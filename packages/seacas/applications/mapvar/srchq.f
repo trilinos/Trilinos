@@ -184,6 +184,7 @@ C
      *                LBLK,NDIM)
 C
           DO 140 K = 1, NLIST
+            lval = list(k)
             CALL QADSRC(
      *      NDIM,     NPTS,     NPSRF,    NFSRF,    NISR,     
      *      NRSR,     NRSS,     XYZSRF,   XYZPTS,   LINKSRF,

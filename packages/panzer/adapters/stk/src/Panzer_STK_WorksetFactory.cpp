@@ -73,7 +73,8 @@ getWorksets(const panzer::WorksetDescriptor & worksetDesc,
     return getVolumeWorksets(worksetDesc.getElementBlock(),pb);
   }
   else if(worksetDesc.useSideset() && worksetDesc.sideAssembly()) {
-    return panzer_stk::buildWorksets(*mesh_,pb,worksetDesc.getSideset());
+    // uses cascade by default, each subcell has its own workset
+    return panzer_stk::buildWorksets(*mesh_,pb,worksetDesc.getSideset(),true);
   }
   else {
     TEUCHOS_ASSERT(false);

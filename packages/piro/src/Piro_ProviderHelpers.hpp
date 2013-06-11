@@ -52,6 +52,8 @@
 
 namespace Piro {
 
+//! \cond DETAILS
+
 template <typename T>
 struct ConstructorProviderFunctor : public ProviderFunctorBase<T> {
 public:
@@ -232,6 +234,8 @@ Provider<T> providerFromReferenceAccepting()
 {
   return NullaryProviderFunctorAdapter<T, ReferenceAcceptingFunctor>();
 }
+
+//! \endcond
 
 } // namespace Piro
 

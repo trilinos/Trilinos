@@ -97,7 +97,7 @@ evaluateFields(typename Traits::EvalData workset)
 {
   // just copy fields if there is no AD data
   for(std::size_t i = 0; i < inFields_.size(); ++i)
-    for(std::size_t j = 0; j < inFields_[i].size(); ++j)
+    for(typename PHX::MDField<ScalarT>::size_type j = 0; j < inFields_[i].size(); ++j)
       outFields_[i][j] = inFields_[i][j];
 }
 
@@ -155,7 +155,7 @@ evaluateFields(typename Traits::EvalData workset)
   // for AD data do a reordering
   for(std::size_t i = 0; i < inFields_.size(); ++i) {
 
-    for(std::size_t j = 0; j < inFields_[i].size(); ++j) {
+    for(typename PHX::MDField<ScalarT>::size_type j = 0; j < inFields_[i].size(); ++j) {
       // allocated scalar fields
       outFields_[i][j] = ScalarT(dstFromSrcMap_.size(), inFields_[i][j].val());
 

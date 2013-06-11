@@ -70,7 +70,7 @@ namespace Xpetra {
   }
   //
 
-  ArrayView< const int > EpetraImport::getExportImageIDs() const { XPETRA_MONITOR("EpetraImport::getExportImageIDs"); return ArrayView<const int> (import_->ExportPIDs(),import_->NumExportIDs()); }
+  ArrayView< const int > EpetraImport::getExportPIDs() const { XPETRA_MONITOR("EpetraImport::getExportImageIDs"); return ArrayView<const int> (import_->ExportPIDs(),import_->NumExportIDs()); }
 
   ArrayView< const int > EpetraImport::getPermuteFromLIDs() const {
     XPETRA_MONITOR("EpetraImport::getPermuteFromLIDs");

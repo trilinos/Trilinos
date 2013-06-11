@@ -940,47 +940,9 @@ int Epetra_MpiDistributor::DoReversePosts( char * export_objs,
   assert(indices_to_==0); //Can only do reverse comm when original data
                           // is blocked by processor
 
-  int i;
-  int my_proc = 0;
-
-  MPI_Comm_rank( comm_, &my_proc );
-
+  // If we don't have a reverse distributor, make one.
   if( comm_plan_reverse_ == 0 )
-  {
-    int total_send_length = 0;
-    for( i = 0; i < nsends_+self_msg_; i++ )
-      total_send_length += lengths_to_[i];
-
-    int max_recv_length = 0;
-    for( i = 0; i < nrecvs_; i++ )
-      if( procs_from_[i] != my_proc )
-        if( lengths_from_[i] > max_recv_length )
-          max_recv_length = lengths_from_[i];
-
-    comm_plan_reverse_ = new Epetra_MpiDistributor(*epComm_);
-
-    comm_plan_reverse_->lengths_to_ = lengths_from_;
-    comm_plan_reverse_->procs_to_ = procs_from_;
-    comm_plan_reverse_->indices_to_ = indices_from_;
-    comm_plan_reverse_->starts_to_ = starts_from_;
-
-    comm_plan_reverse_->lengths_from_ = lengths_to_;
-    comm_plan_reverse_->procs_from_ = procs_to_;
-    comm_plan_reverse_->indices_from_ = indices_to_;
-    comm_plan_reverse_->starts_from_ = starts_to_;
-
-    comm_plan_reverse_->nsends_ = nrecvs_;
-    comm_plan_reverse_->nrecvs_ = nsends_;
-    comm_plan_reverse_->self_msg_ = self_msg_;
-
-    comm_plan_reverse_->max_send_length_ = max_recv_length;
-    comm_plan_reverse_->total_recv_length_ = total_send_length;
-
-    comm_plan_reverse_->request_ = new MPI_Request[ comm_plan_reverse_->nrecvs_ ];
-    comm_plan_reverse_->status_= new MPI_Status[ comm_plan_reverse_->nrecvs_ ];
-
-    comm_plan_reverse_->no_delete_ = true;
-  }
+    CreateReverseDistributor();
 
   int comm_flag = comm_plan_reverse_->DoPosts(export_objs, obj_size, len_import_objs, import_objs);
 
@@ -1360,47 +1322,9 @@ int Epetra_MpiDistributor::DoReversePosts( char * export_objs,
   assert(indices_to_==0); //Can only do reverse comm when original data
                           // is blocked by processor
 
-  int i;
-  int my_proc = 0;
-
-  MPI_Comm_rank( comm_, &my_proc );
-
+  // If we don't have a reverse distributor, make one.
   if( comm_plan_reverse_ == 0 )
-  {
-    int total_send_length = 0;
-    for( i = 0; i < nsends_+self_msg_; i++ )
-      total_send_length += lengths_to_[i];
-
-    int max_recv_length = 0;
-    for( i = 0; i < nrecvs_; i++ )
-      if( procs_from_[i] != my_proc )
-        if( lengths_from_[i] > max_recv_length )
-          max_recv_length = lengths_from_[i];
-
-    comm_plan_reverse_ = new Epetra_MpiDistributor(*epComm_);
-
-    comm_plan_reverse_->lengths_to_ = lengths_from_;
-    comm_plan_reverse_->procs_to_ = procs_from_;
-    comm_plan_reverse_->indices_to_ = indices_from_;
-    comm_plan_reverse_->starts_to_ = starts_from_;
-
-    comm_plan_reverse_->lengths_from_ = lengths_to_;
-    comm_plan_reverse_->procs_from_ = procs_to_;
-    comm_plan_reverse_->indices_from_ = indices_to_;
-    comm_plan_reverse_->starts_from_ = starts_to_;
-
-    comm_plan_reverse_->nsends_ = nrecvs_;
-    comm_plan_reverse_->nrecvs_ = nsends_;
-    comm_plan_reverse_->self_msg_ = self_msg_;
-
-    comm_plan_reverse_->max_send_length_ = max_recv_length;
-    comm_plan_reverse_->total_recv_length_ = total_send_length;
-
-    comm_plan_reverse_->request_ = new MPI_Request[ comm_plan_reverse_->nrecvs_ ];
-    comm_plan_reverse_->status_= new MPI_Status[ comm_plan_reverse_->nrecvs_ ];
-
-    comm_plan_reverse_->no_delete_ = true;
-  }
+    CreateReverseDistributor();
 
   int comm_flag = comm_plan_reverse_->DoPosts(export_objs, obj_size, sizes, len_import_objs, import_objs);
 
@@ -1599,4 +1523,58 @@ Epetra_MpiDistributor& Epetra_MpiDistributor::operator=(const Epetra_MpiDistribu
     throw ReportError("Epetra_MpiDistributor::operator= not supported.",-1);
   }
   return( *this );
+}
+
+
+//-------------------------------------------------------------------------
+void Epetra_MpiDistributor::CreateReverseDistributor() {
+  int i;
+  int my_proc = 0;
+
+  MPI_Comm_rank( comm_, &my_proc );
+
+  if( comm_plan_reverse_ == 0 ) {
+    int total_send_length = 0;
+    for( i = 0; i < nsends_+self_msg_; i++ )
+      total_send_length += lengths_to_[i];
+
+    int max_recv_length = 0;
+    for( i = 0; i < nrecvs_; i++ )
+      if( procs_from_[i] != my_proc )
+        if( lengths_from_[i] > max_recv_length )
+          max_recv_length = lengths_from_[i];
+
+    comm_plan_reverse_ = new Epetra_MpiDistributor(*epComm_);
+
+    comm_plan_reverse_->lengths_to_ = lengths_from_;
+    comm_plan_reverse_->procs_to_ = procs_from_;
+    comm_plan_reverse_->indices_to_ = indices_from_;
+    comm_plan_reverse_->starts_to_ = starts_from_;
+
+    comm_plan_reverse_->lengths_from_ = lengths_to_;
+    comm_plan_reverse_->procs_from_ = procs_to_;
+    comm_plan_reverse_->indices_from_ = indices_to_;
+    comm_plan_reverse_->starts_from_ = starts_to_;
+
+    comm_plan_reverse_->nsends_ = nrecvs_;
+    comm_plan_reverse_->nrecvs_ = nsends_;
+    comm_plan_reverse_->self_msg_ = self_msg_;
+
+    comm_plan_reverse_->max_send_length_ = max_recv_length;
+    comm_plan_reverse_->total_recv_length_ = total_send_length;
+
+    comm_plan_reverse_->request_ = new MPI_Request[ comm_plan_reverse_->nrecvs_ ];
+    comm_plan_reverse_->status_= new MPI_Status[ comm_plan_reverse_->nrecvs_ ];
+
+    comm_plan_reverse_->no_delete_ = true;
+  }
+  
+}
+
+//-------------------------------------------------------------------------
+Epetra_Distributor * Epetra_MpiDistributor::ReverseClone() {
+  if(comm_plan_reverse_==0)
+    CreateReverseDistributor();
+
+  return(dynamic_cast<Epetra_Distributor *>(new Epetra_MpiDistributor(*comm_plan_reverse_)));
 }

@@ -244,7 +244,6 @@ namespace {
     /* Test the getCrs() method of MatrixAdapter.  We check against a simple
      * test matrix that we construct on the fly.
      */
-    typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef MatrixAdapter<MAT> ADAPT;
     typedef std::pair<Scalar,GO> my_pair_t;
@@ -328,7 +327,6 @@ namespace {
     /* Test the getCrs() method of MatrixAdapter.  We check against a simple
      * test matrix that we construct on the fly.
      */
-    typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef MatrixAdapter<MAT> ADAPT;
     typedef std::pair<Scalar,GO> my_pair_t;
@@ -411,10 +409,8 @@ namespace {
     /* Test the getCrs() method of MatrixAdapter.  We check against a simple
      * test matrix that we construct on the fly.
      */
-    typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef MatrixAdapter<MAT> ADAPT;
-    typedef std::pair<Scalar,GO> my_pair_t;
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
     RCP<const Comm<int> > comm = platform.getComm();
     RCP<Node>             node = platform.getNode();
@@ -491,7 +487,6 @@ namespace {
     /* Test the getCcs() method of MatrixAdapter.  Again, check against a known
      * matrix
      */
-    typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef MatrixAdapter<MAT> ADAPT;
 

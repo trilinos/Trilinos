@@ -35,8 +35,8 @@ C
       QAINFO(2) = '        '
       QAINFO(3) = '        '
       
-      QAINFO(2)(:8) = '20120225'
-      QAINFO(3)(:8) = ' 1.58'
+      QAINFO(2)(:8) = '20130411'
+      QAINFO(3)(:8) = ' 1.59'
 C
 c..Dynamic dimensioning of block names+other changes
 c..compress output of distribution factors
@@ -93,3 +93,4 @@ c..Add check for unique attribute names
 c..Add printing of coordinate frames
 c..Add command line parsing; remove exname and need for script
 c..Fix attribute name check
+c..Add option to rename output file, can change during run.  OUTPUT command

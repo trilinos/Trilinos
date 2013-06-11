@@ -1249,7 +1249,6 @@ template <typename mvector_t, typename Adapter>
   env->debug(DETAILED_STATUS, string("Entering determineCut"));
   typedef typename mvector_t::scalar_type scalar_t;
   typedef typename mvector_t::local_ordinal_type lno_t;
-  typedef typename mvector_t::global_ordinal_type gno_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 
   lno_t numLocalCoords = vectors->getLocalLength();

@@ -48,7 +48,15 @@
 // enums and defines
 #include "Tpetra_ConfigDefs.hpp"
 
-#include "Tpetra_HashTable.hpp"
+// mfh 27 Apr 2013: If HAVE_TPETRA_FIXED_HASH_TABLE is defined (which
+// it is by default), then Map will used the fixed-structure hash
+// table variant for global-to-local index lookups.  Otherwise, it
+// will use the dynamic-structure hash table variant.
+
+#ifndef HAVE_TPETRA_FIXED_HASH_TABLE
+#  define HAVE_TPETRA_FIXED_HASH_TABLE 1
+#endif // HAVE_TPETRA_FIXED_HASH_TABLE
+
 /// \file Tpetra_Map_decl.hpp
 /// \brief Declarations for the Tpetra::Map class and related nonmember constructors.
 ///
@@ -57,7 +65,19 @@ namespace Tpetra {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // Forward declaration of Directory.
   template <class LO, class GO, class N> class Directory;
-#endif
+
+#  ifdef HAVE_TPETRA_FIXED_HASH_TABLE
+  namespace Details {
+    template<class GlobalOrdinal, class LocalOrdinal>
+    class FixedHashTable;
+  } // namespace Details
+#  else
+  namespace Details {
+    template<class GlobalOrdinal, class LocalOrdinal>
+    class HashTable;
+  } // namespace Details
+#  endif // HAVE_TPETRA_FIXED_HASH_TABLE
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
   /// \class Map
   /// \brief Describes a parallel distribution of objects over processes.
@@ -172,7 +192,7 @@ namespace Tpetra {
   public:
     //! @name Typedefs
     //@{
-    
+
     //! The type of local indices.
     typedef LocalOrdinal local_ordinal_type;
     //! The type of global indices.
@@ -361,62 +381,63 @@ namespace Tpetra {
     /// return Teuchos::OrdinalTraits<GlobalOrdinal>::invalid().
     GlobalOrdinal getGlobalElement (LocalOrdinal localIndex) const;
 
-    /// \brief Return the process IDs and corresponding local IDs for the given global IDs.
+    /// \brief Return the process ranks and corresponding local
+    ///   indices for the given global indices.
     ///
-    /// This operation should always be called as a collective over
-    /// all processes in the communicator.  For a distributed
+    /// This operation must always be called as a collective over all
+    /// processes in the Map's communicator.  For a distributed
     /// noncontiguous Map, this operation requires communication.
     ///
-    /// \param GIDList [in] List of global IDs for which to find
-    ///   process IDs and local IDs.  These global IDs need not be
-    ///   owned by the calling process.  Indeed, they need not be
-    ///   owned by any process.
-    /// \param nodeIDList [out] List of process IDs corresponding to
-    ///   the given global IDs.  If a global ID does not belong to any
-    ///   process, the resulting process ID is -1.
-    /// \param LIDList [out] List of local IDs (that is, the local ID
-    ///   on the process that owns them) corresponding the given
-    ///   global IDs.  If a global ID does not have a local ID, the
-    ///   resulting local ID is
+    /// \param GIDList [in] List of global indices for which to find
+    ///   process ranks and local indices.  These global indices need
+    ///   not be owned by the calling process.  Indeed, they need not
+    ///   be owned by any process.
+    /// \param nodeIDList [out] List of process rank corresponding to
+    ///   the given global indices.  If a global index does not belong
+    ///   to any process, the resulting process rank is -1.
+    /// \param LIDList [out] List of local indices (that is, the local
+    ///   index on the process that owns them) corresponding to the
+    ///   given global indices.  If a global index does not have a
+    ///   local index, the resulting local index is
     ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
     ///
     /// \pre nodeIDList.size() == GIDList.size()
     /// \pre LIDList.size() == GIDList.size()
     ///
     /// \return IDNotPresent indicates that for at least one global
-    ///   ID, we could not find the corresponding process ID.
+    ///   index, we could not find the corresponding process rank.
     ///   Otherwise, return AllIDsPresent.
     ///
-    /// \note This is crucial technology used in \c Export, \c Import,
-    ///   \c CrsGraph, and \c CrsMatrix.
+    /// \note This is crucial technology used in Export, Import,
+    ///   CrsGraph, and CrsMatrix.
     LookupStatus
     getRemoteIndexList (const Teuchos::ArrayView<const GlobalOrdinal>& GIDList,
                         const Teuchos::ArrayView<                int>& nodeIDList,
                         const Teuchos::ArrayView<       LocalOrdinal>& LIDList) const;
 
-    /// \brief Return the process IDs for the given global IDs.
+    /// \brief Return the process ranks for the given global indices.
     ///
-    /// This operation should always be called as a collective over
-    /// all processes in the communicator.  For a distributed
+    /// This method must always be called as a collective over all
+    /// processes in the Map's communicator.  For a distributed
     /// noncontiguous Map, this operation requires communication.
     ///
-    /// \param GIDList [in] List of global IDs for which to find
-    ///   process IDs and local IDs.  These global IDs need not be
-    ///   owned by the calling process.  Indeed, they need not be
-    ///   owned by any process.
-    /// \param nodeIDList [out] List of process IDs corresponding to
-    ///   the given global IDs.  If a global ID does not belong to any
-    ///   process, the resulting process ID is -1.
+    /// \param GIDList [in] List of global indices for which to find
+    ///   process ranks and local indices.  These global indices need
+    ///   not be owned by the calling process.  Indeed, they need not
+    ///   be owned by any process.
+    /// \param nodeIDList [out] List of process ranks corresponding to
+    ///   the given global indices.  If a global index does not belong
+    ///   to any process, the resulting process rank is -1.
     ///
     /// \pre nodeIDList.size() == GIDList.size()
     ///
     /// \return IDNotPresent indicates that for at least one global
-    ///   ID, we could not find the corresponding process ID.
+    ///   index, we could not find the corresponding process rank.
     ///   Otherwise, return AllIDsPresent.
     ///
     /// \note For a distributed noncontiguous Map, this operation
     ///   requires communication.  This is crucial technology used in
-    ///   \c Export, \c Import, \c CrsGraph, and \c CrsMatrix.
+    ///   Export, Import, CrsGraph, and CrsMatrix.
     LookupStatus
     getRemoteIndexList (const Teuchos::ArrayView<const GlobalOrdinal> & GIDList,
                         const Teuchos::ArrayView<                int> & nodeIDList) const;
@@ -433,6 +454,14 @@ namespace Tpetra {
 
     //! True if the global index is found in this Map on this node, else false.
     bool isNodeGlobalElement (GlobalOrdinal globalIndex) const;
+
+    /// \brief Whether the range of global indices is uniform.
+    ///
+    /// This is a conservative quantity.  It need only be true if the
+    /// Map was constructed using the first (uniform contiguous)
+    /// constructor or a nonmember constructor that calls it.  We
+    /// reserve the right to do more work to check this in the future.
+    bool isUniform () const;
 
     /// \brief True if this Map is distributed contiguously, else false.
     ///
@@ -471,10 +500,13 @@ namespace Tpetra {
     /// \brief True if and only if \c map is compatible with this Map.
     ///
     /// Two Maps are "compatible" if all of the following are true:
-    /// 1. They have the same global number of elements.
-    /// 2. They have the same number of local elements on each process.
     ///
-    /// Determining #2 requires communication (a reduction over this
+    /// 1. Their communicators have the same numbers of processes.
+    ///    (This is necessary even to call this method.)
+    /// 2. They have the same global number of elements.
+    /// 3. They have the same number of local elements on each process.
+    ///
+    /// Determining #3 requires communication (a reduction over this
     /// Map's communicator).  This method assumes that the input Map
     /// is valid on all processes in this Map's communicator.
     ///
@@ -484,45 +516,29 @@ namespace Tpetra {
     /// compatible, then it is legal to assign X to Y or to assign Y
     /// to X.
     ///
-    /// Notes for Tpetra developers:
-    ///
     /// If the input Map and this Map have different communicators,
-    /// the behavior of this method is currently undefined.  In
-    /// general, Tpetra currently assumes that if users instigate
-    /// interactions between Tpetra objects, then those Tpetra objects
-    /// have the same communicator.  Also, defining semantics of
-    /// interaction between Tpetra objects with different
-    /// communicators may be tricky.  It seems like two Maps could be
-    /// compatible even if they had different communicators, as long
-    /// as their communicators have the same number of processes.
-    /// Could two Maps with different communicators be the same (in
-    /// the sense of \c isSameAs())?  It's not clear.
-    ///
-    /// Checking whether two communicators are the same would require
-    /// extending Teuchos::Comm to provide a comparison operator.
-    /// This could be implemented for MPI communicators by returning
-    /// \c true if \c MPI_Comm_compare() returns \c MPI_IDENT, and \c
-    /// false otherwise.  (Presumably, \c MPI_Comm_compare() works
-    /// even if the two communicators have different process counts;
-    /// the MPI 2.2 standard doesn't say otherwise.)  All serial
-    /// communicators have the same context and contain the same
-    /// number of processes, so all serial communicators are equal.
+    /// the behavior of this method is currently undefined if the two
+    /// communicators have different numbers of processes.
     bool isCompatible (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const;
 
     /// \brief True if and only if \c map is identical to this Map.
     ///
     /// "Identical" is stronger than "compatible."  Two Maps are
     /// identical if all of the following are true:
-    /// 1. They have the same min and max global indices.
-    /// 2. They have the same global number of elements.
-    /// 3. They are either both distributed, or both not distributed.
-    /// 4. Their index bases are the same.
-    /// 5. They have the same number of local elements on each process.
-    /// 6. They have the same global indices on each process.
     ///
-    /// #2 and #5 are exactly "compatibility" (see \c isCompatible()).
-    /// Thus, "identical" includes, but is stronger than,
-    /// "compatible."
+    /// 1. Their communicators are <i>congruent</i> (have the same
+    ///    number of processes, in the same order: this corresponds to
+    ///    the \c MPI_IDENT or \c MPI_CONGRUENT return values of
+    ///    MPI_Comm_compare).
+    /// 2. They have the same min and max global indices.
+    /// 3. They have the same global number of elements.
+    /// 4. They are either both distributed, or both not distributed.
+    /// 5. Their index bases are the same.
+    /// 6. They have the same number of local elements on each process.
+    /// 7. They have the same global indices on each process.
+    ///
+    /// "Identical" (isSameAs()) includes and is stronger than
+    /// "compatible" (isCompatible()).
     ///
     /// A Map corresponds to a block permutation over process ranks
     /// and global element indices.  Two Maps with different numbers
@@ -530,15 +546,13 @@ namespace Tpetra {
     /// alone identical.  Two identical Maps correspond to the same
     /// permutation.
     ///
-    /// Notes for Tpetra developers:
-    ///
     /// If the input Map and this Map have different communicators,
-    /// the behavior of this method is currently undefined.  See
-    /// further notes on \c isCompatible().
+    /// the behavior of this method is undefined if the two
+    /// communicators have different numbers of processes.
     bool isSameAs (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const;
 
     //@}
-    //! Accessors for the \c Teuchos::Comm and Kokkos Node objects.
+    //! Accessors for the Teuchos::Comm and Kokkos Node objects.
     //@{
 
     //! Get this Map's Comm object.
@@ -568,19 +582,107 @@ namespace Tpetra {
     template <class Node2>
     RCP<const Map<LocalOrdinal, GlobalOrdinal, Node2> > clone(const RCP<Node2> &node2) const;
 
+    /// \brief Return a new Map with processes with zero elements removed.
+    ///
+    /// \warning This method is only for expert users.  Understanding
+    ///   how to use this method correctly requires some familiarity
+    ///   with semantics of MPI communicators.
+    ///
+    /// \warning We make no promises of backwards compatibility for
+    ///   this method.  It may go away or change at any time.
+    ///
+    /// This method first computes a new communicator, which contains
+    /// only those processes in this Map's communicator (the "original
+    /// communicator") that have a nonzero number of elements in this
+    /// Map (the "original Map").  It then returns a new Map
+    /// distributed over the new communicator.  The new Map represents
+    /// the same distribution as the original Map, except that
+    /// processes containing zero elements are not included in the new
+    /// Map or its communicator.  On processes not included in the new
+    /// Map or communicator, this method returns
+    /// <tt>Teuchos::null</tt>.
+    ///
+    /// The returned Map always has a distinct communicator from this
+    /// Map's original communicator.  The new communicator contains a
+    /// subset of processes from the original communicator.  Even if
+    /// the number of processes in the new communicator equals the
+    /// number of processes in the original communicator, the new
+    /// communicator is distinct.  (In an MPI implementation, the new
+    /// communicator is created using MPI_Comm_split.)
+    ///
+    /// This method must be called collectively on the original
+    /// communicator.  It leaves the original Map and communicator
+    /// unchanged.
+    ///
+    /// This method was intended for applications such as algebraic
+    /// multigrid or other multilevel preconditioners.  Construction
+    /// of each level of the multilevel preconditioner typically
+    /// requires constructing sparse matrices, which in turn requires
+    /// all-reduces over all participating processes at that level.
+    /// Matrix sizes at successively coarser levels shrink
+    /// geometrically.  At the coarsest levels, some processes might
+    /// be left with zero rows of the matrix, or the multigrid
+    /// implementation might "rebalance" (redistribute the matrix) and
+    /// intentionally leave some processes with zero rows.  Removing
+    /// processes with zero rows makes the all-reduces and other
+    /// communication operations cheaper.
+    RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+    removeEmptyProcesses () const;
+
+    /// \brief Replace this Map's communicator with a subset communicator.
+    ///
+    /// \warning This method is only for expert users.  Understanding
+    ///   how to use this method correctly requires some familiarity
+    ///   with semantics of MPI communicators.
+    ///
+    /// \warning We make no promises of backwards compatibility for
+    ///   this method.  It may go away or change at any time.
+    ///
+    /// \pre The input communicator's processes are a subset of this
+    ///   Map's current communicator's processes.
+    /// \pre On processes which are not included in the input
+    ///   communicator, the input communicator is null.
+    ///
+    /// This method must be called collectively on the original
+    /// communicator.  It leaves the original Map and communicator
+    /// unchanged.
+    ///
+    /// \note This method differs from removeEmptyProcesses(), in that
+    ///   it does not assume that excluded processes have zero
+    ///   entries.  For example, one might wish to remove empty
+    ///   processes from the row Map of a CrsGraph using
+    ///   removeEmptyProcesses(), and then apply the resulting subset
+    ///   communicator to the column, domain, and range Maps of the
+    ///   same graph.  For the latter three Maps, one would in general
+    ///   use this method instead of removeEmptyProcesses(), giving
+    ///   the new row Map's communicator to this method.
+    RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+    replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const;
     //@}
 
   protected:
-
+    // This lets other specializations of Map access all of this
+    // specialization's internal methods and data, so that we can
+    // implement clone() without exposing the details of Map to users.
     template <class LO, class GO, class N> friend class Map;
 
-    //! Empty constructor; used for post-construction initialization in clone()
+    /// \brief Default constructor (that does nothing).
+    ///
+    /// We use this in clone() and removeEmptyProcesses(), where we
+    /// have the information to initialize the Map more efficiently
+    /// ourselves, without going through one of the three usual Map
+    /// construction paths.
     Map() {}
 
   private:
-
-    //! Create this Map's Directory, if it hasn't been created already.
-    void setupDirectory();
+    /// \brief Create this Map's Directory, if it hasn't been created already.
+    ///
+    /// This method must be called collectively over all processes in
+    /// the Map's communicator.
+    ///
+    /// This is declared "const" so that we can call it in
+    /// getRemoteIndexList() to create the Directory on demand.
+    void setupDirectory () const;
 
     /// \brief Determine whether this map is globally distributed or locally replicated.
     ///
@@ -628,6 +730,12 @@ namespace Tpetra {
     GlobalOrdinal minAllGID_, maxAllGID_;
     //! First, last contiguous GID for use-cases of partially contiguous maps
     GlobalOrdinal firstContiguousGID_, lastContiguousGID_;
+    /// \brief Whether the range of global indices is uniform.
+    ///
+    /// This is only true if the Map was constructed using the first
+    /// (uniform contiguous) constructor or a nonmember constructor
+    /// that calls it.
+    bool uniform_;
     //! Whether the range of global indices are contiguous and ordered.
     bool contiguous_;
     //! Whether this map's global indices are non-identically distributed among different nodes.
@@ -650,8 +758,13 @@ namespace Tpetra {
     /// describe(), may invoke \c getNodeElementList().
     mutable Teuchos::ArrayRCP<GlobalOrdinal> lgMap_;
 
+#ifdef HAVE_TPETRA_FIXED_HASH_TABLE
+    //! Type of the table that maps global IDs to local IDs.
+    typedef Details::FixedHashTable<GlobalOrdinal, LocalOrdinal> global_to_local_table_type;
+#else
     //! Type of the table that maps global IDs to local IDs.
     typedef Details::HashTable<GlobalOrdinal, LocalOrdinal> global_to_local_table_type;
+#endif // HAVE_TPETRA_FIXED_HASH_TABLE
 
     /// \brief A mapping from global IDs to local IDs.
     ///
@@ -662,12 +775,25 @@ namespace Tpetra {
     /// from global to local indices).
     ///
     /// This mapping is built only for a noncontiguous map, by the
-    /// noncontiguous map constructor.  For noncontiguous maps, the 
+    /// noncontiguous map constructor.  For noncontiguous maps, the
     /// getLocalElement() and isNodeGlobalElement() methods use
     /// this mapping.
     RCP<global_to_local_table_type> glMap_;
 
-    /// Directory: finds the process rank and local ID for any given global ID.
+    /// \brief Object that can find the process rank and local index
+    ///   for any given global index.
+    ///
+    /// Creating this object is a collective operation over all
+    /// processes in the Map's communicator.  getRemoteIndexList() is
+    /// the only method that needs this object, and it also happens to
+    /// be a collective.  Thus, we create the Directory on demand in
+    /// getRemoteIndexList().  This saves the communication cost of
+    /// creating the Directory, for some Maps which are never involved
+    /// in an Import or Export operation.  For example, a nonsquare
+    /// sparse matrix (CrsMatrix) with row and range Maps the same
+    /// would never need to construct an Export object.  This is a
+    /// common case for the prolongation or restriction operators in
+    /// algebraic multigrid.
     ///
     /// \warning Never allow this pointer to escape the Map.  The
     ///   directory must hold an RCP to this Map, which must be
@@ -675,7 +801,10 @@ namespace Tpetra {
     ///   allowing the Directory to persist beyond this Map would
     ///   result in a dangling RCP. We avoid this by not sharing the
     ///   Directory.
-    Teuchos::RCP<Directory<LocalOrdinal,GlobalOrdinal,Node> > directory_;
+    ///
+    /// \note This is declared "mutable" so that getRemoteIndexList()
+    ///   can create the Directory on demand.
+    mutable Teuchos::RCP<Directory<LocalOrdinal,GlobalOrdinal,Node> > directory_;
 
   }; // Map class
 
@@ -808,11 +937,13 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   template <class Node2>
   RCP<const Map<LocalOrdinal, GlobalOrdinal, Node2> >
-  Map<LocalOrdinal,GlobalOrdinal,Node>::clone(const RCP<Node2> &node2) const
+  Map<LocalOrdinal,GlobalOrdinal,Node>::clone (const RCP<Node2> &node2) const
   {
     typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
-    RCP<Map2> map = rcp(new Map2());
-    // the same old stuff...
+    RCP<Map2> map = rcp (new Map2 ());
+    // Fill the new Map with shallow copies of all of the original
+    // Map's data.  This is safe because Map is immutable, so users
+    // can't change the original Map.
     map->comm_              = comm_;
     map->indexBase_         = indexBase_;
     map->numGlobalElements_ = numGlobalElements_;
@@ -823,33 +954,38 @@ namespace Tpetra {
     map->maxAllGID_         = maxAllGID_;
     map->firstContiguousGID_= firstContiguousGID_;
     map->lastContiguousGID_ = lastContiguousGID_;
+    map->uniform_           = uniform_;
     map->contiguous_        = contiguous_;
     map->distributed_       = distributed_;
     map->lgMap_             = lgMap_;
     map->glMap_             = glMap_;
-    // the hot new stuff!
+    // New Map gets the new Node instance.
     map->node_              = node2;
-    if (directory_ != null) {
-      // mfh 20 Feb 2013: The weak reference prevents circularity.
+    // mfh 02 Apr 2013: While Map only needs to create the Directory
+    // on demand in getRemoteIndexList, we have a Directory here that
+    // we can clone inexpensively, so there is no harm in creating it
+    // here.
+    if (! directory_.is_null ()) {
+      // The weak reference prevents circularity.
       map->directory_ = directory_->template clone<Node2> (map.create_weak ());
     }
     return map;
   }
-}
+} // namespace Tpetra
 
 /// \brief True if map1 is the same as (in the sense of isSameAs()) map2, else false.
 /// \relatesalso Tpetra::Map
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 bool operator== (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1,
                  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2)
-{ return map1.isSameAs(map2); }
+{ return map1.isSameAs (map2); }
 
 /// \brief True if map1 is not the same as (in the sense of isSameAs()) map2, else false.
 /// \relatesalso Tpetra::Map
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 bool operator!= (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1,
                  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2)
-{ return !map1.isSameAs(map2); }
+{ return ! map1.isSameAs (map2); }
 
 #endif // TPETRA_MAP_DECL_HPP
 

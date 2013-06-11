@@ -98,18 +98,8 @@ namespace MueLu {
     transferOp->apply(*onesVector, *rowSumVector);
     transferOp->apply(*fineVector, *coarseVector);
 
-    if (vectorName == "Coordinates") {
-      GetOStream(Runtime0, 0) << "Averaging coordinates" << std::endl;
-      size_t numLocalRows = transferOp->getNodeNumRows();
-      ArrayRCP<Scalar> sums = rowSumVector->getDataNonConst(0);
-      assert(numLocalRows == coarseVector->getLocalLength());
-      for (size_t i=0; i<coarseVector->getNumVectors(); ++i) {
-        ArrayRCP<Scalar> vals = coarseVector->getDataNonConst(i);
-        for (size_t j=0; j<numLocalRows; ++j) {
-          vals[j] /= (sums[j] != Teuchos::ScalarTraits<Scalar>::zero())?(sums[j]):(Teuchos::ScalarTraits<Scalar>::one());
-        }
-      }
-    }
+    if (vectorName == "Coordinates")
+      TEUCHOS_TEST_FOR_EXCEPTION(true,Exceptions::RuntimeError,"Use CoordinatesTransferFactory to transfer coordinates instead of MultiVectorTransferFactory.");
 
     Set<RCP<MultiVector> >(coarseLevel, vectorName, coarseVector);
 

@@ -59,7 +59,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Assert.hpp"
 
-//!  TriKota namespace
+//!  \brief %Piro-specific extension of the %TriKota package
 namespace TriKota {
 
 /*! \brief Adapter class that transates from a Trilinos interface to a 

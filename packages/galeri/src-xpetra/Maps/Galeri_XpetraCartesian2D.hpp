@@ -72,7 +72,7 @@ namespace Galeri {
       //TODO: avoid using GlobalOrdinal everywhere?
 
       template <class LocalOrdinal, class GlobalOrdinal, class Map>
-      RCP<Map>
+      Teuchos::RCP<Map>
       Cartesian2D(const Teuchos::RCP<const Teuchos::Comm<int> > & comm, const GlobalOrdinal nx, const GlobalOrdinal ny,
                   const GlobalOrdinal mx, const GlobalOrdinal my)
       {
@@ -89,8 +89,8 @@ namespace Galeri {
         GlobalOrdinal xpid = MyPID % mx;
         GlobalOrdinal ypid = MyPID / mx;
 
-        GlobalOrdinal PerProcSmallXDir = (GlobalOrdinal) (((double) nx)/((double) mx));
-        GlobalOrdinal PerProcSmallYDir = (GlobalOrdinal) (((double) ny)/((double) my));
+        GlobalOrdinal PerProcSmallXDir = Teuchos::as<GlobalOrdinal>(Teuchos::as<double>(nx)/Teuchos::as<double>(mx));
+        GlobalOrdinal PerProcSmallYDir = Teuchos::as<GlobalOrdinal>(Teuchos::as<double>(ny)/Teuchos::as<double>(my));
         GlobalOrdinal NBigXDir         = nx - PerProcSmallXDir*mx;
         GlobalOrdinal NBigYDir         = ny - PerProcSmallYDir*my;
 

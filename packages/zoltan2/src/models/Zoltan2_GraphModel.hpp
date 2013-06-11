@@ -120,7 +120,6 @@ template <typename User> size_t removeUndesiredEdges(
   typedef typename InputTraits<User>::gid_t gid_t;
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t lno_t;
-  typedef StridedData<lno_t, scalar_t> input_t;
   size_t numKeep = 0;
 
   size_t numVtx = offsets.size() - 1;

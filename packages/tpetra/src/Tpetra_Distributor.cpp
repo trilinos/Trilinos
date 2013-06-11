@@ -43,6 +43,7 @@
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
+
 namespace Tpetra {
   namespace Details {
     std::string
@@ -78,132 +79,178 @@ namespace Tpetra {
     return sendTypes;
   }
 
-  #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
+  // We set default values of Distributor's Boolean parameters here,
+  // in this one place.  That way, if we want to change the default
+  // value of a parameter, we don't have to search the whole file to
+  // ensure a consistent setting.
   namespace {
-    const bool useDistinctTags_default = false;
+    // Default value of the "Debug" parameter.
+    const bool tpetraDistributorDebugDefault = false;
+    // Default value of the "Barrier between receives and sends" parameter.
+    const bool barrierBetween_default = false;
+    // Default value of the "Use distinct tags" parameter.
+    const bool useDistinctTags_default = true;
   } // namespace (anonymous)
 
-  // Initialize the tag counter, used to assign each Distributor instance its own tag.
-  int Distributor::tagCounter_ = 0;
+  int Distributor::getTag (const int pathTag) const {
+    return useDistinctTags_ ? pathTag : comm_->getTag ();
+  }
 
-  void Distributor::incrementTagCounter () {
-    // The MPI standard requires a minimum upper bound of 32767 for
-    // tags.  Some implementations allow larger values.  We could call
-    // MPI_Comm_get_attr() (with attribute MPI_TAG_UB) to get the
-    // actual upper bound, but it's not really necessary for this
-    // case.  We don't expect an application to create a large number
-    // of Distributor objects, and the tag counter is really only for
-    // debugging.
-    if (tagCounter_ >= 32764) {
-      tagCounter_ = 0;
-    } else {
-      // First four are for doPosts() (two paths in each of two
-      // versions of doPosts()).  We reserve the remaining four for
-      // initialization.
-      tagCounter_ += 8;
+
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+  void Distributor::makeTimers () {
+    const std::string name_doPosts3 = "Tpetra::Distributor: doPosts(3)";
+    const std::string name_doPosts4 = "Tpetra::Distributor: doPosts(4)";
+    const std::string name_doWaits = "Tpetra::Distributor: doWaits";
+    const std::string name_doPosts3_recvs = "Tpetra::Distributor: doPosts(3): recvs";
+    const std::string name_doPosts4_recvs = "Tpetra::Distributor: doPosts(4): recvs";
+    const std::string name_doPosts3_barrier = "Tpetra::Distributor: doPosts(3): barrier";
+    const std::string name_doPosts4_barrier = "Tpetra::Distributor: doPosts(4): barrier";
+    const std::string name_doPosts3_sends = "Tpetra::Distributor: doPosts(3): sends";
+    const std::string name_doPosts4_sends = "Tpetra::Distributor: doPosts(4): sends";
+
+    timer_doPosts3_ = Teuchos::TimeMonitor::getNewTimer (name_doPosts3);
+    timer_doPosts4_ = Teuchos::TimeMonitor::getNewTimer (name_doPosts4);
+    timer_doWaits_ = Teuchos::TimeMonitor::getNewTimer (name_doWaits);
+    timer_doPosts3_recvs_ = Teuchos::TimeMonitor::getNewTimer (name_doPosts3_recvs);
+    timer_doPosts4_recvs_ = Teuchos::TimeMonitor::getNewTimer (name_doPosts4_recvs);
+    timer_doPosts3_barrier_ = Teuchos::TimeMonitor::getNewTimer (name_doPosts3_barrier);
+    timer_doPosts4_barrier_ = Teuchos::TimeMonitor::getNewTimer (name_doPosts4_barrier);
+    timer_doPosts3_sends_ = Teuchos::TimeMonitor::getNewTimer (name_doPosts3_sends);
+    timer_doPosts4_sends_ = Teuchos::TimeMonitor::getNewTimer (name_doPosts4_sends);
+  }
+#endif // TPETRA_DISTRIBUTOR_TIMERS
+
+  void
+  Distributor::init (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                     const Teuchos::RCP<Teuchos::ParameterList>& plist)
+  {
+    this->setVerbLevel (debug_ ? Teuchos::VERB_EXTREME : Teuchos::VERB_NONE);
+    this->setOStream (out_);
+    if (! plist.is_null ()) {
+      // The input parameters may override the above verbosity level
+      // setting, if there is a "VerboseObject" sublist.
+      this->setParameterList (plist);
+    }
+
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    makeTimers ();
+#endif // TPETRA_DISTRIBUTOR_TIMERS
+
+    if (debug_) {
+      Teuchos::OSTab tab (out_);
+      std::ostringstream os;
+      os << comm_->getRank ()
+         << ": Distributor ctor done" << std::endl;
+      *out_ << os.str ();
     }
   }
 
-  int Distributor::getTag (const int pathTag) const {
-    return useDistinctTags_ ? (instanceTag_ + pathTag) : comm_->getTag ();
-  }
-  #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
-
-  Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
-    : comm_(comm)
+  Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+    : comm_ (comm)
+    , out_  (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)))
     , sendType_ (Details::DISTRIBUTOR_SEND)
-    , barrierBetween_ (true)
-    , debug_ (false)
-    , numExports_(0)
-    , selfMessage_(false)
-    , numSends_(0)
-    , maxSendLength_(0)
-    , numReceives_(0)
-    , totalReceiveLength_(0)
-#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
-    , instanceTag_ (tagCounter_) // <- This is not thread safe: tagCounter_ is global.
+    , barrierBetween_ (barrierBetween_default)
+    , debug_ (tpetraDistributorDebugDefault)
+    , numExports_ (0)
+    , selfMessage_ (false)
+    , numSends_ (0)
+    , maxSendLength_ (0)
+    , numReceives_ (0)
+    , totalReceiveLength_ (0)
     , useDistinctTags_ (useDistinctTags_default)
-#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
   {
-    using Teuchos::getFancyOStream;
-    using Teuchos::oblackholestream;
-    using Teuchos::rcp;
-    // Always start by making sure the Distributor won't print anything.
-    this->setVerbLevel (Teuchos::VERB_NONE);
-    this->setOStream (getFancyOStream (rcp (new oblackholestream)));
-#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
-    // Defer side effects until we know that everything else didn't throw.
-    // This is not thread safe: tagCounter_ is global.
-    incrementTagCounter ();
-#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
+    init (comm, Teuchos::null);
+  }
+
+  Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                            const Teuchos::RCP<Teuchos::FancyOStream>& out)
+    : comm_ (comm)
+    , out_ (out.is_null () ? Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : out)
+    , sendType_ (Details::DISTRIBUTOR_SEND)
+    , barrierBetween_ (barrierBetween_default)
+    , debug_ (tpetraDistributorDebugDefault)
+    , numExports_ (0)
+    , selfMessage_ (false)
+    , numSends_ (0)
+    , maxSendLength_ (0)
+    , numReceives_ (0)
+    , totalReceiveLength_ (0)
+    , useDistinctTags_ (useDistinctTags_default)
+  {
+    init (comm, Teuchos::null);
   }
 
   Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                             const Teuchos::RCP<Teuchos::ParameterList>& plist)
-    : comm_(comm)
+    : comm_ (comm)
+    , out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)))
     , sendType_ (Details::DISTRIBUTOR_SEND)
-    , barrierBetween_ (true)
-    , debug_ (false)
-    , numExports_(0)
-    , selfMessage_(false)
-    , numSends_(0)
-    , maxSendLength_(0)
-    , numReceives_(0)
-    , totalReceiveLength_(0)
-#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
-    , instanceTag_ (tagCounter_) // <- This is not thread safe: tagCounter_ is global.
+    , barrierBetween_ (barrierBetween_default)
+    , debug_ (tpetraDistributorDebugDefault)
+    , numExports_ (0)
+    , selfMessage_ (false)
+    , numSends_ (0)
+    , maxSendLength_ (0)
+    , numReceives_ (0)
+    , totalReceiveLength_ (0)
     , useDistinctTags_ (useDistinctTags_default)
-#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
   {
-    using Teuchos::getFancyOStream;
-    using Teuchos::oblackholestream;
-    using Teuchos::rcp;
-    TEUCHOS_TEST_FOR_EXCEPTION (plist.is_null(), std::invalid_argument, "The "
-      "two-argument Distributor constructor requires that the input "
-      "RCP<ParameterList> be nonnull.  If you don't know what parameters to "
-      "set, you can either call the one-argument constructor, or supply a "
-      "nonnull but empty ParameterList.  Both of these options will set default "
-      "parameters.");
-    // Always start by making sure the Distributor won't print anything.
-    this->setVerbLevel (Teuchos::VERB_NONE);
-    this->setOStream (getFancyOStream (rcp (new oblackholestream)));
-    // Setting parameters may override these, if there is a
-    // "VerboseObject" sublist.
-    this->setParameterList (plist);
-#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
-    // Defer side effects until we know that everything else didn't throw.
-    // This is not thread safe: tagCounter_ is global.
-    incrementTagCounter ();
-#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
+    init (comm, plist);
+  }
+
+  Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                            const Teuchos::RCP<Teuchos::FancyOStream>& out,
+                            const Teuchos::RCP<Teuchos::ParameterList>& plist)
+    : comm_ (comm)
+    , out_ (out.is_null () ? Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : out)
+    , sendType_ (Details::DISTRIBUTOR_SEND)
+    , barrierBetween_ (barrierBetween_default)
+    , debug_ (tpetraDistributorDebugDefault)
+    , numExports_ (0)
+    , selfMessage_ (false)
+    , numSends_ (0)
+    , maxSendLength_ (0)
+    , numReceives_ (0)
+    , totalReceiveLength_ (0)
+    , useDistinctTags_ (useDistinctTags_default)
+  {
+    init (comm, plist);
   }
 
   Distributor::Distributor (const Distributor & distributor)
-    : comm_(distributor.comm_)
+    : comm_ (distributor.comm_)
+    , out_ (distributor.out_)
     , sendType_ (distributor.sendType_)
     , barrierBetween_ (distributor.barrierBetween_)
     , debug_ (distributor.debug_)
-    , numExports_(distributor.numExports_)
-    , selfMessage_(distributor.selfMessage_)
-    , numSends_(distributor.numSends_)
-    , maxSendLength_(distributor.maxSendLength_)
-    , numReceives_(distributor.numReceives_)
-    , totalReceiveLength_(distributor.totalReceiveLength_)
-    , reverseDistributor_(distributor.reverseDistributor_)
-#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
-    , instanceTag_ (tagCounter_) // <- This is not thread safe: tagCounter_ is global.
+    , numExports_ (distributor.numExports_)
+    , selfMessage_ (distributor.selfMessage_)
+    , numSends_ (distributor.numSends_)
+    , imagesTo_ (distributor.imagesTo_)
+    , startsTo_ (distributor.startsTo_)
+    , lengthsTo_ (distributor.lengthsTo_)
+    , maxSendLength_ (distributor.maxSendLength_)
+    , indicesTo_ (distributor.indicesTo_)
+    , numReceives_ (distributor.numReceives_)
+    , totalReceiveLength_ (distributor.totalReceiveLength_)
+    , lengthsFrom_ (distributor.lengthsFrom_)
+    , imagesFrom_ (distributor.imagesFrom_)
+    , startsFrom_ (distributor.startsFrom_)
+    , indicesFrom_ (distributor.indicesFrom_)
+    , reverseDistributor_ (distributor.reverseDistributor_)
     , useDistinctTags_ (distributor.useDistinctTags_)
-#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
   {
-    using Teuchos::getFancyOStream;
-    using Teuchos::oblackholestream;
     using Teuchos::ParameterList;
     using Teuchos::parameterList;
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    this->setVerbLevel (Teuchos::VERB_NONE);
-    this->setOStream (getFancyOStream (rcp (new oblackholestream)));
-
+    this->setVerbLevel (distributor.getVerbLevel ());
+    this->setOStream (out_);
+    // The input parameters may override the above verbosity level
+    // setting, if there is a "VerboseObject" sublist.
+    //
     // Clone the right-hand side's ParameterList, so that this' list
     // is decoupled from the right-hand side's list.  We don't need to
     // do validation, since the right-hand side already has validated
@@ -214,11 +261,74 @@ namespace Tpetra {
     if (! rhsList.is_null ()) {
       this->setMyParamList (parameterList (* rhsList));
     }
-#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
-    // Defer side effects until we know that everything else didn't throw.
-    // This is not thread safe: tagCounter_ is global.
-    incrementTagCounter ();
-#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
+
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    makeTimers ();
+#endif // TPETRA_DISTRIBUTOR_TIMERS
+
+    if (debug_) {
+      Teuchos::OSTab tab (out_);
+      std::ostringstream os;
+      os << comm_->getRank ()
+         << ": Distributor copy ctor done" << std::endl;
+      *out_ << os.str ();
+    }
+  }
+
+  void Distributor::swap (Distributor& rhs) {
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
+
+    std::swap (comm_, rhs.comm_);
+    std::swap (out_, rhs.out_);
+    std::swap (sendType_, rhs.sendType_);
+    std::swap (barrierBetween_, rhs.barrierBetween_);
+    std::swap (debug_, rhs.debug_);
+    std::swap (numExports_, rhs.numExports_);
+    std::swap (selfMessage_, rhs.selfMessage_);
+    std::swap (numSends_, rhs.numSends_);
+    std::swap (imagesTo_, rhs.imagesTo_);
+    std::swap (startsTo_, rhs.startsTo_);
+    std::swap (lengthsTo_, rhs.lengthsTo_);
+    std::swap (maxSendLength_, rhs.maxSendLength_);
+    std::swap (indicesTo_, rhs.indicesTo_);
+    std::swap (numReceives_, rhs.numReceives_);
+    std::swap (totalReceiveLength_, rhs.totalReceiveLength_);
+    std::swap (lengthsFrom_, rhs.lengthsFrom_);
+    std::swap (imagesFrom_, rhs.imagesFrom_);
+    std::swap (startsFrom_, rhs.startsFrom_);
+    std::swap (indicesFrom_, rhs.indicesFrom_);
+    std::swap (reverseDistributor_, rhs.reverseDistributor_);
+    std::swap (useDistinctTags_, rhs.useDistinctTags_);
+
+    // Swap verbosity levels.
+    const Teuchos::EVerbosityLevel lhsVerb = this->getVerbLevel ();
+    const Teuchos::EVerbosityLevel rhsVerb = rhs.getVerbLevel ();
+    this->setVerbLevel (rhsVerb);
+    rhs.setVerbLevel (lhsVerb);
+
+    // Swap output streams.  We've swapped out_ above, but we have to
+    // tell the parent class VerboseObject about the swap.
+    this->setOStream (out_);
+    rhs.setOStream (rhs.out_);
+
+    // Swap parameter lists.  If they are the same object, make a deep
+    // copy first, so that modifying one won't modify the other one.
+    RCP<ParameterList> lhsList = this->getNonconstParameterList ();
+    RCP<ParameterList> rhsList = rhs.getNonconstParameterList ();
+    if (lhsList.getRawPtr () == rhsList.getRawPtr () && ! rhsList.is_null ()) {
+      rhsList = parameterList (*rhsList);
+    }
+    if (! rhsList.is_null ()) {
+      this->setMyParamList (rhsList);
+    }
+    if (! lhsList.is_null ()) {
+      rhs.setMyParamList (lhsList);
+    }
+
+    // We don't need to swap timers, because all instances of
+    // Distributor use the same timers.
   }
 
   Distributor::~Distributor()
@@ -251,9 +361,7 @@ namespace Tpetra {
       plist->get<bool> ("Barrier between receives and sends");
     const Details::EDistributorSendType sendType =
       getIntegralValue<Details::EDistributorSendType> (*plist, "Send type");
-#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
     const bool useDistinctTags = plist->get<bool> ("Use distinct tags");
-#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
     const bool debug = plist->get<bool> ("Debug");
 
     // We check this property explicitly, since we haven't yet learned
@@ -279,35 +387,8 @@ namespace Tpetra {
     // Now that we've validated the input list, save the results.
     sendType_ = sendType;
     barrierBetween_ = barrierBetween;
-#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
     useDistinctTags_ = useDistinctTags;
-#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
     debug_ = debug;
-
-#ifdef HAVE_TEUCHOS_DEBUG
-    // Prepare for verbose output, if applicable.
-    Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel ();
-    RCP<FancyOStream> out = this->getOStream ();
-    const int myRank = comm_->getRank ();
-    // We only want one process to print verbose output here.
-    // const bool doPrint = out.get () && (myRank == 0) &&
-    //   includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
-    (void) verbLevel; // Silence "unused variable" compiler warnings.
-    const bool doPrint = out.get () && (myRank == 0);
-
-    if (doPrint) {
-      *out << "Distributor parameters:" << endl;
-      OSTab tab = this->getOSTab (); // Add one tab level
-      *out << "\"Send type\": " << DistributorSendTypeEnumToString (sendType_)
-	   << endl << "\"Barrier between receives and sends\": " 
-	   << (barrierBetween_ ? "true" : "false") << endl;
-#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
-      *out << "\"Use distinct tags\": "
-	   << (useDistinctTags_ ? "true" : "false") << endl;
-#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
-      *out << "\"Debug\": " << (debug_ ? "true" : "false") << endl;
-    }
-#endif // HAVE_TEUCHOS_DEBUG
 
     // ParameterListAcceptor semantics require pointer identity of the
     // sublist passed to setParameterList(), so we save the pointer.
@@ -323,11 +404,9 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::setStringToIntegralParameter;
 
-    const bool barrierBetween = true;
-#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
+    const bool barrierBetween = barrierBetween_default;
     const bool useDistinctTags = useDistinctTags_default;
-#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
-    const bool debug = false;
+    const bool debug = tpetraDistributorDebugDefault;
 
     Array<std::string> sendTypes = distributorSendTypes ();
     const std::string defaultSendType ("Send");
@@ -345,13 +424,10 @@ namespace Tpetra {
     setStringToIntegralParameter<Details::EDistributorSendType> ("Send type",
       defaultSendType, "When using MPI, the variant of send to use in "
       "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
-#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
     plist->set ("Use distinct tags", useDistinctTags, "Whether to use distinct "
-		"MPI message tags for different Distributor instances, and for "
-		"different doPosts() code paths.");
-#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
+                "MPI message tags for different code paths.");
     plist->set ("Debug", debug, "Whether to print copious debugging output on "
-		"all processes.");
+                "all processes.");
 
     Teuchos::setupVerboseObjectSublist (&*plist);
     return Teuchos::rcp_const_cast<const ParameterList> (plist);
@@ -395,15 +471,15 @@ namespace Tpetra {
   }
 
 
-  void 
-  Distributor::createReverseDistributor() const 
+  void
+  Distributor::createReverseDistributor() const
   {
     reverseDistributor_ = Teuchos::rcp (new Distributor (comm_));
 
     // The total length of all the sends of this Distributor.  We
     // calculate it because it's the total length of all the receives
     // of the reverse Distributor.
-    size_t totalSendLength = 
+    size_t totalSendLength =
       std::accumulate (lengthsTo_.begin(), lengthsTo_.end(), 0);
 
     // The maximum length of any of the receives of this Distributor.
@@ -454,29 +530,25 @@ namespace Tpetra {
     using Teuchos::waitAll;
     using std::endl;
 
-#ifdef HAVE_TEUCHOS_DEBUG
-    // Prepare for verbose output, if applicable.
-    Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel ();
-    RCP<FancyOStream> out = this->getOStream ();
-    const bool doPrint = out.get () &&
-      includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
+    Teuchos::OSTab tab (out_);
+
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    Teuchos::TimeMonitor timeMon (*timer_doWaits_);
+#endif // TPETRA_DISTRIBUTOR_TIMERS
+
     const int myRank = comm_->getRank ();
 
-    if (doPrint) {
-      *out << "Distributor::doWaits (Proc " << myRank << "):" << endl;
+    if (debug_) {
+      std::ostringstream os;
+      os << myRank << ": doWaits: # reqs = "
+         << requests_.size () << endl;
+      *out_ << os.str ();
     }
-    OSTab tab = this->getOSTab(); // Add one tab level
-#endif // HAVE_TEUCHOS_DEBUG
 
     if (requests_.size() > 0) {
       waitAll (*comm_, requests_());
 
 #ifdef HAVE_TEUCHOS_DEBUG
-      if (doPrint) {
-        *out << "Proc " << myRank << ": waitAll completed " << requests_.size()
-             << " requests" << endl;
-      }
-
       // Make sure that waitAll() nulled out all the requests.
       for (Array<RCP<CommRequest<int> > >::const_iterator it = requests_.begin();
            it != requests_.end(); ++it)
@@ -490,6 +562,27 @@ namespace Tpetra {
       // Restore the invariant that requests_.size() is the number of
       // outstanding nonblocking communication requests.
       requests_.resize (0);
+    }
+
+#ifdef HAVE_TEUCHOS_DEBUG
+    {
+      const int localSizeNonzero = (requests_.size () != 0) ? 1 : 0;
+      int globalSizeNonzero = 0;
+      Teuchos::reduceAll<int, int> (*comm_, Teuchos::REDUCE_MAX,
+                                    localSizeNonzero,
+                                    Teuchos::outArg (globalSizeNonzero));
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        globalSizeNonzero != 0, std::runtime_error,
+        "Tpetra::Distributor::doWaits: After waitAll, at least one process has "
+        "a nonzero number of outstanding posts.  There should be none at this "
+        "point.  Please report this bug to the Tpetra developers.");
+    }
+#endif // HAVE_TEUCHOS_DEBUG
+
+    if (debug_) {
+      std::ostringstream os;
+      os << myRank << ": doWaits done" << endl;
+      *out_ << os.str ();
     }
   }
 
@@ -506,9 +599,9 @@ namespace Tpetra {
     return oss.str();
   }
 
-  void 
-  Distributor::describe (Teuchos::FancyOStream &out, 
-			 const Teuchos::EVerbosityLevel verbLevel) const
+  void
+  Distributor::describe (Teuchos::FancyOStream &out,
+                         const Teuchos::EVerbosityLevel verbLevel) const
   {
     using std::endl;
     using std::setw;
@@ -529,43 +622,41 @@ namespace Tpetra {
     } else {
       if (myImageID == 0) {
         // VERB_LOW and higher prints description() (on Proc 0 only).
-	// We quote the class name because it contains colons:
-	// quoting makes the output valid YAML.
-	out << "\"Tpetra::Distributor\":" << endl;
-	Teuchos::OSTab tab2 (out);
-	const std::string label = this->getObjectLabel ();
-	if (label != "") {
-	  out << "Label: " << label << endl;
-	}
-	out << "Parameters: " << endl;
-	{
-	  Teuchos::OSTab tab3 (out);
-	  out << "\"Send type\": " 
-	      << DistributorSendTypeEnumToString (sendType_) << endl
-	      << "\"Barrier between receives and sends\": " 
-	      << (barrierBetween_ ? "true" : "false") << endl;
-#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
-	  out << "\"Use distinct tags\": "
-	      << (useDistinctTags_ ? "true" : "false") << endl;
-#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
-	  out << "\"Debug\": " << (debug_ ? "true" : "false") << endl;
-	}
+        // We quote the class name because it contains colons:
+        // quoting makes the output valid YAML.
+        out << "\"Tpetra::Distributor\":" << endl;
+        Teuchos::OSTab tab2 (out);
+        const std::string label = this->getObjectLabel ();
+        if (label != "") {
+          out << "Label: " << label << endl;
+        }
+        out << "Parameters: " << endl;
+        {
+          Teuchos::OSTab tab3 (out);
+          out << "\"Send type\": "
+              << DistributorSendTypeEnumToString (sendType_) << endl
+              << "\"Barrier between receives and sends\": "
+              << (barrierBetween_ ? "true" : "false") << endl;
+          out << "\"Use distinct tags\": "
+              << (useDistinctTags_ ? "true" : "false") << endl;
+          out << "\"Debug\": " << (debug_ ? "true" : "false") << endl;
+        }
       }
       if (vl == VERB_LOW) {
         return;
       } else {
-	Teuchos::OSTab tab2 (out);
+        Teuchos::OSTab tab2 (out);
         // vl > VERB_LOW lets each image print its data.  We assume
         // that all images can print to the given output stream, and
         // execute barriers to make it more likely that the output
         // will be in the right order.
         for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
           if (myImageID == imageCtr) {
-	    if (myImageID == 0) {
-	      out << "Number of processes: " << numImages << endl;
-	    }
+            if (myImageID == 0) {
+              out << "Number of processes: " << numImages << endl;
+            }
             out << "Process: " << myImageID << endl;
-	    Teuchos::OSTab tab3 (out);
+            Teuchos::OSTab tab3 (out);
             out << "selfMessage: " << hasSelfMessage () << endl;
             out << "numSends: " << getNumSends () << endl;
             if (vl == VERB_HIGH || vl == VERB_EXTREME) {
@@ -613,30 +704,31 @@ namespace Tpetra {
     using Teuchos::reduceAllAndScatter;
     using Teuchos::send;
     using Teuchos::waitAll;
-    using std::cerr;
     using std::endl;
 
-#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
-    // MPI tag for nonblocking receives and blocking sends in this method.
-    const int pathTag = 4;
-    const int tag = this->getTag (pathTag);
-#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
-
+    Teuchos::OSTab tab (out_);
     const int myRank = comm_->getRank();
     const int numProcs = comm_->getSize();
+
+    // MPI tag for nonblocking receives and blocking sends in this method.
+    const int pathTag = 2;
+    const int tag = this->getTag (pathTag);
+
     if (debug_) {
       std::ostringstream os;
-      os << "  Proc " << myRank << ": in computeReceives (selfMessage_ = " 
-	 << (selfMessage_ ? "true" : "false") << ")" << endl;
-      cerr << os.str ();
+      os << myRank << ": computeReceives: "
+        "{selfMessage_: " << (selfMessage_ ? "true" : "false")
+         << ", tag: " << tag << "}" << endl;
+      *out_ << os.str ();
     }
 
     // toNodesFromMe[i] == the number of messages sent by this process
-    // to process i.  The data in numSends_, imagesTo_, lengthsTo_
+    // to process i.  The data in numSends_, imagesTo_, and lengthsTo_
     // concern the contiguous sends.  Therefore, each process will be
-    // listed in imagesTo_ at most once.
+    // listed in imagesTo_ at most once, and so toNodesFromMe[i] will
+    // either be 0 or 1.
     {
-      Array<size_t> toNodesFromMe (numProcs,0);
+      Array<int> toNodesFromMe (numProcs, 0);
 #ifdef HAVE_TEUCHOS_DEBUG
       bool counting_error = false;
 #endif // HAVE_TEUCHOS_DEBUG
@@ -657,9 +749,10 @@ namespace Tpetra {
 #endif // HAVE_TEUCHOS_DEBUG
 
       if (debug_) {
-	std::ostringstream os;
-	os << "  - Proc " << myRank << ": calling reduceAllAndScatter" << endl;
-	cerr << os.str ();
+        std::ostringstream os;
+        os << myRank << ": computeReceives: "
+          "Calling reduceAllAndScatter" << endl;
+        *out_ << os.str ();
       }
 
       // Compute the number of receives that this process needs to
@@ -701,10 +794,17 @@ namespace Tpetra {
       // critical path length of MPI_Reduce, so reduceAllAndScatter
       // can't be more than twice as fast as the all-reduce, even if
       // the scatter is free).
+      //
+      // mfh 12 Apr 2013: See discussion in createFromSends() about
+      // how we could use this communication to propagate an error
+      // flag for "free" in a release build.
       Array<int> counts (numProcs, 1);
-      reduceAllAndScatter (*comm_, REDUCE_SUM, numProcs,
-                           toNodesFromMe.getRawPtr (),
-                           counts.getRawPtr (), &numReceives_);
+      int numReceivesAsInt = 0; // output
+      reduceAllAndScatter<int, int> (*comm_, REDUCE_SUM, numProcs,
+                                     toNodesFromMe.getRawPtr (),
+                                     counts.getRawPtr (),
+                                     &numReceivesAsInt);
+      numReceives_ = Teuchos::as<size_t> (numReceivesAsInt);
     }
 
     // Now we know numReceives_, which is this process' number of
@@ -734,11 +834,7 @@ namespace Tpetra {
     // one RCP per nonblocking receive request.  They get allocated in
     // the loop below.
     Array<RCP<CommRequest<int> > > requests (actualNumReceives);
-#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
     Array<ArrayRCP<size_t> > lengthsFromBuffers (actualNumReceives);
-#else
-    Array<RCP<size_t> > lengthsFromBuffers (actualNumReceives);
-#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
     Array<RCP<CommStatus<int> > > statuses (actualNumReceives);
 
     // Teuchos::Comm treats a negative process ID as MPI_ANY_SOURCE
@@ -747,42 +843,33 @@ namespace Tpetra {
 
     if (debug_) {
       std::ostringstream os;
-      os << "  - Proc " << myRank << ": Posting " 
-	 << actualNumReceives << " ireceives" << endl;
-      cerr << os.str ();
+      os << myRank << ": computeReceives: Posting "
+         << actualNumReceives << " irecvs" << endl;
+      *out_ << os.str ();
     }
+
     // Post the (nonblocking) receives.
     for (size_t i = 0; i < actualNumReceives; ++i) {
       // Once the receive completes, we can ask the corresponding
       // CommStatus object (output by wait()) for the sending process'
       // ID (which we'll assign to imagesFrom_[i] -- don't forget to
       // do that!).
-#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
       lengthsFromBuffers[i].resize (1);
       lengthsFromBuffers[i][0] = as<size_t> (0);
       requests[i] = ireceive<int, size_t> (lengthsFromBuffers[i], anySourceProc, tag, *comm_);
       if (debug_) {
-	std::ostringstream os;
-	os << "  - Proc " << myRank << ": Posted ireceive with tag " << tag << endl;
-	cerr << os.str ();
+        std::ostringstream os;
+        os << myRank << ": computeReceives: "
+          "Posted any-proc irecv w/ specified tag " << tag << endl;
+        *out_ << os.str ();
       }
-#else
-      lengthsFromBuffers[i] = rcp (new size_t (0));
-      requests[i] = ireceive<int, size_t> (*comm_, lengthsFromBuffers[i], anySourceProc);
-      if (debug_) {
-	std::ostringstream os;
-	os << "  - Proc " << myRank << ": Posted ireceive with tag " 
-	   << comm_->getTag () << endl;
-	cerr << os.str ();
-      }
-#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
     }
 
     if (debug_) {
       std::ostringstream os;
-      os << "  - Proc " << myRank << ": Posting " << numSends_ 
-	 << " sends" << endl;
-      cerr << os.str ();
+      os << myRank << ": computeReceives: "
+        "posting " << numSends_ << " sends" << endl;
+      *out_ << os.str ();
     }
     // Post the sends: Tell each process to which we are sending how
     // many packets it should expect from us in the communication
@@ -793,28 +880,19 @@ namespace Tpetra {
     // set.  The value of numSends_ (my process' number of sends) does
     // not include any message that it might send to itself.
     for (size_t i = 0; i < numSends_ + (selfMessage_ ? 1 : 0); ++i) {
-      if (imagesTo_[i] != myRank ) {
+      if (imagesTo_[i] != myRank) {
         // Send a message to imagesTo_[i], telling that process that
         // this communication pattern will send that process
         // lengthsTo_[i] blocks of packets.
-#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
-	const size_t* const lengthsTo_i = &lengthsTo_[i];
-	send<int, size_t> (lengthsTo_i, 1, as<int> (imagesTo_[i]), tag, *comm_);
-	if (debug_) {
-	  std::ostringstream os;
-	  os << "  - Proc " << myRank << ": Posted send to Proc " 
-	     << imagesTo_[i] << " with tag " << tag << endl;
-	  cerr << os.str ();
-	}
-#else
-        send<int, size_t> (*comm_, lengthsTo_[i], imagesTo_[i]);
-	if (debug_) {
-	  std::ostringstream os;
-	  os << "  - Proc " << myRank << ": Posted send to Proc " 
-	     << imagesTo_[i] << " with tag " << comm_->getTag () << endl;
-	  cerr << os.str ();
-	}
-#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
+        const size_t* const lengthsTo_i = &lengthsTo_[i];
+        send<int, size_t> (lengthsTo_i, 1, as<int> (imagesTo_[i]), tag, *comm_);
+        if (debug_) {
+          std::ostringstream os;
+          os << myRank << ": computeReceives: "
+            "Posted send to Proc " << imagesTo_[i] << " w/ specified tag "
+             << tag << endl;
+          *out_ << os.str ();
+        }
       }
       else {
         // We don't need a send in the self-message case.  If this
@@ -830,11 +908,10 @@ namespace Tpetra {
 
     if (debug_) {
       std::ostringstream os;
-      os << "  - Proc " << myRank << ": Calling waitAll on " 
-	 << requests.size () << " requests" << endl;
-      cerr << os.str ();
+      os << myRank << ": computeReceives: waitAll on "
+         << requests.size () << " requests" << endl;
+      *out_ << os.str ();
     }
-
     //
     // Wait on all the receives.  When they arrive, check the status
     // output of wait() for the receiving process ID, unpack the
@@ -843,27 +920,9 @@ namespace Tpetra {
     //
     waitAll (*comm_, requests (), statuses ());
     for (size_t i = 0; i < actualNumReceives; ++i) {
-#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
-      lengthsFrom_[i] = lengthsFromBuffers[i][0];
-#else
       lengthsFrom_[i] = *lengthsFromBuffers[i];
-#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
       imagesFrom_[i] = statuses[i]->getSourceRank ();
     }
-
-#ifdef HAVE_TEUCHOS_DEBUG
-    if (debug_) {
-      std::ostringstream os;
-      os << "  - Proc " << myRank << ": Calling barrier" << endl;
-      cerr << os.str ();
-    }
-    comm_->barrier();
-    if (debug_) {
-      std::ostringstream os;
-      os << "  - Proc " << myRank << ": Past barrier" << endl;
-      cerr << os.str ();
-    }
-#endif // HAVE_TEUCHOS_DEBUG
 
     // Sort the imagesFrom_ array, and apply the same permutation to
     // lengthsFrom_.  This ensures that imagesFrom_[i] and
@@ -889,42 +948,40 @@ namespace Tpetra {
       --numReceives_;
     }
 
-#ifdef HAVE_TEUCHOS_DEBUG
     if (debug_) {
       std::ostringstream os;
-      os << "  - Proc " << myRank << ": Calling last barrier" << endl;
-      cerr << os.str ();
+      os << myRank << ": computeReceives: done" << endl;
+      *out_ << os.str ();
     }
-    comm_->barrier();
-    if (debug_) {
-      std::ostringstream os;
-      os << "  - Proc " << myRank << ": Past last barrier" << endl;
-      cerr << os.str ();
-    }
-#endif // HAVE_TEUCHOS_DEBUG
   }
 
   size_t
   Distributor::createFromSends (const Teuchos::ArrayView<const int> &exportNodeIDs)
   {
     using Teuchos::outArg;
-    using std::cerr;
+    using Teuchos::REDUCE_MAX;
+    using Teuchos::reduceAll;
     using std::endl;
+
+    Teuchos::OSTab tab (out_);
+
     numExports_ = exportNodeIDs.size();
-    
+
     const int myImageID = comm_->getRank();
     const int numImages = comm_->getSize();
     if (debug_) {
       std::ostringstream os;
-      os << "  Proc " << myImageID << ": createFromSends" << endl;
-      cerr << os.str ();
+      os << myImageID << ": createFromSends" << endl;
+      *out_ << os.str ();
     }
+
     // exportNodeIDs tells us the communication pattern for this
     // distributor.  It dictates the way that the export data will be
     // interpreted in doPosts().  We want to perform at most one
-    // communication per node; this is for two reasons:
-    //   * minimize latency/overhead in the comm routines (nice)
-    //   * match the number of receives and sends between nodes (necessary)
+    // send per process in doPosts; this is for two reasons:
+    //   * minimize latency / overhead in the comm routines (nice)
+    //   * match the number of receives and sends between processes
+    //     (necessary)
     //
     // Teuchos::Comm requires that the data for a send are contiguous
     // in a send buffer.  Therefore, if the data in the send buffer
@@ -949,7 +1006,7 @@ namespace Tpetra {
     //
     // Both of these tests require O(n), where n is the number of
     // exports. However, the latter will positively identify a greater
-    // portion of contiguous patterns. We will use the latter method.
+    // portion of contiguous patterns.  We use the latter method.
     //
     // Check to see if values are grouped by images without gaps
     // If so, indices_to -> 0.
@@ -960,7 +1017,7 @@ namespace Tpetra {
 
     // numActive is the number of sends that are not Null
     size_t numActive = 0;
-    char needSendBuff = 0;
+    int needSendBuff = 0; // Boolean
 
     int badID = -1;
     for (size_t i = 0; i < numExports_; ++i) {
@@ -990,32 +1047,47 @@ namespace Tpetra {
       }
     }
 
-    if (debug_) {
-      std::ostringstream os;
-      os << "  - Proc " << myImageID << ": reduceAll" << endl;
-      cerr << os.str ();
-    }
-
+#ifdef HAVE_TPETRA_DEBUG
     // Test whether any process in the communicator got an invalid
     // process ID.  If badID != -1 on this process, then it equals
     // this process' rank.  The max of all badID over all processes is
     // the max rank which has an invalid process ID.
     {
       int gbl_badID;
-      Teuchos::reduceAll(*comm_,Teuchos::REDUCE_MAX,badID,outArg(gbl_badID));
+      reduceAll<int, int> (*comm_, REDUCE_MAX, badID, outArg (gbl_badID));
       TEUCHOS_TEST_FOR_EXCEPTION(gbl_badID >= 0, std::runtime_error,
         Teuchos::typeName(*this) << "::createFromSends(): Process  " << gbl_badID
         << ", perhaps among other processes, got a bad send process ID.");
     }
+#else
+    // FIXME (mfh 12 Apr 2013) Rather than simply ignoring this
+    // information, we should think about how to pass it along so that
+    // all the processes find out about it.  In a release build with
+    // efficiency warnings turned off, the next communication happens
+    // in computeReceives(), in the reduceAllAndScatter
+    // (MPI_Reduce_scatter).  We could figure out how to encode the
+    // error flag in that operation, for example by replacing it with
+    // a reduceAll (MPI_Allreduce) as described there, and adding an
+    // extra element to the array that encodes the error condition
+    // (zero on all processes if no error, else 1 on any process with
+    // the error, so that the sum will produce a nonzero value if any
+    // process had an error).  I'll defer this change for now and
+    // recommend instead that people with troubles try a debug build.
 
-#   if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
+    (void) badID; // forestall "unused variable" compile warning
+#endif // HAVE_TPETRA_DEBUG
+
+#if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
     {
-      char global_needSendBuff;
-      Teuchos::reduceAll (*comm_, Teuchos::REDUCE_MAX, needSendBuff, Teuchos::ptr (&global_needSendBuff));
-      TPETRA_EFFICIENCY_WARNING(global_needSendBuff,std::runtime_error,
-          "::createFromSends(): Grouping export IDs together leads to improved performance.");
+      int global_needSendBuff;
+      reduceAll<int, int> (*comm_, REDUCE_MAX, needSendBuff,
+                            outArg (global_needSendBuff));
+      TPETRA_EFFICIENCY_WARNING(
+        global_needSendBuff != 0, std::runtime_error,
+        "::createFromSends: Grouping export IDs together by process rank often "
+        "improves performance.");
     }
-#   endif
+#endif
 
     // Determine from the caller's data whether or not the current
     // process should send (a) message(s) to itself.
@@ -1026,18 +1098,19 @@ namespace Tpetra {
       selfMessage_ = false;
     }
 
-
 #ifdef HAVE_TEUCHOS_DEBUG
     bool index_neq_numActive = false;
     bool send_neq_numSends = false;
 #endif
-    if (!needSendBuff) {
+    if (! needSendBuff) {
       // grouped by image, no send buffer or indicesTo_ needed
       numSends_ = 0;
       // Count total number of sends, i.e., total number of images to
       // which we are sending.  This includes myself, if applicable.
-      for (int i=0; i < numImages; ++i) {
-        if (starts[i]) ++numSends_;
+      for (int i = 0; i < numImages; ++i) {
+        if (starts[i]) {
+          ++numSends_;
+        }
       }
 
       // Not only do we not need these, but we must clear them, as
@@ -1186,15 +1259,14 @@ namespace Tpetra {
 
     if (selfMessage_) --numSends_;
 
-    if (debug_) {
-      std::ostringstream os;
-      os << "  - Proc " << myImageID << ": computeReceives" << endl;
-      cerr << os.str ();
-    }
-
     // Invert map to see what msgs are received and what length
     computeReceives();
 
+    if (debug_) {
+      std::ostringstream os;
+      os << myImageID << ": createFromSends: done" << endl;
+      *out_ << os.str ();
+    }
     return totalReceiveLength_;
   }
 

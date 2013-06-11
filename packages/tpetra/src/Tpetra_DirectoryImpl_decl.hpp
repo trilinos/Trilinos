@@ -42,10 +42,31 @@
 #ifndef __Tpetra_DirectoryImpl_decl_hpp
 #define __Tpetra_DirectoryImpl_decl_hpp
 
-#include "Tpetra_ConfigDefs.hpp"
+#include <Tpetra_ConfigDefs.hpp>
+
+//
+// mfh 13-15 May 2013: HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX governs
+// the fix for Bug 5822.  The fix is enabled by default.  To disable
+// the fix, uncomment out the three lines below that undefine
+// HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX, and comment out the three
+// lines below them that define that macro.
+//
+
+// #ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
+// #  undef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
+// #endif HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
+
+#ifndef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
+#  define HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX 1
+#endif // HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
+
+#ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
+#  include <Tpetra_HashTable_decl.hpp>
+#endif // HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
+
 
 namespace Tpetra {
-
+  // Forward declaration.
   template <class LocalOrdinal, class GlobalOrdinal, class Node> class Map;
 
   namespace Details {
@@ -157,7 +178,60 @@ namespace Tpetra {
                       const bool computeLIDs) const;
     };
 
-    /// \class ReplicatedDirectory
+
+    /// \class ContiguousUniformDirectory
+    /// \brief Implementation of Directory for a contiguous, uniformly distributed Map.
+    ///
+    /// The Map may have any number of processes starting with one.
+    /// Since the entries are uniformly distributed over the
+    /// processes, this implementation of Directory can compute which
+    /// process owns a GID (and the GID's corresponding LID) in
+    /// \f$O(1)\f$ space and time.
+    template<class LocalOrdinal, class GlobalOrdinal, class NodeType>
+    class ContiguousUniformDirectory :
+      public Directory<LocalOrdinal, GlobalOrdinal, NodeType> {
+    private:
+      // This friend declaration lets us implement clone().
+      template <class LO, class GO, class N> friend class ContiguousUniformDirectory;
+
+      //! Empty constructor for use by clone()
+      ContiguousUniformDirectory() {}
+
+    public:
+      typedef Directory<LocalOrdinal, GlobalOrdinal, NodeType> base_type;
+      typedef typename base_type::map_type map_type;
+
+      //! Constructor.
+      ContiguousUniformDirectory (const Teuchos::RCP<const map_type>& map);
+
+      template <class Node2>
+      RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> >
+      clone (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node2> > &clone_map) const
+      {
+        typedef ContiguousUniformDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
+        RCP<Dir2> dir = rcp (new Dir2 ());
+        dir->setMap (clone_map);
+        return dir;
+      }
+
+      //! @name Implementation of Teuchos::Describable.
+      //@{
+
+      //! A one-line human-readable description of this object.
+      std::string description () const;
+      //@}
+
+    protected:
+      //! Find process IDs and (optionally) local IDs for the given global IDs.
+      LookupStatus
+      getEntriesImpl (const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
+                      const Teuchos::ArrayView<int> &nodeIDs,
+                      const Teuchos::ArrayView<LocalOrdinal> &localIDs,
+                      const bool computeLIDs) const;
+    };
+
+
+    /// \class DistributedContiguousDirectory
     /// \brief Implementation of Directory for a distributed contiguous Map.
     template<class LocalOrdinal, class GlobalOrdinal, class NodeType>
     class DistributedContiguousDirectory :
@@ -165,7 +239,7 @@ namespace Tpetra {
     private:
       template <class LO, class GO, class N> friend class DistributedContiguousDirectory;
 
-      //! Empty constructor for used by clone()
+      //! Empty constructor for use by clone()
       DistributedContiguousDirectory() {}
 
     public:
@@ -225,7 +299,6 @@ namespace Tpetra {
       ///   elements.  In this case, it would be more memory scalable to
       ///   use reductions or scans to figure out who owns what.
       Teuchos::ArrayRCP<GlobalOrdinal> allMinGIDs_;
-
     };
 
     /// \class DistributedNoncontiguousDirectory
@@ -291,6 +364,9 @@ namespace Tpetra {
       /// minimum GID over all processes in the user's Map.
       Teuchos::RCP<const map_type> directoryMap_;
 
+      //! \name First of two implementations of Directory storage
+      //@{
+
       /// Array of the same length as the local number of entries in
       /// directoryMap_, containing the process IDs corresponding to the
       /// GIDs owned by the Directory Map on this process.
@@ -300,6 +376,36 @@ namespace Tpetra {
       /// directoryMap_, containing the LIDs corresponding to the GIDs
       /// owned by the Directory Map on this process.
       Teuchos::ArrayRCP<LocalOrdinal> LIDs_;
+
+#ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
+      //@}
+      //! \name Second of two implementations of Directory storage
+      //@{
+
+      /// \brief Mapping from Directory Map LID to input Map PID.
+      ///
+      /// This hash table implements a mapping from an LID in the
+      /// Directory Map (corresponding to a GID in the input Map) to
+      /// the GID's owning PID in the input Map.
+      Teuchos::RCP<Details::HashTable<LocalOrdinal, int> > lidToPidTable_;
+
+      /// \brief Mapping from Directory Map LID to input Map LID.
+      ///
+      /// This hash table implements a mapping from an LID in the
+      /// Directory Map (corresponding to a GID in the input Map), to
+      /// the GID's LID in the input Map on the GID's owning process.
+      Teuchos::RCP<Details::HashTable<LocalOrdinal, LocalOrdinal> > lidToLidTable_;
+      //@}
+#endif // HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
+
+      /// \brief Whether this process is using hash tables for Directory storage.
+      ///
+      /// Directory may use either arrays or hash tables for Directory
+      /// storage.  Lookups with arrays are faster, but hash tables
+      /// use less memory if the input Map is sparse.  The choice of
+      /// implementation is decided locally, and may differ from
+      /// process to process.
+      bool useHashTables_;
     };
   } // namespace Details
 } // namespace Tpetra

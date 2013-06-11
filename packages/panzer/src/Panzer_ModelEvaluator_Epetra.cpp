@@ -65,6 +65,7 @@
 #include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_DefaultProductVector.hpp"
+#include "Thyra_ProductVectorSpaceBase.hpp"
 
 #ifdef HAVE_STOKHOS
    #include "Stokhos_EpetraVectorOrthogPoly.hpp"
@@ -215,12 +216,6 @@ void panzer::ModelEvaluator_Epetra::initializeEpetraObjs(panzer::EpetraLinearObj
     p_init_.push_back(ep_vec);
   }
   
-  // setup response maps
-  for (std::size_t i=0;i<responseLibrary_->getLabeledResponseCount();i++) {
-    RCP<Epetra_Map> local_map = rcp(new Epetra_LocalMap(1, 0, map_x_->Comm()));
-    g_map_.push_back(local_map);
-  }
-
   // Initialize the epetra operator factory
   epetraOperatorFactory_ = Teuchos::rcp(new EpetraLOF_EOpFactory(lof));
 }
@@ -379,6 +374,22 @@ panzer::ModelEvaluator_Epetra::createOutArgs() const
       ,true // supportsAdjoint
       )
     );
+
+  // add in dg/dx (if appropriate)
+  for(std::size_t i=0;i<g_names_.size();i++) {
+    typedef panzer::Traits::Jacobian RespEvalT;
+
+    // check dg/dx and add it in if appropriate
+    Teuchos::RCP<panzer::ResponseBase> respJacBase = responseLibrary_->getResponse<RespEvalT>(g_names_[i]);
+    if(respJacBase!=Teuchos::null) {
+      // cast is guranteed to succeed because of check in addResponse
+      Teuchos::RCP<panzer::ResponseMESupportBase<RespEvalT> > resp = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<RespEvalT> >(respJacBase);
+ 
+      // class must supoprt a derivative 
+      if(resp->supportsDerivative())
+        outArgs.setSupports(OUT_ARG_DgDx,i,DerivativeSupport(DERIV_LINEAR_OP));
+    }
+  }
 
 #ifdef HAVE_STOKHOS
   if(!Teuchos::is_null(sg_lof_)) {
@@ -591,21 +602,51 @@ evalModel_basic_g(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const Out
    // optional sanity check
    // TEUCHOS_ASSERT(required_basic_g(outArgs));
 
-   // build a teuchos comm from an mpi comm
-   Teuchos::RCP<Teuchos::Comm<int> > tComm 
-      = Teuchos::rcp(new Teuchos::MpiComm<int>(
-        Teuchos::opaqueWrapper(dynamic_cast<const Epetra_MpiComm &>(map_x_->Comm()).Comm())));
+   for(std::size_t i=0;i<g_names_.size();i++) {
+      Teuchos::RCP<Epetra_Vector> vec = outArgs.get_g(i);
+      if(vec!=Teuchos::null) {
+        std::string responseName = g_names_[i];
+        Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Residual> > resp 
+            = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Residual> >(responseLibrary_->getResponse<panzer::Traits::Residual>(responseName));
+        resp->setVector(vec);
+      }
+   }
 
    // evaluator responses
-   responseLibrary_->evaluateVolumeFieldManagers<panzer::Traits::Residual>(ae_inargs,*tComm);
+   responseLibrary_->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);
+   responseLibrary_->evaluate<panzer::Traits::Residual>(ae_inargs);
 
-   std::vector<Teuchos::RCP<const Response<panzer::Traits> > > responses;
-   responseLibrary_->getLabeledVolumeResponses(responses);
-   for(std::size_t i=0;i<responses.size();i++) {
-      Teuchos::RCP<Epetra_Vector> vec = outArgs.get_g(i);
-      if(vec!=Teuchos::null)
-         (*vec)[0] = responses[i]->getValue();
+   // evaluate response derivatives 
+   if(required_basic_dgdx(outArgs))
+     evalModel_basic_dgdx(ae_inargs,inArgs,outArgs);
+}
+
+void 
+panzer::ModelEvaluator_Epetra::
+evalModel_basic_dgdx(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArgs & outArgs) const
+{
+   // optional sanity check
+   TEUCHOS_ASSERT(required_basic_dgdx(outArgs));
+
+   for(std::size_t i=0;i<g_names_.size();i++) {
+      // get "Vector" out of derivative, if its something else, throw an exception
+      EpetraExt::ModelEvaluator::Derivative deriv = outArgs.get_DgDx(i);
+      if(deriv.isEmpty())
+        continue;
+
+      Teuchos::RCP<Epetra_Vector> vec = Teuchos::rcp_dynamic_cast<Epetra_Vector>(deriv.getMultiVector(),true);
+
+      if(vec!=Teuchos::null) {
+        std::string responseName = g_names_[i];
+        Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Jacobian> > resp 
+            = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Jacobian> >(responseLibrary_->getResponse<panzer::Traits::Jacobian>(responseName));
+        resp->setDerivative(vec);
+      }
    }
+
+   // evaluator responses
+   responseLibrary_->addResponsesToInArgs<panzer::Traits::Jacobian>(ae_inargs);
+   responseLibrary_->evaluate<panzer::Traits::Jacobian>(ae_inargs);
 }
 
 bool panzer::ModelEvaluator_Epetra::required_basic_g(const OutArgs & outArgs) const
@@ -614,6 +655,22 @@ bool panzer::ModelEvaluator_Epetra::required_basic_g(const OutArgs & outArgs) co
    bool activeGArgs = false;
    for(int i=0;i<outArgs.Ng();i++) 
       activeGArgs |= (outArgs.get_g(i)!=Teuchos::null); 
+
+   return activeGArgs | required_basic_dgdx(outArgs);
+}
+
+bool panzer::ModelEvaluator_Epetra::required_basic_dgdx(const OutArgs & outArgs) const
+{
+   // determine if any of the outArgs are not null!
+   bool activeGArgs = false;
+   for(int i=0;i<outArgs.Ng();i++) {
+     // no derivatives are supported
+     if(outArgs.supports(OUT_ARG_DgDx,i).none())
+       continue;
+
+     // this is basically a redundant computation
+     activeGArgs |= (!outArgs.get_DgDx(i).isEmpty());
+   }
 
    return activeGArgs;
 }

@@ -126,8 +126,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Matrix, ViewSwitching, Scalar, LO, GO, Node ) //TODO: add template parameter <Node,...>
   {
 #ifdef HAVE_XPETRA_TPETRA
-    typedef Teuchos::ScalarTraits<Scalar> ST;
-    typedef Matrix<Scalar, LO, GO, Node> Matrix;
     typedef CrsMatrixWrap<Scalar, LO, GO, Node> CrsMatrixWrap;
     RCP<const Comm<int> > comm = getDefaultComm();
 
@@ -182,7 +180,6 @@ namespace {
     const size_t INVALID = OrdinalTraits<size_t>::invalid(); // TODO: global_size_t instead of size_t
 
 #ifdef HAVE_XPETRA_TPETRA
-    //typedef Teuchos::ScalarTraits<Scalar> ST;
     //typedef Matrix<Scalar, LO, GO, Node> Matrix;
     typedef CrsMatrixWrap<Scalar, LO, GO, Node> CrsMatrixWrap;
 

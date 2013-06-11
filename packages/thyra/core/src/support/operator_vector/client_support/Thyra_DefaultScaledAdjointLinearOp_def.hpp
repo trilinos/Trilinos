@@ -112,7 +112,6 @@ template<class Scalar>
 std::string DefaultScaledAdjointLinearOp<Scalar>::description() const
 {
   assertInitialized();
-  typedef Teuchos::ScalarTraits<Scalar> ST;
   std::ostringstream oss;
   oss << Teuchos::Describable::description() << "{"
       << overallScalar() << ","<<toString(overallTransp())<<","

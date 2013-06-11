@@ -46,6 +46,7 @@
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
+#include <iterator>
 
 // FINISH: add test for MultiVector with a node containing zero local entries
 // FINISH: add tests for local MultiVectors
@@ -163,7 +164,6 @@ namespace {
     RCP<Node> node = getNode<Node>();
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef Tpetra::Vector<Scalar,LO,GO,Node> V;
-    typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -314,7 +314,6 @@ namespace {
     // ergo, the arrayview doesn't contain enough data to specify the entries
     // also, if bounds checking is enabled, check that bad bounds are caught
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
-    typedef Tpetra::Vector<Scalar,LO,GO,Node>       V;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -325,6 +324,7 @@ namespace {
     // we need 4 scalars to specify values on each proc
     Array<Scalar> values(4);
 #ifdef HAVE_TPETRA_DEBUG
+    typedef Tpetra::Vector<Scalar,LO,GO,Node>       V;
     // too small an ArrayView (less than 4 values) is met with an exception, if debugging is on
     TEST_THROW(MV mvec(map,values(0,3),2,numVecs), std::runtime_error);
     // it could also be too small for the given LDA:

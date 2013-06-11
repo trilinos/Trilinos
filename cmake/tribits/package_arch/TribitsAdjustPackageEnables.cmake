@@ -1,14 +1,15 @@
 # @HEADER
 # ************************************************************************
 #
-#            Trilinos: An Object-Oriented Solver Framework
-#                 Copyright (2001) Sandia Corporation
+#            TriBITS: Tribial Build, Integrate, and Test System
+#                    Copyright 2013 Sandia Corporation
 #
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+# the U.S. Government retains certain rights in this software.
 #
-# Copyright (2001) Sandia Corporation. Under the terms of Contract
-# DE-AC04-94AL85000, there is a non-exclusive license for use of this
-# work by or on behalf of the U.S. Government.  Export of this program
-# may require a license from the United States Government.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
 #
 # 1. Redistributions of source code must retain the above copyright
 # notice, this list of conditions and the following disclaimer.
@@ -32,23 +33,6 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# NOTICE:  The United States Government is granted for itself and others
-# acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
-# license in this data to reproduce, prepare derivative works, and
-# perform publicly and display publicly.  Beginning five (5) years from
-# July 25, 2001, the United States Government is granted for itself and
-# others acting on its behalf a paid-up, nonexclusive, irrevocable
-# worldwide license in this data to reproduce, prepare derivative works,
-# distribute copies to the public, perform publicly and display
-# publicly, and to permit others to do so.
-#
-# NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
-# OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
-# ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
-# RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
-# INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
-# THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
 #
 # ************************************************************************
 # @HEADER
@@ -154,13 +138,14 @@ ENDFUNCTION()
 # needed and for informational purposes for dependent projects.
 #
 FUNCTION(TRIBITS_SET_FULL_DEP_PACKAGES PACKAGE_NAME)
-  IF(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
+
+  IF(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES)
     #message("{")
     LIST(FIND ${PROJECT_NAME}_SE_PACKAGES ${PACKAGE_NAME} PACKAGE_VALUE)
     #message("Entering TRIBITS_SET_FULL_DEP_PACKAGES for package '${PACKAGE_NAME}'(${PACKAGE_VALUE})")
 
     LIST(APPEND PACKAGE_FULL_DEPS_LIST ${${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES}
-                                       ${${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES} )
+      ${${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES} )
 
     IF(PACKAGE_FULL_DEPS_LIST)
       LIST(REMOVE_DUPLICATES PACKAGE_FULL_DEPS_LIST)
@@ -172,7 +157,7 @@ FUNCTION(TRIBITS_SET_FULL_DEP_PACKAGES PACKAGE_NAME)
       LIST(REMOVE_DUPLICATES PACKAGE_FULL_DEPS_LIST)
     ENDIF()
 
-    SET(ORDERED_PACKAGE_FULL_DEPS_LIST ${PACKAGE_NAME})
+    SET(ORDERED_PACKAGE_FULL_DEPS_LIST)
 
     FOREACH(DEP_PACKAGE ${PACKAGE_FULL_DEPS_LIST})
       LIST(FIND ${PROJECT_NAME}_SE_PACKAGES ${DEP_PACKAGE} DEP_PACKAGE_VALUE)
@@ -791,14 +776,26 @@ FUNCTION(TRIBITS_PRIVATE_PRINT_DISABLE
   DEP_TYPE_STR  THING_DISALBED_TYPE  THING_DISABLED_NAME
   )
   IF (${ENABLE_BEING_DISABLED_VAR_NAME})
-    MESSAGE(FATAL_ERROR
-      " ***\n"
-      " *** ERROR: Setting ${ENABLE_BEING_DISABLED_VAR_NAME}=OFF"
-      " which was 'ON' because ${PACKAGE_WITH_SOMETHING_BEING_DISABLED} has"
-      " a required ${DEP_TYPE_STR} dependence on disabled"
-      " ${THING_DISALBED_TYPE} ${THING_DISABLED_NAME}!\n"
-      " ***\n"
-      )
+    IF (${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES)
+      MESSAGE(
+        " ***\n"
+        " *** WARNING: Setting ${ENABLE_BEING_DISABLED_VAR_NAME}=OFF"
+        " which was 'ON' because ${PACKAGE_WITH_SOMETHING_BEING_DISABLED} has"
+        " a required ${DEP_TYPE_STR} dependence on disabled"
+        " ${THING_DISALBED_TYPE} ${THING_DISABLED_NAME}"
+        " but ${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON!\n"
+        " ***\n"
+        )
+    ELSE()
+      MESSAGE(FATAL_ERROR
+        " ***\n"
+        " *** ERROR: Setting ${ENABLE_BEING_DISABLED_VAR_NAME}=OFF"
+        " which was 'ON' because ${PACKAGE_WITH_SOMETHING_BEING_DISABLED} has"
+        " a required ${DEP_TYPE_STR} dependence on disabled"
+        " ${THING_DISALBED_TYPE} ${THING_DISABLED_NAME}!\n"
+        " ***\n"
+        )
+    ENDIF()
   ELSE()
     MESSAGE("-- "
       "Setting ${ENABLE_BEING_DISABLED_VAR_NAME}=OFF"
@@ -813,7 +810,7 @@ MACRO(TRIBITS_PRIVATE_DISABLE_TPL_REQUIRED_PACKAGE_ENABLE
   )
 
   #MESSAGE("TRIBITS_PRIVATE_DISABLE_TPL_REQUIRED_PACKAGE_ENABLE"
-  #  " ${FORWARD_DEP_PACKAGE_NAME} ${LIBRARY_DEP}")  
+  #  " ${TPL_NAME} ${PACKAGE_NAME} ${LIBRARY_DEP}")  
 
   # Only turn off PACKAGE_NAME libraries and test/eamples if it
   # is currently enabled or could be enabled.
@@ -1067,6 +1064,8 @@ MACRO(TRIBITS_PRINT_PACKAGE_DEPENDENCIES PACKAGE_NAME)
   PRINT_NONEMPTY_VAR(${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES)
   PRINT_NONEMPTY_VAR(${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES)
   PRINT_NONEMPTY_VAR(${PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES)
+
+  PRINT_NONEMPTY_VAR(${PACKAGE_NAME}_FULL_EXPORT_DEP_PACKAGES)
 
   PRINT_NONEMPTY_VAR(${PACKAGE_NAME}_FORWARD_LIB_REQUIRED_DEP_PACKAGES)
   PRINT_NONEMPTY_VAR(${PACKAGE_NAME}_FORWARD_LIB_OPTIONAL_DEP_PACKAGES)

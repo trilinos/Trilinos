@@ -45,10 +45,13 @@
 #include <Epetra_CrsGraph.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_Map.h>
+#include <Epetra_Import.h>
+#include <Epetra_Export.h>
 
-#include <Epetra_Comm.h>    //DEBUG
-
+#include <Teuchos_TimeMonitor.hpp>
 #include <vector>
+
+//#define ENABLE_TRANSPOSE_TIMINGS
 
 namespace EpetraExt {
 
@@ -79,6 +82,14 @@ RowMatrix_Transpose::
 //=========================================================================
   Epetra_CrsMatrix* EpetraExt::RowMatrix_Transpose::BuildTempTrans() 
 {
+#ifdef ENABLE_TRANSPOSE_TIMINGS
+  Teuchos::Time myTime("global");
+  Teuchos::TimeMonitor MM(myTime);
+  Teuchos::RCP<Teuchos::Time> mtime;
+  mtime=MM.getNewTimer("Transpose: BuildTempTrans 1");
+  mtime->start();
+#endif
+
   int i,j,err;
   const Epetra_RowMatrix & orig    = *origObj_;
   const Epetra_CrsMatrix * OrigCrsMatrix = dynamic_cast<const Epetra_CrsMatrix*>(&orig);
@@ -94,7 +105,7 @@ RowMatrix_Transpose::
   TransRowptr.Resize(NumMyCols_+1);
   TransColind.Resize(TransNnz);
   resize_doubles(0,TransNnz,TransVals);
-  std::vector<int> CurrentStart(NumMyCols_+1,0);
+  std::vector<int> CurrentStart(NumMyCols_,0);
 
   // Count up nnz using the Rowptr to count the number of non-nonzeros.
   if (OrigMatrixIsCrsMatrix_)
@@ -130,7 +141,7 @@ RowMatrix_Transpose::
   // Scansum the rowptr; reset currentstart
   TransRowptr[0] = 0;
   for (i=1;i<NumMyCols_+1; i++)  TransRowptr[i]   = CurrentStart[i-1] + TransRowptr[i-1];
-  for (i=0;i<NumMyCols_+1; i++)  CurrentStart[i]  = TransRowptr[i];
+  for (i=0;i<NumMyCols_;   i++)  CurrentStart[i]  = TransRowptr[i];
 
   // Now copy values and global indices into newly create transpose storage
   for (i=0; i<NumMyRows_; i++)
@@ -153,10 +164,36 @@ RowMatrix_Transpose::
     }
   }
 
-  err = TempTransA1->ExpertStaticFillComplete(orig.OperatorRangeMap(),*TransposeRowMap_);
+#ifdef ENABLE_TRANSPOSE_TIMINGS
+  mtime->stop();
+  mtime=MM.getNewTimer("Transpose: BuildTempTrans 2");
+  mtime->start();
+#endif
+
+  // Prebuild the importers and exporters the no-communication way, flipping the importers
+  // and exporters around.
+  Epetra_Import * myimport = 0;
+  Epetra_Export * myexport = 0;
+  if(OrigMatrixIsCrsMatrix_ && OrigCrsMatrix->Importer())
+    myexport = new Epetra_Export(*OrigCrsMatrix->Importer());
+  if(OrigMatrixIsCrsMatrix_ && OrigCrsMatrix->Exporter())
+    myimport = new Epetra_Import(*OrigCrsMatrix->Exporter());
+
+#ifdef ENABLE_TRANSPOSE_TIMINGS
+  mtime->stop();
+  mtime=MM.getNewTimer("Transpose: BuildTempTrans 3");
+  mtime->start();
+#endif
+
+  // Call ExpertStaticFillComplete
+  err = TempTransA1->ExpertStaticFillComplete(orig.OperatorRangeMap(),*TransposeRowMap_,myimport,myexport);
   if (err != 0) {
     throw TempTransA1->ReportError("ExpertStaticFillComplete failed.",err);
   }
+
+#ifdef ENABLE_TRANSPOSE_TIMINGS
+  mtime->stop();
+#endif
  
   return TempTransA1;
 }
@@ -193,9 +230,21 @@ operator()( OriginalTypeRef orig )
     return *newObj_;    
   }
 
+#ifdef ENABLE_TRANSPOSE_TIMINGS
+  Teuchos::Time myTime("global");
+  Teuchos::TimeMonitor MM(myTime);
+  Teuchos::RCP<Teuchos::Time> mtime;
+  mtime=MM.getNewTimer("Transpose: Final FusedExport");
+  mtime->start();
+#endif
+
   // Now that transpose matrix with shared rows is entered, create a new matrix that will
   // get the transpose with uniquely owned rows (using the same row distribution as A).
-  TransposeMatrix_ = new Epetra_CrsMatrix(*TempTransA1,*TempTransA1->Exporter(),TransposeRowMap_);
+  TransposeMatrix_ = new Epetra_CrsMatrix(*TempTransA1,*TempTransA1->Exporter(),0,TransposeRowMap_);
+
+#ifdef ENABLE_TRANSPOSE_TIMINGS
+  mtime->stop();
+#endif
 
   newObj_ = TransposeMatrix_;
   delete TempTransA1;

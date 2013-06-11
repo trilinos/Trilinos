@@ -1,0 +1,1 @@
+icpc test_crsmatrix.cpp -lrt -O3 -I../src -I../../array/src -L../../array/src -DDEVICE=1 -lhwloc -lkokkosarray -I../src -DKOKKOS_USE_MKL  -I/opt/intel/mkl/include/ -L/opt/intel/mkl/lib/intel64/ -lmkl_intel_lp64 -lmkl_sequential -lmkl_core

@@ -236,8 +236,6 @@ template <typename User>
       env_(rcp(new Environment)), base_(),
       numWeights_(0), weights_()
 {
-  typedef StridedData<lno_t, scalar_t> input_t;
-
   vector_ = XpetraTraits<User>::convertToXpetra(invector);
   map_ = vector_->getMap();
   base_ = map_->getIndexBase();

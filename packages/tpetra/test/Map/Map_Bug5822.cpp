@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -48,9 +48,13 @@
 #include <Tpetra_Map.hpp>
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
-#include "Tpetra_Map_def.hpp"
-#include "Tpetra_Directory_def.hpp"
-#include "Tpetra_HashTable_def.hpp"
+#  include "Tpetra_Map_def.hpp"
+#  include "Tpetra_Directory_def.hpp"
+#  ifdef HAVE_TPETRA_FIXED_HASH_TABLE
+#    include "Tpetra_Details_FixedHashTable_def.hpp"
+#  else
+#    include "Tpetra_HashTable_def.hpp"
+#  endif // HAVE_TPETRA_FIXED_HASH_TABLE
 #endif
 
 using Tpetra::global_size_t;
@@ -69,19 +73,32 @@ using std::endl;
 TEUCHOS_UNIT_TEST( Map, Bug5822_StartWith3Billion )
 {
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm ();
+  const int numProcs = comm->getSize ();
+  const int myRank = comm->getRank ();
+  TEUCHOS_TEST_FOR_EXCEPTION(numProcs != 2, std::logic_error,
+    "This test only makes sense to run with 2 MPI processes.");
 
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-  typedef int LO;
   typedef long long GO;
-  typedef Kokkos::SerialNode NT;
-  typedef Tpetra::Map<LO, GO, NT> map_type;
-
   if (sizeof (long long) <= 4) {
     out << "sizeof (long long) = " << sizeof (long long) << " <= 4.  "
       "This test only makes sense if sizeof (long long) >= 8, "
       "since the test is supposed to exercise GIDs > 2 billion.";
     return;
   }
+#else // NOT HAVE_TEUCHOS_LONG_LONG_INT
+  typedef long GO;
+  if (sizeof (long) <= 4) {
+    out << "sizeof (long) = " << sizeof (long) << " <= 4.  "
+      "This test only makes sense if sizeof (long) >= 8, "
+      "since the test is supposed to exercise GIDs > 2 billion.";
+    return;
+  }
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
+  typedef int LO;
+  typedef Kokkos::SerialNode NT;
+  typedef Tpetra::Map<LO, GO, NT> map_type;
+
   const size_t localNumElts = 5;
   const global_size_t globalNumElts = comm->getSize () * localNumElts;
   const GO globalFirstGid = 3000000000L;
@@ -97,11 +114,11 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWith3Billion )
     myGids[k] = localFirstGid + as<GO> (2*k);
     // Make a copy, just to make sure that Map's constructor didn't
     // sneakily change the input ArrayView.
-    myGidsExpected[k] = myGids[k]; 
+    myGidsExpected[k] = myGids[k];
   }
   // Proc 0: myGids = [3B, 3B+2, 3B+4, 3B+6, 3B+8].
   // Proc 1: myGids = [3B+10, 3B+12, 3B+14, 3B+16, 3B+18].
-  
+
   RCP<NT> node;
   {
     ParameterList junk;
@@ -113,9 +130,45 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWith3Billion )
 
   ArrayView<const GO> myGidsFound = map->getNodeElementList ();
   TEST_COMPARE_ARRAYS( myGidsExpected (), myGidsFound () );
-  
-#else
-  out << "This test only makes sense if long long support is enabled in Teuchos.";
-  return;
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
+
+  Array<GO> remoteGids (5);
+  Array<int> remotePids (5, -1);
+  Array<LO> remoteLids (5, Teuchos::OrdinalTraits<LO>::invalid ());
+  if (myRank == 0) {
+    Array<int> expectedRemotePids (5);
+    std::fill (expectedRemotePids.begin (), expectedRemotePids.end (), 1);
+    Array<int> expectedRemoteLids (5);
+    expectedRemoteLids[0] = 0;
+    expectedRemoteLids[1] = 1;
+    expectedRemoteLids[2] = 2;
+    expectedRemoteLids[3] = 3;
+    expectedRemoteLids[4] = 4;
+    remoteGids[0] = globalFirstGid + 10;
+    remoteGids[1] = globalFirstGid + 12;
+    remoteGids[2] = globalFirstGid + 14;
+    remoteGids[3] = globalFirstGid + 16;
+    remoteGids[4] = globalFirstGid + 18;
+    map->getRemoteIndexList (remoteGids (), remotePids (), remoteLids ());
+
+    TEST_COMPARE_ARRAYS( remotePids (), expectedRemotePids () );
+    TEST_COMPARE_ARRAYS( remoteLids (), expectedRemoteLids () );
+  } else if (myRank == 1) {
+    Array<int> expectedRemotePids (5);
+    std::fill (expectedRemotePids.begin (), expectedRemotePids.end (), 0);
+    Array<int> expectedRemoteLids (5);
+    expectedRemoteLids[0] = 0;
+    expectedRemoteLids[1] = 1;
+    expectedRemoteLids[2] = 2;
+    expectedRemoteLids[3] = 3;
+    expectedRemoteLids[4] = 4;
+    remoteGids[0] = globalFirstGid;
+    remoteGids[1] = globalFirstGid + 2;
+    remoteGids[2] = globalFirstGid + 4;
+    remoteGids[3] = globalFirstGid + 6;
+    remoteGids[4] = globalFirstGid + 8;
+    map->getRemoteIndexList (remoteGids (), remotePids (), remoteLids ());
+
+    TEST_COMPARE_ARRAYS( remotePids (), expectedRemotePids () );
+    TEST_COMPARE_ARRAYS( remoteLids (), expectedRemoteLids () );
+  }
 }

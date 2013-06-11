@@ -75,7 +75,10 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("DofsPerNode",         Teuchos::null,                        "Generating factory for number of dofs per node");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo",  Teuchos::null,                        "Generating factory for amalgamation");
 
-    validParamList->set< std::string >           ("Output filename",     "aggs_level%LEVELID_proc%PROCID.out", "Output filename template (%LEVELID is replaced level id, %PROCID is replaced by processor id)");
+    validParamList->set< std::string >           ("Output filename",     "aggs_level%LEVELID_proc%PROCID.out", "Output filename template (%TIMESTEP is replaced by \'Output file: time step\' variable, %ITER is replaced by \'Output file: iter\' variable, %LEVELID is replaced level id, %PROCID is replaced by processor id)");
+
+    validParamList->set< int > ("Output file: time step", 0, "time step variable for output file name");
+    validParamList->set< int > ("Output file: iter", 0, "nonlinear iteration variable for output file name");
 
     return validParamList;
   }
@@ -123,10 +126,17 @@ namespace MueLu {
     //std::string outFile = outputFileName_;
     const ParameterList & pL = GetParameterList();
     std::string outFile = pL.get<std::string> ("Output filename");
+    int timeStep = pL.get< int > ("Output file: time step");
+    int iter = pL.get< int >("Output file: iter");
+
     std::stringstream streamLevel; streamLevel << fineLevel.GetLevelID();
     outFile = replaceAll(outFile,"%LEVELID", streamLevel.str());
     std::stringstream streamProc; streamProc << comm->getRank();
     outFile = replaceAll(outFile,"%PROCID", streamProc.str());
+    std::stringstream streamTimeStep; streamTimeStep << timeStep;
+    outFile = replaceAll(outFile,"%TIMESTEP", streamTimeStep.str());
+    std::stringstream streamIter; streamIter << iter;
+    outFile = replaceAll(outFile,"%ITER", streamIter.str());
 
     GetOStream(Runtime0, 0) << "AggregationExportFactory: outputfilel \"" << outFile << "\"" << std::endl;
     std::ofstream fout(outFile.c_str());

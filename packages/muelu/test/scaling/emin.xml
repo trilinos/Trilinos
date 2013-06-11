@@ -63,9 +63,7 @@
     -->
 
     <ParameterList name="myTransferCoordinatesFact">
-      <Parameter name="factory"         type="string" value="MultiVectorTransferFactory"/>
-      <Parameter name="Vector name"     type="string" value="Coordinates"/>
-      <Parameter name="R"               type="string" value="myTentativeRFact"/>
+      <Parameter name="factory"         type="string" value="CoordinatesTransferFactory"/>
     </ParameterList>
 
     <ParameterList name="myRAPFact">

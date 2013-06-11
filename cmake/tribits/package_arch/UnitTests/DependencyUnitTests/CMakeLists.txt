@@ -1,3 +1,42 @@
+# @HEADER
+# ************************************************************************
+#
+#            TriBITS: Tribial Build, Integrate, and Test System
+#                    Copyright 2013 Sandia Corporation
+#
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+# the U.S. Government retains certain rights in this software.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the Corporation nor the names of the
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# ************************************************************************
+# @HEADER
+
 
 INCLUDE(TribitsAddAdvancedTest)
 
@@ -259,6 +298,22 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
 
 
 CREATE_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableStratimikos_DisableThyra_DisableEnabledDownstreamPackages
+  ARGS -DTrilinos_ENABLE_Stratimikos=ON -DTrilinos_ENABLE_Thyra=OFF
+    -DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    "Setting subpackage enable Trilinos_ENABLE_ThyraCoreLibs=OFF because parent package Trilinos_ENABLE_Thyra=OFF"
+    "Setting subpackage enable Trilinos_ENABLE_ThyraGoodStuff=OFF because parent package Trilinos_ENABLE_Thyra=OFF" 
+    "Setting subpackage enable Trilinos_ENABLE_ThyraEpetra=OFF because parent package Trilinos_ENABLE_Thyra=OFF"
+    "Setting subpackage enable Trilinos_ENABLE_ThyraEpetraExt=OFF because parent package Trilinos_ENABLE_Thyra=OFF"
+    "Setting subpackage enable Trilinos_ENABLE_ThyraTpetra=OFF because parent package Trilinos_ENABLE_Thyra=OFF"
+    "WARNING: Setting Trilinos_ENABLE_Stratimikos=OFF which was 'ON' because Stratimikos has a required library dependence on disabled package ThyraCoreLibs but Trilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON"
+    "Final set of enabled packages:  0"
+    "Final set of non-enabled packages:  .+ Teuchos .+ Thyra .+ Stratimikos .+"
+  )
+
+
+CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   EnableEpetra_DisableThyraCoreLibs_EnableAllForwardPackages
   ARGS -DTrilinos_ENABLE_Epetra:BOOL=ON -DTrilinos_ENABLE_ThyraCoreLibs:BOOL=OFF
     -DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON
@@ -347,6 +402,19 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   PASS_REGULAR_EXPRESSION_ALL
     "ERROR: Setting Trilinos_ENABLE_Panzer=OFF which was 'ON' because Panzer has a required library dependence on disabled TPL MPI!"
     "Configuring incomplete, errors occurred!"
+  )
+
+
+CREATE_DEPENDENCY_HANDLING_TEST_CASE(
+  EnablePanzer_DisableMPI_DisableEnabledDownstreamPackages
+  ARGS  -DTrilinos_ENABLE_Panzer=ON
+    -DTPL_ENABLE_MPI:BOOL=OFF
+    -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF
+    -DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    "WARNING: Setting Trilinos_ENABLE_Panzer=OFF which was 'ON' because Panzer has a required library dependence on disabled TPL MPI but Trilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON"
+    "Final set of enabled packages:  0"
+    "Final set of non-enabled packages:  .+ Panzer .+"
   )
 
 

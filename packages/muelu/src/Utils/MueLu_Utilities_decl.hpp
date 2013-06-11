@@ -51,9 +51,11 @@
 #include "MueLu_ConfigDefs.hpp"
 
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_ParameterList.hpp>
 
 #include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_CrsMatrix_fwd.hpp>
@@ -184,8 +186,9 @@ namespace MueLu {
                                 const Matrix & B,
                                 bool transposeB,
                                 bool callFillCompleteOnResult = true,
-                                bool doOptimizeStorage = true) {
-      return Utils<SC,LO,GO,NO,LMO>::Multiply(A, transposeA, B, transposeB, Teuchos::null, callFillCompleteOnResult, doOptimizeStorage);
+                                bool doOptimizeStorage        = true,
+                                bool allowMLMultiply          = true) {
+      return Utils<SC,LO,GO,NO,LMO>::Multiply(A, transposeA, B, transposeB, Teuchos::null, callFillCompleteOnResult, doOptimizeStorage, allowMLMultiply);
 
     }
 
@@ -215,7 +218,8 @@ namespace MueLu {
                                 bool transposeB,
                                 RCP<Matrix> C_in,
                                 bool callFillCompleteOnResult = true,
-                                bool doOptimizeStorage = true);
+                                bool doOptimizeStorage        = true,
+                                bool allowMLMultiply          = true);
 
 #ifdef HAVE_MUELU_EPETRAEXT
     // Michael Gee's MLMultiply
@@ -235,8 +239,8 @@ namespace MueLu {
     */
     static RCP<BlockedCrsMatrix> TwoMatrixMultiplyBlock(RCP<BlockedCrsMatrix> const &A, bool transposeA,
                                                         RCP<BlockedCrsMatrix> const &B, bool transposeB,
-                                                        bool doFillComplete=true,
-                                                        bool doOptimizeStorage=true);
+                                                        bool doFillComplete    = true,
+                                                        bool doOptimizeStorage = true);
 
     /*! @brief Helper function to calculate B = alpha*A + beta*B.
 
@@ -263,10 +267,6 @@ namespace MueLu {
 
     It is up to the caller to ensure that the resulting matrix sum is fillComplete'd.
     */
-
-    static void MatrixPrint(RCP<Matrix> const &Op);
-
-    static void MatrixPrint(RCP<Matrix> const &Op, std::string const &label);
 
     /*! @brief Get Matrix Diagonal
      */
@@ -328,12 +328,28 @@ namespace MueLu {
 
     /*! @brief Save matrix to file in Matrix Market format.
      TODO Move this to Xpetra?
-   */
+    */
    static void Write(std::string const & fileName, Matrix const & Op); //Write
+
+    /*! @brief Save vector to file in Matrix Market format.
+     TODO Move this to Xpetra?
+    */
    static void Write(std::string const & fileName, const MultiVector& x); // Write
 
-   //! @brief Read matrix from file in Matrix Market format.
-   static Teuchos::RCP<Matrix> Read(std::string const & fileName, Xpetra::UnderlyingLib lib, RCP<const Teuchos::Comm<int> > const &comm);
+    /*! @brief Save map to file in Matrix Market format.
+     TODO Move this to Xpetra?
+    */
+   static void Write(std::string const & fileName, const Map& M); // Write
+
+   //! @brief Read matrix from file in Matrix Market or binary format.
+   static Teuchos::RCP<Matrix> Read(std::string const & fileName, Xpetra::UnderlyingLib lib, RCP<const Teuchos::Comm<int> > const &comm, bool binary = false);
+
+
+    /*! @brief Read vector from file in Matrix Market format.
+     TODO Move this to Xpetra?
+    */
+    static RCP<MultiVector> Read(std::string const & fileName,const RCP<const Map> &map);
+
 
     static void PauseForDebugger();
 
@@ -392,6 +408,10 @@ namespace MueLu {
         @return boolean array.  The ith entry is true iff row i is a Dirichlet row.
     */
     static Teuchos::ArrayRCP<const bool> DetectDirichletRows(Matrix const &A, typename Teuchos::ScalarTraits<SC>::magnitudeType const &tol=Teuchos::ScalarTraits<SC>::zero());
+
+    /*! @brief print matrix info
+    */
+    static std::string PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const Teuchos::ParameterList> params = Teuchos::null);
 
   }; // class Utils
 

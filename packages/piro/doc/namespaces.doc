@@ -1,0 +1,10 @@
+/*! \namespace Piro
+ *  \brief Main namespace of the %Piro package.
+ *
+ *  All Thyra-based definitions are directly located in the Piro namespace.
+ *  Definitions that are specific to %Epetra are in the enclosed Epetra namespace.
+ */
+
+/*! \namespace Piro::Epetra
+ *  \brief Namespace that holds the definitions specific to %Epetra.
+ */

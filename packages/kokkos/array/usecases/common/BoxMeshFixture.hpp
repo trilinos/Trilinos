@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -172,7 +172,7 @@ struct BoxMeshFixture {
           std::ostringstream msg ;
           msg << "BoxMeshFixture node_elem_ids error"
               << " : node_index(" << node_index
-              << ") entry(" << j 
+              << ") entry(" << j
               << ") elem_index(" << elem_index
               << ") node_local(" << node_local
               << ") elem_node_id(" << en_id
@@ -227,7 +227,7 @@ struct BoxMeshFixture {
   // These elements could be computed while waiting for
   // received node data.
 
-  static void layout_elements_interior_exterior(    
+  static void layout_elements_interior_exterior(
     const BoxType                vertex_box_local_used ,
     const BoxType                vertex_box_local_owned ,
     const BoxType                node_box_local_used ,
@@ -258,7 +258,7 @@ struct BoxMeshFixture {
       }
 
       for ( size_t nn = 0 ; nn < element_node_count ; ++nn ) {
-        unsigned coord[3] = { ix , iy , iz };  
+        unsigned coord[3] = { ix , iy , iz };
 
         element_fixture.elem_to_node( nn , coord );
 
@@ -275,9 +275,9 @@ struct BoxMeshFixture {
   //------------------------------------
   // Nested partitioning of elements by number of thread 'gangs'
 
-  static void layout_elements_partitioned(    
+  static void layout_elements_partitioned(
     const BoxType                vertex_box_local_used ,
-    const BoxType                vertex_box_local_owned ,
+    const BoxType                /*vertex_box_local_owned*/ ,
     const BoxType                node_box_local_used ,
     const std::vector<size_t> &  node_used_id_map ,
     const ElementSpec            element_fixture ,
@@ -305,7 +305,7 @@ struct BoxMeshFixture {
       for ( size_t ix = box[0][0] ; ix < box[0][1] ; ++ix , ++elem_index ) {
 
         for ( size_t nn = 0 ; nn < element_node_count ; ++nn ) {
-          unsigned coord[3] = { ix , iy , iz };  
+          unsigned coord[3] = { ix , iy , iz };
 
           element_fixture.elem_to_node( nn , coord );
 
@@ -542,7 +542,7 @@ struct BoxMeshFixture {
     verify( node_coords , elem_node_ids , node_elem_ids );
 
     //------------------------------------
-    // Scale node coordinates to problem extent with 
+    // Scale node coordinates to problem extent with
     // nonlinear mapping.
     {
       const double problem_extent[3] =
@@ -579,7 +579,7 @@ struct BoxMeshFixture {
 
       for ( size_t i = 1 ; i < proc_count ; ++i ) {
 
-        // Order sending starting with the local processor rank 
+        // Order sending starting with the local processor rank
         // to try to smooth out the amount of messages simultaneously
         // send to a particular processor.
 

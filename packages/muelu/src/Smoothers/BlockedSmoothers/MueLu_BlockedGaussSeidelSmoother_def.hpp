@@ -87,9 +87,9 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void BlockedGaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    this->Input(currentLevel, "A");
-
-    //Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
+    //this->Input(currentLevel, "A");
+    // TODO: check me: why is this->Input not freeing properly A in release mode?
+    currentLevel.DeclareInput("A",this->GetFactory("A").get());
 
     // loop over all factory managers for the subblocks of blocked operator A
     std::vector<Teuchos::RCP<const FactoryManagerBase> >::const_iterator it;
@@ -97,14 +97,20 @@ namespace MueLu {
       SetFactoryManager currentSFM  (rcpFromRef(currentLevel),   *it);
 
       // request "Smoother" for current subblock row.
-      currentLevel.DeclareInput("PreSmoother",(*it)->GetFactory("Smoother").get()); // TODO check me: what about postsmoother?
-      currentLevel.DeclareInput("A",(*it)->GetFactory("A").get()); // request A for comparing maps (to setup a map of the real block rows and the ordering of given blocks in Inverse_)
+      currentLevel.DeclareInput("PreSmoother",(*it)->GetFactory("Smoother").get());
+      // TODO check me: this is not working properly on the coarsest level
+      //currentLevel.DeclareInput("A",(*it)->GetFactory("A").get()); // request A for comparing maps (to setup a map of the real block rows and the ordering of given blocks in Inverse_)
     }
+
+    //RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    //currentLevel.print(*out,Teuchos::VERB_EXTREME);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void BlockedGaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level &currentLevel) {
     //typedef Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOMatrix;
+
+    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
     FactoryMonitor m(*this, "Setup blocked Gauss-Seidel Smoother", currentLevel);
     if (SmootherPrototype::IsSetup() == true) this->GetOStream(Warnings0, 0) << "Warning: MueLu::BlockedGaussSeidelSmoother::Setup(): Setup() has already been called";
@@ -138,7 +144,10 @@ namespace MueLu {
       Inverse_.push_back(Smoo);
 
       // extract i-th diagonal block Aii -> determine block
+      /*currentLevel.print(*out, Teuchos::VERB_EXTREME);
+      std::cout << "BGS: need A from factory " << (*it)->GetFactory("A").get() << std::endl;
       RCP<Matrix> Aii = currentLevel.Get< RCP<Matrix> >("A",(*it)->GetFactory("A").get());
+      currentLevel.print(*out, Teuchos::VERB_EXTREME);
       for(size_t i = 0; i<rangeMapExtractor_->NumMaps(); i++) {
         if(rangeMapExtractor_->getMap(i)->isSameAs(*(Aii->getRangeMap()))) {
           // map found: i is the true block row index
@@ -146,7 +155,8 @@ namespace MueLu {
           bgsOrderingIndex2blockRowIndex_[bgsOrderingIndex] = i;
           break;
         }
-      }
+      }*/
+      bgsOrderingIndex2blockRowIndex_[bgsOrderingIndex] = bgsOrderingIndex; // TODO fix me
 
       bgsOrderingIndex++;
     }

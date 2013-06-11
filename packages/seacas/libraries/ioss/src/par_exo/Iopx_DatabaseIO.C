@@ -66,6 +66,7 @@
 #include <utility>
 #include <vector>
 
+#include "Ioss_CoordinateFrame.h"
 #include "Ioss_CommSet.h"
 #include "Ioss_DBUsage.h"
 #include "Ioss_DatabaseIO.h"
@@ -239,34 +240,6 @@ namespace {
     return omitted;
   }
 
-  int64_t get_side_offset(const Ioss::SideBlock *sb)
-  {
-    // And yet another idiosyncracy of sidesets...
-    // The side of an element (especially shells) can be
-    // either a face or an edge in the same sideset.  The
-    // ordinal of an edge is (local_edge_number+#faces) on the
-    // database, but needs to be (local_edge_number) for
-    // Sierra...
-    //
-    // If the sideblock has a "parent_element_topology" and a
-    // "topology", then we can determine whether to offset the
-    // side ordinals...
-
-    const Ioss::ElementTopology *side_topo   = sb->topology();
-    const Ioss::ElementTopology *parent_topo = sb->parent_element_topology();
-    int64_t side_offset = 0;
-    if (side_topo && parent_topo) {
-      int side_topo_dim = side_topo->parametric_dimension();
-      int elem_topo_dim = parent_topo->parametric_dimension();
-      int elem_spat_dim = parent_topo->spatial_dimension();
-
-      if (side_topo_dim+1 < elem_spat_dim && side_topo_dim < elem_topo_dim) {
-        side_offset = parent_topo->number_faces();
-      }
-    }
-    return side_offset;
-  }
-
   void get_connectivity_data(int exoid, void *data, ex_entity_type type, ex_entity_id id, int position)
   {
     int ierr = 0;
@@ -358,6 +331,9 @@ namespace {
     for (int i=0; i < count; i++) {delete [] names[i];}
     delete [] names;
   }
+
+  void add_coordinate_frames(int exoid, Ioss::Region *region);
+  void write_coordinate_frames(int exoid, const Ioss::CoordinateFrameContainer &frames);
 
   std::string get_entity_name(int exoid, ex_entity_type type, int64_t id,
                               const std::string &basename, int length)
@@ -909,6 +885,10 @@ namespace Iopx {
     }
 
     Ioss::Region *this_region = get_region();
+
+    // See if any coordinate frames exist on mesh.  If so, define them on region.
+    add_coordinate_frames(get_file_pointer(), this_region);
+
     this_region->property_add(Ioss::Property(std::string("title"), info.title));
     this_region->property_add(Ioss::Property(std::string("spatial_dimension"),
                                              spatialDimension));
@@ -2286,6 +2266,28 @@ namespace Iopx {
           get_map(EX_NODE_BLOCK).map_implicit_data(data, field, num_to_get, 0);
         }
 
+	// The 1..global_node_count id.  In a parallel-decomposed run,
+	// it maps the node back to its implicit position in the serial
+	// undecomposed mesh file.  This is ONLY provided for backward-
+	// compatibility and should not be used unless absolutely required.
+	else if (field.get_name() == "implicit_ids") {
+	  size_t offset = decomp->nodeOffset;
+	  size_t count = decomp->nodeCount;
+          if (int_byte_size_api() == 4) {
+	    std::vector<int> file_ids; file_ids.reserve(count);
+	    for (size_t i=0; i<count; i++) {
+	      file_ids.push_back(offset+i+1);
+	    }
+            decomp->communicate_node_data(TOPTR(file_ids), (int*)data, 1);
+          } else {
+	    std::vector<int64_t> file_ids; file_ids.reserve(count);
+	    for (size_t i=0; i<count; i++) {
+	      file_ids.push_back(offset+i+1);
+	    }
+            decomp->communicate_node_data(TOPTR(file_ids), (int64_t*)data, 1);
+          }
+	}
+
         else if (field.get_name() == "connectivity") {
           // Do nothing, just handles an idiosyncracy of the GroupingEntity
         }
@@ -2415,7 +2417,7 @@ namespace Iopx {
           // FIXME SIZE
           decomp->get_block_connectivity(get_file_pointer(), data, id, order, element_nodes);
         }
-        else if (field.get_name() == "ids") {
+        else if (field.get_name() == "ids" || field.get_name() == "implicit_ids") {
           // Map the local ids in this element block
           // (eb_offset+1...eb_offset+1+my_element_count) to global element ids.
           get_map(EX_ELEM_BLOCK).map_implicit_data(data, field, num_to_get, eb->get_offset());
@@ -2877,7 +2879,7 @@ namespace Iopx {
           // numbers.
 
           // See if edges or faces...
-          int64_t side_offset = get_side_offset(fb);
+          int64_t side_offset = Ioss::Utils::get_side_offset(fb);
 
 
           if (fb->owner()->block_count() == 1) {
@@ -3711,6 +3713,8 @@ namespace Iopx {
             // Do nothing, just handles an idiosyncracy of the GroupingEntity
           } else if (field.get_name() == "node_connectivity_status") {
             // Do nothing, input only field.
+	  } else if (field.get_name() == "implicit_ids") {
+	    // Do nothing, input only field.
           } else {
             return Ioss::Utils::field_warning(nb, field, "mesh output");
           }
@@ -3803,7 +3807,8 @@ namespace Iopx {
         } else if (field.get_name() == "ids") {
           size_t glob_map_offset = eb->get_property("global_map_offset").get_int();
           handle_element_ids(eb, data, num_to_get, glob_map_offset+proc_offset, file_count);
-
+        } else if (field.get_name() == "implicit_ids") {
+          // Do nothing, input only field.
         } else if (field.get_name() == "skin") {
           // This is (currently) for the skinned body. It maps the
           // side element on the skin to the original element/local
@@ -4821,7 +4826,7 @@ namespace Iopx {
           // Allocate space for local side number and element numbers
           // numbers.
           // See if edges or faces...
-          size_t side_offset = get_side_offset(fb);
+          size_t side_offset = Ioss::Utils::get_side_offset(fb);
 
           size_t index = 0;
 
@@ -4873,7 +4878,7 @@ namespace Iopx {
           // The element_id passed in is the local id.
 
           // See if edges or faces...
-          size_t side_offset = get_side_offset(fb);
+          size_t side_offset = Ioss::Utils::get_side_offset(fb);
 
           size_t index = 0;
           if (field.get_type() == Ioss::Field::INTEGER) {
@@ -5256,7 +5261,10 @@ namespace Iopx {
         ierr = ex_put_coord_names(get_file_pointer(), (char**)labels);
         if (ierr < 0)
           exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	      }
+
+	// Write coordinate frame data...
+	write_coordinate_frames(get_file_pointer(), get_region()->get_coordinate_frames());
+      }
       // Set the processor offset property. Specifies where in the global list, the data from this
       // processor begins...
 
@@ -5821,12 +5829,16 @@ namespace Iopx {
           exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
         // Convert to lowercase.
+	bool attributes_named = true;
         for (int i=0; i < attribute_count; i++) {
           fix_bad_name(names[i]);
           Ioss::Utils::fixup_name(names[i]);
+	  if (names[i][0] == '\0' || names[i][0] == ' ' || !std::isalnum(names[i][0])) {
+	    attributes_named = false;
+	  }
         }
 
-        if (names[0][0] != '\0' && names[0][0] != ' ' && std::isalnum(names[0][0])) {
+        if (attributes_named) {
           std::vector<Ioss::Field> attributes;
           get_fields(my_element_count, names, attribute_count,
                      Ioss::Field::ATTRIBUTE, get_field_separator(), NULL,
@@ -6929,6 +6941,67 @@ namespace Iopx {
             side_map[name_topo] = 999;
           }
         }
+      }
+    }
+
+    template <typename INT>
+    void internal_add_coordinate_frames(int exoid, Ioss::Region *region, INT /*dummy*/)
+    {
+      // Query number of coordinate frames...
+      int nframes = 0;
+      ex_get_coordinate_frames(exoid, &nframes, NULL, NULL, NULL);
+
+      if (nframes > 0) {
+	std::vector<char> tags(nframes);
+	std::vector<double> coord(nframes*9);
+	std::vector<INT>  ids(nframes);
+	ex_get_coordinate_frames(exoid, &nframes, TOPTR(ids), TOPTR(coord), TOPTR(tags));
+
+	for (int i=0; i<nframes; i++) {
+	  Ioss::CoordinateFrame cf(ids[i], tags[i], &coord[9*i]);
+	  region->add(cf);
+	}
+      }
+    }
+
+    void add_coordinate_frames(int exoid, Ioss::Region *region)
+    {
+      if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
+	internal_add_coordinate_frames(exoid, region, (int64_t)0);
+      }
+      else {
+	internal_add_coordinate_frames(exoid, region, (int)0);
+      }
+    }
+
+    template <typename INT>
+    void internal_write_coordinate_frames(int exoid, const Ioss::CoordinateFrameContainer &frames, INT /*dummy*/)
+    {
+      // Query number of coordinate frames...
+      int nframes = (int)frames.size();
+      if (nframes > 0) {
+	std::vector<char> tags(nframes);
+	std::vector<double> coordinates(nframes*9);
+	std::vector<INT>  ids(nframes);
+
+	for (size_t i=0; i < frames.size(); i++) {
+	  ids[i]  = frames[i].id();
+	  tags[i] = frames[i].tag();
+	  const double *coord = frames[i].coordinates();
+	  for (size_t j=0; j < 9; j++) {
+	    coordinates[9*i+j] = coord[j];
+	  }
+	}
+	ex_put_coordinate_frames(exoid, nframes, TOPTR(ids), TOPTR(coordinates), TOPTR(tags));
+      }
+    }
+
+    void write_coordinate_frames(int exoid, const Ioss::CoordinateFrameContainer &frames) {
+      if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
+	internal_write_coordinate_frames(exoid, frames, (int64_t)0);
+      }
+      else {
+	internal_write_coordinate_frames(exoid, frames, (int)0);
       }
     }
 

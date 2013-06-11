@@ -49,69 +49,66 @@
 
 namespace KokkosArray {
 
-template< class DataType , class LayoutType , class DeviceType , typename SizeType >
+template< class DataType , class Arg1Type , class Arg2Type , typename SizeType >
 inline
-typename CrsArray< DataType , LayoutType , DeviceType , SizeType >::HostMirror
-create_mirror_view( const CrsArray<DataType,LayoutType,DeviceType,SizeType > & view ,
-                    typename Impl::enable_if<
-                      Impl::is_same< typename DeviceType::memory_space , HostSpace >::value 
-                    >::type * = 0 )
+typename CrsArray< DataType , Arg1Type , Arg2Type , SizeType >::HostMirror
+create_mirror_view( const CrsArray<DataType,Arg1Type,Arg2Type,SizeType > & view ,
+                    typename Impl::enable_if< ViewTraits<DataType,Arg1Type,Arg2Type,void>::is_hostspace >::type * = 0 )
 {
   return view ;
 }
 
-template< class DataType , class LayoutType , class DeviceType , typename SizeType >
+template< class DataType , class Arg1Type , class Arg2Type , typename SizeType >
 inline
-typename CrsArray< DataType , LayoutType , DeviceType , SizeType >::HostMirror
-create_mirror_view( const CrsArray<DataType,LayoutType,DeviceType,SizeType > & view ,
-                    typename Impl::enable_if<
-                      ! Impl::is_same< typename DeviceType::memory_space , HostSpace >::value 
-                    >::type * = 0 )
+typename CrsArray< DataType , Arg1Type , Arg2Type , SizeType >::HostMirror
+create_mirror_view( const CrsArray<DataType,Arg1Type,Arg2Type,SizeType > & view ,
+                    typename Impl::enable_if< ! ViewTraits<DataType,Arg1Type,Arg2Type,void>::is_hostspace >::type * = 0 )
 {
-  typedef typename
-    CrsArray< DataType , LayoutType , DeviceType , SizeType >::HostMirror host_view ;
-  
-  typedef View< SizeType[] , LayoutType , typename host_view::device_type > host_work_type ;
+  // Force copy:
+  typedef Impl::ViewAssignment< Impl::LayoutDefault > alloc ;
+  typedef CrsArray< DataType , Arg1Type , Arg2Type , SizeType >  crsarray_type ;
 
-  host_view tmp ;
+  typename crsarray_type::HostMirror               tmp ;
+  typename crsarray_type::row_map_type::HostMirror tmp_row_map ;
 
-  host_work_type tmp_row_map ;
+  // Allocation to match:
+  alloc( tmp_row_map , view.row_map );
+  alloc( tmp.entries , view.entries );
 
-  Impl::ViewAssignment< typename host_work_type::specialize >( tmp_row_map , view.row_map );
-  Impl::ViewAssignment< typename host_view::entries_type::specialize >( tmp.entries , view.entries );
-  
+  // Assignment of 'const' from 'non-const'
   tmp.row_map = tmp_row_map ;
 
+  // Deep copy:
   deep_copy( tmp_row_map , view.row_map );
   deep_copy( tmp.entries , view.entries );
 
   return tmp ;
 }
 
-template< class DataType , class LayoutType , class DeviceType , typename SizeType >
+template< class DataType , class Arg1Type , class Arg2Type , typename SizeType >
 inline
-typename CrsArray< DataType , LayoutType , DeviceType , SizeType >::HostMirror
-create_mirror( const CrsArray<DataType,LayoutType,DeviceType,SizeType > & view )
+typename CrsArray< DataType , Arg1Type , Arg2Type , SizeType >::HostMirror
+create_mirror( const CrsArray<DataType,Arg1Type,Arg2Type,SizeType > & view )
 {
 #if KOKKOSARRAY_MIRROR_VIEW_OPTIMIZE
   // Allow choice via type:
   return create_mirror_view( view );
 #else
   // Force copy:
-  typedef typename
-    CrsArray< DataType , LayoutType , DeviceType , SizeType >::HostMirror host_view ;
+  typedef Impl::ViewAssignment< Impl::LayoutDefault > alloc ;
+  typedef CrsArray< DataType , Arg1Type , Arg2Type , SizeType >  crsarray_type ;
 
-  typedef typename host_view::row_map_type row_map_type ;
-  
-  host_view tmp ;
+  typename crsarray_type::HostMirror               tmp ;
+  typename crsarray_type::row_map_type::HostMirror tmp_row_map ;
 
-  typename row_map_type::HostMirror tmp_row_map ;
+  // Allocation to match:
+  alloc( tmp_row_map , view.row_map );
+  alloc( tmp.entries , view.entries );
 
-  Impl::ViewAssignment< typename row_map_type::specialize >( tmp_row_map , view.row_map );
-  Impl::ViewAssignment< typename host_view::entries_type::specialize >( tmp.entries , view.entries );
-
+  // Assignment of 'const' from 'non-const'
   tmp.row_map = tmp_row_map ;
 
+  // Deep copy:
   deep_copy( tmp_row_map , view.row_map );
   deep_copy( tmp.entries , view.entries );
 
@@ -128,10 +125,7 @@ namespace KokkosArray {
 
 template< class CrsArrayType , class InputSizeType >
 inline
-CrsArray< typename CrsArrayType::data_type ,
-          typename CrsArrayType::layout_type ,
-          typename CrsArrayType::device_type ,
-          typename CrsArrayType::size_type >
+typename CrsArrayType::crsarray_type
 create_crsarray( const std::string & label ,
                  const std::vector< InputSizeType > & input )
 {
@@ -141,7 +135,7 @@ create_crsarray( const std::string & label ,
   typedef typename output_type::entries_type   entries_type ;
 
   typedef View< typename output_type::size_type [] ,
-                typename output_type::layout_type ,
+                typename output_type::array_layout ,
                 typename output_type::device_type > work_type ;
 
   output_type output ;
@@ -175,10 +169,7 @@ create_crsarray( const std::string & label ,
 
 template< class CrsArrayType , class InputSizeType >
 inline
-CrsArray< typename CrsArrayType::data_type ,
-          typename CrsArrayType::layout_type ,
-          typename CrsArrayType::device_type ,
-          typename CrsArrayType::size_type >
+typename CrsArrayType::crsarray_type
 create_crsarray( const std::string & label ,
                  const std::vector< std::vector< InputSizeType > > & input )
 {
@@ -192,7 +183,7 @@ create_crsarray( const std::string & label ,
       ok_rank ;
 
   typedef View< typename output_type::size_type [] ,
-                typename output_type::layout_type ,
+                typename output_type::array_layout ,
                 typename output_type::device_type > work_type ;
 
   output_type output ;

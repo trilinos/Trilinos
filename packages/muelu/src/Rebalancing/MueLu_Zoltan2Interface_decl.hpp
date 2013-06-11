@@ -50,8 +50,6 @@
 
 #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
 
-#include <zoltan_cpp.h>
-
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
@@ -105,6 +103,9 @@ namespace MueLu {
     void Build(Level &level) const;
 
     //@}
+  private:
+
+    std::string getPQParts(const std::string& algo, GO numProcs, size_t dim) const;
 
   };  //class Zoltan2Interface
 

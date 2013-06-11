@@ -85,6 +85,11 @@ public:
                           const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & colProvider,
                           bool useDiscreteAdjoint=false);
 
+   /** This has been added for the case when you want an epetra LOF but don't have a comm. It simply can build
+     * scatter and gather evaluators. But not necessarily the objects that go into them.
+     */
+   EpetraLinearObjFactory(const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & rowProvider);
+
    virtual ~EpetraLinearObjFactory();
 
 /*************** Linear object factory methods *******************/

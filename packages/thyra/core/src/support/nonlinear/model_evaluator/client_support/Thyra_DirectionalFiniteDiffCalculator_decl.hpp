@@ -256,20 +256,39 @@ private:
   // //////////////////////////////
   // Private static data members
 
-  static const std::string FDMethod_name;
-  static const RCP<Teuchos::StringToIntegralParameterEntryValidator<EFDMethodType> >
-  fdMethodValidator;
-  static const std::string FDMethod_default;
+  static const std::string& FDMethod_name();
 
-  static const std::string FDStepSelectType_name;
-  static const RCP<Teuchos::StringToIntegralParameterEntryValidator<EFDStepSelectType> >
-  fdStepSelectTypeValidator;
-  static const std::string FDStepSelectType_default;
+  static const RCP<Teuchos::StringToIntegralParameterEntryValidator<EFDMethodType> >&
+  fdMethodValidator();
 
-  static const std::string FDStepLength_name;
-  static const double FDStepLength_default;
+  static const std::string& FDMethod_default();
+
+  static const std::string& FDStepSelectType_name();
+
+  static const RCP<Teuchos::StringToIntegralParameterEntryValidator<EFDStepSelectType> >&
+  fdStepSelectTypeValidator();
+
+  static const std::string& FDStepSelectType_default();
+
+  static const std::string& FDStepLength_name();
+
+  static const double& FDStepLength_default();
 
 };
+
+
+/** \brief Nonmember constructor.
+ *
+ * \relates DirectionalFiniteDiffCalculator
+ */
+template<class Scalar>
+RCP<DirectionalFiniteDiffCalculator<Scalar> >
+directionalFiniteDiffCalculator()
+{
+  RCP<DirectionalFiniteDiffCalculator<Scalar> >
+    fdCalc = Teuchos::rcp(new DirectionalFiniteDiffCalculator<Scalar>());
+  return fdCalc;
+}
 
 
 /** \brief Nonmember constructor.

@@ -141,27 +141,27 @@ namespace MueLu {
         presmootherFact_->CallBuild(level);
       }
     } else {
-      if (!level.IsAvailable("PreSmoother", presmootherFact_.get()))
+      if (!level.IsAvailable("PreSmoother",  presmootherFact_.get()))
         presmootherFact_->CallBuild(level);
       if (!level.IsAvailable("PostSmoother", postsmootherFact_.get()))
         postsmootherFact_->CallBuild(level);
     }
 
-      // Factory might or might not have created a pre smoother
-      if (level.IsAvailable("PreSmoother", presmootherFact_.get())) {
-        RCP<SmootherBase2> Pre  = level.Get<RCP<SmootherBase2> >("PreSmoother", presmootherFact_.get());
-        level.Set           ("PreSmoother", Pre, NoFactory::get());
-        level.AddKeepFlag   ("PreSmoother", NoFactory::get(), MueLu::Final);
-        level.RemoveKeepFlag("PreSmoother", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack
-      }
+    // Factory might or might not have created a pre smoother
+    if (level.IsAvailable("PreSmoother", presmootherFact_.get())) {
+      RCP<SmootherBase2> Pre  = level.Get<RCP<SmootherBase2> >("PreSmoother", presmootherFact_.get());
+      level.Set           ("PreSmoother", Pre, NoFactory::get());
+      level.AddKeepFlag   ("PreSmoother", NoFactory::get(), MueLu::Final);
+      level.RemoveKeepFlag("PreSmoother", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack
+    }
 
-      // Factory might or might not have created a post smoother
-      if (level.IsAvailable("PostSmoother", postsmootherFact_.get())) {
-        RCP<SmootherBase2> Post = level.Get<RCP<SmootherBase2> >("PostSmoother", postsmootherFact_.get());
-        level.Set           ("PostSmoother", Post, NoFactory::get());
-        level.AddKeepFlag   ("PostSmoother", NoFactory::get(), MueLu::Final);
-        level.RemoveKeepFlag("PostSmoother", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack
-      }
+    // Factory might or might not have created a post smoother
+    if (level.IsAvailable("PostSmoother", postsmootherFact_.get())) {
+      RCP<SmootherBase2> Post = level.Get<RCP<SmootherBase2> >("PostSmoother", postsmootherFact_.get());
+      level.Set           ("PostSmoother", Post, NoFactory::get());
+      level.AddKeepFlag   ("PostSmoother", NoFactory::get(), MueLu::Final);
+      level.RemoveKeepFlag("PostSmoother", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack
+    }
 
     }
 } // namespace MueLu

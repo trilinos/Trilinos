@@ -130,7 +130,7 @@ namespace MueLu {
       size_t nnz  = pindices.size();    // number of nonzeros in the constrained matrix
       size_t nnz1 = indices.size();     // number of nonzeros in the supplied matrix
 
-      Teuchos::Array<SC> newValues(nnz, 0.0);
+      Teuchos::Array<SC> newValues(nnz, Teuchos::ScalarTraits<SC>::zero());
 
       // step 1: fix stencil
       // Projected already has the correct stencil

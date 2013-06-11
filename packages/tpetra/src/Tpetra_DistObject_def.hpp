@@ -156,6 +156,42 @@ namespace Tpetra {
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+      "Tpetra::DistObject::removeEmptyProcessesInPlace: Not implemented");
+  }
+
+  template<class DistObjectType>
+  void
+  removeEmptyProcessesInPlace (Teuchos::RCP<DistObjectType>& input,
+                               const Teuchos::RCP<const Map<typename DistObjectType::local_ordinal_type,
+                                                            typename DistObjectType::global_ordinal_type,
+                                                            typename DistObjectType::node_type> >& newMap)
+  {
+    input->removeEmptyProcessesInPlace (newMap);
+    if (newMap.is_null ()) { // my process is excluded
+      input = Teuchos::null;
+    }
+  }
+
+  template<class DistObjectType>
+  void
+  removeEmptyProcessesInPlace (Teuchos::RCP<DistObjectType>& input)
+  {
+    using Teuchos::RCP;
+    typedef typename DistObjectType::local_ordinal_type LO;
+    typedef typename DistObjectType::global_ordinal_type GO;
+    typedef typename DistObjectType::node_type NT;
+    typedef Map<LO, GO, NT> map_type;
+
+    RCP<const map_type> newMap = input->getMap ()->removeEmptyProcesses ();
+    removeEmptyProcessesInPlace<DistObjectType> (input, newMap);
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
   doImport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A,
             const Import<LocalOrdinal,GlobalOrdinal,Node> & importer,
@@ -254,6 +290,13 @@ namespace Tpetra {
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  constantNumberOfPackets () const {
+    return 0; // default implementation; subclasses may override
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
   doTransfer (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source,
@@ -324,9 +367,17 @@ namespace Tpetra {
       // There is at least one GID to copy or permute.
       copyAndPermute (source, numSameIDs, permuteToLIDs, permuteFromLIDs);
     }
-    size_t constantNumPackets = 0;
-    numExportPacketsPerLID_.resize(exportLIDs.size());
-    numImportPacketsPerLID_.resize(remoteLIDs.size());
+    // The method may return zero even if the implementation actually
+    // does have a constant number of packets per LID.  However, if it
+    // returns nonzero, we may use this information to avoid
+    // (re)allocating num{Ex,Im}portPacketsPerLID_.  packAndPrepare()
+    // will set this to its final value.
+    size_t constantNumPackets = this->constantNumberOfPackets ();
+
+    if (constantNumPackets == 0) {
+      numExportPacketsPerLID_.resize (exportLIDs.size ());
+      numImportPacketsPerLID_.resize (remoteLIDs.size ());
+    }
 
     {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS

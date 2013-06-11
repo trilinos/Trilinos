@@ -8,6 +8,7 @@
 #include <sstream>
 #include <iostream>
 #include <KokkosArray_Host.hpp>
+#include <KokkosArray_hwloc.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -15,35 +16,33 @@ void test_box_partition( bool print );
 
 //----------------------------------------------------------------------------
 
-void test_host_query( comm::Machine );
-
 void test_host_fixture( comm::Machine machine ,
                         size_t gang_count ,
                         size_t gang_worker_count ,
                         size_t nx , size_t ny , size_t nz );
 
-void test_host_implicit( comm::Machine machine , 
+void test_host_implicit( comm::Machine machine ,
                          size_t gang_count ,
                          size_t gang_worker_count ,
                          size_t elem_count_begin ,
                          size_t elem_count_end ,
                          size_t count_run );
 
-void test_host_explicit( comm::Machine machine , 
+void test_host_explicit( comm::Machine machine ,
                          size_t gang_count ,
                          size_t gang_worker_count ,
                          size_t elem_count_begin ,
                          size_t elem_count_end ,
                          size_t count_run );
 
-void test_host_nonlinear( comm::Machine machine , 
+void test_host_nonlinear( comm::Machine machine ,
                           size_t gang_count ,
                           size_t gang_worker_count ,
                           size_t elem_count_begin ,
                           size_t elem_count_end ,
                           size_t count_run );
 
-void test_host_nonlinear_quadratic( comm::Machine machine , 
+void test_host_nonlinear_quadratic( comm::Machine machine ,
                                     size_t gang_count ,
                                     size_t gang_worker_count ,
                                     size_t elem_count_begin ,
@@ -73,7 +72,7 @@ void test_cuda_nonlinear( comm:: Machine machine ,
                           size_t elem_count_end ,
                           size_t count_run );
 
-void test_cuda_nonlinear_quadratic( comm::Machine machine , 
+void test_cuda_nonlinear_quadratic( comm::Machine machine ,
                                     size_t elem_count_begin ,
                                     size_t elem_count_end ,
                                     size_t count_run );
@@ -128,7 +127,7 @@ bool run_host( std::istream & input ,
     input >> mesh_node_begin >> mesh_node_end >> run ;
     test_host_nonlinear( machine , host_gang_count , host_gang_worker_count , mesh_node_begin , mesh_node_end , run );
 
-  }   
+  }
   else if ( which == std::string("nonlinear_quadratic") ) {
 
     size_t mesh_node_begin = 100 ;
@@ -137,7 +136,7 @@ bool run_host( std::istream & input ,
     input >> mesh_node_begin >> mesh_node_end >> run ;
     test_host_nonlinear_quadratic( machine , host_gang_count , host_gang_worker_count , mesh_node_begin , mesh_node_end , run );
 
-  }   
+  }
   else {
     cmd_error = true ;
   }
@@ -145,6 +144,7 @@ bool run_host( std::istream & input ,
   return cmd_error ;
 }
 
+#if HAVE_CUDA
 bool run_cuda( std::istream & input , comm::Machine machine )
 {
   bool cmd_error = false ;
@@ -184,7 +184,7 @@ bool run_cuda( std::istream & input , comm::Machine machine )
     input >> mesh_node_begin >> mesh_node_end >> run ;
     test_cuda_nonlinear( machine , mesh_node_begin , mesh_node_end , run );
 
-  }   
+  }
   else if ( which == std::string("nonlinear_quadratic") ) {
 
     size_t mesh_node_begin = 100 ;
@@ -193,16 +193,20 @@ bool run_cuda( std::istream & input , comm::Machine machine )
     input >> mesh_node_begin >> mesh_node_end >> run ;
     test_cuda_nonlinear_quadratic( machine , mesh_node_begin , mesh_node_end , run );
 
-  }   
+  }
   else {
     cmd_error = true ;
   }
 
   return cmd_error ;
 }
+#endif
 
 void run( const std::string & argline , comm::Machine machine )
 {
+  const std::pair<unsigned,unsigned> core_topo = KokkosArray::hwloc::get_core_topology();
+  const unsigned                     core_cap  = KokkosArray::hwloc::get_core_capacity();
+
   std::istringstream input( argline );
 
   bool cmd_error = false ;
@@ -210,7 +214,11 @@ void run( const std::string & argline , comm::Machine machine )
   std::string which ; input >> which ;
 
   if ( which == std::string("query") ) {
-    test_host_query( machine );
+    std::cout << "P" << comm::rank( machine )
+              << ": hwloc { NUMA[" << core_topo.first << "]"
+              << " CORE[" << core_topo.second << "]"
+              << " PU[" << core_cap << "] }"
+              << std::endl ;
 #if HAVE_CUDA
     test_cuda_query( machine );
 #endif
@@ -231,17 +239,14 @@ void run( const std::string & argline , comm::Machine machine )
       cmd_error = run_host( input , machine , host_gang_count , host_gang_worker_count );
     }
     else if ( which == std::string("host-all") ) {
-      size_t host_gang_count        = KokkosArray::Host::detect_gang_capacity();
-      size_t host_gang_worker_count = KokkosArray::Host::detect_gang_worker_capacity() ;
+      size_t host_gang_count        = core_topo.first ;
+      size_t host_gang_worker_count = core_topo.second * core_cap ;
 
       cmd_error = run_host( input , machine , host_gang_count , host_gang_worker_count );
     }
     else if ( which == std::string("host-most") ) {
-      size_t host_gang_count        = KokkosArray::Host::detect_gang_capacity();
-      size_t host_gang_worker_count = KokkosArray::Host::detect_gang_worker_capacity() ;
-
-      if ( 1 < host_gang_count ) { --host_gang_count ; }
-      else if ( 1 < host_gang_worker_count ) { --host_gang_worker_count ; }
+      size_t host_gang_count        = core_topo.first ;
+      size_t host_gang_worker_count = ( core_topo.second - 1 ) * core_cap ;
 
       cmd_error = run_host( input , machine , host_gang_count , host_gang_worker_count );
     }
@@ -265,9 +270,9 @@ void run( const std::string & argline , comm::Machine machine )
               << "    cuda <test>" << std::endl
               << "where <test> is" << std::endl
               << "    fixture   NumElemX NumElemY NumElemZ" << std::endl
-              << "    implicit  NumElemBegin NumElemEnd NumRun" << std::endl 
+              << "    implicit  NumElemBegin NumElemEnd NumRun" << std::endl
               << "    explicit  NumElemBegin NumElemEnd NumRun" << std::endl
-              << "    nonlinear NumElemBegin NumElemEnd NumRun" << std::endl 
+              << "    nonlinear NumElemBegin NumElemEnd NumRun" << std::endl
               << "    nonlinear_quadratic NumElemBegin NumElemEnd NumRun" << std::endl ;
 
   }

@@ -568,6 +568,50 @@ size_t mask;
 }
 
 
+/*****************************************************************************/
+#ifdef ZOLTAN_PURIFY
+
+/* Purify has a bug in strcasecmp and strncasecmp; 
+ * for now, we provide a work-around for purify builds. */
+
+int Zoltan_strcasecmp(const char *s1, const char *s2) 
+{
+  char *t1, *t2;
+  int len1 = strlen(s1), len2 = strlen(s2);
+  int i;
+  t1 = ZOLTAN_MALLOC((len1+len2+2)*sizeof(char));
+  t2 = t1 + len1 + 1;
+  strcpy(t1, s1);
+  strcpy(t2, s2);
+  for (i = 0; i < len1; i++) 
+    if (t1[i] >= 'A' && t1[i] <= 'Z') t1[i] = t1[i] - 'A' + 'a';
+  for (i = 0; i < len2; i++) 
+    if (t2[i] >= 'A' && t2[i] <= 'Z') t2[i] = t2[i] - 'A' + 'a';
+  i = strcmp(t1, t2);
+  ZOLTAN_FREE(&t1);
+  return i;
+}
+
+int Zoltan_strncasecmp(const char *s1, const char *s2, size_t n) 
+{
+  char *t1, *t2;
+  int len1 = strlen(s1), len2 = strlen(s2);
+  int i;
+  t1 = ZOLTAN_MALLOC((len1+len2+2)*sizeof(char));
+  t2 = t1 + len1 + 1;
+  strcpy(t1, s1);
+  strcpy(t2, s2);
+  for (i = 0; i < len1; i++) 
+    if (t1[i] >= 'A' && t1[i] <= 'Z') t1[i] = t1[i] - 'A' + 'a';
+  for (i = 0; i < len2; i++) 
+    if (t2[i] >= 'A' && t2[i] <= 'Z') t2[i] = t2[i] - 'A' + 'a';
+  i = strncmp(t1, t2, n);
+  ZOLTAN_FREE(&t1);
+  return i;
+}
+
+#endif /* ZOLTAN_PURIFY */
+
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

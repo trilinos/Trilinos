@@ -44,31 +44,22 @@
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_Cuda.hpp>
 
-#include <KokkosArray_ProductTensor.hpp>
 #include <KokkosArray_LegendrePolynomial.hpp>
 #include <KokkosArray_SymmetricDiagonalSpec.hpp>
-#include <KokkosArray_StochasticProductTensor.hpp>
 #include <KokkosArray_BlockCrsMatrix.hpp>
 #include <KokkosArray_CrsMatrix.hpp>
 
 //
 
-
-
-
-#include <Host/KokkosArray_Host_ProductTensor.hpp>
-
 #include <Cuda/KokkosArray_Cuda_SymmetricDiagonalSpec.hpp>
-#include <Cuda/KokkosArray_Cuda_ProductTensor.hpp>
 #include <Cuda/KokkosArray_Cuda_CrsProductTensorLegendre.hpp>
-#include <Cuda/KokkosArray_Cuda_StochasticProductTensor.hpp>
+#include <Cuda/KokkosArray_Cuda_SparseProductTensorLegendre.hpp>
 #include <Cuda/KokkosArray_Cuda_BlockCrsMatrix.hpp>
 #include <Cuda/KokkosArray_Cuda_CrsMatrix.hpp>
 
 //
 
 #include <TestBlockCrsMatrix.hpp>
-#include <TestTensorCrsMatrix.hpp>
 #include <TestStochastic.hpp>
 
 namespace unit_test {
@@ -151,36 +142,33 @@ int mainCuda(bool test_flat, bool test_orig, bool test_block, bool check,
 	    << "Device " << device_id << ": " << deviceProp.name 
 	    << std::endl;
 
-//  unit_test::test_dense<KokkosArray::Cuda>();
-//  unit_test::test_diagonal<KokkosArray::Cuda>();
-//  unit_test::test_other<KokkosArray::Cuda>();
+  typedef KokkosArray::Cuda device ;
 
-//  unit_test::test_inner_product_legengre_polynomial<10,KokkosArray::Cuda>();
-//  unit_test::test_triple_product_legendre_polynomial<4,KokkosArray::Cuda>();
+  //------------------------------------
+  // Quick correctness check:
 
-  unit_test::test_block_crs_matrix<KokkosArray::Cuda>( 1 , 2 );
-  unit_test::test_block_crs_matrix<KokkosArray::Cuda>( 1 , 5 );
-  unit_test::test_block_crs_matrix<KokkosArray::Cuda>( 2 , 1 );
-  unit_test::test_block_crs_matrix<KokkosArray::Cuda>( 2 , 2 );
-  unit_test::test_block_crs_matrix<KokkosArray::Cuda>( 3 , 1 );
-  unit_test::test_block_crs_matrix<KokkosArray::Cuda>( 3 , 2 );
+  const std::vector<int> var( 3 , 2 ); // #Stochastic variables = 3 , polynomical degree = 2
+  const int ngrid = 3 ; // 3x3x3 element grid
 
-  unit_test_tensor::test_tensor_crs_matrix<KokkosArray::Cuda,IntType>( 1 , 2 );
-  unit_test_tensor::test_tensor_crs_matrix<KokkosArray::Cuda,IntType>( 1 , 5 );
-  unit_test_tensor::test_tensor_crs_matrix<KokkosArray::Cuda,IntType>( 2 , 1 );
-  unit_test_tensor::test_tensor_crs_matrix<KokkosArray::Cuda,IntType>( 5 , 1 );
-  unit_test_tensor::test_tensor_crs_matrix<KokkosArray::Cuda,IntType>( 5 , 5 );
+  unit_test::test_product_flat_original_matrix<  float, device>( var , ngrid , 1 , true );
+  unit_test::test_product_flat_original_matrix<  double,device>( var , ngrid , 1 , true );
 
-  std::cout << "Stress tests:" << std::endl ;
+  unit_test::test_product_flat_commuted_matrix<  float, device>( var , ngrid , 1 , true );
+  unit_test::test_product_flat_commuted_matrix<  double,device>( var , ngrid , 1 , true );
 
-  unit_test::test_block_crs_matrix<KokkosArray::Cuda>( 10 , 8 );
-  unit_test::test_block_crs_matrix<KokkosArray::Cuda>( 11 , 8 );
-  unit_test::test_block_crs_matrix<KokkosArray::Cuda>( 12 , 10 );
-  unit_test::test_block_crs_matrix<KokkosArray::Cuda>( 13 , 10 );
+  unit_test::test_product_tensor_diagonal_matrix<float, device>( var , ngrid , 1 , true );
+  unit_test::test_product_tensor_diagonal_matrix<double,device>( var , ngrid , 1 , true );
 
-  unit_test_tensor::test_tensor_crs_matrix<KokkosArray::Cuda,IntType>( 100 , 10 );
+  unit_test::test_product_tensor_legendre< KokkosArray::CrsProductTensorLegendre< float , device > , float , float >( var , ngrid , 1 , true );
+  unit_test::test_product_tensor_legendre< KokkosArray::CrsProductTensorLegendre< double, device > , double, double>( var , ngrid , 1 , true );
+
+  unit_test::test_product_tensor_legendre< KokkosArray::SparseProductTensorLegendre< float , device > , float , float >( var , ngrid , 1 , true );
+  unit_test::test_product_tensor_legendre< KokkosArray::SparseProductTensorLegendre< double, device > , double, double>( var , ngrid , 1 , true );
+
+  //------------------------------------
 
   std::cout << std::endl << "\"Cuda Performance\"" << std::endl ;
+
   unit_test::performance_test_driver<Scalar,KokkosArray::Cuda>::run(
     test_flat, test_orig, test_block, check);
 

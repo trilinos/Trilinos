@@ -32,12 +32,14 @@
 
 #include <Ioss_DatabaseIO.h>
 #include <Ioss_ElementBlock.h>
+#include <Ioss_Field.h>
 #include <Ioss_Property.h>
 #include <stddef.h>
 #include <string>
 #include <vector>
 
 #include "Ioss_EntityBlock.h"
+#include "Ioss_FieldManager.h"
 
 namespace Ioss {
   class Field;
@@ -48,6 +50,13 @@ namespace Ioss {
 			     int64_t number_elements)
     : EntityBlock(io_database, my_name, element_type, number_elements)
   {
+    // The 1..global_element_count id.  In a parallel-decomposed run,
+    // if maps the element back to its implicit position in the serial
+    // undecomposed mesh file.  This is ONLY provided for backward-
+    // compatibility and should not be used unless absolutely required.
+    fields.add(Ioss::Field("implicit_ids",
+         field_int_type(), "scalar",
+         Ioss::Field::MESH, number_elements));
   }
 
   ElementBlock::~ElementBlock() {}

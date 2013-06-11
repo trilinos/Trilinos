@@ -4,13 +4,14 @@
 #include <iostream>
 
 #include <TestGenerateTensor.hpp>
+#include <TestGenerateGraph.hpp>
 #include <impl/KokkosArray_Timer.hpp>
 
 namespace unit_test {
 
 //----------------------------------------------------------------------------
 
-template< typename VectorScalar , typename MatrixScalar , typename TensorScalar , class Device >
+template< class TensorType , typename VectorScalar , typename MatrixScalar >
 std::vector<double>
 test_product_tensor_legendre(
   const std::vector<int> & arg_var_degree ,
@@ -18,13 +19,14 @@ test_product_tensor_legendre(
   const int iterCount ,
   const bool check )
 {
+  typedef TensorType                         tensor_type ;
+  typedef typename tensor_type::device_type  device_type ;
+
   typedef KokkosArray::View< VectorScalar** ,
                              KokkosArray::LayoutLeft ,
-                             Device > vector_type ;
+                             device_type > vector_type ;
 
-  typedef KokkosArray::CrsProductTensorLegendre< TensorScalar , Device >  tensor_type ;
-
-  typedef KokkosArray::BlockCrsMatrix< tensor_type , MatrixScalar , Device > matrix_type ;
+  typedef KokkosArray::BlockCrsMatrix< tensor_type , MatrixScalar , device_type > matrix_type ;
 
   typedef typename matrix_type::graph_type graph_type ;
 
@@ -83,7 +85,7 @@ test_product_tensor_legendre(
   matrix.graph = KokkosArray::create_crsarray<graph_type>( std::string("test crs graph") , fem_graph );
 
   if ( stoch_length != matrix.block.dimension() ) {
-    throw std::runtime_error("test_product_tensor_legendre matrix sizing error");
+    throw std::runtime_error("test_crs_product_tensor_legendre matrix sizing error");
   }
 
   matrix.values = vector_type( "matrix" , stoch_length , fem_graph_length );
@@ -124,7 +126,7 @@ test_product_tensor_legendre(
 	      const double A_fem_k = generate_matrix_coefficient( fem_length , stoch_length , iRowFEM , iColFEM , k );
 
 	      if ( 1.0e-6 < std::abs( hM(k,iEntryFEM) - A_fem_k ) ) {
-		std::cout << "test_product_tensor_legendre error: Matrix entry"
+		std::cout << "test_crs_product_tensor_legendre error: Matrix entry"
 			  << "  A(" << k << ",(" << iRowFEM << "," << iColFEM << ")) = " << hM(k,iEntryFEM) 
 			  << " , error = " << hM(k,iEntryFEM) - A_fem_k
 			  << std::endl ;
@@ -150,7 +152,7 @@ test_product_tensor_legendre(
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     op.run();
   }
-  Device::fence();
+  device_type::fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
   const double flops_per_block = matrix.block.multiply_add_flops();
@@ -161,7 +163,7 @@ test_product_tensor_legendre(
 
   if (check)
   {
-    const double tol = 1.0e-13 ;
+    const double tol = KokkosArray::Impl::is_same<double,VectorScalar>::value ? 1.0e-13 : 1.0e-5 ;
     const size_t error_max = 10 ;
 
     KokkosArray::deep_copy( hx , y );
@@ -184,7 +186,7 @@ test_product_tensor_legendre(
       }
     }
     if ( error_count ) {
-      std::cout << "test_product_tensor_legendre error_count = " << error_count << std::endl ;
+      std::cout << "test_crs_product_tensor_legendre error_count = " << error_count << std::endl ;
     }
   }
 
@@ -199,6 +201,7 @@ test_product_tensor_legendre(
   return perf ;
 }
 
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 } // namespace unit_test

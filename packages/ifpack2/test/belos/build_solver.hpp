@@ -18,7 +18,6 @@ Teuchos::RCP<Belos::SolverManager<Scalar,MV,OP> >
 build_solver(Teuchos::ParameterList& test_params,
              Teuchos::RCP<Belos::LinearProblem<Scalar,MV,OP> > problem)
 {
-  typedef Belos::LinearProblem<Scalar,MV,OP> BLinProb;
   Teuchos::RCP<Belos::SolverManager<Scalar,MV,OP> > solver;
 
   Teuchos::ParameterList bparams;
@@ -32,15 +31,15 @@ build_solver(Teuchos::ParameterList& test_params,
   if (solver_type == "PseudoBlockCG") {
     solver = Teuchos::rcp(new Belos::PseudoBlockCGSolMgr<Scalar,MV,OP>(problem,rcpparams));
   }
-// BlockCG does not work right now with QD since POTRF is not templated in Teuchos LAPACK
-#ifndef USING_QD
   else if (solver_type == "BlockCG") {
     solver = Teuchos::rcp(new Belos::BlockCGSolMgr<Scalar,MV,OP>(problem,rcpparams));
   }
-#endif
+// PseudoBlockGmres does not work right now with QD
+#ifndef USING_QD
   else if (solver_type == "PseudoBlockGmres") {
     solver = Teuchos::rcp(new Belos::PseudoBlockGmresSolMgr<Scalar,MV,OP>(problem,rcpparams));
   }
+#endif
   else if (solver_type == "BlockGmres") {
     solver = Teuchos::rcp(new Belos::BlockGmresSolMgr<Scalar,MV,OP>(problem,rcpparams));
   }

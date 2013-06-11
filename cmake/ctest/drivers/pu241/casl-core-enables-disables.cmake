@@ -60,6 +60,11 @@ SET(Belos_Tpetra_MVOPTester_complex_test_DISABLE TRUE)
 SET(Anasazi_Tpetra_MVOPTester_MPI_4_DISABLE TRUE)
 SET(Anasazi_Tpetra_MVOPTester_DISABLE TRUE)
 
+# We don't want PETSC support in Trilinos in case of incompatible version
+SET(EpetraExt_ENABLE_PETSC OFF CACHE BOOL "")
+SET(ML_ENABLE_PETSC OFF CACHE BOOL "")
+SET(NOX_ENABLE_PETSC OFF CACHE BOOL "")
+
 # Don't allow Optika GUI tests since they just seem to work and are not tested
 # (see discussion in commit message).
 SET(Optika_DO_GUI_UNIT_TESTS OFF CACHE BOOL "")

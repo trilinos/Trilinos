@@ -10,7 +10,7 @@
 /* #undef HAVE_IFPACK2_QD */
 
 /* Define if we have Zoltan2 */
-/* #undef HAVE_IFPACK2_ZOLTAN2 */
+#define HAVE_IFPACK2_ZOLTAN2
 
 /* Define if we have Xpetra */
 #define HAVE_IFPACK2_XPETRA

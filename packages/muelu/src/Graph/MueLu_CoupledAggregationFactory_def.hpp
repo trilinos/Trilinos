@@ -88,6 +88,8 @@ namespace MueLu {
 
     }
 
+    aggregates->AggregatesCrossProcessors(true);
+
     // Level Set
     Set(currentLevel, "Aggregates", aggregates);
 

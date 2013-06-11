@@ -249,7 +249,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
               spreader.Restart_Info.Num_Times = -1; /* -1 designates read all times */
             }
           }
-          /* check if the user wants move variable in blocks */
+          /* IGNORED check if the user wants move variable in blocks IGNORED */
           else if (strstr(cptr, "block")) {
             cptr2 = strchr(cptr, '=');
             if(cptr2 == NULL)
@@ -258,14 +258,6 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
               exit(1);
             }
             cptr2++;
-
-            if (spreader.Restart_Info.Block_Size < 0) {
-              if(sscanf(cptr2, "%d", &spreader.Restart_Info.Block_Size) != 1) {
-                fprintf(stderr, "%s: ERROR, can\'t interpret value for "
-                        "block size\n", yo);
-                exit(1);
-              }
-            }
           }
           /* check if the user has a list of time indices to get */
           else if (strstr(cptr, "list")) {
@@ -284,12 +276,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
             *cptr3 = '\0';
 
             /* Allocate the time list */
-            spreader.Restart_Info.Time_Idx  = (int *) array_alloc(__FILE__, __LINE__,
-                                                    1, TLIST_CNT, sizeof(int));
-            if(!(spreader.Restart_Info.Time_Idx)) {
-              fprintf(stderr, "Insufficient memory\n");
-              exit(1);
-            }
+            spreader.Restart_Info.Time_Idx.resize(TLIST_CNT);
             tlist_alloc = TLIST_CNT;
             spreader.Restart_Info.Num_Times = 0;
 
@@ -309,12 +296,7 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
 
               if (spreader.Restart_Info.Num_Times >= tlist_alloc) {
                 tlist_alloc += TLIST_CNT;
-                spreader.Restart_Info.Time_Idx  = (int *) realloc(spreader.Restart_Info.Time_Idx,
-                                                      tlist_alloc*sizeof(int));
-                if(!(spreader.Restart_Info.Time_Idx)) {
-                  fprintf(stderr, "Insufficient memory\n");
-                  exit(1);
-                }
+                spreader.Restart_Info.Time_Idx.resize(tlist_alloc);
               }
               /* move to the next blank space */
               cptr3 = strchr(cptr2, ' ');

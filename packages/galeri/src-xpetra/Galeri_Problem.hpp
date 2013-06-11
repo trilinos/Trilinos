@@ -78,7 +78,7 @@ namespace Galeri {
       };
       virtual ~Problem() { }
 
-      virtual Teuchos::RCP<Matrix>      BuildMatrix() = 0;
+      virtual Teuchos::RCP<Matrix> BuildMatrix() = 0;
       virtual Teuchos::RCP<MultiVector> BuildCoords() {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Coordinates construction is not implemented for this problem");
       }

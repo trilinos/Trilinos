@@ -64,7 +64,7 @@ namespace Xpetra {
   const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> & toTpetra(const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &);
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > & toTpetra(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &);
+  const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > toTpetra(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &);
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > toXpetra(const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > &);
@@ -186,6 +186,13 @@ namespace Xpetra {
     //! Print this object with the given verbosity level to the given FancyOStream.
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { XPETRA_MONITOR("TpetraMap::describe"); map_->describe(out, verbLevel); }
 
+    RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > removeEmptyProcesses () const {
+      return toXpetra(map_->removeEmptyProcesses());
+    }
+    RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const {
+      return toXpetra(map_->replaceCommWithSubset(newComm));
+    }
+
     //@}
 
     //! @name Xpetra specific
@@ -218,7 +225,20 @@ namespace Xpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > & toTpetra(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map) {
+  const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > toTpetra(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map) {
+    typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMapClass;
+    if (map != Teuchos::null) {
+      XPETRA_RCP_DYNAMIC_CAST(const TpetraMapClass, map, tpetraMap, "toTpetra");
+      return tpetraMap->getTpetra_Map();
+    }
+    return Teuchos::null;
+  }
+
+  // In some cases (for instance, in MueLu adapter to Tpetra operator), we need to return a reference. This is only possible if
+  // we assume that the map argument is nonzero
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >& toTpetraNonZero(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map) {
+    TEUCHOS_TEST_FOR_EXCEPTION(map.is_null(), std::invalid_argument, "map must be nonzero");
     typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMapClass;
     XPETRA_RCP_DYNAMIC_CAST(const TpetraMapClass, map, tpetraMap, "toTpetra");
     return tpetraMap->getTpetra_Map();
@@ -226,7 +246,9 @@ namespace Xpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > toXpetra(const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > &map) {
-    return rcp( new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(map));
+    if (map != Teuchos::null)
+      return rcp( new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(map));
+    return Teuchos::null;
   }
   //
 

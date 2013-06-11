@@ -44,135 +44,42 @@
 #ifndef KOKKOSARRAY_HOST_INTERNAL_HPP
 #define KOKKOSARRAY_HOST_INTERNAL_HPP
 
-#include <KokkosArray_Host.hpp>
-#include <KokkosArray_HostSpace.hpp>
-#include <Host/KokkosArray_Host_Parallel.hpp>
+#include <utility>
 
 //----------------------------------------------------------------------------
 
 namespace KokkosArray {
 namespace Impl {
 
-class HostWorkerBlock : public HostThreadWorker {
-public:
-  void execute_on_thread( HostThread & ) const ;
+/** \brief  The driver subprogram to be run by a spawned thread. */
+void host_thread_driver();
 
-  HostWorkerBlock()  {}
-  ~HostWorkerBlock() {}
-};
+/** \name  Internal interface to threading runtime. */
+/**@{ */
+
+/** \brief  Span a thread and call 'host_thread_driver()' */
+bool host_thread_spawn();
+
+/** \brief  Query if called on the master thread */
+bool host_thread_is_master();
+
+/** \brief  Wait for *flag != value */
+int  host_thread_wait( volatile int * const flag , const int value );
+
+/** \brief  Hard lock the current thread (e.g., via pthread_mutex */
+void host_thread_lock();
+
+/** \brief  Unlock the current thread */
+void host_thread_unlock();
+/**@} */
 
 //----------------------------------------------------------------------------
 
-/**
- * \class HostInternal
- * \brief Internal implementation of intraprocess parallelism on the host.
- *
- * Hardware model
- * ==============
- *
- * - The Host process is running within a NUMA multiprocessor environment.
- * - The hardware locality (hwloc) library defines a 'node' as a collection
- *   of processing units associated with a NUMA region.
- * - If the Host process is pinned to a particular NUMA node we assume
- *   that the threads of the Host process are also restricted to that node.
- *
- * Be aware that "node" here means "CPU processing units associated
- * with a NUMA affinity region," and does not have its traditional
- * high-performance computing hardware meaning.
- */
-class HostInternal {
-protected:
-
-  HostWorkerBlock  m_worker_block ;
-
-  unsigned         m_gang_capacity ;   // Maximum number of gangs
-  unsigned         m_worker_capacity ; // Maixmum number of workers per gang
-
-  unsigned         m_cache_line_size ; //
-  unsigned         m_thread_count ;  // Number of threads
-  unsigned         m_gang_count ;    // Number of NUMA nodes used
-  unsigned         m_worker_count ;  // Number of threads per NUMA node
-  unsigned         m_reduce_scratch_size ;   // Sizeof reduction memory
-  HostThread       m_master_thread ;
-  //! Array of all worker threads (including master); accessible to the threads.
-  HostThread     * m_thread[ HostThread::max_thread_count ];
-
-  const HostThreadWorker * volatile m_worker ;
-
-  virtual ~HostInternal();
-
-  virtual bool bind_thread( const unsigned thread_rank ) const ;
-
-  HostInternal();
-
-private:
-  /// \brief Spawn the worker threads, and set up interthread communication.
-  ///
-  /// \param use_node_count [in] The number of NUMA regions ("nodes")
-  ///   to use.
-  /// \param use_node_thread_count [in] The number of worker threads
-  ///   to use per NUMA region.
-  ///
-  /// \return Whether the threads successfully spawned.
-  ///
-  /// The calling thread also gets bound as a worker thread.  This has
-  /// implications for parallel kernels: in particular, they are not
-  /// asynchronous.
-  bool spawn_threads( const unsigned use_node_count ,
-                      const unsigned use_node_thread_count );
-
-  bool spawn( const size_t );
-
-  bool initialize_thread( const unsigned thread_rank, HostThread & thread );
-
-  void activate_threads();
-
-  void execute_serial( const HostThreadWorker & worker );
-
-public:
-  /// \brief Assert at run time that the calling worker thread is inactive.
-  ///
-  /// \param method [in] Name of the method invoking the assertion.
-  ///   Used only for constructing the exception message in case the
-  ///   assertion fails.
-  void verify_inactive( const char * const method ) const ;
-
-  /// \brief Initialize the worker threads for parallel kernels.
-  ///
-  /// \param use_node_count [in] The number of NUMA regions ("nodes")
-  ///   to use.
-  /// \param use_node_thread_count [in] The number of worker threads
-  ///   to use per NUMA region.
-  ///
-  /// \exception std::runtime_error if initialization failed.
-  ///
-  /// The calling thread, which is the master thread, also gets bound
-  /// as a worker thread.  This has implications for parallel kernels:
-  /// in particular, they are not asynchronous.  Tasks get assigned to
-  /// the master thread as well as to the other worker threads.
-  void initialize( const unsigned use_node_count ,
-                   const unsigned use_node_thread_count );
-
-  void finalize();
-
-  virtual void print_configuration( std::ostream & ) const ;
-
-  inline void execute( const HostThreadWorker & worker );
-
-  void driver( const size_t );
-
-  bool is_master_thread() const ;
-
-  void resize_reduce_scratch( unsigned size );
-  void resize_reduce_thread( HostThread & thread ) const ;
-  void * reduce_scratch() const ;
-
-  //! Access the one HostInternal instance.
-  static HostInternal & singleton();
-
-  friend class KokkosArray::Host ;
-  friend class KokkosArray::HostSpace ;
-};
+void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
+                          const std::pair<unsigned,unsigned> core_use ,
+                          const std::pair<unsigned,unsigned> core_topo ,
+                          const std::pair<unsigned,unsigned> master_coord ,
+                                std::pair<unsigned,unsigned> thread_coord[] );
 
 } /* namespace Impl */
 } /* namespace KokkosArray */

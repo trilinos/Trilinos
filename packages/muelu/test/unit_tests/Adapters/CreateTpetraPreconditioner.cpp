@@ -48,6 +48,7 @@
 #include "MueLu_Version.hpp"
 
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Galeri_XpetraMaps.hpp>
 
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Hierarchy.hpp"
@@ -128,6 +129,69 @@ TEUCHOS_UNIT_TEST(TpetraOperator, CreatePreconditioner)
     out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 #endif
 
+
+  } else {
+
+    out << "This test is enabled only for linAlgebra=Tpetra." << std::endl;
+
+  }
+
+} //CreatePreconditioner
+
+TEUCHOS_UNIT_TEST(TpetraOperator, CreatePreconditioner_PDESystem)
+{
+
+  out << "version: " << MueLu::Version() << std::endl;
+
+  if (TestHelpers::Parameters::getLib() == Xpetra::UseTpetra )
+  {
+    //matrix
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    GO nx=972;
+    RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(nx*comm->getSize());
+    RCP<const Map > map = Op->getRowMap();
+
+    // ------------- test Tpetra Operator wrapping MueLu hierarchy ------------
+    RCP< Tpetra::CrsMatrix<SC, LO, GO, NO> > tpA = MueLu::Utils<SC,LO,GO,NO,LMO>::Op2NonConstTpetraCrs(Op);
+#if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
+    std::string xmlFileName="testPDE.xml";
+
+    RCP<MultiVector> RHS1 = MultiVectorFactory::Build(Op->getRowMap(), 1);
+    RCP<MultiVector> X1   = MultiVectorFactory::Build(Op->getRowMap(), 1);
+
+    //normalized RHS, zero initial guess
+    RHS1->setSeed(846930886);
+    RHS1->randomize();
+    Teuchos::Array<ST::magnitudeType> norms(1);
+    RHS1->norm2(norms);
+    RHS1->scale(1/norms[0]);
+//
+    Teuchos::ParameterList clist;
+    clist.set("nx", (nx*comm->getSize())/3);
+    RCP<const Map> cmap = Galeri::Xpetra::CreateMap<LO, GO, Node>(Xpetra::UseTpetra, "Cartesian1D", comm, clist);
+    RCP<MultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D",cmap,clist);
+//
+
+    //Teuchos::ParameterList galeriList;
+    //galeriList.set("nx", nx);
+    //RCP<MultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D",Op->getRowMap(),galeriList);
+    RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpcoordinates = Utils::MV2NonConstTpetraMV(coordinates);
+    Teuchos::RCP<TpetraOperator> tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA,xmlFileName,tpcoordinates);
+
+    X1->putScalar( (SC) 0.0);
+    tH->apply(*(Utils::MV2TpetraMV(RHS1)),*(Utils::MV2NonConstTpetraMV(X1)));
+    out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
+    //RCP<MultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D",Op->getRowMap(),galeriList);
+
+    RCP<Xpetra::MultiVector<SC, LO, GO, NO> > nullspace = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(Op->getDomainMap(),1);
+    nullspace->putScalar( Teuchos::ScalarTraits<SC>::one() );
+    RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpnullspace = Utils::MV2NonConstTpetraMV(nullspace);
+    tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA,xmlFileName,tpcoordinates,tpnullspace);
+
+    X1->putScalar( (SC) 0.0);
+    tH->apply(*(Utils::MV2TpetraMV(RHS1)),*(Utils::MV2NonConstTpetraMV(X1)));
+    out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
+#endif // defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 
   } else {
 

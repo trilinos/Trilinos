@@ -55,11 +55,12 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-/** \brief . */
-
 namespace Piro {
 namespace Epetra {
 
+/** \brief Epetra-based Model Evaluator for Rythmos solves
+ *  \ingroup Piro_Epetra_solver_grp
+ */
 class RythmosSolver : public EpetraExt::ModelEvaluator
 {
 public:
@@ -152,4 +153,6 @@ private:
 
 }
 }
+
+
 #endif

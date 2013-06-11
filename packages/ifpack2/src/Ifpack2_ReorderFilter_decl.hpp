@@ -291,6 +291,22 @@ public:
 		     Teuchos::ETransp mode = Teuchos::NO_TRANS, 
 		     Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
 		     Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+
+  //! \brief Computes the operator-multivector application.
+  /*! Loosely, performs \f$Y = \alpha \cdot A^{\textrm{mode}} \cdot X + \beta \cdot Y\f$. However, the details of operation
+    vary according to the values of \c alpha and \c beta. Specifically
+    - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
+    - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
+
+    This assumes that X and Y are in the *reordered* order.
+  */
+  template <class DomainScalar, class RangeScalar>
+  void applyTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
+		  Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+		  Teuchos::ETransp mode = Teuchos::NO_TRANS, 
+		  RangeScalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+		  RangeScalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+  
   
   //! Indicates whether this operator supports applying the adjoint operator.
   virtual bool hasTransposeApply() const;
@@ -299,10 +315,18 @@ public:
   //! Permute multivector: original-to-reordered
   virtual void permuteOriginalToReordered(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &originalX, 
 					  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &reorderedY) const;
+
+  template <class DomainScalar, class RangeScalar>
+  void permuteOriginalToReorderedTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &originalX, 
+				       Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &reorderedY) const;
   
   //! Permute multivector: reordered-to-original
   virtual void permuteReorderedToOriginal(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &reorderedX, 
 					  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &originalY) const;
+
+  template <class DomainScalar, class RangeScalar>
+  void permuteReorderedToOriginalTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &reorderedX, 
+				       Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &originalY) const;
 
   
   //@}

@@ -64,6 +64,16 @@
 #include <math.h>
 #include "az_aztec.h"
 
+/* Set this to 1 if you want to time communication in AZ_exhange_bdry. */
+#define AZ_TIME_BDRY_DEFAULT 0
+
+/* Determine whether to time mat-vec's. */
+#if AZ_TIMERS_ENABLED && AZ_TIME_BDRY_DEFAULT
+#  define AZ_TIME_BDRY 1
+#else
+#  define AZ_TIME_BDRY 0
+#endif
+
 #ifndef TRUE
 #define TRUE  1
 #define FALSE 0
@@ -272,6 +282,10 @@ void AZ_exchange_local_info(int num_neighbors, int proc_num_neighbor[],
 
   /* post receives for all messages */
 
+#if AZ_TIME_BDRY
+  AZ_START_TIMER( "AztecOO: import recvs", recvsID );
+#endif
+
   for (n = 0; n < num_neighbors; n++) {
     rtype = type;
     (void) mdwrap_iread((void *) *(message_recv_add+n),
@@ -279,7 +293,15 @@ void AZ_exchange_local_info(int num_neighbors, int proc_num_neighbor[],
                          request+n);
   }
 
+#if AZ_TIME_BDRY
+  AZ_STOP_TIMER( recvsID );
+#endif
+
   /* write out all messages */
+
+#if AZ_TIME_BDRY
+  AZ_START_TIMER( "AztecOO: import sends", sendsID );
+#endif
 
   for (n = 0; n < num_neighbors; n++) {
     (void) mdwrap_write((void *) *(message_send_add+n),
@@ -287,7 +309,15 @@ void AZ_exchange_local_info(int num_neighbors, int proc_num_neighbor[],
                          type, &st);
   }
 
+#if AZ_TIME_BDRY
+  AZ_STOP_TIMER( sendsID );
+#endif
+
   /* wait for all messages */
+
+#if AZ_TIME_BDRY
+  AZ_START_TIMER( "AztecOO: import waits", waitsID );
+#endif
 
   for (n = 0; n < num_neighbors; n++) {
     rtype = type;
@@ -295,6 +325,10 @@ void AZ_exchange_local_info(int num_neighbors, int proc_num_neighbor[],
                         *(message_recv_length+n), proc_num_neighbor+n, &rtype,
                         &st, request+n);
   }
+
+#if AZ_TIME_BDRY
+  AZ_STOP_TIMER( waitsID );
+#endif
 
 } /* AZ_exchange_local_info */
 

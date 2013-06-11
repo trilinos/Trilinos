@@ -252,6 +252,7 @@ protected:
    bool useWScaling_;
    DiagonalType scaleType_; 
    bool isSymmetric_;
+   bool assumeStable_;
 
    // operators requested, to be filled by user
    LinearOp userPresStabMat_;

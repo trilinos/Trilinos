@@ -892,16 +892,16 @@ namespace Belos {
           Array< RCP< const MV > > theX;
           RCP<mat_type > B = rcp( new mat_type(sizeS,sizeS) );
           Array<RCP<mat_type > > C;
-          if ( (t && 3) == 0 ) {
+          if ( (t % 3) == 0 ) {
             // neither <X1,Y1> nor <X2,Y2>
             // C, theX and theY are already empty
           }
-          else if ( (t && 3) == 1 ) {
+          else if ( (t % 3) == 1 ) {
             // X1
             theX = tuple(X1);
             C = tuple( rcp(new mat_type(sizeX1,sizeS)) );
           }
-          else if ( (t && 3) == 2 ) {
+          else if ( (t % 3) == 2 ) {
             // X2
             theX = tuple(X2);
             C = tuple( rcp(new mat_type(sizeX2,sizeS)) );
@@ -983,7 +983,7 @@ namespace Belos {
             }
 
             // do we run the reversed input?
-            if ( (t && 3) == 3 ) {
+            if ( (t % 3) == 3 ) {
               // copies of S,MS
               Scopy = MVT::CloneCopy(*S);
 
@@ -1709,16 +1709,16 @@ namespace Belos {
           {
             Array< RCP< const MV > > theX;
             Array< RCP< mat_type > > C;
-            if ( (t && 3) == 0 ) {
+            if ( (t % 3) == 0 ) {
               // neither X1 nor X2
               // C and theX are already empty
             }
-            else if ( (t && 3) == 1 ) {
+            else if ( (t % 3) == 1 ) {
               // X1
               theX = tuple(X1);
               C = tuple( rcp(new mat_type(sizeX1,sizeS)) );
             }
-            else if ( (t && 3) == 2 ) {
+            else if ( (t % 3) == 2 ) {
               // X2
               theX = tuple(X2);
               C = tuple( rcp(new mat_type(sizeX2,sizeS)) );
@@ -1765,7 +1765,7 @@ namespace Belos {
               }
 
               // do we run the reversed input?
-              if ( (t && 3) == 3 ) {
+              if ( (t % 3) == 3 ) {
                 // copies of S,MS
                 Scopy = MVT::CloneCopy(*S);
                 // randomize this data, it should be overwritten

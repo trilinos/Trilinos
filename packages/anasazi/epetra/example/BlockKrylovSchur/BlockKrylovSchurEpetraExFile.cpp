@@ -250,7 +250,7 @@ int main(int argc, char *argv[]) {
           MVT::MvNorm( *tempKevec, resnorm );
 
           // Compute the norms and scale by magnitude of eigenvalue
-          normR[i] = lapack.LAPY2( tempnrm[i], resnorm[i] ) /
+          normR[i] = lapack.LAPY2( tempnrm[0], resnorm[0] ) /
             lapack.LAPY2( evals[i].realpart, evals[i].imagpart );
           normR[i+1] = normR[i];
 

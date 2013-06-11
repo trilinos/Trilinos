@@ -46,96 +46,103 @@
 
 namespace Intrepid {
 
-  ///
-  /// Sign function
-  ///
-  template<typename T>
-  int
-  sgn(T const & s);
+///
+/// Sign function
+///
+template<typename T>
+int
+sgn(T const & s);
 
-  ///
-  /// Copysign function
-  ///
-  template<typename T>
-  T
-  copysign(T const & a, T const & b);
+///
+/// Copysign function
+///
+template<typename T>
+T
+copysign(T const & a, T const & b);
 
-  ///
-  /// NaN function. Necessary to choose the proper underlying NaN
-  /// for non-floating-point types.
-  /// Assumption: non-floating-point types have a typedef that
-  /// determines the underlying floating-point type.
-  ///
-  template<typename T>
-  typename Sacado::ScalarType<T>::type
-  not_a_number();
+///
+/// NaN function. Necessary to choose the proper underlying NaN
+/// for non-floating-point types.
+/// Assumption: non-floating-point types have a typedef that
+/// determines the underlying floating-point type.
+///
+template<typename T>
+typename Sacado::ScalarType<T>::type
+not_a_number();
 
-  ///
-  /// Machine epsilon function. Necessary to choose the proper underlying
-  /// machine epsilon for non-floating-point types.
-  /// Assumption: non-floating-point types have a typedef that
-  /// determines the underlying floating-point type.
-  ///
-  template<typename T>
-  typename Sacado::ScalarType<T>::type
-  machine_epsilon();
+///
+/// Machine epsilon function. Necessary to choose the proper underlying
+/// machine epsilon for non-floating-point types.
+/// Assumption: non-floating-point types have a typedef that
+/// determines the underlying floating-point type.
+///
+template<typename T>
+typename Sacado::ScalarType<T>::type
+machine_epsilon();
 
-  ///
-  /// Duet type. Holder of two objects of the same type.
-  /// Useful as return type for functions that need to return two objects.
-  ///
-  template<typename T>
-  struct Duet
-  {
-    T first;
-    T second;
-  };
+///
+/// Compute a non-negative integer power by binary manipulation.
+///
+template<typename T>
+T
+integer_power(T const & X, Index const exponent);
 
-  ///
-  /// Triplet type. Holder of three objects of the same type.
-  /// Useful as return type for functions that need to return three objects.
-  ///
-  template<typename T>
-  struct Triplet
-  {
-    T first;
-    T second;
-    T third;
-  };
+///
+/// Duet type. Holder of two objects of the same type.
+/// Useful as return type for functions that need to return two objects.
+///
+template<typename T>
+struct Duet
+{
+  T first;
+  T second;
+};
 
-  ///
-  /// Create a Duet structure.
-  ///
-  template<typename T>
-  inline
-  Duet<T>
-  make_duet(T const & a, T const & b);
+///
+/// Triplet type. Holder of three objects of the same type.
+/// Useful as return type for functions that need to return three objects.
+///
+template<typename T>
+struct Triplet
+{
+  T first;
+  T second;
+  T third;
+};
 
-  ///
-  /// Create a Triplet structure.
-  ///
-  template<typename T>
-  inline
-  Triplet<T>
-  make_triplet(T const & a, T const & b, T const & c);
+///
+/// Create a Duet structure.
+///
+template<typename T>
+inline
+Duet<T>
+make_duet(T const & a, T const & b);
 
-  ///
-  /// Tie function template to hold values of functions
-  /// that return a Duet.
-  ///
-  template<typename T>
-  inline
-  Duet<T>
-  tie(T & a, T& b);
+///
+/// Create a Triplet structure.
+///
+template<typename T>
+inline
+Triplet<T>
+make_triplet(T const & a, T const & b, T const & c);
 
-  ///
-  /// Tie function template to hold values of functions
-  /// that return a Duet.
-  ///
-  template<typename T>
-  inline
-  Triplet<T>
-  tie(T & a, T & b, T & c);
+///
+/// Tie function template to hold values of functions
+/// that return a Duet.
+///
+template<typename T>
+inline
+Duet<T>
+tie(T & a, T& b);
+
+///
+/// Tie function template to hold values of functions
+/// that return a Duet.
+///
+template<typename T>
+inline
+Triplet<T>
+tie(T & a, T & b, T & c);
 
 } // namespace Intrepid
 

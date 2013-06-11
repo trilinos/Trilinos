@@ -138,7 +138,18 @@ namespace MueLu {
           optimizeStorage=false;
         }
 
-        AP = Utils::Multiply(*A, false, *Ptent, false, doFillComplete, optimizeStorage);
+        bool allowMLMultiply = true;
+#ifdef HAVE_MUELU_EXPERIMENTAL
+        // Energy minimization uses AP pattern for restriction. The problem with ML multiply is that it automatically
+        // removes zero valued entries in the matrix product, resulting in incorrect pattern for the minimization.
+        // One could try to mitigate that by multiply matrices with all entries equal to zero, which would produce the
+        // correct graph. However, that is one extra MxM we don't need.
+        // Instead, I disable ML multiply when experimental option is specified.
+        // NOTE: Thanks to C.Siefert, native EPetra MxM multiply version should actually be comparable with ML in time
+        allowMLMultiply      = false;
+#endif
+
+        AP = Utils::Multiply(*A, false, *Ptent, false, doFillComplete, optimizeStorage, allowMLMultiply);
       }
 
       {
@@ -182,25 +193,27 @@ namespace MueLu {
     }
 
     // Level Set
-    if(!restrictionMode_)
-      {
-        // prolongation factory is in prolongation mode
-        Set(coarseLevel, "P", finalP);
+    if (!restrictionMode_) {
+      // prolongation factory is in prolongation mode
+      Set(coarseLevel, "P", finalP);
 
-        ///////////////////////// EXPERIMENTAL
-        if(Ptent->IsView("stridedMaps")) finalP->CreateView("stridedMaps", Ptent);
-        ///////////////////////// EXPERIMENTAL
-      }
-    else
-      {
-        // prolongation factory is in restriction mode
-        RCP<Matrix> R = Utils2::Transpose(finalP, true); // use Utils2 -> specialization for double
-        Set(coarseLevel, "R", R);
+      // NOTE: EXPERIMENTAL
+      if (Ptent->IsView("stridedMaps"))
+        finalP->CreateView("stridedMaps", Ptent);
 
-        ///////////////////////// EXPERIMENTAL
-        if(Ptent->IsView("stridedMaps")) R->CreateView("stridedMaps", Ptent, true);
-        ///////////////////////// EXPERIMENTAL
-      }
+    } else {
+      // prolongation factory is in restriction mode
+      RCP<Matrix> R = Utils2::Transpose(finalP, true); // use Utils2 -> specialization for double
+      Set(coarseLevel, "R", R);
+
+      // NOTE: EXPERIMENTAL
+      if (Ptent->IsView("stridedMaps"))
+        R->CreateView("stridedMaps", Ptent, true);
+    }
+
+    RCP<ParameterList> params = rcp(new ParameterList());
+    params->set("printLoadBalancingInfo", true);
+    GetOStream(Statistics0,0) << Utils::PrintMatrixInfo(*finalP, (!restrictionMode_ ? "P" : "R"), params);
 
   } //Build()
 

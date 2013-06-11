@@ -375,7 +375,7 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         self.assertEquals(emv2.MyLength(),     emv1.MyLength()    )
         self.assertEquals(emv2.GlobalLength(), emv1.GlobalLength())
 
-    def testReplaceMap1(self):
+    def notestReplaceMap1(self):
         "Test Epetra.MultiVector ReplaceMap method with good map"
         blockMap = Epetra.BlockMap(3*self.comm.NumProc(),3,0,self.comm)
         emv = Epetra.MultiVector(self.map,3)

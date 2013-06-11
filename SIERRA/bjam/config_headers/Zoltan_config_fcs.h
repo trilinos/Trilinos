@@ -42,6 +42,9 @@
 /* Define if want to build with OVIS enabled */
 /* #undef HAVE_OVIS */
 
+/* Define if want to build with OVIS enabled */
+/* #undef HAVE_PURIFY */
+
 /* Define if DON'T want support for MPI TPL */
 #ifndef HAVE_MPI
 #define NO_MPI_TPL

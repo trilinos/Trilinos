@@ -45,6 +45,7 @@
 /* KokkosArray interfaces */
 
 #include <KokkosArray_Host.hpp>
+#include <KokkosArray_hwloc.hpp>
 #include <Host/KokkosArray_Host_Internal.hpp>
 #include <impl/KokkosArray_Error.hpp>
 
@@ -62,442 +63,287 @@
 namespace KokkosArray {
 namespace Impl {
 
-void * host_allocate_not_thread_safe(
-  const std::string    & label ,
-  const std::type_info & scalar_type ,
-  const size_t           scalar_size ,
-  const size_t           scalar_count );
-
-void host_decrement_not_thread_safe( const void * ptr );
-
-//----------------------------------------------------------------------------
-
-HostThread::~HostThread()
+void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
+                          const std::pair<unsigned,unsigned> core_use ,
+                          const std::pair<unsigned,unsigned> core_topo ,
+                          const std::pair<unsigned,unsigned> master_coord ,
+                                std::pair<unsigned,unsigned> thread_coord[] )
 {
-  m_fan_count    = 0 ;
-  m_thread_rank  = std::numeric_limits<unsigned>::max();
-  m_thread_count = 0 ;
-  m_gang_rank    = std::numeric_limits<unsigned>::max();
-  m_gang_count   = 0 ;
-  m_worker_rank  = std::numeric_limits<unsigned>::max();
-  m_worker_count = 0 ;
-  m_reduce       = 0 ;
+  const unsigned thread_count = gang_topo.first * gang_topo.second ;
+  const unsigned core_base    = core_topo.second - core_use.second ;
 
-  for ( unsigned i = 0 ; i < max_fan_count ; ++i ) { m_fan[i] = 0 ; }
-}
+  for ( unsigned thread_rank = 0 , gang_rank = 0 ; gang_rank < gang_topo.first ; ++gang_rank ) {
+  for ( unsigned worker_rank = 0 ; worker_rank < gang_topo.second ; ++worker_rank , ++thread_rank ) {
 
-HostThread::HostThread()
-{
-  m_fan_count    = 0 ;
-  m_thread_rank  = std::numeric_limits<unsigned>::max();
-  m_thread_count = 0 ;
-  m_gang_rank    = std::numeric_limits<unsigned>::max();
-  m_gang_count   = 0 ;
-  m_worker_rank  = std::numeric_limits<unsigned>::max();
-  m_worker_count = 0 ;
-  m_reduce       = 0 ;
-  m_state        = ThreadActive ;
+    unsigned gang_in_numa_count = 0 ;
+    unsigned gang_in_numa_rank  = 0 ;
 
-  for ( unsigned i = 0 ; i < max_fan_count ; ++i ) { m_fan[i] = 0 ; }
-}
+    { // Distribute gangs among NUMA regions:
+      // gang_count = k * bin + ( #NUMA - k ) * ( bin + 1 )
+      const unsigned bin  = gang_topo.first / core_use.first ;
+      const unsigned bin1 = bin + 1 ;
+      const unsigned k    = core_use.first * bin1 - gang_topo.first ;
+      const unsigned part = k * bin ;
 
-std::pair< Host::size_type , Host::size_type >
-HostThread::work_range( const size_type work_count ) const
-{
-  // A 'chunk' is HostSpace::WORK_ALIGNMENT atomic units of work
+      if ( gang_rank < part ) {
+        thread_coord[ thread_rank ].first = gang_rank / bin ;
+        gang_in_numa_rank  = gang_rank % bin ;
+        gang_in_numa_count = bin ;
+      }
+      else {
+        thread_coord[ thread_rank ].first = k + ( gang_rank - part ) / bin1 ;
+        gang_in_numa_rank  = ( gang_rank - part ) % bin1 ;
+        gang_in_numa_count = bin1 ;
+      }
+    }
 
-  const size_type chunk_count =
-    ( work_count + HostSpace::WORK_ALIGNMENT - 1 ) / HostSpace::WORK_ALIGNMENT ;
+    { // Distribute workers to cores within this NUMA region:
+      // worker_in_numa_count = k * bin + ( (#CORE/NUMA) - k ) * ( bin + 1 )
+      const unsigned worker_in_numa_count = gang_in_numa_count * gang_topo.second ;
+      const unsigned worker_in_numa_rank  = gang_in_numa_rank  * gang_topo.second + worker_rank ;
 
-  // Each thread performs some number of 'chunks' of work:
+      const unsigned bin  = worker_in_numa_count / core_use.second ;
+      const unsigned bin1 = bin + 1 ;
+      const unsigned k    = core_use.second * bin1 - worker_in_numa_count ;
+      const unsigned part = k * bin ;
 
-  const size_type work_per_thread =
-    HostSpace::WORK_ALIGNMENT * (( chunk_count + m_thread_count - 1 ) / m_thread_count );
+      thread_coord[ thread_rank ].second = core_base +
+        ( ( worker_in_numa_rank < part )
+          ? ( worker_in_numa_rank / bin )
+          : ( k + ( worker_in_numa_rank - part ) / bin1 ) );
+    }
+  }}
 
-  // Range of work:
+  // The master core should be thread #0 so rotate all coordinates accordingly ...
 
-  const size_type work_begin =
-    std::min( m_thread_rank * work_per_thread , work_count );
+  const std::pair<unsigned,unsigned> offset
+    ( ( thread_coord[0].first  < master_coord.first  ? master_coord.first  - thread_coord[0].first  : 0 ) ,
+      ( thread_coord[0].second < master_coord.second ? master_coord.second - thread_coord[0].second : 0 ) );
 
-  const size_type work_end =
-    std::min( work_begin + work_per_thread , work_count );
-
-  return std::pair<size_type,size_type>( work_begin , work_end );
-}
-
-void HostThread::barrier()
-{
-  // The 'wait' function repeatedly polls the 'thread' state
-  // which may reside in a different NUMA region.
-  // Thus the fan is intra-node followed by inter-node
-  // to minimize inter-node memory access.
-
-  for ( unsigned i = 0 ; i < m_fan_count ; ++i ) {
-    // Wait until thread enters the 'Rendezvous' state
-    m_fan[i]->wait( HostThread::ThreadActive );
+  for ( unsigned i = 0 ; i < thread_count ; ++i ) {
+    thread_coord[i].first  = ( thread_coord[i].first + offset.first ) % core_use.first ;
+    thread_coord[i].second = core_base + ( thread_coord[i].second + offset.second - core_base ) % core_use.second ;
   }
 
-  if ( m_thread_rank ) {
-    set(  HostThread::ThreadRendezvous );
-    wait( HostThread::ThreadRendezvous );
+#if 0
+
+  std::cout << "KokkosArray::Host thread_mapping" << std::endl ;
+
+  for ( unsigned g = 0 , t = 0 ; g < gang_topo.first ; ++g ) {
+    std::cout << "  gang[" << g 
+              << "] on numa[" << thread_coord[t].first
+              << "] cores(" ;
+    for ( unsigned w = 0 ; w < gang_topo.second ; ++w , ++t ) {
+      std::cout << " " << thread_coord[t].second ;
+    }
+    std::cout << " )" << std::endl ;
   }
 
-  for ( unsigned i = m_fan_count ; 0 < i ; ) {
-    m_fan[--i]->set( HostThread::ThreadActive );
-  }
+#endif
+
 }
 
-/** \brief  This thread waits for each fan-in thread to deactivate.  */
-void HostThreadWorker::fanin_deactivation( HostThread & thread ) const
-{
-  // The 'wait' function repeatedly polls the 'thread' state
-  // which may reside in a different NUMA region.
-  // Thus the fan is intra-node followed by inter-node
-  // to minimize inter-node memory access.
+} // namespace Impl
+} // namespace KokkosArray
 
-  for ( unsigned i = 0 ; i < thread.m_fan_count ; ++i ) {
-    thread.m_fan[i]->wait( HostThread::ThreadActive );
-  }
-}
+/*--------------------------------------------------------------------------*/
 
-void HostInternal::activate_threads()
-{
-  // Activate threads to call 'm_worker.execute_on_thread'
-  for ( unsigned i = m_thread_count ; 1 < i ; ) {
-    m_thread[--i]->set( HostThread::ThreadActive );
-  }
-}
+namespace KokkosArray {
+namespace {
 
-inline
-void HostInternal::execute( const HostThreadWorker & worker )
-{
-  verify_inactive("execute(...)");
+class HostWorkerBlock : public Impl::HostThreadWorker {
+public:
 
-  // Worker threads are verified to be in the ThreadInactive state.
-
-  m_worker = & worker ;
-
-  activate_threads();
-
-  // Execute on the master thread,
-  worker.execute_on_thread( m_master_thread );
-
-  // Wait for fanin/fanout threads to self-deactivate.
-  worker.fanin_deactivation( m_master_thread );
-
-  // Worker threads are returned to the ThreadInactive state.
-  m_worker = NULL ;
-}
-
-void HostThreadWorker::execute() const
-{ HostInternal::singleton().execute( *this ); }
-
-void HostInternal::execute_serial( const HostThreadWorker & worker )
-{
-  verify_inactive("execute_serial(...)");
-
-  // Worker threads are verified to be in the ThreadInactive state.
-
-  m_worker = & worker ;
-
-  for ( unsigned i = m_thread_count ; 1 < i ; ) {
-    --i ;
-    m_thread[i]->set(  HostThread::ThreadActive );
-    m_thread[i]->wait( HostThread::ThreadActive );
+  void execute_on_thread( Impl::HostThread & thread ) const 
+  {
+    Impl::host_thread_lock();
+    Impl::host_thread_unlock();
+    end_barrier( thread );
   }
 
-  // Execute on the master thread,
-  worker.execute_on_thread( m_master_thread );
-
-  // Worker threads are returned to the ThreadInactive state.
-  m_worker = NULL ;
-}
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-HostInternal::~HostInternal() {}
-
-HostInternal::HostInternal()
-  : m_worker_block()
-
-  , m_gang_capacity( 1 )
-  , m_worker_capacity( 0 )
-
-  , m_cache_line_size( 64 /* default guess */ )
-  , m_thread_count( 1 )
-  , m_gang_count( 1 )
-  , m_worker_count( 1 )
-  , m_reduce_scratch_size( 0 )
-{
-  m_worker = NULL ;
-
-  if ( ! is_master_thread() ) {
-    KokkosArray::Impl::throw_runtime_exception( std::string("KokkosArray::Impl::HostInternal FAILED : not initialized on the master thread") );
-  }
-
-  // Master thread:
-  m_thread[0] = & m_master_thread ;
-
-  m_master_thread.m_fan_count    = 0 ;
-  m_master_thread.m_thread_rank  = 0 ;
-  m_master_thread.m_thread_count = m_thread_count ;
-  m_master_thread.m_gang_rank    = 0 ;
-  m_master_thread.m_gang_count   = m_gang_count ;
-  m_master_thread.m_worker_rank  = 0 ;
-  m_master_thread.m_worker_count = m_worker_count ;
-
-  for ( unsigned i = 0 ; i < HostThread::max_fan_count ; ++i ) {
-    m_master_thread.m_fan[i] = 0 ;
-  }
-}
-
-void HostInternal::print_configuration( std::ostream & s ) const
-{
-  s << "KokkosArray::Host thread capacity( "
-    << m_gang_capacity << " x " << m_worker_capacity
-    << " ) used( "
-    << m_gang_count << " x " << m_worker_count
-    << " )"
-    << std::endl ;
-}
-
-//----------------------------------------------------------------------------
-
-inline
-void HostInternal::resize_reduce_thread( HostThread & thread ) const
-{
-  if ( thread.m_reduce ) {
-    host_decrement_not_thread_safe( thread.m_reduce );
-    thread.m_reduce = 0 ;
-  }
-
-  if ( m_reduce_scratch_size ) {
-
-    thread.m_reduce = host_allocate_not_thread_safe( "reduce_scratch_space" , typeid(unsigned char) , 1 , m_reduce_scratch_size );
-
-    // Guaranteed multiple of 'unsigned'
-
-    unsigned * ptr = (unsigned *)( thread.m_reduce );
-    unsigned * const end = ptr + m_reduce_scratch_size / sizeof(unsigned );
-  
-    // touch on this thread
-    while ( ptr < end ) *ptr++ = 0 ;
-  }
-}
-
-struct HostWorkerResizeReduce : public HostThreadWorker
-{
-  void execute_on_thread( HostThread & ) const ;
-
-  ~HostWorkerResizeReduce() {}
-  HostWorkerResizeReduce() {}
+  HostWorkerBlock()  {}
+  ~HostWorkerBlock() {}
 };
 
-void HostWorkerResizeReduce::execute_on_thread( HostThread & thread ) const
-{ HostInternal::singleton().resize_reduce_thread( thread ); }
+//----------------------------------------------------------------------------
 
+const HostWorkerBlock s_worker_block ;
+Impl::HostThread      s_master_thread ;
+unsigned              s_host_thread_count = 0 ;
+
+std::pair<unsigned,unsigned>
+  s_host_thread_coord[ Impl::HostThread::max_thread_count ] ;
+
+const Impl::HostThreadWorker * volatile s_current_worker = 0 ;
+
+//----------------------------------------------------------------------------
+
+struct Sentinel {
+  Sentinel() {}
+  ~Sentinel();
+};
+
+Sentinel::~Sentinel()
+{
+  if ( 1 < s_master_thread.count() ) {
+    std::cerr << "KokkosArray::Host ERROR : initialized but not finalized"
+              << std::endl ;
+  }
+}
+
+//----------------------------------------------------------------------------
+// Bind this thread to one of the requested cores and remove that request.
+
+unsigned bind_host_thread()
+{
+  const std::pair<unsigned,unsigned> current = hwloc::get_this_thread_coordinate();
+
+  unsigned i = 0 ;
+
+  // Match one of the requests:
+  for ( i = 0 ; i < s_host_thread_count && current != s_host_thread_coord[i] ; ++i );
+
+  if ( s_host_thread_count == i ) {
+    // Match the NUMA request:
+    for ( i = 0 ; i < s_host_thread_count && current.first != s_host_thread_coord[i].first ; ++i );
+  }
+
+  if ( s_host_thread_count == i ) {
+    // Match any unclaimed request:
+    for ( i = 0 ; i < s_host_thread_count && ~0u == s_host_thread_coord[i].first  ; ++i );
+  }
+
+  if ( i < s_host_thread_count ) {
+    if ( ! hwloc::bind_this_thread( s_host_thread_coord[i] ) ) i = s_host_thread_count ;
+  }
+
+  if ( i < s_host_thread_count ) {
+
+#if 0
+
+    if ( current != s_host_thread_coord[i] ) {
+      std::cout << "  rebinding thread[" << i << "] from ("
+                << current.first << "," << current.second
+                << ") to ("
+                << s_host_thread_coord[i].first << ","
+                << s_host_thread_coord[i].second
+                << ")" << std::endl ;
+    }
+
+#endif
+
+    s_host_thread_coord[i].first  = ~0u ;
+    s_host_thread_coord[i].second = ~0u ;
+  }
+
+  return i ;
+}
+
+
+bool spawn_threads( const std::pair<unsigned,unsigned> gang_topo ,
+                          std::pair<unsigned,unsigned> core_use )
+{
+  // If the process is bound to a particular node
+  // then only use cores belonging to that node.
+  // Otherwise use all nodes and all their cores.
+
+  // Define coordinates for pinning threads:
+  const unsigned thread_count = gang_topo.first * gang_topo.second ;
+
+  bool ok_spawn_threads = true ;
+
+  if ( 1 < thread_count ) {
+    const std::pair<unsigned,unsigned> core_topo    = hwloc::get_core_topology();
+    const std::pair<unsigned,unsigned> master_coord = hwloc::get_this_thread_coordinate();
+
+    if ( 0 == core_use.first  || core_topo.first  < core_use.first ||
+         0 == core_use.second || core_topo.second < core_use.second ) {
+      core_use = core_topo ;
+    }
+
+    Impl::host_thread_mapping( gang_topo , core_use , core_topo , master_coord , s_host_thread_coord );
+
+    // Reserve the master thread coordinate for the mater thread:
+
+    const std::pair<unsigned,unsigned> master_core = s_host_thread_coord[0] ;
+
+    s_host_thread_coord[0] = std::pair<unsigned,unsigned>(~0u,~0u);
+
+    s_current_worker = & s_worker_block ;
+    s_host_thread_count = thread_count ;
+
+    for ( unsigned i = 1 ; i < thread_count && ok_spawn_threads ; ++i ) {
+
+      s_master_thread.m_state = Impl::HostThread::ThreadInactive ;
+
+      // Spawn thread executing the 'driver' function.
+      ok_spawn_threads = Impl::host_thread_spawn();
+
+      // Thread spawned.  Thread will inform me of its condition as:
+      //   Active     = success and has entered its 'HostThread' data in the lookup table.
+      //   Terminate  = failure
+
+      if ( ok_spawn_threads ) {
+        ok_spawn_threads =
+          Impl::HostThread::ThreadActive ==
+            host_thread_wait( & s_master_thread.m_state , Impl::HostThread::ThreadInactive );
+      }
+    }
+
+    // All successfully spawned threads are in the list as [1,thread_count)
+    // Wait for them to deactivate before zeroing the worker
+
+    for ( unsigned rank = 1 ; rank < thread_count ; ++rank ) {
+      Impl::HostThread * const th = Impl::HostThread::get_thread(rank);
+      if ( th ) {
+        host_thread_wait( & th->m_state , Impl::HostThread::ThreadActive );
+      }
+    }
+
+    s_current_worker = NULL ;
+    s_host_thread_count = 0 ;
+
+    if ( ok_spawn_threads ) {
+
+      hwloc::bind_this_thread( master_core );
+
+      Impl::HostThread::set_thread( 0 , & s_master_thread );
+
+      // All threads spawned, set the fan-in relationships
+
+      for ( unsigned g = 0 , r = 0 ; g < gang_topo.first ; ++g ) {
+      for ( unsigned w = 0 ;         w < gang_topo.second ; ++w , ++r ) {
+        Impl::HostThread::get_thread(r)->set_topology( r , thread_count ,
+                                                       g , gang_topo.first ,
+                                                       w , gang_topo.second );
+      }}
+
+      Impl::HostThread::set_thread_relationships();
+    }
+  }
+
+  return ok_spawn_threads ;
+}
+
+//----------------------------------------------------------------------------
 
 inline
-void HostInternal::resize_reduce_scratch( unsigned size )
+void activate_threads()
 {
-  if ( 0 == size || m_reduce_scratch_size < size ) {
-    // Round up to cache line size:
-    const unsigned rem = size % m_cache_line_size ;
-
-    if ( rem ) size += m_cache_line_size - rem ;
-  
-    m_reduce_scratch_size = size ;
-
-    const HostWorkerResizeReduce work ;
-
-    execute_serial( work );
+  for ( unsigned i = s_master_thread.count() ; 0 < --i ; ) {
+    Impl::HostThread::get_thread(i)->m_state = Impl::HostThread::ThreadActive ;
   }
 }
 
-void * HostInternal::reduce_scratch() const
+void verify_inactive( const char * const method )
 {
-  return m_master_thread.reduce_data();
-}
-
-void host_resize_scratch_reduce( unsigned size )
-{ HostInternal::singleton().resize_reduce_scratch( size ); }
-
-void * host_scratch_reduce()
-{ return HostInternal::singleton().reduce_scratch(); }
-
-//----------------------------------------------------------------------------
-
-bool HostInternal::initialize_thread(
-  const unsigned thread_rank ,
-  HostThread & thread )
-{
-  const unsigned gang_rank   = thread_rank / m_worker_count ;
-  const unsigned worker_rank = thread_rank % m_worker_count ;
-
-  thread.m_thread_rank  = thread_rank ;
-  thread.m_thread_count = m_thread_count ;
-  thread.m_gang_rank    = gang_rank ;
-  thread.m_gang_count   = m_gang_count ;
-  thread.m_worker_rank  = worker_rank ;
-  thread.m_worker_count = m_worker_count ;
-
-  {
-    unsigned fan_count = 0 ;
-
-    // Intranode reduction:
-    for ( unsigned n = 1 ; worker_rank + n < m_worker_count ; n <<= 1 ) {
-
-      if ( n & worker_rank ) break ;
-
-      HostThread * const th = m_thread[ thread_rank + n ];
-
-      if ( 0 == th ) return false ;
-
-      thread.m_fan[ fan_count++ ] = th ;
-    }
-
-    if ( worker_rank == 0 ) {
-
-      // Internode reduction:
-      for ( unsigned n = 1 ; gang_rank + n < m_gang_count ; n <<= 1 ) {
-
-        if ( n & gang_rank ) break ;
-
-        HostThread * const th = m_thread[ thread_rank + n * m_worker_count ];
-
-        if ( 0 == th ) return false ;
-
-        thread.m_fan[ fan_count++ ] = th ;
-      }
-    }
-
-    thread.m_fan_count = fan_count ;
-  }
-
-  return true ;
-}
-
-bool HostInternal::bind_thread( const unsigned thread_rank ) const
-{
-  (void) thread_rank; // Prevent compiler warning for unused argument
-  return true ;
-}
-
-//----------------------------------------------------------------------------
-
-void HostInternal::finalize()
-{
-  verify_inactive("finalize()");
-
-  resize_reduce_scratch( 0 );
-
-  // Release and clear worker threads:
-  while ( 1 < m_thread_count ) {
-    --m_thread_count ;
-
-    if ( m_thread[ m_thread_count ] ) {
-      m_master_thread.set( HostThread::ThreadInactive );
-
-      m_thread[ m_thread_count ]->set( HostThread::ThreadTerminating );
-
-      m_master_thread.wait( HostThread::ThreadInactive );
-
-      // Is in the 'ThreadTerminating" state
-    }
-  }
-
-  // Reset master thread:
-  m_master_thread.m_fan_count    = 0 ;
-  m_master_thread.m_thread_rank  = 0 ;
-  m_master_thread.m_thread_count = 1 ;
-  m_master_thread.m_gang_rank    = 0 ;
-  m_master_thread.m_gang_count   = 1 ;
-  m_master_thread.m_worker_rank  = 0 ;
-  m_master_thread.m_worker_count = 1 ;
-  m_master_thread.set( HostThread::ThreadActive );
-
-  for ( unsigned i = 0 ; i < HostThread::max_fan_count ; ++i ) {
-    m_master_thread.m_fan[i] = 0 ;
-  }
-}
-
-//----------------------------------------------------------------------------
-// Driver for each created thread
-
-void HostInternal::driver( const size_t thread_rank )
-{
-  // Bind this thread to a unique processing unit
-  // with all members of a gang in the same NUMA region.
-
-  if ( bind_thread( thread_rank ) ) {
-
-    HostThread this_thread ;
-
-    m_thread[ thread_rank ] = & this_thread ;
-
-    // Initialize thread ranks and fan-in relationships:
-
-    if ( initialize_thread( thread_rank , this_thread ) ) {
-
-      // Inform master thread that binding and initialization succeeded.
-      m_master_thread.set( HostThread::ThreadActive );
-
-      try {
-        // Work loop:
-
-        while ( HostThread::ThreadActive == this_thread.m_state ) {
-
-          // Perform the work:
-          m_worker->execute_on_thread( this_thread );
-
-          // Wait for fanin threads to self-deactivate:
-          m_worker->fanin_deactivation( this_thread );
-
-          // Deactivate this thread:
-          this_thread.set(  HostThread::ThreadInactive );
-
-          // Wait to be activated or terminated:
-          this_thread.wait( HostThread::ThreadInactive );
-        }
-      }
-      catch( const std::exception & x ) {
-        // mfh 29 May 2012: Doesn't calling std::terminate() seem a
-        // little violent?  On the other hand, C++ doesn't define how
-        // to transport exceptions between threads (until C++11).
-        // Since this is a worker thread, it would be hard to tell the
-        // master thread what happened.
-        std::cerr << "Thread " << thread_rank << " uncaught exception : "
-                  << x.what() << std::endl ;
-        std::terminate();
-      }
-      catch( ... ) {
-        // mfh 29 May 2012: See note above on std::terminate().
-        std::cerr << "Thread " << thread_rank << " uncaught exception"
-                  << std::endl ;
-        std::terminate();
-      }
-    }
-  }
-
-  // Notify master thread that this thread has terminated.
-
-  m_thread[ thread_rank ] = 0 ;
-
-  m_master_thread.set( HostThread::ThreadTerminating );
-}
-
-//----------------------------------------------------------------------------
-
-void HostInternal::verify_inactive( const char * const method ) const
-{
-  if ( NULL != m_worker ) {
+  if ( NULL != s_current_worker ) {
 
     std::ostringstream msg ;
-    msg << "KokkosArray::Host::" << method << " FAILED: " ;
+    msg << method << " FAILED: " ;
 
-    if ( & m_worker_block == m_worker ) {
-      msg << "Device is blocked" ;
+    if ( & s_worker_block == s_current_worker ) {
+      msg << "Host is blocked" ;
     }
     else {
       msg << "Functor is executing." ;
@@ -506,106 +352,99 @@ void HostInternal::verify_inactive( const char * const method ) const
   }
 }
 
-//----------------------------------------------------------------------------
-
-bool HostInternal::spawn_threads( const unsigned gang_count ,
-                                  const unsigned worker_count )
-{
-  // If the process is bound to a particular node
-  // then only use cores belonging to that node.
-  // Otherwise use all nodes and all their cores.
-
-  m_gang_count   = gang_count ;
-  m_worker_count = worker_count ;
-  m_thread_count = gang_count * worker_count ;
-  m_worker       = & m_worker_block ;
-
-  // Bind the process thread as thread_rank == 0
-  bool ok_spawn_threads = bind_thread( 0 );
-
-  // Spawn threads from last-to-first so that the
-  // fan-in barrier thread relationships can be established.
-
-  for ( unsigned rank = m_thread_count ; ok_spawn_threads && 0 < --rank ; ) {
-
-    m_master_thread.set( HostThread::ThreadInactive );
-
-    // Spawn thread executing the 'driver' function.
-    ok_spawn_threads = spawn( rank );
-
-    if ( ok_spawn_threads ) {
-
-      // Thread spawned, wait for thread to activate:
-      m_master_thread.wait( HostThread::ThreadInactive );
-
-      // Check if the thread initialized and bound correctly:
-      ok_spawn_threads = HostThread::ThreadActive == m_master_thread.m_state ;
-
-      if ( ok_spawn_threads ) { // Wait for spawned thread to deactivate
-        HostThread * volatile * const threads = m_thread ;
-        threads[ rank ]->wait( HostThread::ThreadActive );
-        // m_thread[ rank ]->wait( HostThread::ThreadActive );
-      }
-    }
-  }
-
-  m_worker = NULL ;
-
-  // All threads spawned, initialize the master-thread fan-in
-  ok_spawn_threads =
-    ok_spawn_threads && initialize_thread( 0 , m_master_thread );
-
-  if ( ! ok_spawn_threads ) {
-    finalize();
-  }
-
-  return ok_spawn_threads ;
+}
 }
 
-void HostInternal::initialize( const unsigned gang_count ,
-                               const unsigned worker_count )
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace KokkosArray {
+namespace Impl {
+
+// Driver called by each created thread
+
+void host_thread_driver()
 {
-  const bool ok_inactive     = 1 == m_thread_count ;
-  const bool ok_gang_count   = gang_count <= m_gang_capacity ;
-  const bool ok_worker_count = ( 0 == m_worker_capacity ||
-                                 worker_count <= m_worker_capacity );
+  // Bind this thread to a unique processing unit.
 
-  // Only try to spawn threads if input is valid.
+  const unsigned thread_rank = bind_host_thread();
 
-  const bool ok_spawn_threads =
-    ( ok_inactive &&
-      ok_gang_count && ok_worker_count &&
-      1 < gang_count * worker_count )
-    ? spawn_threads( gang_count , worker_count )
-    : true ;
+  if ( thread_rank < s_host_thread_count ) {
 
-  if ( ! ok_inactive ||
-       ! ok_gang_count ||
-       ! ok_worker_count ||
-       ! ok_spawn_threads )
-  {
-    std::ostringstream msg ;
+    HostThread this_thread ;
 
-    msg << "KokkosArray::Host::initialize() FAILED" ;
+    this_thread.m_state = HostThread::ThreadActive ;
 
-    if ( ! ok_inactive ) {
-      msg << " : Device is already active" ;
+    HostThread::set_thread( thread_rank , & this_thread );
+
+    // Inform master thread that spawning and binding succeeded.
+    s_master_thread.m_state = HostThread::ThreadActive ;
+
+    // Work loop:
+
+    while ( HostThread::ThreadActive == this_thread.m_state ) {
+
+      // Perform the work:
+      s_current_worker->execute_on_thread( this_thread );
+
+      // Deactivate this thread:
+      this_thread.m_state = HostThread::ThreadInactive ;
+
+      // Wait to be activated or terminated:
+      host_thread_wait( & this_thread.m_state , HostThread::ThreadInactive );
     }
-    if ( ! ok_gang_count || ! ok_worker_count ) {
-      msg << " : request for threads ( "
-          << gang_count << " x " << worker_count
-          << " ) exceeds detected capacity ( "
-          << m_gang_capacity << " x " << m_worker_capacity
-          << " )" ;
-    }
-    if ( ! ok_spawn_threads ) {
-      msg << " : Spawning or cpu-binding the threads" ;
-    }
-
-    KokkosArray::Impl::throw_runtime_exception( msg.str() );
   }
 
-  resize_reduce_scratch( 1024 );
+  // Notify master thread that this thread has terminated.
+
+  s_master_thread.m_state = HostThread::ThreadTerminating ;
+}
+
+//----------------------------------------------------------------------------
+
+void HostThreadWorker::execute() const
+{
+  verify_inactive("KokkosArray::Impl::HostThreadWorker::execute()");
+
+  // Worker threads are verified to be in the ThreadInactive state.
+
+  s_current_worker = this ;
+
+  activate_threads();
+
+  // Execute on the master thread,
+  execute_on_thread( s_master_thread );
+
+  // Wait for threads to complete:
+  end_barrier( s_master_thread );
+
+  // Worker threads are returned to the ThreadInactive state.
+  s_current_worker = NULL ;
+}
+
+void HostThreadWorker::execute_serial() const
+{
+  verify_inactive("KokkosArray::Impl::HostThreadWorker::execute_serial()");
+
+  // Worker threads are verified to be in the ThreadInactive state.
+
+  s_current_worker = this ;
+
+  for ( unsigned rank = s_master_thread.count() ; 1 < rank ; ) {
+    --rank ;
+
+    HostThread & thread = * HostThread::get_thread(rank);
+
+    thread.m_state = HostThread::ThreadActive ;
+
+    host_thread_wait( & thread.m_state , HostThread::ThreadActive );
+  }
+
+  // Execute on the master thread last.
+  execute_on_thread( s_master_thread );
+
+  // Worker threads are returned to the ThreadInactive state.
+  s_current_worker = NULL ;
 }
 
 //----------------------------------------------------------------------------
@@ -617,27 +456,172 @@ void HostInternal::initialize( const unsigned gang_count ,
 //----------------------------------------------------------------------------
 
 namespace KokkosArray {
+namespace {
+
+struct HostThreadResizeReduce : public Impl::HostThreadWorker {
+
+  const unsigned reduce_size ;
+
+  HostThreadResizeReduce( unsigned size )
+    : reduce_size(size)
+    { HostThreadWorker::execute_serial(); }
+
+  void execute_on_thread( Impl::HostThread & thread ) const
+    {
+      thread.resize_reduce( reduce_size );
+      end_barrier( thread );
+    }
+};
+
+}
+
+void Host::resize_reduce_scratch( unsigned size )
+{
+  static unsigned m_reduce_size = 0 ;
+
+  const unsigned rem = size % HostSpace::MEMORY_ALIGNMENT ;
+
+  if ( rem ) size += HostSpace::MEMORY_ALIGNMENT - rem ;
+
+  if ( ( 0 == size ) || ( m_reduce_size < size ) ) {
+
+    HostThreadResizeReduce tmp(size);
+
+    m_reduce_size = size ;
+  }
+}
+
+void * Host::root_reduce_scratch()
+{ return s_master_thread.reduce_data(); }
+
+//----------------------------------------------------------------------------
 
 void Host::finalize()
-{ Impl::HostInternal::singleton().finalize(); }
-
-void Host::initialize( const Host::size_type gang_count ,
-                       const Host::size_type gang_worker_count )
 {
-  Impl::HostInternal::singleton().initialize( gang_count , gang_worker_count );
+  verify_inactive("KokkosArray::Host::finalize()");
+
+  Host::resize_reduce_scratch(0);
+
+  // Release and clear worker threads:
+
+  Impl::HostThread::clear_thread_relationships();
+
+  for ( unsigned r = 0 ; r < Impl::HostThread::max_thread_count ; ++r ) {
+
+    Impl::HostThread * thread = Impl::HostThread::get_thread( r );
+
+    if ( & s_master_thread != thread && 0 != thread ) {
+
+      s_master_thread.m_state = Impl::HostThread::ThreadInactive ;
+
+      thread->m_state = Impl::HostThread::ThreadTerminating ;
+
+      thread = 0 ; // The '*thread' object is now invalid
+
+      // Wait for '*thread' to terminate:
+      host_thread_wait( & s_master_thread.m_state , Impl::HostThread::ThreadInactive );
+    }
+
+    Impl::HostThread::clear_thread(r);
+  }
+
+  hwloc::unbind_this_thread();
+}
+
+void Host::initialize( const std::pair<unsigned,unsigned> gang_topo ,
+                       const std::pair<unsigned,unsigned> core_topo )
+{
+  static const Sentinel sentinel ;
+
+  const bool ok_inactive = Impl::host_thread_is_master() &&
+                           1 == s_master_thread.count() &&
+                           0 == Impl::HostThread::get_thread(0);
+  bool ok_spawn_threads = true ;
+
+  // Only try to spawn threads if input is valid.
+
+  if ( ok_inactive && 1 < gang_topo.first * gang_topo.second ) {
+
+    ok_spawn_threads = spawn_threads( gang_topo , core_topo );
+
+    if ( ! ok_spawn_threads ) {
+      finalize();
+    }
+  }
+
+  if ( ! ok_inactive || ! ok_spawn_threads )
+  {
+    std::ostringstream msg ;
+
+    msg << "KokkosArray::Host::initialize() FAILED" ;
+
+    if ( ! ok_inactive ) {
+      msg << " : Device is already active" ;
+    }
+    if ( ! ok_spawn_threads ) {
+      msg << " : Spawning or cpu-binding the threads" ;
+    }
+
+    KokkosArray::Impl::throw_runtime_exception( msg.str() );
+  }
+
+  // Initial reduction allocation:
+  Host::resize_reduce_scratch( 4096 );
 }
 
 void Host::print_configuration( std::ostream & s )
-{ Impl::HostInternal::singleton().print_configuration(s); }
+{
+  const std::pair<unsigned,unsigned> core_topo = hwloc::get_core_topology();
+  const unsigned core_size = hwloc::get_core_capacity();
 
-Host::size_type Host::detect_gang_capacity()
-{ return Impl::HostInternal::singleton().m_gang_capacity ; }
+  s << "hwloc { NUMA[" << core_topo.first << "]"
+    << " CORE[" << core_topo.second << "]"
+    << " PU[" << core_size << "] } "
+    << "threadpool { GANG[" << s_master_thread.gang_count() << "]"
+    << " WORKER[" << s_master_thread.worker_count() << "] }"
+    << std::endl ;
+}
 
-Host::size_type Host::detect_gang_worker_capacity()
-{ return Impl::HostInternal::singleton().m_worker_capacity ; }
+//----------------------------------------------------------------------------
 
-Host::size_type Host::detect_cache_line_size()
-{ return Impl::HostInternal::singleton().m_cache_line_size ; }
+bool Host::sleep()
+{
+  const bool is_ready   = NULL == s_current_worker ;
+        bool is_blocked = & s_worker_block == s_current_worker ;
+
+  if ( is_ready ) {
+    Impl::host_thread_lock();
+
+    s_current_worker = & s_worker_block ;
+
+    // Activate threads so that they will proceed from
+    // spinning state to being blocked on the mutex.
+
+    activate_threads();
+
+    is_blocked = true ;
+  }
+
+  return is_blocked ;
+}
+
+bool Host::wake()
+{
+  const bool is_blocked = & s_worker_block == s_current_worker ;
+        bool is_ready   = NULL == s_current_worker ;
+
+  if ( is_blocked ) {
+    Impl::host_thread_unlock();
+
+    s_worker_block.end_barrier( s_master_thread );
+
+    s_current_worker = NULL ;
+
+    is_ready = true ;
+  }
+
+  return is_ready ;
+}
 
 /*--------------------------------------------------------------------------*/
 

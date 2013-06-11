@@ -55,6 +55,20 @@ buildAndRegisterEvaluators(const std::string & responseName,
    }
 }
 
+template <typename EvalT>
+bool ResponseEvaluatorFactory_IPCoordinates<EvalT>::
+typeSupported() const
+{
+   return false;
+}
+
+template < >
+bool ResponseEvaluatorFactory_IPCoordinates<panzer::Traits::Residual>::
+typeSupported() const
+{
+  return true;
+}
+
 }
 
 #endif

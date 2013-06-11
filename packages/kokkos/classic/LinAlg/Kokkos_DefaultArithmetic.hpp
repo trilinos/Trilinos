@@ -95,7 +95,7 @@ namespace Kokkos {
                   ldb = Teuchos::as<int>(B.getStride()),
                   ldc = Teuchos::as<int>(C.getStride());
         // For some BLAS implementations (i.e. MKL), GEMM when B has one column
-        // is signficantly less efficient 
+        // is signficantly less efficient
         if (n == 1 && transB == Teuchos::NO_TRANS)
           blas.GEMV(transA, A.getNumRows(), A.getNumCols(), alpha, A.getValues().getRawPtr(), lda, B.getValues().getRawPtr(), Teuchos::as<int>(1), beta, C.getValuesNonConst().getRawPtr(), Teuchos::as<int>(1));
         else
@@ -1404,7 +1404,6 @@ namespace Kokkos {
   };
 
   // Partial specialization for Node=Kokkos::SerialNode.
-
   template <class Scalar>
   class DefaultArithmetic<MultiVector<Scalar, SerialNode> > :
     public DefaultArithmeticBase<MultiVector<Scalar, SerialNode> > {
@@ -2243,6 +2242,793 @@ namespace Kokkos {
       }
     }
   };
+
+
+
+  // Full specialization for Scalar=double and Node=Kokkos::SerialNode.
+  template <>
+  class DefaultArithmetic<MultiVector<double, SerialNode> > :
+    public DefaultArithmeticBase<MultiVector<double, SerialNode> > {
+  public:
+    static void Init (MultiVector<double, SerialNode> &A, double alpha) {
+      const size_t numRows = A.getNumRows ();
+      const size_t numCols = A.getNumCols ();
+      double* KOKKOSCLASSIC_RESTRICT A_raw = A.getValuesNonConst ().getRawPtr ();
+      const size_t stride = A.getStride ();
+      if (stride == numRows) {
+        const size_t numElts = numRows * numCols;
+        for (size_t i = 0; i < numElts; ++i) {
+          A_raw[i] = alpha;
+        }
+      }
+      else {
+        // one kernel invocation for each column
+        for (size_t j = 0; j < numCols; ++j) {
+          double* KOKKOSCLASSIC_RESTRICT A_j = A_raw;
+          for (size_t i = 0; i < numRows; ++i) {
+            A_j[i] = alpha;
+          }
+          A_raw += stride;
+        }
+      }
+    }
+
+    static void
+    Recip (MultiVector<double,SerialNode> &A,
+           const MultiVector<double,SerialNode> &B)
+    {
+      const size_t nR = A.getNumRows();
+      const size_t nC = A.getNumCols();
+      const size_t A_stride = A.getStride();
+      const size_t B_stride = B.getStride();
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        nC != B.getNumCols() || nR != B.getNumRows(),
+        std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Recip(A,B): "
+        "A and B must have the same dimensions.");
+
+      const double* KOKKOSCLASSIC_RESTRICT B_raw = B.getValues ().getRawPtr ();
+      double* KOKKOSCLASSIC_RESTRICT A_raw = A.getValuesNonConst ().getRawPtr ();
+      if (A_stride == nR && B_stride == nR) {
+        // one kernel invocation for whole multivector
+        const size_t numElts = nR * nC;
+        for (size_t i = 0; i < numElts; ++i) {
+          A_raw[i] = 1.0 / B_raw[i];
+        }
+      }
+      else {
+        // one kernel invocation for each column
+        for (size_t j = 0; j < nC; ++j) {
+          const double* const KOKKOSCLASSIC_RESTRICT B_j = B_raw;
+          double* const KOKKOSCLASSIC_RESTRICT A_j = A_raw;
+          for (size_t i = 0; i < nR; ++i) {
+            A_j[i] = 1.0 / B_j[i];
+          }
+          A_raw += A_stride;
+          B_raw += B_stride;
+        }
+      }
+    }
+
+    static void
+    ReciprocalThreshold (MultiVector<double,SerialNode>& A,
+                         const double& minDiagVal)
+    {
+      const size_t numRows = A.getNumRows ();
+      const size_t numCols = A.getNumCols ();
+      const size_t stride = A.getStride ();
+      double* KOKKOSCLASSIC_RESTRICT A_ptr = A.getValuesNonConst ().getRawPtr ();
+
+      RCP<SerialNode> node = A.getNode ();
+      if (stride == numRows) {
+        // One kernel invocation for all columns of the multivector.
+        typedef ReciprocalThresholdOp<double> op_type;
+        op_type wdp (A_ptr, minDiagVal);
+        node->parallel_for<op_type> (0, numRows*numCols, wdp);
+      }
+      else {
+        // One kernel invocation for each column of the multivector.
+        for (size_t j = 0; j < numCols; ++j) {
+          typedef ReciprocalThresholdOp<double> op_type;
+          double* KOKKOSCLASSIC_RESTRICT const A_j = A_ptr;
+          op_type wdp (A_j, minDiagVal);
+          node->parallel_for<op_type> (0, numRows, wdp);
+          A_ptr += stride;
+        }
+      }
+    }
+
+    static void
+    ElemMult (MultiVector<double,SerialNode> &C,
+              double scalarC,
+              double scalarAB,
+              const MultiVector<double,SerialNode> &A,
+              const MultiVector<double,SerialNode> &B)
+    {
+      const size_t nR_A = A.getNumRows();
+      const size_t nC_A = A.getNumCols();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        nC_A != 1, std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName(A)
+        << ">::ElemMult(C,sC,sAB,A,B): A must have just 1 column.");
+
+      const size_t Cstride = C.getStride();
+      const size_t Bstride = B.getStride();
+      const size_t nC_C = C.getNumCols();
+      const size_t nR_C = C.getNumRows();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        nC_C != B.getNumCols() || nR_A != B.getNumRows() || nR_C != B.getNumRows(),
+        std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName(A) << ">::ElemMult"
+        "(C,sC,sAB,A,B): A, B and C must have the same number of rows, "
+        "and B and C must have the same number of columns.");
+
+      RCP<SerialNode> node = B.getNode();
+      ArrayRCP<double> Cdata = C.getValuesNonConst();
+      ArrayRCP<const double> Bdata = B.getValues();
+      ArrayRCP<const double> Adata = A.getValues();
+
+      if (scalarC == Teuchos::ScalarTraits<double>::zero ()) {
+        MVElemMultOverwriteOp<double> wdp;
+        wdp.scalarYZ = scalarAB;
+        // one kernel invocation for each column
+        for (size_t j=0; j<nC_C; ++j) {
+          wdp.x = Cdata(0,nR_C).getRawPtr();
+          wdp.y = Adata(0,nR_C).getRawPtr();
+          wdp.z = Bdata(0,nR_C).getRawPtr();
+          node->parallel_for<MVElemMultOverwriteOp<double> >(0,nR_C,wdp);
+          Cdata += Cstride;
+          Bdata += Bstride;
+        }
+      }
+      else {
+        MVElemMultOp<double> wdp;
+        wdp.scalarX = scalarC;
+        wdp.scalarYZ = scalarAB;
+        // one kernel invocation for each column
+        for (size_t j=0; j<nC_C; ++j) {
+          wdp.x = Cdata(0,nR_C).getRawPtr();
+          wdp.y = Adata(0,nR_C).getRawPtr();
+          wdp.z = Bdata(0,nR_C).getRawPtr();
+          node->parallel_for<MVElemMultOp<double> >(0,nR_C,wdp);
+          Cdata += Cstride;
+          Bdata += Bstride;
+        }
+      }
+    }
+
+    static void
+    Assign (MultiVector<double,SerialNode> &A,
+            const MultiVector<double,SerialNode> &B)
+    {
+      const size_t numRows = A.getNumRows ();
+      const size_t numCols = A.getNumCols ();
+      const size_t A_stride = A.getStride ();
+      const size_t B_stride = B.getStride ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        numCols != B.getNumCols() || numRows != B.getNumRows(),
+        std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Assign(A,B): "
+        "The MultiVectors A and B do not have the same dimensions.  "
+        "A is " << numRows << " x " << numCols << ", but B is "
+        << B.getNumRows () << " x " << B.getNumCols () << ".");
+      double* KOKKOSCLASSIC_RESTRICT A_raw = A.getValuesNonConst ().getRawPtr ();
+      const double* KOKKOSCLASSIC_RESTRICT B_raw = B.getValues ().getRawPtr ();
+
+      // If A and B are the same pointer, just return without doing
+      // anything.  This can make the implementation of
+      // Tpetra::MultiVector::copyAndPermute more concise.
+      if (A_raw == B_raw) {
+        return;
+      }
+      // If both strides are the same as the number of rows,
+      // we can just loop over all the data in one loop.
+      if (A_stride == numRows && B_stride == numRows) {
+        const size_t numElts = numRows * numCols;
+        memcpy (A_raw, B_raw, numElts * sizeof(double));
+      } else {
+        for (size_t j = 0; j < numCols; ++j) {
+          double* const KOKKOSCLASSIC_RESTRICT A_j = A_raw;
+          const double* const KOKKOSCLASSIC_RESTRICT B_j = B_raw;
+          memcpy (A_j, B_j, numRows * sizeof(double));
+          A_raw += A_stride;
+          B_raw += B_stride;
+        }
+      }
+    }
+
+    static void
+    Assign (MultiVector<double,SerialNode>& A,
+            const MultiVector<double,SerialNode>& B,
+            const ArrayView<const size_t>& whichVectors)
+    {
+      const size_t numRows = A.getNumRows ();
+      const size_t numCols = A.getNumCols ();
+      const size_t A_stride = A.getStride ();
+      const size_t B_stride = B.getStride ();
+      const size_t numColsToCopy = static_cast<size_t> (whichVectors.size ());
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        numRows != B.getNumRows() || numColsToCopy > numCols,
+        std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Assign(A,B,"
+        "whichVectors): The MultiVectors A and B(whichVectors) do not have "
+        "compatible dimensions.  A is " << numRows << " x " << numCols
+        << ", but B has " << B.getNumRows() << ", and there are "
+        << numColsToCopy << " columns of B to copy into A.");
+      double* const KOKKOSCLASSIC_RESTRICT A_raw = A.getValuesNonConst ().getRawPtr ();
+      const double* const KOKKOSCLASSIC_RESTRICT B_raw = B.getValues ().getRawPtr ();
+
+      for (size_t j = 0; j < numColsToCopy; ++j) {
+        double* const KOKKOSCLASSIC_RESTRICT A_j = A_raw + j * A_stride;
+        const double* const KOKKOSCLASSIC_RESTRICT B_j = B_raw + whichVectors[j] * B_stride;
+        // Skip columns that alias one another.
+        if (A_j != B_j) {
+          memcpy (A_j, B_j, numRows * sizeof(double));
+        }
+      }
+    }
+
+    static void
+    Dot (const MultiVector<double,SerialNode> &A,
+         const MultiVector<double,SerialNode> &B,
+         const ArrayView<double> &dots)
+    {
+      const size_t nR = A.getNumRows ();
+      const size_t nC = A.getNumCols ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        nC != B.getNumCols() || nR != B.getNumRows(),
+        std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName (A) << ">::Dot(A,B,dots): "
+        "A and B must have the same dimensions.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        nC > Teuchos::as<size_t> (dots.size ()),
+        std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName (A) << ">::Dot(A,B,dots): "
+        "dots must have length as large as number of columns of A and B.");
+      if (nR == 0) {
+        // "Trivial" (no rows) dot product is zero, since trivial sum
+        // (sum of no terms) is zero.
+        for (size_t j = 0; j < nC; ++j) {
+          dots[j] = 0.0;
+        }
+        return;
+      }
+      const double* A_raw = A.getValues ().getRawPtr ();
+      const double* B_raw = B.getValues ().getRawPtr ();
+      const size_t A_stride = A.getStride ();
+      const size_t B_stride = B.getStride ();
+
+      Teuchos::BLAS<int,double> blas;
+      for (size_t j = 0; j < nC; ++j) {
+        dots[j] = blas.DOT(nR, A_raw, 1, B_raw, 1);
+        A_raw += A_stride;
+        B_raw += B_stride;
+      }
+    }
+
+    static double
+    Dot (const MultiVector<double,SerialNode> &A,
+         const MultiVector<double,SerialNode> &B)
+    {
+      const size_t nR = A.getNumRows ();
+      const size_t nC = A.getNumCols ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        nC != 1,
+        std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Dot(A,B): "
+        "A must have exactly one column.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        B.getNumCols () != 1,
+        std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Dot(A,B): "
+        "B must have exactly one column.");
+      // "Trivial" (no rows) dot product result is zero,
+      // since trivial sum (sum of no terms) is zero.
+      const double* A_raw = A.getValues ().getRawPtr ();
+      const double* B_raw = B.getValues ().getRawPtr ();
+      Teuchos::BLAS<int,double> blas;
+      return blas.DOT(nR, A_raw, 1, B_raw, 1);
+    }
+
+    static void
+    GESUM (MultiVector<double,SerialNode> &B,
+           double alpha,
+           const MultiVector<double,SerialNode> &A,
+           double beta)
+    {
+      const size_t nR = A.getNumRows ();
+      const size_t nC = A.getNumCols ();
+      const size_t A_stride = A.getStride ();
+      const size_t B_stride = B.getStride ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        nC != B.getNumCols() || nR != B.getNumRows(),
+        std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName (A)
+        << ">::GESUM(B,alpha,A,beta): "
+        "A and B must have the same dimensions.");
+
+      // mfh 07 Mar 2013: Special case for beta = 0, that overwrites
+      // any NaN entries in B.
+      if (beta == Teuchos::ScalarTraits<double>::zero ()) {
+        const double* const KOKKOSCLASSIC_RESTRICT A_raw =
+          A.getValues ().getRawPtr ();
+        double* const KOKKOSCLASSIC_RESTRICT B_raw =
+          B.getValuesNonConst ().getRawPtr ();
+        for (size_t j = 0; j < nC; ++j) {
+          const double* const KOKKOSCLASSIC_RESTRICT A_j = &A_raw[j * A_stride];
+          double* const KOKKOSCLASSIC_RESTRICT B_j = &B_raw[j * B_stride];
+          for (size_t i = 0; i < nR; ++i) {
+            B_j[i] = alpha * A_j[i];
+          }
+        }
+      }
+      else if (beta == Teuchos::ScalarTraits<double>::one ()) {
+        const double* A_raw = A.getValues ().getRawPtr ();
+        double* B_raw = B.getValuesNonConst ().getRawPtr ();
+        Teuchos::BLAS<int,double> blas;
+        for (size_t j = 0; j < nC; ++j) {
+          blas.AXPY(nR, alpha, A_raw + j * A_stride, 1, B_raw + j * B_stride, 1);
+        }
+      }
+      else {
+        const double* const KOKKOSCLASSIC_RESTRICT A_raw =
+          A.getValues ().getRawPtr ();
+        double* const KOKKOSCLASSIC_RESTRICT B_raw =
+          B.getValuesNonConst ().getRawPtr ();
+        for (size_t j = 0; j < nC; ++j) {
+          const double* const KOKKOSCLASSIC_RESTRICT A_j = &A_raw[j * A_stride];
+          double* const KOKKOSCLASSIC_RESTRICT B_j = &B_raw[j * B_stride];
+          for (size_t i = 0; i < nR; ++i) {
+            B_j[i] = alpha * A_j[i] + beta * B_j[i];
+          }
+        }
+      }
+    }
+
+    static void
+    GESUM (MultiVector<double,SerialNode> &C,
+           double alpha,
+           const MultiVector<double,SerialNode> &A,
+           double beta,
+           const MultiVector<double,SerialNode> &B,
+           double gamma)
+    {
+      const size_t nR = A.getNumRows();
+      const size_t nC = A.getNumCols();
+      const size_t Astride = A.getStride();
+      const size_t Bstride = B.getStride();
+      const size_t Cstride = C.getStride();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        nC != B.getNumCols() || nR != B.getNumRows(),
+        std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName(A) << ">::GESUM"
+        "(C,alpha,A,beta,B,gamma): A and B must have the same dimensions.");
+
+      RCP<SerialNode> node = B.getNode();
+      ArrayRCP<const double> Adata = A.getValues();
+      ArrayRCP<const double> Bdata = B.getValues();
+      ArrayRCP<double>       Cdata = C.getValuesNonConst();
+      // prepare buffers
+      ReadyBufferHelper<SerialNode> rbh(node);
+      rbh.begin();
+      rbh.addConstBuffer<double>(Adata);
+      rbh.addConstBuffer<double>(Bdata);
+      rbh.addNonConstBuffer<double>(Cdata);
+      rbh.end();
+
+      // mfh 07 Mar 2013: Special case for gamma = 0, that overwrites
+      // any NaN entries in C.
+      if (gamma == Teuchos::ScalarTraits<double>::zero ()) {
+        GESUMZeroGammaOp3<double> wdp;
+        wdp.alpha = alpha;
+        wdp.beta  = beta;
+        if (Astride == nR && Bstride == nR && Cstride == nR) {
+          // one kernel invocation for whole multivector
+          wdp.z = Cdata(0,nR*nC).getRawPtr();
+          wdp.y = Bdata(0,nR*nC).getRawPtr();
+          wdp.x = Adata(0,nR*nC).getRawPtr();
+          node->parallel_for<GESUMZeroGammaOp3<double> >(0,nR*nC,wdp);
+        }
+        else {
+          // one kernel invocation for each column
+          for (size_t j=0; j<nC; ++j) {
+            wdp.z = Cdata(0,nR).getRawPtr();
+            wdp.y = Bdata(0,nR).getRawPtr();
+            wdp.x = Adata(0,nR).getRawPtr();
+            node->parallel_for<GESUMZeroGammaOp3<double> >(0,nR,wdp);
+            Adata += Astride;
+            Bdata += Bstride;
+            Cdata += Cstride;
+          }
+        }
+      }
+      else {
+        GESUMOp3<double> wdp;
+        wdp.alpha = alpha;
+        wdp.beta  = beta;
+        wdp.gamma = gamma;
+        if (Astride == nR && Bstride == nR && Cstride == nR) {
+          // one kernel invocation for whole multivector
+          wdp.z = Cdata(0,nR*nC).getRawPtr();
+          wdp.y = Bdata(0,nR*nC).getRawPtr();
+          wdp.x = Adata(0,nR*nC).getRawPtr();
+          node->parallel_for<GESUMOp3<double> >(0,nR*nC,wdp);
+        }
+        else {
+          // one kernel invocation for each column
+          for (size_t j=0; j<nC; ++j) {
+            wdp.z = Cdata(0,nR).getRawPtr();
+            wdp.y = Bdata(0,nR).getRawPtr();
+            wdp.x = Adata(0,nR).getRawPtr();
+            node->parallel_for<GESUMOp3<double> >(0,nR,wdp);
+            Adata += Astride;
+            Bdata += Bstride;
+            Cdata += Cstride;
+          }
+        }
+      }
+    }
+
+    static void
+    Norm1 (const MultiVector<double,SerialNode> &A,
+           const ArrayView<double> &norms)
+    {
+      typedef double magnitude_type;
+      typedef Teuchos::ScalarTraits<magnitude_type> STM;
+
+      const size_t nR = A.getNumRows();
+      const size_t nC = A.getNumCols();
+      const size_t Astride = A.getStride();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        nC > Teuchos::as<size_t>(norms.size()),
+        std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Norm1(A,norms): "
+        "norms must have length as large as number of columns of A.");
+
+      if (nR*nC == 0) {
+        std::fill (norms.begin(), norms.begin() + nC, STM::zero ());
+        return;
+      }
+      RCP<SerialNode> node = A.getNode();
+      ArrayRCP<const double> Adata = A.getValues();
+      // prepare buffers
+      ReadyBufferHelper<SerialNode> rbh(node);
+      rbh.begin();
+      rbh.addConstBuffer<double>(Adata);
+      rbh.end();
+      SumAbsOp<double> op;
+      for (size_t j=0; j<nC; ++j) {
+        op.x = Adata(0,nR).getRawPtr();
+        norms[j] = node->parallel_reduce(0,nR,op);
+        Adata += Astride;
+      }
+    }
+
+    static double
+    Norm1 (const MultiVector<double,SerialNode> &A)
+    {
+      typedef double magnitude_type;
+      typedef Teuchos::ScalarTraits<magnitude_type> STM;
+
+      const size_t nR = A.getNumRows();
+      const size_t nC = A.getNumCols();
+      if (nR*nC == 0) {
+        return STM::zero ();
+      }
+      RCP<SerialNode> node = A.getNode();
+      ArrayRCP<const double> Adata = A.getValues(0);
+      // prepare buffers
+      ReadyBufferHelper<SerialNode> rbh(node);
+      rbh.begin();
+      rbh.addConstBuffer<double>(Adata);
+      rbh.end();
+      SumAbsOp<double> op;
+      op.x = Adata(0,nR).getRawPtr();
+      return node->parallel_reduce(0,nR,op);
+    }
+
+    static void
+    Sum (const MultiVector<double,SerialNode> &A,
+         const ArrayView<double> &sums)
+    {
+      const size_t nR = A.getNumRows();
+      const size_t nC = A.getNumCols();
+      const size_t Astride = A.getStride();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        nC > (size_t)sums.size(),
+        std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Sum(A,sums): "
+        "sums must have length as large as number of columns of A.");
+
+      if (nR*nC == 0) {
+        std::fill( sums.begin(), sums.begin() + nC, Teuchos::ScalarTraits<double>::zero() );
+        return;
+      }
+      RCP<SerialNode> node = A.getNode();
+      ArrayRCP<const double> Adata = A.getValues();
+      // prepare buffers
+      ReadyBufferHelper<SerialNode> rbh(node);
+      rbh.begin();
+      rbh.addConstBuffer<double>(Adata);
+      rbh.end();
+      SumOp<double> op;
+      for (size_t j=0; j<nC; ++j) {
+        op.x = Adata(0,nR).getRawPtr();
+        sums[j] = node->parallel_reduce(0,nR,op);
+        Adata += Astride;
+      }
+    }
+
+    static double Sum(const MultiVector<double,SerialNode> &A) {
+      const size_t nR = A.getNumRows();
+      const size_t nC = A.getNumCols();
+      if (nR*nC == 0) {
+        return Teuchos::ScalarTraits<double>::zero();
+      }
+      RCP<SerialNode> node = A.getNode();
+      ArrayRCP<const double> Adata = A.getValues(0);
+      // prepare buffers
+      ReadyBufferHelper<SerialNode> rbh(node);
+      rbh.begin();
+      rbh.addConstBuffer<double>(Adata);
+      rbh.end();
+      SumOp<double> op;
+      op.x = Adata(0,nR).getRawPtr();
+      return node->parallel_reduce(0,nR,op);
+    }
+
+    static double NormInf(const MultiVector<double,SerialNode> &A) {
+      const size_t nR = A.getNumRows();
+      const size_t nC = A.getNumCols();
+      if (nR*nC == 0) {
+        return Teuchos::ScalarTraits<double>::zero();
+      }
+      RCP<SerialNode> node = A.getNode();
+      ArrayRCP<const double> Adata = A.getValues(0);
+      // prepare buffers
+      ReadyBufferHelper<SerialNode> rbh(node);
+      rbh.begin();
+      rbh.addConstBuffer<double>(Adata);
+      rbh.end();
+      MaxAbsOp<double> op;
+      op.x = Adata(0,nR).getRawPtr();
+      return node->parallel_reduce(0,nR,op);
+    }
+
+    static void NormInf(const MultiVector<double,SerialNode> &A, const ArrayView<double> &norms) {
+      const size_t nR = A.getNumRows();
+      const size_t nC = A.getNumCols();
+      const size_t Astride = A.getStride();
+      TEUCHOS_TEST_FOR_EXCEPTION(nC > Teuchos::as<size_t>(norms.size()), std::runtime_error,
+                                 "DefaultArithmetic<" << Teuchos::typeName(A) << ">::NormInf(A,norms): norms must have length as large as number of columns of A.");
+      if (nR*nC == 0) {
+        std::fill( norms.begin(), norms.begin() + nC, Teuchos::ScalarTraits<double>::zero() );
+        return;
+      }
+      RCP<SerialNode> node = A.getNode();
+      ArrayRCP<const double> Adata = A.getValues();
+      // prepare buffers
+      ReadyBufferHelper<SerialNode> rbh(node);
+      rbh.begin();
+      rbh.addConstBuffer<double>(Adata);
+      rbh.end();
+      MaxAbsOp<double> op;
+      for (size_t j=0; j<nC; ++j) {
+        op.x = Adata(0,nR).getRawPtr();
+        norms[j] = node->parallel_reduce(0,nR,op);
+        Adata += Astride;
+      }
+    }
+
+    static void
+    Norm2Squared (const MultiVector<double,SerialNode> &A,
+                  const ArrayView<double> &norms)
+    {
+      const size_t nR = A.getNumRows ();
+      const size_t nC = A.getNumCols ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        nC > Teuchos::as<size_t> (norms.size ()),
+        std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName (A) << ">::Norm2Squared(A, "
+        "norms): norms must be at least as long as number of columns of A.");
+      if (nR == 0) {
+        // "Trivial" (no rows) norm is zero, since trivial sum (sum of
+        // no terms) is zero.
+        for (size_t j = 0; j < nC; ++j) {
+          norms[j] = 0.0;
+        }
+        return;
+      }
+      const double* const KOKKOSCLASSIC_RESTRICT A_raw = A.getValues ().getRawPtr ();
+      const size_t A_stride = A.getStride ();
+
+      for (size_t j = 0; j < nC; ++j) {
+        const double* const KOKKOSCLASSIC_RESTRICT A_j = A_raw + j * A_stride;
+        double norm_j = 0.0;
+        for (size_t i = 0; i < nR; ++i) {
+          norm_j += A_j[i] * A_j[i];
+        }
+        norms[j] = norm_j;
+      }
+    }
+
+    static double
+    Norm2Squared (const MultiVector<double,SerialNode> &A) {
+      const size_t nR = A.getNumRows ();
+      const size_t nC = A.getNumCols ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        nC != 1,
+        std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName (A) << ">::Norm2Squared(A): "
+        "A must have exactly one column.");
+
+      // "Trivial" (no rows) norm is zero, since trivial sum (sum of
+      // no terms) is zero.
+      double result = 0.0;
+      const double* const KOKKOSCLASSIC_RESTRICT A_raw = A.getValues ().getRawPtr ();
+      for (size_t i = 0; i < nR; ++i) {
+        result += A_raw[i] * A_raw[i];
+      }
+      return result;
+    }
+
+    static double
+    WeightedNorm(const MultiVector<double,SerialNode> &A, const MultiVector<double,SerialNode> &weightVector) {
+      const size_t nR = A.getNumRows();
+      const size_t nC = A.getNumCols();
+      if (nR*nC == 0) {
+        return Teuchos::ScalarTraits<double>::zero();
+      }
+      RCP<SerialNode> node = A.getNode();
+      ArrayRCP<const double> Adata = A.getValues(0),
+        Wdata = weightVector.getValues(0);
+      // prepare buffers
+      ReadyBufferHelper<SerialNode> rbh(node);
+      rbh.begin();
+      rbh.addConstBuffer<double>(Adata);
+      rbh.addConstBuffer<double>(Wdata);
+      rbh.end();
+      WeightNormOp<double> op;
+      op.x = Adata(0,nR).getRawPtr();
+      op.w = Wdata(0,nR).getRawPtr();
+      return node->parallel_reduce(0,nR,op);
+    }
+
+    static void
+    WeightedNorm (const MultiVector<double,SerialNode> &A,
+                  const MultiVector<double,SerialNode> &weightVector,
+                  const ArrayView<double> &norms)
+    {
+      const size_t nR = A.getNumRows();
+      const size_t nC = A.getNumCols();
+      const size_t Astride = A.getStride(),
+        Wstride = weightVector.getStride();
+      TEUCHOS_TEST_FOR_EXCEPTION(nC > Teuchos::as<size_t>(norms.size()), std::runtime_error,
+                                 "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Norm1(A,norms): norms must have length as large as number of columns of A.");
+      if (nR*nC == 0) {
+        std::fill( norms.begin(), norms.begin() + nC, Teuchos::ScalarTraits<double>::zero() );
+        return;
+      }
+      RCP<SerialNode> node = A.getNode();
+      ArrayRCP<const double> Adata = A.getValues(),
+        Wdata = weightVector.getValues();
+      const bool OneW = (weightVector.getNumCols() == 1);
+      // prepare buffers
+      ReadyBufferHelper<SerialNode> rbh(node);
+      rbh.begin();
+      rbh.addConstBuffer<double>(Adata);
+      rbh.addConstBuffer<double>(Wdata);
+      rbh.end();
+      WeightNormOp<double> op;
+      if (OneW) {
+        op.w = Wdata(0,nR).getRawPtr();
+        for (size_t j=0; j<nC; ++j) {
+          op.x = Adata(0,nR).getRawPtr();
+          norms[j] = node->parallel_reduce(0,nR,op);
+          Adata += Astride;
+        }
+      }
+      else {
+        for (size_t j=0; j<nC; ++j) {
+          op.x = Adata(0,nR).getRawPtr();
+          op.w = Wdata(0,nR).getRawPtr();
+          norms[j] = node->parallel_reduce(0,nR,op);
+          Adata += Astride;
+          Wdata += Wstride;
+        }
+      }
+    }
+
+    static void Abs(MultiVector<double,SerialNode> &A, const MultiVector<double,SerialNode> &B) {
+      const size_t nR = A.getNumRows();
+      const size_t nC = A.getNumCols();
+      const size_t Astride = A.getStride();
+      const size_t Bstride = B.getStride();
+      TEUCHOS_TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
+                                 "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Abs(A,B): A and B must have the same dimensions.");
+      if (nC*nR == 0) return;
+      RCP<SerialNode> node = A.getNode();
+      ArrayRCP<const double> Bdata = B.getValues();
+      ArrayRCP<double>       Adata = A.getValuesNonConst();
+      // prepare buffers
+      ReadyBufferHelper<SerialNode> rbh(node);
+      rbh.begin();
+      rbh.addConstBuffer<double>(Bdata);
+      rbh.addNonConstBuffer<double>(Adata);
+      rbh.end();
+      // prepare op
+      AbsOp<double> wdp;
+      if (Astride == nR && Bstride == nR) {
+        // one kernel invocation for whole multivector assignment
+        wdp.x = Adata(0,nR*nC).getRawPtr();
+        wdp.y = Bdata(0,nR*nC).getRawPtr();
+        node->parallel_for<AbsOp<double> >(0,nR*nC,wdp);
+      }
+      else {
+        // one kernel invocation for each column
+        for (size_t j=0; j<nC; ++j) {
+          wdp.x = Adata(0,nR).getRawPtr();
+          wdp.y = Bdata(0,nR).getRawPtr();
+          node->parallel_for<AbsOp<double> >(0,nR,wdp);
+          Adata += Astride;
+          Bdata += Bstride;
+        }
+      }
+    }
+
+    static void
+    Scale (MultiVector<double,SerialNode> &B,
+           double alpha,
+           const MultiVector<double,SerialNode> &A)
+    {
+      const size_t nR = A.getNumRows();
+      const size_t nC = A.getNumCols();
+      const size_t Astride = A.getStride();
+      const size_t Bstride = B.getStride();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Scale(B,alpha,A): "
+        "A and B must have the same dimensions.");
+      const double* KOKKOSCLASSIC_RESTRICT A_raw = A.getValues ().getRawPtr ();
+      double* KOKKOSCLASSIC_RESTRICT B_raw = B.getValuesNonConst ().getRawPtr ();
+      if (Astride == nR && Bstride == nR) {
+        // one kernel invocation for whole multivector
+        const size_t numElts = nR * nC;
+        for (size_t i = 0; i < numElts; ++i) {
+          B_raw[i] = alpha * A_raw[i];
+        }
+      }
+      else {
+        // one kernel invocation for each column
+        for (size_t j = 0; j < nC; ++j) {
+          const double* const KOKKOSCLASSIC_RESTRICT A_j = A_raw;
+          double* const KOKKOSCLASSIC_RESTRICT       B_j = B_raw;
+          for (size_t i = 0; i < nR; ++i) {
+            B_j[i] = alpha * A_j[i];
+          }
+          A_raw += Astride;
+          B_raw += Bstride;
+        }
+      }
+    }
+
+    static void
+    Scale (MultiVector<double,SerialNode> &A, double alpha)
+    {
+      const size_t nR = A.getNumRows ();
+      const size_t nC = A.getNumCols ();
+      const size_t A_stride = A.getStride ();
+
+      double* A_raw = A.getValuesNonConst ().getRawPtr ();
+      Teuchos::BLAS<int,double> blas;
+      for (size_t j = 0; j < nC; ++j) {
+        blas.SCAL(nR, alpha, A_raw, 1);
+        A_raw += A_stride;
+      }
+    }
+  };
+
 
 } // namespace Kokkos
 

@@ -345,6 +345,34 @@ void Ioss::Utils::calculate_sideblock_membership(IntVector &face_is_member,
   }
 }
 
+int64_t Ioss::Utils::get_side_offset(const Ioss::SideBlock *sb)
+{
+  // And yet another idiosyncracy of sidesets...
+  // The side of an element (especially shells) can be
+  // either a face or an edge in the same sideset.  The
+  // ordinal of an edge is (local_edge_number+#faces) on the
+  // database, but needs to be (local_edge_number) for
+  // Sierra...
+  //
+  // If the sideblock has a "parent_element_topology" and a
+  // "topology", then we can determine whether to offset the
+  // side ordinals...
+
+  const Ioss::ElementTopology *side_topo   = sb->topology();
+  const Ioss::ElementTopology *parent_topo = sb->parent_element_topology();
+  int64_t side_offset = 0;
+  if (side_topo && parent_topo) {
+    int side_topo_dim = side_topo->parametric_dimension();
+    int elem_topo_dim = parent_topo->parametric_dimension();
+    int elem_spat_dim = parent_topo->spatial_dimension();
+
+    if (side_topo_dim+1 < elem_spat_dim && side_topo_dim < elem_topo_dim) {
+      side_offset = parent_topo->number_faces();
+    }
+  }
+  return side_offset;
+}
+
 unsigned int Ioss::Utils::hash (const std::string& name)
 {
   // Hash function from Aho, Sethi, Ullman "Compilers: Principles,

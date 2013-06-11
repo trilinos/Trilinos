@@ -1,0 +1,1 @@
+nvcc -x cu test_crsmatrix.cpp -lrt -O3 -I../src -I../../array/src -L../../array/src -DDEVICE=2 -lhwloc -lkokkosarraycuda5 -I../src -arch=sm_35 -DKOKKOS_USE_CUSPARSE -lcusparse

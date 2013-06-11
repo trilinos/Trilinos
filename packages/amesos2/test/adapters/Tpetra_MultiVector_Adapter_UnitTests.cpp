@@ -132,7 +132,6 @@ namespace {
      * - Correct initialization of class members
      * - Correct typedefs ( using Amesos2::is_same<> )
      */
-    typedef ScalarTraits<SCALAR> ST;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
     typedef MultiVecAdapter<MV> ADAPT;
 
@@ -165,7 +164,6 @@ namespace {
   {
     // Test that the dimensions reported by the adapter match those as reported
     // by the Tpetra::MultiVector
-    typedef ScalarTraits<SCALAR> ST;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
     typedef MultiVecAdapter<MV> ADAPT;
 
@@ -198,8 +196,6 @@ namespace {
      * known multivector and also check against what is returned by the
      * Tpetra::MultiVector.
      */
-    typedef ScalarTraits<SCALAR> ST;
-    typedef typename ScalarTraits<SCALAR>::magnitudeType MAG;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
     typedef MultiVecAdapter<MV> ADAPT;
 
@@ -264,8 +260,6 @@ namespace {
        MPI processes and then get a copy of the multivector data on
        only the first 2 ranks.
      */
-    typedef ScalarTraits<SCALAR> ST;
-    typedef typename ScalarTraits<SCALAR>::magnitudeType MAG;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
     typedef MultiVecAdapter<MV> ADAPT;
 
@@ -355,8 +349,6 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVecAdapter, Globalize, SCALAR, LO, GO )
   {
-    typedef ScalarTraits<SCALAR> ST;
-    typedef typename ScalarTraits<SCALAR>::magnitudeType MAG;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
     typedef MultiVecAdapter<MV> ADAPT;
 

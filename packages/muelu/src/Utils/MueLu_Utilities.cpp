@@ -45,11 +45,14 @@
 // @HEADER
 #include "MueLu_Utilities_def.hpp"
 
+#ifdef HAVE_MUELU_EPETRAEXT
+#include "EpetraExt_Transpose_RowMatrix.h"
+#endif
+
 namespace MueLu {
 
   RCP<Xpetra::Matrix<double, int, int> > Utils2<double, int, int>::Transpose(RCP<Xpetra::Matrix<double, int, int> > const &Op, bool const & optimizeTranspose)
   {
-   typedef Xpetra::Matrix<double,int,int> Matrix;
    typedef double Scalar;
    typedef int LocalOrdinal;
    typedef int GlobalOrdinal;
@@ -107,18 +110,11 @@ namespace MueLu {
     } else {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
       //epetra case
-      Epetra_RowMatrixTransposer et(&*epetraOp);
-      Epetra_CrsMatrix *A;
-      int rv = et.CreateTranspose(false,A);
-      if (rv != 0) {
-        std::ostringstream buf;
-        buf << rv;
-        std::string msg = "Utils::Transpose: Epetra::RowMatrixTransposer returned value of " + buf.str();
-        throw(Exceptions::RuntimeError(msg));
-      }
+      EpetraExt::RowMatrix_Transpose transposer;
+      Epetra_CrsMatrix * A = dynamic_cast<Epetra_CrsMatrix*>(&transposer(*epetraOp));
+      transposer.ReleaseTranspose(); // So we can keep A in Muelu...
 
       RCP<Epetra_CrsMatrix> rcpA(A);
-      //RCP<Epetra_CrsMatrix> rcpA = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::simple_EpetraTranspose(epetraOp);
       RCP<EpetraCrsMatrix> AA = rcp(new EpetraCrsMatrix(rcpA) );
       RCP<Xpetra::CrsMatrix<SC> > AAA = rcp_implicit_cast<Xpetra::CrsMatrix<SC> >(AA);
       RCP<Xpetra::CrsMatrixWrap<SC> > AAAA = rcp( new Xpetra::CrsMatrixWrap<SC>(AAA) );

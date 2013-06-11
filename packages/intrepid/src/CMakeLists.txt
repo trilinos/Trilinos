@@ -67,6 +67,9 @@ IF (TPL_ENABLE_Boost)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Shared/MiniTensor)
   APPEND_SET(HEADERS
     Shared/MiniTensor/Intrepid_MiniTensor.h
+    Shared/MiniTensor/Intrepid_MiniTensor_TensorBase.h
+    Shared/MiniTensor/Intrepid_MiniTensor_TensorBase.i.h
+    Shared/MiniTensor/Intrepid_MiniTensor_TensorBase.t.h
     Shared/MiniTensor/Intrepid_MiniTensor_Definitions.h
     Shared/MiniTensor/Intrepid_MiniTensor_Geometry.h
     Shared/MiniTensor/Intrepid_MiniTensor_Geometry.i.h
@@ -77,6 +80,8 @@ IF (TPL_ENABLE_Boost)
     Shared/MiniTensor/Intrepid_MiniTensor_Mechanics.h
     Shared/MiniTensor/Intrepid_MiniTensor_Mechanics.i.h
     Shared/MiniTensor/Intrepid_MiniTensor_Mechanics.t.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Storage.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Storage.i.h
     Shared/MiniTensor/Intrepid_MiniTensor_Tensor.h
     Shared/MiniTensor/Intrepid_MiniTensor_Tensor.i.h
     Shared/MiniTensor/Intrepid_MiniTensor_Tensor.t.h

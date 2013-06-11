@@ -169,6 +169,7 @@ int main(int argc, char *argv[])
     int64api = EX_ALL_INT64_API;
   }
   
+  
   int status;
   if (io_ws == 4) {
     if (int64api) {
@@ -214,6 +215,7 @@ int main(int argc, char *argv[])
   double g_end_t = second() - g_start_t;
   printf("The average run time was: %.2fs\n", g_end_t);
 
+  ex_close(exoid);
   add_to_log(argv[0], g_end_t);
   return status;
 }

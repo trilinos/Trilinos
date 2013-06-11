@@ -156,6 +156,7 @@ namespace MueLu {
       if (varName == "Aggregates")          return SetAndReturnDefaultFactory(varName, rcp(new CoupledAggregationFactory()));
       if (varName == "CoarseMap")           return SetAndReturnDefaultFactory(varName, rcp(new CoarseMapFactory()));
       if (varName == "DofsPerNode")         return GetFactory("Graph");
+      if (varName == "Filtering")           return GetFactory("Graph");
 
       // Same factory for both Pre and Post Smoother. Factory for key "Smoother" can be set by users.
       if (varName == "PreSmoother")         return GetFactory("Smoother");

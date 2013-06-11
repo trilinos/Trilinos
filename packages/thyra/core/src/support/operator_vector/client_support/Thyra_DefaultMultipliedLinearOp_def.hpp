@@ -169,7 +169,6 @@ template<class Scalar>
 std::string DefaultMultipliedLinearOp<Scalar>::description() const
 {
   assertInitialized();
-  typedef Teuchos::ScalarTraits<Scalar>  ST;
   std::ostringstream oss;
   oss << Teuchos::Describable::description() << "{numOps = "<<numOps()<<"}";
   return oss.str();
@@ -181,7 +180,6 @@ void DefaultMultipliedLinearOp<Scalar>::describe(
   const Teuchos::EVerbosityLevel verbLevel
   ) const
 {
-  typedef Teuchos::ScalarTraits<Scalar>  ST;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   assertInitialized();

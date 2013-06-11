@@ -33,14 +33,10 @@
 /* detected problems with the blas and solution methods */
 #define HAVE_TEUCHOS_BLASFLOAT
 /* #undef HAVE_TEUCHOS_BLASFLOAT_APPLE_VECLIB_BUGFIX */
-#define HAVE_TEUCHOS_BLASFLOAT_DOUBLE_RETURN
 
-#define HAVE_SLAPY2_PROBLEM
-#define HAVE_SLAPY2_DOUBLE_RETURN
 
 #define HAVE_COMPLEX_BLAS
 #define HAVE_COMPLEX_BLAS_PROBLEM
-#define HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM
 /* #undef HAVE_VECLIB_COMPLEX_BLAS */
 
 /* define if the compiler supports access of protected templated nested

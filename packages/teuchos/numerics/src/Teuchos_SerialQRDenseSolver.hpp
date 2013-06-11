@@ -51,6 +51,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_SerialDenseSolver.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
 #ifdef HAVE_TEUCHOSNUMERICS_EIGEN
@@ -390,21 +391,8 @@ namespace Teuchos {
 
   };
 
-  namespace details {
-
-    // Helper traits to distinguish work arrays for real and complex-valued datatypes.
-    template<typename T>
-    struct lapack_traits {
-      typedef int iwork_type;
-    };
-
-    // Complex-valued specialization
-    template<typename T>
-    struct lapack_traits<std::complex<T> > {
-      typedef typename ScalarTraits<T>::magnitudeType iwork_type;
-    };
-
-  } // end namespace details
+  // Helper traits to distinguish work arrays for real and complex-valued datatypes.
+  using namespace details;
 
 //=============================================================================
 
@@ -658,12 +646,14 @@ int SerialQRDenseSolver<OrdinalType,ScalarType>::solve() {
   solved_ = true;
 
   // Unequilibrate LHS if necessary
-  int ierr1=0;
-  if (equilibrate_) ierr1 = unequilibrateLHS();
-  if (ierr != 0) return(ierr);
+  if (equilibrate_) {
+    ierr = unequilibrateLHS();
+  }
+  if (ierr != 0) {
+    return ierr;
+  }
 
-  return(INFO_);
-
+  return INFO_;
 }
 
 //=============================================================================

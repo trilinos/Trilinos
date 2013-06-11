@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -62,12 +62,15 @@ namespace Tpetra {
 
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   class BlockCrsGraph;
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class Vector;
 } // namespace Tpetra
 
 namespace Kokkos {
   template<class Scalar, class LocalOrdinal, class Node>
   class VbrMatrix;
-} // namespace Kokkos 
+} // namespace Kokkos
 
 namespace Teuchos {
   template<class OrdinalType, class ScalarType>
@@ -106,13 +109,13 @@ to the optimized-storage state by calling the method fillComplete().
 Once in the optimized-storage state, the VbrMatrix can not be returned to the
 non-optimized-storage state.
 */
-template <class Scalar, 
-          class LocalOrdinal  = int, 
-          class GlobalOrdinal = LocalOrdinal, 
-          class Node          = Kokkos::DefaultNode::DefaultNodeType, 
+template <class Scalar,
+          class LocalOrdinal  = int,
+          class GlobalOrdinal = LocalOrdinal,
+          class Node          = Kokkos::DefaultNode::DefaultNodeType,
           class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::BlockSparseOps >
-class VbrMatrix : 
-    public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, Node>, 
+class VbrMatrix :
+    public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, Node>,
     public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 public:
   typedef Scalar        scalar_type;
@@ -455,7 +458,7 @@ public:
   */
   void getLocalBlockEntryView(LocalOrdinal localBlockRow,
                               LocalOrdinal localBlockCol,
-                              LocalOrdinal& numPtRows, 
+                              LocalOrdinal& numPtRows,
                               LocalOrdinal& numPtCols,
                               Teuchos::ArrayRCP<const Scalar>& blockEntry) const;
 
@@ -549,7 +552,7 @@ public:
   // class.  std::unique_ptr (C++11) would be more appropriate.
   Teuchos::RCP<Kokkos::VbrMatrix<Scalar,LocalOrdinal,Node> > lclMatrix_;
 
-  //A variable-block-row matrix is represented by 6 arrays 
+  //A variable-block-row matrix is represented by 6 arrays
   //in packed (contiguous storage) form. For a description of these
   //arrays, see the text at the bottom of this file.
   //(2 of those arrays, rptr and cptr, are represented by arrays in the
@@ -633,12 +636,12 @@ public:
 // int nbr = num_block_rows;
 // int total_num_block_nonzeros = bptr[nbr];
 // int total_num_scalar_nonzeros = indx[num_block_nonzeros];
-// 
+//
 // //get arrays for i-th block-row:
 // int* bindx_i = &bindx[bptr[i]];
 // double* vals_i = &val[indx[bptr[i]]];
 // int num_block_nonzeros_in_row_i = bptr[i+1]-bptr[i];
-// 
+//
 //----------------------------------------------------------------------------
 
 #endif //TPETRA_VBRMATRIX_DECL_HPP

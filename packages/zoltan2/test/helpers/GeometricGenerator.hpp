@@ -1586,10 +1586,11 @@ public:
 		Zoltan2::PartitioningSolution< Tpetra::MultiVector<T, lno_t, gno_t, node_t> > solution;
 		xmv.applyPartitioningSolution<Tpetra::MultiVector<T, lno_t, gno_t, node_t> >(this->tmVector, &tmVector2, solution);
      */
-
-    this->wghts = new T *[this->weight_dimension];
-    for(int i = 0; i < this->weight_dimension; ++i){
-      this->wghts[i] = new T[this->numLocalCoords];
+    if (this->weight_dimension > 0){
+    	this->wghts = new T *[this->weight_dimension];
+    	for(int i = 0; i < this->weight_dimension; ++i){
+    		this->wghts[i] = new T[this->numLocalCoords];
+    	}
     }
 
     for(int ii = 0; ii < this->weight_dimension; ++ii){

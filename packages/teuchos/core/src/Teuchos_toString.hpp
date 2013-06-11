@@ -50,7 +50,7 @@ namespace Teuchos {
 
 /** \brief Default traits class for converting objects into strings.
  *
- * NOTE: This default implementation relies on operator<<(std::ostream&, ...) 
+ * NOTE: This default implementation relies on operator<<(std::ostream&, ...)
  * being defined for the data type T.
  *
  * \ingroup teuchos_language_support_grp
@@ -141,7 +141,18 @@ public:
   }
 };
 
-
+/// \brief Partial specialization for std::pair<T1, T2>.
+///
+/// \note This relies on operator<< working for T1 and T2.
+template<typename T1, typename T2>
+class ToStringTraits<std::pair<T1, T2> > {
+public:
+  static std::string toString (const std::pair<T1, T2>& t) {
+    std::ostringstream oss;
+    oss << "(" << t.first << "," << t.second << ")";
+    return oss.str();
+  }
+};
 
 } // end namespace Teuchos
 

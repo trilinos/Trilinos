@@ -87,7 +87,12 @@ public:
       if(get_x()!=Teuchos::null) get_x()->putScalar(0.0);
       if(get_dxdt()!=Teuchos::null) get_dxdt()->putScalar(0.0);
       if(get_f()!=Teuchos::null) get_f()->putScalar(0.0);
-      if(get_A()!=Teuchos::null) get_A()->setAllToScalar(0.0);
+      if(get_A()!=Teuchos::null) {
+        Teuchos::RCP<CrsMatrixType> mat = get_A(); 
+        mat->resumeFill();
+        mat->setAllToScalar(0.0);
+        mat->fillComplete();
+      }
    }
 
    //! Wipe out stored data.
@@ -112,7 +117,11 @@ public:
    inline const Teuchos::RCP<CrsMatrixType> get_A() const { return A; }
 
    void initializeMatrix(ScalarT value)
-   { A->setAllToScalar(value); }
+   {  
+     A->resumeFill();
+     A->setAllToScalar(value); 
+     A->fillComplete();
+   }
 
    virtual void set_x_th(const Teuchos::RCP<Thyra::VectorBase<ScalarT> > & in) 
    { x = (in==Teuchos::null) ? Teuchos::null : TOE::getTpetraVector(in); } 

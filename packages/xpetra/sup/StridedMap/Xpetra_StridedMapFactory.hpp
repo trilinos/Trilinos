@@ -130,7 +130,7 @@ namespace Xpetra {
           nStridedOffset += stridingInfo[j];
         }
 
-        size_t numMyBlockDofs = stridingInfo[stridedBlockId] / map->getFixedBlockSize() * map->getNodeNumElements();
+        size_t numMyBlockDofs = (stridingInfo[stridedBlockId] * map->getNodeNumElements()) / map->getFixedBlockSize();
         std::vector<GlobalOrdinal> subBlockDofGids(numMyBlockDofs);
 
         // TODO fill vector with dofs
@@ -237,7 +237,6 @@ namespace Xpetra {
     // special constructor for generating a given subblock of a strided map
     static RCP<StridedMap<LocalOrdinal,GlobalOrdinal, Node> > Build(const RCP<const StridedMap<LocalOrdinal, GlobalOrdinal, Node> >& map, LocalOrdinal stridedBlockId) {
       TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockId < 0, Exceptions::RuntimeError,"Xpetra::StridedMapFactory::Build: constructor expects stridedBlockId > -1.");
-      typedef Xpetra::StridedMap<LocalOrdinal,GlobalOrdinal,Node> StridedMapClass;
       //typename Teuchos::ArrayView< const GlobalOrdinal >::iterator it;
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra) {

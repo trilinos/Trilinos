@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -58,6 +58,11 @@ using Teuchos::REDUCE_MIN;
 using Teuchos::reduceAll;
 using std::endl;
 
+// Whether to print copious debugging output to stderr when doing
+// Matrix Market input and output.  This affects all the tests.
+const bool debug = false;
+
+
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, ContiguousUniformIndexBase0, LocalOrdinalType, GlobalOrdinalType, NodeType )
 {
   typedef LocalOrdinalType LO;
@@ -66,7 +71,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, ContiguousUniformIndexBase0, 
   typedef Tpetra::Map<LO, GO, NT> map_type;
 
   const bool tolerant = false;
-  const bool debug = false;
   out << "Test: output a contiguous uniform Tpetra::Map (index base 0) "
     "to a Matrix Market file" << endl;
   OSTab tab1 (out);
@@ -92,7 +96,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, ContiguousUniformIndexBase0, 
   // The Scalar type doesn't matter, since we're just writing a Map.
   typedef Tpetra::CrsMatrix<double, LO, GO, NT> crs_matrix_type;
   typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
-  writer_type::writeMap (mapOutStream, map);
+  writer_type::writeMap (mapOutStream, map, debug);
   out << "Result of writing the Map:" << endl;
   if (myRank == 0) {
     OSTab tab2 (out);
@@ -102,12 +106,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, ContiguousUniformIndexBase0, 
   out << "Reading Map back in from the output stream" << endl;
   std::istringstream mapInStream (mapOutStream.str ());
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
-  RCP<const map_type> inMap = 
-    reader_type::readMap (mapInStream, map.getComm (), map.getNode (), 
-			  tolerant, debug);
+  RCP<const map_type> inMap =
+    reader_type::readMap (mapInStream, map.getComm (), map.getNode (),
+                          tolerant, debug);
 
   TEST_EQUALITY(map.isSameAs (*inMap), true);
 }
+
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, ContiguousUniformIndexBase1, LocalOrdinalType, GlobalOrdinalType, NodeType )
 {
@@ -117,7 +122,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, ContiguousUniformIndexBase1, 
   typedef Tpetra::Map<LO, GO, NT> map_type;
 
   const bool tolerant = false;
-  const bool debug = false;
   out << "Test: output a contiguous uniform Tpetra::Map (index base 1) "
     "to a Matrix Market file" << endl;
   OSTab tab1 (out);
@@ -143,7 +147,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, ContiguousUniformIndexBase1, 
   // The Scalar type doesn't matter, since we're just writing a Map.
   typedef Tpetra::CrsMatrix<double, LO, GO, NT> crs_matrix_type;
   typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
-  writer_type::writeMap (mapOutStream, map);
+  writer_type::writeMap (mapOutStream, map, debug);
   out << "Result of writing the Map:" << endl;
   if (myRank == 0) {
     OSTab tab2 (out);
@@ -153,9 +157,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, ContiguousUniformIndexBase1, 
   out << "Reading Map back in from the output stream" << endl;
   std::istringstream mapInStream (mapOutStream.str ());
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
-  RCP<const map_type> inMap = 
+  RCP<const map_type> inMap =
     reader_type::readMap (mapInStream, map.getComm (), map.getNode (),
-			  tolerant, debug);
+                          tolerant, debug);
 
   TEST_EQUALITY(map.isSameAs (*inMap), true);
 }
@@ -169,7 +173,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, ContiguousNonuniformIndexBase
   typedef Tpetra::Map<LO, GO, NT> map_type;
 
   const bool tolerant = false;
-  const bool debug = false;
   out << "Test: output a contiguous nonuniform Tpetra::Map (index base 0) "
     "to a Matrix Market file" << endl;
   OSTab tab1 (out);
@@ -193,7 +196,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, ContiguousNonuniformIndexBase
   // The Scalar type doesn't matter, since we're just writing a Map.
   typedef Tpetra::CrsMatrix<double, LO, GO, NT> crs_matrix_type;
   typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
-  writer_type::writeMap (mapOutStream, map);
+  writer_type::writeMap (mapOutStream, map, debug);
   out << "Result of writing the Map:" << endl;
   if (myRank == 0) {
     OSTab tab2 (out);
@@ -203,9 +206,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, ContiguousNonuniformIndexBase
   out << "Reading Map back in from the output stream" << endl;
   std::istringstream mapInStream (mapOutStream.str ());
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
-  RCP<const map_type> inMap = 
-    reader_type::readMap (mapInStream, map.getComm (), map.getNode (), 
-			  tolerant, debug);
+  RCP<const map_type> inMap =
+    reader_type::readMap (mapInStream, map.getComm (), map.getNode (),
+                          tolerant, debug);
 
   TEST_EQUALITY(map.isSameAs (*inMap), true);
 }
@@ -218,7 +221,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, ContiguousNonuniformIndexBase
   typedef Tpetra::Map<LO, GO, NT> map_type;
 
   const bool tolerant = false;
-  const bool debug = false;
   out << "Test: output a contiguous nonuniform Tpetra::Map (index base 1) "
     "to a Matrix Market file" << endl;
   OSTab tab1 (out);
@@ -242,7 +244,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, ContiguousNonuniformIndexBase
   // The Scalar type doesn't matter, since we're just writing a Map.
   typedef Tpetra::CrsMatrix<double, LO, GO, NT> crs_matrix_type;
   typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
-  writer_type::writeMap (mapOutStream, map);
+  writer_type::writeMap (mapOutStream, map, debug);
   out << "Result of writing the Map:" << endl;
   if (myRank == 0) {
     OSTab tab2 (out);
@@ -252,9 +254,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, ContiguousNonuniformIndexBase
   out << "Reading Map back in from the output stream" << endl;
   std::istringstream mapInStream (mapOutStream.str ());
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
-  RCP<const map_type> inMap = 
-    reader_type::readMap (mapInStream, map.getComm (), map.getNode (), 
-			  tolerant, debug);
+  RCP<const map_type> inMap =
+    reader_type::readMap (mapInStream, map.getComm (), map.getNode (),
+                          tolerant, debug);
 
   TEST_EQUALITY(map.isSameAs (*inMap), true);
 }
@@ -265,7 +267,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, NoncontiguousIndexBase0, Loca
   typedef GlobalOrdinalType GO;
   typedef NodeType NT;
   typedef Tpetra::Map<LO, GO, NT> map_type;
-  typedef typename Array<GO>::size_type size_type;
 
   RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
   RCP<NT> node = Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
@@ -273,7 +274,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, NoncontiguousIndexBase0, Loca
   const int numProcs = comm->getSize();
 
   const bool tolerant = false;
-  const bool debug = false;
   out << "Test: output a noncontiguous Tpetra::Map (index base 0) "
     "to a Matrix Market file" << endl;
   OSTab tab1 (out);
@@ -298,7 +298,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, NoncontiguousIndexBase0, Loca
   // The Scalar type doesn't matter, since we're just writing a Map.
   typedef Tpetra::CrsMatrix<double, LO, GO, NT> crs_matrix_type;
   typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
-  writer_type::writeMap (mapOutStream, map);
+  writer_type::writeMap (mapOutStream, map, debug);
   out << "Result of writing the Map:" << endl;
   if (myRank == 0) {
     OSTab tab2 (out);
@@ -308,9 +308,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, NoncontiguousIndexBase0, Loca
   out << "Reading Map back in from the output stream" << endl;
   std::istringstream mapInStream (mapOutStream.str ());
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
-  RCP<const map_type> inMap = 
-    reader_type::readMap (mapInStream, map.getComm (), map.getNode (), 
-			  tolerant, debug);
+  RCP<const map_type> inMap =
+    reader_type::readMap (mapInStream, map.getComm (), map.getNode (),
+                          tolerant, debug);
 
   TEST_EQUALITY(map.isSameAs (*inMap), true);
 }
@@ -321,7 +321,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, NoncontiguousIndexBase1, Loca
   typedef GlobalOrdinalType GO;
   typedef NodeType NT;
   typedef Tpetra::Map<LO, GO, NT> map_type;
-  typedef typename Array<GO>::size_type size_type;
 
   RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
   RCP<NT> node = Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
@@ -329,7 +328,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, NoncontiguousIndexBase1, Loca
   const int numProcs = comm->getSize();
 
   const bool tolerant = false;
-  const bool debug = false;
   out << "Test: output a noncontiguous Tpetra::Map (index base 1) "
     "to a Matrix Market file" << endl;
   OSTab tab1 (out);
@@ -354,7 +352,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, NoncontiguousIndexBase1, Loca
   // The Scalar type doesn't matter, since we're just writing a Map.
   typedef Tpetra::CrsMatrix<double, LO, GO, NT> crs_matrix_type;
   typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
-  writer_type::writeMap (mapOutStream, map);
+  writer_type::writeMap (mapOutStream, map, debug);
   out << "Result of writing the Map:" << endl;
   if (myRank == 0) {
     OSTab tab2 (out);
@@ -364,9 +362,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, NoncontiguousIndexBase1, Loca
   out << "Reading Map back in from the output stream" << endl;
   std::istringstream mapInStream (mapOutStream.str ());
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
-  RCP<const map_type> inMap = 
-    reader_type::readMap (mapInStream, map.getComm (), map.getNode (), 
-			  tolerant, debug);
+  RCP<const map_type> inMap =
+    reader_type::readMap (mapInStream, map.getComm (), map.getNode (),
+                          tolerant, debug);
 
   TEST_EQUALITY(map.isSameAs (*inMap), true);
 }

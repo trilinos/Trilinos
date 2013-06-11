@@ -59,7 +59,7 @@ struct CrsMatrix {
   typedef Device      device_type ;
   typedef ScalarType  value_type ;
 
-  typedef CrsArray< int , device_type , device_type , int >  graph_type ;
+  typedef CrsArray< int , device_type , void , int >  graph_type ;
   typedef View< value_type* , device_type >   coefficients_type ;
 
   graph_type         graph ;
@@ -88,17 +88,16 @@ namespace Impl {
 
 template< typename AScalarType ,
           typename VScalarType ,
-          class LayoutType ,
           class DeviceType >
 struct Multiply< CrsMatrix<AScalarType,DeviceType> ,
-                 View<VScalarType*,LayoutType,DeviceType > ,
-                 View<VScalarType*,LayoutType,DeviceType > >
+                 View<VScalarType*,DeviceType > ,
+                 View<VScalarType*,DeviceType > >
 {
   typedef DeviceType                       device_type ;
   typedef typename device_type::size_type  size_type ;
 
-  typedef View<       VScalarType*, LayoutType, device_type, MemoryUnmanaged >  vector_type ;
-  typedef View< const VScalarType*, LayoutType, device_type, MemoryUnmanaged >  vector_const_type ;
+  typedef View<       VScalarType*, device_type, MemoryUnmanaged >  vector_type ;
+  typedef View< const VScalarType*, device_type, MemoryUnmanaged >  vector_const_type ;
 
   typedef CrsMatrix< AScalarType , device_type >    matrix_type ;
 

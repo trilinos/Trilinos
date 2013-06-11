@@ -53,6 +53,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_IntSerialDenseVector.h"
+#include "Epetra_SerialComm.h"
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 #include "Epetra_LongLongSerialDenseVector.h"
@@ -2004,6 +2005,12 @@ int Epetra_CrsGraph::OptimizeStorage() {
   SetIndicesAreContiguous(true); // Can no longer dynamically add or remove indices
   CrsGraphData_->StorageOptimized_ = true;
 
+/*
+#if defined(Epetra_ENABLE_MKL_SPARSE) && !defined(Epetra_DISABLE_MKL_SPARSE_MM)
+  All_IndicesPlus1(); // see if preemptively calling this improves Multiply timing.
+#endif
+*/
+
   return(0);
 }
 
@@ -2232,7 +2239,80 @@ int Epetra_CrsGraph::ReplaceDomainMapAndImporter(const Epetra_BlockMap& NewDomai
   return rv;
 }
 
+//==============================================================================
+int Epetra_CrsGraph::RemoveEmptyProcessesInPlace(const Epetra_BlockMap * newMap) {
+  const Epetra_BlockMap *newDomainMap=0, *newRangeMap=0, *newColMap=0;
+  Epetra_Import * newImport=0;
+  Epetra_Export * newExport=0;
 
+  const Epetra_Comm *newComm = newMap ? &newMap->Comm() : 0;
+
+  if(DomainMap().SameAs(RowMap())) {
+    // Common case: original domain and row Maps are identical.
+    // In that case, we need only replace the original domain Map
+    // with the new Map.  This ensures that the new domain and row
+    // Maps _stay_ identical.
+    newDomainMap = newMap;
+  }
+  else
+    newDomainMap = DomainMap().ReplaceCommWithSubset(newComm);
+
+  if(RangeMap().SameAs(RowMap())){
+    // Common case: original range and row Maps are identical.  In
+    // that case, we need only replace the original range Map with
+    // the new Map.  This ensures that the new range and row Maps
+    // _stay_ identical.
+    newRangeMap = newMap;
+  }
+  else
+    newRangeMap = RangeMap().ReplaceCommWithSubset(newComm);
+  
+  newColMap=ColMap().ReplaceCommWithSubset(newComm);
+
+  if(newComm) {
+    // (Re)create the Export and / or Import if necessary.
+    //
+    // The operations below are collective on the new communicator.
+    //
+    if(RangeMap().DataPtr() != RowMap().DataPtr()) 
+      newExport = new Epetra_Export(*newMap,*newRangeMap);
+
+    if(DomainMap().DataPtr() != ColMap().DataPtr()) 
+      newImport = new Epetra_Import(*newColMap,*newDomainMap);
+  }
+
+  // CrsGraphData things
+  if(CrsGraphData_->ReferenceCount() !=1)
+    throw ReportError("Epetra_CrsGraph::RemoveEmptyProcessesInPlace does not work for shared CrsGraphData_",-2);
+  
+  // Dummy map for the non-active procs
+  Epetra_SerialComm SComm;
+  Epetra_Map dummy(0,0,SComm);
+
+  delete CrsGraphData_->Importer_;
+  delete CrsGraphData_->Exporter_;
+
+
+  CrsGraphData_->RowMap_    = newMap       ? *newMap      : dummy;
+  CrsGraphData_->ColMap_    = newColMap    ? *newColMap    : dummy;
+  CrsGraphData_->DomainMap_ = newDomainMap ? *newDomainMap : dummy;
+  CrsGraphData_->RangeMap_  = newRangeMap  ? *newRangeMap : dummy;
+  CrsGraphData_->Importer_  = newImport;
+  CrsGraphData_->Exporter_  = newExport;
+
+  // Epetra_DistObject things
+  if(newMap) {
+    Map_  = *newMap;
+    Comm_ = &newMap->Comm();
+  }
+
+  // Cleanup (newRowMap is always newMap, so don't delete that)
+  if(newColMap != newMap)    delete newColMap;
+  if(newDomainMap != newMap) delete newDomainMap;
+  if(newRangeMap != newMap)  delete newRangeMap;
+
+  return(0);
+}
 
 // private =====================================================================
 int Epetra_CrsGraph::CheckSizes(const Epetra_SrcDistObject& Source) {
@@ -2829,6 +2909,37 @@ void Epetra_CrsGraph::ComputeIndexState() {
   CrsGraphData_->IndicesAreLocal_ = (allIndicesAreLocal==1); // If indices are local on one PE, should be local on all
   CrsGraphData_->IndicesAreGlobal_ = (allIndicesAreGlobal==1);  // If indices are global on one PE should be local on all
 }
+
+//==============================================================================
+#if defined(Epetra_ENABLE_MKL_SPARSE) && !defined(Epetra_DISABLE_MKL_SPARSE_MM)
+int *Epetra_CrsGraph::All_IndicesPlus1() const {
+  // This functionality is needed because MKL "sparse matrix" "dense matrix"
+  // functions do not work with column-based dense storage and zero-based
+  // sparse storage.  So add "1" to indices and save duplicate data.  This means
+  // we will use one-based indices.  This does not affect sparse-matrix and vector
+  // operations.
+
+  int* ptr = 0;
+  if (!StorageOptimized()) {
+    throw ReportError("Epetra_CrsGraph: int *All_IndicesPlus1() cannot be called when StorageOptimized()==false", -1);
+  }
+  else {
+    Epetra_IntSerialDenseVector& vec = CrsGraphData_->data->All_IndicesPlus1_;
+
+    if(!vec.Length()) {
+      int* indices = All_Indices();
+	  vec.Size(CrsGraphData_->data->All_Indices_.Length());
+	  ptr = vec.Values();
+      for(int i = 0; i < CrsGraphData_->NumMyNonzeros_; ++i)
+		  ptr[i] = indices[i] + 1;
+	}
+	else {
+	  ptr = vec.Values();
+	}
+  }
+  return ptr;
+}
+#endif // defined(Epetra_ENABLE_MKL_SPARSE) && !defined(Epetra_DISABLE_MKL_SPARSE_MM)
 
 //==============================================================================
 void Epetra_CrsGraph::Print (ostream& os) const {

@@ -41,6 +41,8 @@
 // @HEADER
 
 #include "Piro_RythmosSolver.hpp"
+
+#include "Piro_ObserverToRythmosIntegrationObserverAdapter.hpp"
 #include "Piro_ValidPiroParameters.hpp"
 
 #include "Rythmos_BackwardEulerStepper.hpp"
@@ -62,6 +64,7 @@
 #include "Thyra_DefaultAddedLinearOp.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 #ifdef Piro_ENABLE_NOX
 #  include "Thyra_NonlinearSolver_NOX.hpp"
@@ -78,11 +81,12 @@ Piro::RythmosSolver<Scalar>::RythmosSolver() :
 {
 }
 
+
 template <typename Scalar>
 Piro::RythmosSolver<Scalar>::RythmosSolver(
-    Teuchos::RCP<Teuchos::ParameterList> appParams,
-    Teuchos::RCP< Thyra::ModelEvaluator<Scalar> > in_model,
-    Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer) :
+    const Teuchos::RCP<Teuchos::ParameterList> &appParams,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &in_model,
+    const Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > &observer) :
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
   isInitialized(false)
 {
@@ -91,9 +95,9 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
 
 template <typename Scalar>
 void Piro::RythmosSolver<Scalar>::initialize(
-    Teuchos::RCP<Teuchos::ParameterList> appParams,
-    Teuchos::RCP< Thyra::ModelEvaluator<Scalar> > in_model,
-    Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer)
+    const Teuchos::RCP<Teuchos::ParameterList> &appParams,
+    const Teuchos::RCP< Thyra::ModelEvaluator<Scalar> > &in_model,
+    const Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > &observer)
 {
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
@@ -793,4 +797,21 @@ void Piro::RythmosSolver<Scalar>::
 addStepperFactory(const std::string & stepperName,const Teuchos::RCP<RythmosStepperFactory<Scalar> > & factory)
 {
   stepperFactories[stepperName] = factory;
+}
+
+
+template <typename Scalar>
+Teuchos::RCP<Piro::RythmosSolver<Scalar> >
+Piro::rythmosSolver(
+    const Teuchos::RCP<Teuchos::ParameterList> &appParams,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &in_model,
+    const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver)
+{
+  Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer;
+  if (Teuchos::nonnull(piroObserver)) {
+    observer = Teuchos::rcp(
+        new ObserverToRythmosIntegrationObserverAdapter<Scalar>(piroObserver));
+  }
+
+  return Teuchos::rcp(new RythmosSolver<Scalar>(appParams, in_model, observer));
 }

@@ -94,6 +94,14 @@ namespace Xpetra {
     //! Scale the current values of a matrix, this = alpha*this.
     virtual void scale(const Scalar &alpha)= 0;
 
+    //! Allocates and returns ArrayRCPs of the Crs arrays --- This is an Xpetra-only routine.
+    //** \warning This is an expert-only routine and should not be called from user code. */
+    virtual void allocateAllValues(size_t numNonZeros,ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind, ArrayRCP<Scalar> & values)=0;
+
+    //! Sets the matrix's structure from the Crs arrays
+    //** \warning This is an expert-only routine and should not be called from user code. */
+    virtual void setAllValues(const ArrayRCP<size_t> & rowptr, const ArrayRCP<LocalOrdinal> & colind, const ArrayRCP<Scalar> & values)=0;
+
     //@}
 
     //! @name Transformational Methods
@@ -111,6 +119,12 @@ namespace Xpetra {
     //!  Replaces the current domainMap and importer with the user-specified objects.
     virtual void replaceDomainMapAndImporter(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >& newDomainMap, Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter)=0;
 
+    //! Expert static fill complete
+    virtual void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+					  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+					  const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
+					  const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
+					  const RCP<ParameterList> &params=Teuchos::null) = 0;
     //@}
 
     //! @name Methods implementing RowMatrix
@@ -182,6 +196,8 @@ namespace Xpetra {
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
     virtual void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const = 0;
 
+    virtual void removeEmptyProcessesInPlace(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap) = 0;
+
     //@}
 
     //! @name Methods implementing Operator
@@ -215,6 +231,9 @@ namespace Xpetra {
 
     //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
         virtual void getLocalRowCopy(LocalOrdinal LocalRow, const ArrayView< LocalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const = 0;
+
+    //! Does this have an underlying matrix
+    virtual bool hasMatrix() const = 0;
 
 
   }; // CrsMatrix class

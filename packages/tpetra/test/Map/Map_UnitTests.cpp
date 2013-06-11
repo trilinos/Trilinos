@@ -74,6 +74,7 @@ namespace {
   using Teuchos::broadcast;
   using Teuchos::OrdinalTraits;
   using Teuchos::Comm;
+  using std::endl;
 
   double errorTolSlack = 1e+1;
 
@@ -184,10 +185,15 @@ namespace {
     const int myImageID = comm->getRank();
     const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
     // bad constructor calls: (num global, entry list, index base)
+
+    out << "Test GID = " << -myImageID << " < indexBase = " << 1 << endl;
     TEST_THROW(M map(numImages, tuple<GO>(-myImageID), 1, comm), std::invalid_argument); // GID less than iB
     if (numImages > 1) {
+      out << "Test number of GIDs too large" << endl;
       TEST_THROW(M map( 1, tuple<GO>(myImageID+1), 1, comm), std::invalid_argument);    // nG != sum nL
+      out << "Test invalid number of GIDs on one process" << endl;
       TEST_THROW(M map((myImageID == 0 ? GSTI :  0),tuple<GO>(myImageID+1),1, comm), std::invalid_argument);
+      out << "Test incorrect number of GIDs on all processes" << endl;
       TEST_THROW(M map(0, tuple<GO>(myImageID+1), (myImageID == 0 ? 0 : 1), comm), std::invalid_argument);
     }
     // All procs fail if any proc fails

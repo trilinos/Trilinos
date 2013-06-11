@@ -187,7 +187,7 @@ namespace Xpetra {
 
     //! EpetraMap constructor to wrap a Epetra_Map object
     StridedEpetraMap(const Teuchos::RCP<const Epetra_BlockMap> &map, std::vector<size_t>& stridingInfo, LocalOrdinal stridedBlockId=-1, GlobalOrdinal offset = 0)
-      : EpetraMap(map), StridedMap<int, int>(stridingInfo, stridedBlockId, offset) {
+      : EpetraMap(map), StridedMap<int, int>(stridingInfo, map->IndexBase(), stridedBlockId, offset) {
       int nDofsPerNode = Teuchos::as<int>(getFixedBlockSize());
       TEUCHOS_TEST_FOR_EXCEPTION(map_->NumMyPoints() % nDofsPerNode != 0, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: wrong distribution of dofs among processors.");
       TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: CheckConsistency() == false");
@@ -223,7 +223,7 @@ namespace Xpetra {
         //size_t nDofsPerNode = stridingInfo_[stridedBlockId_];
 
         const GlobalOrdinal goStridedOffset = Teuchos::as<GlobalOrdinal>(nStridedOffset);
-        const GlobalOrdinal goZeroOffset = (dofGids[0] - nStridedOffset - offset_) / Teuchos::as<GlobalOrdinal>(getFixedBlockSize());
+        const GlobalOrdinal goZeroOffset = (dofGids[0] - nStridedOffset - offset_ - indexBase_) / Teuchos::as<GlobalOrdinal>(getFixedBlockSize());
         /*printf("goZeroOffset: %i\n",goZeroOffset);
         printf("dofGids[0]: %i \n",dofGids[0]);
         printf("stridedOffset: %i\n",nStridedOffset);
@@ -236,7 +236,7 @@ namespace Xpetra {
 
           for(size_t j=0; j<stridingInfo_[stridedBlockId_]; j++) {
             const GlobalOrdinal gid = dofGids[i+j];
-            if((gid - Teuchos::as<GlobalOrdinal>(j) - goStridedOffset - offset_) / Teuchos::as<GlobalOrdinal>(getFixedBlockSize()) - goZeroOffset - cnt != 0) {
+            if((gid - Teuchos::as<GlobalOrdinal>(j) - goStridedOffset - offset_ - indexBase_) / Teuchos::as<GlobalOrdinal>(getFixedBlockSize()) - goZeroOffset - cnt != 0) {
               //std::cout << "gid: " << gid << " GID: " <<  (gid - Teuchos::as<GlobalOrdinal>(j) - goStridedOffset) / Teuchos::as<GlobalOrdinal>(getFixedBlockSize()) - goZeroOffset - cnt << std::endl;
               return false;
             }

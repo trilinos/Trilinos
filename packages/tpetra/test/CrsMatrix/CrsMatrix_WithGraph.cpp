@@ -226,11 +226,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   {
     RCP<Node> node = getNode<Node>();
     // generate a tridiagonal matrix
-    typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
-    typedef Vector<Scalar,LO,GO,Node> V;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -431,10 +427,10 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map with numLocal entries per node using a pre-existing column map.
     // ensure:
-    // * that the matrix uses this col map
-    // * that it performs filtering during insertions
+    // * that the matrix uses this column Map
     // * that we can perform local or global insertions
-    const size_t numLocal = 10; TEUCHOS_TEST_FOR_EXCEPTION( numLocal < 2, std::logic_error, "Test assumes that numLocal be greater than 1.");
+    const size_t numLocal = 10;
+    TEUCHOS_TEST_FOR_EXCEPTION( numLocal < 2, std::logic_error, "Test assumes that numLocal be greater than 1.");
     // these maps are equalivalent, but we should keep two distinct maps just to verify the general use case.
     RCP<const Map<LO,GO,Node> > rmap = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
     RCP<const Map<LO,GO,Node> > cmap = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
@@ -444,18 +440,33 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     //
     // run this test twice; once where we insert global indices and once where we insert local indices
     // both are allowed with a specified column map; however, we can only test one at a time.
-    //
-    // the first time, use const NNZ
-    // the second, use NNZ array
+
+    // First test: use a constant upper bound (3) on the number of
+    // entries in each row, and insert using global indices.
     {
-      MAT bdmat(rmap,cmap,3,StaticProfile);
+      MAT bdmat (rmap, cmap, 3, StaticProfile);
       TEST_EQUALITY(bdmat.getRowMap(), rmap);
       TEST_EQUALITY_CONST(bdmat.hasColMap(), true);
       TEST_EQUALITY(bdmat.getColMap(), cmap);
+
       for (GO r=rmap->getMinGlobalIndex(); r <= rmap->getMaxGlobalIndex(); ++r) {
-        // use global for the first one to verify that the matrix allows it
-        // r-1 might be invalid, but the column map filtering should address that.
-        bdmat.insertGlobalValues(r,tuple<GO>(r-1,r,r+1),tuple<Scalar>(SONE,SONE,SONE));
+        // The second, apparently superfluous check avoids issues if
+        // r-1 overflows unsigned.
+        if (r - 1 >= cmap->getMinGlobalIndex () && r - 1 <= cmap->getMaxGlobalIndex ()) {
+          // The second, apparently superfluous check avoids issues if
+          // r+1 overflows.
+          if (r + 1 <= cmap->getMaxGlobalIndex () && r + 1 >= cmap->getMinGlobalIndex ()) {
+            bdmat.insertGlobalValues(r,tuple<GO>(r-1,r,r+1),tuple<Scalar>(SONE,SONE,SONE));
+          } else {
+            bdmat.insertGlobalValues(r,tuple<GO>(r-1,r),tuple<Scalar>(SONE,SONE));
+          }
+        } else { // r - 1 invalid
+          if (r + 1 <= cmap->getMaxGlobalIndex () && r + 1 >= cmap->getMinGlobalIndex ()) {
+            bdmat.insertGlobalValues(r,tuple<GO>(r,r+1),tuple<Scalar>(SONE,SONE));
+          } else { // r + 1 invalid
+            bdmat.insertGlobalValues(r,tuple<GO>(r),tuple<Scalar>(SONE));
+          }
+        }
       }
       TEST_NOTHROW(bdmat.fillComplete());
       // nothing should have changed with regard to the row and column maps of the matrix
@@ -472,6 +483,9 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
         }
       }
     }
+
+    // Second test: use an array to bound from above the number of
+    // entries in each row, and insert using local indices.
     {
       ArrayRCP<size_t> nnzperrow = arcp<size_t>(numLocal);
       std::fill(nnzperrow.begin(), nnzperrow.end(), 3);
@@ -479,12 +493,31 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       TEST_EQUALITY(bdmat.getRowMap(), rmap);
       TEST_EQUALITY_CONST(bdmat.hasColMap(), true);
       TEST_EQUALITY(bdmat.getColMap(), cmap);
-      for (GO r=rmap->getMinGlobalIndex(); r <= rmap->getMaxGlobalIndex(); ++r) {
-        // use local for the rest. need the column map
-        // column map and row map are the same, so we only have to do one translation
-        LO lid = cmap->getLocalElement(r);
-        // as above, filtering via column map (required to happen for local and global) will save us for the invalid r-1
-        bdmat.insertLocalValues(lid,tuple<LO>(lid-1,lid,lid+1),tuple<Scalar>(SONE,SONE,SONE));
+
+      for (LO localRow = rmap->getMinLocalIndex (); localRow <= rmap->getMaxLocalIndex (); ++localRow) {
+        // In this test, the column Map and row Map are the same, so
+        // we can use localRow as the local column index as well.
+        const LO c = localRow;
+
+        // The second, apparently superfluous check avoids issues if
+        // c-1 overflows unsigned.
+        if (c - 1 >= cmap->getMinLocalIndex () && c - 1 <= cmap->getMaxLocalIndex ()) {
+          // The second, apparently superfluous check avoids issues if
+          // c+1 overflows.
+          if (c + 1 <= cmap->getMaxLocalIndex () && c + 1 >= cmap->getMinLocalIndex ()) {
+            bdmat.insertLocalValues (c, tuple<LO>(c-1,c,c+1), tuple<Scalar>(SONE,SONE,SONE));
+          } else { // c + 1 is an invalid column index
+            bdmat.insertLocalValues (c, tuple<LO>(c-1,c), tuple<Scalar>(SONE,SONE));
+          }
+        } else { // c - 1 is an invalid column index
+          // The second, apparently superfluous check avoids issues if
+          // c+1 overflows.
+          if (c + 1 <= cmap->getMaxLocalIndex () && c + 1 >= cmap->getMinLocalIndex ()) {
+            bdmat.insertLocalValues (c, tuple<LO>(c,c+1), tuple<Scalar>(SONE,SONE));
+          } else { // c + 1 is an invalid column index
+            bdmat.insertLocalValues (c, tuple<LO>(c), tuple<Scalar>(SONE));
+          }
+        }
       }
       TEST_NOTHROW(bdmat.fillComplete());
       // nothing should have changed with regard to the row and column maps of the matrix
@@ -568,6 +601,20 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     } else {
       TEST_COMPARE_FLOATING_ARRAYS( expectedDiags(), dvec_view, MT::zero() );
     }
+
+    // Test the precomputed offsets version of getLocalDiagCopy().
+    V dvec2 (map, false);
+    dvec2.randomize ();
+    ArrayRCP<size_t> offsets;
+    matrix.getLocalDiagOffsets (offsets);
+    TEST_EQUALITY( matrix.getNodeNumRows(), Teuchos::as<size_t>(offsets.size()) );
+    matrix.getLocalDiagCopy (dvec2, offsets ());
+    ArrayRCP<const Scalar> dvec2_view = dvec2.get1dView ();
+    if (ST::isOrdinal) {
+      TEST_COMPARE_ARRAYS( expectedDiags(), dvec2_view );
+    } else {
+      TEST_COMPARE_FLOATING_ARRAYS( expectedDiags(), dvec2_view, MT::zero() );
+    }
   }
 
 
@@ -577,9 +624,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<Node> node = getNode<Node>();
     // test that an exception is thrown when we exceed statically allocated memory
     typedef ScalarTraits<Scalar> ST;
-    typedef typename ST::magnitudeType Mag;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
-    typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();

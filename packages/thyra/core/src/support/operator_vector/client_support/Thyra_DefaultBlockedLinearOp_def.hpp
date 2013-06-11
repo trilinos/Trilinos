@@ -356,7 +356,6 @@ void DefaultBlockedLinearOp<Scalar>::describe(
   ,const Teuchos::EVerbosityLevel verbLevel
   ) const
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
   using Teuchos::rcpFromRef;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
@@ -563,8 +562,6 @@ void DefaultBlockedLinearOp<Scalar>::setBlockSpaces(
   const int i, const int j, const LinearOpBase<Scalar> &block
   )
 {
-
-  typedef std::string s;
   using Teuchos::toString;
   assertBlockFillIsActive(true);
   assertBlockRowCol(i,j);

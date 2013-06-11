@@ -136,6 +136,21 @@ namespace Xpetra {
     //! Scale the current values of a matrix, this = alpha*this.
     void scale(const Scalar &alpha) { XPETRA_MONITOR("EpetraCrsMatrix::scale"); mtx_->Scale(alpha); }
 
+    //! Allocates and returns ArrayRCPs of the Crs arrays --- This is an Xpetra-only routine.
+    //** \warning This is an expert-only routine and should not be called from user code. */
+    void allocateAllValues(size_t numNonZeros,ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind, ArrayRCP<Scalar> & values);
+
+    //! Sets the matrix's structure from the Crs arrays
+    //** \warning This is an expert-only routine and should not be called from user code. */
+    void setAllValues(const ArrayRCP<size_t> & rowptr, const ArrayRCP<LocalOrdinal> & colind, const ArrayRCP<Scalar> & values);
+
+    //! Expert static fill complete
+    //** \warning This is an expert-only routine and should not be called from user code. */
+    void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+				  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+				  const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
+				  const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
+				  const RCP<ParameterList> &params=Teuchos::null);
     //@}
 
     //! @name Transformational Methods
@@ -283,10 +298,15 @@ namespace Xpetra {
     //! Export (using an Importer).
     void doExport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &dest, const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM);
 
+    void removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap) { }
+
     //@}
 
     //! @name Xpetra specific
     //@{
+
+    //! Does this have an underlying matrix
+    bool hasMatrix() const { return !mtx_.is_null();}
 
     //! EpetraCrsMatrix constructor to wrap a Epetra_CrsMatrix object
     EpetraCrsMatrix(const Teuchos::RCP<Epetra_CrsMatrix > &mtx) : mtx_(mtx), isFillResumed_(false) {  }

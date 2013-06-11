@@ -165,7 +165,6 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( BlockMap, OverlapConstBlkSize, LO, GO )
   {
-    typedef Map<LO,GO> M;
     typedef BlockMap<LO,GO> BM;
     // create a comm  
     RCP<const Comm<int> > comm = getDefaultComm();

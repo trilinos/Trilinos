@@ -55,7 +55,7 @@
 #include "TestClasses.hpp"
 
 
-// 
+//
 // Uncomment these macros to see example errors
 //
 
@@ -103,7 +103,7 @@ int main( int argc, char* argv[] ) {
   using Teuchos::getNonconstEmbeddedObj;
   using Teuchos::getConst;
   using Teuchos::CommandLineProcessor;
-  
+
   bool success = true;
   bool createCircRefs = false; // Don't create memory leak by default!
 
@@ -161,7 +161,7 @@ int main( int argc, char* argv[] ) {
 
       // Create some more smart points (no new memory!)
 
-      const RCP<const A> ca_ptr1 = rcp_const_cast<const A>(a_ptr1); 
+      const RCP<const A> ca_ptr1 = rcp_const_cast<const A>(a_ptr1);
       TEUCHOS_TEST_FOR_EXCEPT( !(ca_ptr1 == a_ptr1) );
       TEUCHOS_TEST_FOR_EXCEPT( ca_ptr1 != a_ptr1 );
       TEUCHOS_TEST_FOR_EXCEPT( !ca_ptr1.shares_resource(a_ptr1) );
@@ -196,7 +196,7 @@ int main( int argc, char* argv[] ) {
       TEUCHOS_TEST_FOR_EXCEPT( d_ptr1->D_g() != D_g_return );
       TEUCHOS_TEST_FOR_EXCEPT( d_ptr1->D_f() != D_f_return );
       TEUCHOS_TEST_FOR_EXCEPT( cd_ptr1->D_f() != D_f_return );
-    
+
       // Test funciton calls through operator*(...)
 
       TEUCHOS_TEST_FOR_EXCEPT( (*a_ptr1).A_g() != A_g_return );
@@ -245,7 +245,7 @@ int main( int argc, char* argv[] ) {
       TEUCHOS_TEST_FOR_EXCEPT( d_ptr1.strong_count() != 3 );
 
       // Cast up the inheritance hiearchy (const E -> const D)
-      TEUCHOS_TEST_FOR_EXCEPT( rcp_implicit_cast<const D>(ce_ptr1)->D_f() != D_f_return ); 
+      TEUCHOS_TEST_FOR_EXCEPT( rcp_implicit_cast<const D>(ce_ptr1)->D_f() != D_f_return );
       // Cast away constantness (const E -> E)
       TEUCHOS_TEST_FOR_EXCEPT( rcp_const_cast<E>(ce_ptr1)->E_g() != E_g_return );
       TEUCHOS_TEST_FOR_EXCEPT( ce_ptr1->D_f() != D_f_return );
@@ -292,7 +292,7 @@ int main( int argc, char* argv[] ) {
 #ifdef SHOW_MEMORY_LEAK_1
       a_ptr1.release(); // If we release but do not delete manually then this is a memory leak!
 #endif
-    
+
       // Here at the end of the block, all of the other smart pointers are deleted!
     }
     // Check that all of the other references where removed but these
@@ -300,7 +300,7 @@ int main( int argc, char* argv[] ) {
     TEUCHOS_TEST_FOR_EXCEPT( d_ptr1.strong_count() != 1 );
 
     // Assign some other dynamically created objects.
-  
+
     a_ptr1 = rcp(new A); // In each case the current dynamically allocated object is deleted ...
     a_ptr1 = rcp(new B1); // before the new reference is set.
     a_ptr1 = rcp(new B2); // ""
@@ -319,7 +319,7 @@ int main( int argc, char* argv[] ) {
 #ifndef SHOW_RUN_TIME_ERROR_3
     // Release ownership so that a_ptr1 will not try to delete &c when a_ptr1 goes out of scope
     a_ptr1.release();
-#endif  
+#endif
 
     E e; // Automatic object what will be deleted by compiler at end of block
     d_ptr1 = rcp(&e);
@@ -345,7 +345,7 @@ int main( int argc, char* argv[] ) {
     a_ptr1 = rcp(a_rptr5); // This is a no-no and could cause trouble!
     a_ptr1 = null; // This will cause a segmentation fault in free(...) on many platforms
 #endif // SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS
-  
+
     // Test out getting the deallocator object
     a_ptr1 = rcpWithDealloc( new C, DeallocDelete<C>() );
     get_dealloc<DeallocDelete<C> >(a_ptr1);
@@ -354,7 +354,7 @@ int main( int argc, char* argv[] ) {
     TEUCHOS_TEST_FOR_EXCEPT( get_optional_nonconst_dealloc<DeallocDelete<A> >(a_ptr1)!=null );
     TEUCHOS_TEST_FOR_EXCEPT( get_optional_dealloc<DeallocDelete<C> >(const_cast<const RCP<A>&>(a_ptr1))==null );
     TEUCHOS_TEST_FOR_EXCEPT( get_optional_dealloc<DeallocDelete<A> >(const_cast<const RCP<A>&>(a_ptr1))!=null );
- 
+
     // Test storing extra data and then getting it out again
     TEUCHOS_TEST_FOR_EXCEPT( get_optional_nonconst_extra_data<RCP<B1> >(a_ptr1,"blahblah") != null );
     TEUCHOS_TEST_FOR_EXCEPT( get_optional_extra_data<int>(const_cast<const RCP<A>&>(a_ptr1),"blahblah") != null ); // test const version
@@ -371,7 +371,7 @@ int main( int argc, char* argv[] ) {
 
     // Test storage of extra data as embedded objects and then getting it out
     // again
- 
+
     {
       RCP<A> a_ptr = rcpWithEmbeddedObj(new C,int(-5));
       const int intRtn1 = getEmbeddedObj<C,int>(a_ptr);
@@ -380,7 +380,7 @@ int main( int argc, char* argv[] ) {
       const int intRtn2 = getEmbeddedObj<C,int>(a_ptr);
       TEUCHOS_TEST_FOR_EXCEPT( intRtn2 != -4 );
     }
- 
+
     {
       RCP<A> a_ptr = rcpWithEmbeddedObjPreDestroy(new C,int(-5));
       const int intRtn1 = getEmbeddedObj<C,int>(a_ptr);
@@ -389,7 +389,7 @@ int main( int argc, char* argv[] ) {
       const int intRtn2 = getEmbeddedObj<C,int>(a_ptr);
       TEUCHOS_TEST_FOR_EXCEPT( intRtn2 != -4 );
     }
- 
+
     {
       RCP<A> a_ptr = rcpWithEmbeddedObjPostDestroy(new C,int(-5));
       const int intRtn1 = getEmbeddedObj<C,int>(a_ptr);
@@ -422,7 +422,7 @@ int main( int argc, char* argv[] ) {
     a_ptr1 = null;
 
 #ifdef TEUCHOS_DEBUG
- 
+
     if (createCircRefs) {
       out << "\nCreate a circular reference that will cause a memory leak! ...\n";
 #  if !defined(HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING)
@@ -437,12 +437,14 @@ int main( int argc, char* argv[] ) {
 
 #endif // TEUCHOS_DEBUG
 
-#ifndef TEUCHOS_DEBUG 
+#ifndef TEUCHOS_DEBUG
 
     out << "\nTesting using RCP to wrap an undefined opaque object (no TNT) ...\n";
     {
-      RCP<UndefinedType> op_ptr = rcp( createOpaque(),
-        deallocFunctorHandleDelete<UndefinedType>(destroyOpaque), true );
+      RCP<UndefinedType> op_ptr =
+        rcpWithDeallocUndef (createOpaque (),
+                             deallocFunctorHandleDelete<UndefinedType> (destroyOpaque),
+                             true);
       TEUCHOS_ASSERT_EQUALITY( getOpaqueValue(&*op_ptr), getOpaqueValue_return );
     }
     // 2008/08/01: rabartl: Above, we can only wrap an undefined type in
@@ -489,7 +491,7 @@ int main( int argc, char* argv[] ) {
 
   } // end try
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
- 
+
   try {
     // In debug mode, this should show that the A and C RCP objects are still
     // around!
@@ -502,7 +504,7 @@ int main( int argc, char* argv[] ) {
     }
   } // end try
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
- 
+
   if(success)
     out << "\nEnd Result: TEST PASSED" << std::endl;
 
