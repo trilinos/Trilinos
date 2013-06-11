@@ -78,7 +78,7 @@ namespace Galeri {
       };
       virtual ~Problem() { }
 
-      virtual Teuchos::RCP<Matrix> BuildMatrix() = 0;
+      virtual Teuchos::RCP<Matrix>      BuildMatrix() = 0;
       virtual Teuchos::RCP<MultiVector> BuildCoords() {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Coordinates construction is not implemented for this problem");
       }
@@ -87,13 +87,13 @@ namespace Galeri {
       }
 
       // Get methods
-      Teuchos::RCP<const Map>         getMap()       const { return Map_; }
-      Teuchos::RCP<const Matrix>      getMatrix()    const { return A_; }
-      Teuchos::RCP<const MultiVector> getNullspace() const { return Nullspace_; }
-      Teuchos::RCP<const MultiVector> getCoords()    const { return Coords_; }
+      Teuchos::RCP<const Map>         getMap()                                   const { return Map_; }
+      Teuchos::RCP<const Matrix>      getMatrix()                                const { return A_; }
+      Teuchos::RCP<const MultiVector> getNullspace()                             const { return Nullspace_; }
+      Teuchos::RCP<const MultiVector> getCoords()                                const { return Coords_; }
 
       // Set methods
-      Teuchos::RCP<const Map> setMap   (const Teuchos::RCP<const Map>& map)       { Map_ = map; }
+      Teuchos::RCP<const Map>         setMap(const Teuchos::RCP<const Map>& map)       { Map_ = map; }
 
     protected:
       Teuchos::ParameterList&   list_;
