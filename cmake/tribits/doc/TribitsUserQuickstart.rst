@@ -156,7 +156,7 @@ d) Using the QT CMake configuration GUI:
 Selecting the list of packages to enable
 ----------------------------------------
 
-a) Configuring a package(s) along with all of the packages it can use:
+a) Configuring a package(s) along with all of the packages it can use::
 
     $ ./do-configure \
        -D Trilinos_ENABLE_<TRIBITS_PACKAGE>:BOOL=ON \
@@ -571,7 +571,7 @@ are implicitly enabled due to package dependencies are not directly processed
 by the experimental_build_test.cmake script.
 
 There are a number of options that you can set in the environment to control
-what this script does.  This set of options can be found by doing:
+what this script does.  This set of options can be found by doing::
 
   $ grep 'SET_DEFAULT_AND_FROM_ENV(' \
       Trilinos/cmake/tribits/ctest/TribitsCTestDriverCore.cmake

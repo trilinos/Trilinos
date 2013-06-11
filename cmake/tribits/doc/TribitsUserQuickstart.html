@@ -933,12 +933,10 @@ are implicitly enabled due to package dependencies are not directly processed
 by the experimental_build_test.cmake script.</p>
 <p>There are a number of options that you can set in the environment to control
 what this script does.  This set of options can be found by doing:</p>
-<blockquote>
-<dl class="docutils">
-<dt>$ grep 'SET_DEFAULT_AND_FROM_ENV(' </dt>
-<dd>Trilinos/cmake/tribits/ctest/TribitsCTestDriverCore.cmake</dd>
-</dl>
-</blockquote>
+<pre class="literal-block">
+$ grep 'SET_DEFAULT_AND_FROM_ENV(' \
+    Trilinos/cmake/tribits/ctest/TribitsCTestDriverCore.cmake
+</pre>
 <p>Currently, this options includes:</p>
 <pre class="literal-block">
 Blah blah blah ...
