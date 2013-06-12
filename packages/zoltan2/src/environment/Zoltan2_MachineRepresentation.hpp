@@ -52,8 +52,8 @@ public:
 
         int m = myRank;
         for (int i = 0; i < networkDim; ++i){
-            procCoords[i][myRank] = m / int(pow(slice, networkDim - i - 1));
-            m = m % int(pow(slice, networkDim - i - 1));
+            procCoords[i][myRank] = m / int(pow(slice, double(networkDim - i - 1)));
+            m = m % int(pow(double(slice), double(networkDim - i - 1)));
         }
     }
 
