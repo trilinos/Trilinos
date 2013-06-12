@@ -35,6 +35,7 @@
 #include "Ifpack_IC.h"
 #include "Ifpack_ICT.h"
 #include "Ifpack_ILU.h"
+#include "Ifpack_SILU.h"
 #include "Ifpack_ILUT.h"
 #include "Ifpack_SPARSKIT.h"
 #include "Ifpack_AdditiveSchwarz.h"
@@ -78,6 +79,10 @@ const Ifpack::EPrecType Ifpack::precTypeValues[Ifpack::numPrecTypes] =
   ,BLOCK_RELAXATION
   ,BLOCK_RELAXATION_STAND_ALONE
   ,BLOCK_RELAXATION_STAND_ALONE_ILU
+  ,BLOCK_RELAXATION_STAND_ALONE_IC
+#ifdef HAVE_IFPACK_SUPERLU
+  ,BLOCK_RELAXATION_STAND_ALONE_SILU
+#endif
 #ifdef HAVE_IFPACK_AMESOS
   ,BLOCK_RELAXATION_STAND_ALONE_AMESOS
   ,BLOCK_RELAXATION_AMESOS
@@ -119,6 +124,10 @@ const char* Ifpack::precTypeNames[Ifpack::numPrecTypes] =
   ,"block relaxation"
   ,"block relaxation stand-alone"
   ,"block relaxation stand-alone (ILU)"
+  ,"block relaxation stand-alone (IC)"
+#ifdef HAVE_IFPACK_SUPERLU
+  ,"block relaxation stand-alone (SILU)"
+#endif
 #ifdef HAVE_IFPACK_AMESOS
   ,"block relaxation stand-alone (Amesos)"
   ,"block relaxation (Amesos)"
@@ -160,6 +169,10 @@ const bool Ifpack::supportsUnsymmetric[Ifpack::numPrecTypes] =
   ,true // block relaxation
   ,true // block relaxation stand-alone
   ,true // block relaxation stand-alone (ILU)
+  ,false // block relaxation stand-alone (IC)
+#ifdef HAVE_IFPACK_SUPERLU
+  ,true // block relaxation stand-alone (SILU)
+#endif
 #ifdef HAVE_IFPACK_AMESOS
   ,true // block relaxation stand-alone (Amesos)
   ,true // block relaxation (Amesos)
@@ -219,6 +232,12 @@ Ifpack_Preconditioner* Ifpack::Create(EPrecType PrecType,
       return(new Ifpack_BlockRelaxation<Ifpack_DenseContainer>(Matrix));
     case BLOCK_RELAXATION_STAND_ALONE_ILU:
       return(new Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_ILU> >(Matrix));
+    case BLOCK_RELAXATION_STAND_ALONE_IC:
+      return(new Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_IC> >(Matrix));
+#ifdef HAVE_IFPACK_SUPERLU
+    case BLOCK_RELAXATION_STAND_ALONE_SILU:
+      return(new Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_SILU> >(Matrix));
+#endif
 #ifdef HAVE_IFPACK_AMESOS
     case BLOCK_RELAXATION_STAND_ALONE_AMESOS:
       return(new Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> >(Matrix));
