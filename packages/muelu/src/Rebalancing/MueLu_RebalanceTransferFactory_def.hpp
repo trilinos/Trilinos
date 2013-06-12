@@ -102,6 +102,7 @@ namespace MueLu {
     } else {
       Input(coarseLevel, "R");
       Input(coarseLevel, "Nullspace");
+      if(pL.isParameter("Coordinates") && pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null)
       Input(coarseLevel, "Coordinates");
     }
 
@@ -191,9 +192,13 @@ namespace MueLu {
         if (IsAvailable(coarseLevel, "Nullspace"))
           Set(coarseLevel, "Nullspace", Get< RCP<MultiVector> >(coarseLevel, "Nullspace"));
 
-        TEUCHOS_TEST_FOR_EXCEPTION(!IsAvailable(coarseLevel, "Coordinates"), Exceptions::RuntimeError, "RebalanceTransferFactory::Build : no coordinates found");
-        if (IsAvailable(coarseLevel, "Coordinates"))
-          Set(coarseLevel, "Coordinates", Get< RCP<MultiVector> >(coarseLevel, "Coordinates"));
+        //TEUCHOS_TEST_FOR_EXCEPTION(!IsAvailable(coarseLevel, "Coordinates"), Exceptions::RuntimeError, "RebalanceTransferFactory::Build : no coordinates found");
+        //if (IsAvailable(coarseLevel, "Coordinates"))
+        //if (coarseLevel.IsAvailable("Coordinates"))
+        if(pL.isParameter("Coordinates") && pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null) {
+          if (IsAvailable(coarseLevel, "Coordinates"))
+            Set(coarseLevel, "Coordinates", Get< RCP<MultiVector> >(coarseLevel, "Coordinates"));
+        }
 
         return;
       }
@@ -219,8 +224,10 @@ namespace MueLu {
         //if(originalR->IsView("stridedMaps")) rebalancedR->CreateView("stridedMaps", originalR);
         ///////////////////////// EXPERIMENTAL
 
-        TEUCHOS_TEST_FOR_EXCEPTION(!IsAvailable(coarseLevel, "Coordinates"), Exceptions::RuntimeError, "RebalanceTransferFactory::Build : no coordinates found");
-        if (IsAvailable(coarseLevel, "Coordinates")) {
+        //TEUCHOS_TEST_FOR_EXCEPTION(!IsAvailable(coarseLevel, "Coordinates"), Exceptions::RuntimeError, "RebalanceTransferFactory::Build : no coordinates found");
+        if (pL.isParameter("Coordinates") &&
+            pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null &&
+            IsAvailable(coarseLevel, "Coordinates")) {
           SubFactoryMonitor subM(*this, "Rebalancing coordinates", coarseLevel);
 
           RCP<MultiVector> coords = Get< RCP<MultiVector> >(coarseLevel, "Coordinates");
