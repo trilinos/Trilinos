@@ -58,18 +58,20 @@ namespace Teuchos {
 #include "slu_ddefs.h"
 
 
-//! Ifpack_SILU: A wrapper to SuperLU 4.0's supernodal ILUT w/ partial pivoting.
+/*! @class Ifpack_SILU
+    @brief A wrapper to SuperLU 4.0's supernodal ILUT w/ partial pivoting.
 
-/*! The Ifpack_SILU class is a  wrapper to SuperLU 4.0's supernodal ILUT w/ partial pivoting.
+    The Ifpack_SILU class is a  wrapper to SuperLU 4.0's supernodal ILUT w/ partial pivoting.
+
     \author Chris Siefert, SNL 1431
-
     \date Last modified on 07-Apr-10
 */    
 
 class Ifpack_SILU: public Ifpack_Preconditioner {
       
 public:
-  // @{ Constructors and destructors.
+  /// @name Constructors and destructors.
+  //@{
   //! Constructor
   Ifpack_SILU(Epetra_RowMatrix* A);
   
@@ -79,8 +81,9 @@ public:
     Destroy();
   }
 
-  // @}
-  // @{ Construction methods
+  //@}
+  /// @name Construction methods
+  //@{
   
   //! Initialize the preconditioner, does not touch matrix values.
   int Initialize();
@@ -121,9 +124,10 @@ public:
       \return Always returns 0.
   */
   int SetUseTranspose(bool UseTranspose_in) {UseTranspose_ = UseTranspose_in; return(0);};
-  // @}
+  //@}
 
-  // @{ Mathematical functions.
+  /// @name Mathematical functions.
+  //@{
   // Applies the matrix to X, returns the result in Y.
   int Apply(const Epetra_MultiVector& X, 
 	       Epetra_MultiVector& Y) const
@@ -162,8 +166,10 @@ public:
     return(Condest_);
   }
 
-  // @}
-  // @{ Query methods
+  //@}
+
+  /// @name Query methods
+  //@{
   
   //! Returns a character string describing the operator
   const char* Label() const {return(Label_);}
@@ -255,8 +261,9 @@ public:
 
 private:
 
-  // @}
-  // @{ Private methods
+  //@}
+  /// @name Private methods
+  //@{
 
   //! Copy constructor (should never be used)
   Ifpack_SILU(const Ifpack_SILU& RHS):
@@ -339,8 +346,10 @@ private:
     return(*A_);
   }
 
-  // @}
-  // @{ Internal data
+  //@}
+
+  /// @name Internal data
+  //@{
   
   //! Pointer to the Epetra_RowMatrix to factorize
   Teuchos::RefCountPtr<Epetra_RowMatrix> A_;
@@ -397,6 +406,7 @@ private:
   mutable SuperMatrix SA_,SAc_,SL_,SU_,SY_;
   //! SuperLU goodies
   int *etree_,*perm_r_,*perm_c_;
+  //@}
 
 };
 
