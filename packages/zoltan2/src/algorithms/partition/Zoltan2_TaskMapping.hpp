@@ -7,7 +7,130 @@
 #include "Zoltan2_AlgPQJagged.hpp"
 #include "Teuchos_ArrayViewDecl.hpp"
 #include "Zoltan2_PartitionMapping.hpp"
+#include "Zoltan2_MachineRepresentation.hpp"
 namespace Zoltan2{
+
+template <typename gno_t, typename partId_t>
+class GNO_LNO_PAIR{
+public:
+    gno_t gno;
+    partId_t part;
+};
+
+//returns the center of the parts.
+template <typename Adapter, typename scalar_t, typename partId_t>
+void getSolutionCenterCoordinates(
+        const Teuchos::Comm<int> *comm,
+        const Zoltan2::CoordinateModel<typename Adapter::base_adapter_t> *coords,
+        const Zoltan2::PartitioningSolution<Adapter> *soln_,
+        int coordDim,
+        partId_t ntasks,
+        scalar_t **partCenters){
+
+    typedef typename Adapter::lno_t lno_t;
+    typedef typename Adapter::gno_t gno_t;
+
+    typedef StridedData<lno_t, scalar_t> input_t;
+    ArrayView<const gno_t> gnos;
+    ArrayView<input_t>     xyz;
+    ArrayView<input_t>     wgts;
+    coords->getCoordinates(gnos, xyz, wgts);
+
+    //local and global num coordinates.
+    lno_t numLocalCoords = coords->getLocalNumCoordinates();
+    //gno_t numGlobalCoords = coords->getGlobalNumCoordinates();
+
+
+
+    //local number of points in each part.
+    gno_t *point_counts = allocMemory<gno_t>(ntasks);
+    memset(point_counts, 0, sizeof(gno_t) * ntasks);
+
+    //global number of points in each part.
+    gno_t *global_point_counts = allocMemory<gno_t>(ntasks);
+
+
+    scalar_t **pqJagged_coordinates = allocMemory<scalar_t *>(coordDim);
+
+    for (int dim=0; dim < coordDim; dim++){
+        ArrayRCP<const scalar_t> ar;
+        xyz[dim].getInputArray(ar);
+        //pqJagged coordinate values assignment
+        pqJagged_coordinates[dim] =  (scalar_t *)ar.getRawPtr();
+        memset(partCenters[dim], 0, sizeof(scalar_t) * ntasks);
+    }
+
+    //get parts with parallel gnos.
+    const partId_t *parts = soln_->getPartList();
+    const gno_t *soln_gnos = soln_->getIdList();
+
+    //hash vector
+    vector< vector <GNO_LNO_PAIR<gno_t, partId_t> > > hash(numLocalCoords);
+
+    //insert each point in solution to hash.
+    for (lno_t i=0; i < numLocalCoords; i++){
+        GNO_LNO_PAIR<gno_t, partId_t> tmp;
+        tmp.gno = soln_gnos[i];
+        tmp.part = parts[i];
+
+        //count the local number of points in each part.
+        ++point_counts[tmp.part];
+        lno_t hash_index = tmp.gno % numLocalCoords;
+        hash[hash_index].push_back(tmp);
+    }
+
+    //get global number of points in each part.
+    reduceAll<int, gno_t>(*comm, Teuchos::REDUCE_SUM,
+            ntasks, point_counts, global_point_counts
+    );
+
+
+    //add up all coordinates in each part.
+    for (lno_t i=0; i < numLocalCoords; i++){
+        gno_t g = gnos[i];
+        lno_t hash_index = g % numLocalCoords;
+        lno_t hash_size = hash[hash_index].size();
+        partId_t p = -1;
+        for (int j =0; j < hash_size; ++j){
+            if (hash[hash_index][j].gno == g){
+                p = hash[hash_index][j].part;
+                break;
+            }
+        }
+        if(p == -1) {
+            cerr << "ERROR AT HASHING FOR GNO:"<< g << " LNO:" << i << endl;
+        }
+        //add uo all coordinates in each part.
+        for(int j = 0; j < coordDim; ++j){
+            scalar_t c = pqJagged_coordinates[j][i];
+            partCenters[j][p] += c;
+        }
+    }
+
+    for(int j = 0; j < coordDim; ++j){
+        for (partId_t i=0; i < ntasks; ++i){
+            partCenters[j][i] /= global_point_counts[i];
+        }
+    }
+
+    scalar_t *tmpCoords = allocMemory<scalar_t>(ntasks);
+    for(int j = 0; j < coordDim; ++j){
+        reduceAll<int, scalar_t>(*comm, Teuchos::REDUCE_SUM,
+                ntasks, partCenters[j], tmpCoords
+        );
+
+        scalar_t *tmp = partCenters[j];
+        partCenters[j] = tmpCoords;
+        tmpCoords = tmp;
+    }
+
+    freeArray<gno_t> (point_counts);
+    freeArray<gno_t> (global_point_counts);
+
+    freeArray<scalar_t> (tmpCoords);
+    freeArray<scalar_t *>(pqJagged_coordinates);
+}
+
 
 /*! \brief KmeansHeap Class, max heap, but holds the minimum values.
  */
@@ -681,53 +804,110 @@ public:
         }
     }
 
-
+    /*! \brief Constructor
+     *  \param comm_ is the communication object.
+     *  \param machine_ is the machineRepresentation object. Stores the coordinates of machines.
+     *  \param model_ is the input adapter.
+     *  \param soln_ is the solution object. Holds the assignment of points.
+     *  \param envConst_ is the environment object.
+     */
     TaskMapper(
-            Teuchos::Comm<int> *comm_,
+            const Teuchos::Comm<int> *comm_,
             const MachineRepresentation<pcoord_t> *machine_,
-            const Zoltan2::Model<Adapter> *model_,
+            const Zoltan2::Model<typename Adapter::base_adapter_t> *model_,
             const Zoltan2::PartitioningSolution<Adapter> *soln_,
-            const Environment &envConst_
+            const Environment *envConst_
     ):  PartitionMapping<Adapter> (comm_, machine_, model_, soln_, envConst_),
             proc_to_task_xadj(0),
             proc_to_task_adj(0),
-            isOwnerofModel(true),
             task_to_proc(0),
+            isOwnerofModel(true),
             proc_task_comm(0){
 
         const Teuchos::ParameterList &pl = this->env->getParameters();
         const Teuchos::ParameterEntry *pe = pl.getEntryPtr("mapping_type");
+
         int mapping_type = 0;
-        if (pe)
+        if (pe){
             mapping_type = pe->getValue(&mapping_type);
+        }
 
-        //if 0, coordinate mapping.
         if (mapping_type == 0){
-            int procDim = this->machine->getProcDim();
-            pcoord_t **procCoordinates = this->machine->getProcCoords();
-            this->nprocs = this->machine->getNumProcs();
+            //if mapping type is 0 then it is coordinate mapping
+            int procDim = machine_->getProcDim();
+            this->nprocs = machine_->getNumProcs();
+            //get processor coordinates.
+            pcoord_t **procCoordinates = machine_->getProcCoords();
 
+            int coordDim = ((Zoltan2::CoordinateModel<typename Adapter::base_adapter_t> *)model_)->getCoordinateDim();
             this->ntasks = soln_->getActualGlobalNumberOfParts();
-            int coordDim = 0;
-            tcoord_t **partCenters = NULL;
 
-            getSolutionCoordinates(coordDim, ntasks, partCenters);
+            //alloc memory for part centers.
+            tcoord_t **partCenters = NULL;
+            partCenters = allocMemory<tcoord_t *>(coordDim);
+            for (int i = 0; i < coordDim; ++i){
+                partCenters[i] = allocMemory<tcoord_t>(this->ntasks);
+            }
+            //get centers for the parts.
+            getSolutionCenterCoordinates<Adapter, typename Adapter::scalar_t,procId_t>(
+                    comm_,
+                    ((Zoltan2::CoordinateModel<typename Adapter::base_adapter_t> *)model_),
+                    this->soln,
+                    coordDim,
+                    ntasks,
+                    partCenters);
+
+            /*
+            for (int j = 0; j < ntasks ; ++j){
+                cout << "n:" << j << " ";
+                for (int i = 0; i < coordDim; ++i){
+                    cout << partCenters[i][j] << " ";
+                }
+                cout << endl;
+            }
+
+
+            for (int j = 0; j < nprocs ; ++j){
+                cout << "n:" << j << " ";
+                for (int i = 0; i < procDim; ++i){
+                    cout << procCoordinates[i][j] << " ";
+                }
+                cout << endl;
+            }
+            */
+
+            //create coordinate communication model.
             this->proc_task_comm =
                     new Zoltan2::CoordinateCommunicationModel<pcoord_t,tcoord_t,procId_t>(
-                            procDim, procCoordinates,
-                            coordDim, partCenters,
-                            this->nprocs, this->ntasks);
+                            procDim,
+                            procCoordinates,
+                            coordDim,
+                            partCenters,
+                            this->nprocs,
+                            this->ntasks
+                            );
+
+            if(comm_->getRank() == 0){
+                this->doMapping();
+                this->writeMapping2();
+            }
+
+            for (int i = 0; i < coordDim; ++i){
+                freeArray<tcoord_t>(partCenters[i]);
+            }
+            freeArray<tcoord_t *>(partCenters);
         }
-        //else graph mapping
         else {
+            //else graph mapping
+            //TODO add graph mapping code.
+            this->doMapping();
 
         }
-        this->doMapping();
     }
 
     /*! \brief Constructor
      *  \param env_ Environment object.
-     *  \param proc_task_comm_ is the templated parameter for which the mapping will be obtained with getMapping() function.
+     *  \param proc_task_comm_ is the template parameter for which the mapping will be obtained with getMapping() function.
      */
     TaskMapper(
             const Environment *env_,
@@ -752,7 +932,7 @@ public:
 
         if(this->proc_task_comm){
             this->proc_task_comm->getMapping(
-                    Teuchos::RCP<const Environment>(this->env),
+                    Teuchos::RCP<const Environment>(this->env, false),
                     this->proc_to_task_xadj, //  = allocMemory<procId_t> (this->no_procs); //holds the pointer to the task array
                     this->proc_to_task_adj, // = allocMemory<procId_t>(this->no_tasks); //holds the indices of tasks wrt to proc_to_task_xadj array.
                     this->task_to_proc //allocMemory<procId_t>(this->no_procs); //holds the processors mapped to tasks.);
@@ -771,6 +951,12 @@ public:
         return 0;
     }
 
+    /*! \brief getAssignedProcForTask function,
+     * returns the assigned tasks with the number of tasks.
+     *  \param procId procId being queried.
+     *  \param numProcs (output), the number of processor the part is assigned to.
+     *  \param procs (output), the list of processors assigned to given part..
+     */
     virtual void getProcsForPart(partId_t taskId, int &numProcs, int *procs) const{
         numProcs = 1;
         procs = this->task_to_proc + taskId;
@@ -784,6 +970,8 @@ public:
     /*! \brief getAssignedProcForTask function,
      * returns the assigned tasks with the number of tasks.
      *  \param procId procId being queried.
+     *  \param numParts (output), the number of parts the processor is assigned to.
+     *  \param parts (output), the list of parts assigned to given processor..
      */
     virtual void getPartsForProc(int procId, partId_t &numParts, partId_t *parts) const{
 
@@ -904,16 +1092,6 @@ public:
             if (a.size() == 0){
                 continue;
             }
-            /*
-            std::string procFile = toString<int>(i) + "_mapping.txt";
-            if (i == 0){
-                gnuPlotCode << "plot \"" << procFile << "\"\n";
-            }
-            else {
-                gnuPlotCode << "replot \"" << procFile << "\"\n";
-            }
-             */
-
 
             //std::ofstream inpFile (procFile.c_str(), std::ofstream::out);
 

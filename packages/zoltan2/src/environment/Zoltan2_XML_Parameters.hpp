@@ -242,6 +242,10 @@
     id=\"41\" name=\"migration_doMigration_type\" type=\"int\" validatorId=\"41\" value=\"1\" \
     docString=\"Migration doMigration type, 0 for using tpetra::multivector doMigration, 1 for Zoltan1_Comm\" \
     /> \
+   <Parameter  \
+    id=\"42\" name=\"mapping_type\" type=\"int\" validatorId=\"42\" value=\"-1\" \
+    docString=\"Mapping of solution to the processors. -1 No Mapping, 0 coordinate mapping.\" \
+    /> \
     <Validators> \
       <Validator defaultParameterName=\"error_check_level\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"0\"> \
         <String integralValue=\"0\" stringDoc=\"no assertions will be performed\" stringValue=\"no_assertions\"/> \
@@ -431,6 +435,7 @@
       <Validator defaultParameterName=\"migration_check_option\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"38\"/> \
       <Validator defaultParameterName=\"migration_processor_assignment_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"39\"/> \
       <Validator defaultParameterName=\"migration_doMigration_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"41\"/> \
+      <Validator defaultParameterName=\"mapping_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"42\"/> \
       <Validator defaultParameterName=\"remap_parts\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"40\"> \
         <String integralValue=\"1\" stringValue=\"true\"/> \
         <String integralValue=\"1\" stringValue=\"yes\"/> \

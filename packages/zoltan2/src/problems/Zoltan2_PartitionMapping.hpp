@@ -50,16 +50,14 @@
 #ifndef _ZOLTAN2_PARTITIONMAPPING_HPP_
 #define _ZOLTAN2_PARTITIONMAPPING_HPP_
 #include "Zoltan2_Model.hpp"
-#include "Zoltan2_Solution.hpp"
+#include "Zoltan2_PartitioningSolution.hpp"
 #include "Teuchos_Comm.hpp"
+#include "Zoltan2_Environment.hpp"
+#include "Zoltan2_MachineRepresentation.hpp"
 
 namespace Zoltan2 {
 
 long measure_stays(partId_t *, int *, partId_t *, long *, partId_t, partId_t);
-
-class Zoltan2_MachineRepresentation{
-
-};
 
 /*! \brief PartitionMapping maps a solution or an input distribution to ranks.
 */
@@ -77,6 +75,12 @@ public:
   typedef typename Adapter::user_t user_t;
 #endif
 
+  const Teuchos::Comm<int> *comm;
+  const Zoltan2::MachineRepresentation <scalar_t> *machine;
+  const Zoltan2::Model<typename Adapter::base_adapter_t> *model;
+  const Zoltan2::PartitioningSolution<Adapter> *soln;
+  const Environment *env;
+
 /*! \brief Constructor 
  *  Constructor builds the map from parts to ranks.
  *  KDDKDD WILL NEED THE SOLUTION FOR INTELLIGENT MAPPING
@@ -84,18 +88,39 @@ public:
  *  KDDKDD SO WHEN SHOULD THE MAP BE CREATED?
  */
   PartitionMapping(
-    Teuchos::ParameterList *params,
-    Teuchos::Comm<int> *comm,
-    const Zoltan2_MachineRepresentation *machine, // If NULL, assume homogeneous
+    const Teuchos::Comm<int> *comm_,
+    const Zoltan2::MachineRepresentation<scalar_t> *machine_, // If NULL, assume homogeneous
                                                   // Make optional
-    const Zoltan2::Model<Adapter> *model, // Needed to get information about
+    const Zoltan2::Model<typename Adapter::base_adapter_t> *model_, // Needed to get information about
                                          // the application data (coords, graph)
-    const Zoltan2::Solution *soln, // Needed for mapping a partition
-    const Environment &envConst  // Perhaps envConst should be optional
+    const Zoltan2::PartitioningSolution<Adapter> *soln_, // Needed for mapping a partition
+    const Environment *envConst_  // Perhaps envConst should be optional
                                          // so applications can create a mapping
                                          // directly
-  ) {} ;
+  ):comm(comm_),
+      machine(machine_),
+      model(model_),
+      soln(soln_),
+      env(envConst_)
+          {} ;
 
+  PartitionMapping():
+          comm(0),
+          machine(0),
+          model(0),
+          soln(0),
+          env(0){};
+
+  PartitionMapping(const Environment *envConst_):
+          comm(0),
+          machine(0),
+          model(0),
+          soln(0),
+          env(envConst_){};
+
+
+
+  virtual ~PartitionMapping(){}
 
 /*! \brief Returns the number of parts to be assigned to this process.
  */

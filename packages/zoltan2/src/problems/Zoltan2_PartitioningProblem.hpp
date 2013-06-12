@@ -57,6 +57,8 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_IntegerRangeList.hpp>
+#include <Zoltan2_MachineRepresentation.hpp>
+#include <Zoltan2_TaskMapping.hpp>
 
 #include <unistd.h>
 
@@ -264,7 +266,9 @@ public:
 
   void setPartSizesForCritiera(int criteria, int len, partId_t *partIds, 
     scalar_t *partSizes, bool makeCopy=true) ;
-
+/*
+  void setMachine(MachineRepresentation<typename Adapter::base_adapter_t::scalar_t> *machine);
+*/
   /*! \brief Reset the list of parameters
    */
   void resetParameters(ParameterList *params)
@@ -289,6 +293,8 @@ private:
   void createPartitioningProblem(bool newData);
 
   RCP<PartitioningSolution<Adapter> > solution_;
+
+  RCP<MachineRepresentation <typename Adapter::base_adapter_t::scalar_t>  > machine_;
 
   RCP<Comm<int> > problemComm_;
   RCP<const Comm<int> > problemCommConst_;
@@ -351,7 +357,12 @@ template <typename Adapter>
   initializeProblem();
 }
 #endif
-
+/*
+template <typename Adapter>
+void PartitioningProblem<Adapter>::setMachine(MachineRepresentation<typename Adapter::base_adapter_t::scalar_t> *machine){
+  this->machine_ = RCP<MachineRepresentation<typename Adapter::base_adapter_t::scalar_t> > (machine, false);
+}
+*/
 template <typename Adapter>
   PartitioningProblem<Adapter>::PartitioningProblem(Adapter *A, 
     ParameterList *p):
@@ -388,6 +399,7 @@ template <typename Adapter>
   problemComm_ = this->comm_->duplicate();
   problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
 
+  machine_ = RCP <Zoltan2::MachineRepresentation<typename Adapter::scalar_t> >(new Zoltan2::MachineRepresentation<typename Adapter::scalar_t>(problemComm_));
 #ifdef HAVE_ZOLTAN2_MPI
 
   // TPLs may want an MPI communicator
@@ -540,6 +552,29 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     }
   }
   Z2_FORWARD_EXCEPTIONS;
+
+  //if mapping is requested
+  {
+
+      const Teuchos::ParameterEntry *pe = this->envConst_->getParameters().getEntryPtr("mapping_type");
+      int mapping_type = -1;
+      if (pe){
+          mapping_type = pe->getValue(&mapping_type);
+      }
+      //if mapping is 0 -- coordinate mapping
+      //if mapping is 1 -- graph mapping
+      if (mapping_type == 0 || mapping_type == 1){
+          Zoltan2::TaskMapper <Adapter, zoltan2_partId_t> *ctm=
+                  new Zoltan2::TaskMapper<Adapter,zoltan2_partId_t>(
+                          problemComm_.getRawPtr(),
+                          machine_.getRawPtr(),
+                          this->coordinateModel_.getRawPtr(),
+                          solution_.getRawPtr(),
+                          this->envConst_.getRawPtr());
+          //for now just delete the object.
+          delete ctm;
+      }
+  }
 
 #ifdef KDDKDD_SHOULD_NEVER_CHANGE_PROBLEMCOMM
 #ifdef HAVE_ZOLTAN2_MPI

@@ -717,7 +717,7 @@ int main(int argc, char *argv[])
     }
 
 
-    catch(std::string s){
+    catch(std::string &s){
         if (rank == 0)
             cerr << s << endl;
     }

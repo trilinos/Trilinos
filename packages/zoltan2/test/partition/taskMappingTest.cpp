@@ -262,11 +262,6 @@ int main(int argc, char *argv[]){
                         coordDim, partCenters,
                         numProcs, numParts);
 
-        /*
-        Zoltan2::TaskMapper <Zoltan2::CoordinateModelInput<scalar_t,scalar_t,zoltan2_partId_t>, zoltan2_partId_t> *ctm=
-                new Zoltan2::TaskMapper<Zoltan2::CoordinateModelInput<scalar_t,scalar_t,zoltan2_partId_t>,zoltan2_partId_t>(env, cm);
-
-         */
         Zoltan2::Environment *env = new Zoltan2::Environment();
         Zoltan2::TaskMapper <inputAdapter_t, zoltan2_partId_t> *ctm=
                 new Zoltan2::TaskMapper<inputAdapter_t,zoltan2_partId_t>(env, cm);
