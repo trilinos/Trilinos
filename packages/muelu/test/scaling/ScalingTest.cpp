@@ -97,7 +97,9 @@
 #include "BelosMueLuAdapter.hpp"  // this header defines Belos::MueLuOp()
 #endif
 
+#ifdef HAVE_MUELU_ISORROPIA
 #include "MueLu_IsorropiaInterface.hpp"
+#endif
 
 //
 typedef double Scalar;
@@ -399,10 +401,12 @@ int main(int argc, char *argv[]) {
           RCP<MueLu::IsorropiaInterface<LO, GO, NO, LMO> > isoInterface = rcp(new MueLu::IsorropiaInterface<LO, GO, NO, LMO>());
           isoInterface->SetFactory("A", AFact);
           // we don't need Coordinates here!
-#else
-          TEUCHOS_TEST_FOR_EXCEPT(true,"Please recompile Trilinos with Isorropia support enabled.");
-#endif
           RepartitionFact->SetFactory("Partition", isoInterface);
+#else
+          if (comm->getRank() == 0)
+            std::cout << "Please recompile Trilinos with Isorropia support enabled." << std::endl;
+          return EXIT_FAILURE;
+#endif
         }
 
 

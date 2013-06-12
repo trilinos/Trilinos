@@ -96,11 +96,13 @@
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_EpetraOperator.hpp"
+#ifdef HAVE_MUELU_ISORROPIA
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
 //#include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
+#endif
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
@@ -326,6 +328,7 @@ int main(int argc, char *argv[]) {
     M.SetFactory("R", Rfact);
     M.SetFactory("A", Acfact);
   } else {
+#ifdef HAVE_MUELU_ISORROPIA
     // The Factory Manager will be configured to return the rebalanced versions of P, R, A by default.
     // Everytime we want to use the non-rebalanced versions, we need to explicitly define the generating factory.
     Rfact->SetFactory("P", Pfact);
@@ -370,6 +373,12 @@ int main(int argc, char *argv[]) {
     //M.SetFactory("Partition", isoInterface);
     M.SetFactory("Nullspace",   RebalancedRFact);
     M.SetFactory("Importer",    RepartitionFact);
+#else
+    // no re-balancing available
+    M.SetFactory("P", Pfact);
+    M.SetFactory("R", Rfact);
+    M.SetFactory("A", Acfact);
+#endif
   }
 
   H->Setup(M, 0, maxLevels);
