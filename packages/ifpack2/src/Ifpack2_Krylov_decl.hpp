@@ -47,9 +47,7 @@
 #include "Ifpack2_AdditiveSchwarz.hpp"
 
 #include <BelosConfigDefs.hpp>
-#include <BelosSolverFactory.hpp>
 #include <BelosSolverManager.hpp>
-#include <BelosLinearProblem.hpp>
 #include <BelosTpetraAdapter.hpp>
 #include <BelosBlockGmresSolMgr.hpp>
 #include <BelosBlockCGSolMgr.hpp>
@@ -138,6 +136,10 @@ namespace Ifpack2 {
     
     //! Preserved only for backwards compatibility.  Please use "magnitude_type".
     TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
+
+    //! Tpetra MultiVector/Operator
+    typedef typename Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> TMV;
+    typedef typename Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> TOP;
 
     //@}
     // \name Constructors and Destructors
@@ -331,10 +333,10 @@ namespace Ifpack2 {
     global_size_t NumGlobalNonzeros_;
     
     //! Belos Objects
-    Teuchos::RCP< Belos::LinearProblem<belos_scalar_type,
+    Teuchos::RCP< Belos::LinearProblem<scalar_type,
 				       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
 				       Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > > belosProblem_;
-    Teuchos::RCP< Belos::SolverManager<belos_scalar_type,
+    Teuchos::RCP< Belos::SolverManager<scalar_type,
 				       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
 				       Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > > belosSolver_;
     Teuchos::RCP<Teuchos::ParameterList> belosList_;

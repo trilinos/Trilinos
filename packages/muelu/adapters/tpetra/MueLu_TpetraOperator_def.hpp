@@ -55,6 +55,7 @@
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_TpetraMultiVector.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 
 #include "MueLu_TpetraOperator_decl.hpp"
 #include "MueLu_Hierarchy.hpp"
@@ -106,15 +107,15 @@ void TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(c
                                                                                Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
                                                                                Teuchos::ETransp mode, Scalar alpha, Scalar beta) const {
 
-  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
-  typedef Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> XTMV;
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>        TMV;
+  typedef Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>  XTMV;
+  typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XMV;
+
+  TMV & temp_x = const_cast<TMV &>(X);
+  const XTMV tX(rcpFromRef(temp_x));
+  XTMV       tY(rcpFromRef(Y));
 
   try {
-
-    TMV & temp_x = const_cast<TMV &>(X);
-    const XTMV tX(rcpFromRef(temp_x));
-    XTMV       tY(rcpFromRef(Y));
-
     tY.putScalar(0.0);
     Hierarchy_->Iterate(tX, 1, tY, true);
   }
@@ -124,6 +125,25 @@ void TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(c
     std::cerr << "Caught an exception in MueLu::TpetraOperator::ApplyInverse():" << std::endl
         << e.what() << std::endl;
   }
+
+  // update solution with 2-grid error correction
+  if(option_==1) {
+    for(int j=0; j<cycles_; j++) {
+      RCP<XMV> residual       = MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Residual(*A_, tY, tX);
+      RCP<XMV> coarseResidual = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(R_->getRangeMap(), tX.getNumVectors());
+      RCP<XMV> coarseError    = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(R_->getRangeMap(), tX.getNumVectors());
+      R_ -> apply(*residual, *coarseResidual, Teuchos::NO_TRANS, (Scalar) 1.0, (Scalar) 0.0);
+      RCP<TMV> tcoarseR = MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::MV2NonConstTpetraMV(coarseResidual);
+      RCP<TMV> tcoarseE = MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::MV2NonConstTpetraMV(coarseError);
+      BelosLP_ -> setProblem(tcoarseE,tcoarseR);
+      BelosSM_ -> solve();
+      RCP<XMV> fineError      = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(P_->getRangeMap(), tX.getNumVectors());
+      XTMV tmpcoarseE(rcpFromRef(*tcoarseE));
+      P_ -> apply(tmpcoarseE, *fineError, Teuchos::NO_TRANS, (Scalar) 1.0, (Scalar) 0.0);
+      tY.update((Scalar) 1.0, *fineError, (Scalar) 1.0);
+    }
+  }
+
 }
 
 // ------------- apply -----------------------

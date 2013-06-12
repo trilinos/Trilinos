@@ -53,6 +53,13 @@
 #include <Tpetra_MultiVector_decl.hpp>
 #include "MueLu_Level.hpp"
 #include "MueLu_Hierarchy_decl.hpp"
+#include "MueLu_Utilities.hpp"
+
+// Belos
+#include <BelosConfigDefs.hpp>
+#include <BelosLinearProblem.hpp>
+#include <BelosBlockGmresSolMgr.hpp>
+
 //TODO: Kokkos headers
 
 /*! @class TpetraOperator
@@ -68,13 +75,50 @@ namespace MueLu {
     : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>
   {
 
+    typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>      Matrix;
+    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>   CrsMatrix;
+    typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>             MV;
+    typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>                OP;
+    typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>        MUtils;
   public:
 
     //! @name Constructor/Destructor
     //@{
 
     //! Constructor
-    TpetraOperator(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & H) : Hierarchy_(H) { }
+    TpetraOperator(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & H) : Hierarchy_(H), option_(0) { }
+
+    //! Auxiliary Constructor
+    TpetraOperator(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & H,
+		   const RCP<Matrix> A, int cycles, int iters, double tol, int option) : Hierarchy_(H), A_(A), cycles_(cycles), iters_(iters), tol_(tol), option_(option)
+    {
+
+      // setup 2-level correction
+      RCP< MueLu::Level > Level1 = H -> GetLevel(1);
+      R_ = Level1 -> Get< RCP<Matrix> >("R");
+      P_ = Level1 -> Get< RCP<Matrix> >("P");
+      //RCP<Matrix> AP = Level1 -> Get< RCP<Matrix> >("AP Pattern");
+      RCP<Matrix> AP;
+      AP = MUtils::Multiply(*A_, false, *P_, false, AP);
+      // Optimization storage option. If matrix is not changing later, allow this.
+      bool doOptimizedStorage = true;
+      // Reuse coarse matrix memory if available (multiple solve)
+      //RCP<Matrix> Ac = Level1 -> Get< RCP<Matrix> >("RAP Pattern");
+      RCP<Matrix> Ac;
+      Ac = MUtils::Multiply(*R_, false, *AP, false, Ac, true, doOptimizedStorage);
+      Ac_ = MUtils::Op2NonConstTpetraCrs(Ac);
+      
+      // Setup Belos for two-level correction
+      BelosList_ = rcp( new Teuchos::ParameterList("GMRES") );
+      BelosList_ -> set("Maximum Iterations", iters_ );
+      BelosList_ -> set("Convergence Tolerance", tol_ );
+      BelosLP_   = rcp( new Belos::LinearProblem<Scalar,MV,OP> );
+      BelosLP_   -> setOperator ( Ac_ );
+      BelosSM_   = rcp( new Belos::BlockGmresSolMgr<Scalar,MV,OP>(BelosLP_, BelosList_) );
+
+    }
+
+
 
     //! Destructor.
     virtual ~TpetraOperator() { }
@@ -105,6 +149,16 @@ namespace MueLu {
   private:
 
     RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Hierarchy_;
+    RCP< Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > R_, P_, A_;
+    RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > Ac_;
+    RCP< Teuchos::ParameterList >  BelosList_;
+    RCP< Belos::LinearProblem<Scalar,MV,OP> > BelosLP_;
+    RCP< Belos::SolverManager<Scalar,MV,OP> > BelosSM_;
+    // cycles -> number of 2-level corrections
+    // iters  -> number of GMRES iterations per correction
+    // option -> 0 if no correction is desired
+    int cycles_, iters_, option_;
+    double tol_;
 
   };
 

@@ -215,22 +215,15 @@ void Krylov<MatrixType,PrecType>::initialize() {
     ifpack2_prec_->initialize();
     ifpack2_prec_->setParameters(params_);
   }
-  belosProblem_ = 
-    Teuchos::rcp( new Belos::LinearProblem<belos_scalar_type,
-		  Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
-		  Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > );
+  belosProblem_ = Teuchos::rcp( new Belos::LinearProblem<scalar_type,TMV,TOP> );
   belosProblem_ -> setOperator(A_);
   if(IterationType_==1) {
     belosSolver_ = 
-      Teuchos::rcp( new Belos::BlockGmresSolMgr<belos_scalar_type,
-		    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
-		    Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > (belosProblem_, belosList_) );
+      Teuchos::rcp( new Belos::BlockGmresSolMgr<scalar_type,TMV,TOP> (belosProblem_, belosList_) );
   }
   else {
     belosSolver_ = 
-      Teuchos::rcp( new Belos::BlockCGSolMgr<belos_scalar_type,
-		    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
-		    Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > (belosProblem_, belosList_) );
+      Teuchos::rcp( new Belos::BlockCGSolMgr<scalar_type,TMV,TOP> (belosProblem_, belosList_) );
   }
   IsInitialized_ = true;
   ++NumInitialize_;
