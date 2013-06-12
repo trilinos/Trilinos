@@ -345,12 +345,6 @@ namespace MueLu {
    static Teuchos::RCP<Matrix> Read(std::string const & fileName, Xpetra::UnderlyingLib lib, RCP<const Teuchos::Comm<int> > const &comm, bool binary = false);
 
 
-    /*! @brief Read vector from file in Matrix Market format.
-     TODO Move this to Xpetra?
-    */
-    static RCP<MultiVector> Read(std::string const & fileName,const RCP<const Map> &map);
-
-
     static void PauseForDebugger();
 
 
@@ -480,6 +474,12 @@ namespace MueLu {
     static void TwoMatrixAdd(RCP<Matrix> const &A, bool const &transposeA, SC const &alpha,
                              RCP<Matrix> const &B, bool const &transposeB, SC const &beta,
                              RCP<Matrix> &C, bool const &AHasFixedNnzPerRow=false);
+
+    /*! @brief Read vector from file in Matrix Market format.
+      TODO Move this to Xpetra?
+    */
+    static RCP<MultiVector> Read(const std::string& fileName, const RCP<const Map>& map);
+
   }; // class Utils2
 
   // specialization Utils2 for SC=double, LO=GO=int
@@ -487,21 +487,24 @@ namespace MueLu {
   class Utils2<double,int,int>//, Kokkos::DefaultNode::DefaultNodeType,
                //Kokkos::DefaultKernels<double,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps >
   {
-    typedef double SC;
-    typedef int LO;
-    typedef int GO;
-    typedef Kokkos::DefaultNode::DefaultNodeType NO;
-    typedef Kokkos::DefaultKernels<double,int,NO>::SparseOps LMO;
-    typedef Xpetra::Matrix<double,int,int,NO,LMO> Matrix;
+    typedef double                                              SC;
+    typedef int                                                 LO;
+    typedef int                                                 GO;
+    typedef Kokkos::DefaultNode::DefaultNodeType                NO;
+    typedef Kokkos::DefaultKernels<double,int,NO>::SparseOps    LMO;
+    typedef Xpetra::Map<int,int,NO>                             Map;
+    typedef Xpetra::Matrix<double,int,int,NO,LMO>               Matrix;
+    typedef Xpetra::MultiVector<double,int,int,NO>              MultiVector;
 
   public:
 
-    static RCP<Matrix> Transpose(RCP<Matrix> const &Op, bool const & optimizeTranspose=false);
-    static void MyOldScaleMatrix_Epetra(RCP<Matrix> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doFillComplete, bool doOptimizeStorage);
-    static void TwoMatrixAdd(RCP<Matrix> const &A, bool transposeA, SC alpha, RCP<Matrix> &B, SC beta);
-    static void TwoMatrixAdd(RCP<Matrix> const &A, bool const &transposeA, SC const &alpha,
-                             RCP<Matrix> const &B, bool const &transposeB, SC const &beta,
-                             RCP<Matrix> &C, bool const &AHasFixedNnzPerRow=false);
+    static RCP<Matrix>      Transpose               (const RCP<Matrix>& Op, const bool& optimizeTranspose = false);
+    static void             MyOldScaleMatrix_Epetra (RCP<Matrix> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doFillComplete, bool doOptimizeStorage);
+    static void             TwoMatrixAdd            (RCP<Matrix> const &A, bool transposeA, SC alpha, RCP<Matrix> &B, SC beta);
+    static void             TwoMatrixAdd            (RCP<Matrix> const &A, bool const &transposeA, SC const &alpha,
+                                                     RCP<Matrix> const &B, bool const &transposeB, SC const &beta,
+                                                     RCP<Matrix> &C, bool const &AHasFixedNnzPerRow = false);
+    static RCP<MultiVector> Read                    (const std::string& fileName, const RCP<const Map>& map);
   }; //specialization to Scalar=double
 
 
