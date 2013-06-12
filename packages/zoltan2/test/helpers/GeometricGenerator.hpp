@@ -124,13 +124,14 @@ public:
     this->edge3 = edge3_;
   }
   virtual bool isInArea(CoordinatePoint<T> dot) = 0;
+  virtual ~Hole(){}
 };
 
 template <typename T>
 class SquareHole:public Hole<T>{
 public:
   SquareHole(CoordinatePoint<T> center_ , T edge_): Hole<T>(center_, edge_, 0 , 0){}
-
+  virtual ~SquareHole(){}
   virtual bool isInArea(CoordinatePoint<T> dot){
     return fabs(dot.x - this->center.x) < this->edge1 / 2 && fabs(dot.y - this->center.y) < this->edge1 / 2;
   }
@@ -143,12 +144,14 @@ public:
   virtual bool isInArea(CoordinatePoint<T> dot){
     return fabs(dot.x - this->center.x) < this->edge1 / 2 && fabs(dot.y - this->center.y) < this->edge2 / 2;
   }
+  virtual ~RectangleHole(){}
 };
 
 template <typename T>
 class CircleHole:public Hole<T>{
 public:
   CircleHole(CoordinatePoint<T> center_ , T edge_): Hole<T>(center_, edge_, 0 , 0){}
+  virtual ~CircleHole(){}
   virtual bool isInArea(CoordinatePoint<T> dot){
     return (dot.x - this->center.x)*(dot.x - this->center.x) + (dot.y - this->center.y) * (dot.y - this->center.y) < this->edge1 * this->edge1;
   }
@@ -158,6 +161,7 @@ template <typename T>
 class CubeHole:public Hole<T>{
 public:
   CubeHole(CoordinatePoint<T> center_ , T edge_): Hole<T>(center_, edge_, 0 , 0){}
+  virtual ~CubeHole(){}
   virtual bool isInArea(CoordinatePoint<T> dot){
     return fabs(dot.x - this->center.x) < this->edge1 / 2 && fabs(dot.y - this->center.y) < this->edge1 / 2 && fabs(dot.z - this->center.z) < this->edge1 / 2;
   }
@@ -167,6 +171,7 @@ template <typename T>
 class RectangularPrismHole:public Hole<T>{
 public:
   RectangularPrismHole(CoordinatePoint<T> center_  , T edge_x_, T edge_y_, T edge_z_): Hole<T>(center_, edge_x_,  edge_y_, edge_z_){}
+  virtual ~RectangularPrismHole(){}
   virtual bool isInArea(CoordinatePoint<T> dot){
     return fabs(dot.x - this->center.x) < this->edge1 / 2 && fabs(dot.y - this->center.y) < this->edge2 / 2 && fabs(dot.z - this->center.z) < this->edge3 / 2;
   }
@@ -176,6 +181,7 @@ template <typename T>
 class SphereHole:public Hole<T>{
 public:
   SphereHole(CoordinatePoint<T> center_ , T edge_): Hole<T>(center_, edge_, 0 , 0){}
+  virtual ~SphereHole(){}
   virtual bool isInArea(CoordinatePoint<T> dot){
     return  fabs((dot.x - this->center.x) * (dot.x - this->center.x) * (dot.x - this->center.x)) +
         fabs((dot.y - this->center.y) * (dot.y - this->center.y) * (dot.y - this->center.y)) +
