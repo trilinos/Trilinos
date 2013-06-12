@@ -293,9 +293,6 @@ show :
   # change these, you are telling the system to trust you that they
   # work.  It is likely that you will end up with a broken build.
   mark_as_advanced (PETSC_INCLUDES PETSC_LIBRARIES PETSC_COMPILER PETSC_DEFINITIONS PETSC_MPIEXEC)
-  
-  INCLUDE_DIRECTORIES(${petsc_include}) 
-  LINK_LIBRARIES(${petsc_lib})
 
   #check if cmake version > 2.8.5
   SET(major_ver_req 2)

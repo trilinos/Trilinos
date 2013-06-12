@@ -1052,19 +1052,30 @@ public:
   {
     static const unsigned Length = 1000 , Count = 8 ;
 
-    typedef KokkosArray::View< T* , KokkosArray::LayoutRight, host > vector_right_type ;
-    typedef KokkosArray::View< T* , KokkosArray::LayoutLeft , host > vector_type ;
+    typedef KokkosArray::View< T* ,  KokkosArray::LayoutLeft , host > vector_type ;
     typedef KokkosArray::View< T** , KokkosArray::LayoutLeft , host > multivector_type ;
+
+    typedef KokkosArray::View< T* ,  KokkosArray::LayoutRight , host > vector_right_type ;
+    typedef KokkosArray::View< T** , KokkosArray::LayoutRight , host > multivector_right_type ;
 
     typedef KokkosArray::View< const T* , KokkosArray::LayoutRight, host > const_vector_right_type ;
     typedef KokkosArray::View< const T* , KokkosArray::LayoutLeft , host > const_vector_type ;
     typedef KokkosArray::View< const T** , KokkosArray::LayoutLeft , host > const_multivector_type ;
 
     multivector_type mv = multivector_type( "mv" , Length , Count );
+    multivector_right_type mv_right = multivector_right_type( "mv" , Length , Count );
 
     vector_type v1 = KokkosArray::subview< vector_type >( mv , 0 );
     vector_type v2 = KokkosArray::subview< vector_type >( mv , 1 );
     vector_type v3 = KokkosArray::subview< vector_type >( mv , 2 );
+
+    multivector_type mv1 = KokkosArray::subview< multivector_type >( mv , std::make_pair( 1 , 998 ) ,
+                                                                          std::make_pair( 2 , 5 ) );
+
+    multivector_right_type mvr1 =
+      KokkosArray::subview< multivector_right_type >( mv_right ,
+                                                      std::make_pair( 1 , 998 ) ,
+                                                      std::make_pair( 2 , 5 ) );
 
     const_vector_type cv1 = KokkosArray::subview< const_vector_type >( mv , 0 );
     const_vector_type cv2 = KokkosArray::subview< const_vector_type >( mv , 1 );
@@ -1093,6 +1104,13 @@ public:
     ASSERT_TRUE( & cvr1[0] == & mv(0,0) );
     ASSERT_TRUE( & cvr2[0] == & mv(0,1) );
     ASSERT_TRUE( & cvr3[0] == & mv(0,2) );
+
+    ASSERT_TRUE( & mv1(0,0) == & mv( 1 , 2 ) );
+    ASSERT_TRUE( & mv1(1,1) == & mv( 2 , 3 ) );
+    ASSERT_TRUE( & mv1(3,2) == & mv( 4 , 4 ) );
+    ASSERT_TRUE( & mvr1(0,0) == & mv_right( 1 , 2 ) );
+    ASSERT_TRUE( & mvr1(1,1) == & mv_right( 2 , 3 ) );
+    ASSERT_TRUE( & mvr1(3,2) == & mv_right( 4 , 4 ) );
 
     const_vector_type c_cv1( v1 );
     typename vector_type::const_type c_cv2( v2 );

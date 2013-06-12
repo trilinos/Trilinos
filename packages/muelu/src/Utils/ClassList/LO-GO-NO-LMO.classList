@@ -6,6 +6,7 @@ DemoFactory
 EmergencyAggregationAlgorithm
 Graph
 IsolatedNodeAggregationAlgorithm
+IsorropiaInterface
 LWGraph
 LeftoverAggregationAlgorithm
 LocalAggregationAlgorithm

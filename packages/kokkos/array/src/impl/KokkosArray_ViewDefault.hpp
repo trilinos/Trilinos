@@ -363,6 +363,102 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
     }
   }
 
+  /** \brief  Rank-2 to Rank-2 array */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM ,
+            typename iType0 , typename iType1 >
+  KOKKOSARRAY_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,LayoutDefault> & dst ,
+                  const View<ST,SL,SD,SM,LayoutDefault> & src ,
+                  const std::pair<iType0,iType0> & range0 ,
+                  const std::pair<iType1,iType1> & range1 ,
+                  typename enable_if< (
+                    ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
+                                     ViewTraits<ST,SL,SD,SM> >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 2 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 2 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
+                    && 
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutLeft >::value
+                    && 
+                    is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout , LayoutLeft >::value
+                  ) >::type * = 0 )
+  {
+    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
+    typedef typename traits_type::shape_type shape_type ;
+
+    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
+
+    dst.m_shape.N0      = 0 ;
+    dst.m_shape.N1      = 0 ;
+    dst.m_stride        = 0 ;
+    dst.m_ptr_on_device = 0 ;
+
+    if ( range0.first < range0.second && range1.first < range1.second ) {
+      assert_shape_bounds( src.m_shape , 2 , range0.first , range1.first );
+      assert_shape_bounds( src.m_shape , 2 , range0.second - 1 , range1.second - 1 );
+
+      dst.m_shape.N0 = range0.second - range0.first ;
+      dst.m_shape.N1 = range1.second - range1.first ;
+      dst.m_stride   = src.m_stride ;
+      dst.m_ptr_on_device = src.m_ptr_on_device + range0.first + dst.m_stride * range1.first ;
+      // dst.m_ptr_on_device[ i0 + dst.m_stride * i1 ]
+
+      ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+    }
+  }
+
+  /** \brief  Rank-2 to Rank-2 array */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM ,
+            typename iType0 , typename iType1 >
+  KOKKOSARRAY_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,LayoutDefault> & dst ,
+                  const View<ST,SL,SD,SM,LayoutDefault> & src ,
+                  const std::pair<iType0,iType0> & range0 ,
+                  const std::pair<iType1,iType1> & range1 ,
+                  typename enable_if< (
+                    ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
+                                     ViewTraits<ST,SL,SD,SM> >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 2 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 2 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
+                    && 
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
+                    && 
+                    is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout , LayoutRight >::value
+                  ) >::type * = 0 )
+  {
+    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
+    typedef typename traits_type::shape_type shape_type ;
+
+    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
+
+    dst.m_shape.N0      = 0 ;
+    dst.m_shape.N1      = 0 ;
+    dst.m_stride        = 0 ;
+    dst.m_ptr_on_device = 0 ;
+
+    if ( range0.first < range0.second && range1.first < range1.second ) {
+      assert_shape_bounds( src.m_shape , 2 , range0.first , range1.first );
+      assert_shape_bounds( src.m_shape , 2 , range0.second - 1 , range1.second - 1 );
+
+      dst.m_shape.N0 = range0.second - range0.first ;
+      dst.m_shape.N1 = range1.second - range1.first ;
+      dst.m_stride   = src.m_stride ;
+      dst.m_ptr_on_device = src.m_ptr_on_device + range0.first * dst.m_stride + range1.first ;
+      // dst.m_ptr_on_device[ i0 * dst.m_stride + i1 ]
+
+      ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+    }
+  }
+
   /** \brief  Extract LayoutRight Rank-N array from range of LayoutRight Rank-N array */
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM ,

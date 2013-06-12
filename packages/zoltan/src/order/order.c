@@ -355,7 +355,7 @@ int Zoltan_Order_Get_Num_Blocks(
    struct Zoltan_Struct *zz
 )
 {
-  return (zz->Order.nbr_blocks);
+  return (zz->TPL_Order.nbr_blocks);
 }
 
 /*****************************************************************************/
@@ -378,11 +378,11 @@ int Zoltan_Order_Get_Block_Bounds(
   int                        *last         /* Last element in block */
   )
 {
-  if (block_num >= zz->Order.nbr_blocks)
+  if (block_num >= zz->TPL_Order.nbr_blocks)
     return (ZOLTAN_FATAL);
 
-  *first = zz->Order.start[block_num];
-  *last  = zz->Order.start[block_num + 1];
+  *first = zz->TPL_Order.start[block_num];
+  *last  = zz->TPL_Order.start[block_num + 1];
   return (ZOLTAN_OK);
 }
 
@@ -400,9 +400,9 @@ int Zoltan_Order_Get_Block_Size(
   int                         block_num   /* Number of the wanted block */
 )
 {
-  if (block_num >= zz->Order.nbr_blocks)
+  if (block_num >= zz->TPL_Order.nbr_blocks)
     return (-1);
-  return (zz->Order.start[block_num+1] - zz->Order.start[block_num]);
+  return (zz->TPL_Order.start[block_num+1] - zz->TPL_Order.start[block_num]);
 }
 
 /*****************************************************************************/
@@ -419,9 +419,9 @@ int Zoltan_Order_Get_Block_Parent(
   int                         block_num   /* Number of the wanted block */
 )
 {
- if (block_num >= zz->Order.nbr_blocks)
+ if (block_num >= zz->TPL_Order.nbr_blocks)
     return (-2);
- return (zz->Order.ancestor[block_num]);
+ return (zz->TPL_Order.ancestor[block_num]);
 }
 
 /*****************************************************************************/
@@ -435,7 +435,7 @@ int Zoltan_Order_Get_Num_Leaves(
   struct Zoltan_Struct *zz
 )
 {
-  return(zz->Order.nbr_leaves);
+  return(zz->TPL_Order.nbr_leaves);
 }
 
 /*****************************************************************************/
@@ -453,8 +453,8 @@ void Zoltan_Order_Get_Block_Leaves(
   int                        *leaves
 )
 {
-  if (zz->Order.nbr_leaves > 0)
-    memcpy (leaves, zz->Order.leaves, (zz->Order.nbr_leaves+1)*sizeof(int));
+  if (zz->TPL_Order.nbr_leaves > 0)
+    memcpy (leaves, zz->TPL_Order.leaves, (zz->TPL_Order.nbr_leaves+1)*sizeof(int));
   else
     *leaves = -1;
 }

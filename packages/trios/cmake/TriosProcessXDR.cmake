@@ -8,8 +8,6 @@ function (TriosProcessXDR path)
      OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${file}.c
      COMMAND rpcgen -Cc ${path}
         | sed -e "\"s#include.*${file}.*#include <${file}.h>#\""
-        | grep -v \"register int32_t \\*buf\;\"
-        | grep -v \"int i\;\"
                 > ${CMAKE_CURRENT_BINARY_DIR}/${file}.c
      DEPENDS ${path} ${file}.h)
 

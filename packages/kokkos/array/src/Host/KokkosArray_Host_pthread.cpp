@@ -125,11 +125,37 @@ bool host_thread_spawn()
 
 //----------------------------------------------------------------------------
 
-int host_thread_wait( volatile int * const flag , const int value )
+namespace {
+
+template< unsigned N > inline void noop_cycle();
+
+template<> inline void noop_cycle<0>() {}
+template< unsigned N > inline void noop_cycle()
 {
-  int result ;
-  while ( value == ( result = *flag ) ) sched_yield();
-  return result ;
+#if defined( __GNUC__ ) || \
+    defined( __GNUG__ ) || \
+    defined( __INTEL_COMPILER__ )
+
+  asm volatile("nop");
+  noop_cycle<N-1>();
+
+#else
+  sched_yield();
+#endif
+}
+
+}
+
+void host_thread_wait( volatile int * const flag , const int value )
+{
+  // Issue 'NCycle' no-op operations between checks for the flag to change value.
+  enum { NCycle = 1 };
+  do { noop_cycle< NCycle >(); } while ( value == *flag );
+}
+
+void host_thread_wait_yield( volatile int * const flag , const int value )
+{
+  do { sched_yield(); } while ( value == *flag );
 }
 
 void host_thread_lock()

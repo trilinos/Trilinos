@@ -44,13 +44,12 @@
 #ifndef PARALLELCOMM_HPP
 #define PARALLELCOMM_HPP
 
-#include <string>
-
 //------------------------------------------------------------------------
 
 #if defined( HAVE_MPI )
 
 #include <mpi.h>
+#include <string>
 
 namespace comm {
 
@@ -115,6 +114,8 @@ std::string command_line( Machine machine , const int argc , const char * const 
 }
 
 #else /* ! defined( HAVE_MPI ) */
+
+#include <string>
 
 namespace comm {
 
