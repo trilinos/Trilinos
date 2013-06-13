@@ -96,7 +96,7 @@
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_EpetraOperator.hpp"
-#ifdef HAVE_MUELU_ISORROPIA
+#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MUELU_ISORROPIA)
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
 //#include "MueLu_ZoltanInterface.hpp"
@@ -147,12 +147,14 @@ int main(int argc, char *argv[]) {
   int optMaxCoarseSize = 1;              clp.setOption("maxCoarseSize",  &optMaxCoarseSize,      "maximum #dofs in coarse operator"); //FIXME clp doesn't like long long int
 
   // - Repartitioning
-#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN)
+#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MUELU_ISORROPIA)
   int optRepartition = 1;                 clp.setOption("repartition",    &optRepartition,        "enable repartitioning");
   LO optMinRowsPerProc = 50;              clp.setOption("minRowsPerProc", &optMinRowsPerProc,     "min #rows allowable per proc before repartitioning occurs");
   double optNnzImbalance = 1.2;           clp.setOption("nnzImbalance",   &optNnzImbalance,       "max allowable nonzero imbalance before repartitioning occurs");
 #else
   int optRepartition = 0;
+  LO optMinRowsPerProc = 50;
+  double optNnzImbalance = 1.2;
 #endif // HAVE_MPI && HAVE_MUELU_ZOLTAN
 
   switch (clp.parse(argc, argv)) {
@@ -328,7 +330,7 @@ int main(int argc, char *argv[]) {
     M.SetFactory("R", Rfact);
     M.SetFactory("A", Acfact);
   } else {
-#ifdef HAVE_MUELU_ISORROPIA
+#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MUELU_ISORROPIA)
     // The Factory Manager will be configured to return the rebalanced versions of P, R, A by default.
     // Everytime we want to use the non-rebalanced versions, we need to explicitly define the generating factory.
     Rfact->SetFactory("P", Pfact);
