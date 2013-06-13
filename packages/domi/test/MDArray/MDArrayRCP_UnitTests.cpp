@@ -374,6 +374,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, rangeErrorCOrder, T )
 #endif
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, assign, T )
+{
+  typedef Domi::Ordinal ord;
+  MDArrayRCP< T > a = generateMDArrayRCP< T >(3,4,5);
+  a.assign(-1);
+  for (ord k = 0; k < 5; ++k)
+    for (ord j = 0; j < 4; ++j)
+      for (ord i = 0; i < 3; ++i)
+        TEST_EQUALITY_CONST(a(i,j,k), -1);
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, legalAt, T )
 {
   MDArrayRCP< T > a = generateMDArrayRCP< T >(2,3);
@@ -475,6 +486,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, toString3D, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayRCP, squareBracketSlice2, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayRCP, rangeError, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayRCP, rangeErrorCOrder, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayRCP, assign, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayRCP, legalAt, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayRCP, illegalAt, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayRCP, clearEmpty, T ) \

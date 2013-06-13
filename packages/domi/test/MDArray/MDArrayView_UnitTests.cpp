@@ -283,41 +283,57 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, squareBracketSlice2, T )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, rangeError, T )
 {
   MDArray< T > a = generateMDArray< T >(3,4);
+  MDArrayView< T > av(a);
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
-  TEST_THROW(a(3,3), RangeError);
-  TEST_THROW(a(0,4), RangeError);
+  TEST_THROW(av(3,3), RangeError);
+  TEST_THROW(av(0,4), RangeError);
 #else
-  a(0,0);  // Prevent unused variable warning
+  av(0,0);  // Prevent unused variable warning
 #endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, rangeErrorCOrder, T )
 {
   MDArray< T > a = generateMDArray< T >(3,4,Domi::C_ORDER);
+  MDArrayView< T > av(a);
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
-  TEST_THROW(a(3,3), RangeError);
-  TEST_THROW(a(0,4), RangeError);
+  TEST_THROW(av(3,3), RangeError);
+  TEST_THROW(av(0,4), RangeError);
 #else
-  a(0,0);  // Prevent unused variable warning
+  av(0,0);  // Prevent unused variable warning
 #endif
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, assign, T )
+{
+  typedef Domi::Ordinal ord;
+  MDArray< T > a = generateMDArray< T >(3,4,5);
+  MDArrayView< T > av(a);
+  av.assign(-1);
+  for (ord k = 0; k < 5; ++k)
+    for (ord j = 0; j < 4; ++j)
+      for (ord i = 0; i < 3; ++i)
+        TEST_EQUALITY_CONST(av(i,j,k), -1);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, legalAt, T )
 {
   MDArray< T > a = generateMDArray< T >(2,3);
-  TEST_EQUALITY_CONST(a.at(0,0), 0);
-  TEST_EQUALITY_CONST(a.at(1,0), 1);
-  TEST_EQUALITY_CONST(a.at(0,1), 2);
-  TEST_EQUALITY_CONST(a.at(1,1), 3);
-  TEST_EQUALITY_CONST(a.at(0,2), 4);
-  TEST_EQUALITY_CONST(a.at(1,2), 5);
+  MDArrayView< T > av(a);
+  TEST_EQUALITY_CONST(av.at(0,0), 0);
+  TEST_EQUALITY_CONST(av.at(1,0), 1);
+  TEST_EQUALITY_CONST(av.at(0,1), 2);
+  TEST_EQUALITY_CONST(av.at(1,1), 3);
+  TEST_EQUALITY_CONST(av.at(0,2), 4);
+  TEST_EQUALITY_CONST(av.at(1,2), 5);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, illegalAt, T )
 {
   MDArray< T > a = generateMDArray< T >(2,3);
-  TEST_THROW(a.at(2,0), RangeError);
-  TEST_THROW(a.at(0,3), RangeError);
+  MDArrayView< T > av(a);
+  TEST_THROW(av.at(2,0), RangeError);
+  TEST_THROW(av.at(0,3), RangeError);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, toStringNull, T )
@@ -373,6 +389,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, toString3D, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayView, squareBracketSlice2, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayView, rangeError, T) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayView, rangeErrorCOrder, T) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayView, assign, T) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayView, legalAt, T) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayView, illegalAt, T) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayView, toStringNull, T) \
