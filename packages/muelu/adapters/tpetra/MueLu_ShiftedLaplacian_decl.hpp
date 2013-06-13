@@ -61,7 +61,7 @@
 #include <MueLu_RAPShiftFactory.hpp>
 #include <MueLu_ShiftedLaplacian_fwd.hpp>
 #include <MueLu_UncoupledAggregationFactory.hpp>
-#include <MueLu_TpetraOperator.hpp>
+#include <MueLu_ShiftedLaplacianOperator.hpp>
 
 // Belos
 #include <BelosConfigDefs.hpp>

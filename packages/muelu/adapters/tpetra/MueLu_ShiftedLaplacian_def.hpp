@@ -345,8 +345,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   // Define Operator and Preconditioner
   //RCP<TOP> BelosOper = rcp(new Belos::XpetraOp<SC,LO,GO,NO,LMO> ( A_         ) );
   //RCP<TOP> BelosPrec = rcp(new Belos::MueLuOp<SC,LO,GO,NO,LMO>  ( Hierarchy_ ) );
-  RCP< MueLu::TpetraOperator<SC,LO,GO,NO> > MueLuOp 
-    = rcp( new MueLu::TpetraOperator<SC,LO,GO,NO>(Hierarchy_, A_, cycles_, subiters_, tol_, option_) );
+  RCP< MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO> > MueLuOp 
+    = rcp( new MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO>(Hierarchy_, A_, cycles_, subiters_, tol_, option_) );
   RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > TpetraA = Utils::Op2NonConstTpetraCrs(A_);
 
   // Belos parameter list
