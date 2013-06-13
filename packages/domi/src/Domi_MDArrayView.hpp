@@ -42,15 +42,19 @@
 #ifndef DOMI_MDARRAYVIEW_HPP
 #define DOMI_MDARRAYVIEW_HPP
 
+// Standar includes
+#include <cstdarg>
+
+// Teuchos includes
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayView.hpp"
 #include "Teuchos_ConstTypeTraits.hpp"
 #include "Teuchos_RCPNode.hpp"
 
+// Domi includes
 #include "Domi_MDArray_Utils.hpp"
 #include "Domi_Slice.hpp"
-
-#include <cstdarg>
+#include "Domi_MDIterator.hpp"
 
 namespace Domi
 {
@@ -166,6 +170,22 @@ public:
   /** \brief Return the storage order
    */
   inline EStorageOrder storage_order() const;
+
+  //@}
+
+  /** \name Iterator class and methods */
+  //@{
+
+  friend class MDIterator< MDArrayView< T > >;
+  typedef MDIterator< MDArrayView< T > > iterator;
+
+  /** \brief Return the beginning iterator
+   */
+  const iterator begin() const;
+
+  /** \brief Return the ending iterator
+   */
+  const iterator end() const;
 
   //@}
 
@@ -582,6 +602,21 @@ MDArrayView< T >::storage_order() const
 }
 
 template< typename T >
+const typename MDArrayView< T >::iterator
+MDArrayView< T >::begin() const
+{
+  return iterator(*this);
+}
+
+template< typename T >
+const typename MDArrayView< T >::iterator
+MDArrayView< T >::end() const
+{
+  // Return the iterator corresponding to the last element
+  return iterator(*this, true);
+}
+
+template< typename T >
 MDArrayView< T >
 MDArrayView< T >::operator[](MDArrayView< T >::size_type i)
 {
@@ -914,8 +949,8 @@ template< typename T >
 void
 MDArrayView< T >::assign(const T & value)
 {
-  std::cout << "MDArrayView<T>::assign(const T &) will not be implemented "
-	    << "until iterators are implemented." << std::endl;
+  for (iterator it = begin(); it != end(); ++it)
+    *it = value;
 }
 
 template< typename T >

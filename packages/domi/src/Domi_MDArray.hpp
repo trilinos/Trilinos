@@ -42,11 +42,16 @@
 #ifndef DOMI_MDARRAY_HPP
 #define DOMI_MDARRAY_HPP
 
+// Standard includes
+#include <cstdarg>
+
+// Teuchos includes
 #include "Teuchos_Array.hpp"
+
+// Domi includes
 #include "Domi_MDArray_Utils.hpp"
 #include "Domi_MDArrayView.hpp"
-
-#include <cstdarg>
+#include "Domi_MDIterator.hpp"
 
 namespace Domi
 {
@@ -335,6 +340,22 @@ public:
   /** \brief Return the storage order
    */
   inline const EStorageOrder storage_order() const;
+
+  //@}
+
+  /** \name Iterator class and methods */
+  //@{
+
+  friend class MDIterator< MDArray< T > >;
+  typedef MDIterator< MDArray< T > > iterator;
+
+  /** \brief Return the beginning iterator
+   */
+  const iterator begin() const;
+
+  /** \brief Return the ending iterator
+   */
+  const iterator end() const;
 
   //@}
 
@@ -824,10 +845,18 @@ MDArray< T >::storage_order() const
 }
 
 template< typename T >
-std::string
-MDArray< T >::toString()
+const typename MDArray< T >::iterator
+MDArray< T >::begin() const
 {
-  return mdArrayView().toString();
+  return iterator(*this);
+}
+
+template< typename T >
+const typename MDArray< T >::iterator
+MDArray< T >::end() const
+{
+  // Return the iterator corresponding to the last element
+  return iterator(*this, true);
 }
 
 template< typename T >
@@ -1144,8 +1173,8 @@ template< typename T >
 void
 MDArray< T >::assign(const T & value)
 {
-  std::cout << "MDArray<T>::assign(const T &) will not be implemented until "
-	    << "iterators are implemented." << std::endl;
+  for (iterator it = begin(); it != end(); ++it)
+    *it = value;
 }
 
 template< typename T >
@@ -1254,6 +1283,13 @@ MDArray< T >::hasBoundsChecking()
 #else
   return false;
 #endif
+}
+
+template< typename T >
+std::string
+MDArray< T >::toString()
+{
+  return mdArrayView().toString();
 }
 
 template< typename T >

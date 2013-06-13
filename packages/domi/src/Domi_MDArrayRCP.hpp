@@ -42,11 +42,15 @@
 #ifndef DOMI_MDARRAYRCP_HPP
 #define DOMI_MDARRAYRCP_HPP
 
+// Standard includes
+#include <cstdarg>
+
+// Teuchos includes
 #include "Teuchos_ArrayRCPDecl.hpp"
+
+// Domi includes
 #include "Domi_MDArray_Utils.hpp"
 #include "Domi_MDArrayView.hpp"
-
-#include <cstdarg>
 
 namespace Domi
 {
@@ -217,6 +221,22 @@ public:
   /** \brief Return the storage order
    */
   inline const EStorageOrder storage_order() const;
+
+  //@}
+
+  /** \name Iterator class and methods */
+  //@{
+
+  friend class MDIterator< MDArrayRCP< T > >;
+  typedef MDIterator< MDArrayRCP< T > > iterator;
+
+  /** \brief Return the beginning iterator
+   */
+  const iterator begin() const;
+
+  /** \brief Return the ending iterator
+   */
+  const iterator end() const;
 
   //@}
 
@@ -709,6 +729,21 @@ MDArrayRCP< T >::storage_order() const
 }
 
 template< typename T >
+const typename MDArrayRCP< T >::iterator
+MDArrayRCP< T >::begin() const
+{
+  return iterator(*this);
+}
+
+template< typename T >
+const typename MDArrayRCP< T >::iterator
+MDArrayRCP< T >::end() const
+{
+  // Return the iterator corresponding to the last element
+  return iterator(*this, true);
+}
+
+template< typename T >
 bool
 MDArrayRCP< T >::is_null() const
 {
@@ -1050,8 +1085,8 @@ template< typename T >
 void
 MDArrayRCP< T >::assign(const T & value)
 {
-  std::cout << "MDArray<T>::assign(const T &) will not be implemented until "
-            << "iterators are implemented." << std::endl;
+  for (iterator it = begin(); it != end(); ++it)
+    *it = value;
 }
 
 template< typename T >
