@@ -1,6 +1,6 @@
-============================================================
-Trilinos User Configure, Build, Test, and Install Quickstart
-============================================================
+=======================================================
+Trilinos Configure, Build, Test, and Install Quickstart
+=======================================================
 
 :Author: Roscoe A. Bartlett
 :Contact: bartlett.roscoe@gmail.com
