@@ -155,6 +155,10 @@ namespace MueLu {
       if (checkAc_)
         CheckMainDiagonal(Ac);
 
+      Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList());
+      p->set("DoOptimizeStorage",true);
+      Ac->fillComplete(p);
+
       RCP<ParameterList> params = rcp(new ParameterList());;
       params->set("printLoadBalancingInfo", true);
       GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*Ac, "Ac", params);
