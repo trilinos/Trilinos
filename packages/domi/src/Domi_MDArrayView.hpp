@@ -227,9 +227,32 @@ public:
    *        <tt>n</tt> square bracket operators when referencing an
    *        <tt>n</tt>-dimensional <tt>MDArrayView</tt>.
    */
+  MDArrayView< T > operator[](size_type i);
+
+  /** \brief Sub-array const access operator.  The returned
+   *  <tt>MDArrayView</tt> object will have one fewer dimensions than
+   *  the calling <tt>MDArrayView</tt>.
+   *
+   * \param i [in] Index of the desired sub-array.  Note that to
+   *        obtain expected behavior, you should always chain together
+   *        <tt>n</tt> square bracket operators when referencing an
+   *        <tt>n</tt>-dimensional <tt>MDArrayView</tt>.
+   */
   const MDArrayView< T > operator[](size_type i) const;
 
   /** \brief Sub-array access operator.  The returned
+   *  <tt>MDArrayView</tt> object will have the same number of
+   *  dimensions as the calling <tt>MDArrayView</tt>.
+   *
+   * \param s [in] Slice representing the bounds of the desired
+   *        sub-array.  Note that to obtain expected behavior, you
+   *        should always chain together <tt>n</tt> square bracket
+   *        operators when referencing an <tt>n</tt>-dimensional
+   *        <tt>MDArrayView</tt>.
+   */
+  MDArrayView< T > operator[](Slice s);
+
+  /** \brief Sub-array const access operator.  The returned
    *  <tt>MDArrayView</tt> object will have the same number of
    *  dimensions as the calling <tt>MDArrayView</tt>.
    *
@@ -532,9 +555,9 @@ private:
 
 };  // class MDArrayView
 
-//////////////////
-// Implementations
-//////////////////
+/////////////////////
+// Implementations //
+/////////////////////
 
 template< typename T >
 MDArrayView< T >::
@@ -547,6 +570,8 @@ MDArrayView(Teuchos::ENull null_arg) :
   _next_axis(0)
 {
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 MDArrayView< T >::MDArrayView(const Teuchos::ArrayView< T > & array,
@@ -565,6 +590,8 @@ MDArrayView< T >::MDArrayView(const Teuchos::ArrayView< T > & array,
                              "dimensions");
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 MDArrayView< T >::MDArrayView(const MDArrayView< T > & array) :
   _dimensions(array._dimensions),
@@ -575,6 +602,8 @@ MDArrayView< T >::MDArrayView(const MDArrayView< T > & array) :
   _next_axis(0)
 {
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 MDArrayView< T > &
@@ -589,10 +618,14 @@ MDArrayView< T >::operator=(const MDArrayView< T > & array)
   return *this;
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 MDArrayView< T >::~MDArrayView()
 {
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 int
@@ -601,12 +634,16 @@ MDArrayView< T >::num_dims() const
   return _dimensions.size();
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 const Teuchos::Array< typename Teuchos::ArrayView< T >::size_type > &
 MDArrayView< T >::dimensions() const
 {
   return _dimensions;
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 typename Teuchos::ArrayView< T >::size_type
@@ -615,12 +652,16 @@ MDArrayView< T >::dimension(int axis) const
   return _dimensions[axis];
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 typename Teuchos::ArrayView< T >::size_type
 MDArrayView< T >::size()
 {
   return computeSize(_dimensions(), _strides());
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 const Teuchos::Array< typename Teuchos::ArrayView< T >::size_type > &
@@ -629,12 +670,16 @@ MDArrayView< T >::strides() const
   return _strides;
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 const Teuchos::ArrayView< T > &
 MDArrayView< T >::arrayView() const
 {
   return _array;
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 EStorageOrder
@@ -643,12 +688,16 @@ MDArrayView< T >::storage_order() const
   return _storage_order;
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 const typename MDArrayView< T >::iterator
 MDArrayView< T >::begin() const
 {
   return iterator(*this);
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 const typename MDArrayView< T >::iterator
@@ -657,6 +706,51 @@ MDArrayView< T >::end() const
   // Return the iterator corresponding to the last element
   return iterator(*this, true);
 }
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+MDArrayView< T >
+MDArrayView< T >::operator[](MDArrayView< T >::size_type i)
+{
+#ifdef DOMI_ENABLE_ABC
+  assertIndex(i, _next_axis);
+#endif
+  // Find the offset to the new MDArrayView
+  size_type offset = i * _strides[_next_axis];
+  // Compute the dimensions of the new MDArrayView
+  size_type n = _dimensions.size();
+  Teuchos::Array< size_type > newDims;
+  Teuchos::Array< size_type > newStrides;
+  if (n == 1)
+  {
+    newDims.resize(1);
+    newDims[0] = 1;
+    newStrides.resize(1);
+    newStrides[0] = 1;
+  }
+  else
+  {
+    for (int axis = 0; axis < n; axis++)
+      if (axis != _next_axis)
+      {
+	newDims.push_back(_dimensions[axis]);
+	newStrides.push_back(_strides[axis]);
+      }
+  } 
+  // Construct the new MDArrayView
+  Teuchos::ArrayView< T > buffer = _array.view(offset, computeSize(newDims(),
+                                                                 newStrides()));
+  MDArrayView< T > result(buffer, newDims, _storage_order);
+  // Correct the strides of the new MDArrayView
+  result._strides = newStrides;
+  // Correct the next axis of the new MDArrayView
+  result._next_axis = _next_axis;
+  // Return the result
+  return result;
+}
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 const MDArrayView< T >
@@ -699,6 +793,38 @@ MDArrayView< T >::operator[](MDArrayView< T >::size_type i) const
   return result;
 }
 
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+MDArrayView< T >
+MDArrayView< T >::operator[](Slice s)
+{
+  // Note: the Slice.bounds() method produces safe indexes
+  Slice bounds = s.bounds(_dimensions[_next_axis]);
+  // Find the offset to the new MDArrayView
+  size_type offset = bounds.start * _strides[_next_axis];
+  // Compute the dimensions of the new MDArrayView
+  Teuchos::Array< size_type > newDims(_dimensions);
+  newDims[_next_axis] = (bounds.stop - bounds.start) / bounds.step;
+  // Compute the strides of the new MDArrayView
+  Teuchos::Array< size_type > newStrides(_strides);
+  newStrides[_next_axis] *= bounds.step;
+  // Construct the new MDArrayView
+  Teuchos::ArrayView< T > buffer = _array.view(offset, computeSize(newDims(),
+                                                          newStrides()));
+  MDArrayView< T > result(buffer, newDims, _storage_order);
+  // Correct the strides of the new MDArrayView
+  result._strides = newStrides;
+  // Correct the next axis of the new MDArrayView
+  result._next_axis = _next_axis + 1;
+  if (result._next_axis >= _dimensions.size())
+    result._next_axis = 0;
+  // Return the result
+  return result;
+}
+
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 const MDArrayView< T >
 MDArrayView< T >::operator[](Slice s) const
@@ -727,6 +853,8 @@ MDArrayView< T >::operator[](Slice s) const
   return result;
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 T &
 MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i)
@@ -740,6 +868,8 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i)
 #endif
   return _ptr[i * _strides[0]];
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 T &
@@ -756,6 +886,8 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
 #endif
   return _ptr[i * _strides[0] + j * _strides[1]];
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 T &
@@ -774,6 +906,8 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
 #endif
   return _ptr[i * _strides[0] + j * _strides[1] + k * _strides[2]];
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 T &
@@ -795,6 +929,8 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
   return _ptr[i * _strides[0] + j * _strides[1] + k * _strides[2] +
               m * _strides[3]];
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 T &
@@ -818,6 +954,8 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
   return _ptr[i * _strides[0] + j * _strides[1] + k * _strides[2] +
               m * _strides[3] + n * _strides[4]];
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 T &
@@ -857,6 +995,8 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
   return _ptr[offset];
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 const T &
 MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i) const
@@ -870,6 +1010,8 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i) const
 #endif
   return _ptr[i * _strides[0]];
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 const T &
@@ -886,6 +1028,8 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
 #endif
   return _ptr[i * _strides[0] + j * _strides[1]];
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 const T &
@@ -904,6 +1048,8 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
 #endif
   return _ptr[i * _strides[0] + j * _strides[1] + k * _strides[2]];
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 const T &
@@ -925,6 +1071,8 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
   return _ptr[i * _strides[0] + j * _strides[1] + k * _strides[2] +
               m * _strides[3]];
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 const T &
@@ -948,6 +1096,8 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
   return _ptr[i * _strides[0] + j * _strides[1] + k * _strides[2] +
               m * _strides[3] + n * _strides[4]];
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 const T &
@@ -987,6 +1137,8 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
   return _ptr[offset];
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 void
 MDArrayView< T >::assign(const T & value)
@@ -994,6 +1146,8 @@ MDArrayView< T >::assign(const T & value)
   for (iterator it = begin(); it != end(); ++it)
     *it = value;
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 T &
@@ -1013,6 +1167,8 @@ MDArrayView< T >::at(size_type i, ...)
   return _array[offset];
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 const T &
 MDArrayView< T >::at(size_type i, ...) const
@@ -1031,6 +1187,8 @@ MDArrayView< T >::at(size_type i, ...) const
   return _array[offset];
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 bool
 MDArrayView< T >::hasBoundsChecking()
@@ -1042,6 +1200,8 @@ MDArrayView< T >::hasBoundsChecking()
 #endif
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 std::string
 MDArrayView< T >::toString() const
@@ -1050,6 +1210,8 @@ MDArrayView< T >::toString() const
   // of zero
   return toString(0);
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 std::string
@@ -1083,12 +1245,16 @@ MDArrayView< T >::toString(int indent) const
   return ss.str();
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 const T *
 MDArrayView< T >::getRawPtr() const
 {
   return _array.getRawPtr();
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 bool operator==(const MDArrayView< T > & a1, const MDArrayView< T > & a2)
@@ -1102,17 +1268,23 @@ bool operator==(const MDArrayView< T > & a1, const MDArrayView< T > & a2)
   return true;
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 bool operator!=(const MDArrayView< T > & a1, const MDArrayView< T > & a2)
 {
   return not (a1 == a2);
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 void swap(MDArrayView< T > & a1, MDArrayView< T > & a2)
 {
   a1.swap(a2);
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 std::ostream & operator<<(std::ostream & os, const MDArrayView< T > & a)
@@ -1121,9 +1293,9 @@ std::ostream & operator<<(std::ostream & os, const MDArrayView< T > & a)
   return os;
 }
 
-//////////////////////////
-// Private implementations
-//////////////////////////
+/////////////////////////////
+// Private implementations //
+/////////////////////////////
 
 template< typename T >
 void

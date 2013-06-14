@@ -265,15 +265,23 @@ public:
   //@{
 
   /** \brief Perform an explicit conversion to a non-const
-   *  <tt>MDArrayView</tt>
+   *  <tt>MDArrayView<T></tt>
    */
   MDArrayView< T > mdArrayView();
-  const MDArrayView< T > mdArrayView() const;
 
   /** \brief Perform an explicit conversion to a const
-   *  <tt>MDArrayView</tt>
+   *  <tt>MDArrayView<T></tt>
+   */
+  const MDArrayView< T > mdArrayView() const;
+
+  /** \brief Perform an explicit conversion to a non-const
+   *  <tt>MDArrayView<const T></tt>
    */
   MDArrayView< const T > mdArrayViewConst();
+
+  /** \brief Perform an explicit conversion to a const
+   *  <tt>MDArrayView<const T></tt>
+   */
   const MDArrayView< const T > mdArrayViewConst() const;
 
   /** \brief Perform an implicit conversion to a non-const
@@ -300,6 +308,17 @@ public:
    *        <tt>n</tt> square bracket operators when referencing an
    *        <tt>n</tt>-dimensional <tt>MDArrayRCP</tt>.
    */
+  MDArrayView< T > operator[](size_type i);
+
+  /** \brief Sub-array const access operator.  The returned
+   *  <tt>MDArrayView</tt> object will have one fewer dimensions than
+   *  the calling <tt>MDArrayRCP</tt>.
+   *
+   * \param i [in] Index of the desired sub-array.  Note that to
+   *        obtain expected behavior, you should always chain together
+   *        <tt>n</tt> square bracket operators when referencing an
+   *        <tt>n</tt>-dimensional <tt>MDArrayRCP</tt>.
+   */
   const MDArrayView< T > operator[](size_type i) const;
 
   /** \brief Sub-array access operator.  The returned
@@ -312,9 +331,25 @@ public:
    *        operators when referencing an <tt>n</tt>-dimensional
    *        <tt>MDArrayRCP</tt>.
    */
+  MDArrayView< T > operator[](Slice s);
+
+  /** \brief Sub-array const access operator.  The returned
+   *  <tt>MDArrayView</tt> object will have the same number of
+   *  dimensions as the calling <tt>MDArrayRCP</tt>.
+   *
+   * \param s [in] Slice representing the bounds of the desired
+   *        sub-array.  Note that to obtain expected behavior, you
+   *        should always chain together <tt>n</tt> square bracket
+   *        operators when referencing an <tt>n</tt>-dimensional
+   *        <tt>MDArrayRCP</tt>.
+   */
   const MDArrayView< T > operator[](Slice s) const;
 
   /** \brief Conversion to <tt>MDArrayView</tt>
+   */
+  MDArrayView< T > operator()();
+
+  /** \brief Conversion to const <tt>MDArrayView</tt>
    */
   const MDArrayView< T > operator()() const;
 
@@ -624,9 +659,9 @@ private:
   void assertIndex(size_type i, int axis) const;
 };
 
-//////////////////
-// Implementations
-//////////////////
+/////////////////////
+// Implementations //
+/////////////////////
 
 template< typename T >
 MDArrayRCP< T >::MDArrayRCP(Teuchos::ENull null_arg) :
@@ -637,6 +672,8 @@ MDArrayRCP< T >::MDArrayRCP(Teuchos::ENull null_arg) :
   _ptr()
 {
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< T > & array,
@@ -654,6 +691,8 @@ MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< T > & array,
                              "dimensions");
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< size_type > & dims,
 			    const T & val,
@@ -666,6 +705,8 @@ MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< size_type > & dims,
 {
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< size_type > & dims,
 			    EStorageOrder storageOrder) :
@@ -677,6 +718,8 @@ MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< size_type > & dims,
 {
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 MDArrayRCP< T >::MDArrayRCP(const MDArrayRCP< T > & r_ptr) :
   _dimensions(r_ptr._dimensions),
@@ -687,10 +730,14 @@ MDArrayRCP< T >::MDArrayRCP(const MDArrayRCP< T > & r_ptr) :
 {
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 MDArrayRCP< T >::~MDArrayRCP()
 {
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 MDArrayRCP< T > &
@@ -703,12 +750,16 @@ MDArrayRCP< T >::operator=(const MDArrayRCP< T > & r_ptr)
   _ptr           = r_ptr._ptr;
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 int
 MDArrayRCP< T >::num_dims() const
 {
   return _dimensions.size();
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 const Teuchos::Array< typename Teuchos::Array< T >::size_type > &
@@ -717,12 +768,16 @@ MDArrayRCP< T >::dimensions() const
   return _dimensions;
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 typename Teuchos::Array< T >::size_type
 MDArrayRCP< T >::dimension(int axis) const
 {
   return _dimensions[axis];
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 typename Teuchos::Array< T >::size_type
@@ -731,12 +786,16 @@ MDArrayRCP< T >::size() const
   return _array.size();
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 const Teuchos::Array< typename Teuchos::Array< T >::size_type > &
 MDArrayRCP< T >::strides() const
 {
   return _strides;
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 const Teuchos::ArrayRCP< T > &
@@ -745,6 +804,8 @@ MDArrayRCP< T >::arrayRCP() const
   return _array;
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 const EStorageOrder
 MDArrayRCP< T >::storage_order() const
@@ -752,12 +813,16 @@ MDArrayRCP< T >::storage_order() const
   return _storage_order;
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 const typename MDArrayRCP< T >::iterator
 MDArrayRCP< T >::begin() const
 {
   return iterator(*this);
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 const typename MDArrayRCP< T >::iterator
@@ -767,12 +832,16 @@ MDArrayRCP< T >::end() const
   return iterator(*this, true);
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 bool
 MDArrayRCP< T >::is_null() const
 {
   return _array.is_null();
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 T *
@@ -781,12 +850,16 @@ MDArrayRCP< T >::operator->() const
   return _array.operator->();
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 T &
 MDArrayRCP< T >::operator*()
 {
   return _array.operator*();
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 T *
@@ -795,12 +868,16 @@ MDArrayRCP< T >::get() const
   return _array.get();
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 MDArrayView< T >
 MDArrayRCP< T >::mdArrayView()
 {
   return MDArrayView< T >(_array(), _dimensions, _storage_order);
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 const MDArrayView< T >
@@ -810,12 +887,16 @@ MDArrayRCP< T >::mdArrayView() const
   return MDArrayView< T >(_array(), dims(), _storage_order);
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 MDArrayView< const T >
 MDArrayRCP< T >::mdArrayViewConst()
 {
   return MDArrayView< const T >(_array(), _dimensions, _storage_order);
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 const MDArrayView< const T >
@@ -824,17 +905,34 @@ MDArrayRCP< T >::mdArrayViewConst() const
   return MDArrayView< const T >(_array(), _dimensions, _storage_order);
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 MDArrayRCP< T >::operator MDArrayView< T >() const
 {
   return mdArrayView();
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 MDArrayRCP< T >::operator MDArrayView< const T >() const
 {
   return mdArrayViewConst();
 }
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+MDArrayView< T >
+MDArrayRCP< T >::operator[](size_type i)
+{
+  // Note: array bounds checking, if active, will be performed by the
+  // MDArrayView class
+  return mdArrayView()[i];
+}
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 const MDArrayView< T >
@@ -845,6 +943,8 @@ MDArrayRCP< T >::operator[](size_type i) const
   return mdArrayView()[i];
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 const MDArrayView< T >
 MDArrayRCP< T >::operator[](Slice s) const
@@ -853,12 +953,35 @@ MDArrayRCP< T >::operator[](Slice s) const
   return mdArrayView()[s];
 }
 
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+MDArrayView< T >
+MDArrayRCP< T >::operator[](Slice s)
+{
+  // Note: Slices produce safe indexes
+  return mdArrayView()[s];
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+MDArrayView< T >
+MDArrayRCP< T >::operator()()
+{
+  return mdArrayView();
+}
+
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 const MDArrayView< T >
 MDArrayRCP< T >::operator()() const
 {
   return mdArrayView();
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 T &
@@ -873,6 +996,8 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i)
 #endif
   return _ptr[i * _strides[0]];
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 T &
@@ -889,6 +1014,8 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
 #endif
   return _ptr[i * _strides[0] + j * _strides[1]];
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 T &
@@ -907,6 +1034,8 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
 #endif
   return _ptr[i * _strides[0] + j * _strides[1] + k * _strides[2]];
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 T &
@@ -928,6 +1057,8 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
   return _ptr[i * _strides[0] + j * _strides[1] + k * _strides[2] +
               m * _strides[3]];
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 T &
@@ -951,6 +1082,8 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
   return _ptr[i * _strides[0] + j * _strides[1] + k * _strides[2] +
               m * _strides[3] + n * _strides[4]];
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 T &
@@ -990,6 +1123,8 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
   return _ptr[offset];
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 const T &
 MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i) const
@@ -1003,6 +1138,8 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i) const
 #endif
   return _ptr[i * _strides[0]];
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 const T &
@@ -1019,6 +1156,8 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
 #endif
   return _ptr[i * _strides[0] + j * _strides[1]];
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 const T &
@@ -1037,6 +1176,8 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
 #endif
   return _ptr[i * _strides[0] + j * _strides[1] + k * _strides[2]];
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 const T &
@@ -1058,6 +1199,8 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
   return _ptr[i * _strides[0] + j * _strides[1] + k * _strides[2] +
               m * _strides[3]];
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 const T &
@@ -1081,6 +1224,8 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
   return _ptr[i * _strides[0] + j * _strides[1] + k * _strides[2] +
               m * _strides[3] + n * _strides[4]];
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 const T &
@@ -1120,6 +1265,8 @@ MDArrayRCP< T >::operator()(typename MDArrayRCP< T >::size_type i,
   return _ptr[offset];
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 void
 MDArrayRCP< T >::assign(const T & value)
@@ -1127,6 +1274,8 @@ MDArrayRCP< T >::assign(const T & value)
   for (iterator it = begin(); it != end(); ++it)
     *it = value;
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 T &
@@ -1146,6 +1295,8 @@ MDArrayRCP< T >::at(size_type i, ...)
   return _array[offset];
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 const T &
 MDArrayRCP< T >::at(size_type i, ...) const
@@ -1164,12 +1315,16 @@ MDArrayRCP< T >::at(size_type i, ...) const
   return _array[offset];
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 typename MDArrayRCP< T >::size_type
 MDArrayRCP< T >::capacity() const
 {
   return _array.capacity();
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 void
@@ -1183,6 +1338,8 @@ MDArrayRCP< T >::clear()
   _ptr = _array.getRawPtr();
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 bool
 MDArrayRCP< T >::empty() const
@@ -1190,12 +1347,16 @@ MDArrayRCP< T >::empty() const
   return (_array.size() == 0);
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 typename MDArrayRCP< T >::size_type
 MDArrayRCP< T >::max_size() const
 {
   return _array.max_size();
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 void
@@ -1206,6 +1367,8 @@ MDArrayRCP< T >::resize(const Teuchos::ArrayView< size_type > & dims)
   _array.resize(computeSize(dims));
   _ptr = _array.getRawPtr();
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 bool
@@ -1218,6 +1381,8 @@ MDArrayRCP< T >::hasBoundsChecking()
 #endif
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 std::string
 MDArrayRCP< T >::toString() const
@@ -1225,12 +1390,16 @@ MDArrayRCP< T >::toString() const
   return mdArrayView().toString();
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 const T *
 MDArrayRCP< T >::getRawPtr() const
 {
   return _array.getRawPtr();
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 bool operator==(const MDArrayRCP< T > & a1, const MDArrayRCP< T > & a2)
@@ -1244,11 +1413,15 @@ bool operator==(const MDArrayRCP< T > & a1, const MDArrayRCP< T > & a2)
   return true;
 }
 
+////////////////////////////////////////////////////////////////////////
+
 template< typename T >
 bool operator!=(const MDArrayRCP< T > & a1, const MDArrayRCP< T > & a2)
 {
   return not (a1 == a2);
 }
+
+////////////////////////////////////////////////////////////////////////
 
 template< typename T >
 std::ostream & operator<<(std::ostream & os, const MDArrayRCP< T > & a)
