@@ -21,7 +21,8 @@ from optparse import OptionParser
 #
 
 thisFilePath = __file__
-thisFileRealAbsBasePath = os.path.dirname(os.path.abspath(os.path.realpath(thisFilePath)))
+thisFileRealAbsBasePath = \
+  os.path.dirname(os.path.abspath(os.path.realpath(thisFilePath)))
 #print "thisFileRealAbsBasePath = '"+thisFileRealAbsBasePath+"'"
 
 tribitsBaseDir = os.path.abspath(os.path.join(thisFileRealAbsBasePath, '..'))
@@ -129,6 +130,8 @@ substitutedTribitsBuildQuickRefBodyStr = \
 # F) Generate the output files
 #
 
+filesToClean = []
+
 projectBuildQuickRefTemplateFile = \
   os.path.join(projectBaseDir, "cmake", \
     projectName+"BuildQuickRefTemplate.rst")
@@ -159,12 +162,33 @@ if options.generateHtml:
 if options.generateLatex:
   print "Generating "+outputFileBaseName+".tex ..."
   outputLatexFile = outputFileBase+".tex"
-  generateFile(outputLatexFile, \
-    options.generateLatex+" "+outputRstFile+" "+outputLatexFile)
+  runSysCmnd(options.generateLatex+" "+outputRstFile+" "+outputLatexFile)
   if options.generatePDF:
     print "Generating "+outputFileBaseName+".pdf ..."
     outputPdfFile = outputFileBase+".pdf"
+    outputPdfFileLog = outputLatexFile+".log"
     generateFile(outputPdfFile,
       options.generatePDF+" "+outputLatexFile,
-      outFile=outputLatexFile+".log",
+      outFile=outputPdfFileLog,
       workingDir=projectBaseDir)
+    filesToClean.append(outputPdfFileLog)
+
+#
+# G) Clean the intermediate files
+#
+
+print "Cleaning intermediate files ..."
+
+filesToClean.extend(
+  [
+    outputFileBase+".aux",
+    outputFileBase+".log",
+    outputFileBase+".out",
+    outputFileBase+".tex",
+    outputFileBase+".toc",
+    ]
+  )
+
+for tempFile in filesToClean:
+  if os.path.exists(tempFile):
+    runSysCmnd("rm "+tempFile)
