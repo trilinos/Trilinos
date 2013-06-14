@@ -1017,6 +1017,18 @@ const char *do_if(double x)
   return NULL;
 }
 
+const char *do_notif(double x)
+{
+  aprepro->lexer->if_handler(!x);
+  return NULL;
+}
+
+const char *do_elseif(double x)
+{
+  aprepro->lexer->elseif_handler(x);
+  return NULL;
+}
+
 const char *do_switch(double x)
 {
   aprepro->lexer->switch_handler(x);
