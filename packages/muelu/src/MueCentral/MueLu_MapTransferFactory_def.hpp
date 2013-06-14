@@ -43,12 +43,6 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_ContactMapTransferFactory_def.hpp
- *
- *  Created on: Aug 2, 2012
- *      Author: wiesner
- */
 
 #ifndef MUELU_MAPTRANSFERFACTORY_DEF_HPP_
 #define MUELU_MAPTRANSFERFACTORY_DEF_HPP_

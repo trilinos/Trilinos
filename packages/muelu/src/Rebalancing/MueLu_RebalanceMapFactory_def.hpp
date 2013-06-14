@@ -60,19 +60,15 @@
 
 namespace MueLu {
 
- /*template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
- RebalanceMapFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RebalanceMapFactory(std::string mapName, Teuchos::RCP<const FactoryBase> mapFact)
- : mapName_(mapName), mapFact_(mapFact)
- {}*/
-
  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
  RCP<const ParameterList> RebalanceMapFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    //validParamList->set< RCP<const FactoryBase> >("A",                    Teuchos::null, "Factory of the matrix A");
+    // Information about map that is to be rebalanced
     validParamList->set< std::string >           ("Map name"   , "", "Name of map to rebalanced.");
     validParamList->set< RCP<const FactoryBase> >("Map factory", MueLu::NoFactory::getRCP(), "Generating factory of map to be rebalanced.");
 
+    // Importer object with rebalancing information
     validParamList->set< RCP<const FactoryBase> >("Importer",             Teuchos::null, "Factory of the importer object used for the rebalancing");
 
     return validParamList;
@@ -81,7 +77,6 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RebalanceMapFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & currentLevel) const {
-    //Input(currentLevel, "A");
     const Teuchos::ParameterList & pL = GetParameterList();
     std::string mapName                        = pL.get<std::string> ("Map name");
     Teuchos::RCP<const FactoryBase> mapFactory = GetFactory          ("Map factory");
@@ -94,8 +89,9 @@ namespace MueLu {
   void RebalanceMapFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &level) const {
     FactoryMonitor m(*this, "Build", level);
 
-    Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
+    //Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
 
+    // extract data from Level object
     const Teuchos::ParameterList & pL = GetParameterList();
     std::string mapName = pL.get<std::string> ("Map name");
     Teuchos::RCP<const FactoryBase> mapFactory = GetFactory ("Map factory");
@@ -106,27 +102,21 @@ namespace MueLu {
     RCP<const Map> map = level.Get< RCP<const Map> >(mapName,mapFactory.get());
 
     // create vector based on input map
+    // Note, that the map can be a part only of the full map stored in rebalanceImporter.getSourceMap()
     RCP<Vector> v = VectorFactory::Build(map);
     v->putScalar(1.0);
 
-    //v->describe(*fos, Teuchos::VERB_EXTREME);
-
-    // source map unique
+    // create a new vector based on the full rebalanceImporter.getSourceMap()
+    // import the partial map information to the full source map
     RCP<const Import> blowUpImporter = ImportFactory::Build(map, rebalanceImporter->getSourceMap());
     RCP<Vector> pv = VectorFactory::Build(rebalanceImporter->getSourceMap());
     pv->doImport(*v,*blowUpImporter,Xpetra::INSERT);
 
-    //pv->describe(*fos, Teuchos::VERB_EXTREME);
-
-    // do rebalancing
+    // do rebalancing using rebalanceImporter
     RCP<Vector> ptv = VectorFactory::Build(rebalanceImporter->getTargetMap());
     ptv->doImport(*pv,*rebalanceImporter,Xpetra::INSERT);
 
-    // reconstruct map
-
-
-
-
+    // reconstruct rebalanced partial map
     Teuchos::ArrayRCP< const Scalar > ptvData = ptv->getData(0);
     std::vector<GlobalOrdinal> localGIDs;  // vector with GIDs that are stored on current proc
 
@@ -144,9 +134,8 @@ namespace MueLu {
         localGIDs_view,
         0, map->getComm());
 
-    //localGIDsMap->describe(*fos, Teuchos::VERB_EXTREME);
-
-
+    // store rebalanced partial map using the same name and generating factory as the original map
+    // in the level class
     level.Set(mapName, localGIDsMap, mapFactory.get());
   } //Build()
 

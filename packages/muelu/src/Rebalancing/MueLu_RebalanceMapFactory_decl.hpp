@@ -46,7 +46,6 @@
 #ifndef MUELU_REBALANCEMAPFACTORY_DECL_HPP_
 #define MUELU_REBALANCEMAPFACTORY_DECL_HPP_
 
-#include <Xpetra_Matrix.hpp> // TODO do we need this??
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Import.hpp>
@@ -80,7 +79,7 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    RebalanceMapFactory(/*std::string mapName, Teuchos::RCP<const FactoryBase> mapFact*/) {}
+    RebalanceMapFactory() {}
 
     //! Destructor
     virtual ~RebalanceMapFactory() { }
@@ -98,11 +97,6 @@ namespace MueLu {
     void Build(Level &level) const;
 
     //@}
-
-  private:
-
-    std::string              mapName_;   ///< name of input and output variable
-    RCP<const FactoryBase>   mapFact_;   ///< generating factory of input variable
   };
 
 } //namespace MueLu
