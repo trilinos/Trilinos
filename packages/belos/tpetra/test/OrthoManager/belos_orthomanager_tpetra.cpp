@@ -53,19 +53,6 @@
 
 using std::endl;
 
-//
-// These typedefs make main() as generic as possible.
-//
-typedef double scalar_type;
-typedef int local_ordinal_type;
-typedef int global_ordinal_type;
-
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-typedef Kokkos::TBBNode node_type;
-#else
-typedef Kokkos::SerialNode node_type;
-#endif // HAVE_KOKKOSCLASSIC_TBB
-
 //////////////////////////////////////////////////////////////////////
 // Command-line arguments
 //////////////////////////////////////////////////////////////////////
@@ -209,6 +196,62 @@ getCmdLineArgs (const Teuchos::Comm<int>& comm, int argc, char* argv[])
     "numRows <= sizeS + sizeX1 + sizeX2 is not allowed");
 }
 
+// C++03 does not allow partial specialization of a template function,
+// so we have to declare a class to load the sparse matrix and create
+// the Map.
+
+// We don't have a generic Harwell-Boeing sparse file reader yet.  If
+// filename == "", then the user doesn't want to read in a sparse
+// matrix, so we can just create the appropriate Map and be done with
+// it.  Otherwise, raise an exception at run time.
+template<class ScalarType, class LocalOrdinalType, class GlobalOrdinalType, class NodeType>
+class SparseMatrixLoader {
+public:
+  typedef Tpetra::Map<LocalOrdinalType, GlobalOrdinalType, NodeType> map_type;
+  typedef Tpetra::CrsMatrix<ScalarType, LocalOrdinalType, GlobalOrdinalType, NodeType> matrix_type;
+
+  static void
+  load (Teuchos::RCP<map_type>& map,
+        Teuchos::RCP<matrix_type>& M,
+        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+        std::ostream& debugOut)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      filename != "", std::logic_error, "Sorry, reading in a Harwell-Boeing "
+      "sparse matrix file for ScalarType="
+      << Teuchos::TypeNameTraits<ScalarType>::name () << " is not yet "
+      "implemented.  This currently only works for ScalarType=double.");
+    const GlobalOrdinalType indexBase = 0;
+    map = Teuchos::rcp (new map_type (numRows, indexBase, comm, Tpetra::GloballyDistributed));
+    M = Teuchos::null;
+  }
+};
+
+// We _do_ know how to read a Harwell-Boeing sparse matrix file with Scalar=double.
+template<class LocalOrdinalType, class GlobalOrdinalType, class NodeType>
+class SparseMatrixLoader<double, LocalOrdinalType, GlobalOrdinalType, NodeType> {
+public:
+  typedef Tpetra::Map<LocalOrdinalType, GlobalOrdinalType, NodeType> map_type;
+  typedef Tpetra::CrsMatrix<double, LocalOrdinalType, GlobalOrdinalType, NodeType> matrix_type;
+
+  static void
+  load (Teuchos::RCP<map_type>& map,
+        Teuchos::RCP<matrix_type>& M,
+        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+        std::ostream& debugOut)
+  {
+    // If the sparse matrix is loaded successfully, this call will
+    // modify numRows to be the number of rows in the sparse matrix.
+    // Otherwise, it will leave numRows alone.
+    std::pair<Teuchos::RCP<map_type>, Teuchos::RCP<matrix_type> > results =
+      Belos::Test::loadSparseMatrix<LocalOrdinalType,
+      GlobalOrdinalType,
+      NodeType> (comm, filename, numRows, debugOut);
+    map = results.first;
+    M = results.second;
+  }
+};
+
 int
 main (int argc, char *argv[])
 {
@@ -216,17 +259,28 @@ main (int argc, char *argv[])
   using Teuchos::parameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
+
+  typedef double scalar_type;
+  typedef int local_ordinal_type;
+  typedef int global_ordinal_type;
+
+#ifdef HAVE_KOKKOSCLASSIC_TBB
+  typedef Kokkos::TBBNode node_type;
+#else
+  typedef Kokkos::SerialNode node_type;
+#endif // HAVE_KOKKOSCLASSIC_TBB
+
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
   typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> OP;
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
-  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> sparse_matrix_type;
+  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> crs_matrix_type;
 
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &std::cout);
-  RCP<const Teuchos::Comm<int> > pComm =
+  RCP<const Teuchos::Comm<int> > comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
 
   // Get values of command-line arguments.
-  getCmdLineArgs (*pComm, argc, argv);
+  getCmdLineArgs (*comm, argc, argv);
 
   // Declare an output manager for handling local output.  Initialize,
   // using the caller's desired verbosity level.
@@ -246,21 +300,15 @@ main (int argc, char *argv[])
   // Load the inner product operator matrix from the given filename.
   // If filename == "", use the identity matrix as the inner product
   // operator (the Euclidean inner product), and leave M as
-  // Teuchos::null.  Also return an appropriate Map (which will
-  // always be initialized; it should never be Teuchos::null).
+  // Teuchos::null.  Also return an appropriate Map (which will always
+  // be initialized, even if filename == ""; it should never be
+  // Teuchos::null).
   RCP<map_type> map;
-  RCP<sparse_matrix_type> M;
+  RCP<crs_matrix_type> M;
   {
-    using Belos::Test::loadSparseMatrix;
-    // If the sparse matrix is loaded successfully, this call will
-    // modify numRows to be the number of rows in the sparse matrix.
-    // Otherwise, it will leave numRows alone.
-    std::pair<RCP<map_type>, RCP<sparse_matrix_type> > results =
-      loadSparseMatrix<local_ordinal_type,
-                       global_ordinal_type,
-                       node_type> (pComm, filename, numRows, debugOut);
-    map = results.first;
-    M = results.second;
+    typedef SparseMatrixLoader<scalar_type, local_ordinal_type,
+      global_ordinal_type, node_type> loader_type;
+    loader_type::load (map, M, comm, debugOut);
   }
   TEUCHOS_TEST_FOR_EXCEPTION(map.is_null (), std::runtime_error,
     "(Mat)OrthoManager test code failed to initialize the Map.");
@@ -280,7 +328,7 @@ main (int argc, char *argv[])
     // we make maxNormalizeNumCols a size_t as well.
     if (map->getNodeNumElements () < maxNormalizeNumCols) {
       std::ostringstream os;
-      os << "The number of elements on this process " << pComm->getRank()
+      os << "The number of elements on this process " << comm->getRank()
          << " is too small for the number of columns that you want to test."
          << "  There are " << map->getNodeNumElements() << " elements on "
         "this process, but the normalize() method of the MatOrthoManager "
@@ -337,20 +385,20 @@ main (int argc, char *argv[])
 
   // Only Process 0 gets to write to cout.  The other processes dump
   // output to a black hole.
-  //std::ostream& finalOut = (Teuchos::rank(*pComm) == 0) ? std::cout : Teuchos::oblackholestream;
+  //std::ostream& finalOut = (Teuchos::rank(*comm) == 0) ? std::cout : Teuchos::oblackholestream;
 
   if (numFailed != 0) {
     outMan->stream(Belos::Errors) << numFailed << " errors." << endl;
 
     // The Trilinos test framework depends on seeing this message,
     // so don't rely on the OutputManager to report it correctly.
-    if (pComm->getRank () == 0) {
+    if (comm->getRank () == 0) {
       std::cout << "End Result: TEST FAILED" << endl;
     }
     return EXIT_FAILURE;
   }
   else {
-    if (pComm->getRank () == 0) {
+    if (comm->getRank () == 0) {
       std::cout << "End Result: TEST PASSED" << endl;
     }
     return EXIT_SUCCESS;
