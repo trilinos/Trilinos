@@ -209,11 +209,11 @@ namespace MueLu {
       else                      GetOStream(Warnings0,0) << "RAPFactory (WARNING): found "    << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
     }
 
-    /*
+    // call fillComplete with optimized storage option set to true
+    // This is necessary for new faster Epetra MM kernels.
     Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList());
     p->set("DoOptimizeStorage",true);
     Ac->fillComplete(p);
-    */
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

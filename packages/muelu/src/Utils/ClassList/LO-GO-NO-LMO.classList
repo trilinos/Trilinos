@@ -13,6 +13,7 @@ LocalAggregationAlgorithm
 MaxLinkAggregationAlgorithm
 OnePtAggregationAlgorithm
 PRFactory
+RebalanceMapFactory
 SmallAggregationAlgorithm
 UncoupledAggregationAlgorithm
 UncoupledAggregationFactory
