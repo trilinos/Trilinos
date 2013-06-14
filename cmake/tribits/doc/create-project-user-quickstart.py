@@ -10,10 +10,15 @@ ToDo: Finish documentation!
 
 import sys
 import os
+import stat
 import subprocess
 import commands
 
 from optparse import OptionParser
+
+#
+# A) Set up basic paths and import modules
+#
 
 thisFilePath = __file__
 thisFileRealAbsBasePath = os.path.dirname(os.path.abspath(os.path.realpath(thisFilePath)))
@@ -28,7 +33,25 @@ from GeneralScriptSupport import *
 from CheckinTest import *
 
 #
-# A) Read in the commandline options
+# B) Define some helper functions
+#
+
+def openWriteFilePermissions(filePath):
+  if os.path.exists(filePath):
+    os.chmod(filePath, stat.S_IREAD | stat.S_IWRITE \
+      | stat.S_IRGRP | stat.S_IWGRP)
+
+def setGeneratedFilePermissions(filePath):
+  os.chmod(filePath, stat.S_IREAD | stat.S_IRGRP | stat.S_IROTH)
+
+def generateFile(filePath, generateCmnd, outFile=None, workingDir=""):
+  openWriteFilePermissions(filePath)
+  runSysCmnd(generateCmnd, outFile=outFile, workingDir=workingDir)
+  setGeneratedFilePermissions(filePath)
+
+
+#
+# C) Read in the commandline options
 #
   
 clp = OptionParser(usage=usageHelp)
@@ -68,7 +91,7 @@ clp.add_option(
 (options, args) = clp.parse_args(sys.argv)
 
 #
-# B) Get information for everything
+# D) Get information for everything
 #
 
 if options.projectBaseDir:
@@ -88,7 +111,7 @@ else:
 #print "outputFileBase =", outputFileBase
 
 #
-# B) Read in standard body and make substitution
+# E) Read in standard body and make substitution
 #
 
 tribitsUserQuickstartBodyFile = \
@@ -102,7 +125,7 @@ substitutedTribitsUserQuickstartBodyStr = \
   tribitsUserQuickstartBodyStr.replace("<Project>", projectName)
 
 #
-# C) Generate the output files
+# F) Generate the output files
 #
 
 projectUserQuickstartTemplateFile = \
@@ -118,20 +141,29 @@ projectUserQuickstartStr = \
   + "\n\n" \
   + substitutedTribitsUserQuickstartBodyStr
 
+outputFileBaseName = os.path.basename(outputFileBase)
+
 outputRstFile = outputFileBase+".rst"
 print "Writing rst file ..."
+openWriteFilePermissions(outputRstFile)
 writeStrToFile(outputRstFile, projectUserQuickstartStr)
+setGeneratedFilePermissions(outputRstFile)
 
 if options.generateHtml:
-  print "Generating html file ..."
+  print "Generating "+outputFileBaseName+".html ..."
   outputHtmlFile = outputFileBase+".html"
-  runSysCmnd(options.generateHtml+" "+outputRstFile+" "+outputHtmlFile)
+  generateFile(outputHtmlFile,
+    options.generateHtml+" "+outputRstFile+" "+outputHtmlFile)
 
 if options.generateLatex:
-  print "Generating latex file ..."
+  print "Generating "+outputFileBaseName+".tex ..."
   outputLatexFile = outputFileBase+".tex"
-  runSysCmnd(options.generateLatex+" "+outputRstFile+" "+outputLatexFile)
+  generateFile(outputLatexFile, \
+    options.generateLatex+" "+outputRstFile+" "+outputLatexFile)
   if options.generatePDF:
-    print "Generating PDF file ..."
-    runSysCmnd(options.generatePDF+" "+outputLatexFile,
+    print "Generating "+outputFileBaseName+".pdf ..."
+    outputPdfFile = outputFileBase+".pdf"
+    generateFile(outputPdfFile,
+      options.generatePDF+" "+outputLatexFile,
+      outFile=outputLatexFile+".log",
       workingDir=projectBaseDir)
