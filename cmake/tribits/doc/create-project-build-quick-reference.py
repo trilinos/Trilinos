@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-usageHelp = r"""create-project-user-quickstart.py [options]
+usageHelp = r"""create-project-build-quick-reference.py [options]
 
-Generate a TriBITS project-specific user quickstart file.
+Generate a TriBITS project-specific build quick reference file.
 
 ToDo: Finish documentation!
 
@@ -67,8 +67,8 @@ clp.add_option(
 clp.add_option(
   "--output-file-base", dest="outputFileBase", type="string",
   default="",
-  help="Project-specific user quickstart file base name." \
-    "  If not set, then set to <projectBaseDir>/<Project>UserQuickstart"
+  help="Project-specific build quickref file base name." \
+    "  If not set, then set to <projectBaseDir>/<Project>BuildQuickReference"
   )
   
 clp.add_option(
@@ -107,46 +107,47 @@ projectName = getProjectName(projectBaseDir)
 if options.outputFileBase:
   outputFileBase = options.outputFileBase
 else:
-  outputFileBase = os.path.join(projectBaseDir, projectName+"UserQuickstart")
+  outputFileBase = os.path.join(projectBaseDir,
+    projectName+"BuildQuickReference")
 #print "outputFileBase =", outputFileBase
 
 #
 # E) Read in standard body and make substitution
 #
 
-tribitsUserQuickstartBodyFile = \
-  os.path.join(thisFileRealAbsBasePath, "TribitsUserQuickstartBody.rst")
-#print "tribitsUserQuickstartBodyFile =", tribitsUserQuickstartBodyFile
+tribitsBuildQuickReferenceBodyFile = \
+  os.path.join(thisFileRealAbsBasePath, "TribitsBuildQuickReferenceBody.rst")
+#print "tribitsBuildQuickReferenceBodyFile =", tribitsBuildQuickReferenceBodyFile
 
-tribitsUserQuickstartBodyStr = \
-  readStrFromFile(tribitsUserQuickstartBodyFile)
+tribitsBuildQuickReferenceBodyStr = \
+  readStrFromFile(tribitsBuildQuickReferenceBodyFile)
 
-substitutedTribitsUserQuickstartBodyStr = \
-  tribitsUserQuickstartBodyStr.replace("<Project>", projectName)
+substitutedTribitsBuildQuickReferenceBodyStr = \
+  tribitsBuildQuickReferenceBodyStr.replace("<Project>", projectName)
 
 #
 # F) Generate the output files
 #
 
-projectUserQuickstartTemplateFile = \
+projectBuildQuickReferenceTemplateFile = \
   os.path.join(projectBaseDir, "cmake", \
-    projectName+"UserQuickstartTemplate.rst")
-#print "projectUserQuickstartTemplateFile =", projectUserQuickstartTemplateFile
+    projectName+"BuildQuickReferenceTemplate.rst")
+#print "projectBuildQuickReferenceTemplateFile =", projectBuildQuickReferenceTemplateFile
 
-projectUserQuickstartTemplateStr = \
-  readStrFromFile(projectUserQuickstartTemplateFile)
+projectBuildQuickReferenceTemplateStr = \
+  readStrFromFile(projectBuildQuickReferenceTemplateFile)
 
-projectUserQuickstartStr = \
-  projectUserQuickstartTemplateStr \
+projectBuildQuickReferenceStr = \
+  projectBuildQuickReferenceTemplateStr \
   + "\n\n" \
-  + substitutedTribitsUserQuickstartBodyStr
+  + substitutedTribitsBuildQuickReferenceBodyStr
 
 outputFileBaseName = os.path.basename(outputFileBase)
 
 outputRstFile = outputFileBase+".rst"
 print "Writing rst file ..."
 openWriteFilePermissions(outputRstFile)
-writeStrToFile(outputRstFile, projectUserQuickstartStr)
+writeStrToFile(outputRstFile, projectBuildQuickReferenceStr)
 setGeneratedFilePermissions(outputRstFile)
 
 if options.generateHtml:
