@@ -89,6 +89,12 @@ extern FILE *check_open_file(char *file, char *mode);
 int if_state[MAX_IF_NESTING] = {0}; /* INITIAL */
 int if_lvl = 0;
 int suppress_nl = 0; /* Used by some constructs to temporarily suppress a newline */
+
+int switch_active = 0; /* Are we in a switch */
+int switch_case_run = 0; /* has there been a case which matched condition run? */
+int switch_skip_to_endcase = 0;
+double switch_condition = 0.0; /* Value specified in "switch(condition)" */
+
 %}
 
 %option nounput
@@ -104,7 +110,7 @@ NL    "\n"
 number {D}*\.({D}+)?({E})?
 integer {D}+({E})?
 
-%START PARSING GET_FILENAME IF_SKIP GET_VAR VERBATIM IF_WHILE_SKIP GET_LOOP_VAR LOOP LOOP_SKIP
+%START PARSING GET_FILENAME IF_SKIP GET_VAR VERBATIM IF_WHILE_SKIP GET_LOOP_VAR LOOP LOOP_SKIP END_CASE_SKIP
 
 %%
 <INITIAL>"{VERBATIM(ON)}"   { BEGIN(VERBATIM);  }
@@ -162,21 +168,23 @@ integer {D}+({E})?
 				}
 				 LINENUM_INC;
 			       }
-<LOOP>{WS}"{"[Ee]"nd"[Ll]"oop".*"\n" { LINENUM_INC;
-				   if (--loop_lvl == 0)
-				     {
-				       BEGIN(INITIAL);
-				       fclose(tmp_file);
-				       file_pointer[nfile++] = YY_CURRENT_BUFFER;
-				       NEWSTR(temp_f, ap_file_list[nfile].name);
-				       SET_FILE_LIST(nfile, 0, True, -1);
-				       yyin = open_file(temp_f, "r");
-				       yy_switch_to_buffer (
-					 yy_create_buffer( yyin, YY_BUF_SIZE));
-				     }
-				   else
-				     fprintf(tmp_file, "%s", yytext);
-				 }
+<LOOP>{WS}"{"[Ee]"nd"[Ll]"oop".*"\n" {
+  LINENUM_INC;
+  if (--loop_lvl == 0)
+    {
+      BEGIN(INITIAL);
+      fclose(tmp_file);
+      file_pointer[nfile++] = YY_CURRENT_BUFFER;
+      NEWSTR(temp_f, ap_file_list[nfile].name);
+      SET_FILE_LIST(nfile, 0, True, -1);
+      yyin = open_file(temp_f, "r");
+      yy_switch_to_buffer (
+			   yy_create_buffer( yyin, YY_BUF_SIZE));
+    }
+  else
+    fprintf(tmp_file, "%s", yytext);
+}
+
 <LOOP>{WS}"{"[Ll]"oop"{WS}"(".*"\n"  { loop_lvl++; /* Nested Loop */
 			     fprintf(tmp_file, "%s", yytext);
 			     LINENUM_INC;
@@ -194,6 +202,46 @@ integer {D}+({E})?
 					LINENUM_INC;
 				      }
 <LOOP_SKIP>.*"\n"		      { LINENUM_INC; }
+
+<END_CASE_SKIP>"{case".*"\n"  {
+  yyless(0);
+  BEGIN(INITIAL);
+  switch_skip_to_endcase = 0;
+}
+
+<INITIAL,END_CASE_SKIP>"{default}".*"\n"     {
+  LINENUM_INC;
+  if (!switch_active) {
+    yyerror("default statement found outside switch statement.");
+  }
+
+  if (!switch_case_run) {
+    switch_case_run = 1;
+    BEGIN(INITIAL);
+    switch_skip_to_endcase = 0;
+    if (ap_options.debugging) 
+      fprintf (stderr, "DEBUG SWITCH: 'default' code executing at line %d\n",
+	       ap_file_list[nfile].lineno);
+  } 
+  else {
+    if (ap_options.debugging) 
+      fprintf (stderr, "DEBUG SWITCH: 'default' not executing since a previous case already ran at line %d\n",
+	       ap_file_list[nfile].lineno);
+    
+    /* Need to skip all code until end of case */
+    BEGIN(END_CASE_SKIP);
+  }
+}
+
+<END_CASE_SKIP>.*"\n" { LINENUM_INC; }
+
+<INITIAL>{WS}"{endswitch}".*"\n"        {
+  LINENUM_INC;
+  if (!switch_active) {
+    yyerror("endswitch statement found without matching switch.");
+  }
+  switch_active = 0;
+}
 
 <IF_SKIP>{WS}"{"[Ii]"fdef"{WS}"("  { if_lvl++; 
     if (ap_options.debugging) 
@@ -421,7 +469,13 @@ integer {D}+({E})?
                              NEWSTR(yytext+1, yylval.string);
 			     return QSTRING; }
 
-<PARSING>"}"               { BEGIN(if_state[if_lvl]); return('}'); }
+<PARSING>"}" {
+  if (switch_skip_to_endcase)
+    BEGIN(END_CASE_SKIP);
+  else
+    BEGIN(if_state[if_lvl]);
+  return('}');
+}
 
 \\\{                      { if (echo) fwrite( "{", 1, 1, yyout ); }
 
@@ -633,6 +687,59 @@ char *do_rescan (char *string)
     free(new_string);
   }
   return (NULL);
+}
+
+char *do_switch(double x)
+{
+  /* save that we are in a switch statement */
+  /* save the value of 'x' for use in deciding which case to execute */
+  if (switch_active) {
+    yyerror("switch statement found while switch already active. Nested switch not supported.");
+  }
+
+  switch_active = 1;
+  switch_case_run = 0;
+  switch_condition = x;
+  switch_skip_to_endcase = 1; /* Skip everything until first case */
+  suppress_nl = 1;
+
+  if (ap_options.debugging) 
+    fprintf (stderr, "DEBUG SWITCH: 'switch' with condition = %g at line %d\n",
+	     switch_condition, ap_file_list[nfile].lineno);
+
+  return(NULL);
+}
+
+char *do_case(double x)
+{
+  /* make sure we are in a switch statement */
+  /* if 'x' matches the value saved in the switch statement 
+   * and no other case has been executed, then
+   * execute the code in the case and set a flag indicating
+   * the switch has run;
+   * if 'x' does not match the value saved, then skip to endcase
+   */
+  suppress_nl = 1;
+
+  if (!switch_active) {
+    yyerror("case statement found outside switch statement.");
+  }
+
+  if (!switch_case_run && x == switch_condition) {
+    switch_case_run = 1;
+    if (ap_options.debugging) 
+      fprintf (stderr, "DEBUG SWITCH: 'case' condition = %g matches switch condition = %g at line %d\n",
+	       x, switch_condition, ap_file_list[nfile].lineno);
+  } 
+  else {
+    if (ap_options.debugging) 
+      fprintf (stderr, "DEBUG SWITCH: 'case' condition = %g does not match switch condition = %g (or case already matched) at line %d\n",
+	       x, switch_condition, ap_file_list[nfile].lineno);
+
+    /* Need to skip all code until end of case */
+    switch_skip_to_endcase = 1;
+  }
+  return(NULL);
 }
 
 char *do_if(double x)

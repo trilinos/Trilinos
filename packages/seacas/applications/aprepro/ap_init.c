@@ -127,7 +127,8 @@ struct init arith_fncts[] =
   {0, 0, 0, 0}				/* Last line must be 0, 0 */
 };
 
-extern char *do_if(double x), *do_tolower(char *string), *do_toupper(char *string), *do_tostring(double x),
+extern char *do_switch(double x), do_case(double x), *do_if(double x),
+  *do_tolower(char *string), *do_toupper(char *string), *do_tostring(double x),
   *do_output(char *filename), *do_get_word(double n, char *string, char *delm),
   *do_execute(char *string), *do_getenv(char *env), *do_error(char *error_string),
   *do_rescan(char *string),  *do_Units(char *type), *do_dumpsym(void), *do_dumpfunc(void), *do_help(void),
@@ -141,6 +142,8 @@ extern char *do_if(double x), *do_tolower(char *string), *do_toupper(char *strin
 
 struct str_init string_fncts[] =
 {
+  {"switch",         do_switch,      "switch(x)", "Switch statement. Select from the following case statements which matches 'x' and execute that one. End with endswitch"},
+  {"case",           do_case,        "case(x)", "Switch statement. A case used in a containing switch statement."},
   {"if",             do_if,          "if(x)", "Handles the if statements. x can be any valid expression; nonzero is true"},
   {"tolower",        do_tolower,     "tolower(svar)","Translates all uppercase characters in svar to lowercase. It modifies svar and returns the resulting string.  "},
   {"toupper",        do_toupper,     "toupper(svar)","Translates all lowercase character in svar to uppercase. It modifies svar and returns the resulting string. "},

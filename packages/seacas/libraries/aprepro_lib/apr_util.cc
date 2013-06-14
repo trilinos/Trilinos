@@ -101,7 +101,7 @@ namespace SEAMS {
 	type = "User";
 
       std::cerr << "Aprepro: WARN: " << type << "-defined Variable '"
-		<< var << "' redefined (" << apr.ap_file_list.top().name << ", line "
+		<< var->name << "' redefined (" << apr.ap_file_list.top().name << ", line "
 		<< apr.ap_file_list.top().lineno + 1 <<")\n";
     }
   }

@@ -56,6 +56,8 @@ public:
     char *rescan(char *string);
     char *execute(char *string);
     char *if_handler(double x);
+    char *switch_handler(double x);
+    char *case_handler(double x);
 
     /** Enable debug output (via arg_yyout) if compiled into the scanner. */
     void set_debug(bool b);

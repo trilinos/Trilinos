@@ -182,6 +182,8 @@ extern const char
   *do_rescan(char *string),
 
   *do_if(double x),
+  *do_switch(double x),
+  *do_case(double x),
   *do_intout(double intval),
   *do_tostring(double x),
 
@@ -234,6 +236,8 @@ struct str_d_init string_d_fncts[] =
   {"to_string",      do_tostring,    "to_string(x)","Returns a string representation of the numerical variable x. The variable x is unchanged."},
   {"tostring",       do_tostring,    "tostring(x)","Returns a string representation of the numerical variable x. The variable x is unchanged."},
   {"if",             do_if,          "if(x)", "Handles the if statements. x can be any valid expression; nonzero is true"},
+  {"switch",         do_switch,      "switch(x)", "Switch statement. Select from the following case statements which matches 'x' and execute that one. End with endswitch"},
+  {"case",           do_case,        "case(x)", "Switch statement. A case used in a containing switch statement."},
   {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
   };
 

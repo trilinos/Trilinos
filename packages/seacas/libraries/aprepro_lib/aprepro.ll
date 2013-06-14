@@ -42,8 +42,12 @@ char  *temp_f;
 #define MAX_IF_NESTING 64
 
  int if_state[MAX_IF_NESTING] = {0}; // INITIAL
-int if_lvl = 0;
-bool suppress_nl = false;
+ int if_lvl = 0;
+ bool suppress_nl = false;
+ bool switch_active = false;   // Are we in a switch
+ bool switch_case_run = false; // has there been a case which matched condition run?
+ bool switch_skip_to_endcase = false;
+ double switch_condition = 0.0; // Value specified in "switch(condition)"
  
 %}
 /*** Flex Declarations and Options ***/
@@ -72,7 +76,7 @@ NL    "\n"
 number {D}*\.({D}+)?({E})?
 integer {D}+({E})?
 
-%START PARSING GET_FILENAME IF_SKIP GET_VAR VERBATIM IF_WHILE_SKIP GET_LOOP_VAR LOOP LOOP_SKIP
+%START PARSING GET_FILENAME IF_SKIP GET_VAR VERBATIM IF_WHILE_SKIP GET_LOOP_VAR LOOP LOOP_SKIP END_CASE_SKIP
 
 %%
 <INITIAL>"{VERBATIM(ON)}"   { BEGIN(VERBATIM);  }
@@ -176,6 +180,46 @@ integer {D}+({E})?
 					aprepro.ap_file_list.top().lineno++;
 				      }
 <LOOP_SKIP>.*"\n"		      { aprepro.ap_file_list.top().lineno++; }
+
+<END_CASE_SKIP>"{case".*"\n"  {
+  yyless(0);
+  BEGIN(INITIAL);
+  switch_skip_to_endcase = false;
+}
+
+<INITIAL,END_CASE_SKIP>"{default}".*"\n"     {
+ aprepro.ap_file_list.top().lineno++;
+ if (!switch_active) {
+    yyerror("default statement found outside switch statement.");
+  }
+
+  if (!switch_case_run) {
+    switch_case_run = true;
+    BEGIN(INITIAL);
+    switch_skip_to_endcase = false;
+    if (aprepro.ap_options.debugging) 
+      fprintf (stderr, "DEBUG SWITCH: 'default' code executing at line %d\n",
+	       aprepro.ap_file_list.top().lineno);
+  } 
+  else {
+    if (aprepro.ap_options.debugging) 
+      fprintf (stderr, "DEBUG SWITCH: 'default' not executing since a previous case already ran at line %d\n",
+	       aprepro.ap_file_list.top().lineno);
+    
+    /* Need to skip all code until end of case */
+    BEGIN(END_CASE_SKIP);
+  }
+}
+
+<END_CASE_SKIP>.*"\n" {  aprepro.ap_file_list.top().lineno++; }
+
+<INITIAL>{WS}"{endswitch}".*"\n"        {
+  aprepro.ap_file_list.top().lineno++;
+  if (!switch_active) {
+    yyerror("endswitch statement found without matching switch.");
+  }
+  switch_active = false;
+}
 
 <IF_SKIP>{WS}"{"[Ii]"fdef"{WS}"("  { if_lvl++; 
     if (aprepro.ap_options.debugging) 
@@ -397,7 +441,14 @@ integer {D}+({E})?
                              new_string(yytext+1, &yylval->string);
 			     return token::QSTRING; }
 
-<PARSING>"}"               { BEGIN(if_state[if_lvl]); return(token::RBRACE); }
+<PARSING>"}" {
+  if (switch_skip_to_endcase)
+    BEGIN(END_CASE_SKIP);
+  else
+    BEGIN(if_state[if_lvl]);
+  return(token::RBRACE);
+}
+
 
 \\\{                      { if (echo) LexerOutput("{", 1); }
 
@@ -582,6 +633,57 @@ namespace SEAMS {
     return(NULL);
   }
 
+  char *Scanner::switch_handler(double x)
+  {
+    // save that we are in a switch statement
+    // save the value of 'x' for use in deciding which case to execute
+    if (switch_active) {
+      yyerror("switch statement found while switch already active. Nested switch not supported.");
+    }
+
+    switch_active = true;
+    switch_case_run = false;
+    switch_condition = x;
+    switch_skip_to_endcase = true; /* Skip everything until first case */
+    suppress_nl = true;
+
+    if (aprepro.ap_options.debugging) {
+      std::cerr << "DEBUG SWITCH: 'switch' with condition = " << switch_condition
+		<< " at line " << aprepro.ap_file_list.top().lineno << "\n";
+    }
+    return(NULL);
+  }
+
+  char *Scanner::case_handler(double x)
+  {
+    // make sure we are in a switch statement 
+    // if 'x' matches the value saved in the switch statement 
+    // and no other case has been executed, then
+    // execute the code in the case and set a flag indicating
+    // the switch has run;
+    // if 'x' does not match the value saved, then skip to endcase
+    suppress_nl = true;
+
+    if (!switch_active) {
+      yyerror("case statement found outside switch statement.");
+    }
+
+    if (!switch_case_run && x == switch_condition) {
+      switch_case_run = true;
+      if (aprepro.ap_options.debugging) 
+	fprintf (stderr, "DEBUG SWITCH: 'case' condition = %g matches switch condition = %g at line %d\n",
+		 x, switch_condition, aprepro.ap_file_list.top().lineno);
+    } 
+    else {
+      if (aprepro.ap_options.debugging) 
+	fprintf (stderr, "DEBUG SWITCH: 'case' condition = %g does not match switch condition = %g (or case already matched) at line %d\n",
+		 x, switch_condition, aprepro.ap_file_list.top().lineno);
+
+      // Need to skip all code until end of case
+      switch_skip_to_endcase = true;
+    }
+    return(NULL);
+  }
 }
 
 /* This implementation of ExampleFlexLexer::yylex() is required to fill the
