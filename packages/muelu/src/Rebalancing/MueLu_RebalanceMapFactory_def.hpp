@@ -71,6 +71,8 @@ namespace MueLu {
     // Importer object with rebalancing information
     validParamList->set< RCP<const FactoryBase> >("Importer",             Teuchos::null, "Factory of the importer object used for the rebalancing");
 
+    validParamList->set< bool >                  ("useSubcomm",              true, "Construct subcommunicators");
+
     return validParamList;
   }
 
@@ -98,45 +100,53 @@ namespace MueLu {
 
     RCP<const Import> rebalanceImporter = Get<RCP<const Import> >(level, "Importer");
 
-    // input map (not rebalanced)
-    RCP<const Map> map = level.Get< RCP<const Map> >(mapName,mapFactory.get());
+    if(rebalanceImporter != Teuchos::null) {
+      // input map (not rebalanced)
+      RCP<const Map> map = level.Get< RCP<const Map> >(mapName,mapFactory.get());
 
-    // create vector based on input map
-    // Note, that the map can be a part only of the full map stored in rebalanceImporter.getSourceMap()
-    RCP<Vector> v = VectorFactory::Build(map);
-    v->putScalar(1.0);
+      // create vector based on input map
+      // Note, that the map can be a part only of the full map stored in rebalanceImporter.getSourceMap()
+      RCP<Vector> v = VectorFactory::Build(map);
+      v->putScalar(1.0);
 
-    // create a new vector based on the full rebalanceImporter.getSourceMap()
-    // import the partial map information to the full source map
-    RCP<const Import> blowUpImporter = ImportFactory::Build(map, rebalanceImporter->getSourceMap());
-    RCP<Vector> pv = VectorFactory::Build(rebalanceImporter->getSourceMap());
-    pv->doImport(*v,*blowUpImporter,Xpetra::INSERT);
+      // create a new vector based on the full rebalanceImporter.getSourceMap()
+      // import the partial map information to the full source map
+      RCP<const Import> blowUpImporter = ImportFactory::Build(map, rebalanceImporter->getSourceMap());
+      RCP<Vector> pv = VectorFactory::Build(rebalanceImporter->getSourceMap());
+      pv->doImport(*v,*blowUpImporter,Xpetra::INSERT);
 
-    // do rebalancing using rebalanceImporter
-    RCP<Vector> ptv = VectorFactory::Build(rebalanceImporter->getTargetMap());
-    ptv->doImport(*pv,*rebalanceImporter,Xpetra::INSERT);
+      // do rebalancing using rebalanceImporter
+      RCP<Vector> ptv = VectorFactory::Build(rebalanceImporter->getTargetMap());
+      ptv->doImport(*pv,*rebalanceImporter,Xpetra::INSERT);
 
-    // reconstruct rebalanced partial map
-    Teuchos::ArrayRCP< const Scalar > ptvData = ptv->getData(0);
-    std::vector<GlobalOrdinal> localGIDs;  // vector with GIDs that are stored on current proc
+      if (pL.get<bool>("useSubcomm") == true)
+        ptv->replaceMap(ptv->getMap()->removeEmptyProcesses());
 
-    for (size_t k = 0; k < ptv->getLocalLength(); k++) {
-      if(ptvData[k] == 1.0) {
-        localGIDs.push_back(ptv->getMap()->getGlobalElement(k));
+      // reconstruct rebalanced partial map
+      Teuchos::ArrayRCP< const Scalar > ptvData = ptv->getData(0);
+      std::vector<GlobalOrdinal> localGIDs;  // vector with GIDs that are stored on current proc
+
+      for (size_t k = 0; k < ptv->getLocalLength(); k++) {
+        if(ptvData[k] == 1.0) {
+          localGIDs.push_back(ptv->getMap()->getGlobalElement(k));
+        }
       }
+
+      const Teuchos::ArrayView<const LocalOrdinal> localGIDs_view(&localGIDs[0],localGIDs.size());
+
+      Teuchos::RCP<const Map> localGIDsMap = MapFactory::Build(
+          map->lib(),
+          Teuchos::OrdinalTraits<int>::invalid(),
+          localGIDs_view,
+          0, map->getComm());
+
+      //if (pL.get<bool>("useSubcomm") == true)
+      //  localGIDsMap->removeEmptyProcesses();
+
+      // store rebalanced partial map using the same name and generating factory as the original map
+      // in the level class
+      level.Set(mapName, localGIDsMap, mapFactory.get());
     }
-
-    const Teuchos::ArrayView<const LocalOrdinal> localGIDs_view(&localGIDs[0],localGIDs.size());
-
-    Teuchos::RCP<const Map> localGIDsMap = MapFactory::Build(
-        map->lib(),
-        Teuchos::OrdinalTraits<int>::invalid(),
-        localGIDs_view,
-        0, map->getComm());
-
-    // store rebalanced partial map using the same name and generating factory as the original map
-    // in the level class
-    level.Set(mapName, localGIDsMap, mapFactory.get());
   } //Build()
 
 } // end namespace MueLu
