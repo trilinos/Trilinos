@@ -155,10 +155,6 @@ namespace MueLu {
       if (checkAc_)
         CheckMainDiagonal(Ac);
 
-      Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList());
-      p->set("DoOptimizeStorage",true);
-      Ac->fillComplete(p);
-
       RCP<ParameterList> params = rcp(new ParameterList());;
       params->set("printLoadBalancingInfo", true);
       GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*Ac, "Ac", params);
@@ -212,6 +208,12 @@ namespace MueLu {
       if (repairZeroDiagonals_) GetOStream(Warnings0,0) << "RAPFactory (WARNING): repaired " << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
       else                      GetOStream(Warnings0,0) << "RAPFactory (WARNING): found "    << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
     }
+
+    /*
+    Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList());
+    p->set("DoOptimizeStorage",true);
+    Ac->fillComplete(p);
+    */
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
