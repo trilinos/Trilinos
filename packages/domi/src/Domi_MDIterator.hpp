@@ -101,24 +101,9 @@ public:
    *  \param mdarray [in] The multi-dimensional array object on which
    *         will be iterated.
    *
-   *  Produces an iterator with index corresponding to the MDARRAY
-   *  <tt>begin()</tt> methods.
-   */
-  // MDIterator(MDARRAY & mdarray) :
-  //   _mdarray(mdarray),
-  //   _index()
-  // {
-  //   _index.assign(_mdarray.num_dims(), 0);
-  // }
-
-  /** \brief MDARRAY end iterator constructor
-   *
-   *  \param mdarray [in] The multi-dimensional array object on which
-   *         will be iterated.
-   *
    *  \param end_index [in] If true, set the internal index to the
    *         MDARRAY end() index.  If false, set the internal index to
-   *         the MDARRAY begin() index.
+   *         the MDARRAY begin() index.  Default false.
    *
    *  Produces an iterator with index corresponding to either the
    *  MDARRAY <tt>begin()</tt> or <tt>end()</tt> methods, depending on
@@ -151,6 +136,14 @@ public:
     _mdarray(mdarray),
     _index(index)
   {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (_mdarray.num_dims() != _index.size()), Teuchos::RangeError,
+      "Input array has " << _mdarray.num_dims() << " dimensions, while index "
+      "has " << _index.size());
+#ifdef DOMI_ENABLE_ABC
+    for (_axis = 0; _axis < _index.size(); ++_axis)
+      assert_index(_index[_axis], _axis);
+#endif
   }
 
   /** \brief Copy constructor
@@ -307,6 +300,16 @@ private:
     // index for that axis.
     for (size_type axis = 0; axis < _index.size(); ++axis)
       _index[axis] = _mdarray._dimensions[axis];
+  }
+
+  // Assert that the given index is valid for the given axis
+  void assert_index(size_type i, int axis) const
+  {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !(0 <= i && i < _mdarray._dimensions[axis]), Teuchos::RangeError,
+    "MDIterator<MDARRAY>::assertIndex(i=" << i << ",axis=" << axis << "): out of "
+    << "range i in [0, " << _mdarray._dimensions[axis] << ")"
+    );
   }
 
 };
