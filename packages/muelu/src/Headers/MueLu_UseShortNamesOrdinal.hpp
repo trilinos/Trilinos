@@ -66,6 +66,10 @@ typedef MueLu::OnePtAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMa
 typedef MueLu::PRFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PRFactory;
 #endif
 
+#ifdef MUELU_REBALANCEMAPFACTORY_SHORT
+typedef MueLu::RebalanceMapFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RebalanceMapFactory;
+#endif
+
 #ifdef MUELU_SMALLAGGREGATIONALGORITHM_SHORT
 typedef MueLu::SmallAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SmallAggregationAlgorithm;
 #endif
