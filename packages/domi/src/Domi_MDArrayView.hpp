@@ -481,11 +481,6 @@ public:
    */
   std::string toString() const;
 
-  /** \brief Return a raw pointer to the beginning of the
-   *  <tt>MDArrayView</tt> or NULL if unsized.
-   */
-  inline T * getRawPtr();
-
   /** \brief Return a const raw pointer to the beginning of the
    *  <tt>MDArrayView</tt> or NULL if unsized.
    */
@@ -1086,13 +1081,6 @@ MDArrayView< T >::toString(int indent) const
   }
   ss << "]";
   return ss.str();
-}
-
-template< typename T >
-T *
-MDArrayView< T >::getRawPtr()
-{
-  return _array.getRawPtr();
 }
 
 template< typename T >
