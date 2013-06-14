@@ -268,21 +268,23 @@ public:
    *  <tt>MDArrayView</tt>
    */
   MDArrayView< T > mdArrayView();
+  const MDArrayView< T > mdArrayView() const;
 
   /** \brief Perform an explicit conversion to a const
    *  <tt>MDArrayView</tt>
    */
   MDArrayView< const T > mdArrayViewConst();
+  const MDArrayView< const T > mdArrayViewConst() const;
 
   /** \brief Perform an implicit conversion to a non-const
    *  <tt>MDArrayView</tt>
    */
-  inline operator MDArrayView< T >();
+  inline operator MDArrayView< T >() const;
 
   /** \brief Perform an implicit conversion to a const
    *  <tt>MDArrayView</tt>
    */
-  inline operator MDArrayView< const T >();
+  inline operator MDArrayView< const T >() const;
 
   //@}
 
@@ -298,7 +300,7 @@ public:
    *        <tt>n</tt> square bracket operators when referencing an
    *        <tt>n</tt>-dimensional <tt>MDArrayRCP</tt>.
    */
-  MDArrayView< T > operator[](size_type i);
+  const MDArrayView< T > operator[](size_type i) const;
 
   /** \brief Sub-array access operator.  The returned
    *  <tt>MDArrayView</tt> object will have the same number of
@@ -310,11 +312,11 @@ public:
    *        operators when referencing an <tt>n</tt>-dimensional
    *        <tt>MDArrayRCP</tt>.
    */
-  MDArrayView< T > operator[](Slice s);
+  const MDArrayView< T > operator[](Slice s) const;
 
   /** \brief Conversion to <tt>MDArrayView</tt>
    */
-  MDArrayView< T > operator()();
+  const MDArrayView< T > operator()() const;
 
   //@}
 
@@ -577,7 +579,7 @@ public:
   /** \brief Convert the <tt>MDArrayRCP</tt> to a string
    *  representation
    */
-  std::string toString();
+  std::string toString() const;
 
   /** \brief Return a raw pointer to the beginning of the
    *  <tt>MDArrayRCP</tt> or NULL if unsized. */
@@ -586,6 +588,32 @@ public:
   /** \brief Return a const raw pointer to the beginning of the
    *  <tt>MDArrayRCP</tt> or NULL if unsized. */
   inline const T * getRawPtr() const;
+
+  //@}
+
+  // These operators are declared as friends so that the compiler will
+  // do automatic type conversion.
+
+  /** \name Non-member operators and functions */
+  //@{
+
+  /** \brief Equality operator.
+   */
+  template< typename T2 >
+  friend bool operator==(const MDArrayRCP< T2 > & a1,
+                         const MDArrayRCP< T2 > & a2);
+
+  /** \brief Inequality operator.
+   */
+  template< typename T2 >
+  friend bool operator!=(const MDArrayRCP< T2 > & a1,
+                         const MDArrayRCP< T2 > & a2);
+
+  /** \brief Stream output operator
+   */
+  template< typename T2 >
+  friend std::ostream & operator<<(std::ostream & os,
+                                   const MDArrayRCP< T2 > & a);
 
   //@}
 
@@ -779,6 +807,14 @@ MDArrayRCP< T >::mdArrayView()
 }
 
 template< typename T >
+const MDArrayView< T >
+MDArrayRCP< T >::mdArrayView() const
+{
+  Teuchos::Array< size_type > dims(_dimensions);
+  return MDArrayView< T >(_array(), dims(), _storage_order);
+}
+
+template< typename T >
 MDArrayView< const T >
 MDArrayRCP< T >::mdArrayViewConst()
 {
@@ -786,20 +822,27 @@ MDArrayRCP< T >::mdArrayViewConst()
 }
 
 template< typename T >
-MDArrayRCP< T >::operator MDArrayView< T >()
+const MDArrayView< const T >
+MDArrayRCP< T >::mdArrayViewConst() const
+{
+  return MDArrayView< const T >(_array(), _dimensions, _storage_order);
+}
+
+template< typename T >
+MDArrayRCP< T >::operator MDArrayView< T >() const
 {
   return mdArrayView();
 }
 
 template< typename T >
-MDArrayRCP< T >::operator MDArrayView< const T >()
+MDArrayRCP< T >::operator MDArrayView< const T >() const
 {
   return mdArrayViewConst();
 }
 
 template< typename T >
-MDArrayView< T >
-MDArrayRCP< T >::operator[](size_type i)
+const MDArrayView< T >
+MDArrayRCP< T >::operator[](size_type i) const
 {
   // Note: array bounds checking, if active, will be performed by the
   // MDArrayView class
@@ -807,16 +850,16 @@ MDArrayRCP< T >::operator[](size_type i)
 }
 
 template< typename T >
-MDArrayView< T >
-MDArrayRCP< T >::operator[](Slice s)
+const MDArrayView< T >
+MDArrayRCP< T >::operator[](Slice s) const
 {
   // Note: Slices produce safe indexes
   return mdArrayView()[s];
 }
 
 template< typename T >
-MDArrayView< T >
-MDArrayRCP< T >::operator()()
+const MDArrayView< T >
+MDArrayRCP< T >::operator()() const
 {
   return mdArrayView();
 }
@@ -1181,7 +1224,7 @@ MDArrayRCP< T >::hasBoundsChecking()
 
 template< typename T >
 std::string
-MDArrayRCP< T >::toString()
+MDArrayRCP< T >::toString() const
 {
   return mdArrayView().toString();
 }
@@ -1204,11 +1247,12 @@ template< typename T >
 bool operator==(const MDArrayRCP< T > & a1, const MDArrayRCP< T > & a2)
 {
   if (a1._dimensions != a2._dimensions) return false;
-  if (a1._storage_order == a2._storage_order)
-    return (a1._array == a2._array);
-  // This should be changed to compare individual elements when more
-  // sophisticated iterators are available
-  return false;
+  if (a1._storage_order != a2._storage_order) return false;
+  typename MDArrayRCP< T >::iterator it1 = a1.begin();
+  typename MDArrayRCP< T >::iterator it2 = a2.begin();
+  for ( ; it1 != a1.end() && it2 != a2.end(); ++it1, ++it2)
+    if (*it1 != *it2) return false;
+  return true;
 }
 
 template< typename T >

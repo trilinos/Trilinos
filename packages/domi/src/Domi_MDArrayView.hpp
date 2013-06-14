@@ -59,6 +59,32 @@
 namespace Domi
 {
 
+// I put these non-member template functions here for the same reason
+// that Ross did the same thing for the Teuchos::Array class.  See
+// Teuchos_Array.hpp for details.
+template< typename T > class MDArrayView;
+
+/** \brief Equality operator.
+ *
+ * \relates MDArrayView
+ */
+template< typename T >
+bool operator==(const MDArrayView< T > & a1, const MDArrayView< T > & a2);
+
+/** \brief Non-equality operator.
+ *
+ * \relates MDArray
+ */
+template< typename T >
+bool operator!=(const MDArrayView< T > & a1, const MDArrayView< T > & a2);
+
+/** \brief Non-member swap
+ *
+ * \relates MDArray
+ */
+template< typename T >
+void swap(MDArrayView< T > & a1, MDArrayView< T > & a2);
+
 /** \brief Memory-safe templated multi-dimensional array view class
  *
  * The <tt>MDArrayView</tt> class is to the <tt>MDArray</tt> class as
@@ -201,7 +227,7 @@ public:
    *        <tt>n</tt> square bracket operators when referencing an
    *        <tt>n</tt>-dimensional <tt>MDArrayView</tt>.
    */
-  MDArrayView< T > operator[](size_type i);
+  const MDArrayView< T > operator[](size_type i) const;
 
   /** \brief Sub-array access operator.  The returned
    *  <tt>MDArrayView</tt> object will have the same number of
@@ -213,7 +239,7 @@ public:
    *        operators when referencing an <tt>n</tt>-dimensional
    *        <tt>MDArrayView</tt>.
    */
-  MDArrayView< T > operator[](Slice s);
+  const MDArrayView< T > operator[](Slice s) const;
 
   //@}
 
@@ -453,7 +479,7 @@ public:
   /** \brief Convert the <tt>MDArrayView</tt> to a string
    *  representation
    */
-  std::string toString();
+  std::string toString() const;
 
   /** \brief Return a raw pointer to the beginning of the
    *  <tt>MDArrayView</tt> or NULL if unsized.
@@ -465,13 +491,34 @@ public:
    */
   inline const T * getRawPtr() const;
 
+  // These operators are declared as friends so that the compiler will
+  // do automatic type conversion.
+
+  /** \name Non-member operators and functions */
+  //@{
+
+  /** \brief Equality operator.
+   */
+  template< typename T2 >
+  friend bool operator==(const MDArrayView< T2 > & a1, const MDArrayView< T2 > & a2);
+
+  /** \brief Inequality operator.
+   */
+  template< typename T2 >
+  friend bool operator!=(const MDArrayView< T2 > & a1, const MDArrayView< T2 > & a2);
+
+  /** \brief Swap function
+   */
+  template< typename T2 >
+  friend void swap(MDArrayView< T2 > & a1, MDArrayView< T2 > & a2);
+
   /** \brief Stream output operator
    *
    * This operator calls the <tt>MDArrayView toString()</tt> method.
    */
   template< typename T2 >
   friend std::ostream & operator<<(std::ostream & os,
-				   const MDArrayView< T2 > a);
+				   const MDArrayView< T2 > & a);
 
   //@}
 
@@ -486,7 +533,7 @@ private:
 
   void assertIndex(size_type i, int axis) const;
 
-  std::string toString(int indent);
+  std::string toString(int indent) const;
 
 };  // class MDArrayView
 
@@ -617,8 +664,8 @@ MDArrayView< T >::end() const
 }
 
 template< typename T >
-MDArrayView< T >
-MDArrayView< T >::operator[](MDArrayView< T >::size_type i)
+const MDArrayView< T >
+MDArrayView< T >::operator[](MDArrayView< T >::size_type i) const
 {
 #ifdef Domi_ENABLE_ABC
   assertIndex(i, _next_axis);
@@ -658,8 +705,8 @@ MDArrayView< T >::operator[](MDArrayView< T >::size_type i)
 }
 
 template< typename T >
-MDArrayView< T >
-MDArrayView< T >::operator[](Slice s)
+const MDArrayView< T >
+MDArrayView< T >::operator[](Slice s) const
 {
   // Note: the Slice.bounds() method produces safe indexes
   Slice bounds = s.bounds(_dimensions[_next_axis]);
@@ -1002,7 +1049,7 @@ MDArrayView< T >::hasBoundsChecking()
 
 template< typename T >
 std::string
-MDArrayView< T >::toString()
+MDArrayView< T >::toString() const
 {
   // Call the private version of toString() with an indentation level
   // of zero
@@ -1011,7 +1058,7 @@ MDArrayView< T >::toString()
 
 template< typename T >
 std::string
-MDArrayView< T >::toString(int indent)
+MDArrayView< T >::toString(int indent) const
 {
   std::stringstream ss;
   ss << "[";
@@ -1053,6 +1100,30 @@ const T *
 MDArrayView< T >::getRawPtr() const
 {
   return _array.getRawPtr();
+}
+
+template< typename T >
+bool operator==(const MDArrayView< T > & a1, const MDArrayView< T > & a2)
+{
+  if (a1._dimensions != a2._dimensions) return false;
+  if (a1._storage_order != a2._storage_order) return false;
+  typename MDArrayView< T >::iterator it1 = a1.begin();
+  typename MDArrayView< T >::iterator it2 = a2.begin();
+  for ( ; it1 != a1.end() && it2 != a2.end(); ++it1, ++it2)
+    if (*it1 != *it2) return false;
+  return true;
+}
+
+template< typename T >
+bool operator!=(const MDArrayView< T > & a1, const MDArrayView< T > & a2)
+{
+  return not (a1 == a2);
+}
+
+template< typename T >
+void swap(MDArrayView< T > & a1, MDArrayView< T > & a2)
+{
+  a1.swap(a2);
 }
 
 template< typename T >
