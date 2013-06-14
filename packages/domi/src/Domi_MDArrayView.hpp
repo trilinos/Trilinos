@@ -251,7 +251,7 @@ public:
    * \param i [in] 1D index.
    *
    * This operator should only be used with a 1D <tt>MDArrayView</tt>.
-   * If Domi_ENABLE_ABC is true and the <tt>MDArrayView</tt> is not
+   * If DOMI_ENABLE_ABC is true and the <tt>MDArrayView</tt> is not
    * 1D, an exception will be thrown.
    */
   inline T & operator()(size_type i);
@@ -263,7 +263,7 @@ public:
    * \param j [in] second 2D index.
    *
    * This operator should only be used with a 2D <tt>MDArrayView</tt>.
-   * If Domi_ENABLE_ABC is true and the <tt>MDArrayView</tt> is not
+   * If DOMI_ENABLE_ABC is true and the <tt>MDArrayView</tt> is not
    * 2D, an exception will be thrown.
    */
   inline T & operator()(size_type i, size_type j);
@@ -277,7 +277,7 @@ public:
    * \param k [in] third 3D index.
    *
    * This operator should only be used with a 3D <tt>MDArrayView</tt>.
-   * If Domi_ENABLE_ABC is true and the <tt>MDArrayView</tt> is not
+   * If DOMI_ENABLE_ABC is true and the <tt>MDArrayView</tt> is not
    * 3D, an exception will be thrown.
    */
   inline T & operator()(size_type i, size_type j, size_type k);
@@ -293,7 +293,7 @@ public:
    * \param m [in] fourth 4D index.
    *
    * This operator should only be used with a 4D <tt>MDArrayView</tt>.
-   * If Domi_ENABLE_ABC is true and the <tt>MDArrayView</tt> is not
+   * If DOMI_ENABLE_ABC is true and the <tt>MDArrayView</tt> is not
    * 4D, an exception will be thrown.
    */
   inline T & operator()(size_type i, size_type j, size_type k, size_type m);
@@ -311,7 +311,7 @@ public:
    * \param n [in] fifth 5D index.
    *
    * This operator should only be used with a 5D <tt>MDArrayView</tt>.
-   * If Domi_ENABLE_ABC is true and the <tt>MDArrayView</tt> is not
+   * If DOMI_ENABLE_ABC is true and the <tt>MDArrayView</tt> is not
    * 5D, an exception will be thrown.
    */
   inline T & operator()(size_type i, size_type j, size_type k, size_type m,
@@ -334,7 +334,7 @@ public:
    * \param ... [in] seventh and higher indexes.
    *
    * This operator should only be used with a 6D and higher
-   * <tt>MDArrayView</tt>s.  If Domi_ENABLE_ABC is true and the
+   * <tt>MDArrayView</tt>s.  If DOMI_ENABLE_ABC is true and the
    * <tt>MDArrayView</tt> is less than 6D, an exception will be
    * thrown.
    */
@@ -346,7 +346,7 @@ public:
    * \param i [in] 1D index.
    *
    * This operator should only be used with a 1D <tt>MDArrayView</tt>.
-   * If Domi_ENABLE_ABC is true and the <tt>MDArrayView</tt> is not
+   * If DOMI_ENABLE_ABC is true and the <tt>MDArrayView</tt> is not
    * 1D, an exception will be thrown.
    */
   inline const T & operator()(size_type i) const;
@@ -358,7 +358,7 @@ public:
    * \param j [in] second 2D index.
    *
    * This operator should only be used with a 2D <tt>MDArrayView</tt>.
-   * If Domi_ENABLE_ABC is true and the <tt>MDArrayView</tt> is not
+   * If DOMI_ENABLE_ABC is true and the <tt>MDArrayView</tt> is not
    * 2D, an exception will be thrown.
    */
   inline const T & operator()(size_type i, size_type j) const;
@@ -372,7 +372,7 @@ public:
    * \param k [in] third 3D index.
    *
    * This operator should only be used with a 3D <tt>MDArrayView</tt>.
-   * If Domi_ENABLE_ABC is true and the <tt>MDArrayView</tt> is not
+   * If DOMI_ENABLE_ABC is true and the <tt>MDArrayView</tt> is not
    * 3D, an exception will be thrown.
    */
   inline const T & operator()(size_type i, size_type j, size_type k) const;
@@ -388,7 +388,7 @@ public:
    * \param m [in] fourth 4D index.
    *
    * This operator should only be used with a 4D <tt>MDArrayView</tt>.
-   * If Domi_ENABLE_ABC is true and the <tt>MDArrayView</tt> is not
+   * If DOMI_ENABLE_ABC is true and the <tt>MDArrayView</tt> is not
    * 4D, an exception will be thrown.
    */
   inline const T & operator()(size_type i, size_type j, size_type k,
@@ -407,7 +407,7 @@ public:
    * \param n [in] fifth 5D index.
    *
    * This operator should only be used with a 5D <tt>MDArrayView</tt>.
-   * If Domi_ENABLE_ABC is true and the <tt>MDArrayView</tt> is not
+   * If DOMI_ENABLE_ABC is true and the <tt>MDArrayView</tt> is not
    * 5D, an exception will be thrown.
    */
   inline const T & operator()(size_type i, size_type j, size_type k,
@@ -430,7 +430,7 @@ public:
    * \param ... [in] seventh and higher indexes.
    *
    * This operator should only be used with a 6D and higher
-   * <tt>MDArrayView</tt>s.  If Domi_ENABLE_ABC is true and the
+   * <tt>MDArrayView</tt>s.  If DOMI_ENABLE_ABC is true and the
    * <tt>MDArrayView</tt> is less than 6D, an exception will be
    * thrown.
    */
@@ -667,7 +667,7 @@ template< typename T >
 const MDArrayView< T >
 MDArrayView< T >::operator[](MDArrayView< T >::size_type i) const
 {
-#ifdef Domi_ENABLE_ABC
+#ifdef DOMI_ENABLE_ABC
   assertIndex(i, _next_axis);
 #endif
   // Find the offset to the new MDArrayView
@@ -736,7 +736,7 @@ template< typename T >
 T &
 MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i)
 {
-#ifdef Domi_ENABLE_ABC
+#ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_dimensions.size() != 1), Teuchos::RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 1 index"
@@ -751,7 +751,7 @@ T &
 MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
                              typename MDArrayView< T >::size_type j)
 {
-#ifdef Domi_ENABLE_ABC
+#ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_dimensions.size() != 2), Teuchos::RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 2 indexes"
@@ -768,7 +768,7 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
                              typename MDArrayView< T >::size_type j,
                              typename MDArrayView< T >::size_type k)
 {
-#ifdef Domi_ENABLE_ABC
+#ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_dimensions.size() != 3), Teuchos::RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 3 indexes"
@@ -787,7 +787,7 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
                              typename MDArrayView< T >::size_type k,
                              typename MDArrayView< T >::size_type m)
 {
-#ifdef Domi_ENABLE_ABC
+#ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_dimensions.size() != 4), Teuchos::RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 4 indexes"
@@ -809,7 +809,7 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
                              typename MDArrayView< T >::size_type m,
                              typename MDArrayView< T >::size_type n)
 {
-#ifdef Domi_ENABLE_ABC
+#ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_dimensions.size() != 5), Teuchos::RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 5 indexes"
@@ -834,7 +834,7 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
                              typename MDArrayView< T >::size_type p,
                              ...)
 {
-#ifdef Domi_ENABLE_ABC
+#ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_dimensions.size() < 6), Teuchos::RangeError,
     "Attempt to access " << _dimensions.size() << "D array with too many indexes"
@@ -853,7 +853,7 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
   for (size_type axis = 6; axis < _dimensions.size(); axis++)
   {
     size_type q = va_arg(indexes, size_type);
-#ifdef Domi_ENABLE_ABC
+#ifdef DOMI_ENABLE_ABC
     assertIndex(q, axis);
 #endif
     offset += q * _strides[axis];
@@ -866,7 +866,7 @@ template< typename T >
 const T &
 MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i) const
 {
-#ifdef Domi_ENABLE_ABC
+#ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_dimensions.size() != 1), Teuchos::RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 1 index"
@@ -881,7 +881,7 @@ const T &
 MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
                              typename MDArrayView< T >::size_type j) const
 {
-#ifdef Domi_ENABLE_ABC
+#ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_dimensions.size() != 2), Teuchos::RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 2 indexes"
@@ -898,7 +898,7 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
                              typename MDArrayView< T >::size_type j,
                              typename MDArrayView< T >::size_type k) const
 {
-#ifdef Domi_ENABLE_ABC
+#ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_dimensions.size() != 3), Teuchos::RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 3 indexes"
@@ -917,7 +917,7 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
                              typename MDArrayView< T >::size_type k,
                              typename MDArrayView< T >::size_type m) const
 {
-#ifdef Domi_ENABLE_ABC
+#ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_dimensions.size() != 4), Teuchos::RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 4 indexes"
@@ -939,7 +939,7 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
                              typename MDArrayView< T >::size_type m,
                              typename MDArrayView< T >::size_type n) const
 {
-#ifdef Domi_ENABLE_ABC
+#ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_dimensions.size() != 5), Teuchos::RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 5 indexes"
@@ -964,7 +964,7 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
                              typename MDArrayView< T >::size_type p,
                              ...) const
 {
-#ifdef Domi_ENABLE_ABC
+#ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_dimensions.size() < 6), Teuchos::RangeError,
     "Attempt to access " << _dimensions.size() << "D array with too many indexes"
@@ -983,7 +983,7 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
   for (size_type axis = 6; axis < _dimensions.size(); axis++)
   {
     size_type q = va_arg(indexes, size_type);
-#ifdef Domi_ENABLE_ABC
+#ifdef DOMI_ENABLE_ABC
     assertIndex(q, axis);
 #endif
     offset += q * _strides[axis];
@@ -1040,7 +1040,7 @@ template< typename T >
 bool
 MDArrayView< T >::hasBoundsChecking()
 {
-#ifdef Domi_ENABLE_ABC
+#ifdef DOMI_ENABLE_ABC
   return true;
 #else
   return false;
