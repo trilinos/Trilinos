@@ -412,6 +412,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, resize, T )
   TEUCHOS_ASSERT(!a.empty());
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, equality, T )
+{
+  MDArray< T > a = generateMDArray< T >(2,3,4);
+  MDArray< T > b = generateMDArray< T >(2,3,4);
+  TEST_EQUALITY(a, b)
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, inequality, T )
+{
+  MDArray< T > a = generateMDArray< T >(2,3,4);
+  MDArray< T > b = generateMDArray< T >(2,3,4);
+  b(1,1,1) = -1;
+  TEST_INEQUALITY(a, b)
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, swap, T )
 {
   MDArray< T > a = generateMDArray< T >(2,3);
@@ -498,6 +513,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, toString3D, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArray, clearEmpty, T) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArray, max_size, T) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArray, resize, T) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArray, equality, T) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArray, inequality, T) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArray, swap, T) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArray, toStringNull, T) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArray, toString1D, T) \

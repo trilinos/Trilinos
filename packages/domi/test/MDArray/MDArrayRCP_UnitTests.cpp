@@ -196,6 +196,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, indexing4D, T )
   ord nk = 3;
   ord nm = 3;
   MDArrayRCP< T > mdarcp(tuple(ni,nj,nk,nm));
+  MDArrayView< T > mdav = mdarcp();
   for (ord m=0; m < nm; m++)
     for (ord k=0; k < nk; k++)
       for (ord j=0; j < nj; j++)
@@ -432,6 +433,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, resize, T )
   TEUCHOS_ASSERT(!a.empty());
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, equality, T )
+{
+  MDArrayRCP< T > a = generateMDArrayRCP< T >(2,3,4);
+  MDArrayRCP< T > b = generateMDArrayRCP< T >(2,3,4);
+  TEST_EQUALITY(a, b)
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, inequality, T )
+{
+  MDArrayRCP< T > a = generateMDArrayRCP< T >(2,3,4);
+  MDArrayRCP< T > b = generateMDArrayRCP< T >(2,3,4);
+  b(1,1,1) = -1;
+  TEST_INEQUALITY(a, b)
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, toStringNull, T )
 {
   MDArrayRCP< T > a;
@@ -491,6 +507,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, toString3D, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayRCP, illegalAt, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayRCP, clearEmpty, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayRCP, resize, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayRCP, equality, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayRCP, inequality, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayRCP, toStringNull, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayRCP, toString1D, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayRCP, toString2D, T ) \
