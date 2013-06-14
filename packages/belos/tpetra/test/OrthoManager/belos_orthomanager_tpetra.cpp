@@ -252,35 +252,29 @@ public:
   }
 };
 
-int
-main (int argc, char *argv[])
+
+// Run the actual test.  The test has the same template parameters as
+// MultiVector.  The most interesting template parameters for this
+// test are ScalarType and NodeType.
+//
+// Return true if test passed, else return false.
+template<class ScalarType, class LocalOrdinalType, class GlobalOrdinalType, class NodeType>
+bool runTest (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 {
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  typedef double scalar_type;
-  typedef int local_ordinal_type;
-  typedef int global_ordinal_type;
-
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  typedef Kokkos::TBBNode node_type;
-#else
-  typedef Kokkos::SerialNode node_type;
-#endif // HAVE_KOKKOSCLASSIC_TBB
+  typedef ScalarType scalar_type;
+  typedef LocalOrdinalType local_ordinal_type;
+  typedef GlobalOrdinalType global_ordinal_type;
+  typedef NodeType node_type;
 
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
   typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> OP;
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
   typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> crs_matrix_type;
-
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &std::cout);
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-
-  // Get values of command-line arguments.
-  getCmdLineArgs (*comm, argc, argv);
 
   // Declare an output manager for handling local output.  Initialize,
   // using the caller's desired verbosity level.
@@ -383,26 +377,78 @@ main (int argc, char *argv[])
                                        sizeX1, sizeX2, outMan);
   }
 
-  // Only Process 0 gets to write to cout.  The other processes dump
-  // output to a black hole.
-  //std::ostream& finalOut = (Teuchos::rank(*comm) == 0) ? std::cout : Teuchos::oblackholestream;
-
   if (numFailed != 0) {
-    outMan->stream(Belos::Errors) << numFailed << " errors." << endl;
+    outMan->stream (Belos::Errors) << numFailed << " errors." << endl;
+    return false;
+  } else {
+    return true;
+  }
+}
 
-    // The Trilinos test framework depends on seeing this message,
-    // so don't rely on the OutputManager to report it correctly.
-    if (comm->getRank () == 0) {
-      std::cout << "End Result: TEST FAILED" << endl;
+int
+main (int argc, char *argv[])
+{
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  bool success = true;
+
+  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &std::cout);
+  RCP<const Teuchos::Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+
+  // Get values of command-line arguments.
+  getCmdLineArgs (*comm, argc, argv);
+
+  typedef int local_ordinal_type;
+  typedef int global_ordinal_type;
+#ifdef HAVE_KOKKOSCLASSIC_TBB
+  typedef Kokkos::TBBNode node_type;
+#else
+  typedef Kokkos::SerialNode node_type;
+#endif // HAVE_KOKKOSCLASSIC_TBB
+
+  {
+    typedef double scalar_type;
+    success = runTest<scalar_type, local_ordinal_type,
+      global_ordinal_type, node_type> (comm);
+    if (! success) {
+      // The Trilinos test framework depends on seeing this message,
+      // so don't rely on the OutputManager to report it correctly.
+      if (comm->getRank () == 0) {
+        std::cout << "End Result: TEST FAILED" << endl;
+      }
+      return EXIT_FAILURE;
     }
-    return EXIT_FAILURE;
-  }
-  else {
-    if (comm->getRank () == 0) {
-      std::cout << "End Result: TEST PASSED" << endl;
+    else {
+      if (comm->getRank () == 0) {
+        std::cout << "End Result: TEST PASSED" << endl;
+      }
+      return EXIT_SUCCESS;
     }
-    return EXIT_SUCCESS;
   }
+#if defined(HAVE_BELOS_COMPLEX) && defined(HAVE_TPETRA_COMPLEX)
+  {
+    typedef std::complex<double> scalar_type;
+    success = runTest<scalar_type, local_ordinal_type,
+      global_ordinal_type, node_type> (comm);
+    if (! success) {
+      // The Trilinos test framework depends on seeing this message,
+      // so don't rely on the OutputManager to report it correctly.
+      if (comm->getRank () == 0) {
+        std::cout << "End Result: TEST FAILED" << endl;
+      }
+      return EXIT_FAILURE;
+    }
+    else {
+      if (comm->getRank () == 0) {
+        std::cout << "End Result: TEST PASSED" << endl;
+      }
+      return EXIT_SUCCESS;
+    }
+  }
+#endif // defined(HAVE_BELOS_COMPLEX) && defined(HAVE_TPETRA_COMPLEX)
 }
 
 
