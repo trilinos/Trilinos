@@ -57,3 +57,4 @@ SOURCE_BROWSER         = YES
 TAGFILES               = ../../common/tag_files/epetra.tag=../../../epetra/doc/html
 
 GENERATE_TAGFILE       = ../../common/tag_files/ifpack.tag
+USE_MATHJAX            = YES
