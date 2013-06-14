@@ -497,7 +497,7 @@ namespace TSQR {
       const_mat_view A_view (nrows, ncols, A, lda);
 
       // Identify top cache block of A
-      const_mat_view A_top = top_block (A_view, contiguous_cache_blocks);
+      const_mat_view A_top = this->top_block (A_view, contiguous_cache_blocks);
 
       // Fill R (including lower triangle) with zeros.
       fill_matrix (ncols, ncols, R, ldr, Teuchos::ScalarTraits<Scalar>::zero());
