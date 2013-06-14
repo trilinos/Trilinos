@@ -61,7 +61,8 @@ namespace Domi
  * parameter class MDARRAY, which is intended to be any one of the
  * three MDArray types.  The MDARRAY class is expected to support the
  * the typedefs Ordinal, size_type and value_type, the num_dims()
- * method and the _ptr, _strides, and _dimensions attributes.
+ * method and the _ptr, _strides, _dimensions, and _storage_order
+ * attributes.
  *
  * It is intended that the array class that will use the MDIterator
  * will declare the MDIterator to be a friend and to typedef the fully
@@ -313,20 +314,43 @@ template< class MDARRAY >
 MDIterator< MDARRAY > &
 MDIterator< MDARRAY >::operator++()
 {
-  _axis = 0;
-  _done = false;
-  while (not _done)
+  if (_mdarray._storage_order == FIRST_INDEX_FASTEST)
   {
-    _index[_axis]++;
-    _done = (_index[_axis] < _mdarray._dimensions[_axis]);
-    if (not _done)
+    _axis = 0;
+    _done = false;
+    while (not _done)
     {
-      _index[_axis] = 0;
-      _axis++;
-      if (_axis >= _index.size())
+      _index[_axis]++;
+      _done = (_index[_axis] < _mdarray._dimensions[_axis]);
+      if (not _done)
       {
-        _done = true;
-        assign_end_index();
+        _index[_axis] = 0;
+        _axis++;
+        if (_axis >= _index.size())
+        {
+          _done = true;
+          assign_end_index();
+        }
+      }
+    }
+  }
+  else
+  {
+    _axis = _mdarray.num_dims() - 1;
+    _done = false;
+    while (not _done)
+    {
+      _index[_axis]++;
+      _done = (_index[_axis] < _mdarray._dimensions[_axis]);
+      if (not _done)
+      {
+        _index[_axis] = 0;
+        _axis--;
+        if (_axis < 0)
+        {
+          _done = true;
+          assign_end_index();
+        }
       }
     }
   }
@@ -350,20 +374,43 @@ template< class MDARRAY >
 MDIterator< MDARRAY > &
 MDIterator< MDARRAY >::operator--()
 {
-  _axis = 0;
-  _done = false;
-  while (not _done)
+  if (_mdarray._storage_order == FIRST_INDEX_FASTEST)
   {
-    _index[_axis]--;
-    _done = (_index[_axis] >= 0);
-    if (not _done)
+    _axis = 0;
+    _done = false;
+    while (not _done)
     {
-      _index[_axis] = _mdarray._dimensions[_axis];
-      _axis++;
-      if (_axis >= _index.size())
+      _index[_axis]--;
+      _done = (_index[_axis] >= 0);
+      if (not _done)
       {
-        _done = true;
-        assign_end_index();
+        _index[_axis] = _mdarray._dimensions[_axis];
+        _axis++;
+        if (_axis >= _index.size())
+        {
+          _done = true;
+          assign_end_index();
+        }
+      }
+    }
+  }
+  else
+  {
+    _axis = _mdarray.num_dims() - 1;
+    _done = false;
+    while (not _done)
+    {
+      _index[_axis]--;
+      _done = (_index[_axis] >= 0);
+      if (not _done)
+      {
+        _index[_axis] = _mdarray._dimensions[_axis];
+        _axis--;
+        if (_axis < 0)
+        {
+          _done = true;
+          assign_end_index();
+        }
       }
     }
   }
