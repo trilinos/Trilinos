@@ -49,8 +49,8 @@
 #include "MueLu_RebalanceMapFactory_decl.hpp"
 
 #include <Teuchos_Utils.hpp>
-#include <Teuchos_DefaultMpiComm.hpp> //TODO: fwd decl.
-#include <Teuchos_OpaqueWrapper.hpp>  //TODO: fwd decl.
+//#include <Teuchos_DefaultMpiComm.hpp> //TODO: fwd decl.
+//#include <Teuchos_OpaqueWrapper.hpp>  //TODO: fwd decl.
 
 #include "MueLu_Level.hpp"
 #include "MueLu_Exceptions.hpp"
