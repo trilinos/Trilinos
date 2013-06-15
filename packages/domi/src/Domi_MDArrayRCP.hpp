@@ -91,9 +91,6 @@ public:
   /** \name Public types */
   //@{
 
-  /** \brief Ordinal */
-  typedef Teuchos_Ordinal Ordinal;
-
   /** \brief Size type */
   typedef Ordinal size_type;
 

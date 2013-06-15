@@ -229,8 +229,7 @@ public:
   /** \name Teuchos::Array typedefs */
   //@{
 
-  typedef typename Teuchos::Array< T >::Ordinal Ordinal;
-  typedef typename Teuchos::Array< T >::size_type size_type;
+  typedef typename Teuchos::Array< T >::size_type  size_type;
   typedef typename Teuchos::Array< T >::value_type value_type;
 
   //@}

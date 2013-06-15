@@ -109,8 +109,7 @@ public:
   /** \name Teuchos::ArrayView typedefs */
   //@{
 
-  typedef typename Teuchos::ArrayView< T >::Ordinal Ordinal;
-  typedef typename Teuchos::ArrayView< T >::size_type size_type;
+  typedef typename Teuchos::ArrayView< T >::size_type  size_type;
   typedef typename Teuchos::ArrayView< T >::value_type value_type;
 
   //@}
