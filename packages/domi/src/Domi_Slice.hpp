@@ -94,7 +94,7 @@ namespace Domi
  * well.  For example,
 
  \code
- const Teuchos_Ordinal & dflt = Domi::Slice::Default;
+ const Domi_Ordinal & dflt = Domi::Slice::Default;
  \endcode
 
  * For the common case of a positive step value, the default start
