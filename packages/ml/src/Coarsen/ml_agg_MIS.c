@@ -292,7 +292,7 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 #ifdef MB_MODIF_QR
    int     numDeadNod;
    int dead;
-   int     nCDofTrunc, dof;
+   int     nCDofTrunc;
 #endif
 
    /*   int kk, old_upper, nnzs, count2, newptr; */
