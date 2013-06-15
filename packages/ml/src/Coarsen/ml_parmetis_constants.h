@@ -29,10 +29,13 @@
 
 #else
 
-/* METIS 4.x doesn't supply a version macro */
-
 #  define indextype idxtype
 
+#endif
+
+/* METIS 4.x doesn't supply a version macro */
+#if !defined(METIS_VER_MAJOR)
+# define METIS_VER_MAJOR 4
 #endif
 
 #endif /*ifndef ML_PARMETIS_CONSTANTS_H*/
