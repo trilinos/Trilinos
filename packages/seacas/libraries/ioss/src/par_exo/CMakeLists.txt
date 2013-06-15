@@ -18,7 +18,7 @@ TRIBITS_ADD_LIBRARY(
 	Iopx
 	HEADERS	${HEADERS}
 	SOURCES ${SOURCES}
-	DEPLIBS Ioss exodus nemesis zoltan parmetis
+	DEPLIBS Ioss exodus zoltan parmetis
 )
 
 IF (BUILD_TESTING)
