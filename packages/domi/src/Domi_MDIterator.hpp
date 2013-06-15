@@ -60,9 +60,8 @@ namespace Domi
  * (MDArray, MDArrayView and MDArrayRCP), the class is templated on
  * parameter class MDARRAY, which is intended to be any one of the
  * three MDArray types.  The MDARRAY class is expected to support the
- * the typedefs Ordinal, size_type and value_type, the num_dims()
- * method and the _ptr, _strides, _dimensions, and _storage_order
- * attributes.
+ * the typedefs size_type and value_type, the num_dims() method and
+ * the _ptr, _strides, _dimensions, and _storage_order attributes.
  *
  * It is intended that the array class that will use the MDIterator
  * will declare the MDIterator to be a friend and to typedef the fully
@@ -88,7 +87,6 @@ public:
   /** \name MDARRAY typedefs */
   //@{
 
-  typedef typename MDARRAY::Ordinal    Ordinal;
   typedef typename MDARRAY::size_type  size_type;
   typedef typename MDARRAY::value_type value_type;
 
@@ -125,7 +123,7 @@ public:
    *  index.
    */
   MDIterator(const MDARRAY & mdarray,
-             Teuchos::ArrayView< Ordinal > & index);
+             Teuchos::ArrayView< size_type > & index);
 
   /** \brief Copy constructor
    *
@@ -181,7 +179,7 @@ public:
    *
    *  \param axis [in] Requested axis for index value
    */
-  Ordinal index(size_type axis) const;
+  size_type index(size_type axis) const;
 
 private:
 
@@ -189,7 +187,7 @@ private:
   const MDARRAY & _mdarray;
 
   // The multi-dimensional index of the current iterate
-  Teuchos::Array< Ordinal > _index;
+  Teuchos::Array< size_type > _index;
 
   // A temporary value indicating the axis of the index currently
   // being incremented or decremented
@@ -207,7 +205,7 @@ private:
   void assign_end_index();
 
   // Assert that the given index is valid for the given axis
-  void assert_index(Ordinal i, size_type axis) const;
+  void assert_index(size_type i, size_type axis) const;
 
 };
 
@@ -231,7 +229,7 @@ MDIterator< MDARRAY >::MDIterator(const MDARRAY & mdarray,
 
 template< class MDARRAY >
 MDIterator< MDARRAY >::MDIterator(const MDARRAY & mdarray,
-                                  Teuchos::ArrayView< Ordinal > & index) :
+                                  Teuchos::ArrayView< size_type > & index) :
   _mdarray(mdarray),
   _index(index)
 {
@@ -302,7 +300,7 @@ template< class MDARRAY >
 typename MDIterator< MDARRAY >::value_type &
 MDIterator< MDARRAY >::operator*()
 {
-  typename MDIterator< MDARRAY >::Ordinal offset = 0;
+  typename MDIterator< MDARRAY >::size_type offset = 0;
   for (_axis=0; _axis < _index.size(); ++_axis)
     offset += _index[_axis] * _mdarray._strides[_axis];
   return _mdarray._ptr[offset];
@@ -431,7 +429,7 @@ MDIterator< MDARRAY >::operator--(int)
 ////////////////////////////////////////////////////////////////////////
 
 template< class MDARRAY >
-typename MDIterator< MDARRAY >::Ordinal
+typename MDIterator< MDARRAY >::size_type
 MDIterator< MDARRAY >::
 index(typename MDIterator< MDARRAY >::size_type axis) const
 {
@@ -459,7 +457,7 @@ MDIterator< MDARRAY >::assign_end_index()
 template< class MDARRAY >
 void
 MDIterator< MDARRAY >::
-assert_index(typename MDIterator< MDARRAY >::Ordinal i,
+assert_index(typename MDIterator< MDARRAY >::size_type i,
              typename MDIterator< MDARRAY >::size_type axis) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
