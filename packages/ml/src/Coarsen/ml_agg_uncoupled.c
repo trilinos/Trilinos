@@ -75,7 +75,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 #ifdef MB_MODIF_QR
    int     numDeadNod; /* number of nodes with dead dofs on current coarse lev */
    int     dead;
-   int     nCDofTrunc, dof;
+   int     nCDofTrunc;
 #endif
    int     iend, bdry_blk, *bdry_array;
    double  epsilon, *col_val, *tmp_vect = NULL;

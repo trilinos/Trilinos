@@ -436,6 +436,7 @@ extern "C" {
 #endif
 #include "metis.h"
 #ifdef __cplusplus
+#include "ml_parmetis_constants.h"
 }
 #endif
 #endif
@@ -446,27 +447,28 @@ extern "C" {
 
 #ifdef HAVE_ML_PARMETIS
 #include "parmetis.h"
+#include "ml_parmetis_constants.h"
 #endif
 
 int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
                          int *pnode_part, ML_Partitioner which_partitioner, 
 			 double *x_coord, double *y_coord, double *z_coord,int num_PDE_eqns)
 {
-#ifndef METIS
-#define idxtype int
+#ifndef indextype
+#define indextype int
 #endif
 
-  idxtype *vtxdist = NULL, *tpwts = NULL, *adjncy = NULL, *xadj = NULL, *node_wt = NULL; 
+  indextype *vtxdist = NULL, *tpwts = NULL, *adjncy = NULL, *xadj = NULL, *node_wt = NULL; 
   int *map = NULL, *bindx = NULL, *blks = NULL, nprocs, myid, j, ii, jj;
   int allocated = 0, row_length, itemp1, itemp2, Nrows;
   double *val = NULL; 
   int    offset = -1;
 
-#if defined(HAVE_ML_METIS) || defined(HAVE_ML_PARMETIS) || defined(HAVE_ML_JOSTLE) 
+#if ( defined(HAVE_ML_METIS) && (METIS_VER_MAJOR < 5) ) || ( defined(HAVE_ML_PARMETIS) && (PARMETIS_MAJOR_VERSION == 3) ) || defined(HAVE_ML_JOSTLE) 
   int     Cstyle = 0, dummy = -1;
 #endif
-#ifdef HAVE_ML_PARMETIS
-  idxtype ncon = 1;
+#if defined(HAVE_ML_PARMETIS) && (PARMETIS_MAJOR_VERSION == 3)
+  indextype ncon = 1;
   float  itr = 1000., ubvec = 1.05;
 #endif
 #ifdef HAVE_ML_JOSTLE
@@ -477,7 +479,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
   USR_REQ *request = NULL; 
   char str[80];
 #endif
-#if defined(HAVE_ML_METIS) || defined(HAVE_ML_PARMETIS)
+#if ( defined(HAVE_ML_METIS) && (METIS_VER_MAJOR < 5) ) || ( defined(HAVE_ML_PARMETIS) && (PARMETIS_MAJOR_VERSION == 3) )
   int     options[5]={0,3,1,1,0};
   int     weightflag = 0;
 #endif
@@ -583,9 +585,9 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
     }
 #endif
 
-    adjncy = (idxtype *) ML_allocate( (ii+1) * sizeof(idxtype) );
+    adjncy = (indextype *) ML_allocate( (ii+1) * sizeof(indextype) );
     if (adjncy == NULL) pr_error("ML_Operator_BlockPartition: out of space\n");
-    xadj = (idxtype *) ML_allocate( (Nrows+1) * sizeof(idxtype) );
+    xadj = (indextype *) ML_allocate( (Nrows+1) * sizeof(indextype) );
     if (xadj == NULL) pr_error("ML_Operator_BlockPartition: out of space\n");
 
     /* fill graph */
@@ -708,7 +710,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
 #endif
     break;
   case ML_USEMETIS:
-#ifdef HAVE_ML_METIS
+#if defined(HAVE_ML_METIS) && (METIS_VER_MAJOR < 5)
     if (matrix->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 4)
       printf("Repartitioning using METIS\n");
     if (*nblks < 8)
@@ -736,8 +738,8 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
     *nblks = ii;
     break;
   case ML_USEPARMETIS:
-    tpwts   = (idxtype *) ML_allocate(sizeof(idxtype)*ML_max(*nblks,nprocs));
-    vtxdist = (idxtype *) ML_allocate(sizeof(idxtype)*(nprocs+1));
+    tpwts   = (indextype *) ML_allocate(sizeof(indextype)*ML_max(*nblks,nprocs));
+    vtxdist = (indextype *) ML_allocate(sizeof(indextype)*(nprocs+1));
     for (ii = 0; ii <= nprocs; ii++) vtxdist[ii] = 0;
     vtxdist[myid] = n;
     ML_gsum_vec_int(&vtxdist,&tpwts,nprocs,matrix->comm);
@@ -752,8 +754,8 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
     
     for (ii = 0; ii < n; ii++) pnode_part[ii] = matrix->comm->ML_mypid;
 
-#ifdef HAVE_ML_PARMETIS
-    node_wt = (idxtype *) ML_allocate( (Nrows+1) * sizeof(idxtype) );
+#if defined(HAVE_ML_PARMETIS) && (PARMETIS_MAJOR_VERSION == 3)
+    node_wt = (indextype *) ML_allocate( (Nrows+1) * sizeof(indextype) );
     for (j = 0; j < Nrows; j++) {
       node_wt[j] = xadj[j+1] - xadj[j] + 1;
     }
@@ -786,7 +788,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
     for (j = 0; j < nprocs; j++) proc_ids[j] = 0;
     proc_ids[myid] = Nrows;
     ML_gsum_vec_int(&proc_ids, &itmp, nprocs, matrix->comm);
-    node_wt = (idxtype *) ML_allocate( (Nrows+1) * sizeof(idxtype) );
+    node_wt = (indextype *) ML_allocate( (Nrows+1) * sizeof(indextype) );
 
     for (j = 0; j < Nrows; j++) {
       xadj[j] = xadj[j+1] - xadj[j];
@@ -1972,7 +1974,7 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
                                   int perfAndCommStats)
 {
   double t1;
-  double j, Nglobrows, Nglobcols, NglobNonzeros;
+  double Nglobrows, Nglobcols, NglobNonzeros;
   int i,k,NumActiveProc, proc_active;
   ML_Comm *comm = mat->comm;
   int mypid = mat->comm->ML_mypid;
@@ -2939,7 +2941,6 @@ ML_Operator *ML_Operator_BlkMatExtract(ML_Operator *BlkMat, int Row, int Col)
 {
   struct  MLBlkMat  *widget;
   int i;
-  ML_Operator *Entry;
 
   widget = (struct MLBlkMat *) BlkMat->data;
 
@@ -3379,7 +3380,7 @@ int  ML_Operator_BlkMatFinalize(ML_Operator *BlkMat)
 
   ML_Operator_Set_Getrow(BlkMat, widget->outvec, ML_Operator_BlkMatGetrow);
 
-
+  return 0;
 }
 
 
