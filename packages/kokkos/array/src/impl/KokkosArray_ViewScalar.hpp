@@ -89,7 +89,7 @@ struct ViewAssignment< LayoutScalar , void , void >
                               sizeof(typename DstViewType::value_type) ,
                               1 );
 
-    ViewInitialize< DstViewType >::apply( dst );
+    ViewInitialize< typename DstViewType::device_type > init( dst );
   }
 
   template< class DT , class DL , class DD , class DM ,

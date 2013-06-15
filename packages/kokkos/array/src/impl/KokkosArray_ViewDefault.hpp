@@ -65,10 +65,6 @@ struct ViewSpecialize< ScalarType , ScalarType ,
 { typedef LayoutDefault type ; };
 
 //----------------------------------------------------------------------------
-
-template< class DstViewType >
-struct ViewInitialize { static void apply( const DstViewType & ) {} };
-
 //----------------------------------------------------------------------------
 /** \brief  Value is compatible for reference assignment: */
 
@@ -170,7 +166,7 @@ struct ViewAssignment< LayoutDefault , void , void >
     dst.m_ptr_on_device = (scalar_type *)
       memory_space::allocate( label , typeid(scalar_type) , sizeof(scalar_type) , dst.capacity() );
 
-    ViewInitialize< View<T,L,D,M,Specialize> >::apply( dst );
+    ViewInitialize< typename traits::device_type > init( dst );
   }
 
   // Allocate using the dimensions and stride of the input array.
@@ -212,7 +208,7 @@ struct ViewAssignment< LayoutDefault , void , void >
       dst.m_ptr_on_device = (dst_scalar_type *)
         dst_memory_space::allocate( label , typeid(dst_scalar_type) , sizeof(dst_scalar_type) , dst.capacity() );
 
-      ViewInitialize< View<DT,DL,DD,DM,Specialize> >::apply( dst );
+      ViewInitialize< typename dst_traits::device_type > init( dst );
     }
     else {
       dst_shape_type::assign( dst.m_shape, 0, 0, 0, 0, 0, 0, 0, 0 );

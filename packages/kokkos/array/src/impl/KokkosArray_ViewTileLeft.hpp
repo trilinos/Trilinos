@@ -89,7 +89,7 @@ private:
                               sizeof(typename DstViewType::value_type) ,
                               dst.capacity() );
 
-    ViewInitialize< DstViewType >::apply( dst );
+    ViewInitialize< typename DstViewType::device_type > init( dst );
   }
 
 public:

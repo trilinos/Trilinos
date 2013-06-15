@@ -75,6 +75,7 @@ MPIINTEL | mpiintel | mpiicc | mpiicpc )
   CXX="mpiicpc -Wall"
   LINK="mpiicpc"
   LIB="${LIB} -lstdc++"
+  OPTFLAGS="${OPTFLAGS} -DHAVE_MPI"
 ;;
 #-------------------------------
 MIC | mic )
@@ -96,6 +97,7 @@ MPIMIC | mpimic )
   # CXX="${CXX} -guide-vec"
   LIB="${LIB} -lstdc++"
   COMPILE_MIC="on"
+  OPTFLAGS="${OPTFLAGS} -DHAVE_MPI"
   ;;
 #-------------------------------
 curie )

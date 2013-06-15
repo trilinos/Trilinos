@@ -252,6 +252,13 @@ namespace Impl {
 template< class DstViewSpecialize , class SrcViewSpecialize = void , class Enable = void >
 struct ViewAssignment ;
 
+template< class Device >
+struct ViewInitialize
+{
+  template< class ViewType >
+  inline explicit ViewInitialize( const ViewType & ) {}
+};
+
 } // namespace Impl
 } // namespace KokkosArray
 
