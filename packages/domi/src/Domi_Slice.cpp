@@ -44,7 +44,10 @@
 
 namespace Domi
 {
+
 const Ordinal Slice::Default(Teuchos::OrdinalTraits<Ordinal>::max());
+
+////////////////////////////////////////////////////////////////////////
 
 Slice Slice::bounds(Ordinal size) const
 {
@@ -69,9 +72,13 @@ Slice Slice::bounds(Ordinal size) const
   Ordinal numSteps = (hi - lo) / step;
   if ((hi - lo) % step) numSteps += 1;
   hi = lo + step * numSteps;
-  // Return the new slice representing the true bounds
-  return Slice(lo, hi, step);
+  // Return the new slice representing the true bounds.  This is
+  // returned as a ConcreteSlice, which has a optimally efficient
+  // bounds() method for future calls.
+  return ConcreteSlice(lo, hi, step);
 }
+
+////////////////////////////////////////////////////////////////////////
 
 std::string Slice::toString() const
 {
@@ -87,10 +94,44 @@ std::string Slice::toString() const
   return ss.str();
 }
 
+////////////////////////////////////////////////////////////////////////
+
 std::ostream & operator<<(std::ostream & os,
                           const Slice & slice)
 {
   return os << slice.toString();
+}
+
+////////////////////////////////////////////////////////////////////////
+
+ConcreteSlice::ConcreteSlice(Ordinal stopVal) :
+  Slice(0,stopVal,1)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (stop < 0), std::invalid_argument,
+    "ConcreteSlice stop value cannot be negative"
+    );
+}
+
+////////////////////////////////////////////////////////////////////////
+
+ConcreteSlice::ConcreteSlice(Ordinal startVal,
+                             Ordinal stopVal,
+                             Ordinal stepVal) :
+  Slice(startVal,stopVal,stepVal)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (start < 0), std::invalid_argument,
+    "ConcreteSlice start value cannot be negative"
+    );
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (stop < 0), std::invalid_argument,
+    "ConcreteSlice stop value cannot be negative"
+    );
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (step == 0), std::invalid_argument,
+    "ConcreteSlice step interval cannot be zero"
+    );
 }
 
 }  // namespace Domi

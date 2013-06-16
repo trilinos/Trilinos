@@ -55,7 +55,7 @@ namespace Domi
 
 /**
  * \brief A Slice contains a start, stop, and step index, describing a
- *        subset of a container.
+ *        subset of an ordered container.
  *
  * A Slice is an alternative to an index and specifies a range of
  * values with a start value, a stop value, and a step interval.
@@ -68,35 +68,35 @@ namespace Domi
  * <tt>Domi::Slice(...)</tt>. To ease their use as index-like objects,
  * it is recommended that the user define a typedef to provide a
  * shorthand:
- 
- \code
- typedef Domi::Slice slc;
- \endcode
-
+ *
+ *   \code
+ *   typedef Domi::Slice slc;
+ *   \endcode
+ *
  * Thus if you wanted a view into an existing <tt>MDArray</tt> (named
  * <tt>array</tt>) consisting of the 5th through 10th elements of that
  * array, you could specify
-
- \code
- view = array[slc(5,10)];
- \endcode
-
+ *
+ *   \code
+ *   view = array[slc(5,10)];
+ *   \endcode
+ *
  * and you would obtain an <tt>MDArrayView</tt>.  Note that the
  * meaning of the stop index is up to the container class, not the
  * Slice struct.  It is recommended that the stop index be
  * non-inclusive.  Thus in the example above, the length of view would
  * be 10 - 5 = 5 and would support integer indexes 0, 1, ... 4.
-
+ *
  * There are several Slice constructors, taking 0-3 arguments and
  * supporting both implicit and explicit default values.  For
  * explicitly requesting a default value, you can use Slice::Default.
  * It is also recommended that the user define a shorthand for this as
  * well.  For example,
-
- \code
- const Domi_Ordinal & dflt = Domi::Slice::Default;
- \endcode
-
+ *
+ *   \code
+ *   const Domi_Ordinal & dflt = Domi::Slice::Default;
+ *   \endcode
+ *
  * For the common case of a positive step value, the default start
  * index is zero and the default stop index is the size of the
  * dimension being indexed.  If the step value is negative, these
@@ -104,29 +104,29 @@ namespace Domi
  * rules, plus the 3-argument constructor meaning <tt>Slice(start,
  * stop, step)</tt>, the following constructors have the following
  * meanings:
-
- * <tt>Slice()</tt> is equivalent to <tt>Slice(0,Default,1)</tt>.
-
- * <tt>Slice(3)</tt> is equivalent to <tt>Slice(0,3,1)</tt>.
-
- * <tt>Slice(1,4)</tt> is equivalent to <tt>Slice(1,4,1)</tt>.
-
- * <tt>Slice(Default,5,2)</tt> is equivalent to <tt>Slice(0,5,2)</tt>.
-
- * <tt>Slice(Default,Default,-1)</tt> is equivalent to
- * <tt>Slice(Default,0,-1)</tt>.
-
+ *
+ *   <tt>Slice()</tt> is equivalent to <tt>Slice(0,Default,1)</tt>.
+ *
+ *   <tt>Slice(3)</tt> is equivalent to <tt>Slice(0,3,1)</tt>.
+ *
+ *   <tt>Slice(1,4)</tt> is equivalent to <tt>Slice(1,4,1)</tt>.
+ *
+ *   <tt>Slice(Default,5,2)</tt> is equivalent to <tt>Slice(0,5,2)</tt>.
+ *
+ *   <tt>Slice(Default,Default,-1)</tt> is equivalent to
+ *   <tt>Slice(Default,0,-1)</tt>.
+ *
  * Note again that it is up to the container class to recognize that a
  * value of <tt>Default</tt> refers to the size of the container, and
  * not to the literal value of <tt>Default</tt> (which would be set,
  * for practical purposes, to the maximum value supported by the
  * Ordinal, which might be something like 2**63 as an example).
-
+ *
  * A container class can easily convert a Slice object that
  * (potentially) has default values to a Slice object that has
  * concrete values by calling the <tt>bounds()</tt> method, which
  * takes as its single argument the size of the container.
-
+ *
  */
 struct Slice
 {
@@ -135,7 +135,7 @@ public:
   /** \brief The type for start indexes, stop indexes, and step
       intervals
    */
-  typedef Teuchos_Ordinal Ordinal;
+  typedef Domi_Ordinal Ordinal;
 
   /** \brief Default value for Slice constructors
    *
@@ -160,8 +160,11 @@ public:
    * If <tt>start</tt> is a non-negative ordinal, then it is a
    * concrete value.  If <tt>start</tt> is negative, it is interpreted
    * to represent <tt>size-start</tt>, where <tt>size</tt> is the size
-   * of the container.  If <tt>start</tt> equals <tt>Default</tt>,
-   * then it is interpreted to represent the size of the container.
+   * of the container.  If <tt>start</tt> equals <tt>Default</tt>, and
+   * <tt>step</tt> is positive, then it is set to zero.  If
+   * <tt>start</tt> equals <tt>Default</tt>, and <tt>step</tt> is
+   * negative, then it is interpreted to represent the size of the
+   * container.
    */
   const Ordinal start;
 
@@ -170,8 +173,11 @@ public:
    * If <tt>stop</tt> is a non-negative ordinal, then it is a concrete
    * value.  If <tt>stop</tt> is negative, it is interpreted to
    * represent <tt>size-stop</tt>, where <tt>size</tt> is the size of
-   * the container.  If <tt>stop</tt> equals <tt>Default</tt>, then it
-   * is interpreted to represent the size of the container.
+   * the container.  If <tt>stop</tt> equals <tt>Default</tt>, and
+   * <tt>step</tt> is positive, then it is interpreted to represent
+   * the size of the container.  If <tt>start</tt> equals
+   * <tt>Default</tt>, and <tt>step</tt> is negative, then it is set
+   * to zero.
    */
   const Ordinal stop;
 
@@ -254,11 +260,11 @@ public:
    * distance from the end of the container), and <tt>size</tt> is the
    * size of a container, the following code is valid:
    *
-   * \code
-   * Slice bounds = s.bounds(size);
-   * for (Teuchos_Ordinal i = bounds.start; i != bounds.stop; i += bounds.step)
-   * { ... }
-   * \endcode
+   *   \code
+   *   Slice bounds = s.bounds(size);
+   *   for (Domi::Ordinal i = bounds.start; i != bounds.stop; i += bounds.step)
+   *   { ... }
+   *   \endcode
    *
    * Note that in order to accommodate both positive and negative
    * <tt>step</tt>s, the <tt>for</tt> loop continue condition is <tt>(i
@@ -266,7 +272,7 @@ public:
    * precisely the first ordinal outside the bounds that will be
    * returned by <tt>(i += bounds.step)</tt>.
    */
-  Slice bounds(Ordinal size) const;
+  virtual Slice bounds(Ordinal size) const;
 
   /** \brief Return a string representation of the Slice
    *
@@ -296,10 +302,63 @@ private:
   const bool _bounded_neg;
 
   // This is private and never implemented, thus eliminating it from
-  // the interface.  Since Slices are immutable, the assignment
-  // operator is of little value.
+  // the interface.  Since Slices are immutable, the copy constructor
+  // and assignment operator are of little value.
   Slice operator=(const Slice & source);
 
+};
+
+/**
+ * \brief A ConcreteSlice is a Slice that does not accept Default or
+ * negative start or stop values.
+ *
+ * By ensuring that the start, stop and step values are all concrete,
+ * the bounds() method can just return *this, which is much more
+ * efficient than the base class Slice implementation of bounds().
+ *
+ * It is not expected that the end user should ever have to deal
+ * directly with ConcreteSlice.  The Slice bounds() method returns a
+ * Slice object that is in fact a ConcreteSlice.  Any further calls to
+ * bounds() will therefore be efficient.
+ */
+struct ConcreteSlice : public Slice
+{
+public:
+  /** \brief One argument constructor
+   *
+   *  \param stopVal [in] The stop index of the Slice
+   *
+   * Returns Slice with <tt>start == 0</tt>, <tt>step == stopVal</tt>,
+   * <tt>step == 1</tt>.
+   */
+  ConcreteSlice(Ordinal stopVal);
+
+  /** \brief Two or three argument constructor
+   *
+   * \param startVal [in] The start index of the slice.
+   *
+   * \param stopVal [in] The stop index of the slice.
+   *
+   * \param stepVal [in] The step interval of the slice.
+   *
+   * Returns Slice with <tt>start == startVal</tt>, <tt>step ==
+   * stopVal</tt>, <tt>step == stepVal</tt> (default 1).
+   */
+  ConcreteSlice(Ordinal startVal, Ordinal stopVal, Ordinal stepVal=1);
+
+  /** \brief Destructor
+   */
+  ~ConcreteSlice() { }
+
+  /** \brief Simply return this ConcreteSlice
+   */
+  inline Slice bounds(Ordinal size) const {return *this;}
+
+private:
+
+  // Private and not implemented
+  ConcreteSlice();
+  ConcreteSlice operator=(const ConcreteSlice & source);
 };
 
 /////////////////////////
@@ -315,6 +374,8 @@ Slice::Slice() :
 {
 }
 
+////////////////////////////////////////////////////////////////////////
+
 Slice::Slice(Ordinal stopVal) :
   start(0),
   stop(stopVal),
@@ -323,6 +384,8 @@ Slice::Slice(Ordinal stopVal) :
   _bounded_neg(false)
 {
 }
+
+////////////////////////////////////////////////////////////////////////
 
 Slice::Slice(Ordinal startVal, Ordinal stopVal, Ordinal stepVal) :
   start(((startVal==Slice::Default) && (stepVal > 0)) ? 0 : startVal),
@@ -336,12 +399,16 @@ Slice::Slice(Ordinal startVal, Ordinal stopVal, Ordinal stepVal) :
     );
 }
 
+////////////////////////////////////////////////////////////////////////
+
 bool Slice::operator==(const Slice & slice) const
 {
   return ((start == slice.start) &&
           (stop  == slice.stop ) &&
           (step  == slice.step )    );
 }
+
+////////////////////////////////////////////////////////////////////////
 
 bool Slice::operator!=(const Slice & slice) const
 {
