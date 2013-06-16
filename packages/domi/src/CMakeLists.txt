@@ -30,6 +30,7 @@ APPEND_SET(HEADERS
   )
 
 APPEND_SET(SOURCES
+  Domi_Version.cpp
   Domi_Slice.cpp
   )
 
