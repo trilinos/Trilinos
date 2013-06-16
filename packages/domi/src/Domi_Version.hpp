@@ -39,14 +39,16 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Domi_Version.hpp"
+#ifndef DOMI_VERSION_HPP
+#define DOMI_VERSION_HPP
+
+#include "Domi_ConfigDefs.hpp"
 
 namespace Domi
 {
 
-std::string Version()
-{
-  return std::string("Domi Version 0.1b - 6/5/2013");
-}
+std::string Version();
 
 }  // namespace Domi
+
+#endif
