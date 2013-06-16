@@ -81,6 +81,7 @@
 
 #include <Domi_config.h>
 #include <cstddef>
+#include <string>
 
 // Enable or disable array bounds checking
 #ifdef HAVE_DOMI_ARRAY_BOUNDS_CHECK
