@@ -49,8 +49,6 @@
 #include "MueLu_RebalanceMapFactory_decl.hpp"
 
 #include <Teuchos_Utils.hpp>
-//#include <Teuchos_DefaultMpiComm.hpp> //TODO: fwd decl.
-//#include <Teuchos_OpaqueWrapper.hpp>  //TODO: fwd decl.
 
 #include "MueLu_Level.hpp"
 #include "MueLu_Exceptions.hpp"
@@ -138,10 +136,7 @@ namespace MueLu {
           map->lib(),
           Teuchos::OrdinalTraits<int>::invalid(),
           localGIDs_view,
-          0, map->getComm());
-
-      //if (pL.get<bool>("useSubcomm") == true)
-      //  localGIDsMap->removeEmptyProcesses();
+          0, ptv->getMap()->getComm());  // use correct communicator here!
 
       // store rebalanced partial map using the same name and generating factory as the original map
       // in the level class
