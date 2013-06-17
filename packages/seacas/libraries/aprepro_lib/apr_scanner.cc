@@ -3092,8 +3092,6 @@ int yyFlexLexer::yy_get_next_buffer()
 
 /* %if-c++-only */
 
-extern "C" int isatty (int );
-
 /* %endif */
 
 /* Initializes or reinitializes a buffer.
