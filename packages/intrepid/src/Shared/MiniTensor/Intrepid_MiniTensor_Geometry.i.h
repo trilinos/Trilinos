@@ -199,6 +199,63 @@ SphericalParametrization<T>::operator()(Vector<T> const & parameters)
 }
 
 //
+// Constructor for StereographicParametrization
+//
+template<typename T>
+inline
+StereographicParametrization<T>::StereographicParametrization(
+    Tensor4<T> const & A) : tangent_(A)
+{
+  minimum_ = std::numeric_limits<T>::max();
+  maximum_ = std::numeric_limits<T>::min();
+  return;
+}
+
+//
+// Evaluation for StereographicParemetrization
+//
+template<typename T>
+inline
+void
+StereographicParametrization<T>::operator()(Vector<T> const & parameters)
+{
+  assert(parameters.get_dimension() == 2);
+
+  T const &
+  x = parameters(0);
+
+  T const &
+  y = parameters(1);
+
+  T const
+  r2 = x * x + y * y;
+
+  Vector<T>
+  normal(2.0 * x, 2.0 * y, r2 - 1.0);
+
+  normal /= (r2 + 1.0);
+
+  // Localization tensor
+  Tensor<T> const
+  Q = dot(normal, dot(tangent_, normal));
+
+  T const
+  determinant = det(Q);
+
+  if (determinant < minimum_) {
+    minimum_ = determinant;
+    arg_minimum_ = parameters;
+  }
+
+  if (determinant > maximum_) {
+    maximum_ = determinant;
+    arg_maximum_ = parameters;
+  }
+
+  return;
+}
+
+//
 // Constructor for ParametricGrid
 //
 template<typename T>
@@ -219,7 +276,7 @@ ParametricGrid<T>::ParametricGrid(
 }
 
 //
-// Find minimum for ParametricGrid
+// Traverse the grid and apply the visitor to each point.
 //
 template<typename T>
 template<typename Visitor>
