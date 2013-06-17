@@ -47,7 +47,7 @@ public:
         networkDim = 3;
 
         //allocate memory for processor coordinates.
-        procCoords = new (pcoord_t *)[networkDim];
+        procCoords = new pcoord_t *[networkDim];
         for (int i = 0; i < networkDim; ++i){
             procCoords[i] = new pcoord_t [numProcs];
             memset (procCoords[i], 0, sizeof(pcoord_t) * numProcs);
@@ -75,7 +75,7 @@ public:
         // but it should copy the data into xyz instead of the procCoords.
         int myRank = comm->getRank();
 
-        int slice = pow( double(numProcs), double(1.0 / networkDim)) + 0.5 ;
+        int slice = int (pow( double(numProcs), double(1.0 / networkDim)) + 0.5 );
 
         int m = myRank;
         for (int i = 0; i < networkDim; ++i){
