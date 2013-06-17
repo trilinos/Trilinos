@@ -116,18 +116,6 @@ bool MueLuPreconditionerFactory::isCompatible(
 }
 
 
-bool MueLuPreconditionerFactory::applySupportsConj(EConj conj) const
-{
-  return false;
-}
-
-
-bool MueLuPreconditionerFactory::applyTransposeSupportsConj(EConj conj) const
-{
-  return false;
-}
-
-
 RCP<PreconditionerBase<double> >
 MueLuPreconditionerFactory::createPrec() const
 {

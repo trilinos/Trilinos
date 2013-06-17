@@ -66,6 +66,7 @@ namespace Ioex {
   private:
     std::string fileName;
     size_t numDOF;
+    size_t num_nodes;
     size_t numEIG;
     int filePtr;
   };

@@ -6,12 +6,14 @@ DemoFactory
 EmergencyAggregationAlgorithm
 Graph
 IsolatedNodeAggregationAlgorithm
+IsorropiaInterface
 LWGraph
 LeftoverAggregationAlgorithm
 LocalAggregationAlgorithm
 MaxLinkAggregationAlgorithm
 OnePtAggregationAlgorithm
 PRFactory
+RebalanceMapFactory
 SmallAggregationAlgorithm
 UncoupledAggregationAlgorithm
 UncoupledAggregationFactory

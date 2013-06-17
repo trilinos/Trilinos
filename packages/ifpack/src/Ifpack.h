@@ -132,6 +132,10 @@ public:
     ,BLOCK_RELAXATION
     ,BLOCK_RELAXATION_STAND_ALONE
     ,BLOCK_RELAXATION_STAND_ALONE_ILU
+    ,BLOCK_RELAXATION_STAND_ALONE_IC
+#ifdef HAVE_IFPACK_SUPERLU
+    ,BLOCK_RELAXATION_STAND_ALONE_SILU
+#endif
 #ifdef HAVE_IFPACK_AMESOS
     ,BLOCK_RELAXATION_STAND_ALONE_AMESOS
     ,BLOCK_RELAXATION_AMESOS
@@ -167,7 +171,7 @@ public:
 
   /** \brief . */
   static const int numPrecTypes =
-    +5
+    +6
 #ifdef HAVE_IFPACK_AMESOS
     +4
 #endif
@@ -182,7 +186,7 @@ public:
     +1
 #endif
 #ifdef HAVE_IFPACK_SUPERLU
-    +1
+    +2
 #endif
     +5
     ;

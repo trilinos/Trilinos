@@ -10,6 +10,7 @@
 
    By: Chris Siefert <csiefer@sandia.gov>
    Version History
+   05/23/2013 - Adding thresholding control to Maxwell2
    05/01/2013 - Adding reuse support.
    04/26/2013 - Adding Maxwell2 support
    10/04/2012 - Some minor code cleanup and the memory bugfix.
@@ -531,6 +532,11 @@ int ml_maxwell_data_pack::setup_preconditioner(){
   List11_.set("ML output",List->get("ML output",0));
   List22_.set("ML output",List->get("ML output",0));
   List11c_.set("ML output",List->get("ML output",0));
+
+  // Ditto for thresholding
+  List11_.set("aggregation: threshold",List->get("aggregation: threshold",0.0));
+  List22_.set("aggregation: threshold",List->get("aggregation: threshold",0.0));
+  List11c_.set("aggregation: threshold",List->get("aggregation: threshold",0.0));
 
   // To avoid having to grab other inputs...
   List->set("refmaxwell: disable addon",true); 

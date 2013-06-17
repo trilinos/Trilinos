@@ -547,6 +547,107 @@ piola_inverse(Tensor<T> const & F, Tensor<T> const & P)
   return dot_t(P, F) / J;
 }
 
+//
+// Check strict ellipticity condition for 4th-order tensor.
+// Assume A has major symmetries.
+//
+template<typename T>
+bool
+check_strict_ellipticity(Tensor4<T> const & A)
+{
+  // Convert to 2nd-order tensor
+  Tensor<T> const
+  B(A);
+
+  // Check bounds for eigenvalues
+  T const
+  lower_bound = bounds_eigenvalues(B).first;
+
+  if (lower_bound > 0.0) {
+    return true;
+  }
+
+  // Get eigenvalues only
+  Vector<T> const
+  D = diag(eig_sym(B).second);
+
+  T const
+  smallest_eigenvalue = D(B.get_dimension() - 1);
+
+  if (smallest_eigenvalue > 0.0) {
+    return true;
+  }
+
+  return false;
+}
+
+//
+// Check strong ellipticity condition for 4th-order tensor.
+// Assume A has major symmetries.
+//
+template<typename T>
+std::pair<bool, Vector<T> >
+check_strong_ellipticity(Tensor4<T> const & A)
+{
+  bool
+  is_elliptic = true;
+
+  Index const
+  dimension = A.get_dimension();
+
+  Vector<T>
+  eigenvector(dimension, 1.0 / dimension);
+
+  Index const
+  maximum_iterarions = 128;
+
+  T const
+  tolerance = machine_epsilon<T>();
+
+  T
+  error = 1.0;
+
+  T
+  prev_eigenvalue =
+      std::numeric_limits<typename Sacado::ScalarType<T>::type>::max();
+
+  T
+  curr_eigenvalue = prev_eigenvalue;
+
+  Index
+  iteration = 0;
+
+  while (error > tolerance && iteration < maximum_iterarions) {
+
+    Tensor<T>
+    Q = dot(eigenvector, dot(A, eigenvector));
+
+    Tensor<T>
+    V;
+
+    Tensor<T>
+    D;
+
+    boost::tie(V, D) = eig_sym(Q);
+
+    curr_eigenvalue = D(dimension - 1, dimension - 1);
+
+    eigenvector = col(V, dimension - 1);
+
+    error = std::abs(prev_eigenvalue) / std::abs(curr_eigenvalue) - 1.0;
+
+    prev_eigenvalue = curr_eigenvalue;
+
+    ++iteration;
+  }
+
+  if (curr_eigenvalue <= 0.0) {
+    is_elliptic = false;
+  }
+
+  return std::make_pair(is_elliptic, eigenvector);
+}
+
 } // namespace Intrepid
 
 #endif // Intrepid_MiniTensor_Mechanics_t_h

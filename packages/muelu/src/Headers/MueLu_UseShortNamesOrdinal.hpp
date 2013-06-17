@@ -38,6 +38,10 @@ typedef MueLu::Graph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Graph;
 typedef MueLu::IsolatedNodeAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> IsolatedNodeAggregationAlgorithm;
 #endif
 
+#ifdef MUELU_ISORROPIAINTERFACE_SHORT
+typedef MueLu::IsorropiaInterface<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> IsorropiaInterface;
+#endif
+
 #ifdef MUELU_LWGRAPH_SHORT
 typedef MueLu::LWGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> LWGraph;
 #endif
@@ -60,6 +64,10 @@ typedef MueLu::OnePtAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMa
 
 #ifdef MUELU_PRFACTORY_SHORT
 typedef MueLu::PRFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PRFactory;
+#endif
+
+#ifdef MUELU_REBALANCEMAPFACTORY_SHORT
+typedef MueLu::RebalanceMapFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RebalanceMapFactory;
 #endif
 
 #ifdef MUELU_SMALLAGGREGATIONALGORITHM_SHORT

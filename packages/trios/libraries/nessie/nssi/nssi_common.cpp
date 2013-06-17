@@ -166,6 +166,9 @@ int nssi_rpc_init(
         case NSSI_RPC_GEMINI:
             transport_id=NNTI_TRANSPORT_GEMINI;
             break;
+	case NSSI_RPC_BGPDCMF:
+             transport_id=NNTI_TRANSPORT_DCMF;
+             break;
         case NSSI_RPC_MPI:
             transport_id=NNTI_TRANSPORT_MPI;
             break;

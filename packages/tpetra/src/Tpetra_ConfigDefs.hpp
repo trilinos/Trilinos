@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -83,12 +83,12 @@
 #include <Kokkos_ConfigDefs.hpp>
 
 //! %Tpetra namespace
-namespace Tpetra { 
+namespace Tpetra {
   // Used in all Tpetra code that explicitly must a type (like a loop index)
   // that is used with the Teuchos::Array[View,RCP] classes.
 
   //! Size type for Teuchos Array objects.
-  typedef Teuchos_Ordinal Array_size_type; 
+  typedef Teuchos_Ordinal Array_size_type;
 }
 
 // these make some of the macros in Tpetra_Util.hpp much easier to describe
@@ -142,13 +142,13 @@ namespace Tpetra {
 //! Namespace for Tpetra classes and methods
 namespace Tpetra {
 
-  /** \brief Global size_t object. 
-  
+  /** \brief Global size_t object.
+
       Set at configure time, this type is intended to support scenarios where the global memory allocation is larger than that of a single node.
 
       Currently, it is typedefed to size_t.
    */
-      
+
   typedef size_t global_size_t;
 
   /*! Local versus global allocation of Map elements */
@@ -176,7 +176,7 @@ namespace Tpetra {
   };
 
   /*!  \brief Tpetra::Combine Mode enumerable type */
-  /*! 
+  /*!
     If set to Add, existing values will be summed with new values.
     If set to Insert, new values will be inserted that don't currently exist.
     If set to Replace, existing values will be replaced with new values.
@@ -229,10 +229,63 @@ namespace Tpetra {
   using Teuchos::sublist;
 #endif
 
-  // Tpetra functor objects
-  // inspired by SGI-specific project2nd, project1st
+  /// \class project1st
+  /// \brief Binary function that returns its first argument.
+  /// \tparam Arg1 Type of the first argument, and type of the
+  ///   return value.
+  /// \tparam Arg2 Type of the second argument.  It may differ from
+  ///   the type of the first argument.
+  ///
+  /// This function object might be defined in the std namespace; it
+  /// is an SGI extension to the STL.  We can't count on it living in
+  /// the std namespace, but it's useful, so we define it here.
+  ///
+  /// If you apply <tt>using namespace std;</tt> to the global
+  /// namespace, and if your STL implementation includes project1st,
+  /// it will cause collisions with this definition.  We recommend for
+  /// this and other reasons not to state <tt>using namespace
+  /// std;</tt> in the global namespace.
+  template<class Arg1, class Arg2>
+  class project1st : public std::binary_function<Arg1, Arg2, Arg1> {
+  public:
+    typedef Arg1 first_argument_type;
+    typedef Arg2 second_argument_type;
+    typedef Arg1 result_type;
+    Arg1 operator () (const Arg1& x, const Arg2& ) const {
+      return x;
+    }
+  };
+
+  /// \class project2nd
+  /// \brief Binary function that returns its second argument.
+  /// \tparam Arg1 Type of the first argument.
+  /// \tparam Arg2 Type of the second argument, and type of the return
+  ///   value.  It may differ from the type of the first argument.
+  ///
+  /// This function object might be defined in the std namespace; it
+  /// is an SGI extension to the STL.  We can't count on it living in
+  /// the std namespace, but it's useful, so we define it here.
+  ///
+  /// If you apply <tt>using namespace std;</tt> to the global
+  /// namespace, and if your STL implementation includes project1st,
+  /// it will cause collisions with this definition.  We recommend for
+  /// this and other reasons not to state <tt>using namespace
+  /// std;</tt> in the global namespace.
+  template<class Arg1, class Arg2>
+  class project2nd : public std::binary_function<Arg1, Arg2, Arg2> {
+  public:
+    typedef Arg1 first_argument_type;
+    typedef Arg2 second_argument_type;
+    typedef Arg2 result_type;
+    Arg2 operator () (const Arg1& , const Arg2& y) const {
+      return y;
+    }
+  };
+
+  /// \class firstArg
+  /// \brief DEPRECATED; please use project1st instead.
   template <class Arg1, class Arg2>
-  class firstArg : std::binary_function<Arg1,Arg2,Arg1> {
+  class TEUCHOS_DEPRECATED firstArg : std::binary_function<Arg1,Arg2,Arg1> {
     public:
     typedef Arg1 first_argument_type;
     typedef Arg2 second_argument_type;
@@ -240,8 +293,10 @@ namespace Tpetra {
     inline Arg1 operator()(const Arg1 &arg1, const Arg2 &arg2) {return arg1;}
   };
 
+  /// \class secondArg
+  /// \brief DEPRECATED; please use project2nd instead.
   template <class Arg1, class Arg2>
-  class secondArg : std::binary_function<Arg1,Arg2,Arg2> {
+  class TEUCHOS_DEPRECATED secondArg : std::binary_function<Arg1,Arg2,Arg2> {
     public:
     typedef Arg1 first_argument_type;
     typedef Arg2 second_argument_type;
@@ -266,7 +321,13 @@ namespace Tpetra {
   //! Namespace for external %Tpetra functionality
   namespace Ext {
   }
-  //! Collection of matrix-matrix operations.
+
+  /// \namespace MatrixMatrix
+  /// \brief Distributed sparse matrix-matrix multiply and add.
+  ///
+  /// This namespace includes functions for computing the sum or product
+  /// of two distributed sparse matrices, each of which is represented
+  /// as a Tpetra::CrsMatrix.
   namespace MatrixMatrix {
   }
 }

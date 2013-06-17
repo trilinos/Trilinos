@@ -253,7 +253,7 @@ int main(int argc, char *argv[]) {
 
       // Load the RHS
       cout << "[" << j << "] Loading rhs " << rhsFileName << std::endl;
-      RCP<MultiVector> rhs = Utils::Read(string(rhsFileName), Amatvec->getRowMap());
+      RCP<MultiVector> rhs = Utils2::Read(string(rhsFileName), Amatvec->getRowMap());
 
       // Create an LHS
       RCP<Vector> X = VectorFactory::Build(Amatvec->getRowMap());

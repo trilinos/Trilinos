@@ -129,14 +129,6 @@ Tensor<T>::fill(T const * data_ptr, ComponentOrder const component_order)
 
       switch (component_order) {
 
-        default:
-          std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-          std::cerr << std::endl;
-          std::cerr << "Unknown component order.";
-          std::cerr << std::endl;
-          exit(1);
-          break;
-
         case CANONICAL:
           TensorBase<T>::fill(data_ptr);
           break;
@@ -172,6 +164,15 @@ Tensor<T>::fill(T const * data_ptr, ComponentOrder const component_order)
           self[7] = data_ptr[4];
           self[2] = data_ptr[5];
           break;
+
+        default:
+          std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
+          std::cerr << std::endl;
+          std::cerr << "Unknown component order.";
+          std::cerr << std::endl;
+          exit(1);
+          break;
+
       }
 
       break;
@@ -1427,14 +1428,6 @@ skew(Vector<T> const & u)
 
   switch (N) {
 
-    default:
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Skew from vector undefined for R^" << N;
-      std::cerr << std::endl;
-      exit(1);
-      break;
-
     case 3:
       A(0,0) = 0.0;
       A(0,1) = -u(2);
@@ -1447,6 +1440,14 @@ skew(Vector<T> const & u)
       A(2,0) = -u(1);
       A(2,1) = u(0);
       A(2,2) = 0.0;
+      break;
+
+    default:
+      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
+      std::cerr << std::endl;
+      std::cerr << "Skew from vector undefined for R^" << N;
+      std::cerr << std::endl;
+      exit(1);
       break;
 
   }

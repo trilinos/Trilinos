@@ -229,12 +229,12 @@ namespace stk
             // get the integral
             if (m_accumulation_type == ACCUMULATE_SUM)
               {
-                Io(iv, wXdJ, COMP_BLAS);
+                Io(iv, wXdJ, Intrepid::COMP_BLAS);
               }
 
             //optional design:
             //
-            //  Io(integrand(pc_mda, v), wXdJ(w, dJ(J(xi, c, cell_topo)), COMP_BLAS);
+            //  Io(integrand(pc_mda, v), wXdJ(w, dJ(J(xi, c, cell_topo)), Intrepid::COMP_BLAS);
 
             for (unsigned iCell = 0; iCell < nCells; iCell++)
               {
@@ -358,7 +358,7 @@ namespace stk
 
         // get parent cell integration points
         // Map Gauss points on quad to reference face: paramGaussPoints -> refGaussPoints
-        CellTools<double>::mapToReferenceSubcell(xi,
+        Intrepid::CellTools<double>::mapToReferenceSubcell(xi,
                                                  xi_c,
                                                  2, i_face, cell_topo);  // FIXME magic
 
@@ -373,7 +373,7 @@ namespace stk
         MDArray J_mda;
         J.copyTo(J_mda);
         MDArray fn_mda(im.m_Elements_Tag.num, numCubPoints_child, spaceDim);
-        CellTools<double>::getPhysicalFaceNormals(fn_mda, J_mda, i_face, cell_topo);
+        Intrepid::CellTools<double>::getPhysicalFaceNormals(fn_mda, J_mda, i_face, cell_topo);
 
         /// get norm of fn
         for (int icell = 0; icell < im.m_Elements_Tag.num; icell++)
@@ -458,12 +458,12 @@ namespace stk
             // get the integral
             if (m_accumulation_type == ACCUMULATE_SUM)
               {
-                Io(iv, wXfn, COMP_BLAS);
+                Io(iv, wXfn, Intrepid::COMP_BLAS);
               }
 
             //optional design:
             //
-            //  Io(integrand(pc_mda, v), wXdJ(w, dJ(J(xi, c, cell_topo)), COMP_BLAS);
+            //  Io(integrand(pc_mda, v), wXdJ(w, dJ(J(xi, c, cell_topo)), Intrepid::COMP_BLAS);
 
             for (unsigned iCell = 0; iCell < nCells; iCell++)
               {

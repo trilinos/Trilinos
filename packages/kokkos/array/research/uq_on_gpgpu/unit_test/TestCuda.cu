@@ -84,7 +84,6 @@ struct performance_test_driver<Scalar,KokkosArray::Cuda> {
 	5 , 1 ,  5 , nGrid , nIter , print , test_block , check );
     }
     
-#ifdef HAVE_KOKKOSARRAY_STOKHOS
     // Just polynomial methods compared against original
     if (test_orig) {
       nGrid = 32 ;
@@ -95,7 +94,6 @@ struct performance_test_driver<Scalar,KokkosArray::Cuda> {
       performance_test_driver_poly<Scalar,Device>( 
 	5 , 1 ,  6 , nGrid , nIter , print , test_block , check );
     }
-#endif
     
     //------------------------------
     

@@ -578,6 +578,7 @@ namespace MueLu {
     Xpetra::global_size_t totalNnz = 0;
     std::vector<Xpetra::global_size_t> nnzPerLevel;
     std::vector<Xpetra::global_size_t> rowsPerLevel;
+    std::vector<int> numProcsPerLevel;
     for (int i = 0; i < GetNumLevels(); ++i) {
       TEUCHOS_TEST_FOR_EXCEPTION(!(Levels_[i]->IsAvailable("A")) , Exceptions::RuntimeError, "Operator complexity cannot be calculated because A is unavailable on level " << i);
 
@@ -589,6 +590,7 @@ namespace MueLu {
       totalNnz += nnz;
       nnzPerLevel.push_back(nnz);
       rowsPerLevel.push_back(A->getGlobalNumRows());
+      numProcsPerLevel.push_back(A->getRowMap()->getComm()->getSize());
     }
     double operatorComplexity = Teuchos::as<double>(totalNnz) / Levels_[0]->template Get< RCP<Matrix> >("A")->getGlobalNumEntries();
 
@@ -607,13 +609,16 @@ namespace MueLu {
       int rowspacer = 2; while (tt != 0) { tt /= 10; rowspacer++; }
       tt = nnzPerLevel[0];
       int nnzspacer = 2; while (tt != 0) { tt /= 10; nnzspacer++; }
-      out  << "matrix" << std::setw(rowspacer) << " rows " << std::setw(nnzspacer) << " nnz " <<  " nnz/row" << std::endl;
+      tt = numProcsPerLevel[0];
+      int npspacer = 2; while (tt != 0) { tt /= 10; npspacer++; }
+      out  << "matrix" << std::setw(rowspacer) << " rows " << std::setw(nnzspacer) << " nnz " <<  " nnz/row" << std::setw(npspacer)  << " procs" << std::endl;
       for (size_t i = 0; i < nnzPerLevel.size(); ++i) {
         out << "A " << i << "  "
              << std::setw(rowspacer) << rowsPerLevel[i]
              << std::setw(nnzspacer) << nnzPerLevel[i]
              << std::setw(9) << std::setprecision(2) << std::setiosflags(std::ios::fixed)
-             << Teuchos::as<double>(nnzPerLevel[i]) / rowsPerLevel[i] << std::endl;
+             << Teuchos::as<double>(nnzPerLevel[i]) / rowsPerLevel[i]
+             << std::setw(npspacer) << numProcsPerLevel[i] << std::endl;
       }
       for (int i = 0; i < GetNumLevels(); ++i) {
         RCP<SmootherBase> preSmoo, postSmoo;

@@ -150,8 +150,8 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   MA28            "cmake/TPLs/"    TS
   AMD             "cmake/TPLs/"    TS
   CSparse         "cmake/TPLs/"    EX
-  PETSC           "cmake/TPLs/"    SS
   HYPRE           "cmake/TPLs/"    EX
+  PETSC           "${${PROJECT_NAME}_TRIBITS_DIR}/tpls/"   SS
   BLACS           "cmake/TPLs/"    SS
   SCALAPACK       "cmake/TPLs/"    SS
   MUMPS           "cmake/TPLs/"    SS
@@ -174,6 +174,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   CrayPortals     "cmake/TPLs/"    SS
   Gemini          "cmake/TPLs/"    SS
   InfiniBand      "cmake/TPLs/"    SS
+  BGPDCMF         "cmake/TPLs/"    SS
   Pablo           "cmake/TPLs/"    SS
   HPCToolkit      "cmake/TPLs/"    SS
   Pnetcdf         "cmake/TPLs/"    SS

@@ -737,6 +737,18 @@ int ML_Epetra::MultiLevelPreconditioner::SetLevelIds(int Direction)
 
    return 0;
 }
+
+void ML_Epetra::MultiLevelPreconditioner::Complexities(double &complexity, double &fineNnz)
+{
+  if ( agg_ != 0 && agg_->fine_complexity != 0.0 ) {
+    complexity = agg_->operator_complexity / agg_->fine_complexity;
+    fineNnz = agg_->fine_complexity;
+  } else {
+    complexity = -1.0;
+    fineNnz = -1.0;
+  }
+}
+
 int ML_Epetra::MultiLevelPreconditioner::ComputeAndPrintComplexities()
 {
   // ====================================================================== //

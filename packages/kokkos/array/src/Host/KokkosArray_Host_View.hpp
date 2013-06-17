@@ -55,27 +55,236 @@
 namespace KokkosArray {
 namespace Impl {
 
-template< class DataType , class LayoutType , class ManagedType , class Specialize >
-struct ViewInitialize< View< DataType , LayoutType , Host , ManagedType , Specialize > >
-{
-  typedef View< DataType , LayoutType , Host , ManagedType , Specialize > view_type ;
-  typedef typename view_type::scalar_type scalar_type ;
+template< class OutputView , unsigned Rank >
+struct HostViewInit ;
 
-  static void apply( const view_type & view )
+template< class OutputView >
+struct HostViewInit< OutputView , 8 >
+  : public HostThreadWorker
+{
+  const OutputView output ;
+
+  explicit HostViewInit( const OutputView & arg_out )
+    : output( arg_out )
+    { HostThreadWorker::execute(); }
+
+  void execute_on_thread( HostThread & this_thread ) const
   {
-    Impl::HostParallelFill< scalar_type >( view.ptr_on_device() , 0 , view.capacity() );
+    std::pair<Host::size_type,Host::size_type> range =
+      this_thread.work_range( output.dimension_0() );
+
+    for ( Host::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
+    for ( Host::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
+    for ( Host::size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
+    for ( Host::size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
+    for ( Host::size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
+    for ( Host::size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
+    for ( Host::size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
+    for ( Host::size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
+      output(i0,i1,i2,i3,i4,i5,i6,i7) = 0 ;
+    }}}}}}}}
+
+    end_barrier( this_thread );
   }
 };
 
-template< class DataType , class LayoutType , class ManagedType >
-struct ViewInitialize< View< DataType , LayoutType , Host , ManagedType , Impl::LayoutScalar > >
+template< class OutputView >
+struct HostViewInit< OutputView , 7 >
+  : public HostThreadWorker
 {
-  typedef View< DataType , LayoutType , Host , ManagedType , Impl::LayoutScalar > view_type ;
-  typedef typename view_type::scalar_type scalar_type ;
+  const OutputView output ;
 
-  static void apply( const view_type & view )
+  explicit HostViewInit( const OutputView & arg_out )
+    : output( arg_out )
+    { HostThreadWorker::execute(); }
+
+  void execute_on_thread( HostThread & this_thread ) const
   {
-    Impl::HostParallelFill< scalar_type >( view.ptr_on_device() , 0 , 1 );
+    std::pair<Host::size_type,Host::size_type> range =
+      this_thread.work_range( output.dimension_0() );
+
+    for ( Host::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
+    for ( Host::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
+    for ( Host::size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
+    for ( Host::size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
+    for ( Host::size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
+    for ( Host::size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
+    for ( Host::size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
+      output(i0,i1,i2,i3,i4,i5,i6) = 0 ;
+    }}}}}}}
+
+    end_barrier( this_thread );
+  }
+};
+
+template< class OutputView >
+struct HostViewInit< OutputView , 6 >
+  : public HostThreadWorker
+{
+  const OutputView output ;
+
+  explicit HostViewInit( const OutputView & arg_out )
+    : output( arg_out )
+    { HostThreadWorker::execute(); }
+
+  void execute_on_thread( HostThread & this_thread ) const
+  {
+    std::pair<Host::size_type,Host::size_type> range =
+      this_thread.work_range( output.dimension_0() );
+
+    for ( Host::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
+    for ( Host::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
+    for ( Host::size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
+    for ( Host::size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
+    for ( Host::size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
+    for ( Host::size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
+      output(i0,i1,i2,i3,i4,i5) = 0 ;
+    }}}}}}
+
+    end_barrier( this_thread );
+  }
+};
+
+template< class OutputView >
+struct HostViewInit< OutputView , 5 >
+  : public HostThreadWorker
+{
+  const OutputView output ;
+
+  explicit HostViewInit( const OutputView & arg_out )
+    : output( arg_out )
+    { HostThreadWorker::execute(); }
+
+  void execute_on_thread( HostThread & this_thread ) const
+  {
+    std::pair<Host::size_type,Host::size_type> range =
+      this_thread.work_range( output.dimension_0() );
+
+    for ( Host::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
+    for ( Host::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
+    for ( Host::size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
+    for ( Host::size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
+    for ( Host::size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
+      output(i0,i1,i2,i3,i4) = 0 ;
+    }}}}}
+
+    end_barrier( this_thread );
+  }
+};
+
+template< class OutputView >
+struct HostViewInit< OutputView , 4 >
+  : public HostThreadWorker
+{
+  const OutputView output ;
+
+  HostViewInit( const OutputView & arg_out )
+    : output( arg_out )
+    { HostThreadWorker::execute(); }
+
+  void execute_on_thread( HostThread & this_thread ) const
+  {
+    std::pair<Host::size_type,Host::size_type> range =
+      this_thread.work_range( output.dimension_0() );
+
+    for ( Host::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
+    for ( Host::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
+    for ( Host::size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
+    for ( Host::size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
+      output(i0,i1,i2,i3) = 0 ;
+    }}}}
+
+    end_barrier( this_thread );
+  }
+};
+
+template< class OutputView >
+struct HostViewInit< OutputView , 3 >
+  : public HostThreadWorker
+{
+  const OutputView output ;
+
+  explicit HostViewInit( const OutputView & arg_out )
+    : output( arg_out )
+    { HostThreadWorker::execute(); }
+
+  void execute_on_thread( HostThread & this_thread ) const
+  {
+    std::pair<Host::size_type,Host::size_type> range =
+      this_thread.work_range( output.dimension_0() );
+
+    for ( Host::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
+    for ( Host::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
+    for ( Host::size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
+      output(i0,i1,i2) = 0 ;
+    }}}
+
+    end_barrier( this_thread );
+  }
+};
+
+template< class OutputView >
+struct HostViewInit< OutputView , 2 >
+  : public HostThreadWorker
+{
+  const OutputView output ;
+
+  explicit HostViewInit( const OutputView & arg_out )
+    : output( arg_out )
+    { HostThreadWorker::execute(); }
+
+  void execute_on_thread( HostThread & this_thread ) const
+  {
+    std::pair<Host::size_type,Host::size_type> range =
+      this_thread.work_range( output.dimension_0() );
+
+    for ( Host::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
+    for ( Host::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
+      output(i0,i1) = 0 ;
+    }}
+
+    end_barrier( this_thread );
+  }
+};
+
+template< class OutputView >
+struct HostViewInit< OutputView , 1 >
+  : public HostThreadWorker
+{
+  const OutputView output ;
+
+  explicit HostViewInit( const OutputView & arg_out )
+    : output( arg_out )
+    { HostThreadWorker::execute(); }
+
+  void execute_on_thread( HostThread & this_thread ) const
+  {
+    std::pair<Host::size_type,Host::size_type> range =
+      this_thread.work_range( output.dimension_0() );
+
+    for ( Host::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
+      output(i0) = 0 ;
+    }
+
+    end_barrier( this_thread );
+  }
+};
+
+template< class OutputView >
+struct HostViewInit< OutputView , 0 >
+{
+  explicit HostViewInit( const OutputView & arg_out )
+    { *arg_out = 0 ; }
+};
+
+
+template<>
+struct ViewInitialize< Host >
+{
+  template< class ViewType >
+  inline explicit ViewInitialize( const ViewType & view )
+  {
+    HostViewInit< ViewType , ViewType::Rank > init( view );
   }
 };
 
@@ -84,12 +293,10 @@ struct ViewInitialize< View< DataType , LayoutType , Host , ManagedType , Impl::
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 namespace KokkosArray {
 namespace Impl {
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
 
 template< class OutputView , class InputView  , unsigned Rank >
 struct HostViewRemap ;
@@ -322,9 +529,13 @@ struct HostViewRemap< OutputView , InputView , 0 >
 };
 
 } // namespace Impl
+} // namespace KokkosArray
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+
+namespace KokkosArray {
+
 /** \brief Deep copy equal dimension arrays in the host space which
  *         have different layouts or specializations.
  */

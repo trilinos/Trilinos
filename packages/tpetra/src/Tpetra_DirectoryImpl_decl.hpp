@@ -61,7 +61,7 @@
 #endif // HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
 
 #ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
-#  include <Tpetra_HashTable_decl.hpp>
+#  include <Tpetra_Details_FixedHashTable_decl.hpp>
 #endif // HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
 
 
@@ -320,14 +320,15 @@ namespace Tpetra {
 
       template <class Node2>
       RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> >
-      clone(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node2> > &clone_map) const
+      clone (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node2> >& cloneMap) const
       {
         typedef DistributedNoncontiguousDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
-        RCP<Dir2> dir = rcp(new Dir2());
-        dir->setMap ( clone_map );
-        dir->directoryMap_ = directoryMap_->template clone<Node2>(clone_map->getNode());
-        dir->nodeIDs_      = nodeIDs_;
-        dir->LIDs_         = LIDs_;
+        RCP<Dir2> dir (new Dir2 ());
+        dir->setMap (cloneMap);
+        dir->directoryMap_ =
+          directoryMap_->template clone<Node2> (cloneMap->getNode ());
+        dir->PIDs_ = PIDs_;
+        dir->LIDs_ = LIDs_;
         return dir;
       }
 
@@ -356,7 +357,7 @@ namespace Tpetra {
       /// distribution of the Directory.  It is a uniform contiguous
       /// map to prevent infinite recursion (since Map's constructor
       /// creates a Directory for the general case of a noncontiguous
-      /// map).  The data which this Map distributes are nodeIDs_ and
+      /// map).  The data which this Map distributes are PIDs_ and
       /// LIDs_ (see below): the process IDs resp. local IDs.  The
       /// "keys" or indices of this Map are the global IDs.  Thus,
       /// this Map has a range of elements from the minimum to the
@@ -367,11 +368,15 @@ namespace Tpetra {
       //! \name First of two implementations of Directory storage
       //@{
 
+      /// \brief Mapping from Directory Map LID to input Map PID.
+      ///
       /// Array of the same length as the local number of entries in
       /// directoryMap_, containing the process IDs corresponding to the
       /// GIDs owned by the Directory Map on this process.
-      Teuchos::ArrayRCP<int> nodeIDs_;
+      Teuchos::ArrayRCP<int> PIDs_;
 
+      /// \brief Mapping from Directory Map LID to input Map LID.
+      ///
       /// Array of the same length as the local number of entries in
       /// directoryMap_, containing the LIDs corresponding to the GIDs
       /// owned by the Directory Map on this process.
@@ -387,14 +392,14 @@ namespace Tpetra {
       /// This hash table implements a mapping from an LID in the
       /// Directory Map (corresponding to a GID in the input Map) to
       /// the GID's owning PID in the input Map.
-      Teuchos::RCP<Details::HashTable<LocalOrdinal, int> > lidToPidTable_;
+      Teuchos::RCP<Details::FixedHashTable<LocalOrdinal, int> > lidToPidTable_;
 
       /// \brief Mapping from Directory Map LID to input Map LID.
       ///
       /// This hash table implements a mapping from an LID in the
       /// Directory Map (corresponding to a GID in the input Map), to
       /// the GID's LID in the input Map on the GID's owning process.
-      Teuchos::RCP<Details::HashTable<LocalOrdinal, LocalOrdinal> > lidToLidTable_;
+      Teuchos::RCP<Details::FixedHashTable<LocalOrdinal, LocalOrdinal> > lidToLidTable_;
       //@}
 #endif // HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
 

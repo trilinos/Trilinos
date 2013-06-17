@@ -284,9 +284,8 @@ bool spawn_threads( const std::pair<unsigned,unsigned> gang_topo ,
       //   Terminate  = failure
 
       if ( ok_spawn_threads ) {
-        ok_spawn_threads =
-          Impl::HostThread::ThreadActive ==
-            host_thread_wait( & s_master_thread.m_state , Impl::HostThread::ThreadInactive );
+        host_thread_wait_yield( & s_master_thread.m_state , Impl::HostThread::ThreadInactive );
+        ok_spawn_threads = Impl::HostThread::ThreadActive == s_master_thread.m_state ;
       }
     }
 
@@ -296,7 +295,7 @@ bool spawn_threads( const std::pair<unsigned,unsigned> gang_topo ,
     for ( unsigned rank = 1 ; rank < thread_count ; ++rank ) {
       Impl::HostThread * const th = Impl::HostThread::get_thread(rank);
       if ( th ) {
-        host_thread_wait( & th->m_state , Impl::HostThread::ThreadActive );
+        host_thread_wait_yield( & th->m_state , Impl::HostThread::ThreadActive );
       }
     }
 
@@ -390,8 +389,9 @@ void host_thread_driver()
       // Deactivate this thread:
       this_thread.m_state = HostThread::ThreadInactive ;
 
-      // Wait to be activated or terminated:
-      host_thread_wait( & this_thread.m_state , HostThread::ThreadInactive );
+      // Wait to be activated or terminated.
+      // Could be waiting a while, so yield control resources.
+      host_thread_wait_yield( & this_thread.m_state , HostThread::ThreadInactive );
     }
   }
 
@@ -437,7 +437,8 @@ void HostThreadWorker::execute_serial() const
 
     thread.m_state = HostThread::ThreadActive ;
 
-    host_thread_wait( & thread.m_state , HostThread::ThreadActive );
+    // The master thread is doing nothing while waiting, so yield resources.
+    host_thread_wait_yield( & thread.m_state , HostThread::ThreadActive );
   }
 
   // Execute on the master thread last.
@@ -516,10 +517,10 @@ void Host::finalize()
 
       thread->m_state = Impl::HostThread::ThreadTerminating ;
 
-      thread = 0 ; // The '*thread' object is now invalid
-
       // Wait for '*thread' to terminate:
-      host_thread_wait( & s_master_thread.m_state , Impl::HostThread::ThreadInactive );
+      host_thread_wait_yield( & s_master_thread.m_state , Impl::HostThread::ThreadInactive );
+
+      thread = 0 ; // The '*thread' object is now invalid
     }
 
     Impl::HostThread::clear_thread(r);

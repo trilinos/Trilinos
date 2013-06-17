@@ -23,8 +23,9 @@ source ${KOKKOSARRAY}/src/build_common.sh
 
 EXECUTABLE="proxyapp.exe"
 
-INC_PATH="${INC_PATH} -I../../src -I."
+INC_PATH="${INC_PATH} -I../../src -I. -I${KOKKOSARRAY}/usecases/common"
 
+CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/usecases/common/*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ./*.cpp"
 
 #-----------------------------------------------------------------------------

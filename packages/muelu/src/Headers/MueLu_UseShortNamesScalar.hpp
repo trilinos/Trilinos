@@ -222,6 +222,10 @@ typedef MueLu::SchurComplementFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,Loc
 typedef MueLu::ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> ShiftedLaplacian;
 #endif
 
+#ifdef MUELU_SHIFTEDLAPLACIANOPERATOR_SHORT
+typedef MueLu::ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> ShiftedLaplacianOperator;
+#endif
+
 #ifdef MUELU_SIMPLESMOOTHER_SHORT
 typedef MueLu::SimpleSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SimpleSmoother;
 #endif

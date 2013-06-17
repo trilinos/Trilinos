@@ -71,7 +71,7 @@ A) Getting set up to use CMake
 (*) Installing CMake from source [Recommended for Trilinos developers and
     experienced Trilinos users]:
 
-  If you have access to the Trilinos CVS repository, then install CMake with:
+  If you have access to the Trilinos git repository, then install CMake with:
 
     $ $TRILINOS_HOME/cmake/python/install-cmake.py --install-dir=INSTALL_BASE_DIR
 

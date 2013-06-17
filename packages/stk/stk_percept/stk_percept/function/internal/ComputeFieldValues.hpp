@@ -101,9 +101,9 @@ namespace stk
                   }
               }
 
-            /// NOTE: this is needed since FunctionSpaceTools::evaluate method assumes the output array is initialized to 0
+            /// NOTE: this is needed since Intrepid::FunctionSpaceTools::evaluate method assumes the output array is initialized to 0
             loc_output_field_values.initialize(0.0);
-            FunctionSpaceTools::evaluate<double>(loc_output_field_values, field_data_values, transformed_basis_values);
+            Intrepid::FunctionSpaceTools::evaluate<double>(loc_output_field_values, field_data_values, transformed_basis_values);
 
             for (int iCell = 0; iCell < numCells; iCell++)
               {

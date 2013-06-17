@@ -28,6 +28,7 @@
 #include <stk_percept/fixtures/Fixture.hpp>
 
 using namespace Intrepid;
+using namespace shards;
 
 namespace stk
 {

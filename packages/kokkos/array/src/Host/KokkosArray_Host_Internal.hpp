@@ -64,7 +64,10 @@ bool host_thread_spawn();
 bool host_thread_is_master();
 
 /** \brief  Wait for *flag != value */
-int  host_thread_wait( volatile int * const flag , const int value );
+void host_thread_wait( volatile int * const flag , const int value );
+
+/** \brief  Wait for *flag != value and yield resources while waiting. */
+void host_thread_wait_yield( volatile int * const flag , const int value );
 
 /** \brief  Hard lock the current thread (e.g., via pthread_mutex */
 void host_thread_lock();

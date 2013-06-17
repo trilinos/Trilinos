@@ -84,8 +84,8 @@ extern void ML_DestroyQ(void);
 #endif
 
 /* ********************************************************************** */
-/* parmetis.h is required to properly define idxtype, and to declare the  */
-/* used functions. By default, idxtype is defined as int, so in principle */
+/* parmetis.h is required to properly define indextype, and to declare the  */
+/* used functions. By default, indextype is defined as int, so in principle */
 /* one can compile also without including metis.h.                        */
 /* As ParMETIS requires MPI, I suppose that the user will never call this */
 /* function without mpi enabled, Should he do this, I simply put all the  */
@@ -98,11 +98,12 @@ extern void ML_DestroyQ(void);
 extern "C" {
 #endif
 #include "parmetis.h"
+#include "ml_parmetis_constants.h"
 #ifdef __cplusplus
 }
 #endif
 #else
-#define idxtype int
+#define indextype int
 #endif
 
 int OPTIMAL_VALUE = 27*27; /* don't ask me why */
@@ -472,13 +473,13 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   int i, j,jj,  count;
   int Nrows;
   int *wgtflag=NULL, numflag, *options=NULL, edgecut;
-  idxtype *xadj=NULL, *adjncy=NULL;
+  indextype *xadj=NULL, *adjncy=NULL;
 #if defined(ML_MPI)
 #if defined(HAVE_ML_PARMETIS)
-  idxtype *vwgt=NULL, *adjwgt=NULL;
+  indextype *vwgt=NULL, *adjwgt=NULL;
 #endif
 #endif
-  idxtype *part=NULL;
+  indextype *part=NULL;
   ML_Comm * comm = Amatrix->comm;
   int allocated = 0;
   int * rowi_col = NULL;
@@ -488,7 +489,7 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   int N_procs = Amatrix->comm->ML_nprocs;
   int mypid = Amatrix->comm->ML_mypid;
   int * offsets = NULL;
-  idxtype * vtxdist = NULL;
+  indextype * vtxdist = NULL;
   int ncon = 1;
   float * tpwgts = NULL;
   float ubvec; /* size = ncon */
@@ -570,7 +571,7 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   ML_build_global_numbering(Amatrix, &global_numbering, "rows");
 
   offsets = (int     *) ML_allocate( sizeof(int) * (N_procs+1) );
-  vtxdist = (idxtype *) ML_allocate( sizeof(idxtype) * (N_procs+1) );
+  vtxdist = (indextype *) ML_allocate( sizeof(indextype) * (N_procs+1) );
   
   ML_DecomposeGraph_BuildOffsets( Nrows, offsets, N_procs,
 				  Amatrix->comm->USR_comm );
@@ -583,7 +584,7 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
     j = offsets[i]-offsets[i-1];
     if( j>0 ) {
       proc_with_parmetis[N_procs_with_parmetis] = i-1;  
-      vtxdist[1+N_procs_with_parmetis++] = (idxtype)offsets[i];
+      vtxdist[1+N_procs_with_parmetis++] = (indextype)offsets[i];
     }
   }
 
@@ -597,8 +598,8 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
     /* construct the CSR graph information of the LOCAL matrix
        using the get_row function */
     
-    xadj    = (idxtype *) ML_allocate ((Nrows+1)*sizeof(idxtype));
-    adjncy  = (idxtype *) ML_allocate ((N_nonzeros+1)*sizeof(idxtype));
+    xadj    = (indextype *) ML_allocate ((Nrows+1)*sizeof(indextype));
+    adjncy  = (indextype *) ML_allocate ((N_nonzeros+1)*sizeof(indextype));
     
     if(  xadj==NULL || adjncy==NULL ) {
       fprintf( stderr,
@@ -646,14 +647,14 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   }
 
   /* ********************************************************************** */
-  /* idxtype is by default int, but on some architectures can be slightly   */
+  /* indextype is by default int, but on some architectures can be slightly   */
   /* different (for instance, a short int). For the sake of generality, here*/
-  /* I put idxtype. The plus one in the allocation is to avoid cases with   */
+  /* I put indextype. The plus one in the allocation is to avoid cases with   */
   /* Nrows == 0 (this can happen is nodes have already been redistributed   */
   /* to a subset of processors, but that was not the last level).           */
   /* ********************************************************************** */
   
-  part = (idxtype *) ML_allocate( sizeof(idxtype) * (Nrows+1));
+  part = (indextype *) ML_allocate( sizeof(indextype) * (Nrows+1));
   tpwgts = (float *) ML_allocate( sizeof(float) * N_parts );
   
   if( N_parts == 1 ) {
@@ -668,7 +669,7 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
       
     /* set parameters for ParMETIS */
       
-    wgtflag = (idxtype *) ML_allocate (4*sizeof(idxtype));
+    wgtflag = (indextype *) ML_allocate (4*sizeof(indextype));
     options = (int *)     ML_allocate (4*sizeof(int));
       
     wgtflag[0] = 0;    /* no weights */

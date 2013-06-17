@@ -43,7 +43,7 @@
 # Version info that will change with new versions
 #
 
-def_gccVersion = "4.5.1"
+def_gccVersion = "4.6.1"
 def_gmpVersion = "4.3.2"
 def_mpfrVersion = "2.4.2"
 def_mpcVersion = "0.8.1"
@@ -109,9 +109,12 @@ class GccInstall:
 
   def getExtraHelpStr(self):
     return """
-This script builds gcc-"""+def_gccVersion+""" from source which includes the
-sources for gmp-"""+def_gmpVersion+""", mpfr-"""+def_mpfrVersion+""", and mpc-"""+def_mpcVersion+"""
-which are built and installed along with GCC.
+This script builds gcc-"""+def_gccVersion+"""" (see other versions for --gcc-version) from source
+which includes the sources for gmp-"""+def_gmpVersion+""", mpfr-"""+def_mpfrVersion+""", and
+mpc-"""+def_mpcVersion+""" which are built and installed along with GCC.
+
+NOTE: The sources for GCC may be patched so be careful to get an approved version (which the default
+pulled by --checkout-cmnd).
 """
 
   def getBaseDirName(self):

@@ -67,13 +67,14 @@ public:
 
   ///
   /// 4th-order tensor constructor with NaNs
-  ///
+  /// \param dimension the space dimension
+ ///
   explicit
   Tensor4(Index const dimension);
 
   ///
   /// Create 4th-order tensor from a specified value
-  /// \param dimension
+  /// \param dimension the space dimension
   /// \param value all components are set equal to this
   ///
   explicit
@@ -81,13 +82,14 @@ public:
 
   ///
   /// 4th-order tensor constructor with a scalar
+  /// \param dimension the space dimension
   /// \param s all components set to this scalar
   ///
   Tensor4(Index const dimension, T const & s);
 
   ///
   /// Create 4th-order tensor from array
-  /// \param dimension
+  /// \param dimension the space dimension
   /// \param data_ptr pointer into the array
   ///
   Tensor4(Index const dimension, T const * data_ptr);
@@ -95,7 +97,6 @@ public:
   ///
   /// Copy constructor
   /// 4th-order tensor constructor with 4th-order tensor
-  /// \param A from which components are copied
   ///
   Tensor4(Tensor4<T> const & A);
 
@@ -136,7 +137,7 @@ public:
   /// Tensor order
   ///
   Index
-  get_order() const {return order;};
+  get_order() const {return order;}
 
 };
 
@@ -334,6 +335,16 @@ tensor(Tensor<S> const & A, Tensor<T> const & B);
 template<typename S, typename T>
 Tensor4<typename Promote<S, T>::type>
 tensor2(Tensor<S> const & A, Tensor<T> const & B);
+
+///
+/// 2nd-order tensor 2nd-order tensor tensor product
+/// \param A 2nd-order tensor
+/// \param B 2nd-order tensor
+/// \return \f$ C_{ijkl} = A_{il} B_{kj} \f$
+///
+template<typename S, typename T>
+Tensor4<typename Promote<S, T>::type>
+tensor3(Tensor<S> const & A, Tensor<T> const & B);
 
 ///
 /// 4th-order tensor 2nd-order tensor dot product

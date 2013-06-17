@@ -70,7 +70,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPa
   iters_          =  List.get<int>              (  "muelu: number of iterations"  );
   blksize_        =  List.get<int>              (  "muelu: block size"            );
   FGMRESoption_   =  List.get<bool>             (  "muelu: fgmres on/off"         );
-  tol_            =  List.get<double>           (  "muelu: residual tolerance"    );
+  tol_            =  List.get<double>           (  "muelu: residual tolerance"    );  
   omega_          =  List.get<double>           (  "muelu: omega"                 );
 
 }
@@ -343,8 +343,11 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   }
 
   // Define Operator and Preconditioner
-  RCP<TOP> BelosOper = rcp(new Belos::XpetraOp<SC,LO,GO,NO,LMO> ( A_         ) );
-  RCP<TOP> BelosPrec = rcp(new Belos::MueLuOp<SC,LO,GO,NO,LMO>  ( Hierarchy_ ) );
+  //RCP<TOP> BelosOper = rcp(new Belos::XpetraOp<SC,LO,GO,NO,LMO> ( A_         ) );
+  //RCP<TOP> BelosPrec = rcp(new Belos::MueLuOp<SC,LO,GO,NO,LMO>  ( Hierarchy_ ) );
+  RCP< MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO> > MueLuOp 
+    = rcp( new MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO>(Hierarchy_, A_, cycles_, subiters_, tol_, option_) );
+  RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > TpetraA = Utils::Op2NonConstTpetraCrs(A_);
 
   // Belos parameter list
   BelosList_ = rcp( new Teuchos::ParameterList("GMRES") );
@@ -357,8 +360,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
 
   // Belos Linear Problem and Solver Manager
   BelosLinearProblem_ = rcp( new BelosLinearProblem );
-  BelosLinearProblem_ -> setOperator (  BelosOper  );
-  BelosLinearProblem_ -> setRightPrec(  BelosPrec  );
+  BelosLinearProblem_ -> setOperator (  TpetraA  );
+  BelosLinearProblem_ -> setRightPrec(  MueLuOp  );
   BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
 
 }

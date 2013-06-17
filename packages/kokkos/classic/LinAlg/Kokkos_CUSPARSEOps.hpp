@@ -1575,7 +1575,7 @@ namespace Kokkos {
     //! Allocate and initialize storage for row offsets.
     static ArrayRCP<size_t> 
     allocRowPtrs (const RCP<Node> &node,
-		  const ArrayView<const size_t>& numEntriesPerRow);
+		  const ArrayView<const size_t>& numEntriesPerRow)
     {
       // alloc page-locked ("pinned") memory on the host,
       // specially allocated and specially deallocated

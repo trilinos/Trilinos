@@ -49,12 +49,11 @@ namespace Teuchos {
 
 //! Ifpack_IC: A class for constructing and using an incomplete Cholesky factorization of a given Epetra_RowMatrix.
 
-/*! The Ifpack_IC class computes a threshold based incomplete 
+/*! The Ifpack_IC class computes a threshold (not level) based incomplete 
  LDL^T factorization of a given Epetra_RowMatrix.  The factorization 
  that is produced is a function of several parameters:
 <ol>
-  <li> Maximum number of entries per row/column in factor - The factorization will contain at most this number of nonzero
-       terms in each row/column of the factorization.
+  <li> Level of fill ratio. This defines the maximum number of entries per row/column in the factor, relative to the average number of nonzeros per row/col in A. The default value of 1.0 keeps the IC factor as sparse as A.
 
   <li> Diagonal perturbation - Prior to computing the factorization, it is possible to modify the diagonal entries of the matrix
        for which the factorization will be computing.  If the absolute and relative perturbation values are zero and one,
@@ -332,7 +331,7 @@ class Ifpack_IC: public Ifpack_Preconditioner {
   double Athresh_;
   double Rthresh_;
   double Droptol_;
-  int Lfil_;
+  double Lfil_;
 
   void * Aict_;
   void * Lict_;

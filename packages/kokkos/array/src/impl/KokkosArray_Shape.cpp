@@ -117,6 +117,7 @@ void AssertShapeBoundsAbort< KokkosArray::HostSpace >::apply(
   const size_t n4 , const size_t n5 ,
   const size_t n6 , const size_t n7 ,
 
+  const size_t arg_rank ,
   const size_t i0 , const size_t i1 ,
   const size_t i2 , const size_t i3 ,
   const size_t i4 , const size_t i5 ,
@@ -133,14 +134,14 @@ void AssertShapeBoundsAbort< KokkosArray::HostSpace >::apply(
   if ( 6 < rank ) { msg << " " << n6 ; }
   if ( 7 < rank ) { msg << " " << n7 ; }
   msg << " } index = {" ;
-  if ( 0 < rank ) { msg << " " << i0 ; }
-  if ( 1 < rank ) { msg << " " << i1 ; }
-  if ( 2 < rank ) { msg << " " << i2 ; }
-  if ( 3 < rank ) { msg << " " << i3 ; }
-  if ( 4 < rank ) { msg << " " << i4 ; }
-  if ( 5 < rank ) { msg << " " << i5 ; }
-  if ( 6 < rank ) { msg << " " << i6 ; }
-  if ( 7 < rank ) { msg << " " << i7 ; }
+  if ( 0 < arg_rank ) { msg << " " << i0 ; }
+  if ( 1 < arg_rank ) { msg << " " << i1 ; }
+  if ( 2 < arg_rank ) { msg << " " << i2 ; }
+  if ( 3 < arg_rank ) { msg << " " << i3 ; }
+  if ( 4 < arg_rank ) { msg << " " << i4 ; }
+  if ( 5 < arg_rank ) { msg << " " << i5 ; }
+  if ( 6 < arg_rank ) { msg << " " << i6 ; }
+  if ( 7 < arg_rank ) { msg << " " << i7 ; }
   msg << " } )" ;
 
   throw_runtime_exception( msg.str() );

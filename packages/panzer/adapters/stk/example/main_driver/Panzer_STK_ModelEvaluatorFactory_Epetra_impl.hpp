@@ -64,6 +64,7 @@
 #include "Panzer_EpetraLinearObjContainer.hpp"
 #include "Panzer_ThyraObjContainer.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedTpetraLinearObjFactory.hpp"
 #include "Panzer_InitialCondition_Builder.hpp"
 #include "Panzer_ResponseUtilities.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
@@ -112,6 +113,7 @@
 
 #ifdef HAVE_MUELU
 #include <Thyra_MueLuPreconditionerFactory.hpp>
+#include "Stratimikos_MueluTpetraHelpers.hpp"
 #endif
 
 namespace panzer_stk {
@@ -140,6 +142,7 @@ namespace panzer_stk {
       pl->sublist("Initial Conditions").sublist("Transient Parameters").disableRecursiveValidation();
       // pl->sublist("Output").disableRecursiveValidation();
       pl->sublist("Output").set("File Name","panzer.exo"); 
+      pl->sublist("Output").set("Write to Exodus",true); 
       pl->sublist("Output").sublist("Cell Average Quantities").disableRecursiveValidation();
       pl->sublist("Output").sublist("Cell Quantities").disableRecursiveValidation();
  
@@ -321,7 +324,8 @@ namespace panzer_stk {
     }
 
     mesh->print(fout);
-    mesh->setupTransientExodusFile(p.sublist("Output").get<std::string>("File Name")); 
+    if(p.sublist("Output").get<bool>("Write to Exodus"))
+      mesh->setupTransientExodusFile(p.sublist("Output").get<std::string>("File Name")); 
 
     // build worksets
     //////////////////////////////////////////////////////////////
@@ -342,7 +346,7 @@ namespace panzer_stk {
 
     bool blockedAssembly = false;
 
-    if(panzer::BlockedDOFManagerFactory<int,int>::requiresBlocking(field_order)) {
+    if(panzer::BlockedDOFManagerFactory<int,int>::requiresBlocking(field_order) && !useTpetra) {
        // use a blocked DOF manager
        blockedAssembly = true;
 
@@ -355,6 +359,41 @@ namespace panzer_stk {
     
        Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > bloLinObjFactory
         = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(mpi_comm,
+                                                          Teuchos::rcp_dynamic_cast<panzer::BlockedDOFManager<int,int> >(dofManager)));
+ 
+       // parse any explicitly excluded pairs or blocks
+       const std::string excludedBlocks = assembly_params.get<std::string>("Excluded Blocks");
+       std::vector<std::string> stringPairs;
+       panzer::StringTokenizer(stringPairs,excludedBlocks,";",true);
+       for(std::size_t i=0;i<stringPairs.size();i++) {
+          std::vector<std::string> sPair; 
+          std::vector<int> iPair; 
+          panzer::StringTokenizer(sPair,stringPairs[i],",",true);
+          panzer::TokensToInts(iPair,sPair);
+
+          TEUCHOS_TEST_FOR_EXCEPTION(iPair.size()!=2,std::logic_error,
+                        "Input Error: The correct format for \"Excluded Blocks\" parameter in \"Assembly\" sub list is:\n"
+                        "   <int>,<int>; <int>,<int>; ...; <int>,<int>\n"
+                        "Failure on string pair " << stringPairs[i] << "!");
+
+          bloLinObjFactory->addExcludedPair(iPair[0],iPair[1]);
+       }
+
+       linObjFactory = bloLinObjFactory;
+    }
+    else if(panzer::BlockedDOFManagerFactory<int,int>::requiresBlocking(field_order) && useTpetra) {
+       // use a blocked DOF manager
+       blockedAssembly = true;
+
+       panzer::BlockedDOFManagerFactory<int,int> globalIndexerFactory;
+       globalIndexerFactory.setUseDOFManagerFEI(use_dofmanager_fei);
+
+       Teuchos::RCP<panzer::UniqueGlobalIndexer<int,std::pair<int,int> > > dofManager 
+         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
+       globalIndexer = dofManager;
+    
+       Teuchos::RCP<panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,int> > bloLinObjFactory
+        = Teuchos::rcp(new panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,int>(mpi_comm,
                                                           Teuchos::rcp_dynamic_cast<panzer::BlockedDOFManager<int,int> >(dofManager)));
  
        // parse any explicitly excluded pairs or blocks
@@ -1150,6 +1189,7 @@ namespace panzer_stk {
     #ifdef HAVE_MUELU
     {
       Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder); // Register MueLu as a Stratimikos preconditioner strategy.
+      Stratimikos::enableMueLuTpetra(linearSolverBuilder,"MueLu-Tpetra");
     }
     #endif // MUELU
 

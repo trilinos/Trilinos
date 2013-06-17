@@ -590,6 +590,9 @@ public:
 
   void ReportTime();
 
+  //! Return operator complexity and #nonzeros in fine grid matrix.
+  void Complexities(double &complexity, double &fineNnz);
+
 //@}
 
 private:

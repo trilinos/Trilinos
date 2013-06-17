@@ -61,13 +61,12 @@
 #include <MueLu_RAPShiftFactory.hpp>
 #include <MueLu_ShiftedLaplacian_fwd.hpp>
 #include <MueLu_UncoupledAggregationFactory.hpp>
+#include <MueLu_ShiftedLaplacianOperator.hpp>
 
 // Belos
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosBlockGmresSolMgr.hpp>
-#include <BelosXpetraAdapter.hpp>
-#include <BelosMueLuAdapter.hpp>
 
 namespace MueLu {
 
@@ -86,20 +85,18 @@ namespace MueLu {
     
     typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
     typedef Tpetra::MultiVector<SC,LO,GO,NO>             TMV;
-    typedef Belos::OperatorT<TMV>                        TOP;
-    typedef Belos::OperatorTraits<SC,TMV,TOP>            TOPT;
-    typedef Belos::MultiVecTraits<SC,TMV>                TMVT;
-    typedef Belos::LinearProblem<SC,TMV,TOP>             BelosLinearProblem;
-    typedef Belos::SolverManager<SC,TMV,TOP>             BelosSolverManager;
-    typedef Belos::BlockGmresSolMgr<SC,TMV,TOP>          BelosGMRES;
+    typedef Tpetra::Operator<SC,LO,GO,NO>                OP;
+    typedef Belos::LinearProblem<SC,TMV,OP>              BelosLinearProblem;
+    typedef Belos::SolverManager<SC,TMV,OP>              BelosSolverManager;
+    typedef Belos::BlockGmresSolMgr<SC,TMV,OP>           BelosGMRES;
     
   public:
 
     //! Constructors
     ShiftedLaplacian()
-      : Problem_("acoustic"), numPDEs_(1), Smoother_("gmres"), Aggregation_("uncoupled"), Nullspace_("constant"), numLevels_(5), coarseGridSize_(1000),
+      : Problem_("acoustic"), numPDEs_(1), Smoother_("gmres"), Aggregation_("uncoupled"), Nullspace_("constant"), numLevels_(5), coarseGridSize_(100),
 	omega_(2.0*M_PI), ashift1_((SC) 0.0), ashift2_((SC) -1.0), pshift1_((SC) 0.0), pshift2_((SC) -1.0),
-	iters_(500), tol_(1.0e-4), blksize_(1), FGMRESoption_(true),
+	iters_(500), blksize_(1), tol_(1.0e-4), FGMRESoption_(true), cycles_(8), subiters_(10), option_(1),
 	GridTransfersExist_(false), UseLaplacian_(true), VariableShift_(false),
 	LaplaceOperatorSet_(false), ProblemMatrixSet_(false), PreconditioningMatrixSet_(false),
 	StiffMatrixSet_(false), MassMatrixSet_(false), DampMatrixSet_(false),
@@ -169,6 +166,9 @@ namespace MueLu {
     int    blksize_;
     double tol_;
     bool   FGMRESoption_;
+    int    cycles_;
+    int    subiters_;
+    int    option_;
 
     // flags for setup
     bool GridTransfersExist_;

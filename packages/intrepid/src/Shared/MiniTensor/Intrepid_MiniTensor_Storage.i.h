@@ -133,6 +133,75 @@ StorageRaw<T>::clear()
 }
 
 //
+// STL vector storage
+//
+template<typename T>
+inline
+StorageSTLVector<T>::StorageSTLVector()
+{
+  return;
+}
+
+template<typename T>
+inline
+StorageSTLVector<T>::StorageSTLVector(Index const number_entries)
+{
+  resize(number_entries);
+  return;
+}
+
+template<typename T>
+inline
+StorageSTLVector<T>::~StorageSTLVector()
+{
+  return;
+}
+
+template<typename T>
+inline
+T const &
+StorageSTLVector<T>::operator[](Index const i) const
+{
+  assert(i < size());
+  return storage_[i];
+}
+
+template<typename T>
+inline
+T &
+StorageSTLVector<T>::operator[](Index const i)
+{
+  assert(i < size());
+  return storage_[i];
+}
+
+template<typename T>
+inline
+Index
+StorageSTLVector<T>::size() const
+{
+  return storage_.size();
+}
+
+template<typename T>
+inline
+void
+StorageSTLVector<T>::resize(Index const number_entries)
+{
+  storage_.resize(number_entries);
+  return;
+}
+
+template<typename T>
+inline
+void
+StorageSTLVector<T>::clear()
+{
+  storage_.clear();
+  return;
+}
+
+//
 // Teuchos RCP array storage
 //
 template<typename T>
@@ -156,7 +225,6 @@ template<typename T>
 inline
 StorageRCPArray<T>::~StorageRCPArray()
 {
-  clear();
   return;
 }
 
@@ -191,14 +259,7 @@ inline
 void
 StorageRCPArray<T>::resize(Index const number_entries)
 {
-  if (number_entries == size()) {
-    return;
-  }
-
-  clear();
-
   storage_.resize(number_entries);
-
   return;
 }
 
@@ -207,10 +268,7 @@ inline
 void
 StorageRCPArray<T>::clear()
 {
-  if (storage_ != Teuchos::null) {
-    storage_.clear();
-    storage_ = Teuchos::null;
-  }
+  storage_.clear();
   return;
 }
 

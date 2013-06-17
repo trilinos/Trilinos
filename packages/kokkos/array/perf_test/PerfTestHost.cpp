@@ -79,11 +79,11 @@ protected:
 };
 
 TEST_F( host, hexgrad ) {
-  EXPECT_NO_THROW(run_test_hexgrad< KokkosArray::Host>( 10, 20 ));
+  EXPECT_NO_THROW(run_test_hexgrad< KokkosArray::Host>( 10, 20, "KokkosArray::Host" ));
 }
 
 TEST_F( host, gramschmidt ) {
-  EXPECT_NO_THROW(run_test_gramschmidt< KokkosArray::Host>( 10, 20 ));
+  EXPECT_NO_THROW(run_test_gramschmidt< KokkosArray::Host>( 10, 20, "KokkosArray::Host" ));
 }
 
 } // namespace Test

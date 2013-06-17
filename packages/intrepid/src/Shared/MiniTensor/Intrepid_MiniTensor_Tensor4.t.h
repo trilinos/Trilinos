@@ -448,6 +448,34 @@ tensor2(Tensor<S> const & A, Tensor<T> const & B)
 }
 
 //
+// \return \f$ C_{ijkl} = A_{il} B_{kj} \f$
+//
+template<typename S, typename T>
+Tensor4<typename Promote<S, T>::type>
+tensor3(Tensor<S> const & A, Tensor<T> const & B)
+{
+  Index const
+  N = A.get_dimension();
+
+  assert(B.get_dimension() == N);
+
+  Tensor4<typename Promote<S, T>::type>
+  C(N);
+
+  for (Index i = 0; i < N; ++i) {
+    for (Index j = 0; j < N; ++j) {
+      for (Index k = 0; k < N; ++k) {
+        for (Index l = 0; l < N; ++l) {
+          C(i,j,k,l) = A(i,l) * B(k,j);
+        }
+      }
+    }
+  }
+
+  return C;
+}
+
+//
 // \return \f$ C = A \cdot B := C_{ijkl} = A_{ijkp} B_{pl} \f$
 //
 template<typename S, typename T>

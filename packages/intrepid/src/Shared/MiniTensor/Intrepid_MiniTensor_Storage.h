@@ -63,20 +63,20 @@ public:
   ///
   /// Default constructor
   ///
-  Storage() {};
+  Storage() {}
 
   ///
-  /// Constructor that initializes to NaNs
-  /// \param N dimension
+  /// Constructor to given size
+  /// \param number_entries number of entries
   ///
   explicit
-  Storage(Index const number_entries) {};
+  Storage(Index const number_entries) {resize(number_entries);}
 
   ///
   /// Simple destructor
   ///
   virtual
-  ~Storage() {};
+  ~Storage() {}
 
   ///
   /// Entry access
@@ -103,7 +103,7 @@ public:
 
   ///
   /// Resize the storage (assume destructive)
-  /// \param number_entries
+  /// \param number_entries number of entries
   ///
   virtual
   void
@@ -144,9 +144,9 @@ public:
   StorageRaw();
 
   ///
-  /// Constructor that initializes to NaNs
-  /// \param N dimension
-  ///
+  /// Constructor to given size
+  /// \param number_entries number of entries
+ ///
   explicit
   StorageRaw(Index const number_entries);
 
@@ -177,7 +177,7 @@ public:
 
   ///
   /// Resize the storage (assume destructive)
-  /// \param number_entries
+  /// \param number_entries number of entries
   ///
   void
   resize(Index const number_entries);
@@ -216,6 +216,84 @@ private:
 };
 
 ///
+/// Storage with an STL vector
+///
+template<typename T>
+class StorageSTLVector: public Storage<T>
+{
+public:
+  ///
+  /// Default constructor
+  ///
+  StorageSTLVector();
+
+  ///
+  /// Constructor to given size
+  /// \param number_entries number of entries
+  ///
+  explicit
+  StorageSTLVector(Index const number_entries);
+
+  ///
+  /// Simple destructor
+  ///
+  ~StorageSTLVector();
+
+  ///
+  /// Entry access
+  /// \param i the index
+  ///
+  T const &
+  operator[](Index const i) const;
+
+  ///
+  /// Entry access
+  /// \param i the index
+  ///
+  T &
+  operator[](Index const i);
+
+  ///
+  /// \return number of entries
+  ///
+  Index
+  size() const;
+
+  ///
+  /// Resize the storage (assume destructive)
+  /// \param number_entries number of entries
+  ///
+  void
+  resize(Index const number_entries);
+
+  ///
+  /// Clear the storage
+  ///
+  void
+  clear();
+
+private:
+
+  ///
+  /// No copy constructor
+  ///
+  StorageSTLVector(StorageSTLVector<T> const & s);
+
+  ///
+  /// No copy assignment
+  ///
+  StorageSTLVector<T> &
+  operator=(StorageSTLVector<T> const & s);
+
+  ///
+  /// STL Vector
+  ///
+  std::vector<T>
+  storage_;
+
+};
+
+///
 /// Storage with Teuchos RCP Array
 ///
 template<typename T>
@@ -229,7 +307,7 @@ public:
 
   ///
   /// Constructor that initializes to NaNs
-  /// \param N dimension
+  /// \param number_entries number of entries
   ///
   explicit
   StorageRCPArray(Index const number_entries);
@@ -261,7 +339,7 @@ public:
 
   ///
   /// Resize the storage (assume destructive)
-  /// \param number_entries
+  /// \param number_entries number of entries
   ///
   void
   resize(Index const number_entries);

@@ -789,40 +789,32 @@ namespace MueLu {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Read(std::string const & fileName,  const RCP<const Map> & map){
+  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Read(const std::string& fileName, const RCP<const Map> & map){
     Xpetra::UnderlyingLib lib = map->lib();
 
     if (lib == Xpetra::UseEpetra) {
-#     if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
-      Epetra_MultiVector * MV;
-      EpetraExt::MatrixMarketFileToMultiVector(fileName.c_str(),toEpetra(map),MV);
-      return Xpetra::toXpetra(rcp(MV));
-#     else
-      throw(Exceptions::RuntimeError("MueLu has not been compiled with Epetra and EpetraExt support."));
-#     endif
-    }
-    else if (lib == Xpetra::UseTpetra) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, ::Xpetra::Exceptions::BadCast, "Epetra can only be used with Scalar=double and Ordinal=int");
+
+    } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
       typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
-      typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
-      typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
-      typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> multivector_type;
+      typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>                          reader_type;
+      typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>                            map_type;
+      typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>            multivector_type;
 
-      RCP<const map_type> temp = toTpetra(map);
-      RCP<multivector_type> TMV=reader_type::readDenseFile(fileName,map->getComm(),map->getNode(),temp);
-      RCP<MultiVector> rmv = Xpetra::toXpetra(TMV);
+      RCP<const map_type>   temp = toTpetra(map);
+      RCP<multivector_type> TMV  = reader_type::readDenseFile(fileName,map->getComm(),map->getNode(),temp);
+      RCP<MultiVector>      rmv  = Xpetra::toXpetra(TMV);
       return rmv;
-#     else
-      throw(Exceptions::RuntimeError("MueLu has not been compiled with Tpetra support."));
-#     endif
-    }
-    else {
-      throw(Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra."));
+#else
+      throw Exceptions::RuntimeError("MueLu has not been compiled with Tpetra support.");
+#endif
+    } else {
+      throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
     }
 
     return Teuchos::null;
   }
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >

@@ -161,6 +161,9 @@ enum nssi_rpc_transport {
     /** @brief Use Cray Gemini to transfer rpc requests. */
     NSSI_RPC_GEMINI,
 
+   /** @brief Use  Blue Gene/P DCMF Lib to transfer rpc requests. */
+    NSSI_RPC_BGPDCMF,
+
     /** @brief Use MPI to transfer rpc requests. */
     NSSI_RPC_MPI,
 
@@ -174,7 +177,7 @@ enum nssi_rpc_transport {
 /**
  * @brief The number of RPC mechanisms supported by NSSI.
  */
-const NSSI_RPC_COUNT = 6;
+const NSSI_RPC_COUNT = 7;
 
 
 /**

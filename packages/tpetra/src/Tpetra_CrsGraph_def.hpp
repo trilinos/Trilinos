@@ -2155,21 +2155,26 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::globalAssemble()
   {
+    using Teuchos::Array;
     using Teuchos::as;
+    using Teuchos::Comm;
     using Teuchos::gatherAll;
     using Teuchos::ireceive;
     using Teuchos::isend;
     using Teuchos::outArg;
     using Teuchos::REDUCE_MAX;
     using Teuchos::reduceAll;
+    using Teuchos::toString;
     using Teuchos::waitAll;
     using std::deque;
-    using std::pair;
+    using std::endl;
     using std::make_pair;
+    using std::pair;
     typedef GlobalOrdinal GO;
     typedef typename std::map<GO, std::deque<GO> >::const_iterator NLITER;
+    typedef typename Array<GO>::size_type size_type;
 
-    const char tfecfFuncName[] = "globalAssemble()"; // for exception macro
+    const char tfecfFuncName[] = "globalAssemble"; // for exception macro
     RCP<const Comm<int> > comm = getComm();
 
     const int numImages = comm->getSize();
@@ -2217,9 +2222,41 @@ namespace Tpetra {
         LookupStatus stat = rowMap_->getRemoteIndexList(NLRs(),NLRIds());
         int lclerror = ( stat == IDNotPresent ? 1 : 0 );
         int gblerror;
-        reduceAll<int, int> (*getComm(), REDUCE_MAX, lclerror, outArg (gblerror));
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(gblerror != 0, std::runtime_error,
-          ": nonlocal entries correspond to invalid rows.");
+        reduceAll<int, int> (*comm, REDUCE_MAX, lclerror, outArg (gblerror));
+        if (gblerror != 0) {
+          const int myRank = comm->getRank ();
+          std::ostringstream os;
+          os << "On one or more processes in the communicator, "
+             << "there were insertions into rows of the graph that do not "
+             << "exist in the row Map on any process in the communicator."
+             << endl << "This process " << myRank << " is "
+             << (lclerror == 0 ? "not " : "") << "one of those offending "
+             << "processes." << endl;
+          if (lclerror != 0) {
+            // If NLRIds[k] is -1, then NLRs[k] is a row index not in
+            // the row Map.  Collect this list of invalid row indices
+            // for display in the exception message.
+            Array<GO> invalidNonlocalRows;
+            for (size_type k = 0; k < NLRs.size (); ++k) {
+              if (NLRIds[k] == -1) {
+                invalidNonlocalRows.push_back (NLRs[k]);
+              }
+            }
+            const size_type numInvalid = invalidNonlocalRows.size ();
+            os << "On this process, " << numInvalid << " nonlocal row"
+               << (numInvalid != 1 ? "s " : " ") << " were inserted that are "
+               << "not in the row Map on any process." << endl;
+            // Don't print _too_ many nonlocal rows.
+            if (numInvalid <= 100) {
+              os << "Offending row indices: "
+                 << toString (invalidNonlocalRows ()) << endl;
+            }
+          }
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+            gblerror != 0, std::runtime_error,
+            ": nonlocal entries correspond to invalid rows."
+            << endl << os.str ());
+        }
       }
 
       // build up a list of neighbors, as well as a map between NLRs and Ids

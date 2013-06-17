@@ -46,8 +46,9 @@
 #include "AztecOO.h"
 #include "Galeri_Maps.h"
 #include "Galeri_CrsMatrices.h"
-#include "Ifpack_CrsIct.h"
+//#include "Ifpack_CrsRick.h"
 #include "Ifpack.h"
+#include "Ifpack_DiagPreconditioner.h"
 #include "Teuchos_RefCountPtr.hpp"
 
 // function for fancy output
@@ -92,26 +93,51 @@ int main(int argc, char *argv[]) {
   Teuchos::RefCountPtr<Epetra_MultiVector> RHS = Teuchos::rcp( new Epetra_MultiVector(*Map, 1) );
   LHS->PutScalar(0.0); RHS->Random();
 
-  // ============================ //
-  // Construct ILU preconditioner //
-  // ---------------------------- //
+  // ========================================= //
+  // Compare IC preconditioners to no precond. //
+  // ----------------------------------------- //
 
+  const double tol = 1e-5;
+  const int maxIter = 500;
+
+  // Baseline: No preconditioning
+  // Compute number of iterations, to compare to IC later.
+
+  // Here we create an AztecOO object
+  LHS->PutScalar(0.0);
+
+  AztecOO solver;
+  solver.SetUserMatrix(&*A);
+  solver.SetLHS(&*LHS);
+  solver.SetRHS(&*RHS);
+  solver.SetAztecOption(AZ_solver,AZ_cg);
+  //solver.SetPrecOperator(&*PrecDiag);
+  solver.SetAztecOption(AZ_output, 16); 
+  solver.Iterate(maxIter, tol);
+
+  int Iters = solver.NumIters();
+  //cout << "No preconditioner iterations: " << Iters << endl;
+
+#if 0 
+  // Not sure how to use Ifpack_CrsRick - leave out for now.
+  //
   // I wanna test funky values to be sure that they have the same
   // influence on the algorithms, both old and new
   int    LevelFill = 2;
   double DropTol = 0.3333;
   double Condest;
   
-  Teuchos::RefCountPtr<Ifpack_CrsIct> ICT;
-  ICT = Teuchos::rcp( new Ifpack_CrsIct(*A,DropTol,LevelFill) );
-  ICT->SetAbsoluteThreshold(0.00123);
-  ICT->SetRelativeThreshold(0.9876);
+  Teuchos::RefCountPtr<Ifpack_CrsRick> IC;
+  Ifpack_IlukGraph mygraph (A->Graph(), 0, 0);
+  IC = Teuchos::rcp( new Ifpack_CrsRick(*A, mygraph) );
+  IC->SetAbsoluteThreshold(0.00123);
+  IC->SetRelativeThreshold(0.9876);
   // Init values from A
-  ICT->InitValues(*A);
+  IC->InitValues(*A);
   // compute the factors
-  ICT->Factor();
+  IC->Factor();
   // and now estimate the condition number
-  ICT->Condest(false,Condest);
+  IC->Condest(false,Condest);
   
   if( Comm.MyPID() == 0 ) {
     cout << "Condition number estimate (level-of-fill = "
@@ -119,41 +145,83 @@ int main(int argc, char *argv[]) {
   }
 
   // Define label for printing out during the solve phase
-  string label = "Ifpack_CrsIct Preconditioner: LevelFill = " + toString(LevelFill) + 
+  string label = "Ifpack_CrsRick Preconditioner: LevelFill = " + toString(LevelFill) + 
                                                  " Overlap = 0"; 
-  ICT->SetLabel(label.c_str());
+  IC->SetLabel(label.c_str());
   
   // Here we create an AztecOO object
   LHS->PutScalar(0.0);
-
-  int Niters = 1200;
 
   AztecOO solver;
   solver.SetUserMatrix(&*A);
   solver.SetLHS(&*LHS);
   solver.SetRHS(&*RHS);
   solver.SetAztecOption(AZ_solver,AZ_cg);
-  solver.SetPrecOperator(&*ICT);
+  solver.SetPrecOperator(&*IC);
   solver.SetAztecOption(AZ_output, 16); 
-  solver.Iterate(Niters, 5.0e-5);
+  solver.Iterate(maxIter, tol);
 
-  int OldIters = solver.NumIters();
+  int RickIters = solver.NumIters();
+  //cout << "Ifpack_Rick iterations: " << RickIters << endl;
 
-  // now rebuild the same preconditioner using ICT, we expect the same
-  // number of iterations
+  // Compare to no preconditioning
+  if (RickIters > Iters/2)
+    IFPACK_CHK_ERR(-1);
+
+#endif
+
+  //////////////////////////////////////////////////////
+  // Same test with Ifpack_IC
+  // This is Crout threshold Cholesky, so different than IC(0)
 
   Ifpack Factory;
-  Teuchos::RefCountPtr<Ifpack_Preconditioner> Prec = Teuchos::rcp( Factory.Create("IC", &*A) );
+  Teuchos::RefCountPtr<Ifpack_Preconditioner> PrecIC = Teuchos::rcp( Factory.Create("IC", &*A) );
 
   Teuchos::ParameterList List;
-  List.get("fact: level-of-fill", 2);
-  List.get("fact: drop tolerance", 0.3333);
-  List.get("fact: absolute threshold", 0.00123);
-  List.get("fact: relative threshold", 0.9876);
-  List.get("fact: relaxation value", 0.0);
+  //List.get("fact: ict level-of-fill", 2.);
+  //List.get("fact: drop tolerance", 0.3333);
+  //List.get("fact: absolute threshold", 0.00123);
+  //List.get("fact: relative threshold", 0.9876);
+  //List.get("fact: relaxation value", 0.0);
 
-  IFPACK_CHK_ERR(Prec->SetParameters(List));
-  IFPACK_CHK_ERR(Prec->Compute());
+  IFPACK_CHK_ERR(PrecIC->SetParameters(List));
+  IFPACK_CHK_ERR(PrecIC->Compute());
+
+  // Here we create an AztecOO object
+  LHS->PutScalar(0.0);
+
+  //AztecOO solver;
+  solver.SetUserMatrix(&*A);
+  solver.SetLHS(&*LHS);
+  solver.SetRHS(&*RHS);
+  solver.SetAztecOption(AZ_solver,AZ_cg);
+  solver.SetPrecOperator(&*PrecIC);
+  solver.SetAztecOption(AZ_output, 16); 
+  solver.Iterate(maxIter, tol);
+
+  int ICIters = solver.NumIters();
+  //cout << "Ifpack_IC iterations: " << ICIters << endl;
+
+  // Compare to no preconditioning
+  if (ICIters > Iters/2)
+    IFPACK_CHK_ERR(-1);
+
+#if 0
+  //////////////////////////////////////////////////////
+  // Same test with Ifpack_ICT 
+  // This is another threshold Cholesky
+
+  Teuchos::RefCountPtr<Ifpack_Preconditioner> PrecICT = Teuchos::rcp( Factory.Create("ICT", &*A) );
+
+  //Teuchos::ParameterList List;
+  //List.get("fact: level-of-fill", 2);
+  //List.get("fact: drop tolerance", 0.3333);
+  //List.get("fact: absolute threshold", 0.00123);
+  //List.get("fact: relative threshold", 0.9876);
+  //List.get("fact: relaxation value", 0.0);
+
+  IFPACK_CHK_ERR(PrecICT->SetParameters(List));
+  IFPACK_CHK_ERR(PrecICT->Compute());
 
   // Here we create an AztecOO object
   LHS->PutScalar(0.0);
@@ -162,14 +230,17 @@ int main(int argc, char *argv[]) {
   solver.SetLHS(&*LHS);
   solver.SetRHS(&*RHS);
   solver.SetAztecOption(AZ_solver,AZ_cg);
-  solver.SetPrecOperator(&*Prec);
+  solver.SetPrecOperator(&*PrecICT);
   solver.SetAztecOption(AZ_output, 16); 
-  solver.Iterate(Niters, 5.0e-5);
+  solver.Iterate(maxIter, tol);
 
-  int NewIters = solver.NumIters();
+  int ICTIters = solver.NumIters();
+  //cout << "Ifpack_ICT iterations: " << ICTIters << endl;
 
-  if (OldIters != NewIters)
+  // Compare to no preconditioning
+  if (ICTIters > Iters/2)
     IFPACK_CHK_ERR(-1);
+#endif
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;
