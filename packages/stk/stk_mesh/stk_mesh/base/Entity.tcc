@@ -30,20 +30,20 @@ extern const stk::mesh::RelationIterator INVALID_RELATION_ITR;
 namespace detail {
 bool set_attributes( MeshBulkData& meshbulk, stk::mesh::Entity , const int , const MeshObjSharedAttr*, const int);
 bool set_attributes( MeshBulkData& meshbulk, stk::mesh::Entity , const MeshObjSharedAttr*, const int);
-void unset_shared_attr(stk::mesh::Entity );
 bool update_relation( stk::mesh::Entity, const stk::mesh::RelationIterator ir, const bool back_rel_flag, MeshBulkData& bulk);
 }
 
 namespace roster_only {
 void destroy_meshobj(stk::mesh::Entity, MeshBulkData& meshbulk );
-void set_shared_attr(stk::mesh::Entity , const MeshObjSharedAttr*);
 }
 
+#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
 const MeshObjSharedAttr * get_shared_attr(const stk::mesh::Entity );
+#endif
+
 const MeshObjSharedAttr * get_shared_attr(const stk::mesh::Entity mesh_obj, const stk::mesh::BulkData& meshbulk);
 bool insert_relation( stk::mesh::Entity , const stk::mesh::RelationType,  stk::mesh::Entity , const unsigned, const unsigned, const bool, MeshBulkData &);
 bool remove_relation(stk::mesh::Entity , const stk::mesh::RelationIterator, MeshBulkData &);
-bool verify_relations(const stk::mesh::Entity );
 }
 }
 #endif
@@ -176,16 +176,15 @@ union Entity
 
   friend class sierra::Fmwk::MeshObjRoster;
   // These are free functions to facilitate the stk migration:
+#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   friend const sierra::Fmwk::MeshObjSharedAttr * sierra::Fmwk::get_shared_attr(const Entity );
+#endif
   friend bool sierra::Fmwk::detail::set_attributes( sierra::Fmwk::MeshBulkData&, Entity , const int, const sierra::Fmwk::MeshObjSharedAttr *, const int);
   friend bool sierra::Fmwk::detail::set_attributes( sierra::Fmwk::MeshBulkData&, Entity , const sierra::Fmwk::MeshObjSharedAttr *, const int);
-  friend void sierra::Fmwk::detail::unset_shared_attr(Entity );
   friend bool sierra::Fmwk::insert_relation( Entity , const stk::mesh::RelationType, Entity , const unsigned, const unsigned, const bool, sierra::Fmwk::MeshBulkData &);
   friend bool sierra::Fmwk::detail::update_relation( Entity, const stk::mesh::RelationIterator ir, const bool back_rel_flag, sierra::Fmwk::MeshBulkData& bulk);
   friend bool sierra::Fmwk::remove_relation(Entity , const stk::mesh::RelationIterator, sierra::Fmwk::MeshBulkData &);
-  friend bool sierra::Fmwk::verify_relations(const Entity );
   friend void sierra::Fmwk::roster_only::destroy_meshobj(stk::mesh::Entity, sierra::Fmwk::MeshBulkData& meshbulk );
-  friend void sierra::Fmwk::roster_only::set_shared_attr(stk::mesh::Entity , const sierra::Fmwk::MeshObjSharedAttr*);
 
   typedef unsigned DerivedType; ///< Derived type identifier, the admissible values may be extended
 
