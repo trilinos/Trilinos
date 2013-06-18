@@ -256,6 +256,183 @@ StereographicParametrization<T>::operator()(Vector<T> const & parameters)
 }
 
 //
+// Constructor for ProjectiveParametrization
+//
+template<typename T>
+inline
+ProjectiveParametrization<T>::ProjectiveParametrization(
+    Tensor4<T> const & A) : tangent_(A)
+{
+  minimum_ = std::numeric_limits<T>::max();
+  maximum_ = std::numeric_limits<T>::min();
+  return;
+}
+
+//
+// Evaluation for ProjectiveParemetrization
+//
+template<typename T>
+inline
+void
+ProjectiveParametrization<T>::operator()(Vector<T> const & parameters)
+{
+  assert(parameters.get_dimension() == 4);
+
+  T const &
+  x = parameters(0);
+
+  T const &
+  y = parameters(1);
+
+  T const &
+  z = parameters(2);
+
+  T const &
+  lambda = parameters(3);
+
+  const Vector<T>
+  normal(x, y, z);
+
+  // Localization tensor
+  Tensor<T> const
+  Q = dot(normal, dot(tangent_, normal));
+
+  T const
+  determinant = det(Q);
+
+  T const
+  function = determinant + lambda * (x * x + y * y + z * z - 1.0);
+
+  if (function < minimum_) {
+    minimum_ = function;
+    arg_minimum_ = parameters;
+  }
+
+  if (function > maximum_) {
+    maximum_ = function;
+    arg_maximum_ = parameters;
+  }
+
+  return;
+}
+
+//
+// Constructor for TangentParametrization
+//
+template<typename T>
+inline
+TangentParametrization<T>::TangentParametrization(
+    Tensor4<T> const & A) : tangent_(A)
+{
+  minimum_ = std::numeric_limits<T>::max();
+  maximum_ = std::numeric_limits<T>::min();
+  return;
+}
+
+//
+// Evaluation for TangentParemetrization
+//
+template<typename T>
+inline
+void
+TangentParametrization<T>::operator()(Vector<T> const & parameters)
+{
+  assert(parameters.get_dimension() == 2);
+
+  T const &
+  x = parameters(0);
+
+  T const &
+  y = parameters(1);
+
+  T const
+  r = std::sqrt(x * x + y * y);
+
+  Vector<T>
+  normal(3, ZEROS);
+
+  if (r > 0.0) {
+    normal(0) = x * sin(r) / r;
+    normal(1) = y * sin(r) / r;
+    normal(2) = cos(r);
+  }
+
+  // Localization tensor
+  Tensor<T> const
+  Q = dot(normal, dot(tangent_, normal));
+
+  T const
+  determinant = det(Q);
+
+  if (determinant < minimum_) {
+    minimum_ = determinant;
+    arg_minimum_ = parameters;
+  }
+
+  if (determinant > maximum_) {
+    maximum_ = determinant;
+    arg_maximum_ = parameters;
+  }
+
+  return;
+}
+
+//
+// Constructor for CartesianParametrization
+//
+template<typename T>
+inline
+CartesianParametrization<T>::CartesianParametrization(
+    Tensor4<T> const & A) : tangent_(A)
+{
+  minimum_ = std::numeric_limits<T>::max();
+  maximum_ = std::numeric_limits<T>::min();
+  return;
+}
+
+//
+// Evaluation for CartesianParemetrization
+//
+template<typename T>
+inline
+void
+CartesianParametrization<T>::operator()(Vector<T> const & parameters)
+{
+  assert(parameters.get_dimension() == 3);
+
+  T const &
+  x = parameters(0);
+
+  T const &
+  y = parameters(1);
+
+  T const
+  z = parameters(2);
+
+  const Vector<T>
+  normal(x, y, z);
+
+  // Localization tensor
+  Tensor<T> const
+  Q = dot(normal, dot(tangent_, normal));
+
+  T const
+  determinant = det(Q);
+
+  if (determinant < minimum_) {
+    minimum_ = determinant;
+    arg_minimum_ = parameters;
+  }
+
+  if (determinant > maximum_) {
+    maximum_ = determinant;
+    arg_maximum_ = parameters;
+  }
+
+  return;
+}
+
+//
 // Constructor for ParametricGrid
 //
 template<typename T>

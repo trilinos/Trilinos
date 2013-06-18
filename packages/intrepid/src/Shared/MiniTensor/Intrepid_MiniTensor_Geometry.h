@@ -444,6 +444,153 @@ private:
 };
 
 ///
+/// Projective parametrization functor
+///
+template<typename T>
+class ProjectiveParametrization
+{
+public:
+
+  ///
+  /// Constructor that takes material tangent
+  ///
+  ProjectiveParametrization(Tensor4<T> const & A = Tensor4<T>());
+
+  ///
+  ///
+  ///
+  void
+  operator()(Vector<T> const & parameters);
+
+  T
+  get_minimum() const {return minimum_;}
+
+  T
+  get_maximum() const {return maximum_;}
+
+  Vector<T>
+  get_arg_minimum() const {return arg_minimum_;}
+
+  Vector<T>
+  get_arg_maximum() const {return arg_maximum_;}
+
+private:
+
+  Tensor4<T> const &
+  tangent_;
+
+  T
+  minimum_;
+
+  Vector<T>
+  arg_minimum_;
+
+  T
+  maximum_;
+
+  Vector<T>
+  arg_maximum_;
+};
+
+///
+/// Tangent parametrization functor
+///
+template<typename T>
+class TangentParametrization
+{
+public:
+
+  ///
+  /// Constructor that takes material tangent
+  ///
+  TangentParametrization(Tensor4<T> const & A = Tensor4<T>());
+
+  ///
+  ///
+  ///
+  void
+  operator()(Vector<T> const & parameters);
+
+  T
+  get_minimum() const {return minimum_;}
+
+  T
+  get_maximum() const {return maximum_;}
+
+  Vector<T>
+  get_arg_minimum() const {return arg_minimum_;}
+
+  Vector<T>
+  get_arg_maximum() const {return arg_maximum_;}
+
+private:
+
+  Tensor4<T> const &
+  tangent_;
+
+  T
+  minimum_;
+
+  Vector<T>
+  arg_minimum_;
+
+  T
+  maximum_;
+
+  Vector<T>
+  arg_maximum_;
+};
+
+///
+/// Cartesian parametrization functor
+///
+template<typename T>
+class CartesianParametrization
+{
+public:
+
+  ///
+  /// Constructor that takes material tangent
+  ///
+  CartesianParametrization(Tensor4<T> const & A = Tensor4<T>());
+
+  ///
+  ///
+  ///
+  void
+  operator()(Vector<T> const & parameters);
+
+  T
+  get_minimum() const {return minimum_;}
+
+  T
+  get_maximum() const {return maximum_;}
+
+  Vector<T>
+  get_arg_minimum() const {return arg_minimum_;}
+
+  Vector<T>
+  get_arg_maximum() const {return arg_maximum_;}
+
+private:
+
+  Tensor4<T> const &
+  tangent_;
+
+  T
+  minimum_;
+
+  Vector<T>
+  arg_minimum_;
+
+  T
+  maximum_;
+
+  Vector<T>
+  arg_maximum_;
+};
+
+///
 /// Parametric grid class
 ///
 template<typename T>
