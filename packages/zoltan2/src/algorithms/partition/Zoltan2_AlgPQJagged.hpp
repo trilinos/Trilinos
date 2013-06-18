@@ -2925,7 +2925,7 @@ bool checkMigration(
                 }
                 lno_t pEnd = partBeginArray[i];
                 diff += ABS(ideal_num -
-                        (pEnd - pEnd)) /  (ideal_num);
+                        (pEnd - pBegin)) /  (ideal_num);
             }
             diff /= num_parts;
             reduceAll<int, double>(
