@@ -5515,7 +5515,7 @@ void sequentialTaskPartitioning(
     bool pqJagged_uniformParts[1];
     pqJagged_uniformParts[0] = true;
     scalar_t *pqJagged_partSizes[1];
-
+    pqJagged_partSizes[0] = NULL;
     //no weights
     //int weightDim = 0;
     scalar_t pqJagged_weights[1][1];
