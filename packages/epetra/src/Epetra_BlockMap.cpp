@@ -616,9 +616,16 @@ void Epetra_BlockMap::ConstructUserConstantNoComm(int_type NumGlobal_Elements, i
     BlockMapData_->MaxAllGID_ = BlockMapData_->MaxMyGID_;
   }
   else if (NumProc > 1) {
-    // User provides this information
-    BlockMapData_->NumGlobalElements_ = NumGlobal_Elements;
-    CheckValidNGE(NumGlobal_Elements);
+    if(NumGlobal_Elements==-1) {
+      // Sum up all local element counts to get global count
+      long long tmp_NumMyElements = BlockMapData_->NumMyElements_;
+      BlockMapData_->Comm_->SumAll(&tmp_NumMyElements, &BlockMapData_->NumGlobalElements_, 1);
+    }
+    else {
+      // User provides this information
+      BlockMapData_->NumGlobalElements_ = NumGlobal_Elements;
+    }
+    CheckValidNGE(BlockMapData_->NumGlobalElements_);
     
     BlockMapData_->NumGlobalPoints_ = BlockMapData_->NumGlobalElements_ * BlockMapData_->ElementSize_;
     BlockMapData_->NumMyPoints_     = BlockMapData_->NumMyElements_ * BlockMapData_->ElementSize_;
