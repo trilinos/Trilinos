@@ -10,6 +10,11 @@
 #include "Zoltan2_MachineRepresentation.hpp"
 namespace Zoltan2{
 
+template <typename it>
+inline it z2Fact(it x) {
+  return (x == 1 ? x : x * z2Fact<it>(x - 1));
+}
+
 template <typename gno_t, typename partId_t>
 class GNO_LNO_PAIR{
 public:
@@ -17,6 +22,61 @@ public:
     partId_t part;
 };
 
+//returns the ith permutation indices.
+template <typename IT>
+void ithPermutation(const IT n, IT i, IT *perm)
+{
+   IT j, k = 0;
+   IT *fact = new IT[n];
+
+
+   // compute factorial numbers
+   fact[k] = 1;
+   while (++k < n)
+      fact[k] = fact[k - 1] * k;
+
+   // compute factorial code
+   for (k = 0; k < n; ++k)
+   {
+      perm[k] = i / fact[n - 1 - k];
+      i = i % fact[n - 1 - k];
+   }
+
+   // readjust values to obtain the permutation
+   // start from the end and check if preceding values are lower
+   for (k = n - 1; k > 0; --k)
+      for (j = k - 1; j >= 0; --j)
+         if (perm[j] <= perm[k])
+            perm[k]++;
+
+   delete [] fact;
+}
+
+template <typename partId_t>
+void getGridCommunicationGraph(partId_t taskCount, partId_t *&task_comm_xadj, partId_t *&task_comm_adj, vector <int> grid_dims){
+    int dim = grid_dims.size();
+    int neighborCount = 2 * dim;
+    task_comm_xadj = allocMemory< partId_t>(taskCount);
+    task_comm_adj = allocMemory <partId_t>(taskCount * neighborCount);
+
+    partId_t neighBorIndex = 0;
+    for (partId_t i = 0; i < taskCount; ++i){
+        partId_t prevDimMul = 1;
+        for (int j = 0; j < dim; ++j){
+            partId_t lNeighbor = i - prevDimMul;
+            partId_t rNeighbor = i + prevDimMul;
+            prevDimMul *= grid_dims[j];
+            if (lNeighbor >= 0 &&  lNeighbor/ prevDimMul == i / prevDimMul && lNeighbor < taskCount){
+                task_comm_adj[neighBorIndex++] = lNeighbor;
+            }
+            if (rNeighbor >= 0 && rNeighbor/ prevDimMul == i / prevDimMul && rNeighbor < taskCount){
+                task_comm_adj[neighBorIndex++] = rNeighbor;
+            }
+        }
+        task_comm_xadj[i] = neighBorIndex;
+    }
+
+}
 //returns the center of the parts.
 template <typename Adapter, typename scalar_t, typename partId_t>
 void getSolutionCenterCoordinates(
@@ -471,11 +531,60 @@ void fillContinousArray(T *arr, size_t arrSize, T *val){
  */
 template <typename procId_t>
 class CommunicationModel{
+protected:
+    double commCost;
 public:
-    CommunicationModel(){}
+
+    procId_t no_procs; //the number of processors
+    procId_t no_tasks;  //the number of taks.
+    CommunicationModel(): commCost(),no_procs(0), no_tasks(0){}
+    CommunicationModel(procId_t no_procs_, procId_t no_tasks_):
+        commCost(),
+        no_procs(no_procs_),
+        no_tasks(no_tasks_){}
     virtual ~CommunicationModel(){}
-    virtual procId_t getNProcs() const = 0;
-    virtual procId_t getNTasks() const = 0;
+    procId_t getNProcs() const{
+        return this->no_procs;
+    }
+    procId_t getNTasks()const{
+        return this->no_tasks;
+    }
+
+    void calculateCommunicationCost(
+            procId_t *task_to_proc,
+            procId_t *task_communication_xadj,
+            procId_t *task_communication_adj){
+
+        double totalCost = 0;
+
+        procId_t commCount = 0;
+        for (procId_t task = 0; task < this->no_tasks; ++task){
+            int assigned_proc = task_to_proc[task];
+            procId_t task_adj_begin = 0;
+            procId_t task_adj_end = task_communication_xadj[task];
+            if (task > 0) task_adj_begin = task_communication_xadj[task - 1];
+
+            commCount += task_adj_end - task_adj_begin;
+            //cout << "task:" << task << " proc:" << assigned_proc << endl;
+            for (procId_t task2 = task_adj_begin; task2 < task_adj_end; ++task2){
+                procId_t neighborTask = task_communication_adj[task2];
+                //cout << "neighborTask :" << neighborTask  << endl;
+                int neighborProc = task_to_proc[neighborTask];
+                double distance = getProcDistance(assigned_proc, neighborProc);
+                //cout << "assigned_proc:" << assigned_proc << " neighborProc:" << neighborProc << " d:" << distance << endl;
+
+                totalCost += distance ;
+            }
+        }
+
+        this->commCost = totalCost/ commCount;
+    }
+
+    double getCommunicationCostMetric(){
+        return this->commCost;
+    }
+
+    virtual double getProcDistance(int procId1, int procId2) const = 0;
 
     /*! \brief Function is called whenever nprocs > no_task.
      * Function returns only the subset of processors that are closest to each other.
@@ -484,10 +593,11 @@ public:
      *  \param task_to_proc holds the processors mapped to tasks.
      */
     virtual void getMapping(
+            int myRank,
             RCP<const Environment> env,
-            procId_t *&proc_to_task_xadj, //  = allocMemory<procId_t> (this->no_procs); //holds the pointer to the task array
-            procId_t *&proc_to_task_adj, // = allocMemory<procId_t>(this->no_tasks); //holds the indices of tasks wrt to proc_to_task_xadj array.
-            procId_t *&task_to_proc //allocMemory<procId_t>(this->no_tasks); //holds the processors mapped to tasks.
+            ArrayRCP <procId_t> &proc_to_task_xadj, //  = allocMemory<procId_t> (this->no_procs); //holds the pointer to the task array
+            ArrayRCP <procId_t> &proc_to_task_adj, // = allocMemory<procId_t>(this->no_tasks); //holds the indices of tasks wrt to proc_to_task_xadj array.
+            ArrayRCP <procId_t> &task_to_proc //allocMemory<procId_t>(this->no_tasks); //holds the processors mapped to tasks.
     ) const = 0;
 };
 /*! \brief CoordinateModelInput Class that performs mapping between the coordinate partitioning result and mpi ranks
@@ -501,20 +611,18 @@ public:
     pcoord_t **proc_coords; //the processor coordinates. allocated outside of the class.
     int task_coord_dim; //dimension of the tasks coordinates.
     tcoord_t **task_coords; //the task coordinates allocated outside of the class.
-    procId_t no_procs; //the number of processors
-    procId_t no_tasks;  //the number of taks.
+
+
     //public:
-    CoordinateCommunicationModel():proc_coord_dim(0), proc_coords(0),
-            task_coord_dim(0), task_coords(0),
-            no_procs(0), no_tasks(0){}
-    virtual ~CoordinateCommunicationModel(){
-    }
-    virtual procId_t getNProcs() const{
-        return this->no_procs;
-    }
-    virtual procId_t getNTasks()const{
-        return this->no_tasks;
-    }
+    CoordinateCommunicationModel():
+        CommunicationModel<procId_t>(),
+        proc_coord_dim(0),
+        proc_coords(0),
+        task_coord_dim(0),
+        task_coords(0){}
+
+    virtual ~CoordinateCommunicationModel(){}
+
     /*! \brief Class Constructor:
      *  \param pcoord_dim_ the dimension of the processors
      *  \param pcoords_   the processor coordinates. allocated outside of the class.
@@ -523,13 +631,19 @@ public:
      *  \param no_procs_   the number of processors
      *  \param no_tasks_   the number of taks.
      */
-    CoordinateCommunicationModel(int pcoord_dim_, pcoord_t **pcoords_,
-            int tcoord_dim_, tcoord_t **tcoords_,
-            procId_t no_procs_, procId_t no_tasks_):
+    CoordinateCommunicationModel(
+            int pcoord_dim_,
+            pcoord_t **pcoords_,
+            int tcoord_dim_,
+            tcoord_t **tcoords_,
+            procId_t no_procs_,
+            procId_t no_tasks_
+            ):
+                CommunicationModel<procId_t>(no_procs_, no_tasks_),
                 proc_coord_dim(pcoord_dim_), proc_coords(pcoords_),
-                task_coord_dim(tcoord_dim_), task_coords(tcoords_),
-                no_procs(no_procs_), no_tasks(no_tasks_){
+                task_coord_dim(tcoord_dim_), task_coords(tcoords_){
     }
+
 
 
     /*! \brief Function is called whenever nprocs > no_task.
@@ -585,6 +699,14 @@ public:
         return (procId_t) (d*(double)l);
     }
 
+    virtual double getProcDistance(int procId1, int procId2) const{
+        double distance = 0;
+        for (int i = 0 ; i < this->proc_coord_dim; ++i){
+            distance += ABS(proc_coords[i][procId1] - proc_coords[i][procId2]);
+        }
+        return distance;
+    }
+
 
     //temporary, does random permutation.
     void update_visit_order(procId_t* visitOrder, procId_t n, int &_u_umpa_seed, procId_t rndm) {
@@ -632,16 +754,21 @@ public:
      *  \param task_to_proc holds the processors mapped to tasks.
      */
     virtual void getMapping(
+            int myRank,
             RCP<const Environment> env,
-            procId_t *&proc_to_task_xadj, //  = allocMemory<procId_t> (this->no_procs); //holds the pointer to the task array
-            procId_t *&proc_to_task_adj, // = allocMemory<procId_t>(this->no_tasks); //holds the indices of tasks wrt to proc_to_task_xadj array.
-            procId_t *&task_to_proc //allocMemory<procId_t>(this->no_tasks); //holds the processors mapped to tasks.
+            ArrayRCP <procId_t> &rcp_proc_to_task_xadj, //  = allocMemory<procId_t> (this->no_procs); //holds the pointer to the task array
+            ArrayRCP <procId_t> &rcp_proc_to_task_adj, // = allocMemory<procId_t>(this->no_tasks); //holds the indices of tasks wrt to proc_to_task_xadj array.
+            ArrayRCP <procId_t> &rcp_task_to_proc //allocMemory<procId_t>(this->no_tasks); //holds the processors mapped to tasks.
     ) const{
 
+        rcp_proc_to_task_xadj = ArrayRCP <procId_t> (this->no_procs);
+        rcp_proc_to_task_adj = ArrayRCP <procId_t> (this->no_tasks);
+        rcp_task_to_proc = ArrayRCP <procId_t> (this->no_tasks);
 
-        proc_to_task_xadj = allocMemory<procId_t> (this->no_procs); //holds the pointer to the task array
-        proc_to_task_adj = allocMemory<procId_t>(this->no_tasks); //holds the indices of tasks wrt to proc_to_task_xadj array.
-        task_to_proc = allocMemory<procId_t>(this->no_tasks); //holds the processors mapped to tasks.);
+        procId_t *proc_to_task_xadj = rcp_proc_to_task_xadj.getRawPtr(); //holds the pointer to the task array
+        procId_t *proc_to_task_adj = rcp_proc_to_task_adj.getRawPtr(); //holds the indices of tasks wrt to proc_to_task_xadj array.
+        procId_t *task_to_proc = rcp_task_to_proc.getRawPtr(); //holds the processors mapped to tasks.);
+
 
         procId_t invalid = 0;
         fillContinousArray<procId_t> (proc_to_task_xadj, this->no_procs, &invalid);
@@ -650,6 +777,10 @@ public:
         procId_t num_parts = MINOF(this->no_procs, this->no_tasks);
         //obtain the min coordinate dim.
         procId_t minCoordDim = MINOF(this->task_coord_dim, this->proc_coord_dim);
+
+        int taskPerm = z2Fact<int>(this->task_coord_dim); //get the number of different permutations for task dimension ordering
+        int procPerm = z2Fact<int>(this->proc_coord_dim); //get the number of different permutations for proc dimension ordering
+        int permutations =  taskPerm * procPerm; //total number of permutations
 
         //holds the pointers to proc_adjList
         procId_t *proc_xadj = allocMemory<procId_t> (num_parts);
@@ -668,28 +799,50 @@ public:
             fillContinousArray<procId_t>(proc_adjList,this->no_procs, NULL);
         }
 
-        /*
-        for(int i = 0; i < no_procs; ++i){
-            cout << "permute:" << i << " proc:"  << proc_adjList[i] << endl;
+        int myPermutation = myRank % permutations; //the index of the permutation
+
+        int myProcPerm=  myPermutation % procPerm; // the index of the proc permutation
+        int myTaskPerm  = myPermutation / procPerm; // the index of the task permutation
+
+        int *permutation = allocMemory<int> (taskPerm);
+
+        //get the permutation order from the proc permutation index.
+        ithPermutation<int>(this->proc_coord_dim, myProcPerm, permutation);
+        //reorder the coordinate dimensions.
+        pcoord_t **pcoords = allocMemory<pcoord_t *> (this->proc_coord_dim);
+        for(int i = 0; i < this->proc_coord_dim; ++i){
+            pcoords[i] = this->proc_coords[permutation[i]];
+            //cout << permutation[i] << " ";
         }
-         */
-        //partitioning of processors
+
+        //do the partitioning and renumber the parts.
         sequentialTaskPartitioning<pcoord_t, procId_t, procId_t>(
                 env,
                 this->no_procs,
                 used_num_procs,
                 num_parts,
                 minCoordDim,
-                this->proc_coords,
+                pcoords,//this->proc_coords,
                 proc_adjList,
                 proc_xadj,
                 "proc_partitioning"
         );
+        freeArray<pcoord_t *> (pcoords);
+
 
         procId_t *task_xadj = allocMemory<procId_t> (num_parts);
         procId_t *task_adjList = allocMemory<procId_t>(this->no_tasks);
         //fill task_adjList st: task_adjList[i] <- i.
         fillContinousArray<procId_t>(task_adjList,this->no_tasks, NULL);
+
+        //get the permutation order from the task permutation index.
+        ithPermutation<int>(this->task_coord_dim, myTaskPerm, permutation);
+
+        //reorder task coordinate dimensions.
+        tcoord_t **tcoords = allocMemory<tcoord_t *> (this->task_coord_dim);
+        for(int i = 0; i < this->task_coord_dim; ++i){
+            tcoords[i] = this->task_coords[permutation[i]];
+        }
 
         //partitioning of tasks
         sequentialTaskPartitioning<tcoord_t, procId_t, procId_t>(
@@ -698,11 +851,13 @@ public:
                 this->no_tasks,
                 num_parts,
                 minCoordDim,
-                this->task_coords,
+                tcoords, //this->task_coords,
                 task_adjList,
                 task_xadj,
                 "task_partitioning"
         );
+        freeArray<pcoord_t *> (tcoords);
+        freeArray<int> (permutation);
 
 
         //filling proc_to_task_xadj, proc_to_task_adj, task_to_proc arrays.
@@ -737,11 +892,6 @@ public:
             proc_to_task_xadj_work[i] = proc_to_task_xadj[i];
         }
 
-        /*
-        for(procId_t i = 0; i < this->no_procs; ++i){
-            cout << " i: " << i << " "<< proc_to_task_xadj[i] << endl;
-        }
-         */
         for(procId_t i = 0; i < num_parts; ++i){
 
             procId_t proc_index_begin = 0;
@@ -774,7 +924,7 @@ public:
 };
 
 template <typename Adapter, typename procId_t>
-class TaskMapper:public PartitionMapping<Adapter>{
+class CoordinateTaskMapper:public PartitionMapping<Adapter>{
 protected:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -785,33 +935,38 @@ protected:
 #endif
 
     //RCP<const Environment> env;
-    procId_t *proc_to_task_xadj; //  = allocMemory<procId_t> (this->no_procs); //holds the pointer to the task array
-    procId_t *proc_to_task_adj; // = allocMemory<procId_t>(this->no_tasks); //holds the indices of tasks wrt to proc_to_task_xadj array.
-    procId_t *task_to_proc; //allocMemory<procId_t>(this->no_procs); //holds the processors mapped to tasks.
+    ArrayRCP<procId_t> proc_to_task_xadj; //  = allocMemory<procId_t> (this->no_procs); //holds the pointer to the task array
+    ArrayRCP<procId_t> proc_to_task_adj; // = allocMemory<procId_t>(this->no_tasks); //holds the indices of tasks wrt to proc_to_task_xadj array.
+    ArrayRCP<procId_t> task_to_proc; //allocMemory<procId_t>(this->no_procs); //holds the processors mapped to tasks.
     bool isOwnerofModel;
-    CommunicationModel<procId_t> *proc_task_comm;
+    CoordinateCommunicationModel<pcoord_t,tcoord_t,procId_t> *proc_task_comm;
     procId_t nprocs;
     procId_t ntasks;
+    procId_t *task_communication_xadj;
+    procId_t *task_communication_adj;
+
 
 public:
 
-    virtual ~TaskMapper(){
-        freeArray<procId_t> (proc_to_task_xadj);
-        freeArray<procId_t> (proc_to_task_adj);
-        freeArray<procId_t> (task_to_proc);
+    virtual ~CoordinateTaskMapper(){
+        //freeArray<procId_t> (proc_to_task_xadj);
+        //freeArray<procId_t> (proc_to_task_adj);
+        //freeArray<procId_t> (task_to_proc);
         if(this->isOwnerofModel){
             delete this->proc_task_comm;
         }
     }
-
-    /*! \brief Constructor
+    /*! \brief Constructor.
+     * When this constructor is called, in order to calculate the communication metric,
+     * the task adjacency graph is created based on the coordinate model input and partitioning of it.
+     * if the communication graph is already calculated, use the other constructors.
      *  \param comm_ is the communication object.
      *  \param machine_ is the machineRepresentation object. Stores the coordinates of machines.
      *  \param model_ is the input adapter.
      *  \param soln_ is the solution object. Holds the assignment of points.
      *  \param envConst_ is the environment object.
      */
-    TaskMapper(
+    CoordinateTaskMapper(
             const Teuchos::Comm<int> *comm_,
             const MachineRepresentation<pcoord_t> *machine_,
             const Zoltan2::Model<typename Adapter::base_adapter_t> *model_,
@@ -822,116 +977,255 @@ public:
             proc_to_task_adj(0),
             task_to_proc(0),
             isOwnerofModel(true),
-            proc_task_comm(0){
+            proc_task_comm(0),
+            task_communication_xadj(0),
+            task_communication_adj(0){
 
-        const Teuchos::ParameterList &pl = this->env->getParameters();
-        const Teuchos::ParameterEntry *pe = pl.getEntryPtr("mapping_type");
 
-        int mapping_type = 0;
-        if (pe){
-            mapping_type = pe->getValue(&mapping_type);
+        //if mapping type is 0 then it is coordinate mapping
+        int procDim = machine_->getProcDim();
+        this->nprocs = machine_->getNumProcs();
+        //get processor coordinates.
+        pcoord_t **procCoordinates = machine_->getProcCoords();
+
+        int coordDim = ((Zoltan2::CoordinateModel<typename Adapter::base_adapter_t> *)model_)->getCoordinateDim();
+        this->ntasks = soln_->getActualGlobalNumberOfParts();
+        //cout << "actual: " << this->ntasks << endl;
+
+        //alloc memory for part centers.
+        tcoord_t **partCenters = NULL;
+        partCenters = allocMemory<tcoord_t *>(coordDim);
+        for (int i = 0; i < coordDim; ++i){
+            partCenters[i] = allocMemory<tcoord_t>(this->ntasks);
         }
+        //get centers for the parts.
+        getSolutionCenterCoordinates<Adapter, typename Adapter::scalar_t,procId_t>(
+                comm_,
+                ((Zoltan2::CoordinateModel<typename Adapter::base_adapter_t> *)model_),
+                this->soln,
+                coordDim,
+                ntasks,
+                partCenters);
 
-        if (mapping_type == 0){
-            //if mapping type is 0 then it is coordinate mapping
-            int procDim = machine_->getProcDim();
-            this->nprocs = machine_->getNumProcs();
-            //get processor coordinates.
-            pcoord_t **procCoordinates = machine_->getProcCoords();
+        //create coordinate communication model.
+        this->proc_task_comm =
+                new Zoltan2::CoordinateCommunicationModel<pcoord_t,tcoord_t,procId_t>(
+                        procDim,
+                        procCoordinates,
+                        coordDim,
+                        partCenters,
+                        this->nprocs,
+                        this->ntasks
+                );
 
-            int coordDim = ((Zoltan2::CoordinateModel<typename Adapter::base_adapter_t> *)model_)->getCoordinateDim();
-            this->ntasks = soln_->getActualGlobalNumberOfParts();
+        int myRank = comm_->getRank();
+        this->doMapping(myRank);
 
-            //alloc memory for part centers.
-            tcoord_t **partCenters = NULL;
-            partCenters = allocMemory<tcoord_t *>(coordDim);
-            for (int i = 0; i < coordDim; ++i){
-                partCenters[i] = allocMemory<tcoord_t>(this->ntasks);
-            }
-            //get centers for the parts.
-            getSolutionCenterCoordinates<Adapter, typename Adapter::scalar_t,procId_t>(
-                    comm_,
-                    ((Zoltan2::CoordinateModel<typename Adapter::base_adapter_t> *)model_),
-                    this->soln,
-                    coordDim,
-                    ntasks,
-                    partCenters);
+        procId_t *ttask_communication_xadj = NULL, *ttask_communication_adj = NULL;
 
-            /*
-            for (int j = 0; j < ntasks ; ++j){
-                cout << "n:" << j << " ";
-                for (int i = 0; i < coordDim; ++i){
-                    cout << partCenters[i][j] << " ";
-                }
-                cout << endl;
-            }
+        //////////////TEMPORARY COMMUNICATION GRAPH CALCULATION/////////////////
+        vector <int> grid_dims;
+        const Teuchos::ParameterList &pl = this->env->getParameters();
 
-
-            for (int j = 0; j < nprocs ; ++j){
-                cout << "n:" << j << " ";
-                for (int i = 0; i < procDim; ++i){
-                    cout << procCoordinates[i][j] << " ";
-                }
-                cout << endl;
-            }
-            */
-
-            //create coordinate communication model.
-            this->proc_task_comm =
-                    new Zoltan2::CoordinateCommunicationModel<pcoord_t,tcoord_t,procId_t>(
-                            procDim,
-                            procCoordinates,
-                            coordDim,
-                            partCenters,
-                            this->nprocs,
-                            this->ntasks
-                            );
-
-            if(comm_->getRank() == 0){
-                this->doMapping();
-                this->writeMapping2();
-            }
-
-            for (int i = 0; i < coordDim; ++i){
-                freeArray<tcoord_t>(partCenters[i]);
-            }
-            freeArray<tcoord_t *>(partCenters);
+        if (pl.getPtr<Array <partId_t> >("pqParts")){
+            const procId_t *partNo = pl.getPtr<Array <partId_t> >("pqParts")->getRawPtr();
+            int partArraySize = pl.getPtr<Array <partId_t> >("pqParts")->size() - 1;
+            for (int i = 0; i < partArraySize; ++i) grid_dims.push_back(partNo[i]);
         }
         else {
-            //else graph mapping
-            //TODO add graph mapping code.
-            this->doMapping();
+            float fEpsilon = numeric_limits<float>::epsilon();
 
+            procId_t futureNumParts = this->ntasks;
+            for (int i = 0; i < coordDim; ++i){
+                procId_t maxNoPartAlongI = getPartCount<partId_t>( futureNumParts, 1.0f / (coordDim - i), fEpsilon);
+
+                procId_t nfutureNumParts = futureNumParts / maxNoPartAlongI;
+                futureNumParts = nfutureNumParts;
+                grid_dims.push_back(maxNoPartAlongI);
+            }
         }
+
+
+        getGridCommunicationGraph<procId_t>(this->ntasks,
+                ttask_communication_xadj,
+                ttask_communication_adj,
+                grid_dims);
+
+        task_communication_xadj = ttask_communication_xadj;
+        task_communication_adj = ttask_communication_adj;
+        //////////////END/////////////////
+
+
+        this->proc_task_comm->calculateCommunicationCost(
+                task_to_proc.getRawPtr(),
+                task_communication_xadj,
+                task_communication_adj
+        );
+
+        cout << "me: " << comm_->getRank() << " cost:" << this->proc_task_comm->getCommunicationCostMetric() << endl;
+
+        this->getBestMapping();
+        //TODO:
+        //CREATE SUB COMMUNICATORs and find the best mapping and broadcast it here.
+
+        this->writeMapping2(comm_->getRank());
+
+
+        for (int i = 0; i < coordDim; ++i){
+            freeArray<tcoord_t>(partCenters[i]);
+        }
+        freeArray<tcoord_t *>(partCenters);
+
+
+        freeArray<procId_t>(ttask_communication_xadj);
+        freeArray<procId_t>(ttask_communication_adj);
     }
 
     /*! \brief Constructor
+     * When this constructor is called, it is assumed that the communication graph is already computed.
+     * It is assumed that the communication graph is given in task_communication_xadj_ and task_communication_adj_ parameters.
+     *  \param machine_ is the machineRepresentation object. Stores the coordinates of machines.
+     *  \param model_ is the input adapter.
+     *  \param soln_ is the solution object. Holds the assignment of points.
+     *  \param envConst_ is the environment object.
+     *  \param task_communication_xadj_ is the solution object. Holds the assignment of points.
+     *  \param task_communication_adj_ is the environment object.
+     */
+    CoordinateTaskMapper(
+            const Teuchos::Comm<int> *comm_,
+            const MachineRepresentation<pcoord_t> *machine_,
+            const Zoltan2::Model<typename Adapter::base_adapter_t> *model_,
+            const Zoltan2::PartitioningSolution<Adapter> *soln_,
+            const Environment *envConst_,
+            procId_t *task_communication_xadj_,
+            procId_t *task_communication_adj_
+    ):  PartitionMapping<Adapter> (comm_, machine_, model_, soln_, envConst_),
+            proc_to_task_xadj(0),
+            proc_to_task_adj(0),
+            task_to_proc(0),
+            isOwnerofModel(true),
+            proc_task_comm(0),
+            task_communication_xadj(task_communication_xadj_),
+            task_communication_adj(task_communication_adj_){
+
+        //if mapping type is 0 then it is coordinate mapping
+        int procDim = machine_->getProcDim();
+        this->nprocs = machine_->getNumProcs();
+        //get processor coordinates.
+        pcoord_t **procCoordinates = machine_->getProcCoords();
+
+        int coordDim = ((Zoltan2::CoordinateModel<typename Adapter::base_adapter_t> *)model_)->getCoordinateDim();
+        this->ntasks = soln_->getActualGlobalNumberOfParts();
+        //cout << "actual: " << this->ntasks << endl;
+
+        //alloc memory for part centers.
+        tcoord_t **partCenters = NULL;
+        partCenters = allocMemory<tcoord_t *>(coordDim);
+        for (int i = 0; i < coordDim; ++i){
+            partCenters[i] = allocMemory<tcoord_t>(this->ntasks);
+        }
+        //get centers for the parts.
+        getSolutionCenterCoordinates<Adapter, typename Adapter::scalar_t,procId_t>(
+                comm_,
+                ((Zoltan2::CoordinateModel<typename Adapter::base_adapter_t> *)model_),
+                this->soln,
+                coordDim,
+                ntasks,
+                partCenters);
+
+        //create coordinate communication model.
+        this->proc_task_comm =
+                new Zoltan2::CoordinateCommunicationModel<pcoord_t,tcoord_t,procId_t>(
+                        procDim,
+                        procCoordinates,
+                        coordDim,
+                        partCenters,
+                        this->nprocs,
+                        this->ntasks
+                );
+
+        int myRank = comm_->getRank();
+        this->doMapping(myRank);
+        this->proc_task_comm->calculateCommunicationCost(
+                task_to_proc.getRawPtr(),
+                task_communication_xadj,
+                task_communication_adj
+                );
+
+        cout << "me: " << comm_->getRank() << " cost:" << this->proc_task_comm->getCommunicationCostMetric() << endl;
+
+        this->getBestMapping();
+        //TODO:
+        //CREATE SUB COMMUNICATORs and find the best mapping and broadcast it here.
+
+        this->writeMapping2(comm_->getRank());
+
+
+        for (int i = 0; i < coordDim; ++i){
+            freeArray<tcoord_t>(partCenters[i]);
+        }
+        freeArray<tcoord_t *>(partCenters);
+    }
+
+    /*! \brief Constructor. Sequential Constructor for test.
      *  \param env_ Environment object.
      *  \param proc_task_comm_ is the template parameter for which the mapping will be obtained with getMapping() function.
      */
-    TaskMapper(
+    CoordinateTaskMapper(
             const Environment *env_,
-            CommunicationModel<procId_t> *proc_task_comm_):
-                PartitionMapping<Adapter>(env_),
-                proc_to_task_xadj(0),
-                proc_to_task_adj(0),
-                task_to_proc(0),
-                isOwnerofModel(false),
-                proc_task_comm(proc_task_comm_),
-                nprocs(proc_task_comm_->getNProcs()),
-                ntasks(proc_task_comm_->getNTasks())
-                {
-        //calls doMapping function
-        this->doMapping();
+            CoordinateCommunicationModel<pcoord_t,tcoord_t,procId_t> *proc_task_comm_
+    ):PartitionMapping<Adapter>(env_),
+        proc_to_task_xadj(0),
+        proc_to_task_adj(0),
+        task_to_proc(0),
+        isOwnerofModel(false),
+        proc_task_comm(proc_task_comm_),
+        nprocs(proc_task_comm_->getNProcs()),
+        ntasks(proc_task_comm_->getNTasks()),
+        task_communication_xadj(0),
+        task_communication_adj(0){
+        this->doMapping(0);
+    }
 
-                }
+    /*! \brief Constructor. Given the machine object and task centers, performs mapping.
+     *  \param env_ Environment object.
+     *  \param proc_task_comm_ is the template parameter for which the mapping will be obtained with getMapping() function.
+     */
+    CoordinateTaskMapper(
+            const Environment *env_,
+            const Teuchos::Comm<int> *comm_,
+            const MachineRepresentation<pcoord_t> *machine_,
+            int taskDim,
+            procId_t taskCount,
+            tcoord_t **taskCoords
+    ):PartitionMapping<Adapter>(env_, comm_, machine_),
+        proc_to_task_xadj(0),
+        proc_to_task_adj(0),
+        task_to_proc(0),
+        isOwnerofModel(true),
+        proc_task_comm(0),
+        nprocs(comm_->getSize()),
+        ntasks(taskCount),
+        task_communication_xadj(0),
+        task_communication_adj(0){
+
+        this->proc_task_comm = new CoordinateCommunicationModel<pcoord_t,tcoord_t,procId_t> (
+                machine_->getProcDim(),
+                machine_->getProcCoords(),
+                taskDim, taskCoords,
+                this->nprocs, taskCount
+                );
+        this->doMapping(comm_->getRank());
+    }
+
 
     /*! \brief doMapping function, calls getMapping function of communicationModel object.
      */
-    void doMapping(){
+    void doMapping(int myRank){
 
         if(this->proc_task_comm){
             this->proc_task_comm->getMapping(
+                    myRank,
                     Teuchos::RCP<const Environment>(this->env, false),
                     this->proc_to_task_xadj, //  = allocMemory<procId_t> (this->no_procs); //holds the pointer to the task array
                     this->proc_to_task_adj, // = allocMemory<procId_t>(this->no_tasks); //holds the indices of tasks wrt to proc_to_task_xadj array.
@@ -944,11 +1238,52 @@ public:
         }
     }
 
+    double getCommunicationCostMetric(){
+        return this->proc_task_comm->getCommCost();
+    }
 
     /*! \brief Returns the number of parts to be assigned to this process.
      */
     virtual size_t getLocalNumberOfParts() const{
         return 0;
+    }
+
+    void getBestMapping(){
+        /*
+        int procDim = this->proc_task_comm->proc_coord_dim;
+        int taskDim = this->proc_task_comm->task_coord_dim;
+
+        int taskPerm = z2Fact<int>(procDim); //get the number of different permutations for task dimension ordering
+        int procPerm = z2Fact<int>(taskDim); //get the number of different permutations for proc dimension ordering
+        int idealGroupSize =  taskPerm * procPerm; //total number of permutations
+
+        int myRank = this->comm->getRank();
+        int commSize = this->comm->getSize();
+
+        int myGroup = myRank / idealGroupSize;
+
+        int prevGroupBegin = (myGroup - 1)* idealGroupSize;
+        int myGroupBegin = myGroup * idealGroupSize;
+        int myGroupEnd = (myGroup + 1) * idealGroupSize;
+        int nextGroupEnd = (myGroup + 2)* idealGroupSize;
+
+        if (myGroupEnd > commSize){
+            myGroupBegin = prevGroupBegin;
+            myGroupEnd = commSize;
+        }
+        if (nextGroupEnd > commSize){
+            myGroupEnd = commSize;
+        }
+
+
+
+        int maxGroupIndex = size / idealGroupSize;
+        if (size % idealGroupSize != 0) --maxGroupIndex;
+
+
+
+        if (myGroup > maxGroupIndex)
+*/
     }
 
     /*! \brief getAssignedProcForTask function,
@@ -959,7 +1294,7 @@ public:
      */
     virtual void getProcsForPart(partId_t taskId, int &numProcs, int *procs) const{
         numProcs = 1;
-        procs = this->task_to_proc + taskId;
+        procs = this->task_to_proc.getRawPtr() + taskId;
     }
     /*! \brief getAssignedProcForTask function, returns the assigned processor id for the given task
      *  \param taskId taskId being queried.
@@ -978,7 +1313,7 @@ public:
         procId_t task_begin = 0;
         if (procId > 0) task_begin = this->proc_to_task_xadj[procId - 1];
         procId_t taskend = this->proc_to_task_xadj[procId];
-        parts = this->proc_to_task_adj + task_begin;
+        parts = this->proc_to_task_adj.getRawPtr() + task_begin;
         numParts = taskend - task_begin;
     }
 
@@ -994,7 +1329,7 @@ public:
         }
          */
         if (taskend - task_begin > 0){
-            ArrayView <procId_t> assignedParts(this->proc_to_task_adj + task_begin, taskend - task_begin);
+            ArrayView <procId_t> assignedParts(this->proc_to_task_adj.getRawPtr() + task_begin, taskend - task_begin);
             return assignedParts;
         }
         else {
@@ -1068,17 +1403,12 @@ public:
 
 
     //write mapping to gnuPlot code to visualize.
-    void writeMapping2(){
-        /*
-        for(procId_t i = 0; i < this->nprocs; ++i){
-            cout << "Proc:" << i << " assignedParts:" << this->getAssignedTaksForProc(i) << endl;
-        }
-        //cout << "parts" << endl;
-        for(procId_t i = 0; i < this->ntasks; ++i){
-            cout << "Part:" << i << " assignedProcs:" << this->getAssignedProcForTask(i) << endl;
-        }
-         */
-        std::ofstream gnuPlotCode ("gnuPlot2.plot", std::ofstream::out);
+    void writeMapping2(int myRank){
+
+        std::string rankStr = toString<int>(myRank);
+        std::string gnuPlots = "gnuPlot", extentionS = ".plot";
+        std::string outF = gnuPlots + rankStr+ extentionS;
+        std::ofstream gnuPlotCode ( outF.c_str(), std::ofstream::out);
 
         CoordinateCommunicationModel<pcoord_t, tcoord_t, procId_t> *tmpproc_task_comm =
                 static_cast <CoordinateCommunicationModel<pcoord_t, tcoord_t, procId_t> * > (proc_task_comm);

@@ -1,7 +1,7 @@
 #include "Zoltan2_TaskMapping.hpp"
 #include <Zoltan2_TestHelpers.hpp>
 #include "Tpetra_MultiVector_decl.hpp"
-
+#include "Zoltan2_MachineRepresentation.hpp"
 #include <GeometricGenerator.hpp>
 #include <string>
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -144,7 +144,7 @@ void getArgVals(
         std::string &procF,
         std::string &partF){
 
-    bool isprocset = false;
+
     bool ispartset = false;
 
     for(int i = 0; i < argc; ++i){
@@ -154,15 +154,7 @@ void getArgVals(
         if(!getArgumentValue(identifier, fval, tmp)) continue;
         value = (long long int) (fval);
 
-        if(identifier == "PROC"){
-            stringstream stream(stringstream::in | stringstream::out);
-            stream << tmp;
-            getline(stream, procF, '=');
-
-            stream >> procF;
-            isprocset = true;
-        }
-        else if(identifier == "PART"){
+        if(identifier == "PART"){
             stringstream stream(stringstream::in | stringstream::out);
             stream << tmp;
             getline(stream, partF, '=');
@@ -176,24 +168,24 @@ void getArgVals(
         }
 
     }
-    if(!(ispartset && isprocset)){
-        throw "(PROC && PART) are mandatory arguments.";
+    if(!(ispartset)){
+        throw "(PART) is mandatory argument.";
     }
 
 }
 int main(int argc, char *argv[]){
     Teuchos::GlobalMPISession session(&argc, &argv);
-    if (argc != 3){
-        cout << "Usage: " << argv[0] << " PART=partGeoParams.txt PROC=procGeoParams.txt" << endl;
+    if (argc != 2){
+        cout << "Usage: " << argv[0] << " PART=partGeoParams.txt " << endl;
         exit(1);
     }
     zoltan2_partId_t numParts = 0;
     scalar_t **partCenters = NULL;
     int coordDim = 0;
 
-    zoltan2_partId_t numProcs = 0;
-    scalar_t **procCoordinates = NULL;
-    int procDim = 0;
+    //zoltan2_partId_t numProcs = 0;
+    //scalar_t **procCoordinates = NULL;
+    //int procDim = 0;
 
 
 
@@ -201,8 +193,9 @@ int main(int argc, char *argv[]){
     string procfile = "";
 
     const RCP<Comm<int> > commN;
-    RCP<Comm<int> >comm =  Teuchos::rcp_const_cast<Comm<int> >
+    RCP<Comm<int> >serialcomm =  Teuchos::rcp_const_cast<Comm<int> >
             (Teuchos::DefaultComm<int>::getDefaultSerialComm(commN));
+    RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
 
 
     try {
@@ -216,8 +209,8 @@ int main(int argc, char *argv[]){
         {
             Teuchos::ParameterList geoparams;
             //getPartCenters(partCenters, numParts, coordDim);
-            readGeoGenParams(partfile, geoparams, comm);
-            GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
+            readGeoGenParams(partfile, geoparams, serialcomm);
+            GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,serialcomm);
             coordDim = gg->getCoordinateDimension();
             numParts = gg->getNumLocalCoords();
             partCenters = new scalar_t * [coordDim];
@@ -236,40 +229,24 @@ int main(int argc, char *argv[]){
             delete gg;
         }
 
-        //getProcCenters(procCoordinates, numProcs, procDim);
-        {
-            Teuchos::ParameterList geoparams2;
-            readGeoGenParams(procfile, geoparams2, comm);
-            GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams2,comm);
-
-            procDim = gg->getCoordinateDimension();
-            numProcs = gg->getNumLocalCoords();
-            procCoordinates = new scalar_t * [procDim];
-            for(int i = 0; i < procDim; ++i){
-                procCoordinates[i] = new scalar_t[numProcs];
-            }
-            gg->getLocalCoordinatesCopy(procCoordinates);
-
-            delete gg;
-        }
+        const Zoltan2::MachineRepresentation<scalar_t> machine(tcomm);
 
         typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
         typedef Zoltan2::XpetraMultiVectorInput<tMVector_t> inputAdapter_t;
 
-        Zoltan2::CoordinateCommunicationModel<scalar_t,scalar_t,zoltan2_partId_t> *cm =
-                new Zoltan2::CoordinateCommunicationModel<scalar_t,scalar_t,zoltan2_partId_t>(
-                        procDim, procCoordinates,
-                        coordDim, partCenters,
-                        numProcs, numParts);
 
-        Zoltan2::Environment *env = new Zoltan2::Environment();
+        const Zoltan2::Environment *env = new Zoltan2::Environment();
         Zoltan2::CoordinateTaskMapper <inputAdapter_t, zoltan2_partId_t> *ctm=
-                new Zoltan2::CoordinateTaskMapper<inputAdapter_t,zoltan2_partId_t>(env, cm);
+                new Zoltan2::CoordinateTaskMapper<inputAdapter_t,zoltan2_partId_t>(
+                        env, tcomm.getRawPtr(), &machine,
+                        coordDim, numParts, partCenters
+                        );
 
-        ctm->writeMapping2(0);
-        cout << "PASS" << endl;
+        ctm->writeMapping2(tcomm->getRank());
+        if (tcomm->getRank() == 0){
+            cout << "PASS" << endl;
+        }
         delete ctm;
-        delete cm;
         delete env;
     }
     catch(std::string &s){
