@@ -8,3 +8,10 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ThyraTsqrAdaptor_test
+  SOURCES ThyraTsqrAdaptorTester.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
