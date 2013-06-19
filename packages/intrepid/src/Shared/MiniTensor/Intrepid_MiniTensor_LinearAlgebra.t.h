@@ -270,7 +270,7 @@ polynomial_coefficient(Index const order, Index const index)
     default:
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
       std::cerr << std::endl;
-      std::cerr << "Wrong order in Padé polynomial coefficient: ";
+      std::cerr << "Wrong order in Pade' polynomial coefficient: ";
       std::cerr << order << std::endl;
       exit(1);
       break;
