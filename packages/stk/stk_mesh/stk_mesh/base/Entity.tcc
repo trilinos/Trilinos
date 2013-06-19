@@ -224,10 +224,11 @@ union Entity
   bool is_handled_generically(const RelationType relation_type) const;
 private:
 
+#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   void reserve_relation(const unsigned num);
   void erase_and_clear_if_empty(RelationIterator rel_itr);
   void internal_verify_initialization_invariant();
-
+#endif
 
 #endif
 };
