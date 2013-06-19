@@ -102,10 +102,10 @@ namespace stk {
          * (typically locally owned part) used to associate entities
          * when generating the output database.
          */
-        void set_selector(Teuchos::RCP<stk::mesh::Selector> selector)
-        {	m_anded_selector = selector; }
-        void set_selector(stk::mesh::Selector &selector)
-        { set_selector(Teuchos::rcpFromRef(selector));}
+        void set_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)
+        {	m_anded_selector = my_selector; }
+        void set_selector(stk::mesh::Selector &my_selector)
+        { set_selector(Teuchos::rcpFromRef(my_selector));}
 
         /**
          * Set meta data directly with your own meta data. If this is
