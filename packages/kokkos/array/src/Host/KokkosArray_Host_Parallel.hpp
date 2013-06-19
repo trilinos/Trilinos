@@ -187,7 +187,7 @@ public:
 
   void execute_on_thread( HostThread & thread ) const
   {
-#if defined( __INTEL_COMPILER )
+#if defined( __INTEL_COMPILER ) && ! defined( __MIC__ )
     enum { vectorize = is_same<WorkSpec,VectorParallel>::value && 1 < HostSpace::WORK_ALIGNMENT };
 #else
     enum { vectorize = 0 };
@@ -200,7 +200,7 @@ public:
         m_work_functor( iwork );
       }
     }
-#if defined( __INTEL_COMPILER )
+#if defined( __INTEL_COMPILER ) && ! defined( __MIC__ )
     else {
 #pragma simd
 #pragma ivdep
@@ -386,7 +386,7 @@ public:
 
   void execute_on_thread( HostThread & this_thread ) const
   {
-#if defined( __INTEL_COMPILER )
+#if defined( __INTEL_COMPILER ) && ! defined( __MIC__ )
     enum { work_align = is_same<WorkSpec,VectorParallel>::value && 
                         power_of_two<HostSpace::WORK_ALIGNMENT>::value
                       ? HostSpace::WORK_ALIGNMENT : 1 };
@@ -409,7 +409,7 @@ public:
         m_work_functor( iwork , m_reduce.reference( this_thread.reduce_data() ) );
       }
     }
-#if defined( __INTEL_COMPILER )
+#if defined( __INTEL_COMPILER ) && ! defined( __MIC__ )
     else {
 
 #pragma simd

@@ -150,12 +150,12 @@ void host_thread_wait( volatile int * const flag , const int value )
 {
   // Issue 'NCycle' no-op operations between checks for the flag to change value.
   enum { NCycle = 1 };
-  do { noop_cycle< NCycle >(); } while ( value == *flag );
+  while ( value == *flag ) { noop_cycle< NCycle >(); }
 }
 
 void host_thread_wait_yield( volatile int * const flag , const int value )
 {
-  do { sched_yield(); } while ( value == *flag );
+  while ( value == *flag ) { sched_yield(); }
 }
 
 void host_thread_lock()
