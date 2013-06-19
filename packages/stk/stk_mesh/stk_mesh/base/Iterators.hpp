@@ -304,17 +304,6 @@ BucketVectorEntityIteratorRange get_entity_range(const std::vector<Bucket*>& buc
 // Get a range allowing you to iterate over all *selected* entities withing a collection of buckets
 SelectedBucketVectorEntityIteratorRange get_entity_range(const std::vector<Bucket*>& buckets, const Selector& selector);
 
-// Get a range allowing you to iterate over all buckets within a collection of collections of buckets
-AllBucketsRange get_bucket_range(const std::vector<std::vector<Bucket*> >& buckets);
-
-// Get a range allowing you to iterate over a single collection of buckets within a collection of collections of buckets;
-// the single collection is specified by the itr argument.
-AllBucketsRange get_bucket_range(const std::vector<std::vector<Bucket*> >& buckets,
-                                 std::vector<std::vector<Bucket*> >::const_iterator itr);
-
-// Get a range allowing you to iterate over all *selected* buckets within a collection of collections of buckets
-AllSelectedBucketsRange get_selected_bucket_range(const AllBucketsRange& bucket_range, const Selector& selector);
-
 // Get a range allowing you iterate over selected buckets in a vector
 SelectedBucketVectorIteratorRange get_selected_bucket_range(const std::vector<Bucket*>& buckets, const Selector& selector);
 

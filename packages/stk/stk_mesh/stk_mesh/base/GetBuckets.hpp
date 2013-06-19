@@ -47,11 +47,6 @@ void get_buckets( const SELECTOR & selector ,
   }
 }
 
-/**
- * Return a range of buckets for a certain rank.
- */
-AllBucketsRange get_buckets( EntityRank entity_rank, const BulkData& mesh );
-
 /* \brief  Get the parts from the union part vector that the bucket is
  *         contained in. 
  */

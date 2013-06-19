@@ -100,16 +100,6 @@ void get_selected_entities( const Selector & selector ,
   }
 }
 
-#if 0
-//this code is broken
-// \TODO fix
-SelectedBucketRangeEntityIteratorRange get_selected_entities( const Selector & selector,
-                                                              const AllBucketsRange& bucket_range )
-{
-  return get_selected_bucket_entity_range(bucket_range, selector);
-}
-#endif
-
 //----------------------------------------------------------------------
 
 void count_entities(

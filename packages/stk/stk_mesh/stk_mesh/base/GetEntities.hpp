@@ -60,9 +60,6 @@ void get_selected_entities( const Selector & selector ,
                             const std::vector< Bucket * > & input_buckets ,
                             std::vector< Entity> & entities );
 
-SelectedBucketRangeEntityIteratorRange get_selected_entities( const Selector & selector,
-                                                              const AllBucketsRange& bucket_range );
-
 /** \} */
 
 } // namespace mesh

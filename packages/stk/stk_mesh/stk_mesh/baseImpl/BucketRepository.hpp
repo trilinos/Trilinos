@@ -67,22 +67,6 @@ public:
 
   void optimize_buckets();
 
-  AllBucketsRange get_bucket_range() const
-  {
-    const_cast<BucketRepository *>(this)->sync_from_partitions();
-    return stk::mesh::get_bucket_range(m_buckets);
-  }
-
-  AllBucketsRange get_bucket_range(EntityRank entity_rank) const
-  {
-    if (m_need_sync_from_partitions[entity_rank])
-    {
-      const_cast<BucketRepository *>(this)->sync_from_partitions(entity_rank);
-    }
-    std::vector< std::vector<Bucket*> >::const_iterator itr = m_buckets.begin() + entity_rank;
-    return stk::mesh::get_bucket_range(m_buckets, itr);
-  }
-
   Bucket *get_bucket(EntityRank entity_rank, int bucket_id) const;
 
   template <class RankType>

@@ -23,27 +23,6 @@ namespace mesh {
 
 //----------------------------------------------------------------------
 
-AllSelectedBucketsRange get_buckets( const Selector & selector, const BulkData& mesh )
-{
-  AllBucketsRange all_buckets = mesh.get_bucket_range();
-  return get_selected_bucket_range(all_buckets, selector);
-}
-
-AllBucketsRange get_buckets( const BulkData& mesh )
-{
-  return mesh.get_bucket_range();
-}
-
-AllBucketsRange get_buckets( EntityRank entity_rank, const BulkData& mesh )
-{
-  return mesh.get_bucket_range(entity_rank);
-}
-
-AllSelectedBucketsRange get_buckets( const Selector & selector, const AllBucketsRange& range)
-{
-  return get_selected_bucket_range(range, selector);
-}
-
 void copy_ids( std::vector<unsigned> & v , const PartVector & p )
 {
   {

@@ -287,20 +287,6 @@ public:
   const std::vector<Bucket*> & buckets( EntityRank rank ) const
   { return m_bucket_repository.buckets(rank); }
 
-#ifndef SWIG //SRK
-  //  Don't call inside BucketRepository member functions!
-  AllBucketsRange get_bucket_range() const
-  {
-    return m_bucket_repository.get_bucket_range();
-  }
-
-  //  Don't call inside BucketRepository member functions!
-  AllBucketsRange get_bucket_range( EntityRank rank ) const
-  {
-    return m_bucket_repository.get_bucket_range(rank);
-  }
-#endif
-
   typedef impl::EntityRepository::const_iterator const_entity_iterator;
 
   //iterator that traverses entities of the specified rank, in order of ascending global identifier
