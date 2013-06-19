@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,12 +35,15 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
 
+#include <KokkosArray_hwloc.hpp>
+
+#if defined( KOKKOSARRAY_HAVE_HWLOC )
 /*--------------------------------------------------------------------------*/
 
 #include <iostream>
@@ -49,7 +52,6 @@
 
 /* KokkosArray interfaces */
 
-#include <KokkosArray_hwloc.hpp>
 
 /*--------------------------------------------------------------------------*/
 /* Third Party Libraries */
@@ -396,5 +398,33 @@ hwloc::hwloc()
 //----------------------------------------------------------------------------
 
 } /* namespace KokkosArray */
+
+#else
+
+namespace KokkosArray {
+
+bool hwloc::bind_this_thread( const std::pair<unsigned,unsigned> )
+{ return true ; }
+
+bool hwloc::unbind_this_thread()
+{ return true ; }
+
+std::pair<unsigned,unsigned> hwloc::get_this_thread_coordinate()
+{ return std::pair<unsigned,unsigned>(0,0); }
+
+std::pair<unsigned,unsigned> hwloc::get_core_topology()
+{ return std::pair<unsigned,unsigned>(1,1); }
+
+unsigned hwloc::get_core_capacity()
+{ return 1 ; }
+
+hwloc::~hwloc() {}
+
+hwloc::hwloc() {}
+
+} // namespace KokkosArray
+
+
+#endif
 
 

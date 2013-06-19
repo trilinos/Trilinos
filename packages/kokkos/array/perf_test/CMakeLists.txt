@@ -7,7 +7,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../TPL)
 SET(SOURCES PerfTestMain.cpp PerfTestHost.cpp ../TPL/gtest/gtest-all.cc)
 SET(LIBRARIES kokkosarray_devicehost kokkosarray_impl)
 
-IF(KokkosArray_ENABLE_DeviceCuda)
+IF(KokkosArray_ENABLE_Cuda)
   TRIBITS_ADD_LIBRARY(
     perf_cuda
     SOURCES PerfTestCuda.cu

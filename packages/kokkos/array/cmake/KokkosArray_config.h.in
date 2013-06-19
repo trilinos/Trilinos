@@ -1,7 +1,11 @@
 #ifndef KOKKOS_ARRAY_CONFIG_H
 #define KOKKOS_ARRAY_CONFIG_H
 
-/* Define if Cuda is enabled */
-#cmakedefine HAVE_KOKKOSARRAY_CUDA
+#cmakedefine KOKKOSARRAY_HAVE_MPI
+#cmakedefine KOKKOSARRAY_HAVE_CUDA
+#cmakedefine KOKKOSARRAY_HAVE_PTHREAD
+#cmakedefine KOKKOSARRAY_HAVE_Winthread
+#cmakedefine KOKKOSARRAY_HAVE_OPENMP
+#cmakedefine KOKKOSARRAY_HAVE_HWLOC
 
 #endif

@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -99,7 +99,7 @@ namespace KokkosArray {
 
 //----------------------------------------------------------------------------
 
-#if defined( HAVE_MPI )
+#if defined( KOKKOSARRAY_HAVE_MPI )
 
 template< typename ScalarX /* Allow mix of const and non-const */ ,
           typename ScalarY /* Allow mix of const and non-const */ ,
@@ -147,7 +147,7 @@ double dot( const size_t n ,
 
 //----------------------------------------------------------------------------
 
-#if defined( HAVE_MPI )
+#if defined( KOKKOSARRAY_HAVE_MPI )
 
 template< typename ScalarX /* Allow mix of const and non-const */ ,
           class L , class D ,
@@ -314,14 +314,14 @@ public:
 
   template< typename iType >
   KOKKOSARRAY_INLINE_FUNCTION
-  void operator()( const iType & i , value_type & update ) const 
+  void operator()( const iType & i , value_type & update ) const
   { update += x(i) * y(i); }
-    
+
   KOKKOSARRAY_INLINE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & source )
   { update += source;    }
-    
+
   KOKKOSARRAY_INLINE_FUNCTION
   static void init( value_type & update )
   { update = 0 ; }
@@ -353,14 +353,14 @@ public:
 
   template< typename iType >
   KOKKOSARRAY_INLINE_FUNCTION
-  void operator()( const iType & i , value_type & update ) const 
+  void operator()( const iType & i , value_type & update ) const
   { update += x(i) * x(i) ; }
-    
+
   KOKKOSARRAY_INLINE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & source )
   { update += source ; }
-    
+
   KOKKOSARRAY_INLINE_FUNCTION
   static void init( value_type & update )
   { update = 0 ; }

@@ -11,9 +11,10 @@ FILE(GLOB HEADERS *.hpp)
 FILE(GLOB SOURCES *.cpp)
 
 #-----------------------------------------------------------------------------
+# Sources always included
 
 TRIBITS_ADD_LIBRARY(
-  kokkosarray_devicehost
+  kokkosarray_deviceopenmp
   NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}
   DEPLIBS 
@@ -21,6 +22,6 @@ TRIBITS_ADD_LIBRARY(
 
 SET(TRILINOS_INCDIR ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR})
 
-INSTALL(FILES ${HEADERS} DESTINATION ${TRILINOS_INCDIR}/Host/)
+INSTALL(FILES ${HEADERS} DESTINATION ${TRILINOS_INCDIR}/OpenMP/)
 
 

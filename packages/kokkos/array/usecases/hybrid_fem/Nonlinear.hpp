@@ -182,9 +182,9 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   // between T(zmax) and T(zmin).  For the manufactured solution
   // 0 < T(zmin) and 0 < T(zmax)
 
-  const ManufacturedSolution 
+  const ManufacturedSolution
     exact_solution( /* zmin */ 0 ,
-                    /* zmax */ global_max_z , 
+                    /* zmax */ global_max_z ,
                     /* T(zmin) */ 1 ,
                     /* T(zmax) */ 20 );
 
@@ -291,15 +291,15 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   //   The 'zmax' face is assigned to 'T_zmax'.
   //   The resulting solution is one dimensional along the 'Z' axis.
 
-  DirichletSolutionFunctor::apply( nodal_solution , mesh , 
-                                   exact_solution.zmin , 
+  DirichletSolutionFunctor::apply( nodal_solution , mesh ,
+                                   exact_solution.zmin ,
                                    exact_solution.zmax ,
                                    exact_solution.T_zmin ,
                                    exact_solution.T_zmax );
-    
+
   for(;;) { // Nonlinear loop
 
-#if defined( HAVE_MPI )
+#if defined( KOKKOSARRAY_HAVE_MPI )
 
     { //------------------------------------
       // Import off-processor nodal solution values
@@ -333,7 +333,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
     wall_clock.reset();
 
     ElementFunctor( mesh ,
-                    elem_matrices , 
+                    elem_matrices ,
                     elem_vectors ,
                     nodal_solution ,
                     exact_solution.K );
@@ -349,11 +349,11 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
     fill( jacobian.coefficients.dimension_0(), 0 , jacobian.coefficients );
     fill( residual.dimension_0() , 0 , residual );
 
-    GatherFillFunctor::apply( jacobian , 
+    GatherFillFunctor::apply( jacobian ,
                               residual ,
-                              mesh , 
-                              element_map , 
-                              elem_matrices , 
+                              mesh ,
+                              element_map ,
+                              elem_matrices ,
                               elem_vectors );
 
     device_type::fence();
