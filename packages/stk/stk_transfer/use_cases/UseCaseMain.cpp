@@ -31,7 +31,7 @@ int main(int argc, char **argv)
 
   bool status = true;
 
-  std::string range_mesh        = "7x7x7";
+  std::string range_mesh        = "9x9x9";
   std::string range_mesh_type   = "generated";
   std::string domain_mesh       = "8x8x8";
   std::string domain_filetype   = "generated";

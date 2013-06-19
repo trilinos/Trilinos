@@ -4,39 +4,45 @@
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/FieldParallel.hpp>
 
 #include <stk_util/environment/ReportHandler.hpp>
-
-#include <stk_search/IdentProc.hpp>
 #include <stk_search/BoundingBox.hpp>
 
 namespace stk {
+namespace transfer {
 
 template <unsigned DIM> class STKMesh {
 public :
-  typedef DIM                         Dimension;
-  typedef stk::mesh::Entity           Entity;
-  typedef stk::mesh::EntityVec        EntityVec
-  typedef stk::mesh::EntityKey        EntityKey;
-  typedef std::set<EntityKey>      EntityKeySet;
-  typedef std::pair<EntityKey, unsigned>   IdentProc
-  typedef std::vector<IdentProc>     IdentProcVec;
+  typedef mesh:: Entity                                      Entity;
+  typedef std::vector<Entity>                                EntityVec;
+  typedef mesh:: EntityKey                                   EntityKey;
+  typedef std::set   <EntityKey>                             EntityKeySet;
+  typedef search::ident::IdentProc<EntityKey, unsigned>      EntityProc;
+  typedef std::vector<EntityProc>                            EntityProcVec;
 
-  typedef stk::search::box::SphereBoundingBox<IdentProc,float,DIM> BoundingBox;
+  typedef search::box::SphereBoundingBox<EntityProc,float,DIM> BoundingBox;
 
-  STKMesh(const EntityVec                          &ent,
-          const stk::mesh::FieldBase             &coord,
-          const std::vector<stk::mesh::FieldBase*> &val);
+  enum {Dimension = DIM};
+
+  STKMesh(const EntityVec                     &ent,
+          const mesh::FieldBase               &coord,
+          const std::vector<mesh::FieldBase*> &val);
   ~STKMesh();
-  stk::ParallelMachine comm() {return m_comm;}
-  unsigned      Keys(EntityKeySet &keys) const;
 
-  BoundingBox boundingbox (const EntityKey Id, const double radius);
+  // Needed for STK Transfer
+  ParallelMachine comm() const {return m_comm;}
+  bool has_communication_capabilities() const { return true;}
 
-  void copy_entities(const IdentProcVec    &entities_to_copy,
+  unsigned            keys(EntityKeySet &keys) const;
+
+  BoundingBox boundingbox (const EntityKey Id, const double radius) const;
+
+  void copy_entities(const EntityProcVec    &entities_to_copy,
                      const std::string         &transfer_name);
   
   void update_values();
+
 
   // Needed for LinearInterpoate
   const double *coord(const EntityKey k) const;
@@ -50,135 +56,167 @@ private :
   STKMesh(const STKMesh &M);
   STKMesh &operator=(const STKMesh&);
 
-  stk::mesh::MetaData                        *m_meta_data;
-  stk::mesh::BulkData                        *m_bulk_data;
-  const stk::ParallelMachine                       m_comm;
-  const EntityKeySet                        m_entity_keys;
-  const stk::mesh::FieldBase         &m_coordinates_field;
-  const std::vector<stk::mesh::FieldBase*> m_values_field;
+  mesh::BulkData                        &m_bulk_data;
+  const ParallelMachine                       m_comm;
+  const EntityKeySet                   m_entity_keys;
+  const mesh::FieldBase         &m_coordinates_field;
+  const std::vector<mesh::FieldBase*> m_values_field;
 
-  stk::mesh::Ghosting *transfer_entity_ghosting;
+  mesh::Ghosting       *m_transfer_entity_ghosting;
+  mesh::EntityProcVec   m_entities_currently_ghosted;
 
   Entity entity(const EntityKey k) const;
-  static const EntityKeySet EntityKeys (const stk::mesh::EntityVec &ent);
+  static EntityKeySet entity_keys (const mesh::BulkData &bulk_data, const EntityVec &ent);
 };
 
-template<unsigned DIM> const EntityKeySet entity_keys (const stk::mesh::BulkData  *bulk_data,
-                                                       const stk::mesh::EntityVec &entities);
+template<unsigned DIM> typename STKMesh<DIM>::EntityKeySet STKMesh<DIM>::entity_keys (
+  const mesh::BulkData  &bulk_data,
+  const       EntityVec &entities){
   EntityKeySet entity_keys;
   for (EntityVec::const_iterator e=entities.begin(); e!=entities.end(); ++e) {
-    const stk::mesh::EntityKey k = bulk_data->entity_key(*e);
+    const mesh::EntityKey k = bulk_data.entity_key(*e);
     entity_keys.insert(k);
   }
   return entity_keys;
 }
+
 template<unsigned DIM> STKMesh<DIM>::STKMesh(
-          const stk::mesh::EntityVec          &entities,
-          const stk::mesh::FieldBase             &coord,
-          const std::vector<stk::mesh::FieldBase*> &val) :
-    m_meta_data         (&coordinates_field.get_mesh()),
-    m_bulk_data         (&stk::mesh::MetaData::get(m_bulk_data)),
-    m_comm              (m_bulk_data->parallel()),
+          const            EntityVec          &entities,
+          const   mesh::FieldBase             &coord,
+          const std::vector<mesh::FieldBase*> &val) :
+    m_bulk_data         (coord.get_mesh()),
+    m_comm              (m_bulk_data.parallel()),
     m_entity_keys       (entity_keys(m_bulk_data, entities)), 
     m_coordinates_field (coord), 
-    m_values_field      (val) {}
+    m_values_field      (val),
+    m_entities_currently_ghosted() {
+  //const std::string name = "Transfer Ghosting";
+  //m_bulk_data.modification_begin();
+  //m_transfer_entity_ghosting = &m_bulk_data.create_ghosting(name);
+  //m_bulk_data.modification_end();
+}
 
 template<unsigned DIM> unsigned STKMesh<DIM>::keys(EntityKeySet &k) const {
   k = m_entity_keys;
   return k.size();
 }
 
-template<DIM> BoundingBox STKMesh<DIM>::boundingbox (const EntityKey Id, const double radius) {
-  float center[DIM];
+template<unsigned DIM> STKMesh<DIM>::~STKMesh(){}
+
+template<unsigned DIM> typename STKMesh<DIM>::BoundingBox STKMesh<DIM>::boundingbox (
+  const EntityKey Id, 
+  const double radius) const {
+
+  typedef typename BoundingBox::Data Data;
+  typedef typename BoundingBox::Key  Key;
+  const Data r=radius;
+  Data center[Dimension];
   const double *c = coord(Id);
-  for (unsigned j=0; j<DIM; ++j) center[j] = c[j];
-  const BoundingBox::Key key(Id, stk::parallel_machine_rank(m_comm));
-  BoundingBox B(center, radius, key);
+  for (unsigned j=0; j<Dimension; ++j) center[j] = c[j];
+  const Key key(Id, parallel_machine_rank(m_comm));
+  BoundingBox B(center, r, key);
   return B;
 }
 
 template<unsigned NUM> void STKMesh<NUM>::copy_entities(
-                     const IdentProcVec  &keys_to_copy,
+                     const EntityProcVec  &keys_to_copy,
                      const std::string         &transfer_name) {
 
-  m_bulk_data->modification_begin();
 
-  stk::mesh::EntityProcVec entities_to_copy(keys_to_copy.size());
-  for (size_t i=0; i<keys_to_copy.size(); ++i) {
-    stk::mesh::Entity entity = Entity(keys_to_copy[i].first);
-    stk::mesh::EntityProc ep( entity, keys_to_copy[i].second);
-    entities_to_copy[i] = ep;
-  }
-  const std::string name = "Transfer "+transfer_name+" Ghosting";
-  stk::mesh::Ghosting transfer_entity_ghosting = &m_bulk_data->create_ghosting(name);
   {
-    std::vector<stk::mesh::EntityKey> receive;
-    transfer_entity_ghosting->receive_list( receive );
-    m_bulk_data->change_ghosting(*transfer_entity_ghosting ,
-                               entities_to_copy ,
-                               receive );
+    mesh::EntityProcVec new_entities_to_copy(keys_to_copy.size());
+    for (size_t i=0; i<keys_to_copy.size(); ++i) {
+      // convert from EntityProc based on EntityKey to EntityProc based on raw Entity.
+      const EntityProc key_proc = keys_to_copy[i];
+      const EntityKey       key = key_proc.ident;
+      const unsigned       proc = key_proc.proc;
+      const Entity            e = entity(key);
+      const mesh::EntityProc ep( e, proc);
+      new_entities_to_copy[i] = ep;
+    } 
+    m_entities_currently_ghosted.insert(m_entities_currently_ghosted.end(), 
+                                        new_entities_to_copy.begin(), 
+                                        new_entities_to_copy.end());
+
+    std::sort(m_entities_currently_ghosted.begin(), m_entities_currently_ghosted.end());
+    mesh::EntityProcVec::iterator del = std::unique(m_entities_currently_ghosted.begin(), m_entities_currently_ghosted.end());
+    m_entities_currently_ghosted.resize(std::distance(m_entities_currently_ghosted.begin(), del));
   }
-  m_bulk_data->modification_end();
+
+  m_bulk_data.modification_begin();
+  const std::string name = "Transfer Ghosting";
+  m_transfer_entity_ghosting = &m_bulk_data.create_ghosting(name);
+  {
+    m_bulk_data.change_ghosting(*m_transfer_entity_ghosting,
+                                m_entities_currently_ghosted);
+
+    std::vector<mesh::EntityKey> receive;
+    std::vector<mesh::EntityProc> send;
+    m_transfer_entity_ghosting->receive_list( receive );
+    m_transfer_entity_ghosting->send_list( send );
+  }
+  m_bulk_data.modification_end();
 
   // Copy coordinates to the newly ghosted nodes
-  std::vector<const stk::mesh::FieldBase *> fields;
-  fields.push_back(&coordinates_field);
+  std::vector<const mesh::FieldBase *> fields;
+  fields.push_back(&m_coordinates_field);
   fields.insert(fields.end(), m_values_field.begin(), m_values_field.end());
   
-  stk::mesh::communicate_field_data( *transfer_entity_ghosting , fields);
+  mesh::communicate_field_data( *m_transfer_entity_ghosting , fields);
+  mesh::copy_owned_to_shared  (  m_bulk_data, fields );
 }
 
-template<DIM> BoundingBox STKMesh<DIM>::update_values () {
-  stk::mesh::communicate_field_data( *transfer_entity_ghosting , fields);
+template<unsigned DIM> void STKMesh<DIM>::update_values () {
+  std::vector<const mesh::FieldBase *> fields(m_values_field.begin(), m_values_field.end());
+  mesh::communicate_field_data( *m_transfer_entity_ghosting , fields);
+  mesh::copy_owned_to_shared  (  m_bulk_data, fields );
 }
   
-template<DIM> const double *STKMesh<DIM>::coord(const EntityKey k) const {
-  const stk::mesh::Entity e = entity(k);
-  const double *c = static_cast<const double*>(stk::mesh::field_data(m_coordinates_field, e));
+template<unsigned DIM> const double *STKMesh<DIM>::coord(const EntityKey k) const {
+  const mesh::Entity e = entity(k);
+  const double *c = static_cast<const double*>(m_bulk_data.field_data(m_coordinates_field, e));
   return  c;
 }
 
-template<DIM> unsigned  STKMesh<DIM>::num_values() const {
+template<unsigned DIM> unsigned  STKMesh<DIM>::num_values() const {
  const unsigned s = m_values_field.size();
  return s;
 }
 
-template<DIM> unsigned  STKMesh<DIM>::value_size(const EntityKey k, const unsigned i) const {
-  const stk::mesh::Entity         e = entity(k);
-  const stk::mesh::FieldBase &field = *m_values_field[i];
-  const stk::mesh::Bucket    &bucket= m_bulk_data->bucket(e);
+template<unsigned DIM> unsigned  STKMesh<DIM>::value_size(const EntityKey k, const unsigned i) const {
+  const mesh::Entity         e = entity(k);
+  const mesh::FieldBase &field = *m_values_field[i];
+  const mesh::Bucket    &bucket= m_bulk_data.bucket(e);
 
-  const unsigned bytes = m_bulk_data->field_data_size_per_entity(field, bucket);
+  const unsigned bytes = m_bulk_data.field_data_size_per_entity(field, bucket);
   const unsigned bytes_per_entry = field.data_traits().size_of;
   const unsigned num_entry = bytes/bytes_per_entry;
 
   ThrowRequireMsg (bytes == num_entry * bytes_per_entry,    
     __FILE__<<":"<<__LINE__<<" Error:" <<"  bytes:" <<bytes<<"  num_entry:" <<num_entry
          <<"  bytes_per_entry:" <<bytes_per_entry);
-  }
   return  num_entry;
 }
 
-temlate<DIM> const double *STKMesh<DIM>::value(const EntityKey k, const unsigned i) const {
-  const stk::mesh::Entity  e = entity(k);
-  stk::mesh::FieldBase *val=m_values_field[i];
-  const double *value = static_cast<const double*>(stk::mesh::field_data(*val, e));
+template<unsigned DIM> const double *STKMesh<DIM>::value(const EntityKey k, const unsigned i) const {
+  const mesh::Entity  e = entity(k);
+  mesh::FieldBase *val=m_values_field[i];
+  const double *value = static_cast<const double*>(m_bulk_data.field_data(*val, e));
   return  value;
 }
 
-temlate<DIM> double *STKMesh<DIM>::value(const EntityKey k, const unsigned i) {
-  const stk::mesh::Entity e = entity(k);
-  stk::mesh::FieldBase *val=values_field[i];
-  double *value = static_cast<double*>(stk::mesh::field_data(*val, e));
+template<unsigned DIM> double *STKMesh<DIM>::value(const EntityKey k, const unsigned i) {
+  const mesh::Entity e = entity(k);
+  mesh::FieldBase *val=m_values_field[i];
+  double *value = static_cast<double*>(m_bulk_data.field_data(*val, e));
   return  value;
 }
 
-template<DIM> stk::mesh::Entity STKMesh<DIM>::entity(const stk::mesh::EntityKey k) const {
-  const stk::mesh::Entity  e = m_bulk_data->get_entity(k);
+template<unsigned DIM> mesh::Entity STKMesh<DIM>::entity(const mesh::EntityKey k) const {
+  const mesh::Entity  e = m_bulk_data.get_entity(k);
   return e;
 }
 
 
-
-
+}
 }

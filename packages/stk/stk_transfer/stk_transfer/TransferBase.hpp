@@ -12,12 +12,15 @@
 
 
 namespace stk {
+namespace transfer {
 
-class GeometricTransferBase {
-
-GeometricTransferBase(){};
-virtual void initialize(){};
-virtual void apply(){};
+class TransferBase {
+public :
+  TransferBase(){};
+  virtual void initialize() = 0;
+  virtual void apply() = 0;
+};
+}
 }
 #endif
 

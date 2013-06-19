@@ -11,12 +11,20 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_transfer/TransferP2P.hpp>
+#include <stk_transfer/LinearInterpolate.hpp>
 
 namespace stk_transfer_unit_tests {
 
+
+class Mesh {
+public :
+  typedef unsigned EntityKey;
+  enum {Dimension = 3};
+};
+
 void UnitTest_Linterp( MPI_Comm comm )
 {
+  typedef stk::transfer::LinearInterpolate<Mesh,Mesh> Interpolate;
   int mpi_rank = 0;
   int mpi_size = 1;
   
@@ -31,7 +39,7 @@ void UnitTest_Linterp( MPI_Comm comm )
   const unsigned    RUNS  =      100;
   const double   rand_max = RAND_MAX;
 
-  STK_TransferP2P::MDArray A(3,3);
+  Interpolate::MDArray A(3,3);
   std::vector<double> B(3);
 
   for (unsigned n=0; n<RUNS; ++n) {
@@ -40,7 +48,7 @@ void UnitTest_Linterp( MPI_Comm comm )
       B[i] = rand()/rand_max;
       for (unsigned j=0; j<3; ++j) A(i,j) = rand()/rand_max;
     }
-    const std::vector<double> X = STK_TransferP2P::solve_3_by_3_with_LU(A, B);
+    const std::vector<double> X = Interpolate::solve_3_by_3_with_LU(A, B);
     for (unsigned i=0; i<3; ++i) {
       for (unsigned j=0; j<3; ++j) Y[i] += A(i,j)*X[j] ;
     }

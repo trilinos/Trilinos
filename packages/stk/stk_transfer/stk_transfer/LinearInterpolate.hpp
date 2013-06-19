@@ -7,176 +7,248 @@
 /*------------------------------------------------------------------------*/
 
 
-#ifndef  STK_TransferP2P_hpp
-#define  STK_TransferP2P_hpp
+#ifndef  STK_LINEARINTERPOLATE_HPP
+#define  STK_LINEARINTERPOLATE_HPP
 
 #include <boost/smart_ptr/shared_ptr.hpp>
 
+#include <Intrepid_FieldContainer.hpp>
+
 #include <stk_util/util/StaticAssert.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
-#include <stk_mesh/base/Comm.hpp>
 
 
 namespace stk {
 namespace transfer {
 
-template <class MESHA, class MESHB> class LinearInterpoate {
+template <class MESHA, class MESHB> class LinearInterpolate {
 
 public :
-typedef MESHA MeshA;
-typedef MESHB MeshB;
-typedef MeshA::EntityKey EntityKeyA;
-typedef MeshB::EntityKey EntityKeyB;
+  typedef Intrepid::FieldContainer<double> MDArray;
 
-typedef std::multimap<EntityKeyB, EntityKeyA> EntityKeyMap;
-
-enum { Dim = MESHA::DIM };
-
-static void filter_with_fine_search(EntityKeyMap  &rel,
-                                    const MeshB   &ToPoints,
-                                    const MeshA &FromPoints);
-
-static void apply (MeshB        &meshb,
-                    const MeshA         &mesha,
-                    const EntityKeyMap &RangeToDomain);
-
+  typedef MESHA                            MeshA;
+  typedef MESHB                            MeshB;
+  typedef typename MeshA::EntityKey        EntityKeyA;
+  typedef typename MeshB::EntityKey        EntityKeyB;
+  
+  typedef std::multimap<EntityKeyB, EntityKeyA> EntityKeyMap;
+  
+  enum { Dimension = MeshA::Dimension };
+  
+  static void filter_to_nearest(EntityKeyMap    &BtoA,
+                                const MeshA     &FromPoints,
+                                const MeshB     &ToPoints);
+  
+  static void apply (MeshB               &meshb,
+                     const MeshA         &mesha,
+                     const EntityKeyMap &RangeToDomain);
+  
+  static std::vector<double> solve_3_by_3_with_LU(const MDArray &M, const std::vector<double> &x);
 private :
-
-static int LU_decomp(double A[9], int piv[3], int* sign);
-static int LU_solve(const double A[9], const int piv[3], double b[3])
-static std::vector<double> solve_3_by_3_with_LU(const MDArray M, const std::vector<double> x);
-
-enum { dim_eq = stk::StaticAssert<MeshB::Dimension==MeshA::Dimension::OK };
-enum { dim_3  = stk::StaticAssert<               3==MeshA::Dimension::OK };
-
-static double distance_squared(const double *x, const double *y) ;
-static EntityKeyMap determine_best_fit(EntityKeyMap::const_iterator begin,
-                               EntityKeyMap::const_iterator end,
-                               const EntityKeyB          current,
-                                 const MeshB             &ToPoints,
-                                 const MeshA             &FromPoints) const;
-
+  
+  static int LU_decomp(double A[9], int piv[3], int* sign);
+  static int LU_solve(const double A[9], const int piv[3], double b[3]);
+  
+  enum { dim_eq = StaticAssert<MeshB::Dimension==MeshA::Dimension>::OK };
+  enum { dim_3  = StaticAssert<               3==MeshA::Dimension>::OK };
+  
+  static double distance_squared(const double *x, const double *y) ;
+  static EntityKeyMap determine_best_fit(typename EntityKeyMap::const_iterator begin,
+                                         typename EntityKeyMap::const_iterator end,
+                                         const EntityKeyB          current,
+                                         const MeshB             &ToPoints,
+                                         const MeshA             &FromPoints);
+  static bool co_linear(const typename EntityKeyMap::value_type &e,
+                        const EntityKeyMap &first_three,
+                        const MeshA        &FromPoints);
+  static bool co_planer(const typename EntityKeyMap::value_type &e,
+                        const EntityKeyMap &first_three,
+                        const MeshA        &FromPoints);
+  
 };
 
-template <class MESHA, class MESHB> double LinearInterpoate<MESHA,MESHB>::distance_squared(const double *x, const double *y) {
+template <class MESHA, class MESHB> double LinearInterpolate<MESHA,MESHB>::distance_squared(const double *x, const double *y) {
   double d = 0;
-  for (unsigned i=0; i<Dim; ++i) d += (x[i]-y[i])*(x[i]-y[i]);
+  for (unsigned i=0; i<Dimension; ++i) d += (x[i]-y[i])*(x[i]-y[i]);
   return d;
 }
 
-template <class MESHA, class MESHB> EntityKeyMap LinearInterpoate<MESHA,MESHB>::determine_best_fit(
-                               EntityKeyMap::const_iterator begin,
-                               EntityKeyMap::const_iterator end,
-                               const EntityKeyB          current,
-                                 const MeshB             &ToPoints,
-                                 const MeshA             &FromPoints) const {
+template <class MESHA, class MESHB> bool LinearInterpolate<MESHA,MESHB>::co_linear(
+                               const typename EntityKeyMap::value_type &e,
+                               const EntityKeyMap &first_two,
+                               const MeshA        &FromPoints) {
 
-  typedef  std::multimap<double,EntityKeyMap::value_type,std::greater<double> > DIST_MAP;
-  DIST_MAP  smallest;
+  const unsigned span = Dimension-1;
+  const double *Corners[Dimension]={0};
+  {
+    unsigned n=0;
+    for (typename EntityKeyMap::const_iterator j=first_two.begin(); j != first_two.end(); ++j,++n) {
+      const EntityKeyA from_key = j->second;
+      Corners[n] = FromPoints.coord(from_key); 
+    } 
+    Corners[n] = FromPoints.coord(e.second); 
+  }
+  double S[span][Dimension];
+  for (unsigned j=1; j<Dimension; ++j) 
+    for (unsigned k=0; k<Dimension; ++k) 
+      S[j-1][k] = Corners[j][k] - Corners[0][k];
+   
+  const double a_cross_b[Dimension] = { S[0][1]*S[1][2] - S[0][2]*S[1][1] ,
+                                     -( S[0][0]*S[1][2] - S[0][2]*S[1][0]),
+                                        S[0][0]*S[1][1] - S[0][1]*S[1][0]};
+  const double norm_a_cross_b = a_cross_b[0]*a_cross_b[0] + a_cross_b[1]*a_cross_b[1] + a_cross_b[2]*a_cross_b[2];
+  const bool ret = norm_a_cross_b < .00001;
+
+  return ret;
+}
+
+template <class MESHA, class MESHB> bool LinearInterpolate<MESHA,MESHB>::co_planer(
+                               const typename EntityKeyMap::value_type &e,
+                               const EntityKeyMap &first_three,
+                               const MeshA        &FromPoints) {
+
+  const unsigned span = Dimension+1;
+  const double *Corners[span]={0};
+  {
+    unsigned n=0;
+    for (typename EntityKeyMap::const_iterator j=first_three.begin(); j != first_three.end(); ++j,++n) {
+      const EntityKeyA from_key = j->second;
+      Corners[n] = FromPoints.coord(from_key); 
+    } 
+    Corners[n] = FromPoints.coord(e.second); 
+  }
+  double S[Dimension][Dimension];
+  for (unsigned j=1; j<span; ++j) 
+    for (unsigned k=0; k<Dimension; ++k) 
+      S[j-1][k] = Corners[j][k] - Corners[0][k];
+   
+  const double a_cross_b[Dimension] = { S[0][1]*S[1][2] - S[0][2]*S[1][1] ,
+                                     -( S[0][0]*S[1][2] - S[0][2]*S[1][0]),
+                                        S[0][0]*S[1][1] - S[0][1]*S[1][0]};
+  const double a_cross_b_dot_c = a_cross_b[0]*S[2][0] + a_cross_b[1]*S[2][1] + a_cross_b[2]*S[2][2];
+  const bool ret = std::abs(a_cross_b_dot_c) < .00001;
+
+  return ret;
+}
+
+template <class MESHA, class MESHB> typename LinearInterpolate<MESHA,MESHB>::EntityKeyMap LinearInterpolate<MESHA,MESHB>::determine_best_fit(
+                               const typename EntityKeyMap::const_iterator begin,
+                               const typename EntityKeyMap::const_iterator end,
+                               const EntityKeyB          current,
+                               const MeshB             &ToPoints,
+                               const MeshA             &FromPoints) {
+
+  typedef  std::multimap<double, typename EntityKeyMap::value_type, std::greater<double> > DIST_MAP;
+  DIST_MAP  sorted;
 
   const double *  to_coords =   ToPoints.coord(current);
 
-  for (EntityKeyMap::const_iterator d=begin; d != end; ++d) {
+  for (typename EntityKeyMap::const_iterator d=begin; d != end; ++d) {
     const EntityKeyA domain_index = d->second;
     const double *from_coords = FromPoints.coord(domain_index);
 
     const double dist = distance_squared(from_coords, to_coords);
-
-    const DIST_MAP::value_type val(dist,*d);
-    smallest.insert(val);
-    // Is using a map too much memory allocation/deallocation? Maybe std::vector is better.
-    if (Dim+1 < smallest.size()) smallest.erase(smallest.begin()); // DIST_MAP: Largest at begin()
-
+    const typename DIST_MAP::value_type val(dist,*d);
+    sorted.insert(val);
   }
+
   EntityKeyMap ret;
-  for (DIST_MAP::const_iterator d=smallest.begin(); d != smallest.end(); ++d) ret.insert(d->second);
+  for (typename DIST_MAP::const_iterator d=sorted.begin(); d != sorted.end() && ret.size() <= Dimension; ++d) {
+    if      (ret.size()  < Dimension-1)            ret.insert(d->second);
+    else if (ret.size() == Dimension-1) {
+      if    (!co_linear(d->second,ret,FromPoints)) ret.insert(d->second);
+    }else if(!co_planer(d->second,ret,FromPoints)) ret.insert(d->second);
+  }
+  if (ret.size() < Dimension+1) ret.clear();
   return ret;
 }
-template <class MESHA, class MESHB> void LinearInterpoate<MESHA,MESHB>::filter_with_fine_search(
-                                    EntityKeyMap  &rel,
-                                    const MeshB   &ToPoints,
-                                    const MeshA &FromPoints) {
 
-  for (EntityKeyMap::const_iterator j=rel.begin(); j!=rel.end(); ++j) {
-    std::pair<EntityKeyMap::const_iterator,EntityKeyMap::const_iterator> keys=rel.equal_range(j->first);
+template <class MESHA, class MESHB> void LinearInterpolate<MESHA,MESHB>::filter_to_nearest(
+                                    EntityKeyMap  &BtoA,
+                                    const MeshA   &mesha,
+                                    const MeshB   &meshb) {
+  typedef typename EntityKeyMap::iterator iterator;
+  for (iterator j=BtoA.begin(); j!=BtoA.end(); ) {
+    std::pair<iterator, iterator> keys=BtoA.equal_range(j->first);
     const unsigned num = distance(keys.first, keys.second);
-    if (num <= Dim) {
-      rel.erase(keys.first, keys.second);
-    } else if (Dim+1 < num) {
-      EntityKeyMap n = determine_best_fit(keys.first, keys.second, j->first, ToPoints, FromPoints);
-      rel.erase(keys.first, keys.second);
-      rel.insert(n.begin(), n.end()); 
+    if (num <= Dimension) {
+      BtoA.erase(keys.first, keys.second);
+    } else {
+      EntityKeyMap n = determine_best_fit(keys.first, keys.second, j->first, meshb, mesha);
+      BtoA.erase(keys.first, keys.second);
+      BtoA.insert(n.begin(), n.end()); 
     }   
-    j = rel.second;
+    j = keys.second;
   }
 }
 
 
-template <class MESHA, class MESHB>  void LinearInterpoate<MESHA,MESHB>::apply (
+template <class MESHA, class MESHB>  void LinearInterpolate<MESHA,MESHB>::apply (
                           MeshB        &meshb,
-                    const MeshA         &mesha,
+                    const MeshA        &mesha,
                     const EntityKeyMap &RangeToDomain){
 
-  const unsigned dim  = MeshB::Dimension;
-  const unsigned span = dim+1;
+  typedef typename EntityKeyMap::const_iterator map_const_iterator;
+  const unsigned span = Dimension+1;
 
-  MeshB::EntityKeyVec keysb;
-  meshb.Keys(keysb);
-  const unsigned numKeysb = keysb.size();
+  typename MeshB::EntityKeySet keysb;
+  meshb.keys(keysb);
   const unsigned numValsb = meshb.num_values();
 
-  for (unsigned i=0; i<numKeysb; ++i)  {
-    const EntityKeyB to_key = keysb[i];
-    const pair<EntityKeyMap::const_iterator, EntityKeyMap::const_iterator> from_keys = RangeToDomain.equal_range(to_key);
+  for (typename MeshB::EntityKeySet::const_iterator i=keysb.begin(); i!=keysb.end(); ++i)  {
+    const EntityKeyB to_key = *i;
+    const std::pair<map_const_iterator, map_const_iterator> from_keys = RangeToDomain.equal_range(to_key);
     const unsigned num_relations = distance(from_keys.first, from_keys.second);
     ThrowRequireMsg (span == num_relations,  
-      __FILE__<<":"<<__LINE__<<" Expected "<<span<<" relations."<<" Found:"<<num_relations);
+      __FILE__<<":"<<__LINE__<<" Expected "<<span<<" relations."<<" Found:"<<num_relations<<" for Key:"<<to_key);
 
-    MDArray Corners(span,dim);
+    MDArray Corners(span,Dimension);
     {
       unsigned n=0;
-      for (EntityKeyMap const_iterator j=from_keys.first; j!= from_keys.second; ++j,++n) {
+      for (map_const_iterator j=from_keys.first; j!= from_keys.second; ++j,++n) {
         const EntityKeyA from_key = j->second;
         const double *c = mesha.coord(from_key); 
-        for (unsigned k=0; k<dim; ++k) Corners(n,k) = c[k];
+        for (unsigned k=0; k<Dimension; ++k) Corners(n,k) = c[k];
       } 
     }
-    MDArray SpanVectors(dim,dim);
+    MDArray SpanVectors(Dimension,Dimension);
     for (unsigned j=1; j<span; ++j) 
-      for (unsigned k=0; k<dim; ++k) 
+      for (unsigned k=0; k<Dimension; ++k) 
         SpanVectors(k,j-1) = Corners(j,k) - Corners(0,k);
-    std::vector<double> point(dim);
+    std::vector<double> point(Dimension);
     {
       const double  *c = meshb.coord(to_key);
-      for (unsigned k=0; k<DIM; ++k) point[k] = c[k]-Corners(0,k);
+      for (unsigned k=0; k<Dimension; ++k) point[k] = c[k]-Corners(0,k);
     }
 
     std::vector<double> S;
     S = solve_3_by_3_with_LU(SpanVectors, point);
 
-    std::vector<double> Values();
+    std::vector<double> Values(span);
     for (unsigned f=0; f<numValsb; ++f)  {
-      const unsigned   to_field_size =   meshb.value_size(to_key, f);
-      const unsigned from_field_size =   mesha.value_size(*from_keys.first, f);
+      const EntityKeyA from_key = from_keys.first->second;
+      const unsigned   to_field_size =   meshb.value_size(to_key,   f);
+      const unsigned from_field_size =   mesha.value_size(from_key, f);
       const unsigned field_size = std::min(to_field_size, from_field_size);
       for (unsigned n=0; n<field_size; ++n) {
         unsigned m=0;
-        for (EntityKeyMap const_iterator j=from_keys.first; j!= from_keys.second; ++j,++m) {
+        for (typename EntityKeyMap::const_iterator j=from_keys.first; j!= from_keys.second; ++j,++m) {
           const EntityKeyA from_key = j->second;
           const double *c = mesha.value(from_key,f);
           Values[m] = c[n];
         }
+
         // So, we have choosen corner 0 as the base of the span
         // vectors and determined local (or parametric)
         // coordinates of the target point in the span vector
         // coordinate system.  These are stored in S. S is
-        // dimension DIM and there are DIM+1 corner values.
+        // dimension Dimension and there are Dimension+1 corner values.
         // The scalar used to scale the value at corner 0 
         // is 1-sum(S).
         double T=1;
-        for (unsigned j=0; j<dim; ++j) T -= S[j];
+        for (unsigned j=0; j<Dimension; ++j) T -= S[j];
         double interpolated_value = T * Values[0];
-        for (unsigned j=0; j<dim; ++j)
+        for (unsigned j=0; j<Dimension; ++j)
           interpolated_value += S[j] * Values[j+1]; 
         double  *c = meshb.value(to_key, f);
         c[n] = interpolated_value; 
@@ -212,7 +284,7 @@ template <class MESHA, class MESHB>  void LinearInterpoate<MESHA,MESHB>::apply (
  *
  *                                             Drake 9-98
  */
-template <class MESHA, class MESHB> int LinearInterpoate<MESHA,MESHB>::LU_decomp(double A[9], int piv[3], int* sign)
+template <class MESHA, class MESHB> int LinearInterpolate<MESHA,MESHB>::LU_decomp(double A[9], int piv[3], int* sign)
 {
   piv[0] = 0; piv[1] = 1; piv[2] = 2;
   
@@ -300,7 +372,7 @@ template <class MESHA, class MESHB> int LinearInterpoate<MESHA,MESHB>::LU_decomp
  *     Drake 9/98
  *     
  */
-template <class MESHA, class MESHB> int LinearInterpoate<MESHA,MESHB>::LU_solve(const double A[9], const int piv[3], double b[3])
+template <class MESHA, class MESHB> int LinearInterpolate<MESHA,MESHB>::LU_solve(const double A[9], const int piv[3], double b[3])
 {
 #ifndef NDEBUG
   if (A[0] == 0.0 || A[4] == 0.0 || A[8] == 0.0) return 0;
@@ -329,9 +401,9 @@ template <class MESHA, class MESHB> int LinearInterpoate<MESHA,MESHB>::LU_solve(
 }
 
 
-template <class MESHA, class MESHB> std::vector<double> LinearInterpoate<MESHA,MESHB>::solve_3_by_3_with_LU(
-         const MDArray             M,
-         const std::vector<double> x) {
+template <class MESHA, class MESHB> std::vector<double> LinearInterpolate<MESHA,MESHB>::solve_3_by_3_with_LU(
+         const MDArray             &M,
+         const std::vector<double> &x) {
   double A[9];
   double b[3];
   int piv[3];
@@ -343,6 +415,15 @@ template <class MESHA, class MESHB> std::vector<double> LinearInterpoate<MESHA,M
   LU_decomp(A, piv, &sign);
   LU_solve (A, piv, b);
   std::vector<double> v(b,b+3);
+//check
+double a[3]={0};
+for (unsigned i=0; i<3; ++i)
+for (unsigned j=0; j<3; ++j) a[i] += M(i,j)*v[j];
+for (unsigned i=0; i<3; ++i) a[i] -= x[i];
+const double norm = a[0]*a[0]+a[1]*a[1]+a[2]*a[2];
+if (.00001 < norm) std::cout <<__FILE__<<":"<<__LINE__<<" Error in solve_3_by_3_with_LU"<<std::endl;
+
+
   return v;
 }
 

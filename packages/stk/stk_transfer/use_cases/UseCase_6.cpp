@@ -10,7 +10,10 @@
 
 
 #include <stk_mesh/base/Comm.hpp>
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/SkinMesh.hpp>
+#include <stk_mesh/base/GetEntities.hpp>
 
 #include <stk_io/MeshReadWriteUtils.hpp>
 #include <init/Ionit_Initializer.h>
@@ -19,6 +22,8 @@
 #include <stk_util/diag/PrintTimer.hpp>
 
 #include <stk_transfer/Transfer.hpp>
+#include <stk_transfer/STKMesh.hpp>
+#include <stk_transfer/LinearInterpolate.hpp>
 
 namespace bopt = boost::program_options;
 
@@ -108,43 +113,44 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
   stk::mesh::Selector range_nodes = range_meta_data.locally_owned_part();
   stk::mesh::Selector domain_nodes= domain_meta_data.locally_owned_part();
   
-
+  std::vector<stk::mesh::Entity> domain_entities;
   {
-    std::vector<stk::mesh::Entity> entities;
-    get_selected_entities(domain_nodes, domain_bulk_data.buckets(stk::mesh::MetaData::NODE_RANK), entities);
-    const size_t num_entities = entities.size();
+    stk::mesh::get_selected_entities(domain_nodes, domain_bulk_data.buckets(stk::mesh::MetaData::NODE_RANK), domain_entities);
+    const size_t num_entities = domain_entities.size();
     for (size_t i = 0; i < num_entities; ++i) {
-      const stk::mesh::Entity entity = entities[i];
+      const stk::mesh::Entity entity = domain_entities[i];
       double *entity_coordinates = domain_bulk_data.field_data(domain_coord_field, entity);
       double *entity_coord_sum   = domain_bulk_data.field_data(domain_coord_sum_field, entity);
       *entity_coord_sum = entity_coordinates[0] + entity_coordinates[1] + entity_coordinates[2];
     }
   }
+  std::vector<stk::mesh::Entity> range_entities;
   {
-    std::vector<stk::mesh::Entity> entities;
-    get_selected_entities(range_nodes, range_bulk_data.buckets(stk::mesh::MetaData::NODE_RANK), entities);
-    const size_t num_entities = entities.size();
+    stk::mesh::get_selected_entities(range_nodes, range_bulk_data.buckets(stk::mesh::MetaData::NODE_RANK), range_entities);
+    const size_t num_entities = range_entities.size();
     const double rand_max = RAND_MAX;
     for (size_t i = 0; i < num_entities; ++i) {
-      const stk::mesh::Entity entity = entities[i];
+      const stk::mesh::Entity entity = range_entities[i];
       double *entity_coord_sum   = range_bulk_data.field_data(range_coord_sum_field, entity);
       *entity_coord_sum = rand()/rand_max;
     }
   }
 
-  stk::transfer::Transfer<> transfer("STK Transfer test Use case 5");
+  const std::vector<stk::mesh::FieldBase*> from_fields(1, &domain_coord_sum_field);
+  stk::transfer::STKMesh<3> transfer_domain_mesh (domain_entities, domain_coord_field, from_fields);
+
+  const std::vector<stk::mesh::FieldBase*> to_fields  (1, &range_coord_sum_field);
+  stk::transfer::STKMesh<3> transfer_range_mesh (range_entities, range_coord_field, to_fields);
+
+  
+  stk::transfer::GeometricTransfer<class stk::transfer::LinearInterpolate<class stk::transfer::STKMesh<3>, class stk::transfer::STKMesh<3> > >
+    transfer(transfer_domain_mesh, transfer_range_mesh, 4, 1.5, "STK Transfer test Use case 6");
+  
   {
-    std::vector<stk::mesh::FieldBase*>       to_fields  (1,  &range_coord_sum_field);
-    const std::vector<stk::mesh::FieldBase*> from_fields(1, &domain_coord_sum_field);
     stk::diag::TimeBlock __timer_node_to_node(timer_node_to_node);
     try {
-      transfer.NodeToNode(to_fields, 
-                          range_nodes,
-                          range_coord_field,
-                          from_fields, 
-                          domain_nodes,
-                          domain_coord_field,
-                          comm);
+      transfer.initialize();
+      transfer.apply();
     } catch (std::exception &e) {
       std::cout <<__FILE__<<":"<<__LINE__
                 <<" Caught an std::exception with what string:"
@@ -167,14 +173,13 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
                                      range_points);
 
     const unsigned TONUMPOINTS = range_points.size();
-std::cout <<__FILE__<<":"<<__LINE__<<" TONUMPOINTS:"<<TONUMPOINTS<<std::endl;
 
     bool success = true;
     for (unsigned i=0 ; i<TONUMPOINTS; ++i) {
       const  stk::mesh::Entity  entity = range_points[i];
 
-      const double *ToValues = static_cast<double*>(stk::mesh::field_data(range_coord_sum_field, entity));
-      const double *ToPoints = static_cast<double*>(stk::mesh::field_data(range_coord_field, entity));
+      const double *ToValues = static_cast<double*>(range_bulk_data.field_data(range_coord_sum_field, entity));
+      const double *ToPoints = static_cast<double*>(range_bulk_data.field_data(range_coord_field, entity));
 
       double check_l = 0;
       for (unsigned j=0 ; j<DIM; ++j) check_l += ToPoints[j];   

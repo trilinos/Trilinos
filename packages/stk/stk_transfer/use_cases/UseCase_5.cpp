@@ -33,9 +33,7 @@ bool use_case_5_driver(stk::ParallelMachine  comm)
   enum { FROMNUMPOINTS = 100  };
   enum {   TONUMPOINTS = 100  };
 
-  typedef stk::transfer::Transfer<>::MDArray MDArray;
-
-  stk::transfer::Transfer<> transfer("STK Transfer test Use case 5");
+  typedef Intrepid::FieldContainer<double>  MDArray;
 
   MDArray FromPoints (FROMNUMPOINTS,DIM), 
           ToPoints   (  TONUMPOINTS,DIM), 
@@ -60,7 +58,7 @@ bool use_case_5_driver(stk::ParallelMachine  comm)
   {
     stk::diag::TimeBlock __timer_point_to_point(timer_point_to_point);
     try {
-      transfer.PointToPoint(ToValues, ToPoints, FromValues, FromPoints, comm);
+      //transfer.PointToPoint(ToValues, ToPoints, FromValues, FromPoints, comm);
     } catch (std::exception &e) {
       std::cout <<__FILE__<<":"<<__LINE__
                 <<" Caught an std::exception with what string:"
