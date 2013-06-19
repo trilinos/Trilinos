@@ -79,6 +79,7 @@ const Ifpack::EPrecType Ifpack::precTypeValues[Ifpack::numPrecTypes] =
   ,BLOCK_RELAXATION
   ,BLOCK_RELAXATION_STAND_ALONE
   ,BLOCK_RELAXATION_STAND_ALONE_ILU
+  ,BLOCK_RELAXATION_STAND_ALONE_ILUT
   ,BLOCK_RELAXATION_STAND_ALONE_IC
 #ifdef HAVE_IFPACK_SUPERLU
   ,BLOCK_RELAXATION_STAND_ALONE_SILU
@@ -124,6 +125,7 @@ const char* Ifpack::precTypeNames[Ifpack::numPrecTypes] =
   ,"block relaxation"
   ,"block relaxation stand-alone"
   ,"block relaxation stand-alone (ILU)"
+  ,"block relaxation stand-alone (ILUT)"
   ,"block relaxation stand-alone (IC)"
 #ifdef HAVE_IFPACK_SUPERLU
   ,"block relaxation stand-alone (SILU)"
@@ -169,6 +171,7 @@ const bool Ifpack::supportsUnsymmetric[Ifpack::numPrecTypes] =
   ,true // block relaxation
   ,true // block relaxation stand-alone
   ,true // block relaxation stand-alone (ILU)
+  ,true // block relaxation stand-alone (ILUT)
   ,false // block relaxation stand-alone (IC)
 #ifdef HAVE_IFPACK_SUPERLU
   ,true // block relaxation stand-alone (SILU)
@@ -232,6 +235,8 @@ Ifpack_Preconditioner* Ifpack::Create(EPrecType PrecType,
       return(new Ifpack_BlockRelaxation<Ifpack_DenseContainer>(Matrix));
     case BLOCK_RELAXATION_STAND_ALONE_ILU:
       return(new Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_ILU> >(Matrix));
+    case BLOCK_RELAXATION_STAND_ALONE_ILUT:
+      return(new Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_ILUT> >(Matrix));
     case BLOCK_RELAXATION_STAND_ALONE_IC:
       return(new Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_IC> >(Matrix));
 #ifdef HAVE_IFPACK_SUPERLU
