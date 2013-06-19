@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -304,7 +304,7 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank == 1 )
                     &&
                     ( ViewTraits<ST,SL,SD,SM>::rank == 2 )
-                    && 
+                    &&
                     is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutLeft >::value
                   ), unsigned >::type i1 )
   {
@@ -377,9 +377,9 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank == 2 )
                     &&
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
-                    && 
+                    &&
                     is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutLeft >::value
-                    && 
+                    &&
                     is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout , LayoutLeft >::value
                   ) >::type * = 0 )
   {
@@ -425,9 +425,9 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank == 2 )
                     &&
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
-                    && 
+                    &&
                     is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
-                    && 
+                    &&
                     is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout , LayoutRight >::value
                   ) >::type * = 0 )
   {
@@ -467,9 +467,9 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
                     ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
                                      ViewTraits<ST,SL,SD,SM> >::value
                     &&
-                    Impl::is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value 
+                    Impl::is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
                     &&
-                    Impl::is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout , LayoutRight >::value 
+                    Impl::is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout , LayoutRight >::value
                     &&
                     ShapeCompatible< typename ViewTraits<DT,DL,DD,DM>::shape_type ,
                                      typename ViewTraits<ST,SL,SD,SM>::shape_type >::value
@@ -536,7 +536,7 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
           is_right  ? dst.m_shape.N0 * dst.m_stride : (
                       dst.m_stride   * dst.m_shape.N1 * dst.m_shape.N2 * dst.m_shape.N3 *
                       dst.m_shape.N4 * dst.m_shape.N5 * dst.m_shape.N6 * dst.m_shape.N7 )));
-          
+
       DeepCopy< typename dst_traits::memory_space ,
                 typename src_traits::memory_space >( dst.m_ptr_on_device , src.m_ptr_on_device , nbytes );
     }
@@ -646,10 +646,10 @@ public:
   View() : m_ptr_on_device(0), m_stride(0) { traits::shape_type::assign(m_shape,0,0,0,0,0,0,0,0); }
 
   KOKKOSARRAY_INLINE_FUNCTION
-  View( const View & rhs ) : m_ptr_on_device(0) { assign( *this , rhs ); }
+  View( const View & rhs ) : m_ptr_on_device(0) { (void)assign( *this , rhs ); }
 
   KOKKOSARRAY_INLINE_FUNCTION
-  View & operator = ( const View & rhs ) { assign( *this , rhs ); return *this ; }
+  View & operator = ( const View & rhs ) { (void)assign( *this , rhs ); return *this ; }
 
   //------------------------------------
   // Copy or assign compatible array:
@@ -657,12 +657,12 @@ public:
   template< class RT , class RL , class RD , class RM >
   KOKKOSARRAY_INLINE_FUNCTION
   View( const View<RT,RL,RD,RM,typename traits::specialize> & rhs )
-    : m_ptr_on_device(0) { assign( *this , rhs ); }
+    : m_ptr_on_device(0) { (void)assign( *this , rhs ); }
 
   template< class RT , class RL , class RD , class RM >
   KOKKOSARRAY_INLINE_FUNCTION
   View & operator = ( const View<RT,RL,RD,RM,typename traits::specialize> & rhs )
-    { assign( *this , rhs ); return *this ; }
+    { (void)assign( *this , rhs ); return *this ; }
 
   //------------------------------------
   // Allocation.
@@ -678,7 +678,7 @@ public:
         const size_t n6 = 0 ,
         const size_t n7 = 0 )
     : m_ptr_on_device(0)
-    { alloc( *this, label, n0, n1, n2, n3, n4, n5, n6, n7 ); }
+    { (void)alloc( *this, label, n0, n1, n2, n3, n4, n5, n6, n7 ); }
 
   //------------------------------------
   // Is not allocated
@@ -721,7 +721,7 @@ public:
   template< typename iType0 >
   KOKKOSARRAY_INLINE_FUNCTION
   typename Impl::EnableViewOper< traits, LayoutLeft, 1, iType0 >::type & operator()
-    ( const iType0 & i0 , const int , const int = 0 , const int = 0 , 
+    ( const iType0 & i0 , const int , const int = 0 , const int = 0 ,
       const int = 0 , const int = 0 , const int = 0 , const int = 0 ) const
     {
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
@@ -1087,7 +1087,7 @@ public:
   typename Impl::EnableViewOper<
     traits, LayoutRight, 4, iType0, iType1, iType2, iType3
   >::type & operator()
-    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 , 
+    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
       const int , const int = 0 , const int = 0 , const int = 0 ) const
     {
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );

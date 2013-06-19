@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -310,16 +310,16 @@ public:
   ~View() { Impl::ViewTracking< traits >::decrement( m_ptr_on_device ); }
 
   KOKKOSARRAY_INLINE_FUNCTION
-  View( const View & rhs ) : m_ptr_on_device(0) { assign( *this , rhs ); }
+  View( const View & rhs ) : m_ptr_on_device(0) { (void)assign( *this , rhs ); }
 
   KOKKOSARRAY_INLINE_FUNCTION
-  View & operator = ( const View & rhs ) { assign( *this , rhs ); return *this ; }
+  View & operator = ( const View & rhs ) { (void)assign( *this , rhs ); return *this ; }
 
   //------------------------------------
   // Array allocator and member access operator:
 
   View( const std::string & label , const size_t n0 , const size_t n1 )
-    : m_ptr_on_device(0) { alloc( *this , label , n0 , n1 ); }
+    : m_ptr_on_device(0) { (void)alloc( *this , label , n0 , n1 ); }
 
   template< typename iType0 , typename iType1 >
   KOKKOSARRAY_INLINE_FUNCTION
