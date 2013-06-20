@@ -613,16 +613,6 @@ CellTopology MetaData::get_cell_topology( const Part & part) const
   return cell_topology;
 }
 
-EntityRank MetaData::get_entity_rank(
-  const CellTopology       cell_topology) const
-{
-  CellTopologyPartEntityRankMap::const_iterator it = m_cellTopologyPartEntityRankMap.find(cell_topology);
-  if (it == m_cellTopologyPartEntityRankMap.end())
-    return INVALID_RANK;
-  else
-    return (*it).second.second;
-}
-
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 // Verify parallel consistency of fields and parts

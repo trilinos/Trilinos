@@ -41,7 +41,6 @@ STKUNIT_UNIT_TEST ( UnitTestMetaData, create )
   STKUNIT_ASSERT_THROW( fem_meta.get_cell_topology_root_part( invalid_cell_topology), std::logic_error );
   STKUNIT_ASSERT_THROW( fem_meta.get_cell_topology( universal_part), std::logic_error );
   STKUNIT_ASSERT_THROW( stk::mesh::set_cell_topology( universal_part, invalid_cell_topology), std::logic_error );
-  STKUNIT_EXPECT_EQUAL( fem_meta.get_entity_rank( invalid_cell_topology), INVALID_RANK );
 }
 
 STKUNIT_UNIT_TEST( UnitTestMetaData, initialize )
@@ -497,17 +496,4 @@ STKUNIT_UNIT_TEST( MetaData, get_cell_topology_root_part_invalid )
   stk::mesh::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
 
   STKUNIT_ASSERT_THROW( fem_meta.get_cell_topology_root_part( hex_top ), std::runtime_error );
-}
-
-STKUNIT_UNIT_TEST( MetaData, get_entity_rank_invalid )
-{
-  stk::mesh::MetaData fem_meta;
-  const size_t spatial_dimension = 2;
-  fem_meta.initialize(spatial_dimension);
-
-  stk::mesh::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
-  stk::mesh::EntityRank rank = fem_meta.get_entity_rank(hex_top);
-
-  const stk::mesh::EntityRank invalid_rank = INVALID_RANK;
-  STKUNIT_ASSERT_EQUAL( rank, invalid_rank );
 }

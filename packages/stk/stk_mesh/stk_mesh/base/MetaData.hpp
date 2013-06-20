@@ -455,12 +455,6 @@ public:
 
   CellTopology get_cell_topology( const std::string & topology_name) const;
 
-  /** \brief Return the EntityRank that is associated with the given cell
-   * topology.  In several cases, this rank is dependent on spatial
-   * dimension.
-   */
-  EntityRank get_entity_rank(const CellTopology cell_topology) const;
-
   void dump_all_meta_info(std::ostream& out = std::cout) const;
 
   /** \} */
