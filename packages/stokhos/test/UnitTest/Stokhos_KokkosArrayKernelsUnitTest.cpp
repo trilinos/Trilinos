@@ -203,7 +203,7 @@ int main( int argc, char* argv[] ) {
   const size_t gang_worker_count = core_topo.second;
   KokkosArray::Host::initialize( gang_count , gang_worker_count );
 
-#ifdef HAVE_KOKKOSARRAY_CUDA
+#ifdef KOKKOSARRAY_HAVE_CUDA
   // Initialize Cuda
   KokkosArray::Cuda::initialize( KokkosArray::Cuda::SelectDevice(0) );
 #endif
@@ -213,7 +213,7 @@ int main( int argc, char* argv[] ) {
 
   // Finish up
   KokkosArray::Host::finalize();
-#ifdef HAVE_KOKKOSARRAY_CUDA
+#ifdef KOKKOSARRAY_HAVE_CUDA
   KokkosArray::Cuda::finalize();
 #endif
 
