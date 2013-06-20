@@ -79,7 +79,7 @@ private:
   friend class impl::Partition;
   friend class BulkData;                // Replacement friend.
   friend union Entity;
-  friend class utest::ReversePartition;
+  friend struct utest::ReversePartition;
   friend struct utest::SyncToPartitions;
 
   BulkData             & m_mesh ;        // Where this bucket resides
