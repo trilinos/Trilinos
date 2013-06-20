@@ -98,6 +98,13 @@ void default_error_handler(const char* expr,
                            std::ostringstream& message);
 
 /**
+ * This is the same as default_error_handler but does not output traceback
+ * */
+void clean_error_handler(const char* expr,
+                           const std::string& location,
+                           std::ostringstream& message);
+
+/**
  * A function used to create and throw nice-looking exceptions for invalid
  * argument errors.
  */

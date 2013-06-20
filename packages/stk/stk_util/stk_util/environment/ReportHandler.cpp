@@ -38,6 +38,7 @@ void default_handler_req(const char* expr,
     error_msg);
 }
 
+
 template<class EXCEPTION>
 void default_handler_exc(const char* expr,
                          const std::string& location,
@@ -59,7 +60,23 @@ void default_handler_exc(const char* expr,
     error_msg);
 }
 
+
 }
+
+void clean_error_handler(const char* expr,
+                         const std::string& location,
+                         std::ostringstream& message)
+{
+  std::string error_msg = "";
+  if (message.str() != "") {
+    error_msg = std::string("Error: ") + message.str() + "\n";
+  }
+
+  throw std::logic_error(
+    std::string("Requirement( ") + expr + " ) FAILED\n" +
+    error_msg);
+}
+
 
 void
 default_report_handler(
