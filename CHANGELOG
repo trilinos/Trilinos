@@ -4,11 +4,19 @@
 #                                                                             #
 ###############################################################################
 
+Release update 11.2.4 June 20, 2013
+
+1. ML        - Add support for ParMETIS 4.x and METIS 5.x
+
+2. Teuchos   - Fix cdotc_ declarations
+
+3. Triutils  - Fix issue with ambiguous abs() calls in 64bit.
+
 Release update 11.2.3 April 25, 2013
 
 1. EpetraExt - Fix reindexing with the row and column GID set is not the same.
 
-1. EpetraExt - Fixed singleton filter to not generate a separate linear problem
+2. EpetraExt - Fixed singleton filter to not generate a separate linear problem
                if no singletons are detected.
 
 3. Intrepid  - MiniTensor: Fixed coeffcients of Pade Approximant for the
