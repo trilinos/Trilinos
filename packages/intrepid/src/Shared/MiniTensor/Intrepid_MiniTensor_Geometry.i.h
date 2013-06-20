@@ -55,13 +55,9 @@ ELEMENT::Type
 find_type_1D(Index const nodes)
 {
   switch (nodes) {
-    case 2:
-      return ELEMENT::SEGMENTAL;
-      break;
-    default:
-      break;
+    case 2:   return ELEMENT::SEGMENTAL;
+    default:  return ELEMENT::UNKNOWN;
   }
-  return ELEMENT::UNKNOWN;
 }
 
 inline
@@ -69,16 +65,10 @@ ELEMENT::Type
 find_type_2D(Index const nodes)
 {
   switch (nodes) {
-    case 3:
-      return ELEMENT::TRIANGULAR;
-      break;
-    case 4:
-      return ELEMENT::QUADRILATERAL;
-      break;
-    default:
-      break;
+    case 3:   return ELEMENT::TRIANGULAR;
+    case 4:   return ELEMENT::QUADRILATERAL;
+    default:  return ELEMENT::UNKNOWN;
   }
-  return ELEMENT::UNKNOWN;
 }
 
 inline
@@ -86,16 +76,10 @@ ELEMENT::Type
 find_type_3D(Index const nodes)
 {
   switch (nodes) {
-    case 4:
-      return ELEMENT::TETRAHEDRAL;
-      break;
-    case 8:
-      return ELEMENT::HEXAHEDRAL;
-      break;
-    default:
-      break;
+    case 4:   return ELEMENT::TETRAHEDRAL;
+    case 8:   return ELEMENT::HEXAHEDRAL;
+    default:  return ELEMENT::UNKNOWN;
   }
-  return ELEMENT::UNKNOWN;
 }
 
 } // anonymous namespace

@@ -889,7 +889,7 @@ gaussian_elimination(Tensor<T> const & A)
     // find pivot in column j, starting in row i
     i_max = i;
     for (Index k = i + 1; k < N; ++k) {
-      if (std::abs(U(k,j) > std::abs(U(i_max,j)))) {
+      if (std::abs(U(k,j)) > std::abs(U(i_max,j))) {
         i_max = k;
       }
     }
