@@ -130,7 +130,7 @@ void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
   std::cout << "KokkosArray::Host thread_mapping" << std::endl ;
 
   for ( unsigned g = 0 , t = 0 ; g < gang_topo.first ; ++g ) {
-    std::cout << "  gang[" << g 
+    std::cout << "  gang[" << g
               << "] on numa[" << thread_coord[t].first
               << "] cores(" ;
     for ( unsigned w = 0 ; w < gang_topo.second ; ++w , ++t ) {
@@ -154,7 +154,7 @@ namespace {
 class HostWorkerBlock : public Impl::HostThreadWorker {
 public:
 
-  void execute_on_thread( Impl::HostThread & thread ) const 
+  void execute_on_thread( Impl::HostThread & thread ) const
   {
     Impl::host_thread_lock();
     Impl::host_thread_unlock();
@@ -201,16 +201,16 @@ unsigned bind_host_thread()
   unsigned i = 0 ;
 
   // Match one of the requests:
-  for ( i = 0 ; i < s_host_thread_count && current != s_host_thread_coord[i] ; ++i );
+  for ( i = 0 ; i < s_host_thread_count && current != s_host_thread_coord[i] ; ++i ) {}
 
   if ( s_host_thread_count == i ) {
     // Match the NUMA request:
-    for ( i = 0 ; i < s_host_thread_count && current.first != s_host_thread_coord[i].first ; ++i );
+    for ( i = 0 ; i < s_host_thread_count && current.first != s_host_thread_coord[i].first ; ++i ) {}
   }
 
   if ( s_host_thread_count == i ) {
     // Match any unclaimed request:
-    for ( i = 0 ; i < s_host_thread_count && ~0u == s_host_thread_coord[i].first  ; ++i );
+    for ( i = 0 ; i < s_host_thread_count && ~0u == s_host_thread_coord[i].first  ; ++i ) {}
   }
 
   if ( i < s_host_thread_count ) {

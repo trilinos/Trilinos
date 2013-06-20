@@ -77,7 +77,7 @@ struct HostThreadSentinel {
 HostThreadSentinel::~HostThreadSentinel()
 {
   unsigned i = 0 ;
-  for ( ; i < HostThread::max_thread_count && 0 == HostThread::get_thread(i) ; ++i );
+  for ( ; i < HostThread::max_thread_count && 0 == HostThread::get_thread(i) ; ++i ) {}
   if ( i < HostThread::max_thread_count ) {
     std::cerr << "KokkosArray::Impl::HostThread WARNING : "
               << "existing with live HostThread objects"
@@ -170,10 +170,10 @@ void HostThread::set_thread_relationships()
     unsigned j = 0 ;
 
     // Non-zero entries:
-    for ( i = 0 ; i < HostThread::max_thread_count && 0 != HostThread::m_thread[i]; ++i );
+    for ( i = 0 ; i < HostThread::max_thread_count && 0 != HostThread::m_thread[i]; ++i ) {}
 
     // Followed by zero entries:
-    for ( j = i ; j < HostThread::max_thread_count && 0 == HostThread::m_thread[j] ; ++j );
+    for ( j = i ; j < HostThread::max_thread_count && 0 == HostThread::m_thread[j] ; ++j ) {}
 
     if ( 0 == i && HostThread::max_thread_count == j ) return ;
 

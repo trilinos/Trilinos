@@ -6,7 +6,6 @@
 # Additional command-line arguments given to this script will be
 # passed directly to CMake.
 #
-CMAKE_EXTRA_ARGS=$@
 
 #
 # Force CMake to re-evaluate build options.
@@ -16,8 +15,8 @@ rm -rf CMake* Trilinos* packages Dart* Testing cmake_install.cmake MakeFile*
 #-----------------------------------------------------------------------------
 # Location of Trilinos source tree.
 
-CMAKE_TRILINOS_BASE_DIR="../Trilinos"
-CMAKE_TRILINOS_INSTALL_DIR="../TrilinosInstall"
+CMAKE_PROJECT_DIR="../Trilinos"
+CMAKE_INSTALL_PREFIX="../TrilinosInstall"
 
 #-----------------------------------------------------------------------------
 # MPI configuation:
@@ -28,6 +27,18 @@ CMAKE_TRILINOS_INSTALL_DIR="../TrilinosInstall"
 CMAKE_MPI=""
 CMAKE_MPI="${CMAKE_MPI} -D TPL_ENABLE_MPI:BOOL=ON"
 CMAKE_MPI="${CMAKE_MPI} -D MPI_BASE_DIR:PATH=/home/sems/common/openmpi/current"
+
+#-----------------------------------------------------------------------------
+# Pthread configuation:
+
+CMAKE_PTHREAD=""
+CMAKE_PTHREAD="${CMAKE_PTHREAD} -D TPL_ENABLE_Pthread:BOOL=ON"
+
+#-----------------------------------------------------------------------------
+# OpenMP configuation:
+
+CMAKE_OPENMP=""
+CMAKE_OPENMP="${CMAKE_OPENMP} -D Trilinos_ENABLE_OpenMp:BOOL=ON"
 
 #-----------------------------------------------------------------------------
 # Hardware locality cmake configuration:
@@ -64,31 +75,34 @@ CMAKE_CUDA="${CMAKE_CUDA} -D CUDA_PROPAGATE_HOST_FLAGS:BOOL=OFF"
 CMAKE_CUDA="${CMAKE_CUDA} -D CUDA_NVCC_FLAGS:STRING=${CUDA_NVCC_FLAGS}"
 
 #-----------------------------------------------------------------------------
-# KokkosArray cmake configuration to use Pthreads, HWLOC, and Cuda
-
-CMAKE_TRILINOS=""
-CMAKE_TRILINOS="${CMAKE_TRILINOS} -D CMAKE_BUILD_TYPE:STRING='RELEASE'"
-CMAKE_TRILINOS="${CMAKE_TRILINOS} -D CMAKE_VERBOSE_MAKEFILE:BOOL=OFF"
-CMAKE_TRILINOS="${CMAKE_TRILINOS} -D CMAKE_INSTALL_PREFIX=${CMAKE_TRILINOS_INSTALL_DIR}"
-
-CMAKE_TRILINOS="${CMAKE_TRILINOS} ${CMAKE_MPI}"
-CMAKE_TRILINOS="${CMAKE_TRILINOS} ${CMAKE_CUDA}"
-CMAKE_TRILINOS="${CMAKE_TRILINOS} ${CMAKE_HWLOC}"
-CMAKE_TRILINOS="${CMAKE_TRILINOS} -D TPL_ENABLE_Pthread:BOOL=ON"
-#CMAKE_TRILINOS="${CMAKE_TRILINOS} -D Trilinos_ENABLE_OpenMp:BOOL=ON"
+# configure Trilinos to only bulid KokkosArray
 
 CMAKE_TRILINOS="${CMAKE_TRILINOS} -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF"
-CMAKE_TRILINOS="${CMAKE_TRILINOS} -D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING='-Werror'"
 CMAKE_TRILINOS="${CMAKE_TRILINOS} -D Trilinos_ENABLE_Fortran:BOOL=OFF"
 CMAKE_TRILINOS="${CMAKE_TRILINOS} -D Trilinos_ENABLE_EXAMPLES:BOOL=ON"
 CMAKE_TRILINOS="${CMAKE_TRILINOS} -D Trilinos_ENABLE_TESTS:BOOL=ON"
-
 CMAKE_TRILINOS="${CMAKE_TRILINOS} -D Trilinos_ENABLE_KokkosArray:BOOL=ON"
 
-cmake \
-  ${CMAKE_TRILINOS} \
-  ${CMAKE_EXTRA_ARGS} \
-  ${CMAKE_TRILINOS_BASE_DIR}
+
+#-----------------------------------------------------------------------------
+# KokkosArray cmake configuration to use MPI, Pthreads, HWLOC, and Cuda
+
+CMAKE_CONFIGURE=""
+#CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D CMAKE_BUILD_TYPE:STRING='RELEASE'"
+CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D CMAKE_BUILD_TYPE:STRING='DEBUG'"
+CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D CMAKE_VERBOSE_MAKEFILE:BOOL=OFF"
+CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D CMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}"
+
+CMAKE_CONFIGURE="${CMAKE_CONFIGURE} ${CMAKE_MPI}"
+CMAKE_CONFIGURE="${CMAKE_CONFIGURE} ${CMAKE_CUDA}"
+CMAKE_CONFIGURE="${CMAKE_CONFIGURE} ${CMAKE_HWLOC}"
+CMAKE_CONFIGURE="${CMAKE_CONFIGURE} ${CMAKE_PTHREAD}"
+#CMAKE_CONFIGURE="${CMAKE_CONFIGURE} ${CMAKE_OPENMP}"
+CMAKE_CONFIGURE="${CMAKE_CONFIGURE} ${CMAKE_TRILINOS}"
+
+
+#cmake -G"Eclipse CDT4 - Unix Makefiles" ${CMAKE_CONFIGURE} ${CMAKE_PROJECT_DIR}
+cmake ${CMAKE_CONFIGURE} ${CMAKE_PROJECT_DIR}
 
 #-----------------------------------------------------------------------------
 
