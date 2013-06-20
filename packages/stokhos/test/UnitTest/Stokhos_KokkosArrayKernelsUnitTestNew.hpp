@@ -65,6 +65,7 @@
 #include "Stokhos_FlatSparse3Tensor.hpp"
 #include "Stokhos_FlatSparse3Tensor_kji.hpp"
 #include "Stokhos_LinearSparse3Tensor.hpp"
+#include "Stokhos_TiledCrsProductTensor.hpp"
 
 namespace KokkosArrayKernelsUnitTest {
 
@@ -131,6 +132,7 @@ namespace KokkosArrayKernelsUnitTest {
     const scalar A_stoch = ( 1.0 + scalar(iStoch) / scalar(nStoch) );
 
     return A_fem + A_stoch ;
+    //return 1.0;
   }
 
   template <typename scalar, typename ordinal>
@@ -143,6 +145,7 @@ namespace KokkosArrayKernelsUnitTest {
     const scalar X_fem = 100.0 + scalar(iColFEM) / scalar(nFEM);
     const scalar X_stoch =  1.0 + scalar(iStoch) / scalar(nStoch);
     return X_fem + X_stoch ;
+    //return 1.0;
   }
 
   struct UnitTestSetup {
@@ -168,7 +171,9 @@ namespace KokkosArrayKernelsUnitTest {
 
       p = p_;
       d = d_;
-      nGrid = 5;
+      // p = 3;
+      // d = 1;
+      nGrid = 3;
       rel_tol = 1e-12;
       abs_tol = 1e-12;
 
@@ -248,12 +253,10 @@ namespace KokkosArrayKernelsUnitTest {
 
             double v = generate_matrix_coefficient<double>(
               fem_length , stoch_length , iRowFEM , iColFEM , i );
-            //double v = 1.0;
             A->ReplaceGlobalValues(iRowFEM, 1, &v, &iColFEM);
           }
         }
         A->FillComplete();
-        //A->PutScalar(1.0);
         A_sg_blocks->setCoeffPtr(i, A);
       }
       sg_A->setupOperator(A_sg_blocks);
@@ -268,7 +271,6 @@ namespace KokkosArrayKernelsUnitTest {
         for (int iColStoch=0 ; iColStoch < stoch_length; ++iColStoch ) {
           (*sg_x)[iColStoch][iColFEM] = generate_vector_coefficient<double>(
             fem_length , stoch_length , iColFEM , iColStoch );
-          //(*sg_x)[iColStoch][iColFEM] = 1.0;
         }
       }
       sg_y->init(0.0);
@@ -314,7 +316,8 @@ namespace KokkosArrayKernelsUnitTest {
           bool s = diff < tol;
           if (!s) {
             out << "y_expected[" << block << "][" << i << "] - "
-                << "y[" << block << "][" << i << "] == "
+                << "y[" << block << "][" << i << "] = " << (*sg_y)[block][i]
+                << " - " << y[block][i] << " == "
                 << diff << " < " << tol << " : failed"
                 << std::endl;
           }
@@ -337,7 +340,8 @@ namespace KokkosArrayKernelsUnitTest {
           bool s = diff < tol;
           if (!s) {
             out << "y_expected[" << block << "][" << i << "] - "
-                << "y(" << b << "," << i << ") == "
+                << "y(" << b << "," << i << ") = " << (*sg_y)[block][i]
+                << " - " << y(b,i) << " == "
                 << diff << " < " << tol << " : failed"
                 << std::endl;
           }
@@ -448,7 +452,7 @@ namespace KokkosArrayKernelsUnitTest {
                             bool test_block,
                             Teuchos::FancyOStream& out) {
     typedef Stokhos::CrsMatrix<value_type,Device> matrix_type ;
-    typedef KokkosArray::CrsArray<int,Device,Device,int> crsarray_type ;
+    typedef KokkosArray::CrsArray<int,Device,void,int> crsarray_type ;
     typedef KokkosArray::View<value_type[],Device> vec_type ;
 
     //------------------------------
@@ -477,7 +481,6 @@ namespace KokkosArrayKernelsUnitTest {
 
           hM(iEntryFEM) = generate_matrix_coefficient<value_type>(
             setup.fem_length , setup.stoch_length , iRowFEM , iColFEM , block );
-          //hM(iEntryFEM) = 1.0;
         }
       }
 
@@ -485,13 +488,17 @@ namespace KokkosArrayKernelsUnitTest {
 
       typename vec_type::HostMirror hx =
         KokkosArray::create_mirror( x[block] );
+      typename vec_type::HostMirror hy =
+        KokkosArray::create_mirror( y[block] );
 
       for ( int i = 0 ; i < setup.fem_length ; ++i ) {
         hx(i) = generate_vector_coefficient<value_type>(
-          setup.fem_length , setup.stoch_length , i , block ); ;
+          setup.fem_length , setup.stoch_length , i , block );
+        hy(i) = 0.0;
       }
 
       KokkosArray::deep_copy( x[block] , hx );
+      KokkosArray::deep_copy( y[block] , hy );
     }
 
     // Original matrix-free multiply algorithm using a block apply
@@ -550,8 +557,10 @@ namespace KokkosArrayKernelsUnitTest {
   }
 
   template< typename ScalarType , typename TensorType, class Device >
-  bool test_crs_product_tensor(const UnitTestSetup& setup,
-                               Teuchos::FancyOStream& out) {
+  bool test_crs_product_tensor(
+    const UnitTestSetup& setup,
+    Teuchos::FancyOStream& out,
+    const Teuchos::ParameterList& params = Teuchos::ParameterList()) {
     typedef ScalarType value_type ;
     typedef KokkosArray::View< value_type** , KokkosArray::LayoutLeft ,
                                Device > block_vector_type ;
@@ -588,7 +597,8 @@ namespace KokkosArrayKernelsUnitTest {
 
     matrix.block =
       Stokhos::create_stochastic_product_tensor< TensorType >( *setup.basis,
-                                                               *setup.Cijk );
+                                                               *setup.Cijk,
+                                                               params);
 
     matrix.graph = KokkosArray::create_crsarray<graph_type>(
       std::string("test crs graph") , setup.fem_graph );
@@ -628,7 +638,8 @@ namespace KokkosArrayKernelsUnitTest {
 
   template< typename ScalarType , class Device , int BlockSize >
   bool test_linear_tensor(const UnitTestSetup& setup,
-                          Teuchos::FancyOStream& out) {
+                          Teuchos::FancyOStream& out,
+                          const bool symmetric) {
     typedef ScalarType value_type ;
     typedef int ordinal_type;
     typedef KokkosArray::View< value_type** , KokkosArray::LayoutLeft ,
@@ -642,10 +653,12 @@ namespace KokkosArrayKernelsUnitTest {
     // Build tensor
     matrix_type matrix ;
 
-    const bool symmetric = true;
+    Teuchos::ParameterList params;
+    params.set("Symmetric",symmetric);
     matrix.block =
       Stokhos::create_stochastic_product_tensor< TensorType >( *setup.basis,
-                                                               symmetric );
+                                                               *setup.Cijk,
+                                                               params );
     int aligned_stoch_length = matrix.block.tensor().aligned_dimension();
 
     //------------------------------

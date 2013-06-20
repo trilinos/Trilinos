@@ -58,7 +58,7 @@ public:
   typedef ValueType  value_type ;
 
   KokkosArray::View< value_type[] , device_type >   values ;
-  KokkosArray::CrsArray< int , device_type , device_type , int >  graph ;
+  KokkosArray::CrsArray< int , device_type , void , int >  graph ;
 };
 
 template< typename MatrixValueType ,

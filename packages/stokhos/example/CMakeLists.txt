@@ -453,6 +453,12 @@ IF (Stokhos_ENABLE_Thrust)
 
 ENDIF()
 
+TRIBITS_ADD_EXECUTABLE(
+  cijk_partition_rcb
+  SOURCES cijk_partition_rcb.cpp
+  DEPLIBS stokhos
+  )
+
 IF(Stokhos_ENABLE_Isorropia)
 
   TRIBITS_ADD_EXECUTABLE(

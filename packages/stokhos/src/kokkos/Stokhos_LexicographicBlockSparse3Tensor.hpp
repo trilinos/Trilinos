@@ -47,6 +47,7 @@
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_ProductBasis.hpp"
 #include "Stokhos_LTBSparse3Tensor.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 #include <sstream>
 #include <fstream>
@@ -186,7 +187,8 @@ public:
   template <typename OrdinalType>
   static LexicographicBlockSparse3Tensor
   create(const Stokhos::ProductBasis<OrdinalType,ValueType>& basis,
-         const Stokhos::LTBSparse3Tensor<OrdinalType,ValueType>& Cijk)
+         const Stokhos::LTBSparse3Tensor<OrdinalType,ValueType>& Cijk,
+         const Teuchos::ParameterList& params = Teuchos::ParameterList())
   {
     using Teuchos::Array;
     using Teuchos::RCP;
@@ -281,9 +283,11 @@ template< class Device , typename OrdinalType , typename ValueType >
 LexicographicBlockSparse3Tensor<ValueType, Device>
 create_lexicographic_block_sparse_3_tensor(
   const Stokhos::ProductBasis<OrdinalType,ValueType>& basis,
-  const Stokhos::LTBSparse3Tensor<OrdinalType,ValueType>& Cijk )
+  const Stokhos::LTBSparse3Tensor<OrdinalType,ValueType>& Cijk,
+  const Teuchos::ParameterList& params = Teuchos::ParameterList())
 {
-  return LexicographicBlockSparse3Tensor<ValueType, Device>::create(Cijk );
+  return LexicographicBlockSparse3Tensor<ValueType, Device>::create(
+    basis, Cijk, params);
 }
 
 } /* namespace Stokhos */

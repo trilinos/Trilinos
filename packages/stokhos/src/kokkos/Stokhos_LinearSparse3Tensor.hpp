@@ -34,6 +34,7 @@
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_ProductBasis.hpp"
 #include "Stokhos_Sparse3Tensor.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -43,7 +44,7 @@ namespace Stokhos {
 /** \brief  Sparse product tensor with replicated entries
  *          to provide subsets with a given coordinate.
  */
-template< typename ValueType , class DeviceType , int BlockSize = 1 >
+template< typename ValueType , class DeviceType , int BlockSize >
 class LinearSparse3Tensor {
 public:
 
@@ -114,7 +115,7 @@ public:
 
   /** \brief Is tensor built from symmetric PDFs. */
    KOKKOSARRAY_INLINE_FUNCTION
-   bool symmetric() const 
+   bool symmetric() const
    { return m_symmetric; }
 
   /** \brief  Value for entry 'entry' */
@@ -134,9 +135,12 @@ public:
 
   template <typename OrdinalType>
   static LinearSparse3Tensor
-  create( const Stokhos::ProductBasis<OrdinalType,ValueType>& basis ,
-          const bool symmetric )
+  create( const Stokhos::ProductBasis<OrdinalType,ValueType>& basis,
+          const Stokhos::Sparse3Tensor<OrdinalType,ValueType>& Cijk,
+          const Teuchos::ParameterList& params)
   {
+    const bool symmetric = params.get<bool>("Symmetric");
+
     // Allocate tensor data -- currently assuming isotropic
     const size_type dim = basis.size();
     LinearSparse3Tensor tensor ;
@@ -177,9 +181,11 @@ template< class Device , typename OrdinalType , typename ValueType , int BlockSi
 LinearSparse3Tensor<ValueType, Device,BlockSize>
 create_linear_sparse_3_tensor(
   const Stokhos::ProductBasis<OrdinalType,ValueType>& basis,
-  const Stokhos::Sparse3Tensor<OrdinalType,ValueType>& Cijk )
+  const Stokhos::Sparse3Tensor<OrdinalType,ValueType>& Cijk,
+  const Teuchos::ParameterList& params)
 {
-  return LinearSparse3Tensor<ValueType, Device, BlockSize>::create( basis, Cijk );
+  return LinearSparse3Tensor<ValueType, Device, BlockSize>::create(
+    basis, Cijk, params );
 }
 
 } /* namespace Stokhos */

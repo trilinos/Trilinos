@@ -97,11 +97,6 @@ public:
           TV aj(a, j), ak(a, k), xj(x, j), xk(x, k),
             c(&(tensor.value(iEntry)));
 
-          // const size_type *j = &(tensor.coord(iEntry,0));
-          // const size_type *k = &(tensor.coord(iEntry,1));
-          // TV aj(a, j, 2), ak(a, k, 2), xj(x, j, 2), xk(x, k, 2),
-          //    c(&(tensor.value(iEntry)));
-
           // vy += c * ( aj * xk + ak * xj)
           aj.times_equal(xk);
           ak.times_equal(xj);

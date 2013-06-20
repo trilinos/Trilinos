@@ -54,6 +54,7 @@
 #include "Stokhos_Host_BlockCrsMatrix.hpp"
 #include "Stokhos_Host_StochasticProductTensor.hpp"
 #include "Stokhos_Host_CrsProductTensor.hpp"
+#include "Stokhos_Host_TiledCrsProductTensor.hpp"
 #include "Stokhos_Host_FlatSparse3Tensor.hpp"
 #include "Stokhos_Host_FlatSparse3Tensor_kji.hpp"
 #include "Stokhos_Host_LexicographicBlockSparse3Tensor.hpp"
@@ -96,10 +97,10 @@ struct performance_test_driver<Scalar,KokkosArray::Host> {
 #endif
       }
       else {
-        // performance_test_driver_poly<Scalar,Device,Stokhos::DefaultSparseMatOps>(
-        //   3 , 1 , 12 , nGrid , nIter , test_block , symmetric );
         performance_test_driver_poly<Scalar,Device,Stokhos::DefaultSparseMatOps>(
-          5 , 4 ,  4 , nGrid , nIter , test_block , symmetric );
+          3 , 1 , 12 , nGrid , nIter , test_block , symmetric );
+        performance_test_driver_poly<Scalar,Device,Stokhos::DefaultSparseMatOps>(
+          5 , 1 ,  6 , nGrid , nIter , test_block , symmetric );
       }
     }
 
@@ -124,9 +125,9 @@ struct performance_test_driver<Scalar,KokkosArray::Host> {
     // Just polynomial methods compared against original
     if (test_lin) {
       nGrid = 64 ;
-      nIter = 20 ;
+      nIter = 10 ;
       performance_test_driver_linear<Scalar,Device,Stokhos::DefaultSparseMatOps>(
-        5 ,  50 , 5 , nGrid , nIter , test_block , symmetric );
+        31 ,  255 , 32 , nGrid , nIter , test_block , symmetric );
     }
 
     //------------------------------
@@ -142,8 +143,8 @@ int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
 {
   const std::pair<unsigned,unsigned> core_topo =
     KokkosArray::hwloc::get_core_topology();
-  //const size_t core_capacity = KokkosArray::hwloc::get_core_capacity();
-  const size_t core_capacity = 1;
+  const size_t core_capacity = KokkosArray::hwloc::get_core_capacity();
+  //const size_t core_capacity = 1;
 
   const size_t gang_count = core_topo.first ;
   const size_t gang_worker_count = core_topo.second * core_capacity;

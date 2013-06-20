@@ -48,8 +48,8 @@ int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
              bool test_block, bool symmetric, bool mkl);
 
 template <typename scalar>
-int mainCuda(bool test_flat, bool test_orig, bool test_block, bool symmetric,
-             int device_id);
+int mainCuda(bool test_flat, bool test_orig, bool test_lin,
+             bool test_block, bool symmetric, int device_id);
 
 int main(int argc, char *argv[])
 {
@@ -139,9 +139,9 @@ int main(int argc, char *argv[])
   }
   if (test_cuda) {
     if (single)
-      mainCuda<float>(test_flat, test_orig, test_block, symmetric, device);
+      mainCuda<float>(test_flat, test_orig, test_lin, test_block, symmetric, device);
     else
-      mainCuda<double>(test_flat, test_orig, test_block, symmetric, device);
+      mainCuda<double>(test_flat, test_orig, test_lin, test_block, symmetric, device);
   }
 
   return 0 ;

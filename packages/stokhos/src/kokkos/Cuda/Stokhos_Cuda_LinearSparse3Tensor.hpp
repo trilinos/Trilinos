@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_CUDA_FLAT_SPARSE_3_TENSOR_HPP
-#define STOKHOS_CUDA_FLAT_SPARSE_3_TENSOR_HPP
+#ifndef STOKHOS_CUDA_LINEAR_SPARSE_3_TENSOR_HPP
+#define STOKHOS_CUDA_LINEAR_SPARSE_3_TENSOR_HPP
 
 #include <iostream>
 
@@ -44,12 +44,16 @@ namespace Stokhos {
 
 //----------------------------------------------------------------------------
 
-template< typename TensorScalar ,
-          typename MatrixScalar ,
-          typename VectorScalar ,
+/*
+ * This version uses 4 warps per block, one warp per spatial row, and loops
+ * through stochastic rows 32 at a time.
+ */
+template< typename TensorScalar,
+          typename MatrixScalar,
+          typename VectorScalar,
           int BlockSize >
 class Multiply<
-  BlockCrsMatrix< LinearSparse3Tensor< TensorScalar, KokkosArray::Cuda , BlockSize >,
+  BlockCrsMatrix< LinearSparse3Tensor< TensorScalar, KokkosArray::Cuda, BlockSize >,
                   MatrixScalar, KokkosArray::Cuda >,
   KokkosArray::View<VectorScalar**, KokkosArray::LayoutLeft, KokkosArray::Cuda>,
   KokkosArray::View<VectorScalar**, KokkosArray::LayoutLeft, KokkosArray::Cuda>,
@@ -57,25 +61,26 @@ class Multiply<
 {
 public:
 
-  typedef KokkosArray::Cuda device_type ;
-  typedef device_type::size_type size_type ;
+  typedef KokkosArray::Cuda device_type;
+  typedef device_type::size_type size_type;
 
-  typedef LinearSparse3Tensor< TensorScalar , device_type > tensor_type ;
-  typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type ;
-  typedef KokkosArray::View< VectorScalar** ,
-                             KokkosArray::LayoutLeft ,
-                             KokkosArray::Cuda > vector_type ;
+  typedef LinearSparse3Tensor< TensorScalar, device_type, BlockSize > tensor_type;
+  typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type;
+  typedef KokkosArray::View< VectorScalar**,
+                             KokkosArray::LayoutLeft,
+                             KokkosArray::Cuda > vector_type;
 
-  class ApplyKernel {
+  template <int MAX_COL>
+  class ApplyKernelSymmetric {
   public:
 
-    const matrix_type m_A ;
-    const vector_type m_x ;
-    const vector_type m_y ;
+    const matrix_type m_A;
+    const vector_type m_x;
+    const vector_type m_y;
 
-    ApplyKernel( const matrix_type & A ,
-                 const vector_type & x ,
-                 const vector_type & y )
+    ApplyKernelSymmetric( const matrix_type & A,
+                          const vector_type & x,
+                          const vector_type & y )
       : m_A( A ), m_x( x ), m_y( y ) {}
 
     __device__
@@ -84,79 +89,216 @@ public:
       // Number of bases in the stochastic system:
       const size_type dim = m_A.block.dimension();
 
-      const size_type nid = blockDim.x * blockDim.y ;
-      const size_type tid = threadIdx.x + blockDim.x * threadIdx.y ;
-
-      VectorScalar * const sh_t =
+      volatile VectorScalar * const sh =
         kokkos_impl_cuda_shared_memory<VectorScalar>();
-      volatile VectorScalar * const sh_y0 = sh_t + tid;
-      VectorScalar * const sh_y = sh_t + nid;
+      volatile VectorScalar * const sh_y0 =
+        sh + blockDim.x*threadIdx.y;
+      volatile VectorScalar * const sh_a0 =
+        sh + blockDim.x*blockDim.y + MAX_COL*threadIdx.y;
+      volatile VectorScalar * const sh_x0 =
+        sh + blockDim.x*blockDim.y + MAX_COL*blockDim.y + MAX_COL*threadIdx.y;
+      volatile size_type * const sh_col =
+        (size_type*)(sh + blockDim.x*blockDim.y + 2*MAX_COL*blockDim.y) + MAX_COL*threadIdx.y;
 
       // blockIdx.x == row in the deterministic (finite element) system
-      const size_type iBlockEntryBeg = m_A.graph.row_map[ blockIdx.x ];
-      const size_type iBlockEntryEnd = m_A.graph.row_map[ blockIdx.x + 1 ];
+      const size_type row = blockIdx.x*blockDim.y + threadIdx.y;
+      if (row < m_A.graph.row_map.dimension_0()-1) {
+        const size_type colBeg = m_A.graph.row_map[ row ];
+        const size_type colEnd = m_A.graph.row_map[ row + 1 ];
 
-      // Read tensor entries
-      const TensorScalar c0 = m_A.block.value(0);
-      const TensorScalar c1 = m_A.block.value(1);
+        // Read tensor entries
+        const TensorScalar c0 = m_A.block.value(0);
+        const TensorScalar c1 = m_A.block.value(1);
 
-      // Zero y
-      for ( size_type i = tid ; i < dim ; i += nid ) {
-        sh_y[i] = 0.0;
-      }
-      sh_y0[0] = 0.0;
-      VectorScalar y0 = 0.0;
+        // Zero y
+        VectorScalar y0 = 0.0;
 
-      // Loop over columns in the discrete (finite element) system.
-      for ( size_type iBlockEntry = iBlockEntryBeg ;
-            iBlockEntry != iBlockEntryEnd ; ++iBlockEntry ) {
+        // Read column offsets for this row
+        for ( size_type lcol = threadIdx.x; lcol < colEnd-colBeg;
+              lcol += blockDim.x )
+          sh_col[lcol] = m_A.graph.entries( lcol+colBeg );
 
-        const size_type iBlockColumn = m_A.graph.entries( iBlockEntry  );
+        // Loop over stochastic rows
+        for ( size_type stoch_row = threadIdx.x; stoch_row < dim;
+              stoch_row += blockDim.x) {
 
-        const VectorScalar * const x = & m_x(        0 , iBlockColumn );
-        const MatrixScalar * const A = & m_A.values( 0 , iBlockEntry );
+          VectorScalar yi = 0.0;
 
-        const VectorScalar a0 = A[0];
-        const MatrixScalar x0 = x[0];
-        y0 -= 2.0*c0*a0*x0;
+          // Loop over columns in the discrete (finite element) system.
+          // We should probably only loop over a portion at a time to
+          // make better use of L2 cache.
+          //
+          // We could also apply some warps to columns in parallel.
+          // This requires inter-warp reduction of y0 and yi.
+          for ( size_type col_offset = colBeg; col_offset < colEnd;
+                col_offset += 1 ) {
 
-        // Loop over rows of stochastic block
-        for ( size_type i = tid ; i < dim ; i += nid) {
-          const MatrixScalar ai = A[i];
-          const VectorScalar xi = x[i];
-          sh_y[i] += c1*(a0*xi + ai*x0);
-          y0  += c1*ai*xi;
+            // Get column index
+            const size_type lcol = col_offset-colBeg;
+            const size_type col = sh_col[lcol];
+
+            // Read a[i] and x[i] (coalesced)
+            const MatrixScalar ai = m_A.values( stoch_row, col_offset );
+            const VectorScalar xi = m_x( stoch_row, col );
+
+            // Store a[0] and x[0] to shared memory for this column
+            if (stoch_row == 0) {
+              sh_a0[lcol] = ai;
+              sh_x0[lcol] = xi;
+            }
+
+            // Retrieve a[0] and x[0] from shared memory for this column
+            const MatrixScalar a0 = sh_a0[lcol];
+            const VectorScalar x0 = sh_x0[lcol];
+
+            // Subtract off contribution of first iteration of loop
+            if (stoch_row == 0) y0 += (c0-3.0*c1)*a0*x0;
+
+            yi += c1*(a0*xi + ai*x0);
+            y0 += c1*ai*xi;
+          }
+
+          // Write y back to global memory
+          m_y( stoch_row, row ) = yi;
+
+          // Sync warps so rows don't get too out-of-sync to make use of
+          // locality in spatial matrix and L2 cache
+          __syncthreads();
         }
 
+        // Reduction of 'y0' within warp
+        sh_y0[ threadIdx.x ] = y0;
+        if ( threadIdx.x + 16 < blockDim.x )
+          sh_y0[threadIdx.x] += sh_y0[threadIdx.x+16];
+        if ( threadIdx.x +  8 < blockDim.x )
+          sh_y0[threadIdx.x] += sh_y0[threadIdx.x+ 8];
+        if ( threadIdx.x +  4 < blockDim.x )
+          sh_y0[threadIdx.x] += sh_y0[threadIdx.x+ 4];
+        if ( threadIdx.x +  2 < blockDim.x )
+          sh_y0[threadIdx.x] += sh_y0[threadIdx.x+ 2];
+        if ( threadIdx.x +  1 < blockDim.x )
+          sh_y0[threadIdx.x] += sh_y0[threadIdx.x+ 1];
+
+        // Store y0 back in global memory
+        if ( threadIdx.x == 0 ) m_y( 0, row ) += sh_y0[0];
+
       }
+    }
+  };
 
-      sh_y0[ tid ] = y0 ;
-      __syncthreads();
+  template <int MAX_COL>
+  class ApplyKernelAsymmetric {
+  public:
 
-      // Reduction of 'y0' across warps
-      size_type warp = blockDim.y >> 1;
-      while (warp >= 1) {
-        if ( threadIdx.y + warp < blockDim.y ) 
-          sh_y0[tid] += sh_y0[tid+warp*blockDim.x];
-        __syncthreads();
-        warp >>= 1;
-      }
+    const matrix_type m_A;
+    const vector_type m_x;
+    const vector_type m_y;
 
-      // Reduction of 'y0' within warp
-      if ( threadIdx.x + 16 < blockDim.x ) sh_y0[tid] += sh_y0[tid+16];
-      if ( threadIdx.x +  8 < blockDim.x ) sh_y0[tid] += sh_y0[tid+ 8];
-      if ( threadIdx.x +  4 < blockDim.x ) sh_y0[tid] += sh_y0[tid+ 4];
-      if ( threadIdx.x +  2 < blockDim.x ) sh_y0[tid] += sh_y0[tid+ 2];
-      if ( threadIdx.x +  1 < blockDim.x ) sh_y0[tid] += sh_y0[tid+ 1];
+    ApplyKernelAsymmetric( const matrix_type & A,
+                           const vector_type & x,
+                           const vector_type & y )
+      : m_A( A ), m_x( x ), m_y( y ) {}
 
-      if ( threadIdx.x == 0 )
-        sh_y[0] += sh_y0[0];
+    __device__
+    void operator()(void) const
+    {
+      // Number of bases in the stochastic system:
+      const size_type dim = m_A.block.dimension();
 
-      __syncthreads();
+      volatile VectorScalar * const sh =
+        kokkos_impl_cuda_shared_memory<VectorScalar>();
+      volatile VectorScalar * const sh_y0 =
+        sh + blockDim.x*threadIdx.y;
+      volatile VectorScalar * const sh_a0 =
+        sh + blockDim.x*blockDim.y + MAX_COL*threadIdx.y;
+      volatile VectorScalar * const sh_x0 =
+        sh + blockDim.x*blockDim.y + MAX_COL*blockDim.y + MAX_COL*threadIdx.y;
+      volatile size_type * const sh_col =
+        (size_type*)(sh + blockDim.x*blockDim.y + 2*MAX_COL*blockDim.y) + MAX_COL*threadIdx.y;
 
-      // Store result back in global memory
-      for ( size_type i = tid ; i < dim ; i += nid ) {
-        m_y( i , blockIdx.x ) = sh_y[ i ] ;
+      // blockIdx.x == row in the deterministic (finite element) system
+      const size_type row = blockIdx.x*blockDim.y + threadIdx.y;
+      if (row < m_A.graph.row_map.dimension_0()-1) {
+        const size_type colBeg = m_A.graph.row_map[ row ];
+        const size_type colEnd = m_A.graph.row_map[ row + 1 ];
+
+        // Read tensor entries
+        const TensorScalar c0 = m_A.block.value(0);
+        const TensorScalar c1 = m_A.block.value(1);
+        const TensorScalar c2 = m_A.block.value(2);
+
+        // Zero y
+        VectorScalar y0 = 0.0;
+
+        // Read column offsets for this row
+        for ( size_type lcol = threadIdx.x; lcol < colEnd-colBeg;
+              lcol += blockDim.x )
+          sh_col[lcol] = m_A.graph.entries( lcol+colBeg );
+
+        // Loop over stochastic rows
+        for ( size_type stoch_row = threadIdx.x; stoch_row < dim;
+              stoch_row += blockDim.x) {
+
+          VectorScalar yi = 0.0;
+
+          // Loop over columns in the discrete (finite element) system.
+          // We should probably only loop over a portion at a time to
+          // make better use of L2 cache.
+          //
+          // We could also apply some warps to columns in parallel.
+          // This requires inter-warp reduction of y0 and yi.
+          for ( size_type col_offset = colBeg; col_offset < colEnd;
+                col_offset += 1 ) {
+
+            // Get column index
+            const size_type lcol = col_offset-colBeg;
+            const size_type col = sh_col[lcol];
+
+            // Read a[i] and x[i] (coalesced)
+            const MatrixScalar ai = m_A.values( stoch_row, col_offset );
+            const VectorScalar xi = m_x( stoch_row, col );
+
+            // Store a[0] and x[0] to shared memory for this column
+            if (stoch_row == 0) {
+              sh_a0[lcol] = ai;
+              sh_x0[lcol] = xi;
+            }
+
+            // Retrieve a[0] and x[0] from shared memory for this column
+            const MatrixScalar a0 = sh_a0[lcol];
+            const VectorScalar x0 = sh_x0[lcol];
+
+            // Subtract off contribution of first iteration of loop
+            if (stoch_row == 0) y0 += (c0-3.0*c1-c2)*a0*x0;
+
+            yi += c1*(a0*xi + ai*x0) + c2*ai*xi;
+            y0 += c1*ai*xi;
+          }
+
+          // Write y back to global memory
+          m_y( stoch_row, row ) = yi;
+
+          // Sync warps so rows don't get too out-of-sync to make use of
+          // locality in spatial matrix and L2 cache
+          __syncthreads();
+        }
+
+        // Reduction of 'y0' within warp
+        sh_y0[ threadIdx.x ] = y0;
+        if ( threadIdx.x + 16 < blockDim.x )
+          sh_y0[threadIdx.x] += sh_y0[threadIdx.x+16];
+        if ( threadIdx.x +  8 < blockDim.x )
+          sh_y0[threadIdx.x] += sh_y0[threadIdx.x+ 8];
+        if ( threadIdx.x +  4 < blockDim.x )
+          sh_y0[threadIdx.x] += sh_y0[threadIdx.x+ 4];
+        if ( threadIdx.x +  2 < blockDim.x )
+          sh_y0[threadIdx.x] += sh_y0[threadIdx.x+ 2];
+        if ( threadIdx.x +  1 < blockDim.x )
+          sh_y0[threadIdx.x] += sh_y0[threadIdx.x+ 1];
+
+        // Store y0 back in global memory
+        if ( threadIdx.x == 0 ) m_y( 0, row ) += sh_y0[0];
+
       }
     }
   };
@@ -164,38 +306,44 @@ public:
 
   //------------------------------------
 
-  static void apply( const matrix_type & A ,
-                     const vector_type & x ,
+  static void apply( const matrix_type & A,
+                     const vector_type & x,
                      const vector_type & y )
   {
-    const size_type num_spatial_rows = A.graph.row_map.dimension_0() - 1 ;
+    const size_type num_spatial_rows = A.graph.row_map.dimension_0() - 1;
     const size_type num_stoch_rows = A.block.dimension();
 
     const size_type warp_size = KokkosArray::Impl::CudaTraits::WarpSize;
-    // const size_type max_warp =
-    //   KokkosArray::Impl::cuda_internal_maximum_warp_count();
-    // const size_type nWarp = std::min(num_stoch_rows / warp_size, max_warp);
-    const size_type nWarp = 16;
-    const dim3 dBlock( warp_size , nWarp , 1 );
-    const dim3 dGrid( num_spatial_rows , 1 , 1 );
+    const size_type num_rows_per_block = 4;
+    size_type num_blocks = num_spatial_rows / num_rows_per_block;
+    if (num_blocks * num_rows_per_block < num_spatial_rows)
+      ++num_blocks;
+    const dim3 dBlock( warp_size, num_rows_per_block );
+    const dim3 dGrid( num_blocks , 1, 1 );
 
+    const int MAX_COL = 32; // Maximum number of nonzero columns per row
     const size_type shmem =
-      sizeof(VectorScalar) * (num_stoch_rows + dBlock.x*dBlock.y);
+      sizeof(VectorScalar) * (dBlock.x*dBlock.y + 2*MAX_COL*dBlock.y) +
+      sizeof(size_type) * (MAX_COL*dBlock.y);
 
-#if 1
+#if 0
 
     std::cout << "Multiply< BlockCrsMatrix< LinearSparse3Tensor ... > >::apply"
               << std::endl
               << "  grid(" << dGrid.x << "," << dGrid.y << ")" << std::endl
-              << "  block(" << dBlock.x << "," << dBlock.y << ")" << std::endl
+              << "  block(" << dBlock.x << "," << dBlock.y << "," << dBlock.z << ")"<< std::endl
               << "  shmem(" << shmem/1024 << " kB)" << std::endl
               << "  num_spatial_rows(" << num_spatial_rows << ")" << std::endl
               << "  num_stoch_rows(" << num_stoch_rows << ")" << std::endl;
 #endif
 
     //cudaProfilerStart();
-    KokkosArray:: Impl::cuda_parallel_launch_local_memory<<< dGrid , dBlock , shmem >>>
-      ( ApplyKernel( A , x , y ) );
+    if (A.block.symmetric())
+      KokkosArray::Impl::cuda_parallel_launch_local_memory<<< dGrid, dBlock, shmem >>>
+        ( ApplyKernelSymmetric<MAX_COL>( A, x, y ) );
+    else
+      KokkosArray::Impl::cuda_parallel_launch_local_memory<<< dGrid, dBlock, shmem >>>
+        ( ApplyKernelAsymmetric<MAX_COL>( A, x, y ) );
     //cudaProfilerStop();
   }
 };

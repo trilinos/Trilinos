@@ -104,7 +104,7 @@ public:
           *yy++ += c1*(a0*xi + ai*x0);
           y0  += c1*ai*xi;
         }
-        y[0] += y0 - 2*a0*x0;
+        y[0] += y0 + (c0-3.0*c1)*a0*x0;
       }
       else {
 
@@ -130,7 +130,7 @@ public:
           yi.aligned_scatter(yy);
 
           // y0  += c1*aixi;
-          ai2.times_equal(vc2);
+          ai2.times_equal(vc1);
           vy0.plus_equal(ai2);
         }
         ValueType y0 = vy0.sum();
@@ -143,7 +143,7 @@ public:
           *yy++ += c1*(a0*xi + ai*x0) + c2*aixi;
           y0  += c1*aixi;
         }
-        y[0] += y0 - 2*a0*x0;
+        y[0] += y0 + (c0-3.0*c1-c2)*a0*x0;
 
       }
 

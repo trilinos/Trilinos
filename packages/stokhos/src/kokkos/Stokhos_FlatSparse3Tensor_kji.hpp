@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -47,6 +47,7 @@
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_ProductBasis.hpp"
 #include "Stokhos_Sparse3Tensor.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -81,7 +82,7 @@ private:
   size_type          m_nnz ;
   size_type          m_dim ;
   size_type          m_flops ;
- 
+
 
 public:
 
@@ -89,27 +90,27 @@ public:
   ~FlatSparse3Tensor_kji() {}
 
   inline
-  FlatSparse3Tensor_kji() : 
-    m_j_coord() , 
-    m_i_coord() , 
-    m_value() , 
-    m_num_j() , 
-    m_num_i() , 
-    m_j_row_map() , 
-    m_i_row_map() , 
+  FlatSparse3Tensor_kji() :
+    m_j_coord() ,
+    m_i_coord() ,
+    m_value() ,
+    m_num_j() ,
+    m_num_i() ,
+    m_j_row_map() ,
+    m_i_row_map() ,
     m_nnz(0) ,
     m_dim(0) ,
     m_flops(0) {}
 
   inline
-  FlatSparse3Tensor_kji( const FlatSparse3Tensor_kji & rhs ) : 
-    m_j_coord( rhs.m_j_coord ) , 
+  FlatSparse3Tensor_kji( const FlatSparse3Tensor_kji & rhs ) :
+    m_j_coord( rhs.m_j_coord ) ,
     m_i_coord( rhs.m_i_coord ) ,
-    m_value( rhs.m_value ) , 
+    m_value( rhs.m_value ) ,
     m_num_j( rhs.m_num_j ) ,
     m_num_i( rhs.m_num_i ) ,
-    m_j_row_map( rhs.m_j_row_map ) , 
-    m_i_row_map( rhs.m_i_row_map ) , 
+    m_j_row_map( rhs.m_j_row_map ) ,
+    m_i_row_map( rhs.m_i_row_map ) ,
     m_nnz( rhs.m_nnz ) ,
     m_dim( rhs.m_dim ) ,
     m_flops( rhs.m_flops ) {}
@@ -190,36 +191,37 @@ public:
 
   /** \brief Number of non-zero's */
   KOKKOSARRAY_INLINE_FUNCTION
-  size_type num_non_zeros() const 
+  size_type num_non_zeros() const
   { return m_nnz; }
 
   /** \brief Number flop's per multiply-add */
   KOKKOSARRAY_INLINE_FUNCTION
-  size_type num_flops() const 
+  size_type num_flops() const
   { return m_flops; }
 
   template <typename OrdinalType>
   static FlatSparse3Tensor_kji
   create( const Stokhos::ProductBasis<OrdinalType,ValueType>& basis,
-	  const Stokhos::Sparse3Tensor<OrdinalType,ValueType>& Cijk )
+          const Stokhos::Sparse3Tensor<OrdinalType,ValueType>& Cijk,
+          const Teuchos::ParameterList& params = Teuchos::ParameterList())
   {
     typedef Stokhos::Sparse3Tensor<OrdinalType,ValueType> Cijk_type;
-    
+
     // Compute number of j's for each k
     const size_type dimension = basis.size();
     const size_type nk = Cijk.num_k();
     std::vector< size_t > j_coord_work( nk , (size_t) 0 );
     size_type j_entry_count = 0 ;
-    for (typename Cijk_type::k_iterator k_it=Cijk.k_begin(); 
-	 k_it!=Cijk.k_end(); ++k_it) {
+    for (typename Cijk_type::k_iterator k_it=Cijk.k_begin();
+         k_it!=Cijk.k_end(); ++k_it) {
       OrdinalType k = index(k_it);
-      for (typename Cijk_type::kj_iterator j_it = Cijk.j_begin(k_it); 
-	   j_it != Cijk.j_end(k_it); ++j_it) {
-	OrdinalType j = index(j_it);
-	if (j >= k) {
-	  ++j_coord_work[k];
-	  ++j_entry_count;
-	}
+      for (typename Cijk_type::kj_iterator j_it = Cijk.j_begin(k_it);
+           j_it != Cijk.j_end(k_it); ++j_it) {
+        OrdinalType j = index(j_it);
+        if (j >= k) {
+          ++j_coord_work[k];
+          ++j_entry_count;
+        }
       }
     }
 
@@ -227,20 +229,20 @@ public:
     std::vector< size_t > i_coord_work( j_entry_count , (size_t) 0 );
     size_type i_entry_count = 0 ;
     size_type j_entry = 0 ;
-    for (typename Cijk_type::k_iterator k_it=Cijk.k_begin(); 
-	 k_it!=Cijk.k_end(); ++k_it) {
+    for (typename Cijk_type::k_iterator k_it=Cijk.k_begin();
+         k_it!=Cijk.k_end(); ++k_it) {
       OrdinalType k = index(k_it);
-      for (typename Cijk_type::kj_iterator j_it = Cijk.j_begin(k_it); 
-	   j_it != Cijk.j_end(k_it); ++j_it) {
-	OrdinalType j = index(j_it);
-	if (j >= k) {
-	  for (typename Cijk_type::kji_iterator i_it = Cijk.i_begin(j_it); 
-	       i_it != Cijk.i_end(j_it); ++i_it) {
-	    ++i_coord_work[j_entry];
-	    ++i_entry_count;
-	  }
-	  ++j_entry;
-	}
+      for (typename Cijk_type::kj_iterator j_it = Cijk.j_begin(k_it);
+           j_it != Cijk.j_end(k_it); ++j_it) {
+        OrdinalType j = index(j_it);
+        if (j >= k) {
+          for (typename Cijk_type::kji_iterator i_it = Cijk.i_begin(j_it);
+               i_it != Cijk.i_end(j_it); ++i_it) {
+            ++i_coord_work[j_entry];
+            ++i_entry_count;
+          }
+          ++j_entry;
+        }
       }
     }
 
@@ -250,9 +252,9 @@ public:
     for ( size_type i = 0 ; i < dimension ; ++i ) {
       const size_t rem = coord_work[i] % Align;
       if (rem > 0) {
-	const size_t pad = Align - rem;
-	coord_work[i] += pad;
-	entry_count += pad;
+        const size_t pad = Align - rem;
+        coord_work[i] += pad;
+        entry_count += pad;
       }
     }
     */
@@ -291,6 +293,7 @@ public:
     for ( size_type k = 0 ; k < nk ; ++k ) {
       sum += j_coord_work[k];
       host_j_row_map(k+1) = sum;
+      host_num_j(k) = 0;
     }
 
     // Compute i row map
@@ -299,6 +302,7 @@ public:
     for ( size_type j = 0 ; j < j_entry_count ; ++j ) {
       sum += i_coord_work[j];
       host_i_row_map(j+1) = sum;
+      host_num_i(j) = 0;
     }
 
     for ( size_type k = 0 ; k < nk ; ++k ) {
@@ -308,29 +312,29 @@ public:
       i_coord_work[j] = host_i_row_map[j];
     }
 
-    for (typename Cijk_type::k_iterator k_it=Cijk.k_begin(); 
-	 k_it!=Cijk.k_end(); ++k_it) {
+    for (typename Cijk_type::k_iterator k_it=Cijk.k_begin();
+         k_it!=Cijk.k_end(); ++k_it) {
       OrdinalType k = index(k_it);
-      for (typename Cijk_type::kj_iterator j_it = Cijk.j_begin(k_it); 
-	   j_it != Cijk.j_end(k_it); ++j_it) {
-	OrdinalType j = index(j_it);
-	if (j >= k) {
-	  const size_type jEntry = j_coord_work[k]; 
-	  ++j_coord_work[k];
-	  host_j_coord(jEntry) = j ;
-	  ++host_num_j(k);
-	  for (typename Cijk_type::kji_iterator i_it = Cijk.i_begin(j_it); 
-	       i_it != Cijk.i_end(j_it); ++i_it) {
-	    OrdinalType i = index(i_it);
-	    ValueType c = Stokhos::value(i_it);
-	    const size_type iEntry = i_coord_work[jEntry]; 
-	    ++i_coord_work[jEntry];
-	    host_value(iEntry) = (j != k) ? c : 0.5*c;
-	    host_i_coord(iEntry) = i ;
-	    ++host_num_i(jEntry);
-	    ++tensor.m_nnz;
-	  }
-	}
+      for (typename Cijk_type::kj_iterator j_it = Cijk.j_begin(k_it);
+           j_it != Cijk.j_end(k_it); ++j_it) {
+        OrdinalType j = index(j_it);
+        if (j >= k) {
+          const size_type jEntry = j_coord_work[k];
+          ++j_coord_work[k];
+          host_j_coord(jEntry) = j ;
+          ++host_num_j(k);
+          for (typename Cijk_type::kji_iterator i_it = Cijk.i_begin(j_it);
+               i_it != Cijk.i_end(j_it); ++i_it) {
+            OrdinalType i = index(i_it);
+            ValueType c = Stokhos::value(i_it);
+            const size_type iEntry = i_coord_work[jEntry];
+            ++i_coord_work[jEntry];
+            host_value(iEntry) = (j != k) ? c : 0.5*c;
+            host_i_coord(iEntry) = i ;
+            ++host_num_i(jEntry);
+            ++tensor.m_nnz;
+          }
+        }
       }
     }
 
@@ -349,11 +353,13 @@ public:
 
 template< class Device , typename OrdinalType , typename ValueType >
 FlatSparse3Tensor_kji<ValueType, Device>
-create_flat_sparse_3_tensor_kji( 
+create_flat_sparse_3_tensor_kji(
   const Stokhos::ProductBasis<OrdinalType,ValueType>& basis,
-  const Stokhos::Sparse3Tensor<OrdinalType,ValueType>& Cijk )
+  const Stokhos::Sparse3Tensor<OrdinalType,ValueType>& Cijk,
+  const Teuchos::ParameterList& params = Teuchos::ParameterList())
 {
-  return FlatSparse3Tensor_kji<ValueType, Device>::create( basis, Cijk );
+  return FlatSparse3Tensor_kji<ValueType, Device>::create(
+    basis, Cijk, params );
 }
 
 } /* namespace Stokhos */
@@ -362,5 +368,3 @@ create_flat_sparse_3_tensor_kji(
 //----------------------------------------------------------------------------
 
 #endif /* #ifndef STOKHOS_FLAT_SPARSE_3_TENSOR_KJI_HPP */
-
-

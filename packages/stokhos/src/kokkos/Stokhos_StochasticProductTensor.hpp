@@ -47,6 +47,7 @@
 #include "KokkosArray_View.hpp"
 
 #include "Stokhos_ProductBasis.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 namespace Stokhos {
 
@@ -158,7 +159,8 @@ public:
   template <typename OrdinalType, typename CijkType>
   static StochasticProductTensor
   create( const Stokhos::ProductBasis<OrdinalType,ValueType>& basis,
-          const CijkType& Cijk)
+          const CijkType& Cijk,
+          const Teuchos::ParameterList& params = Teuchos::ParameterList())
   {
     StochasticProductTensor spt ;
 
@@ -192,7 +194,7 @@ public:
     KokkosArray::deep_copy( spt.m_degree_map , degree_map );
 
     // Build 3 tensor
-    spt.m_tensor = tensor_type::create( basis, Cijk );
+    spt.m_tensor = tensor_type::create( basis, Cijk, params );
 
     return spt ;
   }
@@ -202,11 +204,12 @@ template<  typename TensorType, typename OrdinalType , typename ValueType, typen
 StochasticProductTensor<ValueType, TensorType, typename TensorType::device_type>
 create_stochastic_product_tensor(
   const Stokhos::ProductBasis<OrdinalType,ValueType>& basis,
-  const CijkType& Cijk)
+  const CijkType& Cijk,
+  const Teuchos::ParameterList& params = Teuchos::ParameterList())
 {
   typedef typename TensorType::device_type Device;
-  return StochasticProductTensor<ValueType, TensorType, Device>::create( basis,
-                                                                         Cijk);
+  return StochasticProductTensor<ValueType, TensorType, Device>::create(
+    basis, Cijk, params);
 }
 
 //----------------------------------------------------------------------------

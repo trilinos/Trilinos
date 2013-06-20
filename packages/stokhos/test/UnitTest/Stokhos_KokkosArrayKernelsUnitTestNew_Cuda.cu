@@ -36,6 +36,7 @@
 #include "Stokhos_Cuda_BlockCrsMatrix.hpp"
 #include "Stokhos_Cuda_StochasticProductTensor.hpp"
 #include "Stokhos_Cuda_CrsProductTensor.hpp"
+#include "Stokhos_Cuda_TiledCrsProductTensor.hpp"
 #include "Stokhos_Cuda_LinearSparse3Tensor.hpp"
 
 #include "KokkosArray_Cuda.hpp"
@@ -57,18 +58,38 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsMatrixFree_Cuda ) {
 TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsProductTensor_Cuda ) {
   typedef double Scalar;
   typedef KokkosArray::Cuda Device;
+  typedef Stokhos::CrsProductTensor<Scalar,Device> Tensor;
 
-  success = test_crs_product_tensor<
-    Scalar,
-    Stokhos::CrsProductTensor<Scalar,Device>,
-    Device>(setup, out);
+  success = test_crs_product_tensor<Scalar,Tensor,Device>(setup, out);
 }
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, LinearTensor_Cuda ) {
+TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, TiledCrsProductTensor_Cuda ) {
   typedef double Scalar;
   typedef KokkosArray::Cuda Device;
+  typedef Stokhos::TiledCrsProductTensor<Scalar,Device> Tensor;
+
+  Teuchos::ParameterList params;
+  params.set("Tile Size", 10);
+  params.set("Max Tiles", 10000);
+  success = test_crs_product_tensor<Scalar,Tensor,Device>(setup, out, params);
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, LinearTensorSymmetric_Cuda ) {
+  typedef double Scalar;
+  typedef KokkosArray::Cuda Device;
+  const bool symmetric = true;
 
   UnitTestSetup s;
-  s.setup(1, 10);
-  success = test_linear_tensor<Scalar,Device,1>(s, out);
+  s.setup(1, 40);
+  success = test_linear_tensor<Scalar,Device,1>(s, out, symmetric);
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, LinearTensorAsymmetric_Cuda ) {
+  typedef double Scalar;
+  typedef KokkosArray::Cuda Device;
+  const bool symmetric = false;
+
+  UnitTestSetup s;
+  s.setup(1, 40);
+  success = test_linear_tensor<Scalar,Device,1>(s, out, symmetric);
 }

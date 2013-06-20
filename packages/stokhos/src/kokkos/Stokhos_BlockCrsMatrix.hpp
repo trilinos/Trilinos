@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -60,7 +60,7 @@ namespace Stokhos {
 template< class BlockSpec , typename ValueType , class Device >
 class BlockCrsMatrix {
 public:
- 
+
   typedef Device                              device_type ;
   typedef typename device_type::size_type     size_type ;
   typedef ValueType                           value_type ;
@@ -78,8 +78,8 @@ template< class BlockSpec ,
           typename VectorValueType ,
           class Device >
 void multiply(const BlockCrsMatrix<BlockSpec,MatrixValueType,Device> & A ,
-	      const KokkosArray::View<VectorValueType**,KokkosArray::LayoutLeft,Device> & x ,
-	      const KokkosArray::View<VectorValueType**,KokkosArray::LayoutLeft,Device> & y )
+              const KokkosArray::View<VectorValueType**,KokkosArray::LayoutLeft,Device> & x ,
+              const KokkosArray::View<VectorValueType**,KokkosArray::LayoutLeft,Device> & y )
 {
   typedef BlockCrsMatrix<BlockSpec,MatrixValueType,Device>  matrix_type ;
   typedef KokkosArray::View<VectorValueType**,KokkosArray::LayoutLeft,Device> block_vector_type ;
@@ -91,11 +91,11 @@ template< class BlockSpec ,
           typename MatrixValueType ,
           typename VectorValueType ,
           class Device ,
-	  class SparseMatOps >
+          class SparseMatOps >
 void multiply(const BlockCrsMatrix<BlockSpec,MatrixValueType,Device> & A ,
-	      const KokkosArray::View<VectorValueType**,KokkosArray::LayoutLeft,Device> & x ,
-	      const KokkosArray::View<VectorValueType**,KokkosArray::LayoutLeft,Device> & y ,
-	      const SparseMatOps& smo = SparseMatOps() )
+              const KokkosArray::View<VectorValueType**,KokkosArray::LayoutLeft,Device> & x ,
+              const KokkosArray::View<VectorValueType**,KokkosArray::LayoutLeft,Device> & y ,
+              const SparseMatOps& smo = SparseMatOps() )
 {
   typedef BlockCrsMatrix<BlockSpec,MatrixValueType,Device>  matrix_type ;
   typedef KokkosArray::View<VectorValueType**,KokkosArray::LayoutLeft,Device> block_vector_type ;
@@ -109,4 +109,3 @@ void multiply(const BlockCrsMatrix<BlockSpec,MatrixValueType,Device> & A ,
 } // namespace Stokhos
 
 #endif /* #ifndef STOKHOS_BLOCKCRSMATRIX_HPP */
-
