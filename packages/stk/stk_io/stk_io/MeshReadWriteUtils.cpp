@@ -621,6 +621,53 @@ void create_input_mesh(const std::string &mesh_type,
   process_nodesets(*in_region,      fem_meta);
 }
 
+void create_input_mesh(const std::string &mesh_type,
+                       const std::string &mesh_filename,
+                       stk::ParallelMachine comm,
+                       stk::mesh::fem::FEMMetaData &fem_meta,
+                       stk::io::MeshData &mesh_data,
+                       const std::vector<std::string>& names_to_add)
+{
+  Ioss::Region *in_region = mesh_data.m_input_region;
+  if (in_region == NULL) {
+	// If in_region is NULL, then open the file;
+	// If in_region is non-NULL, then user has given us a valid Ioss::Region that
+	// should be used.
+	Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(mesh_type, mesh_filename,
+                                                    Ioss::READ_MODEL, comm,
+                                                    mesh_data.m_property_manager);
+	if (dbi == NULL || !dbi->ok()) {
+	  std::cerr  << "ERROR: Could not open database '" << mesh_filename
+                 << "' of type '" << mesh_type << "'\n";
+	  Ioss::NameList db_types;
+	  Ioss::IOFactory::describe(&db_types);
+	  std::cerr << "\nSupported database types:\n\t";
+	  for (Ioss::NameList::const_iterator IF = db_types.begin(); IF != db_types.end(); ++IF) {
+	    std::cerr << *IF << "  ";
+	  }
+	  std::cerr << "\n\n";
+	}
+
+	// NOTE: 'in_region' owns 'dbi' pointer at this time...
+	in_region = new Ioss::Region(dbi, "input_model");
+	mesh_data.m_input_region = in_region;
+  }
+
+  size_t spatial_dimension = in_region->get_property("spatial_dimension").get_int();
+
+  std::vector<std::string> entity_rank_names = stk::mesh::fem::entity_rank_names(spatial_dimension);
+
+  for(std::size_t i = 0; i < names_to_add.size(); i++)
+    entity_rank_names.push_back(names_to_add[i]);
+
+  initialize_spatial_dimension(fem_meta, spatial_dimension, entity_rank_names);
+
+  process_elementblocks(*in_region, fem_meta);
+  process_nodeblocks(*in_region,    fem_meta);
+  process_sidesets(*in_region,      fem_meta);
+  process_nodesets(*in_region,      fem_meta);
+}
+
 
 void create_output_mesh(const std::string &filename,
                         stk::ParallelMachine comm,
