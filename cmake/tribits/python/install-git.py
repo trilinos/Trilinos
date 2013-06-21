@@ -64,13 +64,12 @@ This script installs both git-"""+gitVersion+""" and eg-"""+egVersion+""".
 """
 
   def getBaseDirName(self):
-    return "Git.base"
+    return "git.BASE"
 
   def injectExtraCmndLineOptions(self, clp):
     clp.add_option(
       "--checkout-cmnd", dest="checkoutCmnd", type="string",
-      default="cvs -d :ext:software.sandia.gov:/space/CVS co -d "+self.getBaseDirName()+\
-      " Trilinos3PL/Git.base",
+      default="git clone software.sandia.gov:/space/git/TrilinosToolset/"+self.getBaseDirName(),
       help="Command used to check out "+self.getProductName()+" tarball(s)." )
 
   def echoExtraCmndLineOptions(self, inOptions):
