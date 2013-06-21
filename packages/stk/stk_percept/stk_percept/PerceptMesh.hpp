@@ -648,6 +648,9 @@ namespace stk {
       std::vector<std::vector<stk::mesh::Entity> > & getEntityPool() { return m_entity_pool; }
       void destroyEntityPool();
 
+      // id server
+      stk::mesh::EntityId getNextId(stk::mesh::EntityRank rank);
+
       double * field_data(const stk::mesh::FieldBase *field, const stk::mesh::Bucket & bucket, unsigned *stride=0);
       double * field_data(const stk::mesh::FieldBase *field, const mesh::Entity node, unsigned *stride=0);
 
@@ -857,6 +860,7 @@ namespace stk {
       std::string                           m_ioss_write_options;
 
       std::vector<std::vector<stk::mesh::Entity> >        m_entity_pool;
+      std::vector<stk::mesh::EntityId>      m_idServer; // high water mark
 
     private:
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);

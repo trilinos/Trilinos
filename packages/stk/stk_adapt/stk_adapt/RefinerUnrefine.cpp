@@ -736,6 +736,13 @@ namespace stk {
     Refiner::
     unrefineTheseElements(ElementUnrefineCollection& elements_to_unref)
     {
+      bool doPass2=true;
+      if (doPass2)
+        {
+          unrefinePass2(elements_to_unref);
+          return;
+        }
+
       if (m_alwaysInitNodeRegistry)
         {
           throw std::logic_error("Refiner::unrefineTheseElements: to use urefinement, you must have setAlwaysInitializeNodeRegistry(false)");
@@ -1084,6 +1091,7 @@ namespace stk {
               for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
                 {
                   stk::mesh::Entity element = bucket[ientity];
+                  if (refine_field)
                   {
                     double *f_data = m_eMesh.field_data(refine_field, element);
                     if (f_data) f_data[0] = 0;
@@ -1093,6 +1101,7 @@ namespace stk {
 
                   if (is_root)
                     {
+                      if (refine_field)
                       {
                         double *f_data = m_eMesh.field_data(refine_field, element);
                         if (f_data) f_data[0] = 20;
@@ -1132,6 +1141,7 @@ namespace stk {
 
                   new_root.insert(element);
 
+                  if (refine_field)
                    {
                      double *f_data = m_eMesh.field_data(refine_field, element);
                      if (f_data) f_data[0] = 10;
@@ -1140,6 +1150,7 @@ namespace stk {
                   for (SetOfEntities::iterator it=allD.begin(); it != allD.end(); ++it)
                     {
                       new_set.insert(*it);
+                      if (refine_field)
                       {
                         double *f_data = m_eMesh.field_data(refine_field, *it);
                         if (f_data) f_data[0] = -10;

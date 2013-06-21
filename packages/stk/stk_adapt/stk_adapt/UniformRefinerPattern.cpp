@@ -147,11 +147,15 @@ namespace stk {
           //
           // Since we know that the parent_id is unique across processors, we can use it for the family tree
           //   and guarantee uniqueness of family tree id's across processors.
+          // 06/21/13: but, not with pooling active, as used in unrefinePass2... so, see below for getNextId usage
+
           stk::mesh::EntityId parent_id = eMesh.identifier(parent_elem);
           stk::mesh::EntityId family_tree_id = parent_id;
 
+          family_tree_id = eMesh.getNextId(FAMILY_TREE_RANK);
+
           // FIXME
-          if (eMesh.entity_rank(parent_elem) != stk::mesh::MetaData::ELEMENT_RANK)
+          if (0 && eMesh.entity_rank(parent_elem) != stk::mesh::MetaData::ELEMENT_RANK)
             {
               stk::mesh::EntityId FT_SHIFT_SIDE = 100000000000ull;
               if (family_tree_id > FT_SHIFT_SIDE)
@@ -160,8 +164,8 @@ namespace stk {
               //std::cout << "tmp family_tree_id = " << family_tree_id << " parent_id= " << parent_id << std::endl;
             }
 
-          //unsgined FT_SHIFT = 100000000u;
-          unsigned FT_SHIFT = 0u;
+          //stk::mesh::EntityId FT_SHIFT = 100000000000ull;
+          stk::mesh::EntityId FT_SHIFT = 0ull;
           family_tree_id += FT_SHIFT;
 
           family_tree = eMesh.get_bulk_data()->declare_entity(FAMILY_TREE_RANK, family_tree_id, add);

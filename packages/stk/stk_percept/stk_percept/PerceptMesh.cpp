@@ -1526,6 +1526,29 @@ namespace stk {
       m_entity_pool.resize(0);
     }
 
+    stk::mesh::EntityId PerceptMesh::getNextId(stk::mesh::EntityRank rank)
+    {
+      stk::mesh::EntityId p_size = static_cast<stk::mesh::EntityId>(get_parallel_size());
+      stk::mesh::EntityId p_rank = static_cast<stk::mesh::EntityId>(get_parallel_rank());
+      stk::mesh::EntityId max_ids_per_proc = EntityKey::MAX_ID / p_size;
+      if (!m_idServer.size())
+        {
+          m_idServer.resize(get_fem_meta_data()->entity_rank_count());
+        }
+      // if (!m_idServer[rank])
+      //   {
+      //     m_idServer[rank] = 1ULL;
+      //   }
+
+      ++m_idServer[rank];
+      VERIFY_OP_ON(m_idServer[rank], <, max_ids_per_proc, "Ran out of ids...");
+      stk::mesh::EntityId new_id = m_idServer[rank] + p_rank*max_ids_per_proc;
+
+      VERIFY_OP_ON(get_bulk_data()->is_valid(get_bulk_data()->get_entity(rank, new_id)), ==, false, "id already in use");
+
+      return new_id;
+    }
+
     double * PerceptMesh::field_data(const stk::mesh::FieldBase *field, const stk::mesh::Entity entity, unsigned *stride)
     {
       EXCEPTWATCH;
@@ -1555,10 +1578,10 @@ namespace stk {
             *stride = r.dimension() ;
           }
       }
-//       if(stride) {
-//         const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::MetaData::NODE_RANK, stk::mesh::MetaData::get(*field).universal_part());
-//         *stride = r.dimension() ;
-//       }
+      //       if(stride) {
+      //         const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::MetaData::NODE_RANK, stk::mesh::MetaData::get(*field).universal_part());
+      //         *stride = r.dimension() ;
+      //       }
 
       switch(rank)
         {
@@ -1944,7 +1967,7 @@ namespace stk {
       transform_mesh(mat);
     }
 
-      //========================================================================================================================
+    //========================================================================================================================
     /// transform mesh by a given 3x3 matrix
     void PerceptMesh::transform_mesh(Math::Matrix& matrix)
     {
@@ -2030,23 +2053,23 @@ namespace stk {
 
 
 #if 0
-      return NULL != part.attribute<IOPartAttribute >();
+    return NULL != part.attribute<IOPartAttribute >();
 
     void PerceptMesh::setOmitted(Ioss::Region& out_region)
     {
 
-          // Filter out all non-hex8 element blocks...
-          if (hex_only) {
-            const Ioss::ElementBlockContainer& elem_blocks = in_region->get_element_blocks();
-            for(Ioss::ElementBlockContainer::const_iterator it = elem_blocks.begin();
-                it != elem_blocks.end(); ++it) {
-              Ioss::ElementBlock *entity = *it;
-              std::string name = entity->topology()->name();
-              if (name != "hex8") {
-                entity->property_add(Ioss::Property(std::string("omitted"), 1));
-              }
-            }
+      // Filter out all non-hex8 element blocks...
+      if (hex_only) {
+        const Ioss::ElementBlockContainer& elem_blocks = in_region->get_element_blocks();
+        for(Ioss::ElementBlockContainer::const_iterator it = elem_blocks.begin();
+            it != elem_blocks.end(); ++it) {
+          Ioss::ElementBlock *entity = *it;
+          std::string name = entity->topology()->name();
+          if (name != "hex8") {
+            entity->property_add(Ioss::Property(std::string("omitted"), 1));
           }
+        }
+      }
 
     }
 #endif
@@ -2130,14 +2153,14 @@ namespace stk {
           std::string name = part.name();
           //std::cout << "tmp srk checkForPartsToAvoidWriting found part= " << name << " s_omit_part= " << s_omit_part << std::endl;
           if (name.find(PerceptMesh::s_omit_part) != std::string::npos)
-          {
-            //if (!get_rank()) std::cout << "tmp srk checkForPartsToAvoidWriting found omitted part= " << name << std::endl;
-            const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
-            if (entity)
             {
-              stk::io::remove_io_part_attribute(part);
+              //if (!get_rank()) std::cout << "tmp srk checkForPartsToAvoidWriting found omitted part= " << name << std::endl;
+              const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
+              if (entity)
+                {
+                  stk::io::remove_io_part_attribute(part);
+                }
             }
-          }
         }
 
       parts = &get_io_omitted_parts();
@@ -2152,9 +2175,9 @@ namespace stk {
             //std::cout << "tmp srk checkForPartsToAvoidWriting found part from get_io_omitted_parts() omitted part= " << name << std::endl;
             const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
             if (entity)
-            {
-              stk::io::remove_io_part_attribute(part);
-            }
+              {
+                stk::io::remove_io_part_attribute(part);
+              }
           }
         }
     }
@@ -2228,7 +2251,7 @@ namespace stk {
 
       bool sort_stk_parts = true;
       stk::io::define_output_db(*out_region.getRawPtr(), bulk_data, mesh_data.input_io_region().getRawPtr(),
-				mesh_data.selector().get(), sort_stk_parts);
+                                mesh_data.selector().get(), sort_stk_parts);
       stk::io::write_output_db(*out_region.getRawPtr(),  bulk_data, mesh_data.selector().get());
       mesh_data.set_output_io_region(out_region);
     }
@@ -2256,27 +2279,27 @@ namespace stk {
       checkForPartsToAvoidWriting();
 
       if (m_outputActiveChildrenOnly)
-      {
-        if (Teuchos::is_null(mesh_data.selector()))
         {
-          Teuchos::RCP<stk::mesh::Selector> io_mesh_selector = Teuchos::rcp(new stk::mesh::Selector(get_fem_meta_data()->universal_part()));
-          mesh_data.set_selector(io_mesh_selector);
-        }
-        stk::mesh::Selector & io_mesh_selector = *(mesh_data.selector());
+          if (Teuchos::is_null(mesh_data.selector()))
+            {
+              Teuchos::RCP<stk::mesh::Selector> io_mesh_selector = Teuchos::rcp(new stk::mesh::Selector(get_fem_meta_data()->universal_part()));
+              mesh_data.set_selector(io_mesh_selector);
+            }
+          stk::mesh::Selector & io_mesh_selector = *(mesh_data.selector());
 
-        stk::mesh::Part* active_child_elements_part = get_part("refine_active_elements_part");
-        stk::mesh::Part* inactive_parent_elements_part = get_part("refine_inactive_elements_part");
+          stk::mesh::Part* active_child_elements_part = get_part("refine_active_elements_part");
+          stk::mesh::Part* inactive_parent_elements_part = get_part("refine_inactive_elements_part");
 
-        unsigned num_inactive = stk::mesh::count_selected_entities(stk::mesh::Selector(*inactive_parent_elements_part), bulk_data.buckets(stk::mesh::MetaData::ELEMENT_RANK));
-        if (0 == num_inactive)
-        {
-          io_mesh_selector = stk::mesh::Selector(get_fem_meta_data()->universal_part());
+          unsigned num_inactive = stk::mesh::count_selected_entities(stk::mesh::Selector(*inactive_parent_elements_part), bulk_data.buckets(stk::mesh::MetaData::ELEMENT_RANK));
+          if (0 == num_inactive)
+            {
+              io_mesh_selector = stk::mesh::Selector(get_fem_meta_data()->universal_part());
+            }
+          else
+            {
+              io_mesh_selector = stk::mesh::Selector(*active_child_elements_part);
+            }
         }
-        else
-        {
-          io_mesh_selector = stk::mesh::Selector(*active_child_elements_part);
-        }
-      }
 
       if (!(!Teuchos::is_null(m_iossMeshData) && m_sync_io_regions)) {
         if (!mesh_data.bulk_data_is_set())
@@ -2286,9 +2309,9 @@ namespace stk {
       if (ALLOW_IOSS_PROPERTIES_SETTING_FOR_LARGE_RUNS && m_ioss_write_options.length() )
         {
 
-#define ERASE(prop) \
+#define ERASE(prop)                                                     \
           do { if (mesh_data.m_property_manager.exists(prop)) mesh_data.m_property_manager.erase(prop); } while(0)
-#define ADD1(prop,val) \
+#define ADD1(prop,val)                                                  \
           do { if (mesh_data.m_property_manager.exists(prop)) mesh_data.m_property_manager.erase(prop); \
             mesh_data.m_property_manager.add(Ioss::Property(prop, val)); } while (0)
 
