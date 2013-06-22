@@ -1530,7 +1530,7 @@ namespace stk {
     {
       stk::mesh::EntityId p_size = static_cast<stk::mesh::EntityId>(get_parallel_size());
       stk::mesh::EntityId p_rank = static_cast<stk::mesh::EntityId>(get_parallel_rank());
-      stk::mesh::EntityId max_ids_per_proc = EntityKey::MAX_ID / p_size;
+      stk::mesh::EntityId max_ids_per_proc = stk::mesh::EntityKey::MAX_ID / p_size;
       if (!m_idServer.size())
         {
           m_idServer.resize(get_fem_meta_data()->entity_rank_count());
