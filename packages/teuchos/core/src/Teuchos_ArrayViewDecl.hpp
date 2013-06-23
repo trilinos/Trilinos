@@ -417,167 +417,66 @@ public: // Bad bad bad
 };
 
 
-
 /** \brief Partial specialization of ArrayView for const T.
+ *
+ * The main documentation for ArrayView explains why this class needs
+ * a partial specialization for const types.
  *
  * \ingroup teuchos_mem_mng_grp
  */
 template<class T>
 class ArrayView<const T> {
 public:
-  /** \name std::vector typedefs */
-  //@{
-
-  /** \brief. */
   typedef Teuchos_Ordinal Ordinal;
-
-  /** \brief . */
   typedef Ordinal size_type;
-  /** \brief . */
   typedef Ordinal difference_type;
-  /** \brief . */
   typedef const T value_type;
-  /** \brief . */
   typedef const T* pointer;
-  /** \brief . */
   typedef const T* const_pointer;
-  /** \brief . */
   typedef const T& reference;
-  /** \brief . */
   typedef const T& const_reference;
 
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  /** \brief . */
   typedef ArrayRCP<const T> iterator;
-  /** \brief . */
   typedef ArrayRCP<const T> const_iterator;
 #else
-  /** \brief . */
   typedef pointer iterator;
-  /** \brief . */
   typedef const_pointer const_iterator;
 #endif
 
-  //@}
+  ArrayView( ENull null_arg = null );
 
-  //! @name Constructors/Destructors
-  //@{
+  ArrayView (const T* p, size_type size,
+	     const ERCPNodeLookup rcpNodeLookup = RCP_ENABLE_NODE_LOOKUP );
 
-        /** \brief Initialize to NULL (implicitly or explicitly). */
-        ArrayView( ENull null_arg = null );
+  ArrayView (const ArrayView<const T>& array);
 
-        /** \brief Initialize view from raw memory.
-         *
-   * \param p [in] Pointer to array of typed memory of size <tt>size</tt>.  If
-   * <tt>p==0</tt>, then <tt>*this</tt> is a null view.  Note that the memory
-   * pointed to by <tt>p</tt> can not go away until this view object is
-   * destoryed!
-   *
-   * \param size [in] The size of the array that <tt>*this</tt> will represent
-   * pointer to by <tt>p</tt>.  If <tt>p==0</tt> then <tt>size</tt> must be 0!
-   *
-   * Preconditions:<ul>
-   * <li>[<tt>p!=0</tt>] <tt>size > 0</tt>
-   * <li>[<tt>p==0</tt>] <tt>size == 0</tt>
-   * </ul>
-   *
-   * Postconditions:<ul>
-   * <li>???
-   * </ul>
-   */
-  ArrayView(const T* p, size_type size,
-            const ERCPNodeLookup rcpNodeLookup = RCP_ENABLE_NODE_LOOKUP );
-
-  /** \brief Initialize from another <tt>ArrayView<T></tt> object.
-   *
-   * After construction, <tt>this</tt> and <tt>array</tt> will reference the
-   * same array.
-   *
-   * This form of the copy constructor is required even though the
-   * below more general templated version is sufficient since some
-   * compilers will generate this function automatically which will
-   * give an incorrect implementation.
-   *
-   * Postconditions:<ul>
-   * <li>???
-   * </ul>
-   */
-  ArrayView(const ArrayView<const T>& array);
-
-  /** \brief Non-const view of an std::vector<T> .*/
   ArrayView (std::vector<typename ConstTypeTraits<T>::NonConstType>& vec);
 
-  /** \brief Const view of an std::vector<T> .*/
   ArrayView (const std::vector<typename ConstTypeTraits<T>::NonConstType>& vec);
 
-  /** \brief Shallow copy assignment operator. */
   ArrayView<const T>& operator= (const ArrayView<const T>& array);
 
-  /** \brief Destroy the array view object. */
   ~ArrayView();
 
-  //@}
-  //! @name General query functions
-  //@{
-
-  /** \brief Returns true if the underlying pointer is null. */
   bool is_null() const;
 
-  /** \brief The total number of items in the managed array. */
   size_type size() const;
 
-  /** \brief Convert an ArrayView<T> to an <tt>std::string</tt> */
   std::string toString() const;
 
-  //@}
-
-  //! @name Element Access Functions
-  //@{
-
-  /** \brief Return a raw pointer to beginning of array or NULL if unsized. */
   inline const T* getRawPtr() const;
 
-  /** \brief Random object access.
-   *
-   * <b>Preconditions:</b><ul>
-   * <li><tt>this->get() != NULL</tt>
-   * <li><tt>0 <= i && i < this->size()</tt>
-   * </ul>
-   */
   const T& operator[] (size_type i) const;
 
-  /** \brief Get the first element. */
   const T& front() const;
 
-  /** \brief Get the last element. */
   const T& back() const;
 
-  //@}
-  //! @name Views
-  //@{
-
-  /** \brief Return a view of a contiguous range of elements.
-   *
-   * <b>Preconditions:</b><ul>
-   * <li><tt>this->get() != NULL</tt>
-   * <li><tt>0 <= offset && offset + size <= this->size()</tt>
-   * </ul>
-   *
-   * <b>Postconditions:</b><ul>
-   * <li><tt>returnVal.size() == size</tt>
-   * </ul>
-   *
-   * NOTE: A <tt>size==0</tt> view of even a null ArrayView is allowed and
-   * returns a <tt>null</tt> view.
-   */
   ArrayView<const T> view( size_type offset, size_type size ) const;
 
-  /** \brief Return a view of a contiguous range of elements (calls
-   * view(offset, size)).
-   */
   ArrayView<const T> operator()( size_type offset, size_type size ) const;
 
-  /** \brief Return a *this (just for compatibility with Array) */
   const ArrayView<const T>& operator()() const;
 
   /** \brief Return a const view of *this.
@@ -587,61 +486,19 @@ public:
    */
   ArrayView<const T> getConst() const;
 
-  //@}
-  //! @name Standard Container-Like Functions
-  //@{
-
-  /** \brief Return an iterator to beginning of the array of data.
-   *
-   * If <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt> is defined then the iterator
-   * returned is an <tt>ArrayRCP<T></tt> object and all operations are
-   * checked at runtime.  When <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt> is not
-   * defined, the a raw pointer <tt>T*</tt> is returned for fast execution.
-   *
-   * <b>Postconditions:</b><ul>
-   * <li>[<tt>this->get()!=NULL</tt>] <tt>&*return == this->get()</tt>
-   * <li>[<tt>this->get()==NULL</tt>] <tt>return == (null or NULL)</tt>
-   * </ul>
-   */
   iterator begin() const;
 
-  /** \brief Return an iterator to past the end of the array of data.
-   *
-   * If <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt> is defined then the iterator
-   * returned is an <tt>ArrayView<T></tt> object and all operations are
-   * checked at runtime.  When <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt> is not
-   * defined, the a raw pointer <tt>T*</tt> is returned for fast execution.
-   *
-   * <b>Postconditions:</b><ul>
-   * <li>[<tt>this->get()!=NULL</tt>] <tt>&*end == this->get()+(this->upperOffset()+1)</tt>
-   * <li>[<tt>this->get()==NULL</tt>] <tt>return == (null or NULL)</tt>
-   * </ul>
-   */
   iterator end() const;
 
-  //@}
-
-  //! @name Assertion Functions.
-  //@{
-
-  /** \brief Throws <tt>NullReferenceError</tt> if <tt>this->get()==NULL</tt>,
-   * otherwise returns reference to <tt>*this</tt>.
-   */
   const ArrayView<const T>& assert_not_null() const;
 
-  /** \brief Throws <tt>NullReferenceError</tt> if <tt>this->get()==NULL</tt>
-   * or<tt>this->get()!=NULL</tt>, throws <tt>RangeError</tt> if <tt>(offset < 0 ||
-   * this->size() < offset+size</tt>, otherwise returns reference to <tt>*this</tt>
-   */
   const ArrayView<const T>& assert_in_range( size_type offset, size_type size ) const;
-
-  //@}
 
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
-  // I should make these private but templated friends are not very portable.
-  // Besides, if a client directly calls this it will not compile in an
-  // optimized build.
+  // I should make these private but templated friends are not very
+  // portable.  Besides, if a client directly calls this it will not
+  // compile in an optimized build.
 
   explicit ArrayView (const ArrayRCP<const T> &arcp );
 
@@ -650,10 +507,6 @@ public:
 #endif
 
 private:
-
-  // ///////////////////////
-  // Private data members
-
   const T* ptr_;
   int size_;
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
@@ -662,43 +515,34 @@ private:
 
   void setUpIterators(const ERCPNodeLookup rcpNodeLookup = RCP_ENABLE_NODE_LOOKUP);
 
-  // ///////////////////////
-  // Private member functions
-
-  void debug_assert_not_null() const
-    {
+  void debug_assert_not_null() const {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-      assert_not_null();
+    assert_not_null();
 #endif
-    }
+  }
 
-  void debug_assert_in_range( size_type offset, size_type size_in ) const
-    {
-      (void)offset; (void)size_in;
+  void debug_assert_in_range( size_type offset, size_type size_in ) const {
+    (void)offset; (void)size_in;
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-      assert_in_range(offset, size_in);
+    assert_in_range(offset, size_in);
 #endif
-    }
+  }
 
-  void debug_assert_valid_ptr() const
-    {
+  void debug_assert_valid_ptr() const {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-      arcp_.access_private_node().assert_valid_ptr(*this);
+    arcp_.access_private_node().assert_valid_ptr(*this);
 #endif
-    }
+  }
 
 public: // Bad bad bad
 
   // This is a very bad breach of encapsulation but it exists to avoid
-  // problems with portability of tempalted friends
-  const T* access_private_ptr() const
-    { return ptr_; }
+  // problems with portability of templated friends
+  const T* access_private_ptr() const { return ptr_; }
 
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  ArrayRCP<const T> access_private_arcp() const
-    { return arcp_; }
+  ArrayRCP<const T> access_private_arcp() const { return arcp_; }
 #endif
-
 };
 
 
