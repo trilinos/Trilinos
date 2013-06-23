@@ -103,8 +103,7 @@ namespace Teuchos {
 template<class T>
 class ArrayRCP {
 public:
-
-  //! @name Public types
+  //! @name Public typedefs
   //@{
 
   //! Integer index type used throughout ArrayRCP.
@@ -113,7 +112,7 @@ public:
   //! Type representing the number of elements in an ArrayRCP or view thereof.
   typedef Ordinal size_type;
 
-  //! Type representing the difference between two iterators of an ArrayRCP.
+  //! Type representing the difference between two size_type values.
   typedef Ordinal difference_type;
 
   //! Category of ArrayRCP's iterator type.
