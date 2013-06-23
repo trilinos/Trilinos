@@ -17,7 +17,7 @@ TRIBITS_ADD_LIBRARY(
   kokkosarray_deviceopenmp
   NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS 
+  DEPLIBS kokkosarray_devicehost kokkosarray_impl
   )
 
 SET(TRILINOS_INCDIR ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR})
