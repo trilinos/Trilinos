@@ -1,42 +1,53 @@
-
 INCLUDE(TribitsSubPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 #
-# A) Define the (sub)package
+# Define the subpackage
 #
 
 TRIBITS_SUBPACKAGE(Compat)
 
 #
-# B) Set up package-specific options
+# Set up subpackage-specific configuration macros
 #
 
-TRIBITS_ADD_DEBUG_OPTION()
+TRIBITS_CONFIGURE_FILE( ${PACKAGE_NAME}_config.h )
 
-# TRIBITS_ADD_OPTION_AND_DEFINE( 
-#   KokkosCompat_ENABLE_TBB
-#   HAVE_KOKKOSCOMPAT_TBB
-#   "Enable TBB support in KokkosCompat."
-#   ${${PROJECT_NAME}_ENABLE_TBB}
-#   )
+IF(NOT ${PROJECT_NAME}_ENABLE_TBB)
+  SET(${PROJECT_NAME}_ENABLE_TBB OFF)
+ENDIF()
 
-# TRIBITS_ADD_OPTION_AND_DEFINE( 
-#   KokkosCompat_ENABLE_Cusp
-#   HAVE_KOKKOSCOMPAT_CUSP
-#   "Enable Cusp support in KokkosCompat."
-#   ${${PROJECT_NAME}_ENABLE_CUSP}
-#   )
+TRIBITS_ADD_OPTION_AND_DEFINE( KokkosCompat_ENABLE_TBB
+  HAVE_KOKKOSCOMPAT_TBB
+  "Enable TBB support in KokkosCompat."
+  ${${PROJECT_NAME}_ENABLE_TBB}
+  )
 
-# TRIBITS_ADD_OPTION_AND_DEFINE( 
-#   KokkosCompat_ENABLE_MKL
-#   HAVE_KOKKOSCOMPAT_MKL
-#   "Enable MKL support in KokkosCompat."
-#   ${${PROJECT_NAME}_ENABLE_MKL}
-#   )
+IF(NOT ${PROJECT_NAME}_ENABLE_Cusp)
+  SET(${PROJECT_NAME}_ENABLE_Cusp OFF)
+ENDIF()
 
-#ADD_SUBDIRECTORY(src)
-#TRIBITS_ADD_TEST_DIRECTORIES(perf_test)
-#TRIBITS_ADD_TEST_DIRECTORIES(unit_test)
-#TRIBITS_ADD_EXAMPLE_DIRECTORIES(usecases)
+TRIBITS_ADD_OPTION_AND_DEFINE( 
+  KokkosCompat_ENABLE_Cusp
+  HAVE_KOKKOSCOMPAT_CUSP
+  "Enable Cusp support in KokkosCompat."
+  ${${PROJECT_NAME}_ENABLE_Cusp}
+  )
+
+IF(NOT ${PROJECT_NAME}_ENABLE_MKL)
+  SET(${PROJECT_NAME}_ENABLE_MKL OFF)
+ENDIF()
+
+TRIBITS_ADD_OPTION_AND_DEFINE( 
+  KokkosCompat_ENABLE_MKL
+  HAVE_KOKKOSCOMPAT_MKL
+  "Enable MKL support in KokkosCompat."
+  ${${PROJECT_NAME}_ENABLE_MKL}
+  )
+
+#-----------------------------------------------------------------------------
+
+ADD_SUBDIRECTORY(src)
+#TRIBITS_ADD_TEST_DIRECTORIES(test)
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()
