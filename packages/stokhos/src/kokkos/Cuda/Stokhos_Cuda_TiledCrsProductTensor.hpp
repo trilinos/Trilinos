@@ -241,7 +241,12 @@ public:
     //const size_type tile_dim = std::min(tensor_dimension, tile_size);
     const size_type tile_dim = tile_size;
 
+#ifdef STOKHOS_DEBUG
+    const size_type nWarp = 12; // Use fewer warps in debug mode to prevent
+                                // launch failures
+#else
     const size_type nWarp = 16;
+#endif
     const dim3 dBlock( KokkosArray::Impl::CudaTraits::WarpSize , nWarp , 1 );
     const dim3 dGrid( row_count , 1 , 1 );
 

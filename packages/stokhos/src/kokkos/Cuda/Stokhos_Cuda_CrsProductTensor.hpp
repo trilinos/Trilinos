@@ -203,7 +203,12 @@ public:
     const size_type tensor_dimension = A.block.dimension();
     const size_type tensor_align = tensor_dimension;
 
-    const size_type nWarp = 20;
+#ifdef STOKHOS_DEBUG
+    const size_type nWarp = 16; // Use fewer warps in debug mode to prevent
+                                // launch failures
+#else
+     const size_type nWarp = 20;
+#endif
     const dim3 dBlock( KokkosArray::Impl::CudaTraits::WarpSize, nWarp, 1 );
     const dim3 dGrid( row_count, 1, 1 );
 
