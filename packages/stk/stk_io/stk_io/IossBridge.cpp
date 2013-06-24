@@ -864,6 +864,8 @@ void define_side_blocks(stk::mesh::Part &part,
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
+#ifndef NDEBUG
+// Used in an assert statement...
 bool field_has_expected_size(const stk::mesh::FieldBase* field, unsigned expected_size)
 {
   const stk::mesh::FieldBase::RestrictionVector& restrictions = field->restrictions();
@@ -876,6 +878,7 @@ bool field_has_expected_size(const stk::mesh::FieldBase* field, unsigned expecte
 
   return true;
 }
+#endif
 
 void define_node_block(stk::mesh::Part &part,
                        const stk::mesh::BulkData &bulk,
