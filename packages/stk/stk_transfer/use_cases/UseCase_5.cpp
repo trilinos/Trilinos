@@ -15,6 +15,9 @@
 #include <stk_util/diag/PrintTimer.hpp>
 
 #include <stk_transfer/Transfer.hpp>
+#include <stk_transfer/MDMesh.hpp>
+#include <stk_transfer/LinearInterpolate.hpp>
+
 
 
 bool use_case_5_driver(stk::ParallelMachine  comm)
@@ -30,8 +33,8 @@ bool use_case_5_driver(stk::ParallelMachine  comm)
   const double TOLERANCE = 0.000001;
   const double  rand_max = RAND_MAX;
   enum {           DIM = 3  };
-  enum { FROMNUMPOINTS = 100  };
-  enum {   TONUMPOINTS = 100  };
+  enum { FROMNUMPOINTS = 10   };
+  enum {   TONUMPOINTS = 10   };
 
   typedef Intrepid::FieldContainer<double>  MDArray;
 
@@ -55,10 +58,25 @@ bool use_case_5_driver(stk::ParallelMachine  comm)
     }
   }
 
+  stk::transfer::MDMesh<3> transfer_domain_mesh (FromPoints, FromValues, comm);
+  stk::transfer::MDMesh<3> transfer_range_mesh  (  ToPoints,   ToValues, comm);
+  
+  stk::transfer::GeometricTransfer<
+    class stk::transfer::LinearInterpolate<
+      class stk::transfer::MDMesh<3>, 
+      class stk::transfer::MDMesh<3> 
+    >
+  >
+  transfer(transfer_domain_mesh, 
+           transfer_range_mesh, 
+           .05, 
+           1.5, 
+           "STK Transfer test Use case 5");
   {
     stk::diag::TimeBlock __timer_point_to_point(timer_point_to_point);
     try {
-      //transfer.PointToPoint(ToValues, ToPoints, FromValues, FromPoints, comm);
+      transfer.initialize();
+      transfer.apply();
     } catch (std::exception &e) {
       std::cout <<__FILE__<<":"<<__LINE__
                 <<" Caught an std::exception with what string:"
@@ -101,9 +119,6 @@ bool use_case_5_driver(stk::ParallelMachine  comm)
   }
   status = status && success;
   timer.stop();
-//stk::diag::printTimersTable(std::cout, timer, 
-//      stk::diag::METRICS_CPU_TIME | stk::diag::METRICS_WALL_TIME, false, comm);
-
 
   const bool collective_result = use_case::print_status(comm, status);
   return collective_result;

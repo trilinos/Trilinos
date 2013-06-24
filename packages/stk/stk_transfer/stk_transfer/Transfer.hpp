@@ -121,12 +121,22 @@ template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::initialize() {
     EntityKeyMap entity_key_map;
     {   
 //      diag::TimeBlock __timer_ghosting(GhostingTimer);
+      ParallelMachine comm = m_mesha.comm();
+      const unsigned p_size = parallel_machine_size(comm);
       if (m_mesha.has_communication_capabilities()) {
         entity_key_map = copy_domain_to_range_processors(m_mesha, RangeToDomain, m_name);
       } else if (m_meshb.has_communication_capabilities()) {
         ThrowRequireMsg (m_mesha.has_communication_capabilities() || m_mesha.has_communication_capabilities(),
           __FILE__<<":"<<__LINE__<<" Still working on communicaiton capabilities");
-      } else {
+      } else if (1==p_size) {
+        const typename EntityProcRelationVec::const_iterator end=RangeToDomain.end();
+        for (typename EntityProcRelationVec::const_iterator i=RangeToDomain.begin(); i!=end; ++i) {
+          const EntityKeyB range_entity    = i->first.ident;
+          const EntityKeyA domain_entity   = i->second.ident;
+          std::pair<EntityKeyB,EntityKeyA> key_map(range_entity, domain_entity);
+          entity_key_map.insert(key_map);
+        }
+      } else               {
         ThrowRequireMsg (m_mesha.has_communication_capabilities() || m_mesha.has_communication_capabilities(),
           __FILE__<<":"<<__LINE__<<" Still working on communicaiton capabilities");
       }

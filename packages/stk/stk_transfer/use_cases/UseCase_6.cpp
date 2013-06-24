@@ -38,7 +38,7 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
                       const std::string &domain_mesh,
                       const std::string &domain_filetype)
 {
-  stk::diag::Timer timer("Transfer Use Case 5", 
+  stk::diag::Timer timer("Transfer Use Case 6", 
                           use_case::TIMER_TRANSFER, 
                           use_case::timer());
   stk::diag::Timer timer_node_to_node(" Node To Node", timer);
@@ -143,8 +143,13 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
   stk::transfer::STKMesh<3> transfer_range_mesh (range_entities, range_coord_field, to_fields);
 
   
-  stk::transfer::GeometricTransfer<class stk::transfer::LinearInterpolate<class stk::transfer::STKMesh<3>, class stk::transfer::STKMesh<3> > >
-    transfer(transfer_domain_mesh, transfer_range_mesh, 4, 1.5, "STK Transfer test Use case 6");
+  stk::transfer::GeometricTransfer<
+    class stk::transfer::LinearInterpolate<
+      class stk::transfer::STKMesh<3>, 
+      class stk::transfer::STKMesh<3>
+    >
+  >
+  transfer(transfer_domain_mesh, transfer_range_mesh, 4, 1.5, "STK Transfer test Use case 6");
   
   {
     stk::diag::TimeBlock __timer_node_to_node(timer_node_to_node);
