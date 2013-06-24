@@ -1028,7 +1028,12 @@ int Epetra_CrsGraph::ComputeGlobalConstants()
   }}
   
   // Case 1:  Constant block size (including blocksize = 1)
-  if(RowMap().ConstantElementSize()) {
+  if(RowMap().ConstantElementSize() && ColMap().ConstantElementSize() && RowMap().ElementSize() == ColMap().ElementSize()) {
+    // Jim Westfall reported a fix on 22 June 2013 where the second two conditions
+    // above are necessary.  The added conditions check for the case when the row map
+    // and col map are constant but different as possible with VBR sub matrices used
+    // in global assemble
+
     tempvec[0] = CrsGraphData_->NumMyEntries_;
     tempvec[1] = CrsGraphData_->NumMyBlockDiagonals_;
 
