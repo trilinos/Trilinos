@@ -627,7 +627,7 @@ namespace stk
 
 
       template< class Breaker >
-      static void do_moving_shock_test_square_sidesets(PerceptMesh& eMesh, int num_time_steps, bool save_intermediate=false, bool delete_parents=false, 
+      static void do_moving_shock_test_square_sidesets(PerceptMesh& eMesh, int num_time_steps, bool save_intermediate=false, bool delete_parents=false,
                                                        std::string prefix="")
       {
         EXCEPTWATCH;
@@ -737,7 +737,7 @@ namespace stk
                       eMesh.save_as(prefix+"ref.e-s"+std::string(buf));
                     ++cnt1;
                   }
- 
+
                 if (0)
                   {
                     char buf[1000];
@@ -904,7 +904,7 @@ namespace stk
             eMesh2.open(input_files_loc+"square_tri3_uns_xformed.e");
             //int num_time_steps = 10;  // 10 for stress testing
             //for (int istep=1; istep <= num_time_steps; istep++)
-            do_moving_shock_test_square_sidesets<Local_Tri3_Tri3_N>(eMesh2, 84, false, false, "uns-"); 
+            do_moving_shock_test_square_sidesets<Local_Tri3_Tri3_N>(eMesh2, 84, false, false, "uns-");
           }
         }
       }
@@ -970,12 +970,17 @@ namespace stk
             int scalarDimension = 0; // a scalar
             stk::mesh::FieldBase* proc_rank_field    = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             stk::mesh::FieldBase* refine_field       = eMesh.add_field("refine_field", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
-            //stk::mesh::FieldBase* nodal_refine_field = eMesh.add_field("nodal_refine_field", eMesh.node_rank(), scalarDimension);
 
-            eMesh.add_field("refine_level", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
-            eMesh.add_field("normal_kept_deleted", eMesh.node_rank(), scalarDimension);
+            stk::mesh::FieldBase* refine_level          = eMesh.add_field("refine_level", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+            //RefineLevelFieldType& refine_level_field = eMesh.get_fem_meta_data()->declare_field<RefineLevelFieldType>("refine_level");
+            //stk::mesh::put_field( refine_level_field , stk::mesh::MetaData::ELEMENT_RANK , eMesh.get_fem_meta_data()->universal_part());
 
             eMesh.commit();
+            if (1)
+              {
+                SetElementField1 set_ref_field(eMesh);
+                eMesh.elementOpLoop(set_ref_field, refine_level);
+              }
 
             std::cout << "qual_local initial number elements= " << eMesh.get_number_elements() << std::endl;
 
@@ -996,7 +1001,7 @@ namespace stk
 
             int num_ref_passes = 3;
             int num_unref_passes = 10;
-
+            int iplot=0;
             for (int ipass=0; ipass < num_ref_passes; ipass++)
               {
 
@@ -1012,21 +1017,32 @@ namespace stk
                 if (1)
                   {
                     char buf[1000];
-                    sprintf(buf, "%04d", ipass);
-                    if (ipass == 0)
+                    sprintf(buf, "%04d", iplot);
+                    if (iplot == 0)
                       eMesh.save_as("quad_square_anim.e");
                     else
                       eMesh.save_as("quad_square_anim.e-s"+std::string(buf));
+                    ++iplot;
                   }
 
               }
 
             for (int iunref_pass=0; iunref_pass < num_unref_passes; iunref_pass++)
               {
-                std::cout << "P[" << eMesh.get_rank() << "] iunref_pass= " << iunref_pass <<  std::endl;
                 ElementUnrefineCollection elements_to_unref = breaker.buildUnrefineList();
+                std::cout << "P[" << eMesh.get_rank() << "] iunref_pass= " << iunref_pass <<  " elements_to_unref.size() = " << elements_to_unref.size() << std::endl;
                 breaker.unrefineTheseElements(elements_to_unref);
                 std::cout << "P[" << eMesh.get_rank() << "] done... iunref_pass= " << iunref_pass << " quad_local number elements= " << eMesh.get_number_elements() << std::endl;
+                if (1)
+                  {
+                    char buf[1000];
+                    sprintf(buf, "%04d", iplot);
+                    if (iplot == 0)
+                      eMesh.save_as("quad_square_anim.e");
+                    else
+                      eMesh.save_as("quad_square_anim.e-s"+std::string(buf));
+                    ++iplot;
+                  }
               }
 
             eMesh.save_as(output_files_loc+"quad_tmp_square_sidesets_quad_local_unref_"+post_fix[p_size]+".e");
@@ -1036,11 +1052,16 @@ namespace stk
               {
                 std::cout << "P[" << eMesh.get_rank() << "] iunrefAll_pass= " << iunref <<  std::endl;
                 //eMesh.save_as(output_files_loc+"quad_square_sidesets_final_quad_local_"+post_fix[p_size]+"_unrefAll_pass_"+toString(iunref)+".e."+toString(num_time_steps) );
-                {
-                  char buf[1000];
-                  sprintf(buf, "%04d", iunref+num_ref_passes);
-                  eMesh.save_as("quad_square_anim.e-s"+std::string(buf));
-                }
+                if (1)
+                  {
+                    char buf[1000];
+                    sprintf(buf, "%04d", iplot);
+                    if (iplot == 0)
+                      eMesh.save_as("quad_square_anim.e");
+                    else
+                      eMesh.save_as("quad_square_anim.e-s"+std::string(buf));
+                    ++iplot;
+                  }
 
                 breaker.unrefineAll();
                 std::cout << "P[" << eMesh.get_rank() << "] done... iunrefAll_pass= " << iunref << " quad_local number elements= " << eMesh.get_number_elements() << std::endl;
@@ -1058,7 +1079,7 @@ namespace stk
 
       STKUNIT_UNIT_TEST(regr_localRefiner, break_quad_to_quad_N_5_ElementBased_quad_local_square_sidesets)
       {
-        bool do_test=false;
+        bool do_test = false;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
 
         if (do_test) {

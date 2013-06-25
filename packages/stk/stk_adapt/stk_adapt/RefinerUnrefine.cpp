@@ -1076,9 +1076,6 @@ namespace stk {
       int print_filter_info = DEBUG_UNREF_1;
       if (print_filter_info)  std::cout << "\n\nP["<< m_eMesh.get_rank() << "] filterUnrefSetPass2: initial elements_to_unref size = " << elements_to_unref.size() << std::endl;
 
-      stk::mesh::FieldBase *refine_field = m_eMesh.get_field("refine_field");
-      //stk::mesh::FieldBase *refine_field_filtered = m_eMesh.get_field("refine_field_filtered");
-
       ElementUnrefineCollection new_set(*m_eMesh.get_bulk_data());
       ElementUnrefineCollection new_root(*m_eMesh.get_bulk_data());
 
@@ -1091,21 +1088,10 @@ namespace stk {
               for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
                 {
                   stk::mesh::Entity element = bucket[ientity];
-                  if (refine_field)
-                  {
-                    double *f_data = m_eMesh.field_data(refine_field, element);
-                    if (f_data) f_data[0] = 0;
-                  }
-
                   bool is_root = !m_eMesh.hasFamilyTree(element) || !m_eMesh.isChildElement(element,true);
 
                   if (is_root)
                     {
-                      if (refine_field)
-                      {
-                        double *f_data = m_eMesh.field_data(refine_field, element);
-                        if (f_data) f_data[0] = 20;
-                      }
                       filterRecurse(element, new_root, elements_to_unref);
                     }
                 }
@@ -1141,20 +1127,9 @@ namespace stk {
 
                   new_root.insert(element);
 
-                  if (refine_field)
-                   {
-                     double *f_data = m_eMesh.field_data(refine_field, element);
-                     if (f_data) f_data[0] = 10;
-                   }
-
                   for (SetOfEntities::iterator it=allD.begin(); it != allD.end(); ++it)
                     {
                       new_set.insert(*it);
-                      if (refine_field)
-                      {
-                        double *f_data = m_eMesh.field_data(refine_field, *it);
-                        if (f_data) f_data[0] = -10;
-                      }
                     }
                 }
             }
@@ -1344,8 +1319,11 @@ namespace stk {
       getSideParentsToBeRemeshed(rootElements, parent_side_elements);
 
       // remesh the holes left by removing child elems (quad/hex hanging node doesn't need this)
-      remeshElements(rootElements, m_eMesh.element_rank(), elements_to_unref_sz);
-      remeshElements(parent_side_elements, m_eMesh.side_rank(), elements_to_unref_sz);
+      if (m_needsRemesh)
+        {
+          remeshElements(rootElements, m_eMesh.element_rank(), elements_to_unref_sz);
+          remeshElements(parent_side_elements, m_eMesh.side_rank(), elements_to_unref_sz);
+        }
       // FIXME side sets...
 
       // remove any elements that are empty (these can exist when doing local refinement)
