@@ -38,7 +38,7 @@
 #include <unit_tests/TestLocalRefinerTri_N_3_MeshSizeRatio.hpp>
 #include <unit_tests/TestLocalRefinerTri_N_3_EdgeBasedAnisotropic.hpp>
 
-#include <stk_adapt/IElementBasedAdapterPredicate.hpp>
+#include <stk_adapt/ElementRefinePredicate.hpp>
 #include <stk_adapt/PredicateBasedElementAdapter.hpp>
 
 #include <unit_tests/TestLocalRefinerTet_N_1.hpp>

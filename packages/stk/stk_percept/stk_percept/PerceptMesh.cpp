@@ -944,6 +944,21 @@ namespace stk {
       Math::normalize_3d(normal);
     }
 
+    void PerceptMesh::get_node_neighbors(stk::mesh::Entity element, std::set<stk::mesh::Entity>& neighbors)
+    {
+      const MyPairIterRelation elem_nodes(*get_bulk_data(), element, node_rank() );
+      for (unsigned inode=0; inode < elem_nodes.size(); inode++)
+        {
+          stk::mesh::Entity node = elem_nodes[inode].entity();
+          const MyPairIterRelation node_elems(*get_bulk_data(), node, element_rank() );
+          for (unsigned ielem=0; ielem < node_elems.size(); ielem++)
+            {
+              stk::mesh::Entity elem = node_elems[ielem].entity();
+              if (elem != element) neighbors.insert(elem);
+            }
+        }
+    }
+
     std::map<stk::mesh::Part*, PerceptMesh::MinMaxAve > PerceptMesh::hmesh_surface_normal()
     {
       std::map<stk::mesh::Part*, MinMaxAve > result;

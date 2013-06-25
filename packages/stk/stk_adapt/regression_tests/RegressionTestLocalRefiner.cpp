@@ -53,7 +53,7 @@
 #include <stk_percept/fixtures/WedgeFixture.hpp>
 
 #include <stk_adapt/IEdgeBasedAdapterPredicate.hpp>
-#include <stk_adapt/IElementBasedAdapterPredicate.hpp>
+#include <stk_adapt/ElementRefinePredicate.hpp>
 #include <stk_adapt/PredicateBasedElementAdapter.hpp>
 #include <stk_adapt/PredicateBasedEdgeAdapter.hpp>
 

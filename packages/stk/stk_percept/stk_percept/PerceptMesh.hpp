@@ -471,6 +471,8 @@ namespace stk {
       //========================================================================================================================
       // low-level interfaces
 
+      /// find all neighbors touching one of my nodes
+      void get_node_neighbors(stk::mesh::Entity element, std::vector<stk::mesh::Entity>& neighbors);
 
       /// fill @param histogram with statistics about the given field
       void field_stats(Histogram<double>& histogram, std::string field_name, int index= -2);
