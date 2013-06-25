@@ -85,6 +85,7 @@
 #include "MueLu_MultiVectorTransferFactory.hpp"
 #include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
+#include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
 #include "MueLu_RepartitionFactory.hpp"
@@ -180,6 +181,13 @@ namespace MueLu {
         return Build2<Zoltan2Interface>(paramList, factoryMapIn);
 #else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a Zoltan2Interface object: Zoltan2 is disabled: HAVE_MUELU_ZOLTAN2 && HAVE_MPI == false.");
+#endif // HAVE_MUELU_ZOLTAN2 && HAVE_MPI
+      }
+      if (factoryName == "IsorropiaInterface") {
+#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
+        return Build2<IsorropiaInterface>(paramList, factoryMapIn);
+#else
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a IsorropiaInterface object: Isorropia is disabled: HAVE_MUELU_ISORROPIA && HAVE_MPI == false.");
 #endif // HAVE_MUELU_ZOLTAN2 && HAVE_MPI
       }
 
