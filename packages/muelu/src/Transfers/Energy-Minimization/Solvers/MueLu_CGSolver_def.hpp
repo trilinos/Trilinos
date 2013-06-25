@@ -93,8 +93,9 @@ namespace MueLu {
     bool doFillComplete  = true;
     // bool optimizeStorage = false;
     bool optimizeStorage = true;
+    bool allowMLMultiply = false;
 
-    tmpAP = Utils::Multiply(*A, false, *X, false, doFillComplete, optimizeStorage);
+    tmpAP = Utils::Multiply(*A, false, *X, false, doFillComplete, optimizeStorage, allowMLMultiply);
     C.Apply(*tmpAP, *T);
 
     // R_0 = -A*X_0
@@ -118,8 +119,16 @@ namespace MueLu {
 
     for (size_t k = 0; k < nIts_; k++) {
       // AP = constrain(A*P)
-      if (k == 0) tmpAP = Utils::Multiply(*A, false, *P, false,        doFillComplete, optimizeStorage);
-      else        tmpAP = Utils::Multiply(*A, false, *P, false, tmpAP, doFillComplete, optimizeStorage);
+      if (k == 0 || useTpetra)
+        // Construct the MxM pattern from scratch
+        // This is done by default for Tpetra as the three argument version requires tmpAP
+        // to *not* be locally indexed which defeats the purpose
+        // TODO: need a three argument Tpetra version which allows reuse of already fill-completed matrix
+        tmpAP = Utils::Multiply(*A, false, *P, false,        doFillComplete, optimizeStorage, allowMLMultiply);
+      else {
+        // Reuse the MxM pattern
+        tmpAP = Utils::Multiply(*A, false, *P, false, tmpAP, doFillComplete, optimizeStorage, allowMLMultiply);
+      }
       C.Apply(*tmpAP, *T);
       AP = T;
 
