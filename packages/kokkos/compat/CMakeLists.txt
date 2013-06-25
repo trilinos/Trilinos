@@ -48,6 +48,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 #-----------------------------------------------------------------------------
 
 ADD_SUBDIRECTORY(src)
-#TRIBITS_ADD_TEST_DIRECTORIES(test)
+TRIBITS_ADD_TEST_DIRECTORIES(test)
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()
