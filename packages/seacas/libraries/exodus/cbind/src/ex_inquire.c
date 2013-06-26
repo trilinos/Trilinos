@@ -495,6 +495,12 @@ static int ex_inquire_internal (int      exoid,
     }
     break;
 
+  case EX_INQ_DB_FLOAT_SIZE:
+    {
+      nc_get_att_longlong(exoid, NC_GLOBAL, ATT_FLT_WORDSIZE, (long long*)ret_int);
+    }
+    break;
+    
   case EX_INQ_DB_MAX_USED_NAME_LENGTH:
     /* Return the value of the ATT_MAX_NAME_LENGTH attribute (if it
        exists) which is the maximum length of any entity, variable,
