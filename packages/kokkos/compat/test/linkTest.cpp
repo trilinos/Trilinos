@@ -110,7 +110,10 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkosArray, ArrayViewOfView ) {
   ka_view_type y ("y", numElts);
   KokkosArray::parallel_for (y.dimension_0 (), FillFunctor<KokkosArray::Host> (y));
 
-  // It's possible to get the View's raw pointer because we know its layout.
+  // It's possible to get the View's raw pointer because we know its
+  // layout.  Not every kind of View necessarily implements the
+  // ptr_on_device() method, but certainly Views in Host memory with
+  // left or right (Fortran or C) layout implement this method.
   double* const y_raw = y.ptr_on_device ();
   const size_type y_size = static_cast<size_type> (y.dimension_0 ());
 
@@ -118,6 +121,46 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkosArray, ArrayViewOfView ) {
   TEST_EQUALITY_CONST( y_view.size(), y_size );
   for (size_type k = 0; k < y_size; ++k) {
     TEST_EQUALITY( y_view[k], y[k] );
+  }
+}
+
+
+// Second test of interaction between Teuchos and Kokkos objects:
+//
+// Get a KokkosArray::View of a Teuchos::ArrayView, and make sure that
+// it points to the same data.  Thanks to Christian Trott for
+// implementing the necessary functionality (View constructor for
+// certain View specializations, that takes a raw pointer and
+// dimensions) in Kokkos Array.
+TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkosArray, ViewOfArrayView ) {
+  typedef Teuchos::Array<double>::size_type size_type;
+  typedef KokkosArray::View<double*, KokkosArray::LayoutLeft, KokkosArray::Host, KokkosArray::MemoryUnmanaged> ka_view_type;
+  typedef KokkosArray::View<const double*, KokkosArray::LayoutLeft, KokkosArray::Host, KokkosArray::MemoryUnmanaged> ka_const_view_type;
+
+  const size_type numElts = 10;
+  Teuchos::Array<double> x (numElts);
+  for (size_type k = 0; k < numElts; ++k) {
+    x[k] = 42.0 + static_cast<double> (k);
+  }
+  // You can make an (unmanaged) View of a raw array with left or
+  // right (Fortran or C) layout on the Host device, just by passing
+  // the array and stride(s) into the constructor.  If you want the
+  // dimensions to differ from the strides, you'll have to create a
+  // subview with the desired dimensions.
+  ka_view_type x_view (x.getRawPtr (), x.size ());
+
+  TEST_EQUALITY( x.size(), static_cast<size_type>(x_view.dimension_0()) );
+  for (size_type k = 0; k < x.size (); ++k) {
+    TEST_EQUALITY( x_view[k], x[k] );
+  }
+
+  // This ensures that conversions from double* to const double* work correctly.
+  // x.getRawPtr() returns double*.
+  ka_const_view_type x_view_const (x.getRawPtr (), x.size ());
+
+  TEST_EQUALITY( x.size(), static_cast<size_type>(x_view_const.dimension_0()) );
+  for (size_type k = 0; k < x.size (); ++k) {
+    TEST_EQUALITY( x_view_const[k], x[k] );
   }
 }
 
