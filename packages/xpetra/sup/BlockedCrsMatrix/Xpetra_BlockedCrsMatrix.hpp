@@ -211,6 +211,12 @@ public:
                                 "replaceLocalValues not supported by BlockedCrsMatrix" );
   }
 
+  //! Set all matrix entries equal to scalar
+  virtual void setAllToScalar(const Scalar &alpha) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+                                "setAllToScalar not supported by BlockedCrsMatrix");
+  }
+
   //! Scale the current values of a matrix, this = alpha*this.
   void scale(const Scalar &alpha) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
