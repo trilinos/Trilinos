@@ -64,7 +64,7 @@ namespace {
         }
       }
     }
-    float sum;
+    float sum = 0.0;
     {
       Teuchos::TimeMonitor localTimer(sTime);
       const float *ptr = buff.getRawPtr();

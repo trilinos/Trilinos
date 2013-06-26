@@ -246,6 +246,10 @@
     id=\"42\" name=\"mapping_type\" type=\"int\" validatorId=\"42\" value=\"-1\" \
     docString=\"Mapping of solution to the processors. -1 No Mapping, 0 coordinate mapping.\" \
     /> \
+   <Parameter  \
+    id=\"43\" name=\"keep_part_boxes\" type=\"int\" validatorId=\"43\" value=\"-1\" \
+    docString=\"Keep the part boundaries of the geometric partitioning: Truth values - 0 False, Otherwise True.\" \
+    /> \
     <Validators> \
       <Validator defaultParameterName=\"error_check_level\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"0\"> \
         <String integralValue=\"0\" stringDoc=\"no assertions will be performed\" stringValue=\"no_assertions\"/> \
@@ -436,6 +440,7 @@
       <Validator defaultParameterName=\"migration_processor_assignment_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"39\"/> \
       <Validator defaultParameterName=\"migration_doMigration_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"41\"/> \
       <Validator defaultParameterName=\"mapping_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"42\"/> \
+      <Validator defaultParameterName=\"keep_part_boxes\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"43\"/> \
       <Validator defaultParameterName=\"remap_parts\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"40\"> \
         <String integralValue=\"1\" stringValue=\"true\"/> \
         <String integralValue=\"1\" stringValue=\"yes\"/> \

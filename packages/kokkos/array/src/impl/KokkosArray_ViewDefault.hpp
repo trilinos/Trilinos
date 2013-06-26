@@ -169,6 +169,54 @@ struct ViewAssignment< LayoutDefault , void , void >
     ViewInitialize< typename traits::device_type > init( dst );
   }
 
+  // Creating unmanaged view from ptr and dimensions:
+
+  template< class T , class L , class D, class M >
+  KOKKOSARRAY_INLINE_FUNCTION
+  ViewAssignment( View<T,L,D,M,Specialize> & dst ,
+  		          const typename enable_if< !(ViewTraits<T,L,D,M>::is_managed) , typename ViewTraits<T,L,D,M>::scalar_type >::type* ptr ,
+                  const size_t n0 = 0 ,
+                  const size_t n1 = 0 ,
+                  const size_t n2 = 0 ,
+                  const size_t n3 = 0 ,
+                  const size_t n4 = 0 ,
+                  const size_t n5 = 0 ,
+                  const size_t n6 = 0 ,
+                  const size_t n7 = 0 )
+  {
+    typedef ViewTraits<T,L,D,M> traits ;
+    typedef typename traits::shape_type   shape_type ;
+    typedef typename traits::memory_space memory_space ;
+    typedef typename traits::scalar_type  scalar_type ;
+
+    if ( traits::rank == 1 && traits::rank_dynamic == 1 && n0 < n1 ) {
+
+      // Rank=1 array allocation may be larger than the initial dimension
+      // to allow resizing up to the allocated size.
+
+      shape_type::assign( dst.m_shape, n0, 0, 0, 0, 0, 0, 0, 0 );
+
+      dst.m_stride = n1;
+    }
+    else {
+      enum { is_left = is_same< typename traits::array_layout , LayoutLeft >::value };
+
+      shape_type::assign( dst.m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
+
+      // Rank=1 and left-layout arrays are aligned on the first dimension.
+      // Rank>1 and right-layout arrays are aligned on blocks of the 2-7th dimensions.
+
+      const size_t base_count =
+        ( traits::rank == 1 || is_left )
+        ? dst.m_shape.N0
+        : dst.m_shape.N1 * dst.m_shape.N2 * dst.m_shape.N3 * dst.m_shape.N4 *
+          dst.m_shape.N5 * dst.m_shape.N6 * dst.m_shape.N7 ;
+
+      dst.m_stride = base_count;
+    }
+
+    dst.m_ptr_on_device = (scalar_type *) ptr;
+  }
   // Allocate using the dimensions and stride of the input array.
   // The specialization, layout, and rank must be compatible.
   // Primarily used for creating mirrors.
@@ -680,6 +728,21 @@ public:
     : m_ptr_on_device(0)
     { (void)alloc( *this, label, n0, n1, n2, n3, n4, n5, n6, n7 ); }
 
+  // Create unmanaged View from ptr, can be called in functors, NOTE: no alignment padding is performed
+  KOKKOSARRAY_INLINE_FUNCTION
+  View( const typename traits::scalar_type* ptr,
+		const size_t n0 = 0 ,
+        const size_t n1 = 0 ,
+        const size_t n2 = 0 ,
+        const size_t n3 = 0 ,
+        const size_t n4 = 0 ,
+        const size_t n5 = 0 ,
+        const size_t n6 = 0 ,
+        const size_t n7 = 0 )
+    : m_ptr_on_device(0)
+    {
+	  alloc( *this, ptr, n0, n1, n2, n3, n4, n5, n6, n7 );
+    }
   //------------------------------------
   // Is not allocated
 

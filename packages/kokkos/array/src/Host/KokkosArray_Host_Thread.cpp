@@ -43,8 +43,7 @@
 
 #include <Host/KokkosArray_Host_Thread.hpp>
 
-#include <KokkosArray_Host.hpp>
-#include <Host/KokkosArray_Host_Internal.hpp>
+/* #include <KokkosArray_Host.hpp> */
 
 #include <limits>
 #include <algorithm>
@@ -378,10 +377,24 @@ namespace {
 
 pthread_mutex_t host_internal_pthread_mutex = PTHREAD_MUTEX_INITIALIZER ;
 
-void * host_internal_pthread_driver( void * )
+struct HostInternalPthreadDriver {
+  int (* m_driver )( void * );
+  void * m_arg ;
+  volatile int m_start ;
+};
+
+void * host_internal_pthread_driver( void * global )
 {
   try {
-    host_thread_driver();
+    int ( * const driver )( void * ) = ((HostInternalPthreadDriver*) global )->m_driver ;
+    void * const arg                 = ((HostInternalPthreadDriver*) global )->m_arg ;
+
+    // Tell the spawn function that the data has been copied
+    ((HostInternalPthreadDriver*) global )->m_start = 1 ;
+
+    global = 0 ; // Don't touch data again
+
+    (*driver)(arg);
   }
   catch( const std::exception & x ) {
     // mfh 29 May 2012: Doesn't calling std::terminate() seem a
@@ -404,18 +417,9 @@ void * host_internal_pthread_driver( void * )
 }
 
 //----------------------------------------------------------------------------
+// Spawn a thread
 
-bool host_thread_is_master()
-{
-  static const pthread_t master_pid = pthread_self();
-
-  return pthread_equal( master_pid , pthread_self() );
-}
-
-//----------------------------------------------------------------------------
-// Spawn this thread
-
-bool host_thread_spawn()
+bool host_thread_spawn( int (*driver)(void*) , void * arg )
 {
   bool result = false ;
 
@@ -427,13 +431,25 @@ bool host_thread_spawn()
 
     pthread_t pt ;
 
-    result =
-      0 == pthread_create( & pt, & attr, host_internal_pthread_driver, 0 );
+    HostInternalPthreadDriver global = { driver , arg , 0 };
+
+    result = 0 == pthread_create( & pt, & attr, host_internal_pthread_driver, & global );
+
+    host_thread_wait_yield( & global.m_start , 0 );
   }
 
   pthread_attr_destroy( & attr );
 
   return result ;
+}
+
+//----------------------------------------------------------------------------
+
+bool host_thread_is_master()
+{
+  static const pthread_t master_pid = pthread_self();
+
+  return pthread_equal( master_pid , pthread_self() );
 }
 
 //----------------------------------------------------------------------------

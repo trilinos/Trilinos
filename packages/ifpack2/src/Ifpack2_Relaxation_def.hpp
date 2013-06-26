@@ -648,7 +648,7 @@ void Relaxation<MatrixType>::compute ()
         A_->getLocalRowCopy (i, indices (), values (), numEntries);
         magnitude_type diagonal_boost = STM::zero ();
         for (size_t k = 0 ; k < numEntries ; ++k) {
-          if (as<size_t> (indices[k]) > i) {
+          if (as<size_t> (indices[k]) > numMyRows) {
             diagonal_boost += STS::magnitude (values[k] / two);
           }
         }

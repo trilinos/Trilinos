@@ -53,10 +53,48 @@
 #include <Zoltan2_IdentifierMap.hpp>
 #include <Zoltan2_Solution.hpp>
 #include <Zoltan2_GreedyMWM.hpp>
-
+#include <Zoltan2_CoordinatePartitioningGraph.hpp>
 #include <cmath>
 #include <algorithm>
 #include <vector>
+#include <limits>
+
+namespace Teuchos{
+
+template <typename Ordinal, typename T>
+class Zoltan2_BoxBoundaries  : public ValueTypeReductionOp<Ordinal,T>
+{
+private:
+    Ordinal size;
+    T _EPSILON;
+
+public:
+    /*! \brief Default Constructor
+     */
+    Zoltan2_BoxBoundaries ():size(0), _EPSILON (std::numeric_limits<T>::epsilon()){}
+
+    /*! \brief Constructor
+     *   \param nsum  the count of how many sums will be computed at the
+     *             start of the list.
+     *   \param nmin  following the sums, this many minimums will be computed.
+     *   \param nmax  following the minimums, this many maximums will be computed.
+     */
+    Zoltan2_BoxBoundaries (Ordinal s_):
+        size(s_), _EPSILON (std::numeric_limits<T>::epsilon()){}
+
+    /*! \brief Implement Teuchos::ValueTypeReductionOp interface
+     */
+    void reduce( const Ordinal count, const T inBuffer[], T inoutBuffer[]) const
+    {
+        for (Ordinal i=0; i < count; i++){
+            if (Z2_ABS(inBuffer[i]) >  _EPSILON){
+                inoutBuffer[i] = inBuffer[i];
+            }
+        }
+    }
+};
+} // namespace Teuchos
+
 
 namespace Zoltan2 {
 
@@ -381,6 +419,118 @@ public:
    *            to do it explicitly.
    */
 
+
+  void setPartBoxes(RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > outPartBoxes){
+      this->partBoxes = outPartBoxes;
+  }
+
+  RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > getPartBoxes(){
+      return this->partBoxes;
+  }
+
+
+  void getCommunicationGraph(
+          const Teuchos::Comm<int> *comm,
+          ArrayRCP <partId_t> &comXAdj,
+          ArrayRCP <partId_t> &comAdj
+  ) {
+
+      if(comXAdj_.getRawPtr() == NULL && comAdj_.getRawPtr() == NULL){
+
+          partId_t ntasks =  this->getActualGlobalNumberOfParts();
+          if (partId_t (this->getTargetGlobalNumberOfParts()) > ntasks){
+              ntasks = this->getTargetGlobalNumberOfParts();
+          }
+          RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > pBoxes = this->getGlobalBoxBoundaries(comm);
+          int dim = (*pBoxes)[0].getDim();
+          GridHash < scalar_t, partId_t> grid(
+                  pBoxes,
+                  ntasks,
+                  dim);
+          grid.getAdjArrays(comXAdj_, comAdj_);
+      }
+      comAdj = comAdj_;
+      comXAdj = comXAdj_;
+
+  }
+
+  RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > getGlobalBoxBoundaries(
+          const Teuchos::Comm<int> *comm){
+
+      partId_t ntasks =  this->getActualGlobalNumberOfParts();
+      if (partId_t (this->getTargetGlobalNumberOfParts()) > ntasks){
+          ntasks = this->getTargetGlobalNumberOfParts();
+      }
+
+      RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > pBoxes = this->getPartBoxes();
+
+      int dim = (*pBoxes)[0].getDim();
+
+
+      scalar_t *localPartBoundaries = new scalar_t[ntasks * 2 *dim];
+
+      memset(localPartBoundaries, 0, sizeof(scalar_t) * ntasks * 2 *dim);
+
+      scalar_t *globalPartBoundaries = new scalar_t[ntasks * 2 *dim];
+      memset(globalPartBoundaries, 0, sizeof(scalar_t) * ntasks * 2 *dim);
+
+      scalar_t *localPartMins = localPartBoundaries;
+      scalar_t *localPartMaxs = localPartBoundaries + ntasks * dim;
+
+      scalar_t *globalPartMins = globalPartBoundaries;
+      scalar_t *globalPartMaxs = globalPartBoundaries + ntasks * dim;
+
+      partId_t boxCount = pBoxes->size();
+      for (partId_t i = 0; i < boxCount; ++i){
+          partId_t pId = (*pBoxes)[i].getpId();
+          //cout << "me:" << comm->getRank() << " has:" << pId << endl;
+
+          scalar_t *lmins = (*pBoxes)[i].getlmins();
+          scalar_t *lmaxs = (*pBoxes)[i].getlmaxs();
+
+          for (int j = 0; j < dim; ++j){
+              localPartMins[dim * pId + j] = lmins[j];
+              localPartMaxs[dim * pId + j] = lmaxs[j];
+              /*
+              cout << "me:" << comm->getRank()  <<
+                      " dim * pId + j:"<< dim * pId + j <<
+                      " localMin:" << localPartMins[dim * pId + j] <<
+                      " localMax:" << localPartMaxs[dim * pId + j] << endl;
+                      */
+          }
+      }
+
+      Teuchos::Zoltan2_BoxBoundaries<int, scalar_t> reductionOp(
+              ntasks * 2 *dim);
+
+      reduceAll<int, scalar_t>(*comm, reductionOp,
+              ntasks * 2 *dim, localPartBoundaries, globalPartBoundaries
+      );
+      RCP < std::vector <coordinateModelPartBox <scalar_t, partId_t> > > pB(new std::vector <coordinateModelPartBox <scalar_t, partId_t> > (), true) ;
+      for (partId_t i = 0; i < ntasks; ++i){
+          Zoltan2::coordinateModelPartBox <scalar_t, partId_t> tpb(
+                  i,
+                  dim,
+                  globalPartMins + dim * i,
+                  globalPartMaxs + dim * i);
+
+          /*
+          for (int j = 0; j < dim; ++j){
+              cout << "me:" << comm->getRank()  <<
+                      " dim * pId + j:"<< dim * i + j <<
+                      " globalMin:" << globalPartMins[dim * i + j] <<
+                      " globalMax:" << globalPartMaxs[dim * i + j] << endl;
+          }
+          */
+          pB->push_back(tpb);
+      }
+      delete []localPartBoundaries;
+      delete []globalPartBoundaries;
+      //RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > tmpRCPBox(pB, true);
+      this->partBoxes = pB;
+      return this->partBoxes;
+  }
+
   template <typename Extra>
     size_t convertSolutionToImportList(
       int numExtra,
@@ -452,9 +602,13 @@ private:
 
   void broadcastPartSizes(int wdim);
 
+
   RCP<const Environment> env_;             // has application communicator
   RCP<const Comm<int> > comm_;             // the problem communicator
   RCP<const IdentifierMap<user_t> > idMap_;
+  RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > partBoxes;
+  ArrayRCP <partId_t> comXAdj_;
+  ArrayRCP <partId_t> comAdj_;
 
   partId_t nGlobalParts_;// target global number of parts
   partId_t nLocalParts_; // number of parts to be on this process
@@ -561,6 +715,7 @@ template <typename Adapter>
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<user_t> > &idMap, int userWeightDim)
     : env_(env), comm_(comm), idMap_(idMap),
+      partBoxes(),comXAdj_(), comAdj_(),
       nGlobalParts_(0), nLocalParts_(0),
       localFraction_(0),  weightDim_(),
       onePartPerProc_(false), partDist_(), procDist_(),
@@ -594,6 +749,7 @@ template <typename Adapter>
     ArrayView<ArrayRCP<partId_t> > reqPartIds,
     ArrayView<ArrayRCP<scalar_t> > reqPartSizes)
     : env_(env), comm_(comm), idMap_(idMap),
+      partBoxes(),comXAdj_(), comAdj_(),
       nGlobalParts_(0), nLocalParts_(0),
       localFraction_(0),  weightDim_(),
       onePartPerProc_(false), partDist_(), procDist_(),
@@ -1149,6 +1305,7 @@ template <typename Adapter>
   }
 }
 
+
 template <typename Adapter>
   void PartitioningSolution<Adapter>::setParts(
     ArrayRCP<const gno_t> &gnoList, ArrayRCP<partId_t> &partList,
@@ -1356,6 +1513,10 @@ template <typename Adapter>
 
       int numProcs = comm_->getSize();
 
+      //MD NOTE: there was no initialization for partCounter.
+      //I added the line below, correct me if I am wrong.
+      memset(partCounter, 0, sizeof(lno_t) * nGlobalPartsSolution_);
+
       for (ArrayRCP<partId_t>::size_type i=0; i < partList.size(); i++)
         partCounter[parts[i]]++;
 
@@ -1373,6 +1534,7 @@ template <typename Adapter>
         double dNum = partCounter[part];
         double dProcs = numprocs;
 
+        //cout << "dNum:" << dNum << " dProcs:" << dProcs << endl;
         double each = floor(dNum/dProcs);
         double extra = fmod(dNum,dProcs);
 

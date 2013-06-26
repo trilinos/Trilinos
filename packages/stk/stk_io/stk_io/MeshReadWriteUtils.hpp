@@ -131,6 +131,62 @@ namespace stk {
 			   MeshData &mesh_data);
 
     /**
+     * Read/Generate the metadata for mesh of the specified type. By
+     * default, all entities in the mesh (nodeblocks, element blocks,
+     * nodesets, sidesets) will have an associated stk mesh part
+     * created for it.
+     *
+     * This version of the above call accepts a std::vector<std::string>
+     * argument of names to add to the entity_rank_names prior to populating
+     * it from the mesh file.
+     *
+     * If the mesh_data argument contains a non-null m_input_region
+     * data member, then this is assumed to be a valid Ioss::Region*
+     * that should be used instead of opening the file and creating a
+     * new Ioss::Region.
+     *
+     * Following this call, the 'populate_bulk_data()' function should
+     * be called to read the bulk data from the mesh and generate the
+     * corresponding stk mesh entities (nodes, elements, faces, ...)
+     *
+     * Only the non-transient data stored in the mesh database will be
+     * accessed in this function.  To access any transient field data
+     * that may be on the mesh database, use the
+     * 'define_input_fields()' function.
+     *
+     * \param[in] type   The format of the mesh that will be
+     * "read".  Valid types are "exodus", "generated", "pamgen".
+     *
+     * \param[in] filename If the mesh type is file based ("exodus"),
+     * then this contains the full pathname to the file containing the
+     * mesh information.  If the mesh type is a generated type, then
+     * this parameter contains data used by the generation routines.
+     * See the output from the show_mesh_help() function for details.
+     *
+     * \param[in] comm  MPI Communicator to be used for all parallel
+     * communication needed to generate the mesh.
+     *
+     * \param[in,out] meta_data The STK meta data object which will
+     * be populated with parts and fields based on the mesh model
+     * described by the mesh in filename.  The meta_data will not be
+     * committed by this function, so the caller will need to call
+     * meta_data.commit() after the function returns.
+     *
+     * \param[in,out] mesh_data A small class used for maintaining
+     * some state used by the stk_io routines.
+     *
+     * \param[in] names_to_add to the entity_rank_names array prior
+     * to reading the mesh.
+     *
+     */
+    void create_input_mesh(const std::string &type,
+			   const std::string &filename,
+			   MPI_Comm comm,
+			   stk::mesh::fem::FEMMetaData &metadata,
+			   MeshData &mesh_data,
+               const std::vector<std::string>& names_to_add);
+
+    /**
      * Read/Generate the bulk data for the mesh.  The bulk_data must
      * have been constructed using the meta_data passed to the
      * create_input_mesh() function and the mesh_data must also be the

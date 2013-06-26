@@ -961,15 +961,14 @@ int Epetra_VbrMatrix::MergeRedundantEntries()
               curBlkEntry->A(), curBlkEntry->LDA(), SumInto);
         }
         else {
-          CopyMat(curBlkEntry->A(), curBlkEntry->LDA(), RowDim, curBlkEntry->N(),
-              Entries[curEntry]->A(), Entries[curEntry]->LDA(), false);
-          curEntry++;
-          curBlkEntry = Entries[k];
+          curBlkEntry = Entries[++curEntry];
+          if (curEntry!=k) {
+            curBlkEntry->Shape(RowDim,Entries[k]->N());
+            EPETRA_CHK_ERR(CopyMat(Entries[k]->A(), Entries[k]->LDA(), RowDim, Entries[k]->N(),
+                curBlkEntry->A(), curBlkEntry->LDA(), false));
+          }
         }
       }
-
-      EPETRA_CHK_ERR(CopyMat(curBlkEntry->A(), curBlkEntry->LDA(), RowDim, curBlkEntry->N(),
-            Entries[curEntry]->A(), Entries[curEntry]->LDA(), false));
     }
   }
 

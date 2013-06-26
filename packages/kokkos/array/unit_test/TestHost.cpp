@@ -222,18 +222,18 @@ struct HostFunctor
     {
       m_reduce.init( thread.reduce_data() );
 
-      barrier( thread );
-      barrier( thread );
+      thread.barrier();
+      thread.barrier();
 
       // Reduce to master thread:
-      reduce( thread , m_reduce );
+      thread.reduce( m_reduce );
       if ( 0 == thread.rank() ) m_reduce.finalize( thread.reduce_data() );
 
       // Reduce to master thread:
-      reduce( thread , m_reduce );
+      thread.reduce( m_reduce );
       if ( 0 == thread.rank() ) m_reduce.finalize( thread.reduce_data() );
 
-      end_barrier( thread );
+      thread.end_barrier();
     }
 };
 
