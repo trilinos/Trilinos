@@ -61,7 +61,7 @@
 
 
 
-#define enable_migration2
+//#define enable_migration2
 
 #ifdef enable_migration2
 #include "zoltan_comm_cpp.h"
@@ -5463,7 +5463,7 @@ void getChunksFromCoordinates(
                         //cout << "putting i : " << i << " on cut:" << p << " to part p:" << p << endl;
                         partIds[i] = p;
                         if(p < noCuts - 1 && myRatios[p] < _EPSILON){
-                            if(p < noCuts - 1 && mappedCut == cutMap[p + 1] ){
+                            if(mappedCut == cutMap[p + 1] ){
                                 if (prevMap != mappedCut){
                                     leftOver = myRatios[p];
                                 }
