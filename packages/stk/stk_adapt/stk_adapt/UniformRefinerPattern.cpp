@@ -120,13 +120,23 @@ namespace stk {
           throw std::logic_error("UniformRefinerPatternBase::set_parent_child_relations parent_elem is null");
         }
 
-      stk::mesh::FieldBase *refine_level = eMesh.get_field("refine_level");
-      if (refine_level)
+      stk::mesh::FieldBase *refine_level_d = eMesh.get_field("refine_level_d");
+      if (refine_level_d)
         {
-          double *fdata_new = eMesh.field_data( *static_cast<const ScalarFieldType *>(refine_level) , newElement );
-          double *fdata = eMesh.field_data( *static_cast<const ScalarFieldType *>(refine_level) , parent_elem );
+          double *fdata_new = eMesh.field_data( *static_cast<const ScalarFieldType *>(refine_level_d) , newElement );
+          double *fdata = eMesh.field_data( *static_cast<const ScalarFieldType *>(refine_level_d) , parent_elem );
           if (fdata && fdata_new)
             fdata_new[0] = fdata[0] + 1.0;
+          //std::cout << "fdata= " << fdata << " fdata_new= " << fdata_new[0] << std::endl;
+        }
+
+      ScalarIntFieldType *refine_level = eMesh.get_fem_meta_data()->get_field<ScalarIntFieldType>("refine_level");
+      if (refine_level)
+        {
+          int *fdata_new = eMesh.get_bulk_data()->field_data( *refine_level , newElement );
+          int *fdata = eMesh.get_bulk_data()->field_data( *refine_level , parent_elem );
+          if (fdata && fdata_new)
+            fdata_new[0] = fdata[0] + 1;
           //std::cout << "fdata= " << fdata << " fdata_new= " << fdata_new[0] << std::endl;
         }
 
@@ -221,7 +231,7 @@ namespace stk {
               if (family_tree_relations[i].relation_ordinal() == (ordinal + 1))
                 {
                   std::cout << "UniformRefinerPatternBase::set_parent_child_relations trying to refine a parent element again, or error in ordinal ["
-                            << ordinal << "]" << " family_tree_relations.size= " << family_tree_relations.size() 
+                            << ordinal << "]" << " family_tree_relations.size= " << family_tree_relations.size()
                             << " parent_elem= " << eMesh.identifier(parent_elem)
                             << std::endl;
                   throw std::logic_error("UniformRefinerPatternBase::set_parent_child_relations trying to refine a parent element again, or error in ordinal");
@@ -362,7 +372,8 @@ namespace stk {
       for (unsigned ifld = 0; ifld < nfields; ifld++)
         {
           stk::mesh::FieldBase *field = fields[ifld];
-          if (field->name()=="refine_level") continue;
+          if (field->name() == "refine_level" || field->name() == "refine_level_d")
+            continue;
           int field_dimension = -1;
 
           stk::mesh::EntityRank field_rank = stk::mesh::MetaData::NODE_RANK;

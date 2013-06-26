@@ -1,5 +1,6 @@
 #include <cmath>
 #include <stdexcept>
+#include <stdlib.h>
 
 #include <sstream>
 #include <algorithm>
@@ -109,6 +110,8 @@ namespace stk {
       ,m_save_internal_fields(true)
       ,m_ioss_read_options("")
       ,m_ioss_write_options("")
+      ,m_large_mesh(false)
+      ,m_MAX_IDENT(0)
     {
       init( m_comm);
       s_static_singleton_instance = this;
@@ -201,7 +204,7 @@ namespace stk {
           ERASE0("COMPOSE_RESULTS");
           ERASE0("COMPOSE_RESTART");
 
-          if (!get_rank())
+          if (0 && !get_rank())
             {
               std::cout << "Info: IOSS read options found and will be used: " << m_ioss_read_options << std::endl;
             }
@@ -959,6 +962,57 @@ namespace stk {
         }
     }
 
+    bool PerceptMesh::is_face_neighbor(stk::mesh::Entity element_0, stk::mesh::Entity element_1, int *face_0, int *face_1)
+    {
+      const CellTopologyData * const element_0_topo_data = get_cell_topology(element_0);
+      shards::CellTopology element_0_topo(element_0_topo_data);
+
+      const CellTopologyData * const element_1_topo_data = get_cell_topology(element_1);
+      shards::CellTopology element_1_topo(element_1_topo_data);
+
+      const MyPairIterRelation element_0_nodes(*get_bulk_data(), element_0, stk::mesh::MetaData::NODE_RANK );
+      const MyPairIterRelation element_1_nodes(*get_bulk_data(), element_1, stk::mesh::MetaData::NODE_RANK );
+
+      for (unsigned iface_0 = 0; iface_0 <  element_0_topo_data->side_count; iface_0++)
+        {
+          unsigned num_nodes_on_face_0 = element_0_topo_data->side[iface_0].topology->vertex_count;
+          for (unsigned iface_1 = 0; iface_1 <  element_1_topo_data->side_count; iface_1++)
+            {
+              unsigned num_nodes_on_face_1 = element_1_topo_data->side[iface_1].topology->vertex_count;
+              if (num_nodes_on_face_0 != num_nodes_on_face_1)
+                continue;
+              bool faces_match = true;
+              for (unsigned jnode_0 = 0; jnode_0 < num_nodes_on_face_0; jnode_0++)
+                {
+                  stk::mesh::EntityId side_0_id = identifier(element_0_nodes[ element_0_topo_data->side[iface_0].node[jnode_0] ].entity());
+                  bool found = false;
+                  for (unsigned jnode_1 = 0; jnode_1 < num_nodes_on_face_1; jnode_1++)
+                    {
+                      stk::mesh::EntityId side_1_id = identifier(element_1_nodes[ element_1_topo_data->side[iface_1].node[jnode_1] ].entity());
+                      if (side_1_id == side_0_id)
+                        {
+                          found = true;
+                          break;
+                        }
+                    }
+                  if (!found)
+                    {
+                      faces_match = false;
+                      break;
+                    }
+                }
+              if (faces_match)
+                {
+                  if (face_0) *face_0 = iface_0;
+                  if (face_1) *face_1 = iface_1;
+                  return true;
+                }
+            }
+        }
+      return false;
+    }
+
+
     std::map<stk::mesh::Part*, PerceptMesh::MinMaxAve > PerceptMesh::hmesh_surface_normal()
     {
       std::map<stk::mesh::Part*, MinMaxAve > result;
@@ -1241,6 +1295,8 @@ namespace stk {
       ,m_save_internal_fields(true)
       ,m_ioss_read_options("")
       ,m_ioss_write_options("")
+      ,m_large_mesh(false)
+      ,m_MAX_IDENT(0)
     {
       if (!bulkData)
         throw std::runtime_error("PerceptMesh::PerceptMesh: must pass in non-null bulkData");
@@ -1515,7 +1571,9 @@ namespace stk {
       int current_pool_size = m_entity_pool[entityRank].size();
       requested_entities.resize(0);
       if (count > current_pool_size)
-        return false;
+        {
+          return false;
+        }
       requested_entities.resize(count);
       std::copy( m_entity_pool[entityRank].end() - count, m_entity_pool[entityRank].end(), requested_entities.begin());
       m_entity_pool[entityRank].erase(m_entity_pool[entityRank].end() - count, m_entity_pool[entityRank].end());
@@ -1541,25 +1599,71 @@ namespace stk {
       m_entity_pool.resize(0);
     }
 
+    void PerceptMesh::resetIdServer() { m_idServer.resize(0); }
     stk::mesh::EntityId PerceptMesh::getNextId(stk::mesh::EntityRank rank)
     {
       stk::mesh::EntityId p_size = static_cast<stk::mesh::EntityId>(get_parallel_size());
       stk::mesh::EntityId p_rank = static_cast<stk::mesh::EntityId>(get_parallel_rank());
-      stk::mesh::EntityId max_ids_per_proc = stk::mesh::EntityKey::MAX_ID / p_size;
+      if (!m_MAX_IDENT)
+        {
+          m_MAX_IDENT = std::numeric_limits<unsigned>::max();
+          if (m_ioss_write_options.find("large") != std::string::npos)
+            {
+              m_large_mesh = true;
+              m_MAX_IDENT = stk::mesh::EntityKey::MAX_ID;
+            }
+          else {
+            const char *ip = std::getenv("IOSS_PROPERTIES");
+            std::string ips;
+            if (ip) ips = std::string(ip);
+            if (ips.find("INTEGER_SIZE_API=8") != std::string::npos &&
+                ips.find("INTEGER_SIZE_DB=8") != std::string::npos )
+              {
+                m_large_mesh = true;
+                m_MAX_IDENT = stk::mesh::EntityKey::MAX_ID;
+              }
+          }
+          std::cout << "Large mesh setting = " << (m_large_mesh?"true":"false") << std::endl;
+        }
+      stk::mesh::EntityId max_ids_per_proc =  ((m_MAX_IDENT - 1ULL)/ p_size) - 1ULL;
+
       if (!m_idServer.size())
         {
           m_idServer.resize(get_fem_meta_data()->entity_rank_count());
         }
-      // if (!m_idServer[rank])
-      //   {
-      //     m_idServer[rank] = 1ULL;
-      //   }
+      if (!m_idServer[rank])
+        {
+          stk::mesh::EntityId max_id = 1ULL;
+          stk::mesh::Selector on_locally_owned_part =  ( get_fem_meta_data()->locally_owned_part() );
+          const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( rank );
+          for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+            {
+              stk::mesh::Bucket & bucket = **k ;
+              if (on_locally_owned_part(bucket))
+                {
+                  const unsigned num_elements_in_bucket = bucket.size();
+                  for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+                    {
+                      stk::mesh::Entity entity = bucket[iElement];
+                      stk::mesh::EntityId nid = identifier(entity);
+                      if (nid > max_id) max_id = nid;
+                    }
+                }
+            }
+          if (max_id > p_rank*max_ids_per_proc) max_id -= p_rank*max_ids_per_proc;
+          m_idServer[rank] = max_id;
+        }
 
       ++m_idServer[rank];
-      VERIFY_OP_ON(m_idServer[rank], <, max_ids_per_proc, "Ran out of ids...");
+      VERIFY_OP_ON(m_idServer[rank], <, max_ids_per_proc, "Ran out of ids... try using Exodus large mesh settings.");
       stk::mesh::EntityId new_id = m_idServer[rank] + p_rank*max_ids_per_proc;
+      if (!m_large_mesh && (new_id > static_cast<stk::mesh::EntityId>( std::numeric_limits<int>::max() )))
+        {
+          std::cout << "Ran out of ids by running over 32 bits... try using Exodus large mesh settings, id= " << new_id << std::endl;
+          throw std::runtime_error("Ran out of ids by running over 32 bits... try using Exodus large mesh settings.");
+        }
 
-      VERIFY_OP_ON(get_bulk_data()->is_valid(get_bulk_data()->get_entity(rank, new_id)), ==, false, "id already in use");
+      VERIFY_OP(get_bulk_data()->is_valid(get_bulk_data()->get_entity(rank, new_id)), ==, false, "id already in use");
 
       return new_id;
     }
@@ -2337,7 +2441,7 @@ namespace stk {
           ERASE("COMPOSE_RESULTS");
           ERASE("COMPOSE_RESTART");
 
-          if (!get_rank())
+          if (0 && !get_rank())
             {
               std::cout << "Info: IOSS write options found and will be used: " << m_ioss_write_options << std::endl;
             }

@@ -336,13 +336,13 @@ namespace stk
 
             percept::PerceptMesh eMesh;
             eMesh.open(input_files_loc+"cylinder_with_5_holes.e");
-
             Local_Tet4_Tet4_N break_tet_to_tet_N(eMesh);
             int scalarDimension = 0; // a scalar
             stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             stk::mesh::FieldBase* refine_field = eMesh.add_field("refine_field", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             stk::mesh::FieldBase* nodal_refine_field = eMesh.add_field("nodal_refine_field", eMesh.node_rank(), scalarDimension);
             eMesh.commit();
+            eMesh.set_ioss_write_options("large");
 
             std::cout << "moving_shock initial number elements= " << eMesh.get_number_elements() << std::endl;
 
@@ -409,8 +409,10 @@ namespace stk
             eMesh.save_as(output_files_loc+"final_moving_shock_"+post_fix[p_size]+".e."+toString(num_time_steps) );
             for (int iunref=0; iunref < 10; iunref++)
               {
+                std::cout << "moving shock unrefineAll pass= " << iunref << std::endl;
                 breaker.unrefineAll();
               }
+            std::cout << "moving shock deleteParentElements = "  << std::endl;
             breaker.deleteParentElements();
             std::cout << "moving_shock final number elements= " << eMesh.get_number_elements() << std::endl;
             eMesh.save_as(output_files_loc+"final_unrefed_moving_shock_"+post_fix[p_size]+".e."+toString(num_time_steps) );
@@ -468,14 +470,18 @@ namespace stk
             stk::mesh::FieldBase* refine_field_filtered = eMesh.add_field("refine_field_filtered", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             (void)refine_field_filtered;
             stk::mesh::FieldBase* nodal_refine_field    = eMesh.add_field("nodal_refine_field", eMesh.node_rank(), scalarDimension);
-            stk::mesh::FieldBase* refine_level          = eMesh.add_field("refine_level", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+
+            stk::mesh::FieldBase* refine_level_d     = eMesh.add_field("refine_level_d", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension); 
+            ScalarIntFieldType& refine_level       = eMesh.get_fem_meta_data()->declare_field<ScalarIntFieldType>("refine_level");
+            stk::mesh::put_field( refine_level , stk::mesh::MetaData::ELEMENT_RANK , eMesh.get_fem_meta_data()->universal_part());
+
             eMesh.commit();
             eMesh.delete_side_sets();
             eMesh.output_active_children_only(true);
             if (1)
               {
                 SetElementField1 set_ref_field(eMesh);
-                eMesh.elementOpLoop(set_ref_field, refine_level);
+                eMesh.elementOpLoop(set_ref_field, refine_level_d);
               }
 
             std::cout << "moving_shock initial number elements= " << eMesh.get_number_elements() << std::endl;
@@ -650,14 +656,16 @@ namespace stk
             eMesh.add_field("normal_kept_deleted", eMesh.node_rank(), scalarDimension);
             eMesh.add_field("refine_field_filtered", eMesh.element_rank(), scalarDimension);
 
-            stk::mesh::FieldBase* refine_level = eMesh.add_field("refine_level", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+            stk::mesh::FieldBase* refine_level_d     = eMesh.add_field("refine_level_d", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension); 
+            ScalarIntFieldType& refine_level       = eMesh.get_fem_meta_data()->declare_field<ScalarIntFieldType>("refine_level");
+            stk::mesh::put_field( refine_level , stk::mesh::MetaData::ELEMENT_RANK , eMesh.get_fem_meta_data()->universal_part());
 
             eMesh.commit();
             eMesh.output_active_children_only(true);
             if (1)
               {
                 SetElementField1 set_ref_field(eMesh);
-                eMesh.elementOpLoop(set_ref_field, refine_level);
+                eMesh.elementOpLoop(set_ref_field, refine_level_d);
               }
 
             //eMesh.delete_side_sets();
@@ -971,15 +979,16 @@ namespace stk
             stk::mesh::FieldBase* proc_rank_field    = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             stk::mesh::FieldBase* refine_field       = eMesh.add_field("refine_field", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
 
-            stk::mesh::FieldBase* refine_level          = eMesh.add_field("refine_level", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
-            //RefineLevelFieldType& refine_level_field = eMesh.get_fem_meta_data()->declare_field<RefineLevelFieldType>("refine_level");
-            //stk::mesh::put_field( refine_level_field , stk::mesh::MetaData::ELEMENT_RANK , eMesh.get_fem_meta_data()->universal_part());
+            // for plotting, use doubles, for internal use, use int
+            stk::mesh::FieldBase* refine_level_d     = eMesh.add_field("refine_level_d", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension); 
+            ScalarIntFieldType& refine_level       = eMesh.get_fem_meta_data()->declare_field<ScalarIntFieldType>("refine_level");
+            stk::mesh::put_field( refine_level , stk::mesh::MetaData::ELEMENT_RANK , eMesh.get_fem_meta_data()->universal_part());
 
             eMesh.commit();
             if (1)
               {
                 SetElementField1 set_ref_field(eMesh);
-                eMesh.elementOpLoop(set_ref_field, refine_level);
+                eMesh.elementOpLoop(set_ref_field, refine_level_d);
               }
 
             std::cout << "qual_local initial number elements= " << eMesh.get_number_elements() << std::endl;
@@ -999,7 +1008,7 @@ namespace stk
 
             SetElementFieldQuadCorner set_ref_field(eMesh);
 
-            int num_ref_passes = 3;
+            int num_ref_passes = 4;
             int num_unref_passes = 10;
             int iplot=0;
             for (int ipass=0; ipass < num_ref_passes; ipass++)

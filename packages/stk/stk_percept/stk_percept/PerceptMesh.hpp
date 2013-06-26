@@ -472,7 +472,10 @@ namespace stk {
       // low-level interfaces
 
       /// find all neighbors touching one of my nodes
-      void get_node_neighbors(stk::mesh::Entity element, std::vector<stk::mesh::Entity>& neighbors);
+      void get_node_neighbors(stk::mesh::Entity element, std::set<stk::mesh::Entity>& neighbors);
+
+      /// return true if two elements share a face; if face_0/face_1 are non-null, return the found face index for shared face
+      bool is_face_neighbor(stk::mesh::Entity element_0, stk::mesh::Entity element_1, int *face_0=0, int *face_1=0);
 
       /// fill @param histogram with statistics about the given field
       void field_stats(Histogram<double>& histogram, std::string field_name, int index= -2);
@@ -652,6 +655,7 @@ namespace stk {
 
       // id server
       stk::mesh::EntityId getNextId(stk::mesh::EntityRank rank);
+      void resetIdServer();
 
       double * field_data(const stk::mesh::FieldBase *field, const stk::mesh::Bucket & bucket, unsigned *stride=0);
       double * field_data(const stk::mesh::FieldBase *field, const mesh::Entity node, unsigned *stride=0);
@@ -863,6 +867,8 @@ namespace stk {
 
       std::vector<std::vector<stk::mesh::Entity> >        m_entity_pool;
       std::vector<stk::mesh::EntityId>      m_idServer; // high water mark
+      bool                                  m_large_mesh;
+      stk::mesh::EntityId                   m_MAX_IDENT;
 
     private:
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);

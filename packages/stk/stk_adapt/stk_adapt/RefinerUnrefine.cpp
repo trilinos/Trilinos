@@ -24,6 +24,7 @@ namespace stk {
     // ====================================================================================================
     // ====================================================================================================
     // ====================================================================================================
+    bool use_idServer = true;
 
     void Refiner::
     replaceNodeRegistryOwnership(ElementUnrefineCollection& elements_to_delete, stk::mesh::EntityRank rank)
@@ -370,12 +371,22 @@ namespace stk {
 
           // create new entities on this proc
           new_elements.resize(0);
-          //int pool_size = 10000;
           if (m_eMesh.getEntityPool().size())
             {
               if (!m_eMesh.getEntitiesFromPool(m_ranks[irank], num_elem_needed, new_elements))
                 {
                   throw std::logic_error("entity pool deplenished");
+                }
+            }
+          else if (use_idServer)
+            {
+              new_elements.resize(num_elem_needed);
+              stk::mesh::PartVector empty ;
+
+              for (unsigned ii=0; ii < num_elem_needed; ii++)
+                {
+                  stk::mesh::EntityId new_id = m_eMesh.getNextId(m_ranks[irank]);
+                  new_elements[ii] = m_eMesh.get_bulk_data()->declare_entity( m_ranks[irank], new_id, empty );
                 }
             }
           else
@@ -959,15 +970,25 @@ namespace stk {
     void Refiner::
     remeshElements(SetOfEntities& rootElements, stk::mesh::EntityRank rank, int pool_size_hint)
     {
-      bool use_pool = true;
+      bool use_pool = true && !use_idServer;
       if (use_pool)
       {
-        int pool_size = rootElements.size()*100;
+        int pool_size = rootElements.size()*50;
         if (pool_size_hint)
-          pool_size = std::max(pool_size, pool_size_hint);
+          {
+            pool_size = std::max(pool_size, pool_size_hint);
+          }
         pool_size *= 2; // safety factor
         m_eMesh.initializeEntityPool(rank, pool_size);
       }
+      if (use_idServer)
+        {
+          m_eMesh.resetIdServer();
+          m_eMesh.getNextId(m_eMesh.element_rank()+1u);
+          m_eMesh.getNextId(m_eMesh.element_rank());
+          m_eMesh.getNextId(m_eMesh.side_rank());
+          m_eMesh.getNextId(m_eMesh.node_rank());
+        }
       for (SetOfEntities::iterator elIter = rootElements.begin(); elIter != rootElements.end(); ++elIter)
         {
           stk::mesh::Entity element = *elIter;
@@ -986,6 +1007,10 @@ namespace stk {
       if (use_pool)
         {
           m_eMesh.destroyEntityPool();
+        }
+      if (use_idServer)
+        {
+          m_eMesh.resetIdServer();
         }
     }
 
