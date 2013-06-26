@@ -33,8 +33,8 @@ bool use_case_5_driver(stk::ParallelMachine  comm)
   const double TOLERANCE = 0.000001;
   const double  rand_max = RAND_MAX;
   enum {           DIM = 3  };
-  enum { FROMNUMPOINTS = 10   };
-  enum {   TONUMPOINTS = 10   };
+  enum { FROMNUMPOINTS = 100  };
+  enum {   TONUMPOINTS = 100  };
 
   typedef Intrepid::FieldContainer<double>  MDArray;
 

@@ -19,6 +19,7 @@ namespace stk_transfer_unit_tests {
 class Mesh {
 public :
   typedef unsigned EntityKey;
+  typedef unsigned EntityProc;
   enum {Dimension = 3};
 };
 

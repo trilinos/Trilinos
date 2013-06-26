@@ -30,11 +30,19 @@ public :
   typedef MESHB                            MeshB;
   typedef typename MeshA::EntityKey        EntityKeyA;
   typedef typename MeshB::EntityKey        EntityKeyB;
+  typedef typename MeshA::EntityProc       EntityProcA;
+  typedef typename MeshB::EntityProc       EntityProcB;
+  typedef std::pair<EntityProcB, EntityProcA>             EntityProcRelation;
+  typedef std::vector<EntityProcRelation>                 EntityProcRelationVec;
+
   
   typedef std::multimap<EntityKeyB, EntityKeyA> EntityKeyMap;
   
   enum { Dimension = MeshA::Dimension };
   
+  static void post_coarse_search_filter(EntityProcRelationVec &range_to_domain,
+                                        const MeshA     &mesha,
+                                        const MeshB     &meshb);
   static void filter_to_nearest(EntityKeyMap    &BtoA,
                                 const MeshA     &FromPoints,
                                 const MeshB     &ToPoints);
@@ -163,6 +171,23 @@ template <class MESHA, class MESHB> typename LinearInterpolate<MESHA,MESHB>::Ent
   return ret;
 }
 
+template <class MESHA, class MESHB> void LinearInterpolate<MESHA,MESHB>::post_coarse_search_filter(
+            EntityProcRelationVec &BtoA,
+            const MeshA           &mesha,
+            const MeshB           &meshb){
+  const unsigned p_rank = parallel_machine_rank(mesha.comm());
+  std::sort(BtoA.begin(), BtoA.end());
+  typedef typename EntityProcRelationVec::iterator iterator;
+  iterator k=BtoA.begin();
+  for (iterator i=BtoA.begin(),j=BtoA.begin(); j!=BtoA.end();) {
+    while (i->first == j->first && j!=BtoA.end()) ++j;
+    const unsigned num = j-i;
+    if (Dimension+2 < num || p_rank != i->first.proc) while (i!=j) *k++ = *i++;
+    else i=j;
+  }
+  BtoA.resize(k-BtoA.begin());
+}
+
 template <class MESHA, class MESHB> void LinearInterpolate<MESHA,MESHB>::filter_to_nearest(
                                     EntityKeyMap  &BtoA,
                                     const MeshA   &mesha,
@@ -171,13 +196,11 @@ template <class MESHA, class MESHB> void LinearInterpolate<MESHA,MESHB>::filter_
   for (iterator j=BtoA.begin(); j!=BtoA.end(); ) {
     std::pair<iterator, iterator> keys=BtoA.equal_range(j->first);
     const unsigned num = distance(keys.first, keys.second);
-    if (num <= Dimension) {
-      BtoA.erase(keys.first, keys.second);
-    } else {
-      EntityKeyMap n = determine_best_fit(keys.first, keys.second, j->first, meshb, mesha);
-      BtoA.erase(keys.first, keys.second);
-      BtoA.insert(n.begin(), n.end()); 
-    }   
+    ThrowRequireMsg (Dimension <  num,  
+      __FILE__<<":"<<__LINE__<<" Expected "<<Dimension+1<<" relations."<<" Found:"<<num<<" for Key:"<<j->first);
+    EntityKeyMap n = determine_best_fit(keys.first, keys.second, j->first, meshb, mesha);
+    BtoA.erase(keys.first, keys.second);
+    BtoA.insert(n.begin(), n.end()); 
     j = keys.second;
   }
 }
@@ -211,6 +234,7 @@ template <class MESHA, class MESHB>  void LinearInterpolate<MESHA,MESHB>::apply 
         for (unsigned k=0; k<Dimension; ++k) Corners(n,k) = c[k];
       } 
     }
+
     MDArray SpanVectors(Dimension,Dimension);
     for (unsigned j=1; j<span; ++j) 
       for (unsigned k=0; k<Dimension; ++k) 
@@ -237,7 +261,6 @@ template <class MESHA, class MESHB>  void LinearInterpolate<MESHA,MESHB>::apply 
           const double *c = mesha.value(from_key,f);
           Values[m] = c[n];
         }
-
         // So, we have choosen corner 0 as the base of the span
         // vectors and determined local (or parametric)
         // coordinates of the target point in the span vector

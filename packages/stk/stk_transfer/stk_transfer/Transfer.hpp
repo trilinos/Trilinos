@@ -34,7 +34,7 @@ public :
   typedef typename std::set     <EntityKeyA>              EntityKeySetA;
   typedef typename std::set     <EntityKeyB>              EntityKeySetB;
   typedef typename MeshA::BoundingBox                     BoundingBoxA;
-  typedef typename MeshA::BoundingBox                     BoundingBoxB;
+  typedef typename MeshB::BoundingBox                     BoundingBoxB;
   
   typedef typename MeshA::EntityProc                      EntityProcA;
   typedef typename MeshB::EntityProc                      EntityProcB;
@@ -50,10 +50,17 @@ public :
                     const double radius,
                     const double expansion_factor,
                     const std::string &name);
-  virtual void initialize();
+  virtual void initialize() {
+    coarse_search();
+    communication();
+    local_search();
+  }
   virtual void apply();
   
   
+  virtual void coarse_search();
+  virtual void communication();
+  virtual void local_search();
 private :
   
   MeshA        &m_mesha;
@@ -62,28 +69,33 @@ private :
   const double      m_expansion_factor;
   const std::string m_name;
   
-  EntityKeyMap TotalRangeToDomain;
+  EntityProcRelationVec m_global_range_to_domain;
+  EntityKeyMap          m_local_range_to_domain;
   
   
   template <class MESH>
   void boundingboxes(std::vector<typename MESH::BoundingBox> &vector,
                      const typename MESH::EntityKeySet       &keys_to_match,
                      const MESH                              &mesh,
-                     const double                             radius);
+                     const double                             radius) const ;
   
   EntityKeyMap copy_domain_to_range_processors(MeshA                            &mesh,
                                                const EntityProcRelationVec      &RangeToDomain,
-                                               const std::string                &transfer_name);
+                                               const std::string                &transfer_name) const;
   
   void coarse_search(EntityProcRelationVec   &RangeToDomain,
-                     const EntityKeySetA     &keys_to_matcha,
-                     const EntityKeySetB     &keys_to_matchb,
                      const MeshA             &mesha,
                      const MeshB             &meshb,
-                     const double             radius);
+                     const double             radius,          
+                     const double             expansion_factor) const ;
 
-  void delete_range_points_found(EntityKeySetB            &to_keys,
-                                 const EntityKeyMap   &entity_keys);
+  struct compare {
+    bool operator()(const BoundingBoxB &a, const EntityProcB  &b) const;
+    bool operator()(const EntityProcB  &a, const BoundingBoxB &b) const;
+  };
+
+  void delete_range_points_found(std::vector<BoundingBoxB>            &range_vector,
+                                 const EntityProcRelationVec          &del) const ;
   
   enum { dim_eq = StaticAssert<MeshB::Dimension==MeshA::Dimension>::OK };
   
@@ -102,74 +114,55 @@ template <class INTERPOLATE> GeometricTransfer<INTERPOLATE>::GeometricTransfer (
   m_expansion_factor(expansion_factor),
   m_name (name) {}
 
-template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::initialize() {
 
-  EntityKeySetA keys_to_matcha;
-  EntityKeySetB keys_to_matchb;
-  m_mesha.keys(keys_to_matcha);;
-  m_meshb.keys(keys_to_matchb);;
+template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::coarse_search() {
 
-  double radius = m_radius;
-  while (keys_to_matchb.size()) { // Keep going until all range points are processed.
-    EntityProcRelationVec RangeToDomain;
-    coarse_search(RangeToDomain, 
-                  keys_to_matcha, 
-                  keys_to_matchb,
-                  m_mesha, 
-                  m_meshb, 
-                  radius);
-    EntityKeyMap entity_key_map;
-    {   
-//      diag::TimeBlock __timer_ghosting(GhostingTimer);
-      ParallelMachine comm = m_mesha.comm();
-      const unsigned p_size = parallel_machine_size(comm);
-      if (m_mesha.has_communication_capabilities()) {
-        entity_key_map = copy_domain_to_range_processors(m_mesha, RangeToDomain, m_name);
-      } else if (m_meshb.has_communication_capabilities()) {
-        ThrowRequireMsg (m_mesha.has_communication_capabilities() || m_mesha.has_communication_capabilities(),
-          __FILE__<<":"<<__LINE__<<" Still working on communicaiton capabilities");
-      } else if (1==p_size) {
-        const typename EntityProcRelationVec::const_iterator end=RangeToDomain.end();
-        for (typename EntityProcRelationVec::const_iterator i=RangeToDomain.begin(); i!=end; ++i) {
-          const EntityKeyB range_entity    = i->first.ident;
-          const EntityKeyA domain_entity   = i->second.ident;
-          std::pair<EntityKeyB,EntityKeyA> key_map(range_entity, domain_entity);
-          entity_key_map.insert(key_map);
-        }
-      } else               {
-        ThrowRequireMsg (m_mesha.has_communication_capabilities() || m_mesha.has_communication_capabilities(),
-          __FILE__<<":"<<__LINE__<<" Still working on communicaiton capabilities");
-      }
-    }   
-    INTERPOLATE::filter_to_nearest(entity_key_map, m_mesha, m_meshb); 
-    TotalRangeToDomain.insert(entity_key_map.begin(), entity_key_map.end());
+  m_global_range_to_domain.clear();
+  coarse_search(m_global_range_to_domain, 
+                m_mesha, 
+                m_meshb, 
+                m_radius,
+                m_expansion_factor);
+}
+template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::communication() {
+  m_local_range_to_domain.clear();
 
-    delete_range_points_found(keys_to_matchb, entity_key_map); 
-    radius *= m_expansion_factor; // If points were missed, increase search radius.
+  ParallelMachine comm = m_mesha.comm();
+  const unsigned p_size = parallel_machine_size(comm);
+  if (m_mesha.has_communication_capabilities()) {
+    m_local_range_to_domain = copy_domain_to_range_processors(m_mesha, m_global_range_to_domain, m_name);
+  } else if (m_meshb.has_communication_capabilities()) {
+    ThrowRequireMsg (m_mesha.has_communication_capabilities() || m_mesha.has_communication_capabilities(),
+      __FILE__<<":"<<__LINE__<<" Still working on communicaiton capabilities");
+  } else if (1==p_size) {
+    const typename EntityProcRelationVec::const_iterator end=m_global_range_to_domain.end();
+    for (typename EntityProcRelationVec::const_iterator i=m_global_range_to_domain.begin(); i!=end; ++i) {
+      const EntityKeyB range_entity    = i->first.ident;
+      const EntityKeyA domain_entity   = i->second.ident;
+      std::pair<EntityKeyB,EntityKeyA> key_map(range_entity, domain_entity);
+      m_local_range_to_domain.insert(key_map);
+    }
+  } else               {
+    ThrowRequireMsg (m_mesha.has_communication_capabilities() || m_mesha.has_communication_capabilities(),
+      __FILE__<<":"<<__LINE__<<" Still working on communicaiton capabilities");
   }
 }
 
-template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::delete_range_points_found(
-                               EntityKeySetB            &to_keys,
-                               const EntityKeyMap       &del) {
-  for (typename EntityKeyMap::const_iterator i=del.begin(); i!=del.end(); ++i) {
-    const EntityKeyB e = i->first;
-    to_keys.erase(e);
-  }
+template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::local_search() {
+  INTERPOLATE::filter_to_nearest(m_local_range_to_domain, m_mesha, m_meshb); 
 }
-
 
 
 template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::apply(){
   m_mesha.update_values();
-  INTERPOLATE::apply(m_meshb, m_mesha, TotalRangeToDomain);
+  INTERPOLATE::apply(m_meshb, m_mesha, m_local_range_to_domain);
 }
 
 template <class INTERPOLATE> template <class MESH> void GeometricTransfer<INTERPOLATE>::boundingboxes(
   std::vector<typename MESH::BoundingBox>        &vector,
   const typename MESH::EntityKeySet              &keys_to_match,
   const MESH                                     &mesh,
-  const double                                    radius) {
+  const double                                    radius) const {
 
   typedef typename MESH::BoundingBox        BoundingBox;
   typedef typename MESH::BoundingBox::Data  Data;
@@ -189,16 +182,16 @@ template <class INTERPOLATE> template <class MESH> void GeometricTransfer<INTERP
 template <class INTERPOLATE>
 typename GeometricTransfer<INTERPOLATE>::EntityKeyMap GeometricTransfer<INTERPOLATE>::copy_domain_to_range_processors(
   MeshA                               &mesh,
-  const EntityProcRelationVec         &RangeToDomain,
-  const std::string                   &transfer_name) {
+  const EntityProcRelationVec         &range_to_domain,
+  const std::string                   &transfer_name)  const {
   
   ParallelMachine comm = mesh.comm();
   const unsigned my_rank = parallel_machine_rank(comm);
   
   typename MeshA::EntityProcVec entities_to_copy ;
 
-  const typename EntityProcRelationVec::const_iterator end=RangeToDomain.end();
-  for (typename EntityProcRelationVec::const_iterator i=RangeToDomain.begin(); i!=end; ++i) {
+  const typename EntityProcRelationVec::const_iterator end=range_to_domain.end();
+  for (typename EntityProcRelationVec::const_iterator i=range_to_domain.begin(); i!=end; ++i) {
     const unsigned            domain_owning_rank = i->second.proc;
     const unsigned             range_owning_rank = i->first.proc;
     if (domain_owning_rank == my_rank && range_owning_rank != my_rank) {
@@ -207,14 +200,16 @@ typename GeometricTransfer<INTERPOLATE>::EntityKeyMap GeometricTransfer<INTERPOL
       entities_to_copy.push_back(ep);
     }   
   }
-  std::sort(entities_to_copy.begin(), entities_to_copy.end());
-  typename MeshA::EntityProcVec::iterator del = std::unique(entities_to_copy.begin(), entities_to_copy.end());
-  entities_to_copy.resize(std::distance(entities_to_copy.begin(), del));
+  {
+    std::sort(entities_to_copy.begin(), entities_to_copy.end());
+    typename MeshA::EntityProcVec::iterator del = std::unique(entities_to_copy.begin(), entities_to_copy.end());
+    entities_to_copy.resize(std::distance(entities_to_copy.begin(), del));
+  }
  
   mesh.copy_entities(entities_to_copy, transfer_name);
 
   EntityKeyMap entity_key_map;
-  for (typename EntityProcRelationVec::const_iterator i=RangeToDomain.begin(); i!=end; ++i) {
+  for (typename EntityProcRelationVec::const_iterator i=range_to_domain.begin(); i!=end; ++i) {
     const unsigned range_owning_rank = i->first.proc;
     if (range_owning_rank == my_rank) {
       const EntityKeyB range_entity  = i->first.ident;
@@ -226,14 +221,54 @@ typename GeometricTransfer<INTERPOLATE>::EntityKeyMap GeometricTransfer<INTERPOL
   return entity_key_map;
 }
 
+template <class INTERPOLATE> bool GeometricTransfer<INTERPOLATE>::compare::operator()(const BoundingBoxB &a, const EntityProcB &b) const {
+  return a.key < b;
+}
+template <class INTERPOLATE> bool GeometricTransfer<INTERPOLATE>::compare::operator()(const EntityProcB &a, const BoundingBoxB &b) const {
+  return a < b.key;
+}
+
+template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::delete_range_points_found(
+                               std::vector<BoundingBoxB>            &range_vector,
+                               const EntityProcRelationVec          &del) const {
+
+  std::vector<EntityProcB> range_entities_found;
+  range_entities_found.reserve(del.size());
+  for (typename EntityProcRelationVec::const_iterator i=del.begin(); i!=del.end(); ++i) {
+    range_entities_found.push_back(i->first);
+  }
+  {
+    std::sort(range_entities_found.begin(), range_entities_found.end());
+    const typename std::vector<EntityProcB>::iterator it = std::unique(range_entities_found.begin(), range_entities_found.end());
+    range_entities_found.resize(it-range_entities_found.begin());
+  }
+  
+  std::vector<BoundingBoxB> difference(range_vector.size());
+  {
+    const typename std::vector<BoundingBoxB>::iterator it = 
+      std::set_difference(
+        range_vector.        begin(), range_vector.        end(),
+        range_entities_found.begin(), range_entities_found.end(),
+        difference.begin(), compare());
+    difference.resize(it-difference.begin());
+  }
+  swap(difference, range_vector);  
+}
+
 template <class INTERPOLATE>  void GeometricTransfer<INTERPOLATE>::coarse_search
-(EntityProcRelationVec   &RangeToDomain,
- const EntityKeySetA     &keys_to_matcha,
- const EntityKeySetB     &keys_to_matchb,
+(EntityProcRelationVec   &range_to_domain,
  const MeshA             &mesha,
  const MeshB             &meshb,
- const double            radius) {
+ const double            radius,
+ const double            expansion_factor) const {
   
+  EntityKeySetA keys_to_matcha;
+  EntityKeySetB keys_to_matchb;
+
+  mesha.keys(keys_to_matcha);;
+  meshb.keys(keys_to_matchb);;
+
+  double r = radius;
   std::vector<BoundingBoxB> range_vector;
   std::vector<BoundingBoxA> domain_vector;
 
@@ -243,11 +278,26 @@ template <class INTERPOLATE>  void GeometricTransfer<INTERPOLATE>::coarse_search
   search::FactoryOrder order;
   order.m_communicator = mesha.comm();
 
-  // Slightly confusing: coarse_search documentation has domain->range
-  // relations sorted by domain key.  We want range->domain type relations
-  // sorted on range key. It might appear we have the arguments revered
-  // in coarse_search call, but really, this is what we want.
-  search::coarse_search(RangeToDomain, domain_vector, range_vector, order);
+  while (!range_vector.empty()) { // Keep going until all range points are processed.
+    // Slightly confusing: coarse_search documentation has domain->range
+    // relations sorted by domain key.  We want range->domain type relations
+    // sorted on range key. It might appear we have the arguments revered
+    // in coarse_search call, but really, this is what we want.  
+    EntityProcRelationVec rng_to_dom;
+    search::coarse_search(rng_to_dom, domain_vector, range_vector, order);
+
+    INTERPOLATE::post_coarse_search_filter(rng_to_dom, mesha, meshb); 
+
+    range_to_domain.insert(range_to_domain.end(), rng_to_dom.begin(), rng_to_dom.end());
+
+    delete_range_points_found(range_vector, rng_to_dom); 
+
+    r *= expansion_factor; // If points were missed, increase search radius.
+    for (typename std::vector<BoundingBoxB>::iterator i=range_vector.begin(); i!=range_vector.end(); ++i) {
+      i->expand(r);
+    }
+  } 
+  sort (range_to_domain.begin(), range_to_domain.end());
 }
 
 }

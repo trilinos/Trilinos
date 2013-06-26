@@ -143,13 +143,16 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
   stk::transfer::STKMesh<3> transfer_range_mesh (range_entities, range_coord_field, to_fields);
 
   
+  const double radius=.25;
+  const double expansion_factor=1.5;
   stk::transfer::GeometricTransfer<
     class stk::transfer::LinearInterpolate<
       class stk::transfer::STKMesh<3>, 
       class stk::transfer::STKMesh<3>
     >
   >
-  transfer(transfer_domain_mesh, transfer_range_mesh, 4, 1.5, "STK Transfer test Use case 6");
+  transfer(transfer_domain_mesh, transfer_range_mesh, 
+           radius, expansion_factor, "STK Transfer test Use case 6");
   
   {
     stk::diag::TimeBlock __timer_node_to_node(timer_node_to_node);
