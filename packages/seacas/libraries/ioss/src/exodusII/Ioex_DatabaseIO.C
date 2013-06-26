@@ -5899,8 +5899,12 @@ namespace Ioex {
         Ioss::SerializeIO	serializeIO__(this);
 
         if (myProcessor == 0) {
-          put_qa();
-          put_info();
+	  if (!properties.exists("OMIT_QA_RECORDS")) {
+	    put_qa();
+	  }
+	  if (!properties.exists("OMIT_INFO_RECORDS")) {
+	    put_info();
+	  }
         }
 
         // Write the metadata to the exodusII file...
