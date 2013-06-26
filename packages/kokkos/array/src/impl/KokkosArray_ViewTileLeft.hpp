@@ -339,6 +339,28 @@ public:
     }
 
   //------------------------------------
+  // Accept but ignore extra indices, they should be zero.
+
+  template< typename iType0 , typename iType1 >
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename traits::value_type & operator()(
+    const iType0 & i0 , const iType1 & i1 , const int , const int = 0 ,
+    const int = 0 , const int = 0 , const int = 0 , const int = 0 ) const
+    {
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
+
+      // Use care to insert necessary parentheses as the
+      // shift operators have lower precedence than the arithmatic operators.
+
+      return m_ptr_on_device[
+        // ( ( Tile offset                               ) *  ( Tile size       ) )
+         + ( ( (i0>>SHIFT_0) + m_tile_N0 * (i1>>SHIFT_1) ) << (SHIFT_0 + SHIFT_1) )
+        // ( Offset within tile                       )
+         + ( (i0 & MASK_0) + ((i1 & MASK_1)<<SHIFT_0) ) ] ;
+    }
+
+  //------------------------------------
   // Tile specialization specific declarations and functions:
 
   typedef View< typename traits::value_type [ layout::N0 ][ layout::N1 ] ,

@@ -158,7 +158,7 @@ public:
   {
     Impl::host_thread_lock();
     Impl::host_thread_unlock();
-    end_barrier( thread );
+    thread.end_barrier();
   }
 
   HostWorkerBlock()  {}
@@ -415,9 +415,6 @@ void HostThreadWorker::execute() const
   // Execute on the master thread,
   execute_on_thread( s_master_thread );
 
-  // Wait for threads to complete:
-  end_barrier( s_master_thread );
-
   // Worker threads are returned to the ThreadInactive state.
   s_current_worker = NULL ;
 }
@@ -470,7 +467,7 @@ struct HostThreadResizeReduce : public Impl::HostThreadWorker {
   void execute_on_thread( Impl::HostThread & thread ) const
     {
       thread.resize_reduce( reduce_size );
-      end_barrier( thread );
+      thread.end_barrier();
     }
 };
 
@@ -614,7 +611,7 @@ bool Host::wake()
   if ( is_blocked ) {
     Impl::host_thread_unlock();
 
-    s_worker_block.end_barrier( s_master_thread );
+    s_master_thread.end_barrier();
 
     s_current_worker = NULL ;
 

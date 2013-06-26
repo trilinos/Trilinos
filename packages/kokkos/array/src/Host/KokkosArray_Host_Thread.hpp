@@ -50,6 +50,30 @@
 namespace KokkosArray {
 namespace Impl {
 
+//----------------------------------------------------------------------------
+/** \name  Internal interface to threading runtime. */
+/**@{ */
+
+/** \brief  Spawn a thread and call 'host_thread_driver()' */
+bool host_thread_spawn();
+
+/** \brief  Query if called on the master thread */
+bool host_thread_is_master();
+
+/** \brief  Wait for *flag != value */
+void host_thread_wait( volatile int * const flag , const int value );
+
+/** \brief  Wait for *flag != value and yield resources while waiting. */
+void host_thread_wait_yield( volatile int * const flag , const int value );
+
+/** \brief  Hard lock the current thread (e.g., via pthread_mutex */
+void host_thread_lock();
+
+/** \brief  Unlock the current thread */
+void host_thread_unlock();
+/**@} */
+
+//----------------------------------------------------------------------------
 /** \brief  A thread within the pool. */
 
 class HostThread {
@@ -108,6 +132,82 @@ __assume_aligned(m_reduce,HostSpace::MEMORY_ALIGNMENT);
 
   inline
   HostThread & fan( unsigned i ) const { return *m_fan[i]; }
+
+  //----------------------------------------------------------------------
+  /** \brief End-of-function barrier */
+  inline
+  void end_barrier() const
+  {
+    for ( size_type i = 0 ; i < m_fan_count ; ++i ) {
+      host_thread_wait( & m_fan[i]->m_state , HostThread::ThreadActive );
+    }
+  }
+
+  /** \brief  End-of-function reduction */
+  template< class ReduceOper >
+  void end_reduce( const ReduceOper & reduce ) const
+  {
+    for ( size_type i = 0 ; i < m_fan_count ; ++i ) {
+      host_thread_wait( & m_fan[i]->m_state , HostThread::ThreadActive );
+      reduce.join( m_reduce , m_fan[i]->m_reduce );
+    }
+  }
+
+  //-----------------------------------
+
+  inline
+  void barrier() const
+  {
+    // Wait until fan-in thread enters the 'Rendezvous' state
+    for ( size_type i = 0 ; i < m_fan_count ; ++i ) {
+      host_thread_wait( & m_fan[i]->m_state , HostThread::ThreadActive );
+    }
+
+    // If not the root thread then enter 'Rendezvous' state
+    if ( m_thread_rank ) {
+      volatile int & state = const_cast<volatile int &>( m_state );
+      state = HostThread::ThreadRendezvous ;
+      host_thread_wait( & state , HostThread::ThreadRendezvous );
+    }
+
+    // Reset threads to the active state via fan-out.
+    for ( size_type i = m_fan_count ; 0 < i ; ) {
+      m_fan[--i]->m_state = HostThread::ThreadActive ;
+    }
+  }
+
+  template< class ReduceOper >
+  inline
+  void reduce( const ReduceOper & reduce_op ) const
+  {
+    // Fan-in reduction of other threads' reduction data.
+
+    for ( size_type i = 0 ; i < m_fan_count ; ++i ) {
+      // Wait for source thread to complete its work and
+      // set its own state to 'Rendezvous'.
+      host_thread_wait( & m_fan[i]->m_state , HostThread::ThreadActive );
+
+      // Join source thread reduce data.
+      reduce_op.join( m_reduce , m_fan[i]->m_reduce );
+    }
+
+    if ( m_thread_rank ) {
+      // If this is not the root thread then it will give its
+      // reduction data to another thread.
+      // Set the 'Rendezvous' state.
+      // Wait for the other thread to process reduction data
+      // and then reactivate this thread.
+
+      volatile int & state = const_cast<volatile int &>( m_state );
+      state = HostThread::ThreadRendezvous ;
+      host_thread_wait( & state , HostThread::ThreadRendezvous );
+    }
+
+    // Reset threads to the active state via fan-out.
+    for ( size_type i = m_fan_count ; 0 < i ; ) {
+      m_fan[--i]->m_state = HostThread::ThreadActive ;
+    }
+  }
 
   //----------------------------------------------------------------------
 
