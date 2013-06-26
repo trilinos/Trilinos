@@ -53,7 +53,6 @@
 #include <impl/KokkosArray_StaticAssert.hpp>
 
 #include <Host/KokkosArray_Host_Thread.hpp>
-#include <Host/KokkosArray_Host_Internal.hpp>
 
 namespace KokkosArray {
 namespace Impl {

@@ -54,8 +54,8 @@ namespace Impl {
 /** \name  Internal interface to threading runtime. */
 /**@{ */
 
-/** \brief  Spawn a thread and call 'host_thread_driver()' */
-bool host_thread_spawn();
+/** \brief  Spawn a thread and call C11 compatible 'driver' */
+bool host_thread_spawn( int (*driver)(void*) , void * );
 
 /** \brief  Query if called on the master thread */
 bool host_thread_is_master();

@@ -108,5 +108,19 @@ private:
 
 } // namespace KokkosArray
 
+//----------------------------------------------------------------------------
+
+namespace KokkosArray {
+namespace Impl {
+
+void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
+                          const std::pair<unsigned,unsigned> core_use ,
+                          const std::pair<unsigned,unsigned> core_topo ,
+                          const std::pair<unsigned,unsigned> master_coord ,
+                                std::pair<unsigned,unsigned> thread_coord[] );
+
+}
+}
+
 #endif /* #define KOKKOSARRAY_HWLOC_HPP */
 
