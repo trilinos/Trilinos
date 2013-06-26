@@ -656,7 +656,7 @@ namespace KokkosArray {
 namespace Impl {
 
 bool host_thread_is_master() { return true ; }
-bool host_thread_spawn()     { return false ; }
+bool host_thread_spawn( int (*)(void*) , void * ) { return false ; }
 void host_thread_wait( volatile int * const , const int ) {}
 void host_thread_wait_yield( volatile int * const , const int ) {}
 void host_thread_lock() {}
