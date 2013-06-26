@@ -56,28 +56,41 @@
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_ArrayViewDecl.hpp"
+#include "Teuchos_RCPDecl.hpp"
 
-
+using namespace std;
 namespace Zoltan2{
 
 
 #define Z2_ABS(x) ((x) >= 0 ? (x) : -(x))
 
+/*! \brief coordinateModelPartBox Class,
+ * represents the boundaries of the box which is a result of a geometric partitioning algorithm.
+ */
 template <typename scalar_t,typename partId_t>
 class coordinateModelPartBox{
 
-        partId_t pID;
-        int dim;
-        scalar_t *lmins;
-        scalar_t *lmaxs;
+        partId_t pID; //part Id
+        int dim;    //dimension of the box
+        scalar_t *lmins;    //minimum boundaries of the box along all dimensions.
+        scalar_t *lmaxs;    //maximum boundaries of the box along all dimensions.
         scalar_t maxScalar;
         scalar_t _EPSILON;
 
+        //to calculate the neighbors of the box and avoid the p^2 comparisons,
+        //we use hashing. A box can be put into multiple hash buckets.
+        //the following 2 variable holds the minimum and maximum of the
+        //hash values along all dimensions.
         partId_t *minHashIndices;
         partId_t *maxHashIndices;
+
+        //result hash bucket indices.
         std::vector <partId_t> *gridIndices;
+        //neighbors of the box.
         std::set <partId_t> neighbors;
 public:
+        /*! \brief Constructor
+         */
         coordinateModelPartBox(partId_t pid, int dim_):
             pID(pid),
             dim(dim_),
@@ -98,7 +111,9 @@ public:
                 lmaxs[i] = this->maxScalar;
             }
         }
-
+        /*! \brief  Constructor
+         * deep copy of the maximum and minimum boundaries.
+         */
         coordinateModelPartBox(partId_t pid, int dim_, scalar_t *lmi, scalar_t *lma):
             pID(pid),
             dim(dim_),
@@ -118,6 +133,11 @@ public:
                 lmaxs[i] = lma[i];
             }
         }
+
+
+        /*! \brief  Copy Constructor
+         * deep copy of the maximum and minimum boundaries.
+         */
         coordinateModelPartBox(const coordinateModelPartBox <scalar_t, partId_t> &other):
             pID(0),
             dim(other.getDim()),
@@ -140,7 +160,8 @@ public:
                 lmaxs[i] = othermaxs[i];
             }
         }
-
+        /*! \brief  Destructor
+         */
         ~coordinateModelPartBox(){
             delete []this->lmins;
             delete [] this->lmaxs;
@@ -149,30 +170,49 @@ public:
             delete gridIndices;
         }
 
+        /*! \brief  function to set the part id
+         */
         void setpId(partId_t pid){
             this->pID = pid;
         }
+        /*! \brief  function to get the part id
+         */
         partId_t getpId() const{
             return this->pID;
         }
+
+
+        /*! \brief  function to set the dimension
+         */
         int getDim()const{
             return this->dim;
         }
+        /*! \brief  function to get minimum values along all dimensions
+         */
         scalar_t * getlmins()const{
             return this->lmins;
         }
+        /*! \brief  function to get maximum values along all dimensions
+         */
         scalar_t * getlmaxs()const{
             return this->lmaxs;
         }
 
+        /*! \brief  function to get the indices of the buckets
+         * that the part is inserted to
+         */
         std::vector <partId_t> * getGridIndices (){
             return this->gridIndices;
         }
 
+        /*! \brief  function to get the indices of the neighboring parts.
+         */
         std::set<partId_t> *getNeighbors(){
             return &(this->neighbors);
         }
 
+        /*! \brief  function to check if two boxes are neighbors.
+         */
         bool isNeighborWith(const coordinateModelPartBox <scalar_t, partId_t> &other){
 
 
@@ -200,10 +240,14 @@ public:
             }
         }
 
+
+        /*! \brief  function to add a new neighbor to the neighbor list.
+         */
         void addNeighbor(partId_t nIndex){
             neighbors.insert(nIndex);
         }
-
+        /*! \brief  function to check if a given part is already in the neighbor list.
+         */
         bool isAlreadyNeighbor(partId_t nIndex){
 
             if (neighbors.end() != neighbors.find(nIndex)){
@@ -212,6 +256,10 @@ public:
             return false;
 
         }
+
+
+        /*! \brief  function to obtain the min and max hash values along all dimensions.
+         */
         void setMinMaxHashIndices (
                 scalar_t *minMaxBoundaries,
                 scalar_t *sliceSizes,
@@ -275,13 +323,16 @@ public:
             delete out;
         }
 
-
+        /*! \brief  function to print the boundaries.
+        */
         void print(){
             for(int i = 0; i < this->dim; ++i){
                 cout << "\tbox:" << this->pID << " dim:" << i << " min:" << lmins[i] << " max:" << lmaxs[i] << endl;
             }
         }
 
+        /*! \brief  function to update the boundary of the box.
+        */
         void updateMinMax (scalar_t newBoundary, int isMax, int dimInd){
             if (isMax){
                 lmaxs[dimInd] = newBoundary;
@@ -299,6 +350,10 @@ public:
             ss >> tmp;
             return tmp;
         }
+
+
+        /*! \brief  function for visualization.
+        */
         void writeGnuPlot(std::ofstream &file,std::ofstream &mm){
             int numCorners = pow(2, dim);
             scalar_t *corner1 = new scalar_t [dim];
@@ -399,22 +454,37 @@ public:
 };
 
 
-template <typename scalar_t,typename partId_t>
+/*! \brief GridHash Class,
+ * Hashing Class for part boxes
+ */
+template <typename scalar_t, typename partId_t>
 class GridHash{
 private:
+
     RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > pBoxes;
+
+    //minimum of the maximum box boundaries
     scalar_t *minMaxBoundaries;
+    //maximum of the minimum box boundaries
     scalar_t *maxMinBoundaries;
+    //the size of each slice along dimensions
     scalar_t *sliceSizes;
     partId_t nTasks;
     int dim;
+    //the number of slices per dimension
     partId_t numSlicePerDim;
+    //the number of grids - buckets
     partId_t numGrids;
+    //hash vector
     std::vector <std::vector <partId_t>  > grids;
+    //result communication graph.
     ArrayRCP <partId_t> comXAdj;
     ArrayRCP <partId_t> comAdj;
 public:
 
+    /*! \brief GridHash Class,
+     * Constructor
+     */
     GridHash(RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > pBoxes_,
             partId_t ntasks_, int dim_):
         pBoxes(pBoxes_),
@@ -426,33 +496,48 @@ public:
         numGrids(0),
         grids(),
         comXAdj(), comAdj(){
+
         minMaxBoundaries = new scalar_t[dim];
         maxMinBoundaries = new scalar_t[dim];
         sliceSizes = new scalar_t[dim];
+        //calculate the number of slices in each dimension.
         numSlicePerDim /= 2;
         if (numSlicePerDim == 0) numSlicePerDim = 1;
+
         numGrids = partId_t(pow(numSlicePerDim, dim));
 
+        //allocate memory for buckets.
         std::vector <std::vector <partId_t>  > grids_ (numGrids);
         this->grids = grids_;
+        //get the boundaries of buckets.
         this->getMinMaxBoundaries();
+        //insert boxes to buckets
         this->insertToHash();
+        //calculate the neighbors for each bucket.
         partId_t nCount = this->calculateNeighbors();
 
+        //allocate memory for communication graph
         ArrayRCP <partId_t> tmpComXadj(ntasks_);
         ArrayRCP <partId_t> tmpComAdj(nCount);
         comXAdj = tmpComXadj;
         comAdj = tmpComAdj;
+        //fill communication graph
         this->fillAdjArrays();
     }
 
 
+    /*! \brief GridHash Class,
+     * Destructor
+     */
     ~GridHash(){
         delete []minMaxBoundaries;
         delete []maxMinBoundaries;
         delete []sliceSizes;
     }
 
+    /*! \brief GridHash Class,
+     * Function to fill adj arrays.
+     */
     void fillAdjArrays(){
 
         partId_t adjIndex = 0;
@@ -480,6 +565,9 @@ public:
 
 
 
+    /*! \brief GridHash Class,
+     * returns the adj arrays.
+     */
     void getAdjArrays(
             ArrayRCP <partId_t> &comXAdj_,
             ArrayRCP <partId_t> &comAdj_){
@@ -487,6 +575,9 @@ public:
         comAdj_ = this->comAdj;
     }
 
+    /*! \brief GridHash Class,
+     * For each box compares the adjacency against the boxes that are in the same buckets.
+     */
     partId_t calculateNeighbors(){
         partId_t nCount = 0;
         for(partId_t i = 0; i < this->nTasks; ++i){
@@ -513,6 +604,9 @@ public:
         return nCount;
     }
 
+    /*! \brief GridHash Class,
+     * For each box calculates the buckets which it should be inserted to.
+     */
     void insertToHash(){
 
         //cout << "ntasks:" << this->nTasks << endl;
@@ -544,6 +638,9 @@ public:
 */
     }
 
+    /*! \brief GridHash Class,
+     * calculates the minimum of maximum box boundaries, and maxium of minimum box boundaries.
+     */
     void getMinMaxBoundaries(){
         scalar_t *mins = (*pBoxes)[0].getlmins();
         scalar_t *maxs = (*pBoxes)[0].getlmaxs();

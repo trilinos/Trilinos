@@ -14,26 +14,18 @@
 
 namespace Teuchos{
 
+/*! \brief Zoltan2_ReduceBestMapping Class, reduces the minimum cost mapping, ties breaks with minimum proc id.
+ */
 template <typename Ordinal, typename T>
 class Zoltan2_ReduceBestMapping  : public ValueTypeReductionOp<Ordinal,T>
 {
 private:
-    Ordinal size;
     T _EPSILON;
 
 public:
     /*! \brief Default Constructor
      */
-    Zoltan2_ReduceBestMapping ():size(0), _EPSILON (std::numeric_limits<T>::epsilon()){}
-
-    /*! \brief Constructor
-     *   \param nsum  the count of how many sums will be computed at the
-     *             start of the list.
-     *   \param nmin  following the sums, this many minimums will be computed.
-     *   \param nmax  following the minimums, this many maximums will be computed.
-     */
-    Zoltan2_ReduceBestMapping (Ordinal s_):
-        size(s_), _EPSILON (std::numeric_limits<T>::epsilon()){}
+    Zoltan2_ReduceBestMapping ():_EPSILON (std::numeric_limits<T>::epsilon()){}
 
     /*! \brief Implement Teuchos::ValueTypeReductionOp interface
      */
@@ -1189,7 +1181,9 @@ public:
         envConst->timerStop(MACRO_TIMERS, "Mapping - Communication Cost");
 
         //cout << "me: " << comm_->getRank() << " cost:" << this->proc_task_comm->getCommunicationCostMetric() << endl;
-
+        //processors are divided into groups of size numProc! * numTasks!
+        //each processor in the group obtains a mapping with a different rotation
+        //and best one is broadcasted all processors.
         this->getBestMapping();
 #ifdef gnuPlot
         this->writeMapping2(comm_->getRank());
@@ -1276,10 +1270,13 @@ public:
 
         //cout << "me: " << comm_->getRank() << " cost:" << this->proc_task_comm->getCommunicationCostMetric() << endl;
 
+        //processors are divided into groups of size numProc! * numTasks!
+        //each processor in the group obtains a mapping with a different rotation
+        //and best one is broadcasted all processors.
         this->getBestMapping();
-
+#ifdef gnuPlot
         this->writeMapping2(comm_->getRank());
-
+#endif
 
         for (int i = 0; i < coordDim; ++i){
             freeArray<tcoord_t>(partCenters[i]);
@@ -1368,6 +1365,9 @@ public:
         return 0;
     }
 
+
+    /*! \brief creates and returns the subcommunicator for the processor group.
+     */
     RCP<Comm<int> > create_subCommunicatior(){
         int procDim = this->proc_task_comm->proc_coord_dim;
         int taskDim = this->proc_task_comm->task_coord_dim;
@@ -1408,10 +1408,17 @@ public:
         freeArray<int>(myGroup);
         return subComm;
     }
+
+
+    /*! \brief finds the lowest cost mapping and broadcasts solution to everyone.
+     */
     void getBestMapping(){
+        //create the sub group.
         RCP<Comm<int> > subComm = this->create_subCommunicatior();
+        //calculate cost.
         double myCost = this->proc_task_comm->getCommunicationCostMetric();
         double localCost[2], globalCost[2];
+
         localCost[0] = myCost;
         localCost[1] = double(subComm->getRank());
 

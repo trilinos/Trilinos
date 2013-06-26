@@ -61,6 +61,10 @@
 
 namespace Teuchos{
 
+/*! \brief Zoltan2_BoxBoundaries is a reduction operation
+ * to all reduce the all box boundaries.
+*/
+
 template <typename Ordinal, typename T>
 class Zoltan2_BoxBoundaries  : public ValueTypeReductionOp<Ordinal,T>
 {
@@ -390,45 +394,21 @@ public:
    */
   const int *getProcList() const { return procs_.getRawPtr();}
 
-  /*! \brief Create an import list from the export list.
-   *
-   *  \param numExtra The amount of related information of type
-   *            \c Extra that you would like to associate with the data.
-   *  \param xtraInfo  The extra information related to your global Ids.
-   *       The information for the <tt>k-th</tt> global ID would begin at
-   *       <tt> xtraInfo[k*numExtra]</tt> and end before
-   *       <tt> xtraInfo[(k+1)*numExtra]</tt>.
-   *  \param imports on return is the list of global Ids assigned to
-   *        this process under the Solution.
-   *  \param newXtraInfo on return is the extra information associated
-   *     with the global Ids in the import list.
-   *
-   * The list returned in getPartList() is an export list, detailing
-   * to which part each object should be moved.  This method provides
-   * a new list, listing the global IDs of the objects to be imported
-   * to my part or parts.
-   *
-   * Because this method does global communication, it can also
-   * send useful data related to the global IDs.  For example, if the global IDs
-   * represent matrix rows, the extra data could be the number of non zeros
-   * in the row.
-   *
-   * \todo A version which takes the export part numbers and returns the
-   *            import part numbers in addition to the global IDs.  Although
-   *            this can be done with the extra data, it might be better
-   *            to do it explicitly.
+
+  /*! \brief set the Part Box boundaries as a result of geometric partitioning algorithm.
    */
-
-
   void setPartBoxes(RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > outPartBoxes){
       this->partBoxes = outPartBoxes;
   }
 
+  /*! \brief returns the part box boundary list.
+   */
   RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > getPartBoxes(){
       return this->partBoxes;
   }
 
-
+  /*! \brief returns the communication graph as a result of geometric partitioning algorithm.
+   */
   void getCommunicationGraph(
           const Teuchos::Comm<int> *comm,
           ArrayRCP <partId_t> &comXAdj,
@@ -500,8 +480,7 @@ public:
           }
       }
 
-      Teuchos::Zoltan2_BoxBoundaries<int, scalar_t> reductionOp(
-              ntasks * 2 *dim);
+      Teuchos::Zoltan2_BoxBoundaries<int, scalar_t> reductionOp(ntasks * 2 *dim);
 
       reduceAll<int, scalar_t>(*comm, reductionOp,
               ntasks * 2 *dim, localPartBoundaries, globalPartBoundaries
@@ -530,6 +509,34 @@ public:
       this->partBoxes = pB;
       return this->partBoxes;
   }
+  /*! \brief Create an import list from the export list.
+   *
+   *  \param numExtra The amount of related information of type
+   *            \c Extra that you would like to associate with the data.
+   *  \param xtraInfo  The extra information related to your global Ids.
+   *       The information for the <tt>k-th</tt> global ID would begin at
+   *       <tt> xtraInfo[k*numExtra]</tt> and end before
+   *       <tt> xtraInfo[(k+1)*numExtra]</tt>.
+   *  \param imports on return is the list of global Ids assigned to
+   *        this process under the Solution.
+   *  \param newXtraInfo on return is the extra information associated
+   *     with the global Ids in the import list.
+   *
+   * The list returned in getPartList() is an export list, detailing
+   * to which part each object should be moved.  This method provides
+   * a new list, listing the global IDs of the objects to be imported
+   * to my part or parts.
+   *
+   * Because this method does global communication, it can also
+   * send useful data related to the global IDs.  For example, if the global IDs
+   * represent matrix rows, the extra data could be the number of non zeros
+   * in the row.
+   *
+   * \todo A version which takes the export part numbers and returns the
+   *            import part numbers in addition to the global IDs.  Although
+   *            this can be done with the extra data, it might be better
+   *            to do it explicitly.
+   */
 
   template <typename Extra>
     size_t convertSolutionToImportList(
@@ -606,9 +613,11 @@ private:
   RCP<const Environment> env_;             // has application communicator
   RCP<const Comm<int> > comm_;             // the problem communicator
   RCP<const IdentifierMap<user_t> > idMap_;
+
+  //part box boundaries as a result of geometric partitioning algorithm.
   RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > partBoxes;
-  ArrayRCP <partId_t> comXAdj_;
-  ArrayRCP <partId_t> comAdj_;
+  ArrayRCP <partId_t> comXAdj_; //communication graph xadj
+  ArrayRCP <partId_t> comAdj_; //communication graph adj.
 
   partId_t nGlobalParts_;// target global number of parts
   partId_t nLocalParts_; // number of parts to be on this process
