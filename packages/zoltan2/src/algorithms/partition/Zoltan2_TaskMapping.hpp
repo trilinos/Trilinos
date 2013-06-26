@@ -1667,7 +1667,7 @@ public:
         file += toString<int>(comm_->getRank()) + exten;
         std::ofstream ff(file.c_str());
         //ff.seekg (0, ff.end);
-        RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > outPartBoxes = ((Zoltan2::PartitioningSolution<Adapter> *)soln_)->getPartBoxes();
+        RCP < vector <Zoltan2::coordinateModelPartBox <tcoord_t, partId_t> > > outPartBoxes = ((Zoltan2::PartitioningSolution<Adapter> *)soln_)->getPartBoxes();
 
         for (partId_t i = 0; i < this->ntasks;++i){
             (*outPartBoxes)[i].writeGnuPlot(ff, mm);
@@ -1693,15 +1693,15 @@ public:
                 //cout << "i:" << i << " n:" << n << endl;
                 std::string arrowline = "set arrow from ";
                 for (int j = 0; j < coordDim - 1; ++j){
-                    arrowline += toString<scalar_t>(partCenters[j][n]) + ",";
+                    arrowline += toString<tcoord_t>(partCenters[j][n]) + ",";
                 }
-                arrowline += toString<scalar_t>(partCenters[coordDim -1][n]) + " to ";
+                arrowline += toString<tcoord_t>(partCenters[coordDim -1][n]) + " to ";
 
 
                 for (int j = 0; j < coordDim - 1; ++j){
-                    arrowline += toString<scalar_t>(partCenters[j][i]) + ",";
+                    arrowline += toString<tcoord_t>(partCenters[j][i]) + ",";
                 }
-                arrowline += toString<scalar_t>(partCenters[coordDim -1][i]) + " as 5\n";
+                arrowline += toString<tcoord_t>(partCenters[coordDim -1][i]) + " as 5\n";
 
                 //cout << "arrow:" << arrowline << endl;
                 ff << arrowline;
