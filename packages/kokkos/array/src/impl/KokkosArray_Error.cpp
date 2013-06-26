@@ -1,7 +1,7 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //                             KokkosArray
 //         Manycore Performance-Portable Multidimensional Arrays
 //
@@ -9,7 +9,7 @@
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -38,13 +38,14 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+//
 // ************************************************************************
 //@HEADER
 */
 
 #include <ostream>
 #include <sstream>
+#include <iomanip>
 #include <stdexcept>
 #include <impl/KokkosArray_Error.hpp>
 
@@ -60,6 +61,30 @@ void throw_runtime_exception( const std::string & msg )
   o << msg ;
   traceback_callstack( o );
   throw std::runtime_error( o.str() );
+}
+
+
+std::string human_memory_size(size_t arg_bytes)
+{
+  double bytes = arg_bytes;
+  const double K = 1024;
+  const double M = K*1024;
+  const double G = M*1024;
+
+  std::ostringstream out;
+  if (bytes < K) {
+    out << std::setprecision(4) << bytes << " B";
+  } else if (bytes < M) {
+    bytes /= K;
+    out << std::setprecision(4) << bytes << " K";
+  } else if (bytes < G) {
+    bytes /= M;
+    out << std::setprecision(4) << bytes << " M";
+  } else {
+    bytes /= G;
+    out << std::setprecision(4) << bytes << " G";
+  }
+  return out.str();
 }
 
 }

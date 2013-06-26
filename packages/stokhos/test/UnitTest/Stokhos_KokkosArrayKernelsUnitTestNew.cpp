@@ -51,9 +51,11 @@
 #include "Stokhos_Host_CrsProductTensor.hpp"
 #include "Stokhos_Host_FlatSparse3Tensor.hpp"
 #include "Stokhos_Host_FlatSparse3Tensor_kji.hpp"
+#include "Stokhos_Host_TiledCrsProductTensor.hpp"
 
 #include "Stokhos_LexicographicBlockSparse3Tensor.hpp"
 #include "Stokhos_Host_LexicographicBlockSparse3Tensor.hpp"
+#include "Stokhos_Host_LinearSparse3Tensor.hpp"
 
 #include "KokkosArray_hwloc.hpp"
 #include "KokkosArray_Cuda.hpp"
@@ -66,7 +68,7 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsMatrixFree_Host ) {
   typedef double Scalar;
   typedef KokkosArray::Host Device;
   typedef Stokhos::DefaultSparseMatOps SparseMatOps;
-  bool test_block = true;
+  bool test_block = false;
 
   success = test_crs_matrix_free<Scalar,Device,SparseMatOps>(
     setup, test_block, out);
@@ -89,22 +91,36 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsMatrixFree_HostMKL ) {
 TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsProductTensor_Host ) {
   typedef double Scalar;
   typedef KokkosArray::Host Device;
+  typedef Stokhos::CrsProductTensor<Scalar,Device> Tensor;
 
-  success = test_crs_product_tensor<Scalar,Stokhos::CrsProductTensor<Scalar,Device>,Device>(setup, out);
+  success = test_crs_product_tensor<Scalar,Tensor,Device>(setup, out);
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, TiledCrsProductTensor_Host ) {
+  typedef double Scalar;
+  typedef KokkosArray::Host Device;
+  typedef Stokhos::TiledCrsProductTensor<Scalar,Device> Tensor;
+
+  Teuchos::ParameterList params;
+  params.set("Tile Size", 10);
+  params.set("Max Tiles", 10000);
+  success = test_crs_product_tensor<Scalar,Tensor,Device>(setup, out, params);
 }
 
 TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, FlatSparse3Tensor_Host ) {
   typedef double Scalar;
   typedef KokkosArray::Host Device;
+  typedef Stokhos::FlatSparse3Tensor<Scalar,Device> Tensor;
 
-  success = test_crs_product_tensor<Scalar,Stokhos::FlatSparse3Tensor<Scalar,Device>,Device>(setup, out);
+  success = test_crs_product_tensor<Scalar,Tensor,Device>(setup, out);
 }
 
 TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, FlatSparse3Tensor_kji_Host ) {
   typedef double Scalar;
   typedef KokkosArray::Host Device;
+  typedef Stokhos::FlatSparse3Tensor_kji<Scalar,Device> Tensor;
 
-  success = test_crs_product_tensor<Scalar,Stokhos::FlatSparse3Tensor_kji<Scalar,Device>,Device>(setup, out);
+  success = test_crs_product_tensor<Scalar,Tensor,Device>(setup, out);
 }
 
 TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, ProductTensorCijk ) {
@@ -121,8 +137,11 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, ProductTensorCijk ) {
     const size_t iEntryBeg = tensor.entry_begin(i);
     const size_t iEntryEnd = tensor.entry_end(i);
     for (size_t iEntry = iEntryBeg ; iEntry < iEntryEnd ; ++iEntry ) {
-      const size_t j = tensor.coord(iEntry,0);
-      const size_t k = tensor.coord(iEntry,1);
+      const size_t kj = tensor.coord( iEntry );
+      const size_t j  = kj & 0x0ffff;
+      const size_t k  = kj >> 16;
+      // const size_t j = tensor.coord(iEntry,0);
+      // const size_t k = tensor.coord(iEntry,1);
       double c2 = tensor.value(iEntry);
       if (j == k) c2 *= 2.0;
 
@@ -135,6 +154,56 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, ProductTensorCijk ) {
         out << "(" << ii << "," << jj << "," << kk << "):  " << c
             << " == " << c2 << " failed!" << std::endl;
         success = false;
+      }
+    }
+  }
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, TiledProductTensorCijk ) {
+  success = true;
+
+  typedef double value_type;
+  typedef KokkosArray::Host Device;
+  typedef Stokhos::TiledCrsProductTensor< value_type , Device > tensor_type ;
+
+  Teuchos::ParameterList params;
+  params.set("Tile Size",10);
+  params.set("Max Tiles",10000);
+
+  tensor_type tensor =
+    Stokhos::create_tiled_product_tensor<Device>( *setup.basis, *setup.Cijk,
+                                                  params );
+
+  // This is a valid test only with no symmetry
+  // TEUCHOS_TEST_EQUALITY( tensor.entry_count(), setup.Cijk->num_entries(),
+  //                        out, success );
+
+  const size_t n_tile = tensor.num_tiles();
+  for ( size_t tile = 0 ; tile < n_tile ; ++tile ) {
+    const size_t i_offset = tensor.offset(tile, 0);
+    const size_t j_offset = tensor.offset(tile, 1);
+    const size_t k_offset = tensor.offset(tile, 2);
+    const size_t n_row = tensor.num_rows(tile);
+
+    for (size_t i=0; i<n_row; ++i) {
+      const size_t iEntryBeg = tensor.entry_begin(tile,i);
+      const size_t iEntryEnd = tensor.entry_end(tile,i);
+      for (size_t iEntry = iEntryBeg ; iEntry < iEntryEnd ; ++iEntry ) {
+        const size_t j = tensor.coord(iEntry,0);
+        const size_t k = tensor.coord(iEntry,1);
+        double c2 = tensor.value(iEntry);
+        int ii = i + i_offset;
+        int jj = j + j_offset;
+        int kk = k + k_offset;
+        if (jj == kk)
+          c2 *= 2.0;
+        double c = setup.Cijk->getValue(ii,jj,kk);
+
+        if (std::abs(c-c2) > std::abs(c)*setup.rel_tol + setup.abs_tol) {
+          out << "(" << ii << "," << jj << "," << kk << "):  " << c
+              << " == " << c2 << " failed!" << std::endl;
+          success = false;
+        }
       }
     }
   }
@@ -314,6 +383,26 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, LexoBlockTensor_Host ) {
   success = test_lexo_block_tensor<Scalar,Device>(setup, out);
 }
 
+TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, LinearTensorSymmetric_Host ) {
+  typedef double Scalar;
+  typedef KokkosArray::Host Device;
+  const bool symmetric = true;
+
+  UnitTestSetup s;
+  s.setup(1, 10);
+  success = test_linear_tensor<Scalar,Device,4>(s, out, symmetric);
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, LinearTensorAsymmetric_Host ) {
+  typedef double Scalar;
+  typedef KokkosArray::Host Device;
+  const bool symmetric = false;
+
+  UnitTestSetup s;
+  s.setup(1, 10);
+  success = test_linear_tensor<Scalar,Device,4>(s, out, symmetric);
+}
+
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   setup.setup();
@@ -321,13 +410,14 @@ int main( int argc, char* argv[] ) {
   // Initialize host
   const std::pair<unsigned,unsigned> core_topo =
     KokkosArray::hwloc::get_core_topology();
-  //const size_t core_capacity = KokkosArray::hwloc::get_core_capacity();
-
-  const size_t gang_count = core_topo.first ;
-  const size_t gang_worker_count = core_topo.second;
+  const size_t core_capacity = KokkosArray::hwloc::get_core_capacity();
+  const size_t gang_count = core_topo.first;
+  const size_t gang_worker_count = core_topo.second * core_capacity;
+  // const size_t gang_count = 1 ;
+  // const size_t gang_worker_count = 1;
   KokkosArray::Host::initialize( gang_count , gang_worker_count );
 
-#ifdef HAVE_KOKKOSARRAY_CUDA
+#ifdef KOKKOSARRAY_HAVE_CUDA
   // Initialize Cuda
   KokkosArray::Cuda::initialize( KokkosArray::Cuda::SelectDevice(0) );
 #endif
@@ -337,7 +427,7 @@ int main( int argc, char* argv[] ) {
 
   // Finish up
   KokkosArray::Host::finalize();
-#ifdef HAVE_KOKKOSARRAY_CUDA
+#ifdef KOKKOSARRAY_HAVE_CUDA
   KokkosArray::Cuda::finalize();
 #endif
 

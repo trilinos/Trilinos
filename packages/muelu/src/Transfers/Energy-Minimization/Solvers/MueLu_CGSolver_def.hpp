@@ -93,8 +93,9 @@ namespace MueLu {
     bool doFillComplete  = true;
     // bool optimizeStorage = false;
     bool optimizeStorage = true;
+    bool allowMLMultiply = false;
 
-    tmpAP = Utils::Multiply(*A, false, *X, false, doFillComplete, optimizeStorage);
+    tmpAP = Utils::Multiply(*A, false, *X, false, doFillComplete, optimizeStorage, allowMLMultiply);
     C.Apply(*tmpAP, *T);
 
     // R_0 = -A*X_0
@@ -118,8 +119,16 @@ namespace MueLu {
 
     for (size_t k = 0; k < nIts_; k++) {
       // AP = constrain(A*P)
-      if (k == 0) tmpAP = Utils::Multiply(*A, false, *P, false,        doFillComplete, optimizeStorage);
-      else        tmpAP = Utils::Multiply(*A, false, *P, false, tmpAP, doFillComplete, optimizeStorage);
+      if (k == 0 || useTpetra)
+        // Construct the MxM pattern from scratch
+        // This is done by default for Tpetra as the three argument version requires tmpAP
+        // to *not* be locally indexed which defeats the purpose
+        // TODO: need a three argument Tpetra version which allows reuse of already fill-completed matrix
+        tmpAP = Utils::Multiply(*A, false, *P, false,        doFillComplete, optimizeStorage, allowMLMultiply);
+      else {
+        // Reuse the MxM pattern
+        tmpAP = Utils::Multiply(*A, false, *P, false, tmpAP, doFillComplete, optimizeStorage, allowMLMultiply);
+      }
       C.Apply(*tmpAP, *T);
       AP = T;
 
@@ -185,47 +194,60 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Scalar CGSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Frobenius(const Matrix& Aref, const Matrix& Bref) const {
-    RCP<const Matrix> A = rcpFromRef(Aref), B = rcpFromRef(Bref);
+  Scalar CGSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Frobenius(const Matrix& A, const Matrix& B) const {
+    // We check only row maps. Column may be different. One would hope that they are the same, as we typically
+    // calculate frobenius norm of the specified sparsity pattern with an updated matrix from the previous step,
+    // but matrix addition, even when one is submatrix of the other, changes column map (though change may be as
+    // simple as couple of elements swapped)
+    TEUCHOS_TEST_FOR_EXCEPTION(!A.getRowMap()->isSameAs(*B.getRowMap()),   Exceptions::Incompatible, "MueLu::CGSolver::Frobenius: row maps are incompatible");
+    TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete() || !B.isFillComplete(), Exceptions::RuntimeError, "Matrices must be fill completed");
 
-    size_t numRows = A->getNodeNumRows();
+    const Map& AColMap = *A.getColMap();
+    const Map& BColMap = *B.getColMap();
 
-    // In the future, one might need to restrict this test for only row maps
-    // For instance, if matrix B = M*A then they would have different colmaps
-    // See comments in the loop how to update the algorithm
-    TEUCHOS_TEST_FOR_EXCEPTION(!A->getRowMap()->isSameAs(*(B->getRowMap())), Exceptions::Incompatible, "MueLu::CGSolver::Frobenius: row maps are incompatible");
-    TEUCHOS_TEST_FOR_EXCEPTION(!A->getColMap()->isSameAs(*(B->getColMap())), Exceptions::Incompatible, "MueLu::CGSolver::Frobenius: col maps are incompatible");
+    Teuchos::ArrayView<const LO> indA, indB;
+    Teuchos::ArrayView<const SC> valA, valB;
+    size_t nnzA = 0, nnzB = 0;
 
-    SC f = Teuchos::ScalarTraits<SC>::zero();
+    // We use a simple algorithm
+    // for each row we fill valBAll array with the values in the corresponding row of B
+    // as such, it serves as both sorted array and as storage, so we don't need to do a
+    // tricky problem: "find a value in the row of B corresponding to the specific GID"
+    // Once we do that, we translate LID of entries of row of A to LID of B, and multiply
+    // corresponding entries.
+    // The algorithm should be reasonably cheap, as it does not sort anything, provided
+    // that getLocalElement and getGlobalElement functions are reasonably effective. It
+    // *is* possible that the costs are hidden in those functions, but if maps are close
+    // to linear maps, we should be fine
+    Teuchos::Array<SC> valBAll(BColMap.getNodeNumElements());
+
+    LO     invalid = Teuchos::OrdinalTraits<LO>::invalid();
+    SC     zero    = Teuchos::ScalarTraits<SC> ::zero(),    f = zero, gf;
+    size_t numRows = A.getNodeNumRows();
     for (size_t i = 0; i < numRows; i++) {
-      Teuchos::ArrayView<const LO> indA, indB;
-      Teuchos::ArrayView<const SC> valA, valB;
+      A.getLocalRowView(i, indA, valA);
+      B.getLocalRowView(i, indB, valB);
+      nnzA = indA.size();
+      nnzB = indB.size();
 
-      // If A and B have different colmaps, we need to replace
-      // indA and indB by their corresponding global indices
-      // It can be done, for instance, using getGlobalElement() function.
-      // We would also probably need to sort those GIDs.
-      A->getLocalRowView(i, indA, valA);
-      B->getLocalRowView(i, indB, valB);
+      // Set up array values
+      for (size_t j = 0; j < nnzB; j++)
+        valBAll[indB[j]] = valB[j];
 
-      size_t nnzA = indA.size()/*, nnzB = indB.size()*/;
-
-      // We assume that indA and indB are sorted in increasing order
-      for (size_t j0 = 0, j1 = 0; j0 < nnzA;) {
-        if (indA[j0] < indB[j1])
-          j0++;
-        else if (indA[j0] > indB[j1])
-          j1++;
-        else {
-          f += valA[j0]*valB[j1];
-          j0++;
-          j1++;
-        }
+      for (size_t j = 0; j < nnzA; j++) {
+        // The cost of the whole Frobenius dot product function depends on the
+        // cost of the getLocalElement and getGlobalElement functions here.
+        LO ind = BColMap.getLocalElement(AColMap.getGlobalElement(indA[j]));
+        if (ind != invalid)
+          f += valBAll[ind] * valA[j];
       }
+
+      // Clean up array values
+      for (size_t j = 0; j < nnzB; j++)
+        valBAll[indB[j]] = zero;
     }
 
-    SC gf;
-    sumAll(A->getRowMap()->getComm(), f, gf);
+    sumAll(AColMap.getComm(), f, gf);
 
     return gf;
   }

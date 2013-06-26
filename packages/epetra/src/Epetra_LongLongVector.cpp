@@ -222,7 +222,7 @@ void Epetra_LongLongVector::Print(ostream& os) const {
   os << endl;
       }
       for (int i=0; i < NumMyElements1; i++) {
-  for (int ii=0; ii< Map().ElementSize(ii); ii++) {
+  for (int ii=0; ii< Map().ElementSize(i); ii++) {
     int iii;
     os.width(10);
     os <<  MyPID; os << "    ";
@@ -408,9 +408,9 @@ int Epetra_LongLongVector::PackAndPrepare(const Epetra_SrcDistObject & Source,
     // variable element size case
     else {
       
-      SizeOfPacket = MaxElementSize;
+      int thisSizeOfPacket = MaxElementSize;
       for (j=0; j<NumExportIDs; j++) {
-  ptr = (long long *) Exports + j*SizeOfPacket;
+  ptr = (long long *) Exports + j*thisSizeOfPacket;
   jj = FromFirstPointInElementList[ExportLIDs[j]];
   int ElementSize = FromElementSizeList[ExportLIDs[j]];
     for (k=0; k<ElementSize; k++)
@@ -435,6 +435,7 @@ int Epetra_LongLongVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
 {
   (void)Source;
   (void)LenImports;
+  (void)SizeOfPacket;
   (void)Distor;
   (void)Indexor;
   int j, jj, k;
@@ -525,11 +526,11 @@ int Epetra_LongLongVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
 
   else {
       
-    SizeOfPacket = MaxElementSize;
+    int thisSizeOfPacket = MaxElementSize;
 
     if (CombineMode==Add) {
       for (j=0; j<NumImportIDs; j++) {
-  ptr = (long long *) Imports + j*SizeOfPacket;
+  ptr = (long long *) Imports + j*thisSizeOfPacket;
   jj = ToFirstPointInElementList[ImportLIDs[j]];
   int ElementSize = ToElementSizeList[ImportLIDs[j]];
     for (k=0; k<ElementSize; k++)
@@ -538,7 +539,7 @@ int Epetra_LongLongVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
     }
     else  if(CombineMode==Insert){
       for (j=0; j<NumImportIDs; j++) {
-  ptr = (long long *) Imports + j*SizeOfPacket;
+  ptr = (long long *) Imports + j*thisSizeOfPacket;
   jj = ToFirstPointInElementList[ImportLIDs[j]];
   int ElementSize = ToElementSizeList[ImportLIDs[j]];
     for (k=0; k<ElementSize; k++)
@@ -547,7 +548,7 @@ int Epetra_LongLongVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
     }
     else  if(CombineMode==AbsMax){
       for (j=0; j<NumImportIDs; j++) {
-  ptr = (long long *) Imports + j*SizeOfPacket;
+  ptr = (long long *) Imports + j*thisSizeOfPacket;
   jj = ToFirstPointInElementList[ImportLIDs[j]];
   int ElementSize = ToElementSizeList[ImportLIDs[j]];
   for (k=0; k<ElementSize; k++) {
@@ -560,7 +561,7 @@ int Epetra_LongLongVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
     //        This might be an issue in the future, but we leave this way for now.
     else if(CombineMode==Average) {
       for (j=0; j<NumImportIDs; j++) {
-  ptr = (long long *) Imports + j*SizeOfPacket;
+  ptr = (long long *) Imports + j*thisSizeOfPacket;
   jj = ToFirstPointInElementList[ImportLIDs[j]];
   int ElementSize = ToElementSizeList[ImportLIDs[j]];
     for (k=0; k<ElementSize; k++)

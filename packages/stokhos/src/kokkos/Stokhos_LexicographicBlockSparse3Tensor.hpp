@@ -47,6 +47,7 @@
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_ProductBasis.hpp"
 #include "Stokhos_LTBSparse3Tensor.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 #include <sstream>
 #include <fstream>
@@ -69,13 +70,14 @@ public:
 
 private:
 
-  typedef KokkosArray::View< size_type[][6] , device_type > coord_array_type;
+  typedef KokkosArray::View< int[][7] , KokkosArray::LayoutRight, device_type >       coord_array_type;
   typedef KokkosArray::View< value_type[], device_type >    value_array_type;
 
   coord_array_type  m_coord;
   value_array_type  m_value;
   size_type         m_dimension;
   size_type         m_flops;
+  bool              m_symmetric;
 
 public:
 
@@ -87,7 +89,8 @@ public:
     m_coord(),
     m_value(),
     m_dimension(),
-    m_flops(0){}
+    m_flops(0),
+    m_symmetric(false) {}
 
   inline
   LexicographicBlockSparse3Tensor(
@@ -95,7 +98,8 @@ public:
     m_coord(rhs.m_coord),
     m_value(rhs.m_value),
     m_dimension(rhs.m_dimension),
-    m_flops(rhs.m_flops) {}
+    m_flops(rhs.m_flops),
+    m_symmetric(rhs.m_symmetric) {}
 
   inline
   LexicographicBlockSparse3Tensor &operator=(
@@ -105,6 +109,7 @@ public:
     m_value = rhs.m_value;
     m_dimension = rhs.m_dimension;
     m_flops = rhs.m_flops;
+    m_symmetric = rhs.m_symmetric;
     return *this ;
   }
 
@@ -122,52 +127,45 @@ public:
 
   /** \brief   */
   KOKKOSARRAY_INLINE_FUNCTION
-  size_type get_i_begin(const size_type entry) const {
+  int get_i_begin(const size_type entry) const {
     return m_coord(entry,0);
   }
 
   /** \brief   */
   KOKKOSARRAY_INLINE_FUNCTION
-  size_type get_j_begin(const size_type entry) const {
+  int get_j_begin(const size_type entry) const {
     return m_coord(entry,1);
   }
 
   /** \brief   */
   KOKKOSARRAY_INLINE_FUNCTION
-  size_type get_k_begin(const size_type entry) const {
+  int get_k_begin(const size_type entry) const {
     return m_coord(entry,2);
   }
 
   /** \brief   */
   KOKKOSARRAY_INLINE_FUNCTION
-  size_type get_i_size(const size_type entry) const {
+  int get_p_i(const size_type entry) const {
     return m_coord(entry,3);
   }
 
   /** \brief   */
   KOKKOSARRAY_INLINE_FUNCTION
-  size_type get_j_size(const size_type entry) const {
+  int get_p_j(const size_type entry) const {
     return m_coord(entry,4);
   }
 
   /** \brief   */
   KOKKOSARRAY_INLINE_FUNCTION
-  size_type get_k_size(const size_type entry) const {
+  int get_p_k(const size_type entry) const {
     return m_coord(entry,5);
   }
 
-  /** \brief Block information for entry 'entry' */
-   KOKKOSARRAY_INLINE_FUNCTION
-   void block(const size_type entry,
-              size_type& i_begin, size_type& j_begin, size_type& k_begin,
-              size_type& i_size,  size_type& j_size,  size_type& k_size) const {
-     i_begin = m_coord(entry,0);
-     j_begin = m_coord(entry,1);
-     k_begin = m_coord(entry,2);
-     i_size  = m_coord(entry,3);
-     j_size  = m_coord(entry,4);
-     k_size  = m_coord(entry,5);
-   }
+  /** \brief   */
+  KOKKOSARRAY_INLINE_FUNCTION
+  int get_j_eq_k(const size_type entry) const {
+    return m_coord(entry,6);
+  }
 
   /** \brief  Cijk for entry 'entry' */
   KOKKOSARRAY_INLINE_FUNCTION
@@ -182,10 +180,15 @@ public:
   KOKKOSARRAY_INLINE_FUNCTION
   size_type num_flops() const { return m_flops; }
 
+  /** \brief Is PDF symmetric */
+  KOKKOSARRAY_INLINE_FUNCTION
+  bool symmetric() const { return m_symmetric; }
+
   template <typename OrdinalType>
   static LexicographicBlockSparse3Tensor
   create(const Stokhos::ProductBasis<OrdinalType,ValueType>& basis,
-         const Stokhos::LTBSparse3Tensor<OrdinalType,ValueType>& Cijk)
+         const Stokhos::LTBSparse3Tensor<OrdinalType,ValueType>& Cijk,
+         const Teuchos::ParameterList& params = Teuchos::ParameterList())
   {
     using Teuchos::Array;
     using Teuchos::RCP;
@@ -193,6 +196,7 @@ public:
     // Allocate tensor data
     LexicographicBlockSparse3Tensor tensor ;
     tensor.m_dimension = basis.size();
+    tensor.m_symmetric = Cijk.symmetric();
     tensor.m_coord = coord_array_type( "coord" , Cijk.num_leafs() );
     tensor.m_value = value_array_type( "value" , Cijk.num_entries() );
 
@@ -223,13 +227,14 @@ public:
         host_coord(coord_index, 0) = node->i_begin;
         host_coord(coord_index, 1) = node->j_begin;
         host_coord(coord_index, 2) = node->k_begin;
-        host_coord(coord_index, 3) = node->i_size;
-        host_coord(coord_index, 4) = node->j_size;
-        host_coord(coord_index, 5) = node->k_size;
+        host_coord(coord_index, 3) = node->p_i;
+        host_coord(coord_index, 4) = node->p_j;
+        host_coord(coord_index, 5) = node->p_k;
+        host_coord(coord_index, 6) = node->parent_j_equals_k;
         ++coord_index;
         for (OrdinalType i=0; i<node->my_num_entries; ++i)
           host_value(value_index++) = node->values[i];
-        tensor.m_flops += 3*node->my_num_entries + node->i_size;
+        tensor.m_flops += 5*node->my_num_entries + node->i_size;
         node_stack.pop_back();
         index_stack.pop_back();
       }
@@ -259,7 +264,7 @@ public:
     file_name << "cijk_vol_" << index << ".txt";
     std::ofstream file(file_name.str().c_str());
     for (size_type i=0; i<coord_index; ++i) {
-      size_type vol = host_coord(i,3) * host_coord(i,4) * host_coord(i,5);
+      int vol = host_coord(i,3) * host_coord(i,4) * host_coord(i,5);
       file << vol << std::endl;
     }
     file.close();
@@ -278,9 +283,11 @@ template< class Device , typename OrdinalType , typename ValueType >
 LexicographicBlockSparse3Tensor<ValueType, Device>
 create_lexicographic_block_sparse_3_tensor(
   const Stokhos::ProductBasis<OrdinalType,ValueType>& basis,
-  const Stokhos::LTBSparse3Tensor<OrdinalType,ValueType>& Cijk )
+  const Stokhos::LTBSparse3Tensor<OrdinalType,ValueType>& Cijk,
+  const Teuchos::ParameterList& params = Teuchos::ParameterList())
 {
-  return LexicographicBlockSparse3Tensor<ValueType, Device>::create(Cijk );
+  return LexicographicBlockSparse3Tensor<ValueType, Device>::create(
+    basis, Cijk, params);
 }
 
 } /* namespace Stokhos */

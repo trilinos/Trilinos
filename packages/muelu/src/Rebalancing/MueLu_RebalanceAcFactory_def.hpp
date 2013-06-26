@@ -119,7 +119,7 @@ namespace MueLu {
     }
 
     if (rebalanceFacts_.begin() != rebalanceFacts_.end()) {
-      SubFactoryMonitor m(*this, "Rebalance additional data", coarseLevel);
+      SubFactoryMonitor m2(*this, "Rebalance additional data", coarseLevel);
 
       // call Build of all user-given transfer factories
       for (std::vector<RCP<const FactoryBase> >::const_iterator it = rebalanceFacts_.begin(); it != rebalanceFacts_.end(); ++it) {

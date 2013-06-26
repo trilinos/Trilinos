@@ -129,9 +129,9 @@ public:
    *  The core topology must be less than or equal to hwloc::get_core_topology().
    *  If core topology is not input then the full hwloc::get_core_topology() is used.
    */
+  typedef std::pair<unsigned,unsigned> UnsignedPair;
   static void initialize( const std::pair<unsigned,unsigned> gang_topo ,
-                          const std::pair<unsigned,unsigned> core_topo =
-                                std::pair<unsigned,unsigned>(0,0) );
+                          const std::pair<unsigned,unsigned> core_topo = UnsignedPair(0u,0u) );
 
   inline
   static void initialize( const size_type gang_count ,

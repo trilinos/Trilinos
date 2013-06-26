@@ -95,7 +95,7 @@ inline
 void deep_copy( ValueType & dst ,
                 const View< ValueType , LayoutSrc , Cuda , MemoryTraits , Impl::LayoutScalar > & src )
 {
-  DeepCopy<HostSpace,CudaSpace>( & dst , src.ptr_on_device() , sizeof(ValueType) );
+  (void)DeepCopy<HostSpace,CudaSpace>( & dst , src.ptr_on_device() , sizeof(ValueType) );
 }
 
 template< typename ValueType , class LayoutDst , class MemoryTraits >
@@ -103,7 +103,7 @@ inline
 void deep_copy( const View< ValueType , LayoutDst , Cuda , MemoryTraits , Impl::LayoutScalar > & dst ,
                 const ValueType & src )
 {
-  DeepCopy<CudaSpace,HostSpace>( dst.ptr_on_device() , & src , sizeof(ValueType) );
+  (void)DeepCopy<CudaSpace,HostSpace>( dst.ptr_on_device() , & src , sizeof(ValueType) );
 }
 
 } // namespace KokkosArray
@@ -576,7 +576,7 @@ public:
 
   View & operator = ( const View & rhs )
     {
-      Impl::ViewAssignment< Impl::CudaTexture , Impl::CudaTexture >( *this , rhs );
+      (void)Impl::ViewAssignment< Impl::CudaTexture , Impl::CudaTexture >( *this , rhs );
       return *this ;
     }
 

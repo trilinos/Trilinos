@@ -68,7 +68,7 @@ public:
   virtual bool queryAdaptationCriteria() = 0;
 
   //! Apply adaptation method to mesh and problem. Returns true if adaptation is performed successfully.
-  virtual bool adaptMesh() = 0;
+  virtual bool adaptMesh(const Epetra_Vector& solution, const Epetra_Vector& ovlp_solution) = 0;
 
   //! Transfer solution between meshes.
   virtual void solutionTransfer(const Epetra_Vector& oldSolution,

@@ -34,6 +34,8 @@
 
 #define HAVE_MUELU_IFPACK2
 
+/* #undef HAVE_MUELU_ISORROPIA */
+
 #define HAVE_MUELU_KOKKOSCLASSIC
 
 #define HAVE_MUELU_ML

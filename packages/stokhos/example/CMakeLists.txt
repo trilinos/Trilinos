@@ -111,6 +111,18 @@ TRIBITS_ADD_EXECUTABLE(
   )
 
 TRIBITS_ADD_EXECUTABLE(
+  cijk_ltb_partition
+  SOURCES cijk_ltb_partition.cpp
+  DEPLIBS stokhos
+  )
+
+TRIBITS_ADD_EXECUTABLE(
+  cijk_ltb_partition_level
+  SOURCES cijk_ltb_partition_level.cpp
+  DEPLIBS stokhos
+  )
+
+TRIBITS_ADD_EXECUTABLE(
   sparsity_slice_example
   SOURCES sparsity_slice_example.cpp
   DEPLIBS stokhos
@@ -441,11 +453,39 @@ IF (Stokhos_ENABLE_Thrust)
 
 ENDIF()
 
+TRIBITS_ADD_EXECUTABLE(
+  cijk_partition_rcb
+  SOURCES cijk_partition_rcb.cpp
+  DEPLIBS stokhos
+  )
+
 IF(Stokhos_ENABLE_Isorropia)
 
   TRIBITS_ADD_EXECUTABLE(
     cijk_partition
     SOURCES cijk_partition.cpp
+    DEPLIBS stokhos
+    )
+
+ENDIF()
+
+IF(Stokhos_ENABLE_Zoltan)
+
+  TRIBITS_ADD_EXECUTABLE(
+    cijk_partition_zoltan
+    SOURCES cijk_partition_zoltan.cpp
+    DEPLIBS stokhos
+    )
+
+  TRIBITS_ADD_EXECUTABLE(
+    cijk_partition_zoltan_3d
+    SOURCES cijk_partition_zoltan_3d.cpp
+    DEPLIBS stokhos
+    )
+
+  TRIBITS_ADD_EXECUTABLE(
+    cijk_partition_zoltan_rcb
+    SOURCES cijk_partition_zoltan_rcb.cpp
     DEPLIBS stokhos
     )
 

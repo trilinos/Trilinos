@@ -42,6 +42,7 @@
 #include "Stokhos_Epetra.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Isorropia_Epetra.hpp"
 #include "Isorropia_EpetraPartitioner.hpp"
 
 #ifdef HAVE_MPI
@@ -94,6 +95,14 @@ const OrderingType ordering_type_values[] = {
 const char *ordering_type_names[] = {
   "total", "lexicographic" };
 
+// Partitioning types
+enum PartitioningType { RCB, HG_MATRIX };
+const int num_partitioning_types = 2;
+const PartitioningType partitioning_type_values[] = {
+  RCB, HG_MATRIX };
+const char *partitioning_type_names[] = {
+  "rcb", "hg_matrix" };
+
 using Teuchos::rcp;
 using Teuchos::RCP;
 using Teuchos::ParameterList;
@@ -128,16 +137,23 @@ int main(int argc, char **argv)
     CLP.setOption("growth", &growth_type,
                   num_growth_types, growth_type_values, growth_type_names,
                   "Growth type");
-    ProductBasisType prod_basis_type = COMPLETE;
+    ProductBasisType prod_basis_type = TOTAL;
     CLP.setOption("product_basis", &prod_basis_type,
                   num_prod_basis_types, prod_basis_type_values,
                   prod_basis_type_names,
                   "Product basis type");
-    OrderingType ordering_type = TOTAL_ORDERING;
+    OrderingType ordering_type = LEXICOGRAPHIC_ORDERING;
     CLP.setOption("ordering", &ordering_type,
                   num_ordering_types, ordering_type_values,
                   ordering_type_names,
                   "Product basis ordering");
+    PartitioningType partitioning_type = RCB;
+    CLP.setOption("partitioning", &partitioning_type,
+                  num_partitioning_types, partitioning_type_values,
+                  partitioning_type_names,
+                  "Partitioning Method");
+    double imbalance_tol = 1.0;
+    CLP.setOption("imbalance", &imbalance_tol, "Imbalance tolerance");
     double alpha = 1.0;
     CLP.setOption("alpha", &alpha, "Jacobi alpha index");
     double beta = 1.0;
@@ -239,74 +255,163 @@ int main(int argc, char **argv)
     Epetra_SerialComm comm;
 #endif
 
-    // Store Cijk (i,j,k) triples in Epetra_MultiVector
-    int num_cijk_entries = Cijk->num_entries();
-    Epetra_LocalMap cijk_map(num_cijk_entries, 0, comm);
-    Epetra_MultiVector ijk_triples(cijk_map, 3);
-    int idx = 0;
-    Cijk_type::k_iterator k_begin = Cijk->k_begin();
-    Cijk_type::k_iterator k_end = Cijk->k_end();
-    for (Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
-      int k = index(k_it);
-      Cijk_type::kj_iterator j_begin = Cijk->j_begin(k_it);
-      Cijk_type::kj_iterator j_end = Cijk->j_end(k_it);
-      for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
-        int j = index(j_it);
-        Cijk_type::kji_iterator i_begin = Cijk->i_begin(j_it);
-        Cijk_type::kji_iterator i_end = Cijk->i_end(j_it);
-        for (Cijk_type::kji_iterator i_it = i_begin; i_it != i_end; ++i_it) {
-          int i = index(i_it);
-          ijk_triples[0][idx] = i;
-          ijk_triples[1][idx] = j;
-          ijk_triples[2][idx] = k;
-          ++idx;
+    // File for saving sparse Cijk tensor and parts
+    std::ofstream cijk_file;
+    if (save_3tensor) {
+      cijk_file.open(file_3tensor.c_str());
+      cijk_file.precision(14);
+      cijk_file.setf(std::ios::scientific);
+      cijk_file << "i, j, k, part" << std::endl;
+    }
+
+    Teuchos::Array<int> parts;
+    if (partitioning_type == RCB) {
+      // Store Cijk (i,j,k) triples in Epetra_MultiVector
+      int num_cijk_entries = Cijk->num_entries();
+      Epetra_LocalMap cijk_map(num_cijk_entries, 0, comm);
+      Epetra_MultiVector ijk_triples(cijk_map, 3);
+      int idx = 0;
+      Cijk_type::k_iterator k_begin = Cijk->k_begin();
+      Cijk_type::k_iterator k_end = Cijk->k_end();
+      for (Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
+        int k = index(k_it);
+        Cijk_type::kj_iterator j_begin = Cijk->j_begin(k_it);
+        Cijk_type::kj_iterator j_end = Cijk->j_end(k_it);
+        for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
+          int j = index(j_it);
+          Cijk_type::kji_iterator i_begin = Cijk->i_begin(j_it);
+          Cijk_type::kji_iterator i_end = Cijk->i_end(j_it);
+          for (Cijk_type::kji_iterator i_it = i_begin; i_it != i_end; ++i_it) {
+            int i = index(i_it);
+            ijk_triples[0][idx] = i;
+            ijk_triples[1][idx] = j;
+            ijk_triples[2][idx] = k;
+            ++idx;
+          }
+        }
+      }
+
+      // Partition ijk_triples using isorropia
+      ParameterList params;
+      params.set("partitioning method", "rcb");
+      int num_parts = num_cijk_entries / tile_size;
+      if (num_cijk_entries % tile_size > 0)
+        ++num_parts;
+      std::stringstream ss;
+      ss << num_parts;
+      params.set<std::string>("num parts", ss.str());
+      RCP<const Epetra_MultiVector> ijk_triples_rcp =
+        rcp(&ijk_triples,false);
+      Isorropia::Epetra::Partitioner partitioner(ijk_triples_rcp, params);
+      partitioner.compute();
+
+      std::cout << "num parts requested = " << num_parts 
+                << " num parts computed = " << partitioner.numProperties() << std::endl;
+
+      parts.resize(num_cijk_entries);
+      int sz;
+      partitioner.extractPartsCopy(num_cijk_entries, sz, &parts[0]);
+      TEUCHOS_ASSERT(sz == num_cijk_entries);
+
+      // Print full 3-tensor to file
+      if (save_3tensor) {
+        for (int i=0; i<num_cijk_entries; ++i) {
+          cijk_file << ijk_triples[0][i] << ", "
+                    << ijk_triples[1][i] << ", "
+                    << ijk_triples[2][i] << ", "
+                    << parts[i] << std::endl;
         }
       }
     }
 
-    // Partition ijk_triples using isorropia
-    ParameterList params;
-    params.set("partitioning method", "rcb");
-    int num_parts = num_cijk_entries / tile_size;
-    if (num_cijk_entries % tile_size > 0)
-      ++num_parts;
-    std::stringstream ss;
-    ss << num_parts;
-    params.set<std::string>("num parts", ss.str());
-    RCP<const Epetra_MultiVector> ijk_triples_rcp =
-      rcp(&ijk_triples,false);
-    Isorropia::Epetra::Partitioner partitioner(ijk_triples_rcp, params);
-    partitioner.compute();
+    else if (partitioning_type == HG_MATRIX) {
+      // Build CRS graph from Cijk tensor
+      RCP<const EpetraExt::MultiComm> multiComm =
+        Stokhos::buildMultiComm(comm, basis_size, 1);
+      Stokhos::EpetraSparse3Tensor epetra_Cijk(basis, Cijk, multiComm);
+      RCP<const Epetra_CrsGraph> graph = epetra_Cijk.getStochasticGraph();
+      // RCP<const Epetra_CrsGraph> graph =
+      //   Stokhos::sparse3Tensor2CrsGraph(*basis, *Cijk, comm);
 
-    std::cout << "num parts requested = " << num_parts 
-              << " num parts computed = " << partitioner.numProperties() << std::endl;
+      // Partition graph using isorropia/zoltan's hypergraph partitioner
+      ParameterList params;
+      params.set("partitioning method", "hypergraph");
+      //int num_parts = basis_size / tile_size;
+      int num_parts = comm.NumProc();
+      std::stringstream ss;
+      ss << num_parts;
+      params.set<std::string>("num parts", ss.str());
+      std::stringstream ss2;
+      ss2 << imbalance_tol;
+      params.set<std::string>("imbalance tol", ss2.str());
 
-    Teuchos::Array<int> parts(num_cijk_entries);
-    int sz;
-    partitioner.extractPartsCopy(num_cijk_entries, sz, &parts[0]);
-    TEUCHOS_ASSERT(sz == num_cijk_entries);
+      /*
+      Isorropia::Epetra::Partitioner partitioner(graph, params);
+      partitioner.compute();
 
-    // Print full 3-tensor to file
-    if (save_3tensor) {
-      std::ofstream cijk_file(file_3tensor.c_str());
-      cijk_file.precision(14);
-      cijk_file.setf(std::ios::scientific);
-      cijk_file << "i, j, k, part" << std::endl;
-      for (int i=0; i<num_cijk_entries; ++i) {
-        cijk_file << ijk_triples[0][i] << ", "
-                  << ijk_triples[1][i] << ", "
-                  << ijk_triples[2][i] << ", "
-                  << parts[i] << std::endl;
+      std::cout << "num parts requested = " << num_parts
+                << " num parts computed = " << partitioner.numProperties() << std::endl;
+
+      parts.resize(partitioner.numProperties());
+      int sz;
+      partitioner.extractPartsCopy(partitioner.numProperties(), sz, &parts[0]);
+      TEUCHOS_ASSERT(sz == partitioner.numProperties());
+
+      for (int i=0; i<sz; ++i)
+        std::cout << i << " " << parts[i] << std::endl;
+
+      // Create the permuted map
+      RCP<Epetra_Map> permuted_map = partitioner.createNewMap();
+      std::cout << *permuted_map << std::endl;
+      */
+      Teuchos::RCP<const Epetra_CrsGraph> rebalanced_graph =
+        Teuchos::rcp(Isorropia::Epetra::createBalancedCopy(
+                       *graph, params));
+      Epetra_BlockMap permuted_map = rebalanced_graph->RowMap();
+      std::cout << permuted_map << std::endl;
+
+      //Epetra_CrsMatrix mat(Copy, *rebalanced_graph);
+      Epetra_CrsMatrix mat(Copy, *graph);
+      mat.FillComplete();
+      mat.PutScalar(1.0);
+      EpetraExt::RowMatrixToMatrixMarketFile(file.c_str(), mat);
+
+      // Print full 3-tensor to file
+      if (save_3tensor) {
+        Cijk_type::k_iterator k_begin = Cijk->k_begin();
+        Cijk_type::k_iterator k_end = Cijk->k_end();
+        for (Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
+          int k = index(k_it);
+          Cijk_type::kj_iterator j_begin = Cijk->j_begin(k_it);
+          Cijk_type::kj_iterator j_end = Cijk->j_end(k_it);
+          for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
+            int j = index(j_it);
+            Cijk_type::kji_iterator i_begin = Cijk->i_begin(j_it);
+            Cijk_type::kji_iterator i_end = Cijk->i_end(j_it);
+            for (Cijk_type::kji_iterator i_it = i_begin; i_it != i_end; ++i_it){
+              int i = index(i_it);
+              cijk_file << i << ", " << j << ", " << k << ", " << parts[i]
+                        << std::endl;
+            }
+          }
+        }
       }
+    }
+
+    if (save_3tensor) {
       cijk_file.close();
     }
 
-    Teuchos::TimeMonitor::summarize(std::cout);
+    //Teuchos::TimeMonitor::summarize(std::cout);
 
   }
   catch (std::exception& e) {
     std::cout << e.what() << std::endl;
   }
+
+#ifdef HAVE_MPI
+  MPI_Finalize() ;
+#endif
 
   return 0;
 }

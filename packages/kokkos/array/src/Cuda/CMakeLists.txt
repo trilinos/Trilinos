@@ -22,6 +22,7 @@ TRIBITS_ADD_LIBRARY(
   kokkosarray_devicecuda
   NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}
+  DEPLIBS kokkosarray_impl
   CUDALIBRARY
 )
 

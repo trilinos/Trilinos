@@ -258,7 +258,7 @@ struct BoxMeshFixture {
       }
 
       for ( size_t nn = 0 ; nn < element_node_count ; ++nn ) {
-        unsigned coord[3] = { ix , iy , iz };
+        unsigned coord[3] = { static_cast<unsigned>(ix) , static_cast<unsigned>(iy) , static_cast<unsigned>(iz) };
 
         element_fixture.elem_to_node( nn , coord );
 
@@ -305,7 +305,7 @@ struct BoxMeshFixture {
       for ( size_t ix = box[0][0] ; ix < box[0][1] ; ++ix , ++elem_index ) {
 
         for ( size_t nn = 0 ; nn < element_node_count ; ++nn ) {
-          unsigned coord[3] = { ix , iy , iz };
+          unsigned coord[3] = { static_cast<unsigned>(ix) , static_cast<unsigned>(iy) , static_cast<unsigned>(iz) };
 
           element_fixture.elem_to_node( nn , coord );
 
@@ -395,8 +395,6 @@ struct BoxMeshFixture {
     element.create_node_boxes_from_vertex_boxes(
       vertex_box_global , vertex_box_parts ,
       node_box_global , node_box_parts );
-
-    const BoxType node_box_local_owned = node_box_parts[ proc_local ];
 
     // Node communication maps:
 
@@ -546,14 +544,14 @@ struct BoxMeshFixture {
     // nonlinear mapping.
     {
       const double problem_extent[3] =
-        { ( vertex_box_global[0][1] - 1 ) ,
-          ( vertex_box_global[1][1] - 1 ) ,
-          ( vertex_box_global[2][1] - 1 ) };
+        { static_cast<double>( vertex_box_global[0][1] - 1 ) ,
+          static_cast<double>( vertex_box_global[1][1] - 1 ) ,
+          static_cast<double>( vertex_box_global[2][1] - 1 ) };
 
       const double grid_extent[3] =
-        { ( node_box_global[0][1] - 1 ) ,
-          ( node_box_global[1][1] - 1 ) ,
-          ( node_box_global[2][1] - 1 ) };
+        { static_cast<double>( node_box_global[0][1] - 1 ) ,
+          static_cast<double>( node_box_global[1][1] - 1 ) ,
+          static_cast<double>( node_box_global[2][1] - 1 ) };
 
       for ( size_t i = 0 ; i < node_count_total ; ++i ) {
         const double x_unit = node_coords(i,0) / grid_extent[0] ;

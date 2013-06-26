@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -101,7 +101,7 @@ struct ViewAssignment< LayoutScalar , void , void >
                              typename View<ST,SL,SD,SM,LayoutScalar>::HostMirror >::value
                   ) >::type * = 0 )
   {
-    ViewAssignment( dst , "mirror" );
+    (void)ViewAssignment( dst , "mirror" );
   }
 };
 
@@ -111,7 +111,7 @@ struct ViewAssignment< LayoutScalar , LayoutScalar , void >
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
   KOKKOSARRAY_INLINE_FUNCTION
-  ViewAssignment( View<DT,DL,DD,DM,LayoutScalar> & dst , 
+  ViewAssignment( View<DT,DL,DD,DM,LayoutScalar> & dst ,
                   const View<ST,SL,SD,SM,LayoutScalar> & src ,
                   typename enable_if< (
                     ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
@@ -569,25 +569,25 @@ public:
 
   KOKKOSARRAY_INLINE_FUNCTION
   View( const View & rhs )
-    : m_ptr_on_device(0) { assign( *this , rhs ); }
+    : m_ptr_on_device(0) { (void)assign( *this , rhs ); }
 
   KOKKOSARRAY_INLINE_FUNCTION
-  View & operator = ( const View & rhs ) { assign( *this , rhs ); return *this ; }
+  View & operator = ( const View & rhs ) { (void)assign( *this , rhs ); return *this ; }
 
   template< class RT , class RL , class RD , class RM >
   KOKKOSARRAY_INLINE_FUNCTION
   View( const View<RT,RL,RD,RM,Impl::LayoutScalar> & rhs )
-    : m_ptr_on_device(0) { assign( *this , rhs ); }
+    : m_ptr_on_device(0) { (void)assign( *this , rhs ); }
 
   template< class RT , class RL , class RD , class RM >
   KOKKOSARRAY_INLINE_FUNCTION
   View & operator = ( const View<RT,RL,RD,RM,Impl::LayoutScalar> & rhs )
-    { assign( *this , rhs ); return *this ; }
+    { (void)assign( *this , rhs ); return *this ; }
 
   //------------------------------------
   /** \brief  Allocation constructor */
   explicit
-  View( const std::string & label ) : m_ptr_on_device(0) { alloc( *this , label ); }
+  View( const std::string & label ) : m_ptr_on_device(0) { (void)alloc( *this , label ); }
 
   //------------------------------------
 

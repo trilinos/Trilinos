@@ -149,6 +149,18 @@ CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/src/OpenMP/KokkosArray_OpenMP_Paralle
 fi
 
 #-----------------------------------------------------------------------------
+# Option for PTHREAD or WINTHREAD eventually
+
+HAVE_PTHREAD=1
+
+if [ -n "${HAVE_PTHREAD}" ] ;
+then
+  OPTFLAGS="${OPTFLAGS} -DKOKKOSARRAY_HAVE_PTHREAD" 
+  LIB="${LIB} -lpthread"
+fi
+
+#-----------------------------------------------------------------------------
+# Attach options to compile lines
 
 CXX="${CXX} ${OPTFLAGS}"
 
@@ -180,17 +192,6 @@ then
 
   LIB="${LIB} -L${HAVE_HWLOC}/lib -lhwloc"
   INC_PATH="${INC_PATH} -I${HAVE_HWLOC}/include"
-fi
-
-#-----------------------------------------------------------------------------
-# Option for PTHREAD or WINTHREAD eventually
-
-HAVE_PTHREAD=1
-
-if [ -n "${HAVE_PTHREAD}" ] ;
-then
-  OPTFLAGS="${OPTFLAGS} -DKOKKOSARRAY_HAVE_PTHREAD" 
-  LIB="${LIB} -lpthread"
 fi
 
 #-----------------------------------------------------------------------------

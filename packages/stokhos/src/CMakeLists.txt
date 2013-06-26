@@ -1,4 +1,3 @@
-
 INCLUDE(TribitsLibraryMacros)
 INCLUDE(TrilinosCreateClientTemplateHeaders)
 
@@ -121,6 +120,7 @@ SET(HEADERS ${HEADERS}
   Stokhos_Dense3Tensor.hpp
   Stokhos_Dense3TensorImp.hpp
   Stokhos_Sparse3TensorUtilities.hpp
+  Stokhos_Sparse3TensorPartition.hpp
   Stokhos_LTBSparse3Tensor.hpp
   Stokhos_Quadrature.hpp
   Stokhos_TensorProductQuadrature.hpp
@@ -397,13 +397,20 @@ IF (Stokhos_ENABLE_KokkosArray)
     kokkos/Stokhos_BlockCrsMatrix.hpp
     kokkos/Stokhos_StochasticProductTensor.hpp
     kokkos/Stokhos_CrsProductTensor.hpp
+    kokkos/Stokhos_TiledCrsProductTensor.hpp
     kokkos/Stokhos_FlatSparse3Tensor.hpp
+    kokkos/Stokhos_FlatSparse3Tensor_kji.hpp
+    kokkos/Stokhos_LinearSparse3Tensor.hpp
     kokkos/Stokhos_LexicographicBlockSparse3Tensor.hpp
+    kokkos/Host/Stokhos_Host_TinyVec.hpp
     kokkos/Host/Stokhos_Host_CrsMatrix.hpp
     kokkos/Host/Stokhos_Host_BlockCrsMatrix.hpp
     kokkos/Host/Stokhos_Host_StochasticProductTensor.hpp
     kokkos/Host/Stokhos_Host_CrsProductTensor.hpp
+    kokkos/Host/Stokhos_Host_TiledCrsProductTensor.hpp
     kokkos/Host/Stokhos_Host_FlatSparse3Tensor.hpp
+    kokkos/Host/Stokhos_Host_FlatSparse3Tensor_kji.hpp
+    kokkos/Host/Stokhos_Host_LinearSparse3Tensor.hpp
     kokkos/Host/Stokhos_Host_LexicographicBlockSparse3Tensor.hpp
     )
   IF(Stokhos_ENABLE_CUDA AND KokkosArray_ENABLE_DeviceCuda)
@@ -413,6 +420,10 @@ IF (Stokhos_ENABLE_KokkosArray)
       kokkos/Cuda/Stokhos_Cuda_BlockCrsMatrix.hpp
       kokkos/Cuda/Stokhos_Cuda_StochasticProductTensor.hpp
       kokkos/Cuda/Stokhos_Cuda_CrsProductTensor.hpp
+      kokkos/Cuda/Stokhos_Cuda_TiledCrsProductTensor.hpp
+      kokkos/Cuda/Stokhos_Cuda_FlatSparse3Tensor.hpp
+      kokkos/Cuda/Stokhos_Cuda_FlatSparse3Tensor_kji.hpp
+      kokkos/Cuda/Stokhos_Cuda_LinearSparse3Tensor.hpp
       kokkos/Cuda/Stokhos_Cuda_LexicographicBlockSparse3Tensor.hpp
       )
   ENDIF()
