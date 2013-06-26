@@ -946,11 +946,14 @@ public:
 
 
     dView4_unmanaged unmanaged_dx = dx;
+    dView4_unmanaged unmanaged_from_ptr_dx = dView4_unmanaged(dx.ptr_on_device(),dx.dimension_0());
     const_dView4 const_dx = dx ;
 
 
     ASSERT_FALSE( dx.is_null() );
     ASSERT_FALSE( const_dx.is_null() );
+    ASSERT_FALSE( unmanaged_dx.is_null() );
+    ASSERT_FALSE( unmanaged_from_ptr_dx.is_null() );
     ASSERT_FALSE( dy.is_null() );
     ASSERT_NE( dx , dy );
 
@@ -963,6 +966,8 @@ public:
     ASSERT_EQ( dy.dimension_1() , unsigned(N1) );
     ASSERT_EQ( dy.dimension_2() , unsigned(N2) );
     ASSERT_EQ( dy.dimension_3() , unsigned(N3) );
+
+    ASSERT_EQ( unmanaged_from_ptr_dx.capacity(),unsigned(N0)*unsigned(N1)*unsigned(N2)*unsigned(N3) );
 
     hx = KokkosArray::create_mirror( dx );
     hy = KokkosArray::create_mirror( dy );

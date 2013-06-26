@@ -46,7 +46,6 @@
 
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_hwloc.hpp>
-#include <Host/KokkosArray_Host_Internal.hpp>
 #include <impl/KokkosArray_Error.hpp>
 
 /*--------------------------------------------------------------------------*/
@@ -59,94 +58,15 @@
 #include <sstream>
 
 /*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
 
 namespace KokkosArray {
 namespace Impl {
 
-void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
-                          const std::pair<unsigned,unsigned> core_use ,
-                          const std::pair<unsigned,unsigned> core_topo ,
-                          const std::pair<unsigned,unsigned> master_coord ,
-                                std::pair<unsigned,unsigned> thread_coord[] )
-{
-  const unsigned thread_count = gang_topo.first * gang_topo.second ;
-  const unsigned core_base    = core_topo.second - core_use.second ;
-
-  for ( unsigned thread_rank = 0 , gang_rank = 0 ; gang_rank < gang_topo.first ; ++gang_rank ) {
-  for ( unsigned worker_rank = 0 ; worker_rank < gang_topo.second ; ++worker_rank , ++thread_rank ) {
-
-    unsigned gang_in_numa_count = 0 ;
-    unsigned gang_in_numa_rank  = 0 ;
-
-    { // Distribute gangs among NUMA regions:
-      // gang_count = k * bin + ( #NUMA - k ) * ( bin + 1 )
-      const unsigned bin  = gang_topo.first / core_use.first ;
-      const unsigned bin1 = bin + 1 ;
-      const unsigned k    = core_use.first * bin1 - gang_topo.first ;
-      const unsigned part = k * bin ;
-
-      if ( gang_rank < part ) {
-        thread_coord[ thread_rank ].first = gang_rank / bin ;
-        gang_in_numa_rank  = gang_rank % bin ;
-        gang_in_numa_count = bin ;
-      }
-      else {
-        thread_coord[ thread_rank ].first = k + ( gang_rank - part ) / bin1 ;
-        gang_in_numa_rank  = ( gang_rank - part ) % bin1 ;
-        gang_in_numa_count = bin1 ;
-      }
-    }
-
-    { // Distribute workers to cores within this NUMA region:
-      // worker_in_numa_count = k * bin + ( (#CORE/NUMA) - k ) * ( bin + 1 )
-      const unsigned worker_in_numa_count = gang_in_numa_count * gang_topo.second ;
-      const unsigned worker_in_numa_rank  = gang_in_numa_rank  * gang_topo.second + worker_rank ;
-
-      const unsigned bin  = worker_in_numa_count / core_use.second ;
-      const unsigned bin1 = bin + 1 ;
-      const unsigned k    = core_use.second * bin1 - worker_in_numa_count ;
-      const unsigned part = k * bin ;
-
-      thread_coord[ thread_rank ].second = core_base +
-        ( ( worker_in_numa_rank < part )
-          ? ( worker_in_numa_rank / bin )
-          : ( k + ( worker_in_numa_rank - part ) / bin1 ) );
-    }
-  }}
-
-  // The master core should be thread #0 so rotate all coordinates accordingly ...
-
-  const std::pair<unsigned,unsigned> offset
-    ( ( thread_coord[0].first  < master_coord.first  ? master_coord.first  - thread_coord[0].first  : 0 ) ,
-      ( thread_coord[0].second < master_coord.second ? master_coord.second - thread_coord[0].second : 0 ) );
-
-  for ( unsigned i = 0 ; i < thread_count ; ++i ) {
-    thread_coord[i].first  = ( thread_coord[i].first + offset.first ) % core_use.first ;
-    thread_coord[i].second = core_base + ( thread_coord[i].second + offset.second - core_base ) % core_use.second ;
-  }
-
-#if 0
-
-  std::cout << "KokkosArray::Host thread_mapping" << std::endl ;
-
-  for ( unsigned g = 0 , t = 0 ; g < gang_topo.first ; ++g ) {
-    std::cout << "  gang[" << g
-              << "] on numa[" << thread_coord[t].first
-              << "] cores(" ;
-    for ( unsigned w = 0 ; w < gang_topo.second ; ++w , ++t ) {
-      std::cout << " " << thread_coord[t].second ;
-    }
-    std::cout << " )" << std::endl ;
-  }
-
-#endif
+int host_thread_driver( void * ); // Driver called by each created thread
 
 }
-
-} // namespace Impl
-} // namespace KokkosArray
-
-/*--------------------------------------------------------------------------*/
+}
 
 namespace KokkosArray {
 namespace {
@@ -158,7 +78,7 @@ public:
   {
     Impl::host_thread_lock();
     Impl::host_thread_unlock();
-    end_barrier( thread );
+    thread.end_barrier();
   }
 
   HostWorkerBlock()  {}
@@ -239,7 +159,6 @@ unsigned bind_host_thread()
   return i ;
 }
 
-
 bool spawn_threads( const std::pair<unsigned,unsigned> gang_topo ,
                           std::pair<unsigned,unsigned> core_use )
 {
@@ -277,7 +196,7 @@ bool spawn_threads( const std::pair<unsigned,unsigned> gang_topo ,
       s_master_thread.m_state = Impl::HostThread::ThreadInactive ;
 
       // Spawn thread executing the 'driver' function.
-      ok_spawn_threads = Impl::host_thread_spawn();
+      ok_spawn_threads = Impl::host_thread_spawn( & Impl::host_thread_driver , 0 );
 
       // Thread spawned.  Thread will inform me of its condition as:
       //   Active     = success and has entered its 'HostThread' data in the lookup table.
@@ -362,7 +281,7 @@ namespace Impl {
 
 // Driver called by each created thread
 
-void host_thread_driver()
+int host_thread_driver( void * )
 {
   // Bind this thread to a unique processing unit.
 
@@ -398,6 +317,8 @@ void host_thread_driver()
   // Notify master thread that this thread has terminated.
 
   s_master_thread.m_state = HostThread::ThreadTerminating ;
+
+  return 0 ;
 }
 
 //----------------------------------------------------------------------------
@@ -414,9 +335,6 @@ void HostThreadWorker::execute() const
 
   // Execute on the master thread,
   execute_on_thread( s_master_thread );
-
-  // Wait for threads to complete:
-  end_barrier( s_master_thread );
 
   // Worker threads are returned to the ThreadInactive state.
   s_current_worker = NULL ;
@@ -470,7 +388,7 @@ struct HostThreadResizeReduce : public Impl::HostThreadWorker {
   void execute_on_thread( Impl::HostThread & thread ) const
     {
       thread.resize_reduce( reduce_size );
-      end_barrier( thread );
+      thread.end_barrier();
     }
 };
 
@@ -614,7 +532,7 @@ bool Host::wake()
   if ( is_blocked ) {
     Impl::host_thread_unlock();
 
-    s_worker_block.end_barrier( s_master_thread );
+    s_master_thread.end_barrier();
 
     s_current_worker = NULL ;
 

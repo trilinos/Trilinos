@@ -55,11 +55,8 @@
 namespace KokkosArray {
 namespace Impl {
 
-template< class OutputView , unsigned Rank >
-struct OpenMPViewInit ;
-
-template< class OutputView >
-struct OpenMPViewInit< OutputView , 8 >
+template< class OutputView , unsigned Rank = OutputView::Rank >
+struct OpenMPViewInit 
 {
   explicit OpenMPViewInit( const OutputView & output )
   {
@@ -80,141 +77,6 @@ struct OpenMPViewInit< OutputView , 8 >
       for ( OpenMP::size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
         output(i0,i1,i2,i3,i4,i5,i6,i7) = 0 ;
       }}}}}}}}
-    }
-  }
-};
-
-template< class OutputView >
-struct OpenMPViewInit< OutputView , 7 >
-{
-  explicit OpenMPViewInit( const OutputView & output )
-  {
-#pragma omp parallel
-    {
-      HostThread & thread = * OpenMP::get_host_thread();
-  
-      std::pair<OpenMP::size_type,OpenMP::size_type> range =
-        thread.work_range( output.dimension_0() );
-
-      for ( OpenMP::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
-      for ( OpenMP::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
-      for ( OpenMP::size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
-      for ( OpenMP::size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
-      for ( OpenMP::size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
-      for ( OpenMP::size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
-      for ( OpenMP::size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
-        output(i0,i1,i2,i3,i4,i5,i6) = 0 ;
-      }}}}}}}
-    }
-  }
-};
-
-template< class OutputView >
-struct OpenMPViewInit< OutputView , 6 >
-{
-  explicit OpenMPViewInit( const OutputView & output )
-  {
-#pragma omp parallel
-    {
-      HostThread & thread = * OpenMP::get_host_thread();
-
-      std::pair<OpenMP::size_type,OpenMP::size_type> range =
-        thread.work_range( output.dimension_0() );
-
-      for ( OpenMP::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
-      for ( OpenMP::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
-      for ( OpenMP::size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
-      for ( OpenMP::size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
-      for ( OpenMP::size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
-      for ( OpenMP::size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
-        output(i0,i1,i2,i3,i4,i5) = 0 ;
-      }}}}}}
-    }
-  }
-};
-
-template< class OutputView >
-struct OpenMPViewInit< OutputView , 5 >
-{
-  explicit OpenMPViewInit( const OutputView & output )
-  {
-#pragma omp parallel
-    {
-      HostThread & thread = * OpenMP::get_host_thread();
-
-      std::pair<OpenMP::size_type,OpenMP::size_type> range =
-        thread.work_range( output.dimension_0() );
-
-      for ( OpenMP::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
-      for ( OpenMP::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
-      for ( OpenMP::size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
-      for ( OpenMP::size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
-      for ( OpenMP::size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
-        output(i0,i1,i2,i3,i4) = 0 ;
-      }}}}}
-    }
-  }
-};
-
-template< class OutputView >
-struct OpenMPViewInit< OutputView , 4 >
-{
-  explicit OpenMPViewInit( const OutputView & output )
-  {
-#pragma omp parallel
-    {
-      HostThread & thread = * OpenMP::get_host_thread();
-
-      std::pair<OpenMP::size_type,OpenMP::size_type> range =
-        thread.work_range( output.dimension_0() );
-
-      for ( OpenMP::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
-      for ( OpenMP::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
-      for ( OpenMP::size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
-      for ( OpenMP::size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
-        output(i0,i1,i2,i3) = 0 ;
-      }}}}
-    }
-  }
-};
-
-template< class OutputView >
-struct OpenMPViewInit< OutputView , 3 >
-{
-  explicit OpenMPViewInit( const OutputView & output )
-  {
-#pragma omp parallel
-    {
-      HostThread & thread = * OpenMP::get_host_thread();
-
-      std::pair<OpenMP::size_type,OpenMP::size_type> range =
-        thread.work_range( output.dimension_0() );
-
-      for ( OpenMP::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
-      for ( OpenMP::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
-      for ( OpenMP::size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
-        output(i0,i1,i2) = 0 ;
-      }}}
-    }
-  }
-};
-
-template< class OutputView >
-struct OpenMPViewInit< OutputView , 2 >
-{
-  explicit OpenMPViewInit( const OutputView & output )
-  {
-#pragma omp parallel
-    {
-      HostThread & thread = * OpenMP::get_host_thread();
-
-      std::pair<OpenMP::size_type,OpenMP::size_type> range =
-        thread.work_range( output.dimension_0() );
-
-      for ( OpenMP::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
-      for ( OpenMP::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
-        output(i0,i1) = 0 ;
-      }}
     }
   }
 };
@@ -251,7 +113,7 @@ struct ViewInitialize< OpenMP >
   template< class ViewType >
   inline explicit ViewInitialize( const ViewType & view )
   {
-    OpenMPViewInit< ViewType , ViewType::Rank > init( view );
+    OpenMPViewInit< ViewType > init( view );
   }
 };
 
@@ -265,166 +127,36 @@ struct ViewInitialize< OpenMP >
 namespace KokkosArray {
 namespace Impl {
 
-template< class OutputView , class InputView  , unsigned Rank >
-struct OpenMPViewRemap ;
-
-template< class OutputView , class InputView >
-struct OpenMPViewRemap< OutputView , InputView , 8 >
+template< class OutputView , class InputView , unsigned Rank = OutputView::Rank >
+struct OpenMPViewRemap
 {
   OpenMPViewRemap( const OutputView & output , const InputView & input )
   {
+    const OpenMP::size_type n0 = std::min( output.dimension_0() , input.dimension_0() );
+    const OpenMP::size_type n1 = std::min( output.dimension_1() , input.dimension_1() );
+    const OpenMP::size_type n2 = std::min( output.dimension_2() , input.dimension_2() );
+    const OpenMP::size_type n3 = std::min( output.dimension_3() , input.dimension_3() );
+    const OpenMP::size_type n4 = std::min( output.dimension_4() , input.dimension_4() );
+    const OpenMP::size_type n5 = std::min( output.dimension_5() , input.dimension_5() );
+    const OpenMP::size_type n6 = std::min( output.dimension_6() , input.dimension_6() );
+    const OpenMP::size_type n7 = std::min( output.dimension_7() , input.dimension_7() );
+
 #pragma omp parallel
     {
       HostThread & thread = * OpenMP::get_host_thread();
 
-      std::pair<OpenMP::size_type,OpenMP::size_type> range =
-        thread.work_range( output.dimension_0() );
+      std::pair<OpenMP::size_type,OpenMP::size_type> range = thread.work_range( n0 );
 
       for ( OpenMP::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
-      for ( OpenMP::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
-      for ( OpenMP::size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
-      for ( OpenMP::size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
-      for ( OpenMP::size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
-      for ( OpenMP::size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
-      for ( OpenMP::size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
-      for ( OpenMP::size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
+      for ( OpenMP::size_type i1 = 0 ; i1 < n1 ; ++i1 ) {
+      for ( OpenMP::size_type i2 = 0 ; i2 < n2 ; ++i2 ) {
+      for ( OpenMP::size_type i3 = 0 ; i3 < n3 ; ++i3 ) {
+      for ( OpenMP::size_type i4 = 0 ; i4 < n4 ; ++i4 ) {
+      for ( OpenMP::size_type i5 = 0 ; i5 < n5 ; ++i5 ) {
+      for ( OpenMP::size_type i6 = 0 ; i6 < n6 ; ++i6 ) {
+      for ( OpenMP::size_type i7 = 0 ; i7 < n7 ; ++i7 ) {
         output(i0,i1,i2,i3,i4,i5,i6,i7) = input(i0,i1,i2,i3,i4,i5,i6,i7);
       }}}}}}}}
-    }
-  }
-};
-
-template< class OutputView , class InputView >
-struct OpenMPViewRemap< OutputView , InputView , 7 >
-{
-  OpenMPViewRemap( const OutputView & output , const InputView & input )
-  {
-#pragma omp parallel
-    {
-      HostThread & thread = * OpenMP::get_host_thread();
-  
-      std::pair<OpenMP::size_type,OpenMP::size_type> range =
-        thread.work_range( output.dimension_0() );
-
-      for ( OpenMP::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
-      for ( OpenMP::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
-      for ( OpenMP::size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
-      for ( OpenMP::size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
-      for ( OpenMP::size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
-      for ( OpenMP::size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
-      for ( OpenMP::size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
-        output(i0,i1,i2,i3,i4,i5,i6) = input(i0,i1,i2,i3,i4,i5,i6);
-      }}}}}}}
-    }
-  }
-};
-
-template< class OutputView , class InputView >
-struct OpenMPViewRemap< OutputView , InputView , 6 >
-{
-  OpenMPViewRemap( const OutputView & output , const InputView & input )
-  {
-#pragma omp parallel
-    {
-      HostThread & thread = * OpenMP::get_host_thread();
-
-      std::pair<OpenMP::size_type,OpenMP::size_type> range =
-        thread.work_range( output.dimension_0() );
-
-      for ( OpenMP::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
-      for ( OpenMP::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
-      for ( OpenMP::size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
-      for ( OpenMP::size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
-      for ( OpenMP::size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
-      for ( OpenMP::size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
-        output(i0,i1,i2,i3,i4,i5) = input(i0,i1,i2,i3,i4,i5);
-      }}}}}}
-    }
-  }
-};
-
-template< class OutputView , class InputView >
-struct OpenMPViewRemap< OutputView , InputView , 5 >
-{
-  OpenMPViewRemap( const OutputView & output , const InputView & input )
-  {
-#pragma omp parallel
-    {
-      HostThread & thread = * OpenMP::get_host_thread();
-
-      std::pair<OpenMP::size_type,OpenMP::size_type> range =
-        thread.work_range( output.dimension_0() );
-
-      for ( OpenMP::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
-      for ( OpenMP::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
-      for ( OpenMP::size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
-      for ( OpenMP::size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
-      for ( OpenMP::size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
-        output(i0,i1,i2,i3,i4) = input(i0,i1,i2,i3,i4);
-      }}}}}
-    }
-  }
-};
-
-template< class OutputView , class InputView >
-struct OpenMPViewRemap< OutputView , InputView , 4 >
-{
-  OpenMPViewRemap( const OutputView & output , const InputView & input )
-  {
-#pragma omp parallel
-    {
-      HostThread & thread = * OpenMP::get_host_thread();
-
-      std::pair<OpenMP::size_type,OpenMP::size_type> range =
-        thread.work_range( output.dimension_0() );
-
-      for ( OpenMP::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
-      for ( OpenMP::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
-      for ( OpenMP::size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
-      for ( OpenMP::size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
-        output(i0,i1,i2,i3) = input(i0,i1,i2,i3);
-      }}}}
-    }
-  }
-};
-
-template< class OutputView , class InputView >
-struct OpenMPViewRemap< OutputView , InputView , 3 >
-{
-  OpenMPViewRemap( const OutputView & output , const InputView & input )
-  {
-#pragma omp parallel
-    {
-      HostThread & thread = * OpenMP::get_host_thread();
-
-      std::pair<OpenMP::size_type,OpenMP::size_type> range =
-        thread.work_range( output.dimension_0() );
-
-      for ( OpenMP::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
-      for ( OpenMP::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
-      for ( OpenMP::size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
-        output(i0,i1,i2) = input(i0,i1,i2);
-      }}}
-    }
-  }
-};
-
-template< class OutputView , class InputView >
-struct OpenMPViewRemap< OutputView , InputView , 2 >
-{
-  OpenMPViewRemap( const OutputView & output , const InputView & input )
-  {
-#pragma omp parallel
-    {
-      HostThread & thread = * OpenMP::get_host_thread();
-
-      std::pair<OpenMP::size_type,OpenMP::size_type> range =
-        thread.work_range( output.dimension_0() );
-
-      for ( OpenMP::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
-      for ( OpenMP::size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
-        output(i0,i1) = input(i0,i1);
-      }}
     }
   }
 };
@@ -439,7 +171,7 @@ struct OpenMPViewRemap< OutputView , InputView , 1 >
       HostThread & thread = * OpenMP::get_host_thread();
 
       std::pair<OpenMP::size_type,OpenMP::size_type> range =
-        thread.work_range( output.dimension_0() );
+        thread.work_range( std::min( output.dimension_0() , input.dimension_0() ) );
 
       for ( OpenMP::size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
         output(i0) = input(i0);

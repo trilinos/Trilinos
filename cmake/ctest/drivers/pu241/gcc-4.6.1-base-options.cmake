@@ -3,10 +3,13 @@
 #
 
 # Define the core compilers
-SET(TRILINOS_TOOLSET_BASE  /opt/gcc-4.6.1/trilinos-toolset)
+IF (NOT TRILINOS_TOOLSET_BASE)
+  SET(TRILINOS_TOOLSET_BASE  /projects/vera/gcc-4.6.1/toolset)
+ENDIF()
+SET(GCC_BASE_DIR ${TRILINOS_TOOLSET_BASE}/gcc-4.6.1)
 # Add rpath for compiler libraries and gomp for parts built with OpenMP
 SET(${PROJECT_NAME}_EXTRA_LINK_FLAGS
-  "-lgomp -Wl,-rpath,${TRILINOS_TOOLSET_BASE}/lib64"
+  "-lgomp -Wl,-rpath,${GCC_BASE_DIR}/lib64"
   CACHE STRING "")
 # This dicates downstream the intel fortran compiler to be used
 # Include MKL and TBB; these should match version of Intel compilers being used

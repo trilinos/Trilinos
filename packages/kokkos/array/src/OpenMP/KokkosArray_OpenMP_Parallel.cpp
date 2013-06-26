@@ -46,7 +46,6 @@
 #include <stdexcept>
 #include <KokkosArray_OpenMP.hpp>
 #include <KokkosArray_hwloc.hpp>
-#include <Host/KokkosArray_Host_Internal.hpp>
 
 namespace KokkosArray {
 
