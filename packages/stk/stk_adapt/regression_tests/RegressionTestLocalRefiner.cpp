@@ -424,7 +424,10 @@ namespace stk
 
       STKUNIT_UNIT_TEST(regr_localRefiner, break_tet_to_tet_N_5_EdgeBased_moving_shock)
       {
-        //if (1) return;
+#ifndef NDEBUG
+        bool no_test=true;
+        if (no_test) return;
+#endif
         const bool do_full_demo = false;
         if (LARGE_TEST_ONLY || !DO_TESTS) return;
         if (do_full_demo)
@@ -590,6 +593,10 @@ namespace stk
       STKUNIT_UNIT_TEST(regr_localRefiner, break_tet_to_tet_N_5_EdgeBased_moving_shock_cyl_sidesets)
       {
         const bool do_full_demo = false;
+#ifndef NDEBUG
+        bool no_test=true;
+        if (no_test) return;
+#endif
         if (LARGE_TEST_ONLY || !DO_TESTS) return;
         std::string filename = "cylinder_tet4_0.e";
         if (do_full_demo)

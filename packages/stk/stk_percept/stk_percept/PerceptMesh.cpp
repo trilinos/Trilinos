@@ -1606,7 +1606,7 @@ namespace stk {
       stk::mesh::EntityId p_rank = static_cast<stk::mesh::EntityId>(get_parallel_rank());
       if (!m_MAX_IDENT)
         {
-          m_MAX_IDENT = std::numeric_limits<unsigned>::max();
+          m_MAX_IDENT = std::numeric_limits<int>::max();
           if (m_ioss_write_options.find("large") != std::string::npos)
             {
               m_large_mesh = true;

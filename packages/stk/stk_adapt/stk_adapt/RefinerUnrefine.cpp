@@ -24,7 +24,7 @@ namespace stk {
     // ====================================================================================================
     // ====================================================================================================
     // ====================================================================================================
-    bool use_idServer = true;
+    bool use_idServer = false;
 
     void Refiner::
     replaceNodeRegistryOwnership(ElementUnrefineCollection& elements_to_delete, stk::mesh::EntityRank rank)
@@ -973,7 +973,7 @@ namespace stk {
       bool use_pool = true && !use_idServer;
       if (use_pool)
       {
-        int pool_size = rootElements.size()*50;
+        int pool_size = rootElements.size()*100;
         if (pool_size_hint)
           {
             pool_size = std::max(pool_size, pool_size_hint);
