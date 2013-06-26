@@ -22,6 +22,7 @@ namespace stk {
 
     private:
       bool is_face_neighbor(stk::mesh::Entity element, int element_level, stk::mesh::Entity neighbor, int neighbor_level);
+      bool min_max_face_neighbors_level(stk::mesh::Entity element, int min_max[2], ScalarIntFieldType *refine_level );
 
     };
 

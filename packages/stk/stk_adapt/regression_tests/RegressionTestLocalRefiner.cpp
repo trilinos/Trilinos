@@ -1016,8 +1016,18 @@ namespace stk
             SetElementFieldQuadCorner set_ref_field(eMesh);
 
             int num_ref_passes = 4;
-            int num_unref_passes = 10;
+            int num_unref_passes = 4;
             int iplot=0;
+            if (1)
+              {
+                char buf[1000];
+                sprintf(buf, "%04d", iplot);
+                if (iplot == 0)
+                  eMesh.save_as("quad_square_anim.e");
+                else
+                  eMesh.save_as("quad_square_anim.e-s"+std::string(buf));
+                ++iplot;
+              }
             for (int ipass=0; ipass < num_ref_passes; ipass++)
               {
 
@@ -1026,7 +1036,9 @@ namespace stk
 
                 std::cout << "P[" << eMesh.get_rank() << "] ipass= " << ipass <<  std::endl;
                 breaker.doBreak();
-                std::cout << "P[" << eMesh.get_rank() << "] done... ipass= " << ipass << " quad_local number elements= " << eMesh.get_number_elements() << std::endl;
+                bool is_valid_2_to_1 = erp.check_two_to_one();
+                std::cout << "P[" << eMesh.get_rank() << "] done... ipass= " << ipass << " quad_local number elements= " 
+                          << eMesh.get_number_elements() << " check_two_to_one= " << is_valid_2_to_1 << std::endl;
 
                 //breaker.deleteParentElements();
                 //eMesh.save_as("square_anim."+toString(ipass+1)+".e");
@@ -1095,7 +1107,7 @@ namespace stk
 
       STKUNIT_UNIT_TEST(regr_localRefiner, break_quad_to_quad_N_5_ElementBased_quad_local_square_sidesets)
       {
-        bool do_test = false;
+        bool do_test = true;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
 
         if (do_test) {

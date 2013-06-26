@@ -28,16 +28,40 @@ namespace stk {
     {
       stk::mesh::Entity parent_element = element;
       stk::mesh::Entity parent_neighbor = neighbor;
-      if (element_level < neighbor_level)
+      if (std::abs(element_level - neighbor_level) > 1) return false;
+      if (element_level > neighbor_level)
         {
           parent_element = m_eMesh.getParent(element, true);
         }
-      else if (element_level > neighbor_level)
+      else if (element_level < neighbor_level)
         {
           parent_neighbor = m_eMesh.getParent(neighbor, true);
         }
       bool fn = m_eMesh.is_face_neighbor(parent_element, parent_neighbor);
       return fn;
+    }
+
+    bool ElementRefinePredicate::min_max_face_neighbors_level(stk::mesh::Entity element, int min_max[2], ScalarIntFieldType *refine_level)
+    {
+      min_max[0] = std::numeric_limits<int>::max();
+      min_max[1] = 0;
+      bool found_a_face_neighbor = false;
+
+      std::set<stk::mesh::Entity> neighbors;
+      m_eMesh.get_node_neighbors(element, neighbors);
+      int *refine_level_elem = m_eMesh.get_bulk_data()->field_data( *refine_level , element );
+      for (std::set<stk::mesh::Entity>::iterator neighbor = neighbors.begin(); neighbor != neighbors.end(); neighbor++)
+        {
+          int *refine_level_neigh = m_eMesh.get_bulk_data()->field_data( *refine_level , *neighbor );
+          bool fn = is_face_neighbor(element, refine_level_elem[0], *neighbor, refine_level_neigh[0]);
+          if (fn)
+            {
+              min_max[0] = std::min(min_max[0], refine_level_neigh[0]);
+              min_max[1] = std::max(min_max[1], refine_level_neigh[0]);
+              found_a_face_neighbor = true;
+            }
+        }
+      return found_a_face_neighbor;
     }
 
     bool ElementRefinePredicate::check_two_to_one()
@@ -48,7 +72,6 @@ namespace stk {
           throw std::logic_error("must have refine_level field for hanging-node refinement");
         }
       bool valid = true;
-      std::set<stk::mesh::Entity> neighbors;
       stk::mesh::Selector on_locally_owned_part =  ( m_eMesh.get_fem_meta_data()->locally_owned_part() );
       const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.element_rank() );
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
@@ -60,22 +83,26 @@ namespace stk {
               for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                 {
                   stk::mesh::Entity element = bucket[iElement];
-                  neighbors.clear();
-                  m_eMesh.get_node_neighbors(element, neighbors);
-                  for (std::set<stk::mesh::Entity>::iterator neighbor = neighbors.begin(); neighbor != neighbors.end(); neighbor++)
+                  //if (m_eMesh.numChildren(element)) ...
+                  int *refine_level_elem = m_eMesh.get_bulk_data()->field_data( *refine_level , element );
+                  int min_max_neigh[2] = {0,0};
+                  bool ffn = min_max_face_neighbors_level(element, min_max_neigh, refine_level);
+                  (void) ffn;
+                  if (m_eMesh.hasFamilyTree(element))
                     {
-                      int *ref_lev_elem = m_eMesh.get_bulk_data()->field_data( *refine_level , element );
-                      int *ref_lev_neigh = m_eMesh.get_bulk_data()->field_data( *refine_level , *neighbor );
-                      if (std::abs(ref_lev_neigh[0] - ref_lev_elem[0]) > 1)
+                      stk::mesh::Entity parent = m_eMesh.getParent(element, true);
+                      if (m_eMesh.is_valid(parent))
                         {
-                          bool fn = is_face_neighbor(element, ref_lev_elem[0], *neighbor, ref_lev_neigh[0]);
-                          if (fn)
+                          //int *refine_level_parent = m_eMesh.get_bulk_data()->field_data( *refine_level , element );
+                          int min_max_neigh_parent[2] = {0,0};
+                          min_max_face_neighbors_level(parent, min_max_neigh_parent, refine_level);
+                          if (refine_level_elem[0] - min_max_neigh_parent[0] > 1)
                             {
                               valid = false;
                             }
                         }
-
                     }
+
                 }
             }
         }
