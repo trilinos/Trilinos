@@ -8,7 +8,57 @@
 #include "Teuchos_ArrayViewDecl.hpp"
 #include "Zoltan2_PartitionMapping.hpp"
 #include "Zoltan2_MachineRepresentation.hpp"
+#include "Teuchos_ReductionOp.hpp"
+
+#define gnuPlot
+
+namespace Teuchos{
+
+template <typename Ordinal, typename T>
+class Zoltan2_ReduceBestMapping  : public ValueTypeReductionOp<Ordinal,T>
+{
+private:
+    Ordinal size;
+    T _EPSILON;
+
+public:
+    /*! \brief Default Constructor
+     */
+    Zoltan2_ReduceBestMapping ():size(0), _EPSILON (std::numeric_limits<T>::epsilon()){}
+
+    /*! \brief Constructor
+     *   \param nsum  the count of how many sums will be computed at the
+     *             start of the list.
+     *   \param nmin  following the sums, this many minimums will be computed.
+     *   \param nmax  following the minimums, this many maximums will be computed.
+     */
+    Zoltan2_ReduceBestMapping (Ordinal s_):
+        size(s_), _EPSILON (std::numeric_limits<T>::epsilon()){}
+
+    /*! \brief Implement Teuchos::ValueTypeReductionOp interface
+     */
+    void reduce( const Ordinal count, const T inBuffer[], T inoutBuffer[]) const
+    {
+
+        for (Ordinal i=0; i < count; i++){
+            if (inBuffer[0] - inoutBuffer[0] < -_EPSILON){
+                inoutBuffer[0] = inBuffer[0];
+                inoutBuffer[1] = inBuffer[1];
+            } else if(
+                    inBuffer[0] - inoutBuffer[0] < _EPSILON &&
+                    inBuffer[1] - inoutBuffer[1] < _EPSILON){
+                inoutBuffer[0] = inBuffer[0];
+                inoutBuffer[1] = inBuffer[1];
+            }
+        }
+    }
+};
+} // namespace Teuchos
+
+
 namespace Zoltan2{
+
+
 
 template <typename it>
 inline it z2Fact(it x) {
@@ -80,6 +130,7 @@ void getGridCommunicationGraph(partId_t taskCount, partId_t *&task_comm_xadj, pa
 //returns the center of the parts.
 template <typename Adapter, typename scalar_t, typename partId_t>
 void getSolutionCenterCoordinates(
+        const Environment *envConst,
         const Teuchos::Comm<int> *comm,
         const Zoltan2::CoordinateModel<typename Adapter::base_adapter_t> *coords,
         const Zoltan2::PartitioningSolution<Adapter> *soln_,
@@ -123,7 +174,14 @@ void getSolutionCenterCoordinates(
     //get parts with parallel gnos.
     const partId_t *parts = soln_->getPartList();
     const gno_t *soln_gnos = soln_->getIdList();
+/*
+    for (lno_t i=0; i < numLocalCoords; i++){
+        cout << "me:" << comm->getRank() << " gno:" << soln_gnos[i] << " tmp.part :" << parts[i]<< endl;
+    }
+    */
 
+
+    envConst->timerStart(MACRO_TIMERS, "Mapping - Hashing Creation");
     //hash vector
     vector< vector <GNO_LNO_PAIR<gno_t, partId_t> > > hash(numLocalCoords);
 
@@ -132,19 +190,22 @@ void getSolutionCenterCoordinates(
         GNO_LNO_PAIR<gno_t, partId_t> tmp;
         tmp.gno = soln_gnos[i];
         tmp.part = parts[i];
-
+        //cout << "gno:" << tmp.gno << " tmp.part :" << tmp.part << endl;
         //count the local number of points in each part.
         ++point_counts[tmp.part];
         lno_t hash_index = tmp.gno % numLocalCoords;
         hash[hash_index].push_back(tmp);
     }
 
+    envConst->timerStop(MACRO_TIMERS, "Mapping - Hashing Creation");
     //get global number of points in each part.
     reduceAll<int, gno_t>(*comm, Teuchos::REDUCE_SUM,
             ntasks, point_counts, global_point_counts
     );
 
 
+
+    envConst->timerStart(MACRO_TIMERS, "Mapping - Hashing Search");
     //add up all coordinates in each part.
     for (lno_t i=0; i < numLocalCoords; i++){
         gno_t g = gnos[i];
@@ -166,6 +227,7 @@ void getSolutionCenterCoordinates(
             partCenters[j][p] += c;
         }
     }
+    envConst->timerStop(MACRO_TIMERS, "Mapping - Hashing Search");
 
     for(int j = 0; j < coordDim; ++j){
         for (partId_t i=0; i < ntasks; ++i){
@@ -816,6 +878,7 @@ public:
         }
 
         //do the partitioning and renumber the parts.
+        env->timerStart(MACRO_TIMERS, "Mapping - Proc Partitioning");
         sequentialTaskPartitioning<pcoord_t, procId_t, procId_t>(
                 env,
                 this->no_procs,
@@ -824,9 +887,10 @@ public:
                 minCoordDim,
                 pcoords,//this->proc_coords,
                 proc_adjList,
-                proc_xadj,
-                "proc_partitioning"
+                proc_xadj
+                //,"proc_partitioning"
         );
+        env->timerStop(MACRO_TIMERS, "Mapping - Proc Partitioning");
         freeArray<pcoord_t *> (pcoords);
 
 
@@ -844,6 +908,7 @@ public:
             tcoords[i] = this->task_coords[permutation[i]];
         }
 
+        env->timerStart(MACRO_TIMERS, "Mapping - Task Partitioning");
         //partitioning of tasks
         sequentialTaskPartitioning<tcoord_t, procId_t, procId_t>(
                 env,
@@ -853,9 +918,10 @@ public:
                 minCoordDim,
                 tcoords, //this->task_coords,
                 task_adjList,
-                task_xadj,
-                "task_partitioning"
+                task_xadj
+                //,"task_partitioning"
         );
+        env->timerStop(MACRO_TIMERS, "Mapping - Task Partitioning");
         freeArray<pcoord_t *> (tcoords);
         freeArray<int> (permutation);
 
@@ -942,8 +1008,8 @@ protected:
     CoordinateCommunicationModel<pcoord_t,tcoord_t,procId_t> *proc_task_comm;
     procId_t nprocs;
     procId_t ntasks;
-    procId_t *task_communication_xadj;
-    procId_t *task_communication_adj;
+    ArrayRCP<procId_t>task_communication_xadj;
+    ArrayRCP<procId_t>task_communication_adj;
 
 
 public:
@@ -971,8 +1037,8 @@ public:
             const MachineRepresentation<pcoord_t> *machine_,
             const Zoltan2::Model<typename Adapter::base_adapter_t> *model_,
             const Zoltan2::PartitioningSolution<Adapter> *soln_,
-            const Environment *envConst_
-    ):  PartitionMapping<Adapter> (comm_, machine_, model_, soln_, envConst_),
+            const Environment *envConst
+    ):  PartitionMapping<Adapter> (comm_, machine_, model_, soln_, envConst),
             proc_to_task_xadj(0),
             proc_to_task_adj(0),
             task_to_proc(0),
@@ -990,6 +1056,9 @@ public:
 
         int coordDim = ((Zoltan2::CoordinateModel<typename Adapter::base_adapter_t> *)model_)->getCoordinateDim();
         this->ntasks = soln_->getActualGlobalNumberOfParts();
+        if (procId_t (soln_->getTargetGlobalNumberOfParts()) > this->ntasks){
+            this->ntasks = soln_->getTargetGlobalNumberOfParts();
+        }
         //cout << "actual: " << this->ntasks << endl;
 
         //alloc memory for part centers.
@@ -998,14 +1067,21 @@ public:
         for (int i = 0; i < coordDim; ++i){
             partCenters[i] = allocMemory<tcoord_t>(this->ntasks);
         }
+
+
+        envConst->timerStart(MACRO_TIMERS, "Mapping - Solution Center");
         //get centers for the parts.
         getSolutionCenterCoordinates<Adapter, typename Adapter::scalar_t,procId_t>(
+                envConst,
                 comm_,
                 ((Zoltan2::CoordinateModel<typename Adapter::base_adapter_t> *)model_),
                 this->soln,
                 coordDim,
                 ntasks,
                 partCenters);
+
+        envConst->timerStop(MACRO_TIMERS, "Mapping - Solution Center");
+
 
         //create coordinate communication model.
         this->proc_task_comm =
@@ -1019,66 +1095,111 @@ public:
                 );
 
         int myRank = comm_->getRank();
+
+
+        envConst->timerStart(MACRO_TIMERS, "Mapping - Processor Task map");
         this->doMapping(myRank);
+        envConst->timerStop(MACRO_TIMERS, "Mapping - Processor Task map");
 
-        procId_t *ttask_communication_xadj = NULL, *ttask_communication_adj = NULL;
 
-        //////////////TEMPORARY COMMUNICATION GRAPH CALCULATION/////////////////
-        vector <int> grid_dims;
-        const Teuchos::ParameterList &pl = this->env->getParameters();
+        envConst->timerStart(MACRO_TIMERS, "Mapping - Communication Graph");
+        ((Zoltan2::PartitioningSolution<Adapter> *)soln_)->getCommunicationGraph(
+                comm_,
+                task_communication_xadj,
+                task_communication_adj
+         );
 
-        if (pl.getPtr<Array <partId_t> >("pqParts")){
-            const procId_t *partNo = pl.getPtr<Array <partId_t> >("pqParts")->getRawPtr();
-            int partArraySize = pl.getPtr<Array <partId_t> >("pqParts")->size() - 1;
-            for (int i = 0; i < partArraySize; ++i) grid_dims.push_back(partNo[i]);
+
+
+        envConst->timerStop(MACRO_TIMERS, "Mapping - Communication Graph");
+#ifdef gnuPlot
+        if (comm_->getRank() == 0){
+
+            procId_t taskCommCount = task_communication_xadj.size();
+            std::cout << " TotalComm:" << task_communication_xadj[taskCommCount - 1] << std::endl;
+            procId_t maxN = task_communication_xadj[0];
+            for (procId_t i = 1; i < taskCommCount; ++i){
+                procId_t nc = task_communication_xadj[i] - task_communication_xadj[i - 1];
+                if (maxN < nc) maxN = nc;
+            }
+            std::cout << " maxNeighbor:" << maxN << std::endl;
+        }
+
+        this->writeGnuPlot(comm_, soln_, coordDim, partCenters);
+        /*
+        std::string file = "gggnuPlot";
+        std::string exten = ".plot";
+        ofstream mm("2d.txt");
+        file += toString<int>(comm_->getRank()) + exten;
+        std::ofstream ff(file.c_str());
+        //ff.seekg (0, ff.end);
+        RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > outPartBoxes = ((Zoltan2::PartitioningSolution<Adapter> *)soln_)->getPartBoxes();
+
+        for (partId_t i = 0; i < this->ntasks;++i){
+            (*outPartBoxes)[i].writeGnuPlot(ff, mm);
+        }
+        if (coordDim == 2){
+        ff << "plot \"2d.txt\"" << endl;
+        //ff << "\n pause -1" << endl;
         }
         else {
-            float fEpsilon = numeric_limits<float>::epsilon();
+            ff << "splot \"2d.txt\"" << endl;
+            //ff << "\n pause -1" << endl;
+        }
+        mm.close();
 
-            procId_t futureNumParts = this->ntasks;
-            for (int i = 0; i < coordDim; ++i){
-                procId_t maxNoPartAlongI = getPartCount<partId_t>( futureNumParts, 1.0f / (coordDim - i), fEpsilon);
+        ff << "set style arrow 5 nohead size screen 0.03,15,135 ls 1" << endl;
+        for (partId_t i = 0; i < this->ntasks;++i){
+            procId_t pb = 0;
+            if (i > 0) pb = task_communication_xadj[i -1];
+            procId_t pe = task_communication_xadj[i];
+            for (procId_t p = pb; p < pe; ++p){
+                procId_t n = task_communication_adj[p];
 
-                procId_t nfutureNumParts = futureNumParts / maxNoPartAlongI;
-                futureNumParts = nfutureNumParts;
-                grid_dims.push_back(maxNoPartAlongI);
+                //cout << "i:" << i << " n:" << n << endl;
+                std::string arrowline = "set arrow from ";
+                for (int j = 0; j < coordDim - 1; ++j){
+                    arrowline += toString<scalar_t>(partCenters[j][n]) + ",";
+                }
+                arrowline += toString<scalar_t>(partCenters[coordDim -1][n]) + " to ";
+
+
+                for (int j = 0; j < coordDim - 1; ++j){
+                    arrowline += toString<scalar_t>(partCenters[j][i]) + ",";
+                }
+                arrowline += toString<scalar_t>(partCenters[coordDim -1][i]) + " as 5\n";
+
+                //cout << "arrow:" << arrowline << endl;
+                ff << arrowline;
             }
         }
 
+        ff << "replot\n pause -1" << endl;
+        ff.close();
+        */
+#endif
 
-        getGridCommunicationGraph<procId_t>(this->ntasks,
-                ttask_communication_xadj,
-                ttask_communication_adj,
-                grid_dims);
-
-        task_communication_xadj = ttask_communication_xadj;
-        task_communication_adj = ttask_communication_adj;
-        //////////////END/////////////////
-
-
+        envConst->timerStart(MACRO_TIMERS, "Mapping - Communication Cost");
         this->proc_task_comm->calculateCommunicationCost(
                 task_to_proc.getRawPtr(),
-                task_communication_xadj,
-                task_communication_adj
+                task_communication_xadj.getRawPtr(),
+                task_communication_adj.getRawPtr()
         );
 
-        cout << "me: " << comm_->getRank() << " cost:" << this->proc_task_comm->getCommunicationCostMetric() << endl;
+        envConst->timerStop(MACRO_TIMERS, "Mapping - Communication Cost");
+
+        //cout << "me: " << comm_->getRank() << " cost:" << this->proc_task_comm->getCommunicationCostMetric() << endl;
 
         this->getBestMapping();
-        //TODO:
-        //CREATE SUB COMMUNICATORs and find the best mapping and broadcast it here.
-
+#ifdef gnuPlot
         this->writeMapping2(comm_->getRank());
-
+#endif
 
         for (int i = 0; i < coordDim; ++i){
             freeArray<tcoord_t>(partCenters[i]);
         }
         freeArray<tcoord_t *>(partCenters);
 
-
-        freeArray<procId_t>(ttask_communication_xadj);
-        freeArray<procId_t>(ttask_communication_adj);
     }
 
     /*! \brief Constructor
@@ -1097,8 +1218,8 @@ public:
             const Zoltan2::Model<typename Adapter::base_adapter_t> *model_,
             const Zoltan2::PartitioningSolution<Adapter> *soln_,
             const Environment *envConst_,
-            procId_t *task_communication_xadj_,
-            procId_t *task_communication_adj_
+            ArrayRCP<procId_t>task_communication_xadj_,
+            ArrayRCP<procId_t>task_communication_adj_
     ):  PartitionMapping<Adapter> (comm_, machine_, model_, soln_, envConst_),
             proc_to_task_xadj(0),
             proc_to_task_adj(0),
@@ -1126,6 +1247,7 @@ public:
         }
         //get centers for the parts.
         getSolutionCenterCoordinates<Adapter, typename Adapter::scalar_t,procId_t>(
+                envConst_,
                 comm_,
                 ((Zoltan2::CoordinateModel<typename Adapter::base_adapter_t> *)model_),
                 this->soln,
@@ -1148,15 +1270,13 @@ public:
         this->doMapping(myRank);
         this->proc_task_comm->calculateCommunicationCost(
                 task_to_proc.getRawPtr(),
-                task_communication_xadj,
-                task_communication_adj
+                task_communication_xadj.getRawPtr(),
+                task_communication_adj.getRawPtr()
                 );
 
-        cout << "me: " << comm_->getRank() << " cost:" << this->proc_task_comm->getCommunicationCostMetric() << endl;
+        //cout << "me: " << comm_->getRank() << " cost:" << this->proc_task_comm->getCommunicationCostMetric() << endl;
 
         this->getBestMapping();
-        //TODO:
-        //CREATE SUB COMMUNICATORs and find the best mapping and broadcast it here.
 
         this->writeMapping2(comm_->getRank());
 
@@ -1248,8 +1368,7 @@ public:
         return 0;
     }
 
-    void getBestMapping(){
-        /*
+    RCP<Comm<int> > create_subCommunicatior(){
         int procDim = this->proc_task_comm->proc_coord_dim;
         int taskDim = this->proc_task_comm->task_coord_dim;
 
@@ -1260,12 +1379,13 @@ public:
         int myRank = this->comm->getRank();
         int commSize = this->comm->getSize();
 
-        int myGroup = myRank / idealGroupSize;
+        int myGroupIndex = myRank / idealGroupSize;
 
-        int prevGroupBegin = (myGroup - 1)* idealGroupSize;
-        int myGroupBegin = myGroup * idealGroupSize;
-        int myGroupEnd = (myGroup + 1) * idealGroupSize;
-        int nextGroupEnd = (myGroup + 2)* idealGroupSize;
+        int prevGroupBegin = (myGroupIndex - 1)* idealGroupSize;
+        if (prevGroupBegin < 0) prevGroupBegin = 0;
+        int myGroupBegin = myGroupIndex * idealGroupSize;
+        int myGroupEnd = (myGroupIndex + 1) * idealGroupSize;
+        int nextGroupEnd = (myGroupIndex + 2)* idealGroupSize;
 
         if (myGroupEnd > commSize){
             myGroupBegin = prevGroupBegin;
@@ -1274,16 +1394,40 @@ public:
         if (nextGroupEnd > commSize){
             myGroupEnd = commSize;
         }
+        int myGroupSize = myGroupEnd - myGroupBegin;
 
+        int *myGroup = allocMemory<int>(myGroupSize);
+        for (int i = 0; i < myGroupSize; ++i){
+            myGroup[i] = myGroupBegin + i;
+        }
+        //cout << "me:" << myRank << " myGroupBegin:" << myGroupBegin << " myGroupEnd:" << myGroupEnd << endl;
 
+        ArrayView<const partId_t> myGroupView(myGroup, myGroupSize);
 
-        int maxGroupIndex = size / idealGroupSize;
-        if (size % idealGroupSize != 0) --maxGroupIndex;
+        RCP<Comm<int> > subComm = this->comm->createSubcommunicator(myGroupView);
+        freeArray<int>(myGroup);
+        return subComm;
+    }
+    void getBestMapping(){
+        RCP<Comm<int> > subComm = this->create_subCommunicatior();
+        double myCost = this->proc_task_comm->getCommunicationCostMetric();
+        double localCost[2], globalCost[2];
+        localCost[0] = myCost;
+        localCost[1] = double(subComm->getRank());
 
+        globalCost[1] = globalCost[0] = std::numeric_limits<double>::max();
+        Teuchos::Zoltan2_ReduceBestMapping<int,double> reduceBest;
+        reduceAll<int, double>(*subComm, reduceBest,
+                2, localCost, globalCost
+        );
 
+        int sender = int(globalCost[1]);
 
-        if (myGroup > maxGroupIndex)
-*/
+        //cout << "me:" << localCost[1] << " localcost:" << localCost[0]<< " bestcost:" << globalCost[0] << endl;
+        //cout << "me:" << localCost[1] << " proc:" << globalCost[1] << endl;
+        broadcast (*subComm, sender, this->ntasks, this->task_to_proc.getRawPtr());
+        broadcast (*subComm, sender, this->nprocs, this->proc_to_task_xadj.getRawPtr());
+        broadcast (*subComm, sender, this->ntasks, this->proc_to_task_adj.getRawPtr());
     }
 
     /*! \brief getAssignedProcForTask function,
@@ -1503,6 +1647,63 @@ public:
 
     }
 
+
+    void writeGnuPlot(
+            const Teuchos::Comm<int> *comm_,
+            const Zoltan2::PartitioningSolution<Adapter> *soln_,
+            int coordDim,
+            tcoord_t **partCenters
+            ){
+        std::string file = "gggnuPlot";
+        std::string exten = ".plot";
+        ofstream mm("2d.txt");
+        file += toString<int>(comm_->getRank()) + exten;
+        std::ofstream ff(file.c_str());
+        //ff.seekg (0, ff.end);
+        RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > outPartBoxes = ((Zoltan2::PartitioningSolution<Adapter> *)soln_)->getPartBoxes();
+
+        for (partId_t i = 0; i < this->ntasks;++i){
+            (*outPartBoxes)[i].writeGnuPlot(ff, mm);
+        }
+        if (coordDim == 2){
+        ff << "plot \"2d.txt\"" << endl;
+        //ff << "\n pause -1" << endl;
+        }
+        else {
+            ff << "splot \"2d.txt\"" << endl;
+            //ff << "\n pause -1" << endl;
+        }
+        mm.close();
+
+        ff << "set style arrow 5 nohead size screen 0.03,15,135 ls 1" << endl;
+        for (partId_t i = 0; i < this->ntasks;++i){
+            procId_t pb = 0;
+            if (i > 0) pb = task_communication_xadj[i -1];
+            procId_t pe = task_communication_xadj[i];
+            for (procId_t p = pb; p < pe; ++p){
+                procId_t n = task_communication_adj[p];
+
+                //cout << "i:" << i << " n:" << n << endl;
+                std::string arrowline = "set arrow from ";
+                for (int j = 0; j < coordDim - 1; ++j){
+                    arrowline += toString<scalar_t>(partCenters[j][n]) + ",";
+                }
+                arrowline += toString<scalar_t>(partCenters[coordDim -1][n]) + " to ";
+
+
+                for (int j = 0; j < coordDim - 1; ++j){
+                    arrowline += toString<scalar_t>(partCenters[j][i]) + ",";
+                }
+                arrowline += toString<scalar_t>(partCenters[coordDim -1][i]) + " as 5\n";
+
+                //cout << "arrow:" << arrowline << endl;
+                ff << arrowline;
+            }
+        }
+
+        ff << "replot\n pause -1" << endl;
+        ff.close();
+    }
 };
 }// namespace Zoltan2
 
