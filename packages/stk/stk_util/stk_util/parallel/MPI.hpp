@@ -105,12 +105,12 @@ struct Loc
     : m_value(),
       m_loc(0)
   {}
-  
+
   Loc(const T &value, int loc)
     : m_value(value),
       m_loc(loc)
   {}
-  
+
   T		m_value;
   int		m_loc;
 };
@@ -122,13 +122,13 @@ struct TempLoc
       m_other(),
       m_loc(0)
   {}
-  
+
   TempLoc(double value, double other, int loc)
     : m_value(value),
       m_other(other),
       m_loc(loc)
   {}
-  
+
   double        m_value;
   double        m_other;
   int		m_loc;
@@ -997,7 +997,7 @@ AllReduceCollected(MPI_Comm mpi_comm, MPI_Op op, U collector)
 
 
   std::vector<int> local_array_len(num_proc, 0);
-  local_array_len[my_proc] == size;
+  local_array_len[my_proc] = size;
   std::vector<int> global_array_len(num_proc, 0);
 
   MPI_Allreduce(&local_array_len[0], &global_array_len[0], num_proc, MPI_INT, MPI_SUM, mpi_comm);
