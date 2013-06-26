@@ -355,7 +355,7 @@ public:
         /*! \brief  function for visualization.
         */
         void writeGnuPlot(std::ofstream &file,std::ofstream &mm){
-            int numCorners = pow(2, dim);
+            int numCorners = int(pow(2.0f, dim));
             scalar_t *corner1 = new scalar_t [dim];
             scalar_t *corner2 = new scalar_t [dim];
 
@@ -403,7 +403,7 @@ public:
                     else {
                         corner1[i] = lmaxs[i];
                     }
-                    if (j % int(pow(2,i + 1)) >= int(pow(2,i )) ){
+                    if (j % int(pow(2.0f,i + 1)) >= int(pow(2.0f,i )) ){
                         int c1 = j - int(pow(2,i));
 
                         if (c1 > 0) {
