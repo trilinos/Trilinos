@@ -114,6 +114,9 @@ public:
 
   //@}
 
+  template< typename T2 >
+  friend class MDArray;
+
   /** @name Constructors and Destructor */
   //@{
 
