@@ -1012,6 +1012,84 @@ namespace stk {
       return false;
     }
 
+    bool PerceptMesh::is_edge_neighbor(stk::mesh::Entity element_0, stk::mesh::Entity element_1, int *edge_0, int *edge_1)
+    {
+      const CellTopologyData * const element_0_topo_data = get_cell_topology(element_0);
+      shards::CellTopology element_0_topo(element_0_topo_data);
+
+      const CellTopologyData * const element_1_topo_data = get_cell_topology(element_1);
+      shards::CellTopology element_1_topo(element_1_topo_data);
+
+      const MyPairIterRelation element_0_nodes(*get_bulk_data(), element_0, stk::mesh::MetaData::NODE_RANK );
+      const MyPairIterRelation element_1_nodes(*get_bulk_data(), element_1, stk::mesh::MetaData::NODE_RANK );
+
+      for (unsigned iedge_0 = 0; iedge_0 <  element_0_topo_data->edge_count; iedge_0++)
+        {
+          unsigned num_nodes_on_edge_0 = element_0_topo_data->edge[iedge_0].topology->vertex_count;
+          for (unsigned iedge_1 = 0; iedge_1 <  element_1_topo_data->edge_count; iedge_1++)
+            {
+              unsigned num_nodes_on_edge_1 = element_1_topo_data->edge[iedge_1].topology->vertex_count;
+              if (num_nodes_on_edge_0 != num_nodes_on_edge_1)
+                continue;
+              bool edges_match = true;
+              for (unsigned jnode_0 = 0; jnode_0 < num_nodes_on_edge_0; jnode_0++)
+                {
+                  stk::mesh::EntityId edge_0_id = identifier(element_0_nodes[ element_0_topo_data->edge[iedge_0].node[jnode_0] ].entity());
+                  bool found = false;
+                  for (unsigned jnode_1 = 0; jnode_1 < num_nodes_on_edge_1; jnode_1++)
+                    {
+                      stk::mesh::EntityId edge_1_id = identifier(element_1_nodes[ element_1_topo_data->edge[iedge_1].node[jnode_1] ].entity());
+                      if (edge_1_id == edge_0_id)
+                        {
+                          found = true;
+                          break;
+                        }
+                    }
+                  if (!found)
+                    {
+                      edges_match = false;
+                      break;
+                    }
+                }
+              if (edges_match)
+                {
+                  if (edge_0) *edge_0 = iedge_0;
+                  if (edge_1) *edge_1 = iedge_1;
+                  return true;
+                }
+            }
+        }
+      return false;
+    }
+
+    bool PerceptMesh::is_node_neighbor(stk::mesh::Entity element_0, stk::mesh::Entity element_1, int *node_0, int *node_1)
+    {
+      const CellTopologyData * const element_0_topo_data = get_cell_topology(element_0);
+      shards::CellTopology element_0_topo(element_0_topo_data);
+
+      const CellTopologyData * const element_1_topo_data = get_cell_topology(element_1);
+      shards::CellTopology element_1_topo(element_1_topo_data);
+
+      const MyPairIterRelation element_0_nodes(*get_bulk_data(), element_0, stk::mesh::MetaData::NODE_RANK );
+      const MyPairIterRelation element_1_nodes(*get_bulk_data(), element_1, stk::mesh::MetaData::NODE_RANK );
+
+      for (unsigned inode_0 = 0; inode_0 <  element_0_topo_data->vertex_count; inode_0++)
+        {
+          for (unsigned inode_1 = 0; inode_1 <  element_1_topo_data->vertex_count; inode_1++)
+            {
+              stk::mesh::EntityId node_0_id = identifier(element_0_nodes[ inode_0 ].entity());
+              stk::mesh::EntityId node_1_id = identifier(element_1_nodes[ inode_1 ].entity());
+              if (node_1_id == node_0_id)
+                {
+                  if (node_0) *node_0 = inode_0;
+                  if (node_1) *node_1 = inode_1;
+                  return true;
+                }
+            }
+        }
+      return false;
+    }
+
 
     std::map<stk::mesh::Part*, PerceptMesh::MinMaxAve > PerceptMesh::hmesh_surface_normal()
     {

@@ -474,7 +474,7 @@ namespace stk
             (void)refine_field_filtered;
             stk::mesh::FieldBase* nodal_refine_field    = eMesh.add_field("nodal_refine_field", eMesh.node_rank(), scalarDimension);
 
-            stk::mesh::FieldBase* refine_level_d     = eMesh.add_field("refine_level_d", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension); 
+            stk::mesh::FieldBase* refine_level_d     = eMesh.add_field("refine_level_d", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             ScalarIntFieldType& refine_level       = eMesh.get_fem_meta_data()->declare_field<ScalarIntFieldType>("refine_level");
             stk::mesh::put_field( refine_level , stk::mesh::MetaData::ELEMENT_RANK , eMesh.get_fem_meta_data()->universal_part());
 
@@ -663,7 +663,7 @@ namespace stk
             eMesh.add_field("normal_kept_deleted", eMesh.node_rank(), scalarDimension);
             eMesh.add_field("refine_field_filtered", eMesh.element_rank(), scalarDimension);
 
-            stk::mesh::FieldBase* refine_level_d     = eMesh.add_field("refine_level_d", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension); 
+            stk::mesh::FieldBase* refine_level_d     = eMesh.add_field("refine_level_d", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             ScalarIntFieldType& refine_level       = eMesh.get_fem_meta_data()->declare_field<ScalarIntFieldType>("refine_level");
             stk::mesh::put_field( refine_level , stk::mesh::MetaData::ELEMENT_RANK , eMesh.get_fem_meta_data()->universal_part());
 
@@ -987,7 +987,7 @@ namespace stk
             stk::mesh::FieldBase* refine_field       = eMesh.add_field("refine_field", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
 
             // for plotting, use doubles, for internal use, use int
-            stk::mesh::FieldBase* refine_level_d     = eMesh.add_field("refine_level_d", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension); 
+            stk::mesh::FieldBase* refine_level_d     = eMesh.add_field("refine_level_d", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             ScalarIntFieldType& refine_level       = eMesh.get_fem_meta_data()->declare_field<ScalarIntFieldType>("refine_level");
             stk::mesh::put_field( refine_level , stk::mesh::MetaData::ELEMENT_RANK , eMesh.get_fem_meta_data()->universal_part());
 
@@ -1015,7 +1015,7 @@ namespace stk
 
             SetElementFieldQuadCorner set_ref_field(eMesh);
 
-            int num_ref_passes = 4;
+            int num_ref_passes = 6;
             int num_unref_passes = 4;
             int iplot=0;
             if (1)
@@ -1034,11 +1034,24 @@ namespace stk
                 eMesh.elementOpLoop(set_ref_field, refine_field);
                 eMesh.save_as(output_files_loc+"quad_tmp_square_sidesets_quad_local_ref_"+post_fix[p_size]+".e.s-"+toString(ipass+1));
 
-                std::cout << "P[" << eMesh.get_rank() << "] ipass= " << ipass <<  std::endl;
+                bool enforce_what[3] = {false, false, true};
+                int max_iter=100;
+                int iter=0;
+                bool did_change=false;
+                while ((iter++ < max_iter) && (did_change = erp.enforce_two_to_one_refine(enforce_what)) )
+                  {
+                    std::cout << "P[" << eMesh.get_rank() << "] ipass= " << ipass << " iter= " << iter
+                              << " did_change= " << did_change
+                              << std::endl;
+                  }
                 breaker.doBreak();
-                bool is_valid_2_to_1 = erp.check_two_to_one();
-                std::cout << "P[" << eMesh.get_rank() << "] done... ipass= " << ipass << " quad_local number elements= " 
-                          << eMesh.get_number_elements() << " check_two_to_one= " << is_valid_2_to_1 << std::endl;
+                bool check_what[3] = {false, false, true};
+                bool is_valid_2_to_1 = erp.check_two_to_one(check_what);
+                bool check_what_1[3] = {true, false, false};
+                bool is_valid_2_to_1_1 = erp.check_two_to_one(check_what_1);
+                std::cout << "P[" << eMesh.get_rank() << "] done... ipass= " << ipass << " quad_local number elements= "
+                          << eMesh.get_number_elements() << " check_two_to_one= " << is_valid_2_to_1
+                          << " node check_two_to_one= " << is_valid_2_to_1_1 << std::endl;
 
                 //breaker.deleteParentElements();
                 //eMesh.save_as("square_anim."+toString(ipass+1)+".e");

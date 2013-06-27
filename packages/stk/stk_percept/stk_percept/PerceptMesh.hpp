@@ -476,6 +476,10 @@ namespace stk {
 
       /// return true if two elements share a face; if face_0/face_1 are non-null, return the found face index for shared face
       bool is_face_neighbor(stk::mesh::Entity element_0, stk::mesh::Entity element_1, int *face_0=0, int *face_1=0);
+      /// return true if two elements share any edge; if edge_0/edge_1 are non-null, return the found edge index for shared edge
+      bool is_edge_neighbor(stk::mesh::Entity element_0, stk::mesh::Entity element_1, int *edge_0=0, int *edge_1=0);
+      /// return true if two elements share any node; if node_0/node_1 are non-null, return the found node index for shared node
+      bool is_node_neighbor(stk::mesh::Entity element_0, stk::mesh::Entity element_1, int *node_0=0, int *node_1=0);
 
       /// fill @param histogram with statistics about the given field
       void field_stats(Histogram<double>& histogram, std::string field_name, int index= -2);
