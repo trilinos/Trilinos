@@ -73,9 +73,10 @@ enum EStorageOrder
   DEFAULT_ORDER       = 1
 };
 
+
 /** \brief Compute the strides of an <tt>MDArray</tt>,
  *         <tt>MDArrayView</tt>, or <tt>MDArrayRCP</tt>, given the
- *         dimensions and the storage order.
+ *         dimensions (as an Array) and the storage order.
  */
 template< typename T >
 Teuchos::Array< T > computeStrides(const Teuchos::ArrayView< T > & dimensions,
@@ -99,9 +100,32 @@ Teuchos::Array< T > computeStrides(const Teuchos::ArrayView< T > & dimensions,
   return strides;
 }
 
-/** \brief Compute the total size of an <tt>MDArray</tt>,
+/** \brief Compute the minimum size required for an <tt>MDArray</tt>,
  *         <tt>MDArrayView</tt>, or <tt>MDArrayRCP</tt>, given its
- *         dimensions.
+ *         dimensions as an ArrayView.
+ */
+template< typename T >
+Teuchos::Array< T >
+computeStrides(const Teuchos::Array< T > & dimensions,
+               const EStorageOrder storageOrder)
+{
+  // In the MDArray<T>(const MDArrayView<T> &) constructor, I try to
+  // pass the MDArrayView dimensions to computeStrides(), but they
+  // come in as ArrayView<const T> (for reasons I can't determine) and
+  // cause all sorts of const-correctness problems.  So I copy them
+  // into a new Array<T> and pass its view to the main
+  // computeStrides() function.  Fortunately, the array of dimensions
+  // is small.
+  Teuchos::Array< T > nonConstDims(0);
+  nonConstDims.insert(nonConstDims.begin(),
+                      dimensions.begin(),
+                      dimensions.end());
+  return computeStrides(nonConstDims(), storageOrder);
+}
+
+/** \brief Compute the minimum size required for an <tt>MDArray</tt>,
+ *         <tt>MDArrayView</tt>, or <tt>MDArrayRCP</tt>, given its
+ *         dimensions as an Arrayview.
  */
 template< typename T >
 T computeSize(const Teuchos::ArrayView< T > & dimensions)
@@ -113,7 +137,27 @@ T computeSize(const Teuchos::ArrayView< T > & dimensions)
   return result;
 }
 
-/** \brief Compute the total size of an <tt>MDArray</tt>,
+/** \brief Compute the minimum size required for an <tt>MDArray</tt>,
+ *         <tt>MDArrayView</tt>, or <tt>MDArrayRCP</tt>, given its
+ *         dimensions as an Array.
+ */
+template< typename T >
+T computeSize(const Teuchos::Array< T > & dimensions)
+{
+  // In the MDArray<T>(const MDArrayView<T> &) constructor, I try to
+  // pass the MDArrayView dimensions to computeSize(), but they come
+  // in as ArrayView<const T> (for reasons I can't determine) and
+  // cause all sorts of const-correctness problems.  So I copy them
+  // into a new Array<T> and pass its view to the main computeSize()
+  // function.  Fortunately, the array of dimensions is small.
+  Teuchos::Array< T > nonConstDims(0);
+  nonConstDims.insert(nonConstDims.begin(),
+                      dimensions.begin(),
+                      dimensions.end());
+  return computeSize(nonConstDims());
+}
+
+/** \brief Compute the minimum size required for an <tt>MDArray</tt>,
  *         <tt>MDArrayView</tt>, or <tt>MDArrayRCP</tt>, given its
  *         dimensions and strides.
  */
