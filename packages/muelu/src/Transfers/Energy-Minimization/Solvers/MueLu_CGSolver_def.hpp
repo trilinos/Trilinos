@@ -63,7 +63,7 @@ namespace MueLu {
   { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CGSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Iterate(const Matrix& Aref, const Constraint& C, const Matrix& P0, const MultiVector& B, RCP<Matrix>& finalP) const {
+  void CGSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Iterate(const Matrix& Aref, const Constraint& C, const Matrix& P0, RCP<Matrix>& finalP) const {
     // Note: this function matrix notations follow Saad's "Iterative methods", ed. 2, pg. 246
     // So, X is the unknown prolongator, P's are conjugate directions, Z's are preconditioned P's
     RCP<const Matrix> A = rcpFromRef(Aref);
