@@ -449,33 +449,31 @@ b) Enabling checked STL implementation:
     code.  This only works with GCC currently.
 
   * This option is disabled by default because to enable it by default can
-    cause runtime segfaults when linked against code that was compiled without
-    -D_GLIBCXX_DEBUG set.
+    cause runtime segfaults when linked against C++ code that was compiled
+    without -D_GLIBCXX_DEBUG.
 
+Configuring with MPI support
+----------------------------
 
-
-
-
-
-(*) Configuring <Project> for MPI support:
-
-  To enable MPI support you must minimally:
+  To enable MPI support you must minimally set::
 
     -D TPL_ENABLE_MPI:BOOL=ON
 
   There is built-in logic to try to find the various MPI components on your
-  system but you can override (or make suggestions) with:
+  system but you can override (or make suggestions) with::
 
     -D MPI_BASE_DIR:PATH="path"
 
-      Base path of a standard MPI installation which has
-      the subdirs 'bin', 'libs', 'include' etc.
+   (Base path of a standard MPI installation which has the subdirs 'bin',
+   'libs', 'include' etc.)
 
-    -D MPI_BIN_DIR:PATH="path1;path2;...;pathn"
+   or::
 
-      Paths where the MPI executables (e.g. mpiCC, mpicc, mpirun, mpiexec)
-      can be found.  By default this is set to ${MPI_BASE_DIR}/bin if
-      MPI_BASE_DIR is set.
+     -D MPI_BIN_DIR:PATH="path1;path2;...;pathn"
+
+   (Paths where the MPI executables (e.g. mpiCC, mpicc, mpirun, mpiexec) can
+   be found.  By default this is set to ``${MPI_BASE_DIR}/bin`` if
+   ``MPI_BASE_DIR`` is set).
 
   The value of LD_LIBRARY_PATH will also automatically be set to
   ${MPI_BASE_DIR}/lib if it exists.  This is needed for the basic compiler
