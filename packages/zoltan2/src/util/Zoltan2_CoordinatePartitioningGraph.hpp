@@ -397,7 +397,7 @@ public:
             for (int j = 0; j < numCorners; ++j){
                 std::vector <int> neighborCorners;
                 for (int i = 0; i < dim; ++i){
-                    if(int(j & (int(1)<<i))) == 0){
+                    if(int(j & (int(1)<<i)) == 0){
                         corner1[i] = lmins[i];
                     }
                     else {
