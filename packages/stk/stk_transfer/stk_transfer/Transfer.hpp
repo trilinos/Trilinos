@@ -97,7 +97,7 @@ private :
   void delete_range_points_found(std::vector<BoundingBoxB>            &range_vector,
                                  const EntityProcRelationVec          &del) const ;
   
-  enum { dim_eq = StaticAssert<MeshB::Dimension==MeshA::Dimension>::OK };
+  enum { dim_eq = StaticAssert<static_cast<unsigned>(MeshB::Dimension)==static_cast<unsigned>(MeshA::Dimension)>::OK };
   
 };
 
@@ -131,9 +131,6 @@ template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::communication(
   const unsigned p_size = parallel_machine_size(comm);
   if (m_mesha.has_communication_capabilities()) {
     m_local_range_to_domain = copy_domain_to_range_processors(m_mesha, m_global_range_to_domain, m_name);
-  } else if (m_meshb.has_communication_capabilities()) {
-    ThrowRequireMsg (m_mesha.has_communication_capabilities() || m_mesha.has_communication_capabilities(),
-      __FILE__<<":"<<__LINE__<<" Still working on communicaiton capabilities");
   } else if (1==p_size) {
     const typename EntityProcRelationVec::const_iterator end=m_global_range_to_domain.end();
     for (typename EntityProcRelationVec::const_iterator i=m_global_range_to_domain.begin(); i!=end; ++i) {
@@ -142,9 +139,9 @@ template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::communication(
       std::pair<EntityKeyB,EntityKeyA> key_map(range_entity, domain_entity);
       m_local_range_to_domain.insert(key_map);
     }
-  } else               {
-    ThrowRequireMsg (m_mesha.has_communication_capabilities() || m_mesha.has_communication_capabilities(),
-      __FILE__<<":"<<__LINE__<<" Still working on communicaiton capabilities");
+  } else {
+    ThrowRequireMsg (m_mesha.has_communication_capabilities(),
+      __FILE__<<":"<<__LINE__<<" Still working on communicaiton capabilities.");
   }
 }
 

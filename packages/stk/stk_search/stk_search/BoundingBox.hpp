@@ -180,14 +180,15 @@ struct SphereBoundingBox
     return point_.intersect(*this);
   }
 
-  bool intersect( const SphereBoundingBox<K,T,Dim> & sphere_) const {
+  template <class KT, class TT>
+  bool intersect( const SphereBoundingBox<KT,TT,Dim> & sphere_) const {
     Data tmp = 0;
     Data dist = 0;
     for (int i=0; i<DIMENSION; ++i) {
-      tmp = middle(i) - sphere_.middle(i);
+      tmp = middle(i) - static_cast<Data>(sphere_.middle(i));
       dist += tmp * tmp;
     }
-    Data radius_sum = radius + sphere_.radius;
+    Data radius_sum = radius + static_cast<Data>(sphere_.radius);
     return dist < radius_sum * radius_sum;
   }
 

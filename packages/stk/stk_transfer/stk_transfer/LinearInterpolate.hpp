@@ -57,7 +57,7 @@ private :
   static int LU_decomp(double A[9], int piv[3], int* sign);
   static int LU_solve(const double A[9], const int piv[3], double b[3]);
   
-  enum { dim_eq = StaticAssert<MeshB::Dimension==MeshA::Dimension>::OK };
+  enum { dim_eq = StaticAssert<static_cast<unsigned>(MeshB::Dimension)==static_cast<unsigned>(MeshA::Dimension)>::OK };
   enum { dim_3  = StaticAssert<               3==MeshA::Dimension>::OK };
   
   static double distance_squared(const double *x, const double *y) ;
@@ -216,7 +216,11 @@ template <class MESHA, class MESHB>  void LinearInterpolate<MESHA,MESHB>::apply 
 
   typename MeshB::EntityKeySet keysb;
   meshb.keys(keysb);
+  const unsigned numValsa = mesha.num_values();
   const unsigned numValsb = meshb.num_values();
+    ThrowRequireMsg (numValsb == numValsa,  
+      __FILE__<<":"<<__LINE__<<" Found "<<numValsa<<" values for mesh a and "<<numValsb<<" for mesh b."
+      <<" These should be the same.");
 
   for (typename MeshB::EntityKeySet::const_iterator i=keysb.begin(); i!=keysb.end(); ++i)  {
     const EntityKeyB to_key = *i;

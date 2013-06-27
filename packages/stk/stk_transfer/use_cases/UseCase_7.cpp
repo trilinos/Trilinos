@@ -23,6 +23,7 @@
 
 #include <stk_transfer/Transfer.hpp>
 #include <stk_transfer/STKMesh.hpp>
+#include <stk_transfer/MDMesh.hpp>
 #include <stk_transfer/LinearInterpolate.hpp>
 
 namespace bopt = boost::program_options;
@@ -31,10 +32,8 @@ typedef stk::mesh::Field<double>                       ScalarField ;
 typedef stk::mesh::Field<double, stk::mesh::Cartesian> CartesianField ;
 
 
-bool use_case_6_driver(stk::ParallelMachine  comm,
+bool use_case_7_driver(stk::ParallelMachine  comm,
                       const std::string &working_directory,
-                      const std::string &range_mesh,
-                      const std::string &range_filetype,
                       const std::string &domain_mesh,
                       const std::string &domain_filetype)
 {
@@ -44,39 +43,28 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
   stk::diag::Timer timer_node_to_node(" Node To Node", timer);
   use_case::timerSet().setEnabledTimerMask(use_case::TIMER_ALL);
 
-  const double TOLERANCE = 0.000001;
-
   bool status = true;
 
-  //const double TOLERANCE = 0.000001;
-  //const double  rand_max = RAND_MAX;
   enum {           DIM = 3  };
+  const double TOLERANCE = 0.000001;
+  const double  rand_max = RAND_MAX;
+  enum {   TONUMPOINTS = 100  };  
 
-  stk::io::MeshData range_mesh_data(comm);
-  stk::io::MeshData domain_mesh_data(comm);
+  typedef Intrepid::FieldContainer<double>  MDArray;
+ 
+  MDArray ToPoints   (  TONUMPOINTS,DIM), 
+          ToValues   (  TONUMPOINTS,  1); 
+  for (unsigned i=0 ; i<TONUMPOINTS; ++i) {
+    for (unsigned j=0 ; j<DIM; ++j) {
+      ToPoints(i,j) = rand()/rand_max;
+    }   
+  }
 
-  std::string filename = working_directory + range_mesh;
-  range_mesh_data.open_mesh_database(filename, range_filetype);
-  range_mesh_data.create_input_mesh();
-
-  stk::mesh::MetaData &range_meta_data = range_mesh_data.meta_data();
   const stk::mesh::EntityRank node_rank = stk::mesh::MetaData::NODE_RANK;
-  stk::mesh::Part & range_block         = range_meta_data.declare_part("nodes", node_rank);
-  stk::mesh::CellTopology node_top (shards::getCellTopologyData<shards::Node>());
-  stk::mesh::set_cell_topology( range_block,  node_top );
-
-
   const std::string data_field_name = "Sum_Of_Coordinates";
-  ScalarField &range_coord_sum_field = stk::mesh::put_field( 
-                        range_meta_data.declare_field<ScalarField>(data_field_name), 
-                        stk::mesh::MetaData::NODE_RANK , 
-                        range_meta_data.universal_part() );
 
-  range_meta_data.commit();
-  range_mesh_data.populate_bulk_data();
-  stk::mesh::BulkData &range_bulk_data = range_mesh_data.bulk_data();
-
-  filename = working_directory + domain_mesh;
+  stk::io::MeshData domain_mesh_data(comm);
+  const std::string filename = working_directory + domain_mesh;
   domain_mesh_data.open_mesh_database(filename, domain_filetype);
   domain_mesh_data.create_input_mesh();
 
@@ -107,10 +95,8 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
   // domain_mesh, then the search should return a single box for each
   // point and the id of the box should match the id of the point.
   
-  CartesianField &range_coord_field  = static_cast<CartesianField&>( range_mesh_data.get_coordinate_field());
   CartesianField &domain_coord_field = static_cast<CartesianField&>(domain_mesh_data.get_coordinate_field());
 
-  stk::mesh::Selector range_nodes = range_meta_data.locally_owned_part();
   stk::mesh::Selector domain_nodes= domain_meta_data.locally_owned_part();
   
   std::vector<stk::mesh::Entity> domain_entities;
@@ -124,23 +110,10 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
       *entity_coord_sum = entity_coordinates[0] + entity_coordinates[1] + entity_coordinates[2];
     }
   }
-  std::vector<stk::mesh::Entity> range_entities;
-  {
-    stk::mesh::get_selected_entities(range_nodes, range_bulk_data.buckets(stk::mesh::MetaData::NODE_RANK), range_entities);
-    const size_t num_entities = range_entities.size();
-    const double rand_max = RAND_MAX;
-    for (size_t i = 0; i < num_entities; ++i) {
-      const stk::mesh::Entity entity = range_entities[i];
-      double *entity_coord_sum   = range_bulk_data.field_data(range_coord_sum_field, entity);
-      *entity_coord_sum = rand()/rand_max;
-    }
-  }
 
   const std::vector<stk::mesh::FieldBase*> from_fields(1, &domain_coord_sum_field);
   stk::transfer::STKMesh<3> transfer_domain_mesh (domain_entities, domain_coord_field, from_fields);
-
-  const std::vector<stk::mesh::FieldBase*> to_fields  (1, &range_coord_sum_field);
-  stk::transfer::STKMesh<3> transfer_range_mesh (range_entities, range_coord_field, to_fields);
+  stk::transfer:: MDMesh<3> transfer_range_mesh  (  ToPoints,   ToValues, comm);
 
   
   const double radius=.25;
@@ -148,7 +121,7 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
   stk::transfer::GeometricTransfer<
     class stk::transfer::LinearInterpolate<
       class stk::transfer::STKMesh<3>, 
-      class stk::transfer::STKMesh<3>
+      class stk::transfer::MDMesh<3>
     >
   >
   transfer(transfer_domain_mesh, transfer_range_mesh, 
@@ -175,30 +148,18 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
   }
 
   if (status) {
-    std::vector<stk::mesh::Entity> range_points;
-    stk::mesh::get_selected_entities(range_nodes,
-                                     range_bulk_data.buckets(stk::mesh::MetaData::NODE_RANK),
-                                     range_points);
-
-    const unsigned TONUMPOINTS = range_points.size();
 
     bool success = true;
     for (unsigned i=0 ; i<TONUMPOINTS; ++i) {
-      const  stk::mesh::Entity  entity = range_points[i];
-
-      const double *ToValues = static_cast<double*>(range_bulk_data.field_data(range_coord_sum_field, entity));
-      const double *ToPoints = static_cast<double*>(range_bulk_data.field_data(range_coord_field, entity));
-
       double check_l = 0;
-      for (unsigned j=0 ; j<DIM; ++j) check_l += ToPoints[j];   
-      if (TOLERANCE < fabs(check_l-ToValues[0]) ) { 
-        const stk::mesh::EntityKey k = range_bulk_data.entity_key(entity);
+      for (unsigned j=0 ; j<DIM; ++j) check_l += ToPoints(i,j); 
+      if (TOLERANCE < fabs(check_l-ToValues(i,0))) { 
         std::cout <<__FILE__<<":"<<__LINE__
-                  <<" EntityKey:"<<k
-                  <<" ToPoints:"<<ToPoints[0]<<" "<<ToPoints[1]<<" "<<ToPoints[2]
-                  <<" ToValues:"<<ToValues[0]
+                  <<" EntityKey:"<<i
+                  <<" ToPoints:"<<ToPoints(i,0)<<" "<<ToPoints(i,1)<<" "<<ToPoints(i,2)
+                  <<" ToValues:"<<ToValues(i,0)
                   <<" check:"<<check_l
-                  <<" error:"<<fabs(check_l-ToValues[0])
+                  <<" error:"<<fabs(check_l-ToValues(i,0))
                   <<std::endl;
         success = false;
       }   

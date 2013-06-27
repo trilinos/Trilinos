@@ -57,6 +57,7 @@ private :
   STKMesh &operator=(const STKMesh&);
 
   mesh::BulkData                        &m_bulk_data;
+  bool                               m_mesh_modified;
   const ParallelMachine                       m_comm;
   const EntityKeySet                   m_entity_keys;
   const mesh::FieldBase         &m_coordinates_field;
@@ -85,15 +86,16 @@ template<unsigned DIM> STKMesh<DIM>::STKMesh(
           const   mesh::FieldBase             &coord,
           const std::vector<mesh::FieldBase*> &val) :
     m_bulk_data         (coord.get_mesh()),
+    m_mesh_modified     (false),
     m_comm              (m_bulk_data.parallel()),
     m_entity_keys       (entity_keys(m_bulk_data, entities)), 
     m_coordinates_field (coord), 
     m_values_field      (val),
     m_entities_currently_ghosted() {
-  //const std::string name = "Transfer Ghosting";
-  //m_bulk_data.modification_begin();
-  //m_transfer_entity_ghosting = &m_bulk_data.create_ghosting(name);
-  //m_bulk_data.modification_end();
+  const std::string name = "Transfer Ghosting";
+  m_bulk_data.modification_begin();
+  m_transfer_entity_ghosting = &m_bulk_data.create_ghosting(name);
+  m_bulk_data.modification_end();
 }
 
 template<unsigned DIM> unsigned STKMesh<DIM>::keys(EntityKeySet &k) const {
@@ -120,9 +122,9 @@ template<unsigned DIM> typename STKMesh<DIM>::BoundingBox STKMesh<DIM>::bounding
 
 template<unsigned NUM> void STKMesh<NUM>::copy_entities(
                      const EntityProcVec  &keys_to_copy,
-                     const std::string         &transfer_name) {
+                     const std::string    &transfer_name) {
 
-
+  m_bulk_data.modification_begin();
   {
     mesh::EntityProcVec new_entities_to_copy(keys_to_copy.size());
     for (size_t i=0; i<keys_to_copy.size(); ++i) {
@@ -142,10 +144,6 @@ template<unsigned NUM> void STKMesh<NUM>::copy_entities(
     mesh::EntityProcVec::iterator del = std::unique(m_entities_currently_ghosted.begin(), m_entities_currently_ghosted.end());
     m_entities_currently_ghosted.resize(std::distance(m_entities_currently_ghosted.begin(), del));
   }
-
-  m_bulk_data.modification_begin();
-  const std::string name = "Transfer Ghosting";
-  m_transfer_entity_ghosting = &m_bulk_data.create_ghosting(name);
   {
     m_bulk_data.change_ghosting(*m_transfer_entity_ghosting,
                                 m_entities_currently_ghosted);
@@ -155,19 +153,17 @@ template<unsigned NUM> void STKMesh<NUM>::copy_entities(
     m_transfer_entity_ghosting->receive_list( receive );
     m_transfer_entity_ghosting->send_list( send );
   }
+  m_mesh_modified = true;
   m_bulk_data.modification_end();
-
-  // Copy coordinates to the newly ghosted nodes
-  std::vector<const mesh::FieldBase *> fields;
-  fields.push_back(&m_coordinates_field);
-  fields.insert(fields.end(), m_values_field.begin(), m_values_field.end());
-  
-  mesh::communicate_field_data( *m_transfer_entity_ghosting , fields);
-  mesh::copy_owned_to_shared  (  m_bulk_data, fields );
 }
 
 template<unsigned DIM> void STKMesh<DIM>::update_values () {
   std::vector<const mesh::FieldBase *> fields(m_values_field.begin(), m_values_field.end());
+  if (m_mesh_modified) {
+    // Copy coordinates to the newly ghosted nodes
+    m_mesh_modified = false;
+    fields.push_back(&m_coordinates_field);
+  }
   mesh::communicate_field_data( *m_transfer_entity_ghosting , fields);
   mesh::copy_owned_to_shared  (  m_bulk_data, fields );
 }

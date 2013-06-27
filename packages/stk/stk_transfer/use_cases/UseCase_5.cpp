@@ -92,32 +92,34 @@ bool use_case_5_driver(stk::ParallelMachine  comm)
     } 
   }
 
-  bool success = true;
-  for (unsigned i=0 ; i<TONUMPOINTS; ++i) {
-    double check_l = 0;
-    double check_q = 0;
-    for (unsigned j=0 ; j<DIM; ++j) {
-      check_l +=   ToPoints(i,j);
-      check_q += j*ToPoints(i,j);
+  if (status) {
+    bool success = true;
+    for (unsigned i=0 ; i<TONUMPOINTS; ++i) {
+      double check_l = 0;
+      double check_q = 0;
+      for (unsigned j=0 ; j<DIM; ++j) {
+        check_l +=   ToPoints(i,j);
+        check_q += j*ToPoints(i,j);
+      }
+      if (TOLERANCE < fabs(check_l-ToValues(i,0)) ) {
+        std::cout <<__FILE__<<":"<<__LINE__
+                  <<" ToValues:"<<ToValues(i,0)
+                  <<" check:"<<check_l
+                  <<" error:"<<fabs(check_l-ToValues(i,0))
+                  <<std::endl;
+        success = false;
+      }
+      if (TOLERANCE < fabs(check_q-ToValues(i,1)) ) {
+        std::cout <<__FILE__<<":"<<__LINE__
+                  <<" ToValues:"<<ToValues(i,1)
+                  <<" check:"<<check_q
+                  <<" error:"<<fabs(check_q-ToValues(i,1))
+                  <<std::endl;
+        success = false;
+      }
     }
-    if (TOLERANCE < fabs(check_l-ToValues(i,0)) ) {
-      std::cout <<__FILE__<<":"<<__LINE__
-                <<" ToValues:"<<ToValues(i,0)
-                <<" check:"<<check_l
-                <<" error:"<<fabs(check_l-ToValues(i,0))
-                <<std::endl;
-      success = false;
-    }
-    if (TOLERANCE < fabs(check_q-ToValues(i,1)) ) {
-      std::cout <<__FILE__<<":"<<__LINE__
-                <<" ToValues:"<<ToValues(i,1)
-                <<" check:"<<check_q
-                <<" error:"<<fabs(check_q-ToValues(i,1))
-                <<std::endl;
-      success = false;
-    }
+    status = status && success;
   }
-  status = status && success;
   timer.stop();
 
   const bool collective_result = use_case::print_status(comm, status);
