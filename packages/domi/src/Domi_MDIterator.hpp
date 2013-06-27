@@ -161,6 +161,9 @@ public:
   /** \brief Dereferencing operator */
   value_type & operator*();
 
+  /** \brief Const dereferencing operator */
+  const value_type & operator*() const;
+
   /** \brief Prefix increment operator */
   MDIterator< MDARRAY > & operator++();
 
@@ -180,6 +183,11 @@ public:
    *  \param axis [in] Requested axis for index value
    */
   size_type index(size_type axis) const;
+
+  /** \brief Stream output operator
+   */
+  template< typename T2 >
+  friend std::ostream & operator<<(std::ostream & os, const MDIterator< T2 > & a);
 
 private:
 
@@ -299,6 +307,18 @@ MDIterator< MDARRAY >::operator!=(const MDIterator< MDARRAY > & other) const
 template< class MDARRAY >
 typename MDIterator< MDARRAY >::value_type &
 MDIterator< MDARRAY >::operator*()
+{
+  typename MDIterator< MDARRAY >::size_type offset = 0;
+  for (_axis=0; _axis < _index.size(); ++_axis)
+    offset += _index[_axis] * _mdarray._strides[_axis];
+  return _mdarray._ptr[offset];
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class MDARRAY >
+const typename MDIterator< MDARRAY >::value_type &
+MDIterator< MDARRAY >::operator*() const
 {
   typename MDIterator< MDARRAY >::size_type offset = 0;
   for (_axis=0; _axis < _index.size(); ++_axis)
@@ -434,6 +454,15 @@ MDIterator< MDARRAY >::
 index(typename MDIterator< MDARRAY >::size_type axis) const
 {
   return _index[axis];
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+std::ostream & operator<<(std::ostream & os, const MDIterator< T > & a)
+{
+  os << &(*a);
+  return os;
 }
 
 /////////////////////////////
