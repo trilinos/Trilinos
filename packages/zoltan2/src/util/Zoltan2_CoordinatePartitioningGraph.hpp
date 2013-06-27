@@ -299,7 +299,7 @@ public:
                 partId_t maxInd = maxHashIndices[j];
 
 
-                partId_t pScale = partId_t(pow (float(numSlicePerDim), float(dim - j -1)));
+                partId_t pScale = partId_t(pow (float(numSlicePerDim), int(dim - j -1)));
 
                 partId_t inSize = in->size();
 
@@ -504,7 +504,7 @@ public:
         numSlicePerDim /= 2;
         if (numSlicePerDim == 0) numSlicePerDim = 1;
 
-        numGrids = partId_t(pow(float(numSlicePerDim), float(dim)));
+        numGrids = partId_t(pow(float(numSlicePerDim), int(dim)));
 
         //allocate memory for buckets.
         std::vector <std::vector <partId_t>  > grids_ (numGrids);
