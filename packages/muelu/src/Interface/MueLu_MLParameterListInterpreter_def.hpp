@@ -81,13 +81,13 @@
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_ParameterListUtils.hpp"
 
-#ifdef HAVE_MUELU_ISORROPIA
+//#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
 #include "MueLu_RebalanceMapFactory.hpp"
-#endif
+//#endif
 
 // Note: do not add options that are only recognized by MueLu.
 
@@ -265,7 +265,7 @@ namespace MueLu {
     //
     // introduce rebalancing
     //
- #ifdef HAVE_MUELU_ISORROPIA
+#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
     Teuchos::RCP<Factory> RebalancedPFact = Teuchos::null;
     Teuchos::RCP<Factory> RebalancedRFact = Teuchos::null;
     Teuchos::RCP<Factory> RepartitionFact = Teuchos::null;
@@ -285,10 +285,10 @@ namespace MueLu {
       // Repartitioning (creates "Importer" from "Partition")
       RepartitionFact = Teuchos::rcp(new RepartitionFactory());
       {
-        Teuchos::ParameterList paramList;
-        paramList.set("minRowsPerProcessor", minperproc);
-        paramList.set("nonzeroImbalance", maxminratio);
-        RepartitionFact->SetParameterList(paramList);
+        Teuchos::ParameterList paramListRepFact;
+        paramListRepFact.set("minRowsPerProcessor", minperproc);
+        paramListRepFact.set("nonzeroImbalance", maxminratio);
+        RepartitionFact->SetParameterList(paramListRepFact);
       }
       RepartitionFact->SetFactory("A", AcFact);
       RepartitionFact->SetFactory("Partition", isoInterface);
