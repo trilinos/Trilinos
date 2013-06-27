@@ -38,25 +38,3 @@
 //
 // ***********************************************************************
 //@HEADER
-*/
-
-#include "Ifpack2_OverlappingRowMatrix_decl.hpp"
-
-#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-
-#include "Ifpack2_OverlappingRowMatrix_def.hpp"
-#include "Ifpack2_ExplicitInstantiationHelpers.hpp"
-#include "Ifpack2_ETIHelperMacros.h"
-
-namespace Ifpack2 {
-
-  #define LCLINST(S,LO,GO) \
-          IFPACK2_INST(OverlappingRowMatrix,S,LO,GO)
-
-  IFPACK2_ETI_MANGLING_TYPEDEFS()
-
-  IFPACK2_INSTANTIATE_SLG(LCLINST)
-
-}
-
-#endif
