@@ -299,7 +299,7 @@ public:
                 partId_t maxInd = maxHashIndices[j];
 
 
-                partId_t pScale = partId_t(pow (numSlicePerDim, dim - j -1));
+                partId_t pScale = partId_t(pow (float(numSlicePerDim), float(dim - j -1)));
 
                 partId_t inSize = in->size();
 
@@ -355,7 +355,7 @@ public:
         /*! \brief  function for visualization.
         */
         void writeGnuPlot(std::ofstream &file,std::ofstream &mm){
-            int numCorners = int(pow(2.0f, dim));
+            int numCorners = (int(1)<<dim);
             scalar_t *corner1 = new scalar_t [dim];
             scalar_t *corner2 = new scalar_t [dim];
 
@@ -397,14 +397,14 @@ public:
             for (int j = 0; j < numCorners; ++j){
                 std::vector <int> neighborCorners;
                 for (int i = 0; i < dim; ++i){
-                    if(int(j & int(pow(2,i))) == 0){
+                    if(int(j & (int(1)<<i))) == 0){
                         corner1[i] = lmins[i];
                     }
                     else {
                         corner1[i] = lmaxs[i];
                     }
-                    if (j % int(pow(2.0f,i + 1)) >= int(pow(2.0f,i )) ){
-                        int c1 = j - int(pow(2,i));
+                    if (j % (int(1)<<(i + 1)) >= (int(1)<<i)){
+                        int c1 = j - (int(1)<<i);
 
                         if (c1 > 0) {
                             neighborCorners.push_back(c1);
@@ -412,8 +412,8 @@ public:
                     }
                     else {
 
-                        int c1 = j + int(pow(2,i));
-                        if (c1 < int(pow(2,dim ))) {
+                        int c1 = j + (int(1)<<i);
+                        if (c1 < (int(1) << dim)) {
                             neighborCorners.push_back(c1);
                         }
                     }
@@ -424,7 +424,7 @@ public:
                     int n = neighborCorners[m];
                     //std::cout << "me:" << j << " n:" << n << std::endl;
                     for (int i = 0; i < dim; ++i){
-                        if(int(n & int(pow(2,i))) == 0){
+                        if(int(n & (int(1)<<i)) == 0){
                             corner2[i] = lmins[i];
                         }
                         else {
@@ -504,7 +504,7 @@ public:
         numSlicePerDim /= 2;
         if (numSlicePerDim == 0) numSlicePerDim = 1;
 
-        numGrids = partId_t(pow(numSlicePerDim, dim));
+        numGrids = partId_t(pow(float(numSlicePerDim), float(dim)));
 
         //allocate memory for buckets.
         std::vector <std::vector <partId_t>  > grids_ (numGrids);
