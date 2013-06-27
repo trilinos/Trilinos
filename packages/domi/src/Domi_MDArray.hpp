@@ -823,12 +823,19 @@ MDArray< T >::MDArray(const MDArray< T > & source) :
 
 template< typename T >
 MDArray< T >::MDArray(const MDArrayView< T > & source) :
-  _dimensions(source.dimensions()),
-  _strides(source.strides()),
-  _array(source.arrayView()),
-  _storage_order(source.storage_order()),
+  _dimensions(source._dimensions),
+  _strides(computeStrides(source._dimensions, source._storage_order)),
+  _array(computeSize(source._dimensions)),
+  _storage_order(source._storage_order),
   _ptr(_array.getRawPtr())
 {
+  // Copy the values from the MDArrayView to the MDArray
+  iterator thisit = begin();
+  typename MDArrayView< T >::iterator srcit = source.begin();
+  for ( ; srcit != source.end(); ++thisit, ++srcit)
+  {
+    *thisit = *srcit;
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
