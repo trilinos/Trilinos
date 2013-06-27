@@ -63,6 +63,16 @@ GNU | gnu | g++ )
   LIB="${LIB} -ldl"
   ;;
 #-------------------------------
+GNU_OSX | gnu_osx | g++_osx )
+  # Turn on lots of warnings and ansi compliance.
+  # The Trilinos build system requires '-pedantic'
+  # 
+  CXX="g++ -Wall -Wextra -ansi -pedantic -m64"
+  LINK="g++"
+  CXX="${CXX} -DENABLE_TRACEBACK"
+  LIB="${LIB} -ldl"
+  ;;
+#-------------------------------
 INTEL | intel | icc | icpc )
   # -xW = use SSE and SSE2 instructions
   CXX="icpc -Wall"
