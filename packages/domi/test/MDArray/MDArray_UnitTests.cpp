@@ -135,6 +135,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, copyConstructor, T )
 {
   MDArray< T > a = generateMDArray< T >(3,4);
   MDArray< T > b(a);
+  TEUCHOS_ASSERT( a == b );
   TEUCHOS_ASSERT( b == a );
 }
 
@@ -143,7 +144,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, mdArrayViewConstructor0, T )
   MDArray< T >     a = generateMDArray< T >(4,2);
   MDArrayView< T > b = a.mdArrayView();
   MDArray< T >     c(b);
-  TEUCHOS_ASSERT(c == a);
+  TEUCHOS_ASSERT( a == c );
+  TEUCHOS_ASSERT( c == a );
+  TEUCHOS_ASSERT( b == c );
+  TEUCHOS_ASSERT( c == b );
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, mdArrayViewConstructor1, T )
@@ -151,7 +155,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, mdArrayViewConstructor1, T )
   MDArray< T >     a = generateMDArray< T >(5,6);
   MDArrayView< T > b = a[Slice(1,4)][Slice(2,5)];
   MDArray< T >     c(b);
-  TEUCHOS_ASSERT(c() == b);
+  TEUCHOS_ASSERT( b == c );
+  TEUCHOS_ASSERT( c == b );
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, equalOperatorDiffStorage, T )
@@ -159,6 +164,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, equalOperatorDiffStorage, T )
   MDArray< T > a = generateMDArray< T >(3,4,Domi::FORTRAN_ORDER);
   MDArray< T > b = generateMDArray< T >(3,4,Domi::C_ORDER);
   TEST_EQUALITY((a == b), false);
+  TEUCHOS_ASSERT( a != b );
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, equalOperatorMDArrayView, T )
+{
+  MDArray< T > a = generateMDArray< T >(3,4);
+  MDArrayView< T > b(a);
+  TEUCHOS_ASSERT( a == b );
+  TEUCHOS_ASSERT( b == a );
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, inequalityOperator, T )
@@ -505,6 +519,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, toString3D, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArray, copyConstructor, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArray, mdArrayViewConstructor0, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArray, mdArrayViewConstructor1, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArray, equalOperatorDiffStorage, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArray, equalOperatorMDArrayView, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArray, inequalityOperator, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArray, indexing4D, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArray, indexing5D, T ) \
