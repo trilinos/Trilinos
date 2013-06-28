@@ -477,6 +477,7 @@ namespace stk
             stk::mesh::FieldBase* refine_level_d     = eMesh.add_field("refine_level_d", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             ScalarIntFieldType& refine_level       = eMesh.get_fem_meta_data()->declare_field<ScalarIntFieldType>("refine_level");
             stk::mesh::put_field( refine_level , stk::mesh::MetaData::ELEMENT_RANK , eMesh.get_fem_meta_data()->universal_part());
+            stk::io::set_field_role(refine_level, Ioss::Field::TRANSIENT);
 
             eMesh.commit();
             eMesh.delete_side_sets();
@@ -666,6 +667,7 @@ namespace stk
             stk::mesh::FieldBase* refine_level_d     = eMesh.add_field("refine_level_d", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             ScalarIntFieldType& refine_level       = eMesh.get_fem_meta_data()->declare_field<ScalarIntFieldType>("refine_level");
             stk::mesh::put_field( refine_level , stk::mesh::MetaData::ELEMENT_RANK , eMesh.get_fem_meta_data()->universal_part());
+            stk::io::set_field_role(refine_level, Ioss::Field::TRANSIENT);
 
             eMesh.commit();
             eMesh.output_active_children_only(true);
@@ -990,6 +992,7 @@ namespace stk
             stk::mesh::FieldBase* refine_level_d     = eMesh.add_field("refine_level_d", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
             ScalarIntFieldType& refine_level       = eMesh.get_fem_meta_data()->declare_field<ScalarIntFieldType>("refine_level");
             stk::mesh::put_field( refine_level , stk::mesh::MetaData::ELEMENT_RANK , eMesh.get_fem_meta_data()->universal_part());
+            stk::io::set_field_role(refine_level, Ioss::Field::TRANSIENT);
 
             eMesh.commit();
             if (1)
@@ -1072,6 +1075,23 @@ namespace stk
               {
                 ElementUnrefineCollection elements_to_unref = breaker.buildUnrefineList();
                 std::cout << "P[" << eMesh.get_rank() << "] iunref_pass= " << iunref_pass <<  " elements_to_unref.size() = " << elements_to_unref.size() << std::endl;
+
+                bool enforce_what[3] = {false, false, true};
+                int max_iter=100;
+                int iter=0;
+                bool did_change=false;
+                if (iplot==7)
+                  {
+                    Util::setFlag(12567,true);
+                  }
+
+                while ((iter++ < max_iter) && (did_change = erp.enforce_two_to_one_unrefine(enforce_what)) )
+                  {
+                    std::cout << "P[" << eMesh.get_rank() << "] iunref_pass= " << iunref_pass << " iter= " << iter
+                              << " did_change= " << did_change
+                              << std::endl;
+                  }
+
                 breaker.unrefineTheseElements(elements_to_unref);
                 std::cout << "P[" << eMesh.get_rank() << "] done... iunref_pass= " << iunref_pass << " quad_local number elements= " << eMesh.get_number_elements() << std::endl;
                 if (1)
@@ -1093,6 +1113,18 @@ namespace stk
               {
                 std::cout << "P[" << eMesh.get_rank() << "] iunrefAll_pass= " << iunref <<  std::endl;
                 //eMesh.save_as(output_files_loc+"quad_square_sidesets_final_quad_local_"+post_fix[p_size]+"_unrefAll_pass_"+toString(iunref)+".e."+toString(num_time_steps) );
+
+                bool enforce_what[3] = {false, false, true};
+                int max_iter=100;
+                int iter=0;
+                bool did_change=false;
+                while ((iter++ < max_iter) && (did_change = erp.enforce_two_to_one_unrefine(enforce_what)) )
+                  {
+                    std::cout << "P[" << eMesh.get_rank() << "] iunrefAll_ipass= " << iunref << " iter= " << iter
+                              << " did_change= " << did_change
+                              << std::endl;
+                  }
+
                 if (1)
                   {
                     char buf[1000];

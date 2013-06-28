@@ -408,7 +408,9 @@ namespace stk {
 
       /// dump a vtk file for the mesh surrounding the given node
       void dump_vtk(stk::mesh::Entity node, std::string filename, stk::mesh::Selector *selector=0);
-      void dump_vtk(std::string filename, bool dump_sides=true);
+
+      /// dump the whole mesh, or just the entities in the list
+      void dump_vtk(std::string filename, bool dump_sides=true, std::set<stk::mesh::Entity> *list=0);
 
       /// choose to respect the mesh spacing in the refined mesh
       void set_respect_spacing(bool do_respect_spacing=true) { m_do_respect_spacing = do_respect_spacing; }

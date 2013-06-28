@@ -1024,7 +1024,7 @@ namespace stk {
 
           //std::cout << "tmp interpolateFields...done " << std::endl;
 #if defined(STK_BUILT_IN_SIERRA)
-          if (m_rbar_names.size()) 
+          if (m_rbar_names.size())
             m_nodeRegistry->add_rbars(m_rbar_names);
 #endif
         }
@@ -1078,11 +1078,16 @@ namespace stk {
             }
         }
 
+
       // remove any elements that are empty (these can exist when doing local refinement)
       removeEmptyElements();
 
       // remove nodes not referred to by elements
       removeDanglingNodes();
+#if CHECK_DEBUG
+      //check_db("after doBreak");
+      m_nodeRegistry->checkDB("after removeDanglingNodes");
+#endif
 
       // remove pseudo elements
       //m_nodeRegistry->removePseudoEntities();
@@ -1259,6 +1264,7 @@ namespace stk {
             {
               stk::mesh::Entity node = bucket[iElement];
               size_t num_rels = mesh.count_relations(node);
+              if (0) std::cout << "node= " << m_eMesh.identifier(node) << " delete= " << (0==num_rels) << std::endl;
               if (0 == num_rels)
                 {
                   node_list.insert(node);

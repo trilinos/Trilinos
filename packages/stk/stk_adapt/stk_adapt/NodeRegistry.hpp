@@ -551,22 +551,32 @@ namespace stk {
             NodeIdsOnSubDimEntityType node_to_keep(0);
             //std::vector<stk::mesh::Entity> node_to_keep;
             std::vector<stk::mesh::EntityId> node_id_to_keep(0);
+            {
+              const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+              if (debug) std::cout << " nnodes= " << nnodes << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " << m_eMesh.identifier(subDimEntity[1]) <<  std::endl;
+            }
             for (unsigned inode=0; inode < nnodes; inode++)
               {
-                if (!m_eMesh.is_valid(nodeIds_onSE[inode])) continue;
                 stk::mesh::EntityId id = nodeIds_onSE.m_entity_id_vector[inode];
+                if (!m_eMesh.is_valid(nodeIds_onSE[inode])) {
+                  const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+                  if (debug) std::cout << " invalid deleting " << id << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " << m_eMesh.identifier(subDimEntity[1]) <<  std::endl;
+                  continue;
+                }
                 stk::mesh::EntityId id_check = m_eMesh.identifier(nodeIds_onSE[inode]);
                 VERIFY_OP_ON(id_check, ==, id, "NodeRegistry::clear_dangling_nodes id");
 
                 //if (  stk::mesh::Deleted == nodeIds_onSE[inode]->log_query() )
                 if (nodes_to_be_deleted && nodes_to_be_deleted->find(nodeIds_onSE[inode]) != nodes_to_be_deleted->end())
                   {
-                    //const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
-                    //std::cout << " deleting " << id << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " << m_eMesh.identifier(subDimEntity[1]) <<  std::endl;
+                    const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+                    if (debug) std::cout << " deleting " << id << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " << m_eMesh.identifier(subDimEntity[1]) <<  std::endl;
                     ++num_delete;
                   }
                 else if (!nodes_to_be_deleted && stk::mesh::Deleted == bulk_data.state(nodeIds_onSE[inode]) )
                   {
+                    const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+                    if (debug) std::cout << " 2 deleting " << id << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " << m_eMesh.identifier(subDimEntity[1]) <<  std::endl;
                     ++num_delete;
                   }
                 else
@@ -585,6 +595,9 @@ namespace stk {
 
             if (nodeIds_onSE.size() == 0)
               {
+                stk::mesh::EntityId id = nodeIds_onSE.m_entity_id_vector[0];
+                const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+                if (debug) std::cout << " to_erase deleting " << id << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " << m_eMesh.identifier(subDimEntity[1]) <<  std::endl;
                 to_erase.push_back(&(iter->first));
               }
 
@@ -627,10 +640,11 @@ namespace stk {
         init_entity_repo();
       }
 
+#define CHECK_DB 0
       void //NodeRegistry::
       beginRegistration()
       {
-        //checkDB("beginRegistration");
+        if (CHECK_DB) checkDB("beginRegistration");
 
         m_nodes_to_ghost.resize(0);
         m_pseudo_entities.clear();
@@ -647,17 +661,17 @@ namespace stk {
 
         //putInESMap();
 
-        //checkDB("endRegistration");
+        if (CHECK_DB) checkDB("endRegistration");
 
         removeUnmarkedSubDimEntities();
 
-        //checkDB("endRegistration - after removeUnmarkedSubDimEntities");
+        if (CHECK_DB) checkDB("endRegistration - after removeUnmarkedSubDimEntities");
 
         m_eMesh.get_bulk_data()->modification_begin();
         this->createNewNodesInParallel();
         m_nodes_to_ghost.resize(0);
 
-        //checkDB("endRegistration - after createNewNodesInParallel");
+        if (CHECK_DB) checkDB("endRegistration - after createNewNodesInParallel");
 
 #if STK_ADAPT_NODEREGISTRY_DO_REHASH
         m_cell_2_data_map.rehash(m_cell_2_data_map.size());
@@ -665,7 +679,7 @@ namespace stk {
         if (m_debug)
           std::cout << "P[" << m_eMesh.get_rank() << "] tmp NodeRegistry::endRegistration end" << std::endl;
 
-        //checkDB("endRegistration - after rehash");
+        if (CHECK_DB) checkDB("endRegistration - after rehash");
 
         m_state = NRS_END_REGISTER_NODE;
 
@@ -847,6 +861,7 @@ namespace stk {
       {
         EXCEPTWATCH;
         SubDimCellToDataMap::iterator iter;
+        bool debug = false;
 
         for (iter = m_cell_2_data_map.begin(); iter != m_cell_2_data_map.end(); ++iter)
           {
@@ -869,8 +884,24 @@ namespace stk {
                 //nodeIds_onSE.m_mark = 0u;
                 if (!is_marked && is_not_marked)
                   {
-                    //std::cout << "tmp SRK FOUND NR_MARK " << NR_MARK << " " << NR_MARK_NONE << std::endl;
-                    nodeIds_onSE.resize(0);
+                    if (debug) std::cout << "tmp SRK FOUND mark = " << mark << " NR_MARK =" << NR_MARK << " NR_MARK_NONE= " << NR_MARK_NONE << std::endl;
+                    // check if the node is a "hanging node" in which case it has relations
+                    bool found = false;
+                    for (unsigned in=0; in < nodeIds_onSE.size(); ++in)
+                      {
+                        if(!m_eMesh.is_valid(nodeIds_onSE[in])) continue;
+                        if (debug) std::cout << "is valid = " << m_eMesh.is_valid(nodeIds_onSE[in]) << std::endl;
+                        size_t num_rels = m_eMesh.get_bulk_data()->count_relations(nodeIds_onSE[in]);
+                        if (num_rels)
+                          {
+                            if (debug) std::cout << "tmp SRK num_rels is non-zero in removeUnmarkedSubDimEntities, id= " << m_eMesh.identifier(nodeIds_onSE[in]) <<  std::endl;
+                            found = true;
+                            break;
+                          }
+                      }
+
+                    if (!found)
+                      nodeIds_onSE.resize(0);
                   }
               }
           }

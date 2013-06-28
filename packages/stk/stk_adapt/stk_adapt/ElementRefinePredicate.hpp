@@ -16,22 +16,31 @@ namespace stk {
       /// Return DO_REFINE, DO_UNREFINE, DO_NOTHING
       int operator()(const stk::mesh::Entity entity);
 
-      // check_what: {node-, edge-, face-} neighbors
+      /** return true if mesh is 2-to-1 rule compliant
+       * check_what: {node-, edge-, face-} neighbors
+       */
       bool check_two_to_one(bool check_what[3]);
 
-      // after marking with operator() above, revisit all elements and upgrade
-      // any that need it to enforce two to one
-      // enforce_what: {node-, edge-, face-} neighbors
+      /** after marking using field "refine_field", revisit all elements and upgrade
+       * any that need it to enforce two to one
+       * @return true if there was a change to refine_field; useful in a while(did_change) loop
+       * @param enforce_what: {node-, edge-, face-} neighbors
+       */
       bool enforce_two_to_one_refine(bool enforce_what[3]);
-      void ok_to_unrefine();
+
+      /** after marking using field "refine_field", revisit all elements and downgrade
+       * any that need it to enforce two to one during unrefinement
+       * @return true if there was a change to refine_field; useful in a while(did_change) loop
+       * @param enforce_what: {node-, edge-, face-} neighbors
+       */
+      bool enforce_two_to_one_unrefine(bool enforce_what[3]);
 
     private:
       bool is_face_neighbor(stk::mesh::Entity element, int element_level, stk::mesh::Entity neighbor, int neighbor_level);
       bool is_edge_neighbor(stk::mesh::Entity element, int element_level, stk::mesh::Entity neighbor, int neighbor_level);
       bool is_node_neighbor(stk::mesh::Entity element, int element_level, stk::mesh::Entity neighbor, int neighbor_level);
       bool min_max_neighbors_level(stk::mesh::Entity element, int min_max[2], ScalarIntFieldType *refine_level, bool check_what[3] );
-      void get_neighbors(stk::mesh::Entity element, ScalarIntFieldType *refine_level,
-                         ScalarFieldType *refine_field, bool get_what[3],
+      void get_neighbors(stk::mesh::Entity element, ScalarIntFieldType *refine_level, bool get_what[3],
                          std::set<stk::mesh::Entity>& selected_neighbors);
     };
 

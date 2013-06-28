@@ -4420,7 +4420,7 @@ namespace stk {
     static std::string vtk_type(PerceptMesh& eMesh, stk::mesh::Entity element)
     {
       const CellTopologyData * topology_data = eMesh.get_cell_topology(element);
-      
+
       switch(topology_data->key)
         {
         case shards::Triangle<3>::key:
@@ -4580,7 +4580,7 @@ namespace stk {
 
     }
 
-    void PerceptMesh::dump_vtk(std::string filename, bool dump_sides)
+    void PerceptMesh::dump_vtk(std::string filename, bool dump_sides, std::set<stk::mesh::Entity> *list)
     {
       unsigned sdr = (dump_sides?side_rank():element_rank());
       typedef std::map<stk::mesh::Entity , unsigned, stk::mesh::EntityLess> NodeMap;
@@ -4597,6 +4597,7 @@ namespace stk {
               for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                 {
                   stk::mesh::Entity element = bucket[iElement];
+                  if (list && list->find(element) == list->end()) continue;
                   ++nelem;
                   const MyPairIterRelation elem_nodes(*get_bulk_data(), element, node_rank() );
                   nnode_per_elem = elem_nodes.size(); // FIXME for hetero mesh
@@ -4639,6 +4640,7 @@ namespace stk {
               for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                 {
                   stk::mesh::Entity element = bucket[iElement];
+                  if (list && list->find(element) == list->end()) continue;
                   const MyPairIterRelation elem_nodes(*get_bulk_data(), element, node_rank() );
                   file << elem_nodes.size() << " ";
                   for (unsigned inode = 0; inode < elem_nodes.size(); inode++)
@@ -4662,6 +4664,7 @@ namespace stk {
               for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                 {
                   stk::mesh::Entity element = bucket[iElement];
+                  if (list && list->find(element) == list->end()) continue;
                   file << vtk_type(*this, element) << "\n";
                 }
             }

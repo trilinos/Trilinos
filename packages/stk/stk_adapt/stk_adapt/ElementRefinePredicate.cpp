@@ -4,6 +4,8 @@
 namespace stk {
   namespace adapt {
 
+    static bool debug_print = true;
+
     /// Return DO_REFINE, DO_UNREFINE, DO_NOTHING
     int ElementRefinePredicate::operator()(const stk::mesh::Entity entity)
     {
@@ -46,7 +48,7 @@ namespace stk {
                   int *refine_level_elem = m_eMesh.get_bulk_data()->field_data( *refine_level , element );
                   double *refine_field_elem = m_eMesh.get_bulk_data()->field_data( *refine_field , element );
                   std::set<stk::mesh::Entity> selected_neighbors;
-                  get_neighbors(element, refine_level, refine_field, enforce_what, selected_neighbors);
+                  get_neighbors(element, refine_level, enforce_what, selected_neighbors);
                   //std::cout << "selected_neighbors.size= " << selected_neighbors.size() << std::endl;
                   for (std::set<stk::mesh::Entity>::iterator neighbor = selected_neighbors.begin();
                        neighbor != selected_neighbors.end(); ++neighbor)
@@ -64,8 +66,67 @@ namespace stk {
                            && refine_field_elem[0] <= 0.0)
                         {
                           refine_field_elem[0] = 1.0;
-                          std::cout << "enforce_two_to_one_refine: upgrading element " << m_eMesh.identifier(element)
-                                    << " due to neighbor: " << m_eMesh.identifier(*neighbor) << std::endl;
+                          if (debug_print)
+                            std::cout << "enforce_two_to_one_refine: upgrading element " << m_eMesh.identifier(element)
+                                      << " due to neighbor: " << m_eMesh.identifier(*neighbor) << std::endl;
+                          did_change = true;
+                        }
+                    }
+                }
+            }
+        }
+      return did_change;
+    }
+
+    bool ElementRefinePredicate::enforce_two_to_one_unrefine(bool enforce_what[3])
+    {
+      bool did_change = false;
+      ScalarIntFieldType *refine_level = m_eMesh.get_fem_meta_data()->get_field<ScalarIntFieldType>("refine_level");
+      if (!refine_level)
+        {
+          throw std::logic_error("must have refine_level field for hanging-node refinement");
+        }
+      ScalarFieldType *refine_field = static_cast<ScalarFieldType *>(m_field);
+
+      stk::mesh::Selector on_locally_owned_part =  ( m_eMesh.get_fem_meta_data()->locally_owned_part() );
+      const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.element_rank() );
+      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        {
+          if (on_locally_owned_part(**k))
+            {
+              stk::mesh::Bucket & bucket = **k ;
+              const unsigned num_elements_in_bucket = bucket.size();
+              for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+                {
+                  stk::mesh::Entity element = bucket[iElement];
+                  if (m_eMesh.numChildren(element))
+                    continue;
+
+                  int *refine_level_elem = m_eMesh.get_bulk_data()->field_data( *refine_level , element );
+                  double *refine_field_elem = m_eMesh.get_bulk_data()->field_data( *refine_field , element );
+                  std::set<stk::mesh::Entity> selected_neighbors;
+                  get_neighbors(element, refine_level, enforce_what, selected_neighbors);
+                  //std::cout << "selected_neighbors.size= " << selected_neighbors.size() << std::endl;
+                  for (std::set<stk::mesh::Entity>::iterator neighbor = selected_neighbors.begin();
+                       neighbor != selected_neighbors.end(); ++neighbor)
+                    {
+                      if (m_eMesh.numChildren(*neighbor))
+                        continue;
+
+                      int *refine_level_neigh = m_eMesh.get_bulk_data()->field_data( *refine_level , *neighbor );
+                      double *refine_field_neigh = m_eMesh.get_bulk_data()->field_data( *refine_field , *neighbor );
+
+                      // if any neighbor is more refined (level is higher)
+                      //   and I am marked for unrefine, unmark me for unrefine
+                      if ( (refine_level_neigh[0] > refine_level_elem[0])
+                           && refine_field_elem[0] < 0.0)
+                        {
+                          refine_field_elem[0] = 0.0;
+                          if (debug_print)
+                            std::cout << "enforce_two_to_one_unrefine: downgrading element " << m_eMesh.identifier(element)
+                                      << " due to neighbor: " << m_eMesh.identifier(*neighbor)
+                                      << " with refine_field_neigh= " << refine_field_neigh[0]
+                                      << std::endl;
                           did_change = true;
                         }
                     }
@@ -77,6 +138,7 @@ namespace stk {
 
     bool ElementRefinePredicate::is_face_neighbor(stk::mesh::Entity element, int element_level, stk::mesh::Entity neighbor, int neighbor_level)
     {
+
       stk::mesh::Entity parent_element = element;
       stk::mesh::Entity parent_neighbor = neighbor;
       if (std::abs(element_level - neighbor_level) > 1) return false;
@@ -156,19 +218,16 @@ namespace stk {
       return found_a_face_neighbor;
     }
 
-    void ElementRefinePredicate::get_neighbors(stk::mesh::Entity element, ScalarIntFieldType *refine_level,
-                                               ScalarFieldType *refine_field, bool get_what[3],
+    void ElementRefinePredicate::get_neighbors(stk::mesh::Entity element, ScalarIntFieldType *refine_level, bool get_what[3],
                                                std::set<stk::mesh::Entity>& selected_neighbors)
     {
       std::set<stk::mesh::Entity> neighbors;
       m_eMesh.get_node_neighbors(element, neighbors);
       //std::cout << "node_neighbors.size= " << neighbors.size() << std::endl;
       int *refine_level_elem = m_eMesh.get_bulk_data()->field_data( *refine_level , element );
-      //double *refine_field_elem = m_eMesh.get_bulk_data()->field_data( *refine_field , element );
       for (std::set<stk::mesh::Entity>::iterator neighbor = neighbors.begin(); neighbor != neighbors.end(); ++neighbor)
         {
           int *refine_level_neigh = m_eMesh.get_bulk_data()->field_data( *refine_level , *neighbor );
-          //double *refine_field_elem = m_eMesh.get_bulk_data()->field_data( *refine_field , *neighbor );
           bool fn = false;
           if (get_what[2])
             {
@@ -189,12 +248,13 @@ namespace stk {
 
     bool ElementRefinePredicate::check_two_to_one(bool check_what[3])
     {
+      bool valid = true;
       ScalarIntFieldType *refine_level = m_eMesh.get_fem_meta_data()->get_field<ScalarIntFieldType>("refine_level");
       if (!refine_level)
         {
           throw std::logic_error("must have refine_level field for hanging-node refinement");
         }
-      bool valid = true;
+
       stk::mesh::Selector on_locally_owned_part =  ( m_eMesh.get_fem_meta_data()->locally_owned_part() );
       const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.element_rank() );
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
@@ -206,31 +266,37 @@ namespace stk {
               for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                 {
                   stk::mesh::Entity element = bucket[iElement];
-                  //if (m_eMesh.numChildren(element)) ...
+                  if (m_eMesh.numChildren(element))
+                    continue;
+
                   int *refine_level_elem = m_eMesh.get_bulk_data()->field_data( *refine_level , element );
-                  int min_max_neigh[2] = {0,0};
-                  bool ffn = min_max_neighbors_level(element, min_max_neigh, refine_level, check_what);
-                  (void) ffn;
-                  if (m_eMesh.hasFamilyTree(element))
+                  std::set<stk::mesh::Entity> selected_neighbors;
+                  get_neighbors(element, refine_level, check_what, selected_neighbors);
+                  //std::cout << "selected_neighbors.size= " << selected_neighbors.size() << std::endl;
+                  for (std::set<stk::mesh::Entity>::iterator neighbor = selected_neighbors.begin();
+                       neighbor != selected_neighbors.end(); ++neighbor)
                     {
-                      stk::mesh::Entity parent = m_eMesh.getParent(element, true);
-                      if (m_eMesh.is_valid(parent))
+                      if (m_eMesh.numChildren(*neighbor))
+                        continue;
+
+                      int *refine_level_neigh = m_eMesh.get_bulk_data()->field_data( *refine_level , *neighbor );
+
+                      if ( std::abs(refine_level_neigh[0] - refine_level_elem[0]) > 1)
                         {
-                          //int *refine_level_parent = m_eMesh.get_bulk_data()->field_data( *refine_level , element );
-                          int min_max_neigh_parent[2] = {0,0};
-                          min_max_neighbors_level(parent, min_max_neigh_parent, refine_level, check_what);
-                          if (refine_level_elem[0] - min_max_neigh_parent[0] > 1)
-                            {
-                              valid = false;
-                            }
+                          if (debug_print)
+                            std::cout << "check_two_to_one: invalid element (id,level)= ("
+                                      << m_eMesh.identifier(element) << ", " << refine_level_elem[0]
+                                      << ") due to neighbor: (" << m_eMesh.identifier(*neighbor)
+                                      << ", " << refine_level_neigh[0] << ")"
+                                      << std::endl;
+                          valid = false;
                         }
                     }
-
                 }
             }
         }
-
       return valid;
+
     }
 
 
