@@ -88,17 +88,18 @@ namespace stk
 
 #define EXTRA_PRINT 0
 
-      class SetElementField1 : public percept::ElementOp
+      class SetElementRefineFieldValue : public percept::ElementOp
       {
         percept::PerceptMesh& m_eMesh;
+        double m_val;
       public:
-        SetElementField1(percept::PerceptMesh& eMesh) : m_eMesh(eMesh){
+        SetElementRefineFieldValue(percept::PerceptMesh& eMesh, double val=0.0) : m_eMesh(eMesh), m_val(val) {
         }
 
         virtual bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
         {
           double *f_data = m_eMesh.field_data(field, element);
-          f_data[0] = (double)(0);
+          f_data[0] = m_val;
 
           return false;  // don't terminate the loop
         }
@@ -106,6 +107,7 @@ namespace stk
         virtual void fini_elementOp() {}
 
       };
+
 
 
       STKUNIT_UNIT_TEST(regr_localRefiner, break_tet_to_tet_N_5_ElementBased)
@@ -484,7 +486,7 @@ namespace stk
             eMesh.output_active_children_only(true);
             if (1)
               {
-                SetElementField1 set_ref_field(eMesh);
+                SetElementRefineFieldValue set_ref_field(eMesh);
                 eMesh.elementOpLoop(set_ref_field, refine_level_d);
               }
 
@@ -673,7 +675,7 @@ namespace stk
             eMesh.output_active_children_only(true);
             if (1)
               {
-                SetElementField1 set_ref_field(eMesh);
+                SetElementRefineFieldValue set_ref_field(eMesh);
                 eMesh.elementOpLoop(set_ref_field, refine_level_d);
               }
 
@@ -997,7 +999,7 @@ namespace stk
             eMesh.commit();
             if (1)
               {
-                SetElementField1 set_ref_field(eMesh);
+                SetElementRefineFieldValue set_ref_field(eMesh);
                 eMesh.elementOpLoop(set_ref_field, refine_level_d);
               }
 
@@ -1073,8 +1075,7 @@ namespace stk
 
             for (int iunref_pass=0; iunref_pass < num_unref_passes; iunref_pass++)
               {
-                ElementUnrefineCollection elements_to_unref = breaker.buildUnrefineList();
-                std::cout << "P[" << eMesh.get_rank() << "] iunref_pass= " << iunref_pass <<  " elements_to_unref.size() = " << elements_to_unref.size() << std::endl;
+                eMesh.elementOpLoop(set_ref_field, refine_field);
 
                 bool enforce_what[3] = {false, false, true};
                 int max_iter=100;
@@ -1092,7 +1093,10 @@ namespace stk
                               << std::endl;
                   }
 
+                ElementUnrefineCollection elements_to_unref = breaker.buildUnrefineList();
+                std::cout << "P[" << eMesh.get_rank() << "] iunref_pass= " << iunref_pass <<  " elements_to_unref.size() = " << elements_to_unref.size() << std::endl;
                 breaker.unrefineTheseElements(elements_to_unref);
+
                 std::cout << "P[" << eMesh.get_rank() << "] done... iunref_pass= " << iunref_pass << " quad_local number elements= " << eMesh.get_number_elements() << std::endl;
                 if (1)
                   {
@@ -1106,13 +1110,16 @@ namespace stk
                   }
               }
 
+            SetElementRefineFieldValue set_ref_field_val_unref_all(eMesh, -1.0);
+
             eMesh.save_as(output_files_loc+"quad_tmp_square_sidesets_quad_local_unref_"+post_fix[p_size]+".e");
 
             eMesh.save_as(output_files_loc+"quad_square_sidesets_final_quad_local_"+post_fix[p_size]+".e.s-"+toString(num_time_steps) );
+
             for (int iunref=0; iunref < 10; iunref++)
               {
+                eMesh.elementOpLoop(set_ref_field_val_unref_all, refine_field);
                 std::cout << "P[" << eMesh.get_rank() << "] iunrefAll_pass= " << iunref <<  std::endl;
-                //eMesh.save_as(output_files_loc+"quad_square_sidesets_final_quad_local_"+post_fix[p_size]+"_unrefAll_pass_"+toString(iunref)+".e."+toString(num_time_steps) );
 
                 bool enforce_what[3] = {false, false, true};
                 int max_iter=100;
@@ -1124,6 +1131,8 @@ namespace stk
                               << " did_change= " << did_change
                               << std::endl;
                   }
+                ElementUnrefineCollection elements_to_unref = breaker.buildUnrefineList();
+                breaker.unrefineTheseElements(elements_to_unref);
 
                 if (1)
                   {
@@ -1136,7 +1145,6 @@ namespace stk
                     ++iplot;
                   }
 
-                breaker.unrefineAll();
                 std::cout << "P[" << eMesh.get_rank() << "] done... iunrefAll_pass= " << iunref << " quad_local number elements= " << eMesh.get_number_elements() << std::endl;
               }
 
