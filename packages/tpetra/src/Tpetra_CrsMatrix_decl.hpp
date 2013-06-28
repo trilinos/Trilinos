@@ -1461,12 +1461,28 @@ namespace Tpetra {
                         const ArrayView<const LocalOrdinal> &permuteToLIDs,
                         const ArrayView<const LocalOrdinal> &permuteFromLIDs);
 
-    void packAndPrepare(const DistObject<char, LocalOrdinal,GlobalOrdinal,Node>& source,
-                        const ArrayView<const LocalOrdinal> &exportLIDs,
-                        Array<char> &exports,
-                        const ArrayView<size_t> & numPacketsPerLID,
-                        size_t& constantNumPackets,
-                        Distributor &distor);
+    void 
+    packAndPrepare (const DistObject<char, LocalOrdinal,GlobalOrdinal,Node>& source,
+		    const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+		    Teuchos::Array<char>& exports,
+		    const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+		    size_t& constantNumPackets,
+		    Distributor& distor);
+
+    /// \brief Implementation of SrcDistObjectWithPack.
+    /// 
+    /// \warning To be called only by the packAndPrepare method of
+    ///   appropriate classes of DistObject.
+    ///
+    /// Subclasses may override this method to speed up or otherwise
+    /// improve the implementation by exploiting more specific details
+    /// of the subclass.
+    virtual void
+    pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+	  Teuchos::Array<char>& exports,
+	  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+	  size_t& constantNumPackets,
+	  Distributor& distor) const;
 
     /// \brief Unpack the imported column indices and values, and combine into matrix.
     ///
