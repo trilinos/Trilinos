@@ -67,12 +67,68 @@ template< typename T > class MDArrayRCP;
 template< typename T >
 bool operator==(const MDArrayRCP< T > & a1, const MDArrayRCP< T > & a2);
 
+/** \brief MDArray/MDArrayRCP equality operator.
+ *
+ * \relates MDArray
+ * \relates MDArrayRCP
+ */
+template< typename T >
+bool operator==(const MDArray< T > & a1, const MDArrayRCP< T > & a2);
+
+/** \brief MDArrayRCP/MDArray equality operator.
+ *
+ * \relates MDArray
+ * \relates MDArrayRCP
+ */
+template< typename T >
+bool operator==(const MDArrayRCP< T > & a1, const MDArray< T > & a2);
+
+/** \brief MDArrayView/MDArrayRCP equality operator.
+ *
+ * \relates MDArrayView
+ * \relates MDArrayRCP
+ */
+template< typename T >
+bool operator==(const MDArrayView< T > & a1, const MDArrayRCP< T > & a2);
+
+/** \brief MDArrayRCP/MDArrayView equality operator.
+ *
+ * \relates MDArrayView
+ * \relates MDArrayRCP
+ */
+template< typename T >
+bool operator==(const MDArrayRCP< T > & a1, const MDArrayView< T > & a2);
+
 /** \brief Inequality operator.
  *
  * \relates MDArrayRCP
  */
 template< typename T >
 bool operator!=(const MDArrayRCP< T > & a1, const MDArrayRCP< T > & a2);
+
+/** \brief MDArray/MDArrayRCP inequality operator.
+ *
+ * \relates MDArray
+ * \relates MDArrayRCP
+ */
+template< typename T >
+bool operator!=(const MDArray< T > & a1, const MDArrayRCP< T > & a2);
+
+/** \brief MDArrayView/MDArrayRCP inequality operator.
+ *
+ * \relates MDArrayView
+ * \relates MDArrayRCP
+ */
+template< typename T >
+bool operator!=(const MDArrayView< T > & a1, const MDArrayRCP< T > & a2);
+
+/** \brief MDArrayRCP/MDArrayView inequality operator.
+ *
+ * \relates MDArrayView
+ * \relates MDArrayRCP
+ */
+template< typename T >
+bool operator!=(const MDArrayRCP< T > & a1, const MDArrayView< T > & a2);
 
 /** \brief Memory-safe, reference-counted, templated,
  * multi-dimensional array class
@@ -631,11 +687,51 @@ public:
   friend bool operator==(const MDArrayRCP< T2 > & a1,
                          const MDArrayRCP< T2 > & a2);
 
+  /** \brief MDArray/MDArrayRCP equality operator.
+   */
+  template< typename T2 >
+  friend bool operator==(const MDArray< T2 > & a1, const MDArrayRCP< T2 > & a2);
+
+  /** \brief MDArrayRCP/MDArray equality operator.
+   */
+  template< typename T2 >
+  friend bool operator==(const MDArrayRCP< T2 > & a1, const MDArray< T2 > & a2);
+
+  /** \brief MDArrayRCP/MDArrayView equality operator.
+   */
+  template< typename T2 >
+  friend bool operator==(const MDArrayRCP< T2 > & a1, const MDArrayView< T2 > & a2);
+
+  /** \brief MDArrayView/MDArrayRCP equality operator.
+   */
+  template< typename T2 >
+  friend bool operator==(const MDArrayView< T2 > & a1, const MDArrayRCP< T2 > & a2);
+
   /** \brief Inequality operator.
    */
   template< typename T2 >
   friend bool operator!=(const MDArrayRCP< T2 > & a1,
                          const MDArrayRCP< T2 > & a2);
+
+  /** \brief MDArray/MDArrayRCP inequality operator.
+   */
+  template< typename T2 >
+  friend bool operator!=(const MDArray< T2 > & a1, const MDArrayRCP< T2 > & a2);
+
+  /** \brief MDArrayRCP/MDArray inequality operator.
+   */
+  template< typename T2 >
+  friend bool operator!=(const MDArrayRCP< T2 > & a1, const MDArray< T2 > & a2);
+
+  /** \brief MDArrayRCP/MDArrayView inequality operator.
+   */
+  template< typename T2 >
+  friend bool operator!=(const MDArrayRCP< T2 > & a1, const MDArrayView< T2 > & a2);
+
+  /** \brief MDArrayView/MDArrayRCP inequality operator.
+   */
+  template< typename T2 >
+  friend bool operator!=(const MDArrayView< T2 > & a1, const MDArrayRCP< T2 > & a2);
 
   /** \brief Stream output operator
    */
@@ -1413,9 +1509,73 @@ bool operator==(const MDArrayRCP< T > & a1, const MDArrayRCP< T > & a2)
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
+bool operator==(const MDArray< T > & a1, const MDArrayRCP< T > & a2)
+{
+  return (a1() == a2());
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+bool operator==(const MDArrayRCP< T > & a1, const MDArray< T > & a2)
+{
+  return (a1() == a2());
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+bool operator==(const MDArrayView< T > & a1, const MDArrayRCP< T > & a2)
+{
+  return (a1 == a2());
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+bool operator==(const MDArrayRCP< T > & a1, const MDArrayView< T > & a2)
+{
+  return (a1() == a2);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
 bool operator!=(const MDArrayRCP< T > & a1, const MDArrayRCP< T > & a2)
 {
   return not (a1 == a2);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+bool operator!=(const MDArray< T > & a1, const MDArrayRCP< T > & a2)
+{
+  return (a1() != a2());
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+bool operator!=(const MDArrayRCP< T > & a1, const MDArray< T > & a2)
+{
+  return (a1() != a2());
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+bool operator!=(const MDArrayView< T > & a1, const MDArrayRCP< T > & a2)
+{
+  return (a1 != a2());
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+bool operator!=(const MDArrayRCP< T > & a1, const MDArrayView< T > & a2)
+{
+  return (a1() != a2);
 }
 
 ////////////////////////////////////////////////////////////////////////

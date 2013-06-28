@@ -50,8 +50,8 @@
 
 // Domi includes
 #include "Domi_MDArray_Utils.hpp"
-#include "Domi_MDArrayView.hpp"
 #include "Domi_MDIterator.hpp"
+#include "Domi_MDArrayView.hpp"
 
 namespace Domi
 {
@@ -68,12 +68,43 @@ template< typename T > class MDArray;
 template< typename T >
 bool operator==(const MDArray< T > & a1, const MDArray< T > & a2);
 
-/** \brief Non-equality operator.
+/** \brief MDArray/MDArrayView equality operator.
+ *
+ * \relates MDArray
+ * \relates MDArrayView
+ */
+template< typename T >
+bool operator==(const MDArray< T > & a1, const MDArrayView< T > & a2);
+
+/** \brief MDArrayView/MDArray equality operator.
+ *
+ * \relates MDArray
+ * \relates MDArrayView
+ */
+template< typename T >
+bool operator==(const MDArrayView< T > & a1, const MDArray< T > & a2);
+
+/** \brief Inequality operator.
  *
  * \relates MDArray
  */
 template< typename T >
 bool operator!=(const MDArray< T > & a1, const MDArray< T > & a2);
+
+/** \brief MDArrayView inequality operator.
+ *
+ * \relates MDArray
+ */
+template< typename T >
+bool operator!=(const MDArray< T > & a1, const MDArrayView< T > & a2);
+
+/** \brief MDArrayView/MDArray inequality operator.
+ *
+ * \relates MDArray
+ * \relates MDArrayView
+ */
+template< typename T >
+bool operator!=(const MDArrayView< T > & a1, const MDArray< T > & a2);
 
 /** \brief Non-member swap
  *
@@ -725,10 +756,30 @@ public:
   template< typename T2 >
   friend bool operator==(const MDArray< T2 > & a1, const MDArray< T2 > & a2);
 
+  /** \brief MDArray/MDArrayView equality operator.
+   */
+  template< typename T2 >
+  friend bool operator==(const MDArray< T2 > & a1, const MDArrayView< T2 > & a2);
+
+  /** \brief MDArrayView/MDArray equality operator.
+   */
+  template< typename T2 >
+  friend bool operator==(const MDArrayView< T2 > & a1, const MDArray< T2 > & a2);
+
   /** \brief Inequality operator.
    */
   template< typename T2 >
   friend bool operator!=(const MDArray< T2 > & a1, const MDArray< T2 > & a2);
+
+  /** \brief MDArray/MDArrayView inequality operator.
+   */
+  template< typename T2 >
+  friend bool operator!=(const MDArray< T2 > & a1, const MDArrayView< T2 > & a2);
+
+  /** \brief MDArrayView/MDArray inequality operator.
+   */
+  template< typename T2 >
+  friend bool operator!=(const MDArrayView< T2 > & a1, const MDArray< T2 > & a2);
 
   /** \brief Stream output operator
    */
@@ -1497,9 +1548,41 @@ bool operator==(const MDArray< T > & a1, const MDArray< T > & a2)
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
+bool operator==(const MDArray< T > & a1, const MDArrayView< T > & a2)
+{
+  return (a1() == a2);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+bool operator==(const MDArrayView< T > & a1, const MDArray< T > & a2)
+{
+  return (a1 == a2());
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
 bool operator!=(const MDArray< T > & a1, const MDArray< T > & a2)
 {
   return not (a1 == a2);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+bool operator!=(const MDArray< T > & a1, const MDArrayView< T > & a2)
+{
+  return (a1() != a2);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+bool operator!=(const MDArrayView< T > & a1, const MDArray< T > & a2)
+{
+  return (a1 != a2());
 }
 
 ////////////////////////////////////////////////////////////////////////

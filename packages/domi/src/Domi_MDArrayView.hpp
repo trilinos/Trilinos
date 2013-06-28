@@ -62,7 +62,9 @@ namespace Domi
 // I put these non-member template functions here for the same reason
 // that Ross did the same thing for the Teuchos::Array class.  See
 // Teuchos_Array.hpp for details.
+template< typename T > class MDArray;
 template< typename T > class MDArrayView;
+template< typename T > class MDArrayRCP;
 
 /** \brief Equality operator.
  *
@@ -71,9 +73,9 @@ template< typename T > class MDArrayView;
 template< typename T >
 bool operator==(const MDArrayView< T > & a1, const MDArrayView< T > & a2);
 
-/** \brief Non-equality operator.
+/** \brief Inequality operator.
  *
- * \relates MDArray
+ * \relates MDArrayView
  */
 template< typename T >
 bool operator!=(const MDArrayView< T > & a1, const MDArrayView< T > & a2);
