@@ -100,7 +100,7 @@ Teuchos::Array< T > computeStrides(const Teuchos::ArrayView< T > & dimensions,
   return strides;
 }
 
-/** \brief Compute the minimum size required for an <tt>MDArray</tt>,
+/** \brief Compute the strides of an <tt>MDArray</tt>,
  *         <tt>MDArrayView</tt>, or <tt>MDArrayRCP</tt>, given its
  *         dimensions as an ArrayView.
  */
