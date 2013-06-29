@@ -280,6 +280,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, squareBracketSlice2, T )
   TEST_EQUALITY_CONST(view(1,2), 10);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, contiguous1, T )
+{
+  MDArray< T> a = generateMDArray< T >(3, 5, 7);
+  MDArrayView< T > b = a[Slice(1,2)][Slice(1,4)][Slice(1,6)];
+  TEST_EQUALITY_CONST(b.contiguous(), false);
+  MDArrayView< T > c = a[Slice()][Slice()][Slice()];
+  TEST_EQUALITY_CONST(c.contiguous(), true);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, contiguous2, T )
+{
+  MDArray< T> a = generateMDArray< T >(7, 5, 3);
+  MDArrayView< T > b = a[Slice()][2][Slice()];
+  TEST_EQUALITY_CONST(b.contiguous(), false);
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, rangeError, T )
 {
   MDArray< T > a = generateMDArray< T >(3,4);
@@ -406,6 +422,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, toString3D, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayView, squareBracketOrdinalCOrder, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayView, squareBracketSlice1, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayView, squareBracketSlice2, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayView, contiguous1, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayView, contiguous2, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayView, rangeError, T) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayView, rangeErrorCOrder, T) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArrayView, assign, T) \
