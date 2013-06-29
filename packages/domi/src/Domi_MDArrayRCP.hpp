@@ -227,6 +227,12 @@ public:
    */
   inline MDArrayRCP(const MDArrayRCP< T > & r_ptr);
 
+  /** \brief Deep copy constructor
+   *
+   * \param source [in] Source MDArrayView
+   */
+  MDArrayRCP(const MDArrayView< T > & source);
+
   /** \brief Destructor
    */
   inline ~MDArrayRCP();
@@ -821,6 +827,25 @@ MDArrayRCP< T >::MDArrayRCP(const MDArrayRCP< T > & r_ptr) :
   _storage_order(r_ptr._storage_order),
   _ptr(_array.getRawPtr())
 {
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+MDArrayRCP< T >::MDArrayRCP(const MDArrayView< T > & source) :
+  _dimensions(source.dimensions()),
+  _strides(computeStrides(source.dimensions(), source.storage_order())),
+  _array(computeSize(source.dimensions())),
+  _storage_order(source.storage_order()),
+  _ptr(_array.getRawPtr())
+{
+  // Copy the values from the MDArrayView to the MDArrayRCP
+  iterator thisit = begin();
+  typename MDArrayView< T >::iterator srcit = source.begin();
+  for ( ; srcit != source.end(); ++thisit, ++srcit)
+  {
+    *thisit = *srcit;
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
