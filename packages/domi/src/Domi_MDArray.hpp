@@ -874,10 +874,10 @@ MDArray< T >::MDArray(const MDArray< T > & source) :
 
 template< typename T >
 MDArray< T >::MDArray(const MDArrayView< T > & source) :
-  _dimensions(source._dimensions),
-  _strides(computeStrides(source._dimensions, source._storage_order)),
-  _array(computeSize(source._dimensions)),
-  _storage_order(source._storage_order),
+  _dimensions(source.dimensions()),
+  _strides(computeStrides(source.dimensions(), source.storage_order())),
+  _array(computeSize(source.dimensions())),
+  _storage_order(source.storage_order()),
   _ptr(_array.getRawPtr())
 {
   // Copy the values from the MDArrayView to the MDArray
