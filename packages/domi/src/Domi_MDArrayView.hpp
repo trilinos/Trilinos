@@ -116,9 +116,6 @@ public:
 
   //@}
 
-  template< typename T2 >
-  friend class MDArray;
-
   /** @name Constructors and Destructor */
   //@{
 
@@ -200,6 +197,10 @@ public:
   /** \brief Return the storage order
    */
   inline EStorageOrder storage_order() const;
+
+  /** \brief Return whether the MDArrayView is contiguous in memory
+   */
+  inline bool contiguous() const;
 
   //@}
 
@@ -690,6 +691,21 @@ EStorageOrder
 MDArrayView< T >::storage_order() const
 {
   return _storage_order;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+bool
+MDArrayView< T >::contiguous() const
+{
+  // Temporarily compute the strides this MDArrayView would have if
+  // its memory were contiguous with no stride gaps
+  Teuchos::Array< size_type > contig_strides =
+    computeStrides(_dimensions, _storage_order);
+  // If these strides are the same as the actual strides, then the
+  // MDArrayView is contiguous
+  return (contig_strides == _strides);
 }
 
 ////////////////////////////////////////////////////////////////////////
