@@ -441,29 +441,31 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-  checkSizes (const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &sourceObj)
+  checkSizes (const SrcDistObject& sourceObj)
   {
-    using Teuchos::RCP;
-    using Teuchos::rcp_dynamic_cast;
-    using Teuchos::rcpFromRef;
-
-    typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
-    // rcp_dynamic_cast gives us superior cast failure output to dynamic_cast.
-    RCP<const MV> A = rcp_dynamic_cast<const MV> (rcpFromRef (sourceObj), true);
-
-    // This method is called in DistObject::doTransfer().  By that
-    // point, we've already constructed an Import or Export object
-    // using the two multivectors' Maps, which means that (hopefully)
-    // we've already checked other attributes of the multivectors.
-    // Thus, all we need to do here is check the number of columns.
-    return A->getNumVectors() == this->getNumVectors ();
+    // Check whether the source object is a MultiVector.  If not, then
+    // we can't even compare sizes, so it's definitely not OK to
+    // Import or Export from it.
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> this_type;
+    const this_type* src = dynamic_cast<const this_type*> (&sourceObj);
+    if (src == NULL) {
+      return false; 
+    } else {
+      // The target of the Import or Export calls checkSizes() in
+      // DistObject::doTransfer().  By that point, we've already
+      // constructed an Import or Export object using the two
+      // multivectors' Maps, which means that (hopefully) we've
+      // already checked other attributes of the multivectors.  Thus,
+      // all we need to do here is check the number of columns.
+      return src->getNumVectors () == this->getNumVectors ();
+    }
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-  copyAndPermute (const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> & sourceObj,
+  copyAndPermute (const SrcDistObject& sourceObj,
                   size_t numSameIDs,
                   const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
                   const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs)
@@ -473,16 +475,18 @@ namespace Tpetra {
     using Teuchos::RCP;
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
     typedef typename ArrayView<const LocalOrdinal>::size_type size_type;
+    const char tfecfFuncName[] = "copyAndPermute";
 
-    // We've already called checkSizes(), so we know this will succeed.
-    const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
-    TEUCHOS_TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       permuteToLIDs.size() != permuteFromLIDs.size(), std::runtime_error,
-      "Tpetra::MultiVector::copyAndPermute(): permuteToLIDs and permuteFromLIDs"
-      " must have the same size." << std::endl << "permuteToLIDs.size() = "
-      << permuteToLIDs.size() << " != permuteFromLIDs.size() = "
-      << permuteFromLIDs.size() << ".");
-    const size_t numCols = getNumVectors ();
+      ": permuteToLIDs and permuteFromLIDs must have the same size." 
+      << std::endl << "permuteToLIDs.size() = " << permuteToLIDs.size () 
+      << " != permuteFromLIDs.size() = " << permuteFromLIDs.size () << ".");
+
+    // We've already called checkSizes(), so this cast must succeed.
+    const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
+
+    const size_t numCols = this->getNumVectors ();
 
     // Copy rows [0, numSameIDs-1] of the local multivectors.
     //
@@ -576,7 +580,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-  packAndPrepare (const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> & sourceObj,
+  packAndPrepare (const SrcDistObject& sourceObj,
                   const ArrayView<const LocalOrdinal> &exportLIDs,
                   Array<Scalar> &exports,
                   const ArrayView<size_t> &numExportPacketsPerLID,
@@ -589,7 +593,7 @@ namespace Tpetra {
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
     typedef Array<size_t>::size_type size_type;
 
-    // This cast should always succeed, since checkSizes() does the cast.
+    // We've already called checkSizes(), so this cast must succeed.
     const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
 
     // We don't need numExportPacketsPerLID; forestall "unused

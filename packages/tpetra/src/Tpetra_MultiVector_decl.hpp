@@ -983,11 +983,11 @@ namespace Tpetra {
     ///
     /// This method is called in DistObject::doTransfer() to check
     /// whether data redistribution between the two objects is legal.
-    bool
-    checkSizes (const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>& sourceObj);
+    virtual bool
+    checkSizes (const SrcDistObject& sourceObj);
 
-    void
-    copyAndPermute (const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>& sourceObj,
+    virtual void
+    copyAndPermute (const SrcDistObject& sourceObj,
                     size_t numSameIDs,
                     const ArrayView<const LocalOrdinal>& permuteToLIDs,
                     const ArrayView<const LocalOrdinal>& permuteFromLIDs);
@@ -995,15 +995,15 @@ namespace Tpetra {
     //! Number of packets to send per LID
     virtual size_t constantNumberOfPackets () const;
 
-    void
-    packAndPrepare (const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>& sourceObj,
+    virtual void
+    packAndPrepare (const SrcDistObject& sourceObj,
                     const ArrayView<const LocalOrdinal>& exportLIDs,
                     Array<Scalar>& exports,
                     const ArrayView<size_t>& numExportPacketsPerLID,
                     size_t& constantNumPackets,
                     Distributor& distor);
 
-    void
+    virtual void
     unpackAndCombine (const ArrayView<const LocalOrdinal>& importLIDs,
                       const ArrayView<const Scalar>& imports,
                       const ArrayView<size_t>& numPacketsPerLID,

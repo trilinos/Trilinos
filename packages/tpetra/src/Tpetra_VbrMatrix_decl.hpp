@@ -487,39 +487,55 @@ public:
 
   //! Return a copy of the (point-entry) diagonal values.
   /*!
-    Throws an exception if the input-vector's map is not the same as
+    Throws an exception if the input Vector's Map is not the same as
     getBlockRowMap()->getPointMap().
   */
-  void getLocalDiagCopy(Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag) const;
+  void getLocalDiagCopy (Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag) const;
 
-  const Teuchos::RCP<const BlockCrsGraph<LocalOrdinal, GlobalOrdinal, Node> >& getBlockCrsGraph() {return constBlkGraph_;}
-  //@}
-
-  //! @name Overridden from Teuchos::DistObject
-  //@{
-
-  bool checkSizes(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node>& source);
-
-  void copyAndPermute(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node>& source, size_t numSameIDs, const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs, const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs);
-
-  void packAndPrepare(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node>& source, const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs, Teuchos::Array<char>& exports, const Teuchos::ArrayView<size_t>& numPacketsPerLID, size_t& constantNumPackets, Distributor& distor);
-
-  void unpackAndCombine(const Teuchos::ArrayView<const LocalOrdinal>& importLIDs, const Teuchos::ArrayView<const char>& imports, const Teuchos::ArrayView<size_t>& numPacketsPerLID, size_t constantNumPackets, Distributor& distor, CombineMode CM);
+  const Teuchos::RCP<const BlockCrsGraph<LocalOrdinal, GlobalOrdinal, Node> >& 
+  getBlockCrsGraph () {
+    return constBlkGraph_;
+  }
 
   //@}
-
-  //! @name Overridden from Teuchos::Describable
+  //! @name Implementation of DistObject
   //@{
+
+  virtual bool checkSizes (const SrcDistObject& source);
+
+  virtual void 
+  copyAndPermute (const SrcDistObject& source, 
+		  size_t numSameIDs, 
+		  const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs, 
+		  const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs);
+
+  virtual void 
+  packAndPrepare (const SrcDistObject& source, 
+		  const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs, 
+		  Teuchos::Array<char>& exports, 
+		  const Teuchos::ArrayView<size_t>& numPacketsPerLID, 
+		  size_t& constantNumPackets, 
+		  Distributor& distor);
+
+  virtual void
+  unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal>& importLIDs, 
+		    const Teuchos::ArrayView<const char>& imports, 
+		    const Teuchos::ArrayView<size_t>& numPacketsPerLID, 
+		    size_t constantNumPackets, 
+		    Distributor& distor, 
+		    CombineMode CM);
+
+  //@}
+  //! @name Implementation of Teuchos::Describable
+  //@{
+
   std::string description() const;
 
-  /** \brief Print the object with some verbosity level to a FancyOStream object.
-  */
+  //! Print the object with some verbosity level to a FancyOStream object.
   void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
   //@}
 
  private:
-  //private methods:
-
   Teuchos::RCP<Node> getNode() const;
 
   void updateImport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X) const;

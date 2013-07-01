@@ -3934,24 +3934,19 @@ namespace Tpetra {
            class LocalMatOps>
   bool
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  checkSizes (const DistObject<char, LocalOrdinal, GlobalOrdinal, Node>& source)
+  checkSizes (const SrcDistObject& source)
   {
-    // It's not clear what kind of compatibility checks on sizes can be performed here.
-    // Epetra_CrsGraph doesn't check any sizes for compatibility.
+    // It's not clear what kind of compatibility checks on sizes can
+    // be performed here.  Epetra_CrsGraph doesn't check any sizes for
+    // compatibility.
 
-    // right now, we'll only support import/exporting between CrsMatrix<Scalar>
-    // if the source dist object isn't CrsMatrix or some offspring, flag this operation as incompatible.
-    try {
-      typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> this_type;
-      const this_type& A = dynamic_cast<const this_type&> (source);
-      (void) A;
-    }
-    catch (...) {
-      // If the input isn't even a CrsMatrix, then certainly the sizes
-      // don't match.
-      return false;
-    }
-    return true;
+    // Currently, the source object must be a RowMatrix with the same
+    // four template parameters as the target CrsMatrix.  We might
+    // relax this requirement later.
+    typedef RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> row_matrix_type;
+    const row_matrix_type* srcRowMat = 
+      dynamic_cast<const row_matrix_type*> (&source);
+    return (srcRowMat != NULL);
   }
 
 
@@ -3962,7 +3957,7 @@ namespace Tpetra {
            class LocalMatOps>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  copyAndPermute (const DistObject<char, LocalOrdinal,GlobalOrdinal,Node> & source,
+  copyAndPermute (const SrcDistObject& source,
                   size_t numSameIDs,
                   const ArrayView<const LocalOrdinal> &permuteToLIDs,
                   const ArrayView<const LocalOrdinal> &permuteFromLIDs)
@@ -3973,30 +3968,29 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef Node NT;
-
     // Method name string for TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC.
     const char tfecfFuncName[] = "copyAndPermute";
 
-    // This dynamic cast should succeed, because we've already tested
-    // it in checkSizes().
-    typedef CrsMatrix<Scalar, LO, GO, NT, LocalMatOps> this_type;
-    const this_type& sourceMatrix = dynamic_cast<const this_type&> (source);
-
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       permuteToLIDs.size() != permuteFromLIDs.size(),
-      std::invalid_argument, "permuteToLIDs.size() = " << permuteToLIDs.size()
+      std::invalid_argument, ": permuteToLIDs.size() = " << permuteToLIDs.size()
       << "!= permuteFromLIDs.size() = " << permuteFromLIDs.size() << ".");
 
-    const bool sourceIsLocallyIndexed = sourceMatrix.isLocallyIndexed();
+    // This dynamic cast should succeed, because we've already tested
+    // it in checkSizes().
+    typedef RowMatrix<Scalar, LO, GO, NT> row_matrix_type;
+    const row_matrix_type& srcMat = dynamic_cast<const row_matrix_type&> (source);
+
+    const bool sourceIsLocallyIndexed = srcMat.isLocallyIndexed ();
     //
     // Copy the first numSame row from source to target (this matrix).
     // This involves copying rows corresponding to LIDs [0, numSame-1].
     //
-    const map_type& srcRowMap = * (sourceMatrix.getMap ());
+    const map_type& srcRowMap = * (srcMat.getRowMap ());
     Array<GO> rowInds;
     Array<Scalar> rowVals;
-    LO sourceLID = 0;
-    for (size_t i = 0; i < numSameIDs; ++i, ++sourceLID) {
+    const LO numSameIDs_as_LID = as<LO> (numSameIDs);
+    for (LO sourceLID = 0; sourceLID < numSameIDs_as_LID; ++sourceLID) {
       // Global ID for the current row index in the source matrix.
       // The first numSameIDs GIDs in the two input lists are the
       // same, so sourceGID == targetGID in this case.
@@ -4008,7 +4002,7 @@ namespace Tpetra {
       ArrayView<const Scalar> rowValsConstView;
 
       if (sourceIsLocallyIndexed) {
-        const size_t rowLength = sourceMatrix.getNumEntriesInGlobalRow (sourceGID);
+        const size_t rowLength = srcMat.getNumEntriesInGlobalRow (sourceGID);
         if (rowLength > as<size_t> (rowInds.size())) {
           rowInds.resize (rowLength);
           rowVals.resize (rowLength);
@@ -4022,7 +4016,7 @@ namespace Tpetra {
         // copy.  Really it's the GIDs that have to be copied (because
         // they have to be converted from LIDs).
         size_t checkRowLength = 0;
-        sourceMatrix.getGlobalRowCopy (sourceGID, rowIndsView, rowValsView, checkRowLength);
+        srcMat.getGlobalRowCopy (sourceGID, rowIndsView, rowValsView, checkRowLength);
 
 #ifdef HAVE_TPETRA_DEBUG
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(rowLength != checkRowLength,
@@ -4037,7 +4031,7 @@ namespace Tpetra {
         rowValsConstView = rowValsView.view (0, rowLength);
       }
       else { // source matrix is globally indexed.
-        sourceMatrix.getGlobalRowView (sourceGID, rowIndsConstView, rowValsConstView);
+        srcMat.getGlobalRowView (sourceGID, rowIndsConstView, rowValsConstView);
       }
 
       // Combine the data into the target matrix.
@@ -4057,17 +4051,19 @@ namespace Tpetra {
     //
     // Permute the remaining rows.
     //
-    for (size_t p = 0; p < (size_t)permuteToLIDs.size(); ++p) {
-      const GO sourceGID = sourceMatrix.getMap()->getGlobalElement (permuteFromLIDs[p]);
-      const GO targetGID = this->getMap()->getGlobalElement (permuteToLIDs[p]);
+    const map_type& tgtRowMap = * (this->getRowMap ());
+    const size_t numPermuteToLIDs = as<size_t> (permuteToLIDs.size ());
+    for (size_t p = 0; p < numPermuteToLIDs; ++p) {
+      const GO sourceGID = srcRowMap.getGlobalElement (permuteFromLIDs[p]);
+      const GO targetGID = tgtRowMap.getGlobalElement (permuteToLIDs[p]);
 
       // Input views for the combineGlobalValues() call below.
       ArrayView<const GO> rowIndsConstView;
       ArrayView<const Scalar> rowValsConstView;
 
       if (sourceIsLocallyIndexed) {
-        const size_t rowLength = sourceMatrix.getNumEntriesInGlobalRow (sourceGID);
-        if (rowLength > as<size_t> (rowInds.size())) {
+        const size_t rowLength = srcMat.getNumEntriesInGlobalRow (sourceGID);
+        if (rowLength > as<size_t> (rowInds.size ())) {
           rowInds.resize (rowLength);
           rowVals.resize (rowLength);
         }
@@ -4080,7 +4076,7 @@ namespace Tpetra {
         // copy.  Really it's the GIDs that have to be copied (because
         // they have to be converted from LIDs).
         size_t checkRowLength = 0;
-        sourceMatrix.getGlobalRowCopy (sourceGID, rowIndsView, rowValsView, checkRowLength);
+        srcMat.getGlobalRowCopy (sourceGID, rowIndsView, rowValsView, checkRowLength);
 
 #ifdef HAVE_TPETRA_DEBUG
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(rowLength != checkRowLength,
@@ -4096,15 +4092,17 @@ namespace Tpetra {
         rowValsConstView = rowValsView.view (0, rowLength);
       }
       else {
-        sourceMatrix.getGlobalRowView (sourceGID, rowIndsConstView, rowValsConstView);
+        srcMat.getGlobalRowView (sourceGID, rowIndsConstView, rowValsConstView);
       }
 
       // Combine the data into the target matrix.
       if (isStaticGraph()) {
-        combineGlobalValues (targetGID, rowIndsConstView, rowValsConstView, REPLACE);
+        this->combineGlobalValues (targetGID, rowIndsConstView, 
+				   rowValsConstView, REPLACE);
       }
       else {
-        combineGlobalValues (targetGID, rowIndsConstView, rowValsConstView, INSERT);
+        this->combineGlobalValues (targetGID, rowIndsConstView, 
+				   rowValsConstView, INSERT);
       }
     } // For each ID to permute
   }
@@ -4117,12 +4115,12 @@ namespace Tpetra {
            class LocalMatOps>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  packAndPrepare (const DistObject<char, LocalOrdinal,GlobalOrdinal,Node>& source,
-                  const ArrayView<const LocalOrdinal>& exportLIDs,
-                  Array<char>& exports,
-                  const ArrayView<size_t>& numPacketsPerLID,
+  packAndPrepare (const SrcDistObject& source,
+                  const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+                  Teuchos::Array<char>& exports,
+                  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                   size_t& constantNumPackets,
-                  Distributor &distor)
+                  Distributor& distor)
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;
@@ -4133,147 +4131,231 @@ namespace Tpetra {
     typedef typename ArrayView<const LO>::size_type size_type;
     const char tfecfFuncName[] = "packAndPrepare";
 
+    // Attempt to cast the source object to RowMatrix.  If the cast
+    // succeeds, use the source object's pack method to pack its data
+    // for communication.  If the source object is really a CrsMatrix,
+    // this will pick up the CrsMatrix's more efficient override.  If
+    // the RowMatrix cast fails, then the source object doesn't have
+    // the right type.
+    //
+    // FIXME (mfh 30 Jun 2013) We don't even need the RowMatrix to
+    // have the same Node type.  Unfortunately, we don't have a way to
+    // ask if the RowMatrix is "a RowMatrix with any Node type," since
+    // RowMatrix doesn't have a base class.  A hypothetical
+    // RowMatrixBase<Scalar, LO, GO> class, which does not currently
+    // exist, would satisfy this requirement.  
+    //
+    // Why RowMatrixBase<Scalar, LO, GO>?  The source object's Scalar
+    // type doesn't technically need to match the target object's
+    // Scalar type, so we could just have RowMatrixBase<LO, GO>.  LO
+    // and GO need not be the same, as long as there is no overflow of
+    // the indices.  However, checking for index overflow is global
+    // and therefore undesirable.
+    typedef RowMatrix<Scalar, LO, GO, Node> row_matrix_type;
+    const row_matrix_type* srcRowMat = 
+      dynamic_cast<const row_matrix_type*> (&source);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      srcRowMat == NULL, std::invalid_argument, 
+      ": The source object of the Import or Export operation is neither a "
+      "CrsMatrix (with the same template parameters as the target object), "
+      "nor a RowMatrix (with the same first four template parameters as the "
+      "target object).");
+    srcRowMat->pack (exportLIDs, exports, numPacketsPerLID, 
+		     constantNumPackets, distor);
+  }
+
+
+  template<class Scalar,
+           class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node,
+           class LocalMatOps>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+	Teuchos::Array<char>& exports,
+	const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+	size_t& constantNumPackets,
+	Distributor &distor) const
+  {
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
+    using Teuchos::as;
+    using Teuchos::av_reinterpret_cast;
+    using Teuchos::RCP;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef typename ArrayView<const LO>::size_type size_type;
+    const char tfecfFuncName[] = "pack";
+
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       exportLIDs.size() != numPacketsPerLID.size(),
-      std::invalid_argument, "exportLIDs.size() = " << exportLIDs.size()
+      std::invalid_argument, ": exportLIDs.size() = " << exportLIDs.size()
       << "!= numPacketsPerLID.size() = " << numPacketsPerLID.size() << ".");
 
-    // This dynamic cast should always succeed.  The packAndPrepare()
-    // method is invoked by DistObject::doTransfer(), which calls
-    // checkSizes() and copyAndPermute() first.  At least one of the
-    // latter two methods must have successfully done the cast in
-    // order for doTransfer() to get to this point.
-    //
-    // It would be possible to implement this method if the source
-    // object is any RowMatrix or CrsMatrix with the same first
-    // three template parameters.  However, it's more efficient if we
-    // can get row views, so we require for now that this be a
-    // CrsMatrix of the same type as *this.
-    typedef CrsMatrix<Scalar, LO, GO, Node, LocalMatOps> this_type;
-    const this_type& src_mat = dynamic_cast<const this_type&> (source);
-    const bool src_is_locally_indexed = src_mat.isLocallyIndexed();
+    // Get a reference to the matrix's row Map.
+    const map_type& rowMap = * (this->getRowMap ());
+
+    const bool locallyIndexed = this->isLocallyIndexed ();
     constantNumPackets = 0;
 
-    // Row Map of the source matrix.
-    const map_type& srcRowMap = * (src_mat.getMap ());
-    // We always need the GIDs of the rows we want to pack.
+    // Get the GIDs of the rows we want to pack.
     Array<GO> exportGIDs (exportLIDs.size ());
     const size_type numExportGIDs = exportGIDs.size ();
     for (size_type i = 0; i < numExportGIDs; ++i) {
-      exportGIDs[i] = srcRowMap.getGlobalElement (exportLIDs[i]);
+      exportGIDs[i] = rowMap.getGlobalElement (exportLIDs[i]);
     }
 
-    // Compute the number of packets per export LID, and accumulate
-    // the total number of packages.  While doing so, find the max
-    // necessary row size.  We may need it below.  Note that
-    // numPacketsPerLID is for byte-packets, so it needs to be
-    // multiplied.
+    // We say "Packet" is char (really a "byte"), but the actual unit
+    // of packing is a (GID, value) pair.  The GID is the column index
+    // in that row of the sparse matrix, and the value is the value at
+    // that entry of the sparse matrix.  Thus, we have to scale
+    // numPacketsPerLID by the number of bytes in a _packed_ (GID,
+    // value) pair.  (We pack the GID and value in each pair
+    // separately, so the number of bytes in a packed pair is actually
+    // sizeof(GO) + sizeof(Scalar).)
     //
     // FIXME (mfh 24 Feb 2013) This code is only correct if
     // sizeof(Scalar) is a meaningful representation of the amount of
     // data in a Scalar instance.  (GO is always a built-in integer
     // type.)
-    const size_t SizeOfOrdValPair = sizeof (GO) + sizeof (Scalar);
+    //
+    // Compute the number of packets per export LID, and accumulate
+    // the total number of packages.  While doing so, find the max
+    // number of entries in each row owned by this process; we will
+    // use that to size temporary arrays below.
+    const size_t sizeOfOrdValPair = sizeof (GO) + sizeof (Scalar);
     size_t totalNumEntries = 0;
-    size_t maxExpRowLength = 0;
+    size_t maxRowLength = 0;
     for (size_type i = 0; i < exportGIDs.size(); ++i) {
       const size_t curNumEntries =
-        src_mat.getNumEntriesInGlobalRow (exportGIDs[i]);
-      numPacketsPerLID[i] = curNumEntries * SizeOfOrdValPair;
+        this->getNumEntriesInGlobalRow (exportGIDs[i]);
+      numPacketsPerLID[i] = curNumEntries * sizeOfOrdValPair;
       totalNumEntries += curNumEntries;
-      maxExpRowLength = std::max (curNumEntries, maxExpRowLength);
+      maxRowLength = std::max (curNumEntries, maxRowLength);
     }
 
     // Pack export data by interleaving rows' indices and values in
     // the following way:
     //
-    // [inds_row0 vals_row0 inds_row1 vals_row1 ... inds_rowN vals_rowN]
+    // [inds_row0 vals_row0 inds_row1 vals_row1 ... ]
     if (totalNumEntries > 0) {
-      // exports is an array of char (bytes). it needs room for all of the indices and values
-      const size_t totalNumBytes = totalNumEntries * SizeOfOrdValPair;
+      // exports is an array of char (bytes), so scale the total
+      // number of entries by the number of bytes per entry (where
+      // "entry" includes both the column index and the value).
+      const size_t totalNumBytes = totalNumEntries * sizeOfOrdValPair;
       exports.resize (totalNumBytes);
 
-      ArrayView<char> avIndsC, avValsC;
-      ArrayView<GO>   avInds;
-      ArrayView<Scalar>   avVals;
-
-      // now loop again and pack rows of indices into exports:
-      // if global indices exist in the source, then we can use view semantics
-      // otherwise, we are forced to use copy semantics (for the indices; for simplicity, we'll use them for values as well)
+      // Current position in the 'exports' output array.
       size_t curOffsetInBytes = 0;
-      if (src_is_locally_indexed) {
-        Array<GO> curGids;
-        ArrayView<const LO> curLids;
-        ArrayView<const Scalar> curVals;
 
+      // For each row of the matrix owned by the calling process, pack
+      // that row's column indices and values into the exports array.
+      // If the matrix is globally indexed, we can use view semantics
+      // (getGlobalRowView), which should be faster than copy
+      // semantics (getGlobalRowCopy).  Otherwise, we'll have to use
+      // copy semantics.
+      //
+      // FIXME (mfh 28 Jun 2013) This could be made a (shared-memory)
+      // parallel kernel, by using the CSR data layout to calculate
+      // positions in the output buffer.
+      if (locallyIndexed) {
         // Locally indexed matrices always have a column Map.
-        const map_type& srcColMap = * (src_mat.getColMap ());
-        for (size_type i = 0; i < exportLIDs.size(); ++i) {
-          // Get a (locally indexed) view of the current row's data.
-          const LO LID = exportLIDs[i];
-          src_mat.getLocalRowView (LID, curLids, curVals);
+        const map_type& colMap = * (this->getColMap ());
 
-          // Convert local indices to global indices.
-          curGids.resize (curLids.size ());
-          const size_t curNumEntries = as<size_t> (curLids.size ());
-          for (size_t k = 0; k < curNumEntries; ++k) {
-            curGids[k] = srcColMap.getGlobalElement (curLids[k]);
+	// Views of the column LIDs and values in each row.  It's
+	// worth creating empty views here, because they aren't
+	// returned by getLocalRowView; that method will modify (set)
+	// them in place.
+	ArrayView<const LO> lidsView;
+	ArrayView<const Scalar> valsView;
+
+	// Temporary buffer for a copy of the column indices (as GIDs)
+	// in each row.  Import and Export operations to a CrsMatrix
+	// target currently expect GIDs, not LIDs.
+	//
+	// FIXME (mfh 30 Jun 2013) If the source and target have the
+	// same column Maps, it would make sense to pack column
+	// indices as LIDs instead of GIDs.  Packing them as GIDs is
+	// correct, but it's inefficient to convert LIDs to GIDs and
+	// then back again on receipt.  Furthermore, GIDs might be
+	// larger than LIDs, thus costing more bandwidth.
+	Array<GO> gids (as<size_type> (maxRowLength));
+
+	const size_type numExportLIDs = exportLIDs.size ();
+        for (size_type i = 0; i < numExportLIDs; ++i) {
+          // Get a (locally indexed) view of the current row's data.
+          this->getLocalRowView (exportLIDs[i], lidsView, valsView);
+
+          // Convert column indices as LIDs to column indices as GIDs.
+          const size_type curNumEntries = lidsView.size ();
+	  ArrayView<GO> gidsView = gids (0, curNumEntries);
+          for (size_type k = 0; k < curNumEntries; ++k) {
+            gidsView[k] = colMap.getGlobalElement (lidsView[k]);
           }
 
           // Get views of the spots in the exports array in which to
           // put the indices resp. values.  The type cast makes the
           // views look like GO resp. Scalar, when the array they are
           // viewing is really an array of char.
-          //
-          // TODO (mfh 14 Mar 2012): Why do we need the reinterpret
-          // cast?  Why can't we just store pairs?  Is it because
-          // there are no Comm functions for sending and receiving
-          // pairs?  How hard can that be to implement?
-          avIndsC = exports (curOffsetInBytes, curNumEntries * sizeof(GO));
-          avValsC = exports (curOffsetInBytes + curNumEntries * sizeof(GO),
-                             curNumEntries * sizeof(Scalar));
-          avInds = av_reinterpret_cast<GO> (avIndsC);
-          avVals = av_reinterpret_cast<Scalar> (avValsC);
-          // Copy the source matrix's row data into the views of the
-          // exports array for indices resp. values.
-          std::copy (curGids.begin(), curGids.begin()+curNumEntries, avInds.begin());
-          std::copy (curVals.begin(), curVals.begin()+curNumEntries, avVals.begin());
+	  ArrayView<char> gidsViewOutChar = 
+	    exports (curOffsetInBytes, 
+		     as<size_t> (curNumEntries) * sizeof (GO));
+	  ArrayView<char> valsViewOutChar =
+	    exports (curOffsetInBytes + as<size_t> (curNumEntries) * sizeof (GO),
+		     as<size_t> (curNumEntries) * sizeof (Scalar));
+          ArrayView<GO> gidsViewOut = av_reinterpret_cast<GO> (gidsViewOutChar);
+          ArrayView<Scalar> valsViewOut = av_reinterpret_cast<Scalar> (valsViewOutChar);
+
+          // Copy the row's data into the views of the exports array.
+          std::copy (gidsView.begin (), 
+		     gidsView.begin () + as<size_type> (curNumEntries), 
+		     gidsViewOut.begin ());
+          std::copy (valsView.begin (), 
+		     valsView.begin () + as<size_type> (curNumEntries), 
+		     valsViewOut.begin ());
           // Keep track of how many bytes we packed.
-          curOffsetInBytes += SizeOfOrdValPair * curNumEntries;
+          curOffsetInBytes += sizeOfOrdValPair * curNumEntries;
         }
       }
-      else { // the source matrix's column indices are stored as GIDs, not LIDs.
-        ArrayView<const GO> curColInds;
-        ArrayView<const Scalar> curVals;
-        for (size_type i = 0; i < exportGIDs.size(); ++i) {
-          // Get a view of the current row's data.  We don't need to
-          // get a copy, since the source matrix's indices are stored
-          // as GIDs.
-          src_mat.getGlobalRowView (exportGIDs[i], curColInds, curVals);
-          const size_t curNumEntries = as<size_t> (curColInds.size ());
+      else { // the matrix is globally indexed
+	ArrayView<const GO> gidsView;
+	ArrayView<const Scalar> valsView;
+
+	const size_type numExportLIDs = exportLIDs.size ();
+        for (size_type i = 0; i < numExportLIDs; ++i) {
+          // Get a view of the current row's data.
+          this->getGlobalRowView (exportGIDs[i], gidsView, valsView);
+          const size_t curNumEntries = as<size_t> (gidsView.size ());
           // Get views of the spots in the exports array in which to
           // put the indices resp. values.  See notes and FIXME above.
-          avIndsC = exports (curOffsetInBytes, curNumEntries * sizeof (GO));
-          avValsC = exports (curOffsetInBytes + curNumEntries * sizeof (GO),
-                             curNumEntries * sizeof (Scalar));
-          avInds = av_reinterpret_cast<GO> (avIndsC);
-          avVals = av_reinterpret_cast<Scalar> (avValsC);
-          // Copy the source matrix's row data into the views of the
-          // exports array for indices resp. values.
-          std::copy (curColInds.begin(), curColInds.end(), avInds.begin());
-          std::copy (curVals.begin(), curVals.end(), avVals.begin());
-          curOffsetInBytes += SizeOfOrdValPair * curNumEntries;
+
+	  ArrayView<char> gidsViewOutChar = 
+	    exports (curOffsetInBytes, curNumEntries * sizeof (GO));
+	  ArrayView<char> valsViewOutChar =
+	    exports (curOffsetInBytes + curNumEntries * sizeof (GO),
+		     curNumEntries * sizeof (Scalar));
+          ArrayView<GO> gidsViewOut = av_reinterpret_cast<GO> (gidsViewOutChar);
+          ArrayView<Scalar> valsViewOut = av_reinterpret_cast<Scalar> (valsViewOutChar);
+
+          // Copy the row's data into the views of the exports array.
+          std::copy (gidsView.begin (), gidsView.end (), gidsViewOut.begin ());
+          std::copy (valsView.begin (), valsView.end (), valsViewOut.begin ());
+          // Keep track of how many bytes we packed.
+          curOffsetInBytes += sizeOfOrdValPair * curNumEntries;
         }
       }
+
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(curOffsetInBytes != totalNumBytes,
-        std::logic_error, "packAndPrepare: At end of method, the final offset "
-        "bytes curOffsetInBytes=" << curOffsetInBytes << " != total number of "
-        "bytes totalNumBytes=" << totalNumBytes << ".  Please report this bug "
-        "to the Tpetra developers.");
+        std::logic_error, ": At end of method, the final offset bytes count "
+        "curOffsetInBytes=" << curOffsetInBytes << " does not equal the total "
+        "number of bytes packed totalNumBytes=" << totalNumBytes << ".  Please "
+        "report this bug to the Tpetra developers.");
 #endif //  HAVE_TPETRA_DEBUG
     }
   }
+
 
   template<class Scalar,
            class LocalOrdinal,
@@ -4849,6 +4931,220 @@ namespace Tpetra {
     }
 
     return rcp_implicit_cast<row_matrix_type> (C);
+  }
+
+
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node,
+            class LocalMatOps>
+  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  importAndFillComplete (const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+			 const Teuchos::RCP<const map_type>& domainMap,
+			 const Teuchos::RCP<const map_type>& rangeMap,
+			 const Teuchos::RCP<Teuchos::ParameterList>& params) const
+  {
+    using Teuchos::ArrayRCP;
+    using Teuchos::as;
+    using Teuchos::Comm;
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef Node NT;
+    typedef CrsMatrix<Scalar, LO, GO, NT, LocalMatOps> this_type;
+
+    // FIXME (mfh 11 Apr 2012) The current implementation of this
+    // method doesn't actually fuse the Import with fillComplete().
+    // This will change in the future.
+
+    // Are we in reverse mode?
+    bool reverseMode = false;
+    if (! params.is_null ()) {
+      reverseMode = params->get ("Reverse Mode", reverseMode);
+    }
+
+    // Cache the maps
+    RCP<const map_type> sourceMap = reverseMode ? 
+      importer.getTargetMap () : importer.getSourceMap ();
+    RCP<const map_type> targetMap = reverseMode ? 
+      importer.getSourceMap () : importer.getTargetMap ();
+
+    // Pre-count the nonzeros to allow a build w/ Static Profile
+    Tpetra::Vector<LO, LO, GO, NT> sourceNnzPerRowVec (sourceMap);
+    Tpetra::Vector<LO, LO, GO, NT> targetNnzPerRowVec (targetMap);
+    ArrayRCP<int> nnzPerRow = sourceNnzPerRowVec.getDataNonConst (0);
+    for (size_t i = 0; i < this->getNodeNumRows (); ++i) {
+      nnzPerRow[i] = as<LO> (this->getNumEntriesInLocalRow (i));
+    }
+    if (reverseMode) {
+      targetNnzPerRowVec.doExport (sourceNnzPerRowVec, importer, Tpetra::ADD);
+    } else {
+      targetNnzPerRowVec.doImport (sourceNnzPerRowVec, importer, Tpetra::INSERT);
+    }
+
+    ArrayRCP<size_t> MyNnz (targetMap->getNodeNumElements ());
+
+    ArrayRCP<const int> targetNnzPerRow = targetNnzPerRowVec.getData (0);
+    for (size_t i = 0; i < targetNnzPerRowVec.getLocalLength (); ++i) {
+      MyNnz[i] = as<size_t> (targetNnzPerRow[i]);
+    }
+
+    RCP<ParameterList> matrixparams;
+    if (! params.is_null ()) {
+      matrixparams = sublist (params, "CrsMatrix");
+    }
+
+    RCP<this_type> destMat =
+      rcp (new this_type (targetMap, MyNnz, StaticProfile, matrixparams));
+    if (reverseMode) {
+      destMat->doExport (*this, importer, Tpetra::ADD);
+    } else {
+      destMat->doImport (*this, importer, Tpetra::INSERT);
+    }
+
+    // Use the source matrix's domain Map as the default.
+    RCP<const map_type> theDomainMap =
+      domainMap.is_null () ? this->getDomainMap () : domainMap;
+    // Use the source matrix's range Map as the default.
+    RCP<const map_type> theRangeMap =
+      rangeMap.is_null () ? this->getRangeMap () : rangeMap;
+
+    // Do we need to restrict the communicator?
+    bool restrictComm = false;
+    if (! params.is_null ()) {
+      restrictComm = params->get ("Restrict Communicator", restrictComm);
+    }
+
+    if (restrictComm) {
+      // Handle communicator restriction, if requested
+      RCP<const map_type> newRowMap = targetMap->removeEmptyProcesses ();
+      RCP<const Comm<int> > newComm = newRowMap.is_null () ? 
+	Teuchos::null : newRowMap->getComm();
+
+      destMat->removeEmptyProcessesInPlace (newRowMap);
+      theDomainMap = theDomainMap->replaceCommWithSubset (newComm);
+      theRangeMap = theRangeMap->replaceCommWithSubset (newComm);
+      if (! newComm.is_null ()) {
+	destMat->fillComplete (theDomainMap, theRangeMap);
+      }
+    }
+    else {
+      destMat->fillComplete (theDomainMap, theRangeMap);
+    }
+
+    return destMat;
+  }
+
+
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node,
+            class LocalMatOps>
+  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  exportAndFillComplete (const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+			 const Teuchos::RCP<const map_type>& domainMap,
+			 const Teuchos::RCP<const map_type>& rangeMap,
+			 const Teuchos::RCP<Teuchos::ParameterList>& params) const
+  {
+    using Teuchos::ArrayRCP;
+    using Teuchos::as;
+    using Teuchos::Comm;
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::sublist;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef Node NT;
+    typedef CrsMatrix<Scalar, LO, GO, NT, LocalMatOps> this_type;
+
+    // FIXME (mfh 11 Apr 2012) The current implementation of this
+    // method doesn't actually fuse the Export with fillComplete().
+    // This will change in the future.
+
+    // Are we in reverse mode?
+    bool reverseMode = false;
+    if (! params.is_null ()) {
+      reverseMode = params->get ("Reverse Mode", reverseMode);
+    }
+
+    // Cache the maps
+    RCP<const map_type> sourceMap = reverseMode ? 
+      exporter.getTargetMap () : exporter.getSourceMap ();
+    RCP<const map_type> targetMap = reverseMode ? 
+      exporter.getSourceMap () : exporter.getTargetMap ();
+
+    // Pre-count the nonzeros to allow a build w/ Static Profile
+    Tpetra::Vector<LO, LO, GO, NT> sourceNnzPerRowVec (sourceMap);
+    Tpetra::Vector<LO, LO, GO, NT> targetNnzPerRowVec (targetMap);
+    ArrayRCP<int> nnzPerRow = sourceNnzPerRowVec.getDataNonConst(0);
+    for (size_t i = 0; i < this->getNodeNumRows (); ++i) {
+      nnzPerRow[i] = as<LO> (this->getNumEntriesInLocalRow (i));
+    }
+
+    if (reverseMode) {
+      targetNnzPerRowVec.doImport (sourceNnzPerRowVec, exporter, Tpetra::INSERT);
+    } else {
+      targetNnzPerRowVec.doExport (sourceNnzPerRowVec, exporter, Tpetra::ADD);
+    }
+    ArrayRCP<size_t> MyNnz (targetMap->getNodeNumElements ());
+
+    ArrayRCP<const int> targetNnzPerRow = targetNnzPerRowVec.getData (0);
+    for (size_t i=0; i<targetNnzPerRowVec.getLocalLength(); ++i) {
+      MyNnz[i] = as<size_t> (targetNnzPerRow[i]);
+    }
+
+    RCP<ParameterList> matrixparams;
+    if (! params.is_null ()) {
+      matrixparams = sublist (params, "CrsMatrix");
+    }
+
+    RCP<this_type> destMat =
+      rcp (new this_type (targetMap, MyNnz, StaticProfile, matrixparams));
+
+    if (reverseMode) {
+      destMat->doImport (*this, exporter, Tpetra::ADD);
+    } else {
+      destMat->doExport (*this, exporter, Tpetra::INSERT);
+    }
+
+    // Use the source matrix's domain Map as the default.
+    RCP<const map_type> theDomainMap =
+      domainMap.is_null () ? this->getDomainMap () : domainMap;
+    // Use the source matrix's range Map as the default.
+    RCP<const map_type> theRangeMap =
+      rangeMap.is_null () ? this->getRangeMap () : rangeMap;
+
+    // Do we need to restrict the communicator?
+    bool restrictComm = false;
+    if (! params.is_null ()) {
+      restrictComm = params->get ("Restrict Communicator", restrictComm);
+    }
+
+    if (restrictComm) {
+      // Handle communicator restriction, if requested
+      RCP<const map_type> newRowMap = targetMap->removeEmptyProcesses ();
+      RCP<const Comm<int> > newComm = newRowMap.is_null () ? 
+	Teuchos::null : newRowMap->getComm ();
+
+      destMat->removeEmptyProcessesInPlace (newRowMap);
+      theDomainMap = theDomainMap->replaceCommWithSubset (newComm);
+      theRangeMap = theRangeMap->replaceCommWithSubset (newComm);
+      if (! newComm.is_null()) {
+	destMat->fillComplete (theDomainMap, theRangeMap);
+      }
+    }
+    else {
+      destMat->fillComplete (theDomainMap, theRangeMap);
+    }
+
+    return destMat;
   }
 
 } // namespace Tpetra

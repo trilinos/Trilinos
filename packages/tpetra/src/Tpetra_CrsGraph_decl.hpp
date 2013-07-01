@@ -894,29 +894,33 @@ namespace Tpetra {
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
     //@}
-    //! @name Methods implementing Tpetra::DistObject
+    //! @name Implementation of DistObject
     //@{
 
-    bool checkSizes(const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>& source);
+    virtual bool 
+    checkSizes (const SrcDistObject& source);
 
-    void copyAndPermute(const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> & source,
-                        size_t numSameIDs,
-                        const ArrayView<const LocalOrdinal> &permuteToLIDs,
-                        const ArrayView<const LocalOrdinal> &permuteFromLIDs);
+    virtual void 
+    copyAndPermute (const SrcDistObject& source,
+		    size_t numSameIDs,
+		    const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
+		    const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs);
 
-    void packAndPrepare(const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> & source,
-                        const ArrayView<const LocalOrdinal> &exportLIDs,
-                        Array<GlobalOrdinal> &exports,
-                        const ArrayView<size_t> & numPacketsPerLID,
-                        size_t& constantNumPackets,
-                        Distributor &distor);
+    virtual void
+    packAndPrepare (const SrcDistObject& source,
+		    const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
+		    Teuchos::Array<GlobalOrdinal> &exports,
+		    const Teuchos::ArrayView<size_t> & numPacketsPerLID,
+		    size_t& constantNumPackets,
+		    Distributor &distor);
 
-    void unpackAndCombine(const ArrayView<const LocalOrdinal> &importLIDs,
-                          const ArrayView<const GlobalOrdinal> &imports,
-                          const ArrayView<size_t> &numPacketsPerLID,
-                          size_t constantNumPackets,
-                          Distributor &distor,
-                          CombineMode CM);
+    virtual void 
+    unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
+		      const Teuchos::ArrayView<const GlobalOrdinal> &imports,
+		      const Teuchos::ArrayView<size_t> &numPacketsPerLID,
+		      size_t constantNumPackets,
+		      Distributor &distor,
+		      CombineMode CM);
     //@}
     //! \name Advanced methods, at increased risk of deprecation.
     //@{
