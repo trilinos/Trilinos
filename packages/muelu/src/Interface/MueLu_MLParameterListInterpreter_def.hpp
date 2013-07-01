@@ -81,13 +81,13 @@
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_ParameterListUtils.hpp"
 
-//#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
+#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
 #include "MueLu_RebalanceMapFactory.hpp"
-//#endif
+#endif
 
 // Note: do not add options that are only recognized by MueLu.
 
@@ -391,7 +391,7 @@ namespace MueLu {
       manager->SetFactory("DofsPerNode", dropFact);
       manager->SetFactory("Ptent", PtentFact);
 
-#ifdef HAVE_MUELU_ISORROPIA
+#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
     if(bDoRepartition == 1) {
       manager->SetFactory("A", RebalancedAFact);
       manager->SetFactory("P", RebalancedPFact);
@@ -404,7 +404,7 @@ namespace MueLu {
       manager->SetFactory("A", AcFact);          // same RAP factory for all levels
       manager->SetFactory("P", PFact);           // same prolongator and restrictor factories for all levels
       manager->SetFactory("R", RFact);           // same prolongator and restrictor factories for all levels
-#ifdef HAVE_MUELU_ISORROPIA
+#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
     }
 #endif
 

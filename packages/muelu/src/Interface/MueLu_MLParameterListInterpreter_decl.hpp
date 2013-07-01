@@ -77,13 +77,13 @@
 #include "MueLu_NullspaceFactory_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
 
-//#ifdef HAVE_MUELU_ISORROPIA
+#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
 #include "MueLu_RepartitionFactory_fwd.hpp"
 #include "MueLu_RebalanceTransferFactory_fwd.hpp"
 #include "MueLu_IsorropiaInterface_fwd.hpp"
 #include "MueLu_RebalanceAcFactory_fwd.hpp"
 #include "MueLu_RebalanceMapFactory_fwd.hpp"
-//#endif
+#endif
 
 namespace MueLu {
 
