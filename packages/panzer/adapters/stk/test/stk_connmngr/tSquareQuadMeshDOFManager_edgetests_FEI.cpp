@@ -85,7 +85,7 @@ Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk::ParallelMachine c
    meshFact.setParameterList(Teuchos::rcpFromRef(pl));
    
    Teuchos::RCP<panzer_stk::STK_Interface> mesh = meshFact.buildMesh(comm);
-   return Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+   return Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 }
 
 template <typename IntrepidType>

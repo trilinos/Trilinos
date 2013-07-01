@@ -209,7 +209,7 @@ namespace panzer {
     // connection manager
     /////////////////////////////////////////////
     Teuchos::RCP<panzer::ConnManager<int,int> > connMngr 
-          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+          = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     RCP<const panzer::FieldPattern> fp
          = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
@@ -274,7 +274,7 @@ namespace panzer {
     // connection manager
     /////////////////////////////////////////////
     Teuchos::RCP<panzer::ConnManager<int,int> > connMngr 
-          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+          = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     RCP<const panzer::FieldPattern> fp
          = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
@@ -341,7 +341,7 @@ namespace panzer {
     // connection manager
     /////////////////////////////////////////////
     Teuchos::RCP<panzer::ConnManager<int,int> > connMngr 
-          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+          = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     RCP<const panzer::FieldPattern> fp
          = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
@@ -406,7 +406,7 @@ namespace panzer {
     // connection manager
     /////////////////////////////////////////////
     Teuchos::RCP<panzer::ConnManager<int,int> > connMngr 
-          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+          = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     RCP<const panzer::FieldPattern> fp
          = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
@@ -476,7 +476,7 @@ namespace panzer {
     // connection manager
     /////////////////////////////////////////////
     Teuchos::RCP<panzer::ConnManager<int,int> > connMngr 
-          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+          = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     RCP<const panzer::FieldPattern> fp
          = buildFieldPattern<Intrepid::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
@@ -602,7 +602,7 @@ namespace panzer {
     // connection manager
     /////////////////////////////////////////////
     Teuchos::RCP<panzer::ConnManager<int,int> > connMngr 
-          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+          = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     RCP<const panzer::FieldPattern> fp
          = buildFieldPattern<Intrepid::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
@@ -719,7 +719,7 @@ namespace panzer {
     // connection manager
     /////////////////////////////////////////////
     Teuchos::RCP<panzer::ConnManager<int,int> > connMngr 
-          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+          = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     RCP<const panzer::FieldPattern> fp
          = buildFieldPattern<Intrepid::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();

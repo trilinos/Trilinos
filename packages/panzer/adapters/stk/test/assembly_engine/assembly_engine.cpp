@@ -169,7 +169,7 @@ namespace panzer {
 
     // build the connection manager 
     const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     panzer::DOFManagerFactory<int,int> globalIndexerFactory;
     RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
@@ -294,15 +294,15 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
 
     // build the connection manager 
-    const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+    const Teuchos::RCP<panzer::ConnManager<int,long> > 
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<long>(mesh));
 
-    panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
+    panzer::DOFManagerFactory<int,long> globalIndexerFactory;
+    RCP<panzer::UniqueGlobalIndexer<int,long> > dofManager 
          = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
  
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory 
-          = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,int>(comm,dofManager));
+          = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,long>(comm,dofManager));
 
     // setup field manager build
     /////////////////////////////////////////////////////////////
@@ -348,15 +348,15 @@ namespace panzer {
     ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
     ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
 
-    RCP<panzer::TpetraLinearObjContainer<double,int,int> > globalCont 
-       = Teuchos::rcp_dynamic_cast<panzer::TpetraLinearObjContainer<double,int,int> >(tGlobal);
+    RCP<panzer::TpetraLinearObjContainer<double,int,long> > globalCont 
+       = Teuchos::rcp_dynamic_cast<panzer::TpetraLinearObjContainer<double,int,long> >(tGlobal);
 
-    Teuchos::RCP<const Tpetra::Operator<double,int,int> > baseOp = globalCont->get_A();
+    Teuchos::RCP<const Tpetra::Operator<double,int,long> > baseOp = globalCont->get_A();
     Teuchos::RCP<const Thyra::VectorSpaceBase<double> > rangeSpace = Thyra::createVectorSpace<double>(baseOp->getRangeMap());
     Teuchos::RCP<const Thyra::VectorSpaceBase<double> > domainSpace = Thyra::createVectorSpace<double>(baseOp->getDomainMap());
 
-    tLinearOp = Thyra::constTpetraLinearOp<double,int,int>(rangeSpace, domainSpace, baseOp);
-    tVector = Thyra::constTpetraVector<double,int,int>(Thyra::tpetraVectorSpace<double,int,int>(baseOp->getRangeMap()).getConst(),
+    tLinearOp = Thyra::constTpetraLinearOp<double,int,long>(rangeSpace, domainSpace, baseOp);
+    tVector = Thyra::constTpetraVector<double,int,long>(Thyra::tpetraVectorSpace<double,int,long>(baseOp->getRangeMap()).getConst(),
                                                        globalCont->get_f().getConst());
   }
 

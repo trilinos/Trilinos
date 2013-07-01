@@ -58,7 +58,7 @@
 
 namespace panzer_stk {
 
-class STKConnManager;
+template <typename GO> class STKConnManager;
 
 /** Implements an interface used by the Teko request handler mechanism.
   * This particular class is usesd most frequently with an ML preconditioner that
@@ -69,7 +69,7 @@ class ParameterListCallback : public Teko::RequestCallback<Teuchos::RCP<Teuchos:
 public:
   ParameterListCallback(const std::string & coordFieldName,
                         const std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fp,
-                        const Teuchos::RCP<const panzer_stk::STKConnManager> & connManager, 
+                        const Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > & connManager, 
                         const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi);
 
    Teuchos::RCP<Teuchos::ParameterList> request(const Teko::RequestMesg & rm);
@@ -95,7 +95,7 @@ private:
 
    std::string coordFieldName_;
    std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > fieldPatterns_;
-   Teuchos::RCP<const panzer_stk::STKConnManager> connManager_;
+   Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > connManager_;
    Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > ugi_;
    bool coordinatesBuilt_;
  

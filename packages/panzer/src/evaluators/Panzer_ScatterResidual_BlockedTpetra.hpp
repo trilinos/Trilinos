@@ -142,7 +142,7 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<const BlockedDOFManager<LO,int> > globalIndexer_;
+  Teuchos::RCP<const BlockedDOFManager<LO,GO> > globalIndexer_;
 
   std::vector<int> fieldIds_; // field IDs needing mapping
 
@@ -224,7 +224,7 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<const BlockedDOFManager<LO,int> > globalIndexer_;
+  Teuchos::RCP<const BlockedDOFManager<LO,GO> > globalIndexer_;
 
   std::vector<int> fieldIds_; // field IDs needing mapping
 

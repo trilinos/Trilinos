@@ -266,20 +266,32 @@ int main(int argc,char * argv[])
    // build DOF Manager and linear object factory
    /////////////////////////////////////////////////////////////
  
-   // build the connection manager 
-   const Teuchos::RCP<panzer::ConnManager<int,int> > 
-     conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
-
-   panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-   RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
-         = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
-
-   // construct some linear algebra object, build object to pass to evaluators
+   RCP<panzer::UniqueGlobalIndexerBase> dofManager;
    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
-   if(!useTpetra)
-      linObjFactory = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager));
-   else
-      linObjFactory = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,int>(comm,dofManager));
+
+   // build the connection manager 
+   if(!useTpetra) {
+     const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+
+     panzer::DOFManagerFactory<int,int> globalIndexerFactory;
+     RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager_int
+           = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
+     dofManager = dofManager;
+
+     // construct some linear algebra object, build object to pass to evaluators
+     linObjFactory = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager_int));
+   }
+   else {
+     const Teuchos::RCP<panzer::ConnManager<int,long> > conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<long>(mesh));
+
+     panzer::DOFManagerFactory<int,long> globalIndexerFactory;
+     RCP<panzer::UniqueGlobalIndexer<int,long> > dofManager_long
+           = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
+     dofManager = dofManager;
+
+     // construct some linear algebra object, build object to pass to evaluators
+     linObjFactory = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,long>(comm,dofManager_long));
+   }
 
    // Setup STK response library for writing out the solution fields
    ////////////////////////////////////////////////////////////////////////
@@ -442,7 +454,7 @@ void solveEpetraSystem(panzer::LinearObjContainer & container)
 
 void solveTpetraSystem(panzer::LinearObjContainer & container)
 {
-  typedef panzer::TpetraLinearObjContainer<double,int,int> LOC;
+  typedef panzer::TpetraLinearObjContainer<double,int,long> LOC;
 
   LOC & tp_container = Teuchos::dyn_cast<LOC>(container);
 
@@ -452,8 +464,8 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
   // only copied shallowly and will be overwritten by the solve, so we
   // make a deep copy here.  That way we can compare the result
   // against the original X_guess.
-  typedef Tpetra::MultiVector<double,int,int> MV;
-  typedef Tpetra::Operator<double,int,int> OP;
+  typedef Tpetra::MultiVector<double,int,long> MV;
+  typedef Tpetra::Operator<double,int,long> OP;
   typedef Belos::LinearProblem<double,MV, OP> ProblemType;
   Teuchos::RCP<ProblemType> problem(new ProblemType(tp_container.get_A(), tp_container.get_x(), tp_container.get_f()));
   TEUCHOS_ASSERT(problem->setProblem());

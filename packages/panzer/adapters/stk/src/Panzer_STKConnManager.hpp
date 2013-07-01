@@ -56,8 +56,12 @@
 
 namespace panzer_stk {
 
-class STKConnManager : public panzer::ConnManager<int,int> {
+template <typename GO>
+class STKConnManager : public panzer::ConnManager<int,GO> {
 public:
+   typedef typename panzer::ConnManager<int, GO>::LocalOrdinal LocalOrdinal;
+   typedef typename panzer::ConnManager<int, GO>::GlobalOrdinal GlobalOrdinal;
+
    STKConnManager(const Teuchos::RCP<STK_Interface> & stkMeshDB);
 
    virtual ~STKConnManager() {}

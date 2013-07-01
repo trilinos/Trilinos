@@ -87,11 +87,12 @@ namespace panzer {
   template <typename,typename> class BlockedDOFManager;
   template <typename,typename> class DOFManagerFEI;
   template <typename,typename> class DOFManager;
+  template <typename> class ConnManagerBase;
 }
 
 namespace panzer_stk {
 
-  class STKConnManager;
+  template <typename GO> class STKConnManager;
   class NOXObserverFactory;
   class RythmosObserverFactory;
   
@@ -206,7 +207,8 @@ namespace panzer_stk {
       * \param[out] fieldPatterns A map from element block IDs to field patterns associated with the fieldName
       *                           argument
       */
-    void fillFieldPatternMap(const panzer::DOFManagerFEI<int,int> & globalIndexer, const std::string & fieldName, 
+    template <typename GO>
+    void fillFieldPatternMap(const panzer::DOFManagerFEI<int,GO> & globalIndexer, const std::string & fieldName, 
                              std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const;
 
     /** Fill a STL map with the the block ids associated with the pattern for a specific field.
@@ -215,7 +217,8 @@ namespace panzer_stk {
       * \param[out] fieldPatterns A map from element block IDs to field patterns associated with the fieldName
       *                           argument
       */
-    void fillFieldPatternMap(const panzer::DOFManager<int,int> & globalIndexer, const std::string & fieldName, 
+    template <typename GO>
+    void fillFieldPatternMap(const panzer::DOFManager<int,GO> & globalIndexer, const std::string & fieldName, 
                              std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const;
 
     /** \brief Gets the initial time from either the input parameter list or an exodus file
@@ -242,16 +245,27 @@ namespace panzer_stk {
                                            const Teuchos::ParameterList & closure_models,
                                            int workset_size, Teuchos::ParameterList & user_data) const;
 
+  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
+  buildLOWSFactory(bool blockedAssembly,
+                   const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
+                   const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
+                   const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
+                   const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm);
+
     /** Build LOWS factory.
       */
+    template <typename GO>
     Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > buildLOWSFactory(bool blockedAssembly,
                                                                                 const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
-                                                                                const Teuchos::RCP<panzer_stk::STKConnManager> & stkConn_manager,
+                                                                                const Teuchos::RCP<panzer_stk::STKConnManager<GO> > & stkConn_manager,
                                                                                 const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
                                                                                 const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm);
 
-    void writeTopology(const panzer::BlockedDOFManager<int,int> & blkDofs) const;
-    void writeTopology(const panzer::DOFManagerFEI<int,int> & dofs,const std::string & block,std::ostream & os) const;
+    template <typename GO>
+    void writeTopology(const panzer::BlockedDOFManager<int,GO> & blkDofs) const;
+
+    template <typename GO>
+    void writeTopology(const panzer::DOFManagerFEI<int,GO> & dofs,const std::string & block,std::ostream & os) const;
 
   private:
 

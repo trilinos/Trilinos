@@ -162,7 +162,7 @@ size_t setUp1(RCP<Map> &rowmap,
   factory.setParameterList(pl);
   RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
-  conn = rcp(new panzer_stk::STKConnManager(mesh));
+  conn = rcp(new panzer_stk::STKConnManager<int>(mesh));
 
   RCP<Intrepid::Basis<double,FieldContainer> > basis1 = rcp(new Intrepid::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer>);
   RCP<const panzer::FieldPattern> pressure_pattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis1));

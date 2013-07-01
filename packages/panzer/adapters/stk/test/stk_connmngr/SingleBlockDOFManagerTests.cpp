@@ -114,7 +114,7 @@ namespace {
     RCP<panzer::SingleBlockDOFManager<LO,GO> > my_SingleBlockDOFManager = Teuchos::rcp(new panzer::SingleBlockDOFManager<LO,GO>());
     TEST_EQUALITY(my_SingleBlockDOFManager->getComm(),Teuchos::null);
 
-    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager(mesh));
+    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager<GO>(mesh));
 
     RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
      
@@ -163,7 +163,7 @@ namespace {
     RCP<panzer::SingleBlockDOFManager<LO,GO> > my_SingleBlockDOFManager = Teuchos::rcp(new panzer::SingleBlockDOFManager<LO,GO>());
     TEST_EQUALITY(my_SingleBlockDOFManager->getComm(),Teuchos::null);
 
-    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager(mesh));
+    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager<GO>(mesh));
 
     RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
      
@@ -323,7 +323,7 @@ namespace {
     RCP<panzer::SingleBlockDOFManager<LO,GO> > my_SingleBlockDOFManager = Teuchos::rcp(new panzer::SingleBlockDOFManager<LO,GO>());
     TEST_EQUALITY(my_SingleBlockDOFManager->getComm(),Teuchos::null);
 
-    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager(mesh));
+    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager<GO>(mesh));
 
     RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
      
