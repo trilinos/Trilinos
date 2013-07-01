@@ -543,7 +543,7 @@ void pqJagged_getParameters(
         }
     }
 
-    pe = pl.getEntryPtr("enable_rcb");
+    pe = pl.getEntryPtr("mj_enable_rcb");
     if (pe){
         enable_rcb = pe->getValue(&enable_rcb);
     }else {

@@ -251,7 +251,7 @@
     docString=\"Keep the part boundaries of the geometric partitioning: Truth values - 0 False, Otherwise True.\" \
     /> \
    <Parameter  \
-    id=\"44\" name=\"enable_rcb\" type=\"int\" validatorId=\"44\" value=\"-1\" \
+    id=\"44\" name=\"mj_enable_rcb\" type=\"int\" validatorId=\"44\" value=\"-1\" \
     docString=\"Use MJ as RCB: Truth values - 0 False, Otherwise True.\" \
     /> \
    <Parameter  \
@@ -449,7 +449,7 @@
       <Validator defaultParameterName=\"migration_doMigration_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"41\"/> \
       <Validator defaultParameterName=\"mapping_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"42\"/> \
       <Validator defaultParameterName=\"keep_part_boxes\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"43\"/> \
-      <Validator defaultParameterName=\"enable_rcb\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"44\"/> \
+      <Validator defaultParameterName=\"mj_enable_rcb\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"44\"/> \
       <Validator defaultParameterName=\"recursion_depth\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"45\"/> \
       <Validator defaultParameterName=\"remap_parts\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"40\"> \
         <String integralValue=\"1\" stringValue=\"true\"/> \
