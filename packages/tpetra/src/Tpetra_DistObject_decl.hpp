@@ -46,6 +46,7 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
+#include "Tpetra_SrcDistObject.hpp"
 
 // #ifndef HAVE_TPETRA_TRANSFER_TIMERS
 // #  define HAVE_TPETRA_TRANSFER_TIMERS 1
@@ -160,11 +161,17 @@ namespace Tpetra {
   /// default implementation of these hooks does nothing.  The
   /// documentation of these methods explains different ways you might
   /// choose to implement them.
+  ///
+  /// DistObject implements SrcDistObject, because we presume that if
+  /// an object can be the target of an Import or Export, it can also
+  /// be the source of an Import or Export.
   template <class Packet,
             class LocalOrdinal = int,
             class GlobalOrdinal = LocalOrdinal,
             class Node = Kokkos::DefaultNode::DefaultNodeType>
-  class DistObject : virtual public Teuchos::Describable {
+  class DistObject : 
+    virtual public SrcDistObject,
+    virtual public Teuchos::Describable {
   public:
     //! @name Typedefs
     //@{
@@ -189,7 +196,7 @@ namespace Tpetra {
     explicit DistObject (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map);
 
     //! Copy constructor.
-    DistObject (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source);
+    DistObject (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& rhs);
 
     //! Destructor (virtual for memory safety of derived classes).
     virtual ~DistObject ();
@@ -216,7 +223,7 @@ namespace Tpetra {
     /// \param CM [in] How to combine incoming data with the same
     ///   global index.
     void
-    doImport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source,
+    doImport (const SrcDistObject& source,
               const Import<LocalOrdinal,GlobalOrdinal,Node>& importer,
               CombineMode CM);
 
@@ -238,7 +245,7 @@ namespace Tpetra {
     /// \param CM [in] How to combine incoming data with the same
     ///   global index.
     void
-    doExport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &source,
+    doExport (const SrcDistObject& source,
               const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter,
               CombineMode CM);
 
@@ -261,7 +268,7 @@ namespace Tpetra {
     /// \param CM [in] How to combine incoming data with the same
     ///   global index.
     void
-    doImport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source,
+    doImport (const SrcDistObject& source,
               const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter,
               CombineMode CM);
 
@@ -284,7 +291,7 @@ namespace Tpetra {
     /// \param CM [in] How to combine incoming data with the same
     ///   global index.
     void
-    doExport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source,
+    doExport (const SrcDistObject& source,
               const Import<LocalOrdinal,GlobalOrdinal,Node>& importer,
               CombineMode CM);
 
@@ -432,8 +439,8 @@ namespace Tpetra {
 
     /// \brief Redistribute data across memory images.
     ///
-    /// \param source [in] The source object, to redistribute into
-    ///   the destination object, which is <tt>*this</tt> object.
+    /// \param src [in] The source object, to redistribute into
+    ///   the target object, which is <tt>*this</tt> object.
     ///
     /// \param CM [in] The combine mode that describes how to combine
     ///   values that map to the same global ID on the same process.
@@ -453,7 +460,7 @@ namespace Tpetra {
     /// \param revOp [in] Whether to do a forward or reverse mode
     ///   redistribution.
     virtual void
-    doTransfer (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &source,
+    doTransfer (const SrcDistObject& src,
                 CombineMode CM,
                 size_t numSameIDs,
                 const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
@@ -479,7 +486,7 @@ namespace Tpetra {
     ///
     /// \return True if they are compatible, else false.
     virtual bool
-    checkSizes (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source) = 0;
+    checkSizes (const SrcDistObject& source) = 0;
 
     /// \brief Perform copies and permutations that are local to this process.
     ///
@@ -499,7 +506,7 @@ namespace Tpetra {
     ///   permuted.  They are listed by their LID in the source
     ///   object.
     virtual void
-    copyAndPermute (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source,
+    copyAndPermute (const SrcDistObject& source,
                     size_t numSameIDs,
                     const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
                     const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs) = 0;
@@ -527,7 +534,7 @@ namespace Tpetra {
     ///
     /// \param distor [in] The Distributor object we are using.
     virtual void
-    packAndPrepare (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source,
+    packAndPrepare (const SrcDistObject& source,
                     const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
                     Teuchos::Array<Packet>& exports,
                     const Teuchos::ArrayView<size_t>& numPacketsPerLID,

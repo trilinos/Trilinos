@@ -1451,22 +1451,40 @@ namespace Tpetra {
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
     //@}
-    //! @name Implementation of Tpetra::DistObject interface
+    //! @name Implementation of DistObject interface
     //@{
 
-    bool checkSizes(const DistObject<char, LocalOrdinal,GlobalOrdinal,Node>& source);
+    virtual bool
+    checkSizes (const SrcDistObject& source);
 
-    void copyAndPermute(const DistObject<char, LocalOrdinal,GlobalOrdinal,Node>& source,
-                        size_t numSameIDs,
-                        const ArrayView<const LocalOrdinal> &permuteToLIDs,
-                        const ArrayView<const LocalOrdinal> &permuteFromLIDs);
+    virtual void
+    copyAndPermute (const SrcDistObject& source,
+		    size_t numSameIDs,
+		    const ArrayView<const LocalOrdinal> &permuteToLIDs,
+		    const ArrayView<const LocalOrdinal> &permuteFromLIDs);
 
-    void packAndPrepare(const DistObject<char, LocalOrdinal,GlobalOrdinal,Node>& source,
-                        const ArrayView<const LocalOrdinal> &exportLIDs,
-                        Array<char> &exports,
-                        const ArrayView<size_t> & numPacketsPerLID,
-                        size_t& constantNumPackets,
-                        Distributor &distor);
+    virtual void 
+    packAndPrepare (const SrcDistObject& source,
+		    const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+		    Teuchos::Array<char>& exports,
+		    const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+		    size_t& constantNumPackets,
+		    Distributor& distor);
+
+    /// \brief Implementation of SrcDistObjectWithPack.
+    /// 
+    /// \warning To be called only by the packAndPrepare method of
+    ///   appropriate classes of DistObject.
+    ///
+    /// Subclasses may override this method to speed up or otherwise
+    /// improve the implementation by exploiting more specific details
+    /// of the subclass.
+    virtual void
+    pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+	  Teuchos::Array<char>& exports,
+	  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+	  size_t& constantNumPackets,
+	  Distributor& distor) const;
 
     /// \brief Unpack the imported column indices and values, and combine into matrix.
     ///
@@ -1485,6 +1503,59 @@ namespace Tpetra {
                       Distributor &distor,
                       CombineMode combineMode);
     //@}
+
+  private:
+    template<class CrsMatrixType>
+    friend Teuchos::RCP<CrsMatrixType> 
+    importAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
+				    const Import<typename CrsMatrixType::local_ordinal_type,
+						 typename CrsMatrixType::global_ordinal_type,
+						 typename CrsMatrixType::node_type>& importer,
+				    const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
+								 typename CrsMatrixType::global_ordinal_type,
+								 typename CrsMatrixType::node_type> >& domainMap = Teuchos::null,
+				    const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
+								 typename CrsMatrixType::global_ordinal_type,
+								 typename CrsMatrixType::node_type> >& rangeMap = Teuchos::null,
+				    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+    template<class CrsMatrixType>
+    friend Teuchos::RCP<CrsMatrixType> 
+    exportAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
+				    const Export<typename CrsMatrixType::local_ordinal_type,
+						 typename CrsMatrixType::global_ordinal_type,
+						 typename CrsMatrixType::node_type>& exporter,
+				    const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
+								 typename CrsMatrixType::global_ordinal_type,
+								 typename CrsMatrixType::node_type> >& domainMap = Teuchos::null,
+				    const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
+								 typename CrsMatrixType::global_ordinal_type,
+								 typename CrsMatrixType::node_type> >& rangeMap = Teuchos::null,
+				    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+    /// \brief Import from <tt>this</tt> to the result, and fillComplete the result.
+    ///
+    /// This method implements the nonmember "constructor"
+    /// importAndFillCompleteCrsMatrix.  It's convenient to put that
+    /// function's implementation inside the CrsMatrix class, so that
+    /// we don't have to put much code in the _decl header file.
+    Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
+    importAndFillComplete (const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+			   const Teuchos::RCP<const map_type>& domainMap,
+			   const Teuchos::RCP<const map_type>& rangeMap,
+			   const Teuchos::RCP<Teuchos::ParameterList>& params) const;
+
+    /// \brief Export from <tt>this</tt> to the result, and fillComplete the result.
+    ///
+    /// This method implements the nonmember "constructor"
+    /// exportAndFillCompleteCrsMatrix.  It's convenient to put that
+    /// function's implementation inside the CrsMatrix class, so that
+    /// we don't have to put much code in the _decl header file.
+    Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
+    exportAndFillComplete (const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+			   const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
+			   const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
+			   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
 
   private:
     // We forbid copy construction by declaring this method private
@@ -2061,80 +2132,7 @@ namespace Tpetra {
                                                                typename CrsMatrixType::node_type> >& rangeMap = Teuchos::null,
                                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
   {
-    using Teuchos::as;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    typedef typename CrsMatrixType::local_ordinal_type LO;
-    typedef typename CrsMatrixType::global_ordinal_type GO;
-    typedef typename CrsMatrixType::node_type NT;
-    typedef Map<typename CrsMatrixType::local_ordinal_type,
-      typename CrsMatrixType::global_ordinal_type,
-      typename CrsMatrixType::node_type> map_type;
-
-    // FIXME (mfh 11 Apr 2012) The current implementation of this
-    // method doesn't actually fuse the Import with fillComplete().
-    // This will change in the future.
-
-    // Are we in reverse mode?
-    bool reverseMode = false;
-    if (!params.is_null()) reverseMode = params->get("Reverse Mode",reverseMode);
-
-    // Cache the maps
-    RCP<const map_type> sourceMap = reverseMode? importer.getTargetMap() : importer.getSourceMap();
-    RCP<const map_type> targetMap = reverseMode? importer.getSourceMap() : importer.getTargetMap();
-
-    // Pre-count the nonzeros to allow a build w/ Static Profile
-    Tpetra::Vector<LO, LO, GO, NT> sourceNnzPerRowVec(sourceMap);
-    Tpetra::Vector<LO, LO, GO, NT> targetNnzPerRowVec(targetMap);
-    ArrayRCP<int> nnzPerRow = sourceNnzPerRowVec.getDataNonConst(0);
-    for (size_t i=0; i<sourceMatrix->getNodeNumRows(); ++i)
-      nnzPerRow[i] = Teuchos::as<LO>(sourceMatrix->getNumEntriesInLocalRow(i));
-    if(reverseMode) targetNnzPerRowVec.doExport(sourceNnzPerRowVec,importer,Tpetra::ADD);
-    else targetNnzPerRowVec.doImport(sourceNnzPerRowVec,importer,Tpetra::INSERT);
-
-
-    ArrayRCP<size_t> MyNnz(targetMap->getNodeNumElements());
-
-    ArrayRCP<const int> targetNnzPerRow = targetNnzPerRowVec.getData(0);
-    for (size_t i=0; i<targetNnzPerRowVec.getLocalLength(); ++i)
-      MyNnz[i] = Teuchos::as<size_t>(targetNnzPerRow[i]);
-
-    RCP<ParameterList> matrixparams;
-    if(!params.is_null()) matrixparams = sublist(params,"CrsMatrix");
-
-    RCP<CrsMatrixType> destMat =
-      rcp (new CrsMatrixType (targetMap,
-                              MyNnz,
-                              StaticProfile,
-                              matrixparams));
-    if(reverseMode) destMat->doExport(*sourceMatrix, importer, Tpetra::ADD);
-    else destMat->doImport(*sourceMatrix, importer, Tpetra::INSERT);
-
-    // Use the source matrix's domain Map as the default.
-    RCP<const map_type> theDomainMap =
-      domainMap.is_null () ? sourceMatrix->getDomainMap () : domainMap;
-    // Use the source matrix's range Map as the default.
-    RCP<const map_type> theRangeMap =
-      rangeMap.is_null () ? sourceMatrix->getRangeMap () : rangeMap;
-
-    // Do we need to restrict the communicator?
-    bool restrictComm = false;
-    if (!params.is_null()) restrictComm = params->get("Restrict Communicator",restrictComm);
-
-    if(restrictComm) {
-      // Handle communicator restriction, if requested
-      RCP<const map_type> newRowMap = targetMap->removeEmptyProcesses();
-      RCP<const Comm<int> > newComm = newRowMap.is_null() ? Teuchos::null : newRowMap->getComm();
-
-      destMat->removeEmptyProcessesInPlace(newRowMap);
-      theDomainMap = theDomainMap->replaceCommWithSubset(newComm);
-      theRangeMap  = theRangeMap->replaceCommWithSubset(newComm);
-      if(!newComm.is_null()) destMat->fillComplete(theDomainMap, theRangeMap);
-    }
-    else
-      destMat->fillComplete(theDomainMap, theRangeMap);
-
-    return destMat;
+    return sourceMatrix->importAndFillComplete (importer, domainMap, rangeMap, params);
   }
 
   /// \brief Nonmember CrsMatrix constructor that fuses Export and fillComplete().
@@ -2184,80 +2182,7 @@ namespace Tpetra {
                                                                typename CrsMatrixType::node_type> >& rangeMap = Teuchos::null,
                                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
   {
-    using Teuchos::as;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    typedef typename CrsMatrixType::local_ordinal_type LO;
-    typedef typename CrsMatrixType::global_ordinal_type GO;
-    typedef typename CrsMatrixType::node_type NT;
-    typedef Map<typename CrsMatrixType::local_ordinal_type,
-      typename CrsMatrixType::global_ordinal_type,
-      typename CrsMatrixType::node_type> map_type;
-
-    // FIXME (mfh 11 Apr 2012) The current implementation of this
-    // method doesn't actually fuse the Export with fillComplete().
-    // This will change in the future.
-
-    // Are we in reverse mode?
-    bool reverseMode = false;
-    if (!params.is_null()) reverseMode = params->get("Reverse Mode",reverseMode);
-
-    // Cache the maps
-    RCP<const map_type> sourceMap = reverseMode? exporter.getTargetMap() : exporter.getSourceMap();
-    RCP<const map_type> targetMap = reverseMode? exporter.getSourceMap() : exporter.getTargetMap();
-
-    // Pre-count the nonzeros to allow a build w/ Static Profile
-    Tpetra::Vector<LO, LO, GO, NT> sourceNnzPerRowVec(sourceMap);
-    Tpetra::Vector<LO, LO, GO, NT> targetNnzPerRowVec(targetMap);
-    ArrayRCP<int> nnzPerRow = sourceNnzPerRowVec.getDataNonConst(0);
-    for (size_t i=0; i<sourceMatrix->getNodeNumRows(); ++i)
-      nnzPerRow[i] = Teuchos::as<LO>(sourceMatrix->getNumEntriesInLocalRow(i));
-
-    if(reverseMode) targetNnzPerRowVec.doImport(sourceNnzPerRowVec,exporter,Tpetra::INSERT);
-    else targetNnzPerRowVec.doExport(sourceNnzPerRowVec,exporter,Tpetra::ADD);
-
-    ArrayRCP<size_t> MyNnz(targetMap->getNodeNumElements());
-
-    ArrayRCP<const int> targetNnzPerRow = targetNnzPerRowVec.getData(0);
-    for (size_t i=0; i<targetNnzPerRowVec.getLocalLength(); ++i)
-      MyNnz[i] = Teuchos::as<size_t>(targetNnzPerRow[i]);
-
-    RCP<ParameterList> matrixparams;
-    if(!params.is_null()) matrixparams = sublist(params,"CrsMatrix");
-
-    RCP<CrsMatrixType> destMat =
-      rcp (new CrsMatrixType (targetMap,
-                              MyNnz,
-                              StaticProfile,
-                              matrixparams));
-    if(reverseMode) destMat->doImport(*sourceMatrix, exporter, Tpetra::ADD);
-    else destMat->doExport (*sourceMatrix, exporter, Tpetra::INSERT);
-
-    // Use the source matrix's domain Map as the default.
-    RCP<const map_type> theDomainMap =
-      domainMap.is_null () ? sourceMatrix->getDomainMap () : domainMap;
-    // Use the source matrix's range Map as the default.
-    RCP<const map_type> theRangeMap =
-      rangeMap.is_null () ? sourceMatrix->getRangeMap () : rangeMap;
-
-    // Do we need to restrict the communicator?
-    bool restrictComm = false;
-    if (!params.is_null()) restrictComm = params->get("Restrict Communicator",restrictComm);
-
-    if(restrictComm) {
-      // Handle communicator restriction, if requested
-      RCP<const map_type> newRowMap = targetMap->removeEmptyProcesses();
-      RCP<const Comm<int> > newComm = newRowMap.is_null() ? Teuchos::null : newRowMap->getComm();
-
-      destMat->removeEmptyProcessesInPlace(newRowMap);
-      theDomainMap = theDomainMap->replaceCommWithSubset(newComm);
-      theRangeMap  = theRangeMap->replaceCommWithSubset(newComm);
-      if(!newComm.is_null()) destMat->fillComplete(theDomainMap, theRangeMap);
-    }
-    else
-      destMat->fillComplete(theDomainMap, theRangeMap);
-
-    return destMat;
+    return sourceMatrix->exportAndFillComplete (exporter, domainMap, rangeMap, params);
   }
 } // namespace Tpetra
 
