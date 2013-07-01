@@ -69,7 +69,9 @@
 #include <Epetra_CrsMatrix.h>
 #endif
 
+#ifdef HAVE_ISPATEST
 #include "ispatest_lbeval_utils.hpp"
+#endif
 
 //Declarations for helper-functions that create epetra objects. These
 //functions are implemented at the bottom of this file.
@@ -136,6 +138,7 @@ int main(int argc, char** argv) {
 
   // Results
 
+#ifdef HAVE_ISPATEST
   Isorropia::Epetra::CostDescriber emptyCostObject;
   double bal0, bal1, cutn0, cutn1, cutl0, cutl1;
 
@@ -160,6 +163,7 @@ int main(int argc, char** argv) {
     std::cout << std::endl;
     std::cout << std::endl;
   }
+#endif
 
 
   //Next, do a similar exercise with a Epetra_CrsMatrix. Like the
@@ -209,8 +213,10 @@ int main(int argc, char** argv) {
     MPI_Finalize();
     return(-1);
   }
+ 
   // Results
 
+#ifdef HAVE_ISPATEST
   double cutWgt0, cutWgt1;
   int numCuts0, numCuts1;
 
@@ -233,6 +239,7 @@ int main(int argc, char** argv) {
     std::cout << "                     Balance " << bal1 << " cutN " << cutn1 << " cutL " << cutl1;
     std::cout << std::endl;
   }
+#endif
 
   MPI_Finalize();
 
