@@ -730,6 +730,13 @@ public:
     return bucket(entity).parallel_owner_rank(bucket_ordinal(entity));
   }
 
+  unsigned local_id(Entity entity) const
+  {
+    entity_getter_debug_check(entity);
+
+    return m_local_ids[entity.local_offset()];
+  }
+
 #ifdef SIERRA_MIGRATION
 
   int global_id(Entity entity) const
@@ -760,14 +767,6 @@ public:
       m_fmwk_aux_relations[entity.local_offset()] = new RelationVector();
     }
     return *m_fmwk_aux_relations[entity.local_offset()];
-  }
-
-  unsigned local_id(Entity entity) const
-  {
-    ThrowAssert(m_add_fmwk_data);
-    entity_getter_debug_check(entity);
-
-    return m_fmwk_local_ids[entity.local_offset()];
   }
 
   const void* get_shared_attr(Entity entity) const
@@ -844,6 +843,13 @@ public:
     m_entity_sync_counts[entity.local_offset()] = sync_count;
   }
 
+  void set_local_id(Entity entity, unsigned id)
+  {
+    entity_setter_debug_check(entity);
+
+    m_local_ids[entity.local_offset()] = id;
+  }
+
 #ifdef SIERRA_MIGRATION
   void set_global_id(Entity entity, int id)
   {
@@ -851,14 +857,6 @@ public:
     entity_setter_debug_check(entity);
 
     m_fmwk_global_ids[entity.local_offset()] = id;
-  }
-
-  void set_local_id(Entity entity, unsigned id)
-  {
-    ThrowAssert(m_add_fmwk_data);
-    entity_setter_debug_check(entity);
-
-    m_fmwk_local_ids[entity.local_offset()] = id;
   }
 
   template <typename SharedAttr>
@@ -1135,13 +1133,13 @@ private:
   std::vector<uint16_t>    m_entity_states;
   std::vector<uint16_t>    m_closure_count;
   std::vector<size_t>      m_entity_sync_counts;
+  std::vector<unsigned>    m_local_ids;
 
 #ifdef SIERRA_MIGRATION
   // Extra data that fmwk needs to have on an entity. These vectors are indexed by local offset.
 
   mutable std::vector<RelationVector* > m_fmwk_aux_relations;   // Relations that can't be managed by STK such as PARENT/CHILD
   std::vector<int>                      m_fmwk_global_ids;
-  std::vector<unsigned>                 m_fmwk_local_ids;
   std::vector<const void*>              m_fmwk_shared_attrs;
   std::vector<unsigned short>           m_fmwk_connect_counts;
 #endif

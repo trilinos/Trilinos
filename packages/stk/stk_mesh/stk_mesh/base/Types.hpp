@@ -123,6 +123,7 @@ static const EntityRank InvalidEntityRank = stk::topology::INVALID_RANK;
 static const PartOrdinal InvalidPartOrdinal = InvalidOrdinal;
 static const RelationIdentifier InvalidRelationIdentifier = InvalidOrdinal;
 static const int InvalidProcessRank = -1;
+static const unsigned InvalidLocalId = std::numeric_limits<unsigned int>::max();
 
 /**
 * Predefined identifiers for mesh object relationship types.

@@ -141,10 +141,10 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_entity_states(),
     m_closure_count(),
     m_entity_sync_counts(),
+    m_local_ids(),
 #ifdef SIERRA_MIGRATION
     m_fmwk_aux_relations(),
     m_fmwk_global_ids(),
-    m_fmwk_local_ids(),
     m_fmwk_shared_attrs(),
     m_fmwk_connect_counts(),
 #endif
@@ -415,12 +415,12 @@ size_t BulkData::generate_next_local_offset()
     m_entity_states.push_back(Created);
     m_closure_count.push_back(static_cast<uint16_t>(0));
     m_entity_sync_counts.push_back(0);
+    m_local_ids.push_back(stk::mesh::InvalidLocalId);
 
 #ifdef SIERRA_MIGRATION
     if (m_add_fmwk_data) {
       m_fmwk_aux_relations.push_back(NULL);
       m_fmwk_global_ids.push_back(0);
-      m_fmwk_local_ids.push_back(sierra::Fmwk::INVALID_LOCAL_ID);
       m_fmwk_shared_attrs.push_back(NULL);
       m_fmwk_connect_counts.push_back(0);
     }
@@ -434,6 +434,7 @@ size_t BulkData::generate_next_local_offset()
     m_entity_states[new_local_offset] = Created;
     m_closure_count[new_local_offset] = static_cast<uint16_t>(0);
     m_entity_sync_counts[new_local_offset] = 0;
+    m_local_ids[new_local_offset] = stk::mesh::InvalidLocalId;
 
 #ifdef SIERRA_MIGRATION
     if (m_add_fmwk_data) {
@@ -441,7 +442,6 @@ size_t BulkData::generate_next_local_offset()
       delete m_fmwk_aux_relations[new_local_offset];
       m_fmwk_aux_relations[new_local_offset] = NULL;
       m_fmwk_global_ids[new_local_offset] = 0;
-      m_fmwk_local_ids[new_local_offset] = sierra::Fmwk::INVALID_LOCAL_ID;
       //don't delete shared-attr, it was allocated by fmwk.
       m_fmwk_shared_attrs[new_local_offset] = NULL;
       m_fmwk_connect_counts[new_local_offset] = 0;
@@ -467,12 +467,12 @@ void BulkData::initialize_arrays()
   m_entity_states.push_back(Deleted);
   m_closure_count.push_back(static_cast<uint16_t>(0));
   m_entity_sync_counts.push_back(0);
+  m_local_ids.push_back(stk::mesh::InvalidLocalId);
 
 #ifdef SIERRA_MIGRATION
   if (m_add_fmwk_data) {
     m_fmwk_aux_relations.push_back(NULL);
     m_fmwk_global_ids.push_back(0);
-    m_fmwk_local_ids.push_back(sierra::Fmwk::INVALID_LOCAL_ID);
     m_fmwk_shared_attrs.push_back(NULL);
     m_fmwk_connect_counts.push_back(0);
   }
