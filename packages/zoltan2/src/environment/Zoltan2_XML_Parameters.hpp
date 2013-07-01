@@ -251,7 +251,7 @@
     docString=\"Keep the part boundaries of the geometric partitioning: Truth values - 0 False, Otherwise True.\" \
     /> \
    <Parameter  \
-    id=\"44\" name=\"mj_enable_rcb\" type=\"int\" validatorId=\"44\" value=\"-1\" \
+    id=\"44\" name=\"mj_enable_rcb\" type=\"int\" validatorId=\"44\" value=\"0\" \
     docString=\"Use MJ as RCB: Truth values - 0 False, Otherwise True.\" \
     /> \
    <Parameter  \
