@@ -27,13 +27,11 @@ APPEND_SET(SOURCES
   SaPFactory.cpp
   PgPFactory.cpp
   TransPFactory.cpp
-  Needs.cpp
   TentativePFactory.cpp
   Aggregates.cpp
   CoalesceDropFactory.cpp
   Memory.cpp
   #CoupledAggregationFactory.cpp
-  TwoKeyMap.cpp
   GenericRFactory.cpp
   ThresholdAFilterFactory.cpp
   Smoothers/SmootherFactory.cpp

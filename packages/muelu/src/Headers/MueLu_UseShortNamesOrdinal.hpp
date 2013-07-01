@@ -130,10 +130,6 @@ typedef MueLu::RFactory RFactory;
 typedef MueLu::SingleLevelFactoryBase SingleLevelFactoryBase;
 #endif
 
-#ifdef MUELU_TWOKEYMAP_SHORT
-typedef MueLu::TwoKeyMap TwoKeyMap;
-#endif
-
 #ifdef MUELU_TWOLEVELFACTORYBASE_SHORT
 typedef MueLu::TwoLevelFactoryBase TwoLevelFactoryBase;
 #endif
