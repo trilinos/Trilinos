@@ -67,7 +67,15 @@ namespace Tpetra {
   /// A SrcDistObject subclass which does not inherit from DistObject
   /// need only be a valid source of an Import or Export; it need not
   /// be a valid target.
-  class SrcDistObject {};
+  class SrcDistObject {
+  public:
+    /// \brief Virtual destructor.
+    ///
+    /// It's necessary to provide this both for memory safety of
+    /// derived classes, and to make SrcDistObject a polymorphic type
+    /// (otherwise it can't be the argument of a dynamic_cast).
+    virtual ~SrcDistObject () {}
+  };
 
 } // namespace Tpetra
 

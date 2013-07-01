@@ -72,7 +72,7 @@ namespace Tpetra {
   /// may ask the source object to pack its own data, if the source
   /// object implements SrcDistObjectWithPack.
   template<class Packet, class LocalOrdinal>
-  class SrcDistObjectWithPack : public SrcDistObject {
+  class SrcDistObjectWithPack { // : public SrcDistObject {
   public:
     /// \brief Pack the object's data for an Import or Export.
     ///

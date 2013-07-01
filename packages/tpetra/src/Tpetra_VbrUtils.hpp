@@ -192,31 +192,38 @@ struct VbrDataDist : public Tpetra::DistObject<char,LocalOrdinal,GlobalOrdinal,N
   VbrData<LocalOrdinal,GlobalOrdinal,Scalar>& vbrdata;
   Teuchos::RCP<Tpetra::BlockMap<LocalOrdinal,GlobalOrdinal,Node> > importMap;
 
-  bool checkSizes(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node>& source)
+  virtual bool 
+  checkSizes (const SrcDistObject& source) 
   {
-    bool ok = this->getMap()->getMinAllGlobalIndex() <= source.getMap()->getMinAllGlobalIndex();
-    ok = ok && this->getMap()->getMaxAllGlobalIndex() >= source.getMap()->getMaxAllGlobalIndex();
+    typedef VbrDataDist<LocalOrdinal,GlobalOrdinal,Scalar,Node> this_type;
+    const this_type* src = dynamic_cast<const this_type*> (&source);
+
+    bool ok = this->getMap ()->getMinAllGlobalIndex () <= 
+      src->getMap ()->getMinAllGlobalIndex ();
+    ok = ok && this->getMap ()->getMaxAllGlobalIndex () >= 
+      src->getMap ()->getMaxAllGlobalIndex ();
     return ok;
   }
 
-  void copyAndPermute(
-   const DistObject<char, LocalOrdinal, GlobalOrdinal, Node>& source,
-   size_t numSameIDs,
-   const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
-   const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs)
+  void 
+  copyAndPermute (const SrcDistObject& source,
+		  size_t numSameIDs,
+		  const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
+		  const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs)
   {
     throw std::runtime_error("VbrDataDist hasn't implemented copyAndPermute!!");
   }
 
-  void packAndPrepare(
-     const DistObject<char, LocalOrdinal, GlobalOrdinal, Node>& source,
-     const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-     Teuchos::Array<char>& exports,
-     const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-     size_t& constantNumPackets,
-     Distributor& distor)
+  void 
+  packAndPrepare (const SrcDistObject& source,
+		  const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+		  Teuchos::Array<char>& exports,
+		  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+		  size_t& constantNumPackets,
+		  Distributor& distor)
   {
-    const VbrDataDist<LocalOrdinal,GlobalOrdinal,Scalar,Node>* vdd = dynamic_cast<const VbrDataDist<LocalOrdinal,GlobalOrdinal,Scalar,Node>*>(&source);
+    typedef VbrDataDist<LocalOrdinal,GlobalOrdinal,Scalar,Node> this_type;
+    const this_type* vdd = dynamic_cast<const this_type*> (&source);
     if (vdd == NULL) {
       throw std::runtime_error("VbrDataDist::packAndPrepare ERROR, dynamic_cast failed.");
     }

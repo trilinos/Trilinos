@@ -97,7 +97,7 @@ namespace Tpetra {
             class Node = Kokkos::DefaultNode::DefaultNodeType>
   class RowMatrix :
     virtual public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
-    virtual public SrcDistObjectWithPack<char, LocalOrdinal> {
+    public SrcDistObjectWithPack<char, LocalOrdinal> {
   public:
     //! @name Typedefs
     //@{
