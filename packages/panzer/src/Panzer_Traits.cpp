@@ -68,9 +68,11 @@ const std::string PHX::TypeString< Sacado::ELRFad::DFad<double> >::value =
 const std::string PHX::TypeString< Sacado::ELRCacheFad::DFad<double> >::value = 
   "Sacado::ELRCacheFad::DFad<double>";
 
+/*
 const std::string PHX::TypeString<panzer::Traits::Value>::value = "Value";
 
 const std::string PHX::TypeString<panzer::Traits::Derivative>::value = "Derivative";
+*/
 
 #ifdef HAVE_STOKHOS
 

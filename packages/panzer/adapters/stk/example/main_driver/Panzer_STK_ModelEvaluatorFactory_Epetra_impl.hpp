@@ -1244,8 +1244,8 @@ namespace panzer_stk {
 
     #ifdef HAVE_MUELU
     {
-      Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder); // Register MueLu as a Stratimikos preconditioner strategy.
-      Stratimikos::enableMueLuTpetra(linearSolverBuilder,"MueLu-Tpetra");
+      Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder); // Register MueLu as a Stratimikos preconditioner strategy for Epetra
+      Stratimikos::enableMueLuTpetra<int,long,Kokkos::DefaultNode::DefaultNodeType>(linearSolverBuilder,"MueLu-Tpetra");
     }
     #endif // MUELU
 

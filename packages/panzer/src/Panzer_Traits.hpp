@@ -125,11 +125,13 @@ namespace panzer {
     // *** Response Types
     // ******************************************************************
 
+/*
     struct Value {      typedef RealType ScalarT; typedef Residual EvalType; };
     struct Derivative { typedef FadType ScalarT;  typedef Jacobian EvalType; };
 
     typedef Sacado::mpl::vector<Value, Derivative 
                                > RespTypes;
+*/
 
     // ******************************************************************
     // *** Data Types
@@ -173,16 +175,6 @@ namespace panzer {
     typedef SD SetupData;
 
     typedef panzer::Workset& EvalData;
-
-/*
-    struct PED {
-       struct DirichletData {
-          //! Stores information about which global indices were set as dirichlet conditions
-          Teuchos::RCP<LinearObjContainer> ghostedCounter;
-       } dirichletData;
-    };
-    typedef PED& PreEvalData;
-*/
     typedef GlobalEvaluationDataContainer& PreEvalData;
 
     typedef void* PostEvalData;
@@ -239,12 +231,14 @@ namespace PHX {
      { static const std::string value; };
   #endif 
 
+/*
   // Response Types
   template<> struct TypeString<panzer::Traits::Value> 
   { static const std::string value; };
 
   template<> struct TypeString<panzer::Traits::Derivative> 
   { static const std::string value; };
+*/
 }
 
 #endif
