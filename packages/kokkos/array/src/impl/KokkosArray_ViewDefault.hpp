@@ -108,7 +108,7 @@ struct ViewTracking {
 
 template< class ViewTraits , class MemorySpace , class MemoryTraits >
 struct ViewTracking< ViewTraits , MemorySpace , MemoryTraits ,
-          typename enable_if< MemoryTraits::managed , HostSpace >::type >
+          typename enable_if< MemoryTraits::Unmanaged == 0 , HostSpace >::type >
 {
   KOKKOSARRAY_INLINE_FUNCTION static void increment( const void * ptr )
     { MemorySpace::increment( ptr ); }

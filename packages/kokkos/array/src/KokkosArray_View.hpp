@@ -132,7 +132,7 @@ public:
   typedef typename device_type::size_type     size_type ;
 
   enum { is_hostspace = Impl::is_same< memory_space , HostSpace >::value };
-  enum { is_managed   = memory_traits::managed };
+  enum { is_managed   = memory_traits::Unmanaged == 0 };
 
   //------------------------------------
   // Specialization:
