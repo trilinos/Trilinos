@@ -508,6 +508,7 @@ testCrsMatrix (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
   typedef Tpetra::CrsMatrix<ST, LO, GO, NT> crs_matrix_type;
   bool result = true; // current Boolean result; reused below
   bool success = true; // used by TEST_EQUALITY
+  (void) success; // silence "unused variable" compiler warning
 
   out << "Test: CrsMatrix Matrix Market I/O, w/ Map with index base "
       << indexBase << endl;
