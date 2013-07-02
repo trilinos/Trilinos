@@ -789,7 +789,7 @@ namespace MueLuTests {
     RCP<RepartitionFactory> repart = rcp(new RepartitionFactory());
     Teuchos::ParameterList paramList;
     paramList.set("startLevel", 1);
-    paramList.set("minRowsPerProcessor", 1000);
+    paramList.set("minRowsPerProcessor", 1);
     paramList.set("nonzeroImbalance", 1.2);
     paramList.set("diffusiveHeuristic", 10);
     paramList.set< RCP<const FactoryBase> >("number of partitions", Teuchos::null); // use user-defined #partitions
