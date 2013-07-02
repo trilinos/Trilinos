@@ -100,6 +100,9 @@ namespace Tpetra {
 	  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
 	  size_t& constantNumPackets,
 	  Distributor &distor) const = 0;
+
+    //! Destructor (declared virtual for memory safety of derived classes).
+    virtual ~SrcDistObjectWithPack () {}
   };
 
 } // namespace Tpetra
