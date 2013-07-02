@@ -476,7 +476,9 @@ void pqJagged_getParameters(
         int &migration_all2all_option,
         T &migration_imbalance_cut_off, 
         int &migration_assignment_type,
-        int &keep_part_boxes){
+        int &keep_part_boxes,
+        int &enable_rcb,
+        int &recursion_depth){
 
 
     const Teuchos::ParameterEntry *pe = pl.getEntryPtr("partitioning_objective");
@@ -539,6 +541,20 @@ void pqJagged_getParameters(
                 keep_part_boxes  = 1;
             }
         }
+    }
+
+    pe = pl.getEntryPtr("mj_enable_rcb");
+    if (pe){
+        enable_rcb = pe->getValue(&enable_rcb);
+    }else {
+        enable_rcb = 0; // Set to invalid value
+    }
+
+    pe = pl.getEntryPtr("recursion_depth");
+    if (pe){
+        recursion_depth = pe->getValue(&recursion_depth);
+    }else {
+        recursion_depth = -1; // Set to invalid value
     }
 
     int val = 0;
@@ -2248,7 +2264,7 @@ void pqJagged_1D_Partition(
 
 
 
-
+                //cout << "p:" << partNo << endl;
                 partId_t noCuts = partNo - 1;
                 size_t total_part_count = partNo + size_t (noCuts) ;
                 if (myNonDoneCounts[kk] > 0){
@@ -4962,9 +4978,9 @@ partId_t getPartitionArrays(
                 newFuturePartitions->push_back(fNofCuts);
 
                 if (keep_part_boxes){
-                    for (partId_t j = 0; j < numParts; ++j){
-                        outPartBoxes->push_back((*inPartBoxes)[i]);
-                    }
+                    //for (partId_t j = 0; j < numParts; ++j){
+                        outPartBoxes->push_back((*inPartBoxes)[ii]);
+                    //}
                 }
 
 
@@ -5042,8 +5058,7 @@ void getInitialPartAssignments(
 
 template <typename partId_t>
 void getPartSpecifications(const partId_t *partNo,
-                  int &partArraySize,
-                  int coordDim,
+                  int partArraySize,
                   size_t &numGlobalParts,
                   partId_t &totalDimensionCut, //how many cuts will be totally
                   partId_t &totalPartCount ,    //how many parts will be totally
@@ -5064,14 +5079,17 @@ void getPartSpecifications(const partId_t *partNo,
         numGlobalParts = totalPartCount;
     } else {
         float fEpsilon = numeric_limits<float>::epsilon();
-        partArraySize = coordDim;
         partId_t futureNumParts = numGlobalParts;
-        for (int i = 0; i < coordDim; ++i){
-            partId_t maxNoPartAlongI = getPartCount<partId_t>( futureNumParts, 1.0f / (coordDim - i), fEpsilon);
+
+        for (int i = 0; i < partArraySize; ++i){
+
+            partId_t maxNoPartAlongI = getPartCount<partId_t>( futureNumParts, 1.0f / (partArraySize - i), fEpsilon);
+            //cout << "futureNumParts:" << futureNumParts << "partArraySize:" << partArraySize << " i:" << i << "maxNoPartAlongI:" << maxNoPartAlongI<< endl;
             //partId_t maxNoPartAlongI = ceil(pow(futureNumParts, 1.0f / (coordDim - i)));// + 0.5f;
             if (maxNoPartAlongI > maxPartNo){
                 maxPartNo = maxNoPartAlongI;
             }
+            //cout << "i:" << i << "maxPartNo:" << maxPartNo<< endl;
 
             partId_t nfutureNumParts = futureNumParts / maxNoPartAlongI;
             if (futureNumParts % maxNoPartAlongI){
@@ -5084,10 +5102,12 @@ void getPartSpecifications(const partId_t *partNo,
         //estimate reduceAll Count here.
         //we find the upperbound instead.
         partId_t p = 1;
-        for (int i = 0; i < coordDim; ++i){
+        for (int i = 0; i < partArraySize; ++i){
             reduceAllCount += p;
             p *= maxPartNo;
         }
+
+        //cout << "maxPartNo:" << maxPartNo << endl;
         maxTotalCumulativePartCount  = p / maxPartNo;
     }
 
@@ -5658,10 +5678,11 @@ void sequentialTaskPartitioning(
     partId_t maxCutNo = 0;
     size_t maxTotalPartCount = 0;
 
+    partArraySize = coordDim;
     getPartSpecifications <partId_t>(
                         partNo,   //partNoArray Input
                         partArraySize,  //size of the partNoArray --output if partNo is not given.
-                        coordDim,       //coordinate dim
+                        //coordDim,       //coordinate dim
                         numGlobalParts,     //how many global parts will be -- output if partNo is not given.
                         totalDimensionCut, //how many cuts will be totally
                         totalPartCount ,    //how many parts will be totally
@@ -6321,6 +6342,7 @@ void AlgPQJagged(
         partArraySize = pl.getPtr<Array <partId_t> >("pqParts")->size() - 1;
     }
 
+    //cout << "partArraySize:" << partArraySize << endl;
     int coordDim, weightDim;
     size_t nlc;
     global_size_t gnc; int criteriaDim;
@@ -6429,6 +6451,9 @@ void AlgPQJagged(
     int migration_assignment_type = 0;
     int keep_part_boxes = 0;
 
+    int enable_rcb = 0;
+    int recursion_depth = -1;
+
     pqJagged_getParameters<scalar_t>(pl,
             allowNonRectelinearPart,
             concurrentPartCount,
@@ -6437,7 +6462,25 @@ void AlgPQJagged(
             migration_all2all_option,
             migration_imbalance_cut_off,
             migration_assignment_type,
-            keep_part_boxes);
+            keep_part_boxes,
+            enable_rcb,
+            recursion_depth);
+
+    //cout << "enable_rcb:" << enable_rcb << " recursion_depth:" << recursion_depth << endl;
+    //cout << "partArraySize:" << partArraySize << " recursion_depth:" << recursion_depth << endl;
+    if (enable_rcb){
+        recursion_depth = ceil(log ((numGlobalParts)) / log (2.0));
+    }
+    if (partArraySize < 1){
+        if (recursion_depth > 0){
+            partArraySize = recursion_depth;
+        }
+        else {
+            partArraySize = coordDim;
+        }
+    }
+
+    //cout << "partArraySize:" << partArraySize << " recursion_depth:" << recursion_depth << endl;
 
     int numThreads = 1;
 #ifdef HAVE_ZOLTAN2_OMP
@@ -6461,7 +6504,7 @@ void AlgPQJagged(
     getPartSpecifications <partId_t>(
                         partNo,   //partNoArray Input
                         partArraySize,  //size of the partNoArray --output if partNo is not given.
-                        coordDim,       //coordinate dim
+                        //coordDim,       //coordinate dim
                         numGlobalParts,     //how many global parts will be -- output if partNo is not given.
                         totalDimensionCut, //how many cuts will be totally
                         totalPartCount ,    //how many parts will be totally
@@ -6737,6 +6780,7 @@ void AlgPQJagged(
         outPartBoxes->push_back(tmpBox);
     }
 
+    //cout << "partArraySize:" << partArraySize << endl;
     for (int i = 0; i < partArraySize; ++i){
 
         //partitioning array.
@@ -6775,6 +6819,14 @@ void AlgPQJagged(
             inPartBoxes = outPartBoxes;
             outPartBoxes = tmpPartBoxes;
             outPartBoxes->clear();
+
+/*
+            for (partId_t j = 0; j < inPartBoxes->size(); ++j){
+
+                cout << "me:" << j << endl;
+                (*inPartBoxes)[j].print();
+            }
+            */
         }
 
 
@@ -7074,23 +7126,29 @@ void AlgPQJagged(
                     if(noParts > 1){
                         if(keep_part_boxes){
                             for (partId_t j = 0; j < noParts - 1; ++j){
-                                /*
+/*
+                                cout << " outShift + currentOut + j: " << outShift + currentOut + j << endl;
+                                cout << " coordInd:" << coordInd << " cut:" << "usedCutCoordinate["<< j<< "]" << usedCutCoordinate[j] << endl;
+
                                 cout << "me:" << problemComm->getRank() << " before update:" << endl;
+
                                 (*outPartBoxes)[outShift + currentOut + j].print();
-                                */
+*/
                                 (*outPartBoxes)[outShift + currentOut + j].updateMinMax(usedCutCoordinate[j], 1 /*update max*/, coordInd);
-                                /*
+/*
                                 cout << "me:" << problemComm->getRank() <<  " after update:"<< endl;
                                 (*outPartBoxes)[outShift + currentOut + j].print();
 
                                 cout <<  "me:" << problemComm->getRank() << " before update:"<< endl;
+
                                 (*outPartBoxes)[outShift + currentOut + j + 1].print();
-                                */
+*/
                                 (*outPartBoxes)[outShift + currentOut + j + 1].updateMinMax(usedCutCoordinate[j], 0 /*update min*/, coordInd);
-                                /*
+/*
                                 cout <<  "me:" << problemComm->getRank() << " after update:"<< endl;
                                 (*outPartBoxes)[outShift + currentOut + j + 1].print();
-                                */
+*/
+
                             }
                         }
 

@@ -250,6 +250,14 @@
     id=\"43\" name=\"keep_part_boxes\" type=\"int\" validatorId=\"43\" value=\"-1\" \
     docString=\"Keep the part boundaries of the geometric partitioning: Truth values - 0 False, Otherwise True.\" \
     /> \
+   <Parameter  \
+    id=\"44\" name=\"mj_enable_rcb\" type=\"int\" validatorId=\"44\" value=\"0\" \
+    docString=\"Use MJ as RCB: Truth values - 0 False, Otherwise True.\" \
+    /> \
+   <Parameter  \
+    id=\"45\" name=\"recursion_depth\" type=\"int\" validatorId=\"45\" value=\"-1\" \
+    docString=\"Recursuion depth for MJ: Must be greater than 0.\" \
+    /> \
     <Validators> \
       <Validator defaultParameterName=\"error_check_level\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"0\"> \
         <String integralValue=\"0\" stringDoc=\"no assertions will be performed\" stringValue=\"no_assertions\"/> \
@@ -441,6 +449,8 @@
       <Validator defaultParameterName=\"migration_doMigration_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"41\"/> \
       <Validator defaultParameterName=\"mapping_type\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"42\"/> \
       <Validator defaultParameterName=\"keep_part_boxes\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"43\"/> \
+      <Validator defaultParameterName=\"mj_enable_rcb\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"44\"/> \
+      <Validator defaultParameterName=\"recursion_depth\" allowDouble=\"false\" allowInt=\"true\" allowString=\"true\" prefferedType=\"int\" type=\"anynumberValidator\" validatorId=\"45\"/> \
       <Validator defaultParameterName=\"remap_parts\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"40\"> \
         <String integralValue=\"1\" stringValue=\"true\"/> \
         <String integralValue=\"1\" stringValue=\"yes\"/> \
