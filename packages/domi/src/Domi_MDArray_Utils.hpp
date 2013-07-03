@@ -73,6 +73,31 @@ enum EStorageOrder
   DEFAULT_ORDER       = 1
 };
 
+////////////////////////////////////////////////////////////////////////
+
+/** \brief Provide capability to declare a variable as non-const, even
+ *         if template parameter is const
+ *
+ * Note that this capability is provided in the C++11 standard via
+ * std::remove_const<>, but that we cannot asssume that we are using a
+ * C++11 compiler.
+ */
+template< class T >
+struct remove_const
+{
+  typedef T type;
+};
+
+/** \brief Specialization of remove_const when template parameter is
+ *         already const
+ */
+template< class T >
+struct remove_const< const T >
+{
+  typedef T type;
+};
+
+////////////////////////////////////////////////////////////////////////
 
 /** \brief Compute the strides of an <tt>MDArray</tt>,
  *         <tt>MDArrayView</tt>, or <tt>MDArrayRCP</tt>, given the
@@ -100,6 +125,8 @@ Teuchos::Array< T > computeStrides(const Teuchos::ArrayView< T > & dimensions,
   return strides;
 }
 
+////////////////////////////////////////////////////////////////////////
+
 /** \brief Compute the strides of an <tt>MDArray</tt>,
  *         <tt>MDArrayView</tt>, or <tt>MDArrayRCP</tt>, given its
  *         dimensions as an ArrayView.
@@ -123,6 +150,8 @@ computeStrides(const Teuchos::Array< T > & dimensions,
   return computeStrides(nonConstDims(), storageOrder);
 }
 
+////////////////////////////////////////////////////////////////////////
+
 /** \brief Compute the minimum size required for an <tt>MDArray</tt>,
  *         <tt>MDArrayView</tt>, or <tt>MDArrayRCP</tt>, given its
  *         dimensions as an Arrayview.
@@ -136,6 +165,8 @@ T computeSize(const Teuchos::ArrayView< T > & dimensions)
     result *= dimensions[axis];
   return result;
 }
+
+////////////////////////////////////////////////////////////////////////
 
 /** \brief Compute the minimum size required for an <tt>MDArray</tt>,
  *         <tt>MDArrayView</tt>, or <tt>MDArrayRCP</tt>, given its
@@ -157,6 +188,8 @@ T computeSize(const Teuchos::Array< T > & dimensions)
   return computeSize(nonConstDims());
 }
 
+////////////////////////////////////////////////////////////////////////
+
 /** \brief Compute the minimum size required for an <tt>MDArray</tt>,
  *         <tt>MDArrayView</tt>, or <tt>MDArrayRCP</tt>, given its
  *         dimensions and strides.
@@ -166,7 +199,8 @@ T computeSize(const Teuchos::ArrayView< T > & dimensions,
 	      const Teuchos::ArrayView< T > & strides)
 {
   typedef typename Teuchos::ArrayView< T >::size_type size_type;
-  T result = 1;
+  // T might be a const type, but we need result to be non-const
+  typename remove_const< T >::type result = 1;
   for (size_type axis = 0; axis < dimensions.size(); ++axis)
     result += (dimensions[axis]-1) * strides[axis];
   return result;
