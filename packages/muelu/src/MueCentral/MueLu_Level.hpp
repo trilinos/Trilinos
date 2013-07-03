@@ -331,6 +331,9 @@ namespace MueLu {
 
     //@}
 
+    enum   RequestMode { REQUEST, RELEASE, UNDEF };
+    RequestMode GetRequestMode() const { return requestMode_; }
+
   private:
 
     //! Copy constructor.
@@ -358,7 +361,6 @@ namespace MueLu {
     //
     const FactoryBase* GetFactory(const std::string& varname, const FactoryBase* factory) const;
 
-    enum   RequestMode { REQUEST, RELEASE, UNDEF };
     static RequestMode requestMode_;
 
     typedef const FactoryBase*          Key1;
