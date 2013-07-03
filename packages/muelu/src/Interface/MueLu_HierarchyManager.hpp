@@ -163,6 +163,16 @@ namespace MueLu {
         isLastLevel = r || (levelID == lastLevelID);
         levelID++;
       }
+      // When we reuse hierarchy, it is necessary that we don't
+      // change the number of levels. We also cannot make requests
+      // for coarser levels, because we don't construct all the
+      // data on previous levels. For instance, let's say our first
+      // run constructed three levels. If we try to do requests during
+      // next setup for the fourth level, it would need Aggregates
+      // which we didn't construct for level 3 because we reused P.
+      // To fix this situation, we change the number of desired levels
+      // here.
+      numDesiredLevel_ = levelID;
 
       WriteData<Matrix>(H, matricesToPrint_,     "A");
       WriteData<Matrix>(H, prolongatorsToPrint_, "P");
@@ -204,7 +214,7 @@ namespace MueLu {
     }
 
     // Hierarchy parameters
-    int                   numDesiredLevel_;
+    mutable int           numDesiredLevel_;
     Xpetra::global_size_t maxCoarseSize_;
     MsgType               verbosity_;
     int                   graphOutputLevel_;
