@@ -4671,9 +4671,8 @@ namespace stk {
         }
     }
 
-    void PerceptMesh::print(const stk::mesh::Entity entity, bool cr, bool id_only)
+    void PerceptMesh::print(std::ostream& out, const stk::mesh::Entity entity, bool cr, bool id_only)
     {
-      std::ostream& out = std::cout;
       if (entity_rank(entity) != stk::mesh::MetaData::NODE_RANK)
         {
           const CellTopologyData * const cell_topo_data = this->get_cell_topology(entity);

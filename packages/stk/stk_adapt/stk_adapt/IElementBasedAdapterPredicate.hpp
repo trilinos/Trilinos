@@ -34,10 +34,6 @@ namespace stk {
       IElementBasedAdapterPredicate(PerceptMesh& eMesh, stk::mesh::Selector * selector=0, stk::mesh::FieldBase *field=0, double tolerance=0.0) :
         m_eMesh(eMesh), m_eb_selector(selector), m_field(field), m_tolerance(tolerance) {}
 
-      void check_two_to_one(PerceptMesh& eMesh);
-      void enforce_two_to_one_refine(PerceptMesh& eMesh);
-      void ok_to_unrefine(PerceptMesh& eMesh);
-
     };
 
 

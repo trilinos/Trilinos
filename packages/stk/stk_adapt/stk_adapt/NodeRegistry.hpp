@@ -134,9 +134,10 @@ namespace stk {
       entity_id_vector_type m_entity_id_vector;
       unsigned m_mark;
 
-      NodeIdsOnSubDimEntityType(unsigned sz=1, NodeIdsOnSubDimEntityTypeQuantum allValues=stk::mesh::Entity()) : base_type(sz,allValues),
-                                                                                                                 m_entity_id_vector(sz,0u),
-                                                                                                                 m_mark(0u)  {}
+      NodeIdsOnSubDimEntityType(unsigned sz=1, NodeIdsOnSubDimEntityTypeQuantum allValues=stk::mesh::Entity(),
+                                unsigned mark=0u) : base_type(sz,allValues),
+                                                    m_entity_id_vector(sz,0u),
+                                                    m_mark(mark)  {}
 
       void resize(size_t sz)
       {
@@ -848,6 +849,7 @@ namespace stk {
                             if (!m_eMesh.is_valid(node)) throw std::logic_error("NodeRegistry:: setAllReceivedNodeData logic err #3.1");
                           }
                       }
+                    if (!m_eMesh.is_valid(node)) throw std::logic_error("NodeRegistry:: setAllReceivedNodeData logic err #3.2");
                     nodeIds_onSE[ii] = node;
                   }
               }
@@ -914,6 +916,7 @@ namespace stk {
       /// can be determined by the locality of the element (ghost or not).
       bool registerNeedNewNode(const stk::mesh::Entity element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd, bool needNodes)
       {
+        bool ret_val = false;
         SubDimCell_SDSEntityType subDimEntity(m_eMesh);
         getSubDimEntity(subDimEntity, element, needed_entity_rank.first, iSubDimOrd);
 
@@ -930,30 +933,7 @@ namespace stk {
         bool should_put_in_rank = (m_eMesh.entity_rank(element) > nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().rank());
         bool should_put_in = should_put_in_id || should_put_in_rank;
 
-#define DEBUG_NR_UNREF 0
-        if (DEBUG_NR_UNREF) // && (m_eMesh.identifier(subDimEntity[0]) == 19 && m_eMesh.identifier(subDimEntity[1]) == 20))
-          {
-            std::cout << "registerNeedNewNode:: element= "; m_eMesh.print(element,false,true);
-            std::cout << " is_empty= " << is_empty
-                      << " should_put_in= " << should_put_in
-                      << " should_put_in_id= " << should_put_in_id
-                      << " should_put_in_rank= " << should_put_in_rank
-                      << " needed_entity_rank= "
-                      << needed_entity_rank.first << " subDimEntity= ";
-
-            for (unsigned k=0; k < subDimEntity.size(); k++)
-              {
-                std::cout << " " << m_eMesh.identifier(subDimEntity[k]) << " ";
-              }
-#if 0
-            for (unsigned k=0; k < subDimEntity.size(); k++)
-              {
-                std::cout << " " << (stk::mesh::EntityId) subDimEntity[k] << " ";
-              }
-#endif
-            std::cout << std::endl;
-          }
-
+        unsigned smark=0;
         if (!is_empty)
           {
             unsigned& mark = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>().m_mark;
@@ -961,8 +941,10 @@ namespace stk {
               mark |= NR_MARK;
             else
               mark |= NR_MARK_NONE;
+            smark = mark;
           }
 
+#define DEBUG_NR_UNREF 0
 
         /// once it's in, the assertion should be:
         ///   owning_elementId < non_owning_elementId && owning_elementRank >= non_owning_elementRank
@@ -974,11 +956,14 @@ namespace stk {
 
             unsigned numNewNodes = needed_entity_rank.second;
 
-            NodeIdsOnSubDimEntityType nid_new(numNewNodes, stk::mesh::Entity());
+            NodeIdsOnSubDimEntityType nid_new(numNewNodes, stk::mesh::Entity(), smark);
+            //NodeIdsOnSubDimEntityType nid_new(numNewNodes, stk::mesh::Entity(), 0u);
             if (needNodes)
               nid_new.m_mark |= NR_MARK;
             else
               nid_new.m_mark |= NR_MARK_NONE;
+
+            smark = nid_new.m_mark;
 
             // create SubDimCellData for the map rhs
             // add one to iSubDimOrd for error checks later
@@ -992,9 +977,40 @@ namespace stk {
             //m_cell_2_data_map.insert(std::pair<SubDimCell_SDSEntityType, SubDimCellData>(subDimEntity, new_SubDimCellData) );
             //m_cell_2_data_map.insert(std::pair<SubDimCell_SDSEntityType, SubDimCellData>(subDimEntity, data) );
 
-            return true;
+            ret_val = true;
           }
-        return false;
+
+        if (DEBUG_NR_UNREF)
+          {
+            SubDimCellData* a_nodeId_elementOwnderId_ptr = getFromMapPtr(subDimEntity);
+            SubDimCellData& a_nodeId_elementOwnderId = (a_nodeId_elementOwnderId_ptr ? *a_nodeId_elementOwnderId_ptr : empty_SubDimCellData);
+            bool a_is_empty = a_nodeId_elementOwnderId_ptr == 0;
+            //bool is_not_empty_but_data_cleared = (!is_empty && nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>().size() == 0);
+            unsigned& gotMark = a_nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>().m_mark;
+            unsigned nidSize = a_nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>().size();
+
+            std::ostringstream sout;
+            sout << "P[" << m_eMesh.get_rank() << "] registerNeedNewNode:: element= " << m_eMesh.identifier(element) << " nidSize= " << nidSize;
+            //m_eMesh.print(sout, element,false,true);
+            sout << " smark= " << smark << " gotMark= " << gotMark << " needNodes= " << needNodes << " isG= " << m_eMesh.isGhostElement(element) 
+                 << " is_empty= " << is_empty
+                 << " a_is_empty= " << a_is_empty
+                      << " should_put_in= " << should_put_in
+                      << " should_put_in_id= " << should_put_in_id
+                      << " should_put_in_rank= " << should_put_in_rank
+                      << " needed_entity_rank= "
+                      << needed_entity_rank.first << " subDimEntity= ";
+
+            for (unsigned k=0; k < subDimEntity.size(); k++)
+              {
+                sout << " " << m_eMesh.identifier(subDimEntity[k]) << " ";
+              }
+            // if ((m_eMesh.identifier(element) == 8 || m_eMesh.identifier(element) == 13) && needed_entity_rank.first==1
+            //     && m_eMesh.identifier(subDimEntity[0]) == 15 && m_eMesh.identifier(subDimEntity[1]) == 16)
+            std::cout << sout.str() << std::endl;
+          }
+
+        return ret_val;
       }
 
       /// Replace element ownership - FIXME for parallel
@@ -2201,10 +2217,8 @@ namespace stk {
 
                     recv_buffer.unpack< CommDataType >( buffer_entry );
                     nodeIds_onSE.unpack(m_eMesh, recv_buffer);
-                    //recv_buffer.unpack< NodeIdsOnSubDimEntityType > (nodeIds_onSE);
 
-
-                    //std::cout << "P[" << proc_rank << "] unpack for buffer from proc= " << from_proc << " " << buffer_entry << std::endl;
+                    //if(1) std::cout << "P[" << proc_rank << "] unpack for buffer from proc= " << from_proc << " " << buffer_entry << std::endl;
                     createNodeAndConnect(buffer_entry, nodeIds_onSE, from_proc, nodes_to_ghost);
                   }
               }

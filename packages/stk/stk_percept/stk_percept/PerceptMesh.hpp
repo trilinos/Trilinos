@@ -420,7 +420,8 @@ namespace stk {
       void set_smooth_surfaces(bool do_smooth_surfaces=true) { m_do_smooth_surfaces = do_smooth_surfaces; }
       bool get_smooth_surfaces() { return m_do_smooth_surfaces; }
 
-      void print(const stk::mesh::Entity entity, bool cr=true, bool id_only=false);
+      void print(std::ostream& out, const stk::mesh::Entity entity, bool cr=true, bool id_only=false);
+      void print(const stk::mesh::Entity entity, bool cr=true, bool id_only=false) { print(std::cout, entity, cr, id_only); }
 
       /////// mesh parameter ////////////////////////////////////////////////////////////////////////////////
 

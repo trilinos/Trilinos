@@ -1082,6 +1082,9 @@ namespace stk {
       // remove any elements that are empty (these can exist when doing local refinement)
       removeEmptyElements();
 
+      bulkData.modification_end();
+      bulkData.modification_begin();
+
       // remove nodes not referred to by elements
       removeDanglingNodes();
 #if CHECK_DEBUG

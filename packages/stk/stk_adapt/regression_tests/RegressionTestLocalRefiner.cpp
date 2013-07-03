@@ -968,7 +968,6 @@ namespace stk
             }
           // FIXME tmp
           //f_data[0] = 1.0;
-
           return false;  // don't terminate the loop
         }
         virtual void init_elementOp() {}
@@ -1037,19 +1036,14 @@ namespace stk
               {
 
                 eMesh.elementOpLoop(set_ref_field, refine_field);
-                eMesh.save_as(output_files_loc+"quad_tmp_square_sidesets_quad_local_ref_"+post_fix[p_size]+".e.s-"+toString(ipass+1));
+                eMesh.save_as(output_files_loc+"quad_anim_set_field_"+post_fix[p_size]+".e.s-"+toString(ipass+1));
 
-                bool enforce_what[3] = {false, false, true};
-                int max_iter=100;
-                int iter=0;
-                bool did_change=false;
-                while ((iter++ < max_iter) && (did_change = erp.enforce_two_to_one_refine(enforce_what)) )
-                  {
-                    std::cout << "P[" << eMesh.get_rank() << "] ipass= " << ipass << " iter= " << iter
-                              << " did_change= " << did_change
-                              << std::endl;
-                  }
+                //bool enforce_what[3] = {false, false, true};
+                //erp.refine(breaker, enforce_what);
                 breaker.doBreak();
+
+                MPI_Barrier( MPI_COMM_WORLD );
+                //VERIFY_OP_ON(true,==,false,"here");
                 bool check_what[3] = {false, false, true};
                 bool is_valid_2_to_1 = erp.check_two_to_one(check_what);
                 bool check_what_1[3] = {true, false, false};
@@ -1078,25 +1072,7 @@ namespace stk
                 eMesh.elementOpLoop(set_ref_field, refine_field);
 
                 bool enforce_what[3] = {false, false, true};
-                int max_iter=100;
-                int iter=0;
-                bool did_change=false;
-                if (iplot==7)
-                  {
-                    Util::setFlag(12567,true);
-                  }
-
-                while ((iter++ < max_iter) && (did_change = erp.enforce_two_to_one_unrefine(enforce_what)) )
-                  {
-                    std::cout << "P[" << eMesh.get_rank() << "] iunref_pass= " << iunref_pass << " iter= " << iter
-                              << " did_change= " << did_change
-                              << std::endl;
-                  }
-
-                ElementUnrefineCollection elements_to_unref = breaker.buildUnrefineList();
-                std::cout << "P[" << eMesh.get_rank() << "] iunref_pass= " << iunref_pass <<  " elements_to_unref.size() = " << elements_to_unref.size() << std::endl;
-                breaker.unrefineTheseElements(elements_to_unref);
-
+                erp.unrefine(breaker, enforce_what);
                 std::cout << "P[" << eMesh.get_rank() << "] done... iunref_pass= " << iunref_pass << " quad_local number elements= " << eMesh.get_number_elements() << std::endl;
                 if (1)
                   {
@@ -1120,19 +1096,8 @@ namespace stk
               {
                 eMesh.elementOpLoop(set_ref_field_val_unref_all, refine_field);
                 std::cout << "P[" << eMesh.get_rank() << "] iunrefAll_pass= " << iunref <<  std::endl;
-
                 bool enforce_what[3] = {false, false, true};
-                int max_iter=100;
-                int iter=0;
-                bool did_change=false;
-                while ((iter++ < max_iter) && (did_change = erp.enforce_two_to_one_unrefine(enforce_what)) )
-                  {
-                    std::cout << "P[" << eMesh.get_rank() << "] iunrefAll_ipass= " << iunref << " iter= " << iter
-                              << " did_change= " << did_change
-                              << std::endl;
-                  }
-                ElementUnrefineCollection elements_to_unref = breaker.buildUnrefineList();
-                breaker.unrefineTheseElements(elements_to_unref);
+                erp.unrefine(breaker, enforce_what);
 
                 if (1)
                   {

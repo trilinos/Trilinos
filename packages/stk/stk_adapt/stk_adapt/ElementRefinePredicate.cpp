@@ -21,6 +21,38 @@ namespace stk {
       return mark;
     }
 
+    void ElementRefinePredicate::refine(IAdapter& breaker, bool enforce_what[3])
+    {
+      int max_iter=100;
+      int iter=0;
+      bool did_change=false;
+      if (0)
+      while ((iter++ < max_iter) && (did_change = this->enforce_two_to_one_refine(enforce_what)) )
+        {
+          if (debug_print)
+            std::cout << "P[" << m_eMesh.get_rank() << " iter= " << iter << " did_change= " << did_change
+                      << std::endl;
+        }
+      breaker.doBreak();
+    }
+
+    void ElementRefinePredicate::unrefine(IAdapter& breaker, bool enforce_what[3])
+    {
+      int max_iter=100;
+      int iter=0;
+      bool did_change=false;
+      while ((iter++ < max_iter) && (did_change = this->enforce_two_to_one_unrefine(enforce_what)) )
+        {
+          if (debug_print)
+            std::cout << "P[" << m_eMesh.get_rank() << "]  iter= " << iter
+                      << " did_change= " << did_change
+                      << std::endl;
+        }
+
+      ElementUnrefineCollection elements_to_unref = breaker.buildUnrefineList();
+      breaker.unrefineTheseElements(elements_to_unref);
+    }
+
     bool ElementRefinePredicate::enforce_two_to_one_refine(bool enforce_what[3])
     {
       bool did_change = false;

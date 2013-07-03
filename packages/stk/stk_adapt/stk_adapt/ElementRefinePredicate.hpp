@@ -16,6 +16,13 @@ namespace stk {
       /// Return DO_REFINE, DO_UNREFINE, DO_NOTHING
       int operator()(const stk::mesh::Entity entity);
 
+      /// wrappers around refine and unrefine
+      /// @param enforce_2_to_1_what: {node-, edge-, face-} neighbors
+      void refine(IAdapter& breaker, bool enforce_2_to_1_what[3]);
+      void unrefine(IAdapter& breaker, bool enforce_2_to_1_what[3]);
+
+      // low-level interface:
+
       /** return true if mesh is 2-to-1 rule compliant
        * check_what: {node-, edge-, face-} neighbors
        */
