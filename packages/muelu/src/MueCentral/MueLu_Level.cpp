@@ -261,7 +261,7 @@ namespace MueLu {
     out0->setShowProcRank(true);
 
     std::ostringstream ss;
-    ss << print(ss, verbLevel);
+    print(ss, verbLevel);
 
     out0->setOutputToRootOnly(-1);
     *out0 << ss.str();
@@ -269,7 +269,7 @@ namespace MueLu {
     out0->setShowProcRank(false);
   }
 
-  std::ostream& Level::print(std::ostream& out, const VerbLevel verbLevel) const {
+  void Level::print(std::ostream& out, const VerbLevel verbLevel) const {
     out << "LevelID = " << GetLevelID() << std::endl;
 
     typedef Teuchos::TabularOutputter TTO;
@@ -370,9 +370,7 @@ namespace MueLu {
 
         outputter.nextRow();
       }
-    } //for (std::vector<const MueLu::FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++)
-
-    return out;
+    } // for (TwoKeyMap::const_iterator kt = map_.begin(); kt != map_.end(); kt++) {
   }
 
 #if defined(HAVE_MUELU_BOOST) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
