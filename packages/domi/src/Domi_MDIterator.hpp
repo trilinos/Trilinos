@@ -42,6 +42,9 @@
 #ifndef DOMI_MDITERATOR_HPP
 #define DOMI_MDITERATOR_HPP
 
+// Standard include
+#include <iterator>
+
 namespace Domi
 {
 
@@ -69,18 +72,28 @@ namespace Domi
  *
  *   \code
  *   friend class MDIterator< MDArray< T > >;
+ *   friend class MDIterator< MDArray< const T > >;
+ *
  *   typedef MDIterator< MDArray< T > > iterator;
+ *   typedef MDIterator< MDArray< const T > > const_iterator;
  *   \endcode
  *
- * and declare begin() and end() methods:
+ * and declare begin(), end() and cbegin(), cend() methods:
  *
  *   \code
- *   const iterator begin() const { return iterator(*this      ); }
- *   const iterator end()   const { return iterator(*this, true); }
+ *   iterator begin() { return iterator(*this      ); }
+ *   iterator end()   { return iterator(*this, true); }
+ *
+ *   const_iterator begin() const { return const_iterator(*this      ); }
+ *   const_iterator end()   const { return const_iterator(*this, true); }
+ *
+ *   const_iterator cbegin() const { return const_iterator(*this      ); }
+ *   const_iterator cend()   const { return const_iterator(*this, true); }
  *   \endcode
  */
 template< class MDARRAY >
-class MDIterator
+class MDIterator : public std::iterator< std::bidirectional_iterator_tag,
+                                         typename MDARRAY::value_type >
 {
 public:
 
@@ -123,7 +136,7 @@ public:
    *  index.
    */
   MDIterator(const MDARRAY & mdarray,
-             Teuchos::ArrayView< size_type > & index);
+             const Teuchos::ArrayView< size_type > & index);
 
   /** \brief Copy constructor
    *
@@ -161,9 +174,6 @@ public:
   /** \brief Dereferencing operator */
   value_type & operator*();
 
-  /** \brief Const dereferencing operator */
-  const value_type & operator*() const;
-
   /** \brief Prefix increment operator */
   MDIterator< MDARRAY > & operator++();
 
@@ -191,18 +201,31 @@ public:
 
 private:
 
-  // A reference to the multi-dimensional array being iterated
-  const MDARRAY & _mdarray;
+  // A copy of the dimensions of the multi-dimensional array being
+  // iterated
+  const Teuchos::Array< size_type > _dimensions;
+
+  // A copy of the strides of the multi-dimensional array being
+  // iterated
+  const Teuchos::Array< size_type > _strides;
+
+  // A pointer to the data buffer of the multi-dimensional array
+  // being iterated
+  value_type * _ptr;
+
+  // A copy of the storage order of the multi-dimensional array being
+  // iterated
+  EStorageOrder _storage_order;
 
   // The multi-dimensional index of the current iterate
   Teuchos::Array< size_type > _index;
 
-  // A temporary value indicating the axis of the index currently
-  // being incremented or decremented
+  // A temporary value used to indicate the axis of the index
+  // currently being incremented or decremented
   mutable size_type _axis;
 
-  // A temporary value indicating whether an increment or decrement
-  // operation is complete
+  // A temporary value used to indicate whether an increment or
+  // decrement operation is complete
   mutable bool _done;
 
   // We need an index that is recognized as the end index.  It must
@@ -224,26 +247,33 @@ private:
 template< class MDARRAY >
 MDIterator< MDARRAY >::MDIterator(const MDARRAY & mdarray,
                                   bool end_index) :
-  _mdarray(mdarray),
+  _dimensions(mdarray._dimensions),
+  _strides(mdarray._strides),
+  _ptr(mdarray._ptr),
+  _storage_order(mdarray._storage_order),
   _index(mdarray.num_dims())
 {
   if (end_index)
     assign_end_index();
   else
-    _index.assign(_mdarray.num_dims(), 0);
+    _index.assign(_dimensions.size(), 0);
 }
 
 ////////////////////////////////////////////////////////////////////////
 
 template< class MDARRAY >
-MDIterator< MDARRAY >::MDIterator(const MDARRAY & mdarray,
-                                  Teuchos::ArrayView< size_type > & index) :
-  _mdarray(mdarray),
+MDIterator< MDARRAY >::
+MDIterator(const MDARRAY & mdarray,
+           const Teuchos::ArrayView< size_type > & index) :
+  _dimensions(mdarray._dimensions),
+  _strides(mdarray._strides),
+  _ptr(mdarray._ptr),
+  _storage_order(mdarray._storage_order),
   _index(index)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (_mdarray.num_dims() != _index.size()), Teuchos::RangeError,
-    "Input array has " << _mdarray.num_dims() << " dimensions, while index "
+    (_dimensions.size() != _index.size()), Teuchos::RangeError,
+    "Input array has " << _dimensions.size() << " dimensions, while index "
     "has " << _index.size());
 #ifdef DOMI_ENABLE_ABC
   for (_axis = 0; _axis < _index.size(); ++_axis)
@@ -255,7 +285,10 @@ MDIterator< MDARRAY >::MDIterator(const MDARRAY & mdarray,
 
 template< class MDARRAY >
 MDIterator< MDARRAY >::MDIterator(const MDIterator< MDARRAY > & source) :
-  _mdarray(source._mdarray),
+  _dimensions(source._dimensions),
+  _strides(source._strides),
+  _ptr(source._ptr),
+  _storage_order(source._storage_order),
   _index(source._index)
 {
 }
@@ -273,8 +306,11 @@ template< class MDARRAY >
 MDIterator< MDARRAY > &
 MDIterator< MDARRAY >::operator=(const MDIterator< MDARRAY > & source)
 {
-  _mdarray = source._mdarray;
-  _index   = source._index;
+  _dimensions    = source._dimensions;
+  _strides       = source._strides;
+  _ptr           = source._ptr;
+  _storage_order = source._storage_order;
+  _index         = source._index;
   return *this;
 }
 
@@ -285,7 +321,7 @@ bool
 MDIterator< MDARRAY >::operator==(const MDIterator< MDARRAY > & other) const
 {
   // If underlying MDARRAYs are different, then return not equal
-  if (_mdarray._ptr != other._mdarray._ptr) return false;
+  if (_ptr != other._ptr) return false;
   // If any of the current index values differ, then return not equal 
   for (_axis = 0; _axis < _index.size(); _axis++)
     if (_index[_axis] != other._index[_axis]) return false;
@@ -310,20 +346,8 @@ MDIterator< MDARRAY >::operator*()
 {
   typename MDIterator< MDARRAY >::size_type offset = 0;
   for (_axis=0; _axis < _index.size(); ++_axis)
-    offset += _index[_axis] * _mdarray._strides[_axis];
-  return _mdarray._ptr[offset];
-}
-
-////////////////////////////////////////////////////////////////////////
-
-template< class MDARRAY >
-const typename MDIterator< MDARRAY >::value_type &
-MDIterator< MDARRAY >::operator*() const
-{
-  typename MDIterator< MDARRAY >::size_type offset = 0;
-  for (_axis=0; _axis < _index.size(); ++_axis)
-    offset += _index[_axis] * _mdarray._strides[_axis];
-  return _mdarray._ptr[offset];
+    offset += _index[_axis] * _strides[_axis];
+  return _ptr[offset];
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -332,14 +356,14 @@ template< class MDARRAY >
 MDIterator< MDARRAY > &
 MDIterator< MDARRAY >::operator++()
 {
-  if (_mdarray._storage_order == FIRST_INDEX_FASTEST)
+  if (_storage_order == FIRST_INDEX_FASTEST)
   {
     _axis = 0;
     _done = false;
     while (not _done)
     {
       _index[_axis]++;
-      _done = (_index[_axis] < _mdarray._dimensions[_axis]);
+      _done = (_index[_axis] < _dimensions[_axis]);
       if (not _done)
       {
         _index[_axis] = 0;
@@ -354,12 +378,12 @@ MDIterator< MDARRAY >::operator++()
   }
   else
   {
-    _axis = _mdarray.num_dims() - 1;
+    _axis = _dimensions.size() - 1;
     _done = false;
     while (not _done)
     {
       _index[_axis]++;
-      _done = (_index[_axis] < _mdarray._dimensions[_axis]);
+      _done = (_index[_axis] < _dimensions[_axis]);
       if (not _done)
       {
         _index[_axis] = 0;
@@ -392,7 +416,7 @@ template< class MDARRAY >
 MDIterator< MDARRAY > &
 MDIterator< MDARRAY >::operator--()
 {
-  if (_mdarray._storage_order == FIRST_INDEX_FASTEST)
+  if (_storage_order == FIRST_INDEX_FASTEST)
   {
     _axis = 0;
     _done = false;
@@ -402,7 +426,7 @@ MDIterator< MDARRAY >::operator--()
       _done = (_index[_axis] >= 0);
       if (not _done)
       {
-        _index[_axis] = _mdarray._dimensions[_axis];
+        _index[_axis] = _dimensions[_axis];
         _axis++;
         if (_axis >= _index.size())
         {
@@ -414,7 +438,7 @@ MDIterator< MDARRAY >::operator--()
   }
   else
   {
-    _axis = _mdarray.num_dims() - 1;
+    _axis = _dimensions.size() - 1;
     _done = false;
     while (not _done)
     {
@@ -422,7 +446,7 @@ MDIterator< MDARRAY >::operator--()
       _done = (_index[_axis] >= 0);
       if (not _done)
       {
-        _index[_axis] = _mdarray._dimensions[_axis];
+        _index[_axis] = _dimensions[_axis];
         _axis--;
         if (_axis < 0)
         {
@@ -478,7 +502,7 @@ MDIterator< MDARRAY >::assign_end_index()
   // index for that axis.
   for (typename MDIterator< MDARRAY >::size_type axis = 0;
        axis < _index.size(); ++axis)
-    _index[axis] = _mdarray._dimensions[axis];
+    _index[axis] = _dimensions[axis];
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -490,9 +514,9 @@ assert_index(typename MDIterator< MDARRAY >::size_type i,
              typename MDIterator< MDARRAY >::size_type axis) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
-    !(0 <= i && i < _mdarray._dimensions[axis]), Teuchos::RangeError,
+    !(0 <= i && i < _dimensions[axis]), Teuchos::RangeError,
     "MDIterator<MDARRAY>::assert_index(i=" << i << ",axis=" << axis << "): out"
-    << " of range i in [0, " << _mdarray._dimensions[axis] << ")"
+    << " of range i in [0, " << _dimensions[axis] << ")"
   );
 }
 
