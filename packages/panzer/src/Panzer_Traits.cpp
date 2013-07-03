@@ -54,6 +54,8 @@ const std::string PHX::TypeString<panzer::Traits::Residual>::value = "Residual";
 
 const std::string PHX::TypeString<panzer::Traits::Jacobian>::value = "Jacobian";
 
+const std::string PHX::TypeString<panzer::Traits::Tangent>::value = "Tangent";
+
 const std::string PHX::TypeString<double>::value = "double";
 
 const std::string PHX::TypeString< Sacado::Fad::DFad<double> >::value = 

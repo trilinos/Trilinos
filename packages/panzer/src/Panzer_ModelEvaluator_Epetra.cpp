@@ -375,6 +375,12 @@ panzer::ModelEvaluator_Epetra::createOutArgs() const
       )
     );
 
+  // add in df/dp (if appropriate)
+  for(std::size_t i=0;i<p_init_.size();i++) {
+    if(is_distributed_parameter_[i])
+      outArgs.setSupports(OUT_ARG_DfDp,i,EpetraExt::ModelEvaluator::DerivativeSupport());
+  }
+
   // add in dg/dx (if appropriate)
   for(std::size_t i=0;i<g_names_.size();i++) {
     typedef panzer::Traits::Jacobian RespEvalT;

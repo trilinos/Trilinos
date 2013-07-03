@@ -182,6 +182,128 @@ evaluateFields(typename Traits::EvalData workset)
 }
 
 // **********************************************************************
+// Specialization: Tangent
+// **********************************************************************
+
+template<typename Traits,typename LO,typename GO,typename NodeT>
+panzer::ScatterResidual_Tpetra<panzer::Traits::Tangent, Traits,LO,GO,NodeT>::
+ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+                       const Teuchos::ParameterList& p)
+  : globalIndexer_(indexer) 
+  , globalDataKey_("Residual Scatter Container")
+{ 
+  std::string scatterName = p.get<std::string>("Scatter Name");
+  scatterHolder_ = 
+    Teuchos::rcp(new PHX::Tag<ScalarT>(scatterName,Teuchos::rcp(new PHX::MDALayout<Dummy>(0))));
+
+  // get names to be evaluated
+  const std::vector<std::string>& names = 
+    *(p.get< Teuchos::RCP< std::vector<std::string> > >("Dependent Names"));
+
+  // grab map from evaluated names to field names
+  fieldMap_ = p.get< Teuchos::RCP< std::map<std::string,std::string> > >("Dependent Map");
+
+  Teuchos::RCP<PHX::DataLayout> dl = 
+    p.get< Teuchos::RCP<const panzer::PureBasis> >("Basis")->functional;
+  
+  // build the vector of fields that this is dependent on
+  scatterFields_.resize(names.size());
+  for (std::size_t eq = 0; eq < names.size(); ++eq) {
+    scatterFields_[eq] = PHX::MDField<ScalarT,Cell,NODE>(names[eq],dl);
+
+    // tell the field manager that we depend on this field
+    this->addDependentField(scatterFields_[eq]);
+  }
+
+  // this is what this evaluator provides
+  this->addEvaluatedField(*scatterHolder_);
+
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
+
+  this->setName(scatterName+" Scatter Tangent");
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO,typename NodeT> 
+void panzer::ScatterResidual_Tpetra<panzer::Traits::Tangent, Traits,LO,GO,NodeT>::
+postRegistrationSetup(typename Traits::SetupData d, 
+		      PHX::FieldManager<Traits>& fm)
+{
+  fieldIds_.resize(scatterFields_.size());
+  // load required field numbers for fast use
+  for(std::size_t fd=0;fd<scatterFields_.size();++fd) {
+    // get field ID from DOF manager
+    std::string fieldName = fieldMap_->find(scatterFields_[fd].fieldTag().name())->second;
+    fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
+
+    // fill field data object
+    this->utils.setFieldData(scatterFields_[fd],fm);
+  }
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO,typename NodeT>
+void panzer::ScatterResidual_Tpetra<panzer::Traits::Tangent, Traits,LO,GO,NodeT>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+  typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
+
+  // extract linear object container
+  tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject(globalDataKey_));
+ 
+  if(tpetraContainer_==Teuchos::null) {
+    // extract linear object container
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
+  }
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO,typename NodeT>
+void panzer::ScatterResidual_Tpetra<panzer::Traits::Tangent, Traits,LO,GO,NodeT>::
+evaluateFields(typename Traits::EvalData workset)
+{ 
+   TEUCHOS_ASSERT(false);
+
+   typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
+
+   std::vector<LO> LIDs;
+ 
+   // for convenience pull out some objects from workset
+   std::string blockId = workset.block_id;
+   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+
+   Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer_->get_f(); 
+   Teuchos::ArrayRCP<double> r_array = r->get1dViewNonConst();
+
+   // NOTE: A reordering of these loops will likely improve performance
+   //       The "getGIDFieldOffsets may be expensive.  However the
+   //       "getElementGIDs" can be cheaper. However the lookup for LIDs
+   //       may be more expensive!
+
+   // scatter operation for each cell in workset
+   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
+      std::size_t cellLocalId = localCellIds[worksetCellIndex];
+
+      LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
+
+      // loop over each field to be scattered
+      for (std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
+         int fieldNum = fieldIds_[fieldIndex];
+         const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
+   
+         // loop over basis functions
+         for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
+            int offset = elmtOffset[basis];
+            LO lid = LIDs[offset];
+            r_array[lid] += (scatterFields_[fieldIndex])(worksetCellIndex,basis).val();
+         }
+      }
+   }
+}
+
+// **********************************************************************
 // Specialization: Jacobian
 // **********************************************************************
 
