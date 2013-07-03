@@ -168,7 +168,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, copyConstructor, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, equalOperator, T )
 {
-  typedef typename MDArrayRCP< T >::size_type size_type;
   MDArrayRCP< T > a = generateMDArrayRCP< T >(3,4);
   MDArrayRCP< T > b = generateMDArrayRCP< T >(3,4);
   TEUCHOS_ASSERT( a == b );
@@ -177,7 +176,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, equalOperator, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, equalOperatorMDArray, T )
 {
-  typedef typename MDArrayRCP< T >::size_type size_type;
   MDArray< T >    a = generateMDArray< T >(4,5);
   MDArrayRCP< T > b = generateMDArrayRCP< T >(4,5);
   TEUCHOS_ASSERT( a == b );
@@ -186,7 +184,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, equalOperatorMDArray, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, equalOperatorMDArrayView, T )
 {
-  typedef typename MDArrayRCP< T >::size_type size_type;
   MDArrayRCP< T >  a = generateMDArrayRCP< T >(2,6);
   MDArrayView< T > b = a();
   TEUCHOS_ASSERT( a == b );
@@ -195,7 +192,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, equalOperatorMDArrayView, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, inequalityOperator, T )
 {
-  typedef typename MDArrayRCP< T >::size_type size_type;
   MDArrayRCP< T > a = generateMDArrayRCP< T >(3,4);
   MDArrayRCP< T > b = generateMDArrayRCP< T >(3,4);
   b(2,2) = -1;
@@ -205,7 +201,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, inequalityOperator, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, inequalityOperatorMDArray, T )
 {
-  typedef typename MDArrayRCP< T >::size_type size_type;
   MDArray< T >    a = generateMDArray< T >(5,3);
   MDArrayRCP< T > b = generateMDArrayRCP< T >(5,3);
   a(4,2) = -1;
@@ -215,7 +210,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, inequalityOperatorMDArray, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, inequalityOperatorMDArrayView, T )
 {
-  typedef typename MDArrayRCP< T >::size_type size_type;
   MDArrayRCP< T >  a = generateMDArrayRCP< T >(2,4);
   MDArrayView< T > b = a[Slice()][Slice(1,3)];
   TEUCHOS_ASSERT( a != b );
@@ -249,7 +243,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, assignmentOperator, T )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, indexing4D, T )
 {
   typedef Domi::Ordinal ord;
-  using Teuchos::tuple;
   ord ni = 2;
   ord nj = 2;
   ord nk = 3;
@@ -269,7 +262,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, indexing4D, T )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, indexing5D, T )
 {
   typedef Domi::Ordinal ord;
-  using Teuchos::tuple;
   ord ni = 2;
   ord nj = 2;
   ord nk = 3;
@@ -290,7 +282,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, indexing5D, T )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, indexing6D, T )
 {
   typedef Domi::Ordinal ord;
-  using Teuchos::tuple;
   ord ni = 2;
   ord nj = 2;
   ord nk = 3;
@@ -315,7 +306,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, indexing7D, T )
   // Note: this unit test exercises the variadic argument of the last
   // overloaded operator()
   typedef Domi::Ordinal ord;
-  using Teuchos::tuple;
   ord ni = 2;
   ord nj = 2;
   ord nk = 3;
