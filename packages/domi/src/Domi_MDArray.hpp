@@ -373,19 +373,38 @@ public:
 
   //@}
 
-  /** \name Iterator class and methods */
+  /** \name Iterator classes and methods */
   //@{
 
   friend class MDIterator< MDArray< T > >;
-  typedef MDIterator< MDArray< T > > iterator;
+  friend class MDIterator< MDArray< const T > >;
+
+  typedef MDIterator< MDArray< T > >       iterator;
+  typedef MDIterator< MDArray< const T > > const_iterator;
 
   /** \brief Return the beginning iterator
    */
-  const iterator begin() const;
+  iterator begin();
 
   /** \brief Return the ending iterator
    */
-  const iterator end() const;
+  iterator end();
+
+  /** \brief Return the beginning const_iterator
+   */
+  const_iterator begin() const;
+
+  /** \brief Return the ending const_iterator
+   */
+  const_iterator end() const;
+
+  /** \brief Return the beginning const_iterator
+   */
+  const_iterator cbegin() const;
+
+  /** \brief Return the ending const_iterator
+   */
+  const_iterator cend() const;
 
   //@}
 
@@ -882,8 +901,8 @@ MDArray< T >::MDArray(const MDArrayView< T > & source) :
 {
   // Copy the values from the MDArrayView to the MDArray
   iterator thisit = begin();
-  typename MDArrayView< T >::iterator srcit = source.begin();
-  for ( ; srcit != source.end(); ++thisit, ++srcit)
+  typename MDArrayView< T >::const_iterator srcit = source.cbegin();
+  for ( ; srcit != source.cend(); ++thisit, ++srcit)
   {
     *thisit = *srcit;
   }
@@ -962,8 +981,8 @@ MDArray< T >::storage_order() const
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-const typename MDArray< T >::iterator
-MDArray< T >::begin() const
+typename MDArray< T >::iterator
+MDArray< T >::begin()
 {
   return iterator(*this);
 }
@@ -971,11 +990,49 @@ MDArray< T >::begin() const
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-const typename MDArray< T >::iterator
-MDArray< T >::end() const
+typename MDArray< T >::iterator
+MDArray< T >::end()
 {
   // Return the iterator corresponding to the last element
   return iterator(*this, true);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+typename MDArray< T >::const_iterator
+MDArray< T >::begin() const
+{
+  return const_iterator(*this);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+typename MDArray< T >::const_iterator
+MDArray< T >::end() const
+{
+  // Return the iterator corresponding to the last element
+  return const_iterator(*this, true);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+typename MDArray< T >::const_iterator
+MDArray< T >::cbegin() const
+{
+  return const_iterator(*this);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+typename MDArray< T >::const_iterator
+MDArray< T >::cend() const
+{
+  // Return the iterator corresponding to the last element
+  return const_iterator(*this, true);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1536,13 +1593,7 @@ MDArray< T >::getRawPtr() const
 template< typename T >
 bool operator==(const MDArray< T > & a1, const MDArray< T > & a2)
 {
-  if (a1._dimensions != a2._dimensions) return false;
-  if (a1._storage_order != a2._storage_order) return false;
-  typename MDArray< T >::iterator it1 = a1.begin();
-  typename MDArray< T >::iterator it2 = a2.begin();
-  for ( ; it1 != a1.end() && it2 != a2.end(); ++it1, ++it2)
-    if (*it1 != *it2) return false;
-  return true;
+  return (a1() == a2());
 }
 
 ////////////////////////////////////////////////////////////////////////

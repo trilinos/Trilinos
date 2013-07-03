@@ -146,6 +146,32 @@ public:
 	      const Teuchos::ArrayView< size_type > & dims,
 	      const EStorageOrder storageOrder = DEFAULT_ORDER);
 
+  /** \brief Constructor with a source <tt>Teuchos::ArrayView</tt>,
+   *   dimensions, strides, and optional storage order
+   *
+   * \param array [in] <tt>Teuchos::ArrayView</tt> of the data buffer
+   *
+   * \param dims [in] An array that defines the lengths of each
+   *        dimension.
+   *
+   * \param strides [in] An array that defines the strides between
+   *        elements along each axis.
+   *
+   * \param storageOrder [in] An enumerated value specifying the
+   *        internal storage order of the <tt>MDArrayView</tt>
+   *
+   * Note that this constructor was introduced specifically to
+   * implement the getConst() method, which converts an MDArrayView< T >
+   * to an MDArrayView< const T >.  The presence of both strides and
+   * storageOrder in the input arguments makes this an easy
+   * constructor to call incorrectly, and is not advised for general
+   * use.
+   */
+  MDArrayView(const Teuchos::ArrayView< T > & array,
+	      const Teuchos::Array< size_type > & dims,
+              const Teuchos::Array< size_type > & strides,
+	      const EStorageOrder storageOrder = DEFAULT_ORDER);
+
   /** \brief Copy constructor
    *
    * \param array [in] The source <tt>MDArrayView</tt> to be copied
@@ -204,24 +230,50 @@ public:
 
   //@}
 
-  /** \name Iterator class and methods */
+  /** \name Iterator classes and methods */
   //@{
 
   friend class MDIterator< MDArrayView< T > >;
-  typedef MDIterator< MDArrayView< T > > iterator;
+  friend class MDIterator< MDArrayView< const T > >;
+
+  typedef MDIterator< MDArrayView< T > >       iterator;
+  typedef MDIterator< MDArrayView< const T > > const_iterator;
 
   /** \brief Return the beginning iterator
    */
-  const iterator begin() const;
+  iterator begin();
 
   /** \brief Return the ending iterator
    */
-  const iterator end() const;
+  iterator end();
+
+  /** \brief Return the beginning const_iterator
+   */
+  const_iterator begin() const;
+
+  /** \brief Return the ending const_iterator
+   */
+  const_iterator end() const;
+
+  /** \brief Return the beginning const_iterator
+   */
+  const_iterator cbegin() const;
+
+  /** \brief Return the ending const_iterator
+   */
+  const_iterator cend() const;
 
   //@}
 
   /** \name Indexing operators that return MDArrayViews */
   //@{
+
+  /** \brief Return an MDArrayView< const T > of an MDArrayView< T > object
+   * 
+   * WARNING!  If <tt>T</tt> is already const (e.g. <tt>const double</tt>)
+   * then do not try to instantiate this function since it will not compile!
+   */
+  MDArrayView< const T > getConst() const;
 
   /** \brief Sub-array access operator.  The returned
    *  <tt>MDArrayView</tt> object will have one fewer dimensions than
@@ -554,8 +606,15 @@ private:
   T *                         _ptr;
   int                         _next_axis;
 
+  // Method provided for aiding in array bounds checking.  It raises
+  // an exception when the given index i is out of range along the
+  // given axis.
   void assertIndex(size_type i, int axis) const;
 
+  // Private implementation of the toString() method that includes an
+  // indent argument.  The publicly available version takes no
+  // arguments and calls this one with initial indent value of zero.
+  // This method can call itself recursively.
   std::string toString(int indent) const;
 
 };  // class MDArrayView
@@ -593,6 +652,26 @@ MDArrayView< T >::MDArrayView(const Teuchos::ArrayView< T > & array,
 			     Teuchos::RangeError,
 			     "Teuchos::ArrayView size too small for "
                              "dimensions");
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+MDArrayView< T >::MDArrayView(const Teuchos::ArrayView< T > & array,
+			      const Teuchos::Array< size_type > & dims,
+			      const Teuchos::Array< size_type > & strides,
+			      const EStorageOrder storageOrder) :
+  _dimensions(dims),
+  _strides(strides),
+  _array(array),
+  _storage_order(storageOrder),
+  _ptr(_array.getRawPtr()),
+  _next_axis(0)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(array.size() < computeSize(dims(),strides()),
+			     Teuchos::RangeError,
+			     "Teuchos::ArrayView size too small for "
+                             "dimensions and strides");
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -711,8 +790,8 @@ MDArrayView< T >::contiguous() const
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-const typename MDArrayView< T >::iterator
-MDArrayView< T >::begin() const
+typename MDArrayView< T >::iterator
+MDArrayView< T >::begin()
 {
   return iterator(*this);
 }
@@ -720,11 +799,61 @@ MDArrayView< T >::begin() const
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-const typename MDArrayView< T >::iterator
-MDArrayView< T >::end() const
+typename MDArrayView< T >::iterator
+MDArrayView< T >::end()
 {
   // Return the iterator corresponding to the last element
   return iterator(*this, true);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+typename MDArrayView< T >::const_iterator
+MDArrayView< T >::begin() const
+{
+  return const_iterator(getConst());
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+typename MDArrayView< T >::const_iterator
+MDArrayView< T >::end() const
+{
+  // Return the iterator corresponding to the last element
+  return const_iterator(getConst(), true);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+typename MDArrayView< T >::const_iterator
+MDArrayView< T >::cbegin() const
+{
+  return const_iterator(getConst());
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+typename MDArrayView< T >::const_iterator
+MDArrayView< T >::cend() const
+{
+  // Return the iterator corresponding to the last element
+  return const_iterator(getConst(), true);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+MDArrayView< const T >
+MDArrayView< T >::getConst() const
+{
+  return MDArrayView< const T >(_array.getConst(),
+                                _dimensions,
+                                _strides,
+                                _storage_order);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1281,10 +1410,12 @@ bool operator==(const MDArrayView< T > & a1, const MDArrayView< T > & a2)
 {
   if (a1._dimensions != a2._dimensions) return false;
   if (a1._storage_order != a2._storage_order) return false;
-  typename MDArrayView< T >::iterator it1 = a1.begin();
-  typename MDArrayView< T >::iterator it2 = a2.begin();
+  typename MDArrayView< T >::const_iterator it1 = a1.begin();
+  typename MDArrayView< T >::const_iterator it2 = a2.begin();
   for ( ; it1 != a1.end() && it2 != a2.end(); ++it1, ++it2)
+  {
     if (*it1 != *it2) return false;
+  }
   return true;
 }
 
