@@ -45,7 +45,6 @@
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
-#include "Epetra_IntVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Comm.h"
@@ -3196,47 +3195,27 @@ int Epetra_VbrMatrix::BlockMap2PointMap(const Epetra_BlockMap & BlockMap,
   // as the input Epetra_BlockMap object.  The global IDs for the output PointMap
   // are computed by using the MaxElementSize of the BlockMap.  For variable block
   // sizes this will create gaps in the GID space, but that is OK for Epetra_Maps.
-  // FIXME Jim Westfall 24 Jun 2013
-  // FIXME I changed this so that are not any gaps, this is because some solvers
-  // FIXME such as UMFPACK are sensitive to gaps in GIDs
 
-  int PtNumMyPoints = BlockMap.NumMyPoints();
-  int * PtMyGlobalPoints = 0;
-  if (PtNumMyPoints>0) PtMyGlobalPoints = new int[PtNumMyPoints];
+  int MaxElementSize = BlockMap.MaxElementSize();
+  int PtNumMyElements = BlockMap.NumMyPoints();
+  int * PtMyGlobalElements = 0;
+  if (PtNumMyElements>0) PtMyGlobalElements = new int[PtNumMyElements];
 
-  int numProc = BlockMap.Comm().NumProc();
-  int PtNumNonOverlapPoints = (BlockMap.UniqueGIDs()) ? PtNumMyPoints : RowMap().NumMyPoints();
-  int *allNumPoints=NULL;
-  allNumPoints = (int*) alloca(sizeof(int)*numProc);
-  std::fill(allNumPoints, allNumPoints+numProc, 0);
-  BlockMap.Comm().GatherAll(&PtNumNonOverlapPoints,allNumPoints,1);
+  int NumMyElements = BlockMap.NumMyElements();
 
-  int StartID = 0;
-  int MyPID = BlockMap.Comm().MyPID();
-  for (int ip = 0; ip < MyPID; ++ip) StartID += allNumPoints[ip];
-
-  if (BlockMap.UniqueGIDs() ||numProc < 2 ){
-    for (int i=0; i<BlockMap.NumMyPoints() ; i++) PtMyGlobalPoints[i] = StartID++;
-
-    PointMap = new Epetra_Map(-1, PtNumMyPoints, PtMyGlobalPoints, BlockMap.IndexBase(), BlockMap.Comm());
+  int curID = 0;
+  for (int i=0; i<NumMyElements; i++) {
+    int StartID = BlockMap.GID64(i)*MaxElementSize; // CJ TODO FIXME long long
+    int ElementSize = BlockMap.ElementSize(i);
+    for (int j=0; j<ElementSize; j++) PtMyGlobalElements[curID++] = StartID+j;
   }
-  else
-  {
-    Epetra_IntVector nonOverlapPointGIDs(RowMap(),false);
-    for (int i=0; i<PtNumNonOverlapPoints ; i++) nonOverlapPointGIDs.Values()[i] = StartID + i;
+  assert(curID==PtNumMyElements); // Sanity test
 
-    Epetra_IntVector myPointGIDs(BlockMap,false);
-    Epetra_Import importer(BlockMap,RowMap());
+  PointMap = new Epetra_Map(-1, PtNumMyElements, PtMyGlobalElements, BlockMap.IndexBase(), BlockMap.Comm());// FIXME long long
 
-    myPointGIDs.Import(nonOverlapPointGIDs,importer,Insert);
-
-    PointMap = new Epetra_Map(-1, PtNumMyPoints, myPointGIDs.Values(), BlockMap.IndexBase(), BlockMap.Comm());
-  }
-
-  if (PtNumMyPoints>0) delete [] PtMyGlobalPoints;
+  if (PtNumMyElements>0) delete [] PtMyGlobalElements;
 
   if (!BlockMap.PointSameAs(*PointMap)) {EPETRA_CHK_ERR(-1);} // Maps not compatible
-
   return(0);
 }
 
