@@ -56,6 +56,7 @@
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
+#include "Panzer_ParameterList_GlobalEvaluationData.hpp"
 
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
@@ -310,6 +311,18 @@ preEvaluate(typename Traits::PreEvalData d)
     dirichletCounter_ = epetraContainer->get_x();
     TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
   }
+
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  
+  // this is the list of parameters and their names that this scatter has to account for
+  std::vector<std::string> activeParameters = 
+    rcp_dynamic_cast<ParameterList_GlobalEvaluationData>(d.getDataObject("PARAMETER_NAMES"))->getActiveParameters();
+
+  for(std::size_t i=0;i<activeParameters.size();i++) {
+    RCP<Epetra_Vector> vec = rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(activeParameters[i]),true)->get_f();
+    dfdp_vectors_.push_back(vec);
+  }
 }
 
 // **********************************************************************
@@ -317,8 +330,6 @@ template<typename Traits,typename LO,typename GO>
 void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Tangent, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
-   TEUCHOS_ASSERT(false);
-
    std::vector<GO> GIDs;
    std::vector<int> LIDs;
  
@@ -363,7 +374,16 @@ evaluateFields(typename Traits::EvalData workset)
                continue;
 
             int basisId = basisIdMap[basis];
-            (*r)[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId).val();
+            ScalarT value = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
+            // (*r)[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId).val();
+
+            // then scatter the sensitivity vectors
+            if(value.size()==0) 
+               for(std::size_t d=0;d<dfdp_vectors_.size();d++)
+                 (*dfdp_vectors_[d])[lid] = 0.0;
+            else
+               for(int d=0;d<value.size();d++)
+                 (*dfdp_vectors_[d])[lid] = value.fastAccessDx(d);
 
             // record that you set a dirichlet condition
             if(dirichletCounter_!=Teuchos::null)

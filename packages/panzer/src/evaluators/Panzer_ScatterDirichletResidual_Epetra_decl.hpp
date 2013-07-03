@@ -186,6 +186,8 @@ private:
   //    fieldMap_["RESIDUAL_Pressure"] --> "Pressure"
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
 
+  std::vector<Teuchos::RCP<Epetra_Vector> > dfdp_vectors_;
+
   std::size_t num_nodes;
 
   std::size_t side_subcell_dim_;

@@ -57,6 +57,7 @@
 #include "Panzer_EpetraLinearObjContainer.hpp"
 #include "Panzer_PtrFromStlVector.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
+#include "Panzer_ParameterList_GlobalEvaluationData.hpp"
 
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
@@ -191,8 +192,6 @@ ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,G
                        const Teuchos::ParameterList& p,
                        bool useDiscreteAdjoint)
   : globalIndexer_(indexer) 
-  , globalDataKey_("Residual Scatter Container")
-  , useDiscreteAdjoint_(useDiscreteAdjoint)
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
@@ -220,9 +219,6 @@ ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,G
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
 
-  if (p.isType<std::string>("Global Data Key"))
-     globalDataKey_ = p.get<std::string>("Global Data Key");
-
   this->setName(scatterName+" Scatter Tangent");
 }
 
@@ -249,13 +245,16 @@ template<typename Traits,typename LO,typename GO>
 void panzer::ScatterResidual_Epetra<panzer::Traits::Tangent, Traits,LO,GO>::
 preEvaluate(typename Traits::PreEvalData d)
 {
-  // extract linear object container
-  epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(globalDataKey_));
- 
-  if(epetraContainer_==Teuchos::null) {
-    // extract linear object container
-    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
-    epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  
+  // this is the list of parameters and their names that this scatter has to account for
+  std::vector<std::string> activeParameters = 
+    rcp_dynamic_cast<ParameterList_GlobalEvaluationData>(d.getDataObject("PARAMETER_NAMES"))->getActiveParameters();
+
+  for(std::size_t i=0;i<activeParameters.size();i++) {
+    RCP<Epetra_Vector> vec = rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(activeParameters[i]),true)->get_f();
+    dfdp_vectors_.push_back(vec);
   }
 }
 
@@ -264,14 +263,11 @@ template<typename Traits,typename LO,typename GO>
 void panzer::ScatterResidual_Epetra<panzer::Traits::Tangent, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
-   TEUCHOS_ASSERT(false);
    std::vector<int> LIDs;
  
    // for convenience pull out some objects from workset
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
-
-   Teuchos::RCP<Epetra_Vector> r = epetraContainer_->get_f(); 
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -293,7 +289,15 @@ evaluateFields(typename Traits::EvalData workset)
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
             int offset = elmtOffset[basis];
             int lid = LIDs[offset];
-            (*r)[lid] += (scatterFields_[fieldIndex])(worksetCellIndex,basis).val();
+
+            ScalarT value = (scatterFields_[fieldIndex])(worksetCellIndex,basis);
+            // // first scatter the residual (WE ARE NOT DOING THIS!)
+            // if(r!=Teuchos::null)
+            //   (*r)[lid] += value.val();
+
+            // then scatter the sensitivity vectors
+            for(int d=0;d<value.size();d++)
+              (*dfdp_vectors_[d])[lid] += value.fastAccessDx(d);
          }
       }
    }

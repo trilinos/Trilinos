@@ -358,11 +358,15 @@ void EpetraLinearObjFactory<Traits,LocalOrdinalT>::initializeGhostedContainer(in
    if((mem & ELOC::DxDt) == ELOC::DxDt)
       loc.set_dxdt(getGhostedEpetraVector());
     
-   if((mem & ELOC::F) == ELOC::F)
+   if((mem & ELOC::F) == ELOC::F) {
       loc.set_f(getGhostedEpetraVector());
+      loc.setRequiresDirichletAdjustment(true);
+   }
 
-   if((mem & ELOC::Mat) == ELOC::Mat)
+   if((mem & ELOC::Mat) == ELOC::Mat) {
       loc.set_A(getGhostedEpetraMatrix());
+      loc.setRequiresDirichletAdjustment(true);
+   }
 }
 
 // "Get" functions

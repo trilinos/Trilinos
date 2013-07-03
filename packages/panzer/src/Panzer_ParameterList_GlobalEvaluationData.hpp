@@ -40,46 +40,38 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_LOCPair_GlobalEvaluationData_hpp__
-#define __Panzer_LOCPair_GlobalEvaluationData_hpp__
+#ifndef __Panzer_ParameterList_GlobalEvaluationData_hpp__
+#define __Panzer_ParameterList_GlobalEvaluationData_hpp__
 
-#include "Panzer_config.hpp"
-#include "Panzer_Traits.hpp"
-#include "Panzer_LinearObjFactory.hpp"
+#include <string>
+#include <vector>
+
+#include "Panzer_GlobalEvaluationData.hpp"
 
 namespace panzer {
 
-/** Class that overides the communication primitives
-  * to do nothing. This is used by the <code>LinearObjContainer</code>.
+/** This class is used by the residual scatter
+  * to determine the name and indices of the active parameters
+  * for scattering to the residual vector.
   */
-class LOCPair_GlobalEvaluationData : public GlobalEvaluationData {
+class ParameterList_GlobalEvaluationData : public GlobalEvaluationData {
 public:
-   LOCPair_GlobalEvaluationData(
-                 Teuchos::RCP<const LinearObjFactory<panzer::Traits> > lof,
-                 int initParam) : lof_(lof), initParam_(initParam) 
-   {
-      globalLOC_ = lof_->buildLinearObjContainer();
-      ghostedLOC_ = lof_->buildGhostedLinearObjContainer();
+   ParameterList_GlobalEvaluationData(const std::vector<std::string> & activeParameters) 
+     : activeParameters_(activeParameters) {}
+   virtual ~ParameterList_GlobalEvaluationData() {} 
 
-      lof_->initializeContainer(initParam,*globalLOC_);
-      lof_->initializeGhostedContainer(initParam,*ghostedLOC_);
-   }
-  
-   virtual void ghostToGlobal(int mem) { lof_->ghostToGlobalContainer(*ghostedLOC_,*globalLOC_,mem); }
-   virtual void globalToGhost(int mem) { lof_->globalToGhostContainer(*globalLOC_,*ghostedLOC_,mem); }
-
-   virtual void initializeData() { ghostedLOC_->initialize(); } 
-
-   Teuchos::RCP<LinearObjContainer> getGhostedLOC() const { return ghostedLOC_; }
-   Teuchos::RCP<LinearObjContainer> getGlobalLOC() const { return globalLOC_; }
+   virtual void ghostToGlobal(int mem) {}
+   virtual void globalToGhost(int mem) {}
 
    virtual bool requiresDirichletAdjustment() const { return false; }
 
-private:
-   Teuchos::RCP<LinearObjContainer> ghostedLOC_, globalLOC_;
+   virtual void initializeData() {}
 
-   Teuchos::RCP<const LinearObjFactory<panzer::Traits> > lof_; 
-   int initParam_;
+   const std::vector<std::string> & getActiveParameters() const
+   { return activeParameters_; }
+
+private:
+   std::vector<std::string> activeParameters_;
 };
 
 }

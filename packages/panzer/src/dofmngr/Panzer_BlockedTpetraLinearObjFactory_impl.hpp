@@ -385,11 +385,15 @@ initializeGhostedContainer(int mem,BTLOC & loc) const
    if((mem & LOC::DxDt) == LOC::DxDt)
       loc.set_dxdt(getGhostedThyraDomainVector());
     
-   if((mem & LOC::F) == LOC::F)
+   if((mem & LOC::F) == LOC::F) {
       loc.set_f(getGhostedThyraRangeVector());
+      loc.setRequiresDirichletAdjustment(true);
+   }
 
-   if((mem & LOC::Mat) == LOC::Mat)
+   if((mem & LOC::Mat) == LOC::Mat) {
       loc.set_A(getGhostedThyraMatrix());
+      loc.setRequiresDirichletAdjustment(true);
+   }
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>

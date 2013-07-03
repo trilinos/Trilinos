@@ -409,26 +409,32 @@ namespace panzer {
     RCP<Epetra_Vector> f3 = Teuchos::rcp(new Epetra_Vector(*me->get_f_map()));
     RCP<Epetra_Vector> f4 = Teuchos::rcp(new Epetra_Vector(*me->get_f_map()));
 
+    RCP<Epetra_Vector> dfdp = Teuchos::rcp(new Epetra_Vector(*me->get_f_map()));
+
     // set values and evaluate
     in_args.set_x(x);
     in_args.set_p(0,p);
 
     out << "evalModel(f1)" << std::endl;
     out_args.set_f(f1);
+    out_args.set_DfDp(0,EpetraExt::ModelEvaluator::Derivative());
     me->evalModel(in_args,out_args);
     
     out << "evalModel(f2)" << std::endl;
     out_args.set_f(f2);
+    out_args.set_DfDp(0,EpetraExt::ModelEvaluator::Derivative());
     me->evalModel(in_args,out_args);
     
     out << "evalModel(f3)" << std::endl;
     p->PutScalar(20.0);
     out_args.set_f(f3);
+    out_args.set_DfDp(0,EpetraExt::ModelEvaluator::Derivative());
     me->evalModel(in_args,out_args);
     
     out << "evalModel(f4)" << std::endl;
     p->PutScalar(1.0);
     out_args.set_f(f4);
+    out_args.set_DfDp(0,EpetraExt::ModelEvaluator::Derivative());
     me->evalModel(in_args,out_args);
     
     // f1 == f2 == f4, f3 is evaluated with p=20 instead of p=1
@@ -445,6 +451,25 @@ namespace panzer {
 
     // f2 != f3
     TEST_EQUALITY_CONST(testEqualityOfEpetraVectorValues(*f2,*f3,tol), false);
+ 
+
+    // TEST DfDp
+    /////////////////////////////////////////////////////
+
+    x->PutScalar(0.0);
+    f1->PutScalar(0.0);
+
+    out << "evalModel(f2)" << std::endl;
+    p->PutScalar(20.0);
+    out_args.set_f(f1);
+    out_args.set_DfDp(0,EpetraExt::ModelEvaluator::Derivative(dfdp,EpetraExt::ModelEvaluator::DERIV_MV_BY_COL));
+    me->evalModel(in_args,out_args);
+
+    for(int i=0;i<f1->MyLength();i++) {
+      if((*dfdp)[i]!=0.0)
+      { TEST_FLOATING_EQUALITY((*f1)[i],20.0*(*dfdp)[i],1e-10); }
+      out << (*f1)[i] << "    " << (*dfdp)[i] << std::endl;
+    }
 
   }
 

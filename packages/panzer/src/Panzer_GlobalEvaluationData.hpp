@@ -59,6 +59,8 @@ public:
    virtual void ghostToGlobal(int mem) = 0;
    virtual void globalToGhost(int mem) = 0;
 
+   virtual bool requiresDirichletAdjustment() const = 0;
+
    virtual void initializeData() = 0;
 };
 
@@ -67,9 +69,19 @@ public:
   */
 class GlobalEvaluationData_Default : public GlobalEvaluationData {
 public:
+   GlobalEvaluationData_Default() : requiresDirichletAdjustment_(false) {}
+   GlobalEvaluationData_Default(const GlobalEvaluationData_Default & s) 
+   { requiresDirichletAdjustment_ = s.requiresDirichletAdjustment(); }
+
    virtual void ghostToGlobal(int mem) {}
    virtual void globalToGhost(int mem) {}
    virtual void initializeData() {}
+
+   void setRequiresDirichletAdjustment(bool b) { requiresDirichletAdjustment_ = b; }
+   bool requiresDirichletAdjustment() const { return requiresDirichletAdjustment_; }
+
+private:
+   bool requiresDirichletAdjustment_;
 };
 
 }

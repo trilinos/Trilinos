@@ -391,11 +391,15 @@ initializeGhostedContainer(int mem,BlockedEpetraLinearObjContainer & loc) const
    if((mem & BLOC::DxDt) == BLOC::DxDt)
       loc.set_dxdt(getGhostedThyraDomainVector());
     
-   if((mem & BLOC::F) == BLOC::F)
+   if((mem & BLOC::F) == BLOC::F) {
       loc.set_f(getGhostedThyraRangeVector());
+      loc.setRequiresDirichletAdjustment(true);
+   }
 
-   if((mem & BLOC::Mat) == BLOC::Mat)
+   if((mem & BLOC::Mat) == BLOC::Mat) {
       loc.set_A(getGhostedThyraMatrix());
+      loc.setRequiresDirichletAdjustment(true);
+   }
 }
 
 template <typename Traits,typename LocalOrdinalT>
