@@ -148,6 +148,8 @@ namespace MueLu {
 
       // TODO: coarsestLevelManager
 
+      H.Clear();
+
       int  levelID     = 0;
       int  lastLevelID = numDesiredLevel_ - 1;
       bool isLastLevel = false;

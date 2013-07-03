@@ -232,6 +232,22 @@ namespace MueLu {
     }
   }
 
+  void Level::Clear() {
+    for (TwoKeyMap::const_iterator kt = map_.begin(); kt != map_.end(); kt++) {
+      const FactoryBase* factory = kt->first;
+
+      for (SubMap::const_iterator it = kt->second.begin(); it != kt->second.end(); it++) {
+        const std::string& ename = it->first;
+
+        // We clear all the data that
+        //   a) has not been requested
+        //   b) is not being kept using NextRun (e.g., we clear out Final data)
+        if (!IsKept(ename, factory, MueLu::NextRun))
+          RemoveKeepFlag(ename, factory, MueLu::All); // will delete the data if counter == 0
+      }
+    }
+  }
+
   std::string Level::description() const {
     std::ostringstream out;
     out << BaseClass::description();

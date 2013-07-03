@@ -188,6 +188,9 @@ namespace MueLu {
     //!
     void Setup(const FactoryManagerBase & manager = FactoryManager(), const int &startLevel = 0, const int &numDesiredLevels = 10); // Setup()
 
+    //! Clear impermanent data from previous setup
+    void Clear();
+
     /*!
       @brief Apply the multigrid preconditioner.
 
