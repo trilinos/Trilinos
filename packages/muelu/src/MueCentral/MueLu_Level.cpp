@@ -340,6 +340,9 @@ namespace MueLu {
           } else if (strType.find("MueLu::Graph") != std::string::npos) {
             outputter.outputField("Graph");
             outputter.outputField("available");
+          } else if (strType.find("MueLu::Constraint") != std::string::npos) {
+            outputter.outputField("Constraint");
+            outputter.outputField("available");
           } else if (strType == "int") {
             outputter.outputField(strType);
             outputter.outputField(Teuchos::getValue<int>(it->second->GetData()));
