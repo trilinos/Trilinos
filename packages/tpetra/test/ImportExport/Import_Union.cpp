@@ -384,10 +384,10 @@ namespace {
                   lengthsTo_actual2.begin ());
     TEST_EQUALITY( sameLengthsTo2, true );
   }
-} // namespace (anonymous)
 
   //
-  // INSTANTIATIONS
+  // INSTANTIATIONS (template tests must be instantiated in the same
+  // anonymous namespace as where the tests were defined)
   //
 
 #define UNIT_TEST_GROUP(LOCAL_ORDINAL, GLOBAL_ORDINAL) \
@@ -405,6 +405,8 @@ UNIT_TEST_GROUP(int, long)
 // UNIT_TEST_GROUP(int, long_long_type)
 
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
+
+} // namespace (anonymous)
 
 
 
