@@ -51,6 +51,7 @@
 // Domi includes
 #include "Domi_MDArray_Utils.hpp"
 #include "Domi_MDIterator.hpp"
+#include "Domi_MDRevIterator.hpp"
 #include "Domi_MDArrayView.hpp"
 
 namespace Domi
@@ -378,9 +379,13 @@ public:
 
   friend class MDIterator< MDArray< T > >;
   friend class MDIterator< MDArray< const T > >;
+  friend class MDRevIterator< MDArray< T > >;
+  friend class MDRevIterator< MDArray< const T > >;
 
-  typedef MDIterator< MDArray< T > >       iterator;
-  typedef MDIterator< MDArray< const T > > const_iterator;
+  typedef MDIterator< MDArray< T > >          iterator;
+  typedef MDIterator< MDArray< const T > >    const_iterator;
+  typedef MDRevIterator< MDArray< T > >       reverse_iterator;
+  typedef MDRevIterator< MDArray< const T > > const_reverse_iterator;
 
   /** \brief Return the beginning iterator
    */
@@ -405,6 +410,22 @@ public:
   /** \brief Return the ending const_iterator
    */
   const_iterator cend() const;
+
+  /** \brief Return the beginning reverse_iterator
+   */
+  reverse_iterator rbegin();
+
+  /** \brief Return the ending reverse_iterator
+   */
+  reverse_iterator rend();
+
+  /** \brief Return the beginning const_reverse_iterator
+   */
+  const_reverse_iterator crbegin() const;
+
+  /** \brief Return the ending const_reverse_iterator
+   */
+  const_reverse_iterator crend() const;
 
   //@}
 
@@ -1033,6 +1054,44 @@ MDArray< T >::cend() const
 {
   // Return the iterator corresponding to the last element
   return const_iterator(*this, true);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+typename MDArray< T >::reverse_iterator
+MDArray< T >::rbegin()
+{
+  return reverse_iterator(*this);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+typename MDArray< T >::reverse_iterator
+MDArray< T >::rend()
+{
+  // Return the reverse_iterator corresponding to the last element
+  return reverse_iterator(*this, true);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+typename MDArray< T >::const_reverse_iterator
+MDArray< T >::crbegin() const
+{
+  return const_reverse_iterator(*this);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+typename MDArray< T >::const_reverse_iterator
+MDArray< T >::crend() const
+{
+  // Return the reverse_iterator corresponding to the last element
+  return const_reverse_iterator(*this, true);
 }
 
 ////////////////////////////////////////////////////////////////////////
