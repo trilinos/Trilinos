@@ -26,7 +26,6 @@ namespace stk {
       int max_iter=100;
       int iter=0;
       bool did_change=false;
-      if (0)
       while ((iter++ < max_iter) && (did_change = this->enforce_two_to_one_refine(enforce_what)) )
         {
           if (debug_print)
