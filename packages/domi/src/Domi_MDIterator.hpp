@@ -426,7 +426,7 @@ MDIterator< MDARRAY >::operator--()
       _done = (_index[_axis] >= 0);
       if (not _done)
       {
-        _index[_axis] = _dimensions[_axis];
+        _index[_axis] = _dimensions[_axis] - 1;
         _axis++;
         if (_axis >= _index.size())
         {
@@ -446,7 +446,7 @@ MDIterator< MDARRAY >::operator--()
       _done = (_index[_axis] >= 0);
       if (not _done)
       {
-        _index[_axis] = _dimensions[_axis];
+        _index[_axis] = _dimensions[_axis] - 1;
         _axis--;
         if (_axis < 0)
         {
