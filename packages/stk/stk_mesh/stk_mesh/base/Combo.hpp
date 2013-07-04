@@ -101,15 +101,13 @@ void Relation::setMeshObj(Entity object, EntityRank object_rank )
   m_target_entity = object;
 }
 
+#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
 inline
 void Relation::setMeshObj(Entity object)
 {
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   setMeshObj(object, object.entity_rank());
-#else
-  ThrowErrorMsg("Relation::setMeshObj(Entity) has been deprecated");
-#endif
 }
+#endif
 
 #endif
 

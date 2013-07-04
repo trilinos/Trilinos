@@ -170,12 +170,12 @@ private:
 
 #ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   Relation(Entity obj, const unsigned relation_type, const unsigned ordinal, const unsigned orient = 0);
+
+  void setMeshObj(Entity object);
 #endif
 
   // Only needed by Framework and Framework-based apps.
   void setMeshObj(Entity object, EntityRank object_rank);
-
-  void setMeshObj(Entity object);
 
   RelationType  getRelationType() const {
     return static_cast<RelationType::relation_type_t >(attribute() >> fmwk_orientation_digits);
