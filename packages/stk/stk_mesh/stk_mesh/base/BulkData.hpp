@@ -123,6 +123,20 @@ public:
   inline static BulkData & get( const Ghosting & ghost);
   inline static BulkData & get( const impl::BucketRepository & bucket_repo );
 
+  struct FieldMetaData
+  {
+    int m_size; // num bytes per entity, 0 means bucket does not have this field
+    const FieldBase::Restriction::size_type * m_stride;
+    unsigned char* m_data;
+  };
+
+
+  inline const std::vector<FieldMetaData>& get_meta_data_for_field(const FieldBase & f, const stk::mesh::EntityRank rank) const {
+    return m_field_meta_data[m_num_fields*rank +  f.mesh_meta_data_ordinal()];
+  }
+
+
+
   enum BulkDataSyncState { MODIFIABLE = 1 , SYNCHRONIZED = 2 };
 
   ~BulkData();
@@ -653,14 +667,14 @@ public:
   // Entity getters
   //
 
-  const MeshIndex& mesh_index(Entity entity) const
+  inline const MeshIndex& mesh_index(Entity entity) const
   {
     entity_getter_debug_check(entity);
 
     return m_mesh_indexes[entity.local_offset()];
   }
 
-  MeshIndex& mesh_index(Entity entity)
+  inline MeshIndex& mesh_index(Entity entity)
   {
     entity_setter_debug_check(entity); // setter check due to non-const
 
@@ -981,6 +995,7 @@ public:
 
   size_t total_field_data_footprint(EntityRank rank) const;
 
+
   template<class FieldType>
   typename FieldTraits<FieldType>::data_type*
   field_data(const FieldType & f, const Bucket& b, Bucket::size_type bucket_ord = 0) const
@@ -1119,6 +1134,9 @@ private:
 
 public:
   mutable bool       m_check_invalid_rels; // TODO REMOVE
+
+
+
 private:
 #endif
   int m_num_fields;
@@ -1144,13 +1162,9 @@ private:
   std::vector<unsigned short>           m_fmwk_connect_counts;
 #endif
 
-  // There will be one of these per bucket
-  struct FieldMetaData
-  {
-    int m_size; // num bytes per entity, 0 means bucket does not have this field
-    const FieldBase::Restriction::size_type * m_stride;
-    unsigned char* m_data;
-  };
+
+ // There will be one of these per bucket
+
   // Outer index is (m_num_fields * entity rank) + field_ordinal, inner index
   // is bucket id, pair defines num bytes of data per entity and the
   // data for that field on that bucket
@@ -1162,6 +1176,7 @@ private:
   typedef std::vector<FieldMetaData> FieldMetaDataVector;
   typedef std::vector<FieldMetaDataVector> FieldMetaDataVectorVector;
 #endif
+
   FieldMetaDataVectorVector m_field_meta_data;
 
   // Outer index is rank, inner is bucket-id. This contains *all* field
