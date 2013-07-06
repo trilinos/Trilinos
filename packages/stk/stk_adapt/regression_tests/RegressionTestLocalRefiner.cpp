@@ -747,7 +747,7 @@ namespace stk
                     eMesh.nodalOpLoop(srp, nodal_refine_field);
                   }
 
-                if (1)
+                if (0)
                   {
                     char buf[1000];
                     sprintf(buf, "%04d", cnt1);
@@ -812,7 +812,7 @@ namespace stk
                   }
 
 
-                if (1)
+                if (0)
                   {
                     char buf[1000];
                     sprintf(buf, "%04d", cnt1);
@@ -866,8 +866,11 @@ namespace stk
 
       STKUNIT_UNIT_TEST(regr_localRefiner, break_tri_to_tri_N_5_EdgeBased_moving_shock_square_sidesets)
       {
-        bool do_test=false;
+        bool do_test=true;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        bool do_demo=false; // does more timesteps
+
+        int num_time_steps = (do_demo?80:10);
 
         if (do_test) {
 
@@ -889,8 +892,6 @@ namespace stk
 
             fixture.generate_mesh();
             eMesh.save_as(input_files_loc+"square_tri3_0.e");
-            //eMesh.print_info("test1",2);
-            //eMesh.dump_vtk("sqtri3.vtk",false);
           }
 
           // structured mesh
@@ -898,10 +899,7 @@ namespace stk
           {
             PerceptMesh eMesh;
             eMesh.open(input_files_loc+"square_tri3_0.e");
-
-            //int num_time_steps = 10;  // 10 for stress testing
-            //for (int istep=1; istep <= num_time_steps; istep++)
-            do_moving_shock_test_square_sidesets<Local_Tri3_Tri3_N>(eMesh, 80, false, true, "str-");
+            do_moving_shock_test_square_sidesets<Local_Tri3_Tri3_N>(eMesh, num_time_steps, false, true, "str-");
           }
 
           if (do_bootstrap_mesh)
@@ -922,9 +920,7 @@ namespace stk
           {
             PerceptMesh eMesh2;
             eMesh2.open(input_files_loc+"square_tri3_uns_xformed.e");
-            //int num_time_steps = 10;  // 10 for stress testing
-            //for (int istep=1; istep <= num_time_steps; istep++)
-            do_moving_shock_test_square_sidesets<Local_Tri3_Tri3_N>(eMesh2, 84, false, false, "uns-");
+            do_moving_shock_test_square_sidesets<Local_Tri3_Tri3_N>(eMesh2, num_time_steps, false, false, "uns-");
           }
         }
       }
@@ -972,7 +968,7 @@ namespace stk
           //f_data[0] = 1.0;
           return false;  // don't terminate the loop
         }
-        virtual void init_elementOp() 
+        virtual void init_elementOp()
         {
           std::vector< const stk::mesh::FieldBase *> fields(1,m_field);
           //stk::mesh::copy_owned_to_shared( *m_eMesh.get_bulk_data(), fields);
