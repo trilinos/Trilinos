@@ -58,6 +58,7 @@
 #include <stk_adapt/PredicateBasedEdgeAdapter.hpp>
 
 #include <stk_percept/function/ElementOp.hpp>
+#include <stk_mesh/base/FieldParallel.hpp>
 
 #include <regression_tests/RegressionTestLocalRefiner.hpp>
 
@@ -937,8 +938,9 @@ namespace stk
       class SetElementFieldQuadCorner : public percept::ElementOp
       {
         percept::PerceptMesh& m_eMesh;
+        stk::mesh::FieldBase *m_field;
       public:
-        SetElementFieldQuadCorner(percept::PerceptMesh& eMesh) : m_eMesh(eMesh) {
+        SetElementFieldQuadCorner(percept::PerceptMesh& eMesh, stk::mesh::FieldBase *field) : m_eMesh(eMesh), m_field(field) {
         }
 
         virtual bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
@@ -970,8 +972,17 @@ namespace stk
           //f_data[0] = 1.0;
           return false;  // don't terminate the loop
         }
-        virtual void init_elementOp() {}
-        virtual void fini_elementOp() {}
+        virtual void init_elementOp() 
+        {
+          std::vector< const stk::mesh::FieldBase *> fields(1,m_field);
+          //stk::mesh::copy_owned_to_shared( *m_eMesh.get_bulk_data(), fields);
+          stk::mesh::communicate_field_data(m_eMesh.get_bulk_data()->shared_aura(), fields);
+        }
+        virtual void fini_elementOp() {
+          std::vector< const stk::mesh::FieldBase *> fields(1,m_field);
+          //stk::mesh::copy_owned_to_shared( *m_eMesh.get_bulk_data(), fields);
+          stk::mesh::communicate_field_data(m_eMesh.get_bulk_data()->shared_aura(), fields);
+        }
 
       };
 
@@ -1017,7 +1028,7 @@ namespace stk
             breaker.setAlwaysInitializeNodeRegistry(false);
             breaker.setNeedsRemesh(false); // special for quad/hex hanging node
 
-            SetElementFieldQuadCorner set_ref_field(eMesh);
+            SetElementFieldQuadCorner set_ref_field(eMesh, refine_field);
 
             int num_ref_passes = 6;
             int num_unref_passes = 4;
@@ -1038,9 +1049,9 @@ namespace stk
                 eMesh.elementOpLoop(set_ref_field, refine_field);
                 eMesh.save_as(output_files_loc+"quad_anim_set_field_"+post_fix[p_size]+".e.s-"+toString(ipass+1));
 
-                //bool enforce_what[3] = {false, false, true};
-                //erp.refine(breaker, enforce_what);
-                breaker.doBreak();
+                bool enforce_what[3] = {false, false, true};
+                erp.refine(breaker, enforce_what);
+                //breaker.doBreak();
 
                 MPI_Barrier( MPI_COMM_WORLD );
                 //VERIFY_OP_ON(true,==,false,"here");
@@ -1156,6 +1167,8 @@ namespace stk
           {
             PerceptMesh eMesh;
             eMesh.open(input_files_loc+"quad_square_quad4_0.e");
+
+            eMesh.output_active_children_only(true);
 
             //int num_time_steps = 10;  // 10 for stress testing
             //for (int istep=1; istep <= num_time_steps; istep++)

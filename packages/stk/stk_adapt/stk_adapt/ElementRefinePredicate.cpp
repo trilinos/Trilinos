@@ -1,10 +1,11 @@
 
 #include <stk_adapt/ElementRefinePredicate.hpp>
+#include <stk_mesh/base/FieldParallel.hpp>
 
 namespace stk {
   namespace adapt {
 
-    static bool debug_print = true;
+    static bool debug_print = false;
 
     /// Return DO_REFINE, DO_UNREFINE, DO_NOTHING
     int ElementRefinePredicate::operator()(const stk::mesh::Entity entity)
@@ -62,11 +63,38 @@ namespace stk {
         }
       ScalarFieldType *refine_field = static_cast<ScalarFieldType *>(m_field);
 
+      {
+        std::vector< const stk::mesh::FieldBase *> fields;
+        fields.push_back(refine_level);
+        fields.push_back(refine_field);
+        //stk::mesh::copy_owned_to_shared( *m_eMesh.get_bulk_data(), fields);
+        stk::mesh::communicate_field_data(m_eMesh.get_bulk_data()->shared_aura(), fields);
+
+      }
+
+      if (0 && debug_print)
+        {
+          std::ostringstream ostr;
+          stk::mesh::EntityId id[]={12,13};
+          for (unsigned i=0; i < 2; i++)
+            {
+              stk::mesh::Entity element = m_eMesh.get_entity(m_eMesh.element_rank(), id[i]);
+              if (m_eMesh.is_valid(element))
+                {
+                  int *refine_level_elem = m_eMesh.get_bulk_data()->field_data( *refine_level , element );
+                  double *refine_field_elem = m_eMesh.get_bulk_data()->field_data( *refine_field , element );
+                  ostr << "P[" << m_eMesh.get_rank() << "] elem " << id[i] << " lev= " << refine_level_elem[0]
+                       << " ref_field= " << refine_field_elem[0] << "\n";
+                }
+            }
+          std::cout << ostr.str() << std::endl;
+        }
+
       stk::mesh::Selector on_locally_owned_part =  ( m_eMesh.get_fem_meta_data()->locally_owned_part() );
       const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.element_rank() );
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
-          if (on_locally_owned_part(**k))
+          if (1 || on_locally_owned_part(**k))
             {
               stk::mesh::Bucket & bucket = **k ;
               const unsigned num_elements_in_bucket = bucket.size();
@@ -98,14 +126,69 @@ namespace stk {
                         {
                           refine_field_elem[0] = 1.0;
                           if (debug_print)
-                            std::cout << "enforce_two_to_one_refine: upgrading element " << m_eMesh.identifier(element)
-                                      << " due to neighbor: " << m_eMesh.identifier(*neighbor) << std::endl;
+                            std::cout << "P[" << m_eMesh.get_rank() << "] enforce_two_to_one_refine: upgrading element (" 
+                                      << m_eMesh.identifier(element) << "," << m_eMesh.isGhostElement(element) << ")"
+                                      << " due to neighbor: " 
+                                      << m_eMesh.identifier(*neighbor) << "," << m_eMesh.isGhostElement(*neighbor) << ")"
+                                      << std::endl;
                           did_change = true;
                         }
                     }
                 }
             }
         }
+
+      if (0 && debug_print)
+        {
+          std::ostringstream ostr;
+          stk::mesh::EntityId id[]={12,13};
+          unsigned nid=1;
+          for (unsigned i=0; i < nid; i++)
+            {
+              stk::mesh::Entity element = m_eMesh.get_entity(m_eMesh.element_rank(), id[i]);
+              if (m_eMesh.is_valid(element))
+                {
+                  int *refine_level_elem = m_eMesh.get_bulk_data()->field_data( *refine_level , element );
+                  double *refine_field_elem = m_eMesh.get_bulk_data()->field_data( *refine_field , element );
+                  ostr << "P[" << m_eMesh.get_rank() << "] t4 b4 copy_owned_to_shared elem " << id[i] << " lev= " << refine_level_elem[0]
+                       << " ref_field= " << refine_field_elem[0] << "\n";
+                }
+            }
+          std::cout << ostr.str() << std::endl;
+        }
+
+      {
+        std::vector< const stk::mesh::FieldBase *> fields;
+        fields.push_back(refine_level);
+        fields.push_back(refine_field);
+        //stk::mesh::copy_owned_to_shared( *m_eMesh.get_bulk_data(), fields);
+        stk::mesh::communicate_field_data( m_eMesh.get_bulk_data()->shared_aura(), fields);
+
+      }
+
+      if (0 && debug_print)
+        {
+          MPI_Barrier( MPI_COMM_WORLD );
+          std::ostringstream ostr;
+          stk::mesh::EntityId id[]={12,13};
+          unsigned nid=1;
+          for (unsigned i=0; i < nid; i++)
+            {
+              stk::mesh::Entity element = m_eMesh.get_entity(m_eMesh.element_rank(), id[i]);
+              if (m_eMesh.is_valid(element))
+                {
+                  int *refine_level_elem = m_eMesh.get_bulk_data()->field_data( *refine_level , element );
+                  double *refine_field_elem = m_eMesh.get_bulk_data()->field_data( *refine_field , element );
+                  ostr << "P[" << m_eMesh.get_rank() << "] t4 after copy_owned_to_shared elem " << id[i] << " lev= " << refine_level_elem[0]
+                       << " ref_field= " << refine_field_elem[0] << "\n";
+                }
+            }
+          std::cout << ostr.str() << std::endl;
+        }
+
+      stk::ParallelMachine pm = m_eMesh.get_bulk_data()->parallel();
+      stk::all_reduce( pm, stk::ReduceMax<1>( &did_change ) );
+
       return did_change;
     }
 
@@ -119,11 +202,19 @@ namespace stk {
         }
       ScalarFieldType *refine_field = static_cast<ScalarFieldType *>(m_field);
 
+      {
+        std::vector< const stk::mesh::FieldBase *> fields;
+        fields.push_back(refine_level);
+        fields.push_back(refine_field);
+        //stk::mesh::copy_owned_to_shared( *m_eMesh.get_bulk_data(), fields);
+        stk::mesh::communicate_field_data(m_eMesh.get_bulk_data()->shared_aura(), fields);
+      }
+
       stk::mesh::Selector on_locally_owned_part =  ( m_eMesh.get_fem_meta_data()->locally_owned_part() );
       const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.element_rank() );
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
-          if (on_locally_owned_part(**k))
+          if (1 || on_locally_owned_part(**k))
             {
               stk::mesh::Bucket & bucket = **k ;
               const unsigned num_elements_in_bucket = bucket.size();
@@ -154,7 +245,7 @@ namespace stk {
                         {
                           refine_field_elem[0] = 0.0;
                           if (debug_print)
-                            std::cout << "enforce_two_to_one_unrefine: downgrading element " << m_eMesh.identifier(element)
+                            std::cout << "P[" << m_eMesh.get_rank() << "] enforce_two_to_one_unrefine: downgrading element " << m_eMesh.identifier(element)
                                       << " due to neighbor: " << m_eMesh.identifier(*neighbor)
                                       << " with refine_field_neigh= " << refine_field_neigh[0]
                                       << std::endl;
@@ -164,6 +255,17 @@ namespace stk {
                 }
             }
         }
+      {
+        std::vector< const stk::mesh::FieldBase *> fields;
+        fields.push_back(refine_level);
+        fields.push_back(refine_field);
+        //stk::mesh::copy_owned_to_shared( *m_eMesh.get_bulk_data(), fields);
+        stk::mesh::communicate_field_data(m_eMesh.get_bulk_data()->shared_aura(), fields);
+      }
+
+      stk::ParallelMachine pm = m_eMesh.get_bulk_data()->parallel();
+      stk::all_reduce( pm, stk::ReduceMax<1>( &did_change ) );
+
       return did_change;
     }
 
