@@ -312,8 +312,7 @@ namespace Tpetra {
     /// multiple Map objects.  For example, CrsMatrix has both a row
     /// Map and a column Map.  It is up to the subclass to decide
     /// which Map to use when invoking the DistObject constructor.
-    /// (CrsMatrix uses the row Map.)
-    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >&
+    virtual Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
     getMap() const { return map_; }
 
     //@}

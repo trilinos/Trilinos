@@ -39,14 +39,13 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_SRCDISTOBJECTWITHPACK_DECL_HPP
-#define TPETRA_SRCDISTOBJECTWITHPACK_DECL_HPP
+#ifndef TPETRA_PACKABLE_DECL_HPP
+#define TPETRA_PACKABLE_DECL_HPP
 
-/// \file Tpetra_SrcDistObjectWithPack.hpp
+/// \file Tpetra_Packable.hpp
 /// \brief Abstract base class for sources of an Import or Export,
 ///   that also know how to pack themselves.
 
-#include <Tpetra_SrcDistObject.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
 
@@ -59,27 +58,43 @@ namespace Tpetra {
   // Tpetra_Distributor.hpp.
   class Distributor;
 
-  /// \class SrcDistObjectWithPack
+  /// \class Packable
   /// \brief Abstract base class for objects that can be the source of
   ///   an Import or Export operation, and that also know how to pack
   ///   their data to send to the target object.
+  /// \tparam Packet The type of each entry of the array of packed
+  ///   data to be sent in the Import or Export operation.  The type
+  ///   of packed data may differ from the type of actual data stored
+  ///   in the object.  For example, a sparse matrix might need to
+  ///   pack both column indices (an integer type) and values
+  ///   (typically, but not always, a floating-point type), and it
+  ///   might choose any of various types to represent packed data.
+  /// \tparam LocalOrdinal The type of local indices in the object.
+  ///   This is a template parameter because the pack() method
+  ///   includes as input a list of local indices to pack.
   ///
-  /// If an object implements SrcDistObjectWithPack, then that object
-  /// acknowledges that it knows how to pack its data as the source
-  /// object of an Import or Export operation.  The target object in
-  /// general assumes responsibility for packing the source object's
-  /// data.  However, the target object (in its packAndPrepare method)
-  /// may ask the source object to pack its own data, if the source
-  /// object implements SrcDistObjectWithPack.
+  /// If an object implements Packable, then that object acknowledges
+  /// that it knows how to pack its data as the source object of an
+  /// Import or Export operation.  The target object in general
+  /// assumes responsibility for packing the source object's data.
+  /// However, the target object (in its packAndPrepare method) may
+  /// ask the source object to pack its own data, if the source object
+  /// implements Packable.
+  ///
+  /// It might make sense for Packable to inherit from SrcDistObject.
+  /// However, that sets up the possibility of ambiguous multiple
+  /// inheritance.  For example, RowGraph inherits from Packable, and
+  /// CrsGraph inherits from both RowGraph and DistObject. 
   template<class Packet, class LocalOrdinal>
-  class SrcDistObjectWithPack { // : public SrcDistObject {
+  class Packable {
   public:
     /// \brief Pack the object's data for an Import or Export.
     ///
-    /// \param exportLIDs [in] List of the entries (as local IDs in
-    ///   the source object) we will be sending to other processes.
+    /// \param exportLIDs [in] List of the local indices of the
+    ///   entries which the source object will send out.
     ///
-    /// \param exports [out] On exit, the buffer for data to send.
+    /// \param exports [out] On exit, the buffer packed with data to
+    ///   send.  This object may resize the array if necessary.
     ///
     /// \param numPacketsPerLID [out] On exit, the implementation of
     ///   this method must do one of two things: set
@@ -88,12 +103,15 @@ namespace Tpetra {
     ///   zero, or set constantNumPackets to a nonzero value.  If the
     ///   latter, the implementation need not fill numPacketsPerLID.
     ///
-    /// \param constantNumPackets [out] On exit, 0 if numPacketsPerLID
-    ///   has variable contents (different size for each LID).  If
-    ///   nonzero, then it is expected that the number of packets per
-    ///   LID is constant, and that constantNumPackets is that value.
+    /// \param constantNumPackets [out] On exit, zero if
+    ///   <tt>numPacketsPerLID</tt> has variable contents (different
+    ///   size for each local index).  If nonzero, then it is expected
+    ///   that the number of packets per local index is constant, and
+    ///   that <tt>constantNumPackets</tt> is that value.
     ///
     /// \param distor [in] The Distributor object we are using.
+    ///   Implementations may ignore this object.  We provide it for
+    ///   consistency with DistObject's packAndPrepare method.
     virtual void 
     pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
 	  Teuchos::Array<Packet>& exports,
@@ -102,9 +120,9 @@ namespace Tpetra {
 	  Distributor &distor) const = 0;
 
     //! Destructor (declared virtual for memory safety of derived classes).
-    virtual ~SrcDistObjectWithPack () {}
+    virtual ~Packable () {}
   };
 
 } // namespace Tpetra
 
-#endif /* TPETRA_SRCDISTOBJECTWITHPACK_DECL_HPP */
+#endif /* TPETRA_PACKABLE_DECL_HPP */

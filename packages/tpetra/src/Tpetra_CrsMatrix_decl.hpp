@@ -1471,21 +1471,6 @@ namespace Tpetra {
 		    size_t& constantNumPackets,
 		    Distributor& distor);
 
-    /// \brief Implementation of SrcDistObjectWithPack.
-    /// 
-    /// \warning To be called only by the packAndPrepare method of
-    ///   appropriate classes of DistObject.
-    ///
-    /// Subclasses may override this method to speed up or otherwise
-    /// improve the implementation by exploiting more specific details
-    /// of the subclass.
-    virtual void
-    pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-	  Teuchos::Array<char>& exports,
-	  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-	  size_t& constantNumPackets,
-	  Distributor& distor) const;
-
     /// \brief Unpack the imported column indices and values, and combine into matrix.
     ///
     /// \warning The allowed \c combineMode depends on whether the
@@ -1503,8 +1488,28 @@ namespace Tpetra {
                       Distributor &distor,
                       CombineMode combineMode);
     //@}
+    //! @name Implementation of Packable interface
+    //@{
+
+    /// \brief Pack this object's data for an Import or Export.
+    /// 
+    /// \warning To be called only by the packAndPrepare method of
+    ///   appropriate classes of DistObject.
+    ///
+    /// Subclasses may override this method to speed up or otherwise
+    /// improve the implementation by exploiting more specific details
+    /// of the subclass.
+    virtual void
+    pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+	  Teuchos::Array<char>& exports,
+	  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+	  size_t& constantNumPackets,
+	  Distributor& distor) const;
+
+    //@}
 
   private:
+    // Friend declaration for nonmember function.
     template<class CrsMatrixType>
     friend Teuchos::RCP<CrsMatrixType> 
     importAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
@@ -1519,6 +1524,7 @@ namespace Tpetra {
 								 typename CrsMatrixType::node_type> >& rangeMap,
 				    const Teuchos::RCP<Teuchos::ParameterList>& params);
 
+    // Friend declaration for nonmember function.
     template<class CrsMatrixType>
     friend Teuchos::RCP<CrsMatrixType> 
     exportAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,

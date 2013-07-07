@@ -48,7 +48,7 @@
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_RowGraph.hpp"
-#include "Tpetra_SrcDistObjectWithPack.hpp"
+#include "Tpetra_Packable.hpp"
 
 namespace Tpetra {
   //
@@ -97,7 +97,7 @@ namespace Tpetra {
             class Node = Kokkos::DefaultNode::DefaultNodeType>
   class RowMatrix :
     virtual public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
-    public SrcDistObjectWithPack<char, LocalOrdinal> {
+    public Packable<char, LocalOrdinal> {
   public:
     //! @name Typedefs
     //@{
@@ -447,8 +447,10 @@ namespace Tpetra {
          const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& rangeMap=Teuchos::null,
          const Teuchos::RCP<Teuchos::ParameterList>& params=Teuchos::null) const;
     //@}
+    //! \name Implementation of Packable interface
+    //@{
 
-    /// \brief Implementation of SrcDistObjectWithPack.
+    /// \brief Pack this object's data for an Import or Export.
     /// 
     /// \warning To be called only by the packAndPrepare method of
     ///   appropriate classes of DistObject.
@@ -462,6 +464,7 @@ namespace Tpetra {
 	  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
 	  size_t& constantNumPackets,
 	  Distributor& distor) const;
+    //@}
   }; // class RowMatrix
 } // namespace Tpetra
 
