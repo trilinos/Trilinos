@@ -267,6 +267,7 @@ void getSubcellElements(const panzer_stk::STK_Interface & mesh,
 {
   // for verifying that an element is in specified block
   stk::mesh::Part * blockPart = mesh.getElementBlockPart(blockId);
+  stk::mesh::Part * ownedPart = mesh.getOwnedPart();
   stk::mesh::EntityRank elementRank = mesh.getElementRank();
   
   // loop over each entitiy extracting elements and local entity ID that
@@ -283,7 +284,8 @@ void getSubcellElements(const panzer_stk::STK_Interface & mesh,
 	
       // is this element in requested block
       bool inBlock = element->bucket().member(*blockPart);
-      if(inBlock) {
+      bool onProc = element->bucket().member(*ownedPart);
+      if(inBlock && onProc) {
         // add element and Side ID to output vectors
         elements.push_back(element);
         localEntityIds.push_back(entityId);

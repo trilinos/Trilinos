@@ -121,7 +121,7 @@ void getIdsAndVertices(const panzer_stk::STK_Interface& mesh,
 			 ArrayT& vertices);
 
 /** This function loops over the passed in set of entities and looks
- * at there related elements. It is then determined which elements
+ * at their related elements. It is then determined which elements
  * belong in the requested element block, and what the local ID of 
  * the entitiy is.
  *
@@ -195,7 +195,7 @@ void getNodeElements(const panzer_stk::STK_Interface & mesh,
 		       std::vector<std::size_t> & localNodeIds, 
 	 	       std::vector<stk::mesh::Entity*> & elements);
 
-/** This function builds the "element cascade" contained within an specfied
+/** This function builds the "element cascade" contained within a specfied
   * element block. That is given a set of "sides" extract all elements that
   * live in the block and touch those sides on a node, edge or face. It returns
   * the local sub cell index and sub cell dimension.
