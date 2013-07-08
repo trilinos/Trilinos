@@ -84,7 +84,13 @@ namespace Tpetra {
   /// It might make sense for Packable to inherit from SrcDistObject.
   /// However, that sets up the possibility of ambiguous multiple
   /// inheritance.  For example, RowGraph inherits from Packable, and
-  /// CrsGraph inherits from both RowGraph and DistObject. 
+  /// CrsGraph inherits from both RowGraph and DistObject.
+  /// Furthermore, it is not necessary for a source object of an
+  /// Import or Export to know how to pack itself.  The ability to
+  /// pack oneself is independent of the ability to be the source of
+  /// an Import or Export.  Packable exists mainly for syntactic
+  /// enforcement of the interface needed for an object to know how to
+  /// pack itself for an Import or Export.
   template<class Packet, class LocalOrdinal>
   class Packable {
   public:
