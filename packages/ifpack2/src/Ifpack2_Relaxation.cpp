@@ -49,13 +49,16 @@
 #include "Ifpack2_ETIHelperMacros.h"
 
 namespace Ifpack2 {
-
-  #define LCLINST(S,LO,GO) \
-          IFPACK2_INST(Relaxation,S,LO,GO)
+  
+#define IFPACK2_INST_RELAXATION( S, LO, GO )		       \
+							       \
+  template class Relaxation< Tpetra::RowMatrix< S, LO, GO > >; \
+							       \
+  template class Relaxation< Tpetra::CrsMatrix< S, LO, GO > >;
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
-  IFPACK2_INSTANTIATE_SLG(LCLINST)
+  IFPACK2_INSTANTIATE_SLG( IFPACK2_INST_RELAXATION )
 
 }
 

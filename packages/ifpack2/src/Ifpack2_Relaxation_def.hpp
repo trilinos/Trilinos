@@ -47,6 +47,7 @@
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include <Teuchos_TimeMonitor.hpp>
 #include <Tpetra_ConfigDefs.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 
 // mfh 28 Mar 2013: Uncomment out these three lines to compute
 // statistics on diagonal entries in compute().
@@ -158,7 +159,7 @@ Relaxation (const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type, local_ordina
   fixTinyDiagEntries_ (false),
   checkDiagEntries_ (false),
   Condest_ (-STM::one ()),
-  IsInitialized_ (false),
+  isInitialized_ (false),
   IsComputed_ (false),
   NumInitialize_ (0),
   NumCompute_ (0),
@@ -533,7 +534,7 @@ void Relaxation<MatrixType>::initialize() {
   // Initialization for Relaxation is trivial, so we say it takes zero time.
   //InitializeTime_ += Time_->totalElapsedTime ();
   ++NumInitialize_;
-  IsInitialized_ = true;
+  isInitialized_ = true;
 }
 
 //==========================================================================
@@ -593,8 +594,21 @@ void Relaxation<MatrixType>::compute ()
     // 05 Apr 2013) have a way to tell if the graph hasn't changed
     // since the last time we used it.
     {
-      RCP<const MatrixType> crsMat = rcp_dynamic_cast<const MatrixType> (A_);
-      if (crsMat.is_null () || ! crsMat->isStaticGraph ()) {
+      // NOTE (mfh 07 Jul 2013): We must cast here to CrsMatrix
+      // instead of MatrixType, because isStaticGraph is a CrsMatrix
+      // method (not inherited from RowMatrix's interface).  It's
+      // perfectly valid to do relaxation on a RowMatrix which is not
+      // a CrsMatrix.
+      //
+      // This cast isn't ideal because it won't catch CrsMatrix
+      // specializations with nondefault LocalMatOps (fifth) template
+      // parameter.  The code will still be correct if the cast fails,
+      // but it won't pick up the "cached offsets" optimization.
+      typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, 
+				global_ordinal_type, node_type> crs_matrix_type;
+      const crs_matrix_type* crsMat = 
+	dynamic_cast<const crs_matrix_type*> (A_.getRawPtr ());
+      if (crsMat == NULL || ! crsMat->isStaticGraph ()) {
         A_->getLocalDiagCopy (*Diagonal_); // slow path
       } else {
         if (! savedDiagOffsets_) { // we haven't precomputed offsets
@@ -939,25 +953,24 @@ void Relaxation<MatrixType>::ApplyInverseJacobi(
 
 //==========================================================================
 template<class MatrixType>
-void Relaxation<MatrixType>::ApplyInverseGS(
-        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
+void 
+Relaxation<MatrixType>::
+ApplyInverseGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+		Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
-  using Teuchos::RCP;
-  using Teuchos::rcp_dynamic_cast;
-
-  // FIXME (mfh 02 Jan 2013) This assumes that MatrixType is a
-  // CrsMatrix specialization.
-  RCP<const MatrixType> crsMat = rcp_dynamic_cast<const MatrixType> (A_);
-
   // The CrsMatrix version is faster, because it can access the sparse
   // matrix data directly, rather than by copying out each row's data
   // in turn.  Thus, we check whether the RowMatrix is really a
   // CrsMatrix.
-  if (! crsMat.is_null ()) {
+  //
+  // FIXME (mfh 07 Jul 2013) See note on crs_matrix_type typedef
+  // declaration in Ifpack2_Relaxation_decl.hpp header file.  The code
+  // will still be correct if the cast fails, but it will use an
+  // unoptimized kernel.
+  const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
+  if (crsMat != NULL) {
     ApplyInverseGS_CrsMatrix (*crsMat, X, Y);
-  }
-  else {
+  } else {
     ApplyInverseGS_RowMatrix (X, Y);
   }
 }
@@ -1073,16 +1086,15 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
 template<class MatrixType>
 void
 Relaxation<MatrixType>::
-ApplyInverseGS_CrsMatrix (const MatrixType& A,
+ApplyInverseGS_CrsMatrix (const crs_matrix_type& A,
                           const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                           Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
   using Teuchos::as;
-
   const Tpetra::ESweepDirection direction =
     DoBackwardGS_ ? Tpetra::Backward : Tpetra::Forward;
   A.gaussSeidelCopy (Y, X, *Diagonal_, DampingFactor_, direction,
-                     NumSweeps_, ZeroStartingSolution_);
+		     NumSweeps_, ZeroStartingSolution_);
 
   // For each column of output, for each sweep over the matrix:
   //
@@ -1109,41 +1121,29 @@ void Relaxation<MatrixType>::ApplyInverseSGS(
         const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
-  using Teuchos::RCP;
-  using Teuchos::rcp_dynamic_cast;
-
-  // FIXME (mfh 02 Jan 2013) This assumes that MatrixType is a
-  // CrsMatrix specialization.  Alas, C++ doesn't let me do pattern
-  // matching on template types.  I could just cast to the four
-  // template argument specialization of CrsMatrix, but that would
-  // miss nondefault values of the fifth template parameter of
-  // CrsMatrix.
-  //
-  // Another way to solve this problem would be to move
-  // implementations of relaxations into Tpetra.  Tpetra::RowMatrix
-  // could provide a gaussSeidel, etc. interface, with a default
-  // implementation (same as the RowMatrix version here in Ifpack2
-  // now), and Tpetra::CrsMatrix specializations could reimplement
-  // this however they wish.
-  RCP<const MatrixType> crsMat = rcp_dynamic_cast<const MatrixType> (A_);
-
   // The CrsMatrix version is faster, because it can access the sparse
   // matrix data directly, rather than by copying out each row's data
   // in turn.  Thus, we check whether the RowMatrix is really a
   // CrsMatrix.
-  if (! crsMat.is_null ()) {
+  //
+  // FIXME (mfh 07 Jul 2013) See note on crs_matrix_type typedef
+  // declaration in Ifpack2_Relaxation_decl.hpp header file.  The code
+  // will still be correct if the cast fails, but it will use an
+  // unoptimized kernel.
+  const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
+  if (crsMat != NULL) {
     ApplyInverseSGS_CrsMatrix (*crsMat, X, Y);
-  }
-  else {
+  } else {
     ApplyInverseSGS_RowMatrix (X, Y);
   }
 }
 
 //==========================================================================
 template<class MatrixType>
-void Relaxation<MatrixType>::ApplyInverseSGS_RowMatrix(
-        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
+void 
+Relaxation<MatrixType>::
+ApplyInverseSGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+			   Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
@@ -1249,7 +1249,7 @@ void Relaxation<MatrixType>::ApplyInverseSGS_RowMatrix(
 template<class MatrixType>
 void
 Relaxation<MatrixType>::
-ApplyInverseSGS_CrsMatrix (const MatrixType& A,
+ApplyInverseSGS_CrsMatrix (const crs_matrix_type& A,
                            const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
