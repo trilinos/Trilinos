@@ -17,10 +17,48 @@ IF(Tpetra_ENABLE_Thrust)
   SET(MAXNP NUM_MPI_PROCS 1)
 ENDIF()
 
+#
+# We break up CrsMatrix's unit tests into several files, to reduce
+# compilation time for each file and improve build parallelism.
+#
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_UnitTests
   SOURCES
     CrsMatrix_UnitTests
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ${ARGS}
+  ${MAXNP}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_UnitTests2
+  SOURCES
+    CrsMatrix_UnitTests2
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ${ARGS}
+  ${MAXNP}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_UnitTests3
+  SOURCES
+    CrsMatrix_UnitTests3
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ${ARGS}
+  ${MAXNP}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_UnitTests4
+  SOURCES
+    CrsMatrix_UnitTests4
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
   ${MAXNP}
