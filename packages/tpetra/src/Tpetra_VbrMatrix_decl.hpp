@@ -46,6 +46,7 @@
 /// \brief Declarations for the class Tpetra::VbrMatrix.
 
 #include <Tpetra_ConfigDefs.hpp>
+#include <Tpetra_DistObject_decl.hpp>
 #include <Tpetra_Operator.hpp>
 #include <Tpetra_VbrUtils.hpp>
 #include <Kokkos_DefaultNode.hpp>

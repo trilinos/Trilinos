@@ -44,6 +44,7 @@
 
 #include <Tpetra_BlockMap.hpp>
 #include <Tpetra_BlockCrsGraph.hpp>
+#include <Tpetra_DistObject.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Kokkos_NodeHelpers.hpp>
 #include <Kokkos_VbrMatrix.hpp>
@@ -591,18 +592,20 @@ checkSizes (const SrcDistObject& source)
 
   if (srcVbrMat == NULL) {
     typedef VbrUtils::VbrDataDist<LocalOrdinal,GlobalOrdinal,Scalar,Node> VDD;
-    VDD* vdd = const_cast<VDD*> (dynamic_cast<const VDD*> (&source));
-    // FIXME (mfh 01 Jul 2013) Should check dimensions of the VDD
-    // object here.  Problem is that in Tpetra, SrcDistObject doesn't
-    // currently have a Map, unlike in Epetra.
-    return (vdd != NULL);
-  } 
-  else {
-    bool ok = this->getMap ()->getMinAllGlobalIndex() <= 
-      srcVbrMat->getMap ()->getMinAllGlobalIndex ();
-    ok = ok && this->getMap ()->getMaxAllGlobalIndex () >= 
-      srcVbrMat->getMap ()->getMaxAllGlobalIndex ();
-    return ok;
+    const VDD* vdd = const_cast<VDD*> (dynamic_cast<const VDD*> (&source));
+    if (vdd == NULL) {
+      return false;
+    } else {
+      return (this->getMap ()->getMinAllGlobalIndex () <= 
+	      vdd->getMap ()->getMinAllGlobalIndex ()) &&
+	(this->getMap ()->getMaxAllGlobalIndex () >= 
+	 vdd->getMap ()->getMaxAllGlobalIndex ());
+    }
+  } else {
+    return (this->getMap ()->getMinAllGlobalIndex () <= 
+	    srcVbrMat->getMap ()->getMinAllGlobalIndex ()) &&
+      (this->getMap ()->getMaxAllGlobalIndex () >= 
+       srcVbrMat->getMap ()->getMaxAllGlobalIndex ());
   }
 }
 
@@ -712,14 +715,13 @@ packAndPrepare (const SrcDistObject& source,
   const this_type* src_mat_ptr = dynamic_cast<const this_type*> (&source);
 
   if (src_mat_ptr == NULL) {
-    typedef VbrUtils::VbrDataDist<LocalOrdinal,GlobalOrdinal,Scalar,Node> VDD;
-    VDD* vdd = const_cast<VDD*> (dynamic_cast<const VDD*> (&source));
-    if (vdd != NULL) {
-      vdd->packAndPrepare (source, exportLIDs, exports, numPacketsPerLID, 
-			   constantNumPackets, distor);
-    } else {
-      throw std::runtime_error("VbrMatrix::packAndPrepare ERROR, dynamic_cast failed.");
-    }
+    typedef VbrUtils::VbrDataDist<LocalOrdinal, GlobalOrdinal, Scalar, Node> VDD;
+    const VDD* vdd = dynamic_cast<const VDD*> (&source);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      vdd == NULL, std::invalid_argument, "Tpetra::VbrMatrix::packAndPrepare: "
+      "Source object input must be either a VbrMatrix or a VbrDataDist with "
+      "matching template parameters.");
+    vdd->pack (exportLIDs, exports, numPacketsPerLID, constantNumPackets, distor);
     return;
   }
   const this_type& src_mat = *src_mat_ptr;
@@ -1349,17 +1351,17 @@ void VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::globalAssemb
   //VbrDataDist is a wrapper that makes our overlapping data behave
   //like a DistObject so that the overlapping data can be exported
   //to the owning processors in a standard way.
-  VbrUtils::VbrDataDist<LocalOrdinal,GlobalOrdinal,Scalar,Node>
-      vdd(nonlocal_data_, *overlapMap, *this->getBlockRowMap());
+  typedef VbrUtils::VbrDataDist<LocalOrdinal, GlobalOrdinal, Scalar, Node> VDD;
+  VDD vdd (nonlocal_data_, *overlapMap);
 
   //Create an exporter where the source map is our overlapMap and the
   //target map is the rowmap of our VbrMatrix.
-  Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>
-      importer( vdd.getMap(), convertBlockMapToPointMap(*getBlockRowMap()));
+  typedef Import<LocalOrdinal,GlobalOrdinal,Node> import_type;
+  import_type importer (vdd.getMap (), convertBlockMapToPointMap (*getBlockRowMap ()));
 
   //Communicate the overlapping data to the owning processors and add it
   //into this VbrMatrix.
-  this->doImport(vdd, importer, Tpetra::ADD);
+  this->doImport (vdd, importer, Tpetra::ADD);
 
   //Zero out the overlapping data so it can be re-populated and re-assembled
   //in future calls to globalAssemble.
