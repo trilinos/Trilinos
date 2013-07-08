@@ -1255,11 +1255,11 @@ namespace stk
         {
           mesh::Entity elem = my_entities[i];
 
-          if (my_pMesh.isParentElement(elem,false))
-          {
-            my_markers[i] = stk::adapt::DO_NOTHING;
-          }
-          else
+          // if (my_pMesh.isParentElement(elem,false))
+          // {
+          //   my_markers[i] = stk::adapt::DO_NOTHING;
+          // }
+          // else
           {
             my_markers[i] = *((Int *)my_pMesh.field_data( *my_marker_field, my_entities[i] ));
           }
@@ -1312,7 +1312,7 @@ namespace stk
         {
           mesh::Entity elem = entities[i];
 
-          if (pMesh.isParentElement(elem,false)) continue;
+          //if (pMesh.isParentElement(elem,false)) continue;
 
           int elem_mark = 0;
           const percept::MyPairIterRelation elem_nodes (pMesh, elem, stk::mesh::MetaData::NODE_RANK );
@@ -1335,6 +1335,13 @@ namespace stk
           }
           Int * marker_data = pMesh.get_bulk_data()->field_data( marker_field, elem );
           *marker_data = elem_mark;
+        }
+
+        // update ghost element values
+        {
+          std::vector< const stk::mesh::FieldBase *> fields(1, &marker_field);
+          //stk::mesh::copy_owned_to_shared( *m_eMesh.get_bulk_data(), fields);
+          stk::mesh::communicate_field_data(pMesh.get_bulk_data()->shared_aura(), fields);
         }
       }
 
@@ -1377,7 +1384,10 @@ namespace stk
             for (int iunref_pass=0; iunref_pass < 3; iunref_pass++)
             {
               std::cout << "P[" << eMesh.get_rank() << "] iunref_pass= " << iunref_pass << std::endl;
+              mimic_encr_function_and_element_marker(eMesh, time, *function_field, marker_field);
+              element_marker.update_markers();
               ElementUnrefineCollection elements_to_unref = breaker.buildUnrefineList();
+              //std::cout << "elements_to_unref.size() = " << elements_to_unref.size() << std::endl;
               breaker.unrefineTheseElements(elements_to_unref);
             }
 
