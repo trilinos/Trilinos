@@ -32,7 +32,6 @@ public :
 
   // Needed for STK Transfer
   ParallelMachine comm() const {return m_comm;}
-  bool has_communication_capabilities() const { return true;}
 
   unsigned            keys(EntityKeySet &keys) const;
 

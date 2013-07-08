@@ -33,15 +33,11 @@ public :
 
   // Needed for STK Transfer
   ParallelMachine comm() const {return m_comm;}
-  bool has_communication_capabilities() const { return false;}
 
   unsigned            keys(EntityKeySet &keys) const;
 
   BoundingBox boundingbox (const EntityKey Id, const double radius) const;
 
-  void copy_entities(const EntityProcVec    &entities_to_copy,
-                     const std::string         &transfer_name);
-  
   void update_values();
 
 
@@ -98,12 +94,6 @@ template<unsigned DIM> typename MDMesh<DIM>::BoundingBox MDMesh<DIM>::boundingbo
   const Key key(Id, parallel_machine_rank(comm()));
   BoundingBox B(center, r, key);
   return B;
-}
-
-template<unsigned NUM> void MDMesh<NUM>::copy_entities(
-                     const EntityProcVec  &keys_to_copy,
-                     const std::string   &transfer_name) {
-  ThrowErrorMsg(__FILE__<<":"<<__LINE__<<" Error: copy_entities undefinded in this class.");
 }
 
 template<unsigned DIM> void MDMesh<DIM>::update_values () {}

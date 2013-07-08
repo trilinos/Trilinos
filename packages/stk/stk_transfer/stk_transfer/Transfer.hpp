@@ -10,6 +10,7 @@
 #ifndef  STK_GEOMETRICTRANSFER_HPP
 #define  STK_GEOMETRICTRANSFER_HPP
 
+
 #include <boost/smart_ptr/shared_ptr.hpp>
 
 #include <stk_util/util/StaticAssert.hpp>
@@ -79,6 +80,40 @@ private :
                      const MESH                              &mesh,
                      const double                             radius) const ;
   
+
+  template <bool B, typename T = void> struct Enable_If          { typedef T type; };
+  template <        typename T       > struct Enable_If<false, T>{                 };
+
+  template <typename T> struct optional_functions {
+  private : 
+    template <typename X, X> class check {};
+    template <typename X> static long copy_ent(...);
+    template <typename X> static char copy_ent(
+      check<
+        void (X::*)(const typename MeshA::EntityProcVec&, const std::string&), 
+        &X::copy_entities
+      >*);
+  public :
+    static const bool copy_entities = (sizeof(copy_ent<T>(0)) == sizeof(char));
+  };
+  
+  template <typename T> 
+  typename Enable_If<optional_functions<T>::copy_entities>::type
+       copy_entities(T                                   &mesh,
+                     const typename MeshA::EntityProcVec &entities_to_copy,
+                     const std::string                   &transfer_name) const 
+  {
+    mesh.copy_entities(entities_to_copy, transfer_name);
+  }
+
+  template <typename T> 
+  typename Enable_If<!optional_functions<T>::copy_entities>::type
+       copy_entities(T                                   &mesh,
+                     const typename MeshA::EntityProcVec &entities_to_copy,
+                     const std::string                   &transfer_name) const {
+    ThrowErrorMsg(__FILE__<<":"<<__LINE__<<" Error: copy_entities undefinded in this class.");
+  }
+
   EntityKeyMap copy_domain_to_range_processors(MeshA                            &mesh,
                                                const EntityProcRelationVec      &RangeToDomain,
                                                const std::string                &transfer_name) const;
@@ -129,9 +164,7 @@ template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::communication(
 
   ParallelMachine comm = m_mesha.comm();
   const unsigned p_size = parallel_machine_size(comm);
-  if (m_mesha.has_communication_capabilities()) {
-    m_local_range_to_domain = copy_domain_to_range_processors(m_mesha, m_global_range_to_domain, m_name);
-  } else if (1==p_size) {
+  if (1==p_size) {
     const typename EntityProcRelationVec::const_iterator end=m_global_range_to_domain.end();
     for (typename EntityProcRelationVec::const_iterator i=m_global_range_to_domain.begin(); i!=end; ++i) {
       const EntityKeyB range_entity    = i->first.ident;
@@ -139,8 +172,10 @@ template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::communication(
       std::pair<EntityKeyB,EntityKeyA> key_map(range_entity, domain_entity);
       m_local_range_to_domain.insert(key_map);
     }
+  } else if (optional_functions<MeshA>::copy_entities) {
+    m_local_range_to_domain = copy_domain_to_range_processors(m_mesha, m_global_range_to_domain, m_name);
   } else {
-    ThrowRequireMsg (m_mesha.has_communication_capabilities(),
+    ThrowRequireMsg (optional_functions<MeshA>::copy_entities,
       __FILE__<<":"<<__LINE__<<" Still working on communicaiton capabilities.");
   }
 }
@@ -175,7 +210,6 @@ template <class INTERPOLATE> template <class MESH> void GeometricTransfer<INTERP
   }
 }
 
-
 template <class INTERPOLATE>
 typename GeometricTransfer<INTERPOLATE>::EntityKeyMap GeometricTransfer<INTERPOLATE>::copy_domain_to_range_processors(
   MeshA                               &mesh,
@@ -203,7 +237,7 @@ typename GeometricTransfer<INTERPOLATE>::EntityKeyMap GeometricTransfer<INTERPOL
     entities_to_copy.resize(std::distance(entities_to_copy.begin(), del));
   }
  
-  mesh.copy_entities(entities_to_copy, transfer_name);
+  copy_entities(mesh, entities_to_copy, transfer_name);
 
   EntityKeyMap entity_key_map;
   for (typename EntityProcRelationVec::const_iterator i=range_to_domain.begin(); i!=end; ++i) {
