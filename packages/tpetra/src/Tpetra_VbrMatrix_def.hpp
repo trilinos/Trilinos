@@ -1365,7 +1365,7 @@ void VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::globalAssemb
 
   //Zero out the overlapping data so it can be re-populated and re-assembled
   //in future calls to globalAssemble.
-  VbrUtils::zeroEntries(nonlocal_data_);
+  nonlocal_data_.zeroEntries ();
 }
 
 //-------------------------------------------------------------------
@@ -1376,10 +1376,12 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::description() con
   std::ostringstream oss;
   oss << Teuchos::Describable::description();
   if (isFillComplete()) {
-    oss << "{status = fill complete, global num block rows = " << getBlockRowMap()->getGlobalNumBlocks() << "}";
+    oss << "{status = fill complete, global num block rows = " 
+	<< getBlockRowMap()->getGlobalNumBlocks() << "}";
   }
   else {
-    oss << "{status = fill not complete, global num block rows = " << getBlockRowMap()->getGlobalNumBlocks() << "}";
+    oss << "{status = fill not complete, global num block rows = " 
+	<< getBlockRowMap()->getGlobalNumBlocks() << "}";
   }
   return oss.str();
 }

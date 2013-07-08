@@ -76,45 +76,36 @@ struct VbrData {
 
   typedef typename std::map<GlobalOrdinal,BlkInfo<LocalOrdinal,Scalar> > RowGlobalCols;
 
-  VbrData()
-   : row_map(),
-     data(Teuchos::rcp(new Teuchos::Array<RowGlobalCols>))
-  {}
+  VbrData() {}
+  ~VbrData() {}
 
-  ~VbrData(){}
+  void zeroEntries () {
+    typedef typename Teuchos::Array<RowGlobalCols>::size_type size_type;
+    typedef typename Teuchos::ScalarTraits<Scalar> STS;
+
+    const size_type numEntries = this->data.size ();
+    for (size_type i = 0; i < numEntries; ++i) {
+      RowGlobalCols& rgc = (this->data)[i];
+      typename RowGlobalCols::iterator rgc_it = rgc.begin(), rgc_end = rgc.end();
+      for ( ; rgc_it != rgc_end; ++rgc_it) {
+	BlkInfo<LocalOrdinal,Scalar>& blk = rgc_it->second;
+	std::fill (blk.blkEntry.begin (), blk.blkEntry.end (), STS::zero ());
+      }
+    }
+  }
 
   std::map<GlobalOrdinal,LocalOrdinal> row_map;
-  Teuchos::RCP<Teuchos::Array<RowGlobalCols> > data;
+  Teuchos::Array<RowGlobalCols> data;
 };
 
 template<typename LocalOrdinal, typename GlobalOrdinal, typename Scalar>
-inline
-void zeroEntries(VbrData<LocalOrdinal,GlobalOrdinal,Scalar>& vbrdata)
-{
-  typedef typename VbrData<LocalOrdinal,GlobalOrdinal,Scalar>::RowGlobalCols RowGlobalCols;
-  typedef typename Teuchos::Array<RowGlobalCols>::size_type Tsize_t;
-  typedef typename Teuchos::ScalarTraits<Scalar> STS;
-
-  for(Tsize_t i=0; i<vbrdata.data->size(); ++i) {
-    RowGlobalCols& rgc = (*vbrdata.data)[i];
-    typename RowGlobalCols::iterator
-      rgc_it = rgc.begin(), rgc_end = rgc.end();
-    for(; rgc_it != rgc_end; ++rgc_it) {
-      BlkInfo<LocalOrdinal,Scalar>& blk = rgc_it->second;
-      std::fill (blk.blkEntry.begin (), blk.blkEntry.end (), STS::zero ());
-    }
-  }
-}
-
-template<typename LocalOrdinal, typename GlobalOrdinal, typename Scalar>
-inline
-void getGlobalBlockEntryViewNonConst(
-                   VbrData<LocalOrdinal,GlobalOrdinal,Scalar>& vbrdata,
-                   GlobalOrdinal globalBlockRow,
-                   GlobalOrdinal globalBlockCol,
-                   LocalOrdinal& numPtRows,
-                   LocalOrdinal& numPtCols,
-                   Teuchos::ArrayRCP<Scalar>& blockEntry)
+void
+getGlobalBlockEntryViewNonConst (VbrData<LocalOrdinal,GlobalOrdinal,Scalar>& vbrdata,
+				 GlobalOrdinal globalBlockRow,
+				 GlobalOrdinal globalBlockCol,
+				 LocalOrdinal& numPtRows,
+				 LocalOrdinal& numPtCols,
+				 Teuchos::ArrayRCP<Scalar>& blockEntry)
 {
   typename std::map<GlobalOrdinal,LocalOrdinal>::iterator miter =
       vbrdata.row_map.find(globalBlockRow);
@@ -122,16 +113,16 @@ void getGlobalBlockEntryViewNonConst(
   LocalOrdinal localBlockRow = 0;
 
   if (miter == vbrdata.row_map.end()) {
-    localBlockRow = vbrdata.data->size();
+    localBlockRow = vbrdata.data.size ();
     vbrdata.row_map.insert(std::make_pair(globalBlockRow,localBlockRow));
-    vbrdata.data->resize(localBlockRow+1);
+    vbrdata.data.resize (localBlockRow+1);
   }
   else {
     localBlockRow = miter->second;
   }
 
   typedef typename VbrData<LocalOrdinal,GlobalOrdinal,Scalar>::RowGlobalCols RowGlobalCols;
-  RowGlobalCols& blkrow = (*vbrdata.data)[localBlockRow];
+  RowGlobalCols& blkrow = (vbrdata.data)[localBlockRow];
   typename RowGlobalCols::iterator iter = blkrow.find(globalBlockCol);
   if (iter == blkrow.end()) {
     BlkInfo<LocalOrdinal,Scalar> blk;
@@ -228,7 +219,7 @@ public:
     //occupy in the exports buffer:
     size_t total_exports_size = 0;
     for (Tsize_t i = 0; i < exportLIDs.size (); ++i) {
-      const RowGlobalCols& rgc = (*(this->vbrData_.data))[exportLIDs[i]];
+      const RowGlobalCols& rgc = (this->vbrData_.data)[exportLIDs[i]];
       typename RowGlobalCols::const_iterator rgc_it = rgc.begin();
       typename RowGlobalCols::const_iterator rgc_end = rgc.end();
       size_t numScalars = 0;
@@ -259,7 +250,7 @@ public:
       ptColsPerBlkCol.clear();
       blkEntries.clear();
 
-      const RowGlobalCols& rgc = (*(this->vbrData_.data))[exportLIDs[i]];
+      const RowGlobalCols& rgc = (this->vbrData_.data)[exportLIDs[i]];
       typename RowGlobalCols::const_iterator rgc_it = rgc.begin ();
       typename RowGlobalCols::const_iterator rgc_end = rgc.end ();
       LO numPtRows = 0;
