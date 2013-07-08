@@ -112,7 +112,7 @@ TEUCHOS_UNIT_TEST(tSGEpetraLinearObjFactory, basic)
 
    RCP<Stokhos::OrthogPolyExpansion<int,double> > sgExpansion = buildExpansion(3,5);
    RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
-         = rcp(new unit_test::UniqueGlobalIndexer<int>(myRank,numProc));
+         = rcp(new unit_test::UniqueGlobalIndexer<int,int>(myRank,numProc));
  
    // setup factory
    RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > epetraFactory
@@ -168,7 +168,7 @@ TEUCHOS_UNIT_TEST(tSGEpetraLinearObjFactory, initializeContainer)
 
    RCP<Stokhos::OrthogPolyExpansion<int,double> > sgExpansion = buildExpansion(3,5);
    RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
-         = rcp(new unit_test::UniqueGlobalIndexer<int>(myRank,numProc));
+         = rcp(new unit_test::UniqueGlobalIndexer<int,int>(myRank,numProc));
 
    std::vector<int> ownedIndices, ownedAndSharedIndices;
    indexer->getOwnedIndices(ownedIndices);
