@@ -229,7 +229,8 @@ extern "C" {
     EX_DEFAULT  = 0,
     EX_VERBOSE  = 1,  /**< verbose mode message flag   */
     EX_DEBUG    = 2,  /**< debug mode def             */
-    EX_ABORT    = 4   /**< abort mode flag def        */
+    EX_ABORT    = 4,   /**< abort mode flag def        */
+    EX_NULLVERBOSE = 8 /**< verbose mode for null entity detection warning */
   };
   typedef enum ex_options ex_options;
   

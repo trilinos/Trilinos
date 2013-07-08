@@ -88,7 +88,7 @@ int ex_get_partial_side_set_df (int   exoid,
       sprintf(errmsg,
 	      "Warning: side set %"PRId64" is NULL in file id %d",
               side_set_id, exoid);
-      ex_err("ex_get_partial_side_set_df",errmsg,EX_MSG);
+      ex_err("ex_get_partial_side_set_df",errmsg,EX_NULLENTITY);
       return (EX_WARN);
     } else {
       sprintf(errmsg,

@@ -81,7 +81,7 @@ int ex_put_partial_var (int   exoid,
 	    sprintf(errmsg,						\
 		    "Warning: no variables allowed for NULL block %"PRId64" in file id %d", \
 		    obj_id,exoid);					\
-	    ex_err("ex_put_partial_var",errmsg,EX_MSG);			\
+	    ex_err("ex_put_partial_var",errmsg,EX_NULLENTITY);		\
 	    return (EX_WARN);						\
 	  }								\
 	else								\

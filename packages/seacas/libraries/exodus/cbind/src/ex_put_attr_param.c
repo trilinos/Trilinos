@@ -88,7 +88,7 @@ int ex_put_attr_param (int   exoid,
 	sprintf(errmsg,
 		"Warning: no attributes found for NULL %s %"PRId64" in file id %d",
 		ex_name_of_object(obj_type),obj_id,exoid);
-	ex_err("ex_put_attr_param",errmsg,EX_MSG);
+	ex_err("ex_put_attr_param",errmsg,EX_NULLENTITY);
 	return (EX_WARN);              /* no attributes for this object */
       } else {
 	sprintf(errmsg,
