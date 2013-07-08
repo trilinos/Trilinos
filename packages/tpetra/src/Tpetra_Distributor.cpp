@@ -1019,11 +1019,15 @@ namespace Tpetra {
     size_t numActive = 0;
     int needSendBuff = 0; // Boolean
 
-    int badID = -1;
+#ifdef HAVE_TPETRA_DEBUG
+    int badID = -1; // only used in a debug build
+#endif // HAVE_TPETRA_DEBUG
     for (size_t i = 0; i < numExports_; ++i) {
       int exportID = exportNodeIDs[i];
       if (exportID >= numImages) {
+#ifdef HAVE_TPETRA_DEBUG
         badID = myImageID;
+#endif // HAVE_TPETRA_DEBUG
         break;
       }
       else if (exportID >= 0) {
@@ -1073,8 +1077,6 @@ namespace Tpetra {
     // the error, so that the sum will produce a nonzero value if any
     // process had an error).  I'll defer this change for now and
     // recommend instead that people with troubles try a debug build.
-
-    (void) badID; // forestall "unused variable" compile warning
 #endif // HAVE_TPETRA_DEBUG
 
 #if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
