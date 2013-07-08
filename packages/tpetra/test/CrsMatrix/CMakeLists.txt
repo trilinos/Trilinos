@@ -153,16 +153,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CrsTests_CopyFiles2
   SOURCE_FILES bcsstk14.hb bcsstk15.hb
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CrsMatrix_InOutTests
-  SOURCES
-    CrsMatrix_InOutTests
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  ARGS ${ARGS}
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
 # This test only makes sense for > 1 processes.
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_NonlocalSumInto
