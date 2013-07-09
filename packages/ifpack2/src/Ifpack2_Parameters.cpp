@@ -91,7 +91,7 @@ void getValidParameters(Teuchos::ParameterList& params)
 
   // Ifpack2_METISPartitioner.cpp
   params.set("partitioner: local parts", (int)1);
-  params.set("partitioner: overlap", (int)0);
+  params.set("partitioner: overlap", (size_t)0);
   params.set("partitioner: print level", (int)0);
 
   // Ifpack2_Relaxation.cpp
@@ -127,7 +127,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   // params.get("relaxation: zero starting solution", true); // already set
   params.set("partitioner: type", "greedy");
   params.set("partitioner: local parts", (int)1);
-  params.set("partitioner: overlap", (int)0);
+  params.set("partitioner: overlap", (size_t)0);
 
   // Krylov smoother
   params.set("krylov: iteration type",(int)1);
