@@ -468,7 +468,7 @@ void LocalFilter<MatrixType>::apply(const Tpetra::MultiVector<scalar_type,local_
     "Ifpack2::LocalFilter::apply: X and Y must have the same number of columns.  "
     "X has " << X.getNumVectors () << " columns, but Y has "
     << Y.getNumVectors () << " columns.");
-
+  /*
   TEUCHOS_TEST_FOR_EXCEPTION(
     alpha != STS::one (), std::logic_error,
     "Ifpack2::LocalFilter::apply: This method does not currently work when alpha != 1.");
@@ -476,12 +476,16 @@ void LocalFilter<MatrixType>::apply(const Tpetra::MultiVector<scalar_type,local_
   TEUCHOS_TEST_FOR_EXCEPTION(
     beta != STS::zero (), std::logic_error,
     "Ifpack2::LocalFilter::apply: This method does not currently work when beta != 0.");
-
+  */
   const scalar_type zero = STS::zero();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const scalar_type> > x_ptr = X.get2dView();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> >       y_ptr = Y.get2dViewNonConst();
 
-  Y.putScalar(zero);
+  if (beta == zero)
+    Y.putScalar(zero);
+  else
+    Y.scale(beta);
+
   size_t NumVectors = Y.getNumVectors();
 
 
@@ -492,17 +496,17 @@ void LocalFilter<MatrixType>::apply(const Tpetra::MultiVector<scalar_type,local_
     if (mode==Teuchos::NO_TRANS){
       for (size_t j = 0 ; j < Nnz ; ++j)
         for (size_t k = 0 ; k < NumVectors ; ++k)
-          y_ptr[k][i] += Values_[j] * x_ptr[k][Indices_[j]];
+          y_ptr[k][i] += alpha * Values_[j] * x_ptr[k][Indices_[j]];
     }
     else if (mode==Teuchos::TRANS){
       for (size_t j = 0 ; j < Nnz ; ++j)
         for (size_t k = 0 ; k < NumVectors ; ++k)
-          y_ptr[k][Indices_[j]] += Values_[j] * x_ptr[k][i];
+          y_ptr[k][Indices_[j]] += alpha * Values_[j] * x_ptr[k][i];
     }
     else { //mode==Teuchos::CONJ_TRANS
       for (size_t j = 0 ; j < Nnz ; ++j)
         for (size_t k = 0 ; k < NumVectors ; ++k)
-          y_ptr[k][Indices_[j]] += STS::conjugate(Values_[j]) * x_ptr[k][i];
+          y_ptr[k][Indices_[j]] += alpha * STS::conjugate(Values_[j]) * x_ptr[k][i];
     }
   }
 }
