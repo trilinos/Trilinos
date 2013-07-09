@@ -645,7 +645,7 @@ void BlockRelaxation<MatrixType,ContainerType>::ApplyInverseSGS(const Tpetra::Mu
   
   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>  Xcopy(X);
   for (int j = 0; j < NumSweeps_ ; j++) {
-    DoSGS(X,Xcopy,Y);
+    DoSGS(Xcopy,Y);
     if(j != NumSweeps_-1)
       Xcopy=X;
   }
@@ -653,8 +653,7 @@ void BlockRelaxation<MatrixType,ContainerType>::ApplyInverseSGS(const Tpetra::Mu
 
 //==========================================================================
 template<class MatrixType,class ContainerType>
-void BlockRelaxation<MatrixType,ContainerType>::DoSGS(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-						      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xcopy, 
+void BlockRelaxation<MatrixType,ContainerType>::DoSGS(Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
 						      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   Scalar    one =  Teuchos::ScalarTraits<Scalar>::one();
@@ -682,8 +681,8 @@ void BlockRelaxation<MatrixType,ContainerType>::DoSGS(const Tpetra::MultiVector<
   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Correction(X.getMap(),NumVectors,true);
   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TmpResidual(X.getMap(),NumVectors,false);
 
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > x_ptr       = X.get2dView();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       xcopy_ptr   = Xcopy.get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > x_ptr       = X.get2dViewNonConst();
+  //Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       xcopy_ptr   = Xcopy.get2dViewNonConst();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       y_ptr       = Y.get2dViewNonConst();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       y2_ptr      = Y2->get2dViewNonConst();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >  correction_ptr = Correction.get2dViewNonConst();

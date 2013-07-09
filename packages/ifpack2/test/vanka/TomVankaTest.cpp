@@ -138,7 +138,7 @@ int main(int argc, char *argv[]){
   MyList.set("partitioner: overlap"    ,(size_t) 1);
 
   // What type of block relaxation should we use?
-  MyList.set("relaxation: type"        ,"Gauss-Seidel");
+  MyList.set("relaxation: type"        ,"Symmetric Gauss-Seidel");
   // How many sweeps?
   MyList.set("relaxation: sweeps"      ,(int) 1);
   // How much damping?

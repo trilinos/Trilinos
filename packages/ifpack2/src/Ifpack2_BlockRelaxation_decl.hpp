@@ -320,8 +320,7 @@ private:
   virtual void ApplyInverseSGS(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
 			       Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  virtual void DoSGS(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-		     Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xtmp,
+  virtual void DoSGS(Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
 		     Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
  
   void ExtractSubmatrices();
