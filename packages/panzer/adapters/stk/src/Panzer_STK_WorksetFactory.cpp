@@ -62,7 +62,7 @@ Teuchos::RCP<std::map<unsigned,panzer::Workset> > WorksetFactory::
 getSideWorksets(const panzer::BC & bc,
               const panzer::PhysicsBlock & pb) const
 {
-   return panzer_stk::buildBCWorksets(*mesh_,pb,bc);
+   return panzer_stk::buildBCWorksets(*mesh_,pb,bc.sidesetID());
 }
 
 Teuchos::RCP<std::vector<panzer::Workset> > WorksetFactory::
@@ -78,6 +78,21 @@ getWorksets(const panzer::WorksetDescriptor & worksetDesc,
   }
   else {
     TEUCHOS_ASSERT(false);
+    
+    // The following code does not yet function in full generality, we need
+    // to fix how the assembly process is handled for sidesets 
+    /*
+    Teuchos::RCP<std::map<unsigned,panzer::Workset> > workset_map =
+      panzer_stk::buildBCWorksets(*mesh_,pb,worksetDesc.getSideset());
+
+    // loop over worksets, adding them to vector
+    Teuchos::RCP<std::vector<panzer::Workset> > worksets = Teuchos::rcp(new std::vector<panzer::Workset>);
+    for(std::map<unsigned,panzer::Workset>::const_iterator itr=workset_map->begin();
+        itr!=workset_map->end();++itr)
+      worksets->push_back(itr->second);
+
+    return worksets;
+    */
   }
 }
 

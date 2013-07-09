@@ -58,6 +58,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_GlobalData.hpp"
+#include "Panzer_BC.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
 

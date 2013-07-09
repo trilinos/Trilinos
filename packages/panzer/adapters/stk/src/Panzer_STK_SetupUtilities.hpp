@@ -45,7 +45,6 @@
 
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_Workset.hpp"
-#include "Panzer_BC.hpp"
 #include "Panzer_PhysicsBlock.hpp"
 
 #include "Teuchos_RCP.hpp"
@@ -90,7 +89,7 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
   *
   * \param[in] mesh A pointer to the STK_Interface used to construct the worksets
   * \param[in] pb Physics block associated with the element block
-  * \param[in] bc Boundary condition object
+  * \param[in] sidesetID Name of sideset
   *
   * \returns Map relating local element side IDs to a workset.
   *
@@ -100,7 +99,7 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
 buildBCWorksets(const panzer_stk::STK_Interface & mesh,
                 const panzer::PhysicsBlock & pb,
-                const panzer::BC & bc);
+                const std::string & sidesetID);
 
 // namespace may not be neccssary in the future, currently avoids
 // collisions with previously implemented code in tests
