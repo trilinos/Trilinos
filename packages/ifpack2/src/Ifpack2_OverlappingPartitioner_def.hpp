@@ -247,8 +247,7 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
     for (int part = 0 ; part < NumLocalParts_ ; ++part) {
       for (size_t i = 0; i < (size_t)Parts_[part].size() ; ++i) {  
 	LocalOrdinal LRID = Parts_[part][i];
-        tmp[part].push_back(LRID);
-
+        
 	size_t NumIndices;
 	Graph_->getLocalRowCopy(LRID,Indices(),NumIndices);
 
@@ -266,6 +265,16 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
 	    tmp[part].push_back(col);
 	  }
 	}
+
+        // has this column already been inserted?
+        vector<size_t>::iterator
+          where = std::find(tmp[part].begin(), tmp[part].end(), (size_t) LRID);
+        
+        // This happens here b/c Vanka on Stokes with Stabilized elements will have
+        // a zero pivot entry if this gets pushed back first. So... Last.
+        if (where == tmp[part].end()) {
+          tmp[part].push_back(LRID);
+        }
       }
     }
 

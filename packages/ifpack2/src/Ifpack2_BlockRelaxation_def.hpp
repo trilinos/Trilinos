@@ -657,7 +657,8 @@ void BlockRelaxation<MatrixType,ContainerType>::DoSGS(const Tpetra::MultiVector<
 						      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xcopy, 
 						      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
-  Scalar one=Teuchos::ScalarTraits<Scalar>::one();
+  Scalar    one =  Teuchos::ScalarTraits<Scalar>::one();
+  Scalar negone = -one;
   int Length = A_->getNodeMaxNumRowEntries(); 
   int NumVectors = X.getNumVectors();
   Teuchos::Array<Scalar>         Values;
@@ -674,13 +675,27 @@ void BlockRelaxation<MatrixType,ContainerType>::DoSGS(const Tpetra::MultiVector<
   else
     Y2 = Teuchos::rcp( &Y, false );
 
+  // I think I decided I need two extra vectors:
+  // One to store the sum of the corrections (initialized to zero)
+  // One to store the temporary residual (doesn't matter if it is zeroed or not)
+  // My apologies for making the names clear and meaningful. (X=RHS, Y=guess?! Nice.)
+  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Correction(X.getMap(),NumVectors,true);
+  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TmpResidual(X.getMap(),NumVectors,false);
+
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > x_ptr       = X.get2dView();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       xcopy_ptr   = Xcopy.get2dViewNonConst();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       y_ptr       = Y.get2dViewNonConst();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       y2_ptr      = Y2->get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >  correction_ptr = Correction.get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > tmpresidual_ptr = TmpResidual.get2dViewNonConst();
 
   // data exchange is here, once per sweep
   if (IsParallel_)  Y2->doImport(Y,*Importer_,Tpetra::INSERT);
+
+  // Replace X (the RHS) by the initial residual, if Y != 0
+  // Note: this will not change the RHS outside of this function
+  if (!ZeroStartingSolution_)
+    A_->apply(*Y2,X,Teuchos::NO_TRANS,negone,one);
 
   // Forward Sweep
   for(LocalOrdinal i = 0 ; i < NumLocalBlocks_ ; i++) {
@@ -694,23 +709,27 @@ void BlockRelaxation<MatrixType,ContainerType>::DoSGS(const Tpetra::MultiVector<
       size_t NumEntries;
       A_->getLocalRowCopy(LID,Indices(),Values(),NumEntries);
 
+      //Set tmpresid = initresid
+      for (int kk = 0 ; kk < NumVectors ; kk++)
+        tmpresidual_ptr[kk][LID] = x_ptr[kk][LID];
+
+      //set tmpresid = initresid - A*correction
       for (size_t k = 0 ; k < NumEntries ; k++) {
         LocalOrdinal col = Indices[k];
         for (int kk = 0 ; kk < NumVectors ; kk++) 
-          xcopy_ptr[kk][LID] -= Values[k] * y2_ptr[kk][col];
+          tmpresidual_ptr[kk][LID] -= Values[k] * correction_ptr[kk][col];
       }
     }
     // solve with this block
     // Note: I'm abusing the ordering information, knowing that X/Y and Y2 have the same ordering for on-proc unknowns.
     // Note: Add flop counts for inverse apply
-    Containers_[i]->apply(Xcopy,*Y2,Teuchos::NO_TRANS,DampingFactor_,one);
+    Containers_[i]->apply(TmpResidual,Correction,Teuchos::NO_TRANS,DampingFactor_,one);
 
     // operations for all getrow's
     ApplyFlops_ += NumVectors * (2 * NumGlobalNonzeros_ + 2 * NumGlobalRows_);
   }// end forward sweep
 
   // Reverse Sweep
-  Xcopy = X;
   for(LocalOrdinal i = NumLocalBlocks_-1; i >=0 ; i--) {
     // may happen that a partition is empty
     if (Containers_[i]->getNumRows() == 0) continue;
@@ -722,25 +741,32 @@ void BlockRelaxation<MatrixType,ContainerType>::DoSGS(const Tpetra::MultiVector<
       size_t NumEntries;
       A_->getLocalRowCopy(LID,Indices(),Values(),NumEntries);
 
+      //Set tmpresid = initresid
+      for (int kk = 0 ; kk < NumVectors ; kk++)
+        tmpresidual_ptr[kk][LID] = x_ptr[kk][LID];
+      
+      //set tmpresid = initresid - A*correction
       for (size_t k = 0 ; k < NumEntries ; k++) {
         LocalOrdinal col = Indices[k];
         for (int kk = 0 ; kk < NumVectors ; kk++) 
-          xcopy_ptr[kk][LID] -= Values[k] * y2_ptr[kk][col];
+          tmpresidual_ptr[kk][LID] -= Values[k] * correction_ptr[kk][col];
       }
     }
     
     // solve with this block
     // Note: I'm abusing the ordering information, knowing that X/Y and Y2 have the same ordering for on-proc unknowns.
     // Note: Add flop counts for inverse apply
-    Containers_[i]->apply(Xcopy,*Y2,Teuchos::NO_TRANS,DampingFactor_,one);
+    Containers_[i]->apply(TmpResidual,Correction,Teuchos::NO_TRANS,DampingFactor_,one);
 
     // operations for all getrow's
     ApplyFlops_ += NumVectors * (2 * NumGlobalNonzeros_ + 2 * NumGlobalRows_);
   } //end reverse sweep
 
+  // Now that the full sum of the corrections has been computed, add them to the initial guess
+  Y2->update(one,Correction,one);
 
   // Attention: this is delicate... Not all combinations
-  // of Y2 and Y will always work (tough for ML it should be ok)
+  // of Y2 and Y will always work (though for ML it should be ok)
   if (IsParallel_)
     for (int m = 0 ; m < NumVectors ; ++m) 
       for (size_t i = 0 ; i < NumMyRows_ ; ++i)
