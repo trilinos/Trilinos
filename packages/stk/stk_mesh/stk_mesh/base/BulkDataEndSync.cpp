@@ -31,6 +31,10 @@
 #include <stk_mesh/base/EntityCommDatabase.hpp>
 #include <stk_mesh/base/Trace.hpp>
 
+#ifdef STK_PROFILE_MEMORY
+  #include <stk_mesh/baseImpl/Partition.hpp>
+#endif
+
 //----------------------------------------------------------------------
 
 namespace stk {
@@ -750,10 +754,13 @@ bool BulkData::modification_end()
 
 #ifdef STK_PROFILE_MEMORY
 
+  std::cout << "Modification cycle: " << synchronized_count() << std::endl;
   profile_memory_usage<parallel::DistributedIndex>("Distributed Index", parallel(),parallel_rank());
   profile_memory_usage<BucketRelationTag>("Fixed Relation", parallel(),parallel_rank());
   profile_memory_usage<DynamicBucketRelationTag>("Dynamic Relation", parallel(),parallel_rank());
   profile_memory_usage<FieldBase>("Fields", parallel(),parallel_rank());
+  profile_memory_usage<impl::Partition>("Partitions", parallel(),parallel_rank());
+  profile_memory_usage<Bucket>("Buckets", parallel(),parallel_rank());
 
 #endif
 

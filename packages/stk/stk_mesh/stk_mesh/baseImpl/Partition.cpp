@@ -93,12 +93,19 @@ Partition::Partition(BulkData& mesh, BucketRepository *repo, EntityRank rank,
   // Nada.
 }
 
+// Only the BucketRepository will delete a Partition.
 Partition::~Partition()
 {
+#ifdef STK_PROFILE_MEMORY
+  typedef tracking_allocator<Bucket, Bucket> bucket_allocator;
+#else
+  typedef std::allocator<Bucket>  bucket_allocator;
+#endif
   size_t num_bkts = m_buckets.size();
   for (size_t i = 0; i < num_bkts; ++i)
   {
-    delete m_buckets[i];   // Only the BucketRepository will delete a Partition.
+    m_buckets[i]->~Bucket();
+    bucket_allocator().deallocate(m_buckets[i],1);
   }
 }
 

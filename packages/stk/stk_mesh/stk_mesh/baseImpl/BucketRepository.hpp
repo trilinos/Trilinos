@@ -13,6 +13,8 @@
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Iterators.hpp>
 
+#include <stk_util/util/TrackingAllocator.hpp>
+
 namespace stk {
 namespace mesh {
 
@@ -26,6 +28,13 @@ class EntityRepository;
 
 class BucketRepository
 {
+
+#ifdef STK_PROFILE_MEMORY
+  typedef tracking_allocator<Bucket, Bucket> bucket_allocator;
+#else
+  typedef std::allocator<Bucket>  bucket_allocator;
+#endif
+
 public:
   ~BucketRepository();
   BucketRepository(

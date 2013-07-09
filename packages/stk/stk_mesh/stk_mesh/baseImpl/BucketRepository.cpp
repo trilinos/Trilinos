@@ -41,6 +41,12 @@ BucketRepository::~BucketRepository()
 {
   // Destroy buckets, which were *not* allocated by the set.
 
+#ifdef STK_PROFILE_MEMORY
+  typedef tracking_allocator<Partition, Partition> partition_allocator;
+#else
+  typedef std::allocator<Partition> partition_allocator;
+#endif
+
   try {
 
     for ( std::vector<std::vector<Partition *> >::iterator pv_i = m_partitions.begin();
@@ -49,7 +55,9 @@ BucketRepository::~BucketRepository()
       for (std::vector<Partition *>::iterator p_j = pv_i->begin();
            p_j != pv_i->end(); ++p_j)
       {
-        delete *p_j;
+        Partition * tmp = *p_j;
+        tmp->~Partition();
+        partition_allocator().deallocate(tmp,1);
       }
       pv_i->clear();
     }
@@ -159,8 +167,17 @@ Partition *BucketRepository::get_or_create_partition(
     return ik[-1];
   }
 
+
   key[key[0]] = 0;
-  Partition *partition = new Partition(m_mesh, this, arg_entity_rank, key);
+
+#ifdef STK_PROFILE_MEMORY
+  typedef tracking_allocator<Partition, Partition> partition_allocator;
+#else
+  typedef std::allocator<Partition> partition_allocator;
+#endif
+  Partition *partition = partition_allocator().allocate(1);
+  partition = new (partition) Partition(m_mesh, this, arg_entity_rank, key);
+
   m_need_sync_from_partitions[arg_entity_rank] = true;
   partitions.insert( ik , partition );
 
@@ -213,7 +230,15 @@ Partition *BucketRepository::get_or_create_partition(
   }
 
   key[key[0]] = 0;
-  Partition *partition = new Partition(m_mesh, this, arg_entity_rank, key);
+
+#ifdef STK_PROFILE_MEMORY
+  typedef tracking_allocator<Partition, Partition> partition_allocator;
+#else
+  typedef std::allocator<Partition> partition_allocator;
+#endif
+  Partition *partition = partition_allocator().allocate(1);
+  partition = new (partition) Partition(m_mesh, this, arg_entity_rank, key);
+
   m_need_sync_from_partitions[arg_entity_rank] = true;
   partitions.insert( ik , partition );
 
@@ -310,6 +335,13 @@ inline bool is_null(stk::mesh::impl::Partition *p) { return (p ? false : true);}
 
 void BucketRepository::sync_from_partitions(EntityRank rank)
 {
+
+#ifdef STK_PROFILE_MEMORY
+  typedef tracking_allocator<Partition, Partition> partition_allocator;
+#else
+  typedef std::allocator<Partition> partition_allocator;
+#endif
+
   if (!m_need_sync_from_partitions[rank])
   {
     return;
@@ -337,7 +369,8 @@ void BucketRepository::sync_from_partitions(EntityRank rank)
 
     if (partition.empty())
     {
-      delete partitions[p_i];
+      partitions[p_i]->~Partition();
+      partition_allocator().deallocate(partitions[p_i],1);
       partitions[p_i] = 0;
       has_hole = true;
       continue;
@@ -364,7 +397,9 @@ Bucket *BucketRepository::allocate_bucket(EntityRank arg_entity_rank,
                                           const std::vector<unsigned> & arg_key,
                                           size_t arg_capacity )
 {
-  Bucket * new_bucket = new Bucket(m_mesh, arg_entity_rank, arg_key, arg_capacity, m_connectivity_map);
+
+  Bucket * new_bucket = bucket_allocator().allocate(1);
+  new_bucket = new (new_bucket) Bucket(m_mesh, arg_entity_rank, arg_key, arg_capacity, m_connectivity_map);
   std::vector<Bucket *> &bucket_vec = m_buckets[arg_entity_rank];
   new_bucket->m_bucket_id = bucket_vec.size();
   bucket_vec.push_back(new_bucket);
@@ -380,7 +415,8 @@ void BucketRepository::deallocate_bucket(Bucket *b)
 
   m_buckets[b->m_entity_rank][b->m_bucket_id] = 0; // space will be reclaimed by sync_from_partitions
   m_need_sync_from_partitions[b->m_entity_rank] = true;
-  delete b;
+  b->~Bucket();
+  bucket_allocator().deallocate(b,1);
 }
 
 void BucketRepository::sync_bucket_ids(EntityRank entity_rank)
