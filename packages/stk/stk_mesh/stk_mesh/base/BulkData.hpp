@@ -955,7 +955,8 @@ public:
   Entity const* end_edges(Entity entity) const;
   Entity const* end_faces(Entity entity) const;
   Entity const* end_elements(Entity entity) const;
-  Entity const* end_others(Entity entity) const;
+  Entity const* end_others(Entity entity) const
+  { return end(entity, stk::topology::CONSTRAINT_RANK); }
 
   ConnectivityOrdinal const* end_ordinals(Entity entity, EntityRank rank) const;
   ConnectivityOrdinal const* end_node_ordinals(Entity entity) const;
