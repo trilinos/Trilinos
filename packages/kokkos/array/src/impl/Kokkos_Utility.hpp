@@ -51,13 +51,73 @@
 namespace Kokkos {
 namespace Impl {
 
-template< typename T , typename TS1 , typename TS2 = TS1 ,
-          bool Enable1 = sizeof(T) == sizeof(TS1) ,
-          bool Enable2 = sizeof(T) == sizeof(TS2) >
-union UnionPair ;
+template < bool , class T , class F > struct or_ ;
 
-template< typename T , typename TS2 , bool Enable2 >
-union UnionPair<T,T,TS2,true,Enable2> 
+template < class T , class F > struct or_<true, T,F> { typedef T type ; };
+template < class T , class F > struct or_<false,T,F> { typedef F type ; };
+
+} // namespace Impl
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
+
+template< typename T , typename TS1 , typename TS2 = TS1 >
+union UnionPair
+{
+private:
+  typedef typename or_< sizeof(T) == sizeof(TS2) , TS2 , void     >::type ts2_type ;
+  typedef typename or_< sizeof(T) == sizeof(TS1) , TS1 , ts2_type >::type ts_type ;
+public:
+
+  typedef T       first_type ;
+  typedef ts_type second_type ;
+
+  first_type  first ;
+  second_type second ;
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  UnionPair() {}
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  UnionPair( const second_type & rhs ) : second(rhs) {}
+  
+  KOKKOSARRAY_INLINE_FUNCTION
+  static
+  second_type * cast( first_type * const ptr )
+  { return reinterpret_cast<second_type*>( ptr ); }
+  
+  KOKKOSARRAY_INLINE_FUNCTION
+  static
+  const second_type * cast( const first_type * const ptr )
+  { return reinterpret_cast<const second_type*>( ptr ); }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  static
+  volatile second_type * cast( volatile first_type * const ptr )
+  { return reinterpret_cast<volatile second_type*>( ptr ); }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  static
+  second_type & cast( first_type & ptr )
+  { return reinterpret_cast<second_type&>( ptr ); }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  static
+  const second_type & cast( const first_type & ptr )
+  { return reinterpret_cast<const second_type &>( ptr ); }
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  static
+  volatile second_type * cast( volatile first_type & ptr )
+  { return reinterpret_cast<volatile second_type &>( ptr ); }
+};
+
+
+template< typename T >
+union UnionPair<T,T,T>
 {
   typedef T  first_type ;
   typedef T  second_type ;
@@ -96,11 +156,11 @@ union UnionPair<T,T,TS2,true,Enable2>
   volatile second_type * cast( volatile first_type & ptr ) { return ptr ; }
 };
 
-template< typename T , typename TS1 , typename TS2 , bool Enable2 >
-union UnionPair<T,TS1,TS2,true,Enable2> 
+template< typename T , typename TS2 >
+union UnionPair<T,T,TS2>
 {
-  typedef T    first_type ;
-  typedef TS1  second_type ;
+  typedef T  first_type ;
+  typedef T  second_type ;
 
   first_type  first ;
   second_type second ;
@@ -112,41 +172,33 @@ union UnionPair<T,TS1,TS2,true,Enable2>
   UnionPair( const first_type & rhs ) : first(rhs) {}
 
   KOKKOSARRAY_INLINE_FUNCTION
-  UnionPair( const second_type & rhs ) : second(rhs) {}
-
-  KOKKOSARRAY_INLINE_FUNCTION
   static
-  second_type * cast( first_type * const ptr )
-  { return reinterpret_cast<second_type*>( ptr ); }
+  second_type * cast( first_type * const ptr ) { return ptr ; }
   
   KOKKOSARRAY_INLINE_FUNCTION
   static
-  const second_type * cast( const first_type * const ptr )
-  { return reinterpret_cast<const second_type*>( ptr ); }
+  const second_type * cast( const first_type * const ptr ) { return ptr ; }
 
   KOKKOSARRAY_INLINE_FUNCTION
   static
-  volatile second_type * cast( volatile first_type * const ptr )
-  { return reinterpret_cast<volatile second_type*>( ptr ); }
+  volatile second_type * cast( volatile first_type * const ptr ) { return ptr ; }
 
   KOKKOSARRAY_INLINE_FUNCTION
   static
-  second_type & cast( first_type & ptr )
-  { return reinterpret_cast<second_type&>( ptr ); }
+  second_type & cast( first_type & ptr ) { return ptr ; }
   
   KOKKOSARRAY_INLINE_FUNCTION
   static
-  const second_type & cast( const first_type & ptr )
-  { return reinterpret_cast<const second_type &>( ptr ); }
+  const second_type & cast( const first_type & ptr ) { return ptr ; }
 
   KOKKOSARRAY_INLINE_FUNCTION
   static
-  volatile second_type * cast( volatile first_type & ptr )
-  { return reinterpret_cast<volatile second_type &>( ptr ); }
+  volatile second_type * cast( volatile first_type & ptr ) { return ptr ; }
 };
+
 
 template< typename T , typename TS1 >
-union UnionPair<T,TS1,T,false,true> 
+union UnionPair<T,TS1,T>
 {
   typedef T  first_type ;
   typedef T  second_type ;
@@ -183,55 +235,6 @@ union UnionPair<T,TS1,T,false,true>
   KOKKOSARRAY_INLINE_FUNCTION
   static
   volatile second_type * cast( volatile first_type & ptr ) { return ptr ; }
-};
-
-template< typename T , typename TS1 , typename TS2 >
-union UnionPair<T,TS1,TS2,false,true>
-{
-  typedef T    first_type ;
-  typedef TS2  second_type ;
-
-  first_type  first ;
-  second_type second ;
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  UnionPair() {}
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  UnionPair( const first_type & rhs ) : first(rhs) {}
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  UnionPair( const second_type & rhs ) : second(rhs) {}
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  static
-  second_type * cast( first_type * const ptr )
-  { return reinterpret_cast<second_type*>( ptr ); }
-  
-  KOKKOSARRAY_INLINE_FUNCTION
-  static
-  const second_type * cast( const first_type * const ptr )
-  { return reinterpret_cast<const second_type*>( ptr ); }
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  static
-  volatile second_type * cast( volatile first_type * const ptr )
-  { return reinterpret_cast<volatile second_type*>( ptr ); }
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  static
-  second_type & cast( first_type & ptr )
-  { return reinterpret_cast<second_type&>( ptr ); }
-  
-  KOKKOSARRAY_INLINE_FUNCTION
-  static
-  const second_type & cast( const first_type & ptr )
-  { return reinterpret_cast<const second_type &>( ptr ); }
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  static
-  volatile second_type * cast( volatile first_type & ptr )
-  { return reinterpret_cast<volatile second_type &>( ptr ); }
 };
 
 }

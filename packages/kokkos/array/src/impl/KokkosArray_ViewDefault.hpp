@@ -592,22 +592,15 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
 };
 
 //----------------------------------------------------------------------------
-
+/** \brief  Enable view parentheses operator for a given layout, rank,
+ *          and arguments of an integral type.
+ */
 template< class Traits , class OperLayout , unsigned OperRank ,
           typename iType0 = int , typename iType1 = int ,
           typename iType2 = int , typename iType3 = int ,
           typename iType4 = int , typename iType5 = int ,
           typename iType6 = int , typename iType7 = int ,
-          bool Match = ( is_same< typename Traits::array_layout , OperLayout >::value &&
-                         ( unsigned(Traits::rank) == OperRank ) &&
-                         iType0(0) == 0 &&
-                         iType1(0) == 0 &&
-                         iType2(0) == 0 &&
-                         iType3(0) == 0 &&
-                         iType4(0) == 0 &&
-                         iType5(0) == 0 &&
-                         iType6(0) == 0 &&
-                         iType7(0) == 0 ) >
+          class Enable = void >
 struct EnableViewOper ;
 
 template< class Traits ,
@@ -619,7 +612,17 @@ template< class Traits ,
 struct EnableViewOper< Traits , OperLayout , OperRank ,
                        iType0 , iType1 , iType2 , iType3 ,
                        iType4 , iType5 , iType6 , iType7 ,
-                       true >
+                       typename enable_if<
+                         is_same< typename Traits::array_layout , OperLayout >::value &&
+                         ( unsigned(Traits::rank) == OperRank ) &&
+                         iType0(0) == 0 &&
+                         iType1(0) == 0 &&
+                         iType2(0) == 0 &&
+                         iType3(0) == 0 &&
+                         iType4(0) == 0 &&
+                         iType5(0) == 0 &&
+                         iType6(0) == 0 &&
+                         iType7(0) == 0 >::type >
 { typedef typename Traits::value_type type ; };
 
 } /* namespace Impl */
