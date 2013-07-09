@@ -51,6 +51,8 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 
+#include "Ifpack2_Details_Tpetra_RowGraph_def.hpp"
+
 #ifdef HAVE_MPI
 #include <mpi.h>
 #include "Teuchos_DefaultMpiComm.hpp"
@@ -207,7 +209,8 @@ Teuchos::RCP<const Tpetra::RowGraph<typename MatrixType::local_ordinal_type,
                                      typename MatrixType::node_type> >
 LocalFilter<MatrixType>::getGraph() const
 {
-  throw std::runtime_error("Ifpack2::LocalFilter: does not support getGraph.");
+  Teuchos::RCP<const Ifpack2::Details::Tpetra_RowGraph<MatrixType> > Graph = Teuchos::rcp(new Ifpack2::Details::Tpetra_RowGraph<MatrixType> (A_));
+  return Graph;
 }
 
 //==========================================================================
