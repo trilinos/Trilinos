@@ -105,12 +105,6 @@ bool is_handled_generically(const RelationType relation_type)
  */
 class BulkData {
 
-#ifdef STK_PROFILE_MEMORY
-  typedef tracking_allocator<unsigned char, FieldBase> field_data_allocator;
-#else
-  typedef std::allocator<unsigned char> field_data_allocator;
-#endif
-
 public:
 
   void optimize_buckets_at_modification_end(bool b) { m_optimize_buckets = b; }
@@ -130,8 +124,18 @@ public:
     unsigned char* m_data;
   };
 
+#ifdef STK_PROFILE_MEMORY
+  typedef tracking_allocator<unsigned char, FieldBase>                                          field_data_allocator;
+  typedef std::vector<FieldMetaData, tracking_allocator<FieldMetaData, FieldBase> >             FieldMetaDataVector;
+  typedef std::vector<FieldMetaDataVector, tracking_allocator<FieldMetaDataVector, FieldBase> > FieldMetaDataVectorVector;
+#else
+  typedef std::allocator<unsigned char>    field_data_allocator;
+  typedef std::vector<FieldMetaData>       FieldMetaDataVector;
+  typedef std::vector<FieldMetaDataVector> FieldMetaDataVectorVector;
+#endif
 
-  inline const std::vector<FieldMetaData>& get_meta_data_for_field(const FieldBase & f, const stk::mesh::EntityRank rank) const {
+
+  inline const FieldMetaDataVector & get_meta_data_for_field(const FieldBase & f, const stk::mesh::EntityRank rank) const {
     return m_field_meta_data[m_num_fields*rank +  f.mesh_meta_data_ordinal()];
   }
 
@@ -1170,13 +1174,6 @@ private:
   // is bucket id, pair defines num bytes of data per entity and the
   // data for that field on that bucket
 
-#ifdef STK_PROFILE_MEMORY
-  typedef std::vector<FieldMetaData, tracking_allocator<FieldMetaData, FieldBase> > FieldMetaDataVector;
-  typedef std::vector<FieldMetaDataVector, tracking_allocator<FieldMetaDataVector, FieldBase> > FieldMetaDataVectorVector;
-#else
-  typedef std::vector<FieldMetaData> FieldMetaDataVector;
-  typedef std::vector<FieldMetaDataVector> FieldMetaDataVectorVector;
-#endif
 
   FieldMetaDataVectorVector m_field_meta_data;
 
