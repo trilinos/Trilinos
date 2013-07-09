@@ -64,7 +64,6 @@
 #include "Panzer_EquationSet_Factory.hpp"
 #include "Panzer_BCStrategy_Factory.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
-#include "Panzer_ResponseAggregator_Factory.hpp"
 
 #ifdef HAVE_TEKO 
 #include "Teko_RequestHandler.hpp"
@@ -114,14 +113,12 @@ namespace panzer_stk {
 	\param[in] eqset_factory (Required) Equation set factory to provide user defined equation sets.
 	\param[in] bc_factory (Required) Boundary condition factory to provide user defined boundary conditions.
 	\param[in] cm_factory (Required) Closure model factory to provide user defined closure models.
-	\param[in] ra_factory (Optional) Response aggregator factory to provide user defined response aggregator types.
     */
     void buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
 		      const Teuchos::RCP<panzer::GlobalData>& global_data,
                       const Teuchos::RCP<const panzer::EquationSetFactory>& eqset_factory,
                       const panzer::BCStrategyFactory & bc_factory,
-		      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
-		      const Teuchos::Ptr<const panzer::ResponseAggregatorFactory<panzer::Traits> > ra_factory = Teuchos::null);
+		      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory);
 
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > getPhysicsModelEvaluator();
     
