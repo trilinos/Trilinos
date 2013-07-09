@@ -586,8 +586,13 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
   }
 
   // evaluate responses...uses the stored assembly arguments and containers
-  if(requiredResponses)
+  if(requiredResponses) {
      evalModel_basic_g(ae_inargs,inArgs,outArgs);
+
+     // evaluate response derivatives 
+     if(required_basic_dgdx(outArgs))
+       evalModel_basic_dgdx(ae_inargs,inArgs,outArgs);
+  }
 
   if(required_basic_dfdp(outArgs))
      evalModel_basic_dfdp(ae_inargs,inArgs,outArgs);
@@ -627,10 +632,6 @@ evalModel_basic_g(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const Out
    // evaluator responses
    responseLibrary_->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);
    responseLibrary_->evaluate<panzer::Traits::Residual>(ae_inargs);
-
-   // evaluate response derivatives 
-   if(required_basic_dgdx(outArgs))
-     evalModel_basic_dgdx(ae_inargs,inArgs,outArgs);
 }
 
 void 
