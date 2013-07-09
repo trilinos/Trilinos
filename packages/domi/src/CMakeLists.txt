@@ -25,12 +25,13 @@ APPEND_SET(HEADERS
   Domi_MDArray.hpp
   Domi_MDArrayRCP.hpp
   Domi_MDArrayView.hpp
-  Domi_MDArray_Utils.hpp
+  Domi_Utils.hpp
   Domi_Slice.hpp
   )
 
 APPEND_SET(SOURCES
   Domi_Version.cpp
+  Domi_Utils.cpp
   Domi_Slice.cpp
   )
 

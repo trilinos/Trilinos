@@ -52,7 +52,7 @@
 #include "Teuchos_RCPNode.hpp"
 
 // Domi includes
-#include "Domi_MDArray_Utils.hpp"
+#include "Domi_Utils.hpp"
 #include "Domi_Slice.hpp"
 #include "Domi_MDIterator.hpp"
 #include "Domi_MDRevIterator.hpp"
