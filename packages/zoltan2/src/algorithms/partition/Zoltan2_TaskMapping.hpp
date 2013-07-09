@@ -9,8 +9,9 @@
 #include "Zoltan2_PartitionMapping.hpp"
 #include "Zoltan2_MachineRepresentation.hpp"
 #include "Teuchos_ReductionOp.hpp"
+#include "Zoltan2_XpetraMultiVectorInput.hpp"
 
-#define gnuPlot
+//#define gnuPlot
 
 namespace Teuchos{
 
@@ -49,8 +50,6 @@ public:
 
 
 namespace Zoltan2{
-
-
 
 template <typename it>
 inline it z2Fact(it x) {
@@ -615,12 +614,15 @@ public:
         for (procId_t task = 0; task < this->no_tasks; ++task){
             int assigned_proc = task_to_proc[task];
             procId_t task_adj_begin = 0;
+            //cout << "task:" << task << endl;
             procId_t task_adj_end = task_communication_xadj[task];
             if (task > 0) task_adj_begin = task_communication_xadj[task - 1];
 
             commCount += task_adj_end - task_adj_begin;
             //cout << "task:" << task << " proc:" << assigned_proc << endl;
             for (procId_t task2 = task_adj_begin; task2 < task_adj_end; ++task2){
+
+                //cout << "task2:" << task2 << endl;
                 procId_t neighborTask = task_communication_adj[task2];
                 //cout << "neighborTask :" << neighborTask  << endl;
                 int neighborProc = task_to_proc[neighborTask];
@@ -1006,6 +1008,12 @@ protected:
 
 public:
 
+    void getProcTask(procId_t* &proc_to_task_xadj_, procId_t* &proc_to_task_adj_){
+        proc_to_task_xadj_ = this->proc_to_task_xadj.getRawPtr();
+        proc_to_task_adj_ = this->proc_to_task_adj.getRawPtr();
+    }
+
+
     virtual ~CoordinateTaskMapper(){
         //freeArray<procId_t> (proc_to_task_xadj);
         //freeArray<procId_t> (proc_to_task_adj);
@@ -1283,6 +1291,74 @@ public:
         }
         freeArray<tcoord_t *>(partCenters);
     }
+
+
+
+    /*! \brief Constructor
+     * When this constructor is called, it is assumed that the communication graph is already computed.
+     * It is assumed that the communication graph is given in task_communication_xadj_ and task_communication_adj_ parameters.
+     *  \param envConst_ is the environment object.
+     *  \param task_communication_xadj_ is the solution object. Holds the assignment of points.
+     *  \param task_communication_adj_ is the environment object.
+     */
+    CoordinateTaskMapper(
+            const Teuchos::Comm<int> *comm_,
+            int procDim,
+            int numProcessors,
+            pcoord_t **machine_coords_,
+
+            int taskDim,
+            procId_t numTasks,
+            tcoord_t **task_coords,
+            const Environment *envConst_,
+            ArrayRCP<procId_t>task_communication_xadj_,
+            ArrayRCP<procId_t>task_communication_adj_
+    ):  PartitionMapping<Adapter>(comm_, NULL, NULL, NULL, envConst_),
+            proc_to_task_xadj(0),
+            proc_to_task_adj(0),
+            task_to_proc(0),
+            isOwnerofModel(true),
+            proc_task_comm(0),
+            task_communication_xadj(task_communication_xadj_),
+            task_communication_adj(task_communication_adj_){
+
+        //if mapping type is 0 then it is coordinate mapping
+
+        this->nprocs = numProcessors;
+        //get processor coordinates.
+        pcoord_t **procCoordinates = machine_coords_;
+
+        int coordDim = taskDim;
+        this->ntasks = numTasks;
+
+        //alloc memory for part centers.
+        tcoord_t **partCenters = task_coords;
+
+        //create coordinate communication model.
+        this->proc_task_comm =
+                new Zoltan2::CoordinateCommunicationModel<pcoord_t,tcoord_t,procId_t>(
+                        procDim,
+                        procCoordinates,
+                        coordDim,
+                        partCenters,
+                        this->nprocs,
+                        this->ntasks
+                );
+
+        int myRank = comm_->getRank();
+        this->doMapping(myRank);
+        this->proc_task_comm->calculateCommunicationCost(
+                task_to_proc.getRawPtr(),
+                task_communication_xadj.getRawPtr(),
+                task_communication_adj.getRawPtr()
+                );
+
+        this->getBestMapping();
+#ifdef gnuPlot
+        this->writeMapping2(comm_->getRank());
+#endif
+    }
+
 
     /*! \brief Constructor. Sequential Constructor for test.
      *  \param env_ Environment object.
@@ -1712,6 +1788,76 @@ public:
         ff.close();
     }
 };
+
+
+
+
+template <typename procId_t, typename pcoord_t, typename tcoord_t>
+void coordinateTaskMapperInterface(
+        int procDim,
+        int numProcessors,
+        pcoord_t **machine_coords_,
+
+        int taskDim,
+        procId_t numTasks,
+        tcoord_t **task_coords,
+
+        procId_t *task_communication_xadj_,
+        procId_t *task_communication_adj_,
+
+        procId_t *proc_to_task_xadj, /*output*/
+        procId_t *proc_to_task_adj /*output*/
+        ){
+
+    const Environment *envConst_ = new Environment();
+    RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
+    const Teuchos::Comm<int> *comm_ = tcomm.getRawPtr();
+
+
+    typedef Tpetra::MultiVector<tcoord_t, procId_t,procId_t, Kokkos::DefaultNode::DefaultNodeType> tMVector_t;
+
+
+
+    //cout << "numProcessors:" << numProcessors << endl;
+    //cout << "task_communication_xadj_[numProcessors]:" << task_communication_xadj_[numProcessors - 1] << endl;
+    Teuchos::ArrayRCP<procId_t> task_communication_xadj (task_communication_xadj_, 0, numProcessors, false);
+    Teuchos::ArrayRCP<procId_t> task_communication_adj (task_communication_adj_, 0, task_communication_xadj_[numProcessors -1], false);
+
+    CoordinateTaskMapper<XpetraMultiVectorInput <tMVector_t>, procId_t> *ctm = new CoordinateTaskMapper<XpetraMultiVectorInput <tMVector_t>, procId_t>(
+                comm_,
+                procDim,
+                numProcessors,
+                machine_coords_,
+
+                taskDim,
+                numTasks,
+                task_coords,
+
+                envConst_,
+                task_communication_xadj,
+                task_communication_adj
+        );
+
+
+    procId_t* proc_to_task_xadj_;
+    procId_t* proc_to_task_adj_;
+
+    ctm->getProcTask(proc_to_task_xadj_, proc_to_task_adj_);
+
+    for (procId_t i = 0; i < numProcessors; ++i){
+        //cout << "i:" << i << " proc_to_task_xadj_[i]:" << proc_to_task_xadj_[i] << endl;
+        proc_to_task_xadj[i] = proc_to_task_xadj_[i];
+    }
+    for (procId_t i = 0; i < numTasks; ++i){
+        //cout << "i:" << i << " proc_to_task_adj_[i]:" << proc_to_task_adj_[i] << endl;
+        proc_to_task_adj[i] = proc_to_task_adj_[i];
+    }
+    //cout << "done 3" << endl;
+    delete ctm;
+    delete envConst_;
+    //cout << "done 4" << endl;
+
+}
 }// namespace Zoltan2
 
 #endif

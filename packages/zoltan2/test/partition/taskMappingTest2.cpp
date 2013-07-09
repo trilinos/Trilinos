@@ -266,35 +266,7 @@ int main(int argc, char *argv[]){
         Zoltan2::CoordinateTaskMapper <inputAdapter_t, zoltan2_partId_t> *ctm=
                 new Zoltan2::CoordinateTaskMapper<inputAdapter_t,zoltan2_partId_t>(env, cm);
 
-
-        zoltan2_partId_t *task_communication_xadj_ = new zoltan2_partId_t[numParts];
-        zoltan2_partId_t *task_communication_adj_ = new zoltan2_partId_t[numParts * 4];
-
-        for (zoltan2_partId_t i = 0; i < numParts; ++i){
-            task_communication_xadj_[i] = (i+1) * 4;
-            for (int j = 0; j < 4; ++j){
-                task_communication_adj_[i*4+j] = (i + j) % numParts;
-            }
-        }
-
-
-        zoltan2_partId_t *proc_to_task_xadj_ = new zoltan2_partId_t[numProcs], *proc_to_task_adj_ = new zoltan2_partId_t[numParts];
-        Zoltan2::coordinateTaskMapperInterface<zoltan2_partId_t, scalar_t, scalar_t>(
-                procDim,
-                numProcs,
-                procCoordinates,
-
-                coordDim,
-                numParts,
-                partCenters,
-
-                task_communication_xadj_,
-                task_communication_adj_,
-
-                proc_to_task_xadj_, /*output*/
-                proc_to_task_adj_ /*output*/
-                );
-
+        ctm->writeMapping2(0);
         cout << "PASS" << endl;
         delete ctm;
         delete cm;

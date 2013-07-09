@@ -37,6 +37,21 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
 ENDIF()
+
+
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    taskMapper2
+    SOURCES taskMappingTest2.cpp
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    ARGS 
+    "PART=part.txt PROC=proc.txt"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+ENDIF()
+
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     parallelTaskMapper
