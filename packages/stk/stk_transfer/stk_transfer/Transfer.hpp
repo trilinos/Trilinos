@@ -64,11 +64,11 @@ public :
   virtual void local_search();
 private :
   
-  MeshA        &m_mesha;
-  MeshB        &m_meshb;
-  const double      m_radius;
-  const double      m_expansion_factor;
-  const std::string m_name;
+  MeshA                &m_mesha;
+  MeshB                &m_meshb;
+  const double          m_radius;
+  const double          m_expansion_factor;
+  const std::string     m_name;
   
   EntityProcRelationVec m_global_range_to_domain;
   EntityKeyMap          m_local_range_to_domain;

@@ -12,7 +12,7 @@
 namespace stk {
 namespace transfer {
 
-template <unsigned DIM> class STKMesh {
+template <unsigned DIM> class STKNode {
 public :
   typedef mesh:: Entity                                      Entity;
   typedef std::vector<Entity>                                EntityVec;
@@ -25,10 +25,10 @@ public :
 
   enum {Dimension = DIM};
 
-  STKMesh(const EntityVec                     &ent,
+  STKNode(const EntityVec                     &ent,
           const mesh::FieldBase               &coord,
           const std::vector<mesh::FieldBase*> &val);
-  ~STKMesh();
+  ~STKNode();
 
   // Needed for STK Transfer
   ParallelMachine comm() const {return m_comm;}
@@ -51,9 +51,9 @@ public :
   unsigned      num_values() const;
 
 private :
-  STKMesh (); 
-  STKMesh(const STKMesh &M);
-  STKMesh &operator=(const STKMesh&);
+  STKNode (); 
+  STKNode(const STKNode &M);
+  STKNode &operator=(const STKNode&);
 
   mesh::BulkData                        &m_bulk_data;
   bool                               m_mesh_modified;
@@ -69,7 +69,7 @@ private :
   static EntityKeySet entity_keys (const mesh::BulkData &bulk_data, const EntityVec &ent);
 };
 
-template<unsigned DIM> typename STKMesh<DIM>::EntityKeySet STKMesh<DIM>::entity_keys (
+template<unsigned DIM> typename STKNode<DIM>::EntityKeySet STKNode<DIM>::entity_keys (
   const mesh::BulkData  &bulk_data,
   const       EntityVec &entities){
   EntityKeySet entity_keys;
@@ -80,7 +80,7 @@ template<unsigned DIM> typename STKMesh<DIM>::EntityKeySet STKMesh<DIM>::entity_
   return entity_keys;
 }
 
-template<unsigned DIM> STKMesh<DIM>::STKMesh(
+template<unsigned DIM> STKNode<DIM>::STKNode(
           const            EntityVec          &entities,
           const   mesh::FieldBase             &coord,
           const std::vector<mesh::FieldBase*> &val) :
@@ -97,14 +97,14 @@ template<unsigned DIM> STKMesh<DIM>::STKMesh(
   m_bulk_data.modification_end();
 }
 
-template<unsigned DIM> unsigned STKMesh<DIM>::keys(EntityKeySet &k) const {
+template<unsigned DIM> unsigned STKNode<DIM>::keys(EntityKeySet &k) const {
   k = m_entity_keys;
   return k.size();
 }
 
-template<unsigned DIM> STKMesh<DIM>::~STKMesh(){}
+template<unsigned DIM> STKNode<DIM>::~STKNode(){}
 
-template<unsigned DIM> typename STKMesh<DIM>::BoundingBox STKMesh<DIM>::boundingbox (
+template<unsigned DIM> typename STKNode<DIM>::BoundingBox STKNode<DIM>::boundingbox (
   const EntityKey Id, 
   const double radius) const {
 
@@ -119,7 +119,7 @@ template<unsigned DIM> typename STKMesh<DIM>::BoundingBox STKMesh<DIM>::bounding
   return B;
 }
 
-template<unsigned NUM> void STKMesh<NUM>::copy_entities(
+template<unsigned NUM> void STKNode<NUM>::copy_entities(
                      const EntityProcVec  &keys_to_copy,
                      const std::string    &transfer_name) {
 
@@ -156,7 +156,7 @@ template<unsigned NUM> void STKMesh<NUM>::copy_entities(
   m_bulk_data.modification_end();
 }
 
-template<unsigned DIM> void STKMesh<DIM>::update_values () {
+template<unsigned DIM> void STKNode<DIM>::update_values () {
   std::vector<const mesh::FieldBase *> fields(m_values_field.begin(), m_values_field.end());
   if (m_mesh_modified) {
     // Copy coordinates to the newly ghosted nodes
@@ -167,18 +167,18 @@ template<unsigned DIM> void STKMesh<DIM>::update_values () {
   mesh::copy_owned_to_shared  (  m_bulk_data, fields );
 }
   
-template<unsigned DIM> const double *STKMesh<DIM>::coord(const EntityKey k) const {
+template<unsigned DIM> const double *STKNode<DIM>::coord(const EntityKey k) const {
   const mesh::Entity e = entity(k);
   const double *c = static_cast<const double*>(m_bulk_data.field_data(m_coordinates_field, e));
   return  c;
 }
 
-template<unsigned DIM> unsigned  STKMesh<DIM>::num_values() const {
+template<unsigned DIM> unsigned  STKNode<DIM>::num_values() const {
  const unsigned s = m_values_field.size();
  return s;
 }
 
-template<unsigned DIM> unsigned  STKMesh<DIM>::value_size(const EntityKey k, const unsigned i) const {
+template<unsigned DIM> unsigned  STKNode<DIM>::value_size(const EntityKey k, const unsigned i) const {
   const mesh::Entity         e = entity(k);
   const mesh::FieldBase &field = *m_values_field[i];
   const mesh::Bucket    &bucket= m_bulk_data.bucket(e);
@@ -193,21 +193,21 @@ template<unsigned DIM> unsigned  STKMesh<DIM>::value_size(const EntityKey k, con
   return  num_entry;
 }
 
-template<unsigned DIM> const double *STKMesh<DIM>::value(const EntityKey k, const unsigned i) const {
+template<unsigned DIM> const double *STKNode<DIM>::value(const EntityKey k, const unsigned i) const {
   const mesh::Entity  e = entity(k);
   mesh::FieldBase *val=m_values_field[i];
   const double *value = static_cast<const double*>(m_bulk_data.field_data(*val, e));
   return  value;
 }
 
-template<unsigned DIM> double *STKMesh<DIM>::value(const EntityKey k, const unsigned i) {
+template<unsigned DIM> double *STKNode<DIM>::value(const EntityKey k, const unsigned i) {
   const mesh::Entity e = entity(k);
   mesh::FieldBase *val=m_values_field[i];
   double *value = static_cast<double*>(m_bulk_data.field_data(*val, e));
   return  value;
 }
 
-template<unsigned DIM> mesh::Entity STKMesh<DIM>::entity(const mesh::EntityKey k) const {
+template<unsigned DIM> mesh::Entity STKNode<DIM>::entity(const mesh::EntityKey k) const {
   const mesh::Entity  e = m_bulk_data.get_entity(k);
   return e;
 }

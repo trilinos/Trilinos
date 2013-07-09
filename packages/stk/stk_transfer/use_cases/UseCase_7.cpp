@@ -22,7 +22,7 @@
 #include <stk_util/diag/PrintTimer.hpp>
 
 #include <stk_transfer/Transfer.hpp>
-#include <stk_transfer/STKMesh.hpp>
+#include <stk_transfer/STKNode.hpp>
 #include <stk_transfer/MDMesh.hpp>
 #include <stk_transfer/LinearInterpolate.hpp>
 
@@ -112,7 +112,7 @@ bool use_case_7_driver(stk::ParallelMachine  comm,
   }
 
   const std::vector<stk::mesh::FieldBase*> from_fields(1, &domain_coord_sum_field);
-  stk::transfer::STKMesh<3> transfer_domain_mesh (domain_entities, domain_coord_field, from_fields);
+  stk::transfer::STKNode<3> transfer_domain_mesh (domain_entities, domain_coord_field, from_fields);
   stk::transfer:: MDMesh<3> transfer_range_mesh  (  ToPoints,   ToValues, comm);
 
   
@@ -120,7 +120,7 @@ bool use_case_7_driver(stk::ParallelMachine  comm,
   const double expansion_factor=1.5;
   stk::transfer::GeometricTransfer<
     class stk::transfer::LinearInterpolate<
-      class stk::transfer::STKMesh<3>, 
+      class stk::transfer::STKNode<3>, 
       class stk::transfer::MDMesh<3>
     >
   >

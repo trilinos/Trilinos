@@ -64,19 +64,19 @@ boost::shared_ptr<TransferBase> NodeToNode(
   const unsigned spatial_dimension = FromCoordinates.max_size(stk::mesh::MetaData::NODE_RANK);
   switch (spatial_dimension) {
     case 1 :
-      stk::STKMesh FromMesh<1>(from_nodes, FromCoordinates,  FromFields);
-      stk::STKMesh   ToMesh<1>(  to_nodes,   ToCoordinates,    ToFields);
-      transfer_base.reset(new Transfer<LinearInterpoate<STKMesh,STKMesh> >(FromMesh, ToMesh, InterpParam));
+      stk::STKNode FromMesh<1>(from_nodes, FromCoordinates,  FromFields);
+      stk::STKNode   ToMesh<1>(  to_nodes,   ToCoordinates,    ToFields);
+      transfer_base.reset(new Transfer<LinearInterpoate<STKNode,STKNode> >(FromMesh, ToMesh, InterpParam));
       break;
     case 2 :
-      stk::STKMesh FromMesh<2>(from_nodes, FromCoordinates,  FromFields);
-      stk::STKMesh   ToMesh<2>(  to_nodes,   ToCoordinates,    ToFields);
-      transfer_base.reset(new Transfer<LinearInterpoate<STKMesh,STKMesh> >(FromMesh, ToMesh, InterpParam));
+      stk::STKNode FromMesh<2>(from_nodes, FromCoordinates,  FromFields);
+      stk::STKNode   ToMesh<2>(  to_nodes,   ToCoordinates,    ToFields);
+      transfer_base.reset(new Transfer<LinearInterpoate<STKNode,STKNode> >(FromMesh, ToMesh, InterpParam));
       break;
     case 3 :
-      stk::STKMesh FromMesh<3>( from_nodes, FromCoordinates,  FromFields);
-      stk::STKMesh   ToMesh<3>(   to_nodes,   ToCoordinates,    ToFields);
-      transfer_base.reset(new Transfer<LinearInterpoate<STKMesh,STKMesh> >(FromMesh, ToMesh, InterpParam));
+      stk::STKNode FromMesh<3>( from_nodes, FromCoordinates,  FromFields);
+      stk::STKNode   ToMesh<3>(   to_nodes,   ToCoordinates,    ToFields);
+      transfer_base.reset(new Transfer<LinearInterpoate<STKNode,STKNode> >(FromMesh, ToMesh, InterpParam));
       break;
     }
   return transfer_base;
