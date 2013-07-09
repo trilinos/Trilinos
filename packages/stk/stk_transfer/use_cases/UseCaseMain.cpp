@@ -25,6 +25,11 @@ bool use_case_7_driver(stk::ParallelMachine  comm,
                       const std::string &domain_mesh,
                       const std::string &domain_mesh_type);
 
+bool use_case_8_driver(stk::ParallelMachine  comm,
+                      const std::string &working_directory,
+                      const std::string &domain_mesh,
+                      const std::string &domain_mesh_type);
+
 namespace bopt = boost::program_options;
 
 int main(int argc, char **argv)
@@ -56,7 +61,8 @@ int main(int argc, char **argv)
      "See GeneratedMesh documentation for more options. Use 'gears' to generate the gears mesh." )
     ("use_case_5",   "transfer use case 5 -- node (range) to node    (domain) copy     search." ) 
     ("use_case_6",   "transfer use case 6 -- node (range) to node    (domain) copy     search." ) 
-    ("use_case_7",   "transfer use case 6 -- node (range) to node    (domain) copy     search." ) 
+    ("use_case_7",   "transfer use case 7 -- node (range) to node    (domain) copy     search." ) 
+    ("use_case_8",   "transfer use case 8 -- node (range) to node    (domain) copy     search." ) 
     ("offset",       bopt::value<double>()->default_value(0.1), "transfer use case 3 offset" )
     ("scale",        bopt::value<double>()->default_value(0.0), "transfer use case 3 scale." )
     ;
@@ -78,6 +84,9 @@ int main(int argc, char **argv)
   }
   if (vm.count("use_case_7")) {
      status = status && use_case_7_driver(comm, working_directory, domain_mesh, domain_filetype);
+  }
+  if (vm.count("use_case_8")) {
+     status = status && use_case_8_driver(comm, working_directory, domain_mesh, domain_filetype);
   }
 
   timer.stop();

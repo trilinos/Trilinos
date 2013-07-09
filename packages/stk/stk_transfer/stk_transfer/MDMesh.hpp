@@ -8,6 +8,8 @@
 
 #include <stk_util/environment/ReportHandler.hpp>
 #include <stk_search/BoundingBox.hpp>
+#include <stk_search/IdentProc.hpp>
+
 
 namespace stk {
 namespace transfer {

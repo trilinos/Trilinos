@@ -21,10 +21,10 @@
 #include <stk_util/use_cases/UseCaseEnvironment.hpp>
 #include <stk_util/diag/PrintTimer.hpp>
 
-#include <stk_transfer/Transfer.hpp>
 #include <stk_transfer/STKNode.hpp>
 #include <stk_transfer/MDMesh.hpp>
 #include <stk_transfer/LinearInterpolate.hpp>
+#include <stk_transfer/Transfer.hpp>
 
 namespace bopt = boost::program_options;
 
@@ -37,10 +37,10 @@ bool use_case_7_driver(stk::ParallelMachine  comm,
                       const std::string &domain_mesh,
                       const std::string &domain_filetype)
 {
-  stk::diag::Timer timer("Transfer Use Case 6", 
+  stk::diag::Timer timer("Transfer Use Case 7", 
                           use_case::TIMER_TRANSFER, 
                           use_case::timer());
-  stk::diag::Timer timer_node_to_node(" Node To Node", timer);
+  stk::diag::Timer timer_node_to_node(" Node To Point", timer);
   use_case::timerSet().setEnabledTimerMask(use_case::TIMER_ALL);
 
   bool status = true;
@@ -125,7 +125,7 @@ bool use_case_7_driver(stk::ParallelMachine  comm,
     >
   >
   transfer(transfer_domain_mesh, transfer_range_mesh, 
-           radius, expansion_factor, "STK Transfer test Use case 6");
+           radius, expansion_factor, "STK Transfer test Use case 7");
   
   {
     stk::diag::TimeBlock __timer_node_to_node(timer_node_to_node);

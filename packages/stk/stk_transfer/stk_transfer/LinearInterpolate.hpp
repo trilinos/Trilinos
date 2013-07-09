@@ -32,14 +32,18 @@ public :
   typedef typename MeshB::EntityKey        EntityKeyB;
   typedef typename MeshA::EntityProc       EntityProcA;
   typedef typename MeshB::EntityProc       EntityProcB;
-  typedef std::pair<EntityProcB, EntityProcA>             EntityProcRelation;
-  typedef std::vector<EntityProcRelation>                 EntityProcRelationVec;
 
-  
+  typedef std::pair    <EntityProcB, EntityProcA>         EntityProcRelation;
+  typedef std::vector  <EntityProcRelation>               EntityProcRelationVec;
+
   typedef std::multimap<EntityKeyB, EntityKeyA> EntityKeyMap;
-  
+
   enum { Dimension = MeshA::Dimension };
   
+  void post_coarse_search_test(EntityProcRelationVec &range_to_domain,
+                                        const MeshA     &mesha,
+                                        const MeshB     &meshb);
+
   static void post_coarse_search_filter(EntityProcRelationVec &range_to_domain,
                                         const MeshA     &mesha,
                                         const MeshB     &meshb);
@@ -61,8 +65,8 @@ private :
   enum { dim_3  = StaticAssert<               3==MeshA::Dimension>::OK };
   
   static double distance_squared(const double *x, const double *y) ;
-  static EntityKeyMap determine_best_fit(typename EntityKeyMap::const_iterator begin,
-                                         typename EntityKeyMap::const_iterator end,
+  static EntityKeyMap determine_best_fit(const typename EntityKeyMap::const_iterator begin,
+                                         const typename EntityKeyMap::const_iterator end,
                                          const EntityKeyB          current,
                                          const MeshB             &ToPoints,
                                          const MeshA             &FromPoints);
@@ -74,6 +78,15 @@ private :
                         const MeshA        &FromPoints);
   
 };
+
+template<class T>
+typename T::EntityKeyMap::iterator insert(typename T::EntityKeyMap &map, 
+                                    const typename T::EntityKeyMap::key_type &k, 
+                                    const typename T::EntityKeyMap::mapped_type &m) {
+  const typename T::EntityKeyMap::value_type val(k, m);
+  const typename T::EntityKeyMap::iterator it = map.insert(val);
+  return it;
+}
 
 template <class MESHA, class MESHB> double LinearInterpolate<MESHA,MESHB>::distance_squared(const double *x, const double *y) {
   double d = 0;

@@ -21,9 +21,9 @@
 #include <stk_util/use_cases/UseCaseEnvironment.hpp>
 #include <stk_util/diag/PrintTimer.hpp>
 
-#include <stk_transfer/Transfer.hpp>
 #include <stk_transfer/STKNode.hpp>
 #include <stk_transfer/LinearInterpolate.hpp>
+#include <stk_transfer/Transfer.hpp>
 
 namespace bopt = boost::program_options;
 

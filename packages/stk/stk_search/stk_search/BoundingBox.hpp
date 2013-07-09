@@ -71,7 +71,8 @@ struct PointBoundingBox
       center[i] = center_[i];
   }
 
-  bool intersect( const PointBoundingBox<K,T,Dim> & point_) const {
+  template <class KT, class TT>
+  bool intersect( const PointBoundingBox<KT,TT,Dim> & point_) const {
     Data dist = 0;
     for (int i=0; i<DIMENSION; ++i) {
       dist += std::abs(middle(i) - point_.middle(i));
@@ -79,7 +80,8 @@ struct PointBoundingBox
     return dist == 0;
   }
 
-  bool intersect( const SphereBoundingBox<K,T,Dim> & sphere_) const {
+  template <class KT, class TT>
+  bool intersect( const SphereBoundingBox<KT,TT,Dim> & sphere_) const {
     Data tmp = 0;
     Data dist = 0;
     for (int i=0; i<DIMENSION; ++i) {
@@ -89,7 +91,8 @@ struct PointBoundingBox
     return dist < sphere_.radius * sphere_.radius;
   }
 
-  bool intersect( const AxisAlignedBoundingBox<K,T,Dim> & box_) const {
+  template <class KT, class TT>
+  bool intersect( const AxisAlignedBoundingBox<KT,TT,Dim> & box_) const {
     for (int i=0; i<DIMENSION; ++i) {
       if( middle(i) < box_.lower(i) || middle(i) > box_.upper(i)) {
         return false;
@@ -175,8 +178,8 @@ struct SphereBoundingBox
     radius = radius_;
   }
 
-  inline
-  bool intersect( const PointBoundingBox<K,T,Dim> & point_) const {
+  template <class KT, class TT>
+  bool intersect( const PointBoundingBox<KT,TT,Dim> & point_) const {
     return point_.intersect(*this);
   }
 
@@ -192,7 +195,8 @@ struct SphereBoundingBox
     return dist < radius_sum * radius_sum;
   }
 
-  bool intersect( const AxisAlignedBoundingBox<K,T,Dim> & box_) const {
+  template <class KT, class TT>
+  bool intersect( const AxisAlignedBoundingBox<KT,TT,Dim> & box_) const {
     Data tmp = 0;
     Data dist = 0;
     for (int i=0; i<DIMENSION; ++i) {
@@ -284,17 +288,18 @@ struct AxisAlignedBoundingBox
       box[i] = box_[i];
   }
 
-  inline
-  bool intersect( const PointBoundingBox<K,T,Dim> & point_) const {
+  template <class KT, class TT>
+  bool intersect( const PointBoundingBox<KT,TT,Dim> & point_) const {
     return point_.intersect(*this);
   }
 
-  inline
-  bool intersect( const SphereBoundingBox<K,T,Dim> & sphere_) const {
+  template <class KT, class TT>
+  bool intersect( const SphereBoundingBox<KT,TT,Dim> & sphere_) const {
     return sphere_.intersect(*this);
   }
 
-  bool intersect( const AxisAlignedBoundingBox<K,T,Dim> & box_) const {
+  template <class KT, class TT>
+  bool intersect( const AxisAlignedBoundingBox<KT,TT,Dim> & box_) const {
     for (int i=0; i<DIMENSION; ++i) {
       if( upper(i) < box_.lower(i) || lower(i) > box_.upper(i)) return false;
     }

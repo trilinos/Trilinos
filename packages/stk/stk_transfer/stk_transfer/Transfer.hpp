@@ -29,19 +29,21 @@ public :
   typedef INTERPOLATE                                     InterpolateClass;
   typedef typename InterpolateClass::MeshA                MeshA;
   typedef typename InterpolateClass::MeshB                MeshB;
-  typedef typename MeshA::EntityKey                       EntityKeyA;
-  typedef typename MeshB::EntityKey                       EntityKeyB;
-  typedef typename std::multimap<EntityKeyB, EntityKeyA>  EntityKeyMap;
+  typedef typename InterpolateClass::EntityKeyA           EntityKeyA;
+  typedef typename InterpolateClass::EntityKeyB           EntityKeyB;
+  typedef typename InterpolateClass::EntityKeyMap         EntityKeyMap;
+
+  typedef typename InterpolateClass::EntityProcA          EntityProcA;
+  typedef typename InterpolateClass::EntityProcB          EntityProcB;
+
+  typedef typename InterpolateClass::EntityProcRelation       EntityProcRelation;
+  typedef typename InterpolateClass::EntityProcRelationVec    EntityProcRelationVec;
+
   typedef typename std::set     <EntityKeyA>              EntityKeySetA;
   typedef typename std::set     <EntityKeyB>              EntityKeySetB;
   typedef typename MeshA::BoundingBox                     BoundingBoxA;
   typedef typename MeshB::BoundingBox                     BoundingBoxB;
   
-  typedef typename MeshA::EntityProc                      EntityProcA;
-  typedef typename MeshB::EntityProc                      EntityProcB;
-
-  typedef std::pair<EntityProcB, EntityProcA>             EntityProcRelation;
-  typedef std::vector<EntityProcRelation>                 EntityProcRelationVec;
   
   enum {Dimension = MeshA::Dimension};
   
@@ -87,32 +89,52 @@ private :
   template <typename T> struct optional_functions {
   private : 
     template <typename X, X> class check {};
+    template <typename Type, Type Ptr> struct MemberHelperClass;
     template <typename X> static long copy_ent(...);
     template <typename X> static char copy_ent(
       check<
         void (X::*)(const typename MeshA::EntityProcVec&, const std::string&), 
         &X::copy_entities
       >*);
+    template <typename X> static long pcsf(...);
+    template <typename X> static char pcsf(
+      check<
+        void(*)(EntityProcRelationVec&, const MeshA&, const MeshB&), 
+        &X::post_coarse_search_filter
+      >*);
   public :
-    static const bool copy_entities = (sizeof(copy_ent<T>(0)) == sizeof(char));
+    static const bool copy_entities             = (sizeof(copy_ent<T>(0)) == sizeof(char));
+    static const bool post_coarse_search_filter = (sizeof(pcsf<T>(0)) == sizeof(char));
   };
   
-  template <typename T> 
-  typename Enable_If<optional_functions<T>::copy_entities>::type
+  template <typename T> typename Enable_If<optional_functions<T>::copy_entities>::type
        copy_entities(T                                   &mesh,
                      const typename MeshA::EntityProcVec &entities_to_copy,
                      const std::string                   &transfer_name) const 
-  {
-    mesh.copy_entities(entities_to_copy, transfer_name);
-  }
+  { mesh.copy_entities(entities_to_copy, transfer_name); }
 
-  template <typename T> 
-  typename Enable_If<!optional_functions<T>::copy_entities>::type
+  template <typename T> typename Enable_If<!optional_functions<T>::copy_entities>::type
        copy_entities(T                                   &mesh,
                      const typename MeshA::EntityProcVec &entities_to_copy,
                      const std::string                   &transfer_name) const {
     ThrowErrorMsg(__FILE__<<":"<<__LINE__<<" Error: copy_entities undefinded in this class.");
   }
+
+  template <typename T> static typename Enable_If<optional_functions<T>::post_coarse_search_filter>::type
+       post_coarse_search_filter(EntityProcRelationVec &BtoA,
+                     const MeshA                       &mesha,
+                     const MeshB                       &meshb) {
+    T::post_coarse_search_filter(BtoA, mesha, meshb);
+  }
+  template <typename T> static typename Enable_If<!optional_functions<T>::post_coarse_search_filter>::type
+       post_coarse_search_filter(EntityProcRelationVec &BtoA,
+                     const MeshA                       &msha,
+                     const MeshB                       &meshb) {
+    ThrowErrorMsg(__FILE__<<":"<<__LINE__<<" Error: post_coarse_search_filter undefinded in this class.");
+  }
+
+
+
 
   EntityKeyMap copy_domain_to_range_processors(MeshA                            &mesh,
                                                const EntityProcRelationVec      &RangeToDomain,
@@ -167,10 +189,7 @@ template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::communication(
   if (1==p_size) {
     const typename EntityProcRelationVec::const_iterator end=m_global_range_to_domain.end();
     for (typename EntityProcRelationVec::const_iterator i=m_global_range_to_domain.begin(); i!=end; ++i) {
-      const EntityKeyB range_entity    = i->first.ident;
-      const EntityKeyA domain_entity   = i->second.ident;
-      std::pair<EntityKeyB,EntityKeyA> key_map(range_entity, domain_entity);
-      m_local_range_to_domain.insert(key_map);
+      insert<INTERPOLATE>(m_local_range_to_domain, i->first.ident, i->second.ident);
     }
   } else if (optional_functions<MeshA>::copy_entities) {
     m_local_range_to_domain = copy_domain_to_range_processors(m_mesha, m_global_range_to_domain, m_name);
@@ -242,12 +261,7 @@ typename GeometricTransfer<INTERPOLATE>::EntityKeyMap GeometricTransfer<INTERPOL
   EntityKeyMap entity_key_map;
   for (typename EntityProcRelationVec::const_iterator i=range_to_domain.begin(); i!=end; ++i) {
     const unsigned range_owning_rank = i->first.proc;
-    if (range_owning_rank == my_rank) {
-      const EntityKeyB range_entity  = i->first.ident;
-      const EntityKeyA domain_entity = i->second.ident;
-      std::pair<EntityKeyB,EntityKeyA> key_map(range_entity, domain_entity);
-      entity_key_map.insert(key_map);
-    }   
+    if (range_owning_rank == my_rank) insert<INTERPOLATE>(entity_key_map, i->first.ident, i->second.ident);
   }   
   return entity_key_map;
 }
@@ -317,8 +331,8 @@ template <class INTERPOLATE>  void GeometricTransfer<INTERPOLATE>::coarse_search
     EntityProcRelationVec rng_to_dom;
     search::coarse_search(rng_to_dom, domain_vector, range_vector, order);
 
-    INTERPOLATE::post_coarse_search_filter(rng_to_dom, mesha, meshb); 
-
+    if (optional_functions<InterpolateClass>::post_coarse_search_filter) 
+      post_coarse_search_filter<InterpolateClass>(rng_to_dom, mesha, meshb); 
     range_to_domain.insert(range_to_domain.end(), rng_to_dom.begin(), rng_to_dom.end());
 
     delete_range_points_found(range_vector, rng_to_dom); 

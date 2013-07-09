@@ -1,4 +1,7 @@
 
+#ifndef  STK_STKNODE_HPP
+#define  STK_STKNODE_HPP
+
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
@@ -8,6 +11,8 @@
 
 #include <stk_util/environment/ReportHandler.hpp>
 #include <stk_search/BoundingBox.hpp>
+#include <stk_search/IdentProc.hpp>
+
 
 namespace stk {
 namespace transfer {
@@ -215,3 +220,4 @@ template<unsigned DIM> mesh::Entity STKNode<DIM>::entity(const mesh::EntityKey k
 
 }
 }
+#endif
