@@ -1518,7 +1518,7 @@ namespace Tpetra {
     bool haveGlobalConstants_;
 
     //! Nonlocal data given to insertGlobalValues or sumIntoGlobalValues.
-    std::map<GlobalOrdinal, std::deque<GlobalOrdinal> > nonlocals_;
+    std::map<GlobalOrdinal, std::vector<GlobalOrdinal> > nonlocals_;
 
     bool haveRowInfo_;
 
