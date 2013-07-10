@@ -459,7 +459,9 @@ void Piro::Epetra::LOCASolver::evalModel( const InArgs& inArgs,
       Teuchos::RCP<Epetra_MultiVector> dgdx = 
 	Teuchos::rcp(new Epetra_MultiVector(finalSolution->Map(),
 					    g_map->NumGlobalElements()));
-      model_outargs.set_DgDx(j,dgdx);
+      EpetraExt::ModelEvaluator::DerivativeMultiVector
+	dmv_dgdx(dgdx, DERIV_TRANS_MV_BY_ROW);
+      model_outargs.set_DgDx(j,dmv_dgdx);
 
       for (int i=0; i<num_p; i++) {
 	// dg/dp
