@@ -1010,13 +1010,13 @@ MDArrayView< T >::operator[](Slice s)
   // Note: the Slice.bounds() method produces safe indexes
   Slice bounds = s.bounds(_dimensions[_next_axis]);
   // Find the offset to the new MDArrayView
-  size_type offset = bounds.start * _strides[_next_axis];
+  size_type offset = bounds.start() * _strides[_next_axis];
   // Compute the dimensions of the new MDArrayView
   Teuchos::Array< size_type > newDims(_dimensions);
-  newDims[_next_axis] = (bounds.stop - bounds.start) / bounds.step;
+  newDims[_next_axis] = (bounds.stop() - bounds.start()) / bounds.step();
   // Compute the strides of the new MDArrayView
   Teuchos::Array< size_type > newStrides(_strides);
-  newStrides[_next_axis] *= bounds.step;
+  newStrides[_next_axis] *= bounds.step();
   // Construct the new MDArrayView
   Teuchos::ArrayView< T > buffer = _array.view(offset, computeSize(newDims(),
                                                           newStrides()));
@@ -1040,13 +1040,13 @@ MDArrayView< T >::operator[](Slice s) const
   // Note: the Slice.bounds() method produces safe indexes
   Slice bounds = s.bounds(_dimensions[_next_axis]);
   // Find the offset to the new MDArrayView
-  size_type offset = bounds.start * _strides[_next_axis];
+  size_type offset = bounds.start() * _strides[_next_axis];
   // Compute the dimensions of the new MDArrayView
   Teuchos::Array< size_type > newDims(_dimensions);
-  newDims[_next_axis] = (bounds.stop - bounds.start) / bounds.step;
+  newDims[_next_axis] = (bounds.stop() - bounds.start()) / bounds.step();
   // Compute the strides of the new MDArrayView
   Teuchos::Array< size_type > newStrides(_strides);
-  newStrides[_next_axis] *= bounds.step;
+  newStrides[_next_axis] *= bounds.step();
   // Construct the new MDArrayView
   Teuchos::ArrayView< T > buffer = _array.view(offset, computeSize(newDims(),
                                                           newStrides()));

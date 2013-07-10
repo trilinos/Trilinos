@@ -39,12 +39,16 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Domi_Slice.hpp"
+// Teuchos includes
 #include "Teuchos_OrdinalTraits.hpp"
+
+// Domi includes
+#include "Domi_Slice.hpp"
 
 namespace Domi
 {
 
+// Default value
 const Ordinal Slice::Default(Teuchos::OrdinalTraits<Ordinal>::max());
 
 ////////////////////////////////////////////////////////////////////////
@@ -54,28 +58,28 @@ Slice Slice::bounds(Ordinal size) const
   // If this Slice is already bounded and the size is large enough,
   // just return a copy of this Slice.  This is done for performance
   // reasons to avoid, when we can, all of the conditionals below.
-  if (_bounded_pos && size >= stop ) return *this;
-  if (_bounded_neg && size >  start) return *this;
+  if (_bounded_pos && size >= _stop ) return *this;
+  if (_bounded_neg && size >  _start) return *this;
   // Initialize the lo and hi indexes
-  Ordinal lo = start;
-  Ordinal hi = stop;
+  Ordinal lo = _start;
+  Ordinal hi = _stop;
   // Convert Default values to concrete indexes
-  if (lo == Default) lo = (step < 0) ? size-1 :  0;
-  if (hi == Default) hi = (step > 0) ? size   : -1;
+  if (lo == Default) lo = (_step < 0) ? size-1 :  0;
+  if (hi == Default) hi = (_step > 0) ? size   : -1;
   // Convert negative values to nonnegative indexes
   while (lo < 0) lo += size;
   while (hi < 0) hi += size;
   // Clip too-large values
-  if ((step < 0) && (lo > size)) lo = size;
-  if ((step > 0) && (hi > size)) hi = size;
+  if ((_step < 0) && (lo > size)) lo = size;
+  if ((_step > 0) && (hi > size)) hi = size;
   // Fine-tune hi to be a precise stopping index
-  Ordinal numSteps = (hi - lo) / step;
-  if ((hi - lo) % step) numSteps += 1;
-  hi = lo + step * numSteps;
+  Ordinal numSteps = (hi - lo) / _step;
+  if ((hi - lo) % _step) numSteps += 1;
+  hi = lo + _step * numSteps;
   // Return the new slice representing the true bounds.  This is
   // returned as a ConcreteSlice, which has a optimally efficient
   // bounds() method for future calls.
-  return ConcreteSlice(lo, hi, step);
+  return ConcreteSlice(lo, hi, _step);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -84,12 +88,12 @@ std::string Slice::toString() const
 {
   std::stringstream ss;
   ss << "[";
-  if (step > 0 && start != 0      ) ss << start;
-  if (step < 0 && start != Default) ss << start;
+  if (_step > 0 && _start != 0      ) ss << _start;
+  if (_step < 0 && _start != Default) ss << _start;
   ss << ":";
-  if (step > 0 && stop != Default) ss << stop;
-  if (step < 0 && stop != 0      ) ss << stop;
-  if (step != 1)                   ss << ":" << step;
+  if (_step > 0 && _stop != Default) ss << _stop;
+  if (_step < 0 && _stop != 0      ) ss << _stop;
+  if (_step != 1)                    ss << ":" << _step;
   ss << "]";
   return ss.str();
 }
@@ -108,7 +112,7 @@ ConcreteSlice::ConcreteSlice(Ordinal stopVal) :
   Slice(0,stopVal,1)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (stop < 0), std::invalid_argument,
+    (stop() < 0), std::invalid_argument,
     "ConcreteSlice stop value cannot be negative"
     );
 }
@@ -121,15 +125,15 @@ ConcreteSlice::ConcreteSlice(Ordinal startVal,
   Slice(startVal,stopVal,stepVal)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (start < 0), std::invalid_argument,
+    (start() < 0), std::invalid_argument,
     "ConcreteSlice start value cannot be negative"
     );
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (stop < 0), std::invalid_argument,
+    (stop() < 0), std::invalid_argument,
     "ConcreteSlice stop value cannot be negative"
     );
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (step == 0), std::invalid_argument,
+    (step() == 0), std::invalid_argument,
     "ConcreteSlice step interval cannot be zero"
     );
 }

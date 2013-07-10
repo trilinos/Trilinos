@@ -44,7 +44,7 @@
 
 /** \file Domi_Slice.hpp
  *
- *  \brief A SLice defines a subset of a container.
+ *  \brief A Slice defines a subset of a container.
  */
 
 #include "Domi_ConfigDefs.hpp"
@@ -133,7 +133,7 @@ struct Slice
 public:
 
   /** \brief The type for start indexes, stop indexes, and step
-      intervals
+   *         intervals
    */
   typedef Domi_Ordinal Ordinal;
 
@@ -147,50 +147,6 @@ public:
    *  <tt>step</tt> is negative.  The default <tt>step</tt> is one.
    */
   static const Ordinal Default;
-
-  /** \name Public data members
-   *
-   * Note that these public data members are const, can only be set
-   * via a constructor, and that the Slice struct is <i>immutable</i>.
-   */
-  //@{
-
-  /** \brief Start index
-   *
-   * If <tt>start</tt> is a non-negative ordinal, then it is a
-   * concrete value.  If <tt>start</tt> is negative, it is interpreted
-   * to represent <tt>size-start</tt>, where <tt>size</tt> is the size
-   * of the container.  If <tt>start</tt> equals <tt>Default</tt>, and
-   * <tt>step</tt> is positive, then it is set to zero.  If
-   * <tt>start</tt> equals <tt>Default</tt>, and <tt>step</tt> is
-   * negative, then it is interpreted to represent the size of the
-   * container.
-   */
-  const Ordinal start;
-
-  /** \brief Stop index
-   *
-   * If <tt>stop</tt> is a non-negative ordinal, then it is a concrete
-   * value.  If <tt>stop</tt> is negative, it is interpreted to
-   * represent <tt>size-stop</tt>, where <tt>size</tt> is the size of
-   * the container.  If <tt>stop</tt> equals <tt>Default</tt>, and
-   * <tt>step</tt> is positive, then it is interpreted to represent
-   * the size of the container.  If <tt>start</tt> equals
-   * <tt>Default</tt>, and <tt>step</tt> is negative, then it is set
-   * to zero.
-   */
-  const Ordinal stop;
-
-  /** \brief Step interval
-   *
-   * If <tt>step</tt> is a non-zero ordinal, then is is a concrete
-   * value.  If <tt>step</tt> equals <tt>0</tt>, the constructor will
-   * throw an exception.  If <tt>step</tt> equals <tt>Default</tt>,
-   * the constructor will convert it to a value of one.
-   */
-  const Ordinal step;
-
-  //@}
 
   /** \name Constructors and destructor */
 
@@ -229,14 +185,63 @@ public:
    */
   inline Slice(Ordinal startVal, Ordinal stopVal, Ordinal stepVal=1);
 
+  /** \brief Copy constructor
+   */
+  inline Slice(const Slice & source);
+
   /** \brief Destructor
    */
   ~Slice() { }
 
   //@}
 
+  /** \name Accessor methods
+   */
+  //@{
+
+  /** \brief Start index
+   *
+   * If <tt>start</tt> is a non-negative ordinal, then it is a
+   * concrete value.  If <tt>start</tt> is negative, it is interpreted
+   * to represent <tt>size-start</tt>, where <tt>size</tt> is the size
+   * of the container.  If <tt>start</tt> equals <tt>Default</tt>, and
+   * <tt>step</tt> is positive, then it is set to zero.  If
+   * <tt>start</tt> equals <tt>Default</tt>, and <tt>step</tt> is
+   * negative, then it is interpreted to represent the size of the
+   * container.
+   */
+  inline const Ordinal start() const;
+
+  /** \brief Stop index
+   *
+   * If <tt>stop</tt> is a non-negative ordinal, then it is a concrete
+   * value.  If <tt>stop</tt> is negative, it is interpreted to
+   * represent <tt>size-stop</tt>, where <tt>size</tt> is the size of
+   * the container.  If <tt>stop</tt> equals <tt>Default</tt>, and
+   * <tt>step</tt> is positive, then it is interpreted to represent
+   * the size of the container.  If <tt>start</tt> equals
+   * <tt>Default</tt>, and <tt>step</tt> is negative, then it is set
+   * to zero.
+   */
+  inline const Ordinal stop() const;
+
+  /** \brief Step interval
+   *
+   * If <tt>step</tt> is a non-zero ordinal, then it is a concrete
+   * value.  If <tt>step</tt> equals <tt>0</tt>, the constructor will
+   * throw an exception.  If <tt>step</tt> equals <tt>Default</tt>,
+   * the constructor will convert it to a value of one.
+   */
+  inline const Ordinal step() const;
+
+  //@}
+
   /** \name Slice operators */
   //@{
+
+  /** \brief Assignment operator
+   */
+  inline Slice & operator=(const Slice & source);
 
   /** \brief Equals operator
    */
@@ -262,15 +267,16 @@ public:
    *
    *   \code
    *   Slice bounds = s.bounds(size);
-   *   for (Domi::Ordinal i = bounds.start; i != bounds.stop; i += bounds.step)
+   *   for (Domi::Ordinal i = bounds.start(); i != bounds.stop();
+   *        i += bounds.step())
    *   { ... }
    *   \endcode
    *
    * Note that in order to accommodate both positive and negative
-   * <tt>step</tt>s, the <tt>for</tt> loop continue condition is <tt>(i
-   * != bounds.stop)</tt>.  This requires that <tt>bounds()</tt> return
-   * precisely the first ordinal outside the bounds that will be
-   * returned by <tt>(i += bounds.step)</tt>.
+   * <tt>step</tt>s, the <tt>for</tt> loop continue condition is
+   * <tt>(i != bounds.stop())</tt>.  This requires that
+   * <tt>bounds()</tt> return precisely the first ordinal outside the
+   * bounds that will be returned by <tt>(i += bounds.step())</tt>.
    */
   virtual Slice bounds(Ordinal size) const;
 
@@ -293,18 +299,22 @@ public:
 
 private:
 
+  // Start index
+  Ordinal _start;
+
+  // Stop index
+  Ordinal _stop;
+
+  // Step interval
+  Ordinal _step;
+
   // Boolean flag indicating whether the step is positive and the stop
   // index is concrete (i.e. it is not Default and not negative)
-  const bool _bounded_pos;
+  bool _bounded_pos;
 
   // Boolean flag indicating whether the step is negative and the
   // start index is concrete (i.e. it is not Default and not negative)
-  const bool _bounded_neg;
-
-  // This is private and never implemented, thus eliminating it from
-  // the interface.  Since Slices are immutable, the copy constructor
-  // and assignment operator are of little value.
-  Slice operator=(const Slice & source);
+  bool _bounded_neg;
 
 };
 
@@ -358,7 +368,6 @@ private:
 
   // Private and not implemented
   ConcreteSlice();
-  ConcreteSlice operator=(const ConcreteSlice & source);
 };
 
 /////////////////////////
@@ -366,9 +375,9 @@ private:
 /////////////////////////
 
 Slice::Slice() :
-  start(0),
-  stop(Slice::Default),
-  step(1),
+  _start(0),
+  _stop(Slice::Default),
+  _step(1),
   _bounded_pos(false),
   _bounded_neg(false)
 {
@@ -377,10 +386,10 @@ Slice::Slice() :
 ////////////////////////////////////////////////////////////////////////
 
 Slice::Slice(Ordinal stopVal) :
-  start(0),
-  stop(stopVal),
-  step(1),
-  _bounded_pos((stop >= 0 && stop != Slice::Default)),
+  _start(0),
+  _stop(stopVal),
+  _step(1),
+  _bounded_pos((_stop >= 0 && _stop != Slice::Default)),
   _bounded_neg(false)
 {
 }
@@ -388,24 +397,69 @@ Slice::Slice(Ordinal stopVal) :
 ////////////////////////////////////////////////////////////////////////
 
 Slice::Slice(Ordinal startVal, Ordinal stopVal, Ordinal stepVal) :
-  start(((startVal==Slice::Default) && (stepVal > 0)) ? 0 : startVal),
-  stop( ((stopVal ==Slice::Default) && (stepVal < 0)) ? 0 : stopVal ),
-  step(  (stepVal ==Slice::Default) ? 1 : stepVal),
-  _bounded_pos(((step > 0) && (stop  >= 0 && stop  != Slice::Default))),
-  _bounded_neg(((step < 0) && (start >= 0 && start != Slice::Default)))
+  _start(((startVal==Slice::Default) && (stepVal > 0)) ? 0 : startVal),
+  _stop( ((stopVal ==Slice::Default) && (stepVal < 0)) ? 0 : stopVal ),
+  _step(  (stepVal ==Slice::Default) ? 1 : stepVal),
+  _bounded_pos(((_step > 0) && (_stop  >= 0 && _stop  != Slice::Default))),
+  _bounded_neg(((_step < 0) && (_start >= 0 && _start != Slice::Default)))
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (step==0), std::invalid_argument, "Slice step interval cannot be zero"
+    (_step == 0),
+    std::invalid_argument, "Slice step interval cannot be zero"
     );
+}
+
+////////////////////////////////////////////////////////////////////////
+
+Slice::Slice(const Slice & source) :
+  _start(source._start),
+  _stop(source._stop),
+  _step(source._step),
+  _bounded_pos(source._bounded_pos),
+  _bounded_neg(source._bounded_neg)
+{
+}
+
+////////////////////////////////////////////////////////////////////////
+
+const Ordinal Slice::start() const
+{
+  return _start;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+const Ordinal Slice::stop() const
+{
+  return _stop;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+const Ordinal Slice::step() const
+{
+  return _step;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+Slice & Slice::operator=(const Slice & slice)
+{
+  _start       = slice._start      ;
+  _stop        = slice._stop       ;
+  _step        = slice._step       ;
+  _bounded_pos = slice._bounded_pos;
+  _bounded_neg = slice._bounded_neg;
+  return *this;
 }
 
 ////////////////////////////////////////////////////////////////////////
 
 bool Slice::operator==(const Slice & slice) const
 {
-  return ((start == slice.start) &&
-          (stop  == slice.stop ) &&
-          (step  == slice.step )    );
+  return ((_start == slice._start) &&
+          (_stop  == slice._stop ) &&
+          (_step  == slice._step )    );
 }
 
 ////////////////////////////////////////////////////////////////////////

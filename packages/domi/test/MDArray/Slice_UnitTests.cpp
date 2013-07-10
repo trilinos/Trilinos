@@ -53,97 +53,97 @@ const Domi::Ordinal & Default = Domi::Slice::Default;
 TEUCHOS_UNIT_TEST( Slice, defaultConstructor )
 {
   Slice slc;
-  TEST_EQUALITY_CONST(slc.start, 0      );
-  TEST_EQUALITY_CONST(slc.stop,  Default);
-  TEST_EQUALITY_CONST(slc.step,  1      );
+  TEST_EQUALITY_CONST(slc.start(), 0      );
+  TEST_EQUALITY_CONST(slc.stop(),  Default);
+  TEST_EQUALITY_CONST(slc.step(),  1      );
 }
 
 TEUCHOS_UNIT_TEST( Slice, stopConstructor )
 {
   Slice slc(5);
-  TEST_EQUALITY_CONST(slc.start, 0);
-  TEST_EQUALITY_CONST(slc.stop,  5);
-  TEST_EQUALITY_CONST(slc.step,  1);
+  TEST_EQUALITY_CONST(slc.start(), 0);
+  TEST_EQUALITY_CONST(slc.stop(),  5);
+  TEST_EQUALITY_CONST(slc.step(),  1);
 }
 
 TEUCHOS_UNIT_TEST( Slice, startStopConstructor1 )
 {
   Slice slc(2,6);
-  TEST_EQUALITY_CONST(slc.start, 2);
-  TEST_EQUALITY_CONST(slc.stop,  6);
-  TEST_EQUALITY_CONST(slc.step,  1);
+  TEST_EQUALITY_CONST(slc.start(), 2);
+  TEST_EQUALITY_CONST(slc.stop(),  6);
+  TEST_EQUALITY_CONST(slc.step(),  1);
 }
 
 TEUCHOS_UNIT_TEST( Slice, startStopConstructor2 )
 {
   Slice slc(Default,9);
-  TEST_EQUALITY_CONST(slc.start, 0);
-  TEST_EQUALITY_CONST(slc.stop,  9);
-  TEST_EQUALITY_CONST(slc.step,  1);
+  TEST_EQUALITY_CONST(slc.start(), 0);
+  TEST_EQUALITY_CONST(slc.stop(),  9);
+  TEST_EQUALITY_CONST(slc.step(),  1);
 }
 
 TEUCHOS_UNIT_TEST( Slice, startStopConstructor3 )
 {
   Slice slc(1,Default);
-  TEST_EQUALITY_CONST(slc.start, 1      );
-  TEST_EQUALITY_CONST(slc.stop,  Default);
-  TEST_EQUALITY_CONST(slc.step,  1      );
+  TEST_EQUALITY_CONST(slc.start(), 1      );
+  TEST_EQUALITY_CONST(slc.stop(),  Default);
+  TEST_EQUALITY_CONST(slc.step(),  1      );
 }
 
 TEUCHOS_UNIT_TEST( Slice, startStopStepConstructor1 )
 {
   Slice slc(1,10,2);
-  TEST_EQUALITY_CONST(slc.start,  1);
-  TEST_EQUALITY_CONST(slc.stop,  10);
-  TEST_EQUALITY_CONST(slc.step,   2);
+  TEST_EQUALITY_CONST(slc.start(),  1);
+  TEST_EQUALITY_CONST(slc.stop(),  10);
+  TEST_EQUALITY_CONST(slc.step(),   2);
 }
 
 TEUCHOS_UNIT_TEST( Slice, startStopStepConstructor2 )
 {
   Slice slc(5,10,Default);
-  TEST_EQUALITY_CONST(slc.start,  5);
-  TEST_EQUALITY_CONST(slc.stop,  10);
-  TEST_EQUALITY_CONST(slc.step,   1);
+  TEST_EQUALITY_CONST(slc.start(),  5);
+  TEST_EQUALITY_CONST(slc.stop(),  10);
+  TEST_EQUALITY_CONST(slc.step(),   1);
 }
 
 TEUCHOS_UNIT_TEST( Slice, startStopStepConstructor3 )
 {
   Slice slc(1,Default,-1);
-  TEST_EQUALITY_CONST(slc.start, 1);
-  TEST_EQUALITY_CONST(slc.stop,  0);
-  TEST_EQUALITY_CONST(slc.step, -1);
+  TEST_EQUALITY_CONST(slc.start(), 1);
+  TEST_EQUALITY_CONST(slc.stop(),  0);
+  TEST_EQUALITY_CONST(slc.step(), -1);
 }
 
 TEUCHOS_UNIT_TEST( Slice, startStopStepConstructor4 )
 {
   Slice slc(Default,10,-2);
-  TEST_EQUALITY_CONST(slc.start, Default);
-  TEST_EQUALITY_CONST(slc.stop,  10     );
-  TEST_EQUALITY_CONST(slc.step,  -2     );
+  TEST_EQUALITY_CONST(slc.start(), Default);
+  TEST_EQUALITY_CONST(slc.stop(),  10     );
+  TEST_EQUALITY_CONST(slc.step(),  -2     );
 }
 
 TEUCHOS_UNIT_TEST( Slice, startStopStepConstructor5 )
 {
   Slice slc(3,Default,Default);
-  TEST_EQUALITY_CONST(slc.start, 3      );
-  TEST_EQUALITY_CONST(slc.stop,  Default);
-  TEST_EQUALITY_CONST(slc.step,  1      );
+  TEST_EQUALITY_CONST(slc.start(), 3      );
+  TEST_EQUALITY_CONST(slc.stop(),  Default);
+  TEST_EQUALITY_CONST(slc.step(),  1      );
 }
 
 TEUCHOS_UNIT_TEST( Slice, startStopStepConstructor6 )
 {
   Slice slc(Default,Default,-1);
-  TEST_EQUALITY_CONST(slc.start, Default);
-  TEST_EQUALITY_CONST(slc.stop,   0     );
-  TEST_EQUALITY_CONST(slc.step,  -1     );
+  TEST_EQUALITY_CONST(slc.start(), Default);
+  TEST_EQUALITY_CONST(slc.stop(),   0     );
+  TEST_EQUALITY_CONST(slc.step(),  -1     );
 }
 
 TEUCHOS_UNIT_TEST( Slice, startStopStepConstructor7 )
 {
   Slice slc(Default,6,Default);
-  TEST_EQUALITY_CONST(slc.start, 0);
-  TEST_EQUALITY_CONST(slc.stop,  6);
-  TEST_EQUALITY_CONST(slc.step,  1);
+  TEST_EQUALITY_CONST(slc.start(), 0);
+  TEST_EQUALITY_CONST(slc.stop(),  6);
+  TEST_EQUALITY_CONST(slc.step(),  1);
 }
 
 TEUCHOS_UNIT_TEST( Slice, step0Constructor )
@@ -155,76 +155,76 @@ TEUCHOS_UNIT_TEST( Slice, bounds1 )
 {
   Slice slc(3, 14);
   Slice bounds = slc.bounds(20);
-  TEST_EQUALITY_CONST(bounds.start,  3);
-  TEST_EQUALITY_CONST(bounds.stop,  14);
-  TEST_EQUALITY_CONST(bounds.step,   1);
+  TEST_EQUALITY_CONST(bounds.start(),  3);
+  TEST_EQUALITY_CONST(bounds.stop(),  14);
+  TEST_EQUALITY_CONST(bounds.step(),   1);
 }
 
 TEUCHOS_UNIT_TEST( Slice, bounds2 )
 {
   Slice slc(3, 20);
   Slice bounds = slc.bounds(14);
-  TEST_EQUALITY_CONST(bounds.start,  3);
-  TEST_EQUALITY_CONST(bounds.stop,  14);
-  TEST_EQUALITY_CONST(bounds.step,   1);
+  TEST_EQUALITY_CONST(bounds.start(),  3);
+  TEST_EQUALITY_CONST(bounds.stop(),  14);
+  TEST_EQUALITY_CONST(bounds.step(),   1);
 }
 
 TEUCHOS_UNIT_TEST( Slice, bounds3 )
 {
   Slice slc(Default, 14, -1);
   Slice bounds = slc.bounds(20);
-  TEST_EQUALITY_CONST(bounds.start, 19);
-  TEST_EQUALITY_CONST(bounds.stop,  14);
-  TEST_EQUALITY_CONST(bounds.step,  -1);
+  TEST_EQUALITY_CONST(bounds.start(), 19);
+  TEST_EQUALITY_CONST(bounds.stop(),  14);
+  TEST_EQUALITY_CONST(bounds.step(),  -1);
 }
 
 TEUCHOS_UNIT_TEST( Slice, bounds4 )
 {
   Slice slc(3, Default);
   Slice bounds = slc.bounds(20);
-  TEST_EQUALITY_CONST(bounds.start,  3);
-  TEST_EQUALITY_CONST(bounds.stop,  20);
-  TEST_EQUALITY_CONST(bounds.step,   1);
+  TEST_EQUALITY_CONST(bounds.start(),  3);
+  TEST_EQUALITY_CONST(bounds.stop(),  20);
+  TEST_EQUALITY_CONST(bounds.step(),   1);
 }
 
 TEUCHOS_UNIT_TEST( Slice, bounds5 )
 {
   Slice slc(3, -1);
   Slice bounds = slc.bounds(20);
-  TEST_EQUALITY_CONST(bounds.start,  3);
-  TEST_EQUALITY_CONST(bounds.stop,  19);
-  TEST_EQUALITY_CONST(bounds.step,   1);
+  TEST_EQUALITY_CONST(bounds.start(),  3);
+  TEST_EQUALITY_CONST(bounds.stop(),  19);
+  TEST_EQUALITY_CONST(bounds.step(),   1);
 }
 
 TEUCHOS_UNIT_TEST( Slice, bounds6 )
 {
   Slice slc(-2, 2, -1);
   Slice bounds = slc.bounds(20);
-  TEST_EQUALITY_CONST(bounds.start, 18);
-  TEST_EQUALITY_CONST(bounds.stop,   2);
-  TEST_EQUALITY_CONST(bounds.step,  -1);
+  TEST_EQUALITY_CONST(bounds.start(), 18);
+  TEST_EQUALITY_CONST(bounds.stop(),   2);
+  TEST_EQUALITY_CONST(bounds.step(),  -1);
 }
 
 TEUCHOS_UNIT_TEST( Slice, bounds7 )
 {
   // This one is a little tricky.  I set up a slice from [0:20) with a
-  // step of 2.  When I ask for bounds, I cut it down to [0:11) with a
-  // step of 2.  This corresponds to iterates {0,2,4,6,8,10}.  By
+  // step() of 2.  When I ask for bounds, I cut it down to [0:11) with a
+  // step() of 2.  This corresponds to iterates {0,2,4,6,8,10}.  By
   // returning a stop index of 12 (instead of 11), I can code the
   // following:
   //
-  //     for (i=bounds.start; i != bounds.stop; i += bounds.step) ...
+  //     for (i=bounds.start(); i != bounds.stop(); i += bounds.step()) ...
   //
   // and it will work, because i == 12 at the stopping condition.
-  // Note that I want to use (i != bounds.stop) as my stopping
-  // condition so that I can handle both positive and negative step
+  // Note that I want to use (i != bounds.stop()) as my stopping
+  // condition so that I can handle both positive and negative step()
   // sizes.
 
   Slice slc(0, 20, 2);
   Slice bounds = slc.bounds(11);
-  TEST_EQUALITY_CONST(bounds.start,  0);
-  TEST_EQUALITY_CONST(bounds.stop,  12);
-  TEST_EQUALITY_CONST(bounds.step,   2);
+  TEST_EQUALITY_CONST(bounds.start(),  0);
+  TEST_EQUALITY_CONST(bounds.stop(),  12);
+  TEST_EQUALITY_CONST(bounds.step(),   2);
 }
 
 TEUCHOS_UNIT_TEST( Slice, toString0 )
