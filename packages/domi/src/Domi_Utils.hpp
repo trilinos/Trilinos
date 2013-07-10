@@ -39,8 +39,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef DOMI_MDARRAY_UTILS_HPP
-#define DOMI_MDARRAY_UTILS_HPP
+#ifndef DOMI_UTILS_HPP
+#define DOMI_UTILS_HPP
 
 #include "Domi_ConfigDefs.hpp"
 #include "Teuchos_Array.hpp"
@@ -208,21 +208,47 @@ T computeSize(const Teuchos::ArrayView< T > & dimensions,
 
 ////////////////////////////////////////////////////////////////////////
 
+/** \brief Compute a valid axisSizes array, given the number of
+ *         processors, the number of dimensions, and a candidate
+ *         axisSizes array.
+ *
+ *  The candidate array can have fewer entries than the number of
+ *  dimensions -- this function will fill in the extra ones.  It can
+ *  also have negative values -- this function will substitute valid
+ *  processor counts in place of negative values.  If a valid array is
+ *  not possible, i.e. the number of processors is not evenly
+ *  divisible into the number of dimensions or the given concrete axis
+ *  sizes, then an exception will be raised.
+ *
+ *  The current algorithm is not terribly smart -- the first negative
+ *  axis size encountered will result in all the available processors
+ *  being assigned to that axis and any further negative axis sizes
+ *  will be given a single process.
+ */
+Teuchos::Array< int >
+regularizeAxisSizes(int numProcs,
+                    int numDims,
+                    const Teuchos::ArrayView< int > & axisSizes);
+
+////////////////////////////////////////////////////////////////////////
+
 /** \brief Compute the axis ranks for a given processor rank, given
  *         the number of processors along each axis.
  */
-Teuchos::Array< int > computeAxisRanks(int rank,
-                                       Teuchos::ArrayView< int > axisSizes);
+Teuchos::Array< int >
+computeAxisRanks(int rank,
+                 const Teuchos::ArrayView< int > & axisSizes);
 
 ////////////////////////////////////////////////////////////////////////
 
 /** \brief Compute the axis ranks for a given processor rank, given
  *         the offset and the processors strides along each axis.
  */
-Teuchos::Array< int > computeAxisRanks(int rank,
-                                       int offset,
-                                       Teuchos::ArrayView< int > axisStrides);
+Teuchos::Array< int >
+computeAxisRanks(int rank,
+                 int offset,
+                 const Teuchos::ArrayView< int > & axisStrides);
 
-} // end namespace Domi
+}       // End Domi namespace
 
 #endif	// DOMI_MDARRAY_UTILS_HPP

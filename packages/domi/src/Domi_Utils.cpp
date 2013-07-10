@@ -44,8 +44,57 @@
 namespace Domi
 {
 
-Teuchos::Array< int > computeAxisRanks(int rank,
-                                       Teuchos::ArrayView< int > axisSizes)
+Teuchos::Array< int >
+regularizeAxisSizes(int numProcs,
+                    int numDims,
+                    const Teuchos::ArrayView< int > & axisSizes)
+{
+  // Allocate the return array, filled with the value -1
+  Teuchos::Array< int > result(numDims, -1);
+  // Copy the candidate array into the return array
+  for (int axis = 0; axis < numDims && axis < axisSizes.size(); ++axis)
+    result[axis] = axisSizes[axis];
+  // Compute the block of processors accounted for, and the number of
+  // unspecified axis sizes
+  int block       = 1;
+  int unspecified = 0;
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    if (result[axis] <= 0)
+      ++unspecified;
+    else
+      block *= result[axis];
+  }
+  // If all processor counts are specified, check the processor block
+  // against the total number of processors and return
+  if (unspecified == 0)
+  {
+    if (block != numProcs)
+      throw std::invalid_argument("Product of axis processor sizes does not "
+                                  "equal total number of processors");
+  }
+  // For underspecified processor partitions, give the remainder to
+  // the first unspecified axis and set all the rest to 1
+  if (numProcs % block)
+    throw std::invalid_argument("Number of processors do not divide evenly");
+  int quotient = numProcs / block;
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    if (result[axis] <= 0)
+    {
+      result[axis] = quotient;
+      quotient = 1;
+    }
+  }
+  // Return the result
+  return result;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+Teuchos::Array< int >
+computeAxisRanks(int rank,
+                 const Teuchos::ArrayView< int > & axisSizes)
 {
   Teuchos::Array< int > result(axisSizes.size());
   int relRank = rank;
@@ -64,9 +113,10 @@ Teuchos::Array< int > computeAxisRanks(int rank,
 
 ////////////////////////////////////////////////////////////////////////
 
-Teuchos::Array< int > computeAxisRanks(int rank,
-                                       int offset,
-                                       Teuchos::ArrayView< int > axisStrides)
+Teuchos::Array< int >
+computeAxisRanks(int rank,
+                 int offset,
+                 const Teuchos::ArrayView< int > & axisStrides)
 {
   Teuchos::Array< int > result(axisStrides.size());
   int relRank = rank - offset;
