@@ -1,3 +1,4 @@
 # -*- cmake -*-
 
 ADD_SUBDIRECTORY(MDArray)
+ADD_SUBDIRECTORY(MDComm)
