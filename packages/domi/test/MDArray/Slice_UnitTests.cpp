@@ -2,8 +2,8 @@
 // @HEADER
 // ***********************************************************************
 //
-//                    Teuchos: Common Tools Package
-//                 Copyright (2012) Sandia Corporation
+//            Domi: Multidimensional Datastructures Package
+//                 Copyright (2013) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
