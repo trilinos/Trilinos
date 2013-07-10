@@ -192,7 +192,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
 }
 
 template <typename INT>
-void process_nodeblocks(stk::io::MeshData &mesh, INT /*dummy*/)
+void process_nodeblocks(stk::io::MeshData &mesh, INT /*dummy*/, std::vector<stk::mesh::Entity>& nodes)
 {
   stk::mesh::BulkData &bulk = mesh.bulk_data();
   // This must be called after the "process_element_blocks" call
@@ -213,7 +213,6 @@ void process_nodeblocks(stk::io::MeshData &mesh, INT /*dummy*/)
 
   size_t node_count = nb->get_property("entity_count").get_int();
 
-  std::vector<stk::mesh::Entity> nodes;
   nodes.reserve(node_count);
 
   std::vector<INT> ids;
@@ -221,11 +220,30 @@ void process_nodeblocks(stk::io::MeshData &mesh, INT /*dummy*/)
 
   for (size_t i=0; i < ids.size(); i++) {
     stk::mesh::Entity node = bulk.declare_entity(stk::mesh::MetaData::NODE_RANK, ids[i]);
-    if (bulk.add_fmwk_data()) {
-      bulk.set_local_id(node, i);
-    }
+    bulk.set_local_id(node, i);
     nodes.push_back(node);
   }
+}
+
+template <typename INT>
+void process_node_coords_and_attributes(stk::io::MeshData &mesh, INT /*dummy*/, std::vector<stk::mesh::Entity>& nodes)
+{
+  stk::mesh::BulkData &bulk = mesh.bulk_data();
+  // This must be called after the "process_element_blocks" call
+  // since there may be nodes that exist in the database that are
+  // not part of the analysis mesh due to subsetting of the element
+  // blocks.
+
+  // Currently, all nodes found in the finite element mesh are defined
+  // as nodes in the stk_mesh database. If some of the element blocks
+  // are omitted, then there will be disconnected nodes defined.
+  // However, if we only define nodes that are connected to elements,
+  // then we risk missing "free" nodes that the user may want to have
+  // existing in the model.
+  const Ioss::NodeBlockContainer& node_blocks = mesh.input_io_region()->get_node_blocks();
+  assert(node_blocks.size() == 1);
+
+  Ioss::NodeBlock *nb = node_blocks[0];
 
   // Temporary (2013/04/02) kluge for Salinas porting to stk-based mesh.
   // Salinas uses the "implicit id" which is the ordering of the nodes
@@ -303,11 +321,46 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT 
         std::copy(&conn[0], &conn[0+nodes_per_elem], id_vec.begin());
         elements[i] = stk::mesh::declare_element(bulk, *part, elem_ids[i], &id_vec[0]);
 
-        if (bulk.add_fmwk_data()) {
-          // HEAD: bulk.set_local_id(elements[i], i);
-          // master: elements[i].set_local_id(offset+i);
-          bulk.set_local_id(elements[i], offset + i);
-        }
+        bulk.set_local_id(elements[i], offset + i);
+      }
+    }
+  }
+}
+
+template <typename INT>
+void process_elem_attributes_and_implicit_ids(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dummy*/)
+{
+  const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
+
+  const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
+  for(Ioss::ElementBlockContainer::const_iterator it = elem_blocks.begin();
+      it != elem_blocks.end(); ++it) {
+    Ioss::ElementBlock *entity = *it;
+
+    if (stk::io::include_entity(entity)) {
+      const std::string &name = entity->name();
+      stk::mesh::Part* const part = meta.get_part(name);
+      assert(part != NULL);
+
+      stk::topology topo = part->topology();
+      if (topo == stk::topology::INVALID_TOPOLOGY) {
+        std::ostringstream msg ;
+        msg << " INTERNAL_ERROR: Part " << part->name() << " has invalid topology";
+        throw std::runtime_error( msg.str() );
+      }
+
+      std::vector<INT> elem_ids ;
+
+      entity->get_field_data("ids", elem_ids);
+
+      size_t element_count = elem_ids.size();
+      int nodes_per_elem = topo.num_nodes();
+
+      std::vector<stk::mesh::EntityId> id_vec(nodes_per_elem);
+      std::vector<stk::mesh::Entity> elements(element_count);
+
+      for(size_t i=0; i<element_count; ++i) {
+        elements[i] = bulk.get_entity(stk::topology::ELEMENT_RANK, elem_ids[i]);
       }
 
       // Temporary (2013/04/17) kluge for Salinas porting to stk-based mesh.
@@ -791,23 +844,39 @@ namespace stk {
 
       bulk_data().modification_begin();
 
+      std::vector<stk::mesh::Entity> nodes;
+
       bool ints64bit = db_api_int_size(region) == 8;
       if (ints64bit) {
         int64_t zero = 0;
-        process_nodeblocks(*this, zero);
+        process_nodeblocks(*this, zero, nodes);
         process_elementblocks(*region, bulk_data(), zero);
         process_nodesets(*region,      bulk_data(), zero);
         process_sidesets(*region,      bulk_data());
       } else {
         int zero = 0;
-        process_nodeblocks(*this, zero);
+        process_nodeblocks(*this, zero, nodes);
         process_elementblocks(*region, bulk_data(), zero);
         process_nodesets(*region,      bulk_data(), zero);
         process_sidesets(*region,      bulk_data());
       }
+
       bulk_data().modification_end();
       if (region->get_property("state_count").get_int() == 0) {
         region->get_database()->release_memory();
+      }
+
+      bulk_data().allocate_field_data();
+
+      if (ints64bit) {
+          int64_t zero = 0;
+          process_node_coords_and_attributes(*this, zero, nodes);
+          process_elem_attributes_and_implicit_ids(*region, bulk_data(), zero);
+      }
+      else {
+          int zero = 0;
+          process_node_coords_and_attributes(*this, zero, nodes);
+          process_elem_attributes_and_implicit_ids(*region, bulk_data(), zero);
       }
     }
 
