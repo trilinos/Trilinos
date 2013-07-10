@@ -440,30 +440,51 @@ public:
 
   /// \brief Set the MPI error handler for this communicator.
   ///
-  /// MPI lets you set an error handler function specific to each
-  /// communicator.  MpiComm wraps this functionality.  Create an
-  /// error handler using MPI_Comm_create_errhandler() (or
-  /// MPI_Errhandler_create() if you are stuck with an MPI 1
-  /// implementation), or use one of the default error handlers that
-  /// the MPI standard or your MPI implementation provides.  You will
-  /// need to wrap the MPI error handler in an OpaqueWrapper first.
-  /// (See the documentation of OpaqueWrapper for the rationale behind
-  /// not using MPI's opaque objects directly.)
-  ///
-  /// MpiComm will not attempt to call MPI_Errhandler_free() on the
-  /// error handler you provide.  You can always set the RCP's custom
-  /// "deallocator" function to free the error handler, if you want it
-  /// taken care of automatically.  Be sure not to free the error
-  /// handler if the communicator
-  ///
   /// \param errHandler [in] The error handler to set.  If null, do
   ///   nothing.
   ///
-  /// Here is an example.  An MPI communicator's default error handler
-  /// is <tt>MPI_ERRORS_ARE_FATAL</tt>.  This handler immediately
-  /// aborts if MPI encounters an error, without returning an error
-  /// code from the MPI function.  Suppose that instead you would like
-  /// MPI functions to return an error code if MPI should encounter an
+  /// MPI lets you set an error handler function specific to each
+  /// communicator.  (See Section 8.3 of the MPI 3.0 Standard.)
+  /// MpiComm wraps this functionality using this method.  You must
+  /// first either create an error handler using
+  /// MPI_Comm_create_errhandler() (or MPI_Errhandler_create() if you
+  /// are stuck with an MPI 1 implementation), or use one of the
+  /// default error handlers that the MPI standard or your MPI
+  /// implementation provides.  You will need to wrap the MPI error
+  /// handler in an OpaqueWrapper.  (See the documentation of
+  /// OpaqueWrapper for the rationale behind not using MPI's opaque
+  /// objects directly.)
+  ///
+  /// MpiComm will not attempt to call MPI_Errhandler_free() on the
+  /// error handler you provide.  You are responsible for arranging
+  /// that this be done.  Note that MPI_Comm_create_errhandler()
+  /// (which creates an error handler, given a function pointer) does
+  /// not attach the error handler to an MPI_Comm, so the lifetime of
+  /// the error handler is not tied to the MPI_Comm to which it is
+  /// assigned.  An error handler can be assigned to more than one
+  /// MPI_Comm, in fact.  You just need to guarantee that if you
+  /// create a custom error handler, then that handler gets freed at
+  /// some point.  "The call to <tt>MPI_FINALIZE</tt> does not free
+  /// objects created by MPI calls; these objects are freed using
+  /// <tt>MPI_xxx_FREE</tt> calls" (Section 8.7, MPI 3.0 Standard).
+  /// Note that it is legitimate to call MPI_Errhandler_free() right
+  /// after setting the MPI_Comm's error handler; see Section 8.3.4 of
+  /// the MPI 3.0 Standard ("The error handler [given to
+  /// MPI_Errhandler_free] will be deallocated after all the objects
+  /// associated with it (communicator, window, or file) have been
+  /// deallocated").  You might instead attach your error handler as a
+  /// attribute to <tt>MPI_COMM_SELF</tt>, in such a way that
+  /// MPI_Errhandler_free() will be called when <tt>MPI_COMM_SELF</tt>
+  /// is freed (which MPI_Finalize() does automatically).  We do not
+  /// take responsibility for doing any of these things; you are
+  /// responsible for freeing the error handler.
+  ///
+  /// Here is an example showing how to change an MpiComm's error
+  /// handler.  The default error handler for any <tt>MPI_Comm</tt> is
+  /// <tt>MPI_ERRORS_ARE_FATAL</tt>.  This handler immediately aborts
+  /// if MPI encounters an error, without returning an error code from
+  /// the MPI function.  Suppose that instead you would like MPI
+  /// functions to return an error code if MPI should encounter an
   /// error.  (In that case, Teuchos' MPI wrappers will detect the
   /// returned error code and throw an exception with an appropriate
   /// error message.  If MPI aborts immediately on error, Teuchos
@@ -471,7 +492,7 @@ public:
   /// you may set the error handler to MPI_ERRORS_RETURN, one of MPI's
   /// built-in error handlers.  Here is how you may do this for an
   /// MpiComm:
-  ///
+  /// \code
   /// // Suppose that you've already created this MpiComm.
   /// RCP<const MpiComm<int> > comm = ...; 
   ///
@@ -480,12 +501,11 @@ public:
   ///   rcp (new OpaqueWrapper<MPI_Errhandler> (MPI_ERRORS_RETURN));
   /// // Set the MpiComm's error handler.
   /// comm->setErrorHandler (errHandler);
-  ///
+  /// \endcode
   void setErrorHandler (const RCP<const OpaqueWrapper<MPI_Errhandler> >& errHandler);
 
   //@}
-
-  //! @name Overridden from Comm
+  //! @name Implementation of Comm interface
   //@{
 
   /** \brief . */
@@ -597,9 +617,9 @@ public:
   /** \brief . */
   virtual RCP< Comm<Ordinal> > createSubcommunicator(
     const ArrayView<const int>& ranks) const;
-  //@}
 
-  //! @name Overridden from Describable
+  //@}
+  //! @name Implementation of Describable interface
   //@{
 
   /** \brief . */
@@ -621,7 +641,9 @@ public:
 
 private:
 
-  // Set internal data members once the rawMpiComm_ data member is valid.
+  /// \brief Set internal data members once the rawMpiComm_ data member is valid.
+  ///
+  /// This method should only be called from MpiComm's constructor.
   void setupMembersFromComm();
   static int tagCounter_;
 
@@ -807,11 +829,15 @@ void MpiComm<Ordinal>::setupMembersFromComm ()
     tagCounter_ = minTag_;
   }
   tag_ = tagCounter_++;
-  // Must ensure the same tag is used on all processes!
+  // Ensure that the same tag is used on all processes.
   //
   // FIXME (mfh 09 Jul 2013) This would not be necessary if MpiComm
   // were just to call MPI_Comm_dup (as every library should) when
-  // given its communicator.
+  // given its communicator.  Of course, MPI_Comm_dup may also be
+  // implemented as a collective, and may even be more expensive than
+  // a broadcast.  If we do decide to use MPI_Comm_dup, we can get rid
+  // of the broadcast below, and also get rid of tag_, tagCounter_,
+  // minTag_, and maxTag_.
   MPI_Bcast (&tag_, 1, MPI_INT, 0, *rawMpiComm_);
 }
 
@@ -832,10 +858,9 @@ setErrorHandler (const RCP<const OpaqueWrapper<MPI_Errhandler> >& errHandler)
   customErrorHandler_ = errHandler;
 }
 
-
-
+//
 // Overridden from Comm
-
+//
 
 template<typename Ordinal>
 int MpiComm<Ordinal>::getRank() const
