@@ -393,8 +393,9 @@ namespace panzer_stk {
        // use a blocked DOF manager
        blockedAssembly = true;
 
+       TEUCHOS_ASSERT(!use_dofmanager_fei);
        panzer::BlockedDOFManagerFactory<int,long> globalIndexerFactory;
-       globalIndexerFactory.setUseDOFManagerFEI(use_dofmanager_fei);
+       globalIndexerFactory.setUseDOFManagerFEI(false);
 
        Teuchos::RCP<panzer::UniqueGlobalIndexer<int,std::pair<int,long> > > dofManager 
          = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager_long,field_order);
@@ -430,6 +431,7 @@ namespace panzer_stk {
 
        // use a flat DOF manager
 
+       TEUCHOS_ASSERT(!use_dofmanager_fei);
        panzer::DOFManagerFactory<int,long> globalIndexerFactory;
        globalIndexerFactory.setUseDOFManagerFEI(false);
        Teuchos::RCP<panzer::UniqueGlobalIndexer<int,long> > dofManager 
@@ -445,9 +447,8 @@ namespace panzer_stk {
 
        // use a flat DOF manager
 
-       TEUCHOS_ASSERT(!use_dofmanager_fei);
        panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-       globalIndexerFactory.setUseDOFManagerFEI(false);
+       globalIndexerFactory.setUseDOFManagerFEI(use_dofmanager_fei);
        Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
          = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager_int,field_order);
        globalIndexer = dofManager;
