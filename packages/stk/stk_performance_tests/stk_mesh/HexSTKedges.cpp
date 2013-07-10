@@ -197,7 +197,7 @@ TEST(hex_edges, minimal_hex_edges)
   bool use_64bit_IO_api = num_nodes > 2150000000;
 
   stk::mesh::ConnectivityMap connectivity_map = stk::mesh::ConnectivityMap::minimal_back_relations_map();
-  stk::io::util::Gmesh_STKmesh_Fixture fixture(MPI_COMM_WORLD, oss.str(), use_64bit_IO_api, 1000, &connectivity_map );
+  stk::io::util::Gmesh_STKmesh_Fixture fixture(MPI_COMM_WORLD, oss.str(), use_64bit_IO_api, &connectivity_map );
   fixture.commit();
 
   double mesh_create_time = stk::cpu_time() - start_time;

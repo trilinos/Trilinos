@@ -25,7 +25,7 @@ STKUNIT_UNIT_TEST( UnitTestMinimalBackRelation, simpleHex )
   const unsigned NZ = 9;
 
   ConnectivityMap connectivity_map = ConnectivityMap::minimal_back_relations_map();
-  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD,NX,NY,NZ,100,&connectivity_map);
+  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD,NX,NY,NZ,&connectivity_map);
   fixture.m_fem_meta.commit();
   fixture.generate_mesh();
 

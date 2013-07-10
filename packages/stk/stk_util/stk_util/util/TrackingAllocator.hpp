@@ -39,7 +39,7 @@ size_t memory_usage<Tag>::num_deallocations = 0;
 
 typedef memory_usage<void> default_memory_usage;
 
-} // namespace details
+} // namespace detail
 
 
 template <typename T, typename Tag = void>

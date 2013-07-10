@@ -15,6 +15,7 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/parallel/DistributedIndex.hpp>
 #include <stk_util/util/TrackingAllocator.hpp>
+#include <stk_util/util/PageAlignedAllocator.hpp>
 
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Field.hpp>
@@ -107,8 +108,6 @@ class BulkData {
 
 public:
 
-  void optimize_buckets_at_modification_end(bool b) { m_optimize_buckets = b; }
-
 #ifdef  STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   inline static BulkData & get( Entity entity);
 #endif
@@ -124,12 +123,14 @@ public:
     unsigned char* m_data;
   };
 
+  typedef page_aligned_allocator<unsigned char, FieldBase>  field_data_allocator;
+
 #ifdef STK_PROFILE_MEMORY
-  typedef tracking_allocator<unsigned char, FieldBase>                                          field_data_allocator;
+  //typedef tracking_allocator<unsigned char, FieldBase>                                          field_data_allocator;
   typedef std::vector<FieldMetaData, tracking_allocator<FieldMetaData, FieldBase> >             FieldMetaDataVector;
   typedef std::vector<FieldMetaDataVector, tracking_allocator<FieldMetaDataVector, FieldBase> > FieldMetaDataVectorVector;
 #else
-  typedef std::allocator<unsigned char>    field_data_allocator;
+  //typedef std::allocator<unsigned char>    field_data_allocator;
   typedef std::vector<FieldMetaData>       FieldMetaDataVector;
   typedef std::vector<FieldMetaDataVector> FieldMetaDataVectorVector;
 #endif
@@ -152,9 +153,8 @@ public:
    *  - The maximum number of entities per bucket may be supplied.
    *  - The bulk data is in the synchronized or "locked" state.
    */
-  BulkData( MetaData & mesh_meta_data ,
-            ParallelMachine parallel ,
-            unsigned bucket_max_size = 1000
+  BulkData(   MetaData & mesh_meta_data
+            , ParallelMachine parallel
 #ifdef SIERRA_MIGRATION
             , bool add_fmwk_data = false
 #endif
@@ -1128,7 +1128,6 @@ private:
   size_t             m_sync_count;
   BulkDataSyncState  m_sync_state;
   bool               m_meta_data_verified;
-  bool               m_optimize_buckets;
   bool               m_mesh_finalized;
 #ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   int                m_bulk_data_id;

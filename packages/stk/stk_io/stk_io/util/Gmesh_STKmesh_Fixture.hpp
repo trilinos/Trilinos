@@ -34,7 +34,6 @@ class Gmesh_STKmesh_Fixture
   Gmesh_STKmesh_Fixture(   stk::ParallelMachine comm
                          , const std::string& gmesh_spec
                          , bool use_64bit_int_IO_api=false
-                         , unsigned bucket_size = 1000
                          , stk::mesh::ConnectivityMap * connectivity_map = NULL
                        );
 

@@ -524,14 +524,14 @@ namespace stk {
   namespace io {
 
     MeshData::MeshData()
-    : m_communicator_(MPI_COMM_NULL), m_anded_selector(NULL), m_bucket_size(1000), m_connectivity_map(NULL),
+    : m_communicator_(MPI_COMM_NULL), m_anded_selector(NULL), m_connectivity_map(NULL),
       useNodesetForPartNodesFields(true)
     {
       Ioss::Init::Initializer::initialize_ioss();
     }
 
-    MeshData::MeshData(MPI_Comm comm, unsigned bucket_size, stk::mesh::ConnectivityMap * connectivity_map)
-    : m_communicator_(comm), m_anded_selector(NULL), m_bucket_size(bucket_size), m_connectivity_map(connectivity_map),
+    MeshData::MeshData(MPI_Comm comm, stk::mesh::ConnectivityMap * connectivity_map)
+    : m_communicator_(comm), m_anded_selector(NULL), m_connectivity_map(connectivity_map),
       useNodesetForPartNodesFields(true)
     {
       Ioss::Init::Initializer::initialize_ioss();
@@ -779,7 +779,6 @@ namespace stk {
       if (Teuchos::is_null(m_bulk_data)) {
         set_bulk_data(Teuchos::rcp( new stk::mesh::BulkData(   meta_data()
                                                              , region->get_database()->util().communicator()
-                                                             , m_bucket_size
 #ifdef SIERRA_MIGRATION
                                                              , false
 #endif

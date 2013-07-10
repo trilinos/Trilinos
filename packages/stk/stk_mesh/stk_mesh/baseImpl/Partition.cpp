@@ -10,16 +10,6 @@
 
 #include <iostream>
 
-// No more than one of these 4 should be set to 1.
-#define PARTITION_DONT_COMPRESS_SMALL_PARTITIONS                     0
-#define PARTITION_DONT_COMPRESS_SINGLE_BUCKET_PARTITIONS             0
-#define PARTITION_DONT_SORT_SMALL_PARTITIONS_ON_COMPRESS             0
-#define PARTITION_DONT_SORT_SINGLE_BUCKET_PARTITIONS_ON_COMPRESS     0
-
-// Somewhat contradicts a reason for compress, but useful for debugging
-// and experimentation.
-#define PARTITION_MAINTAIN_SINGLE_BUCKET_CAPACITY_ON_COMPRESS        0
-
 // Testing this!
 #define PARTITION_HOLD_EMPTY_BUCKET_OPTIMIZATION
 
@@ -295,50 +285,14 @@ void Partition::compress(bool force)
     return;
   }
 
-  const bool dont_compress_small_partitions =                 PARTITION_DONT_COMPRESS_SMALL_PARTITIONS;
-  const bool dont_sort_small_partitions_on_compress =         PARTITION_DONT_SORT_SMALL_PARTITIONS_ON_COMPRESS;
-  const bool dont_compress_single_bucket_partitions =         PARTITION_DONT_COMPRESS_SINGLE_BUCKET_PARTITIONS;
-  const bool dont_sort_single_bucket_partitions_on_compress = PARTITION_DONT_SORT_SINGLE_BUCKET_PARTITIONS_ON_COMPRESS;
-
-  const bool maintain_single_bucket_capacity_on_compress =    PARTITION_MAINTAIN_SINGLE_BUCKET_CAPACITY_ON_COMPRESS;
-
-  const bool single_bucket_case = (m_buckets.size() <= 1);
-  const bool small_partition_case = (m_size <= m_repository->bucket_capacity() );
-
-  // Default values
-  bool dont_sort_or_compress = false;    // Policy for shortcutting out.
-  bool sort_partition = true;
-
-  if (dont_compress_single_bucket_partitions)
-  {
-    dont_sort_or_compress = single_bucket_case;
-  }
-  if (dont_compress_small_partitions)
-  {
-    dont_sort_or_compress = small_partition_case;
-  }
-
-  if (dont_sort_single_bucket_partitions_on_compress)
-  {
-    sort_partition = !single_bucket_case;
-  }
-  if (dont_sort_small_partitions_on_compress)
-  {
-    sort_partition = !small_partition_case;
-  }
-
-  if (!force && dont_sort_or_compress)
-  {
-    DiagIf(LOG_PARTITION, "Before compress, state is: " << *this << "\n" << dumpit());
-    m_updated_since_compress = false;  // correct in the sense that compress(.) has been called.
-    return;
-  }
-
   std::vector<unsigned> partition_key = get_legacy_partition_id();
   //index of bucket in partition
   partition_key[ partition_key[0] ] = 0;
 
-  std::vector<Entity> entities(m_size);
+  const size_t num_entities = m_size; // m_size will change when we add new buckets
+                                      // so need to store it here
+
+  std::vector<Entity> entities(num_entities);
 
   // Copy the entities (but not their data) into a vector, where they will be sorted.
   //
@@ -351,52 +305,53 @@ void Partition::compress(bool force)
     new_i += b_size;
   }
 
-  if (sort_partition)
-  {
-    DiagIf(LOG_PARTITION, "Partition::compress is sorting "
-           << m_size << " entities in " << m_buckets.size() << " buckets");
-    std::sort( entities.begin(), entities.end(), EntityLess(m_mesh) );
-    m_updated_since_sort = false;
+  //sort entities
+  DiagIf(LOG_PARTITION, "Partition::compress is sorting "
+         << num_entities << " entities in " << m_buckets.size() << " buckets");
+  std::sort( entities.begin(), entities.end(), EntityLess(m_mesh) );
+  m_updated_since_sort = false;
+
+// ceiling
+  const size_t num_new_buckets = (num_entities + (m_repository->max_bucket_capacity - 1u)) / m_repository->max_bucket_capacity;
+
+  std::vector< Bucket * > tmp_buckets(num_new_buckets);
+
+  size_t curr_entity = 0;
+  for (size_t bi=0; bi<num_new_buckets; ++bi) {
+
+    const size_t bucket_size = ((num_entities - curr_entity) < m_repository->max_bucket_capacity) ? num_entities - curr_entity : m_repository->max_bucket_capacity;
+    tmp_buckets[bi] = m_repository->allocate_bucket( m_rank, partition_key, bucket_size );
+    Bucket & b = *tmp_buckets[bi];
+    b.set_first_bucket_in_partition(tmp_buckets[0]);
+    b.m_partition = this;
+
+    for (size_t i=0; i<bucket_size; ++i, ++curr_entity) {
+
+      Entity entity = entities[curr_entity];
+
+      TraceIfWatching("stk::mesh::impl::Partition::compress affects", LOG_ENTITY, m_mesh.entity_key(entity));
+      DiagIfWatching(LOG_ENTITY, m_mesh.entity_key(entity),
+                     "  old_bucket: " << entity.bucket() << ", old_ordinal: " << m_mesh.bucket_ordinal(entity) << '\n'
+                     << dumpit()
+                     << "\n  new_bucket: " << *new_bucket << ", new_ordinal: " << new_ordinal << " of " << curr_entity);
+
+
+      // TODO - Paying for symmetry here that we may not need since the old bucket is being deleted
+      internal_swap_to_end( entity );
+      b.move_entity( entity ) ;
+      remove_impl(entity, true /*due to move*/);
+    }
   }
-  else
-  {
-    DiagIf(LOG_PARTITION, "Partition::compress is NOT sorting");
-  }
 
-  const size_t new_bucket_capacity = (single_bucket_case && maintain_single_bucket_capacity_on_compress
-                                      ? m_buckets[0]->capacity() : m_size);
 
-  // Now that the entities have been sorted, we copy them and their field data into a
-  // single bucket in sorted order.
-  //
-  Bucket * new_bucket = m_repository->allocate_bucket( m_rank, partition_key, new_bucket_capacity);
-  new_bucket->set_first_bucket_in_partition(new_bucket); // partition members point to first bucket
-  new_bucket->m_partition = this;
-
-  for(size_t new_ordinal = 0; new_ordinal < entities.size(); ++new_ordinal)
-  {
-    Entity entity = entities[new_ordinal];
-
-    TraceIfWatching("stk::mesh::impl::Partition::compress affects", LOG_ENTITY, m_mesh.entity_key(entity));
-    DiagIfWatching(LOG_ENTITY, m_mesh.entity_key(entity),
-                   "  old_bucket: " << entity.bucket() << ", old_ordinal: " << m_mesh.bucket_ordinal(entity) << '\n'
-                   << dumpit()
-                   << "\n  new_bucket: " << *new_bucket << ", new_ordinal: " << new_ordinal << " of " << m_size);
-
-    // TODO - Paying for symmetry here that we may not need since the old bucket is being deleted
-    internal_swap_to_end( entity );
-    new_bucket->move_entity( entity ) ;
-    remove_impl(entity, true /*due to move*/);
-  }
-  m_size = entities.size();
-
-  for (std::vector<Bucket *>::iterator b_i = begin(); b_i != end(); ++b_i)
-  {
+  //remove old buckets
+  for (std::vector<Bucket *>::iterator b_i = begin(); b_i != end(); ++b_i) {
     m_repository->deallocate_bucket(*b_i);
   }
 
-  m_buckets.resize(1);
-  m_buckets[0] = new_bucket;
+  m_size = num_entities;
+  m_buckets.swap(tmp_buckets);
+
   m_updated_since_compress = false;
   m_updated_since_sort = false;
 
@@ -523,7 +478,7 @@ stk::mesh::Bucket *Partition::get_bucket_for_adds()
     std::vector<unsigned> partition_key = get_legacy_partition_id();
     partition_key[ partition_key[0] ] = 0;
     Bucket *bucket = m_repository->allocate_bucket(m_rank, partition_key,
-                                                   m_repository->bucket_capacity());
+                                                   m_repository->default_bucket_capacity);
     bucket->m_partition = this;
     bucket->set_first_bucket_in_partition(bucket);
     m_buckets.push_back(bucket);
@@ -538,7 +493,7 @@ stk::mesh::Bucket *Partition::get_bucket_for_adds()
     std::vector<unsigned> partition_key = get_legacy_partition_id();
     partition_key[ partition_key[0] ] = m_buckets.size();
     bucket = m_repository->allocate_bucket(m_rank, partition_key,
-                                           m_repository->bucket_capacity());
+                                           m_repository->default_bucket_capacity);
     bucket->m_partition = this;
     bucket->set_first_bucket_in_partition(m_buckets[0]);
     m_buckets[0]->set_last_bucket_in_partition(bucket);

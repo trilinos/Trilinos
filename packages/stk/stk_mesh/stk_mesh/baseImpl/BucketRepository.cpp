@@ -22,12 +22,10 @@ namespace mesh {
 namespace impl {
 
 BucketRepository::BucketRepository(BulkData & mesh,
-                                   unsigned bucket_capacity,
                                    unsigned entity_rank_count,
                                    EntityRepository & entity_repo,
                                    const ConnectivityMap& connectivity_map)
   : m_mesh(mesh),
-    m_bucket_capacity(bucket_capacity),
     m_buckets(entity_rank_count),
     m_entity_repo(entity_repo),
     m_partitions(entity_rank_count),

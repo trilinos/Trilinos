@@ -39,7 +39,6 @@ public:
   ~BucketRepository();
   BucketRepository(
       BulkData & mesh,
-      unsigned bucket_capacity,
       unsigned entity_rank_count,
       EntityRepository & entity_repo,
       const ConnectivityMap & connectivity_map
@@ -65,7 +64,8 @@ public:
   /** \brief  Query the upper bound on the number of mesh entities
     *         that may be associated with a single bucket.
     */
-  unsigned bucket_capacity() const { return m_bucket_capacity; }
+  static const unsigned max_bucket_capacity = 16384; //2^14
+  static const unsigned default_bucket_capacity = 512;
 
   BulkData& mesh() const { return m_mesh; }
 
@@ -124,17 +124,16 @@ private:
 
   void sync_bucket_ids(EntityRank entity_rank);
 
-  BulkData                            & m_mesh ; // Associated Bulk Data Aggregate
-  unsigned                              m_bucket_capacity ; // Maximum number of entities per bucket
+  BulkData & m_mesh ; // Associated Bulk Data Aggregate
 
   // Vector of bucket pointers by rank.  This is now a cache and no longer the primary
   // location of Buckets when USE_STK_MESH_IMPL_PARTITION is #defined.
   std::vector< std::vector<Bucket*> >   m_buckets ;
 
-  EntityRepository                    & m_entity_repo ;
+  EntityRepository & m_entity_repo ;
 
-  std::vector<std::vector<Partition *> >         m_partitions;
-  std::vector<bool>                              m_need_sync_from_partitions;
+  std::vector<std::vector<Partition *> > m_partitions;
+  std::vector<bool> m_need_sync_from_partitions;
 
   ConnectivityMap m_connectivity_map;
 };

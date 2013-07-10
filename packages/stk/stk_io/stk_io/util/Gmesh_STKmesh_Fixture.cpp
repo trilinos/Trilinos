@@ -23,10 +23,9 @@ using namespace stk::io::util;
 Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(   stk::ParallelMachine comm
                                               , const std::string& gmesh_spec
                                               , bool use_64bit_int_IO_api
-                                              , unsigned bucket_size
                                               , stk::mesh::ConnectivityMap * connectivity_map
                                             )
-  : m_mesh_data(comm, bucket_size, connectivity_map)
+  : m_mesh_data(comm, connectivity_map)
 
 ///////////////////////////////////////////////////////////////////////////////
 {

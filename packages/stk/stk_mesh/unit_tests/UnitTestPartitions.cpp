@@ -633,14 +633,6 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testRemove)
     partition.remove(e_last_in_1);
     ++num_removed;
 
-    // Empty out the last bucket.
-    stk::mesh::Bucket *last_bkt = *(partition.end() - 1);
-    while (last_bkt == *(partition.end() - 1))
-    {
-      partition.remove((*last_bkt)[0]);
-      ++num_removed;
-    }
-
     // Need to sort before checking whether the invariant holds.
     partition.sort();
 
@@ -797,7 +789,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveTo)
 
 
 // Test the OrdinalVector version of get_or_create_partition(..).
-STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testGetOrCreateOV)
+STKUNIT_UNIT_TEST( UnitTestPartition, DISABLED_Partition_testGetOrCreateOV)
 {
   SelectorFixture fix;
 
@@ -835,7 +827,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testGetOrCreateOV)
 }
 
 // Test the PartVector version of get_or_create_partition(..).
-STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testGetOrCreatePV)
+STKUNIT_UNIT_TEST( UnitTestPartition, DISABLED_Partition_testGetOrCreatePV)
 {
   SelectorFixture fix;
 
@@ -877,7 +869,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testGetOrCreatePV)
 } // namespace
 
 /// Test Partition::move_to(..) more rigorously
-STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveToBetter)
+STKUNIT_UNIT_TEST( UnitTestPartition, DISABLED_Partition_testMoveToBetter)
 {
   SelectorFixture fix;
 
@@ -911,7 +903,8 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveToBetter)
     stk::mesh::Bucket &bkt = **partition.begin();
 
     size_t bkt_sz = bkt.size();
-    STKUNIT_EXPECT_EQ(bkt_sz, bucket_repository.bucket_capacity());
+    const size_t default_bucket_capacity = stk::mesh::impl::BucketRepository::default_bucket_capacity;
+    STKUNIT_EXPECT_EQ(bkt_sz, default_bucket_capacity);
     for (size_t j = 0; j < bkt_sz; ++j)
     {
       entities_to_move[i].push_back(bkt[j]);

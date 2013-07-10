@@ -104,8 +104,7 @@ BulkData * BulkData::the_bulk_data_registry[MAX_NUM_BULKDATA] = {};
 //----------------------------------------------------------------------
 
 BulkData::BulkData( MetaData & mesh_meta_data ,
-                    ParallelMachine parallel ,
-                    unsigned bucket_max_size
+                    ParallelMachine parallel
 #ifdef SIERRA_MIGRATION
                     , bool add_fmwk_data
 #endif
@@ -125,7 +124,6 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_sync_count( 0 ),
     m_sync_state( MODIFIABLE ),
     m_meta_data_verified( false ),
-    m_optimize_buckets(false),
     m_mesh_finalized(false),
 #ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
     m_bulk_data_id(0),
@@ -152,7 +150,6 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_field_raw_data(mesh_meta_data.entity_rank_count()),
     m_bucket_repository(
         *this,
-        bucket_max_size,
         mesh_meta_data.entity_rank_count(),
         m_entity_repo,
         arg_connectivity_map != NULL ? *arg_connectivity_map :

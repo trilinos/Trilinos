@@ -47,7 +47,6 @@ class HexFixture
               , unsigned nx
               , unsigned ny
               , unsigned nz
-              , unsigned bucket_size = 1000
               , ConnectivityMap * connectivity_map = NULL
             );
 

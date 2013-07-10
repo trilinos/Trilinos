@@ -29,7 +29,6 @@ namespace fixtures {
               , unsigned nx
               , unsigned ny
               , unsigned nz
-              , unsigned bucket_size
               , ConnectivityMap * connectivity_map
             )
   : m_spatial_dimension(3),
@@ -39,7 +38,6 @@ namespace fixtures {
     m_fem_meta( m_spatial_dimension ),
     m_bulk_data(  m_fem_meta
                 , pm
-                , bucket_size
 #ifdef SIERRA_MIGRATION
                 , false
 #endif
