@@ -5,6 +5,7 @@
 #include <GeometricGenerator.hpp>
 #include <string>
 #include "Teuchos_XMLParameterListHelpers.hpp"
+//#include "Teuchos_MPIComm.hpp"
 #define partDIM 3
 #define procDIM 3
 #define nProcs 200;
@@ -278,8 +279,10 @@ int main(int argc, char *argv[]){
         }
 
 
+        RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
         zoltan2_partId_t *proc_to_task_xadj_ = new zoltan2_partId_t[numProcs], *proc_to_task_adj_ = new zoltan2_partId_t[numParts];
         Zoltan2::coordinateTaskMapperInterface<zoltan2_partId_t, scalar_t, scalar_t>(
+                tcomm,
                 procDim,
                 numProcs,
                 procCoordinates,
@@ -299,6 +302,8 @@ int main(int argc, char *argv[]){
         delete ctm;
         delete cm;
         delete env;
+        delete []proc_to_task_xadj_;
+        delete [] proc_to_task_adj_;
     }
     catch(std::string &s){
         cerr << s << endl;

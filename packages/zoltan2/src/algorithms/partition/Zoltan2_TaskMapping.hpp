@@ -10,6 +10,8 @@
 #include "Zoltan2_MachineRepresentation.hpp"
 #include "Teuchos_ReductionOp.hpp"
 #include "Zoltan2_XpetraMultiVectorInput.hpp"
+#include "Teuchos_DefaultMpiComm.hpp"
+
 
 //#define gnuPlot
 
@@ -1791,12 +1793,14 @@ public:
 
 
 
-
 template <typename procId_t, typename pcoord_t, typename tcoord_t>
 void coordinateTaskMapperInterface(
+
+        RCP<const Teuchos::Comm<int> > comm_,
         int procDim,
         int numProcessors,
         pcoord_t **machine_coords_,
+
 
         int taskDim,
         procId_t numTasks,
@@ -1810,9 +1814,7 @@ void coordinateTaskMapperInterface(
         ){
 
     const Environment *envConst_ = new Environment();
-    RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
-    const Teuchos::Comm<int> *comm_ = tcomm.getRawPtr();
-
+    //RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
 
     typedef Tpetra::MultiVector<tcoord_t, procId_t,procId_t, Kokkos::DefaultNode::DefaultNodeType> tMVector_t;
 
@@ -1824,7 +1826,7 @@ void coordinateTaskMapperInterface(
     Teuchos::ArrayRCP<procId_t> task_communication_adj (task_communication_adj_, 0, task_communication_xadj_[numProcessors -1], false);
 
     CoordinateTaskMapper<XpetraMultiVectorInput <tMVector_t>, procId_t> *ctm = new CoordinateTaskMapper<XpetraMultiVectorInput <tMVector_t>, procId_t>(
-                comm_,
+                comm_.getRawPtr(),
                 procDim,
                 numProcessors,
                 machine_coords_,
@@ -1858,6 +1860,51 @@ void coordinateTaskMapperInterface(
     //cout << "done 4" << endl;
 
 }
+
+
+template <typename procId_t, typename pcoord_t, typename tcoord_t>
+void coordinateTaskMapperInterface_Fortran(
+
+        int *comm_World,
+        int procDim,
+        int numProcessors,
+        pcoord_t **machine_coords_,
+
+
+        int taskDim,
+        procId_t numTasks,
+        tcoord_t **task_coords,
+
+        procId_t *task_communication_xadj_,
+        procId_t *task_communication_adj_,
+
+        procId_t *proc_to_task_xadj, /*output*/
+        procId_t *proc_to_task_adj /*output*/
+        ){
+
+#ifdef HAVE_MPI
+    MPI_Comm cComm = MPI_Comm_f2c((MPI_Fint) *comm_World);
+    RCP<const Teuchos::Comm<int> > tcomm = RCP<const Teuchos::Comm<int> > (new Teuchos::MpiComm<int> (cComm));
+#else
+    RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
+#endif
+    coordinateTaskMapperInterface<procId_t, pcoord_t, tcoord_t>(
+            tcomm,
+            numProcessors,
+            machine_coords_,
+
+
+            taskDim,
+            numTasks,
+            task_coords,
+
+            task_communication_xadj_,
+            task_communication_adj_,
+
+            proc_to_task_xadj, /*output*/
+            proc_to_task_adj /*output*/);
+}
+
 }// namespace Zoltan2
 
 #endif
