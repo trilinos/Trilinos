@@ -75,13 +75,13 @@ clp.add_option(
 clp.add_option(
   "--generate-html", dest="generateHtml", type="string",
   help="Generate the HTML output file using provided script (i.e. rst2html)",
-  default="rst2html" )
+  default="rst2html.py" )
   
 clp.add_option(
   "--generate-latex", dest="generateLatex", type="string",
   help="Generate the Latex (*.tex) output file using provided script" \
     " (i.e. rst2latex)",
-  default="rst2latex" )
+  default="rst2latex.py" )
   
 clp.add_option(
   "--generate-pdf", dest="generatePDF", type="string",
