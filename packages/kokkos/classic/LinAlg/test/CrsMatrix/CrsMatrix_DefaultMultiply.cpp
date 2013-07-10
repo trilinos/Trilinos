@@ -85,16 +85,16 @@
 #endif
 
 namespace {
-
-  using Teuchos::ParameterList;
-  using Teuchos::parameterList;
-  using Kokkos::MultiVector;
   using Kokkos::DefaultArithmetic;
   using Kokkos::DefaultKernels;
+  using Kokkos::MultiVector;
   using Teuchos::ArrayRCP;
+  using Teuchos::as;
+  using Teuchos::null;
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using Teuchos::null;
   using Teuchos::tuple;
   using std::endl;
 
@@ -243,7 +243,7 @@ namespace {
 
     ArrayRCP<Scalar> xdat, axdat, atxdat;
     xdat  = node->template allocBuffer<Scalar>(2);
-    node->template copyToBuffer<Scalar>(2, tuple<Scalar>(1.0,2.0), xdat);
+    node->template copyToBuffer<Scalar> (2, tuple<Scalar> (as<Scalar> (1), as<Scalar> (2)), xdat);
     axdat = node->template allocBuffer<Scalar>(N);
     atxdat = node->template allocBuffer<Scalar>(2);
     MV X(node), AX(node), ATX(node);
