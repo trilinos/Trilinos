@@ -39,6 +39,11 @@
 // ***********************************************************************
 // @HEADER
 
+// System includes
+#include <string>
+#include <stdlib.h>
+
+// Domi includes
 #include "Domi_Utils.hpp"
 
 namespace Domi
@@ -126,6 +131,21 @@ computeAxisRanks(int rank,
     relRank      = relRank % axisStrides[axis];
   }
   return result;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+void splitStringOfIntsWithCommas(std::string data,
+                                 Teuchos::Array< int > & result)
+{
+  size_t current = 0;
+  while (current < data.size())
+  {
+    size_t next = data.find(",", current);
+    if (next == std::string::npos) next = data.size();
+    result.push_back(atoi(data.substr(current, next-current).c_str()));
+    current = next + 1;
+  }
 }
 
 } // end namespace Domi

@@ -249,6 +249,14 @@ computeAxisRanks(int rank,
                  int offset,
                  const Teuchos::ArrayView< int > & axisStrides);
 
+////////////////////////////////////////////////////////////////////////
+
+/** \brief Given a std::string which contains comma-separated integers,
+ *         return an array of ints.
+ */
+void splitStringOfIntsWithCommas(std::string data,
+                                 Teuchos::Array< int > & result);
+
 }       // End Domi namespace
 
 #endif	// DOMI_MDARRAY_UTILS_HPP
