@@ -25,9 +25,13 @@
 #include <sstream>
 #include <time.h>
 
+#include <exodusII.h>
+
 class ParaViewCatalystSierraAdaptorBase;
 
 namespace Iovs {
+
+  typedef std::set<std::pair<int64_t, int64_t> > EntityIdSet;
 
   class DatabaseIO : public Ioss::DatabaseIO
   {
@@ -107,10 +111,10 @@ namespace Iovs {
     int64_t put_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
     int64_t put_field_internal(const Ioss::SideBlock* eb, const Ioss::Field& field,
-			   void *data, size_t data_size) const { return 0; }
+			   void *data, size_t data_size) const;
 
     int64_t put_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
+			   void *data, size_t data_size) const;
     int64_t put_field_internal(const Ioss::EdgeSet* ns, const Ioss::Field& field,
 			   void *data, size_t data_size) const {return 0;}
     int64_t put_field_internal(const Ioss::FaceSet* ns, const Ioss::Field& field,
@@ -118,7 +122,7 @@ namespace Iovs {
     int64_t put_field_internal(const Ioss::ElementSet* ns, const Ioss::Field& field,
 			   void *data, size_t data_size) const {return 0;}
     int64_t put_field_internal(const Ioss::SideSet* fs, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
+			   void *data, size_t data_size) const;
     int64_t put_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
 			   void *data, size_t data_size) const {return 0;}
 
@@ -140,6 +144,10 @@ namespace Iovs {
 
     std::string databaseTitle;
     std::string paraview_script_filename;
+    int underscoreVectors;
+    int applyDisplacements;
+    int createSideSets;
+    int createNodeSets;
     int spatialDimension;
 
     int64_t nodeCount;
@@ -151,8 +159,9 @@ namespace Iovs {
     // Handle to the ParaView Catalyst dynamic library
     // that is loaded via Sierra user plugin at runtime.
     ParaViewCatalystSierraAdaptorBase* pvcsa;
-    bool globalNodeAndElementIDsCreated;
-    void create_global_node_and_element_ids();
+    mutable bool globalNodeAndElementIDsCreated;
+    void create_global_node_and_element_ids() const;
+    mutable EntityIdSet ids_;
 
     // Bulk Data
 

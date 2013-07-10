@@ -82,7 +82,7 @@ ex_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex_entity_id o
       sprintf(errmsg,
 	      "Warning: no variables allowed for NULL block %"PRId64" in file id %d",
 	      obj_id,exoid);
-      ex_err("ex_put_var",errmsg,EX_MSG);
+      ex_err("ex_put_var",errmsg,EX_NULLENTITY);
       return (EX_WARN);
     }
     else {

@@ -635,18 +635,20 @@ namespace Ioex {
     size_t num_qa_records = qaRecords.size()/4;
 
     qa_element *qa = new qa_element[num_qa_records+1];
-    for (int i=0; i < num_qa_records+1; i++) {
+    for (size_t i=0; i < num_qa_records+1; i++) {
       for (int j=0; j < 4; j++) {
 	qa[i].qa_record[0][j] = new char[MAX_STR_LENGTH+1];
       }
     }
 
-    int j = 0;
-    for (int i=0; i < num_qa_records; i++) {
-      std::strncpy(qa[i].qa_record[0][0], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-      std::strncpy(qa[i].qa_record[0][1], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-      std::strncpy(qa[i].qa_record[0][2], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-      std::strncpy(qa[i].qa_record[0][3], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+    {
+      int j = 0;
+      for (size_t i=0; i < num_qa_records; i++) {
+	std::strncpy(qa[i].qa_record[0][0], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+	std::strncpy(qa[i].qa_record[0][1], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+	std::strncpy(qa[i].qa_record[0][2], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+	std::strncpy(qa[i].qa_record[0][3], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+      }
     }
 
     Ioss::Utils::time_and_date(qa[num_qa_records].qa_record[0][3],
@@ -675,7 +677,7 @@ namespace Ioex {
     if (ierr < 0)
       exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
-    for (int i=0; i < num_qa_records+1; i++) {
+    for (size_t i=0; i < num_qa_records+1; i++) {
       for (int j=0; j < 4; j++) {
 	delete [] qa[i].qa_record[0][j];
       }
@@ -2877,12 +2879,12 @@ namespace Ioex {
               } else {
                 if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
                   int64_t *idata = static_cast<int64_t*>(data);
-                  for (int64_t i=0; i < my_element_count; i++) {
+                  for (size_t i=0; i < my_element_count; i++) {
                     idata[i] = eb_offset_plus_one + i;
                   }
                 } else {
                   int *idata = static_cast<int*>(data);
-                  for (int64_t i=0; i < my_element_count; i++) {
+                  for (size_t i=0; i < my_element_count; i++) {
                     idata[i] = eb_offset_plus_one + i;
                   }
                 }
@@ -4339,7 +4341,7 @@ namespace Ioex {
 
           // Get the element block id and element count
           int64_t id = get_id(eb, EX_ELEM_BLOCK, &ids_);
-          int64_t my_element_count = eb->get_property("entity_count").get_int();
+          size_t my_element_count = eb->get_property("entity_count").get_int();
           Ioss::Field::RoleType role = field.get_role();
 
           if (role == Ioss::Field::MESH) {
@@ -4409,7 +4411,7 @@ namespace Ioex {
                 int *side32 = (int*)TOPTR(side);
 
                 int index = 0;
-                for (int i=0; i < my_element_count; i++) {
+                for (size_t i=0; i < my_element_count; i++) {
                   element32[i] = el_side[index++];
                   side32[i]    = el_side[index++];
                 }
@@ -4419,7 +4421,7 @@ namespace Ioex {
                 int64_t *side64 = (int64_t*)TOPTR(side);
 
                 int64_t index = 0;
-                for (int64_t i=0; i < my_element_count; i++) {
+                for (size_t i=0; i < my_element_count; i++) {
                   element64[i] = el_side[index++];
                   side64[i]    = el_side[index++];
                 }
@@ -5899,8 +5901,12 @@ namespace Ioex {
         Ioss::SerializeIO	serializeIO__(this);
 
         if (myProcessor == 0) {
-          put_qa();
-          put_info();
+	  if (!properties.exists("OMIT_QA_RECORDS")) {
+	    put_qa();
+	  }
+	  if (!properties.exists("OMIT_INFO_RECORDS")) {
+	    put_info();
+	  }
         }
 
         // Write the metadata to the exodusII file...

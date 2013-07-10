@@ -87,7 +87,7 @@ int ex_get_set_dist_fact (int   exoid,
       sprintf(errmsg,
               "Warning: %s set %"PRId64" is NULL in file id %d",
 	      ex_name_of_object(set_type), set_id,exoid);
-      ex_err("ex_get_set_dist_fact",errmsg,EX_MSG);
+      ex_err("ex_get_set_dist_fact",errmsg,EX_NULLENTITY);
       return (EX_WARN);
     } else {
       sprintf(errmsg,

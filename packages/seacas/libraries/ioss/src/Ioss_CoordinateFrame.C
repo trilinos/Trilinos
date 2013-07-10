@@ -41,10 +41,10 @@
 #include "Ioss_PropertyManager.h"
 
 namespace Ioss {
-  CoordinateFrame::CoordinateFrame(int64_t id,
-		  char tag,
-		  const double *point_list)
-    : id_(id), tag_(tag)
+  CoordinateFrame::CoordinateFrame(int64_t my_id,
+				   char my_tag,
+				   const double *point_list)
+    : id_(my_id), tag_(my_tag)
   {
     pointList_.reserve(9);
     for (int i=0; i < 9; i++) {

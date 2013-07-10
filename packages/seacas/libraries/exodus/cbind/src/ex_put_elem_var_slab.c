@@ -88,7 +88,7 @@ int ex_put_elem_var_slab (int   exoid,
       sprintf(errmsg,
 	      "Warning: no variables allowed for NULL block %"PRId64" in file id %d",
 	      elem_blk_id, exoid);
-      ex_err("ex_put_elem_var_slab", errmsg, EX_MSG);
+      ex_err("ex_put_elem_var_slab", errmsg, EX_NULLENTITY);
       return (EX_WARN);
     } else {
       sprintf(errmsg,
