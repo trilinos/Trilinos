@@ -415,7 +415,7 @@ size_t BulkData::generate_next_local_offset()
     m_entity_states.push_back(Created);
     m_closure_count.push_back(static_cast<uint16_t>(0));
     m_entity_sync_counts.push_back(0);
-    m_local_ids.push_back(stk::mesh::InvalidLocalId);
+    m_local_ids.push_back(stk::mesh::GetInvalidLocalId());
 
 #ifdef SIERRA_MIGRATION
     if (m_add_fmwk_data) {
@@ -434,7 +434,7 @@ size_t BulkData::generate_next_local_offset()
     m_entity_states[new_local_offset] = Created;
     m_closure_count[new_local_offset] = static_cast<uint16_t>(0);
     m_entity_sync_counts[new_local_offset] = 0;
-    m_local_ids[new_local_offset] = stk::mesh::InvalidLocalId;
+    m_local_ids[new_local_offset] = stk::mesh::GetInvalidLocalId();
 
 #ifdef SIERRA_MIGRATION
     if (m_add_fmwk_data) {
@@ -467,7 +467,7 @@ void BulkData::initialize_arrays()
   m_entity_states.push_back(Deleted);
   m_closure_count.push_back(static_cast<uint16_t>(0));
   m_entity_sync_counts.push_back(0);
-  m_local_ids.push_back(stk::mesh::InvalidLocalId);
+  m_local_ids.push_back(stk::mesh::GetInvalidLocalId());
 
 #ifdef SIERRA_MIGRATION
   if (m_add_fmwk_data) {
