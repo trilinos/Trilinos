@@ -4,14 +4,14 @@
 # Include the TriBITS library macros
 INCLUDE(TribitsLibraryMacros)
 
-#
-# Package-specific configuration options
-TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
-
 SET(${PACKAGE_NAME}_ORDINAL_TYPE ptrdiff_t
   CACHE STRING
   "Select the data type for Domi_Ordinal (Domi::Ordinal)."
   )
+
+#
+# Package-specific configuration options
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # Define the header and source files (and directories)
