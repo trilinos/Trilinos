@@ -452,324 +452,360 @@ b) Enabling checked STL implementation:
     cause runtime segfaults when linked against C++ code that was compiled
     without -D_GLIBCXX_DEBUG.
 
+
 Configuring with MPI support
 ----------------------------
 
-  To enable MPI support you must minimally set::
+To enable MPI support you must minimally set::
 
-    -D TPL_ENABLE_MPI:BOOL=ON
+  -D TPL_ENABLE_MPI:BOOL=ON
 
-  There is built-in logic to try to find the various MPI components on your
-  system but you can override (or make suggestions) with::
+There is built-in logic to try to find the various MPI components on your
+system but you can override (or make suggestions) with::
 
-    -D MPI_BASE_DIR:PATH="path"
+  -D MPI_BASE_DIR:PATH="path"
 
-   (Base path of a standard MPI installation which has the subdirs 'bin',
-   'libs', 'include' etc.)
+(Base path of a standard MPI installation which has the subdirs 'bin', 'libs',
+'include' etc.)
 
-   or::
+or::
 
-     -D MPI_BIN_DIR:PATH="path1;path2;...;pathn"
+  -D MPI_BIN_DIR:PATH="path1;path2;...;pathn"
 
-   (Paths where the MPI executables (e.g. mpiCC, mpicc, mpirun, mpiexec) can
-   be found.  By default this is set to ``${MPI_BASE_DIR}/bin`` if
-   ``MPI_BASE_DIR`` is set).
+which sets the paths where the MPI executables (e.g. mpiCC, mpicc, mpirun,
+mpiexec) can be found.  By default this is set to ``${MPI_BASE_DIR}/bin`` if
+``MPI_BASE_DIR`` is set.
 
-  The value of LD_LIBRARY_PATH will also automatically be set to
-  ${MPI_BASE_DIR}/lib if it exists.  This is needed for the basic compiler
-  tests for some MPI implementations that are installed in non-standard
-  locations.
+The value of ``LD_LIBRARY_PATH`` will also automatically be set to
+``${MPI_BASE_DIR}/lib`` if it exists.  This is needed for the basic compiler
+tests for some MPI implementations that are installed in non-standard
+locations.
 
-  a) Configuring build using MPI compiler wrappers:
+There are several different different variations for configuring with MPI
+support:
 
-    The MPI compiler wrappers are turned on by default.  There is built-in
-    logic that will try to find the right compiler wrappers.  However, you can
-    specifically select them by setting:
+a) **Configuring build using MPI compiler wrappers:**
 
-      -D MPI_[C,CXX_Fortran]_COMPILER:FILEPATH="exec_name"
+  The MPI compiler wrappers are turned on by default.  There is built-in
+  logic that will try to find the right compiler wrappers.  However, you can
+  specifically select them by setting, for example::
 
-        The name of the MPI C/C++/Fortran compiler wrapper executable.
-        If this is just the name of the program it will be looked for
-        in ${MPI_BIN_DIR} and in other standard locations with that name.
-        If this is an absolute path, then this will be used as
-        CMAKE_[C,CXX,Fortran]_COMPILER to compile and link code.
+    -D MPI_C_COMPILER:FILEPATH=mpicc \
+    -D MPI_CXX_COMPILER:FILEPATH=mpic++ \
+    -D MPI_Fortan_COMPILER:FILEPATH=mpif77
 
-  b) Configuring to build using raw compilers and flags/libraries:
+  which gives the name of the MPI C/C++/Fortran compiler wrapper executable.
+  If this is just the name of the program it will be looked for in
+  ${MPI_BIN_DIR} and in other standard locations with that name.  If this is
+  an absolute path, then this will be used as CMAKE_[C,CXX,Fortran]_COMPILER
+  to compile and link code.
 
-    While using the MPI compiler wrappers as described above is the preferred
-    way to enable support for MPI, you can also just use the raw compilers and
-    then pass in all of the other information that will be used to compile and
-    link your code.
+b) **Configuring to build using raw compilers and flags/libraries:**
 
-    To turn off the MPI compiler wrappers, set:
+  While using the MPI compiler wrappers as described above is the preferred
+  way to enable support for MPI, you can also just use the raw compilers and
+  then pass in all of the other information that will be used to compile and
+  link your code.
 
-      -D MPI_USE_COMPILER_WRAPPERS:BOOL=OFF
+  To turn off the MPI compiler wrappers, set::
 
-    You will then need to manually pass in the compile and link lines needed
-    to compile and link MP programs.  The compile flags can be set through:
+    -D MPI_USE_COMPILER_WRAPPERS:BOOL=OFF
 
-      -D CMAKE_[C,CXX,Fortran]_FLAGS:STRING="$EXTRA_COMPILE_FLAGS"
+  You will then need to manually pass in the compile and link lines needed to
+  compile and link MPI programs.  The compile flags can be set through::
 
-    The link and library flags must be set through:
+    -D CMAKE_[C,CXX,Fortran]_FLAGS:STRING="$EXTRA_COMPILE_FLAGS"
 
-      -D <Project>_EXTRA_LINK_FLAGS:STRING="$EXTRA_LINK_FLAGS"
+  The link and library flags must be set through::
 
-    Above, you can pass any type of library or other linker flags in and they
-    will always be the last libraries listed, even after all of the TPLs.
+    -D <Project>_EXTRA_LINK_FLAGS:STRING="$EXTRA_LINK_FLAGS"
 
-    NOTE: A good way to get the extra compile and link flags for MPI is to
-    use:
+  Above, you can pass any type of library or other linker flags in and they
+  will always be the last libraries listed, even after all of the TPLs.
 
-      export EXTRA_COMPILE_FLAGS="`$MPI_BIN_DIR/mpiCC --showme:compile`"
-      
-      export EXTRA_LINK_FLAGS="`$MPI_BIN_DIR/mpiCC --showme:link`"
-      
-    where MPI_BIN_DIR is set to your MPI installations binary directory.
+  NOTE: A good way to determine the extra compile and link flags for MPI is to
+  use::
 
-  c) Setting up to run MPI programs
+    export EXTRA_COMPILE_FLAGS="`$MPI_BIN_DIR/mpiCC --showme:compile`"
+    
+    export EXTRA_LINK_FLAGS="`$MPI_BIN_DIR/mpiCC --showme:link`"
+    
+  where ``MPI_BIN_DIR`` is set to your MPI installations binary directory.
 
-    In order to use the ctest program to run MPI tests, you must set the mpi
-    run command and the options it takes.  The built-in logic will try to find
-    the right program and options but you will have to override them in many
-    cases.
+c) **Setting up to run MPI programs:**
 
-    MPI test and example executables are run as:
+  In order to use the ctest program to run MPI tests, you must set the mpi
+  run command and the options it takes.  The built-in logic will try to find
+  the right program and options but you will have to override them in many
+  cases.
 
-      ${MPI_EXEC} ${MPI_EXEC_PRE_NUMPROCS_FLAGS} ${MPI_EXEC_NUMPROCS_FLAG} <NP> \
-        ${MPI_EXEC_POST_NUMPROCS_FLAGS} <TEST_EXECUTABLE_PATH> <TEST_ARGS>
+  MPI test and example executables are run as::
 
-    where TEST_EXECUTABLE_PATH, TEST_ARGS, and NP are specific to the test
-    being run.
+    ${MPI_EXEC} ${MPI_EXEC_PRE_NUMPROCS_FLAGS} \
+      ${MPI_EXEC_NUMPROCS_FLAG} <NP> \
+      ${MPI_EXEC_POST_NUMPROCS_FLAGS} \
+      <TEST_EXECUTABLE_PATH> <TEST_ARGS>
 
-    The test-independent MPI arguments are:
+  where ``<TEST_EXECUTABLE_PATH>``, ``<TEST_ARGS>``, and ``<NP>`` are specific
+  to the test being run.
 
-      -D MPI_EXEC:FILEPATH="exec_name"
+  The test-independent MPI arguments are::
 
-        The name of the MPI run command (e.g. mpirun, mpiexec) that is used to
-        run the MPI program.  This can be just the name of the program in which
-        case the full path will be looked for in ${MPI_BIN_DIR} as described
-        above.  If it is an absolute path, it will be used without question.
+    -D MPI_EXEC:FILEPATH="exec_name"
 
-      -D MPI_EXEC_MAX_NUMPROCS:STRING=4
+  (The name of the MPI run command (e.g. mpirun, mpiexec) that is used to run
+  the MPI program.  This can be just the name of the program in which case
+  the full path will be looked for in ``${MPI_BIN_DIR}`` as described above.
+  If it is an absolute path, it will be used without modification.)
 
-        The maximum number of processes to allow when setting up and running
-        MPI test and example executables.  The default is set to '4' and only
-        needs to be changed when needed or desired.
+  ::
 
-      -D MPI_EXEC_NUMPROCS_FLAG:STRING=-np
+    -D MPI_EXEC_MAX_NUMPROCS:STRING=4
 
-        The command-line option just before the number of processes to use
-        <NP>.  The default value is based on the name of ${MPI_EXEC}.
+  (The maximum number of processes to allow when setting up and running
+  MPI test and example executables.  The default is set to '4' and only
+  needs to be changed when needed or desired.)
 
-      -D MPI_EXEC_PRE_NUMPROCS_FLAGS:STRING="arg1 arg2 ... argn"
+  ::
 
-        Other command-line arguments that must come *before* the numprocs
-        argument.  The default is empty "".
+    -D MPI_EXEC_NUMPROCS_FLAG:STRING=-np
 
-      -D MPI_EXEC_POST_NUMPROCS_FLAGS:STRING="arg1 arg2 ... argn"
+  (The command-line option just before the number of processes to use
+  ``<NP>``.  The default value is based on the name of ``${MPI_EXEC}``, for
+  example, which is ``-np`` for OpenMPI.)
 
-        Other command-line arguments that must come *after* the numprocs
-        argument.  The default is empty "".
+  ::
 
+    -D MPI_EXEC_PRE_NUMPROCS_FLAGS:STRING="arg1 arg2 ... argn"
 
-(*) Configuring <Project> for OpenMP support:
+  (Other command-line arguments that must come *before* the numprocs
+  argument.  The default is empty "".)
 
-  To enable OpenMP support you must set
+  ::
 
-    -D <Project>_ENABLE_OpenMP:BOOL=ON
+    -D MPI_EXEC_POST_NUMPROCS_FLAGS:STRING="arg1 arg2 ... argn"
 
-  Note that if you enable OpenMP directly through a compiler option
-  (e.g., -fopenmp), you will NOT enable OpenMP inside <Project> source code.
+  (Other command-line arguments that must come *after* the numprocs
+  argument.  The default is empty "".)
 
-(*) Building shared libraries:
 
-    -D BUILD_SHARED_LIBS:BOOL=ON
+Configuring for OpenMP support
+------------------------------
 
-  NOTE: The above option will result in all shared libraries to be build on
-  all systems (i.e. *.so on Unix/Linux systems, *.dylib on Mac OS X,
-  and *.dll on Windows systems).
+To enable OpenMP support, one must set::
 
+  -D <Project>_ENABLE_OpenMP:BOOL=ON
 
-(*) Building static libraries and executables:
+Note that if you enable OpenMP directly through a compiler option (e.g.,
+``-fopenmp``), you will NOT enable OpenMP inside <Project> source code.
 
-   To build static libraries, turn off the shared library support:
-  
-    -D BUILD_SHARED_LIBS:BOOL=OFF
 
-   Some machines, such as the Cray XT5, require static executables.
-   To build trilinos package executables as static objects, a number of
-   flags must be set:
+Building shared libraries
+-------------------------
 
-    -D BUILD_SHARED_LIBS:BOOL=OFF
-    -D TPL_FIND_SHARED_LIBS:BOOL=OFF
-    -D <Project>_LINK_SEARCH_START_STATIC:BOOL=ON
-  
-   The first flag tells cmake to build static versions of the <Project>
-   libraries.  The second flag tells the build system to locate static
-   library versions of any required TPLs.  The third flag tells the
-   autodetection routines that search for extra required libraries
-   (such as the mpi library and the gfortran library for gnu
-   compilers) to locate static versions.
+To configure to build shared libraries, set::
 
-   NOTE: The flag <Project>_LINK_SEARCH_START_STATIC is only supported
-   in cmake version 2.8.5 or higher.  The variable will be ignored in
-   prior releases of cmake.
+  -D BUILD_SHARED_LIBS:BOOL=ON
 
+The above option will result in all shared libraries to be build on all
+systems (i.e., ``.so`` on Unix/Linux systems, ``.dylib`` on Mac OS X, and
+``.dll`` on Windows systems).
 
-(*) Enabling support for optional Third-Party Libraries (TPLs):
 
-  Pass into 'cmake':
+Building static libraries and executables
+-----------------------------------------
 
-    -D TPL_ENABLE_<TPLNAME>:BOOL=ON
+To build static libraries, turn off the shared library support::
 
-  where <TPLNAME> = Boost, ParMETIS, etc.
+ -D BUILD_SHARED_LIBS:BOOL=OFF
 
-  The headers, libraries, and library directories can then be specified with
-  the input cache variables:
+Some machines, such as the Cray XT5, require static executables.  To build
+<Project> executables as static objects, a number of flags must be set::
 
-    <TPLNAME>_INCLUDE_DIRS:PATH: List of paths to the header include
-      directories.
+ -D BUILD_SHARED_LIBS:BOOL=OFF \
+ -D TPL_FIND_SHARED_LIBS:BOOL=OFF \
+ -D <Project>_LINK_SEARCH_START_STATIC:BOOL=ON
 
-      Example:
- 
-       -D Boost_INCLUDE_DIRS:PATH=/usr/local/boost/include
+The first flag tells cmake to build static versions of the <Project>
+libraries.  The second flag tells cmake to locate static library versions of
+any required TPLs.  The third flag tells the autodetection routines that
+search for extra required libraries (such as the mpi library and the gfortran
+library for gnu compilers) to locate static versions.
 
-    <TPLNAME>_LIBRARY_NAMES:STRING: List of unadorned library names,
-      in the order of the link line.  The platform-specific prefixes
-      (e.g.. 'lib') and postfixes (e.g. '.a', '.lib', or '.dll') will be
-      added automatically.
+NOTE: The flag ``<Project>_LINK_SEARCH_START_STATIC`` is only supported in
+cmake version 2.8.5 or higher.  The variable will be ignored in prior releases
+of cmake.
 
-      Example:
 
-        -D BLAS_LIBRARY_NAMES:STRING="blas;gfortran"
+Enabling support for optional Third-Party Libraries (TPLs)
+----------------------------------------------------------
 
-    <TPLNAME>_LIBRARY_DIRS:PATH: The list of directories where the
-      library files can be found.
+To enable a given TPL, set::
 
-      Example:
+  -D TPL_ENABLE_<TPLNAME>:BOOL=ON
 
-        -D BLAS_LIBRARY_DIRS:PATH=/usr/local/blas
+where ``<TPLNAME>`` = ``Boost``, ``ParMETIS``, etc.
 
-  NOTE: The variables TPL_<TPLNAME>_INCLUDE_DIRS and TPL_<TPLNAME>_LIBRARIES
-  are what are directly used by the CMake build infrastructure.  These
-  variables are normally set by the variables <TPLNAME>_INCLUDE_DIRS,
-  <TPLNAME>_LIBRARY_NAMES, and <TPLNAME>_LIBRARY_DIRS using find commands but
-  you can always override these by setting the (type FILEPATH) cache
-  variables TPL_<TPLNAME>_INCLUDE_DIRS and TPL_<TPLNAME>_LIBRARIES.  This gives
-  the user complete and direct control in specifying exactly what is used in
-  the build process.  The other variables that start with <TPLNAME>_ are just a
-  convenience to make it easier to specify the location of the libraries.
+The headers, libraries, and library directories can then be specified with
+the input cache variables:
 
-  NOTE: In order to allow a TPL that normally requires one or more libraries
-  to ignore the libraries, you can set:
+* ``<TPLNAME>_INCLUDE_DIRS:PATH``: List of paths to the header include
+  directories.  For example::
 
-    -D BLAS_LIBRARY_NAMES:STRING=""
+    -D Boost_INCLUDE_DIRS:PATH=/usr/local/boost/include
 
-  Optional package-specific support for a TPL can be turned off by passing
-  into 'cmake':
+* ``<TPLNAME>_LIBRARY_NAMES:STRING``: List of unadorned library names, in the
+  order of the link line.  The platform-specific prefixes (e.g.. 'lib') and
+  postfixes (e.g. '.a', '.lib', or '.dll') will be added automatically by
+  CMake.  For example::
 
-    -D <TRIBITS_PACKAGE>_ENABLE_<TPLNAME>:BOOL=OFF
+    -D BLAS_LIBRARY_NAMES:STRING="blas;gfortran"
 
-  where <TRIBITS_PACKAGE> is Epetra, NOX etc.  This gives the user full control over
-  what TPLs are supported by which package independently.
+* ``<TPLNAME>_LIBRARY_DIRS:PATH``: The list of directories where the library
+  files can be found.  For example::
 
-  Support for an optional TPL can also be turned on implicitly by setting:
+    -D BLAS_LIBRARY_DIRS:PATH=/usr/local/blas
 
-    -D <TRIBITS_PACKAGE>_ENABLE_<TPLNAME>:BOOL=ON
+The variables ``TPL_<TPLNAME>_INCLUDE_DIRS`` and ``TPL_<TPLNAME>_LIBRARIES``
+are what are directly used by the TriBITS dependency infrastructure.  These
+variables are normally set by the variables ``<TPLNAME>_INCLUDE_DIRS``,
+``<TPLNAME>_LIBRARY_NAMES``, and ``<TPLNAME>_LIBRARY_DIRS`` using CMake
+``find`` commands but one can always override these by directly setting these
+cache variables ``TPL_<TPLNAME>_INCLUDE_DIRS`` and
+``TPL_<TPLNAME>_LIBRARIES``, for example, as::
 
-  That will result in setting TPL_ENABLE_<TPLNAME>=ON internally (but not set
-  in the cache) if TPL_ENABLE_<TPLNAME>=OFF is not already set.
+  -D TPL_Boost_INCLUDE_DIRS=/usr/local/boost/include \
+  -D TPL_Boost_LIBRARIES="/user/local/boost/lib/libprogram_options.a;..."
 
-  WARNING: Do *not* try to hack the system and set:
+This gives the user complete and direct control in specifying exactly what is
+used in the build process.  The other variables that start with ``<TPLNAME>_``
+are just a convenience to make it easier to specify the location of the
+libraries.
 
-    TPL_BLAS_LIBRARIES:PATH="-L/some/dir -llib1 -llib2 ..."
+In order to allow a TPL that normally requires one or more libraries to ignore
+the libraries, one can set ``<TPLNAME>_LIBRARY_NAMES``, for example::
 
-  This is not compatible with proper CMake usage and it not guaranteed
-  to be supported.
+  -D BLAS_LIBRARY_NAMES:STRING=""
 
+Optional package-specific support for a TPL can be turned off by setting::
 
-(*) Disabling tentatively enabled TPLs:
+  -D <TRIBITS_PACKAGE>_ENABLE_<TPLNAME>:BOOL=OFF
 
-    -D TPL_ENABLE_<TPLNAME>:BOOL=OFF
+This gives the user full control over what TPLs are supported by which package
+independently.
 
-  where <TPLNAME> = BinUtils, Boost, etc.
+Support for an optional TPL can also be turned on implicitly by setting::
 
-  NOTE: Some TPLs in <Project> are always tentatively enabled (e.g. BinUtils
-  for C++ stacktracing) and if all of the components for the TPL are found
-  (e.g. headers and libraries) then support for the TPL will be enabled,
-  otherwise it will be disabled.  This is to allow as much functionality as
-  possible to get automatically enabled without the user having to learn about
-  the TPL, explicitly enable the TPL, and then see if it is supported or not
-  on the given system.  However, if the TPL is not supported on a given
-  platform, then it may be better to explicitly disable the TPL (as shown
-  above) so as to avoid the output from the CMake configure process that shows
-  the tentatively enabled TPL being processes and then failing to be enabled.
-  Also, it is possible that the enable process for the TPL may pass, but the
-  TPL may not work correctly on the given platform.  In this case, one would
-  also want to explicitly disable the TPL as shown above.
+  -D <TRIBITS_PACKAGE>_ENABLE_<TPLNAME>:BOOL=ON
 
+where ``<TRIBITS_PACKAGE>`` is a TriBITS package that has an optional
+dependency on ``<TPLNAME>``.  That will result in setting
+``TPL_ENABLE_<TPLNAME>=ON`` internally (but not set in the cache) if
+``TPL_ENABLE_<TPLNAME>=OFF`` is not already set.
 
-(*) Getting verbose output from configure:
+WARNING: Do *not* try to hack the system and set::
 
-    $ ./do_configure -D <Project>_VERBOSE_CONFIGURE:BOOL=ON
+  TPL_BLAS_LIBRARIES:PATH="-L/some/dir -llib1 -llib2 ..."
+
+This is not compatible with proper CMake usage and it not guaranteed
+to be supported.
+
+
+Disabling tentatively enabled TPLs
+----------------------------------
+
+To disable a tentatively enabled TPL, set::
+
+  -D TPL_ENABLE_<TPLNAME>:BOOL=OFF
+
+where ``<TPLNAME>`` = ``BinUtils``, ``Boost``, etc.
+
+NOTE: Some TPLs in <Project> are always tentatively enabled (e.g. BinUtils
+for C++ stacktracing) and if all of the components for the TPL are found
+(e.g. headers and libraries) then support for the TPL will be enabled,
+otherwise it will be disabled.  This is to allow as much functionality as
+possible to get automatically enabled without the user having to learn about
+the TPL, explicitly enable the TPL, and then see if it is supported or not
+on the given system.  However, if the TPL is not supported on a given
+platform, then it may be better to explicitly disable the TPL (as shown
+above) so as to avoid the output from the CMake configure process that shows
+the tentatively enabled TPL being processes and then failing to be enabled.
+Also, it is possible that the enable process for the TPL may pass, but the
+TPL may not work correctly on the given platform.  In this case, one would
+also want to explicitly disable the TPL as shown above.
+
+Generating verbose output
+-------------------------
+
+There are several different ways to generate verbose output to debug problems
+when they occur:
+
+a) **Getting verbose output from TriBITS configure:**
+
+  ::
+
+    -D <Project>_VERBOSE_CONFIGURE:BOOL=ON
 
   NOTE: This produces a *lot* of output but can be very useful when debugging
-  configuration problems
+  configuration problems.
 
+b) **Getting verbose output from the makefile:**
 
-(*) Getting verbose output from the makefile:
+  ::
 
-    $ ./do_configure -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE
+    -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE
 
+  NOTE: It is generally better to just pass in ``VERBOSE=`` when directly
+  calling ``make`` after configuration is finihsed.  See `Building with
+  verbose output without reconfiguring`_.
 
-(*) Getting very verbose output from configure:
+c) **Getting very verbose output from configure:**
 
-    $ ./do_configure -D <Project>_VERBOSE_CONFIGURE:BOOL=ON --debug-output --trace
+  ::
+
+    -D <Project>_VERBOSE_CONFIGURE:BOOL=ON --debug-output --trace
 
   NOTE: This will print a complete stack trace to show exactly where you are.
 
 
-(*) Enabling/disabling time monitors:
+Enabling/disabling deprecated warnings
+--------------------------------------
 
-   -D <Project>_ENABLE_TEUCHOS_TIME_MONITOR:BOOL=ON
+To turn off all deprecated warnings, set::
 
-  Above will enable Teuchos time monitors by default in all <Project> packages
-  that support them.  To print the timers at the end of the program, call
-  Teuchos::TimeMonitor::summarize().
+  -D <Project>_SHOW_DEPRECATED_WARNINGS:BOOL=OFF
 
+This will disable, by default, all deprecated warnings in packages in
+<Project>.  By default, deprecated warnings are enabled.
 
-(*) Enabling/disabling deprecated warnings:
+To enable/disable deprecated warnings for a single <Project> package, set::
 
-    -D <Project>_SHOW_DEPRECATED_WARNINGS:BOOL=OFF
+  -D <TRIBITS_PACKAGE>_SHOW_DEPRECATED_WARNINGS:BOOL=OFF
 
-  Above will disable, by default, all deprecated warnings in <Project>.  By
-  default, deprecated warnings are enabled.
-
-  To enable/disable deprecated warnings for a single <Project> package use:
-
-    -D <TRIBITS_PACKAGE>_SHOW_DEPRECATED_WARNINGS:BOOL=OFF
-
-  This will override the global behavior set by
-  <Project>_SHOW_DEPRECATED_WARNINGS for individual packages <TRIBITS_PACKAGE>
-  (e.g. <TRIBITS_PACKAGE> = Teuchos, Thyra, etc.).
+This will override the global behavior set by
+``<Project>_SHOW_DEPRECATED_WARNINGS`` for individual package
+``<TRIBITS_PACKAGE>``.
 
 
-(*) Disabling deprecated code:
+Disabling deprecated code
+-------------------------
 
-    -D <Project>_HIDE_DEPRECATED_CODE:BOOL=ON
+To actually disable deprecated code from being included in compilation, set::
 
-  Above, a subset of deprecated code will actually be removed from the build.
-  This is to allow testing of downstream client code that might otherwise
-  ignore deprecated warnings and to certify that a downstream client code is
-  free of calling deprecated coee.
+  -D <Project>_HIDE_DEPRECATED_CODE:BOOL=ON
 
-  To hide deprecated code or not for a single <Project> package use:
+and a subset of deprecated code will actually be removed from the build.  This
+is to allow testing of downstream client code that might otherwise ignore
+deprecated warnings and to certify that a downstream client code is free of
+calling deprecated coee.
 
-    -D <TRIBITS_PACKAGE>_HIDE_DEPRECATED_CODE:BOOL=ON
+To hide deprecated code or not for a single <Project> package set::
 
-  This will override the global behavior set by <Project>_HIDE_DEPRECATED_CODE
-  for individual packages <TRIBITS_PACKAGE> (e.g. <TRIBITS_PACKAGE> = Teuchos,
-  Thyra, etc.).
+  -D <TRIBITS_PACKAGE>_HIDE_DEPRECATED_CODE:BOOL=ON
+
+This will override the global behavior set by
+``<Project>_HIDE_DEPRECATED_CODE`` for individual packages
+``<TRIBITS_PACKAGE>``.
 
 
 (*) Disable update of package dependency information:

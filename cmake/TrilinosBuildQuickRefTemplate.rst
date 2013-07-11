@@ -23,3 +23,21 @@ Also, this particular quick reference has no information at all on what is actua
   http://trilinos.org
 
 to get started.
+
+Trilinos-specific options
+=========================
+
+Below, configure options specific to Trilinos are given.  The later sections
+give more generic options that are the same for all TriBITS projects.
+
+
+Enabling/disabling time monitors
+--------------------------------
+
+I order to enable instrumentation of select code to generate timing statistics, set::
+
+ -D <Project>_ENABLE_TEUCHOS_TIME_MONITOR:BOOL=ON
+
+This will enable Teuchos time monitors by default in all Trilinos packages
+that support them.  To print the timers at the end of the program, call
+``Teuchos::TimeMonitor::summarize()``.
