@@ -471,6 +471,34 @@ IF (Stokhos_ENABLE_Thrust)
   SET(SOURCES ${SOURCES} ${CUDA_SOURCES})
 ENDIF()
 
+# Include cusp
+IF (Stokhos_ENABLE_Cusp)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/cusp)
+  SET(HEADERS ${HEADERS}
+    cusp/krylov/blockcg.h
+    cusp/block_monitor.h
+    cusp/block_multilevel.h
+    cusp/MVmultiply.h
+    cusp/detail/block_lu.h
+    cusp/detail/device/MVmultiply.h
+    cusp/detail/device/spmm/array2d.h
+    cusp/detail/device/spmm/csr_vector.h
+    cusp/detail/dispatch/MVmultiply.h
+    cusp/precond/block_smoothed_aggregation.h
+    cusp/relaxation/block_polynomial.h
+    cusp/relaxation/block_jacobi.h     
+    )
+  SET(SOURCES ${SOURCES} ${CUDA_SOURCES}
+    cusp/krylov/blockcg.inl
+    cusp/block_multilevel.inl
+    cusp/detail/MVmultiply.inl
+    cusp/precond/block_smoothed_aggregation.inl
+    cusp/relaxation/block_polynomial.inl
+    cusp/relaxation/block_jacobi.inl
+    )
+ENDIF()
+
+
 #
 # C) Define the targets for package's library(s)
 #
