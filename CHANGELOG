@@ -4,6 +4,12 @@
 #                                                                             #
 ###############################################################################
 
+Release update 11.2.5 July 11, 2013
+
+1. SEACAS    - Fix parallel-aware exodus build activation
+
+2. Teuchos   - Fix configuration issue on OSX with case sensitive file system
+
 Release update 11.2.4 June 20, 2013
 
 1. ML        - Add support for ParMETIS 4.x and METIS 5.x
