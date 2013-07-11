@@ -76,7 +76,7 @@ typename GraphType::local_ordinal_type OverlappingPartitioner<GraphType>::numLoc
 
 //==============================================================================
 template<class GraphType>
-size_t OverlappingPartitioner<GraphType>::overlappingLevel() const
+int OverlappingPartitioner<GraphType>::overlappingLevel() const
 {
   return(OverlappingLevel_);
 }

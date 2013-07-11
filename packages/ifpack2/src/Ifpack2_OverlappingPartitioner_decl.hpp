@@ -92,7 +92,7 @@ public:
   LocalOrdinal numLocalParts() const;
 
   //! Returns the overlapping level.
-  size_t overlappingLevel() const;
+  int overlappingLevel() const;
 
   //! Returns the local non-overlapping partition ID of the specified row.
   /*! Returns the non-overlapping partition ID of the specified row.
@@ -170,7 +170,7 @@ protected:
   //! Reference to the graph to be partitioned
   Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> > Graph_;
   //! Overlapping level.
-  size_t OverlappingLevel_;
+  int OverlappingLevel_;
   //! If \c true,  the graph has been successfully partitioned.
   bool IsComputed_;
   //! If \c true, information are reported on cout.

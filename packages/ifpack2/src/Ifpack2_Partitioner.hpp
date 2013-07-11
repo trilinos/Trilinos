@@ -159,7 +159,7 @@ public:
   virtual LocalOrdinal numLocalParts() const = 0;
 
   //! Returns the overlapping level.
-  virtual size_t overlappingLevel() const = 0;
+  virtual int overlappingLevel() const = 0;
 
   //! Returns the local non-overlapping partition ID of the specified row.
   /*! Returns the non-overlapping partition ID of the specified row.

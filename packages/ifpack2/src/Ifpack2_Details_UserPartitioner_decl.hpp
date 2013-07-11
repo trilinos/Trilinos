@@ -40,66 +40,59 @@
 //@HEADER
 */
 
-#ifndef IFPACK2_USER_PARTITIONER_DEF_HPP
-#define IFPACK2_USER_PARTITIONER_DEF_HPP
+#ifndef IFPACK2_USER_PARTITIONER_DECL_HPP
+#define IFPACK2_USER_PARTITIONER_DECL_HPP
+
+/// \file Ifpack2_Details_Tpetra_RowGraph_decl.hpp
+/// \brief Declaration of a user-defined partitioner in which the user can define a nonoverlapping partition of the graph.
+/// \author Tom Benson
+///
+/// This file is meant for Ifpack2 developers only, not for users.
+/// It declares a user-defined partitioner to mirror the one in Ifpack.
+
 #include "Ifpack2_ConfigDefs.hpp"
-#include "Ifpack2_UserPartitioner_decl.hpp"
-#include "Ifpack2_OverlappingPartitioner_def.hpp"
+#include "Ifpack2_OverlappingPartitioner_decl.hpp"
 
-namespace Ifpack2 {
+#include "Teuchos_ParameterList.hpp"
 
-//==============================================================================
-// Constructor
+namespace Ifpack2{
+/// \namespace Details
+/// \brief Ifpack2 implementation details
+///
+/// This namespace contains implementation details of Ifpack2.
+/// It is <i>not</i> meant for users.  Users should not rely on
+/// anything in this namespace.
+
+namespace Details{
+/// \class UserPartitioner
+/// \brief Allow the user to specify any nonoverlapping partition of the graph that they may choose.
+///
+
 template<class GraphType>
-UserPartitioner<GraphType>::UserPartitioner(const Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> >& Graph) :
-  OverlappingPartitioner<GraphType>(Graph)
-{
-}
-//==============================================================================
-// Destructor.
-template<class GraphType>
-UserPartitioner<GraphType>::~UserPartitioner()
-{
-}
+class UserPartitioner : public OverlappingPartitioner<GraphType> {
 
-//==============================================================================
-  //! Sets all the parameters for the partitioner (none for linear partioning).
-template<class GraphType>
-void UserPartitioner<GraphType>::setPartitionParameters(Teuchos::ParameterList& List)
-{
-  Map_ = List.get("partitioner: map",Map_);
-  if (Map_ == Teuchos::null)
-    {
-      throw std::runtime_error("AAAAARRRGGGGGHHHh!");
+public:
+  typedef typename GraphType::local_ordinal_type LocalOrdinal;
+  typedef typename GraphType::global_ordinal_type GlobalOrdinal;
+  typedef typename GraphType::node_type Node;
 
-    }
+  //! Constructor.
+  UserPartitioner(const Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> >& Graph);
 
-}
+  //! Destructor.
+  virtual ~UserPartitioner();
 
-//==============================================================================
-template<class GraphType>
-void UserPartitioner<GraphType>::UserPartitioner::computePartitions()
-{
-  
-  if (Map_ == Teuchos::null)
-    {
-      // Throw some exception
-      throw std::runtime_error("AAAAARRRGGGGGHHHh!");
-    }
+  //! Sets all the parameters for the partitioner.
+  void setPartitionParameters(Teuchos::ParameterList& List);
 
-  for (size_t ii=0 ; ii < this->Graph_->getNodeNumRows() ; ++ii)
-    {
-      this->Partition_[ii] = Map_[ii];
-    }
+  //! Computes the partitions. Returns 0 if successful.
+  void computePartitions();
 
-  //IGNORING ALL THE SINGLETON B.S. IN IFPACK_USERPARTITIONER.CPP BY
-  //ORDERS OF CHRIS SIEFERT
+protected:
+  Teuchos::ArrayRCP<LocalOrdinal> Map_;
 
-}
-
-
+};
+}// namespace Details
 }// namespace Ifpack2
 
-#endif // IFPACK2_USERPARTITIONER_DEF_HPP
-
-/* Have to assign a partition number to everyone, but don't want to assign partition number to velocity - we really just want things that are not partitioned in the initial partition. We can assign a dummy value for an initial partition (something like -1 or something greater than num partitions or something Teuchos::OrdinalTraits<LocalOrdinal>::invalid();*/
+#endif // IFPACK2_USER_PARTITIONER_DECL_HPP

@@ -1,14 +1,5 @@
 // This will be a driver to test the development and implementation of
-// the Vanka Smoother in Ifpack2. The tasks to be completed are as
-// follows:
-//
-// 1. Translate Ifpack_UserPartition interface into Ifpack2 -- DONE
-// 2. Feed it pressure LIDs -- SORTA DONE (ACTUALLY GIDs IN MY EXAMPLE)
-// 3. Specify overlap = 1 -- DONE
-// 4. Verify that this spits out the correct partitioning for Stokes Vanka -- DONE
-// 5. Write a unit test -- TODO
-// 6. Figure out how to efficiently add magnetics coupling -- EH KINDA SORTA DONE
-// 7. Write a unit test -- TODO
+// the Vanka Smoother in Ifpack2. 
 //
 
 #include <Teuchos_ConfigDefs.hpp>
@@ -31,7 +22,7 @@
 #include <Ifpack2_Preconditioner.hpp>
 #include <Ifpack2_Partitioner.hpp>
 #include <Ifpack2_OverlappingPartitioner.hpp>
-#include <Ifpack2_UserPartitioner_def.hpp>
+#include <Ifpack2_Details_UserPartitioner_def.hpp>
 #include <Ifpack2_LinearPartitioner_def.hpp>
 #include <Ifpack2_BlockRelaxation_def.hpp>
 #include <Ifpack2_ILUT.hpp>
@@ -92,7 +83,7 @@ int main(int argc, char *argv[]){
   // Create our matrix!
 
   // Parameters
-  GlobalOrdinal numGlobalDOFs = 16;
+  GlobalOrdinal numGlobalDOFs = 32;
   
   // Create a map
   Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > myMap = Tpetra::createUniformContigMap<LocalOrdinal,GlobalOrdinal>(numGlobalDOFs,comm);
@@ -135,10 +126,10 @@ int main(int argc, char *argv[]){
   // Distribute the local dofs over how many partitions?
   MyList.set("partitioner: local parts",(LocalOrdinal) A->getNodeNumRows());
   // How much overlap in the partitions
-  MyList.set("partitioner: overlap"    ,(size_t) 1);
+  MyList.set("partitioner: overlap"    ,(int) 1);
 
   // What type of block relaxation should we use?
-  MyList.set("relaxation: type"        ,"Symmetric Gauss-Seidel");
+  MyList.set("relaxation: type"        ,"Gauss-Seidel");
   // How many sweeps?
   MyList.set("relaxation: sweeps"      ,(int) 1);
   // How much damping?
@@ -152,7 +143,7 @@ int main(int argc, char *argv[]){
   MyList.set("fact: ilut level-of-fill", 3.0);
 
   // Schwarz for the parallel
-  MyList.set("schwarz: overlap level", (int) 0);
+  MyList.set("schwarz: overlap level", (int) 1);
 
 
 
