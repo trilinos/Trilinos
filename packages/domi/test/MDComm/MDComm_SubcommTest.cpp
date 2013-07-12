@@ -150,15 +150,15 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, lowerRight )
     if (axis == 0)
     {
       int n = axisSizesVal[axis] / 2;
-      if (n == 0) n = 1;
-      slices[axis] = Slice(n);
-      newSizes[axis] = n;
+      slices[axis] = Slice(n,Default);
+      newSizes[axis] = axisSizesVal[axis] - n;
     }
     else if (axis == 1)
     {
       int n = axisSizesVal[axis] / 2;
-      slices[axis] = Slice(n,Default);
-      newSizes[axis] = axisSizesVal[axis] - n;
+      if (n == 0) n = 1;
+      slices[axis] = Slice(n);
+      newSizes[axis] = n;
     }
     else
     {
@@ -178,7 +178,7 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, lowerRight )
     if (mdComm->getAxisRank(1) >= newSizes[1])
       partOfSubcomm = false;
 
-#if 1
+#if 0
   if (partOfSubcomm)
     std::cout << "P" << comm->getRank() << ": IS part of sub-comm "
               << newSizes << std::endl;
