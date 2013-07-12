@@ -202,4 +202,145 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, lowerRight )
   }
 }
 
+TEUCHOS_UNIT_TEST( MDComm_Subcomm, upperLeft )
+{
+  // Construct the MDComm from command-line arguments
+  TeuchosComm comm = Teuchos::DefaultComm< int >::getComm();
+  Array< int > axisSizesVal;
+  Domi::splitStringOfIntsWithCommas(axisSizes, axisSizesVal);
+  Teuchos::RCP< MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, numDims, axisSizesVal));
+
+  // Get the final axisSizes
+  axisSizesVal.resize(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    axisSizesVal[axis] = mdComm->getAxisSize(axis);
+  
+  // Figure out the upper left slice
+  Array< Slice > slices(numDims);
+  Array< int >   newSizes(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    if (axis == 0)
+    {
+      int n = axisSizesVal[axis] / 2;
+      if (n == 0) n = 1;
+      slices[axis] = Slice(n);
+      newSizes[axis] = n;
+    }
+    else if (axis == 1)
+    {
+      int n = axisSizesVal[axis] / 2;
+      slices[axis] = Slice(n,Default);
+      newSizes[axis] = axisSizesVal[axis] - n;
+    }
+    else
+    {
+      slices[axis] = Slice();
+      newSizes[axis] = axisSizesVal[axis];
+    }
+  }
+
+  // Construct the sub-MDComm
+  MDComm subMDComm(mdComm, slices);
+
+  // Should this processor be a part of the sub-MDComm?
+  bool partOfSubcomm = true;
+  if (mdComm->getAxisRank(0) >= newSizes[0])
+    partOfSubcomm = false;
+  if (numDims > 1)
+    if (mdComm->getAxisRank(1) < axisSizesVal[1] - newSizes[1])
+      partOfSubcomm = false;
+
+#if 0
+  if (partOfSubcomm)
+    std::cout << "P" << comm->getRank() << ": IS part of sub-comm "
+              << newSizes << std::endl;
+  else
+    std::cout << "P" << comm->getRank() << ": is NOT part of sub-comm"
+              << std::endl;
+#endif
+
+  // Do some unit tests
+  if (partOfSubcomm)
+  {
+    TEST_EQUALITY(subMDComm.getNumDims(), numDims);
+    for (int axis = 0; axis < numDims; ++axis)
+    {
+      TEST_EQUALITY(subMDComm.getAxisSize(axis), newSizes[axis]);
+    }
+  }
+  else
+  {
+    TEST_EQUALITY_CONST(subMDComm.getNumDims(), 0);
+  }
+}
+
+TEUCHOS_UNIT_TEST( MDComm_Subcomm, upperRight )
+{
+  // Construct the MDComm from command-line arguments
+  TeuchosComm comm = Teuchos::DefaultComm< int >::getComm();
+  Array< int > axisSizesVal;
+  Domi::splitStringOfIntsWithCommas(axisSizes, axisSizesVal);
+  Teuchos::RCP< MDComm > mdComm =
+    Teuchos::rcp(new MDComm(comm, numDims, axisSizesVal));
+
+  // Get the final axisSizes
+  axisSizesVal.resize(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    axisSizesVal[axis] = mdComm->getAxisSize(axis);
+  
+  // Figure out the upper right slice
+  Array< Slice > slices(numDims);
+  Array< int >   newSizes(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    if (axis < 2)
+    {
+      int n = axisSizesVal[axis] / 2;
+      slices[axis] = Slice(n,Default);
+      newSizes[axis] = axisSizesVal[axis] - n;
+    }
+    else
+    {
+      slices[axis] = Slice();
+      newSizes[axis] = axisSizesVal[axis];
+    }
+  }
+
+  // Construct the sub-MDComm
+  MDComm subMDComm(mdComm, slices);
+
+  // Should this processor be a part of the sub-MDComm?
+  bool partOfSubcomm = true;
+  if (mdComm->getAxisRank(0) < axisSizesVal[0] - newSizes[0])
+    partOfSubcomm = false;
+  if (numDims > 1)
+    if (mdComm->getAxisRank(1) < axisSizesVal[1] - newSizes[1])
+      partOfSubcomm = false;
+
+#if 0
+  if (partOfSubcomm)
+    std::cout << "P" << comm->getRank() << ": IS part of sub-comm "
+              << newSizes << std::endl;
+  else
+    std::cout << "P" << comm->getRank() << ": is NOT part of sub-comm"
+              << std::endl;
+#endif
+
+  // Do some unit tests
+  if (partOfSubcomm)
+  {
+    TEST_EQUALITY(subMDComm.getNumDims(), numDims);
+    for (int axis = 0; axis < numDims; ++axis)
+    {
+      TEST_EQUALITY(subMDComm.getAxisSize(axis), newSizes[axis]);
+    }
+  }
+  else
+  {
+    TEST_EQUALITY_CONST(subMDComm.getNumDims(), 0);
+  }
+}
+
 }
