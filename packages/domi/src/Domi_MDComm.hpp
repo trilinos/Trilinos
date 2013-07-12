@@ -60,7 +60,6 @@ class MDComm
 {
 public:
 
-  typedef Domi_Ordinal Ordinal;
   typedef Teuchos::Array< int >::size_type size_type;
 
   MDComm(const TeuchosComm teuchosComm,
