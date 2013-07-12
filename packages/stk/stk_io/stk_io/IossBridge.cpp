@@ -35,8 +35,6 @@ namespace {
   const std::string internal_selector_name = "_stk_io_internal_selector";
   const std::string base_stk_part_name = "_base_stk_part_name";
   const std::string block_nodes_suffix = "_nodes";
-  // Need to somehow associate this with the string in MeshReadWriteUtils
-  const std::string coordinate_field_name = "coordinates";
 
 stk::mesh::EntityRank get_entity_rank(const Ioss::GroupingEntity *entity,
                                       const stk::mesh::MetaData &meta)
@@ -898,7 +896,7 @@ void define_node_block(stk::mesh::Part &part,
   const int spatial_dim = meta.spatial_dimension();
   io_region.property_add( Ioss::Property("spatial_dimension", spatial_dim));
 
-  ThrowAssertMsg(field_has_expected_size(bulk.coordinate_field(), spatial_dim), "IossBridge define_node_block ERROR, coordinate field doesn't have the correct size. (Should match spatial-dimension.)");
+  ThrowAssertMsg(field_has_expected_size(meta.coordinate_field(), spatial_dim), "IossBridge define_node_block ERROR, coordinate field doesn't have the correct size. (Should match spatial-dimension.)");
 
   //--------------------------------
   // Create the special universal node block:
@@ -1304,7 +1302,7 @@ void output_node_block(Ioss::NodeBlock &nb,
   }
 
   const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
-  const mesh::FieldBase *coord_field = bulk.coordinate_field();
+  const mesh::FieldBase *coord_field = meta_data.coordinate_field();
   assert(coord_field != NULL);
   field_data_to_ioss(bulk, coord_field, nodes, &nb, "mesh_model_coordinates", Ioss::Field::MESH);
 

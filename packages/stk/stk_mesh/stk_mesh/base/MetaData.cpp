@@ -61,6 +61,32 @@ void find_cell_topologies_in_part_and_subsets_of_same_rank(const Part & part, En
   }
 }
 
+//----------------------------------------------------------------------
+
+stk::mesh::FieldBase* try_to_find_coord_field(const stk::mesh::MetaData& meta)
+{
+  //attempt to initialize the coordinate-field pointer, trying a couple
+  //of commonly-used names. It is expected that the client code will initialize
+  //the coordinates field using set_coordinate_field, but this is an
+  //attempt to be helpful for existing client codes which aren't yet calling that.
+
+  stk::mesh::FieldBase* coord_field = meta.get_field("mesh_model_coordinates");
+  if (coord_field == NULL) {
+    coord_field = meta.get_field("mesh_model_coordinates_0");
+  }
+  if (coord_field == NULL) {
+    coord_field = meta.get_field("model_coordinates");
+  }
+  if (coord_field == NULL) {
+    coord_field = meta.get_field("model_coordinates_0");
+  }
+  if (coord_field == NULL) {
+    coord_field = meta.get_field("coordinates");
+  }
+
+  return coord_field;
+}
+
 } // namespace
 
 void MetaData::assign_cell_topology(
@@ -172,6 +198,7 @@ MetaData::MetaData(size_t spatial_dimension, const std::vector<std::string>& ent
     m_owns_part( NULL ),
     m_shares_part( NULL ),
     m_field_repo(),
+    m_coord_field(NULL),
     m_properties( ),
     m_entity_rank_names( ),
     m_spatial_dimension( 0 /*invalid spatial dimension*/)
@@ -245,6 +272,18 @@ EntityRank MetaData::entity_rank( const std::string &name ) const
       break;
     }
   return entity_rank;
+}
+
+FieldBase* MetaData::coordinate_field() const
+{
+  if (m_coord_field == NULL) {
+    m_coord_field = try_to_find_coord_field(*this);
+  }
+
+  ThrowErrorMsgIf( m_coord_field == NULL,
+                   "MetaData::coordinate_field: Coordinate field has not been defined" );
+
+  return m_coord_field;
 }
 
 //----------------------------------------------------------------------

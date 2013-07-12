@@ -170,9 +170,6 @@ public:
             , ConnectivityMap* arg_connectivity_map = NULL
             );
 
-  FieldBase* coordinate_field() const { return m_coord_field; }
-  void set_coordinate_field(FieldBase* coord_field) { m_coord_field = coord_field; }
-
   //------------------------------------
   /** \brief  The meta data manager for this bulk data manager. */
   const MetaData & mesh_meta_data() const { return m_mesh_meta_data ; }
@@ -1134,7 +1131,6 @@ private:
 
   std::list<size_t>     m_deleted_entities;
   std::list<size_t>     m_deleted_entities_current_modification_cycle;
-  FieldBase* m_coord_field;
 
   // Other information:
   MetaData &         m_mesh_meta_data;
