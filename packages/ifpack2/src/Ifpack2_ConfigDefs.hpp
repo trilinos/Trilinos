@@ -45,6 +45,7 @@
 
 #include <Ifpack2_config.h>
 #include <Teuchos_ScalarTraits.hpp>
+#include <Tpetra_ConfigDefs.hpp>
 
 //The sgn function isn't well defined for complex.
 //Is it correct to operate on the real part of x as is done below?
@@ -56,9 +57,22 @@ IFPACK2_SGN(const Scalar& x)
   return Teuchos::ScalarTraits<Scalar>::real(x) > 0.0 ? -one : one;
 }
 
-#include <Tpetra_ConfigDefs.hpp>
+
 namespace Ifpack2 {
   typedef Tpetra::global_size_t global_size_t;
-}
+
+  namespace Details {
+    /// \brief Type of relaxation to use.
+    /// \warning This is an implementation detail of Ifpack2.  Users
+    ///   should not depend on this enum or its integer values.  The
+    ///   enum may disappear or change name, or the values may change
+    ///   names or values or disappear, at any time.
+    enum RelaxationType {
+      JACOBI, //!< Jacobi
+      GS,     //!< Gauss-Seidel
+      SGS     //!< Symmetric Gauss-Seidel
+    };
+  } // namespace Details
+} // namespace Ifpack2
 
 #endif /*_IFPACK2_CONFIGDEFS_HPP_*/
