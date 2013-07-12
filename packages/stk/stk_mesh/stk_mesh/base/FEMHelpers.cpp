@@ -176,7 +176,8 @@ Entity declare_element_side(
   const stk::mesh::EntityId global_side_id ,
   Entity elem ,
   const unsigned local_side_id ,
-  Part * part )
+  Part * part ,
+  bool check_pre_existing )
 {
   verify_declare_element_side(mesh, elem, local_side_id);
 
@@ -192,8 +193,19 @@ Entity declare_element_side(
 		   local_side_id << ", side has no defined topology" );
 
   PartVector empty_parts ;
-  Entity side = mesh.declare_entity( side_top->dimension , global_side_id, empty_parts );
-  return declare_element_side(mesh, elem, side, local_side_id, part);
+  Entity side;
+  if (check_pre_existing) {
+    side = mesh.get_entity( side_top->dimension, global_side_id);
+    if (!mesh.is_valid(side)) {
+      side = mesh.declare_entity( side_top->dimension , global_side_id, empty_parts );
+      declare_element_side(mesh, elem, side, local_side_id, part);
+    }
+  }
+  else {
+    side = mesh.declare_entity( side_top->dimension , global_side_id, empty_parts );
+    declare_element_side(mesh, elem, side, local_side_id, part);
+  }
+  return side;
 }
 
 Entity declare_element_edge(
@@ -201,7 +213,8 @@ Entity declare_element_edge(
   const stk::mesh::EntityId global_edge_id ,
   Entity elem ,
   const unsigned local_edge_id ,
-  Part * part )
+  Part * part,
+  bool check_pre_existing )
 {
   verify_declare_element_edge(mesh, elem, local_edge_id);
 
@@ -218,8 +231,19 @@ Entity declare_element_edge(
       local_edge_id << ", edge has no defined topology" );
 
   PartVector empty_parts ;
-  Entity edge = mesh.declare_entity( edge_top->dimension , global_edge_id, empty_parts );
-  return declare_element_edge(mesh, elem, edge, local_edge_id, part);
+  Entity edge;
+  if (check_pre_existing) {
+    edge = mesh.get_entity(edge_top->dimension, global_edge_id);
+    if (!mesh.is_valid(edge)) {
+      edge = mesh.declare_entity( edge_top->dimension , global_edge_id, empty_parts );
+      declare_element_edge(mesh, elem, edge, local_edge_id, part);
+    }
+  }
+  else {
+    edge = mesh.declare_entity( edge_top->dimension , global_edge_id, empty_parts );
+    declare_element_edge(mesh, elem, edge, local_edge_id, part);
+  }
+  return edge;
 }
 
 const CellTopologyData * get_subcell_nodes(const BulkData& mesh, const Entity entity ,

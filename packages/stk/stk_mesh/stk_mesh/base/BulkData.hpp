@@ -116,6 +116,7 @@ public:
   //Once the mesh is initialized with entities and relations, turn on field-data by calling the
   //method 'allocate_field_data'.
   void deactivate_field_updating();
+  bool is_field_updating_active() const { return m_keep_fields_updated; }
 
 #ifdef  STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   inline static BulkData & get( Entity entity);
@@ -132,7 +133,8 @@ public:
     unsigned char* m_data;
   };
 
-  typedef page_aligned_allocator<unsigned char, FieldBase>  field_data_allocator;
+  //typedef page_aligned_allocator<unsigned char, FieldBase>  field_data_allocator;
+  typedef std::allocator<unsigned char>  field_data_allocator;
 
 #ifdef STK_PROFILE_MEMORY
   //typedef tracking_allocator<unsigned char, FieldBase>                                          field_data_allocator;

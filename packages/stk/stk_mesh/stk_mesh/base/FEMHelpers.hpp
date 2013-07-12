@@ -43,7 +43,8 @@ Entity declare_element_side( BulkData & mesh ,
                                const stk::mesh::EntityId global_side_id ,
                                Entity elem ,
                                const unsigned local_side_id ,
-                               Part * part = NULL );
+                               Part * part = NULL,
+                               bool check_pre_existing = false);
 
 /** \brief  Create (or find) an element edge.
  *
@@ -53,7 +54,8 @@ Entity declare_element_edge( BulkData & mesh ,
                                const stk::mesh::EntityId global_side_id ,
                                Entity elem ,
                                const unsigned local_side_id ,
-                               Part * part = NULL );
+                               Part * part = NULL,
+                               bool check_pre_existing = false );
 
 /** \brief  Create (or find) an element side.
  *

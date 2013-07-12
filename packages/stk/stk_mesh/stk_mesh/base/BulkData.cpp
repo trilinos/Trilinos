@@ -762,6 +762,7 @@ void BulkData::allocate_field_data()
 {
   if (m_keep_fields_updated == true) {
     //fields are already allocated, nothing to do here.
+    return;
   }
 
   //temporary (hopefully) kludge:

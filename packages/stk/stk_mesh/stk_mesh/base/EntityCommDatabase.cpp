@@ -122,6 +122,10 @@ void unpack_entity_info(
 
 void pack_field_values(const BulkData& mesh, CommBuffer & buf , Entity entity )
 {
+  if (!mesh.is_field_updating_active()) {
+    return;
+  }
+
   const Bucket   & bucket = mesh.bucket(entity);
   const MetaData & mesh_meta_data = MetaData::get(mesh);
 
@@ -149,6 +153,10 @@ void pack_field_values(const BulkData& mesh, CommBuffer & buf , Entity entity )
 bool unpack_field_values(const BulkData& mesh,
   CommBuffer & buf , Entity entity , std::ostream & error_msg )
 {
+  if (!mesh.is_field_updating_active()) {
+    return true;
+  }
+
   const Bucket   & bucket = mesh.bucket(entity);
   const MetaData & mesh_meta_data = MetaData::get(mesh);
 

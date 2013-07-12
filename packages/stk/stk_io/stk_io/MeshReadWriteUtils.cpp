@@ -121,7 +121,6 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
       int par_dimen = block->topology()->parametric_dimension();
 
       size_t side_count = side_ids.size();
-      std::vector<stk::mesh::Entity> sides(side_count);
       for(size_t is=0; is<side_count; ++is) {
         stk::mesh::Entity const elem = bulk.get_entity(elem_rank, elem_side[is*2]);
 
@@ -136,11 +135,66 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
           if (par_dimen == 1) {
             stk::mesh::Entity side = stk::mesh::declare_element_edge(bulk, side_ids[is], elem, side_ordinal);
             bulk.change_entity_parts( side, add_parts );
-            sides[is] = side;
           }
           else if (par_dimen == 2) {
             stk::mesh::Entity side = stk::mesh::declare_element_side(bulk, side_ids[is], elem, side_ordinal);
             bulk.change_entity_parts( side, add_parts );
+          }
+        }
+      }
+    }
+  }
+}
+
+// ========================================================================
+template <typename INT>
+void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk, INT /*dummy*/)
+{
+  assert(sset->type() == Ioss::SIDESET);
+
+  const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
+  bool check_pre_existing = true;
+
+  size_t block_count = sset->block_count();
+  for (size_t i=0; i < block_count; i++) {
+    Ioss::SideBlock *block = sset->get_block(i);
+    if (stk::io::include_entity(block)) {
+      std::vector<INT> side_ids ;
+      std::vector<INT> elem_side ;
+
+      stk::mesh::Part * const sb_part = meta.get_part(block->name());
+      stk::mesh::EntityRank elem_rank = stk::mesh::MetaData::ELEMENT_RANK;
+
+      block->get_field_data("ids", side_ids);
+      block->get_field_data("element_side", elem_side);
+
+      assert(side_ids.size() * 2 == elem_side.size());
+
+      // Get topology of the sides being defined to see if they
+      // are 'faces' or 'edges'.  This is needed since for shell-type
+      // elements, (and actually all elements) a sideset can specify either a face or an edge...
+      // For a quad shell, sides 1,2 are faces and 3,4,5,6 are edges.
+      int par_dimen = block->topology()->parametric_dimension();
+
+      size_t side_count = side_ids.size();
+      std::vector<stk::mesh::Entity> sides(side_count);
+      for(size_t is=0; is<side_count; ++is) {
+        stk::mesh::Entity const elem = bulk.get_entity(elem_rank, elem_side[is*2]);
+
+        // If NULL, then the element was probably assigned to an
+        // element block that appears in the database, but was
+        // subsetted out of the analysis mesh. Only process if
+        // non-null.
+        if (bulk.is_valid(elem)) {
+          // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
+          int side_ordinal = elem_side[is*2+1] - 1;
+
+          if (par_dimen == 1) {
+            stk::mesh::Entity side = stk::mesh::declare_element_edge(bulk, side_ids[is], elem, side_ordinal, NULL, check_pre_existing);
+            sides[is] = side;
+          }
+          else if (par_dimen == 2) {
+            stk::mesh::Entity side = stk::mesh::declare_element_side(bulk, side_ids[is], elem, side_ordinal, NULL, check_pre_existing);
             sides[is] = side;
           }
         } else {
@@ -175,6 +229,14 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
     process_surface_entity(sset, bulk, (int)0);
   else
     process_surface_entity(sset, bulk, (int64_t)0);
+}
+
+void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk)
+{
+  if (stk::io::db_api_int_size(sset) == 4)
+    process_surface_entity_df(sset, bulk, (int)0);
+  else
+    process_surface_entity_df(sset, bulk, (int64_t)0);
 }
 
 void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
@@ -213,19 +275,44 @@ void process_nodeblocks(stk::io::MeshData &mesh, INT /*dummy*/)
 
   Ioss::NodeBlock *nb = node_blocks[0];
 
-  size_t node_count = nb->get_property("entity_count").get_int();
-
-  std::vector<stk::mesh::Entity> nodes;
-  nodes.reserve(node_count);
-
   std::vector<INT> ids;
   nb->get_field_data("ids", ids);
 
   for (size_t i=0; i < ids.size(); i++) {
     stk::mesh::Entity node = bulk.declare_entity(stk::mesh::MetaData::NODE_RANK, ids[i]);
-    if (bulk.add_fmwk_data()) {
-      bulk.set_local_id(node, i);
-    }
+    bulk.set_local_id(node, i);
+  }
+}
+
+template <typename INT>
+void process_node_coords_and_attributes(stk::io::MeshData &mesh, INT /*dummy*/)
+{
+  stk::mesh::BulkData &bulk = mesh.bulk_data();
+  // This must be called after the "process_element_blocks" call
+  // since there may be nodes that exist in the database that are
+  // not part of the analysis mesh due to subsetting of the element
+  // blocks.
+
+  // Currently, all nodes found in the finite element mesh are defined
+  // as nodes in the stk_mesh database. If some of the element blocks
+  // are omitted, then there will be disconnected nodes defined.
+  // However, if we only define nodes that are connected to elements,
+  // then we risk missing "free" nodes that the user may want to have
+  // existing in the model.
+  const Ioss::NodeBlockContainer& node_blocks = mesh.input_io_region()->get_node_blocks();
+  assert(node_blocks.size() == 1);
+
+  Ioss::NodeBlock *nb = node_blocks[0];
+
+  size_t node_count = nb->get_property("entity_count").get_int();
+
+  std::vector<INT> ids;
+  nb->get_field_data("ids", ids);
+
+  std::vector<stk::mesh::Entity> nodes;
+  nodes.reserve(node_count);
+  for (size_t i=0; i < ids.size(); i++) {
+    stk::mesh::Entity node = bulk.get_entity(stk::mesh::MetaData::NODE_RANK, ids[i]);
     nodes.push_back(node);
   }
 
@@ -297,19 +384,53 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT 
       int nodes_per_elem = topo.num_nodes();
 
       std::vector<stk::mesh::EntityId> id_vec(nodes_per_elem);
-      std::vector<stk::mesh::Entity> elements(element_count);
 
       size_t offset = entity->get_offset();
       for(size_t i=0; i<element_count; ++i) {
         INT *conn = &connectivity[i*nodes_per_elem];
         std::copy(&conn[0], &conn[0+nodes_per_elem], id_vec.begin());
-        elements[i] = stk::mesh::declare_element(bulk, *part, elem_ids[i], &id_vec[0]);
+        stk::mesh::Entity element = stk::mesh::declare_element(bulk, *part, elem_ids[i], &id_vec[0]);
 
-        if (bulk.add_fmwk_data()) {
-          // HEAD: bulk.set_local_id(elements[i], i);
-          // master: elements[i].set_local_id(offset+i);
-          bulk.set_local_id(elements[i], offset + i);
-        }
+        bulk.set_local_id(element, offset + i);
+      }
+    }
+  }
+}
+
+template <typename INT>
+void process_elem_attributes_and_implicit_ids(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dummy*/)
+{
+  const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
+
+  const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
+  for(Ioss::ElementBlockContainer::const_iterator it = elem_blocks.begin();
+      it != elem_blocks.end(); ++it) {
+    Ioss::ElementBlock *entity = *it;
+
+    if (stk::io::include_entity(entity)) {
+      const std::string &name = entity->name();
+      stk::mesh::Part* const part = meta.get_part(name);
+      assert(part != NULL);
+
+      stk::topology topo = part->topology();
+      if (topo == stk::topology::INVALID_TOPOLOGY) {
+        std::ostringstream msg ;
+        msg << " INTERNAL_ERROR: Part " << part->name() << " has invalid topology";
+        throw std::runtime_error( msg.str() );
+      }
+
+      std::vector<INT> elem_ids ;
+
+      entity->get_field_data("ids", elem_ids);
+
+      size_t element_count = elem_ids.size();
+      int nodes_per_elem = topo.num_nodes();
+
+      std::vector<stk::mesh::EntityId> id_vec(nodes_per_elem);
+      std::vector<stk::mesh::Entity> elements(element_count);
+
+      for(size_t i=0; i<element_count; ++i) {
+        elements[i] = bulk.get_entity(stk::topology::ELEMENT_RANK, elem_ids[i]);
       }
 
       // Temporary (2013/04/17) kluge for Salinas porting to stk-based mesh.
@@ -393,7 +514,6 @@ void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
 }
 
 // ========================================================================
-// ========================================================================
 void process_sidesets(Ioss::Region &region, stk::mesh::MetaData &meta)
 {
   const Ioss::SideSetContainer& side_sets = region.get_sidesets();
@@ -431,12 +551,49 @@ void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dum
       std::vector<INT> node_ids ;
       size_t node_count = entity->get_field_data("ids", node_ids);
 
+      stk::mesh::EntityRank n_rank = stk::mesh::MetaData::NODE_RANK;
+      for(size_t i=0; i<node_count; ++i) {
+        stk::mesh::Entity node = bulk.get_entity(n_rank, node_ids[i] );
+        if (!bulk.is_valid(node)) {
+          node = bulk.declare_entity(n_rank, node_ids[i], add_parts );
+        }
+        else {
+          bulk.change_entity_parts(node, add_parts);
+        }
+      }
+    }
+  }
+}
+
+// ========================================================================
+template <typename INT>
+void process_nodesets_df(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dummy*/)
+{
+  // Should only process nodes that have already been defined via the element
+  // blocks connectivity lists.
+  const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
+  const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
+
+  for(Ioss::NodeSetContainer::const_iterator it = node_sets.begin();
+      it != node_sets.end(); ++it) {
+    Ioss::NodeSet *entity = *it;
+
+    if (stk::io::include_entity(entity)) {
+      const std::string & name = entity->name();
+      stk::mesh::Part* const part = meta.get_part(name);
+      assert(part != NULL);
+      stk::mesh::PartVector add_parts( 1 , part );
+
+      std::vector<INT> node_ids ;
+      size_t node_count = entity->get_field_data("ids", node_ids);
+
       std::vector<stk::mesh::Entity> nodes(node_count);
       stk::mesh::EntityRank n_rank = stk::mesh::MetaData::NODE_RANK;
       for(size_t i=0; i<node_count; ++i) {
         nodes[i] = bulk.get_entity(n_rank, node_ids[i] );
-        if (bulk.is_valid(nodes[i]))
+        if (!bulk.is_valid(nodes[i])) {
           bulk.declare_entity(n_rank, node_ids[i], add_parts );
+        }
       }
 
       stk::mesh::Field<double> *df_field =
@@ -482,6 +639,21 @@ void process_sidesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
 
     if (stk::io::include_entity(entity)) {
       process_surface_entity(entity, bulk);
+    }
+  }
+}
+
+// ========================================================================
+void process_sidesets_df(Ioss::Region &region, stk::mesh::BulkData &bulk)
+{
+  const Ioss::SideSetContainer& side_sets = region.get_sidesets();
+
+  for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
+      it != side_sets.end(); ++it) {
+    Ioss::SideSet *entity = *it;
+
+    if (stk::io::include_entity(entity)) {
+      process_surface_entity_df(entity, bulk);
     }
   }
 }
@@ -741,8 +913,7 @@ namespace stk {
       return out_step;
     }
 
-    // ========================================================================
-    void MeshData::populate_bulk_data()
+    void MeshData::populate_mesh(bool delay_field_data_allocation)
     {
       if (!meta_data().is_commit())
         meta_data().commit();
@@ -752,7 +923,7 @@ namespace stk {
 
       Ioss::Region *region = m_input_region.get();
       ThrowErrorMsgIf (region==NULL,
-                       "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_bulk_data.");
+                       "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_mesh.");
 
       // Check if bulk_data is null; if so, create a new one...
       if (Teuchos::is_null(m_bulk_data)) {
@@ -763,6 +934,10 @@ namespace stk {
 #endif
                                                              , m_connectivity_map
                                                            )));
+      }
+
+      if (delay_field_data_allocation) {
+        bulk_data().deactivate_field_updating();
       }
 
       bulk_data().modification_begin();
@@ -781,10 +956,49 @@ namespace stk {
         process_nodesets(*region,      bulk_data(), zero);
         process_sidesets(*region,      bulk_data());
       }
+
       bulk_data().modification_end();
       if (region->get_property("state_count").get_int() == 0) {
         region->get_database()->release_memory();
       }
+    }
+
+    void MeshData::populate_field_data()
+    {
+      //if field-data has already been allocated, then the allocate_field_data() method
+      //is a harmless no-op.
+      bulk_data().allocate_field_data();
+
+      Ioss::Region *region = m_input_region.get();
+      ThrowErrorMsgIf (region==NULL,
+                       "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_field_data.");
+
+      bool ints64bit = db_api_int_size(region) == 8;
+      if (ints64bit) {
+          int64_t zero = 0;
+          process_node_coords_and_attributes(*this, zero);
+          process_elem_attributes_and_implicit_ids(*region, bulk_data(), zero);
+          process_nodesets_df(*region,      bulk_data(), zero);
+          process_sidesets_df(*region,      bulk_data());
+      }
+      else {
+          int zero = 0;
+          process_node_coords_and_attributes(*this, zero);
+          process_elem_attributes_and_implicit_ids(*region, bulk_data(), zero);
+          process_nodesets_df(*region,      bulk_data(), zero);
+          process_sidesets_df(*region,      bulk_data());
+      }
+    }
+
+    // ========================================================================
+    void MeshData::populate_bulk_data()
+    {
+      //to preserve behavior for callers of this method, don't do the
+      //delay-field-data-allocation optimization.
+      //Folks who want the optimization can call the population_mesh/populate_field_data methods separately.
+      bool delay_field_data_allocation = true;//false;
+      populate_mesh(delay_field_data_allocation);
+      populate_field_data();
     }
 
     void MeshData::internal_process_output_request(int step, const std::set<const stk::mesh::Part*> &exclude)
