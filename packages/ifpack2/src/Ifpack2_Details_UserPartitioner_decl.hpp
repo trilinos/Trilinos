@@ -43,8 +43,9 @@
 #ifndef IFPACK2_USER_PARTITIONER_DECL_HPP
 #define IFPACK2_USER_PARTITIONER_DECL_HPP
 
-/// \file Ifpack2_Details_Tpetra_RowGraph_decl.hpp
-/// \brief Declaration of a user-defined partitioner in which the user can define a nonoverlapping partition of the graph.
+/// \file Ifpack2_Details_UserPartitioner_decl.hpp
+/// \brief Declaration of a user-defined partitioner in which the user
+///   can define a nonoverlapping partition of the graph.
 /// \author Tom Benson
 ///
 /// This file is meant for Ifpack2 developers only, not for users.
@@ -57,13 +58,12 @@ namespace Ifpack2 {
 namespace Details {
 
 /// \class UserPartitioner
-/// \brief Let users specify any nonoverlapping partition of the graph
-///   that they may choose.
+/// \brief Partition in which the user can define a nonoverlapping
+///   partition of the graph in any way they choose.
 /// \tparam GraphType Specialization of Tpetra::CrsGraph or
 ///   Tpetra::RowGraph.
 template<class GraphType>
 class UserPartitioner : public OverlappingPartitioner<GraphType> {
-
 public:
   typedef typename GraphType::local_ordinal_type local_ordinal_type;
   typedef typename GraphType::global_ordinal_type global_ordinal_type;

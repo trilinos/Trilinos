@@ -42,67 +42,60 @@
 
 #ifndef IFPACK2_LOCALFILTER_DEF_HPP
 #define IFPACK2_LOCALFILTER_DEF_HPP
-#include "Ifpack2_LocalFilter_decl.hpp"
-#include <vector>
 
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_RowMatrix.hpp"
-#include "Tpetra_Map.hpp"
-#include "Tpetra_MultiVector.hpp"
-#include "Tpetra_Vector.hpp"
-
-#include "Ifpack2_Details_Tpetra_RowGraph_def.hpp"
+#include <Ifpack2_LocalFilter_decl.hpp>
+#include <Tpetra_Map.hpp>
+#include <Tpetra_MultiVector.hpp>
+#include <Tpetra_Vector.hpp>
 
 #ifdef HAVE_MPI
-#include <mpi.h>
-#include "Teuchos_DefaultMpiComm.hpp"
+#  include "Teuchos_DefaultMpiComm.hpp"
 #else
-#include "Teuchos_DefaultSerialComm.hpp"
+#  include "Teuchos_DefaultSerialComm.hpp"
 #endif
+
 namespace Ifpack2 {
 
 //==========================================================================
 template<class MatrixType>
 LocalFilter<MatrixType>::
-LocalFilter (const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& Matrix) :
-  A_(Matrix),
-  NumRows_(0),
-  NumNonzeros_(0),
-  MaxNumEntries_(0),
-  MaxNumEntriesA_(0)
+LocalFilter (const Teuchos::RCP<const row_matrix_type>& matrix) :
+  A_ (matrix),
+  NumRows_ (0),
+  NumNonzeros_ (0),
+  MaxNumEntries_ (0),
+  MaxNumEntriesA_ (0)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
-  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
   // Communicator containing this process only.
   RCP<const Teuchos::Comm<int> > localComm;
-
 #ifdef HAVE_MPI
   localComm = rcp (new Teuchos::MpiComm<int> (MPI_COMM_SELF));
 #else
   localComm = rcp (new Teuchos::SerialComm<int> ());
-#endif
+#endif // HAVE_MPI
 
   // localized matrix has all the local rows of Matrix
-  NumRows_ = A_->getNodeNumRows();
+  NumRows_ = A_->getNodeNumRows ();
 
   // build a linear map, based on the serial communicator
-  LocalMap_ = rcp (new map_type (NumRows_, 0, localComm));
+  localMap_ = rcp (new map_type (NumRows_, 0, localComm));
 
   // NodeNumEntries_ will contain the actual number of nonzeros
   // for each localized row (that is, without external nodes,
   // and always with the diagonal entry)
-  NumEntries_.resize(NumRows_);
+  NumEntries_.resize (NumRows_);
 
   // tentative value for MaxNumEntries. This is the number of
   // nonzeros in the local matrix
-  MaxNumEntries_  = A_->getNodeMaxNumRowEntries();
-  MaxNumEntriesA_ = A_->getNodeMaxNumRowEntries();
+  MaxNumEntries_  = A_->getNodeMaxNumRowEntries ();
+  MaxNumEntriesA_ = A_->getNodeMaxNumRowEntries ();
 
   // ExtractMyRowCopy() will use these vectors
-  Indices_.resize(MaxNumEntries_);
-  Values_.resize(MaxNumEntries_);
+  Indices_.resize (MaxNumEntries_);
+  Values_.resize (MaxNumEntries_);
 
   // now compute:
   // - the number of nonzero per row
@@ -113,11 +106,10 @@ LocalFilter (const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordina
   // diagonal entries (already modified)
   size_t ActualMaxNumEntries = 0;
 
-  for (size_t i = 0 ; i < NumRows_ ; ++i) {
-
+  for (size_t i = 0; i < NumRows_; ++i) {
     NumEntries_[i] = 0;
     size_t Nnz, NewNnz = 0;
-    A_->getLocalRowCopy(i,Indices_,Values_,Nnz);
+    A_->getLocalRowCopy (i, Indices_, Values_, Nnz);
     for (size_t j = 0 ; j < Nnz ; ++j) {
       // FIXME (mfh 03 Apr 2013) This assumes the following:
       //
@@ -130,15 +122,17 @@ LocalFilter (const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordina
       //    the same as its LID in the column Map.  (Hence the
       //    less-than test, which if true, means that Indices_[j]
       //    belongs to the row Map.)
-      if ((size_t) Indices_[j] < NumRows_ ) ++NewNnz;
+      if (Teuchos::as<size_t> (Indices_[j]) < NumRows_) {
+	++NewNnz;
+      }
     }
 
-    if (NewNnz > ActualMaxNumEntries)
+    if (NewNnz > ActualMaxNumEntries) {
       ActualMaxNumEntries = NewNnz;
+    }
 
     NumNonzeros_ += NewNnz;
     NumEntries_[i] = NewNnz;
-
   }
 
   MaxNumEntries_ = ActualMaxNumEntries;
@@ -152,7 +146,7 @@ LocalFilter<MatrixType>::~LocalFilter() { }
 template<class MatrixType>
 const Teuchos::RCP<const Teuchos::Comm<int> > & LocalFilter<MatrixType>::getComm() const
 {
-  return LocalMap_->getComm ();
+  return localMap_->getComm ();
 }
 
 //==========================================================================
@@ -169,7 +163,7 @@ const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
                                      typename MatrixType::node_type> >&
 LocalFilter<MatrixType>::getRowMap() const
 {
-  return LocalMap_;
+  return localMap_;
 }
 
 //==========================================================================
@@ -179,7 +173,7 @@ const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
                                      typename MatrixType::node_type> >&
 LocalFilter<MatrixType>::getColMap() const
 {
-  return LocalMap_;
+  return localMap_;
 }
 
 //==========================================================================
@@ -189,7 +183,7 @@ const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
                                      typename MatrixType::node_type> >&
 LocalFilter<MatrixType>::getDomainMap() const
 {
-  return LocalMap_;
+  return localMap_;
 }
 
 //==========================================================================
@@ -199,7 +193,7 @@ const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
                                      typename MatrixType::node_type> >&
 LocalFilter<MatrixType>::getRangeMap() const
 {
-  return LocalMap_;
+  return localMap_;
 }
 
 //==========================================================================
@@ -207,10 +201,9 @@ template<class MatrixType>
 Teuchos::RCP<const Tpetra::RowGraph<typename MatrixType::local_ordinal_type,
                                      typename MatrixType::global_ordinal_type,
                                      typename MatrixType::node_type> >
-LocalFilter<MatrixType>::getGraph() const
+LocalFilter<MatrixType>::getGraph () const
 {
-  Teuchos::RCP<const Ifpack2::Details::Tpetra_RowGraph<MatrixType> > Graph = Teuchos::rcp(new Ifpack2::Details::Tpetra_RowGraph<MatrixType> (A_));
-  return Graph;
+  return A_->getGraph ();
 }
 
 //==========================================================================
@@ -265,14 +258,18 @@ size_t LocalFilter<MatrixType>::getNodeNumEntries() const
 
 //==========================================================================
 template<class MatrixType>
-size_t LocalFilter<MatrixType>::getNumEntriesInGlobalRow(global_ordinal_type globalRow) const
+size_t
+LocalFilter<MatrixType>::
+getNumEntriesInGlobalRow (global_ordinal_type globalRow) const
 {
   throw std::runtime_error("Ifpack2::LocalFilter does not implement getNumEntriesInGlobalRow.");
 }
 
 //==========================================================================
 template<class MatrixType>
-size_t LocalFilter<MatrixType>::getNumEntriesInLocalRow(local_ordinal_type localRow) const
+size_t
+LocalFilter<MatrixType>::
+getNumEntriesInLocalRow (local_ordinal_type localRow) const
 {
   return NumEntries_[localRow];
 }
@@ -349,39 +346,43 @@ bool LocalFilter<MatrixType>::isFillComplete() const
 
 //==========================================================================
 template<class MatrixType>
-void LocalFilter<MatrixType>::getGlobalRowCopy(global_ordinal_type GlobalRow,
-                                                  const Teuchos::ArrayView<global_ordinal_type> &Indices,
-                                                  const Teuchos::ArrayView<scalar_type> &Values,
-                                                  size_t &NumEntries) const
+void
+LocalFilter<MatrixType>::
+getGlobalRowCopy (global_ordinal_type GlobalRow,
+		  const Teuchos::ArrayView<global_ordinal_type> &Indices,
+		  const Teuchos::ArrayView<scalar_type> &Values,
+		  size_t &NumEntries) const
 {
   throw std::runtime_error("Ifpack2::LocalFilter does not implement getGlobalRowCopy.");
 }
 
 //==========================================================================
 template<class MatrixType>
-void LocalFilter<MatrixType>::getLocalRowCopy(local_ordinal_type LocalRow,
-                                              const Teuchos::ArrayView<local_ordinal_type> &Indices,
-                                              const Teuchos::ArrayView<scalar_type> &Values,
-                                              size_t &NumEntries) const
+void
+LocalFilter<MatrixType>::
+getLocalRowCopy (local_ordinal_type LocalRow,
+		 const Teuchos::ArrayView<local_ordinal_type> &Indices,
+		 const Teuchos::ArrayView<scalar_type> &Values,
+		 size_t &NumEntries) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     NumRows_ == 0, std::invalid_argument,
     "Ifpack2::LocalFilter::getLocalRowCopy: Invalid local row index "
-    << LocalRow << ".  This process " << LocalMap_->getComm ()->getSize ()
+    << LocalRow << ".  This process " << localMap_->getComm ()->getSize ()
     << " owns no rows of the matrix.");
   TEUCHOS_TEST_FOR_EXCEPTION(
     LocalRow < 0 || (size_t) LocalRow >= NumRows_,
     std::invalid_argument,
     "Ifpack2::LocalFilter::getLocalRowCopy: Invalid local row index "
     << LocalRow << ".  The valid range of row indices on this process "
-    << LocalMap_->getComm ()->getSize () << " is "
+    << localMap_->getComm ()->getSize () << " is "
     << "[0, " << (NumRows_ - 1) << "].");
   TEUCHOS_TEST_FOR_EXCEPTION(
     (size_t) Indices.size() <  NumEntries_[LocalRow], std::runtime_error,
     "Ifpack2::LocalFilter::getLocalRowCopy: Invalid output array length.  "
     "The output arrays must each have length at least " << NumEntries_[LocalRow]
     << " for local row " << LocalRow << " on process "
-    << LocalMap_->getComm ()->getSize () << ".");
+    << localMap_->getComm ()->getSize () << ".");
 
   size_t A_NumEntries=0;
   // Always extract using the object Values_ and Indices_.  This is
@@ -405,63 +406,85 @@ void LocalFilter<MatrixType>::getLocalRowCopy(local_ordinal_type LocalRow,
 
 //==========================================================================
 template<class MatrixType>
-void LocalFilter<MatrixType>::getGlobalRowView(global_ordinal_type GlobalRow,
-                                                  Teuchos::ArrayView<const global_ordinal_type> &indices,
-                                                  Teuchos::ArrayView<const scalar_type> &values) const
+void
+LocalFilter<MatrixType>::
+getGlobalRowView (global_ordinal_type GlobalRow,
+		  Teuchos::ArrayView<const global_ordinal_type> &indices,
+		  Teuchos::ArrayView<const scalar_type> &values) const
 {
   throw std::runtime_error("Ifpack2::LocalFilter: does not support getGlobalRowView.");
 }
 
 //==========================================================================
 template<class MatrixType>
-void LocalFilter<MatrixType>::getLocalRowView(local_ordinal_type LocalRow,
-                                                 Teuchos::ArrayView<const local_ordinal_type> &indices,
-                                                 Teuchos::ArrayView<const scalar_type> &values) const
+void
+LocalFilter<MatrixType>::
+getLocalRowView (local_ordinal_type LocalRow,
+		 Teuchos::ArrayView<const local_ordinal_type> &indices,
+		 Teuchos::ArrayView<const scalar_type> &values) const
 {
   throw std::runtime_error("Ifpack2::LocalFilter: does not support getLocalRowView.");
 }
 
 //==========================================================================
 template<class MatrixType>
-void LocalFilter<MatrixType>::getLocalDiagCopy(Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &diag) const
+void
+LocalFilter<MatrixType>::
+getLocalDiagCopy (Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& diag) const
 {
-  Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> temp(A_->getRowMap());
-  A_->getLocalDiagCopy(temp);
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> >       d_ptr = diag.get2dViewNonConst();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const scalar_type> > t_ptr = temp.get2dView();
+  using Teuchos::ArrayRCP;
+  typedef Tpetra::Vector<scalar_type, local_ordinal_type, 
+			 global_ordinal_type, node_type> vector_type;
 
-  for(size_t i=0; i<NumRows_; i++)
+  vector_type temp (A_->getRowMap ());
+  A_->getLocalDiagCopy (temp);
+
+  // FIXME (mfh 12 July 2013) WHY DO WE NEED ANYTHING MORE AFTER THE
+  // ABOVE???  AND WHY CAN'T WE USE Vector::operator= INSTEAD OF
+  // COPYING ALL THE DATA BY HAND???
+  
+  ArrayRCP<ArrayRCP<scalar_type> >       d_ptr = diag.get2dViewNonConst();
+  ArrayRCP<ArrayRCP<const scalar_type> > t_ptr = temp.get2dView();
+
+  for (size_t i=0; i<NumRows_; i++) {
     d_ptr[0][i] = t_ptr[0][i];
+  }
 }
 
 //==========================================================================
 template<class MatrixType>
-void LocalFilter<MatrixType>::leftScale(const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& x)
+void
+LocalFilter<MatrixType>::
+leftScale (const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& x)
 {
   throw std::runtime_error("Ifpack2::LocalFilter does not support leftScale.");
 }
 
 //==========================================================================
 template<class MatrixType>
-void LocalFilter<MatrixType>::rightScale(const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& x)
+void
+LocalFilter<MatrixType>::
+rightScale (const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& x)
 {
   throw std::runtime_error("Ifpack2::LocalFilter does not support rightScale.");
 }
 
 //==========================================================================
 template<class MatrixType>
-void LocalFilter<MatrixType>::apply(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X,
-                                       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &Y,
-                                       Teuchos::ETransp mode,
-                                       scalar_type alpha,
-                                       scalar_type beta) const
+void 
+LocalFilter<MatrixType>::
+apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X,
+       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &Y,
+       Teuchos::ETransp mode,
+       scalar_type alpha,
+       scalar_type beta) const
 {
   typedef Teuchos::ScalarTraits<scalar_type> STS;
 
   // Note: This isn't AztecOO compliant.  But neither was Ifpack's version.
 
   TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
-                             "Ifpack2::LocalFilter::apply ERROR: X.getNumVectors() != Y.getNumVectors().");
+    "Ifpack2::LocalFilter::apply ERROR: X.getNumVectors() != Y.getNumVectors().");
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
@@ -481,24 +504,28 @@ void LocalFilter<MatrixType>::apply(const Tpetra::MultiVector<scalar_type,local_
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const scalar_type> > x_ptr = X.get2dView();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> >       y_ptr = Y.get2dViewNonConst();
 
-  if (beta == zero)
-    Y.putScalar(zero);
-  else
-    Y.scale(beta);
+  if (beta == zero) {
+    Y.putScalar (zero);
+  }
+  else {
+    Y.scale (beta);
+  }
 
-  size_t NumVectors = Y.getNumVectors();
+  const size_t NumVectors = Y.getNumVectors();
 
+  // FIXME (mfh 12 July 2013) This would be a good candidate for
+  // parallelization via Kokkos.
 
   for (size_t i = 0 ; i < NumRows_ ; ++i) {
     size_t Nnz;
     // Use this class's getrow to make the below code simpler
-    getLocalRowCopy(i,Indices_(),Values_(),Nnz);
-    if (mode==Teuchos::NO_TRANS){
+    getLocalRowCopy (i, Indices_ (), Values_ (), Nnz);
+    if (mode == Teuchos::NO_TRANS){
       for (size_t j = 0 ; j < Nnz ; ++j)
         for (size_t k = 0 ; k < NumVectors ; ++k)
           y_ptr[k][i] += alpha * Values_[j] * x_ptr[k][Indices_[j]];
     }
-    else if (mode==Teuchos::TRANS){
+    else if (mode == Teuchos::TRANS){
       for (size_t j = 0 ; j < Nnz ; ++j)
         for (size_t k = 0 ; k < NumVectors ; ++k)
           y_ptr[k][Indices_[j]] += alpha * Values_[j] * x_ptr[k][i];
@@ -528,7 +555,9 @@ bool LocalFilter<MatrixType>::supportsRowViews() const
 
 //==========================================================================
 template<class MatrixType>
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType LocalFilter<MatrixType>::getFrobeniusNorm() const
+typename
+Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType 
+LocalFilter<MatrixType>::getFrobeniusNorm () const
 {
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
