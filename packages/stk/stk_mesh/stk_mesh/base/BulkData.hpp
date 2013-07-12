@@ -108,15 +108,6 @@ class BulkData {
 
 public:
 
-  //Power users only.
-  //Call this right after construction, before any field-data has been allocated.
-  //If you call this method too late (after any field-data has been allocated, it will have no effect.
-  //It turns off field-data updating so that movement of entities between buckets etc., as is done during
-  //mesh-setup, will not cause corresponding churn of field-data.
-  //Once the mesh is initialized with entities and relations, turn on field-data by calling the
-  //method 'allocate_field_data'.
-  void deactivate_field_updating();
-
 #ifdef  STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   inline static BulkData & get( Entity entity);
 #endif
@@ -236,13 +227,6 @@ public:
    *              a parallel-consistent exception will be thrown.
    */
   bool modification_end();
-
-  /** If field-data was set to not stay in sync with buckets as the mesh was populated,
-   * (by calling 'deactivate_field_updating' right after construction) this call
-   * causes field-data to be allocated and field-data updating is re-activated.
-   * If field-data was already allocated and staying in sync, then this call is a no-op.
-   */
-  void allocate_field_data();
 
   void verify_relations(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank) const;
 
@@ -1160,7 +1144,6 @@ public:
 private:
 #endif
   int m_num_fields;
-  bool m_keep_fields_updated;
 
   // The full database of comm info for all communicated entities.
   EntityCommDatabase m_entity_comm_map;
