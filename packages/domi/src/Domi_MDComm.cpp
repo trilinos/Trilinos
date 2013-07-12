@@ -146,16 +146,8 @@ MDComm::MDComm(const Teuchos::RCP< MDComm > parent,
   _teuchosComm =
     parent->getTeuchosComm()->createSubcommunicator(ranks()).getConst();
   // On processors that are not a part of the subcommunicator, reset
-  // the data attributes.  I seem to get inconsistent behavior here --
-  // sometimes I get a null pointer and sometimes I get an empty
-  // communicator.
+  // the data attributes.
   if (_teuchosComm.getRawPtr() == 0)
-  {
-    _axisSizes.clear();
-    _axisRanks.clear();
-    _axisStrides.clear();
-  }
-  else if (_teuchosComm->getSize() == 0)
   {
     _axisSizes.clear();
     _axisRanks.clear();
@@ -182,8 +174,6 @@ MDComm::getTeuchosComm() const
 int
 MDComm::getNumDims() const
 {
-  std::cout << "P" << _teuchosComm->getRank() << ": _axisSizes = " << _axisSizes
-            << std::endl;
   return _axisSizes.size();
 }
 
