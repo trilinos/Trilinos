@@ -57,6 +57,12 @@ Teuchos::RCP<Teuchos::FancyOStream>& RTOpPack::spmdApplyOpDumpOut()
 }
 
 
+void RTOpPack::set_SPMD_apply_op_dump_out(const RCP<FancyOStream> &dumpOut)
+{
+  spmdApplyOpDumpOut() = dumpOut;
+}
+
+
 #ifdef HAVE_RTOP_EXPLICIT_INSTANTIATION
 
 

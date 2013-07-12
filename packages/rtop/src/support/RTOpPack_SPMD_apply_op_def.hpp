@@ -86,12 +86,6 @@ void print( const ConstSubVectorView<Scalar> &v, Teuchos::FancyOStream &out_arg 
 //
 
 
-void RTOpPack::set_SPMD_apply_op_dump_out(const RCP<FancyOStream> &dumpOut)
-{
-  spmdApplyOpDumpOut() = dumpOut;
-}
-
-
 template<class PrimitiveScalar>
 int RTOpPack::serializedSize(
   int num_values,
