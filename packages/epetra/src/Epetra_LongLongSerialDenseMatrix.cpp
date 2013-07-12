@@ -207,8 +207,8 @@ Epetra_LongLongSerialDenseMatrix& Epetra_LongLongSerialDenseMatrix::operator = (
     return(*this); // Special case of both are views to same data.
 
   if(std::strcmp(Label(), Source.Label()) != 0)
-    throw ReportError("operator= type mismatch (lhs = " + string(Label()) + 
-                      ", rhs = " + string(Source.Label()) + ").", -5);
+    throw ReportError("operator= type mismatch (lhs = " + std::string(Label()) + 
+      ", rhs = " + std::string(Source.Label()) + ").", -5);
   
   if(Source.CV_ == View) {
     if(CV_ == Copy) { // C->V only

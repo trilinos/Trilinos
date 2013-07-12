@@ -126,7 +126,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Object {
   virtual void Print(ostream & os) const;
 
   //! Error reporting method
-  virtual int ReportError(const string Message, int ErrorCode) const;
+  virtual int ReportError(const std::string Message, int ErrorCode) const;
   //@}
 
   
@@ -142,21 +142,21 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Object {
 
 
  protected:
-  string toString(const int& x) const {
+  std::string toString(const int& x) const {
      char s[100];
      sprintf(s, "%d", x);
-     return string(s);
+     return std::string(s);
 }
-  string toString(const long long& x) const {
+  std::string toString(const long long& x) const {
      char s[100];
      sprintf(s, "%lld", x);
-     return string(s);
+     return std::string(s);
 }
 
-  string toString(const double& x) const {
+  std::string toString(const double& x) const {
      char s[100];
      sprintf(s, "%g", x);
-     return string(s);
+     return std::string(s);
 }
   
 

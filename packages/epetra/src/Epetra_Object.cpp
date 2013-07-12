@@ -100,7 +100,7 @@ void Epetra_Object::Print(ostream & os) const {
   return;
 }
 //=============================================================================
-int Epetra_Object::ReportError(const string Message, int ErrorCode) const {
+int Epetra_Object::ReportError(const std::string Message, int ErrorCode) const {
 #ifndef EPETRA_NO_ERROR_REPORTS
   // NOTE:  We are extracting a C-style string from Message because
   //        the SGI compiler does not have a real string class with 

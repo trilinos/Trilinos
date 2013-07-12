@@ -151,7 +151,7 @@ using std::floor;
 
 #include <iomanip>
 
-using std::string;
+//using std::string;
 using std::memcpy;
 using std::strcpy;
 using std::strcmp;
