@@ -45,32 +45,33 @@
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_OverlappingPartitioner_decl.hpp"
 
-#include "Teuchos_ParameterList.hpp"
+namespace Ifpack2 {
 
-namespace Ifpack2{
-//! Ifpack2::LinearPartitioner: A class to define linear partitions.
-
+/// \class LinearPartitioner
+/// \brief A class to define linear partitions
+/// \tparam GraphType Specialization of Tpetra::RowGraph or Tpetra::CrsGraph.
 template<class GraphType>
 class LinearPartitioner : public OverlappingPartitioner<GraphType> {
-
 public:
-  typedef typename GraphType::local_ordinal_type LocalOrdinal;
-  typedef typename GraphType::global_ordinal_type GlobalOrdinal;
-  typedef typename GraphType::node_type Node;
+  typedef typename GraphType::local_ordinal_type local_ordinal_type;
+  typedef typename GraphType::global_ordinal_type global_ordinal_type;
+  typedef typename GraphType::node_type node_type;
+  typedef Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type> 
+    row_graph_type;
 
   //! Constructor.
-  LinearPartitioner(const Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> >& Graph);
+  LinearPartitioner (const Teuchos::RCP<const row_graph_type>& graph);
 
   //! Destructor.
-  virtual ~LinearPartitioner();
+  virtual ~LinearPartitioner ();
 
-  //! Sets all the parameters for the partitioner (none for linear partioning).
-  void setPartitionParameters(Teuchos::ParameterList& List);
+  //! Set the partitioner's parameters (none for linear partitioning).
+  void setPartitionParameters (Teuchos::ParameterList& List);
 
-  //! Computes the partitions. Returns 0 if successful.
-  void computePartitions();
-
+  //! Compute the partitions.
+  void computePartitions ();
 };
+
 }// namespace Ifpack2
 
 #endif // IFPACK2_LINEARPARTITIONER_DECL_HPP

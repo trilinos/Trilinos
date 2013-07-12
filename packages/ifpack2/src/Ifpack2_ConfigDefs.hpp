@@ -61,6 +61,12 @@ IFPACK2_SGN(const Scalar& x)
 namespace Ifpack2 {
   typedef Tpetra::global_size_t global_size_t;
 
+  /// \namespace Details
+  /// \brief Ifpack2 implementation details
+  ///
+  /// This namespace contains implementation details of Ifpack2.
+  /// It is <i>not</i> meant for users.  Users should not rely on
+  /// anything in this namespace.
   namespace Details {
     /// \brief Type of relaxation to use.
     /// \warning This is an implementation detail of Ifpack2.  Users

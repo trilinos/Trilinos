@@ -48,9 +48,6 @@
 namespace Ifpack2 {
 namespace Details {
 
-//Tpetra_RowGraph (const Teuchos::RCP<const MatrixType& Matrix) :
-//Tpetra_RowGraph (const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& Matrix) :
-
 //==========================================================================
 template<class MatrixType>
 Tpetra_RowGraph<MatrixType>::

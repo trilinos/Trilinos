@@ -83,12 +83,7 @@
 #include <Tpetra_CrsMatrix.hpp>
 
 namespace Ifpack2 {
-/// \namespace Details
-/// \brief Ifpack2 implementation details
-///
-/// This namespace contains implementation details of Ifpack2.
-/// It is <i>not</i> meant for users.  Users should not rely on
-/// anything in this namespace.
+
 namespace Details {
 /// \class Chebyshev
 /// \brief Left-scaled Chebyshev iteration.

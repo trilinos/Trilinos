@@ -53,45 +53,40 @@
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_OverlappingPartitioner_decl.hpp"
 
-#include "Teuchos_ParameterList.hpp"
+namespace Ifpack2 {
+namespace Details {
 
-namespace Ifpack2{
-/// \namespace Details
-/// \brief Ifpack2 implementation details
-///
-/// This namespace contains implementation details of Ifpack2.
-/// It is <i>not</i> meant for users.  Users should not rely on
-/// anything in this namespace.
-
-namespace Details{
 /// \class UserPartitioner
-/// \brief Allow the user to specify any nonoverlapping partition of the graph that they may choose.
-///
-
+/// \brief Let users specify any nonoverlapping partition of the graph
+///   that they may choose.
+/// \tparam GraphType Specialization of Tpetra::CrsGraph or
+///   Tpetra::RowGraph.
 template<class GraphType>
 class UserPartitioner : public OverlappingPartitioner<GraphType> {
 
 public:
-  typedef typename GraphType::local_ordinal_type LocalOrdinal;
-  typedef typename GraphType::global_ordinal_type GlobalOrdinal;
-  typedef typename GraphType::node_type Node;
+  typedef typename GraphType::local_ordinal_type local_ordinal_type;
+  typedef typename GraphType::global_ordinal_type global_ordinal_type;
+  typedef typename GraphType::node_type node_type;
+  typedef Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type> 
+    row_graph_type;
 
   //! Constructor.
-  UserPartitioner(const Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> >& Graph);
+  UserPartitioner (const Teuchos::RCP<const row_graph_type>& graph);
 
   //! Destructor.
   virtual ~UserPartitioner();
 
   //! Sets all the parameters for the partitioner.
-  void setPartitionParameters(Teuchos::ParameterList& List);
+  void setPartitionParameters (Teuchos::ParameterList& List);
 
-  //! Computes the partitions. Returns 0 if successful.
-  void computePartitions();
+  //! Compute the partitions.
+  void computePartitions ();
 
-protected:
-  Teuchos::ArrayRCP<LocalOrdinal> Map_;
-
+private:
+  Teuchos::ArrayRCP<local_ordinal_type> map_;
 };
+
 }// namespace Details
 }// namespace Ifpack2
 

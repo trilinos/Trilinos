@@ -38,20 +38,11 @@
 /// It declares a Tpetra::RowGraph to be used with LocalFilter.
 
 #include "Ifpack2_ConfigDefs.hpp"
-#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_RowGraph.hpp"
 #include "Tpetra_RowMatrix.hpp"
-#include "Teuchos_RefCountPtr.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-
 
 namespace Ifpack2 {
-/// \namespace Details
-/// \brief Ifpack2 implementation details
-///
-/// This namespace contains implementation details of Ifpack2.
-/// It is <i>not</i> meant for users.  Users should not rely on
-/// anything in this namespace.
+
 namespace Details {
 /// \class Tpetra_RowGraph
 /// \brief Minimal necessary functionality of Tpetra::RowGraph to satisfy a partitioner.
