@@ -4,8 +4,8 @@ INCLUDE(TribitsAddOptionAndDefine)
 SET(HEADERS "")
 SET(SOURCES "")
 
-FILE(GLOB HEADERS KokkosArray_*.hpp)
-FILE(GLOB SOURCES KokkosArray_*.cpp)
+FILE(GLOB HEADERS *.hpp)
+FILE(GLOB SOURCES *.cpp)
 
 TRIBITS_ADD_LIBRARY(
     kokkosarray_impl

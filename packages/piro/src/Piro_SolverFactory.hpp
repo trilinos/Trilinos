@@ -52,10 +52,23 @@
 
 namespace Piro {
 
-//! Factory for creating Thyra-based Piro solvers
+/*! \brief Factory for creating Thyra-based %Piro solvers
+ *
+ *  Piro::Epetra::SolverFactory is the counterpart for Epetra-based models.
+ */
 class SolverFactory {
 public:
-  //! Create solver
+  /*! \brief Create a solved model
+   *
+   *  The type of %Piro solver to instantiate is determined by the value of the string entry labeled <tt>"Solver Type"</tt>
+   *  and located at the top level of parameter list \c piroParams.
+   *
+   *  Currently, the following solver types are available (each accompanied by the corresponding token value):
+   *  - Piro::NOXSolver (<tt>"NOX"</tt>)
+   *  - Piro::RythmosSolver (<tt>"Rythmos"</tt>)
+   *
+   *  For Epetra-based models, additional options are available in Piro::Epetra::SolverFactory.
+   */
   template <typename Scalar>
   Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > createSolver(
       const Teuchos::RCP<Teuchos::ParameterList> &piroParams,

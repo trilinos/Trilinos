@@ -1,28 +1,41 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//  
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -34,6 +47,7 @@
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_ProductBasis.hpp"
 #include "Stokhos_Sparse3Tensor.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -74,26 +88,26 @@ public:
   ~FlatSparse3Tensor() {}
 
   inline
-  FlatSparse3Tensor() : 
-    m_k_coord() , 
-    m_j_coord() , 
-    m_value() , 
-    m_num_k() , 
-    m_num_j() , 
-    m_k_row_map() , 
-    m_j_row_map() , 
+  FlatSparse3Tensor() :
+    m_k_coord() ,
+    m_j_coord() ,
+    m_value() ,
+    m_num_k() ,
+    m_num_j() ,
+    m_k_row_map() ,
+    m_j_row_map() ,
     m_nnz(0) ,
     m_flops(0) {}
 
   inline
-  FlatSparse3Tensor( const FlatSparse3Tensor & rhs ) : 
-    m_k_coord( rhs.m_k_coord ) , 
+  FlatSparse3Tensor( const FlatSparse3Tensor & rhs ) :
+    m_k_coord( rhs.m_k_coord ) ,
     m_j_coord( rhs.m_j_coord ) ,
-    m_value( rhs.m_value ) , 
+    m_value( rhs.m_value ) ,
     m_num_k( rhs.m_num_k ) ,
     m_num_j( rhs.m_num_j ) ,
-    m_k_row_map( rhs.m_k_row_map ) , 
-    m_j_row_map( rhs.m_j_row_map ) , 
+    m_k_row_map( rhs.m_k_row_map ) ,
+    m_j_row_map( rhs.m_j_row_map ) ,
     m_nnz( rhs.m_nnz ) ,
     m_flops( rhs.m_flops ) {}
 
@@ -168,27 +182,28 @@ public:
 
   /** \brief Number of non-zero's */
   KOKKOSARRAY_INLINE_FUNCTION
-  size_type num_non_zeros() const 
+  size_type num_non_zeros() const
   { return m_nnz; }
 
   /** \brief Number flop's per multiply-add */
   KOKKOSARRAY_INLINE_FUNCTION
-  size_type num_flops() const 
+  size_type num_flops() const
   { return m_flops; }
 
   template <typename OrdinalType>
   static FlatSparse3Tensor
   create( const Stokhos::ProductBasis<OrdinalType,ValueType>& basis,
-	  const Stokhos::Sparse3Tensor<OrdinalType,ValueType>& Cijk )
+          const Stokhos::Sparse3Tensor<OrdinalType,ValueType>& Cijk,
+          const Teuchos::ParameterList& params = Teuchos::ParameterList())
   {
     typedef Stokhos::Sparse3Tensor<OrdinalType,ValueType> Cijk_type;
-    
+
     // Compute number of k's for each i
     const size_type dimension = basis.size();
     std::vector< size_t > k_coord_work( dimension , (size_t) 0 );
     size_type k_entry_count = 0 ;
-    for (typename Cijk_type::i_iterator i_it=Cijk.i_begin(); 
-	 i_it!=Cijk.i_end(); ++i_it) {
+    for (typename Cijk_type::i_iterator i_it=Cijk.i_begin();
+         i_it!=Cijk.i_end(); ++i_it) {
       OrdinalType i = index(i_it);
       k_coord_work[i] = Cijk.num_k(i_it);
       k_entry_count += Cijk.num_k(i_it);
@@ -198,19 +213,19 @@ public:
     std::vector< size_t > j_coord_work( k_entry_count , (size_t) 0 );
     size_type j_entry_count = 0 ;
     size_type k_entry = 0 ;
-    for (typename Cijk_type::i_iterator i_it=Cijk.i_begin(); 
-	 i_it!=Cijk.i_end(); ++i_it) {
-      for (typename Cijk_type::ik_iterator k_it = Cijk.k_begin(i_it); 
-	   k_it != Cijk.k_end(i_it); ++k_it, ++k_entry) {
-	OrdinalType k = index(k_it);
-	for (typename Cijk_type::ikj_iterator j_it = Cijk.j_begin(k_it); 
-	     j_it != Cijk.j_end(k_it); ++j_it) {
-	  OrdinalType j = index(j_it);
-	  if (j >= k) {
-	    ++j_coord_work[k_entry];
-	    ++j_entry_count;
-	  }
-	}
+    for (typename Cijk_type::i_iterator i_it=Cijk.i_begin();
+         i_it!=Cijk.i_end(); ++i_it) {
+      for (typename Cijk_type::ik_iterator k_it = Cijk.k_begin(i_it);
+           k_it != Cijk.k_end(i_it); ++k_it, ++k_entry) {
+        OrdinalType k = index(k_it);
+        for (typename Cijk_type::ikj_iterator j_it = Cijk.j_begin(k_it);
+             j_it != Cijk.j_end(k_it); ++j_it) {
+          OrdinalType j = index(j_it);
+          if (j >= k) {
+            ++j_coord_work[k_entry];
+            ++j_entry_count;
+          }
+        }
       }
     }
 
@@ -220,9 +235,9 @@ public:
     for ( size_type i = 0 ; i < dimension ; ++i ) {
       const size_t rem = coord_work[i] % Align;
       if (rem > 0) {
-	const size_t pad = Align - rem;
-	coord_work[i] += pad;
-	entry_count += pad;
+        const size_t pad = Align - rem;
+        coord_work[i] += pad;
+        entry_count += pad;
       }
     }
     */
@@ -259,6 +274,7 @@ public:
     for ( size_type i = 0 ; i < dimension ; ++i ) {
       sum += k_coord_work[i];
       host_k_row_map(i+1) = sum;
+      host_num_k(i) = 0;
     }
 
     // Compute j row map
@@ -267,6 +283,7 @@ public:
     for ( size_type i = 0 ; i < k_entry_count ; ++i ) {
       sum += j_coord_work[i];
       host_j_row_map(i+1) = sum;
+      host_num_j(i) = 0;
     }
 
     for ( size_type i = 0 ; i < dimension ; ++i ) {
@@ -276,29 +293,29 @@ public:
       j_coord_work[i] = host_j_row_map[i];
     }
 
-    for (typename Cijk_type::i_iterator i_it=Cijk.i_begin(); 
-	 i_it!=Cijk.i_end(); ++i_it) {
+    for (typename Cijk_type::i_iterator i_it=Cijk.i_begin();
+         i_it!=Cijk.i_end(); ++i_it) {
       OrdinalType i = index(i_it);
-      for (typename Cijk_type::ik_iterator k_it = Cijk.k_begin(i_it); 
-	   k_it != Cijk.k_end(i_it); ++k_it) {
-	OrdinalType k = index(k_it);
-	const size_type kEntry = k_coord_work[i]; 
-	++k_coord_work[i];
-	host_k_coord(kEntry) = k ;
-	++host_num_k(i);
-	for (typename Cijk_type::ikj_iterator j_it = Cijk.j_begin(k_it); 
-	     j_it != Cijk.j_end(k_it); ++j_it) {
-	  OrdinalType j = index(j_it);
-	  ValueType c = Stokhos::value(j_it);
-	  if (j >= k) {
-	    const size_type jEntry = j_coord_work[kEntry]; 
-	    ++j_coord_work[kEntry];
-	    host_value(jEntry) = (j != k) ? c : 0.5*c;
-	    host_j_coord(jEntry) = j ;
-	    ++host_num_j(kEntry);
-	    ++tensor.m_nnz;
-	  }
-	}
+      for (typename Cijk_type::ik_iterator k_it = Cijk.k_begin(i_it);
+           k_it != Cijk.k_end(i_it); ++k_it) {
+        OrdinalType k = index(k_it);
+        const size_type kEntry = k_coord_work[i];
+        ++k_coord_work[i];
+        host_k_coord(kEntry) = k ;
+        ++host_num_k(i);
+        for (typename Cijk_type::ikj_iterator j_it = Cijk.j_begin(k_it);
+             j_it != Cijk.j_end(k_it); ++j_it) {
+          OrdinalType j = index(j_it);
+          ValueType c = Stokhos::value(j_it);
+          if (j >= k) {
+            const size_type jEntry = j_coord_work[kEntry];
+            ++j_coord_work[kEntry];
+            host_value(jEntry) = (j != k) ? c : 0.5*c;
+            host_j_coord(jEntry) = j ;
+            ++host_num_j(kEntry);
+            ++tensor.m_nnz;
+          }
+        }
       }
     }
 
@@ -319,11 +336,12 @@ public:
 
 template< class Device , typename OrdinalType , typename ValueType >
 FlatSparse3Tensor<ValueType, Device>
-create_flat_sparse_3_tensor( 
+create_flat_sparse_3_tensor(
   const Stokhos::ProductBasis<OrdinalType,ValueType>& basis,
-  const Stokhos::Sparse3Tensor<OrdinalType,ValueType>& Cijk )
+  const Stokhos::Sparse3Tensor<OrdinalType,ValueType>& Cijk,
+  const Teuchos::ParameterList& params = Teuchos::ParameterList() )
 {
-  return FlatSparse3Tensor<ValueType, Device>::create( basis, Cijk );
+  return FlatSparse3Tensor<ValueType, Device>::create( basis, Cijk, params );
 }
 
 } /* namespace Stokhos */
@@ -332,5 +350,3 @@ create_flat_sparse_3_tensor(
 //----------------------------------------------------------------------------
 
 #endif /* #ifndef STOKHOS_FLAT_SPARSE_3_TENSOR_HPP */
-
-

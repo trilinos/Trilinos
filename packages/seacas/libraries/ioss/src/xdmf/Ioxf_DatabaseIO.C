@@ -82,9 +82,6 @@ namespace {
 			       const Ioss::GroupingEntity *block,
 			       int ndim, std::string *disp_name);
 
-  int field_warning(const Ioss::GroupingEntity *ge,
-		    const Ioss::Field &field, const std::string& inout);
-
   void clean_out(const Ioxf::XmlContainer &container)
   {
     for (size_t i=0; i < container.size(); i++)
@@ -467,7 +464,7 @@ namespace Ioxf {
 	std::ostringstream errmsg;
 	errmsg << "Can not handle non-TRANSIENT or non-REDUCTION fields on regions ";
 	IOSS_ERROR(errmsg);
-	//    num_to_get = field_warning(region, field, "output");
+	//    num_to_get = Ioss::Utils::field_warning(region, field, "output");
       }
       return num_to_get;
     }
@@ -527,8 +524,14 @@ namespace Ioxf {
 	    new_this->handle_node_ids((int*)data, num_to_get);
 	  } else if (field.get_name() == "connectivity") {
 	    // Do nothing, just handles an idiosyncracy of the GroupingEntity
+	  } else if (field.get_name() == "connectivity_raw") {
+	    // Do nothing, just handles an idiosyncracy of the GroupingEntity
+	  } else if (field.get_name() == "node_connectivity_status") {
+	    // Do nothing, input only field.
+	  } else if (field.get_name() == "implicit_ids") {
+	    // Do nothing, input only field.
 	  } else {
-	    return field_warning(nb, field, "mesh output");
+	    return Ioss::Utils::field_warning(nb, field, "mesh output");
 	  }
 
 	} else if (role == Ioss::Field::TRANSIENT) {
@@ -554,7 +557,7 @@ namespace Ioxf {
 				     const Ioss::Field& field,
 				     void */* data */, size_t /* data_size */) const
   {
-    int num_to_get = field_warning(fs, field, "output");
+    int num_to_get = Ioss::Utils::field_warning(fs, field, "output");
     return num_to_get;
   }
 
@@ -562,7 +565,7 @@ namespace Ioxf {
 				     const Ioss::Field& field,
 				     void */* data */, size_t /* data_size */) const
   {
-    int num_to_get = field_warning(fs, field, "output");
+    int num_to_get = Ioss::Utils::field_warning(fs, field, "output");
     return num_to_get;
   }
 
@@ -664,11 +667,10 @@ namespace Ioxf {
 	    DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
 	    new_this->handle_element_ids(eb, (int*)data, num_to_get);
 
+	  } else if (field.get_name() == "implicit_ids") {
+	    // Do nothing, input only field.
 	  } else {
-	    IOSS_WARNING << " ElementBlock "
-			 << eb->name()
-			 << ". Unknown field " << field.get_name();
-	    num_to_get = -4; //IOSS_UNKNOWN_FIELD;
+	    return Ioss::Utils::field_warning(eb, field, "mesh output");
 	  }
 	} else if (role == Ioss::Field::TRANSIENT) {
 	  // Check if the specified field exists on this element block.
@@ -1231,7 +1233,7 @@ namespace Ioxf {
 	    delete ScalarArray;
 
 	  } else {
-	    num_to_get = field_warning(ns, field, "output");
+	    num_to_get = Ioss::Utils::field_warning(ns, field, "output");
 	  }
 	} else if (role == Ioss::Field::TRANSIENT) {
 	  // Check if the specified field exists on this element block.
@@ -1256,7 +1258,7 @@ namespace Ioxf {
 				     const Ioss::Field& field,
 				     void */* data */, size_t /* data_size */) const
   {
-    int num_to_get = field_warning(fs, field, "output");
+    int num_to_get = Ioss::Utils::field_warning(fs, field, "output");
     return num_to_get;
   }
 
@@ -1264,7 +1266,7 @@ namespace Ioxf {
 				     const Ioss::Field& field,
 				     void */* data */, size_t /* data_size */) const
   {
-    int num_to_get = field_warning(fs, field, "output");
+    int num_to_get = Ioss::Utils::field_warning(fs, field, "output");
     return num_to_get;
   }
 
@@ -1272,15 +1274,20 @@ namespace Ioxf {
 				     const Ioss::Field& field,
 				     void */* data */, size_t /* data_size */) const
   {
-    int num_to_get = field_warning(fs, field, "output");
+    int num_to_get = Ioss::Utils::field_warning(fs, field, "output");
     return num_to_get;
   }
 
   int64_t DatabaseIO::put_field_internal(const Ioss::SideSet* fs,
 				     const Ioss::Field& field,
-				     void */* data */, size_t /* data_size */) const
+				     void */* data */, size_t data_size) const
   {
-    int num_to_get = field_warning(fs, field, "output");
+    size_t num_to_get = field.verify(data_size);
+    if (field.get_name() == "ids") {
+      // Do nothing, just handles an idiosyncracy of the GroupingEntity
+    } else {
+      num_to_get = Ioss::Utils::field_warning(fs, field, "output");
+    }
     return num_to_get;
   }
 
@@ -1460,7 +1467,7 @@ namespace Ioxf {
 
       }
     } else {
-      num_to_get = field_warning(cs, field, "output");
+      num_to_get = Ioss::Utils::field_warning(cs, field, "output");
     }
     return num_to_get;
   }
@@ -1504,7 +1511,6 @@ namespace Ioxf {
 	  delete ScalarArray;
 
 	} else if (field.get_name() == "element_side") {
-#if 1
 	  // In exodusII, the 'side block' is stored as a sideset.  A
 	  // sideset has a list of elements and a corresponding local
 	  // element side (1-based)
@@ -1518,6 +1524,9 @@ namespace Ioxf {
 	  // The element_id passed in is the global id; we need to
 	  // output the local id.
 
+	  // See if edges or faces...
+	  size_t side_offset = Ioss::Utils::get_side_offset(fb);
+
 	  // Allocate space for local side number and element numbers
 	  // numbers.
 	  std::vector<int> element(num_to_get);
@@ -1526,8 +1535,9 @@ namespace Ioxf {
 
 	  int index = 0;
 	  for (int i=0; i < num_to_get; i++) {
+	    std::cout << i << "\t" << el_side[index] << "\t" << element_global_to_local(el_side[index]) << "\n";
 	    element[i] = element_global_to_local(el_side[index++]);
-	    side[i]    = el_side[index++];
+	    side[i]    = el_side[index++]+side_offset;
 	  }
 
 
@@ -1562,12 +1572,70 @@ namespace Ioxf {
 	    delete ScalarArray;
 	    // delete Hdf;
 	  }
+	} else if (field.get_name() == "element_side_raw") {
+	  // In exodusII, the 'side block' is stored as a sideset.  A
+	  // sideset has a list of elements and a corresponding local
+	  // element side (1-based)
 
-#endif
+	  // The 'data' passed into the function is stored as a
+	  // 2D vector e0,f0,e1,f1,... (e=element, f=side)
+
+	  // To avoid overwriting the passed in data, we allocate
+	  // two arrays to store the data for this sideset.
+
+	  // The element_id passed in is the global id; we need to
+	  // output the local id.
+
+	  // See if edges or faces...
+	  size_t side_offset = Ioss::Utils::get_side_offset(fb);
+
+	  // Allocate space for local side number and element numbers
+	  // numbers.
+	  std::vector<int> element(num_to_get);
+	  std::vector<int> side(num_to_get);
+	  int *el_side = (int *)data;
+
+	  int index = 0;
+	  for (int i=0; i < num_to_get; i++) {
+	    element[i] = el_side[index++];
+	    side[i]    = el_side[index++]+side_offset;
+	  }
+
+
+	  XdmfArray *ScalarArray = new XdmfArray();
+	  ScalarArray->SetNumberType( XDMF_INT32_TYPE );
+	  ScalarArray->SetNumberOfElements( num_to_get );
+	  ScalarArray->SetDataPointer(&side[0]);
+
+	  {
+	    std::string FinalName(hdfname.tailname());
+	    FinalName += ":/SideSets/" + Ioss::Utils::to_string(id) + "/Side";
+	    WriteHdfDataset(FinalName, ScalarArray, __LINE__);
+	  }
+
+	  delete ScalarArray;
+
+	  {
+	    ScalarArray = new XdmfArray();
+	    ScalarArray->SetNumberType( XDMF_INT32_TYPE );
+	    ScalarArray->SetNumberOfElements( num_to_get );
+	    ScalarArray->SetDataPointer(&element[0]);
+
+	    XdmfInt64        Dimensions[2];
+	    Dimensions[0] = num_to_get;
+	    Dimensions[1] = 1;
+	    ScalarArray->SetShape( 2, Dimensions ); // Rank, Dimensions
+
+	    std::string FinalName(hdfname.tailname());
+	    FinalName += ":/SideSets/" + Ioss::Utils::to_string(id) + "/Element";
+	    WriteHdfDataset(FinalName, ScalarArray, __LINE__);
+	    delete ScalarArray;
+	    // delete Hdf;
+	  }
 	} else if (field.get_name() == "connectivity") {
 	  // Do nothing, just handles an idiosyncracy of the GroupingEntity
 	} else {
-	  num_to_get = field_warning(fb, field, "output");
+	  num_to_get = Ioss::Utils::field_warning(fb, field, "output");
 	}
       } else if (role == Ioss::Field::TRANSIENT) {
 	// Check if the specified field exists on this block.
@@ -2845,16 +2913,6 @@ bool find_displacement_field(Ioss::NameList &fields,
     }
   }
   return false;
-}
-
-int field_warning(const Ioss::GroupingEntity *ge,
-		  const Ioss::Field &field, const std::string& inout)
-{
-  IOSS_WARNING << ge->type() << " '"
-		   << ge->name()
-		   << "'. Unknown " << inout << " field '"
-		   << field.get_name() << "'";
-  return -4;
 }
 
 #ifndef NDEBUG

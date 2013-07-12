@@ -114,7 +114,7 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, 2_blocks)
    RCP<const panzer::FieldPattern> fp 
          = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
 
-   STKConnManager connMngr(mesh);
+   STKConnManager<int> connMngr(mesh);
    connMngr.buildConnectivity(*fp);
 
    // did we get the element block correct?
@@ -133,8 +133,8 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, 2_blocks)
          TEST_EQUALITY(connMngr.getConnectivitySize(elementBlock[elmt]),9); 
    }
 
-   STKConnManager::GlobalOrdinal maxEdgeId = mesh->getMaxEntityId(mesh->getEdgeRank());
-   STKConnManager::GlobalOrdinal nodeCount = mesh->getEntityCounts(mesh->getNodeRank());
+   STKConnManager<int>::GlobalOrdinal maxEdgeId = mesh->getMaxEntityId(mesh->getEdgeRank());
+   STKConnManager<int>::GlobalOrdinal nodeCount = mesh->getEntityCounts(mesh->getNodeRank());
 
    if(numProcs==1) {
       const int * conn1 = connMngr.getConnectivity(1);
@@ -189,7 +189,7 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, single_block_2d)
    RCP<const panzer::FieldPattern> fp 
          = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
 
-   STKConnManager connMngr(mesh);
+   STKConnManager<int> connMngr(mesh);
    connMngr.buildConnectivity(*fp);
 
    // did we get the element block correct?
@@ -269,7 +269,7 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, four_block_2d)
    RCP<const panzer::FieldPattern> fp 
          = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
 
-   STKConnManager connMngr(mesh);
+   STKConnManager<int> connMngr(mesh);
    connMngr.buildConnectivity(*fp);
 
    TEUCHOS_ASSERT(numProcs<=2);

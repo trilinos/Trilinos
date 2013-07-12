@@ -42,6 +42,7 @@
 
 #include "Piro_MatrixFreeLinearOp.hpp"
 
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_OperatorVectorTypes.hpp"
 

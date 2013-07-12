@@ -81,7 +81,7 @@ int ex_put_partial_elem_attr (int   exoid,
       sprintf(errmsg,
               "Warning: no attributes allowed for NULL block %"PRId64" in file id %d",
               elem_blk_id, exoid);
-      ex_err("ex_put_partial_elem_attr",errmsg,EX_MSG);
+      ex_err("ex_put_partial_elem_attr",errmsg,EX_NULLENTITY);
       return (EX_WARN);              /* no attributes for this element block */
     } else {
       sprintf(errmsg,

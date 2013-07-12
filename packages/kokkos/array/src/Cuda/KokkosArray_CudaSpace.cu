@@ -44,6 +44,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 
 #include <KokkosArray_Cuda.hpp>
 #include <KokkosArray_CudaSpace.hpp>
@@ -84,13 +85,15 @@ public:
 
 CudaMemoryTrackingEntry::~CudaMemoryTrackingEntry()
 {
-  cudaDeviceSynchronize();
+  cudaError_t sync_err = cudaDeviceSynchronize();
 
   if ( tex_obj ) {
 
   }
 
-  if ( cudaSuccess != cudaFree( ptr_alloc ) ) {
+  cudaError_t free_err = cudaFree( ptr_alloc );
+
+  if ( cudaSuccess != sync_err || cudaSuccess != free_err ) {
     std::cerr << "cudaFree( " << ptr_alloc << " ) FAILED for " ;
     Impl::MemoryTrackingEntry::print( std::cerr );
   }
@@ -139,25 +142,24 @@ void * CudaSpace::allocate(
   void * ptr = 0 ;
 
   if ( 0 < scalar_size * scalar_count ) {
-    bool ok = true ;
 
-    cudaDeviceSynchronize();
-
-    if ( ok ) ok = cudaSuccess == cudaMalloc( & ptr , size );
-    if ( ok ) ok = 0 != ptr ;
-    if ( ok ) ok = cudaSuccess == cudaMemset( ptr , 0 , size );
-    if ( ok ) ok = cudaSuccess == cudaThreadSynchronize();
-
-    if ( ! ok ) {
+    try {
+      CUDA_SAFE_CALL( cudaDeviceSynchronize() );
+      CUDA_SAFE_CALL( cudaMalloc( (void**) &ptr, size) );
+      CUDA_SAFE_CALL( cudaMemset( ptr, 0, size ) );
+      CUDA_SAFE_CALL( cudaThreadSynchronize() );
+    }
+    catch( std::runtime_error & err) {
       std::ostringstream msg ;
       msg << "KokkosArray::Impl::CudaSpace::allocate( "
           << label
           << " , " << scalar_type.name()
           << " , " << scalar_size
           << " , " << scalar_count
-          << " ) FAILED memory allocation" ;
+          << " ) FAILED memory allocation\n" 
+          << err.what();
       KokkosArray::Impl::throw_runtime_exception( msg.str() );
-    }
+    } 
 
     cuda_space_singleton().insert(
       new CudaMemoryTrackingEntry( label , scalar_type , ptr , scalar_size , scalar_count ) );

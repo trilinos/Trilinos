@@ -83,6 +83,8 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("Importer",       Teuchos::null, "Factory of the importer object used for the rebalancing");
     // The value of "useSubcomm" paramter here must be the same as in RebalanceAcFactory
     validParamList->set< bool >                  ("useSubcomm",              true, "Construct subcommunicators");
+    validParamList->set< int >                   ("write start",    -1, "first level at which coordinates should be written to file");
+    validParamList->set< int >                   ("write end",      -1, "last level at which coordinates should be written to file");
 
     // TODO validation: "P" parameter valid only for type="Interpolation" and "R" valid only for type="Restriction". Like so:
     // if (paramList.isEntry("type") && paramList.get("type) == "Interpolation) {
@@ -100,6 +102,7 @@ namespace MueLu {
     } else {
       Input(coarseLevel, "R");
       Input(coarseLevel, "Nullspace");
+      if(pL.isParameter("Coordinates") && pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null)
       Input(coarseLevel, "Coordinates");
     }
 
@@ -110,6 +113,18 @@ namespace MueLu {
   void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
     const Teuchos::ParameterList & pL = GetParameterList();
+
+    int writeStart = pL.get< int >("write start");
+    int writeEnd   = pL.get< int >("write end");
+
+    if (writeStart == 0 && fineLevel.GetLevelID() == 0 && writeStart <= writeEnd && IsAvailable(fineLevel, "Coordinates"))
+    {
+      std::string fileName = "coordinates_level_0.m";
+      RCP<MultiVector> fineCoords = fineLevel.Get< RCP<MultiVector> >("Coordinates");
+      if (fineCoords != Teuchos::null)
+        Utils::Write(fileName,*fineCoords);
+    }
+
 
     RCP<const Import> rebalanceImporter = Get< RCP<const Import> >(coarseLevel, "Importer");
 
@@ -177,9 +192,13 @@ namespace MueLu {
         if (IsAvailable(coarseLevel, "Nullspace"))
           Set(coarseLevel, "Nullspace", Get< RCP<MultiVector> >(coarseLevel, "Nullspace"));
 
-        TEUCHOS_TEST_FOR_EXCEPTION(!IsAvailable(coarseLevel, "Coordinates"), Exceptions::RuntimeError, "RebalanceTransferFactory::Build : no coordinates found");
-        if (IsAvailable(coarseLevel, "Coordinates"))
-          Set(coarseLevel, "Coordinates", Get< RCP<MultiVector> >(coarseLevel, "Coordinates"));
+        //TEUCHOS_TEST_FOR_EXCEPTION(!IsAvailable(coarseLevel, "Coordinates"), Exceptions::RuntimeError, "RebalanceTransferFactory::Build : no coordinates found");
+        //if (IsAvailable(coarseLevel, "Coordinates"))
+        //if (coarseLevel.IsAvailable("Coordinates"))
+        if(pL.isParameter("Coordinates") && pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null) {
+          if (IsAvailable(coarseLevel, "Coordinates"))
+            Set(coarseLevel, "Coordinates", Get< RCP<MultiVector> >(coarseLevel, "Coordinates"));
+        }
 
         return;
       }
@@ -205,8 +224,10 @@ namespace MueLu {
         //if(originalR->IsView("stridedMaps")) rebalancedR->CreateView("stridedMaps", originalR);
         ///////////////////////// EXPERIMENTAL
 
-        TEUCHOS_TEST_FOR_EXCEPTION(!IsAvailable(coarseLevel, "Coordinates"), Exceptions::RuntimeError, "RebalanceTransferFactory::Build : no coordinates found");
-        if (IsAvailable(coarseLevel, "Coordinates")) {
+        //TEUCHOS_TEST_FOR_EXCEPTION(!IsAvailable(coarseLevel, "Coordinates"), Exceptions::RuntimeError, "RebalanceTransferFactory::Build : no coordinates found");
+        if (pL.isParameter("Coordinates") &&
+            pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null &&
+            IsAvailable(coarseLevel, "Coordinates")) {
           SubFactoryMonitor subM(*this, "Rebalancing coordinates", coarseLevel);
 
           RCP<MultiVector> coords = Get< RCP<MultiVector> >(coarseLevel, "Coordinates");
@@ -246,6 +267,11 @@ namespace MueLu {
             permutedCoords->replaceMap(permutedCoords->getMap()->removeEmptyProcesses());
 
           Set(coarseLevel, "Coordinates", permutedCoords);
+
+          std::string fileName = "rebalanced_coordinates_level_" + toString(coarseLevel.GetLevelID()) + ".m";
+          //if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd && permutedCoords != Teuchos::null)
+          if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd && permutedCoords->getMap() != Teuchos::null)
+            Utils::Write(fileName, *permutedCoords);
         }
 
         if (IsAvailable(coarseLevel, "Nullspace")) {

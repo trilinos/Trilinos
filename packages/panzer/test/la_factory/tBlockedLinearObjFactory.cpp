@@ -66,6 +66,7 @@
 #include "Thyra_BlockedLinearOpBase.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 #include "Epetra_Comm.h"
 #include "Epetra_MpiComm.h"
@@ -124,9 +125,9 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, epetra_factory_tests)
    int numProc = eComm->NumProc();
 
    RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int>(myRank,numProc));
+         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int,int>(myRank,numProc));
    RCP<const panzer::UniqueGlobalIndexer<int,std::pair<int,int> > > blkIndexer 
-         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int>(numBlocks,myRank,numProc));
+         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int,int>(numBlocks,myRank,numProc));
 
    std::vector<int> ownedIndices, ownedAndSharedIndices;
    indexer->getOwnedIndices(ownedIndices);
@@ -275,9 +276,9 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, ghostToGlobal)
    typedef BlockedEpetraLinearObjContainer BLOC;
 
    RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int>(myRank,numProc));
+         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int,int>(myRank,numProc));
    RCP<const panzer::UniqueGlobalIndexer<int,std::pair<int,int> > > blkIndexer 
-         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int>(numBlocks,myRank,numProc));
+         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int,int>(numBlocks,myRank,numProc));
 
    std::vector<RCP<const panzer::UniqueGlobalIndexer<int,int> > > indexers;
    for(int i=0;i<numBlocks;i++)
@@ -348,9 +349,9 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, graph_constr)
    typedef BlockedEpetraLinearObjContainer BLOC;
 
    RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int>(myRank,numProc));
+         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int,int>(myRank,numProc));
    RCP<const panzer::UniqueGlobalIndexer<int,std::pair<int,int> > > blkIndexer 
-         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int>(numBlocks,myRank,numProc));
+         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int,int>(numBlocks,myRank,numProc));
 
    std::vector<RCP<const panzer::UniqueGlobalIndexer<int,int> > > indexers;
    for(int i=0;i<numBlocks;i++)
@@ -402,9 +403,9 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
    typedef BlockedEpetraLinearObjContainer BLOC;
 
    RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int>(myRank,numProc));
+         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int,int>(myRank,numProc));
    RCP<const panzer::UniqueGlobalIndexer<int,std::pair<int,int> > > blkIndexer 
-         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int>(numBlocks,myRank,numProc));
+         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int,int>(numBlocks,myRank,numProc));
 
    std::vector<int> ownedIndices, ownedAndSharedIndices;
    indexer->getOwnedIndices(ownedIndices);
@@ -587,11 +588,11 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
    typedef BlockedEpetraLinearObjContainer BLOC;
 
    RCP<panzer::UniqueGlobalIndexer<int,int> > indexer_node
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int>(myRank,numProc));
+         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int,int>(myRank,numProc));
    RCP<panzer::UniqueGlobalIndexer<int,int> > indexer_cell
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer_Element<int>(myRank,numProc));
+         = rcp(new panzer::unit_test::UniqueGlobalIndexer_Element<int,int>(myRank,numProc));
    RCP<const panzer::UniqueGlobalIndexer<int,std::pair<int,int> > > blkIndexer 
-         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int>(numBlocks,myRank,numProc));
+         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int,int>(numBlocks,myRank,numProc));
 
    std::vector<RCP<const panzer::UniqueGlobalIndexer<int,int> > > indexers;
    indexers.push_back(indexer_node);
@@ -808,9 +809,9 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, exclusion)
    int numProc = eComm->NumProc();
 
    RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int>(myRank,numProc));
+         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int,int>(myRank,numProc));
    RCP<const panzer::UniqueGlobalIndexer<int,std::pair<int,int> > > blkIndexer 
-         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int>(numBlocks,myRank,numProc));
+         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int,int>(numBlocks,myRank,numProc));
 
    std::vector<int> ownedIndices, ownedAndSharedIndices;
    indexer->getOwnedIndices(ownedIndices);

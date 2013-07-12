@@ -64,6 +64,7 @@
 #include "Thyra_DefaultAddedLinearOp.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 #ifdef Piro_ENABLE_NOX
 #  include "Thyra_NonlinearSolver_NOX.hpp"

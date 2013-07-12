@@ -6,7 +6,7 @@
 
 //----------------------------------------------------------------------------
 
-void test_host_explicit( comm::Machine machine , 
+void test_host_explicit( comm::Machine machine ,
                          size_t gang_count ,
                          size_t gang_worker_count ,
                          size_t elem_count_begin ,
@@ -46,7 +46,7 @@ void run( const std::string & argline , comm::Machine machine )
     input >> which ;
 
     if ( which == std::string("explicit") ) {
- 
+
       size_t mesh_node_begin = 100 ;
       size_t mesh_node_end   = 300 ;
       size_t uq_count_begin  = 1 ;
@@ -69,13 +69,13 @@ void run( const std::string & argline , comm::Machine machine )
       cmd_error = true ;
     }
   }
-#if HAVE_CUDA
+#if KOKKOSARRAY_HAVE_CUDA
   else if ( which == std::string("cuda") ) {
-  
+
     input >> which ;
 
     if ( which == std::string("explicit") ) {
-  
+
       size_t mesh_node_begin = 100 ;
       size_t mesh_node_end   = 300 ;
       size_t uq_count_begin  = 1 ;
@@ -90,7 +90,7 @@ void run( const std::string & argline , comm::Machine machine )
                           uq_count_begin ,
                           uq_count_end ,
                           run );
-   
+
     }
   }
 #endif
@@ -131,14 +131,14 @@ int main( int argc , char ** argv )
     }
   }
 
-#ifdef HAVE_MPI
+#ifdef KOKKOSARRAY_HAVE_MPI
   {
     int length = argline.length();
     MPI_Bcast( & length , 1 , MPI_INT , 0 , machine.mpi_comm );
     argline.resize( length , ' ' );
     MPI_Bcast( (void*) argline.data() , length , MPI_CHAR , 0 , machine.mpi_comm );
   }
-#endif /* HAVE_MPI */
+#endif /* KOKKOSARRAY_HAVE_MPI */
 
   try {
     run( argline , machine );

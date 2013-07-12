@@ -48,6 +48,7 @@
 #include "NOX_MeritFunction_Weighted.hpp"
 #include "NOX_Thyra_Vector.H"
 #include "NOX_Thyra_Group.H"
+#include "Thyra_VectorStdOps.hpp"
 #include "Teuchos_Assert.hpp"
 
 NOX::Thyra::WeightedMeritFunction::

@@ -15,7 +15,7 @@
 
 namespace {
   const unsigned int HASHSIZE = 5939;
-  const char* version_string = "3.14 (2013/02/07)";
+  const char* version_string = "3.16 (2013/06/11)";
   
   unsigned hash_symbol (const char *symbol)
   {

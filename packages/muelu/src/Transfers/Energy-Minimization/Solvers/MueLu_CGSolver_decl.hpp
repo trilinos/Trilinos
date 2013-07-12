@@ -93,7 +93,7 @@ namespace MueLu {
     //@{
 
     //! Iterate
-    void Iterate(const Matrix& A, const Constraint& C, const Matrix& P0, const MultiVector& B, RCP<Matrix>& P) const;
+    void Iterate(const Matrix& A, const Constraint& C, const Matrix& P0, RCP<Matrix>& P) const;
 
     //@}
   private:

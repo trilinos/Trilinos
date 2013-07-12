@@ -301,6 +301,8 @@ Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,GlobalOrdinalT,Node> >
 ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
    getGhostedDataVector(const std::string & fieldName,const std::map<std::string,ArrayT> & data) const
 {
+   TEUCHOS_ASSERT(data.size()>0); // there must be at least one "data" item
+
    int fieldNum = ugi_->getFieldNum(fieldName);
    std::vector<std::string> blockIds;
    ugi_->getElementBlockIds(blockIds);
@@ -312,9 +314,10 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
       numCols = 1;
    else if(rank==3)
       numCols = data.begin()->second.dimension(2);
-   else
+   else {
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
-                          "ArrayToFieldVector::getGhostedDataVector: data array must have rank 2 or 3");
+                          "ArrayToFieldVector::getGhostedDataVector: data array must have rank 2 or 3. This array has rank " << rank << ".");
+   }
 
 
    // first build and fill in final reduced field vector

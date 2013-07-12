@@ -109,9 +109,15 @@ void ex_err(const char *module_name,
     return;
   }
 
+  else if (err_num == EX_NULLENTITY)
+  {
+    if (exoptval & EX_NULLVERBOSE) {
+      fprintf(stderr, "Exodus Library Warning: [%s]\n\t%s\n",module_name,message);
+    }
+  }
   else if (exoptval & EX_VERBOSE) /* check see if we really want to hear this */
   {
-    fprintf(stderr, "Exodus Library Error: [%s]\n\t%s\n",module_name,message);
+    fprintf(stderr, "Exodus Library Warning/Error: [%s]\n\t%s\n",module_name,message);
     switch (err_num) {
     case NC_SYSERR:
       fprintf (stderr,"\t[%d] System error -- Usually disk full or filesystem issue\n", err_num);

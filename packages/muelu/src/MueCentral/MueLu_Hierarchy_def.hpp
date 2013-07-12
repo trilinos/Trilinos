@@ -304,6 +304,8 @@ namespace MueLu {
     GetOStream(Runtime0, 0) << "Loop: startLevel=" << startLevel << ", lastLevel=" << lastLevel
         << " (stop if numLevels = " << numDesiredLevels << " or Ac.size() = " << maxCoarseSize_ << ")" << std::endl;
 
+    Clear();
+
     // Setup multigrid levels
     Teuchos::Ptr<const FactoryManagerBase> ptrmanager = Teuchos::ptrInArg(manager);
     bool bIsLastLevel = Setup(startLevel, Teuchos::null, ptrmanager, ptrmanager);    // setup finest level (level 0) (first manager is Teuchos::null)
@@ -328,6 +330,14 @@ namespace MueLu {
     GetOStream(Statistics0,0) << ss.str();
 
   } // Setup()
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Clear() {
+    GetOStream(Runtime0, 0) << "Clearing old data" << std::endl;
+    for (int iLevel = 0; iLevel < GetNumberOfLevels(); iLevel++) {
+      Levels_[iLevel]->Clear();
+    }
+  }
 
   // ---------------------------------------- Iterate -------------------------------------------------------
 
@@ -424,15 +434,15 @@ namespace MueLu {
         RCP<const Map> origMap;
         if (implicitTranspose_) {
           origMap   = P->getDomainMap();
-          coarseRhs = MultiVectorFactory::Build(origMap, X.getNumVectors(),false); //no need to initialize
-          coarseX   = MultiVectorFactory::Build(origMap, X.getNumVectors());       //should be initialized to zero
+          coarseRhs = MultiVectorFactory::Build(origMap, X.getNumVectors(), false); // no need to initialize
+          coarseX   = MultiVectorFactory::Build(origMap, X.getNumVectors());        // should be initialized to zero
           P->apply(*residual, *coarseRhs, Teuchos::TRANS,    one, zero);
 
         } else {
           RCP<Matrix> R = Coarse->Get< RCP<Matrix> >("R");
           origMap   = R->getRangeMap();
-          coarseRhs = MultiVectorFactory::Build(origMap, X.getNumVectors(),false); //no need to initialize
-          coarseX   = MultiVectorFactory::Build(origMap, X.getNumVectors());       //should be initialized to zero
+          coarseRhs = MultiVectorFactory::Build(origMap, X.getNumVectors(), false); // no need to initialize
+          coarseX   = MultiVectorFactory::Build(origMap, X.getNumVectors());        // should be initialized to zero
           R->apply(*residual, *coarseRhs, Teuchos::NO_TRANS, one, zero);
         }
 
@@ -442,9 +452,7 @@ namespace MueLu {
           coarseRhs->replaceMap(Ac->getRangeMap());
           coarseX  ->replaceMap(Ac->getDomainMap());
 
-          if (coarseX != Teuchos::null) {
-            //coarseX has been initialized to zero already by MultiVectorFactory::Build
-
+          {
             hl = Teuchos::null; // stop timing this level
             Iterate(*coarseRhs, 1, *coarseX, true, Cycle, startLevel+1);
             // ^^ zero initial guess
@@ -580,6 +588,7 @@ namespace MueLu {
     Xpetra::global_size_t totalNnz = 0;
     std::vector<Xpetra::global_size_t> nnzPerLevel;
     std::vector<Xpetra::global_size_t> rowsPerLevel;
+    std::vector<int> numProcsPerLevel;
     for (int i = 0; i < GetNumLevels(); ++i) {
       TEUCHOS_TEST_FOR_EXCEPTION(!(Levels_[i]->IsAvailable("A")) , Exceptions::RuntimeError, "Operator complexity cannot be calculated because A is unavailable on level " << i);
 
@@ -591,6 +600,7 @@ namespace MueLu {
       totalNnz += nnz;
       nnzPerLevel.push_back(nnz);
       rowsPerLevel.push_back(A->getGlobalNumRows());
+      numProcsPerLevel.push_back(A->getRowMap()->getComm()->getSize());
     }
     double operatorComplexity = Teuchos::as<double>(totalNnz) / Levels_[0]->template Get< RCP<Matrix> >("A")->getGlobalNumEntries();
 
@@ -609,13 +619,16 @@ namespace MueLu {
       int rowspacer = 2; while (tt != 0) { tt /= 10; rowspacer++; }
       tt = nnzPerLevel[0];
       int nnzspacer = 2; while (tt != 0) { tt /= 10; nnzspacer++; }
-      out  << "matrix" << std::setw(rowspacer) << " rows " << std::setw(nnzspacer) << " nnz " <<  " nnz/row" << std::endl;
+      tt = numProcsPerLevel[0];
+      int npspacer = 2; while (tt != 0) { tt /= 10; npspacer++; }
+      out  << "matrix" << std::setw(rowspacer) << " rows " << std::setw(nnzspacer) << " nnz " <<  " nnz/row" << std::setw(npspacer)  << " procs" << std::endl;
       for (size_t i = 0; i < nnzPerLevel.size(); ++i) {
         out << "A " << i << "  "
              << std::setw(rowspacer) << rowsPerLevel[i]
              << std::setw(nnzspacer) << nnzPerLevel[i]
              << std::setw(9) << std::setprecision(2) << std::setiosflags(std::ios::fixed)
-             << Teuchos::as<double>(nnzPerLevel[i]) / rowsPerLevel[i] << std::endl;
+             << Teuchos::as<double>(nnzPerLevel[i]) / rowsPerLevel[i]
+             << std::setw(npspacer) << numProcsPerLevel[i] << std::endl;
       }
       for (int i = 0; i < GetNumLevels(); ++i) {
         RCP<SmootherBase> preSmoo, postSmoo;
@@ -640,10 +653,8 @@ namespace MueLu {
 
     if (verbLevel & Statistics1) {
       Teuchos::OSTab tab2(out);
-      for(int i = 0; i < GetNumLevels(); ++i) {
-        out << Levels_[i]->print(out, verbLevel);
-        out << std::endl;
-      }
+      for (int i = 0; i < GetNumLevels(); ++i)
+        Levels_[i]->print(out, verbLevel);
     }
 
     return out;

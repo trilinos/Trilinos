@@ -75,6 +75,16 @@ static Time& yetAnotherTimer() {static RCP<Time> t = TimeMonitor::getNewTimer("y
 static Time& yetOneMoreTimer() {static RCP<Time> t = TimeMonitor::getNewTimer("yet one more func"); return *t;}
 
 
+// Prototypes of the functions we will time below.
+double sqrtFunc();
+double factFunc(int x);
+double exceptFunc();
+double localFunc();
+double anotherFunc();
+double yetAnotherFunc();
+double yetOneMoreFunc();
+
+
 int main(int argc, char* argv[])
 {
   bool verbose = 0;
@@ -93,81 +103,65 @@ int main(int argc, char* argv[])
   if (verbose && procRank==0)
     std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
-  try
-  {
-
-    // Prototypes???
-    double sqrtFunc();
-    double factFunc(int x);
-    double exceptFunc();
-    double localFunc();
-    double anotherFunc();
-    double yetAnotherFunc();
-    double yetOneMoreFunc();
-      
-    /* time a simple function */
+  try {
+    // time a simple function
     for (int i=0; i<100; i++)
     {
       double x = 0.0;
-      x = sqrtFunc();
-      (void)x; // Not used!
+      x = sqrtFunc ();
+      (void) x; // forestall "variable set but not used" compiler warning
     }
 
-    /* time a reentrant function */
-    for (int i=0; i<100; i++)
-    {
-      factFunc(100);
+    // time a reentrant function
+    for (int i = 0; i < 100; ++i) {
+      factFunc (100);
     }
 
     /* time a couple of silly functions */
-    for (int i=0; i<100; i++)
-    {
-      anotherFunc();
-      yetAnotherFunc();
-      yetOneMoreFunc();
+    for (int i = 0; i < 100; ++i) {
+      anotherFunc ();
+      yetAnotherFunc ();
+      yetOneMoreFunc ();
     }
 
     /* Time a function that will be called only on the root proc. This 
      * checks that the TimeMonitor will work properly when different
      * processors have different sets of timers. */
-    if (procRank==0)
-    {
-      for (int i=0; i<100; i++)
-      {
+    if (procRank == 0) {
+      for (int i = 0; i < 100; ++i) {
         double x = 0.0;
-        x = localFunc();
-        (void)x; // Not used!
+        x = localFunc ();
+	(void) x; // forestall "variable set but not used" compiler warning
       }
     }
 
-    /* time a function that throws an std::exception */
-    for (int i=0; i<100; i++)
-    {
+    // time a function that throws an exception
+    for (int i = 0; i < 100; ++i) {
       double x = 0.0;
-      x = exceptFunc();
-      (void)x; // Not used!
+      x = exceptFunc ();
+      (void) x; // forestall "variable set but not used" compiler warning
     }
-
-      
   }
-  catch(std::exception& e)
-  {
-    if (verbose && procRank==0)
+  catch (std::exception& e) {
+    // This _should_ only catch the one exception thrown above by the
+    // first call to exceptFunc().
+    if (verbose && procRank==0) {
       std::cerr << "Caught std::exception [expected]:  " << e.what() << std::endl;
-
+    }
     // Return 0 since we caught the std::exception
     FailedTests = 0;
   }
 
-  /* Summarize timings. This must be done before finalizing MPI  */
-  TimeMonitor::format().setRowsBetweenLines(3);
-  if (verbose)
-    TimeMonitor::summarize();
+  // Summarize timings. This must be done before finalizing MPI.
+  TimeMonitor::format ().setRowsBetweenLines (3);
+  if (verbose) {
+    TimeMonitor::summarize ();
+  }
 
 #ifdef HAVE_MPI
   /* clean up MPI if we are running in parallel*/
-  MPI_Finalize();
-#endif
+  MPI_Finalize ();
+#endif // HAVE_MPI
 
   if (FailedTests != 0) {
     std::cout << "End Result: TEST FAILED" << std::endl;

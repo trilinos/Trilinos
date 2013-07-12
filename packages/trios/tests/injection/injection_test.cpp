@@ -91,11 +91,12 @@ int print_args(
         out << prefix << " ------------  ARGUMENTS (server) ----------- " << std::endl;
 
     out << prefix << " \tserver-url       = " << args.server_url << std::endl;
+    out << prefix << " \tserver-url-file  = " << args.url_file << std::endl;
 
     if (args.client_flag) {
         out << prefix << " \ttransport        = " << args.transport_name << std::endl;
         out << prefix << " \tio-method        = " << args.io_method_name << std::endl;
-        out << prefix << " \tnum-trials        = " << args.num_trials << std::endl;
+        out << prefix << " \tnum-trials       = " << args.num_trials << std::endl;
         out << prefix << " \tnum-reqs         = " << args.num_reqs << std::endl;
         out << prefix << " \tresult-file      = " <<
                 (args.result_file.empty()?"<stdout>":args.result_file) << std::endl;
@@ -136,16 +137,18 @@ int main(int argc, char *argv[])
     const char * io_method_names[] = {
             "empty-request-sync", "empty-request-async"};
 
-    const int num_nssi_transports = 4;
+    const int num_nssi_transports = 5;
     const int nssi_transport_vals[] = {
             NSSI_RPC_PTL,
             NSSI_RPC_IB,
             NSSI_RPC_GEMINI,
+            NSSI_RPC_BGPDCMF,
             NSSI_RPC_MPI};
     const char * nssi_transport_names[] = {
             "ptl",
             "ib",
             "gni",
+            "dcmf",
             "mpi"
     };
 
@@ -417,6 +420,7 @@ int main(int argc, char *argv[])
 
     // Print the arguments after they've all been set.
     args.io_method_name = io_method_names[args.io_method];
+    args.transport_name = nssi_transport_names[args.transport];
     print_args(out, args, "%");
 
 

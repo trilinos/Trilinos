@@ -43,21 +43,45 @@
 //@HEADER
 */
 
-#ifndef KOKKOSARRAY_MEMORYMANAGEMENT_HPP
-#define KOKKOSARRAY_MEMORYMANAGEMENT_HPP
+#ifndef KOKKOSARRAY_MEMORYTRAITS_HPP
+#define KOKKOSARRAY_MEMORYTRAITS_HPP
 
-namespace KokkosArray {
+//----------------------------------------------------------------------------
 
-struct MemoryManaged
-{ typedef MemoryManaged  memory_traits ; enum { managed = true }; };
+namespace Kokkos {
 
-struct MemoryUnmanaged
-{ typedef MemoryUnmanaged  memory_traits ; enum { managed = false }; };
+/** \brief  Memory access traits for views, an extension point.
+ *
+ *  These traits should be orthogonal.  If there are dependencies then
+ *  the MemoryTraits template must detect and enforce dependencies.
+ *
+ *  A zero value is the default for a View, indicating that none of
+ *  these traits are present.
+ */
+enum MemoryTraitsFlags
+  { Unmanaged  = 0x01  
+  , RandomRead = 0x02  
+  };
 
-struct MemoryRandomRead
-{ typedef MemoryRandomRead  memory_traits ; enum { managed = false }; };
+template < unsigned T >
+struct MemoryTraits {
+  enum { Unmanaged  = T & unsigned(Kokkos::Unmanaged) };
+  enum { RandomRead = T & unsigned(Kokkos::RandomRead) };
+
+  typedef MemoryTraits memory_traits ;
+};
 
 } // namespace Kokkos
 
-#endif /* #ifndef KOKKOSARRAY_MEMORYMANAGEMENT_HPP */
+//----------------------------------------------------------------------------
+
+namespace KokkosArray {
+
+typedef Kokkos::MemoryTraits<0> MemoryManaged ;
+typedef Kokkos::MemoryTraits< Kokkos::Unmanaged > MemoryUnmanaged ;
+typedef Kokkos::MemoryTraits< Kokkos::Unmanaged | Kokkos::RandomRead > MemoryRandomRead ;
+
+} // namespace Kokkos
+
+#endif /* #ifndef KOKKOSARRAY_MEMORYTRAITS_HPP */
 

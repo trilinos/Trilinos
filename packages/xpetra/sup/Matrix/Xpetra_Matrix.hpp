@@ -246,6 +246,9 @@ namespace Xpetra {
                                     const ArrayView<const LocalOrdinal> &cols,
                                     const ArrayView<const Scalar>       &vals) = 0;
 
+    //! Set all matrix entries equal to scalar
+    virtual void setAllToScalar(const Scalar &alpha)= 0;
+
     //! Scale the current values of a matrix, this = alpha*this.
     virtual void scale(const Scalar &alpha)= 0;
 

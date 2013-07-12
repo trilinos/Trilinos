@@ -38,7 +38,7 @@
 
 void immutable_modify(symrec* var);
 void undefined_warning(char* var);
-void redefined_warning(char* var);
+void redefined_warning(symrec* var);
 void set_type(symrec *var, int type);
 void yyerror(char* var);
 int  yylex(void);
@@ -128,10 +128,10 @@ sexp:     QSTRING		{ $$ = $1;				}
 	                          set_type($1, SVAR);			}
         | SVAR '=' sexp         { $$ = $3; 
                                   $1->value.svar = $3;
-                                  redefined_warning($1->name);          }
+                                  redefined_warning($1);          }
         | VAR '=' sexp          { $$ = $3; 
                                   $1->value.svar= $3;
-                                  redefined_warning($1->name);          
+                                  redefined_warning($1);          
                                   $1->type = SVAR;              }
 	| IMMSVAR '=' sexp	{ immutable_modify($1); YYERROR; }
         | IMMVAR '=' sexp	{ immutable_modify($1); YYERROR; }
@@ -161,9 +161,9 @@ exp:	  NUM			{ $$ = $1; 				}
 	| VAR INC		{ $$ = ($1->value.var)++;		}
 	| VAR DEC		{ $$ = ($1->value.var)--;		}
 	| VAR '=' exp		{ $$ = $3; $1->value.var = $3;
-				  redefined_warning($1->name);          }
+				  redefined_warning($1);          }
 	| SVAR '=' exp		{ $$ = $3; $1->value.var = $3;
-				  redefined_warning($1->name);          
+				  redefined_warning($1);          
 				  $1->type = VAR;			}
 	| VAR EQ_PLUS exp	{ $1->value.var += $3; $$ = $1->value.var; }
 	| VAR EQ_MINUS exp	{ $1->value.var -= $3; $$ = $1->value.var; }

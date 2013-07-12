@@ -44,8 +44,15 @@
 #include <iostream>
 #include <string>
 
-#define KOKKOSARRAY_MACRO_IMPL_TO_STRING( X ) #X
-#define KOKKOSARRAY_MACRO_TO_STRING( X )  KOKKOSARRAY_MACRO_IMPL_TO_STRING( X )
+// mfh 06 Jun 2013: This macro doesn't work like one might thing it
+// should.  It doesn't take the template parameter DeviceType and
+// print its actual type name; it just literally prints out
+// "DeviceType".  I've worked around this below without using the
+// macro, so I'm commenting out the macro to avoid compiler complaints
+// about an unused macro.
+
+// #define KOKKOSARRAY_MACRO_IMPL_TO_STRING( X ) #X
+// #define KOKKOSARRAY_MACRO_TO_STRING( X )  KOKKOSARRAY_MACRO_IMPL_TO_STRING( X )
 
 //------------------------------------------------------------------------
 
@@ -56,11 +63,16 @@ enum { NUMBER_OF_TRIALS = 5 };
 
 
 template< class DeviceType >
-void run_test_hexgrad( int exp_beg , int exp_end )
+void run_test_hexgrad( int exp_beg , int exp_end, const char deviceTypeName[] )
 {
   std::string label_hexgrad ;
   label_hexgrad.append( "\"HexGrad< double , " );
-  label_hexgrad.append( KOKKOSARRAY_MACRO_TO_STRING( DeviceType ) );
+  // mfh 06 Jun 2013: This only appends "DeviceType" (literally) to
+  // the string, not the actual name of the device type.  Thus, I've
+  // modified the function to take the name of the device type.
+  //
+  //label_hexgrad.append( KOKKOSARRAY_MACRO_TO_STRING( DeviceType ) );
+  label_hexgrad.append( deviceTypeName );
   label_hexgrad.append( " >\"" );
 
   for (int i = exp_beg ; i < exp_end ; ++i) {
@@ -94,11 +106,16 @@ void run_test_hexgrad( int exp_beg , int exp_end )
 }
 
 template< class DeviceType >
-void run_test_gramschmidt( int exp_beg , int exp_end )
+void run_test_gramschmidt( int exp_beg , int exp_end, const char deviceTypeName[] )
 {
   std::string label_gramschmidt ;
   label_gramschmidt.append( "\"GramSchmidt< double , " );
-  label_gramschmidt.append( KOKKOSARRAY_MACRO_TO_STRING( DeviceType ) );
+  // mfh 06 Jun 2013: This only appends "DeviceType" (literally) to
+  // the string, not the actual name of the device type.  Thus, I've
+  // modified the function to take the name of the device type.
+  //
+  //label_gramschmidt.append( KOKKOSARRAY_MACRO_TO_STRING( DeviceType ) );
+  label_gramschmidt.append( deviceTypeName );
   label_gramschmidt.append( " >\"" );
 
   for (int i = exp_beg ; i < exp_end ; ++i) {

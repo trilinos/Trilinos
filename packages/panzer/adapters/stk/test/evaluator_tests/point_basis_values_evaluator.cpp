@@ -65,7 +65,6 @@ using Teuchos::rcp;
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
-#include "Panzer_STKConnManager.hpp"
 
 #include "RandomFieldEvaluator.hpp"
 

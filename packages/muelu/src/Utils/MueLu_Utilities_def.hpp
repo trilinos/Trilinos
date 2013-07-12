@@ -61,15 +61,16 @@
 #include <EpetraExt_MatrixMatrix.h>
 #include <EpetraExt_RowMatrixOut.h>
 #include <EpetraExt_MultiVectorOut.h>
-#include <Epetra_RowMatrixTransposer.h>
 #include <EpetraExt_CrsMatrixIn.h>
+#include <EpetraExt_MultiVectorIn.h>
 #include <Xpetra_EpetraUtils.hpp>
+#include <Xpetra_EpetraMultiVector.hpp>
 #endif // HAVE_MUELU_EPETRAEXT
 
 #ifdef HAVE_MUELU_TPETRA
-#include <TpetraExt_MatrixMatrix.hpp>
-#include <Tpetra_RowMatrixTransposer.hpp>
 #include <MatrixMarket_Tpetra.hpp>
+#include <Tpetra_RowMatrixTransposer.hpp>
+#include <TpetraExt_MatrixMatrix.hpp>
 #include <Xpetra_TpetraMultiVector.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
 #endif // HAVE_MUELU_TPETRA
@@ -81,6 +82,7 @@
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Vector.hpp>
+#include <Xpetra_MapFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
@@ -274,19 +276,20 @@ namespace MueLu {
                                                                           bool transposeB,
                                                                           RCP< Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > C_in,
                                                                           bool doFillComplete,
-                                                                          bool doOptimizeStorage) {
+                                                                          bool doOptimizeStorage,
+                                                                          bool allowMLMultiply) {
 
     RCP<Matrix> C;
 
     // Preconditions
     if (!A.isFillComplete())
-      throw(Exceptions::RuntimeError("A is not fill-completed"));
+      throw Exceptions::RuntimeError("A is not fill-completed") ;
     if (!B.isFillComplete())
-      throw(Exceptions::RuntimeError("B is not fill-completed"));
+      throw Exceptions::RuntimeError("B is not fill-completed") ;
 
     // Optimization using ML Multiply when available
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_ML)
-    if (B.getDomainMap()->lib() == Xpetra::UseEpetra && !transposeA && !transposeB) {
+    if (allowMLMultiply && B.getDomainMap()->lib() == Xpetra::UseEpetra && !transposeA && !transposeB) {
 
       if (!transposeA && !transposeB) {
         RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(rcpFromRef(A)); // TODO: do conversion without RCPs.
@@ -399,33 +402,33 @@ namespace MueLu {
     int N_send = 0;
     int flag   = 0;
     for (int i=0; i<getrow_comm->N_neighbors; i++)
-      {
-        N_rcvd += (getrow_comm->neighbors)[i].N_rcv;
-        N_send += (getrow_comm->neighbors)[i].N_send;
-        if ( ((getrow_comm->neighbors)[i].N_rcv !=0) &&
-             ((getrow_comm->neighbors)[i].rcv_list != NULL) ) flag = 1;
-      }
+    {
+      N_rcvd += (getrow_comm->neighbors)[i].N_rcv;
+      N_send += (getrow_comm->neighbors)[i].N_send;
+      if ( ((getrow_comm->neighbors)[i].N_rcv !=0) &&
+           ((getrow_comm->neighbors)[i].rcv_list != NULL) ) flag = 1;
+    }
     // For some unknown reason, ML likes to have stuff one larger than
     // neccessary...
     std::vector<double> dtemp(N_local + N_rcvd + 1); // "double" vector for comm function
     std::vector<int>    cmap (N_local + N_rcvd + 1); // vector for gids
     for (int i=0; i<N_local; ++i)
-      {
-        cmap[i] = B.DomainMap().GID(i);
-        dtemp[i] = (double) cmap[i];
-      }
+    {
+      cmap[i] = B.DomainMap().GID(i);
+      dtemp[i] = (double) cmap[i];
+    }
     ML_cheap_exchange_bdry(&dtemp[0],getrow_comm,N_local,N_send,comm_AB); // do communication
     if (flag) // process received data
+    {
+      int count = N_local;
+      const int neighbors = getrow_comm->N_neighbors;
+      for (int i=0; i< neighbors; i++)
       {
-        int count = N_local;
-        const int neighbors = getrow_comm->N_neighbors;
-        for (int i=0; i< neighbors; i++)
-          {
-            const int nrcv = getrow_comm->neighbors[i].N_rcv;
-            for (int j=0; j<nrcv; j++)
-              cmap[getrow_comm->neighbors[i].rcv_list[j]] = (int) dtemp[count++];
-          }
+        const int nrcv = getrow_comm->neighbors[i].N_rcv;
+        for (int j=0; j<nrcv; j++)
+          cmap[getrow_comm->neighbors[i].rcv_list[j]] = (int) dtemp[count++];
       }
+    }
     else
       for (int i=0; i<N_local+N_rcvd; ++i) cmap[i] = (int)dtemp[i];
     dtemp.clear();  // free double array
@@ -445,36 +448,36 @@ namespace MueLu {
     // int guessnpr = A.MaxNumEntries()*B.MaxNumEntries();
     int educatedguess = 0;
     for (int i=0; i<myrowlength; ++i)
-      {
-        // get local row
-        ML_get_matrix_row(ml_AtimesB,1,&i,&allocated,&bindx,&val,&rowlength,0);
-        if (rowlength>educatedguess) educatedguess = rowlength;
-      }
+    {
+      // get local row
+      ML_get_matrix_row(ml_AtimesB,1,&i,&allocated,&bindx,&val,&rowlength,0);
+      if (rowlength>educatedguess) educatedguess = rowlength;
+    }
 
     // allocate our result matrix and fill it
     RCP<Epetra_CrsMatrix> result
-      = rcp(new Epetra_CrsMatrix(::Copy,A.RangeMap(),gcmap,educatedguess,false));
+        = rcp(new Epetra_CrsMatrix(::Copy,A.RangeMap(),gcmap,educatedguess,false));
 
     std::vector<int> gcid(educatedguess);
     for (int i=0; i<myrowlength; ++i)
+    {
+      const int grid = rowmap.GID(i);
+      // get local row
+      ML_get_matrix_row(ml_AtimesB,1,&i,&allocated,&bindx,&val,&rowlength,0);
+      if (!rowlength) continue;
+      if ((int)gcid.size() < rowlength) gcid.resize(rowlength);
+      for (int j=0; j<rowlength; ++j)
       {
-        const int grid = rowmap.GID(i);
-        // get local row
-        ML_get_matrix_row(ml_AtimesB,1,&i,&allocated,&bindx,&val,&rowlength,0);
-        if (!rowlength) continue;
-        if ((int)gcid.size() < rowlength) gcid.resize(rowlength);
-        for (int j=0; j<rowlength; ++j)
-          {
-            gcid[j] = gcmap.GID(bindx[j]);
-            if (gcid[j]<0) throw(Exceptions::RuntimeError("Error: cannot find gcid!"));
-          }
-        int err = result->InsertGlobalValues(grid,rowlength,val,&gcid[0]);
-        if (err!=0 && err!=1) {
-	  std::ostringstream errStr;
-	  errStr << "Epetra_CrsMatrix::InsertGlobalValues returned err=" << err;
-	  throw Exceptions::RuntimeError (errStr.str ());
-	}
+        gcid[j] = gcmap.GID(bindx[j]);
+        if (gcid[j]<0) throw(Exceptions::RuntimeError("Error: cannot find gcid!"));
       }
+      int err = result->InsertGlobalValues(grid,rowlength,val,&gcid[0]);
+      if (err!=0 && err!=1) {
+        std::ostringstream errStr;
+        errStr << "Epetra_CrsMatrix::InsertGlobalValues returned err=" << err;
+        throw Exceptions::RuntimeError (errStr.str ());
+      }
+    }
     // free memory
     if (bindx) ML_free(bindx);
     if (val) ML_free(val);
@@ -748,6 +751,8 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write(std::string const & fileName, Matrix const & Op) {
+    std::string mapfile = "rowmap_" + fileName;
+    Write( mapfile,*(Op.getRowMap()));
     CrsMatrixWrap const & crsOp = dynamic_cast<CrsMatrixWrap const &>(Op);
     RCP<const CrsMatrix> tmp_CrsMtx = crsOp.getCrsMatrix();
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
@@ -782,52 +787,107 @@ namespace MueLu {
 
   } //Write
 
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Read(std::string const & fileName, Xpetra::UnderlyingLib lib, RCP<const Teuchos::Comm<int> > const &comm)
-  {
+  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Read(const std::string& fileName, const RCP<const Map> & map){
+    Xpetra::UnderlyingLib lib = map->lib();
 
     if (lib == Xpetra::UseEpetra) {
-
-#     if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
-
-      Epetra_CrsMatrix *A;
-      const RCP<const Epetra_Comm> epcomm = Xpetra::toEpetra(comm);
-      int rv = EpetraExt::MatrixMarketFileToCrsMatrix( fileName.c_str(), *epcomm, A);
-      if (rv != 0) {
-        std::ostringstream buf;
-        buf << rv;
-        std::string msg = "EpetraExt::MatlabFileToCrsMatrix return value of " + buf.str();
-        throw(Exceptions::RuntimeError(msg));
-      }
-      RCP<Epetra_CrsMatrix> tmpA = rcp(A);
-      RCP<Matrix> rcpA = Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(tmpA);
-      return rcpA;
-#     else
-      throw(Exceptions::RuntimeError("MueLu has not been compiled with Epetra and EpetraExt support."));
-#     endif
+      TEUCHOS_TEST_FOR_EXCEPTION(true, ::Xpetra::Exceptions::BadCast, "Epetra can only be used with Scalar=double and Ordinal=int");
 
     } else if (lib == Xpetra::UseTpetra) {
-
 #ifdef HAVE_MUELU_TPETRA
       typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
-      typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
+      typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>                          reader_type;
+      typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>                            map_type;
+      typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>            multivector_type;
 
-      RCP<Node> node = Xpetra::DefaultPlatform::getDefaultPlatform().getNode();
-      bool callFillComplete = true;
-      RCP<sparse_matrix_type> tpA = reader_type::readSparseFile(fileName, comm, node, callFillComplete);
-      if (tpA.is_null())
-        throw(Exceptions::RuntimeError("The Tpetra::CrsMatrix returned from readSparseFile() is null."));
-      RCP<TpetraCrsMatrix> tmpA1 = rcp(new TpetraCrsMatrix(tpA) );
-      RCP<CrsMatrix> tmpA2 = rcp_implicit_cast<CrsMatrix>(tmpA1);
-      RCP<Matrix> returnA = rcp( new CrsMatrixWrap(tmpA2) );
-      return returnA;
-
-#     else
-      throw(Exceptions::RuntimeError("MueLu has not been compiled with Tpetra support."));
-#     endif
-
+      RCP<const map_type>   temp = toTpetra(map);
+      RCP<multivector_type> TMV  = reader_type::readDenseFile(fileName,map->getComm(),map->getNode(),temp);
+      RCP<MultiVector>      rmv  = Xpetra::toXpetra(TMV);
+      return rmv;
+#else
+      throw Exceptions::RuntimeError("MueLu has not been compiled with Tpetra support.");
+#endif
     } else {
-        throw(Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra."));
+      throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
+    }
+
+    return Teuchos::null;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
+  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Read(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm, bool binary) {
+    if (binary == false) {
+      // Matrix Market file format (ASCII)
+      if (lib == Xpetra::UseEpetra) {
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
+        Epetra_CrsMatrix *eA;
+        const RCP<const Epetra_Comm> epcomm = Xpetra::toEpetra(comm);
+        int rv = EpetraExt::MatrixMarketFileToCrsMatrix(fileName.c_str(), *epcomm, eA);
+        if (rv != 0)
+          throw Exceptions::RuntimeError("EpetraExt::MatrixMarketFileToCrsMatrix return value of " + toString(rv));
+
+        RCP<Epetra_CrsMatrix> tmpA = rcp(eA);
+        RCP<Matrix>           A    = Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(tmpA);
+
+        return A;
+#else
+        throw Exceptions::RuntimeError("MueLu has not been compiled with Epetra and EpetraExt support.");
+#endif
+      } else if (lib == Xpetra::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
+        typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
+        typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
+
+        RCP<Node> node = Xpetra::DefaultPlatform::getDefaultPlatform().getNode();
+        bool callFillComplete = true;
+
+        RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, comm, node, callFillComplete);
+        if (tA.is_null())
+          throw Exceptions::RuntimeError("The Tpetra::CrsMatrix returned from readSparseFile() is null.");
+
+        RCP<TpetraCrsMatrix> tmpA1 = rcp(new TpetraCrsMatrix(tA));
+        RCP<CrsMatrix>       tmpA2 = rcp_implicit_cast<CrsMatrix>(tmpA1);
+        RCP<Matrix>          A     = rcp(new CrsMatrixWrap(tmpA2));
+
+        return A;
+#else
+        throw Exceptions::RuntimeError("MueLu has not been compiled with Tpetra support.");
+#endif
+      } else {
+        throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
+      }
+    } else {
+      // Custom file format (binary)
+      std::ifstream ifs(fileName.c_str(), std::ios::binary);
+      TEUCHOS_TEST_FOR_EXCEPTION(!ifs.good(), Exceptions::RuntimeError, "Can not read \"" << fileName << "\"");
+      int m, n, nnz;
+      ifs.read(reinterpret_cast<char*>(&m),   sizeof(m));
+      ifs.read(reinterpret_cast<char*>(&n),   sizeof(n));
+      ifs.read(reinterpret_cast<char*>(&nnz), sizeof(nnz));
+
+      GO indexBase = 0;
+      RCP<Map>    map = MapFactory   ::Build(lib, m, indexBase, comm);
+      RCP<Matrix> A   = MatrixFactory::Build(map, 1);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GO), Exceptions::RuntimeError, "Incompatible sizes");
+
+      Teuchos::Array<GO>     inds;
+      Teuchos::Array<double> vals;
+      for (int i = 0; i < m; i++) {
+        int row, rownnz;
+        ifs.read(reinterpret_cast<char*>(&row),    sizeof(row));
+        ifs.read(reinterpret_cast<char*>(&rownnz), sizeof(rownnz));
+        inds.resize(rownnz);
+        vals.resize(rownnz);
+        for (int j = 0; j < rownnz; j++) ifs.read(reinterpret_cast<char*>(&inds[0]+j), sizeof(inds[j]));
+        for (int j = 0; j < rownnz; j++) ifs.read(reinterpret_cast<char*>(&vals[0]+j), sizeof(vals[j]));
+        A->insertGlobalValues(row, inds, vals);
+      }
+      A->fillComplete();
+      return A;
     }
 
     return Teuchos::null;
@@ -835,6 +895,8 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write(std::string const & fileName, const MultiVector& x) {
+    std::string mapfile = "map_" + fileName;
+    Write( mapfile,*(x.getMap()));
     RCP<const MultiVector> tmp_Vec = rcpFromRef(x);
 #ifdef HAVE_MUELU_EPETRAEXT
     const RCP<const EpetraMultiVector> &tmp_EVec = rcp_dynamic_cast<const EpetraMultiVector>(tmp_Vec);

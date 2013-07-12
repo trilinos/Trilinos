@@ -52,6 +52,7 @@
 #include "Panzer_GatherSolution_TpetraSG_decl.hpp"
 #include "Panzer_GatherSolution_TpetraSG_impl.hpp"
 
-PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherSolution_Tpetra,int,int)
+// PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherSolution_Tpetra,int,int)
+PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherSolution_Tpetra,int,long)
 
 #endif

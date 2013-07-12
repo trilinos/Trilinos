@@ -189,34 +189,6 @@ namespace {
     return omitted;
   }
 
-  int64_t get_side_offset(const Ioss::SideBlock *sb)
-  {
-    // And yet another idiosyncracy of sidesets...
-    // The side of an element (especially shells) can be
-    // either a face or an edge in the same sideset.  The
-    // ordinal of an edge is (local_edge_number+#faces) on the
-    // database, but needs to be (local_edge_number) for
-    // Sierra...
-    //
-    // If the sideblock has a "parent_element_topology" and a
-    // "topology", then we can determine whether to offset the
-    // side ordinals...
-
-    const Ioss::ElementTopology *side_topo   = sb->topology();
-    const Ioss::ElementTopology *parent_topo = sb->parent_element_topology();
-    int64_t side_offset = 0;
-    if (side_topo && parent_topo) {
-      int side_topo_dim = side_topo->parametric_dimension();
-      int elem_topo_dim = parent_topo->parametric_dimension();
-      int elem_spat_dim = parent_topo->spatial_dimension();
-
-      if (side_topo_dim+1 < elem_spat_dim && side_topo_dim < elem_topo_dim) {
-        side_offset = parent_topo->number_faces();
-      }
-    }
-    return side_offset;
-  }
-
   void get_connectivity_data(int exoid, void *data, ex_entity_type type, ex_entity_id id, int position)
   {
     int ierr = 0;
@@ -663,18 +635,20 @@ namespace Ioex {
     size_t num_qa_records = qaRecords.size()/4;
 
     qa_element *qa = new qa_element[num_qa_records+1];
-    for (int i=0; i < num_qa_records+1; i++) {
+    for (size_t i=0; i < num_qa_records+1; i++) {
       for (int j=0; j < 4; j++) {
 	qa[i].qa_record[0][j] = new char[MAX_STR_LENGTH+1];
       }
     }
 
-    int j = 0;
-    for (int i=0; i < num_qa_records; i++) {
-      std::strncpy(qa[i].qa_record[0][0], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-      std::strncpy(qa[i].qa_record[0][1], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-      std::strncpy(qa[i].qa_record[0][2], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-      std::strncpy(qa[i].qa_record[0][3], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+    {
+      int j = 0;
+      for (size_t i=0; i < num_qa_records; i++) {
+	std::strncpy(qa[i].qa_record[0][0], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+	std::strncpy(qa[i].qa_record[0][1], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+	std::strncpy(qa[i].qa_record[0][2], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+	std::strncpy(qa[i].qa_record[0][3], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+      }
     }
 
     Ioss::Utils::time_and_date(qa[num_qa_records].qa_record[0][3],
@@ -703,7 +677,7 @@ namespace Ioex {
     if (ierr < 0)
       exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
-    for (int i=0; i < num_qa_records+1; i++) {
+    for (size_t i=0; i < num_qa_records+1; i++) {
       for (int j=0; j < 4; j++) {
 	delete [] qa[i].qa_record[0][j];
       }
@@ -2905,12 +2879,12 @@ namespace Ioex {
               } else {
                 if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
                   int64_t *idata = static_cast<int64_t*>(data);
-                  for (int64_t i=0; i < my_element_count; i++) {
+                  for (size_t i=0; i < my_element_count; i++) {
                     idata[i] = eb_offset_plus_one + i;
                   }
                 } else {
                   int *idata = static_cast<int*>(data);
-                  for (int64_t i=0; i < my_element_count; i++) {
+                  for (size_t i=0; i < my_element_count; i++) {
                     idata[i] = eb_offset_plus_one + i;
                   }
                 }
@@ -3524,7 +3498,7 @@ namespace Ioex {
             // numbers.
 
             // See if edges or faces...
-            int64_t side_offset = get_side_offset(fb);
+            int64_t side_offset = Ioss::Utils::get_side_offset(fb);
 
             std::vector<char> element(number_sides * int_byte_size_api());
             std::vector<char> sides(number_sides * int_byte_size_api());
@@ -3596,7 +3570,7 @@ namespace Ioex {
             // global id.
 
             // See if edges or faces...
-            int64_t side_offset = get_side_offset(fb);
+            int64_t side_offset = Ioss::Utils::get_side_offset(fb);
 
             std::vector<char> element(number_sides * int_byte_size_api());
             std::vector<char> sides(number_sides * int_byte_size_api());
@@ -4367,7 +4341,7 @@ namespace Ioex {
 
           // Get the element block id and element count
           int64_t id = get_id(eb, EX_ELEM_BLOCK, &ids_);
-          int64_t my_element_count = eb->get_property("entity_count").get_int();
+          size_t my_element_count = eb->get_property("entity_count").get_int();
           Ioss::Field::RoleType role = field.get_role();
 
           if (role == Ioss::Field::MESH) {
@@ -4437,7 +4411,7 @@ namespace Ioex {
                 int *side32 = (int*)TOPTR(side);
 
                 int index = 0;
-                for (int i=0; i < my_element_count; i++) {
+                for (size_t i=0; i < my_element_count; i++) {
                   element32[i] = el_side[index++];
                   side32[i]    = el_side[index++];
                 }
@@ -4447,7 +4421,7 @@ namespace Ioex {
                 int64_t *side64 = (int64_t*)TOPTR(side);
 
                 int64_t index = 0;
-                for (int64_t i=0; i < my_element_count; i++) {
+                for (size_t i=0; i < my_element_count; i++) {
                   element64[i] = el_side[index++];
                   side64[i]    = el_side[index++];
                 }
@@ -5312,6 +5286,7 @@ namespace Ioex {
         std::vector<char> procs(entity_count * int_byte_size_api());
 
         if (type == "node") {
+	  Ioss::SerializeIO	serializeIO__(this);
           // Convert global node id to local node id and store in 'entities'
           if (int_byte_size_api() == 4) {
             int* entity_proc = static_cast<int*>(data);
@@ -5372,6 +5347,7 @@ namespace Ioex {
           }
 
         } else if (type == "side") {
+	  Ioss::SerializeIO	serializeIO__(this);
           std::vector<char> sides(entity_count * int_byte_size_api());
           if (int_byte_size_api() == 4) {
             int* entity_proc = static_cast<int*>(data);
@@ -5510,7 +5486,7 @@ namespace Ioex {
             // Allocate space for local side number and element numbers
             // numbers.
             // See if edges or faces...
-            size_t side_offset = get_side_offset(fb);
+            size_t side_offset = Ioss::Utils::get_side_offset(fb);
 
             size_t index = 0;
 
@@ -5556,7 +5532,7 @@ namespace Ioex {
             // The element_id passed in is the local id.
 
             // See if edges or faces...
-            size_t side_offset = get_side_offset(fb);
+            size_t side_offset = Ioss::Utils::get_side_offset(fb);
 
             size_t index = 0;
             if (field.get_type() == Ioss::Field::INTEGER) {
@@ -5925,8 +5901,12 @@ namespace Ioex {
         Ioss::SerializeIO	serializeIO__(this);
 
         if (myProcessor == 0) {
-          put_qa();
-          put_info();
+	  if (!properties.exists("OMIT_QA_RECORDS")) {
+	    put_qa();
+	  }
+	  if (!properties.exists("OMIT_INFO_RECORDS")) {
+	    put_info();
+	  }
         }
 
         // Write the metadata to the exodusII file...
@@ -6590,7 +6570,7 @@ namespace Ioex {
 					 // higher-order storage type.
 	  
 	  for (int i=0; i < attribute_count; i++) {
-	    int writ = std::snprintf(names[i], maximumNameLength+1, "attribute_%d", i+1);
+	    int writ = snprintf(names[i], maximumNameLength+1, "attribute_%d", i+1);
 	    if (writ > maximumNameLength)
 	      names[i][maximumNameLength] = '\0';
 	  }

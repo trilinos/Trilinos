@@ -30,8 +30,8 @@ Isorropia contains separate classes to solve each of these problems, all of whic
 \section parameters  Isorropia Parameters
 
 Isorropia has a fairly small number of parameters, listed below. (Default values in all caps.) 
-Note that Isorropia parameters are case insensitive. For more specific control of low-level features, 
-you may set a Zoltan parameter. Isorropia will pass any parameter in the Zoltan sublist to Zoltan.
+Isorropia parameters are case insensitive. For more specific control of low-level features, 
+you may set a Zoltan parameter. Isorropia will pass any parameter in the Zoltan sublist to Zoltan. Note that all Zoltan parameter values must be strings (for example, the integer 2 should be passed as "2"), and currently this is also true for Isorropia parameters.
 
 <ul>
 <li>STRUCTURALLY SYMMETRIC [NO/yes] (is symmetrization required?) </li>

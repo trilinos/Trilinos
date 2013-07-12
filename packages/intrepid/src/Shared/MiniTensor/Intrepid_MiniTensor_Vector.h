@@ -49,22 +49,24 @@
 
 #include "Intrepid_MiniTensor_Definitions.h"
 #include "Intrepid_MiniTensor_Storage.h"
+#include "Intrepid_MiniTensor_TensorBase.h"
 #include "Intrepid_MiniTensor_Utilities.h"
 
 namespace Intrepid {
 
 ///
-/// Vector in R^N.
+/// Vector class.
 ///
 template<typename T>
-class Vector
+class Vector : public TensorBase<T>
 {
 public:
 
   ///
-  /// Component type
+  /// Order
   ///
-  typedef T type;
+  static Index const
+  order = 1U;
 
   ///
   /// Default constructor
@@ -72,45 +74,50 @@ public:
   Vector();
 
   ///
-  /// Constructor that initializes to NaNs
-  /// \param N dimension
+  /// Construction that initializes to NaNs
+  /// \param dimension the space dimension
   ///
   explicit
-  Vector(Index const N);
+  Vector(Index const dimension);
+
+  ///
+  /// Create vector from a specified value
+  /// \param dimension the space dimension
+  /// \param value all components are set equal to this
+  ///
+  explicit
+  Vector(Index const dimension, ComponentValue value);
 
   ///
   /// Create vector from a scalar
-  /// \param N dimension
+  /// \param dimension the space dimension
   /// \param s all components are set equal to this value
   ///
   explicit
-  Vector(Index const N, T const & s);
+  Vector(Index const dimension, T const & s);
 
   ///
   /// Create vector specifying components
-  /// \param s0, s1 are the vector components in the R^2 canonical basis
+  /// \param s0 s1 are the vector components in the R^2 canonical basis
   ///
   Vector(T const & s0, T const & s1);
 
   ///
   /// Create vector specifying components
   /// the vector components in the R^3 canonical basis
-  /// \param s0
-  /// \param s1
-  /// \param s2
+  /// \param s0 s1 s2 are the vector components in the R^3 canonical basis
   ///
   Vector(T const & s0, T const & s1, T const & s2);
 
   ///
-  /// Create vector from array - const version
-  /// \param N dimension
+  /// Create vector from array.
+  /// \param dimension the space dimension
   /// \param data_ptr pointer into the array
   ///
-  Vector(Index const N, T const * data_ptr);
+  Vector(Index const dimension, T const * data_ptr);
 
   ///
   /// Copy constructor
-  /// \param v the values of its components are copied to the new vector
   ///
   Vector(Vector<T> const & v);
 
@@ -134,96 +141,15 @@ public:
   operator()(Index const i);
 
   ///
-  /// Linear access to components
-  /// \param i the index
-  ///
-  T const &
-  operator[](Index const i) const;
-
-  ///
-  /// Linear access to components
-  /// \param i the index
-  ///
-  T &
-  operator[](Index const i);
-
-  ///
-  /// \return dimension
-  ///
-  Index
-  get_dimension() const;
-
-  ///
-  /// \param N dimension of vector
-  ///
-  void
-  set_dimension(Index const N);
-
-  ///
-  /// Fill components from array defined by pointer.
-  /// \param data_ptr pointer into array for filling components
-  ///
-  void
-  fill(T const * data_ptr);
-
-  ///
-  /// Copy assignment
-  /// \param v the values of its components are copied to this vector
-  ///
-  Vector<T> &
-  operator=(Vector<T> const & v);
-
-  ///
-  /// Vector increment
-  /// \param v added to currrent vector
-  ///
-  Vector<T> &
-  operator+=(Vector<T> const & v);
-
-  ///
-  /// Vector decrement
-  /// \param v substracted from current vector
-  ///
-  Vector<T> &
-  operator-=(Vector<T> const & v);
-
-  ///
-  /// Fill with zeros
-  ///
-  void
-  clear();
-
-  ///
   /// Vector order
   ///
-  static
   Index
-  order() {return 1U;};
-
-private:
-
-  ///
-  /// Vector dimension
-  ///
-  Index
-  dimension;
-
-  ///
-  /// Vector components
-  ///
-  MiniTensor::StorageRCPArray<T>
-  e;
+  get_order() const {return order;}
 
 };
 
-//
-// Prototypes for utilities
-//
-
 ///
 /// Vector addition
-/// \param u
-/// \param v the operands
 /// \return \f$ u + v \f$
 ///
 template<typename S, typename T>
@@ -232,8 +158,6 @@ operator+(Vector<S> const & u, Vector<T> const & v);
 
 ///
 /// Vector substraction
-/// \param u
-/// \param v the operands
 /// \return \f$ u - v \f$
 ///
 template<typename S, typename T>
@@ -242,7 +166,6 @@ operator-(Vector<S> const & u, Vector<T> const & v);
 
 ///
 /// Vector minus
-/// \param u
 /// \return \f$ -u \f$
 ///
 template<typename T>
@@ -251,8 +174,6 @@ operator-(Vector<T> const & u);
 
 ///
 /// Vector dot product
-/// \param u
-/// \param v the operands
 /// \return \f$ u \cdot v \f$
 ///
 template<typename S, typename T>
@@ -261,8 +182,6 @@ operator*(Vector<S> const & u, Vector<T> const & v);
 
 ///
 /// Vector equality tested by components
-/// \param u
-/// \param v the operands
 /// \return \f$ u \equiv v \f$
 ///
 template<typename T>
@@ -271,8 +190,6 @@ operator==(Vector<T> const & u, Vector<T> const & v);
 
 ///
 /// Vector inequality tested by components
-/// \param u
-/// \param v the operands
 /// \return \f$ u \neq v \f$
 ///
 template<typename T>
@@ -311,8 +228,6 @@ operator/(Vector<T> const & u, S const & s);
 
 ///
 /// Vector dot product
-/// \param u
-/// \param v operands
 /// \return \f$ u \cdot v \f$
 ///
 template<typename S, typename T>
@@ -322,8 +237,6 @@ dot(Vector<S> const & u, Vector<T> const & v);
 ///
 /// Cross product only valid for R^3.
 /// R^N with N != 3 will produce an error.
-/// \param u
-/// \param v operands
 /// \return \f$ u \times v \f$
 ///
 template<typename S, typename T>

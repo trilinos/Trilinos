@@ -26,6 +26,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 2
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tBlockedTpetraLinearObjFactory
+  SOURCES tBlockedTpetraLinearObjFactory.cpp UnitTest_UniqueGlobalIndexer.cpp ${UNIT_TEST_DRIVER}
+  COMM mpi
+  NUM_MPI_PROCS 2
+  )
+
 IF(${PACKAGE_NAME}_ENABLE_Stokhos)
    TRIBITS_ADD_EXECUTABLE_AND_TEST(
      tSGEpetraLinearObjFactory

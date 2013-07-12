@@ -109,6 +109,29 @@ namespace MueLuTests {
     TEST_EQUALITY(aLevel.GetLevelID(), 42); //TODO: test default value of LevelID
   }
 
+  TEUCHOS_UNIT_TEST(Level, NumRequests)
+  {
+    out << "version: " << MueLu::Version() << std::endl;
+
+    Level aLevel;
+    aLevel.SetLevelID(0);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(2);
+    aLevel.Set("A", A);
+
+    RCP<FactoryManager> facManager = rcp(new FactoryManager());
+    aLevel.SetFactoryManager(facManager);
+    RCP<FactoryBase> factory = rcp(new CoalesceDropFactory());
+
+    aLevel.Request("Graph", factory.get());
+    aLevel.Request("Graph", factory.get());
+
+    aLevel.Release("Graph", factory.get());
+    TEST_EQUALITY(aLevel.IsRequested("Graph", factory.get()), true);
+
+    aLevel.Release("Graph", factory.get());
+    TEST_EQUALITY(aLevel.IsRequested("Graph", factory.get()), false);
+  }
+
   TEUCHOS_UNIT_TEST(Level, RequestRelease)
   {
     Level l;

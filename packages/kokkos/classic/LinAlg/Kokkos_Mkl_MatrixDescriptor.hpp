@@ -119,7 +119,7 @@ namespace Kokkos {
       ///
       /// \warning This pointer is only valid during the lifetime of
       ///   the MatrixDescriptor object.
-      const char* const getRawPtr () const {
+      const char* getRawPtr () const {
         return &descr_[0];
       }
 

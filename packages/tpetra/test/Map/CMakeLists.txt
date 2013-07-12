@@ -59,22 +59,20 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES
     Map_Bug5822
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM serial mpi
+  COMM mpi
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 2
   )
 
 # Tpetra bug 5822, second test.
-#
-# mfh 23 Jan 2013: This test is disabled for now, because it appears
-# to take a lot of memory and may crash the build machine.  Thus, we
-# build it, but don't run it by default.
-TRIBITS_ADD_EXECUTABLE(
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Map_Bug5822_2
   SOURCES
     Map_Bug5822_2
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM serial mpi
+  COMM mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 2
   )
 
 # Tpetra bug 5882

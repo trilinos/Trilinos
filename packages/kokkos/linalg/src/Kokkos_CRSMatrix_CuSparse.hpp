@@ -18,18 +18,32 @@ bool MV_Multiply_DoCuSparse(typename KokkosArray::Impl::enable_if<KokkosArray::I
 	Impl::PhysicalLayout layout_y(y);
 	if((layout_x.layout_type!=layout_x.Left) || layout_y.layout_type!=layout_y.Left) return false;
 
-	cusparseDcsrmm(A.cusparse_handle,CUSPARSE_OPERATION_NON_TRANSPOSE,
-	               A.numRows, x.dimension_1(), A.numCols,  A.nnz,
+	if(x.dimension_1()==1)
+	    cusparseDcsrmv(A.cusparse_handle,CUSPARSE_OPERATION_NON_TRANSPOSE,
+	               A.numRows(), A.numCols(),  A.nnz(),
 	               &s_a,
 	               A.cusparse_descr,
 	               A.values.ptr_on_device(),
 	               (const int*) A.graph.row_map.ptr_on_device(),
 	               A.graph.entries.ptr_on_device(),
 	               x.ptr_on_device(),
-	               layout_x.stride[1],
 	               &s_b,
-	               y.ptr_on_device(),
-	               layout_y.stride[1]);
+	               y.ptr_on_device());
+	else
+		cusparseDcsrmm(A.cusparse_handle,CUSPARSE_OPERATION_NON_TRANSPOSE,
+		               A.numRows(), x.dimension_1(), A.numCols(),  A.nnz(),
+		               &s_a,
+		               A.cusparse_descr,
+		               A.values.ptr_on_device(),
+		               (const int*) A.graph.row_map.ptr_on_device(),
+		               A.graph.entries.ptr_on_device(),
+		               x.ptr_on_device(),
+		               layout_x.stride[1],
+		               &s_b,
+		               y.ptr_on_device(),
+		               layout_y.stride[1]);
+
+
 	return true;
 }
 
@@ -40,20 +54,30 @@ bool MV_Multiply_DoCuSparse(typename KokkosArray::Impl::enable_if<KokkosArray::I
 	Impl::PhysicalLayout layout_x(x);
 	Impl::PhysicalLayout layout_y(y);
 	if((layout_x.layout_type!=layout_x.Left) || layout_y.layout_type!=layout_y.Left) return false;
-
-	cusparseScsrmm(A.cusparse_handle,CUSPARSE_OPERATION_NON_TRANSPOSE,
-	               A.numRows, x.dimension_1(), A.numCols,  A.nnz,
+	if(x.dimension_1()==1)
+	cusparseScsrmv(A.cusparse_handle,CUSPARSE_OPERATION_NON_TRANSPOSE,
+	               A.numRows(), A.numCols(),  A.nnz(),
 	               &s_a,
 	               A.cusparse_descr,
 	               A.values.ptr_on_device(),
 	               (const int*) A.graph.row_map.ptr_on_device(),
 	               A.graph.entries.ptr_on_device(),
 	               x.ptr_on_device(),
-	               layout_x.stride[1],
 	               &s_b,
-	               y.ptr_on_device(),
-	               layout_y.stride[1]);
-	return true;
+	               y.ptr_on_device());
+	else
+		cusparseScsrmm(A.cusparse_handle,CUSPARSE_OPERATION_NON_TRANSPOSE,
+		               A.numRows(), x.dimension_1(), A.numCols(),  A.nnz(),
+		               &s_a,
+		               A.cusparse_descr,
+		               A.values.ptr_on_device(),
+		               (const int*) A.graph.row_map.ptr_on_device(),
+		               A.graph.entries.ptr_on_device(),
+		               x.ptr_on_device(),
+		               layout_x.stride[1],
+		               &s_b,
+		               y.ptr_on_device(),
+		               layout_y.stride[1]);	return true;
 }
 
 //ToDo: strip compatible type attributes (const, volatile); make type of s_b and s_a independent

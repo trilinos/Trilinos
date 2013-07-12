@@ -304,6 +304,10 @@ public:
      */
    void getNodesetNames(std::vector<std::string> & name) const;
 
+   //! Get a pointer to the locally owned part
+   stk::mesh::Part * getOwnedPart() const
+   { return &getMetaData()->locally_owned_part(); } // I don't like the pointer access here, but it will do for now!
+
    //! get the block count
    stk::mesh::Part * getElementBlockPart(const std::string & name) const
    { 

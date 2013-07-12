@@ -64,7 +64,7 @@ namespace MueLu {
   { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SteepestDescentSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Iterate(const Matrix& Aref, const Constraint& C, const Matrix& P0, const MultiVector& B, RCP<Matrix>& P) const {
+  void SteepestDescentSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Iterate(const Matrix& Aref, const Constraint& C, const Matrix& P0, RCP<Matrix>& P) const {
     RCP<const Matrix> A = rcpFromRef(Aref);
     RCP<Matrix> AP, G;
 

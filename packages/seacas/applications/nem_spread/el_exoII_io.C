@@ -570,9 +570,9 @@ void NemSpread<T,INT>::load_mesh()
       printf("%sParallel mesh file name is %s\n", yo, Par_Nem_File_Name);
     else {
       if (iproc%10 == 0 || iproc ==Proc_Info[2]-1)
-	fprintf(stderr, "%d", iproc);
+	printf("%d", iproc);
       else
-	fprintf(stderr, ".");
+	printf(".");
     }
 
     int mode = EX_CLOBBER;

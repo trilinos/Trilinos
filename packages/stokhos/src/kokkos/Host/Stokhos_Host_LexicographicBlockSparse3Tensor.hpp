@@ -1,28 +1,41 @@
 // @HEADER
 // ***********************************************************************
-//
-//                     Stokhos Package
+// 
+//                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-//
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov)
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
 //
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
+// 
 // ***********************************************************************
 // @HEADER
 
@@ -50,59 +63,121 @@ public:
                      const VectorValue * const x ,
                            VectorValue * const y )
   {
-    // const int max_size = 10;
-    // MatrixValue ax[max_size][max_size];
-
     const size_type nBlock = tensor.num_coord();
 
-    // Loop over coordinate blocks
-    size_type value_entry = 0;
-    for ( size_type block = 0; block < nBlock; ++block) {
-      const size_type i_begin = tensor.get_i_begin(block);
-      const size_type j_begin = tensor.get_j_begin(block);
-      const size_type k_begin = tensor.get_k_begin(block);
-      const size_type i_size = tensor.get_i_size(block);
-      const size_type j_size = tensor.get_j_size(block);
-      const size_type k_size = tensor.get_k_size(block);
-      VectorValue * const y_block = y + i_begin;
-      const MatrixValue * const a_block = a + j_begin;
-      const VectorValue * const x_block = x + k_begin;
+    if (tensor.symmetric()) {
 
-      // // Precompute a*x outer product
-      // for (size_type j=0; j<j_size; ++j) {
-      //   for (size_type k=0; k<k_size; ++k) {
-      //     ax[j][k] = a_block[j]*x_block[k]; 
-      //   }
-      // }
+      // Loop over coordinate blocks
+      size_type value_entry = 0;
+      for ( size_type block = 0; block < nBlock; ++block) {
+        const int i_begin = tensor.get_i_begin(block);
+        const int j_begin = tensor.get_j_begin(block);
+        const int k_begin = tensor.get_k_begin(block);
+        const int p_i = tensor.get_p_i(block);
+        const int p_j = tensor.get_p_j(block);
+        const int p_k = tensor.get_p_k(block);
+        VectorValue * const y_block = y + i_begin;
+        const MatrixValue * const a_j_block = a + j_begin;
+        const VectorValue * const x_k_block = x + k_begin;
+        const MatrixValue * const a_k_block = a + k_begin;
+        const VectorValue * const x_j_block = x + j_begin;
 
-      /*
-      // Compute y_i = \sum_{j,k} c_{ijk} * a_j * x_k
-      for (size_type i=0; i<i_size; ++i) {
-        VectorValue ytmp = 0;
-        for (size_type j=0; j<j_size; ++j) {
-          const size_type imj = i-j;
-          const size_type ipj = i+j+1;
-          const size_type k_beg = 0      <= imj ? imj    : -imj;
-          const size_type k_end = k_size <= ipj ? k_size :  ipj;
-          const size_type k0 = k_beg % 2 == (i+j) % 2 ? k_beg : k_beg+1;
-          for (size_type k=k0; k<k_end; ++k) {
-            //ytmp += tensor.value(value_entry++) * ax[j][k];
-            ytmp += tensor.value(value_entry++) * ( a_block[j] * x_block[k] );
+        // for (int i=0; i<=p_i; ++i) {
+        //   VectorValue ytmp = 0;
+        //   for (int j=0; j<=p_j; ++j) {
+        //     int k0 = j_eq_k != 0 ? j : 0;
+        //     if (symmetric && (k0 % 2 != (i+j) % 2)) ++k0;
+        //     for (int k=k0; k<=p_k; k+=k_inc) {
+        //       ytmp += tensor.value(value_entry++) *
+        //         ( a_j_block[j] * x_k_block[k] + a_k_block[k] * x_j_block[j] );
+        //     }
+        //   }
+        //   y_block[i] += ytmp ;
+        // }
+
+        if (tensor.get_j_eq_k(block) != 0) {
+          for (int i=0; i<=p_i; ++i) {
+            VectorValue ytmp = 0;
+            for (int j=0; j<=p_j; ++j) {
+              int k0 = j%2 != (i+j)%2 ? j+1 : j;
+              for (int k=k0; k<=p_k; k+=2) {
+                ytmp += tensor.value(value_entry++) *
+                  ( a_j_block[j] * x_k_block[k] + a_k_block[k] * x_j_block[j] );
+              }
+            }
+            y_block[i] += ytmp ;
           }
         }
-        y_block[i] += ytmp ;
+        else {
+          for (int i=0; i<=p_i; ++i) {
+            VectorValue ytmp = 0;
+            for (int j=0; j<=p_j; ++j) {
+              for (int k=(i+j)%2; k<=p_k; k+=2) {
+                ytmp += tensor.value(value_entry++) *
+                  ( a_j_block[j] * x_k_block[k] + a_k_block[k] * x_j_block[j] );
+              }
+            }
+            y_block[i] += ytmp ;
+          }
+        }
       }
-      */
 
-      // Compute y_i = \sum_{j,k} c_{ijk} * a_j * x_k
-      for (size_type i=0; i<i_size; ++i) {
-        VectorValue ytmp = 0;
-        for (size_type j=0; j<j_size; ++j) {
-          for (size_type k=((i+j)%2); k<k_size; k+=2) {
-            ytmp += tensor.value(value_entry++) * ( a_block[j] * x_block[k] );
+    }
+
+    else {
+
+      // Loop over coordinate blocks
+      size_type value_entry = 0;
+      for ( size_type block = 0; block < nBlock; ++block) {
+        const int i_begin = tensor.get_i_begin(block);
+        const int j_begin = tensor.get_j_begin(block);
+        const int k_begin = tensor.get_k_begin(block);
+        const int p_i = tensor.get_p_i(block);
+        const int p_j = tensor.get_p_j(block);
+        const int p_k = tensor.get_p_k(block);
+        VectorValue * const y_block = y + i_begin;
+        const MatrixValue * const a_j_block = a + j_begin;
+        const VectorValue * const x_k_block = x + k_begin;
+        const MatrixValue * const a_k_block = a + k_begin;
+        const VectorValue * const x_j_block = x + j_begin;
+
+        // for (int i=0; i<=p_i; ++i) {
+        //   VectorValue ytmp = 0;
+        //   for (int j=0; j<=p_j; ++j) {
+        //     int k0 = j_eq_k != 0 ? j : 0;
+        //     if (symmetric && (k0 % 2 != (i+j) % 2)) ++k0;
+        //     for (int k=k0; k<=p_k; k+=k_inc) {
+        //       ytmp += tensor.value(value_entry++) *
+        //         ( a_j_block[j] * x_k_block[k] + a_k_block[k] * x_j_block[j] );
+        //     }
+        //   }
+        //   y_block[i] += ytmp ;
+        // }
+
+        if (tensor.get_j_eq_k(block) != 0) {
+          for (int i=0; i<=p_i; ++i) {
+            VectorValue ytmp = 0;
+            for (int j=0; j<=p_j; ++j) {
+              for (int k=j; k<=p_k; ++k) {
+                ytmp += tensor.value(value_entry++) *
+                  ( a_j_block[j] * x_k_block[k] + a_k_block[k] * x_j_block[j] );
+              }
+            }
+            y_block[i] += ytmp ;
           }
         }
-        y_block[i] += ytmp ;
+        else {
+          for (int i=0; i<=p_i; ++i) {
+            VectorValue ytmp = 0;
+            for (int j=0; j<=p_j; ++j) {
+              for (int k=0; k<=p_k; ++k) {
+                ytmp += tensor.value(value_entry++) *
+                  ( a_j_block[j] * x_k_block[k] + a_k_block[k] * x_j_block[j] );
+              }
+            }
+            y_block[i] += ytmp ;
+          }
+        }
       }
 
     }

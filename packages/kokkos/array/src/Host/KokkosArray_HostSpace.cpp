@@ -48,7 +48,7 @@
 #include <sstream>
 
 #include <KokkosArray_HostSpace.hpp>
-#include <Host/KokkosArray_Host_Internal.hpp>
+#include <Host/KokkosArray_Host_Thread.hpp>
 #include <impl/KokkosArray_Error.hpp>
 #include <impl/KokkosArray_MemoryTracking.hpp>
 

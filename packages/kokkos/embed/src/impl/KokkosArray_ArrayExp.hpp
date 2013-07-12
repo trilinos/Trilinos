@@ -96,21 +96,29 @@ KOKKOSARRAY_BINARYEXPRESSIONTYPE(int,unsigned int)
 //----------------------------------------------------------------------------
 // Assigment operators:
 
+#define KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR_CLASS ArrayAssignAddition
 #define KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR  +=
 #include <impl/KokkosArray_ArrayExp_macros.hpp>
 #undef KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR
+#undef KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR_CLASS
 
+#define KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR_CLASS ArrayAssignSubtraction
 #define KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR  -=
 #include <impl/KokkosArray_ArrayExp_macros.hpp>
 #undef KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR
+#undef KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR_CLASS
 
+#define KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR_CLASS ArrayAssignMultiplication
 #define KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR  *=
 #include <impl/KokkosArray_ArrayExp_macros.hpp>
 #undef KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR
+#undef KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR_CLASS
 
+#define KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR_CLASS ArrayAssignDivision
 #define KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR  /=
 #include <impl/KokkosArray_ArrayExp_macros.hpp>
 #undef KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR
+#undef KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR_CLASS
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

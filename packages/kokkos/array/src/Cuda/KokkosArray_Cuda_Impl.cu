@@ -56,16 +56,21 @@
 #include <vector>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 /*--------------------------------------------------------------------------*/
 
 namespace KokkosArray {
 namespace Impl {
 
-void cuda_internal_error_throw( cudaError e , const char * name )
+
+void cuda_internal_error_throw( cudaError e , const char * name, const char * file, const int line )
 {
   std::ostringstream out ;
   out << name << " error: " << cudaGetErrorString(e);
+  if (file) {
+    out << " " << file << ":" << line;
+  }
   throw_runtime_exception( out.str() );
 }
 
@@ -122,6 +127,8 @@ void cuda_internal_error_throw( cudaError e , const char * name )
 
 namespace {
 
+
+
 class CudaInternalDevices {
 public:
   enum { MAXIMUM_DEVICE_COUNT = 8 };
@@ -138,10 +145,10 @@ CudaInternalDevices::CudaInternalDevices()
   // See 'cudaSetDeviceFlags' for host-device thread interaction
   // Section 4.4.2.6 of the CUDA Toolkit Reference Manual
 
-  cudaGetDeviceCount( & m_cudaDevCount );
+  CUDA_SAFE_CALL (cudaGetDeviceCount( & m_cudaDevCount ) );
 
   for ( int i = 0 ; i < m_cudaDevCount ; ++i ) {
-    cudaGetDeviceProperties( m_cudaProp + i , i );
+    CUDA_SAFE_CALL( cudaGetDeviceProperties( m_cudaProp + i , i ) );
   }
 }
 
@@ -208,6 +215,7 @@ public:
 
 //----------------------------------------------------------------------------
 
+
 void CudaInternal::print_configuration( std::ostream & s ) const
 {
   const CudaInternalDevices & dev_info = CudaInternalDevices::singleton();
@@ -215,9 +223,10 @@ void CudaInternal::print_configuration( std::ostream & s ) const
   for ( int i = 0 ; i < dev_info.m_cudaDevCount ; ++i ) {
     s << "KokkosArray::Cuda[ " << i << " ] "
       << dev_info.m_cudaProp[i].name
-      << " capability " << dev_info.m_cudaProp[i].major
-      << "." << dev_info.m_cudaProp[i].minor ;
-    if ( m_cudaDev == i ) s << " : selected" ;
+      << " capability " << dev_info.m_cudaProp[i].major << "." << dev_info.m_cudaProp[i].minor
+      << ", Total Global Memory: " << human_memory_size(dev_info.m_cudaProp[i].totalGlobalMem) 
+      << ", Shared Memory per Block: " << human_memory_size(dev_info.m_cudaProp[i].sharedMemPerBlock);
+    if ( m_cudaDev == i ) s << " : Selected" ;
     s << std::endl ;
   }
 }
@@ -272,13 +281,16 @@ void CudaInternal::initialize( int cuda_device_id )
 
   if ( ok_init && ok_dev ) {
 
+
     const struct cudaDeviceProp & cudaProp =
       dev_info.m_cudaProp[ cuda_device_id ];
 
     m_cudaDev = cuda_device_id ;
 
     CUDA_SAFE_CALL( cudaSetDevice( m_cudaDev ) );
-  
+    CUDA_SAFE_CALL( cudaDeviceReset() );
+    CUDA_SAFE_CALL( cudaDeviceSynchronize() );
+
     //----------------------------------
     // Maximum number of warps,
     // at most one warp per thread in a warp for reduction.
@@ -375,8 +387,7 @@ CudaInternal::scratch_flags( const Cuda::size_type size )
         sizeof( ScratchGrain ),
         m_scratchFlagsCount );
 
-    CUDA_SAFE_CALL(
-      cudaMemset( m_scratchFlags , 0 , m_scratchFlagsCount * sizeScratchGrain ) );
+    CUDA_SAFE_CALL( cudaMemset( m_scratchFlags , 0 , m_scratchFlagsCount * sizeScratchGrain ) );
   }
 
   return m_scratchFlags ;
@@ -414,11 +425,13 @@ CudaInternal::scratch_unified( const Cuda::size_type size )
     const bool allocate   = m_scratchUnifiedCount * sizeScratchGrain < size ;
     const bool deallocate = m_scratchUnified && ( 0 == size || allocate );
 
-    if ( allocate || deallocate ) cudaDeviceSynchronize();
+    if ( allocate || deallocate ) {
+      CUDA_SAFE_CALL( cudaDeviceSynchronize() );
+    }
 
     if ( deallocate ) {
 
-      cudaFreeHost( m_scratchUnified );
+      CUDA_SAFE_CALL( cudaFreeHost( m_scratchUnified ) );
 
       m_scratchUnified = 0 ;
       m_scratchUnifiedCount = 0 ;
@@ -428,9 +441,9 @@ CudaInternal::scratch_unified( const Cuda::size_type size )
 
       m_scratchUnifiedCount = ( size + sizeScratchGrain - 1 ) / sizeScratchGrain ;
 
-      cudaHostAlloc( (void **)( & m_scratchUnified ) ,
-                     m_scratchUnifiedCount * sizeScratchGrain ,
-                     cudaHostAllocDefault );
+      CUDA_SAFE_CALL( cudaHostAlloc( (void **)( & m_scratchUnified ) ,
+                      m_scratchUnifiedCount * sizeScratchGrain ,
+                      cudaHostAllocDefault ) );
     }
   }
 
@@ -489,6 +502,20 @@ Cuda::size_type Cuda::detect_device_count()
 void Cuda::initialize( const Cuda::SelectDevice config )
 { Impl::CudaInternal::raw_singleton().initialize( config.cuda_device_id ); }
 
+std::vector<unsigned>
+Cuda::detect_device_arch()
+{
+  const Impl::CudaInternalDevices & s = Impl::CudaInternalDevices::singleton();
+
+  std::vector<unsigned> output( s.m_cudaDevCount );
+
+  for ( int i = 0 ; i < s.m_cudaDevCount ; ++i ) {
+    output[i] = s.m_cudaProp[i].major * 100 + s.m_cudaProp[i].minor ;
+  }
+
+  return output ;
+}
+
 Cuda::size_type Cuda::device_arch()
 {
   const int dev_id = Impl::CudaInternal::singleton().m_cudaDev ;
@@ -510,7 +537,9 @@ bool Cuda::sleep() { return false ; }
 bool Cuda::wake() { return true ; }
 
 void Cuda::fence()
-{ CUDA_SAFE_CALL( cudaDeviceSynchronize() ); }
+{ 
+  CUDA_SAFE_CALL( cudaDeviceSynchronize() ); 
+}
 
 } // namespace KokkosArray
 

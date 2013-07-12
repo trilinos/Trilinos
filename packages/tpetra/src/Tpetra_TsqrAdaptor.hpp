@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -50,7 +50,7 @@
 #  include <Tsqr_DistTsqr.hpp> // internode TSQR
 // Subclass of TSQR::MessengerBase, implemented using Teuchos
 // communicator template helper functions
-#  include <Tsqr_TeuchosMessenger.hpp> 
+#  include <Tsqr_TeuchosMessenger.hpp>
 #  include <Tpetra_MultiVector.hpp>
 #  include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
 #  include <stdexcept>
@@ -90,7 +90,7 @@ namespace Tpetra {
     typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
   private:
-    typedef TSQR::MatView<ordinal_type, scalar_type> matview_type;
+    //typedef TSQR::MatView<ordinal_type, scalar_type> matview_type;
     typedef TSQR::NodeTsqrFactory<node_type, scalar_type, ordinal_type> node_tsqr_factory_type;
     typedef typename node_tsqr_factory_type::node_tsqr_type node_tsqr_type;
     typedef TSQR::DistTsqr<ordinal_type, scalar_type> dist_tsqr_type;
@@ -113,7 +113,7 @@ namespace Tpetra {
     }
 
     //! Constructor (that uses default parameters).
-    TsqrAdaptor () : 
+    TsqrAdaptor () :
       nodeTsqr_ (new node_tsqr_type),
       distTsqr_ (new dist_tsqr_type),
       tsqr_ (new tsqr_type (nodeTsqr_, distTsqr_)),
@@ -139,7 +139,7 @@ namespace Tpetra {
       return defaultParams_;
     }
 
-    void 
+    void
     setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
     {
       using Teuchos::ParameterList;
@@ -147,7 +147,7 @@ namespace Tpetra {
       using Teuchos::RCP;
       using Teuchos::sublist;
 
-      RCP<ParameterList> params = plist.is_null() ? 
+      RCP<ParameterList> params = plist.is_null() ?
         parameterList (*getValidParameters ()) : plist;
       nodeTsqr_->setParameterList (sublist (params, "NodeTsqr"));
       distTsqr_->setParameterList (sublist (params, "DistTsqr"));
@@ -172,8 +172,8 @@ namespace Tpetra {
     ///   nonnegative diagonal.
     ///
     /// \warning Currently, this method only works if A and Q have the
-    ///   same communicator and row distribution ("map," in Petra
-    ///   terms) as those of the multivector given to this TsqrAdaptor
+    ///   same communicator and row distribution ("Map," in Petra
+    ///   terms) as those of the multivector given to this adapter
     ///   instance's constructor.  Otherwise, the result of this
     ///   method is undefined.
     void
@@ -187,7 +187,7 @@ namespace Tpetra {
       prepareTsqr (Q); // Finish initializing TSQR.
       KMV A_view = getNonConstView (A);
       KMV Q_view = getNonConstView (Q);
-      tsqr_->factorExplicit (A_view, Q_view, R, false, 
+      tsqr_->factorExplicit (A_view, Q_view, R, false,
                              forceNonnegativeDiagonal);
     }
 
@@ -195,33 +195,32 @@ namespace Tpetra {
     ///
     /// Using the R factor and explicit Q factor from
     /// factorExplicit(), compute the singular value decomposition
-    /// (SVD) of R (\f$R = U \Sigma V^*\f$).  If R is full rank (with
-    /// respect to the given relative tolerance tol), don't change Q
-    /// or R.  Otherwise, compute \f$Q := Q \cdot U\f$ and \f$R :=
-    /// \Sigma V^*\f$ in place (the latter may be no longer upper
-    /// triangular).
+    /// (SVD) of R: \f$R = U \Sigma V^*\f$.  If R is full rank (with
+    /// respect to the given relative tolerance \c tol), do not modify
+    /// Q or R.  Otherwise, compute \f$Q := Q \cdot U\f$ and \f$R :=
+    /// \Sigma V^*\f$ in place.  If R was modified, then it may not
+    /// necessarily be upper triangular on output.
     ///
     /// \param Q [in/out] On input: explicit Q factor computed by
     ///   factorExplicit().  (Must be an orthogonal resp. unitary
     ///   matrix.)  On output: If R is of full numerical rank with
     ///   respect to the tolerance tol, Q is unmodified.  Otherwise, Q
-    ///   is updated so that the first rank columns of Q are a basis
-    ///   for the column space of A (the original matrix whose QR
-    ///   factorization was computed by factorExplicit()).  The
+    ///   is updated so that the first \c rank columns of Q are a
+    ///   basis for the column space of A (the original matrix whose
+    ///   QR factorization was computed by factorExplicit()).  The
     ///   remaining columns of Q are a basis for the null space of A.
     ///
-    /// \param R [in/out] On input: ncols by ncols upper triangular
-    ///   matrix with leading dimension ldr >= ncols.  On output: if
-    ///   input is full rank, R is unchanged on output.  Otherwise, if
-    ///   \f$R = U \Sigma V^*\f$ is the SVD of R, on output R is
-    ///   overwritten with \f$\Sigma \cdot V^*\f$.  This is also an
-    ///   ncols by ncols matrix, but may not necessarily be upper
-    ///   triangular.
+    /// \param R [in/out] On input: N by N upper triangular matrix
+    ///   with leading dimension LDR >= N.  On output: if input is
+    ///   full rank, R is unchanged on output.  Otherwise, if \f$R = U
+    ///   \Sigma V^*\f$ is the SVD of R, on output R is overwritten
+    ///   with \f$\Sigma \cdot V^*\f$.  This is also an N by N matrix,
+    ///   but it may not necessarily be upper triangular.
     ///
     /// \param tol [in] Relative tolerance for computing the numerical
     ///   rank of the matrix R.
     ///
-    /// \return Rank \f$r\f$ of R: \f$ 0 \leq r \leq ncols\f$.
+    /// \return Rank \f$r\f$ of R: \f$ 0 \leq r \leq N\f$.
     int
     revealRank (MV& Q,
                 dense_matrix_type& R,
@@ -229,7 +228,7 @@ namespace Tpetra {
     {
       typedef Kokkos::MultiVector<scalar_type, node_type> KMV;
 
-      prepareTsqr (Q); // Finish initializing TSQR.      
+      prepareTsqr (Q); // Finish initializing TSQR.
 
       // FIXME (mfh 18 Oct 2010) Check Teuchos::Comm<int> object in Q
       // to make sure it is the same communicator as the one we are
@@ -241,14 +240,14 @@ namespace Tpetra {
   private:
     //! The intranode TSQR implementation instance.
     Teuchos::RCP<node_tsqr_type> nodeTsqr_;
-    
+
     //! The internode TSQR implementation instance.
     Teuchos::RCP<dist_tsqr_type> distTsqr_;
 
     //! The (full) TSQR implementation instance.
     Teuchos::RCP<tsqr_type> tsqr_;
 
-    //! Default parameter list.  Initialized by \c getValidParameters().
+    //! Default parameter list.  Initialized by getValidParameters().
     mutable Teuchos::RCP<const Teuchos::ParameterList> defaultParams_;
 
     //! Whether TSQR has been fully initialized.
@@ -274,8 +273,8 @@ namespace Tpetra {
     ///   to the multivector) and Kokkos Node instance.  All
     ///   multivector objects used with this Adaptor instance must
     ///   have the same map, communicator, and Kokkos Node instance.
-    void 
-    prepareTsqr (const MV& mv) 
+    void
+    prepareTsqr (const MV& mv)
     {
       if (! ready_) {
         prepareDistTsqr (mv);
@@ -295,7 +294,7 @@ namespace Tpetra {
 
     /// \brief Finish internode TSQR initialization.
     ///
-    /// \param mv [in] A valid Tpetra_MultiVector instance whose
+    /// \param mv [in] A valid Tpetra::MultiVector instance whose
     ///   communicator wrapper we will use to prepare TSQR.
     ///
     /// \note It's OK to call this method more than once; it is idempotent.

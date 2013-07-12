@@ -71,7 +71,7 @@ A) Getting set up to use CMake
 (*) Installing CMake from source [Recommended for Trilinos developers and
     experienced Trilinos users]:
 
-  If you have access to the Trilinos CVS repository, then install CMake with:
+  If you have access to the Trilinos git repository, then install CMake with:
 
     $ $TRILINOS_HOME/cmake/python/install-cmake.py --install-dir=INSTALL_BASE_DIR
 
@@ -661,7 +661,7 @@ C) Configuring (Makefile Generator)
  
        -D Boost_INCLUDE_DIRS:PATH=/usr/local/boost/include
 
-      <TPLNAME>_LIBRARY_NAMES:STRING: List of unadorned library names,
+    <TPLNAME>_LIBRARY_NAMES:STRING: List of unadorned library names,
       in the order of the link line.  The platform-specific prefixes
       (e.g.. 'lib') and postfixes (e.g. '.a', '.lib', or '.dll') will be
       added automatically.

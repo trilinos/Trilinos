@@ -762,6 +762,117 @@ namespace Tpetra {
     }
   }
 
+
+  /// \brief Merge two sorted (by keys) sequences of unique
+  ///   (key,value) pairs by combining pairs with equal keys.
+  ///
+  /// \param keyBeg1 [in] Start of first sequence of keys.
+  /// \param keyEnd1 [in] End (exclusive) of first sequence of keys.
+  /// \param valBeg1 [in] Start of first sequence of values.
+  /// \param valEnd1 [in] End (exclusive) of first sequence of values.
+  ///
+  /// \param keyBeg2 [in] Start of second sequence of keys.
+  /// \param keyEnd2 [in] End (exclusive) of second sequence of keys.
+  /// \param valBeg2 [in] Start of second sequence of values.
+  /// \param valEnd2 [in] End (exclusive) of second sequence of values.
+  ///
+  /// \param keyOut [in/out] Output sequence of keys.
+  /// \param valOut [in/out] Output sequence of values.
+  ///
+  /// \param f [in] Binary associative function to use to combine
+  ///   values whose keys are equal.  For example, for simple
+  ///   replacement, use a function like std::project1st (in the SGI
+  ///   extensions to the STL) with both template parameters equal to
+  ///   the value type.  For addition, use std::plus with template
+  ///   parameter equal to the value type.
+  ///
+  /// \return Number of (key,value) pairs in the merged sequence.
+  ///
+  /// \warning For now, this function requires that the two input
+  ///   sequences be made unique by key.  Later, we plan to relax that
+  ///   requirement.
+  template<class KeyInputIterType, class ValueInputIterType,
+           class KeyOutputIterType, class ValueOutputIterType,
+           class BinaryFunction>
+  void
+  keyValueMerge (KeyInputIterType keyBeg1, KeyInputIterType keyEnd1,
+                 ValueInputIterType valBeg1, ValueInputIterType valEnd1,
+                 KeyInputIterType keyBeg2, KeyInputIterType keyEnd2,
+                 ValueInputIterType valBeg2, ValueInputIterType valEnd2,
+                 KeyOutputIterType keyOut, ValueOutputIterType valOut,
+                 BinaryFunction f)
+  {
+    while (keyBeg1 != keyEnd1 && keyBeg2 != keyEnd2) {
+      if (*keyBeg1 < *keyBeg2) {
+        *keyOut++ = *keyBeg1++;
+        *valOut++ = *valBeg1++;
+      } else if (*keyBeg1 > *keyBeg2) {
+        *keyOut++ = *keyBeg2++;
+        *valOut++ = *valBeg2++;
+      } else { // *keyBeg1 == *keyBeg2
+        *keyOut++ = *keyBeg1;
+        *valOut++ = f (*valBeg1, *valBeg2);
+        ++keyBeg1;
+        ++valBeg1;
+        ++keyBeg2;
+        ++valBeg2;
+      }
+    }
+    // At most one of the two sequences will be nonempty.
+    std::copy (keyBeg1, keyEnd1, keyOut);
+    std::copy (valBeg1, valEnd1, valOut);
+    std::copy (keyBeg2, keyEnd2, keyOut);
+    std::copy (valBeg2, valEnd2, valOut);
+  }
+
+  template<class KeyInputIterType>
+  size_t
+  keyMergeCount (KeyInputIterType keyBeg1, KeyInputIterType keyEnd1,
+                 KeyInputIterType keyBeg2, KeyInputIterType keyEnd2)
+  {
+    size_t count = 0;
+    while (keyBeg1 != keyEnd1 && keyBeg2 != keyEnd2) {
+      if (*keyBeg1 < *keyBeg2) {
+        ++keyBeg1;
+      } else if (*keyBeg1 > *keyBeg2) {
+        ++keyBeg2;
+      } else { // *keyBeg1 == *keyBeg2
+        ++keyBeg1;
+        ++keyBeg2;
+      }
+      ++count;
+    }
+    // At most one of the two sequences will be nonempty.
+    count += static_cast<size_t> (keyEnd1 - keyBeg1) +
+      static_cast<size_t> (keyEnd2 - keyBeg2);
+    return count;
+  }
+
+  namespace Details {
+    /// \brief Whether the two communicators are congruent.
+    ///
+    /// Two communicators are <i>congruent</i> when they have the same
+    /// number of processes, and those processes occur in the same
+    /// rank order.
+    ///
+    /// If both communicators are Teuchos::MpiComm instances, this
+    /// function returns <tt>true</tt> exactly when
+    /// <tt>MPI_Comm_compare</tt> returns <tt>MPI_IDENT</tt> (the
+    /// communicators are handles for the same object) or
+    /// <tt>MPI_CONGRUENT</tt> on their MPI_Comm handles.  Any two
+    /// Teuchos::SerialComm instances are always congruent.  An
+    /// MpiComm instance is congruent to a SerialComm instance if and
+    /// only if the MpiComm has one process.  This function is
+    /// symmetric in its arguments.
+    ///
+    /// If either Teuchos::Comm instance is neither an MpiComm nor a
+    /// SerialComm, this method cannot do any better than to compare
+    /// their process counts.
+    bool
+    congruent (const Teuchos::Comm<int>& comm1,
+               const Teuchos::Comm<int>& comm2);
+  } // namespace Details
+
 } // namespace Tpetra
 
 #endif // TPETRA_UTIL_HPP

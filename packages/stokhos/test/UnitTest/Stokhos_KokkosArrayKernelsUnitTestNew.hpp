@@ -1,28 +1,41 @@
 // @HEADER
 // ***********************************************************************
-//
+// 
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-//
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-//
+// 
 // ***********************************************************************
 // @HEADER
 
@@ -51,6 +64,8 @@
 #include "Stokhos_CrsProductTensor.hpp"
 #include "Stokhos_FlatSparse3Tensor.hpp"
 #include "Stokhos_FlatSparse3Tensor_kji.hpp"
+#include "Stokhos_LinearSparse3Tensor.hpp"
+#include "Stokhos_TiledCrsProductTensor.hpp"
 
 namespace KokkosArrayKernelsUnitTest {
 
@@ -117,6 +132,7 @@ namespace KokkosArrayKernelsUnitTest {
     const scalar A_stoch = ( 1.0 + scalar(iStoch) / scalar(nStoch) );
 
     return A_fem + A_stoch ;
+    //return 1.0;
   }
 
   template <typename scalar, typename ordinal>
@@ -129,6 +145,7 @@ namespace KokkosArrayKernelsUnitTest {
     const scalar X_fem = 100.0 + scalar(iColFEM) / scalar(nFEM);
     const scalar X_stoch =  1.0 + scalar(iStoch) / scalar(nStoch);
     return X_fem + X_stoch ;
+    //return 1.0;
   }
 
   struct UnitTestSetup {
@@ -150,11 +167,13 @@ namespace KokkosArrayKernelsUnitTest {
     Teuchos::Array<int> perm, inv_perm;
 
     // Can't be a constructor because MPI will not be initialized
-    void setup() {
+    void setup(int p_ = 5, int d_ = 2) {
 
-      p = 5;
-      d = 2;
-      nGrid = 5;
+      p = p_;
+      d = d_;
+      // p = 3;
+      // d = 1;
+      nGrid = 3;
       rel_tol = 1e-12;
       abs_tol = 1e-12;
 
@@ -238,7 +257,6 @@ namespace KokkosArrayKernelsUnitTest {
           }
         }
         A->FillComplete();
-        //A->PutScalar(1.0);
         A_sg_blocks->setCoeffPtr(i, A);
       }
       sg_A->setupOperator(A_sg_blocks);
@@ -298,7 +316,8 @@ namespace KokkosArrayKernelsUnitTest {
           bool s = diff < tol;
           if (!s) {
             out << "y_expected[" << block << "][" << i << "] - "
-                << "y[" << block << "][" << i << "] == "
+                << "y[" << block << "][" << i << "] = " << (*sg_y)[block][i]
+                << " - " << y[block][i] << " == "
                 << diff << " < " << tol << " : failed"
                 << std::endl;
           }
@@ -321,7 +340,8 @@ namespace KokkosArrayKernelsUnitTest {
           bool s = diff < tol;
           if (!s) {
             out << "y_expected[" << block << "][" << i << "] - "
-                << "y(" << b << "," << i << ") == "
+                << "y(" << b << "," << i << ") = " << (*sg_y)[block][i]
+                << " - " << y(b,i) << " == "
                 << diff << " < " << tol << " : failed"
                 << std::endl;
           }
@@ -344,7 +364,8 @@ namespace KokkosArrayKernelsUnitTest {
           bool s = diff < tol;
           if (!s) {
             out << "y_expected[" << block << "][" << i << "] - "
-                << "y(" << b << "," << i << ") == "
+                << "y(" << b << "," << i << ") = " << (*sg_y)[block][i] << " - "
+                << y(b,i) << " == "
                 << diff << " < " << tol << " : failed"
                 << std::endl;
           }
@@ -431,7 +452,7 @@ namespace KokkosArrayKernelsUnitTest {
                             bool test_block,
                             Teuchos::FancyOStream& out) {
     typedef Stokhos::CrsMatrix<value_type,Device> matrix_type ;
-    typedef KokkosArray::CrsArray<int,Device,Device,int> crsarray_type ;
+    typedef KokkosArray::CrsArray<int,Device,void,int> crsarray_type ;
     typedef KokkosArray::View<value_type[],Device> vec_type ;
 
     //------------------------------
@@ -460,7 +481,6 @@ namespace KokkosArrayKernelsUnitTest {
 
           hM(iEntryFEM) = generate_matrix_coefficient<value_type>(
             setup.fem_length , setup.stoch_length , iRowFEM , iColFEM , block );
-          //hM(iEntryFEM) = 1.0;
         }
       }
 
@@ -468,13 +488,17 @@ namespace KokkosArrayKernelsUnitTest {
 
       typename vec_type::HostMirror hx =
         KokkosArray::create_mirror( x[block] );
+      typename vec_type::HostMirror hy =
+        KokkosArray::create_mirror( y[block] );
 
       for ( int i = 0 ; i < setup.fem_length ; ++i ) {
         hx(i) = generate_vector_coefficient<value_type>(
-          setup.fem_length , setup.stoch_length , i , block ); ;
+          setup.fem_length , setup.stoch_length , i , block );
+        hy(i) = 0.0;
       }
 
       KokkosArray::deep_copy( x[block] , hx );
+      KokkosArray::deep_copy( y[block] , hy );
     }
 
     // Original matrix-free multiply algorithm using a block apply
@@ -533,8 +557,10 @@ namespace KokkosArrayKernelsUnitTest {
   }
 
   template< typename ScalarType , typename TensorType, class Device >
-  bool test_crs_product_tensor(const UnitTestSetup& setup,
-                               Teuchos::FancyOStream& out) {
+  bool test_crs_product_tensor(
+    const UnitTestSetup& setup,
+    Teuchos::FancyOStream& out,
+    const Teuchos::ParameterList& params = Teuchos::ParameterList()) {
     typedef ScalarType value_type ;
     typedef KokkosArray::View< value_type** , KokkosArray::LayoutLeft ,
                                Device > block_vector_type ;
@@ -571,7 +597,8 @@ namespace KokkosArrayKernelsUnitTest {
 
     matrix.block =
       Stokhos::create_stochastic_product_tensor< TensorType >( *setup.basis,
-                                                               *setup.Cijk );
+                                                               *setup.Cijk,
+                                                               params);
 
     matrix.graph = KokkosArray::create_crsarray<graph_type>(
       std::string("test crs graph") , setup.fem_graph );
@@ -605,6 +632,91 @@ namespace KokkosArrayKernelsUnitTest {
     KokkosArray::deep_copy( hy , y );
 
     bool success = setup.test_commuted(hy, out);
+    //bool success = true;
+    return success;
+  }
+
+  template< typename ScalarType , class Device , int BlockSize >
+  bool test_linear_tensor(const UnitTestSetup& setup,
+                          Teuchos::FancyOStream& out,
+                          const bool symmetric) {
+    typedef ScalarType value_type ;
+    typedef int ordinal_type;
+    typedef KokkosArray::View< value_type** , KokkosArray::LayoutLeft ,
+                               Device > block_vector_type ;
+    typedef Stokhos::LinearSparse3Tensor<value_type,Device,BlockSize> TensorType;
+    typedef Stokhos::StochasticProductTensor< value_type , TensorType , Device > tensor_type ;
+
+    typedef Stokhos::BlockCrsMatrix< tensor_type , value_type , Device > matrix_type ;
+    typedef typename matrix_type::graph_type graph_type ;
+
+    // Build tensor
+    matrix_type matrix ;
+
+    Teuchos::ParameterList params;
+    params.set("Symmetric",symmetric);
+    matrix.block =
+      Stokhos::create_stochastic_product_tensor< TensorType >( *setup.basis,
+                                                               *setup.Cijk,
+                                                               params );
+    int aligned_stoch_length = matrix.block.tensor().aligned_dimension();
+
+    //------------------------------
+    // Generate input multivector:
+
+    block_vector_type x =
+      block_vector_type( "x" , aligned_stoch_length , setup.fem_length );
+    block_vector_type y =
+      block_vector_type( "y" , aligned_stoch_length , setup.fem_length );
+
+    typename block_vector_type::HostMirror hx =
+      KokkosArray::create_mirror( x );
+
+    for ( int iColFEM = 0 ;   iColFEM < setup.fem_length ;   ++iColFEM ) {
+      for ( int iColStoch = 0 ; iColStoch < setup.stoch_length ; ++iColStoch ) {
+        hx(iColStoch,iColFEM) =
+          generate_vector_coefficient<ScalarType>(
+            setup.fem_length , setup.stoch_length , iColFEM , iColStoch );
+        //hx(iColStoch,iColFEM) = 1.0;
+      }
+    }
+
+    KokkosArray::deep_copy( x , hx );
+
+    //------------------------------
+
+    matrix.graph = KokkosArray::create_crsarray<graph_type>(
+      std::string("test crs graph") , setup.fem_graph );
+
+    matrix.values = block_vector_type(
+      "matrix" , aligned_stoch_length , setup.fem_graph_length );
+
+    typename block_vector_type::HostMirror hM =
+      KokkosArray::create_mirror( matrix.values );
+
+    for ( int iRowFEM = 0 , iEntryFEM = 0 ; iRowFEM < setup.fem_length ; ++iRowFEM ) {
+      for ( size_t iRowEntryFEM = 0 ; iRowEntryFEM < setup.fem_graph[iRowFEM].size() ; ++iRowEntryFEM , ++iEntryFEM ) {
+        const int iColFEM = setup.fem_graph[iRowFEM][iRowEntryFEM] ;
+
+        for ( int k = 0 ; k < setup.stoch_length ; ++k ) {
+          hM(k,iEntryFEM) =
+            generate_matrix_coefficient<ScalarType>(
+              setup.fem_length , setup.stoch_length , iRowFEM , iColFEM , k );
+          //hM(k,iEntryFEM) = 1.0;
+        }
+      }
+    }
+
+    KokkosArray::deep_copy( matrix.values , hM );
+
+    //------------------------------
+
+    Stokhos::multiply( matrix , x , y );
+
+    typename block_vector_type::HostMirror hy = KokkosArray::create_mirror( y );
+    KokkosArray::deep_copy( hy , y );
+
+    bool success = setup.test_commuted_no_perm(hy, out);
     //bool success = true;
     return success;
   }

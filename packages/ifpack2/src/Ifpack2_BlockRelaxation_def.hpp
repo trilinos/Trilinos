@@ -7,20 +7,33 @@
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
@@ -541,7 +554,8 @@ void BlockRelaxation<MatrixType,ContainerType>::DoGaussSeidel(Tpetra::MultiVecto
   // Note: Flop counts copied naively from Ifpack.
   
   // allocations
-  Scalar one=Teuchos::ScalarTraits<Scalar>::one();
+  Scalar    one =  Teuchos::ScalarTraits<Scalar>::one();
+  Scalar negone = -one;
   int Length = A_->getNodeMaxNumRowEntries(); 
   int NumVectors = X.getNumVectors();
   Teuchos::Array<Scalar>         Values;
@@ -558,13 +572,27 @@ void BlockRelaxation<MatrixType,ContainerType>::DoGaussSeidel(Tpetra::MultiVecto
   else
     Y2 = Teuchos::rcp( &Y, false );
 
+  // I think I decided I need two extra vectors:
+  // One to store the sum of the corrections (initialized to zero)
+  // One to store the temporary residual (doesn't matter if it is zeroed or not)
+  // My apologies for making the names clear and meaningful. (X=RHS, Y=guess?! Nice.)
+  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Correction(X.getMap(),NumVectors,true);
+  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TmpResidual(X.getMap(),NumVectors,false);
 
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       x_ptr   = X.get2dViewNonConst();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       y_ptr   = Y.get2dViewNonConst();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       y2_ptr  = Y2->get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >           x_ptr = X.get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >           y_ptr = Y.get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >          y2_ptr = Y2->get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >  correction_ptr = Correction.get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > tmpresidual_ptr = TmpResidual.get2dViewNonConst();
 
   // data exchange is here, once per sweep
   if (IsParallel_)  Y2->doImport(Y,*Importer_,Tpetra::INSERT);
+
+  // Replace X (the RHS) by the initial residual, if Y != 0
+  // Note: this will not change the RHS outside of this function
+  if (!ZeroStartingSolution_)
+    A_->apply(*Y2,X,Teuchos::NO_TRANS,negone,one);
+  // else r = b already, so nothing to do
 
   for (LocalOrdinal i = 0 ; i < NumLocalBlocks_ ; i++) {
     // may happen that a partition is empty
@@ -572,25 +600,33 @@ void BlockRelaxation<MatrixType,ContainerType>::DoGaussSeidel(Tpetra::MultiVecto
     LocalOrdinal LID;
 
     // update from previous block
+    // i.e. write the appropriate elements of the temporary residual
     for (size_t j = 0 ; j < Containers_[i]->getNumRows(); j++) {
       LID = Containers_[i]->ID(j);
       size_t NumEntries;
       A_->getLocalRowCopy(LID,Indices(),Values(),NumEntries);
 
+      //Set tmpresid = initresid
+      for (int kk = 0 ; kk < NumVectors ; kk++)
+        tmpresidual_ptr[kk][LID] = x_ptr[kk][LID];
+
       for (size_t k = 0 ; k < NumEntries ; k++) {
         LocalOrdinal col = Indices[k];
 	for (int kk = 0 ; kk < NumVectors ; kk++)
-	  x_ptr[kk][LID] -= Values[k] * y2_ptr[kk][col];	
+	  tmpresidual_ptr[kk][LID] -= Values[k] * correction_ptr[kk][col];	
       }
     }
     // solve with this block
     // Note: I'm abusing the ordering information, knowing that X/Y and Y2 have the same ordering for on-proc unknowns.
     // Note: Add flop counts for inverse apply
-    Containers_[i]->apply(X,*Y2,Teuchos::NO_TRANS,DampingFactor_,one);
+    Containers_[i]->apply(TmpResidual,Correction,Teuchos::NO_TRANS,DampingFactor_,one);
     
     // operations for all getrow's
     ApplyFlops_ += NumVectors * (2 * NumGlobalNonzeros_ + 2 * NumGlobalRows_);    
   } // end for NumLocalBlocks_
+
+  // Now that the full sum of the corrections has been computed, add them to the initial guess
+  Y2->update(one,Correction,one);
 
   // Attention: this is delicate... Not all combinations
   // of Y2 and Y will always work (tough for ML it should be ok)
@@ -609,7 +645,7 @@ void BlockRelaxation<MatrixType,ContainerType>::ApplyInverseSGS(const Tpetra::Mu
   
   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>  Xcopy(X);
   for (int j = 0; j < NumSweeps_ ; j++) {
-    DoSGS(X,Xcopy,Y);
+    DoSGS(Xcopy,Y);
     if(j != NumSweeps_-1)
       Xcopy=X;
   }
@@ -617,11 +653,11 @@ void BlockRelaxation<MatrixType,ContainerType>::ApplyInverseSGS(const Tpetra::Mu
 
 //==========================================================================
 template<class MatrixType,class ContainerType>
-void BlockRelaxation<MatrixType,ContainerType>::DoSGS(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-						      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xcopy, 
+void BlockRelaxation<MatrixType,ContainerType>::DoSGS(Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
 						      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
-  Scalar one=Teuchos::ScalarTraits<Scalar>::one();
+  Scalar    one =  Teuchos::ScalarTraits<Scalar>::one();
+  Scalar negone = -one;
   int Length = A_->getNodeMaxNumRowEntries(); 
   int NumVectors = X.getNumVectors();
   Teuchos::Array<Scalar>         Values;
@@ -638,13 +674,27 @@ void BlockRelaxation<MatrixType,ContainerType>::DoSGS(const Tpetra::MultiVector<
   else
     Y2 = Teuchos::rcp( &Y, false );
 
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > x_ptr       = X.get2dView();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       xcopy_ptr   = Xcopy.get2dViewNonConst();
+  // I think I decided I need two extra vectors:
+  // One to store the sum of the corrections (initialized to zero)
+  // One to store the temporary residual (doesn't matter if it is zeroed or not)
+  // My apologies for making the names clear and meaningful. (X=RHS, Y=guess?! Nice.)
+  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Correction(X.getMap(),NumVectors,true);
+  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TmpResidual(X.getMap(),NumVectors,false);
+
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > x_ptr       = X.get2dViewNonConst();
+  //Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       xcopy_ptr   = Xcopy.get2dViewNonConst();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       y_ptr       = Y.get2dViewNonConst();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       y2_ptr      = Y2->get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >  correction_ptr = Correction.get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > tmpresidual_ptr = TmpResidual.get2dViewNonConst();
 
   // data exchange is here, once per sweep
   if (IsParallel_)  Y2->doImport(Y,*Importer_,Tpetra::INSERT);
+
+  // Replace X (the RHS) by the initial residual, if Y != 0
+  // Note: this will not change the RHS outside of this function
+  if (!ZeroStartingSolution_)
+    A_->apply(*Y2,X,Teuchos::NO_TRANS,negone,one);
 
   // Forward Sweep
   for(LocalOrdinal i = 0 ; i < NumLocalBlocks_ ; i++) {
@@ -658,23 +708,27 @@ void BlockRelaxation<MatrixType,ContainerType>::DoSGS(const Tpetra::MultiVector<
       size_t NumEntries;
       A_->getLocalRowCopy(LID,Indices(),Values(),NumEntries);
 
+      //Set tmpresid = initresid
+      for (int kk = 0 ; kk < NumVectors ; kk++)
+        tmpresidual_ptr[kk][LID] = x_ptr[kk][LID];
+
+      //set tmpresid = initresid - A*correction
       for (size_t k = 0 ; k < NumEntries ; k++) {
         LocalOrdinal col = Indices[k];
         for (int kk = 0 ; kk < NumVectors ; kk++) 
-          xcopy_ptr[kk][LID] -= Values[k] * y2_ptr[kk][col];
+          tmpresidual_ptr[kk][LID] -= Values[k] * correction_ptr[kk][col];
       }
     }
     // solve with this block
     // Note: I'm abusing the ordering information, knowing that X/Y and Y2 have the same ordering for on-proc unknowns.
     // Note: Add flop counts for inverse apply
-    Containers_[i]->apply(Xcopy,*Y2,Teuchos::NO_TRANS,DampingFactor_,one);
+    Containers_[i]->apply(TmpResidual,Correction,Teuchos::NO_TRANS,DampingFactor_,one);
 
     // operations for all getrow's
     ApplyFlops_ += NumVectors * (2 * NumGlobalNonzeros_ + 2 * NumGlobalRows_);
   }// end forward sweep
 
   // Reverse Sweep
-  Xcopy = X;
   for(LocalOrdinal i = NumLocalBlocks_-1; i >=0 ; i--) {
     // may happen that a partition is empty
     if (Containers_[i]->getNumRows() == 0) continue;
@@ -686,25 +740,32 @@ void BlockRelaxation<MatrixType,ContainerType>::DoSGS(const Tpetra::MultiVector<
       size_t NumEntries;
       A_->getLocalRowCopy(LID,Indices(),Values(),NumEntries);
 
+      //Set tmpresid = initresid
+      for (int kk = 0 ; kk < NumVectors ; kk++)
+        tmpresidual_ptr[kk][LID] = x_ptr[kk][LID];
+      
+      //set tmpresid = initresid - A*correction
       for (size_t k = 0 ; k < NumEntries ; k++) {
         LocalOrdinal col = Indices[k];
         for (int kk = 0 ; kk < NumVectors ; kk++) 
-          xcopy_ptr[kk][LID] -= Values[k] * y2_ptr[kk][col];
+          tmpresidual_ptr[kk][LID] -= Values[k] * correction_ptr[kk][col];
       }
     }
     
     // solve with this block
     // Note: I'm abusing the ordering information, knowing that X/Y and Y2 have the same ordering for on-proc unknowns.
     // Note: Add flop counts for inverse apply
-    Containers_[i]->apply(Xcopy,*Y2,Teuchos::NO_TRANS,DampingFactor_,one);
+    Containers_[i]->apply(TmpResidual,Correction,Teuchos::NO_TRANS,DampingFactor_,one);
 
     // operations for all getrow's
     ApplyFlops_ += NumVectors * (2 * NumGlobalNonzeros_ + 2 * NumGlobalRows_);
   } //end reverse sweep
 
+  // Now that the full sum of the corrections has been computed, add them to the initial guess
+  Y2->update(one,Correction,one);
 
   // Attention: this is delicate... Not all combinations
-  // of Y2 and Y will always work (tough for ML it should be ok)
+  // of Y2 and Y will always work (though for ML it should be ok)
   if (IsParallel_)
     for (int m = 0 ; m < NumVectors ; ++m) 
       for (size_t i = 0 ; i < NumMyRows_ ; ++i)

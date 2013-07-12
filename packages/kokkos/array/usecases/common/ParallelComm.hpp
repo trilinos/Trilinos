@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -46,9 +46,10 @@
 
 //------------------------------------------------------------------------
 
-#if defined( HAVE_MPI )
+#if defined( KOKKOSARRAY_HAVE_MPI )
 
 #include <mpi.h>
+#include <string>
 
 namespace comm {
 
@@ -91,9 +92,30 @@ double max( Machine machine , double local )
   return global ;
 }
 
+inline
+std::string command_line( Machine machine , const int argc , const char * const * const argv )
+{
+  std::string argline ;
+
+  if ( 0 == rank( machine ) ) {
+    for ( int i = 1 ; i < argc ; ++i ) {
+      argline.append(" ").append( argv[i] );
+    }
+  }
+
+  int length = argline.length();
+  MPI_Bcast( & length , 1 , MPI_INT , 0 , machine.mpi_comm );
+  argline.resize( length , ' ' );
+  MPI_Bcast( (void*) argline.data() , length , MPI_CHAR , 0 , machine.mpi_comm );
+
+  return argline ;
 }
 
-#else /* ! defined( HAVE_MPI ) */
+}
+
+#else /* ! defined( KOKKOSARRAY_HAVE_MPI ) */
+
+#include <string>
 
 namespace comm {
 
@@ -116,9 +138,23 @@ inline
 double max( Machine , double local )
 { return local ; }
 
+inline
+std::string command_line( Machine machine , const int argc , const char * const * const argv )
+{
+  std::string argline ;
+
+  if ( 0 == rank( machine ) ) {
+    for ( int i = 1 ; i < argc ; ++i ) {
+      argline.append(" ").append( argv[i] );
+    }
+  }
+
+  return argline ;
 }
 
-#endif /* ! defined( HAVE_MPI ) */
+}
+
+#endif /* ! defined( KOKKOSARRAY_HAVE_MPI ) */
 
 //------------------------------------------------------------------------
 

@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,21 +35,109 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
 
+#include <KokkosArray_hwloc.hpp>
+
 /*--------------------------------------------------------------------------*/
+
+namespace KokkosArray {
+namespace Impl {
+
+void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
+                          const std::pair<unsigned,unsigned> core_use ,
+                          const std::pair<unsigned,unsigned> core_topo ,
+                          const std::pair<unsigned,unsigned> master_coord ,
+                                std::pair<unsigned,unsigned> thread_coord[] )
+{
+  const unsigned thread_count = gang_topo.first * gang_topo.second ;
+  const unsigned core_base    = core_topo.second - core_use.second ;
+
+  for ( unsigned thread_rank = 0 , gang_rank = 0 ; gang_rank < gang_topo.first ; ++gang_rank ) {
+  for ( unsigned worker_rank = 0 ; worker_rank < gang_topo.second ; ++worker_rank , ++thread_rank ) {
+
+    unsigned gang_in_numa_count = 0 ;
+    unsigned gang_in_numa_rank  = 0 ;
+
+    { // Distribute gangs among NUMA regions:
+      // gang_count = k * bin + ( #NUMA - k ) * ( bin + 1 )
+      const unsigned bin  = gang_topo.first / core_use.first ;
+      const unsigned bin1 = bin + 1 ;
+      const unsigned k    = core_use.first * bin1 - gang_topo.first ;
+      const unsigned part = k * bin ;
+
+      if ( gang_rank < part ) {
+        thread_coord[ thread_rank ].first = gang_rank / bin ;
+        gang_in_numa_rank  = gang_rank % bin ;
+        gang_in_numa_count = bin ;
+      }
+      else {
+        thread_coord[ thread_rank ].first = k + ( gang_rank - part ) / bin1 ;
+        gang_in_numa_rank  = ( gang_rank - part ) % bin1 ;
+        gang_in_numa_count = bin1 ;
+      }
+    }
+
+    { // Distribute workers to cores within this NUMA region:
+      // worker_in_numa_count = k * bin + ( (#CORE/NUMA) - k ) * ( bin + 1 )
+      const unsigned worker_in_numa_count = gang_in_numa_count * gang_topo.second ;
+      const unsigned worker_in_numa_rank  = gang_in_numa_rank  * gang_topo.second + worker_rank ;
+
+      const unsigned bin  = worker_in_numa_count / core_use.second ;
+      const unsigned bin1 = bin + 1 ;
+      const unsigned k    = core_use.second * bin1 - worker_in_numa_count ;
+      const unsigned part = k * bin ;
+
+      thread_coord[ thread_rank ].second = core_base +
+        ( ( worker_in_numa_rank < part )
+          ? ( worker_in_numa_rank / bin )
+          : ( k + ( worker_in_numa_rank - part ) / bin1 ) );
+    }
+  }}
+
+  // The master core should be thread #0 so rotate all coordinates accordingly ...
+
+  const std::pair<unsigned,unsigned> offset
+    ( ( thread_coord[0].first  < master_coord.first  ? master_coord.first  - thread_coord[0].first  : 0 ) ,
+      ( thread_coord[0].second < master_coord.second ? master_coord.second - thread_coord[0].second : 0 ) );
+
+  for ( unsigned i = 0 ; i < thread_count ; ++i ) {
+    thread_coord[i].first  = ( thread_coord[i].first + offset.first ) % core_use.first ;
+    thread_coord[i].second = core_base + ( thread_coord[i].second + offset.second - core_base ) % core_use.second ;
+  }
+
+#if 0
+
+  std::cout << "KokkosArray::host_thread_mapping" << std::endl ;
+
+  for ( unsigned g = 0 , t = 0 ; g < gang_topo.first ; ++g ) {
+    std::cout << "  gang[" << g
+              << "] on numa[" << thread_coord[t].first
+              << "] cores(" ;
+    for ( unsigned w = 0 ; w < gang_topo.second ; ++w , ++t ) {
+      std::cout << " " << thread_coord[t].second ;
+    }
+    std::cout << " )" << std::endl ;
+  }
+
+#endif
+
+}
+
+}
+}
+
+/*--------------------------------------------------------------------------*/
+
+#if defined( KOKKOSARRAY_HAVE_HWLOC )
 
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-
-/* KokkosArray interfaces */
-
-#include <KokkosArray_hwloc.hpp>
 
 /*--------------------------------------------------------------------------*/
 /* Third Party Libraries */
@@ -396,5 +484,35 @@ hwloc::hwloc()
 //----------------------------------------------------------------------------
 
 } /* namespace KokkosArray */
+
+#else /* ! defined( KOKKOSARRAY_HAVE_HWLOC ) */
+
+namespace KokkosArray {
+
+bool hwloc::bind_this_thread( const std::pair<unsigned,unsigned> )
+{ return true ; }
+
+bool hwloc::unbind_this_thread()
+{ return true ; }
+
+std::pair<unsigned,unsigned> hwloc::get_this_thread_coordinate()
+{ return std::pair<unsigned,unsigned>(0,0); }
+
+std::pair<unsigned,unsigned> hwloc::get_core_topology()
+{ return std::pair<unsigned,unsigned>(1,1); }
+
+unsigned hwloc::get_core_capacity()
+{ return 1 ; }
+
+hwloc::~hwloc() {}
+
+hwloc::hwloc() {}
+
+} // namespace KokkosArray
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#endif
 
 

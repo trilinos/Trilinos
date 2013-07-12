@@ -57,8 +57,7 @@ panzer::buildWorksets(const panzer::PhysicsBlock & pb,
 
 template
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-panzer::buildBCWorkset(const panzer::BC& bc,
-		       const panzer::PhysicsBlock & volume_pb,
+panzer::buildBCWorkset(const panzer::PhysicsBlock & volume_pb,
 		       const std::vector<std::size_t>& local_cell_ids,
 		       const std::vector<std::size_t>& local_side_ids,
 		       const Intrepid::FieldContainer<double>& vertex_coordinates);

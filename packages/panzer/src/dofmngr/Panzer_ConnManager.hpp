@@ -53,12 +53,62 @@ namespace panzer {
 class FieldPattern; // from DOFManager
 
 /** Pure abstract base class templated on the
+  * local ordinal types. This is used as a convenient
+  * abstraction over the different global ordinal types.
+  */
+template <typename LocalOrdinalT>
+class ConnManagerBase {
+public:
+   typedef LocalOrdinalT LocalOrdinal;
+
+   virtual ~ConnManagerBase() {}
+
+   /** Tell the connection manager to build the connectivity assuming
+     * a particular field pattern.
+     *
+     * \param[in] fp Field pattern to build connectivity for
+     */
+   virtual void buildConnectivity(const FieldPattern & fp) = 0;
+
+   /** How many mesh IDs are associated with this element?
+     *
+     * \param[in] localElmtId Local element ID
+     *
+     * \returns Number of mesh IDs that are associated with this element.
+     */
+   virtual LocalOrdinal getConnectivitySize(LocalOrdinal localElmtId) const = 0;
+
+   /** Get the block ID for a particular element.
+     *
+     * \param[in] localElmtId Local element ID
+     */
+   virtual std::string getBlockId(LocalOrdinal localElmtId) const = 0;
+
+   /** How many element blocks in this mesh?
+     */
+   virtual std::size_t numElementBlocks() const = 0;
+
+   /** What are the blockIds included in this connection manager?
+     */
+   virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const = 0; 
+
+   /** Get the local element IDs for a paricular element
+     * block.
+     *
+     * \param[in] blockID Block ID
+     *
+     * \returns Vector of local element IDs.
+     */
+   virtual const std::vector<LocalOrdinal> & getElementBlock(const std::string & blockID) const = 0;
+};
+
+/** Pure abstract base class templated on the
   * global and local ordinal types. It is assumed
   * that element blocks are number by a GlobalOrdinal
   * and local element IDs use the LocalOrdinal.
   */
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-class ConnManager {
+class ConnManager : public ConnManagerBase<LocalOrdinalT> {
 public:
    typedef GlobalOrdinalT GlobalOrdinal;
    typedef LocalOrdinalT LocalOrdinal;

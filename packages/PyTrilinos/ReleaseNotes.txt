@@ -1,3 +1,13 @@
+Release Notes for PyTrilinos 4.10 (Trilinos 11.4)
+=================================================
+
+General
+  * Updated the NumPy interface to properly deal with deprecated
+    code.  If PyTrilinos if compiled an older NumPy, it still works,
+    but if compiled against newer versions of NumPy, the deprecated
+    code is avoided, as are the warnings.
+
+
 Release Notes for PyTrilinos 4.8 (Trilinos 11.2)
 ================================================
 

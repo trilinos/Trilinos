@@ -111,25 +111,16 @@ namespace panzer {
     // ******************************************************************
     struct Residual { typedef RealType ScalarT; };
     struct Jacobian { typedef FadType ScalarT;  };
+    struct Tangent { typedef FadType ScalarT;  };
     #ifdef HAVE_STOKHOS
        struct SGResidual { typedef SGType ScalarT; };
        struct SGJacobian { typedef SGFadType ScalarT;  };
     #endif
-    typedef Sacado::mpl::vector<Residual, Jacobian
+    typedef Sacado::mpl::vector<Residual, Jacobian, Tangent
                                 #ifdef HAVE_STOKHOS
                                    , SGResidual, SGJacobian
                                 #endif
                                > EvalTypes;
-
-    // ******************************************************************
-    // *** Response Types
-    // ******************************************************************
-
-    struct Value {      typedef RealType ScalarT; typedef Residual EvalType; };
-    struct Derivative { typedef FadType ScalarT;  typedef Jacobian EvalType; };
-
-    typedef Sacado::mpl::vector<Value, Derivative 
-                               > RespTypes;
 
     // ******************************************************************
     // *** Data Types
@@ -143,6 +134,9 @@ namespace panzer {
     // Jacobian (default scalar type is Fad<double, double>)
     typedef Sacado::mpl::vector< FadType > JacobianDataTypes;
 
+    // Tangent (default scalar type is Fad<double, double>)
+    typedef Sacado::mpl::vector< FadType > TangentDataTypes;
+
     #ifdef HAVE_STOKHOS
        typedef Sacado::mpl::vector< SGType > SGResidualDataTypes;
        typedef Sacado::mpl::vector< SGFadType > SGJacobianDataTypes;
@@ -151,7 +145,8 @@ namespace panzer {
     // Maps the key EvalType a vector of DataTypes
     typedef boost::mpl::map<
       boost::mpl::pair<Residual, ResidualDataTypes>,
-      boost::mpl::pair<Jacobian, JacobianDataTypes>
+      boost::mpl::pair<Jacobian, JacobianDataTypes>,
+      boost::mpl::pair<Tangent, TangentDataTypes>
       #ifdef HAVE_STOKHOS
          , boost::mpl::pair<SGResidual, SGResidualDataTypes>
          , boost::mpl::pair<SGJacobian, SGJacobianDataTypes>
@@ -173,16 +168,6 @@ namespace panzer {
     typedef SD SetupData;
 
     typedef panzer::Workset& EvalData;
-
-/*
-    struct PED {
-       struct DirichletData {
-          //! Stores information about which global indices were set as dirichlet conditions
-          Teuchos::RCP<LinearObjContainer> ghostedCounter;
-       } dirichletData;
-    };
-    typedef PED& PreEvalData;
-*/
     typedef GlobalEvaluationDataContainer& PreEvalData;
 
     typedef void* PostEvalData;
@@ -205,6 +190,9 @@ namespace PHX {
   { static const std::string value; };
 
   template<> struct TypeString<panzer::Traits::Jacobian> 
+  { static const std::string value; };
+
+  template<> struct TypeString<panzer::Traits::Tangent> 
   { static const std::string value; };
 
   #ifdef HAVE_STOKHOS
@@ -239,12 +227,6 @@ namespace PHX {
      { static const std::string value; };
   #endif 
 
-  // Response Types
-  template<> struct TypeString<panzer::Traits::Value> 
-  { static const std::string value; };
-
-  template<> struct TypeString<panzer::Traits::Derivative> 
-  { static const std::string value; };
 }
 
 #endif

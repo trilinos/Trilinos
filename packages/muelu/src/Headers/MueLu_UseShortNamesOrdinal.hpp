@@ -38,6 +38,10 @@ typedef MueLu::Graph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Graph;
 typedef MueLu::IsolatedNodeAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> IsolatedNodeAggregationAlgorithm;
 #endif
 
+#ifdef MUELU_ISORROPIAINTERFACE_SHORT
+typedef MueLu::IsorropiaInterface<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> IsorropiaInterface;
+#endif
+
 #ifdef MUELU_LWGRAPH_SHORT
 typedef MueLu::LWGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> LWGraph;
 #endif
@@ -62,6 +66,10 @@ typedef MueLu::OnePtAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMa
 typedef MueLu::PRFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PRFactory;
 #endif
 
+#ifdef MUELU_REBALANCEMAPFACTORY_SHORT
+typedef MueLu::RebalanceMapFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RebalanceMapFactory;
+#endif
+
 #ifdef MUELU_SMALLAGGREGATIONALGORITHM_SHORT
 typedef MueLu::SmallAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SmallAggregationAlgorithm;
 #endif
@@ -72,6 +80,10 @@ typedef MueLu::UncoupledAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,Loc
 
 #ifdef MUELU_UNCOUPLEDAGGREGATIONFACTORY_SHORT
 typedef MueLu::UncoupledAggregationFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> UncoupledAggregationFactory;
+#endif
+
+#ifdef MUELU_USERAGGREGATIONFACTORY_SHORT
+typedef MueLu::UserAggregationFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> UserAggregationFactory;
 #endif
 
 #ifdef MUELU_ZOLTAN2INTERFACE_SHORT
@@ -116,10 +128,6 @@ typedef MueLu::RFactory RFactory;
 
 #ifdef MUELU_SINGLELEVELFACTORYBASE_SHORT
 typedef MueLu::SingleLevelFactoryBase SingleLevelFactoryBase;
-#endif
-
-#ifdef MUELU_TWOKEYMAP_SHORT
-typedef MueLu::TwoKeyMap TwoKeyMap;
 #endif
 
 #ifdef MUELU_TWOLEVELFACTORYBASE_SHORT

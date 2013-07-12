@@ -144,7 +144,7 @@ bool run_host( std::istream & input ,
   return cmd_error ;
 }
 
-#if HAVE_CUDA
+#if KOKKOSARRAY_HAVE_CUDA
 bool run_cuda( std::istream & input , comm::Machine machine )
 {
   bool cmd_error = false ;
@@ -219,7 +219,7 @@ void run( const std::string & argline , comm::Machine machine )
               << " CORE[" << core_topo.second << "]"
               << " PU[" << core_cap << "] }"
               << std::endl ;
-#if HAVE_CUDA
+#if KOKKOSARRAY_HAVE_CUDA
     test_cuda_query( machine );
 #endif
   }
@@ -250,7 +250,7 @@ void run( const std::string & argline , comm::Machine machine )
 
       cmd_error = run_host( input , machine , host_gang_count , host_gang_worker_count );
     }
-#if HAVE_CUDA
+#if KOKKOSARRAY_HAVE_CUDA
     else if ( which == std::string("cuda") ) {
       cmd_error = run_cuda( input , machine );
     }
@@ -289,26 +289,7 @@ int main( int argc , char ** argv )
 
   const unsigned comm_rank = comm::rank( machine );
 
-  // Turn command line into a string,
-  // broadcast it to all processes,
-  // turn string into an input stream for parsing.
-
-  std::string argline ;
-
-  if ( 0 == comm_rank ) {
-    for ( int i = 1 ; i < argc ; ++i ) {
-      argline.append(" ").append( argv[i] );
-    }
-  }
-
-#ifdef HAVE_MPI
-  {
-    int length = argline.length();
-    MPI_Bcast( & length , 1 , MPI_INT , 0 , machine.mpi_comm );
-    argline.resize( length , ' ' );
-    MPI_Bcast( (void*) argline.data() , length , MPI_CHAR , 0 , machine.mpi_comm );
-  }
-#endif /* HAVE_MPI */
+  const std::string argline = comm::command_line( machine , argc , argv );
 
   try {
     run( argline , machine );

@@ -50,41 +50,64 @@
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#if defined( KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR )
-
-// ArrayExp OP= cv-ArrayExp
-// ArrayExp OP= scalar
+#if defined( KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR_CLASS ) && \
+    defined( KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR )
 
 namespace KokkosArray {
 
-template< typename T, unsigned N, class ProxyLHS, class ProxyRHS >
-KOKKOSARRAY_INLINE_FUNCTION
-Array< T , N , ProxyLHS > &
-operator KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR
-  ( Array< T , N , ProxyLHS > & lhs ,
-    Array< T , N , ProxyRHS > & rhs )
+template< class LHS , class RHS >
+struct KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR_CLASS {};
+
+//----------------------------------------------------------------------------
+// ArrayExp OP= cv-ArrayExp
+// ArrayExp OP= scalar
+
+template< typename TypeLHS , unsigned CountLHS , class ProxyLHS ,
+          typename TypeRHS , unsigned CountRHS , class ProxyRHS >
+class KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR_CLASS
+  < Array< TypeLHS,CountLHS,ProxyLHS > ,
+    Array< TypeRHS,CountRHS,ProxyRHS > >
 {
-  for ( unsigned i = 0 ; i < lhs.size() ; ++i ) {
-    lhs[i] KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR rhs[i] ;
+public:
+  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR_CLASS
+    (       Array<TypeLHS,CountLHS,ProxyLHS > & lhs ,
+      const Array<TypeRHS,CountRHS,ProxyRHS > & rhs )
+  {
+    for ( unsigned i = 0 ; i < lhs.size() ; ++i ) {
+      lhs[i] KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR rhs[i] ;
+    }
   }
-  return lhs ;
-}
+};
+
+template< typename TypeLHS , unsigned CountLHS , class ProxyLHS , class RHS >
+class KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR_CLASS
+  < Array< TypeLHS,CountLHS,ProxyLHS > , RHS >
+{
+public:
+  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR_CLASS
+    ( Array<TypeLHS,CountLHS,ProxyLHS > & lhs , const RHS rhs )
+  {
+    for ( unsigned i = 0 ; i < lhs.size() ; ++i ) {
+      lhs[i] KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR rhs ;
+    }
+  }
+};
 
 template< typename T , unsigned N , class Proxy , class RHS >
 KOKKOSARRAY_INLINE_FUNCTION
 Array< T , N , Proxy > &
 operator KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR
-  ( Array< T , N , Proxy > & lhs , const RHS rhs )
+  ( Array< T , N , Proxy > & lhs , const RHS & rhs )
 {
-  for ( unsigned i = 0 ; i < lhs.size() ; ++i ) {
-    lhs[i] KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR rhs ;
-  }
+  KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR_CLASS < Array< T , N , Proxy > , RHS >( lhs , rhs );
   return lhs ;
 }
 
 } /* namespace KokkosArray */
 
-#endif /* #if defined( KOKKOSARRAY_ARRAY_ASSIGN_OPERATOR ) */
+#endif
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

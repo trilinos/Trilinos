@@ -129,10 +129,6 @@ void modified_gram_schmidt(
   // reads  += 0
   // writes += count * count
   KokkosArray::deep_copy( R , hostR );
-
-  // reads  = 6 * length
-  // writes = 
-  // flops  = count * ( 3 + 7 * length )
 }
 
 struct ModifedGramSchmidCounts {

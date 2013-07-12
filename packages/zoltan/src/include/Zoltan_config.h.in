@@ -27,7 +27,7 @@
 #undef HAVE_GNUMAKE
 
 /* Define if want to build with gzip enabled */
-#undef HAVE_GZIP
+#undef ZHAVE_GZIP
 
 /* define if we want to use MPI */
 #undef HAVE_MPI

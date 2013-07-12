@@ -51,6 +51,8 @@ struct HexGrad
   typedef DeviceType device_type ;
   typedef typename device_type::size_type  size_type ;
 
+  typedef HexGrad<DeviceType,CoordScalarType,GradScalarType> self_type;
+
   // 3D array : ( ParallelWork , Space , Node )
 
   enum { NSpace = 3 , NNode = 8 };
@@ -139,7 +141,7 @@ struct HexGrad
       coords(ielem,1,4),
       coords(ielem,1,5),
       coords(ielem,1,6),
-      coords(ielem,1,7) 
+      coords(ielem,1,7)
     };
 
     const CoordScalarType z[NNode] = {
@@ -190,7 +192,7 @@ struct HexGrad
   //--------------------------------------------------------------------------
 
   struct Init {
-    typedef HexGrad::device_type device_type ;
+    typedef typename self_type::device_type device_type ;
 
     elem_coord_type coords ;
 

@@ -47,6 +47,7 @@
 #define KOKKOSARRAY_CUDA_HPP
 
 #include <iosfwd>
+#include <vector>
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_Layout.hpp>
 #include <KokkosArray_CudaSpace.hpp>
@@ -64,7 +65,6 @@ public:
   //@{
 
   typedef Cuda                  type ;
-  typedef Cuda                  layout_type ;
   typedef Cuda                  device_type ;
   typedef CudaSpace             memory_space ;
   typedef CudaSpace::size_type  size_type ;
@@ -120,15 +120,22 @@ public:
     explicit SelectDevice( int id ) : cuda_device_id( id ) {}
   };
 
-  //! Initialize, telling the CUDA run-time library which device to use.
+  /** \brief  Initialize, telling the CUDA run-time library which device to use. */
   static void initialize( const SelectDevice = SelectDevice() );
-
-  static size_type detect_device_count();
 
   /** \brief  Cuda device architecture of the selected device.
    *          Matches the __CUDA_ARCH__ specification.
    */
   static size_type device_arch();
+
+
+  /** \brief  Query device count. */
+  static size_type detect_device_count();
+
+  /** \brief  Detect the available devices and their architecture
+   *          as defined by the __CUDA_ARCH__ specification.
+   */
+  static std::vector<unsigned> detect_device_arch();
 
   //@}
 };

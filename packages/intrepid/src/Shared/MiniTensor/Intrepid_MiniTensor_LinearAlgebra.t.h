@@ -270,7 +270,7 @@ polynomial_coefficient(Index const order, Index const index)
     default:
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
       std::cerr << std::endl;
-      std::cerr << "Wrong order in Padé polynomial coefficient: ";
+      std::cerr << "Wrong order in Pade' polynomial coefficient: ";
       std::cerr << order << std::endl;
       exit(1);
       break;
@@ -830,7 +830,7 @@ log_rotation_pi(Tensor<T> const & R)
 
       normal = normal / norm(normal);
 
-      r.clear();
+      r.fill(ZEROS);
       r(0,1) = -normal(2);
       r(0,2) =  normal(1);
       r(1,0) =  normal(2);
@@ -889,7 +889,7 @@ gaussian_elimination(Tensor<T> const & A)
     // find pivot in column j, starting in row i
     i_max = i;
     for (Index k = i + 1; k < N; ++k) {
-      if (std::abs(U(k,j) > std::abs(U(i_max,j)))) {
+      if (std::abs(U(k,j)) > std::abs(U(i_max,j))) {
         i_max = k;
       }
     }

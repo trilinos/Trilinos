@@ -66,7 +66,7 @@ int main( int argc , char ** argv )
   const unsigned                     gang_worker_capacity = core_top.second * core_cap ;
 
   const int cuda_device_count =
-#if defined( HAVE_CUDA )
+#if defined( KOKKOSARRAY_HAVE_CUDA )
     KokkosArray::Cuda::detect_device_count() ;
 #else
     0 ;
@@ -126,7 +126,7 @@ int main( int argc , char ** argv )
                 << "cuda DEVICE# | "
                 << "test #LENGTH_BEGIN #LENGTH_END #COUNT #ITER )"
                 << std::endl
-                << "thread capacity = " << thread_capacity
+                << "thread capacity = " << core_top.first << "x" << gang_worker_capacity
                 << std::endl
                 << "cuda devices = "
                 << cuda_device_count
@@ -134,7 +134,7 @@ int main( int argc , char ** argv )
     }
   }
 
-#if defined( HAVE_MPI )
+#if defined( KOKKOSARRAY_HAVE_MPI )
   {
     int data[16] = { error , gang_count , gang_worker , cuda_device ,
                      test_length_begin , test_length_end , test_count , test_iter };
@@ -172,7 +172,7 @@ int main( int argc , char ** argv )
       KokkosArray::Host::finalize();
     }
 
-#if defined( HAVE_CUDA )
+#if defined( KOKKOSARRAY_HAVE_CUDA )
     if ( 0 <= cuda_device ) {
       KokkosArray::Cuda::SelectDevice select( ( cuda_device + comm_rank ) % cuda_device_count );
       KokkosArray::Cuda::initialize( select );

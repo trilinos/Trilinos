@@ -1,0 +1,269 @@
+Trilinos has the capability to allow Makefiles to import important variables
+that can be used to compile against either a Trilinos installation or a build
+tree. This capability is similar to the previously supported autotools
+Makefile.export system. There are some important differences though as the
+newer capability also takes some of it's functionality from the similar in
+concept find Trilinos capability for CMake aware projects.
+
+There are two versions of this system, one for an installation of Trilinos, and
+another for a build tree of Trilinos. The only difference between the versions
+is the  information that is stored in the variables being relative to an install
+tree versus relative to a build tree. The variables still have the same meaning
+and names regardless of which type you are using.
+
+The way to import this into your project is to use the following line:
+include Makefile.export.<package>
+Where <package> is any Trilinos package or "Trilinos" itself.
+
+
+The variables most projects will be interested in are those that store which
+Trilinos packages were enabled, their libraries, and the tpls that Trilinos was
+configured with. The following variables contain that information. There is a
+minor difference between these variables for Trilinos as a whole and for an
+individual package. For projects that import Makefile.export.Trilinos these
+variables will hold the complete set of packages and tpls that were enabled for
+Trilinos. This is guaranteed to be the full set of what Trilinos was configured
+with. When you import Makefile.export.<package> to find individual Trilinos
+packages, only those packages and tpls which were both enabled for the Trilinos
+build and enabled for the specific package will be contained in these variables.
+In this way, the Makefile.export.<package> file is more accurate than the
+Makefile.export.Trilinos when you are interested in specific dependencies for a
+package. If you built Trilinos yourself specifically for your project you might
+find it easier to use Makefile.export.Trilinos as it will have everything you
+need in one place if you use multiple Trilinos packages. However, if you are
+using a pre-installed copy of Trilinos it will likely be better for you to
+import each package you need individually.
+
+Throughout the rest of this readme you can replace "Trilinos_" with
+"<package>_" for the cases where you are looking for a specific package.
+
+Compiler variables:
+
+The C++ compiler is in Trilinos_CXX_COMPILER and the options for the C++
+compilier are in Trilinos_CXX_COMPILER_FLAGS.
+
+The C compiler is in Trilinos_C_COMPILER and the options for the C compiler are
+in Trilinos_C_COMPILER_FLAGS.
+
+The Fortran compiler is in Trilinos_Fortran_COMPILER and the options for the
+Fortran compiler are in Trilinos_Fortran_COMPILER_FLAGS.
+
+If Trilinos was built as shared libraries, Trilinos_BUILD_SHARED_LIBS will be
+set to ON, and any additional rpaths needed will be in
+Trilinos_SHARED_LIB_RPATH_COMMAND.
+
+Any additional options that were passed to the linker for Trilinos or a package
+can be found in the variable Trilinos_EXTRA_LD_FLAGS.
+
+Packages, TPLs and other library variables.
+
+Trilinos_INCLUDE_DIRS holds the paths to all the header files for all packages
+that Trilinos was configured with. Each path in this variable will have the -I
+already prepended to it.
+
+Trilinos_LIBRARY_DIRS holds the paths to all the library files for all packages
+that Trilinos was configured with. Each path in this variable wil have the -L
+already prepended to it.
+
+Trilinos_LIBRARIES is the complete list of all the libraries for the packages
+that Trilinos was configured with. This list is in the proper order for linking
+so it is safe to just add this to a Makefile link target. Each library in this
+variable will have -l already prepended to it. If you are using multiple
+packages and are importing several specific Makefile.export.<package>  you will
+need to add each package's <package>_LIBRARIES variable to your link target.
+Note that if you are doing this there is a good chance that there will be
+repeated libraries on your link line. If you have a small set of
+dependencies this might not be a problem, but if you have a large set it could
+dramatically increase you link time. If this is a concern you will need to strip
+out the duplicates while making sure not to change the order of the libraries.
+
+Trilinos_TPL_INCLUDE_DIRS holds the paths to all the header files needed by all
+TPLs that were enabled. Each path in this variable will have the -I already
+prepended to it.
+
+Trilinos_TPL_LIBRARY_DIRS holds the paths to all the library files for all the
+TPLs that were enabled. Note that some TPLs return their absolute path to their
+libraries when they are found. In those instances the TPLs typically do not set
+this variable as well. This won't affect linking, but it does make it harder to
+rely on only this variable to look for the paths to all enabled TPLs. Each path
+in this variable wil have the -L already prepended to it.
+
+Trilinos_TPL_LIBRARIES holds the full list of libraries for the enabled TPLs.
+For Trilinos this is guaranteed to be in the correct order for linking if there
+are dependencies between TPLs. This should generally be true for individual
+packages as well. However, there isn't currently a mechanism in place that
+guarantees this. There has been some care taken to ensure that these libraries
+come out in the right order, however, if you run into a case where this is not
+true please let us know so that we can fix it. Generally each library in this
+variable will have -l already prepended to it however, some libaries are return
+their absolute path, in those cases the library path is used verbatim and -l is
+not prepended to it.
+
+Trilinos_PACKAGE_LIST holds the complete list of all enabled packages for
+Trilinos. For individual packages this will only hold the packages which the
+given package has a dependency on and that dependency was enabled. This list is
+very useful in determining the actual dependencies of a package for the
+individual package case. If you just want to link against a package everything
+required to do that is in the above variables. However, if your project can
+optionally use features from the package, this variable is useful for
+determining which features were enabled.
+
+Trilinos_TPL_LIST holds the complete list of TPLs that were enabled for
+Trilinos. It is possible for Trilinos to be configured with TPLs that are not
+used by any of the enabled packages. This won't cause any errors,
+but if you are interested in getting the minimum set of TPLs then it would be
+best to check this variable for the packages you are interested in. For
+individual packages this will hold only those TPLs that the package was
+configured to use.
+
+
+Trilinos_VERSION holds the version number for Trilinos. This variable does not
+exist for individual packages as there is no common package versioning system.
+
+Other general variables:
+
+Trilinos_LINKER holds the linker that Trilinos was configured for. Typically
+it is safe to use any linker that supports the library type that Trilinos was
+compiled for, but if you want to use the exact same linker executable that
+Trilinos used, you can get it from this variable.
+
+Trilinos_AR holds the archiving utility that was used to make the Trilinos
+libraries if they were compiled as static libraries. Again using a different but
+compatible archiver is generally fine, but if you want to use the same one as
+Trilinos you can use this variable.
+
+Trilinos_MPI_LIBRARIES holds the libraries for MPI specifically. These are
+duplicated here to make it easier in cases where you do not use MPI wrappers for
+compiling to make sure you are using the right MPI library. Each library in this
+variable will have the -l already prepended to it.
+
+Trilinos_MPI_LIBRARY_DIRS holds any directories that will need to be put on the
+link line to find the MPI libraries. These are duplicated here to make it easier
+in cases where you do not use MPI wrappers for compiling to make sure you are
+using the right MPI library. Each path in this variable will have the -L already
+prepended to it.
+
+Trilinos_MPI_INCLUDE_DIRS holds any directories that will need to be put on the
+compile line to find the MPI headers.  These are duplicated here to make it
+easier in cases where you do not use MPI wrappers for compiling to make sure
+you are using the right MPI library. Each path in this variable will have the -I
+already prepended to it.
+
+Trilinos_MPI_EXEC holds the mpi run program that was used when testing Trilinos.
+This is useful if you want to make sure you are running your tests with the same
+mpi run that Trilinos used.
+
+Trilinos_MPI_EXEC_MAX_NUMPROCS holds the maximum number of processors that
+Trilinos was tested with. This is useful if you want to make sure that you limit
+your own testing to the same parameters that Trilinos was tested with.
+
+Trilinos_MPI_EXEC_NUMPROCS_FLAG holds the flag to pass to Trilinos_MPI_EXEC to
+specify the number of processors to run on.
+
+See Export_Makefile.example for a simple example of how to use this capability.
+
+Transitioning from the previous systems:
+
+There are some important differences between the previous 2 systems that
+Trilinos has made available. Mostly these differences are in the names of
+variables, however, there is not always a one to one relationship between the
+old variable names and the new ones, which can make it confusing as to which
+variables are needed and how they are to be used.
+
+In the Makefile export system that was available in Trilinos 9, there were
+typically only 2 variables of interest. One is <PACKAGE_NAME>_LIBS, which held
+all of the libraries and paths to libraries, including tpls, for the given
+packages. The other is <PACKAGE_NAME>_INCLUDES which held all of the include
+directories you needed to pull in any header files needed. These variables no
+longer exist, however all the information is still available, though the
+equivalent for <PACKAGE_NAME>_LIBS is spread out among several variables now.
+
+For example if you were including Makefile.export.epetra before you would need
+to make the following changes:
+
+EPETRA_LIBS == $(Epetra_EXTRA_LD_FLAGS) $(Epetra_LIBRARY_DIRS)
+  $(Epetra_TPL_LIBRARY_DIRS) $(Epetra_LIBRARIES) $(Epetra_TPL_LIBRARIES)
+
+EPETRA_INCLUDES == $(Epetra_INCLUDE_DIRS) $(Epetra_TPL_INCLUDE_DIRS)
+
+Because these variables have changed significantly, to prevent link errors due
+the variables not being set, the new Makefile export system does define these
+variables and sets them to a deprecation warning. This will not prevent a link
+error; however, it should make the problem obvious on the link line.
+
+For the system that existed in Trilinos 10 the only difference is the names of
+variables. The previous system had fully capitalized the package names for each
+variable, however now we use the package name as it exists in the cmake system.
+For example if you were including Makefile.export.epetra before, you would need
+to replace all instances of "EPETRA" with "Epetra".
+
+--------------------------------------------------------------------------------
+Example Makefile file:
+
+# CMAKE File for "MyApp" application building against an installed Trilinos
+
+#This file is an adaptation of the CMakeLists.txt file that was converted from 
+#the buildAgainstTrilinos example. This Makefile was designed to be used in a
+#flat directory structure. If you would like to run this example you will need
+#put this file and src_file.cpp, src_file.hpp, main_file.cpp from
+#buildAgainstTrilinos into a new directory. You will then need to set the
+#environment variable MYAPP_TRILINOS_DIR to point to your base installation of
+#Trilinos. Note that this example assumes that the installation of Trilinos that
+#you point to has Epetra enabled.
+
+# Get Trilinos as one entity
+include $(MYAPP_TRILINOS_DIR)/include/Makefile.export.Trilinos
+
+# Make sure to use same compilers and flags as Trilinos
+CXX=$(Trilinos_CXX_COMPILER)
+CC=$(Trilinos_C_COMPILER)
+FORT=$(Trilinos_Fortran_COMPILER)
+
+CXX_FLAGS=$(Trilinos_CXX_COMPILER_FLAGS) $(USER_CXX_FLAGS)
+C_FLAGS=$(Trilinos_C_COMPILER_FLAGS) $(USERC_FLAGS)
+FORT_FLAGS=$(Trilinos_Fortran_COMPILER_FLAGS) $(USER_FORT_FLAGS)
+
+INCLUDE_DIRS=$(Trilinos_INCLUDE_DIRS) $(Trilinos_TPL_INCLUDE_DIRS)
+LIBRARY_DIRS=$(Trilinos_LIBRARY_DIRS) $(Trilinos_TPL_LIBRARY_DIRS)
+LIBRARIES=$(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES)
+
+LINK_FLAGS=$(Trilinos_EXTRA_LD_FLAGS)
+
+#just assuming that epetra is turned on.
+DEFINES=-DMYAPP_EPETRA
+
+
+default: print_info MyApp.exe
+
+# Echo trilinos build info just for fun
+print_info:
+	@echo "\nFound Trilinos!  Here are the details: "
+	@echo "   Trilinos_VERSION = $(Trilinos_VERSION)"
+	@echo "   Trilinos_PACKAGE_LIST = $(Trilinos_PACKAGE_LIST)"
+	@echo "   Trilinos_LIBRARIES = $(Trilinos_LIBRARIES)"
+	@echo "   Trilinos_INCLUDE_DIRS = $(Trilinos_INCLUDE_DIRS)"
+	@echo "   Trilinos_LIBRARY_DIRS = $(Trilinos_LIBRARY_DIRS)"
+	@echo "   Trilinos_TPL_LIST = $(Trilinos_TPL_LIST)"
+	@echo "   Trilinos_TPL_INCLUDE_DIRS = $(Trilinos_TPL_INCLUDE_DIRS)"
+	@echo "   Trilinos_TPL_LIBRARIES = $(Trilinos_TPL_LIBRARIES)"
+	@echo "   Trilinos_TPL_LIBRARY_DIRS = $(Trilinos_TPL_LIBRARY_DIRS)"
+	@echo "   Trilinos_BUILD_SHARED_LIBS = $(Trilinos_BUILD_SHARED_LIBS)"
+	@echo "End of Trilinos details\n"
+
+# run the given test
+test: MyApp.exe input.xml
+	./MyApp.exe
+
+# build the 
+MyApp.exe: libmyappLib.a
+	$(CXX) $(CXX_FLAGS) libMyappLib.a main_file.cpp -o MyApp.exe $(LINK_FLAGS) $(INCLUDE_DIRS) $(DEFINES) $(LIBRARY_DIRS) $(LIBRARIES)
+
+libmyappLib.a: src_file.o
+	$(Trilinos_AR) cr libmyappLib.a src_file.o
+
+src_file.o:
+	$(CXX) -c $(CXX_FLAGS) $(INCLUDE_DIRS) $(DEFINES) src_file.cpp
+
+.PHONY: clean
+clean:
+	rm -f *.o *.a *.exe 

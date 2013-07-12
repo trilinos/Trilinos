@@ -39,7 +39,7 @@ IF((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(MLParameterList_cp
-    SOURCE_FILES ml_ParameterList.xml
+    SOURCE_FILES ml_ParameterList.xml ml_RebalancedParameterList.xml
     )
 
 ENDIF()
@@ -50,12 +50,20 @@ ENDIF()
 
 IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   XPETRA_ADD_TEST_TPETRA(ParameterList   1-4)
-  XPETRA_ADD_TEST_TPETRA(MLParameterList 1-4)
+#  XPETRA_ADD_TEST_TPETRA(MLParameterList 1-4)
 ENDIF()
 
 IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE_NAME}_ENABLE_Amesos)
   XPETRA_ADD_TEST_EPETRA(ParameterList   1-4)
   XPETRA_ADD_TEST_EPETRA(MLParameterList 1-4)
+  
+  TRIBITS_ADD_TEST(
+    MLParameterList
+    NAME MLParamterList_Repartition-Epetra
+    ARGS "--xml=ml_RebalancedParameterList.xml --linAlgebra=Epetra"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    )
 ENDIF()
 
 #

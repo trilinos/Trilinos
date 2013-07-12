@@ -48,5 +48,6 @@
 #include "Panzer_BlockedDOFManagerFactory_impl.hpp"
 
 template class panzer::BlockedDOFManagerFactory<int,int>;
+template class panzer::BlockedDOFManagerFactory<int,long>;
 
 #endif

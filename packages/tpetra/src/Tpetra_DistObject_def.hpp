@@ -108,8 +108,8 @@ namespace Tpetra {
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
-  DistObject (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source)
-    : map_ (source.map_)
+  DistObject (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& rhs)
+    : map_ (rhs.map_)
   {}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -193,24 +193,31 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
-  doImport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A,
-            const Import<LocalOrdinal,GlobalOrdinal,Node> & importer,
+  doImport (const SrcDistObject& source,
+            const Import<LocalOrdinal,GlobalOrdinal,Node>& importer,
             CombineMode CM)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(*getMap() != *importer.getTargetMap(),
       std::invalid_argument, "doImport: The target DistObject's Map is not "
       "identical to the Import's target Map.");
-    TEUCHOS_TEST_FOR_EXCEPTION(*A.getMap() != *importer.getSourceMap(),
-      std::invalid_argument, "doImport: The source DistObject's Map is not "
-      "identical to the Import's source Map.");
-    size_t numSameIDs = importer.getNumSameIDs();
+#ifdef HAVE_TPETRA_DEBUG
+    {
+      typedef DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> this_type;
+      const this_type* srcDistObj = dynamic_cast<const this_type*> (&source);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        srcDistObj != NULL && * (srcDistObj->getMap ()) != *importer.getSourceMap(),
+	std::invalid_argument, "doImport: The source is a DistObject, yet its "
+	"Map is not identical to the Import's source Map.");
+    }
+#endif // HAVE_TPETRA_DEBUG
+    size_t numSameIDs = importer.getNumSameIDs ();
 
-    typedef ArrayView<const LocalOrdinal> view_type;
+    typedef Teuchos::ArrayView<const LocalOrdinal> view_type;
     const view_type exportLIDs      = importer.getExportLIDs();
     const view_type remoteLIDs      = importer.getRemoteLIDs();
     const view_type permuteToLIDs   = importer.getPermuteToLIDs();
     const view_type permuteFromLIDs = importer.getPermuteFromLIDs();
-    this->doTransfer (A, CM, numSameIDs, permuteToLIDs, permuteFromLIDs,
+    this->doTransfer (source, CM, numSameIDs, permuteToLIDs, permuteFromLIDs,
                       remoteLIDs, exportLIDs, importer.getDistributor (),
                       DoForward);
   }
@@ -218,14 +225,24 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
-  doExport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A,
-            const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter,
+  doExport (const SrcDistObject& source,
+            const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter,
             CombineMode CM)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(   *getMap() != *exporter.getTargetMap(), std::invalid_argument,
-      "doExport: The target DistObject's Map is not identical to the Export's target Map.");
-    TEUCHOS_TEST_FOR_EXCEPTION( *A.getMap() != *exporter.getSourceMap(), std::invalid_argument,
-      "doExport: The source DistObject's Map is not identical to the Export's source Map.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      *getMap() != *exporter.getTargetMap(), std::invalid_argument,
+      "doExport: The target DistObject's Map is not identical to the Export's "
+      "target Map.");
+#ifdef HAVE_TPETRA_DEBUG
+    {
+      typedef DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> this_type;
+      const this_type* srcDistObj = dynamic_cast<const this_type*> (&source);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        srcDistObj != NULL && * (srcDistObj->getMap ()) != *exporter.getSourceMap(),
+	std::invalid_argument, "doExport: The source is a DistObject, yet its "
+	"Map is not identical to the Export's source Map.");
+    }
+#endif // HAVE_TPETRA_DEBUG
     size_t numSameIDs = exporter.getNumSameIDs();
 
     typedef ArrayView<const LocalOrdinal> view_type;
@@ -233,21 +250,32 @@ namespace Tpetra {
     view_type remoteLIDs      = exporter.getRemoteLIDs();
     view_type permuteToLIDs   = exporter.getPermuteToLIDs();
     view_type permuteFromLIDs = exporter.getPermuteFromLIDs();
-    doTransfer (A, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs,
+    doTransfer (source, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs,
                 exportLIDs, exporter.getDistributor (), DoForward);
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
-  doImport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A,
+  doImport (const SrcDistObject& source,
             const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter,
             CombineMode CM)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(  * getMap() != *exporter.getSourceMap(), std::invalid_argument,
-      "doImport (with Export): The target DistObject's Map is not identical to the Export's source Map.");
-    TEUCHOS_TEST_FOR_EXCEPTION( *A.getMap() != *exporter.getTargetMap(), std::invalid_argument,
-      "doImport (with Export): The source DistObject's Map is not identical to the Export's target Map.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      *getMap() != *exporter.getSourceMap(), std::invalid_argument,
+      "doImport (reverse mode): The target DistObject's Map is not identical "
+      "to the Export's source Map.");
+#ifdef HAVE_TPETRA_DEBUG
+    {
+      typedef DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> this_type;
+      const this_type* srcDistObj = dynamic_cast<const this_type*> (&source);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        srcDistObj != NULL && * (srcDistObj->getMap ()) != *exporter.getTargetMap(),
+	std::invalid_argument, 
+	"doImport (reverse mode): The source is a DistObject, yet its "
+	"Map is not identical to the Export's target Map.");
+    }
+#endif // HAVE_TPETRA_DEBUG
     size_t numSameIDs = exporter.getNumSameIDs();
 
     typedef ArrayView<const LocalOrdinal> view_type;
@@ -255,23 +283,32 @@ namespace Tpetra {
     view_type remoteLIDs      = exporter.getExportLIDs();
     view_type permuteToLIDs   = exporter.getPermuteFromLIDs();
     view_type permuteFromLIDs = exporter.getPermuteToLIDs();
-    doTransfer (A, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs,
+    doTransfer (source, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs,
                 exportLIDs, exporter.getDistributor (), DoReverse);
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
-  doExport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A,
+  doExport (const SrcDistObject& source,
             const Import<LocalOrdinal,GlobalOrdinal,Node> & importer,
             CombineMode CM)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION( *getMap() != *importer.getSourceMap(),
-      std::invalid_argument, "doExport (with Import): The target object's Map "
+    TEUCHOS_TEST_FOR_EXCEPTION( 
+      *getMap() != *importer.getSourceMap(), std::invalid_argument, 
+      "doExport (reverse mode): The target object's Map "
       "is not identical to the Import's source Map.");
-    TEUCHOS_TEST_FOR_EXCEPTION( *A.getMap() != *importer.getTargetMap(),
-      std::invalid_argument, "doExport (with Import): The source object's Map "
-      "is not identical to the Import's target Map.");
+#ifdef HAVE_TPETRA_DEBUG
+    {
+      typedef DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> this_type;
+      const this_type* srcDistObj = dynamic_cast<const this_type*> (&source);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        srcDistObj != NULL && * (srcDistObj->getMap ()) != *importer.getTargetMap(),
+	std::invalid_argument, 
+	"doExport (reverse mode): The source is a DistObject, yet its "
+	"Map is not identical to the Import's target Map.");
+    }
+#endif // HAVE_TPETRA_DEBUG
     size_t numSameIDs = importer.getNumSameIDs();
 
     typedef ArrayView<const LocalOrdinal> view_type;
@@ -279,7 +316,7 @@ namespace Tpetra {
     view_type remoteLIDs      = importer.getExportLIDs();
     view_type permuteToLIDs   = importer.getPermuteFromLIDs();
     view_type permuteFromLIDs = importer.getPermuteToLIDs();
-    doTransfer (A, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs,
+    doTransfer (source, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs,
                 exportLIDs, importer.getDistributor (), DoReverse);
   }
 
@@ -299,7 +336,7 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
-  doTransfer (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source,
+  doTransfer (const SrcDistObject& src,
               CombineMode CM,
               size_t numSameIDs,
               const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
@@ -314,7 +351,8 @@ namespace Tpetra {
     Teuchos::TimeMonitor doXferMon (*doXferTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
 
-    TEUCHOS_TEST_FOR_EXCEPTION( ! checkSizes(source), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( 
+      ! checkSizes (src), std::invalid_argument,
       "Tpetra::DistObject::doTransfer(): checkSizes() indicates that the "
       "destination object is not a legal target for redistribution from the "
       "source object.  This probably means that they do not have the same "
@@ -344,7 +382,11 @@ namespace Tpetra {
     // rather, local LIDs to send) and packet counts, createViews()
     // could create a "sparse view" that only brings in the necessary
     // data from device to host memory.
-    source.createViews();
+    typedef DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> this_type;
+    const this_type* srcDistObj = dynamic_cast<const this_type*> (&src);
+    if (srcDistObj != NULL) {
+      srcDistObj->createViews ();
+    }
 
     // Tell the target to create a view of its data.  Depending on
     // rwo, this could be a write-only view or a read-and-write view.
@@ -358,14 +400,14 @@ namespace Tpetra {
     // rather, local LIDs into which to receive) and packet counts,
     // createViewsNonConst() could create a "sparse view" that only
     // transfers the necessary data.
-    this->createViewsNonConst(rwo);
+    this->createViewsNonConst (rwo);
 
     if (numSameIDs + permuteToLIDs.size()) {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
       Teuchos::TimeMonitor copyAndPermuteMon (*copyAndPermuteTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
       // There is at least one GID to copy or permute.
-      copyAndPermute (source, numSameIDs, permuteToLIDs, permuteFromLIDs);
+      copyAndPermute (src, numSameIDs, permuteToLIDs, permuteFromLIDs);
     }
     // The method may return zero even if the implementation actually
     // does have a constant number of packets per LID.  However, if it
@@ -388,14 +430,17 @@ namespace Tpetra {
       // an output argument).  If there are, constantNumPackets will
       // come back nonzero.  Otherwise, the source will fill the
       // numExportPacketsPerLID_ array.
-      packAndPrepare (source, exportLIDs, exports_, numExportPacketsPerLID_(),
+      packAndPrepare (src, exportLIDs, exports_, numExportPacketsPerLID_ (),
                       constantNumPackets, distor);
     }
 
     // We don't need the source's data anymore, so it can let go of
-    // its views.  On a discrete accelerator, this frees host memory,
-    // since device memory has the "master" version of the data.
-    source.releaseViews();
+    // its views.  On an accelerator device with a separate memory
+    // space (like a GPU), this frees host memory, since device memory
+    // has the "master" version of the data.
+    if (srcDistObj != NULL) {
+      srcDistObj->releaseViews ();
+    }
 
     if (constantNumPackets != 0) {
       // There are a constant number of packets per element.  We
@@ -407,9 +452,24 @@ namespace Tpetra {
         imports_.resize (rbufLen);
       }
     }
-    if ((isDistributed() && revOp == DoReverse) ||
-        (source.isDistributed() && revOp == DoForward)) {
-      // call one of the doPostsAndWaits functions
+
+    // Do we need to do communication (via doPostsAndWaits)?
+    bool needCommunication = true;
+    if (revOp == DoReverse && ! isDistributed ()) {
+      needCommunication = false;
+    }
+    // FIXME (mfh 30 Jun 2013): Checking whether the source object is
+    // distributed requires a cast to DistObject.  If it's not a
+    // DistObject, then I'm not quite sure what to do.  Perhaps it
+    // would be more appropriate for SrcDistObject to have an
+    // isDistributed() method.  For now, I'll just assume that we need
+    // to do communication unless the cast succeeds and the source is
+    // not distributed.
+    else if (revOp == DoForward && srcDistObj != NULL && ! srcDistObj->isDistributed ()) {
+      needCommunication = false;
+    }
+      
+    if (needCommunication) {
       if (revOp == DoReverse) {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
         Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);

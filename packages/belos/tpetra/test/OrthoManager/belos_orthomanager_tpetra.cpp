@@ -53,177 +53,259 @@
 
 using std::endl;
 
-//
-// These typedefs make main() as generic as possible.
-//
-typedef double scalar_type;
-typedef int local_ordinal_type;
-typedef int global_ordinal_type;
+//////////////////////////////////////////////////////////////////////
+// Command-line arguments
+//////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-typedef Kokkos::TBBNode node_type;
-#else
-typedef Kokkos::SerialNode node_type;
-#endif // HAVE_KOKKOSCLASSIC_TBB
+// The name of the (Mat)OrthoManager subclass to instantiate.
+std::string orthoManName ("DGKS");
 
-typedef Teuchos::ScalarTraits<scalar_type> SCT;
-typedef SCT::magnitudeType magnitude_type;
-typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
-typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> OP;
-typedef Belos::MultiVecTraits<scalar_type, MV> MVT;
-typedef Belos::OperatorTraits<scalar_type, MV, OP> OPT;
-typedef Teuchos::SerialDenseMatrix<int, scalar_type> serial_matrix_type;
-typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
-typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> sparse_matrix_type;
+// For SimpleOrthoManager: the normalization method to use.
+std::string normalization ("CGS");
 
-/// \fn main
-/// \brief Test driver for (Mat)OrthoManager subclasses
-int 
-main (int argc, char *argv[]) 
+// Name of the Harwell-Boeing sparse matrix file from which to read
+// the inner product operator matrix.  If name is "" or not provided
+// at the command line, use the standard Euclidean inner product.
+std::string filename;
+
+bool verbose = false;
+bool debug = false;
+
+// The OrthoManager is tested with three different multivectors: S
+// (sizeS columns), X1 (sizeX1 columns), and X2 (sizeX2 columns).  The
+// values below are defaults and may be changed by the corresponding
+// command-line arguments.
+int sizeS  = 5;
+int sizeX1 = 11;
+int sizeX2 = 13;
+
+// Default _global_ number of rows.  The number of rows per MPI
+// process must be no less than max(sizeS, sizeX1, sizeX2).  To ensure
+// that the test always passes with default parameters, we must scale
+// below by the number of processes.  The default value below may be
+// changed by a command-line parameter with a corresponding name.
+int numRows = 100;
+
+// Set default values of command-line arguments,
+// and get their actual values from the command line.
+static void
+getCmdLineArgs (const Teuchos::Comm<int>& comm, int argc, char* argv[])
 {
-  using Belos::OrthoManager;
-  using Belos::OrthoManagerFactory;
-  using Belos::OutputManager;
   using Teuchos::CommandLineProcessor;
-  using Teuchos::ParameterList;
-  using Teuchos::parameterList;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
 
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &std::cout);
-  RCP<const Teuchos::Comm<int> > pComm = 
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  // Define a OrthoManagerFactory to use to get the names of valid
+  // orthogonalization manager types.  We won't use this factory to
+  // create them, so we should be able to pick the Scalar, MV, and
+  // OP template parameters as we wish.
+  typedef Belos::OrthoManagerFactory<double,
+    Tpetra::MultiVector<double>, Tpetra::Operator<double> > factory_type;
+  factory_type factory;
 
-  // This factory object knows how to make a (Mat)OrthoManager
-  // subclass, given a name for the subclass.  The name is not the
-  // same as the class' syntactic name: e.g., "TSQR" is the name of
-  // TsqrOrthoManager.
-  OrthoManagerFactory<scalar_type, MV, OP> factory;
+  ////////////////////////////////////////////////////////////////////
+  // Set default values of command-line arguments.
+  ////////////////////////////////////////////////////////////////////
 
   // The name of the (Mat)OrthoManager subclass to instantiate.
-  std::string orthoManName (factory.defaultName());
+  orthoManName = factory.defaultName ();
 
   // For SimpleOrthoManager: the normalization method to use.  Valid
   // values: "MGS", "CGS".
-  std::string normalization ("CGS");
+  normalization = "CGS";
 
   // Name of the Harwell-Boeing sparse matrix file from which to read
   // the inner product operator matrix.  If name is "" or not provided
   // at the command line, use the standard Euclidean inner product.
-  std::string filename;
+  filename = "";
 
-  bool verbose = false;
-  bool debug = false;
+  verbose = false;
+  debug = false;
 
   // The OrthoManager is tested with three different multivectors: S
   // (sizeS columns), X1 (sizeX1 columns), and X2 (sizeX2 columns).
   // The values below are defaults and may be changed by the
   // corresponding command-line arguments.
-  int sizeS  = 5;
-  int sizeX1 = 11;
-  int sizeX2 = 13;
+  sizeS  = 5;
+  sizeX1 = 11;
+  sizeX2 = 13;
 
   // Default _global_ number of rows.  The number of rows per MPI
   // process must be no less than max(sizeS, sizeX1, sizeX2).  To
   // ensure that the test always passes with default parameters, we
   // scale by the number of processes.  The default value below may be
   // changed by a command-line parameter with a corresponding name.
-  int numRows = 100 * pComm->getSize();
+  numRows = 100 * comm.getSize ();
 
-  CommandLineProcessor cmdp(false,true);
-  cmdp.setOption ("verbose", "quiet", &verbose,
-		  "Print messages and results.");
-  cmdp.setOption ("debug", "nodebug", &debug,
-		  "Print debugging information.");
+  ////////////////////////////////////////////////////////////////////
+  // Define command-line arguments and parse them.
+  ////////////////////////////////////////////////////////////////////
+
+  CommandLineProcessor cmdp (false, true);
+  cmdp.setOption ("verbose", "quiet", &verbose, "Print messages and results.");
+  cmdp.setOption ("debug", "nodebug", &debug, "Print debugging information.");
   cmdp.setOption ("filename", &filename,
-		  "Filename of a Harwell-Boeing sparse matrix, used as the "
-		  "inner product operator by the orthogonalization manager."
-		  "  If not provided, no matrix is read and the Euclidean "
-		  "inner product is used.");
+                  "Filename of a Harwell-Boeing sparse matrix, used as the "
+                  "inner product operator by the orthogonalization manager."
+                  "  If not provided, no matrix is read and the Euclidean "
+                  "inner product is used.  This is only valid for Scalar="
+                  "double.");
   {
     std::ostringstream os;
-    const int numValid = factory.numOrthoManagers();
+    const int numValid = factory.numOrthoManagers ();
     const bool plural = numValid > 1 || numValid == 0;
 
     os << "OrthoManager subclass to test.  There ";
     os << (plural ? "are " : "is ") << numValid << (plural ? "s: " : ": ");
     factory.printValidNames (os);
     os << ".";
-    cmdp.setOption ("ortho", &orthoManName, os.str().c_str());
+    cmdp.setOption ("ortho", &orthoManName, os.str ().c_str ());
   }
-  cmdp.setOption ("normalization", &normalization, 
-		  "For SimpleOrthoManager (--ortho=Simple): the normalization "
-		  "method to use.  Valid values: \"MGS\", \"CGS\".");
-  cmdp.setOption ("numRows", &numRows, 
-		  "Controls the number of rows of the test "
-		  "multivectors.  If an input matrix is given, this "
-		  "parameter\'s value is ignored, since the vectors must "
-		  "be commensurate with the dimensions of the matrix.");
+  cmdp.setOption ("normalization", &normalization,
+                  "For SimpleOrthoManager (--ortho=Simple): the normalization "
+                  "method to use.  Valid values: \"MGS\", \"CGS\".");
+  cmdp.setOption ("numRows", &numRows,
+                  "Controls the number of rows of the test "
+                  "multivectors.  If an input matrix is given, this "
+                  "parameter\'s value is ignored, since the vectors must "
+                  "be commensurate with the dimensions of the matrix.");
   cmdp.setOption ("sizeS", &sizeS, "Controls the number of columns of the "
-		  "input multivector.");
+                  "input multivector.");
   cmdp.setOption ("sizeX1", &sizeX1, "Controls the number of columns of the "
-		  "first basis.");
+                  "first basis.");
   cmdp.setOption ("sizeX2", &sizeX2, "Controls the number of columns of the "
-		  "second basis.  We require for simplicity of testing (the "
-		  "routines do not require it) that sizeX1 >= sizeX2.");
+                  "second basis.  We require for simplicity of testing (the "
+                  "routines do not require it) that sizeX1 >= sizeX2.");
   // Parse the command-line arguments.
   {
-    const CommandLineProcessor::EParseCommandLineReturn parseResult = cmdp.parse (argc,argv);
+    const CommandLineProcessor::EParseCommandLineReturn parseResult =
+      cmdp.parse (argc, argv);
     // If the caller asks us to print the documentation, or does not
-    // provide the name of an OrthoManager subclass, we let the "test"
-    // pass trivially.
-    if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED)
-      {
-	if (Teuchos::rank(*pComm) == 0)
-	  std::cout << "End Result: TEST PASSED" << endl;
-	return EXIT_SUCCESS;
-      }
-    TEUCHOS_TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL, 
-		       std::invalid_argument, 
-		       "Failed to parse command-line arguments");
+    // provide the name of an OrthoManager subclass, we just keep
+    // going.  Otherwise, we throw an exception.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      parseResult != CommandLineProcessor::PARSE_SUCCESSFUL,
+      std::invalid_argument,
+      "Failed to parse command-line arguments");
   }
   //
   // Validate command-line arguments
   //
-  TEUCHOS_TEST_FOR_EXCEPTION(numRows <= 0, std::invalid_argument, "numRows <= 0 is not allowed");
-  TEUCHOS_TEST_FOR_EXCEPTION(numRows <= sizeS + sizeX1 + sizeX2, std::invalid_argument, 
-		     "numRows <= sizeS + sizeX1 + sizeX2 is not allowed");
-    
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    numRows <= 0, std::invalid_argument, "numRows <= 0 is not allowed");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    numRows <= sizeS + sizeX1 + sizeX2, std::invalid_argument,
+    "numRows <= sizeS + sizeX1 + sizeX2 is not allowed");
+}
+
+// C++03 does not allow partial specialization of a template function,
+// so we have to declare a class to load the sparse matrix and create
+// the Map.
+
+// We don't have a generic Harwell-Boeing sparse file reader yet.  If
+// filename == "", then the user doesn't want to read in a sparse
+// matrix, so we can just create the appropriate Map and be done with
+// it.  Otherwise, raise an exception at run time.
+template<class ScalarType, class LocalOrdinalType, class GlobalOrdinalType, class NodeType>
+class SparseMatrixLoader {
+public:
+  typedef Tpetra::Map<LocalOrdinalType, GlobalOrdinalType, NodeType> map_type;
+  typedef Tpetra::CrsMatrix<ScalarType, LocalOrdinalType, GlobalOrdinalType, NodeType> matrix_type;
+
+  static void
+  load (Teuchos::RCP<map_type>& map,
+        Teuchos::RCP<matrix_type>& M,
+        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+        std::ostream& debugOut)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      filename != "", std::logic_error, "Sorry, reading in a Harwell-Boeing "
+      "sparse matrix file for ScalarType="
+      << Teuchos::TypeNameTraits<ScalarType>::name () << " is not yet "
+      "implemented.  This currently only works for ScalarType=double.");
+    const GlobalOrdinalType indexBase = 0;
+    map = Teuchos::rcp (new map_type (numRows, indexBase, comm, Tpetra::GloballyDistributed));
+    M = Teuchos::null;
+  }
+};
+
+// We _do_ know how to read a Harwell-Boeing sparse matrix file with Scalar=double.
+template<class LocalOrdinalType, class GlobalOrdinalType, class NodeType>
+class SparseMatrixLoader<double, LocalOrdinalType, GlobalOrdinalType, NodeType> {
+public:
+  typedef Tpetra::Map<LocalOrdinalType, GlobalOrdinalType, NodeType> map_type;
+  typedef Tpetra::CrsMatrix<double, LocalOrdinalType, GlobalOrdinalType, NodeType> matrix_type;
+
+  static void
+  load (Teuchos::RCP<map_type>& map,
+        Teuchos::RCP<matrix_type>& M,
+        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+        std::ostream& debugOut)
+  {
+    // If the sparse matrix is loaded successfully, this call will
+    // modify numRows to be the number of rows in the sparse matrix.
+    // Otherwise, it will leave numRows alone.
+    std::pair<Teuchos::RCP<map_type>, Teuchos::RCP<matrix_type> > results =
+      Belos::Test::loadSparseMatrix<LocalOrdinalType,
+      GlobalOrdinalType,
+      NodeType> (comm, filename, numRows, debugOut);
+    map = results.first;
+    M = results.second;
+  }
+};
+
+
+// Run the actual test.  The test has the same template parameters as
+// MultiVector.  The most interesting template parameters for this
+// test are ScalarType and NodeType.
+//
+// Return true if test passed, else return false.
+template<class ScalarType, class LocalOrdinalType, class GlobalOrdinalType, class NodeType>
+bool runTest (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+{
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  typedef ScalarType scalar_type;
+  typedef LocalOrdinalType local_ordinal_type;
+  typedef GlobalOrdinalType global_ordinal_type;
+  typedef NodeType node_type;
+
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
+  typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> OP;
+  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> crs_matrix_type;
+
   // Declare an output manager for handling local output.  Initialize,
   // using the caller's desired verbosity level.
   //
   // NOTE In Anasazi, this class is called BasicOutputManager.  In
   // Belos, this class is called OutputManager.  We should eventually
   // resolve the difference.
-  RCP<OutputManager<scalar_type> > outMan = 
+  RCP<Belos::OutputManager<scalar_type> > outMan =
     Belos::Test::makeOutputManager<scalar_type> (verbose, debug);
 
   // Stream for debug output.  If debug output is not enabled, then
   // this stream doesn't print anything sent to it (it's a "black
   // hole" stream).
-  std::ostream& debugOut = outMan->stream(Belos::Debug);
+  std::ostream& debugOut = outMan->stream (Belos::Debug);
   Belos::Test::printVersionInfo (debugOut);
 
   // Load the inner product operator matrix from the given filename.
   // If filename == "", use the identity matrix as the inner product
   // operator (the Euclidean inner product), and leave M as
-  // Teuchos::null.  Also return an appropriate Map (which will
-  // always be initialized; it should never be Teuchos::null).
+  // Teuchos::null.  Also return an appropriate Map (which will always
+  // be initialized, even if filename == ""; it should never be
+  // Teuchos::null).
   RCP<map_type> map;
-  RCP<sparse_matrix_type> M; 
+  RCP<crs_matrix_type> M;
   {
-    using Belos::Test::loadSparseMatrix;
-    // If the sparse matrix is loaded successfully, this call will
-    // modify numRows to be the number of rows in the sparse matrix.
-    // Otherwise, it will leave numRows alone.
-    std::pair<RCP<map_type>, RCP<sparse_matrix_type> > results = 
-      loadSparseMatrix<local_ordinal_type, global_ordinal_type, node_type> (pComm, filename, numRows, debugOut);
-    map = results.first;
-    M = results.second;
+    typedef SparseMatrixLoader<scalar_type, local_ordinal_type,
+      global_ordinal_type, node_type> loader_type;
+    loader_type::load (map, M, comm, debugOut);
   }
-  TEUCHOS_TEST_FOR_EXCEPTION(map.is_null(), std::runtime_error,
-		     "Error: (Mat)OrthoManager test code failed to "
-		     "initialize the Map");
+  TEUCHOS_TEST_FOR_EXCEPTION(map.is_null (), std::runtime_error,
+    "(Mat)OrthoManager test code failed to initialize the Map.");
   {
     // The maximum number of columns that will be passed to a
     // MatOrthoManager's normalize() routine.  Some MatOrthoManager
@@ -238,30 +320,33 @@ main (int argc, char *argv[])
     // getNodeNumElements() returns a size_t, which is unsigned, and
     // you shouldn't compare signed and unsigned values.  This is why
     // we make maxNormalizeNumCols a size_t as well.
-    if (map->getNodeNumElements() < maxNormalizeNumCols)
-      {
-	std::ostringstream os;
-	os << "The number of elements on this process " << pComm->getRank() 
-	   << " is too small for the number of columns that you want to test."
-	   << "  There are " << map->getNodeNumElements() << " elements on "
-	  "this process, but the normalize() method of the MatOrthoManager "
-	  "subclass will need to process a multivector with " 
-	   << maxNormalizeNumCols << " columns.  Not all MatOrthoManager "
-	  "subclasses can handle a local row block with fewer rows than "
-	  "columns.";
-	throw std::invalid_argument(os.str());
-      }
+    if (map->getNodeNumElements () < maxNormalizeNumCols) {
+      std::ostringstream os;
+      os << "The number of elements on this process " << comm->getRank()
+         << " is too small for the number of columns that you want to test."
+         << "  There are " << map->getNodeNumElements() << " elements on "
+        "this process, but the normalize() method of the MatOrthoManager "
+        "subclass will need to process a multivector with "
+         << maxNormalizeNumCols << " columns.  Not all MatOrthoManager "
+        "subclasses can handle a local row block with fewer rows than "
+        "columns.";
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str ());
+    }
   }
+
+  // This factory object knows how to make a (Mat)OrthoManager
+  // subclass, given a name for the subclass and its parameters.
+  Belos::OrthoManagerFactory<scalar_type, MV, OP> factory;
 
   // Using the factory object, instantiate the specified OrthoManager
   // subclass to be tested.  Specify "default" parameters (which
   // should favor accuracy over performance), but override the default
   // parameters to get the desired normalization method for
   // SimpleOrthoManaager.
-  RCP<OrthoManager<scalar_type, MV> > orthoMan;
+  RCP<Belos::OrthoManager<scalar_type, MV> > orthoMan;
   {
     std::string label (orthoManName);
-    RCP<ParameterList> params = 
+    RCP<ParameterList> params =
       parameterList (*(factory.getDefaultParameters (orthoManName)));
     if (orthoManName == "Simple") {
       params->set ("Normalization", normalization);
@@ -288,30 +373,82 @@ main (int argc, char *argv[])
   int numFailed = 0;
   {
     typedef Belos::Test::OrthoManagerTester<scalar_type, MV> tester_type;
-    numFailed = tester_type::runTests (orthoMan, isRankRevealing, S, 
-				       sizeX1, sizeX2, outMan);
+    numFailed = tester_type::runTests (orthoMan, isRankRevealing, S,
+                                       sizeX1, sizeX2, outMan);
   }
 
-  // Only Rank 0 gets to write to cout.  The other processes dump
-  // output to a black hole.
-  //std::ostream& finalOut = (Teuchos::rank(*pComm) == 0) ? std::cout : Teuchos::oblackholestream;
+  if (numFailed != 0) {
+    outMan->stream (Belos::Errors) << numFailed << " errors." << endl;
+    return false;
+  } else {
+    return true;
+  }
+}
 
-  if (numFailed != 0)
-    {
-      outMan->stream(Belos::Errors) << numFailed << " errors." << endl;
+int
+main (int argc, char *argv[])
+{
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  bool success = true;
 
+  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &std::cout);
+  RCP<const Teuchos::Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+
+  // Get values of command-line arguments.
+  getCmdLineArgs (*comm, argc, argv);
+
+  typedef int local_ordinal_type;
+  typedef int global_ordinal_type;
+#ifdef HAVE_KOKKOSCLASSIC_TBB
+  typedef Kokkos::TBBNode node_type;
+#else
+  typedef Kokkos::SerialNode node_type;
+#endif // HAVE_KOKKOSCLASSIC_TBB
+
+  {
+    typedef double scalar_type;
+    success = runTest<scalar_type, local_ordinal_type,
+      global_ordinal_type, node_type> (comm);
+    if (! success) {
       // The Trilinos test framework depends on seeing this message,
       // so don't rely on the OutputManager to report it correctly.
-      if (Teuchos::rank(*pComm) == 0)
-	std::cout << "End Result: TEST FAILED" << endl;	
+      if (comm->getRank () == 0) {
+        std::cout << "End Result: TEST FAILED" << endl;
+      }
       return EXIT_FAILURE;
     }
-  else 
-    {
-      if (Teuchos::rank(*pComm) == 0)
-	std::cout << "End Result: TEST PASSED" << endl;
+    else {
+      if (comm->getRank () == 0) {
+        std::cout << "End Result: TEST PASSED" << endl;
+      }
       return EXIT_SUCCESS;
     }
+  }
+#if defined(HAVE_BELOS_COMPLEX) && defined(HAVE_TPETRA_COMPLEX)
+  {
+    typedef std::complex<double> scalar_type;
+    success = runTest<scalar_type, local_ordinal_type,
+      global_ordinal_type, node_type> (comm);
+    if (! success) {
+      // The Trilinos test framework depends on seeing this message,
+      // so don't rely on the OutputManager to report it correctly.
+      if (comm->getRank () == 0) {
+        std::cout << "End Result: TEST FAILED" << endl;
+      }
+      return EXIT_FAILURE;
+    }
+    else {
+      if (comm->getRank () == 0) {
+        std::cout << "End Result: TEST PASSED" << endl;
+      }
+      return EXIT_SUCCESS;
+    }
+  }
+#endif // defined(HAVE_BELOS_COMPLEX) && defined(HAVE_TPETRA_COMPLEX)
 }
 
 

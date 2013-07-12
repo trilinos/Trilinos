@@ -14,8 +14,6 @@
 
 #include <Teuchos_RCP.hpp>
 
-using namespace Intrepid;
-
 namespace stk
 {
   namespace percept

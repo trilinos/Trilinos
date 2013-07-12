@@ -323,4 +323,37 @@ namespace MueLu {
     if(B->IsView("stridedMaps")) C->CreateView("stridedMaps", B);
     ///////////////////////// EXPERIMENTAL
   }
+
+  RCP<Xpetra::MultiVector<double,int,int> > Utils2<double,int,int>::Read(const std::string& fileName, const RCP<const Map>& map) {
+    Xpetra::UnderlyingLib lib = map->lib();
+
+    if (lib == Xpetra::UseEpetra) {
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
+      Epetra_MultiVector * MV;
+      EpetraExt::MatrixMarketFileToMultiVector(fileName.c_str(), toEpetra(map), MV);
+      return Xpetra::toXpetra(rcp(MV));
+#else
+      throw Exceptions::RuntimeError("MueLu has not been compiled with Epetra and EpetraExt support.");
+#endif
+    } else if (lib == Xpetra::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
+      typedef Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>                sparse_matrix_type;
+      typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>  reader_type;
+      typedef Tpetra::Map<LO,GO,NO>                             map_type;
+      typedef Tpetra::MultiVector<SC,LO,GO,NO>                  multivector_type;
+
+      RCP<const map_type>   temp = toTpetra(map);
+      RCP<multivector_type> TMV  = reader_type::readDenseFile(fileName,map->getComm(),map->getNode(),temp);
+      RCP<MultiVector>      rmv  = Xpetra::toXpetra(TMV);
+      return rmv;
+#else
+      throw Exceptions::RuntimeError("MueLu has not been compiled with Tpetra support.");
+#endif
+    } else {
+      throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
+    }
+
+    return Teuchos::null;
+  }
+
 }

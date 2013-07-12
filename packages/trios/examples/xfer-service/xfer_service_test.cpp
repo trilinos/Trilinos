@@ -153,16 +153,18 @@ int main(int argc, char *argv[])
             "read-encode-sync", "read-encode-async",
             "read-rdma-sync", "read-rdma-async"};
 
-    const int num_nssi_transports = 4;
+    const int num_nssi_transports = 5;
     const int nssi_transport_vals[] = {
             NSSI_RPC_PTL,
             NSSI_RPC_IB,
             NSSI_RPC_GEMINI,
+            NSSI_RPC_BGPDCMF,
             NSSI_RPC_MPI};
     const char * nssi_transport_names[] = {
             "ptl",
             "ib",
             "gni",
+            "bgpdcmf",
             "mpi"
     };
 
@@ -344,6 +346,12 @@ int main(int argc, char *argv[])
 
     log_debug(debug_level, "%d: Starting xfer-service test", rank);
 
+#ifdef TRIOS_ENABLE_COMMSPLITTER
+    if (args.transport == NSSI_RPC_MPI) {
+        MPI_Pcontrol(0);
+    }
+#endif
+
     /**
      * Since this test can be run as a server, client, or both, we need to play some fancy
      * MPI games to get the communicators working correctly.  If we're executing as both
@@ -370,15 +378,19 @@ int main(int argc, char *argv[])
         MPI_Comm_split(MPI_COMM_WORLD, color, rank, &comm);
     }
     else {
-        if (args.client_flag)
+        if (args.client_flag) {
             color=1;
-        else if (args.server_flag)
+            log_debug(debug_level, "rank=%d is a client", rank);
+        }
+        else if (args.server_flag) {
             color=0;
+            log_debug(debug_level, "rank=%d is a server", rank);
+        }
         else {
             log_error(debug_level, "Must be either a client or a server");
             MPI_Abort(MPI_COMM_WORLD, -1);
         }
-        MPI_Comm_dup(MPI_COMM_WORLD, &comm);
+        MPI_Comm_split(MPI_COMM_WORLD, color, rank, &comm);
     }
 
     MPI_Comm_rank(comm, &splitrank);

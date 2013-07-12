@@ -85,7 +85,7 @@ Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk::ParallelMachine c
    meshFact.setParameterList(Teuchos::rcpFromRef(pl));
    
    Teuchos::RCP<panzer_stk::STK_Interface> mesh = meshFact.buildMesh(comm);
-   return Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+   return Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 }
 
 template <typename IntrepidType>
@@ -465,7 +465,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager,getDofCoords)
    TEUCHOS_ASSERT(numProcs==2);
    // build DOF manager
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,2,1);
-   RCP<const panzer_stk::STKConnManager> stkManager = rcp_dynamic_cast<panzer_stk::STKConnManager>(connManager);
+   RCP<const panzer_stk::STKConnManager<int> > stkManager = rcp_dynamic_cast<panzer_stk::STKConnManager<int> >(connManager);
    RCP<panzer_stk::STK_Interface> meshDB = stkManager->getSTKInterface();
    meshDB->print(out);
 

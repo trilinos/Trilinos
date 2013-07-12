@@ -174,6 +174,28 @@ template<typename T>
 Tensor<T>
 piola_inverse(Tensor<T> const & F, Tensor<T> const & P);
 
+///
+/// Check strict ellipticity condition for 4th-order tensor.
+/// Assume A has major symmetries.
+/// \param A 4th-order tensor is transformed into 2nd-order
+/// tensor.
+/// \return whether the smallest eigenvalue of the 2nd-order
+/// tensor is less or equal than zero.
+///
+template<typename T>
+bool
+check_strict_ellipticity(Tensor4<T> const & A);
+
+///
+/// Check strong ellipticity condition for 4th-order tensor.
+/// Assume A has major symmetries.
+/// \param A 4th-order tensor.
+/// \return whether \f$ (m\odot n):A:(m\odot n) > 0 \forall m,n \neq 0 \f$.
+///
+template<typename T>
+std::pair<bool, Vector<T> >
+check_strong_ellipticity(Tensor4<T> const & A);
+
 } // namespace Intrepid
 
 #include "Intrepid_MiniTensor_Mechanics.i.h"

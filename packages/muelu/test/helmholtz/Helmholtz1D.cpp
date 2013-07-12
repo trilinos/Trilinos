@@ -138,8 +138,8 @@ int main(int argc, char *argv[]) {
   Teuchos::ParameterList matrixParams = matrixParameters.GetParameterList();
 
   // Build problem
-  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParams);
+  RCP<Galeri::Xpetra::Problem_Helmholtz<Map,CrsMatrixWrap,MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem_Helmholtz<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParams);
   RCP<Matrix> A = Pr->BuildMatrix();
 
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(map,1);

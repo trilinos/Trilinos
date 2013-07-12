@@ -47,9 +47,14 @@
 #ifndef TPETRA_MAP_DEF_HPP
 #define TPETRA_MAP_DEF_HPP
 
+#include <Tpetra_Directory.hpp> // must include for implicit instantiation to work
+#ifdef HAVE_TPETRA_FIXED_HASH_TABLE
+#  include <Tpetra_Details_FixedHashTable.hpp>
+#else
+#  include <Tpetra_HashTable.hpp>
+#endif // HAVE_TPETRA_FIXED_HASH_TABLE
+#include <Tpetra_Util.hpp>
 #include <Teuchos_as.hpp>
-#include "Tpetra_Directory.hpp" // must include for implicit instantiation to work
-#include "Tpetra_Util.hpp"
 #include <stdexcept>
 
 #ifdef DOXYGEN_USE_ONLY
@@ -352,6 +357,7 @@ namespace Tpetra {
     uniform_ (false)
   {
     using Teuchos::arcp;
+    using Teuchos::ArrayView;
     using Teuchos::as;
     using Teuchos::broadcast;
     using Teuchos::outArg;
@@ -364,6 +370,7 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef global_size_t GST;
+    typedef typename ArrayView<const GO>::size_type size_type;
     const GST GSTI = Teuchos::OrdinalTraits<GST>::invalid ();
 
     // The user has specified the distribution of elements over the
@@ -467,6 +474,67 @@ namespace Tpetra {
 
     minMyGID_ = indexBase_;
     maxMyGID_ = indexBase_;
+#ifdef HAVE_TPETRA_FIXED_HASH_TABLE
+    if (numLocalElements_ > 0) {
+      // Find contiguous GID range, with the restriction that the
+      // beginning of the range starts with the first entry.  While
+      // doing so, fill in the LID -> GID table.
+      lgMap_ = arcp<GO> (numLocalElements_);
+      firstContiguousGID_ = entryList[0];
+      lastContiguousGID_ = firstContiguousGID_+1;
+      lgMap_[0] = firstContiguousGID_;
+      size_t i = 1;
+      for ( ; i < numLocalElements_; ++i) {
+        const GO curGid = entryList[i];
+        const LO curLid = as<LO> (i);
+
+        if (lastContiguousGID_ != curGid) break;
+
+        // Add the entry to the LID->GID table only after we know that
+        // the current GID is in the initial contiguous sequence, so
+        // that we don't repeat adding it in the first iteration of
+        // the loop below over the remaining noncontiguous GIDs.
+        lgMap_[curLid] = curGid;
+        ++lastContiguousGID_;
+      }
+      --lastContiguousGID_;
+
+      // [firstContiguousGID_, lastContigousGID_] is the initial
+      // sequence of contiguous GIDs.  We can start the min and max
+      // GID using this range.
+      minMyGID_ = firstContiguousGID_;
+      maxMyGID_ = lastContiguousGID_;
+
+      // Compute the GID -> LID lookup table, _not_ including the
+      // initial sequence of contiguous GIDs.
+      ArrayView<const GO> nonContigEntries =
+        entryList (as<size_type> (i), entryList.size () - as<size_type> (i));
+      glMap_ = rcp (new global_to_local_table_type (nonContigEntries, as<LO> (i)));
+
+      for ( ; i < numLocalElements_; ++i) {
+        const GO curGid = entryList[i];
+        const LO curLid = as<LO> (i);
+        lgMap_[curLid] = curGid; // LID -> GID table
+
+        // While iterating through entryList, we compute its
+        // (process-local) min and max elements.
+        if (curGid < minMyGID_) {
+          minMyGID_ = curGid;
+        }
+        if (curGid > maxMyGID_) {
+          maxMyGID_ = curGid;
+        }
+      }
+    }
+    else {
+      // This insures tests for GIDs in the range
+      // [firstContiguousGID_, lastContiguousGID_] fail for processes
+      // with no local elements.
+      firstContiguousGID_ = indexBase_+1;
+      lastContiguousGID_ = indexBase_;
+      glMap_ = rcp (new global_to_local_table_type (entryList)); // is empty
+    }
+#else
     glMap_ = rcp (new global_to_local_table_type (numLocalElements_));
     if (numLocalElements_ > 0) {
       lgMap_ = arcp<GO> (numLocalElements_);
@@ -490,8 +558,8 @@ namespace Tpetra {
       }
     }
 
-    // Find contiguous GID range, with the restriction that the beginning
-    // of the range starts with the first entry
+    // Find contiguous GID range, with the restriction that the
+    // beginning of the range starts with the first entry.
     if (numLocalElements_ > 0) {
       firstContiguousGID_ = lgMap_[as<LO>(0)];
       lastContiguousGID_ = firstContiguousGID_+1;
@@ -505,10 +573,11 @@ namespace Tpetra {
     else {
       // This insures tests for GIDs in the range
       // [firstContiguousGID_, lastContiguousGID_] fail for processes
-      // with no local elements
+      // with no local elements.
       firstContiguousGID_ = indexBase_+1;
       lastContiguousGID_ = indexBase_;
     }
+#endif // HAVE_TPETRA_FIXED_HASH_TABLE
 
     // Compute the min and max of all processes' GIDs.  If
     // numLocalElements_ == 0 on this process, minMyGID_ and maxMyGID_
@@ -593,11 +662,9 @@ namespace Tpetra {
       return Teuchos::as<LocalOrdinal>(globalIndex - firstContiguousGID_);
     }
     else {
-      LocalOrdinal i = glMap_->get(globalIndex);
-      if (i == -1) {
-        return Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
-      }
-      return i;
+      // This returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid()
+      // if the given global index is not in the table.
+      return glMap_->get (globalIndex);
     }
   }
 
@@ -653,11 +720,22 @@ namespace Tpetra {
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
 
+#ifdef HAVE_TPETRA_DEBUG
+    // In a debug build, bail out with an exception if the two
+    // communicators don't have the same numbers of processes.
+    // This is explicitly forbidden by the public documentation.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      this->getComm ()->getSize () != map.getComm ()->getSize (),
+      std::invalid_argument, "Tpetra::Map::isCompatibile: The two Maps' "
+      "communicators must have the same numbers of processes in order to call "
+      "this method.");
+#endif // HAVE_TPETRA_DEBUG
+
     // Do both Maps have the same number of elements, both globally
     // and on the calling process?
     int locallyCompat = 0;
     if (getGlobalNumElements() != map.getGlobalNumElements() ||
-          getNodeNumElements() != map.getNodeNumElements()) {
+        getNodeNumElements() != map.getNodeNumElements()) {
       locallyCompat = 0; // NOT compatible on this process
     }
     else {
@@ -678,70 +756,86 @@ namespace Tpetra {
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
 
+#ifdef HAVE_TPETRA_DEBUG
+    // In a debug build, bail out with an exception if the two
+    // communicators don't have the same numbers of processes.
+    // This is explicitly forbidden by the public documentation.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      this->getComm ()->getSize () != map.getComm ()->getSize (),
+      std::invalid_argument, "Tpetra::Map::isSameAs: The two Maps' communicators"
+      "must have the same numbers of processes in order to call this method.");
+#endif // HAVE_TPETRA_DEBUG
+
     if (this == &map) {
-      // we assume that this is globally coherent
-      // if they are the same object, then they are equivalent maps
+      // If the input Map is the same object (has the same address) as
+      // *this, then the Maps are the same.  We assume that if this
+      // holds on one process, then it holds on all processes.
       return true;
     }
 
-    // check all other globally coherent properties
-    // if they do not share each of these properties, then they cannot be
-    // equivalent maps
-    if ( (getMinAllGlobalIndex()   != map.getMinAllGlobalIndex())   ||
-         (getMaxAllGlobalIndex()   != map.getMaxAllGlobalIndex())   ||
-         (getGlobalNumElements() != map.getGlobalNumElements()) ||
-         (isDistributed()       != map.isDistributed())       ||
-         (getIndexBase()        != map.getIndexBase())         )  {
+    // Check all other known properties that are the same on all
+    // processes.  If the two Maps do not share any of these
+    // properties, then they cannot be the same.
+    if (getMinAllGlobalIndex () != map.getMinAllGlobalIndex () ||
+        getMaxAllGlobalIndex () != map.getMaxAllGlobalIndex () ||
+        getGlobalNumElements () != map.getGlobalNumElements () ||
+        isDistributed () != map.isDistributed () ||
+        getIndexBase () != map.getIndexBase ()) {
       return false;
     }
 
     // If we get this far, we need to check local properties and the
-    // communicate same-ness across all nodes
+    // communicate same-ness across all processes
     // we prefer local work over communication, ergo, we will perform all
     // comparisons and conduct a single communication
     int isSame_lcl = 1;
 
-    // check number of entries owned by this node
-    if (getNodeNumElements() != map.getNodeNumElements()) {
+    // The two communicators must have the same number of processes,
+    // with process ranks occurring in the same order.
+    if (! Details::congruent (*comm_, * (map.getComm ()))) {
       isSame_lcl = 0;
     }
 
-    // check the identity of the entries owned by this node
-    // only do this if we haven't already determined not-same-ness
+    // Check the number of entries owned by this process.
+    if (getNodeNumElements () != map.getNodeNumElements ()) {
+      isSame_lcl = 0;
+    }
+
+    // Check that the entries owned by this process in both Maps are
+    // the same.  Only do this if we haven't already determined that
+    // the Maps aren't the same.
     if (isSame_lcl == 1) {
-      // if they are contiguous, we can check the ranges easily
-      // if they are not contiguous, we must check the individual LID -> GID mappings
-      // the latter approach is valid in either case, but the former is faster
-      if (isContiguous() && map.isContiguous()) {
-        if ( (getMinGlobalIndex() != map.getMinGlobalIndex()) ||
-             (getMaxGlobalIndex() != map.getMaxGlobalIndex()) ){
+      // If the Maps are contiguous, we can check the ranges easily by
+      // looking at the min and max GID on this process.  Otherwise,
+      // we'll compare their GID lists.
+      if (isContiguous () && map.isContiguous ()) {
+        if (getMinGlobalIndex () != map.getMinGlobalIndex () ||
+            getMaxGlobalIndex() != map.getMaxGlobalIndex()) {
           isSame_lcl = 0;
         }
       }
       else {
-        // FIXME (mfh 20 Feb 2013) Calling getNodeElementList() is
-        // unnecessary if the Map has contiguous GIDs.  It also forces
-        // the Map to create and cache the GID list.
-
-        /* Note: std::equal requires that the latter range is as large as the former.
-         * We know the ranges have equal length, because they have the same number of
-         * local entries.
-         * However, we only know that lgMap_ has been filled for the Map that is not
-         * contiguous (one is potentially contiguous.) Calling getNodeElementList()
-         * will create it. */
-        Teuchos::ArrayView<const GlobalOrdinal> ge1, ge2;
-        ge1 =     getNodeElementList();
-        ge2 = map.getNodeElementList();
-        if (! std::equal (ge1.begin(), ge1.end(), ge2.begin())) {
+        // We could be more clever here to avoid calling
+        // getNodeElementList() on either of the two Maps has
+        // contiguous GIDs.  For now, we call it regardless of whether
+        // the Map is contiguous, as long as one of the Maps is not
+        // contiguous.
+        //
+        // std::equal requires that the latter range is as large as
+        // the former.  We know the ranges have equal length, because
+        // they have the same number of local entries.
+        Teuchos::ArrayView<const GlobalOrdinal> ge1 =     getNodeElementList ();
+        Teuchos::ArrayView<const GlobalOrdinal> ge2 = map.getNodeElementList ();
+        if (! std::equal (ge1.begin (), ge1.end (), ge2.begin ())) {
           isSame_lcl = 0;
         }
       }
     }
 
-    // now, determine if we detected not-same-ness on any node
-    int isSame_gbl;
+    // Return true if and only if all processes report "same-ness."
+    int isSame_gbl = 0;
     reduceAll<int, int> (*comm_, REDUCE_MIN, isSame_lcl, outArg (isSame_gbl));
-    return (isSame_gbl == 1);
+    return isSame_gbl == 1;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

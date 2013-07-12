@@ -307,7 +307,7 @@ namespace MueLu {
 
           // Check that the number of local coordinates is consistent with the #rows in A
           TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements()/blkSize != Coords->getLocalLength(), Exceptions::Incompatible,
-                                     "Coordinate vector length (" << Coords->getLocalLength() << ") is incompatible with number of rows in A (" << A->getRowMap() << ") by modulo block size ("<< blkSize <<").");
+                                     "Coordinate vector length (" << Coords->getLocalLength() << ") is incompatible with number of rows in A (" << A->getRowMap()->getNodeNumElements() << ") by modulo block size ("<< blkSize <<").");
 
           const RCP<const Map> colMap = A->getColMap();
           RCP<const Map> uniqueMap, nonUniqueMap;
@@ -326,7 +326,7 @@ namespace MueLu {
             std::set<GO>        filter;        // TODO:  replace std::set with an object having faster lookup/insert, hashtable for instance
 
             LO numRows = 0;
-            for (LO id = 0; id < static_cast<LO>(numElements); id++) {
+            for (LO id = 0; id < Teuchos::as<LO>(numElements); id++) {
               GO amalgID = (elementAList[id] - indexBase)/blkSize + indexBase;
               if (filter.find(amalgID) == filter.end()) {
                 elementList[numRows++] = amalgID;

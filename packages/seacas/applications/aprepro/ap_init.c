@@ -127,7 +127,9 @@ struct init arith_fncts[] =
   {0, 0, 0, 0}				/* Last line must be 0, 0 */
 };
 
-extern char *do_tolower(char *string), *do_toupper(char *string), *do_tostring(double x),
+extern char *do_switch(double x), *do_case(double x),
+  *do_if(double x), *do_notif(double x), *do_elseif(double x),
+  *do_tolower(char *string), *do_toupper(char *string), *do_tostring(double x),
   *do_output(char *filename), *do_get_word(double n, char *string, char *delm),
   *do_execute(char *string), *do_getenv(char *env), *do_error(char *error_string),
   *do_rescan(char *string),  *do_Units(char *type), *do_dumpsym(void), *do_dumpfunc(void), *do_help(void),
@@ -141,12 +143,20 @@ extern char *do_tolower(char *string), *do_toupper(char *string), *do_tostring(d
 
 struct str_init string_fncts[] =
 {
+  {"switch",         do_switch,      "switch(x)", "Switch statement. Select from the following case statements which matches 'x' and execute that one. End with endswitch"},
+  {"case",           do_case,        "case(x)", "Switch statement. A case used in a containing switch statement."},
+  {"if",             do_if,          "if(x)", "Handles the if statements. x can be any valid expression; nonzero is true"},
+  {"elseif",         do_elseif,      "elseif(x)", "Handles the if statements. x can be any valid expression; nonzero is true"},
+  {"ifdef",          do_if,          "ifdef(x)", "Handles the if statements. x can be any valid expression; nonzero is true (deprecated, use if)"},
+  {"Ifdef",          do_if,          "Ifdef(x)", "Handles the if statements. x can be any valid expression; nonzero is true (deprecated, use if)"},
+  {"ifndef",         do_notif,       "ifndef(x)", "Handles the if statements. x can be any valid expression; nonzero is true (deprecated, use if)"},
+  {"Ifndef",         do_notif,       "Ifndef(x)", "Handles the if statements. x can be any valid expression; nonzero is true (deprecated, use if)"},
   {"tolower",        do_tolower,     "tolower(svar)","Translates all uppercase characters in svar to lowercase. It modifies svar and returns the resulting string.  "},
   {"toupper",        do_toupper,     "toupper(svar)","Translates all lowercase character in svar to uppercase. It modifies svar and returns the resulting string. "},
   {"tostring",       do_tostring,    "tostring(x)","Returns a string representation of the numerical varaible x. The variable x is unchanged. "},
   {"to_lower",       do_tolower,     "to_lower(svar)","Translates all uppercase characters in svar to lowercase. It modifies svar and returns the resulting string.  "},
   {"to_upper",       do_toupper,     "toupper(svar)","Translates all lowercase character in svar to uppercase. It modifies svar and returns the resulting string. "},
-  {"to_string",      do_tostring,    "tostring(x)","Returns a string representation of the numerical varaible x. The variable x is unchanged. "},
+  {"to_string",      do_tostring,    "tostring(x)","Returns a string representation of the numerical variable x. The variable x is unchanged. "},
   {"getenv",         do_getenv,      "getenv(svar)","Returns a string containing the value of the environment variable svar. If the environment variable is not defined, an empty string is returned. "},
   {"error",          do_error,       "error(svar)","Outputs the string svar to stderr and then terminates the code with an error exit status."},
   {"output",         do_output,      "output(filename)","Creates the file specified by filename and sends all subsequent output from aprepro to that file."},

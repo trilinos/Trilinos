@@ -101,6 +101,17 @@ EpetraLinearObjFactory<Traits,LocalOrdinalT>::EpetraLinearObjFactory(const Teuch
 }
 
 template <typename Traits,typename LocalOrdinalT>
+EpetraLinearObjFactory<Traits,LocalOrdinalT>::EpetraLinearObjFactory(const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider)
+   : comm_(Teuchos::null), gidProvider_(gidProvider), useDiscreteAdjoint_(false)
+{ 
+   hasColProvider_ = colGidProvider_!=Teuchos::null;
+
+   // build and register the gather/scatter evaluators with 
+   // the base class.
+   this->buildGatherScatterEvaluators(*this);
+}
+
+template <typename Traits,typename LocalOrdinalT>
 EpetraLinearObjFactory<Traits,LocalOrdinalT>::~EpetraLinearObjFactory()
 { }
 
@@ -347,11 +358,15 @@ void EpetraLinearObjFactory<Traits,LocalOrdinalT>::initializeGhostedContainer(in
    if((mem & ELOC::DxDt) == ELOC::DxDt)
       loc.set_dxdt(getGhostedEpetraVector());
     
-   if((mem & ELOC::F) == ELOC::F)
+   if((mem & ELOC::F) == ELOC::F) {
       loc.set_f(getGhostedEpetraVector());
+      loc.setRequiresDirichletAdjustment(true);
+   }
 
-   if((mem & ELOC::Mat) == ELOC::Mat)
+   if((mem & ELOC::Mat) == ELOC::Mat) {
       loc.set_A(getGhostedEpetraMatrix());
+      loc.setRequiresDirichletAdjustment(true);
+   }
 }
 
 // "Get" functions

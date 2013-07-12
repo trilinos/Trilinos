@@ -7,20 +7,33 @@
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
@@ -78,30 +91,38 @@ void Diagonal<MatrixType>::setParameters(const Teuchos::ParameterList& /*params*
 template<class MatrixType>
 void Diagonal<MatrixType>::initialize()
 {
-  if (isInitialized_ == true) return;
+  if (isInitialized_) return;
+
+  // Precompute diagonal offsets so we don't have to search for them later.
+  if (matrix_ != Teuchos::null) {
+    matrix_->getLocalDiagOffsets(offsets_);
+  }
+
   isInitialized_ = true;
   ++numInitialize_;
-  //nothing to do
 }
 
 template<class MatrixType>
 void Diagonal<MatrixType>::compute()
 {
-  initialize();
-  ++numCompute_;
+  if (!isInitialized_) initialize();
 
-  if (isComputed_ == true) return;
+  isComputed_ = false;
 
-  isComputed_ = true;
+  if (matrix_ == Teuchos::null) {
+    isComputed_ = true;
+    return;
+  }
 
-  if (matrix_ == Teuchos::null) return;
-
+  // Get the diagonal entries using the precomputed offsets and invert them.
   Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmp_vec = Teuchos::rcp(new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrix_->getRowMap()));
-
-  matrix_->getLocalDiagCopy(*tmp_vec);
+  matrix_->getLocalDiagCopy(*tmp_vec, offsets_());
   tmp_vec->reciprocal(*tmp_vec);
 
   inversediag_ = tmp_vec;
+
+  isComputed_ = true;
+  ++numCompute_;
 }
 
 template<class MatrixType>

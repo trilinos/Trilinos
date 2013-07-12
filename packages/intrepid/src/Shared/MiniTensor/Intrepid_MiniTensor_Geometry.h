@@ -155,7 +155,7 @@ in_normal_side(
 ///
 /// Given two iterators to a container of points,
 /// find the associated bounding box.
-/// \param start, end: define sequence of points
+/// \param start end: define sequence of points
 /// \return vectors that define the bounding box
 ///
 template<typename T, typename I>
@@ -165,7 +165,7 @@ bounding_box(I start, I end);
 ///
 /// Determine if a given point is inside a bounding box.
 /// \param p the point
-/// \param min, max points defining the box
+/// \param min max points defining the box
 /// \return whether the point is inside
 ///
 template<typename T>
@@ -177,7 +177,7 @@ in_box(
 
 ///
 /// Generate random point inside bounding box
-/// \param min, max the bounding box
+/// \param min max the bounding box
 /// \return p point inside box
 ///
 template<typename T>
@@ -229,7 +229,7 @@ closest_point(Vector<T> const & p, std::vector< Vector<T> > const & n);
 
 /// Median of a sequence defined by random
 /// access iterators. Undefined for empty set.
-/// \param begin, end Iterators that define the sequence
+/// \param begin end Iterators that define the sequence
 /// \return median of sequence
 ///
 template<typename T, typename Iterator>
@@ -306,7 +306,7 @@ interpolate_tetrahedron(
 ///
 /// Given element type and nodes and a position
 /// in parametric coordinates, interpolate.
-/// \param type element type
+/// \param element_type element type
 /// \param xi position in parametric coordinates
 /// \param v ... corner nodes
 /// \return interpolated position
@@ -321,7 +321,7 @@ interpolate_element(
 ///
 /// Given a vector of points, determine
 /// distances between all of them.
-/// \param vector of points
+/// \param points vector of points
 /// \return distance matrix
 ///
 template<typename T>
@@ -331,7 +331,7 @@ distance_matrix(std::vector< Vector<T> > const & points);
 ///
 /// Given a distance matrix, determine the minimum
 /// distance between two distinct points.
-/// \param distance matrix
+/// \param distances distance matrix
 /// \return minimum distance
 ///
 template<typename T>
@@ -344,6 +344,295 @@ minimum_distances(std::vector< std::vector<T> > const & distances);
 ///
 ELEMENT::Type
 find_type(Index const dimension, Index const number_nodes);
+
+///
+/// Spherical parametrization functor
+///
+template<typename T>
+class SphericalParametrization
+{
+public:
+
+  ///
+  /// Constructor that takes material tangent
+  ///
+  SphericalParametrization(Tensor4<T> const & A = Tensor4<T>());
+
+  ///
+  ///
+  ///
+  void
+  operator()(Vector<T> const & parameters);
+
+  T
+  get_minimum() const {return minimum_;}
+
+  T
+  get_maximum() const {return maximum_;}
+
+  Vector<T>
+  get_arg_minimum() const {return arg_minimum_;}
+
+  Vector<T>
+  get_arg_maximum() const {return arg_maximum_;}
+
+private:
+
+  Tensor4<T> const &
+  tangent_;
+
+  T
+  minimum_;
+
+  Vector<T>
+  arg_minimum_;
+
+  T
+  maximum_;
+
+  Vector<T>
+  arg_maximum_;
+};
+
+///
+/// Stereographic parametrization functor
+///
+template<typename T>
+class StereographicParametrization
+{
+public:
+
+  ///
+  /// Constructor that takes material tangent
+  ///
+  StereographicParametrization(Tensor4<T> const & A = Tensor4<T>());
+
+  ///
+  ///
+  ///
+  void
+  operator()(Vector<T> const & parameters);
+
+  T
+  get_minimum() const {return minimum_;}
+
+  T
+  get_maximum() const {return maximum_;}
+
+  Vector<T>
+  get_arg_minimum() const {return arg_minimum_;}
+
+  Vector<T>
+  get_arg_maximum() const {return arg_maximum_;}
+
+private:
+
+  Tensor4<T> const &
+  tangent_;
+
+  T
+  minimum_;
+
+  Vector<T>
+  arg_minimum_;
+
+  T
+  maximum_;
+
+  Vector<T>
+  arg_maximum_;
+};
+
+///
+/// Projective parametrization functor
+///
+template<typename T>
+class ProjectiveParametrization
+{
+public:
+
+  ///
+  /// Constructor that takes material tangent
+  ///
+  ProjectiveParametrization(Tensor4<T> const & A = Tensor4<T>());
+
+  ///
+  ///
+  ///
+  void
+  operator()(Vector<T> const & parameters);
+
+  T
+  get_minimum() const {return minimum_;}
+
+  T
+  get_maximum() const {return maximum_;}
+
+  Vector<T>
+  get_arg_minimum() const {return arg_minimum_;}
+
+  Vector<T>
+  get_arg_maximum() const {return arg_maximum_;}
+
+private:
+
+  Tensor4<T> const &
+  tangent_;
+
+  T
+  minimum_;
+
+  Vector<T>
+  arg_minimum_;
+
+  T
+  maximum_;
+
+  Vector<T>
+  arg_maximum_;
+};
+
+///
+/// Tangent parametrization functor
+///
+template<typename T>
+class TangentParametrization
+{
+public:
+
+  ///
+  /// Constructor that takes material tangent
+  ///
+  TangentParametrization(Tensor4<T> const & A = Tensor4<T>());
+
+  ///
+  ///
+  ///
+  void
+  operator()(Vector<T> const & parameters);
+
+  T
+  get_minimum() const {return minimum_;}
+
+  T
+  get_maximum() const {return maximum_;}
+
+  Vector<T>
+  get_arg_minimum() const {return arg_minimum_;}
+
+  Vector<T>
+  get_arg_maximum() const {return arg_maximum_;}
+
+private:
+
+  Tensor4<T> const &
+  tangent_;
+
+  T
+  minimum_;
+
+  Vector<T>
+  arg_minimum_;
+
+  T
+  maximum_;
+
+  Vector<T>
+  arg_maximum_;
+};
+
+///
+/// Cartesian parametrization functor
+///
+template<typename T>
+class CartesianParametrization
+{
+public:
+
+  ///
+  /// Constructor that takes material tangent
+  ///
+  CartesianParametrization(Tensor4<T> const & A = Tensor4<T>());
+
+  ///
+  ///
+  ///
+  void
+  operator()(Vector<T> const & parameters);
+
+  T
+  get_minimum() const {return minimum_;}
+
+  T
+  get_maximum() const {return maximum_;}
+
+  Vector<T>
+  get_arg_minimum() const {return arg_minimum_;}
+
+  Vector<T>
+  get_arg_maximum() const {return arg_maximum_;}
+
+private:
+
+  Tensor4<T> const &
+  tangent_;
+
+  T
+  minimum_;
+
+  Vector<T>
+  arg_minimum_;
+
+  T
+  maximum_;
+
+  Vector<T>
+  arg_maximum_;
+};
+
+///
+/// Parametric grid class
+///
+template<typename T>
+class ParametricGrid
+{
+
+public:
+
+  ///
+  /// Default constructor
+  ///
+  ParametricGrid() {}
+
+  ///
+  /// Constructor that defines grid limits
+  /// \param lower lower limit
+  /// \param upper upper limit
+  /// \param points_per_dimension number of points in each dimension
+  ///
+  ParametricGrid(
+      Vector<T> const & lower,
+      Vector<T> const & upper,
+      Vector<Index> const & points_per_dimension);
+
+  ///
+  ///
+  template<typename Visitor>
+  void
+  traverse(Visitor & visitor) const;
+
+private:
+
+  Vector<T>
+  lower_;
+
+  Vector<T>
+  upper_;
+
+  Vector<Index>
+  points_per_dimension_;
+
+};
 
 } // namespace Intrepid
 

@@ -7,20 +7,33 @@
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
@@ -37,6 +50,8 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
+
+#include "Ifpack2_Details_Tpetra_RowGraph_def.hpp"
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -194,7 +209,8 @@ Teuchos::RCP<const Tpetra::RowGraph<typename MatrixType::local_ordinal_type,
                                      typename MatrixType::node_type> >
 LocalFilter<MatrixType>::getGraph() const
 {
-  throw std::runtime_error("Ifpack2::LocalFilter: does not support getGraph.");
+  Teuchos::RCP<const Ifpack2::Details::Tpetra_RowGraph<MatrixType> > Graph = Teuchos::rcp(new Ifpack2::Details::Tpetra_RowGraph<MatrixType> (A_));
+  return Graph;
 }
 
 //==========================================================================
@@ -452,7 +468,7 @@ void LocalFilter<MatrixType>::apply(const Tpetra::MultiVector<scalar_type,local_
     "Ifpack2::LocalFilter::apply: X and Y must have the same number of columns.  "
     "X has " << X.getNumVectors () << " columns, but Y has "
     << Y.getNumVectors () << " columns.");
-
+  /*
   TEUCHOS_TEST_FOR_EXCEPTION(
     alpha != STS::one (), std::logic_error,
     "Ifpack2::LocalFilter::apply: This method does not currently work when alpha != 1.");
@@ -460,12 +476,16 @@ void LocalFilter<MatrixType>::apply(const Tpetra::MultiVector<scalar_type,local_
   TEUCHOS_TEST_FOR_EXCEPTION(
     beta != STS::zero (), std::logic_error,
     "Ifpack2::LocalFilter::apply: This method does not currently work when beta != 0.");
-
+  */
   const scalar_type zero = STS::zero();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const scalar_type> > x_ptr = X.get2dView();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> >       y_ptr = Y.get2dViewNonConst();
 
-  Y.putScalar(zero);
+  if (beta == zero)
+    Y.putScalar(zero);
+  else
+    Y.scale(beta);
+
   size_t NumVectors = Y.getNumVectors();
 
 
@@ -476,17 +496,17 @@ void LocalFilter<MatrixType>::apply(const Tpetra::MultiVector<scalar_type,local_
     if (mode==Teuchos::NO_TRANS){
       for (size_t j = 0 ; j < Nnz ; ++j)
         for (size_t k = 0 ; k < NumVectors ; ++k)
-          y_ptr[k][i] += Values_[j] * x_ptr[k][Indices_[j]];
+          y_ptr[k][i] += alpha * Values_[j] * x_ptr[k][Indices_[j]];
     }
     else if (mode==Teuchos::TRANS){
       for (size_t j = 0 ; j < Nnz ; ++j)
         for (size_t k = 0 ; k < NumVectors ; ++k)
-          y_ptr[k][Indices_[j]] += Values_[j] * x_ptr[k][i];
+          y_ptr[k][Indices_[j]] += alpha * Values_[j] * x_ptr[k][i];
     }
     else { //mode==Teuchos::CONJ_TRANS
       for (size_t j = 0 ; j < Nnz ; ++j)
         for (size_t k = 0 ; k < NumVectors ; ++k)
-          y_ptr[k][Indices_[j]] += STS::conjugate(Values_[j]) * x_ptr[k][i];
+          y_ptr[k][Indices_[j]] += alpha * STS::conjugate(Values_[j]) * x_ptr[k][i];
     }
   }
 }

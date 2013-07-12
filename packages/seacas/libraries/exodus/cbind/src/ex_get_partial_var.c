@@ -90,7 +90,7 @@ int ex_get_partial_var( int   exoid,
       sprintf(errmsg,
 	      "Warning: no %s variables for NULL block %"PRId64" in file id %d",
 	      ex_name_of_object(var_type), obj_id,exoid);
-      ex_err("ex_get_partial_var",errmsg,EX_MSG);
+      ex_err("ex_get_partial_var",errmsg,EX_NULLENTITY);
       return (EX_WARN);
     } else {
       sprintf(errmsg,

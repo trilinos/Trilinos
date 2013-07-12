@@ -32,6 +32,7 @@
 // {
   
 // }
+using namespace shards ;
 
 SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( Tag1 )
   SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( Tag2 )

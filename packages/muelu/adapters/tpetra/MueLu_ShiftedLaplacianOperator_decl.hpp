@@ -1,0 +1,170 @@
+// @HEADER
+//
+// ***********************************************************************
+//
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact
+//                    Jeremie Gaidamour (jngaida@sandia.gov)
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
+//
+// ***********************************************************************
+//
+// @HEADER
+#ifndef MUELU_SHIFTEDLAPLACIANOPERATOR_DECL_HPP
+#define MUELU_SHIFTEDLAPLACIANOPERATOR_DECL_HPP
+
+#include "MueLu_ConfigDefs.hpp"
+
+#ifdef HAVE_MUELU_TPETRA
+#include <Tpetra_Operator.hpp>
+#include <Tpetra_MultiVector_decl.hpp>
+#include "MueLu_Level.hpp"
+#include "MueLu_Hierarchy_decl.hpp"
+#include "MueLu_Utilities.hpp"
+
+// Belos
+#include <BelosConfigDefs.hpp>
+#include <BelosLinearProblem.hpp>
+#include <BelosBlockGmresSolMgr.hpp>
+
+//TODO: Kokkos headers
+
+/*! @class ShiftedLaplacianOperator
+    Wraps an existing MueLu::Hierarchy as a Tpetra::Operator, with an optional two-level correction.
+    Built for use with MueLu::ShiftedLaplacian.
+*/
+
+namespace MueLu {
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
+            class Node = Kokkos::DefaultNode::DefaultNodeType,
+            class LocalMatOps = typename Kokkos::DefaultKernels<Scalar, LocalOrdinal, Node>::SparseOps >
+  class ShiftedLaplacianOperator
+    : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>
+  {
+
+    typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>      Matrix;
+    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>   CrsMatrix;
+    typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>             MV;
+    typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>                OP;
+    typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>        MUtils;
+  public:
+
+    //! @name Constructor/Destructor
+    //@{
+
+    //! Constructor
+    ShiftedLaplacianOperator(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & H) : Hierarchy_(H), option_(0) { }
+
+    //! Auxiliary Constructor
+    ShiftedLaplacianOperator(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & H,
+		   const RCP<Matrix> A, int cycles, int iters, double tol, int option) : Hierarchy_(H), A_(A), cycles_(cycles), iters_(iters), tol_(tol), option_(option)
+    {
+
+      // setup 2-level correction
+      RCP< MueLu::Level > Level1 = H -> GetLevel(1);
+      R_ = Level1 -> Get< RCP<Matrix> >("R");
+      P_ = Level1 -> Get< RCP<Matrix> >("P");
+      //RCP<Matrix> AP = Level1 -> Get< RCP<Matrix> >("AP Pattern");
+      RCP<Matrix> AP;
+      AP = MUtils::Multiply(*A_, false, *P_, false, AP);
+      // Optimization storage option. If matrix is not changing later, allow this.
+      bool doOptimizedStorage = true;
+      // Reuse coarse matrix memory if available (multiple solve)
+      //RCP<Matrix> Ac = Level1 -> Get< RCP<Matrix> >("RAP Pattern");
+      RCP<Matrix> Ac;
+      Ac = MUtils::Multiply(*R_, false, *AP, false, Ac, true, doOptimizedStorage);
+      Ac_ = MUtils::Op2NonConstTpetraCrs(Ac);
+      
+      // Setup Belos for two-level correction
+      BelosList_ = rcp( new Teuchos::ParameterList("GMRES") );
+      BelosList_ -> set("Maximum Iterations", iters_ );
+      BelosList_ -> set("Convergence Tolerance", tol_ );
+      BelosLP_   = rcp( new Belos::LinearProblem<Scalar,MV,OP> );
+      BelosLP_   -> setOperator ( Ac_ );
+      BelosSM_   = rcp( new Belos::BlockGmresSolMgr<Scalar,MV,OP>(BelosLP_, BelosList_) );
+
+    }
+
+
+
+    //! Destructor.
+    virtual ~ShiftedLaplacianOperator() { }
+
+    //@}
+
+    //! Returns the Tpetra::Map object associated with the domain of this operator.
+    const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
+
+    //! Returns the Tpetra::Map object associated with the range of this operator.
+    const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+
+    //! Returns in Y the result of a Tpetra::Operator applied to a Tpetra::MultiVector X.
+    /*!
+      \param[in] X - Tpetra::MultiVector of dimension NumVectors to multiply with matrix.
+      \param[out] Y -Tpetra::MultiVector of dimension NumVectors containing result.
+
+    */
+    void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+                                         Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+                                         Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                                         Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+                                         Scalar beta = Teuchos::ScalarTraits<Scalar>::one()) const;
+
+    //! Indicates whether this operator supports applying the adjoint operator.
+    bool hasTransposeApply() const;
+
+  private:
+
+    RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Hierarchy_;
+    RCP< Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > R_, P_, A_;
+    RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > Ac_;
+    RCP< Teuchos::ParameterList >  BelosList_;
+    RCP< Belos::LinearProblem<Scalar,MV,OP> > BelosLP_;
+    RCP< Belos::SolverManager<Scalar,MV,OP> > BelosSM_;
+    // cycles -> number of 2-level corrections
+    // iters  -> number of GMRES iterations per correction
+    // option -> 0 if no correction is desired
+    int cycles_, iters_, option_;
+    double tol_;
+
+  };
+
+} // namespace
+
+#endif //ifdef HAVE_MUELU_TPETRA
+
+#endif // MUELU_SHIFTEDLAPLACIANOPERATOR_DECL_HPP

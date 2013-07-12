@@ -50,6 +50,10 @@
 #ifndef NNTI_PTLS_H_
 #define NNTI_PTLS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "Trios_config.h"
 
 #include "Trios_nnti.h"
@@ -146,9 +150,6 @@ typedef void (*ptl_eq_handler_t)(ptl_event_t *event);
 (p)->peer.NNTI_remote_process_t_u.portals.pid  = PTL_PID_ANY;
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 NNTI_result_t NNTI_ptl_init (
         const NNTI_transport_id_t  trans_id,

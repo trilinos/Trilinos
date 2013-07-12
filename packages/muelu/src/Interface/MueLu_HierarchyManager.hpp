@@ -61,6 +61,8 @@
 
 #include "MueLu_Level.hpp"
 
+#include "MueLu_Utilities.hpp"
+
 namespace MueLu {
 
   // This class stores the configuration of a Hierarchy.
@@ -133,7 +135,7 @@ namespace MueLu {
 
       // Setup Matrix
       // TODO: I should certainly undo this somewhere...
-      RCP<Level> l = H.GetLevel(0);
+      RCP<Level>  l  = H.GetLevel(0);
       RCP<Matrix> Op = l->Get<RCP<Matrix> >("A");
       SetupMatrix(*Op);
       SetupExtra(H);
@@ -146,11 +148,13 @@ namespace MueLu {
 
       // TODO: coarsestLevelManager
 
+      H.Clear();
+
       int  levelID     = 0;
       int  lastLevelID = numDesiredLevel_ - 1;
       bool isLastLevel = false;
 
-      while(!isLastLevel) {
+      while (!isLastLevel) {
         bool r = H.Setup(levelID,
                          LvlMngr(levelID-1, lastLevelID),
                          LvlMngr(levelID,   lastLevelID),
@@ -159,7 +163,22 @@ namespace MueLu {
         isLastLevel = r || (levelID == lastLevelID);
         levelID++;
       }
-    }
+      // When we reuse hierarchy, it is necessary that we don't
+      // change the number of levels. We also cannot make requests
+      // for coarser levels, because we don't construct all the
+      // data on previous levels. For instance, let's say our first
+      // run constructed three levels. If we try to do requests during
+      // next setup for the fourth level, it would need Aggregates
+      // which we didn't construct for level 3 because we reused P.
+      // To fix this situation, we change the number of desired levels
+      // here.
+      numDesiredLevel_ = levelID;
+
+      WriteData<Matrix>(H, matricesToPrint_,     "A");
+      WriteData<Matrix>(H, prolongatorsToPrint_, "P");
+      WriteData<Matrix>(H, restrictorsToPrint_,  "R");
+
+    } //SetupHierarchy
 
     //@}
 
@@ -195,12 +214,32 @@ namespace MueLu {
     }
 
     // Hierarchy parameters
-    int                   numDesiredLevel_;
+    mutable int           numDesiredLevel_;
     Xpetra::global_size_t maxCoarseSize_;
     MsgType               verbosity_;
     int                   graphOutputLevel_;
+    Teuchos::Array<int>   matricesToPrint_;
+    Teuchos::Array<int>   prolongatorsToPrint_;
+    Teuchos::Array<int>   restrictorsToPrint_;
 
   private:
+
+    template<class T>
+    void WriteData(Hierarchy & H, Teuchos::Array<int> const &data, std::string const &name) const {
+      for (int i=0; i<data.size(); ++i) {
+        std::ostringstream buf; buf << data[i];
+        std::string fileName = name + "_" + buf.str() + ".m";
+        if (data[i] < H.GetNumLevels()) {
+          RCP<Level> L = H.GetLevel(data[i]);
+          if (L->IsAvailable(name)) {
+            RCP<T> M = L-> template Get< RCP<T> >(name);
+            if ( !( M.is_null() ) )
+              Utils::Write(fileName,*M);
+          }
+        }
+      }
+    } //WriteData
+
     // Levels
     Array<RCP<FactoryManagerBase> > levelManagers_;        // one FactoryManager per level. The last levelManager is used for all the remaining levels.
     RCP<FactoryManagerBase>         coarsestLevelManager_; // coarsest level manager

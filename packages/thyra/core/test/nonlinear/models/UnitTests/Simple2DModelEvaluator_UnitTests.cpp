@@ -44,6 +44,8 @@
 
 #include "Thyra_Simple2DModelEvaluator.hpp"
 #include "Thyra_SimpleDenseLinearOp.hpp"
+#include "Thyra_VectorStdOps.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 
 #include "Teuchos_UnitTestHarness.hpp"
 

@@ -79,7 +79,7 @@ public:
   //--------------------------------------------------------------------------
 
   inline
-  void operator()( HostThread & this_thread ) const
+  void execute_on_thread( HostThread & this_thread ) const
   {
     const std::pair<size_type,size_type> range =
       this_thread.work_range( m_y.dimension_0() );

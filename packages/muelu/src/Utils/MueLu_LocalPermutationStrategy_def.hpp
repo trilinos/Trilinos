@@ -100,7 +100,7 @@ namespace MueLu {
         std::string s = result_perms[t];
         Scalar value = 1.0;
         for(size_t len=0; len<s.length(); len++) {
-          int col = static_cast<int>(s[len]-'0');
+          int col = Teuchos::as<int>(s[len]-'0');
           value = value * subBlockMatrix(len,col);
         }
         performance_vector[t] = value;
@@ -121,7 +121,7 @@ namespace MueLu {
 
       std::string bestPerformancePermutation = result_perms[maxPerformancePermutationIdx] ;
       for(size_t t = 0; t<nDofsPerNode; t++) {
-        int col = static_cast<int>(bestPerformancePermutation[t]-'0');
+        int col = Teuchos::as<int>(bestPerformancePermutation[t]-'0');
         RowColPairs.push_back(std::make_pair(growIds[t],growIds[col]));
       }
 

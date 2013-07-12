@@ -155,7 +155,7 @@ namespace MueLuTests {
         partitionThisDofBelongsTo[2] = 0;           //           1
         partitionThisDofBelongsTo[3] = 0;           //           1          3
         partitionThisDofBelongsTo[4] = 0;           //           1
-        partitionThisDofBelongsTo[5] = 1;           //           5          6
+        partitionThisDofBelongsTo[5] = 1;           //           5          5
         partitionThisDofBelongsTo[0] = 2;           //           1
         partitionThisDofBelongsTo[1] = 2;           //           1          2
         break;
@@ -373,10 +373,19 @@ namespace MueLuTests {
     repart->DeterminePartitionPlacement(level,myPartitionNumber,partitionOwners);
     level.Release(*repart);
 
+#ifdef __APPLE__
+    // These results depend on tie-breaking by random weights.  As std::rand is implementation specific (and so different on Apples),
+    // the results are different (but still valid) on Apples.
+    TEST_EQUALITY(partitionOwners[0],2);
+    TEST_EQUALITY(partitionOwners[1],1);
+    TEST_EQUALITY(partitionOwners[2],3);
+    TEST_EQUALITY(partitionOwners[3],0);
+#else
     TEST_EQUALITY(partitionOwners[0],2);
     TEST_EQUALITY(partitionOwners[1],3);
     TEST_EQUALITY(partitionOwners[2],1);
     TEST_EQUALITY(partitionOwners[3],0);
+#endif
   } //DeterminePartitionPlacement2
 
   // -----------------------------------------------------------------------
@@ -513,9 +522,9 @@ namespace MueLuTests {
     repart->DeterminePartitionPlacement(level,myPartitionNumber,partitionOwners);
     level.Release(*repart);
 
-    TEST_EQUALITY(partitionOwners[0],3);
+    TEST_EQUALITY(partitionOwners[0],2);
     TEST_EQUALITY(partitionOwners[1],0);
-    TEST_EQUALITY(partitionOwners[2],2);
+    TEST_EQUALITY(partitionOwners[2],3);
     TEST_EQUALITY(partitionOwners[3],1);
   } //DeterminePartitionPlacement3
 
@@ -780,7 +789,7 @@ namespace MueLuTests {
     RCP<RepartitionFactory> repart = rcp(new RepartitionFactory());
     Teuchos::ParameterList paramList;
     paramList.set("startLevel", 1);
-    paramList.set("minRowsPerProcessor", 1000);
+    paramList.set("minRowsPerProcessor", 1);
     paramList.set("nonzeroImbalance", 1.2);
     paramList.set("diffusiveHeuristic", 10);
     paramList.set< RCP<const FactoryBase> >("number of partitions", Teuchos::null); // use user-defined #partitions

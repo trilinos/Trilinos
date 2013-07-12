@@ -53,6 +53,7 @@ namespace panzer {
 
 //**********************************************************************
 PHX_EVALUATOR_CTOR(SubcellSum,p) 
+  : evaluateOnClosure_(false)
 {
   Teuchos::RCP<Teuchos::ParameterList> valid_params = this->getValidParameters();
   p.validateParameters(*valid_params);
@@ -61,6 +62,8 @@ PHX_EVALUATOR_CTOR(SubcellSum,p)
   const std::string outName = p.get<std::string>("Sum Name");
   Teuchos::RCP<const PureBasis> basis = p.get< Teuchos::RCP<const PureBasis> >("Basis");
   multiplier = p.get<double>("Multiplier");
+  if(p.isType<bool>("Evaluate On Closure"))
+    evaluateOnClosure_ = p.get<bool>("Evaluate On Closure");
 
   inField = PHX::MDField<ScalarT,Cell,BASIS>( inName, basis->functional);
   outField = PHX::MDField<ScalarT,Cell>( outName, basis->cell_data);
@@ -90,7 +93,10 @@ PHX_EVALUATE_FIELDS(SubcellSum,workset)
   // figure out which indices to sum (this can be made more efficient by 
   // simply saving the indices and only updating if the subcell dimension
   // and index changes)
-  fieldPattern_->getSubcellClosureIndices(workset.subcell_dim,workset.subcell_index,indices);
+  if(evaluateOnClosure_)
+    fieldPattern_->getSubcellClosureIndices(workset.subcell_dim,workset.subcell_index,indices);
+  else
+    indices = fieldPattern_->getSubcellIndices(workset.subcell_dim,workset.subcell_index);
 
   for(std::size_t c=0;c<workset.num_cells;c++) {
     outField(c) = 0.0; // initialize field 
@@ -113,6 +119,7 @@ SubcellSum<EvalT, Traits>::getValidParameters() const
   p->set<std::string>("Sum Name", "?");
   p->set<std::string>("Field Name", "?");
   p->set<double>("Multiplier",1.0);
+  p->set<bool>("Evaluate On Closure",false);
 
   Teuchos::RCP<const panzer::PureBasis> basis;
   p->set("Basis", basis);

@@ -155,6 +155,56 @@ private:
 };
 
 // **************************************************************
+// Tangent 
+// **************************************************************
+template<typename Traits,typename LO,typename GO>
+class GatherSolution_BlockedEpetra<panzer::Traits::Tangent,Traits,LO,GO>
+  : public PHX::EvaluatorWithBaseImpl<Traits>,
+    public PHX::EvaluatorDerived<panzer::Traits::Tangent, Traits>,
+    public panzer::CloneableEvaluator  {
+   
+  
+public:
+  
+   GatherSolution_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer)
+     : gidIndexer_(indexer) {}
+
+   GatherSolution_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
+                                const Teuchos::ParameterList& p);
+  
+  void postRegistrationSetup(typename Traits::SetupData d,
+			     PHX::FieldManager<Traits>& vm);
+  
+  void preEvaluate(typename Traits::PreEvalData d);
+
+  void evaluateFields(typename Traits::EvalData d);
+
+  virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
+  { return Teuchos::rcp(new GatherSolution_BlockedEpetra<panzer::Traits::Tangent,Traits,LO,GO>(gidIndexer_,pl)); }
+
+  
+private:
+
+  typedef typename panzer::Traits::Tangent::ScalarT ScalarT;
+
+  // maps the local (field,element,basis) triplet to a global ID
+  // for scattering
+  Teuchos::RCP<const BlockedDOFManager<LO,int> > gidIndexer_;
+
+  std::vector<int> fieldIds_; // field IDs needing mapping
+
+  std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
+
+  Teuchos::RCP<std::vector<std::string> > indexerNames_;
+  bool useTimeDerivativeSolutionVector_;
+  std::string globalDataKey_; // what global data does this fill?
+
+  Teuchos::RCP<const BlockedEpetraLinearObjContainer> blockedContainer_;
+
+  GatherSolution_BlockedEpetra();
+};
+
+// **************************************************************
 // Jacobian
 // **************************************************************
 template<typename Traits,typename LO,typename GO>

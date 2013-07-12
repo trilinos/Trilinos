@@ -53,58 +53,74 @@
 
 namespace KokkosArray {
 
-//----------------------------------------------------------------------------
-/** \brief  Compressed row storage array.
- *
- *  A row has a range of entries:
- *
- *    row_map[i0] <= entry < row_map[i0+1]
- *    0 <= i1 < row_map[i0+1] - row_map[i0]
- *
- *  entries( entry ,            i2 , i3 , ... );
- *  entries( row_map[i0] + i1 , i2 , i3 , ... );
- */
-
-template< class DataType ,
-          class LayoutType ,
-          class DeviceType  = LayoutType ,
-          typename SizeType = typename DeviceType::size_type >
+/// \class CrsArray
+/// \brief Compressed row storage array.
+///
+/// \tparam DataType The type of stored entries.  If a CrsArray is
+///   used as the graph of a sparse matrix, then this is usually an
+///   integer type, the type of the column indices in the sparse
+///   matrix.
+///
+/// \tparam Arg1Type The second template parameter, corresponding
+///   either to the Device type (if there are no more template
+///   parameters) or to the Layout type (if there is at least one more
+///   template parameter).
+///
+/// \tparam Arg2Type The third template parameter, which if provided
+///   corresponds to the Device type.
+///
+/// \tparam SizeType The type of row offsets.  Usually the default
+///   parameter suffices.  However, setting a nondefault value is
+///   necessary in some cases, for example, if you want to have a
+///   sparse matrices with dimensions (and therefore column indices)
+///   that fit in \c int, but want to store more than <tt>INT_MAX</tt>
+///   entries in the sparse matrix.
+///
+/// A row has a range of entries:
+/// <ul>
+/// <li> <tt> row_map[i0] <= entry < row_map[i0+1] </tt> </li>
+/// <li> <tt> 0 <= i1 < row_map[i0+1] - row_map[i0] </tt> </li>
+/// <li> <tt> entries( entry ,            i2 , i3 , ... ); </tt> </li>
+/// <li> <tt> entries( row_map[i0] + i1 , i2 , i3 , ... ); </tt> </li>
+/// </ul>
+template< class DataType,
+          class Arg1Type,
+          class Arg2Type = void,
+          typename SizeType = typename ViewTraits<DataType*, Arg1Type, Arg2Type, void >::size_type>
 class CrsArray {
 private:
-
-  typedef DataType view_data_type[] ;
+  typedef ViewTraits<DataType*, Arg1Type, Arg2Type, void> traits;
 
 public:
-  typedef CrsArray< DataType , LayoutType , Host , SizeType > HostMirror ;
-  typedef DataType                                            data_type ;
-  typedef LayoutType                                          layout_type ;
-  typedef DeviceType                                          device_type ;
-  typedef SizeType                                            size_type ;
-  typedef View< const size_type[], layout_type, device_type > row_map_type ;
-  typedef View< view_data_type ,   layout_type, device_type > entries_type ;
+  typedef DataType                                            data_type;
+  typedef typename traits::array_layout                       array_layout;
+  typedef typename traits::device_type                        device_type;
+  typedef SizeType                                            size_type;
 
-  entries_type entries ;
-  row_map_type row_map ;
+  typedef CrsArray< DataType , Arg1Type , Arg2Type , SizeType > crsarray_type;
+  typedef CrsArray< DataType , array_layout , Host , SizeType > HostMirror;
+  typedef View< const size_type* , array_layout, device_type >  row_map_type;
+  typedef View<       DataType*  , array_layout, device_type >  entries_type;
 
-  /** \brief  Construct a NULL view */
-  CrsArray() : entries(), row_map() {}
+  entries_type entries;
+  row_map_type row_map;
 
-  /** \brief  Construct a view of the array */
-  CrsArray( const CrsArray & rhs )
-    : entries( rhs.entries )
-    , row_map( rhs.row_map )
-    {}
+  //! Construct an empty view.
+  CrsArray () : entries(), row_map() {}
+
+  //! Copy constructor (shallow copy).
+  CrsArray (const CrsArray& rhs) : entries (rhs.entries), row_map (rhs.row_map)
+  {}
 
   /** \brief  Assign to a view of the rhs array.
    *          If the old view is the last view
    *          then allocated memory is deallocated.
    */
-  CrsArray & operator = ( const CrsArray & rhs )
-    {
-      entries   = rhs.entries ;
-      row_map   = rhs.row_map ;
-      return *this ;
-    }
+  CrsArray& operator= (const CrsArray& rhs) {
+    entries = rhs.entries;
+    row_map = rhs.row_map;
+    return *this;
+  }
 
   /**  \brief  Destroy this view of the array.
    *           If the last view then allocated memory is deallocated.
@@ -115,38 +131,30 @@ public:
 //----------------------------------------------------------------------------
 
 template< class CrsArrayType , class InputSizeType >
-CrsArray< typename CrsArrayType::data_type ,
-          typename CrsArrayType::layout_type ,
-          typename CrsArrayType::device_type ,
-          typename CrsArrayType::size_type >
+typename CrsArrayType::crsarray_type
 create_crsarray( const std::string & label ,
                  const std::vector< InputSizeType > & input );
 
 template< class CrsArrayType , class InputSizeType >
-CrsArray< typename CrsArrayType::data_type ,
-          typename CrsArrayType::layout_type ,
-          typename CrsArrayType::device_type ,
-          typename CrsArrayType::size_type >
+typename CrsArrayType::crsarray_type
 create_crsarray( const std::string & label ,
                  const std::vector< std::vector< InputSizeType > > & input );
 
 //----------------------------------------------------------------------------
 
 template< class DataType ,
-          class LayoutType ,
-          class DeviceType ,
+          class Arg1Type ,
+          class Arg2Type ,
           typename SizeType >
-typename CrsArray< DataType , LayoutType , DeviceType , SizeType >::HostMirror
-create_mirror_view(
-  const CrsArray<DataType,LayoutType,DeviceType,SizeType > & input );
+typename CrsArray< DataType , Arg1Type , Arg2Type , SizeType >::HostMirror
+create_mirror_view( const CrsArray<DataType,Arg1Type,Arg2Type,SizeType > & input );
 
 template< class DataType ,
-          class LayoutType ,
-          class DeviceType ,
+          class Arg1Type ,
+          class Arg2Type ,
           typename SizeType >
-typename CrsArray< DataType , LayoutType , DeviceType , SizeType >::HostMirror
-create_mirror(
-  const CrsArray<DataType,LayoutType,DeviceType,SizeType > & input );
+typename CrsArray< DataType , Arg1Type , Arg2Type , SizeType >::HostMirror
+create_mirror( const CrsArray<DataType,Arg1Type,Arg2Type,SizeType > & input );
 
 } // namespace KokkosArray
 

@@ -1,24 +1,14 @@
 #!/bin/bash
 
-# Used to test Trilinos on any of the ORNL fissle 4 machines
+# Used to test Trilinos on any of the ORNL CASL Fissile 4 machines
 #
-# This script requires that modules be loaded by sourcing the script:
+# This script requires that the VERA dev env be loaded by sourcing the script:
 #
-#    /opt/casl_vri_dev_env/fissile_four/build_scripts/load_official_dev_env.[sh,csh]
+#  . /projects/vera/load_dev_env.[sh,csh]
 #
 # You can source this script either in your shell startup script
-# (e.g. .bash_profile) or you can source it manually whenever you need
-# to set up to build VERA software.
-#
-# NOTE: This script does *NOT* automatically picks up any CASL VRI related
-# extra repos and adds them to the checkin-test.py --extra-repos argument.  If
-# you want to add extra repos, you can just pass in
-# --extra-repos=Repo1,Repo2,...
-#
-# NOTE: This script automatically add SS extra builds so that one can
-# simply run the script without having to specifiy extra builds and
-# the right thing will happen.  Just make sure that you have cloned
-# the right repos.
+# (e.g. .bash_profile) or you can source it manually whenever you need to set
+# up to build VERA software.
 #
 # NOTE: This script should not be directly modifed by typical CASL
 # developers except, perhaps to add new extra builds.
@@ -44,13 +34,14 @@ DRIVERS_BASE_DIR="$TRILINOS_BASE_DIR_ABS/Trilinos/cmake/ctest/drivers/pu241"
 DISABLE_PACKAGES=CTrilinos,ForTrilinos,PyTrilinos,Didasko,Mesquite,Phdmesh,Pliris,Claps
 
 # Check to make sure that the env has been loaded correctly
-if [ "$CASL_VERA_OFFICIAL_DEV_ENV_LOADED" == "" ] ; then
-  echo "Error, must source /opt/casl_vri_dev_env/fissile_four/build_scripts/load_official_dev_env.[sh,csh] before running checkin-test-fissile4.sh!"
+if [ "$LOADED_VERA_DEV_ENV" != "gcc461" ] ; then
+  echo "Error, must source /projects/vera/gcc-4.6.1/load_dev_env.[sh,csh] before running checkin-test-vera.sh!"
   exit 1
 fi
 
 echo "
 -DTrilinos_EXCLUDE_PACKAGES=CTrilinos
+-DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON
 " > COMMON.config
 
 #

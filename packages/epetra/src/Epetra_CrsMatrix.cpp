@@ -938,6 +938,7 @@ int Epetra_CrsMatrix::TSumIntoGlobalValues(int_type Row,
   int ierr = 0;
   int Loc = 0;
 
+
   int locRow = Graph_.LRID(Row); // Normalize row range
     
   if (locRow < 0 || locRow >= NumMyRows_) {
@@ -954,6 +955,11 @@ int Epetra_CrsMatrix::TSumIntoGlobalValues(int_type Row,
     for (j=0; j<NumEntries; j++) {
       int_type Index = Indices[j];
       if (Graph_.FindGlobalIndexLoc(locRow,Index,j,Loc))
+#ifdef EPETRA_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
+#pragma omp atomic
+#endif
+#endif
         RowValues[Loc] += srcValues[j];
       else
         ierr = 2; // Value Excluded
@@ -972,10 +978,20 @@ int Epetra_CrsMatrix::TSumIntoGlobalValues(int_type Row,
         // Check whether the next added element is the subsequent element in
         // the graph indices, then we can skip the binary search
         if (Loc < NumColIndices && Index == ColIndices[Loc])
+#ifdef EPETRA_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
+#pragma omp atomic
+#endif
+#endif
           RowValues[Loc] += srcValues[j];
         else {
           Loc = Epetra_Util_binary_search(Index, ColIndices, NumColIndices, insertPoint);
           if (Loc > -1)
+#ifdef EPETRA_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
+#pragma omp atomic
+#endif
+#endif
             RowValues[Loc] += srcValues[j];
           else 
             ierr = 2; // Value Excluded
@@ -987,6 +1003,11 @@ int Epetra_CrsMatrix::TSumIntoGlobalValues(int_type Row,
       for (j=0; j<NumEntries; j++) {
         int Index = colmap.LID(Indices[j]);
         if (Graph_.FindMyIndexLoc(NumColIndices,ColIndices,Index,j,Loc)) 
+#ifdef EPETRA_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
+#pragma omp atomic
+#endif
+#endif
           RowValues[Loc] += srcValues[j];
         else 
           ierr = 2; // Value Excluded

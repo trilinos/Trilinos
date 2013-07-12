@@ -44,9 +44,16 @@
 #ifndef KOKKOSARRAY_HOST_SPARSEPRODUCTTENSOR_HPP
 #define KOKKOSARRAY_HOST_SPARSEPRODUCTTENSOR_HPP
 
+#define USE_AVX_OR_SSE2_INTRINSICS 0
+
+
+#if USE_AVX_OR_SSE2_INTRINSICS
+
 extern "C" {
 #include <immintrin.h>
 }
+
+#endif
 
 namespace KokkosArray {
 namespace Impl {
@@ -180,7 +187,7 @@ private:
    ValueType v[Num];
 };
 
-#ifdef __SSE2__
+#if defined( __SSE2__ ) && USE_AVX_OR_SSE2_INTRINSICS
 template <> 
 class TinyVec<double,2,true> {
 public:
@@ -255,7 +262,7 @@ private:
 };
 #endif
 
-#ifdef __AVX__
+#if defined( __AVX__ ) && USE_AVX_OR_SSE2_INTRINSICS
 template <> 
 class TinyVec<double,4,true> {
 public:

@@ -50,6 +50,8 @@
 #include "Thyra_DefaultInverseLinearOp.hpp"
 #include "Thyra_DefaultIdentityLinearOp.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TestForException.hpp"
@@ -416,7 +418,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
           }
 
           if (Teuchos::nonnull(minus_dxdp_mv)) {
-            assign(minus_dxdp_mv.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+            Thyra::assign(minus_dxdp_mv.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
 
             const Thyra::SolveCriteria<Scalar> defaultSolveCriteria;
             const Thyra::SolveStatus<Scalar> solveStatus =

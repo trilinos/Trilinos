@@ -1,3 +1,46 @@
+/*
+//@HEADER
+// ***********************************************************************
+//
+//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//                 Copyright (2009) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ***********************************************************************
+//@HEADER
+*/
+
 // ***********************************************************************
 //
 //      Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
@@ -75,11 +118,11 @@ checkConstructorInput () const
     "complex ScalarType altogether in order to remind you of the limitations "
     "of our implementation (and of the algorithm itself).");
   TEUCHOS_TEST_FOR_EXCEPTION(A_.is_null (), std::invalid_argument,
-    "Ifpack2::Details::Chebyshev: Input matrix to constructor is null.");
+    "Ifpack2::Chebyshev: Input matrix to constructor is null.");
   TEUCHOS_TEST_FOR_EXCEPTION(
     A_->getGlobalNumRows() != A_->getGlobalNumCols(),
     std::invalid_argument,
-    "Ifpack2::Details::Chebyshev: The input matrix A must be square.  "
+    "Ifpack2::Chebyshev: The input matrix A must be square.  "
     "A has " << A_->getGlobalNumRows() << " rows and "
     << A_->getGlobalNumCols() << " columns.");
 
@@ -89,18 +132,15 @@ checkConstructorInput () const
   Teuchos::RCP<const map_type> domainMap = A_->getDomainMap ();
   Teuchos::RCP<const map_type> rangeMap = A_->getRangeMap ();
 
-  // The relation 'isSameAs' is transitive.  It's also a collective,
-  // so we don't have to do a "shared" test for exception (i.e., a
-  // global reduction on the test value).  Do the raw pointer
-  // comparison first, to avoid a collective in the common case.
+  // isSameAs is a collective, but if the two pointers are the same,
+  // isSameAs will assume that they are the same on all processes, and
+  // return true without an all-reduce.
   TEUCHOS_TEST_FOR_EXCEPTION(
-     domainMap.getRawPtr () != rangeMap.getRawPtr () ||
-     ! domainMap->isSameAs (*rangeMap),
-     std::invalid_argument,
-     "Ifpack2::Details::Chebyshev: The domain Map and range Map of the matrix "
-     "must be the same (in the sense of isSameAs()).  We only check for this "
-     "if Trilinos was built with the CMake configuration option Teuchos_ENABLE_"
-     "DEBUG set to ON.");
+     ! domainMap->isSameAs (*rangeMap), std::invalid_argument,
+     "Ifpack2::Chebyshev: The domain Map and range Map of the matrix must be "
+     "the same (in the sense of isSameAs())." << std::endl << "We only check "
+     "for this if Trilinos was built with the CMake configuration option "
+     "Teuchos_ENABLE_DEBUG set to ON.");
 #endif // HAVE_TEUCHOS_DEBUG
 }
 

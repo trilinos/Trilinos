@@ -71,15 +71,17 @@ struct ViewSpecialize ;
 
 /** \brief  ViewTraits
  *
- *  Template argument possibilities:
- *    View< T , Device , Device , void >
- *    View< T , Device , MemoryTraits , void >
- *    View< T , Layout , Device , void >
- *    View< T , Layout , Device , MemoryTraits >
+ *  Template argument permutations:
+ *
+ *    View< DataType , Device , void         , void >
+ *    View< DataType , Device , MemoryTraits , void >
+ *    View< DataType , Device , void         , MemoryTraits >
+ *    View< DataType , ArrayLayout , Device  , void >
+ *    View< DataType , ArrayLayout , Device  , MemoryTraits >
  */
 
 template< class DataType ,
-          class LayoutType ,
+          class ArrayLayout ,
           class DeviceType ,
           class MemoryTraits >
 class ViewTraits {
@@ -91,250 +93,115 @@ public:
 
   //------------------------------------
   // Data type traits:
+
   typedef DataType                            data_type ;
   typedef typename analysis::const_type       const_data_type ;
   typedef typename analysis::non_const_type   non_const_data_type ;
 
   //------------------------------------
   // Scalar type traits:
+
   typedef typename analysis::scalar_type            scalar_type ;
   typedef typename analysis::const_scalar_type      const_scalar_type ;
   typedef typename analysis::non_const_scalar_type  non_const_scalar_type ;
 
   //------------------------------------
   // Value type traits:
+
   typedef typename analysis::value_type            value_type ;
   typedef typename analysis::const_value_type      const_value_type ;
   typedef typename analysis::non_const_value_type  non_const_value_type ;
 
   //------------------------------------
   // Layout and shape traits:
-  typedef LayoutType                          layout_type ;
-  typedef typename layout_type::array_layout  array_layout ;
-  typedef typename analysis::shape            shape_type ;
+
+  typedef typename Impl::StaticAssertSame< ArrayLayout , typename ArrayLayout ::array_layout >::type  array_layout ;
+
+  typedef typename analysis::shape   shape_type ;
 
   enum { rank         = shape_type::rank };
   enum { rank_dynamic = shape_type::rank_dynamic };
 
   //------------------------------------
   // Device and memory space traits:
-  typedef DeviceType                          device_type ;
-  typedef MemoryTraits                        memory_traits ;
+
+  typedef typename Impl::StaticAssertSame< DeviceType   , typename DeviceType  ::device_type   >::type  device_type ;
+  typedef typename Impl::StaticAssertSame< MemoryTraits , typename MemoryTraits::memory_traits >::type  memory_traits ;
+
   typedef typename device_type::memory_space  memory_space ;
   typedef typename device_type::size_type     size_type ;
 
-  enum { is_managed = memory_traits::managed };
+  enum { is_hostspace = Impl::is_same< memory_space , HostSpace >::value };
+  enum { is_managed   = memory_traits::Unmanaged == 0 };
 
   //------------------------------------
   // Specialization:
   typedef typename
-    Impl::ViewSpecialize< scalar_type , value_type ,
+    Impl::ViewSpecialize< scalar_type ,
+                          value_type ,
                           array_layout ,
                           Impl::unsigned_<rank> ,
                           Impl::unsigned_<rank_dynamic> ,
-                          memory_space , memory_traits
+                          memory_space ,
+                          memory_traits
                         >::type specialize ;
 };
 
-/** \brief  Memory traits as third argument, void as fourth argument. */
+/** \brief  Traits for View<DataType,DeviceType,void,void> */
+
+template< class DataType ,
+          class DeviceType >
+class ViewTraits<DataType,DeviceType,void,void>
+  : public ViewTraits< DataType , typename DeviceType::array_layout , DeviceType , MemoryManaged > {};
+
+/** \brief  Traits for View<DataType,DeviceType,void,MemoryTraits> */
+
+template< class DataType ,
+          class DeviceType ,
+          class MemoryTraits >
+class ViewTraits<DataType,DeviceType,void,MemoryTraits>
+  : public ViewTraits< DataType , typename DeviceType::array_layout , DeviceType , MemoryTraits > {};
+
+/** \brief  Traits for View<DataType,DeviceType,MemoryTraits,void> */
 
 template< class DataType , class DeviceType , class MemoryTraits >
 class ViewTraits< DataType , DeviceType , MemoryTraits , 
-  typename Impl::enable_if_type< typename MemoryTraits::memory_traits >::type >
-{
-private:
+  typename Impl::enable_if< (
+    Impl::is_same< DeviceType   , typename DeviceType  ::device_type   >::value &&
+    Impl::is_same< MemoryTraits , typename MemoryTraits::memory_traits >::value
+  ) >::type >
+  : public ViewTraits< DataType , typename DeviceType::array_layout , DeviceType , MemoryTraits > {};
 
-  typedef Impl::AnalyzeShape<DataType>       analysis ;
+/** \brief  Traits for View<DataType,ArrayLayout,DeviceType,void> */
 
-public:
-
-  //------------------------------------
-  // Data type traits:
-  typedef DataType                            data_type ;
-  typedef typename analysis::const_type       const_data_type ;
-  typedef typename analysis::non_const_type   non_const_data_type ;
-
-  //------------------------------------
-  // Scalar type traits:
-  typedef typename analysis::scalar_type            scalar_type ;
-  typedef typename analysis::const_scalar_type      const_scalar_type ;
-  typedef typename analysis::non_const_scalar_type  non_const_scalar_type ;
-
-  //------------------------------------
-  // Value type traits:
-  typedef typename analysis::value_type            value_type ;
-  typedef typename analysis::const_value_type      const_value_type ;
-  typedef typename analysis::non_const_value_type  non_const_value_type ;
-
-  //------------------------------------
-  // Layout and shape traits:
-  typedef DeviceType                          layout_type ;
-  typedef typename layout_type::array_layout  array_layout ;
-  typedef typename analysis::shape            shape_type ;
-
-  enum { rank         = shape_type::rank };
-  enum { rank_dynamic = shape_type::rank_dynamic };
-
-  //------------------------------------
-  // Device and memory space traits:
-  typedef DeviceType                          device_type ;
-  typedef MemoryTraits                        memory_traits ;
-  typedef typename device_type::memory_space  memory_space ;
-  typedef typename device_type::size_type     size_type ;
-
-  enum { is_managed = memory_traits::managed };
-
-  //------------------------------------
-  // Specialization:
-  typedef typename
-    Impl::ViewSpecialize< scalar_type , value_type ,
-                          array_layout ,
-                          Impl::unsigned_<rank> ,
-                          Impl::unsigned_<rank_dynamic> ,
-                          memory_space , memory_traits
-                        >::type specialize ;
-};
-
-/** \brief  Device as third argument, void as fourth argument. */
-
-template< class DataType , class LayoutType , class DeviceType >
-class ViewTraits< DataType , LayoutType , DeviceType ,
-  typename Impl::enable_if_type< typename DeviceType::device_type >::type >
-{
-private:
-
-  typedef Impl::AnalyzeShape<DataType>       analysis ;
-
-public:
-
-  //------------------------------------
-  // Data type traits:
-  typedef DataType                            data_type ;
-  typedef typename analysis::const_type       const_data_type ;
-  typedef typename analysis::non_const_type   non_const_data_type ;
-
-  //------------------------------------
-  // Scalar type traits:
-  typedef typename analysis::scalar_type            scalar_type ;
-  typedef typename analysis::const_scalar_type      const_scalar_type ;
-  typedef typename analysis::non_const_scalar_type  non_const_scalar_type ;
-
-  //------------------------------------
-  // Value type traits:
-  typedef typename analysis::value_type            value_type ;
-  typedef typename analysis::const_value_type      const_value_type ;
-  typedef typename analysis::non_const_value_type  non_const_value_type ;
-
-  //------------------------------------
-  // Layout and shape traits:
-  typedef LayoutType                          layout_type ;
-  typedef typename layout_type::array_layout  array_layout ;
-  typedef typename analysis::shape            shape_type ;
-
-  enum { rank         = shape_type::rank };
-  enum { rank_dynamic = shape_type::rank_dynamic };
-
-  //------------------------------------
-  // Device and memory space traits:
-  typedef DeviceType                          device_type ;
-  typedef MemoryManaged                       memory_traits ;
-  typedef typename device_type::memory_space  memory_space ;
-  typedef typename device_type::size_type     size_type ;
-
-  enum { is_managed = memory_traits::managed };
-
-  //------------------------------------
-  // Specialization:
-  typedef typename
-    Impl::ViewSpecialize< scalar_type , value_type ,
-                          array_layout ,
-                          Impl::unsigned_<rank> ,
-                          Impl::unsigned_<rank_dynamic> ,
-                          memory_space , memory_traits
-                        >::type specialize ;
-};
-
-} // namespace KokkosArray
+template< class DataType , class ArrayLayout , class DeviceType >
+class ViewTraits< DataType , ArrayLayout , DeviceType ,
+  typename Impl::enable_if< (
+    Impl::is_same< ArrayLayout , typename ArrayLayout::array_layout >::value &&
+    Impl::is_same< DeviceType  , typename DeviceType ::device_type  >::value
+  ) >::type >
+  : public ViewTraits< DataType , ArrayLayout , DeviceType , MemoryManaged > {};
 
 //----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
 
-namespace KokkosArray {
-namespace Impl {
-
-template< class DstViewType >
-struct ViewInitialize { static void apply( const DstViewType & ) {} };
-
-template< class DstViewSpecialize , class SrcViewSpecialize = void , class Enable = void >
-struct ViewAssignment ;
-
-/** \brief  View specialization mapping of view traits to a specialization tag */
-
-//----------------------------------------------------------------------------
-/** \brief  Value is compatible for reference assignment: */
-
-template< class DstView , class SrcView ,
-          class DstValueType  = typename DstView::value_type ,
-          class DstValueSpace = typename DstView::memory_space ,
-          class SrcValueType  = typename SrcView::value_type ,
-          class SrcValueSpace = typename SrcView::memory_space >
-struct ValueCompatible ;
-
-template< class DstView , class SrcView , class ValueType , class ValueSpace >
-struct ValueCompatible< DstView , SrcView ,
-                        ValueType , ValueSpace ,
-                        ValueType , ValueSpace >
-{
-  typedef ValueType type ;
-  enum { value = true };
-};
-
-template< class DstView , class SrcView , class ValueType , class ValueSpace >
-struct ValueCompatible< DstView , SrcView ,
-                        const ValueType , ValueSpace ,
-                              ValueType , ValueSpace >
-{
-  typedef ValueType type ;
-  enum { value = true };
-};
-
-//----------------------------------------------------------------------------
-/** \brief  View tracking increment/decrement only happens when
- *          view memory is managed and executing in the host space.
+/** \brief  View to array of data.
+ *
+ *  Options for template arguments:
+ *
+ *    View< DataType , Device >
+ *    View< DataType , Device ,        MemoryTraits >
+ *    View< DataType , Device , void , MemoryTraits >
+ *
+ *    View< DataType , Layout , Device >
+ *    View< DataType , Layout , Device , MemoryTraits >
  */
-template< class ViewTraits ,
-          class MemorySpace  = typename ViewTraits::memory_space ,
-          class MemoryTraits = typename ViewTraits::memory_traits ,
-          class ExecSpec     = KokkosArray::ExecutionSpace >
-struct ViewTracking {
-  KOKKOSARRAY_INLINE_FUNCTION static void increment( const void * ) {}
-  KOKKOSARRAY_INLINE_FUNCTION static void decrement( const void * ) {}
-};
-
-template< class ViewTraits , class MemorySpace , class MemoryTraits >
-struct ViewTracking< ViewTraits , MemorySpace , MemoryTraits ,
-          typename enable_if< MemoryTraits::managed , HostSpace >::type >
-{
-  KOKKOSARRAY_INLINE_FUNCTION static void increment( const void * ptr )
-    { MemorySpace::increment( ptr ); }
-
-  KOKKOSARRAY_INLINE_FUNCTION static void decrement( const void * ptr )
-    { MemorySpace::decrement( ptr ); }
-};
-
-} // namespace Impl
-} // namespace KokkosArray
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace KokkosArray {
 
 template< class DataType ,
-          class LayoutType , class DeviceType = LayoutType ,
-          class MemoryTraits = void ,
-          class Specialize   =
-            typename ViewTraits<DataType,LayoutType,DeviceType,MemoryTraits>::specialize >
+          class Arg1Type ,        /* ArrayLayout or DeviceType */
+          class Arg2Type = void , /* DeviceType or MemoryTraits */
+          class Arg3Type = void , /* MemoryTraits */
+          class Specialize =
+            typename ViewTraits<DataType,Arg1Type,Arg2Type,Arg3Type>::specialize >
 class View ;
 
 //----------------------------------------------------------------------------
@@ -357,6 +224,8 @@ operator == ( const View<LT,LL,LD,LM,LS> & lhs ,
                    typename rhs_traits::array_layout >::value &&
     Impl::is_same< typename lhs_traits::memory_space ,
                    typename rhs_traits::memory_space >::value &&
+    Impl::is_same< typename lhs_traits::specialize ,
+                   typename rhs_traits::specialize >::value &&
     lhs.ptr_on_device() == rhs.ptr_on_device() &&
     lhs.shape()         == rhs.shape() ;
 }
@@ -371,43 +240,53 @@ bool operator != ( const View<LT,LL,LD,LM,LS> & lhs ,
 }
 
 //----------------------------------------------------------------------------
-/** \brief  Deep copy data from compatible value type, layout, rank, and specialization.
- *          Check the dimensions and allocation lengths at runtime.
- */
-template< class DT , class DL , class DD , class DM , class Spec ,
-          class ST , class SL , class SD , class SM >
-inline
-void deep_copy( const View<DT,DL,DD,DM,Spec> & dst ,
-                const View<ST,SL,SD,SM,Spec> & src ,
-                const typename Impl::enable_if<(
-                  Impl::is_same< typename ViewTraits<ST,SL,SD,SM>::non_const_value_type ,
-                                 typename ViewTraits<DT,DL,DD,DM>::value_type >::value
-                  &&
-                  Impl::is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout ,
-                                 typename ViewTraits<DT,DL,DD,DM>::array_layout >::value
-                  &&
-                  ( unsigned(ViewTraits<ST,SL,SD,SM>::rank) ==
-                    unsigned(ViewTraits<DT,DL,DD,DM>::rank) )
-                )>::type * = 0 )
+
+} // namespace KokkosArray
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace KokkosArray {
+namespace Impl {
+
+template< class DstViewSpecialize , class SrcViewSpecialize = void , class Enable = void >
+struct ViewAssignment ;
+
+template< class Device >
+struct ViewInitialize
 {
-  typedef ViewTraits<ST,SL,SD,SM> src_traits ;
-  typedef ViewTraits<DT,DL,DD,DM> dst_traits ;
+  template< class ViewType >
+  inline explicit ViewInitialize( const ViewType & ) {}
+};
 
-  if ( dst != src ) {
+} // namespace Impl
+} // namespace KokkosArray
 
-    const size_t n_dst = sizeof(typename dst_traits::scalar_type) *
-                         Impl::ViewAssignment< Spec >::allocation_count( dst );
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
-    const size_t n_src = sizeof(typename src_traits::scalar_type) *
-                         Impl::ViewAssignment< Spec >::allocation_count( src );
+namespace KokkosArray {
 
-    Impl::assert_counts_are_equal( n_dst , n_src );
-    Impl::assert_shapes_are_equal( dst.shape() , src.shape() );
+//----------------------------------------------------------------------------
+/** \brief  A deep copy between views of the same specialization, compatible type,
+ *          same rank, same layout are handled by that specialization.
+ */
 
-    DeepCopy< typename dst_traits::memory_space ,
-              typename src_traits::memory_space >( dst.ptr_on_device() , src.ptr_on_device() , n_dst );
-  }
-}
+template< class DT , class DL , class DD , class DM , class DS ,
+          class ST , class SL , class SD , class SM , class SS >
+inline
+void deep_copy( const View<DT,DL,DD,DM,DS> & dst ,
+                const View<ST,SL,SD,SM,SS> & src ,
+                typename Impl::enable_if<(
+                  Impl::is_same< typename ViewTraits<DT,DL,DD,DM>::scalar_type ,
+                                 typename ViewTraits<ST,SL,SD,SM>::non_const_scalar_type >::value
+                  &&
+                  Impl::is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout ,
+                                 typename ViewTraits<ST,SL,SD,SM>::array_layout >::value
+                  &&
+                  ( unsigned(ViewTraits<DT,DL,DD,DM>::rank) == unsigned(ViewTraits<ST,SL,SD,SM>::rank) )
+                )>::type * = 0 )
+{ Impl::ViewAssignment<DS,SS>::deep_copy( dst , src ); }
 
 //----------------------------------------------------------------------------
 
@@ -416,18 +295,16 @@ template< class DstViewType ,
           class ArgType0 >
 KOKKOSARRAY_INLINE_FUNCTION
 View< typename DstViewType::data_type ,
-      typename DstViewType::layout_type ,
+      typename DstViewType::array_layout ,
       typename DstViewType::device_type ,
       MemoryUnmanaged >
 subview( const View<T,L,D,M,S> & src ,
          const ArgType0 & arg0 )
 {
   typedef View< typename DstViewType::data_type ,
-                typename DstViewType::layout_type ,
+                typename DstViewType::array_layout ,
                 typename DstViewType::device_type ,
                 MemoryUnmanaged > dst_type ;
-
-  typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
@@ -441,7 +318,7 @@ template< class DstViewType ,
           class ArgType0 , class ArgType1 >
 KOKKOSARRAY_INLINE_FUNCTION
 View< typename DstViewType::data_type ,
-      typename DstViewType::layout_type ,
+      typename DstViewType::array_layout ,
       typename DstViewType::device_type ,
       MemoryUnmanaged >
 subview( const View<T,L,D,M,S> & src ,
@@ -449,11 +326,9 @@ subview( const View<T,L,D,M,S> & src ,
          const ArgType1 & arg1 )
 {
   typedef View< typename DstViewType::data_type ,
-                typename DstViewType::layout_type ,
+                typename DstViewType::array_layout ,
                 typename DstViewType::device_type ,
                 MemoryUnmanaged > dst_type ;
-
-  typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
@@ -467,7 +342,7 @@ template< class DstViewType ,
           class ArgType0 , class ArgType1 , class ArgType2 >
 KOKKOSARRAY_INLINE_FUNCTION
 View< typename DstViewType::data_type ,
-      typename DstViewType::layout_type ,
+      typename DstViewType::array_layout ,
       typename DstViewType::device_type ,
       MemoryUnmanaged >
 subview( const View<T,L,D,M,S> & src ,
@@ -476,11 +351,9 @@ subview( const View<T,L,D,M,S> & src ,
          const ArgType2 & arg2 )
 {
   typedef View< typename DstViewType::data_type ,
-                typename DstViewType::layout_type ,
+                typename DstViewType::array_layout ,
                 typename DstViewType::device_type ,
                 MemoryUnmanaged > dst_type ;
-
-  typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
@@ -494,7 +367,7 @@ template< class DstViewType ,
           class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 >
 KOKKOSARRAY_INLINE_FUNCTION
 View< typename DstViewType::data_type ,
-      typename DstViewType::layout_type ,
+      typename DstViewType::array_layout ,
       typename DstViewType::device_type ,
       MemoryUnmanaged >
 subview( const View<T,L,D,M,S> & src ,
@@ -504,11 +377,9 @@ subview( const View<T,L,D,M,S> & src ,
          const ArgType3 & arg3 )
 {
   typedef View< typename DstViewType::data_type ,
-                typename DstViewType::layout_type ,
+                typename DstViewType::array_layout ,
                 typename DstViewType::device_type ,
                 MemoryUnmanaged > dst_type ;
-
-  typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
@@ -523,7 +394,7 @@ template< class DstViewType ,
           class ArgType4 >
 KOKKOSARRAY_INLINE_FUNCTION
 View< typename DstViewType::data_type ,
-      typename DstViewType::layout_type ,
+      typename DstViewType::array_layout ,
       typename DstViewType::device_type ,
       MemoryUnmanaged >
 subview( const View<T,L,D,M,S> & src ,
@@ -534,11 +405,9 @@ subview( const View<T,L,D,M,S> & src ,
          const ArgType4 & arg4 )
 {
   typedef View< typename DstViewType::data_type ,
-                typename DstViewType::layout_type ,
+                typename DstViewType::array_layout ,
                 typename DstViewType::device_type ,
                 MemoryUnmanaged > dst_type ;
-
-  typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
@@ -553,7 +422,7 @@ template< class DstViewType ,
           class ArgType4 , class ArgType5 >
 KOKKOSARRAY_INLINE_FUNCTION
 View< typename DstViewType::data_type ,
-      typename DstViewType::layout_type ,
+      typename DstViewType::array_layout ,
       typename DstViewType::device_type ,
       MemoryUnmanaged >
 subview( const View<T,L,D,M,S> & src ,
@@ -565,11 +434,9 @@ subview( const View<T,L,D,M,S> & src ,
          const ArgType5 & arg5 )
 {
   typedef View< typename DstViewType::data_type ,
-                typename DstViewType::layout_type ,
+                typename DstViewType::array_layout ,
                 typename DstViewType::device_type ,
                 MemoryUnmanaged > dst_type ;
-
-  typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
@@ -584,7 +451,7 @@ template< class DstViewType ,
           class ArgType4 , class ArgType5 , class ArgType6 >
 KOKKOSARRAY_INLINE_FUNCTION
 View< typename DstViewType::data_type ,
-      typename DstViewType::layout_type ,
+      typename DstViewType::array_layout ,
       typename DstViewType::device_type ,
       MemoryUnmanaged >
 subview( const View<T,L,D,M,S> & src ,
@@ -597,11 +464,9 @@ subview( const View<T,L,D,M,S> & src ,
          const ArgType6 & arg6 )
 {
   typedef View< typename DstViewType::data_type ,
-                typename DstViewType::layout_type ,
+                typename DstViewType::array_layout ,
                 typename DstViewType::device_type ,
                 MemoryUnmanaged > dst_type ;
-
-  typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
@@ -616,7 +481,7 @@ template< class DstViewType ,
           class ArgType4 , class ArgType5 , class ArgType6 , class ArgType7 >
 KOKKOSARRAY_INLINE_FUNCTION
 View< typename DstViewType::data_type ,
-      typename DstViewType::layout_type ,
+      typename DstViewType::array_layout ,
       typename DstViewType::device_type ,
       MemoryUnmanaged >
 subview( const View<T,L,D,M,S> & src ,
@@ -630,11 +495,9 @@ subview( const View<T,L,D,M,S> & src ,
          const ArgType7 & arg7 )
 {
   typedef View< typename DstViewType::data_type ,
-                typename DstViewType::layout_type ,
+                typename DstViewType::array_layout ,
                 typename DstViewType::device_type ,
                 MemoryUnmanaged > dst_type ;
-
-  typedef View<T,L,D,M,S> src_type ;
 
   dst_type dst ;
 
@@ -690,9 +553,8 @@ create_mirror( const View<T,L,D,M,S> & view )
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#include <impl/KokkosArray_ViewScalar.hpp>
-#include <impl/KokkosArray_ViewVector.hpp>
 #include <impl/KokkosArray_ViewDefault.hpp>
+#include <impl/KokkosArray_ViewScalar.hpp>
 #include <impl/KokkosArray_ViewTileLeft.hpp>
 
 //----------------------------------------------------------------------------

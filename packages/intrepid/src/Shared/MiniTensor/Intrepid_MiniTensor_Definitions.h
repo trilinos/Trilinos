@@ -55,6 +55,11 @@ namespace Intrepid {
 typedef unsigned int Index;
 
 ///
+/// High count type
+///
+typedef long unsigned int LongCount;
+
+///
 /// Floating point type
 ///
 typedef double Real;

@@ -628,44 +628,36 @@ public:
   EPreferredType getPreferredType() const;
 
   /** \brief Gets the string representation of a given preferred type enum. */
-  static const std::string&
-    getPrefferedTypeString(EPreferredType enumValue)
+  static const std::string& getPrefferedTypeString (EPreferredType enumValue)
   {
-    switch(enumValue){
+    switch (enumValue) {
       case PREFER_INT:
-        return getIntEnumString();
-        break;
+        return getIntEnumString ();
       case PREFER_DOUBLE:
-        return getDoubleEnumString();
-        break;
+        return getDoubleEnumString ();
       case PREFER_STRING:
-        return getStringEnumString();
-        break;
+        return getStringEnumString ();
       default:
-        static const std::string typeString(toString(enumValue));
+        const std::string typeString (toString (enumValue));
         throw std::runtime_error("Cannot convert enumValue: " + typeString + " to a string");
-        //Should never get here. This code is here so that a warning is not generated.
-        return typeString;
     }
   }
 
   /** \brief Gets the preferred type enum associated with a give string. */
-  static EPreferredType getPrefferedTypeStringEnum(const std::string& enumString)
+  static EPreferredType getPrefferedTypeStringEnum (const std::string& enumString)
   {
-    if(enumString == getIntEnumString()){
+    if (enumString == getIntEnumString ()) {
       return PREFER_INT;
     }
-    else if(enumString == getDoubleEnumString()){
+    else if (enumString == getDoubleEnumString ()) {
       return PREFER_DOUBLE;
     }
-    else if(enumString == getStringEnumString()){
+    else if (enumString == getStringEnumString ()) {
       return PREFER_STRING;
     }
-    else{
-      throw std::runtime_error("Cannot convert enumString: " + enumString + " to an enum");
+    else {
+      throw std::runtime_error ("Cannot convert enumString: " + enumString + " to an enum");
     }
-    //Should never get here. This code is here so that a warning is not generated.
-    return (EPreferredType)-1;
   }
 
   //@}

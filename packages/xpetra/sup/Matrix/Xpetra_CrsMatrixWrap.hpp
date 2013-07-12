@@ -208,6 +208,9 @@ public:
                           const ArrayView<const LocalOrdinal> &cols,
                           const ArrayView<const Scalar>       &vals) { matrixData_->replaceLocalValues(localRow, cols, vals); }
 
+  //! Set all matrix entries equal to scalar
+  virtual void setAllToScalar(const Scalar &alpha) { matrixData_->setAllToScalar(alpha); }
+
   //! Scale the current values of a matrix, this = alpha*this.
   void scale(const Scalar &alpha) {
     matrixData_->scale(alpha);

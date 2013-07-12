@@ -362,11 +362,15 @@ initializeGhostedContainer(int mem,TpetraLinearObjContainer<ScalarT,LocalOrdinal
    if((mem & LOC::DxDt) == LOC::DxDt)
       loc.set_dxdt(getGhostedTpetraVector());
     
-   if((mem & LOC::F) == LOC::F)
+   if((mem & LOC::F) == LOC::F) {
       loc.set_f(getGhostedTpetraVector());
+      loc.setRequiresDirichletAdjustment(true);
+   }
 
-   if((mem & LOC::Mat) == LOC::Mat)
+   if((mem & LOC::Mat) == LOC::Mat) {
       loc.set_A(getGhostedTpetraMatrix());
+      loc.setRequiresDirichletAdjustment(true);
+   }
 }
 
 // "Get" functions

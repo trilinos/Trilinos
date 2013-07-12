@@ -7,20 +7,33 @@
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
@@ -194,7 +207,10 @@ void Krylov<MatrixType,PrecType>::initialize() {
   belosList_ = Teuchos::rcp( new Teuchos::ParameterList("GMRES") );
   belosList_->set("Maximum Iterations",Iterations_);
   belosList_->set("Convergence Tolerance",ResidualTolerance_);
-  if(PreconditionerType_==1) { 
+  if(PreconditionerType_==0) {
+    // no preconditioner
+  }
+  else if(PreconditionerType_==1) { 
     ifpack2_prec_=Teuchos::rcp( new Relaxation<MatrixType>(A_) );
   }
   else if(PreconditionerType_==2) {
@@ -208,24 +224,19 @@ void Krylov<MatrixType,PrecType>::initialize() {
   else if(PreconditionerType_==4) {
     ifpack2_prec_=Teuchos::rcp( new Chebyshev<MatrixType>(A_) );
   }
-  ifpack2_prec_->initialize();
-  ifpack2_prec_->setParameters(params_);
-  belosProblem_ = 
-    Teuchos::rcp( new Belos::LinearProblem<belos_scalar_type,
-		  Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
-		  Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > );
+  if(PreconditionerType_>0) {
+    ifpack2_prec_->initialize();
+    ifpack2_prec_->setParameters(params_);
+  }
+  belosProblem_ = Teuchos::rcp( new Belos::LinearProblem<scalar_type,TMV,TOP> );
   belosProblem_ -> setOperator(A_);
   if(IterationType_==1) {
     belosSolver_ = 
-      Teuchos::rcp( new Belos::BlockGmresSolMgr<belos_scalar_type,
-		    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
-		    Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > (belosProblem_, belosList_) );
+      Teuchos::rcp( new Belos::BlockGmresSolMgr<scalar_type,TMV,TOP> (belosProblem_, belosList_) );
   }
   else {
     belosSolver_ = 
-      Teuchos::rcp( new Belos::BlockCGSolMgr<belos_scalar_type,
-		    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
-		    Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > (belosProblem_, belosList_) );
+      Teuchos::rcp( new Belos::BlockCGSolMgr<scalar_type,TMV,TOP> (belosProblem_, belosList_) );
   }
   IsInitialized_ = true;
   ++NumInitialize_;
@@ -245,8 +256,10 @@ void Krylov<MatrixType,PrecType>::compute() {
     initialize();
   }
   Time_.start(true);
-  ifpack2_prec_->compute();
-  belosProblem_->setLeftPrec(ifpack2_prec_);
+  if(PreconditionerType_>0) {
+    ifpack2_prec_->compute();
+    belosProblem_->setLeftPrec(ifpack2_prec_);
+  }
   IsComputed_ = true;
   ++NumCompute_;
   Time_.stop();

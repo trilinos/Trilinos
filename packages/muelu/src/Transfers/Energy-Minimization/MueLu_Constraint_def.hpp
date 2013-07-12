@@ -114,62 +114,74 @@ namespace MueLu {
   //! \note We assume that the graph of Projected is the same as Ppattern_
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(const Matrix& P, Matrix& Projected) const {
+    // We check only row maps. Column may be different.
+    TEUCHOS_TEST_FOR_EXCEPTION(!P.getRowMap()->isSameAs(*Projected.getRowMap()),   Exceptions::Incompatible, "Row maps are incompatible");
     const size_t NSDim   = X_->getNumVectors();
     const size_t numRows = P.getNodeNumRows();
 
+    const Map& ColMap  = *P.getColMap();
+    const Map& PColMap = *Projected.getColMap();
+
     Projected.resumeFill();
+
+    Teuchos::ArrayView<const LO> indices, pindices;
+    Teuchos::ArrayView<const SC> values,  pvalues;
+    Teuchos::Array<SC> valuesAll(ColMap.getNodeNumElements()), newValues;
+
+    LO invalid = Teuchos::OrdinalTraits<LO>::invalid();
+    SC zero    = Teuchos::ScalarTraits<SC> ::zero();
 
     Teuchos::SerialDenseVector<LO,SC> BcRow(NSDim, false);
     for (size_t i = 0; i < numRows; i++) {
-      Teuchos::ArrayView<const LO> indices, pindices;
-      Teuchos::ArrayView<const SC> values,  pvalues;
-
       P        .getLocalRowView(i,  indices,  values);
       Projected.getLocalRowView(i, pindices, pvalues);
 
-      size_t nnz  = pindices.size();    // number of nonzeros in the constrained matrix
-      size_t nnz1 = indices.size();     // number of nonzeros in the supplied matrix
+      size_t nnz  = indices.size();     // number of nonzeros in the supplied matrix
+      size_t pnnz = pindices.size();    // number of nonzeros in the constrained matrix
 
-      Teuchos::Array<SC> newValues(nnz, 0.0);
+      newValues.resize(pnnz);
 
       // step 1: fix stencil
-      // Projected already has the correct stencil
+      // Projected *must* already have the correct stencil
 
       // step 2: copy correct stencil values
-      for (size_t j = 0; j < nnz1; j++) {
-        // this might be accelerated if we know smth about ordering
-        size_t k = 0;
-        for (; k < nnz; k++)
-          if (pindices[k] == indices[j])
-            break;
-        if (k != nnz) {
+      // The algorithm is very similar to the one used in the calculation of
+      // Frobenius dot product, see src/Transfers/Energy-Minimization/Solvers/MueLu_CGSolver_def.hpp
+      for (size_t j = 0; j < nnz; j++)
+        valuesAll[indices[j]] = values[j];
+      for (size_t j = 0; j < pnnz; j++) {
+        LO ind = ColMap.getLocalElement(PColMap.getGlobalElement(pindices[j]));
+        if (ind != invalid)
           // index indices[j] is part of template, copy corresponding value
-          newValues[k] = values[j];
-        }
+          newValues[j] = valuesAll[ind];
+        else
+          newValues[j] = zero;
       }
+      for (size_t j = 0; j < nnz; j++)
+        valuesAll[indices[j]] = zero;
 
       // step 3: project to the space
-      Teuchos::SerialDenseMatrix<LO,SC> locX(NSDim, nnz, false);
-      for (size_t j = 0; j < nnz; j++) {
+      Teuchos::SerialDenseMatrix<LO,SC> locX(NSDim, pnnz, false);
+      for (size_t j = 0; j < pnnz; j++) {
         for (size_t k = 0; k < NSDim; k++)
           BcRow[k] = X_->getData(k)[pindices[j]];
 
         Teuchos::setCol(BcRow, (LO)j, locX);
       }
 
-      Teuchos::SerialDenseVector<LO,SC> val(nnz, false), val1(NSDim, false), val2(NSDim, false);
-      for (size_t j = 0; j < nnz; j++)
+      Teuchos::SerialDenseVector<LO,SC> val(pnnz, false), val1(NSDim, false), val2(NSDim, false);
+      for (size_t j = 0; j < pnnz; j++)
         val[j] = newValues[j];
 
       Teuchos::BLAS<LO,SC> blas;
-      blas.GEMV(Teuchos::NO_TRANS, NSDim, nnz, Teuchos::ScalarTraits<SC>::one(), locX.values(),
+      blas.GEMV(Teuchos::NO_TRANS, NSDim, pnnz, Teuchos::ScalarTraits<SC>::one(), locX.values(),
                 locX.stride(), val.values(), (LO)1, Teuchos::ScalarTraits<SC>::zero(), val1.values(), (LO)1);
       blas.GEMV(Teuchos::NO_TRANS, NSDim, NSDim, Teuchos::ScalarTraits<SC>::one(), XXtInv_[i].values(),
                 XXtInv_[i].stride(), val1.values(), (LO)1, Teuchos::ScalarTraits<SC>::zero(), val2.values(), (LO)1);
-      blas.GEMV(Teuchos::CONJ_TRANS, NSDim, nnz, Teuchos::ScalarTraits<SC>::one(), locX.values(),
+      blas.GEMV(Teuchos::CONJ_TRANS, NSDim, pnnz, Teuchos::ScalarTraits<SC>::one(), locX.values(),
                 locX.stride(), val2.values(), (LO)1, Teuchos::ScalarTraits<SC>::zero(), val.values(), (LO)1);
 
-      for (size_t j = 0; j < nnz; j++)
+      for (size_t j = 0; j < pnnz; j++)
         newValues[j] -= val[j];
 
       Projected.replaceLocalValues(i, pindices, newValues);

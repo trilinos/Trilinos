@@ -51,6 +51,7 @@ namespace Piro {
 namespace Epetra {
 
 //! Factory for creating Piro::Epetra solvers
+//! \deprecated Use Piro::Epetra::SolverFactory instead.
 class Factory {
 public:
 

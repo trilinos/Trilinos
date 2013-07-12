@@ -40,11 +40,10 @@ InstallIncludeList(install,$(INCLIST),$(INCDIR))
 test: check
 
 check: apr_test
-	@echo "****Test should produce the following 4 lines of output to stderr:"
-	@echo "	Aprepro: WARN: Variable \`b' redefined (test.inp_app, line 19)"
+	@echo "****Test should produce the following 3 lines of output to stderr:"
 	@echo "	Aprepro: WARN: Undefined variable \`Parse' (test.inp_app, line 74)"
 	@echo "	Aprepro: ERR:  syntax error (test.inp_app, line 74)"
-	@echo "	Aprepro: WARN: Undefined variable \`T' (test.inp_app, line 106)"
+	@echo "	Aprepro: WARN: Undefined variable \`T' (test.inp_app, line 153)"
 	@echo " "
 	./apr_test test.inp_app >distribution.out
 	@echo " "

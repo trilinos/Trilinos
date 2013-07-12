@@ -55,6 +55,7 @@
 namespace Piro {
 namespace Epetra {
 
+/** \ingroup Piro_Epetra_solver_grp */
 class TrapezoidDecorator
     : public EpetraExt::ModelEvaluator
 {

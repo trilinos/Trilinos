@@ -48,35 +48,6 @@
 #include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
 #include <Teuchos_VerboseObject.hpp>
 
-// If TPETRA_DISTRIBUTOR_TAG_COUNTER is defined, Distributor will use
-// message tags for all of its receives and sends.  This may help
-// prevent messages from getting crossed between different paths or
-// Distributor instances.  Defining this is generally a good idea, as
-// it probably introduces no performance penalty.
-//
-// FIXME (mfh 09 Apr 2013) This does _not_ work, because different
-// processes might create different numbers of Distributors with
-// different communicators.  (For example, Proc 0 might create a
-// SerialComm, and create a Distributor with that communicator.  This
-// will make Proc 0's instance count one greater than the other
-// processes' instance counts.  If the tags depend on the instance
-// counter, this will make different processes' message tags not line
-// up, which will in turn cause deadlock or other incorrect behavior.
-// (I have observed it to cause deadlock.)  Thus, it's best to leave
-// this disabled.  The only way to fix it would be to broadcast over
-// the communicator a unique shared tag every time one creates a
-// Distributor.  (One could, for example, do an all-reduce for the
-// maximum counter value over all processes, and use that as the base
-// for the tag.)  I'm not going to implement this for now.
-
-// #ifndef TPETRA_DISTRIBUTOR_TAG_COUNTER
-// #  define TPETRA_DISTRIBUTOR_TAG_COUNTER 1
-// #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
-
-#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
-#  undef TPETRA_DISTRIBUTOR_TAG_COUNTER
-#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
-
 // If TPETRA_DISTRIBUTOR_TIMERS is defined, Distributor will time
 // doPosts (both versions) and doWaits, and register those timers with
 // Teuchos::TimeMonitor so that summarize() or report() will show
@@ -89,25 +60,6 @@
 #ifdef TPETRA_DISTRIBUTOR_TIMERS
 #  undef TPETRA_DISTRIBUTOR_TIMERS
 #endif // TPETRA_DISTRIBUTOR_TIMERS
-
-// If defined, Distributor's timers will have a unique name for each
-// Distributor instance.  Be careful if you enable this, because it
-// will make Teuchos::TimeMonitor::{summarize, report}() show a long
-// list of timers.  Defining this only has an effect if
-// TPETRA_DISTRIBUTOR_TIMERS is defined.
-//
-// FIXME (mfh 09 Apr 2013) The above problem with the tag counter also
-// affects this.  This could make different processes have differently
-// named timers.  Thus, I recommend that this option be switched off
-// for now.
-
-// #ifndef TPETRA_DISTRIBUTOR_UNIQUE_TIMERS
-// #  define TPETRA_DISTRIBUTOR_UNIQUE_TIMERS 1
-// #endif // TPETRA_DISTRIBUTOR_UNIQUE_TIMERS
-
-#ifdef TPETRA_DISTRIBUTOR_UNIQUE_TIMERS
-#  undef TPETRA_DISTRIBUTOR_UNIQUE_TIMERS
-#endif // TPETRA_DISTRIBUTOR_UNIQUE_TIMERS
 
 
 namespace Tpetra {
@@ -276,6 +228,13 @@ namespace Tpetra {
     //! Destructor (virtual for memory safety).
     virtual ~Distributor ();
 
+    /// \brief Swap the contents of rhs with those of *this.
+    ///
+    /// This is useful in Import's setUnion() method.  It avoids the
+    /// overhead of copying arrays, since it can use std::swap on the
+    /// arrays.
+    void swap (Distributor& rhs);
+
     //@}
     //! @name Implementation of ParameterListAcceptorDefaultBase
     //@{
@@ -347,9 +306,9 @@ namespace Tpetra {
     /// \param exportNodeIDs [out] The ranks of the processes that
     ///   will get the exported IDs in \c exportIDs.
     ///
-    /// The \c exportGIDs and \c exportNodeIDs arrays are allocated by
+    /// The \c exportGIDs and \c exportNodeIDs arrays are resized by
     /// the Distributor, which is why they are passed in as a nonconst
-    /// reference to an ArrayRCP.  They may be null on entry.
+    /// Array reference.
     template <class Ordinal>
     void
     createFromRecvs (const ArrayView<const Ordinal>& remoteIDs,
@@ -760,12 +719,6 @@ namespace Tpetra {
     /// later reuse.  This is why it is declared "mutable".
     mutable RCP<Distributor> reverseDistributor_;
 
-    //! Count to distinguish Distributor instances.
-    static int instanceCounter_;
-
-    //! Per-instance count to distinguish Distributor instances.
-    int instanceCount_;
-
 #ifdef TPETRA_DISTRIBUTOR_TIMERS
     Teuchos::RCP<Teuchos::Time> timer_doPosts3_;
     Teuchos::RCP<Teuchos::Time> timer_doPosts4_;
@@ -781,50 +734,41 @@ namespace Tpetra {
     void makeTimers ();
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
-#ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
-    /// \brief Global "next tag" count for MPI_Irecv and MPI_Send.
+    /// \brief Whether to use different tags for different code paths.
     ///
-    /// To ease debugging and avoid silent MPI message mismatch
-    /// errors, we assign each Distributor instance a unique tag for
-    /// MPI point-to-point communication.  The initial counter value
-    /// is 0. Every invocation of Distributor's constructor first uses
-    /// the counter value as its tag, then increments the counter by
-    /// 4.  We increment by 4 because there are four code paths: two
-    /// in the three-argument version of doPosts(), and two in the
-    /// four-argument version of doPosts().  Thus, dividing the tag by
-    /// 4 gives us the Distributor instance, with the remainder
-    /// telling us which code path posted the receives and sends.
+    /// There are currently three code paths in Distributor that post
+    /// receives and sends:
     ///
-    /// For the three-argument version of doPosts(), the
-    /// <tt>indicesTo_.empty() == true</tt> path has tag remainder 0,
-    /// and the <tt>indicesTo_.empty() == false</tt> path has tag
-    /// remainder 1.
+    /// 1. Three-argument variant of doPosts()
+    /// 2. Four-argument variant of doPosts()
+    /// 3. computeReceives()
     ///
-    /// For the four-argument version of doPosts(), the
-    /// <tt>indicesTo_.empty() == true</tt> path has tag remainder 2,
-    /// and the <tt>indicesTo_.empty() == false</tt> path has tag
-    /// remainder 3.
-    ///
-    /// \warning This makes calling Distributor's constructor by
-    ///   multiple CPU threads at the same time not entirely safe.
-    ///   It would be straightforward to fix this using locks.
-    static int tagCounter_;
-
-    //! This Distributor instance's tag for MPI point-to-point communication.
-    int instanceTag_;
-
-    //! Call this in the constructor to update tagCounter_.
-    static void incrementTagCounter ();
-#endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
-
-    /// \brief Whether to use different tags for different instances and code paths.
-    ///
-    /// If false, always use the same tag for all Distributor
-    /// instances and doPosts() code paths.
+    /// If this option is true, Distributor will use a distinct
+    /// message tag for each of these paths.
     bool useDistinctTags_;
 
-    //! Get the tag to use for receives and sends.  Call in doPosts().
+    //! Get the tag to use for receives and sends.
+    ///
+    /// See useDistinctTags_.  This is called in doPosts() (both
+    /// variants) and computeReceives().
     int getTag (const int pathTag) const;
+
+    /// \brief Initialize using the specified communicator and ParameterList.
+    ///
+    /// This method is only meant to be called by the constructor.
+    ///
+    /// \param comm [in] Communicator used by the Distributor.
+    /// \param plist [in/out] List of parameters controlling how the
+    ///   Distributor performs communication.  Must be nonnull.
+    ///   Please see the class documentation for a list of all
+    ///   accepted parameters and their default values.
+    ///
+    /// This method doesn't actually set up the distribution pattern.
+    /// You need to call one of the "gather / scatter 'constructors'"
+    /// to do that.
+    void
+    init (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+          const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
     /// \brief Compute receive info from sends.
     ///
@@ -846,9 +790,10 @@ namespace Tpetra {
     /// \param importIDs [in] GIDs to receive by my process.
     /// \param importNodeIDs [in] Process IDs from which to receive by
     ///   my process.
-    /// \param exportIDs [out] GIDs to send by my process.
+    /// \param exportIDs [out] GIDs to send by my process.  Resized if
+    ///   necessary.
     /// \param exportNodeIDs [out] Process IDs to which to send by my
-    ///   process.
+    ///   process.  Resized if necessary.
     template <class Ordinal>
     void computeSends (const ArrayView<const Ordinal> &importIDs,
                        const ArrayView<const int> &importNodeIDs,
@@ -1003,9 +948,6 @@ namespace Tpetra {
 //         *out << "sendType: " << DistributorSendTypeEnumToString (sendType)
 //              << endl << "barrierBetween: " << doBarrier << endl;
 //       }
-// #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
-//       *out << "Instance tag: " << instanceTag_ << endl;
-// #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
 //     }
 // #endif // HAVE_TEUCHOS_DEBUG
 
@@ -1042,7 +984,7 @@ namespace Tpetra {
         << myImageID << ": requests_.size() = " << requests_.size ()
         << " != 0.");
       std::ostringstream os;
-      os << myImageID << "," << instanceCount_  << ": doPosts(3,"
+      os << myImageID << ": doPosts(3,"
          << (indicesTo_.empty () ? "fast" : "slow") << ")" << endl;
       *out_ << os.str ();
     }
@@ -1090,7 +1032,7 @@ namespace Tpetra {
                                                       tag, *comm_));
           if (debug_) {
             std::ostringstream os;
-            os << myImageID << "," << instanceCount_  << ": doPosts(3,"
+            os << myImageID << ": doPosts(3,"
                << (indicesTo_.empty () ? "fast" : "slow") << "): "
                << "Posted irecv from Proc " << imagesFrom_[i] << " with "
               "specified tag " << tag << endl;
@@ -1140,8 +1082,7 @@ namespace Tpetra {
     if (indicesTo_.empty()) {
       if (debug_) {
         std::ostringstream os;
-        os << myImageID << "," << instanceCount_
-           << ": doPosts(3,fast): posting sends" << endl;
+        os << myImageID << ": doPosts(3,fast): posting sends" << endl;
         *out_ << os.str ();
       }
 
@@ -1186,7 +1127,7 @@ namespace Tpetra {
 
           if (debug_) {
             std::ostringstream os;
-            os << myImageID << "," << instanceCount_  << ": doPosts(3,fast): "
+            os << myImageID << ": doPosts(3,fast): "
                << "Posted send to Proc " << imagesTo_[i]
                << " w/ specified tag " << tag << endl;
             *out_ << os.str ();
@@ -1200,26 +1141,25 @@ namespace Tpetra {
       if (selfMessage_) {
         // This is how we "send a message to ourself": we copy from
         // the export buffer to the import buffer.  That saves
-        // Teuchos::Comm implementations the trouble of implementing
-        // self messages correctly.  (To do this right, the
-        // Teuchos::Comm subclass instance would need internal buffer
-        // space for messages, keyed on the message's tag.)
+        // Teuchos::Comm implementations other than MpiComm (in
+        // particular, SerialComm) the trouble of implementing self
+        // messages correctly.  (To do this right, SerialComm would
+        // need internal buffer space for messages, keyed on the
+        // message's tag.)
         std::copy (exports.begin()+startsTo_[selfNum]*numPackets,
                    exports.begin()+startsTo_[selfNum]*numPackets+lengthsTo_[selfNum]*numPackets,
                    imports.begin()+selfReceiveOffset);
       }
       if (debug_) {
         std::ostringstream os;
-        os << myImageID << "," << instanceCount_
-           << ": doPosts(3,fast) done" << endl;
+        os << myImageID << ": doPosts(3,fast) done" << endl;
         *out_ << os.str ();
       }
     }
     else { // data are not blocked by image, use send buffer
       if (debug_) {
         std::ostringstream os;
-        os << myImageID << "," << instanceCount_
-           << ": doPosts(3,slow): posting sends" << endl;
+        os << myImageID << ": doPosts(3,slow): posting sends" << endl;
         *out_ << os.str ();
       }
 
@@ -1281,7 +1221,7 @@ namespace Tpetra {
 
           if (debug_) {
             std::ostringstream os;
-            os << myImageID << "," << instanceCount_  << ": doPosts(3,slow): "
+            os << myImageID << ": doPosts(3,slow): "
                << "Posted send to Proc " << imagesTo_[i]
                << " w/ specified tag " << tag << endl;
             *out_ << os.str ();
@@ -1304,8 +1244,7 @@ namespace Tpetra {
       }
       if (debug_) {
         std::ostringstream os;
-        os << myImageID << "," << instanceCount_
-           << ": doPosts(3,slow) done" << endl;
+        os << myImageID << ": doPosts(3,slow) done" << endl;
         *out_ << os.str ();
       }
     }
@@ -1364,9 +1303,6 @@ namespace Tpetra {
 //         *out << "sendType: " << DistributorSendTypeEnumToString (sendType)
 //              << endl << "barrierBetween: " << doBarrier << endl;
 //       }
-// #ifdef TPETRA_DISTRIBUTOR_TAG_COUNTER
-//       *out << "Instance tag: " << instanceTag_ << endl;
-// #endif // TPETRA_DISTRIBUTOR_TAG_COUNTER
 //     }
 // #endif // HAVE_TEUCHOS_DEBUG
 
@@ -1405,7 +1341,7 @@ namespace Tpetra {
         << myImageID << ": requests_.size() = " << requests_.size ()
         << " != 0.");
       std::ostringstream os;
-      os << myImageID << "," << instanceCount_  << ": doPosts(4,"
+      os << myImageID << ": doPosts(4,"
          << (indicesTo_.empty () ? "fast" : "slow") << ")" << endl;
       *out_ << os.str ();
     }
@@ -1515,8 +1451,7 @@ namespace Tpetra {
     if (indicesTo_.empty()) {
       if (debug_) {
         std::ostringstream os;
-        os << myImageID << "," << instanceCount_
-           << ": doPosts(4,fast): posting sends" << endl;
+        os << myImageID << ": doPosts(4,fast): posting sends" << endl;
         *out_ << os.str ();
       }
 
@@ -1571,16 +1506,14 @@ namespace Tpetra {
       }
       if (debug_) {
         std::ostringstream os;
-        os << myImageID << "," << instanceCount_
-           << ": doPosts(4,fast) done" << endl;
+        os << myImageID << ": doPosts(4,fast) done" << endl;
         *out_ << os.str ();
       }
     }
     else { // data are not blocked by image, use send buffer
       if (debug_) {
         std::ostringstream os;
-        os << myImageID << "," << instanceCount_
-           << ": doPosts(4,slow): posting sends" << endl;
+        os << myImageID << ": doPosts(4,slow): posting sends" << endl;
         *out_ << os.str ();
       }
 
@@ -1662,8 +1595,7 @@ namespace Tpetra {
       }
       if (debug_) {
         std::ostringstream os;
-        os << myImageID << "," << instanceCount_
-           << ": doPosts(4,slow) done" << endl;
+        os << myImageID << ": doPosts(4,slow) done" << endl;
         *out_ << os.str ();
       }
     }
@@ -1793,7 +1725,7 @@ namespace Tpetra {
     const int myRank = comm_->getRank();
     if (debug_) {
       std::ostringstream os;
-      os << myRank << "," << instanceCount_ << ": computeSends" << endl;
+      os << myRank << ": computeSends" << endl;
       *out_ << os.str ();
     }
 
@@ -1817,7 +1749,7 @@ namespace Tpetra {
     Distributor tempPlan (comm_, out_);
     if (debug_) {
       std::ostringstream os;
-      os << myRank << "," << instanceCount_ << ": computeSends: tempPlan.createFromSends" << endl;
+      os << myRank << ": computeSends: tempPlan.createFromSends" << endl;
       *out_ << os.str ();
     }
     numExports = tempPlan.createFromSends (importNodeIDs);
@@ -1828,7 +1760,7 @@ namespace Tpetra {
     Array<size_t> exportObjs (tempPlan.getTotalReceiveLength () * 2);
     if (debug_) {
       std::ostringstream os;
-      os << myRank << "," << instanceCount_ << ": computeSends: tempPlan.doPostsAndWaits" << endl;
+      os << myRank << ": computeSends: tempPlan.doPostsAndWaits" << endl;
       *out_ << os.str ();
     }
     tempPlan.doPostsAndWaits<size_t> (importObjs (), 2, exportObjs ());
@@ -1841,7 +1773,7 @@ namespace Tpetra {
 
     if (debug_) {
       std::ostringstream os;
-      os << myRank << "," << instanceCount_ << ": computeSends done" << endl;
+      os << myRank << ": computeSends done" << endl;
       *out_ << os.str ();
     }
   }
@@ -1859,7 +1791,7 @@ namespace Tpetra {
     const int myRank = comm_->getRank();
 
     if (debug_) {
-      *out_ << myRank << "," << instanceCount_ << ": createFromRecvs" << endl;
+      *out_ << myRank << ": createFromRecvs" << endl;
     }
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -1880,7 +1812,7 @@ namespace Tpetra {
     (void) createFromSends (exportNodeIDs ());
 
     if (debug_) {
-      *out_ << myRank << "," << instanceCount_ << ": createFromRecvs done" << endl;
+      *out_ << myRank << ": createFromRecvs done" << endl;
     }
   }
 

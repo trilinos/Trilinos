@@ -748,7 +748,7 @@ public:
     const char intTypeName[] = "unsigned long long";
     std::istringstream istr (t);
     unsigned long long i = 0;
-    i >> istr;
+    istr >> i;
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! istr, std::invalid_argument,
       "Teuchos::ValueTypeConversionTraits<" << intTypeName << ", std::string>::"

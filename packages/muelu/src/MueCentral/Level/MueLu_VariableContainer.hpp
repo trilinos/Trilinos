@@ -68,15 +68,23 @@ namespace MueLu {
   */
   class VariableContainer : public BaseClass {
   public:
+    typedef std::map<const FactoryBase*,int> request_container;
+
+  private:
+    Teuchos::ParameterEntry           data_;        ///< the data itself
+    bool                              available_;   ///< is data available?
+    KeepType                          keep_;        ///< keep flag
+    int                               count_;       ///< number of requests by all factories
+
+    request_container                 requests_;    ///< requesting factories
+
+  public:
     //! @name Constructors/Destructors.
     //@{
 
     //! Default constructor.
-    VariableContainer() :
-      available_(false), keep_(false), count_(0)
-    {};
-
-    virtual ~VariableContainer(){};
+    VariableContainer() : available_(false), keep_(false), count_(0) { }
+    ~VariableContainer() { }
 
     //@}
 
@@ -84,36 +92,28 @@ namespace MueLu {
     //@{
 
     //! Store data in container class and set the "Available" status true.
-    void SetData(const Teuchos::ParameterEntry & entry) {
-      data_ = entry;
+    void SetData(const Teuchos::ParameterEntry& entry) {
+      data_      = entry;
       available_ = true;
-    } //SetData
-
-    //! return const reference to data stored in container
-    //! note: we do not check if data is available
-    const Teuchos::ParameterEntry & GetData() const {
-      return data_;
     }
 
-    //! return reference to data stored in container
-    //! note: we do not check if data is available
-    Teuchos::ParameterEntry & GetData() {
-      return data_;
-    }
+    //! Return const reference to data stored in container
+    //! NOTE: we do not check if data is available
+    const Teuchos::ParameterEntry& GetData() const                              { return data_; }
 
-    //! returns true if data is available, i.e. SetData has been called before
-    bool IsAvailable() const {
-      return available_;
-    }
+    //! Return reference to data stored in container
+    //! NOTE: we do not check if data is available
+    Teuchos::ParameterEntry& GetData()                                          { return data_; }
+
+    //! Returns true if data is available, i.e. SetData has been called before
+    bool IsAvailable() const                                                    { return available_; }
 
     //@}
 
     //! @name Request/Release
     //@{
 
-    //! request data
-    //! increment request counter and add reqFactory to the list
-    //! of requesting factories
+    //! Request data
     void Request(const FactoryBase* reqFactory) {
       request_container::iterator it = requests_.find(reqFactory);
       if (it == requests_.end())
@@ -123,75 +123,50 @@ namespace MueLu {
       count_++;   // increment request counter
     }
 
-    //! release data
-    //! decrement request counter and try to remove reqFactory from list of
-    //! requesting factories
+    //! Release data
     void Release(const FactoryBase* reqFactory) {
       request_container::iterator it = requests_.find(reqFactory);
-      TEUCHOS_TEST_FOR_EXCEPTION(it == requests_.end(), Exceptions::RuntimeError, "MueLu::VariableContainer::Release(): cannot call Release if factory has not been requested before by factory " << reqFactory);
-      if (it != requests_.end()) {
-        (it->second)--;
-        if (!it->second)
-          requests_.erase(it);
-      }
-      count_--; // decrement request counter
+      TEUCHOS_TEST_FOR_EXCEPTION(it == requests_.end(), Exceptions::RuntimeError, "MueLu::VariableContainer::Release():"
+                                 "cannot call Release if factory has not been requested before by factory " << reqFactory);
+      if (--(it->second) == 0)
+        requests_.erase(it);
+      count_--;
     }
 
-    //! returns how often the data has been requested by the factory reqFactory.
+    //! Return the number of times the data has been requested by a specific factory
     int NumRequests(const FactoryBase* reqFactory) const {
       request_container::const_iterator it = requests_.find(reqFactory);
-      if (it != requests_.end())
-        return it->second;
-
-      return 0;
+      return (it != requests_.end()) ? it->second : 0;
     }
 
-    //! returns how often the data has been requested by all factories
-    int NumAllRequests() const {
-      return count_;
-    }
+    //! Returns the number of times the data has been requested
+    int NumAllRequests() const                                                  { return count_; }
 
-    //! returns true, if data is requested by reqFactory
-    bool IsRequested(const FactoryBase* reqFactory) const {
-      if (NumRequests(reqFactory) > 0) return true;
-      return false;
-    }
+    //! Returns true, if data is requested by reqFactory
+    bool IsRequested(const FactoryBase* reqFactory) const                       { return (NumRequests(reqFactory) > 0); }
 
-    //! returns true, if data is requested by at least one factory
-    bool IsRequested() const {
-      if (count_ > 0) return true;
-      return false;
-    }
+    //! Returns true, if data is requested by at least one factory
+    bool IsRequested() const                                                    { return (count_ > 0); }
 
+    const request_container& Requests() const                                   { return requests_; }
     //@}
 
     //! @name Keep status
     //@{
 
-    //! returns true if at least one keep flag is set
-    bool IsKept(KeepType keep) const { return keep_ & keep; }
+    //! Returns true if at least one keep flag is set
+    bool IsKept(KeepType keep) const                                            { return keep_ & keep; }
 
-    //! add a keep flag to the flag combination
-    void AddKeepFlag(KeepType keep = UserData) { keep_ = keep_ | keep; } // bitwise addition because flags can be set several times.
+    //! Adds a keep flag to the flag combination
+    void AddKeepFlag(KeepType keep = UserData)                                  { keep_ |= keep; }
 
-    //! remove a keep flag to the flag combination
-    void RemoveKeepFlag(KeepType keep = UserData) { keep_ = keep_ & (keep_ ^ keep); } // xor between keep and keep_ and mask using & to avoid adding bits to keep_ if they were not set at the first place.
+    //! Removes a keep flag to the flag combination
+    void RemoveKeepFlag(KeepType keep = UserData)                               { keep_ = keep_ & (keep_ ^ keep); }
 
-    //! returns the keep flag combination
-    KeepType GetKeepFlag() const { return keep_; }
-
-    typedef std::map<const FactoryBase*,int> request_container;
-    const request_container& Requests() const { return requests_; }
+    //! Returns the keep flag combination
+    KeepType GetKeepFlag() const                                                { return keep_; }
 
     //@}
-
-  private:
-    Teuchos::ParameterEntry           data_;        ///< the data itself
-    bool                              available_;   ///< is data available?
-    KeepType                          keep_;        ///< keep flag
-    int                               count_;       ///< number of requests by all factories
-
-    request_container                 requests_;    ///< requesting factories
   };
 
 }

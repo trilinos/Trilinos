@@ -50,6 +50,8 @@
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_GlobalData.hpp"
+#include "Panzer_LOCPair_GlobalEvaluationData.hpp"
+#include "Panzer_ParameterList_GlobalEvaluationData.hpp"
 
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MpiComm.h"
@@ -65,6 +67,7 @@
 #include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_DefaultProductVector.hpp"
+#include "Thyra_ProductVectorSpaceBase.hpp"
 
 #ifdef HAVE_STOKHOS
    #include "Stokhos_EpetraVectorOrthogPoly.hpp"
@@ -374,6 +377,12 @@ panzer::ModelEvaluator_Epetra::createOutArgs() const
       )
     );
 
+  // add in df/dp (if appropriate)
+  for(std::size_t i=0;i<p_init_.size();i++) {
+    if(!is_distributed_parameter_[i])
+      outArgs.setSupports(OUT_ARG_DfDp,i,EpetraExt::ModelEvaluator::DerivativeSupport(DERIV_MV_BY_COL));
+  }
+
   // add in dg/dx (if appropriate)
   for(std::size_t i=0;i<g_names_.size();i++) {
     typedef panzer::Traits::Jacobian RespEvalT;
@@ -577,8 +586,17 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
   }
 
   // evaluate responses...uses the stored assembly arguments and containers
-  if(requiredResponses)
+  if(requiredResponses) {
      evalModel_basic_g(ae_inargs,inArgs,outArgs);
+
+     // evaluate response derivatives 
+     if(required_basic_dgdx(outArgs))
+       evalModel_basic_dgdx(ae_inargs,inArgs,outArgs);
+  }
+
+  if(required_basic_dfdp(outArgs))
+     evalModel_basic_dfdp(ae_inargs,inArgs,outArgs);
+   // optional sanity check
   
   // Holding a rcp to f produces a seg fault in Rythmos when the next
   // f comes in and the resulting dtor is called.  Need to discuss
@@ -616,6 +634,117 @@ evalModel_basic_g(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const Out
    responseLibrary_->evaluate<panzer::Traits::Residual>(ae_inargs);
 }
 
+void 
+panzer::ModelEvaluator_Epetra::
+evalModel_basic_dgdx(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArgs & outArgs) const
+{
+   // optional sanity check
+   TEUCHOS_ASSERT(required_basic_dgdx(outArgs));
+
+   for(std::size_t i=0;i<g_names_.size();i++) {
+      // get "Vector" out of derivative, if its something else, throw an exception
+      EpetraExt::ModelEvaluator::Derivative deriv = outArgs.get_DgDx(i);
+      if(deriv.isEmpty())
+        continue;
+
+      Teuchos::RCP<Epetra_Vector> vec = Teuchos::rcp_dynamic_cast<Epetra_Vector>(deriv.getMultiVector(),true);
+
+      if(vec!=Teuchos::null) {
+        std::string responseName = g_names_[i];
+        Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Jacobian> > resp 
+            = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Jacobian> >(responseLibrary_->getResponse<panzer::Traits::Jacobian>(responseName));
+        resp->setDerivative(vec);
+      }
+   }
+
+   // evaluator responses
+   responseLibrary_->addResponsesToInArgs<panzer::Traits::Jacobian>(ae_inargs);
+   responseLibrary_->evaluate<panzer::Traits::Jacobian>(ae_inargs);
+}
+
+void 
+panzer::ModelEvaluator_Epetra::
+evalModel_basic_dfdp(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArgs & outArgs) const
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp_dynamic_cast;
+
+   TEUCHOS_ASSERT(required_basic_dfdp(outArgs));
+
+   // dynamic cast to blocked LOF for now
+   RCP<const Thyra::VectorSpaceBase<double> > glblVS = rcp_dynamic_cast<const ThyraObjFactory<double> >(lof_,true)->getThyraRangeSpace();;
+
+   std::vector<std::string> activeParameters;
+
+   // fill parameter vector containers
+   int totalParameterCount = 0;
+   for(Teuchos::Array<panzer::ParamVec>::size_type i=0; i < parameter_vector_.size(); i++) {
+     // have derivatives been requested?
+     EpetraExt::ModelEvaluator::Derivative deriv = outArgs.get_DfDp(i);
+     if(deriv.isEmpty())
+       continue;
+
+     // grab multivector, make sure its the right dimension
+     Teuchos::RCP<Epetra_MultiVector> mVec = deriv.getMultiVector();
+     TEUCHOS_ASSERT(mVec->NumVectors()==int(parameter_vector_[i].size()));
+
+     for (unsigned int j=0; j < parameter_vector_[i].size(); j++) {
+
+       // build containers for each vector
+       RCP<LOCPair_GlobalEvaluationData> loc_pair = Teuchos::rcp(new LOCPair_GlobalEvaluationData(lof_,LinearObjContainer::F));
+       RCP<LinearObjContainer> globalContainer = loc_pair->getGlobalLOC();
+
+       // stuff target vector into global container
+       RCP<Epetra_Vector> vec = Teuchos::rcpFromRef(*(*mVec)(j));
+       RCP<panzer::ThyraObjContainer<double> > thGlobalContainer = 
+         Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(globalContainer);
+       thGlobalContainer->set_f_th(Thyra::create_Vector(vec,glblVS));
+
+       // add container into in args object
+       std::string name = "PARAMETER_SENSITIVIES: "+(*p_names_[i])[j];
+       ae_inargs.addGlobalEvaluationData(name,loc_pair->getGhostedLOC());
+       ae_inargs.addGlobalEvaluationData(name+"_pair",loc_pair);
+
+       activeParameters.push_back(name);
+       totalParameterCount++;
+     }
+   }
+
+   // this communicates to the scatter evaluators so that the appropriate parameters are scattered
+   RCP<GlobalEvaluationData> ged_activeParameters = Teuchos::rcp(new ParameterList_GlobalEvaluationData(activeParameters));
+   ae_inargs.addGlobalEvaluationData("PARAMETER_NAMES",ged_activeParameters);
+
+   int paramIndex = 0;
+   for (Teuchos::Array<panzer::ParamVec>::size_type i=0; i < parameter_vector_.size(); i++) {
+     // don't modify the parameter if its not needed
+     EpetraExt::ModelEvaluator::Derivative deriv = outArgs.get_DfDp(i);
+     if(deriv.isEmpty()) {
+       // reinitialize values that should not have sensitivities computed (this is a precaution)
+       for (unsigned int j=0; j < parameter_vector_[i].size(); j++) {
+         Traits::FadType p = Traits::FadType(totalParameterCount, parameter_vector_[i][j].baseValue);
+         parameter_vector_[i][j].family->setValue<panzer::Traits::Tangent>(p);
+       }
+       continue;
+     }
+     else {
+       // loop over each parameter in the vector, initializing the AD type
+       for (unsigned int j=0; j < parameter_vector_[i].size(); j++) {
+         Traits::FadType p = Traits::FadType(totalParameterCount, parameter_vector_[i][j].baseValue);
+         p.fastAccessDx(paramIndex) = 1.0;
+         parameter_vector_[i][j].family->setValue<panzer::Traits::Tangent>(p);
+         paramIndex++;
+       }
+     }
+   }
+
+   // make sure that the total parameter count and the total parameter index match up
+   TEUCHOS_ASSERT(paramIndex==totalParameterCount);
+
+   if(totalParameterCount>0) {
+     ae_tm_.getAsObject<panzer::Traits::Tangent>()->evaluate(ae_inargs);
+   }
+}
+
 bool panzer::ModelEvaluator_Epetra::required_basic_g(const OutArgs & outArgs) const
 {
    // determine if any of the outArgs are not null!
@@ -623,7 +752,39 @@ bool panzer::ModelEvaluator_Epetra::required_basic_g(const OutArgs & outArgs) co
    for(int i=0;i<outArgs.Ng();i++) 
       activeGArgs |= (outArgs.get_g(i)!=Teuchos::null); 
 
+   return activeGArgs | required_basic_dgdx(outArgs);
+}
+
+bool panzer::ModelEvaluator_Epetra::required_basic_dgdx(const OutArgs & outArgs) const
+{
+   // determine if any of the outArgs are not null!
+   bool activeGArgs = false;
+   for(int i=0;i<outArgs.Ng();i++) {
+     // no derivatives are supported
+     if(outArgs.supports(OUT_ARG_DgDx,i).none())
+       continue;
+
+     // this is basically a redundant computation
+     activeGArgs |= (!outArgs.get_DgDx(i).isEmpty());
+   }
+
    return activeGArgs;
+}
+
+bool panzer::ModelEvaluator_Epetra::required_basic_dfdp(const OutArgs & outArgs) const
+{
+   // determine if any of the outArgs are not null!
+   bool activeFPArgs = false;
+   for(int i=0;i<outArgs.Np();i++) {
+     // no derivatives are supported
+     if(outArgs.supports(OUT_ARG_DfDp,i).none())
+       continue;
+
+     // this is basically a redundant computation
+     activeFPArgs |= (!outArgs.get_DfDp(i).isEmpty());
+   }
+
+   return activeFPArgs;
 }
 
 void panzer::ModelEvaluator_Epetra::set_t_init(double t)

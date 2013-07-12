@@ -13,13 +13,13 @@ SET(SOURCES
 
 SET(LIBRARIES kokkosarray_devicehost kokkosarray_impl)
 
-IF(KokkosArray_ENABLE_DeviceOpenMP)
+IF(KokkosArray_ENABLE_OpenMP)
   LIST( APPEND SOURCES
     TestOpenMP.cpp
   )
 ENDIF()
 
-IF(KokkosArray_ENABLE_DeviceCuda)
+IF(KokkosArray_ENABLE_Cuda)
 
   TRIBITS_ADD_LIBRARY(
     unit_cuda

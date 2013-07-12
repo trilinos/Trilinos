@@ -79,11 +79,13 @@
 #include "MueLu_TentativePFactory.hpp" //TMP
 #include "MueLu_CoupledAggregationFactory.hpp" //TMP
 #include "MueLu_UncoupledAggregationFactory.hpp" //TMP
+#include "MueLu_UserAggregationFactory.hpp" //TMP
 #include "MueLu_DirectSolver.hpp" //TMP
 #include "MueLu_Exceptions.hpp" //TMP
 #include "MueLu_MultiVectorTransferFactory.hpp"
 #include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
+#include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
 #include "MueLu_RepartitionFactory.hpp"
@@ -139,57 +141,34 @@ namespace MueLu {
       }
 
       // TODO: see how Teko handles this (=> register factories).
-      if (factoryName == "AmalgamationFactory") {
-        return Build2<AmalgamationFactory>(paramList, factoryMapIn);
-      }
-      if (factoryName == "CoalesceDropFactory") {
-        return Build2<CoalesceDropFactory>(paramList, factoryMapIn);
-      }
-      if (factoryName == "TentativePFactory") {
-        return Build2<TentativePFactory>(paramList, factoryMapIn);
-      }
-      if (factoryName == "SaPFactory") {
-        return  Build2<SaPFactory>(paramList, factoryMapIn);
-      }
-      if (factoryName == "TransPFactory") {
-        return Build2<TransPFactory>(paramList, factoryMapIn);
-      }
-      if (factoryName == "RAPFactory") {
-        return BuildRAPFactory(paramList, factoryMapIn);
-      }
-      if (factoryName == "RebalanceAcFactory") {
-        return Build2<RebalanceAcFactory>(paramList, factoryMapIn);
-      }
-      if (factoryName == "AggregationExportFactory") {
-        return Build2<AggregationExportFactory>(paramList, factoryMapIn);
-      }
-      if (factoryName == "CoupledAggregationFactory") {
-        return BuildCoupledAggregationFactory(paramList, factoryMapIn);
-      }
-      if (factoryName == "UncoupledAggregationFactory") {
-        return BuildUncoupledAggregationFactory(paramList, factoryMapIn);
-      }
-      if (factoryName == "TrilinosSmoother") {
-        return BuildTrilinosSmoother(paramList, factoryMapIn);
-      }
-      if (factoryName == "DirectSolver") {
-        return BuildDirectSolver(paramList, factoryMapIn);
-      }
-      if (factoryName == "NoSmoother") {
-        return BuildNoSmoother();
-      }
-      if (factoryName == "NoDirectSolver") {
-        return BuildNoDirectSolver();
-      }
-      if (factoryName == "MultiVectorTransferFactory") {
-        return Build2<MultiVectorTransferFactory>(paramList, factoryMapIn);
-      }
-      if (factoryName == "CoordinatesTransferFactory") {
-        return Build2<CoordinatesTransferFactory>(paramList, factoryMapIn);
-      }
-      if (factoryName == "FilteredAFactory") {
-        return Build2<FilteredAFactory>(paramList, factoryMapIn);
-      }
+      if (factoryName == "AmalgamationFactory")             return Build2<AmalgamationFactory>          (paramList, factoryMapIn);
+      if (factoryName == "CoalesceDropFactory")             return Build2<CoalesceDropFactory>          (paramList, factoryMapIn);
+      if (factoryName == "TentativePFactory")               return Build2<TentativePFactory>            (paramList, factoryMapIn);
+      if (factoryName == "SaPFactory")                      return Build2<SaPFactory>                   (paramList, factoryMapIn);
+      if (factoryName == "PgPFactory")                      return Build2<PgPFactory>                   (paramList, factoryMapIn);
+      if (factoryName == "TransPFactory")                   return Build2<TransPFactory>                (paramList, factoryMapIn);
+      if (factoryName == "GenericRFactory")                 return Build2<GenericRFactory>              (paramList, factoryMapIn);
+      if (factoryName == "RAPFactory")                      return BuildRAPFactory                      (paramList, factoryMapIn);
+      if (factoryName == "RebalanceAcFactory")              return Build2<RebalanceAcFactory>           (paramList, factoryMapIn);
+      if (factoryName == "AggregationExportFactory")        return Build2<AggregationExportFactory>     (paramList, factoryMapIn);
+      if (factoryName == "CoupledAggregationFactory")       return BuildCoupledAggregationFactory       (paramList, factoryMapIn);
+      if (factoryName == "UncoupledAggregationFactory")     return BuildUncoupledAggregationFactory     (paramList, factoryMapIn);
+      if (factoryName == "UserAggregationFactory")          return Build2<UserAggregationFactory>       (paramList, factoryMapIn);
+      if (factoryName == "TrilinosSmoother")                return BuildTrilinosSmoother                (paramList, factoryMapIn);
+      if (factoryName == "DirectSolver")                    return BuildDirectSolver                    (paramList, factoryMapIn);
+      if (factoryName == "NoSmoother")                      return BuildNoSmoother();
+      if (factoryName == "NoDirectSolver")                  return BuildNoDirectSolver();
+      if (factoryName == "MultiVectorTransferFactory")      return Build2<MultiVectorTransferFactory>   (paramList, factoryMapIn);
+      if (factoryName == "CoordinatesTransferFactory")      return Build2<CoordinatesTransferFactory>   (paramList, factoryMapIn);
+      if (factoryName == "FilteredAFactory")                return Build2<FilteredAFactory>             (paramList, factoryMapIn);
+      if (factoryName == "RebalanceTransferFactory")        return  Build2<RebalanceTransferFactory>    (paramList, factoryMapIn);
+#ifdef HAVE_MUELU_EXPERIMENTAL
+      if (factoryName == "EminPFactory")                    return Build2<EminPFactory>                 (paramList, factoryMapIn);
+      if (factoryName == "PatternFactory")                  return Build2<PatternFactory>               (paramList, factoryMapIn);
+      if (factoryName == "ConstraintFactory")               return Build2<ConstraintFactory>            (paramList, factoryMapIn);
+      if (factoryName == "NullspacePresmoothFactory")       return Build2<NullspacePresmoothFactory>    (paramList, factoryMapIn);
+#endif
+
       if (factoryName == "ZoltanInterface") {
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
         return Build2<ZoltanInterface>(paramList, factoryMapIn);
@@ -204,6 +183,13 @@ namespace MueLu {
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a Zoltan2Interface object: Zoltan2 is disabled: HAVE_MUELU_ZOLTAN2 && HAVE_MPI == false.");
 #endif // HAVE_MUELU_ZOLTAN2 && HAVE_MPI
       }
+      if (factoryName == "IsorropiaInterface") {
+#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
+        return Build2<IsorropiaInterface>(paramList, factoryMapIn);
+#else
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a IsorropiaInterface object: Isorropia is disabled: HAVE_MUELU_ISORROPIA && HAVE_MPI == false.");
+#endif // HAVE_MUELU_ZOLTAN2 && HAVE_MPI
+      }
 
       if (factoryName == "RepartitionFactory") {
 #ifdef HAVE_MPI
@@ -212,21 +198,6 @@ namespace MueLu {
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a RepartitionFactory object: HAVE_MPI == false.");
 #endif // HAVE_MPI
       }
-      if (factoryName == "RebalanceTransferFactory") {
-        return  Build2<RebalanceTransferFactory>(paramList, factoryMapIn);
-      }
-
-#ifdef HAVE_MUELU_EXPERIMENTAL
-      if (factoryName == "EminPFactory")
-        return Build2<EminPFactory>(paramList, factoryMapIn);
-      if (factoryName == "PatternFactory")
-        return Build2<PatternFactory>(paramList, factoryMapIn);
-      if (factoryName == "ConstraintFactory")
-        return Build2<ConstraintFactory>(paramList, factoryMapIn);
-      if (factoryName == "NullspacePresmoothFactory")
-        return Build2<NullspacePresmoothFactory>(paramList, factoryMapIn);
-#endif
-
       // Use a user defined factories (in <Factories> node)
       if (factoryMapIn.find(factoryName) != factoryMapIn.end()) {
         TEUCHOS_TEST_FOR_EXCEPTION((param.isList() && (++paramList.begin() != paramList.end())), Exceptions::RuntimeError,

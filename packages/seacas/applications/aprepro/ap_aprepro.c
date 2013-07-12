@@ -47,8 +47,8 @@
 static char *qainfo[] =
 {
   "Aprepro",
-  "Date: 2013/02/07",
-  "Revision: 2.30"
+  "Date: 2013/06/14",
+  "Revision: 2.33"
 };
 
 #include <stdlib.h>
@@ -84,7 +84,6 @@ void initialize_options(aprepro_options *ap_options)
 }
 
 extern void add_input_file(char *filename);
-extern void yyparse(void);
 static void usage(void);
 extern void dumpsym(int type, int doInternal);
 extern void pstats(void);

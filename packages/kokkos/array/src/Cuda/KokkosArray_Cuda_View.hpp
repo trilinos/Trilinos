@@ -67,12 +67,12 @@ struct AssertShapeBoundsAbort< CudaSpace >
 {
   KOKKOSARRAY_INLINE_FUNCTION
   static void apply( const size_t /* rank */ ,
-
                      const size_t /* n0 */ , const size_t /* n1 */ ,
                      const size_t /* n2 */ , const size_t /* n3 */ ,
                      const size_t /* n4 */ , const size_t /* n5 */ ,
                      const size_t /* n6 */ , const size_t /* n7 */ ,
 
+                     const size_t /* arg_rank */ ,
                      const size_t /* i0 */ , const size_t /* i1 */ ,
                      const size_t /* i2 */ , const size_t /* i3 */ ,
                      const size_t /* i4 */ , const size_t /* i5 */ ,
@@ -95,7 +95,7 @@ inline
 void deep_copy( ValueType & dst ,
                 const View< ValueType , LayoutSrc , Cuda , MemoryTraits , Impl::LayoutScalar > & src )
 {
-  DeepCopy<HostSpace,CudaSpace>( & dst , src.ptr_on_device() , sizeof(ValueType) );
+  (void)DeepCopy<HostSpace,CudaSpace>( & dst , src.ptr_on_device() , sizeof(ValueType) );
 }
 
 template< typename ValueType , class LayoutDst , class MemoryTraits >
@@ -103,7 +103,7 @@ inline
 void deep_copy( const View< ValueType , LayoutDst , Cuda , MemoryTraits , Impl::LayoutScalar > & dst ,
                 const ValueType & src )
 {
-  DeepCopy<CudaSpace,HostSpace>( dst.ptr_on_device() , & src , sizeof(ValueType) );
+  (void)DeepCopy<CudaSpace,HostSpace>( dst.ptr_on_device() , & src , sizeof(ValueType) );
 }
 
 } // namespace KokkosArray
@@ -192,8 +192,127 @@ public:
   KOKKOSARRAY_INLINE_FUNCTION
   ValueType operator[]( const iType & i ) const
   {
+    return ptr[ i ];
+  }
+};
+
+template<>
+struct CudaTextureFetch< const int > {
+private:
+
+  cuda_texture_object_type  obj ;
+
+public:
+
+  const int * ptr ;
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  CudaTextureFetch() : obj( 0 ) , ptr( 0 ) {}
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  ~CudaTextureFetch() {}
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  CudaTextureFetch( const CudaTextureFetch & rhs )
+    : obj( rhs.obj ) , ptr( rhs.ptr ) {}
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  CudaTextureFetch & operator = ( const CudaTextureFetch & rhs )
+    { obj = rhs.obj ; ptr = rhs.ptr ; return *this ; }
+
+  explicit
+  CudaTextureFetch( const int * const base_view_ptr )
+    : obj( cuda_texture_object_attach<int>( base_view_ptr ) )
+    , ptr( base_view_ptr ) {}
+
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  int operator[]( const iType & i ) const
+  {
 #if defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
-    return tex1Dfetch<ValueType>(tex_obj,idx);
+    return tex1Dfetch<int>( obj , i );
+#else
+    return ptr[ i ];
+#endif
+  }
+};
+
+template<>
+struct CudaTextureFetch< const unsigned int > {
+private:
+
+  cuda_texture_object_type  obj ;
+
+public:
+
+  const unsigned int * ptr ;
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  CudaTextureFetch() : obj( 0 ) , ptr( 0 ) {}
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  ~CudaTextureFetch() {}
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  CudaTextureFetch( const CudaTextureFetch & rhs )
+    : obj( rhs.obj ) , ptr( rhs.ptr ) {}
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  CudaTextureFetch & operator = ( const CudaTextureFetch & rhs )
+    { obj = rhs.obj ; ptr = rhs.ptr ; return *this ; }
+
+  explicit
+  CudaTextureFetch( const unsigned int * const base_view_ptr )
+    : obj( cuda_texture_object_attach<unsigned int>( base_view_ptr ) )
+    , ptr( base_view_ptr ) {}
+
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  unsigned int operator[]( const iType & i ) const
+  {
+#if defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
+    return tex1Dfetch<unsigned int>( obj , i );
+#else
+    return ptr[ i ];
+#endif
+  }
+};
+
+template<>
+struct CudaTextureFetch< const float > {
+private:
+
+  cuda_texture_object_type  obj ;
+
+public:
+
+  const float * ptr ;
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  CudaTextureFetch() : obj( 0 ) , ptr( 0 ) {}
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  ~CudaTextureFetch() {}
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  CudaTextureFetch( const CudaTextureFetch & rhs )
+    : obj( rhs.obj ) , ptr( rhs.ptr ) {}
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  CudaTextureFetch & operator = ( const CudaTextureFetch & rhs )
+    { obj = rhs.obj ; ptr = rhs.ptr ; return *this ; }
+
+  explicit
+  CudaTextureFetch( const float * const base_view_ptr )
+    : obj( cuda_texture_object_attach<float>( base_view_ptr ) )
+    , ptr( base_view_ptr ) {}
+
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  float operator[]( const iType & i ) const
+  {
+#if defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
+    return tex1Dfetch<float>( obj , i );
 #else
     return ptr[ i ];
 #endif
@@ -298,19 +417,6 @@ struct CudaTexture {};
 
 #if defined( CUDA_VERSION ) && ( 500 <= CUDA_VERSION )
 
-/** \brief  Replace LayoutVector specialization */
-template< typename ScalarType , class RankDynamic >
-struct ViewSpecialize< const ScalarType , const ScalarType ,
-                       LayoutLeft , unsigned_<1> , RankDynamic ,
-                       CudaSpace , MemoryRandomRead >
-{ typedef CudaTexture type ; };
-
-template< typename ScalarType , class RankDynamic >
-struct ViewSpecialize< const ScalarType , const ScalarType ,
-                       LayoutRight , unsigned_<1> , RankDynamic ,
-                       CudaSpace , MemoryRandomRead >
-{ typedef CudaTexture type ; };
-
 /** \brief  Replace LayoutDefault specialization */
 template< typename ScalarType , class Rank , class RankDynamic >
 struct ViewSpecialize< const ScalarType , const ScalarType ,
@@ -366,40 +472,8 @@ struct ViewAssignment< CudaTexture , CudaTexture , void >
 
 
 template<>
-struct ViewAssignment< CudaTexture , LayoutVector , void >
-{
-  template< class DT , class DL , class DD , class DM ,
-            class ST , class SL , class SD , class SM >
-  inline
-  ViewAssignment(       View<DT,DL,DD,DM,CudaTexture> & dst ,
-                  const View<ST,SL,SD,SM,LayoutVector> & src ,
-                  const typename enable_if<(
-                    ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                     ViewTraits<ST,SL,SD,SM> >::value
-                    &&
-                    ShapeCompatible< typename ViewTraits<DT,DL,DD,DM>::shape_type ,
-                                     typename ViewTraits<ST,SL,SD,SM>::shape_type >::value
-                    &&
-                    ( ViewTraits<DT,DL,DD,DM>::rank == 1 )
-                  )>::type * = 0 )
-  {
-    typedef View<DT,DL,DD,DM,CudaTexture> DstViewType ;
-
-    typedef typename DstViewType::shape_type  shape_type ;
-    typedef typename DstViewType::scalar_type scalar_type ;
-
-    dst.m_texture = CudaTextureFetch< scalar_type >( src.m_ptr_on_device );
-    dst.m_stride  = 1 ; // Unused for vector specialization
-
-    shape_type::assign( dst.m_shape, src.m_shape.N0 );
-  }
-};
-
-template<>
 struct ViewAssignment< CudaTexture , LayoutDefault , void >
 {
-  typedef LayoutDefault Specialize ;
-
   /** \brief Assign compatible views */
 
   template< class DT , class DL , class DD , class DM ,
@@ -446,13 +520,12 @@ class View< T , L , D , M , Impl::CudaTexture >
   : public ViewTraits< T , L , D , M >
 {
 public:
-	typedef ViewTraits< T , L , D , M > traits ;
+
+  typedef ViewTraits< T , L , D , M > traits ;
+
 private:
 
   template< class , class , class > friend class Impl::ViewAssignment ;
-  friend class Impl::PhysicalLayout;
-
-
 
   Impl::CudaTextureFetch<typename traits::scalar_type > m_texture ;
   typename traits::shape_type           m_shape ;
@@ -463,13 +536,14 @@ public:
   typedef Impl::CudaTexture specialize ;
 
   typedef View< typename traits::const_data_type ,
-                typename traits::layout_type ,
+                typename traits::array_layout ,
                 typename traits::device_type ,
                 typename traits::memory_traits > const_type ;
 
   typedef View< typename traits::non_const_data_type ,
-                typename traits::layout_type ,
-                Host, MemoryRandomRead > HostMirror ;
+                typename traits::array_layout ,
+                Host ,
+                void > HostMirror ;
 
   enum { Rank = traits::rank };
 
@@ -488,11 +562,7 @@ public:
   typename traits::size_type dimension( const iType & i ) const
     { return Impl::dimension( m_shape , i ); }
 
-  KOKKOSARRAY_INLINE_FUNCTION
-  bool is_null() const { return 0 == m_texture.ptr ; }
-
-  KOKKOSARRAY_INLINE_FUNCTION
-  typename traits::scalar_type * ptr_on_device() const { return m_texture.ptr ; }
+  //------------------------------------
 
   View() : m_texture(), m_stride(0)
    { traits::shape_type::assign(m_shape,0,0,0,0,0,0,0,0); }
@@ -506,7 +576,7 @@ public:
 
   View & operator = ( const View & rhs )
     {
-      Impl::ViewAssignment< Impl::CudaTexture , Impl::CudaTexture >( *this , rhs );
+      (void)Impl::ViewAssignment< Impl::CudaTexture , Impl::CudaTexture >( *this , rhs );
       return *this ;
     }
 
@@ -525,12 +595,37 @@ public:
     }
 
   //------------------------------------
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  bool is_null() const { return 0 == m_texture.ptr ; }
+
+  //------------------------------------
   // Rank = 1 access operators:
 
   template < typename iType0 >
   KOKKOSARRAY_INLINE_FUNCTION
+  typename Impl::EnableViewOper< traits , LayoutLeft , 1 , iType0 >::type operator[]
+    ( const iType0 & i0 ) const
+    {
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
+      KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
+      return m_texture[ i0 ];
+    }
+
+  template < typename iType0 >
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename Impl::EnableViewOper< traits , LayoutRight , 1 , iType0 >::type operator[]
+    ( const iType0 & i0 ) const
+    {
+      KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
+      KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
+      return m_texture[ i0 ];
+    }
+
+  template < typename iType0 >
+  KOKKOSARRAY_INLINE_FUNCTION
   typename Impl::EnableViewOper< traits , LayoutLeft , 1 , iType0 >::type operator()
-    ( const iType0 & i0 )
+    ( const iType0 & i0 ) const
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
@@ -540,7 +635,7 @@ public:
   template < typename iType0 >
   KOKKOSARRAY_INLINE_FUNCTION
   typename Impl::EnableViewOper< traits , LayoutRight , 1 , iType0 >::type operator()
-    ( const iType0 & i0 )
+    ( const iType0 & i0 ) const
     {
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
@@ -794,6 +889,33 @@ public:
                         i2 + m_shape.N2 * (
                         i1 )))))) + i0 * m_stride ];
     }
+
+  //------------------------------------
+
+  KOKKOSARRAY_INLINE_FUNCTION
+  typename traits::scalar_type * ptr_on_device() const { return m_texture.ptr ; }
+
+  // Stride of physical storage, dimensioned to at least Rank
+  template< typename iType >
+  KOKKOSARRAY_INLINE_FUNCTION
+  void stride( iType * const s ) const
+  {
+    enum { is_left = Impl::is_same< typename traits::array_layout , LayoutLeft >::value };
+
+    if ( 1 == Rank ) {
+      s[0] = 1 ;
+    }
+    else if ( is_left ) {
+      s[0] = 1 ;
+      s[1] = m_stride ;
+      for ( int i = 2 ; i < Rank ; ++i ) { s[i] = s[i-1] * dimension(i-1); }
+    }
+    else {
+      s[0] = m_stride ;
+      s[Rank-1] = 1 ;
+      for ( int i = Rank - 2 ; 0 < i ; --i ) { s[i] = s[i+1] * dimension(i+1); }
+    }
+  }
 };
 
 } /* namespace KokkosArray */

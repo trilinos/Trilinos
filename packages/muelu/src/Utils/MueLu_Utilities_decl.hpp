@@ -51,9 +51,11 @@
 #include "MueLu_ConfigDefs.hpp"
 
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_ParameterList.hpp>
 
 #include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_CrsMatrix_fwd.hpp>
@@ -184,8 +186,9 @@ namespace MueLu {
                                 const Matrix & B,
                                 bool transposeB,
                                 bool callFillCompleteOnResult = true,
-                                bool doOptimizeStorage = true) {
-      return Utils<SC,LO,GO,NO,LMO>::Multiply(A, transposeA, B, transposeB, Teuchos::null, callFillCompleteOnResult, doOptimizeStorage);
+                                bool doOptimizeStorage        = true,
+                                bool allowMLMultiply          = true) {
+      return Utils<SC,LO,GO,NO,LMO>::Multiply(A, transposeA, B, transposeB, Teuchos::null, callFillCompleteOnResult, doOptimizeStorage, allowMLMultiply);
 
     }
 
@@ -215,7 +218,8 @@ namespace MueLu {
                                 bool transposeB,
                                 RCP<Matrix> C_in,
                                 bool callFillCompleteOnResult = true,
-                                bool doOptimizeStorage = true);
+                                bool doOptimizeStorage        = true,
+                                bool allowMLMultiply          = true);
 
 #ifdef HAVE_MUELU_EPETRAEXT
     // Michael Gee's MLMultiply
@@ -235,8 +239,8 @@ namespace MueLu {
     */
     static RCP<BlockedCrsMatrix> TwoMatrixMultiplyBlock(RCP<BlockedCrsMatrix> const &A, bool transposeA,
                                                         RCP<BlockedCrsMatrix> const &B, bool transposeB,
-                                                        bool doFillComplete=true,
-                                                        bool doOptimizeStorage=true);
+                                                        bool doFillComplete    = true,
+                                                        bool doOptimizeStorage = true);
 
     /*! @brief Helper function to calculate B = alpha*A + beta*B.
 
@@ -337,8 +341,9 @@ namespace MueLu {
     */
    static void Write(std::string const & fileName, const Map& M); // Write
 
-   //! @brief Read matrix from file in Matrix Market format.
-   static Teuchos::RCP<Matrix> Read(std::string const & fileName, Xpetra::UnderlyingLib lib, RCP<const Teuchos::Comm<int> > const &comm);
+   //! @brief Read matrix from file in Matrix Market or binary format.
+   static Teuchos::RCP<Matrix> Read(std::string const & fileName, Xpetra::UnderlyingLib lib, RCP<const Teuchos::Comm<int> > const &comm, bool binary = false);
+
 
     static void PauseForDebugger();
 
@@ -400,7 +405,7 @@ namespace MueLu {
 
     /*! @brief print matrix info
     */
-    static std::string PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const ParameterList> params = Teuchos::null);
+    static std::string PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const Teuchos::ParameterList> params = Teuchos::null);
 
   }; // class Utils
 
@@ -469,6 +474,12 @@ namespace MueLu {
     static void TwoMatrixAdd(RCP<Matrix> const &A, bool const &transposeA, SC const &alpha,
                              RCP<Matrix> const &B, bool const &transposeB, SC const &beta,
                              RCP<Matrix> &C, bool const &AHasFixedNnzPerRow=false);
+
+    /*! @brief Read vector from file in Matrix Market format.
+      TODO Move this to Xpetra?
+    */
+    static RCP<MultiVector> Read(const std::string& fileName, const RCP<const Map>& map);
+
   }; // class Utils2
 
   // specialization Utils2 for SC=double, LO=GO=int
@@ -476,21 +487,24 @@ namespace MueLu {
   class Utils2<double,int,int>//, Kokkos::DefaultNode::DefaultNodeType,
                //Kokkos::DefaultKernels<double,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps >
   {
-    typedef double SC;
-    typedef int LO;
-    typedef int GO;
-    typedef Kokkos::DefaultNode::DefaultNodeType NO;
-    typedef Kokkos::DefaultKernels<double,int,NO>::SparseOps LMO;
-    typedef Xpetra::Matrix<double,int,int,NO,LMO> Matrix;
+    typedef double                                              SC;
+    typedef int                                                 LO;
+    typedef int                                                 GO;
+    typedef Kokkos::DefaultNode::DefaultNodeType                NO;
+    typedef Kokkos::DefaultKernels<double,int,NO>::SparseOps    LMO;
+    typedef Xpetra::Map<int,int,NO>                             Map;
+    typedef Xpetra::Matrix<double,int,int,NO,LMO>               Matrix;
+    typedef Xpetra::MultiVector<double,int,int,NO>              MultiVector;
 
   public:
 
-    static RCP<Matrix> Transpose(RCP<Matrix> const &Op, bool const & optimizeTranspose=false);
-    static void MyOldScaleMatrix_Epetra(RCP<Matrix> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doFillComplete, bool doOptimizeStorage);
-    static void TwoMatrixAdd(RCP<Matrix> const &A, bool transposeA, SC alpha, RCP<Matrix> &B, SC beta);
-    static void TwoMatrixAdd(RCP<Matrix> const &A, bool const &transposeA, SC const &alpha,
-                             RCP<Matrix> const &B, bool const &transposeB, SC const &beta,
-                             RCP<Matrix> &C, bool const &AHasFixedNnzPerRow=false);
+    static RCP<Matrix>      Transpose               (const RCP<Matrix>& Op, const bool& optimizeTranspose = false);
+    static void             MyOldScaleMatrix_Epetra (RCP<Matrix> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doFillComplete, bool doOptimizeStorage);
+    static void             TwoMatrixAdd            (RCP<Matrix> const &A, bool transposeA, SC alpha, RCP<Matrix> &B, SC beta);
+    static void             TwoMatrixAdd            (RCP<Matrix> const &A, bool const &transposeA, SC const &alpha,
+                                                     RCP<Matrix> const &B, bool const &transposeB, SC const &beta,
+                                                     RCP<Matrix> &C, bool const &AHasFixedNnzPerRow = false);
+    static RCP<MultiVector> Read                    (const std::string& fileName, const RCP<const Map>& map);
   }; //specialization to Scalar=double
 
 

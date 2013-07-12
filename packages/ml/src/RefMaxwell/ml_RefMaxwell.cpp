@@ -752,7 +752,7 @@ int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWr
   List11c.set("cycle applications",1);
   List11c.set("smoother: type","Chebyshev");
   List11c.set("aggregation: threshold",.01);
-  List11c.set("coarse: type","Chebyshev");  
+  List11c.set("coarse: type","Amesos-KLU");  
   List11c.set("ML label","coarse (1,1) block");
   ML_Epetra::UpdateList(List11c,List11c_,OverWrite);
   
@@ -771,7 +771,7 @@ int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWr
   List22.set("smoother: type","Chebyshev");
   List22.set("aggregation: type","Uncoupled");
   List22.set("aggregation: threshold",.01);
-  List22.set("coarse: type","Chebyshev");
+  List22.set("coarse: type","Amesos-KLU");
   List22.set("ML label","(2,2) block");
 
   // This line is commented out due to IFPACK issues
@@ -782,7 +782,7 @@ int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWr
   /* Build Teuchos List: Overall */  
   SetDefaults("maxwell",ListRF,0,0,false);
   ListRF.set("smoother: type","Chebyshev");
-  ListRF.set("smoother: sweeps",2);
+  ListRF.set("smoother: sweeps",2);  
   ListRF.set("refmaxwell: 11solver","edge matrix free");
   ListRF.set("refmaxwell: 11list",List11);
   ListRF.set("refmaxwell: 22solver","multilevel");

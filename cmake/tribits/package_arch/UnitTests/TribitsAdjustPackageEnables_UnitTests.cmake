@@ -1,14 +1,15 @@
 # @HEADER
 # ************************************************************************
 #
-#            Trilinos: An Object-Oriented Solver Framework
-#                 Copyright (2001) Sandia Corporation
+#            TriBITS: Tribial Build, Integrate, and Test System
+#                    Copyright 2013 Sandia Corporation
 #
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+# the U.S. Government retains certain rights in this software.
 #
-# Copyright (2001) Sandia Corporation. Under the terms of Contract
-# DE-AC04-94AL85000, there is a non-exclusive license for use of this
-# work by or on behalf of the U.S. Government.  Export of this program
-# may require a license from the United States Government.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
 #
 # 1. Redistributions of source code must retain the above copyright
 # notice, this list of conditions and the following disclaimer.
@@ -33,60 +34,11 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# NOTICE:  The United States Government is granted for itself and others
-# acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
-# license in this data to reproduce, prepare derivative works, and
-# perform publicly and display publicly.  Beginning five (5) years from
-# July 25, 2001, the United States Government is granted for itself and
-# others acting on its behalf a paid-up, nonexclusive, irrevocable
-# worldwide license in this data to reproduce, prepare derivative works,
-# distribute copies to the public, perform publicly and display
-# publicly, and to permit others to do so.
-#
-# NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
-# OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
-# ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
-# RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
-# INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
-# THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
-#
 # ************************************************************************
 # @HEADER
 
-MESSAGE("PROJECT_NAME = ${PROJECT_NAME}")
-MESSAGE("${PROJECT_NAME}_TRIBITS_DIR = ${${PROJECT_NAME}_TRIBITS_DIR}")
 
-SET( CMAKE_MODULE_PATH
-  "${${PROJECT_NAME}_TRIBITS_DIR}/utils"
-  "${${PROJECT_NAME}_TRIBITS_DIR}/package_arch"
-  )
-
-INCLUDE(TribitsAdjustPackageEnables)
-INCLUDE(TribitsProcessTplsLists)
-INCLUDE(UnitTestHelpers)
-INCLUDE(GlobalSet)
-
-
-#####################################################################
-#
-# Helper macros for unit tests
-#
-#####################################################################
-
-
-MACRO(UNITTEST_HELPER_READ_AND_PROESS_PACKAGES)
-
-  TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS(${PROJECT_NAME} ".")
-  TRIBITS_PROCESS_TPLS_LISTS(${PROJECT_NAME} ".")
-  TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS(${EXTRA_REPO_NAME} ${EXTRA_REPO_DIR})
-  TRIBITS_PROCESS_TPLS_LISTS(${EXTRA_REPO_NAME} ${EXTRA_REPO_DIR})
-  TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES()
-  SET_DEFAULT(${PROJECT_NAME}_ENABLE_ALL_PACKAGES OFF)
-  SET_DEFAULT(${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE OFF)
-  SET(DO_PROCESS_MPI_ENABLES ON) # Should not be needed but CMake is not working!
-  TRIBITS_ADJUST_PACKAGE_ENABLES(TRUE)
- 
-ENDMACRO()
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsAdjustPackageEnablesHelpers.cmake)
 
 
 #####################################################################
@@ -359,6 +311,36 @@ FUNCTION(UNITTEST_EXTRA_REPO_MISSING_REQUIRED_PACKAGE)
   UNITTEST_COMPARE_CONST( ${PROJECT_NAME}_PACKAGES
     "Teuchos;RTOp;Ex2Package1;Ex2Package2")
   UNITTEST_COMPARE_CONST(${PROJECT_NAME}_ENABLE_Ex2Package1 OFF)
+
+ENDFUNCTION()
+
+
+FUNCTION(UNITTEST_ELEVATE_SUBPACKAGES_SS_TO_PS)
+
+  MESSAGE("\n***")
+  MESSAGE("*** Testing elevating packages and subpackages from SS to PS")
+  MESSAGE("***\n")
+
+  # Debugging
+  #SET(TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS ON)
+  #SET(${PROJECT_NAME}_VERBOSE_CONFIGURE ON)
+  #SET(TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS_DEBUG ON)
+
+  SET(${PROJECT_NAME}_ELEVATE_SS_TO_PS TRUE)
+
+  TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS(${PROJECT_NAME} ".")
+
+  INCLUDE(${PROJECT_SOURCE_DIR}/extraRepoOnePackageThreeSubpackages/PackagesList.cmake)
+  TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS(extraRepoOnePackageThreeSubpackages
+    extraRepoOnePackageThreeSubpackages)
+
+  TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES()
+
+  UNITTEST_COMPARE_CONST( ${PROJECT_NAME}_SE_PACKAGES
+    "Teuchos;RTOp;extraRepoOnePackageThreeSubpackagesSP1;extraRepoOnePackageThreeSubpackagesSP2;extraRepoOnePackageThreeSubpackagesSP3;extraRepoOnePackageThreeSubpackages")
+  UNITTEST_COMPARE_CONST(extraRepoOnePackageThreeSubpackagesSP1_CLASSIFICATION PS)
+  UNITTEST_COMPARE_CONST(extraRepoOnePackageThreeSubpackagesSP2_CLASSIFICATION PS)
+  UNITTEST_COMPARE_CONST(extraRepoOnePackageThreeSubpackagesSP3_CLASSIFICATION EX)
 
 ENDFUNCTION()
 
@@ -741,40 +723,6 @@ GLOBAL_SET(UNITTEST_OVERALL_PASS TRUE)
 GLOBAL_SET(UNITTEST_OVERALL_NUMPASSED 0)
 GLOBAL_SET(UNITTEST_OVERALL_NUMRUN 0)
 
-# Set common/base options
-
-SET(PROJECT_SOURCE_DIR "${${PROJECT_NAME}_TRIBITS_DIR}/package_arch/UnitTests/MockTrilinos")
-PRINT_VAR(PROJECT_SOURCE_DIR)
-SET(REPOSITORY_DIR ".")
-PRINT_VAR(REPOSITORY_DIR)
-
-# Set the mock project name last to override the outer project
-SET(PROJECT_NAME "Trilinos")
-
-SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
-  Teuchos             packages/teuchos                PS
-  RTOp                packages/rtop                   PS
-  )
-
-SET(Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
-  MPI            cmake/TPLs/    PS
-  BLAS           cmake/TPLs/    PS
-  LAPACK         cmake/TPLs/    PS
-  Boost          cmake/TPLs/    SS
-  )
-
-SET(EXTRA_REPO_NAME extraRepoTwoPackages)
-SET(EXTRA_REPO_DIR extraRepoTwoPackages)
-
-INCLUDE(${PROJECT_SOURCE_DIR}/${EXTRA_REPO_NAME}/PackagesList.cmake)
-
-SET(${EXTRA_REPO_NAME}_TPLS_FINDMODS_CLASSIFICATIONS)
-
-SET(${PROJECT_NAME}_ALL_REPOSITORIES "." "${EXTRA_REPO_NAME}")
-
-SET( ${PROJECT_NAME}_ASSERT_MISSING_PACKAGES ON )
-
-
 #
 # Run the unit tests
 #
@@ -790,6 +738,7 @@ UNITTEST_SINGLE_PROJECT_EMAIL_LIST()
 UNITTEST_SINGLE_PROJECT_EMAIL_LIST_OVERRIDE()
 UNITTEST_EXTRA_REPO_MISSING_OPTIONAL_PACKAGE()
 UNITTEST_EXTRA_REPO_MISSING_REQUIRED_PACKAGE()
+UNITTEST_ELEVATE_SUBPACKAGES_SS_TO_PS()
 
 # B) Test enabled/disable logic
 UNITTEST_ENABLE_NO_PACKAGES()
@@ -808,4 +757,4 @@ UNITTEST_TARNIPED_ALLOW_Ex2Package1_ENABLE_ALL()
 UNITTEST_TARNIPED_ALLOW_Ex2Package2_ENABLE_ALL()
 
 # Pass in the number of expected tests that must pass!
-UNITTEST_FINAL_RESULT(139)
+UNITTEST_FINAL_RESULT(143)

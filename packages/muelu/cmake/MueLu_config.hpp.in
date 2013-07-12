@@ -35,6 +35,8 @@
 
 #cmakedefine HAVE_MUELU_IFPACK2
 
+#cmakedefine HAVE_MUELU_ISORROPIA
+
 #cmakedefine HAVE_MUELU_KOKKOSCLASSIC
 
 #cmakedefine HAVE_MUELU_ML

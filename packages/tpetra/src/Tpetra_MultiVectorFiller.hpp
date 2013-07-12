@@ -78,7 +78,7 @@ namespace Details {
     typedef typename ArrayView<T>::iterator iter_type;
     typedef typename ArrayView<T>::size_type size_type;
 
-    std::unique (newEntries.begin(), newEntries.end());
+    std::sort (newEntries.begin(), newEntries.end());
     iter_type it = std::unique (newEntries.begin(), newEntries.end());
     const size_type numNew = as<size_type> (it - newEntries.begin());
     // View of the sorted, made-unique new entries to merge in.

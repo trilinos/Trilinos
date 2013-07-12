@@ -103,8 +103,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
 #ifdef HAVE_ML_AZTECOO
   RCP<std::vector<int> > aztecOptions = List_.get("smoother: Aztec options",SmootherOptions_);
   RCP<std::vector<double> > aztecParams = List_.get("smoother: Aztec params",SmootherParams_);
-  int* SmootherOptionsPtr = &(*aztecOptions)[0];
-  double* SmootherParamsPtr = &(*aztecParams)[0];
 
   bool AztecSmootherAsASolver = List_.get("smoother: Aztec as solver",false);
   int aztec_its;
@@ -148,7 +146,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
   // Ifpack-specific
   string IfpackType = List_.get("smoother: ifpack type", "Amesos");
   int IfpackOverlap = List_.get("smoother: ifpack overlap",0);
-  ParameterList & IfpackList = List_.sublist("smoother: ifpack list");
   // note: lof has different meanings for IC and ICT.  For IC and ILU, we
   // will cast it to an integer later.
   double IfpackLOF=0.0;
@@ -329,11 +326,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       // point Gauss-Seidel //
       // ================== //
 
+      bool gs_type = List_.get("smoother: Gauss-Seidel efficient symmetric",false);
+
       if( verbose_ ) cout << msg << "Gauss-Seidel (sweeps="
                           << Mynum_smoother_steps << ",omega=" << Myomega << ","
-                          << MyPreOrPostSmoother << ")" << endl;
-
-      bool gs_type = List_.get("smoother: Gauss-Seidel efficient symmetric",false);
+                          << MyPreOrPostSmoother << (gs_type ? ",efficient symmetric)" : ")") << std::endl;
       
 #ifdef HAVE_ML_IFPACK
       if (ml_->Amat[currentLevel].type == ML_TYPE_CRS_MATRIX) {
@@ -387,7 +384,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       bool gs_type = List_.get("smoother: Gauss-Seidel efficient symmetric",false);
       if( verbose_ ) cout << msg << "Gauss-Seidel (sweeps="
                          << Mynum_smoother_steps << ",omega=" << Myomega << ","
-                         << MyPreOrPostSmoother << ")" << endl;
+                         << MyPreOrPostSmoother << (gs_type ? ",efficient symmetric)" : ")") << std::endl;
 
       if(gs_type)
         ML_Gen_Smoother_EffSymGaussSeidel(ml_, currentLevel, pre_or_post,
@@ -536,12 +533,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       // These should remain int* and double*, rather than Teuchos::RCP's.
       // The user created the options & params arrays, so he is responsible for
       // freeing them.
-//      int* MySmootherOptionsPtr         = smList.get("smoother: Aztec options", SmootherOptionsPtr);
-RCP<std::vector<int> > myaztecOptions   = smList.get("smoother: Aztec options",SmootherOptions_);
-RCP<std::vector<double> > myaztecParams = smList.get("smoother: Aztec params",SmootherParams_);
-  int* MySmootherOptionsPtr = &(*myaztecOptions)[0];
-  double* MySmootherParamsPtr = &(*myaztecParams)[0];
-//      double* MySmootherParamsPtr = smList.get("smoother: Aztec params", SmootherParamsPtr);
+      RCP<std::vector<int> > myaztecOptions   = smList.get("smoother: Aztec options",SmootherOptions_);
+      RCP<std::vector<double> > myaztecParams = smList.get("smoother: Aztec params",SmootherParams_);
+      int* MySmootherOptionsPtr = &(*myaztecOptions)[0];
+      double* MySmootherParamsPtr = &(*myaztecParams)[0];
       bool MyAztecSmootherAsASolver = smList.get("smoother: Aztec as solver",AztecSmootherAsASolver);
      
       if( MyAztecSmootherAsASolver == false ) aztec_its = AZ_ONLY_PRECONDITIONER;
@@ -660,8 +655,13 @@ RCP<std::vector<double> > myaztecParams = smList.get("smoother: Aztec params",Sm
 
       // set these in the case the user wants "partitioner: type" = "user"
       // (if not, these values are ignored).
-      if (MyIfpackList.get("partitioner: type", "user") == "user")
-        MyIfpackList.set("partitioner: local parts", NumAggr);
+      if (MyIfpackList.isParameter("partitioner: type")) {
+        std::string  partitionerType = MyIfpackList.get<std::string>("partitioner: type");
+        if (partitionerType == "user")
+          MyIfpackList.set("partitioner: local parts", NumAggr);
+        if (partitionerType == "linear" && !MyIfpackList.isParameter("partitioner: local parts"))
+          MyIfpackList.set("partitioner: local parts", ml_->Amat[currentLevel].outvec_leng / NumPDEEqns_);
+      }
       MyIfpackList.set("partitioner: map", AggrMap);
 
       // Set the fact: LOF options, but only if they're not set already... All this sorcery is because level-of-fill

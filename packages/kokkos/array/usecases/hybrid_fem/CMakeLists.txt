@@ -8,18 +8,11 @@ SET(SOURCES "")
 
 FILE(GLOB SOURCES *.cpp ../common/*.cpp)
 
-IF( TPL_ENABLE_MPI )
-  ADD_DEFINITIONS( -DHAVE_MPI )
-ENDIF()
-
-
 SET(LIBRARIES kokkosarray_devicehost kokkosarray_impl)
   
 
 IF( TPL_ENABLE_CUDA AND TPL_ENABLE_CUSPARSE )
   SET(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)
-
-  ADD_DEFINITIONS( -DHAVE_CUDA )
 
   # add MPI include dir to nvcc
   IF( TPL_ENABLE_MPI )

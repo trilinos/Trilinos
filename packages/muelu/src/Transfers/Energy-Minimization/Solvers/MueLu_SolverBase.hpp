@@ -79,11 +79,10 @@ namespace MueLu {
      \param A -- Energy matrix
      \param C -- Constraints
      \param P0 -- Initial guess
-     \param B -- Fine nullspace
      \param P -- Resulting prolongator
      \note We assume that P0 has correct sparsity pattern
      */
-    virtual void Iterate(const Matrix& A, const Constraint& C, const Matrix& P0, const MultiVector& B, RCP<Matrix>& P) const = 0;
+    virtual void Iterate(const Matrix& A, const Constraint& C, const Matrix& P0, RCP<Matrix>& P) const = 0;
 
     //@}
 

@@ -108,7 +108,7 @@ private:
 public:
 
   ElementComputation( const mesh_type   & arg_mesh ,
-                      const elem_matrices_type  & arg_element_matrices , 
+                      const elem_matrices_type  & arg_element_matrices ,
                       const elem_vectors_type   & arg_element_vectors ,
                       const value_vector_type   & arg_nodal_values ,
 	              const scalar_type   arg_coeff_K )
@@ -175,17 +175,17 @@ public:
     // Inverse jacobian:
 
     float invJ[ TensorDim ] = {
-      ( J[j22] * J[j33] - J[j23] * J[j32] ) ,
-      ( J[j13] * J[j32] - J[j12] * J[j33] ) ,
-      ( J[j12] * J[j23] - J[j13] * J[j22] ) ,
+      static_cast<float>( J[j22] * J[j33] - J[j23] * J[j32] ) ,
+      static_cast<float>( J[j13] * J[j32] - J[j12] * J[j33] ) ,
+      static_cast<float>( J[j12] * J[j23] - J[j13] * J[j22] ) ,
 
-      ( J[j23] * J[j31] - J[j21] * J[j33] ) ,
-      ( J[j11] * J[j33] - J[j13] * J[j31] ) ,
-      ( J[j13] * J[j21] - J[j11] * J[j23] ) ,
+      static_cast<float>( J[j23] * J[j31] - J[j21] * J[j33] ) ,
+      static_cast<float>( J[j11] * J[j33] - J[j13] * J[j31] ) ,
+      static_cast<float>( J[j13] * J[j21] - J[j11] * J[j23] ) ,
 
-      ( J[j21] * J[j32] - J[j22] * J[j31] ) ,
-      ( J[j12] * J[j31] - J[j11] * J[j32] ) ,
-      ( J[j11] * J[j22] - J[j12] * J[j21] ) };
+      static_cast<float>( J[j21] * J[j32] - J[j22] * J[j31] ) ,
+      static_cast<float>( J[j12] * J[j31] - J[j11] * J[j32] ) ,
+      static_cast<float>( J[j11] * J[j22] - J[j12] * J[j21] ) };
 
     const float detJ = J[j11] * invJ[j11] +
                        J[j21] * invJ[j12] +
@@ -237,10 +237,10 @@ public:
 
     const scalar_type k_detJ_weight = coeff_k        * detJ * integ_weight ;
     const double res_val = value_at_pt * value_at_pt * detJ * integ_weight ;
-    const double mat_val = 2.0 * value_at_pt         * detJ * integ_weight ; 
+    const double mat_val = 2.0 * value_at_pt         * detJ * integ_weight ;
 
-    // $$ R_i = \int_{\Omega} \nabla \phi_i \cdot (k \nabla T) + \phi_i T^2 d \Omega $$ 
-    // $$ J_{i,j} = \frac{\partial R_i}{\partial T_j} = \int_{\Omega} k \nabla \phi_i \cdot \nabla \phi_j + 2 \phi_i \phi_j T d \Omega $$ 
+    // $$ R_i = \int_{\Omega} \nabla \phi_i \cdot (k \nabla T) + \phi_i T^2 d \Omega $$
+    // $$ J_{i,j} = \frac{\partial R_i}{\partial T_j} = \int_{\Omega} k \nabla \phi_i \cdot \nabla \phi_j + 2 \phi_i \phi_j T d \Omega $$
 
     for ( unsigned m = 0; m < FunctionCount; m++) {
       double * const mat = elem_mat[m] ;
@@ -255,11 +255,11 @@ public:
                      res_val * bases_val_m ;
 
       for( unsigned n = 0; n < FunctionCount; n++) {
-      
-        mat[n] += k_detJ_weight * ( dpsidx_m * dpsidx[n] + 
+
+        mat[n] += k_detJ_weight * ( dpsidx_m * dpsidx[n] +
                                     dpsidy_m * dpsidy[n] +
                                     dpsidz_m * dpsidz[n] ) +
-                  mat_val * bases_val_m * bases_vals[n]; 
+                  mat_val * bases_val_m * bases_vals[n];
       }
     }
   }
@@ -307,7 +307,7 @@ public:
                                   val , dpsidx , dpsidy , dpsidz ,
                                   detJ ,
                                   elem_data.weights[i] ,
-                                  elem_data.values[i] , 
+                                  elem_data.values[i] ,
                                   elem_vec , elem_mat );
     }
 
@@ -348,7 +348,7 @@ struct DirichletSolution<
   KOKKOSARRAY_INLINE_FUNCTION
   void operator()( const unsigned inode ) const
   {
-   
+
   // Apply dirichlet boundary condition on the Solution vector.
   // Define boundary node values to be either bc_lower_value or
   // bc_upper_value, depending on which boundary face they lie on.
@@ -411,7 +411,7 @@ struct DirichletResidual<
   void operator()( const unsigned inode ) const
   {
     //  Apply a dirichlet boundary condition to 'irow'
-    //  to maintain the symmetry of the original 
+    //  to maintain the symmetry of the original
     //  global stiffness matrix, zero out the columns
     //  that correspond to boundary conditions, and
     //  adjust the load vector accordingly

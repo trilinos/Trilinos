@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -118,7 +118,7 @@ namespace TSQR {
   ///   This can be fixed as soon as RCPs are made thread safe.
   ///
   template<class LocalOrdinal, class Scalar>
-  class SequentialTsqr : 
+  class SequentialTsqr :
     public NodeTsqr<LocalOrdinal, Scalar, std::vector<std::vector<Scalar> > >
   {
   public:
@@ -169,7 +169,7 @@ namespace TSQR {
 			std::vector<Scalar>& work) const
     {
       const LocalOrdinal ncols = A_top.ncols();
-      combine.factor_first (A_top.nrows(), ncols, A_top.get(), A_top.lda(), 
+      combine.factor_first (A_top.nrows(), ncols, A_top.get(), A_top.lda(),
 			    &tau[0], &work[0]);
       return mat_view(ncols, ncols, A_top.get(), A_top.lda());
     }
@@ -178,7 +178,7 @@ namespace TSQR {
     /// computed by factor_first_block() and stored implicitly in
     /// Q_first and tau, to the first (topmost) block C_first of the
     /// matrix C.
-    void 
+    void
     apply_first_block (Combine<LocalOrdinal, Scalar>& combine,
 		       const ApplyType& applyType,
 		       const const_mat_view& Q_first,
@@ -187,7 +187,7 @@ namespace TSQR {
 		       std::vector<Scalar>& work) const
     {
       const LocalOrdinal nrowsLocal = Q_first.nrows();
-      combine.apply_first (applyType, nrowsLocal, C_first.ncols(), 
+      combine.apply_first (applyType, nrowsLocal, C_first.ncols(),
 			   Q_first.ncols(), Q_first.get(), Q_first.lda(),
 			   &tau[0], C_first.get(), C_first.lda(), &work[0]);
     }
@@ -205,8 +205,8 @@ namespace TSQR {
       const LocalOrdinal ncols_Q = Q_cur.ncols();
       const LocalOrdinal ncols_C = C_cur.ncols();
 
-      combine.apply_inner (apply_type, 
-			   nrows_local, ncols_C, ncols_Q, 
+      combine.apply_inner (apply_type,
+			   nrows_local, ncols_C, ncols_Q,
 			   Q_cur.get(), C_cur.lda(), &tau[0],
 			   C_top.get(), C_top.lda(),
 			   C_cur.get(), C_cur.lda(), &work[0]);
@@ -222,8 +222,8 @@ namespace TSQR {
       const LocalOrdinal nrows_local = A_cur.nrows();
       const LocalOrdinal ncols = A_cur.ncols();
 
-      combine.factor_inner (nrows_local, ncols, R.get(), R.lda(), 
-			    A_cur.get(), A_cur.lda(), &tau[0], 
+      combine.factor_inner (nrows_local, ncols, R.get(), R.lda(),
+			    A_cur.get(), A_cur.lda(), &tau[0],
 			    &work[0]);
     }
 
@@ -251,7 +251,7 @@ namespace TSQR {
     ///   <it>not</it> work for arbitrary-precision types whose
     ///   storage is dynamically allocated, even if the amount of
     ///   storage is a constant.  In the latter case, you should
-    ///   specify a nondefault value.  
+    ///   specify a nondefault value.
     ///
     /// \note sizeOfScalar affects performance, not correctness (more
     ///   or less -- it should never be zero, for example).  It's OK
@@ -277,7 +277,7 @@ namespace TSQR {
     /// \param strategy [in] Cache blocking strategy to use (copied).
     ///
     SequentialTsqr (const CacheBlockingStrategy<LocalOrdinal, Scalar>& strategy) :
-      strategy_ (strategy) 
+      strategy_ (strategy)
     {}
 
     /// \brief Alternate constructor that takes a list of parameters.
@@ -300,7 +300,7 @@ namespace TSQR {
     ///   time, since it cannot cache an RCP (due to thread safety --
     ///   TbbTsqr invokes multiple instances of SequentialTsqr in
     ///   parallel).
-    Teuchos::RCP<const Teuchos::ParameterList> 
+    Teuchos::RCP<const Teuchos::ParameterList>
     getValidParameters () const
     {
       using Teuchos::ParameterList;
@@ -311,7 +311,7 @@ namespace TSQR {
       const size_t sizeOfScalar = sizeof(Scalar);
 
       RCP<ParameterList> plist = parameterList ("NodeTsqr");
-      plist->set ("Cache Size Hint", cacheSizeHint, 
+      plist->set ("Cache Size Hint", cacheSizeHint,
 		  "Cache size hint in bytes (as a size_t) to use for intranode"
 		  "TSQR.  If zero, TSQR will pick a reasonable default.  "
 		  "The size should correspond to that of the largest cache that "
@@ -332,15 +332,15 @@ namespace TSQR {
     ///
     /// For a list of currently understood parameters, see the
     /// parameter list returned by \c getValidParameters().
-    void 
+    void
     setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
     {
       using Teuchos::Exceptions::InvalidParameter;
       using Teuchos::ParameterList;
       using Teuchos::parameterList;
       using Teuchos::RCP;
-      
-      RCP<ParameterList> params = plist.is_null() ? 
+
+      RCP<ParameterList> params = plist.is_null() ?
 	parameterList (*getValidParameters()) : plist;
 
       const std::string cacheSizeHintName ("Cache Size Hint");
@@ -352,7 +352,7 @@ namespace TSQR {
       // change them here.
       size_t cacheSizeHint = 0;
       size_t sizeOfScalar = sizeof(Scalar);
-      
+
       try {
 	cacheSizeHint = params->get<size_t> (cacheSizeHintName);
       } catch (InvalidParameter&) {
@@ -366,7 +366,7 @@ namespace TSQR {
 
       // Reconstruct the cache blocking strategy, since we may have
       // changed parameters.
-      strategy_ = CacheBlockingStrategy<LocalOrdinal, Scalar> (cacheSizeHint, 
+      strategy_ = CacheBlockingStrategy<LocalOrdinal, Scalar> (cacheSizeHint,
 							       sizeOfScalar);
     }
 
@@ -378,7 +378,7 @@ namespace TSQR {
     std::string description () const {
       std::ostringstream os;
       os << "Intranode Tall Skinny QR (TSQR): sequential cache-blocked "
-	"implementation with cache size hint " << this->cache_size_hint() 
+	"implementation with cache size hint " << this->cache_size_hint()
 	 << " bytes.";
       return os.str();
     }
@@ -401,16 +401,16 @@ namespace TSQR {
     /// This may be different than the cache size hint argument
     /// specified in the constructor.  SequentialTsqr treats that as a
     /// hint, not a command.
-    size_t cache_size_hint () const { 
-      return strategy_.cache_size_hint(); 
+    size_t cache_size_hint () const {
+      return strategy_.cache_size_hint();
     }
 
     /// \brief Cache size hint (in bytes) used for the factorization.
     ///
     /// This method is deprecated, because the name is misleading.
     /// Please call \c cache_size_hint() instead.
-    size_t TEUCHOS_DEPRECATED cache_block_size () const { 
-      return strategy_.cache_size_hint(); 
+    size_t TEUCHOS_DEPRECATED cache_block_size () const {
+      return strategy_.cache_size_hint();
     }
 
     /// \brief Compute QR factorization (implicitly stored Q factor) of A.
@@ -442,7 +442,7 @@ namespace TSQR {
     factor (const LocalOrdinal nrows,
 	    const LocalOrdinal ncols,
 	    Scalar A[],
-	    const LocalOrdinal lda, 
+	    const LocalOrdinal lda,
 	    const bool contiguous_cache_blocks) const
     {
       CacheBlocker<LocalOrdinal, Scalar> blocker (nrows, ncols, strategy_);
@@ -497,7 +497,7 @@ namespace TSQR {
       const_mat_view A_view (nrows, ncols, A, lda);
 
       // Identify top cache block of A
-      const_mat_view A_top = top_block (A_view, contiguous_cache_blocks);
+      const_mat_view A_top = this->top_block (A_view, contiguous_cache_blocks);
 
       // Fill R (including lower triangle) with zeros.
       fill_matrix (ncols, ncols, R, ldr, Teuchos::ScalarTraits<Scalar>::zero());
@@ -518,7 +518,7 @@ namespace TSQR {
     factor (const LocalOrdinal nrows,
 	    const LocalOrdinal ncols,
 	    Scalar A[],
-	    const LocalOrdinal lda, 
+	    const LocalOrdinal lda,
 	    Scalar R[],
 	    const LocalOrdinal ldr,
 	    const bool contiguous_cache_blocks) const
@@ -553,7 +553,7 @@ namespace TSQR {
 	  combine_factor (combine, R_view, A_cur, tau, work);
 	  tau_arrays.push_back (tau);
 	}
-      
+
       // Copy the R factor resulting from the factorization out of
       // R_view (a view of the topmost cache block of A) into the R
       // output argument.
@@ -586,7 +586,7 @@ namespace TSQR {
     factor_num_cache_blocks (const LocalOrdinal nrows,
 			     const LocalOrdinal ncols,
 			     const Scalar A[],
-			     const LocalOrdinal lda, 
+			     const LocalOrdinal lda,
 			     const bool contiguous_cache_blocks) const
     {
       CacheBlocker<LocalOrdinal, Scalar> blocker (nrows, ncols, strategy_);
@@ -649,7 +649,7 @@ namespace TSQR {
       const bool transposed = apply_type.transposed();
       const FactorOutput& tau_arrays = factor_output; // rename for encapsulation
       std::vector<Scalar> work (ncols_C);
-      
+
       // We say "*_rest" because it points to the remaining part of
       // the matrix left to factor; at the beginning, the "remaining"
       // part is the whole matrix, but that will change as the
@@ -735,8 +735,8 @@ namespace TSQR {
 
       // Apply the Q factor to C, to extract the first ncols_C columns
       // of Q in explicit form.
-      apply (ApplyType::NoTranspose, 
-	     nrows, ncols_Q, Q, ldq, factor_output, 
+      apply (ApplyType::NoTranspose,
+	     nrows, ncols_Q, Q, ldq, factor_output,
 	     ncols_C, C, ldc, contiguous_cache_blocks);
     }
 
@@ -768,11 +768,11 @@ namespace TSQR {
       CacheBlocker< LocalOrdinal, Scalar > blocker (nrows, ncols, strategy_);
       BLAS< LocalOrdinal, Scalar > blas;
       mat_view Q_rest (nrows, ncols, Q, ldq);
-      Matrix< LocalOrdinal, Scalar > 
+      Matrix< LocalOrdinal, Scalar >
 	Q_cur_copy (LocalOrdinal(0), LocalOrdinal(0)); // will be resized
       while (! Q_rest.empty())
 	{
-	  mat_view Q_cur = 
+	  mat_view Q_cur =
 	    blocker.split_top_block (Q_rest, contiguous_cache_blocks);
 
 	  // GEMM doesn't like aliased arguments, so we use a copy.
@@ -828,7 +828,7 @@ namespace TSQR {
     un_cache_block (const LocalOrdinal nrows,
 		    const LocalOrdinal ncols,
 		    Scalar A_out[],
-		    const LocalOrdinal lda_out,		    
+		    const LocalOrdinal lda_out,
 		    const Scalar A_in[]) const
     {
       CacheBlocker<LocalOrdinal, Scalar> blocker (nrows, ncols, strategy_);
@@ -836,13 +836,13 @@ namespace TSQR {
     }
 
     /// \brief Fill the nrows by ncols matrix A with zeros.
-    /// 
+    ///
     /// Fill the matrix A with zeros, in a way that respects the cache
     /// blocking scheme.
     ///
     /// \param nrows [in] Number of rows in A
-    /// \param ncols [in] Number of columns in A 
-    /// \param A [out] nrows by ncols column-major-order dense matrix 
+    /// \param ncols [in] Number of columns in A
+    /// \param A [out] nrows by ncols column-major-order dense matrix
     ///   with leading dimension lda
     /// \param lda [in] Leading dimension of A: lda >= nrows
     /// \param contiguous_cache_blocks [in] Whether the cache blocks
@@ -851,7 +851,7 @@ namespace TSQR {
     fill_with_zeros (const LocalOrdinal nrows,
 		     const LocalOrdinal ncols,
 		     Scalar A[],
-		     const LocalOrdinal lda, 
+		     const LocalOrdinal lda,
 		     const bool contiguous_cache_blocks) const
     {
       CacheBlocker<LocalOrdinal, Scalar> blocker (nrows, ncols, strategy_);
@@ -873,8 +873,8 @@ namespace TSQR {
     ///
     /// \return View of the topmost cache block of the matrix C.
     ConstMatView<LocalOrdinal, Scalar>
-    const_top_block (const ConstMatView<LocalOrdinal, Scalar>& C, 
-		     const bool contiguous_cache_blocks) const 
+    const_top_block (const ConstMatView<LocalOrdinal, Scalar>& C,
+		     const bool contiguous_cache_blocks) const
     {
       // The CacheBlocker object knows how to construct a view of the
       // top cache block of C.  This is complicated because cache
@@ -888,7 +888,7 @@ namespace TSQR {
       // C_top_block should have >= ncols rows, otherwise either cache
       // blocking is broken or the input matrix C itself had fewer
       // rows than columns.
-      const_mat_view C_top_block = 
+      const_mat_view C_top_block =
 	blocker.top_block (C, contiguous_cache_blocks);
       return C_top_block;
     }
@@ -897,7 +897,7 @@ namespace TSQR {
     //! Strategy object that helps us cache block matrices.
     CacheBlockingStrategy<LocalOrdinal, Scalar> strategy_;
   };
-  
+
 } // namespace TSQR
 
 #endif // __TSQR_Tsqr_SequentialTsqr_hpp

@@ -66,7 +66,7 @@ namespace Tpetra {
   /// \struct RowInfo
   /// \brief Allocation information for a locally owned row in a
   ///   CrsGraph or CrsMatrix
-  ///  
+  ///
   /// A RowInfo instance identifies a locally owned row uniquely by
   /// its local index, and contains other information useful for
   /// inserting entries into the row.  It is the return value of
@@ -229,9 +229,6 @@ namespace Tpetra {
 
     /// \brief Constructor specifying column Map and fixed number of entries for each row.
     ///
-    /// The column Map will be used to filter any graph indices
-    /// inserted using insertLocalIndices() or insertGlobalIndices().
-    ///
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
     /// \param colMap [in] Distribution of columns of the graph.
@@ -256,9 +253,6 @@ namespace Tpetra {
               const RCP<ParameterList>& params = null);
 
     /// \brief Constructor specifying column Map and number of entries in each row.
-    ///
-    /// The column Map will be used to filter any graph indices
-    /// inserted using insertLocalIndices() or insertGlobalIndices().
     ///
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
@@ -555,9 +549,9 @@ namespace Tpetra {
     insertGlobalIndices (GlobalOrdinal globalRow,
                          const ArrayView<const GlobalOrdinal>& indices);
 
-    //! Insert graph indices, using local IDs.
+    //! Insert local indices into the graph.
     /**
-       \pre \c localRow is a local row belonging to the graph on this node
+       \pre \c localRow is a local row belonging to the graph on this process.
        \pre <tt>isGloballyIndexed() == false</tt>
        \pre <tt>isStorageOptimized() == false</tt>
        \pre <tt>hasColMap() == true</tt>
@@ -571,7 +565,7 @@ namespace Tpetra {
          during the next call to fillComplete().
     */
     void
-    insertLocalIndices (LocalOrdinal localRow,
+    insertLocalIndices (const LocalOrdinal localRow,
                         const ArrayView<const LocalOrdinal> &indices);
 
     //! Remove all graph indices from the specified local row.
@@ -752,27 +746,57 @@ namespace Tpetra {
      */
     size_t getNodeNumDiags() const;
 
-    //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
-    /** Undefined if isFillActive().
-     */
+    /// \brief Maximum number of entries in all rows over all processes.
+    ///
+    /// \note Undefined if isFillActive().
+    ///
+    /// \note This is the same as the result of a global maximum of
+    ///   getNodeMaxNumRowEntries() over all processes.  That may not
+    ///   necessarily mean what you think it does if some rows of the
+    ///   matrix are owned by multiple processes.  In particular, some
+    ///   processes might only own some of the entries in a particular
+    ///   row.  This method only counts the number of entries in each
+    ///   row that a process owns, not the total number of entries in
+    ///   the row over all processes.
     size_t getGlobalMaxNumRowEntries() const;
 
-    //! \brief Returns the maximum number of entries across all rows/columns on this node.
+    //! \brief Maximum number of entries in all rows owned by the calling process.
     /** Undefined if isFillActive().
      */
     size_t getNodeMaxNumRowEntries() const;
 
-    //! \brief Indicates whether the graph has a well-defined column map.
+    /// \brief Whether the graph has a column Map.
+    ///
+    /// A CrsGraph has a column Map either because it was given to its
+    /// constructor, or because it was constructed in fillComplete().
+    /// Calling fillComplete() always makes a column Map if the graph
+    /// does not already have one.
+    ///
+    /// A column Map lets the graph
+    ///
+    ///   - use local indices for storing entries in each row, and
+    ///   - compute an Import from the domain Map to the column Map.
+    ///
+    /// The latter is mainly useful for a graph associated with a
+    /// CrsMatrix.
     bool hasColMap() const;
 
-    //! \brief Indicates whether the graph is lower triangular.
-    /** Undefined if isFillActive().
-     */
+    /// \brief Whether the graph is locally lower triangular.
+    ///
+    /// \pre <tt>! isFillActive()</tt>.
+    ///   If fill is active, this method's behavior is undefined.
+    ///
+    /// \note This is entirely a local property.  That means this
+    ///   method may return different results on different processes.
     bool isLowerTriangular() const;
 
-    //! \brief Indicates whether the graph is upper triangular.
-    /** Undefined if isFillActive().
-     */
+    /// \brief Whether the graph is locally upper triangular.
+    ///
+    /// \pre <tt>! isFillActive()</tt>.
+    ///   If fill is active, this method's behavior is undefined.
+    ///
+    /// \note This is entirely a local property.  That means this
+    ///   method may return different results on different processes.
     bool isUpperTriangular() const;
 
     //! \brief If graph indices are in the local range, this function returns true. Otherwise, this function returns false. */
@@ -870,29 +894,40 @@ namespace Tpetra {
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
     //@}
-    //! @name Methods implementing Tpetra::DistObject
+    //! @name Implementation of DistObject
     //@{
 
-    bool checkSizes(const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>& source);
+    virtual bool 
+    checkSizes (const SrcDistObject& source);
 
-    void copyAndPermute(const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> & source,
-                        size_t numSameIDs,
-                        const ArrayView<const LocalOrdinal> &permuteToLIDs,
-                        const ArrayView<const LocalOrdinal> &permuteFromLIDs);
+    virtual void 
+    copyAndPermute (const SrcDistObject& source,
+		    size_t numSameIDs,
+		    const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
+		    const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs);
 
-    void packAndPrepare(const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> & source,
-                        const ArrayView<const LocalOrdinal> &exportLIDs,
-                        Array<GlobalOrdinal> &exports,
-                        const ArrayView<size_t> & numPacketsPerLID,
-                        size_t& constantNumPackets,
-                        Distributor &distor);
+    virtual void
+    packAndPrepare (const SrcDistObject& source,
+		    const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
+		    Teuchos::Array<GlobalOrdinal> &exports,
+		    const Teuchos::ArrayView<size_t> & numPacketsPerLID,
+		    size_t& constantNumPackets,
+		    Distributor &distor);
 
-    void unpackAndCombine(const ArrayView<const LocalOrdinal> &importLIDs,
-                          const ArrayView<const GlobalOrdinal> &imports,
-                          const ArrayView<size_t> &numPacketsPerLID,
-                          size_t constantNumPackets,
-                          Distributor &distor,
-                          CombineMode CM);
+    virtual void
+    pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+	  Teuchos::Array<GlobalOrdinal>& exports,
+	  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+	  size_t& constantNumPackets,
+	  Distributor& distor) const;
+
+    virtual void 
+    unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
+		      const Teuchos::ArrayView<const GlobalOrdinal> &imports,
+		      const Teuchos::ArrayView<size_t> &numPacketsPerLID,
+		      size_t constantNumPackets,
+		      Distributor &distor,
+		      CombineMode CM);
     //@}
     //! \name Advanced methods, at increased risk of deprecation.
     //@{
@@ -1031,13 +1066,18 @@ namespace Tpetra {
     template<class T>
     size_t
     filterGlobalIndicesAndValues (const ArrayView<GlobalOrdinal>& ginds,
-				  const ArrayView<T>& vals) const;
+                                  const ArrayView<T>& vals) const;
     template<class T>
     size_t
     filterLocalIndicesAndValues (const ArrayView<LocalOrdinal>& linds,
-				 const ArrayView<T>& vals) const;
+                                 const ArrayView<T>& vals) const;
 
     /// \brief Insert indices into the given row.
+    ///
+    /// \pre <tt>! (lg == LocalIndices && I == GlobalIndices)</tt>.
+    ///   It does not make sense to give this method local column
+    ///   indices (meaning that the graph has a column Map), yet to
+    ///   ask it to store global indices.
     ///
     /// \param rowInfo [in] Result of CrsGraph's getRowInfo() or
     ///   updateAllocAndValues() methods, for the locally owned row
@@ -1061,26 +1101,74 @@ namespace Tpetra {
     ///   will store the input indices as global indices.  Otherwise,
     ///   if <tt>I == LocalIndices</tt>, this method will store the
     ///   input indices as local indices.
-    size_t 
-    insertIndices (const RowInfo& rowInfo, 
-		   const SLocalGlobalViews& newInds,
-		   const ELocalGlobal lg,
-		   const ELocalGlobal I);
+    size_t
+    insertIndices (const RowInfo& rowInfo,
+                   const SLocalGlobalViews& newInds,
+                   const ELocalGlobal lg,
+                   const ELocalGlobal I);
 
+    /// \brief Insert indices and their values into the given row.
+    ///
+    /// \tparam Scalar The type of a single value.  When this method
+    ///   is called by CrsMatrix, \c Scalar corresponds to the first
+    ///   template parameter of CrsMatrix.
+    ///
+    /// \pre <tt>! (lg == LocalIndices && I == GlobalIndices)</tt>.
+    ///   It does not make sense to give this method local column
+    ///   indices (meaning that the graph has a column Map), yet to
+    ///   ask it to store global indices.
+    ///
+    /// \param rowInfo [in] Result of CrsGraph's getRowInfo() or
+    ///   updateAllocAndValues() methods, for the locally owned row
+    ///   (whose local index is <tt>rowInfo.localRow</tt>) for which
+    ///   you want to insert indices.
+    ///
+    /// \param newInds [in] View of the column indices to insert.  If
+    ///   <tt>lg == GlobalIndices</tt>, then newInds.ginds, a
+    ///   <tt>Teuchos::ArrayView<const GlobalOrdinal></tt>, contains
+    ///   the (global) column indices to insert.  Otherwise, if <tt>lg
+    ///   == LocalIndices</tt>, then newInds.linds, a
+    ///   <tt>Teuchos::ArrayView<const LocalOrdinal></tt>, contains
+    ///   the (local) column indices to insert.
+    ///
+    /// \param oldRowVals [out] View of the current values.  They will
+    ///   be overwritten with the new values.
+    ///
+    /// \param newRowVals [in] View of the new values.  They will be
+    ///   copied over the old values.
+    ///
+    /// \param lg If <tt>lg == GlobalIndices</tt>, then the input
+    ///   indices (in \c newInds) are global indices.  Otherwise, if
+    ///   <tt>lg == LocalIndices</tt>, the input indices are local
+    ///   indices.
+    ///
+    /// \param I If <tt>lg == GlobalIndices</tt>, then this method
+    ///   will store the input indices as global indices.  Otherwise,
+    ///   if <tt>I == LocalIndices</tt>, this method will store the
+    ///   input indices as local indices.
     template<class Scalar>
     void
     insertIndicesAndValues (const RowInfo& rowInfo,
                             const SLocalGlobalViews& newInds,
-			    const ArrayView<Scalar>& oldRowVals,
+                            const ArrayView<Scalar>& oldRowVals,
                             const ArrayView<const Scalar>& newRowVals,
-			    const ELocalGlobal lg,
-			    const ELocalGlobal I);
+                            const ELocalGlobal lg,
+                            const ELocalGlobal I);
     void
     insertGlobalIndicesImpl (const LocalOrdinal myRow,
                              const ArrayView<const GlobalOrdinal> &indices);
     void
     insertLocalIndicesImpl (const LocalOrdinal myRow,
                             const ArrayView<const LocalOrdinal> &indices);
+    //! Like insertLocalIndices(), but with column Map filtering.
+    void
+    insertLocalIndicesFiltered (const LocalOrdinal localRow,
+                                const ArrayView<const LocalOrdinal> &indices);
+
+    //! Like insertGlobalIndices(), but with column Map filtering.
+    void
+    insertGlobalIndicesFiltered (const GlobalOrdinal localRow,
+                                 const ArrayView<const GlobalOrdinal> &indices);
 
     /// \brief Transform the given values using local indices.
     ///
@@ -1141,11 +1229,12 @@ namespace Tpetra {
     //! Whether duplicate column indices in each row have been merged.
     bool isMerged () const;
 
-    //! Set indicesAreSorted_ to merged.  (Just set the Boolean.)
-    void setSorted (bool sorted);
-
-    //! Set noRedundancies_ to merged.  (Just set the Boolean.)
-    void setMerged (bool merged);
+    /// \brief Report that we made a local modification to its structure.
+    ///
+    /// Call this after making a local change to the graph's
+    /// structure.  Changing the structure locally invalidates the "is
+    /// sorted" and "is merged" states.
+    void setLocallyModified ();
 
     //! Sort the column indices in all the rows.
     void sortAllIndices ();
@@ -1414,14 +1503,22 @@ namespace Tpetra {
     bool indicesAreLocal_;
     bool indicesAreGlobal_;
     bool fillComplete_;
+    //! Whether the graph is locally lower triangular.
     bool lowerTriangular_;
+    //! Whether the graph is locally upper triangular.
     bool upperTriangular_;
+    //! Whether the graph's indices are sorted in each row, on this process.
     bool indicesAreSorted_;
+    /// \brief Whether the graph's indices are non-redundant (merged)
+    ///   in each row, on this process.
     bool noRedundancies_;
+    //! Whether this process has computed local constants.
+    bool haveLocalConstants_;
+    //! Whether all processes have computed global constants.
     bool haveGlobalConstants_;
 
     //! Nonlocal data given to insertGlobalValues or sumIntoGlobalValues.
-    std::map<GlobalOrdinal, std::deque<GlobalOrdinal> > nonlocals_;
+    std::map<GlobalOrdinal, std::vector<GlobalOrdinal> > nonlocals_;
 
     bool haveRowInfo_;
 
@@ -1437,11 +1534,6 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
       return haveRowInfo_;
     }
-
-    //! Whether this instance's insertGlobalIndices() method has triggered an efficiency warning yet.
-    bool insertGlobalIndicesWarnedEfficiency_;
-    //! Whether this instance's insertLocalIndices() method has triggered an efficiency warning yet.
-    bool insertLocalIndicesWarnedEfficiency_;
   }; // class CrsGraph
 
   /** \brief Non-member function to create an empty CrsGraph given a row map and a non-zero profile.
