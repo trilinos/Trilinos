@@ -56,6 +56,7 @@ namespace {
 
 
 using Teuchos::ptrFromRef;
+using Teuchos::Comm;
 
 
 void runVectorSpaceTesterTest(const int emptyProc, 
@@ -92,6 +93,32 @@ void runVectorSpaceTesterTest(const int emptyProc,
 //
 // Unit Tests
 //
+
+// Test Thyra::create_Comm() and Thyra::get_Epetra_Comm()
+
+
+TEUCHOS_UNIT_TEST( EpetraThyraWrappers, comm )
+{
+  typedef Teuchos::GlobalMPISession GMPIS;
+  const RCP<const Epetra_Comm> epetra_comm = getEpetraComm();
+  TEST_EQUALITY(epetra_comm->NumProc(), GMPIS::getNProc());
+  TEST_EQUALITY(epetra_comm->MyPID(), GMPIS::getRank());
+  const RCP<const Comm<Ordinal> > comm = Thyra::create_Comm(epetra_comm);
+  TEST_EQUALITY(comm->getSize(), GMPIS::getNProc());
+  TEST_EQUALITY(comm->getRank(), GMPIS::getRank());
+  const RCP<const Epetra_Comm> epetra_comm2 = Thyra::get_Epetra_Comm(*comm);
+  TEST_EQUALITY(epetra_comm2->NumProc(), GMPIS::getNProc());
+  TEST_EQUALITY(epetra_comm2->MyPID(), GMPIS::getRank());
+}
+
+
+// Test Thyra::create_VectorSpace() and Thyra::get_Epetra_Map() with empty process
+
+// Test Thyra::create_LocallyReplicatedVectorSpace() with empty process
+
+// Test Thyra::create_Vector() (const and nonconst) and all views with empty processes
+
+// Test Thyra::create_MultiVector() (const and nonconst) and all views with empty processes
 
 
 TEUCHOS_UNIT_TEST( EpetraThyraWrappers, vectorSpaceTester )
