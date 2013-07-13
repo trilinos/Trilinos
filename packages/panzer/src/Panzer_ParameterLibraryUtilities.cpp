@@ -40,42 +40,34 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_PARAMETER_LIBRARY_UTILITIES_IMPL_HPP
-#define PANZER_PARAMETER_LIBRARY_UTILITIES_IMPL_HPP
+#ifndef PANZER_PARAMETER_LIBRARY_UTILITIES_CPP
+#define PANZER_PARAMETER_LIBRARY_UTILITIES_CPP
+
+#include "Panzer_ParameterLibraryUtilities.hpp"
 
 namespace panzer {
 
-  template<typename EvaluationType>
-  Teuchos::RCP<panzer::ScalarParameterEntry<EvaluationType> >
-  createAndRegisterScalarParameter(const std::string name, 
-				   panzer::ParamLib& pl)
-  {
-    if (!pl.isParameter(name))
-      pl.addParameterFamily(name,true,false);
-    
-    Teuchos::RCP<panzer::ScalarParameterEntry<EvaluationType> > entry;
-    
-    if (pl.isParameterForType<EvaluationType>(name)) {
-      Teuchos::RCP<Sacado::ScalarParameterEntry<EvaluationType,panzer::EvaluationTraits> > sacado_entry =
-	pl.getEntry<EvaluationType>(name);
-      entry = Teuchos::rcp_dynamic_cast<panzer::ScalarParameterEntry<EvaluationType> >(sacado_entry);
-    }
-    else {
-      entry = Teuchos::rcp(new panzer::ScalarParameterEntry<EvaluationType>);
-      pl.addEntry<EvaluationType>(name,entry);
-    }
+struct RegisterScalarParameter {
+  std::string name;
+  Teuchos::Ptr<panzer::ParamLib> pl;
 
-    return entry;
-  }
+  template <typename T>
+  void apply() const
+  { createAndRegisterScalarParameter<T>(name,*pl); }
+};
 
-  template<typename EvaluationType>
-  Teuchos::RCP<panzer::ScalarParameterEntry<EvaluationType> >
-  accessScalarParameter(const std::string name, panzer::ParamLib& pl)
-  {
-    Teuchos::RCP<Sacado::ScalarParameterEntry<EvaluationType,panzer::EvaluationTraits> > sacado_entry =
-      pl.getEntry<EvaluationType>(name);
-    return Teuchos::rcp_dynamic_cast<panzer::ScalarParameterEntry<EvaluationType> >(sacado_entry,true);
-  }
+void registerScalarParameter(const std::string name,panzer::ParamLib& pl,double realValue)
+{
+  RegisterScalarParameter rsp; 
+  rsp.name = name;
+  rsp.pl = Teuchos::ptrFromRef(pl);
+
+  rsp.apply<panzer::Traits::Residual>();
+  rsp.apply<panzer::Traits::Jacobian>();
+  rsp.apply<panzer::Traits::Tangent>();
+
+  pl.setRealValueForAllTypes(name,realValue);
+}
 
 }
 

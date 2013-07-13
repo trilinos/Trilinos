@@ -208,13 +208,17 @@ void panzer::ModelEvaluator_Epetra::initializeEpetraObjs(panzer::EpetraLinearObj
   x_dot_init_ = rcp(new Epetra_Vector(*map_x_));
   x_dot_init_->PutScalar(0.0);
 
-  // setup parameters
-  for (std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >::const_iterator p = p_names_.begin(); 
-       p != p_names_.end(); ++p) {
-    RCP<Epetra_Map> local_map = rcp(new Epetra_LocalMap(static_cast<int>((*p)->size()), 0, map_x_->Comm())) ;
+  // setup parameters (initialize vector from parameter library)
+  for (int i=0; i < parameter_vector_.size(); i++) {
+    RCP<Epetra_Map> local_map = rcp(new Epetra_LocalMap(static_cast<int>(parameter_vector_[i].size()), 0, map_x_->Comm())) ;
     p_map_.push_back(local_map);
+
     RCP<Epetra_Vector> ep_vec = rcp(new Epetra_Vector(*local_map));
     ep_vec->PutScalar(0.0);
+
+    for (unsigned int j=0; j < parameter_vector_[i].size(); j++)
+      (*ep_vec)[j] = parameter_vector_[i][j].baseValue;
+
     p_init_.push_back(ep_vec);
   }
   
@@ -491,14 +495,17 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
   for (int i=0; i<inArgs.Np(); i++) {
     Teuchos::RCP<const Epetra_Vector> p = inArgs.get_p(i);
     if ( nonnull(p) && !is_distributed_parameter_[i]) {
-      for (unsigned int j=0; j < parameter_vector_[i].size(); j++)
+      for (unsigned int j=0; j < parameter_vector_[i].size(); j++) {
 	parameter_vector_[i][j].baseValue = (*p)[j];
+      }
     }
   }
 
-  for (Teuchos::Array<panzer::ParamVec>::size_type i=0; i < parameter_vector_.size(); i++)
-    for (unsigned int j=0; j < parameter_vector_[i].size(); j++)
+  for (Teuchos::Array<panzer::ParamVec>::size_type i=0; i < parameter_vector_.size(); i++) {
+    for (unsigned int j=0; j < parameter_vector_[i].size(); j++) {
       parameter_vector_[i][j].family->setRealValueForAllTypes(parameter_vector_[i][j].baseValue);
+    }
+  }
 
   // Perform global to ghost and set distributed parameters
   for (std::vector<boost::tuple<std::string,int,Teuchos::RCP<Epetra_Import>,Teuchos::RCP<Epetra_Vector> > >::const_iterator i = 
