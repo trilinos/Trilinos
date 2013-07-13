@@ -318,9 +318,7 @@ size_t OverlappingRowMatrix<MatrixType>::getNodeNumEntries() const
   return A_->getNodeNumEntries () + ExtMatrix_->getNodeNumEntries ();
 }
   
-//==========================================================================
-//  Returns the current number of entries on this node in the specified global row.
-/* Returns Teuchos::OrdinalTraits<size_t>::invalid() if the specified global row is not valid for this graph. */
+
 template<class MatrixType>
 size_t
 OverlappingRowMatrix<MatrixType>::
@@ -335,9 +333,6 @@ getNumEntriesInGlobalRow (global_ordinal_type globalRow) const
 }
 
   
-//==========================================================================
-// Returns the current number of entries on this node in the specified local row.
-/* Returns Teuchos::OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this graph. */
 template<class MatrixType>
 size_t
 OverlappingRowMatrix<MatrixType>::
@@ -352,97 +347,77 @@ getNumEntriesInLocalRow (local_ordinal_type localRow) const
   }
 }
   
-//==========================================================================
-//  Returns the number of global diagonal entries, based on global row/column index comparisons. 
+
 template<class MatrixType>
 global_size_t OverlappingRowMatrix<MatrixType>::getGlobalNumDiags() const
 {
   throw std::runtime_error("Ifpack2::OverlappingRowMatrix::getGlobalNumDiags() not supported.");
 }
   
-//==========================================================================
-//  Returns the number of local diagonal entries, based on global row/column index comparisons. 
+
 template<class MatrixType>
 size_t OverlappingRowMatrix<MatrixType>::getNodeNumDiags() const
 {
   return A_->getNodeNumDiags();
 }
   
-//==========================================================================
-//  Returns the maximum number of entries across all rows/columns on all nodes.
+
 template<class MatrixType>
 size_t OverlappingRowMatrix<MatrixType>::getGlobalMaxNumRowEntries() const
 {
   throw std::runtime_error("Ifpack2::OverlappingRowMatrix::getGlobalMaxNumRowEntries() not supported.");
 }
   
-//==========================================================================
+
 template<class MatrixType>
-//  Returns the maximum number of entries across all rows/columns on this node.
 size_t OverlappingRowMatrix<MatrixType>::getNodeMaxNumRowEntries() const
 {
   return MaxNumEntries_;
 }
   
-//==========================================================================
-//  Indicates whether this matrix has a well-defined column map
+
 template<class MatrixType>
 bool OverlappingRowMatrix<MatrixType>::hasColMap() const
 {
   return true;
 }
   
-//==========================================================================
-//  Indicates whether this matrix is lower triangular.
+
 template<class MatrixType>
 bool OverlappingRowMatrix<MatrixType>::isLowerTriangular() const
 {
   return A_->isLowerTriangular();
 }
   
-//==========================================================================
-//  Indicates whether this matrix is upper triangular.
+
 template<class MatrixType>
 bool OverlappingRowMatrix<MatrixType>::isUpperTriangular() const
 {
   return A_->isUpperTriangular();
 } 
-//==========================================================================
-//  If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */
+
+
 template<class MatrixType>
 bool OverlappingRowMatrix<MatrixType>::isLocallyIndexed() const
 {
   return true;
 }
    
-//==========================================================================
-//  If matrix indices are in the global range, this function returns true. Otherwise, this function returns false. */
+
 template<class MatrixType>
 bool OverlappingRowMatrix<MatrixType>::isGloballyIndexed() const
 {
   return false;
 }
   
-//==========================================================================
-// Returns \c true if fillComplete() has been called.
+
 template<class MatrixType>
 bool OverlappingRowMatrix<MatrixType>::isFillComplete() const
 {
   return true;
 }
-  
-//==========================================================================
-// Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
-  /*
-    \param LocalRow - (In) Global row number for which indices are desired.
-    \param Indices - (Out) Global column indices corresponding to values.
-    \param Values - (Out) Matrix values.
-    \param NumEntries - (Out) Number of indices.
-    
-    Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
-    with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c Indices and \c Values are unchanged and \c NumIndices is 
-    returned as Teuchos::OrdinalTraits<size_t>::invalid().
-  */
+
+
 template<class MatrixType>
 void
 OverlappingRowMatrix<MatrixType>::

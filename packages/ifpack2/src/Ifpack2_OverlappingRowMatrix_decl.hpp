@@ -365,9 +365,10 @@ public:
 private: 
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
   typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
+  typedef Tpetra::Export<local_ordinal_type, global_ordinal_type, node_type> export_type;
   typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> crs_matrix_type;
 
-  // Original matrix object
+  //! The input matrix to the constructor.
   Teuchos::RCP<const row_matrix_type> A_;
 
   Tpetra::global_size_t NumGlobalRows_;
@@ -380,14 +381,14 @@ private:
   int subdomainID_;
 
   // Wrapper matrix objects
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >    RowMap_;
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >    ColMap_;
-  Teuchos::RCP<const Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> > Importer_;
+  Teuchos::RCP<const map_type> RowMap_;
+  Teuchos::RCP<const map_type> ColMap_;
+  Teuchos::RCP<const import_type> Importer_;
 
-  // External matrix objects
+  //! The matrix containing only the overlap rows.
   Teuchos::RCP<row_matrix_type> ExtMatrix_;
-  Teuchos::RCP<Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >              ExtMap_;
-  Teuchos::RCP<Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> >           ExtImporter_;
+  Teuchos::RCP<map_type>        ExtMap_;
+  Teuchos::RCP<import_type>     ExtImporter_;
 
   //! Used in apply, to avoid allocation each time.
   mutable Teuchos::Array<local_ordinal_type> Indices_;
