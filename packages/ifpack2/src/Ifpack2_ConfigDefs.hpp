@@ -57,7 +57,8 @@ IFPACK2_SGN(const Scalar& x)
   return Teuchos::ScalarTraits<Scalar>::real(x) > 0.0 ? -one : one;
 }
 
-
+/// \namespace Ifpack2
+/// \brief Preconditioners and smoothers for Tpetra sparse matrices.
 namespace Ifpack2 {
   typedef Tpetra::global_size_t global_size_t;
 
