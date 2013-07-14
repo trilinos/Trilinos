@@ -22,11 +22,16 @@ SET(HEADERS ${HEADERS}
   )
 
 APPEND_SET(HEADERS
-  Domi_MDArray.hpp
-  Domi_MDArrayRCP.hpp
-  Domi_MDArrayView.hpp
+  Domi_ConfigDefs.hpp
+  Domi_Version.hpp
   Domi_Utils.hpp
+  Domi_Exceptions.hpp
   Domi_Slice.hpp
+  Domi_MDIterator.hpp
+  Domi_MDRevIterator.hpp
+  Domi_MDArray.hpp
+  Domi_MDArrayView.hpp
+  Domi_MDArrayRCP.hpp
   Domi_MDComm.hpp
   )
 
