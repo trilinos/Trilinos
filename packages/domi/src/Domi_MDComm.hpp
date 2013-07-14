@@ -76,7 +76,17 @@ typedef Teuchos::RCP< const Teuchos::Comm<int> > TeuchosComm;
  * An <tt>MDComm</tt> can also be constructed that is a slice of a
  * parent <tt>MDComm</tt>.  Such an object is constructed by providing
  * an RCP of the parent and an array of Slices that define the
- * sub-communicator.
+ * sub-communicator.  When you construct a sub-communicator, you run
+ * the risk of calling methods of the <tt>MDComm</tt> object or of
+ * objects built on top of the <tt>MDComm</tt> object from processors
+ * that are not a part of the sub-communicator.  You can always check
+ * whether this is safe with the
+ *
+ *     \code
+ *     bool onSubcommunicator() const;
+ *     \code
+ *
+ * method.
  *
  * The <tt>MDComm</tt> class provides two methods that return the
  * processor rank of neighboring processors in the grid of arrays:
@@ -87,7 +97,7 @@ typedef Teuchos::RCP< const Teuchos::Comm<int> > TeuchosComm;
  *     \code
  *
  * This should be sufficient to provide the necessary processor ranks
- * for conductiong halo updates.
+ * for conducting halo updates.
  */
 class MDComm
 {
@@ -170,11 +180,24 @@ public:
   /** \name Accessor methods */
   //@{
 
+  /** \brief Query whether this processor is on the sub-communicator.
+   *         For a full communicator, this method will return true
+   */
+  bool onSubcommunicator() const;
+
   /** \brief Get the Teuchos communicator
+   *
+   * Note that if the communicator is not a full communicator, i.e. a
+   * sub-communicator, that the underlying Comm pointer may be NULL,
+   * depending on this processor's rank.
    */
   TeuchosComm getTeuchosComm() const;
 
   /** \brief Get the number of dimensions
+   *
+   * This method will return 0 if the communicator is a
+   * sub-communicator and this processor does not belong to the
+   * sub-communicator.
    */
   int getNumDims() const;
 
@@ -182,6 +205,10 @@ public:
    *
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
+   *
+   * This method will throw a Domi::SubcommunicatorError if the
+   * communicator is a sub-communicator and this processor does not
+   * belong to the sub-communicator.
    */
   int getAxisSize(int axis) const;
 
@@ -189,6 +216,10 @@ public:
    *
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
+   *
+   * This method will throw a Domi::SubcommunicatorError if the
+   * communicator is a sub-communicator and this processor does not
+   * belong to the sub-communicator.
    */
   int getAxisRank(int axis) const;
 
@@ -196,6 +227,10 @@ public:
    *
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
+   *
+   * This method will throw a Domi::SubcommunicatorError if the
+   * communicator is a sub-communicator and this processor does not
+   * belong to the sub-communicator.
    */
   int getLowerNeighbor(int axis) const;
 
@@ -203,6 +238,10 @@ public:
    *
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
+   *
+   * This method will throw a Domi::SubcommunicatorError if the
+   * communicator is a sub-communicator and this processor does not
+   * belong to the sub-communicator.
    */
   int getUpperNeighbor(int axis) const;
 

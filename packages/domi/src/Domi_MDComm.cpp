@@ -39,7 +39,11 @@
 // ***********************************************************************
 // @HEADER
 
+// Teuchos includes
+#include "Teuchos_TestForException.hpp"
+
 // Domi includes
+#include "Domi_Exceptions.hpp"
 #include "Domi_Utils.hpp"
 #include "Domi_MDComm.hpp"
 
@@ -100,9 +104,11 @@ MDComm::MDComm(const Teuchos::RCP< MDComm > parent,
 {
   // Sanity check
   size_type numDims = parent->getNumDims();
-  if (slices.size() != numDims)
-    throw std::invalid_argument("Length of array of slices does not match "
-                                "number of dimension of parent MDComm");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    slices.size() != numDims,
+    std::invalid_argument,
+    "Length of array of slices does not match "
+    "number of dimension of parent MDComm");
   // Make sure the array of Slices we work with is concrete, compute
   // the _axisSizes and _axisRanks arrays, and compute the size of the
   // ranks array
@@ -163,6 +169,14 @@ MDComm::~MDComm()
 
 ////////////////////////////////////////////////////////////////////////
 
+bool
+MDComm::onSubcommunicator() const
+{
+  return _teuchosComm.getRawPtr();
+}
+
+////////////////////////////////////////////////////////////////////////
+
 TeuchosComm
 MDComm::getTeuchosComm() const
 {
@@ -182,6 +196,10 @@ MDComm::getNumDims() const
 int
 MDComm::getAxisSize(int axis) const
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    not onSubcommunicator(),
+    SubcommunicatorError,
+    "MDComm::getAxisSize()");
   return _axisSizes[axis];
 }
 
@@ -190,6 +208,10 @@ MDComm::getAxisSize(int axis) const
 int
 MDComm::getAxisRank(int axis) const
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    not onSubcommunicator(),
+    SubcommunicatorError,
+    "MDComm::getAxisRank()");
   return _axisRanks[axis];
 }
 
@@ -198,6 +220,10 @@ MDComm::getAxisRank(int axis) const
 int
 MDComm::getLowerNeighbor(int axis) const
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    not onSubcommunicator(),
+    SubcommunicatorError,
+    "MDComm::getLowerNeighbor()");
   if (_axisRanks[axis] == 0) return -1;
   return _teuchosComm->getRank() - _axisStrides[axis];
 }
@@ -207,6 +233,10 @@ MDComm::getLowerNeighbor(int axis) const
 int
 MDComm::getUpperNeighbor(int axis) const
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    not onSubcommunicator(),
+    SubcommunicatorError,
+    "MDComm::getUpperNeighbor()");
   if (_axisRanks[axis] == _axisSizes[axis] - 1) return -1;
   return _teuchosComm->getRank() + _axisStrides[axis];
 }
