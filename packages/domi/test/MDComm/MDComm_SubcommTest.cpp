@@ -48,6 +48,7 @@
 // Domi includes
 #include "Domi_Utils.hpp"
 #include "Domi_MDComm.hpp"
+#include "Domi_Exceptions.hpp"
 
 namespace
 {
@@ -331,6 +332,7 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, upperRight )
   // Do some unit tests
   if (partOfSubcomm)
   {
+    TEST_EQUALITY_CONST(subMDComm.onSubcommunicator(), true);
     TEST_EQUALITY(subMDComm.getNumDims(), numDims);
     for (int axis = 0; axis < numDims; ++axis)
     {
@@ -339,7 +341,14 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, upperRight )
   }
   else
   {
-    TEST_EQUALITY_CONST(subMDComm.getNumDims(), 0);
+    TEST_EQUALITY_CONST(subMDComm.onSubcommunicator()         , false);
+    TEST_EQUALITY_CONST(subMDComm.getTeuchosComm().getRawPtr(), 0    );
+    TEST_EQUALITY_CONST(subMDComm.getNumDims()                , 0    );
+
+    TEST_THROW(subMDComm.getAxisSize(0)     , Domi::SubcommunicatorError);
+    TEST_THROW(subMDComm.getAxisRank(0)     , Domi::SubcommunicatorError);
+    TEST_THROW(subMDComm.getLowerNeighbor(0), Domi::SubcommunicatorError);
+    TEST_THROW(subMDComm.getUpperNeighbor(0), Domi::SubcommunicatorError);
   }
 }
 
