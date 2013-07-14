@@ -366,6 +366,7 @@ private:
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
   typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
   typedef Tpetra::Export<local_ordinal_type, global_ordinal_type, node_type> export_type;
+  typedef Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type> row_graph_type;
   typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> crs_matrix_type;
 
   //! The input matrix to the constructor.
@@ -390,9 +391,12 @@ private:
   Teuchos::RCP<map_type>        ExtMap_;
   Teuchos::RCP<import_type>     ExtImporter_;
 
-  //! Used in apply, to avoid allocation each time.
+  //! Graph of the matrix (as returned by getGraph()).
+  Teuchos::RCP<const row_graph_type> graph_;
+
+  //! Used in apply(), to avoid allocation each time.
   mutable Teuchos::Array<local_ordinal_type> Indices_;
-  //! Used in apply, to avoid allocation each time.
+  //! Used in apply(), to avoid allocation each time.
   mutable Teuchos::Array<scalar_type> Values_;
 
 }; // class OverlappingRowMatrix

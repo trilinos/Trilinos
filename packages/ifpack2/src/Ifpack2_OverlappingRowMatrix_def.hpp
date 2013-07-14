@@ -44,6 +44,7 @@
 #define IFPACK2_OVERLAPPINGROWMATRIX_DEF_HPP
 
 #include <Ifpack2_OverlappingRowMatrix_decl.hpp>
+#include <Ifpack2_Details_OverlappingRowGraph.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
@@ -61,7 +62,9 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
   using Teuchos::rcp;
   using Teuchos::Array;
   using Teuchos::outArg;
+  using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
+  using Teuchos::rcp_implicit_cast;
   using Teuchos::REDUCE_SUM;
   using Teuchos::reduceAll;
   typedef Tpetra::global_size_t GST;
@@ -180,6 +183,20 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
     MaxNumEntries_ = ExtMatrix_->getNodeMaxNumRowEntries ();
   }
 
+  // Create the graph (returned by getGraph()).
+  typedef Details::OverlappingRowGraph<row_graph_type> row_graph_impl_type;
+  RCP<row_graph_impl_type> graph = 
+    rcp (new row_graph_impl_type (A_->getGraph (),
+				  ExtMatrix_->getGraph (),
+				  RowMap_,
+				  ColMap_,
+				  NumGlobalRows_,
+				  NumGlobalRows_, // # global cols == # global rows
+				  NumGlobalNonzeros_,
+				  MaxNumEntries_,
+				  rcp_const_cast<const import_type> (Importer_),
+				  rcp_const_cast<const import_type> (ExtImporter_)));
+  graph_ = rcp_const_cast<const row_graph_type> (rcp_implicit_cast<row_graph_type> (graph));
   // Resize temp arrays
   Indices_.resize (MaxNumEntries_);
   Values_.resize (MaxNumEntries_);
@@ -257,15 +274,7 @@ template<class MatrixType>
 Teuchos::RCP<const Tpetra::RowGraph<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> > 
 OverlappingRowMatrix<MatrixType>::getGraph() const
 {
-  // FIXME (mfh 12 July 2013) There is no excuse for not implementing
-  // this.  Here's how to fix this:
-  //
-  // 1. Introduce a new OverlappingRowGraph class.
-  // 2. Give the OverlappingRowGraph class A_->getGraph(),
-  //    ExtMatrix_->getGraph(), and the Maps and Import object.
-  //
-  // Done! That's it!
-  throw std::runtime_error("Ifpack2::OverlappingRowMatrix - ERROR getGraph() is not implemented.");
+  return graph_;
 }
   
 
