@@ -51,6 +51,21 @@ CUDA | Cuda | cuda )
   NVCC="${NVCC} -lib -o libCuda.a -x cu"
 
   LIB="${LIB} libCuda.a -L/usr/local/cuda/lib64 -lcudart -lcusparse"
+  ;;#-------------------------------
+CUDA_OSX | Cuda_OSX | cuda_osx )
+  KOKKOSARRAY_HAVE_CUDA="-DKOKKOSARRAY_HAVE_CUDA"
+  OPTFLAGS="${OPTFLAGS} ${KOKKOSARRAY_HAVE_CUDA}"
+  NVCC_SOURCES="${NVCC_SOURCES} ${KOKKOSARRAY}/src/Cuda/*.cu"
+  #
+  # -x cu : process all files through the Cuda compiler as Cuda code.
+  # -lib -o : produce library
+  #
+  NVCC="nvcc"
+  NVCC="${NVCC} -gencode arch=compute_20,code=sm_20 -gencode arch=compute_30,code=sm_30 -gencode arch=compute_35,code=sm_35 -maxrregcount=64"
+  NVCC="${NVCC} -Xcompiler -Wall,-ansi -Xcompiler -m64"
+  NVCC="${NVCC} -lib -o libCuda.a -x cu"
+
+  LIB="${LIB} libCuda.a -Xlinker -rpath -Xlinker /Developer/NVIDIA/CUDA-5.5/lib -L /Developer/NVIDIA/CUDA-5.5/lib -lcudart -lcusparse"
   ;;
 #-------------------------------
 GNU | gnu | g++ )
