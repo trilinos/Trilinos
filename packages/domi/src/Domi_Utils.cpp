@@ -44,6 +44,7 @@
 #include <stdlib.h>
 
 // Domi includes
+#include "Domi_Exceptions.hpp"
 #include "Domi_Utils.hpp"
 
 namespace Domi
@@ -74,14 +75,16 @@ regularizeAxisSizes(int numProcs,
   // against the total number of processors and return
   if (unspecified == 0)
   {
-    if (block != numProcs)
-      throw std::invalid_argument("Product of axis processor sizes does not "
-                                  "equal total number of processors");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (block != numProcs),
+      InvalidArgument,
+      "Product of axis processor sizes does not "
+      "equal total number of processors");
   }
   // For underspecified processor partitions, give the remainder to
   // the first unspecified axis and set all the rest to 1
   if (numProcs % block)
-    throw std::invalid_argument("Number of processors do not divide evenly");
+    throw InvalidArgument("Number of processors do not divide evenly");
   int quotient = numProcs / block;
   for (int axis = 0; axis < numDims; ++axis)
   {

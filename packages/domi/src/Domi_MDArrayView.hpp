@@ -52,6 +52,7 @@
 #include "Teuchos_RCPNode.hpp"
 
 // Domi includes
+#include "Domi_Exceptions.hpp"
 #include "Domi_Utils.hpp"
 #include "Domi_Slice.hpp"
 #include "Domi_MDIterator.hpp"
@@ -670,7 +671,7 @@ MDArrayView< T >::MDArrayView(const Teuchos::ArrayView< T > & array,
   _next_axis(0)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(array.size() < computeSize(dims),
-			     Teuchos::RangeError,
+			     RangeError,
 			     "Teuchos::ArrayView size too small for "
                              "dimensions");
 }
@@ -690,7 +691,7 @@ MDArrayView< T >::MDArrayView(const Teuchos::ArrayView< T > & array,
   _next_axis(0)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(array.size() < computeSize(dims(),strides()),
-			     Teuchos::RangeError,
+			     RangeError,
 			     "Teuchos::ArrayView size too small for "
                              "dimensions and strides");
 }
@@ -1069,7 +1070,7 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i)
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (_dimensions.size() != 1), Teuchos::RangeError,
+    (_dimensions.size() != 1), RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 1 index"
     );
   assertIndex(i, 0);
@@ -1086,7 +1087,7 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (_dimensions.size() != 2), Teuchos::RangeError,
+    (_dimensions.size() != 2), RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 2 indexes"
     );
   assertIndex(i, 0);
@@ -1105,7 +1106,7 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (_dimensions.size() != 3), Teuchos::RangeError,
+    (_dimensions.size() != 3), RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 3 indexes"
     );
   assertIndex(i, 0);
@@ -1126,7 +1127,7 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (_dimensions.size() != 4), Teuchos::RangeError,
+    (_dimensions.size() != 4), RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 4 indexes"
     );
   assertIndex(i, 0);
@@ -1150,7 +1151,7 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (_dimensions.size() != 5), Teuchos::RangeError,
+    (_dimensions.size() != 5), RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 5 indexes"
     );
   assertIndex(i, 0);
@@ -1177,7 +1178,7 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (_dimensions.size() < 6), Teuchos::RangeError,
+    (_dimensions.size() < 6), RangeError,
     "Attempt to access " << _dimensions.size() << "D array with too many indexes"
     );
   assertIndex(i, 0);
@@ -1211,7 +1212,7 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i) const
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (_dimensions.size() != 1), Teuchos::RangeError,
+    (_dimensions.size() != 1), RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 1 index"
     );
   assertIndex(i, 0);
@@ -1228,7 +1229,7 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (_dimensions.size() != 2), Teuchos::RangeError,
+    (_dimensions.size() != 2), RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 2 indexes"
     );
   assertIndex(i, 0);
@@ -1247,7 +1248,7 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (_dimensions.size() != 3), Teuchos::RangeError,
+    (_dimensions.size() != 3), RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 3 indexes"
     );
   assertIndex(i, 0);
@@ -1268,7 +1269,7 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (_dimensions.size() != 4), Teuchos::RangeError,
+    (_dimensions.size() != 4), RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 4 indexes"
     );
   assertIndex(i, 0);
@@ -1292,7 +1293,7 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (_dimensions.size() != 5), Teuchos::RangeError,
+    (_dimensions.size() != 5), RangeError,
     "Attempt to access " << _dimensions.size() << "D array with 5 indexes"
     );
   assertIndex(i, 0);
@@ -1319,7 +1320,7 @@ MDArrayView< T >::operator()(typename MDArrayView< T >::size_type i,
 {
 #ifdef DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (_dimensions.size() < 6), Teuchos::RangeError,
+    (_dimensions.size() < 6), RangeError,
     "Attempt to access " << _dimensions.size() << "D array with too many indexes"
     );
   assertIndex(i, 0);
@@ -1512,7 +1513,7 @@ void
 MDArrayView< T >::assertIndex(size_type i, int axis) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
-    !(0 <= i && i < _dimensions[axis]), Teuchos::RangeError,
+    !(0 <= i && i < _dimensions[axis]), RangeError,
     "MDArrayView<T>::assertIndex(i=" << i << ",axis=" << axis << "): out of "
     << "range i in [0, " << _dimensions[axis] << ")"
     );

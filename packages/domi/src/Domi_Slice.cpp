@@ -112,7 +112,7 @@ ConcreteSlice::ConcreteSlice(Ordinal stopVal) :
   Slice(0,stopVal,1)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (stop() < 0), std::invalid_argument,
+    (stop() < 0), InvalidArgument,
     "ConcreteSlice stop value cannot be negative"
     );
 }
@@ -125,15 +125,15 @@ ConcreteSlice::ConcreteSlice(Ordinal startVal,
   Slice(startVal,stopVal,stepVal)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (start() < 0), std::invalid_argument,
+    (start() < 0), InvalidArgument,
     "ConcreteSlice start value cannot be negative"
     );
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (stop() < 0), std::invalid_argument,
+    (stop() < 0), InvalidArgument,
     "ConcreteSlice stop value cannot be negative"
     );
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (step() == 0), std::invalid_argument,
+    (step() == 0), InvalidArgument,
     "ConcreteSlice step interval cannot be zero"
     );
 }

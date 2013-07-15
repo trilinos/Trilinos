@@ -47,8 +47,12 @@
  *  \brief A Slice defines a subset of a container.
  */
 
-#include "Domi_ConfigDefs.hpp"
+// Teuchos includes
 #include "Teuchos_Assert.hpp"
+
+// Domi includes
+#include "Domi_ConfigDefs.hpp"
+#include "Domi_Exceptions.hpp"
 
 namespace Domi
 {
@@ -405,7 +409,7 @@ Slice::Slice(Ordinal startVal, Ordinal stopVal, Ordinal stepVal) :
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     (_step == 0),
-    std::invalid_argument, "Slice step interval cannot be zero"
+    InvalidArgument, "Slice step interval cannot be zero"
     );
 }
 

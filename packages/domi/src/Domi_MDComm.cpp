@@ -106,7 +106,7 @@ MDComm::MDComm(const Teuchos::RCP< MDComm > parent,
   size_type numDims = parent->getNumDims();
   TEUCHOS_TEST_FOR_EXCEPTION(
     slices.size() != numDims,
-    std::invalid_argument,
+    InvalidArgument,
     "Length of array of slices does not match "
     "number of dimension of parent MDComm");
   // Make sure the array of Slices we work with is concrete, compute

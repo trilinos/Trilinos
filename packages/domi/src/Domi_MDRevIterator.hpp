@@ -45,6 +45,9 @@
 // Standard include
 #include <iterator>
 
+// Domi includes
+#include "Domi_Exceptions.hpp"
+
 namespace Domi
 {
 
@@ -274,7 +277,7 @@ MDRevIterator(const MDARRAY & mdarray,
   _index(index)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (_dimensions.size() != _index.size()), Teuchos::RangeError,
+    (_dimensions.size() != _index.size()), RangeError,
     "Input array has " << _dimensions.size() << " dimensions, while index "
     "has " << _index.size());
 #ifdef DOMI_ENABLE_ABC
@@ -528,7 +531,7 @@ assert_index(typename MDRevIterator< MDARRAY >::size_type i,
              typename MDRevIterator< MDARRAY >::size_type axis) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
-    !(0 <= i && i < _dimensions[axis]), Teuchos::RangeError,
+    !(0 <= i && i < _dimensions[axis]), RangeError,
     "MDRevIterator<MDARRAY>::assert_index(i=" << i << ",axis=" << axis << "): out"
     << " of range i in [0, " << _dimensions[axis] << ")"
   );
