@@ -39,11 +39,7 @@ BucketRepository::~BucketRepository()
 {
   // Destroy buckets, which were *not* allocated by the set.
 
-#ifdef STK_PROFILE_MEMORY
-  typedef tracking_allocator<Partition, Partition> partition_allocator;
-#else
-  typedef std::allocator<Partition> partition_allocator;
-#endif
+  typedef tracking_allocator<Partition, PartitionTag> partition_allocator;
 
   try {
 
@@ -168,11 +164,7 @@ Partition *BucketRepository::get_or_create_partition(
 
   key[key[0]] = 0;
 
-#ifdef STK_PROFILE_MEMORY
-  typedef tracking_allocator<Partition, Partition> partition_allocator;
-#else
-  typedef std::allocator<Partition> partition_allocator;
-#endif
+  typedef tracking_allocator<Partition, PartitionTag> partition_allocator;
   Partition *partition = partition_allocator().allocate(1);
   partition = new (partition) Partition(m_mesh, this, arg_entity_rank, key);
 
@@ -229,11 +221,7 @@ Partition *BucketRepository::get_or_create_partition(
 
   key[key[0]] = 0;
 
-#ifdef STK_PROFILE_MEMORY
-  typedef tracking_allocator<Partition, Partition> partition_allocator;
-#else
-  typedef std::allocator<Partition> partition_allocator;
-#endif
+  typedef tracking_allocator<Partition, PartitionTag> partition_allocator;
   Partition *partition = partition_allocator().allocate(1);
   partition = new (partition) Partition(m_mesh, this, arg_entity_rank, key);
 
@@ -334,11 +322,7 @@ inline bool is_null(stk::mesh::impl::Partition *p) { return (p ? false : true);}
 void BucketRepository::sync_from_partitions(EntityRank rank)
 {
 
-#ifdef STK_PROFILE_MEMORY
-  typedef tracking_allocator<Partition, Partition> partition_allocator;
-#else
-  typedef std::allocator<Partition> partition_allocator;
-#endif
+  typedef tracking_allocator<Partition, PartitionTag> partition_allocator;
 
   if (!m_need_sync_from_partitions[rank])
   {

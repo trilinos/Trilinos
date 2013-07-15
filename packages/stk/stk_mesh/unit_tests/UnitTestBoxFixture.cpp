@@ -196,7 +196,7 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyBoxFixture )
   }
 
   size_t count_shared_entities = 0 ;
-  for (std::vector<stk::mesh::EntityCommListInfo>::const_iterator
+  for (stk::mesh::EntityCommListInfoVector::const_iterator
        i = bulk.comm_list().begin() ;
        i != bulk.comm_list().end() ;
        ++i) {

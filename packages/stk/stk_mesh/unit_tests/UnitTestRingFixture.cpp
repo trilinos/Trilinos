@@ -225,7 +225,7 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
   STKUNIT_ASSERT_EQUAL( local_count[MetaData::ELEMENT_RANK] , nLocalElement );
 
   unsigned count_shared = 0 ;
-  for ( std::vector<stk::mesh::EntityCommListInfo>::const_iterator
+  for ( stk::mesh::EntityCommListInfoVector::const_iterator
         i = bulk.comm_list().begin() ;
         i != bulk.comm_list().end() ; ++i )
   {

@@ -351,7 +351,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyParallelAddParts )
 
   bulk.modification_begin();
 
-  for ( std::vector<stk::mesh::EntityCommListInfo>::const_iterator
+  for ( stk::mesh::EntityCommListInfoVector::const_iterator
         i =  bulk.comm_list().begin();
         i != bulk.comm_list().end() ; ++i ) {
     if ( i->key.rank() == 0 ) {
@@ -363,7 +363,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyParallelAddParts )
 
   bulk.modification_end();
 
-  for ( std::vector<stk::mesh::EntityCommListInfo>::const_iterator
+  for ( stk::mesh::EntityCommListInfoVector::const_iterator
         i =  bulk.comm_list().begin();
         i != bulk.comm_list().end() ; ++i ) {
     if ( i->key.rank() == 0 ) {

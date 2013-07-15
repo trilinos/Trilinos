@@ -71,7 +71,7 @@ void donate_one_element( BulkData & mesh , bool aura )
   EntityKey node_key;
   Entity elem = Entity();
 
-  for ( std::vector<stk::mesh::EntityCommListInfo>::const_iterator
+  for ( stk::mesh::EntityCommListInfoVector::const_iterator
         i =  mesh.comm_list().begin() ;
         i != mesh.comm_list().end() ; ++i ) {
     if ( mesh.in_shared( i->key ) && i->key.rank() == BaseEntityRank ) {
@@ -142,13 +142,13 @@ void donate_all_shared_nodes( BulkData & mesh , bool aura )
 
   // Donate owned shared nodes to first sharing process.
 
-  const std::vector<stk::mesh::EntityCommListInfo> & entity_comm = mesh.comm_list();
+  const stk::mesh::EntityCommListInfoVector & entity_comm = mesh.comm_list();
 
   STKUNIT_ASSERT( ! entity_comm.empty() );
 
   std::vector<EntityProc> change ;
 
-  for ( std::vector<stk::mesh::EntityCommListInfo>::const_iterator
+  for ( stk::mesh::EntityCommListInfoVector::const_iterator
         i =  entity_comm.begin() ;
         i != entity_comm.end() &&
         i->key.rank() == BaseEntityRank ; ++i ) {
@@ -678,7 +678,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_ring)
       change[0].first = ring_mesh.m_bulk_data.get_entity( MetaData::NODE_RANK , ring_mesh.m_node_ids[1] );
       change[0].second = p_size ;
       // Error to change a ghost:
-      for ( std::vector<stk::mesh::EntityCommListInfo>::const_iterator
+      for ( stk::mesh::EntityCommListInfoVector::const_iterator
             ec =  ring_mesh.m_bulk_data.comm_list().begin() ;
             ec != ring_mesh.m_bulk_data.comm_list().end() ; ++ec ) {
         if ( bulk.in_receive_ghost( ec->key ) ) {

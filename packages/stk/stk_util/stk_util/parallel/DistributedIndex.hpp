@@ -46,19 +46,11 @@ public:
   typedef std::pair<KeyType,KeyType>  KeySpan ;
   typedef std::pair<KeyType,ProcType> KeyProc ;
 
-#ifdef STK_PROFILE_MEMORY
   typedef std::vector<unsigned long, tracking_allocator<unsigned long, DistributedIndex> > UnsignedVector;
   typedef std::vector<long, tracking_allocator<long, DistributedIndex> > LongVector;
   typedef std::vector<KeySpan, tracking_allocator<KeySpan, DistributedIndex> > KeySpanVector;
   typedef std::vector<KeyType, tracking_allocator<KeyType, DistributedIndex> > KeyTypeVector;
   typedef std::vector<KeyProc, tracking_allocator<KeyProc, DistributedIndex> > KeyProcVector;
-#else
-  typedef std::vector<unsigned long> UnsignedVector;
-  typedef std::vector<long>    LongVector;
-  typedef std::vector<KeySpan> KeySpanVector;
-  typedef std::vector<KeyType> KeyTypeVector;
-  typedef std::vector<KeyProc> KeyProcVector;
-#endif
 
   /*----------------------------------------*/
 

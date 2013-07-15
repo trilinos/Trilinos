@@ -104,7 +104,7 @@ void print_entity_proc_map( stk::diag::Writer & writer ,
                             const stk::mesh::BulkData & mesh )
 {
   const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(mesh);
-  const std::vector<stk::mesh::EntityCommListInfo> & comm = mesh.comm_list();
+  const stk::mesh::EntityCommListInfoVector & comm = mesh.comm_list();
   const std::vector<stk::mesh::Ghosting*> & ghost = mesh.ghostings();
 
   size_t counter = 0 ;
@@ -116,7 +116,7 @@ void print_entity_proc_map( stk::diag::Writer & writer ,
     writer << "P" << mesh.parallel_rank()
            << " " << g.name() << " Communication:" << std::endl ;
 
-    for ( std::vector<stk::mesh::EntityCommListInfo>::const_iterator
+    for ( stk::mesh::EntityCommListInfoVector::const_iterator
           i = comm.begin() ; i != comm.end() ; ++i ) {
 
       std::vector<int> procs ;

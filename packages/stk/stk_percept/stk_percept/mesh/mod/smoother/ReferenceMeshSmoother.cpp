@@ -1,5 +1,5 @@
 #include <stk_percept/Percept.hpp>
-#if !defined(__IBMCPP__) 
+#if !defined(__IBMCPP__)
 
 #include <stk_percept/mesh/mod/smoother/ReferenceMeshSmoother.hpp>
 #include <stk_percept/mesh/mod/smoother/SmootherMetric.hpp>
@@ -22,7 +22,7 @@ namespace stk {
       fields.push_back(m_eMesh->get_coordinates_field());
 
       // only the aura = !locally_owned_part && !globally_shared_part (outer layer)
-      stk::mesh::communicate_field_data(m_eMesh->get_bulk_data()->shared_aura(), fields); 
+      stk::mesh::communicate_field_data(m_eMesh->get_bulk_data()->shared_aura(), fields);
       // the shared part (just the shared boundary)
       //stk::mesh::communicate_field_data(*m_eMesh->get_bulk_data()->ghostings()[0], fields);
     }
@@ -52,7 +52,7 @@ namespace stk {
 
         msg << std::endl ;
 
-        for ( std::vector<EntityCommListInfo>::const_iterator
+        for ( EntityCommListInfoVector::const_iterator
                 i =  mesh.comm_list().begin() ;
               i != mesh.comm_list().end() ; ++i ) {
 
@@ -81,7 +81,7 @@ namespace stk {
     {
       //std::cout << "\nP[" << m_eMesh->get_rank() << "] tmp srk ReferenceMeshSmoother innerIter= " << innerIter << " parallelIterations= " << parallelIterations << std::endl;
 
-      //if (!m_eMesh->get_rank()) 
+      //if (!m_eMesh->get_rank())
       //std::cout << "\nP[" << m_eMesh->get_rank() << "] tmp srk ReferenceMeshSmoother: running shape improver... \n" << std::endl;
 
       PerceptMesh *eMesh = m_eMesh;
@@ -91,7 +91,7 @@ namespace stk {
 
       stk::mesh::FieldBase *coord_field           = eMesh->get_coordinates_field();
       stk::mesh::FieldBase *coord_field_current   = coord_field;
-      stk::mesh::FieldBase *coord_field_projected = eMesh->get_field("coordinates_N"); 
+      stk::mesh::FieldBase *coord_field_projected = eMesh->get_field("coordinates_N");
       stk::mesh::FieldBase *coord_field_original  = eMesh->get_field("coordinates_NM1");
       stk::mesh::FieldBase *coord_field_lagged    = eMesh->get_field("coordinates_lagged");
 
@@ -131,7 +131,7 @@ namespace stk {
       //double omegas[] = { 0.001, 0.01, 0.1, 0.2, 0.4, 1.0};
       //double omegas[] = {0.0, 0.001, 0.01, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16, 0.17, 0.18, 0.19, 0.2, 0.4, 0.6, 0.8, 1.0};
       int nomega = sizeof(omegas)/sizeof(omegas[0]);
-      
+
       for (int outer = 0; outer < nomega; outer++)
         {
           double omega = (outer < nomega ? omegas[outer] : 1.0);
@@ -144,8 +144,8 @@ namespace stk {
 
           int num_invalid = MeshSmoother::parallel_count_invalid_elements(m_eMesh);
 
-          if (!m_eMesh->get_rank()) 
-            std::cout << "\ntmp srk ReferenceMeshSmoother num_invalid current= " << num_invalid << " for outer_iter= " << outer 
+          if (!m_eMesh->get_rank())
+            std::cout << "\ntmp srk ReferenceMeshSmoother num_invalid current= " << num_invalid << " for outer_iter= " << outer
                       << " omega= " << omega
                       << (num_invalid ? " WARNING: invalid elements exist before smoothing" : " OK")
                       << std::endl;
@@ -167,12 +167,12 @@ namespace stk {
           for (int stage = 0; stage < nstage; stage++)
             {
               m_stage = stage;
-              if (stage==0) 
+              if (stage==0)
                 {
                   m_metric = &untangle_metric;
                   //m_metric = &scaled_jac_metric_nodal;
                 }
-              else 
+              else
                 {
                   int num_invalid_1 = MeshSmoother::parallel_count_invalid_elements(m_eMesh);
                   VERIFY_OP_ON(num_invalid_1, ==, 0, "Invalid elements exist for start of stage 2, aborting");
@@ -196,8 +196,8 @@ namespace stk {
                       m_untangled = true;
                     }
 
-                  //               if (!m_eMesh->get_rank() && num_invalid_0) 
-                  //                 std::cout << "\ntmp srk ReferenceMeshSmoother num_invalid current= " << num_invalid_0 
+                  //               if (!m_eMesh->get_rank() && num_invalid_0)
+                  //                 std::cout << "\ntmp srk ReferenceMeshSmoother num_invalid current= " << num_invalid_0
                   //                           << (num_invalid ? " WARNING: invalid elements exist before smoothing" : "OK")
                   //                           << std::endl;
 
@@ -209,9 +209,9 @@ namespace stk {
                   bool conv = check_convergence();
                   if (!m_eMesh->get_rank())
                   {
-                    std::cout << "P[" << m_eMesh->get_rank() << "] " << "INFO: iter= " << iter << " dmax= " << m_dmax << " m_dnew= " << m_dnew 
+                    std::cout << "P[" << m_eMesh->get_rank() << "] " << "INFO: iter= " << iter << " dmax= " << m_dmax << " m_dnew= " << m_dnew
                               << " m_d0= " << m_d0 << " m_alpha= " << m_alpha << " m_scale= " << m_scale << " m_grad_norm= " << m_grad_norm << " m_grad_norm_scaled = " << m_grad_norm_scaled
-                              << " num_invalid= " << num_invalid_0 
+                              << " num_invalid= " << num_invalid_0
                               << " m_global_metric= " << m_global_metric << " stage= " << stage << " m_untangled= " << m_untangled
                               << std::endl;
                   }
@@ -226,7 +226,7 @@ namespace stk {
                     {
                       m_untangled = true;
                     }
-                  if (conv && m_untangled) 
+                  if (conv && m_untangled)
                     {
                       //std::cout << "P[" << m_eMesh->get_rank() << "] tmp srk a1 converged, stage= " << m_stage << std::endl;
                       break;
@@ -240,11 +240,11 @@ namespace stk {
 
         }
 
-      //if (!m_eMesh->get_rank()) 
+      //if (!m_eMesh->get_rank())
 
       MPI_Barrier( MPI_COMM_WORLD );
 
-      if (!m_eMesh->get_rank()) 
+      if (!m_eMesh->get_rank())
         std::cout << "\nP[" << m_eMesh->get_rank() << "] tmp srk ReferenceMeshSmoother: running shape improver... done \n" << std::endl;
 
     }

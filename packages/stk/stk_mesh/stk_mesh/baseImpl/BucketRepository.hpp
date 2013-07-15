@@ -29,11 +29,7 @@ class EntityRepository;
 class BucketRepository
 {
 
-#ifdef STK_PROFILE_MEMORY
-  typedef tracking_allocator<Bucket, Bucket> bucket_allocator;
-#else
-  typedef std::allocator<Bucket>  bucket_allocator;
-#endif
+  typedef tracking_allocator<Bucket, BucketTag> bucket_allocator;
 
 public:
   ~BucketRepository();

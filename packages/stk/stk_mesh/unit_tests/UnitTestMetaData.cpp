@@ -35,12 +35,6 @@ using std::endl;
 //----------------------------------------------------------------------
 
 namespace {
-int stencil_test_function( unsigned  from_type ,
-                           unsigned  to_type ,
-                           unsigned  identifier )
-{
-  return 0;
-}
 
 STKUNIT_UNIT_TEST( UnitTestMetaData, testMetaData )
 {

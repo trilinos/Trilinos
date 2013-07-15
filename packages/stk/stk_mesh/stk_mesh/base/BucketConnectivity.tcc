@@ -67,15 +67,9 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
   static const EntityRank target_rank = TargetRank;
   static const ConnectivityType connectivity_type = FIXED_CONNECTIVITY;
 
-#ifdef STK_PROFILE_MEMORY
   typedef std::vector<Entity,              tracking_allocator<Entity, BucketRelationTag> >              EntityVector;
   typedef std::vector<ConnectivityOrdinal, tracking_allocator<ConnectivityOrdinal, BucketRelationTag> > ConnectivityOrdinalVector;
   typedef std::vector<Permutation,         tracking_allocator<Permutation, BucketRelationTag> >         PermutationVector;
-#else
-  typedef std::vector<Entity>              EntityVector;
-  typedef std::vector<ConnectivityOrdinal> ConnectivityOrdinalVector;
-  typedef std::vector<Permutation>         PermutationVector;
-#endif
 
   BucketConnectivity() //default constructed BucketConnectivity implies connectivity is not used
     : m_num_connectivity(0u)
@@ -445,19 +439,11 @@ public:
   static const EntityRank target_rank = TargetRank;
   static const ConnectivityType connectivity_type = DYNAMIC_CONNECTIVITY;
 
-#ifdef STK_PROFILE_MEMORY
   typedef std::vector<Entity,              tracking_allocator<Entity, DynamicBucketRelationTag> >              EntityVector;
   typedef std::vector<ConnectivityOrdinal, tracking_allocator<ConnectivityOrdinal, DynamicBucketRelationTag> > ConnectivityOrdinalVector;
   typedef std::vector<Permutation,         tracking_allocator<Permutation, DynamicBucketRelationTag> >         PermutationVector;
   typedef std::vector<uint32_t,            tracking_allocator<uint32_t, DynamicBucketRelationTag> >            UInt32Vector;
   typedef std::vector<uint16_t,            tracking_allocator<uint16_t, DynamicBucketRelationTag> >            UInt16Vector;
-#else
-  typedef std::vector<Entity>              EntityVector;
-  typedef std::vector<ConnectivityOrdinal> ConnectivityOrdinalVector;
-  typedef std::vector<Permutation>         PermutationVector;
-  typedef std::vector<uint32_t>            UInt32Vector;
-  typedef std::vector<uint16_t>            UInt16Vector;
-#endif
 
   static const unsigned chunk_size = 1u;
 

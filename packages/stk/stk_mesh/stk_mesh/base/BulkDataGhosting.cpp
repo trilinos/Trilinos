@@ -123,7 +123,7 @@ void BulkData::destroy_all_ghosting()
 
   // Iterate backwards so as not to invalidate a closure.
 
-  for ( std::vector<EntityCommListInfo>::reverse_iterator
+  for ( EntityCommListInfoVector::reverse_iterator
         i =  m_entity_comm_list.rbegin() ;
         i != m_entity_comm_list.rend() ; ++i) {
 
@@ -140,7 +140,7 @@ void BulkData::destroy_all_ghosting()
     }
   }
 
-  std::vector<EntityCommListInfo>::iterator i =
+  EntityCommListInfoVector::iterator i =
     std::remove_if( m_entity_comm_list.begin() ,
                     m_entity_comm_list.end() , IsInvalid() );
 
@@ -250,7 +250,7 @@ void BulkData::internal_change_ghosting(
     // Iterate over all entities with communication information, adding
     // the entity if it's a ghost on this process. new_recv will contain
     // all ghosts on this process by the end of the loop.
-    for ( std::vector<EntityCommListInfo>::const_iterator
+    for ( EntityCommListInfoVector::const_iterator
           i = comm_list().begin() ; i != comm_list().end() ; ++i ) {
       if ( in_receive_ghost( ghosts , i->key ) ) {
         new_recv.insert( i->key );
@@ -320,7 +320,7 @@ void BulkData::internal_change_ghosting(
 
   bool removed = false ;
 
-  for ( std::vector<EntityCommListInfo>::reverse_iterator
+  for ( EntityCommListInfoVector::reverse_iterator
         i = m_entity_comm_list.rbegin() ; i != m_entity_comm_list.rend() ; ++i) {
 
     const bool is_owner = i->owner == m_parallel_rank ;
@@ -358,7 +358,7 @@ void BulkData::internal_change_ghosting(
   }
 
   if ( removed ) {
-    std::vector<EntityCommListInfo>::iterator i =
+    EntityCommListInfoVector::iterator i =
       std::remove_if( m_entity_comm_list.begin() ,
                       m_entity_comm_list.end() , IsInvalid() );
     m_entity_comm_list.erase( i , m_entity_comm_list.end() );
@@ -488,7 +488,7 @@ void BulkData::internal_change_ghosting(
       // Added new ghosting entities to the list,
       // must now sort and merge.
 
-      std::vector<EntityCommListInfo>::iterator i = m_entity_comm_list.begin();
+      EntityCommListInfoVector::iterator i = m_entity_comm_list.begin();
       i += entity_comm_size ;
       std::sort( i , m_entity_comm_list.end() );
       std::inplace_merge( m_entity_comm_list.begin() , i ,
@@ -722,7 +722,7 @@ void BulkData::internal_regenerate_shared_aura()
   // Iterate over all entities with communication info, get the sharing
   // comm info for each entity, and ensure that upwardly related
   // entities to the shared entity are ghosted on the sharing proc.
-  for ( std::vector<EntityCommListInfo>::const_iterator
+  for ( EntityCommListInfoVector::const_iterator
       i = comm_list().begin() ; i != comm_list().end() ; ++i ) {
 
     const unsigned erank = i->key.rank();

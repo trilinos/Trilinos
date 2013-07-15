@@ -22,6 +22,8 @@
 #include <stk_util/util/NamedPair.hpp>
 #include <stk_util/util/TrackingAllocator.hpp>
 
+#include <stk_util/parallel/Parallel.hpp>
+
 #include <stk_topology/topology.hpp>
 
 // #ifndef STK_MESH_DISALLOW_DEPRECATED_ENTITY_FNS
@@ -31,8 +33,17 @@
 namespace stk {
 namespace mesh {
 
+// Tags used by tracking allocator
+struct FieldDataTag {};
+struct PartitionTag {};
+struct BucketTag {};
+struct EntityCommTag {};
 struct BucketRelationTag {};
 struct DynamicBucketRelationTag {};
+struct AuxRelationTag {};
+struct DeletedEntityTag {};
+
+void print_max_stk_memory_usage( ParallelMachine parallel, int parallel_rank, std::ostream & out);
 
 //----------------------------------------------------------------------
 /** \addtogroup stk_mesh_module
@@ -177,10 +188,9 @@ NAMED_PAIR( EntityCommInfo , unsigned , ghost_id , int , proc )
 /** \brief  Span of ( communication-subset-ordinal , process-rank ) pairs
  *          for the communication of an entity.
  */
-typedef PairIter< std::vector< EntityCommInfo >::const_iterator >
-  PairIterEntityComm ;
+typedef std::vector<EntityCommInfo, tracking_allocator<EntityCommInfo,EntityCommTag > > EntityCommInfoVector;
+typedef PairIter<  EntityCommInfoVector::const_iterator >  PairIterEntityComm ;
 
-typedef std::vector<EntityCommInfo> EntityCommInfoVector;
 #endif
 /** \} */
 
@@ -211,11 +221,7 @@ typedef int ( * relation_stencil_ptr )( unsigned  from_type ,
  *  -# relation identifier, and
  *  -# range entity global identifier.
  */
-#ifdef STK_PROFILE_MEMORY
-typedef std::vector<Relation, tracking_allocator<Relation,Relation> > RelationVector;
-#else
-typedef std::vector<Relation> RelationVector;
-#endif
+typedef std::vector<Relation, tracking_allocator<Relation,AuxRelationTag> > RelationVector;
 
 typedef PairIter< RelationVector::const_iterator > PairIterRelation ;
 

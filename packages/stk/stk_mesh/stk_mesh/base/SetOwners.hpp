@@ -33,7 +33,7 @@ void set_owners(BulkData& mesh)
 
   std::vector<EntityProc> entity_new_owners;
 
-  const std::vector<EntityCommListInfo>& entity_comm = mesh.comm_list();
+  const EntityCommListInfoVector& entity_comm = mesh.comm_list();
 
   for ( size_t i=0; i<entity_comm.size(); ++i) {
     Entity const entity = entity_comm[i].entity;;

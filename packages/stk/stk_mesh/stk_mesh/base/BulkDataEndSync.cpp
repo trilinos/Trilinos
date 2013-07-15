@@ -31,10 +31,6 @@
 #include <stk_mesh/base/EntityCommDatabase.hpp>
 #include <stk_mesh/base/Trace.hpp>
 
-#ifdef STK_PROFILE_MEMORY
-  #include <stk_mesh/baseImpl/Partition.hpp>
-#endif
-
 //----------------------------------------------------------------------
 
 namespace stk {
@@ -70,10 +66,10 @@ namespace {
 
 // A method for quickly finding an entity within a comm list
 EntityCommListInfo find_entity(const BulkData& mesh,
-                               const std::vector<EntityCommListInfo>& entities,
+                               const EntityCommListInfoVector& entities,
                                const EntityKey& key)
 {
-  std::vector<EntityCommListInfo>::const_iterator lb_itr = std::lower_bound(entities.begin(), entities.end(), key);
+  EntityCommListInfoVector::const_iterator lb_itr = std::lower_bound(entities.begin(), entities.end(), key);
   ThrowAssertMsg(lb_itr != entities.end() && lb_itr->key == key,
                  "Cannot find id: " << key.id() << " in comm-list" );
   return *lb_itr;
@@ -95,9 +91,9 @@ bool pack_entity_modification( const BulkData & mesh ,
 {
   bool flag = false;
 
-  const std::vector<EntityCommListInfo> & entity_comm = mesh.comm_list();
+  const EntityCommListInfoVector & entity_comm = mesh.comm_list();
 
-  for ( std::vector<EntityCommListInfo>::const_iterator
+  for ( EntityCommListInfoVector::const_iterator
         i = entity_comm.begin() ; i != entity_comm.end() ; ++i ) {
 
     Entity entity = i->entity;
@@ -136,7 +132,7 @@ void communicate_entity_modification( const BulkData & mesh ,
     comm.allocate_buffers( comm.parallel_size() / 4 , false , local_mod );
 
   if ( global_mod ) {
-    const std::vector<EntityCommListInfo> & entity_comm = mesh.comm_list();
+    const EntityCommListInfoVector & entity_comm = mesh.comm_list();
 
     // Packing send buffers:
     pack_entity_modification( mesh , shared , comm );
@@ -307,7 +303,7 @@ void destroy_dependent_ghosts( BulkData & mesh , Entity entity )
 
 void resolve_shared_removed_from_owned_closure( BulkData & mesh )
 {
-  for ( std::vector<EntityCommListInfo>::const_reverse_iterator
+  for ( EntityCommListInfoVector::const_reverse_iterator
         i =  mesh.comm_list().rbegin() ;
         i != mesh.comm_list().rend() ; ++i) {
 
@@ -442,7 +438,7 @@ void BulkData::internal_resolve_shared_modify_delete()
   } // remote mod loop
 
   // Erase all sharing communication lists for Destroyed entities:
-  for ( std::vector<EntityCommListInfo>::const_reverse_iterator
+  for ( EntityCommListInfoVector::const_reverse_iterator
         i = comm_list().rbegin() ; i != comm_list().rend() ; ++i) {
     if ( !is_valid(i->entity) ) {
       // m_ghosting[0] is the SHARED communication
@@ -540,7 +536,7 @@ void BulkData::internal_resolve_ghosted_modify_delete()
   // 1) Destroyed entities.
   // 2) Owned and modified entities.
 
-  for ( std::vector<EntityCommListInfo>::const_reverse_iterator
+  for ( EntityCommListInfoVector::const_reverse_iterator
         i = comm_list().rbegin() ; i != comm_list().rend() ; ++i) {
 
     Entity entity = i->entity;
@@ -729,7 +725,7 @@ void BulkData::internal_resolve_parallel_create()
                       m_entity_comm_list.end() );
 
   {
-    std::vector<EntityCommListInfo>::iterator i =
+    EntityCommListInfoVector::iterator i =
       std::unique( m_entity_comm_list.begin() , m_entity_comm_list.end() );
 
     m_entity_comm_list.erase( i , m_entity_comm_list.end() );
@@ -752,18 +748,6 @@ bool BulkData::modification_end()
 
   bool return_value = internal_modification_end( true );
 
-#ifdef STK_PROFILE_MEMORY
-
-  std::cout << "Modification cycle: " << synchronized_count() << std::endl;
-  profile_memory_usage<parallel::DistributedIndex>("Distributed Index", parallel(),parallel_rank());
-  profile_memory_usage<BucketRelationTag>("Fixed Relation", parallel(),parallel_rank());
-  profile_memory_usage<DynamicBucketRelationTag>("Dynamic Relation", parallel(),parallel_rank());
-  profile_memory_usage<FieldBase>("Fields", parallel(),parallel_rank());
-  profile_memory_usage<impl::Partition>("Partitions", parallel(),parallel_rank());
-  profile_memory_usage<Bucket>("Buckets", parallel(),parallel_rank());
-
-#endif
-
   return return_value;
 }
 
@@ -780,7 +764,7 @@ void print_comm_list( const BulkData & mesh , bool doit )
 
     msg << std::endl ;
 
-    for ( std::vector<EntityCommListInfo>::const_iterator
+    for ( EntityCommListInfoVector::const_iterator
           i =  mesh.comm_list().begin() ;
           i != mesh.comm_list().end() ; ++i ) {
 
@@ -831,7 +815,7 @@ bool BulkData::internal_modification_end( bool regenerate_aura )
     // If there is no communication information then the
     // entity must be removed from the communication list.
     {
-      std::vector<EntityCommListInfo>::iterator i = m_entity_comm_list.begin();
+      EntityCommListInfoVector::iterator i = m_entity_comm_list.begin();
       bool changed = false ;
       for ( ; i != m_entity_comm_list.end() ; ++i ) {
         if ( entity_comm(i->key).empty() ) {
@@ -1020,9 +1004,9 @@ namespace {
 
 void pack_induced_memberships( BulkData& bulk_data,
                                CommAll & comm ,
-                               const std::vector<EntityCommListInfo> & entity_comm )
+                               const EntityCommListInfoVector & entity_comm )
 {
-  for ( std::vector<EntityCommListInfo>::const_iterator
+  for ( EntityCommListInfoVector::const_iterator
         i = entity_comm.begin() ; i != entity_comm.end() ; ++i ) {
 
     if ( bulk_data.in_shared( i->key , i->owner ) ) {
@@ -1049,10 +1033,10 @@ void pack_induced_memberships( BulkData& bulk_data,
 void generate_send_list( BulkData& bulk_data,
                          const size_t sync_count ,
                          const int p_rank ,
-                         const std::vector<EntityCommListInfo> & entity_comm ,
+                         const EntityCommListInfoVector & entity_comm ,
                                std::vector<EntityProc> & send_list )
 {
-  for ( std::vector<EntityCommListInfo>::const_iterator
+  for ( EntityCommListInfoVector::const_iterator
         i = entity_comm.begin() ; i != entity_comm.end() ; ++i ) {
 
     if ( i->owner == p_rank &&
@@ -1164,7 +1148,7 @@ void BulkData::internal_resolve_shared_membership()
 
     comm.communicate();
 
-    for ( std::vector<EntityCommListInfo>::iterator
+    for ( EntityCommListInfoVector::iterator
           i = m_entity_comm_list.begin() ; i != m_entity_comm_list.end() ; ++i ) {
 
       if ( i->owner == p_rank ) {

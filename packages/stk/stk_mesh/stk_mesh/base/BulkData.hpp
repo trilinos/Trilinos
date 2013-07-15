@@ -56,6 +56,8 @@ struct EntityCommListInfo
   int  owner;
 };
 
+typedef std::vector<EntityCommListInfo, tracking_allocator<EntityCommListInfo, EntityCommTag> >  EntityCommListInfoVector;
+
 inline
 bool operator<(const EntityKey& key, const EntityCommListInfo& comm)
 { return key < comm.key; }
@@ -133,23 +135,20 @@ public:
     unsigned char* m_data;
   };
 
-  //typedef page_aligned_allocator<unsigned char, FieldBase>  field_data_allocator;
-  typedef std::allocator<unsigned char>  field_data_allocator;
-
-#ifdef STK_PROFILE_MEMORY
-  //typedef tracking_allocator<unsigned char, FieldBase>                                          field_data_allocator;
-  typedef std::vector<FieldMetaData, tracking_allocator<FieldMetaData, FieldBase> >             FieldMetaDataVector;
-  typedef std::vector<FieldMetaDataVector, tracking_allocator<FieldMetaDataVector, FieldBase> > FieldMetaDataVectorVector;
-#else
-  //typedef std::allocator<unsigned char>    field_data_allocator;
-  typedef std::vector<FieldMetaData>       FieldMetaDataVector;
-  typedef std::vector<FieldMetaDataVector> FieldMetaDataVectorVector;
-#endif
+  typedef page_aligned_allocator<unsigned char, FieldDataTag> field_data_allocator;
+  typedef std::vector<FieldMetaData, tracking_allocator<FieldMetaData, FieldDataTag> >             FieldMetaDataVector;
+  typedef std::vector<FieldMetaDataVector, tracking_allocator<FieldMetaDataVector, FieldDataTag> > FieldMetaDataVectorVector;
 
 
   inline const FieldMetaDataVector & get_meta_data_for_field(const FieldBase & f, const stk::mesh::EntityRank rank) const {
     return m_field_meta_data[m_num_fields*rank +  f.mesh_meta_data_ordinal()];
   }
+
+  // current memory usage of stk_mesh data structures on current processor
+  void current_memory_usage(std::ostream & out);
+
+  // current max memory usage of stk_mesh data structures across all processor
+  void current_max_memory_usage(std::ostream & out);
 
 
 
@@ -566,7 +565,7 @@ public:
   //------------------------------------
   //------------------------------------
   /** \brief  All entities with communication information. */
-  const std::vector<EntityCommListInfo> & comm_list() const
+  const EntityCommListInfoVector & comm_list() const
     { return m_entity_comm_list; }
 
   //------------------------------------
@@ -1127,12 +1126,12 @@ private:
   impl::EntityRepository              m_entity_repo;
 
   // Simply a list of data for entities that are being communicated
-  std::vector<EntityCommListInfo>     m_entity_comm_list;
+  EntityCommListInfoVector            m_entity_comm_list;
 
   std::vector<Ghosting*>              m_ghosting; /**< Aura is [1] */
 
-  std::list<size_t>     m_deleted_entities;
-  std::list<size_t>     m_deleted_entities_current_modification_cycle;
+  std::list<size_t, tracking_allocator<size_t, DeletedEntityTag> >     m_deleted_entities;
+  std::list<size_t, tracking_allocator<size_t, DeletedEntityTag> >     m_deleted_entities_current_modification_cycle;
 
   // Other information:
   MetaData &         m_mesh_meta_data;

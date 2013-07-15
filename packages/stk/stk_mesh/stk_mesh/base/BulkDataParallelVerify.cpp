@@ -230,7 +230,7 @@ bool verify_parallel_attributes( BulkData & M , std::ostream & error_log )
     }
   }
 
-  for ( std::vector<EntityCommListInfo>::const_iterator
+  for ( EntityCommListInfoVector::const_iterator
         i =  M.comm_list().begin() ;
         i != M.comm_list().end() ; ++i ) {
 
@@ -279,10 +279,10 @@ void insert( std::vector<int> & vec , int val )
 
 void pack_owned_verify( CommAll & all , const BulkData & mesh )
 {
-  const std::vector<EntityCommListInfo> & entity_comm = mesh.comm_list();
+  const EntityCommListInfoVector & entity_comm = mesh.comm_list();
   const int p_rank = all.parallel_rank();
 
-  for ( std::vector<EntityCommListInfo>::const_iterator
+  for ( EntityCommListInfoVector::const_iterator
         i = entity_comm.begin() ; i != entity_comm.end() ; ++i ) {
 
     if ( i->owner == p_rank ) {
@@ -366,7 +366,7 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
   Part * const       shares_part = & meta.globally_shared_part();
   const PartVector & mesh_parts  = meta.get_parts();
   const int               p_rank = mesh.parallel_rank();
-  const std::vector<EntityCommListInfo> & entity_comm = mesh.comm_list();
+  const EntityCommListInfoVector & entity_comm = mesh.comm_list();
   const EntityRank   entity_rank = meta.entity_rank_count();
 
   bool result = true ;
@@ -378,7 +378,7 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
   std::vector<Relation> recv_relations ;
   std::vector<int>      recv_comm ;
 
-  for ( std::vector<EntityCommListInfo>::const_iterator
+  for ( EntityCommListInfoVector::const_iterator
         i = entity_comm.begin() ; i != entity_comm.end() ; ++i ) {
 
     EntityKey key = i->key;

@@ -94,7 +94,7 @@ DofMapper::add_dof_mappings(const stk::mesh::BulkData& mesh_bulk,
   std::vector<int> shared_ids;
   std::vector<int> sharing_procs;
 
-  const std::vector<stk::mesh::EntityCommListInfo>& entity_comm = mesh_bulk.comm_list();
+  const stk::mesh::EntityCommListInfoVector & entity_comm = mesh_bulk.comm_list();
   for(size_t i=0; i<entity_comm.size(); ++i) {
 
     //we only care about entities of the right type, and which have data for 'field'.

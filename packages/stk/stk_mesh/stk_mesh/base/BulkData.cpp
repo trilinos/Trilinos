@@ -148,6 +148,16 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
 
 BulkData::~BulkData()
 {
+  try {
+    std::ostringstream oss;
+
+    if ( parallel_rank() == 0u) oss << "Destroying BulkData:\n";
+    print_max_stk_memory_usage( parallel(), parallel_rank(), oss);
+
+    if (parallel_rank() == 0u) std::cout << oss.str() << std::endl;
+  }
+  catch(...) {}
+
 #ifdef SIERRA_MIGRATION
   for(size_t i=0; i<m_fmwk_aux_relations.size(); ++i) {
     delete m_fmwk_aux_relations[i];
@@ -161,6 +171,7 @@ BulkData::~BulkData()
 #ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   the_bulk_data_registry[m_bulk_data_id] = NULL;
 #endif
+
 }
 
 void BulkData::update_deleted_entities_container()
@@ -584,7 +595,7 @@ bool BulkData::destroy_entity( Entity entity )
   // makes references to the entity's original bucket.
 
   // Need to invalidate Entity handles in comm-list
-  std::vector<EntityCommListInfo>::iterator lb_itr =
+  EntityCommListInfoVector::iterator lb_itr =
     std::lower_bound(m_entity_comm_list.begin(), m_entity_comm_list.end(), entity_key(entity));
   if (lb_itr != m_entity_comm_list.end() && lb_itr->key == entity_key(entity)) {
     lb_itr->entity = Entity();
@@ -697,7 +708,7 @@ bool BulkData::in_ghost( const Ghosting & ghost , EntityKey key , int proc ) con
   EntityCommInfo tmp( ghost.ordinal() , proc );
 
   PairIterEntityComm ec = entity_comm(key);
-  std::vector<EntityCommInfo>::const_iterator i =
+  EntityCommInfoVector::const_iterator i =
     std::lower_bound( ec.begin(), ec.end() , tmp );
 
   return i != ec.end() && tmp == *i ;
@@ -730,7 +741,7 @@ void BulkData::internal_change_owner_in_comm_data(const EntityKey& key, int new_
 {
   const bool changed = m_entity_comm_map.change_owner_rank(key, new_owner);
   if (changed) {
-    std::vector<EntityCommListInfo>::iterator lb_itr = std::lower_bound(m_entity_comm_list.begin(),
+    EntityCommListInfoVector::iterator lb_itr = std::lower_bound(m_entity_comm_list.begin(),
                                                                         m_entity_comm_list.end(),
                                                                         key);
     if (lb_itr != m_entity_comm_list.end() && lb_itr->key == key) {
@@ -767,7 +778,7 @@ void BulkData::allocate_field_data()
 
   //temporary (hopefully) kludge:
   //calling the buckets(rank) getter causes partitions/buckets to potentially
-  //be reorganized (including deleting buckets) and so we need to do it 
+  //be reorganized (including deleting buckets) and so we need to do it
   //before flipping the m_keep_fields_updated flag...
   for(EntityRank rank = stk::topology::NODE_RANK; rank < mesh_meta_data().entity_rank_count(); ++rank) {
     this->buckets(rank);

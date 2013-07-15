@@ -36,7 +36,16 @@ struct EntityComm
 
 class EntityCommDatabase
 {
-  typedef boost::unordered_map<EntityKey, EntityComm> map_type;
+  typedef std::pair<EntityKey const, EntityComm> map_value;
+  typedef tracking_allocator< map_value, EntityCommTag> map_allocator;
+  typedef boost::hash<EntityKey> map_hash;
+  typedef std::equal_to<EntityKey> map_predicate;
+  typedef boost::unordered_map<  EntityKey
+                               , EntityComm
+                               , map_hash
+                               , map_predicate
+                               , map_allocator
+                              > map_type;
 
 public:
   EntityCommDatabase() : m_comm_map(), m_last_lookup(m_comm_map.end()) {}
@@ -149,7 +158,7 @@ bool EntityCommDatabase::insert( const EntityKey & key, const EntityCommInfo & v
   EntityCommInfoVector & comm_map = m_last_lookup->second.comm_map;
   m_last_lookup->second.owner_rank = owner;
 
-  std::vector< EntityCommInfo >::iterator i =
+  EntityCommInfoVector::iterator i =
     std::lower_bound( comm_map.begin() , comm_map.end() , val );
 
   const bool result = ((i == comm_map.end()) || (val != *i));
@@ -170,7 +179,7 @@ bool EntityCommDatabase::erase( const EntityKey & key, const EntityCommInfo & va
 
   EntityCommInfoVector & comm_map = m_last_lookup->second.comm_map;
 
-  std::vector< EntityCommInfo >::iterator i =
+  EntityCommInfoVector::iterator i =
     std::lower_bound( comm_map.begin() , comm_map.end() , val );
 
   const bool result = ( (i != comm_map.end()) && (val == *i) ) ;
@@ -226,7 +235,7 @@ void EntityCommDatabase::comm_clear_ghosting(const EntityKey & key)
 
   EntityCommInfoVector & comm_map = m_last_lookup->second.comm_map;
 
-  std::vector< EntityCommInfo >::iterator j = comm_map.begin();
+  EntityCommInfoVector::iterator j = comm_map.begin();
   while ( j != comm_map.end() && j->ghost_id == 0 ) { ++j ; }
   comm_map.erase( j , comm_map.end() );
 

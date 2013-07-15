@@ -15,7 +15,7 @@ namespace mesh {
 
 void Ghosting::send_list( std::vector< EntityProc > & v ) const
 {
-  for ( std::vector<EntityCommListInfo>::const_iterator
+  for ( EntityCommListInfoVector::const_iterator
         i =  m_mesh.comm_list().begin() ;
         i != m_mesh.comm_list().end() ; ++i ){
     if ( i->owner == m_mesh.parallel_rank() ) {
@@ -30,7 +30,7 @@ void Ghosting::send_list( std::vector< EntityProc > & v ) const
 
 void Ghosting::receive_list( std::vector<EntityKey> & v ) const
 {
-  for ( std::vector<EntityCommListInfo>::const_iterator
+  for ( EntityCommListInfoVector::const_iterator
         i =  m_mesh.comm_list().begin() ;
         i != m_mesh.comm_list().end() ; ++i ){
     if ( i->owner != m_mesh.parallel_rank() ) {
@@ -50,7 +50,7 @@ std::ostream& Ghosting::operator<<(std::ostream& out) const
 
   out << "  Locally owned entities ghosted on other processors (send list):\n";
 
-  for ( std::vector<EntityCommListInfo>::const_iterator
+  for ( EntityCommListInfoVector::const_iterator
         i =  m_mesh.comm_list().begin() ;
         i != m_mesh.comm_list().end() ; ++i ){
     if ( i->owner == m_mesh.parallel_rank() ) {
@@ -66,7 +66,7 @@ std::ostream& Ghosting::operator<<(std::ostream& out) const
   }
 
   out << "  Entities ghosted on this processor from the owner (recv list):\n";
-  for ( std::vector<EntityCommListInfo>::const_iterator
+  for ( EntityCommListInfoVector::const_iterator
         i =  m_mesh.comm_list().begin() ;
         i != m_mesh.comm_list().end() ; ++i ) {
     if ( i->owner != m_mesh.parallel_rank() ) {

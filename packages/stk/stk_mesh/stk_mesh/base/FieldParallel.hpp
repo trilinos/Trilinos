@@ -114,8 +114,8 @@ void parallel_reduce( const BulkData & mesh ,
 
 //----------------------------------------------------------------------
 
-/// with Selector 
-template< class ReduceOp , 
+/// with Selector
+template< class ReduceOp ,
           class Type , class Tag1, class Tag2, class Tag3 ,
           class Tag4 , class Tag5, class Tag6, class Tag7 >
 struct ParallelReduceField {
@@ -142,8 +142,8 @@ operator()(const BulkData& mesh, CommAll & sparse ) const
 {
   typedef EntityArray< field_type > array_type ;
 
-  const std::vector<EntityCommListInfo>& entity_comm = mesh.comm_list();
-  for ( std::vector<EntityCommListInfo>::const_iterator
+  const EntityCommListInfoVector& entity_comm = mesh.comm_list();
+  for ( EntityCommListInfoVector::const_iterator
         i = entity_comm.begin(); i != entity_comm.end() ; ++i ) {
     Entity entity = i->entity;
     const MeshIndex& mi = mesh.mesh_index(entity);
