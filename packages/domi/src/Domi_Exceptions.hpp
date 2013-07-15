@@ -47,6 +47,34 @@
 namespace Domi
 {
 
+/** \brief Invalid argument exception type
+ */
+class InvalidArgument : public std::invalid_argument
+{
+public:
+  /** \brief Constructor
+   *
+   * \param msg [in] Error message
+   */
+  InvalidArgument(std::string msg) :
+    std::invalid_argument(msg)
+  { }
+};
+
+/** \brief Range Error exception type
+ */
+class RangeError : public std::range_error
+{
+public:
+  /** \brief Constructor
+   *
+   * \param msg [in] Error message
+   */
+  RangeError(std::string msg) :
+    std::range_error(msg)
+  { }
+};
+
 /** \brief Subcommunicator Error exception type
  */
 class SubcommunicatorError : public std::domain_error
@@ -54,7 +82,7 @@ class SubcommunicatorError : public std::domain_error
 public:
   /** \brief Constructor
    *
-   * \param op [in] Sohould be the name of the operator or operation
+   * \param op [in] Should be the name of the operator or operation
    *        that is throwing the SubcommunicatorError
    */
   SubcommunicatorError(std::string op) :
