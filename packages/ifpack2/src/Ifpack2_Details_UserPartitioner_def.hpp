@@ -78,7 +78,7 @@ void UserPartitioner<GraphType>::UserPartitioner::computePartitions ()
     "computePartitions: Map_ is null.");
 
   const size_t localNumRows = this->Graph_->getNodeNumRows ();
-  for (size_t ii = 0; ii < localNumRows; ++i) {
+  for (size_t ii = 0; ii < localNumRows; ++ii) {
     this->Partition_[ii] = map_[ii];
   }
   // IGNORING ALL THE SINGLETON STUFF IN IFPACK_USERPARTITIONER.CPP BY
