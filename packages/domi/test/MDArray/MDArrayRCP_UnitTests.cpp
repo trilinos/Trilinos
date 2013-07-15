@@ -52,7 +52,7 @@ using Domi::MDArray;
 using Domi::MDArrayRCP;
 using Domi::MDArrayView;
 using Domi::Slice;
-using Teuchos::RangeError;
+using Domi::RangeError;
 using MDArrayUnitTestHelpers::generateMDArray;
 using MDArrayUnitTestHelpers::generateMDArrayRCP;
 

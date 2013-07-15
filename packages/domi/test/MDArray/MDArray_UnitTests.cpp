@@ -48,7 +48,7 @@ using Teuchos::tuple;
 using Domi::MDArray;
 using Domi::MDArrayView;
 using Domi::Slice;
-using Teuchos::RangeError;
+using Domi::RangeError;
 using MDArrayUnitTestHelpers::nrows;
 using MDArrayUnitTestHelpers::ncols;
 using MDArrayUnitTestHelpers::generateMDArray;
