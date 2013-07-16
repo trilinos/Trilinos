@@ -160,7 +160,7 @@ namespace MueLu {
 
     /////////////////// calculate D^{-1} A Ptent (needed for smoothing)
     bool doFillComplete=true;
-    bool optimizeStorage=false;
+    bool optimizeStorage=true;
     RCP<Matrix> DinvAP0 = Utils::Multiply(*A, false, *Ptent, false, doFillComplete, optimizeStorage);
 
     doFillComplete=true;
