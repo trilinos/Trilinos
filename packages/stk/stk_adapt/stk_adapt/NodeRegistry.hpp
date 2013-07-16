@@ -533,7 +533,7 @@ namespace stk {
 
       void clear_dangling_nodes(SetOfEntities* nodes_to_be_deleted)
       {
-        const bool debug = false;
+        bool debug = false;
         if (debug) std::cout <<  "tmp srk NodeRegistry::clear_dangling_nodes start" << std::endl;
         double cpu_0 = stk::cpu_time();
 
@@ -547,23 +547,44 @@ namespace stk {
 
         for (iter = map.begin(); iter != map.end(); ++iter)
           {
+            const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
             SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+            stk::mesh::EntityId owning_elementId = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().id();
+            stk::mesh::EntityRank      owning_element_rank = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().rank();
             NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
             VERIFY_OP_ON(nodeIds_onSE.size(), ==, nodeIds_onSE.m_entity_id_vector.size(), "NodeRegistry::clear_dangling_nodes id vector/size mismatch");
             unsigned nnodes = nodeIds_onSE.size();
             NodeIdsOnSubDimEntityType node_to_keep(0);
             //std::vector<stk::mesh::Entity> node_to_keep;
             std::vector<stk::mesh::EntityId> node_id_to_keep(0);
+
+            if (debug)
+              {
+                stk::mesh::Entity owning_element = m_eMesh.get_bulk_data()->get_entity(owning_element_rank, owning_elementId);
+                if (!m_eMesh.is_valid(owning_element))
+                  {
+                    std::cout << "owning_element is invalid in clear_dangling_nodes  owning_elementId= " << owning_elementId << " owning_element_rank= " << owning_element_rank
+                              << " subDimCellData.size=" << subDimEntity.size()
+                              << std::endl;
+                    throw std::logic_error("logic: clear_dangling_nodes hmmm #111.0");
+                  }
+
+              }
+
             {
               const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
-              if (debug) std::cout << " nnodes= " << nnodes << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " << m_eMesh.identifier(subDimEntity[1]) <<  std::endl;
+              if (debug) std::cout << " nnodes= " << nnodes << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " << (nnodes>=2?m_eMesh.identifier(subDimEntity[1]):-1)
+                                   << " owning_elementId= " << owning_elementId
+                                   <<  std::endl;
             }
             for (unsigned inode=0; inode < nnodes; inode++)
               {
                 stk::mesh::EntityId id = nodeIds_onSE.m_entity_id_vector[inode];
                 if (!m_eMesh.is_valid(nodeIds_onSE[inode])) {
                   const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
-                  if (debug) std::cout << " invalid deleting " << id << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " << m_eMesh.identifier(subDimEntity[1]) <<  std::endl;
+                  if (debug) std::cout << " invalid deleting " << id << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " << (nnodes>=2?m_eMesh.identifier(subDimEntity[1]):-1)
+                                       << " owning_elementId= " << owning_elementId
+                                       <<  std::endl;
                   continue;
                 }
                 stk::mesh::EntityId id_check = m_eMesh.identifier(nodeIds_onSE[inode]);
@@ -573,13 +594,17 @@ namespace stk {
                 if (nodes_to_be_deleted && nodes_to_be_deleted->find(nodeIds_onSE[inode]) != nodes_to_be_deleted->end())
                   {
                     const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
-                    if (debug) std::cout << " deleting " << id << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " << m_eMesh.identifier(subDimEntity[1]) <<  std::endl;
+                    if (debug) std::cout << " deleting " << id << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " << (nnodes>=2?m_eMesh.identifier(subDimEntity[1]):-1)
+                                         << " owning_elementId= " << owning_elementId
+                                         <<  std::endl;
                     ++num_delete;
                   }
                 else if (!nodes_to_be_deleted && stk::mesh::Deleted == bulk_data.state(nodeIds_onSE[inode]) )
                   {
                     const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
-                    if (debug) std::cout << " 2 deleting " << id << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " << m_eMesh.identifier(subDimEntity[1]) <<  std::endl;
+                    if (debug) std::cout << " 2 deleting " << id << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " <<  (nnodes>=2?m_eMesh.identifier(subDimEntity[1]):-1)
+                                         << " owning_elementId= " << owning_elementId
+                                         <<  std::endl;
                     ++num_delete;
                   }
                 else
@@ -599,8 +624,9 @@ namespace stk {
             if (nodeIds_onSE.size() == 0)
               {
                 stk::mesh::EntityId id = nodeIds_onSE.m_entity_id_vector[0];
-                const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
-                if (debug) std::cout << " to_erase deleting " << id << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " << m_eMesh.identifier(subDimEntity[1]) <<  std::endl;
+                if (debug) std::cout << " to_erase deleting " << id << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " << (nnodes>=2?m_eMesh.identifier(subDimEntity[1]):-1)
+                                     << " owning_elementId= " << owning_elementId
+                                     <<  std::endl;
                 to_erase.push_back(&(iter->first));
               }
 
@@ -632,6 +658,83 @@ namespace stk {
           }
         double cpu_1 = stk::cpu_time();
         if (debug) std::cout <<  "tmp srk NodeRegistry::clear_dangling_nodes end, time= " << (cpu_1-cpu_0) << std::endl;
+      }
+
+      void clear_elements_to_be_deleted(SetOfEntities* elements_to_be_deleted)
+      {
+        //if (1) return;
+        bool debug = false;
+        if (debug) std::cout <<  "tmp srk NodeRegistry::clear_elements_to_be_deleted start" << std::endl;
+
+        SubDimCellToDataMap::iterator iter;
+        SubDimCellToDataMap& map = getMap();
+
+        std::vector<const SubDimCell_SDSEntityType *> to_erase;
+        int num_delete=0;
+
+        for (iter = map.begin(); iter != map.end(); ++iter)
+          {
+            const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+            SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+            stk::mesh::EntityId owning_elementId = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().id();
+            stk::mesh::EntityRank      owning_element_rank = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().rank();
+            NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+            VERIFY_OP_ON(nodeIds_onSE.size(), ==, nodeIds_onSE.m_entity_id_vector.size(), "NodeRegistry::clear_elements_to_be_deleted id vector/size mismatch");
+
+            stk::mesh::Entity owning_element = stk::mesh::Entity();
+            if (owning_elementId)
+              {
+
+                owning_element = m_eMesh.get_bulk_data()->get_entity(owning_element_rank, owning_elementId);
+                if (!m_eMesh.is_valid(owning_element))
+                  {
+                    std::cout << "owning_element is invalid in clear_elements_to_be_deleted  owning_elementId= " << owning_elementId << " owning_element_rank= " << owning_element_rank
+                              << " subDimCellData.size=" << subDimEntity.size()
+                              << std::endl;
+                    throw std::logic_error("logic: clear_elements_to_be_deleted hmmm #211.0");
+                  }
+              }
+
+            if (!owning_elementId || (elements_to_be_deleted && elements_to_be_deleted->find(owning_element) != elements_to_be_deleted->end()))
+              {
+                if (debug) std::cout << " deleting "
+                                     << " owning_elementId= " << owning_elementId
+                                     << " subDimEntity size= " << subDimEntity.size()
+                                     <<  std::endl;
+                ++num_delete;
+                to_erase.push_back(&(iter->first));
+              }
+          }
+        for (iter = map.begin(); iter != map.end(); ++iter)
+          {
+            const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+            SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+            stk::mesh::EntityId owning_elementId = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().id();
+            if (!owning_elementId) continue;
+            stk::mesh::EntityRank      owning_element_rank = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().rank();
+            stk::mesh::Entity owning_element = m_eMesh.get_bulk_data()->get_entity(owning_element_rank, owning_elementId);
+            if (!m_eMesh.is_valid(owning_element))
+              {
+                std::cout << "owning_element is invalid in clear_elements_to_be_deleted  owning_elementId= " << owning_elementId << " owning_element_rank= " << owning_element_rank
+                          << " subDimCellData.size=" << subDimEntity.size()
+                          << std::endl;
+                throw std::logic_error("logic: clear_elements_to_be_deleted hmmm #211.1");
+              }
+          }
+        if (debug) std::cout << "tmp srk NodeRegistry::clear_elements_to_be_deleted num_delete= " << num_delete <<  std::endl;
+        if (to_erase.size())
+          {
+            s_compare_using_entity_impl = true;
+            for (unsigned i=0; i < to_erase.size(); i++)
+              {
+                if ( to_erase[i]->size() &&  map.find(*to_erase[i]) != map.end())
+                  {
+                    map.erase(*to_erase[i]);
+                  }
+              }
+            s_compare_using_entity_impl = false;
+          }
+
       }
 
       void initialize()
@@ -975,9 +1078,13 @@ namespace stk {
         bool is_not_empty_but_data_cleared = (!is_empty && nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>().size() == 0);
 
         // if empty or if my id is the smallest, make this element the owner
-        bool should_put_in_id = (m_eMesh.identifier(element)  < nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().id());
-        bool should_put_in_rank = (m_eMesh.entity_rank(element) > nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().rank());
-        bool should_put_in = should_put_in_id || should_put_in_rank;
+        stk::mesh::EntityId db_id = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().id();
+        stk::mesh::EntityId db_rank = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().rank();
+
+        bool should_put_in_id = (m_eMesh.identifier(element)  < db_id);
+        bool should_put_in_rank_gt = (m_eMesh.entity_rank(element) > db_rank);
+        bool should_put_in_rank_gte = (m_eMesh.entity_rank(element) >= db_rank);
+        bool should_put_in = should_put_in_rank_gt || (should_put_in_id && should_put_in_rank_gte);
 
         unsigned smark=0;
         if (!is_empty)
@@ -1047,12 +1154,13 @@ namespace stk {
                  << " nid= " << (nidSize ? m_eMesh.identifier(nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>()[0]) : -1);
 
             //m_eMesh.print(sout, element,false,true);
-            sout << " smark= " << smark << " gotMark= " << gotMark << " needNodes= " << needNodes << " isG= " << m_eMesh.isGhostElement(element) 
+            sout << " smark= " << smark << " gotMark= " << gotMark << " needNodes= " << needNodes << " isG= " << m_eMesh.isGhostElement(element)
                  << " is_empty= " << is_empty
                  << " a_is_empty= " << a_is_empty
                       << " should_put_in= " << should_put_in
                       << " should_put_in_id= " << should_put_in_id
-                      << " should_put_in_rank= " << should_put_in_rank
+                      << " should_put_in_rank_gt= " << should_put_in_rank_gt
+                      << " should_put_in_rank_gte= " << should_put_in_rank_gte
                       << " needed_entity_rank= "
                       << needed_entity_rank.first << " subDimEntity= ";
 
@@ -1106,7 +1214,7 @@ namespace stk {
             std::ostringstream sout;
             sout << "P[" << m_eMesh.get_rank() << "] query:: " << msg << " element= " << m_eMesh.identifier(element) << " nidSize= " << nidSize
                  << " nid= " << (nidSize ? m_eMesh.identifier(nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>()[0]) : -1);
-            sout << " smark= " << smark << " gotMark= " << gotMark << " isG= " << m_eMesh.isGhostElement(element) 
+            sout << " smark= " << smark << " gotMark= " << gotMark << " isG= " << m_eMesh.isGhostElement(element)
                  << " is_empty= " << is_empty << " subDimEntity= ";
 
             for (unsigned k=0; k < subDimEntity.size(); k++)
@@ -1144,9 +1252,11 @@ namespace stk {
         // if empty or if my id is the smallest, make this element the owner
         stk::mesh::EntityId db_id = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().id();
         stk::mesh::EntityId db_rank = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().rank();
+
         bool should_put_in_id = (m_eMesh.identifier(element)  < db_id);
-        bool should_put_in_rank = (m_eMesh.entity_rank(element) > db_rank);
-        bool should_put_in = should_put_in_id || should_put_in_rank;
+        bool should_put_in_rank_gt = (m_eMesh.entity_rank(element) > db_rank);
+        bool should_put_in_rank_gte = (m_eMesh.entity_rank(element) >= db_rank);
+        bool should_put_in = should_put_in_rank_gt || (should_put_in_id && should_put_in_rank_gte);
         if (db_id == 0u)
           should_put_in = true;
 
@@ -1287,7 +1397,7 @@ namespace stk {
                         std::ostringstream sout;
                         sout << "P[" << m_eMesh.get_rank() << "] checkForRemote:: element= " << m_eMesh.identifier(element) << " nidSize= " << nidSize;
                         //m_eMesh.print(sout, element,false,true);
-                        sout << " isG= " << m_eMesh.isGhostElement(element) 
+                        sout << " isG= " << m_eMesh.isGhostElement(element)
                              << " gotMark= " << gotMark
                              << " a_is_empty= " << a_is_empty
                              << " needed_entity_rank= "
@@ -1303,8 +1413,8 @@ namespace stk {
                             std::cout << " " << (stk::mesh::EntityId) subDimEntity[k] << " ";
                           }
 #endif
-                        sout << " : nodes_to_ghost: " << m_eMesh.identifier(new_node) << " element= " << m_eMesh.identifier(element) 
-                             << " element owner_proc_rank= " << owner_proc_rank 
+                        sout << " : nodes_to_ghost: " << m_eMesh.identifier(new_node) << " element= " << m_eMesh.identifier(element)
+                             << " element owner_proc_rank= " << owner_proc_rank
                              << " owning_elementId= " << owning_elementId ;
 
                         if ((m_eMesh.identifier(element) == 253 || m_eMesh.identifier(element) == 265) && needed_entity_rank.first==1
@@ -2206,7 +2316,7 @@ namespace stk {
           }
         if (0)
           {
-            std::cout << "NodeRegistry::checkDB start msg= " << msg << " m_cell_2_data_map.size= " << m_cell_2_data_map.size() << std::endl;
+            std::cout << "P[" << m_eMesh.get_rank() << "] NodeRegistry::checkDB start msg= " << msg << " m_cell_2_data_map.size= " << m_cell_2_data_map.size() << std::endl;
             for (SubDimCellToDataMap::iterator cell_iter = m_cell_2_data_map.begin(); cell_iter != m_cell_2_data_map.end(); ++cell_iter)
               {
                 const SubDimCell_SDSEntityType& subDimEntity = (*cell_iter).first;
@@ -2252,26 +2362,32 @@ namespace stk {
                     VERIFY_OP_ON(m_eMesh.identifier(node_0), ==, nodeId, "checkDB #11.4");
                   }
               }
-            std::cout << "NodeRegistry::checkDB end msg= " << msg << std::endl;
+            std::cout << "P[" << m_eMesh.get_rank() << "] NodeRegistry::checkDB end msg= " << msg << std::endl;
           }
 
-        if (0)
+        if (1)
           {
-            std::cout << "NodeRegistry::checkDB start 1 msg= " << msg << std::endl;
+            std::cout << "P[" << m_eMesh.get_rank() << "] NodeRegistry::checkDB start 1 msg= " << msg << std::endl;
             for (SubDimCellToDataMap::iterator cell_iter = m_cell_2_data_map.begin(); cell_iter != m_cell_2_data_map.end(); ++cell_iter)
               {
-                //const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+                const SubDimCell_SDSEntityType& subDimEntity = (*cell_iter).first;
                 SubDimCellData&            subDimCellData      = (*cell_iter).second;
                 stk::mesh::EntityId        owning_elementId    = subDimCellData.get<SDC_DATA_OWNING_ELEMENT_KEY>().id();
                 stk::mesh::EntityRank      owning_element_rank = subDimCellData.get<SDC_DATA_OWNING_ELEMENT_KEY>().rank();
                 NodeIdsOnSubDimEntityType& nodeIds_onSE        = subDimCellData.get<SDC_DATA_GLOBAL_NODE_IDS>();
 
+                VERIFY_OP_ON(owning_elementId , !=, 0, "owning_elementId=0");
                 if (owning_elementId == 0) continue;
                 stk::mesh::Entity owning_element = m_eMesh.get_bulk_data()->get_entity(owning_element_rank, owning_elementId);
                 if (!m_eMesh.is_valid(owning_element))
-                  throw std::logic_error("logic: checkDB hmmm #11.0");
+                  {
+                    std::cout << "owning_element is invalid, msg= " << msg << " owning_elementId= " << owning_elementId << " owning_element_rank= " << owning_element_rank
+                              << " subDimCellData.size=" << subDimEntity.size()
+                              << std::endl;
+                    throw std::logic_error("logic: checkDB hmmm #11.0");
+                  }
                 //bool isGhost = m_eMesh.isGhostElement(*owning_element);
-                if (!m_eMesh.isGhostElement(owning_element))
+                if (0 && !m_eMesh.isGhostElement(owning_element))
                   {
                     for (unsigned i=0; i < nodeIds_onSE.size(); i++)
                       {
@@ -2289,7 +2405,7 @@ namespace stk {
                       }
                   }
               }
-            std::cout << "NodeRegistry::checkDB end 1 msg= " << msg << std::endl;
+            std::cout << "P[" << m_eMesh.get_rank() << "] NodeRegistry::checkDB end 1 msg= " << msg << std::endl;
 
           }
 

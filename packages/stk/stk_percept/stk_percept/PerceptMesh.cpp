@@ -1701,7 +1701,7 @@ namespace stk {
                 m_MAX_IDENT = stk::mesh::EntityKey::MAX_ID;
               }
           }
-          std::cout << "Large mesh setting = " << (m_large_mesh?"true":"false") << std::endl;
+          //std::cout << "Large mesh setting = " << (m_large_mesh?"true":"false") << std::endl;
         }
       stk::mesh::EntityId max_ids_per_proc =  ((m_MAX_IDENT - 1ULL)/ p_size) - 1ULL;
 

@@ -57,7 +57,7 @@ typedef std::set<stk::mesh::Entity, stk::mesh::EntityLess> ElementUnrefineCollec
 
 
 #if UNIFORM_REF_REMOVE_OLD_STD_SET
-typedef std::set<stk::mesh::Entity, stk::mesh::EntityLess> elements_to_be_destroyed_type;
+    typedef std::set<stk::mesh::Entity, stk::mesh::EntityLess> elements_to_be_destroyed_type;
 #endif
 #if UNIFORM_REF_REMOVE_OLD_STD_VECTOR
     typedef std::vector<stk::mesh::Entity> elements_to_be_destroyed_type;

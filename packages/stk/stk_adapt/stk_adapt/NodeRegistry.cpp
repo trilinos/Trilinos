@@ -160,12 +160,14 @@ namespace stk {
 
         //unsigned iv[2]={iv0,iv1};
         double alp[2]={0.0,0.0};
+        double alps[2]={0.0,0.0};
         double alp1[2]={0.0,0.0};
 
         double alpsum=0.0;
         for (unsigned ipts=0; ipts < nsz; ipts++)
           {
             alp[ipts] = nodeId_elementOwnderId.get<SDC_DATA_SPACING>()[ipts];
+            alps[ipts] = alp[ipts];
             VERIFY_OP_ON(alp[ipts], >=, 0.0, "hmmm33");
             alpsum += alp[ipts];
           }
@@ -195,6 +197,11 @@ namespace stk {
           {
             alp1[ipts] /= sum;
           }
+        if (!(alp1[0] <= 1.0)) {
+          std::cout << "alp1[0] = " << alp1[0] << " sum= " << sum << " alpsum= " << alpsum 
+                    << " alp= " << alp[0] << " " << alp[1] 
+                    << " alps= " << alps[0] << " " << alps[1] << std::endl;
+        }
         VERIFY_OP_ON(alp1[0], <=, 1.0, "hmmm35");
         if (swapped) alp1[0] = 1.0-alp1[0];
         double candidate_alpha = 1.0-alp1[0];
@@ -468,7 +475,11 @@ namespace stk {
 
             NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
             unsigned owning_elementId = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().id();
-            //unsigned owning_elementRank = stk::mesh::entity_rank(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>());
+            unsigned owning_elementRank = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().rank();
+
+            stk::mesh::Entity owning_element = m_eMesh.get_bulk_data()->get_entity(owning_elementRank, owning_elementId);
+            VERIFY_OP_ON(owning_element, !=, stk::mesh::Entity(), "bad entity");
+
             unsigned char owning_elementSubDimOrd = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_ORDINAL>();
             VERIFY_OP_ON(owning_elementSubDimOrd, >, 0, "hmm 2");
             --owning_elementSubDimOrd ;
@@ -478,11 +489,6 @@ namespace stk {
             static const SubDimCellData empty_SubDimCellData;
 
             bool is_empty = (nodeId_elementOwnderId == empty_SubDimCellData);
-
-            if (s_allow_empty_sub_dims && is_empty)
-              {
-                return;
-              }
 
             if (is_empty)
               {
@@ -579,12 +585,8 @@ namespace stk {
                 nodes.resize(nsz, stk::mesh::Entity());
                 c_p.resize(fieldDim,0);
 
-                if (do_respect_spacing && nsz == 4 &&  spatialDim == 3)
+                if (do_respect_spacing && nsz == 4 &&  spatialDim == 3 && owning_elementRank == m_eMesh.element_rank())
                   {
-                    //exit(1);
-                    //element_side_nodes( const stk::mesh::Entity elem , int local_side_id, stk::mesh::EntityRank side_entity_rank, std::vector<stk::mesh::Entity>& side_node_entities )
-                    stk::mesh::Entity owning_element = m_eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::ELEMENT_RANK, owning_elementId);
-                    VERIFY_OP_ON(owning_element, !=, stk::mesh::Entity(), "hmmm");
                     std::vector<stk::mesh::Entity> side_node_entities;
                     m_eMesh.element_side_nodes(owning_element, owning_elementSubDimOrd, m_eMesh.face_rank(), side_node_entities);
                     VERIFY_OP_ON(side_node_entities.size(), ==, 4, "hmmm 3");
@@ -644,6 +646,7 @@ namespace stk {
                             {
                               len += (coord[1][isp] - coord[0][isp])*(coord[1][isp] - coord[0][isp]);
                             }
+                          VERIFY_OP_ON(len, >, 1.e-20, "bad len in makeCentroid");
                           for (int isp = 0; isp < spatialDim; isp++)
                             {
                               unit_edge_vec[isp] = (coord[1][isp] - coord[0][isp]) / std::sqrt(len);
@@ -659,7 +662,6 @@ namespace stk {
                             {
                               spc[ipts][isp] = spc[ipts][0];
                             }
-
                         }
 
                       if (0)

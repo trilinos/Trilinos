@@ -1119,6 +1119,7 @@ namespace stk {
 #endif
                         eMesh.commit();
 
+                        //eMesh.delete_side_sets();
 
                         if (fix_all_block_boundaries)
                           eMesh.get_skin_part("inner_skin_part", true);

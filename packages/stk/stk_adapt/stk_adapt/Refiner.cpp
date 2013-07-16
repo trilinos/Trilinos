@@ -581,6 +581,7 @@ namespace stk {
       EXCEPTWATCH;
 
       /**/                                                TRACE_PRINT( "Refiner:doBreak start...");
+      //check_sidesets_2("start of doBreak");
 
       m_nodeRegistry->dumpDB("start of doBreak");
 
@@ -1016,6 +1017,11 @@ namespace stk {
 
           m_nodeRegistry->addToExistingPartsNew();
           //std::cout << "tmp makeCentroid... " << std::endl;
+#if CHECK_DEBUG
+          //check_db("after doBreak");
+          m_nodeRegistry->checkDB("before makeCentroid");
+#endif
+
           m_nodeRegistry->makeCentroid(m_eMesh.get_coordinates_field());
           //std::cout << "tmp makeCentroid...done " << std::endl;
           //std::cout << "tmp interpolateFields... " << std::endl;
@@ -1065,6 +1071,11 @@ namespace stk {
           //           m_eMesh.adapt_parent_to_child_relations().clear();
           /***********************/                           TRACE_PRINT("Refiner: fixElementSides1...done ");
 
+#if CHECK_DEBUG
+          //check_db("after doBreak");
+          m_nodeRegistry->checkDB("before removeOldElements");
+#endif
+
           for (unsigned irank = 0; irank < ranks.size(); irank++)
             {
 
@@ -1080,7 +1091,16 @@ namespace stk {
 
 
       // remove any elements that are empty (these can exist when doing local refinement)
+#if CHECK_DEBUG
+      //check_db("after doBreak");
+      m_nodeRegistry->checkDB("before removeEmptyElements");
+#endif
       removeEmptyElements();
+
+#if CHECK_DEBUG
+      //check_db("after doBreak");
+      m_nodeRegistry->checkDB("after removeEmptyElements");
+#endif
 
       bulkData.modification_end();
       bulkData.modification_begin();
@@ -1118,6 +1138,7 @@ namespace stk {
       //m_eMesh.dump_elements();
 
       checkPolarity(m_eMesh);
+      //check_sidesets_2("end of doBreak");
 
 #if  defined(STK_PERCEPT_HAS_GEOMETRY)
       snapAndSmooth(m_geomSnap, m_geomFile);
@@ -1218,7 +1239,7 @@ namespace stk {
 
     void Refiner::removeEmptyElements()
     {
-
+      if (CHECK_DEBUG) std::cout << "removeEmptyElements start.... " << std::endl;
       elements_to_be_destroyed_type list(*m_eMesh.get_bulk_data());
 
       const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::ELEMENT_RANK );
@@ -1231,7 +1252,6 @@ namespace stk {
           for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
             {
               stk::mesh::Entity element = bucket[iElement];
-              //if (0 == element.relations(stk::mesh::MetaData::NODE_RANK).size())
               if (0 == m_eMesh.get_bulk_data()->num_connectivity(element, stk::mesh::MetaData::NODE_RANK))
                 {
 #if UNIFORM_REF_REMOVE_OLD_STD_VECTOR
@@ -1243,10 +1263,12 @@ namespace stk {
             }
         }
 
+      //getNodeRegistry().clear_elements_to_be_deleted(&list);
       //m_eMesh.get_bulk_data()->modification_begin();
       //std::cout << "tmp removeElements(parents) " << std::endl;
       removeElements(list);
       //m_eMesh.get_bulk_data()->modification_end();
+      if (CHECK_DEBUG) std::cout << "removeEmptyElements ....end " << std::endl;
 
     }
 
@@ -3329,6 +3351,7 @@ namespace stk {
       //fix_side_sets_3(true, side_part_map);
       fix_side_sets_2();
 
+
     }
 
     // if the element (element) has a side that matches  the given side (side_elem), connect them but first delete old connections
@@ -3493,6 +3516,7 @@ namespace stk {
     removeOldElements(unsigned irank, stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern)
     {
       EXCEPTWATCH;
+      if (CHECK_DEBUG) std::cout << "removeOldElements start ... " << std::endl;
 
       const mesh::Part *oldPart = m_eMesh.getPart(breakPattern->getOldElementsPartName()+toString(rank));
 
@@ -3567,7 +3591,10 @@ namespace stk {
                 }
             }
         }
+
+      //getNodeRegistry().clear_elements_to_be_deleted(&elements_to_be_destroyed);
       removeElements(elements_to_be_destroyed, irank);
+      if (CHECK_DEBUG) std::cout << "removeOldElements  ... end " << std::endl;
 
     }
 
