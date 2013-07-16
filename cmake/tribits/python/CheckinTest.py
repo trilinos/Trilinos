@@ -365,13 +365,18 @@ class GitRepo:
     return str(self)
 
 
-def getExtraReposPyFileFromCmakeFile(inOptions, extraReposPythonOutFile, \
-  consoleOutputFile = None, verbose=False \
-  ):
+def getExtraReposFilePath(inOptions):
   if inOptions.extraReposFile == "project":
     extraReposFile = inOptions.srcDir+"/cmake/ExtraRepositoriesList.cmake"
   else:
     extraReposFile = inOptions.extraReposFile
+  return extraReposFile
+
+
+def getExtraReposPyFileFromCmakeFile(inOptions, extraReposPythonOutFile, \
+  consoleOutputFile = None, verbose=False \
+  ):
+  extraReposFile = getExtraReposFilePath(inOptions)
   cmnd = "\""+inOptions.withCmake+"\""+ \
     " -DPROJECT_SOURCE_DIR="+inOptions.srcDir+ \
     " -DTRIBITS_BASE_DIR="+inOptions.tribitsDir+ \
@@ -1200,10 +1205,18 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
     print "\nFinal package enable list: [" + ','.join(enablePackagesList) + "]"
 
   if tribitsGitRepos.numTribitsExtraRepos() > 0:
-    cmakePkgOptions.append(cmakeScopedDefine(
-      projectName, "EXTRA_REPOSITORIES:STRING",
-      ','.join(tribitsGitRepos.tribitsExtraRepoNamesList())))
-
+    cmakePkgOptions.extend(
+      [
+        cmakeScopedDefine(
+          projectName, "EXTRA_REPOSITORIES:STRING",
+          ','.join(tribitsGitRepos.tribitsExtraRepoNamesList())),
+        cmakeScopedDefine(
+          projectName, "ENABLE_KNOWN_EXTERNAL_REPOS_TYPE", inOptions.extraReposType),
+        cmakeScopedDefine(
+          projectName, "EXTRAREPOS_FILE", getExtraReposFilePath(inOptions)),
+        ]
+      )
+        
   for pkg in enablePackagesList:
     cmakePkgOptions.append(cmakeScopedDefine(projectName, "ENABLE_"+pkg+":BOOL", "ON"))
 

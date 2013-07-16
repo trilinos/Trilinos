@@ -461,9 +461,10 @@ template< unsigned N > inline void noop_cycle();
 template<> inline void noop_cycle<0>() {}
 template< unsigned N > inline void noop_cycle()
 {
-#if defined( __GNUC__ ) || \
-    defined( __GNUG__ ) || \
-    defined( __INTEL_COMPILER__ )
+#if !defined ( KOKKOS_DISABLE_ASM ) && \
+    ( defined( __GNUC__ ) || \
+      defined( __GNUG__ ) || \
+      defined( __INTEL_COMPILER__ ) )
 
   asm volatile("nop");
   noop_cycle<N-1>();

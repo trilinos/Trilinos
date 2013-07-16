@@ -76,7 +76,7 @@
 #define LEAST_SIGNIFICANCE 0.0001
 #define SIGNIFICANCE_MUL 1000
 #define FUTURE_REDUCEALL_CUTOFF 1500000
-#define MIN_WORK_LAST_DIM 4000
+#define MIN_WORK_LAST_DIM 1000
 //#define INCLUDE_ZOLTAN2_EXPERIMENTAL
 #ifdef HAVE_ZOLTAN2_OMP
 #include <omp.h>
@@ -370,9 +370,9 @@ inline scalar_t pivotPos (scalar_t * cutUpperBounds, scalar_t *cutLowerBounds,si
     }
 
     scalar_t coordinate_range = (cutUpperBounds[currentCutIndex] - cutLowerBounds[currentCutIndex]);
-    scalar_t weight_range = (cutUpperWeight[currentCutIndex] - cutLowerWeight[currentCutIndex]);
+    //scalar_t weight_range = (cutUpperWeight[currentCutIndex] - cutLowerWeight[currentCutIndex]);
 
-    scalar_t myWeightDif = (ew - cutLowerWeight[currentCutIndex]);
+    //scalar_t myWeightDif = (ew - cutLowerWeight[currentCutIndex]);
     scalar_t newCut =(coordinate_range ) / 2 /** (myWeightDif / weight_range)*/ + cutLowerBounds[currentCutIndex];
     /*
     cout << "cutIndex:" << currentCutIndex <<
@@ -2949,6 +2949,15 @@ bool checkMigration(
         lno_t *partBeginArray
         ){
 
+    /*
+    if (myRank == 0){
+        cout << "futureReduceAll:" << futureReduceAll <<
+                " FUTURE_REDUCEALL_CUTOFF:" << FUTURE_REDUCEALL_CUTOFF <<
+                " numCoordinatesForLastDimPartitioning:" << numCoordinatesForLastDimPartitioning <<
+                " MIN_WORK_LAST_DIM:" << MIN_WORK_LAST_DIM << endl;
+    }
+    */
+
     if (futureReduceAll > FUTURE_REDUCEALL_CUTOFF) return true;
     if (numCoordinatesForLastDimPartitioning < MIN_WORK_LAST_DIM) return true;
 
@@ -2983,9 +2992,20 @@ bool checkMigration(
                     double ideal_num = p_gno_np_global_num_coord_each_part_actual[global_shift + i] /  double(nprocs);
                     global_diff += ABS(ideal_num -
                             p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i]) /  (ideal_num);
+                    /*
+                    if (myRank == 0&& nprocs == 96){
+                        cout << "i:" << i << " ii:" << ii << " idealNum:" << ideal_num << " procHas:" << p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i] << endl;
+                    }
+                    */
                 }
             }
             global_diff /= num_parts;
+
+            /*
+            if (myRank == 0&& nprocs == 96){
+                cout << "Global Diff:" << global_diff << " nprocs:" << nprocs << endl;
+            }
+            */
 
         }
         global_diff /= nprocs;
@@ -7301,6 +7321,10 @@ void AlgPQJagged(
                 env->timerStop(MACRO_TIMERS, "PQJagged - Problem_Migration-" + istring);
                 reduceAllCount /= num_parts;
 
+            }
+            else {
+                is_migrated_in_current = false;
+                env->timerStop(MACRO_TIMERS, "PQJagged - Problem_Migration-" + istring);
             }
         }
 #endif
