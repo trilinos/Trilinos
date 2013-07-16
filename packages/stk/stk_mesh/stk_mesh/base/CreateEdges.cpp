@@ -419,7 +419,7 @@ void create_edges( BulkData & mesh, const Selector & element_selector )
     update_shared_edges_global_ids( mesh, shared_edge_map );
   }
 
-  mesh.modification_end();
+  mesh.modification_end( BulkData::MOD_END_COMPRESS_AND_SORT );
 }
 
 }

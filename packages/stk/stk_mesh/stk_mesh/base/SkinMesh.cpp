@@ -537,7 +537,7 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
       }
     }
   }
-  mesh.modification_end();
+  mesh.modification_end( BulkData::MOD_END_COMPRESS_AND_SORT );
 }
 
 }

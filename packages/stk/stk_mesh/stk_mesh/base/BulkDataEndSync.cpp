@@ -742,11 +742,11 @@ namespace {
 }
 //----------------------------------------------------------------------
 
-bool BulkData::modification_end()
+bool BulkData::modification_end( modification_optimization opt)
 {
   Trace_("stk::mesh::BulkData::modification_end");
 
-  bool return_value = internal_modification_end( true );
+  bool return_value = internal_modification_end( true, opt );
 
   return return_value;
 }
@@ -793,7 +793,7 @@ void print_comm_list( const BulkData & mesh , bool doit )
 
 #endif
 
-bool BulkData::internal_modification_end( bool regenerate_aura )
+bool BulkData::internal_modification_end( bool regenerate_aura, modification_optimization opt )
 {
   Trace_("stk::mesh::BulkData::internal_modification_end");
 
@@ -868,7 +868,12 @@ bool BulkData::internal_modification_end( bool regenerate_aura )
   //a single larger bucket, and also does a sort.
   //If optimize_buckets has not been requested, still do the sort.
 
-  m_bucket_repository.optimize_buckets();
+  if ((opt == MOD_END_COMPRESS_AND_SORT) ) {
+    m_bucket_repository.optimize_buckets();
+  }
+  else {
+    m_bucket_repository.internal_sort_bucket_entities();
+  }
 
   // ------------------------------
 

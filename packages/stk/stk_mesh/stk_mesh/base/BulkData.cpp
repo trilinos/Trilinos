@@ -148,16 +148,6 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
 
 BulkData::~BulkData()
 {
-  try {
-    std::ostringstream oss;
-
-    if ( parallel_rank() == 0u) oss << "Destroying BulkData:\n";
-    print_max_stk_memory_usage( parallel(), parallel_rank(), oss);
-
-    if (parallel_rank() == 0u) std::cout << oss.str() << std::endl;
-  }
-  catch(...) {}
-
 #ifdef SIERRA_MIGRATION
   for(size_t i=0; i<m_fmwk_aux_relations.size(); ++i) {
     delete m_fmwk_aux_relations[i];

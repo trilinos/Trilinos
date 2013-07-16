@@ -449,7 +449,7 @@ void check_bucket_ids_testset_A(stk::mesh::impl::BucketRepository &bucket_reposi
 
 
 /// Verify we can construct the unit testing fixture.
-STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testInitialize )
+STKUNIT_UNIT_TEST( UnitTestPartition, DISABLED_Partition_testInitialize )
 {
   std::vector<stk::mesh::Entity> ec1;
   std::vector<stk::mesh::Entity> ec2;
@@ -503,7 +503,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testInitialize )
 }
 
 /// Test that we can get the Partitions from a BucketRepository.
-STKUNIT_UNIT_TEST( UnitTestPartition, Partition_getPartitions)
+STKUNIT_UNIT_TEST( UnitTestPartition, DISABLED_Partition_getPartitions)
 {
   SelectorFixture fix;
 
@@ -531,7 +531,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_getPartitions)
 }
 
 /// Test of Partition::compress()
-STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testCompress)
+STKUNIT_UNIT_TEST( UnitTestPartition, DISABLED_Partition_testCompress)
 {
   SelectorFixture fix;
 
@@ -563,7 +563,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testCompress)
 }
 
 /// Test Partition::sort()
-STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testSort)
+STKUNIT_UNIT_TEST( UnitTestPartition, DISABLED_Partition_testSort)
 {
   SelectorFixture fix;
 
@@ -595,7 +595,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testSort)
 }
 
 /// Test Partition::remove(.)
-STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testRemove)
+STKUNIT_UNIT_TEST( UnitTestPartition, DISABLED_Partition_testRemove)
 {
   SelectorFixture fix;
 
@@ -660,7 +660,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testRemove)
 }
 
 /// Test Partition::add(.).
-STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testAdd)
+STKUNIT_UNIT_TEST( UnitTestPartition, DISABLED_Partition_testAdd)
 {
   SelectorFixture fix;
 
@@ -729,7 +729,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testAdd)
 }
 
 /// Test Partition::move_to(..)
-STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveTo)
+STKUNIT_UNIT_TEST( UnitTestPartition, DISABLED_Partition_testMoveTo)
 {
   SelectorFixture fix;
 

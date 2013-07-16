@@ -197,6 +197,11 @@ public:
    */
   BulkDataSyncState synchronized_state() const { return m_sync_state ; }
 
+  enum modification_optimization {
+      MOD_END_COMPRESS_AND_SORT
+    , MOD_END_SORT
+  };
+
   /** \brief  Count of the number of times that the bulk data has been
    *          parallel synchronized.  This count gets updated with
    *          each call to 'modification_end'.
@@ -216,6 +221,7 @@ public:
    */
   bool modification_begin();
 
+
   /** \brief  Parallel synchronization of modifications and
    *          transition to the guaranteed parallel consistent state.
    *
@@ -233,7 +239,8 @@ public:
    *  \exception  If modification resolution errors occur then
    *              a parallel-consistent exception will be thrown.
    */
-  bool modification_end();
+  bool modification_end( modification_optimization opt = MOD_END_SORT );
+
 
   /** If field-data was set to not stay in sync with buckets as the mesh was populated,
    * (by calling 'deactivate_field_updating' right after construction) this call
@@ -1260,7 +1267,7 @@ private:
                                  const std::vector<EntityKey> & remove_receive,
                                  bool is_full_regen = false);
 
-  bool internal_modification_end( bool regenerate_aura );
+  bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
   void internal_resolve_shared_modify_delete();
   void internal_resolve_shared_modify_delete_second_pass();
   void internal_resolve_ghosted_modify_delete();

@@ -60,7 +60,7 @@ public:
   /** \brief  Query the upper bound on the number of mesh entities
     *         that may be associated with a single bucket.
     */
-  static const unsigned max_bucket_capacity = 16384; //2^14
+  static const unsigned max_bucket_capacity = 1024;
   static const unsigned default_bucket_capacity = 512;
 
   BulkData& mesh() const { return m_mesh; }

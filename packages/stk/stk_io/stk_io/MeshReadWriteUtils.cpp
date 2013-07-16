@@ -248,7 +248,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
       meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(stk::io::CoordinateFieldName);
 
   meta.set_coordinate_field(&coord_field);
-  
+
   Ioss::NodeBlock *nb = node_blocks[0];
   stk::mesh::put_field(coord_field, stk::mesh::MetaData::NODE_RANK, meta.universal_part(),
                        meta.spatial_dimension());
@@ -957,7 +957,7 @@ namespace stk {
         process_sidesets(*region,      bulk_data());
       }
 
-      bulk_data().modification_end();
+      bulk_data().modification_end( stk::mesh::BulkData::MOD_END_COMPRESS_AND_SORT );
       if (region->get_property("state_count").get_int() == 0) {
         region->get_database()->release_memory();
       }
@@ -1325,7 +1325,7 @@ namespace stk {
 
         region->end_state(step);
 
-        bulk_data().modification_end();
+        bulk_data().modification_end( stk::mesh::BulkData::MOD_END_COMPRESS_AND_SORT );
 
       } else {
         std::cerr << "INTERNAL ERROR: Mesh Input Region pointer is NULL in process_input_request.\n";
