@@ -369,8 +369,11 @@ inline scalar_t pivotPos (scalar_t * cutUpperBounds, scalar_t *cutLowerBounds,si
         return cutLowerBounds[currentCutIndex];
     }
 
-    scalar_t newCut =((cutUpperBounds[currentCutIndex] - cutLowerBounds[currentCutIndex]) /
-            (cutUpperWeight[currentCutIndex] - cutLowerWeight[currentCutIndex]))  * (ew - cutLowerWeight[currentCutIndex]) + cutLowerBounds[currentCutIndex];
+    scalar_t coordinate_range = (cutUpperBounds[currentCutIndex] - cutLowerBounds[currentCutIndex]);
+    scalar_t weight_range = (cutUpperWeight[currentCutIndex] - cutLowerWeight[currentCutIndex]);
+
+    scalar_t myWeightDif = (ew - cutLowerWeight[currentCutIndex]);
+    scalar_t newCut =(coordinate_range ) / 2 /** (myWeightDif / weight_range)*/ + cutLowerBounds[currentCutIndex];
     /*
     cout << "cutIndex:" << currentCutIndex <<
             " upper:" << cutUpperBounds[currentCutIndex] << " uw:" << cutUpperWeight[currentCutIndex] <<
@@ -7343,6 +7346,14 @@ void AlgPQJagged(
 
     problemComm->barrier();
     */
+#ifdef writeParts
+    ofstream *ss = new ofstream[currentPartitionCount];
+
+    for(partId_t i = 0; i < currentPartitionCount;++i){
+        string a = toString<partId_t>(i)+".part";
+        ss[i].open (a.c_str(), std::ofstream::out);
+    }
+#endif
 
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
@@ -7367,6 +7378,14 @@ void AlgPQJagged(
             lno_t k = partitionedPointCoordinates[ii];
             partIds[k] = pToSet;
 
+
+#ifdef writeParts
+            for (int d = 0; d < coordDim; ++d){
+                ss[pToSet] << pqJagged_coordinates[d][k] << " ";
+            }
+            ss[pToSet] << endl;
+#endif
+
 #ifdef debug_setparts
             fprintf(f, "setting %d with coords: %lf %lf %lf to part %d\n", k, pqJagged_coordinates[0][k],  pqJagged_coordinates[1][k], pqJagged_coordinates[
                                                                                                                                                             ][k], partIds[k]);
@@ -7374,6 +7393,50 @@ void AlgPQJagged(
 
         }
     }
+
+#ifdef writeParts
+    for(partId_t i = 0; i < currentPartitionCount;++i){
+        ss[i].close();
+    }
+    if(keep_part_boxes){
+        ofstream arrowLines("arrows.gnuplot");
+
+        arrowLines << "set nokey" << endl;
+        ofstream corners("corners.gnuplot");
+        for (partId_t i = 0; i < partId_t (outPartBoxes->size()); ++i){
+            (*outPartBoxes)[i].writeGnuPlot(arrowLines, corners);
+
+        }
+        for(partId_t i = 0; i < currentPartitionCount;++i){
+            string plotStr = "";
+            if (i == 0){
+                if (coordDim == 2){
+                    plotStr = "plot ";
+                }
+                else {
+                    plotStr = "splot ";
+                }
+            }
+            else {
+                plotStr = "replot ";
+            }
+            string a = toString<partId_t>(i)+".part";
+            plotStr += "\""+a + "\"";
+            arrowLines << plotStr << endl;
+
+
+
+        }
+
+        arrowLines << "set terminal png" << endl;
+        arrowLines << "set output 'output.png'\nreplot" << endl;
+
+        //arrowLines << "pause -1" << endl;
+        arrowLines.close();
+        corners.close();
+
+    }
+#endif
     //cout << "me:" << problemComm->getRank() << " currentPartitionCount:" << currentPartitionCount << endl;
 
 #ifdef debug_setparts

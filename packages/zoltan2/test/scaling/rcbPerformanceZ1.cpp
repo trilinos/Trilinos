@@ -72,14 +72,17 @@
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
+#include <Zoltan2_TestHelpers.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Kokkos_DefaultNode.hpp>
+#include <GeometricGenerator.hpp>
 
 #include <vector>
 #include <string>
 #include <ostream>
 #include <sstream>
-
+#include <fstream>
+using namespace std;
 using std::string;
 using std::vector;
 using std::cout;
@@ -91,10 +94,11 @@ using Teuchos::rcp;
 using Teuchos::Comm;
 using Teuchos::ArrayView;
 using Teuchos::CommandLineProcessor;
-
+/*
 typedef int lno_t;
 typedef long gno_t;
 typedef double scalar_t;
+*/
 typedef Kokkos::DefaultNode::DefaultNodeType node_t;
 
 typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
@@ -106,6 +110,93 @@ typedef struct dots {
   vector<vector<float> > weights;
   tMVector_t *coordinates;
 } DOTS;
+
+const char param_comment = '#';
+
+string trim_right_copy(
+        const string& s,
+        const string& delimiters = " \f\n\r\t\v" )
+{
+    return s.substr( 0, s.find_last_not_of( delimiters ) + 1 );
+}
+
+string trim_left_copy(
+        const string& s,
+        const string& delimiters = " \f\n\r\t\v" )
+{
+    return s.substr( s.find_first_not_of( delimiters ) );
+}
+
+string trim_copy(
+        const string& s,
+        const string& delimiters = " \f\n\r\t\v" )
+{
+    return trim_left_copy( trim_right_copy( s, delimiters ), delimiters );
+}
+
+void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, const RCP<const Teuchos::Comm<int> > & comm){
+    std::string input = "";
+    char inp[25000];
+    for(int i = 0; i < 25000; ++i){
+        inp[i] = 0;
+    }
+
+    bool fail = false;
+    if(comm->getRank() == 0){
+
+        std::fstream inParam(paramFileName.c_str());
+        if (inParam.fail())
+        {
+            fail = true;
+        }
+        if(!fail)
+        {
+            std::string tmp = "";
+            getline (inParam,tmp);
+            while (!inParam.eof()){
+                if(tmp != ""){
+                    tmp = trim_copy(tmp);
+                    if(tmp != ""){
+                        input += tmp + "\n";
+                    }
+                }
+                getline (inParam,tmp);
+            }
+            inParam.close();
+            for (size_t i = 0; i < input.size(); ++i){
+                inp[i] = input[i];
+            }
+        }
+    }
+
+
+
+    int size = input.size();
+    if(fail){
+        size = -1;
+    }
+    comm->broadcast(0, sizeof(int), (char*) &size);
+    if(size == -1){
+        throw "File " + paramFileName + " cannot be opened.";
+    }
+    comm->broadcast(0, size, inp);
+    istringstream inParam(inp);
+    string str;
+    getline (inParam,str);
+    while (!inParam.eof()){
+        if(str[0] != param_comment){
+            size_t pos = str.find('=');
+            if(pos == string::npos){
+                throw  "Invalid Line:" + str  + " in parameter file";
+            }
+            string paramname = trim_copy(str.substr(0,pos));
+            string paramvalue = trim_copy(str.substr(pos + 1));
+            geoparams.set(paramname, paramvalue);
+        }
+        getline (inParam,str);
+    }
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 // Zoltan1 query functions
@@ -122,7 +213,9 @@ int getDim(void *data, int *ierr)
 {
   *ierr = 0;
   DOTS *dots = (DOTS *) data;
-  return dots->coordinates->getNumVectors();
+  int dim =  dots->coordinates->getNumVectors();
+
+  return dim;
 }
 
 //////////////////////////
@@ -157,6 +250,7 @@ void getCoordinates(void *data, int numGid, int numLid,
   int dim, double *coords, int *ierr)
 {
   // I know that Zoltan asks for coordinates in gid order.
+  if (dim == 3){
   *ierr = 0;
   DOTS *dots = (DOTS *) data;
   double *val = coords;
@@ -167,6 +261,20 @@ void getCoordinates(void *data, int numGid, int numLid,
     *val++ = static_cast<double>(x[i]);
     *val++ = static_cast<double>(y[i]);
     *val++ = static_cast<double>(z[i]);
+  }
+  }
+  else {
+      *ierr = 0;
+      DOTS *dots = (DOTS *) data;
+      double *val = coords;
+      const scalar_t *x = dots->coordinates->getData(0).getRawPtr();
+      const scalar_t *y = dots->coordinates->getData(1).getRawPtr();
+      for (int i=0; i < numObj; i++){
+        *val++ = static_cast<double>(x[i]);
+        *val++ = static_cast<double>(y[i]);
+      }
+
+
   }
 }
 
@@ -370,6 +478,15 @@ int main(int argc, char *argv[])
   CommandLineProcessor commandLine(false, true);
   //commandLine.setOption("size", &numGlobalCoords,
   //  "Approximate number of global coordinates.");
+  int input_option = 0;
+  commandLine.setOption("input_option", &input_option,
+    "whether to use mesh creation, geometric generator, or file input");
+  string inputFile = "";
+
+  commandLine.setOption("input_file", &inputFile,
+    "the input file for geometric generator or file input");
+
+
   commandLine.setOption("size", &numGlobalCoords,
     "Approximate number of global coordinates.");
   commandLine.setOption("numParts", &numGlobalParts,
@@ -398,6 +515,9 @@ int main(int argc, char *argv[])
 
   CommandLineProcessor::EParseCommandLineReturn rc =
     commandLine.parse(argc, argv);
+
+
+
   if (rc != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     if (rc == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) {
       if (rank==0) cout << "PASS" << endl;
@@ -412,40 +532,109 @@ int main(int argc, char *argv[])
   //MEMORY_CHECK(doMemory && rank==0, "After processing parameters");
 
   // Create the data structure
-  dots.coordinates = makeMeshCoordinates(comm, numGlobalCoords);
-  size_t numLocalCoords = dots.coordinates->getLocalLength();
+  size_t numLocalCoords = 0;
+  if (input_option == 0){
+      dots.coordinates = makeMeshCoordinates(comm, numGlobalCoords);
+      numLocalCoords = dots.coordinates->getLocalLength();
 
 #if 0
-  comm->barrier();
-  for (int p=0; p < nprocs; p++){
-    if (p==rank){
-      cout << "Rank " << rank << ", " << numLocalCoords << "coords" << endl;
-      const scalar_t *x = coordinates->getData(0).getRawPtr();
-      const scalar_t *y = coordinates->getData(1).getRawPtr();
-      const scalar_t *z = coordinates->getData(2).getRawPtr();
-      for (lno_t i=0; i < numLocalCoords; i++)
-        cout << " " << x[i] << " " << y[i] << " " << z[i] << endl;
-    }
-    cout.flush();
-    comm->barrier();
-  }
+      comm->barrier();
+      for (int p=0; p < nprocs; p++){
+          if (p==rank){
+              cout << "Rank " << rank << ", " << numLocalCoords << "coords" << endl;
+              const scalar_t *x = coordinates->getData(0).getRawPtr();
+              const scalar_t *y = coordinates->getData(1).getRawPtr();
+              const scalar_t *z = coordinates->getData(2).getRawPtr();
+              for (lno_t i=0; i < numLocalCoords; i++)
+                  cout << " " << x[i] << " " << y[i] << " " << z[i] << endl;
+          }
+          cout.flush();
+          comm->barrier();
+      }
 #endif
 
-  if (weightDim > 0){
+      if (weightDim > 0){
 
-    dots.weights.resize(weightDim);
+          dots.weights.resize(weightDim);
 
-    int wt = 0;
-    float scale = 1.0;
-    for (int i=0; i < weightDim; i++){
-      dots.weights[i].resize(numLocalCoords);
-      makeWeights(comm, dots.weights[i], weightTypes(wt++), scale, rank);
+          int wt = 0;
+          float scale = 1.0;
+          for (int i=0; i < weightDim; i++){
+              dots.weights[i].resize(numLocalCoords);
+              makeWeights(comm, dots.weights[i], weightTypes(wt++), scale, rank);
 
-      if (wt == numWeightTypes){
-        wt = 0;
-        scale++;
+              if (wt == numWeightTypes){
+                  wt = 0;
+                  scale++;
+              }
+          }
       }
-    }
+  }
+  else if(input_option == 1){
+      Teuchos::ParameterList geoparams("geo params");
+      readGeoGenParams(inputFile, geoparams, comm);
+      GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
+
+      int coord_dim = gg->getCoordinateDimension();
+      weightDim = gg->getWeightDimension();
+      numLocalCoords = gg->getNumLocalCoords();
+      numGlobalCoords = gg->getNumGlobalCoords();
+      scalar_t **coords = new scalar_t * [coord_dim];
+      for(int i = 0; i < coord_dim; ++i){
+          coords[i] = new scalar_t[numLocalCoords];
+      }
+      gg->getLocalCoordinatesCopy(coords);
+      scalar_t **weight = NULL;
+      if(weightDim){
+          weight= new scalar_t * [weightDim];
+          for(int i = 0; i < weightDim; ++i){
+              weight[i] = new scalar_t[numLocalCoords];
+          }
+          gg->getLocalWeightsCopy(weight);
+      }
+
+      delete gg;
+
+      RCP<Tpetra::Map<lno_t, gno_t, node_t> > mp = rcp(
+              new Tpetra::Map<lno_t, gno_t, node_t> (numGlobalCoords, numLocalCoords, 0, comm));
+
+      Teuchos::Array<Teuchos::ArrayView<const scalar_t> > coordView(coord_dim);
+      for (int i=0; i < coord_dim; i++){
+          if(numLocalCoords > 0){
+              Teuchos::ArrayView<const scalar_t> a(coords[i], numLocalCoords);
+              coordView[i] = a;
+          } else{
+              Teuchos::ArrayView<const scalar_t> a;
+              coordView[i] = a;
+          }
+      }
+
+      tMVector_t *tmVector = new tMVector_t( mp, coordView.view(0, coord_dim), coord_dim);
+
+      dots.coordinates = tmVector;
+      dots.weights.resize(weightDim);
+
+      if(weightDim){
+          for (int i = 0; i < weightDim;++i){
+              for (lno_t j = 0; j < lno_t(numLocalCoords); ++j){
+                  dots.weights[i].push_back(weight[i][j]);
+              }
+          }
+      }
+      if(weightDim){
+          for(int i = 0; i < weightDim; ++i)
+              delete [] weight[i];
+          delete [] weight;
+      }
+  }
+  else {
+
+      UserInputForTests uinput(testDataFilePath, inputFile, comm, true);
+      RCP<tMVector_t> coords = uinput.getCoordinates();
+      tMVector_t *newMulti = new tMVector_t(*coords);
+      dots.coordinates = newMulti;
+      numLocalCoords = coords->getLocalLength();
+      numGlobalCoords = coords->getGlobalLength();
   }
 
   MEMORY_CHECK(doMemory && rank==0, "After creating input");
