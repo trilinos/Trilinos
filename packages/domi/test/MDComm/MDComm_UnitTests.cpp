@@ -54,27 +54,28 @@ namespace
 
 using std::string;
 using Teuchos::Array;
-using Domi::TeuchosComm;
+using Domi::TeuchosCommRCP;
 using Domi::MDComm;
 
 int numDims = 2;
-string axisSizes = "-1";
+string axisSizesStr = "-1";
+Array< int > axisSizes;
 
 TEUCHOS_STATIC_SETUP()
 {
   Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
   clp.addOutputSetupOptions(true);
-  clp.setOption("numDims"  , &numDims  , "number of dimensions");
-  clp.setOption("axisSizes", &axisSizes, "comma-separated list of axis sizes");
+  clp.setOption("numDims"  , &numDims     , "number of dimensions");
+  clp.setOption("axisSizes", &axisSizesStr, "comma-separated list of number "
+                "of processors along each axis");
 }
 
 TEUCHOS_UNIT_TEST( MDComm, regularizeAxisSizes )
 {
-  TeuchosComm comm = Teuchos::DefaultComm< int >::getComm();
-  Array< int > axisSizesVal;
-  Domi::splitStringOfIntsWithCommas(axisSizes, axisSizesVal);
+  Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   Array< int > axisSizesActual =
-    Domi::regularizeAxisSizes(comm->getSize(), numDims, axisSizesVal);
+    Domi::regularizeAxisSizes(comm->getSize(), numDims, axisSizes);
   
   TEST_EQUALITY(axisSizesActual.size(), numDims);
 
@@ -87,31 +88,31 @@ TEUCHOS_UNIT_TEST( MDComm, regularizeAxisSizes )
 
 TEUCHOS_UNIT_TEST( MDComm, axisSizesConstructor )
 {
-  TeuchosComm comm = Teuchos::DefaultComm< int >::getComm();
-  Array< int > axisSizesVal;
-  Domi::splitStringOfIntsWithCommas(axisSizes, axisSizesVal);
-  // If axisSizesVal is shorter than numDims, pad it with -1 values at
+  Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  // If axisSizes is shorter than numDims, pad it with -1 values at
   // the end
-  for (int axis = axisSizesVal.size(); axis < numDims; ++axis)
+  for (int axis = axisSizes.size(); axis < numDims; ++axis)
   {
-    axisSizesVal.push_back(-1);
+    axisSizes.push_back(-1);
   }
-  MDComm mdComm(comm, axisSizesVal);
+  MDComm mdComm(comm, axisSizes);
 
   TEST_EQUALITY(mdComm.getNumDims(), numDims);
 
   for (int axis = 0; axis < numDims; ++axis)
   {
-    if (axisSizesVal[axis] > 0)
+    if (axisSizes[axis] > 0)
     {
-      TEST_EQUALITY(mdComm.getAxisSize(axis), axisSizesVal[axis]);
+      TEST_EQUALITY(mdComm.getAxisSize(axis), axisSizes[axis]);
     }
   }
 }
 
 TEUCHOS_UNIT_TEST( MDComm, numDimsConstructor )
 {
-  TeuchosComm comm = Teuchos::DefaultComm< int >::getComm();
+  Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   MDComm mdComm(comm, numDims);
 
   TEST_EQUALITY(mdComm.getNumDims(), numDims);
@@ -125,29 +126,27 @@ TEUCHOS_UNIT_TEST( MDComm, numDimsConstructor )
 
 TEUCHOS_UNIT_TEST( MDComm, numDimsAxisSizesConstructor )
 {
-  TeuchosComm comm = Teuchos::DefaultComm< int >::getComm();
-  Array< int > axisSizesVal;
-  Domi::splitStringOfIntsWithCommas(axisSizes, axisSizesVal);
-  MDComm mdComm(comm, numDims, axisSizesVal);
+  Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  MDComm mdComm(comm, numDims, axisSizes);
 
   TEST_EQUALITY(mdComm.getNumDims(), numDims);
 
-  for (int axis = 0; axis < numDims && axis < axisSizesVal.size(); ++axis)
+  for (int axis = 0; axis < numDims && axis < axisSizes.size(); ++axis)
   {
-    if (axisSizesVal[axis] > 0)
+    if (axisSizes[axis] > 0)
     {
-      TEST_EQUALITY(mdComm.getAxisSize(axis), axisSizesVal[axis]);
+      TEST_EQUALITY(mdComm.getAxisSize(axis), axisSizes[axis]);
     }
   }
 }
 
 TEUCHOS_UNIT_TEST( MDComm, getTeuchosComm )
 {
-  TeuchosComm comm = Teuchos::DefaultComm< int >::getComm();
-  Array< int > axisSizesVal;
-  Domi::splitStringOfIntsWithCommas(axisSizes, axisSizesVal);
-  MDComm mdComm(comm, numDims, axisSizesVal);
-  TeuchosComm newComm = mdComm.getTeuchosComm();
+  Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  MDComm mdComm(comm, numDims, axisSizes);
+  TeuchosCommRCP newComm = mdComm.getTeuchosComm();
 
   TEST_EQUALITY_CONST(newComm.shares_resource(comm), true);
 
@@ -155,20 +154,19 @@ TEUCHOS_UNIT_TEST( MDComm, getTeuchosComm )
 
 TEUCHOS_UNIT_TEST( MDComm, getAxisRank )
 {
-  TeuchosComm comm = Teuchos::DefaultComm< int >::getComm();
-  Array< int > axisSizesVal;
-  Domi::splitStringOfIntsWithCommas(axisSizes, axisSizesVal);
-  MDComm mdComm(comm, numDims, axisSizesVal);
+  Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  MDComm mdComm(comm, numDims, axisSizes);
   // Get the final axisSizes and compute the strides
-  axisSizesVal.resize(numDims);
+  axisSizes.resize(numDims);
   Array< int > strides(numDims);
   for (int axis = 0; axis < numDims; ++axis)
   {
-    axisSizesVal[axis] = mdComm.getAxisSize(axis);
+    axisSizes[axis] = mdComm.getAxisSize(axis);
     if (axis == 0)
       strides[axis] = 1;
     else
-      strides[axis] = strides[axis-1] * axisSizesVal[axis-1];
+      strides[axis] = strides[axis-1] * axisSizes[axis-1];
   }
   // Compute what the axis ranks should be for this processor
   Array< int > axisRanks(numDims);
@@ -189,20 +187,19 @@ TEUCHOS_UNIT_TEST( MDComm, getAxisRank )
 
 TEUCHOS_UNIT_TEST( MDComm, getLowerNeighbor )
 {
-  TeuchosComm comm = Teuchos::DefaultComm< int >::getComm();
-  Array< int > axisSizesVal;
-  Domi::splitStringOfIntsWithCommas(axisSizes, axisSizesVal);
-  MDComm mdComm(comm, numDims, axisSizesVal);
+  Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  MDComm mdComm(comm, numDims, axisSizes);
   // Get the final axisSizes and compute the strides
-  axisSizesVal.resize(numDims);
+  axisSizes.resize(numDims);
   Array< int > strides(numDims);
   for (int axis = 0; axis < numDims; ++axis)
   {
-    axisSizesVal[axis] = mdComm.getAxisSize(axis);
+    axisSizes[axis] = mdComm.getAxisSize(axis);
     if (axis == 0)
       strides[axis] = 1;
     else
-      strides[axis] = strides[axis-1] * axisSizesVal[axis-1];
+      strides[axis] = strides[axis-1] * axisSizes[axis-1];
   }
   // Get the axis ranks for this processor
   Array< int > axisRanks(numDims);
@@ -229,20 +226,19 @@ TEUCHOS_UNIT_TEST( MDComm, getLowerNeighbor )
 
 TEUCHOS_UNIT_TEST( MDComm, getUpperNeighbor )
 {
-  TeuchosComm comm = Teuchos::DefaultComm< int >::getComm();
-  Array< int > axisSizesVal;
-  Domi::splitStringOfIntsWithCommas(axisSizes, axisSizesVal);
-  MDComm mdComm(comm, numDims, axisSizesVal);
+  Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  MDComm mdComm(comm, numDims, axisSizes);
   // Get the final axisSizes and compute the strides
-  axisSizesVal.resize(numDims);
+  axisSizes.resize(numDims);
   Array< int > strides(numDims);
   for (int axis = 0; axis < numDims; ++axis)
   {
-    axisSizesVal[axis] = mdComm.getAxisSize(axis);
+    axisSizes[axis] = mdComm.getAxisSize(axis);
     if (axis == 0)
       strides[axis] = 1;
     else
-      strides[axis] = strides[axis-1] * axisSizesVal[axis-1];
+      strides[axis] = strides[axis-1] * axisSizes[axis-1];
   }
   // Get the axis ranks for this processor
   Array< int > axisRanks(numDims);

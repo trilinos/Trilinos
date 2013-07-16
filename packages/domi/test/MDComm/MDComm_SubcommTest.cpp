@@ -55,36 +55,37 @@ namespace
 
 using std::string;
 using Teuchos::Array;
-using Domi::TeuchosComm;
+using Domi::TeuchosCommRCP;
 using Domi::MDComm;
+using Domi::MDCommRCP;
 using Domi::Slice;
 typedef Domi::Ordinal Ordinal;
 const Ordinal & Default = Domi::Slice::Default;
 
 int numDims = 2;
-string axisSizes = "-1";
+string axisSizesStr = "-1";
+Array< int > axisSizes;
 
 TEUCHOS_STATIC_SETUP()
 {
   Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
   clp.addOutputSetupOptions(true);
-  clp.setOption("numDims"  , &numDims  , "number of dimensions");
-  clp.setOption("axisSizes", &axisSizes, "comma-separated list of axis sizes");
+  clp.setOption("numDims"  , &numDims     , "number of dimensions");
+  clp.setOption("axisSizes", &axisSizesStr, "comma-separated list of number "
+                "of processors along each axis");
 }
 
 TEUCHOS_UNIT_TEST( MDComm_Subcomm, lowerLeft )
 {
   // Construct the MDComm from command-line arguments
-  TeuchosComm comm = Teuchos::DefaultComm< int >::getComm();
-  Array< int > axisSizesVal;
-  Domi::splitStringOfIntsWithCommas(axisSizes, axisSizesVal);
-  Teuchos::RCP< MDComm > mdComm =
-    Teuchos::rcp(new MDComm(comm, numDims, axisSizesVal));
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisSizes));
 
   // Get the final axisSizes
-  axisSizesVal.resize(numDims);
+  axisSizes.resize(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    axisSizesVal[axis] = mdComm->getAxisSize(axis);
+    axisSizes[axis] = mdComm->getAxisSize(axis);
   
   // Figure out the lower left slice
   Array< Slice > slices(numDims);
@@ -93,7 +94,7 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, lowerLeft )
   {
     if (axis < 2)
     {
-      int n = axisSizesVal[axis] / 2;
+      int n = axisSizes[axis] / 2;
       if (n == 0) n = 1;
       slices[axis] = Slice(n);
       newSizes[axis] = n;
@@ -101,7 +102,7 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, lowerLeft )
     else
     {
       slices[axis] = Slice();
-      newSizes[axis] = axisSizesVal[axis];
+      newSizes[axis] = axisSizes[axis];
     }
   }
 
@@ -132,16 +133,14 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, lowerLeft )
 TEUCHOS_UNIT_TEST( MDComm_Subcomm, lowerRight )
 {
   // Construct the MDComm from command-line arguments
-  TeuchosComm comm = Teuchos::DefaultComm< int >::getComm();
-  Array< int > axisSizesVal;
-  Domi::splitStringOfIntsWithCommas(axisSizes, axisSizesVal);
-  Teuchos::RCP< MDComm > mdComm =
-    Teuchos::rcp(new MDComm(comm, numDims, axisSizesVal));
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisSizes));
 
   // Get the final axisSizes
-  axisSizesVal.resize(numDims);
+  axisSizes.resize(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    axisSizesVal[axis] = mdComm->getAxisSize(axis);
+    axisSizes[axis] = mdComm->getAxisSize(axis);
   
   // Figure out the lower right slice
   Array< Slice > slices(numDims);
@@ -150,13 +149,13 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, lowerRight )
   {
     if (axis == 0)
     {
-      int n = axisSizesVal[axis] / 2;
+      int n = axisSizes[axis] / 2;
       slices[axis] = Slice(n,Default);
-      newSizes[axis] = axisSizesVal[axis] - n;
+      newSizes[axis] = axisSizes[axis] - n;
     }
     else if (axis == 1)
     {
-      int n = axisSizesVal[axis] / 2;
+      int n = axisSizes[axis] / 2;
       if (n == 0) n = 1;
       slices[axis] = Slice(n);
       newSizes[axis] = n;
@@ -164,7 +163,7 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, lowerRight )
     else
     {
       slices[axis] = Slice();
-      newSizes[axis] = axisSizesVal[axis];
+      newSizes[axis] = axisSizes[axis];
     }
   }
 
@@ -173,7 +172,7 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, lowerRight )
 
   // Should this processor be a part of the sub-MDComm?
   bool partOfSubcomm = true;
-  if (mdComm->getAxisRank(0) < axisSizesVal[0] - newSizes[0])
+  if (mdComm->getAxisRank(0) < axisSizes[0] - newSizes[0])
     partOfSubcomm = false;
   if (numDims > 1)
     if (mdComm->getAxisRank(1) >= newSizes[1])
@@ -206,16 +205,14 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, lowerRight )
 TEUCHOS_UNIT_TEST( MDComm_Subcomm, upperLeft )
 {
   // Construct the MDComm from command-line arguments
-  TeuchosComm comm = Teuchos::DefaultComm< int >::getComm();
-  Array< int > axisSizesVal;
-  Domi::splitStringOfIntsWithCommas(axisSizes, axisSizesVal);
-  Teuchos::RCP< MDComm > mdComm =
-    Teuchos::rcp(new MDComm(comm, numDims, axisSizesVal));
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisSizes));
 
   // Get the final axisSizes
-  axisSizesVal.resize(numDims);
+  axisSizes.resize(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    axisSizesVal[axis] = mdComm->getAxisSize(axis);
+    axisSizes[axis] = mdComm->getAxisSize(axis);
   
   // Figure out the upper left slice
   Array< Slice > slices(numDims);
@@ -224,21 +221,21 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, upperLeft )
   {
     if (axis == 0)
     {
-      int n = axisSizesVal[axis] / 2;
+      int n = axisSizes[axis] / 2;
       if (n == 0) n = 1;
       slices[axis] = Slice(n);
       newSizes[axis] = n;
     }
     else if (axis == 1)
     {
-      int n = axisSizesVal[axis] / 2;
+      int n = axisSizes[axis] / 2;
       slices[axis] = Slice(n,Default);
-      newSizes[axis] = axisSizesVal[axis] - n;
+      newSizes[axis] = axisSizes[axis] - n;
     }
     else
     {
       slices[axis] = Slice();
-      newSizes[axis] = axisSizesVal[axis];
+      newSizes[axis] = axisSizes[axis];
     }
   }
 
@@ -250,7 +247,7 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, upperLeft )
   if (mdComm->getAxisRank(0) >= newSizes[0])
     partOfSubcomm = false;
   if (numDims > 1)
-    if (mdComm->getAxisRank(1) < axisSizesVal[1] - newSizes[1])
+    if (mdComm->getAxisRank(1) < axisSizes[1] - newSizes[1])
       partOfSubcomm = false;
 
 #if 0
@@ -280,16 +277,14 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, upperLeft )
 TEUCHOS_UNIT_TEST( MDComm_Subcomm, upperRight )
 {
   // Construct the MDComm from command-line arguments
-  TeuchosComm comm = Teuchos::DefaultComm< int >::getComm();
-  Array< int > axisSizesVal;
-  Domi::splitStringOfIntsWithCommas(axisSizes, axisSizesVal);
-  Teuchos::RCP< MDComm > mdComm =
-    Teuchos::rcp(new MDComm(comm, numDims, axisSizesVal));
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisSizes));
 
   // Get the final axisSizes
-  axisSizesVal.resize(numDims);
+  axisSizes.resize(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    axisSizesVal[axis] = mdComm->getAxisSize(axis);
+    axisSizes[axis] = mdComm->getAxisSize(axis);
   
   // Figure out the upper right slice
   Array< Slice > slices(numDims);
@@ -298,14 +293,14 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, upperRight )
   {
     if (axis < 2)
     {
-      int n = axisSizesVal[axis] / 2;
+      int n = axisSizes[axis] / 2;
       slices[axis] = Slice(n,Default);
-      newSizes[axis] = axisSizesVal[axis] - n;
+      newSizes[axis] = axisSizes[axis] - n;
     }
     else
     {
       slices[axis] = Slice();
-      newSizes[axis] = axisSizesVal[axis];
+      newSizes[axis] = axisSizes[axis];
     }
   }
 
@@ -314,10 +309,10 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, upperRight )
 
   // Should this processor be a part of the sub-MDComm?
   bool partOfSubcomm = true;
-  if (mdComm->getAxisRank(0) < axisSizesVal[0] - newSizes[0])
+  if (mdComm->getAxisRank(0) < axisSizes[0] - newSizes[0])
     partOfSubcomm = false;
   if (numDims > 1)
-    if (mdComm->getAxisRank(1) < axisSizesVal[1] - newSizes[1])
+    if (mdComm->getAxisRank(1) < axisSizes[1] - newSizes[1])
       partOfSubcomm = false;
 
 #if 0
