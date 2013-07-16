@@ -604,6 +604,40 @@ public:
     procId_t getNTasks()const{
         return this->no_tasks;
     }
+    /*
+    void calculateCommunicationCost2(
+            procId_t *task_to_proc,
+            procId_t *task_communication_xadj,
+            procId_t *task_communication_adj){
+
+        double totalCost = 0;
+
+        procId_t commCount = 0;
+        for (procId_t task = 0; task < this->no_tasks; ++task){
+            int assigned_proc = task_to_proc[task];
+            procId_t task_adj_begin = 0;
+            //cout << "task:" << task << endl;
+            procId_t task_adj_end = task_communication_xadj[task];
+            if (task > 0) task_adj_begin = task_communication_xadj[task - 1];
+
+            commCount += task_adj_end - task_adj_begin;
+            //cout << "task:" << task << " proc:" << assigned_proc << endl;
+            for (procId_t task2 = task_adj_begin; task2 < task_adj_end; ++task2){
+
+                //cout << "task2:" << task2 << endl;
+                procId_t neighborTask = task_communication_adj[task2];
+                //cout << "neighborTask :" << neighborTask  << endl;
+                int neighborProc = task_to_proc[neighborTask];
+                double distance = getProcDistance(assigned_proc, neighborProc);
+                cout << assigned_proc << " " << neighborProc << " " << distance << endl;
+
+                totalCost += distance ;
+            }
+        }
+
+        this->commCost = totalCost;// commCount;
+    }
+    */
 
     void calculateCommunicationCost(
             procId_t *task_to_proc,
@@ -635,7 +669,7 @@ public:
             }
         }
 
-        this->commCost = totalCost/ commCount;
+        this->commCost = totalCost;// commCount;
     }
 
     double getCommunicationCostMetric(){
@@ -1356,6 +1390,17 @@ public:
                 );
 
         this->getBestMapping();
+	/*
+	if (myRank == 0){
+        	this->proc_task_comm->calculateCommunicationCost2(
+                	task_to_proc.getRawPtr(),
+               		task_communication_xadj.getRawPtr(),
+	                task_communication_adj.getRawPtr()
+                );
+	}
+	*/
+
+
 #ifdef gnuPlot
         this->writeMapping2(comm_->getRank());
 #endif
@@ -1495,6 +1540,7 @@ public:
         RCP<Comm<int> > subComm = this->create_subCommunicatior();
         //calculate cost.
         double myCost = this->proc_task_comm->getCommunicationCostMetric();
+	//cout << "me:" << this->comm->getRank() << " myCost:" << myCost << endl;
         double localCost[2], globalCost[2];
 
         localCost[0] = myCost;
@@ -1890,6 +1936,7 @@ void coordinateTaskMapperInterface_Fortran(
 #endif
     coordinateTaskMapperInterface<procId_t, pcoord_t, tcoord_t>(
             tcomm,
+	    procDim,
             numProcessors,
             machine_coords_,
 
