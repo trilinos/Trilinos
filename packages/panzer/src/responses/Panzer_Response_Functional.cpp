@@ -47,4 +47,4 @@
 #include "Panzer_Response_Functional.hpp"
 #include "Panzer_Response_Functional_impl.hpp"
 
-PANZER_INSTANTIATE_TEMPLATE_CLASS_ONE_T(panzer::Response_Functional) \
+PANZER_INSTANTIATE_TEMPLATE_CLASS_ONE_T(panzer::Response_Functional)

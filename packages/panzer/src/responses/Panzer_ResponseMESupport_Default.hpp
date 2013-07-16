@@ -107,14 +107,14 @@ public:
    /** Get the vector for this response. This must be 
      * constructed from the vector space returned by <code>getMap</code>.
      */
-   Teuchos::RCP<Thyra::VectorBase<double> > getDerivative() const
+   Teuchos::RCP<Thyra::MultiVectorBase<double> > getDerivative() const
    { return derivative_; }
 
    // This is the epetra view of the world
    ///////////////////////////////////////////////////////////
 
    //! Get the <code>Epetra_Map</code> for this response, map is constructed lazily.
-   virtual Teuchos::RCP<Epetra_Vector> buildEpetraDerivative() const 
+   virtual Teuchos::RCP<Epetra_MultiVector> buildEpetraDerivative() const 
    {
      TEUCHOS_ASSERT(!vectorIsDistributed());
      TEUCHOS_ASSERT(localSizeRequired()==1);
@@ -129,21 +129,21 @@ public:
    /** Set the vector (to be filled) for this response. This must be 
      * constructed from the vector space returned by <code>getMap</code>.
      */
-   virtual void setDerivative(const Teuchos::RCP<Epetra_Vector> & derivative) 
+   virtual void setDerivative(const Teuchos::RCP<Epetra_MultiVector> & derivative) 
    { 
      TEUCHOS_ASSERT(!vectorIsDistributed());
      TEUCHOS_ASSERT(localSizeRequired()==1);
      TEUCHOS_ASSERT(supportsDerivative());
      TEUCHOS_ASSERT(eMap_!=Teuchos::null);
 
-     derivative_ = Thyra::create_Vector(derivative,getDerivativeVectorSpace());
+     derivative_ = Thyra::create_MultiVector(derivative,getDerivativeVectorSpace());
    }
 
    // This is the Thyra view of the world
    ///////////////////////////////////////////////////////////
 
    //! Get the <code>Epetra_Map</code> for this response, map is constructed lazily.
-   virtual Teuchos::RCP<Thyra::VectorBase<double> > buildDerivative() const 
+   virtual Teuchos::RCP<Thyra::MultiVectorBase<double> > buildDerivative() const 
    { 
      TEUCHOS_ASSERT(!vectorIsDistributed());
      TEUCHOS_ASSERT(localSizeRequired()==1);
@@ -154,7 +154,7 @@ public:
    /** Set the vector (to be filled) for this response. This must be 
      * constructed from the vector space returned by <code>getMap</code>.
      */
-   virtual void setDerivative(const Teuchos::RCP<Thyra::VectorBase<double> > & derivative) 
+   virtual void setDerivative(const Teuchos::RCP<Thyra::MultiVectorBase<double> > & derivative) 
    { 
      TEUCHOS_ASSERT(!vectorIsDistributed());
      TEUCHOS_ASSERT(localSizeRequired()==1);
@@ -183,7 +183,7 @@ private:
    Teuchos::RCP<const Thyra::VectorSpaceBase<double> > derivVecSpace_;
    mutable Teuchos::RCP<const Epetra_Map> eMap_;
 
-   Teuchos::RCP<Thyra::VectorBase<double> > derivative_;
+   Teuchos::RCP<Thyra::MultiVectorBase<double> > derivative_;
 };
 
 }

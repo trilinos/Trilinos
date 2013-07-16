@@ -39,9 +39,9 @@ template < >
 void Response_Functional<panzer::Traits::Jacobian>::
 scatterResponse() 
 {
-  Teuchos::RCP<Thyra::VectorBase<double> > dgdx_unique = getDerivative();
+  Teuchos::RCP<Thyra::MultiVectorBase<double> > dgdx_unique = getDerivative();
    
-  Teuchos::rcp_dynamic_cast<ThyraObjContainer<double> >(uniqueContainer_)->set_f_th(dgdx_unique);
+  Teuchos::rcp_dynamic_cast<ThyraObjContainer<double> >(uniqueContainer_)->set_f_th(dgdx_unique->col(0));
   linObjFactory_->ghostToGlobalContainer(*ghostedContainer_,*uniqueContainer_,LinearObjContainer::F);
 }
 
