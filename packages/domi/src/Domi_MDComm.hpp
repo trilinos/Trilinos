@@ -56,7 +56,13 @@ namespace Domi
 
 /** \brief Provide a simple typedef for the Teuchos communicator
  */
-typedef Teuchos::RCP< const Teuchos::Comm<int> > TeuchosComm;
+typedef Teuchos::RCP< const Teuchos::Comm<int> > TeuchosCommRCP;
+
+// Forward declaration
+class MDComm;
+
+/** \brief Provide a simple typedef for an MDComm RCP */
+typedef Teuchos::RCP< const MDComm > MDCommRCP;
 
 /** \brief Multi-dimensional communicator object
  *
@@ -124,7 +130,7 @@ public:
    *        the product of the resulting axis sizes will equal the
    *        number of processors in the Teuchos communicator.
    */
-  MDComm(const TeuchosComm teuchosComm,
+  MDComm(const TeuchosCommRCP teuchosComm,
          const Teuchos::ArrayView< int > & axisSizes);
 
   /** \brief Constructor with number of dimensions
@@ -136,7 +142,7 @@ public:
    *        allocated to the first axis, and the other axes are assign
    *        a size of one.
    */
-  MDComm(const TeuchosComm teuchosComm,
+  MDComm(const TeuchosCommRCP teuchosComm,
          int numDims);
 
   /** \brief Constructor with number of dimensions and axis sizes
@@ -155,7 +161,7 @@ public:
    *        of the resulting axis sizes will equal the number of
    *        processors in the Teuchos communicator.
    */
-  MDComm(const TeuchosComm teuchosComm,
+  MDComm(const TeuchosCommRCP teuchosComm,
          int numDims,
          const Teuchos::ArrayView< int > & axisSizes);
 
@@ -168,7 +174,7 @@ public:
    *        defines what portions of the parent will be translated to
    *        the sub-communicator along each axis.
    */
-  MDComm(const Teuchos::RCP< MDComm > parent,
+  MDComm(const Teuchos::RCP< const MDComm > parent,
          const Teuchos::ArrayView< Slice > & slices);
 
   /** Destructor
@@ -191,7 +197,7 @@ public:
    * sub-communicator, that the underlying Comm pointer may be NULL,
    * depending on this processor's rank.
    */
-  TeuchosComm getTeuchosComm() const;
+  TeuchosCommRCP getTeuchosComm() const;
 
   /** \brief Get the number of dimensions
    *
@@ -255,7 +261,7 @@ protected:
 private:
 
   // The Teuchos communicator
-  TeuchosComm           _teuchosComm;
+  TeuchosCommRCP        _teuchosComm;
 
   // An array of the sizes along each axis
   Teuchos::Array< int > _axisSizes;

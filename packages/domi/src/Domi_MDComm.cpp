@@ -50,7 +50,7 @@
 namespace Domi
 {
 
-MDComm::MDComm(const TeuchosComm teuchosComm,
+MDComm::MDComm(const TeuchosCommRCP teuchosComm,
                const Teuchos::ArrayView< int > & axisSizes) :
   _teuchosComm(teuchosComm),
   _axisSizes(regularizeAxisSizes(teuchosComm->getSize(),
@@ -65,7 +65,7 @@ MDComm::MDComm(const TeuchosComm teuchosComm,
 
 ////////////////////////////////////////////////////////////////////////
 
-MDComm::MDComm(const TeuchosComm teuchosComm,
+MDComm::MDComm(const TeuchosCommRCP teuchosComm,
                int numDims) :
   _teuchosComm(teuchosComm),
   _axisSizes(regularizeAxisSizes(teuchosComm->getSize(),
@@ -80,7 +80,7 @@ MDComm::MDComm(const TeuchosComm teuchosComm,
 
 ////////////////////////////////////////////////////////////////////////
 
-MDComm::MDComm(const TeuchosComm teuchosComm,
+MDComm::MDComm(const TeuchosCommRCP teuchosComm,
                int numDims,
                const Teuchos::ArrayView< int > & axisSizes) :
   _teuchosComm(teuchosComm),
@@ -96,7 +96,7 @@ MDComm::MDComm(const TeuchosComm teuchosComm,
 
 ////////////////////////////////////////////////////////////////////////
 
-MDComm::MDComm(const Teuchos::RCP< MDComm > parent,
+MDComm::MDComm(const Teuchos::RCP< const MDComm > parent,
                const Teuchos::ArrayView< Slice > & slices) :
   _axisSizes(parent->getNumDims()),    // just allocate the size
   _axisRanks(parent->_axisRanks),      // will be adjusted below...
@@ -177,7 +177,7 @@ MDComm::onSubcommunicator() const
 
 ////////////////////////////////////////////////////////////////////////
 
-TeuchosComm
+TeuchosCommRCP
 MDComm::getTeuchosComm() const
 {
   return _teuchosComm;
