@@ -33,7 +33,8 @@ namespace {
   void mesh_read_write(const std::string &type,
 		       const std::string &working_directory,
 		       const std::string &filename,
-		       stk::io::MeshData &mesh_data)
+		       stk::io::MeshData &mesh_data,
+           int db_integer_size)
   {
     std::string file = working_directory;
     file += filename;
@@ -43,9 +44,19 @@ namespace {
     mesh_data.define_input_fields();
 
     stk::mesh::MetaData &meta = mesh_data.meta_data();
-    stk::mesh::Field<int> &imp_id_field = meta.declare_field<stk::mesh::Field<int> >("implicit_ids");
-    stk::mesh::put_field(imp_id_field, stk::mesh::MetaData::NODE_RANK, meta.universal_part());
-    stk::mesh::put_field(imp_id_field, stk::mesh::MetaData::ELEMENT_RANK, meta.universal_part());
+
+    ThrowRequireMsg(db_integer_size == 8 || db_integer_size == 4, "db_integer_size ("<<db_integer_size<<") is required to be either 4 or 8.");
+
+    if (db_integer_size == 8) {
+      stk::mesh::Field<int64_t> &imp_id_field = meta.declare_field<stk::mesh::Field<int64_t> >("implicit_ids");
+      stk::mesh::put_field(imp_id_field, stk::mesh::MetaData::NODE_RANK, meta.universal_part());
+      stk::mesh::put_field(imp_id_field, stk::mesh::MetaData::ELEMENT_RANK, meta.universal_part());
+    }
+    else {
+      stk::mesh::Field<int> &imp_id_field = meta.declare_field<stk::mesh::Field<int> >("implicit_ids");
+      stk::mesh::put_field(imp_id_field, stk::mesh::MetaData::NODE_RANK, meta.universal_part());
+      stk::mesh::put_field(imp_id_field, stk::mesh::MetaData::ELEMENT_RANK, meta.universal_part());
+    }
 
     mesh_data.populate_bulk_data();
 
@@ -105,7 +116,7 @@ namespace {
       mesh_data.m_property_manager.add(Ioss::Property("INTEGER_SIZE_API", db_integer_size));
     }
 
-    mesh_read_write(type, working_directory, filename, mesh_data);
+    mesh_read_write(type, working_directory, filename, mesh_data, db_integer_size);
   }
 }
 
