@@ -88,6 +88,4 @@ private:
 
 }
 
-#include "Panzer_Response_Functional_impl.hpp"
-
 #endif
