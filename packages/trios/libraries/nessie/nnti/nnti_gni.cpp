@@ -1043,7 +1043,7 @@ cleanup:
  * URL format: "transport://address/memory_descriptor"
  *    - transport - (required) identifies how the URL should parsed
  *    - address   - (required) uniquely identifies a location on the network
- *                - ex. "ptl://nid:pid/", "gni://ip_addr:port", "luc://endpoint_id/"
+ *                - ex. "ptl://nid:pid/", "gni://ip_addr:port"
  *    - memory_descriptor - (optional) transport-specific representation of RMA params
  */
 NNTI_result_t NNTI_gni_get_url (

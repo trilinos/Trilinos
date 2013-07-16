@@ -57,12 +57,8 @@
 #include <sys/param.h>
 #include <errno.h>
 
-#ifdef __MTA__
-#include <xdr.h>
-#else
 #include <rpc/types.h>
 #include <rpc/xdr.h>
-#endif
 
 /* Some systems do not have xdr functions for uint16_t, uint32_t, uint64_t.
  * We should have checked for these in the cmake config.  To fix the problem,
