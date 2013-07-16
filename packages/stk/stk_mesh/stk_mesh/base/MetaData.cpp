@@ -220,6 +220,7 @@ MetaData::MetaData()
     m_owns_part( NULL ),
     m_shares_part( NULL ),
     m_field_repo(),
+    m_coord_field(NULL),
     m_properties( ),
     m_entity_rank_names( ),
     m_spatial_dimension( 0 /*invalid spatial dimension*/)
