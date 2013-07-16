@@ -123,11 +123,11 @@ void ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps
   catch(std::exception& e) {
     //FIXME add message and rethrow
     std::cerr << "Caught an exception in MueLu::ShiftedLaplacianOperator::ApplyInverse():" << std::endl
-        << e.what() << std::endl;
+	      << e.what() << std::endl;
   }
 
   // update solution with 2-grid error correction
-  if(option_==1) {
+  /*if(option_==1) {
     for(int j=0; j<cycles_; j++) {
       RCP<XMV> residual       = MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Residual(*A_, tY, tX);
       RCP<XMV> coarseResidual = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(R_->getRangeMap(), tX.getNumVectors());
@@ -144,6 +144,16 @@ void ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps
     }
   }
 
+  try {
+    Hierarchy_->Iterate(tX, 1, tY, false);
+  }
+
+  catch(std::exception& e) {
+    //FIXME add message and rethrow
+    std::cerr << "Caught an exception in MueLu::ShiftedLaplacianOperator::ApplyInverse():" << std::endl
+	      << e.what() << std::endl;
+	      }*/
+  
 }
 
 // ------------- apply -----------------------

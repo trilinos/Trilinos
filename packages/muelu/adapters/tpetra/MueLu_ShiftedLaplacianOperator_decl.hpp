@@ -91,11 +91,11 @@ namespace MueLu {
 
     //! Auxiliary Constructor
     ShiftedLaplacianOperator(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & H,
-		   const RCP<Matrix> A, int cycles, int iters, double tol, int option) : Hierarchy_(H), A_(A), cycles_(cycles), iters_(iters), tol_(tol), option_(option)
+			     const RCP<Matrix> A, int cycles, int iters, int option, double tol) : Hierarchy_(H), A_(A), cycles_(cycles), iters_(iters), option_(option), tol_(tol)
     {
 
       // setup 2-level correction
-      RCP< MueLu::Level > Level1 = H -> GetLevel(1);
+      /*RCP< MueLu::Level > Level1 = H -> GetLevel(1);
       R_ = Level1 -> Get< RCP<Matrix> >("R");
       P_ = Level1 -> Get< RCP<Matrix> >("P");
       //RCP<Matrix> AP = Level1 -> Get< RCP<Matrix> >("AP Pattern");
@@ -115,7 +115,7 @@ namespace MueLu {
       BelosList_ -> set("Convergence Tolerance", tol_ );
       BelosLP_   = rcp( new Belos::LinearProblem<Scalar,MV,OP> );
       BelosLP_   -> setOperator ( Ac_ );
-      BelosSM_   = rcp( new Belos::BlockGmresSolMgr<Scalar,MV,OP>(BelosLP_, BelosList_) );
+      BelosSM_   = rcp( new Belos::BlockGmresSolMgr<Scalar,MV,OP>(BelosLP_, BelosList_) );*/
 
     }
 
