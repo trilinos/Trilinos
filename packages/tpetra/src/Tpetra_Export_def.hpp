@@ -563,7 +563,6 @@ namespace Tpetra {
       // Get rid of process IDs not in the target Map.  This prevents
       // exporting to GIDs which don't belong to any process in the
       // target Map.
-      typedef typename ArrayRCP<int>::difference_type size_type;
       if (lookup == IDNotPresent) {
         const size_type numInvalidExports =
           std::count_if (ExportData_->exportPIDs_().begin(),

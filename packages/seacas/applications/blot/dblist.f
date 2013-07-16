@@ -198,7 +198,7 @@ C      --Reset selection if not done by SELECT command
      &      NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &      IDELB, LENE, IDNPS, IDESS,
      &      NCSTEP, LISNP, NLISEL, LISEL, LISNPS, LISESS,
-     &      LISHV, LISGV, LISNV, LISEV)
+     &      LISHV, LISGV, LISNV, LISEV, MAPEL, MAPND)
 
          FIRST = .FALSE.
       END IF
@@ -259,7 +259,7 @@ C *** GENESIS Print Commands ***
      &         NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &         IDELB, LENE, IDNPS, IDESS,
      &         NCSTEP, LISNP, NLISEL, LISEL, LISNPS, LISESS,
-     &         LISHV, LISGV, LISNV, LISEV)
+     &         LISHV, LISGV, LISNV, LISEV, MAPEL, MAPND)
 
          ELSE IF ((LISTYP .EQ. 'BLOCKS')
      &      .OR. (LISTYP .EQ. 'MATERIAL')) THEN
@@ -270,7 +270,7 @@ C *** GENESIS Print Commands ***
      &         NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &         IDELB, LENE, IDNPS, IDESS,
      &         NCSTEP, LISNP, NLISEL, LISEL, LISNPS, LISESS,
-     &         LISHV, LISGV, LISNV, LISEV)
+     &         LISHV, LISGV, LISNV, LISEV, MAPEL, MAPND)
 
          ELSE IF ((LISTYP .EQ. 'LINK') .OR. (LISTYP .EQ. 'CONNECTI')
      &      .OR. (LISTYP .EQ. 'ATTRIBU')) THEN
@@ -281,7 +281,7 @@ C *** GENESIS Print Commands ***
      &         NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &         IDELB, LENE, IDNPS, IDESS,
      &         NCSTEP, LISNP, NLISEL, LISEL, LISNPS, LISESS,
-     &         LISHV, LISGV, LISNV, LISEV)
+     &         LISHV, LISGV, LISNV, LISEV, MAPEL, MAPND)
 
          ELSE IF (LISTYP .EQ. 'NSETS') THEN
             CALL PRTERR ('CMDREQ',
@@ -291,7 +291,7 @@ C *** GENESIS Print Commands ***
      &         NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &         IDELB, LENE, IDNPS, IDESS,
      &         NCSTEP, LISNP, NLISEL, LISEL, LISNPS, LISESS,
-     &         LISHV, LISGV, LISNV, LISEV)
+     &         LISHV, LISGV, LISNV, LISEV, MAPEL, MAPND)
 
          ELSE IF (LISTYP .EQ. 'SSETS') THEN
             CALL PRTERR ('CMDREQ',
@@ -301,7 +301,7 @@ C *** GENESIS Print Commands ***
      &         NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &         IDELB, LENE, IDNPS, IDESS,
      &         NCSTEP, LISNP, NLISEL, LISEL, LISNPS, LISESS,
-     &         LISHV, LISGV, LISNV, LISEV)
+     &         LISHV, LISGV, LISNV, LISEV, MAPEL, MAPND)
 
          ELSE IF (LISTYP .EQ. 'HVARS') THEN
             CALL PRTERR ('CMDREQ',
@@ -311,7 +311,7 @@ C *** GENESIS Print Commands ***
      &         NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &         IDELB, LENE, IDNPS, IDESS,
      &         NCSTEP, LISNP, NLISEL, LISEL, LISNPS, LISESS,
-     &         LISHV, LISGV, LISNV, LISEV)
+     &         LISHV, LISGV, LISNV, LISEV, MAPEL, MAPND)
 
          ELSE IF (LISTYP .EQ. 'GVARS') THEN
             CALL PRTERR ('CMDREQ',
@@ -321,7 +321,7 @@ C *** GENESIS Print Commands ***
      &         NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &         IDELB, LENE, IDNPS, IDESS,
      &         NCSTEP, LISNP, NLISEL, LISEL, LISNPS, LISESS,
-     &         LISHV, LISGV, LISNV, LISEV)
+     &         LISHV, LISGV, LISNV, LISEV, MAPEL, MAPND)
 
          ELSE IF (LISTYP .EQ. 'NVARS') THEN
             CALL PRTERR ('CMDREQ',
@@ -331,7 +331,7 @@ C *** GENESIS Print Commands ***
      &         NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &         IDELB, LENE, IDNPS, IDESS,
      &         NCSTEP, LISNP, NLISEL, LISEL, LISNPS, LISESS,
-     &         LISHV, LISGV, LISNV, LISEV)
+     &         LISHV, LISGV, LISNV, LISEV, MAPEL, MAPND)
 
          ELSE IF (LISTYP .EQ. 'EVARS') THEN
             CALL PRTERR ('CMDREQ',
@@ -341,7 +341,7 @@ C *** GENESIS Print Commands ***
      &         NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &         IDELB, LENE, IDNPS, IDESS,
      &         NCSTEP, LISNP, NLISEL, LISEL, LISNPS, LISESS,
-     &         LISHV, LISGV, LISNV, LISEV)
+     &         LISHV, LISGV, LISNV, LISEV, MAPEL, MAPND)
 
          ELSE IF (LISTYP .EQ. 'NODALS') THEN
             CALL PRTERR ('CMDREQ',
@@ -351,7 +351,7 @@ C *** GENESIS Print Commands ***
      &         NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &         IDELB, LENE, IDNPS, IDESS,
      &         NCSTEP, LISNP, NLISEL, LISEL, LISNPS, LISESS,
-     &         LISHV, LISGV, LISNV, LISEV)
+     &         LISHV, LISGV, LISNV, LISEV, MAPEL, MAPND)
 
          ELSE IF (LISTYP .EQ. 'ELEMENTS') THEN
             CALL PRTERR ('CMDREQ',
@@ -361,7 +361,7 @@ C *** GENESIS Print Commands ***
      &         NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &         IDELB, LENE, IDNPS, IDESS,
      &         NCSTEP, LISNP, NLISEL, LISEL, LISNPS, LISESS,
-     &         LISHV, LISGV, LISNV, LISEV)
+     &         LISHV, LISGV, LISNV, LISEV, MAPEL, MAPND)
          END IF
       END IF
 

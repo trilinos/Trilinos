@@ -96,7 +96,7 @@ public:
                       std::vector<panzer::BC> & bcs,
                       int myRank) {
      volume_worksets["block_0"] = panzer::buildWorksets(pb,cellIds,coords);
-     bc_worksets[bcs[myRank]] = panzer::buildBCWorkset(bcs[myRank],pb,cellIds,sideIds,coords);
+     bc_worksets[bcs[myRank]] = panzer::buildBCWorkset(pb,cellIds,sideIds,coords);
    }
    virtual ~TestWorksetFactory() {}
 

@@ -173,6 +173,10 @@ void Epetra_Export::Construct( const Epetra_BlockMap &  sourceMap, const Epetra_
     Epetra_Util util;
 
     if(targetMap.GlobalIndicesLongLong()) {
+      // FIXME (mfh 11 Jul 2013) This breaks ANSI aliasing rules, if
+      // int_type != long long.  On some compilers, it results in
+      // warnings such as this: "dereferencing type-punned pointer
+      // will break strict-aliasing rules".
       util.Sort(true,NumExportIDs_,ExportPIDs_,0,0,1,&ExportLIDs_, 1, (long long **)&ExportGIDs);
     }
     else if(targetMap.GlobalIndicesInt()) {

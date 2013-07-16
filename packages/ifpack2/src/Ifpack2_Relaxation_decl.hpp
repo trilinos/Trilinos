@@ -61,12 +61,6 @@ namespace Teuchos {
 
 namespace Ifpack2 {
 
-enum RelaxationType {
-  JACOBI,
-  GS,
-  SGS
-};
-
 /** \class Relaxation
 \brief Relaxation preconditioners for Tpetra::RowMatrix and Tpetra::CrsMatrix sparse matrices.
 \author Michael A. Heroux (Sandia)
@@ -682,7 +676,7 @@ private:
   //! How many times to apply the relaxation per apply() call.
   int NumSweeps_;
   //! Which relaxation method to use.
-  int PrecType_;
+  Details::RelaxationType PrecType_;
   //! Damping factor
   scalar_type DampingFactor_;
   //! If \c true, more than 1 processor is currently used.

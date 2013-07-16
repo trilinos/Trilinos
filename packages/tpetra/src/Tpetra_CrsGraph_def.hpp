@@ -2026,7 +2026,7 @@ namespace Tpetra {
       // This creates the Array if it doesn't exist yet.  std::map's
       // operator[] does a lookup each time, so it's better to pull
       // nonlocals_[grow] out of the loop.
-      std::deque<GO>& nonlocalRow = nonlocals_[grow];
+      std::vector<GO>& nonlocalRow = nonlocals_[grow];
       for (size_type k = 0; k < numIndices; ++k) {
         nonlocalRow.push_back (indices[k]);
       }
@@ -2165,12 +2165,11 @@ namespace Tpetra {
     using Teuchos::reduceAll;
     using Teuchos::toString;
     using Teuchos::waitAll;
-    using std::deque;
     using std::endl;
     using std::make_pair;
     using std::pair;
     typedef GlobalOrdinal GO;
-    typedef typename std::map<GO, std::deque<GO> >::const_iterator NLITER;
+    typedef typename std::map<GO, std::vector<GO> >::const_iterator NLITER;
     typedef typename Array<GO>::size_type size_type;
 
     const char tfecfFuncName[] = "globalAssemble"; // for exception macro
@@ -2318,7 +2317,7 @@ namespace Tpetra {
           std::logic_error, ": internal logic error. Contact Tpetra team.");
       }
       // copy data for row into contiguous storage
-      for (typename deque<GO>::const_iterator j = nonlocals_[row].begin(); j != nonlocals_[row].end(); ++j)
+      for (typename std::vector<GO>::const_iterator j = nonlocals_[row].begin(); j != nonlocals_[row].end(); ++j)
       {
         IJSendBuffer.push_back( pair<GlobalOrdinal,GlobalOrdinal>(row,*j) );
         sendSizes[numSends]++;
@@ -3682,7 +3681,7 @@ namespace Tpetra {
     using Teuchos::Array;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    const char tfecfFuncName[] = "packAndPrepare";
+    const char tfecfFuncName[] = "pack";
     (void) distor; // forestall "unused argument" compiler warning
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(

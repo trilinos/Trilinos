@@ -148,7 +148,7 @@ Relaxation (const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type, local_ordina
 : A_(A),
   Time_ (Teuchos::rcp (new Teuchos::Time ("Ifpack2::Relaxation"))),
   NumSweeps_ (1),
-  PrecType_ (Ifpack2::JACOBI),
+  PrecType_ (Ifpack2::Details::JACOBI),
   DampingFactor_ (STS::one ()),
   IsParallel_ (A->getRowMap ()->getComm ()->getSize () > 1),
   ZeroStartingSolution_ (true),
@@ -210,12 +210,12 @@ Relaxation<MatrixType>::getValidParameters () const
     precTypes[0] = "Jacobi";
     precTypes[1] = "Gauss-Seidel";
     precTypes[2] = "Symmetric Gauss-Seidel";
-    Array<RelaxationType> precTypeEnums (3);
-    precTypeEnums[0] = JACOBI;
-    precTypeEnums[1] = GS;
-    precTypeEnums[2] = SGS;
+    Array<Details::RelaxationType> precTypeEnums (3);
+    precTypeEnums[0] = Details::JACOBI;
+    precTypeEnums[1] = Details::GS;
+    precTypeEnums[2] = Details::SGS;
     const std::string defaultPrecType ("Jacobi");
-    setStringToIntegralParameter<RelaxationType> ("relaxation: type",
+    setStringToIntegralParameter<Details::RelaxationType> ("relaxation: type",
       defaultPrecType, "Relaxation method", precTypes (), precTypeEnums (),
       pl.getRawPtr ());
 
@@ -266,8 +266,8 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
 
   pl.validateParametersAndSetDefaults (* getValidParameters ());
 
-  const RelaxationType precType =
-    getIntegralValue<RelaxationType> (pl, "relaxation: type");
+  const Details::RelaxationType precType =
+    getIntegralValue<Details::RelaxationType> (pl, "relaxation: type");
   const int numSweeps = pl.get<int> ("relaxation: sweeps");
   const ST dampingFactor = pl.get<ST> ("relaxation: damping factor");
   const bool zeroStartSol = pl.get<bool> ("relaxation: zero starting solution");
@@ -482,13 +482,13 @@ void Relaxation<MatrixType>::apply(
       // All implementations handle zeroing out the starting solution
       // (if necessary) themselves.
       switch (PrecType_) {
-      case Ifpack2::JACOBI:
+      case Ifpack2::Details::JACOBI:
         ApplyInverseJacobi(*Xcopy,Y);
         break;
-      case Ifpack2::GS:
+      case Ifpack2::Details::GS:
         ApplyInverseGS(*Xcopy,Y);
         break;
-      case Ifpack2::SGS:
+      case Ifpack2::Details::SGS:
         ApplyInverseSGS(*Xcopy,Y);
         break;
       default:
@@ -872,7 +872,8 @@ void Relaxation<MatrixType>::compute ()
       }
     }
 
-    if (IsParallel_ && ((PrecType_ == Ifpack2::GS) || (PrecType_ == Ifpack2::SGS))) {
+    if (IsParallel_ && (PrecType_ == Ifpack2::Details::GS || 
+			PrecType_ == Ifpack2::Details::SGS)) {
       Importer_ = A_->getGraph ()->getImporter ();
       // mfh 21 Mar 2013: The Import object may be null, but in that
       // case, the domain and column Maps are the same and we don't
@@ -1300,11 +1301,11 @@ std::string Relaxation<MatrixType>::description() const {
   }
 
   std::string type;
-  if (PrecType_ == Ifpack2::JACOBI) {
+  if (PrecType_ == Ifpack2::Details::JACOBI) {
     type = "Jacobi";
-  } else if (PrecType_ == Ifpack2::GS) {
+  } else if (PrecType_ == Ifpack2::Details::GS) {
     type = "Gauss-Seidel";
-  } else if (PrecType_ == Ifpack2::SGS) {
+  } else if (PrecType_ == Ifpack2::Details::SGS) {
     type = "Symmetric Gauss-Seidel";
   } else {
     type = "INVALID";
@@ -1369,11 +1370,11 @@ describe (Teuchos::FancyOStream &out,
     {
       OSTab tab3 (out);
       out << "\"relaxation: type\": ";
-      if (PrecType_ == Ifpack2::JACOBI) {
+      if (PrecType_ == Ifpack2::Details::JACOBI) {
         out << "Jacobi";
-      } else if (PrecType_ == Ifpack2::GS) {
+      } else if (PrecType_ == Ifpack2::Details::GS) {
         out << "Gauss-Seidel";
-      } else if (PrecType_ == Ifpack2::SGS) {
+      } else if (PrecType_ == Ifpack2::Details::SGS) {
         out << "Symmetric Gauss-Seidel";
       } else {
         out << "INVALID";

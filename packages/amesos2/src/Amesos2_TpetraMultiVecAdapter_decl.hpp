@@ -140,7 +140,7 @@ namespace Amesos2 {
     /// Returns the Teuchos::Comm object associated with this multi-vector
     const Teuchos::RCP<const Teuchos::Comm<int> >& getComm() const
     {
-      return getMap()->getComm();
+      return mv_->getMap()->getComm();
     }
 
     /// Get the length of vectors local to the calling node

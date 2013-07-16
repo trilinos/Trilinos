@@ -37,7 +37,7 @@ C=======================================================================
 C   --*** RIXINT *** (BLOT) Parse selection command
 C   --   Written by Amy Gilkey - revised 05/20/88
 C   --
-C   --RIXINT selects the items listed in the command.  If there are no
+C   --RMIXINT selects the items listed in the command.  If there are no
 C   --fields, all the items are selected.  If the first field is ADD, the
 c   --items are added to the items already selected, otherwise only the
 C   --listed items are selected.
@@ -53,6 +53,8 @@ C   --   MAXSEL - IN - the number of the maximum selected items
 C   --   NUMSEL - IN/OUT - the number of selected items; set to zero
 C   --      upon entry unless ADD is the first field
 C   --   IXSEL - IN/OUT - the selected items
+C   --   MAP - IN - map local ids to global ids.  User specifies global, 
+C                   ixsel stores local. Map size is MAXSEL
 C   --   * - return statement if error before any items selected
 
       CHARACTER*(*) INLINE

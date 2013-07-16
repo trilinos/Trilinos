@@ -40,41 +40,30 @@
 //@HEADER
 */
 
-#ifndef IFPACK2_USER_PARTITIONER_DECL_HPP
-#define IFPACK2_USER_PARTITIONER_DECL_HPP
-#include "Ifpack2_ConfigDefs.hpp"
-#include "Ifpack2_OverlappingPartitioner_decl.hpp"
+#include <Ifpack2_Details_OverlappingRowGraph_decl.hpp>
 
-#include "Teuchos_ParameterList.hpp"
+#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
-namespace Ifpack2{
-//! Ifpack2::UserPartitioner: A class to define user partitions.  
+#include <Ifpack2_Details_OverlappingRowGraph_def.hpp>
+#include <Ifpack2_ExplicitInstantiationHelpers.hpp>
+#include <Ifpack2_ETIHelperMacros.h>
+#include <Tpetra_CrsGraph.hpp>
 
 
-template<class GraphType>
-class UserPartitioner : public OverlappingPartitioner<GraphType> {
+#define IFPACK2_DETAILS_INST_OVERLAPPINGROWGRAPH( LO, GO ) \
+  template class OverlappingRowGraph<Tpetra::CrsGraph< LO, GO > >; \
+  \
+  template class OverlappingRowGraph<Tpetra::RowGraph< LO, GO > >; \
 
-public:
-  typedef typename GraphType::local_ordinal_type LocalOrdinal;
-  typedef typename GraphType::global_ordinal_type GlobalOrdinal;
-  typedef typename GraphType::node_type Node;
+namespace Ifpack2 {
+namespace Details {
 
-  //! Constructor.
-  UserPartitioner(const Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> >& Graph);
+  IFPACK2_ETI_MANGLING_TYPEDEFS()
 
-  //! Destructor.
-  virtual ~UserPartitioner();
+  IFPACK2_INSTANTIATE_LG( IFPACK2_DETAILS_INST_OVERLAPPINGROWGRAPH )
 
-  //! Sets all the parameters for the partitioner.
-  void setPartitionParameters(Teuchos::ParameterList& List);
+} // namespace Details
+} // namespace Ifpack2
 
-  //! Computes the partitions. Returns 0 if successful.
-  void computePartitions();
+#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
-protected:
-  Teuchos::ArrayRCP<LocalOrdinal> Map_;
-
-};
-}// namespace Ifpack2
-
-#endif // IFPACK2_USER_PARTITIONER_DECL_HPP

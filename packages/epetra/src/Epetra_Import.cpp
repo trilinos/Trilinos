@@ -198,6 +198,10 @@ void Epetra_Import::Construct_Expert( const Epetra_BlockMap &  targetMap, const 
     
     if(targetMap.GlobalIndicesLongLong())
       {
+	// FIXME (mfh 11 Jul 2013) This breaks ANSI aliasing rules, if
+	// int_type != long long.  On some compilers, it results in
+	// warnings such as this: "dereferencing type-punned pointer
+	// will break strict-aliasing rules".
 	util.Sort(true,NumRemoteIDs_,RemotePIDs,0,0, 1,&RemoteLIDs_, 1,(long long**)&RemoteGIDs);
       }
     else if(targetMap.GlobalIndicesInt())
@@ -414,6 +418,10 @@ void Epetra_Import::Construct( const Epetra_BlockMap &  targetMap, const Epetra_
     //Sort Remote IDs by processor so DoReverses will work
     if(targetMap.GlobalIndicesLongLong())
       {
+	// FIXME (mfh 11 Jul 2013) This breaks ANSI aliasing rules, if
+	// int_type != long long.  On some compilers, it results in
+	// warnings such as this: "dereferencing type-punned pointer
+	// will break strict-aliasing rules".
 	Epetra_Util::Sort(true,NumRemoteIDs_,RemotePIDs,0,0, 1,&RemoteLIDs_, 1,(long long**)&RemoteGIDs);
       }
     else if(targetMap.GlobalIndicesInt())
