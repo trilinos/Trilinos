@@ -141,6 +141,7 @@ computeAxisRanks(int rank,
 void splitStringOfIntsWithCommas(std::string data,
                                  Teuchos::Array< int > & result)
 {
+  result.clear();
   size_t current = 0;
   while (current < data.size())
   {
