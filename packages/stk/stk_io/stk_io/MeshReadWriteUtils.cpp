@@ -248,7 +248,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
       meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(stk::io::CoordinateFieldName);
 
   meta.set_coordinate_field(&coord_field);
-
+  
   Ioss::NodeBlock *nb = node_blocks[0];
   stk::mesh::put_field(coord_field, stk::mesh::MetaData::NODE_RANK, meta.universal_part(),
                        meta.spatial_dimension());
@@ -940,7 +940,7 @@ namespace stk {
         bulk_data().deactivate_field_updating();
       }
 
-      bulk_data().modification_begin();
+      bool i_started_modification_cycle = bulk_data().modification_begin();
 
       bool ints64bit = db_api_int_size(region) == 8;
       if (ints64bit) {
@@ -957,7 +957,10 @@ namespace stk {
         process_sidesets(*region,      bulk_data());
       }
 
-      bulk_data().modification_end( stk::mesh::BulkData::MOD_END_COMPRESS_AND_SORT );
+      if (i_started_modification_cycle) {
+        bulk_data().modification_end();
+      }
+
       if (region->get_property("state_count").get_int() == 0) {
         region->get_database()->release_memory();
       }
@@ -993,12 +996,35 @@ namespace stk {
     // ========================================================================
     void MeshData::populate_bulk_data()
     {
+      if (!meta_data().is_commit())
+        meta_data().commit();
+
+      ThrowErrorMsgIf (Teuchos::is_null(m_input_region),
+                       "There is no Input mesh region associated with this Mesh Data.");
+
+      Ioss::Region *region = m_input_region.get();
+      ThrowErrorMsgIf (region==NULL,
+                       "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_mesh.");
+
+      // Check if bulk_data is null; if so, create a new one...
+      if (Teuchos::is_null(m_bulk_data)) {
+        set_bulk_data(Teuchos::rcp( new stk::mesh::BulkData(   meta_data()
+                                                             , region->get_database()->util().communicator()
+#ifdef SIERRA_MIGRATION
+                                                             , false
+#endif
+                                                             , m_connectivity_map
+                                                           )));
+      }
+
       //to preserve behavior for callers of this method, don't do the
       //delay-field-data-allocation optimization.
       //Folks who want the optimization can call the population_mesh/populate_field_data methods separately.
-      bool delay_field_data_allocation = true;//false;
+      bool delay_field_data_allocation = false;
+      bulk_data().modification_begin();
       populate_mesh(delay_field_data_allocation);
       populate_field_data();
+      bulk_data().modification_end();
     }
 
     void MeshData::internal_process_output_request(int step, const std::set<const stk::mesh::Part*> &exclude)
@@ -1325,7 +1351,7 @@ namespace stk {
 
         region->end_state(step);
 
-        bulk_data().modification_end( stk::mesh::BulkData::MOD_END_COMPRESS_AND_SORT );
+        bulk_data().modification_end();
 
       } else {
         std::cerr << "INTERNAL ERROR: Mesh Input Region pointer is NULL in process_input_request.\n";
