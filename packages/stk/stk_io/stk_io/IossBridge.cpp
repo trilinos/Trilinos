@@ -290,21 +290,10 @@ void initialize_spatial_dimension(stk::mesh::MetaData & meta, size_t spatial_dim
   }
 }
 
-bool is_valid_part_field(const stk::mesh::FieldBase *field,
-                         const stk::mesh::EntityRank part_type,
-                         const stk::mesh::Part &part,
-                         const Ioss::Field::RoleType filter_role,
-                         bool add_all)
+bool is_field_on_part(const stk::mesh::FieldBase *field,
+		      const stk::mesh::EntityRank part_type,
+		      const stk::mesh::Part &part)
 {
-  const Ioss::Field::RoleType *role = stk::io::get_field_role(*field);
-
-  if (!add_all && role == NULL) {
-	return false;
-  }
-
-  if (role != NULL && *role != filter_role)
-	return false;
-
   const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(part);
   const stk::mesh::FieldBase::Restriction &res = field->restriction(part_type, part);
   if (res.dimension() > 0) {
@@ -334,6 +323,24 @@ bool is_valid_part_field(const stk::mesh::FieldBase *field,
     }
   }
   return false;
+ }
+
+bool is_valid_part_field(const stk::mesh::FieldBase *field,
+                         const stk::mesh::EntityRank part_type,
+                         const stk::mesh::Part &part,
+                         const Ioss::Field::RoleType filter_role,
+                         bool add_all)
+{
+  const Ioss::Field::RoleType *role = stk::io::get_field_role(*field);
+
+  if (!add_all && role == NULL) {
+	return false;
+  }
+
+  if (role != NULL && *role != filter_role)
+	return false;
+
+  return is_field_on_part(field, part_type, part);
 }
 
 void get_io_field_type(const stk::mesh::FieldBase *field,
@@ -577,6 +584,7 @@ void ioss_add_fields(const stk::mesh::Part &part,
   }
 }
 
+
 /**
  * For the given Ioss::GroupingEntity "entity", find all fields that
  * exist on the input database of type "role" and declare them on
@@ -738,21 +746,21 @@ void field_data_to_ioss(const stk::mesh::BulkData& mesh,
   /// Ioss field and stk::mesh::Field; better error messages...
 
   if (field != NULL && io_entity->field_exists(io_fld_name)) {
-	const Ioss::Field &io_field = io_entity->get_fieldref(io_fld_name);
-	if (io_field.get_role() == filter_role) {
-	  if (field->type_is<double>()) {
-	    internal_field_data_to_ioss(mesh, io_field, field, entities, io_entity,
+    const Ioss::Field &io_field = io_entity->get_fieldref(io_fld_name);
+    if (io_field.get_role() == filter_role) {
+      if (field->type_is<double>()) {
+	internal_field_data_to_ioss(mesh, io_field, field, entities, io_entity,
                                     static_cast<double>(1.0));
-	  } else if (field->type_is<int>()) {
-	    if (io_field.get_type() != Ioss::Field::INTEGER) {
-	      Ioss::Field &tmp = const_cast<Ioss::Field&>(io_field);
-	      tmp.reset_type(Ioss::Field::INTEGER);
-	    }
-	    // FIX 64?
-	    internal_field_data_to_ioss(mesh, io_field, field, entities, io_entity,
-                                    static_cast<int>(1));
-	  }
+      } else if (field->type_is<int>()) {
+	if (io_field.get_type() != Ioss::Field::INTEGER) {
+	  Ioss::Field &tmp = const_cast<Ioss::Field&>(io_field);
+	  tmp.reset_type(Ioss::Field::INTEGER);
 	}
+	// FIX 64?
+	internal_field_data_to_ioss(mesh, io_field, field, entities, io_entity,
+                                    static_cast<int>(1));
+      }
+    }
   }
 }
 

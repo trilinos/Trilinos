@@ -34,18 +34,22 @@ namespace {
 		       const std::string &working_directory,
 		       const std::string &filename,
 		       stk::io::MeshData &mesh_data,
-           int db_integer_size)
+		       int db_integer_size)
   {
     std::string file = working_directory;
     file += filename;
     
     mesh_data.open_mesh_database(file, type);
     mesh_data.create_input_mesh();
+
+    // This is done just to defined some fields in stk
+    // that can be used later for reading restart data.
     mesh_data.define_input_fields();
 
     stk::mesh::MetaData &meta = mesh_data.meta_data();
 
-    ThrowRequireMsg(db_integer_size == 8 || db_integer_size == 4, "db_integer_size ("<<db_integer_size<<") is required to be either 4 or 8.");
+    ThrowRequireMsg(db_integer_size == 8 || db_integer_size == 4,
+		    "db_integer_size ("<<db_integer_size<<") is required to be either 4 or 8.");
 
     if (db_integer_size == 8) {
       //on the mac, sizeof(long) seems to be 8.
@@ -66,6 +70,14 @@ namespace {
       stk::mesh::put_field(imp_id_field, stk::mesh::MetaData::ELEMENT_RANK, meta.universal_part());
     }
 
+    // Iterate all fields and set them as restart fields...
+    const stk::mesh::FieldVector &fields = mesh_data.meta_data().get_fields();
+    std::string name;
+    for (size_t i=0; i < fields.size(); i++) {
+      std::string name = fields[i]->name();
+      mesh_data.add_restart_field(*fields[i], name);
+    }
+
     mesh_data.populate_bulk_data();
 
     //------------------------------------------------------------------
@@ -74,12 +86,25 @@ namespace {
     mesh_data.create_output_mesh(output_filename);
     mesh_data.define_output_fields();
 
+    // Create restart output ...  ("generated_mesh.restart") ("exodus_mesh.restart")
+    
+    std::string restart_filename = working_directory + type + "_mesh.restart";
+    mesh_data.create_restart_output(restart_filename);
+
+    mesh_data.define_restart_fields();
+
     // Determine number of timesteps on input database...
     int timestep_count = mesh_data.input_io_region()->get_property("state_count").get_int();
     for (int step=1; step <= timestep_count; step++) {
       double time = mesh_data.input_io_region()->get_state_time(step);
-      mesh_data.process_input_request(step);
+
+      // Normally, an app would only process the restart input at a single step and
+      // then continue with execution at that point.  Here just for testing, we are
+      // reading restart data at each step on the input restart file/mesh and then
+      // outputting that data to the restart and results output.
+      mesh_data.process_restart_input(step);
       mesh_data.process_output_request(time);
+      mesh_data.process_restart_output(time);
     }
   }
 

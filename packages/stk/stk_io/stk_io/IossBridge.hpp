@@ -167,6 +167,10 @@ bool is_valid_part_field(const stk::mesh::FieldBase *field,
                          const Ioss::Field::RoleType filter_role,
                          const bool add_all = false);
 
+bool is_field_on_part(const stk::mesh::FieldBase *field,
+		      const stk::mesh::EntityRank part_type,
+		      const stk::mesh::Part &part);
+
 /** Add all stk::Fields on the specified part of the specified
  * filter_role to the specified Ioss::GroupingEntity.  Retrieves
  * all fields; calls 'is_valid_part_field'; and adds those that
