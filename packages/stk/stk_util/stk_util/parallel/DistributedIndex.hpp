@@ -119,11 +119,6 @@ public:
     const std::vector<size_t>                 & requests ,
           std::vector< KeyTypeVector > & requested_keys );
 
-  void print_sizes() const
-  {
-     std::cout<<"proc "<<m_comm_rank<<", m_key_usage.size(): "<<m_key_usage.size()<<", capacity: "<<m_key_usage.capacity()<<std::endl;
-  }
-
 private:
 
   /*------------------------------------------------------------------*/
