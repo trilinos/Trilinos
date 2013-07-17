@@ -322,7 +322,7 @@ int output_gnu(const char *cmd_file,
     fprintf(fp, "set noyzeroaxis\n");
     fprintf(fp, "set noxtics\n");
     fprintf(fp, "set noytics\n");
-    fprintf(fp, "set data style %s\n", datastyle);
+    fprintf(fp, "set style data %s\n", datastyle);
 
     /* resize range so that there is a 5% border around data */
     fprintf(fp, "set xrange [%f:%f] \n ",globMinX-(globMaxX-globMinX)/20
