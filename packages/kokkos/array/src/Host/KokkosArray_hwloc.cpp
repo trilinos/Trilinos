@@ -41,6 +41,7 @@
 //@HEADER
 */
 
+#include <KokkosArray_config.h>
 #include <KokkosArray_hwloc.hpp>
 
 /*--------------------------------------------------------------------------*/

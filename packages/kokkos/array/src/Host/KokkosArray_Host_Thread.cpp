@@ -41,6 +41,7 @@
 //@HEADER
 */
 
+#include <KokkosArray_config.h>
 #include <Host/KokkosArray_Host_Thread.hpp>
 
 /* #include <KokkosArray_Host.hpp> */
