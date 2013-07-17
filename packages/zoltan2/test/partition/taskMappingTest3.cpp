@@ -11,6 +11,7 @@
 #define nProcs 200;
 #define nParts 200;
 
+typedef int partId_t;
 template <typename scalar_t, typename procId_t>
 void randomFill(scalar_t **&partCenters, procId_t &numCoords, int &coorDim){
     partCenters = Zoltan2::allocMemory<scalar_t *>(coorDim);
@@ -143,13 +144,16 @@ void getArgVals(
         int argc,
         char **argv,
         std::string &procF,
-        std::string &partF){
+        partId_t &nx,
+        partId_t &ny,
+        partId_t &nz){
 
     bool isprocset = false;
-    bool ispartset = false;
+    int ispartset = 0;
 
     for(int i = 0; i < argc; ++i){
         string tmp = convert_to_string(argv[i]);
+        string tmp2 = "";
         string identifier = "";
         long long int value = -1; double fval = -1;
         if(!getArgumentValue(identifier, fval, tmp)) continue;
@@ -163,13 +167,29 @@ void getArgVals(
             stream >> procF;
             isprocset = true;
         }
-        else if(identifier == "PART"){
+        else if(identifier == "NX"){
             stringstream stream(stringstream::in | stringstream::out);
             stream << tmp;
-            getline(stream, partF, '=');
+            getline(stream, tmp2, '=');
 
-            stream >> partF;
-            ispartset = true;
+            stream >> nx;
+            ispartset++;
+        }
+        else if(identifier == "NY"){
+            stringstream stream(stringstream::in | stringstream::out);
+            stream << tmp;
+            getline(stream, tmp2, '=');
+
+            stream >> ny;
+            ispartset++;
+        }
+        else if(identifier == "NZ"){
+            stringstream stream(stringstream::in | stringstream::out);
+            stream << tmp;
+            getline(stream, tmp2, '=');
+
+            stream >> nz;
+            ispartset++;
         }
 
         else {
@@ -177,17 +197,17 @@ void getArgVals(
         }
 
     }
-    if(!(ispartset && isprocset)){
+    if(!(ispartset == 3&& isprocset)){
         throw "(PROC && PART) are mandatory arguments.";
     }
 
 }
 int main(int argc, char *argv[]){
     Teuchos::GlobalMPISession session(&argc, &argv);
-    if (argc != 3){
-        cout << "Usage: " << argv[0] << " PART=partGeoParams.txt PROC=procGeoParams.txt" << endl;
-        exit(1);
-    }
+    //if (argc != 3){
+    //    cout << "Usage: " << argv[0] << " PART=partGeoParams.txt PROC=procGeoParams.txt" << endl;
+    //    exit(1);
+    //}
     zoltan2_partId_t numParts = 0;
     scalar_t **partCenters = NULL;
     int coordDim = 0;
@@ -198,65 +218,93 @@ int main(int argc, char *argv[]){
 
 
 
-    string partfile = "";
+    partId_t jobX = 1, jobY = 1 ,jobZ = 1;
     string procfile = "";
 
     const RCP<Comm<int> > commN;
     RCP<Comm<int> >comm =  Teuchos::rcp_const_cast<Comm<int> >
             (Teuchos::DefaultComm<int>::getDefaultSerialComm(commN));
 
-
+    partId_t *task_communication_xadj_ = NULL;
+    partId_t *task_communication_adj_ = NULL;
     try {
 
         getArgVals(
                 argc,
                 argv,
                 procfile ,
-                partfile);
-        //cout << "part:" << partfile << " proc:" << procfile << endl;
+                jobX, jobY, jobZ);
+
+        coordDim = 3;
+        procDim = 3;
+        numParts = jobZ*jobY*jobX;
+        numProcs = numParts;
+        //cout << "part:" << numParts << " proc:" << procfile << endl;
         {
-            Teuchos::ParameterList geoparams;
-            //getPartCenters(partCenters, numParts, coordDim);
-            readGeoGenParams(partfile, geoparams, comm);
-            GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
-            coordDim = gg->getCoordinateDimension();
-            numParts = gg->getNumLocalCoords();
             partCenters = new scalar_t * [coordDim];
             for(int i = 0; i < coordDim; ++i){
                 partCenters[i] = new scalar_t[numParts];
             }
-            gg->getLocalCoordinatesCopy(partCenters);
-            /*
-        for(int i = 0; i < coordDim; ++i){
-            for(int j = 0; j < numParts; ++j){
-                cout << partCenters[i][j] << " ";
+
+
+            task_communication_xadj_ = new partId_t [numParts];
+            task_communication_adj_ = new partId_t [numParts * 6];
+
+            int prevNCount = 0;
+            for (int i = 0; i < numParts; ++i) {
+              int x = i % jobX;
+              int y = (i / (jobX)) % jobY;
+              int z = (i / (jobX)) / jobY;
+              partCenters[0][i] = x;
+              partCenters[1][i] = y;
+              partCenters[2][i] = z;
+
+              if (x > 0){
+              task_communication_adj_[prevNCount++] = i - 1;
+              }
+              if (x < jobX - 1){
+              task_communication_adj_[prevNCount++] = i + 1;
+              }
+              if (y > 0){
+              task_communication_adj_[prevNCount++] = i - jobX;
+              }
+              if (y < jobY - 1){
+              task_communication_adj_[prevNCount++] = i + jobX;
+              }
+              if (z > 0){
+              task_communication_adj_[prevNCount++] = i - jobX * jobY;
+              }
+              if (z < jobZ - 1){
+              task_communication_adj_[prevNCount++] = i + jobX * jobY;
+              }
+              task_communication_xadj_[i] = prevNCount;
             }
-            cout << endl;
         }
-             */
-            delete gg;
-        }
+
+
 
         //getProcCenters(procCoordinates, numProcs, procDim);
         {
-            Teuchos::ParameterList geoparams2;
-            readGeoGenParams(procfile, geoparams2, comm);
-            GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams2,comm);
-
-            procDim = gg->getCoordinateDimension();
-            numProcs = gg->getNumLocalCoords();
+            fstream m(procfile.c_str());
             procCoordinates = new scalar_t * [procDim];
             for(int i = 0; i < procDim; ++i){
-                procCoordinates[i] = new scalar_t[numProcs];
+                procCoordinates[i] = new scalar_t[numParts];
             }
-            gg->getLocalCoordinatesCopy(procCoordinates);
+            int i = 0;
+            while(i < numProcs){
+                m >> procCoordinates[0][i] >> procCoordinates[1][i] >> procCoordinates[2][i];
+                //cout << "i:" <<i << endl;
+                ++i;
 
-            delete gg;
+            }
+            m.close();
         }
+
 
         typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
         typedef Zoltan2::XpetraMultiVectorInput<tMVector_t> inputAdapter_t;
 
+        /*
         Zoltan2::CoordinateCommunicationModel<scalar_t,scalar_t,zoltan2_partId_t> *cm =
                 new Zoltan2::CoordinateCommunicationModel<scalar_t,scalar_t,zoltan2_partId_t>(
                         procDim, procCoordinates,
@@ -267,20 +315,31 @@ int main(int argc, char *argv[]){
         Zoltan2::CoordinateTaskMapper <inputAdapter_t, zoltan2_partId_t> *ctm=
                 new Zoltan2::CoordinateTaskMapper<inputAdapter_t,zoltan2_partId_t>(env, cm);
 
-
-        zoltan2_partId_t *task_communication_xadj_ = new zoltan2_partId_t[numParts];
-        zoltan2_partId_t *task_communication_adj_ = new zoltan2_partId_t[numParts * 4];
-
-        for (zoltan2_partId_t i = 0; i < numParts; ++i){
-            task_communication_xadj_[i] = (i+1) * 4;
-            for (int j = 0; j < 4; ++j){
-                task_communication_adj_[i*4+j] = (i + j) % numParts;
-            }
-        }
-
-
+        */
         RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
         zoltan2_partId_t *proc_to_task_xadj_ = new zoltan2_partId_t[numProcs], *proc_to_task_adj_ = new zoltan2_partId_t[numParts];
+/*
+        cout << "procDim:" << procDim <<
+                " numProcs:" << numProcs <<
+                " coordDim:" << coordDim <<
+                " numParts" << numParts << endl;
+
+        for(zoltan2_partId_t j = 0; j < numProcs; ++j){
+            cout << "proc - coord:" << j << " " << procCoordinates[0][j]<< " " << procCoordinates[1][j]<< " " << procCoordinates[2][j] << endl;
+        }
+
+        for(zoltan2_partId_t j = 0; j < numParts; ++j){
+            cout << "part - coord:" << j << " " << partCenters[0][j]<< " " << partCenters[1][j]<< " " << partCenters[2][j] << endl;
+        }
+*/
+        /*
+        zoltan2_partId_t partArray[3];
+        partArray[0] = 8;
+        partArray[1] = 4;
+        partArray[2] = 16;
+        */
+        zoltan2_partId_t *partArray = NULL;
+        int partArraysize = -1;
         Zoltan2::coordinateTaskMapperInterface<zoltan2_partId_t, scalar_t, scalar_t>(
                 tcomm,
                 procDim,
@@ -296,14 +355,18 @@ int main(int argc, char *argv[]){
 
                 proc_to_task_xadj_, /*output*/
                 proc_to_task_adj_, /*output*/
-                -1,
-                NULL
+                partArraysize,
+                partArray
                 );
 
-        cout << "PASS" << endl;
+        if (tcomm->getRank() == 0){
+            cout << "PASS" << endl;
+        }
+        /*
         delete ctm;
         delete cm;
         delete env;
+        */
         delete []proc_to_task_xadj_;
         delete [] proc_to_task_adj_;
     }
