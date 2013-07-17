@@ -946,10 +946,10 @@ void pqJagged_getLocalMinMaxTotalCoord(
 }
 
 template <typename partId_t>
-inline partId_t getPartCount(partId_t numFuture, float root, float fEpsilon){
-    float fp = pow(numFuture, root);
+inline partId_t getPartCount(partId_t numFuture, double root, double fEpsilon){
+    double fp = pow(numFuture, root);
     partId_t ip = partId_t (fp);
-    if (fp - ip < fEpsilon){
+    if (fp - ip < fEpsilon * 100){
         return ip;
     }
     else {
@@ -4966,14 +4966,14 @@ partId_t getPartitionArrays(
         futurePartNumbers = 1; //TODO this should be removed.
 
         //cout << "i:" << i << endl;
-        float fEpsilon = numeric_limits<float>::epsilon();
+        double fEpsilon = numeric_limits<double>::epsilon();
         for (partId_t ii = 0; ii < currentPartitionCount; ++ii){
             //get how many parts a part should be divided.
             partId_t numFuture = (*currentPartitions)[ii];
 
             //get the ideal number of parts that is close to the
             //(partArraySize - i) root of the numFuture.
-            partId_t numParts = getPartCount<partId_t>( numFuture, 1.0f / (partArraySize - i), fEpsilon);
+            partId_t numParts = getPartCount<partId_t>( numFuture, 1.0 / (partArraySize - i), fEpsilon);
             //partId_t numParts = ceil( pow(numFuture, 1.0f / (partArraySize - i)));// + 0.5f;
 
             //cout << "\tii:" << ii << " numParts:" << numParts << endl;
@@ -5611,7 +5611,10 @@ void sequentialTaskPartitioning(
         int coordDim,
         scalar_t **pqJagged_coordinates,
         lno_t *output_permutation,
-        lno_t *output_partIndices
+        lno_t *output_partIndices,
+        int partArraySize,
+        const partId_t *partNo
+
         //,string partitioningName
         ){
     //env->timerStart(MACRO_TIMERS, "PQJagged - " +partitioningName+"-Problem_Partitioning");
@@ -5621,8 +5624,11 @@ void sequentialTaskPartitioning(
             (Teuchos::DefaultComm<int>::getDefaultSerialComm(commN));
 
 
+    /*
     const partId_t *partNo = NULL;
     int partArraySize = 0;
+    */
+
 
     //weights are uniform for task mapping
     bool pqJagged_uniformWeights[1];
@@ -5701,7 +5707,7 @@ void sequentialTaskPartitioning(
     partId_t maxCutNo = 0;
     size_t maxTotalPartCount = 0;
 
-    partArraySize = coordDim;
+    //partArraySize = coordDim * 8;
     getPartSpecifications <partId_t>(
                         partNo,   //partNoArray Input
                         partArraySize,  //size of the partNoArray --output if partNo is not given.
@@ -5892,6 +5898,15 @@ void sequentialTaskPartitioning(
         //it also expects pAlongI to be empty as well.
         newFuturePartitions->clear();
 
+
+
+        /*
+        cout << "i:" << i << " ";
+        for (int jj = 0; jj < currentPartitions->size();++jj){
+            cout << (*currentPartitions)[jj] << " ";
+        }
+        cout << endl;
+        */
         //returns the total number of output parts for this dimension partitioning.
         partId_t outPartCount = getPartitionArrays<scalar_t, partId_t>(
                 partNo,
@@ -5907,6 +5922,14 @@ void sequentialTaskPartitioning(
                 t1,
                 t2
                 );
+
+        /*
+        cout << "i:" << i << " ";
+        for (int jj = 0; jj < pAlongI.size();++jj){
+            cout << pAlongI[jj] << " ";
+        }
+        cout << endl;
+        */
 
         if(outPartCount == currentPartitionCount) {
             tmpPartVect= currentPartitions;

@@ -635,7 +635,7 @@ public:
             }
         }
 
-        this->commCost = totalCost/ commCount;
+        this->commCost = totalCost;//#/ commCount;
     }
 
     double getCommunicationCostMetric(){
@@ -669,7 +669,8 @@ public:
     pcoord_t **proc_coords; //the processor coordinates. allocated outside of the class.
     int task_coord_dim; //dimension of the tasks coordinates.
     tcoord_t **task_coords; //the task coordinates allocated outside of the class.
-
+    int partArraySize;
+    procId_t *partNoArray;
 
     //public:
     CoordinateCommunicationModel():
@@ -677,7 +678,9 @@ public:
         proc_coord_dim(0),
         proc_coords(0),
         task_coord_dim(0),
-        task_coords(0){}
+        task_coords(0),
+        partArraySize(-1),
+        partNoArray(NULL){}
 
     virtual ~CoordinateCommunicationModel(){}
 
@@ -699,10 +702,18 @@ public:
             ):
                 CommunicationModel<procId_t>(no_procs_, no_tasks_),
                 proc_coord_dim(pcoord_dim_), proc_coords(pcoords_),
-                task_coord_dim(tcoord_dim_), task_coords(tcoords_){
+                task_coord_dim(tcoord_dim_), task_coords(tcoords_),
+                partArraySize(min(tcoord_dim_, pcoord_dim_)),
+                partNoArray(NULL){
     }
 
 
+    void setPartArraySize(int psize){
+        this->partArraySize = psize;
+    }
+    void setPartArray(procId_t *pNo){
+        this->partNoArray = pNo;
+    }
 
     /*! \brief Function is called whenever nprocs > no_task.
      * Function returns only the subset of processors that are closest to each other.
@@ -836,6 +847,9 @@ public:
         //obtain the min coordinate dim.
         procId_t minCoordDim = MINOF(this->task_coord_dim, this->proc_coord_dim);
 
+        int recursion_depth = partArraySize;
+        if(partArraySize < minCoordDim) recursion_depth = minCoordDim;
+
         int taskPerm = z2Fact<int>(this->task_coord_dim); //get the number of different permutations for task dimension ordering
         int procPerm = z2Fact<int>(this->proc_coord_dim); //get the number of different permutations for proc dimension ordering
         int permutations =  taskPerm * procPerm; //total number of permutations
@@ -873,6 +887,7 @@ public:
             //cout << permutation[i] << " ";
         }
 
+
         //do the partitioning and renumber the parts.
         env->timerStart(MACRO_TIMERS, "Mapping - Proc Partitioning");
         sequentialTaskPartitioning<pcoord_t, procId_t, procId_t>(
@@ -883,7 +898,9 @@ public:
                 minCoordDim,
                 pcoords,//this->proc_coords,
                 proc_adjList,
-                proc_xadj
+                proc_xadj,
+                recursion_depth,
+                partNoArray
                 //,"proc_partitioning"
         );
         env->timerStop(MACRO_TIMERS, "Mapping - Proc Partitioning");
@@ -914,7 +931,9 @@ public:
                 minCoordDim,
                 tcoords, //this->task_coords,
                 task_adjList,
-                task_xadj
+                task_xadj,
+                recursion_depth,
+                partNoArray
                 //,"task_partitioning"
         );
         env->timerStop(MACRO_TIMERS, "Mapping - Task Partitioning");
@@ -1111,6 +1130,24 @@ public:
                 task_communication_adj
          );
 
+        /*
+        if (myRank == 0){
+            procId_t maxComm = 0;
+            procId_t totalComm = 0;
+            for (procId_t i = 0; i < this->ntasks;++i){
+                procId_t tBegin = 0;
+                if (i > 0){
+                    tBegin = task_communication_xadj[i - 1];
+                }
+                procId_t tEnd = task_communication_xadj[i];
+                if (tEnd - tBegin > maxComm) maxComm = tEnd - tBegin;
+            }
+            totalComm = task_communication_xadj[this->ntasks - 1];
+            cout << "commMax:" << maxComm << " totalComm:"<< totalComm << endl;
+        }
+        */
+
+
 
 
         envConst->timerStop(MACRO_TIMERS, "Mapping - Communication Graph");
@@ -1297,8 +1334,7 @@ public:
 
 
     /*! \brief Constructor
-     * When this constructor is called, it is assumed that the communication graph is already computed.
-     * It is assumed that the communication graph is given in task_communication_xadj_ and task_communication_adj_ parameters.
+     * Constructor called for fortran interface.
      *  \param envConst_ is the environment object.
      *  \param task_communication_xadj_ is the solution object. Holds the assignment of points.
      *  \param task_communication_adj_ is the environment object.
@@ -1314,7 +1350,9 @@ public:
             tcoord_t **task_coords,
             const Environment *envConst_,
             ArrayRCP<procId_t>task_communication_xadj_,
-            ArrayRCP<procId_t>task_communication_adj_
+            ArrayRCP<procId_t>task_communication_adj_,
+            int partArraySize,
+            procId_t *partNoArray
     ):  PartitionMapping<Adapter>(comm_, NULL, NULL, NULL, envConst_),
             proc_to_task_xadj(0),
             proc_to_task_adj(0),
@@ -1346,9 +1384,15 @@ public:
                         this->nprocs,
                         this->ntasks
                 );
+        this->proc_task_comm->setPartArraySize(partArraySize);
+        this->proc_task_comm->setPartArray(partNoArray);
 
         int myRank = comm_->getRank();
+
         this->doMapping(myRank);
+#ifdef gnuPlot
+        this->writeMapping2(myRank);
+#endif
         this->proc_task_comm->calculateCommunicationCost(
                 task_to_proc.getRawPtr(),
                 task_communication_xadj.getRawPtr(),
@@ -1357,7 +1401,8 @@ public:
 
         this->getBestMapping();
 #ifdef gnuPlot
-        this->writeMapping2(comm_->getRank());
+        if(comm_->getRank() == 0)
+        this->writeMapping2(-1);
 #endif
     }
 
@@ -1495,6 +1540,7 @@ public:
         RCP<Comm<int> > subComm = this->create_subCommunicatior();
         //calculate cost.
         double myCost = this->proc_task_comm->getCommunicationCostMetric();
+        //cout << "me:" << this->comm->getRank() << " myCost:" << myCost << endl;
         double localCost[2], globalCost[2];
 
         localCost[0] = myCost;
@@ -1810,7 +1856,9 @@ void coordinateTaskMapperInterface(
         procId_t *task_communication_adj_,
 
         procId_t *proc_to_task_xadj, /*output*/
-        procId_t *proc_to_task_adj /*output*/
+        procId_t *proc_to_task_adj, /*output*/
+        int partArraySize,
+        procId_t *partNoArray
         ){
 
     const Environment *envConst_ = new Environment();
@@ -1837,7 +1885,9 @@ void coordinateTaskMapperInterface(
 
                 envConst_,
                 task_communication_xadj,
-                task_communication_adj
+                task_communication_adj,
+                partArraySize,
+                partNoArray
         );
 
 
@@ -1879,7 +1929,9 @@ void coordinateTaskMapperInterface_Fortran(
         procId_t *task_communication_adj_,
 
         procId_t *proc_to_task_xadj, /*output*/
-        procId_t *proc_to_task_adj /*output*/
+        procId_t *proc_to_task_adj, /*output*/
+        int partArraySize,
+        procId_t *partNoArray
         ){
 
 #ifdef HAVE_MPI
@@ -1902,7 +1954,9 @@ void coordinateTaskMapperInterface_Fortran(
             task_communication_adj_,
 
             proc_to_task_xadj, /*output*/
-            proc_to_task_adj /*output*/);
+            proc_to_task_adj, /*output*/
+            partArraySize,
+            partNoArray);
 }
 
 }// namespace Zoltan2
