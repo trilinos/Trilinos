@@ -413,7 +413,7 @@ namespace Tpetra {
 
 	bool staticProfileClone = true;
 	staticProfileClone = params->get ("Static profile clone", staticProfileClone);
-	pftype = staticProfileClone ? DynamicProfile : StaticProfile;
+	pftype = staticProfileClone ? StaticProfile : DynamicProfile;
       }
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
