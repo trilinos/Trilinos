@@ -116,36 +116,42 @@ namespace Tpetra {
    communicator.  Finally, you should read the documentation of Map
    and MultiVector.
 
-   \section Tpetra_CrsMatrix_local_vs_global Local vs. global indices and nonlocal insertion
+   \section Tpetra_CrsMatrix_local_vs_global Local and global indices
 
    The distinction between local and global indices might confuse new
    Tpetra users.  Please refer to the documentation of Map for a
    detailed explanation.  This is important because many of
    CrsMatrix's methods for adding, modifying, or accessing entries
    come in versions that take either local or global indices.  The
-   matrix itself may store indices either as local or global.  You
-   should only use the method version corresponding to the current
-   state of the matrix.  For example, getGlobalRowView() returns a
-   view to the indices represented as global; it is incorrect to call
-   this method if the matrix is storing indices as local.  Call the
-   isGloballyIndexed() or isLocallyIndexed() methods to find out
-   whether the matrix currently stores indices as local or global.
+   matrix itself may store indices either as local or global, and the
+   same matrix may use global indices or local indices at different
+   points in its life.  You should only use the method version
+   corresponding to the current state of the matrix.  For example,
+   getGlobalRowView() returns a view to the indices represented as
+   global; it is incorrect to call this method if the matrix is
+   storing indices as local.  Call isGloballyIndexed() or
+   isLocallyIndexed() to find out whether the matrix currently stores
+   indices as local or global.
 
-   All methods (but insertGlobalValues(); see below) that work with
-   global indices only allow operations on indices owned by the
-   calling process.  For example, methods that take a global row index
-   expect that row to be owned by the calling process.  Access to
-   nonlocal (i.e., not owned by the calling process) rows requires
+   \section Tpetra_CrsMatrix_insertion_into_nonowned_rows Insertion into nonowned rows
+
+   All methods (except for insertGlobalValues() and
+   sumIntoGlobalValues(); see below) that work with global indices
+   only allow operations on indices owned by the calling process.  For
+   example, methods that take a global row index expect that row to be
+   owned by the calling process.  Access to <i>nonowned rows</i>, that
+   is, rows <i>not</i> owned by the calling process, requires
    performing an explicit communication via the Import / Export
    capabilities of the CrsMatrix object.  See the documentation of
    DistObject for more details.
 
-   The method insertGlobalValues() is an exception to this rule.  It
-   allows you to add data to nonlocal rows.  These data are stored
-   locally and communicated to the appropriate node on the next call
-   to globalAssemble() or fillComplete().  This means that CrsMatrix
-   provides the same nonlocal insertion functionality that in Epetra
-   is provided by Epetra_FECrsMatrix.
+   The methods insertGlobalValues() and sumIntoGlobalValues() are
+   exceptions to this rule.  They both allows you to add data to
+   nonowned rows.  These data are stored locally and communicated to
+   the appropriate process on the next call to globalAssemble() or
+   fillComplete().  This means that CrsMatrix provides the same
+   nonowned insertion functionality that Epetra provides via
+   Epetra_FECrsMatrix.
 
    \section Tpetra_DistObject_MultDist Note for developers on DistObject
 
@@ -194,6 +200,9 @@ namespace Tpetra {
   class CrsMatrix : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
                     public DistObject<char, LocalOrdinal,GlobalOrdinal,Node> {
   public:
+    //! @name Typedefs
+    //@{
+
     typedef Scalar                                scalar_type;
     typedef LocalOrdinal                          local_ordinal_type;
     typedef GlobalOrdinal                         global_ordinal_type;
@@ -203,9 +212,7 @@ namespace Tpetra {
     typedef LocalMatOps   mat_vec_type;
     typedef LocalMatOps   mat_solve_type;
 
-    template <class S2, class LO2, class GO2, class N2, class LMO2>
-    friend class CrsMatrix;
-
+    //@}
     //! @name Constructor/Destructor Methods
     //@{
 
@@ -362,63 +369,93 @@ namespace Tpetra {
               const ArrayRCP<Scalar> & values,
               const RCP<ParameterList>& params = null);
 
+    // This friend declaration makes the clone() method work.
+    template <class S2, class LO2, class GO2, class N2, class LMO2>
+    friend class CrsMatrix;
 
-    /// \brief Create a cloned CrsMatrix for a different node type.
+    /// \brief Create a deep copy of this CrsMatrix, where the copy
+    ///   may have a different Node type.
     ///
-    /// This method creates a new CrsMatrix on a specified node type,
-    /// with all of the entries of this CrsMatrix object.
-    ///
-    /// \param node2 [in] A node for constructing the clone CrsMatrix and its constituent objects.
-    ///
+    /// \param node2 [in] Kokkos Node instance for the returned copy.
     /// \param params [in/out] Optional list of parameters. If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     ///
     /// Parameters to \c params:
-    /// - "Static profile clone"  [boolean, default: true] If \c true, creates the clone with a static allocation profile. If false, a dynamic allocation profile is used.
-    /// - "Locally indexed clone" [boolean] If \c true, fills clone using this matrix's column map and local indices (requires that this graph have a column map.) If
-    ///   false, fills clone using global indices and does not provide a column map. By default, will use local indices only if this matrix is using local indices.
-    /// - "fillComplete clone" [boolean, default: true] If \c true, calls fillComplete() on the cloned CrsMatrix object, with parameters from \c params sublist "CrsMatrix". The domain map and range maps
-    ///   passed to fillComplete() are those of the map being cloned, if they exist. Otherwise, the row map is used.
+    /// - "Static profile clone" [boolean, default: true] If \c true,
+    ///   create the copy with a static allocation profile. If false,
+    ///   use a dynamic allocation profile.
+    /// - "Locally indexed clone" [boolean] If \c true, fill clone
+    ///   using this matrix's column Map and local indices.  This
+    ///   matrix must have a column Map in order for this to work.  If
+    ///   false, fill clone using global indices.  By default, this
+    ///   will use local indices only if this matrix is using local
+    ///   indices.
+    /// - "fillComplete clone" [boolean, default: true] If \c true,
+    ///   call fillComplete() on the cloned CrsMatrix object, with
+    ///   parameters from the input parameters' "CrsMatrix" sublist
+    ///   The domain Map and range Map passed to fillComplete() are
+    ///   those of the map being cloned, if they exist. Otherwise, the
+    ///   row Map is used.
     template <class Node2>
-    RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2,typename Kokkos::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> >
-    clone(const RCP<Node2> &node2, const RCP<ParameterList> &params = null)
+    RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, typename Kokkos::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> >
+    clone (const RCP<Node2> &node2, const RCP<ParameterList> &params = null)
     {
-      const char tfecfFuncName[] = "clone()";
-      bool fillCompleteClone  = true;
-      bool useLocalIndices    = hasColMap();
+      const char tfecfFuncName[] = "clone";
+
+      // Get parameter values.  Set them initially to their default values.
+      bool fillCompleteClone = true;
+      bool useLocalIndices = this->hasColMap ();
       ProfileType pftype = StaticProfile;
-      if (params != null) fillCompleteClone = params->get("fillComplete clone",fillCompleteClone);
-      if (params != null) useLocalIndices = params->get("Locally indexed clone",useLocalIndices);
-      if (params != null && params->get("Static profile clone",true) == false) pftype = DynamicProfile;
+      if (! params.is_null ()) {
+	fillCompleteClone = params->get ("fillComplete clone", fillCompleteClone);
+	useLocalIndices = params->get ("Locally indexed clone", useLocalIndices);
+
+	bool staticProfileClone = true;
+	staticProfileClone = params->get ("Static profile clone", staticProfileClone);
+	pftype = staticProfileClone ? DynamicProfile : StaticProfile;
+      }
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          hasColMap() == false && useLocalIndices == true,
-          std::runtime_error,
-          ": requested clone using local indices, but source graph doesn't have a column map yet."
-      )
+        ! this->hasColMap () && useLocalIndices, std::runtime_error,
+	": You requested that the returned clone have local indices, but the "
+	"the source matrix does not have a column Map yet.");
 
-      typedef CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2,typename Kokkos::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> CrsMatrix2;
-      typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
-      RCP<const Map2> clonedRowMap = getRowMap()->template clone(node2);
+      typedef typename Kokkos::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps LocalMatOps2;
+      typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> CrsMatrix2;
+      typedef Map<LocalOrdinal, GlobalOrdinal, Node2> Map2;
+      RCP<const Map2> clonedRowMap = this->getRowMap ()->template clone (node2);
 
       RCP<CrsMatrix2> clonedMatrix;
       ArrayRCP<const size_t> numEntries;
       size_t numEntriesForAll = 0;
-      if (staticGraph_->indicesAreAllocated() == false) {
-        if (staticGraph_->numAllocPerRow_ != null) numEntries = staticGraph_->numAllocPerRow_;
-        else numEntriesForAll =                    staticGraph_->numAllocForAllRows_;
+      if (! staticGraph_->indicesAreAllocated ()) {
+        if (! staticGraph_->numAllocPerRow_.is_null ()) {
+	  numEntries = staticGraph_->numAllocPerRow_;
+	}
+        else {
+	  numEntriesForAll = staticGraph_->numAllocForAllRows_;
+	}
       }
-      else if (staticGraph_->numRowEntries_ != null) numEntries = staticGraph_->numRowEntries_;
-      else if (staticGraph_->nodeNumAllocated_ == 0) numEntriesForAll = 0;
+      else if (! staticGraph_->numRowEntries_.is_null ()) {
+	numEntries = staticGraph_->numRowEntries_;
+      }
+      else if (staticGraph_->nodeNumAllocated_ == 0) {
+	numEntriesForAll = 0;
+      }
       else {
         // left with the case that we have optimized storage. in this case, we have to construct a list of row sizes.
-        TEUCHOS_TEST_FOR_EXCEPTION( getProfileType() != StaticProfile, std::logic_error, "Internal logic error. Please report this to Tpetra team." )
-        const size_t numRows = getNodeNumRows();
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          getProfileType() != StaticProfile, std::logic_error, 
+	  "Internal logic error. Please report this to Tpetra team." )
+
+        const size_t numRows = this->getNodeNumRows ();
         numEntriesForAll = 0;
         ArrayRCP<size_t> numEnt;
-        if (numRows) numEnt = arcp<size_t>(numRows);
-        for (size_t i=0; i<numRows; ++i) {
+        if (numRows) {
+	  numEnt = arcp<size_t> (numRows);
+	}
+        for (size_t i=0; i < numRows; ++i) {
           numEnt[i] = staticGraph_->rowPtrs_[i+1] - staticGraph_->rowPtrs_[i];
         }
         numEntries = numEnt;
@@ -426,117 +463,129 @@ namespace Tpetra {
 
       RCP<ParameterList> matrixparams = sublist(params,"CrsMatrix");
       if (useLocalIndices) {
-        RCP<const Map2> clonedColMap = getColMap()->template clone(node2);
-        if (numEntries == null) clonedMatrix = rcp(new CrsMatrix2(clonedRowMap,clonedColMap,numEntriesForAll,pftype,matrixparams));
-        else                    clonedMatrix = rcp(new CrsMatrix2(clonedRowMap,clonedColMap,numEntries,pftype,matrixparams));
+        RCP<const Map2> clonedColMap = this->getColMap ()->template clone (node2);
+        if (numEntries.is_null ()) {
+	  clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, clonedColMap, numEntriesForAll, pftype, matrixparams));
+	}
+        else {
+	  clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, clonedColMap, numEntries, pftype, matrixparams));
+	}
       }
       else {
-        if (numEntries == null) clonedMatrix = rcp(new CrsMatrix2(clonedRowMap,numEntriesForAll,pftype,matrixparams));
-        else                    clonedMatrix = rcp(new CrsMatrix2(clonedRowMap,numEntries,pftype,matrixparams));
+        if (numEntries.is_null ()) {
+	  clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, numEntriesForAll, pftype, matrixparams));
+	}
+        else {
+	  clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, numEntries, pftype, matrixparams));
+	}
       }
       // done with these
       numEntries = null;
       numEntriesForAll = 0;
 
-      if (useLocalIndices)
-      {
-        clonedMatrix->allocateValues(LocalIndices,CrsMatrix2::GraphNotYetAllocated);
-        if (this->isLocallyIndexed())
-        {
+      if (useLocalIndices) {
+        clonedMatrix->allocateValues (LocalIndices, CrsMatrix2::GraphNotYetAllocated);
+        if (this->isLocallyIndexed ()) {
           ArrayView<const LocalOrdinal> linds;
           ArrayView<const Scalar>       vals;
-          for (LocalOrdinal lrow =  clonedRowMap->getMinLocalIndex();
-                            lrow <= clonedRowMap->getMaxLocalIndex();
-                            ++lrow)
-          {
-            this->getLocalRowView(lrow, linds, vals);
-            if (linds.size()) clonedMatrix->insertLocalValues(lrow, linds, vals);
+          for (LocalOrdinal lrow = clonedRowMap->getMinLocalIndex ();
+	       lrow <= clonedRowMap->getMaxLocalIndex ();
+	       ++lrow) {
+            this->getLocalRowView (lrow, linds, vals);
+            if (linds.size ()) {
+	      clonedMatrix->insertLocalValues (lrow, linds, vals);
+	    }
           }
         }
-        else // this->isGloballyIndexed()
-        {
+        else { // this->isGloballyIndexed()
           Array<LocalOrdinal> linds;
-          Array<Scalar>        vals;
-          for (LocalOrdinal lrow =  clonedRowMap->getMinLocalIndex();
-                            lrow <= clonedRowMap->getMaxLocalIndex();
-                            ++lrow)
-          {
-            size_t theNumEntries;
-            linds.resize( this->getNumEntriesInLocalRow(lrow) );
-            vals.resize( linds.size() );
-            this->getLocalRowCopy(clonedRowMap->getGlobalElement(lrow), linds(), vals(), theNumEntries);
-            if (theNumEntries) clonedMatrix->insertLocalValues(lrow, linds(0,theNumEntries), vals(0,theNumEntries) );
+          Array<Scalar> vals;
+          for (LocalOrdinal lrow = clonedRowMap->getMinLocalIndex ();
+	       lrow <= clonedRowMap->getMaxLocalIndex ();
+	       ++lrow) {
+	    size_t numEntries = this->getNumEntriesInLocalRow (lrow);
+	    if (numEntries > Teuchos::as<size_t> (linds.size ())) {
+	      linds.resize (numEntries);
+	    }
+	    if (numEntries > Teuchos::as<size_t> (vals.size ())) {
+	      vals.resize (numEntries);
+	    }
+            this->getLocalRowCopy (clonedRowMap->getGlobalElement (lrow), linds (), vals (), numEntries);
+            if (numEntries != 0) {
+	      clonedMatrix->insertLocalValues (lrow, linds (0, numEntries), vals (0, numEntries) );
+	    }
           }
         }
       }
-      else /* useGlobalIndices */
-      {
-        clonedMatrix->allocateValues(GlobalIndices,CrsMatrix2::GraphNotYetAllocated);
-        if (this->isGloballyIndexed())
-        {
+      else { // useGlobalIndices
+        clonedMatrix->allocateValues (GlobalIndices, CrsMatrix2::GraphNotYetAllocated);
+        if (this->isGloballyIndexed ()) {
           ArrayView<const GlobalOrdinal> ginds;
           ArrayView<const Scalar>         vals;
           for (GlobalOrdinal grow =  clonedRowMap->getMinGlobalIndex();
-                             grow <= clonedRowMap->getMaxGlobalIndex();
-                             ++grow)
-          {
-            this->getGlobalRowView(grow, ginds, vals);
-            if (ginds.size()) clonedMatrix->insertGlobalValues(grow, ginds, vals);
+	       grow <= clonedRowMap->getMaxGlobalIndex();
+	       ++grow) {
+            this->getGlobalRowView (grow, ginds, vals);
+            if (ginds.size () > 0) {
+	      clonedMatrix->insertGlobalValues (grow, ginds, vals);
+	    }
           }
         }
-        else // this->isLocallyIndexed()
-        {
+        else { // this->isLocallyIndexed()
           Array<GlobalOrdinal> ginds;
-          Array<Scalar>         vals;
-          for (GlobalOrdinal grow =  clonedRowMap->getMinGlobalIndex();
-                             grow <= clonedRowMap->getMaxGlobalIndex();
-                             ++grow)
-          {
-            size_t theNumEntries;
-            ginds.resize( this->getNumEntriesInGlobalRow(grow) );
-            vals.resize( ginds.size() );
-            this->getGlobalRowCopy(grow, ginds(), vals(), theNumEntries);
-            if (theNumEntries) clonedMatrix->insertGlobalValues(grow, ginds(0,theNumEntries), vals(0,theNumEntries) );
-          }
+          Array<Scalar> vals;
+          for (GlobalOrdinal grow = clonedRowMap->getMinGlobalIndex ();
+	       grow <= clonedRowMap->getMaxGlobalIndex ();
+	       ++grow) {
+	    size_t numEntries = this->getNumEntriesInGlobalRow (grow);
+	    if (numEntries > Teuchos::as<size_t> (ginds.size ())) {
+	      ginds.resize (numEntries);
+	    }
+	    if (numEntries > Teuchos::as<size_t> (vals.size ())) {
+	      vals.resize (numEntries);
+	    }
+	    this->getGlobalRowCopy (grow, ginds (), vals (), numEntries);
+	    if (numEntries != 0) {
+	      clonedMatrix->insertGlobalValues (grow, ginds (0, numEntries), vals (0, numEntries));
+	    }
+	  }
         }
       }
 
       if (fillCompleteClone) {
-        RCP<ParameterList> fillparams = sublist(params,"fillComplete");
+        RCP<ParameterList> fillparams = sublist (params, "fillComplete");
         try {
           RCP<const Map2> clonedRangeMap;
           RCP<const Map2> clonedDomainMap;
-          if (getRangeMap() != null && getRangeMap() != clonedRowMap) {
-            clonedRangeMap  = getRangeMap()->template clone(node2);
+          if (! this->getRangeMap ().is_null () && this->getRangeMap () != clonedRowMap) {
+            clonedRangeMap  = this->getRangeMap ()->template clone(node2);
           }
           else {
             clonedRangeMap = clonedRowMap;
           }
-          if (getDomainMap() != null && getDomainMap() != clonedRowMap) {
-            clonedDomainMap = getDomainMap()->template clone(node2);
+          if (! this->getDomainMap ().is_null () && this->getDomainMap () != clonedRowMap) {
+            clonedDomainMap = this->getDomainMap ()->template clone (node2);
           }
           else {
             clonedDomainMap = clonedRowMap;
           }
-          clonedMatrix->fillComplete(clonedDomainMap, clonedRangeMap, fillparams);
+          clonedMatrix->fillComplete (clonedDomainMap, clonedRangeMap, fillparams);
         }
         catch (std::exception &e) {
           const bool caughtExceptionOnClone = true;
-          TEUCHOS_TEST_FOR_EXCEPTION(caughtExceptionOnClone,
-                             std::runtime_error,
-              Teuchos::typeName(*this)
-              << "\ncaught the following exception while calling fillComplete() on clone of type\n"
-              << Teuchos::typeName(*clonedMatrix)
-              << "\n:"
-              << e.what()
-              << "\n");
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            caughtExceptionOnClone, std::runtime_error,
+	    Teuchos::typeName (*this) << std::endl << "clone: " << std::endl <<
+	    "Caught the following exception while calling fillComplete() on a "
+	    "clone of type" << std::endl << Teuchos::typeName (*clonedMatrix)
+	    << ": " << std::endl << e.what () << std::endl);
         }
       }
       return clonedMatrix;
     }
 
     //! Destructor.
-    virtual ~CrsMatrix();
+    virtual ~CrsMatrix ();
 
     //@}
     //! @name Insertion/Removal Methods

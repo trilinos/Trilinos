@@ -83,17 +83,19 @@ namespace Tpetra {
   /// \brief Describes a parallel distribution of objects over processes.
   ///
   /// \tparam LocalOrdinal The type of local indices.  Should be an
-  ///   integer, and generally should be signed.  A good model of \c
-  ///   LocalOrdinal is \c int.  (In Epetra, this is always just \c
-  ///   int.)
+  ///   integer, and generally should be signed.  A good model of
+  ///   <tt>LocalOrdinal</tt> is \c int.  (In Epetra, this is always
+  ///   just \c int.)
   ///
   /// \tparam GlobalOrdinal The type of global indices.  Should be an
   ///   integer, and generally should be signed.  Also,
   ///   <tt>sizeof(GlobalOrdinal)</tt> should be greater than to equal
-  ///   to <tt>sizeof(LocalOrdinal)</tt>.  For example, if \c
-  ///   LocalOrdinal is \c int, good models of \c GlobalOrdinal are \c
-  ///   int, \c long, <tt>long long</tt> (if the configure-time option
-  ///   Teuchos_ENABLE_LONG_LONG was set), or \c ptrdiff_t.
+  ///   to <tt>sizeof(LocalOrdinal)</tt>.  For example, if
+  ///   <tt>LocalOrdinal</tt> is \c int, good models of
+  ///   <tt>GlobalOrdinal</tt> are \c int, \c long, <tt>long long</tt>
+  ///   (if the configure-time option
+  ///   <tt>Teuchos_ENABLE_LONG_LONG_INT</tt> was set), or
+  ///   <tt>ptrdiff_t</tt>.
   ///
   /// \tparam Node A class implementing on-node shared-memory parallel
   ///   operations.  It must implement the
@@ -151,27 +153,53 @@ namespace Tpetra {
   ///
   /// \subsection Tpetra_Map_contig Contiguous or noncontiguous
   ///
-  /// A Map is <i>contiguous</i> when each process' list of global IDs
-  /// forms an interval and is strictly increasing, and the globally
-  /// minimum global ID equals the index base.  Map optimizes for the
-  /// contiguous case.  In particular, noncontiguous Maps require
-  /// communication in order to figure out which process owns a
-  /// particular global ID.  (This communication happens in
-  /// getRemoteIndexList().)
+  /// A <i>contiguous</i> Map divides an interval of global indices
+  /// over the processes in its communicator, such that each process
+  /// gets a contiguous interval of zero or more of those global
+  /// indices, with the indices owned by a process p strictly greater
+  /// than those owned by process q if \f$p > q\f$.  Formally, we call
+  /// a Map contiguous when all of the following hold:
+  /// <ol>
+  /// <li>the set of global indices (over all processes) forms an
+  ///   interval, </li>
+  /// <li>every global index in that interval is owned by exactly one
+  ///   process in the Map's communicator, <li>
+  /// <li>the (ordered) list of global indices on each process p in
+  ///   the Map's communicator forms a contiguous interval, and </li>
+  /// <li>if process p owns a global index \f$g_p\f$ and process q
+  ///   owns a global index \f$g_q\f$, and if \f$p > q\f$, then 
+  ///   \f$g_p > g_q\f$. </li>
+  /// </ol>
+  /// Different processes may own different numbers of global indices.
+  /// We call a Map <i>uniform</i> if it is contiguous, <i>and</i> if
+  /// the user let the Map divide a global count of indices evenly
+  /// over the Map's communicator's processes.  The latter happens by
+  /// calling the version of Map's constructor that takes a global
+  /// count of indices, rather than a local count or an arbitrary list
+  /// of indices.
+  ///
+  /// Map optimizes for the contiguous case.  For example,
+  /// noncontiguous Maps always require communication in order to
+  /// figure out which process owns a particular global index.  (This
+  /// communication happens in getRemoteIndexList().)  Contiguous but
+  /// nonuniform Maps may also require communication in this case,
+  /// though we may only need to perform that communication once (at
+  /// Map setup time).  Contiguous Maps also can convert between
+  /// global and local indices more efficiently.
   ///
   /// \subsection Tpetra_Map_dist_repl Globally distributed or locally replicated
   ///
-  /// "Globally distributed" means that <i>all</i> of the following
-  /// are true:
-  ///
-  /// 1. The map's communicator has more than one process.
-  /// 2. There is at least one process in the map's communicator,
-  ///    whose local number of elements does not equal the number of
-  ///    global elements.  (That is, not all the elements are
-  ///    replicated over all the processes.)
-  ///
+  /// <i>Globally distributed</i> means that <i>all</i> of the
+  /// following are true:
+  /// <ol>
+  /// <li> The map's communicator has more than one process. </li>
+  /// <li>There is at least one process in the map's communicator,
+  ///     whose local number of elements does not equal the number of
+  ///     global elements.  (That is, not all the elements are
+  ///     replicated over all the processes.) </li>
+  /// </ol>
   /// If at least one of the above are not true, then the map is
-  /// "locally replicated."  (The two are mutually exclusive.)
+  /// <i>locally replicated.</i> (The two are mutually exclusive.)
   ///
   /// Globally distributed objects are partitioned across multiple
   /// processes in a communicator.  Each process owns at least one
@@ -200,6 +228,7 @@ namespace Tpetra {
     //! The type of the Kokkos Node.
     typedef Node node_type;
 
+    //@}
     //! @name Constructors and destructor
     //@{
 
