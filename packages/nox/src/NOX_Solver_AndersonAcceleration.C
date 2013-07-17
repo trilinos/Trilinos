@@ -53,6 +53,8 @@
 #include "NOX_Abstract_Group.H"
 #include "NOX_Common.H"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_SerialDenseHelpers.hpp"
+#include "Teuchos_DataAccess.hpp"
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
 #include "NOX_Solver_SolverUtils.H"
@@ -60,6 +62,7 @@
 #include "NOX_LineSearch_Factory.H"
 #include "NOX_Direction_Generic.H"
 #include "NOX_Direction_Factory.H"
+#include <cmath>
 
 NOX::Solver::AndersonAcceleration::
 AndersonAcceleration(const Teuchos::RCP<NOX::Abstract::Group>& xGrp, 
@@ -68,10 +71,12 @@ AndersonAcceleration(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
   globalDataPtr(Teuchos::rcp(new NOX::GlobalData(p))),
   utilsPtr(globalDataPtr->getUtils()), 
   solnPtr(xGrp),		                       // pointer to xGrp
-  oldSolnPtr(xGrp->clone(DeepCopy)),     // create via clone
-  dirPtr(xGrp->getX().clone(ShapeCopy)), // create via clone 
+  oldSolnPtr(xGrp->clone(DeepCopy)),     // create via clone 
   testPtr(t),	
   paramsPtr(p),   
+  tempVec(xGrp->getX().clone(NOX::ShapeCopy)),
+  precF(xGrp->getX().clone(NOX::ShapeCopy)),
+  oldPrecF(xGrp->getX().clone(NOX::ShapeCopy)),
   prePostOperator(utilsPtr, paramsPtr->sublist("Solver Options"))
 {
   init();
@@ -83,14 +88,30 @@ void NOX::Solver::AndersonAcceleration::init()
   // Initialize 
   stepSize = 0.0;
   nIter = 0;
+  tempVec->init(0.0);
+  Teuchos::ParameterList validParams;
+  validParams.set("Storage Depth", 2, "max number of previous iterates for which data stored");
+  validParams.set("Mixing Parameter", 1.0, "damping factor applied to residuals");
+  validParams.sublist("Preconditioning").set("Precondition", false, "flag for preconditioning");
+  validParams.sublist("Preconditioning").set("Recompute Jacobian", false, "set true if preconditioner requires Jacobian");
+  paramsPtr->sublist("Anderson Parameters").validateParametersAndSetDefaults(validParams);
+  storeParam = paramsPtr->sublist("Anderson Parameters").get<int>("Storage Depth");
+  mixParam = paramsPtr->sublist("Anderson Parameters").get<double>("Mixing Parameter");
+  if (storeParam <= 0){
+    utilsPtr->out() << "NOX::Solver::AndersonAcceleration::init - "
+      << "Storage parameter must be positive" << std::endl;
+    throw "NOX Error";    
+  }
+  if ((mixParam < -1.0) || (mixParam == 0) || (mixParam > 1.0)){
+    utilsPtr->out() << "NOX::Solver::AndersonAcceleration::init - "
+      << "Mixing parameter must be in [-1,0)U(0,1]" << std::endl;
+    throw "NOX Error"; 
+  }
+  precond = paramsPtr->sublist("Anderson Parameters").sublist("Preconditioning").get<bool>("Precondition");
+  recomputeJacobian = paramsPtr->sublist("Anderson Parameters").sublist("Preconditioning").
+    get<bool>("Recompute Jacobian");
   status = NOX::StatusTest::Unconverged;
   checkType = parseStatusTestCheckType(paramsPtr->sublist("Solver Options"));
-
-  lineSearchPtr = NOX::LineSearch::
-    buildLineSearch(globalDataPtr, paramsPtr->sublist("Line Search"));
-
-  directionPtr = NOX::Direction::
-    buildDirection(globalDataPtr, paramsPtr->sublist("Direction"));
 
   // Print out parameters
   if (utilsPtr->isPrintType(NOX::Utils::Parameters)) 
@@ -132,7 +153,8 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::getStatus()
 NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
 {
   prePostOperator.runPreIterate(*this);
-
+  Teuchos::ParameterList lsParams = paramsPtr->sublist("Direction").sublist("Newton").sublist("Linear Solver");  
+  
   // On the first step, do some initializations
   if (nIter == 0) {
     // Compute F of initital guess
@@ -142,6 +164,15 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
 		      << "Unable to compute F" << std::endl;
       throw "NOX Error";
     }
+
+    // Apply preconditioner if enabled
+    if (precond){
+      if (recomputeJacobian)
+        solnPtr->computeJacobian();
+      solnPtr->applyRightPreconditioning(false, lsParams, solnPtr->getF(), *oldPrecF);
+    }
+    else
+      *oldPrecF = solnPtr->getF();
 
     // Test the initial guess
     status = testPtr->checkStatus(*this, checkType);
@@ -154,6 +185,46 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
 		      << "attempt to solve this system since status is "
 		      << "flagged as converged." << std::endl;
     }
+    printUpdate();
+
+    // First check status
+      if (status != NOX::StatusTest::Unconverged) {
+        prePostOperator.runPostIterate(*this);
+        printUpdate();
+        return status;
+      }
+
+    // Copy initial guess to old soln
+    *oldSolnPtr = *solnPtr;
+
+    // Compute first iterate.
+    solnPtr->computeX(*solnPtr, *oldPrecF, mixParam);
+
+    // Compute F for the first iterate
+    rtype = solnPtr->computeF();
+    if (rtype != NOX::Abstract::Group::Ok)
+    {
+      utilsPtr->out() << "NOX::Solver::AndersonAcceleration::iterate - unable to compute F" << std::endl;
+      status = NOX::StatusTest::Failed;
+      prePostOperator.runPostIterate(*this);
+      printUpdate();
+      return status;
+    }
+
+    // Apply preconditioner if enabled
+    if (precond){
+      if (recomputeJacobian)
+        solnPtr->computeJacobian();
+      solnPtr->applyRightPreconditioning(false, lsParams, solnPtr->getF(), *precF);
+    }
+    else
+      *precF = solnPtr->getF();
+
+    // Evaluate the current status.
+    status = testPtr->checkStatus(*this, checkType);
+
+    //Update iteration count
+    nIter++;
 
     printUpdate();
   }
@@ -165,46 +236,60 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
     return status;
   }
 
-  // Copy pointers into temporary references
-  NOX::Abstract::Group& soln = *solnPtr;
-  NOX::StatusTest::Generic& test = *testPtr;
-
-  // Compute the direction for the update vector at the current solution.
-  bool ok;
-  ok = directionPtr->compute(*dirPtr, soln, *this);
-  if (!ok) 
-  {
-    utilsPtr->out() << "NOX::Solver::AndersonAcceleration::iterate - unable to calculate direction" << std::endl;
-    status = NOX::StatusTest::Failed;
-    prePostOperator.runPostIterate(*this);
-    printUpdate();
-    return status;
+  // Manage the matrices of past iterates and QR factors
+  if (nIter == 1){
+    // Initialize
+    nStore = 1;
+    xMat.push_back(solnPtr->getX().clone(NOX::DeepCopy));
+    (xMat[0])->update(-1.0, oldSolnPtr->getX(), 1.0);
+    oldPrecF->update(1.0, *precF, -1.0);
+    rMat.shape(0,0);
+    qrAdd(*oldPrecF);
+    }
+  else{
+    if (nStore < storeParam){
+      xMat.push_back(solnPtr->getX().clone(NOX::ShapeCopy));
+      nStore++;
+    }
+    else{
+      for (int ii = 0; ii<nStore-1; ii++)
+        *(xMat[ii]) = *(xMat[ii+1]);
+      qrDelete();
+    }
+    *(xMat[nStore-1]) = solnPtr->getX();
+    (xMat[nStore-1])->update(-1.0,oldSolnPtr->getX(),1.0);
+    oldPrecF->update(1.0, *precF, -1.0);
+    qrAdd(*oldPrecF);
   }
-
-  // Update iteration count.
-  nIter ++;
 
   // Copy current soln to the old soln.
   *oldSolnPtr = *solnPtr;
+  *oldPrecF = *precF;
 
-  // Do line search and compute new soln.
-  ok = lineSearchPtr->compute(soln, stepSize, *dirPtr, *this);
-  if (!ok) 
-  {
-    if (stepSize == 0.0) 
-    {
-      utilsPtr->out() << "NOX::Solver::AndersonAcceleration::iterate - line search failed" << std::endl;
-      status = NOX::StatusTest::Failed;
-      prePostOperator.runPostIterate(*this);
-      printUpdate();
-      return status;
+  // Solve the least-squares problem.
+  Teuchos::SerialDenseMatrix<int,double> gamma(nStore,1), RHS(nStore,1), Rgamma(nStore,1);
+  for (int ii = 0; ii<nStore; ii++)
+    RHS(ii,0) = precF->innerProduct( *(qMat[ii]) ); //Compute Q^T*Prec*F_k
+  
+  //Back-solve for gamma
+  for (int ii = nStore-1; ii>=0; ii--){
+    gamma(ii,0) = RHS(ii,0);
+    for (int jj = ii+1; jj<nStore; jj++){
+      gamma(ii,0) -= rMat(ii,jj)*gamma(jj,0);
     }
-    else if (utilsPtr->isPrintType(NOX::Utils::Warning))
-      utilsPtr->out() << "NOX::Solver::AndersonAcceleration::iterate - using recovery step for line search" << std::endl;
+    gamma(ii,0) /= rMat(ii,ii);
+  }
+  Rgamma.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,mixParam,rMat,gamma,0.0);
+
+  // Compute the new solution.
+  solnPtr->computeX(*solnPtr, *precF, mixParam);  
+  for (int ii=0; ii<nStore; ii++){
+    solnPtr->computeX(*solnPtr, *(xMat[ii]), -gamma(ii,0));
+    solnPtr->computeX(*solnPtr, *(qMat[ii]), -Rgamma(ii,0));
   }
 
   // Compute F for new current solution.
-  NOX::Abstract::Group::ReturnType rtype = soln.computeF();
+  NOX::Abstract::Group::ReturnType rtype = solnPtr->computeF();
   if (rtype != NOX::Abstract::Group::Ok) 
   {
     utilsPtr->out() << "NOX::Solver::AndersonAcceleration::iterate - unable to compute F" << std::endl;
@@ -214,13 +299,24 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
     return status;
   }
 
+  // Apply preconditioner if enabled
+  if (precond){
+    if (recomputeJacobian)
+      solnPtr->computeJacobian();
+    solnPtr->applyRightPreconditioning(false, lsParams, solnPtr->getF(), *precF);
+  }
+  else
+    *precF = solnPtr->getF();
+
+  // Update iteration count
+  nIter++;
+
   // Evaluate the current status.
-  status = test.checkStatus(*this, checkType);
+  status = testPtr->checkStatus(*this, checkType);
  
   prePostOperator.runPostIterate(*this);
 
   printUpdate();
-
   return status;
 }
 
@@ -239,6 +335,50 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::solve()
   prePostOperator.runPostSolve(*this);
 
   return status;
+}
+
+void NOX::Solver::AndersonAcceleration::qrAdd(NOX::Abstract::Vector& newCol)
+{
+  // Increase size of QR factors.
+  int N = qMat.size();
+  qMat.push_back(solnPtr->getX().clone(NOX::ShapeCopy));
+  rMat.reshape(N+1,N+1);
+  // Update QR factors
+  for (int ii = 0; ii<N; ii++){
+    rMat(ii,N) = qMat[ii]->innerProduct(newCol);
+    newCol.update(-rMat(ii,N),*(qMat[ii]),1.0);
+  }
+  rMat(N,N) = newCol.norm();
+  *(qMat[N]) = newCol.scale(1.0/rMat(N,N));
+}
+
+void NOX::Solver::AndersonAcceleration::qrDelete()
+{
+  int N = qMat.size();
+  for (int ii = 0; ii<N-1; ii++){
+    double temp = sqrt(rMat(ii,ii+1)*rMat(ii,ii+1) + rMat(ii+1,ii+1)*rMat(ii+1,ii+1));
+    double c = rMat(ii,ii+1)/temp;
+    double s = rMat(ii+1,ii+1)/temp;
+    rMat(ii,ii+1) = temp;
+    rMat(ii+1,ii+1) = 0;
+    for (int jj = ii+2; jj<N; jj++){
+      temp = c*rMat(ii,jj) + s*rMat(ii+1,jj);
+      rMat(ii+1,jj) = -s*rMat(ii,jj) + c*rMat(ii+1,jj);
+      rMat(ii,jj) = temp;
+    }
+    *tempVec = *(qMat[ii]);
+    tempVec->update(s, *(qMat[ii+1]), c);
+    qMat[ii+1]->update(-s, *(qMat[ii]), c);
+    *(qMat[ii]) = *tempVec;
+  }
+  // Shrink the factors.
+  qMat.pop_back();
+  Teuchos::SerialDenseVector<int,double> Temp(N);
+  for (int ii=0; ii<N; ii++){
+    for (int jj = 0; jj<N-1; jj++)
+      rMat(ii,jj) = rMat(ii,jj+1);
+  }
+  rMat.reshape(N-1,N-1);
 }
 
 const NOX::Abstract::Group& 
@@ -268,7 +408,6 @@ NOX::Solver::AndersonAcceleration::getList() const
 void NOX::Solver::AndersonAcceleration::printUpdate() 
 {
   double normSoln = 0;
-  double normStep = 0;
 
   // Print the status test parameters at each iteration if requested  
   if ((status == NOX::StatusTest::Unconverged) && 
@@ -284,7 +423,6 @@ void NOX::Solver::AndersonAcceleration::printUpdate()
   if (utilsPtr->isPrintType(NOX::Utils::OuterIteration)) 
   {
     normSoln = solnPtr->getNormF();
-    normStep = (nIter > 0) ? dirPtr->norm() : 0;
   }
 
   // ...But only the print process actually prints the result.
@@ -293,8 +431,6 @@ void NOX::Solver::AndersonAcceleration::printUpdate()
     utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n";
     utilsPtr->out() << "-- Nonlinear Solver Step " << nIter << " -- \n";
     utilsPtr->out() << "||F|| = " << utilsPtr->sciformat(normSoln);
-    utilsPtr->out() << "  step = " << utilsPtr->sciformat(stepSize);
-    utilsPtr->out() << "  dx = " << utilsPtr->sciformat(normStep);
     if (status == NOX::StatusTest::Converged)
       utilsPtr->out() << " (Converged!)";
     if (status == NOX::StatusTest::Failed)

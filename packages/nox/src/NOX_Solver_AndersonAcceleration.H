@@ -56,6 +56,8 @@
 #include "Teuchos_ParameterList.hpp"	         // class data element
 #include "NOX_Utils.H"		         // class data element
 #include "Teuchos_RCP.hpp"       // class data element
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_SerialDenseVector.hpp"
 
 // Forward declarations
 namespace NOX {
@@ -72,33 +74,39 @@ namespace NOX {
 namespace Solver {
 
 /*!
-  \brief Nonlinear solver based on a line search (i.e., damping)
+  \brief Nonlinear solver based on Anderson Acceleration
 
-  Solves \f$F(x)=0\f$ using an iterative line-search-based method.
+  Solves \f$F(x)=0\f$ using Anderson Acceleration.
 
-  Each iteration, the solver does the following.
+  This method requires a mixing parameter \f$\beta\f$ and a preconditioner
+  \f$M(x)\f$. If preconditioning is not supported, it is taken to be the identity.
+
+  For the first iteration, the solver computes \f$x_1 = x_0 + \beta M(x_0)F(x_0)\f$.
+
+  Each iteration afterward, the solver does the following.
 
   <ul> 
-  <li>Compute a search direction \f$d\f$ via a NOX::Direction method
+  <li> Set \f$m_k = \min\{m,k\}\f$, where \f$m\f$ is a parameter that determines the maximum number of iterates for
+       which we store iterate and function values in addition to the current iterate. \f$m_k\f$ represents the number
+       of previous iterates stored currently.
 
-  <li>Compute a step length \f$\lambda\f$ and update \f$x\f$ as \f$x_{\rm new}
-      = x_{\rm old} + \lambda d\f$ via a NOX::AndersonAcceleration method.
+  <li> Solve the least-squares problem: \f$\min_{\gamma}\|\sum_{i=0}^{m_k} \alpha_iM(x_{k-i})F(x_{k-i}) \|\f$,
+       such that \f$ \sum_{i=1}^{m_k} \alpha_i = 1 \f$. In this implementation, we solve an equivalent unconstrained
+       problem for which the QR factors are stored and updated.
+
+  <li> Calculate the new iterate: $x_{k+1} = \sum_{i=0}^{m_k} \alpha_i[x_{k-i} + \beta M(x_{k-i})F(x_{k-i})]$.
 
   </ul>
   
   The iterations progress until the status tests (see NOX::StatusTest) determine either
   failure or convergence.
 
-  \note To support several line searches and status tests, this
-  version of the solver has a getStepSize() function that returns
-  \f$\lambda\f$.
-
   <B>Input Parameters</B>
 
   The following parameter list entries are valid for this solver:
  
-  - "Line Search" - Sublist of the line search parameters, passed to
-    the NOX::LineSearch::Manager constructor. Defaults to an empty list.
+  - "Anderson Parameters" - Sublist of parameters specific to AA, passed to
+    the NOX::LineSearch::Manager constructor.
 
   - "Direction" - Sublist of the direction parameters, passed to
     the NOX::Direction::Manager constructor. Defaults to an empty list.
@@ -162,6 +170,12 @@ protected:
   //! Prints the current iteration information.
   virtual void printUpdate();
 
+  //! Updates QR factors by addition of a column
+  void qrAdd(NOX::Abstract::Vector& newCol);
+
+  //! Updates QR factors by deletion of a column
+  void qrDelete();
+
 protected:
   
   //! Pointer to the global data object.
@@ -176,23 +190,47 @@ protected:
   //! Previous solution pointer. 
   Teuchos::RCP<NOX::Abstract::Group> oldSolnPtr;	
 
-  //! Current search direction pointer.
-  Teuchos::RCP<NOX::Abstract::Vector> dirPtr;
-
   //! Stopping test.
   Teuchos::RCP<NOX::StatusTest::Generic> testPtr;		
 
   //! Input parameters.
   Teuchos::RCP<Teuchos::ParameterList> paramsPtr;	
 
-  //! Linesearch. 
-  Teuchos::RCP<NOX::LineSearch::Generic> lineSearchPtr; 
+  //! Flag for preconditioning
+  bool precond;
 
-  //! %Search %Direction. 
-  Teuchos::RCP<NOX::Direction::Generic> directionPtr; 
+  //! Flag to recompute Jacobian each iterate. Needed if Jacobian required to apply preconditioner. 
+  bool recomputeJacobian;
+
+  //! Abstract vector for temporary storage
+  Teuchos::RCP<NOX::Abstract::Vector> tempVec;
+
+  //! Current preconditioned function value
+  Teuchos::RCP<NOX::Abstract::Vector> precF;
+
+  //! Previous preconditioned function value
+  Teuchos::RCP<NOX::Abstract::Vector> oldPrecF;
+
+  //! Maximum storage depth
+  int storeParam; 
+
+  //! Current storage depth
+  int nStore;
+
+  //! Mixing parameter
+  double mixParam;
 
   //! Current step.
   double stepSize;			
+
+  //! "Matrix" of successive iterate differences
+  std::vector< Teuchos::RCP<NOX::Abstract::Vector> > xMat;
+
+  //! Q factor the for least-squares problem
+  std::vector< Teuchos::RCP<NOX::Abstract::Vector> > qMat;
+  
+  //! R factor for the least-squares problem
+  Teuchos::SerialDenseMatrix<int,double> rMat;
 
   //! Number of nonlinear iterations.
   int nIter;                    

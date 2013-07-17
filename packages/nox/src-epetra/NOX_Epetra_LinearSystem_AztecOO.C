@@ -801,6 +801,17 @@ applyRightPreconditioning(bool useTranspose,
       newIfpackPreconditionerPtr->SetUseTranspose(false);    
 
   }
+  else if (precAlgorithm == ML_) {  
+    if (useTranspose)
+      MLPreconditionerPtr->SetUseTranspose(useTranspose);
+
+    errorCode = MLPreconditionerPtr->ApplyInverse(input.getEpetraVector(),
+                                                   result.getEpetraVector());
+    // Unset the transpose call
+      if (useTranspose)
+        MLPreconditionerPtr->SetUseTranspose(false);
+
+  }
   else if (precAlgorithm == UserDefined_) {
 
     if (useTranspose)
