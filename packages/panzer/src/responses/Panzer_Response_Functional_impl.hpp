@@ -3,6 +3,7 @@
 
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_CommHelpers.hpp"
+#include "Teuchos_dyn_cast.hpp"
 
 #include "Epetra_LocalMap.h"
 
@@ -56,6 +57,21 @@ void Response_Functional<panzer::Traits::Jacobian>::
 setSolnVectorSpace(const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & soln_vs) 
 { 
   setDerivativeVectorSpace(soln_vs);
+}
+
+// Do nothing unless derivatives are required
+template <typename EvalT>
+void Response_Functional<EvalT>::
+adjustForDirichletConditions(const GlobalEvaluationData & localBCRows,const GlobalEvaluationData & globalBCRows) { }
+
+// Do nothing unless derivatives are required
+template < >
+void Response_Functional<panzer::Traits::Jacobian>::
+adjustForDirichletConditions(const GlobalEvaluationData & localBCRows,const GlobalEvaluationData & globalBCRows) 
+{ 
+  linObjFactory_->adjustForDirichletConditions(Teuchos::dyn_cast<const LinearObjContainer>(localBCRows),
+                                               Teuchos::dyn_cast<const LinearObjContainer>(globalBCRows),
+                                               *ghostedContainer_,true);
 }
 
 }

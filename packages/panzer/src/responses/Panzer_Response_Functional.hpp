@@ -29,7 +29,8 @@ namespace panzer {
   * values).
   */
 template <typename EvalT>
-class Response_Functional : public ResponseMESupport_Default<EvalT> {
+class Response_Functional : public ResponseMESupport_Default<EvalT>
+                          , public GlobalEvaluationData_BCAdjustment {
 public:
    typedef typename EvalT::ScalarT ScalarT;
 
@@ -57,7 +58,7 @@ public:
    virtual void scatterResponse();
 
    virtual void initializeResponse()  
-   { value = 0.0; }
+   { value = 0.0; if(ghostedContainer_!=Teuchos::null) ghostedContainer_->initialize(); }
 
    // from ResponseMESupport_Default
 
@@ -70,6 +71,8 @@ public:
    //! Get ghosted responses (this will be filled by the evaluator)
    Teuchos::RCP<Thyra::VectorBase<double> > getGhostedVector() const
    { return Teuchos::rcp_dynamic_cast<const ThyraObjContainer<double> >(ghostedContainer_)->get_f_th(); }
+
+   void adjustForDirichletConditions(const GlobalEvaluationData & localBCRows,const GlobalEvaluationData & globalBCRows);
     
 private:
    //! Set solution vector space

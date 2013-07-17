@@ -16,7 +16,12 @@ namespace panzer {
 template <typename EvalT,typename LO,typename GO>
 Teuchos::RCP<ResponseBase> ResponseEvaluatorFactory_Functional<EvalT,LO,GO>::
 buildResponseObject(const std::string & responseName) const
-{ return Teuchos::rcp(new Response_Functional<EvalT>(responseName,comm_,linearObjFactory_)); }
+{ 
+  Teuchos::RCP<ResponseBase> response = Teuchos::rcp(new Response_Functional<EvalT>(responseName,comm_,linearObjFactory_)); 
+  response->setRequiresDirichletAdjustment(applyDirichletToDerivative_);
+ 
+  return response;
+}
 
 template <typename EvalT,typename LO,typename GO>
 void ResponseEvaluatorFactory_Functional<EvalT,LO,GO>::
