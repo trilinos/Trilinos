@@ -192,9 +192,9 @@ void CudaSpace::print_memory_view( std::ostream & o )
 size_t CudaSpace::preferred_alignment(
   size_t scalar_size , size_t scalar_count )
 {
-  const size_t align = 0 == MEMORY_ALIGNMENT % scalar_size 
-                     ? MEMORY_ALIGNMENT / scalar_size : 0 ;
-  const size_t threshold = align ;
+  const size_t align = 0 == Impl::MEMORY_ALIGNMENT % scalar_size
+                     ? Impl::MEMORY_ALIGNMENT / scalar_size : 0 ;
+  const size_t threshold = Impl::MEMORY_ALIGNMENT_THRESHOLD * align ;
 
   if ( align && threshold < scalar_count && scalar_count % align ) {
     scalar_count += align - scalar_count % align ;

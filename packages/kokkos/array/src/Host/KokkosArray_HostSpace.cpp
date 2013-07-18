@@ -111,29 +111,29 @@ void * host_allocate_not_thread_safe(
 
 #if defined( __INTEL_COMPILER )
 
-    ptr = ptr_alloc = _mm_malloc( scalar_size * count_alloc , HostSpace::MEMORY_ALIGNMENT );
+    ptr = ptr_alloc = _mm_malloc( scalar_size * count_alloc , MEMORY_ALIGNMENT );
    
 #elif ( defined( _POSIX_C_SOURCE ) && _POSIX_C_SOURCE >= 200112L ) || \
       ( defined( _XOPEN_SOURCE )   && _XOPEN_SOURCE   >= 600 )
 
-    posix_memalign( & ptr_alloc , HostSpace::MEMORY_ALIGNMENT , scalar_size * count_alloc );
+    posix_memalign( & ptr_alloc , MEMORY_ALIGNMENT , scalar_size * count_alloc );
     ptr = ptr_alloc ;
 
 #else
 
     // Over-allocate to guarantee enough aligned space.
 
-    count_alloc += ( HostSpace::MEMORY_ALIGNMENT + scalar_size - 1 ) / scalar_size ;
+    count_alloc += ( MEMORY_ALIGNMENT + scalar_size - 1 ) / scalar_size ;
 
     ptr_alloc = malloc( scalar_size * count_alloc );
 
     ptr = static_cast<unsigned char *>(ptr_alloc) + 
-          ( HostSpace::MEMORY_ALIGNMENT - reinterpret_cast<ptrdiff_t>(ptr_alloc) % HostSpace::MEMORY_ALIGNMENT );
+          ( MEMORY_ALIGNMENT - reinterpret_cast<ptrdiff_t>(ptr_alloc) % MEMORY_ALIGNMENT );
 
 #endif
 
     if ( ptr_alloc && ptr_alloc <= ptr &&
-         0 == ( reinterpret_cast<ptrdiff_t>(ptr) % HostSpace::MEMORY_ALIGNMENT ) ) {
+         0 == ( reinterpret_cast<ptrdiff_t>(ptr) % MEMORY_ALIGNMENT ) ) {
       host_space_singleton().insert(
         new HostMemoryTrackingEntry( label , scalar_type , ptr_alloc , scalar_size * count_alloc ) );
     }
@@ -211,10 +211,10 @@ size_t HostSpace::preferred_alignment(
   // Padding 'large' array dimensions to be memory aligned
   // where 'large' greater than 4 * cacheline-size
 
-  const size_t align = 0 == MEMORY_ALIGNMENT % scalar_size
-                     ? MEMORY_ALIGNMENT / scalar_size : 0 ;
+  const size_t align = 0 == Impl::MEMORY_ALIGNMENT % scalar_size
+                     ? Impl::MEMORY_ALIGNMENT / scalar_size : 0 ;
 
-  const size_t threshold = align * 4 ;
+  const size_t threshold = Impl::MEMORY_ALIGNMENT_THRESHOLD * align ;
 
   if ( align && threshold < scalar_count && scalar_count % align ) {
     scalar_count += align - scalar_count % align ;

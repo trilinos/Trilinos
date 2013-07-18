@@ -120,7 +120,7 @@ public:
   void * reduce_data() const
     {
 #if defined( __INTEL_COMPILER )
-__assume_aligned(m_reduce,HostSpace::MEMORY_ALIGNMENT);
+__assume_aligned(m_reduce,MEMORY_ALIGNMENT);
 #endif
       return m_reduce ;
     }

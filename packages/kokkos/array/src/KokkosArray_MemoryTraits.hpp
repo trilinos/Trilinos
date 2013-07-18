@@ -83,5 +83,25 @@ typedef Kokkos::MemoryTraits< Kokkos::Unmanaged | Kokkos::RandomRead > MemoryRan
 
 } // namespace Kokkos
 
+/** \brief Memory alignment settings
+ *
+ *  Sets global value for memory alignment.
+ *  Enable compatibility of views from different devices with static stride.
+ *  Use compiler flag to enable overwrites.
+ */
+
+#ifndef KOKKOS_MEMORY_ALIGNMENT
+#define KOKKOS_MEMORY_ALIGNMENT 128
+#endif
+
+namespace KokkosArray {
+namespace Impl {
+
+enum { MEMORY_ALIGNMENT = KOKKOS_MEMORY_ALIGNMENT };
+enum { MEMORY_ALIGNMENT_THRESHOLD = 4 };
+
+} //namespace Impl
+} // namespace Kokkos
+
 #endif /* #ifndef KOKKOSARRAY_MEMORYTRAITS_HPP */
 

@@ -66,7 +66,6 @@ class CudaSpace {
 public:
 
   enum { WORK_ALIGNMENT   = 32 /* WarpSize */ };
-  enum { MEMORY_ALIGNMENT = sizeof(int) * WORK_ALIGNMENT };
 
   typedef CudaSpace     memory_space ;
   typedef unsigned int  size_type ;

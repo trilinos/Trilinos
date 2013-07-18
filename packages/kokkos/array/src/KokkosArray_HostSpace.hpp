@@ -49,6 +49,7 @@
 #include <string>
 
 #include <KokkosArray_Macros.hpp>
+#include <KokkosArray_MemoryTraits.hpp>
 
 #if defined( __INTEL_COMPILER ) && 0
   /*
@@ -58,7 +59,7 @@
    *  residual enforcement function.
    */
 
-#define KOKKOSARRAY_ASSUME_ALIGNED( M , P ) __assume_aligned( P , M :: MEMORY_ALIGNMENT )
+#define KOKKOSARRAY_ASSUME_ALIGNED( M , P ) __assume_aligned( P , MEMORY_ALIGNMENT )
 
 #else
 
@@ -75,7 +76,6 @@ namespace KokkosArray {
 class HostSpace {
 public:
 
-  enum { MEMORY_ALIGNMENT = 64 };
   enum { WORK_ALIGNMENT   =  8 };
 
   typedef HostSpace  memory_space ;

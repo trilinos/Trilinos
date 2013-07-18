@@ -633,38 +633,38 @@ struct StaticStride{
 
 template<class S, class D>
 struct StaticStride<S,LayoutLeft,D,0> {
-  enum {Stride = (0==(D::memory_space::MEMORY_ALIGNMENT % S::scalar_size))&&
-  	           (S::N0>4*D::memory_space::MEMORY_ALIGNMENT/S::scalar_size)?
+  enum {Stride = (0==(MEMORY_ALIGNMENT % S::scalar_size))&&
+  	           (S::N0>MEMORY_ALIGNMENT_THRESHOLD * MEMORY_ALIGNMENT/S::scalar_size)?
   		        S::N0 +
-  		        ((D::memory_space::MEMORY_ALIGNMENT%S::scalar_size?(D::memory_space::MEMORY_ALIGNMENT/S::scalar_size):0)?
-  		        (D::memory_space::MEMORY_ALIGNMENT%S::scalar_size?(D::memory_space::MEMORY_ALIGNMENT/S::scalar_size):0) -
+  		        ((MEMORY_ALIGNMENT%S::scalar_size?(MEMORY_ALIGNMENT/S::scalar_size):0)?
+  		        (MEMORY_ALIGNMENT%S::scalar_size?(MEMORY_ALIGNMENT/S::scalar_size):0) -
   		        S::N0 %
-  		        (D::memory_space::MEMORY_ALIGNMENT%S::scalar_size?(D::memory_space::MEMORY_ALIGNMENT/S::scalar_size):0):
+  		        (MEMORY_ALIGNMENT%S::scalar_size?(MEMORY_ALIGNMENT/S::scalar_size):0):
   		        0)
   		        :S::N0};
 };
 
 template<class S, class D>
 struct StaticStride<S,LayoutRight,D,0> {
-  enum {Stride = (0==(D::memory_space::MEMORY_ALIGNMENT % S::scalar_size))&&
-  	           (S::N1*S::N2*S::N3*S::N4*S::N5*S::N6*S::N7>4*D::memory_space::MEMORY_ALIGNMENT/S::scalar_size)?
+  enum {Stride = (0==(MEMORY_ALIGNMENT % S::scalar_size))&&
+  	           (S::N1*S::N2*S::N3*S::N4*S::N5*S::N6*S::N7>MEMORY_ALIGNMENT_THRESHOLD * MEMORY_ALIGNMENT/S::scalar_size)?
   	        	S::N1*S::N2*S::N3*S::N4*S::N5*S::N6*S::N7 +
-  	        	((D::memory_space::MEMORY_ALIGNMENT%S::scalar_size?(D::memory_space::MEMORY_ALIGNMENT/S::scalar_size):0)?
-  	        	(D::memory_space::MEMORY_ALIGNMENT%S::scalar_size?(D::memory_space::MEMORY_ALIGNMENT/S::scalar_size):0) -
+  	        	((MEMORY_ALIGNMENT%S::scalar_size?(MEMORY_ALIGNMENT/S::scalar_size):0)?
+  	        	(MEMORY_ALIGNMENT%S::scalar_size?(MEMORY_ALIGNMENT/S::scalar_size):0) -
   	        	S::N1*S::N2*S::N3*S::N4*S::N5*S::N6*S::N7 %
-  	        	(D::memory_space::MEMORY_ALIGNMENT%S::scalar_size?(D::memory_space::MEMORY_ALIGNMENT/S::scalar_size):0):
+  	        	(MEMORY_ALIGNMENT%S::scalar_size?(MEMORY_ALIGNMENT/S::scalar_size):0):
   	        	0)
   		        :S::N1*S::N2*S::N3*S::N4*S::N5*S::N6*S::N7};
 };
 template<class S, class D>
 struct StaticStride<S,LayoutRight,D,1> {
-  enum {Stride = (0==(D::memory_space::MEMORY_ALIGNMENT % S::scalar_size))&&
-  	           (S::N1*S::N2*S::N3*S::N4*S::N5*S::N6*S::N7>4*D::memory_space::MEMORY_ALIGNMENT/S::scalar_size)?
+  enum {Stride = (0==(MEMORY_ALIGNMENT % S::scalar_size))&&
+  	           (S::N1*S::N2*S::N3*S::N4*S::N5*S::N6*S::N7>MEMORY_ALIGNMENT_THRESHOLD * MEMORY_ALIGNMENT/S::scalar_size)?
   	        	S::N1*S::N2*S::N3*S::N4*S::N5*S::N6*S::N7 +
-  	        	((D::memory_space::MEMORY_ALIGNMENT%S::scalar_size?(D::memory_space::MEMORY_ALIGNMENT/S::scalar_size):0)?
-  	        	(D::memory_space::MEMORY_ALIGNMENT%S::scalar_size?(D::memory_space::MEMORY_ALIGNMENT/S::scalar_size):0) -
+  	        	((MEMORY_ALIGNMENT%S::scalar_size?(MEMORY_ALIGNMENT/S::scalar_size):0)?
+  	        	(MEMORY_ALIGNMENT%S::scalar_size?(MEMORY_ALIGNMENT/S::scalar_size):0) -
   	        	S::N1*S::N2*S::N3*S::N4*S::N5*S::N6*S::N7 %
-  	        	(D::memory_space::MEMORY_ALIGNMENT%S::scalar_size?(D::memory_space::MEMORY_ALIGNMENT/S::scalar_size):0):
+  	        	(MEMORY_ALIGNMENT%S::scalar_size?(MEMORY_ALIGNMENT/S::scalar_size):0):
   	        	0)
   		        :S::N1*S::N2*S::N3*S::N4*S::N5*S::N6*S::N7};
 };
