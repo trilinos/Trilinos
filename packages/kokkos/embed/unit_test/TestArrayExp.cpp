@@ -443,7 +443,9 @@ int test_inner_product< TEST_KOKKOSARRAY_SPACE >()
   KokkosArray::deep_copy( x , hx );
   KokkosArray::deep_copy( y , hy );
 
-  double r = KokkosArray::parallel_reduce( N , functor_type(x,y) );
+  double r = 0 ;
+
+  KokkosArray::parallel_reduce( N , functor_type(x,y) , r );
 
   std::cout << "test_inner_product r = " << r << std::endl ;
 

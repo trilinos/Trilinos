@@ -69,20 +69,10 @@ namespace KokkosArray {
  *                       const volatile value_type input [] ,
  *                       int_type count );
  */
-template< class FunctorType >
-typename FunctorType::value_type
-parallel_reduce( const size_t        work_count ,
-                 const FunctorType & functor );
-
 template< class FunctorType , class FinalizeType >
 void parallel_reduce( const size_t         work_count ,
                       const FunctorType  & functor ,
                       const FinalizeType & finalize );
-
-template< class FunctorType >
-typename FunctorType::value_type
-vector_parallel_reduce( const size_t        work_count ,
-                        const FunctorType & functor );
 
 template< class FunctorType , class FinalizeType >
 void vector_parallel_reduce( const size_t         work_count ,
@@ -151,46 +141,6 @@ class ParallelReduceFunctorValue ;
 
 namespace KokkosArray {
 
-template< class FunctorType >
-typename FunctorType::value_type
-parallel_reduce( const size_t work_count ,
-                 const FunctorType & functor )
-{
-  typedef typename FunctorType::value_type    value_type ;
-  typedef typename FunctorType::device_type   device_type ;
-
-  typedef Impl::ParallelReduceFunctorValue< value_type , device_type >
-    FinalizeType ; 
-
-  const FinalizeType finalize ; 
-
-  Impl::ParallelReduce< FunctorType, FunctorType, FinalizeType, device_type >
-    ( work_count , functor , finalize );
-
-  return finalize.result();
-}
-
-template< class FunctorType >
-typename FunctorType::value_type
-vector_parallel_reduce( const size_t work_count ,
-                        const FunctorType & functor )
-{
-  typedef typename FunctorType::value_type    value_type ;
-  typedef typename FunctorType::device_type   device_type ;
-
-  typedef Impl::ParallelReduceFunctorValue< value_type , device_type >
-    FinalizeType ; 
-
-  const FinalizeType finalize ; 
-
-  Impl::ParallelReduce< FunctorType, FunctorType, FinalizeType, device_type , Impl::VectorParallel >
-    ( work_count , functor , finalize );
-
-  return finalize.result();
-}
-
-//----------------------------------------------------------------------------
-
 template< class FunctorType , class FinalizeType >
 void parallel_reduce( const size_t work_count ,
                       const FunctorType & functor ,
@@ -200,6 +150,48 @@ void parallel_reduce( const size_t work_count ,
 
   Impl::ParallelReduce< FunctorType, FunctorType, FinalizeType, device_type >
     ( work_count , functor , finalize );
+}
+
+//----------------------------------------------------------------------------
+
+template< class FunctorType >
+void parallel_reduce( const size_t work_count ,
+                      const FunctorType & functor ,
+                      typename FunctorType::value_type & value )
+{
+  typedef typename FunctorType::device_type device_type ;
+  typedef typename FunctorType::value_type  value_type ;
+
+  typedef Impl::ParallelReduceFunctorValue< value_type , device_type >
+    FinalizeType ; 
+
+  const FinalizeType finalize ;
+
+  Impl::ParallelReduce< FunctorType, FunctorType, FinalizeType, device_type >
+    ( work_count , functor , finalize );
+
+  finalize.result( value ); 
+}
+
+//----------------------------------------------------------------------------
+
+template< class FunctorType >
+void vector_parallel_reduce( const size_t work_count ,
+                             const FunctorType & functor ,
+                             typename FunctorType::value_type & value )
+{
+  typedef typename FunctorType::device_type device_type ;
+  typedef typename FunctorType::value_type  value_type ;
+
+  typedef Impl::ParallelReduceFunctorValue< value_type , device_type >
+    FinalizeType ; 
+
+  const FinalizeType finalize ;
+
+  Impl::ParallelReduce< FunctorType, FunctorType, FinalizeType, device_type , Impl::VectorParallel >
+    ( work_count , functor , finalize );
+
+  finalize.result( value ); 
 }
 
 //----------------------------------------------------------------------------

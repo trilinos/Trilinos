@@ -184,7 +184,7 @@ struct Dot
        double & result )
   : x( arg_x ), y( arg_y )
   {
-    result = parallel_reduce( count , *this );
+    parallel_reduce( count , *this , result );
   }
 };
 
@@ -215,7 +215,7 @@ struct Dot< TypeX , void , Device >
        double & result )
   : x( arg_x )
   {
-    result = parallel_reduce( count , *this );
+    parallel_reduce( count , *this , result );
   }
 };
 

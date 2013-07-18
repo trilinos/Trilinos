@@ -106,7 +106,7 @@ private:
     dst.m_ptr_on_device = (scalar_type *)
       memory_space::allocate( label , typeid(scalar_type) , sizeof(scalar_type) , dst.capacity() );
 
-    ViewInitialize< DstViewType >::apply( dst );
+    ViewInitialize< DstViewType > init( dst );
   }
 
 public:
