@@ -72,7 +72,7 @@ void driver_modified_gram_schmidt<KokkosArray::Host>(
 
 }
 
-#if defined( KOKKOSARRAY_HAVE_CUDA )
+#if defined( KOKKOS_HAVE_CUDA )
 
 #include <KokkosArray_Cuda.hpp>
 

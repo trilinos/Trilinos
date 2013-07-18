@@ -134,7 +134,7 @@ void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
 
 /*--------------------------------------------------------------------------*/
 
-#if defined( KOKKOSARRAY_HAVE_HWLOC )
+#if defined( KOKKOS_HAVE_HWLOC )
 
 #include <iostream>
 #include <sstream>
@@ -486,7 +486,7 @@ hwloc::hwloc()
 
 } /* namespace KokkosArray */
 
-#else /* ! defined( KOKKOSARRAY_HAVE_HWLOC ) */
+#else /* ! defined( KOKKOS_HAVE_HWLOC ) */
 
 namespace KokkosArray {
 

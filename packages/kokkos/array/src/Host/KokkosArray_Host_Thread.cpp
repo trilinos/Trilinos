@@ -358,7 +358,7 @@ HostThread * HostThread::clear_thread( const unsigned rank )
 } // namespace Impl
 } // namespace KokkosArray
 
-#if defined( KOKKOSARRAY_HAVE_PTHREAD )
+#if defined( KOKKOS_HAVE_PTHREAD )
 
 /*--------------------------------------------------------------------------*/
 /* Standard 'C' Linux libraries */
@@ -505,7 +505,7 @@ void host_thread_unlock()
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#elif defined( KOKKOSARRAY_HAVE_WINTHREAD )
+#elif defined( KOKKOS_HAVE_WINTHREAD )
 
 /* Windows libraries */
 #include <windows.h>

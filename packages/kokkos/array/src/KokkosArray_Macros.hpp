@@ -43,6 +43,8 @@
 //@HEADER
 */
 
+#include <KokkosArray_config.h>
+
 #ifndef KOKKOSARRAY_MACROS_HPP
 #define KOKKOSARRAY_MACROS_HPP
 
@@ -57,6 +59,10 @@ class Cuda ;
 //----------------------------------------------------------------------------
 
 #if defined( __CUDACC__ )
+
+#if ! defined( KOKKOS_HAVE_CUDA )
+#error "Compiling Kokkos with Cuda compiler but KOKKOS_ARRAY_CUDA is undefined"
+#endif
 
 /*  Compiling with a CUDA compiler for host and device code.
  *
