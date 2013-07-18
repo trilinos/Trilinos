@@ -69,7 +69,7 @@ using std::vector;
 typedef double                                                  scalar_type;
 typedef double                                                  mag_type;
 typedef ScalarTraits< scalar_type >                             STraits;
-typedef Kokkos::SerialNode                                      node_type;
+typedef KokkosClassic::SerialNode                                      node_type;
 typedef Tpetra::MultiVector< scalar_type, int, int, node_type > MultiVec;
 typedef Tpetra::Operator< scalar_type, int, int, node_type >    OP;
 typedef MultiVecTraits< scalar_type, MultiVec >                 MVTraits;
@@ -85,24 +85,24 @@ getNode() {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Node type not defined.");
 }
 
-RCP<Kokkos::SerialNode> serialnode;
+RCP<KokkosClassic::SerialNode> serialnode;
 template <>
-RCP< Kokkos::SerialNode > getNode< Kokkos::SerialNode >() {
+RCP< KokkosClassic::SerialNode > getNode< KokkosClassic::SerialNode >() {
   ParameterList pl;
   if (serialnode == null) {
-    serialnode = rcp (new Kokkos::SerialNode (pl));
+    serialnode = rcp (new KokkosClassic::SerialNode (pl));
   }
   return serialnode;
 }
 
 #ifdef HAVE_KOKKOSCLASSIC_TBB
 int tbb_nT = 0;
-RCP< Kokkos::TBBNode > tbbnode;
+RCP< KokkosClassic::TBBNode > tbbnode;
 template <>
-RCP< Kokkos::TBBNode > getNode< Kokkos::TBBNode >() {
+RCP< KokkosClassic::TBBNode > getNode< KokkosClassic::TBBNode >() {
   if (tbbnode == null) {
     ParameterList pl;
-    tbbnode = rcp (new Kokkos::TBBNode(pl));
+    tbbnode = rcp (new KokkosClassic::TBBNode(pl));
   }
   return tbbnode;
 }
@@ -393,7 +393,7 @@ main (int argc, char *argv[])
     
         // Create Tpetra::Map to represent multivectors in the range of
         // the sparse matrix.
-        map = rcp (new map_type (numRows, 0, comm, Tpetra::GloballyDistributed, getNode< Kokkos::SerialNode >()));
+        map = rcp (new map_type (numRows, 0, comm, Tpetra::GloballyDistributed, getNode< KokkosClassic::SerialNode >()));
         M = rcp (new sparse_matrix_type (map, rnnzmax));
 
         if (MyPID == 0) 
@@ -440,7 +440,7 @@ main (int argc, char *argv[])
 
         // Let M remain null, and allocate map using the number of rows
         // (numRows) specified on the command line.
-        map = rcp (new map_type (numRows, 0, comm, Tpetra::GloballyDistributed, getNode< Kokkos::SerialNode >()));
+        map = rcp (new map_type (numRows, 0, comm, Tpetra::GloballyDistributed, getNode< KokkosClassic::SerialNode >()));
       }
     
     // Instantiate the specified OrthoManager subclass for testing.
