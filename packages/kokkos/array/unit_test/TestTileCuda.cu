@@ -56,7 +56,8 @@ void test_device_cuda_tile()
   typedef ReduceTileErrors< KokkosArray::Cuda, tile_layout > functor_type;
 
   functor_type::array_type array("",dim,dim);
-  ptrdiff_t errors = KokkosArray::parallel_reduce(dim, functor_type(array) );
+  ptrdiff_t errors = 0 ;
+  KokkosArray::parallel_reduce(dim, functor_type(array) , errors );
   EXPECT_EQ( errors, 0u);
 }
 
@@ -66,7 +67,8 @@ void test_device_cuda_tile()
   typedef ReduceTileErrors< KokkosArray::Cuda, tile_layout > functor_type;
 
   functor_type::array_type array("",dim,dim);
-  ptrdiff_t errors = KokkosArray::parallel_reduce(dim, functor_type(array) );
+  ptrdiff_t errors = 0 ;
+  KokkosArray::parallel_reduce(dim, functor_type(array) , errors );
   EXPECT_EQ( errors, 0u);
 }
 
@@ -76,7 +78,8 @@ void test_device_cuda_tile()
   typedef ReduceTileErrors< KokkosArray::Cuda, tile_layout > functor_type;
 
   functor_type::array_type array("",dim,dim);
-  ptrdiff_t errors = KokkosArray::parallel_reduce(dim, functor_type(array) );
+  ptrdiff_t errors = 0 ;
+  KokkosArray::parallel_reduce(dim, functor_type(array) , errors );
   EXPECT_EQ( errors, 0u);
 }
 
@@ -86,7 +89,8 @@ void test_device_cuda_tile()
   typedef ReduceTileErrors< KokkosArray::Cuda, tile_layout > functor_type;
 
   functor_type::array_type array("",dim,dim);
-  ptrdiff_t errors = KokkosArray::parallel_reduce(dim, functor_type(array) );
+  ptrdiff_t errors = 0 ;
+  KokkosArray::parallel_reduce(dim, functor_type(array) , errors );
   EXPECT_EQ( errors, 0u);
 }
 
@@ -96,7 +100,8 @@ void test_device_cuda_tile()
   typedef ReduceTileErrors< KokkosArray::Cuda, tile_layout > functor_type;
 
   functor_type::array_type array("",dim,dim);
-  ptrdiff_t errors = KokkosArray::parallel_reduce(dim, functor_type(array) );
+  ptrdiff_t errors = 0 ;
+  KokkosArray::parallel_reduce(dim, functor_type(array) , errors );
   EXPECT_EQ( errors, 0u);
 }
 }

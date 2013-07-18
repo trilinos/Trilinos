@@ -166,7 +166,9 @@ public:
       reduce_op.execute();
     }
 
-    value_type result = result_functor.result();
+    value_type result ;
+
+    result_functor.result( result );
 
     const unsigned long nw   = nwork ;
     const unsigned long nsum = nw % 2 ? nw * (( nw + 1 )/2 )

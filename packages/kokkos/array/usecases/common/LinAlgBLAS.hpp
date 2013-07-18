@@ -309,7 +309,7 @@ public:
   Dot( const size_t n , const ArgX & arg_x , const ArgY & arg_y , double & result )
     : x( arg_x ), y( arg_y )
   {
-    result = vector_parallel_reduce( n , *this );
+    vector_parallel_reduce( n , *this , result );
   }
 
   template< typename iType >
@@ -348,7 +348,7 @@ public:
   Dot1( const size_t n , const ArgX & arg_x , double & result )
     : x( arg_x )
   {
-    result = vector_parallel_reduce( n , *this );
+    vector_parallel_reduce( n , *this , result );
   }
 
   template< typename iType >

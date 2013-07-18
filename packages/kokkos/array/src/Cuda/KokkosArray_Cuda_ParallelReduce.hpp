@@ -725,22 +725,6 @@ struct CudaReduceResult {
       DeepCopy<HostSpace,CudaSpace>( host_pointer , ptr , sizeof(T) * count );
     }
   }
-
-  inline static
-  T return_to_host()
-  {
-    Cuda::fence();
-    T * ptr = (T*) cuda_internal_scratch_unified( sizeof(T) );
-    if ( 0 != ptr ) {
-      return *ptr ;
-    }
-    else {
-      ptr = (T*) cuda_internal_scratch_space( sizeof(T) );
-      T value ;
-      DeepCopy<HostSpace,CudaSpace>( & value , ptr , sizeof(T) );
-      return value ;
-    }
-  }
 };
 
 template< typename ValueType >
@@ -762,8 +746,8 @@ public:
     : m_dev( CudaReduceResult<value_type>::device_pointer(1) ) {}
 
   inline
-  value_type result() const
-  { return CudaReduceResult<value_type>::return_to_host(); }
+  void result( value_type & value ) const
+  { CudaReduceResult<value_type>::copy_to_host( & value , 1 ); }
 };
 
 template< typename MemberType >

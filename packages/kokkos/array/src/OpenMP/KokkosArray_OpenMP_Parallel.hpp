@@ -111,10 +111,10 @@ public:
 
   inline void operator()( const value_type & ) const {}
 
-  value_type result() const
+  void result( value_type & value ) const
   {
     value_type * const ptr = (value_type*) OpenMP::root_reduce_scratch();
-    return *ptr ;
+    value = *ptr ;
   }
 };
 
