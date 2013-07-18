@@ -117,7 +117,9 @@ public:
     op.node_coords = arg_node_coords ;
     op.buffer      = arg_buffer ;
     op.node_begin  = arg_node_begin ;
-    return KokkosArray::parallel_reduce( arg_node_count , op );
+    size_type count = 0 ;
+    KokkosArray::parallel_reduce( arg_node_count , op , count );
+    return count ;
   }
 };
 
@@ -125,7 +127,7 @@ public:
 
 //----------------------------------------------------------------------------
 
-#ifdef KOKKOSARRAY_HAVE_MPI
+#ifdef KOKKOS_HAVE_MPI
 
 namespace TestFEMesh {
 
@@ -188,7 +190,7 @@ void verify_parallel(
 
 } // namespace TestFEMesh
 
-#else /* ! #ifdef KOKKOSARRAY_HAVE_MPI */
+#else /* ! #ifdef KOKKOS_HAVE_MPI */
 
 namespace TestFEMesh {
 
@@ -203,7 +205,7 @@ void verify_parallel(
 
 } // namespace TestFEMesh
 
-#endif /* ! #ifdef KOKKOSARRAY_HAVE_MPI */
+#endif /* ! #ifdef KOKKOS_HAVE_MPI */
 
 //----------------------------------------------------------------------------
 

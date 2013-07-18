@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -53,6 +53,10 @@
 #include <impl/KokkosArray_StaticAssert.hpp>
 
 #include <Host/KokkosArray_Host_Thread.hpp>
+
+//only enable for intel 13 or better
+#define KOKKOSARRAY_ENABLE_SIMD     defined( __INTEL_COMPILER ) && ! defined( __MIC__ ) \
+                                 && (__INTEL_COMPILER > 1299)
 
 namespace KokkosArray {
 namespace Impl {
@@ -102,7 +106,7 @@ public:
 
   void execute_on_thread( HostThread & thread ) const
   {
-#if defined( __INTEL_COMPILER ) && ! defined( __MIC__ )
+#if KOKKOSARRAY_ENABLE_SIMD
     enum { vectorize = is_same<WorkSpec,VectorParallel>::value && 1 < HostSpace::WORK_ALIGNMENT };
 #else
     enum { vectorize = 0 };
@@ -115,7 +119,7 @@ public:
         m_work_functor( iwork );
       }
     }
-#if defined( __INTEL_COMPILER ) && ! defined( __MIC__ )
+#if KOKKOSARRAY_ENABLE_SIMD
     else {
 #pragma simd
 #pragma ivdep
@@ -194,7 +198,7 @@ class MultiFunctorParallelFor< Host >
 public:
   typedef Host::size_type               size_type ;
   typedef Impl::HostMultiFunctorParallelForMember<void>  worker_type ;
-  
+
   typedef std::vector< worker_type * > MemberContainer ;
 
   typedef MemberContainer::const_iterator MemberIterator ;
@@ -210,19 +214,19 @@ public:
 
     this_thread.end_barrier();
   }
-  
-public: 
+
+public:
 
   MultiFunctorParallelFor() : m_member_functors() {}
-    
+
   ~MultiFunctorParallelFor()
-  { 
+  {
     while ( ! m_member_functors.empty() ) {
       delete m_member_functors.back();
       m_member_functors.pop_back();
     }
   }
-  
+
   template< class FunctorType >
   void push_back( const size_type work_count , const FunctorType & functor )
   {
@@ -254,10 +258,10 @@ public:
 
   inline void operator()( const value_type & ) const {}
 
-  value_type result() const
+  void result( value_type & value ) const
   {
     value_type * const ptr = (value_type*) Host::root_reduce_scratch();
-    return *ptr ;
+    value = *ptr ;
   }
 };
 
@@ -301,8 +305,8 @@ public:
 
   void execute_on_thread( HostThread & this_thread ) const
   {
-#if defined( __INTEL_COMPILER ) && ! defined( __MIC__ )
-    enum { work_align = is_same<WorkSpec,VectorParallel>::value && 
+#if KOKKOSARRAY_ENABLE_SIMD
+    enum { work_align = is_same<WorkSpec,VectorParallel>::value &&
                         power_of_two<HostSpace::WORK_ALIGNMENT>::value
                       ? HostSpace::WORK_ALIGNMENT : 1 };
     enum { work_mask  = work_align - 1 };
@@ -324,7 +328,7 @@ public:
         m_work_functor( iwork , m_reduce.reference( this_thread.reduce_data() ) );
       }
     }
-#if defined( __INTEL_COMPILER ) && ! defined( __MIC__ )
+#if KOKKOSARRAY_ENABLE_SIMD
     else {
 
 #pragma simd
@@ -388,7 +392,7 @@ class HostMultiFunctorParallelReduceMember
   : public HostMultiFunctorParallelReduceMember<void,ReduceOper> {
 public:
   typedef Host::size_type size_type ;
-    
+
   const FunctorType m_work_functor ;
   const size_type   m_work_count ;
 
@@ -400,7 +404,7 @@ public:
     : m_work_functor( work_functor )
     , m_work_count(   work_count )
     {}
-    
+
   // virtual method
   void apply( HostThread & this_thread ,
               const ReduceOper & reduce ) const
@@ -412,10 +416,10 @@ public:
       m_work_functor( iwork , reduce.reference( this_thread.reduce_data() ) );
     }
   }
-};  
+};
 
 } // namespace Impl
-  
+
 template< class ValueOper , class FinalizeType >
 class MultiFunctorParallelReduce< ValueOper , FinalizeType , Host >
   : public Impl::HostThreadWorker

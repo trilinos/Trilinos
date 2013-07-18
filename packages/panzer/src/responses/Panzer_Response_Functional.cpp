@@ -1,9 +1,9 @@
-/*
-//@HEADER
-// ************************************************************************
+// @HEADER
+// ***********************************************************************
 //
-//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//                 Copyright (2011) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,60 +35,16 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
-// ************************************************************************
-//@HEADER
-*/
+// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
+// Eric C. Cyr (eccyr@sandia.gov)
+// ***********************************************************************
+// @HEADER
 
-#ifndef TEST_GRAMSCHMIDT_HPP
-#define TEST_GRAMSCHMIDT_HPP
+#include "Panzer_config.hpp"
 
-#include <ParallelComm.hpp>
-#include <KokkosArray_Macros.hpp>
-#include <KokkosArray_Host.hpp>
+#include "Panzer_ExplicitTemplateInstantiation.hpp"
 
-#include <iostream>
+#include "Panzer_Response_Functional.hpp"
+#include "Panzer_Response_Functional_impl.hpp"
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace Test {
-
-template< class DeviceType >
-void driver_modified_gram_schmidt( const int length_begin ,
-                                   const int length_end ,
-                                   const int count ,
-                                   const int iter ,
-                                   comm::Machine machine );
-
-template<>
-void driver_modified_gram_schmidt<KokkosArray::Host>(
-  const int length_begin ,
-  const int length_end ,
-  const int count ,
-  const int iter ,
-  comm::Machine machine );
-
-}
-
-#if defined( KOKKOS_HAVE_CUDA )
-
-#include <KokkosArray_Cuda.hpp>
-
-namespace Test {
-
-template<>
-void driver_modified_gram_schmidt<KokkosArray::Cuda>(
-  const int length_begin ,
-  const int length_end ,
-  const int count ,
-  const int iter ,
-  comm::Machine machine );
-
-}
-
-#endif
-
-#endif /* #ifndef TEST_GRAMSCHMIDT_HPP */
-
+PANZER_INSTANTIATE_TEMPLATE_CLASS_ONE_T(panzer::Response_Functional)

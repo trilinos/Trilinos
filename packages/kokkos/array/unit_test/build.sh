@@ -28,7 +28,7 @@ CXX_SOURCES="${CXX_SOURCES} ${TPL_PATH}/gtest/gtest-all.cc"
 CXX_SOURCES="${CXX_SOURCES} UnitTestMain.cpp TestHost.cpp TestTileHost.cpp"
 CXX_SOURCES="${CXX_SOURCES} TestHWLOC.cpp"
 
-if [ -n "${HAVE_OMP}" ]
+if [ -n "${KOKKOS_HAVE_OPENMP}" ]
 then
 CXX_SOURCES="${CXX_SOURCES} TestOpenMP.cpp"
 fi

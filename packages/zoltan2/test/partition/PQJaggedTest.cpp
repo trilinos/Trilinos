@@ -619,9 +619,9 @@ void print_usage(char *executable){
     cout << "\tF=filePath: When O=0 the path of the coordinate input file, for O>1 the path to the geometric generator parameter file." << endl;
     cout << "\tO=input option: O=0 for reading coordinate from file, O>0 for generating coordinate from coordinate generator file. Default will run geometric generator." << endl;
     cout << "\tK=concurrent part calculation input: K>0." << endl;
-    cout << "\tMI=migration_imbalance_cut_off: MI=1.15. " << endl;
+    cout << "\tMI=migration_imbalance_cut_off: MI=1.35. " << endl;
     cout << "\tMT=migration_all_to_all_type: 0 for alltoallv, 1 for Zoltan_Comm, 2 for Zoltan2 Distributor object(Default 1)." << endl;
-    cout << "\tMO=migration_check_option: 0 for decision on imbalance, 1 for forcing migration, >1 for avoiding migration. (Default-2)" << endl;
+    cout << "\tMO=migration_check_option: 0 for decision on imbalance, 1 for forcing migration, >1 for avoiding migration. (Default-0)" << endl;
     cout << "\tAT=migration_processor_assignment_type. 0-for assigning procs with respect to proc ownment, otherwise, assignment with respect to proc closeness." << endl;
     cout << "Example:\n" << executable << " P=2,2,2 C=8 F=simple O=0" << endl;
 }

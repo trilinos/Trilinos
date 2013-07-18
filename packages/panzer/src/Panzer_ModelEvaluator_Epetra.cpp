@@ -399,7 +399,8 @@ panzer::ModelEvaluator_Epetra::createOutArgs() const
  
       // class must supoprt a derivative 
       if(resp->supportsDerivative())
-        outArgs.setSupports(OUT_ARG_DgDx,i,DerivativeSupport(DERIV_LINEAR_OP));
+        outArgs.setSupports(OUT_ARG_DgDx,i,DerivativeSupport(DERIV_MV_BY_COL));
+        //outArgs.setSupports(OUT_ARG_DgDx,i,DerivativeSupport(DERIV_LINEAR_OP));
     }
   }
 
@@ -654,7 +655,7 @@ evalModel_basic_dgdx(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const 
       if(deriv.isEmpty())
         continue;
 
-      Teuchos::RCP<Epetra_Vector> vec = Teuchos::rcp_dynamic_cast<Epetra_Vector>(deriv.getMultiVector(),true);
+      Teuchos::RCP<Epetra_MultiVector> vec = deriv.getMultiVector();
 
       if(vec!=Teuchos::null) {
         std::string responseName = g_names_[i];

@@ -47,8 +47,9 @@
 //------------------------------------------------------------------------
 
 #include <iosfwd>
+#include <KokkosArray_config.h>
 
-#if defined( KOKKOSARRAY_HAVE_MPI )
+#if defined( KOKKOS_HAVE_MPI )
 #include <mpi.h>
 #else
   typedef int MPI_Comm ;

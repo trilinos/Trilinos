@@ -99,7 +99,7 @@ namespace KokkosArray {
 
 //----------------------------------------------------------------------------
 
-#if defined( KOKKOSARRAY_HAVE_MPI )
+#if defined( KOKKOS_HAVE_MPI )
 
 template< typename ScalarX /* Allow mix of const and non-const */ ,
           typename ScalarY /* Allow mix of const and non-const */ ,
@@ -147,7 +147,7 @@ double dot( const size_t n ,
 
 //----------------------------------------------------------------------------
 
-#if defined( KOKKOSARRAY_HAVE_MPI )
+#if defined( KOKKOS_HAVE_MPI )
 
 template< typename ScalarX /* Allow mix of const and non-const */ ,
           class L , class D ,
@@ -309,7 +309,7 @@ public:
   Dot( const size_t n , const ArgX & arg_x , const ArgY & arg_y , double & result )
     : x( arg_x ), y( arg_y )
   {
-    result = vector_parallel_reduce( n , *this );
+    vector_parallel_reduce( n , *this , result );
   }
 
   template< typename iType >
@@ -348,7 +348,7 @@ public:
   Dot1( const size_t n , const ArgX & arg_x , double & result )
     : x( arg_x )
   {
-    result = vector_parallel_reduce( n , *this );
+    vector_parallel_reduce( n , *this , result );
   }
 
   template< typename iType >
