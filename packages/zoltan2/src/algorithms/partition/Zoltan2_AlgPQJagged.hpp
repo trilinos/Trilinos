@@ -277,12 +277,12 @@ void minMaxSum(void *in, void *inout, int *count, MPI_Datatype *type) {
  *  coordinate linked lists.
  */
 
-template <typename lno_t, typename partId_t>
+template <typename pq_lno_t, typename partId_t>
 class pqJagged_PartVertices{
 private:
-    lno_t *linkedList; //initially filled with -1's.
-    lno_t *partBegins; //initially filled with -1's.
-    lno_t *partEnds; //initially filled with -1's.
+    pq_lno_t *linkedList; //initially filled with -1's.
+    pq_lno_t *partBegins; //initially filled with -1's.
+    pq_lno_t *partEnds; //initially filled with -1's.
 public:
 
     //default constructor
@@ -297,7 +297,7 @@ public:
      *  Holds the end coordinate of each part.
      */
 
-    void set(lno_t *linkedList_, lno_t *partBegins_, lno_t *partEnds_){
+    void set(pq_lno_t *linkedList_, pq_lno_t *partBegins_, pq_lno_t *partEnds_){
         linkedList = linkedList_;
         partBegins = partBegins_;
         partEnds = partEnds_;
@@ -310,7 +310,7 @@ public:
      * \param partNo is the part number that the coordinate is inserted.
      * \param coordinateIndex is index of coordinate to be inserted.
      */
-    void inserToPart (partId_t partNo, lno_t coordinateIndex){
+    void inserToPart (partId_t partNo, pq_lno_t coordinateIndex){
 
         switch (partEnds[partNo]){
         case -1: // this means partBegins[partNo] is also -1.
@@ -329,16 +329,16 @@ public:
     /*! \brief
      * linkedList getter function.
      */
-    lno_t *getLinkedList(){ return linkedList;}
+    pq_lno_t *getLinkedList(){ return linkedList;}
 
     /*! \brief
      * partBegins getter function.
      */
-    lno_t *getPartBegins(){ return partBegins;}
+    pq_lno_t *getPartBegins(){ return partBegins;}
     /*! \brief
      * partEnds getter function.
      */
-    lno_t *getPartEnds(){ return partEnds;}
+    pq_lno_t *getPartEnds(){ return partEnds;}
 
 };
 
@@ -362,18 +362,18 @@ inline void firstTouch(T *arrayName, size_t arraySize){
  * \param cutLowerWeight is the pointer to the array holding the weights at the lower bounds of each cut.
  * \param ew is the expected weight that should be placed on the left of the cut line.
  */
-template <typename scalar_t>
-inline scalar_t pivotPos (scalar_t * cutUpperBounds, scalar_t *cutLowerBounds,size_t currentCutIndex, scalar_t *cutUpperWeight, scalar_t *cutLowerWeight, scalar_t ew, scalar_t _EPSILON){
+template <typename pq_scalar_t>
+inline pq_scalar_t pivotPos (pq_scalar_t * cutUpperBounds, pq_scalar_t *cutLowerBounds,size_t currentCutIndex, pq_scalar_t *cutUpperWeight, pq_scalar_t *cutLowerWeight, pq_scalar_t ew, pq_scalar_t _EPSILON){
 
     if(ABS(cutUpperWeight[currentCutIndex] - cutLowerWeight[currentCutIndex]) < _EPSILON){
         return cutLowerBounds[currentCutIndex];
     }
 
-    scalar_t coordinate_range = (cutUpperBounds[currentCutIndex] - cutLowerBounds[currentCutIndex]);
-    //scalar_t weight_range = (cutUpperWeight[currentCutIndex] - cutLowerWeight[currentCutIndex]);
+    pq_scalar_t coordinate_range = (cutUpperBounds[currentCutIndex] - cutLowerBounds[currentCutIndex]);
+    //pq_scalar_t weight_range = (cutUpperWeight[currentCutIndex] - cutLowerWeight[currentCutIndex]);
 
-    //scalar_t myWeightDif = (ew - cutLowerWeight[currentCutIndex]);
-    scalar_t newCut =(coordinate_range ) / 2 /** (myWeightDif / weight_range)*/ + cutLowerBounds[currentCutIndex];
+    //pq_scalar_t myWeightDif = (ew - cutLowerWeight[currentCutIndex]);
+    pq_scalar_t newCut =(coordinate_range ) / 2 /** (myWeightDif / weight_range)*/ + cutLowerBounds[currentCutIndex];
     /*
     cout << "cutIndex:" << currentCutIndex <<
             " upper:" << cutUpperBounds[currentCutIndex] << " uw:" << cutUpperWeight[currentCutIndex] <<
@@ -485,7 +485,7 @@ void pqJagged_getParameters(
 
 
     const Teuchos::ParameterEntry *pe = pl.getEntryPtr("partitioning_objective");
-    migration_imbalance_cut_off = .1;
+    migration_imbalance_cut_off = 0.35;
     pe = pl.getEntryPtr("migration_imbalance_cut_off");
     if (pe){
         double tol;
@@ -512,7 +512,7 @@ void pqJagged_getParameters(
     if (pe){
         migration_assignment_type = pe->getValue(&concurrentPartCount);
     }else {
-        migration_assignment_type = 1;
+        migration_assignment_type = 0;
     }
     pe = pl.getEntryPtr("migration_doMigration_type");
     if (pe){
@@ -627,7 +627,7 @@ void pqJagged_getCoordinateValues( const RCP<const CoordinateModel<
  */
 
 
-template <typename Adapter, typename scalar_t, typename gno_t>
+template <typename Adapter, typename pq_scalar_t, typename pq_gno_t>
 void pqJagged_getInputValues(
         const RCP<const Environment> &env, const RCP<const CoordinateModel<
         typename Adapter::base_adapter_t> > &coords,
@@ -638,20 +638,20 @@ void pqJagged_getInputValues(
         const size_t &numLocalCoords,
         size_t &numGlobalParts,
         int &pqJagged_multiVectorDim,
-        scalar_t **pqJagged_values,
+        pq_scalar_t **pqJagged_values,
         const int &criteriaDim,
-        scalar_t **pqJagged_weights,
-        ArrayView<const gno_t> &pqJagged_gnos,
+        pq_scalar_t **pqJagged_weights,
+        ArrayView<const pq_gno_t> &pqJagged_gnos,
         bool &ignoreWeights,
         bool *pqJagged_uniformWeights,
         bool *pqJagged_uniformParts,
-        scalar_t **pqJagged_partSizes
+        pq_scalar_t **pqJagged_partSizes
 ){
-    //typedef typename Adapter::node_t node_t;
-    typedef typename Adapter::lno_t lno_t;
-    typedef StridedData<lno_t, scalar_t> input_t;
+    //typedef typename Adapter::node_t pq_node_t;
+    typedef typename Adapter::lno_t pq_lno_t;
+    typedef StridedData<pq_lno_t, pq_scalar_t> input_t;
 
-    ArrayView<const gno_t> gnos;
+    ArrayView<const pq_gno_t> gnos;
     ArrayView<input_t>     xyz;
     ArrayView<input_t>     wgts;
 
@@ -662,10 +662,10 @@ void pqJagged_getInputValues(
     //std::cout << std::endl;
 
     for (int dim=0; dim < coordDim; dim++){
-        ArrayRCP<const scalar_t> ar;
+        ArrayRCP<const pq_scalar_t> ar;
         xyz[dim].getInputArray(ar);
         //pqJagged coordinate values assignment
-        pqJagged_values[dim] =  (scalar_t *)ar.getRawPtr();
+        pqJagged_values[dim] =  (pq_scalar_t *)ar.getRawPtr();
     }
 
     if (weightDim == 0 || ignoreWeights){
@@ -680,10 +680,10 @@ void pqJagged_getInputValues(
                 pqJagged_weights[wdim] = NULL;
             }
             else{
-                ArrayRCP<const scalar_t> ar;
+                ArrayRCP<const pq_scalar_t> ar;
                 wgts[wdim].getInputArray(ar);
                 pqJagged_uniformWeights[wdim] = false;
-                pqJagged_weights[wdim] = (scalar_t *) ar.getRawPtr();
+                pqJagged_weights[wdim] = (pq_scalar_t *) ar.getRawPtr();
             }
         }
     }
@@ -702,7 +702,7 @@ void pqJagged_getInputValues(
         }
         else{
             //TODO
-            scalar_t *tmp = new scalar_t [numGlobalParts];
+            pq_scalar_t *tmp = new pq_scalar_t [numGlobalParts];
             env->localMemoryAssertion(__FILE__, __LINE__, numGlobalParts, tmp) ;
             for (size_t i=0; i < numGlobalParts; i++){
                 tmp[i] = solution->getCriteriaPartSize(wdim, i);
@@ -747,11 +747,11 @@ void pqJagged_getInputValues(
 /*! \brief Printing the input values, to check configuration.
  *
  */
-template <typename scalar_t, typename gno_t>
+template <typename pq_scalar_t, typename pq_gno_t>
 void pqJagged_printInput(int coordDim, int weightDim, size_t numLocalCoords, global_size_t numGlobalCoords,
-        int criteriaDim, scalar_t **pqJagged_values, scalar_t **pqJagged_weights,
-        bool *pqJagged_uniformParts, bool *pqJagged_uniformWeights, gno_t *pqJagged_gnos,
-        bool ignoreWeights,size_t numGlobalParts, scalar_t **pqJagged_partSizes){
+        int criteriaDim, pq_scalar_t **pqJagged_values, pq_scalar_t **pqJagged_weights,
+        bool *pqJagged_uniformParts, bool *pqJagged_uniformWeights, pq_gno_t *pqJagged_gnos,
+        bool ignoreWeights,size_t numGlobalParts, pq_scalar_t **pqJagged_partSizes){
 
     std::cout << "numLocalCoords:" << numLocalCoords << std::endl;
     std::cout << "coordDim:" << coordDim << std::endl;
@@ -827,25 +827,25 @@ void pqJagged_printInput(int coordDim, int weightDim, size_t numLocalCoords, glo
  * \param totalWeight is the output to represent the local total weight in the coordinate in the given range of coordinates.
  *
  */
-template <typename scalar_t, typename lno_t>
+template <typename pq_scalar_t, typename pq_lno_t>
 void pqJagged_getLocalMinMaxTotalCoord(
-        lno_t *partitionedPointPermutations,
-        scalar_t *pqJagged_coordinates,
+        pq_lno_t *partitionedPointPermutations,
+        pq_scalar_t *pqJagged_coordinates,
         bool pqJagged_uniformWeights,
-        scalar_t *pqJagged_weights,
+        pq_scalar_t *pqJagged_weights,
 
 
         int numThreads,
-        lno_t coordinateBegin,
-        lno_t coordinateEnd,
+        pq_lno_t coordinateBegin,
+        pq_lno_t coordinateEnd,
 
-        scalar_t *max_min_array /*sized nothreads * 2*/,
-        scalar_t maxScalar,
-        scalar_t minScalar,
+        pq_scalar_t *max_min_array /*sized nothreads * 2*/,
+        pq_scalar_t maxScalar,
+        pq_scalar_t minScalar,
 
-        scalar_t &minCoordinate,
-        scalar_t &maxCoordinate,
-        scalar_t &totalWeight
+        pq_scalar_t &minCoordinate,
+        pq_scalar_t &maxCoordinate,
+        pq_scalar_t &totalWeight
 ){
 
     //if the part is empty.
@@ -857,7 +857,7 @@ void pqJagged_getLocalMinMaxTotalCoord(
         totalWeight = 0;
     }
     else {
-        scalar_t mytotalWeight = 0;
+        pq_scalar_t mytotalWeight = 0;
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel
 #endif
@@ -877,7 +877,7 @@ void pqJagged_getLocalMinMaxTotalCoord(
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for reduction(+:mytotalWeight)
 #endif
-                for (lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
+                for (pq_lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
                     int i = partitionedPointPermutations[ii];
                     mytotalWeight += pqJagged_weights[i];
                 }
@@ -887,7 +887,7 @@ void pqJagged_getLocalMinMaxTotalCoord(
 #ifdef HAVE_ZOLTAN2_OMP
             myId = omp_get_thread_num();
 #endif
-            scalar_t myMin, myMax;
+            pq_scalar_t myMin, myMax;
 /*
             problemComm->barrier();
             cout << "initial me:" << problemComm->getRank()
@@ -903,7 +903,7 @@ void pqJagged_getLocalMinMaxTotalCoord(
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
-            for(lno_t j = coordinateBegin + 1; j < coordinateEnd; ++j){
+            for(pq_lno_t j = coordinateBegin + 1; j < coordinateEnd; ++j){
                 int i = partitionedPointPermutations[j];
                 if(pqJagged_coordinates[i] > myMax) myMax = pqJagged_coordinates[i];
                 if(pqJagged_coordinates[i] < myMin) myMin = pqJagged_coordinates[i];
@@ -946,10 +946,10 @@ void pqJagged_getLocalMinMaxTotalCoord(
 }
 
 template <typename partId_t>
-inline partId_t getPartCount(partId_t numFuture, float root, float fEpsilon){
-    float fp = pow(numFuture, root);
+inline partId_t getPartCount(partId_t numFuture, double root, double fEpsilon){
+    double fp = pow(numFuture, root);
     partId_t ip = partId_t (fp);
-    if (fp - ip < fEpsilon){
+    if (fp - ip < fEpsilon * 100){
         return ip;
     }
     else {
@@ -967,13 +967,13 @@ inline partId_t getPartCount(partId_t numFuture, float root, float fEpsilon){
  * \param localMinMaxTotal is the output array holding global min and global coordinate values with global total weight.
  * The structure is same as localMinMaxTotal.
  */
-template <typename scalar_t>
+template <typename pq_scalar_t>
 void pqJagged_getGlobalMinMaxTotalCoord(
         RCP<Comm<int> > &comm,
         const RCP<const Environment> &env,
         partId_t concurrentPartCount,
-        scalar_t *localMinMaxTotal,
-        scalar_t *globalMinMaxTotal){
+        pq_scalar_t *localMinMaxTotal,
+        pq_scalar_t *globalMinMaxTotal){
 
 
     //reduce min for first concurrentPartCount elements, reduce max for next concurrentPartCount elements,
@@ -981,7 +981,7 @@ void pqJagged_getGlobalMinMaxTotalCoord(
     if(comm->getSize()  > 1){
 
 #ifndef mpi_communication
-        Teuchos::PQJaggedCombinedMinMaxTotalReductionOp<int, scalar_t> reductionOp(
+        Teuchos::PQJaggedCombinedMinMaxTotalReductionOp<int, pq_scalar_t> reductionOp(
                 concurrentPartCount,
                 concurrentPartCount,
                 concurrentPartCount);
@@ -1000,7 +1000,7 @@ void pqJagged_getGlobalMinMaxTotalCoord(
             MPI_Allreduce(localMinMaxTotal, globalMinMaxTotal, 3 * concurrentPartCount, MPI_FLOAT, myop,MPI_COMM_WORLD);
 #endif
 #ifndef mpi_communication
-            reduceAll<int, scalar_t>(*comm, reductionOp,
+            reduceAll<int, pq_scalar_t>(*comm, reductionOp,
                     3 * concurrentPartCount, localMinMaxTotal, globalMinMaxTotal
             );
 #endif
@@ -1040,20 +1040,20 @@ void pqJagged_getGlobalMinMaxTotalCoord(
  * \param partIndex is the index of the part in the currentPartitions vector.
  * \param futureArrayIndex holds the amount of shift in the futurePartitions for the output parts.
  */
-template <typename scalar_t>
+template <typename pq_scalar_t>
 void pqJagged_getCutCoord_Weights(
-        scalar_t minCoordinate,
-        scalar_t maxCoordinate,
+        pq_scalar_t minCoordinate,
+        pq_scalar_t maxCoordinate,
 
         bool pqJagged_uniformParts,
         bool pqJagged_uniformWeights,
 
-        scalar_t *pqJagged_partSizes /*p sized, weight ratios of each part*/,
+        pq_scalar_t *pqJagged_partSizes /*p sized, weight ratios of each part*/,
         partId_t noCuts/*p-1*/ ,
-        scalar_t globalTotalWeight,
+        pq_scalar_t globalTotalWeight,
 
-        scalar_t *cutCoordinates /*p - 1 sized, coordinate of each cut line*/,
-        scalar_t *cutPartRatios /*cumulative weight ratios, at left side of each cut line. p-1 sized*/,
+        pq_scalar_t *cutCoordinates /*p - 1 sized, coordinate of each cut line*/,
+        pq_scalar_t *cutPartRatios /*cumulative weight ratios, at left side of each cut line. p-1 sized*/,
         int numThreads,
 
         vector <partId_t> *currentPartitions, //the vecto
@@ -1062,12 +1062,12 @@ void pqJagged_getCutCoord_Weights(
         partId_t futureArrayIndex
 ){
 
-    scalar_t coordinateRange = maxCoordinate - minCoordinate;
+    pq_scalar_t coordinateRange = maxCoordinate - minCoordinate;
     if(pqJagged_uniformParts){
         {
             partId_t cumulative = 0;
-            scalar_t totalInnerPartCount = scalar_t((*currentPartitions)[partIndex]);
-            scalar_t unitWeight = globalTotalWeight / totalInnerPartCount;
+            pq_scalar_t totalInnerPartCount = pq_scalar_t((*currentPartitions)[partIndex]);
+            pq_scalar_t unitWeight = globalTotalWeight / totalInnerPartCount;
             for(partId_t i = 0; i < noCuts; ++i){
                 cumulative += (*futurePartitions)[i + futureArrayIndex];
                 //cutPartRatios[i] = (cumulative /*+  (*futurePartitions)[i + futureArrayIndex]*/) / (totalInnerPartCount);
@@ -1135,49 +1135,49 @@ void pqJagged_getCutCoord_Weights(
  *
  * \param myNoneDoneCount is the number of cutlines whose position has not been determined yet. For K > 1 it is the count in a single part (whose cut lines are determined).
  */
-template <typename scalar_t>
+template <typename pq_scalar_t>
 void getNewCoordinates(
         const RCP<const Environment> &env,
         RCP<Comm<int> > &comm,
         const size_t &total_part_count,
         const partId_t &noCuts,
-        const scalar_t &maxCoordinate,
-        const scalar_t &minCoordinate,
-        const scalar_t &globalTotalWeight,
-        const scalar_t &imbalanceTolerance,
-        //scalar_t maxCoordinate,
-        //scalar_t minCoordinate,
+        const pq_scalar_t &maxCoordinate,
+        const pq_scalar_t &minCoordinate,
+        const pq_scalar_t &globalTotalWeight,
+        const pq_scalar_t &imbalanceTolerance,
+        //pq_scalar_t maxCoordinate,
+        //pq_scalar_t minCoordinate,
 
-        scalar_t * globalPartWeights,
-        const scalar_t * localPartWeights,
-        const scalar_t *targetPartWeightRatios,
+        pq_scalar_t * globalPartWeights,
+        const pq_scalar_t * localPartWeights,
+        const pq_scalar_t *targetPartWeightRatios,
         bool *isDone,
 
-        scalar_t *cutCoordinates,
-        scalar_t *cutUpperBounds,
-        scalar_t *cutLowerBounds,
-        scalar_t *leftClosestDistance,
-        scalar_t *rightClosestDistance,
-        scalar_t * cutLowerWeight,
-        scalar_t * cutUpperWeight,
-        scalar_t *newCutCoordinates,
+        pq_scalar_t *cutCoordinates,
+        pq_scalar_t *cutUpperBounds,
+        pq_scalar_t *cutLowerBounds,
+        pq_scalar_t *leftClosestDistance,
+        pq_scalar_t *rightClosestDistance,
+        pq_scalar_t * cutLowerWeight,
+        pq_scalar_t * cutUpperWeight,
+        pq_scalar_t *newCutCoordinates,
 
         bool allowNonRectelinearPart,
         float *nonRectelinearPartRatios,
         partId_t *rectilinearCutCount,
-        scalar_t *localCutWeights,
-        scalar_t *globalCutWeights,
+        pq_scalar_t *localCutWeights,
+        pq_scalar_t *globalCutWeights,
 
         partId_t &myNoneDoneCount
 )
 {
 
 
-    scalar_t seenW = 0;
+    pq_scalar_t seenW = 0;
     float expected = 0;
-    scalar_t leftImbalance = 0, rightImbalance = 0;
-    scalar_t _EPSILON = numeric_limits<scalar_t>::epsilon();
-    //scalar_t _EPSILON = numeric_limits<float>::epsilon();
+    pq_scalar_t leftImbalance = 0, rightImbalance = 0;
+    pq_scalar_t _EPSILON = numeric_limits<pq_scalar_t>::epsilon();
+    //pq_scalar_t _EPSILON = numeric_limits<float>::epsilon();
 
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
@@ -1244,7 +1244,7 @@ void getNewCoordinates(
         }
         else if(leftImbalance < 0){
 
-            scalar_t ew = expected; //globalTotalWeight * expected;
+            pq_scalar_t ew = expected; //globalTotalWeight * expected;
             if(allowNonRectelinearPart){
 
                 if (globalPartWeights[i * 2 + 1] == ew){
@@ -1279,7 +1279,7 @@ void getNewCoordinates(
 #endif
                     myNoneDoneCount -= 1;
                     newCutCoordinates [i] = cutCoordinates[i];
-                    scalar_t myWeightOnLine = localPartWeights[i * 2 + 1] - localPartWeights[i * 2];
+                    pq_scalar_t myWeightOnLine = localPartWeights[i * 2 + 1] - localPartWeights[i * 2];
                     localCutWeights[i] = myWeightOnLine;
                     continue;
                 }
@@ -1290,8 +1290,8 @@ void getNewCoordinates(
 
             //compare the upper bound with the current lines.
             for (partId_t ii = i + 1; ii < noCuts ; ++ii){
-                scalar_t pw = globalPartWeights[ii * 2];
-                scalar_t lw = globalPartWeights[ii * 2 + 1];
+                pq_scalar_t pw = globalPartWeights[ii * 2];
+                pq_scalar_t lw = globalPartWeights[ii * 2 + 1];
                 if(pw >= ew){
                     if(pw == ew){
 
@@ -1324,7 +1324,7 @@ void getNewCoordinates(
             }
 
 
-            scalar_t newPivot = pivotPos<scalar_t> (cutUpperBounds, cutLowerBounds,i, cutUpperWeight, cutLowerWeight, ew, _EPSILON);
+            pq_scalar_t newPivot = pivotPos<pq_scalar_t> (cutUpperBounds, cutLowerBounds,i, cutUpperWeight, cutLowerWeight, ew, _EPSILON);
 
             //if cut line does not move significantly.
             if (ABS(cutCoordinates[i] - newPivot) < _EPSILON * EPS_SCALE || cutLowerBounds[i] - cutUpperBounds[i] > _EPSILON/*cutUpperBounds[i] < cutLowerBounds[i]*/){
@@ -1340,7 +1340,7 @@ void getNewCoordinates(
         } else {
 
             //moving to left.
-            scalar_t ew = expected; //globalTotalWeight * expected;
+            pq_scalar_t ew = expected; //globalTotalWeight * expected;
             //moving left, set upper to current line.
             //cout << "setting upper bound to:" << leftClosestDistance[i] << endl;
             cutUpperBounds[i] = /*cutCoordinates[i] -*/ leftClosestDistance[i];
@@ -1348,8 +1348,8 @@ void getNewCoordinates(
 
             // compare the current cut line weights with previous upper and lower bounds.
             for (int ii = i - 1; ii >= 0; --ii){
-                scalar_t pw = globalPartWeights[ii * 2];
-                scalar_t lw = globalPartWeights[ii * 2 + 1];
+                pq_scalar_t pw = globalPartWeights[ii * 2];
+                pq_scalar_t lw = globalPartWeights[ii * 2 + 1];
                 if(pw <= ew){
                     if(pw == ew){
                         cutUpperBounds[i] = cutCoordinates[ii];
@@ -1375,7 +1375,7 @@ void getNewCoordinates(
                 }
             }
 
-            scalar_t newPivot = pivotPos<scalar_t> (cutUpperBounds, cutLowerBounds,i, cutUpperWeight, cutLowerWeight, ew, _EPSILON);
+            pq_scalar_t newPivot = pivotPos<pq_scalar_t> (cutUpperBounds, cutLowerBounds,i, cutUpperWeight, cutLowerWeight, ew, _EPSILON);
             //if cut line does not move significantly.
             if (ABS(cutCoordinates[i] - newPivot) < _EPSILON * EPS_SCALE  || cutLowerBounds[i] - cutUpperBounds[i] > _EPSILON ){
                 isDone[i] = true;
@@ -1401,7 +1401,7 @@ void getNewCoordinates(
     {
         if(*rectilinearCutCount > 0){
             try{
-                Teuchos::scan<int,scalar_t>(
+                Teuchos::scan<int,pq_scalar_t>(
                         *comm, Teuchos::REDUCE_SUM,
                         noCuts,localCutWeights, globalCutWeights
                 );
@@ -1412,15 +1412,15 @@ void getNewCoordinates(
             for (partId_t i = 0; i < noCuts; ++i){
                 //cout << "gw:" << globalCutWeights[i] << endl;
                 if(globalCutWeights[i] > 0) {
-                    //scalar_t ew = globalTotalWeight * targetPartWeightRatios[i];
-                    scalar_t ew = targetPartWeightRatios[i];
-                    //ew = long (ew * long(1000)) / scalar_t(1000.0);
-                    //globalPartWeights[i * 2] = long(globalPartWeights[i * 2] * long(1000)) / scalar_t (1000);
-                    scalar_t expectedWeightOnLine = ew - globalPartWeights[i * 2];
-                    scalar_t myWeightOnLine = localCutWeights[i];
-                    scalar_t weightOnLineBefore = globalCutWeights[i];
-                    scalar_t incMe = expectedWeightOnLine - weightOnLineBefore;
-                    scalar_t mine = incMe + myWeightOnLine;
+                    //pq_scalar_t ew = globalTotalWeight * targetPartWeightRatios[i];
+                    pq_scalar_t ew = targetPartWeightRatios[i];
+                    //ew = long (ew * long(1000)) / pq_scalar_t(1000.0);
+                    //globalPartWeights[i * 2] = long(globalPartWeights[i * 2] * long(1000)) / pq_scalar_t (1000);
+                    pq_scalar_t expectedWeightOnLine = ew - globalPartWeights[i * 2];
+                    pq_scalar_t myWeightOnLine = localCutWeights[i];
+                    pq_scalar_t weightOnLineBefore = globalCutWeights[i];
+                    pq_scalar_t incMe = expectedWeightOnLine - weightOnLineBefore;
+                    pq_scalar_t mine = incMe + myWeightOnLine;
                     if(mine < 0){
                         nonRectelinearPartRatios[i] = 0;
 /*
@@ -1470,7 +1470,7 @@ void getNewCoordinates(
  * \param noCuts is the number of cut lines. P - 1.
  * \param maxCoordinate is the maximum coordinate in the part.
  * \param minCoordinate is the min coordinate in the part.
- * \param _EPSILON is the smallest error value for scalar_t.
+ * \param _EPSILON is the smallest error value for pq_scalar_t.
  * \param numThreads hold the number of threads available per processor.
  *
  * \param coordinateBegin is the index of the first coordinate in current part.
@@ -1492,26 +1492,26 @@ void getNewCoordinates(
  * \param useBinarySearch is boolean parameter whether to search for cut lines with binary search of linear search.
  * \param partIds is the array that holds the part ids of the coordinates
  */
-template <typename scalar_t, typename lno_t>
+template <typename pq_scalar_t, typename pq_lno_t>
 void pqJagged_1DPart_getPartWeights(
         size_t total_part_count,
         partId_t noCuts,
-        scalar_t maxCoordinate,
-        scalar_t minCoordinate,
-        scalar_t _EPSILON,
+        pq_scalar_t maxCoordinate,
+        pq_scalar_t minCoordinate,
+        pq_scalar_t _EPSILON,
         int numThreads,
-        lno_t coordinateBegin,
-        lno_t coordinateEnd,
-        lno_t *partitionedPointPermutations,
-        scalar_t *pqJagged_coordinates,
+        pq_lno_t coordinateBegin,
+        pq_lno_t coordinateEnd,
+        pq_lno_t *partitionedPointPermutations,
+        pq_scalar_t *pqJagged_coordinates,
         bool pqJagged_uniformWeights,
-        scalar_t *pqJagged_weights,
+        pq_scalar_t *pqJagged_weights,
 
-        scalar_t *cutCoordinates_tmp, //TODO change name
+        pq_scalar_t *cutCoordinates_tmp, //TODO change name
         bool *isDone,
         double *myPartWeights,
-        scalar_t *myLeftClosest,
-        scalar_t *myRightClosest,
+        pq_scalar_t *myLeftClosest,
+        pq_scalar_t *myRightClosest,
         bool useBinarySearch,
         partId_t *partIds
 ){
@@ -1530,13 +1530,13 @@ void pqJagged_1DPart_getPartWeights(
     }
     if(useBinarySearch){
 
-        //lno_t comparison_count = 0;
-        scalar_t minus_EPSILON = -_EPSILON;
+        //pq_lno_t comparison_count = 0;
+        pq_scalar_t minus_EPSILON = -_EPSILON;
 #ifdef HAVE_ZOLTAN2_OMP
 //no need for the barrier as all threads uses their local memories.
 #pragma omp for
 #endif
-        for (lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
+        for (pq_lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
             int i = partitionedPointPermutations[ii];
             partId_t j = partIds[i] / 2;
 
@@ -1548,13 +1548,13 @@ void pqJagged_1DPart_getPartWeights(
             partId_t lc = 0;
             partId_t uc = noCuts - 1;
 
-            scalar_t w = pqJagged_uniformWeights? 1:pqJagged_weights[i];
+            pq_scalar_t w = pqJagged_uniformWeights? 1:pqJagged_weights[i];
             bool isInserted = false;
             bool onLeft = false;
             bool onRight = false;
             partId_t lastPart = -1;
 
-            scalar_t coord = pqJagged_coordinates[i];
+            pq_scalar_t coord = pqJagged_coordinates[i];
 
             while(uc >= lc)
             {
@@ -1562,9 +1562,9 @@ void pqJagged_1DPart_getPartWeights(
                 lastPart = -1;
                 onLeft = false;
                 onRight = false;
-                scalar_t cut = cutCoordinates_tmp[j];
-                scalar_t distance = coord - cut;
-                scalar_t absdistance = ABS(distance);
+                pq_scalar_t cut = cutCoordinates_tmp[j];
+                pq_scalar_t distance = coord - cut;
+                pq_scalar_t absdistance = ABS(distance);
 
                 if(absdistance < _EPSILON){
 
@@ -1663,7 +1663,7 @@ void pqJagged_1DPart_getPartWeights(
                          */
                         bool _break = false;
                         if(j < noCuts - 1){
-                            scalar_t distance_ = coord - cutCoordinates_tmp[j + 1];
+                            pq_scalar_t distance_ = coord - cutCoordinates_tmp[j + 1];
                             /*
                      if(distance > _EPSILON){
                      if (myRightClosest[j + 1] > distance){
@@ -1700,12 +1700,12 @@ void pqJagged_1DPart_getPartWeights(
                     //cout << "\ti:" << i << " assigned:" << 2 * lastPart + 2 << endl;
                     myPartWeights[2 * lastPart + 2] += w;
                     partIds[i] = 2 * lastPart + 2;
-                    //scalar_t distance = coord - cutCoordinates_tmp[lastPart];
+                    //pq_scalar_t distance = coord - cutCoordinates_tmp[lastPart];
                     if(myRightClosest[lastPart] - coord > _EPSILON){
                         myRightClosest[lastPart] = coord;
                     }
                     if(lastPart+1 < noCuts){
-                        //scalar_t distance_ = cutCoordinates_tmp[lastPart + 1] - coord;
+                        //pq_scalar_t distance_ = cutCoordinates_tmp[lastPart + 1] - coord;
                         if(coord - myLeftClosest[lastPart + 1] > _EPSILON){
                             myLeftClosest[lastPart + 1] = coord;
                         }
@@ -1716,13 +1716,13 @@ void pqJagged_1DPart_getPartWeights(
                     //cout << "\ti:" << i << " assigned:" << 2 * lastPart << endl;
                     myPartWeights[2 * lastPart] += w;
                     partIds[i] = 2 * lastPart;
-                    //scalar_t distance = cutCoordinates_tmp[lastPart ] - coord;
+                    //pq_scalar_t distance = cutCoordinates_tmp[lastPart ] - coord;
                     if(coord - myLeftClosest[lastPart] > _EPSILON){
                         myLeftClosest[lastPart] = coord;
                     }
 
                     if(lastPart-1 >= 0){
-                        //scalar_t distance_ = coord - cutCoordinates_tmp[lastPart - 1];
+                        //pq_scalar_t distance_ = coord - cutCoordinates_tmp[lastPart - 1];
                         if(myRightClosest[lastPart -1] - coord > _EPSILON){
                             myRightClosest[lastPart -1] = coord;
                         }
@@ -1736,21 +1736,21 @@ void pqJagged_1DPart_getPartWeights(
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
-        for (lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
+        for (pq_lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
             int i = partitionedPointPermutations[ii];
 
-            scalar_t w = pqJagged_uniformWeights ? 1 : pqJagged_weights[i];
+            pq_scalar_t w = pqJagged_uniformWeights ? 1 : pqJagged_weights[i];
 
-            scalar_t coord = pqJagged_coordinates[i];
+            pq_scalar_t coord = pqJagged_coordinates[i];
 
             partId_t j = partIds[i] / 2;
 
             if(j >= noCuts){
                 j = noCuts - 1;
             }
-            scalar_t cut = cutCoordinates_tmp[j];
-            scalar_t distance = coord - cut;
-            scalar_t absdistance = ABS(distance);
+            pq_scalar_t cut = cutCoordinates_tmp[j];
+            pq_scalar_t distance = coord - cut;
+            pq_scalar_t absdistance = ABS(distance);
 
             //comp++;
             if(absdistance < _EPSILON){
@@ -1949,16 +1949,16 @@ void pqJagged_1DPart_getPartWeights(
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
-for (lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
+for (pq_lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
 int i = partitionedPointPermutations[ii];
 
-scalar_t w = pqJagged_uniformWeights? 1:pqJagged_weights[i];
+pq_scalar_t w = pqJagged_uniformWeights? 1:pqJagged_weights[i];
 //get a coordinate and compare it with cut lines from left to right.
 for(partId_t j = 0; j < noCuts; ++j){
 
 if(isDone[j]) continue;
-scalar_t distance = pqJagged_coordinates[i] - cutCoordinates_tmp[j];
-scalar_t absdistance = ABS(distance);
+pq_scalar_t distance = pqJagged_coordinates[i] - cutCoordinates_tmp[j];
+pq_scalar_t absdistance = ABS(distance);
 if(absdistance < _EPSILON){
 myPartWeights[j * 2] -= w;
 //myPartWeights[j * 2] += w;
@@ -2021,7 +2021,7 @@ else {
  * \param totalPartWeights_leftClosest_rightCloset is the output array of accumulation, where total part weights (2P - 1),
  * then left closest distances (P -1), then right closest distance (P -1) are stored.
  */
-template <typename scalar_t>
+template <typename pq_scalar_t>
 void accumulateThreadResults(
         const vector <partId_t> &pVector,
         partId_t vBegin,
@@ -2029,11 +2029,11 @@ void accumulateThreadResults(
         partId_t concurrentPartCount,
         int numThreads,
         bool *isDone,
-        scalar_t **leftClosestPoints,
-        scalar_t **rightClosestPoints,
+        pq_scalar_t **leftClosestPoints,
+        pq_scalar_t **rightClosestPoints,
         double **partWeights,
-        //scalar_t *localMinMaxTotal,
-        scalar_t *totalPartWeights_leftClosest_rightCloset
+        //pq_scalar_t *localMinMaxTotal,
+        pq_scalar_t *totalPartWeights_leftClosest_rightCloset
 
 ){
 #ifdef HAVE_ZOLTAN2_OMP
@@ -2054,7 +2054,7 @@ void accumulateThreadResults(
                     partId_t next = tlr_shift + ii;
                     partId_t nCut = cut_shift + ii;
                     if(isDone[nCut]) continue;
-                    scalar_t minl = leftClosestPoints[0][nCut], minr = rightClosestPoints[0][nCut];
+                    pq_scalar_t minl = leftClosestPoints[0][nCut], minr = rightClosestPoints[0][nCut];
 
                     for (int j = 1; j < numThreads; ++j){
                         if (rightClosestPoints[j][nCut] < minr ){
@@ -2147,44 +2147,44 @@ void accumulateThreadResults(
  * \param pVector is the vector that holds how many parts each part will be divided into.
  *
  */
-template <typename scalar_t, typename lno_t>
+template <typename pq_scalar_t, typename pq_lno_t>
 void pqJagged_1D_Partition(
         const RCP<const Environment> &env,
         RCP<Comm<int> > &comm,
 
-        lno_t *partitionedPointPermutations,
-        scalar_t *pqJagged_coordinates,
+        pq_lno_t *partitionedPointPermutations,
+        pq_scalar_t *pqJagged_coordinates,
         bool pqJagged_uniformWeights,
-        scalar_t *pqJagged_weights,
+        pq_scalar_t *pqJagged_weights,
 
-        scalar_t *targetPartWeightRatios,   // the weight ratios at left side of the cuts. last is 1.
-        scalar_t *globalMinMaxTotal,
-        scalar_t *localMinMaxTotal,
+        pq_scalar_t *targetPartWeightRatios,   // the weight ratios at left side of the cuts. last is 1.
+        pq_scalar_t *globalMinMaxTotal,
+        pq_scalar_t *localMinMaxTotal,
 
         int numThreads,
-        //scalar_t maxScalar,
-        //scalar_t minScalar,
-        scalar_t imbalanceTolerance,
+        //pq_scalar_t maxScalar,
+        //pq_scalar_t minScalar,
+        pq_scalar_t imbalanceTolerance,
         partId_t currentPartBeginIndex,
         partId_t concurrentPartCount,
-        lno_t *inTotalCounts,
+        pq_lno_t *inTotalCounts,
 
-        scalar_t *cutCoordinates,
-        scalar_t *cutCoordinatesWork, 	// work array to manipulate coordinate of cutlines in different iterations.
-        scalar_t **leftClosestDistance,
-        scalar_t **rightClosestDistance,
-        scalar_t *cutUpperBounds,  //to determine the next cut line with binary search
-        scalar_t *cutLowerBounds,  //to determine the next cut line with binary search
-        scalar_t *cutUpperWeight,   //to determine the next cut line with binary search
-        scalar_t *cutLowerWeight,  //to determine the next cut line with binary search
+        pq_scalar_t *cutCoordinates,
+        pq_scalar_t *cutCoordinatesWork, 	// work array to manipulate coordinate of cutlines in different iterations.
+        pq_scalar_t **leftClosestDistance,
+        pq_scalar_t **rightClosestDistance,
+        pq_scalar_t *cutUpperBounds,  //to determine the next cut line with binary search
+        pq_scalar_t *cutLowerBounds,  //to determine the next cut line with binary search
+        pq_scalar_t *cutUpperWeight,   //to determine the next cut line with binary search
+        pq_scalar_t *cutLowerWeight,  //to determine the next cut line with binary search
         bool *isDone,
         double **partWeights,
-        scalar_t *local_totalPartWeights_leftClosest_rightCloset,
-        scalar_t *global_totalPartWeights_leftClosest_rightCloset,
+        pq_scalar_t *local_totalPartWeights_leftClosest_rightCloset,
+        pq_scalar_t *global_totalPartWeights_leftClosest_rightCloset,
         bool allowNonRectelinearPart,
         float *nonRectelinearPartRatios,
-        scalar_t *localCutWeights,
-        scalar_t *globalCutWeights,
+        pq_scalar_t *localCutWeights,
+        pq_scalar_t *globalCutWeights,
 
         partId_t allDone,
         partId_t *myNonDoneCounts,
@@ -2195,7 +2195,7 @@ void pqJagged_1D_Partition(
 ){
 
     partId_t recteLinearCutCount = 0;
-    scalar_t *cutCoordinates_tmp = cutCoordinates;
+    pq_scalar_t *cutCoordinates_tmp = cutCoordinates;
 
 
 #ifdef mpi_communication
@@ -2204,10 +2204,10 @@ void pqJagged_1D_Partition(
 #endif
 
 
-    scalar_t _EPSILON = numeric_limits<scalar_t>::epsilon();
+    pq_scalar_t _EPSILON = numeric_limits<pq_scalar_t>::epsilon();
 
-    Teuchos::PQJaggedCombinedReductionOp<partId_t, scalar_t> *reductionOp = NULL;
-        reductionOp = new Teuchos::PQJaggedCombinedReductionOp<partId_t, scalar_t>(&pVector , currentPartBeginIndex , concurrentPartCount);
+    Teuchos::PQJaggedCombinedReductionOp<partId_t, pq_scalar_t> *reductionOp = NULL;
+        reductionOp = new Teuchos::PQJaggedCombinedReductionOp<partId_t, pq_scalar_t>(&pVector , currentPartBeginIndex , concurrentPartCount);
 
 
     size_t totalReductionSize = 0;
@@ -2220,8 +2220,8 @@ void pqJagged_1D_Partition(
         me = omp_get_thread_num();
 #endif
         double *myPartWeights = partWeights[me];
-        scalar_t *myLeftClosest = leftClosestDistance[me];
-        scalar_t *myRightClosest = rightClosestDistance[me];
+        pq_scalar_t *myLeftClosest = leftClosestDistance[me];
+        pq_scalar_t *myRightClosest = rightClosestDistance[me];
 
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp single
@@ -2275,19 +2275,19 @@ void pqJagged_1D_Partition(
                     //although isDone shared, currentDone is private and same for all.
                     bool *currentDone = isDone + cutShifts;
                     double *myCurrentPartWeights = myPartWeights + totalPartShift;
-                    scalar_t *myCurrentLeftClosest = myLeftClosest + cutShifts;
-                    scalar_t *myCurrentRightClosest = myRightClosest + cutShifts;
+                    pq_scalar_t *myCurrentLeftClosest = myLeftClosest + cutShifts;
+                    pq_scalar_t *myCurrentRightClosest = myRightClosest + cutShifts;
 
                     partId_t current = currentPartBeginIndex + kk;
-                    lno_t coordinateBegin = current ==0 ? 0: inTotalCounts[current -1];
-                    lno_t coordinateEnd = inTotalCounts[current];
-                    scalar_t *cutCoordinates_ = cutCoordinates_tmp + cutShifts;
+                    pq_lno_t coordinateBegin = current ==0 ? 0: inTotalCounts[current -1];
+                    pq_lno_t coordinateEnd = inTotalCounts[current];
+                    pq_scalar_t *cutCoordinates_ = cutCoordinates_tmp + cutShifts;
 
-                    scalar_t minCoordinate = globalMinMaxTotal[kk];
-                    scalar_t maxCoordinate = globalMinMaxTotal[kk + concurrentPartCount];
+                    pq_scalar_t minCoordinate = globalMinMaxTotal[kk];
+                    pq_scalar_t maxCoordinate = globalMinMaxTotal[kk + concurrentPartCount];
 
                     // compute part weights using existing cuts
-                    pqJagged_1DPart_getPartWeights<scalar_t, lno_t>(
+                    pqJagged_1DPart_getPartWeights<pq_scalar_t, pq_lno_t>(
                             total_part_count,
                             noCuts,
                             maxCoordinate,//globalMinMaxTotal[kk + concurrentPartCount],//maxScalar,
@@ -2316,7 +2316,7 @@ void pqJagged_1D_Partition(
             }
 
             //sum up the results of threads
-            accumulateThreadResults<scalar_t>(
+            accumulateThreadResults<pq_scalar_t>(
                     pVector,
                     currentPartBeginIndex,
                     concurrentPartCount,
@@ -2332,9 +2332,9 @@ void pqJagged_1D_Partition(
                 int partNo = pVector[currentPartBeginIndex];
                 cout << "iteration:" << iteration << endl;
 
-                scalar_t *cutCoordinates_ = cutCoordinates_tmp + cutShifts;
-                scalar_t *myCurrentLeftClosest = myLeftClosest + cutShifts;
-                scalar_t *myCurrentRightClosest = myRightClosest + cutShifts;
+                pq_scalar_t *cutCoordinates_ = cutCoordinates_tmp + cutShifts;
+                pq_scalar_t *myCurrentLeftClosest = myLeftClosest + cutShifts;
+                pq_scalar_t *myCurrentRightClosest = myRightClosest + cutShifts;
                 bool *currentDone = isDone + cutShifts;
 
                 for (int i = 0; i < partNo - 1; ++i){
@@ -2370,7 +2370,7 @@ void pqJagged_1D_Partition(
 #endif
 #ifndef mpi_communication
 
-                        reduceAll<int, scalar_t>(
+                        reduceAll<int, pq_scalar_t>(
                                 *comm,
                                 *reductionOp,
                                 totalReductionSize,
@@ -2384,7 +2384,7 @@ void pqJagged_1D_Partition(
                 else {
                         memcpy(global_totalPartWeights_leftClosest_rightCloset,
                                 local_totalPartWeights_leftClosest_rightCloset,
-                                totalReductionSize * sizeof(scalar_t)
+                                totalReductionSize * sizeof(pq_scalar_t)
                         );
                 }
             }
@@ -2403,28 +2403,28 @@ void pqJagged_1D_Partition(
                     continue;
                 }
 
-                scalar_t *localPartWeights = local_totalPartWeights_leftClosest_rightCloset  + tlrShift ;
-                scalar_t *gtlr = global_totalPartWeights_leftClosest_rightCloset + tlrShift;
-                scalar_t *glc = gtlr + total_part_count; //left closest points
-                scalar_t *grc = gtlr + total_part_count + noCuts; //right closest points
-                scalar_t *globalPartWeights = gtlr;
+                pq_scalar_t *localPartWeights = local_totalPartWeights_leftClosest_rightCloset  + tlrShift ;
+                pq_scalar_t *gtlr = global_totalPartWeights_leftClosest_rightCloset + tlrShift;
+                pq_scalar_t *glc = gtlr + total_part_count; //left closest points
+                pq_scalar_t *grc = gtlr + total_part_count + noCuts; //right closest points
+                pq_scalar_t *globalPartWeights = gtlr;
                 bool *currentDone = isDone + cutShift;
 
-                scalar_t *currentTargetPartWeightRatios = targetPartWeightRatios + cutShift + kk;
+                pq_scalar_t *currentTargetPartWeightRatios = targetPartWeightRatios + cutShift + kk;
                 float *currentnonRectelinearPartRatios = nonRectelinearPartRatios + cutShift;
 
-                scalar_t minCoordinate = globalMinMaxTotal[kk];
-                scalar_t maxCoordinate = globalMinMaxTotal[kk + concurrentPartCount];
-                scalar_t globalTotalWeight = globalMinMaxTotal[kk + concurrentPartCount * 2];
-                scalar_t *currentcutLowerWeight = cutLowerWeight + cutShift;
-                scalar_t *currentcutUpperWeight = cutUpperWeight + cutShift;
-                scalar_t *currentcutUpperBounds = cutUpperBounds + cutShift;
-                scalar_t *currentcutLowerBounds = cutLowerBounds + cutShift;
+                pq_scalar_t minCoordinate = globalMinMaxTotal[kk];
+                pq_scalar_t maxCoordinate = globalMinMaxTotal[kk + concurrentPartCount];
+                pq_scalar_t globalTotalWeight = globalMinMaxTotal[kk + concurrentPartCount * 2];
+                pq_scalar_t *currentcutLowerWeight = cutLowerWeight + cutShift;
+                pq_scalar_t *currentcutUpperWeight = cutUpperWeight + cutShift;
+                pq_scalar_t *currentcutUpperBounds = cutUpperBounds + cutShift;
+                pq_scalar_t *currentcutLowerBounds = cutLowerBounds + cutShift;
 
                 partId_t prevDoneCount = myNonDoneCounts[kk];
 
                 // Now compute the new cut coordinates.
-                getNewCoordinates<scalar_t>(
+                getNewCoordinates<pq_scalar_t>(
                         env,
                         comm,
                         total_part_count,
@@ -2475,7 +2475,7 @@ void pqJagged_1D_Partition(
 #pragma omp single
 #endif
             {
-                scalar_t *t = cutCoordinates_tmp;
+                pq_scalar_t *t = cutCoordinates_tmp;
                 cutCoordinates_tmp = cutCoordinatesWork;
                 cutCoordinatesWork = t;
             }
@@ -2743,39 +2743,39 @@ void uqsort(IT n, uSortItem<IT, WT> * arr)
 }
 
 #ifdef enable_migration2
-template <typename gno_t, typename lno_t,typename scalar_t, typename node_t>
-RCP<const Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > create_initial_multi_vector(
+template <typename pq_gno_t, typename pq_lno_t,typename pq_scalar_t, typename pq_node_t>
+RCP<const Tpetra::MultiVector<pq_scalar_t, pq_lno_t, pq_gno_t, pq_node_t> > create_initial_multi_vector(
         const RCP<const Environment> &env,
         RCP<Comm<int> > &comm,
-        gno_t numGlobalPoints,
-        lno_t numLocalPoints,
+        pq_gno_t numGlobalPoints,
+        pq_lno_t numLocalPoints,
         int coord_dim,
-        scalar_t **coords,
+        pq_scalar_t **coords,
         int weight_dim,
-        scalar_t **weight,
+        pq_scalar_t **weight,
 
         int pqJagged_multiVectorDim
 ){
-    typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
+    typedef Tpetra::MultiVector<pq_scalar_t, pq_lno_t, pq_gno_t, pq_node_t> tMVector_t;
 #ifdef memory_debug
     sleep(1); env->memory("initial multivector before map");
 #endif
-    RCP<Tpetra::Map<lno_t, gno_t, node_t> > mp = rcp(
-            new Tpetra::Map<lno_t, gno_t, node_t> (numGlobalPoints, numLocalPoints, 0, comm));
+    RCP<Tpetra::Map<pq_lno_t, pq_gno_t, pq_node_t> > mp = rcp(
+            new Tpetra::Map<pq_lno_t, pq_gno_t, pq_node_t> (numGlobalPoints, numLocalPoints, 0, comm));
 
 
 #ifdef memory_debug
     if(comm->getRank() == 0) cout << "nn:"<< numLocalPoints<<"created map:" << mp.getRawPtr() << endl;
     sleep(1); env->memory("initial multivector after map");
 #endif
-    Teuchos::Array<Teuchos::ArrayView<const scalar_t> > coordView(pqJagged_multiVectorDim);
+    Teuchos::Array<Teuchos::ArrayView<const pq_scalar_t> > coordView(pqJagged_multiVectorDim);
     for (int i=0; i < coord_dim; i++){
         //cout << "setting i:" << i << endl;
         if(numLocalPoints > 0){
-            Teuchos::ArrayView<const scalar_t> a(coords[i], numLocalPoints);
+            Teuchos::ArrayView<const pq_scalar_t> a(coords[i], numLocalPoints);
             coordView[i] = a;
         } else{
-            Teuchos::ArrayView<const scalar_t> a;
+            Teuchos::ArrayView<const pq_scalar_t> a;
             coordView[i] = a;
         }
 #ifdef memory_debug
@@ -2790,10 +2790,10 @@ RCP<const Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > create_initial_m
         //if (j >= pqJagged_multiVectorDim - 1) break;
         //cout << "setting j:" << j << endl;
         if(numLocalPoints > 0){
-            Teuchos::ArrayView<const scalar_t> a(weight[i], numLocalPoints);
+            Teuchos::ArrayView<const pq_scalar_t> a(weight[i], numLocalPoints);
             coordView[j] = a;
         } else{
-            Teuchos::ArrayView<const scalar_t> a;
+            Teuchos::ArrayView<const pq_scalar_t> a;
             coordView[j] = a;
         }
     }
@@ -2804,16 +2804,16 @@ RCP<const Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > create_initial_m
 #ifdef migrate_gid
     if(numLocalPoints > 0){
         //cout << "writing :" << weight_dim + coord_dim << endl;
-        Teuchos::ArrayView<const scalar_t> a(mappedGnos, numLocalPoints);
+        Teuchos::ArrayView<const pq_scalar_t> a(mappedGnos, numLocalPoints);
         coordView[pqJagged_multiVectorDim - 1] = a;
     } else{
-        Teuchos::ArrayView<const scalar_t> a;
+        Teuchos::ArrayView<const pq_scalar_t> a;
         coordView[pqJagged_multiVectorDim - 1] = a;
     }
 #endif
-    RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >tmVector =
-            RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >(
-                    new Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>( mp, coordView.view(0, pqJagged_multiVectorDim), pqJagged_multiVectorDim));
+    RCP< Tpetra::MultiVector<pq_scalar_t, pq_lno_t, pq_gno_t, pq_node_t> >tmVector =
+            RCP< Tpetra::MultiVector<pq_scalar_t, pq_lno_t, pq_gno_t, pq_node_t> >(
+                    new Tpetra::MultiVector<pq_scalar_t, pq_lno_t, pq_gno_t, pq_node_t>( mp, coordView.view(0, pqJagged_multiVectorDim), pqJagged_multiVectorDim));
 
 #ifdef memory_debug
     sleep(1); env->memory("initial multivector after create");
@@ -2829,8 +2829,8 @@ RCP<const Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > create_initial_m
 
 //fills up the p_gno_np_global_num_coord_each_part_actual array and
 //returns the allocation size of arrays.
-template <typename gno_t,
-          typename lno_t,
+template <typename pq_gno_t,
+          typename pq_lno_t,
           typename partId_t>
 void getProcessorCoordinatePartCounts(
 
@@ -2842,8 +2842,8 @@ void getProcessorCoordinatePartCounts(
                                 partId_t nprocs,
                                 partId_t myRank,
                                 partId_t num_parts,
-                                lno_t *partBeginArray,
-                                gno_t *&p_gno_np_global_num_coord_each_part_actual
+                                pq_lno_t *partBeginArray,
+                                pq_gno_t *&p_gno_np_global_num_coord_each_part_actual
                                 ){
 
     //if nprocs is less than numparts we still need to allocate more memory.
@@ -2859,14 +2859,14 @@ void getProcessorCoordinatePartCounts(
 
 
     //this will be output
-    p_gno_np_global_num_coord_each_part_actual  = allocMemory<gno_t>(allocation_size);
+    p_gno_np_global_num_coord_each_part_actual  = allocMemory<pq_gno_t>(allocation_size);
 
     //allocate memory for the local num coordinates in each part.
-    gno_t *p_gno_np_local_num_coord_each_part_actual = allocMemory<gno_t>(allocation_size);
+    pq_gno_t *p_gno_np_local_num_coord_each_part_actual = allocMemory<pq_gno_t>(allocation_size);
 
 
-    gno_t *p_gno_np_local_num_coord_each_part = p_gno_np_local_num_coord_each_part_actual;
-    gno_t *p_gno_np_local_num_coord_each_part_mypart = p_gno_np_local_num_coord_each_part_actual;
+    pq_gno_t *p_gno_np_local_num_coord_each_part = p_gno_np_local_num_coord_each_part_actual;
+    pq_gno_t *p_gno_np_local_num_coord_each_part_mypart = p_gno_np_local_num_coord_each_part_actual;
 
 
 
@@ -2879,15 +2879,15 @@ void getProcessorCoordinatePartCounts(
         p_gno_np_local_num_coord_each_part_mypart += my_part_shift;
     }
 
-    memset(p_gno_np_local_num_coord_each_part_actual, 0, sizeof(gno_t)*allocation_size);
+    memset(p_gno_np_local_num_coord_each_part_actual, 0, sizeof(pq_gno_t)*allocation_size);
 
     //write the number of coordinates in each part.
     for (partId_t i = 0; i < num_parts; ++i){
-        lno_t pBegin = 0;
+        pq_lno_t pBegin = 0;
         if (i > 0){
             pBegin = partBeginArray[i - 1];
         }
-        lno_t pEnd = partBeginArray[i];
+        pq_lno_t pEnd = partBeginArray[i];
         p_gno_np_local_num_coord_each_part[i] = pEnd - pBegin;
     }
 
@@ -2896,7 +2896,7 @@ void getProcessorCoordinatePartCounts(
     if (migration_proc_assignment_type == 1){
         memcpy (p_gno_np_local_num_coord_each_part_mypart,
                 p_gno_np_local_num_coord_each_part,
-                sizeof(gno_t) * (num_parts) );
+                sizeof(pq_gno_t) * (num_parts) );
     }
 
 
@@ -2907,7 +2907,7 @@ void getProcessorCoordinatePartCounts(
     //the global number of points will be held at the index
     //nprocs * num_parts size
     try{
-        reduceAll<int, gno_t>(
+        reduceAll<int, pq_gno_t>(
                 *comm,
                 Teuchos::REDUCE_SUM,
                 allocation_size,
@@ -2915,7 +2915,7 @@ void getProcessorCoordinatePartCounts(
                 p_gno_np_global_num_coord_each_part_actual);
     }
     Z2_THROW_OUTSIDE_ERROR(*env)
-    freeArray<gno_t>(p_gno_np_local_num_coord_each_part_actual);
+    freeArray<pq_gno_t>(p_gno_np_local_num_coord_each_part_actual);
     //free local num coordinates array, as it is no use after this point.
 
 
@@ -2928,7 +2928,7 @@ void getProcessorCoordinatePartCounts(
 // -numCoordinates that left for the last dimension partitioning is less than a predetermined value
 // -the imbalance of the processors on the parts are higher than given threshold.
 //returns false otherwise, and migration is not performed.
-template <typename gno_t, typename lno_t, typename partId_t>
+template <typename pq_gno_t, typename pq_lno_t, typename partId_t>
 bool checkMigration(
 
         RCP<Comm<int> > &pcomm,
@@ -2937,7 +2937,7 @@ bool checkMigration(
 
         int migration_check_option,
         size_t futureReduceAll,
-        lno_t numCoordinatesForLastDimPartitioning,
+        pq_lno_t numCoordinatesForLastDimPartitioning,
         float migration_imbalance_cut_off,
 
         int migration_proc_assignment_type,
@@ -2945,8 +2945,8 @@ bool checkMigration(
         partId_t myRank,
         partId_t num_parts,
 
-        gno_t *p_gno_np_global_num_coord_each_part_actual,
-        lno_t *partBeginArray
+        pq_gno_t *p_gno_np_global_num_coord_each_part_actual,
+        pq_lno_t *partBeginArray
         ){
 
     /*
@@ -2969,11 +2969,11 @@ bool checkMigration(
             for (partId_t i = 0; i < num_parts; ++i){
                 double ideal_num = p_gno_np_global_num_coord_each_part_actual[i] /  double(nprocs);
 
-                lno_t pBegin = 0;
+                pq_lno_t pBegin = 0;
                 if (i > 0){
                     pBegin = partBeginArray[i - 1];
                 }
-                lno_t pEnd = partBeginArray[i];
+                pq_lno_t pEnd = partBeginArray[i];
                 diff += ABS(ideal_num -
                         (pEnd - pBegin)) /  (ideal_num);
             }
@@ -3032,38 +3032,38 @@ bool checkMigration(
 //this function is only called when nprocs < num_parts, in this case
 //a processor will have coordinates from multiple parts.
 //the partId's are migrated as well to separate the points from different parts.
-template <typename gno_t, typename lno_t,typename scalar_t, typename node_t>
-RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > createNewMultivector(
+template <typename pq_gno_t, typename pq_lno_t,typename pq_scalar_t, typename pq_node_t>
+RCP< Tpetra::MultiVector<pq_scalar_t, pq_lno_t, pq_gno_t, pq_node_t> > createNewMultivector(
         RCP<Comm<int> > &comm,
-        gno_t numGlobalPoints,
-        lno_t numLocalPoints,
+        pq_gno_t numGlobalPoints,
+        pq_lno_t numLocalPoints,
 
         int coord_dim,
-        scalar_t **coords,
+        pq_scalar_t **coords,
 
         int weight_dim,
-        scalar_t **weight,
+        pq_scalar_t **weight,
 
         partId_t num_parts,
         partId_t *partBeginArray,
-        lno_t *permutationArray,
+        pq_lno_t *permutationArray,
 
         int &multiVectorDim,
-        RCP<const Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > old_mvector
+        RCP<const Tpetra::MultiVector<pq_scalar_t, pq_lno_t, pq_gno_t, pq_node_t> > old_mvector
         ){
 
 
-    typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
-    RCP<const Tpetra::Map<lno_t, gno_t, node_t> > mp = old_mvector->getMap();
+    typedef Tpetra::MultiVector<pq_scalar_t, pq_lno_t, pq_gno_t, pq_node_t> tMVector_t;
+    RCP<const Tpetra::Map<pq_lno_t, pq_gno_t, pq_node_t> > mp = old_mvector->getMap();
 
-    Teuchos::Array<Teuchos::ArrayView<const scalar_t> > coordView(multiVectorDim + 1);
+    Teuchos::Array<Teuchos::ArrayView<const pq_scalar_t> > coordView(multiVectorDim + 1);
 
     for (int i=0; i < coord_dim; i++){
         if(numLocalPoints > 0){
-            Teuchos::ArrayView<const scalar_t> a(coords[i], numLocalPoints);
+            Teuchos::ArrayView<const pq_scalar_t> a(coords[i], numLocalPoints);
             coordView[i] = a;
         } else{
-            Teuchos::ArrayView<const scalar_t> a;
+            Teuchos::ArrayView<const pq_scalar_t> a;
             coordView[i] = a;
         }
     }
@@ -3071,39 +3071,39 @@ RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > createNewMultivector(
     for (int i=0; i < weight_dim; i++){
         int j = i + coord_dim;
         if(numLocalPoints > 0){
-            Teuchos::ArrayView<const scalar_t> a(weight[i], numLocalPoints);
+            Teuchos::ArrayView<const pq_scalar_t> a(weight[i], numLocalPoints);
             coordView[j] = a;
         } else{
-            Teuchos::ArrayView<const scalar_t> a;
+            Teuchos::ArrayView<const pq_scalar_t> a;
             coordView[j] = a;
         }
     }
-    scalar_t *assigned_parts = allocMemory<scalar_t>(numLocalPoints);
+    pq_scalar_t *assigned_parts = allocMemory<pq_scalar_t>(numLocalPoints);
 
 
     for (partId_t i = 0; i < num_parts; ++i){
-        lno_t pBegin = 0;
+        pq_lno_t pBegin = 0;
         if (i > 0) pBegin = partBeginArray[i - 1];
-        lno_t pEnd = partBeginArray[i];
+        pq_lno_t pEnd = partBeginArray[i];
 
         //cout << "when setting me:" << comm->getRank() << " p:" << i << " c:" << pEnd - pBegin  <<  " assigned_parts:" << assigned_parts<< endl;
-        scalar_t p = scalar_t (i);
-        for (lno_t j = pBegin; j < pEnd; ++j){
-            lno_t ind = permutationArray[j];
+        pq_scalar_t p = pq_scalar_t (i);
+        for (pq_lno_t j = pBegin; j < pEnd; ++j){
+            pq_lno_t ind = permutationArray[j];
             assigned_parts[ind] = p;
         }
     }
     if(numLocalPoints > 0){
-        Teuchos::ArrayView<const scalar_t> a(assigned_parts, numLocalPoints);
+        Teuchos::ArrayView<const pq_scalar_t> a(assigned_parts, numLocalPoints);
         coordView[multiVectorDim] = a;
     } else{
-        Teuchos::ArrayView<const scalar_t> a;
+        Teuchos::ArrayView<const pq_scalar_t> a;
         coordView[multiVectorDim] = a;
     }
     multiVectorDim += 1;
 
-    RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >tmVector = RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >(
-            new Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>( mp, coordView.view(0, multiVectorDim), multiVectorDim));
+    RCP< Tpetra::MultiVector<pq_scalar_t, pq_lno_t, pq_gno_t, pq_node_t> >tmVector = RCP< Tpetra::MultiVector<pq_scalar_t, pq_lno_t, pq_gno_t, pq_node_t> >(
+            new Tpetra::MultiVector<pq_scalar_t, pq_lno_t, pq_gno_t, pq_node_t>( mp, coordView.view(0, multiVectorDim), multiVectorDim));
 
     RCP<const tMVector_t> coordsConst = Teuchos::rcp_const_cast<const tMVector_t>(tmVector);
 
@@ -3111,19 +3111,19 @@ RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > createNewMultivector(
 }
 
 
-template <typename partId_t, typename lno_t, typename gno_t>
+template <typename partId_t, typename pq_lno_t, typename pq_gno_t>
 void fillContinousSendBuffer2(partId_t num_parts,
-                             lno_t *partBegins,
-                             lno_t *permutation,
-                             const gno_t *gno_list,
+                             pq_lno_t *partBegins,
+                             pq_lno_t *permutation,
+                             const pq_gno_t *gno_list,
                              uSortItem<partId_t, partId_t> * part_assignment, //input sorted wrt processors
-                             gno_t *sendBuf,
+                             pq_gno_t *sendBuf,
                              partId_t &partBeginIndex,
                              vector<partId_t> *newFuturePartitions,
                              partId_t myRank
                              ){
 
-    lno_t nextInd = 0;
+    pq_lno_t nextInd = 0;
     partId_t partShift = partBeginIndex;
     partId_t previous_processor = -1;
     for(partId_t i = 0; i < num_parts; ++i){
@@ -3131,9 +3131,9 @@ void fillContinousSendBuffer2(partId_t num_parts,
         //assigned processors are sorted.
         //partId_t assigned_proc = part_assignment[i].val;
 
-        lno_t pBegin = 0;
+        pq_lno_t pBegin = 0;
         if (p > 0) pBegin = partBegins[p - 1];
-        lno_t pEnd = partBegins[p];
+        pq_lno_t pEnd = partBegins[p];
 
         partId_t assigned_proc = part_assignment[i].val;
         if (myRank == assigned_proc && previous_processor != assigned_proc){
@@ -3142,9 +3142,9 @@ void fillContinousSendBuffer2(partId_t num_parts,
         previous_processor = assigned_proc;
         partShift += (*newFuturePartitions)[p];
 
-        for (lno_t j=pBegin; j < pEnd; j++){
-            lno_t localInd = permutation[j];
-            gno_t to_send = gno_list[localInd];
+        for (pq_lno_t j=pBegin; j < pEnd; j++){
+            pq_lno_t localInd = permutation[j];
+            pq_gno_t to_send = gno_list[localInd];
             sendBuf[nextInd++] = to_send;
         }
         //cout << "sent to:" << part_assignment[i].val << " this much:" << pEnd - pBegin << " because of part:" << p << endl;
@@ -3152,10 +3152,10 @@ void fillContinousSendBuffer2(partId_t num_parts,
 }
 
 
-template <typename partId_t, typename lno_t>
+template <typename partId_t, typename pq_lno_t>
 void Z1fillSendBuffer2(partId_t num_parts,
-                             lno_t *partBegins,
-                             lno_t *permutation,
+                             pq_lno_t *partBegins,
+                             pq_lno_t *permutation,
                              uSortItem<partId_t, partId_t> * part_assignment, //input sorted wrt processors
                              int *coordinate_destionations,
                              partId_t &partBeginIndex,
@@ -3171,9 +3171,9 @@ void Z1fillSendBuffer2(partId_t num_parts,
         //assigned processors are sorted.
         //partId_t assigned_proc = part_assignment[i].val;
 
-        lno_t pBegin = 0;
+        pq_lno_t pBegin = 0;
         if (p > 0) pBegin = partBegins[p - 1];
-        lno_t pEnd = partBegins[p];
+        pq_lno_t pEnd = partBegins[p];
 
         partId_t assigned_proc = part_assignment[i].val;
         if (myRank == assigned_proc && previous_processor != assigned_proc){
@@ -3182,8 +3182,8 @@ void Z1fillSendBuffer2(partId_t num_parts,
         previous_processor = assigned_proc;
         partShift += (*newFuturePartitions)[p];
 
-        for (lno_t j=pBegin; j < pEnd; j++){
-            lno_t localInd = permutation[j];
+        for (pq_lno_t j=pBegin; j < pEnd; j++){
+            pq_lno_t localInd = permutation[j];
             coordinate_destionations[localInd] = assigned_proc;
 /*
             cout << " i:" << localInd <<
@@ -3195,29 +3195,29 @@ void Z1fillSendBuffer2(partId_t num_parts,
     }
 }
 
-template <typename partId_t, typename lno_t, typename gno_t>
+template <typename partId_t, typename pq_lno_t, typename pq_gno_t>
 void fillContinousSendBuffer1(
 
                             RCP<Comm<int> > &pcomm, //original communication.
                             partId_t numParts,
-                             lno_t *partBegins,
-                             lno_t *permutation,
+                             pq_lno_t *partBegins,
+                             pq_lno_t *permutation,
 
-                             const gno_t *gno_list,
+                             const pq_gno_t *gno_list,
                              partId_t nprocs,
 
                              partId_t *part_assign_begins,
                              partId_t *proc_chains,
 
-                             lno_t *sendCount,
-                             gno_t *sendBuf
+                             pq_lno_t *sendCount,
+                             pq_gno_t *sendBuf
                              ){
     //function will fill the sendBuf array in a consecutive way.
 
     //initially allocate array to store prefixSum of sendCounts,
     //so that we know where to write the send gnos for other processors.
-    lno_t *_sendCount_psum = allocMemory<lno_t>(nprocs);
-    lno_t prefixsum = 0;
+    pq_lno_t *_sendCount_psum = allocMemory<pq_lno_t>(nprocs);
+    pq_lno_t prefixsum = 0;
     for (int i = 0; i < nprocs; ++i ){
         _sendCount_psum[i] = prefixsum;
         prefixsum += sendCount[i];
@@ -3232,17 +3232,17 @@ void fillContinousSendBuffer1(
     */
     //now distribute all parts.
     for (partId_t p = 0; p < numParts; ++p){
-        lno_t pBegin = 0;
+        pq_lno_t pBegin = 0;
         if (p > 0) pBegin = partBegins[p - 1];
-        lno_t pEnd = partBegins[p];
+        pq_lno_t pEnd = partBegins[p];
 
         //get the first part that current processor will send its part-p.
         partId_t proc_to_sent = part_assign_begins[p];
         //initialize how many point I sent to this processor.
-        lno_t totalSend = 0;
-        for (lno_t j=pBegin; j < pEnd; j++){
-            lno_t localInd = permutation[j];
-            gno_t to_send = gno_list[localInd];
+        pq_lno_t totalSend = 0;
+        for (pq_lno_t j=pBegin; j < pEnd; j++){
+            pq_lno_t localInd = permutation[j];
+            pq_gno_t to_send = gno_list[localInd];
             //if the sendCount to this processor
             //reached its limit then start sending to the next processor.
             while (totalSend >= sendCount[proc_to_sent]){
@@ -3259,18 +3259,18 @@ void fillContinousSendBuffer1(
         }
 
     }
-    freeArray<lno_t>(_sendCount_psum);
+    freeArray<pq_lno_t>(_sendCount_psum);
 }
 
 
 
-template <typename partId_t, typename lno_t>
+template <typename partId_t, typename pq_lno_t>
 void Z1fillSendBuffer1(
 
                             RCP<Comm<int> > &pcomm, //original communication.
                             partId_t numParts,
-                             lno_t *partBegins,
-                             lno_t *permutation,
+                             pq_lno_t *partBegins,
+                             pq_lno_t *permutation,
 
 
                              partId_t nprocs,
@@ -3278,20 +3278,20 @@ void Z1fillSendBuffer1(
                              partId_t *part_assign_begins,
                              partId_t *proc_chains,
 
-                             lno_t *sendCount,
+                             pq_lno_t *sendCount,
                              int *coordinate_destionations
                              ){
     for (partId_t p = 0; p < numParts; ++p){
-        lno_t pBegin = 0;
+        pq_lno_t pBegin = 0;
         if (p > 0) pBegin = partBegins[p - 1];
-        lno_t pEnd = partBegins[p];
+        pq_lno_t pEnd = partBegins[p];
 
         //get the first part that current processor will send its part-p.
         partId_t proc_to_sent = part_assign_begins[p];
         //initialize how many point I sent to this processor.
-        lno_t totalSend = 0;
-        for (lno_t j=pBegin; j < pEnd; j++){
-            lno_t localInd = permutation[j];
+        pq_lno_t totalSend = 0;
+        for (pq_lno_t j=pBegin; j < pEnd; j++){
+            pq_lno_t localInd = permutation[j];
             while (totalSend >= sendCount[proc_to_sent]){
                 totalSend = 0;
                 //assign new processor to part_assign_begin[p]
@@ -3310,23 +3310,23 @@ void Z1fillSendBuffer1(
 }
 
 
-template <typename partId_t, typename lno_t, typename gno_t>
+template <typename partId_t, typename pq_lno_t, typename pq_gno_t>
 void procAssignment2(
         int assignment_type, //either assign to minimize migration, or assign to increase locality.
-        gno_t * p_gno_np_global_num_coord_each_part_actual,
-        gno_t nGlobalObj,
-        //lno_t nLocal,
+        pq_gno_t * p_gno_np_global_num_coord_each_part_actual,
+        pq_gno_t nGlobalObj,
+        //pq_lno_t nLocal,
         partId_t num_parts,
         partId_t nprocs,
         partId_t myRank,
 
 
-        lno_t *partBegins, //holds the beginning of each part.
-        lno_t *permutation, //the permutation array ordered wrt partBegins array.
-        const gno_t *gnoList, //gno array
+        pq_lno_t *partBegins, //holds the beginning of each part.
+        pq_lno_t *permutation, //the permutation array ordered wrt partBegins array.
+        const pq_gno_t *gnoList, //gno array
 
-        gno_t *sendBuf, //output: sized nLocal, the buffer is filled by the function with gnos.
-        lno_t *sendCount, //output: sized nprocs, show the number of send point counts to each proc.
+        pq_gno_t *sendBuf, //output: sized nLocal, the buffer is filled by the function with gnos.
+        pq_lno_t *sendCount, //output: sized nprocs, show the number of send point counts to each proc.
 
         //TODO futurePartIndex might need to be changed.sendBuf,
         vector<partId_t> *newFuturePartitions,//input how many more partitions the part will be partitioned into.
@@ -3340,22 +3340,22 @@ void procAssignment2(
 
     out_num_part = 0;
 
-    gno_t *p_gno_np_global_num_coord_each_part = p_gno_np_global_num_coord_each_part_actual + nprocs * num_parts;
-    //gno_t *p_gno_np_global_num_coord_each_part_mypart = p_gno_np_global_num_coord_each_part_actual + myRank * num_parts;
+    pq_gno_t *p_gno_np_global_num_coord_each_part = p_gno_np_global_num_coord_each_part_actual + nprocs * num_parts;
+    //pq_gno_t *p_gno_np_global_num_coord_each_part_mypart = p_gno_np_global_num_coord_each_part_actual + myRank * num_parts;
 
     out_part_index.clear();
 
     //to sort the parts that is assigned to the processors.
     //id is the part number, sort value is the assigned processor id.
     uSortItem<partId_t, partId_t> * part_assignment  = allocMemory <uSortItem<partId_t, partId_t> >(num_parts);
-    uSortItem<partId_t, gno_t> * proc_load_sort = allocMemory <uSortItem<partId_t, gno_t> >(nprocs);
+    uSortItem<partId_t, pq_gno_t> * proc_load_sort = allocMemory <uSortItem<partId_t, pq_gno_t> >(nprocs);
 
 
     //calculate the optimal number of coordinates
     //that should be assigned to each processor.
-    lno_t work_each = nGlobalObj / (float (nprocs)) + 0.5f;
+    pq_lno_t work_each = nGlobalObj / (float (nprocs)) + 0.5f;
     //to hold the left space as the number of coordinates to the optimal number in each proc.
-    lno_t *space_in_each_processor = allocMemory <lno_t>(nprocs);
+    pq_lno_t *space_in_each_processor = allocMemory <pq_lno_t>(nprocs);
     //initialize left space in each.
     for (partId_t i = 0; i < nprocs; ++i){
         space_in_each_processor[i] = work_each;
@@ -3364,7 +3364,7 @@ void procAssignment2(
 
     //to sort the parts with decreasing order of their coordiantes.
     //id are the part numbers, sort value is the number of points in each.
-    uSortItem<partId_t, gno_t> * part_loads  = allocMemory <uSortItem<partId_t, gno_t> >(num_parts);
+    uSortItem<partId_t, pq_gno_t> * part_loads  = allocMemory <uSortItem<partId_t, pq_gno_t> >(num_parts);
 
     //initially we will sort the parts according to the number of coordinates they have.
     //so that we will start assigning with the part that has the most number of coordinates.
@@ -3373,7 +3373,7 @@ void procAssignment2(
         part_loads[i].val = p_gno_np_global_num_coord_each_part[i];
     }
     //sort parts with increasing order of loads.
-    uqsort<partId_t, gno_t>(num_parts, part_loads);
+    uqsort<partId_t, pq_gno_t>(num_parts, part_loads);
 
 
     //assigning parts to the processors
@@ -3383,7 +3383,7 @@ void procAssignment2(
         //sorted with increasing order, traverse inverse.
         partId_t i = part_loads[num_parts - 1 - j].id;
         //load of the part
-        gno_t load = p_gno_np_global_num_coord_each_part[i];
+        pq_gno_t load = p_gno_np_global_num_coord_each_part[i];
 
         //assigned processors
         partId_t assigned_proc = -1;
@@ -3397,7 +3397,7 @@ void procAssignment2(
             //how many points processor ii has in part i?
             proc_load_sort[ii].val =  p_gno_np_global_num_coord_each_part_actual[ii * num_parts + i];
         }
-        uqsort<partId_t, gno_t>(nprocs, proc_load_sort);
+        uqsort<partId_t, pq_gno_t>(nprocs, proc_load_sort);
 
         //traverse all processors with increasing load.
         //TODO there should be a mistake here. (inefficiency)
@@ -3407,7 +3407,7 @@ void procAssignment2(
         for (partId_t iii = nprocs - 1; iii >= 0; --iii){
 
             partId_t ii = proc_load_sort[iii].id;
-            lno_t left_space = space_in_each_processor[ii] - load;
+            pq_lno_t left_space = space_in_each_processor[ii] - load;
             //if enought space, assign to this part.
             if(left_space >= 0 ){
                 assigned_proc = ii;
@@ -3436,9 +3436,9 @@ void procAssignment2(
         //increase the send to that processor by the number of points in that part.
         sendCount[assigned_proc] += p_gno_np_global_num_coord_each_part_actual[myRank * num_parts + i];
     }
-    freeArray< uSortItem<partId_t, gno_t> > (proc_load_sort);
-    freeArray<uSortItem<partId_t, gno_t> >(part_loads);
-    freeArray<lno_t >(space_in_each_processor);
+    freeArray< uSortItem<partId_t, pq_gno_t> > (proc_load_sort);
+    freeArray<uSortItem<partId_t, pq_gno_t> >(part_loads);
+    freeArray<pq_lno_t >(space_in_each_processor);
 
 
     //sort assignments with respect to the assigned processors.
@@ -3446,7 +3446,7 @@ void procAssignment2(
     //fill sendBuf.
 
     if (doMigrationType == 0){
-        fillContinousSendBuffer2< partId_t,  lno_t,  gno_t>(
+        fillContinousSendBuffer2< partId_t,  pq_lno_t,  pq_gno_t>(
                 num_parts,
                 partBegins,
                 permutation,
@@ -3459,7 +3459,7 @@ void procAssignment2(
         );
     }
     else {
-        Z1fillSendBuffer2< partId_t,  lno_t>(
+        Z1fillSendBuffer2< partId_t,  pq_lno_t>(
                 num_parts,
                 partBegins,
                 permutation,
@@ -3475,24 +3475,24 @@ void procAssignment2(
     freeArray<uSortItem<partId_t, partId_t> >(part_assignment);
 }
 
-template <typename partId_t, typename lno_t, typename gno_t>
+template <typename partId_t, typename pq_lno_t, typename pq_gno_t>
 void procAssignment1(
         RCP<Comm<int> > &pcomm, //original communication.
         int assignment_type, //either assign to minimize migration, or assign to increase locality.
-        gno_t * p_gno_np_global_num_coord_each_part_actual,
-        gno_t nGlobalObj,
-        lno_t nLocal,
+        pq_gno_t * p_gno_np_global_num_coord_each_part_actual,
+        pq_gno_t nGlobalObj,
+        pq_lno_t nLocal,
         partId_t num_parts,
         partId_t nprocs,
         partId_t myRank,
 
 
-        lno_t *partBegins, //holds the beginning of each part.
-        lno_t *permutation, //the permutation array ordered wrt partBegins array.
-        const gno_t *gnoList, //gno array
+        pq_lno_t *partBegins, //holds the beginning of each part.
+        pq_lno_t *permutation, //the permutation array ordered wrt partBegins array.
+        const pq_gno_t *gnoList, //gno array
 
-        gno_t *sendBuf, //output: sized nLocal, the buffer is filled by the function with gnos.
-        lno_t *sendCount, //output: sized nprocs, show the number of send point counts to each proc.
+        pq_gno_t *sendBuf, //output: sized nLocal, the buffer is filled by the function with gnos.
+        pq_lno_t *sendCount, //output: sized nprocs, show the number of send point counts to each proc.
         vector<partId_t> &ids, //output: this holds the id of the processors for the next subcommunicatior.
 
 
@@ -3508,8 +3508,8 @@ void procAssignment1(
 
 
 
-    gno_t *p_gno_np_global_num_coord_each_part = p_gno_np_global_num_coord_each_part_actual + nprocs * num_parts;
-    //gno_t *p_gno_np_global_num_coord_each_part_mypart = p_gno_np_global_num_coord_each_part_actual + myRank * num_parts;
+    pq_gno_t *p_gno_np_global_num_coord_each_part = p_gno_np_global_num_coord_each_part_actual + nprocs * num_parts;
+    //pq_gno_t *p_gno_np_global_num_coord_each_part_mypart = p_gno_np_global_num_coord_each_part_actual + myRank * num_parts;
 
 
     partId_t *p_pid_np_num_procs_each_part = allocMemory<partId_t>(num_parts);
@@ -3593,7 +3593,7 @@ void procAssignment1(
     cout << "me:" << pcomm->getRank() << " reached 2" << endl;
      */
     //Allocate memory for sorting data structure.
-    uSortItem<partId_t, lno_t> * proc_points_in_part = allocMemory <uSortItem<partId_t, partId_t> > (nprocs);
+    uSortItem<partId_t, pq_lno_t> * proc_points_in_part = allocMemory <uSortItem<partId_t, partId_t> > (nprocs);
     for(partId_t i = 0; i < num_parts; ++i){
 
         //if the assignment type is 0, then the algorithm tries to minimize the cost
@@ -3634,14 +3634,14 @@ void procAssignment1(
         uqsort<partId_t, partId_t>(nprocs, proc_points_in_part);
 
         partId_t required_proc_count =  p_pid_np_num_procs_each_part[i];
-        gno_t total_num_points_in_part = p_gno_np_global_num_coord_each_part[i];
-        gno_t ideal_num_points_in_procs =
+        pq_gno_t total_num_points_in_part = p_gno_np_global_num_coord_each_part[i];
+        pq_gno_t ideal_num_points_in_procs =
                 ceil (total_num_points_in_part / float (required_proc_count));
 
         //starts sending to heaviest part.
         partId_t next_part_to_send = nprocs - required_proc_count;
         partId_t next_part_to_send_id = proc_points_in_part[next_part_to_send].id;
-        lno_t space_left =  ideal_num_points_in_procs - proc_points_in_part[next_part_to_send].val;
+        pq_lno_t space_left =  ideal_num_points_in_procs - proc_points_in_part[next_part_to_send].val;
 
         //find the assigned processors.
         for(partId_t ii = nprocs - 1; ii >= nprocs - required_proc_count; --ii){
@@ -3728,7 +3728,7 @@ void procAssignment1(
         //starts from the heaviest nonassigned processor.
         for(partId_t ii = nprocs - required_proc_count - 1; ii >= 0; --ii){
             partId_t partid = proc_points_in_part[ii].id;
-            lno_t to_sent = proc_points_in_part[ii].val;
+            pq_lno_t to_sent = proc_points_in_part[ii].val;
 
             //we set number of points to -to_sent - 1 for the assigned processors.
             //we reverse it here.
@@ -3809,7 +3809,7 @@ void procAssignment1(
     cout << "me:" << pcomm->getRank() << " reached 3:" << nLocal << endl;
     */
     if (doMigrationType == 0){
-        fillContinousSendBuffer1 <partId_t, lno_t, gno_t> (
+        fillContinousSendBuffer1 <partId_t, pq_lno_t, pq_gno_t> (
                 pcomm,
                 num_parts,
                 partBegins,
@@ -3825,7 +3825,7 @@ void procAssignment1(
                 sendBuf
         );
     } else {
-        Z1fillSendBuffer1 <partId_t, lno_t> (
+        Z1fillSendBuffer1 <partId_t, pq_lno_t> (
                 pcomm,
                 num_parts,
                 partBegins,
@@ -3852,27 +3852,27 @@ void procAssignment1(
 
 }
 
-template <typename partId_t, typename lno_t, typename gno_t>
+template <typename partId_t, typename pq_lno_t, typename pq_gno_t>
 void getProcGroups_SendCounts_SendBuff(
 
         RCP<Comm<int> > &pcomm, //original communication.
         int migration_proc_assignment_type,
         int assignment_type, //either assign to minimize migration, or assign to increase locality.
 
-        gno_t * p_gno_np_global_num_coord_each_part_actual,
-        gno_t nGlobalObj,
-        lno_t nLocal,
+        pq_gno_t * p_gno_np_global_num_coord_each_part_actual,
+        pq_gno_t nGlobalObj,
+        pq_lno_t nLocal,
         partId_t num_parts,
         partId_t nprocs,
         partId_t myRank,
 
 
-        lno_t *partBegins, //holds the beginning of each part.
-        lno_t *permutation, //the permutation array ordered wrt partBegins array.
-        const gno_t *gnoList, //gno array
+        pq_lno_t *partBegins, //holds the beginning of each part.
+        pq_lno_t *permutation, //the permutation array ordered wrt partBegins array.
+        const pq_gno_t *gnoList, //gno array
 
-        gno_t *sendBuf, //output: sized nLocal, the buffer is filled by the function with gnos.
-        lno_t *sendCount, //output: sized nprocs, show the number of send point counts to each proc.
+        pq_gno_t *sendBuf, //output: sized nLocal, the buffer is filled by the function with gnos.
+        pq_lno_t *sendCount, //output: sized nprocs, show the number of send point counts to each proc.
         vector<partId_t> &ids, //output: this holds the id of the processors for the next subcommunicatior.
 
 
@@ -3910,7 +3910,7 @@ void getProcGroups_SendCounts_SendBuff(
             pcomm->barrier();
             cout << "me:" << pcomm->getRank() << endl;
             */
-            procAssignment1<partId_t, lno_t, gno_t>(
+            procAssignment1<partId_t, pq_lno_t, pq_gno_t>(
                     pcomm,
                     assignment_type, //either assign to minimize migration, or assign to increase locality.
                     p_gno_np_global_num_coord_each_part_actual,
@@ -3954,7 +3954,7 @@ void getProcGroups_SendCounts_SendBuff(
 
             /*
             int partsendCount = 0;
-            lno_t sc = 0;
+            pq_lno_t sc = 0;
             for(int i = 0; i < nprocs; ++i){
 
                 if(sendCount[i] > 0){
@@ -3980,11 +3980,11 @@ void getProcGroups_SendCounts_SendBuff(
         else {
             ids.push_back(myRank);
 
-            procAssignment2<partId_t, lno_t, gno_t>(
+            procAssignment2<partId_t, pq_lno_t, pq_gno_t>(
                     assignment_type, //either assign to minimize migration, or assign to increase locality.
                     p_gno_np_global_num_coord_each_part_actual,
                     nGlobalObj,
-                    //lno_t nLocal,
+                    //pq_lno_t nLocal,
                     num_parts,
                     nprocs,
                     myRank,
@@ -4008,7 +4008,7 @@ void getProcGroups_SendCounts_SendBuff(
 
 
             /*
-            lno_t sc = 0;
+            pq_lno_t sc = 0;
             int partsendCount = 0;
             for(int i = 0; i < nprocs; ++i){
                 if(sendCount[i] > 0){
@@ -4038,25 +4038,25 @@ void getProcGroups_SendCounts_SendBuff(
 }
 
 
-template <typename partId_t, typename lno_t, typename gno_t, typename scalar_t>
+template <typename partId_t, typename pq_lno_t, typename pq_gno_t, typename pq_scalar_t>
 void doAll2All(
         const RCP<const Environment> &env, //environment
         RCP<Comm<int> > &comm, //current communication object.
         int doMigrationType,
         int all2alloption,
         partId_t nprocs,
-        lno_t nLocal,
-        lno_t *sendCount,
-        gno_t *sendBuf,
-        ArrayRCP<gno_t> &recvBuf,
-        gno_t &numMyNewGnos,
+        pq_lno_t nLocal,
+        pq_lno_t *sendCount,
+        pq_gno_t *sendBuf,
+        ArrayRCP<pq_gno_t> &recvBuf,
+        pq_gno_t &numMyNewGnos,
         string iteration,
 
         int coord_dim, // coordinate dimension
-        scalar_t **coords, //coordinates.
+        pq_scalar_t **coords, //coordinates.
         int weight_dim, //weight dimension
-        scalar_t **weights, //weights
-        gno_t *&coordinate_gnos,
+        pq_scalar_t **weights, //weights
+        pq_gno_t *&coordinate_gnos,
         int *&coordinate_owners,
         int *coordinate_destionations,
         partId_t *&assigned_parts,
@@ -4074,7 +4074,7 @@ void doAll2All(
 
             //write which processor each point is going.
             for (int i = 0; i < nprocs; ++i){
-                lno_t sendC = sendCount[i];
+                pq_lno_t sendC = sendCount[i];
                 for (int ii = 0; ii < sendC; ++ii){
                     *(p++) = i;
                 }
@@ -4087,11 +4087,11 @@ void doAll2All(
             numMyNewGnos = distributor.createFromSends(pIds);
             env->timerStop(MACRO_TIMERS, "PQJagged - Migration DistPlanCreating-" + iteration);
 
-            ArrayRCP<gno_t> recvBuf2(distributor.getTotalReceiveLength());
+            ArrayRCP<pq_gno_t> recvBuf2(distributor.getTotalReceiveLength());
 
             env->timerStart(MACRO_TIMERS, "PQJagged - Migration DistPlanCom-" + iteration);
-            ArrayView<gno_t> s(sendBuf, nLocal);
-            distributor.doPostsAndWaits<gno_t>(s, 1, recvBuf2());
+            ArrayView<pq_gno_t> s(sendBuf, nLocal);
+            distributor.doPostsAndWaits<pq_gno_t>(s, 1, recvBuf2());
             env->timerStop(MACRO_TIMERS, "PQJagged - Migration DistPlanCom-" + iteration);
             recvBuf = recvBuf2;
             freeArray<partId_t>(partIds);
@@ -4105,7 +4105,7 @@ void doAll2All(
             //write which processor each point is going.
 
             for (int i = 0; i < nprocs; ++i){
-                lno_t sendC = sendCount[i];
+                pq_lno_t sendC = sendCount[i];
                 //cout << "me:" << comm->getRank() << " to:" << i << " sending:" << sendC << endl;
                 for (int ii = 0; ii < sendC; ++ii){
                     *(p++) = i;
@@ -4117,7 +4117,7 @@ void doAll2All(
 
 
             MPI_Comm mpi_comm = Teuchos2MPI (comm);
-            lno_t incoming = 0;
+            pq_lno_t incoming = 0;
             int message_tag = 7859;
 
             env->timerStart(MACRO_TIMERS, "PQJagged - Migration Z1PlanCreating-" + iteration);
@@ -4126,14 +4126,14 @@ void doAll2All(
             env->timerStop(MACRO_TIMERS, "PQJagged - Migration Z1PlanCreating-" + iteration);
 
 
-            ArrayRCP<gno_t> recvBuf2(incoming);
-            gno_t *recieves  = recvBuf2.getRawPtr();
+            ArrayRCP<pq_gno_t> recvBuf2(incoming);
+            pq_gno_t *recieves  = recvBuf2.getRawPtr();
 
 
             message_tag++;
             env->timerStart(MACRO_TIMERS, "PQJagged - Migration Z1PlanComm-" + iteration);
             ierr = Zoltan_Comm_Do(plan, message_tag, (char *) sendBuf,
-                    sizeof(gno_t),
+                    sizeof(pq_gno_t),
                     (char *) recieves);
             env->timerStop(MACRO_TIMERS, "PQJagged - Migration Z1PlanComm-" + iteration);
 
@@ -4143,11 +4143,11 @@ void doAll2All(
             freeArray<partId_t>(partIds);
 
         } else {
-            ArrayView<gno_t> s (sendBuf, nLocal);
+            ArrayView<pq_gno_t> s (sendBuf, nLocal);
             ArrayView<int> sc (sendCount, nprocs);
-            Array<lno_t> recvCount(nprocs, 0);
+            Array<pq_lno_t> recvCount(nprocs, 0);
             try{
-                AlltoAllv<gno_t>(*comm, *env,
+                AlltoAllv<pq_gno_t>(*comm, *env,
                         s, sc,
                         recvBuf, recvCount());
             }
@@ -4162,10 +4162,10 @@ void doAll2All(
     else {
 /*
         int coord_dim, // coordinate dimension
-        scalar_t **coords, //coordinates.
+        pq_scalar_t **coords, //coordinates.
         int weight_dim, //weight dimension
-        scalar_t **weights, //weights
-        gno_t * coordinate_gnos,
+        pq_scalar_t **weights, //weights
+        pq_gno_t * coordinate_gnos,
         int * coordinate_owners,
         int *coordinate_destionations,
         partId_t num_parts
@@ -4175,7 +4175,7 @@ void doAll2All(
 
 
         MPI_Comm mpi_comm = Teuchos2MPI (comm);
-        lno_t incoming = 0;
+        pq_lno_t incoming = 0;
         int message_tag = 7859;
 
         /*
@@ -4213,16 +4213,16 @@ void doAll2All(
         cout << "me:" << comm->getRank() << " incoming:" << incoming << endl;
         */
 
-        gno_t *incoming_gnos = allocMemory< gno_t>(incoming);
+        pq_gno_t *incoming_gnos = allocMemory< pq_gno_t>(incoming);
 
         message_tag++;
         env->timerStart(MACRO_TIMERS, "PQJagged - Migration Z1PlanComm-" + iteration);
         ierr = Zoltan_Comm_Do(
                 plan, message_tag,
                 (char *) coordinate_gnos,
-                sizeof(gno_t), (char *) incoming_gnos);
+                sizeof(pq_gno_t), (char *) incoming_gnos);
         env->timerStop(MACRO_TIMERS, "PQJagged - Migration Z1PlanComm-" + iteration);
-        freeArray<gno_t>(coordinate_gnos);
+        freeArray<pq_gno_t>(coordinate_gnos);
         coordinate_gnos = incoming_gnos;
 
 
@@ -4230,26 +4230,26 @@ void doAll2All(
         env->timerStart(MACRO_TIMERS, "PQJagged - Migration Z1Migration-" + iteration);
         for (int i = 0; i < coord_dim; ++i){
             message_tag++;
-            scalar_t *coord = coords[i];
+            pq_scalar_t *coord = coords[i];
 
-            coords[i] = allocMemory<scalar_t>(incoming);
+            coords[i] = allocMemory<pq_scalar_t>(incoming);
             ierr = Zoltan_Comm_Do(
                     plan, message_tag,
                     (char *) coord,
-                    sizeof(scalar_t), (char *) coords[i]);
-            freeArray<scalar_t>(coord);
+                    sizeof(pq_scalar_t), (char *) coords[i]);
+            freeArray<pq_scalar_t>(coord);
         }
 
         for (int i = 0; i < weight_dim; ++i){
             message_tag++;
-            scalar_t *weight = weights[i];
+            pq_scalar_t *weight = weights[i];
 
-            weights[i] = allocMemory<scalar_t>(incoming);
+            weights[i] = allocMemory<pq_scalar_t>(incoming);
             ierr = Zoltan_Comm_Do(
                     plan, message_tag,
                     (char *) weight,
-                    sizeof(scalar_t), (char *) weights[i]);
-            freeArray<scalar_t>(weight);
+                    sizeof(pq_scalar_t), (char *) weights[i]);
+            freeArray<pq_scalar_t>(weight);
         }
 
 
@@ -4293,12 +4293,12 @@ void doAll2All(
     }
 }
 
-template <typename mvector_t, typename gno_t>
+template <typename mvector_t, typename pq_gno_t>
 void doActualMigration(
                         const RCP<const Environment> &env, //environment
                         RCP<const mvector_t> &vectors,    // on return is the new data,
-                        gno_t numMyNewGnos,
-                        ArrayRCP<gno_t> recvBuf){
+                        pq_gno_t numMyNewGnos,
+                        ArrayRCP<pq_gno_t> recvBuf){
     try{
         vectors = XpetraTraits<mvector_t>::doMigration(
                 vectors, numMyNewGnos, recvBuf.getRawPtr()/*, env*/);
@@ -4325,7 +4325,7 @@ void createSubCommunicator(
 
 }
 
-template <typename mvector_t, typename lno_t, typename gno_t, typename scalar_t, typename node_t>
+template <typename mvector_t, typename pq_lno_t, typename pq_gno_t, typename pq_scalar_t, typename pq_node_t>
 void create_new_multi_vector(
         const RCP<const Environment> &env,
         RCP<Comm<int> > &comm,
@@ -4333,10 +4333,10 @@ void create_new_multi_vector(
         int multiVectorDim
         ){
 
-    typedef ArrayView<const scalar_t> coordList_t;
-    typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
+    typedef ArrayView<const pq_scalar_t> coordList_t;
+    typedef Tpetra::Map<pq_lno_t, pq_gno_t, pq_node_t> map_t;
 
-    ArrayView<const gno_t> gnoList = mvector->getMap()->getNodeElementList();
+    ArrayView<const pq_gno_t> gnoList = mvector->getMap()->getNodeElementList();
     size_t localSize = mvector->getLocalLength();
 
     // Tpetra will calculate the globalSize.
@@ -4353,7 +4353,7 @@ void create_new_multi_vector(
     for (int dim=0; dim < multiVectorDim; dim++)
         avSubList[dim] = mvector->getData(dim).view(0, localSize);
 
-    ArrayRCP<const ArrayView<const scalar_t> > subVectors =
+    ArrayRCP<const ArrayView<const pq_scalar_t> > subVectors =
             arcp(avSubList, 0, multiVectorDim);
 
 
@@ -4364,10 +4364,10 @@ void create_new_multi_vector(
     Z2_THROW_OUTSIDE_ERROR(*env)
 }
 
-template <typename lno_t, typename partId_t>
+template <typename pq_lno_t, typename partId_t>
 void resizeArrays(
-        lno_t numLocalPoints,
-        lno_t prev_num_local,
+        pq_lno_t numLocalPoints,
+        pq_lno_t prev_num_local,
         partId_t *& partArray,
         partId_t *&permutation,
         partId_t *&oldpermutation){
@@ -4378,48 +4378,48 @@ void resizeArrays(
         freeArray<partId_t>(partArray);
         partArray = allocMemory<partId_t>(numLocalPoints);
 
-        freeArray<lno_t>(permutation);
-        freeArray<lno_t>(oldpermutation);
-        oldpermutation = allocMemory<lno_t>(numLocalPoints);
-        permutation = allocMemory<lno_t>(numLocalPoints);
+        freeArray<pq_lno_t>(permutation);
+        freeArray<pq_lno_t>(oldpermutation);
+        oldpermutation = allocMemory<pq_lno_t>(numLocalPoints);
+        permutation = allocMemory<pq_lno_t>(numLocalPoints);
     }
 
 }
 
 
-template <typename gno_t, typename lno_t,typename scalar_t, typename node_t>
+template <typename pq_gno_t, typename pq_lno_t,typename pq_scalar_t, typename pq_node_t>
 void getNewMultivectorArrays(
         RCP<Comm<int> > &comm,
-        lno_t &numLocalPoints,
+        pq_lno_t &numLocalPoints,
 
         int coord_dim,
-        scalar_t **coords,
+        pq_scalar_t **coords,
         int weight_dim,
-        scalar_t **weight
-        ,RCP<const Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > coordsConst
+        pq_scalar_t **weight
+        ,RCP<const Tpetra::MultiVector<pq_scalar_t, pq_lno_t, pq_gno_t, pq_node_t> > coordsConst
         ,partId_t out_num_parts,
-        lno_t *&permutations,
-        lno_t *part_begins
+        pq_lno_t *&permutations,
+        pq_lno_t *part_begins
         ,partId_t num_parts,
         int pqJagged_multiVectorDim
 
 ){
 
     for (int i=0; i < coord_dim; i++){
-        ArrayRCP< const scalar_t >  coord = coordsConst->getData(i);
-        coords[i] =(scalar_t *) coord.getRawPtr();
+        ArrayRCP< const pq_scalar_t >  coord = coordsConst->getData(i);
+        coords[i] =(pq_scalar_t *) coord.getRawPtr();
     }
 
     for (int i=0; i < weight_dim; i++){
         if (i + coord_dim >= pqJagged_multiVectorDim) break;
-        ArrayRCP< const scalar_t >  wgts = coordsConst->getData(i+ coord_dim);
-        weight[i] = (scalar_t *) wgts.getRawPtr();
+        ArrayRCP< const pq_scalar_t >  wgts = coordsConst->getData(i+ coord_dim);
+        weight[i] = (pq_scalar_t *) wgts.getRawPtr();
     }
     //cout << "me:" << comm->getRank() << " obtained till weights:" << endl;
 
     if (out_num_parts == 1){
         //cout << "me:" << comm->getRank() << " filling permutation:" << endl;
-        for(lno_t i = 0; i < numLocalPoints; ++i){
+        for(pq_lno_t i = 0; i < numLocalPoints; ++i){
             permutations[i] = i;
         }
         part_begins[0] = numLocalPoints;
@@ -4427,19 +4427,19 @@ void getNewMultivectorArrays(
         //cout << "me:" << comm->getRank() << " filled permutation:" << endl;
     }
     else {
-        scalar_t *assigned_parts = (scalar_t *)coordsConst->getData /*getData*/(pqJagged_multiVectorDim).getRawPtr();
-        lno_t *counts = allocMemory<lno_t>(num_parts);
+        pq_scalar_t *assigned_parts = (pq_scalar_t *)coordsConst->getData /*getData*/(pqJagged_multiVectorDim).getRawPtr();
+        pq_lno_t *counts = allocMemory<pq_lno_t>(num_parts);
 
         partId_t *part_shifts = allocMemory<partId_t>(num_parts);
 
-        memset(counts, 0, sizeof(lno_t) * num_parts);
+        memset(counts, 0, sizeof(pq_lno_t) * num_parts);
 
-        for(lno_t i = 0; i < numLocalPoints; ++i){
+        for(pq_lno_t i = 0; i < numLocalPoints; ++i){
             partId_t ii = assigned_parts[i];
             ++counts[ii];
         }
         partId_t p = 0;
-        lno_t prev_index = 0;
+        pq_lno_t prev_index = 0;
         for(partId_t i = 0; i < num_parts; ++i){
             //cout << "me:" << comm->getRank() << " p:" << i << " count:" <<  counts[i] << " a:" << assigned_parts << endl;
             if(counts[i] > 0)  {
@@ -4456,43 +4456,43 @@ void getNewMultivectorArrays(
         for(partId_t i = 0; i < out_num_parts; ++i){
             counts[i] = part_begins[i];
         }
-        for(lno_t i = numLocalPoints - 1; i >= 0; --i){
+        for(pq_lno_t i = numLocalPoints - 1; i >= 0; --i){
             partId_t part = part_shifts[partId_t(assigned_parts[i])];
             permutations[--counts[part]] = i;
         }
 
-        freeArray<lno_t>(counts);
+        freeArray<pq_lno_t>(counts);
         freeArray<partId_t>(part_shifts);
     }
 }
 
 
 
-template <typename lno_t, typename partId_t>
+template <typename pq_lno_t, typename partId_t>
 void fillPermutationArrays(
         RCP<Comm<int> > &comm,
-        lno_t &numLocalPoints,
+        pq_lno_t &numLocalPoints,
         partId_t out_num_parts,
-        lno_t *permutations,
-        lno_t *part_begins,
+        pq_lno_t *permutations,
+        pq_lno_t *part_begins,
         partId_t *assigned_parts,
         partId_t num_parts
 ){
     if (out_num_parts == 1){
         //cout << "me:" << comm->getRank() << " filling permutation:" << endl;
-        for(lno_t i = 0; i < numLocalPoints; ++i){
+        for(pq_lno_t i = 0; i < numLocalPoints; ++i){
             permutations[i] = i;
         }
         part_begins[0] = numLocalPoints;
     }
     else {
-        lno_t *counts = allocMemory<lno_t>(num_parts);
+        pq_lno_t *counts = allocMemory<pq_lno_t>(num_parts);
 
         partId_t *part_shifts = allocMemory<partId_t>(num_parts);
 
-        memset(counts, 0, sizeof(lno_t) * num_parts);
+        memset(counts, 0, sizeof(pq_lno_t) * num_parts);
 
-        for(lno_t i = 0; i < numLocalPoints; ++i){
+        for(pq_lno_t i = 0; i < numLocalPoints; ++i){
             partId_t ii = assigned_parts[i];
             ++counts[ii];
         }
@@ -4502,7 +4502,7 @@ void fillPermutationArrays(
         }
 */
         partId_t p = 0;
-        lno_t prev_index = 0;
+        pq_lno_t prev_index = 0;
         for(partId_t i = 0; i < num_parts; ++i){
             //cout << "me:" << comm->getRank() << " p:" << i << " count:" <<  counts[i] << " a:" << assigned_parts << endl;
             if(counts[i] > 0)  {
@@ -4519,37 +4519,37 @@ void fillPermutationArrays(
         for(partId_t i = 0; i < out_num_parts; ++i){
             counts[i] = part_begins[i];
         }
-        for(lno_t i = numLocalPoints - 1; i >= 0; --i){
+        for(pq_lno_t i = numLocalPoints - 1; i >= 0; --i){
             partId_t part = part_shifts[partId_t(assigned_parts[i])];
             permutations[--counts[part]] = i;
         }
 
-        freeArray<lno_t>(counts);
+        freeArray<pq_lno_t>(counts);
         freeArray<partId_t>(part_shifts);
     }
 }
 
 
-template <typename gno_t,
-          typename lno_t,
-          typename scalar_t,
-          typename node_t,
+template <typename pq_gno_t,
+          typename pq_lno_t,
+          typename pq_scalar_t,
+          typename pq_node_t,
           typename partId_t>
 bool migration_refactored(
         RCP<Comm<int> > &pcomm, //original communication.
         const RCP<const Environment> &env, //environment
         RCP<Comm<int> > &comm, //current communication object.
 
-        RCP<const Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > &vectors, //multivector
+        RCP<const Tpetra::MultiVector<pq_scalar_t, pq_lno_t, pq_gno_t, pq_node_t> > &vectors, //multivector
         int pqJagged_multiVectorDim, //multivector dimension
 
-        gno_t &numGlobalPoints, //numGlobal points, output
-        lno_t &numLocalPoints, //numLocal points, output
+        pq_gno_t &numGlobalPoints, //numGlobal points, output
+        pq_lno_t &numLocalPoints, //numLocal points, output
 
         int coord_dim, // coordinate dimension
-        scalar_t **coords, //coordinates.
+        pq_scalar_t **coords, //coordinates.
         int weight_dim, //weight dimension
-        scalar_t **weight, //weights
+        pq_scalar_t **weight, //weights
 
         partId_t * &assigned_parts_, //this should not be necessary anymore.
 
@@ -4557,10 +4557,10 @@ bool migration_refactored(
         partId_t &out_num_part, //output num parts.
         vector<partId_t> *newFuturePartitions,
 
-        lno_t *&permutation,
-        lno_t *&old_permutation,
+        pq_lno_t *&permutation,
+        pq_lno_t *&old_permutation,
 
-        lno_t *partBeginArray,
+        pq_lno_t *partBeginArray,
         partId_t &partIndexBegin,
         //partId_t futurePartIndex,
 
@@ -4568,16 +4568,16 @@ bool migration_refactored(
         int assignment_type,
         int doMigrationType,
         int migration_check_option,
-        scalar_t migration_imbalance_cut_off,
+        pq_scalar_t migration_imbalance_cut_off,
         size_t futureReduceAll,
-        lno_t numCoordinatesForLastDimPartitioning,
+        pq_lno_t numCoordinatesForLastDimPartitioning,
 
-        gno_t *&coordinate_gnos,
+        pq_gno_t *&coordinate_gnos,
         int *&actual_gno_owner,
         string iteration,
         int keep_part_boxes,
-        RCP < vector <coordinateModelPartBox <scalar_t, partId_t> > > &inPartBoxes,
-        RCP < vector <coordinateModelPartBox <scalar_t, partId_t> > > &outPartBoxes
+        RCP < vector <coordinateModelPartBox <pq_scalar_t, partId_t> > > &inPartBoxes,
+        RCP < vector <coordinateModelPartBox <pq_scalar_t, partId_t> > > &outPartBoxes
 
 ){
 /*
@@ -4594,13 +4594,13 @@ bool migration_refactored(
     int multiVectorDim = pqJagged_multiVectorDim;
 
 
-    gno_t *p_gno_np_global_num_coord_each_part_actual = NULL;
+    pq_gno_t *p_gno_np_global_num_coord_each_part_actual = NULL;
 
     //get the number of coordinates in each part in each processor.
     //p_gno_np_global_num_coord_each_part_actual is allocated in this function.
     //allocation_size is returned, and this is the size of p_gno_np_global_num_coord_each_part_actual array.
     //size_t allocation_size =
-    getProcessorCoordinatePartCounts <gno_t, lno_t ,partId_t>(
+    getProcessorCoordinatePartCounts <pq_gno_t, pq_lno_t ,partId_t>(
             pcomm,
             env,
             comm,
@@ -4614,7 +4614,7 @@ bool migration_refactored(
 
 
     //check if migration will be performed or not.
-    if (!checkMigration <gno_t, lno_t ,partId_t>(
+    if (!checkMigration <pq_gno_t, pq_lno_t ,partId_t>(
             pcomm,
             env,
             comm,
@@ -4632,7 +4632,7 @@ bool migration_refactored(
             p_gno_np_global_num_coord_each_part_actual,
             partBeginArray)){
 
-        freeArray<gno_t>(p_gno_np_global_num_coord_each_part_actual);
+        freeArray<pq_gno_t>(p_gno_np_global_num_coord_each_part_actual);
         return false;
     }
 
@@ -4660,34 +4660,34 @@ bool migration_refactored(
         } else {
 
             for (partId_t i = 0; i < num_parts; ++i){
-                lno_t pBegin = 0;
+                pq_lno_t pBegin = 0;
                 if (i > 0) pBegin = partBeginArray[i - 1];
-                lno_t pEnd = partBeginArray[i];
+                pq_lno_t pEnd = partBeginArray[i];
 
 
 
-                for (lno_t j = pBegin; j < pEnd; ++j){
-                    lno_t ind = permutation[j];
+                for (pq_lno_t j = pBegin; j < pEnd; ++j){
+                    pq_lno_t ind = permutation[j];
                     assigned_parts_[ind] = i;
                 }
             }
         }
     }
 
-    const gno_t *gnoList = NULL;
+    const pq_gno_t *gnoList = NULL;
 
 
-    lno_t *sendCount = NULL;
-    gno_t *sendBuf = NULL;
+    pq_lno_t *sendCount = NULL;
+    pq_gno_t *sendBuf = NULL;
     int *coordinate_destionations = NULL;
-    sendCount = allocMemory<lno_t>(nprocs);
+    sendCount = allocMemory<pq_lno_t>(nprocs);
     for (int i = 0; i < nprocs; ++i) sendCount[i] = 0;
 
     if (doMigrationType == 0){
 
-        sendBuf = allocMemory<gno_t>(numLocalPoints);
+        sendBuf = allocMemory<pq_gno_t>(numLocalPoints);
 
-        ArrayView<const gno_t> gno_list = vectors->getMap()->getNodeElementList();
+        ArrayView<const pq_gno_t> gno_list = vectors->getMap()->getNodeElementList();
         gnoList = gno_list.getRawPtr();
     }
     else {
@@ -4699,7 +4699,7 @@ bool migration_refactored(
     vector<partId_t> out_part_indices;
 
 
-    getProcGroups_SendCounts_SendBuff<partId_t, lno_t, gno_t>(
+    getProcGroups_SendCounts_SendBuff<partId_t, pq_lno_t, pq_gno_t>(
             pcomm,
             migration_proc_assignment_type,
             assignment_type, //either assign to minimize migration, or assign to increase locality.
@@ -4733,8 +4733,8 @@ bool migration_refactored(
     std::sort (out_part_indices.begin(), out_part_indices.end());
     partId_t outP = out_part_indices.size();
 
-    gno_t newGlobalCount = 0;
-    gno_t *p_gno_np_global_num_coord_each_part = p_gno_np_global_num_coord_each_part_actual + nprocs * num_parts;
+    pq_gno_t newGlobalCount = 0;
+    pq_gno_t *p_gno_np_global_num_coord_each_part = p_gno_np_global_num_coord_each_part_actual + nprocs * num_parts;
 
 
     if (keep_part_boxes){
@@ -4758,7 +4758,7 @@ bool migration_refactored(
 
 
     if (keep_part_boxes){
-        RCP < vector <coordinateModelPartBox <scalar_t, partId_t> > > tmpPartBoxes = inPartBoxes;
+        RCP < vector <coordinateModelPartBox <pq_scalar_t, partId_t> > > tmpPartBoxes = inPartBoxes;
         inPartBoxes = outPartBoxes;
         outPartBoxes = tmpPartBoxes;
     }
@@ -4770,8 +4770,8 @@ bool migration_refactored(
         newFuturePartitions->push_back(p);
     }
 
-    ArrayRCP<gno_t> recvBuf;
-    gno_t numMyNewGnos = 0;
+    ArrayRCP<pq_gno_t> recvBuf;
+    pq_gno_t numMyNewGnos = 0;
 
 
     /*
@@ -4779,7 +4779,7 @@ bool migration_refactored(
     cout << "it:" << iteration << " in doAll2All:" << endl;
     */
     env->timerStart(MACRO_TIMERS, "PQJagged - Migration AlltoAll-" + iteration);
-    doAll2All<partId_t, lno_t, gno_t, scalar_t>(
+    doAll2All<partId_t, pq_lno_t, pq_gno_t, pq_scalar_t>(
             env, //environment
             comm, //current communication object.
             doMigrationType,
@@ -4811,28 +4811,28 @@ bool migration_refactored(
 
 
     if (doMigrationType == 0){
-        freeArray<gno_t>(sendBuf);
+        freeArray<pq_gno_t>(sendBuf);
     }
     else {
         freeArray<int>(coordinate_destionations);
 
         if(numLocalPoints != numMyNewGnos){
-            freeArray<lno_t>(permutation);
-            freeArray<lno_t>(old_permutation);
+            freeArray<pq_lno_t>(permutation);
+            freeArray<pq_lno_t>(old_permutation);
 
-            permutation = allocMemory<lno_t>(numMyNewGnos);
-            old_permutation = allocMemory<lno_t>(numMyNewGnos);
+            permutation = allocMemory<pq_lno_t>(numMyNewGnos);
+            old_permutation = allocMemory<pq_lno_t>(numMyNewGnos);
         }
         numLocalPoints = numMyNewGnos;
         numGlobalPoints = newGlobalCount;
     }
-    freeArray<lno_t>(sendCount);
-    freeArray<gno_t>(p_gno_np_global_num_coord_each_part_actual);
+    freeArray<pq_lno_t>(sendCount);
+    freeArray<pq_gno_t>(p_gno_np_global_num_coord_each_part_actual);
 
-    typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> mvector_t;
+    typedef Tpetra::MultiVector<pq_scalar_t, pq_lno_t, pq_gno_t, pq_node_t> mvector_t;
     if(doMigrationType == 0){
         env->timerStart(MACRO_TIMERS, "PQJagged - Migration doActualMigration-" + iteration);
-        doActualMigration<mvector_t, gno_t>(
+        doActualMigration<mvector_t, pq_gno_t>(
                 env, //environment
                 vectors,    // on return is the new data,
                 numMyNewGnos,
@@ -4844,7 +4844,7 @@ bool migration_refactored(
     ids.clear();
 
     if(doMigrationType == 0){
-        create_new_multi_vector<mvector_t, lno_t, gno_t,scalar_t, node_t>(
+        create_new_multi_vector<mvector_t, pq_lno_t, pq_gno_t,pq_scalar_t, pq_node_t>(
                 env, comm,
                 vectors,
                 multiVectorDim
@@ -4853,13 +4853,13 @@ bool migration_refactored(
 
 
 
-        lno_t prev_num_local = numLocalPoints;
+        pq_lno_t prev_num_local = numLocalPoints;
         numLocalPoints = vectors->getLocalLength();
         numGlobalPoints = vectors->getGlobalLength();
 
 
 
-    resizeArrays<lno_t, partId_t>(
+    resizeArrays<pq_lno_t, partId_t>(
             numLocalPoints,
             prev_num_local,
             assigned_parts_,
@@ -4868,7 +4868,7 @@ bool migration_refactored(
             );
 
 
-        getNewMultivectorArrays<gno_t, lno_t,scalar_t, node_t>(
+        getNewMultivectorArrays<pq_gno_t, pq_lno_t,pq_scalar_t, pq_node_t>(
                 comm,
                 numLocalPoints,
                 coord_dim,
@@ -4885,7 +4885,7 @@ bool migration_refactored(
         );
     }
     else {
-        fillPermutationArrays<lno_t,partId_t>(
+        fillPermutationArrays<pq_lno_t,partId_t>(
                 comm,
                 numLocalPoints,
                 out_num_part,
@@ -4901,7 +4901,7 @@ bool migration_refactored(
 
 #endif
 
-template <typename scalar_t, typename partId_t>
+template <typename pq_scalar_t, typename partId_t>
 partId_t getPartitionArrays(
         const partId_t *partNo,
         vector <partId_t> &pAlongI, //assumes this vector is empty.
@@ -4914,8 +4914,8 @@ partId_t getPartitionArrays(
         int i,
         partId_t maxPartNo,
         int keep_part_boxes,
-        RCP < vector <coordinateModelPartBox <scalar_t, partId_t> > > inPartBoxes,
-        RCP < vector <coordinateModelPartBox <scalar_t, partId_t> > > outPartBoxes
+        RCP < vector <coordinateModelPartBox <pq_scalar_t, partId_t> > > inPartBoxes,
+        RCP < vector <coordinateModelPartBox <pq_scalar_t, partId_t> > > outPartBoxes
 ){
     partId_t outPartCount = 0;
     if(partNo){
@@ -4966,14 +4966,14 @@ partId_t getPartitionArrays(
         futurePartNumbers = 1; //TODO this should be removed.
 
         //cout << "i:" << i << endl;
-        float fEpsilon = numeric_limits<float>::epsilon();
+        double fEpsilon = numeric_limits<double>::epsilon();
         for (partId_t ii = 0; ii < currentPartitionCount; ++ii){
             //get how many parts a part should be divided.
             partId_t numFuture = (*currentPartitions)[ii];
 
             //get the ideal number of parts that is close to the
             //(partArraySize - i) root of the numFuture.
-            partId_t numParts = getPartCount<partId_t>( numFuture, 1.0f / (partArraySize - i), fEpsilon);
+            partId_t numParts = getPartCount<partId_t>( numFuture, 1.0 / (partArraySize - i), fEpsilon);
             //partId_t numParts = ceil( pow(numFuture, 1.0f / (partArraySize - i)));// + 0.5f;
 
             //cout << "\tii:" << ii << " numParts:" << numParts << endl;
@@ -5026,28 +5026,28 @@ partId_t getPartitionArrays(
  * \param pqCoord is the 1D array holding the coordinates.
  * \param partIds is the array holding the partIds of each coordinate.
  *
- * \param _EPSILON is min element can be differentiated by scalar_t
+ * \param _EPSILON is min element can be differentiated by pq_scalar_t
  * \param partition is the number of parts that the current part will be partitioned into.
  */
 
-template <typename scalar_t, typename lno_t, typename partId_t>
+template <typename pq_scalar_t, typename pq_lno_t, typename partId_t>
 void getInitialPartAssignments(
-        scalar_t &maxCoordinate,
-        scalar_t &minCoordinate,
+        pq_scalar_t &maxCoordinate,
+        pq_scalar_t &minCoordinate,
 
         partId_t &currentPart,
-        lno_t *inTotalCounts,
-        lno_t *partitionedPointCoordinates,
-        scalar_t *pqCoord,
+        pq_lno_t *inTotalCounts,
+        pq_lno_t *partitionedPointCoordinates,
+        pq_scalar_t *pqCoord,
         partId_t *partIds,
 
-        scalar_t _EPSILON,
+        pq_scalar_t _EPSILON,
         partId_t &partition
 ){
-    scalar_t coordinate_range = maxCoordinate - minCoordinate;
+    pq_scalar_t coordinate_range = maxCoordinate - minCoordinate;
     //partId_t currentPart = currentWorkPart + kk;
-    lno_t coordinateEnd= inTotalCounts[currentPart];
-    lno_t coordinateBegin = currentPart==0 ? 0: inTotalCounts[currentPart -1];
+    pq_lno_t coordinateEnd= inTotalCounts[currentPart];
+    pq_lno_t coordinateBegin = currentPart==0 ? 0: inTotalCounts[currentPart -1];
 
     //if there is single point, or if all points are along a line.
     //set initial part to 0 for all.
@@ -5055,7 +5055,7 @@ void getInitialPartAssignments(
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif
-        for(lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
+        for(pq_lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
             partIds[partitionedPointCoordinates[ii]] = 0;
         }
     }
@@ -5063,14 +5063,14 @@ void getInitialPartAssignments(
 
         //otherwise estimate an initial part for each coordinate.
         //assuming uniform distribution of points.
-        scalar_t slice = coordinate_range / partition;
+        pq_scalar_t slice = coordinate_range / partition;
 
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif
-        for(lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
+        for(pq_lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
 
-            lno_t iii = partitionedPointCoordinates[ii];
+            pq_lno_t iii = partitionedPointCoordinates[ii];
             partId_t pp = partId_t((pqCoord[iii] - minCoordinate) / slice);
             partIds[iii] = 2 * pp;
         }
@@ -5172,41 +5172,41 @@ void getPartSpecifications(const partId_t *partNo,
  * \param pqCoordDim is dimension of the input
  * \param currentCoord is the index according to which the partitioning is done.
  */
-template <typename lno_t, typename scalar_t>
+template <typename pq_lno_t, typename pq_scalar_t>
 void getChunksFromCoordinates(
         partId_t partNo,
         int noThreads,
 
-        lno_t *partitionedPointPermutations,
-        scalar_t *pqJagged_coordinates,
+        pq_lno_t *partitionedPointPermutations,
+        pq_scalar_t *pqJagged_coordinates,
         bool pqJagged_uniformWeights,
-        scalar_t *coordWeights,
-        scalar_t *cutCoordinates,
-        lno_t coordinateBegin,
-        lno_t coordinateEnd,
+        pq_scalar_t *coordWeights,
+        pq_scalar_t *cutCoordinates,
+        pq_lno_t coordinateBegin,
+        pq_lno_t coordinateEnd,
 
         bool allowNonRectelinearPart,
         float *actual_ratios,
-        scalar_t *localPartWeights,
+        pq_scalar_t *localPartWeights,
         double **partWeights,
         float **nonRectelinearRatios,
 
-        lno_t ** partPointCounts,
+        pq_lno_t ** partPointCounts,
 
-        lno_t *newpartitionedPointPermutations,
-        lno_t *totalCounts,
+        pq_lno_t *newpartitionedPointPermutations,
+        pq_lno_t *totalCounts,
         partId_t *partIds,
 
         bool isSequentialAndPricise,
-        scalar_t **pqJaggedAllCoordinates,
+        pq_scalar_t **pqJaggedAllCoordinates,
         int pqCoordDim,
         int currentCoord
 ){
 
-    //lno_t numCoordsInPart =  coordinateEnd - coordinateBegin;
+    //pq_lno_t numCoordsInPart =  coordinateEnd - coordinateBegin;
     partId_t noCuts = partNo - 1;
     //size_t total_part_count = noCuts + partNo;
-    scalar_t _EPSILON = numeric_limits<scalar_t>::epsilon();
+    pq_scalar_t _EPSILON = numeric_limits<pq_scalar_t>::epsilon();
 
     //if (migration_check == true) allowNonRectelinearPart = false;
 #ifdef HAVE_ZOLTAN2_OMP
@@ -5218,7 +5218,7 @@ void getChunksFromCoordinates(
         me = omp_get_thread_num();
 #endif
 
-        lno_t *myPartPointCounts = partPointCounts[me];
+        pq_lno_t *myPartPointCounts = partPointCounts[me];
         float *myRatios = NULL;
         if (allowNonRectelinearPart){
 
@@ -5229,12 +5229,12 @@ void getChunksFromCoordinates(
 #endif
             for (partId_t i = 0; i < noCuts; ++i){
                 //float r = actual_ratios[i];
-                //scalar_t leftWeight = r * (localPartWeights[i * 2 + 1] - localPartWeights[i * 2]);
-                scalar_t leftWeight = actual_ratios[i];
+                //pq_scalar_t leftWeight = r * (localPartWeights[i * 2 + 1] - localPartWeights[i * 2]);
+                pq_scalar_t leftWeight = actual_ratios[i];
                 for(int ii = 0; ii < noThreads; ++ii){
                     if(leftWeight > _EPSILON){
 
-                        scalar_t ithWeight = partWeights[ii][i * 2 + 1] - partWeights[ii][i * 2 ];
+                        pq_scalar_t ithWeight = partWeights[ii][i * 2 + 1] - partWeights[ii][i * 2 ];
                         if(ithWeight < leftWeight){
                             nonRectelinearRatios[ii][i] = ithWeight;
                         }
@@ -5259,7 +5259,7 @@ void getChunksFromCoordinates(
                     if(ABS(cutCoordinates[i] - cutCoordinates[i -1]) < _EPSILON){
                         myRatios[i] -= myRatios[i - 1] ;
                     }
-                    myRatios[i] = int ((myRatios[i] + LEAST_SIGNIFICANCE) * SIGNIFICANCE_MUL) / scalar_t(SIGNIFICANCE_MUL);
+                    myRatios[i] = int ((myRatios[i] + LEAST_SIGNIFICANCE) * SIGNIFICANCE_MUL) / pq_scalar_t(SIGNIFICANCE_MUL);
                 }
             }
 /*
@@ -5280,10 +5280,10 @@ void getChunksFromCoordinates(
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
-            for (lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
+            for (pq_lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
 
-                lno_t i = partitionedPointPermutations[ii];
-                scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
+                pq_lno_t i = partitionedPointPermutations[ii];
+                pq_scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
                 partId_t pp = partIds[i];
                 partId_t p = pp / 2;
                 if(pp % 2 == 1){
@@ -5307,7 +5307,7 @@ void getChunksFromCoordinates(
                             if(ABS(cutCoordinates[p] - cutCoordinates[p - 1]) < _EPSILON){
                                 //if line has enough space on left, put it there.
                                 if(myRatios[p] > _EPSILON * EPS_SCALE && myRatios[p] >= ABS(myRatios[p] - w)){
-                                    //scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
+                                    //pq_scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
                                     myRatios[p] -= w;
                                     if(myRatios[p] < 0 && p < noCuts - 1 && ABS(cutCoordinates[p+1] - cutCoordinates[p]) < _EPSILON){
                                         myRatios[p + 1] += myRatios[p];
@@ -5322,7 +5322,7 @@ void getChunksFromCoordinates(
                             ++p;
                         }
 
-                        //scalar_t currentCut = cutCoordinates[p];
+                        //pq_scalar_t currentCut = cutCoordinates[p];
                         //TODO:currently cannot divide 1 line more than 2 parts.
                         //bug cannot be divided, therefore this part should change.
                         //cout << "p:" << p+1 << endl;
@@ -5353,13 +5353,13 @@ void getChunksFromCoordinates(
         } else {
             partId_t *cutMap = allocMemory<partId_t> (noCuts);
 
-            typedef uMultiSortItem<lno_t, int, scalar_t> multiSItem;
+            typedef uMultiSortItem<pq_lno_t, int, pq_scalar_t> multiSItem;
             typedef std::vector< multiSItem > multiSVector;
             typedef std::vector<multiSVector> multiS2Vector;
 
-            std::vector<scalar_t *>allocated_memory;
-            //scalar_t *currentPartWeight = allocMemory<scalar_t> (partNo);
-            //memset(currentPartWeight, 0, sizeof(scalar_t) * partNo);
+            std::vector<pq_scalar_t *>allocated_memory;
+            //pq_scalar_t *currentPartWeight = allocMemory<pq_scalar_t> (partNo);
+            //memset(currentPartWeight, 0, sizeof(pq_scalar_t) * partNo);
 
             multiS2Vector cutPointSortArrays;
 
@@ -5384,16 +5384,16 @@ void getChunksFromCoordinates(
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
-            for (lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
+            for (pq_lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
 
-                lno_t i = partitionedPointPermutations[ii];
-                //scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
+                pq_lno_t i = partitionedPointPermutations[ii];
+                //pq_scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
 
                 //cout << "index:" << i << " pqJagged_coordinates:" << pqJagged_coordinates[i] << " p:" << partIds[i] << endl;
                 partId_t pp = partIds[i];
                 partId_t p = pp / 2;
                 if(pp % 2 == 1 /*&& ABS(actual_ratios[p] - 1.0f) < _EPSILON*/){
-                    scalar_t *vals = allocMemory<scalar_t>(pqCoordDim -1);
+                    pq_scalar_t *vals = allocMemory<pq_scalar_t>(pqCoordDim -1);
                     allocated_memory.push_back(vals);
 
                     int val_ind = 0;
@@ -5427,7 +5427,7 @@ void getChunksFromCoordinates(
             for (partId_t p = 0; p < noCuts; ++p){
 
                 partId_t mappedCut = cutMap[p];
-                lno_t cutPointCount = (lno_t)cutPointSortArrays[mappedCut].size();
+                pq_lno_t cutPointCount = (pq_lno_t)cutPointSortArrays[mappedCut].size();
                 cout << "p:" << p <<
                         " mappedCut:" << mappedCut <<
                         " myPartPointCounts[p]:" << myPartPointCounts[p] <<
@@ -5441,12 +5441,12 @@ void getChunksFromCoordinates(
             cout << "p:" << noCuts << " myPartPointCounts[p]:" << myPartPointCounts[noCuts] << endl;
             */
             partId_t prevMap = cutMap[0];
-            scalar_t leftOver = 0;
+            pq_scalar_t leftOver = 0;
             for (partId_t p = 0; p < noCuts; ++p){
                 /*
                 {
                     partId_t mappedCut = cutMap[p];
-                    lno_t cutPointCount = (lno_t)cutPointSortArrays[mappedCut].size();
+                    pq_lno_t cutPointCount = (pq_lno_t)cutPointSortArrays[mappedCut].size();
 
                     cout << "p:" << p <<
                             " mappedCut:" << mappedCut <<
@@ -5463,11 +5463,11 @@ void getChunksFromCoordinates(
                 partId_t mappedCut = cutMap[p];
                 if (prevMap != mappedCut){
                     //biggestCutForVector[mappedCut] = p;
-                    lno_t vEnd = (lno_t)cutPointSortArrays[prevMap].size() - 1;
+                    pq_lno_t vEnd = (pq_lno_t)cutPointSortArrays[prevMap].size() - 1;
                     for (; vEnd >= 0; --vEnd){
                         multiSItem t = cutPointSortArrays[prevMap][vEnd];
-                        lno_t i = t.index;
-                        //scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
+                        pq_lno_t i = t.index;
+                        //pq_scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
                         //cutPointSortArrays[mappedCut].pop_back();
                         //cout << "putting i : " << i << " on cut:" << prevMap << " to part p:" << p << endl;
                         ++myPartPointCounts[p];
@@ -5476,15 +5476,15 @@ void getChunksFromCoordinates(
                     cutPointSortArrays[prevMap].clear();
                 }
                 //biggestCutForVector[mappedCut] = p;
-                lno_t vEnd = (lno_t)cutPointSortArrays[mappedCut].size() - 1;
+                pq_lno_t vEnd = (pq_lno_t)cutPointSortArrays[mappedCut].size() - 1;
 
                 //cout << "c:" << p << " r:" << myRatios[p] << " leftOver:" << leftOver << endl;
-                //scalar_t leftPartW = currentPartWeight[p];
+                //pq_scalar_t leftPartW = currentPartWeight[p];
 
                 for (; vEnd >= 0; --vEnd){
                     multiSItem t = cutPointSortArrays[mappedCut][vEnd];
-                    lno_t i = t.index;
-                    scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
+                    pq_lno_t i = t.index;
+                    pq_scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
 
                     if(myRatios[p] + leftOver> _EPSILON * EPS_SCALE &&
                             myRatios[p] + leftOver - ABS(myRatios[p] + leftOver - w) > _EPSILON){
@@ -5537,11 +5537,11 @@ void getChunksFromCoordinates(
                 prevMap = mappedCut;
             }
             {
-                lno_t vEnd = (lno_t)cutPointSortArrays[prevMap].size() - 1;
+                pq_lno_t vEnd = (pq_lno_t)cutPointSortArrays[prevMap].size() - 1;
                 for (; vEnd >= 0; --vEnd){
                     multiSItem t = cutPointSortArrays[prevMap][vEnd];
-                    lno_t i = t.index;
-                    //scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
+                    pq_lno_t i = t.index;
+                    //pq_scalar_t w = pqJagged_uniformWeights? 1:coordWeights[i];
                     //cutPointSortArrays[mappedCut].pop_back();
                     //cout << "putting i : " << i << " on cut:" << prevMap << " to part p:" << noCuts << endl;
                     ++myPartPointCounts[noCuts];
@@ -5551,11 +5551,11 @@ void getChunksFromCoordinates(
             }
 
             freeArray<partId_t> (cutMap);
-            //freeArray<scalar_t> (currentPartWeight);
+            //freeArray<pq_scalar_t> (currentPartWeight);
 
-            lno_t vSize = (lno_t) allocated_memory.size();
-            for(lno_t i = 0; i < vSize; ++i){
-                freeArray<scalar_t> (allocated_memory[i]);
+            pq_lno_t vSize = (pq_lno_t) allocated_memory.size();
+            for(pq_lno_t i = 0; i < vSize; ++i){
+                freeArray<pq_scalar_t> (allocated_memory[i]);
             }
         }
 
@@ -5564,9 +5564,9 @@ void getChunksFromCoordinates(
 #pragma omp for
 #endif
         for(partId_t j = 0; j < partNo; ++j){
-            lno_t pwj = 0;
+            pq_lno_t pwj = 0;
             for (int i = 0; i < noThreads; ++i){
-                lno_t threadPartPointCount = partPointCounts[i][j];
+                pq_lno_t threadPartPointCount = partPointCounts[i][j];
                 partPointCounts[i][j] = pwj;
                 pwj += threadPartPointCount;
 
@@ -5591,8 +5591,8 @@ void getChunksFromCoordinates(
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp for
 #endif
-        for (lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
-            lno_t i = partitionedPointPermutations[ii];
+        for (pq_lno_t ii = coordinateBegin; ii < coordinateEnd; ++ii){
+            pq_lno_t i = partitionedPointPermutations[ii];
             partId_t p =  partIds[i];
             newpartitionedPointPermutations[coordinateBegin + myPartPointCounts[p]++] = i;
         }
@@ -5602,27 +5602,36 @@ void getChunksFromCoordinates(
 
 
 
-template <typename scalar_t, typename lno_t, typename partId_t>
+template <typename pq_scalar_t, typename pq_lno_t, typename partId_t>
 void sequentialTaskPartitioning(
         const RCP<const Environment> &env,
-        lno_t numLocalCoords,
-        lno_t actualNumCoords,
+        pq_lno_t numLocalCoords,
+        pq_lno_t actualNumCoords,
         size_t numGlobalParts,
         int coordDim,
-        scalar_t **pqJagged_coordinates,
-        lno_t *output_permutation,
-        lno_t *output_partIndices
+        pq_scalar_t **pqJagged_coordinates,
+        pq_lno_t *output_permutation,
+        pq_lno_t *output_partIndices,
+        int partArraySize,
+        const partId_t *partNo
+
         //,string partitioningName
         ){
     //env->timerStart(MACRO_TIMERS, "PQJagged - " +partitioningName+"-Problem_Partitioning");
-
+#ifdef HAVE_ZOLTAN2_OMP
+    int actual_num_threads = omp_get_num_threads();
+    omp_set_num_threads(1);
+#endif
     const RCP<Comm<int> > commN;
     RCP<Comm<int> >comm =  Teuchos::rcp_const_cast<Comm<int> >
             (Teuchos::DefaultComm<int>::getDefaultSerialComm(commN));
 
 
+    /*
     const partId_t *partNo = NULL;
     int partArraySize = 0;
+    */
+
 
     //weights are uniform for task mapping
     bool pqJagged_uniformWeights[1];
@@ -5632,15 +5641,15 @@ void sequentialTaskPartitioning(
     //parts are uniform for task mapping
     bool pqJagged_uniformParts[1];
     pqJagged_uniformParts[0] = true;
-    scalar_t *pqJagged_partSizes[1];
+    pq_scalar_t *pqJagged_partSizes[1];
     pqJagged_partSizes[0] = NULL;
     //no weights
     //int weightDim = 0;
-    scalar_t pqJagged_weights[1][1];
+    pq_scalar_t pqJagged_weights[1][1];
 
 
     //as input indices.
-    lno_t *partitionedPointCoordinates =  allocMemory< lno_t>(numLocalCoords);
+    pq_lno_t *partitionedPointCoordinates =  allocMemory< pq_lno_t>(numLocalCoords);
     //initial configuration
     //set each pointer-i to i.
 #ifdef HAVE_ZOLTAN2_OMP
@@ -5651,10 +5660,10 @@ void sequentialTaskPartitioning(
     }
 
     //as output indices
-    lno_t *newpartitionedPointCoordinates = allocMemory< lno_t>(numLocalCoords);
+    pq_lno_t *newpartitionedPointCoordinates = allocMemory< pq_lno_t>(numLocalCoords);
 #ifdef HAVE_ZOLTAN2_OMP
 #ifdef FIRST_TOUCH
-    firstTouch<lno_t>(newpartitionedPointCoordinates, numLocalCoords);
+    firstTouch<pq_lno_t>(newpartitionedPointCoordinates, numLocalCoords);
 #endif
 #endif
 
@@ -5670,10 +5679,10 @@ void sequentialTaskPartitioning(
     //single partition starts at index-0, and ends at numLocalCoords
     //inTotalCounts array holds the end points in partitionedPointCoordinates array
     //for each partition. Initially sized 1, and single element is set to numLocalCoords.
-    lno_t *inTotalCounts = allocMemory<lno_t>(1);
-    inTotalCounts[0] = static_cast<lno_t>(actualNumCoords);//the end of the initial partition is the end of coordinates.
+    pq_lno_t *inTotalCounts = allocMemory<pq_lno_t>(1);
+    inTotalCounts[0] = static_cast<pq_lno_t>(actualNumCoords);//the end of the initial partition is the end of coordinates.
     //the ends points of the output.
-    lno_t *outTotalCounts = NULL;
+    pq_lno_t *outTotalCounts = NULL;
 
 
 
@@ -5701,7 +5710,7 @@ void sequentialTaskPartitioning(
     partId_t maxCutNo = 0;
     size_t maxTotalPartCount = 0;
 
-    partArraySize = coordDim;
+    //partArraySize = coordDim * 8;
     getPartSpecifications <partId_t>(
                         partNo,   //partNoArray Input
                         partArraySize,  //size of the partNoArray --output if partNo is not given.
@@ -5722,10 +5731,10 @@ void sequentialTaskPartitioning(
     // kddnote if (keep_cuts)
     // coordinates of the cut lines.
     //only store this much if cuts are needed to be stored.
-    scalar_t *allCutCoordinates = allocMemory< scalar_t>(totalDimensionCut);
+    pq_scalar_t *allCutCoordinates = allocMemory< pq_scalar_t>(totalDimensionCut);
     // kddnote else
-    //scalar_t *allCutCoordinates = allocMemory< scalar_t>(maxCutNo * concurrentPartCount);
-    scalar_t *max_min_array =  allocMemory< scalar_t>(numThreads * 2);
+    //pq_scalar_t *allCutCoordinates = allocMemory< pq_scalar_t>(maxCutNo * concurrentPartCount);
+    pq_scalar_t *max_min_array =  allocMemory< pq_scalar_t>(numThreads * 2);
 
     float *nonRectelinearPart = NULL; //how much weight percentage should a MPI put left side of the each cutline
     float **nonRectRatios = NULL; //how much weight percentage should each thread in MPI put left side of the each cutline
@@ -5756,30 +5765,30 @@ void sequentialTaskPartitioning(
     // work array to manipulate coordinate of cutlines in different iterations.
     //necessary because previous cut line information is used for determining the next cutline information.
     //therefore, cannot update the cut work array until all cutlines are determined.
-    scalar_t *cutCoordinatesWork = allocMemory<scalar_t>(maxCutNo * concurrentPartCount);
+    pq_scalar_t *cutCoordinatesWork = allocMemory<pq_scalar_t>(maxCutNo * concurrentPartCount);
 
 #ifdef HAVE_ZOLTAN2_OMP
 #ifdef FIRST_TOUCH
-    firstTouch<scalar_t>(cutCoordinatesWork, maxCutNo);
+    firstTouch<pq_scalar_t>(cutCoordinatesWork, maxCutNo);
 #endif
 #endif
 
     //cumulative part weight ratio array.
-    scalar_t *targetPartWeightRatios = allocMemory<scalar_t>(maxPartNo * concurrentPartCount); // the weight ratios at left side of the cuts. First is 0, last is 1.
+    pq_scalar_t *targetPartWeightRatios = allocMemory<pq_scalar_t>(maxPartNo * concurrentPartCount); // the weight ratios at left side of the cuts. First is 0, last is 1.
 #ifdef HAVE_ZOLTAN2_OMP
 #ifdef FIRST_TOUCH
-    firstTouch<scalar_t>(cutPartRatios, maxCutNo);
+    firstTouch<pq_scalar_t>(cutPartRatios, maxCutNo);
 #endif
 #endif
 
 
-    scalar_t *cutUpperBounds = allocMemory<scalar_t>(maxCutNo * concurrentPartCount);  //upper bound coordinate of a cut line
-    scalar_t *cutLowerBounds = allocMemory<scalar_t>(maxCutNo* concurrentPartCount);  //lower bound coordinate of a cut line
-    scalar_t *cutLowerWeight = allocMemory<scalar_t>(maxCutNo* concurrentPartCount);  //lower bound weight of a cut line
-    scalar_t *cutUpperWeight = allocMemory<scalar_t>(maxCutNo* concurrentPartCount);  //upper bound weight of a cut line
+    pq_scalar_t *cutUpperBounds = allocMemory<pq_scalar_t>(maxCutNo * concurrentPartCount);  //upper bound coordinate of a cut line
+    pq_scalar_t *cutLowerBounds = allocMemory<pq_scalar_t>(maxCutNo* concurrentPartCount);  //lower bound coordinate of a cut line
+    pq_scalar_t *cutLowerWeight = allocMemory<pq_scalar_t>(maxCutNo* concurrentPartCount);  //lower bound weight of a cut line
+    pq_scalar_t *cutUpperWeight = allocMemory<pq_scalar_t>(maxCutNo* concurrentPartCount);  //upper bound weight of a cut line
 
-    scalar_t *localMinMaxTotal = allocMemory<scalar_t>(3 * concurrentPartCount); //combined array to exchange the min and max coordinate, and total weight of part.
-    scalar_t *globalMinMaxTotal = allocMemory<scalar_t>(3 * concurrentPartCount);//global combined array with the results for min, max and total weight.
+    pq_scalar_t *localMinMaxTotal = allocMemory<pq_scalar_t>(3 * concurrentPartCount); //combined array to exchange the min and max coordinate, and total weight of part.
+    pq_scalar_t *globalMinMaxTotal = allocMemory<pq_scalar_t>(3 * concurrentPartCount);//global combined array with the results for min, max and total weight.
 
     //isDone is used to determine if a cutline is determined already.
     //If a cut line is already determined, the next iterations will skip this cut line.
@@ -5793,19 +5802,19 @@ void sequentialTaskPartitioning(
     double **pws = allocMemory<double *>(numThreads);
 
     //leftClosesDistance to hold the min distance of a coordinate to a cutline from left (for each thread).
-    scalar_t **leftClosestDistance = allocMemory<scalar_t *>(numThreads);
+    pq_scalar_t **leftClosestDistance = allocMemory<pq_scalar_t *>(numThreads);
     //leftClosesDistance to hold the min distance of a coordinate to a cutline from right (for each thread)
-    scalar_t **rightClosestDistance = allocMemory<scalar_t *>(numThreads);
+    pq_scalar_t **rightClosestDistance = allocMemory<pq_scalar_t *>(numThreads);
 
     //to store how many points in each part a thread has.
-    lno_t **partPointCounts = allocMemory<lno_t *>(numThreads);
+    pq_lno_t **partPointCounts = allocMemory<pq_lno_t *>(numThreads);
 
     for(int i = 0; i < numThreads; ++i){
-        //partWeights[i] = allocMemory<scalar_t>(maxTotalPartCount);
+        //partWeights[i] = allocMemory<pq_scalar_t>(maxTotalPartCount);
         partWeights[i] = allocMemory < double >(maxTotalPartCount * concurrentPartCount);
-        rightClosestDistance[i] = allocMemory<scalar_t>(maxCutNo * concurrentPartCount);
-        leftClosestDistance[i] = allocMemory<scalar_t>(maxCutNo * concurrentPartCount);
-        partPointCounts[i] =  allocMemory<lno_t>(maxPartNo);
+        rightClosestDistance[i] = allocMemory<pq_scalar_t>(maxCutNo * concurrentPartCount);
+        leftClosestDistance[i] = allocMemory<pq_scalar_t>(maxCutNo * concurrentPartCount);
+        partPointCounts[i] =  allocMemory<pq_lno_t>(maxPartNo);
     }
 #ifdef HAVE_ZOLTAN2_OMP
 #ifdef FIRST_TOUCH
@@ -5827,34 +5836,34 @@ void sequentialTaskPartitioning(
 #endif
 #endif
     // kddnote  Needed only when non-rectilinear parts.
-    scalar_t *cutWeights = allocMemory<scalar_t>(maxCutNo);
-    scalar_t *globalCutWeights = allocMemory<scalar_t>(maxCutNo);
+    pq_scalar_t *cutWeights = allocMemory<pq_scalar_t>(maxCutNo);
+    pq_scalar_t *globalCutWeights = allocMemory<pq_scalar_t>(maxCutNo);
 
     //for faster communication, concatanation of
     //totalPartWeights sized 2P-1, since there are P parts and P-1 cut lines
     //leftClosest distances sized P-1, since P-1 cut lines
     //rightClosest distances size P-1, since P-1 cut lines.
-    scalar_t *totalPartWeights_leftClosests_rightClosests = allocMemory<scalar_t>((maxTotalPartCount + maxCutNo * 2) * concurrentPartCount);
-    scalar_t *global_totalPartWeights_leftClosests_rightClosests = allocMemory<scalar_t>((maxTotalPartCount + maxCutNo * 2) * concurrentPartCount);
+    pq_scalar_t *totalPartWeights_leftClosests_rightClosests = allocMemory<pq_scalar_t>((maxTotalPartCount + maxCutNo * 2) * concurrentPartCount);
+    pq_scalar_t *global_totalPartWeights_leftClosests_rightClosests = allocMemory<pq_scalar_t>((maxTotalPartCount + maxCutNo * 2) * concurrentPartCount);
 
 
-    scalar_t *cutCoordinates =  allCutCoordinates;
+    pq_scalar_t *cutCoordinates =  allCutCoordinates;
 
     //partId_t leftPartitions = totalPartCount;
-    scalar_t maxScalar_t = numeric_limits<scalar_t>::max();
-    scalar_t minScalar_t = -numeric_limits<scalar_t>::max();
+    pq_scalar_t maxScalar_t = numeric_limits<pq_scalar_t>::max();
+    pq_scalar_t minScalar_t = -numeric_limits<pq_scalar_t>::max();
 
 
 
-    scalar_t _EPSILON = numeric_limits<scalar_t>::epsilon();
+    pq_scalar_t _EPSILON = numeric_limits<pq_scalar_t>::epsilon();
     //partId_t partIndexBegin = 0;
     partId_t futurePartNumbers = totalPartCount;
 
     vector<partId_t> *currentPartitions = new vector<partId_t> ();
     vector<partId_t> *newFuturePartitions = new vector<partId_t> ();
     newFuturePartitions->push_back(numGlobalParts);
-    RCP < vector <coordinateModelPartBox <scalar_t, partId_t> > > t1;
-    RCP < vector <coordinateModelPartBox <scalar_t, partId_t> > > t2;
+    RCP < vector <coordinateModelPartBox <pq_scalar_t, partId_t> > > t1;
+    RCP < vector <coordinateModelPartBox <pq_scalar_t, partId_t> > > t2;
 
 
     for (int i = 0; i < partArraySize; ++i){
@@ -5892,8 +5901,17 @@ void sequentialTaskPartitioning(
         //it also expects pAlongI to be empty as well.
         newFuturePartitions->clear();
 
+
+
+        /*
+        cout << "i:" << i << " ";
+        for (int jj = 0; jj < currentPartitions->size();++jj){
+            cout << (*currentPartitions)[jj] << " ";
+        }
+        cout << endl;
+        */
         //returns the total number of output parts for this dimension partitioning.
-        partId_t outPartCount = getPartitionArrays<scalar_t, partId_t>(
+        partId_t outPartCount = getPartitionArrays<pq_scalar_t, partId_t>(
                 partNo,
                 pAlongI,
                 currentPartitions,
@@ -5908,6 +5926,14 @@ void sequentialTaskPartitioning(
                 t2
                 );
 
+        /*
+        cout << "i:" << i << " ";
+        for (int jj = 0; jj < pAlongI.size();++jj){
+            cout << pAlongI[jj] << " ";
+        }
+        cout << endl;
+        */
+
         if(outPartCount == currentPartitionCount) {
             tmpPartVect= currentPartitions;
             currentPartitions = newFuturePartitions;
@@ -5917,7 +5943,7 @@ void sequentialTaskPartitioning(
 
         //get the coordinate axis along which the partitioning will be done.
         int coordInd = i % coordDim;
-        scalar_t * pqCoord = pqJagged_coordinates[coordInd];
+        pq_scalar_t * pqCoord = pqJagged_coordinates[coordInd];
         //convert i to string to be used for debugging purposes.
 
         string istring = toString<int>(i);
@@ -5925,7 +5951,7 @@ void sequentialTaskPartitioning(
 
         //alloc Memory to point the indices
         //of the parts in the permutation array.
-        outTotalCounts = allocMemory<lno_t>(outPartCount);
+        outTotalCounts = allocMemory<pq_lno_t>(outPartCount);
 
         //cout << "outPart:" << outPartCount << " global:" << numGlobalParts << endl;
 
@@ -5958,10 +5984,10 @@ void sequentialTaskPartitioning(
                     continue;
                 }
                 ++workPartCount;
-                lno_t coordinateEnd= inTotalCounts[currentPart];
-                lno_t coordinateBegin = currentPart==0 ? 0: inTotalCounts[currentPart -1];
+                pq_lno_t coordinateEnd= inTotalCounts[currentPart];
+                pq_lno_t coordinateBegin = currentPart==0 ? 0: inTotalCounts[currentPart -1];
                 //cout << "me:" << problemComm->getRank() << " begin:" << coordinateBegin  << " end:" << coordinateEnd << endl;
-                pqJagged_getLocalMinMaxTotalCoord<scalar_t, lno_t>(
+                pqJagged_getLocalMinMaxTotalCoord<pq_scalar_t, pq_lno_t>(
                         partitionedPointCoordinates,
                         pqCoord,
                         pqJagged_uniformWeights[0],
@@ -5983,7 +6009,7 @@ void sequentialTaskPartitioning(
 
             if (workPartCount > 0){
                 //obtain global Min max of the part.
-                pqJagged_getGlobalMinMaxTotalCoord<scalar_t>(
+                pqJagged_getGlobalMinMaxTotalCoord<pq_scalar_t>(
                         comm,
                         env,
                         concurrentPart,
@@ -6001,16 +6027,16 @@ void sequentialTaskPartitioning(
                 partId_t cutShifts = 0;
                 partId_t partShift = 0;
                 for(int kk = 0; kk < concurrentPart; ++kk){
-                    scalar_t minCoordinate = globalMinMaxTotal[kk];
-                    scalar_t maxCoordinate = globalMinMaxTotal[kk + concurrentPart];
-                    scalar_t globalTotalWeight = globalMinMaxTotal[kk + 2 * concurrentPart];
+                    pq_scalar_t minCoordinate = globalMinMaxTotal[kk];
+                    pq_scalar_t maxCoordinate = globalMinMaxTotal[kk + concurrentPart];
+                    pq_scalar_t globalTotalWeight = globalMinMaxTotal[kk + 2 * concurrentPart];
 
                     partId_t currentPart = currentWorkPart + kk;
 
                     partId_t partition = pAlongI[currentPart];
 
-                    scalar_t *usedCutCoordinate = cutCoordinates + cutShifts;
-                    scalar_t *usedCutPartRatios = targetPartWeightRatios + partShift;
+                    pq_scalar_t *usedCutCoordinate = cutCoordinates + cutShifts;
+                    pq_scalar_t *usedCutPartRatios = targetPartWeightRatios + partShift;
                     //shift the usedCutCoordinate array as noCuts.
                     cutShifts += partition - 1;
                     //shift the partRatio array as noParts.
@@ -6027,7 +6053,7 @@ void sequentialTaskPartitioning(
                         myNonDoneCount[kk] = partition - 1;
 
                         //get the target weights of the parts.
-                        pqJagged_getCutCoord_Weights<scalar_t>(
+                        pqJagged_getCutCoord_Weights<pq_scalar_t>(
                                 minCoordinate,
                                 maxCoordinate,
                                 pqJagged_uniformParts[0],
@@ -6045,7 +6071,7 @@ void sequentialTaskPartitioning(
                         );
 
                         //get the initial estimated part assignments of the coordinates.
-                        getInitialPartAssignments<scalar_t, lno_t, partId_t>(
+                        getInitialPartAssignments<pq_scalar_t, pq_lno_t, partId_t>(
                                 maxCoordinate,
                                 minCoordinate,
                                 currentPart,
@@ -6065,10 +6091,10 @@ void sequentialTaskPartitioning(
                 }
 
                 //used imbalance, it is always 0, as it is difficult to estimate a range.
-                scalar_t used_imbalance = 0;
+                pq_scalar_t used_imbalance = 0;
 
                 // Determine cut lines for k parts here.
-                pqJagged_1D_Partition<scalar_t, lno_t>(
+                pqJagged_1D_Partition<pq_scalar_t, pq_lno_t>(
                         env,
                         comm,
                         partitionedPointCoordinates,
@@ -6135,12 +6161,12 @@ void sequentialTaskPartitioning(
                         continue;
                     }
 
-                    lno_t coordinateEnd= inTotalCounts[curr];
-                    lno_t coordinateBegin = curr==0 ? 0: inTotalCounts[curr -1];
-                    scalar_t *usedCutCoordinate = cutCoordinates + cutShift;
+                    pq_lno_t coordinateEnd= inTotalCounts[curr];
+                    pq_lno_t coordinateBegin = curr==0 ? 0: inTotalCounts[curr -1];
+                    pq_scalar_t *usedCutCoordinate = cutCoordinates + cutShift;
                     float *usednonRectelinearPart = nonRectelinearPart + cutShift;
 
-                    scalar_t *tlr =  totalPartWeights_leftClosests_rightClosests + tlrShift;
+                    pq_scalar_t *tlr =  totalPartWeights_leftClosests_rightClosests + tlrShift;
 
                     for(int ii = 0; ii < numThreads; ++ii){
                         pws[ii] = partWeights[ii] +  pwShift;
@@ -6150,7 +6176,7 @@ void sequentialTaskPartitioning(
                     if(noParts > 1){
 
                         // Rewrite the indices based on the computed cuts.
-                        getChunksFromCoordinates<lno_t,scalar_t>(
+                        getChunksFromCoordinates<pq_lno_t,pq_scalar_t>(
                                 noParts,
                                 numThreads,
                                 partitionedPointCoordinates,
@@ -6187,9 +6213,9 @@ void sequentialTaskPartitioning(
                     }
                     else {
                         //if this part is partitioned into 1 then just copy the old values.
-                        lno_t partSize = coordinateEnd - coordinateBegin;
+                        pq_lno_t partSize = coordinateEnd - coordinateBegin;
                         *(outTotalCounts + currentOut + outShift) = partSize;
-                        memcpy(newpartitionedPointCoordinates + coordinateBegin, partitionedPointCoordinates + coordinateBegin, partSize * sizeof(lno_t));
+                        memcpy(newpartitionedPointCoordinates + coordinateBegin, partitionedPointCoordinates + coordinateBegin, partSize * sizeof(pq_lno_t));
                     }
                     cutShift += noParts - 1;
                     tlrShift += (4 *(noParts - 1) + 1);
@@ -6219,10 +6245,10 @@ void sequentialTaskPartitioning(
         // end of this partitioning dimension
 
         currentPartitionCount = outPartCount;
-        lno_t * tmp = partitionedPointCoordinates;
+        pq_lno_t * tmp = partitionedPointCoordinates;
         partitionedPointCoordinates = newpartitionedPointCoordinates;
         newpartitionedPointCoordinates = tmp;
-        freeArray<lno_t>(inTotalCounts);
+        freeArray<pq_lno_t>(inTotalCounts);
         inTotalCounts = outTotalCounts;
 
         //env->timerStop(MACRO_TIMERS, "PQJagged - " +partitioningName+"-Problem_Partitioning_" + istring);
@@ -6231,7 +6257,7 @@ void sequentialTaskPartitioning(
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif
-    for(lno_t i = 0; i < numLocalCoords; ++i){
+    for(pq_lno_t i = 0; i < numLocalCoords; ++i){
         output_permutation[i] = partitionedPointCoordinates[i];
     }
 
@@ -6244,13 +6270,13 @@ void sequentialTaskPartitioning(
     delete currentPartitions;
     delete newFuturePartitions;
 
-    freeArray<lno_t>(partitionedPointCoordinates);
-    freeArray<lno_t>(newpartitionedPointCoordinates);
-    freeArray<lno_t>(inTotalCounts);
+    freeArray<pq_lno_t>(partitionedPointCoordinates);
+    freeArray<pq_lno_t>(newpartitionedPointCoordinates);
+    freeArray<pq_lno_t>(inTotalCounts);
 
-    freeArray<scalar_t>(allCutCoordinates);
-    freeArray<scalar_t>(cutCoordinatesWork);
-    freeArray<scalar_t>(max_min_array);
+    freeArray<pq_scalar_t>(allCutCoordinates);
+    freeArray<pq_scalar_t>(cutCoordinatesWork);
+    freeArray<pq_scalar_t>(max_min_array);
 
     if(allowNonRectelinearPart){
         freeArray<float>(nonRectelinearPart);
@@ -6259,38 +6285,42 @@ void sequentialTaskPartitioning(
         }
         freeArray<float *>(nonRectRatios);
     }
-    freeArray<scalar_t>(targetPartWeightRatios);
+    freeArray<pq_scalar_t>(targetPartWeightRatios);
 
-    freeArray<scalar_t>(cutUpperBounds);
-    freeArray<scalar_t>(cutLowerBounds);
-    freeArray<scalar_t>(cutLowerWeight);
-    freeArray<scalar_t>(cutUpperWeight);
-    freeArray<scalar_t> (localMinMaxTotal);
-    freeArray<scalar_t> (globalMinMaxTotal);
+    freeArray<pq_scalar_t>(cutUpperBounds);
+    freeArray<pq_scalar_t>(cutLowerBounds);
+    freeArray<pq_scalar_t>(cutLowerWeight);
+    freeArray<pq_scalar_t>(cutUpperWeight);
+    freeArray<pq_scalar_t> (localMinMaxTotal);
+    freeArray<pq_scalar_t> (globalMinMaxTotal);
     freeArray<bool>(isDone);
     freeArray<partId_t>(myNonDoneCount);
 
     for(int i = 0; i < numThreads; ++i){
         freeArray<double>(partWeights[i]);
-        freeArray<scalar_t>(rightClosestDistance[i]);
-        freeArray<scalar_t>(leftClosestDistance[i]);
+        freeArray<pq_scalar_t>(rightClosestDistance[i]);
+        freeArray<pq_scalar_t>(leftClosestDistance[i]);
     }
     freeArray<double *>(partWeights);
-    freeArray<scalar_t *>(leftClosestDistance);
-    freeArray<scalar_t *>(rightClosestDistance);
+    freeArray<pq_scalar_t *>(leftClosestDistance);
+    freeArray<pq_scalar_t *>(rightClosestDistance);
 
     freeArray<double *> (pws);
 
     for(int i = 0; i < numThreads; ++i){
-        freeArray<lno_t>(partPointCounts[i]);
+        freeArray<pq_lno_t>(partPointCounts[i]);
     }
-    freeArray<lno_t *>(partPointCounts);
-    freeArray<scalar_t>(cutWeights);
+    freeArray<pq_lno_t *>(partPointCounts);
+    freeArray<pq_scalar_t>(cutWeights);
 
-    freeArray<scalar_t>(globalCutWeights);
-    freeArray<scalar_t>(totalPartWeights_leftClosests_rightClosests);
-    freeArray<scalar_t>(global_totalPartWeights_leftClosests_rightClosests);
+    freeArray<pq_scalar_t>(globalCutWeights);
+    freeArray<pq_scalar_t>(totalPartWeights_leftClosests_rightClosests);
+    freeArray<pq_scalar_t>(global_totalPartWeights_leftClosests_rightClosests);
     //env->timerStop(MACRO_TIMERS, "PQJagged - " +partitioningName+"-Problem_Partitioning");
+
+#ifdef HAVE_ZOLTAN2_OMP
+    omp_set_num_threads(actual_num_threads);
+#endif
 }
 
 /*! \brief PQJagged coordinate partitioning algorithm.
@@ -6326,16 +6356,16 @@ void AlgPQJagged(
     // < 0 - for avoid migration
 
 
-    typedef typename Adapter::scalar_t scalar_t;
-    typedef typename Adapter::gno_t gno_t;
-    typedef typename Adapter::lno_t lno_t;
-    typedef typename Adapter::node_t node_t;
+    typedef typename Adapter::scalar_t pq_scalar_t;
+    typedef typename Adapter::gno_t pq_gno_t;
+    typedef typename Adapter::lno_t pq_lno_t;
+    typedef typename Adapter::node_t pq_node_t;
 
     /*
     if(comm->getRank() == 0){
-    cout << "size of gno:" << sizeof(gno_t) << endl;
-    cout << "size of lno:" << sizeof(lno_t) << endl;
-    cout << "size of scalar_t:" << sizeof(scalar_t) << endl;
+    cout << "size of gno:" << sizeof(pq_gno_t) << endl;
+    cout << "size of lno:" << sizeof(pq_lno_t) << endl;
+    cout << "size of pq_scalar_t:" << sizeof(pq_scalar_t) << endl;
     }
      */
     const Teuchos::ParameterList &pl = env->getParameters();
@@ -6344,13 +6374,13 @@ void AlgPQJagged(
     int numTestCuts = 5;
 
 
-    scalar_t imbalanceTolerance;
+    pq_scalar_t imbalanceTolerance;
 
     multiCriteriaNorm mcnorm;
     bool ignoreWeights=false;
 
 
-    get_partitioning_params<scalar_t>(pl,
+    get_partitioning_params<pq_scalar_t>(pl,
             imbalanceTolerance,
             mcnorm,
             params,
@@ -6380,24 +6410,24 @@ void AlgPQJagged(
     );
 
 
-    lno_t numLocalCoords = nlc;
+    pq_lno_t numLocalCoords = nlc;
 #ifdef enable_migration2
-    gno_t numGlobalCoords = gnc;
+    pq_gno_t numGlobalCoords = gnc;
 #endif
 
     //allocate only two dimensional pointer.
     //raw pointer addresess will be obtained from multivector.
-    scalar_t **pqJagged_coordinates = allocMemory<scalar_t *>(coordDim);
-    scalar_t **pqJagged_weights = allocMemory<scalar_t *>(criteriaDim);
+    pq_scalar_t **pqJagged_coordinates = allocMemory<pq_scalar_t *>(coordDim);
+    pq_scalar_t **pqJagged_weights = allocMemory<pq_scalar_t *>(criteriaDim);
     bool *pqJagged_uniformParts = allocMemory< bool >(criteriaDim); //if the partitioning results wanted to be uniform.
-    scalar_t **pqJagged_partSizes =  allocMemory<scalar_t *>(criteriaDim); //if in a criteria dimension, uniform part is false this shows ratios of the target part weights.
+    pq_scalar_t **pqJagged_partSizes =  allocMemory<pq_scalar_t *>(criteriaDim); //if in a criteria dimension, uniform part is false this shows ratios of the target part weights.
     bool *pqJagged_uniformWeights = allocMemory< bool >(criteriaDim); //if the weights of coordinates are uniform in a criteria dimension.
 
-    ArrayView<const gno_t> pqJagged_gnos;
+    ArrayView<const pq_gno_t> pqJagged_gnos;
     size_t numGlobalParts;
     int pqJagged_multiVectorDim;
 
-    pqJagged_getInputValues<Adapter, scalar_t, gno_t>(
+    pqJagged_getInputValues<Adapter, pq_scalar_t, pq_gno_t>(
             env,
             coords,
             solution,
@@ -6421,13 +6451,13 @@ void AlgPQJagged(
     //////////////////BEGINNING OF THE FUNCTION///////////////////////
 
 #ifdef enable_migration2
-    const gno_t *actual_pqgnos = pqJagged_gnos.getRawPtr();
-    gno_t *pq_gnos = (gno_t *)actual_pqgnos;
+    const pq_gno_t *actual_pqgnos = pqJagged_gnos.getRawPtr();
+    pq_gno_t *pq_gnos = (pq_gno_t *)actual_pqgnos;
     int *actual_owner_of_coordinate  = NULL;
 #endif
 
     //as input indices.
-    lno_t *partitionedPointCoordinates =  allocMemory< lno_t>(numLocalCoords);
+    pq_lno_t *partitionedPointCoordinates =  allocMemory< pq_lno_t>(numLocalCoords);
     //initial configuration
     //set each pointer-i to i.
 #ifdef HAVE_ZOLTAN2_OMP
@@ -6438,10 +6468,10 @@ void AlgPQJagged(
     }
 
     //as output indices
-    lno_t *newpartitionedPointCoordinates = allocMemory< lno_t>(numLocalCoords);
+    pq_lno_t *newpartitionedPointCoordinates = allocMemory< pq_lno_t>(numLocalCoords);
 #ifdef HAVE_ZOLTAN2_OMP
 #ifdef FIRST_TOUCH
-    firstTouch<lno_t>(newpartitionedPointCoordinates, numLocalCoords);
+    firstTouch<pq_lno_t>(newpartitionedPointCoordinates, numLocalCoords);
 #endif
 #endif
 
@@ -6457,10 +6487,10 @@ void AlgPQJagged(
     //single partition starts at index-0, and ends at numLocalCoords
     //inTotalCounts array holds the end points in partitionedPointCoordinates array
     //for each partition. Initially sized 1, and single element is set to numLocalCoords.
-    lno_t *inTotalCounts = allocMemory<lno_t>(1);
-    inTotalCounts[0] = static_cast<lno_t>(numLocalCoords);//the end of the initial partition is the end of coordinates.
+    pq_lno_t *inTotalCounts = allocMemory<pq_lno_t>(1);
+    inTotalCounts[0] = static_cast<pq_lno_t>(numLocalCoords);//the end of the initial partition is the end of coordinates.
     //the ends points of the output.
-    lno_t *outTotalCounts = NULL;
+    pq_lno_t *outTotalCounts = NULL;
 
 
 
@@ -6470,14 +6500,14 @@ void AlgPQJagged(
     int migration_actualMigration_option = 1;
     int migration_check_option = 0;
     int migration_all2all_option = 1;
-    scalar_t migration_imbalance_cut_off = 0.03;
+    pq_scalar_t migration_imbalance_cut_off = 0.35;
     int migration_assignment_type = 0;
     int keep_part_boxes = 0;
 
     int enable_rcb = 0;
     int recursion_depth = -1;
 
-    pqJagged_getParameters<scalar_t>(pl,
+    pqJagged_getParameters<pq_scalar_t>(pl,
             allowNonRectelinearPart,
             concurrentPartCount,
             migration_actualMigration_option,
@@ -6541,11 +6571,14 @@ void AlgPQJagged(
 
     if (concurrentPartCount == 0)
     {
+        if(problemComm->getSize() == 1){
+            concurrentPartCount = 1;
+        }
         // User did not specify concurrentPartCount parameter, Pick a default.
         // Still a conservative default. We could go as big as
         // maxTotalCumulativePartCount, but trying not to use too much memory.
         // Another assumption the total #parts will be large-very large
-        if (coordDim == partArraySize)
+        else if (coordDim == partArraySize)
         {
             // partitioning each dimension only once, pick the default as
             // maxPartNo >> default
@@ -6570,10 +6603,10 @@ void AlgPQJagged(
     // kddnote if (keep_cuts)
     // coordinates of the cut lines.
     //only store this much if cuts are needed to be stored.
-    scalar_t *allCutCoordinates = allocMemory< scalar_t>(totalDimensionCut);
+    pq_scalar_t *allCutCoordinates = allocMemory< pq_scalar_t>(totalDimensionCut);
     // kddnote else
-    //scalar_t *allCutCoordinates = allocMemory< scalar_t>(maxCutNo * concurrentPartCount);
-    scalar_t *max_min_array =  allocMemory< scalar_t>(numThreads * 2);
+    //pq_scalar_t *allCutCoordinates = allocMemory< pq_scalar_t>(maxCutNo * concurrentPartCount);
+    pq_scalar_t *max_min_array =  allocMemory< pq_scalar_t>(numThreads * 2);
 
     float *nonRectelinearPart = NULL; //how much weight percentage should a MPI put left side of the each cutline
     float **nonRectRatios = NULL; //how much weight percentage should each thread in MPI put left side of the each cutline
@@ -6604,30 +6637,30 @@ void AlgPQJagged(
     // work array to manipulate coordinate of cutlines in different iterations.
     //necessary because previous cut line information is used for determining the next cutline information.
     //therefore, cannot update the cut work array until all cutlines are determined.
-    scalar_t *cutCoordinatesWork = allocMemory<scalar_t>(maxCutNo * concurrentPartCount);
+    pq_scalar_t *cutCoordinatesWork = allocMemory<pq_scalar_t>(maxCutNo * concurrentPartCount);
 
 #ifdef HAVE_ZOLTAN2_OMP
 #ifdef FIRST_TOUCH
-    firstTouch<scalar_t>(cutCoordinatesWork, maxCutNo);
+    firstTouch<pq_scalar_t>(cutCoordinatesWork, maxCutNo);
 #endif
 #endif
 
     //cumulative part weight ratio array.
-    scalar_t *targetPartWeightRatios = allocMemory<scalar_t>(maxPartNo * concurrentPartCount); // the weight ratios at left side of the cuts. First is 0, last is 1.
+    pq_scalar_t *targetPartWeightRatios = allocMemory<pq_scalar_t>(maxPartNo * concurrentPartCount); // the weight ratios at left side of the cuts. First is 0, last is 1.
 #ifdef HAVE_ZOLTAN2_OMP
 #ifdef FIRST_TOUCH
-    firstTouch<scalar_t>(cutPartRatios, maxCutNo);
+    firstTouch<pq_scalar_t>(cutPartRatios, maxCutNo);
 #endif
 #endif
 
 
-    scalar_t *cutUpperBounds = allocMemory<scalar_t>(maxCutNo * concurrentPartCount);  //upper bound coordinate of a cut line
-    scalar_t *cutLowerBounds = allocMemory<scalar_t>(maxCutNo* concurrentPartCount);  //lower bound coordinate of a cut line
-    scalar_t *cutLowerWeight = allocMemory<scalar_t>(maxCutNo* concurrentPartCount);  //lower bound weight of a cut line
-    scalar_t *cutUpperWeight = allocMemory<scalar_t>(maxCutNo* concurrentPartCount);  //upper bound weight of a cut line
+    pq_scalar_t *cutUpperBounds = allocMemory<pq_scalar_t>(maxCutNo * concurrentPartCount);  //upper bound coordinate of a cut line
+    pq_scalar_t *cutLowerBounds = allocMemory<pq_scalar_t>(maxCutNo* concurrentPartCount);  //lower bound coordinate of a cut line
+    pq_scalar_t *cutLowerWeight = allocMemory<pq_scalar_t>(maxCutNo* concurrentPartCount);  //lower bound weight of a cut line
+    pq_scalar_t *cutUpperWeight = allocMemory<pq_scalar_t>(maxCutNo* concurrentPartCount);  //upper bound weight of a cut line
 
-    scalar_t *localMinMaxTotal = allocMemory<scalar_t>(3 * concurrentPartCount); //combined array to exchange the min and max coordinate, and total weight of part.
-    scalar_t *globalMinMaxTotal = allocMemory<scalar_t>(3 * concurrentPartCount);//global combined array with the results for min, max and total weight.
+    pq_scalar_t *localMinMaxTotal = allocMemory<pq_scalar_t>(3 * concurrentPartCount); //combined array to exchange the min and max coordinate, and total weight of part.
+    pq_scalar_t *globalMinMaxTotal = allocMemory<pq_scalar_t>(3 * concurrentPartCount);//global combined array with the results for min, max and total weight.
 
     //isDone is used to determine if a cutline is determined already.
     //If a cut line is already determined, the next iterations will skip this cut line.
@@ -6641,19 +6674,19 @@ void AlgPQJagged(
     double **pws = allocMemory<double *>(numThreads);
 
     //leftClosesDistance to hold the min distance of a coordinate to a cutline from left (for each thread).
-    scalar_t **leftClosestDistance = allocMemory<scalar_t *>(numThreads);
+    pq_scalar_t **leftClosestDistance = allocMemory<pq_scalar_t *>(numThreads);
     //leftClosesDistance to hold the min distance of a coordinate to a cutline from right (for each thread)
-    scalar_t **rightClosestDistance = allocMemory<scalar_t *>(numThreads);
+    pq_scalar_t **rightClosestDistance = allocMemory<pq_scalar_t *>(numThreads);
 
     //to store how many points in each part a thread has.
-    lno_t **partPointCounts = allocMemory<lno_t *>(numThreads);
+    pq_lno_t **partPointCounts = allocMemory<pq_lno_t *>(numThreads);
 
     for(int i = 0; i < numThreads; ++i){
-        //partWeights[i] = allocMemory<scalar_t>(maxTotalPartCount);
+        //partWeights[i] = allocMemory<pq_scalar_t>(maxTotalPartCount);
         partWeights[i] = allocMemory < double >(maxTotalPartCount * concurrentPartCount);
-        rightClosestDistance[i] = allocMemory<scalar_t>(maxCutNo * concurrentPartCount);
-        leftClosestDistance[i] = allocMemory<scalar_t>(maxCutNo * concurrentPartCount);
-        partPointCounts[i] =  allocMemory<lno_t>(maxPartNo);
+        rightClosestDistance[i] = allocMemory<pq_scalar_t>(maxCutNo * concurrentPartCount);
+        leftClosestDistance[i] = allocMemory<pq_scalar_t>(maxCutNo * concurrentPartCount);
+        partPointCounts[i] =  allocMemory<pq_lno_t>(maxPartNo);
     }
 #ifdef HAVE_ZOLTAN2_OMP
 #ifdef FIRST_TOUCH
@@ -6675,33 +6708,33 @@ void AlgPQJagged(
 #endif
 #endif
     // kddnote  Needed only when non-rectilinear parts.
-    scalar_t *cutWeights = allocMemory<scalar_t>(maxCutNo);
-    scalar_t *globalCutWeights = allocMemory<scalar_t>(maxCutNo);
+    pq_scalar_t *cutWeights = allocMemory<pq_scalar_t>(maxCutNo);
+    pq_scalar_t *globalCutWeights = allocMemory<pq_scalar_t>(maxCutNo);
 
     //for faster communication, concatanation of
     //totalPartWeights sized 2P-1, since there are P parts and P-1 cut lines
     //leftClosest distances sized P-1, since P-1 cut lines
     //rightClosest distances size P-1, since P-1 cut lines.
-    scalar_t *totalPartWeights_leftClosests_rightClosests = allocMemory<scalar_t>((maxTotalPartCount + maxCutNo * 2) * concurrentPartCount);
-    scalar_t *global_totalPartWeights_leftClosests_rightClosests = allocMemory<scalar_t>((maxTotalPartCount + maxCutNo * 2) * concurrentPartCount);
+    pq_scalar_t *totalPartWeights_leftClosests_rightClosests = allocMemory<pq_scalar_t>((maxTotalPartCount + maxCutNo * 2) * concurrentPartCount);
+    pq_scalar_t *global_totalPartWeights_leftClosests_rightClosests = allocMemory<pq_scalar_t>((maxTotalPartCount + maxCutNo * 2) * concurrentPartCount);
 
 
-    scalar_t *cutCoordinates =  allCutCoordinates;
+    pq_scalar_t *cutCoordinates =  allCutCoordinates;
 
     //partId_t leftPartitions = totalPartCount;
-    scalar_t maxScalar_t = numeric_limits<scalar_t>::max();
-    scalar_t minScalar_t = -numeric_limits<scalar_t>::max();
+    pq_scalar_t maxScalar_t = numeric_limits<pq_scalar_t>::max();
+    pq_scalar_t minScalar_t = -numeric_limits<pq_scalar_t>::max();
 
 
     env->timerStart(MACRO_TIMERS, "PQJagged - Problem_Partitioning");
 
     //create multivector based on the coordinates, weights, and multivectordim
 #ifdef enable_migration2
-    typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> mvector_t;
+    typedef Tpetra::MultiVector<pq_scalar_t, pq_lno_t, pq_gno_t, pq_node_t> mvector_t;
     RCP<const mvector_t> mvector;
     if(migration_actualMigration_option == 0){
 
-            mvector =  create_initial_multi_vector <gno_t,lno_t,scalar_t,node_t>(
+            mvector =  create_initial_multi_vector <pq_gno_t,pq_lno_t,pq_scalar_t,pq_node_t>(
                     env,
                     comm,
                     numGlobalCoords,
@@ -6716,41 +6749,41 @@ void AlgPQJagged(
     }
     else {
         for (int i=0; i < coordDim; i++){
-            scalar_t *coord = allocMemory<scalar_t>(numLocalCoords);
+            pq_scalar_t *coord = allocMemory<pq_scalar_t>(numLocalCoords);
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif
-            for (lno_t j=0; j < numLocalCoords; j++) coord[j] = pqJagged_coordinates[i][j];
+            for (pq_lno_t j=0; j < numLocalCoords; j++) coord[j] = pqJagged_coordinates[i][j];
 
             pqJagged_coordinates[i] = coord;
         }
         for (int i=0; i < weightDim; i++){
-            scalar_t *w = allocMemory<scalar_t>(numLocalCoords);
+            pq_scalar_t *w = allocMemory<pq_scalar_t>(numLocalCoords);
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif
-            for (lno_t j=0; j < numLocalCoords; j++) w[j] = pqJagged_weights[i][j];
+            for (pq_lno_t j=0; j < numLocalCoords; j++) w[j] = pqJagged_weights[i][j];
 
             pqJagged_weights[i] = w;
         }
-        pq_gnos = allocMemory<gno_t>(numLocalCoords);
+        pq_gnos = allocMemory<pq_gno_t>(numLocalCoords);
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif
-        for (lno_t j=0; j < numLocalCoords; j++) pq_gnos[j] = actual_pqgnos[j];
+        for (pq_lno_t j=0; j < numLocalCoords; j++) pq_gnos[j] = actual_pqgnos[j];
 
         actual_owner_of_coordinate = allocMemory<int>(numLocalCoords);
         int me = comm->getRank();
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif
-        for (lno_t j=0; j < numLocalCoords; j++) actual_owner_of_coordinate[j] = me;
+        for (pq_lno_t j=0; j < numLocalCoords; j++) actual_owner_of_coordinate[j] = me;
     }
 
 #endif
 
 
-    scalar_t _EPSILON = numeric_limits<scalar_t>::epsilon();
+    pq_scalar_t _EPSILON = numeric_limits<pq_scalar_t>::epsilon();
     partId_t partIndexBegin = 0;
     partId_t futurePartNumbers = totalPartCount;
     bool is_data_ever_migrated = false;
@@ -6759,21 +6792,21 @@ void AlgPQJagged(
     vector<partId_t> *newFuturePartitions = new vector<partId_t> ();
     newFuturePartitions->push_back(numGlobalParts);
 
-    RCP < vector <coordinateModelPartBox <scalar_t, partId_t> > > inPartBoxes(new vector <coordinateModelPartBox <scalar_t, partId_t> > (), true) ;
-    RCP < vector <coordinateModelPartBox <scalar_t, partId_t> > > outPartBoxes(new vector <coordinateModelPartBox <scalar_t, partId_t> > (), true);
+    RCP < vector <coordinateModelPartBox <pq_scalar_t, partId_t> > > inPartBoxes(new vector <coordinateModelPartBox <pq_scalar_t, partId_t> > (), true) ;
+    RCP < vector <coordinateModelPartBox <pq_scalar_t, partId_t> > > outPartBoxes(new vector <coordinateModelPartBox <pq_scalar_t, partId_t> > (), true);
 
 
     if(keep_part_boxes){
 
-        scalar_t *mins = allocMemory<scalar_t>(coordDim);
-        scalar_t *gmins = allocMemory<scalar_t>(coordDim);
-        scalar_t *maxs = allocMemory<scalar_t>(coordDim);
-        scalar_t *gmaxs = allocMemory<scalar_t>(coordDim);
+        pq_scalar_t *mins = allocMemory<pq_scalar_t>(coordDim);
+        pq_scalar_t *gmins = allocMemory<pq_scalar_t>(coordDim);
+        pq_scalar_t *maxs = allocMemory<pq_scalar_t>(coordDim);
+        pq_scalar_t *gmaxs = allocMemory<pq_scalar_t>(coordDim);
         for (int i = 0; i < coordDim; ++i){
             //cout << " pqJagged_coordinates[i][0]:" << pqJagged_coordinates[i][0] << endl;
-            scalar_t localMin = pqJagged_coordinates[i][0];
-            scalar_t localMax = pqJagged_coordinates[i][0];
-            for (lno_t j = 1; j < numLocalCoords; ++j){
+            pq_scalar_t localMin = pqJagged_coordinates[i][0];
+            pq_scalar_t localMax = pqJagged_coordinates[i][0];
+            for (pq_lno_t j = 1; j < numLocalCoords; ++j){
                 //cout << " pqJagged_coordinates[i][i]:" << pqJagged_coordinates[i][j] << endl;
                 if (pqJagged_coordinates[i][j] < localMin){
                     localMin = pqJagged_coordinates[i][j];
@@ -6787,19 +6820,19 @@ void AlgPQJagged(
             mins[i] = localMin;
             maxs[i] = localMax;
         }
-        reduceAll<int, scalar_t>(*comm, Teuchos::REDUCE_MIN,
+        reduceAll<int, pq_scalar_t>(*comm, Teuchos::REDUCE_MIN,
                 coordDim, mins, gmins
         );
 
-        reduceAll<int, scalar_t>(*comm, Teuchos::REDUCE_MAX,
+        reduceAll<int, pq_scalar_t>(*comm, Teuchos::REDUCE_MAX,
                 coordDim, maxs, gmaxs
         );
-        coordinateModelPartBox <scalar_t, partId_t> tmpBox (0, coordDim, gmins, gmaxs);
-        //coordinateModelPartBox <scalar_t, partId_t> tmpBox (0, coordDim);
-        freeArray<scalar_t>(mins);
-        freeArray<scalar_t>(gmins);
-        freeArray<scalar_t>(maxs);
-        freeArray<scalar_t>(gmaxs);
+        coordinateModelPartBox <pq_scalar_t, partId_t> tmpBox (0, coordDim, gmins, gmaxs);
+        //coordinateModelPartBox <pq_scalar_t, partId_t> tmpBox (0, coordDim);
+        freeArray<pq_scalar_t>(mins);
+        freeArray<pq_scalar_t>(gmins);
+        freeArray<pq_scalar_t>(maxs);
+        freeArray<pq_scalar_t>(gmaxs);
         outPartBoxes->push_back(tmpBox);
     }
 
@@ -6838,7 +6871,7 @@ void AlgPQJagged(
         newFuturePartitions->clear();
 
         if(keep_part_boxes){
-            RCP < vector <coordinateModelPartBox <scalar_t, partId_t> > > tmpPartBoxes = inPartBoxes;
+            RCP < vector <coordinateModelPartBox <pq_scalar_t, partId_t> > > tmpPartBoxes = inPartBoxes;
             inPartBoxes = outPartBoxes;
             outPartBoxes = tmpPartBoxes;
             outPartBoxes->clear();
@@ -6854,7 +6887,7 @@ void AlgPQJagged(
 
 
         //returns the total number of output parts for this dimension partitioning.
-        partId_t outPartCount = getPartitionArrays<scalar_t, partId_t>(
+        partId_t outPartCount = getPartitionArrays<pq_scalar_t, partId_t>(
                 partNo,
                 pAlongI,
                 currentPartitions,
@@ -6877,7 +6910,7 @@ void AlgPQJagged(
             newFuturePartitions = tmpPartVect;
 
             if(keep_part_boxes){
-                RCP < vector <coordinateModelPartBox <scalar_t, partId_t> > > tmpPartBoxes = inPartBoxes;
+                RCP < vector <coordinateModelPartBox <pq_scalar_t, partId_t> > > tmpPartBoxes = inPartBoxes;
                 inPartBoxes = outPartBoxes;
                 outPartBoxes = tmpPartBoxes;
             }
@@ -6892,7 +6925,7 @@ void AlgPQJagged(
 
         //get the coordinate axis along which the partitioning will be done.
         int coordInd = i % coordDim;
-        scalar_t * pqCoord = pqJagged_coordinates[coordInd];
+        pq_scalar_t * pqCoord = pqJagged_coordinates[coordInd];
         //convert i to string to be used for debugging purposes.
         string istring = toString<int>(i);
 
@@ -6901,7 +6934,7 @@ void AlgPQJagged(
 
         //alloc Memory to point the indices
         //of the parts in the permutation array.
-        outTotalCounts = allocMemory<lno_t>(outPartCount);
+        outTotalCounts = allocMemory<pq_lno_t>(outPartCount);
 
         //the index where in the outtotalCounts will be written.
         partId_t currentOut = 0;
@@ -6936,10 +6969,10 @@ void AlgPQJagged(
                     continue;
                 }
                 ++workPartCount;
-                lno_t coordinateEnd= inTotalCounts[currentPart];
-                lno_t coordinateBegin = currentPart==0 ? 0: inTotalCounts[currentPart -1];
+                pq_lno_t coordinateEnd= inTotalCounts[currentPart];
+                pq_lno_t coordinateBegin = currentPart==0 ? 0: inTotalCounts[currentPart -1];
                 //cout << "me:" << problemComm->getRank() << " begin:" << coordinateBegin  << " end:" << coordinateEnd << endl;
-                pqJagged_getLocalMinMaxTotalCoord<scalar_t, lno_t>(
+                pqJagged_getLocalMinMaxTotalCoord<pq_scalar_t, pq_lno_t>(
                         partitionedPointCoordinates,
                         pqCoord,
                         pqJagged_uniformWeights[0],
@@ -6961,7 +6994,7 @@ void AlgPQJagged(
 
             if (workPartCount > 0){
                 //obtain global Min max of the part.
-                pqJagged_getGlobalMinMaxTotalCoord<scalar_t>(
+                pqJagged_getGlobalMinMaxTotalCoord<pq_scalar_t>(
                         comm,
                         env,
                         concurrentPart,
@@ -6979,17 +7012,17 @@ void AlgPQJagged(
                 partId_t cutShifts = 0;
                 partId_t partShift = 0;
                 for(int kk = 0; kk < concurrentPart; ++kk){
-                    scalar_t minCoordinate = globalMinMaxTotal[kk];
-                    scalar_t maxCoordinate = globalMinMaxTotal[kk + concurrentPart];
+                    pq_scalar_t minCoordinate = globalMinMaxTotal[kk];
+                    pq_scalar_t maxCoordinate = globalMinMaxTotal[kk + concurrentPart];
 
-                    scalar_t globalTotalWeight = globalMinMaxTotal[kk + 2 * concurrentPart];
+                    pq_scalar_t globalTotalWeight = globalMinMaxTotal[kk + 2 * concurrentPart];
 
                     partId_t currentPart = currentWorkPart + kk;
 
                     partId_t partition = pAlongI[currentPart];
 
-                    scalar_t *usedCutCoordinate = cutCoordinates + cutShifts;
-                    scalar_t *usedCutPartRatios = targetPartWeightRatios + partShift;
+                    pq_scalar_t *usedCutCoordinate = cutCoordinates + cutShifts;
+                    pq_scalar_t *usedCutPartRatios = targetPartWeightRatios + partShift;
                     //shift the usedCutCoordinate array as noCuts.
                     cutShifts += partition - 1;
                     //shift the partRatio array as noParts.
@@ -7006,7 +7039,7 @@ void AlgPQJagged(
                         myNonDoneCount[kk] = partition - 1;
 
                         //get the target weights of the parts.
-                        pqJagged_getCutCoord_Weights<scalar_t>(
+                        pqJagged_getCutCoord_Weights<pq_scalar_t>(
                                 minCoordinate,
                                 maxCoordinate,
                                 pqJagged_uniformParts[0],
@@ -7024,7 +7057,7 @@ void AlgPQJagged(
                         );
 
                         //get the initial estimated part assignments of the coordinates.
-                        getInitialPartAssignments<scalar_t, lno_t, partId_t>(
+                        getInitialPartAssignments<pq_scalar_t, pq_lno_t, partId_t>(
                                 maxCoordinate,
                                 minCoordinate,
                                 currentPart,
@@ -7046,11 +7079,11 @@ void AlgPQJagged(
 
 
                 //used imbalance, it is always 0, as it is difficult to estimate a range.
-                scalar_t used_imbalance = 0;
+                pq_scalar_t used_imbalance = 0;
 
 
                 // Determine cut lines for k parts here.
-                pqJagged_1D_Partition<scalar_t, lno_t>(
+                pqJagged_1D_Partition<pq_scalar_t, pq_lno_t>(
                         env,
                         comm,
                         partitionedPointCoordinates,
@@ -7121,12 +7154,12 @@ void AlgPQJagged(
                         continue;
                     }
 
-                    lno_t coordinateEnd= inTotalCounts[curr];
-                    lno_t coordinateBegin = curr==0 ? 0: inTotalCounts[curr -1];
-                    scalar_t *usedCutCoordinate = cutCoordinates + cutShift;
+                    pq_lno_t coordinateEnd= inTotalCounts[curr];
+                    pq_lno_t coordinateBegin = curr==0 ? 0: inTotalCounts[curr -1];
+                    pq_scalar_t *usedCutCoordinate = cutCoordinates + cutShift;
                     float *usednonRectelinearPart = nonRectelinearPart + cutShift;
 
-                    scalar_t *tlr =  totalPartWeights_leftClosests_rightClosests + tlrShift;
+                    pq_scalar_t *tlr =  totalPartWeights_leftClosests_rightClosests + tlrShift;
 
                     for(int ii = 0; ii < numThreads; ++ii){
                         pws[ii] = partWeights[ii] +  pwShift;
@@ -7134,9 +7167,9 @@ void AlgPQJagged(
                     }
 /*
                     cout << endl;
-                    scalar_t prev = 0;
+                    pq_scalar_t prev = 0;
                     for (int i = 0; i < noParts * 2 - 1 ; ++i){
-                        scalar_t w = 0;
+                        pq_scalar_t w = 0;
                         for(int ii = 0; ii < numThreads; ++ii){
                             w += pws[ii][i];
                         }
@@ -7176,7 +7209,7 @@ void AlgPQJagged(
                         }
 
                         // Rewrite the indices based on the computed cuts.
-                        getChunksFromCoordinates<lno_t,scalar_t>(
+                        getChunksFromCoordinates<pq_lno_t,pq_scalar_t>(
                                 noParts,
                                 numThreads,
                                 partitionedPointCoordinates,
@@ -7209,10 +7242,10 @@ void AlgPQJagged(
 
                         );
                         /*
-                        lno_t *mm = outTotalCounts + currentOut + outShift;
+                        pq_lno_t *mm = outTotalCounts + currentOut + outShift;
                         for (int i = 0; i < noParts; ++i){
-                            lno_t pbeg = 0;
-                            lno_t pend = mm[i];
+                            pq_lno_t pbeg = 0;
+                            pq_lno_t pend = mm[i];
                             if (i > 0) pbeg = mm[i - 1];
 
 
@@ -7224,9 +7257,9 @@ void AlgPQJagged(
                     }
                     else {
                         //if this part is partitioned into 1 then just copy the old values.
-                        lno_t partSize = coordinateEnd - coordinateBegin;
+                        pq_lno_t partSize = coordinateEnd - coordinateBegin;
                         *(outTotalCounts + currentOut + outShift) = partSize;
-                        memcpy(newpartitionedPointCoordinates + coordinateBegin, partitionedPointCoordinates + coordinateBegin, partSize * sizeof(lno_t));
+                        memcpy(newpartitionedPointCoordinates + coordinateBegin, partitionedPointCoordinates + coordinateBegin, partSize * sizeof(pq_lno_t));
                     }
                     cutShift += noParts - 1;
                     tlrShift += (4 *(noParts - 1) + 1);
@@ -7275,7 +7308,7 @@ void AlgPQJagged(
 
             partId_t num_parts = outPartCount;
             if (
-                    migration_refactored<gno_t, lno_t, scalar_t, node_t, partId_t>(
+                    migration_refactored<pq_gno_t, pq_lno_t, pq_scalar_t, pq_node_t, partId_t>(
                             problemComm,
                             env, comm,
                             mvector,
@@ -7329,7 +7362,7 @@ void AlgPQJagged(
         }
 #endif
 
-        lno_t * tmp = partitionedPointCoordinates;
+        pq_lno_t * tmp = partitionedPointCoordinates;
         partitionedPointCoordinates = newpartitionedPointCoordinates;
         newpartitionedPointCoordinates = tmp;
 
@@ -7337,7 +7370,7 @@ void AlgPQJagged(
             reduceAllCount -= currentPartitionCount;
             currentPartitionCount = outPartCount;
         }
-        freeArray<lno_t>(inTotalCounts);
+        freeArray<pq_lno_t>(inTotalCounts);
         inTotalCounts = outTotalCounts;
 
         env->timerStop(MACRO_TIMERS, "PQJagged - Problem_Partitioning_" + istring);
@@ -7384,8 +7417,8 @@ void AlgPQJagged(
 #endif
     for(partId_t i = 0; i < currentPartitionCount;++i){
 
-        lno_t begin = 0;
-        lno_t end = inTotalCounts[i];
+        pq_lno_t begin = 0;
+        pq_lno_t end = inTotalCounts[i];
 
         if(i > 0) begin = inTotalCounts[i -1];
         partId_t pToSet = i + partIndexBegin;
@@ -7398,8 +7431,8 @@ void AlgPQJagged(
 #endif
          */
         //cout <<"me:" << problemComm->getRank()<< " p:" << i + partIndexBegin << " count:" << end - begin << endl;
-        for (lno_t ii = begin; ii < end; ++ii){
-            lno_t k = partitionedPointCoordinates[ii];
+        for (pq_lno_t ii = begin; ii < end; ++ii){
+            pq_lno_t k = partitionedPointCoordinates[ii];
             partIds[k] = pToSet;
 
 
@@ -7467,7 +7500,7 @@ void AlgPQJagged(
     fclose(f);
 #endif
     env->timerStop(MACRO_TIMERS, "PQJagged - Part_Assignment");
-    ArrayRCP<const gno_t> gnoList;
+    ArrayRCP<const pq_gno_t> gnoList;
     if(!is_data_ever_migrated){
 
         if(numLocalCoords > 0){
@@ -7484,7 +7517,7 @@ void AlgPQJagged(
             ZOLTAN_COMM_OBJ *plan = NULL;
             MPI_Comm mpi_comm = Teuchos2MPI (problemComm);
 
-            lno_t incoming = 0;
+            pq_lno_t incoming = 0;
             int message_tag = 7856;
 
 
@@ -7496,17 +7529,17 @@ void AlgPQJagged(
             env->timerStop(MACRO_TIMERS, "PQJagged - Final Z1PlanCreating" );
 
 
-            gno_t *incoming_gnos = allocMemory< gno_t>(incoming);
+            pq_gno_t *incoming_gnos = allocMemory< pq_gno_t>(incoming);
 
             message_tag++;
             env->timerStart(MACRO_TIMERS, "PQJagged - Final Z1PlanComm");
             ierr = Zoltan_Comm_Do(
                     plan, message_tag,
                     (char *) pq_gnos,
-                    sizeof(gno_t),
+                    sizeof(pq_gno_t),
                     (char *) incoming_gnos);
 
-            freeArray<gno_t>(pq_gnos);
+            freeArray<pq_gno_t>(pq_gnos);
             pq_gnos = incoming_gnos;
 
             partId_t *incoming_partIds = allocMemory< partId_t>(incoming);
@@ -7527,7 +7560,7 @@ void AlgPQJagged(
             is_data_ever_migrated = false;
 
 
-            ArrayView<const gno_t> avpqgnos(pq_gnos, numLocalCoords);
+            ArrayView<const pq_gno_t> avpqgnos(pq_gnos, numLocalCoords);
             gnoList = arcpFromArrayView(avpqgnos);
             //cout << " me:" << problemComm->getRank() << " gnoList:" << gnoList() << endl;
         }
@@ -7566,23 +7599,23 @@ void AlgPQJagged(
 
         for (int i=0; i < coordDim; i++){
 
-            freeArray<scalar_t>(pqJagged_coordinates[i]);
+            freeArray<pq_scalar_t>(pqJagged_coordinates[i]);
         }
         for (int i=0; i < weightDim; i++){
 
-            freeArray<scalar_t>(pqJagged_weights[i]);
+            freeArray<pq_scalar_t>(pqJagged_weights[i]);
         }
 
-        //freeArray<gno_t>(pq_gnos);
+        //freeArray<pq_gno_t>(pq_gnos);
         freeArray<int>(actual_owner_of_coordinate);
     }
 #endif
 
     for(int i = 0; i < numThreads; ++i){
-        freeArray<lno_t>(partPointCounts[i]);
+        freeArray<pq_lno_t>(partPointCounts[i]);
     }
 
-    freeArray<lno_t *>(partPointCounts);
+    freeArray<pq_lno_t *>(partPointCounts);
     freeArray<double *> (pws);
 
     if(allowNonRectelinearPart){
@@ -7595,58 +7628,58 @@ void AlgPQJagged(
 
     freeArray<partId_t>(myNonDoneCount);
 
-    freeArray<scalar_t>(cutWeights);
+    freeArray<pq_scalar_t>(cutWeights);
 
-    freeArray<scalar_t>(globalCutWeights);
+    freeArray<pq_scalar_t>(globalCutWeights);
 
-    freeArray<scalar_t>(max_min_array);
+    freeArray<pq_scalar_t>(max_min_array);
 
-    freeArray<lno_t>(outTotalCounts);
+    freeArray<pq_lno_t>(outTotalCounts);
 
-    freeArray<lno_t>(partitionedPointCoordinates);
+    freeArray<pq_lno_t>(partitionedPointCoordinates);
 
-    freeArray<lno_t>(newpartitionedPointCoordinates);
+    freeArray<pq_lno_t>(newpartitionedPointCoordinates);
 
-    freeArray<scalar_t>(allCutCoordinates);
+    freeArray<pq_scalar_t>(allCutCoordinates);
 
-    freeArray<scalar_t *>(pqJagged_coordinates);
+    freeArray<pq_scalar_t *>(pqJagged_coordinates);
 
-    freeArray<scalar_t *>(pqJagged_weights);
+    freeArray<pq_scalar_t *>(pqJagged_weights);
 
     freeArray<bool>(pqJagged_uniformParts);
 
-    freeArray<scalar_t> (localMinMaxTotal);
+    freeArray<pq_scalar_t> (localMinMaxTotal);
 
-    freeArray<scalar_t> (globalMinMaxTotal);
+    freeArray<pq_scalar_t> (globalMinMaxTotal);
 
-    freeArray<scalar_t *>(pqJagged_partSizes);
+    freeArray<pq_scalar_t *>(pqJagged_partSizes);
 
     freeArray<bool>(pqJagged_uniformWeights);
 
-    freeArray<scalar_t>(cutCoordinatesWork);
+    freeArray<pq_scalar_t>(cutCoordinatesWork);
 
-    freeArray<scalar_t>(targetPartWeightRatios);
+    freeArray<pq_scalar_t>(targetPartWeightRatios);
 
-    freeArray<scalar_t>(cutUpperBounds);
+    freeArray<pq_scalar_t>(cutUpperBounds);
 
-    freeArray<scalar_t>(cutLowerBounds);
+    freeArray<pq_scalar_t>(cutLowerBounds);
 
 
-    freeArray<scalar_t>(cutLowerWeight);
-    freeArray<scalar_t>(cutUpperWeight);
+    freeArray<pq_scalar_t>(cutLowerWeight);
+    freeArray<pq_scalar_t>(cutUpperWeight);
     freeArray<bool>(isDone);
-    freeArray<scalar_t>(totalPartWeights_leftClosests_rightClosests);
-    freeArray<scalar_t>(global_totalPartWeights_leftClosests_rightClosests);
+    freeArray<pq_scalar_t>(totalPartWeights_leftClosests_rightClosests);
+    freeArray<pq_scalar_t>(global_totalPartWeights_leftClosests_rightClosests);
 
     for(int i = 0; i < numThreads; ++i){
         freeArray<double>(partWeights[i]);
-        freeArray<scalar_t>(rightClosestDistance[i]);
-        freeArray<scalar_t>(leftClosestDistance[i]);
+        freeArray<pq_scalar_t>(rightClosestDistance[i]);
+        freeArray<pq_scalar_t>(leftClosestDistance[i]);
     }
 
     freeArray<double *>(partWeights);
-    freeArray<scalar_t *>(leftClosestDistance);
-    freeArray<scalar_t *>(rightClosestDistance);
+    freeArray<pq_scalar_t *>(leftClosestDistance);
+    freeArray<pq_scalar_t *>(rightClosestDistance);
 
 
     env->timerStop(MACRO_TIMERS, "PQJagged - Problem_Free");
