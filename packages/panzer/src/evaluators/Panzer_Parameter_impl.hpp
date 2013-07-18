@@ -71,6 +71,7 @@ Parameter(const std::string name,
   this->addEvaluatedField(target_field);
  
   param = panzer::createAndRegisterScalarParameter<EvalT>(name,param_lib);
+  param->setRealValue(in_initial_value);
 
   std::string n = "Parameter Evaluator";
   this->setName(n);
