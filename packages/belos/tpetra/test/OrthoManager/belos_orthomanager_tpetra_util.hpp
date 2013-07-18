@@ -110,20 +110,20 @@ namespace Belos {
     }
 
     template<>
-    Teuchos::RCP<Kokkos::SerialNode>
+    Teuchos::RCP<KokkosClassic::SerialNode>
     getNode() {
       Teuchos::ParameterList defaultParams;
-      return Teuchos::rcp (new Kokkos::SerialNode (defaultParams));
+      return Teuchos::rcp (new KokkosClassic::SerialNode (defaultParams));
     }
 
 #if defined(HAVE_KOKKOSCLASSIC_TBB)
     template<>
-    Teuchos::RCP<Kokkos::TBBNode>
+    Teuchos::RCP<KokkosClassic::TBBNode>
     getNode() {
       // "Num Threads" specifies the number of threads.  Defaults to an
       // automatically chosen value.
       Teuchos::ParameterList defaultParams;
-      return Teuchos::rcp (new Kokkos::TBBNode (defaultParams));
+      return Teuchos::rcp (new KokkosClassic::TBBNode (defaultParams));
     }
 #endif // defined(HAVE_KOKKOSCLASSIC_TBB)
 
