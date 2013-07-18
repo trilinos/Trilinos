@@ -37,10 +37,6 @@ namespace roster_only {
 void destroy_meshobj(stk::mesh::Entity, MeshBulkData& meshbulk );
 }
 
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-const MeshObjSharedAttr * get_shared_attr(const stk::mesh::Entity );
-#endif
-
 const MeshObjSharedAttr * get_shared_attr(const stk::mesh::Entity mesh_obj, const stk::mesh::BulkData& meshbulk);
 bool insert_relation( stk::mesh::Entity , const stk::mesh::RelationType,  stk::mesh::Entity , const unsigned, const unsigned, const bool, MeshBulkData &);
 bool remove_relation(stk::mesh::Entity , const stk::mesh::RelationIterator, MeshBulkData &);
@@ -171,14 +167,8 @@ union Entity
 
 
 #ifdef SIERRA_MIGRATION
-
-  void compress_relation_capacity();
-
   friend class sierra::Fmwk::MeshObjRoster;
   // These are free functions to facilitate the stk migration:
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-  friend const sierra::Fmwk::MeshObjSharedAttr * sierra::Fmwk::get_shared_attr(const Entity );
-#endif
   friend bool sierra::Fmwk::detail::set_attributes( sierra::Fmwk::MeshBulkData&, Entity , const int, const sierra::Fmwk::MeshObjSharedAttr *, const int);
   friend bool sierra::Fmwk::detail::set_attributes( sierra::Fmwk::MeshBulkData&, Entity , const sierra::Fmwk::MeshObjSharedAttr *, const int);
   friend bool sierra::Fmwk::insert_relation( Entity , const stk::mesh::RelationType, Entity , const unsigned, const unsigned, const bool, sierra::Fmwk::MeshBulkData &);
@@ -187,49 +177,6 @@ union Entity
   friend void sierra::Fmwk::roster_only::destroy_meshobj(stk::mesh::Entity, sierra::Fmwk::MeshBulkData& meshbulk );
 
   typedef unsigned DerivedType; ///< Derived type identifier, the admissible values may be extended
-
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-  template <class Mesh, class SharedAttr>
-  void init_fmwk(
-    Mesh& mesh,
-    const int         id,
-    const SharedAttr* attr,
-    const int         owner,
-    const int         parallel_rank);
-
-  int global_id() const ;
-  unsigned local_id() const;
-  void set_local_id(unsigned int l_id);
-  int owner_processor_rank() const;
-  void set_owner_processor_rank(int owner);
-  void set_owner_rank(int owner);
-
-  unsigned size_connection() const;
-  unsigned inc_connection();
-  unsigned dec_connection();
-
-  RelationIterator aux_relation_begin() const;
-  RelationIterator aux_relation_end() const;
-  RelationVector& aux_relations();
-  const RelationVector& aux_relations() const;
-
-  void set_shared_attr(const void* attr);
-  const void* get_shared_attr() const;
-
-  void set_relation_orientation(RelationIterator rel, unsigned orientation);
-
-  void set_relation_orientation(Entity meshObj, ConnectivityOrdinal ord, unsigned orientation);
-#endif
-
-  bool is_handled_generically(const RelationType relation_type) const;
-private:
-
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-  void reserve_relation(const unsigned num);
-  void erase_and_clear_if_empty(RelationIterator rel_itr);
-  void internal_verify_initialization_invariant();
-#endif
-
 #endif
 };
 
@@ -245,30 +192,6 @@ public:
     return lhs == rhs;
   }
 };
-
-//
-// NEED TO REFACTOR CALLERS TO ELIMINATE THE FOLLOWING
-//
-
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-template <class Mesh, class SharedAttr>
-void Entity::init_fmwk(
-  Mesh& mesh,
-  const int         id,
-  const SharedAttr* attr,
-  const int         owner,
-  const int         parallel_rank)
-{
-  mesh.set_global_id(*this, id);
-  mesh.set_shared_attr(*this, attr);
-  if (attr->locally_owned() && owner == -1) {
-    mesh.set_parallel_owner_rank(*this, parallel_rank);
-  }
-  else {
-    mesh.set_parallel_owner_rank(*this, owner);
-  }
-}
-#endif
 
 /** \} */
 

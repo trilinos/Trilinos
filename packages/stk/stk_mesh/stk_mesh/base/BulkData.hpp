@@ -86,13 +86,6 @@ struct IsInvalid
   }
 };
 
-inline
-bool is_handled_generically(const RelationType relation_type)
-{
-  return relation_type == RelationType::USES || relation_type == RelationType::USED_BY;
-}
-
-
 /** \addtogroup stk_mesh_module
  *  \{
  */
@@ -1068,7 +1061,7 @@ public:
   RelationIterator internal_begin_relation(Entity entity, const Relation::RelationType relation_type) const
   {
     ThrowAssert(m_add_fmwk_data);
-    if (is_handled_generically(relation_type)) {
+    if (impl::internal_is_handled_generically(relation_type)) {
       ThrowErrorMsg("stk::Mesh::BulkData::internal_begin_relation(..) requests native stk::mesh relation type");
       return RelationIterator();
     }
@@ -1080,7 +1073,7 @@ public:
   RelationIterator internal_end_relation(Entity entity, const Relation::RelationType relation_type) const
   {
     ThrowAssert(m_add_fmwk_data);
-    if (is_handled_generically(relation_type)) {
+    if (impl::internal_is_handled_generically(relation_type)) {
       ThrowErrorMsg("stk::Mesh::BulkData::internal_begin_relation(..) requests native stk::mesh relation type");
       return RelationIterator();
     }

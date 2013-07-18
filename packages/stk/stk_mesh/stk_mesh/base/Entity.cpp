@@ -30,13 +30,6 @@ namespace Fmwk {
   //const unsigned int INVALID_LOCAL_ID = stk::mesh::GetInvalidLocalId();
 const stk::mesh::RelationIterator INVALID_RELATION_ITR = dummy_vector.end(); // Some STL implementation use POD for iterators
 
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-unsigned get_derived_type(const stk::mesh::Entity entity)
-{
-  return stk::mesh::BulkData::get(entity).entity_rank(entity);
-}
-#endif
-
 } // namespace Fmwk
 } // namespace Sierra
 #endif
@@ -127,124 +120,6 @@ std::string Entity::TypeToString (Entity::ObjectTypeEnum type)
 }
 
 // ---------------------------------------------------------------------
-
-#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
-
-void Entity::compress_relation_capacity()
-{
-  return BulkData::get(*this).compress_relation_capacity(*this);
-}
-
-int Entity::global_id() const
-{
-  return BulkData::get(*this).global_id(*this);
-}
-
-unsigned Entity::local_id() const
-{
-  return BulkData::get(*this).local_id(*this);
-}
-
-void Entity::set_local_id(unsigned int l_id)
-{
-  BulkData::get(*this).set_local_id(*this, l_id);
-}
-
-int Entity::owner_processor_rank() const
-{
-  return BulkData::get(*this).parallel_owner_rank(*this);
-}
-
-void Entity::set_owner_processor_rank(int owner)
-{
-  BulkData::get(*this).set_parallel_owner_rank(*this, owner);
-}
-
-void Entity::set_owner_rank(int owner)
-{
-  BulkData::get(*this).set_parallel_owner_rank(*this, owner);
-}
-
-void Entity::erase_and_clear_if_empty(RelationIterator rel_itr)
-{
-  BulkData::get(*this).erase_and_clear_if_empty(*this, rel_itr);
-}
-
-void Entity::internal_verify_initialization_invariant()
-{
-  BulkData::get(*this).internal_verify_initialization_invariant(*this);
-}
-
-unsigned Entity::size_connection() const
-{
-  return BulkData::get(*this).get_connect_count(*this);
-}
-
-unsigned Entity::inc_connection()
-{
-  BulkData& bulk_data = BulkData::get(*this);
-  int count = bulk_data.get_connect_count(*this) + 1;
-  bulk_data.set_connect_count(*this, count);
-  return count;
-}
-
-unsigned Entity::dec_connection()
-{
-  BulkData& bulk_data = BulkData::get(*this);
-  int count = bulk_data.get_connect_count(*this) - 1;
-  bulk_data.set_connect_count(*this, count);
-  return count;
-}
-
-RelationIterator Entity::aux_relation_begin() const
-{
-  return BulkData::get(*this).aux_relations(*this).begin();
-}
-
-RelationIterator Entity::aux_relation_end() const
-{
-  return BulkData::get(*this).aux_relations(*this).end();
-}
-
-RelationVector& Entity::aux_relations()
-{
-  return BulkData::get(*this).aux_relations(*this);
-}
-
-const RelationVector& Entity::aux_relations() const
-{
-  return BulkData::get(*this).aux_relations(*this);
-}
-
-void Entity::set_shared_attr(const void* attr)
-{
-  BulkData::get(*this).set_shared_attr(*this, attr);
-}
-
-const void* Entity::get_shared_attr() const
-{
-  return BulkData::get(*this).get_shared_attr(*this);
-}
-
-void Entity::set_relation_orientation(RelationIterator rel, unsigned orientation)
-{
-  BulkData::get(*this).set_relation_orientation(*this, rel, orientation);
-}
-
-void Entity::set_relation_orientation(Entity meshObj, ConnectivityOrdinal ord, unsigned orientation)
-{
-  BulkData::get(*this).set_relation_orientation(*this, meshObj, ord, orientation);
-}
-
-void Entity::reserve_relation(const unsigned num)
-{
-  BulkData::get(*this).reserve_relation(*this, num);
-}
-
-#endif // allow deprecated
-
-// ---------------------------------------------------------------------
-
 
 #endif // SIERRA_MIGRATION
 
