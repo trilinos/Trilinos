@@ -195,6 +195,8 @@ struct CudaParallelLaunch< DriverType , true > {
     }
     else if ( shmem ) {
       cudaFuncSetCacheConfig( cuda_parallel_launch_constant_memory< DriverType > , cudaFuncCachePreferShared );
+    } else {
+      cudaFuncSetCacheConfig( cuda_parallel_launch_constant_memory< DriverType > , cudaFuncCachePreferL1 );
     }
 
     // Copy functor to constant memory on the device
@@ -219,6 +221,8 @@ struct CudaParallelLaunch< DriverType , false > {
     }
     else if ( shmem ) {
       cudaFuncSetCacheConfig( cuda_parallel_launch_constant_memory< DriverType > , cudaFuncCachePreferShared );
+    } else {
+      cudaFuncSetCacheConfig( cuda_parallel_launch_constant_memory< DriverType > , cudaFuncCachePreferL1 );
     }
 
     cuda_parallel_launch_local_memory< DriverType ><<< grid , block , shmem >>>( driver );

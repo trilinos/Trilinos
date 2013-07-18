@@ -47,9 +47,14 @@
 #include <stddef.h>
 
 #ifdef _MSC_VER
+#undef KOKKOS_USE_LIBRT
 #include <gettimeofday.c>
 #else
+#ifdef KOKKOS_USE_LIBRT
+#include <ctime>
+#else
 #include <sys/time.h>
+#endif
 #endif
 
 namespace KokkosArray {
@@ -59,13 +64,23 @@ namespace Impl {
 
 class Timer {
 private:
-  struct timeval m_old ;
+  #ifdef KOKKOS_USE_LIBRT
+	struct timespec m_old;
+  #else
+	struct timeval m_old ;
+  #endif
   Timer( const Timer & );
   Timer & operator = ( const Timer & );
 public:
 
   inline
-  void reset() { gettimeofday( & m_old , ((struct timezone *) NULL ) ); }
+  void reset() {
+    #ifdef KOKKOS_USE_LIBRT
+	  clock_gettime(&m_old);
+    #else
+	  gettimeofday( & m_old , ((struct timezone *) NULL ) );
+    #endif
+  }
 
   inline
   ~Timer() {}
@@ -76,12 +91,20 @@ public:
   inline
   double seconds() const
   {
-    struct timeval m_new ;
+    #ifdef KOKKOS_USE_LIBRT
+      struct timespec m_new;
+      clock_gettime(&m_new);
 
-    ::gettimeofday( & m_new , ((struct timezone *) NULL ) );
+      return ( (double) ( m_new.tv_sec  - m_old.tv_sec ) ) +
+             ( (double) ( m_new.tv_nsec - m_old.tv_nsec ) * 1.0e-9 );
+    #else
+      struct timeval m_new ;
 
-    return ( (double) ( m_new.tv_sec  - m_old.tv_sec ) ) +
-           ( (double) ( m_new.tv_usec - m_old.tv_usec ) * 1.0e-6 );
+      ::gettimeofday( & m_new , ((struct timezone *) NULL ) );
+
+      return ( (double) ( m_new.tv_sec  - m_old.tv_sec ) ) +
+             ( (double) ( m_new.tv_usec - m_old.tv_usec ) * 1.0e-6 );
+    #endif
   }
 };
 

@@ -40,6 +40,11 @@
 // ************************************************************************
 //@HEADER
 */
+
+#ifndef KOKKOS_PHYSICAL_LAYOUT_HPP
+#define KOKKOS_PHYSICAL_LAYOUT_HPP
+
+
 #include <KokkosArray_View.hpp>
 namespace KokkosArray {
 namespace Impl {
@@ -80,3 +85,4 @@ struct PhysicalLayout {
 
 }
 }
+#endif
