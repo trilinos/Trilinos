@@ -78,6 +78,20 @@ public:
 
    void preRequest(const Teko::RequestMesg & rm);
 
+   const std::vector<double> & getCoordsVector(unsigned dim) const 
+   { switch(dim) {
+     case 0:
+       return getXCoordsVector(); 
+     case 1:
+       return getYCoordsVector(); 
+     case 2:
+       return getZCoordsVector(); 
+     default:
+       TEUCHOS_ASSERT(false);
+     }
+     TEUCHOS_ASSERT(false);
+     return xcoords_; // should never get here!
+   }
    const std::vector<double> & getXCoordsVector() const { return xcoords_; }
    const std::vector<double> & getYCoordsVector() const { return ycoords_; }
    const std::vector<double> & getZCoordsVector() const { return zcoords_; }

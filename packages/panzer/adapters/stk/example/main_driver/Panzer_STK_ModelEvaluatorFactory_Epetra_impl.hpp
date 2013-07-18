@@ -1145,28 +1145,34 @@ namespace panzer_stk {
              if(!writeCoordinates)
                 callback->preRequest(Teko::RequestMesg(Teuchos::rcp(new Teuchos::ParameterList())));
 
-             // extract coordinate vectors and conditionally modify strat_params
-             // coordinate vectors are copied and wrapped as ArrayRCP objects
-             // the copy is certainly avoidable
+
+             typedef Tpetra::Map<int,long,Kokkos::DefaultNode::DefaultNodeType> Map;
+             typedef Tpetra::MultiVector<double,int,long,Kokkos::DefaultNode::DefaultNodeType> MV;
    
-             Teuchos::ParameterList & muelu_params = strat_params->sublist("Preconditioner Types").sublist("MueLu").sublist("Operator");
-             switch(mesh->getDimension()) {
-             case 3:{
-               Teuchos::ArrayRCP<double> coords = arcp(rcp(new std::vector<double>(callback->getZCoordsVector())));
-               muelu_params.set("ZCoordinates", coords);
+             // extract coordinate vectors and modify strat_params to include coordinate vectors
+             unsigned dim = mesh->getDimension();
+             Teuchos::RCP<MV> coords;
+             for(unsigned d=0;d<dim;d++) {
+               const std::vector<double> & coord = callback->getCoordsVector(0);
+
+               // no coords vector has been build yet, build one
+               if(coords==Teuchos::null) {
+                 Teuchos::RCP<Map> coords_map = Teuchos::rcp(new Map(-1,coord.size(),0,mpi_comm));
+                 coords = Teuchos::rcp(new MV(coords_map,dim));
+               }
+
+               // sanity check the size
+               TEUCHOS_ASSERT(coords->getLocalLength()==coord.size());
+
+               // fill appropriate coords vector
+               Teuchos::ArrayRCP<double> dest = coords->getDataNonConst(d);
+               for(std::size_t i=0;i<coord.size();i++)
+                 dest[i] = coord[i];
              }
-             case 2:{
-               Teuchos::ArrayRCP<double> coords = arcp(rcp(new std::vector<double>(callback->getYCoordsVector())));
-               muelu_params.set("YCoordinates", coords);
-             }
-             case 1:{
-               Teuchos::ArrayRCP<double> coords = arcp(rcp(new std::vector<double>(callback->getXCoordsVector())));
-               muelu_params.set("XCoordinates", coords);
-             }
-               break;
-             default:
-               TEUCHOS_ASSERT(false);
-             }
+ 
+             // inject coordinates into parameter list
+             Teuchos::ParameterList & muelu_params = strat_params->sublist("Preconditioner Types").sublist("MueLu-Tpetra");
+             muelu_params.set<Teuchos::RCP<MV> >("Coordinates",coords);
           }
           #endif
        }
