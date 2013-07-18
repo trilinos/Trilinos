@@ -47,10 +47,10 @@
 #include <Tpetra_MultiVectorFiller.hpp>
 #include <Kokkos_DefaultNode.hpp>
 
-Teuchos::RCP<Kokkos::SerialNode>
+Teuchos::RCP<KokkosClassic::SerialNode>
 makeSerialNode (const Teuchos::RCP<Teuchos::ParameterList>& nodeParams)
 {
-  return Teuchos::rcp (new Kokkos::SerialNode (*nodeParams));
+  return Teuchos::rcp (new KokkosClassic::SerialNode (*nodeParams));
 }
 
 int 
@@ -76,7 +76,7 @@ main (int argc, char *argv[])
 #else
   typedef int  global_ordinal_type;
 #endif
-  typedef Kokkos::SerialNode node_type;
+  typedef KokkosClassic::SerialNode node_type;
 
   Teuchos::oblackholestream blackHole;
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);

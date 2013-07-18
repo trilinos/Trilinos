@@ -1027,7 +1027,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, NodeConversion, LO, GO, N2 )
   {
-    typedef typename Kokkos::DefaultNode::DefaultNodeType N1;
+    typedef typename KokkosClassic::DefaultNode::DefaultNodeType N1;
     typedef Map<LO,GO,N1>      Map1;
     typedef CrsGraph<LO,GO,N1> Graph1;
     typedef CrsGraph<LO,GO,N2> Graph2;

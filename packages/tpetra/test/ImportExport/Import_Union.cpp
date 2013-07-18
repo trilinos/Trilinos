@@ -87,7 +87,7 @@ namespace {
     //typedef double ST;
     typedef LocalOrdinalType LO;
     typedef GlobalOrdinalType GO;
-    typedef Kokkos::SerialNode NT;
+    typedef KokkosClassic::SerialNode NT;
     typedef Tpetra::Map<LO, GO, NT> map_type;
     typedef Tpetra::Import<LO, GO, NT> import_type;
     typedef Tpetra::Vector<double, LO, GO, NT> vector_type;

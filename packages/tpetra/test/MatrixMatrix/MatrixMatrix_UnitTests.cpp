@@ -78,7 +78,7 @@ namespace {
   using Teuchos::ArrayView;
   using Teuchos::FancyOStream;
   using Teuchos::ParameterList;
-  using Kokkos::SerialNode;
+  using KokkosClassic::SerialNode;
   using Tpetra::RowMatrixTransposer;
 
   typedef CrsMatrix<double, int, int, SerialNode> Matrix_t;
@@ -150,7 +150,7 @@ add_test_results regular_add_test(
   add_test_results toReturn;
   toReturn.correctNorm = C->getFrobeniusNorm ();
 
-  RCP<const Map<int,int, Kokkos::SerialNode> > rowmap = AT ? A->getDomainMap() : A->getRowMap();
+  RCP<const Map<int,int, KokkosClassic::SerialNode> > rowmap = AT ? A->getDomainMap() : A->getRowMap();
   RCP<Matrix_t> computedC = rcp( new Matrix_t(rowmap, 1));
 
   Tpetra::MatrixMatrix::Add(*A, AT, 1.0, *B, BT, 1.0, computedC);
@@ -241,7 +241,7 @@ add_test_results add_into_test(
   add_test_results toReturn;
   toReturn.correctNorm = C->getFrobeniusNorm ();
 
-  RCP<const Map<int,int, Kokkos::SerialNode> > rowmap = AT ? A->getDomainMap() : A->getRowMap();
+  RCP<const Map<int,int, KokkosClassic::SerialNode> > rowmap = AT ? A->getDomainMap() : A->getRowMap();
   RCP<Matrix_t> computedC = rcp( new Matrix_t(rowmap, 1));
   Tpetra::MatrixMatrix::Add(*A, AT, 1.0, *B, 1.0);
   B->fillComplete();
