@@ -215,7 +215,9 @@ template <typename Traits,typename LocalOrdinalT>
 void EpetraLinearObjFactory<Traits,LocalOrdinalT>::
 adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              const LinearObjContainer & globalBCRows,
-                             LinearObjContainer & ghostedObjs) const
+                             LinearObjContainer & ghostedObjs,
+                             bool zeroVectorRows) const
+          
 {
    TEUCHOS_ASSERT(!hasColProvider_); // not implemented
 
@@ -242,8 +244,9 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
       double * values = 0;
       int * indices = 0;
 
-      if(local_bcs[i]==0.0) { 
+      if(local_bcs[i]==0.0 || zeroVectorRows) { 
          // this boundary condition was NOT set by this processor
+         // or the user requrested that every row be zeroed
 
          // if they exist put 0.0 in each entry
          if(!Teuchos::is_null(f))

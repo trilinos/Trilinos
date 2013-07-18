@@ -144,7 +144,7 @@ bool run_host( std::istream & input ,
   return cmd_error ;
 }
 
-#if KOKKOSARRAY_HAVE_CUDA
+#if defined( KOKKOS_HAVE_CUDA )
 bool run_cuda( std::istream & input , comm::Machine machine )
 {
   bool cmd_error = false ;
@@ -219,7 +219,7 @@ void run( const std::string & argline , comm::Machine machine )
               << " CORE[" << core_topo.second << "]"
               << " PU[" << core_cap << "] }"
               << std::endl ;
-#if KOKKOSARRAY_HAVE_CUDA
+#if defined( KOKKOS_HAVE_CUDA )
     test_cuda_query( machine );
 #endif
   }
@@ -250,7 +250,7 @@ void run( const std::string & argline , comm::Machine machine )
 
       cmd_error = run_host( input , machine , host_gang_count , host_gang_worker_count );
     }
-#if KOKKOSARRAY_HAVE_CUDA
+#if defined( KOKKOS_HAVE_CUDA )
     else if ( which == std::string("cuda") ) {
       cmd_error = run_cuda( input , machine );
     }

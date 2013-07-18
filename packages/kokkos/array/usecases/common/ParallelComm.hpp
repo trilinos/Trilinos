@@ -44,9 +44,11 @@
 #ifndef PARALLELCOMM_HPP
 #define PARALLELCOMM_HPP
 
+#include <KokkosArray_config.h>
+
 //------------------------------------------------------------------------
 
-#if defined( KOKKOSARRAY_HAVE_MPI )
+#if defined( KOKKOS_HAVE_MPI )
 
 #include <mpi.h>
 #include <string>
@@ -113,7 +115,7 @@ std::string command_line( Machine machine , const int argc , const char * const 
 
 }
 
-#else /* ! defined( KOKKOSARRAY_HAVE_MPI ) */
+#else /* ! defined( KOKKOS_HAVE_MPI ) */
 
 #include <string>
 
@@ -154,7 +156,7 @@ std::string command_line( Machine machine , const int argc , const char * const 
 
 }
 
-#endif /* ! defined( KOKKOSARRAY_HAVE_MPI ) */
+#endif /* ! defined( KOKKOS_HAVE_MPI ) */
 
 //------------------------------------------------------------------------
 

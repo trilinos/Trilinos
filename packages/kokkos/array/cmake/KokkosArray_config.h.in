@@ -1,11 +1,15 @@
 #ifndef KOKKOS_ARRAY_CONFIG_H
 #define KOKKOS_ARRAY_CONFIG_H
 
-#cmakedefine KOKKOSARRAY_HAVE_MPI
-#cmakedefine KOKKOSARRAY_HAVE_CUDA
-#cmakedefine KOKKOSARRAY_HAVE_PTHREAD
-#cmakedefine KOKKOSARRAY_HAVE_Winthread
-#cmakedefine KOKKOSARRAY_HAVE_OPENMP
-#cmakedefine KOKKOSARRAY_HAVE_HWLOC
+/* The trivial 'src/build_common.sh' creates a config
+ * that must stay in sync with this file.
+ */
+
+#cmakedefine KOKKOS_HAVE_MPI
+#cmakedefine KOKKOS_HAVE_CUDA
+#cmakedefine KOKKOS_HAVE_PTHREAD
+#cmakedefine KOKKOS_HAVE_Winthread
+#cmakedefine KOKKOS_HAVE_OPENMP
+#cmakedefine KOKKOS_HAVE_HWLOC
 
 #endif

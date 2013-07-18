@@ -38,7 +38,7 @@ CMAKE_PTHREAD="${CMAKE_PTHREAD} -D TPL_ENABLE_Pthread:BOOL=ON"
 # OpenMP configuation:
 
 CMAKE_OPENMP=""
-CMAKE_OPENMP="${CMAKE_OPENMP} -D Trilinos_ENABLE_OpenMp:BOOL=ON"
+CMAKE_OPENMP="${CMAKE_OPENMP} -D Trilinos_ENABLE_OpenMP:BOOL=ON"
 
 #-----------------------------------------------------------------------------
 # Hardware locality cmake configuration:

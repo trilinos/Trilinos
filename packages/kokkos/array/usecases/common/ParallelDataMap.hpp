@@ -283,7 +283,7 @@ class AsyncExchange ;
 //
 //----------------------------------------------------------------------------
 
-#ifdef KOKKOSARRAY_HAVE_MPI
+#ifdef KOKKOS_HAVE_MPI
 
 namespace KokkosArray {
 
@@ -477,7 +477,7 @@ public:
 
 } // namespace KokkosArray
 
-#else /* ! #ifdef KOKKOSARRAY_HAVE_MPI */
+#else /* ! #ifdef KOKKOS_HAVE_MPI */
 
 namespace KokkosArray {
 
@@ -509,7 +509,7 @@ public:
 
 } // namespace KokkosArray
 
-#endif /* ! #ifdef KOKKOSARRAY_HAVE_MPI */
+#endif /* ! #ifdef KOKKOS_HAVE_MPI */
 
 //----------------------------------------------------------------------------
 

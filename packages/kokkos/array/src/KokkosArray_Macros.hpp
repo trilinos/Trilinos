@@ -43,6 +43,8 @@
 //@HEADER
 */
 
+#include <KokkosArray_config.h>
+
 #ifndef KOKKOSARRAY_MACROS_HPP
 #define KOKKOSARRAY_MACROS_HPP
 
@@ -57,6 +59,10 @@ class Cuda ;
 //----------------------------------------------------------------------------
 
 #if defined( __CUDACC__ )
+
+#if ! defined( KOKKOS_HAVE_CUDA )
+#error "Compiling Kokkos with Cuda compiler but KOKKOS_ARRAY_CUDA is undefined"
+#endif
 
 /*  Compiling with a CUDA compiler for host and device code.
  *
@@ -92,6 +98,7 @@ class Cuda ;
 
 namespace KokkosArray { typedef CudaSpace ExecutionSpace ; }
 
+#define KOKKOSARRAY_FORCEINLINE_FUNCTION  __device__  __host__  __forceinline__
 #define KOKKOSARRAY_INLINE_FUNCTION  __device__  __host__  inline
 #define KOKKOSARRAY_FUNCTION         __device__  __host__
 
@@ -103,6 +110,16 @@ namespace KokkosArray { typedef HostSpace ExecutionSpace ; }
 
 #define KOKKOSARRAY_INLINE_FUNCTION  inline
 #define KOKKOSARRAY_FUNCTION         /* */
+
+#if defined( __INTEL_COMPILER )
+
+#define KOKKOSARRAY_FORCEINLINE_FUNCTION  __forceinline
+
+#else //GCC Compiler
+
+#define KOKKOSARRAY_FORCEINLINE_FUNCTION  inline __attribute__((always_inline))
+
+#endif
 
 #endif /* ! #if defined( __CUDA_ARCH__ ) */
 
@@ -120,6 +137,7 @@ namespace KokkosArray { typedef HostSpace ExecutionSpace ; }
 
 #if defined( __INTEL_COMPILER )
 
+
 #if defined( __MIC__ )
 
 /*  Compiling with Intel compiler for execution on an Intel MIC device.
@@ -135,6 +153,7 @@ namespace KokkosArray { typedef HostSpace ExecutionSpace ; }
 #if defined( __GNUC__ ) /* GNU C   */ || \
     defined( __GNUG__ ) /* GNU C++ */
 
+
 /*  Compiling with GNU compatible compiler.  */
 
 #endif
@@ -144,7 +163,7 @@ namespace KokkosArray { typedef HostSpace ExecutionSpace ; }
 #if defined( _OPENMP )
 
 /*  Compiling with in OpenMP mode.
- *  The value of _OPENMP is an integer value YYYYMM 
+ *  The value of _OPENMP is an integer value YYYYMM
  *  where YYYY and MM are the year and month designation
  *  of the supported OpenMP API version.
  */

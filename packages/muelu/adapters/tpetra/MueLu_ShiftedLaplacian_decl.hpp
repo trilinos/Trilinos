@@ -94,7 +94,7 @@ namespace MueLu {
 
     //! Constructors
     ShiftedLaplacian()
-      : Problem_("acoustic"), numPDEs_(1), Smoother_("gmres"), Aggregation_("uncoupled"), Nullspace_("constant"), numLevels_(5), coarseGridSize_(100),
+      : Problem_("acoustic"), numPDEs_(1), Smoother_("gmres"), Aggregation_("uncoupled"), Nullspace_("constant"), numLevels_(5), coarseGridSize_(1000),
 	omega_(2.0*M_PI), ashift1_((SC) 0.0), ashift2_((SC) -1.0), pshift1_((SC) 0.0), pshift2_((SC) -1.0),
 	iters_(500), blksize_(1), tol_(1.0e-4), FGMRESoption_(true), cycles_(8), subiters_(10), option_(1),
 	GridTransfersExist_(false), UseLaplacian_(true), VariableShift_(false),
@@ -123,6 +123,9 @@ namespace MueLu {
     void setTolerance(double tol);
 
     // when only the mass matrix term is updated with a new frequency
+    void initialize();
+    void setupFastRAP();
+    void setupSlowRAP();
     void setup(const double omega);
 
     // Solve phase

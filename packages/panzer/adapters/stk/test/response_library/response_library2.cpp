@@ -286,7 +286,7 @@ namespace panzer {
       TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(blkResp)->setVector(eVec));
       TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(ssResp)->setVector(eVec2));
 
-      RCP<Epetra_Vector> dVec = Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Jacobian> >(blkRespJac,true)->buildEpetraDerivative();
+      RCP<Epetra_MultiVector> dVec = Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Jacobian> >(blkRespJac,true)->buildEpetraDerivative();
       TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Jacobian> >(blkRespJac,true)->setDerivative(dVec));
     }
 

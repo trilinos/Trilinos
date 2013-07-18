@@ -22,9 +22,11 @@ public:
 
    ResponseEvaluatorFactory_Functional(MPI_Comm comm, int cubatureDegree=1,bool requiresCellIntegral=true,const std::string & quadPointField="",
                                        const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & linearObjFactory=Teuchos::null,
-                                       const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & globalIndexer=Teuchos::null)
+                                       const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & globalIndexer=Teuchos::null,
+                                       bool applyDirichletToDerivative=false)
      : comm_(comm), cubatureDegree_(cubatureDegree), requiresCellIntegral_(requiresCellIntegral)
      , quadPointField_(quadPointField), linearObjFactory_(linearObjFactory), globalIndexer_(globalIndexer)
+     , applyDirichletToDerivative_(applyDirichletToDerivative)
    {
      TEUCHOS_ASSERT((linearObjFactory==Teuchos::null && globalIndexer==Teuchos::null) ||
                     (linearObjFactory!=Teuchos::null && globalIndexer!=Teuchos::null));
@@ -83,6 +85,7 @@ private:
    std::string quadPointField_;
    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linearObjFactory_;
    Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
+   bool applyDirichletToDerivative_;
 };
 
 template <typename LO,typename GO> 
@@ -91,6 +94,10 @@ struct FunctionalResponse_Builder {
   int cubatureDegree;
   bool requiresCellIntegral;
   std::string quadPointField;
+  bool applyDirichletToDerivative; // if this is set to true, then the dirichlet values will be zerod out in
+                                   // the DgDx vector
+
+  FunctionalResponse_Builder() : applyDirichletToDerivative(false) {}
 
   void setDerivativeInformation(const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & in_linearObjFactory,
                                 const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & in_globalIndexer)
@@ -110,7 +117,8 @@ struct FunctionalResponse_Builder {
 
   template <typename T>
   Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> build() const
-  { return Teuchos::rcp(new ResponseEvaluatorFactory_Functional<T,LO,GO>(comm,cubatureDegree,requiresCellIntegral,quadPointField,linearObjFactory,globalIndexer)); }
+  { return Teuchos::rcp(new ResponseEvaluatorFactory_Functional<T,LO,GO>(comm,cubatureDegree,requiresCellIntegral,quadPointField,
+                                                                         linearObjFactory,globalIndexer,applyDirichletToDerivative)); }
 
 private:
   Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linearObjFactory;

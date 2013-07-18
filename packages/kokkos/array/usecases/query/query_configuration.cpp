@@ -48,7 +48,7 @@
 
 #include <KokkosArray_Host.hpp>
 
-#if defined( KOKKOSARRAY_HAVE_CUDA )
+#if defined( KOKKOS_HAVE_CUDA )
 #include <KokkosArray_Cuda.hpp>
 #endif
 
@@ -65,7 +65,7 @@ int main( int argc , char ** argv )
 
   KokkosArray::Host::print_configuration( msg );
 
-#if defined( KOKKOSARRAY_HAVE_CUDA )
+#if defined( KOKKOS_HAVE_CUDA )
   KokkosArray::Cuda::print_configuration( msg );
 #endif
 

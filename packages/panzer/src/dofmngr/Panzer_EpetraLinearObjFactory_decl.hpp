@@ -117,7 +117,8 @@ public:
      */
    virtual void adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                                              const LinearObjContainer & globalBCRows,
-                                             LinearObjContainer & ghostedObjs) const;
+                                             LinearObjContainer & ghostedObjs,
+                                             bool zeroVectorRows=false) const;
 
    /** Acess to the MPI Comm used in constructing this LOF.
      */
