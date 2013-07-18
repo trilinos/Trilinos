@@ -70,7 +70,7 @@ SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
 SET(BUILD_DIR_NAME MPI_OPT_DEV_BACKWARDS_COMPATIBILITY_11.4)
 #SET(CTEST_TEST_TIMEOUT 900)
-SET(CTEST_TEST_TYPE EXPERIMENTAL)
+SET(CTEST_TEST_TYPE Nightly)
 
 #setting this temporarily while this is an experimental test
 #the default repository for experimental is /space/git/Trilinos
