@@ -79,7 +79,7 @@ namespace Ifpack2 {
  called before the graph is used for subsequent operations.
  
  */    
-template<class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+template<class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
 class IlukGraph : public Teuchos::Describable
 {
 

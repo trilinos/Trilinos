@@ -83,7 +83,7 @@ the bordered operator.
 <b>Title of Method Description</b>
 */
 
-template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType >
+template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType >
 class BorderedOperator : virtual public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node > {
 
   public:

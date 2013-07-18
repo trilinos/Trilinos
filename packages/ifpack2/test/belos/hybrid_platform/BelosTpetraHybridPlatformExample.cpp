@@ -88,7 +88,7 @@ class ThreadedBlasKiller {
   }
 };
 template <>
-class ThreadedBlasKiller<Kokkos::ThrustGPUNode> {
+class ThreadedBlasKiller<KokkosClassic::ThrustGPUNode> {
   public:
   static void kill() {
     mkl_set_dynamic(false);
@@ -112,12 +112,12 @@ class NodeDetails {
 
 #ifdef HAVE_KOKKOS_THRUST
 template <>
-class NodeDetails<Kokkos::ThrustGPUNode> {
+class NodeDetails<KokkosClassic::ThrustGPUNode> {
   public:
-  static void printDetails(const RCP<FancyOStream> &fos, const RCP<const Kokkos::ThrustGPUNode> &node) {
+  static void printDetails(const RCP<FancyOStream> &fos, const RCP<const KokkosClassic::ThrustGPUNode> &node) {
     node->printStatistics(fos);
   }
-  static void clear(const RCP<Kokkos::ThrustGPUNode> &node) {
+  static void clear(const RCP<KokkosClassic::ThrustGPUNode> &node) {
     node->clearStatistics();
   }
 };
@@ -252,7 +252,7 @@ namespace Ifpack2 {
 
   // use the Tpetra macros, because they are node-aware
   #define LCLINST(S,LO,GO,N) \
-          template class Diagonal<Tpetra::CrsMatrix<S,LO,GO,N,Kokkos::DefaultKernels<S,LO,N>::SparseOps> >;
+          template class Diagonal<Tpetra::CrsMatrix<S,LO,GO,N,KokkosClassic::DefaultKernels<S,LO,N>::SparseOps> >;
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

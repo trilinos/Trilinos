@@ -54,8 +54,8 @@
 #define IFPACK2_DETAILS_CHEBYSHEV(S,LO,GO) \
   template<> \
   class Chebyshev<S, \
-		  Tpetra::MultiVector<S,LO,GO,Kokkos::DefaultNode::DefaultNodeType>, \
-		  Tpetra::CrsMatrix<S,LO,GO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> >;
+		  Tpetra::MultiVector<S,LO,GO>, \
+		  Tpetra::CrsMatrix<S,LO,GO> >;
 
 namespace Ifpack2 {
 namespace Details {
