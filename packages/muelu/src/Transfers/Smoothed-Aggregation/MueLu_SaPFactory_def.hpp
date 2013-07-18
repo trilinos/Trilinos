@@ -105,7 +105,7 @@ namespace MueLu {
 
     if(restrictionMode_) {
       SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
-      A = Utils2::Transpose(A, true); // build transpose of A explicitely
+      A = Utils2::Transpose(*A, true); // build transpose of A explicitely
     }
 
     //Build final prolongator
@@ -157,7 +157,7 @@ namespace MueLu {
         bool doFillComplete=true;
         bool optimizeStorage=false;
         Teuchos::ArrayRCP<SC> diag = Utils::GetMatrixDiagonal(*A);
-        Utils::MyOldScaleMatrix(AP, diag, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
+        Utils::MyOldScaleMatrix(*AP, diag, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
       }
 
       Scalar lambdaMax;
@@ -180,7 +180,7 @@ namespace MueLu {
 
         bool doTranspose=false;
         bool PtentHasFixedNnzPerRow=true;
-        Utils2::TwoMatrixAdd(Ptent, doTranspose, Teuchos::ScalarTraits<Scalar>::one(), AP, doTranspose, -dampingFactor/lambdaMax, finalP, PtentHasFixedNnzPerRow);
+        Utils2::TwoMatrixAdd(*Ptent, doTranspose, Teuchos::ScalarTraits<Scalar>::one(), *AP, doTranspose, -dampingFactor/lambdaMax, finalP, PtentHasFixedNnzPerRow);
       }
 
       {
@@ -203,7 +203,7 @@ namespace MueLu {
 
     } else {
       // prolongation factory is in restriction mode
-      RCP<Matrix> R = Utils2::Transpose(finalP, true); // use Utils2 -> specialization for double
+      RCP<Matrix> R = Utils2::Transpose(*finalP, true); // use Utils2 -> specialization for double
       Set(coarseLevel, "R", R);
 
       // NOTE: EXPERIMENTAL

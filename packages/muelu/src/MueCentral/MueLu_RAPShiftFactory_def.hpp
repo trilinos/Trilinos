@@ -129,7 +129,7 @@ namespace MueLu {
       // recombine to get K+shift*M
       int level     = coarseLevel.GetLevelID();
       Scalar shift  = shifts_[level];
-      Utils2::TwoMatrixAdd(Kc, false, (Scalar) 1.0, Mc, false, shift, Ac);
+      Utils2::TwoMatrixAdd(*Kc, false, (Scalar) 1.0, *Mc, false, shift, Ac);
       Ac->fillComplete();
 
       if (checkAc_)
