@@ -290,8 +290,8 @@ int main(int argc, char *argv[])
    if (Comm.MyPID() == 0) std::cout << "Xpetra: ||A Pop x||_1 = " << normx << std::endl;
 
    // calculate A^T P x explicitely
-   Teuchos::RCP<Xpetra::Matrix<double> > crsAOpT = MueLu::Utils2<double>::Transpose(crsAOp,false);
-   Teuchos::RCP<Xpetra::Matrix<double> > AtPexpl = MueLu::Utils<double>::Multiply(*crsAOpT,false,*crsPOp,false);
+   Teuchos::RCP<Xpetra::Matrix<double> > crsAOpT = MueLu::Utils2<double>::Transpose(*crsAOp,  false);
+   Teuchos::RCP<Xpetra::Matrix<double> > AtPexpl = MueLu::Utils<double> ::Multiply (*crsAOpT, false, *crsPOp, false);
    bb1->putScalar(0.0);
    AtPexpl->apply(*xx,*bb1);
    normx = bb1->norm1();

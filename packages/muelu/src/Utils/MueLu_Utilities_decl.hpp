@@ -132,34 +132,37 @@ namespace MueLu {
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 
 #ifdef HAVE_MUELU_EPETRA
-    //! @brief Helper utility to pull out the underlying Epetra_MultiVector from an Xpetra::MultiVector.
+    //! Helper utility to pull out the underlying Epetra objects from an Xpetra object
+    // @{
     static RCP<const Epetra_MultiVector>                    MV2EpetraMV(RCP<MultiVector> const Vec);
-    static RCP<Epetra_MultiVector>                          MV2NonConstEpetraMV(RCP<MultiVector> Vec);
+    static RCP<      Epetra_MultiVector>                    MV2NonConstEpetraMV(RCP<MultiVector> Vec);
 
-    //! @brief Helper utility to pull out the underlying Epetra_MultiVector from an Xpetra::MultiVector.
     static const Epetra_MultiVector&                        MV2EpetraMV(const MultiVector& Vec);
-    static Epetra_MultiVector&                              MV2NonConstEpetraMV(MultiVector& Vec);
+    static       Epetra_MultiVector&                        MV2NonConstEpetraMV(MultiVector& Vec);
 
-    // TODO: add operator casts based on references
-    //! @brief Helper utility to pull out the underlying Epetra_CrsMatrix from an Xpetra::Matrix.
     static RCP<const Epetra_CrsMatrix>                      Op2EpetraCrs(RCP<const Matrix> Op);
-    static RCP<Epetra_CrsMatrix>                            Op2NonConstEpetraCrs(RCP<Matrix> Op);
+    static RCP<      Epetra_CrsMatrix>                      Op2NonConstEpetraCrs(RCP<Matrix> Op);
+
+    static const Epetra_CrsMatrix&                          Op2EpetraCrs(const Matrix& Op);
+    static       Epetra_CrsMatrix&                          Op2NonConstEpetraCrs(Matrix& Op);
+    // @}
 #endif
 
 #ifdef HAVE_MUELU_TPETRA
-    //! @brief Helper utility to pull out the underlying Tpetra::MultiVector from an Xpetra::MultiVector.
+    //! Helper utility to pull out the underlying Tpetra objects from an Xpetra object
+    // @{
     static RCP<const Tpetra::MultiVector<SC,LO,GO,NO> >     MV2TpetraMV(RCP<MultiVector> const Vec);
-    static RCP<Tpetra::MultiVector<SC,LO,GO,NO> >           MV2NonConstTpetraMV(RCP<MultiVector> Vec);
-    static RCP<Tpetra::MultiVector<SC,LO,GO,NO> >           MV2NonConstTpetraMV2(MultiVector& Vec);
+    static RCP<      Tpetra::MultiVector<SC,LO,GO,NO> >     MV2NonConstTpetraMV(RCP<MultiVector> Vec);
+    static RCP<      Tpetra::MultiVector<SC,LO,GO,NO> >     MV2NonConstTpetraMV2(MultiVector& Vec);
 
-    //! @brief Helper utility to pull out the underlying Tpetra::MultiVector from an Xpetra::MultiVector.
     static const Tpetra::MultiVector<SC,LO,GO,NO>&          MV2TpetraMV(const MultiVector& Vec);
-    static Tpetra::MultiVector<SC,LO,GO,NO>&                MV2NonConstTpetraMV(MultiVector& Vec);
+    static       Tpetra::MultiVector<SC,LO,GO,NO>&          MV2NonConstTpetraMV(MultiVector& Vec);
 
-    // TODO: add operator casts based on references
-    //! @brief Helper utility to pull out the underlying Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> from an Xpetra::Matrix.
     static RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >   Op2TpetraCrs(RCP<Matrix> Op);
-    static RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >         Op2NonConstTpetraCrs(RCP<Matrix> Op);
+    static RCP<      Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >   Op2NonConstTpetraCrs(RCP<Matrix> Op);
+
+    static const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>&        Op2TpetraCrs(const Matrix& Op);
+    static       Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>&        Op2NonConstTpetraCrs(Matrix& Op);
 #endif
 
     /*! @brief Helper function to do matrix-matrix multiply
@@ -202,9 +205,9 @@ namespace MueLu {
            This can create a memory penalty if both the useless C_in and the new C are present in memory at the same time
            => Do not enable ML MxM at the same time as the option "reuse pattern".
     */
-    static RCP<Matrix> Multiply(const Matrix & A,
+    static RCP<Matrix> Multiply(const Matrix& A,
                                 bool transposeA,
-                                const Matrix & B,
+                                const Matrix& B,
                                 bool transposeB,
                                 RCP<Matrix> C_in,
                                 bool callFillCompleteOnResult = true,
@@ -227,8 +230,8 @@ namespace MueLu {
     @param transposeB if true, use the transpose of B
     @param doOptimizeStorage if true, the resulting matrix should be fillComplete'd
     */
-    static RCP<BlockedCrsMatrix> TwoMatrixMultiplyBlock(RCP<BlockedCrsMatrix> const &A, bool transposeA,
-                                                        RCP<BlockedCrsMatrix> const &B, bool transposeB,
+    static RCP<BlockedCrsMatrix> TwoMatrixMultiplyBlock(BlockedCrsMatrix& A, bool transposeA,
+                                                        BlockedCrsMatrix& B, bool transposeB,
                                                         bool doFillComplete    = true,
                                                         bool doOptimizeStorage = true);
 
@@ -266,7 +269,7 @@ namespace MueLu {
     @param scalingVector vector that represents diagonal matrix
     @doInverse Indicates whether the inverse of the diagonal matrix should be applied.  (Default is to use inverse.)
     */
-    static void ScaleMatrix(RCP<Matrix>& Op, Teuchos::ArrayRCP<SC> const& scalingVector, bool doInverse = true);
+    static void ScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<SC>& scalingVector, bool doInverse = true);
 
 
     // TODO: should NOT return an Array. Definition must be changed to:
@@ -318,10 +321,10 @@ namespace MueLu {
     static Scalar PowerMethod(const Matrix& A, bool scaleByDiag = true,
                               LO niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123);
 
-    static void MyOldScaleMatrix(RCP<Matrix>& Op, Teuchos::ArrayRCP<const SC> scalingVector, bool doInverse = true,
+    static void MyOldScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<const SC>& scalingVector, bool doInverse = true,
                                  bool doFillComplete = true, bool doOptimizeStorage = true);
 
-    static void MyOldScaleMatrix_Tpetra(RCP<Matrix>& Op, const Teuchos::ArrayRCP<SC>& scalingVector,
+    static void MyOldScaleMatrix_Tpetra(Matrix& Op, const Teuchos::ArrayRCP<SC>& scalingVector,
                                         bool doFillComplete, bool doOptimizeStorage);
 
     static RCP<Teuchos::FancyOStream> MakeFancy(std::ostream& os);
@@ -398,10 +401,10 @@ namespace MueLu {
     Note: Currently, an error is thrown if the matrix isn't a Tpetra::CrsMatrix or Epetra_CrsMatrix.
     In principle, however, we could allow any Epetra_RowMatrix because the Epetra transposer does.
     */
-    static RCP<Matrix> Transpose(const RCP<Matrix>& Op, bool optimizeTranspose = false);
+    static RCP<Matrix> Transpose(Matrix& Op, bool optimizeTranspose = false);
 
     //! Scale an Epetra matrix.
-    static void MyOldScaleMatrix_Epetra(RCP<Matrix>& Op, const Teuchos::ArrayRCP<SC>& scalingVector, bool doFillComplete, bool doOptimizeStorage);
+    static void MyOldScaleMatrix_Epetra(Matrix& Op, const Teuchos::ArrayRCP<SC>& scalingVector, bool doFillComplete, bool doOptimizeStorage);
 
     /*! @brief Helper function to calculate B = alpha*A + beta*B.
 
@@ -415,7 +418,7 @@ namespace MueLu {
 
     Note that B does not have to be fill-completed.
     */
-    static void TwoMatrixAdd(const RCP<Matrix>& A, bool transposeA, SC alpha, RCP<Matrix>& B, SC beta);
+    static void TwoMatrixAdd(const Matrix& A, bool transposeA, SC alpha, Matrix& B, SC beta);
 
     /*! @brief Helper function to calculate C = alpha*A + beta*B.
 
@@ -429,9 +432,9 @@ namespace MueLu {
 
     It is up to the caller to ensure that the resulting matrix sum is fillComplete'd.
     */
-    static void TwoMatrixAdd(const RCP<Matrix>& A, bool transposeA, const SC& alpha,
-                             const RCP<Matrix>& B, bool transposeB, const SC& beta,
-                             RCP<Matrix> &C,       bool AHasFixedNnzPerRow = false);
+    static void TwoMatrixAdd(const Matrix& A, bool transposeA, const SC& alpha,
+                             const Matrix& B, bool transposeB, const SC& beta,
+                             RCP<Matrix>& C,       bool AHasFixedNnzPerRow = false);
 
     /*! @brief Read vector from file in Matrix Market format.  */
     static RCP<MultiVector> Read(const std::string& fileName, const RCP<const Map>& map);
@@ -452,12 +455,12 @@ namespace MueLu {
 
   public:
 
-    static RCP<Matrix>      Transpose               (const RCP<Matrix>& Op, bool optimizeTranspose = false);
-    static void             MyOldScaleMatrix_Epetra (RCP<Matrix> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doFillComplete, bool doOptimizeStorage);
-    static void             TwoMatrixAdd            (RCP<Matrix> const &A, bool transposeA, SC alpha, RCP<Matrix> &B, SC beta);
-    static void             TwoMatrixAdd            (RCP<Matrix> const &A, bool transposeA, SC const &alpha,
-                                                     RCP<Matrix> const &B, bool transposeB, SC const &beta,
-                                                     RCP<Matrix> &C,       bool AHasFixedNnzPerRow = false);
+    static RCP<Matrix>      Transpose               (Matrix& Op, bool optimizeTranspose = false);
+    static void             MyOldScaleMatrix_Epetra (Matrix& Op, const Teuchos::ArrayRCP<SC>& scalingVector, bool doFillComplete, bool doOptimizeStorage);
+    static void             TwoMatrixAdd            (const Matrix& A, bool transposeA, SC alpha, Matrix& B, SC beta);
+    static void             TwoMatrixAdd            (const Matrix& A, bool transposeA, SC alpha,
+                                                     const Matrix& B, bool transposeB, SC beta,
+                                                     RCP<Matrix>& C,  bool AHasFixedNnzPerRow = false);
     static RCP<MultiVector> Read                    (const std::string& fileName, const RCP<const Map>& map);
   };
 

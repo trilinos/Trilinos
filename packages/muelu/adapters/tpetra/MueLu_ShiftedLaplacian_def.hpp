@@ -476,12 +476,12 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   if(ProblemMatrixSet_==false) {
     if(DampMatrixSet_==true) {
       RCP<Matrix> auxK;
-      MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(K_,   false, (SC) 1.0, C_, false, ashift1_*omega,  auxK );
+      MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(*K_,   false, (SC) 1.0, *C_, false, ashift1_*omega,  auxK );
       auxK->fillComplete();
-      MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(auxK, false, (SC) 1.0, M_, false, ashift2_*omega2, A_   );
+      MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(*auxK, false, (SC) 1.0, *M_, false, ashift2_*omega2, A_   );
     }
     else {
-      MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(K_,   false, (SC) 1.0, M_, false, ashift2_*omega2, A_   );
+      MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(*K_,   false, (SC) 1.0, *M_, false, ashift2_*omega2, A_   );
     }
     A_->fillComplete();
     ProblemMatrixSet_=true;
@@ -489,12 +489,12 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   if(PreconditioningMatrixSet_==false) {
     if(DampMatrixSet_==true) {
       RCP<Matrix> auxK;
-      MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(K_,   false, (SC) 1.0, C_, false, pshift1_*omega,  auxK );
+      MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(*K_,   false, (SC) 1.0, *C_, false, pshift1_*omega,  auxK );
       auxK->fillComplete();
-      MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(auxK, false, (SC) 1.0, M_, false, pshift2_*omega2, P_   );
+      MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(*auxK, false, (SC) 1.0, *M_, false, pshift2_*omega2, P_   );
     }
     else {
-      MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(K_,   false, (SC) 1.0, M_, false, pshift2_*omega2, P_   );
+      MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(*K_,   false, (SC) 1.0, *M_, false, pshift2_*omega2, P_   );
     }
     P_->fillComplete();
     PreconditioningMatrixSet_=true;
@@ -503,7 +503,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   if(VariableShift_==true) {
     RCP<Matrix> auxK;
     if(DampMatrixSet_==true) {
-      MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(K_,   false, (SC) 1.0, C_, false, pshift1_*omega,  auxK );
+      MueLu::Utils2<SC,LO,GO,NO,LMO>::TwoMatrixAdd(*K_,   false, (SC) 1.0, *C_, false, pshift1_*omega,  auxK );
       auxK->fillComplete();
     }
     else {

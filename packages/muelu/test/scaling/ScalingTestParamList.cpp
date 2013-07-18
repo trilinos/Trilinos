@@ -335,4 +335,5 @@ int main(int argc, char *argv[]) {
     MueLu::MutuallyExclusiveTime<MueLu::BaseClass>::PrintParentChildPairs();
   }
 
+  return 0;
 } //main
