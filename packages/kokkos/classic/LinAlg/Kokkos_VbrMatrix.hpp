@@ -50,7 +50,7 @@
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_DefaultNode.hpp"
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   //! Kokkos variable block row matrix class.
 
@@ -217,7 +217,7 @@ namespace Kokkos {
     return numRows_;
   }
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 
 #endif /* KOKKOS_VBRMATRIX_H */

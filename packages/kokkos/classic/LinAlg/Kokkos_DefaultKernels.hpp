@@ -54,7 +54,7 @@
 #  include "Kokkos_CuspOps.hpp"
 #endif
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   /// \brief Traits class providing default kernel types for CRS,
   ///   block CRS and relaxation kernels.
@@ -188,6 +188,6 @@ namespace Kokkos {
   };
 #endif
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif // KOKKOS_DEFAULT_KERNELS_HPP

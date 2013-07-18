@@ -60,7 +60,7 @@
 #include "Kokkos_DefaultSparseSolveKernelOps.hpp"
 #include "Kokkos_DefaultSparseMultiplyKernelOps.hpp"
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   namespace details {
 
@@ -480,7 +480,7 @@ namespace Kokkos {
     std::string description () const {
       using Teuchos::TypeNameTraits;
       std::ostringstream os;
-      os << "Kokkos::DefaultHostSparseOps<"
+      os << "KokkosClassic::DefaultHostSparseOps<"
          << "Scalar=" << TypeNameTraits<Scalar>::name()
          << ", Ordinal=" << TypeNameTraits<Ordinal>::name()
          << ", Node=" << TypeNameTraits<Node>::name()
@@ -917,7 +917,7 @@ namespace Kokkos {
   void DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::finalizeGraph(Teuchos::EUplo uplo, Teuchos::EDiag diag, DefaultCrsGraph<Ordinal,Node> &graph, const RCP<ParameterList> &params)
   {
     graph.setMatDesc(uplo,diag);
-    std::string FuncName("Kokkos::DefaultHostSparseOps::finalizeGraph(graph,params)");
+    std::string FuncName("KokkosClassic::DefaultHostSparseOps::finalizeGraph(graph,params)");
     TEUCHOS_TEST_FOR_EXCEPTION(
         graph.isInitialized() == false,
         std::runtime_error, FuncName << ": graph has not yet been initialized."
@@ -937,7 +937,7 @@ namespace Kokkos {
   void DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::finalizeMatrix(const DefaultCrsGraph<Ordinal,Node> &graph, DefaultCrsMatrix<Scalar,Ordinal,Node> &matrix, const RCP<ParameterList> &params)
   {
     // nothing much to do here
-    std::string FuncName("Kokkos::DefaultHostSparseOps::finalizeMatrix(graph,matrix,params)");
+    std::string FuncName("KokkosClassic::DefaultHostSparseOps::finalizeMatrix(graph,matrix,params)");
     TEUCHOS_TEST_FOR_EXCEPTION(
         matrix.isInitialized() == false,
         std::runtime_error, FuncName << ": matrix has not yet been initialized."
@@ -1000,7 +1000,7 @@ namespace Kokkos {
     (void) A;
     (void) beta;
     (void) B;
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Kokkos::"
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "KokkosClassic::"
       "DefaultHostSparseOps: sum constructor not implemented.");
   }
 
@@ -1014,7 +1014,7 @@ namespace Kokkos {
     (void) alpha;
     (void) A;
     (void) beta;
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Kokkos::"
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "KokkosClassic::"
       "DefaultHostSparseOps::addInPlace: Not implemented.");
   }
 
@@ -1284,25 +1284,25 @@ namespace Kokkos {
     TEUCHOS_TEST_FOR_EXCEPTION(
       isInitialized_ == false,
       std::runtime_error,
-      "Kokkos::DefaultHostSparseOps::gaussSeidel: "
+      "KokkosClassic::DefaultHostSparseOps::gaussSeidel: "
       "The solve was not fully initialized.");
     TEUCHOS_TEST_FOR_EXCEPTION(
       isEmpty_ && unit_diag_ != Teuchos::UNIT_DIAG && numRows_ > 0,
       std::runtime_error,
-      "Kokkos::DefaultHostSparseOps::gaussSeidel: Local Gauss-Seidel with a "
+      "KokkosClassic::DefaultHostSparseOps::gaussSeidel: Local Gauss-Seidel with a "
       "sparse matrix with no entries, but a nonzero number of rows, is only "
       "valid if the matrix has an implicit unit diagonal.  This matrix does "
       "not.");
     TEUCHOS_TEST_FOR_EXCEPTION(
       (size_t) X.getNumCols() != (size_t) B.getNumCols(),
       std::runtime_error,
-      "Kokkos::DefaultHostSparseOps::gaussSeidel: "
+      "KokkosClassic::DefaultHostSparseOps::gaussSeidel: "
       "The multivectors B and X have different numbers of vectors.  "
       "X has " << X.getNumCols() << ", but B has " << B.getNumCols() << ".");
     TEUCHOS_TEST_FOR_EXCEPTION(
       (size_t) X.getNumRows() < (size_t) numRows_,
       std::runtime_error,
-      "Kokkos::DefaultHostSparseOps::gaussSeidel: "
+      "KokkosClassic::DefaultHostSparseOps::gaussSeidel: "
       "The input/output multivector X does not have enough rows for the "
       "matrix.  X has " << X.getNumRows() << " rows, but the (local) matrix "
       "has " << numRows_ << " rows.  One possible cause is that the column map "
@@ -1311,7 +1311,7 @@ namespace Kokkos {
     TEUCHOS_TEST_FOR_EXCEPTION(
       (size_t) B.getNumRows() < (size_t) numRows_,
       std::runtime_error,
-      "Kokkos::DefaultHostSparseOps::gaussSeidel: "
+      "KokkosClassic::DefaultHostSparseOps::gaussSeidel: "
       "The input multivector B does not have enough rows for the "
       "matrix.  B has " << B.getNumRows() << " rows, but the (local) matrix "
       "has " << numRows_ << " rows.");
@@ -1549,7 +1549,7 @@ namespace Kokkos {
       }
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Kokkos::DefaultHost"
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "KokkosClassic::DefaultHost"
         "SparseOps::asDenseMatrix: both big_ptrs_ and sml_ptrs_ are empty.  "
         "Please report this bug to the Kokkos developers.");
     }
@@ -1655,7 +1655,7 @@ namespace Kokkos {
     //! Constructor that takes a Kokkos Node: DO NOT CALL (Scalar=void specialization).
     DefaultHostSparseOps (const RCP<Node> &node) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Someone attempted to "
-        "instantiate Kokkos::DefaultHostSparseOps with Scalar=void.  "
+        "instantiate KokkosClassic::DefaultHostSparseOps with Scalar=void.  "
         "This is not allowed.  "
         "The Scalar=void specialization exists only for its typedefs.  "
         "Please report this bug to the Kokkos developers.");
@@ -1664,7 +1664,7 @@ namespace Kokkos {
     //! Constructor that takes a Kokkos Node and parameters: DO NOT CALL (Scalar=void specialization).
     DefaultHostSparseOps (const RCP<Node> &node, Teuchos::ParameterList& params) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Someone attempted to "
-        "instantiate Kokkos::DefaultHostSparseOps with Scalar=void.  "
+        "instantiate KokkosClassic::DefaultHostSparseOps with Scalar=void.  "
         "This is not allowed.  "
         "The Scalar=void specialization exists only for its typedefs.  "
         "Please report this bug to the Kokkos developers.");
@@ -1688,7 +1688,7 @@ namespace Kokkos {
     std::string description () const {
       using Teuchos::TypeNameTraits;
       std::ostringstream os;
-      os <<  "Kokkos::DefaultHostSparseOps<"
+      os <<  "KokkosClassic::DefaultHostSparseOps<"
          << "Scalar=void"
          << ", Ordinal=" << TypeNameTraits<Ordinal>::name()
          << ", Node=" << TypeNameTraits<Node>::name()
@@ -1772,7 +1772,7 @@ namespace Kokkos {
       using Teuchos::ArrayRCP;
       using Teuchos::as;
 
-      std::string FuncName("Kokkos::DefaultHostSparseOps::finalizeGraph(graph,params)");
+      std::string FuncName("KokkosClassic::DefaultHostSparseOps::finalizeGraph(graph,params)");
 
       graph.setMatDesc(uplo,diag);
       TEUCHOS_TEST_FOR_EXCEPTION(graph.isInitialized() == false,
@@ -1800,7 +1800,7 @@ namespace Kokkos {
     * This is an example that unit tests and demonstrates the implementation requirements for the DefaultSparseOps class.
     */
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif /* KOKKOS_DEFAULTSPARSEOPS_HPP */
 

@@ -29,7 +29,7 @@
 #ifndef KOKKOS_PACKEDCRSOPERATORADAPTOR_HPP
 #define KOKKOS_PACKEDCRSOPERATORADAPTOR_HPP
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   template <class Scalar, class Ordinal, class Node, class S, class M>
   class PackedCRSOperatorAdaptor {

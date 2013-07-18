@@ -50,14 +50,14 @@
 
 namespace {
 
-  using Kokkos::DefaultNode;
-  using Kokkos::VbrMatrix;
+  using KokkosClassic::DefaultNode;
+  using KokkosClassic::VbrMatrix;
   using Teuchos::ArrayRCP;
   using Teuchos::Array;
   using Teuchos::RCP;
   using Teuchos::arcpFromArray;
 
-  typedef Kokkos::DefaultNode::DefaultNodeType Node;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
   int N;
   TEUCHOS_STATIC_SETUP()
@@ -75,7 +75,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( VbrMatrix, PackedData, Scalar, Ordinal )
   {
     const size_t N = 10;
-    RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
+    RCP<Node> node = KokkosClassic::DefaultNode::getDefaultNode();
     // test non-empty
     {
       VbrMatrix<Scalar,Ordinal,Node> A(N,node);

@@ -47,7 +47,7 @@
 
 namespace {
 
-  using Kokkos::SerialNode;
+  using KokkosClassic::SerialNode;
   RCP<SerialNode> serialNode_;
 
   template <>

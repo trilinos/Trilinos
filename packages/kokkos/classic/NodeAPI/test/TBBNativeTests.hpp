@@ -50,7 +50,7 @@
 
 namespace {
 
-  using Kokkos::TBBNode;
+  using KokkosClassic::TBBNode;
 
   template <class T>
   class TBBNodeTestInit {

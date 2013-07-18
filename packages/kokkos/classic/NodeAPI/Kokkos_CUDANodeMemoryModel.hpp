@@ -58,7 +58,7 @@ namespace Teuchos {
   typedef basic_FancyOStream<char, std::char_traits<char> > FancyOStream;
 }
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
@@ -147,9 +147,9 @@ namespace Kokkos {
 
       /*! \brief Return a non-const view of a buffer for use on the host.
 
-          \param[in] rw Specifies Kokkos::ReadWrite or Kokkos::WriteOnly. If Kokkos::WriteOnly, the contents of the view are undefined when it is created and must 
+          \param[in] rw Specifies KokkosClassic::ReadWrite or KokkosClassic::WriteOnly. If KokkosClassic::WriteOnly, the contents of the view are undefined when it is created and must 
           be initialized on the host. However, this prevents the potential need for a copy from device to host memory needed to set the view 
-          values as when Kokkos::ReadWrite is specified.
+          values as when KokkosClassic::ReadWrite is specified.
           
           This creates a view of length \c size, constituting the first \c size entries of \c buff, as they exist at the time of view creation.
 
@@ -181,7 +181,7 @@ namespace Kokkos {
       size_t bytesCopiedD2H_, bytesCopiedH2D_, bytesCopiedD2D_;
   };
 
-} // end of namespace Kokkos
+} // end of namespace KokkosClassic
 
 #ifndef KOKKOS_NO_INCLUDE_INSTANTIATIONS
 #include "Kokkos_CUDANodeMemoryModelImpl.hpp"

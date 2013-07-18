@@ -47,7 +47,7 @@
 
 namespace {
 
-  using Kokkos::TPINode;
+  using KokkosClassic::TPINode;
   RCP<TPINode> tpiNode_;
 
   template <>

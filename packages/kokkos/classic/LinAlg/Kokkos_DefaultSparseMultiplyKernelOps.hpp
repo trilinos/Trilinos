@@ -48,7 +48,7 @@
 
 #include <Teuchos_ScalarTraits.hpp>
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   template <class Scalar, class OffsetType, class Ordinal, class DomainScalar, class RangeScalar, int NO_BETA_AND_OVERWRITE>
   struct DefaultSparseMultiplyOp {
@@ -545,6 +545,6 @@ namespace Kokkos {
     }
   };
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif

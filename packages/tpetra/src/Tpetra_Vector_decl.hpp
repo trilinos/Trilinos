@@ -182,8 +182,8 @@ protected:
           const ArrayRCP<Scalar> & data,
           EPrivateComputeViewConstructor /* dummy tag */);
 
-  typedef Kokkos::MultiVector<Scalar,Node> KMV;
-  typedef Kokkos::DefaultArithmetic<KMV>   MVT;
+  typedef KokkosClassic::MultiVector<Scalar,Node> KMV;
+  typedef KokkosClassic::DefaultArithmetic<KMV>   MVT;
 }; // class Vector
 
 /** \brief Non-member function to create a Vector from a specified Map.

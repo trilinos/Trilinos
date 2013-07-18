@@ -46,10 +46,10 @@
 
 #include <string>
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   std::string Kokkos_Version();
 
-} // namespace Kokkos 
+} // namespace KokkosClassic 
 
 #endif
