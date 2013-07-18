@@ -205,7 +205,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkosArray, ArrayRCP1D_of_2DView ) {
   // Array templates the stride() method on the integer type of the
   // input.  I just want to make sure that this works for different
   // integer types; I'll test int here and size_t (useful for
-  // Kokkos(Classic)::MultiVector) below.
+  // KokkosClassic::MultiVector) below.
   {
     int strides[2];
     strides[0] = 0;
@@ -308,22 +308,22 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkosArray, ArrayRCP2D_of_2DView ) {
 
 
 // Create a 2-D LayoutLeft Host-memory View, and create a
-// Kokkos::MultiVector (Kokkos Classic) which views its memory and
-// holds a reference to the View.  The latter will ensure that the
-// Kokkos::MultiVector can safely be used beyond the lifetime of the
-// Tpetra::MultiVector (which created the View).
+// KokkosClassic::MultiVector which views its memory and holds a
+// reference to the View.  The latter will ensure that the
+// KokkosClassic::MultiVector can safely be used beyond the lifetime
+// of the Tpetra::MultiVector (which created the View).
 //
 // We will use this example to implement the Tpetra::MultiVector
-// methods getLocalMV and getLocalMVNonConst methods.
+// methods getLocalMV() and getLocalMVNonConst().
 //
 // Preserving Tpetra's current interface will not require a way to
 // return a View that is an owning (i.e., persisting) view of a
-// Kokkos(Classic)::MultiVector's data.  This is because the porting
+// KokkosClassic::MultiVector's data.  This is because the porting
 // process will start by changing the internal data storage from
-// Kokkos(Classic)::MultiVector to View.
+// KokkosClassic::MultiVector to View.
 TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkosArray, KMV_of_2DView ) {
   typedef KokkosArray::View<double**, KokkosArray::LayoutLeft, KokkosArray::Host> ka_view_type;
-  typedef Kokkos::MultiVector<double, Kokkos::SerialNode> KMV;
+  typedef KokkosClassic::MultiVector<double, KokkosClassic::SerialNode> KMV;
 
   const size_t numRows = 75;
   const size_t numCols = 5;
@@ -339,7 +339,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkosArray, KMV_of_2DView ) {
   // Array templates the stride() method on the integer type of the
   // input.  I just want to make sure that this works for different
   // integer types; I'll test int here and size_t (useful for
-  // Kokkos(Classic)::MultiVector) below.
+  // KokkosClassic::MultiVector) below.
   {
     int strides[2];
     strides[0] = 0;
@@ -371,13 +371,14 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkosArray, KMV_of_2DView ) {
   TEST_EQUALITY(Y_values.getRawPtr(), X_view.ptr_on_device());
   TEST_EQUALITY(Y_values.size(), stride*numCols);
 
-  // Create a Kokkos (Classic) Node for the Kokkos::MultiVector.
-  Teuchos::RCP<Kokkos::SerialNode> node;
+  // Create a Kokkos Classic Node instance.  The
+  // KokkosClassic::MultiVector will want this.
+  Teuchos::RCP<KokkosClassic::SerialNode> node;
   {
     Teuchos::ParameterList pl;
-    node = Teuchos::rcp (new Kokkos::SerialNode (pl));
+    node = Teuchos::rcp (new KokkosClassic::SerialNode (pl));
   }
-  // Create the Kokkos(Classic)::MultiVector.  Initialization takes two steps.
+  // Create the KokkosClassic::MultiVector.  Initialization takes two steps.
   KMV Y (node);
   Y.initializeValues (numRows, numCols, Y_values, stride);
   
