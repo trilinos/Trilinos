@@ -84,12 +84,11 @@ namespace MueLu {
     validParamList->set<double>     ("nonzeroImbalance",       1.2, "Imbalance threshold, below which repartitioning is initiated. Imbalance is measured by "
                                                                     "ratio of maximum nonzeros over all processes to minimum number of nonzeros over all processes");
     validParamList->set<bool>       ("fixedOrder",            true, "Use sorting of recv PIDs to force reproducibility");
-    validParamList->set<std::string>("adjustNumPartitions", "none", "Algorithm for adjusting number of partitions (none|2k)");
-    validParamList->set<LO>         ("maxNumArbitrationRounds", 10, "Maximum number of arbitration rounds for diffusive heuristic");
     validParamList->set<LO>         ("diffusiveHeuristic",       0, "0:   put on procs 0..N\n"
                                                                     "1:   use diffusive heuristic\n"
                                                                     "K>1: if #partitions is > K, put on procs 0..N, otherwise use diffusive heuristic\n"
                                                                     "-1:  put on procs 0..N the first time only, then use diffusive in remaining rounds\n");
+    validParamList->set<LO>         ("maxNumArbitrationRounds", 10, "Maximum number of arbitration rounds for diffusive heuristic");
 
     validParamList->set< RCP<const FactoryBase> >("A",         Teuchos::null, "Factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("Partition", Teuchos::null, "Factory of the partition");
@@ -226,16 +225,6 @@ namespace MueLu {
       if (numPartitions > comm->getSize())
         numPartitions = comm->getSize();
 
-      std::string adjustment = pL.get<std::string>("adjustNumPartitions");
-      if (adjustment == "2k") {
-        GetOStream(Statistics0, 0) << "Number of partitions to use = " << numPartitions << std::endl;
-
-        int i2 = Teuchos::as<int>(floor(log(numPartitions)/log(2)));
-        numPartitions = Teuchos::as<int>(std::pow(2.,i2));
-
-        GetOStream(Runtime0,0) << "Adjusting number of partitions using \"2k\" algorithm to " << numPartitions << std::endl;
-      }
-
       Set(currentLevel, "number of partitions", numPartitions);
     }
     GetOStream(Statistics0, 0) << "Number of partitions to use = " << numPartitions << std::endl;
@@ -252,6 +241,7 @@ namespace MueLu {
       // TODO: can we skip more work (ie: building the hashtable, etc.)?
       GetOStream(Warnings0, 0) << "Only one partition: Skip call to the repartitioner." << std::endl;
       decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(A->getRowMap(), true);
+
     } else {
       decomposition = Get<RCP<GOVector> >(currentLevel, "Partition");
       if (decomposition.is_null()) {
@@ -259,20 +249,6 @@ namespace MueLu {
         Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
         return;
       }
-
-      // Zoltan2 changes the number of partitions. There is no good mechanism to propagate that new number
-      // to this factory, but we can do that by finding out the max number of partition across all processors
-      GO maxPartLocal = 0;
-      if (decomposition->getLocalLength()) {
-        // NOTE: If we don't use subcommunicators, on coarse levels it might happen that some of the processors
-        // do not have any data. Also, one of the unit tests (Repartition_Build) constructs a map in which processor
-        // 2 does not have any data. This could probably be detected earlier, but I'll add the check here.
-        maxPartLocal = *std::max_element(decomposition->getData(0).begin(), decomposition->getData(0).end());
-      }
-      maxAll(decomposition->getMap()->getComm(), maxPartLocal, numPartitions);
-      numPartitions++;
-
-      Set(currentLevel, "number of partitions", numPartitions);
     }
 
     // Use a hashtable to record how many local rows belong to each partition.
