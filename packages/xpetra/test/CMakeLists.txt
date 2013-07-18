@@ -22,6 +22,7 @@ ADD_SUBDIRECTORIES(
 # Tests specifically written for Xpetra:
   Matrix
   MatrixMatrix
+  Cloner
   )
 
 # uncomment this to ensure Xpetra header files include all necessary dependencies

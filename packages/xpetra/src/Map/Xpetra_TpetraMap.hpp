@@ -68,6 +68,9 @@ namespace Xpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > toXpetra(const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > &);
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  const RCP< Map< LocalOrdinal, GlobalOrdinal, Node > > toXpetraNonConst(const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > &);
   //
 
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
@@ -193,6 +196,11 @@ namespace Xpetra {
       return toXpetra(map_->replaceCommWithSubset(newComm));
     }
 
+    template<class Node2>
+    RCP<Map<LocalOrdinal, GlobalOrdinal, Node2> > clone(const RCP<Node2> &node2) const {
+      return toXpetraNonConst(map_->clone(node2));
+    }
+
     //@}
 
     //! @name Xpetra specific
@@ -246,6 +254,13 @@ namespace Xpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > toXpetra(const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > &map) {
+    if (map != Teuchos::null)
+      return rcp( new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(map));
+    return Teuchos::null;
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  const RCP< Map< LocalOrdinal, GlobalOrdinal, Node > > toXpetraNonConst(const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > &map) {
     if (map != Teuchos::null)
       return rcp( new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(map));
     return Teuchos::null;

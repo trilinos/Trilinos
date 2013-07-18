@@ -398,6 +398,11 @@ namespace Xpetra {
 
     // @}
 
+    template<class Node2>
+    RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > clone(const RCP<Node2> &node2) const {
+      return RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >(new TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2>(mtx_->clone(node2)));
+    }
+
     //! @name Xpetra specific
     //@{
 
@@ -417,6 +422,7 @@ namespace Xpetra {
 
   private:
 
+    // RCP< Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > mtx_;
     RCP< Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > mtx_;
 
   }; // TpetraCrsMatrix class

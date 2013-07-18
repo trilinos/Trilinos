@@ -551,6 +551,16 @@ public:
 
   //@}
 
+  template<class Node2>
+  RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > clone(const RCP<Node2> &node2) const {
+    RCP<const Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tMatrix =
+        Teuchos::rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(matrixData_);
+    if (tMatrix == Teuchos::null)
+      throw Xpetra::Exceptions::RuntimeError("clone() functionality is only available for Tpetra");
+
+    return RCP<CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >(new CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node2>(tMatrix->clone(node2)));
+    // TODO: inherit strided maps/views ?
+  }
 
 private:
 
