@@ -855,7 +855,7 @@ public:
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:m_stride_static) * i1 ];
+      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * i1 ];
     }
 
   template< typename iType0 , typename iType1 >
@@ -868,7 +868,7 @@ public:
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:m_stride_static) * i1 ];
+      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * i1 ];
     }
 
   // LayoutLeft, rank 3:
@@ -882,7 +882,7 @@ public:
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:m_stride_static) * (
+      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
                               i1 + m_shape.N1 * i2 ) ];
     }
 
@@ -896,7 +896,7 @@ public:
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:m_stride_static) * (
+      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
                               i1 + m_shape.N1 * i2 ) ];
     }
 
@@ -911,7 +911,7 @@ public:
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:m_stride_static) * (
+      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * i3 )) ];
     }
@@ -926,7 +926,7 @@ public:
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:m_stride_static) * (
+      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * i3 )) ];
     }
@@ -946,7 +946,7 @@ public:
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:m_stride_static) * (
+      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * i4 ))) ];
@@ -965,7 +965,7 @@ public:
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:m_stride_static) * (
+      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * i4 ))) ];
@@ -986,7 +986,7 @@ public:
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:m_stride_static) * (
+      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * (
@@ -1006,7 +1006,7 @@ public:
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:m_stride_static) * (
+      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * (
@@ -1028,7 +1028,7 @@ public:
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:m_stride_static) * (
+      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * (
@@ -1049,7 +1049,7 @@ public:
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:m_stride_static) * (
+      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * (
@@ -1072,7 +1072,7 @@ public:
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:m_stride_static) * (
+      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * (
@@ -1132,7 +1132,7 @@ public:
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i1 + i0 * (m_stride_static==0?m_stride:m_stride_static) ];
+      return m_ptr_on_device[ i1 + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
     }
 
   template< typename iType0 , typename iType1 >
@@ -1145,7 +1145,7 @@ public:
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i1 + i0 * (m_stride_static==0?m_stride:m_stride_static) ];
+      return m_ptr_on_device[ i1 + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
     }
 
   // LayoutRight, rank 3:
@@ -1161,7 +1161,7 @@ public:
       KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i2 + m_shape.N2 * (
-                              i1 ) + i0 * (m_stride_static==0?m_stride:m_stride_static) ];
+                              i1 ) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 >
@@ -1173,8 +1173,7 @@ public:
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       KOKKOSARRAY_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i2 + m_shape.N2 * (
-                              i1 ) + i0 * (m_stride_static==0?m_stride:m_stride_static) ];
+      return m_ptr_on_device[ i2 + m_shape.N2 * ( i1 ) + i0 * (m_stride_static==0 ? m_stride : static_cast<unsigned> (m_stride_static)) ];
     }
 
   // LayoutRight, rank 4:
@@ -1192,7 +1191,7 @@ public:
 
       return m_ptr_on_device[ i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 )) + i0 * (m_stride_static==0?m_stride:m_stride_static) ];
+                              i1 )) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
@@ -1209,7 +1208,7 @@ public:
 
       return m_ptr_on_device[ i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 )) + i0 * (m_stride_static==0?m_stride:m_stride_static) ];
+                              i1 )) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
     }
 
   // LayoutRight, rank 5:
@@ -1230,7 +1229,7 @@ public:
       return m_ptr_on_device[ i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 ))) + i0 * (m_stride_static==0?m_stride:m_stride_static) ];
+                              i1 ))) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -1249,7 +1248,7 @@ public:
       return m_ptr_on_device[ i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 ))) + i0 * (m_stride_static==0?m_stride:m_stride_static) ];
+                              i1 ))) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
     }
 
   // LayoutRight, rank 6:
@@ -1271,7 +1270,7 @@ public:
                               i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 )))) + i0 * (m_stride_static==0?m_stride:m_stride_static) ];
+                              i1 )))) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -1291,7 +1290,7 @@ public:
                               i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 )))) + i0 * (m_stride_static==0?m_stride:m_stride_static) ];
+                              i1 )))) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
     }
 
   // LayoutRight, rank 7:
@@ -1314,7 +1313,7 @@ public:
                               i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 ))))) + i0 * (m_stride_static==0?m_stride:m_stride_static) ];
+                              i1 ))))) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -1335,7 +1334,7 @@ public:
                               i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 ))))) + i0 * (m_stride_static==0?m_stride:m_stride_static) ];
+                              i1 ))))) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
     }
 
   // LayoutRight, rank 8:

@@ -525,7 +525,7 @@ public:
 
 private:
 
-  template< class , class , class > friend class Impl::ViewAssignment ;
+  template< class , class , class > friend struct Impl::ViewAssignment ;
 
   Impl::CudaTextureFetch<typename traits::scalar_type > m_texture ;
   typename traits::shape_type           m_shape ;
@@ -660,7 +660,7 @@ public:
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ i0 + (m_stride_static==0?m_stride:m_stride_static) * i1 ];
+      return m_texture[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * i1 ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 >
@@ -673,7 +673,7 @@ public:
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ i0 + (m_stride_static==0?m_stride:m_stride_static) * (
+      return m_texture[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
                         i1 + m_shape.N1 * i2 ) ];
     }
 
@@ -687,7 +687,7 @@ public:
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ i0 + (m_stride_static==0?m_stride:m_stride_static) * (
+      return m_texture[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
                         i1 + m_shape.N1 * (
                         i2 + m_shape.N2 * i3 )) ];
     }
@@ -704,7 +704,7 @@ public:
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ i0 + (m_stride_static==0?m_stride:m_stride_static) * (
+      return m_texture[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
                         i1 + m_shape.N1 * (
                         i2 + m_shape.N2 * (
                         i3 + m_shape.N3 * i4 ))) ];
@@ -722,7 +722,7 @@ public:
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ i0 + (m_stride_static==0?m_stride:m_stride_static) * (
+      return m_texture[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
                         i1 + m_shape.N1 * (
                         i2 + m_shape.N2 * (
                         i3 + m_shape.N3 * (
@@ -741,7 +741,7 @@ public:
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ i0 + (m_stride_static==0?m_stride:m_stride_static) * (
+      return m_texture[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
                         i1 + m_shape.N1 * (
                         i2 + m_shape.N2 * (
                         i3 + m_shape.N3 * (
@@ -761,7 +761,7 @@ public:
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_8( m_shape, i0,i1,i2,i3,i4,i5,i6,i7 );
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ i0 + (m_stride_static==0?m_stride:m_stride_static) * (
+      return m_texture[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
                         i1 + m_shape.N1 * (
                         i2 + m_shape.N2 * (
                         i3 + m_shape.N3 * (
@@ -785,7 +785,7 @@ public:
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ i1 + i0 * (m_stride_static==0?m_stride:m_stride_static) ];
+      return m_texture[ i1 + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 >
@@ -798,7 +798,7 @@ public:
       KOKKOSARRAY_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
       KOKKOSARRAY_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ i2 + m_shape.N2 * i1 + i0 * (m_stride_static==0?m_stride:m_stride_static) ];
+      return m_texture[ i2 + m_shape.N2 * i1 + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
@@ -813,7 +813,7 @@ public:
 
       return m_texture[ i3 + m_shape.N3 * (
                         i2 + m_shape.N2 * (
-                        i1 )) + i0 * (m_stride_static==0?m_stride:m_stride_static) ];
+                        i1 )) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -831,7 +831,7 @@ public:
       return m_texture[ i4 + m_shape.N4 * (
                         i3 + m_shape.N3 * (
                         i2 + m_shape.N2 * (
-                        i1 ))) + i0 * (m_stride_static==0?m_stride:m_stride_static) ];
+                        i1 ))) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -850,7 +850,7 @@ public:
                         i4 + m_shape.N4 * (
                         i3 + m_shape.N3 * (
                         i2 + m_shape.N2 * (
-                        i1 )))) + i0 * (m_stride_static==0?m_stride:m_stride_static) ];
+                        i1 )))) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -870,7 +870,7 @@ public:
                         i4 + m_shape.N4 * (
                         i3 + m_shape.N3 * (
                         i2 + m_shape.N2 * (
-                        i1 ))))) + i0 * (m_stride_static==0?m_stride:m_stride_static) ];
+                        i1 ))))) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -891,7 +891,7 @@ public:
                         i4 + m_shape.N4 * (
                         i3 + m_shape.N3 * (
                         i2 + m_shape.N2 * (
-                        i1 )))))) + i0 * (m_stride_static==0?m_stride:m_stride_static) ];
+                        i1 )))))) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
     }
 
   //------------------------------------
