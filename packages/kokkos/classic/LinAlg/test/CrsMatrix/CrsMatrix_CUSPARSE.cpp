@@ -53,14 +53,14 @@ namespace {
   using Teuchos::RCP;
   using Teuchos::arcp;
   using Teuchos::rcp;
-  using Kokkos::ThrustGPUNode;
+  using KokkosClassic::ThrustGPUNode;
   using Teuchos::ParameterList;
   using Teuchos::null;
 
   TEUCHOS_UNIT_TEST( CrsMatrix, CUSPARSENative )
   {
-    Kokkos::CUSPARSEdetails::Session::init();
-    RCP<const cusparseHandle_t> sess = Kokkos::CUSPARSEdetails::Session::getHandle();
+    KokkosClassic::CUSPARSEdetails::Session::init();
+    RCP<const cusparseHandle_t> sess = KokkosClassic::CUSPARSEdetails::Session::getHandle();
     
     ParameterList pl;
     RCP<ThrustGPUNode> gpunode = rcp(new ThrustGPUNode(pl));
@@ -100,12 +100,12 @@ namespace {
       ArrayRCP<int> xIndHostPtr;
       ArrayRCP<float> xValHostPtr, yHostPtr;
 
-      cooRowIndexHostPtr = gpunode->viewBufferNonConst(Kokkos::WriteOnly, cooRowIndex.size(), cooRowIndex);
-      cooColIndexHostPtr = gpunode->viewBufferNonConst(Kokkos::WriteOnly, cooColIndex.size(), cooColIndex);
-      cooValHostPtr      = gpunode->viewBufferNonConst(Kokkos::WriteOnly, cooVal.size(),      cooVal);
-      yHostPtr           = gpunode->viewBufferNonConst(Kokkos::WriteOnly, y.size(),           y);
-      xIndHostPtr        = gpunode->viewBufferNonConst(Kokkos::WriteOnly, xInd.size(),        xInd);
-      xValHostPtr        = gpunode->viewBufferNonConst(Kokkos::WriteOnly, xVal.size(),        xVal);
+      cooRowIndexHostPtr = gpunode->viewBufferNonConst(KokkosClassic::WriteOnly, cooRowIndex.size(), cooRowIndex);
+      cooColIndexHostPtr = gpunode->viewBufferNonConst(KokkosClassic::WriteOnly, cooColIndex.size(), cooColIndex);
+      cooValHostPtr      = gpunode->viewBufferNonConst(KokkosClassic::WriteOnly, cooVal.size(),      cooVal);
+      yHostPtr           = gpunode->viewBufferNonConst(KokkosClassic::WriteOnly, y.size(),           y);
+      xIndHostPtr        = gpunode->viewBufferNonConst(KokkosClassic::WriteOnly, xInd.size(),        xInd);
+      xValHostPtr        = gpunode->viewBufferNonConst(KokkosClassic::WriteOnly, xVal.size(),        xVal);
 
       cooRowIndexHostPtr[0] = 0; cooColIndexHostPtr[0] = 0; cooValHostPtr[0] = 1.0; 
       cooRowIndexHostPtr[1] = 0; cooColIndexHostPtr[1] = 2; cooValHostPtr[1] = 2.0; 
@@ -134,7 +134,7 @@ namespace {
     }
 
     /* create and setup matrix descriptor */
-    Teuchos::RCP<cusparseMatDescr_t> descr = Kokkos::CUSPARSEdetails::createMatDescr();
+    Teuchos::RCP<cusparseMatDescr_t> descr = KokkosClassic::CUSPARSEdetails::createMatDescr();
     cusparseSetMatType(      *descr , CUSPARSE_MATRIX_TYPE_GENERAL ) ; 
     cusparseSetMatIndexBase( *descr , CUSPARSE_INDEX_BASE_ZERO ) ;
     status = cusparseXcoo2csr(*sess,cooRowIndex.getRawPtr(),nnz,n, csrRowPtr.getRawPtr() , CUSPARSE_INDEX_BASE_ZERO ) ; 

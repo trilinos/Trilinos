@@ -42,7 +42,7 @@
 #include "Kokkos_Mkl_MatrixDescriptor.hpp"
 
 
-namespace Kokkos {
+namespace KokkosClassic {
   namespace Mkl {
     void MatrixDescriptor::print (Teuchos::FancyOStream& out) const
     {
@@ -278,5 +278,5 @@ namespace Kokkos {
     }
 
   } // namespace Mkl
-} // namespace Kokkos
+} // namespace KokkosClassic
 

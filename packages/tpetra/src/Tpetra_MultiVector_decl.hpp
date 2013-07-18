@@ -50,13 +50,13 @@
 #include <Kokkos_MultiVector.hpp>
 #include <Teuchos_BLAS_types.hpp>
 
-namespace Kokkos {
+namespace KokkosClassic {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration of DefaultArithmetic
   template<class KokkosMultiVectorType>
   class DefaultArithmetic;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 namespace Tpetra {
 
@@ -886,8 +886,8 @@ namespace Tpetra {
 
   protected:
 
-    typedef Kokkos::MultiVector<Scalar,Node> KMV;
-    typedef Kokkos::DefaultArithmetic<KMV>   MVT;
+    typedef KokkosClassic::MultiVector<Scalar,Node> KMV;
+    typedef KokkosClassic::DefaultArithmetic<KMV>   MVT;
 
     //! The Kokkos::MultiVector containing the compute buffer of data.
     KMV lclMV_;

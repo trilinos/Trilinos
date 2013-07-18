@@ -46,14 +46,14 @@
 #include <iostream>
 
 // forward declarations
-namespace Kokkos {
+namespace KokkosClassic {
   class ThrustGPUNode;
 }
 
 #ifdef HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_TRACE
 #  define KOKKOS_NODE_TRACE(lbl) \
      { \
-       if (Teuchos::TypeTraits::is_same<Node,Kokkos::ThrustGPUNode>::value == true) { \
+       if (Teuchos::TypeTraits::is_same<Node,KokkosClassic::ThrustGPUNode>::value == true) { \
          std::ostringstream omsg; \
          omsg << lbl << " -> "; \
          std::cerr << omsg.str(); \

@@ -379,8 +379,8 @@ template< class FunctorType , class ReduceOper >
 class HostMultiFunctorParallelReduceMember ;
 
 template< class ReduceOper >
-struct HostMultiFunctorParallelReduceMember<void,ReduceOper> {
-
+class HostMultiFunctorParallelReduceMember<void,ReduceOper> {
+public:
   virtual ~HostMultiFunctorParallelReduceMember() {}
 
   virtual void apply( HostThread & , const ReduceOper & ) const = 0 ;

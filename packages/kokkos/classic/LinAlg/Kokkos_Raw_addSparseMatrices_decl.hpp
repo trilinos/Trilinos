@@ -44,7 +44,7 @@
 
 #include <Kokkos_ConfigDefs.hpp>
 
-namespace Kokkos {
+namespace KokkosClassic {
 namespace Raw {
 
 /// \fn countMergedRowEntries
@@ -172,7 +172,7 @@ addSparseMatrices (OffsetType*& ptrResult,
                    const OrdinalType numRows);
 
 } // namespace Raw
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif // __Kokkos_Raw_addSparseMatrices_decl_hpp
 

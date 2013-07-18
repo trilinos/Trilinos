@@ -94,7 +94,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 TRIBITS_ADD_OPTION_AND_DEFINE(
   KokkosClassic_TREAT_SERIALNODE_AS_DEVICE
   HAVE_KOKKOSCLASSIC_TREAT_SERIALNODE_AS_DEVICE
-  "Treat Kokkos::SerialNode as a device node instead of a host node, for kernels where there is a difference."
+  "Treat KokkosClassic::SerialNode as a device node instead of a host node, for kernels where there is a difference."
   ${KokkosClassic_ENABLE_DEBUG}
   )
 

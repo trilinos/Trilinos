@@ -71,7 +71,7 @@ struct CrsMatrix {
 namespace Impl {
 
 template< class Matrix , class OutputVector , class InputVector >
-class Multiply ;
+struct Multiply ;
 
 }
 }

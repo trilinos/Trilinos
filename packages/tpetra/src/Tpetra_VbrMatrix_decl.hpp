@@ -68,10 +68,10 @@ namespace Tpetra {
   class Vector;
 } // namespace Tpetra
 
-namespace Kokkos {
+namespace KokkosClassic {
   template<class Scalar, class LocalOrdinal, class Node>
   class VbrMatrix;
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 namespace Teuchos {
   template<class OrdinalType, class ScalarType>
@@ -563,11 +563,13 @@ public:
   Teuchos::RCP<BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> > blkGraph_;
   Teuchos::RCP<const BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> > constBlkGraph_;
 
+  typedef KokkosClassic::VbrMatrix<Scalar, LocalOrdinal, Node> local_matrix_type;
+
   // We use a pointer so that the _decl header file only needs a
   // forward declaration, not an include.  We don't really need an RCP
   // here, since the local matrix object never gets shared outside the
   // class.  std::unique_ptr (C++11) would be more appropriate.
-  Teuchos::RCP<Kokkos::VbrMatrix<Scalar,LocalOrdinal,Node> > lclMatrix_;
+  Teuchos::RCP<local_matrix_type> lclMatrix_;
 
   //A variable-block-row matrix is represented by 6 arrays
   //in packed (contiguous storage) form. For a description of these

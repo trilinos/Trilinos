@@ -51,7 +51,7 @@
 
 // forward declaration for cusp adaptors
 template <class Offset, class Ordinal, class ScalarA, class ScalarX, class ScalarY> 
-void Kokkos::Cuspdetails::cuspCrsMultiply(
+void KokkosClassic::Cuspdetails::cuspCrsMultiply(
                           Ordinal numRows, Ordinal numCols, Ordinal nnz, 
                           const Offset *rowptrs, const Ordinal *colinds, const ScalarA *values, 
                           Ordinal numRHS, const ScalarX *x, Ordinal xstride, ScalarY *y, Ordinal ystride) 
@@ -75,7 +75,7 @@ void Kokkos::Cuspdetails::cuspCrsMultiply(
 }
 
 template <class Offset, class Ordinal, class Scalar>
-void Kokkos::Cuspdetails::cuspCrsTranspose(Ordinal numRows, Ordinal numCols, Ordinal nnz, 
+void KokkosClassic::Cuspdetails::cuspCrsTranspose(Ordinal numRows, Ordinal numCols, Ordinal nnz, 
                                            const Offset *rowptrs,   const Ordinal *colinds,   const Scalar *values, 
                                            Offset *rowptrs_t,       Ordinal *colinds_t,       Scalar *values_t) 
 {

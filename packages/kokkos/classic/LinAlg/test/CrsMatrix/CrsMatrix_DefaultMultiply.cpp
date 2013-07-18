@@ -85,9 +85,9 @@
 #endif
 
 namespace {
-  using Kokkos::DefaultArithmetic;
-  using Kokkos::DefaultKernels;
-  using Kokkos::MultiVector;
+  using KokkosClassic::DefaultArithmetic;
+  using KokkosClassic::DefaultKernels;
+  using KokkosClassic::MultiVector;
   using Teuchos::ArrayRCP;
   using Teuchos::as;
   using Teuchos::null;
@@ -98,22 +98,22 @@ namespace {
   using Teuchos::tuple;
   using std::endl;
 
-  using Kokkos::SerialNode;
+  using KokkosClassic::SerialNode;
   RCP<SerialNode> snode;
 #ifdef HAVE_KOKKOSCLASSIC_TBB
-  using Kokkos::TBBNode;
+  using KokkosClassic::TBBNode;
   RCP<TBBNode> tbbnode;
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  using Kokkos::TPINode;
+  using KokkosClassic::TPINode;
   RCP<TPINode> tpinode;
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  using Kokkos::OpenMPNode;
+  using KokkosClassic::OpenMPNode;
   RCP<OpenMPNode> ompnode;
 #endif
 #ifdef TEST_CUDA
-  using Kokkos::ThrustGPUNode;
+  using KokkosClassic::ThrustGPUNode;
   RCP<ThrustGPUNode> gpunode;
 #endif
 

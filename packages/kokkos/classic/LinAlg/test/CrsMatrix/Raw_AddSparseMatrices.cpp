@@ -309,7 +309,7 @@ TEUCHOS_UNIT_TEST( KokkosRaw, AddSparseMatrices )
     OffsetType* ptrOut = NULL;
     OrdinalType* indOut = NULL;
     ScalarType* valOut = NULL;
-    Kokkos::Raw::addSparseMatrices<OffsetType, OrdinalType, ScalarType> (
+    KokkosClassic::Raw::addSparseMatrices<OffsetType, OrdinalType, ScalarType> (
       ptrOut, indOut, valOut,
       alpha, ptr1, ind1, val1,
       beta, ptr2, ind2, val2,
@@ -378,7 +378,7 @@ TEUCHOS_UNIT_TEST( KokkosRaw, AddSparseMatrices )
     OffsetType* ptrOut = NULL;
     OrdinalType* indOut = NULL;
     ScalarType* valOut = NULL;
-    Kokkos::Raw::addSparseMatrices<OffsetType, OrdinalType, ScalarType> (
+    KokkosClassic::Raw::addSparseMatrices<OffsetType, OrdinalType, ScalarType> (
       ptrOut, indOut, valOut,
       alpha, ptr1, ind1, val1,
       beta, ptr2, ind2, val2,
@@ -449,7 +449,7 @@ TEUCHOS_UNIT_TEST( KokkosRaw, AddSparseMatrices )
     OffsetType* ptrOut = NULL;
     OrdinalType* indOut = NULL;
     ScalarType* valOut = NULL;
-    Kokkos::Raw::addSparseMatrices<OffsetType, OrdinalType, ScalarType> (
+    KokkosClassic::Raw::addSparseMatrices<OffsetType, OrdinalType, ScalarType> (
       ptrOut, indOut, valOut,
       alpha, ptr1, ind1, val1,
       beta, ptr2, ind2, val2,
@@ -519,7 +519,7 @@ TEUCHOS_UNIT_TEST( KokkosRaw, AddSparseMatrices )
     OffsetType* ptrOut = NULL;
     OrdinalType* indOut = NULL;
     ScalarType* valOut = NULL;
-    Kokkos::Raw::addSparseMatrices<OffsetType, OrdinalType, ScalarType> (
+    KokkosClassic::Raw::addSparseMatrices<OffsetType, OrdinalType, ScalarType> (
       ptrOut, indOut, valOut,
       alpha, ptr1, ind1, val1,
       beta, ptr2, ind2, val2,
@@ -589,7 +589,7 @@ TEUCHOS_UNIT_TEST( KokkosRaw, AddSparseMatrices )
     OffsetType* ptrOut = NULL;
     OrdinalType* indOut = NULL;
     ScalarType* valOut = NULL;
-    Kokkos::Raw::addSparseMatrices<OffsetType, OrdinalType, ScalarType> (
+    KokkosClassic::Raw::addSparseMatrices<OffsetType, OrdinalType, ScalarType> (
       ptrOut, indOut, valOut,
       alpha, ptr1, ind1, val1,
       beta, ptr2, ind2, val2,

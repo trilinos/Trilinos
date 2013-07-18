@@ -52,7 +52,7 @@
 #include <Kokkos_ThrustGPUWrappers.hpp>
 #include <Teuchos_TestForException.hpp>
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   namespace ThrustGPUNodeDetails {
 
@@ -98,7 +98,7 @@ namespace Kokkos {
 #ifdef HAVE_KOKKOSCLASSIC_DEBUG
     cudaError_t err = cudaGetLastError();
     TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error, 
-        "Kokkos::ThrustGPUNode::" << __FUNCTION__ << ": " 
+        "KokkosClassic::ThrustGPUNode::" << __FUNCTION__ << ": " 
         << "cudaGetLastError() returned error before function call:\n"
         << cudaGetErrorString(err) );
 #endif
@@ -110,7 +110,7 @@ namespace Kokkos {
 #ifdef HAVE_KOKKOSCLASSIC_DEBUG
     err = cudaThreadSynchronize();
     TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error, 
-        "Kokkos::ThrustGPUNode::" << __FUNCTION__ << ": " 
+        "KokkosClassic::ThrustGPUNode::" << __FUNCTION__ << ": " 
         << "cudaThreadSynchronize() returned error after function call:\n"
         << cudaGetErrorString(err) );
 #endif
@@ -123,7 +123,7 @@ namespace Kokkos {
 #ifdef HAVE_KOKKOSCLASSIC_DEBUG
     cudaError_t err = cudaGetLastError();
     TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error, 
-        "Kokkos::ThrustGPUNode::" << __FUNCTION__ << ": " 
+        "KokkosClassic::ThrustGPUNode::" << __FUNCTION__ << ": " 
         << "cudaGetLastError() returned error before function call:\n"
         << cudaGetErrorString(err) );
 #endif
@@ -137,19 +137,19 @@ namespace Kokkos {
 #ifdef HAVE_KOKKOSCLASSIC_DEBUG
     err = cudaThreadSynchronize();
     TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error, 
-        "Kokkos::ThrustGPUNode::" << __FUNCTION__ << ": " 
+        "KokkosClassic::ThrustGPUNode::" << __FUNCTION__ << ": " 
         << "cudaThreadSynchronize() returned error after function call:\n"
         << cudaGetErrorString(err) );
 #endif
     return ret;
   }
 
-} // end namespace Kokkos
+} // end namespace KokkosClassic
 
 #define KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_FOR(KERN) \
-  template void Kokkos::ThrustGPUNodeDetails::parallel_for< KERN >(int, int, KERN);
+  template void KokkosClassic::ThrustGPUNodeDetails::parallel_for< KERN >(int, int, KERN);
 
 #define KOKKOS_INSTANT_THRUSTGPUNODE_PARALLEL_RED(KERN) \
-  template KERN::ReductionType Kokkos::ThrustGPUNodeDetails::parallel_reduce< KERN >(int, int, KERN );
+  template KERN::ReductionType KokkosClassic::ThrustGPUNodeDetails::parallel_reduce< KERN >(int, int, KERN );
 
 #endif

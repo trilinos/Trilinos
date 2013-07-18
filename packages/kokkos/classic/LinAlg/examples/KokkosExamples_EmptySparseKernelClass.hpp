@@ -67,11 +67,11 @@ namespace KokkosExamples {
   /// \class EmptyCrsGraph
   /// \brief An empty graph fulfilling the CrsGraph interface.
   ///
-  /// This is based off Kokkos::CrsGraphBase to ease our obligations.
+  /// This is based off KokkosClassic::CrsGraphBase to ease our obligations.
   template <class Node>
-  class EmptyCrsGraph : public Kokkos::CrsGraphBase<int,Node> {
+  class EmptyCrsGraph : public KokkosClassic::CrsGraphBase<int,Node> {
   public:
-    EmptyCrsGraph(int numrows, int numcols, const RCP<Node> &node, const RCP<ParameterList> &params) : Kokkos::CrsGraphBase<int,Node>(numrows,numcols,node,params) {}
+    EmptyCrsGraph(int numrows, int numcols, const RCP<Node> &node, const RCP<ParameterList> &params) : KokkosClassic::CrsGraphBase<int,Node>(numrows,numcols,node,params) {}
     ~EmptyCrsGraph() {}
     void setStructure(const ArrayRCP<const size_t>&, const ArrayRCP<const int>&) {}
   };
@@ -79,11 +79,11 @@ namespace KokkosExamples {
   /// \class EmptyCrsMatrix
   /// \brief An empty matrix fulfilling the CrsMatrix interface.
   ///
-  /// This is based off Kokkos::CrsMatrixBase to ease our obligations.
+  /// This is based off KokkosClassic::CrsMatrixBase to ease our obligations.
   template <class Scalar, class Node>
-  class EmptyCrsMatrix : public Kokkos::CrsMatrixBase<Scalar,int,Node> {
+  class EmptyCrsMatrix : public KokkosClassic::CrsMatrixBase<Scalar,int,Node> {
   public:
-    EmptyCrsMatrix(const RCP<const EmptyCrsGraph<Node> > &graph, const RCP<ParameterList> &params) : Kokkos::CrsMatrixBase<Scalar,int,Node>(graph,params) {}
+    EmptyCrsMatrix(const RCP<const EmptyCrsGraph<Node> > &graph, const RCP<ParameterList> &params) : KokkosClassic::CrsMatrixBase<Scalar,int,Node>(graph,params) {}
     ~EmptyCrsMatrix() {}
     void setValues(const ArrayRCP<const Scalar> &) {}
   };
@@ -152,7 +152,7 @@ namespace KokkosExamples {
     /// library only implements the required kernels for scalar types
     /// <tt>float</tt> and <tt>double</tt>.  Thus, you can provide a
     /// "fall-back" implementation for scalar types not supported by
-    /// the third-party library.  We do this for Kokkos::MklSparseOps,
+    /// the third-party library.  We do this for KokkosClassic::MklSparseOps,
     /// for example.  Alternately, some scalar types T (especially
     /// those requiring dynamic memory allocation) might not work
     /// correctly or efficiently on certain Kokkos Node types
@@ -181,7 +181,7 @@ namespace KokkosExamples {
     //! One-line description of this instance.
     std::string description () const {
       std::ostringstream os;
-      os << "Kokkos::EmptySparseKernel<Scalar=" 
+      os << "KokkosClassic::EmptySparseKernel<Scalar=" 
 	 << Teuchos::TypeNameTraits<Scalar>::name () << ", Node=" 
 	 << Teuchos::TypeNameTraits<Node>::name () << ">";
       return os.str ();
@@ -204,14 +204,14 @@ namespace KokkosExamples {
     //! \brief Allocate and initialize the storage for the matrix values.
     static ArrayRCP<size_t> allocRowPtrs(const RCP<Node> &node, const ArrayView<const size_t> &numEntriesPerRow)
     {
-      return Kokkos::details::DefaultCRSAllocator::template allocRowPtrs<size_t,Node>(node,numEntriesPerRow);
+      return KokkosClassic::details::DefaultCRSAllocator::template allocRowPtrs<size_t,Node>(node,numEntriesPerRow);
     }
 
     //! \brief Allocate and initialize the storage for a sparse graph.
     template <class T>
     static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const size_t> &rowPtrs)
     {
-      return Kokkos::details::DefaultCRSAllocator::template allocStorage<T,int,Node>(node,rowPtrs);
+      return KokkosClassic::details::DefaultCRSAllocator::template allocStorage<T,int,Node>(node,rowPtrs);
     }
 
     //! Finalize a graph
@@ -234,7 +234,7 @@ namespace KokkosExamples {
         responsible for deciding what to do with the graph and matrix objects.
         Since your implementation may choose just
         to view the original CrsGraph data instead of making a deep
-        copy, callers should not change the Kokkos::CrsGraph after
+        copy, callers should not change the KokkosClassic::CrsGraph after
         calling this method.
       */
     void setGraphAndMatrix(const RCP<const EmptyCrsGraph<Node> >         &graph,
@@ -272,8 +272,8 @@ namespace KokkosExamples {
     void
     multiply (Teuchos::ETransp trans,
               RangeScalar alpha,
-              const Kokkos::MultiVector<DomainScalar,Node> &X,
-              Kokkos::MultiVector<RangeScalar,Node> &Y) const
+              const KokkosClassic::MultiVector<DomainScalar,Node> &X,
+              KokkosClassic::MultiVector<RangeScalar,Node> &Y) const
     {}
 
     /// \brief Y := Y + alpha * Op(A) * X.
@@ -304,9 +304,9 @@ namespace KokkosExamples {
     void
     multiply (Teuchos::ETransp trans,
               RangeScalar alpha,
-              const Kokkos::MultiVector<DomainScalar,Node> &X,
+              const KokkosClassic::MultiVector<DomainScalar,Node> &X,
               RangeScalar beta,
-              Kokkos::MultiVector<RangeScalar,Node> &Y) const
+              KokkosClassic::MultiVector<RangeScalar,Node> &Y) const
     {}
 
     /// \brief Solve Y = Op(A) X for X, where we assume A is triangular.
@@ -338,8 +338,8 @@ namespace KokkosExamples {
     template <class DomainScalar, class RangeScalar>
     void
     solve (Teuchos::ETransp trans,
-           const Kokkos::MultiVector<DomainScalar,Node> &Y,
-           Kokkos::MultiVector<RangeScalar,Node> &X) const
+           const KokkosClassic::MultiVector<DomainScalar,Node> &Y,
+           KokkosClassic::MultiVector<RangeScalar,Node> &X) const
     {}
 
     /// \brief Gauss-Seidel or SOR on \f$B = A X\f$.
@@ -385,11 +385,11 @@ namespace KokkosExamples {
     /// direction anyway.
     template <class DomainScalar, class RangeScalar>
     void
-    gaussSeidel (const Kokkos::MultiVector<DomainScalar,Node> &B,
-                 Kokkos::MultiVector<RangeScalar,Node> &X,
-                 const Kokkos::MultiVector<Scalar,Node> &D,
+    gaussSeidel (const KokkosClassic::MultiVector<DomainScalar,Node> &B,
+                 KokkosClassic::MultiVector<RangeScalar,Node> &X,
+                 const KokkosClassic::MultiVector<Scalar,Node> &D,
                  const RangeScalar& dampingFactor,
-                 const Kokkos::ESweepDirection direction) const
+                 const KokkosClassic::ESweepDirection direction) const
     {
       (void) B; // Silence compiler warnings for unused variables.
       (void) X;

@@ -257,7 +257,7 @@ class View< DataType , Arg1Type , Arg2Type , Arg3Type , Impl::LayoutTileLeftFast
   : public ViewTraits< DataType , Arg1Type , Arg2Type , Arg3Type >
 {
 private:
-  template< class , class , class > friend class Impl::ViewAssignment ;
+  template< class , class , class > friend struct Impl::ViewAssignment ;
 
   typedef ViewTraits< DataType , Arg1Type , Arg2Type , Arg3Type > traits ;
 

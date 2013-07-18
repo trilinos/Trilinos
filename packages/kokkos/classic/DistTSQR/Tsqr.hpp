@@ -196,7 +196,7 @@ namespace TSQR {
     /// especially intended for orthogonalizing the columns of a \c
     /// Tpetra::MultiVector. It can also be used for an \c
     /// Epetra_MultiVector, if you put each node's data in a \c
-    /// Kokkos::MultiVector first. (This does not require copying.)
+    /// KokkosClassic::MultiVector first. (This does not require copying.)
     ///
     /// \param A [in/out] On input: my node's part of the matrix to
     ///   factor; the matrix is distributed over the participating
@@ -224,8 +224,8 @@ namespace TSQR {
     ///   nonnegative diagonal.
     template<class NodeType>
     void
-    factorExplicit (Kokkos::MultiVector<Scalar, NodeType>& A,
-                    Kokkos::MultiVector<Scalar, NodeType>& Q,
+    factorExplicit (KokkosClassic::MultiVector<Scalar, NodeType>& A,
+                    KokkosClassic::MultiVector<Scalar, NodeType>& Q,
                     Teuchos::SerialDenseMatrix<LocalOrdinal, Scalar>& R,
                     const bool contiguousCacheBlocks,
                     const bool forceNonnegativeDiagonal=false)
@@ -233,7 +233,7 @@ namespace TSQR {
       using Teuchos::asSafe;
 
       // Tsqr currently likes LocalOrdinal ordinals, but
-      // Kokkos::MultiVector has size_t ordinals.  Do conversions
+      // KokkosClassic::MultiVector has size_t ordinals.  Do conversions
       // here.
       //
       // Teuchos::asSafe() can do safe conversion (e.g., checking for
@@ -292,7 +292,7 @@ namespace TSQR {
         nodeTsqr_->factor (A_numRows, A_numCols, A_ptr.getRawPtr(), A_stride,
                            R.values(), R.stride(), contiguousCacheBlocks);
       // FIXME (mfh 19 Oct 2010) Replace actions on raw pointer with
-      // actions on the Kokkos::MultiVector or at least the ArrayRCP.
+      // actions on the KokkosClassic::MultiVector or at least the ArrayRCP.
       nodeTsqr_->fill_with_zeros (Q_numRows, Q_numCols,
                                   Q_ptr.getRawPtr(), Q_stride,
                                   contiguousCacheBlocks);
@@ -340,7 +340,7 @@ namespace TSQR {
     ///
     /// If you want to use TSQR to orthogonalize a block of
     /// distributed vectors, and if you have your own data in raw
-    /// arrays and don't want to know about Kokkos::MultiVector or
+    /// arrays and don't want to know about KokkosClassic::MultiVector or
     /// Teuchos::SerialDenseMatrix, this method is for you.
     ///
     /// This method computes the "thin" QR factorization, like
@@ -818,7 +818,7 @@ namespace TSQR {
     ///
     template<class NodeType>
     LocalOrdinal
-    revealRank (Kokkos::MultiVector<Scalar, NodeType>& Q,
+    revealRank (KokkosClassic::MultiVector<Scalar, NodeType>& Q,
                 Teuchos::SerialDenseMatrix<LocalOrdinal, Scalar>& R,
                 const magnitude_type& tol,
                 const bool contiguousCacheBlocks = false) const
