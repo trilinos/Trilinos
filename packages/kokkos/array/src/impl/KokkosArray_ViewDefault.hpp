@@ -689,7 +689,7 @@ public:
 
 private:
 
-  template< class , class , class > friend class Impl::ViewAssignment ;
+  template< class , class , class > friend struct Impl::ViewAssignment ;
 
   typedef Impl::ViewAssignment<Impl::LayoutDefault> alloc ;
   typedef Impl::ViewAssignment<Impl::LayoutDefault,Impl::LayoutDefault> assign ;
