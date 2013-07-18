@@ -8,6 +8,7 @@
 #endif
 
 #include <stk_adapt/RefinerUtil.hpp>
+#include <stk_adapt/Refiner.hpp>
 
 namespace stk {
 namespace adapt {
@@ -351,6 +352,61 @@ BlockNamesType RefinerUtil::correctBlockNamesForPartPartConsistency(percept::Per
   }
   if (0) std::cout << "tmp RefinerUtil::correctBlockNamesForPartPartConsistency: blocks = " << blocks << std::endl;
   return blocks;
+}
+
+//static
+void RefinerUtil::
+addAncestorsToUnrefineList(percept::PerceptMesh& eMesh, int num_levels_to_add, ElementUnrefineCollection& elements_to_unref)
+{
+  int num_levels_to_add_1 = num_levels_to_add;
+  if (num_levels_to_add < 0) num_levels_to_add_1 = 1000;
+  //std::cout << "here 1 elements_to_unref.size= " << elements_to_unref.size() << std::endl;
+  for (int ilev=0; ilev < num_levels_to_add_1; ilev++)
+    {
+      ElementUnrefineCollection to_add(*eMesh.get_bulk_data());
+      for (ElementUnrefineCollection::iterator iter = elements_to_unref.begin(); iter != elements_to_unref.end(); ++iter)
+        {
+          stk::mesh::Entity element = *iter;
+          if (eMesh.hasFamilyTree(element))
+            {
+              //std::cout << "here 2 elements_to_unref.size= " << elements_to_unref.size() << std::endl;
+              stk::mesh::Entity parent = eMesh.getParent(element, false);
+              if (elements_to_unref.find(parent) != elements_to_unref.end())
+                continue;
+              //std::cout << "here 3 elements_to_unref.size= " << elements_to_unref.size() << std::endl;
+              std::vector<stk::mesh::Entity> children;
+              bool hasChildren = eMesh.getChildren(parent, children, true, false);
+              if (hasChildren && children.size())
+                {
+                  //std::cout << "here 4 elements_to_unref.size= " << elements_to_unref.size() << std::endl;
+                  bool allChildrenInUnrefSet = true;
+                  for (unsigned ichild=0; ichild < children.size(); ichild++)
+                    {
+                      if (elements_to_unref.find(children[ichild]) == elements_to_unref.end())
+                        {
+                          allChildrenInUnrefSet = false;
+                          break;
+                        }
+                    }
+                  if (allChildrenInUnrefSet)
+                    {
+                      //std::cout << "here 5 elements_to_unref.size= " << elements_to_unref.size() << std::endl;
+                      to_add.insert(parent);
+                    }
+                }
+            }
+        }
+      std::cout << "RefinerUtil::addAncestorsToUnrefineList ilev= " << ilev << " to_add.size= " << to_add.size() << std::endl;
+      if (to_add.size())
+        {
+          elements_to_unref.insert(to_add.begin(), to_add.end());
+        }
+      else
+        {
+          break;
+        }
+    }
+
 }
 
 }
