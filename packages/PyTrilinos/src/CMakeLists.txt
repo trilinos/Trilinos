@@ -31,17 +31,17 @@ INCLUDE(TribitsLibraryMacros)
 
 #
 # Package-specific configuration options
-IF(Trilinos_ENABLE_Epetra)
+IF(PyTrilinos_ENABLE_Epetra)
   SET(HAVE_EPETRA ON)
-ENDIF(Trilinos_ENABLE_Epetra)
+ENDIF()
 
-IF(Trilinos_ENABLE_Teuchos)
+IF(PyTrilinos_ENABLE_Teuchos)
   SET(HAVE_TEUCHOS ON)
-ENDIF(Trilinos_ENABLE_Teuchos)
+ENDIF()
 
-IF(Trilinos_ENABLE_STK)
+IF(PyTrilinos_ENABLE_STK)
   SET(HAVE_STK ON)
-ENDIF(Trilinos_ENABLE_STK)
+ENDIF()
 
 IF(NOX_ENABLE_Epetra)
   SET(HAVE_NOX_EPETRA ON)

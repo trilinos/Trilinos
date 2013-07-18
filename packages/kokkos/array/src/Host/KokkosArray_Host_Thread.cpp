@@ -41,6 +41,7 @@
 //@HEADER
 */
 
+#include <KokkosArray_config.h>
 #include <Host/KokkosArray_Host_Thread.hpp>
 
 /* #include <KokkosArray_Host.hpp> */
@@ -357,7 +358,7 @@ HostThread * HostThread::clear_thread( const unsigned rank )
 } // namespace Impl
 } // namespace KokkosArray
 
-#if defined( KOKKOSARRAY_HAVE_PTHREAD )
+#if defined( KOKKOS_HAVE_PTHREAD )
 
 /*--------------------------------------------------------------------------*/
 /* Standard 'C' Linux libraries */
@@ -461,9 +462,10 @@ template< unsigned N > inline void noop_cycle();
 template<> inline void noop_cycle<0>() {}
 template< unsigned N > inline void noop_cycle()
 {
-#if defined( __GNUC__ ) || \
-    defined( __GNUG__ ) || \
-    defined( __INTEL_COMPILER__ )
+#if !defined ( KOKKOS_DISABLE_ASM ) && \
+    ( defined( __GNUC__ ) || \
+      defined( __GNUG__ ) || \
+      defined( __INTEL_COMPILER__ ) )
 
   asm volatile("nop");
   noop_cycle<N-1>();
@@ -503,7 +505,7 @@ void host_thread_unlock()
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#elif defined( KOKKOSARRAY_HAVE_WINTHREAD )
+#elif defined( KOKKOS_HAVE_WINTHREAD )
 
 /* Windows libraries */
 #include <windows.h>

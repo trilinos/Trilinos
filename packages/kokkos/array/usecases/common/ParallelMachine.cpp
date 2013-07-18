@@ -50,7 +50,7 @@
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_hwloc.hpp>
 
-#if ! defined( KOKKOSARRAY_HAVE_MPI )
+#if ! defined( KOKKOS_HAVE_MPI )
 #define MPI_COMM_NULL 0
 #endif
 
@@ -65,7 +65,7 @@ Machine::Machine( int * argc , char *** argv )
   , m_mpi_gpu(0)
 {
 
-#if defined( KOKKOSARRAY_HAVE_CUDA )
+#if defined( KOKKOS_HAVE_CUDA )
   //------------------------------------
   // Might be using a Cuda aware version of MPI.
   // Must select Cuda device before initializing MPI.
@@ -103,7 +103,7 @@ Machine::Machine( int * argc , char *** argv )
 
   //------------------------------------
 
-#if defined( KOKKOSARRAY_HAVE_MPI )
+#if defined( KOKKOS_HAVE_MPI )
   MPI_Init( argc , argv );
   m_mpi_comm = MPI_COMM_WORLD ;
   MPI_Comm_size( m_mpi_comm , & m_mpi_size );
@@ -133,7 +133,7 @@ Machine::Machine( int * argc , char *** argv )
     }
   }
 
-#if defined( KOKKOSARRAY_HAVE_CUDA )
+#if defined( KOKKOS_HAVE_CUDA )
   //------------------------------------
   // Request to use Cuda device and not already initialized.
   if ( ! m_mpi_gpu ) {
@@ -156,10 +156,10 @@ Machine::Machine( int * argc , char *** argv )
 Machine::~Machine()
 {
   KokkosArray::Host::finalize();
-#if defined( KOKKOSARRAY_HAVE_CUDA )
+#if defined( KOKKOS_HAVE_CUDA )
   KokkosArray::Cuda::finalize();
 #endif
-#if defined( KOKKOSARRAY_HAVE_MPI )
+#if defined( KOKKOS_HAVE_MPI )
   MPI_Finalize();
 #endif
 }
@@ -168,7 +168,7 @@ void Machine::print_configuration( std::ostream & msg ) const
 {
   msg << "MPI [ " << m_mpi_rank << " / " << m_mpi_size << " ]" << std::endl ;
   KokkosArray::Host::print_configuration( msg );
-#if defined( KOKKOSARRAY_HAVE_CUDA )
+#if defined( KOKKOS_HAVE_CUDA )
   KokkosArray::Cuda::print_configuration( msg );
 #endif
 }

@@ -60,33 +60,6 @@
 
 namespace panzer {
 
-template <typename LO,typename GO>
-void FunctionalScatter<LO,GO>::scatterDerivative(const PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
-                                                panzer::Traits::EvalData workset, 
-                                                Teuchos::ArrayRCP<double> & dgdx) const
-{
-  std::vector<int> LIDs;
- 
-  // for convenience pull out some objects from workset
-  std::string blockId = workset.block_id;
-  const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
-
-  // NOTE: A reordering of these loops will likely improve performance
-  //       The "getGIDFieldOffsets may be expensive.  However the
-  //       "getElementGIDs" can be cheaper. However the lookup for LIDs
-  //       may be more expensive!
-
-  // scatter operation for each cell in workset
-  for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-    std::size_t cellLocalId = localCellIds[worksetCellIndex];
-    LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
-
-    // loop over basis functions
-    for(std::size_t i=0;i<LIDs.size();i++)
-      dgdx[LIDs[i]] += cellIntegral(worksetCellIndex).dx(i); // its possible functional is independent of solution value!
-  }
-}
-
 /** This class handles responses with values aggregated
   * on each finite element cell.
   */

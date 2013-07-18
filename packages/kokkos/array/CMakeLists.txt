@@ -10,7 +10,7 @@ ENDIF()
 #Enable MPI
 TRIBITS_ADD_OPTION_AND_DEFINE(
   KokkosArray_ENABLE_MPI
-  KOKKOSARRAY_HAVE_MPI
+  KOKKOS_HAVE_MPI
   "Enable MPI support in KokkosArray."
   ${TPL_ENABLE_MPI}
   )
@@ -22,7 +22,7 @@ ENDIF()
 #Enable Devices
 TRIBITS_ADD_OPTION_AND_DEFINE(
   KokkosArray_ENABLE_Cuda
-  KOKKOSARRAY_HAVE_CUDA
+  KOKKOS_HAVE_CUDA
   "Enable CUDA support in KokkosArray."
   ${TPL_ENABLE_CUDA}
   )
@@ -33,7 +33,7 @@ ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   KokkosArray_ENABLE_Pthread
-  KOKKOSARRAY_HAVE_PTHREAD
+  KOKKOS_HAVE_PTHREAD
   "Enable Pthread support in KokkosArray."
   ${TPL_ENABLE_Pthread}
   )
@@ -44,7 +44,7 @@ ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   KokkosArray_ENABLE_Winthread
-  KOKKOSARRAY_HAVE_WINTHREAD
+  KOKKOS_HAVE_WINTHREAD
   "Enable Winthread support in KokkosArray."
   ${TPL_ENABLE_Winthread}
   )
@@ -55,7 +55,7 @@ ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   KokkosArray_ENABLE_OpenMP
-  KOKKOSARRAY_HAVE_OPENMP
+  KOKKOS_HAVE_OPENMP
   "Enable OpenMP support in KokkosArray."
   ${Trilinos_ENABLE_OpenMP}
   )
@@ -68,11 +68,19 @@ ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   KokkosArray_ENABLE_HWLOC
-  KOKKOSARRAY_HAVE_HWLOC
-  "Enable HWLOC support in KokkosArray."
+  KOKKOS_HAVE_HWLOC
+  "Enable HWLOC support in Kokkos."
   ${TPL_ENABLE_HWLOC}
   )
 
+SET(KOKKOS_EXPRESSION_CHECK OFF)
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  KokkosArray_ENABLE_BOUNDS_CHECK
+  KOKKOS_EXPRESSION_CHECK
+  "Enable bounds checking support in Kokkos."
+  ${KOKKOS_EXPRESSION_CHECK}
+  )
 
 ADD_SUBDIRECTORY(src)
 
@@ -82,3 +90,4 @@ TRIBITS_ADD_TEST_DIRECTORIES(unit_test)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(usecases)
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()
+

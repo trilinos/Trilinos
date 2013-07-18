@@ -69,7 +69,7 @@ void run( const std::string & argline , comm::Machine machine )
       cmd_error = true ;
     }
   }
-#if KOKKOSARRAY_HAVE_CUDA
+#if KOKKOS_HAVE_CUDA
   else if ( which == std::string("cuda") ) {
 
     input >> which ;
@@ -131,14 +131,14 @@ int main( int argc , char ** argv )
     }
   }
 
-#ifdef KOKKOSARRAY_HAVE_MPI
+#ifdef KOKKOS_HAVE_MPI
   {
     int length = argline.length();
     MPI_Bcast( & length , 1 , MPI_INT , 0 , machine.mpi_comm );
     argline.resize( length , ' ' );
     MPI_Bcast( (void*) argline.data() , length , MPI_CHAR , 0 , machine.mpi_comm );
   }
-#endif /* KOKKOSARRAY_HAVE_MPI */
+#endif /* KOKKOS_HAVE_MPI */
 
   try {
     run( argline , machine );

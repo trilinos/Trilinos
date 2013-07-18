@@ -99,7 +99,7 @@ namespace KokkosArray {
 
 //----------------------------------------------------------------------------
 
-#if defined( KOKKOSARRAY_HAVE_MPI )
+#if defined( KOKKOS_HAVE_MPI )
 
 template< typename ScalarX /* Allow mix of const and non-const */ ,
           typename ScalarY /* Allow mix of const and non-const */ ,
@@ -147,7 +147,7 @@ double dot( const size_t n ,
 
 //----------------------------------------------------------------------------
 
-#if defined( KOKKOSARRAY_HAVE_MPI )
+#if defined( KOKKOS_HAVE_MPI )
 
 template< typename ScalarX /* Allow mix of const and non-const */ ,
           class L , class D ,

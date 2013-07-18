@@ -125,7 +125,7 @@ public:
 
 //----------------------------------------------------------------------------
 
-#ifdef KOKKOSARRAY_HAVE_MPI
+#ifdef KOKKOS_HAVE_MPI
 
 namespace TestFEMesh {
 
@@ -188,7 +188,7 @@ void verify_parallel(
 
 } // namespace TestFEMesh
 
-#else /* ! #ifdef KOKKOSARRAY_HAVE_MPI */
+#else /* ! #ifdef KOKKOS_HAVE_MPI */
 
 namespace TestFEMesh {
 
@@ -203,7 +203,7 @@ void verify_parallel(
 
 } // namespace TestFEMesh
 
-#endif /* ! #ifdef KOKKOSARRAY_HAVE_MPI */
+#endif /* ! #ifdef KOKKOS_HAVE_MPI */
 
 //----------------------------------------------------------------------------
 
