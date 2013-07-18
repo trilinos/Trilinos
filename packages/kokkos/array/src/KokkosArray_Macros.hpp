@@ -112,13 +112,9 @@ namespace KokkosArray { typedef HostSpace ExecutionSpace ; }
 #define KOKKOSARRAY_FUNCTION         /* */
 
 #if defined( __INTEL_COMPILER )
-
-#define KOKKOSARRAY_FORCEINLINE_FUNCTION  __forceinline
-
+# define KOKKOSARRAY_FORCEINLINE_FUNCTION  __forceinline
 #else //GCC Compiler
-
-#define KOKKOSARRAY_FORCEINLINE_FUNCTION  inline __attribute__((always_inline))
-
+# define KOKKOSARRAY_FORCEINLINE_FUNCTION  inline __attribute__((always_inline))
 #endif
 
 #endif /* ! #if defined( __CUDA_ARCH__ ) */
@@ -132,6 +128,12 @@ namespace KokkosArray { typedef HostSpace ExecutionSpace ; }
 
 #define KOKKOSARRAY_INLINE_FUNCTION  inline
 #define KOKKOSARRAY_FUNCTION         /* */
+
+#if defined( __INTEL_COMPILER )
+# define KOKKOSARRAY_FORCEINLINE_FUNCTION  __forceinline
+#else //GCC Compiler
+# define KOKKOSARRAY_FORCEINLINE_FUNCTION  inline __attribute__((always_inline))
+#endif
 
 //----------------------------------------------------------------------------
 
