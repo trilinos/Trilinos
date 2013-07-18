@@ -162,8 +162,8 @@ namespace Tpetra {
    */
   template <class LocalOrdinal,
             class GlobalOrdinal = LocalOrdinal,
-            class Node = Kokkos::DefaultNode::DefaultNodeType,
-            class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps >
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType,
+            class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps >
   class CrsGraph :
     public RowGraph<LocalOrdinal,GlobalOrdinal,Node>,
     public DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>,
@@ -332,7 +332,7 @@ namespace Tpetra {
     ///   being cloned, if they exist. Otherwise, the row map is used.
     template<class Node2>
     RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node2,
-                 typename Kokkos::DefaultKernels<void, LocalOrdinal, Node2>::SparseOps> >
+                 typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Node2>::SparseOps> >
     clone (const Teuchos::RCP<Node2> &node2,
            const Teuchos::RCP<Teuchos::ParameterList> &params = null) const
     {
@@ -342,7 +342,7 @@ namespace Tpetra {
       using Teuchos::ParameterList;
       using std::endl;
       typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node2,
-        typename Kokkos::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> CrsGraph2;
+        typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> CrsGraph2;
       typedef Map<LocalOrdinal, GlobalOrdinal, Node2> Map2;
       const char tfecfFuncName[] = "clone()";
 
@@ -1429,7 +1429,7 @@ namespace Tpetra {
     /// is necessary in that case for sparse matrix-vector multiply.
     RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > exporter_;
 
-    // local data, stored in a Kokkos::CrsGraph. only initialized after fillComplete()
+    // local data, stored in a KokkosClassic::CrsGraph. only initialized after fillComplete()
     RCP<local_graph_type> lclGraph_;
 
     // Local and Global Counts

@@ -95,8 +95,8 @@ namespace Tpetra {
 	    class MatScalar = Scalar, 
 	    class LocalOrdinal = int, 
 	    class GlobalOrdinal = LocalOrdinal, 
-	    class Node = Kokkos::DefaultNode::DefaultNodeType, 
-	    class LocalMatOps = typename Kokkos::DefaultKernels<MatScalar,LocalOrdinal,Node>::SparseOps>
+	    class Node = KokkosClassic::DefaultNode::DefaultNodeType, 
+	    class LocalMatOps = typename KokkosClassic::DefaultKernels<MatScalar,LocalOrdinal,Node>::SparseOps>
   class CrsMatrixSolveOp : public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
   public:
     //! @name Constructor and destructor

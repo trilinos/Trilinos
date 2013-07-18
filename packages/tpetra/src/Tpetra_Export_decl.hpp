@@ -120,7 +120,7 @@ namespace Tpetra {
   ///
   template <class LocalOrdinal,
             class GlobalOrdinal = LocalOrdinal,
-            class Node = Kokkos::DefaultNode::DefaultNodeType>
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class Export: public Teuchos::Describable {
       friend class Import<LocalOrdinal,GlobalOrdinal,Node>;
   public:

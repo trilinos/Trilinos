@@ -61,13 +61,13 @@ namespace Tpetra {
 template<class Scalar,class Node>
 void fill_device_ArrayRCP(Teuchos::RCP<Node>& node, Teuchos::ArrayRCP<Scalar>& ptr, Scalar value)
 {
-  Kokkos::ReadyBufferHelper<Node> rbh(node);
-  Kokkos::InitOp<Scalar> wdp;
+  KokkosClassic::ReadyBufferHelper<Node> rbh(node);
+  KokkosClassic::InitOp<Scalar> wdp;
   wdp.alpha = value;
   rbh.begin();
   wdp.x = rbh.addNonConstBuffer(ptr);
   rbh.end();
-  node->template parallel_for<Kokkos::InitOp<Scalar> >(0, ptr.size(), wdp);
+  node->template parallel_for<KokkosClassic::InitOp<Scalar> >(0, ptr.size(), wdp);
 }
 
 //-------------------------------------------------------------------
@@ -173,8 +173,8 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::multiply(const Mu
   TEUCHOS_TEST_FOR_EXCEPTION(!isFillComplete(), std::runtime_error,
     "Tpetra::VbrMatrix::multiply ERROR, multiply may only be called after fillComplete has been called.");
 
-  const Kokkos::MultiVector<Scalar,Node> *lclX = &X.getLocalMV();
-  Kokkos::MultiVector<Scalar,Node>        *lclY = &Y.getLocalMVNonConst();
+  const KokkosClassic::MultiVector<Scalar,Node> *lclX = &X.getLocalMV();
+  KokkosClassic::MultiVector<Scalar,Node>        *lclY = &Y.getLocalMVNonConst();
 
   lclMatOps_.template multiply<Scalar,Scalar>(trans,alpha,*lclX,beta,*lclY);
 }
@@ -194,8 +194,8 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::solve(const Multi
   TEUCHOS_TEST_FOR_EXCEPTION(constBlkGraph_->isUpperTriangular()==false && constBlkGraph_->isLowerTriangular()==false, std::runtime_error,
     "Tpetra::VbrMatrix::solve ERROR, matrix must be either upper or lower triangular.");
 
-  const Kokkos::MultiVector<RangeScalar,Node> *lclY = &Y.getLocalMV();
-  Kokkos::MultiVector<DomainScalar,Node>      *lclX = &X.getLocalMVNonConst();
+  const KokkosClassic::MultiVector<RangeScalar,Node> *lclY = &Y.getLocalMV();
+  KokkosClassic::MultiVector<DomainScalar,Node>      *lclX = &X.getLocalMVNonConst();
 
   Teuchos::EUplo triang = constBlkGraph_->isUpperTriangular() ? Teuchos::UPPER_TRI : Teuchos::LOWER_TRI;
   Teuchos::EDiag diag = (constBlkGraph_->getNodeNumBlockDiags() < constBlkGraph_->getNodeNumBlockRows()) ? Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG;
@@ -553,7 +553,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalBlockEntr
   const LocalOrdinal blkSize = numPtRows*numPtCols;
   Host_View_LO indx = node->template viewBuffer<LocalOrdinal>(1,pbuf_indx_+bptr[localBlockRow]+(it-bindx_beg));
   const LocalOrdinal offset = indx[0];
-  blockEntry = node->template viewBufferNonConst<Scalar>(Kokkos::ReadWrite, blkSize, pbuf_values1D_ + offset);
+  blockEntry = node->template viewBufferNonConst<Scalar>(KokkosClassic::ReadWrite, blkSize, pbuf_values1D_ + offset);
 }
 
 //-------------------------------------------------------------------
@@ -1192,8 +1192,8 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::optimizeStorage()
   pbuf_indx_ = node->template allocBuffer<LocalOrdinal>(num_block_nonzeros+1);
   pbuf_values1D_ = node->template allocBuffer<Scalar>(num_point_entries);
 
-  Teuchos::ArrayRCP<LocalOrdinal> view_indx = node->template viewBufferNonConst<LocalOrdinal>(Kokkos::WriteOnly, num_block_nonzeros+1, pbuf_indx_);
-  Teuchos::ArrayRCP<Scalar> view_values1D = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly, num_point_entries, pbuf_values1D_);
+  Teuchos::ArrayRCP<LocalOrdinal> view_indx = node->template viewBufferNonConst<LocalOrdinal>(KokkosClassic::WriteOnly, num_block_nonzeros+1, pbuf_indx_);
+  Teuchos::ArrayRCP<Scalar> view_values1D = node->template viewBufferNonConst<Scalar>(KokkosClassic::WriteOnly, num_point_entries, pbuf_values1D_);
 
   bool have_2D_data = data_2D_->size() > 0;
   Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();

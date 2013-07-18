@@ -3047,16 +3047,16 @@ namespace Tpetra {
 
     // Translate from global to local sweep direction.
     // While doing this, validate the input.
-    Kokkos::ESweepDirection localDirection;
+    KokkosClassic::ESweepDirection localDirection;
     if (direction == Forward) {
-      localDirection = Kokkos::Forward;
+      localDirection = KokkosClassic::Forward;
     }
     else if (direction == Backward) {
-      localDirection = Kokkos::Backward;
+      localDirection = KokkosClassic::Backward;
     }
     else if (direction == Symmetric) {
       // We'll control local sweep direction manually.
-      localDirection = Kokkos::Forward;
+      localDirection = KokkosClassic::Forward;
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
@@ -3236,7 +3236,7 @@ namespace Tpetra {
       } else { // direction == Symmetric
         this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
                                                  dampingFactor,
-                                                 Kokkos::Forward);
+                                                 KokkosClassic::Forward);
         // mfh 18 Mar 2013: Aztec's implementation of "symmetric
         // Gauss-Seidel" does _not_ do an Import between the forward
         // and backward sweeps.  This makes sense, because Aztec
@@ -3251,7 +3251,7 @@ namespace Tpetra {
         }
         this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
                                                  dampingFactor,
-                                                 Kokkos::Backward);
+                                                 KokkosClassic::Backward);
       }
     }
 
@@ -3293,16 +3293,16 @@ namespace Tpetra {
 
     // Translate from global to local sweep direction.
     // While doing this, validate the input.
-    Kokkos::ESweepDirection localDirection;
+    KokkosClassic::ESweepDirection localDirection;
     if (direction == Forward) {
-      localDirection = Kokkos::Forward;
+      localDirection = KokkosClassic::Forward;
     }
     else if (direction == Backward) {
-      localDirection = Kokkos::Backward;
+      localDirection = KokkosClassic::Backward;
     }
     else if (direction == Symmetric) {
       // We'll control local sweep direction manually.
-      localDirection = Kokkos::Forward;
+      localDirection = KokkosClassic::Forward;
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
@@ -3518,7 +3518,7 @@ namespace Tpetra {
       } else { // direction == Symmetric
         this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
                                                  dampingFactor,
-                                                 Kokkos::Forward);
+                                                 KokkosClassic::Forward);
         // mfh 18 Mar 2013: Aztec's implementation of "symmetric
         // Gauss-Seidel" does _not_ do an Import between the forward
         // and backward sweeps.  This makes symmetric Gauss-Seidel a
@@ -3526,7 +3526,7 @@ namespace Tpetra {
         // imitate Aztec's behavior here.
         this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
                                                  dampingFactor,
-                                                 Kokkos::Backward);
+                                                 KokkosClassic::Backward);
       }
     }
 
@@ -3552,8 +3552,8 @@ namespace Tpetra {
     const char tfecfFuncName[] = "localMultiply()";
 #endif // HAVE_TPETRA_DEBUG
     typedef Teuchos::ScalarTraits<RangeScalar> RST;
-    const Kokkos::MultiVector<DomainScalar,Node> *lclX = &X.getLocalMV();
-    Kokkos::MultiVector<RangeScalar,Node>        *lclY = &Y.getLocalMVNonConst();
+    const KokkosClassic::MultiVector<DomainScalar,Node> *lclX = &X.getLocalMV();
+    KokkosClassic::MultiVector<RangeScalar,Node>        *lclY = &Y.getLocalMVNonConst();
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       mode == NO_TRANS && X.getMap() != getColMap() && *X.getMap() != *getColMap(),
@@ -3602,11 +3602,11 @@ namespace Tpetra {
                     MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
                     const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
                     const RangeScalar& dampingFactor,
-                    const Kokkos::ESweepDirection direction) const
+                    const KokkosClassic::ESweepDirection direction) const
   {
-    Kokkos::MultiVector<DomainScalar,Node>& x = X.getLocalMVNonConst ();
-    const Kokkos::MultiVector<RangeScalar,Node>& b = B.getLocalMV ();
-    const Kokkos::MultiVector<RangeScalar,Node>& d = D.getLocalMV ();
+    KokkosClassic::MultiVector<DomainScalar,Node>& x = X.getLocalMVNonConst ();
+    const KokkosClassic::MultiVector<RangeScalar,Node>& b = B.getLocalMV ();
+    const KokkosClassic::MultiVector<RangeScalar,Node>& d = D.getLocalMV ();
 
     lclMatOps_->template gaussSeidel<DomainScalar, RangeScalar> (b, x, d, dampingFactor, direction);
   }
@@ -3626,8 +3626,8 @@ namespace Tpetra {
     const char tfecfFuncName[] = "localSolve()";
 #endif // HAVE_TPETRA_DEBUG
 
-    const Kokkos::MultiVector<RangeScalar,Node> *lclY = &Y.getLocalMV();
-    Kokkos::MultiVector<DomainScalar,Node>      *lclX = &X.getLocalMVNonConst();
+    const KokkosClassic::MultiVector<RangeScalar,Node> *lclY = &Y.getLocalMV();
+    KokkosClassic::MultiVector<DomainScalar,Node>      *lclX = &X.getLocalMVNonConst();
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!isFillComplete(),                                              std::runtime_error, " until fillComplete() has been called.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(X.getNumVectors() != Y.getNumVectors(),                         std::runtime_error, ": X and Y must have the same number of vectors.");

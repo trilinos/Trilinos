@@ -195,8 +195,8 @@ namespace Tpetra {
   template <class Scalar,
             class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node          = Kokkos::DefaultNode::DefaultNodeType,
-            class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps >
+            class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
+            class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps >
   class CrsMatrix : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
                     public DistObject<char, LocalOrdinal,GlobalOrdinal,Node> {
   public:
@@ -398,7 +398,7 @@ namespace Tpetra {
     ///   those of the map being cloned, if they exist. Otherwise, the
     ///   row Map is used.
     template <class Node2>
-    RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, typename Kokkos::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> >
+    RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> >
     clone (const RCP<Node2> &node2, const RCP<ParameterList> &params = null)
     {
       const char tfecfFuncName[] = "clone";
@@ -421,7 +421,7 @@ namespace Tpetra {
 	": You requested that the returned clone have local indices, but the "
 	"the source matrix does not have a column Map yet.");
 
-      typedef typename Kokkos::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps LocalMatOps2;
+      typedef typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps LocalMatOps2;
       typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> CrsMatrix2;
       typedef Map<LocalOrdinal, GlobalOrdinal, Node2> Map2;
       RCP<const Map2> clonedRowMap = this->getRowMap ()->template clone (node2);
@@ -1286,8 +1286,8 @@ namespace Tpetra {
     /// \param D [in] Inverse of diagonal entries of the matrix A.
     /// \param omega [in] SOR damping factor.  omega = 1 results in
     ///   Gauss-Seidel.
-    /// \param direction [in] Sweep direction: Kokkos::Forward or
-    ///   Kokkos::Backward.  ("Symmetric" requires interprocess
+    /// \param direction [in] Sweep direction: KokkosClassic::Forward or
+    ///   KokkosClassic::Backward.  ("Symmetric" requires interprocess
     ///   communication (before each sweep), which is not part of the
     ///   local kernel.)
     template <class DomainScalar, class RangeScalar>
@@ -1296,7 +1296,7 @@ namespace Tpetra {
                       MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
                       const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
                       const RangeScalar& dampingFactor,
-                      const Kokkos::ESweepDirection direction) const;
+                      const KokkosClassic::ESweepDirection direction) const;
 
     /// \brief Solves a linear system when the underlying matrix is triangular.
     ///
