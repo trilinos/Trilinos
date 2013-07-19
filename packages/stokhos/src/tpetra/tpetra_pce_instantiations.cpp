@@ -83,48 +83,48 @@ typedef int GlobalOrdinal;
 
 namespace Tpetra {
 
-  TPETRA_MULTIVECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::SerialNode)
-  TPETRA_VECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::SerialNode)
-  TPETRA_CRSMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::SerialNode)
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(Scalar,Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::SerialNode)
-  TPETRA_MATRIXMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::SerialNode)
-  TPETRA_ROWMATRIXTRANSPOSE_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::SerialNode)
+  TPETRA_MULTIVECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::SerialNode)
+  TPETRA_VECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::SerialNode)
+  TPETRA_CRSMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::SerialNode)
+  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(Scalar,Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::SerialNode)
+  TPETRA_MATRIXMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::SerialNode)
+  TPETRA_ROWMATRIXTRANSPOSE_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::SerialNode)
 
 #if defined(HAVE_KOKKOSCLASSIC_TBB)
-  TPETRA_MULTIVECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::TBBNode)
-  TPETRA_VECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::TBBNode)
-  TPETRA_CRSMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::TBBNode)
-TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(Scalar,Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::TBBNode)
-  TPETRA_MATRIXMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::TBBNode)
-  TPETRA_ROWMATRIXTRANSPOSE_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::TBBNode)
+  TPETRA_MULTIVECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::TBBNode)
+  TPETRA_VECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::TBBNode)
+  TPETRA_CRSMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::TBBNode)
+TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(Scalar,Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::TBBNode)
+  TPETRA_MATRIXMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::TBBNode)
+  TPETRA_ROWMATRIXTRANSPOSE_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::TBBNode)
 #endif
 
 #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-  TPETRA_MULTIVECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::TPINode)
-  TPETRA_VECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::TPINode)
-  TPETRA_CRSMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::TPINode)
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(Scalar,Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::TPINode)
-  TPETRA_MATRIXMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::TPINode)
-  TPETRA_ROWMATRIXTRANSPOSE_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::TPINode)
+  TPETRA_MULTIVECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::TPINode)
+  TPETRA_VECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::TPINode)
+  TPETRA_CRSMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::TPINode)
+  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(Scalar,Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::TPINode)
+  TPETRA_MATRIXMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::TPINode)
+  TPETRA_ROWMATRIXTRANSPOSE_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::TPINode)
 #endif
 
 #if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-  TPETRA_MULTIVECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::OpenMPNode)
-  TPETRA_VECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::OpenMPNode)
-  TPETRA_CRSMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::OpenMPNode)
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(Scalar,Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::OpenMPNode)
-  TPETRA_MATRIXMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::OpenMPNode)
-  TPETRA_ROWMATRIXTRANSPOSE_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::OpenMPNode)
+  TPETRA_MULTIVECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::OpenMPNode)
+  TPETRA_VECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::OpenMPNode)
+  TPETRA_CRSMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::OpenMPNode)
+  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(Scalar,Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::OpenMPNode)
+  TPETRA_MATRIXMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::OpenMPNode)
+  TPETRA_ROWMATRIXTRANSPOSE_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::OpenMPNode)
 #endif
 
   // Not sure if we support thrust yet
 // #if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE)
-//   TPETRA_MULTIVECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::ThrustGPUNode)
-//   TPETRA_VECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::ThrustGPUNode)
-//   TPETRA_CRSMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::ThrustGPUNode)
-  // TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(Scalar,Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::ThrustGPUNode)
-  // TPETRA_MATRIXMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::ThrustGPUNode)
-  // TPETRA_ROWMATRIXTRANSPOSE_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::ThrustGPUNode)
+//   TPETRA_MULTIVECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::ThrustGPUNode)
+//   TPETRA_VECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::ThrustGPUNode)
+//   TPETRA_CRSMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::ThrustGPUNode)
+  // TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(Scalar,Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::ThrustGPUNode)
+  // TPETRA_MATRIXMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::ThrustGPUNode)
+  // TPETRA_ROWMATRIXTRANSPOSE_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::ThrustGPUNode)
 // #endif
   
 }
