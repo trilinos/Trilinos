@@ -98,7 +98,7 @@ namespace Thyra {
     typedef Thyra::MultiVectorBase<Scalar> MV;
     typedef Scalar scalar_type;
     typedef int ordinal_type; // MultiVectorBase really does use int for this
-    typedef Kokkos::SerialNode node_type; // FIXME (mfh 18 Jun 2013) Would be better to defer to the MV subclass
+    typedef KokkosClassic::SerialNode node_type; // FIXME (mfh 18 Jun 2013) Would be better to defer to the MV subclass
     typedef Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> dense_matrix_type;
     typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
@@ -194,7 +194,7 @@ namespace Thyra {
                     dense_matrix_type& R,
                     const bool forceNonnegativeDiagonal=false)
     {
-      typedef Kokkos::MultiVector<scalar_type, node_type> KMV;
+      typedef KokkosClassic::MultiVector<scalar_type, node_type> KMV;
 
       prepareTsqr (Q); // Finish initializing TSQR.
       KMV A_view = getNonConstView (A);
@@ -238,7 +238,7 @@ namespace Thyra {
                 dense_matrix_type& R,
                 const magnitude_type& tol)
     {
-      typedef Kokkos::MultiVector<scalar_type, node_type> KMV;
+      typedef KokkosClassic::MultiVector<scalar_type, node_type> KMV;
 
       prepareTsqr (Q); // Finish initializing TSQR.
 
@@ -415,7 +415,7 @@ namespace Thyra {
     /// \brief Extract a nonconstant view of X's data.
     ///
     /// TSQR represents the local (to each MPI process) part of a
-    /// multivector as a Kokkos::MultiVector (KMV), which gives a
+    /// multivector as a KokkosClassic::MultiVector (KMV), which gives a
     /// nonconstant view of the original multivector's data.  This
     /// class method tells TSQR how to get the KMV from the input
     /// multivector.  The KMV is not a persistent view of the data;
@@ -424,18 +424,18 @@ namespace Thyra {
     /// \warning TSQR does not currently support multivectors with
     ///   nonconstant stride.  If A has nonconstant stride, this
     ///   method will throw an exception.
-    Kokkos::MultiVector<scalar_type, node_type>
+    KokkosClassic::MultiVector<scalar_type, node_type>
     getNonConstView (MV& X)
     {
       // TODO (mfh 18 Jun 2013) Check whether X is constant stride.
       // TODO (mfh 18 Jun 2013) Extract a view of X's data.
 
-      return Kokkos::MultiVector<scalar_type, node_type> (node_);
+      return KokkosClassic::MultiVector<scalar_type, node_type> (node_);
 
       // TODO (mfh 18 Jun 2013) Here is the start of code to extract a
       // nonconstant view of X's data.
 
-      // Kokkos::MultiVector<scalar_type, node_type> kmv (node);
+      // KokkosClassic::MultiVector<scalar_type, node_type> kmv (node);
       // const size_t numRows = ???;
       // const size_t numCols = ???;
       // const size_t stride = ???;
