@@ -127,11 +127,11 @@ namespace Galeri {
 
     //! Map creation function (for Xpetra::Map with UnderlyingLib parameter)
     template <>
-    RCP< ::Xpetra::Map<int, int, Kokkos::DefaultNode::DefaultNodeType> > CreateMap<int, int, Kokkos::DefaultNode::DefaultNodeType>(::Xpetra::UnderlyingLib lib, const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> > & comm, Teuchos::ParameterList & list) {
+    RCP< ::Xpetra::Map<int, int, KokkosClassic::DefaultNode::DefaultNodeType> > CreateMap<int, int, KokkosClassic::DefaultNode::DefaultNodeType>(::Xpetra::UnderlyingLib lib, const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> > & comm, Teuchos::ParameterList & list) {
 
       typedef int LocalOrdinal;
       typedef int GlobalOrdinal;
-      typedef Kokkos::DefaultNode::DefaultNodeType Node;
+      typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == ::Xpetra::UseTpetra)
