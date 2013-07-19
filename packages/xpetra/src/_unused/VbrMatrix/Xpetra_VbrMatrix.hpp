@@ -96,8 +96,8 @@ non-optimized-storage state.
 template <class Scalar,
           class LocalOrdinal  = int,
           class GlobalOrdinal = LocalOrdinal,
-          class Node          = Kokkos::DefaultNode::DefaultNodeType,
-          class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::BlockSparseOps >
+          class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
+          class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::BlockSparseOps >
 class VbrMatrix { //: public Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
  public:
 

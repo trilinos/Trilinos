@@ -122,8 +122,8 @@ namespace MueLu {
   template <class Scalar,
             class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node          = Kokkos::DefaultNode::DefaultNodeType,
-            class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
+            class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
+            class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
   class Utils {
 #undef MUELU_UTILITIES_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -358,8 +358,8 @@ namespace MueLu {
     return Teuchos::null;
   }
 
-  typedef Kokkos::DefaultNode::DefaultNodeType KDNT;
-  typedef Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps KDKSO;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType KDNT;
+  typedef KokkosClassic::DefaultKernels<void,int,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps KDKSO;
 
   //specialization for the case of ScalarType=double and LocalOrdinal=GlobalOrdinal=int
   template<>
@@ -388,8 +388,8 @@ namespace MueLu {
   template <class Scalar,
             class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node          = Kokkos::DefaultNode::DefaultNodeType,
-            class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
+            class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
+            class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
   class Utils2 {
 
 #include "MueLu_UseShortNames.hpp"
@@ -447,8 +447,8 @@ namespace MueLu {
     typedef double                                              SC;
     typedef int                                                 LO;
     typedef int                                                 GO;
-    typedef Kokkos::DefaultNode::DefaultNodeType                NO;
-    typedef Kokkos::DefaultKernels<double,int,NO>::SparseOps    LMO;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType                NO;
+    typedef KokkosClassic::DefaultKernels<double,int,NO>::SparseOps    LMO;
     typedef Xpetra::Map<int,int,NO>                             Map;
     typedef Xpetra::Matrix<double,int,int,NO,LMO>               Matrix;
     typedef Xpetra::MultiVector<double,int,int,NO>              MultiVector;

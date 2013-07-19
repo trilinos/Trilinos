@@ -48,13 +48,13 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   class SerialNode {
     public:
       SerialNode(Teuchos::ParameterList &pl) {}
   };
 
-} // end of Kokkos namespace
+} // end of KokkosClassic namespace
 
 #endif

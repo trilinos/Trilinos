@@ -80,8 +80,8 @@ namespace Xpetra {
 template <class Scalar,
           class LocalOrdinal  = int,
           class GlobalOrdinal = LocalOrdinal,
-          class Node          = Kokkos::DefaultNode::DefaultNodeType,
-          class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
+          class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
+          class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
 class CrsMatrixWrap : public Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 
   typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;

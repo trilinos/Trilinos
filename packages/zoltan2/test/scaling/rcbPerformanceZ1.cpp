@@ -99,7 +99,7 @@ typedef int lno_t;
 typedef long gno_t;
 typedef double scalar_t;
 */
-typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
 
 typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
 typedef Tpetra::Map<lno_t, gno_t, node_t> tMap_t;

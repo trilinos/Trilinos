@@ -57,8 +57,8 @@
 typedef std::complex<double> Scalar;
 typedef int LocalOrdinal;
 typedef int GlobalOrdinal;
-typedef Kokkos::DefaultNode::DefaultNodeType Node;
-typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
+typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 

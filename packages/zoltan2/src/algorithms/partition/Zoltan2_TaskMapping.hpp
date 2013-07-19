@@ -1864,7 +1864,7 @@ void coordinateTaskMapperInterface(
     const Environment *envConst_ = new Environment();
     //RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
 
-    typedef Tpetra::MultiVector<tcoord_t, procId_t,procId_t, Kokkos::DefaultNode::DefaultNodeType> tMVector_t;
+    typedef Tpetra::MultiVector<tcoord_t, procId_t,procId_t, KokkosClassic::DefaultNode::DefaultNodeType> tMVector_t;
 
 
 

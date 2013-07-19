@@ -62,7 +62,7 @@ namespace MueLu {
     capabilities are used by the SmootherFactory.
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class AdvSmootherPrototype : public SmootherPrototypex<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 #undef MUELU_ADVSMOOTHERPROTOTYPE_HPP
 #include "MueLu_UseShortNames.hpp"

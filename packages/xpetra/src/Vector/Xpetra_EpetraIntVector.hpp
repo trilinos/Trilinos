@@ -66,7 +66,7 @@ namespace Xpetra {
     typedef int Scalar;
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef Kokkos::DefaultNode::DefaultNodeType Node;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
   public:
 
@@ -160,22 +160,22 @@ namespace Xpetra {
     //! @name Mathematical methods
     //@{
     //! Computes dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i])
-    void dot(const MultiVector<int,int,int,Kokkos::DefaultNode::DefaultNodeType> &A, const Teuchos::ArrayView<int> &dots) const;
+    void dot(const MultiVector<int,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &A, const Teuchos::ArrayView<int> &dots) const;
 
     //! Puts element-wise absolute values of input Multi-vector in target: A = abs(this)
-    void abs(const MultiVector<int,int,int,Kokkos::DefaultNode::DefaultNodeType> &A);
+    void abs(const MultiVector<int,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &A);
 
     //! Puts element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
-    void reciprocal(const MultiVector<int,int,int,Kokkos::DefaultNode::DefaultNodeType> &A);
+    void reciprocal(const MultiVector<int,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &A);
 
     //! Scale the current values of a multi-vector, this = alpha*this.
     void scale(const int &alpha);
 
     //! Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
-    void update(const int &alpha, const MultiVector<int,int,int,Kokkos::DefaultNode::DefaultNodeType> &A, const int &beta);
+    void update(const int &alpha, const MultiVector<int,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &A, const int &beta);
 
     //! Update multi-vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
-    void update(const int &alpha, const MultiVector<int,int,int,Kokkos::DefaultNode::DefaultNodeType> &A, const int &beta, const MultiVector<int,int,int,Kokkos::DefaultNode::DefaultNodeType> &B, const int &gamma);
+    void update(const int &alpha, const MultiVector<int,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &A, const int &beta, const MultiVector<int,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &B, const int &gamma);
 
     //! Compute 1-norm of each vector in multi-vector.
     void norm1(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const;
@@ -187,7 +187,7 @@ namespace Xpetra {
     void normInf(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const;
 
     //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
-    void normWeighted(const MultiVector<int,int,int,Kokkos::DefaultNode::DefaultNodeType> &weights, const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const;
+    void normWeighted(const MultiVector<int,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &weights, const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const;
 
     //! Compute mean (average) value of each vector in multi-vector.
     void meanValue(const Teuchos::ArrayView<int> &means) const;
@@ -196,10 +196,10 @@ namespace Xpetra {
     void maxValue(const Teuchos::ArrayView<int> &maxs) const;
 
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
-    void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const int &alpha, const MultiVector<int,int,int,Kokkos::DefaultNode::DefaultNodeType> &A, const MultiVector<int,int,int,Kokkos::DefaultNode::DefaultNodeType> &B, const int &beta);
+    void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const int &alpha, const MultiVector<int,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &A, const MultiVector<int,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &B, const int &beta);
 
     //! Element-wise multiply of a Vector A with a EpetraMultiVector B.
-    void elementWiseMultiply(int scalarAB, const Vector<int,int,int,Kokkos::DefaultNode::DefaultNodeType> &A, const MultiVector<int,int,int,Kokkos::DefaultNode::DefaultNodeType> &B, int scalarThis);
+    void elementWiseMultiply(int scalarAB, const Vector<int,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &A, const MultiVector<int,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &B, int scalarThis);
     //@}
 
     //! @name Post-construction modification routines

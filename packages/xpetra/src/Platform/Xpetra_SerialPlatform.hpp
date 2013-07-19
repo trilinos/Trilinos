@@ -60,7 +60,7 @@ namespace Xpetra {
     The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal
     type, if omitted, defaults to the \c LocalOrdinal type.
   */
-  template<class Node=Kokkos::DefaultNode::DefaultNodeType>
+  template<class Node=KokkosClassic::DefaultNode::DefaultNodeType>
   class SerialPlatform : public Teuchos::Describable {
   public:
     //! Typedef indicating the node type over which the platform is templated. This default to the Kokkos default node type.

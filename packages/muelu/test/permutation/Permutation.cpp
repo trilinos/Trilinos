@@ -81,8 +81,8 @@ typedef int    GlobalOrdinal;
 typedef int GlobalOrdinal;
 #warning Teuchos support for long long not enabled.
 #endif
-typedef Kokkos::DefaultNode::DefaultNodeType Node;
-typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
+typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 
 #include "MueLu_UseShortNames.hpp"
 #include <unistd.h>

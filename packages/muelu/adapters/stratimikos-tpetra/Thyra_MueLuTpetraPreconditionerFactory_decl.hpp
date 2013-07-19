@@ -56,7 +56,7 @@ namespace Thyra {
  *
  * ToDo: Finish documentation!
  */
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
 class MueLuTpetraPreconditionerFactory : public PreconditionerFactoryBase<Scalar> {
 public:
 
