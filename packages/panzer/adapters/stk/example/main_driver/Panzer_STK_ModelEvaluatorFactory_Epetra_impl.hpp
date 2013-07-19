@@ -1146,8 +1146,8 @@ namespace panzer_stk {
                 callback->preRequest(Teko::RequestMesg(Teuchos::rcp(new Teuchos::ParameterList())));
 
 
-             typedef Tpetra::Map<int,long,Kokkos::DefaultNode::DefaultNodeType> Map;
-             typedef Tpetra::MultiVector<double,int,long,Kokkos::DefaultNode::DefaultNodeType> MV;
+             typedef Tpetra::Map<int,long,KokkosClassic::DefaultNode::DefaultNodeType> Map;
+             typedef Tpetra::MultiVector<double,int,long,KokkosClassic::DefaultNode::DefaultNodeType> MV;
    
              // extract coordinate vectors and modify strat_params to include coordinate vectors
              unsigned dim = mesh->getDimension();
