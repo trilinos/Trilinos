@@ -1,5 +1,6 @@
 #include <iostream>
 #include <typeinfo>
+#include <stdexcept>
 
 #include "GeometryKernelOpenNURBS.hpp"
 #include <string>
@@ -59,6 +60,7 @@ bool GeometryKernelOpenNURBS::read_file
   FILE* archive_fp = ON::OpenFile( file_name.c_str(), "rb");
   if ( !archive_fp )
   {
+    throw std::runtime_error("File not found, aborting.... file = " + file_name);
     return false;
   }
 
