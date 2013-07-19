@@ -68,6 +68,9 @@ namespace stk {
 
     typedef mesh::Field<double>                          ScalarFieldType ;
     typedef mesh::Field<double, stk::mesh::Cartesian>    VectorFieldType ;
+    typedef mesh::Field<double, stk::mesh::Cartesian, stk::mesh::Cartesian>    TensorFieldType ;
+    typedef mesh::Field<double, stk::mesh::Cartesian, stk::mesh::Cartesian, stk::mesh::Cartesian>    QPTensorFieldType ;
+
 
     static const unsigned EntityRankEnd = 6;
 
