@@ -176,6 +176,12 @@ public:
 #ifdef HAVE_IFPACK_SUPERLU
   ,SILU
 #endif
+#ifdef HAVE_IFPACK_SUPPORTGRAPH
+    ,MSF_AMESOS
+    ,MSF_AMESOS_STAND_ALONE
+    ,MSF_IC
+    ,MSF_IC_STAND_ALONE
+#endif
     ,CHEBYSHEV
     ,POLYNOMIAL
     ,KRYLOV
@@ -201,6 +207,9 @@ public:
 #endif
 #ifdef HAVE_IFPACK_SUPERLU
     +2
+#endif
+#ifdef HAVE_IFPACK_SUPPORTGRAPH
+    +4
 #endif
     +5
     ;

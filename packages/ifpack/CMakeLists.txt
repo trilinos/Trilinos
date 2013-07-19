@@ -50,6 +50,10 @@ IF(${PACKAGE_NAME}_ENABLE_SPARSKIT)
   SET(HAVE_IFPACK_SPARSKIT ON )
 ENDIF()
 
+IF(${PACKAGE_NAME}_ENABLE_Boost)
+  SET(HAVE_IFPACK_SUPPORTGRAPH ON )
+ENDIF()
+
 # "Experimental" code lives in Ifpack, but is not quite ready for use
 # by a general audience.  You have to enable the CMake option below in
 # order to install experimental headers, include experimental source

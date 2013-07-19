@@ -534,6 +534,8 @@ int Ifpack_SupportGraph<T>::findall(std::vector<int>& tree, int root, int *table
 	  findall(tree, child, table, children,num_verts);
 	}
     }
+
+  return 0;
 }
 //============================================================================== 
 template<typename T>
@@ -777,10 +779,7 @@ int Ifpack_SupportGraph<T>::AMST()
 	  upper = TreeNz[i] - 2;
 	  Indices[TreeNz[i]-1] = p[i];
 
-	  if(!edge(i,p[i],gtemp).second)
-	    {
-	      std::cout << "WTFFFFFF" << std::endl;
-	    }
+
 	  Values[TreeNz[i]-1] = get(weightmap, edge(i, p[i], gtemp).first) + shift;
 	}
 
@@ -798,7 +797,7 @@ int Ifpack_SupportGraph<T>::AMST()
       int s = 0;
       for(int j = TreeNz[i] + 1; j < TotalNz[i]; j++)
 	{
-	      std::cout << "extra" << std::endl;
+
 	      Indices[j] = ExtraIndices[i][s];
 	      Values[j] = ExtraValues[i][s];
 
@@ -933,6 +932,7 @@ int Ifpack_SupportGraph<T>::FindSupport()
   int *l = new int[num_verts];
   for(int i = 0; i < num_verts; i++)
     {
+      Indices[i][0] = i;
       l[i] = 1;
     }
   
@@ -1168,6 +1168,8 @@ Print(std::ostream& os) const
   os << "Now calling the underlying preconditioner's print()" << std::endl;
 
   Inverse_->Print(os);
+
+  return os;
 }
 //==============================================================================
 template<typename T>
