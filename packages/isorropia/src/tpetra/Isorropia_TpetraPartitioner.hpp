@@ -72,7 +72,7 @@ namespace Tpetra {
 
 
 
-template <class Node=Kokkos::DefaultNode::DefaultNodeType>
+template <class Node=KokkosClassic::DefaultNode::DefaultNodeType>
 class Partitioner : public Isorropia::Partitioner, public Isorropia::Tpetra::Operator<Node>  {
 public:
   
