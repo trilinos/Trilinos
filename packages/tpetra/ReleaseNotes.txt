@@ -2,6 +2,12 @@
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
+Current (Trilinos 11.5)
+------------------------------
+
+* Accepted non-backwards compatible change to KokkosClassic, in which
+  that subpackage changed its namespace from Kokkos to KokkosClassic.
+
 Trilinos 11.4:
 --------------
 
