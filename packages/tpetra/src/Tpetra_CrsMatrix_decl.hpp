@@ -463,20 +463,27 @@ namespace Tpetra {
 
       RCP<ParameterList> matrixparams = sublist(params,"CrsMatrix");
       if (useLocalIndices) {
-        RCP<const Map2> clonedColMap = this->getColMap ()->template clone (node2);
+        RCP<const Map2> clonedColMap = 
+	  this->getColMap ()->template clone (node2);
         if (numEntries.is_null ()) {
-	  clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, clonedColMap, numEntriesForAll, pftype, matrixparams));
+	  clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, clonedColMap, 
+					      numEntriesForAll, pftype, 
+					      matrixparams));
 	}
         else {
-	  clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, clonedColMap, numEntries, pftype, matrixparams));
+	  clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, clonedColMap, 
+					      numEntries, pftype, 
+					      matrixparams));
 	}
       }
       else {
         if (numEntries.is_null ()) {
-	  clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, numEntriesForAll, pftype, matrixparams));
+	  clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, numEntriesForAll,
+					      pftype, matrixparams));
 	}
         else {
-	  clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, numEntries, pftype, matrixparams));
+	  clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, numEntries, pftype,
+					      matrixparams));
 	}
       }
       // done with these
@@ -484,7 +491,8 @@ namespace Tpetra {
       numEntriesForAll = 0;
 
       if (useLocalIndices) {
-        clonedMatrix->allocateValues (LocalIndices, CrsMatrix2::GraphNotYetAllocated);
+        clonedMatrix->allocateValues (LocalIndices, 
+				      CrsMatrix2::GraphNotYetAllocated);
         if (this->isLocallyIndexed ()) {
           ArrayView<const LocalOrdinal> linds;
           ArrayView<const Scalar>       vals;
@@ -503,27 +511,30 @@ namespace Tpetra {
           for (LocalOrdinal lrow = clonedRowMap->getMinLocalIndex ();
 	       lrow <= clonedRowMap->getMaxLocalIndex ();
 	       ++lrow) {
-	    size_t numEntries = this->getNumEntriesInLocalRow (lrow);
-	    if (numEntries > Teuchos::as<size_t> (linds.size ())) {
-	      linds.resize (numEntries);
+	    size_t theNumEntries = this->getNumEntriesInLocalRow (lrow);
+	    if (theNumEntries > Teuchos::as<size_t> (linds.size ())) {
+	      linds.resize (theNumEntries);
 	    }
-	    if (numEntries > Teuchos::as<size_t> (vals.size ())) {
-	      vals.resize (numEntries);
+	    if (theNumEntries > Teuchos::as<size_t> (vals.size ())) {
+	      vals.resize (theNumEntries);
 	    }
-            this->getLocalRowCopy (clonedRowMap->getGlobalElement (lrow), linds (), vals (), numEntries);
-            if (numEntries != 0) {
-	      clonedMatrix->insertLocalValues (lrow, linds (0, numEntries), vals (0, numEntries) );
+            this->getLocalRowCopy (clonedRowMap->getGlobalElement (lrow), 
+				   linds (), vals (), theNumEntries);
+            if (theNumEntries != 0) {
+	      clonedMatrix->insertLocalValues (lrow, linds (0, theNumEntries),
+					       vals (0, theNumEntries));
 	    }
           }
         }
       }
       else { // useGlobalIndices
-        clonedMatrix->allocateValues (GlobalIndices, CrsMatrix2::GraphNotYetAllocated);
+        clonedMatrix->allocateValues (GlobalIndices, 
+				      CrsMatrix2::GraphNotYetAllocated);
         if (this->isGloballyIndexed ()) {
           ArrayView<const GlobalOrdinal> ginds;
           ArrayView<const Scalar>         vals;
-          for (GlobalOrdinal grow =  clonedRowMap->getMinGlobalIndex();
-	       grow <= clonedRowMap->getMaxGlobalIndex();
+          for (GlobalOrdinal grow = clonedRowMap->getMinGlobalIndex ();
+	       grow <= clonedRowMap->getMaxGlobalIndex ();
 	       ++grow) {
             this->getGlobalRowView (grow, ginds, vals);
             if (ginds.size () > 0) {
@@ -537,16 +548,17 @@ namespace Tpetra {
           for (GlobalOrdinal grow = clonedRowMap->getMinGlobalIndex ();
 	       grow <= clonedRowMap->getMaxGlobalIndex ();
 	       ++grow) {
-	    size_t numEntries = this->getNumEntriesInGlobalRow (grow);
-	    if (numEntries > Teuchos::as<size_t> (ginds.size ())) {
-	      ginds.resize (numEntries);
+	    size_t theNumEntries = this->getNumEntriesInGlobalRow (grow);
+	    if (theNumEntries > Teuchos::as<size_t> (ginds.size ())) {
+	      ginds.resize (theNumEntries);
 	    }
-	    if (numEntries > Teuchos::as<size_t> (vals.size ())) {
-	      vals.resize (numEntries);
+	    if (theNumEntries > Teuchos::as<size_t> (vals.size ())) {
+	      vals.resize (theNumEntries);
 	    }
-	    this->getGlobalRowCopy (grow, ginds (), vals (), numEntries);
-	    if (numEntries != 0) {
-	      clonedMatrix->insertGlobalValues (grow, ginds (0, numEntries), vals (0, numEntries));
+	    this->getGlobalRowCopy (grow, ginds (), vals (), theNumEntries);
+	    if (theNumEntries != 0) {
+	      clonedMatrix->insertGlobalValues (grow, ginds (0, theNumEntries),
+						vals (0, theNumEntries));
 	    }
 	  }
         }
@@ -557,19 +569,22 @@ namespace Tpetra {
         try {
           RCP<const Map2> clonedRangeMap;
           RCP<const Map2> clonedDomainMap;
-          if (! this->getRangeMap ().is_null () && this->getRangeMap () != clonedRowMap) {
-            clonedRangeMap  = this->getRangeMap ()->template clone(node2);
+          if (! this->getRangeMap ().is_null () && 
+	      this->getRangeMap () != clonedRowMap) {
+            clonedRangeMap  = this->getRangeMap ()->template clone (node2);
           }
           else {
             clonedRangeMap = clonedRowMap;
           }
-          if (! this->getDomainMap ().is_null () && this->getDomainMap () != clonedRowMap) {
+          if (! this->getDomainMap ().is_null () && 
+	      this->getDomainMap () != clonedRowMap) {
             clonedDomainMap = this->getDomainMap ()->template clone (node2);
           }
           else {
             clonedDomainMap = clonedRowMap;
           }
-          clonedMatrix->fillComplete (clonedDomainMap, clonedRangeMap, fillparams);
+          clonedMatrix->fillComplete (clonedDomainMap, clonedRangeMap, 
+				      fillparams);
         }
         catch (std::exception &e) {
           const bool caughtExceptionOnClone = true;
@@ -708,15 +723,28 @@ namespace Tpetra {
                        const ArrayView<const LocalOrdinal> &cols,
                        const ArrayView<const Scalar> &vals);
 
-    //! \brief Replace matrix entries, using global IDs.
-    /** All index values must be in the global space.
-
-        \pre \c globalRow is a global row belonging to the matrix on this node.
-
-        \note If (globalRow,cols[i]) corresponds to an entry that is duplicated in this matrix row (likely because it was inserted more than once and fillComplete() has not been called in the interim), the behavior of this function is not defined. */
-    void replaceGlobalValues(GlobalOrdinal globalRow,
-                             const ArrayView<const GlobalOrdinal> &cols,
-                             const ArrayView<const Scalar>        &vals);
+    /// Replace one or more entries' values, using global indices.
+    ///
+    /// \param globalRow [in] Global index of the row in which to
+    ///   replace the entries.  This row <i>must</i> be owned by the
+    ///   calling process.
+    /// \param cols [in] Global indices of the columns in which to
+    ///   replace the entries.
+    /// \param vals [in] Values to use for replacing the entries.
+    ///
+    /// For all k in 0, ..., <tt>cols.size()-1</tt>, replace the value
+    /// at entry <tt>(globalRow, cols[k])</tt> of the matrix with
+    /// <tt>vals[k]</tt>.  That entry must exist in the matrix
+    /// already.
+    ///
+    /// If <tt>(globalRow, cols[k])</tt> corresponds to an entry that
+    /// is duplicated in this matrix row (likely because it was
+    /// inserted more than once and fillComplete() has not been called
+    /// in the interim), the behavior of this method is not defined.
+    void
+    replaceGlobalValues (GlobalOrdinal globalRow,
+			 const ArrayView<const GlobalOrdinal>& cols,
+			 const ArrayView<const Scalar>& vals);
 
     //! Replace matrix entries, using local IDs.
     /** All index values must be in the local space.
