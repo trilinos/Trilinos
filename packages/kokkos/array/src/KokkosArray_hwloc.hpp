@@ -62,6 +62,9 @@ namespace KokkosArray {
  */
 struct hwloc {
 
+  /** \brief  Query if hwloc is available */
+  static bool available();
+
   /** \brief  Query the core topology of ( NUMA x Core/NUMA ).
    *
    *  The topology is limited by the process binding,
@@ -95,6 +98,13 @@ struct hwloc {
   /** \brief  Bind the current thread to a core. */
   static bool bind_this_thread( const std::pair<unsigned,unsigned> );
 
+  /** \brief  Bind the current thread to one of the cores in the list.
+   *          Set that entry to (~0,~0) and return the index.
+   *          If binding fails return ~0.
+   */
+  static unsigned bind_this_thread( const unsigned               coordinate_count ,
+                                    std::pair<unsigned,unsigned> coordinate[] );
+
   /** \brief  Unbind the current thread back to the original process binding */
   static bool unbind_this_thread();
 
@@ -112,6 +122,11 @@ private:
 
 namespace KokkosArray {
 namespace Impl {
+
+void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
+                          const std::pair<unsigned,unsigned> core_use ,
+                          const std::pair<unsigned,unsigned> core_topo ,
+                                std::pair<unsigned,unsigned> thread_coord[] );
 
 void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
                           const std::pair<unsigned,unsigned> core_use ,

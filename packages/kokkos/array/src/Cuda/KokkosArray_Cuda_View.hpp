@@ -531,9 +531,7 @@ private:
   typename traits::shape_type           m_shape ;
   unsigned                              m_stride ;
   enum { m_stride_static = Impl::StaticStride<typename traits::shape_type,
-	                                          typename traits::array_layout,
-	                                          typename traits::device_type,
-	                                          traits::shape_type::rank_dynamic>::Stride};
+	                                          typename traits::array_layout >::Stride};
 
 public:
 

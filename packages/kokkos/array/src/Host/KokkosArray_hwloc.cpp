@@ -49,14 +49,61 @@
 namespace KokkosArray {
 namespace Impl {
 
+int host_thread_binding( const std::pair<unsigned,unsigned> gang_topo ,
+                               std::pair<unsigned,unsigned> thread_coord[] )
+{
+  const std::pair<unsigned,unsigned> current = hwloc::get_this_thread_coordinate();
+  const int thread_count = gang_topo.first * gang_topo.second ;
+
+  int i = 0 ;
+
+  // Match one of the requests:
+  for ( i = 0 ; i < thread_count && current != thread_coord[i] ; ++i );
+
+  if ( thread_count == i ) {
+    // Match the NUMA request:
+    for ( i = 0 ; i < thread_count && current.first != thread_coord[i].first ; ++i );
+  }
+
+  if ( thread_count == i ) {
+    // Match any unclaimed request:
+    for ( i = 0 ; i < thread_count && ~0u == thread_coord[i].first  ; ++i );
+  }
+
+  if ( i < thread_count ) {
+    if ( ! hwloc::bind_this_thread( thread_coord[i] ) ) i = thread_count ;
+  }
+
+  if ( i < thread_count ) {
+
+#if 0
+    if ( current != thread_coord[i] ) {
+      std::cout << "  host_thread_binding("
+                << gang_topo.first << "x" << gang_topo.second
+                << ") rebinding from ("
+                << current.first << ","
+                << current.second
+                << ") to ("
+                << thread_coord[i].first << ","
+                << thread_coord[i].second
+                << ")" << std::endl ;
+    }
+#endif
+
+    thread_coord[i].first  = ~0u ;
+    thread_coord[i].second = ~0u ;
+  }
+
+  return i < thread_count ? i : -1 ;
+}
+
+
 void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
                           const std::pair<unsigned,unsigned> core_use ,
                           const std::pair<unsigned,unsigned> core_topo ,
-                          const std::pair<unsigned,unsigned> master_coord ,
                                 std::pair<unsigned,unsigned> thread_coord[] )
 {
-  const unsigned thread_count = gang_topo.first * gang_topo.second ;
-  const unsigned core_base    = core_topo.second - core_use.second ;
+  const unsigned core_base = core_topo.second - core_use.second ;
 
   for ( unsigned thread_rank = 0 , gang_rank = 0 ; gang_rank < gang_topo.first ; ++gang_rank ) {
   for ( unsigned worker_rank = 0 ; worker_rank < gang_topo.second ; ++worker_rank , ++thread_rank ) {
@@ -99,6 +146,35 @@ void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
           : ( k + ( worker_in_numa_rank - part ) / bin1 ) );
     }
   }}
+
+#if 0
+
+  std::cout << "KokkosArray::host_thread_mapping" << std::endl ;
+
+  for ( unsigned g = 0 , t = 0 ; g < gang_topo.first ; ++g ) {
+    std::cout << "  gang[" << g
+              << "] on numa[" << thread_coord[t].first
+              << "] cores(" ;
+    for ( unsigned w = 0 ; w < gang_topo.second ; ++w , ++t ) {
+      std::cout << " " << thread_coord[t].second ;
+    }
+    std::cout << " )" << std::endl ;
+  }
+
+#endif
+
+}
+
+void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
+                          const std::pair<unsigned,unsigned> core_use ,
+                          const std::pair<unsigned,unsigned> core_topo ,
+                          const std::pair<unsigned,unsigned> master_coord ,
+                                std::pair<unsigned,unsigned> thread_coord[] )
+{
+  const unsigned thread_count = gang_topo.first * gang_topo.second ;
+  const unsigned core_base    = core_topo.second - core_use.second ;
+
+  host_thread_mapping( gang_topo , core_use , core_topo , thread_coord );
 
   // The master core should be thread #0 so rotate all coordinates accordingly ...
 
@@ -181,8 +257,62 @@ void print_bitmap( std::ostream & s , const hwloc_const_bitmap_t bitmap )
 
 //----------------------------------------------------------------------------
 
+bool hwloc::available()
+{ return true ; }
+
+unsigned hwloc::bind_this_thread(
+  const unsigned               coordinate_count ,
+  std::pair<unsigned,unsigned> coordinate[] )
+{
+  const std::pair<unsigned,unsigned> current = hwloc::get_this_thread_coordinate();
+
+  unsigned i = 0 ;
+
+  // Match one of the requests:
+  for ( i = 0 ; i < coordinate_count && current != coordinate[i] ; ++i );
+
+  if ( coordinate_count == i ) {
+    // Match the first request (typically NUMA):
+    for ( i = 0 ; i < coordinate_count && current.first != coordinate[i].first ; ++i );
+  }
+
+  if ( coordinate_count == i ) {
+    // Match any unclaimed request:
+    for ( i = 0 ; i < coordinate_count && ~0u == coordinate[i].first  ; ++i );
+  }
+
+  if ( coordinate_count == i || ! hwloc::bind_this_thread( coordinate[i] ) ) {
+     // Failed to bind:
+     i = ~0u ;
+  }
+
+  if ( i < coordinate_count ) {
+
+#if 0
+    if ( current != coordinate[i] ) {
+      std::cout << "  host_thread_binding("
+                << gang_topo.first << "x" << gang_topo.second
+                << ") rebinding from ("
+                << current.first << ","
+                << current.second
+                << ") to ("
+                << coordinate[i].first << ","
+                << coordinate[i].second
+                << ")" << std::endl ;
+    }
+#endif
+
+    coordinate[i].first  = ~0u ;
+    coordinate[i].second = ~0u ;
+  }
+
+  return i ;
+}
+
+
 bool hwloc::bind_this_thread( const std::pair<unsigned,unsigned> coord )
 {
+  sentinel();
 
 #if 0
 
@@ -212,6 +342,7 @@ bool hwloc::bind_this_thread( const std::pair<unsigned,unsigned> coord )
 
 bool hwloc::unbind_this_thread()
 {
+  sentinel();
 
 #define HWLOC_DEBUG_PRINT 0
 
@@ -253,6 +384,8 @@ bool hwloc::unbind_this_thread()
 
 std::pair<unsigned,unsigned> hwloc::get_this_thread_coordinate()
 {
+  sentinel();
+
   const unsigned n = s_core_topology.first * s_core_topology.second ;
 
   std::pair<unsigned,unsigned> coord(0,0);
@@ -490,8 +623,14 @@ hwloc::hwloc()
 
 namespace KokkosArray {
 
+bool hwloc::available()
+{ return false ; }
+
+unsigned hwloc::bind_this_thread( const unsigned , std::pair<unsigned,unsigned>[] )
+{ return ~0 ; }
+
 bool hwloc::bind_this_thread( const std::pair<unsigned,unsigned> )
-{ return true ; }
+{ return false ; }
 
 bool hwloc::unbind_this_thread()
 { return true ; }

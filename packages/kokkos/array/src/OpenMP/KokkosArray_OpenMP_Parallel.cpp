@@ -300,9 +300,9 @@ void OpenMP::resize_reduce_scratch( unsigned size )
 {
   static unsigned m_reduce_size = 0 ;
 
-  const unsigned rem = size % MEMORY_ALIGNMENT ;
+  const unsigned rem = size % Impl::MEMORY_ALIGNMENT ;
 
-  if ( rem ) size += MEMORY_ALIGNMENT - rem ;
+  if ( rem ) size += Impl::MEMORY_ALIGNMENT - rem ;
 
   if ( ( 0 == size ) || ( m_reduce_size < size ) ) {
 

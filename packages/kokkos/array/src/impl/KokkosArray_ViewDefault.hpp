@@ -626,48 +626,58 @@ struct EnableViewOper< Traits , OperLayout , OperRank ,
 { typedef typename Traits::value_type type ; };
 
 
-template<class ShapeType, class LayoutType, class Device, unsigned RankDynamic>
-struct StaticStride{
-	  enum {Stride = 0};
+template< class ShapeType, class LayoutType , unsigned RankDynamic = ShapeType::rank_dynamic >
+struct StaticStride { enum { Stride = 0 }; };
+
+
+template< class S >
+struct StaticStride< S , LayoutRight , 0 > {
+  enum { count = S::N1*S::N2*S::N3*S::N4*S::N5*S::N6*S::N7  };
+  enum { div   = MEMORY_ALIGNMENT / S::scalar_size };
+  enum { mod   = MEMORY_ALIGNMENT % S::scalar_size };
+  enum { align = 0 == mod ? div : 0 };
+  enum { count_mod = count % ( div ? div : 1 ) };
+
+public:
+
+  enum {Stride = ( align && ( MEMORY_ALIGNMENT_THRESHOLD * align < count ) && count_mod )
+               ? ( count + align - count_mod )
+               : count };
+
 };
 
-template<class S, class D>
-struct StaticStride<S,LayoutLeft,D,0> {
-  enum {Stride = (0==(MEMORY_ALIGNMENT % S::scalar_size))&&
-  	           (S::N0>MEMORY_ALIGNMENT_THRESHOLD * MEMORY_ALIGNMENT/S::scalar_size)?
-  		        S::N0 +
-  		        ((MEMORY_ALIGNMENT%S::scalar_size?(MEMORY_ALIGNMENT/S::scalar_size):0)?
-  		        (MEMORY_ALIGNMENT%S::scalar_size?(MEMORY_ALIGNMENT/S::scalar_size):0) -
-  		        S::N0 %
-  		        (MEMORY_ALIGNMENT%S::scalar_size?(MEMORY_ALIGNMENT/S::scalar_size):0):
-  		        0)
-  		        :S::N0};
+template< class S >
+struct StaticStride< S , LayoutRight , 1 > {
+  enum { count = S::N1*S::N2*S::N3*S::N4*S::N5*S::N6*S::N7  };
+  enum { div   = MEMORY_ALIGNMENT / S::scalar_size };
+  enum { mod   = MEMORY_ALIGNMENT % S::scalar_size };
+  enum { align = 0 == mod ? div : 0 };
+  enum { count_mod = count % ( div ? div : 1 ) };
+
+public:
+
+  enum {Stride = ( align && ( MEMORY_ALIGNMENT_THRESHOLD * align < count ) && count_mod )
+               ? ( count + align - count_mod )
+               : count };
+
 };
 
-template<class S, class D>
-struct StaticStride<S,LayoutRight,D,0> {
-  enum {Stride = (0==(MEMORY_ALIGNMENT % S::scalar_size))&&
-  	           (S::N1*S::N2*S::N3*S::N4*S::N5*S::N6*S::N7>MEMORY_ALIGNMENT_THRESHOLD * MEMORY_ALIGNMENT/S::scalar_size)?
-  	        	S::N1*S::N2*S::N3*S::N4*S::N5*S::N6*S::N7 +
-  	        	((MEMORY_ALIGNMENT%S::scalar_size?(MEMORY_ALIGNMENT/S::scalar_size):0)?
-  	        	(MEMORY_ALIGNMENT%S::scalar_size?(MEMORY_ALIGNMENT/S::scalar_size):0) -
-  	        	S::N1*S::N2*S::N3*S::N4*S::N5*S::N6*S::N7 %
-  	        	(MEMORY_ALIGNMENT%S::scalar_size?(MEMORY_ALIGNMENT/S::scalar_size):0):
-  	        	0)
-  		        :S::N1*S::N2*S::N3*S::N4*S::N5*S::N6*S::N7};
+template< class S >
+struct StaticStride< S , LayoutLeft , 0 > {
+  enum { count = S::N0 };
+  enum { div   = MEMORY_ALIGNMENT / S::scalar_size };
+  enum { mod   = MEMORY_ALIGNMENT % S::scalar_size };
+  enum { align = 0 == mod ? div : 0 };
+  enum { count_mod = count % ( div ? div : 1 ) };
+
+public:
+
+  enum {Stride = ( align && ( MEMORY_ALIGNMENT_THRESHOLD * align < count ) && count_mod )
+               ? ( count + align - count_mod )
+               : count };
+
 };
-template<class S, class D>
-struct StaticStride<S,LayoutRight,D,1> {
-  enum {Stride = (0==(MEMORY_ALIGNMENT % S::scalar_size))&&
-  	           (S::N1*S::N2*S::N3*S::N4*S::N5*S::N6*S::N7>MEMORY_ALIGNMENT_THRESHOLD * MEMORY_ALIGNMENT/S::scalar_size)?
-  	        	S::N1*S::N2*S::N3*S::N4*S::N5*S::N6*S::N7 +
-  	        	((MEMORY_ALIGNMENT%S::scalar_size?(MEMORY_ALIGNMENT/S::scalar_size):0)?
-  	        	(MEMORY_ALIGNMENT%S::scalar_size?(MEMORY_ALIGNMENT/S::scalar_size):0) -
-  	        	S::N1*S::N2*S::N3*S::N4*S::N5*S::N6*S::N7 %
-  	        	(MEMORY_ALIGNMENT%S::scalar_size?(MEMORY_ALIGNMENT/S::scalar_size):0):
-  	        	0)
-  		        :S::N1*S::N2*S::N3*S::N4*S::N5*S::N6*S::N7};
-};
+
 } /* namespace Impl */
 } /* namespace KokkosArray */
 
@@ -700,9 +710,7 @@ private:
 public:
   unsigned                      m_stride ;
   enum { m_stride_static = Impl::StaticStride<typename traits::shape_type,
-	                                          typename traits::array_layout,
-	                                          typename traits::device_type,
-	                                          traits::shape_type::rank_dynamic>::Stride};
+	                                          typename traits::array_layout >::Stride };
 
   typedef View< typename traits::const_data_type ,
                 typename traits::array_layout ,
@@ -1358,7 +1366,7 @@ public:
                               i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 )))))) + i0 * (m_stride_static==0?m_stride:m_stride_static) ];
+                              i1 )))))) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
     }
 
   //------------------------------------
