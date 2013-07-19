@@ -174,6 +174,9 @@ namespace KokkosClassic {
   };
 #endif
 #if defined(HAVE_KOKKOSCLASSIC_CUSPARSE)
+  // cuSPARSE only implements float and double kernels.  Attempts to
+  // refer to DefaultKernels<T,LO,NT> for T != void, float, or double
+  // will result in a compile-time error.
   template <>
   struct DefaultKernels<void,int,ThrustGPUNode> {
     typedef CUSPARSEOps<void,ThrustGPUNode> SparseOps;
