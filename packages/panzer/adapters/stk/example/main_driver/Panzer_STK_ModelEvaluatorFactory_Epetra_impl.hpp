@@ -560,7 +560,7 @@ namespace panzer_stk {
       thyra_me = Thyra::epetraModelEvaluator(ep_me,lowsFactory);
     }
     else {
-      thyra_me = Teuchos::rcp(new panzer::ModelEvaluator<double,Kokkos::DefaultNode::DefaultNodeType>
+      thyra_me = Teuchos::rcp(new panzer::ModelEvaluator<double,KokkosClassic::DefaultNode::DefaultNodeType>
                   (fmb,m_response_library,linObjFactory,p_names,lowsFactory,global_data,is_transient,t_init));
     }
 
@@ -1251,7 +1251,7 @@ namespace panzer_stk {
     #ifdef HAVE_MUELU
     {
       Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder); // Register MueLu as a Stratimikos preconditioner strategy for Epetra
-      Stratimikos::enableMueLuTpetra<int,long,Kokkos::DefaultNode::DefaultNodeType>(linearSolverBuilder,"MueLu-Tpetra");
+      Stratimikos::enableMueLuTpetra<int,long,KokkosClassic::DefaultNode::DefaultNodeType>(linearSolverBuilder,"MueLu-Tpetra");
     }
     #endif // MUELU
 
@@ -1332,7 +1332,7 @@ namespace panzer_stk {
   int ModelEvaluatorFactory_Epetra<ScalarT>::
   addResponse(const std::string & responseName,const std::vector<panzer::WorksetDescriptor> & wkstDesc,const BuilderT & builder)
   {
-    typedef panzer::ModelEvaluator<double,Kokkos::DefaultNode::DefaultNodeType> PanzerME;
+    typedef panzer::ModelEvaluator<double,KokkosClassic::DefaultNode::DefaultNodeType> PanzerME;
 
     Teuchos::RCP<Thyra::EpetraModelEvaluator> thyra_ep_me = Teuchos::rcp_dynamic_cast<Thyra::EpetraModelEvaluator>(m_physics_me);
     Teuchos::RCP<PanzerME> panzer_me = Teuchos::rcp_dynamic_cast<PanzerME>(m_physics_me);
@@ -1358,7 +1358,7 @@ namespace panzer_stk {
                  const bool write_graphviz_file,
                  const std::string& graphviz_file_prefix)
   {
-    typedef panzer::ModelEvaluator<double,Kokkos::DefaultNode::DefaultNodeType> PanzerME;
+    typedef panzer::ModelEvaluator<double,KokkosClassic::DefaultNode::DefaultNodeType> PanzerME;
 
     Teuchos::ParameterList & p = *this->getNonconstParameterList();
     Teuchos::ParameterList & user_data = p.sublist("User Data");
