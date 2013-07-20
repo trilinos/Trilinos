@@ -202,6 +202,9 @@ namespace MueLu {
     //! pointer to Ifpack2 preconditioner object
     RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_;
 
+    //! matrix, used in apply if solving residual equation
+    RCP<Matrix> A_;
+
   }; // class Ifpack2Smoother
 
 } // namespace MueLu
