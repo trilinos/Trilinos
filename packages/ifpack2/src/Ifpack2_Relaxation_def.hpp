@@ -604,8 +604,6 @@ void Relaxation<MatrixType>::compute ()
       // specializations with nondefault LocalMatOps (fifth) template
       // parameter.  The code will still be correct if the cast fails,
       // but it won't pick up the "cached offsets" optimization.
-      typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, 
-				global_ordinal_type, node_type> crs_matrix_type;
       const crs_matrix_type* crsMat = 
 	dynamic_cast<const crs_matrix_type*> (A_.getRawPtr ());
       if (crsMat == NULL || ! crsMat->isStaticGraph ()) {
