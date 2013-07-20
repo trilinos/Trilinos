@@ -83,8 +83,10 @@ regularizeAxisSizes(int numProcs,
   }
   // For underspecified processor partitions, give the remainder to
   // the first unspecified axis and set all the rest to 1
-  if (numProcs % block)
-    throw InvalidArgument("Number of processors do not divide evenly");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (numProcs % block),
+    InvalidArgument,
+    "Number of processors do not divide evenly");
   int quotient = numProcs / block;
   for (int axis = 0; axis < numDims; ++axis)
   {
