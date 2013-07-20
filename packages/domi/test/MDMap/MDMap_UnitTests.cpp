@@ -57,6 +57,7 @@ using std::string;
 using Teuchos::Array;
 using Teuchos::Tuple;
 using Domi::TeuchosCommRCP;
+using Domi::Slice;
 using Domi::MDComm;
 using Domi::MDCommRCP;
 using Domi::MDMap;
@@ -74,21 +75,99 @@ TEUCHOS_STATIC_SETUP()
                 "of processors along each axis");
 }
 
-TEUCHOS_UNIT_TEST( MDMap, dimensionsConstructor )
+//
+// Templated Unit Tests
+//
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, dimensionsConstructor, T )
 {
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  // Note: axisSizes from command line should be fully specified
   Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
   MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisSizes));
 
-  // Construct dimensions
-  Array< int > dims(numDims);
+  // Check that the axisSizes are completely specified
+  TEST_EQUALITY(axisSizes.size(), numDims)
   for (int axis = 0; axis < numDims; ++axis)
-    dims[axis] = 20;
+  {
+    TEST_ASSERT(axisSizes[axis] > 0);
+  }
+
+  // Construct dimensions
+  T localDim = 10;
+  Array< T > dims(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    dims[axis] = localDim * mdComm->getAxisSize(axis);
 
   // Construct an MDMap
-  MDMap< int > mdMap(mdComm, dims());
+  MDMap< T > mdMap(mdComm, dims());
 
+  // Perform unit tests of MDMap as a whole
+  TEST_ASSERT(mdMap.onSubcommunicator());
   TEST_EQUALITY(mdMap.getNumDims(), numDims);
+  TEST_ASSERT(not mdMap.hasHalos());
+  TEST_EQUALITY(mdMap.getStorageOrder(), Domi::DEFAULT_ORDER);
+
+  // Perform unit tests of MDMap axis quantities
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int axisRank = mdMap.getAxisRank(axis);
+    if (axisSizes[axis] > 0)
+      TEST_EQUALITY(mdMap.getAxisCommSize(axis), axisSizes[axis]);
+    TEST_EQUALITY(mdMap.getGlobalDim(axis), dims[axis]);
+    TEST_EQUALITY(mdMap.getLocalDim(axis) , localDim  );
+    Slice globalBounds = mdMap.getGlobalAxisBounds(axis);
+    TEST_EQUALITY(globalBounds.start(), axisRank    *localDim);
+    TEST_EQUALITY(globalBounds.stop() , (axisRank+1)*localDim);
+    Slice localBounds  = mdMap.getLocalAxisBounds(axis);
+    TEST_EQUALITY_CONST(localBounds.start(), 0);
+    TEST_EQUALITY(localBounds.stop() , localDim);
+    TEST_EQUALITY_CONST(mdMap.getLowerHalo(axis), 0);
+    TEST_EQUALITY_CONST(mdMap.getUpperHalo(axis), 0);
+    TEST_EQUALITY_CONST(mdMap.getHaloSize(axis), 0);
+    TEST_EQUALITY_CONST(mdMap.getGhostSize(axis), 0);
+    TEST_ASSERT(not mdMap.getPeriodic(axis));
+  }
 }
+
+// TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, dimensionsConstructor, T )
+// {
+//   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+//   Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
+//   MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisSizes));
+
+//   // Construct dimensions
+//   Array< T > dims(numDims);
+//   for (int axis = 0; axis < numDims; ++axis)
+//     dims[axis] = 20;
+
+//   // Construct an MDMap
+//   MDMap< T > mdMap(mdComm, dims());
+
+//   // Fill out axisSizes for testing purposes
+//   for (int axis = axisSizes.size(); axis < numDims; ++axis)
+//     axisSizes.push_back(-1);
+
+//   // Perform unit tests
+//   TEST_ASSERT(mdMap.onSubcommunicator());
+//   TEST_EQUALITY(mdMap.getNumDims(), numDims);
+//   for (int axis = 0; axis < numDims; ++axis)
+//   {
+//     if (axisSizes[axis] > 0)
+//       TEST_EQUALITY(mdMap.getAxisCommSize(axis), axisSizes[axis]);
+//   }
+// }
+
+//
+// Instantiations
+//
+
+#define UNIT_TEST_GROUP( T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, dimensionsConstructor, T )
+
+UNIT_TEST_GROUP(int)
+#if 0
+UNIT_TEST_GROUP(long)
+#endif
 
 }  // namespace
