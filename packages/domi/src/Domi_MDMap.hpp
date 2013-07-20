@@ -103,16 +103,22 @@ public:
   // LocalOrd getLocalStride(int axis) const;
   // // Axis map methods should go here ...
   // // Conversion to Epetra, Tpetra or Xpetra Maps should go here ...
-  // Teuchos::Array< GlobalOrd >
-  // getGlobalAxisIndex(GlobalOrd globalIndex) const;
-  // Teuchos::Array< LocalOrd >
-  // getLocalAxisIndex(LocalOrd LocalIndex) const;
-  // GlobalOrd getGlobalElement(LocalOrd localIndex) const;
-  // GlobalOrd
-  // getGlobalElement(const Teuchos::ArrayView< GlobalOrd > globalAxisIndex) const;
-  // LocalOrd getLocalElement(GlobalOrd globalIndex) const;
-  // LocalOrd
-  // getLocalElement(const Teuchos::ArrayView< LocalOrd > localAxisIndex) const;
+
+  Teuchos::Array< GlobalOrd >
+  getGlobalAxisIndex(GlobalOrd globalIndex) const;
+
+  Teuchos::Array< LocalOrd >
+  getLocalAxisIndex(LocalOrd LocalIndex) const;
+
+  GlobalOrd getGlobalElement(LocalOrd localIndex) const;
+
+  GlobalOrd
+  getGlobalElement(const Teuchos::ArrayView< GlobalOrd > globalAxisIndex) const;
+
+  LocalOrd getLocalElement(GlobalOrd globalIndex) const;
+
+  LocalOrd
+  getLocalElement(const Teuchos::ArrayView< LocalOrd > localAxisIndex) const;
 
 private:
 
@@ -129,8 +135,8 @@ private:
   Teuchos::Array< halo_t >    _halos;
   Teuchos::Array< int >       _ghostSizes;
   Teuchos::Array< int >       _periodic;
-  //Teuchos::Array< GlobalOrd > _globalStrides;
-  //Teuchos::Array< LocalOrd >  _localStrides;
+  Teuchos::Array< GlobalOrd > _globalStrides;
+  Teuchos::Array< LocalOrd >  _localStrides;
   EStorageOrder               _storageOrder;
   Teuchos::RCP< Node >        _node;
 };
@@ -155,8 +161,8 @@ MDMap(const MDCommRCP mdComm,
   _localAxisBounds(),
   _ghostSizes(mdComm->getNumDims(), 0),
   _periodic(mdComm->getNumDims(), 0),
-  //_globalStrides(mdComm->getNumDims(), 1),
-  //_localStrides(mdComm->getNumDims(), 1),
+  _globalStrides(mdComm->getNumDims(), 1),
+  _localStrides(mdComm->getNumDims(), 1),
   _haloSizes(mdComm->getNumDims(), 0),
   _halos(),
   _storageOrder(storageOrder),
@@ -200,20 +206,22 @@ MDMap(const MDCommRCP mdComm,
     _periodic[axis] = periodic[axis];
   }
 
-  // Compute the global strides
-  // if (_storageOrder == FIRST_INDEX_FASTEST)
-  //   for (int axis = 1; axis < numDims; ++axis)
-  //   {
-  //     _globalStrides[axis] = _globalStrides[axis-1] * _globalDims[axis-1];
-  //   }
-  // else
-  //   for (int axis = numDims - 2; axis >= 0; ++axis)
-  //   {
-  //     _globalStrides[axis] = _globalStrides[axis+1] * _globalDims[axis+1];
-  //   }
-
   // Compute the axis bounds
   computeAxisBounds();
+
+  // Compute the strides
+  if (_storageOrder == FIRST_INDEX_FASTEST)
+    for (int axis = 1; axis < numDims; ++axis)
+    {
+      _globalStrides[axis] = _globalStrides[axis-1] * _globalDims[axis-1];
+      _localStrides[axis]  = _localStrides[axis-1]  * _localDims[axis-1];
+    }
+  else
+    for (int axis = numDims - 2; axis >= 0; ++axis)
+    {
+      _globalStrides[axis] = _globalStrides[axis+1] * _globalDims[axis+1];
+      _localStrides[axis]  = _localStrides[axis+1]  * _localDims[axis+1];
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -501,65 +509,134 @@ MDMap< LocalOrd, GlobalOrd, Node >::getStorageOrder() const
 
 // }
 
-// ////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
 
-// template< class LocalOrd, class GlobalOrd, class Node >
-// Teuchos::Array< GlobalOrd >
-// MDMap< LocalOrd, GlobalOrd, Node >::
-// getGlobalAxisIndex(GlobalOrd globalIndex) const
-// {
+template< class LocalOrd, class GlobalOrd, class Node >
+Teuchos::Array< GlobalOrd >
+MDMap< LocalOrd, GlobalOrd, Node >::
+getGlobalAxisIndex(GlobalOrd globalIndex) const
+{
+  int numDims = getNumDims();
+  Teuchos::Array< GlobalOrd > result(numDims);
+  GlobalOrd index = globalIndex;
+  if (_storageOrder == LAST_INDEX_FASTEST)
+  {
+    for (int axis = 0; axis < numDims-1; ++axis)
+    {
+      result[axis] = index / _globalStrides[axis];
+      index        = index % _globalStrides[axis];
+    }
+    result[numDims-1] = index;
+  }
+  else
+  {
+    for (int axis = numDims-1; axis > 0; --axis)
+    {
+      result[axis] = index / _globalStrides[axis];
+      index        = index % _globalStrides[axis];
+    }
+    result[0] = index;
+  }
+  return result;
+}
 
-// }
+////////////////////////////////////////////////////////////////////////
 
-// ////////////////////////////////////////////////////////////////////////
+template< class LocalOrd, class GlobalOrd, class Node >
+Teuchos::Array< LocalOrd >
+MDMap< LocalOrd, GlobalOrd, Node >::
+getLocalAxisIndex(LocalOrd localIndex) const
+{
+  int numDims = getNumDims();
+  Teuchos::Array< LocalOrd > result(numDims);
+  LocalOrd index = localIndex;
+  if (_storageOrder == LAST_INDEX_FASTEST)
+  {
+    for (int axis = 0; axis < numDims-1; ++axis)
+    {
+      result[axis] = index / _localStrides[axis];
+      index        = index % _localStrides[axis];
+    }
+    result[numDims-1] = index;
+  }
+  else
+  {
+    for (int axis = numDims-1; axis > 0; --axis)
+    {
+      result[axis] = index / _localStrides[axis];
+      index        = index % _localStrides[axis];
+    }
+    result[0] = index;
+  }
+  return result;
+}
 
-// template< class LocalOrd, class GlobalOrd, class Node >
-// Teuchos::Array< LocalOrd >
-// MDMap< LocalOrd, GlobalOrd, Node >::
-// getLocalAxisIndex(LocalOrd localIndex) const
-// {
+////////////////////////////////////////////////////////////////////////
 
-// }
+template< class LocalOrd, class GlobalOrd, class Node >
+GlobalOrd
+MDMap< LocalOrd, GlobalOrd, Node >::
+getGlobalElement(LocalOrd localIndex) const
+{
+  Teuchos::Array< LocalOrd > localAxisIndex = getLocalAxisIndex(localIndex);
+  GlobalOrd result = 0;
+  for (int axis = 0; axis < getNumDims(); ++axis)
+  {
+    GlobalOrd globalAxisIndex =
+      localAxisIndex[axis] + _globalAxisBounds[axis].start() - _halos[axis][0];
+    result += globalAxisIndex * _globalStrides[axis];
+  }
+  return result;
+}
 
-// ////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
 
-// template< class LocalOrd, class GlobalOrd, class Node >
-// GlobalOrd
-// MDMap< LocalOrd, GlobalOrd, Node >::
-// getGlobalElement(LocalOrd localIndex) const
-// {
+template< class LocalOrd, class GlobalOrd, class Node >
+GlobalOrd
+MDMap< LocalOrd, GlobalOrd, Node >::
+getGlobalElement(const Teuchos::ArrayView< GlobalOrd > globalAxisIndex) const
+{
+  GlobalOrd result = 0;
+  for (int axis = 0; axis < getNumDims(); ++axis)
+    result += globalAxisIndex[axis] * _globalStrides[axis];
+  return result;
+}
 
-// }
+////////////////////////////////////////////////////////////////////////
 
-// ////////////////////////////////////////////////////////////////////////
+template< class LocalOrd, class GlobalOrd, class Node >
+LocalOrd
+MDMap< LocalOrd, GlobalOrd, Node >::
+getLocalElement(GlobalOrd globalIndex) const
+{
+  Teuchos::Array< GlobalOrd > globalAxisIndex =
+    getGlobalAxisIndex(globalIndex);
+  LocalOrd result = 0;
+  for (int axis = 0; axis < getNumDims(); ++axis)
+  {
+    LocalOrd localAxisIndex =
+      globalAxisIndex[axis] - _globalAxisBounds[axis].start() + _halos[axis][0];
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (localAxisIndex < 0 || localAxisIndex >= _localDims[axis]),
+      RangeError,
+      "global index not on local processor")
+    result += localAxisIndex * _localStrides[axis];
+  }
+  return result;
+}
 
-// template< class LocalOrd, class GlobalOrd, class Node >
-// GlobalOrd
-// MDMap< LocalOrd, GlobalOrd, Node >::
-// getGlobalElement(const Teuchos::ArrayView< GlobalOrd > globalAxisIndex) const
-// {
+////////////////////////////////////////////////////////////////////////
 
-// }
-
-// ////////////////////////////////////////////////////////////////////////
-
-// template< class LocalOrd, class GlobalOrd, class Node >
-// LocalOrd
-// MDMap< LocalOrd, GlobalOrd, Node >::
-// getLocalElement(GlobalOrd globalIndex) const
-// {
-
-// }
-
-// ////////////////////////////////////////////////////////////////////////
-
-// template< class LocalOrd, class GlobalOrd, class Node >
-// LocalOrd
-// MDMap< LocalOrd, GlobalOrd, Node >::
-// getLocalElement(const Teuchos::ArrayView< LocalOrd > localAxisIndex) const
-// {
-
-// }
+template< class LocalOrd, class GlobalOrd, class Node >
+LocalOrd
+MDMap< LocalOrd, GlobalOrd, Node >::
+getLocalElement(const Teuchos::ArrayView< LocalOrd > localAxisIndex) const
+{
+  LocalOrd result = 0;
+  for (int axis = 0; axis < getNumDims(); ++axis)
+    result += localAxisIndex[axis] * _localStrides[axis];
+  return result;
+}
 
 }
 
