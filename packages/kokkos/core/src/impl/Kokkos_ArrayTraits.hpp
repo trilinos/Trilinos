@@ -118,6 +118,32 @@ struct power_of_two<1,true>
 };
 
 //----------------------------------------------------------------------------
+// is_const
+
+template <typename T>
+struct is_const : public false_type {};
+
+template <typename T>
+struct is_const<const T> : public true_type {};
+
+template <typename T> struct remove_const { typedef T type; };
+template <typename T> struct remove_const<const T> { typedef T type; };
+
+//----------------------------------------------------------------------------
+// if_
+
+template <bool Cond, typename TrueType, typename FalseType>
+struct if_c
+{ typedef TrueType type; };
+
+template <typename TrueType, typename FalseType>
+struct if_c<false, TrueType, FalseType>
+{ typedef FalseType type; };
+
+template <typename Cond, typename TrueType, typename FalseType>
+struct if_
+  : public if_c<Cond::value, TrueType, FalseType>
+{};
 
 } // namespace Impl
 } // namespace Kokkos
