@@ -89,6 +89,7 @@ namespace MueLu {
                                                                     "K>1: if #partitions is > K, put on procs 0..N, otherwise use diffusive heuristic\n"
                                                                     "-1:  put on procs 0..N the first time only, then use diffusive in remaining rounds\n");
     validParamList->set<LO>         ("maxNumArbitrationRounds", 10, "Maximum number of arbitration rounds for diffusive heuristic");
+    validParamList->set<bool>       ("alwaysKeepProc0",       true, "Always keep processor 0 in subcommunicator");
 
     validParamList->set< RCP<const FactoryBase> >("A",         Teuchos::null, "Factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("Partition", Teuchos::null, "Factory of the partition");
@@ -865,32 +866,33 @@ namespace MueLu {
     // clean up phase
     ///////////////////////////////////////////
 
-#ifdef MUELU_NEVER_DROP_PROC0
-    //If all partitions have been assigned but PID 0 doesn't own one, reassign a partition PID 0.
-    if (numAlreadyOwned == numPartitions && mypid==0 && myPartitionNumber==-1 ) {
-      // Grab ownership of the partition for which 0 has the most dofs.
-      GO maxSize=0;
-      for (int i=0; i<allPartitionsIContributeTo.size(); ++i) {
-        if (localNnzPerPartition[i] > maxSize) {
-          maxSize=localNnzPerPartition[i];
-          myPartitionNumber=allPartitionsIContributeTo[i];
+    const bool alwaysKeepProc0 = pL.get<bool>("alwaysKeepProc0");
+    if (alwaysKeepProc0) {
+      //If all partitions have been assigned but PID 0 doesn't own one, reassign a partition PID 0.
+      if (numAlreadyOwned == numPartitions && mypid==0 && myPartitionNumber==-1 ) {
+        // Grab ownership of the partition for which 0 has the most dofs.
+        GO maxSize=0;
+        for (int i=0; i<allPartitionsIContributeTo.size(); ++i) {
+          if (localNnzPerPartition[i] > maxSize) {
+            maxSize=localNnzPerPartition[i];
+            myPartitionNumber=allPartitionsIContributeTo[i];
+          }
         }
+        GetOStream(Statistics0, 0) << "Reassigning partition " << myPartitionNumber << " to pid 0." << std::endl;
       }
-      GetOStream(Statistics0, 0) << "Reassigning partition " << myPartitionNumber << " to pid 0." << std::endl;
-    }
-    // Broadcast PID 0's partition number.  Whichever PID was the previous owner gives up ownership.
-    // + It may be that PID 0 didn't own a partition, in which case the number broadcast is -1.
-    //   No other PID gives up ownership because partition numbers start at 0.
-    // + It may be that PID 0 already owns a partition from the arbitration round.  This is ok
-    //   because no other PID will have that partition number.
-    int root=0;
-    int mpn=-1;
-    if (mypid==0) mpn=Teuchos::as<int>(myPartitionNumber);
-    MPI_Bcast(&mpn, 1, MPI_INT, root,*rawMpiComm);
-    if ( (mypid > 0) && (myPartitionNumber >= 0) && (Teuchos::as<int>(myPartitionNumber) == mpn) ) {
-      myPartitionNumber=-1;
-    }
-#endif //ifdef MUELU_NEVER_DROP_PROC0
+      // Broadcast PID 0's partition number.  Whichever PID was the previous owner gives up ownership.
+      // + It may be that PID 0 didn't own a partition, in which case the number broadcast is -1.
+      //   No other PID gives up ownership because partition numbers start at 0.
+      // + It may be that PID 0 already owns a partition from the arbitration round.  This is ok
+      //   because no other PID will have that partition number.
+      int root=0;
+      int mpn=-1;
+      if (mypid==0) mpn=Teuchos::as<int>(myPartitionNumber);
+      MPI_Bcast(&mpn, 1, MPI_INT, root,*rawMpiComm);
+      if ( (mypid > 0) && (myPartitionNumber >= 0) && (Teuchos::as<int>(myPartitionNumber) == mpn) ) {
+        myPartitionNumber=-1;
+      }
+    } //if (alwaysKeepProc0)
 
     // 1) all pids get global snapshot of partition #s and their owners
     Array<int> allAssignedPartitions(comm->getSize());
