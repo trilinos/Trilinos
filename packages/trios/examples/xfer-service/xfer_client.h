@@ -110,6 +110,7 @@ struct xfer_args {
         int delay;
         int num_retries;
         bool validate_flag;
+        bool kill_server_flag;
 };
 
 
