@@ -444,7 +444,8 @@ namespace Tpetra {
 	numEntriesForAll = 0;
       }
       else {
-        // left with the case that we have optimized storage. in this case, we have to construct a list of row sizes.
+        // We're left with the case that we have optimized storage.
+        // In this case, we have to construct a list of row sizes.
         TEUCHOS_TEST_FOR_EXCEPTION(
           getProfileType() != StaticProfile, std::logic_error, 
 	  "Internal logic error. Please report this to Tpetra team." )
@@ -452,16 +453,17 @@ namespace Tpetra {
         const size_t numRows = this->getNodeNumRows ();
         numEntriesForAll = 0;
         ArrayRCP<size_t> numEnt;
-        if (numRows) {
+        if (numRows != 0) {
 	  numEnt = arcp<size_t> (numRows);
 	}
-        for (size_t i=0; i < numRows; ++i) {
+        for (size_t i = 0; i < numRows; ++i) {
           numEnt[i] = staticGraph_->rowPtrs_[i+1] - staticGraph_->rowPtrs_[i];
         }
         numEntries = numEnt;
       }
 
-      RCP<ParameterList> matrixparams = sublist(params,"CrsMatrix");
+      RCP<ParameterList> matrixparams = 
+	params.is_null () ? null : sublist (params,"CrsMatrix");
       if (useLocalIndices) {
         RCP<const Map2> clonedColMap = 
 	  this->getColMap ()->template clone (node2);
@@ -565,7 +567,8 @@ namespace Tpetra {
       }
 
       if (fillCompleteClone) {
-        RCP<ParameterList> fillparams = sublist (params, "fillComplete");
+        RCP<ParameterList> fillparams = 
+	  params.is_null () ? Teuchos::null : sublist (params, "fillComplete");
         try {
           RCP<const Map2> clonedRangeMap;
           RCP<const Map2> clonedDomainMap;
