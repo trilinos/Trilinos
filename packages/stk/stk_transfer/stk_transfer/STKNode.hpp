@@ -2,6 +2,8 @@
 #ifndef  STK_STKNODE_HPP
 #define  STK_STKNODE_HPP
 
+#include <boost/shared_ptr.hpp>
+
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
@@ -17,6 +19,7 @@
 namespace stk {
 namespace transfer {
 
+
 template <unsigned DIM> class STKNode {
 public :
   typedef mesh:: Entity                                      Entity;
@@ -28,32 +31,43 @@ public :
 
   typedef search::box::SphereBoundingBox<EntityProc,float,DIM> BoundingBox;
 
+
   enum {Dimension = DIM};
 
   STKNode(const EntityVec                     &ent,
           const mesh::FieldBase               &coord,
-          const std::vector<mesh::FieldBase*> &val);
+          const std::vector<mesh::FieldBase*> &val,
+          const double                         initial_radius);
   ~STKNode();
 
   // Needed for STK Transfer
   ParallelMachine comm() const {return m_comm;}
 
-  unsigned            keys(EntityKeySet &keys) const;
-
-  BoundingBox boundingbox (const EntityKey Id, const double radius) const;
+  void bounding_boxes (std::vector<BoundingBox> &v) const;
 
   void copy_entities(const EntityProcVec    &entities_to_copy,
                      const std::string         &transfer_name);
   
   void update_values();
 
-
-  // Needed for LinearInterpoate
+  // Needed for LinearInterpoate and FEInterpolation
   const double *coord(const EntityKey k) const;
   const double *value(const EntityKey k, const unsigned i=0) const;
         double *value(const EntityKey k, const unsigned i=0);
   unsigned      value_size(const EntityKey e, const unsigned i=0) const;
   unsigned      num_values() const;
+
+  struct Record { virtual ~Record(){} };
+  template <class T> T* database(const EntityKey k) {
+    typename RecordMap::iterator i = m_record_map.find(k);
+    if (i == m_record_map.end()) {
+      RecordPtr record(new T());
+      i = m_record_map.insert(RecordMap::value_type(k,record)); 
+    }
+    T *record = dynamic_cast<T*>(i->second.get());
+    ThrowRequireMsg (record,__FILE__<<":"<<__LINE__<<" Dynamic Cast failed in STKNode::record ");
+    return record;
+  }
 
 private :
   STKNode (); 
@@ -63,16 +77,22 @@ private :
   mesh::BulkData                        &m_bulk_data;
   bool                               m_mesh_modified;
   const ParallelMachine                       m_comm;
+  const double                          m_sphere_rad;
   const EntityKeySet                   m_entity_keys;
   const mesh::FieldBase         &m_coordinates_field;
   const std::vector<mesh::FieldBase*> m_values_field;
 
   mesh::Ghosting       *m_transfer_entity_ghosting;
   mesh::EntityProcVec   m_entities_currently_ghosted;
+  
+  typedef  boost::shared_ptr<Record>         RecordPtr;
+  typedef  std::map<EntityKey,RecordPtr>     RecordMap;
+  RecordMap                             m_record_map;
 
   Entity entity(const EntityKey k) const;
   static EntityKeySet entity_keys (const mesh::BulkData &bulk_data, const EntityVec &ent);
 };
+
 
 template<unsigned DIM> typename STKNode<DIM>::EntityKeySet STKNode<DIM>::entity_keys (
   const mesh::BulkData  &bulk_data,
@@ -88,10 +108,12 @@ template<unsigned DIM> typename STKNode<DIM>::EntityKeySet STKNode<DIM>::entity_
 template<unsigned DIM> STKNode<DIM>::STKNode(
           const            EntityVec          &entities,
           const   mesh::FieldBase             &coord,
-          const std::vector<mesh::FieldBase*> &val) :
+          const std::vector<mesh::FieldBase*> &val,
+          const double                         initial_radius) :
     m_bulk_data         (coord.get_mesh()),
     m_mesh_modified     (false),
     m_comm              (m_bulk_data.parallel()),
+    m_sphere_rad        (initial_radius),
     m_entity_keys       (entity_keys(m_bulk_data, entities)), 
     m_coordinates_field (coord), 
     m_values_field      (val),
@@ -102,26 +124,25 @@ template<unsigned DIM> STKNode<DIM>::STKNode(
   m_bulk_data.modification_end();
 }
 
-template<unsigned DIM> unsigned STKNode<DIM>::keys(EntityKeySet &k) const {
-  k = m_entity_keys;
-  return k.size();
-}
-
 template<unsigned DIM> STKNode<DIM>::~STKNode(){}
 
-template<unsigned DIM> typename STKNode<DIM>::BoundingBox STKNode<DIM>::boundingbox (
-  const EntityKey Id, 
-  const double radius) const {
+template<unsigned DIM> void STKNode<DIM>::bounding_boxes (std::vector<BoundingBox> &v) const {
 
   typedef typename BoundingBox::Data Data;
   typedef typename BoundingBox::Key  Key;
-  const Data r=radius;
-  Data center[Dimension];
-  const double *c = coord(Id);
-  for (unsigned j=0; j<Dimension; ++j) center[j] = c[j];
-  const Key key(Id, parallel_machine_rank(m_comm));
-  BoundingBox B(center, r, key);
-  return B;
+  const Data r=m_sphere_rad;
+
+  v.clear();
+
+  for (typename EntityKeySet::const_iterator k=m_entity_keys.begin(); k!=m_entity_keys.end(); ++k) {
+    const EntityKey Id = *k; 
+    Data center[Dimension];
+    const double *c = coord(Id);
+    for (unsigned j=0; j<Dimension; ++j) center[j] = c[j];
+    const Key key(Id, parallel_machine_rank(m_comm));
+    BoundingBox B(center, r, key);
+    v.push_back(B);
+  }
 }
 
 template<unsigned NUM> void STKNode<NUM>::copy_entities(

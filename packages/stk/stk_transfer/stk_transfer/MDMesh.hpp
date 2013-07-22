@@ -1,4 +1,6 @@
 
+#include <boost/shared_ptr.hpp>
+
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
@@ -28,20 +30,18 @@ public :
 
   enum {Dimension = DIM};
 
-  MDMesh(const MDArray               &coord,
-                MDArray               &val,
-          const stk::ParallelMachine   comm);
+  MDMesh(MDArray                     &val,
+         const MDArray               &coord,
+         const double                 initial_radius,
+         const stk::ParallelMachine   comm);
   ~MDMesh();
 
   // Needed for STK Transfer
   ParallelMachine comm() const {return m_comm;}
 
-  unsigned            keys(EntityKeySet &keys) const;
-
-  BoundingBox boundingbox (const EntityKey Id, const double radius) const;
+  void bounding_boxes (std::vector<BoundingBox> &v) const;
 
   void update_values();
-
 
   // Needed for LinearInterpoate
   const double *coord(const EntityKey k) const;
@@ -49,6 +49,20 @@ public :
         double *value(const EntityKey k, const unsigned i=0);
   unsigned      value_size(const EntityKey e, const unsigned i=0) const;
   unsigned      num_values() const;
+
+  struct Record { virtual ~Record(){} };
+  template <class T> T* database(const EntityKey k) {
+    typename RecordMap::const_iterator i = m_record_map.find(k);
+    if (i == m_record_map.end()) {
+      RecordPtr record(new T());
+      typename RecordMap::value_type v(k,record);
+      i = m_record_map.insert(v).first;
+    }
+    T *record = dynamic_cast<T*>(i->second.get());
+    ThrowRequireMsg (record,__FILE__<<":"<<__LINE__<<" Dynamic Cast failed in MDMesh::database ");
+    return record;
+  }
+  
 
 private :
   MDMesh (); 
@@ -58,44 +72,49 @@ private :
   const unsigned                         m_num_nodes;
   const unsigned                       m_spatial_dim;
   const unsigned                        m_num_values;
+  const double                          m_sphere_rad;
   const MDArray                 &m_coordinates_field;
         MDArray                      &m_values_field;
   const ParallelMachine                       m_comm;
+
+  typedef boost::shared_ptr<Record>         RecordPtr;
+  typedef std::map<EntityKey,RecordPtr>     RecordMap;
+  RecordMap                                 m_record_map;
 };
 
 template<unsigned DIM> MDMesh<DIM>::MDMesh(
-          const MDArray               &coord,
                 MDArray               &val,
+          const MDArray               &coord,
+          const double                 initial_radius,
           const stk::ParallelMachine   comm) :
     m_num_nodes         (coord.dimension(0)),
     m_spatial_dim       (coord.dimension(1)),
     m_num_values        (val  .dimension(1)), 
+    m_sphere_rad        (initial_radius    ), 
     m_coordinates_field (coord), 
     m_values_field      (val)  ,
     m_comm              (comm)
 {}
 
-template<unsigned DIM> unsigned MDMesh<DIM>::keys(EntityKeySet &k) const {
-  EntityKeySet::iterator it = k.begin();
-  for (unsigned i=0; i<m_num_nodes; ++i) it = k.insert(it,i);
-  return k.size();
-}
-
 template<unsigned DIM> MDMesh<DIM>::~MDMesh(){}
 
-template<unsigned DIM> typename MDMesh<DIM>::BoundingBox MDMesh<DIM>::boundingbox (
-  const EntityKey Id, 
-  const double radius) const {
+template<unsigned DIM> void MDMesh<DIM>::bounding_boxes (std::vector<BoundingBox> &v) const {
 
   typedef typename BoundingBox::Data Data;
   typedef typename BoundingBox::Key  Key;
-  const Data r=radius;
-  Data center[Dimension];
-  const double *c = &m_coordinates_field(Id,0);
-  for (unsigned j=0; j<Dimension; ++j) center[j] = c[j];
-  const Key key(Id, parallel_machine_rank(comm()));
-  BoundingBox B(center, r, key);
-  return B;
+  const Data r=m_sphere_rad;
+
+  v.clear();
+
+  for (unsigned Id=0; Id!=m_num_nodes; ++Id) {
+
+    Data center[Dimension];
+    const double *c = &m_coordinates_field(Id,0);
+    for (unsigned j=0; j<Dimension; ++j) center[j] = c[j];
+    const Key key(Id, parallel_machine_rank(comm()));
+    BoundingBox B(center, r, key);
+    v.push_back(B);
+  }
 }
 
 template<unsigned DIM> void MDMesh<DIM>::update_values () {}

@@ -2,7 +2,7 @@
 
 #include <limits>
 
-#include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include <Intrepid_Utils.hpp>
 #include <Intrepid_FunctionSpaceTools.hpp>

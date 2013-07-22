@@ -7,6 +7,7 @@
 /*------------------------------------------------------------------------*/
 
 #include <Intrepid_FieldContainer.hpp>
+#include <boost/shared_ptr.hpp>
 
 
 #include <stk_mesh/base/Comm.hpp>
@@ -111,21 +112,21 @@ bool use_case_7_driver(stk::ParallelMachine  comm,
     }
   }
 
+  const double radius=.25;
   const std::vector<stk::mesh::FieldBase*> from_fields(1, &domain_coord_sum_field);
-  stk::transfer::STKNode<3> transfer_domain_mesh (domain_entities, domain_coord_field, from_fields);
-  stk::transfer:: MDMesh<3> transfer_range_mesh  (  ToPoints,   ToValues, comm);
+  boost::shared_ptr<stk::transfer::STKNode<3> >
+    transfer_domain_mesh (new stk::transfer::STKNode<3>(domain_entities, domain_coord_field, from_fields, radius));
+  boost::shared_ptr<stk::transfer:: MDMesh<3> >
+    transfer_range_mesh  (new stk::transfer:: MDMesh<3>(ToValues, ToPoints,   radius, comm));
 
   
-  const double radius=.25;
-  const double expansion_factor=1.5;
   stk::transfer::GeometricTransfer<
     class stk::transfer::LinearInterpolate<
       class stk::transfer::STKNode<3>, 
       class stk::transfer::MDMesh<3>
     >
   >
-  transfer(transfer_domain_mesh, transfer_range_mesh, 
-           radius, expansion_factor, "STK Transfer test Use case 7");
+  transfer(transfer_domain_mesh, transfer_range_mesh, "STK Transfer test Use case 7");
   
   {
     stk::diag::TimeBlock __timer_node_to_node(timer_node_to_node);

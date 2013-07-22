@@ -121,6 +121,7 @@ struct SphereBoundingBox
   inline Data length(int /* axis */ = 0) const { return 2*radius; }
 
   inline void expand(const Data delta) { radius += delta; }
+  inline void scale (const Data delta) { radius *= delta; }
 
 
   SphereBoundingBox()
@@ -237,6 +238,14 @@ struct AxisAlignedBoundingBox
     for (int i=0; i<DIMENSION; ++i) {
       box[i] -= delta;
       box[i+DIMENSION] += delta;
+    }
+  }
+  inline void scale (const Data delta) {
+    for (int i=0; i<DIMENSION; ++i) {
+      const Data f = (delta-1)/2; // Scale like r *= delta
+      const Data d = f*(box[i+DIMENSION] - box[i]);
+      box[i]           -= d;
+      box[i+DIMENSION] += d;
     }
   }
 

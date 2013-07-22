@@ -59,9 +59,8 @@ public :
   // Needed for STK Transfer
   ParallelMachine comm() const {return m_comm;}
 
-  unsigned            keys(EntityKeySet &keys) const;
 
-  BoundingBox boundingbox (const EntityKey Id, const double) const;
+  void bounding_boxes (std::vector<BoundingBox> &v) const;
 
   void copy_entities(const EntityProcVec    &entities_to_copy,
                      const std::string         &transfer_name);
@@ -153,25 +152,25 @@ template<unsigned DIM> STKElem<DIM>::STKElem(
   m_bulk_data.modification_end();
 }
 
-template<unsigned DIM> unsigned STKElem<DIM>::keys(EntityKeySet &k) const {
-  k = m_entity_keys;
-  return k.size();
-}
-
 template<unsigned DIM> STKElem<DIM>::~STKElem(){}
 
-template<unsigned DIM> typename STKElem<DIM>::BoundingBox STKElem<DIM>::boundingbox (
-  const EntityKey Id, const double) const {
+template<unsigned DIM> void STKElem<DIM>::bounding_boxes (std::vector<BoundingBox> &v) const {
 
   typedef typename BoundingBox::Data Data;
   typedef typename BoundingBox::Key  Key;
 
-  Data min_max_coord[2*DIM] = {0.0};
+  v.clear();
+ 
+  for (typename EntityKeySet::const_iterator k=m_entity_keys.begin(); k!=m_entity_keys.end(); ++k) {
+    const EntityKey Id = *k;
 
-  elem_coord_limits(min_max_coord, Id);
-  const Key key(Id, parallel_machine_rank(m_comm));
-  BoundingBox B(min_max_coord, key);
-  return B;
+    Data min_max_coord[2*DIM] = {0.0};
+
+    elem_coord_limits(min_max_coord, Id);
+    const Key key(Id, parallel_machine_rank(m_comm));
+    BoundingBox B(min_max_coord, key);
+    v.push_back(B);
+  }
 }
 
 template<unsigned NUM> void STKElem<NUM>::copy_entities(

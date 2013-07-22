@@ -10,7 +10,7 @@
 #ifndef  STK_FEINTERPOLATE_HPP
 #define  STK_FEINTERPOLATE_HPP
 
-#include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include <stk_util/util/StaticAssert.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
@@ -33,32 +33,37 @@ public :
   typedef std::pair<EntityProcB, EntityProcA>             EntityProcRelation;
   typedef std::vector<EntityProcRelation>                 EntityProcRelationVec;
 
-  
-  typedef std::pair<EntityKeyA, std::vector<double> > KeyCoords;
-  typedef std::multimap<EntityKeyB, KeyCoords>        EntityKeyMap;
+  typedef std::multimap<EntityKeyB, EntityKeyA>        EntityKeyMap;
 
-  
   enum { Dimension = MeshA::Dimension };
   
   static void filter_to_nearest(EntityKeyMap    &BtoA,
                                 const MeshA     &FromElem,
-                                const MeshB     &ToPoints);
+                                      MeshB     &ToPoints);
   
   static void apply (MeshB               &meshb,
                      const MeshA         &mesha,
                      const EntityKeyMap &RangeToDomain);
   
-private :
 
-  enum { dim_eq = StaticAssert<static_cast<unsigned>(MeshB::Dimension)==static_cast<unsigned>(MeshA::Dimension)>::OK };
-  enum { dim_3  = StaticAssert<               3==MeshA::Dimension>::OK };
-  
+  struct Record : public MeshB::Record {
+    virtual ~Record(){}
+    std::vector<double> P;
+  };
+
+protected :
+
   static typename EntityKeyMap::iterator determine_best_fit(
                                          const typename EntityKeyMap::iterator begin,
                                          const typename EntityKeyMap::iterator end,
                                          const EntityKeyB          current,
-                                         const MeshB             &ToPoints,
+                                               MeshB             &ToPoints,
                                          const MeshA             &FromElem);
+  
+private :
+
+  enum { dim_eq = StaticAssert<static_cast<unsigned>(MeshB::Dimension)==static_cast<unsigned>(MeshA::Dimension)>::OK };
+  enum { dim_3  = StaticAssert<               3==MeshA::Dimension>::OK };
   
 };
 
@@ -66,7 +71,7 @@ template <class T>
 typename T::EntityKeyMap::iterator  insert (typename T::EntityKeyMap &map,
                                       const typename T::EntityKeyMap::key_type &k, 
                                       const typename T::EntityKeyA &a) {
-  const typename T::EntityKeyMap::mapped_type m(a, std::vector<double>());
+  const typename T::EntityKeyMap::mapped_type m(a);
   const typename T::EntityKeyMap::value_type  v(k, m);
   const typename T::EntityKeyMap::iterator it = map.insert(v);
   return it;
@@ -77,8 +82,9 @@ FEInterpolate<MESHA,MESHB>::determine_best_fit(
                                const typename EntityKeyMap::iterator begin,
                                const typename EntityKeyMap::iterator end,
                                const EntityKeyB          current,
-                               const MeshB             &ToPoints,
+                                     MeshB             &ToPoints,
                                const MeshA             &FromElems) {
+
 
   typename EntityKeyMap::iterator nearest = end;
   double min_distance     = std::numeric_limits<double>::max();
@@ -86,11 +92,12 @@ FEInterpolate<MESHA,MESHB>::determine_best_fit(
 
   for (typename EntityKeyMap::iterator d=begin; d != end; ++d) {
     std::vector<double> parametric;  
-    const EntityKeyA domain_index = d->second.first;
+    const EntityKeyA domain_index = d->second;
     const double dist = FromElems.parametric_coord(parametric, to_coords, domain_index);
     if (dist < min_distance) {
       min_distance = dist;
-      d->second.second = parametric;
+      Record *record = ToPoints.template database<Record>(d->first); 
+      record->P=parametric;
       nearest = d;
     }
   }
@@ -100,7 +107,7 @@ FEInterpolate<MESHA,MESHB>::determine_best_fit(
 template <class MESHA, class MESHB> void FEInterpolate<MESHA,MESHB>::filter_to_nearest(
                                     EntityKeyMap  &BtoA,
                                     const MeshA   &mesha,
-                                    const MeshB   &meshb) {
+                                          MeshB   &meshb) {
   typedef typename EntityKeyMap::iterator iterator;
   for (iterator j=BtoA.begin(); j!=BtoA.end(); ) {
     std::pair<iterator, iterator> keys=BtoA.equal_range(j->first);
@@ -119,23 +126,25 @@ template <class MESHA, class MESHB>  void FEInterpolate<MESHA,MESHB>::apply (
 
   typedef typename EntityKeyMap::const_iterator const_iterator;
 
-  typename MeshB::EntityKeySet keysb;
-  meshb.keys(keysb);
   const unsigned numValsa = mesha.num_values();
   const unsigned numValsb = meshb.num_values();
     ThrowRequireMsg (numValsb == numValsa,  
       __FILE__<<":"<<__LINE__<<" Found "<<numValsa<<" values for mesh a and "<<numValsb<<" for mesh b."
       <<" These should be the same.");
 
-  for (typename MeshB::EntityKeySet::const_iterator i=keysb.begin(); i!=keysb.end(); ++i)  {
-    const EntityKeyB to_key = *i;
-    const std::pair<const_iterator, const_iterator> from_keys = RangeToDomain.equal_range(to_key);
-    const unsigned num_relations = distance(from_keys.first, from_keys.second);
+  for (const_iterator j,i=RangeToDomain.begin(); i!=RangeToDomain.end(); i=j)  {
+    j = i;
+    while (j != RangeToDomain.end() && i->first == j->first) ++j;
+    const unsigned num_relations = distance(i, j);
+
+    const EntityKeyB to_key = i->first;
     ThrowRequireMsg (1 == num_relations,  
       __FILE__<<":"<<__LINE__<<" Expected "<<1<<" relation."<<" Found:"<<num_relations<<" for Key:"<<to_key);
-    const_iterator f = from_keys.first;
-    const EntityKeyA domain_index         = f->second.first;
-    const std::vector<double> &parametric = f->second.second;
+    const EntityKeyA domain_index         = i->second;
+
+
+    const Record *record = meshb.template database<Record>(to_key); 
+    const std::vector<double> &parametric = record->P;
 
     std::vector<std::vector<double> > val;
     mesha.eval_parametric(val, parametric, domain_index);

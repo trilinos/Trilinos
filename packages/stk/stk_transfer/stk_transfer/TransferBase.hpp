@@ -17,8 +17,15 @@ namespace transfer {
 class TransferBase {
 public :
   TransferBase(){};
-  virtual void initialize() = 0;
-  virtual void apply() = 0;
+  void initialize() {
+    coarse_search();
+    communication();
+    local_search();
+  }
+  virtual void coarse_search() = 0;
+  virtual void communication() = 0;
+  virtual void local_search()  = 0;
+  virtual void apply()         = 0;
 };
 }
 }

@@ -10,7 +10,7 @@
 #ifndef  STK_LINEARINTERPOLATE_HPP
 #define  STK_LINEARINTERPOLATE_HPP
 
-#include <boost/smart_ptr/shared_ptr.hpp>
+#include <iterator>
 
 #include <Intrepid_FieldContainer.hpp>
 
@@ -40,13 +40,10 @@ public :
 
   enum { Dimension = MeshA::Dimension };
   
-  void post_coarse_search_test(EntityProcRelationVec &range_to_domain,
-                                        const MeshA     &mesha,
-                                        const MeshB     &meshb);
-
   static void post_coarse_search_filter(EntityProcRelationVec &range_to_domain,
                                         const MeshA     &mesha,
                                         const MeshB     &meshb);
+
   static void filter_to_nearest(EntityKeyMap    &BtoA,
                                 const MeshA     &FromPoints,
                                 const MeshB     &ToPoints);
@@ -227,35 +224,36 @@ template <class MESHA, class MESHB>  void LinearInterpolate<MESHA,MESHB>::apply 
   typedef typename EntityKeyMap::const_iterator map_const_iterator;
   const unsigned span = Dimension+1;
 
-  typename MeshB::EntityKeySet keysb;
-  meshb.keys(keysb);
   const unsigned numValsa = mesha.num_values();
   const unsigned numValsb = meshb.num_values();
     ThrowRequireMsg (numValsb == numValsa,  
       __FILE__<<":"<<__LINE__<<" Found "<<numValsa<<" values for mesh a and "<<numValsb<<" for mesh b."
       <<" These should be the same.");
 
-  for (typename MeshB::EntityKeySet::const_iterator i=keysb.begin(); i!=keysb.end(); ++i)  {
-    const EntityKeyB to_key = *i;
-    const std::pair<map_const_iterator, map_const_iterator> from_keys = RangeToDomain.equal_range(to_key);
-    const unsigned num_relations = distance(from_keys.first, from_keys.second);
+
+  for (map_const_iterator j,i=RangeToDomain.begin(); i!=RangeToDomain.end(); i=j)  {
+    j = i;
+    while (j!=RangeToDomain.end() && i->first == j->first) ++j;
+    const unsigned num_relations = distance(i, j);
+
+    const EntityKeyB to_key = i->first;
     ThrowRequireMsg (span == num_relations,  
       __FILE__<<":"<<__LINE__<<" Expected "<<span<<" relations."<<" Found:"<<num_relations<<" for Key:"<<to_key);
 
     MDArray Corners(span,Dimension);
     {
       unsigned n=0;
-      for (map_const_iterator j=from_keys.first; j!= from_keys.second; ++j,++n) {
-        const EntityKeyA from_key = j->second;
+      for (map_const_iterator k=i; k!=j; ++k,++n) {
+        const EntityKeyA from_key = k->second;
         const double *c = mesha.coord(from_key); 
         for (unsigned k=0; k<Dimension; ++k) Corners(n,k) = c[k];
       } 
     }
 
     MDArray SpanVectors(Dimension,Dimension);
-    for (unsigned j=1; j<span; ++j) 
+    for (unsigned l=1; l<span; ++l) 
       for (unsigned k=0; k<Dimension; ++k) 
-        SpanVectors(k,j-1) = Corners(j,k) - Corners(0,k);
+        SpanVectors(k,l-1) = Corners(l,k) - Corners(0,k);
     std::vector<double> point(Dimension);
     {
       const double  *c = meshb.coord(to_key);
@@ -267,14 +265,14 @@ template <class MESHA, class MESHB>  void LinearInterpolate<MESHA,MESHB>::apply 
 
     std::vector<double> Values(span);
     for (unsigned f=0; f<numValsb; ++f)  {
-      const EntityKeyA from_key = from_keys.first->second;
+      const EntityKeyA from_key = i->second;
       const unsigned   to_field_size =   meshb.value_size(to_key,   f);
       const unsigned from_field_size =   mesha.value_size(from_key, f);
       const unsigned field_size = std::min(to_field_size, from_field_size);
       for (unsigned n=0; n<field_size; ++n) {
         unsigned m=0;
-        for (typename EntityKeyMap::const_iterator j=from_keys.first; j!= from_keys.second; ++j,++m) {
-          const EntityKeyA from_key = j->second;
+        for (map_const_iterator k=i; k!= j; ++k,++m) {
+          const EntityKeyA from_key = k->second;
           const double *c = mesha.value(from_key,f);
           Values[m] = c[n];
         }
@@ -286,10 +284,10 @@ template <class MESHA, class MESHB>  void LinearInterpolate<MESHA,MESHB>::apply 
         // The scalar used to scale the value at corner 0 
         // is 1-sum(S).
         double T=1;
-        for (unsigned j=0; j<Dimension; ++j) T -= S[j];
+        for (unsigned k=0; k<Dimension; ++k) T -= S[k];
         double interpolated_value = T * Values[0];
-        for (unsigned j=0; j<Dimension; ++j)
-          interpolated_value += S[j] * Values[j+1]; 
+        for (unsigned k=0; k<Dimension; ++k)
+          interpolated_value += S[k] * Values[k+1]; 
         double  *c = meshb.value(to_key, f);
         c[n] = interpolated_value; 
       }

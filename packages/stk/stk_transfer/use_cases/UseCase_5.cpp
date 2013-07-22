@@ -7,6 +7,8 @@
 /*------------------------------------------------------------------------*/
 
 #include <Intrepid_FieldContainer.hpp>
+#include <boost/shared_ptr.hpp>
+
 
 
 #include <stk_mesh/base/Comm.hpp>
@@ -58,8 +60,11 @@ bool use_case_5_driver(stk::ParallelMachine  comm)
     }
   }
 
-  stk::transfer::MDMesh<3> transfer_domain_mesh (FromPoints, FromValues, comm);
-  stk::transfer::MDMesh<3> transfer_range_mesh  (  ToPoints,   ToValues, comm);
+  const double initial_radius   = .05;
+  boost::shared_ptr<stk::transfer::MDMesh<3> >
+    transfer_domain_mesh (new stk::transfer::MDMesh<3>(FromValues, FromPoints, initial_radius, comm));
+  boost::shared_ptr<stk::transfer::MDMesh<3> >
+    transfer_range_mesh  (new stk::transfer::MDMesh<3>(  ToValues, ToPoints,   initial_radius, comm));
   
   stk::transfer::GeometricTransfer<
     class stk::transfer::LinearInterpolate<
@@ -67,11 +72,7 @@ bool use_case_5_driver(stk::ParallelMachine  comm)
       class stk::transfer::MDMesh<3> 
     >
   >
-  transfer(transfer_domain_mesh, 
-           transfer_range_mesh, 
-           .05, 
-           1.5, 
-           "STK Transfer test Use case 5");
+  transfer(transfer_domain_mesh, transfer_range_mesh, "STK Transfer test Use case 5");
   {
     stk::diag::TimeBlock __timer_point_to_point(timer_point_to_point);
     try {
