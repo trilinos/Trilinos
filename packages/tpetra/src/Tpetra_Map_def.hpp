@@ -1151,13 +1151,13 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const Teuchos::RCP<const Teuchos::Comm<int> > &
+  Teuchos::RCP<const Teuchos::Comm<int> >
   Map<LocalOrdinal,GlobalOrdinal,Node>::getComm() const {
     return comm_;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const Teuchos::RCP<Node> &
+  Teuchos::RCP<Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::getNode() const {
     return node_;
   }

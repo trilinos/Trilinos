@@ -256,10 +256,12 @@ namespace Tpetra {
     ArrayView<const int> getExportPIDs() const;
 
     //! The Source Map used to construct this Import object.
-    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& getSourceMap() const;
+    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
+    getSourceMap () const;
 
     //! The Target Map used to construct this Import object.
-    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& getTargetMap() const;
+    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
+    getTargetMap () const;
 
     //! The Distributor that this Import object uses to move data.
     Distributor & getDistributor() const;

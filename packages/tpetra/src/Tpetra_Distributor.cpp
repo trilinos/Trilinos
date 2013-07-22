@@ -461,11 +461,10 @@ namespace Tpetra {
   Teuchos::ArrayView<const size_t> Distributor::getLengthsTo() const
   { return lengthsTo_; }
 
-  const Teuchos::RCP<Distributor> &
+  Teuchos::RCP<Distributor>
   Distributor::getReverse() const {
-    if (reverseDistributor_ == Teuchos::null) {
-      // need to create reverse distributor
-      createReverseDistributor();
+    if (reverseDistributor_.is_null ()) {
+      createReverseDistributor ();
     }
     return reverseDistributor_;
   }

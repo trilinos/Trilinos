@@ -869,13 +869,13 @@ namespace Tpetra {
   }
 
   template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getDomainMap() const {
     return matrix_->getDomainMap();
   }
 
   template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getRangeMap() const {
     return matrix_->getRangeMap();
   }

@@ -124,8 +124,8 @@ class BlockMap : public Teuchos::Describable {
   //@{
 
   //! Return this block-map's point-entry map attribute.
-  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& getPointMap() const
-    { return pointMap_; }
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getPointMap () const
+  { return pointMap_; }
 
   //! Return global number of blocks.
   global_size_t getGlobalNumBlocks() const;

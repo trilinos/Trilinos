@@ -116,12 +116,13 @@ restricts the global vector to the vector lying on subdomain \f$i\f$,
   local matrix.
   
   The complete list of supported parameters is reported in page \ref ifp_params.
-
-  \date Last modified on 05-Sep-12.
 */
 template<class MatrixType,class LocalInverseType>
-class AdditiveSchwarz : virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> {
-      
+class AdditiveSchwarz : 
+    virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
+					   typename MatrixType::local_ordinal_type,
+					   typename MatrixType::global_ordinal_type,
+					   typename MatrixType::node_type> {
 public:
   typedef typename MatrixType::scalar_type         Scalar;
   typedef typename MatrixType::local_ordinal_type  LocalOrdinal;
@@ -153,10 +154,10 @@ public:
   //@{
   
   //! Returns the Map associated with the domain of this operator, which must be compatible with X.getMap().
-  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
   
   //! Returns the Map associated with the range of this operator, which must be compatible with Y.getMap().
-  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
   
   //! Returns a pointer to the input matrix.
   virtual Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getMatrix() const;

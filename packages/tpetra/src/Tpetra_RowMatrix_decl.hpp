@@ -123,16 +123,16 @@ namespace Tpetra {
     //@{
 
     //! The communicator over which this matrix is distributed.
-    virtual const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const = 0;
+    virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const = 0;
 
     //! The Kokkos Node instance.
     virtual Teuchos::RCP<Node> getNode() const = 0;
 
     //! The Map that describes the distribution of rows over processes.
-    virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRowMap() const = 0;
+    virtual Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const = 0;
 
     //! The Map that describes the distribution of columns over processes.
-    virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getColMap() const = 0;
+    virtual Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getColMap() const = 0;
 
     //! The RowGraph associated with this matrix.
     virtual Teuchos::RCP<const RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const = 0;

@@ -607,10 +607,10 @@ namespace Tpetra {
     //@{
 
     //! Get this Map's Comm object.
-    const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
+    Teuchos::RCP<const Teuchos::Comm<int> > getComm () const;
 
     //! Get this Map's Node object.
-    const Teuchos::RCP<Node> & getNode() const;
+    Teuchos::RCP<Node> getNode () const;
 
     //@}
     //! Implementation of \c Teuchos::Describable

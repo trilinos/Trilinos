@@ -81,7 +81,7 @@ OverlappingRowGraph<GraphType>::~OverlappingRowGraph() {}
 
 
 template<class GraphType>
-const Teuchos::RCP<const Teuchos::Comm<int> > & 
+Teuchos::RCP<const Teuchos::Comm<int> > 
 OverlappingRowGraph<GraphType>::getComm () const
 {
   return nonoverlappingGraph_->getComm ();
@@ -97,7 +97,7 @@ OverlappingRowGraph<GraphType>::getNode () const
   
 
 template<class GraphType>
-const Teuchos::RCP<const Tpetra::Map<typename GraphType::local_ordinal_type, typename GraphType::global_ordinal_type, typename GraphType::node_type> > & 
+Teuchos::RCP<const Tpetra::Map<typename GraphType::local_ordinal_type, typename GraphType::global_ordinal_type, typename GraphType::node_type> > 
 OverlappingRowGraph<GraphType>::getRowMap () const
 {
   return rowMap_;
@@ -105,7 +105,7 @@ OverlappingRowGraph<GraphType>::getRowMap () const
   
 
 template<class GraphType>
-const Teuchos::RCP<const Tpetra::Map<typename GraphType::local_ordinal_type, typename GraphType::global_ordinal_type, typename GraphType::node_type> > & 
+Teuchos::RCP<const Tpetra::Map<typename GraphType::local_ordinal_type, typename GraphType::global_ordinal_type, typename GraphType::node_type> > 
 OverlappingRowGraph<GraphType>::getColMap () const
 {
   return colMap_;
@@ -113,7 +113,7 @@ OverlappingRowGraph<GraphType>::getColMap () const
 
 
 template<class GraphType>
-const Teuchos::RCP<const Tpetra::Map<typename GraphType::local_ordinal_type, typename GraphType::global_ordinal_type, typename GraphType::node_type> > & 
+Teuchos::RCP<const Tpetra::Map<typename GraphType::local_ordinal_type, typename GraphType::global_ordinal_type, typename GraphType::node_type> > 
 OverlappingRowGraph<GraphType>::getDomainMap () const
 {
   return nonoverlappingGraph_->getDomainMap ();
@@ -121,7 +121,7 @@ OverlappingRowGraph<GraphType>::getDomainMap () const
 
 
 template<class GraphType>
-const Teuchos::RCP<const Tpetra::Map<typename GraphType::local_ordinal_type, typename GraphType::global_ordinal_type, typename GraphType::node_type> > & 
+Teuchos::RCP<const Tpetra::Map<typename GraphType::local_ordinal_type, typename GraphType::global_ordinal_type, typename GraphType::node_type> >
 OverlappingRowGraph<GraphType>::getRangeMap () const
 {
   return nonoverlappingGraph_->getRangeMap ();

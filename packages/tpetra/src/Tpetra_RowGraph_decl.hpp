@@ -84,26 +84,26 @@ namespace Tpetra {
     //@{ 
 
     //! The communicator over which this graph is distributed.
-    virtual const Teuchos::RCP<const Teuchos::Comm<int> >& 
+    virtual Teuchos::RCP<const Teuchos::Comm<int> >
     getComm () const = 0;
 
     //! The Kokkos Node instance with which this object was created.
     virtual Teuchos::RCP<Node> getNode () const = 0;
 
     //! The Map that describes this graph's distribution of rows over processes.
-    virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& 
+    virtual Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
     getRowMap () const = 0;
 
     //! The Map that describes this graph's distribution of columns over processes.
-    virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& 
+    virtual Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
     getColMap () const = 0;
 
     //! The Map associated with the domain of this graph.
-    virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& 
+    virtual Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
     getDomainMap () const = 0;
 
     //! The Map associated with the range of this graph.
-    virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& 
+    virtual Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
     getRangeMap () const = 0;
 
     //! This graph's Import object.

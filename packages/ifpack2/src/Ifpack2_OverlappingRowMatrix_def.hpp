@@ -221,7 +221,7 @@ OverlappingRowMatrix<MatrixType>::~OverlappingRowMatrix() {}
 
 
 template<class MatrixType>
-const Teuchos::RCP<const Teuchos::Comm<int> > & 
+Teuchos::RCP<const Teuchos::Comm<int> >
 OverlappingRowMatrix<MatrixType>::getComm () const
 {
   return A_->getComm ();
@@ -237,7 +237,7 @@ OverlappingRowMatrix<MatrixType>::getNode () const
   
 
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> > & 
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> >
 OverlappingRowMatrix<MatrixType>::getRowMap () const
 {
   // FIXME (mfh 12 July 2013) Is this really the right Map to return?
@@ -246,7 +246,7 @@ OverlappingRowMatrix<MatrixType>::getRowMap () const
   
 
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> > & 
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> >
 OverlappingRowMatrix<MatrixType>::getColMap () const
 {
   // FIXME (mfh 12 July 2013) Is this really the right Map to return?
@@ -255,7 +255,7 @@ OverlappingRowMatrix<MatrixType>::getColMap () const
 
 
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> > & 
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> >
 OverlappingRowMatrix<MatrixType>::getDomainMap () const
 {
   return A_->getDomainMap();
@@ -263,7 +263,7 @@ OverlappingRowMatrix<MatrixType>::getDomainMap () const
 
 
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> > & 
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> >
 OverlappingRowMatrix<MatrixType>::getRangeMap () const
 {
   return A_->getRangeMap ();

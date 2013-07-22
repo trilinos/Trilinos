@@ -327,7 +327,7 @@ namespace Tpetra {
            class GlobalOrdinal,
            class Node,
            class LocalMatOps>
-  const RCP<const Teuchos::Comm<int> > &
+  RCP<const Teuchos::Comm<int> >
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getComm() const {
     return getCrsGraph ()->getComm ();
   }
@@ -443,28 +443,28 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &
+  RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getRowMap() const {
     return getCrsGraph()->getRowMap();
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &
+  RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getColMap() const {
     return getCrsGraph()->getColMap();
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &
+  RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getDomainMap() const {
     return getCrsGraph()->getDomainMap();
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &
+  RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getRangeMap() const {
     return getCrsGraph()->getRangeMap();
   }

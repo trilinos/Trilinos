@@ -160,22 +160,22 @@ public:
   //@{
 
   //! Returns the communicator.
-  virtual const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
+  virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
   //! Returns the underlying Kokkos Node object.
   virtual Teuchos::RCP<node_type> getNode() const;
 
   //! Returns the Map that describes the row distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > & getRowMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRowMap() const;
 
   //! Returns the Map that describes the column distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > & getColMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getColMap() const;
 
   //! Returns the Map that describes the domain distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > & getDomainMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap() const;
 
   //! Returns the Map that describes the range distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > & getRangeMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRangeMap() const;
 
   //! The (locally filtered) matrix's graph.
   virtual Teuchos::RCP<const Tpetra::RowGraph<local_ordinal_type,global_ordinal_type,node_type> > getGraph() const;

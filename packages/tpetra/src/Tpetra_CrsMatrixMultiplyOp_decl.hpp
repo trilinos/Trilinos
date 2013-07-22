@@ -252,10 +252,10 @@ namespace Tpetra {
     bool hasTransposeApply() const;
 
     //! The domain Map of this Operator.
-    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
+    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
 
     //! The range Map of this Operator.
-    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
 
     //@}
 

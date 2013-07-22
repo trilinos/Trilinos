@@ -126,11 +126,11 @@ namespace Tpetra {
 
     /// The domain Map of this operator.
     /// This is the range map of the underlying CrsMatrix.
-    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
+    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
 
     /// The range Map of this operator.
     /// This is the domain Map of the underlying CrsMatrix.
-    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
 
     //@}
   protected:

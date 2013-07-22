@@ -956,16 +956,16 @@ namespace Tpetra {
     //@{
 
     //! Returns the communicator.
-    const RCP<const Comm<int> > & getComm() const;
+    RCP<const Comm<int> > getComm() const;
 
     //! Returns the underlying node.
     RCP<Node> getNode() const;
 
     //! Returns the Map that describes the row distribution in this matrix.
-    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRowMap() const;
+    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const;
 
     //! \brief Returns the Map that describes the column distribution in this matrix.
-    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getColMap() const;
+    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getColMap() const;
 
     //! Returns the RowGraph associated with this matrix.
     RCP<const RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const;
@@ -1379,12 +1379,12 @@ namespace Tpetra {
     /// \brief The domain Map of this operator.
     ///
     /// This is \c null until fillComplete() has been called.
-    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
+    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
 
     /// \brief The range Map of this operator.
     ///
     /// This is \c null until fillComplete() has been called.
-    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
 
     //@}
     //! @name Other "apply"-like methods

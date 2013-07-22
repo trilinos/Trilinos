@@ -55,8 +55,11 @@
 namespace Ifpack2 {
 //! Ifpack2_SingletonFilter: Filter based on matrix entries.
 template<class MatrixType>
-class  SingletonFilter : virtual public Tpetra::RowMatrix<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> {
-  
+class SingletonFilter : 
+    virtual public Tpetra::RowMatrix<typename MatrixType::scalar_type,
+				     typename MatrixType::local_ordinal_type,
+				     typename MatrixType::global_ordinal_type,
+				     typename MatrixType::node_type> {
 public:
   typedef typename MatrixType::scalar_type Scalar;
   typedef typename MatrixType::local_ordinal_type LocalOrdinal;
@@ -64,8 +67,6 @@ public:
   typedef typename MatrixType::node_type Node;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
   
-
-public:
   //! \name Constructor & destructor methods
   //@{
 
@@ -81,22 +82,22 @@ public:
   //@{
 
   //! Returns the communicator.
-  virtual const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
+  virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
   //! Returns the underlying node.
   virtual Teuchos::RCP<Node> getNode() const;
 
   //! Returns the Map that describes the row distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getRowMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const;
 
   //! \brief Returns the Map that describes the column distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getColMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getColMap() const;
 
   //! Returns the Map that describes the domain distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
 
   //! \brief Returns the Map that describes the range distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
 
   //! Returns the RowGraph associated with this matrix. 
   virtual Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const;

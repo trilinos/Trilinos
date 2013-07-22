@@ -534,7 +534,7 @@ namespace Tpetra {
     ///
     /// \note This method does <i>not</i> do data redistribution.  If
     ///   you need to move data around, use Import or Export.
-    void replaceMap (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map);
+    void replaceMap (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map);
 
     /// \brief Sum values of a locally replicated multivector across all processes.
     ///

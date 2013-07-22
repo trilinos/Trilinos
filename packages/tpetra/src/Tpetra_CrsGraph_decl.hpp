@@ -657,22 +657,22 @@ namespace Tpetra {
     //@{
 
     //! Returns the communicator.
-    const RCP<const Comm<int> > & getComm() const;
+    RCP<const Comm<int> > getComm() const;
 
     //! Returns the underlying node.
     RCP<Node> getNode() const;
 
     //! Returns the Map that describes the row distribution in this graph.
-    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRowMap() const;
+    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const;
 
     //! \brief Returns the Map that describes the column distribution in this graph.
-    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getColMap() const;
+    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getColMap() const;
 
     //! Returns the Map associated with the domain of this graph.
-    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
+    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
 
     //! Returns the Map associated with the domain of this graph.
-    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
 
     //! Returns the importer associated with this graph.
     RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > getImporter() const;

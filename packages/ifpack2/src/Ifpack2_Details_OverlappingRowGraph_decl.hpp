@@ -118,28 +118,28 @@ public:
   //@{ 
   
   //! The communicator over which the graph is distributed.
-  virtual const Teuchos::RCP<const Teuchos::Comm<int> >& getComm () const;
+  virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm () const;
   
   //! The graph's Kokkos Node instance.
   virtual Teuchos::RCP<node_type> getNode () const;
   
   //! The Map that describes the distribution of rows over processes.
-  virtual const Teuchos::RCP<const map_type> & getRowMap () const;
+  virtual Teuchos::RCP<const map_type> getRowMap () const;
   
   //! The Map that describes the distribution of columns over processes.
-  virtual const Teuchos::RCP<const map_type> & getColMap () const;
+  virtual Teuchos::RCP<const map_type> getColMap () const;
 
   /// \brief The Map that describes the domain of this graph.
   ///
   /// The domain is the distribution of valid input vectors of
   /// apply(), for a matrix whose graph is <tt>*this</tt>.
-  virtual const Teuchos::RCP<const map_type> & getDomainMap () const;
+  virtual Teuchos::RCP<const map_type> getDomainMap () const;
 
   /// \brief The Map that describes the range of this graph.
   ///
   /// The range is the distribution of valid output vectors of
   /// apply(), for a matrix whose graph is <tt>*this</tt>.
-  virtual const Teuchos::RCP<const map_type> & getRangeMap () const;
+  virtual Teuchos::RCP<const map_type> getRangeMap () const;
 
   //! Import object (from domain Map to column Map).
   virtual Teuchos::RCP<const import_type> getImporter () const;

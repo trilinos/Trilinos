@@ -160,16 +160,16 @@ class BlockCrsGraph : public Teuchos::Describable {
                              Teuchos::ArrayView<const LocalOrdinal>& blockCols) const;
 
   //! Returns the block-row map.
-  const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockRowMap() const;
+  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > getBlockRowMap() const;
 
   //! Returns the block-column map.
-  const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockColMap() const;
+  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > getBlockColMap() const;
 
   //! Returns the block-domain map.
-  const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockDomainMap() const;
+  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > getBlockDomainMap() const;
 
   //! Returns the block-range map.
-  const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockRangeMap() const;
+  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > getBlockRangeMap() const;
 
   //@}
 

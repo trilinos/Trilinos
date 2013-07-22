@@ -127,78 +127,80 @@ this problem, we must be able to detect it.
 */
 
 template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-class Preconditioner : virtual public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+class Preconditioner : 
+    virtual public Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+public:
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
-  public:
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+  //! Destructor.
+  virtual ~Preconditioner(){}
 
-    //! Destructor.
-    virtual ~Preconditioner(){}
+  /** \name Methods implementing Tpetra::Operator. */
+  //@{
 
-    /** \name Methods implementing Tpetra::Operator. */
-    //@{
+  //! Returns the Map associated with the domain of this operator, which must be compatible with X.getMap().
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > 
+  getDomainMap () const = 0;
 
-    //! Returns the Map associated with the domain of this operator, which must be compatible with X.getMap().
-    virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const = 0;
+  //! Returns the Map associated with the range of this operator, which must be compatible with Y.getMap().
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > 
+  getRangeMap () const = 0;
 
-    //! Returns the Map associated with the range of this operator, which must be compatible with Y.getMap().
-    virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const = 0;
+  //! Applies the effect of the preconditioner.
+  virtual void
+  apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
+	 Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+	 Teuchos::ETransp mode = Teuchos::NO_TRANS,
+	 Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+	 Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const = 0;
+  //@}
 
-    //! Applies the effect of the preconditioner.
-    virtual void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
-                             Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
-                       Teuchos::ETransp mode = Teuchos::NO_TRANS,
-               Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-               Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const = 0;
+  //! Sets all parameters for the preconditioner.
+  virtual void setParameters (const Teuchos::ParameterList& List) = 0;
 
-    //@}
+  //! Computes all (graph-related) data necessary to initialize the preconditioner.
+  virtual void initialize() = 0;
 
-    //! Sets all parameters for the preconditioner.
-    virtual void setParameters(const Teuchos::ParameterList& List) = 0;
+  //! Returns true if the  preconditioner has been successfully initialized, false otherwise.
+  virtual bool isInitialized() const = 0;
 
-    //! Computes all (graph-related) data necessary to initialize the preconditioner.
-    virtual void initialize() = 0;
+  //! Computes all (coefficient) data necessary to apply the preconditioner.
+  virtual void compute() = 0;
 
-    //! Returns true if the  preconditioner has been successfully initialized, false otherwise.
-    virtual bool isInitialized() const = 0;
+  //! Returns true if the  preconditioner has been successfully computed, false otherwise.
+  virtual bool isComputed() const = 0;
 
-    //! Computes all (coefficient) data necessary to apply the preconditioner.
-    virtual void compute() = 0;
+  //! Computes the condition number estimate and returns its value.
+  virtual magnitudeType 
+  computeCondEst (CondestType CT = Ifpack2::Cheap,
+		  LocalOrdinal MaxIters = 1550,
+		  magnitudeType Tol = 1e-9,
+		  const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &Matrix = Teuchos::null) = 0;
 
-    //! Returns true if the  preconditioner has been successfully computed, false otherwise.
-    virtual bool isComputed() const = 0;
+  //! Returns the computed condition number estimate, or -1.0 if not computed.
+  virtual magnitudeType getCondEst() const = 0;
 
-    //! Computes the condition number estimate and returns its value.
-    virtual magnitudeType computeCondEst(CondestType CT = Ifpack2::Cheap,
-                                         LocalOrdinal MaxIters = 1550,
-                                         magnitudeType Tol = 1e-9,
-                                         const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &Matrix = Teuchos::null) = 0;
+  //! Returns a pointer to the input matrix.
+  virtual Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getMatrix() const = 0;
 
-    //! Returns the computed condition number estimate, or -1.0 if not computed.
-    virtual magnitudeType getCondEst() const = 0;
+  //! Returns the number of calls to initialize().
+  virtual int getNumInitialize() const = 0;
 
-    //! Returns a pointer to the input matrix.
-    virtual Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getMatrix() const = 0;
+  //! Returns the number of calls to compute().
+  virtual int getNumCompute() const = 0;
 
-    //! Returns the number of calls to initialize().
-    virtual int getNumInitialize() const = 0;
+  //! Returns the number of calls to apply().
+  virtual int getNumApply() const = 0;
 
-    //! Returns the number of calls to compute().
-    virtual int getNumCompute() const = 0;
+  //! Returns the time spent in initialize().
+  virtual double getInitializeTime() const = 0;
 
-    //! Returns the number of calls to apply().
-    virtual int getNumApply() const = 0;
+  //! Returns the time spent in compute().
+  virtual double getComputeTime() const = 0;
 
-    //! Returns the time spent in initialize().
-    virtual double getInitializeTime() const = 0;
-
-    //! Returns the time spent in compute().
-    virtual double getComputeTime() const = 0;
-
-    //! Returns the time spent in apply().
-    virtual double getApplyTime() const = 0;
-
-};//class Preconditioner
+  //! Returns the time spent in apply().
+  virtual double getApplyTime() const = 0;
+};
 
 }//namespace Ifpack2
 

@@ -93,7 +93,7 @@ namespace Tpetra {
     ///
     /// \param node [in/out] The Kokkos Node instance.  If null, this
     ///   class will create a Node with default parameters.
-    explicit MpiPlatform (const RCP<Node> &node) :
+    explicit MpiPlatform (const Teuchos::RCP<Node> &node) :
       comm_ (Teuchos::createMpiComm<int> (Teuchos::opaqueWrapper<MPI_Comm> (MPI_COMM_WORLD))),
       node_ (node.is_null () ? KokkosClassic::Details::getNode<Node> () : node)
     {}
@@ -116,8 +116,8 @@ namespace Tpetra {
     ///   class will create a Node with default parameters.
     /// \param rawMpiComm [in] The MPI communicator, wrapped in a
     ///   <tt>Teuchos::OpaqueWrapper</tt>.
-    MpiPlatform (const RCP<Node> &node, 
-                 const RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm)
+    MpiPlatform (const Teuchos::RCP<Node> &node, 
+                 const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm)
       : comm_ (Teuchos::createMpiComm<int> (rawMpiComm)),
 	node_ (node.is_null () ? KokkosClassic::Details::getNode<Node> () : node)
     {}
@@ -132,7 +132,7 @@ namespace Tpetra {
     ///   class will create a Node with default parameters.
     /// \param rawMpiComm [in] The "raw" (not wrapped) MPI
     ///   communicator.
-    MpiPlatform (const RCP<Node> &node, MPI_Comm rawMpiComm)
+    MpiPlatform (const Teuchos::RCP<Node> &node, MPI_Comm rawMpiComm)
       : comm_ (Teuchos::createMpiComm<int> (Teuchos::opaqueWrapper<MPI_Comm> (rawMpiComm))),
 	node_ (node.is_null () ? KokkosClassic::Details::getNode<Node> () : node)
     {}
@@ -145,21 +145,21 @@ namespace Tpetra {
     //@{ 
 
     //! The Teuchos::Comm instance with which this object was created.
-    RCP<const Comm<int> > getComm() const {
+    Teuchos::RCP<const Comm<int> > getComm() const {
       return comm_; 
     }
 
     //! The Kokkos Node instance with which this object was created.
-    RCP<Node> getNode() const {
+    Teuchos::RCP<Node> getNode() const {
       return node_;
     }
 
     //@}
   protected: 
     //! Teuchos::Comm object instantiated for the platform.
-    RCP<Teuchos::MpiComm<int> > comm_;
+    Teuchos::RCP<Teuchos::MpiComm<int> > comm_;
     //! Kokkos Node object instantiated for the platform.
-    RCP<Node> node_;
+    Teuchos::RCP<Node> node_;
 
   private:
     //! Unimplemented copy constructor (syntactically forbidden).
