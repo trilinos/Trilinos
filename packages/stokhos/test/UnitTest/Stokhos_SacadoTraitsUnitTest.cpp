@@ -47,7 +47,7 @@
 #include "Stokhos_UnitTestHelpers.hpp"
 
 #include "Stokhos_Sacado.hpp"
-#ifdef HAVE_STOKHOS_KOKKOS
+#ifdef HAVE_STOKHOS_KOKKOSCORE
 #include "Stokhos_Sacado_Kokkos.hpp"
 #endif
 
@@ -140,7 +140,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, ScalarValue, pce_expr_type, double
 //
 // Sacado::MP::Vector
 //
-#ifdef HAVE_STOKHOS_KOKKOS
+#ifdef HAVE_STOKHOS_KOKKOSCORE
 typedef Kokkos::Host node_type;
 typedef Stokhos::DynamicStorage<int,double,node_type> kokkos_storage_type;
 typedef Sacado::MP::Vector<kokkos_storage_type,node_type> mp_type;

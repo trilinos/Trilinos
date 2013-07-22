@@ -344,14 +344,14 @@ IF(Stokhos_ENABLE_Sacado)
 
     SET(CUDA_SOURCES "")
     SET(KKUT_DEPLIBS stokhos kokkosarray_impl kokkosarray_devicehost)
-    IF (Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_DeviceCuda)
-      CUDA_COMPILE(CUDA_SOURCES Stokhos_KokkosCoreKernelsUnitTestNew_Cuda.cu)
+    IF (Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
+      CUDA_COMPILE(CUDA_SOURCES Stokhos_KokkosArrayKernelsUnitTestNew_Cuda.cu)
       SET(KKUT_DEPLIBS ${KKUT_DEPLIBS} kokkosarray_devicecuda)
     ENDIF()
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      KokkosCoreKernelsUnitTestNew
-      SOURCES Stokhos_KokkosCoreKernelsUnitTestNew.hpp
-              Stokhos_KokkosCoreKernelsUnitTestNew.cpp
+      KokkosArrayKernelsUnitTestNew
+      SOURCES Stokhos_KokkosArrayKernelsUnitTestNew.hpp
+              Stokhos_KokkosArrayKernelsUnitTestNew.cpp
               ${CUDA_SOURCES}
       COMM serial mpi
       STANDARD_PASS_OUTPUT

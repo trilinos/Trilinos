@@ -43,7 +43,7 @@
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Stokhos_KokkosKernelsUnitTestNew.hpp"
+#include "Stokhos_KokkosArrayKernelsUnitTestNew.hpp"
 
 #include "Stokhos_Host_CrsMatrix.hpp"
 #include "Stokhos_Host_BlockCrsMatrix.hpp"

@@ -413,7 +413,7 @@ IF (Stokhos_ENABLE_KokkosCore)
     kokkos/Host/Stokhos_Host_LinearSparse3Tensor.hpp
     kokkos/Host/Stokhos_Host_LexicographicBlockSparse3Tensor.hpp
     )
-  IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_DeviceCuda)
+  IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Cuda)
     SET(HEADERS ${HEADERS}
       kokkos/Cuda/Stokhos_Cuda_CrsMatrix.hpp

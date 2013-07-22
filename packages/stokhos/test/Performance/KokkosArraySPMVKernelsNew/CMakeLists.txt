@@ -10,7 +10,7 @@ IF (Stokhos_ENABLE_KokkosCore)
 
   SET(DEPLIBS stokhos kokkosarray_impl kokkosarray_devicehost)
   SET(CUDA_SOURCES "")
-  IF (Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_DeviceCuda)
+  IF (Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
     GET_PROPERTY(Stokhos_CUDA_INC_DIRS DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
     CUDA_INCLUDE_DIRECTORIES(${Stokhos_CUDA_INC_DIRS})
     CUDA_COMPILE(CUDA_SOURCES TestCuda.cu)
