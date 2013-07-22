@@ -189,11 +189,11 @@ MDMap(const MDCommRCP mdComm,
     if (axis < halos.size())
       _haloSizes[axis] = halos[axis];
     int lower, upper;
-    if (mdComm->getLowerNeighbor(axis) == -1)
+    if (getLowerNeighbor(axis) == -1)
       lower = _ghostSizes[axis];
     else
       lower = _haloSizes[axis];
-    if (mdComm->getUpperNeighbor(axis) == -1)
+    if (getUpperNeighbor(axis) == -1)
       upper = _ghostSizes[axis];
     else
       upper = _haloSizes[axis];
