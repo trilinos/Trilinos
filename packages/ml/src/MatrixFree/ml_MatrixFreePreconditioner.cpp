@@ -840,9 +840,9 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
       if (ML_Get_PrintLevel() > 8 && Comm().MyPID() == 0)
       {
         if (ic % 20 == 0)
-          std::cout << "Processing color " << flush;
+          std::cout << "Processing color " << std::flush;
 
-        std::cout << ic << " " << flush;
+        std::cout << ic << " " << std::flush;
         if (ic % 20 == 19 || ic == NumColors - 1)
           std::cout << std::endl;
         if (ic == NumColors - 1) std::cout << std::endl;

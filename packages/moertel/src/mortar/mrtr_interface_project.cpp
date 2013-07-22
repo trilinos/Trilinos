@@ -60,7 +60,7 @@ bool MOERTEL::Interface::BuildNormals()
   if (!IsComplete())
   {
     if (gcomm_.MyPID()==0)
-      cout << "***ERR*** MOERTEL::Interface::Project:\n"
+      std::cout << "***ERR*** MOERTEL::Interface::Project:\n"
            << "***ERR*** Complete() not called on interface " << Id_ << "\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -77,7 +77,7 @@ bool MOERTEL::Interface::BuildNormals()
     for (curr=rseg_[side].begin(); curr!=rseg_[side].end(); ++curr){
       if (curr->second->Nfunctions() < 1)
       {
-        cout << "***ERR*** MOERTEL::Interface::Project:\n"
+        std::cout << "***ERR*** MOERTEL::Interface::Project:\n"
              << "***ERR*** interface " << Id_ << ", mortar side\n"
              << "***ERR*** segment " << curr->second->Id() << " needs at least 1 function set\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -94,11 +94,11 @@ bool MOERTEL::Interface::BuildNormals()
     for (ncurr=rnode_[side].begin(); ncurr!=rnode_[side].end(); ++ncurr) {
 
 #if 0
-      cout << "side " << side << ": " << *(ncurr->second);
+      std::cout << "side " << side << ": " << *(ncurr->second);
 #endif
       ncurr->second->BuildAveragedNormal();
 #if 0
-      cout << "side " << side << ": " << *(ncurr->second);
+      std::cout << "side " << side << ": " << *(ncurr->second);
 #endif
 
     } // for(ncurr ...)
@@ -118,7 +118,7 @@ bool MOERTEL::Interface::Project()
   if (!IsComplete())
   {
     if (gcomm_.MyPID()==0)
-      cout << "***ERR*** MOERTEL::Interface::Project:\n"
+      std::cout << "***ERR*** MOERTEL::Interface::Project:\n"
            << "***ERR*** Complete() not called on interface " << Id_ << "\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -135,7 +135,7 @@ bool MOERTEL::Interface::Project()
     for (curr=rseg_[side].begin(); curr!=rseg_[side].end(); ++curr)
       if (curr->second->Nfunctions() < 1)
       {
-        cout << "***ERR*** MOERTEL::Interface::Project:\n"
+        std::cout << "***ERR*** MOERTEL::Interface::Project:\n"
              << "***ERR*** interface " << Id_ << ", mortar side\n"
              << "***ERR*** segment " << curr->second->Id() << " needs at least 1 function set\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -149,11 +149,11 @@ bool MOERTEL::Interface::Project()
     for (ncurr=rnode_[side].begin(); ncurr!=rnode_[side].end(); ++ncurr)
     {
 #if 0
-      cout << "side " << side << ": " << *(ncurr->second);
+      std::cout << "side " << side << ": " << *(ncurr->second);
 #endif
       ncurr->second->BuildAveragedNormal();
 #if 0
-      cout << "side " << side << ": " << *(ncurr->second);
+      std::cout << "side " << side << ": " << *(ncurr->second);
 #endif
     }
 
@@ -177,7 +177,7 @@ bool MOERTEL::Interface::Project()
   }
   else
   {
-    cout << "***ERR*** MOERTEL::Interface::Project:\n"
+    std::cout << "***ERR*** MOERTEL::Interface::Project:\n"
          << "***ERR*** interface " << Id() << "\n"
          << "***ERR*** unknown type of nodal projection\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -257,7 +257,7 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
         mindist = dist;
 	closenode = mnode;
       }
-      cout << "snode " << snode->Id() << " mnode " << mnode->Id() << " mindist " << mindist  << " dist " << dist << endl;
+      std::cout << "snode " << snode->Id() << " mnode " << mnode->Id() << " mindist " << mindist  << " dist " << dist << std::endl;
     }
     if (closenode == Teuchos::null)
     {
@@ -269,8 +269,8 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
     }
 
 #if 0
-    cout << "snode     " << *snode;
-    cout << "closenode " << *closenode;
+    std::cout << "snode     " << *snode;
+    std::cout << "closenode " << *closenode;
 #endif    
 
     // get segments attached to closest node cnode
@@ -361,7 +361,7 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
     else
     {
       if (OutLevel()>6)
-        cout << "MOERTEL: ***WRN***: Projection s->m: Node " << snode->Id() << " does not have projection\n";
+        std::cout << "MOERTEL: ***WRN***: Projection s->m: Node " << snode->Id() << " does not have projection\n";
       snode->SetProjectedNode(NULL);
     }
   } // for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
@@ -485,8 +485,8 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
     if (foundit)
     {
 #if 1
-      cout << "Node without projection:\n" << *snode;        
-      cout << "...get's lagrange multipliers\n\n";
+      std::cout << "Node without projection:\n" << *snode;        
+      std::cout << "...get's lagrange multipliers\n\n";
 #endif
       MOERTEL::ProjectedNode* pnode = new MOERTEL::ProjectedNode(*snode,NULL,NULL);
       snode->SetProjectedNode(pnode);
@@ -556,8 +556,8 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
     }
 
 #if 0
-    cout << "snode     " << *mnode;
-    cout << "closenode " << *closenode;
+    std::cout << "snode     " << *mnode;
+    std::cout << "closenode " << *closenode;
 #endif    
     
     // get segments attached to closest node closenode
@@ -660,7 +660,7 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
     else // this mnode does not have a valid projection
     {
       if (OutLevel()>6)
-        cout << "MOERTEL: ***WRN***: Projection m->s: Node " << mnode->Id() << " does not have projection\n";
+        std::cout << "MOERTEL: ***WRN***: Projection m->s: Node " << mnode->Id() << " does not have projection\n";
       mnode->SetProjectedNode(NULL);
     }
   } // for (scurr=rnode_[mside].begin(); scurr!=rnode_[mside].end(); ++scurr)
@@ -902,7 +902,7 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
     else // this mnode does not have a valid projection
     {
       if (OutLevel()>6)
-      cout << "MOERTEL: ***WRN***: Node " << mnode->Id() << " does not have projection\n\n";
+      std::cout << "MOERTEL: ***WRN***: Node " << mnode->Id() << " does not have projection\n\n";
       //mnode->SetProjectedNode(NULL);
     }
   } // for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
@@ -1007,7 +1007,7 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
 	Teuchos::RCP<MOERTEL::Node> snode = scurr->second;
 
 #if 0
-    cout << "now projecting\n " << *snode;
+    std::cout << "now projecting\n " << *snode;
 #endif    
     
     if (NodePID(snode->Id()) != lComm()->MyPID())
@@ -1033,7 +1033,7 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
         mindist = dist;
 	closenode = mnode;
       }
-      //cout << "snode " << snode->Id() << " mnode " << mnode->Id() << " mindist " << mindist  << " dist " << dist << endl;
+      //std::cout << "snode " << snode->Id() << " mnode " << mnode->Id() << " mindist " << mindist  << " dist " << dist << std::endl;
     }
     if (closenode == Teuchos::null)
     {
@@ -1088,9 +1088,9 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
           snode->SetProjectedNode(pnode);
 		  snode->SetGap(gap);
 #if 0
-          cout << " snode id: " << pnode->Id()
+          std::cout << " snode id: " << pnode->Id()
                << " projects on mseg: " << msegs[i]->Id()
-               << " orth to sseg " << ssegs[j]->Id() << endl;
+               << " orth to sseg " << ssegs[j]->Id() << std::endl;
 #endif          
         }
       } // for (int j=0; j<nsseg; ++j)
@@ -1223,8 +1223,8 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
     if (foundit)
     {
 #if 0
-      cout << "Node without projection:\n" << *snode;        
-      cout << "...get's lagrange multipliers\n\n";
+      std::cout << "Node without projection:\n" << *snode;        
+      std::cout << "...get's lagrange multipliers\n\n";
 #endif
       MOERTEL::ProjectedNode* pnode = new MOERTEL::ProjectedNode(*snode,NULL,NULL);
       snode->SetProjectedNode(pnode);

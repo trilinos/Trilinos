@@ -52,16 +52,16 @@
 
 #ifdef HAVE_AZTECOO_TEUCHOS
 //=============================================================================
-Teuchos::map<string,int>& AztecOO_key_map()
+Teuchos::map<std::string,int>& AztecOO_key_map()
 {
-  static Teuchos::map<string,int> azoo_key_map;
+  static Teuchos::map<std::string,int> azoo_key_map;
   return( azoo_key_map );
 }
 
 //=============================================================================
-Teuchos::map<string,int>& AztecOO_value_map()
+Teuchos::map<std::string,int>& AztecOO_value_map()
 {
-  static Teuchos::map<string,int> azoo_value_map;
+  static Teuchos::map<std::string,int> azoo_value_map;
   return( azoo_value_map );
 }
 
@@ -73,7 +73,7 @@ void AztecOO_initialize_maps()
     return;
   }
 
-  Teuchos::map<string,int>& azoo_key_map = AztecOO_key_map();
+  Teuchos::map<std::string,int>& azoo_key_map = AztecOO_key_map();
 
   azoo_key_map["AZ_SOLVER"] = AZ_solver;
   azoo_key_map["AZ_SCALING"] = AZ_scaling;
@@ -108,7 +108,7 @@ void AztecOO_initialize_maps()
   azoo_key_map["AZ_UPDATE_REDUCTION"] = AZ_update_reduction;
   azoo_key_map["AZ_ILL_COND_THRESH"] = AZ_ill_cond_thresh;
 
-  Teuchos::map<string,int>& azoo_value_map = AztecOO_value_map();
+  Teuchos::map<std::string,int>& azoo_value_map = AztecOO_value_map();
 
   azoo_value_map["AZ_NONE"] = AZ_none;
   azoo_value_map["AZ_CG"] = AZ_cg;

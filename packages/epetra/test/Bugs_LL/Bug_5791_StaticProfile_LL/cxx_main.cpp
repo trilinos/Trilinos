@@ -77,7 +77,7 @@ int main(int narg, char *arg[])
   for (int i = 0; i < nMyRows; i++)
     myGlobalRows[i] = (ITYPE)i + myFirstRow + OFFSET_EPETRA64;
   Epetra_Map *rowMap = new Epetra_Map(-1, nMyRows, &myGlobalRows[0], 0, comm);
-  if (verbose) rowMap->Print(cout);
+  if (verbose) rowMap->Print(std::cout);
 
   // Create an integer vector nnzPerRow that is used to build the Epetra Matrix.
   // nnzPerRow[i] is the number of entries for the ith local equation
@@ -100,9 +100,9 @@ int main(int narg, char *arg[])
         jv[nMyNonzeros] = i-1 + OFFSET_EPETRA64;
         vv[nMyNonzeros] = -1;
         if (verbose)
-          cout << "(" << iv[nMyNonzeros] << "," << jv[nMyNonzeros] << ")="
+          std::cout << "(" << iv[nMyNonzeros] << "," << jv[nMyNonzeros] << ")="
                << vv[nMyNonzeros] << " on processor " << me
-               << " in " << myrowcnt << endl;
+               << " in " << myrowcnt << std::endl;
         nMyNonzeros++;
         nnzPerRow[myrowcnt]++;
       }
@@ -111,9 +111,9 @@ int main(int narg, char *arg[])
       jv[nMyNonzeros] = i + OFFSET_EPETRA64;
       vv[nMyNonzeros] = ((i == 0 || i == nGlobalRows-1) ? 1. : 2.);
       if (verbose) 
-        cout << "(" << iv[nMyNonzeros] << "," << jv[nMyNonzeros] << ")="
+        std::cout << "(" << iv[nMyNonzeros] << "," << jv[nMyNonzeros] << ")="
              << vv[nMyNonzeros] << " on processor " << me
-             << " in " << myrowcnt << endl;
+             << " in " << myrowcnt << std::endl;
       nMyNonzeros++;
       nnzPerRow[myrowcnt]++;
 
@@ -122,9 +122,9 @@ int main(int narg, char *arg[])
         jv[nMyNonzeros] = i+1 + OFFSET_EPETRA64;
         vv[nMyNonzeros] = -1;
         if (verbose) 
-          cout << "(" << iv[nMyNonzeros] << "," << jv[nMyNonzeros] << ")="
+          std::cout << "(" << iv[nMyNonzeros] << "," << jv[nMyNonzeros] << ")="
                << vv[nMyNonzeros] << " on processor " << me
-               << " in " << myrowcnt << endl;
+               << " in " << myrowcnt << std::endl;
         nMyNonzeros++;
         nnzPerRow[myrowcnt]++;
       }
@@ -141,11 +141,11 @@ int main(int narg, char *arg[])
   for (int i=0; i < nMyRows; i++) {
     if (nnzPerRow[i]) {
       if (verbose) {
-        cout << "InsertGlobalValus row " << iv[sum]
+        std::cout << "InsertGlobalValus row " << iv[sum]
              << " count " << nnzPerRow[i] 
              << " cols " << jv[sum] << " " << jv[sum+1] << " ";
-        if (nnzPerRow[i] == 3) cout << jv[sum+2];
-        cout << endl;
+        if (nnzPerRow[i] == 3) std::cout << jv[sum+2];
+        std::cout << std::endl;
       }
       info = A->InsertGlobalValues(iv[sum],nnzPerRow[i],&vv[sum],&jv[sum]);
       assert(info==0);
@@ -156,7 +156,7 @@ int main(int narg, char *arg[])
   // Finish up
   info = A->FillComplete();
   assert(info==0);
-  if (verbose) A->Print(cout);
+  if (verbose) A->Print(std::cout);
 
   // Sanity test:  Product of matrix and vector of ones should have norm == 0
   // and max/min/mean values of 0
@@ -170,8 +170,8 @@ int main(int narg, char *arg[])
   sanityres.Norm2(&jjtwo);
   sanityres.NormInf(&jjmax);
   if (me == 0)
-    cout << "SanityTest norms 1/2/inf: " << jjone << " "
-                                         << jjtwo << " " << jjmax << endl;
+    std::cout << "SanityTest norms 1/2/inf: " << jjone << " "
+                                         << jjtwo << " " << jjmax << std::endl;
 
   bool test_failed = (jjone != 0) || (jjtwo != 0) || (jjmax != 0);
 
@@ -179,14 +179,14 @@ int main(int narg, char *arg[])
   sanityres.MeanValue(&jjtwo);
   sanityres.MaxValue(&jjmax);
   if (me == 0)
-    cout << "SanityTest values min/max/avg: " << jjone << " "
-                                              << jjmax << " " << jjtwo << endl;
+    std::cout << "SanityTest values min/max/avg: " << jjone << " "
+                                              << jjmax << " " << jjtwo << std::endl;
 
   test_failed = test_failed || (jjone != 0) || (jjtwo != 0) || (jjmax != 0);
 
   if (me == 0) {
     if(test_failed)
-      cout << "Bug_5791_StaticProifle_LL tests FAILED" << endl;
+      std::cout << "Bug_5791_StaticProifle_LL tests FAILED" << std::endl;
   }
 
   delete A;

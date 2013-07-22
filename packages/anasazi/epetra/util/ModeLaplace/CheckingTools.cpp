@@ -210,9 +210,9 @@ int CheckingTools::errorSubspaces(const Epetra_MultiVector &Q, const Epetra_Mult
 
   if (info < 0) {
     if (myPid == 0) {
-      cerr << endl;
-      cerr << " In DGESVD, argument " << -info << " has an illegal value\n";
-      cerr << endl;
+      std::cerr << std::endl;
+      std::cerr << " In DGESVD, argument " << -info << " has an illegal value\n";
+      std::cerr << std::endl;
     }
     delete[] sv;
     return info;
@@ -220,9 +220,9 @@ int CheckingTools::errorSubspaces(const Epetra_MultiVector &Q, const Epetra_Mult
 
   if (info > 0) {
     if (myPid == 0) {
-      cerr << endl;
-      cerr << " In DGESVD, DBSQR did not converge (" << info << ").\n";
-      cerr << endl;
+      std::cerr << std::endl;
+      std::cerr << " In DGESVD, DBSQR did not converge (" << info << ").\n";
+      std::cerr << std::endl;
     }
     delete[] sv;
     return info;
@@ -231,22 +231,22 @@ int CheckingTools::errorSubspaces(const Epetra_MultiVector &Q, const Epetra_Mult
   // Output the result
 
   if (myPid == 0) {
-    cout << endl;
-    cout << " --- Principal angles between eigenspaces ---\n";
-    cout << endl;
-    cout << " Reference space built with " << Qex.NumVectors() << " vectors." << endl;
-    cout << " Dimension of computed space: " << Q.NumVectors() << endl;
-    cout << endl;
-    cout.setf(ios::scientific, ios::floatfield);
-    cout.precision(4);
-    cout << " Smallest singular value = " << sv[0] << endl;
-    cout << " Largest singular value  = " << sv[svSize-1] << endl;
-    cout << endl;
-    cout << " Smallest angle between subspaces (rad) = ";
-    cout << ((sv[0] > 1.0) ? 0.0 : asin(sqrt(1.0 - sv[0]*sv[0]))) << endl;
-    cout << " Largest angle between subspaces (rad)  = ";
-    cout << ((sv[0] > 1.0) ? 0.0 : asin(sqrt(1.0 - sv[svSize-1]*sv[svSize-1]))) << endl;
-    cout << endl;
+    std::cout << std::endl;
+    std::cout << " --- Principal angles between eigenspaces ---\n";
+    std::cout << std::endl;
+    std::cout << " Reference space built with " << Qex.NumVectors() << " vectors." << std::endl;
+    std::cout << " Dimension of computed space: " << Q.NumVectors() << std::endl;
+    std::cout << std::endl;
+    std::cout.setf(ios::scientific, ios::floatfield);
+    std::cout.precision(4);
+    std::cout << " Smallest singular value = " << sv[0] << std::endl;
+    std::cout << " Largest singular value  = " << sv[svSize-1] << std::endl;
+    std::cout << std::endl;
+    std::cout << " Smallest angle between subspaces (rad) = ";
+    std::cout << ((sv[0] > 1.0) ? 0.0 : asin(sqrt(1.0 - sv[0]*sv[0]))) << std::endl;
+    std::cout << " Largest angle between subspaces (rad)  = ";
+    std::cout << ((sv[0] > 1.0) ? 0.0 : asin(sqrt(1.0 - sv[svSize-1]*sv[svSize-1]))) << std::endl;
+    std::cout << std::endl;
   }
 
   delete[] sv;
@@ -276,13 +276,13 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
     return;
 
   if (myPid == 0) {
-    cout << endl;
-    cout << " --- Norms of residuals for computed eigenmodes ---\n";
-    cout << endl;
-    cout << "        Eigenvalue";
+    std::cout << std::endl;
+    std::cout << " --- Norms of residuals for computed eigenmodes ---\n";
+    std::cout << std::endl;
+    std::cout << "        Eigenvalue";
     if (normWeight)
-      cout << "     User Norm     Scaled User N.";
-    cout << "     2-Norm     Scaled 2-Nor.\n";
+      std::cout << "     User Norm     Scaled User N.";
+    std::cout << "     2-Norm     Scaled 2-Nor.\n";
   }
 
   Epetra_Vector KQ(View, Q.Map(), work);
@@ -316,17 +316,17 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
     }
 
     if (myPid == 0) {
-      cout << " ";
-      cout.width(4);
-      cout.precision(8);
-      cout.setf(ios::scientific, ios::floatfield);
-      cout << j+1 << ". " << lambda[j] << " ";
+      std::cout << " ";
+      std::cout.width(4);
+      std::cout.precision(8);
+      std::cout.setf(ios::scientific, ios::floatfield);
+      std::cout << j+1 << ". " << lambda[j] << " ";
       if (normWeight) {
-        cout << residualUser << " ";
-        cout << ((lambda[j] == 0.0) ? 0.0 : residualUser/lambda[j]) << " ";
+        std::cout << residualUser << " ";
+        std::cout << ((lambda[j] == 0.0) ? 0.0 : residualUser/lambda[j]) << " ";
       }
-      cout << residualL2 << " " << ((lambda[j] == 0.0) ? 0.0 : residualL2/lambda[j]) << " ";
-      cout << endl;
+      std::cout << residualL2 << " " << ((lambda[j] == 0.0) ? 0.0 : residualL2/lambda[j]) << " ";
+      std::cout << std::endl;
     }
 
     if (lambda[j] > 0.0) {
@@ -343,15 +343,15 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
   } // for j=0; j<qc; ++j) 
 
   if (myPid == 0) {
-    cout << endl;
+    std::cout << std::endl;
     if (normWeight) {
-      cout << " >> Minimum scaled user-norm of residuals = " << minUserNorm << endl;
-      cout << " >> Maximum scaled user-norm of residuals = " << maxUserNorm << endl;
-      cout << endl;
+      std::cout << " >> Minimum scaled user-norm of residuals = " << minUserNorm << std::endl;
+      std::cout << " >> Maximum scaled user-norm of residuals = " << maxUserNorm << std::endl;
+      std::cout << std::endl;
     }
-    cout << " >> Minimum scaled L2 norm of residuals   = " << minL2Norm << endl;
-    cout << " >> Maximum scaled L2 norm of residuals   = " << maxL2Norm << endl;
-    cout << endl;
+    std::cout << " >> Minimum scaled L2 norm of residuals   = " << minL2Norm << std::endl;
+    std::cout << " >> Maximum scaled L2 norm of residuals   = " << maxL2Norm << std::endl;
+    std::cout << std::endl;
   }
 
   if (work)
@@ -380,12 +380,12 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
     return;
 
   if (myPid == 0) {
-    cout << endl;
-    cout << " --- Norms of residuals for computed eigenmodes ---\n";
-    cout << endl;
-    cout << "        Eigenvalue";
-    cout << "     M^{-1} N.     Sca. M^{-1} N.";
-    cout << "     2-Norm     Scaled 2-Nor.\n";
+    std::cout << std::endl;
+    std::cout << " --- Norms of residuals for computed eigenmodes ---\n";
+    std::cout << std::endl;
+    std::cout << "        Eigenvalue";
+    std::cout << "     M^{-1} N.     Sca. M^{-1} N.";
+    std::cout << "     2-Norm     Scaled 2-Nor.\n";
   }
 
   Epetra_Vector KQ(View, Q.Map(), work);
@@ -418,15 +418,15 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
     residualMinv = sqrt(fabs(residualMinv));
 
     if (myPid == 0) {
-      cout << " ";
-      cout.width(4);
-      cout.precision(8);
-      cout.setf(ios::scientific, ios::floatfield);
-      cout << j+1 << ". " << lambda[j] << " ";
-      cout << residualMinv << " ";
-      cout << ((lambda[j] == 0.0) ? 0.0 : residualMinv/lambda[j]) << " ";
-      cout << residualL2 << " " << ((lambda[j] == 0.0) ? 0.0 : residualL2/lambda[j]) << " ";
-      cout << endl;
+      std::cout << " ";
+      std::cout.width(4);
+      std::cout.precision(8);
+      std::cout.setf(ios::scientific, ios::floatfield);
+      std::cout << j+1 << ". " << lambda[j] << " ";
+      std::cout << residualMinv << " ";
+      std::cout << ((lambda[j] == 0.0) ? 0.0 : residualMinv/lambda[j]) << " ";
+      std::cout << residualL2 << " " << ((lambda[j] == 0.0) ? 0.0 : residualL2/lambda[j]) << " ";
+      std::cout << std::endl;
     }
 
     if (lambda[j] > 0.0) {
@@ -441,13 +441,13 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
   } // for j=0; j<qc; ++j) 
 
   if (myPid == 0) {
-    cout << endl;
-    cout << " >> Minimum scaled M^{-1}-norm of residuals = " << minMinvNorm << endl;
-    cout << " >> Maximum scaled M^{-1}-norm of residuals = " << maxMinvNorm << endl;
-    cout << endl;
-    cout << " >> Minimum scaled L2 norm of residuals   = " << minL2Norm << endl;
-    cout << " >> Maximum scaled L2 norm of residuals   = " << maxL2Norm << endl;
-    cout << endl;
+    std::cout << std::endl;
+    std::cout << " >> Minimum scaled M^{-1}-norm of residuals = " << minMinvNorm << std::endl;
+    std::cout << " >> Maximum scaled M^{-1}-norm of residuals = " << maxMinvNorm << std::endl;
+    std::cout << std::endl;
+    std::cout << " >> Minimum scaled L2 norm of residuals   = " << minL2Norm << std::endl;
+    std::cout << " >> Maximum scaled L2 norm of residuals   = " << maxL2Norm << std::endl;
+    std::cout << std::endl;
   }
 
   if (work)
@@ -510,22 +510,22 @@ int CheckingTools::errorLambda(double *continuous, double *discrete, int numDisc
 
   // Print the results for the eigenvalues
   if (myPid == 0) {
-    cout << endl;
-    cout << " --- Relative errors on eigenvalues ---\n";
-    cout << endl;
-    cout << "       Exact Cont.    Exact Disc.     Computed      ";
-    cout << " Alg. Err.  Mesh Err.\n";
+    std::cout << std::endl;
+    std::cout << " --- Relative errors on eigenvalues ---\n";
+    std::cout << std::endl;
+    std::cout << "       Exact Cont.    Exact Disc.     Computed      ";
+    std::cout << " Alg. Err.  Mesh Err.\n";
   }
 
   int iCount = 0;
   for (int i=0; i<nev; ++i) {
     if (bestMatch[i] == -1) {
       if (myPid == 0) {
-        cout << "      ************** ************** ";
-        cout.precision(8);
-        cout.setf(ios::scientific, ios::floatfield);
-        cout << lambda[i];
-        cout << "  *********  *********" << endl;
+        std::cout << "      ************** ************** ";
+        std::cout.precision(8);
+        std::cout.setf(ios::scientific, ios::floatfield);
+        std::cout << lambda[i];
+        std::cout << "  *********  *********" << std::endl;
       }
       iCount += 1;
     }
@@ -541,29 +541,29 @@ int CheckingTools::errorLambda(double *continuous, double *discrete, int numDisc
       if (used[i] < 0) {
         lastDiscrete = discrete[i];
         if (myPid == 0) {
-          cout << " ";
-          cout.width(4);
-          cout << i+1 << ". ";
-          cout.precision(8);
-          cout.setf(ios::scientific, ios::floatfield);
-          cout << continuous[i] << " " << discrete[i] << " ";
-          cout << "**************  *********  ";
-          cout.precision(3);
-          cout << fabs(continuous[i]-discrete[i])/continuous[i] << endl;
+          std::cout << " ";
+          std::cout.width(4);
+          std::cout << i+1 << ". ";
+          std::cout.precision(8);
+          std::cout.setf(ios::scientific, ios::floatfield);
+          std::cout << continuous[i] << " " << discrete[i] << " ";
+          std::cout << "**************  *********  ";
+          std::cout.precision(3);
+          std::cout << fabs(continuous[i]-discrete[i])/continuous[i] << std::endl;
         }
       }
       else {
         lastDiscrete = discrete[i];
         if (myPid == 0) {
-          cout << " ";
-          cout.width(4);
-          cout << i+1 << ". ";
-          cout.precision(8);
-          cout.setf(ios::scientific, ios::floatfield);
-          cout << continuous[i] << " " << discrete[i] << " " << lambda[used[i]] << "  ";
-          cout.precision(3);
-          cout << fabs(lambda[used[i]]-discrete[i])/discrete[i] << "  ";
-          cout << fabs(continuous[i]-discrete[i])/continuous[i] << endl;
+          std::cout << " ";
+          std::cout.width(4);
+          std::cout << i+1 << ". ";
+          std::cout.precision(8);
+          std::cout.setf(ios::scientific, ios::floatfield);
+          std::cout << continuous[i] << " " << discrete[i] << " " << lambda[used[i]] << "  ";
+          std::cout.precision(3);
+          std::cout << fabs(lambda[used[i]]-discrete[i])/discrete[i] << "  ";
+          std::cout << fabs(continuous[i]-discrete[i])/continuous[i] << std::endl;
         }
         iCount += 1;
       }
@@ -579,29 +579,29 @@ int CheckingTools::errorLambda(double *continuous, double *discrete, int numDisc
         }
         started = true;
         if (myPid == 0) {
-          cout << " ";
-          cout.width(4);
-          cout << i+1 << ". ";
-          cout.precision(8);
-          cout.setf(ios::scientific, ios::floatfield);
-          cout << continuous[i] << " " << discrete[i] << " " << lambda[used[i]] << "  ";
-          cout.precision(3);
-          cout << fabs(lambda[used[i]]-discrete[i])/discrete[i] << "  ";
-          cout << fabs(continuous[i]-discrete[i])/continuous[i] << endl;
+          std::cout << " ";
+          std::cout.width(4);
+          std::cout << i+1 << ". ";
+          std::cout.precision(8);
+          std::cout.setf(ios::scientific, ios::floatfield);
+          std::cout << continuous[i] << " " << discrete[i] << " " << lambda[used[i]] << "  ";
+          std::cout.precision(3);
+          std::cout << fabs(lambda[used[i]]-discrete[i])/discrete[i] << "  ";
+          std::cout << fabs(continuous[i]-discrete[i])/continuous[i] << std::endl;
         }
         iCount += 1;
       }
       else if (started) {
         if (myPid == 0) {
-          cout << " ";
-          cout.width(4);
-          cout << i+1 << ". ";
-          cout.precision(8);
-          cout.setf(ios::scientific, ios::floatfield);
-          cout << continuous[i] << " " << discrete[i] << " ";
-          cout << "**************  *********  ";
-          cout.precision(3);
-          cout << fabs(continuous[i]-discrete[i])/continuous[i] << endl;
+          std::cout << " ";
+          std::cout.width(4);
+          std::cout << i+1 << ". ";
+          std::cout.precision(8);
+          std::cout.setf(ios::scientific, ios::floatfield);
+          std::cout << continuous[i] << " " << discrete[i] << " ";
+          std::cout << "**************  *********  ";
+          std::cout.precision(3);
+          std::cout << fabs(continuous[i]-discrete[i])/continuous[i] << std::endl;
         }
       }
     }
@@ -635,7 +635,7 @@ int CheckingTools::inputArguments(const int &numEigen, const Epetra_Operator *K,
 
   if (K == 0) {
     if (myPid == 0)
-      cerr << "\n !!! The matrix K to analyze has not been specified !!! \n\n";
+      std::cerr << "\n !!! The matrix K to analyze has not been specified !!! \n\n";
     return -1;
   }
 
@@ -646,9 +646,9 @@ int CheckingTools::inputArguments(const int &numEigen, const Epetra_Operator *K,
     int kLocal = (K->OperatorDomainMap()).NumMyElements();
     if ((mGlobal != kGlobal) || (mLocal != kLocal)) {
       if (myPid == 0) {
-        cerr << endl;
-        cerr << " !!! The maps for the matrice K and the mass M are different !!!\n";
-        cerr << endl;
+        std::cerr << std::endl;
+        std::cerr << " !!! The maps for the matrice K and the mass M are different !!!\n";
+        std::cerr << std::endl;
       }
       return -2;
     }
@@ -661,9 +661,9 @@ int CheckingTools::inputArguments(const int &numEigen, const Epetra_Operator *K,
     int kLocal = (K->OperatorDomainMap()).NumMyElements();
     if ((pGlobal != kGlobal) || (pLocal != kLocal)) {
       if (myPid == 0) {
-        cerr << endl;
-        cerr << " !!! The maps for the matrice K and the preconditioner P are different !!!\n";
-        cerr << endl;
+        std::cerr << std::endl;
+        std::cerr << " !!! The maps for the matrice K and the preconditioner P are different !!!\n";
+        std::cerr << std::endl;
       }
       return -3;
     }
@@ -672,30 +672,30 @@ int CheckingTools::inputArguments(const int &numEigen, const Epetra_Operator *K,
   if ((Q.MyLength() != (K->OperatorDomainMap()).NumMyElements()) || 
       (Q.GlobalLength() != (K->OperatorDomainMap()).NumGlobalElements())) {
     if (myPid == 0) {
-      cerr << "\n !!! The maps for the vectors and the matrix are different !!! \n\n";
+      std::cerr << "\n !!! The maps for the vectors and the matrix are different !!! \n\n";
     }
     return -4;
   }
 
   if (Q.NumVectors() < numEigen) {
     if (myPid == 0) {
-      cerr << endl;
-      cerr << " !!! The number of eigenvalues is too large for the space allocated !!! \n\n";
-      cerr << " The recommended size for " << numEigen << " eigenvalues is ";
-      cerr << minSize << endl;
-      cerr << endl;
+      std::cerr << std::endl;
+      std::cerr << " !!! The number of eigenvalues is too large for the space allocated !!! \n\n";
+      std::cerr << " The recommended size for " << numEigen << " eigenvalues is ";
+      std::cerr << minSize << std::endl;
+      std::cerr << std::endl;
     }
     return -5;
   }
 
   if (Q.NumVectors() < minSize) {
     if (myPid == 0) {
-      cerr << endl;
-      cerr << " !!! The space allocated is too small for the number of eigenvalues";
-      cerr << " and the size of blocks specified !!! \n";
-      cerr << " The recommended size for " << numEigen << " eigenvalues is ";
-      cerr << minSize << endl;
-      cerr << endl;
+      std::cerr << std::endl;
+      std::cerr << " !!! The space allocated is too small for the number of eigenvalues";
+      std::cerr << " and the size of blocks specified !!! \n";
+      std::cerr << " The recommended size for " << numEigen << " eigenvalues is ";
+      std::cerr << minSize << std::endl;
+      std::cerr << std::endl;
     }
     return -6;
   }

@@ -159,8 +159,8 @@ int main(int argc, char* argv[])
           }
           else {
             //  bug 1902 and bug 1903  
-            string StrSolverType = toString(solverType) ; 
-            string StrSuperlu = "Superlu";
+            std::string StrSolverType = toString(solverType) ; 
+            std::string StrSuperlu = "Superlu";
             if ( StrSolverType==StrSuperlu && BadMatrixForSuperlu ) {
               *out << " : Skipping since Superlu fails on this matrix!\n";
             }

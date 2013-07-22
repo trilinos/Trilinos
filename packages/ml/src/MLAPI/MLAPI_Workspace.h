@@ -65,9 +65,9 @@ void Init();
 //! Destroys the MLAPI workspace.
 void Finalize();
 
-string GetString(const int& x);
+std::string GetString(const int& x);
 
-string GetString(const double& x);
+std::string GetString(const double& x);
 
 int GetMatrixType();
 

@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
   const ScalarType ONE  = SCT::one();
 
   if (verbose && MyPID == 0) {
-    cout << Anasazi::Anasazi_Version() << endl << endl;
+    std::cout << Anasazi::Anasazi_Version() << std::endl << std::endl;
   }
 
   //  Problem information
@@ -137,8 +137,8 @@ int main(int argc, char *argv[])
   boolret = problem->setProblem();
   if (boolret != true) {
     if (verbose && MyPID == 0) {
-      cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
-           << "End Result: TEST FAILED" << endl;	
+      std::cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << std::endl
+           << "End Result: TEST FAILED" << std::endl;	
     }
 #ifdef HAVE_MPI
     MPI_Finalize() ;
@@ -202,8 +202,8 @@ int main(int argc, char *argv[])
       MyPL.getEntryPtr("Locking Tolerance")->isUsed() == false ||
       MyPL.getEntryPtr("Full Ortho")->isUsed() == false) {
     if (verbose && MyPID==0) {
-      cout << "Failure! Unused parameters: " << endl;
-      MyPL.unused(cout);
+      std::cout << "Failure! Unused parameters: " << std::endl;
+      MyPL.unused(std::cout);
     }
   }
 
@@ -258,10 +258,10 @@ int main(int argc, char *argv[])
     OPT::Apply( *M, *Kvecs, *Mvecs );
     MVT::MvDot( *Mvecs, *Kvecs, normV );
 
-    os << "Number of iterations performed in LOBPCG_test.exe: " << MySolverMan.getNumIters() << endl
-       << "Direct residual norms computed in LOBPCG_test.exe" << endl
-       << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual(M)" << endl
-       << "----------------------------------------" << endl;
+    os << "Number of iterations performed in LOBPCG_test.exe: " << MySolverMan.getNumIters() << std::endl
+       << "Direct residual norms computed in LOBPCG_test.exe" << std::endl
+       << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual(M)" << std::endl
+       << "----------------------------------------" << std::endl;
     for (int i=0; i<numev; i++) {
       if ( SCT::magnitude(evals[i].realpart) != SCT::zero() ) {
         normV[i] = SCT::magnitude( SCT::squareroot( normV[i] ) / evals[i].realpart );
@@ -269,13 +269,13 @@ int main(int argc, char *argv[])
       else {
         normV[i] = SCT::magnitude( SCT::squareroot( normV[i] ) );
       }
-      os << std::setw(20) << evals[i].realpart << std::setw(20) << normV[i] << endl;
+      os << std::setw(20) << evals[i].realpart << std::setw(20) << normV[i] << std::endl;
       if ( normV[i] > tol ) {
         testFailed = true;
       }
     }
     if (verbose && MyPID==0) {
-      cout << endl << os.str() << endl;
+      std::cout << std::endl << os.str() << std::endl;
     }
 
   }
@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
 
   if (testFailed) {
     if (verbose && MyPID==0) {
-      cout << "End Result: TEST FAILED" << endl;	
+      std::cout << "End Result: TEST FAILED" << std::endl;	
     }
     return -1;
   }
@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
   // Default return value
   //
   if (verbose && MyPID==0) {
-    cout << "End Result: TEST PASSED" << endl;
+    std::cout << "End Result: TEST PASSED" << std::endl;
   }
   return 0;
 

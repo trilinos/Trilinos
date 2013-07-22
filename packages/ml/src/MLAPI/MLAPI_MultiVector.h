@@ -339,7 +339,7 @@ public:
   }
 
   //! Sets the name of \c this object, does not touch vector elements or space.
-  MultiVector& operator=(const string& Label)
+  MultiVector& operator=(const std::string& Label)
   {
     SetLabel(Label);
     return(*this);
@@ -576,7 +576,7 @@ public:
       {
         // do nothing here
         if (false)
-          cout << "blablablaaaaa" << endl;
+          std::cout << "blablablaaaaa" << std::endl;
       }
       else if (alpha == 1.0 && beta == -1.0)
       {
@@ -821,7 +821,7 @@ public:
     UpdateTime();
   }
 
-  //! Prints basic information about \c this object on ostream
+  //! Prints basic information about \c this object on std::ostream
   virtual std::ostream& Print(std::ostream& os,
                               const bool verbose = true) const
   {
@@ -829,19 +829,19 @@ public:
     StackPush();
 
     if (GetMyPID() == 0) {
-      os << endl;
-      os << "*** MLAPI::MultiVector ***" << endl;
-      os << "Label             = " << GetLabel() << endl;
-      os << "Local length      = " << GetMyLength() << endl;
-      os << "Global length     = " << GetGlobalLength() << endl;
-      os << "Number of vectors = " << GetNumVectors() << endl;
-      os << "Flop count        = " << GetFlops() << endl;
-      os << "Cumulative time   = " << GetTime() << endl;
+      os << std::endl;
+      os << "*** MLAPI::MultiVector ***" << std::endl;
+      os << "Label             = " << GetLabel() << std::endl;
+      os << "Local length      = " << GetMyLength() << std::endl;
+      os << "Global length     = " << GetGlobalLength() << std::endl;
+      os << "Number of vectors = " << GetNumVectors() << std::endl;
+      os << "Flop count        = " << GetFlops() << std::endl;
+      os << "Cumulative time   = " << GetTime() << std::endl;
       if (GetTime() != 0.0)
-        os << "MFlops rate       = " << 1.0e-6 * GetFlops() / GetTime() << endl;
+        os << "MFlops rate       = " << 1.0e-6 * GetFlops() / GetTime() << std::endl;
       else
-        os << "MFlops rate       = 0.0" << endl;
-      os << endl << endl;
+        os << "MFlops rate       = 0.0" << std::endl;
+      os << std::endl << std::endl;
     }
 
     if (verbose) {
@@ -857,7 +857,7 @@ public:
           os.width(20);
           os << "value " << v;
         }
-        os << endl << endl;
+        os << std::endl << std::endl;
       }
       
       for (int iproc = 0 ; iproc < GetNumProcs() ; ++iproc) {
@@ -875,14 +875,14 @@ public:
               os.width(20);
               os << (*this)(i,v);
             }
-            os << endl;
+            os << std::endl;
           }
         }
 
         Barrier();
       }
       if (GetMyPID() == 0)
-        os << endl;
+        os << std::endl;
     }
 
     StackPop();

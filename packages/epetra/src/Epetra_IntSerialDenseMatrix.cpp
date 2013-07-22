@@ -343,26 +343,26 @@ int Epetra_IntSerialDenseMatrix::InfNorm() {
 }
 
 //=========================================================================
-void Epetra_IntSerialDenseMatrix::Print(ostream& os) const {
+void Epetra_IntSerialDenseMatrix::Print(std::ostream& os) const {
 	if(CV_ == Copy)
-		os << "Data access mode: Copy" << endl;
+		os << "Data access mode: Copy" << std::endl;
 	else
-		os << "Data access mode: View" << endl;
+		os << "Data access mode: View" << std::endl;
 	if(A_Copied_)
-		os << "A_Copied: yes" << endl;
+		os << "A_Copied: yes" << std::endl;
 	else
-		os << "A_Copied: no" << endl;
-	os << "Rows(M): " << M_ << endl;
-	os << "Columns(N): " << N_ << endl;
-	os << "LDA: " << LDA_ << endl;
+		os << "A_Copied: no" << std::endl;
+	os << "Rows(M): " << M_ << std::endl;
+	os << "Columns(N): " << N_ << std::endl;
+	os << "LDA: " << LDA_ << std::endl;
 	if(M_ == 0 || N_ == 0)
-		os << "(matrix is empty, no values to display)" << endl;
+		os << "(matrix is empty, no values to display)" << std::endl;
 	else
 		for(int i = 0; i < M_; i++) {
 			for(int j = 0; j < N_; j++){
 				os << (*this)(i,j) << " ";
 			}
-			os << endl;
+			os << std::endl;
 		}
 }
 

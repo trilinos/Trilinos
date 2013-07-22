@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
     // refer to global indices; however row must be a locally hosted row.
     // If (row, col) is not found, value is set to 0.0.
 
-    cout << A;
+    std::cout << A;
 
     // Here we define 3 vectors. The last, z, is empty.
     
@@ -104,8 +104,8 @@ int main(int argc, char *argv[])
     x = x / (x * y);                  // scale x by the dot product between x and y
 
     if (GetMyPID() == 0) {
-      cout << "2-norm of z = " << norm << endl;
-      cout << "A-norm of z = " << Anorm << endl;
+      std::cout << "2-norm of z = " << norm << std::endl;
+      std::cout << "A-norm of z = " << Anorm << std::endl;
     }
 
     // some basic operations on matrices are also supported. For example,
@@ -134,14 +134,14 @@ int main(int argc, char *argv[])
     double NormX = sqrt(x * x);
 
     if (GetMyPID() == 0)
-      cout << "Norm of inv(A) * A * x - x = " << NormX << endl;
+      std::cout << "Norm of inv(A) * A * x - x = " << NormX << std::endl;
 
     // All MLAPI objects have a Label, which can be set using
     // SetLabel(Label). Also, all objects overload the << operator:
 
-    cout << MySpace;
-    cout << x;
-    cout << A;
+    std::cout << MySpace;
+    std::cout << x;
+    std::cout << A;
       
     // Function Eig() can be used to compute the eigenvalues of an Operator.
     // This function calls LAPACK, therefore the Operator should be "small".
@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
     Eig(A, ER, EI);
 
     for (int i = 0 ; i < ER.GetMyLength() ; ++i)
-      cout << "ER(" << MySpace(i) << ") = " << ER(i) << endl;
+      std::cout << "ER(" << MySpace(i) << ") = " << ER(i) << std::endl;
 
     // Another nice feature is that objects can be printed in a MATLAB format.
     // To that aim, simply do the following:
@@ -186,10 +186,10 @@ int main(int argc, char *argv[])
 
   } 
   catch (const int e) {
-    cout << "Integer exception, code = " << e << endl;
+    std::cout << "Integer exception, code = " << e << std::endl;
   } 
   catch (...) {
-    cout << "problems here..." << endl;
+    std::cout << "problems here..." << std::endl;
   }
 
 #ifdef HAVE_MPI

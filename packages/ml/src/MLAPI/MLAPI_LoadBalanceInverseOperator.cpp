@@ -183,23 +183,23 @@ MultiVector LoadBalanceInverseOperator::operator()(const MultiVector& LHS,
   return(RHS2);
 }
 
-ostream& LoadBalanceInverseOperator::Print(std::ostream& os, const bool verbose) const
+std::ostream& LoadBalanceInverseOperator::Print(std::ostream& os, const bool verbose) const
 {
 
   StackPush();
 
   if (GetMyPID() == 0) {
-    os << "***MLAPI::InverseOperator" << endl;
-    os << "Label             = " << GetLabel() << endl;
-    os << "Number of rows    = " << GetRangeSpace().GetNumGlobalElements() << endl;
-    os << "Number of columns = " << GetRangeSpace().GetNumGlobalElements() << endl;
-    os << "Flop count        = " << GetFlops() << endl;
-    os << "Cumulative time   = " << GetTime() << endl;
+    os << "***MLAPI::InverseOperator" << std::endl;
+    os << "Label             = " << GetLabel() << std::endl;
+    os << "Number of rows    = " << GetRangeSpace().GetNumGlobalElements() << std::endl;
+    os << "Number of columns = " << GetRangeSpace().GetNumGlobalElements() << std::endl;
+    os << "Flop count        = " << GetFlops() << std::endl;
+    os << "Cumulative time   = " << GetTime() << std::endl;
     if (GetTime() != 0.0)
-      os << "MFlops rate       = " << 1.0e-6 * GetFlops() / GetTime() << endl;
+      os << "MFlops rate       = " << 1.0e-6 * GetFlops() / GetTime() << std::endl;
     else
-      os << "MFlops rate       = 0.0" << endl;
-    os << endl;
+      os << "MFlops rate       = 0.0" << std::endl;
+    os << std::endl;
   }
 
   StackPop();

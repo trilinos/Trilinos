@@ -45,7 +45,7 @@
 #include "Trilinos_Util.h"
 #include "Trilinos_version.h"
 
-	string Triutils_Version() { 
+	std::string Triutils_Version() { 
 		return("Triutils in Trilinos " TRILINOS_VERSION_STRING); 
 	}
 

@@ -27,7 +27,7 @@ LinearCombinationMixed operator+(const BaseLinearCombination& left,
 LinearCombinationMixed operator+(const MultiVector& left, 
                                         const BaseLinearCombination& right)
 {
-  cout << "HERE" << endl;
+  std::cout << "HERE" << std::endl;
   return(LinearCombinationMixed(right, left, 1.0));
 }
 

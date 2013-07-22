@@ -52,12 +52,12 @@ namespace ML_Epetra
     }
     
     //! Prints unused parameters in the input ParameterList on the specified stream.
-    virtual void PrintUnused(ostream & os) const
+    virtual void PrintUnused(std::ostream & os) const
     {
       List_.unused(os);
     }
     
-    //! Prints unused parameters in the input ParameterList to cout on proc \c MyPID. 
+    //! Prints unused parameters in the input ParameterList to std::cout on proc \c MyPID. 
     /*! Mispelled parameters are simply ignored. Therefore, it is often the best
      * choice to print out the parameters that have not been used in the
      * construction phase. 
@@ -67,7 +67,7 @@ namespace ML_Epetra
     {
       if( Comm().MyPID() == MyPID ) {
         ML_print_line("-",78);
-        cout << "Unused parameters:" << endl;
+        std::cout << "Unused parameters:" << std::endl;
         PrintUnused();
         ML_print_line("-",78);
       }
@@ -79,12 +79,12 @@ namespace ML_Epetra
       return List_;
     }
     
-    //! Prints on \c cout the values of the internally stored parameter list for processor \c MyPID
+    //! Prints on \c std::cout the values of the internally stored parameter list for processor \c MyPID
     virtual void PrintList(int MyPID)
     {
       if( Comm().MyPID() == MyPID ) {
         ML_print_line("-",78);
-        cout << List_;
+        std::cout << List_;
         ML_print_line("-",78);
       }
     }

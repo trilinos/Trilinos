@@ -143,7 +143,7 @@ void Trilinos_Util_CountTriples_internal( const char *data_file,
 	    first_off_diag = false ; 
 	  }
 	  if ( ( j > i && ! upper ) || ( i > j && upper ) ) { 
-	    cout << "file not symmetric" << endl ; 
+	    std::cout << "file not symmetric" << std::endl ; 
 	    exit(1) ; 
 	  }
 	  non_zeros[j-1]++ ; 

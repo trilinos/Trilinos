@@ -37,7 +37,7 @@ int main(int argCount, char **argValue)
       values[0] = 3.2 + globalRowIdx*0.01;
 
       if (globalRowIdx % 10000 == 0) {
-  cerr << "About to insert row " << globalRowIdx << "\n";
+  std::cerr << "About to insert row " << globalRowIdx << "\n";
       }
 
       ierr = b.ReplaceGlobalValues(1, (const int *)&indices[0], 
@@ -57,7 +57,7 @@ int main(int argCount, char **argValue)
   assert(ierr==0);
 
   if (rank == 0) {
-    cerr << "insertion time = " << insertionTime << " (seconds)\n";
+    std::cerr << "insertion time = " << insertionTime << " (seconds)\n";
   }
 
 

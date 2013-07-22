@@ -424,9 +424,9 @@ void ForwardResponseSensitivityComputer<Scalar>::computeResponseAndSensitivityIm
   
   if (print_norms) {
     if (g_hat)
-      *out << "\n||g_hat||inf = " << norm_inf(*g_hat) << endl;
+      *out << "\n||g_hat||inf = " << norm_inf(*g_hat) << std::endl;
     if (computeSens && !is_null(D_g_D_p_))
-      *out << "\n||D_g_D_p_||inf = " << norms_inf(*D_g_D_p_) << endl;
+      *out << "\n||D_g_D_p_||inf = " << norms_inf(*D_g_D_p_) << std::endl;
   }
   
   if ( g_hat && (dumpSensitivities_ || print_x) )
@@ -434,11 +434,11 @@ void ForwardResponseSensitivityComputer<Scalar>::computeResponseAndSensitivityIm
       
   if (computeSens && print_x) {
     if (!is_null(D_g_D_x_dot_))
-      *out << "\nD_g_D_x_dot = " << *D_g_D_x_ << endl;
+      *out << "\nD_g_D_x_dot = " << *D_g_D_x_ << std::endl;
     if (!is_null(D_g_D_x_))
-      *out << "\nD_g_D_x = " << *D_g_D_x_ << endl;
+      *out << "\nD_g_D_x = " << *D_g_D_x_ << std::endl;
     if (!is_null(D_g_D_p_))
-      *out << "\nD_g_D_p = " << *D_g_D_p_ << endl;
+      *out << "\nD_g_D_p = " << *D_g_D_p_ << std::endl;
   }
   
   //

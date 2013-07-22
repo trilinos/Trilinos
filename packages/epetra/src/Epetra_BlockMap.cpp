@@ -1393,7 +1393,7 @@ void Epetra_BlockMap::EndOfConstructorOps() {
 }
 
 //==============================================================================
-void Epetra_BlockMap::Print(ostream & os) const
+void Epetra_BlockMap::Print(std::ostream & os) const
 {
   int * FirstPointInElementList1 = 0;
   int * ElementSizeList1 = 0;
@@ -1407,21 +1407,21 @@ void Epetra_BlockMap::Print(ostream & os) const
   for (int iproc = 0; iproc < NumProc; iproc++) {
     if (MyPID == iproc) {
       if (MyPID == 0) {
-  os <<  "\nNumber of Global Elements  = "; os << NumGlobalElements64(); os << endl;
-  os <<    "Number of Global Points    = "; os << NumGlobalPoints64(); os << endl;
-  os <<    "Maximum of all GIDs        = "; os << MaxAllGID64(); os << endl;
-  os <<    "Minimum of all GIDs        = "; os << MinAllGID64(); os << endl;
-  os <<    "Index Base                 = "; os << IndexBase64(); os << endl;
+  os <<  "\nNumber of Global Elements  = "; os << NumGlobalElements64(); os << std::endl;
+  os <<    "Number of Global Points    = "; os << NumGlobalPoints64(); os << std::endl;
+  os <<    "Maximum of all GIDs        = "; os << MaxAllGID64(); os << std::endl;
+  os <<    "Minimum of all GIDs        = "; os << MinAllGID64(); os << std::endl;
+  os <<    "Index Base                 = "; os << IndexBase64(); os << std::endl;
   if (ConstantElementSize())
-    os <<  "Constant Element Size      = "; os << ElementSize(); os << endl;
+    os <<  "Constant Element Size      = "; os << ElementSize(); os << std::endl;
       }
-      os << endl;
+      os << std::endl;
       
-      os <<    "Number of Local Elements   = "; os << NumMyElements(); os << endl;
-      os <<    "Number of Local Points     = "; os << NumMyPoints(); os << endl;
-      os <<    "Maximum of my GIDs         = "; os << MaxMyGID64(); os << endl;
-      os <<    "Minimum of my GIDs         = "; os << MinMyGID64(); os << endl;
-      os << endl;
+      os <<    "Number of Local Elements   = "; os << NumMyElements(); os << std::endl;
+      os <<    "Number of Local Points     = "; os << NumMyPoints(); os << std::endl;
+      os <<    "Maximum of my GIDs         = "; os << MaxMyGID64(); os << std::endl;
+      os <<    "Minimum of my GIDs         = "; os << MinMyGID64(); os << std::endl;
+      os << std::endl;
       
       os.width(14);
       os <<  "     MyPID"; os << "    ";
@@ -1435,7 +1435,7 @@ void Epetra_BlockMap::Print(ostream & os) const
   os.width(14);
   os <<"   ElementSize "; os << " ";
       }
-      os << endl;
+      os << std::endl;
       
       for (int i = 0; i < NumMyElements(); i++) {
   os.width(14);
@@ -1469,10 +1469,10 @@ void Epetra_BlockMap::Print(ostream & os) const
     os.width(14);
     os << ElementSizeList1[i]; os << "    ";
   }
-  os << endl;
+  os << std::endl;
       }
       
-      os << flush;
+      os << std::flush;
       
     }
     // Do a few global ops to give I/O a chance to complete

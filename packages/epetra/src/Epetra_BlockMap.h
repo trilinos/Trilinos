@@ -746,7 +746,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   //@{
 
   //! Print object to an output stream
-  virtual void Print(ostream & os) const;
+  virtual void Print(std::ostream & os) const;
 
   //! Access function for Epetra_Comm communicator.
   const Epetra_Comm & Comm() const {return(*BlockMapData_->Comm_);}

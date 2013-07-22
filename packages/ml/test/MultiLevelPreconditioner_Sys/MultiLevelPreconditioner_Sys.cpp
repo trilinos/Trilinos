@@ -34,11 +34,11 @@ using namespace EpetraExt;
 
 void PrintLine() 
 {
-  cout << endl;
+  std::cout << std::endl;
   for( int i=0 ; i<80 ; ++i )
-    cout << "=";
-  cout << endl;
-  cout << endl;
+    std::cout << "=";
+  std::cout << std::endl;
+  std::cout << std::endl;
   
   return;
 }
@@ -128,13 +128,13 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   Ax.Update(1.0, *rhs, -1.0);
   Ax.Norm2(&Norm);
   
-  string msg = ProblemType;
+  std::string msg = ProblemType;
   
   if (A->Comm().MyPID() == 0) {
-    cout << msg << "......Using " << A->Comm().NumProc() << " processes" << endl;
-    cout << msg << "......||A x - b||_2 = " << Norm << endl;
-    cout << msg << "......||x_exact - x||_2 = " << sqrt(d_tot) << endl;
-    cout << msg << "......Total Time = " << Time.ElapsedTime() << endl;
+    std::cout << msg << "......Using " << A->Comm().NumProc() << " processes" << std::endl;
+    std::cout << msg << "......||A x - b||_2 = " << Norm << std::endl;
+    std::cout << msg << "......||x_exact - x||_2 = " << sqrt(d_tot) << std::endl;
+    std::cout << msg << "......Total Time = " << Time.ElapsedTime() << std::endl;
   }
   
   TotalErrorExactSol += sqrt(d_tot);
@@ -233,17 +233,17 @@ int main(int argc, char *argv[]) {
   // ===================== //
 
   if (Comm.MyPID() == 0) {
-    cout << endl;
-    cout << "......Total error for residual        = " << TotalErrorResidual << endl;
-    cout << "......Total error for exact solution  = " << TotalErrorExactSol << endl;
-    cout << endl;
+    std::cout << std::endl;
+    std::cout << "......Total error for residual        = " << TotalErrorResidual << std::endl;
+    std::cout << "......Total error for exact solution  = " << TotalErrorExactSol << std::endl;
+    std::cout << std::endl;
   }
 
   delete Matrix;
   
   // if (TotalErrorResidual > 1e-8) {
   if (TotalErrorResidual > 5e-8) { // loosened tolerances
-    cerr << "Error: `MultiLevelPrecoditioner_Sym.exe' failed!" << endl;
+    std::cerr << "Error: `MultiLevelPrecoditioner_Sym.exe' failed!" << std::endl;
     exit(EXIT_FAILURE);
   }
 
@@ -252,7 +252,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   if (Comm.MyPID() == 0)
-    cerr << "`MultiLevelPrecoditioner_Sym.exe' passed!" << endl;
+    std::cerr << "`MultiLevelPrecoditioner_Sym.exe' passed!" << std::endl;
 
   return (EXIT_SUCCESS);
 }

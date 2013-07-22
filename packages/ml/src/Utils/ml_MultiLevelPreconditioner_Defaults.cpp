@@ -22,7 +22,7 @@ using namespace ML_Epetra;
 
 // ============================================================================
 
-int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List, 
+int ML_Epetra::SetDefaults(std::string ProblemType, ParameterList & List, 
 			   int * ioptions, double * iparams, const bool OverWrite)
 {
   RCP<std::vector<int> >    options;
@@ -67,9 +67,9 @@ int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List,
     ML_CHK_ERR( ML_Epetra::SetDefaultsDD_LU(List, options, params, OverWrite ));
   }
   else {
-    cerr << "ERROR: Wrong input parameter in `SetDefaults' ("
-	 << ProblemType << "). Should be: " << endl
-	 << "ERROR: <SA> / <DD> / <DD-ML> / <maxwell>" << endl;
+    std::cerr << "ERROR: Wrong input parameter in `SetDefaults' ("
+	 << ProblemType << "). Should be: " << std::endl
+	 << "ERROR: <SA> / <DD> / <DD-ML> / <maxwell>" << std::endl;
     ML_CHK_ERR(-1); // bad input option
   }
 
@@ -536,8 +536,8 @@ void ML_OverwriteDefaults(ParameterList &inList, ParameterList &List, bool OverW
   if (inList.isSublist("coarse: list"))
     coarseList = &(inList.sublist("coarse: list"));
   for(ParameterList::ConstIterator param=List.begin(); param!=List.end(); param++) {
-    string pname = List.name(param);
-    if (coarseList && pname.find("coarse: ",0) != string::npos) {
+    std::string pname = List.name(param);
+    if (coarseList && pname.find("coarse: ",0) != std::string::npos) {
       if (!coarseList->isParameter(pname) || OverWrite)
         coarseList->setEntry(pname , List.entry(param));
     }

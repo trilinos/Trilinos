@@ -222,10 +222,10 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm,
     generateGraphUsingElements(*AA);
 
 #ifdef DEBUG_GRAPH
-  AA->Print(cout);
+  AA->Print(std::cout);
 #endif
 #ifdef DEBUG_IMPORTER
-  Importer->Print(cout);
+  Importer->Print(std::cout);
 #endif
 
   // Create the Importer needed for FD coloring using element overlap
@@ -289,7 +289,7 @@ void Brusselator::setParameters(const double alpha_, const double beta_)
 {
   alpha = alpha_;
   beta  = beta_;
-  std::cout<<" Brusselator::setParameters: alpha = "<<alpha<<"  beta = "<<beta<<endl;
+  std::cout<<" Brusselator::setParameters: alpha = "<<alpha<<"  beta = "<<beta<<std::endl;
 }
 
 // Matrix and Residual Fills

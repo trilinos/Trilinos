@@ -74,7 +74,7 @@ namespace EpetraExt {
 */
 template<class T>
 struct Perm_traits {
-  /** return a string name for the object type */
+  /** return a std::string name for the object type */
   static const char* typeName()
   { static const char name[] = "unknown"; return( name ); }
 
@@ -95,13 +95,13 @@ struct Perm_traits {
       map)
    */
   static void replaceMap(T* obj, const Epetra_BlockMap& map)
-  { cerr << "not implemented for unknown type"<<endl; }
+  { std::cerr << "not implemented for unknown type"<<std::endl; }
 
   /** return new object, which is a column-permutation of srcObj */
   static T*
   produceColumnPermutation(Permutation<T>* perm,
 			   T* srcObj)
-  { cerr << "not implemented for unknown type"<<endl; }
+  { std::cerr << "not implemented for unknown type"<<std::endl; }
 
 };//struct Perm_traits
 
@@ -133,7 +133,7 @@ struct Perm_traits<Epetra_CrsMatrix> {
     const Epetra_Map* pointmap =
       dynamic_cast<const Epetra_Map*>(&map);
     if (pointmap == NULL) {
-      cerr << "dynamic_cast<const Epetra_Map*> failed."<<endl;
+      std::cerr << "dynamic_cast<const Epetra_Map*> failed."<<std::endl;
       return(NULL);
     }
 
@@ -182,8 +182,8 @@ struct Perm_traits<Epetra_CrsMatrix> {
       int err = srcObj->ExtractGlobalRowCopy(globalRow, len, numIndices,
 					     src_values, src_indices);
       if (err < 0 || numIndices != len) {
-	cerr<<"Perm_traits<CrsMatrix>::produceColumnPermutation err("<<err<<") row "
-	    <<globalRow<<", len "<<len<<", numIndices "<<numIndices<<endl;
+	std::cerr<<"Perm_traits<CrsMatrix>::produceColumnPermutation err("<<err<<") row "
+	    <<globalRow<<", len "<<len<<", numIndices "<<numIndices<<std::endl;
       }
 
       int* pindices = new int[len];
@@ -196,8 +196,8 @@ struct Perm_traits<Epetra_CrsMatrix> {
 
 	int lid = pmap.LID(old_col);
 	if (lid<0) {
-	  cerr << "Perm_traits<CrsMatrix>::permuteColumnIndices GID("<<old_col
-	       <<") not found"<<endl;
+	  std::cerr << "Perm_traits<CrsMatrix>::permuteColumnIndices GID("<<old_col
+	       <<") not found"<<std::endl;
 	  break;
 	}
 
@@ -206,8 +206,8 @@ struct Perm_traits<Epetra_CrsMatrix> {
 
       err = result->InsertGlobalValues(globalRow, len, src_values, pindices);
       if (err < 0) {
-	cerr << "Perm_traits<CrsMatrix>::permuteColumnIndices err("<<err
-	     <<") row "<<globalRow<<endl;
+	std::cerr << "Perm_traits<CrsMatrix>::permuteColumnIndices err("<<err
+	     <<") row "<<globalRow<<std::endl;
       }
 
       delete [] pindices;
@@ -289,8 +289,8 @@ struct Perm_traits<Epetra_CrsGraph> {
       int* src_indices = new int[len];
       int err = srcObj->ExtractGlobalRowCopy(globalRow, len, numIndices, src_indices);
       if (err < 0 || numIndices != len) {
-	cerr<<"Perm_traits<CrsGraph>::produceColumnPermutation err("<<err<<") row "
-	  <<globalRow<<", len "<<len<<", numIndices "<<numIndices<<endl;
+	std::cerr<<"Perm_traits<CrsGraph>::produceColumnPermutation err("<<err<<") row "
+	  <<globalRow<<", len "<<len<<", numIndices "<<numIndices<<std::endl;
       }
 
       int* pindices = new int[len];
@@ -303,8 +303,8 @@ struct Perm_traits<Epetra_CrsGraph> {
 
 	int lid = pmap.LID(old_col);
 	if (lid<0) {
-	  cerr << "Perm_traits<CrsGraph>::permuteColumnIndices GID("<<old_col
-	       <<") not found"<<endl;
+	  std::cerr << "Perm_traits<CrsGraph>::permuteColumnIndices GID("<<old_col
+	       <<") not found"<<std::endl;
 	  break;
 	}
 
@@ -313,8 +313,8 @@ struct Perm_traits<Epetra_CrsGraph> {
 
       err = result->InsertGlobalIndices(globalRow, len, pindices);
       if (err < 0) {
-	cerr << "Perm_traits<CrsGraph>::produceColumnPermutation err("<<err
-	     <<") row "<<globalRow<<endl;
+	std::cerr << "Perm_traits<CrsGraph>::produceColumnPermutation err("<<err
+	     <<") row "<<globalRow<<std::endl;
       }
 
       delete [] pindices;
@@ -361,7 +361,7 @@ struct Perm_traits<Epetra_MultiVector> {
   produceColumnPermutation(Permutation<Epetra_MultiVector>* perm,
 			   Epetra_MultiVector* srcObj)
   {
-    cerr << "col-permutation not implemented for Epetra_MultiVector"<<endl;
+    std::cerr << "col-permutation not implemented for Epetra_MultiVector"<<std::endl;
     return(NULL);
   }
 
@@ -381,7 +381,7 @@ Permutation<T>::Permutation(Epetra_DataAccess CV,
     origObj_(NULL)
 {
   if (!isTypeSupported()) {
-    cerr << "unsupported type for permutation, aborting" << endl;
+    std::cerr << "unsupported type for permutation, aborting" << std::endl;
     abort();
   }
 }
@@ -393,7 +393,7 @@ Permutation<T>::Permutation(const Epetra_BlockMap& map)
     origObj_(NULL)
 {
   if (!isTypeSupported()) {
-    cerr << "unsupported type for permutation, aborting" << endl;
+    std::cerr << "unsupported type for permutation, aborting" << std::endl;
     abort();
   }
 }
@@ -405,7 +405,7 @@ Permutation<T>::Permutation(const Permutation& src)
     origObj_(NULL)
 {
   if (!isTypeSupported()) {
-    cerr << "unsupported type for permutation, aborting" << endl;
+    std::cerr << "unsupported type for permutation, aborting" << std::endl;
     abort();
   }
 }
@@ -526,8 +526,8 @@ Permutation<T>::operator()( typename Permutation<T>::InputRef orig,
 
   if (strcmp("Epetra_CrsMatrix", Perm_traits<T>::typeName()) &&
       strcmp("Epetra_CrsGraph", Perm_traits<T>::typeName())) {
-    cerr << "Permutation: column-permutation only implemented for"
-	 << "CrsMatrix and CrsGraph." << endl;
+    std::cerr << "Permutation: column-permutation only implemented for"
+	 << "CrsMatrix and CrsGraph." << std::endl;
     assert(0);
   }
 

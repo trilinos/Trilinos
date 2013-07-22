@@ -153,7 +153,7 @@ void Piro::Epetra::InvertMassMatrixDecorator::evalModel( const InArgs& inArgs,
 
   if (outArgs.Np()>0) {
    if (outArgs.get_DfDp(0).getMultiVector() != Teuchos::null) 
-     cout << "InvertMassMatrixDecorator:: NOT IMPLEMENTED FOR dfdp!! " << endl;
+     std::cout << "InvertMassMatrixDecorator:: NOT IMPLEMENTED FOR dfdp!! " << std::endl;
   }
 
   if (outArgs.get_f() == Teuchos::null) {
