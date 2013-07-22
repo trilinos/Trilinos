@@ -69,6 +69,7 @@
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosBlockCGSolMgr.hpp>
+#include <BelosBlockGmresSolMgr.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 #endif
@@ -90,9 +91,9 @@ int main(int argc, char *argv[]) {
   SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
 
   // Instead of checking each time for rank, create a rank 0 stream
-  RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(cout));
-  Teuchos::FancyOStream& cout = *fancy;
-  cout.setOutputToRootOnly(0);
+  RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  Teuchos::FancyOStream& fancyout = *fancy;
+  fancyout.setOutputToRootOnly(0);
 
 
   // =========================================================================
@@ -110,6 +111,7 @@ int main(int argc, char *argv[]) {
   bool   printTimings     = true;              clp.setOption("timings", "notimings",  &printTimings,     "print timings to screen");
   int    writeMatricesOPT = -2;                clp.setOption("write",                 &writeMatricesOPT, "write matrices to file (-1 means all; i>=0 means level i)");
   double tol              = 1e-12;             clp.setOption("tol",                   &tol,              "solver convergence tolerance");
+  std::string krylovMethod = "cg"; clp.setOption("krylov",                   &krylovMethod,     "outer Krylov method");
 
   switch (clp.parse(argc,argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -118,7 +120,7 @@ int main(int argc, char *argv[]) {
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
 
-  cout << "========================================================\n" << xpetraParameters << matrixParameters;
+  fancyout << "========================================================\n" << xpetraParameters << matrixParameters;
 
   // =========================================================================
   // Problem construction
@@ -174,7 +176,7 @@ int main(int argc, char *argv[]) {
     GO mx = galeriList.get("mx", -1);
     GO my = galeriList.get("my", -1);
     GO mz = galeriList.get("mz", -1);
-    cout << "Processor subdomains in x direction: " << mx << std::endl
+    fancyout << "Processor subdomains in x direction: " << mx << std::endl
          << "Processor subdomains in y direction: " << my << std::endl
          << "Processor subdomains in z direction: " << mz << std::endl
          << "========================================================" << std::endl;
@@ -210,7 +212,7 @@ int main(int argc, char *argv[]) {
   comm->barrier();
   tm = Teuchos::null;
 
-  cout << "Galeri complete.\n========================================================" << std::endl;
+  fancyout << "Galeri complete.\n========================================================" << std::endl;
 
   // =========================================================================
   // Preconditioner construction
@@ -239,7 +241,7 @@ int main(int argc, char *argv[]) {
 
   // Print out the hierarchy stats. We should not need this line, but for some reason the
   // print out in the hierarchy construction does not work.
-  H->print(cout);
+  H->print(fancyout);
 
   // =========================================================================
   // System solution (Ax = b)
@@ -291,7 +293,7 @@ int main(int argc, char *argv[]) {
 
     bool set = belosProblem->setProblem();
     if (set == false) {
-      cout << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+      fancyout << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
       return EXIT_FAILURE;
     }
 
@@ -305,7 +307,14 @@ int main(int argc, char *argv[]) {
     belosList.set("Output Style",          Belos::Brief);
 
     // Create an iterative solver manager
-    RCP< Belos::SolverManager<SC, MV, OP> > solver = rcp(new Belos::BlockCGSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
+    RCP< Belos::SolverManager<SC, MV, OP> > solver;
+    if (krylovMethod == "cg") {
+      solver = rcp(new Belos::BlockCGSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
+    } else if (krylovMethod == "gmres") {
+      solver = rcp(new Belos::BlockGmresSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Invalid Krylov method.  Options are \"cg\" or \" gmres\".");
+    }
 
     // Perform solve
     Belos::ReturnType ret = Belos::Unconverged;
@@ -313,17 +322,17 @@ int main(int argc, char *argv[]) {
       ret = solver->solve();
 
       // Get the number of iterations for this solve.
-      cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
+      fancyout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
 
     } catch(...) {
-      cout << std::endl << "ERROR:  Belos threw an error! " << std::endl;
+      fancyout << std::endl << "ERROR:  Belos threw an error! " << std::endl;
     }
 
     // Check convergence
     if (ret != Belos::Converged)
-      cout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
+      fancyout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
     else
-      cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+      fancyout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
 #endif //ifdef HAVE_MUELU_BELOS
   }
   comm->barrier();
