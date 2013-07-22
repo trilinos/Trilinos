@@ -85,6 +85,9 @@ namespace Tpetra {
   // and GlobalOrdinal types enabled by Tpetra's ETI system.  However,
   // it does avoid link errors for common cases.
 
+  // FIXME (mfh 22 Jul 2013) There must be a more concise way to ask
+  // if ThrustGPUNode with CUSPARSEOps (the default sparse kernels for
+  // ThrustGPUNode) works.  However, this works for now.
 #if defined(HAVE_KOKKOSCLASSIC_CUDA) && defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUSPARSE)
 
   //
@@ -92,16 +95,16 @@ namespace Tpetra {
   //
 
 #  if defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_KOKKOSCLASSIC_CUDA_FLOAT)
-  template class RowMatrixTransposer<float, int, int, KokkosClassic::ThrustGPUNode >;
+  template class RowMatrixTransposer<float, int, int, KokkosClassic::ThrustGPUNode>;
 #  endif
 #  if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE)
-  template class RowMatrixTransposer<double, int, int, KokkosClassic::ThrustGPUNode >;
+  template class RowMatrixTransposer<double, int, int, KokkosClassic::ThrustGPUNode>;
 #  endif
 #  if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT) && defined(HAVE_KOKKOSCLASSIC_CUDA_COMPLEX_FLOAT)
-  template class RowMatrixTransposer<std::complex<float>, int, int, KokkosClassic::ThrustGPUNode >;
+  template class RowMatrixTransposer<std::complex<float>, int, int, KokkosClassic::ThrustGPUNode>;
 #  endif
 #  if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_KOKKOSCLASSIC_CUDA_COMPLEX_DOUBLE)
-  template class RowMatrixTransposer<std::complex<double>, int, int, KokkosClassic::ThrustGPUNode >;
+  template class RowMatrixTransposer<std::complex<double>, int, int, KokkosClassic::ThrustGPUNode>;
 #  endif
 
   //
@@ -110,16 +113,16 @@ namespace Tpetra {
 
 #  ifdef HAVE_TPETRA_INST_INT_LONG
 #    if defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_KOKKOSCLASSIC_CUDA_FLOAT)
-  template class RowMatrixTransposer<float, int, int, KokkosClassic::ThrustGPUNode >;
+  template class RowMatrixTransposer<float, int, long, KokkosClassic::ThrustGPUNode>;
 #    endif
 #    if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE)
-  template class RowMatrixTransposer<double, int, int, KokkosClassic::ThrustGPUNode >;
+  template class RowMatrixTransposer<double, int, long, KokkosClassic::ThrustGPUNode>;
 #    endif
 #    if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT) && defined(HAVE_KOKKOSCLASSIC_CUDA_COMPLEX_FLOAT)
-  template class RowMatrixTransposer<std::complex<float>, int, int, KokkosClassic::ThrustGPUNode >;
+  template class RowMatrixTransposer<std::complex<float>, int, long, KokkosClassic::ThrustGPUNode>;
 #    endif
 #    if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_KOKKOSCLASSIC_CUDA_COMPLEX_DOUBLE)
-  template class RowMatrixTransposer<std::complex<double>, int, int, KokkosClassic::ThrustGPUNode >;
+  template class RowMatrixTransposer<std::complex<double>, int, long, KokkosClassic::ThrustGPUNode>;
 #    endif
 #  endif // HAVE_TPETRA_INST_INT_LONG
 
