@@ -257,16 +257,18 @@ namespace MueLu {
       RCP<const ParameterList> validParamList = factory->GetValidParameterList();
       for (ParameterList::ConstIterator param = validParamList->begin(); param != validParamList->end(); ++param) {
         const std::string & pName = validParamList->name(param);
-        if (validParamList->isType< RCP<const FactoryBase> >(pName)) {
-          if (paramList.isParameter(pName)) {
-            // Generate or get factory described by param
-            RCP<const FactoryBase> generatingFact = BuildFactory(paramList.getEntry(pName), factoryMapIn);
 
-            // Replace <std::string> or sub-list entry by an RCP<Factory> in paramListWithFactories
-            paramListWithFactories.remove(pName);
-            paramListWithFactories.set(pName, generatingFact);
-          }
+        if (validParamList->isType< RCP<const FactoryBase> >(pName) && paramList.isParameter(pName)) {
+          // Generate or get factory described by param
+          RCP<const FactoryBase> generatingFact = BuildFactory(paramList.getEntry(pName), factoryMapIn);
+
+          // Replace <std::string> or sub-list entry by an RCP<Factory> in paramListWithFactories
+          paramListWithFactories.remove(pName);
+          paramListWithFactories.set(pName, generatingFact);
         }
+
+        if (pName == "ParameterList" && validParamList->isType<RCP<ParameterList> >(pName) && paramList.isParameter(pName))
+          paramListWithFactories.set(pName, sublist(rcpFromRef(paramList), pName));
       }
 
       // Configure the factory
