@@ -23,7 +23,6 @@ FactoryFactory
 FactoryManager
 FakeSmootherPrototype
 FilteredAFactory
-GaussSeidelSmoother
 GenericRFactory
 Hierarchy
 HierarchyManager
