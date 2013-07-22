@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 //
-//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -41,8 +41,7 @@
 //@HEADER
 */
 
-#include <KokkosArray_config.h>
-
+#include <KokkosCore_config.h>
 #include <Kokkos_Threads.hpp>
 
 /*--------------------------------------------------------------------------*/
@@ -61,29 +60,16 @@ namespace Kokkos {
 namespace Impl {
 
 //----------------------------------------------------------------------------
-// Driver for each created pthread
 
 namespace {
 
 pthread_mutex_t host_internal_pthread_mutex = PTHREAD_MUTEX_INITIALIZER ;
 
-struct HostInternalPthreadDriver {
-  int (* m_driver )( void * );
-  void * m_arg ;
-  int    m_flag ;
-};
+// Pthreads compatible driver:
 
-void * host_internal_pthread_driver( void * global )
+void * internal_pthread_driver( void * )
 {
-  int ( * const driver )( void * ) = ((HostInternalPthreadDriver*) global )->m_driver ;
-  void * const arg                 = ((HostInternalPthreadDriver*) global )->m_arg ;
-
-  // Inform launching process that the data has been extracted.
-  ((HostInternalPthreadDriver*) global )->m_flag = 1 ;
-
-  global = 0 ; // Don't touch data again
-
-  (*driver)(arg);
+  ThreadsExec::driver();
 
   return NULL ;
 }
@@ -91,20 +77,9 @@ void * host_internal_pthread_driver( void * global )
 } // namespace
 
 //----------------------------------------------------------------------------
-
-void ThreadsExec::global_lock()
-{
-  pthread_mutex_lock( & host_internal_pthread_mutex );
-}
-
-void ThreadsExec::global_unlock()
-{
-  pthread_mutex_unlock( & host_internal_pthread_mutex );
-}
-
 // Spawn a thread
 
-bool ThreadsExec::spawn( int (*driver)(void*) , void * arg )
+bool ThreadsExec::spawn()
 {
   bool result = false ;
 
@@ -116,12 +91,7 @@ bool ThreadsExec::spawn( int (*driver)(void*) , void * arg )
 
     pthread_t pt ;
 
-    HostInternalPthreadDriver global = { driver , arg , 0 };
-
-    result = 0 == pthread_create( & pt, & attr, host_internal_pthread_driver, & global );
-
-    // Wait until thread has spawned and used the data
-    wait_yield( global.m_flag , 0 );
+    result = 0 == pthread_create( & pt, & attr, internal_pthread_driver, 0 );
   }
 
   pthread_attr_destroy( & attr );
@@ -136,6 +106,16 @@ bool ThreadsExec::is_process()
   static const pthread_t master_pid = pthread_self();
 
   return pthread_equal( master_pid , pthread_self() );
+}
+
+void ThreadsExec::global_lock()
+{
+  pthread_mutex_lock( & host_internal_pthread_mutex );
+}
+
+void ThreadsExec::global_unlock()
+{
+  pthread_mutex_unlock( & host_internal_pthread_mutex );
 }
 
 //----------------------------------------------------------------------------
@@ -175,7 +155,7 @@ void ThreadsExec::wait_yield( volatile int & flag , const int value )
 }
 
 } // namespace Impl
-} // namespace KokkosArray
+} // namespace Kokkos
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -189,15 +169,13 @@ void ThreadsExec::wait_yield( volatile int & flag , const int value )
 //----------------------------------------------------------------------------
 // Driver for each created pthread
 
-namespace KokkosArray {
+namespace Kokkos {
 namespace Impl {
 namespace {
 
-unsigned WINAPI host_internal_winthread_driver( void * arg )
+unsigned WINAPI internal_winthread_driver( void * arg )
 {
-  HostInternal & pool = HostInternal::singleton();
-
-  pool.driver( reinterpret_cast<size_t>( arg ) );
+  ThreadsExec::driver();
 
   return 0 ;
 }
@@ -230,117 +208,65 @@ ThreadLockWindows & ThreadLockWindows::singleton()
 { static ThreadLockWindows self ; return self ; }
 
 } // namespace <>
-} // namespace KokkosArray
+} // namespace Kokkos
 } // namespace Impl
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-namespace KokkosArray {
+namespace Kokkos {
 namespace Impl {
 
 // Spawn this thread
 
-bool HostInternal::spawn( const size_t thread_rank )
+bool ThreadsExec::spawn()
 {
-  void * const arg = reinterpret_cast<void*>( thread_rank );
-
   unsigned Win32ThreadID = 0 ;
 
   HANDLE handle =
-    _beginthreadex(0,0,host_internal_winthread_driver,arg,0, & Win32ThreadID );
+    _beginthreadex(0,0,internal_winthread_driver,0,0, & Win32ThreadID );
 
   return ! handle ;
 }
 
-//----------------------------------------------------------------------------
+bool ThreadsExec::is_process() { return true ; }
 
-void HostWorkerBlock::execute_on_thread( HostThread & this_thread ) const
+void ThreadsExec::global_lock()
+{ ThreadLockWindows::singleton().lock(); }
+
+void ThreadsExec::global_unlock()
+{ ThreadLockWindows::singleton().unlock(); }
+
+void ThreadsExec::wait( volatile int & flag , const int value )
 {
-  ThreadLockWindows & lock = ThreadLockWindows::singleton();
-  lock.lock();
-  lock.unlock();
-
-  this_thread.barrier();
+  while ( value == flag ) { Sleep(0); }
 }
 
-//----------------------------------------------------------------------------
-// Performance critical function: thread waits while value == *state
-
-void HostMulticoreThread::wait( const HostMulticoreThread::State flag )
+void ThreadsExec::wait_yield( volatile int & flag , const int value ) {}
 {
-  const long value = flag ;
-  while ( value == m_state ) {
-    Sleep(0);
-  }
+  while ( value == flag ) { Sleep(0); }
 }
 
 } // namespace Impl
-} // namespace KokkosArray
+} // namespace Kokkos
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-
-namespace KokkosArray {
-
-bool Host::sleep()
-{
-  Impl::HostInternal & h = Impl::HostInternal::singleton();
-  ThreadLockWindows & lock = ThreadLockWindows::singleton();
-
-  const bool is_ready   = NULL == h.m_worker ;
-        bool is_blocked = & h.m_worker_block == h.m_worker ;
-
-  if ( is_ready ) {
-    ThreadLockWindows::singleton().lock();
-
-    h.m_worker = & h.m_worker_block ;
-
-    Impl::HostThread::activate( h.m_thread + 1 ,
-                                h.m_thread + h.m_thread_count );
-
-    is_blocked = true ;
-  }
-
-  return is_blocked ;
-}
-
-bool Host::wake()
-{
-  Impl::HostInternal & h = Impl::HostInternal::singleton();
-
-  const bool is_blocked = & h.m_worker_block != h.m_worker ;
-        bool is_ready   = NULL == h.m_worker ;
-
-  if ( is_blocked ) {
-    ThreadLockWindows::singleton().unlock();
-
-    h.m_thread->barrier();
-
-    h.m_worker = NULL ;
-
-    is_ready = true ;
-  }
-
-  return is_ready ;
-}
-
-} // namespace KokkosArray
 
 #else /* NO Threads */
 
-namespace KokkosArray {
+namespace Kokkos {
 namespace Impl {
 
-bool host_thread_is_master() { return true ; }
-bool host_thread_spawn( int (*)(void*) , void * ) { return false ; }
-void host_thread_wait( volatile int * const , const int ) {}
-void host_thread_wait_yield( volatile int * const , const int ) {}
-void host_thread_lock() {}
-void host_thread_unlock() {}
+bool ThreadsExec::spawn() { return false ; }
+bool ThreadsExec::is_process() { return true ; }
+void ThreadsExec::global_lock() {}
+void ThreadsExec::global_unlock() {}
+void ThreadsExec::wait( volatile int & , const int ) {}
+void ThreadsExec::wait_yield( volatile int & , const int ) {}
 
 } // namespace Impl
-} // namespace KokkosArray
+} // namespace Kokkos
 
 #endif /* End thread model */
 

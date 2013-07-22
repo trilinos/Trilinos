@@ -47,7 +47,7 @@
 #include <vector>
 #include <algorithm>
 
-#include <Kokkos_ParallelFor.hpp>
+#include <Kokkos_Parallel.hpp>
 #include <Kokkos_ParallelReduce.hpp>
 
 #include <impl/Kokkos_StaticAssert.hpp>
@@ -95,7 +95,7 @@ private:
 //----------------------------------------------------------------------------
 
 template< class FunctorType , class WorkSpec >
-class ParallelFor< FunctorType , Host , WorkSpec > : public HostThreadWorker
+class ParallelFor< FunctorType , WorkSpec , Host > : public HostThreadWorker
 {
 public:
 
@@ -133,7 +133,7 @@ public:
     thread.end_barrier();
   }
 
-  ParallelFor( const size_type work_count , const FunctorType & functor )
+  ParallelFor( const FunctorType & functor , const size_t work_count )
     : m_work_functor( functor )
     , m_work_count( work_count )
     { HostThreadWorker::execute(); }
@@ -246,58 +246,15 @@ public:
 namespace Kokkos {
 namespace Impl {
 
-//----------------------------------------------------------------------------
-
-template< typename ValueType >
-class ParallelReduceFunctorValue< ValueType , Host >
-{
-public:
-  typedef ValueType value_type ;
-
-  ParallelReduceFunctorValue() {}
-
-  inline void operator()( const value_type & ) const {}
-
-  void result( value_type & value ) const
-  {
-    value_type * const ptr = (value_type*) Host::root_reduce_scratch();
-    value = *ptr ;
-  }
-};
-
-template< typename MemberType >
-class ParallelReduceFunctorValue< MemberType[] , Host >
-{
-public:
-  typedef MemberType    value_type[] ;
-  const HostSpace::size_type value_count ;
-
-  inline void operator()( const MemberType [] ) const {}
-
-  explicit
-  ParallelReduceFunctorValue( HostSpace::size_type n )
-    : value_count(n)
-    {}
-
-  void result( value_type result ) const
-  {
-    MemberType * const ptr = (MemberType *) Host::root_reduce_scratch();
-
-    for ( HostSpace::size_type i = 0 ; i < value_count ; ++i ) result[i] = ptr[i] ;
-  }
-};
-
-//----------------------------------------------------------------------------
-
-template< class FunctorType , class ValueOper , class FinalizeType , class WorkSpec >
-class ParallelReduce< FunctorType , ValueOper , FinalizeType , Host , WorkSpec >
-  : public HostThreadWorker
+template< class FunctorType , class WorkSpec >
+class ParallelReduce< FunctorType , WorkSpec , Host > : public HostThreadWorker
 {
 public:
 
-  typedef ReduceOperator< ValueOper , FinalizeType >  reduce_oper ;
-  typedef          Host::size_type         size_type ;
-  typedef typename ValueOper::value_type  value_type ;
+  typedef ReduceOperator< FunctorType >     reduce_oper ;
+  typedef          Host::size_type          size_type ;
+
+  typedef typename ReduceAdapter< FunctorType >::pointer_type pointer_type ;
 
   const FunctorType   m_work_functor ;
   const reduce_oper   m_reduce ;
@@ -353,15 +310,20 @@ public:
 
   ParallelReduce( const size_type      work_count ,
                   const FunctorType  & functor ,
-                  const FinalizeType & finalize )
+                  pointer_type         result )
     : m_work_functor( functor )
-    , m_reduce( finalize )
+    , m_reduce( functor )
     , m_work_count( work_count )
     {
       Host::resize_reduce_scratch( m_reduce.value_size() );
       HostThreadWorker::execute();
-      m_reduce.finalize( Host::root_reduce_scratch() );
+      m_reduce.final( Host::root_reduce_scratch() );
+
+      pointer_type ptr = (pointer_type) Host::root_reduce_scratch();
+      for ( unsigned i = 0 ; i < m_reduce.value_count() ; ++i ) result[i] = ptr[i] ;
     }
+
+  void wait() {}
 };
 
 //----------------------------------------------------------------------------
@@ -420,15 +382,14 @@ public:
 
 } // namespace Impl
 
-template< class ValueOper , class FinalizeType >
-class MultiFunctorParallelReduce< ValueOper , FinalizeType , Host >
-  : public Impl::HostThreadWorker
+template< class ReduceOper >
+class MultiFunctorParallelReduce< ReduceOper , Host > : public Impl::HostThreadWorker
 {
 public:
 
-  typedef Impl::ReduceOperator< ValueOper , FinalizeType > reduce_oper ;
+  typedef Impl::ReduceOperator< ReduceOper > reduce_oper ;
   typedef          Host::size_type         size_type ;
-  typedef typename ValueOper::value_type  value_type ;
+  typedef typename ReduceOper::value_type  value_type ;
   typedef Impl::HostMultiFunctorParallelReduceMember<void,reduce_oper> worker_type ;
 
   typedef std::vector< worker_type * > MemberContainer ;
@@ -454,9 +415,9 @@ public:
 
 public:
 
-  MultiFunctorParallelReduce( const FinalizeType & finalize )
+  explicit MultiFunctorParallelReduce( const ReduceOper & oper )
     : m_member_functors()
-    , m_reduce( finalize )
+    , m_reduce( oper )
     { }
 
   ~MultiFunctorParallelReduce()
@@ -481,7 +442,14 @@ public:
   {
     Host::resize_reduce_scratch( m_reduce.value_size() );
     Impl::HostThreadWorker::execute();
-    m_reduce.finalize( Host::root_reduce_scratch() );
+    m_reduce.final( Host::root_reduce_scratch() );
+  }
+
+  void output( typename reduce_oper::pointer_type result )
+  {
+    typename reduce_oper::pointer_type ptr =
+      (typename reduce_oper::pointer_type) Host::root_reduce_scratch();
+    for ( unsigned i = 0 ; i < m_reduce.value_count() ; ++i ) result[i] = ptr[i] ;
   }
 };
 

@@ -58,9 +58,9 @@ typedef Kokkos::Host device_type;
 typedef Kokkos::Cuda device_type;
 #endif
 
-#include "Kokkos_Atomic.hpp"
-#include "Kokkos_ParallelFor.hpp"
-#include "Kokkos_Macros.hpp"
+#include <Kokkos_Macros.hpp>
+#include <Kokkos_Atomic.hpp>
+#include <Kokkos_Parallel.hpp>
 
 #define RESET		0
 #define BRIGHT 		1

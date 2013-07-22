@@ -240,7 +240,7 @@ struct OpenMPFunctor
       { update += input ; }
   };
 
-  typedef Kokkos::Impl::ReduceOperator< Reduce , Finalize > reduce_type ;
+  typedef Kokkos::Impl::ReduceOperator< Reduce > reduce_type ;
 
   typedef int value_type ;
 

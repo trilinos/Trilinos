@@ -49,6 +49,7 @@
 #include <iosfwd>
 #include <vector>
 #include <Kokkos_Host.hpp>
+#include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_CudaSpace.hpp>
 #include <Kokkos_MemoryTraits.hpp>

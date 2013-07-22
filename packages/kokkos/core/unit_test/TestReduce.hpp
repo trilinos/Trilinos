@@ -216,7 +216,7 @@ public:
                                       : (nw/2) * ( nw + 1 );
 
     for ( unsigned i = 0 ; i < Repeat ; ++i ) {
-      Kokkos::parallel_reduce( nwork , functor_type(nwork,Count) , result[i] , Count );
+      Kokkos::parallel_reduce( nwork , functor_type(nwork,Count) , result[i] );
     }
 
     for ( unsigned i = 0 ; i < Repeat ; ++i ) {
@@ -246,7 +246,7 @@ public:
   {
     typedef Test::RuntimeReduceFunctor< ScalarType , device_type > functor_type ;
 
-    typedef Kokkos::View< ScalarType[] , DeviceType > result_type ;
+    typedef Kokkos::View< ScalarType* , DeviceType > result_type ;
     typedef typename result_type::HostMirror result_host_type ;
 
     const unsigned CountLimit = 23 ;
@@ -260,31 +260,9 @@ public:
       result_type result("result",count);
       result_host_type host_result = Kokkos::create_mirror( result );
 
-      // Test result to device view:
-
-      Kokkos::parallel_reduce( nw , functor_type(nw,count) , result );
-
-      Kokkos::deep_copy( host_result , result );
-
-      for ( unsigned j = 0 ; j < count ; ++j ) {
-        const unsigned long correct = 0 == j % 3 ? nw : nsum ;
-        ASSERT_EQ( (ScalarType) correct , host_result(j) );
-        host_result(j) = 0 ;
-      }
-
-      // Test result to host view:
-
-      Kokkos::parallel_reduce( nw , functor_type(nw,count) , host_result );
-
-      for ( unsigned j = 0 ; j < count ; ++j ) {
-        const unsigned long correct = 0 == j % 3 ? nw : nsum ;
-        ASSERT_EQ( host_result(j), (ScalarType) correct );
-        host_result(j) = 0 ;
-      }
-
       // Test result to host pointer:
 
-      Kokkos::parallel_reduce( nw , functor_type(nw,count) , host_result.ptr_on_device(), count );
+      Kokkos::parallel_reduce( nw , functor_type(nw,count) , host_result.ptr_on_device() );
 
       for ( unsigned j = 0 ; j < count ; ++j ) {
         const unsigned long correct = 0 == j % 3 ? nw : nsum ;

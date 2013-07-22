@@ -46,6 +46,7 @@
 
 #include <cstddef>
 #include <iosfwd>
+#include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_HostSpace.hpp>
 #include <Kokkos_MemoryTraits.hpp>

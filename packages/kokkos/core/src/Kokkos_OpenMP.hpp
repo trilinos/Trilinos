@@ -49,6 +49,7 @@
 #include <omp.h>
 #include <cstddef>
 #include <Kokkos_Host.hpp>
+#include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
 
 /*--------------------------------------------------------------------------*/

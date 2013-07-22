@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -83,54 +83,61 @@ private:
   static void global_unlock();
   static void wait( volatile int & , const int );
   static void wait_yield( volatile int & , const int );
-  static bool spawn( int (*)(void*), void* );
-  static int  driver(void*);
+  static bool spawn();
 
   static void execute_sleep( Threads , const void * );
   static void execute_reduce_resize( Threads , const void * );
   static void execute_shared_resize( Threads , const void * );
-
-  /** \brief  Wait for previous asynchronous functor to complete and
-   *          then acquire memory for the next asynchronous functor.
-   */
-  static void * acquire( size_t );
-
-  /** \brief  Begin execution of the asynchronous functor
-   *          copied into 'acquire'
-   */
-  static void start( void (*)( Threads dev , const void * ) );
-
-  template< class Functor >
-  static void execute( Threads dev , const void * acquire_arg )
-  {
-    const Functor * const f = ((const Functor *) acquire_arg );
-
-    (*f)( dev );
-
-    const int n = dev.m_exec.m_fan_size ;
-
-    for ( int i = 0 ; i < n ; ++i ) {
-      wait( dev.m_exec.m_fan[i]->m_state , ThreadsExec::Active );
-      // If a reduction then join quantities.
-      f->join( dev.m_exec.m_reduce , dev.m_exec.m_fan[i]->m_reduce );
-    }
-
-    if ( ! dev.m_exec.m_thread_rank ) {
-      // Serial finalization, often a no-op
-      f->finalize( dev.m_exec.m_reduce );
-      // Destroy functor
-      f->~Functor();
-    }
-
-    dev.m_exec.m_state = ThreadsExec::Inactive ;
-  }
 
   ThreadsExec( const ThreadsExec & );
   ThreadsExec & operator = ( const ThreadsExec & );
 
   static void execute_serial( void (*)( Threads , const void * ) );
 
+  /** \brief  Function executed by each thread */
+  template< class FunctorAdapter >
+  static void execute( Threads dev , const void * arg )
+  {
+    const FunctorAdapter & f = * ((const FunctorAdapter *) arg );
+
+    // A reduction must initialize reduction value.
+    f.init( dev.m_exec.m_reduce );
+
+    f.apply( dev , dev.m_exec.m_reduce );
+
+    const int n = dev.m_exec.m_fan_size ;
+
+    for ( int i = 0 ; i < n ; ++i ) {
+      wait( dev.m_exec.m_fan[i]->m_state , ThreadsExec::Active );
+
+      // A reduction must join reduction values.
+      f.join( dev.m_exec.m_reduce , dev.m_exec.m_fan[i]->m_reduce );
+    }
+
+    if ( ! dev.m_exec.m_thread_rank ) {
+      // A reduction may perform serial finalization of reduction value.
+      f.final( dev.m_exec.m_reduce );
+    }
+
+    dev.m_exec.m_state = ThreadsExec::Inactive ;
+  }
+
+  static void start( void (*)( Threads dev , const void * ) , const void * );
+
 public:
+
+  /** \brief  Wait for previous asynchronous functor to
+   *          complete and release the Threads device.
+   *          Acquire the Threads device and start this functor.
+   */
+  template< class FunctorAdapter >
+  static void start( const FunctorAdapter & f )
+    { start( & ThreadsExec::template execute<FunctorAdapter> , & f ); }
+
+  static void acquire( const void * ); ///<  Acquire the Threads device
+  static void release( const void * ); ///<  Release the Threads device
+
+  static void driver(void);
 
   ~ThreadsExec();
   ThreadsExec();
@@ -159,39 +166,6 @@ public:
   static bool sleep();
   static bool wake();
   static void fence();
-
-  template< class FunctorType , class ArgType0 >
-  inline static void start( const ArgType0 & arg0 )
-  {
-    enum { S = sizeof(FunctorType) };
-    // Create new functor in the asynchronous functor memory space
-    new( ThreadsExec::acquire(S) ) FunctorType( arg0 );
-    // Start the functor
-    start( & ThreadsExec::template execute<FunctorType> );
-  }
-
-  template< class FunctorType , class ArgType0 , class ArgType1 >
-  inline static void start( const ArgType0 & arg0 ,
-                            const ArgType1 & arg1 )
-  {
-    enum { S = sizeof(FunctorType) };
-    // Create new functor in the asynchronous functor memory space
-    new( ThreadsExec::acquire(S) ) FunctorType( arg0 , arg1 );
-    // Start the functor
-    start( & ThreadsExec::template execute<FunctorType> );
-  }
-
-  template< class FunctorType , class ArgType0 , class ArgType1 , class ArgType2 >
-  inline static void start( const ArgType0 & arg0 ,
-                            const ArgType1 & arg1 ,
-                            const ArgType2 & arg2 )
-  {
-    enum { S = sizeof(FunctorType) };
-    // Create new functor in the asynchronous functor memory space
-    new( ThreadsExec::acquire(S) ) FunctorType( arg0 , arg1 , arg2 );
-    // Start the functor
-    start( & ThreadsExec::template execute<FunctorType> );
-  }
 };
 
 } /* namespace Impl */
@@ -234,8 +208,8 @@ inline
 std::pair< size_t , size_t >
 Threads::work_range( const size_t work_count ) const
 {
-  enum { work_align = KokkosArray::HostSpace::WORK_ALIGNMENT };
-  enum { work_shift = KokkosArray::Impl::power_of_two< work_align >::value };
+  enum { work_align = Kokkos::HostSpace::WORK_ALIGNMENT };
+  enum { work_shift = Kokkos::Impl::power_of_two< work_align >::value };
   enum { work_mask  = work_align - 1 };
 
   // unit_of_work_count = ( work_count + work_mask ) >> work_shift

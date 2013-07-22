@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 //
-//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -46,9 +46,9 @@
 
 #include <cstddef>
 #include <iosfwd>
-#include <KokkosArray_Layout.hpp>
-#include <KokkosArray_MemoryTraits.hpp>
-#include <KokkosArray_Host.hpp>
+#include <Kokkos_Layout.hpp>
+#include <Kokkos_MemoryTraits.hpp>
+#include <Kokkos_Host.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -68,10 +68,10 @@ public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
 
-  typedef Threads                   device_type ;
-  typedef KokkosArray::HostSpace    memory_space ;
-  typedef memory_space::size_type   size_type ;
-  typedef KokkosArray::LayoutRight  array_layout ;
+  typedef Threads                  device_type ;
+  typedef Kokkos::HostSpace        memory_space ;
+  typedef memory_space::size_type  size_type ;
+  typedef Kokkos::LayoutRight      array_layout ;
 
   //@}
   /*------------------------------------------------------------------------*/
@@ -169,6 +169,7 @@ private:
 
 } // namespace Kokkos
 
+#include <Kokkos_Parallel.hpp>
 #include <Threads/Kokkos_ThreadsExec.hpp>
 #include <Threads/Kokkos_Threads_Parallel.hpp>
 
