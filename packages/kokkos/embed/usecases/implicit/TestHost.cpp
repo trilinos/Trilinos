@@ -1,8 +1,8 @@
 #include <ParallelComm.hpp>
 
 #include <sstream>
-#include <KokkosArray_Host.hpp>
-#include <KokkosArray_hwloc.hpp>
+#include <Kokkos_Host.hpp>
+#include <Kokkos_hwloc.hpp>
 
 #include <TestImplicit.hpp>
 
@@ -10,8 +10,8 @@ namespace Test {
 
 int test_host( comm::Machine machine , std::istream & input )
 {
-  const std::pair<unsigned,unsigned> core_top  = KokkosArray::hwloc::get_core_topology();
-  const unsigned                     core_size = KokkosArray::hwloc::get_core_capacity();
+  const std::pair<unsigned,unsigned> core_top  = Kokkos::hwloc::get_core_topology();
+  const unsigned                     core_size = Kokkos::hwloc::get_core_capacity();
 
   std::pair<unsigned,unsigned> gang_top( core_top.first , core_top.second * core_size );
 
@@ -50,14 +50,14 @@ int test_host( comm::Machine machine , std::istream & input )
               << " ]\"" << std::endl ;
   }
 
-  KokkosArray::Host::initialize( gang_top , core_top );
+  Kokkos::Host::initialize( gang_top , core_top );
 
   {
     std::ostringstream label ;
 
     label << "Scalar, Host[" << gang_top.first << "x" << gang_top.second << "]" ;
 
-    implicit_driver<double,KokkosArray::Host>(
+    implicit_driver<double,Kokkos::Host>(
       label.str().c_str() , machine , gang_top.first , elem_beg , elem_end , run );
   }
 
@@ -66,11 +66,11 @@ int test_host( comm::Machine machine , std::istream & input )
 
     label << "Ensemble[32], Host[" << gang_top.first << "x" << gang_top.second << "]" ;
 
-    implicit_driver< KokkosArray::Array<double,32> , KokkosArray::Host>(
+    implicit_driver< Kokkos::Array<double,32> , Kokkos::Host>(
       label.str().c_str() , machine , gang_top.first , elem_beg , elem_end , run );
   }
 
-  KokkosArray::Host::finalize();
+  Kokkos::Host::finalize();
 
   return 0 ;
 }

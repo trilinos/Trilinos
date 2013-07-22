@@ -30,59 +30,59 @@
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Stokhos_KokkosArrayKernelsUnitTest.hpp"
+#include "Stokhos_KokkosKernelsUnitTest.hpp"
 
-#include <KokkosArray_Cuda.hpp>
-#include <Cuda/KokkosArray_Cuda_ProductTensor.hpp>
-#include <Cuda/KokkosArray_Cuda_CrsProductTensorLegendre.hpp>
-#include <Cuda/KokkosArray_Cuda_StochasticProductTensor.hpp>
-#include <Cuda/KokkosArray_Cuda_SymmetricDiagonalSpec.hpp>
-#include <Cuda/KokkosArray_Cuda_CrsMatrix.hpp>
-#include <Cuda/KokkosArray_Cuda_BlockCrsMatrix.hpp>
+#include <Kokkos_Cuda.hpp>
+#include <Cuda/Kokkos_Cuda_ProductTensor.hpp>
+#include <Cuda/Kokkos_Cuda_CrsProductTensorLegendre.hpp>
+#include <Cuda/Kokkos_Cuda_StochasticProductTensor.hpp>
+#include <Cuda/Kokkos_Cuda_SymmetricDiagonalSpec.hpp>
+#include <Cuda/Kokkos_Cuda_CrsMatrix.hpp>
+#include <Cuda/Kokkos_Cuda_BlockCrsMatrix.hpp>
 
-using namespace KokkosArrayKernelsUnitTest;
+using namespace KokkosKernelsUnitTest;
 
 extern UnitTestSetup setup;
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsMatrixFree_Cuda ) {
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsMatrixFree_Cuda ) {
   typedef double Scalar;
-  typedef KokkosArray::Cuda Device;
+  typedef Kokkos::Cuda Device;
   bool test_block = true;
   
   success = test_crs_matrix_free<Scalar,Device>(setup, test_block, out);
 }
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsProductLegendre_Cuda ) {
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsProductLegendre_Cuda ) {
   typedef double Scalar;
-  typedef KokkosArray::Cuda Device;
+  typedef Kokkos::Cuda Device;
   
   success = test_crs_product_legendre<Scalar,Device>(setup, out);
 }
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsDenseBlock_Cuda ) {
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsDenseBlock_Cuda ) {
   typedef double Scalar;
-  typedef KokkosArray::Cuda Device;
+  typedef Kokkos::Cuda Device;
   
   success = test_crs_dense_block<Scalar,Device>(setup, out);
 }
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsFlatCommuted_Cuda ) {
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsFlatCommuted_Cuda ) {
   typedef double Scalar;
-  typedef KokkosArray::Cuda Device;
+  typedef Kokkos::Cuda Device;
   
   success = test_crs_flat_commuted<Scalar,Device>(setup, out);
 }
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsFlatOriginal_Cuda ) {
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsFlatOriginal_Cuda ) {
   typedef double Scalar;
-  typedef KokkosArray::Cuda Device;
+  typedef Kokkos::Cuda Device;
   
   success = test_crs_flat_original<Scalar,Device>(setup, out);
 }
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsProductTensor_Cuda ) {
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsProductTensor_Cuda ) {
   typedef double Scalar;
-  typedef KokkosArray::Cuda Device;
+  typedef Kokkos::Cuda Device;
   
-  success = test_crs_product_tensor<Scalar,Device,KokkosArray::CrsProductTensor>(setup, out);
+  success = test_crs_product_tensor<Scalar,Device,Kokkos::CrsProductTensor>(setup, out);
 }

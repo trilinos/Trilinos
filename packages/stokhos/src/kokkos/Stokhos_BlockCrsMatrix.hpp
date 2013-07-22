@@ -42,8 +42,8 @@
 #ifndef STOKHOS_BLOCKCRSMATRIX_HPP
 #define STOKHOS_BLOCKCRSMATRIX_HPP
 
-#include "KokkosArray_CrsArray.hpp"
-#include "KokkosArray_View.hpp"
+#include "Kokkos_CrsArray.hpp"
+#include "Kokkos_View.hpp"
 
 #include "Stokhos_Multiply.hpp"
 
@@ -65,8 +65,8 @@ public:
   typedef typename device_type::size_type     size_type ;
   typedef ValueType                           value_type ;
   typedef BlockSpec                           block_spec ;
-  typedef KokkosArray::CrsArray< size_type , device_type > graph_type ;
-  typedef KokkosArray::View< value_type**, KokkosArray::LayoutLeft, device_type >  block_vector_type ;
+  typedef Kokkos::CrsArray< size_type , device_type > graph_type ;
+  typedef Kokkos::View< value_type**, Kokkos::LayoutLeft, device_type >  block_vector_type ;
 
   block_vector_type  values ;
   graph_type         graph ;
@@ -78,11 +78,11 @@ template< class BlockSpec ,
           typename VectorValueType ,
           class Device >
 void multiply(const BlockCrsMatrix<BlockSpec,MatrixValueType,Device> & A ,
-              const KokkosArray::View<VectorValueType**,KokkosArray::LayoutLeft,Device> & x ,
-              const KokkosArray::View<VectorValueType**,KokkosArray::LayoutLeft,Device> & y )
+              const Kokkos::View<VectorValueType**,Kokkos::LayoutLeft,Device> & x ,
+              const Kokkos::View<VectorValueType**,Kokkos::LayoutLeft,Device> & y )
 {
   typedef BlockCrsMatrix<BlockSpec,MatrixValueType,Device>  matrix_type ;
-  typedef KokkosArray::View<VectorValueType**,KokkosArray::LayoutLeft,Device> block_vector_type ;
+  typedef Kokkos::View<VectorValueType**,Kokkos::LayoutLeft,Device> block_vector_type ;
 
   Multiply<matrix_type,block_vector_type,block_vector_type,DefaultSparseMatOps>::apply( A , x , y );
 }
@@ -93,12 +93,12 @@ template< class BlockSpec ,
           class Device ,
           class SparseMatOps >
 void multiply(const BlockCrsMatrix<BlockSpec,MatrixValueType,Device> & A ,
-              const KokkosArray::View<VectorValueType**,KokkosArray::LayoutLeft,Device> & x ,
-              const KokkosArray::View<VectorValueType**,KokkosArray::LayoutLeft,Device> & y ,
+              const Kokkos::View<VectorValueType**,Kokkos::LayoutLeft,Device> & x ,
+              const Kokkos::View<VectorValueType**,Kokkos::LayoutLeft,Device> & y ,
               const SparseMatOps& smo = SparseMatOps() )
 {
   typedef BlockCrsMatrix<BlockSpec,MatrixValueType,Device>  matrix_type ;
-  typedef KokkosArray::View<VectorValueType**,KokkosArray::LayoutLeft,Device> block_vector_type ;
+  typedef Kokkos::View<VectorValueType**,Kokkos::LayoutLeft,Device> block_vector_type ;
 
   Multiply<matrix_type,block_vector_type,block_vector_type,SparseMatOps>::apply( A , x , y );
 }
