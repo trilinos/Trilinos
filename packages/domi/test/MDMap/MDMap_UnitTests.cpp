@@ -136,13 +136,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, halosConstructor, T )
   Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
   MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisSizes));
 
-  // Check that the axisSizes are completely specified
-  TEST_EQUALITY(axisSizes.size(), numDims)
-  for (int axis = 0; axis < numDims; ++axis)
-  {
-    TEST_ASSERT(axisSizes[axis] > 0);
-  }
-
   // Construct dimensions
   T localDim = 10;
   Array< T > dims(numDims);
@@ -200,13 +193,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, ghostsConstructor, T )
   // Note: axisSizes from command line should be fully specified
   Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
   MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisSizes));
-
-  // Check that the axisSizes are completely specified
-  TEST_EQUALITY(axisSizes.size(), numDims)
-  for (int axis = 0; axis < numDims; ++axis)
-  {
-    TEST_ASSERT(axisSizes[axis] > 0);
-  }
 
   // Construct dimensions
   T localDim = 10;
@@ -277,13 +263,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, halosAndGhostsConstructor, T )
   Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
   MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisSizes));
 
-  // Check that the axisSizes are completely specified
-  TEST_EQUALITY(axisSizes.size(), numDims)
-  for (int axis = 0; axis < numDims; ++axis)
-  {
-    TEST_ASSERT(axisSizes[axis] > 0);
-  }
-
   // Construct dimensions
   T localDim = 10;
   Array< T > dims(numDims);
@@ -347,6 +326,86 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, halosAndGhostsConstructor, T )
   }
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, indexes, T )
+{
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  // Note: axisSizes from command line should be fully specified
+  Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisSizes));
+
+  // Construct dimensions
+  T localDim = 10;
+  Array< T > dims(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    dims[axis] = localDim * mdComm->getAxisSize(axis);
+
+  // Construct halos and ghosts
+  Array< int > halos(numDims);
+  Array< int > ghosts(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    halos[axis]  = axis+1;
+    ghosts[axis] = axis+2;
+  }
+
+  // Construct an MDMap
+  MDMap< T > mdMap(mdComm, dims(), halos(), ghosts());
+
+  // Compute some quantities for testing
+  Array< int > axisRanks(numDims);
+  Array< int > lowerHalos(numDims);
+  Array< int > upperHalos(numDims);
+  Array< T >   myLocalDims(numDims);
+  Array< T >   globalStrides(numDims, 1);
+  Array< T >   localStrides(numDims, 1);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    axisRanks[axis]   = mdMap.getAxisRank(axis);
+    lowerHalos[axis]  = mdMap.getLowerHalo(axis);
+    upperHalos[axis]  = mdMap.getUpperHalo(axis);
+    myLocalDims[axis] = localDim + lowerHalos[axis] + upperHalos[axis];
+    if (axis > 0)
+    {
+      globalStrides[axis] = globalStrides[axis-1] *
+        (dims[axis-1] + 2*ghosts[axis-1]);
+      localStrides[axis] = localStrides[axis-1] * myLocalDims[axis-1];
+    }
+  }
+
+  // Unit test globalAxisIndex <-> globalIndex
+  Array< T > myGlobalAxisIndex(numDims);
+  T myGlobalIndex = 0;
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    myGlobalAxisIndex[axis] = ghosts[axis] + dims[axis] / 2;
+    myGlobalIndex += myGlobalAxisIndex[axis] * globalStrides[axis];
+  }
+  TEST_EQUALITY(mdMap.getGlobalAxisIndex(myGlobalIndex), myGlobalAxisIndex);
+  TEST_EQUALITY(mdMap.getGlobalIndex(myGlobalAxisIndex()), myGlobalIndex);
+
+  // Unit test localAxisIndex <-> localIndex
+  Array< T > myLocalAxisIndex(numDims);
+  T myLocalIndex = 0;
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    myLocalAxisIndex[axis] = lowerHalos[axis] + localDim / 2;
+    myLocalIndex += myLocalAxisIndex[axis] * localStrides[axis];
+  }
+  TEST_EQUALITY(mdMap.getLocalAxisIndex(myLocalIndex), myLocalAxisIndex);
+  TEST_EQUALITY(mdMap.getLocalIndex(myLocalAxisIndex()), myLocalIndex);
+
+  // Test localIndex <-> globalIndex
+  myGlobalIndex = 0;
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    myGlobalAxisIndex[axis] = myLocalAxisIndex[axis] - lowerHalos[axis] +
+      axisRanks[axis] * localDim + ghosts[axis];
+    myGlobalIndex += myGlobalAxisIndex[axis] * globalStrides[axis];
+  }
+  TEST_EQUALITY(mdMap.getGlobalIndex(myLocalIndex), myGlobalIndex);
+  TEST_EQUALITY(mdMap.getLocalIndex(myGlobalIndex), myLocalIndex );
+}
+
 //
 // Instantiations
 //
@@ -355,10 +414,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, halosAndGhostsConstructor, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, dimensionsConstructor, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, halosConstructor, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, ghostsConstructor, T ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, halosAndGhostsConstructor, T )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, halosAndGhostsConstructor, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, indexes, T )
 
 UNIT_TEST_GROUP(int)
-#if 0
+#if 1
 UNIT_TEST_GROUP(long)
 #endif
 
