@@ -264,46 +264,51 @@ unsigned hwloc::bind_this_thread(
   const unsigned               coordinate_count ,
   std::pair<unsigned,unsigned> coordinate[] )
 {
-  const std::pair<unsigned,unsigned> current = hwloc::get_this_thread_coordinate();
-
   unsigned i = 0 ;
 
-  // Match one of the requests:
-  for ( i = 0 ; i < coordinate_count && current != coordinate[i] ; ++i );
+  try {
+    const std::pair<unsigned,unsigned> current = hwloc::get_this_thread_coordinate();
 
-  if ( coordinate_count == i ) {
-    // Match the first request (typically NUMA):
-    for ( i = 0 ; i < coordinate_count && current.first != coordinate[i].first ; ++i );
-  }
+    // Match one of the requests:
+    for ( i = 0 ; i < coordinate_count && current != coordinate[i] ; ++i );
 
-  if ( coordinate_count == i ) {
-    // Match any unclaimed request:
-    for ( i = 0 ; i < coordinate_count && ~0u == coordinate[i].first  ; ++i );
-  }
+    if ( coordinate_count == i ) {
+      // Match the first request (typically NUMA):
+      for ( i = 0 ; i < coordinate_count && current.first != coordinate[i].first ; ++i );
+    }
 
-  if ( coordinate_count == i || ! hwloc::bind_this_thread( coordinate[i] ) ) {
-     // Failed to bind:
-     i = ~0u ;
-  }
+    if ( coordinate_count == i ) {
+      // Match any unclaimed request:
+      for ( i = 0 ; i < coordinate_count && ~0u == coordinate[i].first  ; ++i );
+    }
 
-  if ( i < coordinate_count ) {
+    if ( coordinate_count == i || ! hwloc::bind_this_thread( coordinate[i] ) ) {
+       // Failed to bind:
+       i = ~0u ;
+    }
+
+    if ( i < coordinate_count ) {
 
 #if 0
-    if ( current != coordinate[i] ) {
-      std::cout << "  host_thread_binding("
-                << gang_topo.first << "x" << gang_topo.second
-                << ") rebinding from ("
-                << current.first << ","
-                << current.second
-                << ") to ("
-                << coordinate[i].first << ","
-                << coordinate[i].second
-                << ")" << std::endl ;
-    }
+      if ( current != coordinate[i] ) {
+        std::cout << "  host_thread_binding("
+                  << gang_topo.first << "x" << gang_topo.second
+                  << ") rebinding from ("
+                  << current.first << ","
+                  << current.second
+                  << ") to ("
+                  << coordinate[i].first << ","
+                  << coordinate[i].second
+                  << ")" << std::endl ;
+      }
 #endif
 
-    coordinate[i].first  = ~0u ;
-    coordinate[i].second = ~0u ;
+      coordinate[i].first  = ~0u ;
+      coordinate[i].second = ~0u ;
+    }
+  }
+  catch( ... ) {
+    i = ~0u ;
   }
 
   return i ;

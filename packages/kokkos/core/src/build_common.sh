@@ -192,6 +192,7 @@ INC_PATH="${INC_PATH} -I${KOKKOS}/src"
 
 CXX_SOURCES="${CXX_SOURCES} ${KOKKOS}/src/impl/*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ${KOKKOS}/src/Host/*.cpp"
+CXX_SOURCES="${CXX_SOURCES} ${KOKKOS}/src/Threads/*.cpp"
 
 #-----------------------------------------------------------------------------
 #
