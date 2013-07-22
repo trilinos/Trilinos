@@ -107,7 +107,8 @@ AdditiveSchwarz<MatrixType,LocalInverseType>::~AdditiveSchwarz()
 //==============================================================================
 // Returns the Map associated with the domain of this operator, which must be compatible with X.getMap().
 template<class MatrixType,class LocalInverseType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type > > & AdditiveSchwarz<MatrixType,LocalInverseType>::getDomainMap() const 
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type > > 
+AdditiveSchwarz<MatrixType,LocalInverseType>::getDomainMap() const 
 { 
   return Matrix_->getDomainMap();
 }
@@ -115,7 +116,8 @@ const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, ty
 //==============================================================================
 // Returns the Map associated with the range of this operator, which must be compatible with Y.getMap().
 template<class MatrixType,class LocalInverseType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> > & AdditiveSchwarz<MatrixType,LocalInverseType>::getRangeMap() const 
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> > 
+AdditiveSchwarz<MatrixType,LocalInverseType>::getRangeMap() const 
 {
   return Matrix_->getRangeMap();
 }

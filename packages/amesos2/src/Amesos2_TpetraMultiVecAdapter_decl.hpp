@@ -128,17 +128,17 @@ namespace Amesos2 {
     bool isGloballyIndexed() const;
 
 
-    const Teuchos::RCP<const Tpetra::Map<
+    Teuchos::RCP<const Tpetra::Map<
 			 local_ordinal_t,
 			 global_ordinal_t,
-			 node_t > >&
+			 node_t > >
     getMap() const
     {
       return mv_->getMap();
     }
 
     /// Returns the Teuchos::Comm object associated with this multi-vector
-    const Teuchos::RCP<const Teuchos::Comm<int> >& getComm() const
+    Teuchos::RCP<const Teuchos::Comm<int> > getComm() const
     {
       return mv_->getMap()->getComm();
     }

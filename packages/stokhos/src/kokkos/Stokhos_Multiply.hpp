@@ -85,7 +85,7 @@ public:
 
   //--------------------------------------------------------------------------
 
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void operator()( const size_type iRow ) const
   {
     m_x(iRow) = m_alpha * m_x(iRow) + m_beta * m_y(iRow) ;
@@ -97,7 +97,7 @@ public:
                      const vector_type & y )
   {
     const size_t row_count = x.dimension_0() ;
-    KokkosArray::parallel_for( row_count , Update(alpha,x,beta,y) );
+    Kokkos::parallel_for( row_count , Update(alpha,x,beta,y) );
   }
 };
 

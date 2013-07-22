@@ -182,7 +182,7 @@ namespace Tpetra {
                     dense_matrix_type& R,
                     const bool forceNonnegativeDiagonal=false)
     {
-      typedef Kokkos::MultiVector<scalar_type, node_type> KMV;
+      typedef KokkosClassic::MultiVector<scalar_type, node_type> KMV;
 
       prepareTsqr (Q); // Finish initializing TSQR.
       KMV A_view = getNonConstView (A);
@@ -226,7 +226,7 @@ namespace Tpetra {
                 dense_matrix_type& R,
                 const magnitude_type& tol)
     {
-      typedef Kokkos::MultiVector<scalar_type, node_type> KMV;
+      typedef KokkosClassic::MultiVector<scalar_type, node_type> KMV;
 
       prepareTsqr (Q); // Finish initializing TSQR.
 
@@ -312,10 +312,10 @@ namespace Tpetra {
       distTsqr_->init (messBase);
     }
 
-    /// \brief Extract A's underlying Kokkos::MultiVector instance.
+    /// \brief Extract A's underlying KokkosClassic::MultiVector instance.
     ///
     /// TSQR represents the local (to each MPI process) part of a
-    /// multivector as a Kokkos::MultiVector (KMV), which gives a
+    /// multivector as a KokkosClassic::MultiVector (KMV), which gives a
     /// nonconstant view of the original multivector's data.  This
     /// class method tells TSQR how to get the KMV from the input
     /// multivector.  The KMV is not a persistent view of the data;
@@ -324,7 +324,7 @@ namespace Tpetra {
     /// \warning TSQR does not currently support multivectors with
     ///   nonconstant stride.  If A has nonconstant stride, this
     ///   method will throw an exception.
-    static Kokkos::MultiVector<scalar_type, node_type>
+    static KokkosClassic::MultiVector<scalar_type, node_type>
     getNonConstView (MV& A)
     {
       // FIXME (mfh 25 Oct 2010) We should be able to run TSQR even if

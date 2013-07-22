@@ -170,6 +170,8 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   gtest           "cmake/TPLs/"    EX
   BoostLib        "cmake/TPLs/"    SS
   OpenNURBS       "cmake/TPLs/"    EX
+  ACIS            "cmake/TPLs/"    EX
+  Parasolid       "cmake/TPLs/"    EX
   Portals         "cmake/TPLs/"    SS
   CrayPortals     "cmake/TPLs/"    SS
   Gemini          "cmake/TPLs/"    SS

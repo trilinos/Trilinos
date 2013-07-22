@@ -160,7 +160,7 @@ namespace Zoltan2{
 #include <Kokkos_DefaultNode.hpp>
 
 namespace Zoltan2{
-typedef Kokkos::DefaultNode::DefaultNodeType default_node_t;
+typedef KokkosClassic::DefaultNode::DefaultNodeType default_node_t;
 }
 
 #endif

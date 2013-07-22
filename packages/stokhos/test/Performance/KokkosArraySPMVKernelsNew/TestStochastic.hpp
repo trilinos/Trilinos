@@ -42,8 +42,8 @@
 #include <cmath>
 #include <iostream>
 
-#include "KokkosArray_Host.hpp"
-#include "impl/KokkosArray_Timer.hpp"
+#include "Kokkos_Host.hpp"
+#include "impl/Kokkos_Timer.hpp"
 
 #include "Stokhos_CrsMatrix.hpp"
 #include "Stokhos_BlockCrsMatrix.hpp"
@@ -128,8 +128,8 @@ test_product_tensor_matrix(
   const bool symmetric )
 {
   typedef ScalarType value_type ;
-  typedef KokkosArray::View< value_type** ,
-                             KokkosArray::LayoutLeft ,
+  typedef Kokkos::View< value_type** ,
+                             Kokkos::LayoutLeft ,
                              Device > block_vector_type ;
 
    typedef Stokhos::StochasticProductTensor< value_type , TensorType , Device > tensor_type ;
@@ -178,7 +178,7 @@ test_product_tensor_matrix(
   matrix.block =
     Stokhos::create_stochastic_product_tensor< TensorType >( *basis,
                                                              *Cijk );
-  matrix.graph = KokkosArray::create_crsarray<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length      = matrix.block.dimension();
 
@@ -188,7 +188,7 @@ test_product_tensor_matrix(
   block_vector_type y = block_vector_type( "y" , inner_length , outer_length );
 
   typename block_vector_type::HostMirror hM =
-    KokkosArray::create_mirror( matrix.values );
+    Kokkos::create_mirror( matrix.values );
 
   for ( size_t i=0 ; i < graph_length ; ++i ) {
     for ( size_t j = 0 ; j < inner_length ; ++j ) {
@@ -196,12 +196,12 @@ test_product_tensor_matrix(
     }
   }
 
-  KokkosArray::deep_copy( matrix.values , hM );
+  Kokkos::deep_copy( matrix.values , hM );
 
   //------------------------------
   // Generate input multivector:
 
-  typename block_vector_type::HostMirror hx = KokkosArray::create_mirror( x );
+  typename block_vector_type::HostMirror hx = Kokkos::create_mirror( x );
 
   for ( size_t i = 0 ; i < outer_length ; ++i ) {
     for ( size_t j = 0 ; j < inner_length ; ++j ) {
@@ -209,11 +209,11 @@ test_product_tensor_matrix(
     }
   }
 
-  KokkosArray::deep_copy( x , hx );
+  Kokkos::deep_copy( x , hx );
 
   //------------------------------
 
-  KokkosArray::Impl::Timer clock ;
+  Kokkos::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
   }
@@ -247,8 +247,8 @@ test_tiled_product_tensor_matrix(
   const bool symmetric )
 {
   typedef ScalarType value_type ;
-  typedef KokkosArray::View< value_type** ,
-                             KokkosArray::LayoutLeft ,
+  typedef Kokkos::View< value_type** ,
+                             Kokkos::LayoutLeft ,
                              Device > block_vector_type ;
 
   typedef Stokhos::TiledCrsProductTensor<ScalarType,Device> TensorType;
@@ -301,7 +301,7 @@ test_tiled_product_tensor_matrix(
   matrix.block =
     Stokhos::create_stochastic_product_tensor< TensorType >( *basis, *Cijk,
                                                              params);
-  matrix.graph = KokkosArray::create_crsarray<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length      = matrix.block.dimension();
 
@@ -311,7 +311,7 @@ test_tiled_product_tensor_matrix(
   block_vector_type y = block_vector_type( "y" , inner_length , outer_length );
 
   typename block_vector_type::HostMirror hM =
-    KokkosArray::create_mirror( matrix.values );
+    Kokkos::create_mirror( matrix.values );
 
   for ( size_t i=0 ; i < graph_length ; ++i ) {
     for ( size_t j = 0 ; j < inner_length ; ++j ) {
@@ -319,12 +319,12 @@ test_tiled_product_tensor_matrix(
     }
   }
 
-  KokkosArray::deep_copy( matrix.values , hM );
+  Kokkos::deep_copy( matrix.values , hM );
 
   //------------------------------
   // Generate input multivector:
 
-  typename block_vector_type::HostMirror hx = KokkosArray::create_mirror( x );
+  typename block_vector_type::HostMirror hx = Kokkos::create_mirror( x );
 
   for ( size_t i = 0 ; i < outer_length ; ++i ) {
     for ( size_t j = 0 ; j < inner_length ; ++j ) {
@@ -332,11 +332,11 @@ test_tiled_product_tensor_matrix(
     }
   }
 
-  KokkosArray::deep_copy( x , hx );
+  Kokkos::deep_copy( x , hx );
 
   //------------------------------
 
-  KokkosArray::Impl::Timer clock ;
+  Kokkos::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
   }
@@ -370,8 +370,8 @@ test_lexo_block_tensor(
   const bool symmetric )
 {
   typedef ScalarType value_type ;
-  typedef KokkosArray::View< value_type** ,
-                             KokkosArray::LayoutLeft ,
+  typedef Kokkos::View< value_type** ,
+                             Kokkos::LayoutLeft ,
                              Device > block_vector_type ;
 
   typedef Stokhos::LexicographicBlockSparse3Tensor<value_type,Device> TensorType;
@@ -422,7 +422,7 @@ test_lexo_block_tensor(
   matrix.block =
     Stokhos::create_stochastic_product_tensor< TensorType >( *basis,
                                                              *Cijk );
-  matrix.graph = KokkosArray::create_crsarray<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length      = matrix.block.dimension();
 
@@ -432,7 +432,7 @@ test_lexo_block_tensor(
   block_vector_type y = block_vector_type( "y" , inner_length , outer_length );
 
   typename block_vector_type::HostMirror hM =
-    KokkosArray::create_mirror( matrix.values );
+    Kokkos::create_mirror( matrix.values );
 
   for ( size_t i=0 ; i < graph_length ; ++i ) {
     for ( size_t j = 0 ; j < inner_length ; ++j ) {
@@ -440,12 +440,12 @@ test_lexo_block_tensor(
     }
   }
 
-  KokkosArray::deep_copy( matrix.values , hM );
+  Kokkos::deep_copy( matrix.values , hM );
 
   //------------------------------
   // Generate input multivector:
 
-  typename block_vector_type::HostMirror hx = KokkosArray::create_mirror( x );
+  typename block_vector_type::HostMirror hx = Kokkos::create_mirror( x );
 
   for ( size_t i = 0 ; i < outer_length ; ++i ) {
     for ( size_t j = 0 ; j < inner_length ; ++j ) {
@@ -453,11 +453,11 @@ test_lexo_block_tensor(
     }
   }
 
-  KokkosArray::deep_copy( x , hx );
+  Kokkos::deep_copy( x , hx );
 
   //------------------------------
 
-  KokkosArray::Impl::Timer clock ;
+  Kokkos::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
   }
@@ -491,8 +491,8 @@ test_linear_tensor(
   const bool symmetric )
 {
   typedef ScalarType value_type ;
-  typedef KokkosArray::View< value_type** ,
-                             KokkosArray::LayoutLeft ,
+  typedef Kokkos::View< value_type** ,
+                             Kokkos::LayoutLeft ,
                              Device > block_vector_type ;
 
   typedef Stokhos::LinearSparse3Tensor<value_type,Device,4> TensorType;
@@ -545,7 +545,7 @@ test_linear_tensor(
     Stokhos::create_stochastic_product_tensor< TensorType >( *basis,
                                                              *Cijk,
                                                              params );
-  matrix.graph = KokkosArray::create_crsarray<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length         = matrix.block.tensor().dimension();
   const size_t inner_length_aligned = matrix.block.tensor().aligned_dimension();
@@ -556,7 +556,7 @@ test_linear_tensor(
   block_vector_type y = block_vector_type( "y" , inner_length_aligned , outer_length );
 
   typename block_vector_type::HostMirror hM =
-    KokkosArray::create_mirror( matrix.values );
+    Kokkos::create_mirror( matrix.values );
 
   for ( size_t i=0 ; i < graph_length ; ++i ) {
     for ( size_t j = 0 ; j < inner_length ; ++j ) {
@@ -564,12 +564,12 @@ test_linear_tensor(
     }
   }
 
-  KokkosArray::deep_copy( matrix.values , hM );
+  Kokkos::deep_copy( matrix.values , hM );
 
   //------------------------------
   // Generate input multivector:
 
-  typename block_vector_type::HostMirror hx = KokkosArray::create_mirror( x );
+  typename block_vector_type::HostMirror hx = Kokkos::create_mirror( x );
 
   for ( size_t i = 0 ; i < outer_length ; ++i ) {
     for ( size_t j = 0 ; j < inner_length ; ++j ) {
@@ -577,11 +577,11 @@ test_linear_tensor(
     }
   }
 
-  KokkosArray::deep_copy( x , hx );
+  Kokkos::deep_copy( x , hx );
 
   //------------------------------
 
-  KokkosArray::Impl::Timer clock ;
+  Kokkos::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
   }
@@ -644,7 +644,7 @@ test_original_matrix_free_vec(
   //------------------------------
 
   typedef Stokhos::CrsMatrix<value_type,Device> matrix_type ;
-  typedef KokkosArray::CrsArray<int,Device,void,int> crsarray_type ;
+  typedef Kokkos::CrsArray<int,Device,void,int> crsarray_type ;
 
   //------------------------------
   // Generate FEM graph:
@@ -657,7 +657,7 @@ test_original_matrix_free_vec(
 
   //------------------------------
 
-  typedef KokkosArray::View<value_type[],Device> vec_type ;
+  typedef Kokkos::View<value_type[],Device> vec_type ;
 
   std::vector<matrix_type> matrix( outer_length ) ;
   std::vector<vec_type> x( outer_length ) ;
@@ -665,7 +665,7 @@ test_original_matrix_free_vec(
   std::vector<vec_type> tmp( outer_length ) ;
 
   for (size_t block=0; block<outer_length; ++block) {
-    matrix[block].graph = KokkosArray::create_crsarray<crsarray_type>( std::string("testing") , fem_graph );
+    matrix[block].graph = Kokkos::create_crsarray<crsarray_type>( std::string("testing") , fem_graph );
 
     matrix[block].values = vec_type( "matrix" , graph_length );
 
@@ -674,30 +674,30 @@ test_original_matrix_free_vec(
     tmp[block] = vec_type( "tmp" , inner_length );
 
     typename vec_type::HostMirror hM =
-      KokkosArray::create_mirror( matrix[block].values );
+      Kokkos::create_mirror( matrix[block].values );
 
     for ( size_t i = 0 ; i < graph_length ; ++i ) {
       hM(i) = 1.0 ;
     }
 
-    KokkosArray::deep_copy( matrix[block].values , hM );
+    Kokkos::deep_copy( matrix[block].values , hM );
 
     typename vec_type::HostMirror hx =
-      KokkosArray::create_mirror( x[block] );
+      Kokkos::create_mirror( x[block] );
     typename vec_type::HostMirror hy =
-      KokkosArray::create_mirror( y[block] );
+      Kokkos::create_mirror( y[block] );
 
     for ( size_t i = 0 ; i < inner_length ; ++i ) {
       hx(i) = 1.0 ;
       hy(i) = 0.0 ;
     }
 
-    KokkosArray::deep_copy( x[block] , hx );
-    KokkosArray::deep_copy( y[block] , hy );
+    Kokkos::deep_copy( x[block] , hx );
+    Kokkos::deep_copy( y[block] , hy );
   }
 
   SparseMatOps smo;
-  KokkosArray::Impl::Timer clock ;
+  Kokkos::Impl::Timer clock ;
   int n_apply = 0;
   int n_add = 0;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
@@ -770,7 +770,7 @@ void performance_test_driver_poly( const int pdeg ,
                                    const bool symmetric )
 {
   // bool do_flat_sparse =
-  //   KokkosArray::Impl::is_same<Device,KokkosArray::Host>::value ;
+  //   Kokkos::Impl::is_same<Device,Kokkos::Host>::value ;
 
   std::cout.precision(8);
 
@@ -842,7 +842,7 @@ void performance_test_driver_poly_deg( const int nvar ,
                                        const bool symmetric )
 {
   bool do_flat_sparse =
-    KokkosArray::Impl::is_same<Device,KokkosArray::Host>::value ;
+    Kokkos::Impl::is_same<Device,Kokkos::Host>::value ;
 
   std::cout.precision(8);
 

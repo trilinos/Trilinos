@@ -57,7 +57,7 @@ namespace Tpetra {
 template<class Scalar,
          class LocalOrdinal=int,
          class GlobalOrdinal=LocalOrdinal,
-         class Node=Kokkos::DefaultNode::DefaultNodeType>
+         class Node=KokkosClassic::DefaultNode::DefaultNodeType>
 class Vector : public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
   // need this so that MultiVector::operator() can call Vector's private view constructor
   friend class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
@@ -198,7 +198,7 @@ createVector (const RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map)
 }
 
 //! \brief Non-member function to create a Vector with view semantics using user-allocated data.
-/*! This use case is not supported for all nodes. Specifically, it is not typically supported for accelerator-based nodes like Kokkos::ThrustGPUNode.
+/*! This use case is not supported for all nodes. Specifically, it is not typically supported for accelerator-based nodes like KokkosClassic::ThrustGPUNode.
     \relatesalso Vector
  */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

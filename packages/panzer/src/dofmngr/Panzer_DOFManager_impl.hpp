@@ -78,7 +78,7 @@ using Teuchos::rcp;
 using Teuchos::ArrayRCP;
 using Teuchos::Array;
 using Teuchos::ArrayView;
-using Kokkos::DefaultArithmetic;
+using KokkosClassic::DefaultArithmetic;
 
 template <typename LO, typename GO>
 DOFManager<LO,GO>::DOFManager()
@@ -302,7 +302,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
                       "DOFManager::buildGlobalUnknowns: buildGlobalUnknowns cannot be called again "
                       "after buildGlobalUnknowns has been called"); 
   //Some stuff for the Map.
-  typedef Kokkos::DefaultNode::DefaultNodeType Node;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
   typedef Tpetra::Map<LO, GO, Node> Map;
 
   typedef Tpetra::Vector<LO,GO> Vector;
@@ -440,9 +440,9 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
    */
   non_overlap_mv->doExport(*overlap_mv,e,Tpetra::ABSMAX);
 
- /* 10. Use Kokkos::DefaultArithmetic to locally sum.
+ /* 10. Use KokkosClassic::DefaultArithmetic to locally sum.
    */
-  typedef Kokkos::MultiVector<GO,Node> KMV;
+  typedef KokkosClassic::MultiVector<GO,Node> KMV;
   Array<GO> columnSums(numFields_);
   DefaultArithmetic<KMV>::Sum(non_overlap_mv->getLocalMVNonConst(), columnSums());
   size_t localsum=0;

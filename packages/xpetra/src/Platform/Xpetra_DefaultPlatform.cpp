@@ -55,9 +55,9 @@ namespace Xpetra {
 
     if (!platform_.get()) {
 #ifdef HAVE_MPI
-      platform_ = Teuchos::rcp(new MpiPlatform<Kokkos::DefaultNode::DefaultNodeType>(Kokkos::DefaultNode::getDefaultNode()));
+      platform_ = Teuchos::rcp(new MpiPlatform<KokkosClassic::DefaultNode::DefaultNodeType>(KokkosClassic::DefaultNode::getDefaultNode()));
 #else
-      platform_ = Teuchos::rcp(new SerialPlatform<Kokkos::DefaultNode::DefaultNodeType>(Kokkos::DefaultNode::getDefaultNode()));
+      platform_ = Teuchos::rcp(new SerialPlatform<KokkosClassic::DefaultNode::DefaultNodeType>(KokkosClassic::DefaultNode::getDefaultNode()));
 #endif
     }
     return *platform_;

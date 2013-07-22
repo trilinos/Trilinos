@@ -168,7 +168,7 @@ namespace Tpetra {
   template <class Packet,
             class LocalOrdinal = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node = Kokkos::DefaultNode::DefaultNodeType>
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class DistObject : 
     virtual public SrcDistObject,
     virtual public Teuchos::Describable {
@@ -593,7 +593,7 @@ namespace Tpetra {
     ///   buffer, whereas a read-and-write view requires copying both
     ///   ways (once to read, from the compute buffer to host memory,
     ///   and once to write, back to the compute buffer).
-    virtual void createViewsNonConst (Kokkos::ReadWriteOption rwo);
+    virtual void createViewsNonConst (KokkosClassic::ReadWriteOption rwo);
 
     /// \brief Hook for releasing views.
     ///

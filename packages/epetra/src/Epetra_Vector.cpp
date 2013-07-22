@@ -188,7 +188,7 @@ int Epetra_Vector::ChangeValues(int NumEntries, int BlockOffset, const double * 
   if(Map().GlobalIndicesInt())
     return TChangeValues<int>(NumEntries, BlockOffset, values, Indices, IndicesGlobal, SumInto);
   else
-    throw ReportError("Epetra_CrsMatrix::InsertGlobalValues long long version called for a matrix that is not long long.", -1);
+    throw ReportError("Epetra_Vector::ChangeValues int version called for a vector that is not int.", -1);
 }
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
@@ -197,6 +197,6 @@ int Epetra_Vector::ChangeValues(int NumEntries, int BlockOffset, const double * 
   if(Map().GlobalIndicesLongLong())
     return TChangeValues<long long>(NumEntries, BlockOffset, values, Indices, IndicesGlobal, SumInto);
   else
-    throw ReportError("Epetra_Vector::ChangeValues long long version called for a matrix that is not long long.", -1);
+    throw ReportError("Epetra_Vector::ChangeValues long long version called for a vector that is not long long.", -1);
 }
 #endif

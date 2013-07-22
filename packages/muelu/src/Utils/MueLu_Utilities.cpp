@@ -55,8 +55,8 @@ namespace MueLu {
    typedef double                                           Scalar;
    typedef int                                              LocalOrdinal;
    typedef int                                              GlobalOrdinal;
-   typedef Kokkos::DefaultNode::DefaultNodeType             Node;
-   typedef Kokkos::DefaultKernels<double,int,NO>::SparseOps LocalMatOps;
+   typedef KokkosClassic::DefaultNode::DefaultNodeType             Node;
+   typedef KokkosClassic::DefaultKernels<double,int,NO>::SparseOps LocalMatOps;
 
    Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("ZZ Entire Transpose"));
 
@@ -124,6 +124,7 @@ namespace MueLu {
       throw Exceptions::RuntimeError("Epetra (Err. 2)");
 #endif
     }
+    return Teuchos::null;
   } //Transpose
 
   // -- ------------------------------------------------------- --
@@ -160,8 +161,8 @@ namespace MueLu {
    typedef double                                           Scalar;
    typedef int                                              LocalOrdinal;
    typedef int                                              GlobalOrdinal;
-   typedef Kokkos::DefaultNode::DefaultNodeType             Node;
-   typedef Kokkos::DefaultKernels<double,int,NO>::SparseOps LocalMatOps;
+   typedef KokkosClassic::DefaultNode::DefaultNodeType             Node;
+   typedef KokkosClassic::DefaultKernels<double,int,NO>::SparseOps LocalMatOps;
 
     if (!(A.getRowMap()->isSameAs(*(B.getRowMap()))))
       throw Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same.");

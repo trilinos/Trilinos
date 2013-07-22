@@ -42,8 +42,8 @@
 #ifndef STOKHOS_HOST_BLOCKCRSMATRIX_HPP
 #define STOKHOS_HOST_BLOCKCRSMATRIX_HPP
 
-#include "KokkosArray_Host.hpp"
-#include "KokkosArray_ParallelFor.hpp"
+#include "Kokkos_Host.hpp"
+#include "Kokkos_ParallelFor.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_BlockCrsMatrix.hpp"
@@ -52,16 +52,16 @@ namespace Stokhos {
 
 template< class BlockSpec , typename MatrixValue , typename VectorValue >
 class Multiply<
-  BlockCrsMatrix< BlockSpec , MatrixValue , KokkosArray::Host > ,
-  KokkosArray::View< VectorValue** , KokkosArray::LayoutLeft , KokkosArray::Host > ,
-  KokkosArray::View< VectorValue** , KokkosArray::LayoutLeft , KokkosArray::Host > ,
+  BlockCrsMatrix< BlockSpec , MatrixValue , Kokkos::Host > ,
+  Kokkos::View< VectorValue** , Kokkos::LayoutLeft , Kokkos::Host > ,
+  Kokkos::View< VectorValue** , Kokkos::LayoutLeft , Kokkos::Host > ,
   DefaultSparseMatOps >
 {
 public:
 
-  typedef KokkosArray::Host                                      device_type ;
+  typedef Kokkos::Host                                      device_type ;
   typedef device_type::size_type                    size_type ;
-  typedef KokkosArray::View< VectorValue** , KokkosArray::LayoutLeft , KokkosArray::Host > block_vector_type ;
+  typedef Kokkos::View< VectorValue** , Kokkos::LayoutLeft , Kokkos::Host > block_vector_type ;
   typedef BlockCrsMatrix< BlockSpec , MatrixValue , device_type >  matrix_type ;
 
   const matrix_type  m_A ;
@@ -108,7 +108,7 @@ public:
                      const block_vector_type & y )
   {
     const size_t row_count = A.graph.row_map.dimension_0() - 1 ;
-    KokkosArray::parallel_for( row_count , Multiply(A,x,y) );
+    Kokkos::parallel_for( row_count , Multiply(A,x,y) );
   }
 };
 

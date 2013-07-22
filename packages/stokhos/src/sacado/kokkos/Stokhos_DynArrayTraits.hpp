@@ -47,7 +47,7 @@
 #include <new>
 #include <cstring>
 
-#include "KokkosArray_Macros.hpp"
+#include "Kokkos_Macros.hpp"
 
 namespace Stokhos {
 
@@ -86,21 +86,21 @@ namespace Stokhos {
 
     //! Copy array from \c src to \c dest of length \c sz
     static 
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     void copy(const T* src, T* dest, std::size_t sz) {
       if (sz > 0) std::memcpy(dest,src,sz*sizeof(T));
     }
 
     //! Zero out array \c dest of length \c sz
     static 
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     void zero(T* dest, std::size_t sz) {
       if (sz > 0) std::memset(dest,0,sz*sizeof(T));
     }
 
     //! Fill array \c dest of length \c sz with value \c v
     static 
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     void fill(T* dest, std::size_t sz, const T& v) {
       //if (sz > 0) std::memset(dest,v,sz*sizeof(T));
       for (std::size_t i=0; i<sz; ++i)
@@ -109,7 +109,7 @@ namespace Stokhos {
 
     //! Get memory for new array of length \c sz and fill with zeros
     static 
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     T* get_and_fill(std::size_t sz, const T& x = T(0.0)) {
       T* m = 0;
       if (sz > 0) {
@@ -126,7 +126,7 @@ namespace Stokhos {
      * entries from \c src
      */
     static 
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     T* get_and_fill(const T* src, std::size_t sz) {
       T* m = 0;
       if (sz > 0) {
@@ -139,7 +139,7 @@ namespace Stokhos {
 
     //! Destroy array elements and release memory
     static 
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     void destroy_and_release(T* m, std::size_t sz) {
       if (sz > 0) operator delete((void*) m);
     }
@@ -156,7 +156,7 @@ namespace Stokhos {
 
     //! Fill array \c dest of length \c sz with value \c v
     static 
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     void fill(T* dest, std::size_t sz, const T& v) {
       for (std::size_t i=0; i<sz; ++i)
 	*(dest++) = v;
@@ -164,7 +164,7 @@ namespace Stokhos {
 
     //! Copy array from \c src to \c dest of length \c sz
     static 
-     KOKKOSARRAY_INLINE_FUNCTION
+     KOKKOS_INLINE_FUNCTION
     void copy(const T* src, T*  dest, std::size_t sz) {
       for (std::size_t i=0; i<sz; ++i)
 	*(dest++) = *(src++);
@@ -172,7 +172,7 @@ namespace Stokhos {
 
     //! Zero out array \c dest of length \c sz
     static 
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     void zero(T* dest, std::size_t sz) {
       for (std::size_t i=0; i<sz; ++i)
 	*(dest++) = T(0.);
@@ -180,7 +180,7 @@ namespace Stokhos {
 
     //! Get memory for new array of length \c sz and fill with zeros
     static 
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     T* get_and_fill(std::size_t sz, const T& x = T(0.0)) {
       T* m = 0;
       if (sz > 0) {
@@ -197,7 +197,7 @@ namespace Stokhos {
      * entries from \c src
      */
     static 
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     T* get_and_fill(const T* src, std::size_t sz) {
       T* m = 0;
       if (sz > 0) {
@@ -211,7 +211,7 @@ namespace Stokhos {
 
     //! Destroy array elements and release memory
     static 
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     void destroy_and_release(T* m, std::size_t sz) {
       T* e = m+sz;
       for (T* b = m; b!=e; b++)

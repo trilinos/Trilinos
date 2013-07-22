@@ -43,69 +43,69 @@
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Stokhos_KokkosArrayKernelsUnitTest.hpp"
+#include "Stokhos_KokkosKernelsUnitTest.hpp"
 
-#include <Host/KokkosArray_Host_ProductTensor.hpp>
-#include <Host/KokkosArray_Host_StochasticProductTensor.hpp>
-#include <Host/KokkosArray_Host_SymmetricDiagonalSpec.hpp>
-#include <Host/KokkosArray_Host_CrsMatrix.hpp>
-#include <Host/KokkosArray_Host_BlockCrsMatrix.hpp>
+#include <Host/Kokkos_Host_ProductTensor.hpp>
+#include <Host/Kokkos_Host_StochasticProductTensor.hpp>
+#include <Host/Kokkos_Host_SymmetricDiagonalSpec.hpp>
+#include <Host/Kokkos_Host_CrsMatrix.hpp>
+#include <Host/Kokkos_Host_BlockCrsMatrix.hpp>
 
-#include "KokkosArray_hwloc.hpp"
-#include <KokkosArray_Cuda.hpp>
+#include "Kokkos_hwloc.hpp"
+#include <Kokkos_Cuda.hpp>
 
-using namespace KokkosArrayKernelsUnitTest;
+using namespace KokkosKernelsUnitTest;
 
 UnitTestSetup setup;
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsMatrixFree_Host ) {
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsMatrixFree_Host ) {
   typedef double Scalar;
-  typedef KokkosArray::Host Device;
+  typedef Kokkos::Host Device;
   bool test_block = true;
 
   success = test_crs_matrix_free<Scalar,Device>(setup, test_block, out);
 }
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsProductLegendre_Host ) {
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsProductLegendre_Host ) {
   typedef double Scalar;
-  typedef KokkosArray::Host Device;
+  typedef Kokkos::Host Device;
 
   success = test_crs_product_legendre<Scalar,Device>(setup, out);
 }
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsDenseBlock_Host ) {
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsDenseBlock_Host ) {
   typedef double Scalar;
-  typedef KokkosArray::Host Device;
+  typedef Kokkos::Host Device;
 
   success = test_crs_dense_block<Scalar,Device>(setup, out);
 }
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsFlatCommuted_Host ) {
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsFlatCommuted_Host ) {
   typedef double Scalar;
-  typedef KokkosArray::Host Device;
+  typedef Kokkos::Host Device;
 
   success = test_crs_flat_commuted<Scalar,Device>(setup, out);
 }
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsFlatOriginal_Host ) {
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsFlatOriginal_Host ) {
   typedef double Scalar;
-  typedef KokkosArray::Host Device;
+  typedef Kokkos::Host Device;
 
   success = test_crs_flat_original<Scalar,Device>(setup, out);
 }
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsProductTensor_Host ) {
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsProductTensor_Host ) {
   typedef double Scalar;
-  typedef KokkosArray::Host Device;
+  typedef Kokkos::Host Device;
 
-  success = test_crs_product_tensor<Scalar,Device,KokkosArray::CrsProductTensor>(setup, out);
+  success = test_crs_product_tensor<Scalar,Device,Kokkos::CrsProductTensor>(setup, out);
 }
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, ProductLegendreCijk ) {
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, ProductLegendreCijk ) {
   success = true;
 
   const std::vector<unsigned> var_degree( setup.d , setup.p );
-  const KokkosArray::TripleProductTensorLegendreCombinatorialEvaluation
+  const Kokkos::TripleProductTensorLegendreCombinatorialEvaluation
     tensor( var_degree );
 
   typename UnitTestSetup::Cijk_type::k_iterator k_begin =
@@ -154,18 +154,18 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, ProductLegendreCijk ) {
   }
 }
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, ProductTensorCijk ) {
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, ProductTensorCijk ) {
   success = true;
 
   typedef double value_type;
-  typedef KokkosArray::Host Device;
-  typedef KokkosArray::NormalizedLegendrePolynomialBases<8> polynomial ;
-  typedef KokkosArray::StochasticProductTensor< value_type , polynomial , Device , KokkosArray::CrsProductTensor > tensor_type ;
+  typedef Kokkos::Host Device;
+  typedef Kokkos::NormalizedLegendrePolynomialBases<8> polynomial ;
+  typedef Kokkos::StochasticProductTensor< value_type , polynomial , Device , Kokkos::CrsProductTensor > tensor_type ;
 
   const std::vector<unsigned> var_degree( setup.d , setup.p );
 
   tensor_type tensor =
-    KokkosArray::create_product_tensor< tensor_type >( var_degree );
+    Kokkos::create_product_tensor< tensor_type >( var_degree );
 
   for (int i=0; i<setup.stoch_length; ++i) {
     const size_t iEntryBeg = tensor.tensor().entry_begin(i);
@@ -196,25 +196,25 @@ int main( int argc, char* argv[] ) {
 
   // Initialize host
   const std::pair<unsigned,unsigned> core_topo =
-    KokkosArray::hwloc::get_core_topology();
-  //const size_t core_capacity = KokkosArray::hwloc::get_core_capacity();
+    Kokkos::hwloc::get_core_topology();
+  //const size_t core_capacity = Kokkos::hwloc::get_core_capacity();
 
   const size_t gang_count = core_topo.first ;
   const size_t gang_worker_count = core_topo.second;
-  KokkosArray::Host::initialize( gang_count , gang_worker_count );
+  Kokkos::Host::initialize( gang_count , gang_worker_count );
 
-#ifdef KOKKOSARRAY_HAVE_CUDA
+#ifdef KOKKOS_HAVE_CUDA
   // Initialize Cuda
-  KokkosArray::Cuda::initialize( KokkosArray::Cuda::SelectDevice(0) );
+  Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
 #endif
 
   // Run tests
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finish up
-  KokkosArray::Host::finalize();
-#ifdef KOKKOSARRAY_HAVE_CUDA
-  KokkosArray::Cuda::finalize();
+  Kokkos::Host::finalize();
+#ifdef KOKKOS_HAVE_CUDA
+  Kokkos::Cuda::finalize();
 #endif
 
   return ret;

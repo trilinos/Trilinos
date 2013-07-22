@@ -59,7 +59,7 @@ namespace Tpetra {
 
 */
 
-template <typename Node=Kokkos::DefaultNode::DefaultNodeType>
+template <typename Node=KokkosClassic::DefaultNode::DefaultNodeType>
 class Library {
 public:
 

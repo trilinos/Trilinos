@@ -450,7 +450,7 @@ namespace Belos { // should be moved to Belos or Xpetra?
   };
 
   template<>
-  class MultiVecTraits<double, Xpetra::MultiVector<double,int,int,Kokkos::DefaultNode::DefaultNodeType> >
+  class MultiVecTraits<double, Xpetra::MultiVector<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType> >
   {
 
   private:
@@ -458,7 +458,7 @@ namespace Belos { // should be moved to Belos or Xpetra?
     typedef double Scalar;
     typedef int LO;
     typedef int GO;
-    typedef Kokkos::DefaultNode::DefaultNodeType Node;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
 #ifdef HAVE_XPETRA_TPETRA
     typedef Xpetra::TpetraMultiVector<Scalar,LO,GO,Node>                    TpetraMultiVector;

@@ -1,6 +1,6 @@
 
-#include <KokkosArray_Host.hpp>
-#include <KokkosArray_Cuda.hpp>
+#include <Kokkos_Host.hpp>
+#include <Kokkos_Cuda.hpp>
 
 #include <ParallelComm.hpp>
 #include <TestImplicit.hpp>
@@ -10,7 +10,7 @@ namespace Test {
 int test_cuda( comm::Machine machine , std::istream & input )
 {
   const unsigned parallel_rank = comm::rank( machine );
-  const unsigned device_count  = KokkosArray::Cuda::detect_device_count();
+  const unsigned device_count  = Kokkos::Cuda::detect_device_count();
 
   unsigned device = 0 ;
   unsigned elem_beg = 3 ;
@@ -39,27 +39,27 @@ int test_cuda( comm::Machine machine , std::istream & input )
 
   device += parallel_rank % device_count ;
 
-  KokkosArray::Cuda::initialize( KokkosArray::Cuda::SelectDevice( device ) );
+  Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( device ) );
 
   {
     std::ostringstream label ;
 
-    label << "Scalar, CudaArch[" << KokkosArray::Cuda::detect_device_arch()[device] << "]" ;
+    label << "Scalar, CudaArch[" << Kokkos::Cuda::detect_device_arch()[device] << "]" ;
 
-    implicit_driver<double,KokkosArray::Cuda>(
+    implicit_driver<double,Kokkos::Cuda>(
       label.str().c_str() , machine , 1 , elem_beg , elem_end , run );
   }
 
   {
     std::ostringstream label ;
 
-    label << "Ensemble[32], CudaArch[" << KokkosArray::Cuda::detect_device_arch()[device] << "]" ;
+    label << "Ensemble[32], CudaArch[" << Kokkos::Cuda::detect_device_arch()[device] << "]" ;
 
-    implicit_driver< KokkosArray::Array<double,32> , KokkosArray::Cuda>(
+    implicit_driver< Kokkos::Array<double,32> , Kokkos::Cuda>(
       label.str().c_str() , machine , 1 , elem_beg , elem_end , run );
   }
 
-  KokkosArray::Cuda::finalize();
+  Kokkos::Cuda::finalize();
 
   return 0 ;
 }

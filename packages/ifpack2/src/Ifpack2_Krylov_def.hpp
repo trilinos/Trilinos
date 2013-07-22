@@ -105,44 +105,44 @@ void Krylov<MatrixType,PrecType>::setParameters(const Teuchos::ParameterList& pa
 
 //==========================================================================
 template <class MatrixType, class PrecType>
-const Teuchos::RCP<const Teuchos::Comm<int> > &
-Krylov<MatrixType,PrecType>::getComm() const{
-  return(Comm_);
+Teuchos::RCP<const Teuchos::Comm<int> > 
+Krylov<MatrixType,PrecType>::getComm () const {
+  return Comm_;
 }
 
 //==========================================================================
 template <class MatrixType, class PrecType>
 Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
-Krylov<MatrixType,PrecType>::getMatrix() const {
-  return(A_);
+Krylov<MatrixType,PrecType>::getMatrix () const {
+  return A_;
 }
 
 //==========================================================================
 template <class MatrixType, class PrecType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >&
-Krylov<MatrixType,PrecType>::getDomainMap() const
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
+Krylov<MatrixType,PrecType>::getDomainMap () const
 {
-  return A_->getDomainMap();
+  return A_->getDomainMap ();
 }
 
 //==========================================================================
 template <class MatrixType, class PrecType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >&
-Krylov<MatrixType,PrecType>::getRangeMap() const
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
+Krylov<MatrixType,PrecType>::getRangeMap () const
 {
-  return A_->getRangeMap();
+  return A_->getRangeMap ();
 }
 
 //==============================================================================
 template <class MatrixType, class PrecType>
-bool Krylov<MatrixType,PrecType>::hasTransposeApply() const {
+bool Krylov<MatrixType,PrecType>::hasTransposeApply () const {
   return true;
 }
 
 //==========================================================================
 template <class MatrixType, class PrecType>
-int Krylov<MatrixType,PrecType>::getNumInitialize() const {
-  return(NumInitialize_);
+int Krylov<MatrixType,PrecType>::getNumInitialize () const {
+  return NumInitialize_;
 }
 
 //==========================================================================

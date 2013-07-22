@@ -41,7 +41,7 @@
 
 #include <iostream>
 
-#include "KokkosArray_hwloc.hpp"
+#include "Kokkos_hwloc.hpp"
 
 #include "Stokhos_ConfigDefs.h"
 #if defined(HAVE_STOKHOS_OPENMP) && defined(HAVE_STOKHOS_MKL)
@@ -63,11 +63,11 @@
 namespace unit_test {
 
 template<typename Scalar>
-struct performance_test_driver<Scalar,KokkosArray::Host> {
+struct performance_test_driver<Scalar,Kokkos::Host> {
 
   static void run(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
                   bool test_block, bool symmetric, bool mkl) {
-    typedef KokkosArray::Host Device;
+    typedef Kokkos::Host Device;
 
     int nGrid;
     int nIter;
@@ -142,8 +142,8 @@ int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
              bool test_block, bool symmetric, bool mkl)
 {
   const std::pair<unsigned,unsigned> core_topo =
-    KokkosArray::hwloc::get_core_topology();
-  const size_t core_capacity = KokkosArray::hwloc::get_core_capacity();
+    Kokkos::hwloc::get_core_topology();
+  const size_t core_capacity = Kokkos::hwloc::get_core_capacity();
   //const size_t core_capacity = 1;
 
   const size_t gang_count = core_topo.first ;
@@ -161,15 +161,15 @@ int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
   }
 #endif
 
-  KokkosArray::Host::initialize( gang_count , gang_worker_count );
+  Kokkos::Host::initialize( gang_count , gang_worker_count );
 
   std::cout << std::endl << "\"Host Performance with "
             << gang_count * gang_worker_count << " threads\"" << std::endl ;
 
-  unit_test::performance_test_driver<Scalar,KokkosArray::Host>::run(
+  unit_test::performance_test_driver<Scalar,Kokkos::Host>::run(
     test_flat, test_orig, test_deg, test_lin, test_block, symmetric, mkl);
 
-  KokkosArray::Host::finalize();
+  Kokkos::Host::finalize();
 
   return 0 ;
 }

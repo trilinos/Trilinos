@@ -83,7 +83,7 @@ namespace ZoltanLib {
  */
 
 
-template <typename Node = Kokkos::DefaultNode::DefaultNodeType >
+template <typename Node = KokkosClassic::DefaultNode::DefaultNodeType >
 class QueryObject 
 {
 

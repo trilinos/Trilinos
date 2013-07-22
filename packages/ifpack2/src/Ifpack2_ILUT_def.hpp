@@ -244,7 +244,7 @@ void ILUT<MatrixType>::setParameters(const Teuchos::ParameterList& params) {
 
 //==========================================================================
 template <class MatrixType>
-const Teuchos::RCP<const Teuchos::Comm<int> > &
+Teuchos::RCP<const Teuchos::Comm<int> >
 ILUT<MatrixType>::getComm() const{
   return A_->getComm ();
 }
@@ -258,7 +258,7 @@ ILUT<MatrixType>::getMatrix() const {
 
 //==========================================================================
 template <class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
 ILUT<MatrixType>::getDomainMap() const
 {
   return A_->getDomainMap();
@@ -266,7 +266,7 @@ ILUT<MatrixType>::getDomainMap() const
 
 //==========================================================================
 template <class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
 ILUT<MatrixType>::getRangeMap() const
 {
   return A_->getRangeMap();

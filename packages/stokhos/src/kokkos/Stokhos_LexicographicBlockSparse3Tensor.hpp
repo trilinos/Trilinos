@@ -42,7 +42,7 @@
 #ifndef STOKHOS_LEXICOGRAPHIC_BLOCK_SPARSE_3_TENSOR_HPP
 #define STOKHOS_LEXICOGRAPHIC_BLOCK_SPARSE_3_TENSOR_HPP
 
-#include "KokkosArray_View.hpp"
+#include "Kokkos_View.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_ProductBasis.hpp"
@@ -70,8 +70,8 @@ public:
 
 private:
 
-  typedef KokkosArray::View< int[][7] , KokkosArray::LayoutRight, device_type >       coord_array_type;
-  typedef KokkosArray::View< value_type[], device_type >    value_array_type;
+  typedef Kokkos::View< int[][7] , Kokkos::LayoutRight, device_type >       coord_array_type;
+  typedef Kokkos::View< value_type[], device_type >    value_array_type;
 
   coord_array_type  m_coord;
   value_array_type  m_value;
@@ -114,74 +114,74 @@ public:
   }
 
   /** \brief  Dimension of the tensor. */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type dimension() const { return m_dimension; }
 
   /** \brief  Number of coordinates. */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type num_coord() const { return m_coord.dimension_0(); }
 
   /** \brief  Number of values. */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type num_value() const { return m_value.dimension_0(); }
 
   /** \brief   */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   int get_i_begin(const size_type entry) const {
     return m_coord(entry,0);
   }
 
   /** \brief   */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   int get_j_begin(const size_type entry) const {
     return m_coord(entry,1);
   }
 
   /** \brief   */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   int get_k_begin(const size_type entry) const {
     return m_coord(entry,2);
   }
 
   /** \brief   */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   int get_p_i(const size_type entry) const {
     return m_coord(entry,3);
   }
 
   /** \brief   */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   int get_p_j(const size_type entry) const {
     return m_coord(entry,4);
   }
 
   /** \brief   */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   int get_p_k(const size_type entry) const {
     return m_coord(entry,5);
   }
 
   /** \brief   */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   int get_j_eq_k(const size_type entry) const {
     return m_coord(entry,6);
   }
 
   /** \brief  Cijk for entry 'entry' */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   const value_type& value(const size_type entry) const
   { return m_value(entry); }
 
   /** \brief Number of non-zero's */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type num_non_zeros() const { return m_value.dimension_0(); }
 
   /** \brief Number flop's per multiply-add */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type num_flops() const { return m_flops; }
 
   /** \brief Is PDF symmetric */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   bool symmetric() const { return m_symmetric; }
 
   template <typename OrdinalType>
@@ -202,9 +202,9 @@ public:
 
     // Create mirror, is a view if is host memory
     typename coord_array_type::HostMirror host_coord =
-      KokkosArray::create_mirror_view( tensor.m_coord );
+      Kokkos::create_mirror_view( tensor.m_coord );
     typename value_array_type::HostMirror host_value =
-      KokkosArray::create_mirror_view( tensor.m_value );
+      Kokkos::create_mirror_view( tensor.m_value );
 
     // Fill flat 3 tensor
     typedef Stokhos::LTBSparse3Tensor<OrdinalType,ValueType> Cijk_type;
@@ -272,8 +272,8 @@ public:
     */
 
     // Copy data to device if necessary
-    KokkosArray::deep_copy( tensor.m_coord , host_coord );
-    KokkosArray::deep_copy( tensor.m_value , host_value );
+    Kokkos::deep_copy( tensor.m_coord , host_coord );
+    Kokkos::deep_copy( tensor.m_value , host_value );
 
     return tensor ;
   }

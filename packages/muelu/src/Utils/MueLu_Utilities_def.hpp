@@ -1172,6 +1172,7 @@ namespace MueLu {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
     try {
       const Epetra_CrsMatrix& epetraOp = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2NonConstEpetraCrs(Op);
+      (void) epetraOp; // silence "unused variable" compiler warning
     } catch (...) {
       TorE = "tpetra";
     }

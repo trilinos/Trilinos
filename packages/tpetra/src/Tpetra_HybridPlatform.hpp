@@ -143,19 +143,19 @@ namespace Tpetra {
     HybridPlatform(const HybridPlatform &platform); // not supported
     const Teuchos::RCP<const Teuchos::Comm<int> > comm_;
     Teuchos::ParameterList instList_;
-    Teuchos::RCP<Kokkos::SerialNode>    serialNode_;
+    Teuchos::RCP<KokkosClassic::SerialNode>    serialNode_;
     bool nodeCreated_;
 #ifdef HAVE_KOKKOSCLASSIC_TBB
-    Teuchos::RCP<Kokkos::TBBNode>       tbbNode_;
+    Teuchos::RCP<KokkosClassic::TBBNode>       tbbNode_;
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-    Teuchos::RCP<Kokkos::TPINode>       tpiNode_;
+    Teuchos::RCP<KokkosClassic::TPINode>       tpiNode_;
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
-    Teuchos::RCP<Kokkos::OpenMPNode>    ompNode_;
+    Teuchos::RCP<KokkosClassic::OpenMPNode>    ompNode_;
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_THRUST
-    Teuchos::RCP<Kokkos::ThrustGPUNode> thrustNode_;
+    Teuchos::RCP<KokkosClassic::ThrustGPUNode> thrustNode_;
 #endif
 
     enum NodeType {
@@ -186,26 +186,26 @@ namespace Tpetra {
     createNode();
     switch (nodeType_) {
       case SERIALNODE:
-        codeobj.template run<Kokkos::SerialNode>(instList_,comm_, serialNode_);
+        codeobj.template run<KokkosClassic::SerialNode>(instList_,comm_, serialNode_);
         break;
 #ifdef HAVE_KOKKOSCLASSIC_TBB
       case TBBNODE:
-        codeobj.template run<Kokkos::TBBNode>(instList_,comm_, tbbNode_);
+        codeobj.template run<KokkosClassic::TBBNode>(instList_,comm_, tbbNode_);
         break;
 #endif        
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
       case OMPNODE:
-        codeobj.template run<Kokkos::OpenMPNode>(instList_,comm_, ompNode_);
+        codeobj.template run<KokkosClassic::OpenMPNode>(instList_,comm_, ompNode_);
         break;
 #endif        
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
       case TPINODE:
-        codeobj.template run<Kokkos::TPINode>(instList_,comm_, tpiNode_);
+        codeobj.template run<KokkosClassic::TPINode>(instList_,comm_, tpiNode_);
         break;
 #endif        
 #ifdef HAVE_KOKKOSCLASSIC_THRUST
       case THRUSTGPUNODE:
-        codeobj.template run<Kokkos::ThrustGPUNode>(instList_,comm_, thrustNode_);
+        codeobj.template run<KokkosClassic::ThrustGPUNode>(instList_,comm_, thrustNode_);
         break;
 #endif        
       default:
@@ -219,26 +219,26 @@ namespace Tpetra {
     createNode();
     switch (nodeType_) {
       case SERIALNODE:
-        UserCode<Kokkos::SerialNode>::run(instList_,comm_, serialNode_);
+        UserCode<KokkosClassic::SerialNode>::run(instList_,comm_, serialNode_);
         break;
 #ifdef HAVE_KOKKOSCLASSIC_TBB
       case TBBNODE:
-        UserCode<Kokkos::TBBNode>::run(instList_,comm_, tbbNode_);
+        UserCode<KokkosClassic::TBBNode>::run(instList_,comm_, tbbNode_);
         break;
 #endif        
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
       case OMPNODE:
-        UserCode<Kokkos::OpenMPNode>::run(instList_,comm_, ompNode_);
+        UserCode<KokkosClassic::OpenMPNode>::run(instList_,comm_, ompNode_);
         break;
 #endif        
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
       case TPINODE:
-        UserCode<Kokkos::TPINode>::run(instList_,comm_, tpiNode_);
+        UserCode<KokkosClassic::TPINode>::run(instList_,comm_, tpiNode_);
         break;
 #endif        
 #ifdef HAVE_KOKKOSCLASSIC_THRUST
       case THRUSTGPUNODE:
-        UserCode<Kokkos::ThrustGPUNode>::run(instList_,comm_, thrustNode_);
+        UserCode<KokkosClassic::ThrustGPUNode>::run(instList_,comm_, thrustNode_);
         break;
 #endif        
       default:
@@ -247,18 +247,18 @@ namespace Tpetra {
     } // end of switch
   }
 
-  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(Kokkos::SerialNode)
+  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::SerialNode)
 #ifdef HAVE_KOKKOSCLASSIC_TBB
-  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(Kokkos::TBBNode)
+  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::TBBNode)
 #endif        
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(Kokkos::OpenMPNode)
+  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::OpenMPNode)
 #endif        
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(Kokkos::TPINode)
+  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::TPINode)
 #endif        
 #ifdef HAVE_KOKKOSCLASSIC_THRUST
-  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(Kokkos::ThrustGPUNode)
+  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::ThrustGPUNode)
 #endif
 
 } // namespace Tpetra

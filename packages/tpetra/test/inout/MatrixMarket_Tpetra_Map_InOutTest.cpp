@@ -370,7 +370,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MapOutputInput, NoncontiguousIndexBase1, Loca
 }
 
 // Unit test macro isn't smart enough to deal with namespace qualifications.
-typedef Kokkos::DefaultNode::DefaultNodeType the_node_type;
+typedef KokkosClassic::DefaultNode::DefaultNodeType the_node_type;
 
 // We instantiate tests for all combinations of the following parameters:
 // - indexBase = {0, 1}

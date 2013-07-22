@@ -87,7 +87,7 @@ class ThreadedBlasKiller {
   }
 };
 template <>
-class ThreadedBlasKiller<Kokkos::ThrustGPUNode> {
+class ThreadedBlasKiller<KokkosClassic::ThrustGPUNode> {
   public:
   static void kill() {
     mkl_set_dynamic(false);
@@ -110,24 +110,24 @@ class NodeDetails {
 };
 
 template <>
-class NodeDetails<Kokkos::ThrustGPUNode> {
+class NodeDetails<KokkosClassic::ThrustGPUNode> {
   public:
-  static void printDetails(const RCP<FancyOStream> &fos, const RCP<const Kokkos::ThrustGPUNode> &node) {
+  static void printDetails(const RCP<FancyOStream> &fos, const RCP<const KokkosClassic::ThrustGPUNode> &node) {
     node->printStatistics(fos);
   }
-  static void clear(const RCP<Kokkos::ThrustGPUNode> &node) {
+  static void clear(const RCP<KokkosClassic::ThrustGPUNode> &node) {
     node->clearStatistics();
   }
 };
 
-template <> Teuchos::RCP<Teuchos::Time> Anasazi::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, Kokkos::TBBNode      > >::mvTransMvTimer_ = Teuchos::null;
-template <> Teuchos::RCP<Teuchos::Time> Anasazi::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, Kokkos::ThrustGPUNode> >::mvTransMvTimer_ = Teuchos::null;
-template <> Teuchos::RCP<Teuchos::Time> Anasazi::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, Kokkos::TPINode      > >::mvTransMvTimer_ = Teuchos::null;
-template <> Teuchos::RCP<Teuchos::Time> Anasazi::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, Kokkos::SerialNode   > >::mvTransMvTimer_ = Teuchos::null;
-template <> Teuchos::RCP<Teuchos::Time> Anasazi::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, Kokkos::TBBNode      > >::mvTimesMatAddMvTimer_ = Teuchos::null;
-template <> Teuchos::RCP<Teuchos::Time> Anasazi::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, Kokkos::ThrustGPUNode> >::mvTimesMatAddMvTimer_ = Teuchos::null;
-template <> Teuchos::RCP<Teuchos::Time> Anasazi::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, Kokkos::TPINode      > >::mvTimesMatAddMvTimer_ = Teuchos::null;
-template <> Teuchos::RCP<Teuchos::Time> Anasazi::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, Kokkos::SerialNode   > >::mvTimesMatAddMvTimer_ = Teuchos::null;
+template <> Teuchos::RCP<Teuchos::Time> Anasazi::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, KokkosClassic::TBBNode      > >::mvTransMvTimer_ = Teuchos::null;
+template <> Teuchos::RCP<Teuchos::Time> Anasazi::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, KokkosClassic::ThrustGPUNode> >::mvTransMvTimer_ = Teuchos::null;
+template <> Teuchos::RCP<Teuchos::Time> Anasazi::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, KokkosClassic::TPINode      > >::mvTransMvTimer_ = Teuchos::null;
+template <> Teuchos::RCP<Teuchos::Time> Anasazi::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, KokkosClassic::SerialNode   > >::mvTransMvTimer_ = Teuchos::null;
+template <> Teuchos::RCP<Teuchos::Time> Anasazi::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, KokkosClassic::TBBNode      > >::mvTimesMatAddMvTimer_ = Teuchos::null;
+template <> Teuchos::RCP<Teuchos::Time> Anasazi::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, KokkosClassic::ThrustGPUNode> >::mvTimesMatAddMvTimer_ = Teuchos::null;
+template <> Teuchos::RCP<Teuchos::Time> Anasazi::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, KokkosClassic::TPINode      > >::mvTimesMatAddMvTimer_ = Teuchos::null;
+template <> Teuchos::RCP<Teuchos::Time> Anasazi::MultiVecTraits<double, Tpetra::MultiVector<double, int, int, KokkosClassic::SerialNode   > >::mvTimesMatAddMvTimer_ = Teuchos::null;
 
 template <class Node>
 class runTest {

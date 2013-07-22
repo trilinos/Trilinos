@@ -28,7 +28,7 @@
 
 #include "TestStochastic.hpp"
 
-#include "KokkosArray_Cuda.hpp"
+#include "Kokkos_Cuda.hpp"
 
 #include "Stokhos_Cuda_CrsMatrix.hpp"
 #include "Stokhos_Cuda_BlockCrsMatrix.hpp"
@@ -43,10 +43,10 @@
 namespace unit_test {
 
 template<typename Scalar>
-struct performance_test_driver<Scalar,KokkosArray::Cuda> {
+struct performance_test_driver<Scalar,Kokkos::Cuda> {
   static void run(bool test_flat, bool test_orig, bool test_lin, 
                   bool test_block, bool symmetric) {
-    typedef KokkosArray::Cuda Device;
+    typedef Kokkos::Cuda Device;
 
     int nGrid;
     int nIter;
@@ -91,7 +91,7 @@ int mainCuda(bool test_flat, bool test_orig, bool test_lin, bool test_block,
 {
   typedef unsigned long long int IntType ;
 
-  KokkosArray::Cuda::initialize( KokkosArray::Cuda::SelectDevice(device_id) );
+  Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device_id) );
 
   cudaDeviceProp deviceProp;
   cudaGetDeviceProperties(&deviceProp, device_id);
@@ -102,10 +102,10 @@ int mainCuda(bool test_flat, bool test_orig, bool test_lin, bool test_block,
   cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
 
   std::cout << std::endl << "\"Cuda Performance\"" << std::endl ;
-  unit_test::performance_test_driver<Scalar,KokkosArray::Cuda>::run(
+  unit_test::performance_test_driver<Scalar,Kokkos::Cuda>::run(
     test_flat, test_orig, test_lin, test_block, symmetric);
 
-  KokkosArray::Cuda::finalize();
+  Kokkos::Cuda::finalize();
 
   cudaDeviceReset();
 

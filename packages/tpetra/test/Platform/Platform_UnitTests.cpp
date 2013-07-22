@@ -62,7 +62,7 @@ namespace {
 #ifdef HAVE_TPETRA_MPI
   using Tpetra::MpiPlatform;
 #endif
-  using Kokkos::SerialNode;
+  using KokkosClassic::SerialNode;
 
   template <class PLAT>
   RCP<PLAT> getPlatform() {

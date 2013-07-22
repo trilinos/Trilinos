@@ -43,18 +43,18 @@
 #include <iostream>
 #include <cstdlib>
 
-#include "KokkosArray_hwloc.hpp"
+#include "Kokkos_hwloc.hpp"
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
 #include <TestStochastic.hpp>
 
-#include <Host/KokkosArray_Host_ProductTensor.hpp>
-#include <Host/KokkosArray_Host_StochasticProductTensor.hpp>
-#include <Host/KokkosArray_Host_SymmetricDiagonalSpec.hpp>
-#include <Host/KokkosArray_Host_BlockCrsMatrix.hpp>
-#include <Host/KokkosArray_Host_CrsMatrix.hpp>
+#include <Host/Kokkos_Host_ProductTensor.hpp>
+#include <Host/Kokkos_Host_StochasticProductTensor.hpp>
+#include <Host/Kokkos_Host_SymmetricDiagonalSpec.hpp>
+#include <Host/Kokkos_Host_BlockCrsMatrix.hpp>
+#include <Host/Kokkos_Host_CrsMatrix.hpp>
 
 // Algorithms
 enum SG_Alg { ORIG_MAT_FREE, PROD_CRS };
@@ -69,23 +69,23 @@ run_test(const size_t num_cpu, const size_t num_core,
 	 const std::vector<double>& perf1 = std::vector<double>())
 {
   typedef double Scalar;
-  typedef KokkosArray::Host Device;
+  typedef Kokkos::Host Device;
 
   const size_t num_thread = num_cpu * num_core ;
-  KokkosArray::Host::initialize( num_cpu , num_core );
+  Kokkos::Host::initialize( num_cpu , num_core );
 
   std::vector<int> var_degree( d , p );
 
   std::vector<double> perf;
   if (sg_alg == PROD_CRS)
     perf = 
-      unit_test::test_product_tensor_matrix<Scalar,Device,KokkosArray::CrsProductTensor>(var_degree , nGrid , nIter );
+      unit_test::test_product_tensor_matrix<Scalar,Device,Kokkos::CrsProductTensor>(var_degree , nGrid , nIter );
   else if (sg_alg == ORIG_MAT_FREE)
     perf =
       unit_test::test_original_matrix_free_vec<Scalar,Device>( 
 	var_degree , nGrid , nIter , true );
 
-  KokkosArray::Host::finalize();
+  Kokkos::Host::finalize();
 
   double speed_up;
   if (perf1.size() > 0)
@@ -131,8 +131,8 @@ int main(int argc, char *argv[])
     
     // Detect number of CPUs and number of cores
     const std::pair<unsigned,unsigned> core_topo =
-    KokkosArray::hwloc::get_core_topology();
-    const size_t core_capacity = KokkosArray::hwloc::get_core_capacity();
+    Kokkos::hwloc::get_core_topology();
+    const size_t core_capacity = Kokkos::hwloc::get_core_capacity();
 
     const size_t num_cpu = core_topo.first;
     const size_t num_core = core_topo.second;

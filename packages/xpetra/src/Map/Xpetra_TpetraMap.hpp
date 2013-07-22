@@ -70,7 +70,7 @@ namespace Xpetra {
   const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > toXpetra(const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > &);
   //
 
-  template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+  template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class TpetraMap
     : public virtual Map<LocalOrdinal,GlobalOrdinal,Node> {
 
@@ -80,15 +80,15 @@ namespace Xpetra {
     //@{
 
     //! Constructor with Tpetra-defined contiguous uniform distribution.
-    TpetraMap(global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalGlobal lg=GloballyDistributed, const Teuchos::RCP< Node > &node=Kokkos::Details::getNode<Node>())
+    TpetraMap(global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalGlobal lg=GloballyDistributed, const Teuchos::RCP< Node > &node=KokkosClassic::Details::getNode<Node>())
       : map_(Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements, indexBase, comm, toTpetra(lg), node))) {  }
 
     //! Constructor with a user-defined contiguous distribution.
-    TpetraMap(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=Kokkos::Details::getNode<Node>())
+    TpetraMap(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=KokkosClassic::Details::getNode<Node>())
       : map_(Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements, numLocalElements, indexBase, comm, node))) {  }
 
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
-    TpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=Kokkos::Details::getNode<Node>())
+    TpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=KokkosClassic::Details::getNode<Node>())
       : map_(Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements, elementList, indexBase, comm, node))) {  }
 
     //! Destructor.
@@ -266,7 +266,7 @@ namespace Xpetra {
 
     //! Non-member function to create a (potentially) non-uniform, contiguous Map with the default node.
     template <class LocalOrdinal, class GlobalOrdinal>
-    Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
+    Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,KokkosClassic::DefaultNode::DefaultNodeType> >
     createContigMap(global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
       XPETRA_MONITOR("useTpetra::createContigMap");
 
