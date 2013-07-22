@@ -108,6 +108,23 @@ namespace Tpetra {
 #  endif
 
   //
+  // LocalOrdinal = int, GlobalOrdinal = unsigned int
+  //
+
+#  if defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_KOKKOSCLASSIC_CUDA_FLOAT)
+  template class RowMatrixTransposer<float, int, unsignedint, KokkosClassic::ThrustGPUNode>;
+#  endif
+#  if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE)
+  template class RowMatrixTransposer<double, int, unsignedint, KokkosClassic::ThrustGPUNode>;
+#  endif
+#  if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT) && defined(HAVE_KOKKOSCLASSIC_CUDA_COMPLEX_FLOAT)
+  template class RowMatrixTransposer<std::complex<float>, int, unsignedint, KokkosClassic::ThrustGPUNode>;
+#  endif
+#  if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_KOKKOSCLASSIC_CUDA_COMPLEX_DOUBLE)
+  template class RowMatrixTransposer<std::complex<double>, int, unsignedint, KokkosClassic::ThrustGPUNode>;
+#  endif
+
+  //
   // LocalOrdinal = int, GlobalOrdinal = long
   //
 
