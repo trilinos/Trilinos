@@ -59,6 +59,8 @@
 #include "Panzer_STK_ModelEvaluatorFactory_Epetra.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 #include "Panzer_PauseToAttach.hpp"
+#include "Panzer_String_Utilities.hpp"
+#include "Panzer_EpetraLinearObjContainer.hpp"
 
 #ifdef Panzer_BUILD_PAPI_SUPPORT
 #include "Panzer_PAPI_Counter.hpp"
