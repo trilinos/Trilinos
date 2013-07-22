@@ -267,8 +267,14 @@ namespace MueLu {
           paramListWithFactories.set(pName, generatingFact);
         }
 
-        if (pName == "ParameterList" && validParamList->isType<RCP<ParameterList> >(pName) && paramList.isParameter(pName))
-          paramListWithFactories.set(pName, sublist(rcpFromRef(paramList), pName));
+        if (pName == "ParameterList" && validParamList->isType<RCP<const ParameterList> >(pName) && paramList.isParameter(pName)) {
+          // NOTE: we cannot use
+          //     subList = sublist(rcpFromRef(paramList), pName)
+          // here as that would result in sublist also being a reference to a temporary object.
+          // The resulting dereferencing in the corresponding factory would then segfault
+          RCP<const ParameterList> subList = sublist(rcp(new ParameterList(paramList)), pName);
+          paramListWithFactories.set(pName, subList);
+        }
       }
 
       // Configure the factory
