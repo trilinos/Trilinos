@@ -342,7 +342,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setParameters(const Teuchos::
   }
 
   Ifpack2::getParameter(List_, "schwarz: overlap level",OverlapLevel_);  
-  if(OverlapLevel_>0) {
+  if ((OverlapLevel_ != 0) && (Matrix_->getComm()->getSize() > 1)) {
     IsOverlapping_=true;
   }
 
@@ -383,7 +383,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize()
     Time_ = Teuchos::rcp( new Teuchos::Time("Ifpack2::AdditiveSchwarz"));
 
   Time_->start();
-  
+
   // compute the overlapping matrix if necessary
   if (IsOverlapping_) {
     if(UseSubdomain_) {
