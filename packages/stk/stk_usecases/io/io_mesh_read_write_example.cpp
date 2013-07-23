@@ -48,9 +48,17 @@ namespace {
     ThrowRequireMsg(db_integer_size == 8 || db_integer_size == 4, "db_integer_size ("<<db_integer_size<<") is required to be either 4 or 8.");
 
     if (db_integer_size == 8) {
-      stk::mesh::Field<int64_t> &imp_id_field = meta.declare_field<stk::mesh::Field<int64_t> >("implicit_ids");
-      stk::mesh::put_field(imp_id_field, stk::mesh::MetaData::NODE_RANK, meta.universal_part());
-      stk::mesh::put_field(imp_id_field, stk::mesh::MetaData::ELEMENT_RANK, meta.universal_part());
+      //on the mac, sizeof(long) seems to be 8.
+      if (sizeof(long) == 8) {
+        stk::mesh::Field<long> &imp_id_field = meta.declare_field<stk::mesh::Field<long> >("implicit_ids");
+        stk::mesh::put_field(imp_id_field, stk::mesh::MetaData::NODE_RANK, meta.universal_part());
+        stk::mesh::put_field(imp_id_field, stk::mesh::MetaData::ELEMENT_RANK, meta.universal_part());
+      }
+      else {
+        stk::mesh::Field<int64_t> &imp_id_field = meta.declare_field<stk::mesh::Field<int64_t> >("implicit_ids");
+        stk::mesh::put_field(imp_id_field, stk::mesh::MetaData::NODE_RANK, meta.universal_part());
+        stk::mesh::put_field(imp_id_field, stk::mesh::MetaData::ELEMENT_RANK, meta.universal_part());
+      }
     }
     else {
       stk::mesh::Field<int> &imp_id_field = meta.declare_field<stk::mesh::Field<int> >("implicit_ids");
