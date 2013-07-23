@@ -455,9 +455,10 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
   const RCP<Epetra_Vector> f_out = outArgs.get_f();
   const RCP<Epetra_Operator> W_out = outArgs.get_W();
   bool requiredResponses = required_basic_g(outArgs);
+  bool requiredSensitivities = required_basic_dfdp(outArgs);
 
   // see if the user wants us to do anything
-  if(Teuchos::is_null(f_out) && Teuchos::is_null(W_out) && !requiredResponses) {
+  if(Teuchos::is_null(f_out) && Teuchos::is_null(W_out) && !requiredResponses && !requiredSensitivities) {
      return;
   }
 
