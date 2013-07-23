@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -62,11 +62,11 @@ const SG_Alg sg_alg_values[] = { ORIG_MAT_FREE, PROD_CRS };
 const char *sg_alg_names[] = { "Original Matrix-Free", "Product CRS" };
 
 std::vector<double>
-run_test(const size_t num_cpu, const size_t num_core_per_cpu, 
-	 const size_t num_threads_per_core, 
-	 const size_t p, const size_t d, const size_t nGrid, const size_t nIter,
-	 const bool symmetric, SG_Alg sg_alg, 
-	 const std::vector<double>& perf1 = std::vector<double>())
+run_test(const size_t num_cpu, const size_t num_core_per_cpu,
+         const size_t num_threads_per_core,
+         const size_t p, const size_t d, const size_t nGrid, const size_t nIter,
+         const bool symmetric, SG_Alg sg_alg,
+         const std::vector<double>& perf1 = std::vector<double>())
 {
   typedef double Scalar;
   typedef Kokkos::Host Device;
@@ -78,12 +78,12 @@ run_test(const size_t num_cpu, const size_t num_core_per_cpu,
 
   std::vector<double> perf;
   if (sg_alg == PROD_CRS)
-    perf = 
+    perf =
       unit_test::test_product_tensor_matrix<Scalar,Stokhos::CrsProductTensor<Scalar,Device>,Device>(var_degree , nGrid , nIter , symmetric );
   else if (sg_alg == ORIG_MAT_FREE)
     perf =
-      unit_test::test_original_matrix_free_vec<Scalar,Device,Stokhos::DefaultSparseMatOps>( 
-	var_degree , nGrid , nIter , true , symmetric );
+      unit_test::test_original_matrix_free_vec<Scalar,Device,Stokhos::DefaultSparseMatOps>(
+        var_degree , nGrid , nIter , true , symmetric );
 
   Kokkos::Host::finalize();
 
@@ -94,15 +94,15 @@ run_test(const size_t num_cpu, const size_t num_core_per_cpu,
     speed_up = perf[1] / perf[1];
   double efficiency = speed_up / num_core;
 
-  std::cout << num_core << " , " 
-	    << nGrid << " , "
-	    << d << " , " 
-	    << p << " , "
-	    << perf[1] << " , "
-	    << perf[2] << " , "
-	    << speed_up << " , "
-	    << 100.0 * efficiency << " , "
-	    << std::endl;
+  std::cout << num_core << " , "
+            << nGrid << " , "
+            << d << " , "
+            << p << " , "
+            << perf[1] << " , "
+            << perf[2] << " , "
+            << speed_up << " , "
+            << 100.0 * efficiency << " , "
+            << std::endl;
 
   return perf;
 }
@@ -128,11 +128,11 @@ int main(int argc, char *argv[])
     CLP.setOption("nht", &n_hyperthreads, "Number of hyperthreads per core available");
     SG_Alg sg_alg = PROD_CRS;
     CLP.setOption("alg", &sg_alg, num_sg_alg, sg_alg_values, sg_alg_names,
-		  "SG Mat-Vec Algorithm");
+                  "SG Mat-Vec Algorithm");
     bool symmetric = true;
     CLP.setOption("symmetric", "asymmetric", &symmetric, "Use symmetric PDF");
     CLP.parse( argc, argv );
-    
+
     // Detect number of CPUs and number of cores
     const std::pair<unsigned,unsigned> core_topo =
     Kokkos::hwloc::get_core_topology();
@@ -142,44 +142,44 @@ int main(int argc, char *argv[])
     const size_t num_core_per_cpu = core_topo.second;
     if (static_cast<size_t>(n_thread_per_core) > core_capacity)
       n_thread_per_core = core_capacity;
-    
+
     // Print header
     std::cout << std::endl
-	      << "\"#nCore\" , "
-	      << "\"#nGrid\" , "
-	      << "\"#Variable\" , "
-	      << "\"PolyDegree\" , "
-	      << "\"" << sg_alg_names[sg_alg] << " MXV Time\" , "
-	      << "\"" << sg_alg_names[sg_alg] << " MXV GFLOPS\" , "
-	      << "\"" << sg_alg_names[sg_alg] << " MXV Speedup\" , "
-	      << "\"" << sg_alg_names[sg_alg] << " MXV Efficiency\" , "
-	      << std::endl ;
-    
+              << "\"#nCore\" , "
+              << "\"#nGrid\" , "
+              << "\"#Variable\" , "
+              << "\"PolyDegree\" , "
+              << "\"" << sg_alg_names[sg_alg] << " MXV Time\" , "
+              << "\"" << sg_alg_names[sg_alg] << " MXV GFLOPS\" , "
+              << "\"" << sg_alg_names[sg_alg] << " MXV Speedup\" , "
+              << "\"" << sg_alg_names[sg_alg] << " MXV Efficiency\" , "
+              << std::endl ;
+
     // Do a serial run to base speedup & efficiency from
-    const std::vector<double> perf1 = 
+    const std::vector<double> perf1 =
       run_test(1, 1, 1, p, d, nGrid, nIter, symmetric, sg_alg);
-    
+
     // First do 1 core per cpu
     for (size_t n=2; n<=num_cpu; ++n) {
-      const std::vector<double> perf = 
-	run_test(n, 1, 1, p, d, nGrid, nIter, symmetric, sg_alg, perf1);
+      const std::vector<double> perf =
+        run_test(n, 1, 1, p, d, nGrid, nIter, symmetric, sg_alg, perf1);
     }
-    
+
     // Now do all cpus, increasing number of cores
     for (size_t n=2; n<=num_core_per_cpu; ++n) {
-      const std::vector<double> perf = 
-	run_test(num_cpu, n, 1, p, d, nGrid, nIter, symmetric, sg_alg, perf1);
+      const std::vector<double> perf =
+        run_test(num_cpu, n, 1, p, d, nGrid, nIter, symmetric, sg_alg, perf1);
     }
 
     // Now do all cpus, all cores, with nthreads/core
-    const std::vector<double> perf = 
-      run_test(num_cpu, num_core_per_cpu, n_thread_per_core, p, d, nGrid, 
-	       nIter, symmetric, sg_alg, perf1);
-    
+    const std::vector<double> perf =
+      run_test(num_cpu, num_core_per_cpu, n_thread_per_core, p, d, nGrid,
+               nIter, symmetric, sg_alg, perf1);
+
 
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
-    
+
   if (!success)
     return -1;
   return 0 ;

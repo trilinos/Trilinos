@@ -33,6 +33,7 @@
 #include "Stokhos_Cuda_CrsMatrix.hpp"
 #include "Stokhos_Cuda_BlockCrsMatrix.hpp"
 #include "Stokhos_Cuda_StochasticProductTensor.hpp"
+#include "Stokhos_Cuda_SymmetricDiagonalSpec.hpp"
 #include "Stokhos_Cuda_CrsProductTensor.hpp"
 #include "Stokhos_Cuda_TiledCrsProductTensor.hpp"
 #include "Stokhos_Cuda_FlatSparse3Tensor.hpp"
@@ -44,7 +45,7 @@ namespace unit_test {
 
 template<typename Scalar>
 struct performance_test_driver<Scalar,Kokkos::Cuda> {
-  static void run(bool test_flat, bool test_orig, bool test_lin, 
+  static void run(bool test_flat, bool test_orig, bool test_lin,
                   bool test_block, bool symmetric) {
     typedef Kokkos::Cuda Device;
 
@@ -52,14 +53,14 @@ struct performance_test_driver<Scalar,Kokkos::Cuda> {
     int nIter;
 
     // All methods compared against flat-original
-    // if (test_flat) {
-    //   nGrid = 5 ;
-    //   nIter = 1 ;
-    //   performance_test_driver_all<Scalar,Device>(
-    //  3 , 1 ,  9 , nGrid , nIter , test_block );
-    //   performance_test_driver_all<Scalar,Device>(
-    //  5 , 1 ,  5 , nGrid , nIter , test_block );
-    // }
+    if (test_flat) {
+      nGrid = 5 ;
+      nIter = 1 ;
+      performance_test_driver_all<Scalar,Device>(
+        3 , 1 ,  9 , nGrid , nIter , test_block , symmetric );
+      performance_test_driver_all<Scalar,Device>(
+        5 , 1 ,  5 , nGrid , nIter , test_block , symmetric );
+    }
 
     // Just polynomial methods compared against original
     if (test_orig) {
@@ -86,7 +87,7 @@ struct performance_test_driver<Scalar,Kokkos::Cuda> {
 }
 
 template <typename Scalar>
-int mainCuda(bool test_flat, bool test_orig, bool test_lin, bool test_block, 
+int mainCuda(bool test_flat, bool test_orig, bool test_lin, bool test_block,
              bool symmetric, int device_id)
 {
   typedef unsigned long long int IntType ;

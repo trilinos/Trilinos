@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -48,6 +48,7 @@
 #include "Stokhos_Host_CrsMatrix.hpp"
 #include "Stokhos_Host_BlockCrsMatrix.hpp"
 #include "Stokhos_Host_StochasticProductTensor.hpp"
+#include "Stokhos_Host_SymmetricDiagonalSpec.hpp"
 #include "Stokhos_Host_CrsProductTensor.hpp"
 #include "Stokhos_Host_FlatSparse3Tensor.hpp"
 #include "Stokhos_Host_FlatSparse3Tensor_kji.hpp"
@@ -87,6 +88,27 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsMatrixFree_HostMKL ) {
 }
 
 #endif
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsDenseBlock_Host ) {
+  typedef double Scalar;
+  typedef Kokkos::Host Device;
+
+  success = test_crs_dense_block<Scalar,Device>(setup, out);
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsFlatCommuted_Host ) {
+  typedef double Scalar;
+  typedef Kokkos::Host Device;
+
+  success = test_crs_flat_commuted<Scalar,Device>(setup, out);
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsFlatOriginal_Host ) {
+  typedef double Scalar;
+  typedef Kokkos::Host Device;
+
+  success = test_crs_flat_original<Scalar,Device>(setup, out);
+}
 
 TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsProductTensor_Host ) {
   typedef double Scalar;
@@ -369,7 +391,7 @@ namespace KokkosKernelsUnitTest {
     typename block_vector_type::HostMirror hy = Kokkos::create_mirror( y );
     Kokkos::deep_copy( hy , y );
 
-    bool success = setup.test_commuted_no_perm(hy, out);
+    bool success = setup.test_commuted(hy, out);
     //bool success = true;
     return success;
   }

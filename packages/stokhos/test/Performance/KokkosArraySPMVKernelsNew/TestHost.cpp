@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -53,6 +53,7 @@
 #include "Stokhos_Host_CrsMatrix.hpp"
 #include "Stokhos_Host_BlockCrsMatrix.hpp"
 #include "Stokhos_Host_StochasticProductTensor.hpp"
+#include "Stokhos_Host_SymmetricDiagonalSpec.hpp"
 #include "Stokhos_Host_CrsProductTensor.hpp"
 #include "Stokhos_Host_TiledCrsProductTensor.hpp"
 #include "Stokhos_Host_FlatSparse3Tensor.hpp"
@@ -73,14 +74,14 @@ struct performance_test_driver<Scalar,Kokkos::Host> {
     int nIter;
 
     // All methods compared against flat-original
-    // if (test_flat) {
-    //   nGrid = 12 ;
-    //   nIter = 1 ;
-    //   performance_test_driver_all<Scalar,Device>(
-    //  3 , 1 ,  9 , nGrid , nIter , test_block );
-    //   performance_test_driver_all<Scalar,Device>(
-    //  5 , 1 ,  5 , nGrid , nIter , test_block );
-    // }
+    if (test_flat) {
+      nGrid = 12 ;
+      nIter = 1 ;
+      performance_test_driver_all<Scalar,Device>(
+        3 , 1 ,  9 , nGrid , nIter , test_block , symmetric );
+      performance_test_driver_all<Scalar,Device>(
+        5 , 1 ,  5 , nGrid , nIter , test_block , symmetric );
+    }
 
     // Just polynomial methods compared against original
     if (test_orig) {
@@ -143,8 +144,8 @@ int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
 {
   const std::pair<unsigned,unsigned> core_topo =
     Kokkos::hwloc::get_core_topology();
-  const size_t core_capacity = Kokkos::hwloc::get_core_capacity();
-  //const size_t core_capacity = 1;
+  //const size_t core_capacity = Kokkos::hwloc::get_core_capacity();
+  const size_t core_capacity = 1;
 
   const size_t gang_count = core_topo.first ;
   const size_t gang_worker_count = core_topo.second * core_capacity;

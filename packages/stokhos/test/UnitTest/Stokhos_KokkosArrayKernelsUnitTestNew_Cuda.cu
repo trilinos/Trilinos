@@ -35,6 +35,7 @@
 #include "Stokhos_Cuda_CrsMatrix.hpp"
 #include "Stokhos_Cuda_BlockCrsMatrix.hpp"
 #include "Stokhos_Cuda_StochasticProductTensor.hpp"
+#include "Stokhos_Cuda_SymmetricDiagonalSpec.hpp"
 #include "Stokhos_Cuda_CrsProductTensor.hpp"
 #include "Stokhos_Cuda_TiledCrsProductTensor.hpp"
 #include "Stokhos_Cuda_LinearSparse3Tensor.hpp"
@@ -53,6 +54,27 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsMatrixFree_Cuda ) {
 
   success = test_crs_matrix_free<Scalar,Device,SparseMatOps>(
     setup, test_block, out);
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsDenseBlock_Cuda ) {
+  typedef double Scalar;
+  typedef Kokkos::Cuda Device;
+
+  success = test_crs_dense_block<Scalar,Device>(setup, out);
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsFlatCommuted_Cuda ) {
+  typedef double Scalar;
+  typedef Kokkos::Cuda Device;
+
+  success = test_crs_flat_commuted<Scalar,Device>(setup, out);
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsFlatOriginal_Cuda ) {
+  typedef double Scalar;
+  typedef Kokkos::Cuda Device;
+
+  success = test_crs_flat_original<Scalar,Device>(setup, out);
 }
 
 TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsProductTensor_Cuda ) {

@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,17 +35,16 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
 template <typename Scalar>
 int mainCuda(bool test_flat, bool test_orig, bool test_block, bool symmetric,
-	     int device_id)
+             int device_id)
 {
   return 0 ;
 }
 
 template int mainCuda<float>(bool, bool, bool, bool, int);
 template int mainCuda<double>(bool, bool, bool, bool, int);
-
