@@ -17,6 +17,32 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+# Unit test the MDIterator class
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MDIterator_UnitTests
+  SOURCES
+    MDIterator_UnitTests.cpp
+    MDArray_UnitTest_helpers.hpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  ARGS --teuchos-suppress-startup-banner
+  STANDARD_PASS_OUTPUT
+  )
+
+# Unit test the MDRevIterator class
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MDRevIterator_UnitTests
+  SOURCES
+    MDRevIterator_UnitTests.cpp
+    MDArray_UnitTest_helpers.hpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  ARGS --teuchos-suppress-startup-banner
+  STANDARD_PASS_OUTPUT
+  )
+
 # Unit test the MDArray class
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MDArray_UnitTests
@@ -48,32 +74,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MDArrayRCP_UnitTests
   SOURCES
     MDArrayRCP_UnitTests.cpp
-    MDArray_UnitTest_helpers.hpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  ARGS --teuchos-suppress-startup-banner
-  STANDARD_PASS_OUTPUT
-  )
-
-# Unit test the MDIterator class
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  MDIterator_UnitTests
-  SOURCES
-    MDIterator_UnitTests.cpp
-    MDArray_UnitTest_helpers.hpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  ARGS --teuchos-suppress-startup-banner
-  STANDARD_PASS_OUTPUT
-  )
-
-# Unit test the MDRevIterator class
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  MDRevIterator_UnitTests
-  SOURCES
-    MDRevIterator_UnitTests.cpp
     MDArray_UnitTest_helpers.hpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
