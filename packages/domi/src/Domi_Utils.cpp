@@ -140,6 +140,18 @@ computeAxisRanks(int rank,
 
 ////////////////////////////////////////////////////////////////////////
 
+Teuchos::Array< int >
+computePeriodic(int numDims,
+                const Teuchos::ArrayView< int > & periodic)
+{
+  Teuchos::Array< int > result(numDims, 0);
+  for (int axis = 0; axis < numDims && axis < periodic.size(); ++axis)
+    result[axis] = periodic[axis];
+  return result;
+}
+
+////////////////////////////////////////////////////////////////////////
+
 void splitStringOfIntsWithCommas(std::string data,
                                  Teuchos::Array< int > & result)
 {

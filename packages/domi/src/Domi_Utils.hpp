@@ -251,6 +251,17 @@ computeAxisRanks(int rank,
 
 ////////////////////////////////////////////////////////////////////////
 
+/** \brief Compute the array of periodic flags, given the user input.
+ *
+ * If the input array is shorter than the number of dimensions, fill
+ * the remainder of the result with zeros.
+ */
+Teuchos::Array< int >
+computePeriodic(int numDims,
+                const Teuchos::ArrayView< int > & periodic);
+
+////////////////////////////////////////////////////////////////////////
+
 /** \brief Given a std::string which contains comma-separated integers,
  *         return an array of ints.
  */
