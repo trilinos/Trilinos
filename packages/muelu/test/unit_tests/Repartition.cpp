@@ -653,6 +653,7 @@ namespace MueLuTests {
     paramList.set("minRowsPerProcessor", 1);
     paramList.set("nonzeroImbalance", 1.2);
     paramList.set("diffusiveHeuristic", 10);
+    paramList.set("alwaysKeepProc0", false);
     paramList.set< RCP<const FactoryBase> >("number of partitions", MueLu::NoFactory::getRCP()); // use user-defined #partitions
     repart->SetParameterList(paramList);
     repart->SetFactory("Partition", zoltan);
