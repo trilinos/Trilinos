@@ -70,8 +70,6 @@ public:
           Teuchos::ArrayView< int >(),
         const Teuchos::ArrayView< int > & ghosts =
           Teuchos::ArrayView< int >(),
-        const Teuchos::ArrayView< int > & periodic =
-          Teuchos::ArrayView< int >(),
         const EStorageOrder storageOrder = DEFAULT_ORDER,
         const Teuchos::RCP< Node > & node =
           Kokkos::DefaultNode::getDefaultNode());
@@ -84,6 +82,7 @@ public:
   TeuchosCommRCP getTeuchosComm() const;
   int getNumDims() const;
   int getAxisCommSize(int axis) const;
+  bool isPeriodic(int axis) const;
   int getAxisRank(int axis) const;
   int getLowerNeighbor(int axis) const;
   int getUpperNeighbor(int axis) const;
@@ -97,7 +96,6 @@ public:
   int getUpperHalo(int axis) const;
   int getHaloSize(int axis) const;
   int getGhostSize(int axis) const;
-  bool getPeriodic(int axis) const;
   EStorageOrder getStorageOrder() const;
   // GlobalOrd getGlobalStride(int axis) const;
   // LocalOrd getLocalStride(int axis) const;
@@ -134,7 +132,6 @@ private:
   Teuchos::Array< int >       _haloSizes;
   Teuchos::Array< halo_t >    _halos;
   Teuchos::Array< int >       _ghostSizes;
-  Teuchos::Array< int >       _periodic;
   Teuchos::Array< GlobalOrd > _globalStrides;
   Teuchos::Array< LocalOrd >  _localStrides;
   EStorageOrder               _storageOrder;
@@ -151,7 +148,6 @@ MDMap(const MDCommRCP mdComm,
       const Teuchos::ArrayView< GlobalOrd > & dimensions,
       const Teuchos::ArrayView< int > & halos,
       const Teuchos::ArrayView< int > & ghosts,
-      const Teuchos::ArrayView< int > & periodic,
       const EStorageOrder storageOrder,
       const Teuchos::RCP< Node > & node) :
   _mdComm(mdComm),
@@ -160,7 +156,6 @@ MDMap(const MDCommRCP mdComm,
   _globalAxisBounds(),
   _localAxisBounds(),
   _ghostSizes(mdComm->getNumDims(), 0),
-  _periodic(mdComm->getNumDims(), 0),
   _globalStrides(mdComm->getNumDims(), 1),
   _localStrides(mdComm->getNumDims(), 1),
   _haloSizes(mdComm->getNumDims(), 0),
@@ -198,12 +193,6 @@ MDMap(const MDCommRCP mdComm,
     else
       upper = _haloSizes[axis];
     _halos.push_back(Teuchos::tuple(lower, upper));
-  }
-
-  // Copy the periodic flags
-  for (int axis = 0; axis < periodic.size() && axis < numDims; ++axis)
-  {
-    _periodic[axis] = periodic[axis];
   }
 
   // Compute the axis bounds
@@ -330,6 +319,15 @@ int
 MDMap< LocalOrd, GlobalOrd, Node >::getAxisCommSize(int axis) const
 {
   return _mdComm->getAxisSize(axis);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class LocalOrd, class GlobalOrd, class Node >
+bool
+MDMap< LocalOrd, GlobalOrd, Node >::isPeriodic(int axis) const
+{
+  return _mdComm->isPeriodic(axis);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -473,15 +471,6 @@ int
 MDMap< LocalOrd, GlobalOrd, Node >::getGhostSize(int axis) const
 {
   return _ghostSizes[axis];
-}
-
-////////////////////////////////////////////////////////////////////////
-
-template< class LocalOrd, class GlobalOrd, class Node >
-bool
-MDMap< LocalOrd, GlobalOrd, Node >::getPeriodic(int axis) const
-{
-  return _periodic[axis];
 }
 
 ////////////////////////////////////////////////////////////////////////
