@@ -1,4 +1,3 @@
-
 #include <stk_util/util/TrackingAllocator.hpp>
 
 namespace stk {
@@ -870,18 +869,20 @@ private:
     uint32_t current_index=0;
     for(size_t i=0, e=m_indices.size(); i<e; ++i)
     {
-      const unsigned begin_offset = m_indices[i];
-      const unsigned end_offset   = begin_offset + num_chunks(m_num_connectivities[i])*chunk_size;
+      const uint32_t entity_data_size = num_chunks(m_num_connectivities[i]) * chunk_size;
+
+      const uint32_t begin_offset = m_indices[i];
+      const uint32_t end_offset   = begin_offset + entity_data_size;
 
       if (begin_offset != end_offset) {
-        temp.insert(temp.end(), data.begin()+begin_offset, data.begin() + end_offset);
+        temp.insert(temp.end(), data.begin() + begin_offset, data.begin() + end_offset);
       }
 
       if (update_index) {
         m_indices[i] = current_index;
       }
 
-      current_index += static_cast<uint32_t>(chunk_size*num_chunks(m_num_connectivities[i]));
+      current_index += entity_data_size;
     }
 
     temp.swap(data);
@@ -923,8 +924,8 @@ private:
 
     if (chunks_available < chunks_needed_by_entity)
     {
-      // Important line, defines how capacity grows. We grow to needed size
-      const unsigned new_capacity = chunks_needed_by_entity*chunk_size;
+      // Important line, defines how capacity grows. We do doublings for now.
+      const unsigned new_capacity = m_targets.capacity() > 0 ? 2*m_targets.capacity() : 8*chunk_size;
       resize_and_order_by_index(new_capacity);
     }
 
