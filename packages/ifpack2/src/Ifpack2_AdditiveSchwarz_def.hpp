@@ -75,6 +75,7 @@ AdditiveSchwarz<MatrixType,LocalInverseType>::AdditiveSchwarz(const Teuchos::RCP
   Condest_(-1.0),
   ComputeCondest_(true),
   UseReordering_(false),
+  ReorderingAlgorithm_("none"),
   UseSubdomain_(false),
   FilterSingletons_(false),
   NumInitialize_(0),
@@ -348,7 +349,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setParameters(const Teuchos::
 
   // Will we be doing reordering?
   // Note: Unlike Ifpack we'll use a "schwarz: reordering list" to give to Zoltan2...
-  if (List_.get("schwarz: reordering type","none") == "none")
+  if (List_.get("schwarz: use reordering",false) == false)
     UseReordering_ = false;
   else
     UseReordering_ = true;
@@ -540,7 +541,8 @@ std::string AdditiveSchwarz<MatrixType,LocalInverseType>::description() const
   else {
     oss << "{status = not initialized, not computed";
   }
-  oss<<"overlap level ="<<OverlapLevel_;
+  oss<<", overlap level ="<<OverlapLevel_;
+  oss<<", subdomain reordering ="<<ReorderingAlgorithm_;
   oss << "}";
   return oss.str();
 }
@@ -648,6 +650,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup()
 #if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
     // Unlike Ifpack, Zoltan2 does all the dirty work here.
     Teuchos::ParameterList zlist = List_.sublist("schwarz: reordering list");
+    ReorderingAlgorithm_ = List_.get<std::string>("order_method","rcm");
     XpetraTpetraMatrixType XpetraMatrix(ActiveMatrix);
     Zoltan2::XpetraRowMatrixInput<XpetraMatrixType> Zoltan2Matrix(Teuchos::rcp<XpetraMatrixType>(&XpetraMatrix,false));
 

@@ -285,6 +285,8 @@ protected:
   bool ComputeCondest_;
   //! If \c true, reorder the local matrix.
   bool UseReordering_;
+  //! Record reordering for output purposes.
+  std::string ReorderingAlgorithm_;
   //! If true, subdomain filtering is used
   bool UseSubdomain_;
 

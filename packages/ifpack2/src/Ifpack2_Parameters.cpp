@@ -116,7 +116,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   // Additive Schwarz preconditioner
   params.set("schwarz: compute condest", true);
   params.set("schwarz: combine mode", "Zero"); // use string mode for this
-  params.set("schwarz: reordering type", "none");
+  params.set("schwarz: use reordering", true);
   params.set("schwarz: filter singletons", false);
   params.set("schwarz: overlap level", (int)0);
 
