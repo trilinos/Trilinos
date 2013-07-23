@@ -165,7 +165,7 @@ class ViewTraits<DataType,DeviceType,void,MemoryTraits>
 /** \brief  Traits for View<DataType,DeviceType,MemoryTraits,void> */
 
 template< class DataType , class DeviceType , class MemoryTraits >
-class ViewTraits< DataType , DeviceType , MemoryTraits , 
+class ViewTraits< DataType , DeviceType , MemoryTraits ,
   typename Impl::enable_if< (
     Impl::is_same< DeviceType   , typename DeviceType  ::device_type   >::value &&
     Impl::is_same< MemoryTraits , typename MemoryTraits::memory_traits >::value
@@ -252,11 +252,81 @@ namespace Impl {
 template< class DstViewSpecialize , class SrcViewSpecialize = void , class Enable = void >
 struct ViewAssignment ;
 
+template< class OutputView , unsigned Rank = OutputView::Rank >
+struct ViewInit
+{
+  typedef typename OutputView::device_type device_type ;
+  typedef typename OutputView::value_type  value_type ;
+  typedef typename device_type::size_type  size_type ;
+
+  const OutputView output ;
+
+  explicit ViewInit( const OutputView & arg_out ) : output( arg_out )
+    { parallel_for( output.dimension_0() , *this ); }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i0 ) const
+  {
+    value_type default_value = value_type();
+
+    for ( size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
+    for ( size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
+    for ( size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
+    for ( size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
+    for ( size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
+    for ( size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
+    for ( size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
+      new (&output(i0,i1,i2,i3,i4,i5,i6,i7)) value_type(default_value) ;
+    }}}}}}}
+  }
+};
+
+template< class OutputView >
+struct ViewInit< OutputView , 1 >
+{
+  typedef typename OutputView::device_type device_type ;
+  typedef typename OutputView::value_type  value_type ;
+  typedef typename device_type::size_type  size_type ;
+
+  const OutputView output ;
+
+  explicit ViewInit( const OutputView & arg_out ) : output( arg_out )
+    { parallel_for( output.dimension_0() , *this ); }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i0 ) const
+  {
+    value_type default_value = value_type();
+    new (&output(i0)) value_type(default_value) ;
+  }
+};
+
+template< class OutputView >
+struct ViewInit< OutputView , 0 >
+{
+  typedef typename OutputView::device_type device_type ;
+  typedef typename OutputView::value_type  value_type ;
+  typedef typename device_type::size_type  size_type ;
+
+  const OutputView output ;
+
+  explicit ViewInit( const OutputView & arg_out ) : output( arg_out )
+    { parallel_for( 1 , *this ); }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type /*i0*/ ) const
+  {
+    value_type default_value = value_type();
+    new (&(*output)) value_type(default_value) ;
+  }
+};
+
 template< class Device >
 struct ViewInitialize
 {
   template< class ViewType >
-  inline explicit ViewInitialize( const ViewType & ) {}
+  inline explicit ViewInitialize( const ViewType & view )
+    { ViewInit<ViewType> init( view ); }
 };
 
 } // namespace Impl
