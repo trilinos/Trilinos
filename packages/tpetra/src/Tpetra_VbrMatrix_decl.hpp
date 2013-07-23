@@ -68,10 +68,10 @@ namespace Tpetra {
   class Vector;
 } // namespace Tpetra
 
-namespace Kokkos {
+namespace KokkosClassic {
   template<class Scalar, class LocalOrdinal, class Node>
   class VbrMatrix;
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 namespace Teuchos {
   template<class OrdinalType, class ScalarType>
@@ -113,8 +113,8 @@ non-optimized-storage state.
 template <class Scalar,
           class LocalOrdinal  = int,
           class GlobalOrdinal = LocalOrdinal,
-          class Node          = Kokkos::DefaultNode::DefaultNodeType,
-          class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::BlockSparseOps >
+          class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
+          class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::BlockSparseOps >
 class VbrMatrix :
     public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, Node>,
     public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
@@ -134,7 +134,9 @@ public:
     Block-entries (rectangular, dense submatrices) may be inserted using class
     methods such as setGlobalBlockEntry(...), declared below.
   */
-  VbrMatrix(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > &blkRowMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile);
+  VbrMatrix (const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blkRowMap, 
+	     size_t maxNumEntriesPerRow, 
+	     ProfileType pftype = DynamicProfile);
 
   //! Constructor specifying a pre-filled block-graph.
   /*! Constructing a VbrMatrix with a pre-filled graph means that the matrix will
@@ -147,13 +149,12 @@ public:
       to each row in the graph, and a block-entry corresponding to each column-
       index in the graph.
   */
-  VbrMatrix(const Teuchos::RCP<const BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& blkGraph);
+  VbrMatrix (const Teuchos::RCP<const BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& blkGraph);
 
   //! Destructor
   virtual ~VbrMatrix();
 
   //@}
-
   //! @name Advanced Mathematical operations
   //@{
 
@@ -164,7 +165,12 @@ public:
       See also the Operator::apply method which is implemented below.
   */
   template <class DomainScalar, class RangeScalar>
-      void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const;
+  void 
+  multiply (const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+	    MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& Y, 
+	    Teuchos::ETransp trans, 
+	    RangeScalar alpha, 
+	    RangeScalar beta) const;
 
   //! Triangular Solve -- Matrix must be triangular.
   /*! Find X such that A*X = Y.
@@ -180,22 +186,24 @@ public:
       point-diagonal must be zero.
   */
   template <class DomainScalar, class RangeScalar>
-      void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
+  void 
+  solve (const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& Y, 
+	 MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+	 Teuchos::ETransp trans) const;
 
   //@}
-
   //! @name Operator Methods
   //@{
 
   //! Returns the (point-entry) Map associated with the domain of this operator.
   /*! Note that this is a point-entry map, not a block-map.
   */
-  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
 
   //! Returns the (point-entry) Map associated with the range of this operator.
   /*! Note that this is a point-entry map, not a block-map.
   */
-  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
 
   //! \brief Computes the operator-multivector application.
   /*! Loosely, performs \f$Y = \alpha \cdot A^{\textrm{trans}} \cdot X + \beta \cdot Y\f$. However, the details of operation
@@ -203,19 +211,21 @@ public:
       - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
       - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
    */
-  void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-             MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
-             Teuchos::ETransp trans = Teuchos::NO_TRANS,
-             Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-             Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+  void
+  apply (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+	 MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+	 Teuchos::ETransp trans = Teuchos::NO_TRANS,
+	 Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+	 Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
 
   //! Triangular Solve -- Matrix must be triangular.
   /*! Find X such that A*X = Y.
       Both \c X and \c Y are required to have constant stride.
   */
-  void applyInverse(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Y,
-                    MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-                    Teuchos::ETransp trans) const;
+  void
+  applyInverse (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Y,
+		MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+		Teuchos::ETransp trans) const;
 
   //! Indicates whether this operator supports applying the adjoint operator.
   /*!
@@ -229,27 +239,27 @@ public:
   //@{
 
   //! Returns the block-row map.
-  const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockRowMap() const;
+  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > getBlockRowMap() const;
 
   //! Returns the block-column map.
-  const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockColMap() const;
+  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > getBlockColMap() const;
 
   //! Returns the block-domain map.
-  const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockDomainMap() const;
+  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > getBlockDomainMap() const;
 
   //! Returns the block-range map.
-  const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockRangeMap() const;
+  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > getBlockRangeMap() const;
 
   //! Returns the point-row map.
-  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getPointRowMap() const;
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getPointRowMap() const;
 
   //! Returns the point-column map.
-  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getPointColMap() const;
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getPointColMap() const;
 
   //! Return true if fillComplete has been called, false otherwise.
   bool isFillComplete() const;
-  //@}
 
+  //@}
   //! @name Insertion Methods
   //@{
 
@@ -391,8 +401,8 @@ public:
 
   //! Communicate non-local contributions to the processors that own those contributions.
   void globalAssemble();
-  //@}
 
+  //@}
   //! @name Extraction Methods
   //@{
 
@@ -493,7 +503,7 @@ public:
   */
   void getLocalDiagCopy (Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag) const;
 
-  const Teuchos::RCP<const BlockCrsGraph<LocalOrdinal, GlobalOrdinal, Node> >& 
+  Teuchos::RCP<const BlockCrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
   getBlockCrsGraph () {
     return constBlkGraph_;
   }
@@ -563,11 +573,13 @@ public:
   Teuchos::RCP<BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> > blkGraph_;
   Teuchos::RCP<const BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> > constBlkGraph_;
 
+  typedef KokkosClassic::VbrMatrix<Scalar, LocalOrdinal, Node> local_matrix_type;
+
   // We use a pointer so that the _decl header file only needs a
   // forward declaration, not an include.  We don't really need an RCP
   // here, since the local matrix object never gets shared outside the
   // class.  std::unique_ptr (C++11) would be more appropriate.
-  Teuchos::RCP<Kokkos::VbrMatrix<Scalar,LocalOrdinal,Node> > lclMatrix_;
+  Teuchos::RCP<local_matrix_type> lclMatrix_;
 
   //A variable-block-row matrix is represented by 6 arrays
   //in packed (contiguous storage) form. For a description of these

@@ -42,8 +42,8 @@
 #ifndef STOKHOS_CUDA_STOCHASTICPRODUCTTENSOR_HPP
 #define STOKHOS_CUDA_STOCHASTICPRODUCTTENSOR_HPP
 
-#include "KokkosArray_Cuda.hpp"
-#include "Cuda/KokkosArray_Cuda_Parallel.hpp"
+#include "Kokkos_Cuda.hpp"
+#include "Cuda/Kokkos_Cuda_Parallel.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_BlockCrsMatrix.hpp"
@@ -60,27 +60,27 @@ template< typename TensorScalar ,
           typename TensorType >
 class Multiply<
   BlockCrsMatrix<
-    StochasticProductTensor<TensorScalar, TensorType, KokkosArray::Cuda>,
-    MatrixScalar, KokkosArray::Cuda> ,
-  KokkosArray::View<VectorScalar**, KokkosArray::LayoutLeft, KokkosArray::Cuda>,
-  KokkosArray::View<VectorScalar**, KokkosArray::LayoutLeft, KokkosArray::Cuda>,
+    StochasticProductTensor<TensorScalar, TensorType, Kokkos::Cuda>,
+    MatrixScalar, Kokkos::Cuda> ,
+  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
+  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
   DefaultSparseMatOps >
 {
 public:
 
-  typedef KokkosArray::Cuda                    device_type ;
+  typedef Kokkos::Cuda                    device_type ;
   typedef device_type::size_type  size_type ;
 
-  typedef StochasticProductTensor< TensorScalar , TensorType , KokkosArray::Cuda > tensor_type ;
+  typedef StochasticProductTensor< TensorScalar , TensorType , Kokkos::Cuda > tensor_type ;
   typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type ;
-  typedef KokkosArray::View< VectorScalar** , KokkosArray::LayoutLeft , KokkosArray::Cuda >           vector_type ;
+  typedef Kokkos::View< VectorScalar** , Kokkos::LayoutLeft , Kokkos::Cuda >           vector_type ;
 
 
   static void apply( const matrix_type & A ,
                      const vector_type & x ,
                      const vector_type & y )
   {
-    typedef BlockCrsMatrix< TensorType, MatrixScalar , KokkosArray::Cuda > base_matrix_type ;
+    typedef BlockCrsMatrix< TensorType, MatrixScalar , Kokkos::Cuda > base_matrix_type ;
 
     typedef Multiply< base_matrix_type , vector_type , vector_type >
       base_multiply_type ;

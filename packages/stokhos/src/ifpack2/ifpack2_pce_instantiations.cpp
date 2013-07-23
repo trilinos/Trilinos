@@ -64,16 +64,16 @@ typedef int GlobalOrdinal;
 // Needed to copy these from Ifpack2_Krylov.cpp since they are defined in the 
 // cpp file
 #define IFPACK2_INST_SPARSE_RELAX(S,LO,GO) \
-  template class Krylov<Tpetra::CrsMatrix<S,LO,GO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>, \
-			Ifpack2::Relaxation<Tpetra::CrsMatrix<S,LO,LO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > >;
+  template class Krylov<Tpetra::CrsMatrix<S,LO,GO,KokkosClassic::DefaultNode::DefaultNodeType,KokkosClassic::DefaultKernels<S,LO,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>, \
+			Ifpack2::Relaxation<Tpetra::CrsMatrix<S,LO,LO,KokkosClassic::DefaultNode::DefaultNodeType,KokkosClassic::DefaultKernels<S,LO,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps> > >;
 
 #define IFPACK2_INST_SPARSE_ILUT(S,LO,GO) \
-  template class Krylov<Tpetra::CrsMatrix<S,LO,GO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>, \
-			Ifpack2::ILUT<Tpetra::CrsMatrix<S,LO,LO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > >;
+  template class Krylov<Tpetra::CrsMatrix<S,LO,GO,KokkosClassic::DefaultNode::DefaultNodeType,KokkosClassic::DefaultKernels<S,LO,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>, \
+			Ifpack2::ILUT<Tpetra::CrsMatrix<S,LO,LO,KokkosClassic::DefaultNode::DefaultNodeType,KokkosClassic::DefaultKernels<S,LO,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps> > >;
 
 #define IFPACK2_INST_SPARSE_CHEBY(S,LO,GO) \
-  template class Krylov<Tpetra::CrsMatrix<S,LO,GO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>, \
-			Ifpack2::Chebyshev<Tpetra::CrsMatrix<S,LO,LO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > >;
+  template class Krylov<Tpetra::CrsMatrix<S,LO,GO,KokkosClassic::DefaultNode::DefaultNodeType,KokkosClassic::DefaultKernels<S,LO,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>, \
+			Ifpack2::Chebyshev<Tpetra::CrsMatrix<S,LO,LO,KokkosClassic::DefaultNode::DefaultNodeType,KokkosClassic::DefaultKernels<S,LO,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps> > >;
 
 namespace Ifpack2 {
 IFPACK2_INST(RILUK,Scalar,LocalOrdinal,GlobalOrdinal)

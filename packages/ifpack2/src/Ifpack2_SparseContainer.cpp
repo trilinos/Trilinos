@@ -53,9 +53,9 @@
 
 // Note: Add similar explicit instantiation for ILU when we get one of those.
 
-#define IFPACK2_INST_ILUT(S,LO,GO) \
-  template class SparseContainer<Tpetra::CrsMatrix<S,LO,GO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>, \
-			   Ifpack2::ILUT<Tpetra::CrsMatrix<S,LO,LO,Kokkos::DefaultNode::DefaultNodeType,Kokkos::DefaultKernels<S,LO,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > >;
+#define IFPACK2_INST_ILUT(S,LO,GO)					\
+  template class SparseContainer<Tpetra::CrsMatrix<S,LO,GO>,		\
+				 Ifpack2::ILUT<Tpetra::CrsMatrix<S,LO,GO> > >;
 
 namespace Ifpack2 {
 

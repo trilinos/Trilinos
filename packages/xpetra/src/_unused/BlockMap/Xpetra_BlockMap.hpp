@@ -58,7 +58,7 @@ namespace Xpetra {
 
   Note: BlockMap doesn't inherit from Xpetra::Map
 */
-template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
 class BlockMap : public Teuchos::Describable {
  public:
 

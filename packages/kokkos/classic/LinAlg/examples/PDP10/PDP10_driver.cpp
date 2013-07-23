@@ -82,7 +82,7 @@
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Node type not defined.");
   }
 
-  using Kokkos::SerialNode;
+  using KokkosClassic::SerialNode;
   template <>
   RCP<SerialNode> getNode<SerialNode>() {
     static RCP<SerialNode> serialnode;
@@ -93,7 +93,7 @@
     return serialnode;
   }
 
-  using Kokkos::TPINode;
+  using KokkosClassic::TPINode;
   template <>
   RCP<TPINode> getNode<TPINode>() {
     static RCP<TPINode> tpinode;
@@ -106,7 +106,7 @@
     return tpinode;
   }
 
-  using Kokkos::ThrustGPUNode;
+  using KokkosClassic::ThrustGPUNode;
   template <>
   RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
     static RCP<ThrustGPUNode> thrustnode;
@@ -126,7 +126,7 @@
   {
     Teuchos::ArrayRCP<SCALAR> x;
     RCP<NODE> node = getNode<NODE>();
-    Kokkos::ReadyBufferHelper<NODE> rbh(node);
+    KokkosClassic::ReadyBufferHelper<NODE> rbh(node);
     SCALAR result;
     {
       x = node->template allocBuffer<SCALAR>(N);
@@ -174,10 +174,10 @@
 
   /////////////////////////////////////////////////////////
   template <class Node>
-  RCP<typename Kokkos::DefaultKernels<float,int,Node>::SparseOps::template bind_scalar<float>::other_type>
+  RCP<typename KokkosClassic::DefaultKernels<float,int,Node>::SparseOps::template bind_scalar<float>::other_type>
   gen_prob(RCP<Node> node, int N, size_t &totalNNZ)
   {
-    typedef typename Kokkos::DefaultKernels<float,int,Node>::SparseOps   DSM;
+    typedef typename KokkosClassic::DefaultKernels<float,int,Node>::SparseOps   DSM;
     typedef typename DSM::template bind_scalar<float>::other_type       fDSM;
     typedef typename fDSM::template graph<int,Node>::graph_type                  GRPH;
     typedef typename fDSM::template matrix<float,int,Node>::matrix_type           MAT;
@@ -224,19 +224,19 @@
   template <class Node>
   CompStats power_method(RCP<Teuchos::Time> time, int N, size_t niters, float tolerance, bool verbose)  
   {
-    typedef Kokkos::MultiVector<float,Node>                        MV;
-    typedef Kokkos::DefaultArithmetic< Kokkos::MultiVector<float,Node> > DMVA;
+    typedef KokkosClassic::MultiVector<float,Node>                        MV;
+    typedef KokkosClassic::DefaultArithmetic< KokkosClassic::MultiVector<float,Node> > DMVA;
     RCP<Node> node = getNode<Node>();
     // create matrix
     size_t NNZ = 0;
-    RCP<typename Kokkos::DefaultKernels<float,int,Node>::SparseOps::template bind_scalar<float>::other_type> A;
+    RCP<typename KokkosClassic::DefaultKernels<float,int,Node>::SparseOps::template bind_scalar<float>::other_type> A;
     A = gen_prob<Node>(node,N,NNZ);
     // Variables needed for iteration
     const float ONE  = 1.0f;
     const float ZERO = 0.0f;
   
     // create vectors
-    Kokkos::MultiVector<float,Node> z(node), q(node), r(node);
+    KokkosClassic::MultiVector<float,Node> z(node), q(node), r(node);
     {
       ArrayRCP<float> zvals = node->template allocBuffer<float>(N),
                       qvals = node->template allocBuffer<float>(N),
@@ -282,12 +282,12 @@
   template <class Node>
   CompStats conjugate_gradient(RCP<Teuchos::Time> time, int N, size_t niters, float tolerance, bool verbose) 
   {
-    typedef Kokkos::MultiVector<float,Node> MV;
-    typedef Kokkos::DefaultArithmetic<MV> DMVA;
+    typedef KokkosClassic::MultiVector<float,Node> MV;
+    typedef KokkosClassic::DefaultArithmetic<MV> DMVA;
     RCP<Node> node = getNode<Node>();
     // create matrix
     size_t NNZ = 0;
-    RCP<typename Kokkos::DefaultKernels<float,int,Node>::SparseOps::template bind_scalar<float>::other_type> A;
+    RCP<typename KokkosClassic::DefaultKernels<float,int,Node>::SparseOps::template bind_scalar<float>::other_type> A;
     A = gen_prob<Node>(node,N,NNZ);
     // Variables needed for iteration
     const float ONE  = 1.0f;
@@ -357,7 +357,7 @@
   // for debugging
   /////////////////////////////////////////////////////////
   template <class Node>
-  void printVec(const Kokkos::MultiVector<float,Node> &vec) {
+  void printVec(const KokkosClassic::MultiVector<float,Node> &vec) {
     const int n = vec.getNumRows();
     ArrayRCP<const float> vals = vec.getValues(0);
     ArrayRCP<const float> vals_h = vec.getNode()->viewBuffer(n,vals);
@@ -383,7 +383,7 @@
       return -1;
     }
 
-    cout << endl << Kokkos::Kokkos_Version() << endl;
+    cout << endl << KokkosClassic::Kokkos_Version() << endl;
 
     // 
     cout << "\nTesting SerialNode" << endl;

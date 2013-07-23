@@ -48,8 +48,7 @@
 #include "Ifpack2_ETIHelperMacros.h"
 
 #define IFPACK2_BO_INST(S,LO,GO) \
-  template class BorderedOperator<S,LO,GO, \
-                 Kokkos::DefaultNode::DefaultNodeType >;
+  template class BorderedOperator<S,LO,GO>;
 
 namespace Ifpack2 {
 

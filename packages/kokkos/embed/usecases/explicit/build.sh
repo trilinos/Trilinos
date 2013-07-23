@@ -4,12 +4,12 @@
 # Simple build script with options
 #-----------------------------------------------------------------------------
 
-# Directory for KokkosArray
+# Directory for Kokkos
 
-KOKKOSARRAY="../../../array"
+KOKKOS="../../../array"
 KOKKOSEMBED="../.."
 
-source ${KOKKOSARRAY}/src/build_common.sh
+source ${KOKKOS}/src/build_common.sh
 
 # Process command line options and set compilation variables
 #

@@ -62,10 +62,10 @@ namespace {
   }
 
   template<>
-  Teuchos::RCP<Kokkos::SerialNode>
+  Teuchos::RCP<KokkosClassic::SerialNode>
   getNode() {
     Teuchos::ParameterList defaultParams;
-    return Teuchos::rcp (new Kokkos::SerialNode (defaultParams));
+    return Teuchos::rcp (new KokkosClassic::SerialNode (defaultParams));
   }
 
   // Ensure that X and Y have the same dimensions, and that the
@@ -429,7 +429,7 @@ main (int argc, char *argv[])
   typedef double scalar_type;
   typedef int local_ordinal_type;
   typedef int global_ordinal_type;
-  typedef Kokkos::SerialNode node_type;
+  typedef KokkosClassic::SerialNode node_type;
 
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &cout);
   RCP<const Comm<int> > comm = 

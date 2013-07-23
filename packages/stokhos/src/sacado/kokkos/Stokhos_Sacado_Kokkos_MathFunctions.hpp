@@ -44,7 +44,7 @@
 #ifndef STOKHOS_SACADO_KOKKOS_MATHFUNCTIONS_HPP
 #define STOKHOS_SACADO_KOKKOS_MATHFUNCTIONS_HPP
 
-#include "KokkosArray_Macros.hpp"
+#include "Kokkos_Macros.hpp"
 
 #define UNARYFUNC_MACRO(OP,FADOP)					\
 namespace Sacado {							\

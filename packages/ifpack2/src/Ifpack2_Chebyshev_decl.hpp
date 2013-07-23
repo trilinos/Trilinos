@@ -531,10 +531,10 @@ public:
 	 scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! The Tpetra::Map representing the domain of this operator.
-  const Teuchos::RCP<const map_type>& getDomainMap() const;
+  Teuchos::RCP<const map_type> getDomainMap() const;
 
   //! The Tpetra::Map representing the range of this operator.
-  const Teuchos::RCP<const map_type>& getRangeMap() const;
+  Teuchos::RCP<const map_type> getRangeMap() const;
 
   //! Whether it's possible to apply the transpose of this operator.
   bool hasTransposeApply() const;
@@ -583,7 +583,7 @@ public:
   magnitude_type getCondEst() const;
 
   //! The communicator over which the matrix is distributed.
-  const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
+  Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
   //! The matrix for which this is a preconditioner.
   Teuchos::RCP<const row_matrix_type> getMatrix() const;

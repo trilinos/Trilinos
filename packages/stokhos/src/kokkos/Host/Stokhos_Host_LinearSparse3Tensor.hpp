@@ -42,7 +42,7 @@
 #ifndef STOKHOS_HOST_LINEAR_SPARSE_3_TENSOR_HPP
 #define STOKHOS_HOST_LINEAR_SPARSE_3_TENSOR_HPP
 
-#include "KokkosArray_Host.hpp"
+#include "Kokkos_Host.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_LinearSparse3Tensor.hpp"
@@ -51,12 +51,12 @@
 namespace Stokhos {
 
 template< typename ValueType, int BlockSize >
-class Multiply< LinearSparse3Tensor< ValueType , KokkosArray::Host , BlockSize > , void , void , DefaultSparseMatOps >
+class Multiply< LinearSparse3Tensor< ValueType , Kokkos::Host , BlockSize > , void , void , DefaultSparseMatOps >
 {
 public:
 
-  typedef KokkosArray::Host::size_type size_type ;
-  typedef LinearSparse3Tensor< ValueType , KokkosArray::Host , BlockSize > tensor_type ;
+  typedef Kokkos::Host::size_type size_type ;
+  typedef LinearSparse3Tensor< ValueType , Kokkos::Host , BlockSize > tensor_type ;
 
   template< typename MatrixValue , typename VectorValue >
   static void apply( const tensor_type & tensor ,

@@ -49,8 +49,8 @@
 #include <cuda_runtime.h>
 #include <cusparse.h>
 
-#include "KokkosArray_Cuda.hpp"
-#include "Cuda/KokkosArray_Cuda_Parallel.hpp"
+#include "Kokkos_Cuda.hpp"
+#include "Cuda/Kokkos_Cuda_Parallel.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_CrsMatrix.hpp"
@@ -98,15 +98,15 @@ CudaSparseSingleton & CudaSparseSingleton::singleton()
 
 template<>
 class Multiply<
-  CrsMatrix< float , KokkosArray::Cuda > ,
-  KokkosArray::View< float[] , KokkosArray::Cuda > ,
-  KokkosArray::View< float[] , KokkosArray::Cuda > ,
+  CrsMatrix< float , Kokkos::Cuda > ,
+  Kokkos::View< float[] , Kokkos::Cuda > ,
+  Kokkos::View< float[] , Kokkos::Cuda > ,
   DefaultSparseMatOps >
 {
 public:
-  typedef KokkosArray::Cuda                        device_type ;
+  typedef Kokkos::Cuda                        device_type ;
   typedef device_type::size_type              size_type ;
-  typedef KokkosArray::View< float[] , device_type >  vector_type ;
+  typedef Kokkos::View< float[] , device_type >  vector_type ;
   typedef CrsMatrix< float , device_type >    matrix_type ;
 
   //--------------------------------------------------------------------------
@@ -141,15 +141,15 @@ public:
 
 template<>
 class Multiply<
-  CrsMatrix< double , KokkosArray::Cuda > ,
-  KokkosArray::View< double[] , KokkosArray::Cuda > ,
-  KokkosArray::View< double[] , KokkosArray::Cuda > ,
+  CrsMatrix< double , Kokkos::Cuda > ,
+  Kokkos::View< double[] , Kokkos::Cuda > ,
+  Kokkos::View< double[] , Kokkos::Cuda > ,
   DefaultSparseMatOps >
 {
 public:
-  typedef KokkosArray::Cuda                         device_type ;
+  typedef Kokkos::Cuda                         device_type ;
   typedef device_type::size_type               size_type ;
-  typedef KokkosArray::View< double[] , device_type >  vector_type ;
+  typedef Kokkos::View< double[] , device_type >  vector_type ;
   typedef CrsMatrix< double , device_type >    matrix_type ;
 
   //--------------------------------------------------------------------------
@@ -184,16 +184,16 @@ public:
 
 template<>
 class MMultiply<
-  CrsMatrix< float , KokkosArray::Cuda > ,
-  KokkosArray::View< float** , KokkosArray::LayoutLeft, KokkosArray::Cuda > ,
-  KokkosArray::View< float** , KokkosArray::LayoutLeft, KokkosArray::Cuda > ,
+  CrsMatrix< float , Kokkos::Cuda > ,
+  Kokkos::View< float** , Kokkos::LayoutLeft, Kokkos::Cuda > ,
+  Kokkos::View< float** , Kokkos::LayoutLeft, Kokkos::Cuda > ,
   DefaultSparseMatOps >
 {
 public:
-  typedef KokkosArray::Cuda                           device_type ;
+  typedef Kokkos::Cuda                           device_type ;
   typedef device_type::size_type                      size_type ;
-  typedef KokkosArray::View< float[] , device_type >              vector_type ;
-  typedef KokkosArray::View< float** , KokkosArray::LayoutLeft, device_type >  multi_vector_type ;
+  typedef Kokkos::View< float[] , device_type >              vector_type ;
+  typedef Kokkos::View< float** , Kokkos::LayoutLeft, device_type >  multi_vector_type ;
   typedef CrsMatrix< float , device_type >           matrix_type ;
   typedef int                                         Ordinal ;
 
@@ -216,9 +216,9 @@ public:
 
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
-      vector_type xx_view = KokkosArray::subview<vector_type>( xx , span );
-      vector_type x_col = KokkosArray::subview<vector_type>( x, col_indices[col] );
-      KokkosArray::deep_copy(xx_view, x_col);
+      vector_type xx_view = Kokkos::subview<vector_type>( xx , span );
+      vector_type x_col = Kokkos::subview<vector_type>( x, col_indices[col] );
+      Kokkos::deep_copy(xx_view, x_col);
     }
 
     // Sparse matrix-times-multivector
@@ -244,25 +244,25 @@ public:
     // Copy columns out of continguous multivector
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
-      vector_type yy_view = KokkosArray::subview<vector_type>( yy , span );
-      vector_type y_col = KokkosArray::subview<vector_type>( y, col_indices[col] );
-      KokkosArray::deep_copy(y_col, yy_view );
+      vector_type yy_view = Kokkos::subview<vector_type>( yy , span );
+      vector_type y_col = Kokkos::subview<vector_type>( y, col_indices[col] );
+      Kokkos::deep_copy(y_col, yy_view );
     }
   }
 };
 
 template<>
 class MMultiply<
-  CrsMatrix< double , KokkosArray::Cuda > ,
-  KokkosArray::View< double** , KokkosArray::LayoutLeft, KokkosArray::Cuda > ,
-  KokkosArray::View< double** , KokkosArray::LayoutLeft, KokkosArray::Cuda > ,
+  CrsMatrix< double , Kokkos::Cuda > ,
+  Kokkos::View< double** , Kokkos::LayoutLeft, Kokkos::Cuda > ,
+  Kokkos::View< double** , Kokkos::LayoutLeft, Kokkos::Cuda > ,
   DefaultSparseMatOps >
 {
 public:
-  typedef KokkosArray::Cuda                           device_type ;
+  typedef Kokkos::Cuda                           device_type ;
   typedef device_type::size_type                      size_type ;
-  typedef KokkosArray::View< double[] , device_type >              vector_type ;
-  typedef KokkosArray::View< double** , KokkosArray::LayoutLeft, device_type >  multi_vector_type ;
+  typedef Kokkos::View< double[] , device_type >              vector_type ;
+  typedef Kokkos::View< double** , Kokkos::LayoutLeft, device_type >  multi_vector_type ;
   typedef CrsMatrix< double , device_type >           matrix_type ;
   typedef int                                         Ordinal ;
 
@@ -285,9 +285,9 @@ public:
 
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
-      vector_type xx_view = KokkosArray::subview<vector_type>( xx , span );
-      vector_type x_col = KokkosArray::subview<vector_type>( x, col_indices[col] );
-      KokkosArray::deep_copy(xx_view, x_col);
+      vector_type xx_view = Kokkos::subview<vector_type>( xx , span );
+      vector_type x_col = Kokkos::subview<vector_type>( x, col_indices[col] );
+      Kokkos::deep_copy(xx_view, x_col);
     }
 
     // Sparse matrix-times-multivector
@@ -313,24 +313,24 @@ public:
     // Copy columns out of continguous multivector
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
-      vector_type yy_view = KokkosArray::subview<vector_type>( yy , span );
-      vector_type y_col = KokkosArray::subview<vector_type>( y, col_indices[col] );
-      KokkosArray::deep_copy(y_col, yy_view );
+      vector_type yy_view = Kokkos::subview<vector_type>( yy , span );
+      vector_type y_col = Kokkos::subview<vector_type>( y, col_indices[col] );
+      Kokkos::deep_copy(y_col, yy_view );
     }
   }
 };
 
 template<>
 class MMultiply<
-  CrsMatrix< float , KokkosArray::Cuda > ,
-  KokkosArray::View< float[] , KokkosArray::Cuda > ,
-  KokkosArray::View< float[] , KokkosArray::Cuda > ,
+  CrsMatrix< float , Kokkos::Cuda > ,
+  Kokkos::View< float[] , Kokkos::Cuda > ,
+  Kokkos::View< float[] , Kokkos::Cuda > ,
   DefaultSparseMatOps >
 {
 public:
-  typedef KokkosArray::Cuda                         device_type ;
+  typedef Kokkos::Cuda                         device_type ;
   typedef device_type::size_type               size_type ;
-  typedef KokkosArray::View< float[] , device_type >  vector_type ;
+  typedef Kokkos::View< float[] , device_type >  vector_type ;
   typedef CrsMatrix< float , device_type >    matrix_type ;
 
   //--------------------------------------------------------------------------
@@ -351,8 +351,8 @@ public:
 
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
-      vector_type xx_view = KokkosArray::subview<vector_type>( xx , span );
-      KokkosArray::deep_copy(xx_view, x[col]);
+      vector_type xx_view = Kokkos::subview<vector_type>( xx , span );
+      Kokkos::deep_copy(xx_view, x[col]);
     }
 
     // Sparse matrix-times-multivector
@@ -378,23 +378,23 @@ public:
     // Copy columns out of continguous multivector
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
-      vector_type yy_view = KokkosArray::subview<vector_type>( yy , span );
-      KokkosArray::deep_copy(y[col], yy_view );
+      vector_type yy_view = Kokkos::subview<vector_type>( yy , span );
+      Kokkos::deep_copy(y[col], yy_view );
     }
   }
 };
 
 template<>
 class MMultiply<
-  CrsMatrix< double , KokkosArray::Cuda > ,
-  KokkosArray::View< double[] , KokkosArray::Cuda > ,
-  KokkosArray::View< double[] , KokkosArray::Cuda > ,
+  CrsMatrix< double , Kokkos::Cuda > ,
+  Kokkos::View< double[] , Kokkos::Cuda > ,
+  Kokkos::View< double[] , Kokkos::Cuda > ,
   DefaultSparseMatOps >
 {
 public:
-  typedef KokkosArray::Cuda                         device_type ;
+  typedef Kokkos::Cuda                         device_type ;
   typedef device_type::size_type               size_type ;
-  typedef KokkosArray::View< double[] , device_type >  vector_type ;
+  typedef Kokkos::View< double[] , device_type >  vector_type ;
   typedef CrsMatrix< double , device_type >    matrix_type ;
 
   //--------------------------------------------------------------------------
@@ -415,8 +415,8 @@ public:
 
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
-      vector_type xx_view = KokkosArray::subview<vector_type>( xx , span );
-      KokkosArray::deep_copy(xx_view, x[col]);
+      vector_type xx_view = Kokkos::subview<vector_type>( xx , span );
+      Kokkos::deep_copy(xx_view, x[col]);
     }
 
     // Sparse matrix-times-multivector
@@ -442,17 +442,17 @@ public:
     // Copy columns out of continguous multivector
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
-      vector_type yy_view = KokkosArray::subview<vector_type>( yy , span );
-      KokkosArray::deep_copy(y[col], yy_view );
+      vector_type yy_view = Kokkos::subview<vector_type>( yy , span );
+      Kokkos::deep_copy(y[col], yy_view );
     }
   }
 };
 
 template< typename MatrixValue>
-class MatrixMarketWriter<MatrixValue,KokkosArray::Cuda>
+class MatrixMarketWriter<MatrixValue,Kokkos::Cuda>
 {
 public:
-  typedef KokkosArray::Cuda                         device_type ;
+  typedef Kokkos::Cuda                         device_type ;
   typedef device_type::size_type                    size_type ;
   typedef CrsMatrix< MatrixValue , device_type >    matrix_type ;
 

@@ -215,7 +215,7 @@ namespace Tpetra {
   /// situations.
   template <class LocalOrdinal,
             class GlobalOrdinal = LocalOrdinal,
-            class Node = Kokkos::DefaultNode::DefaultNodeType>
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class Map : public Teuchos::Describable {
   public:
     //! @name Typedefs
@@ -277,7 +277,7 @@ namespace Tpetra {
          GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
          LocalGlobal lg=GloballyDistributed,
-         const Teuchos::RCP<Node> &node = Kokkos::Details::getNode<Node>());
+         const Teuchos::RCP<Node> &node = KokkosClassic::Details::getNode<Node>());
 
     /** \brief Constructor with a user-defined contiguous distribution.
      *
@@ -322,7 +322,7 @@ namespace Tpetra {
          size_t numLocalElements,
          GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-         const Teuchos::RCP<Node> &node = Kokkos::Details::getNode<Node>());
+         const Teuchos::RCP<Node> &node = KokkosClassic::Details::getNode<Node>());
 
     /** \brief Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
      *
@@ -362,7 +362,7 @@ namespace Tpetra {
          const Teuchos::ArrayView<const GlobalOrdinal> &elementList,
          GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-         const Teuchos::RCP<Node> &node = Kokkos::Details::getNode<Node>());
+         const Teuchos::RCP<Node> &node = KokkosClassic::Details::getNode<Node>());
 
     //! Destructor.
     ~Map();
@@ -607,10 +607,10 @@ namespace Tpetra {
     //@{
 
     //! Get this Map's Comm object.
-    const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
+    Teuchos::RCP<const Teuchos::Comm<int> > getComm () const;
 
     //! Get this Map's Node object.
-    const Teuchos::RCP<Node> & getNode() const;
+    Teuchos::RCP<Node> getNode () const;
 
     //@}
     //! Implementation of \c Teuchos::Describable
@@ -866,7 +866,7 @@ namespace Tpetra {
   ///   the default Kokkos Node.
   ///
   /// This method returns a Map instantiated on the default Kokkos
-  /// Node type, Kokkos::DefaultNode::DefaultNodeType.  The Map is
+  /// Node type, KokkosClassic::DefaultNode::DefaultNodeType.  The Map is
   /// configured to use zero-based indexing.
   ///
   /// \param numElements [in] Number of elements on each process.
@@ -900,11 +900,11 @@ namespace Tpetra {
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createLocalMapWithNode (size_t numElements,
                           const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                          const Teuchos::RCP<Node>& node = Kokkos::Details::getNode<Node> ());
+                          const Teuchos::RCP<Node>& node = KokkosClassic::Details::getNode<Node> ());
 
   /** \brief Non-member constructor for a uniformly distributed, contiguous Map with the default Kokkos Node.
 
-      This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
+      This method returns a Map instantiated on the Kokkos default node type, KokkosClassic::DefaultNode::DefaultNodeType.
 
       The Map is configured to use zero-based indexing.
 
@@ -924,18 +924,18 @@ namespace Tpetra {
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createUniformContigMapWithNode(global_size_t numElements,
                                  const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-                                 const Teuchos::RCP< Node > &node = Kokkos::Details::getNode<Node>());
+                                 const Teuchos::RCP< Node > &node = KokkosClassic::Details::getNode<Node>());
 
   /** \brief Non-member constructor for a (potentially) non-uniformly distributed, contiguous Map with the default Kokkos Node.
 
-      This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
+      This method returns a Map instantiated on the Kokkos default node type, KokkosClassic::DefaultNode::DefaultNodeType.
 
       The Map is configured to use zero-based indexing.
 
       \relatesalso Map
    */
   template <class LocalOrdinal, class GlobalOrdinal>
-  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,KokkosClassic::DefaultNode::DefaultNodeType> >
   createContigMap (global_size_t numElements,
                    size_t localNumElements,
                    const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
@@ -955,14 +955,14 @@ namespace Tpetra {
 
   /** \brief Non-member constructor for a non-contiguous Map with the default Kokkos Node.
 
-      This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
+      This method returns a Map instantiated on the Kokkos default node type, KokkosClassic::DefaultNode::DefaultNodeType.
 
       The Map is configured to use zero-based indexing.
 
       \relatesalso Map
    */
   template <class LocalOrdinal, class GlobalOrdinal>
-  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,KokkosClassic::DefaultNode::DefaultNodeType> >
   createNonContigMap (const ArrayView<const GlobalOrdinal> &elementList,
                       const RCP<const Teuchos::Comm<int> > &comm);
 

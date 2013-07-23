@@ -51,20 +51,20 @@
 
 int main() {
 
-  typedef Kokkos::DefaultNode::DefaultNodeType                      Node;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType                      Node;
   typedef KokkosExamples::EmptySparseKernel<void,Node>            SOBASE;
   typedef SOBASE::graph<int,Node>::graph_type                      Graph;
   typedef SOBASE::bind_scalar<float>::other_type                FloatOps;
   typedef FloatOps::matrix< float,int,Node>::matrix_type         FMatrix;
   typedef SOBASE::bind_scalar<double>::other_type              DoubleOps;
   typedef DoubleOps::matrix<double,int,Node>::matrix_type        DMatrix;
-  typedef Kokkos::MultiVector<double,Node>                     DoubleVec;
-  typedef Kokkos::MultiVector<float,Node>                       FloatVec;
+  typedef KokkosClassic::MultiVector<double,Node>                     DoubleVec;
+  typedef KokkosClassic::MultiVector<float,Node>                       FloatVec;
 
   std::cout << "Note, this class doesn't actually do anything. We are only testing that it compiles." << std::endl;
 
   // get a pointer to the default node
-  Teuchos::RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
+  Teuchos::RCP<Node> node = KokkosClassic::DefaultNode::getDefaultNode();
 
   // create the graph G
   const int numRows = 5,
@@ -91,8 +91,8 @@ int main() {
   // symmetric Gauss-Seidel requires interprocess communication
   // between the forward and backward sweeps.)
   DoubleVec dd (node); 
-  doubleKernel.gaussSeidel (dy, dx, dd, 1.0, Kokkos::Forward);
-  doubleKernel.gaussSeidel (dy, dx, dd, 1.0, Kokkos::Backward);
+  doubleKernel.gaussSeidel (dy, dx, dd, 1.0, KokkosClassic::Forward);
+  doubleKernel.gaussSeidel (dy, dx, dd, 1.0, KokkosClassic::Backward);
 
   // create a float-valued matrix fM using the graph G
   Teuchos::RCP<FMatrix> fM = Teuchos::rcp(new FMatrix(G,Teuchos::null));
@@ -109,8 +109,8 @@ int main() {
   floatKernel.solve( Teuchos::NO_TRANS, fy, fx);
   // Precomputed inverse diagonal entries of the sparse matrix.
   FloatVec fd (node); 
-  floatKernel.gaussSeidel (fy, fx, fd, (float) 1.0, Kokkos::Forward);
-  floatKernel.gaussSeidel (fy, fx, fd, (float) 1.0, Kokkos::Backward);
+  floatKernel.gaussSeidel (fy, fx, fd, (float) 1.0, KokkosClassic::Forward);
+  floatKernel.gaussSeidel (fy, fx, fd, (float) 1.0, KokkosClassic::Backward);
 
   std::cout << "End Result: TEST PASSED" << std::endl;
   return 0;

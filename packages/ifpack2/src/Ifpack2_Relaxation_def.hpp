@@ -301,7 +301,7 @@ void Relaxation<MatrixType>::setParameters (const Teuchos::ParameterList& pl)
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Teuchos::Comm<int> > &
+Teuchos::RCP<const Teuchos::Comm<int> >
 Relaxation<MatrixType>::getComm() const{
   return A_->getRowMap ()->getComm ();
 }
@@ -318,25 +318,25 @@ Relaxation<MatrixType>::getMatrix() const {
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >&
-Relaxation<MatrixType>::getDomainMap() const {
-  return A_->getDomainMap();
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+			       typename MatrixType::global_ordinal_type,
+			       typename MatrixType::node_type> >
+Relaxation<MatrixType>::getDomainMap () const {
+  return A_->getDomainMap ();
 }
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >&
-Relaxation<MatrixType>::getRangeMap() const {
-  return A_->getRangeMap();
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+			       typename MatrixType::global_ordinal_type,
+			       typename MatrixType::node_type> >
+Relaxation<MatrixType>::getRangeMap () const {
+  return A_->getRangeMap ();
 }
 
 //==========================================================================
 template<class MatrixType>
-bool Relaxation<MatrixType>::hasTransposeApply() const {
+bool Relaxation<MatrixType>::hasTransposeApply () const {
   return true;
 }
 
@@ -604,8 +604,6 @@ void Relaxation<MatrixType>::compute ()
       // specializations with nondefault LocalMatOps (fifth) template
       // parameter.  The code will still be correct if the cast fails,
       // but it won't pick up the "cached offsets" optimization.
-      typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, 
-				global_ordinal_type, node_type> crs_matrix_type;
       const crs_matrix_type* crsMat = 
 	dynamic_cast<const crs_matrix_type*> (A_.getRawPtr ());
       if (crsMat == NULL || ! crsMat->isStaticGraph ()) {

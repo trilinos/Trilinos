@@ -72,7 +72,7 @@
 #include <Teuchos_BLAS.hpp>
 
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   // Class for providing GEMM for a particular Node
   template <typename Scalar, typename Node>
@@ -548,7 +548,7 @@ namespace Kokkos {
   /// \brief Partial specialization of DefaultArithmetic for MultiVector<Scalar,Node>.
   ///
   /// Tpetra::MultiVector uses this as a traits class for
-  /// Kokkos::MultiVector, to implement all of its computational
+  /// KokkosClassic::MultiVector, to implement all of its computational
   /// kernels.
   ///
   /// \tparam Scalar The type of entries of the multivector.
@@ -795,7 +795,7 @@ namespace Kokkos {
         nR != B.getNumRows() || numColsToCopy > nC,
         std::runtime_error,
         "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Assign(A,B,"
-        "whichVectors): The Kokkos::MultiVector inputs A and B(whichVectors) "
+        "whichVectors): The KokkosClassic::MultiVector inputs A and B(whichVectors) "
         "do not have compatible dimensions.  "
         "A is " << nR << " x " << nC << ", but B has "
         << B.getNumRows() << ", and there are " << numColsToCopy
@@ -1411,7 +1411,7 @@ namespace Kokkos {
     }
   };
 
-  // Partial specialization for Node=Kokkos::SerialNode.
+  // Partial specialization for Node=KokkosClassic::SerialNode.
   template <class Scalar>
   class DefaultArithmetic<MultiVector<Scalar, SerialNode> > :
     public DefaultArithmeticBase<MultiVector<Scalar, SerialNode> > {
@@ -2253,7 +2253,7 @@ namespace Kokkos {
 
 
 
-  // Full specialization for Scalar=double and Node=Kokkos::SerialNode.
+  // Full specialization for Scalar=double and Node=KokkosClassic::SerialNode.
   template <>
   class DefaultArithmetic<MultiVector<double, SerialNode> > :
     public DefaultArithmeticBase<MultiVector<double, SerialNode> > {
@@ -3038,6 +3038,6 @@ namespace Kokkos {
   };
 
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif

@@ -51,36 +51,41 @@
 
 
 namespace Ifpack2 {
-//! Ifpack2_SparsityFilter: a class to drop based on sparsity.
-/*!
-Ifpack2::SparsityFilter enables the dropping of elements with the criteria
-  (a) Drop elements outside a specified bandwidth
-and/or
-  (b) Keep only the N largest entries per row.
 
-A typical use is as follows:
-\code
-Teuchos::RCP<Tpetra::RowMatrix> A;
-// first localize the matrix
-Ifpack2::LocalFilter<Tpetra::RowMatrix> LocalA(A);
-// drop all elements below this value
-size_t AllowedNumEntries = 20;
-int AllowedBandwidth = 10;
-// now create the matrix, elements dropped are 
-// not included in calls to getLocalRowCopy() and apply()
-Ifpack2::SparsityFilter<Tpetra::RowMatrix> DropA(LocalA,AllowedNumEntries,AllowedBandwidth);
-\endcode
-
-<P>It is supposed that Ifpack2::SparsityFilter is used on localized matrices.
-
-
-\data Last modified: 8-Aug-12.
-
-*/
-
+/// \class SparsityFilter
+/// \brief Drop entries of a matrix, based on the sparsity pattern.
+///
+/// This class takes an existing Tpetra::RowMatrix, and wraps it in a
+/// matrix interface that drops entries using the following criteria:
+///
+/// 1. Drop elements beyond a certain distance from the diagonal, and / or
+/// 2. Keep only the N largest entries in each row.
+///
+/// Here is a typical use case:
+/// \code
+/// Teuchos::RCP<Tpetra::RowMatrix> A = ...;
+/// // First filter out all entries in columns
+/// // which are not in A's domain Map.
+/// Ifpack2::LocalFilter<Tpetra::RowMatrix> A_local (A);
+/// // Drop all but the largest 20 elements in each row.
+/// const size_t maxEntriesPerRow = 20;
+/// // Exclude elements in each row whose local column index
+/// // is more than 10 greater or less than the local column
+/// // index of the diagonal element in that row.
+/// const int maxBw = 10;
+/// // Now create the sparsity filter. Elements dropped are 
+/// // not included in calls to getLocalRowCopy() and apply().
+/// Ifpack2::SparsityFilter<Tpetra::RowMatrix> A_drop (A_local, maxEntriesPerRow, maxBw);
+/// \endcode
+///
+/// This class currently only works if the matrix is the result of a
+/// LocalFilter, that is, if the row and column Maps are the same.
 template<class MatrixType>
-class  SparsityFilter : virtual public Tpetra::RowMatrix<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> {
-  
+class SparsityFilter : 
+    virtual public Tpetra::RowMatrix<typename MatrixType::scalar_type,
+				     typename MatrixType::local_ordinal_type,
+				     typename MatrixType::global_ordinal_type,
+				     typename MatrixType::node_type> {
 public:
   typedef typename MatrixType::scalar_type Scalar;
   typedef typename MatrixType::local_ordinal_type LocalOrdinal;
@@ -88,8 +93,6 @@ public:
   typedef typename MatrixType::node_type Node;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
   
-
-public:
   //! \name Constructor & destructor methods
   //@{
 
@@ -101,27 +104,26 @@ public:
   virtual ~SparsityFilter();
 
   //@}
-
   //! \name Matrix Query Methods
   //@{
 
   //! Returns the communicator.
-  virtual const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
+  virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
   //! Returns the underlying node.
   virtual Teuchos::RCP<Node> getNode() const;
 
   //! Returns the Map that describes the row distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getRowMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const;
 
   //! \brief Returns the Map that describes the column distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getColMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getColMap() const;
 
   //! Returns the Map that describes the domain distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
 
   //! \brief Returns the Map that describes the range distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
 
   //! Returns the RowGraph associated with this matrix. 
   virtual Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const;

@@ -120,7 +120,7 @@ namespace Tpetra {
   ///
   template <class LocalOrdinal,
             class GlobalOrdinal = LocalOrdinal,
-            class Node = Kokkos::DefaultNode::DefaultNodeType>
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class Export: public Teuchos::Describable {
       friend class Import<LocalOrdinal,GlobalOrdinal,Node>;
   public:
@@ -256,10 +256,12 @@ namespace Tpetra {
     ArrayView<const int> getExportPIDs() const;
 
     //! The source Map used to construct this Export.
-    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getSourceMap() const;
+    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > 
+    getSourceMap () const;
 
     //! The target Map used to construct this Export.
-    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getTargetMap() const;
+    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > 
+    getTargetMap () const;
 
     //! The Distributor that this Export object uses to move data.
     Distributor & getDistributor() const;

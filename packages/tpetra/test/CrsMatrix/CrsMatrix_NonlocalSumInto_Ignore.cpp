@@ -410,7 +410,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
 // above the test.
 #if 0
 //
-// Instantiations for default Kokkos::Node type.
+// Instantiations for default KokkosClassic::Node type.
 //
 
 typedef Tpetra::CrsMatrix<float, int, int> mat_float_int_int_type;

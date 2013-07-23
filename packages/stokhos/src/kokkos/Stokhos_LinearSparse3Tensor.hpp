@@ -42,7 +42,7 @@
 #ifndef STOKHOS_LINEAR_SPARSE_3_TENSOR_HPP
 #define STOKHOS_LINEAR_SPARSE_3_TENSOR_HPP
 
-#include "KokkosArray_View.hpp"
+#include "Kokkos_View.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_ProductBasis.hpp"
@@ -69,7 +69,7 @@ public:
 
 private:
 
-  typedef KokkosArray::View< value_type[], device_type > value_array_type ;
+  typedef Kokkos::View< value_type[], device_type > value_array_type ;
 
   value_array_type   m_value ;
   size_type          m_dim ;
@@ -114,35 +114,35 @@ public:
   }
 
   /** \brief  Dimension of the tensor. */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type dimension() const { return m_dim ; }
 
   /** \brief  Dimension of the tensor. */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type aligned_dimension() const { return m_aligned_dim ; }
 
   /** \brief  Number of sparse entries. */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type entry_count() const
   { return m_value.dimension_0(); }
 
   /** \brief Is tensor built from symmetric PDFs. */
-   KOKKOSARRAY_INLINE_FUNCTION
+   KOKKOS_INLINE_FUNCTION
    bool symmetric() const
    { return m_symmetric; }
 
   /** \brief  Value for entry 'entry' */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   const value_type & value( const size_type entry ) const
   { return m_value( entry ); }
 
   /** \brief Number of non-zero's */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type num_non_zeros() const
   { return m_nnz; }
 
   /** \brief Number flop's per multiply-add */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type num_flops() const
   { return m_flops; }
 
@@ -167,7 +167,7 @@ public:
 
     // Create mirror, is a view if is host memory
     typename value_array_type::HostMirror
-      host_value = KokkosArray::create_mirror_view( tensor.m_value );
+      host_value = Kokkos::create_mirror_view( tensor.m_value );
 
     // Get Cijk values
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<OrdinalType,ValueType> > > bases = basis.getCoordinateBases();
@@ -180,7 +180,7 @@ public:
       host_value(2) = (*cijk)(1,1,1);
 
     // Copy data to device if necessary
-    KokkosArray::deep_copy( tensor.m_value , host_value );
+    Kokkos::deep_copy( tensor.m_value , host_value );
 
     tensor.m_flops = 8*dim;
     if (!symmetric)

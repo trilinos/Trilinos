@@ -93,7 +93,7 @@ namespace MueLu {
     //RCP<Matrix> R = Utils::TwoMatrixMultiply(P, true, I, false); //doesn't work -- bug in EpetraExt?
     //      RCP<Matrix> R = Utils::TwoMatrixMultiply(I, false, P, true);
 
-    RCP<Matrix> R = Utils2::Transpose(P, true);
+    RCP<Matrix> R = Utils2::Transpose(*P, true);
 
     Set(coarseLevel, "R", R);
 

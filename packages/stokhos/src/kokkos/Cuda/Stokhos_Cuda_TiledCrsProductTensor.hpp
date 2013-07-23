@@ -44,8 +44,8 @@
 
 #include <iostream>
 
-#include "KokkosArray_Cuda.hpp"
-#include "Cuda/KokkosArray_Cuda_Parallel.hpp"
+#include "Kokkos_Cuda.hpp"
+#include "Cuda/Kokkos_Cuda_Parallel.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_BlockCrsMatrix.hpp"
@@ -63,20 +63,20 @@ template< typename TensorScalar ,
           typename MatrixScalar ,
           typename VectorScalar >
 class Multiply<
-  BlockCrsMatrix< TiledCrsProductTensor< TensorScalar, KokkosArray::Cuda >,
-                  MatrixScalar, KokkosArray::Cuda >,
-  KokkosArray::View<VectorScalar**, KokkosArray::LayoutLeft, KokkosArray::Cuda>,
-  KokkosArray::View<VectorScalar**, KokkosArray::LayoutLeft, KokkosArray::Cuda>,
+  BlockCrsMatrix< TiledCrsProductTensor< TensorScalar, Kokkos::Cuda >,
+                  MatrixScalar, Kokkos::Cuda >,
+  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
+  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
   DefaultSparseMatOps >
 {
 public:
 
-  typedef KokkosArray::Cuda  device_type ;
+  typedef Kokkos::Cuda  device_type ;
   typedef device_type::size_type size_type ;
 
   typedef TiledCrsProductTensor< TensorScalar, device_type > tensor_type ;
   typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type ;
-  typedef KokkosArray::View< VectorScalar**, KokkosArray::LayoutLeft, KokkosArray::Cuda >  vector_type ;
+  typedef Kokkos::View< VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda >  vector_type ;
 
   class ProductTensorLoop {
   public:
@@ -95,7 +95,7 @@ public:
     __device__
     void operator()(void) const
     {
-      const size_type WarpSize = KokkosArray::Impl::CudaTraits::WarpSize;
+      const size_type WarpSize = Kokkos::Impl::CudaTraits::WarpSize;
 
       // Number of bases in the stochastic system:
       const size_type dim = m_A.block.dimension();
@@ -247,10 +247,10 @@ public:
 #else
     const size_type nWarp = 16;
 #endif
-    const dim3 dBlock( KokkosArray::Impl::CudaTraits::WarpSize , nWarp , 1 );
+    const dim3 dBlock( Kokkos::Impl::CudaTraits::WarpSize , nWarp , 1 );
     const dim3 dGrid( row_count , 1 , 1 );
 
-    //const size_type shcap = KokkosArray::Impl::CudaTraits::SharedMemoryCapacity;
+    //const size_type shcap = Kokkos::Impl::CudaTraits::SharedMemoryCapacity;
     const size_type block_size = 5;
     const size_type shmem =
       sizeof(VectorScalar) * ((4*block_size+1)*tile_dim + dBlock.x*dBlock.y);
@@ -270,7 +270,7 @@ public:
              ;
 #endif
     //cudaProfilerStart();
-    KokkosArray::Impl::cuda_parallel_launch_local_memory<<< dGrid , dBlock , shmem >>>
+    Kokkos::Impl::cuda_parallel_launch_local_memory<<< dGrid , dBlock , shmem >>>
       ( ProductTensorLoop( A , x , y, block_size ) );
     //cudaProfilerStop();
   }
@@ -284,20 +284,20 @@ template< typename TensorScalar ,
           typename MatrixScalar ,
           typename VectorScalar >
 class Multiply<
-  BlockCrsMatrix< TiledCrsProductTensor< TensorScalar, KokkosArray::Cuda >,
-                  MatrixScalar, KokkosArray::Cuda >,
-  KokkosArray::View<VectorScalar**, KokkosArray::LayoutLeft, KokkosArray::Cuda>,
-  KokkosArray::View<VectorScalar**, KokkosArray::LayoutLeft, KokkosArray::Cuda>,
+  BlockCrsMatrix< TiledCrsProductTensor< TensorScalar, Kokkos::Cuda >,
+                  MatrixScalar, Kokkos::Cuda >,
+  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
+  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
   DefaultSparseMatOps >
 {
 public:
 
-  typedef KokkosArray::Cuda  device_type ;
+  typedef Kokkos::Cuda  device_type ;
   typedef device_type::size_type size_type ;
 
   typedef TiledCrsProductTensor< TensorScalar, device_type > tensor_type ;
   typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type ;
-  typedef KokkosArray::View< VectorScalar**, KokkosArray::LayoutLeft, KokkosArray::Cuda >  vector_type ;
+  typedef Kokkos::View< VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda >  vector_type ;
 
   class ProductTensorLoop {
   public:
@@ -316,7 +316,7 @@ public:
     __device__
     void operator()(void) const
     {
-      const size_type WarpSize = KokkosArray::Impl::CudaTraits::WarpSize;
+      const size_type WarpSize = Kokkos::Impl::CudaTraits::WarpSize;
 
       // Number of bases in the stochastic system:
       const size_type dim = m_A.block.dimension();
@@ -448,7 +448,7 @@ public:
 
     Zero( const vector_type & x ) : m_x( x ), m_d(x.dimension_0()) {}
 
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     void operator()( const size_type j ) const {
       for (size_type i=0; i<m_d; ++i)
         m_x(i,j) = 0.0;
@@ -472,7 +472,7 @@ public:
     const size_type num_tiles = A.block.num_tiles();
 
     const size_type nWarp = 16;
-    const dim3 dBlock( KokkosArray::Impl::CudaTraits::WarpSize , nWarp , 1 );
+    const dim3 dBlock( Kokkos::Impl::CudaTraits::WarpSize , nWarp , 1 );
     const dim3 dGrid( row_count , 1 , 1 );
 
     const size_type shmem =
@@ -493,11 +493,11 @@ public:
 #endif
     //cudaProfilerStart();
     // Zero y
-    KokkosArray::parallel_for( row_count , Zero(y) );
+    Kokkos::parallel_for( row_count , Zero(y) );
 
     // Loop over Cijk tiles
     for (size_type tile = 0; tile<num_tiles; ++tile) {
-      KokkosArray::Impl::cuda_parallel_launch_local_memory<<< dGrid , dBlock , shmem >>>
+      Kokkos::Impl::cuda_parallel_launch_local_memory<<< dGrid , dBlock , shmem >>>
         ( ProductTensorLoop( A , x , y, tile ) );
     }
     //cudaProfilerStop();
@@ -509,26 +509,26 @@ public:
 //----------------------------------------------------------------------------
 
 // #define MAX_TENSOR_OFFSETS 2000
-// __constant__ KokkosArray::Cuda::size_type tensor_row_begin[MAX_TENSOR_OFFSETS];
+// __constant__ Kokkos::Cuda::size_type tensor_row_begin[MAX_TENSOR_OFFSETS];
 
 template< typename TensorScalar ,
           typename MatrixScalar ,
           typename VectorScalar >
 class Multiply<
-  BlockCrsMatrix< TiledCrsProductTensor< TensorScalar, KokkosArray::Cuda >,
-                  MatrixScalar, KokkosArray::Cuda >,
-  KokkosArray::View<VectorScalar**, KokkosArray::LayoutLeft, KokkosArray::Cuda>,
-  KokkosArray::View<VectorScalar**, KokkosArray::LayoutLeft, KokkosArray::Cuda>,
+  BlockCrsMatrix< TiledCrsProductTensor< TensorScalar, Kokkos::Cuda >,
+                  MatrixScalar, Kokkos::Cuda >,
+  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
+  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
   DefaultSparseMatOps >
 {
 public:
 
-  typedef KokkosArray::Cuda  device_type ;
+  typedef Kokkos::Cuda  device_type ;
   typedef device_type::size_type size_type ;
 
   typedef TiledCrsProductTensor< TensorScalar, device_type > tensor_type ;
   typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type ;
-  typedef KokkosArray::View< VectorScalar**, KokkosArray::LayoutLeft, KokkosArray::Cuda >  vector_type ;
+  typedef Kokkos::View< VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda >  vector_type ;
 
   class ProductTensorLoop {
   public:
@@ -545,7 +545,7 @@ public:
     __device__
     void operator()(void) const
     {
-      const size_type WarpSize = KokkosArray::Impl::CudaTraits::WarpSize;
+      const size_type WarpSize = Kokkos::Impl::CudaTraits::WarpSize;
 
       // Number of bases in the stochastic system:
       const size_type dim = m_A.block.dimension();
@@ -718,7 +718,7 @@ public:
     const size_type num_tiles = A.block.num_tiles();
     const size_type max_num_rows = A.block.max_num_rows();
 
-    const size_type warp_size = KokkosArray::Impl::CudaTraits::WarpSize;
+    const size_type warp_size = Kokkos::Impl::CudaTraits::WarpSize;
     const size_type block_size = 8;
     const size_type nWarp = 16;
     const dim3 dBlock( block_size, warp_size / block_size, nWarp );
@@ -753,7 +753,7 @@ public:
     //                    cudaMemcpyDeviceToDevice);
 
     //cudaProfilerStart();
-    KokkosArray::Impl::cuda_parallel_launch_local_memory<<< dGrid , dBlock , shmem >>>
+    Kokkos::Impl::cuda_parallel_launch_local_memory<<< dGrid , dBlock , shmem >>>
       ( ProductTensorLoop( A , x , y ) );
     //cudaProfilerStop();
   }

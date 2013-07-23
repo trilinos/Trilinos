@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
   std::string defaultMachine(
     " <ParameterList>                                                               "
     "   <ParameterList name='%1=0'>                                                 "
-    "     <Parameter name='NodeType'     type='string' value='Kokkos::SerialNode'/> "
+    "     <Parameter name='NodeType'     type='string' value='KokkosClassic::SerialNode'/> "
     "   </ParameterList>                                                            "
     " </ParameterList>                                                              "
   );

@@ -56,6 +56,8 @@
  * on OrdinalType and ScalarType; possible choices are, 
  * for example, "float", "double", or "std::complex<double>".
  *
+ * \warning This class is almost certainly broken;
+ *   Tpetra::Operator has a different interface now.
  */
 template <class OrdinalType, class ScalarType>
 class MyOperator : public Tpetra::Operator<OrdinalType,ScalarType> 

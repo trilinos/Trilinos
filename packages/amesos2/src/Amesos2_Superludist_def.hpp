@@ -140,7 +140,7 @@ namespace Amesos2 {
       node_type>(my_weight,
                  this->globalNumRows_,
                  this->getComm(),
-                 Kokkos::DefaultNode::getDefaultNode());
+                 KokkosClassic::DefaultNode::getDefaultNode());
     // TODO: the node above should technically come from the matrix
     // itself.  Might need to add a getNode method to the matrix
     // adapter.

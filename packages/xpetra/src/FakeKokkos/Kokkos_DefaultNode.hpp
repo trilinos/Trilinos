@@ -48,7 +48,7 @@
 
 #include <Teuchos_RCP.hpp>
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   namespace Details {
     template <class NodeType>

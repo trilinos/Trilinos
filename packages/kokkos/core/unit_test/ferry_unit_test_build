@@ -1,0 +1,49 @@
+#!/bin/csh
+
+#-----------------------------------------------------------------------------
+# Quick and dirty build for unit testing with Host (serial) and TPI devices.
+# To be replace with CMake integration.
+
+set TBBROOT="/opt/intel/composerxe_mic/tbb"
+
+set INC_PATH="-I. -I../src -I${TBBROOT}/include"
+
+set GCC_SOURCES="../src/impl/*.cpp ../src/DeviceHost/*.cpp UnitTestMain.cpp"
+
+set LIB=""
+
+#-----------------------------------------------------------------------------
+
+set GCC_SOURCES="${GCC_SOURCES} UnitTestTPIStub.cpp"
+
+#-----------------------------------------------------------------------------
+
+set GCC_SOURCES="${GCC_SOURCES} ../src/DeviceTBB/*.cpp"
+
+set LIB="${LIB} -ltbb"
+
+icpc -offload-build ${INC_PATH} -O3 -tbb -c ../src/DeviceFerry/*.cpp UnitTestFerry.cpp 
+
+#-----------------------------------------------------------------------------
+
+set GCC_SOURCES="${GCC_SOURCES} UnitTestTBBStub.cpp"
+
+#-----------------------------------------------------------------------------
+
+set GCC_SOURCES="${GCC_SOURCES} UnitTestCudaStub.cpp"
+
+#-----------------------------------------------------------------------------
+
+echo "#define HAVE_PTHREAD" > ThreadPool_config.h
+
+set GCC_FLAGS="-Wall -Werror -O3 ${INC_PATH}"
+
+icpc $GCC_FLAGS -c ${GCC_SOURCES}
+
+icpc $GCC_FLAGS -offload-build -o unit_test.exe Kokkos_ArrayBounds.o Kokkos_DeviceTBB.o UnitTestTPIStub.o Kokkos_MemoryInfo.o UnitTestFerry.o Kokkos_DeviceFerry.o Kokkos_ViewTracker.o UnitTestMain.o Kokkos_DeviceHost.o UnitTestCudaStub.o UnitTestTBBStub.o ${LIB} -offload-ldopts:"-L${TBBROOT}/lib/mic -ltbb -ltbbmalloc"
+
+rm -f *.o *.a ThreadPool_config.h
+
+#-----------------------------------------------------------------------------
+
+

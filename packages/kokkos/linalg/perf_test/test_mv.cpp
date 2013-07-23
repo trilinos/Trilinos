@@ -7,20 +7,20 @@
 #include <limits.h>
 #include <cmath>
 
-#include <KokkosArray_Host.hpp>
-#include <KokkosArray_Cuda.hpp>
-#include "KokkosArray_MultiVector.hpp"
+#include <Kokkos_Host.hpp>
+#include <Kokkos_Cuda.hpp>
+#include "Kokkos_MultiVector.hpp"
 #ifndef DEVICE
 #define DEVICE 1
 #endif
 #if DEVICE==1
-typedef KokkosArray::Host device_type;
-#define KokkosArrayHost(a) a
-#define KokkosArrayCUDA(a)
+typedef Kokkos::Host device_type;
+#define KokkosHost(a) a
+#define KokkosCUDA(a)
 #else
-typedef KokkosArray::Cuda device_type;
-#define KokkosArrayHost(a)
-#define KokkosArrayCUDA(a) a
+typedef Kokkos::Cuda device_type;
+#define KokkosHost(a)
+#define KokkosCUDA(a) a
 #endif
 
 typedef double FLOAT;
@@ -29,8 +29,8 @@ typedef double FLOAT;
 
 typedef MultiVectorDynamic<FLOAT,device_type>::type mv_type;
 typedef mv_type::HostMirror h_mv_type;
-typedef KokkosArray::View<FLOAT* ,KokkosArray::LayoutLeft,device_type >  vector_type ;
-typedef KokkosArray::View<FLOAT* ,KokkosArray::LayoutLeft,KokkosArray::Host >  h2_vector_type ;
+typedef Kokkos::View<FLOAT* ,Kokkos::LayoutLeft,device_type >  vector_type ;
+typedef Kokkos::View<FLOAT* ,Kokkos::LayoutLeft,Kokkos::Host >  h2_vector_type ;
 typedef vector_type::HostMirror h_vector_type;
 typedef mv_type::size_type            size_type;
 
@@ -40,11 +40,11 @@ void test_mv_dot(int size, int numVecs, int loop)
   mv_type y("Y",size,numVecs);
   mv_type r("R",size,numVecs);
   vector_type a("A",numVecs);
-  h_mv_type h_x = KokkosArray::create_mirror_view(x);
-  h_mv_type h_y = KokkosArray::create_mirror_view(y);
-  h_mv_type h_rh = KokkosArray::create_mirror_view(r);
-  h_mv_type h_rd = KokkosArray::create_mirror_view(r);
-  h_vector_type h_a = KokkosArray::create_mirror_view(a);
+  h_mv_type h_x = Kokkos::create_mirror_view(x);
+  h_mv_type h_y = Kokkos::create_mirror_view(y);
+  h_mv_type h_rh = Kokkos::create_mirror_view(r);
+  h_mv_type h_rd = Kokkos::create_mirror_view(r);
+  h_vector_type h_a = Kokkos::create_mirror_view(a);
   h2_vector_type h_a2("h2",numVecs);
 
   srand(17231);
@@ -58,15 +58,15 @@ void test_mv_dot(int size, int numVecs, int loop)
 	}
   }
 
-  KokkosArray::deep_copy(x,h_x);
-  KokkosArray::deep_copy(y,h_y);
-  KokkosArray::deep_copy(a,h_a);
+  Kokkos::deep_copy(x,h_x);
+  Kokkos::deep_copy(y,h_y);
+  Kokkos::deep_copy(a,h_a);
   h_vector_type h_b = h_a;
 
   MV_Dot(a,x,y);
   device_type::fence();
 
-  KokkosArray::deep_copy(h_a,a);
+  Kokkos::deep_copy(h_a,a);
   double errorsum=0;
   int errors=0;
   for(int k=0;k<numVecs;k++)
@@ -94,11 +94,11 @@ void test_mv_add(int size, int numVecs, int loop)
   mv_type y("Y",size,numVecs);
   mv_type r("R",size,numVecs);
   vector_type a("A",numVecs);
-  h_mv_type h_x = KokkosArray::create_mirror_view(x);
-  h_mv_type h_y = KokkosArray::create_mirror_view(y);
-  h_mv_type h_rh = KokkosArray::create_mirror_view(r);
-  h_mv_type h_rd = KokkosArray::create_mirror_view(r);
-  h_vector_type h_a = KokkosArray::create_mirror_view(a);
+  h_mv_type h_x = Kokkos::create_mirror_view(x);
+  h_mv_type h_y = Kokkos::create_mirror_view(y);
+  h_mv_type h_rh = Kokkos::create_mirror_view(r);
+  h_mv_type h_rd = Kokkos::create_mirror_view(r);
+  h_vector_type h_a = Kokkos::create_mirror_view(a);
   h_vector_type h_b("h_b",numVecs);
 
   srand(17231);
@@ -111,13 +111,13 @@ void test_mv_add(int size, int numVecs, int loop)
 	}
   }
 
-  KokkosArray::deep_copy(x,h_x);
-  KokkosArray::deep_copy(y,h_y);
-  KokkosArray::deep_copy(a,h_a);
+  Kokkos::deep_copy(x,h_x);
+  Kokkos::deep_copy(y,h_y);
+  Kokkos::deep_copy(a,h_a);
   MV_Add(r,a,x,a,y);
   device_type::fence();
 
-  KokkosArray::deep_copy(h_rd,r);
+  Kokkos::deep_copy(h_rd,r);
   for(int k=0;k<numVecs;k++){
 	h_a(k) = 0;
 	h_b(k) = 0;
@@ -152,10 +152,10 @@ void test_mv_mulscalar(int size, int numVecs, int loop)
   mv_type x("X",size,numVecs);
   mv_type r("R",size,numVecs);
   vector_type a("A",numVecs);
-  h_mv_type h_x = KokkosArray::create_mirror_view(x);
-  h_mv_type h_rh = KokkosArray::create_mirror_view(r);
-  h_mv_type h_rd = KokkosArray::create_mirror_view(r);
-  h_vector_type h_a = KokkosArray::create_mirror_view(a);
+  h_mv_type h_x = Kokkos::create_mirror_view(x);
+  h_mv_type h_rh = Kokkos::create_mirror_view(r);
+  h_mv_type h_rd = Kokkos::create_mirror_view(r);
+  h_vector_type h_a = Kokkos::create_mirror_view(a);
   h_vector_type h_b("h_b",numVecs);
 
   srand(17231);
@@ -167,12 +167,12 @@ void test_mv_mulscalar(int size, int numVecs, int loop)
 	}
   }
 
-  KokkosArray::deep_copy(x,h_x);
-  KokkosArray::deep_copy(a,h_a);
+  Kokkos::deep_copy(x,h_x);
+  Kokkos::deep_copy(a,h_a);
   MV_MulScalar(r,a,x);
   device_type::fence();
 
-  KokkosArray::deep_copy(h_rd,r);
+  Kokkos::deep_copy(h_rd,r);
   for(int k=0;k<numVecs;k++){
 	h_a(k) = 0;
 	h_b(k) = 0;
@@ -223,20 +223,20 @@ int main(int argc, char **argv)
  }
 
 
- KokkosArrayCUDA(
-   KokkosArray::Cuda::SelectDevice select_device(device);
-   KokkosArray::Cuda::initialize( select_device );
+ KokkosCUDA(
+   Kokkos::Cuda::SelectDevice select_device(device);
+   Kokkos::Cuda::initialize( select_device );
  )
 
  if(numa>1 || threads>1)
  {
-   KokkosArray::Host::initialize( numa , threads );
+   Kokkos::Host::initialize( numa , threads );
  }
 
  test_mv_dot(size,numVecs,loop);
  test_mv_add(size,numVecs,loop);
  test_mv_mulscalar(size,numVecs,loop);
 
- KokkosArrayCUDA(KokkosArray::Host::finalize();)
+ KokkosCUDA(Kokkos::Host::finalize();)
  device_type::finalize(  );
 }

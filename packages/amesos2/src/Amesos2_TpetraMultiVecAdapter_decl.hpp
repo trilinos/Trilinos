@@ -128,17 +128,17 @@ namespace Amesos2 {
     bool isGloballyIndexed() const;
 
 
-    const Teuchos::RCP<const Tpetra::Map<
+    Teuchos::RCP<const Tpetra::Map<
 			 local_ordinal_t,
 			 global_ordinal_t,
-			 node_t > >&
+			 node_t > >
     getMap() const
     {
       return mv_->getMap();
     }
 
     /// Returns the Teuchos::Comm object associated with this multi-vector
-    const Teuchos::RCP<const Teuchos::Comm<int> >& getComm() const
+    Teuchos::RCP<const Teuchos::Comm<int> > getComm() const
     {
       return mv_->getMap()->getComm();
     }
@@ -265,36 +265,27 @@ namespace Amesos2 {
 		                        global_ordinal_t,
 		                        node_t> > source_map );
 
-
-    /// Get a short description of this adapter class
+    //! Get a short description of this adapter class
     std::string description() const;
 
-
-    /// Print a description of this adapter to the Fancy Output Stream.
+    //! Print a description of this adapter to the given output stream
     void describe( Teuchos::FancyOStream& os,
 		   const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default ) const;
 
 
   private:
-
-    /// The multivector this adapter wraps
+    //! The multivector which this adapter wraps
     Teuchos::RCP<multivec_t> mv_;
 
-
-    /// Used for transferring between local and global multivectors
+    //! Used for transferring between local and global multivectors
     mutable Teuchos::RCP<Tpetra::Import<local_ordinal_t,
 					global_ordinal_t,
 					node_t> > importer_;
+    //! Used for transferring between local and global multivectors
     mutable Teuchos::RCP<Tpetra::Export<local_ordinal_t,
 					global_ordinal_t,
 					node_t> > exporter_;
-
-    /// The adapted multivector's map
-    mutable Teuchos::RCP<const Tpetra::Map<local_ordinal_t,
-					   global_ordinal_t,
-					   node_t> > mv_map_;
-
-  };                              // end class MultiVecAdapter<Tpetra::MultiVector>
+  }; // end class MultiVecAdapter<Tpetra::MultiVector>
 
 } // end namespace Amesos2
 

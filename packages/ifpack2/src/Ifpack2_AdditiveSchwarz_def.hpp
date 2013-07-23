@@ -75,6 +75,7 @@ AdditiveSchwarz<MatrixType,LocalInverseType>::AdditiveSchwarz(const Teuchos::RCP
   Condest_(-1.0),
   ComputeCondest_(true),
   UseReordering_(false),
+  ReorderingAlgorithm_("none"),
   UseSubdomain_(false),
   FilterSingletons_(false),
   NumInitialize_(0),
@@ -107,7 +108,8 @@ AdditiveSchwarz<MatrixType,LocalInverseType>::~AdditiveSchwarz()
 //==============================================================================
 // Returns the Map associated with the domain of this operator, which must be compatible with X.getMap().
 template<class MatrixType,class LocalInverseType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type > > & AdditiveSchwarz<MatrixType,LocalInverseType>::getDomainMap() const 
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type > > 
+AdditiveSchwarz<MatrixType,LocalInverseType>::getDomainMap() const 
 { 
   return Matrix_->getDomainMap();
 }
@@ -115,7 +117,8 @@ const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, ty
 //==============================================================================
 // Returns the Map associated with the range of this operator, which must be compatible with Y.getMap().
 template<class MatrixType,class LocalInverseType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> > & AdditiveSchwarz<MatrixType,LocalInverseType>::getRangeMap() const 
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> > 
+AdditiveSchwarz<MatrixType,LocalInverseType>::getRangeMap() const 
 {
   return Matrix_->getRangeMap();
 }
@@ -340,13 +343,13 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setParameters(const Teuchos::
   }
 
   Ifpack2::getParameter(List_, "schwarz: overlap level",OverlapLevel_);  
-  if(OverlapLevel_>0) {
+  if ((OverlapLevel_ != 0) && (Matrix_->getComm()->getSize() > 1)) {
     IsOverlapping_=true;
   }
 
   // Will we be doing reordering?
   // Note: Unlike Ifpack we'll use a "schwarz: reordering list" to give to Zoltan2...
-  if (List_.get("schwarz: reordering type","none") == "none")
+  if (List_.get("schwarz: use reordering",false) == false)
     UseReordering_ = false;
   else
     UseReordering_ = true;
@@ -381,7 +384,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize()
     Time_ = Teuchos::rcp( new Teuchos::Time("Ifpack2::AdditiveSchwarz"));
 
   Time_->start();
-  
+
   // compute the overlapping matrix if necessary
   if (IsOverlapping_) {
     if(UseSubdomain_) {
@@ -538,7 +541,8 @@ std::string AdditiveSchwarz<MatrixType,LocalInverseType>::description() const
   else {
     oss << "{status = not initialized, not computed";
   }
-  oss<<"overlap level ="<<OverlapLevel_;
+  oss<<", overlap level ="<<OverlapLevel_;
+  oss<<", subdomain reordering ="<<ReorderingAlgorithm_;
   oss << "}";
   return oss.str();
 }
@@ -646,6 +650,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup()
 #if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
     // Unlike Ifpack, Zoltan2 does all the dirty work here.
     Teuchos::ParameterList zlist = List_.sublist("schwarz: reordering list");
+    ReorderingAlgorithm_ = List_.get<std::string>("order_method","rcm");
     XpetraTpetraMatrixType XpetraMatrix(ActiveMatrix);
     Zoltan2::XpetraRowMatrixInput<XpetraMatrixType> Zoltan2Matrix(Teuchos::rcp<XpetraMatrixType>(&XpetraMatrix,false));
 

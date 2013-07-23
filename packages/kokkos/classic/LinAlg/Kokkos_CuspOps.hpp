@@ -57,7 +57,7 @@
 #include "Kokkos_NodeHelpers.hpp"
 #include "Kokkos_CuspWrappers.hpp"
 
-namespace Kokkos {
+namespace KokkosClassic {
 
 
   //! \class CuspCrsGraph
@@ -346,7 +346,7 @@ namespace Kokkos {
     std::string description () const {
       using Teuchos::TypeNameTraits;
       std::ostringstream os;
-      os << "Kokkos::CuspOps<"
+      os << "KokkosClassic::CuspOps<"
          << "Scalar=" << TypeNameTraits<Scalar>::name()
          << ", Ordinal=" << TypeNameTraits<Ordinal>::name()
          << ", Node=" << TypeNameTraits<Node>::name()
@@ -476,7 +476,7 @@ namespace Kokkos {
     solve (Teuchos::ETransp trans,
            const MultiVector<DomainScalar,Node> &Y,
            MultiVector<RangeScalar,Node> &X) const {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Kokkos::CuspOps does not support solve() because Cusp library does not provide sparse triangular solve.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "KokkosClassic::CuspOps does not support solve() because Cusp library does not provide sparse triangular solve.");
     }
 
     template <class DomainScalar, class RangeScalar>
@@ -545,7 +545,7 @@ namespace Kokkos {
     const size_t numnz = hostinds.size();
     TEUCHOS_TEST_FOR_EXCEPTION(
         numnz > (size_t)MAX_NNZ, std::runtime_error,
-        "Kokkos::CuspOps: Selected ordinal does not support more than " << MAX_NNZ << " non-zeros."
+        "KokkosClassic::CuspOps: Selected ordinal does not support more than " << MAX_NNZ << " non-zeros."
         );
     devptrs = node->template allocBuffer<Ordinal>( numRows+1 );
     ArrayRCP<Ordinal> h_devptrs = node->viewBufferNonConst(WriteOnly, numRows+1, devptrs);
@@ -566,7 +566,7 @@ namespace Kokkos {
                         CuspCrsMatrix<Scalar,Ordinal,Node> &matrix,
                   const RCP<ParameterList> &params)
   {
-    std::string FuncName("Kokkos::CuspOps::finalizeMatrix()");
+    std::string FuncName("KokkosClassic::CuspOps::finalizeMatrix()");
     RCP<Node> node = graph.getNode();
     TEUCHOS_TEST_FOR_EXCEPTION(
         matrix.isInitialized() == false,
@@ -612,7 +612,7 @@ namespace Kokkos {
                                                             CuspCrsMatrix<Scalar,Ordinal,Node> &matrix,
                                                             const RCP<ParameterList> &params)
   {
-    std::string FuncName("Kokkos::CuspOps::finalizeGraphAndMatrix(graph,matrix,params)");
+    std::string FuncName("KokkosClassic::CuspOps::finalizeGraphAndMatrix(graph,matrix,params)");
     TEUCHOS_TEST_FOR_EXCEPTION(
         graph.isInitialized() == false,
         std::runtime_error, FuncName << ": graph has not yet been initialized."
@@ -818,6 +818,6 @@ namespace Kokkos {
     }
   }
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif /* KOKKOS_CUSPOPS_HPP */

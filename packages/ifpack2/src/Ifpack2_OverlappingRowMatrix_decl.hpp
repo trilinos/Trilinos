@@ -93,36 +93,41 @@ public:
 			const int overlapLevel,
 			const int subdomainID);
   //! Destructor
-  ~OverlappingRowMatrix();
+  ~OverlappingRowMatrix ();
 
   //@}
   //! @name Matrix query methods
   //@{ 
   
   //! The communicator over which the matrix is distributed.
-  virtual const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
+  virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
   
   //! The matrix's Kokkos Node instance.
   virtual Teuchos::RCP<node_type> getNode() const;
   
   //! The Map that describes the distribution of rows over processes.
-  virtual const Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> > & getRowMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> > 
+  getRowMap () const;
   
   //! The Map that describes the distribution of columns over processes.
-  virtual const Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> > & getColMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> > 
+  getColMap () const;
 
   /// \brief The Map that describes the domain of this matrix.
   ///
   /// The domain is the distribution of valid input vectors of apply().
-  virtual const Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> > & getDomainMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> >
+  getDomainMap () const;
 
   /// \brief The Map that describes the range of this matrix.
   ///
   /// The domain is the distribution of valid output vectors of apply().
-  virtual const Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> > & getRangeMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> >
+  getRangeMap () const;
   
   //! This matrix's graph.
-  virtual Teuchos::RCP<const Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type> > getGraph() const;
+  virtual Teuchos::RCP<const Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type> >
+  getGraph () const;
   
   //! The global number of rows in this matrix.
   virtual global_size_t getGlobalNumRows () const;

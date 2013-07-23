@@ -188,6 +188,7 @@ int main(int argc, char *argv[])
     args.timeout = 500;
     args.num_retries = 5;
     args.validate_flag = true;
+    args.kill_server_flag = true;
     args.block_distribution = true;
 
 
@@ -233,6 +234,7 @@ int main(int argc, char *argv[])
         parser.setOption("validate", "no-validate", &args.validate_flag, "Validate the data");
         parser.setOption("num-servers", &args.num_servers, "Number of server processes");
         parser.setOption("num-threads", &args.num_threads, "Number of threads used by each server process");
+        parser.setOption("kill-server", "no-kill-server", &args.kill_server_flag, "Kill the server at the end of the experiment");
         parser.setOption("block-distribution", "rr-distribution", &args.block_distribution,
                 "Use a block distribution scheme to assign clients to servers");
 
@@ -578,9 +580,14 @@ int main(int argc, char *argv[])
             MPI_Barrier(comm);
 
             // Tell one of the clients to kill the server
-            if (rank_in_server == 0) {
+            if ((args.kill_server_flag) && (rank_in_server == 0)) {
                 log_debug(debug_level, "%d: Halting xfer service", rank);
                 rc = nssi_kill(&xfer_svc, 0, 5000);
+            }
+            rc=nssi_free_service((nssi_rpc_transport)args.transport, &xfer_svc);
+            if (rc != NSSI_OK) {
+                log_error(xfer_debug_level, "could not free svc description: %s",
+                        nssi_err_str(rc));
             }
         }
 

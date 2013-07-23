@@ -93,7 +93,7 @@
 
 namespace {
 
-  using Kokkos::DefaultKernels;
+  using KokkosClassic::DefaultKernels;
   using Teuchos::Array;
   using Teuchos::as;
   using Teuchos::RCP;
@@ -355,7 +355,7 @@ namespace {
 #define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node )                     \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MatrixMatrix, Multiply, SC, LO, GO, Node )
 
-  typedef Kokkos::DefaultNode::DefaultNodeType DefaultNodeType;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNodeType;
 
   UNIT_TEST_GROUP_ORDINAL(double, int, int, DefaultNodeType)
 

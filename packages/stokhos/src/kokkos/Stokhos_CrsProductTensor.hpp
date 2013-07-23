@@ -42,7 +42,7 @@
 #ifndef STOKHOS_CRSPRODUCTTENSOR_HPP
 #define STOKHOS_CRSPRODUCTTENSOR_HPP
 
-#include "KokkosArray_View.hpp"
+#include "Kokkos_View.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_ProductBasis.hpp"
@@ -81,12 +81,12 @@ public:
 
 private:
 
-  typedef KokkosArray::View< value_type[], device_type >  vec_type;
-  typedef KokkosArray::View< size_type[], device_type > coord_array_type;
-  typedef KokkosArray::View< size_type[][2], device_type > coord2_array_type;
-  typedef KokkosArray::View< value_type[], device_type > value_array_type;
-  typedef KokkosArray::View< size_type[], device_type > entry_array_type;
-  typedef KokkosArray::View< size_type[], device_type > row_map_array_type;
+  typedef Kokkos::View< value_type[], device_type >  vec_type;
+  typedef Kokkos::View< size_type[], device_type > coord_array_type;
+  typedef Kokkos::View< size_type[][2], device_type > coord2_array_type;
+  typedef Kokkos::View< value_type[], device_type > value_array_type;
+  typedef Kokkos::View< size_type[], device_type > entry_array_type;
+  typedef Kokkos::View< size_type[], device_type > row_map_array_type;
 
   coord_array_type   m_coord;
   coord2_array_type  m_coord2;
@@ -155,56 +155,56 @@ public:
   }
 
   /** \brief  Dimension of the tensor. */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type dimension() const { return m_row_map.dimension_0() - 1; }
 
   /** \brief  Number of sparse entries. */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type entry_count() const
   { return m_coord.dimension_0(); }
 
   /** \brief  Maximum sparse entries for any coordinate */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type entry_maximum() const
   { return m_entry_max; }
 
   /** \brief  Begin entries with a coordinate 'i' */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type entry_begin( size_type i ) const
   { return m_row_map[i]; }
 
   /** \brief  End entries with a coordinate 'i' */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type entry_end( size_type i ) const
   { return m_row_map[i] + m_num_entry(i); }
 
   /** \brief  Number of entries with a coordinate 'i' */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type num_entry( size_type i ) const
   { return m_num_entry(i); }
 
   /** \brief  Coordinates of an entry */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   const size_type& coord( const size_type entry, const size_type c ) const
   { return m_coord2( entry, c ); }
 
   /** \brief  Coordinates of an entry */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   const size_type& coord( const size_type entry ) const
   { return m_coord( entry ); }
 
   /** \brief  Value of an entry */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   const value_type & value( const size_type entry ) const
   { return m_value( entry ); }
 
   /** \brief Number of non-zero's */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type num_non_zeros() const
   { return m_nnz; }
 
   /** \brief Number flop's per multiply-add */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type num_flops() const
   { return m_flops; }
 
@@ -241,7 +241,7 @@ public:
     }
 
     // Pad each row to have size divisible by alignment size
-    enum { Align = KokkosArray::Impl::is_same<DeviceType,KokkosArray::Cuda>::value ? 32 : 2 };
+    enum { Align = Kokkos::Impl::is_same<DeviceType,Kokkos::Cuda>::value ? 32 : 2 };
     for ( size_type i = 0; i < dimension; ++i ) {
       const size_t rem = coord_work[i] % Align;
       if (rem > 0) {
@@ -276,15 +276,15 @@ public:
 
     // Create mirror, is a view if is host memory
     typename coord_array_type::HostMirror
-      host_coord = KokkosArray::create_mirror_view( tensor.m_coord );
+      host_coord = Kokkos::create_mirror_view( tensor.m_coord );
     typename coord2_array_type::HostMirror
-      host_coord2 = KokkosArray::create_mirror_view( tensor.m_coord2 );
+      host_coord2 = Kokkos::create_mirror_view( tensor.m_coord2 );
     typename value_array_type::HostMirror
-      host_value = KokkosArray::create_mirror_view( tensor.m_value );
+      host_value = Kokkos::create_mirror_view( tensor.m_value );
     typename entry_array_type::HostMirror
-      host_num_entry = KokkosArray::create_mirror_view( tensor.m_num_entry );
+      host_num_entry = Kokkos::create_mirror_view( tensor.m_num_entry );
     typename entry_array_type::HostMirror
-      host_row_map = KokkosArray::create_mirror_view( tensor.m_row_map );
+      host_row_map = Kokkos::create_mirror_view( tensor.m_row_map );
 
     // Compute row map
     size_type sum = 0;
@@ -324,11 +324,11 @@ public:
     }
 
     // Copy data to device if necessary
-    KokkosArray::deep_copy( tensor.m_coord, host_coord );
-    KokkosArray::deep_copy( tensor.m_coord2, host_coord2 );
-    KokkosArray::deep_copy( tensor.m_value, host_value );
-    KokkosArray::deep_copy( tensor.m_num_entry, host_num_entry );
-    KokkosArray::deep_copy( tensor.m_row_map, host_row_map );
+    Kokkos::deep_copy( tensor.m_coord, host_coord );
+    Kokkos::deep_copy( tensor.m_coord2, host_coord2 );
+    Kokkos::deep_copy( tensor.m_value, host_value );
+    Kokkos::deep_copy( tensor.m_num_entry, host_num_entry );
+    Kokkos::deep_copy( tensor.m_row_map, host_row_map );
 
     for ( size_type i = 0; i < dimension; ++i ) {
       tensor.m_entry_max = std::max( tensor.m_entry_max, host_num_entry(i) );

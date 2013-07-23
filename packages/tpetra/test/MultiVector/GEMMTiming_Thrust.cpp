@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Comm info: " << *comm;
   }
 
-  typedef Kokkos::ThrustGPUNode Node;
+  typedef KokkosClassic::ThrustGPUNode Node;
   Teuchos::ParameterList params;
   params.set<int>("Verbose",verbose);
   params.set<int>("Device Number",device);

@@ -95,8 +95,8 @@ namespace Tpetra {
 	    class MatScalar = Scalar, 
 	    class LocalOrdinal = int, 
 	    class GlobalOrdinal = LocalOrdinal, 
-	    class Node = Kokkos::DefaultNode::DefaultNodeType, 
-	    class LocalMatOps = typename Kokkos::DefaultKernels<MatScalar,LocalOrdinal,Node>::SparseOps>
+	    class Node = KokkosClassic::DefaultNode::DefaultNodeType, 
+	    class LocalMatOps = typename KokkosClassic::DefaultKernels<MatScalar,LocalOrdinal,Node>::SparseOps>
   class CrsMatrixSolveOp : public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
   public:
     //! @name Constructor and destructor
@@ -126,11 +126,11 @@ namespace Tpetra {
 
     /// The domain Map of this operator.
     /// This is the range map of the underlying CrsMatrix.
-    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
+    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
 
     /// The range Map of this operator.
     /// This is the domain Map of the underlying CrsMatrix.
-    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
 
     //@}
   protected:

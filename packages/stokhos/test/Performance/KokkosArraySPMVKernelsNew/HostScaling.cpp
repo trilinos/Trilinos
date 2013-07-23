@@ -43,7 +43,7 @@
 #include <iostream>
 #include <cstdlib>
 
-#include "KokkosArray_hwloc.hpp"
+#include "Kokkos_hwloc.hpp"
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -69,10 +69,10 @@ run_test(const size_t num_cpu, const size_t num_core_per_cpu,
 	 const std::vector<double>& perf1 = std::vector<double>())
 {
   typedef double Scalar;
-  typedef KokkosArray::Host Device;
+  typedef Kokkos::Host Device;
   const size_t num_core = num_cpu * num_core_per_cpu;
   const size_t num_threads_per_cpu = num_core_per_cpu * num_threads_per_core;
-  KokkosArray::Host::initialize( num_cpu , num_threads_per_cpu );
+  Kokkos::Host::initialize( num_cpu , num_threads_per_cpu );
 
   std::vector<int> var_degree( d , p );
 
@@ -85,7 +85,7 @@ run_test(const size_t num_cpu, const size_t num_core_per_cpu,
       unit_test::test_original_matrix_free_vec<Scalar,Device,Stokhos::DefaultSparseMatOps>( 
 	var_degree , nGrid , nIter , true , symmetric );
 
-  KokkosArray::Host::finalize();
+  Kokkos::Host::finalize();
 
   double speed_up;
   if (perf1.size() > 0)
@@ -135,8 +135,8 @@ int main(int argc, char *argv[])
     
     // Detect number of CPUs and number of cores
     const std::pair<unsigned,unsigned> core_topo =
-    KokkosArray::hwloc::get_core_topology();
-    const size_t core_capacity = KokkosArray::hwloc::get_core_capacity();
+    Kokkos::hwloc::get_core_topology();
+    const size_t core_capacity = Kokkos::hwloc::get_core_capacity();
 
     const size_t num_cpu = core_topo.first;
     const size_t num_core_per_cpu = core_topo.second;

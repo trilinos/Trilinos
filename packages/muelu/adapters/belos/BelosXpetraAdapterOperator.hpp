@@ -76,8 +76,8 @@ namespace Belos {
   template <class Scalar,
             class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node          = Kokkos::DefaultNode::DefaultNodeType,
-            class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps >
+            class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
+            class LocalMatOps   = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps >
   class XpetraOp :
     public OperatorT<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 #ifdef HAVE_XPETRA_TPETRA
@@ -159,8 +159,8 @@ namespace Belos {
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef Kokkos::DefaultNode::DefaultNodeType Node;
-    typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+    typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 
   public:
 

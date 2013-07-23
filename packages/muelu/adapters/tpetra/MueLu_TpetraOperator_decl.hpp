@@ -62,8 +62,8 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
-            class Node = Kokkos::DefaultNode::DefaultNodeType,
-            class LocalMatOps = typename Kokkos::DefaultKernels<Scalar, LocalOrdinal, Node>::SparseOps >
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType,
+            class LocalMatOps = typename KokkosClassic::DefaultKernels<Scalar, LocalOrdinal, Node>::SparseOps >
   class TpetraOperator
     : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>
   {
@@ -82,10 +82,10 @@ namespace MueLu {
     //@}
 
     //! Returns the Tpetra::Map object associated with the domain of this operator.
-    const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
+    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
 
     //! Returns the Tpetra::Map object associated with the range of this operator.
-    const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
 
     //! Returns in Y the result of a Tpetra::Operator applied to a Tpetra::MultiVector X.
     /*!

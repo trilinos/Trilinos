@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 //
-//                             KokkosArray
+//                             Kokkos
 //         Manycore Performance-Portable Multidimensional Arrays
 //
 //              Copyright (2012) Sandia Corporation
@@ -55,12 +55,12 @@
 ///   we even promise that this header file will continue to exist.
 
 #include <KokkosCompat_config.h>
-#include <KokkosArray_View.hpp>
-#include <KokkosArray_Host.hpp>
+#include <Kokkos_View.hpp>
+#include <Kokkos_Host.hpp>
 #include <Teuchos_ArrayView.hpp>
 
 #if 0
-namespace KokkosArray {
+namespace Kokkos {
 namespace Impl {
 
   /*
@@ -102,7 +102,7 @@ namespace Impl {
 
 
 } // namespace Impl
-} // namespace KokkosArray
+} // namespace Kokkos
 
 namespace Kokkos {
   namespace Compat {
@@ -113,16 +113,16 @@ namespace Kokkos {
 
     template<class ValueType>
     inline void
-    deep_copy (const KokkosArray::View<ValueType, KokkosArray::Host>& dst,
+    deep_copy (const Kokkos::View<ValueType, Kokkos::Host>& dst,
 	       const Teuchos::ArrayView<ValueType>& src)
     {
-      using KokkosArray::LayoutRight;
-      using KokkosArray::Host;
-      using KokkosArray::MemoryUnmanaged;
-      using KokkosArray::View;
+      using Kokkos::LayoutRight;
+      using Kokkos::Host;
+      using Kokkos::MemoryUnmanaged;
+      using Kokkos::View;
 
       View<ValueType, LayoutRight, Host, MemoryUnmanaged> srcView (src.getRawPtr (), src.size ());
-      KokkosArray::deep_copy (dst, srcView);
+      Kokkos::deep_copy (dst, srcView);
     }
 
   } // namespace Compat

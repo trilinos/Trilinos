@@ -326,7 +326,7 @@ IF (Stokhos_ENABLE_Sacado)
     sacado/Sacado_PCE_OrthogPoly.cpp
     sacado/Sacado_ETPCE_OrthogPoly.cpp
     )
-  IF (Stokhos_ENABLE_KokkosArray)
+  IF (Stokhos_ENABLE_KokkosCore)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos)
     SET(HEADERS ${HEADERS}
       sacado/kokkos/Stokhos_Sacado_Kokkos.hpp
@@ -388,7 +388,7 @@ IF (Stokhos_ENABLE_Sacado)
   ENDIF()
 ENDIF()
 
-IF (Stokhos_ENABLE_KokkosArray)
+IF (Stokhos_ENABLE_KokkosCore)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Host)
   SET(HEADERS ${HEADERS}
@@ -413,7 +413,7 @@ IF (Stokhos_ENABLE_KokkosArray)
     kokkos/Host/Stokhos_Host_LinearSparse3Tensor.hpp
     kokkos/Host/Stokhos_Host_LexicographicBlockSparse3Tensor.hpp
     )
-  IF(Stokhos_ENABLE_CUDA AND KokkosArray_ENABLE_DeviceCuda)
+  IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Cuda)
     SET(HEADERS ${HEADERS}
       kokkos/Cuda/Stokhos_Cuda_CrsMatrix.hpp

@@ -3,13 +3,13 @@
 #include <typeinfo>
 #include <utility>
 
-#include <KokkosArray_View.hpp>
+#include <Kokkos_View.hpp>
 
-#include <KokkosArray_Array.hpp>
-#include <impl/KokkosArray_ArrayAnalyzeShape.hpp>
-#include <impl/KokkosArray_ArrayViewDefault.hpp>
+#include <Kokkos_Array.hpp>
+#include <impl/Kokkos_ArrayAnalyzeShape.hpp>
+#include <impl/Kokkos_ArrayViewDefault.hpp>
 
-#include <impl/KokkosArray_Timer.hpp>
+#include <impl/Kokkos_Timer.hpp>
 
 
 #include <TestCrsMatrix.hpp>
@@ -33,12 +33,12 @@ PerfSpmv test_spmv_scalar( const int nGrid ,
 {
   typedef ScalarType value_type ;
 
-  typedef KokkosArray::View< value_type* , KokkosArray::LayoutRight , Device > vector_type ;
+  typedef Kokkos::View< value_type* , Kokkos::LayoutRight , Device > vector_type ;
 
   //------------------------------
 
-  typedef KokkosArray::CrsMatrix<value_type,Device> matrix_type ;
-  typedef KokkosArray::CrsArray<int,Device,void,int> crsarray_type ;
+  typedef Kokkos::CrsMatrix<value_type,Device> matrix_type ;
+  typedef Kokkos::CrsArray<int,Device,void,int> crsarray_type ;
 
   //------------------------------
   // Generate FEM graph:
@@ -54,20 +54,20 @@ PerfSpmv test_spmv_scalar( const int nGrid ,
   vector_type x = vector_type( "x" , fem_length );
   vector_type y = vector_type( "y" , fem_length );
 
-  typename vector_type::HostMirror hx        = KokkosArray::create_mirror( x );
-  typename vector_type::HostMirror hy_result = KokkosArray::create_mirror( y );
+  typename vector_type::HostMirror hx        = Kokkos::create_mirror( x );
+  typename vector_type::HostMirror hy_result = Kokkos::create_mirror( y );
 
   for ( unsigned i = 0 ; i < fem_length ; ++i ) {
     hx(i) = Test::generate_vector_coefficient( fem_length , 1 , i , 0 );
   }
 
-  KokkosArray::deep_copy( x , hx );
+  Kokkos::deep_copy( x , hx );
 
   //------------------------------
 
   matrix_type matrix ;
 
-  matrix.graph = KokkosArray::create_crsarray<crsarray_type>( std::string("testing") , fem_graph );
+  matrix.graph = Kokkos::create_crsarray<crsarray_type>( std::string("testing") , fem_graph );
 
   const unsigned fem_graph_length = matrix.graph.entries.dimension_0();
 
@@ -75,7 +75,7 @@ PerfSpmv test_spmv_scalar( const int nGrid ,
 
   {
     typename vector_type::HostMirror hM =
-      KokkosArray::create_mirror( matrix.values );
+      Kokkos::create_mirror( matrix.values );
 
     for ( size_t iRow = 0 , iEntry = 0 ; iRow < fem_length ; ++iRow ) {
 
@@ -90,7 +90,7 @@ PerfSpmv test_spmv_scalar( const int nGrid ,
       }
     }
 
-    KokkosArray::deep_copy( matrix.values , hM );
+    Kokkos::deep_copy( matrix.values , hM );
   }
 
   //------------------------------
@@ -99,9 +99,9 @@ PerfSpmv test_spmv_scalar( const int nGrid ,
 
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
 
-    KokkosArray::Impl::Timer clock ;
+    Kokkos::Impl::Timer clock ;
     for ( int i = 0 ; i < 100 ; ++i ) {
-      KokkosArray::multiply( matrix , x , y );
+      Kokkos::multiply( matrix , x , y );
     }
     Device::fence();
 
@@ -128,10 +128,10 @@ PerfSpmv test_spmv_scalar( const int nGrid ,
     std::cout << "test_spmv verify " << verify_label << " : "
               << fem_length << " x 1" << std::endl ;
 
-    KokkosArray::deep_copy( hx , y );
+    Kokkos::deep_copy( hx , y );
 
     for ( unsigned i = 0 ; i < fem_length ; ++i ) {
-      const double tol  = KokkosArray::Impl::is_same<ScalarType,double>::value ? 1.0e-14 : 1.0e-5 ;
+      const double tol  = Kokkos::Impl::is_same<ScalarType,double>::value ? 1.0e-14 : 1.0e-5 ;
       const double diff = fabs( hx(i) - hy_result(i) );
       const double mag  = 0 < fabs( hy_result(i) ) ? fabs( hy_result(i) ) : 1 ;
       if ( diff > tol && ( diff / mag ) > tol ) {
@@ -150,14 +150,14 @@ PerfSpmv test_spmv( const int nGrid ,
                     const int iterCount ,
                     const char * const verify_label )
 {
-  typedef KokkosArray::Array<ScalarType,N> value_type ;
+  typedef Kokkos::Array<ScalarType,N> value_type ;
 
-  typedef KokkosArray::View< value_type* , KokkosArray::LayoutRight , Device > vector_type ;
+  typedef Kokkos::View< value_type* , Kokkos::LayoutRight , Device > vector_type ;
 
   //------------------------------
 
-  typedef KokkosArray::CrsMatrix<value_type,Device> matrix_type ;
-  typedef KokkosArray::CrsArray<int,Device,void,int> crsarray_type ;
+  typedef Kokkos::CrsMatrix<value_type,Device> matrix_type ;
+  typedef Kokkos::CrsArray<int,Device,void,int> crsarray_type ;
 
   //------------------------------
   // Generate FEM graph:
@@ -173,8 +173,8 @@ PerfSpmv test_spmv( const int nGrid ,
   vector_type x = vector_type( "x" , fem_length );
   vector_type y = vector_type( "y" , fem_length );
 
-  typename vector_type::HostMirror hx        = KokkosArray::create_mirror( x );
-  typename vector_type::HostMirror hy_result = KokkosArray::create_mirror( y );
+  typename vector_type::HostMirror hx        = Kokkos::create_mirror( x );
+  typename vector_type::HostMirror hy_result = Kokkos::create_mirror( y );
 
   for ( unsigned i = 0 ; i < fem_length ; ++i ) {
     for ( unsigned j = 0 ; j < N ; ++j ) {
@@ -182,13 +182,13 @@ PerfSpmv test_spmv( const int nGrid ,
     }
   }
 
-  KokkosArray::deep_copy( x , hx );
+  Kokkos::deep_copy( x , hx );
 
   //------------------------------
 
   matrix_type matrix ;
 
-  matrix.graph = KokkosArray::create_crsarray<crsarray_type>( std::string("testing") , fem_graph );
+  matrix.graph = Kokkos::create_crsarray<crsarray_type>( std::string("testing") , fem_graph );
 
   const unsigned fem_graph_length = matrix.graph.entries.dimension_0();
 
@@ -196,7 +196,7 @@ PerfSpmv test_spmv( const int nGrid ,
 
   {
     typename vector_type::HostMirror hM =
-      KokkosArray::create_mirror( matrix.values );
+      Kokkos::create_mirror( matrix.values );
 
     for ( size_t iRow = 0 , iEntry = 0 ; iRow < fem_length ; ++iRow ) {
 
@@ -213,7 +213,7 @@ PerfSpmv test_spmv( const int nGrid ,
       }
     }
 
-    KokkosArray::deep_copy( matrix.values , hM );
+    Kokkos::deep_copy( matrix.values , hM );
   }
 
   //------------------------------
@@ -222,9 +222,9 @@ PerfSpmv test_spmv( const int nGrid ,
 
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
 
-    KokkosArray::Impl::Timer clock ;
+    Kokkos::Impl::Timer clock ;
     for ( int i = 0 ; i < 100 ; ++i ) {
-      KokkosArray::multiply( matrix , x , y );
+      Kokkos::multiply( matrix , x , y );
     }
     Device::fence();
 
@@ -251,11 +251,11 @@ PerfSpmv test_spmv( const int nGrid ,
     std::cout << "test_spmv verify " << verify_label << " : "
               << fem_length << " x " << N << std::endl ;
 
-    KokkosArray::deep_copy( hx , y );
+    Kokkos::deep_copy( hx , y );
 
     for ( unsigned i = 0 ; i < fem_length ; ++i ) {
       for ( unsigned j = 0 ; j < N ; ++j ) {
-        const double tol  = KokkosArray::Impl::is_same<ScalarType,double>::value ? 1.0e-14 : 1.0e-5 ;
+        const double tol  = Kokkos::Impl::is_same<ScalarType,double>::value ? 1.0e-14 : 1.0e-5 ;
         const double diff = fabs( hx(i)[j] - hy_result(i)[j] );
         const double mag  = 0 < fabs( hy_result(i)[j] ) ? fabs( hy_result(i)[j] ) : 1 ;
         if ( diff > tol && ( diff / mag ) > tol ) {

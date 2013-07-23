@@ -82,15 +82,15 @@ int main(int argc, char *argv[]) {
     std::cout << "Comm info: " << *comm;
   }
 
-  typedef Kokkos::TPINode Node;
+  typedef KokkosClassic::TPINode Node;
   Teuchos::ParameterList params;
   params.set<int>("Num Threads",numThreads);
   params.set<int>("Verbose",verbose);
   Teuchos::RCP<Node> node = Teuchos::rcp(new Node(params));
 
   if (comm->getRank() == 0) {
-    typedef Kokkos::DefaultKernels<double,int,Node>::SparseOps DSM;
-    Kokkos::CrsMatrix<double,int,Node,DSM> *mat = NULL;
+    typedef KokkosClassic::DefaultKernels<double,int,Node>::SparseOps DSM;
+    KokkosClassic::CrsMatrix<double,int,Node,DSM> *mat = NULL;
 #ifdef HAVE_KOKKOS_FIRST_TOUCH_MATVEC_ALLOCATION
     std::cout << "Using Kokkos first-touch matrix objects." << std::endl;
 #else

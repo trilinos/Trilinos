@@ -120,7 +120,7 @@ namespace Tpetra {
   ///   Tpetra::Directory is a concrete implementation.
   template<class LocalOrdinal,
            class GlobalOrdinal = LocalOrdinal,
-           class Node = Kokkos::DefaultNode::DefaultNodeType>
+           class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class Directory : public Teuchos::Describable {
   public:
     //! Type of the Map specialization to give to the constructor.

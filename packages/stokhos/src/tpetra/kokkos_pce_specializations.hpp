@@ -47,7 +47,7 @@
 
 // Specializations of several Kokkos kernels for PCE scalar types
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   template <typename ScalarType, typename StorageType>
   struct WeightNormOp< Sacado::PCE::OrthogPoly<ScalarType,StorageType> > {
@@ -106,7 +106,7 @@ namespace Kokkos {
     }
   };
 
-}
+} // namespace KokkosClassic
 
 
 #endif

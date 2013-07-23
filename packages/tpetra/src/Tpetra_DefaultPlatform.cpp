@@ -51,9 +51,9 @@ namespace Tpetra {
   DefaultPlatform::DefaultPlatformType & DefaultPlatform::getDefaultPlatform() {
     if (platform_ == null) {
 #ifdef HAVE_TPETRA_MPI
-      platform_ = rcp(new MpiPlatform<Kokkos::DefaultNode::DefaultNodeType>());
+      platform_ = rcp(new MpiPlatform<KokkosClassic::DefaultNode::DefaultNodeType>());
 #else
-      platform_ = rcp(new SerialPlatform<Kokkos::DefaultNode::DefaultNodeType>());
+      platform_ = rcp(new SerialPlatform<KokkosClassic::DefaultNode::DefaultNodeType>());
 #endif
     }
     return *platform_;

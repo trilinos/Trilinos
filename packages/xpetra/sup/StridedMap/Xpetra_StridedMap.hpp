@@ -96,7 +96,7 @@ namespace Xpetra {
 
     @note: there's no support for global offset, yet.
   */
-  template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+  template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class StridedMap
     : public virtual Map<LocalOrdinal, GlobalOrdinal, Node>
   {

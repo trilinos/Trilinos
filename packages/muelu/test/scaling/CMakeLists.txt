@@ -96,7 +96,7 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
       SOURCE_FILES reuse.xml
     )
   ENDIF()
-  
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(ScalingTestParamList_cp
     SOURCE_FILES scalingTest.xml scalingTestIsorropia.xml coupled.xml uncoupled.xml emin.xml isotropicPoisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml
    )
@@ -140,8 +140,8 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
       )
-      
-    IF (${PACKAGE_NAME}_ENABLE_Zoltan)
+
+    IF (${PACKAGE_NAME}_ENABLE_Zoltan AND ${PACKAGE_NAME}_ENABLE_Isorropia)
       TRIBITS_ADD_TEST(
         ScalingTestParamList
         NAME "ScalingTestParamListEpetra_IsorropiaPoisson"
@@ -150,7 +150,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
         COMM mpi # HAVE_MPI required
       )
     ENDIF()
-      
+
   ENDIF()
 
   TRIBITS_ADD_TEST(
