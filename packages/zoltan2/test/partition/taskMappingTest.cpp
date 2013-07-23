@@ -307,6 +307,7 @@ int main(int argc, char *argv[]){
                 proc_to_task_xadj_, /*output*/
                 proc_to_task_adj_, /*output*/
                 -1,
+                NULL,
                 NULL
                 );
 
