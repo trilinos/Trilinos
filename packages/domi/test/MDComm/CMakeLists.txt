@@ -73,7 +73,7 @@ TRIBITS_ADD_TEST(
   NAME MDComm_UnitTests_2D_2
   COMM mpi
   NUM_MPI_PROCS 2
-  ARGS "--teuchos-suppress-startup-banner --numDims=2 --axisSizes=-1,2"
+  ARGS "--teuchos-suppress-startup-banner --numDims=2 --axisCommSizes=-1,2"
   STANDARD_PASS_OUTPUT
   )
 
@@ -82,7 +82,7 @@ TRIBITS_ADD_TEST(
   NAME MDComm_UnitTests_2D_4
   COMM mpi
   NUM_MPI_PROCS 4
-  ARGS "--teuchos-suppress-startup-banner --numDims=2 --axisSizes=2,-1"
+  ARGS "--teuchos-suppress-startup-banner --numDims=2 --axisCommSizes=2,-1"
   STANDARD_PASS_OUTPUT
   )
 
@@ -91,7 +91,7 @@ TRIBITS_ADD_TEST(
   NAME MDComm_UnitTests_2D_8
   COMM mpi
   NUM_MPI_PROCS 8
-  ARGS "--teuchos-suppress-startup-banner --numDims=2 --axisSizes=4"
+  ARGS "--teuchos-suppress-startup-banner --numDims=2 --axisCommSizes=4"
   STANDARD_PASS_OUTPUT
   )
 
@@ -100,7 +100,7 @@ TRIBITS_ADD_TEST(
   NAME MDComm_UnitTests_2D_16
   COMM mpi
   NUM_MPI_PROCS 16
-  ARGS "--teuchos-suppress-startup-banner --numDims=2 --axisSizes=4"
+  ARGS "--teuchos-suppress-startup-banner --numDims=2 --axisCommSizes=4"
   STANDARD_PASS_OUTPUT
   )
 
@@ -118,7 +118,7 @@ TRIBITS_ADD_TEST(
   NAME MDComm_UnitTests_3D_2
   COMM mpi
   NUM_MPI_PROCS 2
-  ARGS "--teuchos-suppress-startup-banner --numDims=3 --axisSizes=1,1,2"
+  ARGS "--teuchos-suppress-startup-banner --numDims=3 --axisCommSizes=1,1,2"
   STANDARD_PASS_OUTPUT
   )
 
@@ -127,7 +127,7 @@ TRIBITS_ADD_TEST(
   NAME MDComm_UnitTests_3D_4
   COMM mpi
   NUM_MPI_PROCS 4
-  ARGS "--teuchos-suppress-startup-banner --numDims=3 --axisSizes=1,2,2"
+  ARGS "--teuchos-suppress-startup-banner --numDims=3 --axisCommSizes=1,2,2"
   STANDARD_PASS_OUTPUT
   )
 
@@ -136,7 +136,7 @@ TRIBITS_ADD_TEST(
   NAME MDComm_UnitTests_3D_8
   COMM mpi
   NUM_MPI_PROCS 8
-  ARGS "--teuchos-suppress-startup-banner --numDims=3 --axisSizes=2,2"
+  ARGS "--teuchos-suppress-startup-banner --numDims=3 --axisCommSizes=2,2"
   STANDARD_PASS_OUTPUT
   )
 
@@ -145,7 +145,7 @@ TRIBITS_ADD_TEST(
   NAME MDComm_UnitTests_3D_16
   COMM mpi
   NUM_MPI_PROCS 16
-  ARGS "--teuchos-suppress-startup-banner --numDims=3 --axisSizes=2,4"
+  ARGS "--teuchos-suppress-startup-banner --numDims=3 --axisCommSizes=2,4"
   STANDARD_PASS_OUTPUT
   )
 
@@ -199,7 +199,7 @@ TRIBITS_ADD_TEST(
   NAME MDComm_SubcommTest_2D_2
   COMM mpi
   NUM_MPI_PROCS 2
-  ARGS "--teuchos-suppress-startup-banner --numDims=2 --axisSizes=1,2"
+  ARGS "--teuchos-suppress-startup-banner --numDims=2 --axisCommSizes=1,2"
   STANDARD_PASS_OUTPUT
   )
 
@@ -208,7 +208,7 @@ TRIBITS_ADD_TEST(
   NAME MDComm_SubcommTest_2D_4
   COMM mpi
   NUM_MPI_PROCS 4
-  ARGS "--teuchos-suppress-startup-banner --numDims=2 --axisSizes=2"
+  ARGS "--teuchos-suppress-startup-banner --numDims=2 --axisCommSizes=2"
   STANDARD_PASS_OUTPUT
   )
 
@@ -217,7 +217,7 @@ TRIBITS_ADD_TEST(
   NAME MDComm_SubcommTest_2D_8
   COMM mpi
   NUM_MPI_PROCS 8
-  ARGS "--teuchos-suppress-startup-banner --numDims=2 --axisSizes=2"
+  ARGS "--teuchos-suppress-startup-banner --numDims=2 --axisCommSizes=2"
   STANDARD_PASS_OUTPUT
   )
 
@@ -226,7 +226,7 @@ TRIBITS_ADD_TEST(
   NAME MDComm_SubcommTest_2D_16
   COMM mpi
   NUM_MPI_PROCS 16
-  ARGS "--teuchos-suppress-startup-banner --numDims=2 --axisSizes=4"
+  ARGS "--teuchos-suppress-startup-banner --numDims=2 --axisCommSizes=4"
   STANDARD_PASS_OUTPUT
   )
 
@@ -244,7 +244,7 @@ TRIBITS_ADD_TEST(
   NAME MDComm_SubcommTest_3D_2
   COMM mpi
   NUM_MPI_PROCS 2
-  ARGS "--teuchos-suppress-startup-banner --numDims=3 --axisSizes=1,1,2"
+  ARGS "--teuchos-suppress-startup-banner --numDims=3 --axisCommSizes=1,1,2"
   STANDARD_PASS_OUTPUT
   )
 
@@ -253,7 +253,7 @@ TRIBITS_ADD_TEST(
   NAME MDComm_SubcommTest_3D_4
   COMM mpi
   NUM_MPI_PROCS 4
-  ARGS "--teuchos-suppress-startup-banner --numDims=3 --axisSizes=1,2"
+  ARGS "--teuchos-suppress-startup-banner --numDims=3 --axisCommSizes=1,2"
   STANDARD_PASS_OUTPUT
   )
 
@@ -262,7 +262,7 @@ TRIBITS_ADD_TEST(
   NAME MDComm_SubcommTest_3D_8
   COMM mpi
   NUM_MPI_PROCS 8
-  ARGS "--teuchos-suppress-startup-banner --numDims=3 --axisSizes=2,2"
+  ARGS "--teuchos-suppress-startup-banner --numDims=3 --axisCommSizes=2,2"
   STANDARD_PASS_OUTPUT
   )
 
@@ -271,7 +271,7 @@ TRIBITS_ADD_TEST(
   NAME MDComm_SubcommTest_3D_16
   COMM mpi
   NUM_MPI_PROCS 16
-  ARGS "--teuchos-suppress-startup-banner --numDims=3 --axisSizes=4,2"
+  ARGS "--teuchos-suppress-startup-banner --numDims=3 --axisCommSizes=4,2"
   STANDARD_PASS_OUTPUT
   )
 

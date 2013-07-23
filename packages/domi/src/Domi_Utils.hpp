@@ -208,9 +208,9 @@ T computeSize(const Teuchos::ArrayView< T > & dimensions,
 
 ////////////////////////////////////////////////////////////////////////
 
-/** \brief Compute a valid axisSizes array, given the number of
+/** \brief Compute a valid axisCommSizes array, given the number of
  *         processors, the number of dimensions, and a candidate
- *         axisSizes array.
+ *         axisCommSizes array.
  *
  *  The candidate array can have fewer entries than the number of
  *  dimensions -- this function will fill in the extra ones.  It can
@@ -228,7 +228,7 @@ T computeSize(const Teuchos::ArrayView< T > & dimensions,
 Teuchos::Array< int >
 regularizeAxisSizes(int numProcs,
                     int numDims,
-                    const Teuchos::ArrayView< int > & axisSizes);
+                    const Teuchos::ArrayView< int > & axisCommSizes);
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -237,7 +237,7 @@ regularizeAxisSizes(int numProcs,
  */
 Teuchos::Array< int >
 computeAxisRanks(int rank,
-                 const Teuchos::ArrayView< int > & axisSizes);
+                 const Teuchos::ArrayView< int > & axisCommSizes);
 
 ////////////////////////////////////////////////////////////////////////
 

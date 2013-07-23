@@ -53,13 +53,13 @@ namespace Domi
 Teuchos::Array< int >
 regularizeAxisSizes(int numProcs,
                     int numDims,
-                    const Teuchos::ArrayView< int > & axisSizes)
+                    const Teuchos::ArrayView< int > & axisCommSizes)
 {
   // Allocate the return array, filled with the value -1
   Teuchos::Array< int > result(numDims, -1);
   // Copy the candidate array into the return array
-  for (int axis = 0; axis < numDims && axis < axisSizes.size(); ++axis)
-    result[axis] = axisSizes[axis];
+  for (int axis = 0; axis < numDims && axis < axisCommSizes.size(); ++axis)
+    result[axis] = axisCommSizes[axis];
   // Compute the block of processors accounted for, and the number of
   // unspecified axis sizes
   int block       = 1;
@@ -104,18 +104,18 @@ regularizeAxisSizes(int numProcs,
 
 Teuchos::Array< int >
 computeAxisRanks(int rank,
-                 const Teuchos::ArrayView< int > & axisSizes)
+                 const Teuchos::ArrayView< int > & axisCommSizes)
 {
-  Teuchos::Array< int > result(axisSizes.size());
+  Teuchos::Array< int > result(axisCommSizes.size());
   int relRank = rank;
   int stride = 1;
-  for (int axis = 0; axis < axisSizes.size()-1; ++axis)
-    stride *= axisSizes[axis];
-  for (int axis = axisSizes.size()-1; axis > 0; --axis)
+  for (int axis = 0; axis < axisCommSizes.size()-1; ++axis)
+    stride *= axisCommSizes[axis];
+  for (int axis = axisCommSizes.size()-1; axis > 0; --axis)
   {
     result[axis] = relRank / stride;
     relRank      = relRank % stride;
-    stride       = stride / axisSizes[axis-1];
+    stride       = stride / axisCommSizes[axis-1];
   }
   result[0] = relRank;
   return result;

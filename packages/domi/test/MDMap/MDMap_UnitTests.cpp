@@ -63,16 +63,16 @@ using Domi::MDCommRCP;
 using Domi::MDMap;
 
 int numDims = 2;
-string axisSizesStr = "-1";
-Array< int > axisSizes;
+string axisCommSizesStr = "-1";
+Array< int > axisCommSizes;
 
 TEUCHOS_STATIC_SETUP()
 {
   Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
   clp.addOutputSetupOptions(true);
   clp.setOption("numDims"  , &numDims     , "number of dimensions");
-  clp.setOption("axisSizes", &axisSizesStr, "comma-separated list of number "
-                "of processors along each axis");
+  clp.setOption("axisCommSizes", &axisCommSizesStr, "comma-separated list of "
+                "number of processors along each axis");
 }
 
 //
@@ -82,15 +82,15 @@ TEUCHOS_STATIC_SETUP()
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, dimensionsConstructor, T )
 {
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
-  // Note: axisSizes from command line should be fully specified
-  Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisSizes));
+  // Note: axisCommSizes from command line should be fully specified
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
 
-  // Check that the axisSizes are completely specified
-  TEST_EQUALITY(axisSizes.size(), numDims)
+  // Check that the axisCommSizes are completely specified
+  TEST_EQUALITY(axisCommSizes.size(), numDims)
   for (int axis = 0; axis < numDims; ++axis)
   {
-    TEST_ASSERT(axisSizes[axis] > 0);
+    TEST_ASSERT(axisCommSizes[axis] > 0);
   }
 
   // Construct dimensions
@@ -112,7 +112,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, dimensionsConstructor, T )
   for (int axis = 0; axis < numDims; ++axis)
   {
     int axisRank = mdMap.getAxisRank(axis);
-    TEST_EQUALITY(mdMap.getAxisCommSize(axis), axisSizes[axis]);
+    TEST_EQUALITY(mdMap.getAxisCommSize(axis), axisCommSizes[axis]);
     TEST_ASSERT(not mdMap.isPeriodic(axis));
     TEST_EQUALITY(mdMap.getGlobalDim(axis), dims[axis]);
     TEST_EQUALITY(mdMap.getLocalDim(axis) , localDim  );
@@ -132,9 +132,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, dimensionsConstructor, T )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, halosConstructor, T )
 {
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
-  // Note: axisSizes from command line should be fully specified
-  Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisSizes));
+  // Note: axisCommSizes from command line should be fully specified
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
 
   // Construct dimensions
   T localDim = 10;
@@ -163,10 +163,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, halosConstructor, T )
     int lowerHalo = 0;
     if (axisRank > 0) lowerHalo = halos[axis];
     int upperHalo = 0;
-    if (axisRank < axisSizes[axis]-1) upperHalo = halos[axis];
+    if (axisRank < axisCommSizes[axis]-1) upperHalo = halos[axis];
     T myDim = localDim + lowerHalo + upperHalo;
 
-    TEST_EQUALITY(mdMap.getAxisCommSize(axis), axisSizes[axis]);
+    TEST_EQUALITY(mdMap.getAxisCommSize(axis), axisCommSizes[axis]);
     TEST_ASSERT(not mdMap.isPeriodic(axis));
     TEST_EQUALITY(mdMap.getGlobalDim(axis), dims[axis]);
     TEST_EQUALITY(mdMap.getLocalDim(axis,true ), myDim   );
@@ -190,9 +190,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, halosConstructor, T )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, ghostsConstructor, T )
 {
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
-  // Note: axisSizes from command line should be fully specified
-  Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisSizes));
+  // Note: axisCommSizes from command line should be fully specified
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
 
   // Construct dimensions
   T localDim = 10;
@@ -224,10 +224,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, ghostsConstructor, T )
     int lowerGhost = 0;
     if (axisRank == 0) lowerGhost = ghosts[axis];
     int upperGhost = 0;
-    if (axisRank == axisSizes[axis]-1) upperGhost = ghosts[axis];
+    if (axisRank == axisCommSizes[axis]-1) upperGhost = ghosts[axis];
     T myDim = localDim + lowerGhost + upperGhost;
 
-    TEST_EQUALITY(mdMap.getAxisCommSize(axis), axisSizes[axis]);
+    TEST_EQUALITY(mdMap.getAxisCommSize(axis), axisCommSizes[axis]);
     TEST_ASSERT(not mdMap.isPeriodic(axis));
     TEST_EQUALITY(mdMap.getGlobalDim(axis,true ), dims[axis]+2*ghosts[axis]);
     TEST_EQUALITY(mdMap.getGlobalDim(axis,false), dims[axis]               );
@@ -240,7 +240,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, ghostsConstructor, T )
     TEST_EQUALITY(globalBounds.stop() , myStop );
     globalBounds = mdMap.getGlobalAxisBounds(axis,true);
     if (axisRank == 0                ) myStart -= ghosts[axis];
-    if (axisRank == axisSizes[axis]-1) myStop  += ghosts[axis];
+    if (axisRank == axisCommSizes[axis]-1) myStop  += ghosts[axis];
     TEST_EQUALITY(globalBounds.start(), myStart);
     TEST_EQUALITY(globalBounds.stop( ), myStop );
     Slice localBounds  = mdMap.getLocalAxisBounds(axis,true);
@@ -259,9 +259,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, ghostsConstructor, T )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, halosAndGhostsConstructor, T )
 {
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
-  // Note: axisSizes from command line should be fully specified
-  Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisSizes));
+  // Note: axisCommSizes from command line should be fully specified
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
 
   // Construct dimensions
   T localDim = 10;
@@ -294,10 +294,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, halosAndGhostsConstructor, T )
     int lowerHalo = halos[axis];
     int upperHalo = halos[axis];
     if (axisRank == 0                ) lowerHalo = ghosts[axis];
-    if (axisRank == axisSizes[axis]-1) upperHalo = ghosts[axis];
+    if (axisRank == axisCommSizes[axis]-1) upperHalo = ghosts[axis];
     T myDim = localDim + lowerHalo + upperHalo;
 
-    TEST_EQUALITY(mdMap.getAxisCommSize(axis), axisSizes[axis]);
+    TEST_EQUALITY(mdMap.getAxisCommSize(axis), axisCommSizes[axis]);
     TEST_ASSERT(not mdMap.isPeriodic(axis));
     TEST_EQUALITY(mdMap.getGlobalDim(axis,true ), dims[axis]+2*ghosts[axis]);
     TEST_EQUALITY(mdMap.getGlobalDim(axis,false), dims[axis]               );
@@ -310,7 +310,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, halosAndGhostsConstructor, T )
     TEST_EQUALITY(globalBounds.stop() , myStop );
     globalBounds = mdMap.getGlobalAxisBounds(axis,true);
     if (axisRank == 0                ) myStart -= ghosts[axis];
-    if (axisRank == axisSizes[axis]-1) myStop  += ghosts[axis];
+    if (axisRank == axisCommSizes[axis]-1) myStop  += ghosts[axis];
     TEST_EQUALITY(globalBounds.start(), myStart);
     TEST_EQUALITY(globalBounds.stop( ), myStop );
     Slice localBounds  = mdMap.getLocalAxisBounds(axis,true);
@@ -329,12 +329,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, halosAndGhostsConstructor, T )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, periodic, T )
 {
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
-  // Note: axisSizes from command line should be fully specified
-  Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
+  // Note: axisCommSizes from command line should be fully specified
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
   Array< int > periodic(numDims, 0);
   periodic[0] = 1;
   MDCommRCP mdComm =
-    Teuchos::rcp(new MDComm(comm, numDims, axisSizes, periodic));
+    Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes, periodic));
 
   for (int axis = 0; axis < numDims; ++axis)
   {
@@ -345,9 +345,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, periodic, T )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, indexes, T )
 {
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
-  // Note: axisSizes from command line should be fully specified
-  Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisSizes));
+  // Note: axisCommSizes from command line should be fully specified
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
 
   // Construct dimensions
   T localDim = 10;

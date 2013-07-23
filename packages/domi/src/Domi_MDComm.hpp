@@ -123,20 +123,21 @@ public:
    *
    * \param teuchosComm [in] The Teuchos Communicator
    *
-   * \param axisSizes [in] An array containing the sizes of the
+   * \param axisCommSizes [in] An array containing the sizes of the
    *        <tt>MDComm</tt> along each axis.  The size of
-   *        <tt>axisSizes</tt> determines the number of dimensions.
-   *        Negative values will be converted to positive such that
-   *        the product of the resulting axis sizes will equal the
-   *        number of processors in the Teuchos communicator.
+   *        <tt>axisCommSizes</tt> determines the number of
+   *        dimensions.  Negative values will be converted to positive
+   *        such that the product of the resulting axis sizes will
+   *        equal the number of processors in the Teuchos
+   *        communicator.
    *
    * \param periodic [in] An array of ints which are simple flags
    *        denoting whether each axis is periodic.  If this array is
-   *        shorter than the size of axisSizes, the unspecified axes
-   *        are assumed to be zero (false).
+   *        shorter than the size of axisCommSizes, the unspecified
+   *        axes are assumed to be zero (false).
    */
   MDComm(const TeuchosCommRCP teuchosComm,
-         const Teuchos::ArrayView< int > & axisSizes,
+         const Teuchos::ArrayView< int > & axisCommSizes,
          const Teuchos::ArrayView< int > & periodic =
            Teuchos::ArrayView< int >());
 
@@ -159,10 +160,10 @@ public:
    * \param numDims [in] The number of dimensions in the
    *        <tt>MDComm</tt>.
    *
-   * \param axisSizes [in] An array containing the sizes of the
+   * \param axisCommSizes [in] An array containing the sizes of the
    *        <tt>MDComm</tt> along each axis.  If the size of
-   *        <tt>axisSizes</tt> is less than <tt>numDims</tt>, then the
-   *        missing values are treated as unspecified.  Negative
+   *        <tt>axisCommSizes</tt> is less than <tt>numDims</tt>, then
+   *        the missing values are treated as unspecified.  Negative
    *        values will also be treated as unspecified.  Unspecified
    *        vlaues will be converted to positive such that the product
    *        of the resulting axis sizes will equal the number of
@@ -175,7 +176,7 @@ public:
    */
   MDComm(const TeuchosCommRCP teuchosComm,
          int numDims,
-         const Teuchos::ArrayView< int > & axisSizes,
+         const Teuchos::ArrayView< int > & axisCommSizes,
          const Teuchos::ArrayView< int > & periodic =
            Teuchos::ArrayView< int >());
 
@@ -287,8 +288,8 @@ private:
   // The Teuchos communicator
   TeuchosCommRCP        _teuchosComm;
 
-  // An array of the sizes along each axis
-  Teuchos::Array< int > _axisSizes;
+  // An array of the sizes of the communicator along each axis
+  Teuchos::Array< int > _axisCommSizes;
 
   // An array of flags denoting periodic axes
   Teuchos::Array< int > _periodic;
