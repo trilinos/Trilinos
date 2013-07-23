@@ -45,8 +45,8 @@
 #include <fstream>
 #include <iomanip>
 
-#include "KokkosArray_Host.hpp"
-#include "KokkosArray_ParallelFor.hpp"
+#include "Kokkos_Host.hpp"
+#include "Kokkos_ParallelFor.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_CrsMatrix.hpp"
@@ -60,15 +60,15 @@ namespace Stokhos {
 
 template< typename MatrixValue , typename VectorValue >
 class Multiply<
-  CrsMatrix< MatrixValue , KokkosArray::Host > ,
-  KokkosArray::View< VectorValue[] , KokkosArray::Host > ,
-  KokkosArray::View< VectorValue[] , KokkosArray::Host > ,
+  CrsMatrix< MatrixValue , Kokkos::Host > ,
+  Kokkos::View< VectorValue[] , Kokkos::Host > ,
+  Kokkos::View< VectorValue[] , Kokkos::Host > ,
   DefaultSparseMatOps >
 {
 public:
-  typedef KokkosArray::Host                         device_type ;
+  typedef Kokkos::Host                         device_type ;
   typedef device_type::size_type                    size_type ;
-  typedef KokkosArray::View< VectorValue[] , device_type >  vector_type ;
+  typedef Kokkos::View< VectorValue[] , device_type >  vector_type ;
   typedef CrsMatrix< MatrixValue , device_type >    matrix_type ;
 
   const matrix_type  m_A ;
@@ -105,21 +105,21 @@ public:
                      const vector_type & y )
   {
     const size_t row_count = A.graph.row_map.dimension_0() - 1 ;
-    KokkosArray::parallel_for( row_count , Multiply(A,x,y) );
+    Kokkos::parallel_for( row_count , Multiply(A,x,y) );
   }
 };
 
 template< typename MatrixValue , typename VectorValue >
 class MMultiply<
-  CrsMatrix< MatrixValue , KokkosArray::Host > ,
-  KokkosArray::View< VectorValue** , KokkosArray::LayoutLeft, KokkosArray::Host > ,
-  KokkosArray::View< VectorValue** , KokkosArray::LayoutLeft, KokkosArray::Host > ,
+  CrsMatrix< MatrixValue , Kokkos::Host > ,
+  Kokkos::View< VectorValue** , Kokkos::LayoutLeft, Kokkos::Host > ,
+  Kokkos::View< VectorValue** , Kokkos::LayoutLeft, Kokkos::Host > ,
   DefaultSparseMatOps >
 {
 public:
-  typedef KokkosArray::Host                                device_type ;
+  typedef Kokkos::Host                                device_type ;
   typedef device_type::size_type                           size_type ;
-  typedef KokkosArray::View< VectorValue** , KokkosArray::LayoutLeft, device_type >  multi_vector_type ;
+  typedef Kokkos::View< VectorValue** , Kokkos::LayoutLeft, device_type >  multi_vector_type ;
   typedef CrsMatrix< MatrixValue , device_type >           matrix_type ;
   typedef VectorValue                                      value_type ;
   typedef int                                              Ordinal ;
@@ -182,28 +182,28 @@ public:
     for (size_t block=0; block<num_blocks; ++block) {
       for (size_t i=0; i<bs; ++i)
 	block_col[i] = col[block*block_size+i];
-      KokkosArray::parallel_for( n , MMultiply(A,x,y,block_col) );
+      Kokkos::parallel_for( n , MMultiply(A,x,y,block_col) );
     }
     if (rem > 0) {
       block_col.resize(rem);
       for (size_t i=0; i<block_size; ++i)
     	block_col[i] = col[num_blocks*block_size+i];
-      KokkosArray::parallel_for( n , MMultiply(A,x,y,block_col) );
+      Kokkos::parallel_for( n , MMultiply(A,x,y,block_col) );
     }
   }
 };
 
 template< typename MatrixValue , typename VectorValue >
 class MMultiply<
-  CrsMatrix< MatrixValue , KokkosArray::Host > ,
-  KokkosArray::View< VectorValue[] , KokkosArray::Host > ,
-  KokkosArray::View< VectorValue[] , KokkosArray::Host > ,
+  CrsMatrix< MatrixValue , Kokkos::Host > ,
+  Kokkos::View< VectorValue[] , Kokkos::Host > ,
+  Kokkos::View< VectorValue[] , Kokkos::Host > ,
   DefaultSparseMatOps >
 {
 public:
-  typedef KokkosArray::Host                                device_type ;
+  typedef Kokkos::Host                                device_type ;
   typedef device_type::size_type                           size_type ;
-  typedef KokkosArray::View< VectorValue[] , device_type > vector_type ;
+  typedef Kokkos::View< VectorValue[] , device_type > vector_type ;
   typedef CrsMatrix< MatrixValue , device_type >           matrix_type ;
   typedef VectorValue                                      value_type ;
 
@@ -249,7 +249,7 @@ public:
                      const std::vector<vector_type> & y )
   {
     const size_t n = A.graph.row_map.dimension_0() - 1 ;
-    KokkosArray::parallel_for( n , MMultiply(A,x,y) );
+    Kokkos::parallel_for( n , MMultiply(A,x,y) );
   }
 };
 
@@ -259,15 +259,15 @@ class MKLSparseMatOps {};
 
 template<>
 class Multiply<
-  CrsMatrix< double , KokkosArray::Host > ,
-  KokkosArray::View< double[] , KokkosArray::Host > ,
-  KokkosArray::View< double[] , KokkosArray::Host > ,
+  CrsMatrix< double , Kokkos::Host > ,
+  Kokkos::View< double[] , Kokkos::Host > ,
+  Kokkos::View< double[] , Kokkos::Host > ,
   MKLSparseMatOps >
 {
 public:
-  typedef KokkosArray::Host                         device_type ;
+  typedef Kokkos::Host                         device_type ;
   typedef device_type::size_type                    size_type ;
-  typedef KokkosArray::View< double[] , device_type >  vector_type ;
+  typedef Kokkos::View< double[] , device_type >  vector_type ;
   typedef CrsMatrix< double , device_type >    matrix_type ;
 
   static void apply( const matrix_type & A ,
@@ -287,10 +287,10 @@ public:
     double *x_values = x.ptr_on_device() ;
     double *y_values = y.ptr_on_device() ;
     
-    KokkosArray::Host::sleep();
+    Kokkos::Host::sleep();
     mkl_dcsrmv(&trans, &n, &n, &alpha, matdescra, A_values, col_indices,
 	       row_beg, row_end, x_values, &beta, y_values);
-    KokkosArray::Host::wake();
+    Kokkos::Host::wake();
   }
 };
 
@@ -302,8 +302,8 @@ namespace Impl {
     typedef OrdinalType ordinal_type;
     typedef DeviceType device_type;
     typedef typename device_type::size_type size_type;
-    typedef KokkosArray::View< value_type** , KokkosArray::LayoutLeft, device_type >  multi_vector_type ;
-    typedef KokkosArray::View< value_type** , KokkosArray::LayoutLeft, device_type >  trans_multi_vector_type ;
+    typedef Kokkos::View< value_type** , Kokkos::LayoutLeft, device_type >  multi_vector_type ;
+    typedef Kokkos::View< value_type** , Kokkos::LayoutLeft, device_type >  trans_multi_vector_type ;
 
     const multi_vector_type m_x;
     const trans_multi_vector_type m_xt;
@@ -323,7 +323,7 @@ namespace Impl {
 		      const trans_multi_vector_type& xt,
 		      const std::vector<ordinal_type> & indices) {
       const size_t n = xt.dimension_1();
-      KokkosArray::parallel_for( n, GatherTranspose(x,xt,indices) );
+      Kokkos::parallel_for( n, GatherTranspose(x,xt,indices) );
     }
   };
 
@@ -333,8 +333,8 @@ namespace Impl {
     typedef OrdinalType ordinal_type;
     typedef DeviceType device_type;
     typedef typename device_type::size_type size_type;
-    typedef KokkosArray::View< value_type** , KokkosArray::LayoutLeft, device_type >  multi_vector_type ;
-    typedef KokkosArray::View< value_type** , KokkosArray::LayoutLeft, device_type >  trans_multi_vector_type ;
+    typedef Kokkos::View< value_type** , Kokkos::LayoutLeft, device_type >  multi_vector_type ;
+    typedef Kokkos::View< value_type** , Kokkos::LayoutLeft, device_type >  trans_multi_vector_type ;
 
     const multi_vector_type m_x;
     const trans_multi_vector_type m_xt;
@@ -354,7 +354,7 @@ namespace Impl {
 		      const trans_multi_vector_type& xt,
 		      const std::vector<ordinal_type> & indices) {
       const size_t n = xt.dimension_1();
-      KokkosArray::parallel_for( n, ScatterTranspose(x,xt,indices) );
+      Kokkos::parallel_for( n, ScatterTranspose(x,xt,indices) );
     }
   };
 
@@ -363,8 +363,8 @@ namespace Impl {
     typedef ValueType value_type;
     typedef DeviceType device_type;
     typedef typename device_type::size_type size_type;
-    typedef KokkosArray::View< value_type[] , device_type > vector_type ;
-    typedef KokkosArray::View< value_type** , KokkosArray::LayoutLeft, device_type >  trans_multi_vector_type ;
+    typedef Kokkos::View< value_type[] , device_type > vector_type ;
+    typedef Kokkos::View< value_type** , Kokkos::LayoutLeft, device_type >  trans_multi_vector_type ;
 
     const std::vector<vector_type> m_x;
     const trans_multi_vector_type m_xt;
@@ -381,7 +381,7 @@ namespace Impl {
     static void apply(const std::vector<vector_type> & x,
 		      const trans_multi_vector_type& xt) {
       const size_t n = xt.dimension_1();
-      KokkosArray::parallel_for( n, GatherVecTranspose(x,xt) );
+      Kokkos::parallel_for( n, GatherVecTranspose(x,xt) );
     }
   };
 
@@ -390,8 +390,8 @@ namespace Impl {
     typedef ValueType value_type;
     typedef DeviceType device_type;
     typedef typename device_type::size_type size_type;
-    typedef KokkosArray::View< value_type[] , device_type > vector_type ;
-    typedef KokkosArray::View< value_type** , KokkosArray::LayoutLeft, device_type >  trans_multi_vector_type ;
+    typedef Kokkos::View< value_type[] , device_type > vector_type ;
+    typedef Kokkos::View< value_type** , Kokkos::LayoutLeft, device_type >  trans_multi_vector_type ;
 
     const std::vector<vector_type> m_x;
     const trans_multi_vector_type m_xt;
@@ -408,7 +408,7 @@ namespace Impl {
     static void apply(const std::vector<vector_type> & x,
 		      const trans_multi_vector_type& xt) {
       const size_t n = xt.dimension_1();
-      KokkosArray::parallel_for( n, ScatterVecTranspose(x,xt) );
+      Kokkos::parallel_for( n, ScatterVecTranspose(x,xt) );
     }
   };
 
@@ -416,17 +416,17 @@ namespace Impl {
 
 template<>
 class MMultiply<
-  CrsMatrix< double , KokkosArray::Host > ,
-  KokkosArray::View< double** , KokkosArray::LayoutLeft, KokkosArray::Host > ,
-  KokkosArray::View< double** , KokkosArray::LayoutLeft, KokkosArray::Host > ,
+  CrsMatrix< double , Kokkos::Host > ,
+  Kokkos::View< double** , Kokkos::LayoutLeft, Kokkos::Host > ,
+  Kokkos::View< double** , Kokkos::LayoutLeft, Kokkos::Host > ,
   MKLSparseMatOps >
 {
 public:
-  typedef KokkosArray::Host device_type ;
+  typedef Kokkos::Host device_type ;
   typedef device_type::size_type size_type ;
-  typedef KokkosArray::View< double** , KokkosArray::LayoutLeft, device_type >  multi_vector_type ;
-  typedef KokkosArray::View< double** , KokkosArray::LayoutLeft, device_type >  trans_multi_vector_type ;
-  typedef KokkosArray::View< double[] , device_type > vector_type ;
+  typedef Kokkos::View< double** , Kokkos::LayoutLeft, device_type >  multi_vector_type ;
+  typedef Kokkos::View< double** , Kokkos::LayoutLeft, device_type >  trans_multi_vector_type ;
+  typedef Kokkos::View< double[] , device_type > vector_type ;
   typedef CrsMatrix< double , device_type > matrix_type ;
   typedef double value_type ;
   typedef int ordinal_type ;
@@ -457,10 +457,10 @@ public:
     double *y_values = yy.ptr_on_device() ;
     
     // Call MKLs CSR x multi-vector (row-based) multiply
-    KokkosArray::Host::sleep();
+    Kokkos::Host::sleep();
     mkl_dcsrmm(&trans, &n, &ncol, &n, &alpha, matdescra, A_values, col_indices,
 	       row_beg, row_end, x_values, &ncol, &beta, y_values, &ncol);
-    KokkosArray::Host::wake();
+    Kokkos::Host::wake();
 
     // Copy columns out of continguous multivector
     Impl::ScatterTranspose<value_type,ordinal_type,device_type>::apply(y,yy,indices);
@@ -470,18 +470,18 @@ public:
 
 template<>
 class MMultiply<
-  CrsMatrix< double , KokkosArray::Host > ,
-  KokkosArray::View< double[] , KokkosArray::Host > ,
-  KokkosArray::View< double[] , KokkosArray::Host > ,
+  CrsMatrix< double , Kokkos::Host > ,
+  Kokkos::View< double[] , Kokkos::Host > ,
+  Kokkos::View< double[] , Kokkos::Host > ,
   MKLSparseMatOps >
 {
 public:
-  typedef KokkosArray::Host                                device_type ;
+  typedef Kokkos::Host                                device_type ;
   typedef device_type::size_type                           size_type ;
-  typedef KokkosArray::View< double[] , device_type > vector_type ;
+  typedef Kokkos::View< double[] , device_type > vector_type ;
   typedef CrsMatrix< double , device_type >           matrix_type ;
   typedef double                                      value_type ;
-  typedef KokkosArray::View< double** , KokkosArray::LayoutLeft, device_type >  trans_multi_vector_type ;
+  typedef Kokkos::View< double** , Kokkos::LayoutLeft, device_type >  trans_multi_vector_type ;
 
 public:
 
@@ -508,10 +508,10 @@ public:
     double *y_values = yy.ptr_on_device() ;
     
     // Call MKLs CSR x multi-vector (row-based) multiply
-    KokkosArray::Host::sleep();
+    Kokkos::Host::sleep();
     mkl_dcsrmm(&trans, &n, &ncol, &n, &alpha, matdescra, A_values, col_indices,
 	       row_beg, row_end, x_values, &ncol, &beta, y_values, &ncol);
-    KokkosArray::Host::wake();
+    Kokkos::Host::wake();
 
     // Copy columns out of continguous multivector
     Impl::ScatterVecTranspose<value_type,device_type>::apply(y,yy);
@@ -522,15 +522,15 @@ public:
 
 template<>
 class Multiply<
-  CrsMatrix< float , KokkosArray::Host > ,
-  KokkosArray::View< float[] , KokkosArray::Host > ,
-  KokkosArray::View< float[] , KokkosArray::Host > ,
+  CrsMatrix< float , Kokkos::Host > ,
+  Kokkos::View< float[] , Kokkos::Host > ,
+  Kokkos::View< float[] , Kokkos::Host > ,
   MKLSparseMatOps >
 {
 public:
-  typedef KokkosArray::Host                         device_type ;
+  typedef Kokkos::Host                         device_type ;
   typedef device_type::size_type                    size_type ;
-  typedef KokkosArray::View< float[] , device_type >  vector_type ;
+  typedef Kokkos::View< float[] , device_type >  vector_type ;
   typedef CrsMatrix< float , device_type >    matrix_type ;
 
   static void apply( const matrix_type & A ,
@@ -550,26 +550,26 @@ public:
     float *x_values = x.ptr_on_device() ;
     float *y_values = y.ptr_on_device() ;
     
-    KokkosArray::Host::sleep();
+    Kokkos::Host::sleep();
     mkl_scsrmv(&trans, &n, &n, &alpha, matdescra, A_values, col_indices,
 	       row_beg, row_end, x_values, &beta, y_values);
-    KokkosArray::Host::wake();
+    Kokkos::Host::wake();
   }
 };
 
 template<>
 class MMultiply<
-  CrsMatrix< float , KokkosArray::Host > ,
-  KokkosArray::View< float** , KokkosArray::LayoutLeft, KokkosArray::Host > ,
-  KokkosArray::View< float** , KokkosArray::LayoutLeft, KokkosArray::Host > ,
+  CrsMatrix< float , Kokkos::Host > ,
+  Kokkos::View< float** , Kokkos::LayoutLeft, Kokkos::Host > ,
+  Kokkos::View< float** , Kokkos::LayoutLeft, Kokkos::Host > ,
   MKLSparseMatOps >
 {
 public:
-  typedef KokkosArray::Host device_type ;
+  typedef Kokkos::Host device_type ;
   typedef device_type::size_type size_type ;
-  typedef KokkosArray::View< float** , KokkosArray::LayoutLeft, device_type >  multi_vector_type ;
-  typedef KokkosArray::View< float** , KokkosArray::LayoutLeft, device_type >  trans_multi_vector_type ;
-  typedef KokkosArray::View< float[] , device_type > vector_type ;
+  typedef Kokkos::View< float** , Kokkos::LayoutLeft, device_type >  multi_vector_type ;
+  typedef Kokkos::View< float** , Kokkos::LayoutLeft, device_type >  trans_multi_vector_type ;
+  typedef Kokkos::View< float[] , device_type > vector_type ;
   typedef CrsMatrix< float , device_type > matrix_type ;
   typedef float value_type ;
   typedef int ordinal_type ;
@@ -598,10 +598,10 @@ public:
     float *y_values = yy.ptr_on_device() ;
     
     // Call MKLs CSR x multi-vector (row-based) multiply
-    KokkosArray::Host::sleep();
+    Kokkos::Host::sleep();
     mkl_scsrmm(&trans, &n, &ncol, &n, &alpha, matdescra, A_values, col_indices,
 	       row_beg, row_end, x_values, &ncol, &beta, y_values, &ncol);
-    KokkosArray::Host::wake();
+    Kokkos::Host::wake();
 
     // Copy columns out of continguous multivector
     Impl::ScatterTranspose<value_type,ordinal_type,device_type>::apply(y,yy,indices);
@@ -611,18 +611,18 @@ public:
 
 template<>
 class MMultiply<
-  CrsMatrix< float , KokkosArray::Host > ,
-  KokkosArray::View< float[] , KokkosArray::Host > ,
-  KokkosArray::View< float[] , KokkosArray::Host > ,
+  CrsMatrix< float , Kokkos::Host > ,
+  Kokkos::View< float[] , Kokkos::Host > ,
+  Kokkos::View< float[] , Kokkos::Host > ,
   MKLSparseMatOps >
 {
 public:
-  typedef KokkosArray::Host                                device_type ;
+  typedef Kokkos::Host                                device_type ;
   typedef device_type::size_type                           size_type ;
-  typedef KokkosArray::View< float[] , device_type > vector_type ;
+  typedef Kokkos::View< float[] , device_type > vector_type ;
   typedef CrsMatrix< float , device_type >           matrix_type ;
   typedef float                                      value_type ;
-  typedef KokkosArray::View< float** , KokkosArray::LayoutLeft, device_type >  trans_multi_vector_type ;
+  typedef Kokkos::View< float** , Kokkos::LayoutLeft, device_type >  trans_multi_vector_type ;
 
   static void apply( const matrix_type & A ,
                      const std::vector<vector_type> & x ,
@@ -647,10 +647,10 @@ public:
     float *y_values = yy.ptr_on_device() ;
     
     // Call MKLs CSR x multi-vector (row-based) multiply
-    KokkosArray::Host::sleep();
+    Kokkos::Host::sleep();
     mkl_scsrmm(&trans, &n, &ncol, &n, &alpha, matdescra, A_values, col_indices,
 	       row_beg, row_end, x_values, &ncol, &beta, y_values, &ncol);
-    KokkosArray::Host::wake();
+    Kokkos::Host::wake();
 
     // Copy columns out of continguous multivector
     Impl::ScatterVecTranspose<value_type,device_type>::apply(y,yy);
@@ -662,10 +662,10 @@ public:
 #endif
 
 template< typename MatrixValue>
-class MatrixMarketWriter<MatrixValue, KokkosArray::Host>
+class MatrixMarketWriter<MatrixValue, Kokkos::Host>
 {
 public:
-  typedef KokkosArray::Host                         device_type ;
+  typedef Kokkos::Host                         device_type ;
   typedef device_type::size_type                    size_type ;
   typedef CrsMatrix< MatrixValue , device_type >    matrix_type ;
 

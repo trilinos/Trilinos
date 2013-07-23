@@ -408,7 +408,12 @@ namespace stk {
                 //mesh::Part& frpart = metaData.get_part(fr.ordinal());
                 
                 field_rank = fr.entity_rank();
-                field_dimension = fr.dimension() ;
+                int rank = field->rank();
+                if(rank == 0)
+                  field_dimension = fr.dimension() ;
+                else
+                  field_dimension = fr.stride(rank - 1);
+
                 //if (Util::getFlag(1234)) std::cout << "tmp field_rank= " << field_rank << " field_dimension= " << field_dimension << std::endl;
               }
           }

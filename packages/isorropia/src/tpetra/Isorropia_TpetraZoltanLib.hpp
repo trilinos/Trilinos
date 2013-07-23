@@ -61,7 +61,7 @@ namespace Isorropia {
 namespace Tpetra {
 
 
-template <class Node=Kokkos::DefaultNode::DefaultNodeType>
+template <class Node=KokkosClassic::DefaultNode::DefaultNodeType>
 class ZoltanLibClass : public Library<Node> {
 public:
 

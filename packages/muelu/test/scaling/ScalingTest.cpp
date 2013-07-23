@@ -111,8 +111,8 @@ typedef int    LocalOrdinal;
 typedef int GlobalOrdinal;
 //#endif
 //
-typedef Kokkos::DefaultNode::DefaultNodeType Node;
-typedef Kokkos::DefaultKernels<Scalar, LocalOrdinal, Node>::SparseOps LocalMatOps;
+typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+typedef KokkosClassic::DefaultKernels<Scalar, LocalOrdinal, Node>::SparseOps LocalMatOps;
 //
 #include "MueLu_UseShortNames.hpp"
 

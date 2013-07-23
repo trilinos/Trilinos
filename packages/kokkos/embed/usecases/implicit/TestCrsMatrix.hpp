@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//    KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//    Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOSARRAY_CRSMATRIX_HPP
-#define KOKKOSARRAY_CRSMATRIX_HPP
+#ifndef KOKKOS_CRSMATRIX_HPP
+#define KOKKOS_CRSMATRIX_HPP
 
 #if defined( __CUDACC__ )
 #include <cusparse.h>
@@ -50,19 +50,19 @@
 
 #include <iostream>
 #include <stdexcept>
-#include <KokkosArray_CrsArray.hpp>
-#include <KokkosArray_Array.hpp>
-#include <impl/KokkosArray_ArrayAnalyzeShape.hpp>
-#include <impl/KokkosArray_ArrayViewDefault.hpp>
+#include <Kokkos_CrsArray.hpp>
+#include <Kokkos_Array.hpp>
+#include <impl/Kokkos_ArrayAnalyzeShape.hpp>
+#include <impl/Kokkos_ArrayViewDefault.hpp>
 
-namespace KokkosArray {
+namespace Kokkos {
 namespace Impl {
 template< class MatrixType , class InputVector , class OutputVector >
 class Multiply ;
 }
 }
 
-namespace KokkosArray {
+namespace Kokkos {
 
 /** \brief  CRS matrix.  */
 
@@ -106,7 +106,7 @@ void multiply( const MatrixType       & A ,
 
 }
 
-namespace KokkosArray {
+namespace Kokkos {
 namespace Impl {
 
 template< class MatrixValueType ,
@@ -130,7 +130,7 @@ public:
   const output_type  m_y ;
 
   template< typename iType >
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void operator()( const iType iRow ) const
   {
     const int iEntryEnd = m_A.graph.row_map(iRow+1);
@@ -177,7 +177,7 @@ public:
   const output_type  m_y ;
 
   template< typename iType >
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void operator()( const iType iRow ) const
   {
     const int iEntryEnd = m_A.graph.row_map(iRow+1);

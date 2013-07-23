@@ -154,7 +154,7 @@ setParameters (const Teuchos::ParameterList& List)
 
 //==========================================================================
 template<class MatrixType,class ContainerType>
-const Teuchos::RCP<const Teuchos::Comm<int> > & 
+Teuchos::RCP<const Teuchos::Comm<int> >
 BlockRelaxation<MatrixType,ContainerType>::getComm() const{
   return A_->getComm();
 }
@@ -171,18 +171,18 @@ BlockRelaxation<MatrixType,ContainerType>::getMatrix() const {
 
 //==========================================================================
 template<class MatrixType,class ContainerType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+			       typename MatrixType::global_ordinal_type,
+			       typename MatrixType::node_type> >
 BlockRelaxation<MatrixType,ContainerType>::getDomainMap() const {
   return A_->getDomainMap();
 }
 
 //==========================================================================
 template<class MatrixType,class ContainerType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+			       typename MatrixType::global_ordinal_type,
+			       typename MatrixType::node_type> >
 BlockRelaxation<MatrixType,ContainerType>::getRangeMap() const {
   return A_->getRangeMap();
 }

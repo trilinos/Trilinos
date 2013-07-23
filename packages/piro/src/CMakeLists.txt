@@ -56,6 +56,7 @@ IF (Piro_ENABLE_NOX)
                      Piro_Epetra_LOCASolver.hpp
                      Piro_Epetra_LOCAAdaptiveSolver.hpp
                      Piro_Epetra_AdaptiveSolutionManager.hpp
+                     Piro_NullSpaceUtils.hpp
                      Piro_Epetra_VelocityVerletSolver.hpp
                      Piro_Epetra_TrapezoidRuleSolver.hpp
 		     Piro_Epetra_SensitivityOperator.hpp)
@@ -63,6 +64,7 @@ IF (Piro_ENABLE_NOX)
                      Piro_Epetra_LOCASolver.cpp
                      Piro_Epetra_LOCAAdaptiveSolver.cpp
                      Piro_Epetra_AdaptiveSolutionManager.cpp
+                     Piro_NullSpaceUtils.cpp
                      Piro_Epetra_VelocityVerletSolver.cpp
                      Piro_Epetra_TrapezoidRuleSolver.cpp
 		     Piro_Epetra_SensitivityOperator.cpp)

@@ -34,6 +34,9 @@ doxygen_objdb_*.tmp
 /DataTransferKit/
 /TeuchosWrappersExt
 
+# RPI SCOREC extra repos
+/SCOREC
+
 # Ignore gtags generated files
 /GPATH
 /GRTAGS

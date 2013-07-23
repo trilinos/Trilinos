@@ -66,11 +66,11 @@
 
 namespace {
 
-  using Kokkos::MultiVector;
-  using Kokkos::VbrMatrix;
-  using Kokkos::DefaultArithmetic;
-  using Kokkos::DefaultBlockSparseOps;
-  using Kokkos::SerialNode;
+  using KokkosClassic::MultiVector;
+  using KokkosClassic::VbrMatrix;
+  using KokkosClassic::DefaultArithmetic;
+  using KokkosClassic::DefaultBlockSparseOps;
+  using KokkosClassic::SerialNode;
   using Teuchos::ArrayRCP;
   using Teuchos::arcp;
   using Teuchos::RCP;
@@ -80,15 +80,15 @@ namespace {
 
   RCP<SerialNode> snode;
 #ifdef HAVE_KOKKOSCLASSIC_TBB
-  using Kokkos::TBBNode;
+  using KokkosClassic::TBBNode;
   RCP<TBBNode> tbbnode;
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  using Kokkos::TPINode;
+  using KokkosClassic::TPINode;
   RCP<TPINode> tpinode;
 #endif
 //#ifdef HAVE_KOKKOSCLASSIC_THRUST
-//  using Kokkos::ThrustGPUNode;
+//  using KokkosClassic::ThrustGPUNode;
 //  RCP<ThrustGPUNode> thrustnode;
 //#endif
 
@@ -182,12 +182,12 @@ namespace {
     ArrayRCP<Scalar>  vals = node->template allocBuffer<Scalar >(totalNNZ);
     // fill the buffers on the host
     {
-      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_rows+1,rptr);
-      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_cols+1,cptr);
-      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(Kokkos::WriteOnly,num_block_rows+1,bptr);
-      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz,bindx);
-      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz+1,indx);
-      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(Kokkos::WriteOnly,totalNNZ,vals);
+      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_rows+1,rptr);
+      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_cols+1,cptr);
+      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(KokkosClassic::WriteOnly,num_block_rows+1,bptr);
+      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz,bindx);
+      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz+1,indx);
+      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(KokkosClassic::WriteOnly,totalNNZ,vals);
 
       rptr_h[ 0] = 0; rptr_h[ 1] = 2; rptr_h[ 2] = 4;
       cptr_h[ 0] = 0; cptr_h[ 1] = 2; cptr_h[ 2] = 4;
@@ -278,12 +278,12 @@ namespace {
     ArrayRCP<Scalar>  vals = node->template allocBuffer<Scalar >(totalNNZ);
     // fill the buffers on the host
     {
-      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_rows+1,rptr);
-      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_cols+1,cptr);
-      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(Kokkos::WriteOnly,num_block_rows+1,bptr);
-      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz,bindx);
-      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz+1,indx);
-      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(Kokkos::WriteOnly,totalNNZ,vals);
+      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_rows+1,rptr);
+      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_cols+1,cptr);
+      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(KokkosClassic::WriteOnly,num_block_rows+1,bptr);
+      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz,bindx);
+      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz+1,indx);
+      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(KokkosClassic::WriteOnly,totalNNZ,vals);
 
       rptr_h[0] = 0; rptr_h[1] = 1; rptr_h[2] = 4;
       cptr_h[0] = 0; cptr_h[1] = 1; cptr_h[2] = 4;
@@ -375,12 +375,12 @@ namespace {
     ArrayRCP<Scalar>  vals = node->template allocBuffer<Scalar >(totalNNZ);
     // fill the buffers on the host
     {
-      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_rows+1,rptr);
-      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_cols+1,cptr);
-      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(Kokkos::WriteOnly,num_block_rows+1,bptr);
-      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz,bindx);
-      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz+1,indx);
-      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(Kokkos::WriteOnly,totalNNZ,vals);
+      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_rows+1,rptr);
+      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_cols+1,cptr);
+      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(KokkosClassic::WriteOnly,num_block_rows+1,bptr);
+      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz,bindx);
+      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz+1,indx);
+      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(KokkosClassic::WriteOnly,totalNNZ,vals);
 
       rptr_h[0] = 0; rptr_h[1] = 2; rptr_h[2] = 4;
       cptr_h[0] = 0; cptr_h[1] = 2; cptr_h[2] = 4;
@@ -472,12 +472,12 @@ namespace {
     ArrayRCP<Scalar>  vals = node->template allocBuffer<Scalar >(totalNNZ);
     // fill the buffers on the host
     {
-      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_rows+1,rptr);
-      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_cols+1,cptr);
-      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(Kokkos::WriteOnly,num_block_rows+1,bptr);
-      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz,bindx);
-      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz+1,indx);
-      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(Kokkos::WriteOnly,totalNNZ,vals);
+      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_rows+1,rptr);
+      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_cols+1,cptr);
+      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(KokkosClassic::WriteOnly,num_block_rows+1,bptr);
+      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz,bindx);
+      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz+1,indx);
+      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(KokkosClassic::WriteOnly,totalNNZ,vals);
 
       rptr_h[0] = 0; rptr_h[1] = 1; rptr_h[2] = 4;
       cptr_h[0] = 0; cptr_h[1] = 1; cptr_h[2] = 4;
@@ -570,12 +570,12 @@ namespace {
     ArrayRCP<Scalar>  vals = node->template allocBuffer<Scalar >(totalNNZ);
     // fill the buffers on the host
     {
-      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_rows+1,rptr);
-      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_cols+1,cptr);
-      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(Kokkos::WriteOnly,num_block_rows+1,bptr);
-      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz,bindx);
-      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz+1,indx);
-      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(Kokkos::WriteOnly,totalNNZ,vals);
+      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_rows+1,rptr);
+      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_cols+1,cptr);
+      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(KokkosClassic::WriteOnly,num_block_rows+1,bptr);
+      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz,bindx);
+      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz+1,indx);
+      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(KokkosClassic::WriteOnly,totalNNZ,vals);
 
       rptr_h[0] = 0; rptr_h[1] = 1; rptr_h[2] = 4;
       cptr_h[0] = 0; cptr_h[1] = 1; cptr_h[2] = 4; cptr_h[3] = 5;
@@ -671,12 +671,12 @@ namespace {
     ArrayRCP<Scalar>  vals = node->template allocBuffer<Scalar >(totalNNZ);
     // fill the buffers on the host
     {
-      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_rows+1,rptr);
-      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_cols+1,cptr);
-      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(Kokkos::WriteOnly,num_block_rows+1,bptr);
-      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz,bindx);
-      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz+1,indx);
-      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(Kokkos::WriteOnly,totalNNZ,vals);
+      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_rows+1,rptr);
+      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_cols+1,cptr);
+      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(KokkosClassic::WriteOnly,num_block_rows+1,bptr);
+      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz,bindx);
+      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz+1,indx);
+      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(KokkosClassic::WriteOnly,totalNNZ,vals);
 
       rptr_h[ 0] = 0; rptr_h[ 1] = 2; rptr_h[ 2] = 4;
       cptr_h[ 0] = 0; cptr_h[ 1] = 2; cptr_h[ 2] = 4;
@@ -697,7 +697,7 @@ namespace {
     xdat = node->template allocBuffer<Scalar>(num_point_rows);
     ydat = node->template allocBuffer<Scalar>(num_point_rows);
     {
-      ArrayRCP<Scalar> yview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,ydat.size(),ydat);
+      ArrayRCP<Scalar> yview = node->template viewBufferNonConst<Scalar>(KokkosClassic::WriteOnly,ydat.size(),ydat);
       yview[0] = 6;
       yview[1] = 5;
       yview[2] = 5;
@@ -745,12 +745,12 @@ namespace {
     ArrayRCP<Scalar>  vals = node->template allocBuffer<Scalar >(totalNNZ);
     // fill the buffers on the host
     {
-      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_rows+1,rptr);
-      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_cols+1,cptr);
-      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(Kokkos::WriteOnly,num_block_rows+1,bptr);
-      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz,bindx);
-      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz+1,indx);
-      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(Kokkos::WriteOnly,totalNNZ,vals);
+      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_rows+1,rptr);
+      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_cols+1,cptr);
+      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(KokkosClassic::WriteOnly,num_block_rows+1,bptr);
+      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz,bindx);
+      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz+1,indx);
+      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(KokkosClassic::WriteOnly,totalNNZ,vals);
 
       rptr_h[ 0] = 0; rptr_h[ 1] = 2; rptr_h[ 2] = 4;
       cptr_h[ 0] = 0; cptr_h[ 1] = 2; cptr_h[ 2] = 4;
@@ -771,7 +771,7 @@ namespace {
     xdat = node->template allocBuffer<Scalar>(num_point_rows);
     ydat = node->template allocBuffer<Scalar>(num_point_rows);
     {
-      ArrayRCP<Scalar> yview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,ydat.size(),ydat);
+      ArrayRCP<Scalar> yview = node->template viewBufferNonConst<Scalar>(KokkosClassic::WriteOnly,ydat.size(),ydat);
       yview[0] = 6;
       yview[1] = 5;
       yview[2] = 5;
@@ -819,12 +819,12 @@ namespace {
     ArrayRCP<Scalar>  vals = node->template allocBuffer<Scalar >(totalNNZ);
     // fill the buffers on the host
     {
-      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_rows+1,rptr);
-      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_cols+1,cptr);
-      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(Kokkos::WriteOnly,num_block_rows+1,bptr);
-      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz,bindx);
-      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz+1,indx);
-      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(Kokkos::WriteOnly,totalNNZ,vals);
+      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_rows+1,rptr);
+      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_cols+1,cptr);
+      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(KokkosClassic::WriteOnly,num_block_rows+1,bptr);
+      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz,bindx);
+      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz+1,indx);
+      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(KokkosClassic::WriteOnly,totalNNZ,vals);
 
       rptr_h[ 0] = 0; rptr_h[ 1] = 2; rptr_h[ 2] = 4;
       cptr_h[ 0] = 0; cptr_h[ 1] = 2; cptr_h[ 2] = 4;
@@ -845,7 +845,7 @@ namespace {
     xdat = node->template allocBuffer<Scalar>(num_point_rows);
     ydat = node->template allocBuffer<Scalar>(num_point_rows);
     {
-      ArrayRCP<Scalar> yview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,ydat.size(),ydat);
+      ArrayRCP<Scalar> yview = node->template viewBufferNonConst<Scalar>(KokkosClassic::WriteOnly,ydat.size(),ydat);
       yview[0] = 6;
       yview[1] = 6;
       yview[2] = 7;
@@ -893,12 +893,12 @@ namespace {
     ArrayRCP<Scalar>  vals = node->template allocBuffer<Scalar >(totalNNZ);
     // fill the buffers on the host
     {
-      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_rows+1,rptr);
-      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_cols+1,cptr);
-      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(Kokkos::WriteOnly,num_block_rows+1,bptr);
-      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz,bindx);
-      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz+1,indx);
-      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(Kokkos::WriteOnly,totalNNZ,vals);
+      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_rows+1,rptr);
+      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_cols+1,cptr);
+      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(KokkosClassic::WriteOnly,num_block_rows+1,bptr);
+      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz,bindx);
+      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz+1,indx);
+      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(KokkosClassic::WriteOnly,totalNNZ,vals);
 
       rptr_h[ 0] = 0; rptr_h[ 1] = 2; rptr_h[ 2] = 4;
       cptr_h[ 0] = 0; cptr_h[ 1] = 2; cptr_h[ 2] = 4;
@@ -919,7 +919,7 @@ namespace {
     xdat = node->template allocBuffer<Scalar>(num_point_rows);
     ydat = node->template allocBuffer<Scalar>(num_point_rows);
     {
-      ArrayRCP<Scalar> yview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,ydat.size(),ydat);
+      ArrayRCP<Scalar> yview = node->template viewBufferNonConst<Scalar>(KokkosClassic::WriteOnly,ydat.size(),ydat);
       yview[0] = 1;
       yview[1] = 3;
       yview[2] = 7;
@@ -967,12 +967,12 @@ namespace {
     ArrayRCP<Scalar>  vals = node->template allocBuffer<Scalar >(totalNNZ);
     // fill the buffers on the host
     {
-      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_rows+1,rptr);
-      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_cols+1,cptr);
-      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(Kokkos::WriteOnly,num_block_rows+1,bptr);
-      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz,bindx);
-      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz+1,indx);
-      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(Kokkos::WriteOnly,totalNNZ,vals);
+      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_rows+1,rptr);
+      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_cols+1,cptr);
+      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(KokkosClassic::WriteOnly,num_block_rows+1,bptr);
+      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz,bindx);
+      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz+1,indx);
+      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(KokkosClassic::WriteOnly,totalNNZ,vals);
 
       rptr_h[ 0] = 0; rptr_h[ 1] = 2; rptr_h[ 2] = 4;
       cptr_h[ 0] = 0; cptr_h[ 1] = 2; cptr_h[ 2] = 4;
@@ -993,7 +993,7 @@ namespace {
     xdat = node->template allocBuffer<Scalar>(num_point_rows);
     ydat = node->template allocBuffer<Scalar>(num_point_rows);
     {
-      ArrayRCP<Scalar> yview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,ydat.size(),ydat);
+      ArrayRCP<Scalar> yview = node->template viewBufferNonConst<Scalar>(KokkosClassic::WriteOnly,ydat.size(),ydat);
       yview[0] = 1;
       yview[1] = 2;
       yview[2] = 5;
@@ -1041,12 +1041,12 @@ namespace {
     ArrayRCP<Scalar>  vals = node->template allocBuffer<Scalar >(totalNNZ);
     // fill the buffers on the host
     {
-      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_rows+1,rptr);
-      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_cols+1,cptr);
-      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(Kokkos::WriteOnly,num_block_rows+1,bptr);
-      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz,bindx);
-      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz+1,indx);
-      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(Kokkos::WriteOnly,totalNNZ,vals);
+      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_rows+1,rptr);
+      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_cols+1,cptr);
+      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(KokkosClassic::WriteOnly,num_block_rows+1,bptr);
+      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz,bindx);
+      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz+1,indx);
+      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(KokkosClassic::WriteOnly,totalNNZ,vals);
 
       rptr_h[ 0] = 0; rptr_h[ 1] = 2; rptr_h[ 2] = 4;
       cptr_h[ 0] = 0; cptr_h[ 1] = 2; cptr_h[ 2] = 4;
@@ -1067,7 +1067,7 @@ namespace {
     xdat = node->template allocBuffer<Scalar>(num_point_rows);
     ydat = node->template allocBuffer<Scalar>(num_point_rows);
     {
-      ArrayRCP<Scalar> yview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,ydat.size(),ydat);
+      ArrayRCP<Scalar> yview = node->template viewBufferNonConst<Scalar>(KokkosClassic::WriteOnly,ydat.size(),ydat);
       yview[0] = 1;
       yview[1] = 2;
       yview[2] = 5;
@@ -1115,12 +1115,12 @@ namespace {
     ArrayRCP<Scalar>  vals = node->template allocBuffer<Scalar >(totalNNZ);
     // fill the buffers on the host
     {
-      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_rows+1,rptr);
-      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_cols+1,cptr);
-      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(Kokkos::WriteOnly,num_block_rows+1,bptr);
-      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz,bindx);
-      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz+1,indx);
-      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(Kokkos::WriteOnly,totalNNZ,vals);
+      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_rows+1,rptr);
+      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_cols+1,cptr);
+      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(KokkosClassic::WriteOnly,num_block_rows+1,bptr);
+      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz,bindx);
+      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz+1,indx);
+      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(KokkosClassic::WriteOnly,totalNNZ,vals);
 
       rptr_h[ 0] = 0; rptr_h[ 1] = 2; rptr_h[ 2] = 4;
       cptr_h[ 0] = 0; cptr_h[ 1] = 2; cptr_h[ 2] = 4;
@@ -1141,7 +1141,7 @@ namespace {
     xdat = node->template allocBuffer<Scalar>(num_point_rows);
     ydat = node->template allocBuffer<Scalar>(num_point_rows);
     {
-      ArrayRCP<Scalar> yview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,ydat.size(),ydat);
+      ArrayRCP<Scalar> yview = node->template viewBufferNonConst<Scalar>(KokkosClassic::WriteOnly,ydat.size(),ydat);
       yview[0] = 1;
       yview[1] = 3;
       yview[2] = 7;
@@ -1189,12 +1189,12 @@ namespace {
     ArrayRCP<Scalar>  vals = node->template allocBuffer<Scalar >(totalNNZ);
     // fill the buffers on the host
     {
-      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_rows+1,rptr);
-      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_cols+1,cptr);
-      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(Kokkos::WriteOnly,num_block_rows+1,bptr);
-      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz,bindx);
-      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz+1,indx);
-      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(Kokkos::WriteOnly,totalNNZ,vals);
+      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_rows+1,rptr);
+      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_cols+1,cptr);
+      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(KokkosClassic::WriteOnly,num_block_rows+1,bptr);
+      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz,bindx);
+      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(KokkosClassic::WriteOnly,num_block_nz+1,indx);
+      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(KokkosClassic::WriteOnly,totalNNZ,vals);
 
       rptr_h[ 0] = 0; rptr_h[ 1] = 2; rptr_h[ 2] = 4;
       cptr_h[ 0] = 0; cptr_h[ 1] = 2; cptr_h[ 2] = 4;
@@ -1215,7 +1215,7 @@ namespace {
     xdat = node->template allocBuffer<Scalar>(num_point_rows);
     ydat = node->template allocBuffer<Scalar>(num_point_rows);
     {
-      ArrayRCP<Scalar> yview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,ydat.size(),ydat);
+      ArrayRCP<Scalar> yview = node->template viewBufferNonConst<Scalar>(KokkosClassic::WriteOnly,ydat.size(),ydat);
       yview[0] = 6;
       yview[1] = 6;
       yview[2] = 7;

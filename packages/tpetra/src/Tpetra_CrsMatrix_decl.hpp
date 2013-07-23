@@ -195,8 +195,8 @@ namespace Tpetra {
   template <class Scalar,
             class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node          = Kokkos::DefaultNode::DefaultNodeType,
-            class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps >
+            class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
+            class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps >
   class CrsMatrix : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
                     public DistObject<char, LocalOrdinal,GlobalOrdinal,Node> {
   public:
@@ -398,7 +398,7 @@ namespace Tpetra {
     ///   those of the map being cloned, if they exist. Otherwise, the
     ///   row Map is used.
     template <class Node2>
-    RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, typename Kokkos::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> >
+    RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> >
     clone (const RCP<Node2> &node2, const RCP<ParameterList> &params = null)
     {
       const char tfecfFuncName[] = "clone";
@@ -421,7 +421,7 @@ namespace Tpetra {
 	": You requested that the returned clone have local indices, but the "
 	"the source matrix does not have a column Map yet.");
 
-      typedef typename Kokkos::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps LocalMatOps2;
+      typedef typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps LocalMatOps2;
       typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> CrsMatrix2;
       typedef Map<LocalOrdinal, GlobalOrdinal, Node2> Map2;
       RCP<const Map2> clonedRowMap = this->getRowMap ()->template clone (node2);
@@ -444,7 +444,8 @@ namespace Tpetra {
 	numEntriesForAll = 0;
       }
       else {
-        // left with the case that we have optimized storage. in this case, we have to construct a list of row sizes.
+        // We're left with the case that we have optimized storage.
+        // In this case, we have to construct a list of row sizes.
         TEUCHOS_TEST_FOR_EXCEPTION(
           getProfileType() != StaticProfile, std::logic_error, 
 	  "Internal logic error. Please report this to Tpetra team." )
@@ -452,31 +453,39 @@ namespace Tpetra {
         const size_t numRows = this->getNodeNumRows ();
         numEntriesForAll = 0;
         ArrayRCP<size_t> numEnt;
-        if (numRows) {
+        if (numRows != 0) {
 	  numEnt = arcp<size_t> (numRows);
 	}
-        for (size_t i=0; i < numRows; ++i) {
+        for (size_t i = 0; i < numRows; ++i) {
           numEnt[i] = staticGraph_->rowPtrs_[i+1] - staticGraph_->rowPtrs_[i];
         }
         numEntries = numEnt;
       }
 
-      RCP<ParameterList> matrixparams = sublist(params,"CrsMatrix");
+      RCP<ParameterList> matrixparams = 
+	params.is_null () ? null : sublist (params,"CrsMatrix");
       if (useLocalIndices) {
-        RCP<const Map2> clonedColMap = this->getColMap ()->template clone (node2);
+        RCP<const Map2> clonedColMap = 
+	  this->getColMap ()->template clone (node2);
         if (numEntries.is_null ()) {
-	  clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, clonedColMap, numEntriesForAll, pftype, matrixparams));
+	  clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, clonedColMap, 
+					      numEntriesForAll, pftype, 
+					      matrixparams));
 	}
         else {
-	  clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, clonedColMap, numEntries, pftype, matrixparams));
+	  clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, clonedColMap, 
+					      numEntries, pftype, 
+					      matrixparams));
 	}
       }
       else {
         if (numEntries.is_null ()) {
-	  clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, numEntriesForAll, pftype, matrixparams));
+	  clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, numEntriesForAll,
+					      pftype, matrixparams));
 	}
         else {
-	  clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, numEntries, pftype, matrixparams));
+	  clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, numEntries, pftype,
+					      matrixparams));
 	}
       }
       // done with these
@@ -484,7 +493,8 @@ namespace Tpetra {
       numEntriesForAll = 0;
 
       if (useLocalIndices) {
-        clonedMatrix->allocateValues (LocalIndices, CrsMatrix2::GraphNotYetAllocated);
+        clonedMatrix->allocateValues (LocalIndices, 
+				      CrsMatrix2::GraphNotYetAllocated);
         if (this->isLocallyIndexed ()) {
           ArrayView<const LocalOrdinal> linds;
           ArrayView<const Scalar>       vals;
@@ -503,27 +513,30 @@ namespace Tpetra {
           for (LocalOrdinal lrow = clonedRowMap->getMinLocalIndex ();
 	       lrow <= clonedRowMap->getMaxLocalIndex ();
 	       ++lrow) {
-	    size_t numEntries = this->getNumEntriesInLocalRow (lrow);
-	    if (numEntries > Teuchos::as<size_t> (linds.size ())) {
-	      linds.resize (numEntries);
+	    size_t theNumEntries = this->getNumEntriesInLocalRow (lrow);
+	    if (theNumEntries > Teuchos::as<size_t> (linds.size ())) {
+	      linds.resize (theNumEntries);
 	    }
-	    if (numEntries > Teuchos::as<size_t> (vals.size ())) {
-	      vals.resize (numEntries);
+	    if (theNumEntries > Teuchos::as<size_t> (vals.size ())) {
+	      vals.resize (theNumEntries);
 	    }
-            this->getLocalRowCopy (clonedRowMap->getGlobalElement (lrow), linds (), vals (), numEntries);
-            if (numEntries != 0) {
-	      clonedMatrix->insertLocalValues (lrow, linds (0, numEntries), vals (0, numEntries) );
+            this->getLocalRowCopy (clonedRowMap->getGlobalElement (lrow), 
+				   linds (), vals (), theNumEntries);
+            if (theNumEntries != 0) {
+	      clonedMatrix->insertLocalValues (lrow, linds (0, theNumEntries),
+					       vals (0, theNumEntries));
 	    }
           }
         }
       }
       else { // useGlobalIndices
-        clonedMatrix->allocateValues (GlobalIndices, CrsMatrix2::GraphNotYetAllocated);
+        clonedMatrix->allocateValues (GlobalIndices, 
+				      CrsMatrix2::GraphNotYetAllocated);
         if (this->isGloballyIndexed ()) {
           ArrayView<const GlobalOrdinal> ginds;
           ArrayView<const Scalar>         vals;
-          for (GlobalOrdinal grow =  clonedRowMap->getMinGlobalIndex();
-	       grow <= clonedRowMap->getMaxGlobalIndex();
+          for (GlobalOrdinal grow = clonedRowMap->getMinGlobalIndex ();
+	       grow <= clonedRowMap->getMaxGlobalIndex ();
 	       ++grow) {
             this->getGlobalRowView (grow, ginds, vals);
             if (ginds.size () > 0) {
@@ -537,39 +550,44 @@ namespace Tpetra {
           for (GlobalOrdinal grow = clonedRowMap->getMinGlobalIndex ();
 	       grow <= clonedRowMap->getMaxGlobalIndex ();
 	       ++grow) {
-	    size_t numEntries = this->getNumEntriesInGlobalRow (grow);
-	    if (numEntries > Teuchos::as<size_t> (ginds.size ())) {
-	      ginds.resize (numEntries);
+	    size_t theNumEntries = this->getNumEntriesInGlobalRow (grow);
+	    if (theNumEntries > Teuchos::as<size_t> (ginds.size ())) {
+	      ginds.resize (theNumEntries);
 	    }
-	    if (numEntries > Teuchos::as<size_t> (vals.size ())) {
-	      vals.resize (numEntries);
+	    if (theNumEntries > Teuchos::as<size_t> (vals.size ())) {
+	      vals.resize (theNumEntries);
 	    }
-	    this->getGlobalRowCopy (grow, ginds (), vals (), numEntries);
-	    if (numEntries != 0) {
-	      clonedMatrix->insertGlobalValues (grow, ginds (0, numEntries), vals (0, numEntries));
+	    this->getGlobalRowCopy (grow, ginds (), vals (), theNumEntries);
+	    if (theNumEntries != 0) {
+	      clonedMatrix->insertGlobalValues (grow, ginds (0, theNumEntries),
+						vals (0, theNumEntries));
 	    }
 	  }
         }
       }
 
       if (fillCompleteClone) {
-        RCP<ParameterList> fillparams = sublist (params, "fillComplete");
+        RCP<ParameterList> fillparams = 
+	  params.is_null () ? Teuchos::null : sublist (params, "fillComplete");
         try {
           RCP<const Map2> clonedRangeMap;
           RCP<const Map2> clonedDomainMap;
-          if (! this->getRangeMap ().is_null () && this->getRangeMap () != clonedRowMap) {
-            clonedRangeMap  = this->getRangeMap ()->template clone(node2);
+          if (! this->getRangeMap ().is_null () && 
+	      this->getRangeMap () != clonedRowMap) {
+            clonedRangeMap  = this->getRangeMap ()->template clone (node2);
           }
           else {
             clonedRangeMap = clonedRowMap;
           }
-          if (! this->getDomainMap ().is_null () && this->getDomainMap () != clonedRowMap) {
+          if (! this->getDomainMap ().is_null () && 
+	      this->getDomainMap () != clonedRowMap) {
             clonedDomainMap = this->getDomainMap ()->template clone (node2);
           }
           else {
             clonedDomainMap = clonedRowMap;
           }
-          clonedMatrix->fillComplete (clonedDomainMap, clonedRangeMap, fillparams);
+          clonedMatrix->fillComplete (clonedDomainMap, clonedRangeMap, 
+				      fillparams);
         }
         catch (std::exception &e) {
           const bool caughtExceptionOnClone = true;
@@ -708,15 +726,28 @@ namespace Tpetra {
                        const ArrayView<const LocalOrdinal> &cols,
                        const ArrayView<const Scalar> &vals);
 
-    //! \brief Replace matrix entries, using global IDs.
-    /** All index values must be in the global space.
-
-        \pre \c globalRow is a global row belonging to the matrix on this node.
-
-        \note If (globalRow,cols[i]) corresponds to an entry that is duplicated in this matrix row (likely because it was inserted more than once and fillComplete() has not been called in the interim), the behavior of this function is not defined. */
-    void replaceGlobalValues(GlobalOrdinal globalRow,
-                             const ArrayView<const GlobalOrdinal> &cols,
-                             const ArrayView<const Scalar>        &vals);
+    /// Replace one or more entries' values, using global indices.
+    ///
+    /// \param globalRow [in] Global index of the row in which to
+    ///   replace the entries.  This row <i>must</i> be owned by the
+    ///   calling process.
+    /// \param cols [in] Global indices of the columns in which to
+    ///   replace the entries.
+    /// \param vals [in] Values to use for replacing the entries.
+    ///
+    /// For all k in 0, ..., <tt>cols.size()-1</tt>, replace the value
+    /// at entry <tt>(globalRow, cols[k])</tt> of the matrix with
+    /// <tt>vals[k]</tt>.  That entry must exist in the matrix
+    /// already.
+    ///
+    /// If <tt>(globalRow, cols[k])</tt> corresponds to an entry that
+    /// is duplicated in this matrix row (likely because it was
+    /// inserted more than once and fillComplete() has not been called
+    /// in the interim), the behavior of this method is not defined.
+    void
+    replaceGlobalValues (GlobalOrdinal globalRow,
+			 const ArrayView<const GlobalOrdinal>& cols,
+			 const ArrayView<const Scalar>& vals);
 
     //! Replace matrix entries, using local IDs.
     /** All index values must be in the local space.
@@ -928,16 +959,16 @@ namespace Tpetra {
     //@{
 
     //! Returns the communicator.
-    const RCP<const Comm<int> > & getComm() const;
+    RCP<const Comm<int> > getComm() const;
 
     //! Returns the underlying node.
     RCP<Node> getNode() const;
 
     //! Returns the Map that describes the row distribution in this matrix.
-    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRowMap() const;
+    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const;
 
     //! \brief Returns the Map that describes the column distribution in this matrix.
-    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getColMap() const;
+    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getColMap() const;
 
     //! Returns the RowGraph associated with this matrix.
     RCP<const RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const;
@@ -1286,8 +1317,8 @@ namespace Tpetra {
     /// \param D [in] Inverse of diagonal entries of the matrix A.
     /// \param omega [in] SOR damping factor.  omega = 1 results in
     ///   Gauss-Seidel.
-    /// \param direction [in] Sweep direction: Kokkos::Forward or
-    ///   Kokkos::Backward.  ("Symmetric" requires interprocess
+    /// \param direction [in] Sweep direction: KokkosClassic::Forward or
+    ///   KokkosClassic::Backward.  ("Symmetric" requires interprocess
     ///   communication (before each sweep), which is not part of the
     ///   local kernel.)
     template <class DomainScalar, class RangeScalar>
@@ -1296,7 +1327,7 @@ namespace Tpetra {
                       MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
                       const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &D,
                       const RangeScalar& dampingFactor,
-                      const Kokkos::ESweepDirection direction) const;
+                      const KokkosClassic::ESweepDirection direction) const;
 
     /// \brief Solves a linear system when the underlying matrix is triangular.
     ///
@@ -1351,12 +1382,12 @@ namespace Tpetra {
     /// \brief The domain Map of this operator.
     ///
     /// This is \c null until fillComplete() has been called.
-    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
+    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
 
     /// \brief The range Map of this operator.
     ///
     /// This is \c null until fillComplete() has been called.
-    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
 
     //@}
     //! @name Other "apply"-like methods

@@ -560,7 +560,7 @@ namespace panzer_stk {
       thyra_me = Thyra::epetraModelEvaluator(ep_me,lowsFactory);
     }
     else {
-      thyra_me = Teuchos::rcp(new panzer::ModelEvaluator<double,Kokkos::DefaultNode::DefaultNodeType>
+      thyra_me = Teuchos::rcp(new panzer::ModelEvaluator<double,KokkosClassic::DefaultNode::DefaultNodeType>
                   (fmb,m_response_library,linObjFactory,p_names,lowsFactory,global_data,is_transient,t_init));
     }
 
@@ -1145,28 +1145,34 @@ namespace panzer_stk {
              if(!writeCoordinates)
                 callback->preRequest(Teko::RequestMesg(Teuchos::rcp(new Teuchos::ParameterList())));
 
-             // extract coordinate vectors and conditionally modify strat_params
-             // coordinate vectors are copied and wrapped as ArrayRCP objects
-             // the copy is certainly avoidable
+
+             typedef Tpetra::Map<int,long,KokkosClassic::DefaultNode::DefaultNodeType> Map;
+             typedef Tpetra::MultiVector<double,int,long,KokkosClassic::DefaultNode::DefaultNodeType> MV;
    
-             Teuchos::ParameterList & muelu_params = strat_params->sublist("Preconditioner Types").sublist("MueLu").sublist("Operator");
-             switch(mesh->getDimension()) {
-             case 3:{
-               Teuchos::ArrayRCP<double> coords = arcp(rcp(new std::vector<double>(callback->getZCoordsVector())));
-               muelu_params.set("ZCoordinates", coords);
+             // extract coordinate vectors and modify strat_params to include coordinate vectors
+             unsigned dim = mesh->getDimension();
+             Teuchos::RCP<MV> coords;
+             for(unsigned d=0;d<dim;d++) {
+               const std::vector<double> & coord = callback->getCoordsVector(0);
+
+               // no coords vector has been build yet, build one
+               if(coords==Teuchos::null) {
+                 Teuchos::RCP<Map> coords_map = Teuchos::rcp(new Map(-1,coord.size(),0,mpi_comm));
+                 coords = Teuchos::rcp(new MV(coords_map,dim));
+               }
+
+               // sanity check the size
+               TEUCHOS_ASSERT(coords->getLocalLength()==coord.size());
+
+               // fill appropriate coords vector
+               Teuchos::ArrayRCP<double> dest = coords->getDataNonConst(d);
+               for(std::size_t i=0;i<coord.size();i++)
+                 dest[i] = coord[i];
              }
-             case 2:{
-               Teuchos::ArrayRCP<double> coords = arcp(rcp(new std::vector<double>(callback->getYCoordsVector())));
-               muelu_params.set("YCoordinates", coords);
-             }
-             case 1:{
-               Teuchos::ArrayRCP<double> coords = arcp(rcp(new std::vector<double>(callback->getXCoordsVector())));
-               muelu_params.set("XCoordinates", coords);
-             }
-               break;
-             default:
-               TEUCHOS_ASSERT(false);
-             }
+ 
+             // inject coordinates into parameter list
+             Teuchos::ParameterList & muelu_params = strat_params->sublist("Preconditioner Types").sublist("MueLu-Tpetra");
+             muelu_params.set<Teuchos::RCP<MV> >("Coordinates",coords);
           }
           #endif
        }
@@ -1245,7 +1251,7 @@ namespace panzer_stk {
     #ifdef HAVE_MUELU
     {
       Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder); // Register MueLu as a Stratimikos preconditioner strategy for Epetra
-      Stratimikos::enableMueLuTpetra<int,long,Kokkos::DefaultNode::DefaultNodeType>(linearSolverBuilder,"MueLu-Tpetra");
+      Stratimikos::enableMueLuTpetra<int,long,KokkosClassic::DefaultNode::DefaultNodeType>(linearSolverBuilder,"MueLu-Tpetra");
     }
     #endif // MUELU
 
@@ -1326,7 +1332,7 @@ namespace panzer_stk {
   int ModelEvaluatorFactory_Epetra<ScalarT>::
   addResponse(const std::string & responseName,const std::vector<panzer::WorksetDescriptor> & wkstDesc,const BuilderT & builder)
   {
-    typedef panzer::ModelEvaluator<double,Kokkos::DefaultNode::DefaultNodeType> PanzerME;
+    typedef panzer::ModelEvaluator<double,KokkosClassic::DefaultNode::DefaultNodeType> PanzerME;
 
     Teuchos::RCP<Thyra::EpetraModelEvaluator> thyra_ep_me = Teuchos::rcp_dynamic_cast<Thyra::EpetraModelEvaluator>(m_physics_me);
     Teuchos::RCP<PanzerME> panzer_me = Teuchos::rcp_dynamic_cast<PanzerME>(m_physics_me);
@@ -1352,7 +1358,7 @@ namespace panzer_stk {
                  const bool write_graphviz_file,
                  const std::string& graphviz_file_prefix)
   {
-    typedef panzer::ModelEvaluator<double,Kokkos::DefaultNode::DefaultNodeType> PanzerME;
+    typedef panzer::ModelEvaluator<double,KokkosClassic::DefaultNode::DefaultNodeType> PanzerME;
 
     Teuchos::ParameterList & p = *this->getNonconstParameterList();
     Teuchos::ParameterList & user_data = p.sublist("User Data");

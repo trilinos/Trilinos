@@ -153,7 +153,7 @@
     </EmailAddresses>
     <ParentPackage value="Kokkos"/>
   </Package>
-  <Package name="KokkosArray" dir="packages/kokkos/array" type="EX">
+  <Package name="KokkosCore" dir="packages/kokkos/core" type="EX">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -168,7 +168,7 @@
     <ParentPackage value="Kokkos"/>
   </Package>
   <Package name="KokkosCompat" dir="packages/kokkos/compat" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES value="KokkosArray,KokkosClassic,Teuchos"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="KokkosCore,KokkosClassic,Teuchos"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="ThreadPool"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -183,7 +183,7 @@
   </Package>
   <Package name="Kokkos" dir="packages/kokkos" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="KokkosClassic,KokkosArray,KokkosCompat"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="KokkosClassic,KokkosCore,KokkosCompat"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -267,7 +267,7 @@
   </Package>
   <Package name="Tpetra" dir="packages/tpetra" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,KokkosClassic"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,KokkosArray"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,KokkosCore"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -1387,7 +1387,7 @@
   </Package>
   <Package name="Stokhos" dir="packages/stokhos" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Ifpack,ML,TriKota,Anasazi,Sacado,NOX,Isorropia,KokkosClassic,KokkosArray,Tpetra,Ifpack2,MueLu,Belos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Ifpack,ML,TriKota,Anasazi,Sacado,NOX,Isorropia,KokkosClassic,KokkosCore,Tpetra,Ifpack2,MueLu,Belos"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="AztecOO,Stratimikos,Zoltan"/>
     <LIB_REQUIRED_DEP_TPLS/>

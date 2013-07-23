@@ -46,7 +46,7 @@
 
 #include <string>
 
-namespace Kokkos {
+namespace KokkosClassic {
   std::string LinAlgVersion();
 }
 

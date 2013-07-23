@@ -63,8 +63,8 @@
 /* Define if Boost is enabled */
 #cmakedefine HAVE_STOKHOS_BOOST
 
-/* Define if Kokkos is enabled */
-#cmakedefine HAVE_STOKHOS_KOKKOSARRAY
+/* Define if KokkosCore is enabled */
+#cmakedefine HAVE_STOKHOS_KOKKOSCORE
 
 /* Define if MueLu is enabled */
 #cmakedefine HAVE_STOKHOS_MUELU

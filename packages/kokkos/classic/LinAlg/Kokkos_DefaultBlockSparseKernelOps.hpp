@@ -57,7 +57,7 @@
 //               necessary for the transposed kernels to work for complex-valued scalars.
 //               Note, this will require also the addition of conjugate functionality to the 1x1 kernel
 
-namespace Kokkos {
+namespace KokkosClassic {
 
 /** Form dense matrix-vector product y = A*x */
 template<class Scalar,class Ordinal,class DomainScalar,class RangeScalar>
@@ -499,6 +499,6 @@ struct DefaultBlockSparseTransposeSolveOp1 {
   }
 };
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif

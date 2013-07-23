@@ -64,34 +64,34 @@ namespace {
 
   // Specialization of getNode for SerialNode
   template<>
-  Teuchos::RCP<Kokkos::SerialNode>
+  Teuchos::RCP<KokkosClassic::SerialNode>
   getNode (Teuchos::RCP<Teuchos::ParameterList> params) {
     // "Num Threads" specifies the number of threads.  Defaults to an
     // automatically chosen value.
     if (params.is_null ()) {
       params = Teuchos::parameterList ();
     }
-    return Teuchos::rcp (new Kokkos::SerialNode (*params));
+    return Teuchos::rcp (new KokkosClassic::SerialNode (*params));
   }
 
 #if defined(HAVE_KOKKOSCLASSIC_TBB)
   // Specialization of getNode for TBBNode
   template<>
-  Teuchos::RCP<Kokkos::TBBNode>
+  Teuchos::RCP<KokkosClassic::TBBNode>
   getNode (Teuchos::RCP<Teuchos::ParameterList> params) {
     // "Num Threads" specifies the number of threads.  Defaults to an
     // automatically chosen value.
     if (params.is_null ()) {
       params = Teuchos::parameterList ();
     }
-    return Teuchos::rcp (new Kokkos::TBBNode (*params));
+    return Teuchos::rcp (new KokkosClassic::TBBNode (*params));
   }
 #endif // defined(HAVE_KOKKOSCLASSIC_TBB)
 
 #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
   // Specialization of getNode for TPINode
   template<>
-  Teuchos::RCP<Kokkos::TPINode>
+  Teuchos::RCP<KokkosClassic::TPINode>
   getNode (Teuchos::RCP<Teuchos::ParameterList> params) {
     using Teuchos::isParameterType;
 
@@ -108,7 +108,7 @@ namespace {
 	     params->get<int>("Num Threads") == -1) {
       params->set ("Num Threads", static_cast<int> (0));
     }
-    return Teuchos::rcp (new Kokkos::TPINode (*params));
+    return Teuchos::rcp (new KokkosClassic::TPINode (*params));
   }
 #endif // defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
 
@@ -485,12 +485,12 @@ main (int argc, char *argv[])
 #endif // 0
 
 #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-  typedef Kokkos::TPINode node_type;
+  typedef KokkosClassic::TPINode node_type;
 #else
 #  if defined(HAVE_KOKKOSCLASSIC_TBB)
-  typedef Kokkos::TBBNode node_type;
+  typedef KokkosClassic::TBBNode node_type;
 #  else
-  typedef Kokkos::SerialNode node_type;
+  typedef KokkosClassic::SerialNode node_type;
 #  endif // HAVE_KOKKOSCLASSIC_TBB
 #endif // HAVE_KOKKOSCLASSIC_THREADPOOL
 

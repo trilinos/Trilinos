@@ -43,7 +43,7 @@
 #include <iostream>
 #include <Teuchos_Assert.hpp>
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   TPINode::TPINode () {
     ParameterList params = getDefaultParameters();

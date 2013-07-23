@@ -155,7 +155,7 @@ namespace MueLu {
     /////////////////// switch from A to A^T in restriction mode (necessary as long as implicit transpose not working for Epetra)
     if(restrictionMode_) {
       SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
-      A = Utils2::Transpose(A, true); // build transpose of A explicitely
+      A = Utils2::Transpose(*A, true); // build transpose of A explicitely
     }
 
     /////////////////// calculate D^{-1} A Ptent (needed for smoothing)
@@ -166,7 +166,7 @@ namespace MueLu {
     doFillComplete=true;
     optimizeStorage=false;
     Teuchos::ArrayRCP<Scalar> diag = Utils::GetMatrixDiagonal(*A);
-    Utils::MyOldScaleMatrix(DinvAP0, diag, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
+    Utils::MyOldScaleMatrix(*DinvAP0, diag, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
 
     /////////////////// calculate local damping factors omega
 
@@ -211,10 +211,10 @@ namespace MueLu {
 
     /////////////////// prolongator smoothing using local damping parameters omega
     RCP<Matrix> P_smoothed = Teuchos::null;
-    Utils::MyOldScaleMatrix(DinvAP0, RowBasedOmega_local, false, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
+    Utils::MyOldScaleMatrix(*DinvAP0, RowBasedOmega_local, false, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
 
-    Utils2::TwoMatrixAdd(Ptent, false, Teuchos::ScalarTraits<Scalar>::one(),
-                         DinvAP0, false, -Teuchos::ScalarTraits<Scalar>::one(),
+    Utils2::TwoMatrixAdd(*Ptent, false, Teuchos::ScalarTraits<Scalar>::one(),
+                         *DinvAP0, false, -Teuchos::ScalarTraits<Scalar>::one(),
                          P_smoothed);
     P_smoothed->fillComplete(Ptent->getDomainMap(), Ptent->getRangeMap());
 
@@ -236,7 +236,7 @@ namespace MueLu {
 
     } else {
       // prolongation factory is in restriction mode
-      RCP<Matrix> R = Utils2::Transpose(P_smoothed, true); // use Utils2 -> specialization for double
+      RCP<Matrix> R = Utils2::Transpose(*P_smoothed, true); // use Utils2 -> specialization for double
       Set(coarseLevel, "R", R);
 
       GetOStream(Statistics0,0) << Utils::PrintMatrixInfo(*R, "P", params);
@@ -318,7 +318,7 @@ namespace MueLu {
         bool optimizeStorage=false;
         Teuchos::ArrayRCP<Scalar> diagA = Utils::GetMatrixDiagonal(*A);
         RCP<Matrix> DinvADinvAP0 = Utils::Multiply(*A, false, *DinvAP0, false, doFillComplete, optimizeStorage);
-        Utils::MyOldScaleMatrix(DinvADinvAP0, diagA, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
+        Utils::MyOldScaleMatrix(*DinvADinvAP0, diagA, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
 
         Numerator =   VectorFactory::Build(DinvADinvAP0->getColMap(), true);
         Denominator = VectorFactory::Build(DinvADinvAP0->getColMap(), true);

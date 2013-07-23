@@ -53,6 +53,7 @@
 #include <Teuchos_ParameterList.hpp>
 
 #include "Ifpack2_Factory.hpp"
+#include "Xpetra_MultiVectorFactory.hpp"
 
 #include "MueLu_Ifpack2Smoother_decl.hpp"
 #include "MueLu_Level.hpp"
@@ -95,7 +96,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
     if (this->IsSetup() == true) this->GetOStream(Warnings0, 0) << "Warning: MueLu::Ifpack2Smoother::Setup(): Setup() has already been called";
 
-    RCP<Matrix> A = Factory::Get< RCP<Matrix> >(currentLevel, "A");
+    A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
     Scalar negone = -Teuchos::ScalarTraits<Scalar>::one();
 
@@ -103,7 +104,7 @@ namespace MueLu {
 
     if (type_ == "CHEBYSHEV") {
       if ( !paramList_.isParameter("chebyshev: max eigenvalue") ) {
-        lambdaMax = A->GetMaxEigenvalueEstimate();
+        lambdaMax = A_->GetMaxEigenvalueEstimate();
         if (lambdaMax != negone) {
           this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (cached with matrix)" << " = " << lambdaMax << std::endl;
           paramList_.set("chebyshev: max eigenvalue", lambdaMax);
@@ -114,7 +115,7 @@ namespace MueLu {
       }
     }
 
-    RCP<const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > tpA = Utils::Op2NonConstTpetraCrs(A);
+    RCP<const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > tpA = Utils::Op2NonConstTpetraCrs(A_);
     prec_ = Ifpack2::Factory::create(type_, tpA, overlap_);
 
     prec_->setParameters(paramList_);
@@ -128,7 +129,7 @@ namespace MueLu {
       chebyPrec = rcp_dynamic_cast<Ifpack2::Chebyshev<MatrixType> >(prec_);
       if (chebyPrec != Teuchos::null) {
         lambdaMax = chebyPrec->getLambdaMaxForApply();
-        A->SetMaxEigenvalueEstimate(lambdaMax);
+        A_->SetMaxEigenvalueEstimate(lambdaMax);
         this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (calculated by Ifpack2)" << " = " << lambdaMax << std::endl;
       }
       TEUCHOS_TEST_FOR_EXCEPTION(lambdaMax == negone, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Setup(): no maximum eigenvalue estimate");
@@ -161,28 +162,11 @@ namespace MueLu {
     else if (type_ == "SCHWARZ") {
       int overlap=0;
       Ifpack2::getParameter(paramList, "schwarz: overlap level", overlap);
-      if (InitialGuessIsZero == false && overlap > 0) {
-        if (this->IsPrint(Warnings0, 0)) {
-          static int warning_only_once=0;
-          if ((warning_only_once++) == 0)
-            this->GetOStream(Warnings0, 0) << "Warning: MueLu::Ifpack2Smoother::Apply(): Additive Schwarz with overlap has no provision for a nonzero initial guess." << std::endl;
-        }
-      }
-      else {
-	paramList.set("schwarz: zero starting solution", InitialGuessIsZero);
-      }
+      if (InitialGuessIsZero == true)
+        paramList.set("schwarz: zero starting solution", InitialGuessIsZero);
     }
     else if (type_ == "ILUT") {
-      if (InitialGuessIsZero == false) {
-        if (this->IsPrint(Warnings0, 0)) {
-          static int warning_only_once=0;
-          if ((warning_only_once++) == 0)
-            this->GetOStream(Warnings0, 0) << "Warning: MueLu::Ifpack2Smoother::Apply(): ILUT has no provision for a nonzero initial guess." << std::endl;
-          // TODO: ILUT using correction equation should be implemented in ifpack2 directly
-          //       I think that an option named "zero starting solution"
-          //       is also appropriate for ILUT
-        }
-      }
+      //do nothing
     } else {
       // TODO: When https://software.sandia.gov/bugzilla/show_bug.cgi?id=5283#c2 is done
       // we should remove the if/else/elseif and just test if this
@@ -192,9 +176,19 @@ namespace MueLu {
     prec_->setParameters(paramList);
 
     // Apply
-    Tpetra::MultiVector<SC,LO,GO,NO> &tpX = Utils::MV2NonConstTpetraMV(X);
-    Tpetra::MultiVector<SC,LO,GO,NO> const &tpB = Utils::MV2TpetraMV(B);
-    prec_->apply(tpB,tpX);
+    if ( (type_ != "ILUT" && type_ != "SCHWARZ") || InitialGuessIsZero) {
+      Tpetra::MultiVector<SC,LO,GO,NO> &tpX = Utils::MV2NonConstTpetraMV(X);
+      Tpetra::MultiVector<SC,LO,GO,NO> const &tpB = Utils::MV2TpetraMV(B);
+      prec_->apply(tpB,tpX);
+    } else {
+      typedef Teuchos::ScalarTraits<Scalar> TST;
+      RCP<MultiVector> Residual = Utils::Residual(*A_,X,B);
+      RCP<MultiVector> Correction = MultiVectorFactory::Build(A_->getDomainMap(), X.getNumVectors());
+      Tpetra::MultiVector<SC,LO,GO,NO> &tpX = Utils::MV2NonConstTpetraMV(*Correction);
+      Tpetra::MultiVector<SC,LO,GO,NO> const &tpB = Utils::MV2TpetraMV(*Residual);
+      prec_->apply(tpB,tpX);
+      X.update(TST::one(), *Correction, TST::one());
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

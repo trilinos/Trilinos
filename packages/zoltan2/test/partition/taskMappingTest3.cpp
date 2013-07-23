@@ -340,6 +340,12 @@ int main(int argc, char *argv[]){
         */
         zoltan2_partId_t *partArray = NULL;
         int partArraysize = -1;
+        zoltan2_partId_t hopper[3];
+        hopper[0] = 17;
+        hopper[1] = 8;
+        hopper[2] = 24;
+        zoltan2_partId_t *machineDimensions = NULL;
+        //machineDimensions = hopper;
         Zoltan2::coordinateTaskMapperInterface<zoltan2_partId_t, scalar_t, scalar_t>(
                 tcomm,
                 procDim,
@@ -356,7 +362,8 @@ int main(int argc, char *argv[]){
                 proc_to_task_xadj_, /*output*/
                 proc_to_task_adj_, /*output*/
                 partArraysize,
-                partArray
+                partArray,
+                machineDimensions
                 );
 
         if (tcomm->getRank() == 0){

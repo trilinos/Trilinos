@@ -46,7 +46,7 @@
 
 #include "Stokhos_StaticArrayTraits.hpp"
 
-#include "KokkosArray_Macros.hpp"
+#include "Kokkos_Macros.hpp"
 
 namespace Stokhos {
 
@@ -75,24 +75,24 @@ namespace Stokhos {
     };
 
     //! Constructor
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     StaticStorage(const ordinal_type& sz,
 		  const value_type& x = value_type(0.0)) : sz_(sz) { 
       ss::fill(coeff_, sz_, x); 
     }
 
     //! Copy constructor
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     StaticStorage(const StaticStorage& s) : sz_(s.sz_) {
       ss::copy(s.coeff_, coeff_, sz_);
     }
 
     //! Destructor
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     ~StaticStorage() {}
 
     //! Assignment operator
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     StaticStorage& operator=(const StaticStorage& s) {
       sz_ = s.sz_;
       ss::copy(s.coeff_, coeff_, sz_);
@@ -100,13 +100,13 @@ namespace Stokhos {
     }
 
     //! Initialize values to a constant value
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     void init(const_reference v) { 
       ss::fill(coeff_, sz_, v); 
     }
 
     //! Initialize values to an array of values
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     void init(const_pointer v, const ordinal_type& sz = 0) {
       if (sz == 0)
       	ss::copy(v, coeff_, sz_);
@@ -115,13 +115,13 @@ namespace Stokhos {
     }
 
     //! Load values to an array of values
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     void load(pointer v) { 
       ss::copy(coeff_, v, sz_); 
     }
 
     //! Resize to new size (values are preserved)
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     void resize(const ordinal_type& sz) { 
       if (sz > sz_)
 	ss::fill(coeff_+sz_, sz-sz_, value_type(0.0));
@@ -129,38 +129,38 @@ namespace Stokhos {
     }
 
     //! Reset storage to given array, size, and stride
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     void shallowReset(pointer v, const ordinal_type& sz, 
 		      const ordinal_type& stride, bool owned) {}
 
     //! Return size
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     ordinal_type size() const { return sz_; }
 
     //! Coefficient access (avoid if possible)
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     const_reference operator[] (const ordinal_type& i) const { 
       return coeff_[i];
     }
 
     //! Coefficient access (avoid if possible)
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     reference operator[] (const ordinal_type& i) { return coeff_[i]; }
 
     template <int i>
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     reference getCoeff() { return coeff_[i]; }
 
     template <int i>
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     const_reference getCoeff() const { return coeff_[i]; }
 
     //! Get coefficients
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     const_pointer coeff() const { return coeff_; }
 
     //! Get coefficients
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     pointer coeff() { return coeff_; }
 
   private:

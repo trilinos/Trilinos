@@ -49,7 +49,7 @@
 #include "Sacado_mpl_next.hpp"
 #include "Sacado_mpl_deref.hpp"
 
-#include "KokkosArray_Macros.hpp"
+#include "Kokkos_Macros.hpp"
 
 namespace Stokhos {
 
@@ -62,7 +62,7 @@ namespace Stokhos {
     struct for_each {
       typedef node_t node_type;
       template <typename Op>
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       for_each(const Op& op) {
 	op(typename Sacado::mpl::deref<Iter1>::type());
 	for_each<Seq, node_type, typename Sacado::mpl::next<Iter1>::type, Iter2> f(op);
@@ -72,7 +72,7 @@ namespace Stokhos {
     template <class Seq, class node_t, class Iter1>
     struct for_each<Seq, node_t, Iter1, Iter1> {
       template <typename Op>
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       for_each(const Op& op) {}
     };
 

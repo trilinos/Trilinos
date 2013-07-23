@@ -42,7 +42,7 @@
 #include <Teuchos_ParameterList.hpp>
 #include "Kokkos_OpenMPNode.hpp"
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   OpenMPNode::OpenMPNode () :
     curNumThreads_ (-1), // Default: Let OpenMP pick the number of threads

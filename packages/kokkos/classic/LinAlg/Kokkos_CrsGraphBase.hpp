@@ -49,7 +49,7 @@
 #include <Teuchos_OrdinalTraits.hpp>
 #include <numeric>
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   /*! @class CrsGraphBase
       @brief An abstract base class providing a template for Kokkos-level sparse graph objects.
@@ -144,6 +144,6 @@ namespace Kokkos {
     return node_;
   }
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif /* KOKKOS_CRSGRAPHBASE_HPP */

@@ -78,7 +78,7 @@ typedef lno_t z2TestLO;
 typedef gno_t z2TestGO;
 typedef scalar_t Scalar;
 
-typedef Kokkos::DefaultNode::DefaultNodeType Node;
+typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 typedef Tpetra::CrsMatrix<Scalar, z2TestLO, z2TestGO> SparseMatrix;
 typedef Tpetra::Vector<Scalar, z2TestLO, z2TestGO> Vector;
 

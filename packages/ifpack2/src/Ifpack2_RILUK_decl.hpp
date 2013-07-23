@@ -427,12 +427,16 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
   //@{ \name Additional methods required to support the Tpetra::Operator interface.
 
   //! Returns the Tpetra::Map object associated with the domain of this operator.
-  const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getDomainMap() const
-  { return Graph_->getL_Graph()->getDomainMap(); }
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > 
+  getDomainMap () const {
+    return Graph_->getL_Graph ()->getDomainMap (); 
+  }
 
   //! Returns the Tpetra::Map object associated with the range of this operator.
-  const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getRangeMap() const
-  { return Graph_->getU_Graph()->getRangeMap(); }
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > 
+  getRangeMap () const {
+    return Graph_->getU_Graph ()->getRangeMap (); 
+  }
 
   //@}
 
@@ -443,8 +447,6 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
   void setAllocated(bool Flag) {isAllocated_ = Flag;}
 
  private:
-
-
   void allocate_L_and_U();
   void initAllValues(const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> & overlapA);
   void generateXY(Teuchos::ETransp mode,

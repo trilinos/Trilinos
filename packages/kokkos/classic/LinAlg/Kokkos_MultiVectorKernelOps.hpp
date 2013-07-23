@@ -53,7 +53,7 @@
 #define KERNEL_PREFIX
 #endif
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   template <typename Scalar>
   struct InitOp {

@@ -1,17 +1,17 @@
 #include <impl/Kokkos_PhysicalLayout.hpp>
-namespace KokkosArray {
+namespace Kokkos {
 
 
 template<typename T, class RangeVector,class CrsMatrix,class DomainVector>
-bool MV_Multiply_DoCuSparse(typename KokkosArray::Impl::enable_if<
-		!KokkosArray::Impl::is_same<T,double>::value && !KokkosArray::Impl::is_same<T,float>::value, typename RangeVector::scalar_type  >::type s_b
+bool MV_Multiply_DoCuSparse(typename Kokkos::Impl::enable_if<
+		!Kokkos::Impl::is_same<T,double>::value && !Kokkos::Impl::is_same<T,float>::value, typename RangeVector::scalar_type  >::type s_b
 		,const RangeVector & y, typename DomainVector::scalar_type s_a,
 		const CrsMatrix & A , const DomainVector & x) {
 	return false;
 }
 
 template<typename T, class RangeVector,class CrsMatrix,class DomainVector>
-bool MV_Multiply_DoCuSparse(typename KokkosArray::Impl::enable_if<KokkosArray::Impl::is_same<T,double>::value, double  >::type s_b
+bool MV_Multiply_DoCuSparse(typename Kokkos::Impl::enable_if<Kokkos::Impl::is_same<T,double>::value, double  >::type s_b
 		,const RangeVector & y, double s_a,
 		const CrsMatrix & A , const DomainVector & x) {
 	Impl::PhysicalLayout layout_x(x);
@@ -48,7 +48,7 @@ bool MV_Multiply_DoCuSparse(typename KokkosArray::Impl::enable_if<KokkosArray::I
 }
 
 template<typename T, class RangeVector,class CrsMatrix,class DomainVector>
-bool MV_Multiply_DoCuSparse(typename KokkosArray::Impl::enable_if<KokkosArray::Impl::is_same<T,float>::value, float  >::type s_b
+bool MV_Multiply_DoCuSparse(typename Kokkos::Impl::enable_if<Kokkos::Impl::is_same<T,float>::value, float  >::type s_b
 		,const RangeVector & y, float s_a,
 		const CrsMatrix & A , const DomainVector & x) {
 	Impl::PhysicalLayout layout_x(x);
@@ -85,15 +85,15 @@ template<class RangeVector,class CrsMatrix,class DomainVector>
 bool MV_Multiply_Try_CuSparse( typename RangeVector::scalar_type s_b,const RangeVector & y, typename DomainVector::scalar_type s_a,
 		const CrsMatrix & A , const DomainVector & x)
 {
-  if(!KokkosArray::Impl::is_same<typename RangeVector::device_type,typename KokkosArray::Cuda>::value) return false;
-  if(KokkosArray::Impl::is_same<typename RangeVector::non_const_scalar_type,float>::value&&
-	 KokkosArray::Impl::is_same<typename DomainVector::non_const_scalar_type,float>::value&&
-	 KokkosArray::Impl::is_same<typename CrsMatrix::values_type::non_const_scalar_type,float>::value) {
+  if(!Kokkos::Impl::is_same<typename RangeVector::device_type,typename Kokkos::Cuda>::value) return false;
+  if(Kokkos::Impl::is_same<typename RangeVector::non_const_scalar_type,float>::value&&
+	 Kokkos::Impl::is_same<typename DomainVector::non_const_scalar_type,float>::value&&
+	 Kokkos::Impl::is_same<typename CrsMatrix::values_type::non_const_scalar_type,float>::value) {
 	   return MV_Multiply_DoCuSparse<typename RangeVector::scalar_type,RangeVector,CrsMatrix,DomainVector>(s_b,y,s_a,A,x);
   } else
-  if(KokkosArray::Impl::is_same<typename RangeVector::non_const_scalar_type,double>::value&&
-	 KokkosArray::Impl::is_same<typename DomainVector::non_const_scalar_type,double>::value&&
-	 KokkosArray::Impl::is_same<typename CrsMatrix::values_type::non_const_scalar_type,double>::value) {
+  if(Kokkos::Impl::is_same<typename RangeVector::non_const_scalar_type,double>::value&&
+	 Kokkos::Impl::is_same<typename DomainVector::non_const_scalar_type,double>::value&&
+	 Kokkos::Impl::is_same<typename CrsMatrix::values_type::non_const_scalar_type,double>::value) {
 	   return MV_Multiply_DoCuSparse<typename RangeVector::scalar_type,RangeVector,CrsMatrix,DomainVector>(s_b,y,s_a,A,x);
   } else
   return false;

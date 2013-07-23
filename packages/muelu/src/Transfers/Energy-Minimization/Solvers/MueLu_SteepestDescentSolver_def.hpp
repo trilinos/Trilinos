@@ -87,12 +87,12 @@ namespace MueLu {
 #else
       // gradient = - A * P
       SC stepLength = stepLength_;
-      Utils::MyOldScaleMatrix(AP, D, true, false, false);
+      Utils::MyOldScaleMatrix(*AP, D, true, false, false);
       C.Apply(*AP, *Ptmp);
 #endif
 
       RCP<Matrix> newP;
-      Utils2::TwoMatrixAdd(Ptmp, false, -stepLength, P, false, Teuchos::ScalarTraits<Scalar>::one(), newP);
+      Utils2::TwoMatrixAdd(*Ptmp, false, -stepLength, *P, false, Teuchos::ScalarTraits<Scalar>::one(), newP);
       newP->fillComplete(P->getDomainMap(), P->getRangeMap() );
       P = newP;
     }

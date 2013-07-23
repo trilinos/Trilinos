@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -43,21 +43,21 @@
 
 #include <TestStochastic.hpp>
 
-#include <KokkosArray_Cuda.hpp>
-#include <Host/KokkosArray_Host_ProductTensor.hpp>
-#include <Cuda/KokkosArray_Cuda_SymmetricDiagonalSpec.hpp>
-#include <Cuda/KokkosArray_Cuda_ProductTensor.hpp>
-#include <Cuda/KokkosArray_Cuda_CrsProductTensorLegendre.hpp>
-#include <Cuda/KokkosArray_Cuda_StochasticProductTensor.hpp>
-#include <Cuda/KokkosArray_Cuda_BlockCrsMatrix.hpp>
-#include <Cuda/KokkosArray_Cuda_CrsMatrix.hpp>
+#include <Kokkos_Cuda.hpp>
+#include <Host/Kokkos_Host_ProductTensor.hpp>
+#include <Cuda/Kokkos_Cuda_SymmetricDiagonalSpec.hpp>
+#include <Cuda/Kokkos_Cuda_ProductTensor.hpp>
+#include <Cuda/Kokkos_Cuda_CrsProductTensorLegendre.hpp>
+#include <Cuda/Kokkos_Cuda_StochasticProductTensor.hpp>
+#include <Cuda/Kokkos_Cuda_BlockCrsMatrix.hpp>
+#include <Cuda/Kokkos_Cuda_CrsMatrix.hpp>
 
 namespace unit_test {
 
 template<typename Scalar>
-struct performance_test_driver<Scalar,KokkosArray::Cuda> {
+struct performance_test_driver<Scalar,Kokkos::Cuda> {
   static void run(bool test_flat, bool test_orig, bool test_block) {
-    typedef KokkosArray::Cuda Device;
+    typedef Kokkos::Cuda Device;
     
     int nGrid;
     int nIter; 
@@ -93,7 +93,7 @@ int mainCuda(bool test_flat, bool test_orig, bool test_block, int device_id)
 {
   typedef unsigned long long int IntType ;
 
-  KokkosArray::Cuda::initialize( KokkosArray::Cuda::SelectDevice(0) );
+  Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
 
   cudaSetDevice(device_id);
   cudaDeviceProp deviceProp;
@@ -103,10 +103,10 @@ int mainCuda(bool test_flat, bool test_orig, bool test_block, int device_id)
 	    << std::endl;
 
   std::cout << std::endl << "\"Cuda Performance\"" << std::endl ;
-  unit_test::performance_test_driver<Scalar,KokkosArray::Cuda>::run(
+  unit_test::performance_test_driver<Scalar,Kokkos::Cuda>::run(
     test_flat, test_orig, test_block);
 
-  KokkosArray::Cuda::finalize();
+  Kokkos::Cuda::finalize();
 
   return 0 ;
 }

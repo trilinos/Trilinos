@@ -57,10 +57,9 @@ namespace Ifpack2 {
 
 //! Ifpack2::OverlapGraph constructs an overlapped graph.
 
-template<class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+template<class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
 class OverlapGraph : public Teuchos::Describable {
-
- public:
+public:
   //@{ \name Constructors/Destructor
   //! Constructor using Tpetra::CrsGraph.
   /*! Creates an Ifpack2::OverlapGraph object from the user graph. 

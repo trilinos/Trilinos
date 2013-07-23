@@ -43,9 +43,9 @@
 #include <Teuchos_ParameterList.hpp>
 #include <iostream>
 
-// tbb::task_scheduler_init Kokkos::TBBNode::tsi_(tbb::task_scheduler_init::deferred);
+// tbb::task_scheduler_init KokkosClassic::TBBNode::tsi_(tbb::task_scheduler_init::deferred);
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   TBBNode::TBBNode () :
     alreadyInit_ (false), 

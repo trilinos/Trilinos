@@ -42,7 +42,7 @@
 #ifndef STOKHOS_FLAT_SPARSE_3_TENSOR_HPP
 #define STOKHOS_FLAT_SPARSE_3_TENSOR_HPP
 
-#include "KokkosArray_View.hpp"
+#include "Kokkos_View.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_ProductBasis.hpp"
@@ -67,10 +67,10 @@ public:
 
 private:
 
-  typedef KokkosArray::View< size_type[] , device_type > coord_array_type ;
-  typedef KokkosArray::View< value_type[], device_type > value_array_type ;
-  typedef KokkosArray::View< size_type[], device_type > entry_array_type ;
-  typedef KokkosArray::View< size_type[], device_type > row_map_array_type ;
+  typedef Kokkos::View< size_type[] , device_type > coord_array_type ;
+  typedef Kokkos::View< value_type[], device_type > value_array_type ;
+  typedef Kokkos::View< size_type[], device_type > entry_array_type ;
+  typedef Kokkos::View< size_type[], device_type > row_map_array_type ;
 
   coord_array_type   m_k_coord ;
   coord_array_type   m_j_coord ;
@@ -127,66 +127,66 @@ public:
   }
 
   /** \brief  Dimension of the tensor. */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type dimension() const { return m_k_row_map.dimension_0() - 1 ; }
 
   /** \brief  Number of sparse entries. */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type entry_count() const
   { return m_j_coord.dimension_0(); }
 
   /** \brief  Begin k entries with a coordinate 'i' */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type k_begin( size_type i ) const
   { return m_k_row_map[i]; }
 
   /** \brief  End k entries with a coordinate 'i' */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type k_end( size_type i ) const
   { return m_k_row_map[i] + m_num_k(i); }
 
   /** \brief  Number of k entries with a coordinate 'i' */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type num_k( size_type i ) const
   { return m_num_k(i); }
 
   /** \brief  k coordinate for k entry 'kEntry' */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   const size_type& k_coord( const size_type kEntry ) const
   { return m_k_coord( kEntry ); }
 
   /** \brief  Begin j entries with a k entry 'kEntry' */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type j_begin( size_type kEntry ) const
   { return m_j_row_map[kEntry]; }
 
   /** \brief  End j entries with a k entry 'kEntry' */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type j_end( size_type kEntry ) const
   { return m_j_row_map[kEntry] + m_num_j(kEntry); }
 
   /** \brief  Number of j entries with a k entry 'kEntry' */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type num_j( size_type kEntry ) const
   { return m_num_j(kEntry); }
 
   /** \brief  j coordinate for j entry 'jEntry' */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   const size_type& j_coord( const size_type jEntry ) const
   { return m_j_coord( jEntry ); }
 
   /** \brief  Value for j entry 'jEntry' */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   const value_type & value( const size_type jEntry ) const
   { return m_value( jEntry ); }
 
   /** \brief Number of non-zero's */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type num_non_zeros() const
   { return m_nnz; }
 
   /** \brief Number flop's per multiply-add */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type num_flops() const
   { return m_flops; }
 
@@ -231,7 +231,7 @@ public:
 
     /*
     // Pad each row to have size divisible by alignment size
-    enum { Align = KokkosArray::Impl::is_same<DeviceType,KokkosArray::Cuda>::value ? 32 : 2 };
+    enum { Align = Kokkos::Impl::is_same<DeviceType,Kokkos::Cuda>::value ? 32 : 2 };
     for ( size_type i = 0 ; i < dimension ; ++i ) {
       const size_t rem = coord_work[i] % Align;
       if (rem > 0) {
@@ -254,19 +254,19 @@ public:
 
     // Create mirror, is a view if is host memory
     typename coord_array_type::HostMirror
-      host_k_coord = KokkosArray::create_mirror_view( tensor.m_k_coord );
+      host_k_coord = Kokkos::create_mirror_view( tensor.m_k_coord );
     typename coord_array_type::HostMirror
-      host_j_coord = KokkosArray::create_mirror_view( tensor.m_j_coord );
+      host_j_coord = Kokkos::create_mirror_view( tensor.m_j_coord );
     typename value_array_type::HostMirror
-      host_value = KokkosArray::create_mirror_view( tensor.m_value );
+      host_value = Kokkos::create_mirror_view( tensor.m_value );
     typename entry_array_type::HostMirror
-      host_num_k = KokkosArray::create_mirror_view( tensor.m_num_k );
+      host_num_k = Kokkos::create_mirror_view( tensor.m_num_k );
     typename entry_array_type::HostMirror
-      host_num_j = KokkosArray::create_mirror_view( tensor.m_num_j );
+      host_num_j = Kokkos::create_mirror_view( tensor.m_num_j );
     typename entry_array_type::HostMirror
-      host_k_row_map = KokkosArray::create_mirror_view( tensor.m_k_row_map );
+      host_k_row_map = Kokkos::create_mirror_view( tensor.m_k_row_map );
     typename entry_array_type::HostMirror
-      host_j_row_map = KokkosArray::create_mirror_view( tensor.m_j_row_map );
+      host_j_row_map = Kokkos::create_mirror_view( tensor.m_j_row_map );
 
     // Compute k row map
     size_type sum = 0;
@@ -320,13 +320,13 @@ public:
     }
 
     // Copy data to device if necessary
-    KokkosArray::deep_copy( tensor.m_k_coord , host_k_coord );
-    KokkosArray::deep_copy( tensor.m_j_coord , host_j_coord );
-    KokkosArray::deep_copy( tensor.m_value , host_value );
-    KokkosArray::deep_copy( tensor.m_num_k , host_num_k );
-    KokkosArray::deep_copy( tensor.m_num_j , host_num_j );
-    KokkosArray::deep_copy( tensor.m_k_row_map , host_k_row_map );
-    KokkosArray::deep_copy( tensor.m_j_row_map , host_j_row_map );
+    Kokkos::deep_copy( tensor.m_k_coord , host_k_coord );
+    Kokkos::deep_copy( tensor.m_j_coord , host_j_coord );
+    Kokkos::deep_copy( tensor.m_value , host_value );
+    Kokkos::deep_copy( tensor.m_num_k , host_num_k );
+    Kokkos::deep_copy( tensor.m_num_j , host_num_j );
+    Kokkos::deep_copy( tensor.m_k_row_map , host_k_row_map );
+    Kokkos::deep_copy( tensor.m_j_row_map , host_j_row_map );
 
     tensor.m_flops = 5*tensor.m_nnz + dimension;
 

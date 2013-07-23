@@ -70,7 +70,7 @@ class UniqueGlobalIndexer;
     names vector.
 
 */
-template<typename EvalT, typename Traits,typename LO,typename GO,typename NodeT=Kokkos::DefaultNode::DefaultNodeType>
+template<typename EvalT, typename Traits,typename LO,typename GO,typename NodeT=KokkosClassic::DefaultNode::DefaultNodeType>
 class ScatterDirichletResidual_Tpetra;
 
 // **************************************************************

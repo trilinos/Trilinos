@@ -110,7 +110,7 @@ namespace MueLu {
 
     // Z_0 = M^{-1}R_0
     Z = MatrixFactory::BuildCopy(R);
-    Utils::MyOldScaleMatrix(Z, D, true, true, false);
+    Utils::MyOldScaleMatrix(*Z, D, true, true, false);
 
     // P_0 = Z_0
     P = MatrixFactory::BuildCopy(Z);
@@ -149,11 +149,11 @@ namespace MueLu {
       // X_{k+1} = X_k + alpha*P_k
 #ifndef TWO_ARG_MATRIX_ADD
       newX = Teuchos::null;
-      Utils2::TwoMatrixAdd(P, false, alpha, X, false, Teuchos::ScalarTraits<Scalar>::one(), newX);
+      Utils2::TwoMatrixAdd(*P, false, alpha, *X, false, Teuchos::ScalarTraits<Scalar>::one(), newX);
       newX->fillComplete(P0.getDomainMap(), P0.getRangeMap());
       X.swap(newX);
 #else
-      Utils2::TwoMatrixAdd(P, false, alpha, X, one);
+      Utils2::TwoMatrixAdd(*P, false, alpha, *X, one);
 #endif
 
       if (k == nIts_ - 1)
@@ -162,16 +162,16 @@ namespace MueLu {
       // R_{k+1} = R_k - alpha*A*P_k
 #ifndef TWO_ARG_MATRIX_ADD
       newR = Teuchos::null;
-      Utils2::TwoMatrixAdd(AP, false, -alpha, R, false, Teuchos::ScalarTraits<Scalar>::one(), newR);
+      Utils2::TwoMatrixAdd(*AP, false, -alpha, *R, false, Teuchos::ScalarTraits<Scalar>::one(), newR);
       newR->fillComplete(P0.getDomainMap(), P0.getRangeMap());
       R.swap(newR);
 #else
-      Utils2::TwoMatrixAdd(AP, false, -alpha, R, one);
+      Utils2::TwoMatrixAdd(*AP, false, -alpha, *R, one);
 #endif
 
       // Z_{k+1} = M^{-1} R_{k+1}
       Z = MatrixFactory::BuildCopy(R);
-      Utils::MyOldScaleMatrix(Z, D, true, true, false);
+      Utils::MyOldScaleMatrix(*Z, D, true, true, false);
 
       // beta = (R_{k+1}, Z_{k+1})/(R_k, Z_k)
       newRZ = Frobenius(*R, *Z);
@@ -180,11 +180,11 @@ namespace MueLu {
       // P_{k+1} = Z_{k+1} + beta*P_k
 #ifndef TWO_ARG_MATRIX_ADD
       newP = Teuchos::null;
-      Utils2::TwoMatrixAdd(P, false, beta, Z, false, Teuchos::ScalarTraits<Scalar>::one(), newP);
+      Utils2::TwoMatrixAdd(*P, false, beta, *Z, false, Teuchos::ScalarTraits<Scalar>::one(), newP);
       newP->fillComplete(P0.getDomainMap(), P0.getRangeMap());
       P.swap(newP);
 #else
-      Utils2::TwoMatrixAdd(Z, false, one, P, beta);
+      Utils2::TwoMatrixAdd(*Z, false, one, *P, beta);
 #endif
 
       oldRZ = newRZ;

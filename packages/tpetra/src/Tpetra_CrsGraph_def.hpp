@@ -350,28 +350,28 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &
+  RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getRowMap() const
   {
     return rowMap_;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &
+  RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getColMap() const
   {
     return colMap_;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &
+  RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getDomainMap() const
   {
     return domainMap_;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &
+  RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getRangeMap() const
   {
     return rangeMap_;
@@ -482,7 +482,7 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<const Comm<int> > &
+  RCP<const Comm<int> >
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getComm() const
   {
     return rowMap_->getComm();

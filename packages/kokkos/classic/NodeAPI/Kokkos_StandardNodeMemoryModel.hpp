@@ -50,7 +50,7 @@
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_ArrayView.hpp>
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   /** \brief A default implementation of the Node memory architecture for a single memory space allocated by standard library calls.
       \ingroup kokkos_node_api
@@ -185,6 +185,6 @@ namespace Kokkos {
       //@}
   };
 
-} // end of namespace Kokkos
+} // end of namespace KokkosClassic
 
 #endif

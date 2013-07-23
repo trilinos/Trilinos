@@ -122,10 +122,18 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
         getline (inParam,str);
     }
 }
-string convert_to_string(char *args){
+string convert2string(char *args){
+#ifdef HAVE_ZOLTAN2_OMP
+    int actual_num_threads = omp_get_num_threads();
+    omp_set_num_threads(1);
+#endif
     string tmp = "";
     for(int i = 0; args[i] != 0; i++)
         tmp += args[i];
+
+#ifdef HAVE_ZOLTAN2_OMP
+    omp_set_num_threads(actual_num_threads);
+#endif
     return tmp;
 }
 bool getArgumentValue(string &argumentid, double &argumentValue, string argumentline){
@@ -149,7 +157,8 @@ void getArgVals(
     bool ispartset = false;
 
     for(int i = 0; i < argc; ++i){
-        string tmp = convert_to_string(argv[i]);
+
+        string tmp = convert2string(argv[i]);
         string identifier = "";
         long long int value = -1; double fval = -1;
         if(!getArgumentValue(identifier, fval, tmp)) continue;
@@ -214,6 +223,7 @@ int main(int argc, char *argv[]){
                 procfile ,
                 partfile);
         //cout << "part:" << partfile << " proc:" << procfile << endl;
+
         {
             Teuchos::ParameterList geoparams;
             //getPartCenters(partCenters, numParts, coordDim);
@@ -297,6 +307,7 @@ int main(int argc, char *argv[]){
                 proc_to_task_xadj_, /*output*/
                 proc_to_task_adj_, /*output*/
                 -1,
+                NULL,
                 NULL
                 );
 

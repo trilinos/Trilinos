@@ -57,7 +57,7 @@ namespace Teuchos {
 
 #include <stdlib.h>
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   template <class WDPin>
   struct BlockedRangeWDP {

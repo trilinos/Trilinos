@@ -67,7 +67,7 @@ namespace Tpetra {
   Thus for a mesh with N nodes, the point-entry map will have N*3 entries,
   whereas the block-map will have N blocks, each of size 3.
 */
-template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
 class BlockMap : public Teuchos::Describable {
  public:
   typedef LocalOrdinal  local_ordinal_type;
@@ -83,7 +83,7 @@ class BlockMap : public Teuchos::Describable {
            LocalOrdinal blockSize,
            GlobalOrdinal indexBase,
            const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-           const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
+           const Teuchos::RCP<Node> &node = KokkosClassic::DefaultNode::getDefaultNode());
 
   /*! \brief BlockMap constructor specifying num global and local blocks, and constant blockSize.
    */
@@ -92,7 +92,7 @@ class BlockMap : public Teuchos::Describable {
            LocalOrdinal blockSize,
            GlobalOrdinal indexBase,
            const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-           const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
+           const Teuchos::RCP<Node> &node = KokkosClassic::DefaultNode::getDefaultNode());
 
   /*! \brief BlockMap constructor specifying numGlobalBlocks and lists of local blocks first-global-point-in-blocks, and blockSizes.
    */
@@ -102,7 +102,7 @@ class BlockMap : public Teuchos::Describable {
       const Teuchos::ArrayView<const LocalOrdinal>& myBlockSizes,
       GlobalOrdinal indexBase,
       const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-      const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
+      const Teuchos::RCP<Node> &node = KokkosClassic::DefaultNode::getDefaultNode());
 
   /*! \brief BlockMap constructor which takes a point-entry Map.
    * The arrays myGlobalBlockIDs and myBlockSizes must be the same length, and
@@ -113,7 +113,7 @@ class BlockMap : public Teuchos::Describable {
   BlockMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& pointMap,
            const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs,
            const Teuchos::ArrayView<const LocalOrdinal>& myBlockSizes,
-           const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
+           const Teuchos::RCP<Node> &node = KokkosClassic::DefaultNode::getDefaultNode());
 
   //! BlockMap destructor.
   ~BlockMap(){}
@@ -124,8 +124,8 @@ class BlockMap : public Teuchos::Describable {
   //@{
 
   //! Return this block-map's point-entry map attribute.
-  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& getPointMap() const
-    { return pointMap_; }
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getPointMap () const
+  { return pointMap_; }
 
   //! Return global number of blocks.
   global_size_t getGlobalNumBlocks() const;

@@ -358,7 +358,7 @@ namespace Tpetra {
       "source object.  This probably means that they do not have the same "
       "dimensions.  For example, MultiVectors must have the same number of "
       "rows and columns.");
-    Kokkos::ReadWriteOption rwo = Kokkos::ReadWrite;
+    KokkosClassic::ReadWriteOption rwo = KokkosClassic::ReadWrite;
     if (CM == INSERT || CM == REPLACE) {
       const size_t numIDsToWrite = numSameIDs +
         as<size_t> (permuteToLIDs.size ()) +
@@ -371,7 +371,7 @@ namespace Tpetra {
         // CrsMatrix with a dynamic graph.  INSERT mode could mean
         // that we're adding new entries to the object, but we don't
         // want to get rid of the old ones.
-        rwo = Kokkos::WriteOnly;
+        rwo = KokkosClassic::WriteOnly;
       }
     }
     // Tell the source to create a read-only view of its data.  On a
@@ -549,7 +549,7 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
-  createViewsNonConst (Kokkos::ReadWriteOption /*rwo*/)
+  createViewsNonConst (KokkosClassic::ReadWriteOption /*rwo*/)
   {}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>

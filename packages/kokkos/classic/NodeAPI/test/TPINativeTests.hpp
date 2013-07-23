@@ -48,7 +48,7 @@
 
 namespace {
 
-  using Kokkos::TPINode;
+  using KokkosClassic::TPINode;
 
   template <class T>
   struct TPIInit {

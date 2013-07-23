@@ -42,7 +42,7 @@
 #ifndef STOKHOS_HOST_STOCHASTICPRODUCTTENSOR_HPP
 #define STOKHOS_HOST_STOCHASTICPRODUCTTENSOR_HPP
 
-#include "KokkosArray_Host.hpp"
+#include "Kokkos_Host.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_StochasticProductTensor.hpp"
@@ -51,10 +51,10 @@ namespace Stokhos {
 
 template< typename ValueType , class TensorType >
 class Multiply< StochasticProductTensor< ValueType, TensorType,
-                                         KokkosArray::Host > >
+                                         Kokkos::Host > >
 {
 public:
-  typedef KokkosArray::Host                    device_type ;
+  typedef Kokkos::Host                    device_type ;
   typedef device_type::size_type  size_type ;
   typedef StochasticProductTensor< ValueType, TensorType, device_type > block_type ;
 

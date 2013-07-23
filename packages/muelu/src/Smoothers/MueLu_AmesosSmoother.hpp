@@ -77,8 +77,8 @@ namespace MueLu {
     typedef double Scalar;
     typedef int    LocalOrdinal;
     typedef int    GlobalOrdinal;
-    typedef Kokkos::DefaultNode::DefaultNodeType Node;
-    typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+    typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 #undef MUELU_AMESOSSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -198,7 +198,7 @@ namespace MueLu {
   }
   //
   template <>
-  inline RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > GetAmesosSmoother<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>(std::string const & type, Teuchos::ParameterList const & paramList, RCP<FactoryBase> AFact) {
+  inline RCP<MueLu::SmootherPrototype<double, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void,int,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps> > GetAmesosSmoother<double, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void,int,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>(std::string const & type, Teuchos::ParameterList const & paramList, RCP<FactoryBase> AFact) {
     RCP<AmesosSmoother> smoo = rcp( new AmesosSmoother(type, paramList) );
     smoo->SetFactory("A", AFact);
     return smoo;

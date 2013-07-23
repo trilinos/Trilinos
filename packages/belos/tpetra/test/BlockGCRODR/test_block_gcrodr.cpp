@@ -76,7 +76,7 @@ main (int argc, char *argv[])
   typedef double scalar_type;
   typedef long int global_ordinal_type;
   typedef int local_ordinal_type;
-  typedef Kokkos::DefaultNode::DefaultNodeType node_type;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
   //
   // Tpetra objects which are the MV and OP template parameters of the
   // Belos specialization which we are testing.

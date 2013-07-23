@@ -54,7 +54,7 @@
 #  include "Kokkos_CuspOps.hpp"
 #endif
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   /// \brief Traits class providing default kernel types for CRS,
   ///   block CRS and relaxation kernels.
@@ -174,6 +174,9 @@ namespace Kokkos {
   };
 #endif
 #if defined(HAVE_KOKKOSCLASSIC_CUSPARSE)
+  // cuSPARSE only implements float and double kernels.  Attempts to
+  // refer to DefaultKernels<T,LO,NT> for T != void, float, or double
+  // will result in a compile-time error.
   template <>
   struct DefaultKernels<void,int,ThrustGPUNode> {
     typedef CUSPARSEOps<void,ThrustGPUNode> SparseOps;
@@ -188,6 +191,6 @@ namespace Kokkos {
   };
 #endif
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif // KOKKOS_DEFAULT_KERNELS_HPP

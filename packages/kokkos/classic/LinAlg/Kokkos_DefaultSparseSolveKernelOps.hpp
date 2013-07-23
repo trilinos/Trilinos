@@ -53,7 +53,7 @@
 #endif
 
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   // 
   // Matrix formatting and mat-vec options
@@ -261,6 +261,6 @@ namespace Kokkos {
     }
   };
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif

@@ -43,23 +43,23 @@
 
 #include <iostream>
 
-#include "KokkosArray_hwloc.hpp"
+#include "Kokkos_hwloc.hpp"
 
 #include <TestStochastic.hpp>
 
-#include <Host/KokkosArray_Host_ProductTensor.hpp>
-#include <Host/KokkosArray_Host_StochasticProductTensor.hpp>
-#include <Host/KokkosArray_Host_SymmetricDiagonalSpec.hpp>
-#include <Host/KokkosArray_Host_BlockCrsMatrix.hpp>
-#include <Host/KokkosArray_Host_CrsMatrix.hpp>
+#include <Host/Kokkos_Host_ProductTensor.hpp>
+#include <Host/Kokkos_Host_StochasticProductTensor.hpp>
+#include <Host/Kokkos_Host_SymmetricDiagonalSpec.hpp>
+#include <Host/Kokkos_Host_BlockCrsMatrix.hpp>
+#include <Host/Kokkos_Host_CrsMatrix.hpp>
 
 namespace unit_test {
 
 template<typename Scalar>
-struct performance_test_driver<Scalar,KokkosArray::Host> {
+struct performance_test_driver<Scalar,Kokkos::Host> {
 
   static void run(bool test_flat, bool test_orig, bool test_block) {
-    typedef KokkosArray::Host Device;
+    typedef Kokkos::Host Device;
 
     int nGrid;
     int nIter; 
@@ -95,20 +95,20 @@ template <typename Scalar>
 int mainHost(bool test_flat, bool test_orig, bool test_block)
 {
   const std::pair<unsigned,unsigned> core_topo =
-    KokkosArray::hwloc::get_core_topology();
-  const size_t core_capacity = KokkosArray::hwloc::get_core_capacity();
+    Kokkos::hwloc::get_core_topology();
+  const size_t core_capacity = Kokkos::hwloc::get_core_capacity();
 
   const size_t gang_count = core_topo.first ;
   const size_t gang_worker_count = core_topo.second * core_capacity;
 
-  KokkosArray::Host::initialize( gang_count , gang_worker_count );
+  Kokkos::Host::initialize( gang_count , gang_worker_count );
 
   std::cout << std::endl << "\"Host Performance with "
             << gang_count * gang_worker_count << " threads\"" << std::endl ;
-  unit_test::performance_test_driver<Scalar,KokkosArray::Host>::run(
+  unit_test::performance_test_driver<Scalar,Kokkos::Host>::run(
     test_flat, test_orig, test_block);
 
-  KokkosArray::Host::finalize();
+  Kokkos::Host::finalize();
 
   return 0 ;
 }

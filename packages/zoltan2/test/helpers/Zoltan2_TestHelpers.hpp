@@ -52,7 +52,7 @@
 #include <Zoltan2_Util.hpp>
 #include <iostream>
 
-typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
 
 // The path to the directory of test data
 

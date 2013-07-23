@@ -86,7 +86,7 @@ namespace Teuchos {
   };
 }
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   namespace CUSPARSEdetails {
 
@@ -709,7 +709,7 @@ namespace Kokkos {
     std::string description () const {
       using Teuchos::TypeNameTraits;
       std::ostringstream os;
-      os << "Kokkos::CUSPARSEOps<"
+      os << "KokkosClassic::CUSPARSEOps<"
          << "Scalar=" << TypeNameTraits<Scalar>::name()
          << ", Node=" << TypeNameTraits<Node>::name()
          << ">";
@@ -940,7 +940,7 @@ namespace Kokkos {
       const size_t numnz = hostinds.size() + numRows;
       TEUCHOS_TEST_FOR_EXCEPTION(
           numnz > CUDA_MAX_INT, std::runtime_error,
-          "Kokkos::CUSPARSEOps: CUSPARSE does not support more than "
+          "KokkosClassic::CUSPARSEOps: CUSPARSE does not support more than "
           << CUDA_MAX_INT << " non-zeros."
       );
       devptrs = node->template allocBuffer<int>( numRows+1 );
@@ -974,7 +974,7 @@ namespace Kokkos {
       const size_t numnz = hostinds.size();
       TEUCHOS_TEST_FOR_EXCEPTION(
           numnz > CUDA_MAX_INT, std::runtime_error,
-          "Kokkos::CUSPARSEOps: CUSPARSE does not support more than "
+          "KokkosClassic::CUSPARSEOps: CUSPARSE does not support more than "
           << CUDA_MAX_INT << " non-zeros."
       );
       devptrs = node->template allocBuffer<int>( numRows+1 );
@@ -997,7 +997,7 @@ namespace Kokkos {
                   CUSPARSECrsMatrix<Scalar,Node> &matrix,
                   const RCP<ParameterList> &params)
   {
-    std::string FuncName("Kokkos::CUSPARSEOps::finalizeMatrix()");
+    std::string FuncName("KokkosClassic::CUSPARSEOps::finalizeMatrix()");
     RCP<Node> node = graph.getNode();
     TEUCHOS_TEST_FOR_EXCEPTION(
         matrix.isInitialized() == false,
@@ -1105,7 +1105,7 @@ namespace Kokkos {
                                     const RCP<ParameterList>        &params)
   {
     std::string FuncName(
-        "Kokkos::CUSPARSEOps::finalizeGraphAndMatrix(graph,matrix,params)"
+        "KokkosClassic::CUSPARSEOps::finalizeGraphAndMatrix(graph,matrix,params)"
         );
     TEUCHOS_TEST_FOR_EXCEPTION(
         graph.isInitialized() == false,
@@ -1239,7 +1239,7 @@ namespace Kokkos {
     // CUSPARSE will short-circuit on these without doing anything, so we have to do it
     if (opRows == 0.0 || opCols == 0.0) {
       // Y <- alpha*A*X == alpha*0*X == 0
-      Kokkos::DefaultArithmetic< MultiVector<DomainScalar,Node> >
+      KokkosClassic::DefaultArithmetic< MultiVector<DomainScalar,Node> >
         ::Init(Y, Teuchos::ScalarTraits<Scalar>::zero() );
       return;
     }
@@ -1334,7 +1334,7 @@ namespace Kokkos {
     // CUSPARSE will short-circuit on these without doing anything, so we have to do it
     if (opRows == 0.0 || opCols == 0.0) {
       // Y <- alpha*A*X + beta*Y == alpha*0*X + beta*Y == beta*Y
-      Kokkos::DefaultArithmetic< MultiVector<DomainScalar,Node> >
+      KokkosClassic::DefaultArithmetic< MultiVector<DomainScalar,Node> >
         ::Scale(Y, beta );
       return;
     }
@@ -1549,7 +1549,7 @@ namespace Kokkos {
     std::string description () const {
       using Teuchos::TypeNameTraits;
       std::ostringstream os;
-      os << "Kokkos::CUSPARSEOps<"
+      os << "KokkosClassic::CUSPARSEOps<"
          << "Scalar=void"
          << ", Node=" << TypeNameTraits<Node>::name()
          << ">";
@@ -1639,7 +1639,7 @@ namespace Kokkos {
         const size_t numnz = hostinds.size() + numRows;
         TEUCHOS_TEST_FOR_EXCEPTION(
           numnz > CUDA_MAX_INT, std::runtime_error,
-          "Kokkos::CUSPARSEOps: CUSPARSE does not support more than "
+          "KokkosClassic::CUSPARSEOps: CUSPARSE does not support more than "
           << CUDA_MAX_INT << " non-zeros.");
 
         devptrs = node->template allocBuffer<int>( numRows+1 );
@@ -1673,7 +1673,7 @@ namespace Kokkos {
         const size_t numnz = hostinds.size();
         TEUCHOS_TEST_FOR_EXCEPTION(
           numnz > CUDA_MAX_INT, std::runtime_error,
-          "Kokkos::CUSPARSEOps: CUSPARSE does not support more than "
+          "KokkosClassic::CUSPARSEOps: CUSPARSE does not support more than "
           << CUDA_MAX_INT << " non-zeros.");
 
         devptrs = node->template allocBuffer<int>( numRows+1 );
@@ -1706,6 +1706,6 @@ namespace Kokkos {
     RCP<cusparseSolveAnalysisInfo_t> aiNoTrans_, aiTrans_, aiConjTrans_;
   };
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif /* KOKKOS_CUSPARSEOPS_HPP */

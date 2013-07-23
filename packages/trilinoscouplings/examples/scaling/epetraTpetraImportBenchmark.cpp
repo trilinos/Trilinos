@@ -60,7 +60,7 @@ using Teuchos::TimeMonitor;
 typedef double ST;
 typedef int LO;
 typedef int GO; // So that Epetra and Tpetra can use the same GID lists
-typedef Kokkos::SerialNode NT;
+typedef KokkosClassic::SerialNode NT;
 
 // Create a new timer with the given name if it hasn't already been
 // created, else get the previously created timer with that name.
@@ -280,7 +280,7 @@ int main (int argc, char* argv[]) {
   Epetra_SerialComm epetraComm;
   tpetraComm = rcp (new Teuchos::SerialComm<int>);
 #endif // EPETRA_MPI
-  RCP<NT> node = Kokkos::Details::getNode<NT> ();
+  RCP<NT> node = KokkosClassic::Details::getNode<NT> ();
 
   const int numProcs = tpetraComm->getSize ();
   const int myRank = tpetraComm->getRank ();

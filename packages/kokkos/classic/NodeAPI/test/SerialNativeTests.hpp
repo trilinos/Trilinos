@@ -48,7 +48,7 @@
 
 namespace {
 
-  using Kokkos::SerialNode;
+  using KokkosClassic::SerialNode;
 
   template <>
   std::pair<double,double> nativeTimings<float,SerialNode>(int N, int numIters, float &result, const RCP<SerialNode> &node) {

@@ -46,7 +46,7 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   /// \class ReadyBufferHelper
   /// \brief A class to assist in readying buffers via the Node::readyBuffers() method.
@@ -271,7 +271,7 @@ namespace Kokkos {
     return arrayOfBuffers;
   }
 
-} // end of namespace Kokkos
+} // end of namespace KokkosClassic
 
 
 #endif

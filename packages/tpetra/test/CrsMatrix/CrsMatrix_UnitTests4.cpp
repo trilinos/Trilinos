@@ -287,7 +287,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   ////
   TEUCHOS_UNIT_TEST( CrsMatrix, Convert )
   {
-    typedef Kokkos::SerialNode Node;
+    typedef KokkosClassic::SerialNode Node;
     RCP<Node> node = getNode<Node>();
     typedef ScalarTraits<double> ST;
     typedef OrdinalTraits<int> LOT;

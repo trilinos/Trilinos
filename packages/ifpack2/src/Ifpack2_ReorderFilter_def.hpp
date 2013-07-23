@@ -91,23 +91,24 @@ ReorderFilter<MatrixType>::~ReorderFilter() { }
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Teuchos::Comm<int> > & ReorderFilter<MatrixType>::getComm() const
+Teuchos::RCP<const Teuchos::Comm<int> > ReorderFilter<MatrixType>::getComm() const
 {
   return A_->getComm();
 }
 
 //==========================================================================
 template<class MatrixType>
-Teuchos::RCP <typename MatrixType::node_type> ReorderFilter<MatrixType>::getNode() const
+Teuchos::RCP<typename MatrixType::node_type> 
+ReorderFilter<MatrixType>::getNode() const
 {
   return A_->getNode();
 }
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+			       typename MatrixType::global_ordinal_type,
+			       typename MatrixType::node_type> >
 ReorderFilter<MatrixType>::getRowMap() const
 {
   return A_->getRowMap();
@@ -115,9 +116,9 @@ ReorderFilter<MatrixType>::getRowMap() const
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+			       typename MatrixType::global_ordinal_type,
+			       typename MatrixType::node_type> >
 ReorderFilter<MatrixType>::getColMap() const
 {
   return A_->getColMap();
@@ -125,9 +126,9 @@ ReorderFilter<MatrixType>::getColMap() const
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+			       typename MatrixType::global_ordinal_type,
+			       typename MatrixType::node_type> >
 ReorderFilter<MatrixType>::getDomainMap() const
 {
   return A_->getDomainMap();
@@ -135,9 +136,9 @@ ReorderFilter<MatrixType>::getDomainMap() const
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+			       typename MatrixType::global_ordinal_type,
+			       typename MatrixType::node_type> >
 ReorderFilter<MatrixType>::getRangeMap() const
 {
   return A_->getRangeMap();

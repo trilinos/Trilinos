@@ -71,10 +71,10 @@ SparsityFilter<MatrixType>::SparsityFilter(const Teuchos::RCP<const Tpetra::RowM
 {
 
  // use this filter only on serial matrices
-  if (A_->getComm()->getSize() != 1 || A_->getNodeNumRows() != A_->getGlobalNumRows()) {
-    throw std::runtime_error("Ifpack2::SparsityFilter can be used with Comm().getSize() == 1 only. This class is a tool for Ifpack2_AdditiveSchwarz, and it is not meant to be used otherwise.");
-  }
-
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_->getComm()->getSize() != 1 || A_->getNodeNumRows() != A_->getGlobalNumRows(),
+    std::runtime_error, "Ifpack2::SparsityFilter: "
+    "This class may only be used when A.getComm()->getSize() == 1.");
 
   // localized matrix has all the local rows of Matrix
   NumRows_ = A_->getNodeNumRows();
@@ -114,7 +114,7 @@ SparsityFilter<MatrixType>::~SparsityFilter() { }
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Teuchos::Comm<int> > & SparsityFilter<MatrixType>::getComm() const
+Teuchos::RCP<const Teuchos::Comm<int> > SparsityFilter<MatrixType>::getComm() const
 {
   return A_->getComm();
 }
@@ -128,9 +128,9 @@ Teuchos::RCP <typename MatrixType::node_type> SparsityFilter<MatrixType>::getNod
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+			       typename MatrixType::global_ordinal_type,
+			       typename MatrixType::node_type> >
 SparsityFilter<MatrixType>::getRowMap() const
 {
   return A_->getRowMap();
@@ -138,9 +138,9 @@ SparsityFilter<MatrixType>::getRowMap() const
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+			       typename MatrixType::global_ordinal_type,
+			       typename MatrixType::node_type> >
 SparsityFilter<MatrixType>::getColMap() const
 {
   return A_->getColMap();
@@ -148,9 +148,9 @@ SparsityFilter<MatrixType>::getColMap() const
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+			       typename MatrixType::global_ordinal_type,
+			       typename MatrixType::node_type> >
 SparsityFilter<MatrixType>::getDomainMap() const
 {
   return A_->getDomainMap();
@@ -158,9 +158,9 @@ SparsityFilter<MatrixType>::getDomainMap() const
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+			       typename MatrixType::global_ordinal_type,
+			       typename MatrixType::node_type> >
 SparsityFilter<MatrixType>::getRangeMap() const
 {
   return A_->getRangeMap();

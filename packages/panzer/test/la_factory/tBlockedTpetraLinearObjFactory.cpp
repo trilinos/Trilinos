@@ -78,7 +78,7 @@ using Teuchos::rcpFromRef;
 typedef double ScalarT;
 typedef int LocalOrdinalT;
 typedef long GlobalOrdinalT;
-typedef Kokkos::DefaultNode::DefaultNodeType NodeT;
+typedef KokkosClassic::DefaultNode::DefaultNodeType NodeT;
 
 typedef Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> VectorType;
 typedef Tpetra::Operator<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> OperatorType;

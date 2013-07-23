@@ -453,10 +453,10 @@ public:
                  scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! Returns the Tpetra::Map object associated with the domain of this operator.
-  const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getDomainMap() const;
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap() const;
 
   //! Returns the Tpetra::Map object associated with the range of this operator.
-  const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getRangeMap() const;
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRangeMap() const;
 
   //! Whether apply() and applyMat() let you apply the transpose or conjugate transpose.
   bool hasTransposeApply() const;
@@ -507,7 +507,7 @@ public:
   magnitude_type getCondEst() const;
 
   //! The communicator over which the matrix and vectors are distributed.
-  const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
+  Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
   //! The matrix to be preconditioned.
   Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > getMatrix() const;

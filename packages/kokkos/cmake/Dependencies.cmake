@@ -1,7 +1,7 @@
 SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   #SubPackageName       Directory         Class    Req/Opt
   Classic               classic           PS       OPTIONAL
-  Array                 array             EX       OPTIONAL
+  Core                  core              EX       OPTIONAL
   Compat                compat            EX       OPTIONAL
   )
 

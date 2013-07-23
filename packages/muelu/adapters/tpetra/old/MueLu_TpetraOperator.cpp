@@ -58,8 +58,10 @@ namespace MueLu {
 // ------------- getDomainMap -----------------------
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getDomainMap() const {
-
+Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > 
+TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+getDomainMap () const 
+{
   typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> XMatrix;
 
   RCP<MueLu::Level>  L0 = Hierarchy_->GetLevel(0);
@@ -76,8 +78,10 @@ const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & Tpetra
 // ------------- getRangeMap -----------------------
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getRangeMap() const {
-
+Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > 
+TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+getRangeMap () const 
+{
   typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> XMatrix;
 
   RCP<MueLu::Level>  L0 = Hierarchy_->GetLevel(0);
