@@ -272,7 +272,12 @@ static int shylu_local_solve(
     ssym->OrigLP->SetRHS(&localrhs);
     ssym->OrigLP->SetLHS(&locallhs);
     ssym->ReIdx_LP->fwd();
+    Teuchos::Time solveD("solve D");
+    solveD.start();
     ssym->Solver->Solve();
+    solveD.stop();
+    std::cout << "RADU SHYLU: solve D: "
+    		  << solveD.totalElapsedTime() << std::endl;
 
     Epetra_MultiVector temp1(LocalSMap, nvectors);
     err = ssym->R->Multiply(false, locallhs, temp1);
@@ -300,7 +305,12 @@ static int shylu_local_solve(
         data->OrigLP2->SetRHS(&Bs);
         data->ReIdx_LP2->fwd();
         //cout << "Calling solve *****************************" << endl;
+        Teuchos::Time solveSbar("solve Sbar");
+        solveSbar.start();
         solver2->Solve();
+        solveSbar.stop();
+        std::cout << "RADU SHYLU: solve Sbar: "
+        		  << solveSbar.totalElapsedTime() << std::endl;
         //cout << "Out of solve *****************************" << endl;
     }
     else
@@ -346,7 +356,12 @@ static int shylu_local_solve(
     ssym->OrigLP->SetRHS(&temp3);
     ssym->OrigLP->SetLHS(&locallhs);
     ssym->ReIdx_LP->fwd();
+    Teuchos::Time solveDagain("solve D again");
+    solveDagain.start();
     ssym->Solver->Solve();
+    solveDagain.stop();
+    std::cout << "RADU SHYLU: solve D again: "
+    		  << solveDagain.totalElapsedTime() << std::endl;
 
     Epetra_Export XdExporter(LocalDMap, Y.Map());
     Y.Export(locallhs, XdExporter, Insert);

@@ -551,6 +551,9 @@ int shylu_symbolic_factor
 
     checkMaps(A);
 
+    Teuchos::Time buildBlocksTime("build blocks");
+    buildBlocksTime.start();
+
     // Get column map
     Epetra_Map AColMap = A->ColMap();
     int ncols = AColMap.NumMyElements();
@@ -693,6 +696,11 @@ int shylu_symbolic_factor
     LP->SetOperator((ssym->D).getRawPtr());
     //LP->SetOperator((ssym->DT).getRawPtr()); // for transpose
 
+    buildBlocksTime.stop();
+    std::cout << "RADU SHYLU: build blocks: "
+    		  << buildBlocksTime.totalElapsedTime() << std::endl;
+
+
     // Create temp vectors
     ssym->Dlhs = Teuchos::RCP<Epetra_MultiVector>
                     (new Epetra_MultiVector(ssym->D->RowMap(), 16));
@@ -722,7 +730,13 @@ int shylu_symbolic_factor
     Teuchos::ParameterList aList;
     aList.set("TrustMe", true);
     Solver->SetParameters(aList);
+    Teuchos::Time symbolicD("symbolic D");
+    symbolicD.start();
     Solver->SymbolicFactorization();
+    symbolicD.stop();
+    std::cout << "RADU SHYLU: symbolic D: "
+    		  << symbolicD.totalElapsedTime() << std::endl;
+
     //config->dm.print(3, "Symbolic Factorization done");
 
 #ifdef TIMING_OUTPUT
@@ -784,7 +798,13 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
 #endif
 
     //config->dm.print(3, "In Numeric Factorization");
+    Teuchos::Time numericD("setup time");
+    numericD.start();
     Solver->NumericFactorization();
+    numericD.stop();
+    std::cout << "RADU SHYLU: numeric D: "
+    		  << numericD.totalElapsedTime() << std::endl;
+
     //config->dm.print(3, "Numeric Factorization done");
 
 #ifdef SHYLU_DEBUG
@@ -802,6 +822,8 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     Epetra_Map LocalDRowMap(-1, data->Dnr, data->DRowElems, 0, LComm);
     Teuchos::RCP<Epetra_CrsMatrix> Sbar;
 
+    Teuchos::Time computeSbar("compute Sbar");
+    computeSbar.start();
     data->schur_op = Teuchos::RCP<ShyLU_Probing_Operator> (new
              ShyLU_Probing_Operator(ssym, (ssym->G).getRawPtr(),
              (ssym->R).getRawPtr(), (ssym->LP).getRawPtr(),
@@ -871,7 +893,9 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         // This was slower when I implemented it for wide sep (and I deleted
         // it !).
     }
-
+    computeSbar.stop();
+    std::cout << "RADU SHYLU: compute Sbar: "
+    		  << computeSbar.totalElapsedTime() << std::endl;
 
     data->Sbar = Sbar;
 
@@ -910,12 +934,17 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         data->dsolver->SetParameters(aList);
         //cout << "Created the direct Schur  Solver" << endl;
 
+        Teuchos::Time factSbar("fact Sbar");
+        factSbar.start();
         data->dsolver->SymbolicFactorization();
         //cout << "Symbolic Factorization done for schur complement" << endl;
 
         //cout << "In Numeric Factorization of Schur complement" << endl;
         data->dsolver->NumericFactorization();
         //cout << "Numeric Factorization done for schur complement" << endl;
+        factSbar.stop();
+        std::cout << "RADU SHYLU: fact Sbar: "
+        		  << factSbar.totalElapsedTime() << std::endl;
 
     }
     else if (config->schurSolver == "AztecOO-Exact")
@@ -935,7 +964,12 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
 					 Sbar.getRawPtr(), 0, false));
 
         data->schur_prec->Initialize();
+        Teuchos::Time factSbar("compute Sbar preconditioner");
+        factSbar.start();
         data->schur_prec->Compute();
+        factSbar.stop();
+        std::cout << "RADU SHYLU: compute Sbar preconditioner: "
+        		  << factSbar.totalElapsedTime() << std::endl;
 
         err = data->innersolver->SetPrecOperator
                     (data->schur_prec.get());
@@ -989,6 +1023,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     {
         assert (0 == 1);
     }
+
 
     //cout << " Out of factor" << endl ;
 #ifdef TIMING_OUTPUT
