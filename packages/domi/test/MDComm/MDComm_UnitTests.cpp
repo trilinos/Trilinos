@@ -104,7 +104,7 @@ TEUCHOS_UNIT_TEST( MDComm, axisCommSizesConstructor )
   {
     if (axisCommSizes[axis] > 0)
     {
-      TEST_EQUALITY(mdComm.getAxisSize(axis), axisCommSizes[axis]);
+      TEST_EQUALITY(mdComm.getAxisCommSize(axis), axisCommSizes[axis]);
     }
     TEST_ASSERT(not mdComm.isPeriodic(axis));
   }
@@ -133,7 +133,7 @@ TEUCHOS_UNIT_TEST( MDComm, axisCommSizesPeriodicConstructor )
   {
     if (axisCommSizes[axis] > 0)
     {
-      TEST_EQUALITY(mdComm.getAxisSize(axis), axisCommSizes[axis]);
+      TEST_EQUALITY(mdComm.getAxisCommSize(axis), axisCommSizes[axis]);
     }
     TEST_EQUALITY(mdComm.isPeriodic(axis), (axis==0));
   }
@@ -147,11 +147,11 @@ TEUCHOS_UNIT_TEST( MDComm, numDimsConstructor )
 
   TEST_EQUALITY(mdComm.getNumDims(), numDims);
 
-  TEST_EQUALITY(mdComm.getAxisSize(0), comm->getSize());
+  TEST_EQUALITY(mdComm.getAxisCommSize(0), comm->getSize());
   TEST_ASSERT(not mdComm.isPeriodic(0));
   for (int axis = 1; axis < numDims; ++axis)
   {
-    TEST_EQUALITY_CONST(mdComm.getAxisSize(axis), 1);
+    TEST_EQUALITY_CONST(mdComm.getAxisCommSize(axis), 1);
     TEST_ASSERT(not mdComm.isPeriodic(axis));
   }
 }
@@ -168,7 +168,7 @@ TEUCHOS_UNIT_TEST( MDComm, numDimsAxisSizesConstructor )
   {
     if (axisCommSizes[axis] > 0)
     {
-      TEST_EQUALITY(mdComm.getAxisSize(axis), axisCommSizes[axis]);
+      TEST_EQUALITY(mdComm.getAxisCommSize(axis), axisCommSizes[axis]);
     }
     TEST_ASSERT(not mdComm.isPeriodic(axis));
   }
@@ -190,7 +190,7 @@ TEUCHOS_UNIT_TEST( MDComm, numDimsAxisSizesPeriodicConstructor )
   {
     if (axisCommSizes[axis] > 0)
     {
-      TEST_EQUALITY(mdComm.getAxisSize(axis), axisCommSizes[axis]);
+      TEST_EQUALITY(mdComm.getAxisCommSize(axis), axisCommSizes[axis]);
     }
     TEST_EQUALITY(mdComm.isPeriodic(axis), (axis==numDims-1));
   }
@@ -217,7 +217,7 @@ TEUCHOS_UNIT_TEST( MDComm, getAxisRank )
   Array< int > strides(numDims);
   for (int axis = 0; axis < numDims; ++axis)
   {
-    axisCommSizes[axis] = mdComm.getAxisSize(axis);
+    axisCommSizes[axis] = mdComm.getAxisCommSize(axis);
     if (axis == 0)
       strides[axis] = 1;
     else
@@ -250,7 +250,7 @@ TEUCHOS_UNIT_TEST( MDComm, getLowerNeighbor )
   Array< int > strides(numDims);
   for (int axis = 0; axis < numDims; ++axis)
   {
-    axisCommSizes[axis] = mdComm.getAxisSize(axis);
+    axisCommSizes[axis] = mdComm.getAxisCommSize(axis);
     if (axis == 0)
       strides[axis] = 1;
     else
@@ -293,7 +293,7 @@ TEUCHOS_UNIT_TEST( MDComm, getLowerNeighborPeriodic )
   Array< int > strides(numDims);
   for (int axis = 0; axis < numDims; ++axis)
   {
-    axisCommSizes[axis] = mdComm.getAxisSize(axis);
+    axisCommSizes[axis] = mdComm.getAxisCommSize(axis);
     if (axis == 0)
       strides[axis] = 1;
     else
@@ -336,7 +336,7 @@ TEUCHOS_UNIT_TEST( MDComm, getUpperNeighbor )
   Array< int > strides(numDims);
   for (int axis = 0; axis < numDims; ++axis)
   {
-    axisCommSizes[axis] = mdComm.getAxisSize(axis);
+    axisCommSizes[axis] = mdComm.getAxisCommSize(axis);
     if (axis == 0)
       strides[axis] = 1;
     else
@@ -354,7 +354,7 @@ TEUCHOS_UNIT_TEST( MDComm, getUpperNeighbor )
   // Test the upper neighbor
   for (int axis = 0; axis < numDims; ++axis)
   {
-    if (axisRanks[axis] == mdComm.getAxisSize(axis)-1)
+    if (axisRanks[axis] == mdComm.getAxisCommSize(axis)-1)
     {
       TEST_EQUALITY(mdComm.getUpperNeighbor(axis), -1);
     }
@@ -379,7 +379,7 @@ TEUCHOS_UNIT_TEST( MDComm, getUpperNeighborPeriodic )
   Array< int > strides(numDims);
   for (int axis = 0; axis < numDims; ++axis)
   {
-    axisCommSizes[axis] = mdComm.getAxisSize(axis);
+    axisCommSizes[axis] = mdComm.getAxisCommSize(axis);
     if (axis == 0)
       strides[axis] = 1;
     else

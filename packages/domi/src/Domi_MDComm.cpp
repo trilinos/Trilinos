@@ -122,7 +122,7 @@ MDComm::MDComm(const Teuchos::RCP< const MDComm > parent,
   Teuchos::Array< Slice > bounds;
   for (int axis = 0; axis < numDims; ++axis)
   {
-    bounds.push_back(slices[axis].bounds(parent->getAxisSize(axis)));
+    bounds.push_back(slices[axis].bounds(parent->getAxisCommSize(axis)));
     _axisCommSizes[axis] = (bounds[axis].stop() - bounds[axis].start());
     _axisRanks[axis] -= bounds[axis].start();
     rankSize *= _axisCommSizes[axis];
@@ -169,7 +169,7 @@ MDComm::MDComm(const Teuchos::RCP< const MDComm > parent,
   for (int axis = 0; axis < numDims; ++axis)
   {
     if ((bounds[axis].start() == 0) &&
-        (bounds[axis].stop() == parent->getAxisSize(axis)))
+        (bounds[axis].stop() == parent->getAxisCommSize(axis)))
       _periodic[axis] = parent->_periodic[axis];
   }
 }
@@ -207,12 +207,12 @@ MDComm::getNumDims() const
 ////////////////////////////////////////////////////////////////////////
 
 int
-MDComm::getAxisSize(int axis) const
+MDComm::getAxisCommSize(int axis) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     not onSubcommunicator(),
     SubcommunicatorError,
-    "MDComm::getAxisSize()");
+    "MDComm::getAxisCommSize()");
   return _axisCommSizes[axis];
 }
 

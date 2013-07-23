@@ -234,7 +234,7 @@ public:
    * communicator is a sub-communicator and this processor does not
    * belong to the sub-communicator.
    */
-  int getAxisSize(int axis) const;
+  int getAxisCommSize(int axis) const;
 
   /** \brief Return the periodic flag for the given axis.
    *
@@ -262,6 +262,10 @@ public:
    * This method will throw a Domi::SubcommunicatorError if the
    * communicator is a sub-communicator and this processor does not
    * belong to the sub-communicator.
+   *
+   * If the periodic flag for the given axis is set, the returned
+   * lower neighbor will be the highest rank of the highest axis rank
+   * processor along this axis.
    */
   int getLowerNeighbor(int axis) const;
 
@@ -273,6 +277,10 @@ public:
    * This method will throw a Domi::SubcommunicatorError if the
    * communicator is a sub-communicator and this processor does not
    * belong to the sub-communicator.
+   *
+   * If the periodic flag for the given axis is set, the lower
+   * neighbor will be the rank of the zero axis rank processor along
+   * this axis.
    */
   int getUpperNeighbor(int axis) const;
 

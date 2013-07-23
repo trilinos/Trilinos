@@ -97,7 +97,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, dimensionsConstructor, T )
   T localDim = 10;
   Array< T > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    dims[axis] = localDim * mdComm->getAxisSize(axis);
+    dims[axis] = localDim * mdComm->getAxisCommSize(axis);
 
   // Construct an MDMap
   MDMap< T > mdMap(mdComm, dims());
@@ -140,7 +140,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, halosConstructor, T )
   T localDim = 10;
   Array< T > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    dims[axis] = localDim * mdComm->getAxisSize(axis);
+    dims[axis] = localDim * mdComm->getAxisCommSize(axis);
 
   // Construct halos
   Array< int > halos(numDims);
@@ -198,7 +198,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, ghostsConstructor, T )
   T localDim = 10;
   Array< T > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    dims[axis] = localDim * mdComm->getAxisSize(axis);
+    dims[axis] = localDim * mdComm->getAxisCommSize(axis);
 
   // Construct halos
   Array< int > halos;
@@ -267,7 +267,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, halosAndGhostsConstructor, T )
   T localDim = 10;
   Array< T > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    dims[axis] = localDim * mdComm->getAxisSize(axis);
+    dims[axis] = localDim * mdComm->getAxisCommSize(axis);
 
   // Construct halos and ghosts
   Array< int > halos(numDims);
@@ -353,7 +353,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, indexes, T )
   T localDim = 10;
   Array< T > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    dims[axis] = localDim * mdComm->getAxisSize(axis);
+    dims[axis] = localDim * mdComm->getAxisCommSize(axis);
 
   // Construct halos and ghosts
   Array< int > halos(numDims);

@@ -85,7 +85,7 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, lowerLeft )
   // Get the final axisCommSizes
   axisCommSizes.resize(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    axisCommSizes[axis] = mdComm->getAxisSize(axis);
+    axisCommSizes[axis] = mdComm->getAxisCommSize(axis);
   
   // Figure out the lower left slice
   Array< Slice > slices(numDims);
@@ -121,7 +121,7 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, lowerLeft )
     TEST_EQUALITY(subMDComm.getNumDims(), numDims);
     for (int axis = 0; axis < numDims; ++axis)
     {
-      TEST_EQUALITY(subMDComm.getAxisSize(axis), newSizes[axis]);
+      TEST_EQUALITY(subMDComm.getAxisCommSize(axis), newSizes[axis]);
       TEST_ASSERT(not subMDComm.isPeriodic(axis));
     }
   }
@@ -141,7 +141,7 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, lowerRight )
   // Get the final axisCommSizes
   axisCommSizes.resize(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    axisCommSizes[axis] = mdComm->getAxisSize(axis);
+    axisCommSizes[axis] = mdComm->getAxisCommSize(axis);
   
   // Figure out the lower right slice
   Array< Slice > slices(numDims);
@@ -194,7 +194,7 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, lowerRight )
     TEST_EQUALITY(subMDComm.getNumDims(), numDims);
     for (int axis = 0; axis < numDims; ++axis)
     {
-      TEST_EQUALITY(subMDComm.getAxisSize(axis), newSizes[axis]);
+      TEST_EQUALITY(subMDComm.getAxisCommSize(axis), newSizes[axis]);
       TEST_ASSERT(not subMDComm.isPeriodic(axis));
     }
   }
@@ -214,7 +214,7 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, upperLeft )
   // Get the final axisCommSizes
   axisCommSizes.resize(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    axisCommSizes[axis] = mdComm->getAxisSize(axis);
+    axisCommSizes[axis] = mdComm->getAxisCommSize(axis);
   
   // Figure out the upper left slice
   Array< Slice > slices(numDims);
@@ -267,7 +267,7 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, upperLeft )
     TEST_EQUALITY(subMDComm.getNumDims(), numDims);
     for (int axis = 0; axis < numDims; ++axis)
     {
-      TEST_EQUALITY(subMDComm.getAxisSize(axis), newSizes[axis]);
+      TEST_EQUALITY(subMDComm.getAxisCommSize(axis), newSizes[axis]);
       TEST_ASSERT(not subMDComm.isPeriodic(axis));
     }
   }
@@ -287,7 +287,7 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, upperRight )
   // Get the final axisCommSizes
   axisCommSizes.resize(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    axisCommSizes[axis] = mdComm->getAxisSize(axis);
+    axisCommSizes[axis] = mdComm->getAxisCommSize(axis);
   
   // Figure out the upper right slice
   Array< Slice > slices(numDims);
@@ -334,7 +334,7 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, upperRight )
     TEST_EQUALITY(subMDComm.getNumDims(), numDims);
     for (int axis = 0; axis < numDims; ++axis)
     {
-      TEST_EQUALITY(subMDComm.getAxisSize(axis), newSizes[axis]);
+      TEST_EQUALITY(subMDComm.getAxisCommSize(axis), newSizes[axis]);
       TEST_ASSERT(not subMDComm.isPeriodic(axis));
     }
   }
@@ -344,7 +344,7 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, upperRight )
     TEST_EQUALITY_CONST(subMDComm.getTeuchosComm().getRawPtr(), 0    );
     TEST_EQUALITY_CONST(subMDComm.getNumDims()                , 0    );
 
-    TEST_THROW(subMDComm.getAxisSize(0)     , Domi::SubcommunicatorError);
+    TEST_THROW(subMDComm.getAxisCommSize(0) , Domi::SubcommunicatorError);
     TEST_THROW(subMDComm.getAxisRank(0)     , Domi::SubcommunicatorError);
     TEST_THROW(subMDComm.getLowerNeighbor(0), Domi::SubcommunicatorError);
     TEST_THROW(subMDComm.getUpperNeighbor(0), Domi::SubcommunicatorError);
@@ -365,7 +365,7 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, periodic )
   // Get the final axisCommSizes
   axisCommSizes.resize(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    axisCommSizes[axis] = mdComm->getAxisSize(axis);
+    axisCommSizes[axis] = mdComm->getAxisCommSize(axis);
   
   // Figure out the lower slice
   Array< Slice > slices(numDims);
@@ -401,7 +401,7 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, periodic )
     TEST_EQUALITY(subMDComm.getNumDims(), numDims);
     for (int axis = 0; axis < numDims; ++axis)
     {
-      TEST_EQUALITY(subMDComm.getAxisSize(axis), newSizes[axis]);
+      TEST_EQUALITY(subMDComm.getAxisCommSize(axis), newSizes[axis]);
       TEST_EQUALITY(subMDComm.isPeriodic(axis), (axis == 0));
     }
   }
