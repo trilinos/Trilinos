@@ -113,6 +113,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, dimensionsConstructor, T )
   {
     int axisRank = mdMap.getAxisRank(axis);
     TEST_EQUALITY(mdMap.getAxisCommSize(axis), axisSizes[axis]);
+    TEST_ASSERT(not mdMap.isPeriodic(axis));
     TEST_EQUALITY(mdMap.getGlobalDim(axis), dims[axis]);
     TEST_EQUALITY(mdMap.getLocalDim(axis) , localDim  );
     Slice globalBounds = mdMap.getGlobalAxisBounds(axis);
@@ -125,7 +126,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, dimensionsConstructor, T )
     TEST_EQUALITY_CONST(mdMap.getUpperHalo(axis), 0);
     TEST_EQUALITY_CONST(mdMap.getHaloSize(axis), 0);
     TEST_EQUALITY_CONST(mdMap.getGhostSize(axis), 0);
-    TEST_ASSERT(not mdMap.getPeriodic(axis));
   }
 }
 
@@ -167,6 +167,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, halosConstructor, T )
     T myDim = localDim + lowerHalo + upperHalo;
 
     TEST_EQUALITY(mdMap.getAxisCommSize(axis), axisSizes[axis]);
+    TEST_ASSERT(not mdMap.isPeriodic(axis));
     TEST_EQUALITY(mdMap.getGlobalDim(axis), dims[axis]);
     TEST_EQUALITY(mdMap.getLocalDim(axis,true ), myDim   );
     TEST_EQUALITY(mdMap.getLocalDim(axis,false), localDim);
@@ -183,7 +184,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, halosConstructor, T )
     TEST_EQUALITY_CONST(mdMap.getUpperHalo(axis), upperHalo);
     TEST_EQUALITY_CONST(mdMap.getHaloSize(axis), halos[axis]);
     TEST_EQUALITY_CONST(mdMap.getGhostSize(axis), 0);
-    TEST_ASSERT(not mdMap.getPeriodic(axis));
   }
 }
 
@@ -228,6 +228,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, ghostsConstructor, T )
     T myDim = localDim + lowerGhost + upperGhost;
 
     TEST_EQUALITY(mdMap.getAxisCommSize(axis), axisSizes[axis]);
+    TEST_ASSERT(not mdMap.isPeriodic(axis));
     TEST_EQUALITY(mdMap.getGlobalDim(axis,true ), dims[axis]+2*ghosts[axis]);
     TEST_EQUALITY(mdMap.getGlobalDim(axis,false), dims[axis]               );
     TEST_EQUALITY(mdMap.getLocalDim(axis,true ), myDim   );
@@ -252,7 +253,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, ghostsConstructor, T )
     TEST_EQUALITY_CONST(mdMap.getUpperHalo(axis), upperGhost);
     TEST_EQUALITY_CONST(mdMap.getHaloSize(axis), 0);
     TEST_EQUALITY_CONST(mdMap.getGhostSize(axis), ghosts[axis]);
-    TEST_ASSERT(not mdMap.getPeriodic(axis));
   }
 }
 
@@ -298,6 +298,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, halosAndGhostsConstructor, T )
     T myDim = localDim + lowerHalo + upperHalo;
 
     TEST_EQUALITY(mdMap.getAxisCommSize(axis), axisSizes[axis]);
+    TEST_ASSERT(not mdMap.isPeriodic(axis));
     TEST_EQUALITY(mdMap.getGlobalDim(axis,true ), dims[axis]+2*ghosts[axis]);
     TEST_EQUALITY(mdMap.getGlobalDim(axis,false), dims[axis]               );
     TEST_EQUALITY(mdMap.getLocalDim(axis,true ), myDim   );
@@ -322,7 +323,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, halosAndGhostsConstructor, T )
     TEST_EQUALITY_CONST(mdMap.getUpperHalo(axis), upperHalo);
     TEST_EQUALITY_CONST(mdMap.getHaloSize(axis), halos[axis]);
     TEST_EQUALITY_CONST(mdMap.getGhostSize(axis), ghosts[axis]);
-    TEST_ASSERT(not mdMap.getPeriodic(axis));
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, periodic, T )
+{
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  // Note: axisSizes from command line should be fully specified
+  Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
+  Array< int > periodic(numDims, 0);
+  periodic[0] = 1;
+  MDCommRCP mdComm =
+    Teuchos::rcp(new MDComm(comm, numDims, axisSizes, periodic));
+
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    TEST_EQUALITY(mdComm->isPeriodic(axis), (axis == 0));
   }
 }
 
