@@ -308,7 +308,7 @@ TEUCHOS_UNIT_TEST( MDComm, getLowerNeighborPeriodic )
   for (int axis = 0; axis < numDims; ++axis)
     if ((axis == 0) && (axisRanks[axis] == 0))
       lowerNeighborRanks[axis] = comm->getRank() +
-        axisSizes[axis]*strides[axis]-1;
+        (axisSizes[axis]-1)*strides[axis];
     else
       lowerNeighborRanks[axis] = comm->getRank() - strides[axis];
 
@@ -394,7 +394,7 @@ TEUCHOS_UNIT_TEST( MDComm, getUpperNeighborPeriodic )
   for (int axis = 0; axis < numDims; ++axis)
     if ((axis == numDims-1) && (axisRanks[axis] == axisSizes[axis]-1))
       upperNeighborRanks[axis] = comm->getRank() -
-        axisSizes[axis]*strides[axis]+1;
+        (axisSizes[axis]-1)*strides[axis];
     else
       upperNeighborRanks[axis] = comm->getRank() + strides[axis];
 

@@ -247,7 +247,7 @@ MDComm::getLowerNeighbor(int axis) const
     "MDComm::getLowerNeighbor()");
   if (_axisRanks[axis] == 0)
     if (_periodic[axis])
-      return _teuchosComm->getRank() + _axisSizes[axis]*_axisStrides[axis]-1;
+      return _teuchosComm->getRank() + (_axisSizes[axis]-1)*_axisStrides[axis];
     else
       return -1;
   return _teuchosComm->getRank() - _axisStrides[axis];
@@ -264,7 +264,7 @@ MDComm::getUpperNeighbor(int axis) const
     "MDComm::getUpperNeighbor()");
   if (_axisRanks[axis] == _axisSizes[axis] - 1)
     if (_periodic[axis])
-      return _teuchosComm->getRank() - _axisSizes[axis]*_axisStrides[axis]+1;
+      return _teuchosComm->getRank() - (_axisSizes[axis]-1)*_axisStrides[axis];
     else
       return -1;
   return _teuchosComm->getRank() + _axisStrides[axis];
