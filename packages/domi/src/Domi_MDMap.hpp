@@ -57,6 +57,63 @@
 namespace Domi
 {
 
+/** \brief Multi-dimensional map
+ *
+ * The <tt>MDMap</tt> class is intended to perform the functions of
+ * Epetra or Tpetra maps, except that the data is multi-dimensional.
+ * Rather than taking a <tt>Teuchos::Comm</tt> object in its
+ * constructor, an <tt>MDMap</tt> object takes a <tt>Domi::MDComm</tt>
+ * object.  An <tt>MDComm</tt> object is ordered in a structured way,
+ * with processors assigned to each axis, whose product is the total
+ * number of processors of its underlying communicator.
+ *
+ * At a bare minimum, an <tt>MDMap</tt> constructor requires an
+ * <tt>MDComm</tt> and an array of dimensions indicating the size and
+ * shape of the data structure(s) the <tt>MDMap</tt> will describe.
+ * Each dimension will be decomposed along each axis, according to the
+ * number of processors along that axis in the <tt>MDComm</tt>, in as
+ * even a fashion as is possible.
+ *
+ * Each axis may be flagged as periodic when constructing the
+ * <tt>MDComm</tt>.  This attribute is transferred to the
+ * <tt>MDMap</tt> at construction.
+ *
+ * There are two distinct exterior buffer concepts employed by
+ * <tt>MDMaps</tt>, halos and ghosts.  Halos refer to local extensions
+ * of the data structure used to receive communication from
+ * neighboring processors.  Ghosts refer to points added to the
+ * exterior of the global domain that are useful, for example, in
+ * certain finite differencing algorithms.  They are treated
+ * separately from the dimensions so that the decomposition will be
+ * performed relative to the dimensions only, and not influenced by
+ * the ghost points.
+ *
+ * From a global perspective, the only points that are visible are
+ * ghost points.  Halos are internal and essentially invisible.  From
+ * a local perspective, the exterior buffers are refered to as the
+ * halos, although if a processor is on a domain boundary, the buffer
+ * will actually be ghost points and not communication halos.
+ *
+ * The sizes of ghost and halo buffers can be different along each
+ * axis, and the sizes of ghosts and halos can be different from each
+ * other.
+ *
+ * Whe you want to loop over the elements of a data structure
+ * described by an <tt>MDMap</tt>, you can obtain the local looping
+ * bounds along a given axis with the <tt>getLocalAxisBounds(int
+ * axis)</tt> method.  This returns a <tt>Slice</tt> object, whose
+ * <tt>start()</tt> and <tt>stop()</tt> methods return the loop bounds
+ * (<tt>stop()</tt> is non-inclusive).  This method also takes a
+ * boolean flag indicating whether the bounds should include the halo
+ * points, which defaults to false.
+ *
+ * There is a corresponding <tt>getGlobalAxisBounds(int axis)</tt>
+ * method that returns global looping bounds.  While it is highly
+ * unlikely that a user will ever actually loop over global bounds,
+ * the method can be useful for obtaining size information.  This
+ * method also has a boolean flag argument to control inclusion of
+ * ghost points in these bounds.
+ */
 template< class LocalOrd,
           class GlobalOrd = LocalOrd,
           class Node = Kokkos::DefaultNode::DefaultNodeType >
@@ -64,6 +121,11 @@ class MDMap
 {
 public:
 
+  /** \name Constructors and destructor */
+  //@{
+
+  /** \brief Main constructor
+   */
   MDMap(const MDCommRCP mdComm,
         const Teuchos::ArrayView< GlobalOrd > & dimensions,
         const Teuchos::ArrayView< int > & halos =
@@ -73,69 +135,325 @@ public:
         const EStorageOrder storageOrder = DEFAULT_ORDER,
         const Teuchos::RCP< Node > & node =
           Kokkos::DefaultNode::getDefaultNode());
+
+  /** \brief Parent/slice constructor
+   */
   MDMap(const Teuchos::RCP< MDMap< LocalOrd, GlobalOrd, Node > > parent,
         const Teuchos::ArrayView< Slice > slices);
+
+  /** \brief Destructor
+   */
   ~MDMap();
+
+  //@}
+
   /** \name MDComm pass-through methods */
   //@{
+
+  /** \brief Query whether this processor is on the sub-communicator
+   *
+   * Sub-communicators are formed when a parent MDComm is sliced by
+   * using the (parent,slices) constructor.  For a full communicator,
+   * this method will always return true.
+   */
   bool onSubcommunicator() const;
+
+  /** \brief Get the Teuchos communicator
+   *
+   * Note that if the communicator is not a full communicator, i.e. a
+   * sub-communicator, that the underlying Comm pointer may be NULL,
+   * depending on this processor's rank.
+   */
   TeuchosCommRCP getTeuchosComm() const;
+
+  /** \brief Get the number of dimensions
+   *
+   * This method will return 0 if the communicator is a
+   * sub-communicator and this processor does not belong to the
+   * sub-communicator.
+   */
   int getNumDims() const;
+
+  /** \brief Get the size along the given axis
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   *
+   * This method will throw a Domi::SubcommunicatorError if the
+   * communicator is a sub-communicator and this processor does not
+   * belong to the sub-communicator.
+   */
   int getAxisCommSize(int axis) const;
+
+  /** \brief Return the periodic flag for the given axis.
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   */
   bool isPeriodic(int axis) const;
+
+  /** \brief Get the rank of the lower neighbor
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   *
+   * This method will throw a Domi::SubcommunicatorError if the
+   * communicator is a sub-communicator and this processor does not
+   * belong to the sub-communicator.
+   */
   int getAxisRank(int axis) const;
+
+  /** \brief Get the rank of the upper neighbor
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   *
+   * This method will throw a Domi::SubcommunicatorError if the
+   * communicator is a sub-communicator and this processor does not
+   * belong to the sub-communicator.
+   *
+   * If the periodic flag for the given axis is set, the returned
+   * lower neighbor will be the highest rank of the highest axis rank
+   * processor along this axis.
+   */
   int getLowerNeighbor(int axis) const;
+
+  /** \brief Get the rank of the upper neighbor
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   *
+   * If the periodic flag for the given axis is set, the lower
+   * neighbor will be the rank of the zero axis rank processor along
+   * this axis.
+   */
   int getUpperNeighbor(int axis) const;
+
   //@}
+
+  /** \name Dimensions and looping bounds */
+  //@{
+
+  /** \brief Get the global dimension along the specified axis
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   *
+   * \param withGhosts [in] specify whether the dimension should
+   *        include ghost points or not
+   */
   GlobalOrd getGlobalDim(int axis, bool withGhosts=false) const;
+
+  /** \brief Get the local dimension along the specified axis
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   *
+   * \param withHalos [in] specify whether the dimension should
+   *        include halos or not
+   */
   LocalOrd getLocalDim(int axis, bool withHalos=false) const;
+
+  /** \brief Get the global loop bounds along the specified axis
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   *
+   * \param withGhosts [in] specify whether the dimension should
+   *        include ghost points or not
+   *
+   * The loop bounds are returned in the form of a <tt>Slice</tt>, in
+   * which the <tt>start()</tt> method returns the loop begin value,
+   * and the <tt>stop()</tt> method returns the non-inclusive end
+   * value.
+   */
   Slice getGlobalAxisBounds(int axis, bool withGhosts=false) const;
+
+  /** \brief Get the local dimension along the specified axis
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   *
+   * \param withHalos [in] specify whether the dimension should
+   *        include halos or not
+   *
+   * The loop bounds are returned in the form of a <tt>Slice</tt>, in
+   * which the <tt>start()</tt> method returns the loop begin value,
+   * and the <tt>stop()</tt> method returns the non-inclusive end
+   * value.
+   */
   Slice getLocalAxisBounds(int axis, bool withHalos=false) const;
+
+  //@}
+
+  /** \name Halos, ghost points, and storage order */
+  //@{
+
+  /** \brief Return true if there are any exterior buffers stored
+   *         locally
+   *
+   * Note that it is not as simple as whether there were halo points
+   * specified in the constructor.  Suppose non-zero halos were
+   * specified, but the problem is on one processor and no ghost
+   * points were specified: this method will return false.  Similarly,
+   * if no halos were specified but ghost points were, then boundary
+   * processors will have exterior buffers and this method will return
+   * true.
+   */
   bool hasHalos() const;
+
+  /** \brief Get the size of the lower halo along the given axis
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   *
+   * Note that on processors that contain lower domain boundaries, the
+   * returned value will be the ghost size.
+   */
   int getLowerHalo(int axis) const;
+
+  /** \brief Get the size of the upper halo along the given axis
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   *
+   * Note that on processors that contain upper domain boundaries, the
+   * returned value will be the ghost size.
+   */
   int getUpperHalo(int axis) const;
+
+  /** \brief Get the halo size along the given axis
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   *
+   * This returns the value of the halos along the given axis at the
+   * time of construction, regardless of the processor's position
+   * relative to the domain boundary.
+   */
   int getHaloSize(int axis) const;
+
+  /** \brief Get the ghost size along the given axis
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   */
   int getGhostSize(int axis) const;
+
+  /** \brief Get the storage order
+   */
   EStorageOrder getStorageOrder() const;
+
+  //@}
+
   // GlobalOrd getGlobalStride(int axis) const;
   // LocalOrd getLocalStride(int axis) const;
   // // Axis map methods should go here ...
   // // Conversion to Epetra, Tpetra or Xpetra Maps should go here ...
 
+  /** \name GLobal/local index conversion methods */
+  //@{
+
+  /** \brief Convert a global index to an array of global axis indexes
+   *
+   * \param globalIndex [in] a unique 1D global identifier
+   */
   Teuchos::Array< GlobalOrd >
   getGlobalAxisIndex(GlobalOrd globalIndex) const;
 
+  /** \brief Convert a local index to an array of local axis indexes
+   *
+   * \param localIndex [in] a unique 1D local identifier
+   */
   Teuchos::Array< LocalOrd >
   getLocalAxisIndex(LocalOrd LocalIndex) const;
 
+  /** \brief Convert a local index to a global index
+   *
+   * \param localIndex [in] a unique 1D local identifier
+   */
   GlobalOrd getGlobalIndex(LocalOrd localIndex) const;
 
+  /** \brief convert an array of global axis indexes to a global index
+   *
+   * \param globalAxisIndex [in] a multi-dimensional global axis index
+   */
   GlobalOrd
   getGlobalIndex(const Teuchos::ArrayView< GlobalOrd > globalAxisIndex) const;
 
+  /** \brief Convert a global index to a local index
+   *
+   * \param globalIndex [in] a unique 1D global identifier
+   *
+   * This method can throw a Domi::RangeError if the global index is
+   * not on the current processor.
+   */
   LocalOrd getLocalIndex(GlobalOrd globalIndex) const;
 
+  /** \brief Convert an array of local axis indexes to a local index
+   *
+   * \param localAxisIndex [in] a multi-dimensional local axis index
+   */
   LocalOrd
   getLocalIndex(const Teuchos::ArrayView< LocalOrd > localAxisIndex) const;
 
+  //@}
+
 private:
 
+  // Typedef for the halo type, a tuple that stores lower and upper
+  // halo sizes, which can be different due to processors on domain
+  // boundaries.
   typedef Teuchos::Tuple< int, 2 > halo_t;
 
+  // A private method for computing the axis bounds, after the
+  // dimensions, halos and ghost points have been properly assigned.
   void computeAxisBounds();
 
-  MDCommRCP                   _mdComm;
+  // The underlying multi-dimensional communicator.
+  MDCommRCP _mdComm;
+
+  // The size of the global dimensions along each axis.  This does NOT
+  // include the values of the ghost sizes.
   Teuchos::Array< GlobalOrd > _globalDims;
-  Teuchos::Array< LocalOrd >  _localDims;
-  Teuchos::Array< Slice >     _globalAxisBounds;
-  Teuchos::Array< Slice >     _localAxisBounds;
-  Teuchos::Array< int >       _haloSizes;
-  Teuchos::Array< halo_t >    _halos;
-  Teuchos::Array< int >       _ghostSizes;
+
+  // The size of the local dimensions along each axis.  This DOES
+  // include the values of the halos.
+  Teuchos::Array< LocalOrd > _localDims;
+
+  // The global loop bounds along each axis, stored as an array of
+  // Slices.  These bounds do NOT include the ghost points.
+  Teuchos::Array< Slice > _globalAxisBounds;
+
+  // The local loop bounds along each axis, stored as an array of
+  // Slices.  These bounds DO include the halos.
+  Teuchos::Array< Slice > _localAxisBounds;
+
+  // The halo sizes that were specified at construction, one value
+  // along each axis.
+  Teuchos::Array< int > _haloSizes;
+
+  // The actual halos stored on this processor along each axis.  The
+  // lower and upper halo can be different due to the processor
+  // position on the boundary of a domain.
+  Teuchos::Array< halo_t > _halos;
+
+  // The size of the ghost points along each axis.
+  Teuchos::Array< int > _ghostSizes;
+
+  // The global stride between adjacent elements.  This quantity is
+  // "virtual" as it does not describe actual memory layot, but it is
+  // useful for index conversion algorithms.
   Teuchos::Array< GlobalOrd > _globalStrides;
-  Teuchos::Array< LocalOrd >  _localStrides;
-  EStorageOrder               _storageOrder;
-  Teuchos::RCP< Node >        _node;
+
+  // The local stride between adjecent elements in memory.
+  Teuchos::Array< LocalOrd > _localStrides;
+
+  // The storage order
+  EStorageOrder _storageOrder;
+
+  // The Kokkos node type
+  Teuchos::RCP< Node > _node;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -318,7 +636,7 @@ template< class LocalOrd, class GlobalOrd, class Node >
 int
 MDMap< LocalOrd, GlobalOrd, Node >::getAxisCommSize(int axis) const
 {
-  return _mdComm->getAxisSize(axis);
+  return _mdComm->getAxisCommSize(axis);
 }
 
 ////////////////////////////////////////////////////////////////////////
