@@ -55,20 +55,55 @@
     <h1>SEACAS Changes</h1>
 
       <table class="zebra" WIDTH=90% align=center  BGCOLOR=WHITE CELLPADDING=10>
-	  <tr align=left><th>Date</th><th>Code</th><th>Version</th><th>Change</tr>
+	<tr align=left><th>Date</th><th>Code</th><th>Version</th><th>Change</tr>
+
+	<tr><td>2013-06-27</td>
+          <td>aprepro</td><td>2.33</td>
+
+	  <td>Aprepro now has switch statements and more capable if/elseif capability. See the 
+	    Aprepro documentation for details.</td>
+	</tr>
+
+
+	<tr><td>2013-04-15</td>
+	  <td>grope</td><td>1.59</td>
+
+	  <td>The file where output from a print command is written can be changed from the default grope.o
+	    to a user-specified file via the <tt>output {filename}</tt> command.  The filename must be all
+	    lowercase.
+	  </td>
+	</tr>
+
+	<tr><td>2012-12-07</td>
+          <td>aprepro</td><td>2.28</td>
+
+	  <td>A file to be parsed prior to the main aprepro input file can be specified via
+	    the <tt>-include {filename}</tt> option.  All variables defined in that file will be
+	    immutable.
+	  </td>
+	</tr>
+
+	<tr><td>2012-12-05</td>
+          <td>aprepro</td><td>2.27</td>
+
+	  <td>Added support for immutable variables in which once a variable is given an value, it 
+	    cannot be redefined (unless it has a '_' prefix).
+	  </td>
+	</tr>
+
+	<tr><td>2012-10-30</td>
+          <td>epu</td><td>4.05</td>
+
+	  <td> Added <tt>-join_subcycles</tt> option which will do the final join to a single file if 
+	    using the <tt>-subcycle</tt> option to do incremental joins.
+	  </td>
+	</tr>
 
 	  <tr><td>2012-09-14</td>
 	  <td>grepos</td><td>1.64</td>
 
-	  <td>Grepos has a node move The syntax is:
-	      <tt>move {global|local} node {id} {to|by} {x} {y} {z}</tt>
-	    <ul>
-	      <li>The <tt>{global|local}</tt> specifies whether the node map is used or not.</li>
-	      <li>The <tt>{to|by}</tt> specifies absolute or relative movement.
-		<ul>
-		  <li>to -- move to that position</li>
-		  <li>by -- delta from current position</li></ul></li></ul>
-	  </td>
+	  <td>Added <tt>move global|local node {id} to|by {x} {y} {z}</tt> command so user can 
+	    specify exact location of a node in the mesh.
 	  </tr>
 
 	  <tr><td>2012-09-07</td>
@@ -428,7 +463,7 @@
     <address><a href="mailto:gdsjaar@sandia.gov">Gregory D Sjaardema</a></address>
 <!-- Created: Tue Nov 17 07:07:27 MST 2009 -->
 <!-- hhmts start -->
-Last modified: Fri Sep 14 11:05:18 MDT 2012
+Last modified: Tue Jul 23 15:42:54 MDT 2013
 <!-- hhmts end -->
   </body>
 </html>
