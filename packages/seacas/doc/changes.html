@@ -57,6 +57,28 @@
       <table class="zebra" WIDTH=90% align=center  BGCOLOR=WHITE CELLPADDING=10>
 	  <tr align=left><th>Date</th><th>Code</th><th>Version</th><th>Change</tr>
 
+	  <tr><td>2012-09-14</td>
+	  <td>grepos</td><td>1.64</td>
+
+	  <td>Grepos has a node move The syntax is:
+	      <tt>move {global|local} node {id} {to|by} {x} {y} {z}</tt>
+	    <ul>
+	      <li>The <tt>{global|local}</tt> specifies whether the node map is used or not.</li>
+	      <li>The <tt>{to|by}</tt> specifies absolute or relative movement.
+		<ul>
+		  <li>to -- move to that position</li>
+		  <li>by -- delta from current position</li></ul></li></ul>
+	  </td>
+	  </tr>
+
+	  <tr><td>2012-09-07</td>
+	  <td>grepos</td><td>1.63</td>
+
+	  <td>Grepos has a node merge command for explicitly combining two nodes into one. The syntax is:
+	      <tt>merge {global|local} node {id1} into node {id2}</tt>
+	    The node with global/local id {id1} is deleted and replaced by the node with id {id2}.
+	  </tr>
+
 	  <tr><td>2012-04-14</td>
 	  <td>nemesis</td><td></td>
 
@@ -406,7 +428,7 @@
     <address><a href="mailto:gdsjaar@sandia.gov">Gregory D Sjaardema</a></address>
 <!-- Created: Tue Nov 17 07:07:27 MST 2009 -->
 <!-- hhmts start -->
-Last modified: Mon Apr 16 09:33:52 MDT 2012
+Last modified: Fri Sep 14 11:05:18 MDT 2012
 <!-- hhmts end -->
   </body>
 </html>
