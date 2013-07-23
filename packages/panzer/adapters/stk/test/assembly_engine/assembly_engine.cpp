@@ -63,6 +63,7 @@ using Teuchos::rcp;
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_TpetraLinearObjFactory.hpp"
 #include "Panzer_AssemblyEngine.hpp"
+#include "Panzer_AssemblyEngine_InArgs.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
