@@ -129,9 +129,16 @@ public:
    *        Negative values will be converted to positive such that
    *        the product of the resulting axis sizes will equal the
    *        number of processors in the Teuchos communicator.
+   *
+   * \param periodic [in] An array of ints which are simple flags
+   *        denoting whether each axis is periodic.  If this array is
+   *        shorter than the size of axisSizes, the unspecified axes
+   *        are assumed to be zero (false).
    */
   MDComm(const TeuchosCommRCP teuchosComm,
-         const Teuchos::ArrayView< int > & axisSizes);
+         const Teuchos::ArrayView< int > & axisSizes,
+         const Teuchos::ArrayView< int > & periodic =
+           Teuchos::ArrayView< int >());
 
   /** \brief Constructor with number of dimensions
    *
@@ -160,10 +167,17 @@ public:
    *        vlaues will be converted to positive such that the product
    *        of the resulting axis sizes will equal the number of
    *        processors in the Teuchos communicator.
+   *
+   * \param periodic [in] An array of ints which are simple flags
+   *        denoting whether each axis is periodic.  If this array is
+   *        shorter than numDims, the unspecified axes are assumed to
+   *        be zero (false).
    */
   MDComm(const TeuchosCommRCP teuchosComm,
          int numDims,
-         const Teuchos::ArrayView< int > & axisSizes);
+         const Teuchos::ArrayView< int > & axisSizes,
+         const Teuchos::ArrayView< int > & periodic =
+           Teuchos::ArrayView< int >());
 
   /** \brief Sub-communicator constructor
    *
@@ -187,7 +201,10 @@ public:
   //@{
 
   /** \brief Query whether this processor is on the sub-communicator.
-   *         For a full communicator, this method will return true
+   *
+   * Sub-communicators are formed when a parent MDComm is sliced by
+   * using the (parent,slices) constructor.  For a full communicator,
+   * this method will always return true.
    */
   bool onSubcommunicator() const;
 
@@ -217,6 +234,13 @@ public:
    * belong to the sub-communicator.
    */
   int getAxisSize(int axis) const;
+
+  /** \brief Return the periodic flag for the given axis.
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   */
+  bool isPeriodic(int axis) const;
 
   /** \brief Get the axis-rank along the given axis
    *
@@ -265,6 +289,9 @@ private:
 
   // An array of the sizes along each axis
   Teuchos::Array< int > _axisSizes;
+
+  // An array of flags denoting periodic axes
+  Teuchos::Array< int > _periodic;
 
   // An array of the axis-ranks for this processor along each axis
   Teuchos::Array< int > _axisRanks;

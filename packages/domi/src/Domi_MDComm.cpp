@@ -51,11 +51,13 @@ namespace Domi
 {
 
 MDComm::MDComm(const TeuchosCommRCP teuchosComm,
-               const Teuchos::ArrayView< int > & axisSizes) :
+               const Teuchos::ArrayView< int > & axisSizes,
+               const Teuchos::ArrayView< int > & periodic) :
   _teuchosComm(teuchosComm),
   _axisSizes(regularizeAxisSizes(teuchosComm->getSize(),
                                  axisSizes.size(),
                                  axisSizes)),
+  _periodic(computePeriodic(axisSizes.size(), periodic)),
   _axisRanks(computeAxisRanks(teuchosComm->getRank(),
                               _axisSizes)),
   _axisStrides(computeStrides(_axisSizes,
@@ -71,6 +73,7 @@ MDComm::MDComm(const TeuchosCommRCP teuchosComm,
   _axisSizes(regularizeAxisSizes(teuchosComm->getSize(),
                                  numDims,
                                  Teuchos::Array< int >())),
+  _periodic(numDims, 0),
   _axisRanks(computeAxisRanks(teuchosComm->getRank(),
                               _axisSizes)),
   _axisStrides(computeStrides(_axisSizes,
@@ -82,11 +85,13 @@ MDComm::MDComm(const TeuchosCommRCP teuchosComm,
 
 MDComm::MDComm(const TeuchosCommRCP teuchosComm,
                int numDims,
-               const Teuchos::ArrayView< int > & axisSizes) :
+               const Teuchos::ArrayView< int > & axisSizes,
+               const Teuchos::ArrayView< int > & periodic) :
   _teuchosComm(teuchosComm),
   _axisSizes(regularizeAxisSizes(teuchosComm->getSize(),
                                  numDims,
                                  axisSizes)),
+  _periodic(computePeriodic(numDims, periodic)),
   _axisRanks(computeAxisRanks(teuchosComm->getRank(),
                               _axisSizes)),
   _axisStrides(computeStrides(_axisSizes,
@@ -99,6 +104,7 @@ MDComm::MDComm(const TeuchosCommRCP teuchosComm,
 MDComm::MDComm(const Teuchos::RCP< const MDComm > parent,
                const Teuchos::ArrayView< Slice > & slices) :
   _axisSizes(parent->getNumDims()),    // just allocate the size
+  _periodic(parent->getNumDims(), 0),  // assume non-periodic for now...
   _axisRanks(parent->_axisRanks),      // will be adjusted below...
   _axisStrides(parent->_axisStrides)   // copy constructor
 {
@@ -159,6 +165,13 @@ MDComm::MDComm(const Teuchos::RCP< const MDComm > parent,
     _axisRanks.clear();
     _axisStrides.clear();
   }
+  // Fix the periodic flags
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    if ((bounds[axis].start() == 0) &&
+        (bounds[axis].stop() == parent->getAxisSize(axis)))
+      _periodic[axis] = parent->_periodic[axis];
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -205,6 +218,14 @@ MDComm::getAxisSize(int axis) const
 
 ////////////////////////////////////////////////////////////////////////
 
+bool
+MDComm::isPeriodic(int axis) const
+{
+  return _periodic[axis];
+}
+
+////////////////////////////////////////////////////////////////////////
+
 int
 MDComm::getAxisRank(int axis) const
 {
@@ -224,7 +245,11 @@ MDComm::getLowerNeighbor(int axis) const
     not onSubcommunicator(),
     SubcommunicatorError,
     "MDComm::getLowerNeighbor()");
-  if (_axisRanks[axis] == 0) return -1;
+  if (_axisRanks[axis] == 0)
+    if (_periodic[axis])
+      return _teuchosComm->getRank() + _axisSizes[axis]*_axisStrides[axis]-1;
+    else
+      return -1;
   return _teuchosComm->getRank() - _axisStrides[axis];
 }
 
@@ -237,7 +262,11 @@ MDComm::getUpperNeighbor(int axis) const
     not onSubcommunicator(),
     SubcommunicatorError,
     "MDComm::getUpperNeighbor()");
-  if (_axisRanks[axis] == _axisSizes[axis] - 1) return -1;
+  if (_axisRanks[axis] == _axisSizes[axis] - 1)
+    if (_periodic[axis])
+      return _teuchosComm->getRank() - _axisSizes[axis]*_axisStrides[axis]+1;
+    else
+      return -1;
   return _teuchosComm->getRank() + _axisStrides[axis];
 }
 
