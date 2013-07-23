@@ -122,6 +122,7 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, lowerLeft )
     for (int axis = 0; axis < numDims; ++axis)
     {
       TEST_EQUALITY(subMDComm.getAxisSize(axis), newSizes[axis]);
+      TEST_ASSERT(not subMDComm.isPeriodic(axis));
     }
   }
   else
@@ -194,6 +195,7 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, lowerRight )
     for (int axis = 0; axis < numDims; ++axis)
     {
       TEST_EQUALITY(subMDComm.getAxisSize(axis), newSizes[axis]);
+      TEST_ASSERT(not subMDComm.isPeriodic(axis));
     }
   }
   else
@@ -266,6 +268,7 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, upperLeft )
     for (int axis = 0; axis < numDims; ++axis)
     {
       TEST_EQUALITY(subMDComm.getAxisSize(axis), newSizes[axis]);
+      TEST_ASSERT(not subMDComm.isPeriodic(axis));
     }
   }
   else
@@ -332,6 +335,7 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, upperRight )
     for (int axis = 0; axis < numDims; ++axis)
     {
       TEST_EQUALITY(subMDComm.getAxisSize(axis), newSizes[axis]);
+      TEST_ASSERT(not subMDComm.isPeriodic(axis));
     }
   }
   else
@@ -344,6 +348,66 @@ TEUCHOS_UNIT_TEST( MDComm_Subcomm, upperRight )
     TEST_THROW(subMDComm.getAxisRank(0)     , Domi::SubcommunicatorError);
     TEST_THROW(subMDComm.getLowerNeighbor(0), Domi::SubcommunicatorError);
     TEST_THROW(subMDComm.getUpperNeighbor(0), Domi::SubcommunicatorError);
+  }
+}
+
+TEUCHOS_UNIT_TEST( MDComm_Subcomm, periodic )
+{
+  // Construct the MDComm from command-line arguments
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Domi::splitStringOfIntsWithCommas(axisSizesStr, axisSizes);
+  // Construct the periodic flags
+  Array< int > periodic(numDims, 0);
+  periodic[0] = 1;
+  MDCommRCP mdComm =
+    Teuchos::rcp(new MDComm(comm, numDims, axisSizes, periodic));
+
+  // Get the final axisSizes
+  axisSizes.resize(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    axisSizes[axis] = mdComm->getAxisSize(axis);
+  
+  // Figure out the lower slice
+  Array< Slice > slices(numDims);
+  Array< int >   newSizes(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    if (axis == 1)
+    {
+      int n = axisSizes[axis] / 2;
+      if (n == 0) n = 1;
+      slices[axis] = Slice(n);
+      newSizes[axis] = n;
+    }
+    else
+    {
+      slices[axis] = Slice();
+      newSizes[axis] = axisSizes[axis];
+    }
+  }
+
+  // Construct the sub-MDComm
+  MDComm subMDComm(mdComm, slices);
+
+  // Should this processor be a part of the sub-MDComm?
+  bool partOfSubcomm = true;
+  for (int axis = 0; axis < numDims; ++axis)
+    if (mdComm->getAxisRank(axis) >= newSizes[axis])
+      partOfSubcomm = false;
+
+  // Do some unit tests
+  if (partOfSubcomm)
+  {
+    TEST_EQUALITY(subMDComm.getNumDims(), numDims);
+    for (int axis = 0; axis < numDims; ++axis)
+    {
+      TEST_EQUALITY(subMDComm.getAxisSize(axis), newSizes[axis]);
+      TEST_EQUALITY(subMDComm.isPeriodic(axis), (axis == 0));
+    }
+  }
+  else
+  {
+    TEST_EQUALITY(subMDComm.getNumDims(), 0);
   }
 }
 
