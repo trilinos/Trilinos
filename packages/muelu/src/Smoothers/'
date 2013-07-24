@@ -227,11 +227,17 @@ namespace MueLu {
 	typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix1;
 	typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> Matrix2;	
 	RCP<Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > cloneSmoother = rcp(new Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2>(type_, paramList_, overlap_));
-	//Get Tpetra::CrsMatrix from Xpetra::Matrix	
+	std::cout << A_newnode->description() << std::endl;
+//	RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> > tpA = Utils::Op2TpetraCrs(A_newnode);
+
 	RCP<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> > crsOp = rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >(A_newnode);
-        const RCP<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> > &tmp = rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >(crsOp->getCrsMatrix());
+    RCP<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> > tmp_ECrsMtx = rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >(crsOp->getCrsMatrix());
+
+
+	//RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> > tpA;
 	Ifpack2::Factory factory;
-	cloneSmoother->prec_ = factory.clone<Matrix1, Matrix2>(prec_, tmp->getTpetra_CrsMatrix());
+	//RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > p = factory.clone<Matrix1, Matrix2>(prec_, tpA);
+	cloneSmoother->prec_ = factory.clone<Matrix1, Matrix2>(prec_, tmp_ECrsMtx->getTpetra_CrsMatrix());//tpA);
 	cloneSmoother->type_ = type_;
 	cloneSmoother->paramList_ = paramList_;
 	cloneSmoother->IsSetup(this->IsSetup());

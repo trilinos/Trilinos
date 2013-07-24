@@ -236,7 +236,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2TpetraCrs(RCP<Matrix> Op) {
+  RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2TpetraCrs(RCP<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Op) {
     // Get the underlying Tpetra Mtx
     RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(Op);
     if (crsOp == Teuchos::null)
@@ -738,6 +738,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
   Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Read(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm, bool binary) {
+
     if (binary == false) {
       // Matrix Market file format (ASCII)
       if (lib == Xpetra::UseEpetra) {
@@ -757,13 +758,18 @@ namespace MueLu {
 #endif
       } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-        typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
+//        typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::SerialNode, typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Kokkos::SerialNode>::SparseOps> sparse_matrix_type;
+	typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
+
         typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
 
-        RCP<Node> node = Xpetra::DefaultPlatform::getDefaultPlatform().getNode();
+        //RCP<Node> node = Xpetra::DefaultPlatform::getDefaultPlatform().getNode();
+	Teuchos::ParameterList pl = Teuchos::ParameterList();
+	RCP<Node> node = rcp(new Node(pl));
         bool callFillComplete = true;
 
         RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, comm, node, callFillComplete);
+
         if (tA.is_null())
           throw Exceptions::RuntimeError("The Tpetra::CrsMatrix returned from readSparseFile() is null.");
 
@@ -810,10 +816,12 @@ namespace MueLu {
     }
 
     return Teuchos::null;
+
   } //Read()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write(const std::string& fileName, const MultiVector& x) {
+
     std::string mapfile = "map_" + fileName;
     Write(mapfile, *(x.getMap()));
 
@@ -872,6 +880,7 @@ namespace MueLu {
 #endif // HAVE_MUELU_TPETRA
 
     throw Exceptions::BadCast("Could not cast to EpetraMultiVector or TpetraMultiVector in matrix writing");
+
   } //Write
 
 #include <unistd.h>

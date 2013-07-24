@@ -306,6 +306,11 @@ namespace Xpetra {
       this->getTpetra_MultiVector()->replaceMap(toTpetra(map));
     }
 
+    template<class Node2>
+    RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > clone(const RCP<Node2> &node2) const {
+      return RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >(new TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2>(vec_->clone(node2)));
+	//toXpetra(vec_->clone(node2));
+    }
 
     //@}
 

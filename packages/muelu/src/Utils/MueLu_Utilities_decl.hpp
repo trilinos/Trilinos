@@ -158,7 +158,7 @@ namespace MueLu {
     static const Tpetra::MultiVector<SC,LO,GO,NO>&          MV2TpetraMV(const MultiVector& Vec);
     static       Tpetra::MultiVector<SC,LO,GO,NO>&          MV2NonConstTpetraMV(MultiVector& Vec);
 
-    static RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >   Op2TpetraCrs(RCP<Matrix> Op);
+    static RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >   Op2TpetraCrs(RCP<const Matrix> Op);
     static RCP<      Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >   Op2NonConstTpetraCrs(RCP<Matrix> Op);
 
     static const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>&        Op2TpetraCrs(const Matrix& Op);

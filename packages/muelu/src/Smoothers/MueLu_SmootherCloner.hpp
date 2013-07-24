@@ -43,38 +43,46 @@
 // ***********************************************************************
 //
 // @HEADER
+#ifndef MUELU_SMOOTHERBASECLONER_HPP
+#define MUELU_SMOOTHERBASECLONER_HPP
 
+#include <Xpetra_MultiVector_fwd.hpp>
 
-#include "MueLu_ExplicitInstantiation.hpp"
+#include "MueLu_ConfigDefs.hpp"
+#include "MueLu_BaseClass.hpp"
 
-#include "MueLu_RAPFactory_def.hpp"
+#include "MueLu_SmootherBase.hpp"
+#include "MueLu_Ifpack2Smoother.hpp"
+#include "MueLu_TrilinosSmoother.hpp"
 
-#ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
-template class MueLu::RAPFactory<double, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
-#endif
+namespace MueLu {
 
-#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
-# ifdef HAVE_TEUCHOS_LONG_LONG_INT
-template class MueLu::RAPFactory<double, int, long long int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
-# else
-# warning To compile MueLu with 'long long int' support, please turn on Teuchos_ENABLE_LONG_LONG_INT
-# endif
-#endif
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node1, class LocalMatOps1, class Node2, class LocalMatOps2>
+  Teuchos::RCP<SmootherBase<Scalar,LocalOrdinal,GlobalOrdinal,Node2,LocalMatOps2> >
+  clone(const Teuchos::RCP<SmootherBase<Scalar,LocalOrdinal,GlobalOrdinal,Node1,LocalMatOps1> >& SB, const Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2,LocalMatOps2> >& cloneA, const RCP<Node2>& node2) {
+	Teuchos::RCP<SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >  cloneSB;
+	Teuchos::RCP<TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node1, LocalMatOps1> > trilSmoother = Teuchos::rcp_dynamic_cast<TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node1, LocalMatOps1> >(SB);
+	if (trilSmoother != Teuchos::null){
+		cloneSB = trilSmoother->clone(node2, cloneA);
+		return cloneSB;
+	}
 
-#ifdef HAVE_MUELU_INST_COMPLEX_INT_INT
-# ifdef HAVE_TEUCHOS_COMPLEX
-#include <complex>
-template class MueLu::RAPFactory<std::complex<double>, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
-# else
-# warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
-# endif
-#endif
+	Teuchos::RCP<Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node1, LocalMatOps1> > ifSmoother = Teuchos::rcp_dynamic_cast<Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node1, LocalMatOps1> >(SB);
+	   if (ifSmoother != Teuchos::null){
+                cloneSB = ifSmoother->clone(node2, cloneA);
+                return cloneSB;
+        }
 
-#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
-template class MueLu::RAPFactory<double, int, int, KokkosClassic::ThrustGPUNode, KokkosClassic::DefaultKernels<void, int, KokkosClassic::ThrustGPUNode>::SparseOps>;
-#endif
+	else {
+		TEUCHOS_TEST_FOR_EXCEPTION(
+		      true, std::invalid_argument, "MueLu::SmootherClone: "
+      		      "Invalid smoother type to clone (not TrilinosSmoother or Ifpack2 ) \"");
+	}
+	
+	
+  }
+} //namespace MueLu
 
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
-template class MueLu::RAPFactory<double, int, int, KokkosClassic::TPINode, KokkosClassic::DefaultKernels<void, int, KokkosClassic::TPINode>::SparseOps>;
-#endif
+#define MUELU_SMOOTHERBASECLONER_SHORT
+#endif //ifndef MUELU_SMOOTHERBASECLONER_HPP
 

@@ -58,6 +58,8 @@
 #include "MueLu_IfpackSmoother_fwd.hpp"
 #include "MueLu_Ifpack2Smoother_fwd.hpp"
 
+#include "MueLu_Ifpack2Smoother.hpp"
+
 // Note: TrilinosSmoother is a SmootherPrototype that cannot be turned into a smoother using Setup().
 //       When this prototype is cloned using Copy(), the clone is an Ifpack or an Ifpack2 smoother.
 //       The clone can be used as a smoother after calling Setup().
@@ -93,6 +95,11 @@ namespace MueLu {
          setup.  See MueLu::Ifpack2Smoother for summary of the most commonly used parameters. See the Ifpack/Ifpack2
          documentation for the full set.
     */
+
+    template<class Scalar2, class LocalOrdinal2, class GlobalOrdinal2, class Node2, class LocalMatOps2>
+    friend class TrilinosSmoother;
+
+
     TrilinosSmoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0, RCP<FactoryBase> AFact = Teuchos::null);
 
     //! Destructor
@@ -120,6 +127,11 @@ namespace MueLu {
 
     //! When this prototype is cloned using Copy(), the clone is an Ifpack or an Ifpack2 smoother.
     RCP<SmootherPrototype> Copy() const;
+
+    template<typename Node2, typename LocalMatOps2>
+    RCP<MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node2,LocalMatOps2> > clone(const RCP<Node2>& node2, const Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2,LocalMatOps2> >& A_newnode) const;
+
+
 
     //! Convert an Ifpack2 preconditioner name to Ifpack
     // As a temporary solution.
@@ -173,6 +185,30 @@ namespace MueLu {
     RCP<SmootherPrototype> s_;
 
   }; // class TrilinosSmoother
+
+   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+   template<typename Node2, typename LocalMatOps2>
+   Teuchos::RCP<MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node2,LocalMatOps2> >
+   TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::clone(const RCP<Node2>& node2, const Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2, LocalMatOps2> >& A_newnode) const {
+	
+        RCP<TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > cloneSmoother = rcp(new TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2>(type_, paramList_, overlap_, AFact_));
+	Teuchos::RCP<MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >  cloneSB;
+
+        Teuchos::RCP<MueLu::Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > ifpack2Smoother = Teuchos::rcp_dynamic_cast<MueLu::Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >(this->s_);
+        if (ifpack2Smoother != Teuchos::null){
+                cloneSB = ifpack2Smoother->template clone<Node2, LocalMatOps2>(node2, A_newnode);
+        }
+	else {
+		 TEUCHOS_TEST_FOR_EXCEPTION(
+                      true, std::invalid_argument, "MueLu::TrilinosSmoother: "
+                      "Invalid smoother type to clone (not type Ifpack2)\"");
+ }	
+	RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> > clonedProto = Teuchos::rcp_dynamic_cast<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2>  >(cloneSB);
+	cloneSmoother->s_ = clonedProto;
+	cloneSmoother->IsSetup(true);	
+        return cloneSmoother;
+   }
+
 
 } // namespace MueLu
 

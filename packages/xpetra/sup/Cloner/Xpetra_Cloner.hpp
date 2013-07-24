@@ -60,7 +60,7 @@
 
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
-
+#include "Xpetra_MultiVector.hpp"
 /** \file Xpetra_Cloner.hpp
 
 Declarations for the class Xpetra::Matrix.
@@ -80,13 +80,25 @@ namespace Xpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node1, class Node2>
   RCP<Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > clone(const Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node1>& matrix, const RCP<Node2>& node2) {
     if (matrix.getRowMap()->lib() == UseEpetra)
-      throw std::invalid_argument("Map::clone() functionality is only available for Tpetra");
+      throw std::invalid_argument("Matrix::clone() functionality is only available for Tpetra");
 
     RCP<const CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node1> > tMatrix =
         Teuchos::rcp_dynamic_cast<const CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node1> >(rcpFromRef(matrix));
 
     return tMatrix->clone(node2);
   }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node1, class Node2>
+  RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > clone(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node1>& MV, const RCP<Node2>& node2) {
+    if (MV.getMap()->lib() == UseEpetra)
+      throw std::invalid_argument("MultiVector::clone() functionality is only available for Tpetra");
+
+    RCP<const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node1> > tMV =
+        Teuchos::rcp_dynamic_cast<const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node1> >(rcpFromRef(MV));
+
+    return tMV->clone(node2);
+  }
+
 
 } //namespace Xpetra
 

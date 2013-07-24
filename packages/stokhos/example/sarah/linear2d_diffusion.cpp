@@ -23,12 +23,12 @@
 // this software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NodeT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DIScalarLAIMED. IN Node EVENT SHALL SANDIA CORPORATION OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NodeT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GlobalOrdinalODS OR SERVICES; LocalOrdinalSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
@@ -56,6 +56,13 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
+//MueLu headers
+#include <MueLu.hpp>
+#include <MueLu_SmootherFactory.hpp>
+#include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
+#include <BelosMueLuAdapter.hpp>  // => This header defines Belos::MueLuOp
+#include <BelosLinearProblem.hpp>
+
 //Tpetra node conversion
 #include <Kokkos_SerialNode.hpp>
 #include <Kokkos_TPINode.hpp>
@@ -63,7 +70,6 @@
 #include <Tpetra_CrsMatrix.hpp>
 
 #include <iostream>
-#include <vector>
 
 using Teuchos::ArrayRCP;
 using Teuchos::RCP;
@@ -76,6 +82,87 @@ using Tpetra::MultiVector;
 using Tpetra::Map;
 using Tpetra::Operator;
 using Ifpack2::Preconditioner;
+
+// Krylov preconditioning approaches
+enum Prec { ILU, CHEBY, MG };
+const int num_prec = 3;
+const Prec prec_values[] = {ILU, CHEBY, MG};
+const char *prec_names[] = { "ILU",
+                                "Chebyshev",
+                                "Multigrid"};
+template <typename Scalar,
+          typename LocalOrdinal,
+          typename GlobalOrdinal,
+          typename Node,
+	  typename LocalMatOps,
+          typename CloneNode,
+	  typename CloneLocalMatOps>
+Scalar MGclone_and_solve(
+  RCP< Xpetra::Matrix <Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > mueluJ, 
+  RCP< const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > f,
+  RCP< const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > dx,
+  RCP< MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > H,
+  ParameterList& nodeParams,
+  RCP<ParameterList> belosParams,
+  bool symmetric)
+{
+  typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+  typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,CloneNode, CloneLocalMatOps> Clone_Mat;
+  typedef Map<LocalOrdinal,GlobalOrdinal,CloneNode> Clone_Map;
+  typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,CloneNode> Clone_MV;
+  typedef Belos::OperatorT<Clone_MV> Clone_OP;
+  typedef Belos::LinearProblem<Scalar,Clone_MV,Clone_OP> BLinProb;
+  typedef MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,CloneNode, CloneLocalMatOps> Clone_Hierarchy;
+  typedef Belos::MueLuOp<Scalar, LocalOrdinal, GlobalOrdinal, CloneNode, CloneLocalMatOps> CloneBelos_MueLuOperator;
+
+  //Convert J to clone node type
+  RCP<ParameterList> plClone = parameterList();
+  RCP<CloneNode> node_clone = rcp(new CloneNode(nodeParams));
+  RCP<Clone_Mat> J_clone = Xpetra::clone(*mueluJ, node_clone);
+
+  //Clone the hierarchy 
+  RCP<Clone_Hierarchy> H_clone = H->template clone< CloneNode, CloneLocalMatOps >(node_clone);
+
+  //Convert f, dx to clone node type
+  RCP<Clone_MV> f_clone = f->clone(node_clone);
+  RCP<Clone_MV> dx_clone = dx->clone(node_clone);
+  dx_clone->putScalar(Scalar(0.0));
+  // Define Operator and Preconditioner
+  RCP<Clone_OP> OP_clone = rcp(new Belos::XpetraOp<Scalar,LocalOrdinal,GlobalOrdinal,CloneNode,CloneLocalMatOps>(J_clone));  // Turns a Xpetra::Matrix object into a Belos operator
+  const RCP<const CloneBelos_MueLuOperator> M_clone = rcp(new CloneBelos_MueLuOperator(H_clone)); // Turns a MueLu::Hierarchy object into a Belos operator
+
+  //Create problem for clone node 
+  RCP< BLinProb > roblem = rcp(new BLinProb(OP_clone, dx_clone,f_clone));
+  roblem->setRightPrec(M_clone);
+  roblem->setProblem();
+
+  // Create solver for clone node type
+  RCP<Belos::SolverManager<Scalar,Clone_MV,Clone_OP> > solver;
+  if (symmetric)
+    solver =
+      rcp(new Belos::PseudoBlockCGSolMgr<Scalar,Clone_MV,Clone_OP>(
+            roblem, belosParams));
+  else
+    solver =
+      rcp(new Belos::PseudoBlockGmresSolMgr<Scalar,Clone_MV,Clone_OP>(
+            roblem, belosParams));
+
+  // Solve linear system for clone node
+  solver->solve();
+/*
+  // Compute norm of difference
+  ParameterList serial_params;
+  RCP<Node> node = rcp(new Node(serial_params));
+  RCP<MV> dx_cpu = dx_clone->clone(node);
+  dx_cpu->update(1.0, *dx, -1.0);
+  Scalar norm;
+  dx_cpu->norm2(Teuchos::arrayView(&norm,1));
+
+  return norm;
+*/
+  return 0.0;
+}
+  
 
 template <typename Scalar,
           typename LocalOrdinal,
@@ -113,7 +200,7 @@ Scalar clone_and_solve(
   //Convert f, dx to clone node type
   RCP<Clone_MV> f_clone = f->clone(node_clone);
   RCP<Clone_MV> dx_clone = dx->clone(node_clone);
-
+  dx_clone->putScalar(Scalar(0.0));
   //Create problem for clone node
   RCP<BLinProb> problem = rcp(new BLinProb(J_clone, dx_clone, f_clone));
   problem->setRightPrec(M_clone);
@@ -153,12 +240,15 @@ int main(int argc, char *argv[]) {
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
   typedef KokkosClassic::TPINode TPINode;
   typedef KokkosClassic::ThrustGPUNode GPUNode;
-
+  typedef KokkosClassic::DefaultKernels<void, LocalOrdinal, Node>::SparseOps LocalMatOps;
+  typedef KokkosClassic::DefaultKernels<void, LocalOrdinal, TPINode>::SparseOps TPILocalMatOps;
+  typedef KokkosClassic::DefaultKernels<void, LocalOrdinal, GPUNode>::SparseOps GPULocalMatOps;
   typedef Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
   typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+  typedef Belos::OperatorT<MV> BelosOP;
   typedef Belos::LinearProblem<Scalar,MV,OP> BLinProb;
   typedef Map<LocalOrdinal,GlobalOrdinal,Node> Map;
-
+  typedef Belos::MueLuOp<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Belos_MueLuOperator;
   // Start up MPI
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
@@ -194,6 +284,15 @@ int main(int argc, char *argv[]) {
     int device_offset = 0;
     CLP.setOption("device_offset", &device_offset,
                   "Offset for attaching MPI ranks to CUDA devices");
+    int chebyDeg = 5;
+    CLP.setOption("chebyDeg",         &chebyDeg,             "Chebyshev degree");
+
+    Prec precMethod = ILU;
+    CLP.setOption("prec_method", &precMethod,
+		  num_prec, prec_values, prec_names,
+                  "Preconditioner method");
+
+		  
     CLP.parse( argc, argv );
     if (my_rank == 0)
       std::cout << "Summary of command line options:" << std::endl
@@ -204,7 +303,9 @@ int main(int argc, char *argv[]) {
                 << "\tnum_threads        = " << num_threads << std::endl
                 << "\tranks_per_node     = " << ranks_per_node << std::endl
                 << "\tgpu_ranks_per_node = " << gpu_ranks_per_node << std::endl
-                << "\tdevice_offset      = " << device_offset << std::endl;
+                << "\tdevice_offset      = " << device_offset << std::endl
+		<< "\tpreconditioner     = " << prec_names[precMethod] << std::endl
+		<< "\tChebyshev poly deg = " << chebyDeg << std::endl;
 
     // Create application
     typedef twoD_diffusion_problem<Scalar,MeshScalar,BasisScalar,LocalOrdinal,GlobalOrdinal,Node> problem_type;
@@ -231,6 +332,7 @@ int main(int argc, char *argv[]) {
     model->computeResidual(*x, *p, *f);
     model->computeJacobian(*x, *p, *J);
 
+    
     //Create RILUK preconditioner using Prec factory
     ParameterList precParams;
     std::string prec_name = "RILUK";
@@ -245,14 +347,17 @@ int main(int argc, char *argv[]) {
     M->compute();
 
     //Create Chebyshev preconditioner using Prec factory
-    Teuchos::ParameterList chevprecParams;
-    Teuchos::RCP<Tprec> M_chev;
+    ParameterList chevprecParams;
+    RCP<Tprec> M_chev;
     M_chev = factory.create<Tpetra_CrsMatrix>("CHEBYSHEV", J);
+    chevprecParams.set("chebyshev: degree", (LocalOrdinal) chebyDeg);
+    chevprecParams.set("chebyshev: ratio eigenvalue", (Scalar) 7);
+
     M_chev->setParameters(chevprecParams);
     M_chev->initialize();
     M_chev->compute();
 
-    // Setup Belos solver
+
     RCP<ParameterList> belosParams = rcp(new ParameterList);
     belosParams->set("Num Blocks", 20);
     belosParams->set("Convergence Tolerance", 1e-12);
@@ -261,41 +366,173 @@ int main(int argc, char *argv[]) {
     belosParams->set("Output Style", 1);
     belosParams->set("Output Frequency", 10);
 
-    RCP< BLinProb > problem = rcp(new BLinProb(J, dx, f));
-    problem->setRightPrec(M);
-    problem->setProblem();
+    if(precMethod == MG){
+      //Create MueLu precondtioner with coasre grid solver = RILUK and smoother = Chebyshev
+      // Turns a Tpetra::CrsMatrix into a MueLu::Matrix
+      RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > mueluA_ = rcp(new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(J));
+      RCP<Xpetra::Matrix <Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > mueluA  = rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(mueluA_));
+      RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > H = rcp(new MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(mueluA));
+      H->setDefaultVerbLevel(Teuchos::VERB_MEDIUM);
+      MueLu::FactoryManager<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> FM;
+      //Setup smoother (chebyshev)
+      std::string ifpackType;
+      Teuchos::ParameterList ifpackList;
+      ifpackType = "CHEBYSHEV";
+      ifpackList.set("chebyshev: degree", (LocalOrdinal) chebyDeg);
+      ifpackList.set("chebyshev: ratio eigenvalue", (Scalar) 7);
+      RCP<MueLu::SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > smootherPrototype = rcp(new MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(ifpackType, ifpackList));
+      FM.SetFactory("Smoother", rcp(new MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(smootherPrototype)));
 
-    //Create solver
-    RCP<Belos::SolverManager<Scalar,MV,OP> > solver;
-    if (symmetric)
-      solver = rcp(new Belos::PseudoBlockCGSolMgr<Scalar,MV,OP>(problem,
+      //Setup coarse grid smoother (RILUK)
+      Teuchos::ParameterList coarsestSmooList;
+      RCP<MueLu::SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > coarsestSmooProto = rcp( new MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>("RILUK",coarsestSmooList) );
+      FM.SetFactory("CoarseSolver", rcp(new MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(coarsestSmooProto)));
+      //Setup hierarchy with startlevel=0 and max levels = 10
+      H->Setup(FM, 0, 10);
+      RCP<BelosOP> belosOp = rcp(new Belos::XpetraOp<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(mueluA));
+      const RCP<const Belos_MueLuOperator> belosPrec = rcp(new Belos_MueLuOperator(H));  
+      RCP< Belos::LinearProblem<Scalar, MV, BelosOP > > MGproblem = rcp(new Belos::LinearProblem<Scalar, MV, BelosOP >(belosOp, dx,f));
+      MGproblem->setRightPrec(belosPrec);
+      MGproblem->setProblem();
+
+      //Create solver
+      RCP<Belos::SolverManager<Scalar,MV,BelosOP> > MGsolver;
+      if (symmetric)
+        MGsolver = rcp(new Belos::PseudoBlockCGSolMgr<Scalar,MV,BelosOP>(MGproblem,
                                                                 belosParams));
-    else
-      solver = rcp(new Belos::PseudoBlockGmresSolMgr<Scalar,MV,OP>(problem,
+      else
+        MGsolver = rcp(new Belos::PseudoBlockGmresSolMgr<Scalar,MV,BelosOP>(MGproblem,
+                                                                 belosParams));
+      // Solve linear system
+      if (my_rank == 0)
+        std::cout << "Solving with default node..." << std::endl;
+      MGsolver->solve();
+      Teuchos::TimeMonitor::summarize(std::cout);
+      Teuchos::TimeMonitor::zeroOutTimers();
+
+      Scalar tpi_norm = 0.0, gpu_norm = 0.0;
+
+      // Solve linear system with TPI node type
+      if (tpi) {
+        ParameterList node_params;
+        node_params.set("Verbose", 1);
+        node_params.set("Num Threads", num_threads);
+
+        if (my_rank == 0)
+            std::cout << "Solving with TPI node..." << std::endl;
+
+        tpi_norm =
+           MGclone_and_solve<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps,TPINode,TPILocalMatOps>(
+                mueluA, f, dx, H, node_params, belosParams, symmetric);
+        if (my_rank == 0)
+          std::cout << "\nNorm of serial node soln - tpi node soln = "
+                  << tpi_norm << std::endl;
+
+        Teuchos::TimeMonitor::summarize(std::cout);
+        Teuchos::TimeMonitor::zeroOutTimers();
+      }
+
+     // Solve linear system with GPU node type
+    if (gpu) {
+      if (my_rank == 0)
+        std::cout << "Solving with GPU node..." << std::endl;
+
+      // Compute whether we are a CPU or GPU rank, and GPU device ID
+      // The first gpu_ranks_per_node ranks are associated with GPUs
+      // (may not be the best choice performance-wise)
+      int num_ranks = comm->getSize();
+      int num_node = num_ranks / ranks_per_node;
+      int node_rank = num_node == 1 ? my_rank : my_rank % num_node;
+      bool gpu_rank = my_rank < gpu_ranks_per_node;
+      int num_device; cudaGetDeviceCount(&num_device);
+      int device_id = node_rank + device_offset;
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        num_node*ranks_per_node != num_ranks, std::logic_error,
+        "ranks_per_node does not evenly divide num_ranks");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        gpu_ranks_per_node > num_device, std::logic_error,
+        "gpu_ranks_per_node cannot exceed number of GPU devices");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        gpu_rank && device_id > num_device, std::logic_error,
+        "Invalid device ID " << device_id << ".  You probably are trying" <<
+        " to run with too many MPI ranks");
+
+      ParameterList node_params;
+      if (gpu_rank) {
+         std::cout << "MPI rank " << my_rank
+                   << ":  Attached to GPU " << device_id
+                   << std::endl;
+
+        node_params.set("Verbose", 1);
+        node_params.set("Device Number", device_id);
+
+        gpu_norm =
+          MGclone_and_solve<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps,GPUNode,GPULocalMatOps>(
+            mueluA, f, dx, H, node_params, belosParams, symmetric);
+      }
+      else {
+        // Note for the non-GPU ranks, we still have to clone since new
+        // matrices are created which call fillComplete() (which involves
+        // communication)
+         MGclone_and_solve<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps,Node,LocalMatOps>(
+            mueluA, f, dx, H, node_params, belosParams, symmetric);
+      }
+
+      if (my_rank == 0)
+        std::cout << "\nNorm of serial node soln - gpu node soln = "
+                  << gpu_norm << std::endl;
+
+      Teuchos::TimeMonitor::summarize(std::cout);
+      Teuchos::TimeMonitor::zeroOutTimers();
+      }
+
+    }
+    else {
+      RCP< BLinProb > problem = rcp(new BLinProb(J, dx, f));
+      RCP<Tprec> prec; 
+      if(precMethod == ILU){
+	prec = M;
+        //problem->setRightPrec(M);
+      }
+      if(precMethod == CHEBY){
+        //problem->setRightPrec(M_chev);
+	prec = M_chev;
+      }
+      problem->setRightPrec(prec);
+      problem->setProblem();
+    
+      //Create solver
+      RCP<Belos::SolverManager<Scalar,MV,OP> > solver;
+      if (symmetric)
+        solver = rcp(new Belos::PseudoBlockCGSolMgr<Scalar,MV,OP>(problem,
+                                                                belosParams));
+      else
+        solver = rcp(new Belos::PseudoBlockGmresSolMgr<Scalar,MV,OP>(problem,
                                                                  belosParams));
 
-    // Solve linear system
-    if (my_rank == 0)
-      std::cout << "Solving with default node..." << std::endl;
-    solver->solve();
-    Teuchos::TimeMonitor::summarize(std::cout);
-    Teuchos::TimeMonitor::zeroOutTimers();
-
-    Scalar tpi_norm = 0.0, gpu_norm = 0.0;
-
-    // Solve linear system with TPI node type
-    if (tpi) {
-      ParameterList node_params;
-      node_params.set("Verbose", 1);
-      node_params.set("Num Threads", num_threads);
-
+      // Solve linear system
       if (my_rank == 0)
-        std::cout << "Solving with TPI node..." << std::endl;
-      tpi_norm =
-        clone_and_solve<Scalar,LocalOrdinal,GlobalOrdinal,Node,TPINode>(
-          J, f, dx, M, node_params, belosParams, symmetric);
-      if (my_rank == 0)
-        std::cout << "\nNorm of serial node soln - tpi node soln = "
+        std::cout << "Solving with default node..." << std::endl;
+      solver->solve();
+      Teuchos::TimeMonitor::summarize(std::cout);
+      Teuchos::TimeMonitor::zeroOutTimers();
+
+      Scalar tpi_norm = 0.0, gpu_norm = 0.0;
+
+      // Solve linear system with TPI node type
+      if (tpi) {
+        ParameterList node_params;
+        node_params.set("Verbose", 1);
+        node_params.set("Num Threads", num_threads);
+
+        if (my_rank == 0)
+          std::cout << "Solving with TPI node..." << std::endl;
+	
+        tpi_norm =
+          clone_and_solve<Scalar,LocalOrdinal,GlobalOrdinal,Node,TPINode>(
+            J, f, dx, prec, node_params, belosParams, symmetric);
+        if (my_rank == 0)
+          std::cout << "\nNorm of serial node soln - tpi node soln = "
                   << tpi_norm << std::endl;
 
       Teuchos::TimeMonitor::summarize(std::cout);
@@ -338,7 +575,7 @@ int main(int argc, char *argv[]) {
 
         gpu_norm =
           clone_and_solve<Scalar,LocalOrdinal,GlobalOrdinal,Node,GPUNode>(
-            J, f, dx, M, node_params, belosParams, symmetric);
+            J, f, dx, prec, node_params, belosParams, symmetric);
       }
       else {
         // Note for the non-GPU ranks, we still have to clone since new
@@ -346,7 +583,7 @@ int main(int argc, char *argv[]) {
         // communication)
         gpu_norm =
           clone_and_solve<Scalar,LocalOrdinal,GlobalOrdinal,Node,Node>(
-            J, f, dx, M, node_params, belosParams, symmetric);
+            J, f, dx, prec, node_params, belosParams, symmetric);
       }
 
       if (my_rank == 0)
@@ -356,7 +593,7 @@ int main(int argc, char *argv[]) {
       Teuchos::TimeMonitor::summarize(std::cout);
       Teuchos::TimeMonitor::zeroOutTimers();
     }
-
+  
     //Determine if example passed
     bool passed = false;
     if (gpu_norm < Scalar(1e-12) && tpi_norm < Scalar(1e-12))
@@ -368,6 +605,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Example Failed!" << std::endl;
     }
 
+   } 
   }
 
   catch (std::exception& e) {

@@ -167,6 +167,8 @@ namespace MueLu {
     }
     else if (type_ == "ILUT") {
       //do nothing
+    }
+    else if (type_ == "RILUK") {
     } else {
       // TODO: When https://software.sandia.gov/bugzilla/show_bug.cgi?id=5283#c2 is done
       // we should remove the if/else/elseif and just test if this
