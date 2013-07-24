@@ -413,13 +413,22 @@ private:
   // The underlying multi-dimensional communicator.
   MDCommRCP _mdComm;
 
-  // The size of the global dimensions along each axis.  This does NOT
-  // include the values of the ghost sizes.
+  // The size of the global dimensions along each axis.  This includes
+  // the values of the ghost sizes.
   Teuchos::Array< GlobalOrd > _globalDims;
 
-  // The size of the local dimensions along each axis.  This DOES
-  // include the values of the halos.
+  // The total size of the global data structure, including ghost
+  // points.  More importantly, this will be the maximum global 1D
+  // index + 1.
+  GlobalOrd _globalSize;
+
+  // The size of the local dimensions along each axis.  This includes
+  // the values of the halos.
   Teuchos::Array< LocalOrd > _localDims;
+
+  // The total size of the local data structure, including halos.
+  // More importantly, this will be the maximum local 1D index + 1.
+  LocalOrd _localSize;
 
   // The global loop bounds along each axis, stored as an array of
   // Slices.  These bounds do NOT include the ghost points.
@@ -469,13 +478,11 @@ MDMap(const MDCommRCP mdComm,
       const EStorageOrder storageOrder,
       const Teuchos::RCP< Node > & node) :
   _mdComm(mdComm),
-  _globalDims(dimensions),
+  _globalDims(mdComm->getNumDims()),
   _localDims(mdComm->getNumDims(), 0),
   _globalAxisBounds(),
   _localAxisBounds(),
   _ghostSizes(mdComm->getNumDims(), 0),
-  _globalStrides(mdComm->getNumDims(), 1),
-  _localStrides(mdComm->getNumDims(), 1),
   _haloSizes(mdComm->getNumDims(), 0),
   _halos(),
   _storageOrder(storageOrder),
@@ -490,11 +497,16 @@ MDMap(const MDCommRCP mdComm,
     InvalidArgument,
     "Size of dimensions does not match MDComm number of dimensions");
 
-  // Copy the ghost sizes
-  for (int axis = 0; axis < ghosts.size() && axis < numDims; ++axis)
+  // Copy the ghost sizes and compute the global dimensions
+  for (int axis = 0; axis < numDims; ++axis)
   {
-    _ghostSizes[axis] = ghosts[axis];
+    if (axis < ghosts.size())
+      _ghostSizes[axis] = ghosts[axis];
+    _globalDims[axis] = dimensions[axis] + 2*_ghostSizes[axis];
   }
+
+  // Compute the global size
+  _globalSize = computeSize(_globalDims());
 
   // Copy the halo sizes and set the halos
   for (int axis = 0; axis < numDims; ++axis)
@@ -513,24 +525,14 @@ MDMap(const MDCommRCP mdComm,
     _halos.push_back(Teuchos::tuple(lower, upper));
   }
 
-  // Compute the axis bounds
+  // Compute _globalAxisBounds, _localAxisBounds, and _localDims.
+  // Then compute the local size
   computeAxisBounds();
+  _localSize = computeSize(_localDims());
 
   // Compute the strides
-  if (_storageOrder == FIRST_INDEX_FASTEST)
-    for (int axis = 1; axis < numDims; ++axis)
-    {
-      _globalStrides[axis] = _globalStrides[axis-1] * (_globalDims[axis-1] +
-                                                       2*_ghostSizes[axis-1]);
-      _localStrides[axis]  = _localStrides[axis-1]  * _localDims[axis-1];
-    }
-  else
-    for (int axis = numDims - 2; axis >= 0; ++axis)
-    {
-      _globalStrides[axis] = _globalStrides[axis+1] * (_globalDims[axis+1] +
-                                                       2*_ghostSizes[axis+1]);
-      _localStrides[axis]  = _localStrides[axis+1]  * _localDims[axis+1];
-    }
+  _globalStrides = computeStrides(_globalDims, _storageOrder);
+  _localStrides  = computeStrides(_localDims , _storageOrder);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -569,7 +571,8 @@ MDMap< LocalOrd, GlobalOrd, Node >::computeAxisBounds()
     // First estimates assuming even division of global dimensions by
     // the number of processors along this axis, and ignoring ghosts
     // and halos.
-    _localDims[axis]    = _globalDims[axis] / axisCommSize;
+    _localDims[axis]    = (_globalDims[axis] - 2*_ghostSizes[axis]) /
+                          axisCommSize;
     GlobalOrd axisStart = axisRank * _localDims[axis];
 
     // Adjustments for non-zero remainder.  Compute the remainder
@@ -579,7 +582,8 @@ MDMap< LocalOrd, GlobalOrd, Node >::computeAxisBounds()
     // standard Tpetra::Map constructor (which adds an elements to the
     // lowest processor ranks), and provides better balance for finite
     // differencing systems with staggered data location.
-    GlobalOrd remainder = _globalDims[axis] % axisCommSize;
+    GlobalOrd remainder = (_globalDims[axis] - 2*_ghostSizes[axis]) %
+                          axisCommSize;
     if (axisCommSize - axisRank - 1 < remainder)
     {
       ++_localDims[axis];
@@ -636,6 +640,13 @@ template< class LocalOrd, class GlobalOrd, class Node >
 int
 MDMap< LocalOrd, GlobalOrd, Node >::getAxisCommSize(int axis) const
 {
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((axis < 0) || (axis >= getNumDims())),
+    RangeError,
+    "invalid axis index = " << axis << " (number of dimensions = " <<
+    getNumDims() << ")");
+#endif
   return _mdComm->getAxisCommSize(axis);
 }
 
@@ -645,6 +656,13 @@ template< class LocalOrd, class GlobalOrd, class Node >
 bool
 MDMap< LocalOrd, GlobalOrd, Node >::isPeriodic(int axis) const
 {
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((axis < 0) || (axis >= getNumDims())),
+    RangeError,
+    "invalid axis index = " << axis << " (number of dimensions = " <<
+    getNumDims() << ")");
+#endif
   return _mdComm->isPeriodic(axis);
 }
 
@@ -654,6 +672,13 @@ template< class LocalOrd, class GlobalOrd, class Node >
 int
 MDMap< LocalOrd, GlobalOrd, Node >::getAxisRank(int axis) const
 {
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((axis < 0) || (axis >= getNumDims())),
+    RangeError,
+    "invalid axis index = " << axis << " (number of dimensions = " <<
+    getNumDims() << ")");
+#endif
   return _mdComm->getAxisRank(axis);
 }
 
@@ -663,6 +688,13 @@ template< class LocalOrd, class GlobalOrd, class Node >
 int
 MDMap< LocalOrd, GlobalOrd, Node >::getLowerNeighbor(int axis) const
 {
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((axis < 0) || (axis >= getNumDims())),
+    RangeError,
+    "invalid axis index = " << axis << " (number of dimensions = " <<
+    getNumDims() << ")");
+#endif
   return _mdComm->getLowerNeighbor(axis);
 }
 
@@ -672,6 +704,13 @@ template< class LocalOrd, class GlobalOrd, class Node >
 int
 MDMap< LocalOrd, GlobalOrd, Node >::getUpperNeighbor(int axis) const
 {
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((axis < 0) || (axis >= getNumDims())),
+    RangeError,
+    "invalid axis index = " << axis << " (number of dimensions = " <<
+    getNumDims() << ")");
+#endif
   return _mdComm->getUpperNeighbor(axis);
 }
 
@@ -683,10 +722,17 @@ MDMap< LocalOrd, GlobalOrd, Node >::
 getGlobalDim(int axis,
              bool withGhosts) const
 {
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((axis < 0) || (axis >= getNumDims())),
+    RangeError,
+    "invalid axis index = " << axis << " (number of dimensions = " <<
+    getNumDims() << ")");
+#endif
   if (withGhosts)
-    return _globalDims[axis] + 2 * _ghostSizes[axis];
-  else
     return _globalDims[axis];
+  else
+    return _globalDims[axis] - 2*_ghostSizes[axis];
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -697,6 +743,13 @@ MDMap< LocalOrd, GlobalOrd, Node >::
 getLocalDim(int axis,
             bool withHalos) const
 {
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((axis < 0) || (axis >= getNumDims())),
+    RangeError,
+    "invalid axis index = " << axis << " (number of dimensions = " <<
+    getNumDims() << ")");
+#endif
   if (withHalos)
     return _localDims[axis];
   else
@@ -711,6 +764,13 @@ MDMap< LocalOrd, GlobalOrd, Node >::
 getGlobalAxisBounds(int axis,
                     bool withGhosts) const
 {
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((axis < 0) || (axis >= getNumDims())),
+    RangeError,
+    "invalid axis index = " << axis << " (number of dimensions = " <<
+    getNumDims() << ")");
+#endif
   if (withGhosts)
   {
     GlobalOrd start = _globalAxisBounds[axis].start();
@@ -733,6 +793,13 @@ MDMap< LocalOrd, GlobalOrd, Node >::
 getLocalAxisBounds(int axis,
                    bool withHalos) const
 {
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((axis < 0) || (axis >= getNumDims())),
+    RangeError,
+    "invalid axis index = " << axis << " (number of dimensions = " <<
+    getNumDims() << ")");
+#endif
   if (withHalos)
     return _localAxisBounds[axis];
   else
@@ -761,6 +828,13 @@ template< class LocalOrd, class GlobalOrd, class Node >
 int
 MDMap< LocalOrd, GlobalOrd, Node >::getLowerHalo(int axis) const
 {
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((axis < 0) || (axis >= getNumDims())),
+    RangeError,
+    "invalid axis index = " << axis << " (number of dimensions = " <<
+    getNumDims() << ")");
+#endif
   return _halos[axis][0];
 }
 
@@ -770,6 +844,13 @@ template< class LocalOrd, class GlobalOrd, class Node >
 int
 MDMap< LocalOrd, GlobalOrd, Node >::getUpperHalo(int axis) const
 {
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((axis < 0) || (axis >= getNumDims())),
+    RangeError,
+    "invalid axis index = " << axis << " (number of dimensions = " <<
+    getNumDims() << ")");
+#endif
   return _halos[axis][1];
 }
 
@@ -779,6 +860,13 @@ template< class LocalOrd, class GlobalOrd, class Node >
 int
 MDMap< LocalOrd, GlobalOrd, Node >::getHaloSize(int axis) const
 {
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((axis < 0) || (axis >= getNumDims())),
+    RangeError,
+    "invalid axis index = " << axis << " (number of dimensions = " <<
+    getNumDims() << ")");
+#endif
   return _haloSizes[axis];
 }
 
@@ -788,6 +876,13 @@ template< class LocalOrd, class GlobalOrd, class Node >
 int
 MDMap< LocalOrd, GlobalOrd, Node >::getGhostSize(int axis) const
 {
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((axis < 0) || (axis >= getNumDims())),
+    RangeError,
+    "invalid axis index = " << axis << " (number of dimensions = " <<
+    getNumDims() << ")");
+#endif
   return _ghostSizes[axis];
 }
 
@@ -825,6 +920,13 @@ Teuchos::Array< GlobalOrd >
 MDMap< LocalOrd, GlobalOrd, Node >::
 getGlobalAxisIndex(GlobalOrd globalIndex) const
 {
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((globalIndex < 0) || (globalIndex >= _globalSize)),
+    RangeError,
+    "invalid global index = " << globalIndex << " (global size = " <<
+    _globalSize << ")");
+#endif
   int numDims = getNumDims();
   Teuchos::Array< GlobalOrd > result(numDims);
   GlobalOrd index = globalIndex;
@@ -856,6 +958,13 @@ Teuchos::Array< LocalOrd >
 MDMap< LocalOrd, GlobalOrd, Node >::
 getLocalAxisIndex(LocalOrd localIndex) const
 {
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((localIndex < 0) || (localIndex >= _localSize)),
+    RangeError,
+    "invalid local index = " << localIndex << " (local size = " <<
+    _localSize << ")");
+#endif
   int numDims = getNumDims();
   Teuchos::Array< LocalOrd > result(numDims);
   LocalOrd index = localIndex;
@@ -887,6 +996,13 @@ GlobalOrd
 MDMap< LocalOrd, GlobalOrd, Node >::
 getGlobalIndex(LocalOrd localIndex) const
 {
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((localIndex < 0) || (localIndex >= _localSize)),
+    RangeError,
+    "invalid local index = " << localIndex << " (local size = " <<
+    _localSize << ")");
+#endif
   Teuchos::Array< LocalOrd > localAxisIndex = getLocalAxisIndex(localIndex);
   GlobalOrd result = 0;
   for (int axis = 0; axis < getNumDims(); ++axis)
@@ -905,6 +1021,22 @@ GlobalOrd
 MDMap< LocalOrd, GlobalOrd, Node >::
 getGlobalIndex(const Teuchos::ArrayView< GlobalOrd > globalAxisIndex) const
 {
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (globalAxisIndex.size() != getNumDims()),
+    InvalidArgument,
+    "globalAxisIndex has " << globalAxisIndex.size() << " entries; expecting "
+    << getNumDims());
+  for (int axis = 0; axis < getNumDims(); ++axis)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ((globalAxisIndex[axis] < 0) ||
+       (globalAxisIndex[axis] >= _globalDims[axis])),
+      RangeError,
+      "invalid globalAxisIndex[" << axis << "] = " << globalAxisIndex[axis] <<
+      " (global dimension = " << _globalDims[axis] << ")");
+  }
+#endif
   GlobalOrd result = 0;
   for (int axis = 0; axis < getNumDims(); ++axis)
     result += globalAxisIndex[axis] * _globalStrides[axis];
@@ -918,6 +1050,13 @@ LocalOrd
 MDMap< LocalOrd, GlobalOrd, Node >::
 getLocalIndex(GlobalOrd globalIndex) const
 {
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((globalIndex < 0) || (globalIndex >= _globalSize)),
+    RangeError,
+    "invalid global index = " << globalIndex << " (global size = " <<
+    _globalSize << ")");
+#endif
   Teuchos::Array< GlobalOrd > globalAxisIndex =
     getGlobalAxisIndex(globalIndex);
   LocalOrd result = 0;
@@ -941,6 +1080,22 @@ LocalOrd
 MDMap< LocalOrd, GlobalOrd, Node >::
 getLocalIndex(const Teuchos::ArrayView< LocalOrd > localAxisIndex) const
 {
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (localAxisIndex.size() != getNumDims()),
+    InvalidArgument,
+    "localAxisIndex has " << localAxisIndex.size() << " entries; expecting "
+    << getNumDims());
+  for (int axis = 0; axis < getNumDims(); ++axis)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ((localAxisIndex[axis] < 0) ||
+       (localAxisIndex[axis] >= _localDims[axis])),
+      RangeError,
+      "invalid localAxisIndex[" << axis << "] = " << localAxisIndex[axis] <<
+      " (local dimension = " << _localDims[axis] << ")");
+  }
+#endif
   LocalOrd result = 0;
   for (int axis = 0; axis < getNumDims(); ++axis)
     result += localAxisIndex[axis] * _localStrides[axis];
