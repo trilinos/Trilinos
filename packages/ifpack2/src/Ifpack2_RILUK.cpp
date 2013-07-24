@@ -57,7 +57,7 @@ namespace Ifpack2 {
 	template class RILUK<Tpetra::CrsMatrix<double, int, int, Kokkos::ThrustGPUNode> >;
 	#endif
 
-	#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
+	#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
 	template class RILUK<Tpetra::CrsMatrix<double, int, int, Kokkos::TPINode> >; 
 	#endif
 
