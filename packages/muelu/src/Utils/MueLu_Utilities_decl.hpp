@@ -333,7 +333,7 @@ namespace MueLu {
 
        Used for coordinate vectors.
     */
-    static Magnitude Distance2(const MultiVector& v, LO i0, LO i1);
+    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType Distance2(const MultiVector& v, LocalOrdinal i0, LocalOrdinal i1);
 
     /*! @brief Detect Dirichlet rows
 
