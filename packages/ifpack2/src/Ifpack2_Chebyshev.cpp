@@ -52,6 +52,14 @@ namespace Ifpack2 {
 
   #define LCLINST(S,LO,GO) \
           IFPACK2_INST(Chebyshev,S,LO,GO)
+	#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
+        template class Chebyshev<Tpetra::CrsMatrix<double, int, int, Kokkos::ThrustGPUNode> >;
+        #endif
+
+        #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
+        template class Chebyshev<Tpetra::CrsMatrix<double, int, int, Kokkos::TPINode> >; 
+        #endif
+
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
