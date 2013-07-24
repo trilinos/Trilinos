@@ -115,7 +115,7 @@ ILUT<MatrixType>::ILUT(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,lo
   Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
   Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
   RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
-  LevelOfFill_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
+  LevelOfFill_ (1),
   DropTolerance_ (ilutDefaultDropTolerance<scalar_type> ()),
   Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
   InitializeTime_(0.0),
@@ -145,30 +145,51 @@ void ILUT<MatrixType>::setParameters(const Teuchos::ParameterList& params) {
   using Teuchos::Exceptions::InvalidParameterType;
 
   // Default values of the various parameters.
-  magnitude_type fillLevel = STM::one ();
+  int fillLevel = 1;
   magnitude_type absThresh = STM::zero ();
   magnitude_type relThresh = STM::one ();
   magnitude_type relaxValue = STM::zero ();
   magnitude_type dropTol = ilutDefaultDropTolerance<scalar_type> ();
 
+  bool gotFillLevel = false;
   try {
-    fillLevel = params.get<magnitude_type> ("fact: ilut level-of-fill");
-  }
-  catch (InvalidParameterType&) {
-    // Try double, for backwards compatibility.
-    // The cast from double to magnitude_type must succeed.
-    fillLevel = as<magnitude_type> (params.get<double> ("fact: ilut level-of-fill"));
+    fillLevel = params.get<int> ("fact: ilut level-of-fill");
+    gotFillLevel = true;
   }
   catch (InvalidParameterName&) {
-    // Accept the default value.
+    // We didn't really get it, but this tells us to stop looking.
+    gotFillLevel = true;
+  }
+  catch (InvalidParameterType&) {
+    // The name is right, but the type is wrong; try different types.
+    // We don't have to check InvalidParameterName again, since we
+    // checked it above, and it has nothing to do with the type.
   }
 
-  // FIXME (mfh 28 Nov 2012) This doesn't make any sense.  Isn't zero
-  // fill allowed?  The exception test doesn't match the exception
-  // message.  However, I'm leaving it alone for now, so as not to
-  // change current behavior.
-  TEUCHOS_TEST_FOR_EXCEPTION(fillLevel <= 0.0, std::runtime_error,
-    "Ifpack2::ILUT::SetParameters ERROR, level-of-fill must be >= 0.");
+  if (! gotFillLevel) {
+    // Try magnitude_type, for backwards compatibility.
+    try {
+      fillLevel = as<int> (params.get<magnitude_type> ("fact: ilut level-of-fill"));
+    }
+    catch (InvalidParameterType&) {}
+  }
+  if (! gotFillLevel) {
+    // Try double, for backwards compatibility.
+    try {
+      fillLevel = as<int> (params.get<double> ("fact: ilut level-of-fill"));
+    }
+    catch (InvalidParameterType&) {}
+  }
+  // If none of the above attempts succeed, accept the default value.
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    fillLevel <= 0, std::runtime_error,
+    "Ifpack2::ILUT: The \"fact: ilut level-of-fill\" parameter must be "
+    "strictly greater than zero, but you specified a value of " << fillLevel
+    << ".  Remember that for ILUT, the fill level p means something different "
+    "than it does for ILU(k).  ILU(0) produces factors with the same sparsity "
+    "structure as the input matrix A; ILUT with p = 0 always produces a "
+    "diagonal matrix, and is thus probably not what you want.");
 
   try {
     absThresh = params.get<magnitude_type> ("fact: absolute threshold");
@@ -438,17 +459,15 @@ void ILUT<MatrixType>::compute() {
     std::ofstream ofsU("U.tif.mtx", std::ios::out);
 #endif
 
-    // mfh 28 Nov 2012: The code here uses double for fill calculations.
-    // This really has nothing to do with magnitude_type.  The point is
-    // to avoid rounding and overflow for integer calculations.  That
-    // should work just fine for reasonably-sized integer values, so I'm
-    // leaving it.  However, the fill level parameter is a
-    // magnitude_type, so I do need to cast to double.  Typical values
-    // of the fill level are small, so this should not cause overflow.
+    // The code here uses double for fill calculations, even though
+    // the fill level is actually an integer.  The point is to avoid
+    // rounding and overflow for integer calculations.  If int is <=
+    // 32 bits, it can never overflow double, so this cast is always
+    // OK as long as int has <= 32 bits.
 
-    // Calculate how much fill will be allowed in addition to the space that
-    // corresponds to the input matrix entries.
-    double local_nnz = static_cast<double>(A_->getNodeNumEntries());
+    // Calculate how much fill will be allowed in addition to the
+    // space that corresponds to the input matrix entries.
+    double local_nnz = static_cast<double> (A_->getNodeNumEntries ());
     double fill;
     {
       const double fillLevel = as<double> (getLevelOfFill ());

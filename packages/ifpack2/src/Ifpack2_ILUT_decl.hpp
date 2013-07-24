@@ -308,7 +308,7 @@ public:
   /// not including the diagonal entry in that row (which is always
   /// part of U).  This has a different meaning for ILUT than it does
   /// for ILU(k).
-  inline magnitude_type getLevelOfFill() const {
+  inline int getLevelOfFill() const {
     return LevelOfFill_;
   }
 
@@ -382,7 +382,7 @@ private:
   magnitude_type Athresh_; //!< Absolute threshold
   magnitude_type Rthresh_; //!< Relative threshold
   magnitude_type RelaxValue_; //!< Relax value
-  magnitude_type LevelOfFill_; //!< Max fill level
+  int LevelOfFill_; //!< Max fill level
   //! Discard all elements below this tolerance
   magnitude_type DropTolerance_;
   //! Condition number estimate
