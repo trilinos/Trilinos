@@ -399,7 +399,7 @@ namespace Tpetra {
     ///   row Map is used.
     template <class Node2>
     RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> >
-    clone (const RCP<Node2> &node2, const RCP<ParameterList> &params = null)
+    clone(const RCP<Node2> &node2, const RCP<ParameterList> &params = null) const
     {
       const char tfecfFuncName[] = "clone";
 
