@@ -106,9 +106,7 @@ namespace Ifpack2 {
 
   } // namespace (anonymous)
 
-//Definitions for the ILUT methods:
 
-//==============================================================================
 template <class MatrixType>
 ILUT<MatrixType>::ILUT(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& A) :
   A_ (A),
@@ -132,12 +130,12 @@ ILUT<MatrixType>::ILUT(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,lo
     "Ifpack2::ILUT: Input matrix is null.");
 }
 
-//==========================================================================
+
 template <class MatrixType>
 ILUT<MatrixType>::~ILUT() {
 }
 
-//==========================================================================
+
 template <class MatrixType>
 void ILUT<MatrixType>::setParameters(const Teuchos::ParameterList& params) {
   using Teuchos::as;
@@ -263,21 +261,21 @@ void ILUT<MatrixType>::setParameters(const Teuchos::ParameterList& params) {
   }
 }
 
-//==========================================================================
+
 template <class MatrixType>
 Teuchos::RCP<const Teuchos::Comm<int> >
 ILUT<MatrixType>::getComm() const{
   return A_->getComm ();
 }
 
-//==========================================================================
+
 template <class MatrixType>
 Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
 ILUT<MatrixType>::getMatrix() const {
   return A_;
 }
 
-//==========================================================================
+
 template <class MatrixType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
 ILUT<MatrixType>::getDomainMap() const
@@ -285,7 +283,7 @@ ILUT<MatrixType>::getDomainMap() const
   return A_->getDomainMap();
 }
 
-//==========================================================================
+
 template <class MatrixType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
 ILUT<MatrixType>::getRangeMap() const
@@ -293,61 +291,61 @@ ILUT<MatrixType>::getRangeMap() const
   return A_->getRangeMap();
 }
 
-//==============================================================================
+
 template <class MatrixType>
 bool ILUT<MatrixType>::hasTransposeApply() const {
   return true;
 }
 
-//==========================================================================
+
 template <class MatrixType>
 int ILUT<MatrixType>::getNumInitialize() const {
   return(NumInitialize_);
 }
 
-//==========================================================================
+
 template <class MatrixType>
 int ILUT<MatrixType>::getNumCompute() const {
   return(NumCompute_);
 }
 
-//==========================================================================
+
 template <class MatrixType>
 int ILUT<MatrixType>::getNumApply() const {
   return(NumApply_);
 }
 
-//==========================================================================
+
 template <class MatrixType>
 double ILUT<MatrixType>::getInitializeTime() const {
   return(InitializeTime_);
 }
 
-//==========================================================================
+
 template<class MatrixType>
 double ILUT<MatrixType>::getComputeTime() const {
   return(ComputeTime_);
 }
 
-//==========================================================================
+
 template<class MatrixType>
 double ILUT<MatrixType>::getApplyTime() const {
   return(ApplyTime_);
 }
 
-//==========================================================================
+
 template<class MatrixType>
 global_size_t ILUT<MatrixType>::getGlobalNumEntries() const {
   return(L_->getGlobalNumEntries() + U_->getGlobalNumEntries());
 }
 
-//==========================================================================
+
 template<class MatrixType>
 size_t ILUT<MatrixType>::getNodeNumEntries() const {
   return(L_->getNodeNumEntries() + U_->getNodeNumEntries());
 }
 
-//=============================================================================
+
 template<class MatrixType>
 typename ILUT<MatrixType>::magnitude_type
 ILUT<MatrixType>::
@@ -366,7 +364,7 @@ computeCondEst (CondestType CT,
   return(Condest_);
 }
 
-//==========================================================================
+
 template<class MatrixType>
 void ILUT<MatrixType>::initialize() {
   Teuchos::Time timer ("ILUT::initialize");
@@ -390,13 +388,15 @@ void ILUT<MatrixType>::initialize() {
   InitializeTime_ += timer.totalElapsedTime ();
 }
 
+
 template<typename ScalarType>
-typename Teuchos::ScalarTraits<ScalarType>::magnitudeType scalar_mag(const ScalarType& s)
+typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
+scalar_mag (const ScalarType& s)
 {
   return Teuchos::ScalarTraits<ScalarType>::magnitude(s);
 }
 
-//==========================================================================
+
 template<class MatrixType>
 void ILUT<MatrixType>::compute() {
   using Teuchos::Array;
@@ -732,7 +732,7 @@ void ILUT<MatrixType>::compute() {
   ++NumCompute_;
 }
 
-//==========================================================================
+
 template <class MatrixType>
 void ILUT<MatrixType>::apply(
            const Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& X,
@@ -744,7 +744,7 @@ void ILUT<MatrixType>::apply(
   this->template applyTempl<scalar_type,scalar_type>(X, Y, mode, alpha, beta);
 }
 
-//==========================================================================
+
 template <class MatrixType>
 template <class DomainScalar, class RangeScalar>
 void ILUT<MatrixType>::applyTempl(
@@ -804,7 +804,7 @@ void ILUT<MatrixType>::applyTempl(
   ApplyTime_ += timer.totalElapsedTime ();
 }
 
-//=============================================================================
+
 template <class MatrixType>
 std::string ILUT<MatrixType>::description() const {
   std::ostringstream oss;
@@ -826,7 +826,7 @@ std::string ILUT<MatrixType>::description() const {
   return oss.str();
 }
 
-//=============================================================================
+
 template <class MatrixType>
 void ILUT<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
   using std::endl;
