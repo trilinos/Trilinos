@@ -208,26 +208,26 @@ int main(int argc, char *argv[]) {
 
     typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
 
-    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::TPINode> Mat_TPINode;    
-    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::ThrustGPUNode> Mat_GPUNode;
-    typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Kokkos::ThrustGPUNode> GPU_Map;
-    typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::ThrustGPUNode> GPU_MV;
-    typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Kokkos::TPINode> TPI_Map;
-    typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::TPINode> TPI_MV;
-    typedef Ifpack2::Preconditioner<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::ThrustGPUNode> GPUPrec;
-    typedef Ifpack2::Preconditioner<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::TPINode> TPIPrec;
+    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::TPINode> Mat_TPINode;    
+    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::ThrustGPUNode> Mat_GPUNode;
+    typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,KokkosClassic::ThrustGPUNode> GPU_Map;
+    typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::ThrustGPUNode> GPU_MV;
+    typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,KokkosClassic::TPINode> TPI_Map;
+    typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::TPINode> TPI_MV;
+    typedef Ifpack2::Preconditioner<Scalar, LocalOrdinal, GlobalOrdinal, KokkosClassic::ThrustGPUNode> GPUPrec;
+    typedef Ifpack2::Preconditioner<Scalar, LocalOrdinal, GlobalOrdinal, KokkosClassic::TPINode> TPIPrec;
 
 
     //Convert J to TPI node type
     RCP<ParameterList> plClone = parameterList();
     ParameterList pl;
     pl.set<LocalOrdinal>("Verbose", 1);
-    RCP<Kokkos::TPINode> tpi_node = rcp(new Kokkos::TPINode(pl));
+    RCP<KokkosClassic::TPINode> tpi_node = rcp(new KokkosClassic::TPINode(pl));
     const RCP<const Mat_TPINode> J_TPI = J->clone(tpi_node, plClone);
     J_TPI->print(cout);
 
     //Convert J to GPU node type
-    RCP<Kokkos::ThrustGPUNode> thrustnode = rcp(new Kokkos::ThrustGPUNode(pl));
+    RCP<KokkosClassic::ThrustGPUNode> thrustnode = rcp(new KokkosClassic::ThrustGPUNode(pl));
     const RCP<const Mat_GPUNode> J_GPU = J->clone(thrustnode, plClone);
     J_GPU->print(cout);
 
@@ -276,14 +276,14 @@ int main(int argc, char *argv[]) {
     RCP<GPU_MV> dx_gpu = dx->clone(thrustnode);
 
     //Create problem for GPU node
-    typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::ThrustGPUNode> GPU_OP;
+    typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::ThrustGPUNode> GPU_OP;
     typedef Belos::LinearProblem<Scalar,GPU_MV,GPU_OP> GPU_BLinProb;
     RCP <GPU_BLinProb> gpu_problem = rcp(new GPU_BLinProb(J_GPU, dx_gpu, f_gpu));
     gpu_problem->setRightPrec(M_GPU);
     gpu_problem->setProblem(); 
  
     //Create problem for TPI node
-    typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::TPINode> TPI_OP;
+    typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::TPINode> TPI_OP;
     typedef Belos::LinearProblem<Scalar,TPI_MV,TPI_OP> TPI_BLinProb;
 
     RCP <TPI_BLinProb> tpi_problem = rcp(new TPI_BLinProb(J_TPI, dx_tpi, f_tpi));
