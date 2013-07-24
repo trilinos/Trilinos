@@ -35,7 +35,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 TRIBITS_ADD_OPTION_AND_DEFINE( 
   KokkosClassic_ENABLE_Serial
   HAVE_KOKKOSCLASSIC_SERIAL
-  "Add SerialNode to the list of enabled nodes (no by default)"
+  "Add SerialNode to the list of enabled Node types"
   ON
   )
 
