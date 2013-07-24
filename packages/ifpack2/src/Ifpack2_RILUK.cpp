@@ -54,11 +54,11 @@ namespace Ifpack2 {
 	IFPACK2_INST(RILUK,S,LO,GO)
  
  	#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
-	template class RILUK<Tpetra::CrsMatrix<double, int, int, Kokkos::ThrustGPUNode> >;
+	template class RILUK<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
 	#endif
 
 	#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
-	template class RILUK<Tpetra::CrsMatrix<double, int, int, Kokkos::TPINode> >; 
+	template class RILUK<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >; 
 	#endif
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
