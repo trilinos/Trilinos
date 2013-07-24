@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
   ParameterList paramList;
   paramList.set("relaxation: type",           "Gauss-Seidel");
   paramList.set("relaxation: sweeps",         1);
-  paramList.set("relaxation: damping factor", 1.0);
+  paramList.set("relaxation: damping factor", (Scalar) 1.0);
   RCP<MueLu::SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal> > smootherPrototype     = rcp( new MueLu::TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal>("RELAXATION", paramList) );
   RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal> >   smootherFact          = rcp( new MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal>(smootherPrototype) );
   M.SetFactory("Smoother", smootherFact);
