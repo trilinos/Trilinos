@@ -40,13 +40,8 @@
 //@HEADER
 */
 
-//-----------------------------------------------------
-// Ifpack2::ILUT is a translation of the Aztec ILUT
-// implementation. The Aztec ILUT implementation was
-// written by Ray Tuminaro.
-// See notes in the Ifpack2::ILUT::Compute method.
-// ABW.
-//------------------------------------------------------
+/// \file Ifpack2_ILUT_decl.hpp
+/// \brief Declaration of ILUT preconditioner
 
 #ifndef IFPACK2_ILUT_DECL_HPP
 #define IFPACK2_ILUT_DECL_HPP
@@ -75,23 +70,27 @@ namespace Teuchos {
 
 namespace Ifpack2 {
 
-  /// \class ILUT
-  /// \brief ILUT incomplete factorization of a Tpetra sparse matrix.
-  ///
-  /// This class computes an ILUT sparse incomplete factorization with
-  /// specified fill and drop tolerance, of a given sparse matrix
-  /// represented as a Tpetra::RowMatrix.
-  ///
-  /// \warning If the matrix is distributed over multiple MPI
-  ///   processes, this class will not work correctly by itself.  You
-  ///   must use it as a subdomain solver inside of a domain
-  ///   decomposition method like AdditiveSchwarz (which see).  If you
-  ///   use Factory to create an ILUT preconditioner, the Factory will
-  ///   automatically wrap ILUT in AdditiveSchwarz for you, if the
-  ///   matrix's communicator contains multiple processes.
-  ///
-  /// See the documentation of setParameters() for a list of valid
-  /// parameters.
+/// \class ILUT
+/// \brief ILUT (incomplete LU factorization with threshold) of a Tpetra sparse matrix.
+/// \tparam Specialization of Tpetra::CrsMatrix or Tpetra::RowMatrix.
+///
+/// This class computes an ILUT sparse incomplete factorization with
+/// specified fill and drop tolerance, of a given sparse matrix
+/// represented as a Tpetra::RowMatrix.
+///
+/// \warning If the matrix is distributed over multiple MPI processes,
+///   this class will not work correctly by itself.  You must use it
+///   as a subdomain solver inside of a domain decomposition method
+///   like AdditiveSchwarz (which see).  If you use Factory to create
+///   an ILUT preconditioner, the Factory will automatically wrap ILUT
+///   in AdditiveSchwarz for you, if the matrix's communicator
+///   contains multiple processes.
+///
+/// See the documentation of setParameters() for a list of valid
+/// parameters.
+///
+/// This version of ILUT is a translation of Aztec's ILUT
+/// implementation, which was written by Ray Tuminaro.
 template<class MatrixType>
 class ILUT :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
@@ -159,16 +158,31 @@ public:
   //! \name Methods for setting up and computing the incomplete factorization
   //@{
 
-  //! Set parameters for the preconditioner.
-  /**
-    <ul>
-     <li> "fact: ilut level-of-fill" (int)<br>
-     <li> "fact: drop tolerance" (magnitude_type)<br>
-     <li> "fact: absolute threshold" (magnitude_type)<br>
-     <li> "fact: relative threshold" (magnitude_type)<br>
-     <li> "fact: relax value" (magnitude_type)<br>
-    </ul>
-  */
+  /// \brief Set preconditioner parameters.
+  ///
+  /// ILUT implements the following parameters:
+  /// <ul>
+  /// <li> "fact: ilut level-of-fill" (\c int)
+  /// <li> "fact: drop tolerance" (\c magnitude_type)
+  /// <li> "fact: absolute threshold" (\c magnitude_type)
+  /// <li> "fact: relative threshold" (\c magnitude_type)
+  /// <li> "fact: relax value" (\c magnitude_type)
+  /// </ul>
+  /// "fact: drop tolerance" is the magnitude threshold for dropping
+  /// entries.  It corresponds to the \f$\tau\f$ parameter in Saad's
+  /// original description of ILUT.  "fact: ilut level-of-fill" is the
+  /// number of entries to keep in the strict upper triangle of the
+  /// current row, and in the strict lower triangle of the current
+  /// row.  It corresponds to the \f$p\f$ parameter in Saad's original
+  /// description.  ILUT always keeps the diagonal entry in the
+  /// current row, regardless of the drop tolerance or fill level.
+  ///
+  /// The absolute and relative threshold parameters affect how this
+  /// code modifies the diagonal entry of the output factor.  These
+  /// parameters are not part of the original ILUT algorithm, but we
+  /// include them for consistency with other Ifpack2 preconditioners.
+  ///
+  /// The "fact: relax value" parameter currently has no effect.
   void setParameters (const Teuchos::ParameterList& params);
 
   /// \brief Clear any previously computed factors.
@@ -287,9 +301,15 @@ public:
   //! Returns the time spent in apply().
   double getApplyTime() const;
 
-  //! The level of fill.
+  /// \brief The level of fill.
+  ///
+  /// For ILUT, this means the maximum number of entries in each row
+  /// of the resulting L and U factors (each considered separately),
+  /// not including the diagonal entry in that row (which is always
+  /// part of U).  This has a different meaning for ILUT than it does
+  /// for ILU(k).
   inline magnitude_type getLevelOfFill() const {
-    return(LevelOfFill_);
+    return LevelOfFill_;
   }
 
   //! Get absolute threshold value
