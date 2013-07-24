@@ -349,10 +349,35 @@ int main(int argc, char *argv[]) {
     if (MyPID == 0)
       std::cout << "\nFinal residual norm = " << norm_f << std::endl;
 
-    
+    Scalar gpu_norm;
+    RCP<KokkosClassic::SerialNode> serialnode = rcp(new KokkosClassic::SerialNode(pl));
+    RCP<MV> dx_gpuoncpu = dx_gpu->clone(serialnode);
+    dx_gpuoncpu->update(1.0, *dx, -1.0);
+    dx_gpuoncpu->norm2(Teuchos::arrayView(&gpu_norm,1));
+    if (MyPID == 0)
+      std::cout << "\nNorm of serial node soln - gpu node soln = " << gpu_norm << std::endl;
+    Scalar tpi_norm;
+    RCP<MV> dx_tpioncpu = dx_tpi->clone(serialnode);
+    dx_tpioncpu->update(1.0, *dx, -1.0);
+    dx_tpioncpu->norm2(Teuchos::arrayView(&tpi_norm,1));
+    if (MyPID == 0)
+      std::cout << "\nNorm of serial node soln - tpi node soln = " << tpi_norm << std::endl;
 
+
+    //Determine if example passed
+    bool passed = false;
+    if (gpu_norm < Scalar(1e-12) && tpi_norm < Scalar(1e-12))
+	passed = true;
+    if (MyPID == 0) {
+      if (passed)
+        std::cout << "Example Passed!" << std::endl;
+      else
+        std::cout << "Example Failed!" << std::endl;
     }
 
+
+    }
+    
 
   }
   
