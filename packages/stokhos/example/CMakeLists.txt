@@ -504,3 +504,5 @@ ENDIF()
 IF(Stokhos_ENABLE_Experimental)
   ADD_SUBDIRECTORY(experimental)
 ENDIF()
+
+ADD_SUBDIRECTORY(sarah)
