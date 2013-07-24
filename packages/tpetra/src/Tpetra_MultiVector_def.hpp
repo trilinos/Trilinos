@@ -405,7 +405,6 @@ namespace Tpetra {
     }
   }
 
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~MultiVector() {
   }

@@ -336,6 +336,7 @@ namespace Tpetra {
     //! The Kokkos Node type.
     typedef Node          node_type;
 
+
     //@}
     //! @name Constructors and destructor
     //@{
@@ -389,6 +390,11 @@ namespace Tpetra {
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
                  const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> >&ArrayOfPtrs,
                  size_t NumVectors);
+
+    //! Create a cloned MultiVector for a different node type
+    template <class Node2>
+    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+    clone(const Teuchos::RCP<Node2> &node2) const;
 
     //! Destructor (virtual for memory safety of derived classes).
     virtual ~MultiVector();
@@ -1098,6 +1104,24 @@ namespace Tpetra {
     return rcp (new MV (map, VAN::template acceptView<Scalar> (view),
                         LDA, numVectors, HOST_VIEW_CONSTRUCTOR));
   }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Node2>
+  Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::clone(const RCP<Node2> &node2) const{
+	typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
+        typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2> MV2;
+        Teuchos::ArrayRCP< Teuchos::ArrayRCP<const Scalar> > MV_view = this->get2dView();
+        Teuchos::RCP<const Map2> clonedMap = this->getMap()->template clone(node2);
+        Teuchos::RCP<MV2> clonedMV = Teuchos::rcp(new MV2(clonedMap, this->getNumVectors()));
+        Teuchos::ArrayRCP< Teuchos::ArrayRCP<Scalar> > clonedMV_view = clonedMV->get2dViewNonConst();
+        for (size_t i = 0; i < this->getNumVectors(); i++)
+		clonedMV_view[i].deepCopy(MV_view[i]());
+        clonedMV_view = Teuchos::null;
+        return clonedMV;
+  }
+      
+
 
 } // namespace Tpetra
 
