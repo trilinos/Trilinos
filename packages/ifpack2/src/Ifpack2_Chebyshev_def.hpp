@@ -96,6 +96,14 @@ getMatrix() const {
 
 //==========================================================================
 template<class MatrixType>
+Teuchos::RCP<const MatrixType>
+Chebyshev<MatrixType>::
+getCrsMatrix() const {
+  return Teuchos::rcp_dynamic_cast<const MatrixType> (impl_.getMatrix ());
+}
+
+//==========================================================================
+template<class MatrixType>
 Teuchos::RCP<const typename Chebyshev<MatrixType>::map_type>
 Chebyshev<MatrixType>::
 getDomainMap() const {
@@ -514,6 +522,7 @@ template<class MatrixType>
 typename MatrixType::scalar_type Chebyshev<MatrixType>::getLambdaMaxForApply() const {
   return impl_.getLambdaMaxForApply();
 }
+
 
 
 }//namespace Ifpack2

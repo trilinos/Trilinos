@@ -135,6 +135,21 @@ public:
   create(const std::string& prec_type,
          const Teuchos::RCP<const MatrixType>& matrix,
          const int overlap = 0);
+
+
+  //! Clones a preconditioner for a different node type from an Ifpack2 RILUK or Chebyshev preconditioner
+  template<class MatrixType, class M2>
+  static
+  Teuchos::RCP<Ifpack2::Preconditioner<typename M2::scalar_type,
+                                       typename M2::local_ordinal_type,
+                                       typename M2::global_ordinal_type,
+                                       typename M2::node_type> >
+  clone(const Teuchos::RCP<Ifpack2::Preconditioner<typename MatrixType::scalar_type,
+                                       typename MatrixType::local_ordinal_type,
+                                       typename MatrixType::global_ordinal_type,
+                                       typename MatrixType::node_type> >& prec,
+		Teuchos::RCP<const M2> matrix = Teuchos::null);
+
 };
 
 /////////////////////////////////////////////
@@ -198,6 +213,54 @@ Factory::create(const std::string& prec_type,
       "Invalid preconditioner type \"" << prec_type << "\".");
   }
   return prec;
+}
+
+template<class MatrixType, class M2>
+Teuchos::RCP<Ifpack2::Preconditioner<typename M2::scalar_type, typename M2::local_ordinal_type,typename M2::global_ordinal_type,typename M2::node_type> >
+Factory::clone(const Teuchos::RCP<Ifpack2::Preconditioner<typename MatrixType::scalar_type,
+                                       typename MatrixType::local_ordinal_type,
+                                       typename MatrixType::global_ordinal_type,
+                                       typename MatrixType::node_type> >& prec,
+                Teuchos::RCP<const M2> matrix) {
+	typedef typename M2::scalar_type scalar_type;
+	typedef typename M2::local_ordinal_type local_ordinal_type;
+	typedef typename M2::global_ordinal_type global_ordinal_type;
+	typedef typename M2::node_type new_node_type;
+
+	Teuchos::RCP<Ifpack2::Preconditioner<scalar_type, local_ordinal_type,global_ordinal_type, new_node_type> > new_prec;
+	Teuchos::RCP<Ifpack2::Chebyshev<MatrixType> > chebyPrec;
+        chebyPrec = Teuchos::rcp_dynamic_cast<Ifpack2::Chebyshev<MatrixType> >(prec);
+        if (chebyPrec != Teuchos::null){
+		if (matrix == Teuchos::null){
+	                Teuchos::RCP<Teuchos::ParameterList> plClone = Teuchos::parameterList();
+        	        Teuchos::RCP<new_node_type> new_node = Teuchos::rcp(new new_node_type(*plClone));
+                	Teuchos::RCP<const MatrixType> A = chebyPrec->getCrsMatrix();
+			matrix = A->clone(new_node, plClone);
+		}
+
+		new_prec = chebyPrec->clone(matrix);
+		return new_prec;
+	}
+	Teuchos::RCP<Ifpack2::RILUK<MatrixType> > luPrec;
+        luPrec = Teuchos::rcp_dynamic_cast<Ifpack2::RILUK<MatrixType> >(prec);
+	if (luPrec != Teuchos::null){	
+		if (matrix == Teuchos::null){
+                        Teuchos::RCP<Teuchos::ParameterList> plClone = Teuchos::parameterList();
+                        Teuchos::RCP<new_node_type> new_node = Teuchos::rcp(new new_node_type(*plClone));
+                        Teuchos::RCP<const MatrixType> A = luPrec->getCrsMatrix();
+                	matrix = A ->clone(new_node,plClone);
+		}
+
+
+		new_prec = luPrec->clone(matrix);
+		return new_prec;
+	}
+	std::ostringstream os;
+        os << "Ifpack2::Factory::Create ERROR, invalid preconditioner type to clone";
+            
+        std::string str = os.str();
+        throw std::runtime_error(str);
+	
 }
 
 } //namespace Ifpack2
