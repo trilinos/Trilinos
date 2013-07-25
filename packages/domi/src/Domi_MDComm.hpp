@@ -225,7 +225,7 @@ public:
    */
   int getNumDims() const;
 
-  /** \brief Get the size along the given axis
+  /** \brief Get the communicator size along the given axis
    *
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
