@@ -254,9 +254,122 @@ namespace MueLu {
           Set(currentLevel, "DofsPerNode", 1);
 
         } else if (A->GetFixedBlockSize() > 1 && threshold == STS::zero()) {
+
           // Case 3:  Multiple DOF/node problem without dropping
-          // TODO
-          throw Exceptions::NotImplemented("Fast CoalesceDrop with multiple DOFs is not yet implemented.");
+          //throw Exceptions::NotImplemented("Fast CoalesceDrop with multiple DOFs is not yet implemented.");
+          // TODO start of work <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+          const RCP<const Map> colMap = A->getColMap();
+          RCP<const Map> uniqueMap, nonUniqueMap;
+          //Build amalgamated uniqueMap, since we're working with A corresponding to systems of PDEs.
+          ArrayView<const GO> elementAList = A->getRowMap()->getNodeElementList();
+          size_t              numElements  = elementAList.size();
+          LO blkSize = A->GetFixedBlockSize();
+          Array<GO>           elementList(numElements/blkSize);
+          std::set<GO>        filter; // TODO:  replace std::set with an object having faster
+                                      // TODO:  lookup/insert, hashtable for instance
+          GO indexBase = A->getRowMap()->getIndexBase();
+          LO numRows = 0;
+          for (LO id = 0; id < Teuchos::as<LO>(numElements); id++) {
+            GO amalgID = (elementAList[id] - indexBase)/blkSize + indexBase;
+            if (filter.find(amalgID) == filter.end()) {
+              elementList[numRows++] = amalgID;
+              filter.insert(amalgID);
+            }
+          }
+          assert(numRows == Teuchos::as<LO>(numElements)/blkSize);
+          uniqueMap = MapFactory::Build(colMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, colMap->getComm());
+          ////////////////////////////////////////////////////////////
+          AmalgamateColumnMap(*A, *uniqueMap, nonUniqueMap);
+          numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
+
+          // allocate space for the local graph
+          ArrayRCP<LO> rows    = ArrayRCP<LO>(numRows+1);
+          ArrayRCP<LO> columns = ArrayRCP<LO>(A->getNodeNumEntries());
+
+          const ArrayRCP<bool> amalgBoundaryNodes(numRows, false);
+
+          // Detect and record rows that correspond to Dirichlet boundary conditions
+          // TODO If we use ArrayRCP<LO>, then we can record boundary nodes as usual.  Size
+          // TODO the array one bigger than the number of local rows, and the last entry can
+          // TODO hold the actual number of boundary nodes.  Clever, huh?
+          ArrayRCP<const bool > pointBoundaryNodes;
+          if (!disableDirichletDetection)
+            pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+          else {
+            pointBoundaryNodes = ArrayRCP<const bool>(A->getNodeNumRows(),false);
+          }
+
+          LO realnnz = 0;
+          rows[0] = 0;
+          for (LO row = 0; row < numRows; row++) {
+            ArrayView<const LO> indices;
+            Array<LO>           indicesExtra;
+
+            // FIXME: for now, if any of the rows in the row block is Dirichlet, we
+            // assume that all are
+            // This may not be true in general, for instance we might have mixed b.c.
+            // where pressure is Dirichlet and velocities are not
+            bool isBoundary = false;
+            if (!disableDirichletDetection)
+              for (LO j = 0; j < blkSize; j++)
+                if (pointBoundaryNodes[row*blkSize+j])
+                  isBoundary = true;
+
+            // Merge rows of A
+            std::set<LO> cols;
+            if (!isBoundary) {
+              MergeRows(*A,row,cols,blkSize,*colMap,indexBase,*nonUniqueMap);
+            } else {
+              cols.insert(row);
+            }
+            indicesExtra.resize(cols.size());
+            size_t pos = 0;
+            for (typename std::set<LO>::const_iterator it = cols.begin(); it != cols.end(); it++)
+              indicesExtra[pos++] = *it;
+            indices = indicesExtra;
+            numTotal += indices.size();
+
+            LO nnz = indices.size(), rownnz = 0;
+            for (LO colID = 0; colID < nnz; colID++) {
+              LO col = indices[colID];
+              columns[realnnz++] = col;
+              rownnz++;
+            }
+
+            if (rownnz == 1) {
+              // If the only element remaining after filtering is diagonal, mark node as boundary
+              // FIXME: this should really be replaced by the following
+              //    if (indices.size() == 1 && indices[0] == row)
+              //        boundaryNodes[row] = true;
+              // We do not do it this way now because there is no framework for distinguishing isolated
+              // and boundary nodes in the aggregation algorithms
+              amalgBoundaryNodes[row] = true;
+            }
+            rows[row+1] = realnnz;
+          } //for (LO row = 0; row < numRows; row++)
+          columns.resize(realnnz);
+
+          RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
+          graph->SetBoundaryNodeMap(amalgBoundaryNodes);
+
+          if (GetVerbLevel() & Statistics0) {
+            GO numLocalBoundaryNodes  = 0;
+            GO numGlobalBoundaryNodes = 0;
+
+            for (LO i = 0; i < amalgBoundaryNodes.size(); ++i)
+              if (amalgBoundaryNodes[i])
+                numLocalBoundaryNodes++;
+
+            RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+            sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+            GetOStream(Statistics0, 0) << "Detected " << numGlobalBoundaryNodes
+                                       << " agglomerated Dirichlet nodes" << std::endl;
+          }
+
+          Set(currentLevel, "Graph",       graph);
+          Set(currentLevel, "DofsPerNode", blkSize);
+          // TODO end of work <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
         } else if (A->GetFixedBlockSize() > 1 && threshold != STS::zero()) {
           // Case 4:  Multiple DOF/node problem with dropping
@@ -328,36 +441,9 @@ namespace MueLu {
 
           } else {
             uniqueMap    = Coords->getMap();
-            TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap->getIndexBase() != indexBase, Exceptions::Incompatible, "Different index bases for matrix and coordinates");
-
-            // Amalgamate column map
-            ArrayView<const GO> elementAList = colMap->getNodeElementList();
-            size_t              numElements  = elementAList.size();
-            Array<GO>           elementList(numElements);
-            std::set<GO>        filter;        // TODO:  replace std::set with an object having faster lookup/insert, hashtable for instance
-
-            LO numRows = 0;
-            for (LO id = 0; id < Teuchos::as<LO>(numElements); id++) {
-              GO amalgID = (elementAList[id] - indexBase)/blkSize + indexBase;
-              if (filter.find(amalgID) == filter.end()) {
-                elementList[numRows++] = amalgID;
-                filter.insert(amalgID);
-              }
-            }
-            elementList.resize(numRows);
-
-#ifdef HAVE_MUELU_DEBUG
-            // At the moment we assume that first GIDs in nonUniqueMap
-            // coincide with those in uniqueMap.
-            for (LO row = 0; row < Teuchos::as<LO> (uniqueMap->getNodeNumElements ()); ++row) {
-              TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap->getGlobalElement(row) != elementList[row], Exceptions::RuntimeError,
-                                         "row = " << row << ", uniqueMap GID = "
-                                         << uniqueMap->getGlobalElement(row) << ", nonUniqueMap GID = "
-                                         << elementList[row] << std::endl);
-            }
-#endif
-
-            nonUniqueMap = MapFactory::Build(uniqueMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, uniqueMap->getComm());
+            TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap->getIndexBase() != indexBase, Exceptions::Incompatible,
+                                       "Different index bases for matrix and coordinates");
+            AmalgamateColumnMap(*A, *uniqueMap, nonUniqueMap);
           }
           LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
 
@@ -485,7 +571,7 @@ namespace MueLu {
             }
 
             if (rownnz == 1) {
-              // If the only element remaining after filtering is diagonal, mark node as bounday
+              // If the only element remaining after filtering is diagonal, mark node as boundary
               // FIXME: this should really be replaced by the following
               //    if (indices.size() == 1 && indices[0] == row)
               //        boundaryNodes[row] = true;
@@ -656,6 +742,8 @@ namespace MueLu {
 
   } //Build
 
+  // ///////////////////////////////////////////////////////
+
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MergeRows(Matrix const & A, LO const &row,
   std::set<LO> &cols, LO const &blkSize, Map const &colMap, GO const &indexBase, Map const &nonUniqueMap) const {
@@ -673,6 +761,43 @@ namespace MueLu {
       }
     }
   } //MergeRows
+
+  // ///////////////////////////////////////////////////////
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AmalgamateColumnMap(
+                             Matrix const & A, Map const &uniqueMap, RCP<const Map> &nonUniqueMap) const {
+    RCP<const Map> const colMap = A.getColMap();
+    GO indexBase = colMap->getIndexBase();
+    ArrayView<const GO> elementAList = colMap->getNodeElementList();
+    size_t              numElements  = elementAList.size();
+    Array<GO>           elementList(numElements);
+    std::set<GO>        filter; // TODO:  replace std::set with an object having faster lookup/insert, hashtable for instance
+
+    LO blkSize = A.GetFixedBlockSize();
+    LO numRows = 0;
+    for (LO id = 0; id < Teuchos::as<LO>(numElements); id++) {
+      GO amalgID = (elementAList[id] - indexBase)/blkSize + indexBase;
+      if (filter.find(amalgID) == filter.end()) {
+        elementList[numRows++] = amalgID;
+        filter.insert(amalgID);
+      }
+    }
+    elementList.resize(numRows);
+
+#   ifdef HAVE_MUELU_DEBUG
+    // At the moment we assume that first GIDs in nonUniqueMap coincide with those in uniqueMap.
+    for (LO row = 0; row < Teuchos::as<LO> (uniqueMap.getNodeNumElements ()); ++row) {
+      TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap.getGlobalElement(row) != elementList[row], Exceptions::RuntimeError,
+                                 "row = " << row << ", uniqueMap GID = "
+                                 << uniqueMap.getGlobalElement(row) << ", nonUniqueMap GID = "
+                                 << elementList[row] << std::endl);
+    }
+#   endif
+
+    nonUniqueMap = MapFactory::Build(uniqueMap.lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, uniqueMap.getComm());
+
+  } //AmalgamateColumnMap
 
 } //namespace MueLu
 

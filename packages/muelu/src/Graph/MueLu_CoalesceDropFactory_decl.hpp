@@ -125,6 +125,9 @@ namespace MueLu {
     void MergeRows(Matrix const & A, LO const &row, std::set<LO> &cols,
                    LO const &blkSize, Map const &colMap, GO const &indexBase, Map const &nonUniqueMap) const;
 
+    //! Method to create merged column map for systems of PDEs.
+    void AmalgamateColumnMap(Matrix const & A, Map const &uniqueMap, RCP<const Map> &nonUniqueMap) const;
+
   }; //class CoalesceDropFactory
 
 } //namespace MueLu
