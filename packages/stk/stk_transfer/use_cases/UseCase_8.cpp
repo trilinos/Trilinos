@@ -22,9 +22,9 @@
 #include <stk_util/use_cases/UseCaseEnvironment.hpp>
 #include <stk_util/diag/PrintTimer.hpp>
 
-#include <stk_transfer/STKElem.hpp>
-#include <stk_transfer/MDMesh.hpp>
-#include <stk_transfer/FEInterpolation.hpp>
+#include "STKElem.hpp"
+#include "MDMesh.hpp"
+#include "FEInterpolation.hpp"
 #include <stk_transfer/GeometricTransfer.hpp>
 
 namespace bopt = boost::program_options;
