@@ -95,24 +95,29 @@ namespace Domi
  * will actually be ghost points and not communication halos.
  *
  * The sizes of ghost and halo buffers can be different along each
- * axis, and the sizes of ghosts and halos can be different from each
- * other.
+ * axis, and the sizes of ghosts and halos on any given axis can be
+ * different from each other.
  *
- * Whe you want to loop over the elements of a data structure
+ * When you want to loop over the elements of a data structure
  * described by an <tt>MDMap</tt>, you can obtain the local looping
- * bounds along a given axis with the <tt>getLocalAxisBounds(int
+ * bounds along a given axis with the <tt>getLocalRankBounds(int
  * axis)</tt> method.  This returns a <tt>Slice</tt> object, whose
  * <tt>start()</tt> and <tt>stop()</tt> methods return the loop bounds
  * (<tt>stop()</tt> is non-inclusive).  This method also takes a
  * boolean flag indicating whether the bounds should include the halo
  * points, which defaults to false.
  *
- * There is a corresponding <tt>getGlobalAxisBounds(int axis)</tt>
+ * There is a corresponding <tt>getGlobalRankBounds(int axis)</tt>
  * method that returns global looping bounds.  While it is highly
  * unlikely that a user will ever actually loop over global bounds,
  * the method can be useful for obtaining size information.  This
  * method also has a boolean flag argument to control inclusion of
  * ghost points in these bounds.
+ *
+ * Note that all indexes start at zero, whether global or local,
+ * whether unique 1D IDs or multidimensional indexes, whether ghosts
+ * or halos are present.  This allows negative indexes to represent
+ * reverse indexing from the end of a dimension.
  */
 template< class LocalOrd,
           class GlobalOrd = LocalOrd,
@@ -139,7 +144,9 @@ public:
   /** \brief Parent/slice constructor
    */
   MDMap(const Teuchos::RCP< MDMap< LocalOrd, GlobalOrd, Node > > parent,
-        const Teuchos::ArrayView< Slice > slices);
+        const Teuchos::ArrayView< Slice > & slices,
+        const Teuchos::ArrayView< int > & ghosts =
+        Teuchos::ArrayView< int >());
 
   /** \brief Destructor
    */
@@ -244,6 +251,16 @@ public:
    */
   GlobalOrd getGlobalDim(int axis, bool withGhosts=false) const;
 
+  /** \brief Get the bounds of the global problem
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   *
+   * \param withGhosts [in] specify whether the bounds should include
+   *        ghost points or not
+   */
+  Slice getGlobalBounds(int axis, bool withGhosts=false) const;
+
   /** \brief Get the local dimension along the specified axis
    *
    * \param axis [in] the index of the axis (from zero to the number
@@ -267,7 +284,7 @@ public:
    * and the <tt>stop()</tt> method returns the non-inclusive end
    * value.
    */
-  Slice getGlobalAxisBounds(int axis, bool withGhosts=false) const;
+  Slice getGlobalRankBounds(int axis, bool withGhosts=false) const;
 
   /** \brief Get the local dimension along the specified axis
    *
@@ -282,7 +299,7 @@ public:
    * and the <tt>stop()</tt> method returns the non-inclusive end
    * value.
    */
-  Slice getLocalAxisBounds(int axis, bool withHalos=false) const;
+  Slice getLocalRankBounds(int axis, bool withHalos=false) const;
 
   //@}
 
@@ -333,10 +350,28 @@ public:
    */
   int getHaloSize(int axis) const;
 
+  /** \brief Get the size of the lower ghost along the given axis
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   */
+  int getLowerGhost(int axis) const;
+
+  /** \brief Get the size of the upper ghost along the given axis
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   */
+  int getUpperGhost(int axis) const;
+
   /** \brief Get the ghost size along the given axis
    *
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
+   *
+   * This returns the value of the ghosts along the given axis at the
+   * time of construction, regardless of whether a sub-map reduced
+   * these values.
    */
   int getGhostSize(int axis) const;
 
@@ -401,14 +436,15 @@ public:
 
 private:
 
-  // Typedef for the halo type, a tuple that stores lower and upper
-  // halo sizes, which can be different due to processors on domain
-  // boundaries.
-  typedef Teuchos::Tuple< int, 2 > halo_t;
+  // Typedef for the exteriior buffer type, a tuple that stores lower
+  // and upper ghost or halo sizes, which can be different due to
+  // processors on domain boundaries.
+  typedef Teuchos::Tuple< int, 2 > ext_buffer;
 
-  // A private method for computing the axis bounds, after the
-  // dimensions, halos and ghost points have been properly assigned.
-  void computeAxisBounds();
+  // A private method for computing the bounds and local dimensions,
+  // after the global dimensions, halos and ghost points have been
+  // properly assigned.
+  void computeBounds();
 
   // The underlying multi-dimensional communicator.
   MDCommRCP _mdComm;
@@ -417,10 +453,17 @@ private:
   // the values of the ghost sizes.
   Teuchos::Array< GlobalOrd > _globalDims;
 
-  // The total size of the global data structure, including ghost
-  // points.  More importantly, this will be the maximum global 1D
-  // index + 1.
-  GlobalOrd _globalSize;
+  // Store the start and stop indexes of the global problem along each
+  // axis.  This includes the values of the ghost sizes.
+  Teuchos::Array< Slice > _globalBounds;
+
+  // The minumum 1D index of the global data structure, including
+  // ghost points.  This will only be non-zero on a sub-map.
+  GlobalOrd _globalMin;
+
+  // The maximum 1D index of the global data structure, including
+  // ghost points.
+  GlobalOrd _globalMax;
 
   // The size of the local dimensions along each axis.  This includes
   // the values of the halos.
@@ -430,25 +473,37 @@ private:
   // More importantly, this will be the maximum local 1D index + 1.
   LocalOrd _localSize;
 
-  // The global loop bounds along each axis, stored as an array of
-  // Slices.  These bounds do NOT include the ghost points.
-  Teuchos::Array< Slice > _globalAxisBounds;
+  // A double array of Slices that stores the starting and stopping
+  // indexes for each axis processor along each axis.  This data
+  // structure allows any processor to know the map bounds on any
+  // other processor.  These bounds do NOT include the ghost points.
+  // The outer array will have a size equal to the number of
+  // dimensions.  Each inner array will have a size equal to the
+  // number of axis processors along that axis.
+  Teuchos::Array< Teuchos::Array< Slice > > _globalRankBounds;
 
   // The local loop bounds along each axis, stored as an array of
   // Slices.  These bounds DO include the halos.
-  Teuchos::Array< Slice > _localAxisBounds;
+  Teuchos::Array< Slice > _localRankBounds;
 
   // The halo sizes that were specified at construction, one value
   // along each axis.
   Teuchos::Array< int > _haloSizes;
 
   // The actual halos stored on this processor along each axis.  The
-  // lower and upper halo can be different due to the processor
+  // lower and upper halos can be different due to the processor
   // position on the boundary of a domain.
-  Teuchos::Array< halo_t > _halos;
+  Teuchos::Array< ext_buffer > _halos;
 
   // The size of the ghost points along each axis.
   Teuchos::Array< int > _ghostSizes;
+
+  // The actual ghost points stored along each axis.  For a full
+  // communicator, the lower and upper ghosts are both the same as the
+  // corresponding value in _ghostSizes.  However, the introduction of
+  // sub-maps creates the possibility of different upper and lower
+  // ghost values.
+  Teuchos::Array< ext_buffer > _ghosts;
 
   // The global stride between adjacent elements.  This quantity is
   // "virtual" as it does not describe actual memory layot, but it is
@@ -479,10 +534,13 @@ MDMap(const MDCommRCP mdComm,
       const Teuchos::RCP< Node > & node) :
   _mdComm(mdComm),
   _globalDims(mdComm->getNumDims()),
+  _globalBounds(),
+  _globalMin(0),
   _localDims(mdComm->getNumDims(), 0),
-  _globalAxisBounds(),
-  _localAxisBounds(),
+  _globalRankBounds(mdComm->getNumDims()),
+  _localRankBounds(),
   _ghostSizes(mdComm->getNumDims(), 0),
+  _ghosts(),
   _haloSizes(mdComm->getNumDims(), 0),
   _halos(),
   _storageOrder(storageOrder),
@@ -497,16 +555,18 @@ MDMap(const MDCommRCP mdComm,
     InvalidArgument,
     "Size of dimensions does not match MDComm number of dimensions");
 
-  // Copy the ghost sizes and compute the global dimensions
+  // Copy the ghost sizes and compute the global dimensions and bounds
   for (int axis = 0; axis < numDims; ++axis)
   {
     if (axis < ghosts.size())
       _ghostSizes[axis] = ghosts[axis];
+    _ghosts.push_back(Teuchos::tuple(_ghostSizes[axis], _ghostSizes[axis]));
     _globalDims[axis] = dimensions[axis] + 2*_ghostSizes[axis];
+    _globalBounds.push_back(ConcreteSlice(_globalDims[axis]));
   }
 
   // Compute the global size
-  _globalSize = computeSize(_globalDims());
+  _globalMax = computeSize(_globalDims());
 
   // Copy the halo sizes and set the halos
   for (int axis = 0; axis < numDims; ++axis)
@@ -525,9 +585,9 @@ MDMap(const MDCommRCP mdComm,
     _halos.push_back(Teuchos::tuple(lower, upper));
   }
 
-  // Compute _globalAxisBounds, _localAxisBounds, and _localDims.
+  // Compute _globalRankBounds, _localRankBounds, and _localDims.
   // Then compute the local size
-  computeAxisBounds();
+  computeBounds();
   _localSize = computeSize(_localDims());
 
   // Compute the strides
@@ -540,9 +600,75 @@ MDMap(const MDCommRCP mdComm,
 template< class LocalOrd, class GlobalOrd, class Node >
 MDMap< LocalOrd, GlobalOrd, Node >::
 MDMap(const Teuchos::RCP< MDMap< LocalOrd, GlobalOrd, Node > > parent,
-      const Teuchos::ArrayView< Slice > slices)
+      const Teuchos::ArrayView< Slice > & slices,
+      const Teuchos::ArrayView< int > & ghosts) :
+  _globalDims(parent->getNumDims()),
+  _globalBounds(),
+  _globalMin(0),
+  _localDims(parent->getNumDims(), 0),
+  _globalRankBounds(parent->getNumDims()),
+  _localRankBounds(),
+  _ghostSizes(parent->getNumDims(), 0),
+  _ghosts(),
+  _haloSizes(parent->getHaloSizes()),
+  _halos(),
+  _globalStrides(parent->_globalStrides),
+  _localStrides(parent->_localStrides),
+  _storageOrder(parent->getStorageOrder()),
+  _node(parent->_node)
 {
+  // Temporarily store the number of dimensions
+  int numDims = parent->getNumDims();
 
+  // Sanity check on dimensions
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (slices.size() != numDims),
+    InvalidArgument,
+    "number of slices = " << slices.size() << " != parent MDMap number of "
+    "dimensions = " << numDims);
+
+  // Copy the ghost sizes and set initial values for _ghosts
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    if (axis < ghosts.size())
+      _ghostSizes[axis] = ghosts[axis];
+    _ghosts[axis][0] = _ghostSizes[axis];
+    _ghosts[axis][1] = _ghostSizes[axis];
+  }
+
+  // Convert the slices to concrete, add the ghost points, and store
+  // in _globalBounds, altering _ghosts if necessary.  Compute
+  // _globalDims, _globalMax, and _globalMin.
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    Slice bounds =
+      slices[axis].bounds(parent->getGlobalBounds(axis).stop());
+    GlobalOrd start = bounds.start() - _ghostSizes[axis];
+    if (start < 0)
+    {
+      _ghosts[axis][0] = bounds.start();
+      start = 0;
+    }
+    GlobalOrd stop = bounds.stop() + _ghostSizes[axis];
+    if (stop > parent->getGlobalDim(axis,true))
+    {
+      _ghosts[axis][1] = parent->getGlobalDim(axis,true) - bounds.stop();
+      stop = parent->getGlobalDim(axis,true);
+    }
+    _globalBounds.push_back(ConcreteSlice(start,stop));
+    // _globalDims[axis] should be stop - start, but we temporarily
+    // store just stop to help us compute _globalMax easily.  We
+    // will fix this after _globalMax is computed. (Note that
+    // _globalMax is only used for bounds checking of global
+    // indexes.)
+    _globalDims[axis] = stop;
+  }
+  _globalMax = computeSize(_globalDims);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    _globalDims[axis] -= _globalBounds[axis].start();
+    _globalMin += _globalBounds[axis].start() * _globalStrides[axis];
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -550,61 +676,6 @@ MDMap(const Teuchos::RCP< MDMap< LocalOrd, GlobalOrd, Node > > parent,
 template< class LocalOrd, class GlobalOrd, class Node >
 MDMap< LocalOrd, GlobalOrd, Node >::~MDMap()
 {
-}
-
-////////////////////////////////////////////////////////////////////////
-
-template< class LocalOrd, class GlobalOrd, class Node >
-void
-MDMap< LocalOrd, GlobalOrd, Node >::computeAxisBounds()
-{
-  // Initialization
-  int numDims = getNumDims();
-
-  // Decompose the multi-dimensional domain
-  for (int axis = 0; axis < numDims; ++axis)
-  {
-    // Get the communicator info for this axis
-    int axisCommSize = getAxisCommSize(axis);
-    int axisRank     = getAxisRank(axis);
-
-    // First estimates assuming even division of global dimensions by
-    // the number of processors along this axis, and ignoring ghosts
-    // and halos.
-    _localDims[axis]    = (_globalDims[axis] - 2*_ghostSizes[axis]) /
-                          axisCommSize;
-    GlobalOrd axisStart = axisRank * _localDims[axis];
-
-    // Adjustments for non-zero remainder.  Compute the remainder
-    // using the mod operator.  If the remainder is > 0, then add an
-    // element to the appropriate number of processors with the
-    // highest axis ranks.  Note that this is the opposite of the
-    // standard Tpetra::Map constructor (which adds an elements to the
-    // lowest processor ranks), and provides better balance for finite
-    // differencing systems with staggered data location.
-    GlobalOrd remainder = (_globalDims[axis] - 2*_ghostSizes[axis]) %
-                          axisCommSize;
-    if (axisCommSize - axisRank - 1 < remainder)
-    {
-      ++_localDims[axis];
-      axisStart += (remainder - axisCommSize + axisRank);
-    }
-
-    // Global adjustment for ghost points
-    axisStart += _ghostSizes[axis];
-
-    // Compute and store the global axis bounds
-    _globalAxisBounds.push_back(ConcreteSlice(axisStart,
-                                              axisStart + _localDims[axis]));
-
-    // Local adjustment for halos.  Note that _halos should already be
-    // corrected to use ghost sizes for processors on the boundaries
-    _localDims[axis] += _halos[axis][0] + _halos[axis][1];
-    axisStart        -= _halos[axis][0];
-
-    // Compute and store the axis bounds
-    _localAxisBounds.push_back(ConcreteSlice(_localDims[axis]));
-  }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -732,7 +803,32 @@ getGlobalDim(int axis,
   if (withGhosts)
     return _globalDims[axis];
   else
-    return _globalDims[axis] - 2*_ghostSizes[axis];
+    return _globalDims[axis] - _ghosts[axis][0] - _ghosts[axis][1];
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class LocalOrd, class GlobalOrd, class Node >
+Slice
+MDMap< LocalOrd, GlobalOrd, Node >::
+getGlobalBounds(int axis,
+                bool withGhosts) const
+{
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((axis < 0) || (axis >= getNumDims())),
+    RangeError,
+    "invalid axis index = " << axis << " (number of dimensions = " <<
+    getNumDims() << ")");
+#endif
+  if (withGhosts)
+    return _globalBounds[axis];
+  else
+  {
+    GlobalOrd start = _globalBounds[axis].start() + _ghosts[axis][0];
+    GlobalOrd stop  = _globalBounds[axis].stop()  - _ghosts[axis][1];
+    return ConcreteSlice(start, stop);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -761,7 +857,7 @@ getLocalDim(int axis,
 template< class LocalOrd, class GlobalOrd, class Node >
 Slice
 MDMap< LocalOrd, GlobalOrd, Node >::
-getGlobalAxisBounds(int axis,
+getGlobalRankBounds(int axis,
                     bool withGhosts) const
 {
 #if DOMI_ENABLE_ABC
@@ -771,18 +867,19 @@ getGlobalAxisBounds(int axis,
     "invalid axis index = " << axis << " (number of dimensions = " <<
     getNumDims() << ")");
 #endif
+  int axisRank = getAxisRank(axis);
   if (withGhosts)
   {
-    GlobalOrd start = _globalAxisBounds[axis].start();
-    GlobalOrd stop  = _globalAxisBounds[axis].stop();
+    GlobalOrd start = _globalRankBounds[axis][axisRank].start();
+    GlobalOrd stop  = _globalRankBounds[axis][axisRank].stop();
     if (getAxisRank(axis) == 0)
-      start -= _ghostSizes[axis];
+      start -= _ghosts[axis][0];
     if (getAxisRank(axis) == getAxisCommSize(axis)-1)
-      stop += _ghostSizes[axis];
+      stop += _ghosts[axis][1];
     return ConcreteSlice(start,stop);
   }
   else
-    return _globalAxisBounds[axis];
+    return _globalRankBounds[axis][axisRank];
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -790,7 +887,7 @@ getGlobalAxisBounds(int axis,
 template< class LocalOrd, class GlobalOrd, class Node >
 Slice
 MDMap< LocalOrd, GlobalOrd, Node >::
-getLocalAxisBounds(int axis,
+getLocalRankBounds(int axis,
                    bool withHalos) const
 {
 #if DOMI_ENABLE_ABC
@@ -801,11 +898,11 @@ getLocalAxisBounds(int axis,
     getNumDims() << ")");
 #endif
   if (withHalos)
-    return _localAxisBounds[axis];
+    return _localRankBounds[axis];
   else
   {
-    LocalOrd start = _localAxisBounds[axis].start() + _halos[axis][0];
-    LocalOrd stop  = _localAxisBounds[axis].stop()  - _halos[axis][1];
+    LocalOrd start = _localRankBounds[axis].start() + _halos[axis][0];
+    LocalOrd stop  = _localRankBounds[axis].stop()  - _halos[axis][1];
     return ConcreteSlice(start, stop);
   }
 }
@@ -874,6 +971,38 @@ MDMap< LocalOrd, GlobalOrd, Node >::getHaloSize(int axis) const
 
 template< class LocalOrd, class GlobalOrd, class Node >
 int
+MDMap< LocalOrd, GlobalOrd, Node >::getLowerGhost(int axis) const
+{
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((axis < 0) || (axis >= getNumDims())),
+    RangeError,
+    "invalid axis index = " << axis << " (number of dimensions = " <<
+    getNumDims() << ")");
+#endif
+  return _ghosts[axis][0];
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class LocalOrd, class GlobalOrd, class Node >
+int
+MDMap< LocalOrd, GlobalOrd, Node >::getUpperGhost(int axis) const
+{
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((axis < 0) || (axis >= getNumDims())),
+    RangeError,
+    "invalid axis index = " << axis << " (number of dimensions = " <<
+    getNumDims() << ")");
+#endif
+  return _ghosts[axis][1];
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class LocalOrd, class GlobalOrd, class Node >
+int
 MDMap< LocalOrd, GlobalOrd, Node >::getGhostSize(int axis) const
 {
 #if DOMI_ENABLE_ABC
@@ -922,10 +1051,10 @@ getGlobalAxisIndex(GlobalOrd globalIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((globalIndex < 0) || (globalIndex >= _globalSize)),
+    ((globalIndex < 0) || (globalIndex >= _globalMax)),
     RangeError,
     "invalid global index = " << globalIndex << " (global size = " <<
-    _globalSize << ")");
+    _globalMax << ")");
 #endif
   int numDims = getNumDims();
   Teuchos::Array< GlobalOrd > result(numDims);
@@ -1007,8 +1136,8 @@ getGlobalIndex(LocalOrd localIndex) const
   GlobalOrd result = 0;
   for (int axis = 0; axis < getNumDims(); ++axis)
   {
-    GlobalOrd globalAxisIndex =
-      localAxisIndex[axis] + _globalAxisBounds[axis].start() - _halos[axis][0];
+    GlobalOrd globalAxisIndex = localAxisIndex[axis] +
+      _globalRankBounds[axis][getAxisRank(axis)].start() - _halos[axis][0];
     result += globalAxisIndex * _globalStrides[axis];
   }
   return result;
@@ -1052,18 +1181,18 @@ getLocalIndex(GlobalOrd globalIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((globalIndex < 0) || (globalIndex >= _globalSize)),
+    ((globalIndex < 0) || (globalIndex >= _globalMax)),
     RangeError,
     "invalid global index = " << globalIndex << " (global size = " <<
-    _globalSize << ")");
+    _globalMax << ")");
 #endif
   Teuchos::Array< GlobalOrd > globalAxisIndex =
     getGlobalAxisIndex(globalIndex);
   LocalOrd result = 0;
   for (int axis = 0; axis < getNumDims(); ++axis)
   {
-    LocalOrd localAxisIndex =
-      globalAxisIndex[axis] - _globalAxisBounds[axis].start() + _halos[axis][0];
+    LocalOrd localAxisIndex = globalAxisIndex[axis] -
+      _globalRankBounds[axis][getAxisRank(axis)].start() + _halos[axis][0];
     TEUCHOS_TEST_FOR_EXCEPTION(
       (localAxisIndex < 0 || localAxisIndex >= _localDims[axis]),
       RangeError,
@@ -1100,6 +1229,67 @@ getLocalIndex(const Teuchos::ArrayView< LocalOrd > localAxisIndex) const
   for (int axis = 0; axis < getNumDims(); ++axis)
     result += localAxisIndex[axis] * _localStrides[axis];
   return result;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class LocalOrd, class GlobalOrd, class Node >
+void
+MDMap< LocalOrd, GlobalOrd, Node >::computeBounds()
+{
+  // Initialization
+  int numDims = getNumDims();
+
+  // Decompose the multi-dimensional domain
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    // Get the communicator info for this axis
+    int axisCommSize = getAxisCommSize(axis);
+    for (int axisRank = 0; axisRank < axisCommSize; ++axisRank)
+    {
+      // First estimates assuming even division of global dimensions
+      // by the number of processors along this axis, and ignoring
+      // ghosts and halos.
+      LocalOrd  localDim  = (_globalDims[axis] - 2*_ghostSizes[axis]) /
+                            axisCommSize;
+      GlobalOrd axisStart = axisRank * localDim;
+
+      // Adjustments for non-zero remainder.  Compute the remainder
+      // using the mod operator.  If the remainder is > 0, then add an
+      // element to the appropriate number of processors with the
+      // highest axis ranks.  Note that this is the opposite of the
+      // standard Tpetra::Map constructor (which adds an elements to
+      // the lowest processor ranks), and provides better balance for
+      // finite differencing systems with staggered data location.
+      GlobalOrd remainder = (_globalDims[axis] - 2*_ghostSizes[axis]) %
+                            axisCommSize;
+      if (axisCommSize - axisRank - 1 < remainder)
+      {
+        ++localDim;
+        axisStart += (remainder - axisCommSize + axisRank);
+      }
+
+      // Global adjustment for ghost points
+      axisStart += _ghostSizes[axis];
+
+      // Compute and store the global axis bounds
+      _globalRankBounds[axis].push_back(
+        ConcreteSlice(axisStart, axisStart + localDim));
+
+      // Set _localDims[axis] and _localRankBounds[axis] only if
+      // axisRank equals the axis rank of this processor
+      if (axisRank == getAxisRank(axis))
+      {
+        // Local adjustment for halos.  Note that _halos should
+        // already be corrected to use ghost sizes for processors on
+        // the boundaries
+        _localDims[axis] = localDim + _halos[axis][0] + _halos[axis][1];
+
+        // Compute and store the axis bounds
+        _localRankBounds.push_back(ConcreteSlice(_localDims[axis]));
+      }
+    }
+  }
 }
 
 }
