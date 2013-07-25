@@ -507,13 +507,15 @@ namespace detail{
 		return param;
 	}
     };
+#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUSPARSE)
    template<class MatrixType, class Scalar>
-   struct setLocalSolveParams<MatrixType, Kokkos::ThrustGPUNode, Kokkos::CUSPARSEOps<Scalar, Kokkos::ThrustGPUNode> >{
+   struct setLocalSolveParams<MatrixType, KokkosClassic::ThrustGPUNode, KokkosClassic::CUSPARSEOps<Scalar, KokkosClassic::ThrustGPUNode> >{
 	static Teuchos::RCP<Teuchos::ParameterList> setParams (const Teuchos::RCP<Teuchos::ParameterList>& param){
 	 	 param->sublist("fillComplete").sublist("Local Sparse Ops").set("Prepare Solve",true);
 		 return param;
 	}
     };
+#endif
 } //end namespace detail
 
 template <class MatrixType> 
