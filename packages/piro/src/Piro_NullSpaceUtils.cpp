@@ -42,6 +42,8 @@
 
 #include "Piro_NullSpaceUtils.hpp"
 
+#include "Piro_StratimikosUtils.hpp"
+
 namespace Piro {
 
 MLRigidBodyModes::MLRigidBodyModes(int numPDEs_)
@@ -51,27 +53,6 @@ MLRigidBodyModes::MLRigidBodyModes(int numPDEs_)
      numScalar(0),
      mlUsed(false)
 {
-}
-
-Teuchos::RCP<Teuchos::ParameterList>
-extractStratimikosParams(const Teuchos::RCP<Teuchos::ParameterList> &piroParams)
-{
-
-  Teuchos::RCP<Teuchos::ParameterList> result;
-
-  const std::string solverToken = piroParams->get<std::string>("Solver Type");
-  if (solverToken == "NOX" || solverToken == "LOCA" || solverToken == "LOCA Adaptive") {
-    result = Teuchos::sublist(Teuchos::sublist(Teuchos::sublist(Teuchos::sublist(Teuchos::sublist(
-                piroParams, "NOX"), "Direction"), "Newton"), "Stratimikos Linear Solver"), "Stratimikos");
-  } else if (solverToken == "Rythmos") {
-    if (piroParams->isSublist("Rythmos")) {
-      result = Teuchos::sublist(Teuchos::sublist(piroParams, "Rythmos"), "Stratimikos");
-    } else if (piroParams->isSublist("Rythmos Solver")) {
-      result = Teuchos::sublist(Teuchos::sublist(piroParams, "Rythmos Solver"), "Stratimikos");
-    }
-  }
-
-  return result;
 }
 
 void

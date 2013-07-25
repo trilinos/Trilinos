@@ -40,63 +40,18 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PIRO_NULLSPACEUTILS_HPP
-#define PIRO_NULLSPACEUTILS_HPP
+#ifndef PIRO_STRATIMIKOSUTILS_HPP
+#define PIRO_STRATIMIKOSUTILS_HPP
 
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_Array.hpp"
 #include "Teuchos_RCP.hpp"
 
 namespace Piro {
 
-class MLRigidBodyModes {
-
-public:
-
-   //! Construct RBM object
-   MLRigidBodyModes(int numPDEs);
-
-   //! Update the number of PDEs present
-   void setNumPDEs(int numPDEs_){ numPDEs = numPDEs_; }
-
-   //! Resize object as mesh changes
-   void resize(const int numSpaceDim, const int numNodes);
-
-   //! Set sizes of nullspace etc
-   void setParameters(const int numPDEs, const int numElasticityDim, 
-          const int numScalar, const int nullSpaceDim);
-
-   //! Set Piro solver parameter list
-   void setPiroPL(const Teuchos::RCP<Teuchos::ParameterList>& piroParams);
-
-   //! Access the arrays to store the coordinates
-   void getCoordArrays(double **x, double **y, double **z);
-
-   //! Is ML used on this problem?
-   bool isMLUsed(){ return mlUsed; }
-
-   //! Pass coordinate arrays to ML
-   void informML();
-
-private:
-
-    void Piro_ML_Coord2RBM(int Nnodes, double x[], double y[], double z[], double rbm[], int Ndof, int NscalarDof, int NSdim);
-
-    int numPDEs;
-    int numElasticityDim;
-    int numScalar;
-    int nullSpaceDim;
-    int numSpaceDim;
-    bool mlUsed;
-    Teuchos::RCP<Teuchos::ParameterList> mlList;
-
-    std::vector<double> x;
-    std::vector<double> y;
-    std::vector<double> z;
-    std::vector<double> rr;
-
-};
+  //! \brief Extracts the Stratimikos sublist from the Piro Solver parameter list
+  Teuchos::RCP<Teuchos::ParameterList>
+    extractStratimikosParams(const Teuchos::RCP<Teuchos::ParameterList> &piroParams);
 
 } // namespace Piro
 
-#endif /* PIRO_NULLSPACEUTILS_HPP */
+#endif /* PIRO_STRATIMIKOSUTILS_HPP */

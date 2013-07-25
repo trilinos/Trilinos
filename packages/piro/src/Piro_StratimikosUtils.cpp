@@ -40,63 +40,24 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PIRO_NULLSPACEUTILS_HPP
-#define PIRO_NULLSPACEUTILS_HPP
+#include "Piro_StratimikosUtils.hpp"
 
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_Array.hpp"
-#include "Teuchos_RCP.hpp"
+Teuchos::RCP<Teuchos::ParameterList>
+Piro::extractStratimikosParams(const Teuchos::RCP<Teuchos::ParameterList> &piroParams)
+{
+  Teuchos::RCP<Teuchos::ParameterList> result;
 
-namespace Piro {
+  const std::string solverToken = piroParams->get<std::string>("Solver Type");
+  if (solverToken == "NOX" || solverToken == "LOCA" || solverToken == "LOCA Adaptive") {
+    result = Teuchos::sublist(Teuchos::sublist(Teuchos::sublist(Teuchos::sublist(Teuchos::sublist(
+                piroParams, "NOX"), "Direction"), "Newton"), "Stratimikos Linear Solver"), "Stratimikos");
+  } else if (solverToken == "Rythmos") {
+    if (piroParams->isSublist("Rythmos")) {
+      result = Teuchos::sublist(Teuchos::sublist(piroParams, "Rythmos"), "Stratimikos");
+    } else if (piroParams->isSublist("Rythmos Solver")) {
+      result = Teuchos::sublist(Teuchos::sublist(piroParams, "Rythmos Solver"), "Stratimikos");
+    }
+  }
 
-class MLRigidBodyModes {
-
-public:
-
-   //! Construct RBM object
-   MLRigidBodyModes(int numPDEs);
-
-   //! Update the number of PDEs present
-   void setNumPDEs(int numPDEs_){ numPDEs = numPDEs_; }
-
-   //! Resize object as mesh changes
-   void resize(const int numSpaceDim, const int numNodes);
-
-   //! Set sizes of nullspace etc
-   void setParameters(const int numPDEs, const int numElasticityDim, 
-          const int numScalar, const int nullSpaceDim);
-
-   //! Set Piro solver parameter list
-   void setPiroPL(const Teuchos::RCP<Teuchos::ParameterList>& piroParams);
-
-   //! Access the arrays to store the coordinates
-   void getCoordArrays(double **x, double **y, double **z);
-
-   //! Is ML used on this problem?
-   bool isMLUsed(){ return mlUsed; }
-
-   //! Pass coordinate arrays to ML
-   void informML();
-
-private:
-
-    void Piro_ML_Coord2RBM(int Nnodes, double x[], double y[], double z[], double rbm[], int Ndof, int NscalarDof, int NSdim);
-
-    int numPDEs;
-    int numElasticityDim;
-    int numScalar;
-    int nullSpaceDim;
-    int numSpaceDim;
-    bool mlUsed;
-    Teuchos::RCP<Teuchos::ParameterList> mlList;
-
-    std::vector<double> x;
-    std::vector<double> y;
-    std::vector<double> z;
-    std::vector<double> rr;
-
-};
-
-} // namespace Piro
-
-#endif /* PIRO_NULLSPACEUTILS_HPP */
+  return result;
+}
