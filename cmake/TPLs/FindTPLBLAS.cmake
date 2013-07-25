@@ -57,10 +57,12 @@ INCLUDE(TribitsTplDeclareLibraries)
 
 IF (MSVC AND NOT
     (BLAS_LIBRARY_DIRS  OR
-     BLAS_LIBRARY_NAMES OR
+     (NOT "${BLAS_LIBRARY_NAMES}" STREQUAL "blas blas_win32" AND
+      NOT "${BLAS_LIBRARY_NAMES}" STREQUAL "") OR
      BLAS_INCLUDE_DIRS  OR
      BLAS_INCLUDE_NAMES OR
-     TPL_BLAS_LIBRARIES OR
+     (NOT "${TPL_BLAS_LIBRARIES}" STREQUAL "blas" AND
+      NOT "${TPL_BLAS_LIBRARIES}" STREQUAL "") OR
      TPL_BLAS_INCLUDE_DIRS)
    )
   # Find the CLAPACK built by CMake on the machine for MSVC if found it will
