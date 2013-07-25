@@ -290,6 +290,7 @@ public:
 
     // TODO: check me, clean up, use only ArrayView instead of std::vector
     // build full col map
+    fullcolmap_ = Teuchos::null; // delete old full column map
     if (fullcolmap_ == Teuchos::null)
     {
       std::vector<GlobalOrdinal> colmapentries;
@@ -854,15 +855,17 @@ private:
             Values[j] *= scalarA;
 
 
-#if 0
+#if 1
+        std::vector<GlobalOrdinal> tempVec;
+        std::vector<Scalar> tempVal;
         for (size_t j=0; j<NumEntries; ++j)
         {
-          std::vector<GlobalOrdinal> tempVec; tempVec.push_back(Indices[j]);
-          std::vector<Scalar> tempVal; tempVal.push_back(Values[j]);
-          Teuchos::ArrayView<GlobalOrdinal> tempIndex(&tempVec[0], 1);
-          Teuchos::ArrayView<Scalar>        tempValue(&tempVal[0],  1);
-          B->insertGlobalValues(Row, tempIndex, tempValue); // insert should be ok, since blocks in BlockedCrsOpeartor do not overlap!
+          tempVec.push_back(A->getColMap()->getGlobalElement(Indices[j]));
+          tempVal.push_back(Values[j]);
         }
+        Teuchos::ArrayView<GlobalOrdinal> tempIndex(&tempVec[0], tempVec.size());
+        Teuchos::ArrayView<Scalar>        tempValue(&tempVal[0], tempVal.size());
+        B->insertGlobalValues(Row, tempIndex, tempValue); // insert should be ok, since blocks in BlockedCrsOpeartor do not overlap!
 #else
 
         std::vector<GlobalOrdinal> tempvecIndices(NumEntries);
