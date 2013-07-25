@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -103,9 +103,6 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    {
-    TEUCHOS_FUNC_TIME_MONITOR("Total PCE Calculation Time");
-
     // Create a communicator for Epetra objects
     RCP<const Epetra_Comm> globalComm;
 #ifdef HAVE_MPI
@@ -116,21 +113,21 @@ int main(int argc, char *argv[]) {
     MyPID = globalComm->MyPID();
 
     // Create Stochastic Galerkin basis and expansion
-    Teuchos::Array< RCP<const Stokhos::OneDOrthogPolyBasis<LocalOrdinal,BasisScalar> > > bases(num_KL); 
+    Teuchos::Array< RCP<const Stokhos::OneDOrthogPolyBasis<LocalOrdinal,BasisScalar> > > bases(num_KL);
     for (LocalOrdinal i=0; i<num_KL; i++)
       bases[i] = rcp(new Stokhos::LegendreBasis<LocalOrdinal,BasisScalar>(p,true));
-    RCP<const Stokhos::CompletePolynomialBasis<LocalOrdinal,BasisScalar> > basis = 
+    RCP<const Stokhos::CompletePolynomialBasis<LocalOrdinal,BasisScalar> > basis =
       rcp(new Stokhos::CompletePolynomialBasis<LocalOrdinal,BasisScalar>(bases,
-		     1e-12));
+                     1e-12));
     LocalOrdinal sz = basis->size();
     RCP<Stokhos::Sparse3Tensor<LocalOrdinal,BasisScalar> > Cijk;
     if (nonlinear_expansion)
       Cijk = basis->computeTripleProductTensor();
     else
       Cijk = basis->computeLinearTripleProductTensor();
-    RCP<Stokhos::OrthogPolyExpansion<LocalOrdinal,BasisScalar> > expansion = 
+    RCP<Stokhos::OrthogPolyExpansion<LocalOrdinal,BasisScalar> > expansion =
       rcp(new Stokhos::AlgebraicOrthogPolyExpansion<LocalOrdinal,BasisScalar>(basis,
-									 Cijk));
+                                                                         Cijk));
     if (MyPID == 0)
       std::cout << "Stochastic Galerkin expansion size = " << sz << std::endl;
 
@@ -141,23 +138,23 @@ int main(int argc, char *argv[]) {
     ParameterList parallelParams;
     parallelParams.set("Number of Spatial Processors", num_spatial_procs);
     // parallelParams.set("Rebalance Stochastic Graph", true);
-    // Teuchos::ParameterList& isorropia_params = 
+    // Teuchos::ParameterList& isorropia_params =
     //   parallelParams.sublist("Isorropia");
     // isorropia_params.set("Balance objective", "nonzeros");
     RCP<Stokhos::ParallelData> sg_parallel_data =
       rcp(new Stokhos::ParallelData(basis, Cijk, globalComm,
-					     parallelParams));
-    RCP<const EpetraExt::MultiComm> sg_comm = 
+                                             parallelParams));
+    RCP<const EpetraExt::MultiComm> sg_comm =
       sg_parallel_data->getMultiComm();
-    RCP<const Epetra_Comm> app_comm = 
+    RCP<const Epetra_Comm> app_comm =
       sg_parallel_data->getSpatialComm();
 
     // Create Teuchos::Comm from Epetra_Comm
     RCP< Teuchos::Comm<int> > teuchos_app_comm;
 #ifdef HAVE_MPI
-    RCP<const Epetra_MpiComm> app_mpi_comm = 
+    RCP<const Epetra_MpiComm> app_mpi_comm =
       Teuchos::rcp_dynamic_cast<const Epetra_MpiComm>(app_comm);
-    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > raw_mpi_comm = 
+    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > raw_mpi_comm =
       Teuchos::opaqueWrapper(app_mpi_comm->Comm());
     teuchos_app_comm = rcp(new Teuchos::MpiComm<int>(raw_mpi_comm));
 #else
@@ -166,10 +163,10 @@ int main(int argc, char *argv[]) {
 
     // Create application
     typedef twoD_diffusion_problem<Scalar,MeshScalar,BasisScalar,LocalOrdinal,GlobalOrdinal,Node> problem_type;
-    RCP<problem_type> model = 
-      rcp(new problem_type(teuchos_app_comm, n, num_KL, s, mu, 
-			   nonlinear_expansion, symmetric));
-    
+    RCP<problem_type> model =
+      rcp(new problem_type(teuchos_app_comm, n, num_KL, s, mu,
+                           nonlinear_expansion, symmetric));
+
 
     // Create vectors and operators
     typedef problem_type::Tpetra_Vector Tpetra_Vector;
@@ -181,7 +178,7 @@ int main(int argc, char *argv[]) {
     RCP<Tpetra_Vector> f = Tpetra::createVector<Scalar>(model->get_f_map());
     RCP<Tpetra_Vector> dx = Tpetra::createVector<Scalar>(model->get_x_map());
     RCP<Tpetra_CrsMatrix> J = model->create_W();
-  
+
     // Evaluate model
     model->computeResidual(*x, *p, *f);
     model->computeJacobian(*x, *p, *J);
@@ -198,17 +195,17 @@ int main(int argc, char *argv[]) {
     M->setParameters(precParams);
     M->initialize();
     M->compute();
-    
+
     //Convert J to different node types
 
-    //typedefs 
+    //typedefs
     typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
     typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
     typedef Belos::LinearProblem<Scalar,MV,OP> BLinProb;
 
     typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
 
-    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::TPINode> Mat_TPINode;    
+    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::TPINode> Mat_TPINode;
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::ThrustGPUNode> Mat_GPUNode;
     typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,KokkosClassic::ThrustGPUNode> GPU_Map;
     typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::ThrustGPUNode> GPU_MV;
@@ -242,7 +239,7 @@ int main(int argc, char *argv[]) {
     M_chev->setParameters(chevprecParams);
     M_chev->initialize();
     M_chev->compute();
-    
+
 
     //Clone Chebyshev preconditioner
     RCP<GPUPrec>  M_chev_gpu = factory.clone<Tpetra_CrsMatrix, Mat_GPUNode>(M_chev, J_GPU);
@@ -280,24 +277,24 @@ int main(int argc, char *argv[]) {
     typedef Belos::LinearProblem<Scalar,GPU_MV,GPU_OP> GPU_BLinProb;
     RCP <GPU_BLinProb> gpu_problem = rcp(new GPU_BLinProb(J_GPU, dx_gpu, f_gpu));
     gpu_problem->setRightPrec(M_GPU);
-    gpu_problem->setProblem(); 
- 
+    gpu_problem->setProblem();
+
     //Create problem for TPI node
     typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::TPINode> TPI_OP;
     typedef Belos::LinearProblem<Scalar,TPI_MV,TPI_OP> TPI_BLinProb;
 
     RCP <TPI_BLinProb> tpi_problem = rcp(new TPI_BLinProb(J_TPI, dx_tpi, f_tpi));
     tpi_problem->setRightPrec(M_TPI);
-    tpi_problem->setProblem(); 
+    tpi_problem->setProblem();
 
     //Create solver
     RCP<Belos::SolverManager<Scalar,MV,OP> > solver;
     if (symmetric)
       solver = rcp(new Belos::PseudoBlockCGSolMgr<Scalar,MV,OP>(problem,
-								belosParams));
+                                                                belosParams));
     else
       solver = rcp(new Belos::PseudoBlockGmresSolMgr<Scalar,MV,OP>(problem,
-								 belosParams));
+                                                                 belosParams));
 
     // Create solve for TPI node type
     RCP<Belos::SolverManager<Scalar,TPI_MV,TPI_OP> > tpi_solver;
@@ -307,7 +304,7 @@ int main(int argc, char *argv[]) {
     else
       tpi_solver = rcp(new Belos::PseudoBlockGmresSolMgr<Scalar,TPI_MV,TPI_OP>(tpi_problem,
                                                                    belosParams));
-								   
+
     //Create solver for GPU node
     RCP<Belos::SolverManager<Scalar,GPU_MV,GPU_OP> > gpu_solver;
     if (symmetric)
@@ -367,7 +364,7 @@ int main(int argc, char *argv[]) {
     //Determine if example passed
     bool passed = false;
     if (gpu_norm < Scalar(1e-12) && tpi_norm < Scalar(1e-12))
-	passed = true;
+        passed = true;
     if (MyPID == 0) {
       if (passed)
         std::cout << "Example Passed!" << std::endl;
@@ -375,12 +372,8 @@ int main(int argc, char *argv[]) {
         std::cout << "Example Failed!" << std::endl;
     }
 
-
-    }
-    
-
   }
-  
+
   catch (std::exception& e) {
     std::cout << e.what() << std::endl;
   }
