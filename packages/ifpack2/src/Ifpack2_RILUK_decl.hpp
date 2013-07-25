@@ -533,7 +533,7 @@ RILUK<MatrixType>::clone(const Teuchos::RCP< const new_matrix_type>& A_newnode) 
   Teuchos::RCP<Teuchos::ParameterList> plClone = Teuchos::parameterList();
   plClone = detail::setLocalSolveParams<new_matrix_type, new_node_type, mat_solve_type>::setParams(plClone);
   
-  Teuchos::RCP<new_node_type> new_node = Teuchos::rcp(new new_node_type(*plClone));
+  Teuchos::RCP<new_node_type> new_node = A_newnode->getNode();
   new_riluk->L_ = L_->clone(new_node, plClone);
   new_riluk->U_ = U_->clone(new_node, plClone);
   new_riluk->D_ = D_->clone(new_node);
