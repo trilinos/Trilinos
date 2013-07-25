@@ -25,7 +25,7 @@
 #include <stk_transfer/STKNode.hpp>
 #include <stk_transfer/MDMesh.hpp>
 #include <stk_transfer/LinearInterpolate.hpp>
-#include <stk_transfer/Transfer.hpp>
+#include <stk_transfer/GeometricTransfer.hpp>
 
 namespace bopt = boost::program_options;
 
