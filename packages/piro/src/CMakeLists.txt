@@ -42,9 +42,7 @@ APPEND_SET(HEADERS Piro_MatrixFreeDecorator.hpp
                    Piro_MatrixFreeDecorator_Def.hpp
                    Piro_MatrixFreeLinearOp.hpp
                    Piro_MatrixFreeLinearOp_Def.hpp
-                   Piro_ObserverBase.hpp
-                   Piro_ObserverToRythmosIntegrationObserverAdapter.hpp
-                   Piro_ObserverToRythmosIntegrationObserverAdapter_Def.hpp)
+                   Piro_ObserverBase.hpp)
 #
 # B.2) epetra files
 #
@@ -74,7 +72,9 @@ IF (Piro_ENABLE_Rythmos)
   APPEND_SET(HEADERS Piro_Epetra_RythmosSolver.hpp
                      Piro_RythmosSolver.hpp
 		     Piro_RythmosStepperFactory.hpp
-                     Piro_RythmosSolver_Def.hpp) 
+                     Piro_RythmosSolver_Def.hpp
+                     Piro_ObserverToRythmosIntegrationObserverAdapter.hpp
+                     Piro_ObserverToRythmosIntegrationObserverAdapter_Def.hpp)
   APPEND_SET(SOURCES Piro_Epetra_RythmosSolver.cpp)
 ENDIF()
 
