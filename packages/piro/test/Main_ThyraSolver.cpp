@@ -46,7 +46,7 @@
 #include "MockModelEval_A.hpp"
 
 #include "Piro_SolverFactory.hpp"
-
+#include "Piro_StratimikosUtils.hpp"
 #include "Piro_PerformSolve.hpp"
 
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -126,17 +126,7 @@ int main(int argc, char *argv[]) {
       // Use these two objects to construct a Piro solved application
       RCP<const Thyra::ResponseOnlyModelEvaluatorBase<double> > piro;
       {
-        const std::string& solver = piroParams->get("Solver Type","NOX");
-
-        RCP<Teuchos::ParameterList> stratParams;
-        if (solver=="NOX" || solver=="LOCA") {
-          stratParams = Teuchos::rcp(&(piroParams->sublist("NOX").sublist("Direction").
-            sublist("Newton").sublist("Stratimikos Linear Solver").sublist("Stratimikos")),false);
-        }
-        else if (solver=="Rythmos") {
-          piroParams->sublist("Rythmos").set("Nonlinear Solver Type", "NOX");
-          stratParams = Teuchos::rcp(&(piroParams->sublist("Rythmos").sublist("Stratimikos")),false);
-        }
+        const RCP<Teuchos::ParameterList> stratParams = Piro::extractStratimikosParams(piroParams);
 
         Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
         linearSolverBuilder.setParameterList(stratParams);
