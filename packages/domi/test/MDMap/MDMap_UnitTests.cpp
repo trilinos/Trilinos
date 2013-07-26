@@ -116,16 +116,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, dimensionsConstructor, T )
     TEST_EQUALITY(mdMap.getAxisCommSize(axis), axisCommSizes[axis]);
     TEST_ASSERT(not mdMap.isPeriodic(axis));
     TEST_EQUALITY(mdMap.getGlobalDim(axis), dims[axis]);
+    TEST_EQUALITY_CONST(mdMap.getGlobalBounds(axis).start(), 0);
+    TEST_EQUALITY(mdMap.getGlobalBounds(axis).stop(), dims[axis]);
     TEST_EQUALITY(mdMap.getLocalDim(axis) , localDim  );
-    Slice globalBounds = mdMap.getGlobalRankBounds(axis);
-    TEST_EQUALITY(globalBounds.start(), axisRank    *localDim);
-    TEST_EQUALITY(globalBounds.stop() , (axisRank+1)*localDim);
-    Slice localBounds  = mdMap.getLocalRankBounds(axis);
-    TEST_EQUALITY_CONST(localBounds.start(), 0);
-    TEST_EQUALITY(localBounds.stop() , localDim);
+    Slice globalRankBounds = mdMap.getGlobalRankBounds(axis);
+    TEST_EQUALITY(globalRankBounds.start(), axisRank    *localDim);
+    TEST_EQUALITY(globalRankBounds.stop() , (axisRank+1)*localDim);
+    Slice localRankBounds  = mdMap.getLocalRankBounds(axis);
+    TEST_EQUALITY_CONST(localRankBounds.start(), 0);
+    TEST_EQUALITY(localRankBounds.stop() , localDim);
     TEST_EQUALITY_CONST(mdMap.getLowerHalo(axis), 0);
     TEST_EQUALITY_CONST(mdMap.getUpperHalo(axis), 0);
     TEST_EQUALITY_CONST(mdMap.getHaloSize(axis), 0);
+    TEST_EQUALITY_CONST(mdMap.getLowerGhost(axis), 0);
+    TEST_EQUALITY_CONST(mdMap.getUpperGhost(axis), 0);
     TEST_EQUALITY_CONST(mdMap.getGhostSize(axis), 0);
   }
 }
@@ -170,20 +174,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, halosConstructor, T )
     TEST_EQUALITY(mdMap.getAxisCommSize(axis), axisCommSizes[axis]);
     TEST_ASSERT(not mdMap.isPeriodic(axis));
     TEST_EQUALITY(mdMap.getGlobalDim(axis), dims[axis]);
+    TEST_EQUALITY_CONST(mdMap.getGlobalBounds(axis).start(), 0);
+    TEST_EQUALITY(mdMap.getGlobalBounds(axis).stop(), dims[axis]);
     TEST_EQUALITY(mdMap.getLocalDim(axis,true ), myDim   );
     TEST_EQUALITY(mdMap.getLocalDim(axis,false), localDim);
-    Slice globalBounds = mdMap.getGlobalRankBounds(axis);
-    TEST_EQUALITY(globalBounds.start(),  axisRank   *localDim);
-    TEST_EQUALITY(globalBounds.stop() , (axisRank+1)*localDim);
-    Slice localBounds  = mdMap.getLocalRankBounds(axis,true);
-    TEST_EQUALITY_CONST(localBounds.start(), 0);
-    TEST_EQUALITY(localBounds.stop() , myDim);
-    localBounds        = mdMap.getLocalRankBounds(axis,false);
-    TEST_EQUALITY_CONST(localBounds.start(), lowerHalo);
-    TEST_EQUALITY(localBounds.stop(), lowerHalo+localDim);
+    Slice globalRankBounds = mdMap.getGlobalRankBounds(axis);
+    TEST_EQUALITY(globalRankBounds.start(),  axisRank   *localDim);
+    TEST_EQUALITY(globalRankBounds.stop() , (axisRank+1)*localDim);
+    Slice localRankBounds  = mdMap.getLocalRankBounds(axis,true);
+    TEST_EQUALITY_CONST(localRankBounds.start(), 0);
+    TEST_EQUALITY(localRankBounds.stop() , myDim);
+    localRankBounds        = mdMap.getLocalRankBounds(axis,false);
+    TEST_EQUALITY_CONST(localRankBounds.start(), lowerHalo);
+    TEST_EQUALITY(localRankBounds.stop(), lowerHalo+localDim);
     TEST_EQUALITY_CONST(mdMap.getLowerHalo(axis), lowerHalo);
     TEST_EQUALITY_CONST(mdMap.getUpperHalo(axis), upperHalo);
     TEST_EQUALITY_CONST(mdMap.getHaloSize(axis), halos[axis]);
+    TEST_EQUALITY_CONST(mdMap.getLowerGhost(axis), 0);
+    TEST_EQUALITY_CONST(mdMap.getUpperGhost(axis), 0);
     TEST_EQUALITY_CONST(mdMap.getGhostSize(axis), 0);
   }
 }
@@ -232,28 +240,36 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, ghostsConstructor, T )
     TEST_ASSERT(not mdMap.isPeriodic(axis));
     TEST_EQUALITY(mdMap.getGlobalDim(axis,true ), dims[axis]+2*ghosts[axis]);
     TEST_EQUALITY(mdMap.getGlobalDim(axis,false), dims[axis]               );
+    TEST_EQUALITY_CONST(mdMap.getGlobalBounds(axis,true ).start(), 0);
+    TEST_EQUALITY(mdMap.getGlobalBounds(axis,false).start(), ghosts[axis]);
+    TEST_EQUALITY(mdMap.getGlobalBounds(axis,true ).stop(), dims[axis]+
+                  2*ghosts[axis]);
+    TEST_EQUALITY(mdMap.getGlobalBounds(axis,false).stop(), dims[axis]+
+                  ghosts[axis]);
     TEST_EQUALITY(mdMap.getLocalDim(axis,true ), myDim   );
     TEST_EQUALITY(mdMap.getLocalDim(axis,false), localDim);
-    Slice globalBounds = mdMap.getGlobalRankBounds(axis,false);
+    Slice globalRankBounds = mdMap.getGlobalRankBounds(axis,false);
     T myStart = ghosts[axis] +  axisRank    * localDim;
     T myStop  = ghosts[axis] + (axisRank+1) * localDim;
-    TEST_EQUALITY(globalBounds.start(), myStart);
-    TEST_EQUALITY(globalBounds.stop() , myStop );
-    globalBounds = mdMap.getGlobalRankBounds(axis,true);
+    TEST_EQUALITY(globalRankBounds.start(), myStart);
+    TEST_EQUALITY(globalRankBounds.stop() , myStop );
+    globalRankBounds = mdMap.getGlobalRankBounds(axis,true);
     if (axisRank == 0                ) myStart -= ghosts[axis];
     if (axisRank == axisCommSizes[axis]-1) myStop  += ghosts[axis];
-    TEST_EQUALITY(globalBounds.start(), myStart);
-    TEST_EQUALITY(globalBounds.stop( ), myStop );
-    Slice localBounds  = mdMap.getLocalRankBounds(axis,true);
-    TEST_EQUALITY_CONST(localBounds.start(), 0);
-    TEST_EQUALITY(localBounds.stop(), myDim);
-    localBounds        = mdMap.getLocalRankBounds(axis,false);
-    TEST_EQUALITY_CONST(localBounds.start(), lowerGhost);
-    TEST_EQUALITY(localBounds.stop(), lowerGhost+localDim);
-    TEST_EQUALITY_CONST(mdMap.getLowerHalo(axis), lowerGhost);
-    TEST_EQUALITY_CONST(mdMap.getUpperHalo(axis), upperGhost);
+    TEST_EQUALITY(globalRankBounds.start(), myStart);
+    TEST_EQUALITY(globalRankBounds.stop( ), myStop );
+    Slice localRankBounds  = mdMap.getLocalRankBounds(axis,true);
+    TEST_EQUALITY_CONST(localRankBounds.start(), 0);
+    TEST_EQUALITY(localRankBounds.stop(), myDim);
+    localRankBounds        = mdMap.getLocalRankBounds(axis,false);
+    TEST_EQUALITY_CONST(localRankBounds.start(), lowerGhost);
+    TEST_EQUALITY(localRankBounds.stop(), lowerGhost+localDim);
+    TEST_EQUALITY(mdMap.getLowerHalo(axis), lowerGhost);
+    TEST_EQUALITY(mdMap.getUpperHalo(axis), upperGhost);
     TEST_EQUALITY_CONST(mdMap.getHaloSize(axis), 0);
-    TEST_EQUALITY_CONST(mdMap.getGhostSize(axis), ghosts[axis]);
+    TEST_EQUALITY(mdMap.getLowerGhost(axis), ghosts[axis]);
+    TEST_EQUALITY(mdMap.getUpperGhost(axis), ghosts[axis]);
+    TEST_EQUALITY(mdMap.getGhostSize(axis), ghosts[axis]);
   }
 }
 
@@ -302,28 +318,36 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, halosAndGhostsConstructor, T )
     TEST_ASSERT(not mdMap.isPeriodic(axis));
     TEST_EQUALITY(mdMap.getGlobalDim(axis,true ), dims[axis]+2*ghosts[axis]);
     TEST_EQUALITY(mdMap.getGlobalDim(axis,false), dims[axis]               );
+    TEST_EQUALITY_CONST(mdMap.getGlobalBounds(axis,true ).start(), 0);
+    TEST_EQUALITY(mdMap.getGlobalBounds(axis,false).start(), ghosts[axis]);
+    TEST_EQUALITY(mdMap.getGlobalBounds(axis,true ).stop(), dims[axis]+
+                  2*ghosts[axis]);
+    TEST_EQUALITY(mdMap.getGlobalBounds(axis,false).stop(), dims[axis]+
+                  ghosts[axis]);
     TEST_EQUALITY(mdMap.getLocalDim(axis,true ), myDim   );
     TEST_EQUALITY(mdMap.getLocalDim(axis,false), localDim);
-    Slice globalBounds = mdMap.getGlobalRankBounds(axis,false);
+    Slice globalRankBounds = mdMap.getGlobalRankBounds(axis,false);
     T myStart = ghosts[axis] +  axisRank    * localDim;
     T myStop  = ghosts[axis] + (axisRank+1) * localDim;
-    TEST_EQUALITY(globalBounds.start(), myStart);
-    TEST_EQUALITY(globalBounds.stop() , myStop );
-    globalBounds = mdMap.getGlobalRankBounds(axis,true);
+    TEST_EQUALITY(globalRankBounds.start(), myStart);
+    TEST_EQUALITY(globalRankBounds.stop() , myStop );
+    globalRankBounds = mdMap.getGlobalRankBounds(axis,true);
     if (axisRank == 0                ) myStart -= ghosts[axis];
     if (axisRank == axisCommSizes[axis]-1) myStop  += ghosts[axis];
-    TEST_EQUALITY(globalBounds.start(), myStart);
-    TEST_EQUALITY(globalBounds.stop( ), myStop );
-    Slice localBounds  = mdMap.getLocalRankBounds(axis,true);
-    TEST_EQUALITY_CONST(localBounds.start(), 0);
-    TEST_EQUALITY(localBounds.stop(), myDim);
-    localBounds        = mdMap.getLocalRankBounds(axis,false);
-    TEST_EQUALITY_CONST(localBounds.start(), lowerHalo);
-    TEST_EQUALITY(localBounds.stop(), lowerHalo+localDim);
-    TEST_EQUALITY_CONST(mdMap.getLowerHalo(axis), lowerHalo);
-    TEST_EQUALITY_CONST(mdMap.getUpperHalo(axis), upperHalo);
-    TEST_EQUALITY_CONST(mdMap.getHaloSize(axis), halos[axis]);
-    TEST_EQUALITY_CONST(mdMap.getGhostSize(axis), ghosts[axis]);
+    TEST_EQUALITY(globalRankBounds.start(), myStart);
+    TEST_EQUALITY(globalRankBounds.stop( ), myStop );
+    Slice localRankBounds  = mdMap.getLocalRankBounds(axis,true);
+    TEST_EQUALITY_CONST(localRankBounds.start(), 0);
+    TEST_EQUALITY(localRankBounds.stop(), myDim);
+    localRankBounds        = mdMap.getLocalRankBounds(axis,false);
+    TEST_EQUALITY_CONST(localRankBounds.start(), lowerHalo);
+    TEST_EQUALITY(localRankBounds.stop(), lowerHalo+localDim);
+    TEST_EQUALITY(mdMap.getLowerHalo(axis), lowerHalo);
+    TEST_EQUALITY(mdMap.getUpperHalo(axis), upperHalo);
+    TEST_EQUALITY(mdMap.getHaloSize(axis), halos[axis]);
+    TEST_EQUALITY(mdMap.getLowerGhost(axis), ghosts[axis]);
+    TEST_EQUALITY(mdMap.getUpperGhost(axis), ghosts[axis]);
+    TEST_EQUALITY(mdMap.getGhostSize(axis), ghosts[axis]);
   }
 }
 
