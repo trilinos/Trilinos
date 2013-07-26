@@ -213,6 +213,13 @@ MDComm::getAxisCommSize(int axis) const
     not onSubcommunicator(),
     SubcommunicatorError,
     "MDComm::getAxisCommSize()");
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((axis < 0) || (axis >= getNumDims())),
+    RangeError,
+    "invalid axis index = " << axis << " (number of dimensions = " <<
+    getNumDims() << ")");
+#endif
   return _axisCommSizes[axis];
 }
 
@@ -221,6 +228,13 @@ MDComm::getAxisCommSize(int axis) const
 bool
 MDComm::isPeriodic(int axis) const
 {
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((axis < 0) || (axis >= getNumDims())),
+    RangeError,
+    "invalid axis index = " << axis << " (number of dimensions = " <<
+    getNumDims() << ")");
+#endif
   return _periodic[axis];
 }
 
@@ -233,6 +247,13 @@ MDComm::getAxisRank(int axis) const
     not onSubcommunicator(),
     SubcommunicatorError,
     "MDComm::getAxisRank()");
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((axis < 0) || (axis >= getNumDims())),
+    RangeError,
+    "invalid axis index = " << axis << " (number of dimensions = " <<
+    getNumDims() << ")");
+#endif
   return _axisRanks[axis];
 }
 
@@ -245,6 +266,13 @@ MDComm::getLowerNeighbor(int axis) const
     not onSubcommunicator(),
     SubcommunicatorError,
     "MDComm::getLowerNeighbor()");
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((axis < 0) || (axis >= getNumDims())),
+    RangeError,
+    "invalid axis index = " << axis << " (number of dimensions = " <<
+    getNumDims() << ")");
+#endif
   if (_axisRanks[axis] == 0)
     if (_periodic[axis])
       return _teuchosComm->getRank() +
@@ -263,6 +291,13 @@ MDComm::getUpperNeighbor(int axis) const
     not onSubcommunicator(),
     SubcommunicatorError,
     "MDComm::getUpperNeighbor()");
+#if DOMI_ENABLE_ABC
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((axis < 0) || (axis >= getNumDims())),
+    RangeError,
+    "invalid axis index = " << axis << " (number of dimensions = " <<
+    getNumDims() << ")");
+#endif
   if (_axisRanks[axis] == _axisCommSizes[axis] - 1)
     if (_periodic[axis])
       return _teuchosComm->getRank() -
