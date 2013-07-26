@@ -100,19 +100,17 @@ namespace Domi
  *
  * When you want to loop over the elements of a data structure
  * described by an <tt>MDMap</tt>, you can obtain the local looping
- * bounds along a given axis with the <tt>getLocalRankBounds(int
+ * bounds along a given axis with the <tt>getLocalBounds(int
  * axis)</tt> method.  This returns a <tt>Slice</tt> object, whose
  * <tt>start()</tt> and <tt>stop()</tt> methods return the loop bounds
  * (<tt>stop()</tt> is non-inclusive).  This method also takes a
  * boolean flag indicating whether the bounds should include the halo
  * points, which defaults to false.
  *
- * There is a corresponding <tt>getGlobalRankBounds(int axis)</tt>
- * method that returns global looping bounds.  While it is highly
- * unlikely that a user will ever actually loop over global bounds,
- * the method can be useful for obtaining size information.  This
- * method also has a boolean flag argument to control inclusion of
- * ghost points in these bounds.
+ * There are two methods for obtaining global loop bounds,
+ * <tt>getGlobalBounds(int axis)</tt> and <tt>getGlobalRankBounds(int
+ * axis)</tt>.  The first returns the global bounds for the full data
+ * structure and the second returns the bounds on this processor.
  *
  * Note that all indexes start at zero, whether global or local,
  * whether unique 1D IDs or multidimensional indexes, whether ghosts
@@ -299,7 +297,7 @@ public:
    * and the <tt>stop()</tt> method returns the non-inclusive end
    * value.
    */
-  Slice getLocalRankBounds(int axis, bool withHalos=false) const;
+  Slice getLocalBounds(int axis, bool withHalos=false) const;
 
   //@}
 
@@ -469,9 +467,13 @@ private:
   // the values of the halos.
   Teuchos::Array< LocalOrd > _localDims;
 
-  // The total size of the local data structure, including halos.
-  // More importantly, this will be the maximum local 1D index + 1.
-  LocalOrd _localSize;
+  // The maximum 1D index of the local data structure, including halo
+  // points.
+  LocalOrd _localMax;
+
+  // The minimum 1D index of the local data structure, including halo
+  // points.
+  LocalOrd _localMin;
 
   // A double array of Slices that stores the starting and stopping
   // indexes for each axis processor along each axis.  This data
@@ -484,7 +486,7 @@ private:
 
   // The local loop bounds along each axis, stored as an array of
   // Slices.  These bounds DO include the halos.
-  Teuchos::Array< Slice > _localRankBounds;
+  Teuchos::Array< Slice > _localBounds;
 
   // The halo sizes that were specified at construction, one value
   // along each axis.
@@ -538,7 +540,7 @@ MDMap(const MDCommRCP mdComm,
   _globalMin(0),
   _localDims(mdComm->getNumDims(), 0),
   _globalRankBounds(mdComm->getNumDims()),
-  _localRankBounds(),
+  _localBounds(),
   _ghostSizes(mdComm->getNumDims(), 0),
   _ghosts(),
   _haloSizes(mdComm->getNumDims(), 0),
@@ -585,10 +587,10 @@ MDMap(const MDCommRCP mdComm,
     _halos.push_back(Teuchos::tuple(lower, upper));
   }
 
-  // Compute _globalRankBounds, _localRankBounds, and _localDims.
+  // Compute _globalRankBounds, _localBounds, and _localDims.
   // Then compute the local size
   computeBounds();
-  _localSize = computeSize(_localDims());
+  _localMax = computeSize(_localDims());
 
   // Compute the strides
   _globalStrides = computeStrides(_globalDims, _storageOrder);
@@ -605,12 +607,15 @@ MDMap(const Teuchos::RCP< MDMap< LocalOrd, GlobalOrd, Node > > parent,
   _globalDims(parent->getNumDims()),
   _globalBounds(),
   _globalMin(0),
+  _globalMax(0),
   _localDims(parent->getNumDims(), 0),
-  _globalRankBounds(parent->getNumDims()),
-  _localRankBounds(),
+  _localMin(0),
+  _localMax(0),
+  _globalRankBounds(parent->_globalRankBounds),
+  _localBounds(),
   _ghostSizes(parent->getNumDims(), 0),
   _ghosts(),
-  _haloSizes(parent->getHaloSizes()),
+  _haloSizes(parent->_haloSizes),
   _halos(),
   _globalStrides(parent->_globalStrides),
   _localStrides(parent->_localStrides),
@@ -656,18 +661,97 @@ MDMap(const Teuchos::RCP< MDMap< LocalOrd, GlobalOrd, Node > > parent,
       stop = parent->getGlobalDim(axis,true);
     }
     _globalBounds.push_back(ConcreteSlice(start,stop));
-    // _globalDims[axis] should be stop - start, but we temporarily
-    // store just stop to help us compute _globalMax easily.  We
-    // will fix this after _globalMax is computed. (Note that
-    // _globalMax is only used for bounds checking of global
-    // indexes.)
-    _globalDims[axis] = stop;
+    _globalDims[axis] = stop - start;
+    _globalMin +=  start   * _globalStrides[axis];
+    _globalMax += (stop-1) * _globalStrides[axis];
   }
-  _globalMax = computeSize(_globalDims);
+
+  // Build the array of slices for the MDComm sub-communicator
+  // constructor
+  Teuchos::Array< Slice > axisRankSlices;
   for (int axis = 0; axis < numDims; ++axis)
   {
-    _globalDims[axis] -= _globalBounds[axis].start();
-    _globalMin += _globalBounds[axis].start() * _globalStrides[axis];
+    int start = -1;
+    int stop  = -1;
+    for (int axisRank = 0; axisRank < getAxisCommSize(); ++axisRank)
+    {
+      if ((_globalRankBounds[axis][axisRank].start() <=
+           _globalBounds[axis].start()) &&
+          (_globalBounds[axis].start() <
+           _globalRankBounds[axis][axisRank].stop()))
+        start = axisRank;
+      if ((_globalRankBounds[axis][axisRank].start() <
+           _globalBounds[axis].stop()) &&
+          (_globalBounds[axis].stop() <=
+           _globalRankBounds[axis][axisRank].stop()))
+        stop = axisRank;
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (start == -1 || stop == -1),
+      InvalidArgument,
+      "error computing axis rank slices");
+    axisRankSlices.push_back(ConcreteSlice(start,stop));
+  }
+  // Construct the MDComm sub-communicator
+  _mdComm = Teuchos::rcp(new MDComm(parent->_mdComm, axisRankSlices));
+
+  // We now have a sub-communicator, and should only construct this
+  // MDMap if this processor is on it.  If this processor is off the
+  // communicator, then we should clear many of the data members.
+  if (_mdComm->onSubcommunicator())
+  {
+    for (int axis = 0; axis < numDims; ++axis)
+    {
+      int axisRank = getAxisRank(axis);
+      LocalOrd start = parent->_localBounds[axis].start();
+      if (_globalBounds[axis].start() >
+          _globalRankBounds[axis][axisRank].start())
+      {
+        start = _globalBounds[axis].start() -
+          _globalRankBounds[axis][axisRank].start();
+      }
+      else
+      {
+        if (_globalRankBounds[axis][axisRank].start() -
+            _globalBounds[axis].start() < _halos[axis][0])
+        {
+          _halos[axis][0] = _globalRankBounds[axis][axisRank].start() -
+            _globalBounds[axis].start();
+        }
+      }
+      LocalOrd stop = parent->_localBounds[axis].stop();
+      if (_globalBounds[axis].stop() <
+          _globalRankBounds[axis][axisRank].stop())
+      {
+        stop = _globalBounds[axis].stop() -
+          _globalRankBounds[axis][axisRank].start();
+      }
+      else
+      {
+        if (_globalBounds[axis].stop() -
+            _globalRankBounds[axis][axisRank].stop() < _halos[axis][1])
+        {
+          _halos[axis][1] = _globalBounds[axis].stop() -
+            _globalRankBounds[axis][axisRank].stop();
+        }
+      }
+      _localBounds.push_back(ConcreteSlice(start,stop));
+      _localDims[axis] = stop - start;
+      _localMin +=  start   * _localStrides[axis];
+      _localMax += (stop-1) * _localStrides[axis];
+    }
+  }
+  else
+  {
+    _localDims.clear();
+    _localMin = 0;
+    _localMax = 0;
+    _localBounds.clear();
+    _haloSizes.clear();
+    _halos.clear();
+    _ghostSizes.clear();
+    _ghosts.clear();
+    _localStrides.clear();
   }
 }
 
@@ -852,8 +936,8 @@ getGlobalRankBounds(int axis,
 template< class LocalOrd, class GlobalOrd, class Node >
 Slice
 MDMap< LocalOrd, GlobalOrd, Node >::
-getLocalRankBounds(int axis,
-                   bool withHalos) const
+getLocalBounds(int axis,
+               bool withHalos) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -863,11 +947,11 @@ getLocalRankBounds(int axis,
     getNumDims() << ")");
 #endif
   if (withHalos)
-    return _localRankBounds[axis];
+    return _localBounds[axis];
   else
   {
-    LocalOrd start = _localRankBounds[axis].start() + _halos[axis][0];
-    LocalOrd stop  = _localRankBounds[axis].stop()  - _halos[axis][1];
+    LocalOrd start = _localBounds[axis].start() + _halos[axis][0];
+    LocalOrd stop  = _localBounds[axis].stop()  - _halos[axis][1];
     return ConcreteSlice(start, stop);
   }
 }
@@ -1054,10 +1138,10 @@ getLocalAxisIndex(LocalOrd localIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((localIndex < 0) || (localIndex >= _localSize)),
+    ((localIndex < 0) || (localIndex >= _localMax)),
     RangeError,
     "invalid local index = " << localIndex << " (local size = " <<
-    _localSize << ")");
+    _localMax << ")");
 #endif
   int numDims = getNumDims();
   Teuchos::Array< LocalOrd > result(numDims);
@@ -1092,10 +1176,10 @@ getGlobalIndex(LocalOrd localIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((localIndex < 0) || (localIndex >= _localSize)),
+    ((localIndex < 0) || (localIndex >= _localMax)),
     RangeError,
     "invalid local index = " << localIndex << " (local size = " <<
-    _localSize << ")");
+    _localMax << ")");
 #endif
   Teuchos::Array< LocalOrd > localAxisIndex = getLocalAxisIndex(localIndex);
   GlobalOrd result = 0;
@@ -1241,7 +1325,7 @@ MDMap< LocalOrd, GlobalOrd, Node >::computeBounds()
       _globalRankBounds[axis].push_back(
         ConcreteSlice(axisStart, axisStart + localDim));
 
-      // Set _localDims[axis] and _localRankBounds[axis] only if
+      // Set _localDims[axis] and _localBounds[axis] only if
       // axisRank equals the axis rank of this processor
       if (axisRank == getAxisRank(axis))
       {
@@ -1251,7 +1335,7 @@ MDMap< LocalOrd, GlobalOrd, Node >::computeBounds()
         _localDims[axis] = localDim + _halos[axis][0] + _halos[axis][1];
 
         // Compute and store the axis bounds
-        _localRankBounds.push_back(ConcreteSlice(_localDims[axis]));
+        _localBounds.push_back(ConcreteSlice(_localDims[axis]));
       }
     }
   }
