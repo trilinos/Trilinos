@@ -412,4 +412,26 @@ TEUCHOS_UNIT_TEST( MDComm, getUpperNeighborPeriodic )
   }
 }
 
+TEUCHOS_UNIT_TEST( MDComm, exceptions )
+{
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  // Construct MDComm
+  MDComm mdComm(comm, numDims, axisCommSizes);
+
+  // Unit test methods that should throw exceptions
+#if DOMI_ENABLE_ABC
+  TEST_THROW(mdComm.getAxisCommSize( -1), Domi::RangeError);
+  TEST_THROW(mdComm.isPeriodic(      -1), Domi::RangeError);
+  TEST_THROW(mdComm.getAxisRank(     -1), Domi::RangeError);
+  TEST_THROW(mdComm.getLowerNeighbor(-1), Domi::RangeError);
+  TEST_THROW(mdComm.getUpperNeighbor(-1), Domi::RangeError);
+  TEST_THROW(mdComm.getAxisCommSize( numDims+1), Domi::RangeError);
+  TEST_THROW(mdComm.isPeriodic(      numDims+1), Domi::RangeError);
+  TEST_THROW(mdComm.getAxisRank(     numDims+1), Domi::RangeError);
+  TEST_THROW(mdComm.getLowerNeighbor(numDims+1), Domi::RangeError);
+  TEST_THROW(mdComm.getUpperNeighbor(numDims+1), Domi::RangeError);
+#endif
+}
+
 }  // namespace

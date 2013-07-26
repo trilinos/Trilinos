@@ -47,6 +47,7 @@
 #include "Teuchos_Tuple.hpp"
 
 // Domi includes
+#include "Domi_ConfigDefs.hpp"
 #include "Domi_Utils.hpp"
 #include "Domi_MDMap.hpp"
 
@@ -421,6 +422,58 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, indexes, T )
   TEST_EQUALITY(mdMap.getGlobalIndex(myLocalIndex), myGlobalIndex);
   TEST_EQUALITY(mdMap.getLocalIndex(myGlobalIndex), myLocalIndex );
 }
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, exceptions, T )
+{
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  // Note: axisCommSizes from command line should be fully specified
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
+
+  // Construct dimensions
+  T localDim = 10;
+  Array< T > dims(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    dims[axis] = localDim * mdComm->getAxisCommSize(axis);
+
+  // Construct an MDMap
+  MDMap< T > mdMap(mdComm, dims());
+
+  // Unit test methods that should throw exceptions
+#if DOMI_ENABLE_ABC
+  TEST_THROW(mdMap.getAxisCommSize(    -1), Domi::RangeError);
+  TEST_THROW(mdMap.isPeriodic(         -1), Domi::RangeError);
+  TEST_THROW(mdMap.getAxisRank(        -1), Domi::RangeError);
+  TEST_THROW(mdMap.getLowerNeighbor(   -1), Domi::RangeError);
+  TEST_THROW(mdMap.getUpperNeighbor(   -1), Domi::RangeError);
+  TEST_THROW(mdMap.getGlobalDim(       -1), Domi::RangeError);
+  TEST_THROW(mdMap.getGlobalBounds(    -1), Domi::RangeError);
+  TEST_THROW(mdMap.getLocalDim(        -1), Domi::RangeError);
+  TEST_THROW(mdMap.getGlobalRankBounds(-1), Domi::RangeError);
+  TEST_THROW(mdMap.getLocalRankBounds( -1), Domi::RangeError);
+  TEST_THROW(mdMap.getLowerHalo(       -1), Domi::RangeError);
+  TEST_THROW(mdMap.getUpperHalo(       -1), Domi::RangeError);
+  TEST_THROW(mdMap.getHaloSize(        -1), Domi::RangeError);
+  TEST_THROW(mdMap.getLowerGhost(      -1), Domi::RangeError);
+  TEST_THROW(mdMap.getUpperGhost(      -1), Domi::RangeError);
+  TEST_THROW(mdMap.getGhostSize(       -1), Domi::RangeError);
+  TEST_THROW(mdMap.getAxisCommSize(    numDims+1), Domi::RangeError);
+  TEST_THROW(mdMap.isPeriodic(         numDims+1), Domi::RangeError);
+  TEST_THROW(mdMap.getAxisRank(        numDims+1), Domi::RangeError);
+  TEST_THROW(mdMap.getLowerNeighbor(   numDims+1), Domi::RangeError);
+  TEST_THROW(mdMap.getUpperNeighbor(   numDims+1), Domi::RangeError);
+  TEST_THROW(mdMap.getGlobalDim(       numDims+1), Domi::RangeError);
+  TEST_THROW(mdMap.getGlobalBounds(    numDims+1), Domi::RangeError);
+  TEST_THROW(mdMap.getLocalDim(        numDims+1), Domi::RangeError);
+  TEST_THROW(mdMap.getGlobalRankBounds(numDims+1), Domi::RangeError);
+  TEST_THROW(mdMap.getLocalRankBounds( numDims+1), Domi::RangeError);
+  TEST_THROW(mdMap.getLowerHalo(       numDims+1), Domi::RangeError);
+  TEST_THROW(mdMap.getUpperHalo(       numDims+1), Domi::RangeError);
+  TEST_THROW(mdMap.getHaloSize(        numDims+1), Domi::RangeError);
+  TEST_THROW(mdMap.getLowerGhost(      numDims+1), Domi::RangeError);
+  TEST_THROW(mdMap.getUpperGhost(      numDims+1), Domi::RangeError);
+  TEST_THROW(mdMap.getGhostSize(       numDims+1), Domi::RangeError);
+#endif
+}
 
 //
 // Instantiations
@@ -431,7 +484,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, indexes, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, halosConstructor, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, ghostsConstructor, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, halosAndGhostsConstructor, T ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, indexes, T )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, indexes, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, exceptions, T )
 
 UNIT_TEST_GROUP(int)
 #if 1
