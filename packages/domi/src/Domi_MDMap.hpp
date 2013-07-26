@@ -711,13 +711,6 @@ template< class LocalOrd, class GlobalOrd, class Node >
 int
 MDMap< LocalOrd, GlobalOrd, Node >::getAxisCommSize(int axis) const
 {
-#if DOMI_ENABLE_ABC
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= getNumDims())),
-    RangeError,
-    "invalid axis index = " << axis << " (number of dimensions = " <<
-    getNumDims() << ")");
-#endif
   return _mdComm->getAxisCommSize(axis);
 }
 
@@ -727,13 +720,6 @@ template< class LocalOrd, class GlobalOrd, class Node >
 bool
 MDMap< LocalOrd, GlobalOrd, Node >::isPeriodic(int axis) const
 {
-#if DOMI_ENABLE_ABC
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= getNumDims())),
-    RangeError,
-    "invalid axis index = " << axis << " (number of dimensions = " <<
-    getNumDims() << ")");
-#endif
   return _mdComm->isPeriodic(axis);
 }
 
@@ -743,13 +729,6 @@ template< class LocalOrd, class GlobalOrd, class Node >
 int
 MDMap< LocalOrd, GlobalOrd, Node >::getAxisRank(int axis) const
 {
-#if DOMI_ENABLE_ABC
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= getNumDims())),
-    RangeError,
-    "invalid axis index = " << axis << " (number of dimensions = " <<
-    getNumDims() << ")");
-#endif
   return _mdComm->getAxisRank(axis);
 }
 
@@ -759,13 +738,6 @@ template< class LocalOrd, class GlobalOrd, class Node >
 int
 MDMap< LocalOrd, GlobalOrd, Node >::getLowerNeighbor(int axis) const
 {
-#if DOMI_ENABLE_ABC
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= getNumDims())),
-    RangeError,
-    "invalid axis index = " << axis << " (number of dimensions = " <<
-    getNumDims() << ")");
-#endif
   return _mdComm->getLowerNeighbor(axis);
 }
 
@@ -775,13 +747,6 @@ template< class LocalOrd, class GlobalOrd, class Node >
 int
 MDMap< LocalOrd, GlobalOrd, Node >::getUpperNeighbor(int axis) const
 {
-#if DOMI_ENABLE_ABC
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= getNumDims())),
-    RangeError,
-    "invalid axis index = " << axis << " (number of dimensions = " <<
-    getNumDims() << ")");
-#endif
   return _mdComm->getUpperNeighbor(axis);
 }
 
