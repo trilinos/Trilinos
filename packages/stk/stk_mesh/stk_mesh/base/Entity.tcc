@@ -175,8 +175,6 @@ union Entity
   friend bool sierra::Fmwk::detail::update_relation( Entity, const stk::mesh::RelationIterator ir, const bool back_rel_flag, sierra::Fmwk::MeshBulkData& bulk);
   friend bool sierra::Fmwk::remove_relation(Entity , const stk::mesh::RelationIterator, sierra::Fmwk::MeshBulkData &);
   friend void sierra::Fmwk::roster_only::destroy_meshobj(stk::mesh::Entity, sierra::Fmwk::MeshBulkData& meshbulk );
-
-  typedef unsigned DerivedType; ///< Derived type identifier, the admissible values may be extended
 #endif
 };
 
