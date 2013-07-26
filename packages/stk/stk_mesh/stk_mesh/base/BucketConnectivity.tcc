@@ -453,6 +453,7 @@ public:
     , m_num_inactive(0)
     , m_indices()
     , m_num_connectivities()
+    , m_total_connectivities(0)
     , m_targets()
     , m_ordinals()
     , m_permutations()
@@ -466,6 +467,7 @@ public:
     , m_num_inactive(0)
     , m_indices()
     , m_num_connectivities()
+    , m_total_connectivities(0)
     , m_targets()
     , m_ordinals()
     , m_permutations()
@@ -598,6 +600,7 @@ public:
       if ( m_targets[i] == to && m_ordinals[i] == ordinal ) {
         found_idx = i;
         --m_num_connectivities[bucket_ordinal];
+        --m_total_connectivities;
         break;
       }
     }
@@ -674,6 +677,9 @@ public:
         diff_length_connectivity_swap(to_ordinal, to, my_ordinal, *this);
       }
 
+      int connectivities_change = second_num - first_num;
+      m_total_connectivities += connectivities_change;
+      to.m_total_connectivities -= connectivities_change;
     }
 
     invariant_check_helper();
@@ -705,6 +711,7 @@ public:
 
     if (m_active) {
       m_indices.pop_back();
+      m_total_connectivities -= m_num_connectivities.back();
       m_num_connectivities.pop_back();
     }
     else {
@@ -735,6 +742,7 @@ public:
     to.m_indices.push_back(to_num_connectivity_before_move);
 
     to.m_num_connectivities.push_back(num_connectivity_to_move);
+    to.m_total_connectivities += num_connectivity_to_move;
 
     //move over target, ordinal, and permutation
     to.m_targets.insert( to.m_targets.end()
@@ -910,6 +918,34 @@ private:
     resize_and_order_by_index_helper(m_targets, capacity, true /*update index*/);
   }
 
+  unsigned compute_new_connectivity_capacity(unsigned capacity_ratio = 2)
+  {
+    const unsigned old_capacity = m_targets.capacity();
+    const unsigned careful_threshold = 2048;
+
+    if (old_capacity < careful_threshold)
+    {
+      const unsigned new_capacity = old_capacity > 0 ? old_capacity : 8*chunk_size;
+      return new_capacity;
+    }
+
+    //    unsigned used = 0;
+    //    size_t lim = m_num_connectivities.size();
+    //    for (size_t i = 0; i < lim; ++i)
+    //    {
+    //      used += m_num_connectivities[i];
+    //    }
+
+    if (capacity_ratio * m_total_connectivities > old_capacity)
+    {
+      return 2 * old_capacity;
+    }
+    else
+    {
+      return old_capacity;
+    }
+  }
+
   void add_connectivity_helper(unsigned bucket_ordinal)
   {
     const unsigned chunks_needed_by_entity = num_chunks(m_num_connectivities[bucket_ordinal]+1);
@@ -918,6 +954,7 @@ private:
     if (chunks_needed_by_entity == chunks_used_by_entity)
     {
       ++m_num_connectivities[bucket_ordinal];
+      ++m_total_connectivities;
       return;
     }
 
@@ -925,8 +962,18 @@ private:
 
     if (chunks_available < chunks_needed_by_entity)
     {
+      const unsigned new_capacity = compute_new_connectivity_capacity();
       // Important line, defines how capacity grows. We do doublings for now.
-      const unsigned new_capacity = m_targets.capacity() > 0 ? 2*m_targets.capacity() : 8*chunk_size;
+      // const unsigned new_capacity = m_targets.capacity() > 0 ? 2*m_targets.capacity() : 8*chunk_size;
+
+#if 0
+      if (new_capacity > 1024)
+      {
+        std::cout << "add_connectivity_helper:  old_capacity " <<  m_targets.capacity()
+                  << "  new_capacity = " << new_capacity << "  chunks_available = " << chunks_available
+                  << " chunks_needed_by_entity = " << chunks_needed_by_entity << std::endl;
+      }
+#endif
       resize_and_order_by_index(new_capacity);
     }
 
@@ -962,6 +1009,7 @@ private:
     }
 
     ++m_num_connectivities[bucket_ordinal];
+    ++m_total_connectivities;
   }
 
   template <typename ConnectivityComparator>
@@ -1109,6 +1157,15 @@ private:
       ThrowAssertMsg(m_num_connectivities.size() == 0, "Expect empty data if inactive");
     }
 
+    unsigned connectivities_sum = 0;
+    size_t lim = m_num_connectivities.size();
+    for (size_t i = 0; i < lim; ++i)
+    {
+      connectivities_sum += m_num_connectivities[i];
+    }
+    ThrowAssertMsg(m_total_connectivities == connectivities_sum,
+                   "Expected m_total_connectivities == " << connectivities_sum << ", found " << m_total_connectivities);
+
     ThrowAssertMsg(m_num_connectivities.size() == m_indices.size(),
                    "Expected m_num_connectivities to be of size " << m_indices.size() << ", found " << m_num_connectivities.size());
 
@@ -1167,6 +1224,7 @@ private:
   // meta data
   UInt32Vector m_indices;  // Common index into vectors below that stores where connectivity starts for a partition_offset (entity).
   UInt16Vector m_num_connectivities;
+  unsigned     m_total_connectivities;
 
   // connectivity data
   EntityVector              m_targets;
