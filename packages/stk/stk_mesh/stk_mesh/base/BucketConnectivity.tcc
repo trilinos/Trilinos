@@ -450,6 +450,7 @@ public:
     : m_from_rank(InvalidEntityRank)
     , m_direction(Lower)
     , m_active(false)
+    , m_needs_shrink_to_fit(false)
     , m_num_inactive(0)
     , m_indices()
     , m_num_connectivities()
@@ -464,6 +465,7 @@ public:
     : m_from_rank(from_rank)
     , m_direction( (m_from_rank > TargetRank) ? Lower : ((m_from_rank == TargetRank) ? Adjacent : Higher))
     , m_active(false)
+    , m_needs_shrink_to_fit(false)
     , m_num_inactive(0)
     , m_indices()
     , m_num_connectivities()
@@ -558,6 +560,8 @@ public:
   {
     impl::check_bucket_ordinal(bucket_ordinal, this);
 
+    m_needs_shrink_to_fit = true;
+
     if (!m_active) {
       activate();
     }
@@ -607,6 +611,7 @@ public:
 
     //slide memory down
     if (found_idx != ~0u) {
+      m_needs_shrink_to_fit = true;
       for (uint32_t i = found_idx; i < end_i - 1; ++i) {
         m_targets[i] = m_targets[i+1];
         m_ordinals[i]        = m_ordinals[i+1];
@@ -642,6 +647,9 @@ public:
       // easy
       std::swap( m_indices[my_ordinal], to.m_indices[to_ordinal] );
       std::swap( m_num_connectivities[my_ordinal], to.m_num_connectivities[to_ordinal]);
+
+      m_needs_shrink_to_fit = true;
+      to.m_needs_shrink_to_fit = true;
     }
     else if (m_num_connectivities[my_ordinal] == to.m_num_connectivities[to_ordinal]) {
       // harder, but still relatively easy
@@ -680,6 +688,9 @@ public:
       int connectivities_change = second_num - first_num;
       m_total_connectivities += connectivities_change;
       to.m_total_connectivities -= connectivities_change;
+
+      m_needs_shrink_to_fit = true;
+      to.m_needs_shrink_to_fit = true;
     }
 
     invariant_check_helper();
@@ -697,6 +708,7 @@ public:
     if (m_active) {
       m_indices.push_back(0); // it's OK for entities with no connectivity to have wrong indices
       m_num_connectivities.push_back(0);
+      m_needs_shrink_to_fit = true;
     }
     else {
       ++m_num_inactive;
@@ -713,6 +725,7 @@ public:
       m_indices.pop_back();
       m_total_connectivities -= m_num_connectivities.back();
       m_num_connectivities.pop_back();
+      m_needs_shrink_to_fit = true;
     }
     else {
       --m_num_inactive;
@@ -738,6 +751,9 @@ public:
       to.activate();
     }
 
+    m_needs_shrink_to_fit = true;
+    to.m_needs_shrink_to_fit = true;
+
     //move over index and num_connectivity
     to.m_indices.push_back(to_num_connectivity_before_move);
 
@@ -746,9 +762,9 @@ public:
 
     //move over target, ordinal, and permutation
     to.m_targets.insert( to.m_targets.end()
-                                 ,m_targets.begin() + my_start_index
-                                 ,m_targets.begin() + my_start_index + num_connectivity_to_move
-                               );
+                         ,m_targets.begin() + my_start_index
+                         ,m_targets.begin() + my_start_index + num_connectivity_to_move
+                         );
 
     to.m_ordinals.insert( to.m_ordinals.end()
                           ,m_ordinals.begin() + my_start_index
@@ -800,6 +816,7 @@ public:
                 to.m_permutations.begin() + to_offset);
     }
 
+    m_needs_shrink_to_fit = true;
     remove_entity();
 
     invariant_check_helper();
@@ -902,7 +919,7 @@ private:
     //compute needed capacity
     if (capacity == 0u) {
       for( size_t i=0, e=m_indices.size(); i<e; ++i) {
-        capacity += num_chunks(m_num_connectivities[i]);
+        capacity += num_chunks(m_num_connectivities[i]) * chunk_size;
       }
     }
 
@@ -1172,6 +1189,12 @@ private:
       const size_t curr_index = m_indices[o];
       ThrowAssertMsg(curr_index <= m_targets.size(),
                      "Index is wrong, " << curr_index << " is beyond max " << m_targets.size());
+      if (!m_needs_shrink_to_fit) {
+        const size_t index_diff     = curr_index - m_indices[o-1];
+        const size_t prior_num_conn = num_chunks(num_connectivity(o-1)) * chunk_size;
+        ThrowAssertMsg(prior_num_conn == index_diff,
+                       "For offset " << o << ", num_connectivity/index mismatch, index_diff is " << index_diff << ", num conn is " << prior_num_conn);
+      }
     }
 #endif
   }
@@ -1182,14 +1205,7 @@ private:
   {
 #ifndef NDEBUG
     invariant_check_helper();
-
-    for (size_t o = 1, e = m_indices.size(); o < e; ++o) {
-      const size_t curr_index     = m_indices[o];
-      const size_t index_diff     = curr_index - m_indices[o-1];
-      const size_t prior_num_conn = num_connectivity(o-1);
-      ThrowAssertMsg(prior_num_conn == index_diff,
-                     "For offset " << o << ", num_connectivity/index mismatch, index_diff is " << index_diff << ", num conn is " << prior_num_conn);
-    }
+    ThrowAssert(!m_active || !m_needs_shrink_to_fit);
 
     // Check that connectivity is in-sync
     ThrowAssertMsg(m_targets.size() == m_ordinals.size(),
@@ -1207,6 +1223,7 @@ private:
   connectivity_direction m_direction;
 
   bool m_active; // In many cases, uses will not make use of dynamic connectivity, so don't even waste the memory unless it looks like they want it
+  bool m_needs_shrink_to_fit; // True if this object potentially has partially full vectors or out-of-order entities
   unsigned  m_num_inactive;
 
   // meta data

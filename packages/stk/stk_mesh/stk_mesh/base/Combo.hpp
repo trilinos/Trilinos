@@ -111,14 +111,17 @@ void impl::BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>::end_modification(
 {
   //TODO: If bucket is blocked, no longer need to shrink to fit!
 
-  {
-    EntityVector temp(m_targets.begin(), m_targets.end());
-    m_targets.swap(temp);
-  }
+  if (m_targets.size() < m_targets.capacity()) {
 
-  {
-    PermutationVector temp(m_permutations.begin(), m_permutations.end());
-    m_permutations.swap(temp);
+    {
+      EntityVector temp(m_targets.begin(), m_targets.end());
+      m_targets.swap(temp);
+    }
+
+    {
+      PermutationVector temp(m_permutations.begin(), m_permutations.end());
+      m_permutations.swap(temp);
+    }
   }
 
   invariant_check_helper(mesh);
@@ -129,7 +132,7 @@ template <typename BulkData>
 inline
 void impl::BucketConnectivity<TargetRank, DYNAMIC_CONNECTIVITY>::end_modification(BulkData* mesh)
 {
-  if (m_active) {
+  if (m_active && m_needs_shrink_to_fit) {
     resize_and_order_by_index();
 
     {
@@ -142,8 +145,10 @@ void impl::BucketConnectivity<TargetRank, DYNAMIC_CONNECTIVITY>::end_modificatio
       m_num_connectivities.swap(temp);
     }
 
-    invariant_check_helper(mesh);
+    m_needs_shrink_to_fit = false;
   }
+
+  invariant_check_helper(mesh);
 }
 
 template <typename BulkData>
