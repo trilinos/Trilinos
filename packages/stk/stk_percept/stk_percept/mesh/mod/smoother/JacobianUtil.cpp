@@ -2,7 +2,6 @@
 #if !defined(__IBMCPP__)
 
 #include "JacobianUtil.hpp"
-#include "MeshSmoother.hpp"
 
 #include "mpi.h"
 
@@ -378,16 +377,6 @@ namespace stk {
           //double *x=0;
           //std::cout << "topology = " << *x;
           std::cout << "topology = " << topology.getName() << std::endl;
-          if (1)
-            {
-              shards::CellTopology cell_topo_bucket(eMesh.get_cell_topology(eMesh.bucket(element)));
-              shards::CellTopology cell_topo_element(eMesh.get_cell_topology(element));
-              std::cout << "cell_topo_element = " << cell_topo_element.getName() << std::endl;
-              std::cout << "cell_topo_bucket = " << cell_topo_bucket.getName() << std::endl;
-              bool val = MeshSmoother::select_bucket(eMesh.bucket(element), &eMesh);
-              std::cout << "val= " << val << std::endl;
-            }
-
 
           throw std::runtime_error("unknown/unhandled topology in JacobianUtil");
           break;

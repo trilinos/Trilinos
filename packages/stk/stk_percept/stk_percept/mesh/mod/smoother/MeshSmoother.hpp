@@ -13,7 +13,9 @@
 
 #include <stk_percept/PerceptMesh.hpp>
 
+#if defined(STK_PERCEPT_HAS_GEOMETRY)
 #include <stk_percept/mesh/geometry/kernel/MeshGeometry.hpp>
+#endif
 
 #undef USE_CALLGRIND
 //#define USE_CALLGRIND
@@ -23,6 +25,10 @@
 
 namespace stk {
   namespace percept {
+
+#if !defined(STK_PERCEPT_HAS_GEOMETRY)
+    class MeshGeometry {};
+#endif
 
     const double PS_DEF_UNT_BETA = 1e-8;
     const double PS_DEF_SUC_EPS = 1e-4;
@@ -58,8 +64,10 @@ namespace stk {
         m_eMesh(eMesh), innerIter(innerIter), gradNorm(gradNorm), parallelIterations(parallelIterations), 
         m_boundarySelector(boundary_selector), m_meshGeometry(meshGeometry)
       {
+#if defined(STK_PERCEPT_HAS_GEOMETRY)
         if (m_meshGeometry) 
           m_meshGeometry->m_cache_classify_bucket_is_active = true;
+#endif
       }
 
       /// @deprecated

@@ -116,10 +116,14 @@ namespace stk {
 
       // following is from Mesquite.MeanRatioFunctions
 
-      static const double isqrt3  = 5.77350269189625797959429519858e-01;        /*  1.0/sqrt(3.0)*/
-      static const double tisqrt3 = 1.15470053837925159591885903972e+00;        /*  2.0/sqrt(3.0)*/
-      static const double isqrt6  = 4.08248290463863052509822647505e-01;        /*  1.0/sqrt(6.0)*/
-      static const double tisqrt6 = 1.22474487139158915752946794252e+00;        /*  3.0/sqrt(6.0)*/
+      /*  1.0/sqrt(3.0)*/
+#define isqrt3  5.77350269189625797959429519858e-01
+      /*  2.0/sqrt(3.0)*/
+#define tisqrt3  1.15470053837925159591885903972e+00
+      /*  1.0/sqrt(6.0)*/
+#define isqrt6   4.08248290463863052509822647505e-01
+      /*  3.0/sqrt(6.0)*/
+#define tisqrt6  1.22474487139158915752946794252e+00
 
       inline bool jacobian_matrix_tet_3D(double &detJ, DenseMatrix<3,3>& A, const double *x0, const double *x1, const double *x2, const double *x3)
       {
@@ -277,18 +281,18 @@ namespace stk {
                     -xi(2,3) + r*(-1 + 2*s)*(xi(1,3) - xi(2,3) + xi(3,3) - xi(4,3)) - xi(4,3) + s*(-xi(1,3) + xi(2,3) - xi(3,3) + xi(4,3)) + 2*xi(5,3))) ;
 
         // at general point
-        double dxidxij[3][3] = 
+        double dxidxij[3][3] =
           List(List((-((-1 + s + t)*xi(1,1)) + (-1 + s + t)*xi(2,1) + (-s + t)*(xi(3,1) - xi(4,1)))/(-1 + 2*t),
                     (-((-1 + r + t)*xi(1,1)) + r*xi(2,1) - r*xi(3,1) - xi(4,1) + r*xi(4,1) + t*(-xi(2,1) + xi(3,1) + xi(4,1)))/(-1 + 2*t),
-                    -((r*xi(1,1) + xi(2,1) - r*xi(2,1) + r*xi(3,1) - (-1 + 2*r)*s*(xi(1,1) - xi(2,1) + xi(3,1) - xi(4,1)) + xi(4,1) - r*xi(4,1) - 
+                    -((r*xi(1,1) + xi(2,1) - r*xi(2,1) + r*xi(3,1) - (-1 + 2*r)*s*(xi(1,1) - xi(2,1) + xi(3,1) - xi(4,1)) + xi(4,1) - r*xi(4,1) -
                        2*t*(xi(1,1) + xi(2,1) + xi(3,1) + xi(4,1) - 4*xi(5,1)) + 2*Power(t,2)*(xi(1,1) + xi(2,1) + xi(3,1) + xi(4,1) - 4*xi(5,1)) - 2*xi(5,1))/
                       Power(1 - 2*t,2))),List((-((-1 + s + t)*xi(1,2)) + (-1 + s + t)*xi(2,2) + (-s + t)*(xi(3,2) - xi(4,2)))/(-1 + 2*t),
                                               (-((-1 + r + t)*xi(1,2)) + r*xi(2,2) - r*xi(3,2) - xi(4,2) + r*xi(4,2) + t*(-xi(2,2) + xi(3,2) + xi(4,2)))/(-1 + 2*t),
-                                              -((r*xi(1,2) + xi(2,2) - r*xi(2,2) + r*xi(3,2) - (-1 + 2*r)*s*(xi(1,2) - xi(2,2) + xi(3,2) - xi(4,2)) + xi(4,2) - r*xi(4,2) - 
+                                              -((r*xi(1,2) + xi(2,2) - r*xi(2,2) + r*xi(3,2) - (-1 + 2*r)*s*(xi(1,2) - xi(2,2) + xi(3,2) - xi(4,2)) + xi(4,2) - r*xi(4,2) -
                                                  2*t*(xi(1,2) + xi(2,2) + xi(3,2) + xi(4,2) - 4*xi(5,2)) + 2*Power(t,2)*(xi(1,2) + xi(2,2) + xi(3,2) + xi(4,2) - 4*xi(5,2)) - 2*xi(5,2))/
                                                 Power(1 - 2*t,2))),List((-((-1 + s + t)*xi(1,3)) + (-1 + s + t)*xi(2,3) + (-s + t)*(xi(3,3) - xi(4,3)))/(-1 + 2*t),
                                                                         (-((-1 + r + t)*xi(1,3)) + r*xi(2,3) - r*xi(3,3) - xi(4,3) + r*xi(4,3) + t*(-xi(2,3) + xi(3,3) + xi(4,3)))/(-1 + 2*t),
-                                                                        -((r*xi(1,3) + xi(2,3) - r*xi(2,3) + r*xi(3,3) - (-1 + 2*r)*s*(xi(1,3) - xi(2,3) + xi(3,3) - xi(4,3)) + xi(4,3) - r*xi(4,3) - 
+                                                                        -((r*xi(1,3) + xi(2,3) - r*xi(2,3) + r*xi(3,3) - (-1 + 2*r)*s*(xi(1,3) - xi(2,3) + xi(3,3) - xi(4,3)) + xi(4,3) - r*xi(4,3) -
                                                                            2*t*(xi(1,3) + xi(2,3) + xi(3,3) + xi(4,3) - 4*xi(5,3)) + 2*Power(t,2)*(xi(1,3) + xi(2,3) + xi(3,3) + xi(4,3) - 4*xi(5,3)) - 2*xi(5,3))/
                                                                           Power(1 - 2*t,2))));
 

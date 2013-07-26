@@ -20,7 +20,8 @@ SET(SOURCES "")
 #FILE(GLOB SOURCES *.cpp)
 
 APPEND_SET(SOURCES
-    io_generated.cpp
+#    io_generated.cpp
+   io_example.cpp
 )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(

@@ -38,6 +38,35 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/mesh/gen)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
+IF( STK_PERCEPT_HAS_GEOMETRY )
+
+  SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/mesh/geometry/kernel)
+  APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+  APPEND_GLOB(SOURCES ${DIR}/*.cpp)
+
+  SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/mesh/mod/smoother)
+  APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+  APPEND_GLOB(SOURCES ${DIR}/*.cpp)
+
+ELSE()
+
+  SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/mesh/mod/smoother)
+
+  APPEND_SET(HEADERS
+    ${DIR}/JacobianUtil.hpp
+    ${DIR}/SpacingFieldUtil.hpp
+    ${DIR}/MeshSmoother.hpp
+  )
+
+  APPEND_SET(SOURCES
+    ${DIR}/JacobianUtil.cpp
+    ${DIR}/SpacingFieldUtil.cpp
+    ${DIR}/MeshSmoother.cpp
+  )
+
+ENDIF()
+
+
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/norm)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
@@ -63,7 +92,7 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
 TRIBITS_ADD_LIBRARY(
 	stk_percept
 	HEADERS	${HEADERS}
-  DEPLIBS stk_mesh_fem stk_io_util stk_util_diag stk_search stk_expreval
+  DEPLIBS  stk_io_util stk_util_diag stk_search stk_expreval
 	SOURCES ${SOURCES}
 )
 

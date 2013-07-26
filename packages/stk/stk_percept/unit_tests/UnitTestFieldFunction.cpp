@@ -826,10 +826,10 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
             stk::mesh::EntityId id=eMesh.identifier(entity);
             int * const p = eMesh.field_data<PressureFieldType>( pressure_field , entity );
             int type=Owned;
-            double p_e = (p_rank+1)*100+id;
+            int p_e = (p_rank+1)*100+id;
             if (bucket.owned())
               {
-                STKUNIT_ASSERT_NEAR(p[0], p_e, 1.e-6);
+                STKUNIT_ASSERT_EQUAL(p[0], p_e);
               }
             else if (bucket.shared())
               {
@@ -837,11 +837,11 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
                 type = Shared;
                 if (sync_shared)
                   {
-                    if (std::fabs(p[0]-p_e) > 1.e-6)
+                    if (p[0] != p_e)
                       {
                         out1 << "P[" << p_rank << "] ERROR: p[0] = " << p[0] << " p_e= " << p_e << std::endl;
                       }
-                    STKUNIT_ASSERT_NEAR(p[0], p_e, 1.e-6);
+                    STKUNIT_ASSERT_EQUAL(p[0], p_e);
                   }
               }
             else
@@ -849,7 +849,7 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
                 p_e = ((eMesh.parallel_owner_rank(entity)+1)*100+id);
                 type = Ghost;
                 if (sync_aura)
-                  STKUNIT_ASSERT_NEAR(p[0], p_e, 1.e-6);
+                  STKUNIT_ASSERT_EQUAL(p[0], p_e);
               }
             out1 << "P["<<p_rank<<"] after id= " << eMesh.identifier(entity) << " p= " << p[0] << " type= " << types[type] << std::endl;
 

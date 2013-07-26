@@ -28,6 +28,9 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
+FormatTime.hpp
+FormatMemorySize.hpp
+
 CPUTime.hpp
 Demangle.hpp
 LogControl.hpp
@@ -45,6 +48,9 @@ IF ( TPL_ENABLE_BoostLib )
 ENDIF()
 
 APPEND_SET(SOURCES
+FormatTime.cpp
+FormatMemorySize.cpp
+
 CPUTime.cpp
 Demangle.cpp
 LogControl.cpp

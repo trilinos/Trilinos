@@ -114,10 +114,13 @@ namespace stk {
     classify_node(stk::mesh::Entity node, size_t& curveOrSurfaceEvaluator) const
     {
       int dof =0;
+      dof = m_eMesh->get_spatial_dim();
+#if defined(STK_PERCEPT_HAS_GEOMETRY)
       if (m_meshGeometry)
-        dof = m_meshGeometry->classify_node(node, curveOrSurfaceEvaluator);
-      else
-        dof = m_eMesh->get_spatial_dim();
+        {
+          dof = m_meshGeometry->classify_node(node, curveOrSurfaceEvaluator);
+        }
+#endif
       return dof;
     }
 
@@ -162,6 +165,7 @@ namespace stk {
         }
       else
         {
+#if defined(STK_PERCEPT_HAS_GEOMETRY)
           if (m_meshGeometry)
             {
               size_t curveOrSurfaceEvaluator;
@@ -201,6 +205,7 @@ namespace stk {
                 }
             }
           else
+#endif
             {
               fixed=false;
               type=MS_VOLUME;
@@ -258,6 +263,8 @@ namespace stk {
     void MeshSmoother::
     project_delta_to_tangent_plane(stk::mesh::Entity node, double *delta)
     {
+#if defined(STK_PERCEPT_HAS_GEOMETRY)
+
       if (!m_meshGeometry)
         {
           return;
@@ -274,6 +281,9 @@ namespace stk {
         {
           delta[i] -= dot*normal[i];
         }
+#else
+      throw std::runtime_error("no geometry available, set STK_PERCEPT_HAS_GEOMETRY flag: not implemented");
+#endif
     }
 
     //! Modifies "coordinate" so that it lies on the
@@ -286,6 +296,7 @@ namespace stk {
     snap_to(stk::mesh::Entity node_ptr,
             double *coordinate, bool reset) const 
     {
+#if defined(STK_PERCEPT_HAS_GEOMETRY)
 
       if (!m_meshGeometry) return;
       stk::mesh::FieldBase* field = m_eMesh->get_coordinates_field();
@@ -334,6 +345,9 @@ namespace stk {
             f_data[2] = f_data_save[2];
         }
 
+#else
+      throw std::runtime_error("no geometry available, set STK_PERCEPT_HAS_GEOMETRY flag: not implemented");
+#endif
     }
 
 

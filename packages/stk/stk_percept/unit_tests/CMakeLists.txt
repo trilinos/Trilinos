@@ -12,12 +12,31 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/)
 
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
-FILE(GLOB SOURCES *.cpp)
+SET(SOURCES "")
+APPEND_SET(SOURCES
+#example.cpp
+#example_wrap.cpp
+#mainsh.cpp
+UnitTestFieldFunction.cpp
+UnitTestGeometryVerifier.cpp
+UnitTestMain.cpp
+UnitTestMath.cpp
+UnitTestNorm.cpp
+UnitTestPerceptMesh.cpp
+UnitTestPerceptMesquiteMesh.cpp
+UnitTestSearch.cpp
+UnitTestStringFunction.cpp
+UnitTestTimeMaps.cpp
+UnitTestTopoCheck.cpp
+UnitTestUtilities.cpp
+
+  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     stk_percept_unit_tests
     SOURCES ${SOURCES}
     ARGS ""
+    DEPLIBS stk_percept
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT

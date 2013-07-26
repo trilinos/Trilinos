@@ -41,6 +41,10 @@ WriterParser.hpp
   )
 
 APPEND_SET(SOURCES
+Option.cpp
+PrintTable.cpp
+String.cpp
+
 PrintTimer.cpp
 Timer.cpp
 Trace.cpp

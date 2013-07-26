@@ -64,12 +64,12 @@ STKUNIT_UNIT_TEST( stk_topology, heterogenuous_topology )
 
   topology t = topology::HETEROGENEOUS_ELEMENT;
 
-  EXPECT_TRUE(t.is_valid() );
-  EXPECT_EQ(t.rank(), topology::ELEMENT_RANK );
-  EXPECT_EQ(t.side_rank(), topology::FACE_RANK );
-  EXPECT_FALSE(t.defined_on_spatial_dimension(1));
-  EXPECT_FALSE(t.defined_on_spatial_dimension(2));
-  EXPECT_TRUE(t.defined_on_spatial_dimension(3));
+  STKUNIT_EXPECT_TRUE(t.is_valid() );
+  STKUNIT_EXPECT_EQ(t.rank(), topology::ELEMENT_RANK );
+  STKUNIT_EXPECT_EQ(t.side_rank(), topology::FACE_RANK );
+  STKUNIT_EXPECT_FALSE(t.defined_on_spatial_dimension(1));
+  STKUNIT_EXPECT_FALSE(t.defined_on_spatial_dimension(2));
+  STKUNIT_EXPECT_TRUE(t.defined_on_spatial_dimension(3));
   {
     std::ostringstream name;
     name << t ;
@@ -79,12 +79,12 @@ STKUNIT_UNIT_TEST( stk_topology, heterogenuous_topology )
 
   t = topology::HETEROGENEOUS_ELEMENT_2D;
 
-  EXPECT_TRUE(t.is_valid() );
-  EXPECT_EQ(t.rank(), topology::ELEMENT_RANK );
-  EXPECT_EQ(t.side_rank(), topology::EDGE_RANK );
-  EXPECT_FALSE(t.defined_on_spatial_dimension(1));
-  EXPECT_TRUE(t.defined_on_spatial_dimension(2));
-  EXPECT_FALSE(t.defined_on_spatial_dimension(3));
+  STKUNIT_EXPECT_TRUE(t.is_valid() );
+  STKUNIT_EXPECT_EQ(t.rank(), topology::ELEMENT_RANK );
+  STKUNIT_EXPECT_EQ(t.side_rank(), topology::EDGE_RANK );
+  STKUNIT_EXPECT_FALSE(t.defined_on_spatial_dimension(1));
+  STKUNIT_EXPECT_TRUE(t.defined_on_spatial_dimension(2));
+  STKUNIT_EXPECT_FALSE(t.defined_on_spatial_dimension(3));
   {
     std::ostringstream name;
     name << t ;
@@ -94,12 +94,12 @@ STKUNIT_UNIT_TEST( stk_topology, heterogenuous_topology )
 
   t = topology::HETEROGENEOUS_FACE;
 
-  EXPECT_TRUE(t.is_valid() );
-  EXPECT_EQ(t.rank(), topology::FACE_RANK );
-  EXPECT_EQ(t.side_rank(), topology::EDGE_RANK );
-  EXPECT_FALSE(t.defined_on_spatial_dimension(1));
-  EXPECT_FALSE(t.defined_on_spatial_dimension(2));
-  EXPECT_TRUE(t.defined_on_spatial_dimension(3));
+  STKUNIT_EXPECT_TRUE(t.is_valid() );
+  STKUNIT_EXPECT_EQ(t.rank(), topology::FACE_RANK );
+  STKUNIT_EXPECT_EQ(t.side_rank(), topology::EDGE_RANK );
+  STKUNIT_EXPECT_FALSE(t.defined_on_spatial_dimension(1));
+  STKUNIT_EXPECT_FALSE(t.defined_on_spatial_dimension(2));
+  STKUNIT_EXPECT_TRUE(t.defined_on_spatial_dimension(3));
   {
     std::ostringstream name;
     name << t ;
@@ -109,12 +109,12 @@ STKUNIT_UNIT_TEST( stk_topology, heterogenuous_topology )
 
   t = topology::HETEROGENEOUS_EDGE;
 
-  EXPECT_TRUE(t.is_valid() );
-  EXPECT_EQ(t.rank(), topology::EDGE_RANK );
-  EXPECT_EQ(t.side_rank(), topology::NODE_RANK );
-  EXPECT_FALSE(t.defined_on_spatial_dimension(1));
-  EXPECT_TRUE(t.defined_on_spatial_dimension(2));
-  EXPECT_TRUE(t.defined_on_spatial_dimension(3));
+  STKUNIT_EXPECT_TRUE(t.is_valid() );
+  STKUNIT_EXPECT_EQ(t.rank(), topology::EDGE_RANK );
+  STKUNIT_EXPECT_EQ(t.side_rank(), topology::NODE_RANK );
+  STKUNIT_EXPECT_FALSE(t.defined_on_spatial_dimension(1));
+  STKUNIT_EXPECT_TRUE(t.defined_on_spatial_dimension(2));
+  STKUNIT_EXPECT_TRUE(t.defined_on_spatial_dimension(3));
   {
     std::ostringstream name;
     name << t ;
@@ -172,8 +172,8 @@ STKUNIT_UNIT_TEST( stk_topology, arrayMesh )
   topology t = topology::HEX_8;
   int side_nodes[4] = {};
   t.side_nodes( nodes, 0, side_nodes );
-  EXPECT_EQ( 0, side_nodes[0] );
-  EXPECT_EQ( 1, side_nodes[1] );
-  EXPECT_EQ( 5, side_nodes[2] );
-  EXPECT_EQ( 4, side_nodes[3] );
+  STKUNIT_EXPECT_EQ( 0, side_nodes[0] );
+  STKUNIT_EXPECT_EQ( 1, side_nodes[1] );
+  STKUNIT_EXPECT_EQ( 5, side_nodes[2] );
+  STKUNIT_EXPECT_EQ( 4, side_nodes[3] );
 }
