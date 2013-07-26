@@ -89,11 +89,7 @@ int main(int argc, char *argv[]) {
   int numTests=2;
 #endif
 
-#ifdef NO_LOCA_THYRA_YET
   for (int iTest=0; iTest<numTests; iTest++) {
-#else
-  for (int iTest=0; iTest<numTests; iTest+=2) {
-#endif
 
     if (doAll) {
       switch (iTest) {
