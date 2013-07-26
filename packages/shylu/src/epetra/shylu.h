@@ -57,10 +57,19 @@
 #include "shylu_probing_operator.h"
 #include "AmesosSchurOperator.h"
 
+#include "gmres.h"
+#include "gmres_tools.h"
+
 //#include "shylu_debug_manager.hpp"
 
 #define MIN(a, b) (((a) < (b)) ? a : b)
 #define MAX(a, b) (((a) > (b)) ? a : b)
+
+typedef IQR::GMRESManager<Epetra_BlockMap,
+						  Epetra_MultiVector,
+						  std::vector<std::vector<double> >,
+						  std::vector<double> >
+			ShyLUGMRESManager;
 
 typedef struct
 {
@@ -77,6 +86,7 @@ typedef struct
     //Epetra_Map *LDColMap;       // ColMap for block diagonals
     //Epetra_CrsMatrix *D;        // Actual D Matrix, not reqd for Amesos_KLU
                                 // but required for Amesos_Pardiso
+    Teuchos::RCP<ShyLUGMRESManager> gmresManager;
     Teuchos::RCP<Epetra_CrsMatrix> Sbar; // Approx Schur complement
     Teuchos::RCP<Epetra_CrsGraph> localSbargraph; // graph of local Sbar
     AztecOO *innersolver;            // inner solver
@@ -101,6 +111,9 @@ typedef struct
     double Sdiagfactor;         // % of diagonals added to Schur complement
     int schurApproxMethod;      // ==1 implies blockdiagonal + A22
                                 // ==2 implies dropping based
+    							// ==4 implies IQR
+    double iqrKrylovDim;
+    int iqrNumIter;
 
     double relative_threshold;  // Relative threshold for dropping
                                 // only used if schurApproxMethod == 2

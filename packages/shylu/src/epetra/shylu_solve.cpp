@@ -138,7 +138,10 @@ static int shylu_dist_solve(
     Xs.PutScalar(0.0);
 
     Epetra_LinearProblem Problem(data->Sbar.get(), &Xs, &Bs);
-    if (config->schurSolver == "Amesos")
+    if (config->schurSolver == "IQR")
+    {
+    	data->gmresManager->ApplyInverse(Bs, Xs);
+    } else if (config->schurSolver == "Amesos")
     {
         Amesos_BaseSolver *solver2 = data->dsolver;
         data->LP2->SetLHS(&Xs);
@@ -276,8 +279,8 @@ static int shylu_local_solve(
     solveD.start();
     ssym->Solver->Solve();
     solveD.stop();
-    std::cout << "RADU SHYLU: solve D: "
-    		  << solveD.totalElapsedTime() << std::endl;
+    /*std::cout << "RADU SHYLU: solve D: "
+    		  << solveD.totalElapsedTime() << std::endl;*/
 
     Epetra_MultiVector temp1(LocalSMap, nvectors);
     err = ssym->R->Multiply(false, locallhs, temp1);
@@ -298,7 +301,10 @@ static int shylu_local_solve(
 
     AztecOO *solver;
     Epetra_LinearProblem Problem(data->Sbar.get(), &Xs, &Bs);
-    if (config->schurSolver == "Amesos")
+    if (config->schurSolver == "IQR")
+    {
+    	data->gmresManager->ApplyInverse(Bs, Xs);
+    } else if (config->schurSolver == "Amesos")
     {
         Amesos_BaseSolver *solver2 = data->dsolver;
         data->OrigLP2->SetLHS(&Xs);
@@ -309,8 +315,8 @@ static int shylu_local_solve(
         solveSbar.start();
         solver2->Solve();
         solveSbar.stop();
-        std::cout << "RADU SHYLU: solve Sbar: "
-        		  << solveSbar.totalElapsedTime() << std::endl;
+        /*std::cout << "RADU SHYLU: solve Sbar: "
+        		  << solveSbar.totalElapsedTime() << std::endl;*/
         //cout << "Out of solve *****************************" << endl;
     }
     else
@@ -360,8 +366,8 @@ static int shylu_local_solve(
     solveDagain.start();
     ssym->Solver->Solve();
     solveDagain.stop();
-    std::cout << "RADU SHYLU: solve D again: "
-    		  << solveDagain.totalElapsedTime() << std::endl;
+    /*std::cout << "RADU SHYLU: solve D again: "
+    		  << solveDagain.totalElapsedTime() << std::endl;*/
 
     Epetra_Export XdExporter(LocalDMap, Y.Map());
     Y.Export(locallhs, XdExporter, Insert);

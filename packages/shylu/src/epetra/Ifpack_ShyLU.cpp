@@ -150,6 +150,13 @@ int Ifpack_ShyLU::Initialize()
 
     slu_config_.relative_threshold =  0.0;
     slu_config_.Sdiagfactor =  0.05;
+    if (schurApproxMethod == "IQR")
+    {
+    	slu_config_.schurSolver = "IQR";
+    	slu_config_.schurApproxMethod = 4;
+    	slu_config_.iqrKrylovDim = List_.get<double>("IQR Krylov Dim", 0.5);
+    	slu_config_.iqrNumIter = List_.get<int>("IQR Number Iterations", 1);
+    }
     if (schurApproxMethod == "A22AndBlockDiagonals")
     {
         slu_config_.schurApproxMethod = 1;

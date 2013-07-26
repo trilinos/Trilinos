@@ -67,6 +67,9 @@
 
 #include <Ifpack_DynamicFactory.h>
 
+#include "gmres.h"
+#include "gmres_tools.h"
+
 int create_matrices
 (
     Epetra_CrsMatrix *A,    // i/p: A matrix
@@ -697,8 +700,8 @@ int shylu_symbolic_factor
     //LP->SetOperator((ssym->DT).getRawPtr()); // for transpose
 
     buildBlocksTime.stop();
-    std::cout << "RADU SHYLU: build blocks: "
-    		  << buildBlocksTime.totalElapsedTime() << std::endl;
+    /*std::cout << "RADU SHYLU: build blocks: "
+    		  << buildBlocksTime.totalElapsedTime() << std::endl;*/
 
 
     // Create temp vectors
@@ -734,8 +737,8 @@ int shylu_symbolic_factor
     symbolicD.start();
     Solver->SymbolicFactorization();
     symbolicD.stop();
-    std::cout << "RADU SHYLU: symbolic D: "
-    		  << symbolicD.totalElapsedTime() << std::endl;
+    /*std::cout << "RADU SHYLU: symbolic D: "
+    		  << symbolicD.totalElapsedTime() << std::endl;*/
 
     //config->dm.print(3, "Symbolic Factorization done");
 
@@ -802,8 +805,8 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     numericD.start();
     Solver->NumericFactorization();
     numericD.stop();
-    std::cout << "RADU SHYLU: numeric D: "
-    		  << numericD.totalElapsedTime() << std::endl;
+    /*std::cout << "RADU SHYLU: numeric D: "
+    		  << numericD.totalElapsedTime() << std::endl;*/
 
     //config->dm.print(3, "Numeric Factorization done");
 
@@ -830,7 +833,37 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
              (ssym->Solver).getRawPtr(), (ssym->C).getRawPtr(), &LocalDRowMap,
              1));
 
-    if (config->schurApproxMethod == 1)
+    if (config->schurApproxMethod == 4)
+    {
+    	int sSize = data->schur_op->OperatorDomainMap().NumGlobalElements();
+    	int kSize = std::floor(config->iqrKrylovDim * sSize);
+
+    	if (! A->Comm().MyPID()) {
+    		std::cout << "KSIZE: " << kSize << ", SSIZE: "
+    				  << sSize << std::endl;
+    	}
+
+		data->gmresManager = Teuchos::rcp(
+				new ShyLUGMRESManager(data->schur_op->OperatorDomainMap(),
+    						 	 	  kSize, false));
+
+		Epetra_MultiVector b(data->schur_op->OperatorDomainMap(),
+							 1, false);
+		Epetra_MultiVector x(data->schur_op->OperatorDomainMap(),
+							 1, true);
+		b.PutScalar(1.0);
+
+		double tol = 1e-10;
+		IQR::IdPreconditioner L, M;
+    	IQR::GMRES<Epetra_Operator,
+    			   Epetra_MultiVector,
+				   IQR::IdPreconditioner,
+				   IQR::IdPreconditioner,
+				   ShyLUGMRESManager,
+				   std::vector<double>,
+				   double> (*(data->schur_op), x, b, &L, &M,
+						    *(data->gmresManager), kSize, tol);
+    } else if (config->schurApproxMethod == 1)
     {
         int nvectors = prober->getNumOrthogonalVectors();
         //Set up the probing operator
@@ -894,8 +927,8 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         // it !).
     }
     computeSbar.stop();
-    std::cout << "RADU SHYLU: compute Sbar: "
-    		  << computeSbar.totalElapsedTime() << std::endl;
+    /*std::cout << "RADU SHYLU: compute Sbar: "
+    		  << computeSbar.totalElapsedTime() << std::endl;*/
 
     data->Sbar = Sbar;
 
@@ -943,8 +976,8 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         data->dsolver->NumericFactorization();
         //cout << "Numeric Factorization done for schur complement" << endl;
         factSbar.stop();
-        std::cout << "RADU SHYLU: fact Sbar: "
-        		  << factSbar.totalElapsedTime() << std::endl;
+        /*std::cout << "RADU SHYLU: fact Sbar: "
+        		  << factSbar.totalElapsedTime() << std::endl;*/
 
     }
     else if (config->schurSolver == "AztecOO-Exact")
@@ -968,8 +1001,8 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         factSbar.start();
         data->schur_prec->Compute();
         factSbar.stop();
-        std::cout << "RADU SHYLU: compute Sbar preconditioner: "
-        		  << factSbar.totalElapsedTime() << std::endl;
+        /*std::cout << "RADU SHYLU: compute Sbar preconditioner: "
+        		  << factSbar.totalElapsedTime() << std::endl;*/
 
         err = data->innersolver->SetPrecOperator
                     (data->schur_prec.get());
@@ -1019,7 +1052,10 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
             data->innersolver = NULL;
         }
     }
-    else
+    else if (config->schurSolver == "IQR")
+    {
+    	// DO NOTHING
+    } else
     {
         assert (0 == 1);
     }
