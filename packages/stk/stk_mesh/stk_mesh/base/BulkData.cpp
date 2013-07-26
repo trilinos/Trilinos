@@ -148,6 +148,10 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
 
 BulkData::~BulkData()
 {
+#ifdef STK_PROFILE_MEMORY
+  print_max_stk_memory_usage(parallel(), parallel_rank(), std::cout);
+#endif
+
 #ifdef SIERRA_MIGRATION
   for(size_t i=0; i<m_fmwk_aux_relations.size(); ++i) {
     delete m_fmwk_aux_relations[i];
@@ -161,7 +165,6 @@ BulkData::~BulkData()
 #ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   the_bulk_data_registry[m_bulk_data_id] = NULL;
 #endif
-
 }
 
 void BulkData::update_deleted_entities_container()

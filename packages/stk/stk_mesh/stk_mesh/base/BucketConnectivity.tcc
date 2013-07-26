@@ -886,6 +886,7 @@ private:
     }
 
     temp.swap(data);
+    ThrowAssert(data.capacity() == capacity); // no growths took place
   }
 
   void resize_and_order_by_index(unsigned capacity = 0u)
@@ -930,7 +931,7 @@ private:
     }
 
     const bool last_entity_by_index = (chunks_used_by_entity > 0) &&
-      (m_indices[bucket_ordinal] +chunks_used_by_entity*chunk_size == m_targets.size());
+      (m_indices[bucket_ordinal] + chunks_used_by_entity*chunk_size == m_targets.size());
     Entity invalid = {Entity::InvalidEntity};
 
     //copy to end
@@ -1175,7 +1176,6 @@ private:
   BulkData                       * m_bulk_data;
   impl::HigherConnectivityRankSensitiveCompare<BulkData>  m_rank_sensitive_higher_connectivity_cmp;
   impl::LowerConnectivitityRankSensitiveCompare<BulkData>  m_rank_sensitive_lower_connectivity_cmp;
-
 };
 
 }}} //namespace stk::mesh::impl

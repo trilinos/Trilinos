@@ -85,7 +85,6 @@ void print_max_stk_memory_usage( ParallelMachine parallel, int parallel_rank, st
 
   std::vector<size_t> max_memory(memory.size(),0);
 
-
   all_reduce_max(parallel, &memory[0], &max_memory[0], memory.size());
 
   if (parallel_rank == 0) {
@@ -106,4 +105,3 @@ void print_max_stk_memory_usage( ParallelMachine parallel, int parallel_rank, st
 }
 
 }} // namespace stk::mesh
-

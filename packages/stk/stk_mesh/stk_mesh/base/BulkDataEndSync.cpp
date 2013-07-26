@@ -748,15 +748,6 @@ bool BulkData::modification_end( modification_optimization opt)
 
   bool return_value = internal_modification_end( true, opt );
 
-#ifdef STK_PROFILE_MEMORY
-
-  if (parallel_rank() == 0) {
-    std::cout << "Modification Cycle: " << synchronized_count() << "\n";
-  }
-  print_max_stk_memory_usage(parallel(), parallel_rank(), std::cout);
-
-#endif
-
   return return_value;
 }
 

@@ -8,10 +8,7 @@
 
 #include <boost/type_traits/is_same.hpp>
 
-
-
 namespace stk {
-
 
 template <typename T, typename Tag = void>
 class tracking_allocator
@@ -87,8 +84,6 @@ public:
   {
     p->~T();
   }
-
-
 };
 
 // return that all specializations of the tracking_allocator with the same allocator and same tag are interchangeable
@@ -99,7 +94,6 @@ inline bool operator==(const tracking_allocator<T1,Tag1>&, const tracking_alloca
 template <typename T1, typename T2, typename Tag1, typename Tag2>
 inline bool operator!=(const tracking_allocator<T1,Tag1>&, const tracking_allocator<T2,Tag2>&)
 { return !boost::is_same<Tag1,Tag2>::value; }
-
 
 } // namespace stk
 
