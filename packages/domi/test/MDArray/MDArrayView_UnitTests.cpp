@@ -319,7 +319,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, rangeError, T )
 {
   MDArray< T > a = generateMDArray< T >(3,4);
   MDArrayView< T > av(a());
-#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
+#if DOMI_ENABLE_ABC
   TEST_THROW(av(3,3), RangeError);
   TEST_THROW(av(0,4), RangeError);
 #else
@@ -331,7 +331,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, rangeErrorCOrder, T )
 {
   MDArray< T > a = generateMDArray< T >(3,4,Domi::C_ORDER);
   MDArrayView< T > av(a());
-#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
+#if DOMI_ENABLE_ABC
   TEST_THROW(av(3,3), RangeError);
   TEST_THROW(av(0,4), RangeError);
 #else
@@ -422,7 +422,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, toString3D, T )
 //
 // Instantiations
 //
-#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
+#if DOMI_ENABLE_ABC
 #  define DEBUG_UNIT_TEST_GROUP( T )
 #else // HAVE_DOMI_ARRAY_BOUNDSCHECK
 #  define DEBUG_UNIT_TEST_GROUP( T )

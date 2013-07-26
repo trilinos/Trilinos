@@ -255,7 +255,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDIterator, LastIndexFastest, T )
 //
 // Instantiations
 //
-#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
+#if DOMI_ENABLE_ABC
 #  define DEBUG_UNIT_TEST_GROUP( T )
 #else // HAVE_DOMI_ARRAY_BOUNDSCHECK
 #  define DEBUG_UNIT_TEST_GROUP( T )

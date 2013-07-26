@@ -405,7 +405,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, squareBracketSlice2, T )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, rangeError, T )
 {
   MDArrayRCP< T > a = generateMDArrayRCP< T >(3,4);
-#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
+#if DOMI_ENABLE_ABC
   TEST_THROW(a(3,3), RangeError);
   TEST_THROW(a(0,4), RangeError);
 #else
@@ -416,7 +416,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, rangeError, T )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, rangeErrorCOrder, T )
 {
   MDArrayRCP< T > a = generateMDArrayRCP< T >(3,4,Domi::C_ORDER);
-#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
+#if DOMI_ENABLE_ABC
   TEST_THROW(a(3,3), RangeError);
   TEST_THROW(a(0,4), RangeError);
 #else
@@ -526,7 +526,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, toString3D, T )
 //
 // Instantiations
 //
-#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
+#if DOMI_ENABLE_ABC
 #  define DEBUG_UNIT_TEST_GROUP( T )
 #else // HAVE_DOMI_ARRAY_BOUNDSCHECK
 #  define DEBUG_UNIT_TEST_GROUP( T )
