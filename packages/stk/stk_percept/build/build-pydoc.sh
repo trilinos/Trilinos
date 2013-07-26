@@ -27,6 +27,6 @@ make -j8
 pydoc -w ./packages/PyTrilinos/src/stk/PyPercept/PerceptMesh.py
 
 cp PerceptMesh.html $TRILINOS_CODE/packages/stk/stk_percept/doc/
-
+cp PerceptMesh.html /projects/percept/doc
 
 

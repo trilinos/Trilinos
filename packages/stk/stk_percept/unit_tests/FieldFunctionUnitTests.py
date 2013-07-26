@@ -1,6 +1,7 @@
 import sys
 
-sys.path.insert(0,"../build/build.dir/packages/PyTrilinos/src/stk/PyPercept")
+#sys.path.insert(0,"../build/build.dir/packages/PyTrilinos/src/stk/PyPercept")
+sys.path.insert(0,"/projects/percept/")
 
 from mpi4py import MPI
 from PerceptMesh import *
@@ -44,7 +45,7 @@ class FieldFunctionUnitTests(unittest.TestCase):
        eMesh = PerceptMesh()
        eMesh.new_mesh(GMeshSpec(config_mesh))
        vectorDimension = 0
-       eMesh.add_field("coords_mag_field", FEMMetaData.NODE_RANK, vectorDimension)
+       eMesh.add_field("coords_mag_field", MetaData.NODE_RANK, vectorDimension)
        eMesh.commit()
        f_coords = eMesh.get_field("coordinates")
        ff_coords = FieldFunction("ff_coords", f_coords, eMesh, Dimensions(3), Dimensions(3), FieldFunction.SIMPLE_SEARCH)
@@ -168,7 +169,7 @@ class FieldFunctionUnitTests(unittest.TestCase):
        eMesh.new_mesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"))
 
        vectorDimension = 0
-       eMesh.add_field("coords_mag_field", FEMMetaData.NODE_RANK, vectorDimension)
+       eMesh.add_field("coords_mag_field", MetaData.NODE_RANK, vectorDimension)
        eMesh.commit()
 
        f_coords = eMesh.get_field("coordinates")
@@ -211,7 +212,7 @@ class FieldFunctionUnitTests(unittest.TestCase):
        eMesh = PerceptMesh()
        eMesh.new_mesh(GMeshSpec(config_mesh))
        vectorDimension = 0
-       eMesh.add_field("coords_mag_field", FEMMetaData.NODE_RANK, vectorDimension)
+       eMesh.add_field("coords_mag_field", MetaData.NODE_RANK, vectorDimension)
        eMesh.commit()
 
        #p_rank = eMesh.get_bulk_data().parallel_rank()

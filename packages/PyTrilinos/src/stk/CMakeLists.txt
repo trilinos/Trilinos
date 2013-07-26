@@ -1,18 +1,25 @@
 
-#FIND_PATH(MPI4PY_INCLUDE_DIR mpi4py HINTS ${PYTHON_INCLUDE_DIRS}/../../lib/python2.7/site-packages/mpi4py/include DOC "path to mpi4py include directory")
+FIND_PATH(MPI4PY_INCLUDE_DIR mpi4py HINTS ${PYTHON_INCLUDE_DIRS}/../../lib/python2.7/site-packages/mpi4py/include DOC "path to mpi4py include directory")
 
-EXECUTE_PROCESS(COMMAND
-  ${PYTHON_EXECUTABLE} -c "import mpi4py; print mpi4py.get_include()"
-  OUTPUT_VARIABLE MPI4PY_INCLUDE_DIR
-  ERROR_VARIABLE  MPI4PY_INCLUDE_ERROR
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
+#################################################################################
+# NOTE: to build stk_2.0 (new Sierra forked version of stk, forked in
+# December 2012), see packages/stk/CMakeLists.txt, and comment the
+# next two lines and uncomment the following two.
+#################################################################################
+SET(STK_ALT_BIN_DIR "")
+SET(STK_ALT_SRC_DIR "")
+#SET(STK_ALT_BIN_DIR "/stk_2.0/")
+#SET(STK_ALT_SRC_DIR "/stk_2.0/")
 
-IF(MPI4PY_INCLUDE_ERROR)
-  MESSAGE(SEND_ERROR
-    "Unable to find mpi4py include directory"
-    )
-ENDIF(MPI4PY_INCLUDE_ERROR)
+SET(STK_BINARY_DIR_ALT ${STK_BINARY_DIR}${STK_ALT_BIN_DIR})
+SET(STK_SOURCE_DIR_ALT ${STK_SOURCE_DIR}${STK_ALT_SRC_DIR})
+
+IF(${STK_ALT_BIN_DIR} STREQUAL "/stk_2.0/")
+  SET(STK_TOPOLOGY ${STK_SOURCE_DIR_ALT}/stk_topology)
+ELSE()
+  SET(STK_TOPOLOGY "")
+ENDIF()
+
 
 #include STK related directories'
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}
@@ -28,25 +35,26 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}
           ${Intrepid_BINARY_DIR}/src
           ${SEACAS_SOURCE_DIR}/libraries/ioss/src
           ${MPI4PY_INCLUDE_DIR}
-          ${STK_SOURCE_DIR}/stk_adapt
-          ${STK_SOURCE_DIR}/stk_adapt/sierra_element
-          ${STK_SOURCE_DIR}/stk_search
-          ${STK_SOURCE_DIR}/stk_expreval
-          ${STK_SOURCE_DIR}/stk_io
-          ${STK_SOURCE_DIR}/stk_io/stk_io/util
-          ${STK_SOURCE_DIR}/stk_mesh
-          ${STK_SOURCE_DIR}/stk_util
-          ${STK_SOURCE_DIR}/stk_util/diag
-          ${STK_SOURCE_DIR}/stk_util/stk_util/parallel
-          ${STK_SOURCE_DIR}/stk_percept
-          ${STK_SOURCE_DIR}/stk_percept/stk_percept
-          ${STK_SOURCE_DIR}/stk_percept/stk_percept/norm
-          ${STK_SOURCE_DIR}/stk_percept/stk_percept/fixtures
-          ${STK_SOURCE_DIR}/stk_percept/stk_percept/function
-          ${STK_SOURCE_DIR}/stk_percept/stk_percept/function/internal
+          ${STK_SOURCE_DIR_ALT}/stk_adapt
+          ${STK_SOURCE_DIR_ALT}/stk_adapt/sierra_element
+          ${STK_SOURCE_DIR_ALT}/stk_search
+          ${STK_SOURCE_DIR_ALT}/stk_expreval
+          ${STK_SOURCE_DIR_ALT}/stk_io
+          ${STK_SOURCE_DIR_ALT}/stk_io/stk_io/util
+          ${STK_SOURCE_DIR_ALT}/stk_mesh
+          ${STK_TOPOLOGY}
+          ${STK_SOURCE_DIR_ALT}/stk_util
+          ${STK_SOURCE_DIR_ALT}/stk_util/diag
+          ${STK_SOURCE_DIR_ALT}/stk_util/stk_util/parallel
+          ${STK_SOURCE_DIR_ALT}/stk_percept
+          ${STK_SOURCE_DIR_ALT}/stk_percept/stk_percept
+          ${STK_SOURCE_DIR_ALT}/stk_percept/stk_percept/norm
+          ${STK_SOURCE_DIR_ALT}/stk_percept/stk_percept/fixtures
+          ${STK_SOURCE_DIR_ALT}/stk_percept/stk_percept/function
+          ${STK_SOURCE_DIR_ALT}/stk_percept/stk_percept/function/internal
           ${ThreadPool_SOURCE_DIR}/src
-          ${STK_BINARY_DIR}/stk_percept/stk_percept
-          ${STK_BINARY_DIR}/stk_util/stk_util
+          ${STK_BINARY_DIR_ALT}/stk_percept/stk_percept
+          ${STK_BINARY_DIR_ALT}/stk_util/stk_util
           ${Trios_BINARY_DIR}/ioss/src
           ${NumPy_INCLUDE_DIR}
           ${Boost_INCLUDE_DIRS}
