@@ -51,6 +51,9 @@
 #include "shylu_util.h"
 #include "shylu.h"
 
+#include <gmres.h>
+#include <gmres_tools.h>
+
 static int shylu_dist_solve(
     shylu_symbolic *ssym,
     shylu_data *data,
@@ -303,7 +306,24 @@ static int shylu_local_solve(
     Epetra_LinearProblem Problem(data->Sbar.get(), &Xs, &Bs);
     if (config->schurSolver == "IQR")
     {
-    	data->gmresManager->ApplyInverse(Bs, Xs);
+        Teuchos::Time solveSbar("solve Sbar");
+        solveSbar.start();
+        if (config->iqrNumIter > 0) {
+            ShyLUGMRESManager newGmresManager(data->schur_op->OperatorDomainMap(),
+                                              config->iqrNumIter+1, false);
+            double tol=1e-10;
+            IQR::IdPreconditioner L;
+            IQR::GMRES<Epetra_Operator, Epetra_MultiVector,
+                       IQR::IdPreconditioner, ShyLUGMRESManager, ShyLUGMRESManager,
+                       std::vector<double>, double>
+                    (*(data->schur_op), Xs, Bs, &L, &*(data->gmresManager),
+                     newGmresManager, config->iqrNumIter, tol);
+        } else {
+            data->gmresManager->ApplyInverse(Bs, Xs);
+        }
+        solveSbar.stop();
+        /*std::cout << "RADU SHYLU: solve Sbar: "
+        		  << solveSbar.totalElapsedTime() << std::endl;*/
     } else if (config->schurSolver == "Amesos")
     {
         Amesos_BaseSolver *solver2 = data->dsolver;
