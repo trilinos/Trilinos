@@ -32,7 +32,8 @@ public:
     ~GMRESManager();
 
     // Public methods
-    MultiVector* initialGuess(const MultiVector &b) const;
+    int initialGuess(const  MultiVector &b,
+		     MultiVector& X) const;
     // solve min_{x\inV} || Ax -b||
     int ApplyInverse(const MultiVector &b, MultiVector& X) const;
     // delete P and restart the gmres.
@@ -95,7 +96,8 @@ GMRESManager< Map, MultiVector, LocalMatrix, LocalVector >::~GMRESManager()
 }
 
 template < typename Map, typename MultiVector, typename LocalMatrix, typename LocalVector >
-MultiVector* GMRESManager< Map, MultiVector, LocalMatrix, LocalVector >::initialGuess( const MultiVector &b) const
+int GMRESManager< Map, MultiVector, LocalMatrix, LocalVector >::initialGuess(const  MultiVector &b,
+										      MultiVector& X) const
 {
     int mm(m);
 
@@ -105,34 +107,37 @@ MultiVector* GMRESManager< Map, MultiVector, LocalMatrix, LocalVector >::initial
         mm = restart;
     }
 
-    MultiVector* x(new MultiVector(map_, 1, true));
-
     if (P != 0 && isFlex == 0) {// if there is a (right) preconditioner,  use it
-        *x = solve(b);
+        this->ApplyInverse(b, X);
         // x= P->initialGuess(x);
-        return x;
+        return 0;
     }
 
     if (mm <= -1 ) {
-        return b;
+        X = b;
+        return 0;
     }
 
-    std::cout << "GMRES_TOOLS.initialGuess: guess with m = " << mm
-              << std::endl;
+    //std::cout << "GMRES_TOOLS.initialGuess: guess with m = " << mm
+    //          << std::endl;
     int i;
 
-    MultiVector bp(b.size(), 0.);
-    for (i = 0; i <= mm + 1; i++) {
-        bp(i) = dot(b, v[i]);
-    }
-
+    LocalVector bp(mm + 1, 0.0);
+    // bp = Q_{n+1}^T b and x = x - bp Q_{n+1} 
     for (i = 0; i < mm + 1; i++) {
-        ApplyPlaneRotation(bp(i), bp(i + 1), cs(i), sn(i));
+        b.Dot(*(*v)(i), &bp[i]);
     }
 
-    Update(x, mm, H, bp, w);
+    // applying Q: bp = \Omega_n bp. At this time, bp = \Omega_n Q_{n+1}^T b
+    for (i = 0; i < mm; i++) {
+        ApplyPlaneRotation(bp[i], bp[i + 1], cs[i], sn[i]);
+    }
 
-    return x;
+    // solving R_{n} y_{n} = bp and setting x = x + Q_{n} y_{n} 
+    Update(X, mm-1, H, bp, *w);
+    //Update(y, i, G.H, , *(G.v));
+
+    return 0;
 }
 
 
@@ -155,12 +160,12 @@ int GMRESManager< Map, MultiVector,
                   LocalMatrix, LocalVector >::ApplyInverse(const  MultiVector &b,
                                                            MultiVector& X) const
 {
-    int mm(m - 1);
+    int mm(m);
 
     if (m > restart) {
         std::cout << "GMRES_TOOLS.solve: mm>m, not expected using  m"
                   << std::endl;
-        mm = restart - 1;
+        mm = restart;
     }
 
     if (mm <= -1 ) {
@@ -172,51 +177,54 @@ int GMRESManager< Map, MultiVector,
     //std::cout << "GMRES_TOOLS.solve: prec with m = " << mm << std::endl;
 
     int i;
-    LocalVector bp(mm + 2, 0.0);
+    LocalVector bp(mm + 1, 0.0);
     MultiVector x(map_, 1, false);
     x = b;
 
-    for (i = 0; i <= mm + 1; i++) { // using " V is an orthogonal basis
-        auto* vi = (*v)(i);
+    // bp = Q_{n+1}^T b and x = x - bp Q_{n+1} 
+    for (i = 0; i < mm + 1; i++) { // using " V is an orthogonal basis
+        MultiVector* vi = (*v)(i);
         b.Dot(*vi, &bp[i]);
         //std::cout << "bp: " << bp[i] << std::endl;
         //    x-= bp(i) * w[i]; // computing the orthogonal component of b
         x.Update(-bp[i], *vi, 1.0);
     }
 
-    // applying Q
-    for (i = 0; i < mm + 1; i++) {
+    // applying Q: bp = \Omega_n bp. At this time, bp = \Omega_n Q_{n+1}^T b
+    for (i = 0; i < mm; i++) {
         ApplyPlaneRotation(bp[i], bp[i + 1], cs[i], sn[i]);
     }
 
     typedef typename  LocalVector::value_type Scalar;
     Scalar scaling(0);
-    for (i = 0; i <= mm + 1; i++)
+    for (i = 0; i < mm; i++)
     {
         scaling += H[i][i];
     }
-    scaling = static_cast<Scalar>(mm+1) / scaling;
+    scaling = static_cast<Scalar>(mm) / scaling;
 
+    LocalVector bq(mm + 1, 0.0);
+    bq[mm] = bp[mm];
 
-    LocalVector bq(mm + 2, 0.0);
-    bq[mm + 1] = bp[mm + 1];
-
-    for (i = mm; i >= 0; i--) {
+    // bq = \omega_n^T (0...0 bp(n+1))^T
+    for (i = mm-1; i >= 0; i--) {
         bq[i] = - sn[i] * bq[i + 1];
         bq[i + 1] = cs[i] * bq[i + 1];
     }
 
-    for (i = 0; i <= mm + 1; i++) {
-        auto* vi = (*v)(i);
+    // x = x + Q_n bq
+    for (i = 0; i <= mm; i++) {
+        MultiVector* vi = (*v)(i);
         //    x+= bq(i)*w[i];
         x.Update(bq[i], *vi, 1.0);
     }
 
 
-    //x.Scale(scaling);
+    x.Scale(scaling);
 
 
-    Update(x, mm, H, bp, *w); // summing to x the solution of Rx=bp
+    // solving R_{n} y_{n} = bp and setting x = x + Q_{n} y_{n} 
+    Update(x, mm-1, H, bp, *w); // summing to x the solution of Rx=bp
 
     if(P != 0 && isFlex == 0) {
         P->ApplyInverse(x, X);

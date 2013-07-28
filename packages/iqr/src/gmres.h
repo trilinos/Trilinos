@@ -37,6 +37,7 @@ struct IdPreconditioner
     }
 };
 
+//! Generate i-th Given rotation Gi. Note Qn= G0 * ... * Gn
 template <typename Scalar>
 void GeneratePlaneRotation(const Scalar &dx, const Scalar &dy, Scalar &cs,
                            Scalar &sn)
@@ -55,6 +56,8 @@ void GeneratePlaneRotation(const Scalar &dx, const Scalar &dy, Scalar &cs,
     }
 }
 
+//! Apply i-th Given rotation Gi. Note Qn= G0 * ... * Gn
+//! Gi = \left( \begin{array}[ccc] I 0 0 
 template <typename Scalar>
 void ApplyPlaneRotation(Scalar &dx, Scalar &dy, const Scalar &cs,
                         const Scalar &sn)
@@ -65,6 +68,7 @@ void ApplyPlaneRotation(Scalar &dx, Scalar &dy, const Scalar &cs,
 }
 
 
+//! solving R_{k+1} y_{k+1} = bp and setting x = x + Q_{k+1} y_{k+1}
 template < typename LocalMatrix, typename LocalVector, typename MultiVector >
 void Update(MultiVector &x, const int k, const LocalMatrix &h,
             const LocalVector &s, const MultiVector v)
@@ -92,27 +96,27 @@ int GMRES(const Operator &A, MultiVector &x, const MultiVector &b,
           Scalar &tol)
 {
     // Storing a reference to the parallel map
-    auto& map = b.Map();
-    int myPID = map.Comm().MyPID();
+  //auto& b.Map() = b.Map();
+    int myPID = b.Map().Comm().MyPID();
 
     Scalar resid;
     int i(0), j(1), k(0);
+    // The following initial guess was wrong! Indeed it was altering the whole QR factorization
     // initial guess from previous solves : compute x
-
-    M->ApplyInverse(b, x);
+    //M->ApplyInverse(b, x);
 
     LocalVector s(G.restart + 1);
-    MultiVector w(map, 1, true);
+    MultiVector w(b.Map(), 1, true);
 
     Scalar normb;
     L->ApplyInverse(b, w);
     w.Norm2(&normb);
 
-    MultiVector t(map, 1, true);
+    MultiVector t(b.Map(), 1, true);
     A.Apply(x, t);
     w.Update(1.0, b, -1.0, t, 0.0);
 
-    MultiVector r(map, 1, true);
+    MultiVector r(b.Map(), 1, true);
     L->ApplyInverse(w, r);
     Scalar beta;
     r.Norm2(&beta);
@@ -128,7 +132,7 @@ int GMRES(const Operator &A, MultiVector &x, const MultiVector &b,
     }
 
     while (j <= max_iter) {
-        auto* v0 = (*G.v)(0);
+        MultiVector* v0 = (*G.v)(0);
         v0->Update(1.0 / beta, r, 0.0);
         s.assign(G.restart + 1, 0.0);
         s[0] = beta;
@@ -139,26 +143,29 @@ int GMRES(const Operator &A, MultiVector &x, const MultiVector &b,
             L->ApplyInverse(r, w);
 
             for (k = 0; k <= i; k++) {
-                auto* vk = (*G.v)(k);
+                MultiVector* vk = (*G.v)(k);
                 w.Dot(*vk, &(G.H[k][i]));
                 w.Update(-G.H[k][i], *vk, 1.0);
             }
             w.Norm2(&(G.H[i + 1][i]));
-            auto* vi1 = (*G.v)(i + 1);
+            MultiVector* vi1 = (*G.v)(i + 1);
+	    // Set (*G.v)(i + 1) to w/||w|| 
             vi1->Scale(1.0 / G.H[i + 1][i], w);
 
             for (k = 0; k < i; k++) {
                 ApplyPlaneRotation(G.H[k][i], G.H[k + 1][i], G.cs[k], G.sn[k]);
             }
 
+	    // Generate i-th Given rotation Gi. Note Qn= G0 * ... * Gn
             GeneratePlaneRotation(G.H[i][i], G.H[i + 1][i], G.cs[i], G.sn[i]);
+	    // Apply Gi
             ApplyPlaneRotation(G.H[i][i], G.H[i + 1][i], G.cs[i], G.sn[i]);
             ApplyPlaneRotation(s[i], s[i + 1], G.cs[i], G.sn[i]);
 
             //if (! myPID) std::cout << "iter: " << j << ", residual: " << resid << std::endl;
 
             if ((resid = abs(s[i + 1]) / normb) < tol) {
-                MultiVector y(map, 1, true);
+                MultiVector y(b.Map(), 1, true);
                 Update(y, i, G.H, s, *(G.v));
                 M->ApplyInverse(y, t);
                 x.Update(1.0, t, 1.0);
@@ -169,7 +176,7 @@ int GMRES(const Operator &A, MultiVector &x, const MultiVector &b,
             }
         }
 
-        MultiVector y(map, 1, true);
+        MultiVector y(b.Map(), 1, true);
         Update(y, i - 1, G.H, s, *(G.v));
         M->ApplyInverse(y, t);
         x.Update(1.0, t, 1.0);
