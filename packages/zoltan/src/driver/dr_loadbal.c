@@ -697,6 +697,7 @@ for (i = 0; i < num_exported; i++)
  /* fprintf(fp, "%d : %d\n", export_gids[(i+1)*Num_GID-1], export_to_part[i]); */
 fclose(fp);
 MPI_Barrier(MPI_COMM_WORLD);
+MPI_Finalize();
 exit(-1);
 }
 #endif
