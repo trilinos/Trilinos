@@ -193,6 +193,10 @@ void getArgVals(
 }
 int main(int argc, char *argv[]){
     Teuchos::GlobalMPISession session(&argc, &argv);
+#ifdef HAVE_ZOLTAN2_OMP
+    omp_set_num_threads(1);
+#endif
+
     if (argc != 3){
         cout << "Usage: " << argv[0] << " PART=partGeoParams.txt PROC=procGeoParams.txt" << endl;
         exit(1);
