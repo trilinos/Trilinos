@@ -455,6 +455,20 @@ private:
   // axis.  This includes the values of the ghost sizes.
   Teuchos::Array< Slice > _globalBounds;
 
+  // A double array of Slices that stores the starting and stopping
+  // indexes for each axis processor along each axis.  This data
+  // structure allows any processor to know the map bounds on any
+  // other processor.  These bounds do NOT include the ghost points.
+  // The outer array will have a size equal to the number of
+  // dimensions.  Each inner array will have a size equal to the
+  // number of axis processors along that axis.
+  Teuchos::Array< Teuchos::Array< Slice > > _globalRankBounds;
+
+  // The global stride between adjacent elements.  This quantity is
+  // "virtual" as it does not describe actual memory layot, but it is
+  // useful for index conversion algorithms.
+  Teuchos::Array< GlobalOrd > _globalStrides;
+
   // The minumum 1D index of the global data structure, including
   // ghost points.  This will only be non-zero on a sub-map.
   GlobalOrd _globalMin;
@@ -467,26 +481,20 @@ private:
   // the values of the halos.
   Teuchos::Array< LocalOrd > _localDims;
 
-  // The maximum 1D index of the local data structure, including halo
-  // points.
-  LocalOrd _localMax;
+  // The local loop bounds along each axis, stored as an array of
+  // Slices.  These bounds DO include the halos.
+  Teuchos::Array< Slice > _localBounds;
+
+  // The local stride between adjecent elements in memory.
+  Teuchos::Array< LocalOrd > _localStrides;
 
   // The minimum 1D index of the local data structure, including halo
   // points.
   LocalOrd _localMin;
 
-  // A double array of Slices that stores the starting and stopping
-  // indexes for each axis processor along each axis.  This data
-  // structure allows any processor to know the map bounds on any
-  // other processor.  These bounds do NOT include the ghost points.
-  // The outer array will have a size equal to the number of
-  // dimensions.  Each inner array will have a size equal to the
-  // number of axis processors along that axis.
-  Teuchos::Array< Teuchos::Array< Slice > > _globalRankBounds;
-
-  // The local loop bounds along each axis, stored as an array of
-  // Slices.  These bounds DO include the halos.
-  Teuchos::Array< Slice > _localBounds;
+  // The maximum 1D index of the local data structure, including halo
+  // points.
+  LocalOrd _localMax;
 
   // The halo sizes that were specified at construction, one value
   // along each axis.
@@ -506,14 +514,6 @@ private:
   // sub-maps creates the possibility of different upper and lower
   // ghost values.
   Teuchos::Array< ext_buffer > _ghosts;
-
-  // The global stride between adjacent elements.  This quantity is
-  // "virtual" as it does not describe actual memory layot, but it is
-  // useful for index conversion algorithms.
-  Teuchos::Array< GlobalOrd > _globalStrides;
-
-  // The local stride between adjecent elements in memory.
-  Teuchos::Array< LocalOrd > _localStrides;
 
   // The storage order
   EStorageOrder _storageOrder;
@@ -537,14 +537,19 @@ MDMap(const MDCommRCP mdComm,
   _mdComm(mdComm),
   _globalDims(mdComm->getNumDims()),
   _globalBounds(),
-  _globalMin(0),
-  _localDims(mdComm->getNumDims(), 0),
   _globalRankBounds(mdComm->getNumDims()),
+  _globalStrides(),
+  _globalMin(0),
+  _globalMax(),
+  _localDims(mdComm->getNumDims(), 0),
   _localBounds(),
-  _ghostSizes(mdComm->getNumDims(), 0),
-  _ghosts(),
+  _localStrides(),
+  _localMin(0),
+  _localMax(),
   _haloSizes(mdComm->getNumDims(), 0),
   _halos(),
+  _ghostSizes(mdComm->getNumDims(), 0),
+  _ghosts(),
   _storageOrder(storageOrder),
   _node(node)
 {
@@ -604,21 +609,22 @@ MDMap< LocalOrd, GlobalOrd, Node >::
 MDMap(const Teuchos::RCP< MDMap< LocalOrd, GlobalOrd, Node > > parent,
       const Teuchos::ArrayView< Slice > & slices,
       const Teuchos::ArrayView< int > & ghosts) :
+  _mdComm(),
   _globalDims(parent->getNumDims()),
   _globalBounds(),
+  _globalRankBounds(parent->_globalRankBounds),
+  _globalStrides(parent->_globalStrides),
   _globalMin(0),
   _globalMax(0),
   _localDims(parent->getNumDims(), 0),
+  _localBounds(),
+  _localStrides(parent->_localStrides),
   _localMin(0),
   _localMax(0),
-  _globalRankBounds(parent->_globalRankBounds),
-  _localBounds(),
-  _ghostSizes(parent->getNumDims(), 0),
-  _ghosts(),
   _haloSizes(parent->_haloSizes),
   _halos(),
-  _globalStrides(parent->_globalStrides),
-  _localStrides(parent->_localStrides),
+  _ghostSizes(parent->getNumDims(), 0),
+  _ghosts(),
   _storageOrder(parent->getStorageOrder()),
   _node(parent->_node)
 {
@@ -1100,10 +1106,10 @@ getGlobalAxisIndex(GlobalOrd globalIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((globalIndex < 0) || (globalIndex >= _globalMax)),
+    ((globalIndex < _globalMin) || (globalIndex >= _globalMax)),
     RangeError,
-    "invalid global index = " << globalIndex << " (global size = " <<
-    _globalMax << ")");
+    "invalid global index = " << globalIndex << " (should be between " <<
+    _globalMin << " and " << _globalMax << ")");
 #endif
   int numDims = getNumDims();
   Teuchos::Array< GlobalOrd > result(numDims);
@@ -1138,10 +1144,10 @@ getLocalAxisIndex(LocalOrd localIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((localIndex < 0) || (localIndex >= _localMax)),
+    ((localIndex < _localMin) || (localIndex >= _localMax)),
     RangeError,
-    "invalid local index = " << localIndex << " (local size = " <<
-    _localMax << ")");
+    "invalid local index = " << localIndex << " (should be between " <<
+    _localMin << " and " << _localMax << ")");
 #endif
   int numDims = getNumDims();
   Teuchos::Array< LocalOrd > result(numDims);
@@ -1230,10 +1236,10 @@ getLocalIndex(GlobalOrd globalIndex) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ((globalIndex < 0) || (globalIndex >= _globalMax)),
+    ((globalIndex < _globalMin) || (globalIndex >= _globalMax)),
     RangeError,
-    "invalid global index = " << globalIndex << " (global size = " <<
-    _globalMax << ")");
+    "invalid global index = " << globalIndex << " (should be between " <<
+    _globalMin << " and " << _globalMax << ")");
 #endif
   Teuchos::Array< GlobalOrd > globalAxisIndex =
     getGlobalAxisIndex(globalIndex);
