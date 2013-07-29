@@ -112,7 +112,7 @@ public:
   static void finalize();
 
   /** \brief  Print configuration information */
-  static void print_configuration( std::ostream & );
+  static void print_configuration( std::ostream & , bool detail = false );
 
   //@}
   /*------------------------------------------------------------------------*/
@@ -124,7 +124,7 @@ public:
   inline int team_rank() const ;
   inline int team_size() const ;
 
-  std::pair<size_t,size_t> work_range( size_t ) const ;
+  inline std::pair<size_t,size_t> work_range( size_t ) const ;
 
   /**@} */
   /*------------------------------------------------------------------------*/

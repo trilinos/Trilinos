@@ -329,6 +329,67 @@ struct ViewInitialize
     { ViewInit<ViewType> init( view ); }
 };
 
+template< class OutputView , class InputView  , unsigned Rank = OutputView::Rank >
+struct ViewRemap
+{
+  typedef typename OutputView::device_type device_type ;
+  typedef typename device_type::size_type  size_type ;
+
+  const OutputView output ;
+  const InputView  input ;
+  const size_type n0 ;
+  const size_type n1 ;
+  const size_type n2 ;
+  const size_type n3 ;
+  const size_type n4 ;
+  const size_type n5 ;
+  const size_type n6 ;
+  const size_type n7 ;
+
+  ViewRemap( const OutputView & arg_out , const InputView & arg_in )
+    : output( arg_out ), input( arg_in )
+    , n0( std::min( arg_out.dimension_0() , arg_in.dimension_0() ) )
+    , n1( std::min( arg_out.dimension_1() , arg_in.dimension_1() ) )
+    , n2( std::min( arg_out.dimension_2() , arg_in.dimension_2() ) )
+    , n3( std::min( arg_out.dimension_3() , arg_in.dimension_3() ) )
+    , n4( std::min( arg_out.dimension_4() , arg_in.dimension_4() ) )
+    , n5( std::min( arg_out.dimension_5() , arg_in.dimension_5() ) )
+    , n6( std::min( arg_out.dimension_6() , arg_in.dimension_6() ) )
+    , n7( std::min( arg_out.dimension_7() , arg_in.dimension_7() ) )
+    {
+      parallel_for( n0 , *this );
+    }
+
+  inline
+  void operator()( const size_type i0 ) const
+  {
+    for ( size_type i1 = 0 ; i1 < n1 ; ++i1 ) {
+    for ( size_type i2 = 0 ; i2 < n2 ; ++i2 ) {
+    for ( size_type i3 = 0 ; i3 < n3 ; ++i3 ) {
+    for ( size_type i4 = 0 ; i4 < n4 ; ++i4 ) {
+    for ( size_type i5 = 0 ; i5 < n5 ; ++i5 ) {
+    for ( size_type i6 = 0 ; i6 < n6 ; ++i6 ) {
+    for ( size_type i7 = 0 ; i7 < n7 ; ++i7 ) {
+      output(i0,i1,i2,i3,i4,i5,i6,i7) = input(i0,i1,i2,i3,i4,i5,i6,i7);
+    }}}}}}}
+  }
+};
+
+template< class OutputView , class InputView  >
+struct ViewRemap< OutputView ,  InputView , 0 >
+{
+  typedef typename OutputView::value_type   value_type ;
+  typedef typename OutputView::device_space dst_space ;
+  typedef typename InputView ::device_space src_space ;
+
+  ViewRemap( const OutputView & arg_out , const InputView & arg_in )
+  {
+    DeepCopy< dst_space , src_space >( arg_out.ptr_on_device() ,
+                                       arg_in.ptr_on_device() ,
+                                       sizeof(value_type) );
+  }
+};
+
 } // namespace Impl
 } // namespace Kokkos
 
@@ -357,6 +418,40 @@ void deep_copy( const View<DT,DL,DD,DM,DS> & dst ,
                   ( unsigned(ViewTraits<DT,DL,DD,DM>::rank) == unsigned(ViewTraits<ST,SL,SD,SM>::rank) )
                 )>::type * = 0 )
 { Impl::ViewAssignment<DS,SS>::deep_copy( dst , src ); }
+
+
+/** \brief Deep copy equal dimension arrays in the host space which
+ *         have different layouts or specializations.
+ */
+template< class DT , class DL , class DD , class DM , class DS ,
+          class ST , class SL ,            class SM , class SS >
+inline
+void deep_copy( const View< DT, DL, DD, DM, DS> & dst ,
+                const View< ST, SL, DD, SM, SS> & src ,
+                const typename Impl::enable_if<(
+                  // Destination is not constant:
+                  Impl::is_same< typename ViewTraits<DT,DL,DD,DM>::value_type ,
+                                 typename ViewTraits<DT,DL,DD,DM>::non_const_value_type >::value
+                  &&
+                  // Same rank
+                  ( unsigned( ViewTraits<DT,DL,DD,DM>::rank ) ==
+                    unsigned( ViewTraits<ST,SL,DD,SM>::rank ) )
+                  &&
+                  // Different layout or different specialization:
+                  ( ( ! Impl::is_same< typename DL::array_layout ,
+                                       typename SL::array_layout >::value )
+                    ||
+                    ( ! Impl::is_same< DS , SS >::value )
+                  )
+                )>::type * = 0 )
+{
+  typedef View< DT, DL, DD, DM, DS> dst_type ;
+  typedef View< ST, SL, DD, SM, SS> src_type ;
+
+  assert_shapes_equal_dimension( dst.shape() , src.shape() );
+
+  Impl::ViewRemap< dst_type , src_type >( dst , src );
+}
 
 //----------------------------------------------------------------------------
 

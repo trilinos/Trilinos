@@ -48,7 +48,6 @@
 #include <sstream>
 #include <Kokkos_Parallel.hpp>
 #include <impl/Kokkos_Error.hpp>
-#include <impl/Kokkos_ReduceOperator.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

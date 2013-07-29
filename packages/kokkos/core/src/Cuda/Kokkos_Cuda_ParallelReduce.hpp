@@ -177,7 +177,7 @@ struct CudaReduceShared
 public:
 
   typedef CudaReduceSharedSizes< typename ValueOper::value_type > reduce_sizes ;
-  typedef ReduceOperator< ValueOper >  reduce_operator ;
+  typedef ReduceAdapter< ValueOper >  reduce_operator ;
 
   //--------------------------------------------------------------------------
 
@@ -201,9 +201,8 @@ public:
 
 private:
 
-  const size_type   m_block_begin ;
-  const size_type   m_block_count ;
-
+  size_type   m_block_begin ;
+  size_type   m_block_count ;
   size_type   m_group_init_count ;
   size_type   m_group_init_offset ;
   size_type   m_group_init_use ;
@@ -215,14 +214,11 @@ private:
 
 public:
 
-  CudaReduceShared( const ValueOper & op ,
-                    const size_type block_begin ,
-                    const size_type block_count )
-  : m_reduce( op )
-  , m_data( m_reduce.value_size() )
-  , m_block_begin( block_begin )
-  , m_block_count( block_count )
+  void assign_block_range( const size_type block_begin ,
+                           const size_type block_count )
   {
+    m_block_begin = block_begin ;
+    m_block_count = block_count ;
     m_group_init_count  = 1 ;
     m_group_init_offset = 1 ;
 
@@ -275,6 +271,11 @@ std::cout
 #endif
 
   }
+
+  CudaReduceShared( const ValueOper & op )
+  : m_reduce( op )
+  , m_data( m_reduce.value_size() )
+  {}
 
 private:
 
@@ -568,29 +569,11 @@ public:
 
   //----------------------------------------------------------------------
 
-  const FunctorType    m_work_functor ;
-  const ReduceType     m_reduce_shared ;
+        ReduceType     m_reduce_shared ;
   const size_type      m_work_count ;
   pointer_type         m_host_ptr ;
 
   //----------------------------------------------------------------------
-
-  static
-  size_type block_count( const FunctorType & f ,
-                         const size_type work_count )
-  {
-    const size_type value_size = ReduceOperator< FunctorType >::value_size( f );
-    const size_type nt =
-      Impl::CudaTraits::WarpSize * ReduceType::warp_count( value_size );
-
-    if ( 0 == nt ) return 0 ;
-
-    // One level:
-    return std::min( nt , size_type( ( work_count + nt - 1 ) / nt ) );
-
-    // Two level:
-    // return std::min( nt * nt , size_type( ( work_count + nt - 1 ) / nt ) );
-  }
 
 public:
 
@@ -599,28 +582,39 @@ public:
                   const size_type      work_count ,
                   const size_type      global_block_begin ,
                   const size_type      global_block_count )
-    : m_work_functor(  functor )
-    , m_reduce_shared( functor ,
-                       global_block_begin ,
-                       global_block_count )
+    : m_reduce_shared( functor )
     , m_work_count(    work_count )
-  {}
+  {
+    m_reduce_shared.assign_block_range( global_block_begin , global_block_count );
+  }
 
   //--------------------------------------------------------------------------
 
   ParallelReduce( const size_type      work_count ,
                   const FunctorType  & functor ,
                   pointer_type         result )
-    : m_work_functor(  functor )
-    , m_reduce_shared( functor , 0 , block_count(functor,work_count) )
+    : m_reduce_shared( functor )
     , m_work_count(    work_count )
     , m_host_ptr(    result )
   {
+    const size_type value_size = m_reduce_shared.m_reduce.value_size();
+    const size_type nt = Impl::CudaTraits::WarpSize * ReduceType::warp_count( value_size );
+
+    if ( 0 == nt ) return ;
+
+    // One level:
+    size_type nb = std::min( nt , size_type( ( work_count + nt - 1 ) / nt ) );
+
+    // Two level:
+    // size_type nb = std::min( nt * nt , size_type( ( work_count + nt - 1 ) / nt ) );
+
+    m_reduce_shared.assign_block_range( 0 , nb );
+
     if ( m_work_count ) {
       const size_type nw = m_reduce_shared.warp_count();
 
       const dim3 block( Impl::CudaTraits::WarpSize * nw , 1, 1 );
-      const dim3 grid( block_count(functor,work_count) , 1 , 1 );
+      const dim3 grid( nb , 1 , 1 );
       const size_type shmem_size = m_reduce_shared.shmem_size();
 
       CudaParallelLaunch< ParallelReduce >( *this , grid , block , shmem_size );
@@ -659,7 +653,7 @@ public:
     // Reduce to per-thread contributions
     for ( Cuda::size_type iwork = threadIdx.x + blockDim.x * blockIdx.x ;
           iwork < m_work_count ; iwork += work_stride ) {
-      m_work_functor( iwork , value );
+      m_reduce_shared.m_reduce.m_functor( iwork , value );
     }
 
     m_reduce_shared( threadIdx.x , blockIdx.x );
@@ -795,7 +789,7 @@ private:
 
   MemberVector    m_member_functors ;
 
-  Impl::ReduceOperator< ValueOper > m_reduce ;
+  Impl::ReduceAdapter< ValueOper > m_reduce ;
 
   inline static 
   size_type block_count( const size_type warp_count ,

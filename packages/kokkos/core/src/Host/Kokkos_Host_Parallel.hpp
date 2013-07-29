@@ -251,12 +251,11 @@ class ParallelReduce< FunctorType , WorkSpec , Host > : public HostThreadWorker
 {
 public:
 
-  typedef ReduceOperator< FunctorType >     reduce_oper ;
-  typedef          Host::size_type          size_type ;
+  typedef          Host::size_type      size_type ;
+  typedef ReduceAdapter< FunctorType >  reduce_oper ;
 
-  typedef typename ReduceAdapter< FunctorType >::pointer_type pointer_type ;
+  typedef typename reduce_oper::pointer_type pointer_type ;
 
-  const FunctorType   m_work_functor ;
   const reduce_oper   m_reduce ;
   const size_type     m_work_count ;
 
@@ -282,7 +281,7 @@ public:
       m_reduce.init( this_thread.reduce_data() );
 
       for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
-        m_work_functor( iwork , m_reduce.reference( this_thread.reduce_data() ) );
+        m_reduce.m_functor( iwork , m_reduce.reference( this_thread.reduce_data() ) );
       }
     }
 #if KOKKOS_ENABLE_SIMD
@@ -297,7 +296,7 @@ public:
 #pragma simd vectorlength(work_align)
 #pragma ivdep
       for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
-        m_work_functor( iwork , m_reduce.reference( this_thread.reduce_data() , iwork & work_mask ) );
+        m_reduce.m_functor( iwork , m_reduce.reference( this_thread.reduce_data() , iwork & work_mask ) );
       }
 
       m_reduce.template join< HostSpace::WORK_ALIGNMENT >( this_thread.reduce_data() );
@@ -311,8 +310,7 @@ public:
   ParallelReduce( const size_type      work_count ,
                   const FunctorType  & functor ,
                   pointer_type         result )
-    : m_work_functor( functor )
-    , m_reduce( functor )
+    : m_reduce( functor )
     , m_work_count( work_count )
     {
       Host::resize_reduce_scratch( m_reduce.value_size() );
@@ -387,7 +385,7 @@ class MultiFunctorParallelReduce< ReduceOper , Host > : public Impl::HostThreadW
 {
 public:
 
-  typedef Impl::ReduceOperator< ReduceOper > reduce_oper ;
+  typedef Impl::ReduceAdapter< ReduceOper > reduce_oper ;
   typedef          Host::size_type         size_type ;
   typedef typename ReduceOper::value_type  value_type ;
   typedef Impl::HostMultiFunctorParallelReduceMember<void,reduce_oper> worker_type ;

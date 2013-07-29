@@ -85,7 +85,7 @@ inline
 void parallel_for( const size_t        work_count ,
                    const FunctorType & functor )
 {
-  Impl::ParallelFor< FunctorType , size_t >( functor , work_count );
+  Impl::ParallelFor< FunctorType , size_t > tmp( functor , work_count );
 }
 
 
@@ -94,7 +94,7 @@ inline
 void vector_parallel_for( const size_t        work_count ,
                           const FunctorType & functor )
 {
-  Impl::ParallelFor< FunctorType , Impl::VectorParallel >( functor , work_count );
+  Impl::ParallelFor< FunctorType , Impl::VectorParallel > tmp( functor , work_count );
 }
 
 template< class DeviceType >
@@ -279,7 +279,7 @@ struct ReduceAdapter
   typedef ScalarType * pointer_type  ;
 
   KOKKOS_INLINE_FUNCTION static
-  reference_type reference( void * p ) { return (ScalarType*) p ; }
+  reference_type reference( void * p ) { return *((ScalarType*) p); }
 
   KOKKOS_INLINE_FUNCTION static
   pointer_type pointer( reference_type p ) { return & p ; }
@@ -287,6 +287,12 @@ struct ReduceAdapter
   const FunctorType  m_functor ;
 
   ReduceAdapter( const FunctorType & f ) : m_functor(f) {}
+
+  KOKKOS_INLINE_FUNCTION static
+  void final( const FunctorType & , pointer_type ) {}
+
+  KOKKOS_INLINE_FUNCTION static
+  unsigned value_count( const FunctorType & ) { return 1 ; }
 
   KOKKOS_INLINE_FUNCTION
   unsigned value_count() const { return 1 ; }
@@ -321,6 +327,12 @@ struct ReduceAdapter< FunctorType , ScalarType , typename FunctorType::has_final
   const FunctorType  m_functor ;
 
   ReduceAdapter( const FunctorType & f ) : m_functor(f) {}
+
+  KOKKOS_INLINE_FUNCTION static
+  void final( const FunctorType & f , pointer_type p ) { f.final( *p ); }
+
+  KOKKOS_INLINE_FUNCTION static
+  unsigned value_count( const FunctorType & ) { return 1 ; }
 
   KOKKOS_INLINE_FUNCTION
   unsigned value_count() const { return 1 ; }
@@ -358,6 +370,12 @@ struct ReduceAdapter< FunctorType , ScalarType[] , NoFinal >
 
   ReduceAdapter( const FunctorType & f ) : m_functor(f) {}
 
+  KOKKOS_INLINE_FUNCTION static
+  unsigned value_count( const FunctorType & f ) { return f.value_count ; }
+
+  KOKKOS_INLINE_FUNCTION static
+  void final( const FunctorType & , pointer_type ) {}
+
   KOKKOS_INLINE_FUNCTION
   unsigned value_count() const { return m_functor.value_count ; }
 
@@ -391,6 +409,12 @@ struct ReduceAdapter< FunctorType , ScalarType[] , typename FunctorType::has_fin
   const FunctorType  m_functor ;
 
   ReduceAdapter( const FunctorType & f ) : m_functor(f) {}
+
+  KOKKOS_INLINE_FUNCTION static
+  void final( const FunctorType & f , pointer_type p ) { f.final( p ); }
+
+  KOKKOS_INLINE_FUNCTION static
+  unsigned value_count( const FunctorType & f ) { return f.value_count ; }
 
   KOKKOS_INLINE_FUNCTION
   unsigned value_count() const { return m_functor.value_count ; }

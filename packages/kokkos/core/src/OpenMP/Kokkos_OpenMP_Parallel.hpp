@@ -109,7 +109,7 @@ public:
 
   typedef typename ReduceAdapter< FunctorType >::pointer_type pointer_type ;
 
-  typedef ReduceOperator< FunctorType > ReduceOp ;
+  typedef ReduceAdapter< FunctorType > ReduceOp ;
 
   const ReduceOp reduce ;
 

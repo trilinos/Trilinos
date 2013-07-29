@@ -41,6 +41,12 @@
 //@HEADER
 */
 
+#define DEBUG_PRINT 0
+
+#if DEBUG_PRINT
+#include <iostream>
+#endif
+
 #include <KokkosCore_config.h>
 #include <Kokkos_hwloc.hpp>
 
@@ -76,7 +82,7 @@ int host_thread_binding( const std::pair<unsigned,unsigned> gang_topo ,
 
   if ( i < thread_count ) {
 
-#if 0
+#if DEBUG_PRINT
     if ( current != thread_coord[i] ) {
       std::cout << "  host_thread_binding("
                 << gang_topo.first << "x" << gang_topo.second
@@ -103,7 +109,8 @@ void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
                           const std::pair<unsigned,unsigned> core_topo ,
                                 std::pair<unsigned,unsigned> thread_coord[] )
 {
-  const unsigned core_base = core_topo.second - core_use.second ;
+  const std::pair<unsigned,unsigned> base( core_topo.first  - core_use.first ,
+                                           core_topo.second - core_use.second );
 
   for ( unsigned thread_rank = 0 , gang_rank = 0 ; gang_rank < gang_topo.first ; ++gang_rank ) {
   for ( unsigned worker_rank = 0 ; worker_rank < gang_topo.second ; ++worker_rank , ++thread_rank ) {
@@ -119,12 +126,12 @@ void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
       const unsigned part = k * bin ;
 
       if ( gang_rank < part ) {
-        thread_coord[ thread_rank ].first = gang_rank / bin ;
+        thread_coord[ thread_rank ].first = base.first + gang_rank / bin ;
         gang_in_numa_rank  = gang_rank % bin ;
         gang_in_numa_count = bin ;
       }
       else {
-        thread_coord[ thread_rank ].first = k + ( gang_rank - part ) / bin1 ;
+        thread_coord[ thread_rank ].first = base.first + k + ( gang_rank - part ) / bin1 ;
         gang_in_numa_rank  = ( gang_rank - part ) % bin1 ;
         gang_in_numa_count = bin1 ;
       }
@@ -140,16 +147,16 @@ void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
       const unsigned k    = core_use.second * bin1 - worker_in_numa_count ;
       const unsigned part = k * bin ;
 
-      thread_coord[ thread_rank ].second = core_base +
+      thread_coord[ thread_rank ].second = base.second +
         ( ( worker_in_numa_rank < part )
           ? ( worker_in_numa_rank / bin )
           : ( k + ( worker_in_numa_rank - part ) / bin1 ) );
     }
   }}
 
-#if 0
+#if DEBUG_PRINT
 
-  std::cout << "Kokkos::host_thread_mapping" << std::endl ;
+  std::cout << "Kokkos::host_thread_mapping (unrotated)" << std::endl ;
 
   for ( unsigned g = 0 , t = 0 ; g < gang_topo.first ; ++g ) {
     std::cout << "  gang[" << g
@@ -187,9 +194,9 @@ void host_thread_mapping( const std::pair<unsigned,unsigned> gang_topo ,
     thread_coord[i].second = core_base + ( thread_coord[i].second + offset.second - core_base ) % core_use.second ;
   }
 
-#if 0
+#if DEBUG_PRINT
 
-  std::cout << "Kokkos::host_thread_mapping" << std::endl ;
+  std::cout << "Kokkos::host_thread_mapping (rotated)" << std::endl ;
 
   for ( unsigned g = 0 , t = 0 ; g < gang_topo.first ; ++g ) {
     std::cout << "  gang[" << g
@@ -289,11 +296,9 @@ unsigned hwloc::bind_this_thread(
 
     if ( i < coordinate_count ) {
 
-#if 0
+#if DEBUG_PRINT
       if ( current != coordinate[i] ) {
-        std::cout << "  host_thread_binding("
-                  << gang_topo.first << "x" << gang_topo.second
-                  << ") rebinding from ("
+        std::cout << "  host_thread_binding: rebinding from ("
                   << current.first << ","
                   << current.second
                   << ") to ("
@@ -319,7 +324,7 @@ bool hwloc::bind_this_thread( const std::pair<unsigned,unsigned> coord )
 {
   sentinel();
 
-#if 0
+#if DEBUG_PRINT
 
   std::cout << "Kokkos::hwloc::bind_this_thread() at " ;
 

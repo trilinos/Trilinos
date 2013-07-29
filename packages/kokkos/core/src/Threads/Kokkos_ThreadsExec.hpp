@@ -49,6 +49,12 @@
 namespace Kokkos {
 namespace Impl {
 
+//----------------------------------------------------------------------------
+
+template< class > struct ThreadsExecAdapter ;
+
+//----------------------------------------------------------------------------
+
 class ThreadsExec {
 public:
 
@@ -64,11 +70,13 @@ public:
 
 private:
 
+  template< class > friend struct ThreadsExecAdapter ;
+
   friend class Kokkos::Threads ;
 
   void        * m_reduce ;    ///< Reduction memory
   void        * m_shared ;    ///< Shared memory
-  int           m_state ;
+  int volatile  m_state ;
   int           m_fan_size ;
   int           m_team_rank ;
   int           m_team_size ;
@@ -85,57 +93,16 @@ private:
   static void wait_yield( volatile int & , const int );
   static bool spawn();
 
-  static void execute_sleep( Threads , const void * );
-  static void execute_reduce_resize( Threads , const void * );
-  static void execute_shared_resize( Threads , const void * );
+  static void execute_sleep( ThreadsExec & , const void * );
+  static void execute_reduce_resize( ThreadsExec & , const void * );
+  static void execute_shared_resize( ThreadsExec & , const void * );
 
   ThreadsExec( const ThreadsExec & );
   ThreadsExec & operator = ( const ThreadsExec & );
 
-  static void execute_serial( void (*)( Threads , const void * ) );
-
-  /** \brief  Function executed by each thread */
-  template< class FunctorAdapter >
-  static void execute( Threads dev , const void * arg )
-  {
-    const FunctorAdapter & f = * ((const FunctorAdapter *) arg );
-
-    // A reduction must initialize reduction value.
-    f.init( dev.m_exec.m_reduce );
-
-    f.apply( dev , dev.m_exec.m_reduce );
-
-    const int n = dev.m_exec.m_fan_size ;
-
-    for ( int i = 0 ; i < n ; ++i ) {
-      wait( dev.m_exec.m_fan[i]->m_state , ThreadsExec::Active );
-
-      // A reduction must join reduction values.
-      f.join( dev.m_exec.m_reduce , dev.m_exec.m_fan[i]->m_reduce );
-    }
-
-    if ( ! dev.m_exec.m_thread_rank ) {
-      // A reduction may perform serial finalization of reduction value.
-      f.final( dev.m_exec.m_reduce );
-    }
-
-    dev.m_exec.m_state = ThreadsExec::Inactive ;
-  }
-
-  static void start( void (*)( Threads dev , const void * ) , const void * );
+  static void execute_serial( void (*)( ThreadsExec & , const void * ) );
 
 public:
-
-  /** \brief  Wait for previous asynchronous functor to
-   *          complete and release the Threads device.
-   *          Acquire the Threads device and start this functor.
-   */
-  template< class FunctorAdapter >
-  static void start( const FunctorAdapter & f )
-    { start( & ThreadsExec::template execute<FunctorAdapter> , & f ); }
-
-  static void acquire( const void * ); ///<  Acquire the Threads device
-  static void release( const void * ); ///<  Release the Threads device
 
   static void driver(void);
 
@@ -163,9 +130,177 @@ public:
 
   //------------------------------------
 
+  Threads threads() { return Threads(*this); }
+
+  inline
+  std::pair< size_t , size_t >
+  work_range( const size_t work_count ) const
+  {
+    enum { work_align = Kokkos::HostSpace::WORK_ALIGNMENT };
+    enum { work_shift = Kokkos::Impl::power_of_two< work_align >::value };
+    enum { work_mask  = work_align - 1 };
+
+    // unit_of_work_count = ( work_count + work_mask ) >> work_shift
+    // unit_of_work_per_thread = ( unit_of_work_count + thread_count - 1 ) / thread_count
+    // work_per_thread = unit_of_work_per_thread * work_align
+
+    const size_t work_per_thread =
+      ( ( ( ( work_count + work_mask ) >> work_shift ) + m_thread_size - 1 ) / m_thread_size ) << work_shift ;
+
+    const size_t work_begin = std::min( m_thread_rank * work_per_thread , work_count );
+    const size_t work_end   = std::min( work_begin + work_per_thread , work_count );
+
+    return std::pair< size_t , size_t >( work_begin , work_end );
+  }
+
+  static void * execute( void (*)( ThreadsExec & , const void * ) , const void * );
+
+  /** \brief  Wait for previous asynchronous functor to
+   *          complete and release the Threads device.
+   *          Acquire the Threads device and start this functor.
+   */
+  static void start( void (*)( ThreadsExec & , const void * ) , const void * );
+
+  static void fence();
+
   static bool sleep();
   static bool wake();
-  static void fence();
+};
+
+//----------------------------------------------------------------------------
+
+template< class FunctorType >
+struct ThreadsExecAdapter< ParallelFor< FunctorType , size_t , Threads > >
+{
+  const FunctorType m_func ;
+  const int         m_work ;
+
+  static void execute( ThreadsExec & exec , const void * arg )
+  {
+    const ThreadsExecAdapter & self = * ((const ThreadsExecAdapter *) arg );
+
+    const std::pair<size_t,size_t> work = exec.work_range( self.m_work );
+
+    for ( size_t iwork = work.first ; iwork < work.second ; ++iwork ) {
+      self.m_func( iwork );
+    }
+
+    {
+      const int n = exec.m_fan_size ;
+
+      for ( int i = 0 ; i < n ; ++i ) {
+        ThreadsExec::wait( exec.m_fan[i]->m_state , ThreadsExec::Active );
+      }
+    }
+  }
+
+  ThreadsExecAdapter( const FunctorType & functor , const size_t work )
+    : m_func( functor ), m_work( work ) {}
+};
+
+//----------------------------------------------------------------------------
+
+template< class FunctorType >
+struct ThreadsExecAdapter< ParallelFor< FunctorType , ParallelWorkRequest , Threads > >
+{
+  const FunctorType m_func ;
+
+  static void execute( ThreadsExec & exec , const void * arg )
+  {
+    const ThreadsExecAdapter & self = * ((const ThreadsExecAdapter *) arg );
+
+    self.m_func( exec.threads() );
+
+    {
+      const int n = exec.m_fan_size ;
+
+      for ( int i = 0 ; i < n ; ++i ) {
+        ThreadsExec::wait( exec.m_fan[i]->m_state , ThreadsExec::Active );
+      }
+    }
+  }
+
+  ThreadsExecAdapter( const FunctorType & functor , const ParallelWorkRequest & work )
+    : m_func( functor ) {}
+};
+
+//----------------------------------------------------------------------------
+
+template< class FunctorType >
+struct ThreadsExecAdapter< ParallelReduce< FunctorType , size_t , Threads > >
+{
+  typedef ReduceAdapter< FunctorType > Reduce ;
+
+  const FunctorType m_func ;
+  const int         m_work ;
+
+  static void execute( ThreadsExec & exec , const void * arg )
+  {
+    const ThreadsExecAdapter & self = * ((const ThreadsExecAdapter *) arg );
+
+    typename Reduce::reference_type update = Reduce::reference( exec.m_reduce );
+
+    self.m_func.init( update ); // Initialize thread-local value
+
+    const std::pair<size_t,size_t> work = exec.work_range( self.m_work );
+
+    for ( size_t iwork = work.first ; iwork < work.second ; ++iwork ) {
+      self.m_func( iwork , update );
+    }
+
+    {
+      const int n = exec.m_fan_size ;
+
+      for ( int i = 0 ; i < n ; ++i ) {
+
+        ThreadsExec & fan = * exec.m_fan[i] ;
+
+        ThreadsExec::wait( fan.m_state , ThreadsExec::Active );
+
+        self.m_func.join( update , Reduce::reference( fan.m_reduce ) );
+      }
+    }
+  }
+
+  ThreadsExecAdapter( const FunctorType & functor , const size_t work )
+    : m_func( functor ), m_work( work ) {}
+};
+
+//----------------------------------------------------------------------------
+
+template< class FunctorType >
+struct ThreadsExecAdapter< ParallelReduce< FunctorType , ParallelWorkRequest , Threads > >
+{
+  typedef ReduceAdapter< FunctorType > Reduce ;
+
+  const FunctorType  m_func ;
+
+  static void execute( ThreadsExec & exec , const void * arg )
+  {
+    const ThreadsExecAdapter & self = * ((const ThreadsExecAdapter *) arg );
+
+    typename Reduce::reference_type update = Reduce::reference( exec.m_reduce );
+
+    self.m_func.init( update ); // Initialize thread-local value
+
+    self.m_func( exec.threads() , update );
+
+    {
+      const int n = exec.m_fan_size ;
+
+      for ( int i = 0 ; i < n ; ++i ) {
+
+        ThreadsExec & fan = * exec.m_fan[i] ;
+
+        ThreadsExec::wait( fan.m_state , ThreadsExec::Active );
+
+        self.m_func.join( update , Reduce::reference( fan.m_reduce ) );
+      }
+    }
+  }
+
+  ThreadsExecAdapter( const FunctorType & functor , const ParallelWorkRequest & )
+    : m_func( functor ) {}
 };
 
 } /* namespace Impl */
@@ -187,10 +322,13 @@ inline void Threads::finalize()
   Impl::ThreadsExec::finalize();
 }
 
-inline void Threads::print_configuration( std::ostream & s )
+inline void Threads::print_configuration( std::ostream & s , bool detail )
 {
-  Impl::ThreadsExec::print_configuration( s );
+  Impl::ThreadsExec::print_configuration( s , detail );
 }
+
+inline void Threads::fence()
+{ Impl::ThreadsExec::fence() ; }
 
 inline int Threads::league_rank() const
 { return m_exec.m_league_rank ; }
@@ -207,23 +345,7 @@ inline int Threads::team_size() const
 inline
 std::pair< size_t , size_t >
 Threads::work_range( const size_t work_count ) const
-{
-  enum { work_align = Kokkos::HostSpace::WORK_ALIGNMENT };
-  enum { work_shift = Kokkos::Impl::power_of_two< work_align >::value };
-  enum { work_mask  = work_align - 1 };
-
-  // unit_of_work_count = ( work_count + work_mask ) >> work_shift
-  // unit_of_work_per_thread = ( unit_of_work_count + thread_count - 1 ) / thread_count
-  // work_per_thread = unit_of_work_per_thread * work_align
-
-  const size_t work_per_thread =
-    ( ( ( ( work_count + work_mask ) >> work_shift ) + m_exec.m_thread_size - 1 ) / m_exec.m_thread_size ) << work_shift ;
-
-  const size_t work_begin = std::min( m_exec.m_thread_rank * work_per_thread , work_count );
-  const size_t work_end   = std::min( work_begin + work_per_thread , work_count );
-
-  return std::pair< size_t , size_t >( work_begin , work_end );
-}
+{ return m_exec.work_range( work_count ); }
 
 } /* namespace Kokkos */
 

@@ -82,7 +82,7 @@ unsigned s_threads_shared_size = 0 ;
 
 const void * s_current_function_lock = 0 ;
 
-void (* volatile s_current_function)( Threads , const void * );
+void (* volatile s_current_function)( ThreadsExec & , const void * );
 const void * volatile s_current_function_arg = 0 ;
 
 struct Sentinel {
@@ -140,9 +140,10 @@ void ThreadsExec::driver(void)
 
     while ( ThreadsExec::Active == this_thread.m_state ) {
 
+#if 0
       try {
         // Call work function
-        (*s_current_function)( Threads( this_thread ) , s_current_function_arg );
+        (*s_current_function)( this_thread , s_current_function_arg );
       }
       catch( const std::exception & x ) {
         std::ostringstream msg ;
@@ -154,6 +155,9 @@ void ThreadsExec::driver(void)
         msg << "Kokkos::Threads[" << thread_rank << "] Uncaught exeception"  << std::endl ;
         s_exception_msg.append( msg.str() );
       }
+#else
+        (*s_current_function)( this_thread , s_current_function_arg );
+#endif
 
       // Deactivate thread and wait for reactivation
       this_thread.m_state = ThreadsExec::Inactive ;
@@ -166,7 +170,7 @@ void ThreadsExec::driver(void)
   }
 }
 
-void execute_function_noop( Threads , const void * ) {}
+void execute_function_noop( ThreadsExec & , const void * ) {}
 
 } // namespace Impl
 } // namespace Kokkos
@@ -252,35 +256,35 @@ void ThreadsExec::set_threads_relationships(
   }}
 }
 
-void ThreadsExec::execute_sleep( Threads dev , const void * )
+void ThreadsExec::execute_sleep( ThreadsExec & exec , const void * )
 {
   ThreadsExec::global_lock();
   ThreadsExec::global_unlock();
 
-  const int n = dev.m_exec.m_fan_size ;
+  const int n = exec.m_fan_size ;
 
   for ( int i = 0 ; i < n ; ++i ) {
-    wait( dev.m_exec.m_fan[i]->m_state , ThreadsExec::Active );
+    wait( exec.m_fan[i]->m_state , ThreadsExec::Active );
   }
 
-  dev.m_exec.m_state = ThreadsExec::Inactive ;
+  exec.m_state = ThreadsExec::Inactive ;
 }
 
-void ThreadsExec::execute_reduce_resize( Threads dev , const void * )
+void ThreadsExec::execute_reduce_resize( ThreadsExec & exec , const void * )
 {
-  if ( dev.m_exec.m_reduce ) {
-    Kokkos::Impl::host_decrement_not_thread_safe( dev.m_exec.m_reduce );
-    dev.m_exec.m_reduce = 0 ;
+  if ( exec.m_reduce ) {
+    Kokkos::Impl::host_decrement_not_thread_safe( exec.m_reduce );
+    exec.m_reduce = 0 ;
   }
 
   if ( s_threads_reduce_size ) {
 
-    dev.m_exec.m_reduce =
+    exec.m_reduce =
       Kokkos::Impl::host_allocate_not_thread_safe( "reduce_scratch_space" , typeid(unsigned char) , 1 , s_threads_reduce_size );
 
     // Guaranteed multiple of 'unsigned'
 
-    unsigned * ptr = (unsigned *)( dev.m_exec.m_reduce );
+    unsigned * ptr = (unsigned *)( exec.m_reduce );
     unsigned * const end = ptr + s_threads_reduce_size / sizeof(unsigned);
 
     // touch on this thread
@@ -288,26 +292,26 @@ void ThreadsExec::execute_reduce_resize( Threads dev , const void * )
   }
 }
 
-void ThreadsExec::execute_shared_resize( Threads dev , const void * )
+void ThreadsExec::execute_shared_resize( ThreadsExec & exec , const void * )
 {
-  if ( dev.m_exec.m_team_rank ) {
-    dev.m_exec.m_shared = 0 ;
+  if ( exec.m_team_rank ) {
+    exec.m_shared = 0 ;
   }
   else {
 
-    if ( dev.m_exec.m_shared ) {
-      Kokkos::Impl::host_decrement_not_thread_safe( dev.m_exec.m_shared );
-      dev.m_exec.m_shared = 0 ;
+    if ( exec.m_shared ) {
+      Kokkos::Impl::host_decrement_not_thread_safe( exec.m_shared );
+      exec.m_shared = 0 ;
     }
 
     if ( s_threads_shared_size ) {
 
-      dev.m_exec.m_shared =
+      exec.m_shared =
         Kokkos::Impl::host_allocate_not_thread_safe( "shared_scratch_space" , typeid(unsigned char) , 1 , s_threads_shared_size );
 
       // Guaranteed multiple of 'unsigned'
 
-      unsigned * ptr = (unsigned *)( dev.m_exec.m_shared );
+      unsigned * ptr = (unsigned *)( exec.m_shared );
       unsigned * const end = ptr + s_threads_shared_size / sizeof(unsigned);
 
       // touch on this thread
@@ -337,9 +341,9 @@ void ThreadsExec::verify_is_process( const std::string & name )
 void ThreadsExec::fence()
 {
   if ( s_threads_count ) {
-    wait_yield( s_threads_exec[0]->m_state , ThreadsExec::Active );
+    wait( s_threads_exec[0]->m_state , ThreadsExec::Active );
 
-    s_current_function = 0 ;
+    s_current_function     = 0 ;
     s_current_function_arg = 0 ;
 
     if ( s_exception_msg.size() ) {
@@ -351,40 +355,21 @@ void ThreadsExec::fence()
 inline
 void ThreadsExec::activate_threads()
 {
-  for ( unsigned i = s_threads_count ; 0 < --i ; ) {
+  for ( unsigned i = s_threads_count ; 0 < i ; ) {
+    --i ;
     s_threads_exec[i]->m_state = ThreadsExec::Active ;
   }
 }
 
-/** \brief  Acquire memory for the asynchronous functor */
-void ThreadsExec::acquire( const void * arg )
+/** \brief  Begin execution of the asynchronous functor */
+void ThreadsExec::start( void (*func)( ThreadsExec & , const void * ) , const void * arg )
 {
-  verify_is_process("ThreadsExec::acquire");
+  verify_is_process("ThreadsExec::start");
 
   if ( s_current_function_lock && 
        s_current_function_lock != arg ) {
-    Kokkos::Impl::throw_runtime_exception( std::string( "ThreadsExec::aquire() FAILED : otherwise acquired" ) );
+    Kokkos::Impl::throw_runtime_exception( std::string( "ThreadsExec::start() FAILED : otherwise acquired" ) );
   }
-
-  s_current_function_lock = arg ;
-}
-
-/** \brief  Acquire memory for the asynchronous functor */
-void ThreadsExec::release( const void * arg )
-{
-  verify_is_process("ThreadsExec::release");
-
-  if ( s_current_function_lock != 0 && s_current_function_lock != arg ) {
-    Kokkos::Impl::throw_runtime_exception( std::string( "ThreadsExec::release() FAILED : otherwise acquired" ) );
-  }
-
-  s_current_function_lock = 0 ;
-}
-
-/** \brief  Begin execution of the asynchronous functor */
-void ThreadsExec::start( void (*func)( Kokkos::Threads , const void * ) , const void * arg )
-{
-  verify_is_process("ThreadsExec::start");
 
   s_exception_msg.clear();
 
@@ -394,10 +379,40 @@ void ThreadsExec::start( void (*func)( Kokkos::Threads , const void * ) , const 
   activate_threads();
 
   if ( s_threads_process.m_thread_size ) {
-    (*func)( Threads( s_threads_process ) , arg );
+    (*func)( s_threads_process , arg );
     s_threads_process.m_state = ThreadsExec::Inactive ;
   }
 }
+
+void * ThreadsExec::execute( void (*func)( ThreadsExec & , const void * ) , const void * arg )
+{
+  if ( s_current_function || s_current_function_arg ) {
+    Kokkos::Impl::throw_runtime_exception( std::string( "ThreadsExec::execute() FAILED : already executing" ) );
+  }
+
+  s_current_function     = func ;
+  s_current_function_arg = arg ;
+
+  for ( unsigned i = s_threads_count ; 0 < i ; ) {
+    --i ;
+    s_threads_exec[i]->m_state = ThreadsExec::Active ;
+  }
+
+  if ( s_threads_process.m_thread_size ) {
+    (*func)( s_threads_process , arg );
+    s_threads_process.m_state = ThreadsExec::Inactive ;
+  }
+  else {
+    wait( s_threads_exec[0]->m_state , ThreadsExec::Active );
+  }
+
+  s_current_function     = 0 ;
+  s_current_function_arg = 0 ;
+
+  return s_threads_exec[0]->m_reduce ;
+}
+
+//----------------------------------------------------------------------------
 
 bool ThreadsExec::sleep()
 {
@@ -427,7 +442,7 @@ bool ThreadsExec::wake()
   ThreadsExec::global_unlock();
 
   if ( s_threads_process.m_thread_size ) {
-    execute_sleep( Threads( s_threads_process ) , 0 );
+    execute_sleep( s_threads_process , 0 );
     s_threads_process.m_state = ThreadsExec::Inactive ;
   }
 
@@ -438,7 +453,7 @@ bool ThreadsExec::wake()
 
 //----------------------------------------------------------------------------
 
-void ThreadsExec::execute_serial( void (*func)( Kokkos::Threads , const void * ) )
+void ThreadsExec::execute_serial( void (*func)( ThreadsExec & , const void * ) )
 {
   s_exception_msg.clear();
 
@@ -456,7 +471,7 @@ void ThreadsExec::execute_serial( void (*func)( Kokkos::Threads , const void * )
 
   if ( s_threads_process.m_thread_size ) {
     s_threads_process.m_state = ThreadsExec::Active ;
-    (*func)( Threads( s_threads_process ) , 0 );
+    (*func)( s_threads_process , 0 );
     s_threads_process.m_state = ThreadsExec::Inactive ;
   }
 
@@ -464,6 +479,11 @@ void ThreadsExec::execute_serial( void (*func)( Kokkos::Threads , const void * )
 }
 
 //----------------------------------------------------------------------------
+
+void * ThreadsExec::root_reduce_scratch()
+{
+  return s_threads_count ? s_threads_exec[0]->m_reduce : (void*) 0 ;
+}
 
 void ThreadsExec::resize_reduce_scratch( size_t size )
 {
@@ -520,11 +540,11 @@ void ThreadsExec::print_configuration( std::ostream & s , const bool detail )
   if ( s_threads_exec[0] ) {
     s << " team_league[" << s_threads_exec[0]->m_league_size << "x" << s_threads_exec[0]->m_team_size << "]" ;
     if ( 0 == s_threads_process.m_thread_size ) { s << " Asynchronous" ; }
+    s << " ReduceScratch[" << s_threads_reduce_size << "]"
+      << " SharedScratch[" << s_threads_shared_size << "]" ;
+    s << std::endl ;
 
     if ( detail ) {
-      s << " ReduceScratch[" << s_threads_reduce_size << "]"
-        << " SharedScratch[" << s_threads_shared_size << "]" ;
-      s << std::endl ;
       for ( unsigned i = 0 ; i < s_threads_count ; ++i ) {
         ThreadsExec * const th = s_threads_exec[i] ;
         s << "  Thread" ;
@@ -537,10 +557,9 @@ void ThreadsExec::print_configuration( std::ostream & s , const bool detail )
             }
           }
         }
+        s << std::endl ;
       }
     }
-
-    s << std::endl ;
   }
   else {
     s << " not initialized" << std::endl ;
@@ -572,12 +591,13 @@ void ThreadsExec::initialize(
   //------------------------------------
   // Query hardware topology and capacity, if available.
 
+  const unsigned                     thread_count = team_topo.first * team_topo.second ;
   const bool                         hwloc_avail  = Kokkos::hwloc::available();
-  const std::pair<unsigned,unsigned> master_coord = Kokkos::hwloc::get_this_thread_coordinate();
   const std::pair<unsigned,unsigned> core_topo    = Kokkos::hwloc::get_core_topology();
   const unsigned                     core_cap     = Kokkos::hwloc::get_core_capacity();
   const unsigned                     capacity     = hwloc_avail ? core_topo.first * core_topo.second * core_cap : 0 ;
-  const unsigned                     thread_count = team_topo.first * team_topo.second ;
+        std::pair<unsigned,unsigned> master_coord = Kokkos::hwloc::get_this_thread_coordinate();
+        bool                         asynchronous = false ;
 
   //------------------------------------
   // Use HWLOC to determine coordinates for pinning threads.
@@ -599,42 +619,59 @@ void ThreadsExec::initialize(
       // Start by assuming use of all available cores
       core_use = core_topo ;
 
-      // Can spawn all requested threads without using a core?
-      if ( thread_count <= core_topo.first * ( core_topo.second - 1 ) * core_cap ) {
+      if ( thread_count <= ( core_topo.first - 1 ) * core_topo.second ) {
+        // Can spawn all requested threads on their own (NUMA) group of cores,
+        // can execute asynchronously.
+        --core_use.first ;
+      }
+      else if ( thread_count <= core_topo.first * ( core_topo.second - 1 ) ) {
+        // Can spawn all requested threads on their own core and have excess core,
+        // can execute asynchronously.
+        --core_use.second ;
+      }
+      else if ( core_topo.first * core_topo.second < thread_count &&
+                thread_count <= core_topo.first * ( core_topo.second - 1 ) * core_cap ) {
+        // Will oversubscribe cores and can omit one core
         --core_use.second ;
       }
     }
 
     if ( core_use.first < core_topo.first ) {
-      // Can omit the use of group of cores and execute work asynchronously
+      // Can omit a (NUMA) group of cores and execute work asynchronously
+      // on the other groups.
 
       Kokkos::Impl::host_thread_mapping( team_topo , core_use , core_topo , s_threads_coord );
 
-      // Don't use master thread's first core coordinate.
+      // Don't use master thread's first core coordinate (NUMA region).
+      // Originally mapped:
+      //   begin = core_topo.first - core_use.first ;
+      //   end   = core_topo.first ;
+      // So can decrement.
+
       for ( unsigned i = 0 ; i < thread_count ; ++i ) {
-        s_threads_coord[i].first = ( s_threads_coord[i].first + master_coord.first + 1 ) % core_topo.first ;
+        if ( s_threads_coord[i].first <= master_coord.first ) {
+          --( s_threads_coord[i].first );
+        }
+std::cout << "thread_map (" << s_threads_coord[i].first << "," << s_threads_coord[i].second << ")" << std::endl ;
       }
+
+
+      asynchronous = true ;
     }
     else if ( core_use.second < core_topo.second ) {
-      // Can omit the use of a core and execute work asynchronously
+      // Can omit a core from each group and execute work asynchronously
 
       Kokkos::Impl::host_thread_mapping( team_topo , core_use , core_topo , s_threads_coord );
 
-      // Don't use the master thread's second core coordinate.
-      for ( unsigned i = 0 ; i < thread_count ; ++i ) {
-        if ( s_threads_coord[i].first == master_coord.first ) {
-          s_threads_coord[i].second = ( s_threads_coord[i].second + master_coord.second + 1 ) % core_topo.second ;
-        }
-      }
+      // Force master thread onto the highest rank unused core.
+      master_coord.second = ( core_topo.second - core_use.second ) - 1 ;
+
+      asynchronous = true ;
     }
     else {
       // Spawn threads with root thread on the master process' core
 
       Kokkos::Impl::host_thread_mapping( team_topo , core_use , core_topo , master_coord , s_threads_coord );
-    }
-
-    if ( thread_count == capacity ) {
-      // Fully subscribed so claim coordinate #0 for master thread
 
       s_threads_coord[0] = std::pair<unsigned,unsigned>( ~0u , ~0u );
     }
@@ -644,7 +681,7 @@ void ThreadsExec::initialize(
   // Spawn threads
 
   {
-    const unsigned thread_spawn_begin  = thread_count < capacity ? 0 : 1 ;
+    const unsigned thread_spawn_begin  = asynchronous ? 0 : 1 ;
     unsigned       thread_spawn_failed = 0 ;
 
     s_threads_count    = thread_count ;
@@ -693,8 +730,10 @@ void ThreadsExec::initialize(
       Kokkos::Impl::throw_runtime_exception( msg.str() );
     }
 
+    Kokkos::hwloc::bind_this_thread( master_coord );
+
     if ( thread_spawn_begin ) { // Include the master thread
-      Kokkos::hwloc::bind_this_thread( master_coord );
+      new( & s_threads_process ) ThreadsExec();
       s_threads_process.m_state = ThreadsExec::Inactive ;
       s_threads_exec[0] = & s_threads_process ;
     }
@@ -737,8 +776,9 @@ void ThreadsExec::finalize()
   if ( s_threads_process.m_thread_size ) {
     ( & s_threads_process )->~ThreadsExec();
     s_threads_exec[0] = 0 ;
-    Kokkos::hwloc::unbind_this_thread();
   }
+
+  Kokkos::hwloc::unbind_this_thread();
 
   s_threads_count = 0 ;
 }

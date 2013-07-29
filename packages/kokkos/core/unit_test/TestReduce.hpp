@@ -70,7 +70,7 @@ public:
     : nwork( rhs.nwork ) {}
 
   KOKKOS_INLINE_FUNCTION
-  static void init( value_type & dst )
+  void init( value_type & dst ) const
   {
     dst.value[0] = 0 ;
     dst.value[1] = 0 ;
@@ -78,8 +78,8 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION
-  static void join( volatile value_type & dst ,
-                    const volatile value_type & src )
+  void join( volatile value_type & dst ,
+             const volatile value_type & src ) const
   {
     dst.value[0] += src.value[0] ;
     dst.value[1] += src.value[1] ;
@@ -118,18 +118,16 @@ public:
     , nwork( arg_nwork ) {}
 
   KOKKOS_INLINE_FUNCTION
-  static void init( value_type dst ,
-                    const size_type count )
+  void init( value_type dst ) const
   {
-    for ( unsigned i = 0 ; i < count ; ++i ) dst[i] = 0 ;
+    for ( unsigned i = 0 ; i < value_count ; ++i ) dst[i] = 0 ;
   }
 
   KOKKOS_INLINE_FUNCTION
-  static void join( volatile ScalarType dst[] ,
-                    const volatile ScalarType src[] ,
-                    const size_type count )
+  void join( volatile ScalarType dst[] ,
+             const volatile ScalarType src[] ) const
   {
-    for ( unsigned i = 0 ; i < count ; ++i ) dst[i] += src[i] ;
+    for ( unsigned i = 0 ; i < value_count ; ++i ) dst[i] += src[i] ;
   }
 
   KOKKOS_INLINE_FUNCTION

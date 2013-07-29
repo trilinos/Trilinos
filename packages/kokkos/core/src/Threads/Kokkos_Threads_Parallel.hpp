@@ -59,117 +59,23 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
-template< class FunctorType >
-class ParallelFor< FunctorType , ParallelWorkRequest , Kokkos::Threads >
-{
-private:
-
-  const FunctorType  m_functor ;
-        bool         m_active ;
-
-public:
-
-  inline ParallelFor( const FunctorType & f , const ParallelWorkRequest & )
-    : m_functor(f), m_active(true)
-    { Kokkos::Impl::ThreadsExec::start( *this ); }
-
-  void wait() { if ( m_active ) { Kokkos::Impl::ThreadsExec::fence(); m_active = false ; } }
-
-  ~ParallelFor() { wait(); }
-
-  inline void apply( Kokkos::Threads dev , void * ) const { m_functor(dev); }
-
-  inline void join( volatile void * , volatile const void * ) const {}
-  inline void init( void * ) const {}
-  inline void final( void * ) const {}
-};
-
-
-template< class FunctorType >
-class ParallelFor< FunctorType , size_t , Kokkos::Threads >
-{
-private:
-
-  const FunctorType m_functor ;
-  const size_t      m_nwork ;
-        bool        m_active ;
-
-public:
-
-  ParallelFor( const FunctorType & f , const size_t n )
-    : m_functor(f), m_nwork(n), m_active(true)
-    { Kokkos::Impl::ThreadsExec::start( *this ); }
-
-  void wait() { if ( m_active ) { Kokkos::Impl::ThreadsExec::fence(); m_active = false ; } }
-
-  ~ParallelFor() { wait(); }
-
-  inline void apply( Kokkos::Threads dev , void * ) const
-  {
-    const std::pair< size_t , size_t > range = dev.work_range( m_nwork );
-// #pragma ivdep
-    for ( size_t iwork = range.first ; iwork < range.second ; ++iwork ) {
-      m_functor(iwork);
-    }
-  }
-
-  inline void join( volatile void * , volatile const void * ) const {}
-  inline void init( void * ) const {}
-  inline void final( void * ) const {}
-};
-
-//----------------------------------------------------------------------------
-
-} /* namespace Impl */
-} /* namespace Kokkos */
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
-namespace Impl {
-
 template< class FunctorType , class WorkSpec >
-struct ThreadsReduceAdapter ;
-
-template< class FunctorType >
-struct ThreadsReduceAdapter< FunctorType , Kokkos::ParallelWorkRequest >
-  : public Kokkos::Impl::ReduceAdapter< FunctorType >
+class ParallelFor< FunctorType , WorkSpec , Kokkos::Threads >
 {
-  typedef Kokkos::Impl::ReduceAdapter< FunctorType > base_type ;
+public:
 
-  inline ThreadsReduceAdapter( const FunctorType & f , const Kokkos::ParallelWorkRequest & )
-    : base_type(f) {}
+  inline ParallelFor( const FunctorType & f , const WorkSpec & w )
+    {
+      typedef ThreadsExecAdapter< ParallelFor > Adapter ;
 
-  inline void apply( Kokkos::Threads dev , void * ptr ) const
-  {
-    typename base_type::reference_type update = base_type::reference( ptr );
+      Adapter tmp( f , w );
 
-    base_type::m_functor(dev,update);
-  }
-};
-
-
-template< class FunctorType >
-struct ThreadsReduceAdapter< FunctorType , size_t > : public Kokkos::Impl::ReduceAdapter< FunctorType >
-{
-  typedef Kokkos::Impl::ReduceAdapter< FunctorType > base_type ;
-
-  const size_t m_nwork ;
-
-  ThreadsReduceAdapter( const FunctorType & f , const size_t n )
-    : base_type(f), m_nwork(n) {}
-
-  inline void apply( Kokkos::Threads dev , void * ptr ) const
-  {
-    typename base_type::reference_type update = base_type::reference( ptr );
-
-    const std::pair< size_t , size_t > range = dev.work_range( m_nwork );
-// #pragma ivdep
-    for ( size_t iwork = range.first ; iwork < range.second ; ++iwork ) {
-      base_type::m_functor(iwork,update);
+      ThreadsExec::execute( & Adapter::execute , & tmp );
     }
-  }
+
+  inline void wait() {}
+
+  inline ~ParallelFor() { wait(); }
 };
 
 //----------------------------------------------------------------------------
@@ -179,43 +85,35 @@ class ParallelReduce< FunctorType , WorkSpec , Kokkos::Threads >
 {
 private:
 
-  typedef ThreadsReduceAdapter< FunctorType , WorkSpec > ReduceAdapter ;
-  typedef typename ReduceAdapter::pointer_type  pointer_type ;
-
-  ReduceAdapter  m_reduce ;
-  pointer_type   m_result_ptr ;
+  typedef ReduceAdapter< FunctorType >   Reduce ;
+  typedef typename Reduce::pointer_type  pointer_type ;
 
 public:
 
   // Create new functor in the asynchronous functor memory space
   // and then launch it.
-  ParallelReduce( const FunctorType & functor , const WorkSpec & work ,
-                  const pointer_type result_ptr = 0 )
-    : m_reduce( functor , work )
-    , m_result_ptr( result_ptr )
+  inline
+  ParallelReduce( const WorkSpec    & work ,
+                  const FunctorType & functor ,
+                  const pointer_type  result_ptr = 0 )
     {
-      if ( result_ptr ) Kokkos::Impl::ThreadsExec::acquire( this );
+      typedef ThreadsExecAdapter< ParallelReduce >  Adapter ;
 
-      Kokkos::Impl::ThreadsExec::start( *this );
+      Adapter tmp( functor , work );
+
+      const pointer_type data = (pointer_type) ThreadsExec::execute( & Adapter::execute , & tmp );
+
+      Reduce::final( functor , data );
+
+      if ( result_ptr ) {
+        const unsigned n = Reduce::value_count( functor );
+        for ( unsigned i = 0 ; i < n ; ++i ) { result_ptr[i] = data[i]; }
+      }
     }
 
-  void wait()
-  {
-    if ( m_result_ptr ) {
+  inline void wait() {}
 
-      Kokkos::Impl::ThreadsExec::fence();
-
-      const pointer_type * const data = (const pointer_type) Kokkos::Impl::ThreadsExec::root_reduce_scratch();
-
-      for ( unsigned i = 0 ; i < m_reduce.value_count() ; ++i ) { m_result_ptr[i] = data[i]; }
-
-      m_result_ptr = 0 ;
-
-      Kokkos::Impl::ThreadsExec::release( this );
-    }
-  }
-
-  ~ParallelReduce() { wait(); }
+  inline ~ParallelReduce() { wait(); }
 };
 
 } // namespace Impl

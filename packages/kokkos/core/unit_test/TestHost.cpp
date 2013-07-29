@@ -204,7 +204,7 @@ struct HostFunctor
       { update += input ; }
   };
 
-  typedef Kokkos::Impl::ReduceOperator< Reduce > reduce_type ;
+  typedef Kokkos::Impl::ReduceAdapter< Reduce > reduce_type ;
 
   typedef int value_type ;
 
