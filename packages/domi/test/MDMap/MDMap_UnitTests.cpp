@@ -57,8 +57,10 @@ namespace
 using std::string;
 using Teuchos::Array;
 using Teuchos::Tuple;
+typedef Domi::Ordinal Ordinal;
 using Domi::TeuchosCommRCP;
 using Domi::Slice;
+const Ordinal & Default = Domi::Slice::Default;
 using Domi::MDComm;
 using Domi::MDCommRCP;
 using Domi::MDMap;
@@ -499,6 +501,325 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, exceptions, T )
 #endif
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapLowerLeft, T )
+{
+  // Construct the MDComm from command-line arguments
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
+
+  // Construct the dimensions
+  Array< T > dimensions(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    dimensions[axis] = 10 * axisCommSizes[axis];
+
+  // Construct an MDMap
+  Teuchos::RCP< MDMap< T > > mdMap =
+    Teuchos::rcp(new MDMap< T >(mdComm, dimensions));
+  
+  // Figure out the lower left slice
+  Array< Slice > slices(numDims);
+  Array< T >     newSizes(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    if (axis < 2)
+    {
+      T n = dimensions[axis] / 2;
+      slices[axis] = Slice(n);
+      newSizes[axis] = n;
+    }
+    else
+    {
+      slices[axis] = Slice();
+      newSizes[axis] = dimensions[axis];
+    }
+  }
+
+  // Construct the sub-MDMap
+  MDMap< T > subMDMap(mdMap, slices);
+
+  // Should this processor be a part of the sub-MDComm?
+  bool partOfSubComm = true;
+  for (int axis = 0; axis < numDims; ++axis)
+    if (mdMap->getGlobalBounds(axis).start() >= newSizes[axis])
+      partOfSubComm = false;
+
+  // Do some unit tests
+  if (partOfSubComm)
+  {
+    TEST_EQUALITY(subMDMap.getNumDims(), numDims);
+    for (int axis = 0; axis < numDims; ++axis)
+    {
+      TEST_EQUALITY(subMDMap.getGlobalDim(axis), newSizes[axis]);
+      TEST_ASSERT(not subMDMap.isPeriodic(axis));
+    }
+  }
+  else
+  {
+    TEST_EQUALITY(subMDMap.getNumDims(), 0);
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapLowerRight, T )
+{
+  // Construct the MDComm from command-line arguments
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
+  
+  // Figure out the lower right slice
+  Array< Slice > slices(numDims);
+  Array< int >   newSizes(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    if (axis == 0)
+    {
+      int n = axisCommSizes[axis] / 2;
+      slices[axis] = Slice(n,Default);
+      newSizes[axis] = axisCommSizes[axis] - n;
+    }
+    else if (axis == 1)
+    {
+      int n = axisCommSizes[axis] / 2;
+      if (n == 0) n = 1;
+      slices[axis] = Slice(n);
+      newSizes[axis] = n;
+    }
+    else
+    {
+      slices[axis] = Slice();
+      newSizes[axis] = axisCommSizes[axis];
+    }
+  }
+
+  // Construct the sub-MDComm
+  MDComm subMDComm(mdComm, slices);
+
+  // Should this processor be a part of the sub-MDComm?
+  bool partOfSubComm = true;
+  if (mdComm->getAxisRank(0) < axisCommSizes[0] - newSizes[0])
+    partOfSubComm = false;
+  if (numDims > 1)
+    if (mdComm->getAxisRank(1) >= newSizes[1])
+      partOfSubComm = false;
+
+#if 0
+  if (partOfSubComm)
+    std::cout << "P" << comm->getRank() << ": IS part of sub-comm "
+              << newSizes << std::endl;
+  else
+    std::cout << "P" << comm->getRank() << ": is NOT part of sub-comm"
+              << std::endl;
+#endif
+
+  // Do some unit tests
+  if (partOfSubComm)
+  {
+    TEST_EQUALITY(subMDComm.getNumDims(), numDims);
+    for (int axis = 0; axis < numDims; ++axis)
+    {
+      TEST_EQUALITY(subMDComm.getAxisCommSize(axis), newSizes[axis]);
+      TEST_ASSERT(not subMDComm.isPeriodic(axis));
+    }
+  }
+  else
+  {
+    TEST_EQUALITY_CONST(subMDComm.getNumDims(), 0);
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapUpperLeft, T )
+{
+  // Construct the MDComm from command-line arguments
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
+  
+  // Figure out the upper left slice
+  Array< Slice > slices(numDims);
+  Array< int >   newSizes(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    if (axis == 0)
+    {
+      int n = axisCommSizes[axis] / 2;
+      if (n == 0) n = 1;
+      slices[axis] = Slice(n);
+      newSizes[axis] = n;
+    }
+    else if (axis == 1)
+    {
+      int n = axisCommSizes[axis] / 2;
+      slices[axis] = Slice(n,Default);
+      newSizes[axis] = axisCommSizes[axis] - n;
+    }
+    else
+    {
+      slices[axis] = Slice();
+      newSizes[axis] = axisCommSizes[axis];
+    }
+  }
+
+  // Construct the sub-MDComm
+  MDComm subMDComm(mdComm, slices);
+
+  // Should this processor be a part of the sub-MDComm?
+  bool partOfSubComm = true;
+  if (mdComm->getAxisRank(0) >= newSizes[0])
+    partOfSubComm = false;
+  if (numDims > 1)
+    if (mdComm->getAxisRank(1) < axisCommSizes[1] - newSizes[1])
+      partOfSubComm = false;
+
+#if 0
+  if (partOfSubComm)
+    std::cout << "P" << comm->getRank() << ": IS part of sub-comm "
+              << newSizes << std::endl;
+  else
+    std::cout << "P" << comm->getRank() << ": is NOT part of sub-comm"
+              << std::endl;
+#endif
+
+  // Do some unit tests
+  if (partOfSubComm)
+  {
+    TEST_EQUALITY(subMDComm.getNumDims(), numDims);
+    for (int axis = 0; axis < numDims; ++axis)
+    {
+      TEST_EQUALITY(subMDComm.getAxisCommSize(axis), newSizes[axis]);
+      TEST_ASSERT(not subMDComm.isPeriodic(axis));
+    }
+  }
+  else
+  {
+    TEST_EQUALITY_CONST(subMDComm.getNumDims(), 0);
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapUpperRight, T )
+{
+  // Construct the MDComm from command-line arguments
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
+  
+  // Figure out the upper right slice
+  Array< Slice > slices(numDims);
+  Array< int >   newSizes(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    if (axis < 2)
+    {
+      int n = axisCommSizes[axis] / 2;
+      slices[axis] = Slice(n,Default);
+      newSizes[axis] = axisCommSizes[axis] - n;
+    }
+    else
+    {
+      slices[axis] = Slice();
+      newSizes[axis] = axisCommSizes[axis];
+    }
+  }
+
+  // Construct the sub-MDComm
+  MDComm subMDComm(mdComm, slices);
+
+  // Should this processor be a part of the sub-MDComm?
+  bool partOfSubComm = true;
+  if (mdComm->getAxisRank(0) < axisCommSizes[0] - newSizes[0])
+    partOfSubComm = false;
+  if (numDims > 1)
+    if (mdComm->getAxisRank(1) < axisCommSizes[1] - newSizes[1])
+      partOfSubComm = false;
+
+#if 0
+  if (partOfSubComm)
+    std::cout << "P" << comm->getRank() << ": IS part of sub-comm "
+              << newSizes << std::endl;
+  else
+    std::cout << "P" << comm->getRank() << ": is NOT part of sub-comm"
+              << std::endl;
+#endif
+
+  // Do some unit tests
+  if (partOfSubComm)
+  {
+    TEST_EQUALITY_CONST(subMDComm.onSubcommunicator(), true);
+    TEST_EQUALITY(subMDComm.getNumDims(), numDims);
+    for (int axis = 0; axis < numDims; ++axis)
+    {
+      TEST_EQUALITY(subMDComm.getAxisCommSize(axis), newSizes[axis]);
+      TEST_ASSERT(not subMDComm.isPeriodic(axis));
+    }
+  }
+  else
+  {
+    TEST_EQUALITY_CONST(subMDComm.onSubcommunicator()         , false);
+    TEST_EQUALITY_CONST(subMDComm.getTeuchosComm().getRawPtr(), 0    );
+    TEST_EQUALITY_CONST(subMDComm.getNumDims()                , 0    );
+
+    TEST_THROW(subMDComm.getAxisCommSize(0) , Domi::SubcommunicatorError);
+    TEST_THROW(subMDComm.getAxisRank(0)     , Domi::SubcommunicatorError);
+    TEST_THROW(subMDComm.getLowerNeighbor(0), Domi::SubcommunicatorError);
+    TEST_THROW(subMDComm.getUpperNeighbor(0), Domi::SubcommunicatorError);
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapPeriodic, T )
+{
+  // Construct the MDComm from command-line arguments
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  // Construct the periodic flags
+  Array< int > periodic(numDims, 0);
+  periodic[0] = 1;
+  MDCommRCP mdComm =
+    Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes, periodic));
+  
+  // Figure out the lower slice
+  Array< Slice > slices(numDims);
+  Array< int >   newSizes(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    if (axis == 1)
+    {
+      int n = axisCommSizes[axis] / 2;
+      if (n == 0) n = 1;
+      slices[axis] = Slice(n);
+      newSizes[axis] = n;
+    }
+    else
+    {
+      slices[axis] = Slice();
+      newSizes[axis] = axisCommSizes[axis];
+    }
+  }
+
+  // Construct the sub-MDComm
+  MDComm subMDComm(mdComm, slices);
+
+  // Should this processor be a part of the sub-MDComm?
+  bool partOfSubComm = true;
+  for (int axis = 0; axis < numDims; ++axis)
+    if (mdComm->getAxisRank(axis) >= newSizes[axis])
+      partOfSubComm = false;
+
+  // Do some unit tests
+  if (partOfSubComm)
+  {
+    TEST_EQUALITY(subMDComm.getNumDims(), numDims);
+    for (int axis = 0; axis < numDims; ++axis)
+    {
+      TEST_EQUALITY(subMDComm.getAxisCommSize(axis), newSizes[axis]);
+      TEST_EQUALITY(subMDComm.isPeriodic(axis), (axis == 0));
+    }
+  }
+  else
+  {
+    TEST_EQUALITY(subMDComm.getNumDims(), 0);
+  }
+}
+
 //
 // Instantiations
 //
@@ -509,10 +830,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, exceptions, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, ghostsConstructor, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, halosAndGhostsConstructor, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, indexes, T ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, exceptions, T )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, exceptions, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapLowerLeft, T )
 
 UNIT_TEST_GROUP(int)
-#if 1
+#if 0
 UNIT_TEST_GROUP(long)
 #endif
 
