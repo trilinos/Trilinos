@@ -622,16 +622,18 @@ MDMap(const Teuchos::RCP< MDMap< LocalOrd, GlobalOrd, Node > > parent,
   _localMin(0),
   _localMax(0),
   _haloSizes(parent->_haloSizes),
-  _halos(),
+  _halos(parent->_halos),
   _ghostSizes(parent->getNumDims(), 0),
-  _ghosts(),
+  _ghosts(parent->getNumDims()),
   _storageOrder(parent->getStorageOrder()),
   _node(parent->_node)
 {
+  std::cout << std::endl << "Inside (MDMap, Slices) constructor" << std::endl;
   // Temporarily store the number of dimensions
   int numDims = parent->getNumDims();
 
   // Sanity check on dimensions
+  std::cout << "Checking number of dimensions" << std::endl;
   TEUCHOS_TEST_FOR_EXCEPTION(
     (slices.size() != numDims),
     InvalidArgument,
@@ -639,6 +641,7 @@ MDMap(const Teuchos::RCP< MDMap< LocalOrd, GlobalOrd, Node > > parent,
     "dimensions = " << numDims);
 
   // Copy the ghost sizes and set initial values for _ghosts
+  std::cout << "Initializing ghosts" << std::endl;
   for (int axis = 0; axis < numDims; ++axis)
   {
     if (axis < ghosts.size())
@@ -650,6 +653,7 @@ MDMap(const Teuchos::RCP< MDMap< LocalOrd, GlobalOrd, Node > > parent,
   // Convert the slices to concrete, add the ghost points, and store
   // in _globalBounds, altering _ghosts if necessary.  Compute
   // _globalDims, _globalMax, and _globalMin.
+  std::cout << "Initializing global bounds and dims" << std::endl;
   for (int axis = 0; axis < numDims; ++axis)
   {
     Slice bounds =
@@ -671,16 +675,25 @@ MDMap(const Teuchos::RCP< MDMap< LocalOrd, GlobalOrd, Node > > parent,
     _globalMin +=  start   * _globalStrides[axis];
     _globalMax += (stop-1) * _globalStrides[axis];
   }
+  std::cout << "  _globalRankBounds = " << _globalRankBounds << std::endl;
+  std::cout << "  _globalBounds = " << _globalBounds << std::endl;
+  std::cout << "  _globalDims   = " << _globalDims   << std::endl;
+  std::cout << "  _globalMin    = " << _globalMin    << std::endl;
+  std::cout << "  _globalMax    = " << _globalMax    << std::endl;
 
   // Build the array of slices for the MDComm sub-communicator
   // constructor
+  std::cout << "Building slices for sub-communicator" << std::endl;
   Teuchos::Array< Slice > axisRankSlices;
   for (int axis = 0; axis < numDims; ++axis)
   {
+    std::cout << "axis = " << axis << std::endl;
     int start = -1;
     int stop  = -1;
-    for (int axisRank = 0; axisRank < getAxisCommSize(); ++axisRank)
+    for (int axisRank = 0; axisRank < parent->getAxisCommSize(axis);
+         ++axisRank)
     {
+      std::cout << "  axisRank = " << axisRank << std::endl;
       if ((_globalRankBounds[axis][axisRank].start() <=
            _globalBounds[axis].start()) &&
           (_globalBounds[axis].start() <
@@ -690,7 +703,7 @@ MDMap(const Teuchos::RCP< MDMap< LocalOrd, GlobalOrd, Node > > parent,
            _globalBounds[axis].stop()) &&
           (_globalBounds[axis].stop() <=
            _globalRankBounds[axis][axisRank].stop()))
-        stop = axisRank;
+        stop = axisRank+1;
     }
     TEUCHOS_TEST_FOR_EXCEPTION(
       (start == -1 || stop == -1),
@@ -698,49 +711,65 @@ MDMap(const Teuchos::RCP< MDMap< LocalOrd, GlobalOrd, Node > > parent,
       "error computing axis rank slices");
     axisRankSlices.push_back(ConcreteSlice(start,stop));
   }
+  std::cout << "axisRankSlices = " << axisRankSlices << std::endl;
   // Construct the MDComm sub-communicator
+  std::cout << "Constructing the sub-communicator" << std::endl;
   _mdComm = Teuchos::rcp(new MDComm(parent->_mdComm, axisRankSlices));
 
   // We now have a sub-communicator, and should only construct this
   // MDMap if this processor is on it.  If this processor is off the
-  // communicator, then we should clear many of the data members.
+  // communicator, then we clear many of the data members.
+  std::cout << "Initializing local bounds and dims" << std::endl;
   if (_mdComm->onSubcommunicator())
   {
     for (int axis = 0; axis < numDims; ++axis)
     {
+      std::cout << "  axis = " << axis << std::endl;
       int axisRank = getAxisRank(axis);
+      std::cout << "    a" << std::endl;
       LocalOrd start = parent->_localBounds[axis].start();
+      std::cout << "    b" << std::endl;
       if (_globalBounds[axis].start() >
           _globalRankBounds[axis][axisRank].start())
       {
+        std::cout << "    c" << std::endl;
         start = _globalBounds[axis].start() -
           _globalRankBounds[axis][axisRank].start();
       }
       else
       {
+        std::cout << "    d" << std::endl;
         if (_globalRankBounds[axis][axisRank].start() -
             _globalBounds[axis].start() < _halos[axis][0])
         {
+          std::cout << "    e" << std::endl;
           _halos[axis][0] = _globalRankBounds[axis][axisRank].start() -
             _globalBounds[axis].start();
         }
       }
+      std::cout << "    f" << std::endl;
       LocalOrd stop = parent->_localBounds[axis].stop();
+      std::cout << "    g" << std::endl;
       if (_globalBounds[axis].stop() <
           _globalRankBounds[axis][axisRank].stop())
       {
+        std::cout << "    h" << std::endl;
         stop = _globalBounds[axis].stop() -
           _globalRankBounds[axis][axisRank].start();
       }
       else
       {
+        std::cout << "    i" << std::endl;
         if (_globalBounds[axis].stop() -
             _globalRankBounds[axis][axisRank].stop() < _halos[axis][1])
         {
+          std::cout << "    j" << std::endl;
           _halos[axis][1] = _globalBounds[axis].stop() -
             _globalRankBounds[axis][axisRank].stop();
         }
       }
+      std::cout << "  start = " << start << std::endl;
+      std::cout << "  stop  = " << stop  << std::endl;
       _localBounds.push_back(ConcreteSlice(start,stop));
       _localDims[axis] = stop - start;
       _localMin +=  start   * _localStrides[axis];
