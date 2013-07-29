@@ -6,20 +6,20 @@ FIND_PATH(MPI4PY_INCLUDE_DIR mpi4py HINTS ${PYTHON_INCLUDE_DIRS}/../../lib/pytho
 # December 2012), see packages/stk/CMakeLists.txt, and comment the
 # next two lines and uncomment the following two.
 #################################################################################
-SET(STK_ALT_BIN_DIR "")
-SET(STK_ALT_SRC_DIR "")
-#SET(STK_ALT_BIN_DIR "/stk_2.0/")
-#SET(STK_ALT_SRC_DIR "/stk_2.0/")
-
-SET(STK_BINARY_DIR_ALT ${STK_BINARY_DIR}${STK_ALT_BIN_DIR})
-SET(STK_SOURCE_DIR_ALT ${STK_SOURCE_DIR}${STK_ALT_SRC_DIR})
-
-IF(${STK_ALT_BIN_DIR} STREQUAL "/stk_2.0/")
+SET(STK_IS_V2 "ON")
+IF(${STK_IS_V2} STREQUAL "ON")
+  MESSAGE("STK_IS_V2 is set")
+  SET(STK_ALT_BIN_DIR "/stk_2.0/")
+  SET(STK_ALT_SRC_DIR "/stk_2.0/")
   SET(STK_TOPOLOGY ${STK_SOURCE_DIR_ALT}/stk_topology)
 ELSE()
+  SET(STK_ALT_BIN_DIR "")
+  SET(STK_ALT_SRC_DIR "")
   SET(STK_TOPOLOGY "")
 ENDIF()
 
+SET(STK_BINARY_DIR_ALT ${STK_BINARY_DIR}${STK_ALT_BIN_DIR})
+SET(STK_SOURCE_DIR_ALT ${STK_SOURCE_DIR}${STK_ALT_SRC_DIR})
 
 #include STK related directories'
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}
