@@ -39,3 +39,10 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   XHOSTTYPE AIX
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  read_MatrixMarket
+  SOURCES ml_read_MatrixMarket.cpp
+  NUM_MPI_PROCS 1-4
+  COMM serial mpi
+  )
+
