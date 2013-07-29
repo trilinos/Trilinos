@@ -210,6 +210,8 @@ int Ifpack_ShyLU::Initialize()
             slu_data_.innersolver = NULL;
     }
 
+    slu_data_.firstIteration = true;
+
     IsInitialized_ = true;
     return 0;
 }

@@ -87,6 +87,7 @@ typedef struct
     //Epetra_CrsMatrix *D;        // Actual D Matrix, not reqd for Amesos_KLU
                                 // but required for Amesos_Pardiso
     Teuchos::RCP<ShyLUGMRESManager> gmresManager;
+    bool firstIteration;
     Teuchos::RCP<Epetra_CrsMatrix> Sbar; // Approx Schur complement
     Teuchos::RCP<Epetra_CrsGraph> localSbargraph; // graph of local Sbar
     AztecOO *innersolver;            // inner solver

@@ -308,18 +308,50 @@ static int shylu_local_solve(
     {
         Teuchos::Time solveSbar("solve Sbar");
         solveSbar.start();
-        if (config->iqrNumIter > 0) {
-            ShyLUGMRESManager newGmresManager(data->schur_op->OperatorDomainMap(),
-                                              config->iqrNumIter+1, false);
-            double tol=1e-10;
-            IQR::IdPreconditioner L;
-            IQR::GMRES<Epetra_Operator, Epetra_MultiVector,
-                       IQR::IdPreconditioner, ShyLUGMRESManager, ShyLUGMRESManager,
-                       std::vector<double>, double>
-                    (*(data->schur_op), Xs, Bs, &L, &*(data->gmresManager),
-                     newGmresManager, config->iqrNumIter, tol);
+
+        if (data->firstIteration) {
+			// Computation phase - only during the first outer GMRES iteration
+			int sSize = data->schur_op->OperatorDomainMap().NumGlobalElements();
+			int kSize = std::floor(config->iqrKrylovDim * sSize);
+
+			data->gmresManager = Teuchos::rcp(
+					new ShyLUGMRESManager(data->schur_op->OperatorDomainMap(),
+										  kSize, false));
+
+			double tol = 1e-10;
+			IQR::IdPreconditioner L, M;
+			IQR::GMRES<Epetra_Operator,
+					   Epetra_MultiVector,
+					   IQR::IdPreconditioner,
+					   IQR::IdPreconditioner,
+					   ShyLUGMRESManager,
+					   std::vector<double>,
+					   double> (*(data->schur_op), Xs, Bs, &L, &M,
+								*(data->gmresManager), kSize, tol);
+
+			if (! Xs.Comm().MyPID()) {
+				std::cout << "KSIZE: " << kSize
+						  << ", SSIZE: " << sSize
+						  << ", TOL: " << tol << std::endl;
+			}
+
+
+			data->firstIteration = false;
         } else {
-            data->gmresManager->ApplyInverse(Bs, Xs);
+			// Solve phase
+			if (config->iqrNumIter > 0) {
+				ShyLUGMRESManager newGmresManager(data->schur_op->OperatorDomainMap(),
+												  config->iqrNumIter+1, false);
+				double tol=1e-10;
+				IQR::IdPreconditioner L;
+				IQR::GMRES<Epetra_Operator, Epetra_MultiVector,
+						   IQR::IdPreconditioner, ShyLUGMRESManager, ShyLUGMRESManager,
+						   std::vector<double>, double>
+						(*(data->schur_op), Xs, Bs, &L, &*(data->gmresManager),
+						 newGmresManager, config->iqrNumIter, tol);
+			} else {
+				data->gmresManager->ApplyInverse(Bs, Xs);
+			}
         }
         solveSbar.stop();
         /*std::cout << "RADU SHYLU: solve Sbar: "
