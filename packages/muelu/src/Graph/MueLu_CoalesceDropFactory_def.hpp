@@ -256,9 +256,10 @@ namespace MueLu {
         } else if (A->GetFixedBlockSize() > 1 && threshold == STS::zero()) {
 
           // Case 3:  Multiple DOF/node problem without dropping
-          //throw Exceptions::NotImplemented("Fast CoalesceDrop with multiple DOFs is not yet implemented.");
           // TODO start of work <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+          CreateAmalgamatedMap(*A, *uniqueMap, nonUniqueMap);
+#ifdef createAmalgRowMap
           const RCP<const Map> colMap = A->getColMap();
           RCP<const Map> uniqueMap, nonUniqueMap;
           //Build amalgamated uniqueMap, since we're working with A corresponding to systems of PDEs.
@@ -279,6 +280,7 @@ namespace MueLu {
           }
           assert(numRows == Teuchos::as<LO>(numElements)/blkSize);
           uniqueMap = MapFactory::Build(colMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, colMap->getComm());
+#endif
           ////////////////////////////////////////////////////////////
           AmalgamateColumnMap(*A, *uniqueMap, nonUniqueMap);
           numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
@@ -369,6 +371,7 @@ namespace MueLu {
 
           Set(currentLevel, "Graph",       graph);
           Set(currentLevel, "DofsPerNode", blkSize);
+          std::cout << "setting DofsPerNode on level structure to " << blkSize << std::endl;
           // TODO end of work <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
         } else if (A->GetFixedBlockSize() > 1 && threshold != STS::zero()) {
@@ -798,6 +801,41 @@ namespace MueLu {
     nonUniqueMap = MapFactory::Build(uniqueMap.lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, uniqueMap.getComm());
 
   } //AmalgamateColumnMap
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CreateAmalgamatedMap(
+                             Matrix const & A, Map const &uniqueMap, RCP<const Map> &nonUniqueMap) const {
+    RCP<const Map> const colMap = A.getColMap();
+    GO indexBase = colMap->getIndexBase();
+    ArrayView<const GO> elementAList = colMap->getNodeElementList();
+    size_t              numElements  = elementAList.size();
+    Array<GO>           elementList(numElements);
+    std::set<GO>        filter; // TODO:  replace std::set with an object having faster lookup/insert, hashtable for instance
+
+    LO blkSize = A.GetFixedBlockSize();
+    LO numRows = 0;
+    for (LO id = 0; id < Teuchos::as<LO>(numElements); id++) {
+      GO amalgID = (elementAList[id] - indexBase)/blkSize + indexBase;
+      if (filter.find(amalgID) == filter.end()) {
+        elementList[numRows++] = amalgID;
+        filter.insert(amalgID);
+      }
+    }
+    elementList.resize(numRows);
+
+#   ifdef HAVE_MUELU_DEBUG
+    // At the moment we assume that first GIDs in nonUniqueMap coincide with those in uniqueMap.
+    for (LO row = 0; row < Teuchos::as<LO> (uniqueMap.getNodeNumElements ()); ++row) {
+      TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap.getGlobalElement(row) != elementList[row], Exceptions::RuntimeError,
+                                 "row = " << row << ", uniqueMap GID = "
+                                 << uniqueMap.getGlobalElement(row) << ", nonUniqueMap GID = "
+                                 << elementList[row] << std::endl);
+    }
+#   endif
+
+    nonUniqueMap = MapFactory::Build(uniqueMap.lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, uniqueMap.getComm());
+
+  } //CreateAmalgamatedMap
 
 } //namespace MueLu
 
