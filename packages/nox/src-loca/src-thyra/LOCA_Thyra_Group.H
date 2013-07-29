@@ -247,7 +247,7 @@ namespace LOCA {
       int param_index;
 
       //! Pointer to Thyra vector storing parameters
-      Teuchos::RCP< ::Thyra::VectorBase<double> > param_thyra_vec;
+      Teuchos::RCP< const ::Thyra::VectorBase<double> > param_thyra_vec;
 
       //! Pointer to x_dot vector of zeros
       Teuchos::RCP< ::Thyra::VectorBase<double> > x_dot_vec;
@@ -258,6 +258,10 @@ namespace LOCA {
       //! Whether we should implement df/dp, or use DerivUtils
       bool implement_dfdp;
 
+
+    private:
+
+      void updateThyraParamView();
     };
 
   } // namespace Thyra

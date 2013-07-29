@@ -53,8 +53,8 @@
 #include "Teuchos_Assert.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_SolveSupportTypes.hpp"
-#include "Thyra_DetachedMultiVectorView.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "RTOpPack_Types.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
@@ -74,13 +74,7 @@ LOCA::Thyra::Group::Group(
   saveDataStrategy(),
   implement_dfdp(impl_dfdp)
 {
-  // Create thyra vector to store parameters that is a view of LOCA
-  // parameter vector
-  RTOpPack::SubVectorView<double> pv(0,params.length(),
-				     Teuchos::ArrayRCP<double>(params.getDoubleArrayPointer(),0,params.length(),false),1);
-  Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > ps = 
-    model_->get_p_space(param_index);
-  param_thyra_vec = ::Thyra::createMemberView(ps,pv);
+  updateThyraParamView();
 
   // Create x_dot vector of zeros
   Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > xs = 
@@ -99,13 +93,7 @@ LOCA::Thyra::Group::Group(const LOCA::Thyra::Group& source,
   saveDataStrategy(source.saveDataStrategy),
   implement_dfdp(source.implement_dfdp)
 {
-  // Create thyra vector to store parameters that is a view of LOCA
-  // parameter vector
-  RTOpPack::SubVectorView<double> pv(0,params.length(),
-				     Teuchos::ArrayRCP<double>(params.getDoubleArrayPointer(),0,params.length(),false),1);
-  Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > ps = 
-    model_->get_p_space(param_index);
-  param_thyra_vec = ::Thyra::createMemberView(ps,pv);
+  updateThyraParamView();
 
   // Create x_dot vector of zeros
   Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > xs = 
@@ -128,8 +116,7 @@ LOCA::Thyra::Group::operator=(const LOCA::Thyra::Group& source)
     param_index = source.param_index;
     saveDataStrategy = source.saveDataStrategy;
     implement_dfdp = source.implement_dfdp;
-
-    // Because param_thyra_vec is a view of params, we don't need to copy
+    updateThyraParamView();
   }
   return *this;
 }
@@ -223,6 +210,7 @@ LOCA::Thyra::Group::setParams(const LOCA::ParameterVector& p)
 {
   this->resetIsValidFlags();
   params = p;
+  updateThyraParamView();
 }
 
 void
@@ -230,6 +218,7 @@ LOCA::Thyra::Group::setParam(int paramID, double val)
 {
   this->resetIsValidFlags();
   params.setValue(paramID, val);
+  updateThyraParamView();
 }
 
 void
@@ -237,6 +226,7 @@ LOCA::Thyra::Group::setParam(std::string paramID, double val)
 {
   this->resetIsValidFlags();
   params.setValue(paramID, val);
+  updateThyraParamView();
 }
 
 const LOCA::ParameterVector& 
@@ -462,4 +452,16 @@ LOCA::Thyra::Group::setSaveDataStrategy(
 			 const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy>& s)
 {
   saveDataStrategy = s;
+}
+
+void
+LOCA::Thyra::Group::updateThyraParamView()
+{
+  // Create thyra vector to store parameters that is a view of LOCA
+  // parameter vector
+  const RTOpPack::ConstSubVectorView<double> pv(
+      Teuchos::ArrayRCP<const double>(params.getDoubleArrayPointer(),0,params.length(),false));
+  Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > ps =
+    model_->get_p_space(param_index);
+  param_thyra_vec = ::Thyra::createMemberView(ps,pv);
 }
