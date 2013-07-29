@@ -40,64 +40,11 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_ASSEMBLY_ENGINE_HPP
-#define PANZER_ASSEMBLY_ENGINE_HPP
+#include "Panzer_config.hpp"
 
-#include "Teuchos_RCP.hpp"
+#include "Panzer_ExplicitTemplateInstantiation.hpp"
 
-#include "Panzer_Base.hpp"
-#include "Panzer_BC.hpp"
-#include "Panzer_Traits.hpp"
-#include "Panzer_LinearObjFactory.hpp"
+#include "Panzer_AssemblyEngine.hpp"
+#include "Panzer_AssemblyEngine_impl.hpp"
 
-namespace panzer {
-  class FieldManagerBuilder;
-  struct AssemblyEngineInArgs;
-}
-
-namespace panzer {
-
-  //! Class for the matrix and residual fill.
-  template <typename EvalT>
-    class AssemblyEngine : public panzer::Base {
-
-  public:    
-    
-    AssemblyEngine(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
-                   const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof);
-    
-    void evaluate(const panzer::AssemblyEngineInArgs& input_arguments);
-
-    void evaluateVolume(const panzer::AssemblyEngineInArgs& input_arguments);
-    void evaluateNeumannBCs(const panzer::AssemblyEngineInArgs& input_arguments);
-    void evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& input_arguments);
-
-    Teuchos::RCP<panzer::FieldManagerBuilder> getManagerBuilder()
-    { return m_field_manager_builder; }
-    
-  protected:
-      
-    /** Evaluate both Dirichlet and Neumann conditions.
-      *
-      * \param[in] bc_type Type of Dirichlet condition to evaluate
-      * \param[in] input_arguments Get solver parameters (alpha,beta, linear object containers)
-      * \param[in] preEval_loc Linear object container used by Dirichlet conditions for
-      *                        keeping track of rows that have been modified.
-      */
-    void evaluateBCs(const panzer::BCType bc_type, 
-		     const panzer::AssemblyEngineInArgs& input_arguments,
-                     const Teuchos::RCP<LinearObjContainer> preEval_loc=Teuchos::null);
-
-  protected:
-    
-      Teuchos::RCP<panzer::FieldManagerBuilder> m_field_manager_builder;
-
-      Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > 
-      m_lin_obj_factory;
-  };
-  
-}
-
-// #include "Panzer_AssemblyEngine_impl.hpp"
-
-#endif
+PANZER_INSTANTIATE_TEMPLATE_CLASS_ONE_T(panzer::AssemblyEngine)

@@ -60,10 +60,15 @@
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_ResponseLibrary.hpp"
-#include "Panzer_STK_Interface.hpp"
 #include "Panzer_EquationSet_Factory.hpp"
 #include "Panzer_BCStrategy_Factory.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
+#include "Panzer_ModelEvaluator_Epetra.hpp"
+#include "Panzer_ModelEvaluator.hpp"
+
+#include "Kokkos_DefaultNode.hpp"
+
+#include "Thyra_EpetraModelEvaluator.hpp"
 
 #ifdef HAVE_TEKO 
 #include "Teko_RequestHandler.hpp"
@@ -286,6 +291,31 @@ namespace panzer_stk {
     Teuchos::RCP<const panzer_stk::NOXObserverFactory> m_nox_observer_factory;
     Teuchos::RCP<const panzer_stk::RythmosObserverFactory> m_rythmos_observer_factory;
   };
+
+template<typename ScalarT>
+template <typename BuilderT>
+int ModelEvaluatorFactory_Epetra<ScalarT>::
+addResponse(const std::string & responseName,const std::vector<panzer::WorksetDescriptor> & wkstDesc,const BuilderT & builder)
+{
+  typedef panzer::ModelEvaluator<double,KokkosClassic::DefaultNode::DefaultNodeType> PanzerME;
+
+  Teuchos::RCP<Thyra::EpetraModelEvaluator> thyra_ep_me = Teuchos::rcp_dynamic_cast<Thyra::EpetraModelEvaluator>(m_physics_me);
+  Teuchos::RCP<PanzerME> panzer_me = Teuchos::rcp_dynamic_cast<PanzerME>(m_physics_me);
+ 
+  if(thyra_ep_me!=Teuchos::null && panzer_me==Teuchos::null) {
+    // I don't need no const-ness!
+    Teuchos::RCP<EpetraExt::ModelEvaluator> ep_me = Teuchos::rcp_const_cast<EpetraExt::ModelEvaluator>(thyra_ep_me->getEpetraModel());
+    Teuchos::RCP<panzer::ModelEvaluator_Epetra> ep_panzer_me = Teuchos::rcp_dynamic_cast<panzer::ModelEvaluator_Epetra>(ep_me);
+
+    return ep_panzer_me->addResponse(responseName,wkstDesc,builder);
+  }
+  else if(panzer_me!=Teuchos::null && thyra_ep_me==Teuchos::null) {
+    return panzer_me->addResponse(responseName,wkstDesc,builder);
+  }
+     
+  TEUCHOS_ASSERT(false);
+  return -1;
+}
 
 }
 

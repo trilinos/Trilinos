@@ -319,6 +319,7 @@ preEvaluate(typename Traits::PreEvalData d)
   std::vector<std::string> activeParameters = 
     rcp_dynamic_cast<ParameterList_GlobalEvaluationData>(d.getDataObject("PARAMETER_NAMES"))->getActiveParameters();
 
+  dfdp_vectors_.clear();
   for(std::size_t i=0;i<activeParameters.size();i++) {
     RCP<Epetra_Vector> vec = rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(activeParameters[i]),true)->get_f();
     dfdp_vectors_.push_back(vec);
@@ -382,8 +383,9 @@ evaluateFields(typename Traits::EvalData workset)
                for(std::size_t d=0;d<dfdp_vectors_.size();d++)
                  (*dfdp_vectors_[d])[lid] = 0.0;
             else
-               for(int d=0;d<value.size();d++)
+               for(int d=0;d<value.size();d++) {
                  (*dfdp_vectors_[d])[lid] = value.fastAccessDx(d);
+               }
 
             // record that you set a dirichlet condition
             if(dirichletCounter_!=Teuchos::null)
