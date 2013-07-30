@@ -832,6 +832,7 @@ int Ifpack_SupportGraph<T>::FindSupport()
   int cols = (*Matrix_).NumGlobalCols();
   int num_edges  = ((*Matrix_).NumMyNonzeros() - (*Matrix_).NumMyDiagonals())/2;
 
+
   // Assert square matrix                                                                       
   IFPACK_CHK_ERR((rows == cols));
 
@@ -1000,14 +1001,22 @@ int Ifpack_SupportGraph<T>::FindSupport()
      }
   
   // Create the CrsMatrix for the support graph                                                 
-  Support_ = rcp(new Epetra_CrsMatrix(Copy, Matrix().RowMatrixRowMap(),l, true));
+  Support_ = rcp(new Epetra_CrsMatrix(Copy, Matrix().RowMatrixRowMap(),l, false));
 
+  std::cout << "checking numperrow" << std::endl;
+  for(int i = 0; i < num_verts; i++)
+    {
+      std::cout << l[i] << " entries in row " << i << std::endl;
+    }
+  
  
   // Fill in the matrix with the stl vectors for each row                                       
   for(int i = 0; i < num_verts; i++)
     {
       (*Support_).InsertGlobalValues(i,l[i],&Values[i][0],&Indices[i][0]);
     }
+
+  
  
   (*Support_).FillComplete();
 

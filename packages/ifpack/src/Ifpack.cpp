@@ -125,11 +125,11 @@ const Ifpack::EPrecType Ifpack::precTypeValues[Ifpack::numPrecTypes] =
 #ifdef HAVE_IFPACK_SUPERLU
   ,SILU
 #endif
-#ifdef HAVE_IFPACK_SUPPORTGRAPH
+#if defined (HAVE_IFPACK_SUPPORTGRAPH) && defined (HAVE_IFPACK_AMESOS)
   ,MSF_AMESOS
-  ,MSF_AMESOS_STAND_ALONE
+#endif
+#ifdef HAVE_IFPACK_SUPPORTGRAPH
   ,MSF_IC
-  ,MSF_IC_STAND_ALONE
 #endif
   ,CHEBYSHEV
   ,POLYNOMIAL
@@ -177,11 +177,11 @@ const char* Ifpack::precTypeNames[Ifpack::numPrecTypes] =
 #ifdef HAVE_IFPACK_SUPERLU
   ,"SILU"
 #endif
-#ifdef HAVE_IFPACK_SUPPORTGRAPH
+#if defined (HAVE_IFPACK_SUPPORTGRAPH) && defined (HAVE_IFPACK_AMESOS)
   ,"MSF Amesos"
-  ,"MSF Amesos stand-alone"
+#endif
+#ifdef HAVE_IFPACK_SUPPORTGRAPH
   ,"MSF IC"
-  ,"MSF IC stand-alone"
 #endif
   ,"Chebyshev"
   ,"Polynomial"
@@ -229,10 +229,10 @@ const bool Ifpack::supportsUnsymmetric[Ifpack::numPrecTypes] =
 #ifdef HAVE_IFPACK_SUPERLU
   ,true // SuperLU's Supernodal ILUTP
 #endif
+#if defined (HAVE_IFPACK_SUPPORTGRAPH) && defined (HAVE_IFPACK_AMESOS)
+  ,false
+#endif
 #ifdef HAVE_IFPACK_SUPPORTGRAPH
-  ,false
-  ,false
-  ,false
   ,false
 #endif
   ,false // CHEBYSHEV
@@ -334,22 +334,19 @@ Ifpack_Preconditioner* Ifpack::Create(EPrecType PrecType,
     case SILU:
       return(new Ifpack_SILU(Matrix));
 #endif
-#ifdef HAVE_IFPACK_SUPPORTGRAPH
-
+#if defined (HAVE_IFPACK_SUPPORTGRAPH) && defined (HAVE_IFPACK_AMESOS)
     case MSF_AMESOS:
       if (serial && !overrideSerialDefault)
-	return(new Ifpack_SupportGraph<>(Matrix));
+	return(new Ifpack_SupportGraph<Ifpack_Amesos>(Matrix));
       else
-	return(new Ifpack_AdditiveSchwarz<Ifpack_SupportGraph<> >(Matrix,Overlap));
-    case MSF_AMESOS_STAND_ALONE:
-      return(new Ifpack_SupportGraph<>(Matrix));
+	return(new Ifpack_AdditiveSchwarz<Ifpack_SupportGraph<Ifpack_Amesos> >(Matrix,Overlap));
+#endif
+#ifdef HAVE_IFPACK_SUPPORTGRAPH
     case MSF_IC:
       if (serial && !overrideSerialDefault)
 	return(new Ifpack_SupportGraph<Ifpack_SupportGraph<Ifpack_IC> >(Matrix));
       else
 	return(new Ifpack_AdditiveSchwarz<Ifpack_SupportGraph<Ifpack_IC> >(Matrix,Overlap));
-    case MSF_IC_STAND_ALONE:
-      return(new Ifpack_SupportGraph<Ifpack_IC>(Matrix));
 #endif
     case CHEBYSHEV:
       return(new Ifpack_Chebyshev(Matrix));

@@ -62,8 +62,9 @@
 #include "Galeri_CrsMatrices.h"
 //#include "Ifpack_CrsRick.h"
 #include "Ifpack.h"
-#include "Ifpack_DiagPreconditioner.h"
 #include "Teuchos_RefCountPtr.hpp"
+
+
 
 // function for fancy output
 
@@ -89,12 +90,28 @@ int main(int argc, char *argv[]) {
 #else
   Epetra_SerialComm Comm;
 #endif
-
+  
   int MyPID = Comm.MyPID();
   bool verbose = false; 
   if (MyPID==0) verbose = true;
 
-  // The problem is defined on a 2D grid, global size is nx * nx.
+  
+  /*int npRows = -1;
+  int npCols = -1;
+  bool useTwoD = false;
+  int randomize = 1;
+  std::string matrix = "Laplacian";
+  
+  Epetra_CrsMatrix *AK = NULL;
+    std::string filename = "email.mtx";
+  read_matrixmarket_file((char*) filename.c_str(), Comm, AK,
+			 useTwoD, npRows, npCols,
+			 randomize, false,
+			 (matrix.find("Laplacian")!=string::npos));
+  Teuchos::RCP<Epetra_CrsMatrix> A(AK);
+  const Epetra_Map *AMap = &(AK->DomainMap());
+  Teuchos::RCP<const Epetra_Map> Map(AMap, false);*/
+
   int nx = 30;
   Teuchos::ParameterList GaleriList;
   GaleriList.set("nx", nx);
@@ -103,13 +120,16 @@ int main(int argc, char *argv[]) {
   GaleriList.set("my", Comm.NumProc());
   Teuchos::RefCountPtr<Epetra_Map> Map = Teuchos::rcp( Galeri::CreateMap("Cartesian2D", Comm, GaleriList) );
   Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( Galeri::CreateCrsMatrix("Laplace2D", &*Map, GaleriList) );
+
   Teuchos::RefCountPtr<Epetra_MultiVector> LHS = Teuchos::rcp( new Epetra_MultiVector(*Map, 1) );
   Teuchos::RefCountPtr<Epetra_MultiVector> RHS = Teuchos::rcp( new Epetra_MultiVector(*Map, 1) );
+
+
   LHS->PutScalar(0.0); RHS->Random();
 
-  // ========================================= //
-  // Compare IC preconditioners to no precond. //
-  // ----------------------------------------- //
+  // ==================================================== //
+  // Compare support graph preconditioners to no precond. //
+  // ---------------------------------------------------- //
 
   const double tol = 1e-5;
   const int maxIter = 500;
@@ -125,81 +145,32 @@ int main(int argc, char *argv[]) {
   solver.SetLHS(&*LHS);
   solver.SetRHS(&*RHS);
   solver.SetAztecOption(AZ_solver,AZ_cg);
-  //solver.SetPrecOperator(&*PrecDiag);
   solver.SetAztecOption(AZ_output, 16); 
   solver.Iterate(maxIter, tol);
 
   int Iters = solver.NumIters();
-  //cout << "No preconditioner iterations: " << Iters << endl;
 
-#if 0 
-  // Not sure how to use Ifpack_CrsRick - leave out for now.
-  //
-  // I wanna test funky values to be sure that they have the same
-  // influence on the algorithms, both old and new
-  int    LevelFill = 2;
-  double DropTol = 0.3333;
-  double Condest;
-  
-  Teuchos::RefCountPtr<Ifpack_CrsRick> IC;
-  Ifpack_IlukGraph mygraph (A->Graph(), 0, 0);
-  IC = Teuchos::rcp( new Ifpack_CrsRick(*A, mygraph) );
-  IC->SetAbsoluteThreshold(0.00123);
-  IC->SetRelativeThreshold(0.9876);
-  // Init values from A
-  IC->InitValues(*A);
-  // compute the factors
-  IC->Factor();
-  // and now estimate the condition number
-  IC->Condest(false,Condest);
-  
-  if( Comm.MyPID() == 0 ) {
-    cout << "Condition number estimate (level-of-fill = "
-	 << LevelFill <<  ") = " << Condest << endl;
-  }
 
-  // Define label for printing out during the solve phase
-  string label = "Ifpack_CrsRick Preconditioner: LevelFill = " + toString(LevelFill) + 
-                                                 " Overlap = 0"; 
-  IC->SetLabel(label.c_str());
-  
-  // Here we create an AztecOO object
-  LHS->PutScalar(0.0);
-
-  AztecOO solver;
-  solver.SetUserMatrix(&*A);
-  solver.SetLHS(&*LHS);
-  solver.SetRHS(&*RHS);
-  solver.SetAztecOption(AZ_solver,AZ_cg);
-  solver.SetPrecOperator(&*IC);
-  solver.SetAztecOption(AZ_output, 16); 
-  solver.Iterate(maxIter, tol);
-
-  int RickIters = solver.NumIters();
-  //cout << "Ifpack_Rick iterations: " << RickIters << endl;
-
-  // Compare to no preconditioning
-  if (RickIters > Iters/2)
-    IFPACK_CHK_ERR(-1);
-
-#endif
-
-  //////////////////////////////////////////////////////
-  // Same test with Ifpack_IC
-  // This is Crout threshold Cholesky, so different than IC(0)
-
+  int SupportIters;
   Ifpack Factory;
-  Teuchos::RefCountPtr<Ifpack_Preconditioner> PrecIC = Teuchos::rcp( Factory.Create("IC", &*A) );
-
   Teuchos::ParameterList List;
-  //List.get("fact: ict level-of-fill", 2.);
-  //List.get("fact: drop tolerance", 0.3333);
-  //List.get("fact: absolute threshold", 0.00123);
-  //List.get("fact: relative threshold", 0.9876);
-  //List.get("fact: relaxation value", 0.0);
 
-  IFPACK_CHK_ERR(PrecIC->SetParameters(List));
-  IFPACK_CHK_ERR(PrecIC->Compute());
+#ifdef HAVE_IFPACK_AMESOS
+  //////////////////////////////////////////////////////
+  // Same test with Ifpack_SupportGraph
+  // Factored with Amesos
+
+  
+  Teuchos::RefCountPtr<Ifpack_Preconditioner> PrecSupportAmesos = Teuchos::rcp( Factory.Create("MSF Amesos", &*A) );
+  List.set("amesos: solver type","Klu");
+  List.set("MST: keep diagonal", 1.0);
+  List.set("MST: randomize", 1);
+  //List.set("fact: absolute threshold", 3.0);
+  
+  IFPACK_CHK_ERR(PrecSupportAmesos->SetParameters(List));
+  IFPACK_CHK_ERR(PrecSupportAmesos->Initialize());
+  IFPACK_CHK_ERR(PrecSupportAmesos->Compute());
+
 
   // Here we create an AztecOO object
   LHS->PutScalar(0.0);
@@ -209,52 +180,57 @@ int main(int argc, char *argv[]) {
   solver.SetLHS(&*LHS);
   solver.SetRHS(&*RHS);
   solver.SetAztecOption(AZ_solver,AZ_cg);
-  solver.SetPrecOperator(&*PrecIC);
+  solver.SetPrecOperator(&*PrecSupportAmesos);
   solver.SetAztecOption(AZ_output, 16); 
   solver.Iterate(maxIter, tol);
 
-  int ICIters = solver.NumIters();
-  //cout << "Ifpack_IC iterations: " << ICIters << endl;
+  SupportIters = solver.NumIters();
 
+
+
+
+  
   // Compare to no preconditioning
-  if (ICIters > Iters/2)
+  if (SupportIters > 2*Iters)
     IFPACK_CHK_ERR(-1);
 
-#if 0
+#endif
+
   //////////////////////////////////////////////////////
-  // Same test with Ifpack_ICT 
-  // This is another threshold Cholesky
+  // Same test with Ifpack_SupportGraph
+  // Factored with IC
+  
 
-  Teuchos::RefCountPtr<Ifpack_Preconditioner> PrecICT = Teuchos::rcp( Factory.Create("ICT", &*A) );
+  
+  Teuchos::RefCountPtr<Ifpack_Preconditioner> PrecSupportIC = Teuchos::rcp( Factory.Create("MSF IC", &*A) );
 
-  //Teuchos::ParameterList List;
-  //List.get("fact: level-of-fill", 2);
-  //List.get("fact: drop tolerance", 0.3333);
-  //List.get("fact: absolute threshold", 0.00123);
-  //List.get("fact: relative threshold", 0.9876);
-  //List.get("fact: relaxation value", 0.0);
+  
 
-  IFPACK_CHK_ERR(PrecICT->SetParameters(List));
-  IFPACK_CHK_ERR(PrecICT->Compute());
+  IFPACK_CHK_ERR(PrecSupportIC->SetParameters(List));
+  IFPACK_CHK_ERR(PrecSupportIC->Compute());
 
-  // Here we create an AztecOO object
+
+  // Here we create an AztecOO object                                                                                                                                                                                                        
   LHS->PutScalar(0.0);
 
+  //AztecOO solver;                                                                                                                                                                                                                          
   solver.SetUserMatrix(&*A);
   solver.SetLHS(&*LHS);
   solver.SetRHS(&*RHS);
   solver.SetAztecOption(AZ_solver,AZ_cg);
-  solver.SetPrecOperator(&*PrecICT);
-  solver.SetAztecOption(AZ_output, 16); 
+  solver.SetPrecOperator(&*PrecSupportIC);
+  solver.SetAztecOption(AZ_output, 16);
   solver.Iterate(maxIter, tol);
 
-  int ICTIters = solver.NumIters();
-  //cout << "Ifpack_ICT iterations: " << ICTIters << endl;
+  SupportIters = solver.NumIters();
 
-  // Compare to no preconditioning
-  if (ICTIters > Iters/2)
+  // Compare to no preconditioning                                                                                                                                                                                                           
+  if (SupportIters > 2*Iters)
     IFPACK_CHK_ERR(-1);
-#endif
+  
+
+
+
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;
