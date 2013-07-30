@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
       RCP<KokkosClassic::TPINode> tpi_node =
         rcp(new KokkosClassic::TPINode(pl_tpi));
       const RCP<const Mat_TPINode> J_TPI = J->clone(tpi_node, plClone);
-      J_TPI->print(cout);
+      J_TPI->print(std::cout);
 
       //Clone RILUK preconditioner
       RCP<TPIPrec> M_TPI =
@@ -287,7 +287,7 @@ int main(int argc, char *argv[]) {
       RCP<KokkosClassic::ThrustGPUNode> thrustnode =
         rcp(new KokkosClassic::ThrustGPUNode(pl_gpu));
       const RCP<const Mat_GPUNode> J_GPU = J->clone(thrustnode, plClone);
-      J_GPU->print(cout);
+      J_GPU->print(std::cout);
 
       //Clone RILUK preconditioner
       RCP<GPUPrec> M_GPU =
@@ -352,14 +352,14 @@ int main(int argc, char *argv[]) {
   catch (std::exception& e) {
     std::cout << e.what() << std::endl;
   }
-  catch (string& s) {
+  catch (std::string& s) {
     std::cout << s << std::endl;
   }
   catch (char *s) {
     std::cout << s << std::endl;
   }
   catch (...) {
-    std::cout << "Caught unknown exception!" <<std:: endl;
+    std::cout << "Caught unknown exception!" << std::endl;
   }
 
 }
