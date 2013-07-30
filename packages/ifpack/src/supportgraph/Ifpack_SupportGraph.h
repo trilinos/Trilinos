@@ -1002,12 +1002,6 @@ int Ifpack_SupportGraph<T>::FindSupport()
   
   // Create the CrsMatrix for the support graph                                                 
   Support_ = rcp(new Epetra_CrsMatrix(Copy, Matrix().RowMatrixRowMap(),l, false));
-
-  std::cout << "checking numperrow" << std::endl;
-  for(int i = 0; i < num_verts; i++)
-    {
-      std::cout << l[i] << " entries in row " << i << std::endl;
-    }
   
  
   // Fill in the matrix with the stl vectors for each row                                       
