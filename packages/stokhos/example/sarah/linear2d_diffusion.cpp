@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
     // Create comm
     RCP<const Teuchos::Comm<LocalOrdinal> > comm =
       Teuchos::DefaultComm<int>::getComm();
-    int MyPID = comm->getRank();
+    int my_rank = comm->getRank();
 
     // Parse command line options
     Teuchos::CommandLineProcessor CLP;
@@ -118,18 +118,26 @@ int main(int argc, char *argv[]) {
     int num_threads = 0;
     CLP.setOption("num_threads", &num_threads,
                   "Number of threads for TPI node");
+    int ranks_per_node = 1;
+    CLP.setOption("ranks_per_node", &ranks_per_node,
+                  "Number of MPI ranks per node");
+    int gpu_ranks_per_node = 1;
+    CLP.setOption("gpu_ranks_per_node", &gpu_ranks_per_node,
+                  "Number of MPI ranks per node for GPUs");
     int device_offset = 0;
     CLP.setOption("device_offset", &device_offset,
                   "Offset for attaching MPI ranks to CUDA devices");
     CLP.parse( argc, argv );
-    if (MyPID == 0)
+    if (my_rank == 0)
       std::cout << "Summary of command line options:" << std::endl
-                << "\tgpu           = " << gpu << std::endl
-                << "\ttpi           = " << tpi << std::endl
-                << "\tnum_mesh      = " << n << std::endl
-                << "\tsymmetric     = " << symmetric << std::endl
-                << "\tnum_threads   = " << num_threads << std::endl
-                << "\tdevice_offset = " << device_offset << std::endl;
+                << "\tgpu                = " << gpu << std::endl
+                << "\ttpi                = " << tpi << std::endl
+                << "\tnum_mesh           = " << n << std::endl
+                << "\tsymmetric          = " << symmetric << std::endl
+                << "\tnum_threads        = " << num_threads << std::endl
+                << "\tranks_per_node     = " << ranks_per_node << std::endl
+                << "\tgpu_ranks_per_node = " << gpu_ranks_per_node << std::endl
+                << "\tdevice_offset      = " << device_offset << std::endl;
 
     // Create application
     typedef twoD_diffusion_problem<Scalar,MeshScalar,BasisScalar,LocalOrdinal,GlobalOrdinal,Node> problem_type;
@@ -200,7 +208,8 @@ int main(int argc, char *argv[]) {
                                                                  belosParams));
 
     // Solve linear system
-    std::cout << "Solving with default node..." << std::endl;
+    if (my_rank == 0)
+      std::cout << "Solving with default node..." << std::endl;
     solver->solve();
     Teuchos::TimeMonitor::summarize(std::cout);
     Teuchos::TimeMonitor::zeroOutTimers();
@@ -253,7 +262,8 @@ int main(int argc, char *argv[]) {
                 tpi_problem, belosParams));
 
       // Solve linear system for TPI node
-      std::cout << "Solving with TPI node..." << std::endl;
+      if (my_rank == 0)
+        std::cout << "Solving with TPI node..." << std::endl;
       tpi_solver->solve();
       Teuchos::TimeMonitor::summarize(std::cout);
       Teuchos::TimeMonitor::zeroOutTimers();
@@ -264,75 +274,140 @@ int main(int argc, char *argv[]) {
       RCP<MV> dx_tpioncpu = dx_tpi->clone(serialnode);
       dx_tpioncpu->update(1.0, *dx, -1.0);
       dx_tpioncpu->norm2(Teuchos::arrayView(&tpi_norm,1));
-      if (MyPID == 0)
+      if (my_rank == 0)
         std::cout << "\nNorm of serial node soln - tpi node soln = " << tpi_norm << std::endl;
     }
 
     // Solve linear system with GPU node type
     if (gpu) {
+      if (my_rank == 0)
+        std::cout << "Solving with GPU node..." << std::endl;
 
-      // Compute CUDA device ID
+      // Compute whether we are a CPU or GPU rank, and GPU device ID
+      // The first gpu_ranks_per_node ranks are associated with GPUs
+      // (may not be the best choice performance-wise)
+      int num_ranks = comm->getSize();
+      int num_node = num_ranks / ranks_per_node;
+      int node_rank = num_node == 1 ? my_rank : my_rank % num_node;
+      bool gpu_rank = my_rank < gpu_ranks_per_node;
       int num_device; cudaGetDeviceCount(&num_device);
-      int device_id = MyPID % num_device + device_offset;
+      int device_id = node_rank + device_offset;
       TEUCHOS_TEST_FOR_EXCEPTION(
-        device_id > num_device, std::logic_error,
+        num_node*ranks_per_node != num_ranks, std::logic_error,
+        "ranks_per_node does not evenly divide num_ranks");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        gpu_ranks_per_node > num_device, std::logic_error,
+        "gpu_ranks_per_node cannot exceed number of GPU devices");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        gpu_rank && device_id > num_device, std::logic_error,
         "Invalid device ID " << device_id << ".  You probably are trying" <<
         " to run with too many MPI ranks");
 
-      //Convert J to GPU node type
-      RCP<ParameterList> plClone = parameterList();
-      ParameterList pl_gpu;
-      pl_gpu.set("Verbose", 1);
-      pl_gpu.set("Device Number", device_id);
-      RCP<KokkosClassic::ThrustGPUNode> thrustnode =
-        rcp(new KokkosClassic::ThrustGPUNode(pl_gpu));
-      const RCP<const Mat_GPUNode> J_GPU = J->clone(thrustnode, plClone);
-      J_GPU->print(std::cout);
+      if (gpu_rank) {
+         std::cout << "MPI rank " << my_rank
+                   << ":  Attached to GPU " << device_id
+                   << std::endl;
 
-      //Clone RILUK preconditioner
-      RCP<GPUPrec> M_GPU =
-        factory.clone<Tpetra_CrsMatrix, Mat_GPUNode>(M, J_GPU);
+        //Convert J to GPU node type
+        RCP<ParameterList> plClone = parameterList();
+        ParameterList pl_gpu;
+        pl_gpu.set("Verbose", 1);
+        pl_gpu.set("Device Number", device_id);
+        RCP<KokkosClassic::ThrustGPUNode> thrustnode =
+          rcp(new KokkosClassic::ThrustGPUNode(pl_gpu));
+        const RCP<const Mat_GPUNode> J_GPU = J->clone(thrustnode, plClone);
+        J_GPU->print(std::cout);
 
-      //Clone Chebyshev preconditioner
-      RCP<GPUPrec>  M_chev_gpu =
-        factory.clone<Tpetra_CrsMatrix, Mat_GPUNode>(M_chev, J_GPU);
+        //Clone RILUK preconditioner
+        RCP<GPUPrec> M_GPU =
+          factory.clone<Tpetra_CrsMatrix, Mat_GPUNode>(M, J_GPU);
 
-      //Convert f, dx to GPU node type
-      RCP<GPU_MV> f_gpu = f->clone(thrustnode);
-      RCP<GPU_MV> dx_gpu = dx->clone(thrustnode);
+        //Clone Chebyshev preconditioner
+        RCP<GPUPrec>  M_chev_gpu =
+          factory.clone<Tpetra_CrsMatrix, Mat_GPUNode>(M_chev, J_GPU);
 
-      //Create problem for GPU node
-      typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::ThrustGPUNode> GPU_OP;
-      typedef Belos::LinearProblem<Scalar,GPU_MV,GPU_OP> GPU_BLinProb;
-      RCP <GPU_BLinProb> gpu_problem =
-        rcp(new GPU_BLinProb(J_GPU, dx_gpu, f_gpu));
-      gpu_problem->setRightPrec(M_GPU);
-      gpu_problem->setProblem();
+        //Convert f, dx to GPU node type
+        RCP<GPU_MV> f_gpu = f->clone(thrustnode);
+        RCP<GPU_MV> dx_gpu = dx->clone(thrustnode);
 
-      //Create solver for GPU node
-      RCP<Belos::SolverManager<Scalar,GPU_MV,GPU_OP> > gpu_solver;
-      if (symmetric)
-        gpu_solver =
-          rcp(new Belos::PseudoBlockCGSolMgr<Scalar,GPU_MV,GPU_OP>(
-                gpu_problem, belosParams));
-      else
-        gpu_solver =
-          rcp(new Belos::PseudoBlockGmresSolMgr<Scalar,GPU_MV,GPU_OP>(
-                gpu_problem, belosParams));
+        //Create problem for GPU node
+        typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::ThrustGPUNode> GPU_OP;
+        typedef Belos::LinearProblem<Scalar,GPU_MV,GPU_OP> GPU_BLinProb;
+        RCP <GPU_BLinProb> gpu_problem =
+          rcp(new GPU_BLinProb(J_GPU, dx_gpu, f_gpu));
+        gpu_problem->setRightPrec(M_GPU);
+        gpu_problem->setProblem();
 
-      // Solve linear system for GPU node
-      std::cout << "Solving with GPU node..." << std::endl;
-      gpu_solver->solve();
+        //Create solver for GPU node
+        RCP<Belos::SolverManager<Scalar,GPU_MV,GPU_OP> > gpu_solver;
+        if (symmetric)
+          gpu_solver =
+            rcp(new Belos::PseudoBlockCGSolMgr<Scalar,GPU_MV,GPU_OP>(
+                  gpu_problem, belosParams));
+        else
+          gpu_solver =
+            rcp(new Belos::PseudoBlockGmresSolMgr<Scalar,GPU_MV,GPU_OP>(
+                  gpu_problem, belosParams));
+
+        // Solve linear system for GPU node
+        gpu_solver->solve();
+
+        ParameterList pl_serial;
+        RCP<KokkosClassic::SerialNode> serialnode =
+          rcp(new KokkosClassic::SerialNode(pl_serial));
+        RCP<MV> dx_gpuoncpu = dx_gpu->clone(serialnode);
+        dx_gpuoncpu->update(1.0, *dx, -1.0);
+        dx_gpuoncpu->norm2(Teuchos::arrayView(&gpu_norm,1));
+      }
+      else {
+        //Convert J to GPU node type
+        RCP<ParameterList> plClone = parameterList();
+        ParameterList pl_gpu;
+        pl_gpu.set("Verbose", 1);
+        pl_gpu.set("Device Number", device_id);
+        RCP<KokkosClassic::SerialNode> thrustnode =
+          rcp(new KokkosClassic::SerialNode(pl_gpu));
+        const RCP<const Tpetra_CrsMatrix> J_GPU = J->clone(thrustnode, plClone);
+        J_GPU->print(std::cout);
+
+        //Clone RILUK preconditioner
+        RCP<Tprec> M_GPU =
+          factory.clone<Tpetra_CrsMatrix, Tpetra_CrsMatrix>(M, J_GPU);
+
+        //Clone Chebyshev preconditioner
+        RCP<Tprec>  M_chev_gpu =
+          factory.clone<Tpetra_CrsMatrix, Tpetra_CrsMatrix>(M_chev, J_GPU);
+
+        //Convert f, dx to GPU node type
+        RCP<MV> f_gpu = f->clone(thrustnode);
+        RCP<MV> dx_gpu = dx->clone(thrustnode);
+
+        //Create new serial solver
+        RCP< BLinProb > gpu_problem = rcp(new BLinProb(J, dx_gpu, f));
+        problem->setRightPrec(M);
+        problem->setProblem();
+        RCP<Belos::SolverManager<Scalar,MV,OP> > solver;
+        if (symmetric)
+          solver = rcp(new Belos::PseudoBlockCGSolMgr<Scalar,MV,OP>(
+                         problem, belosParams));
+        else
+          solver = rcp(new Belos::PseudoBlockGmresSolMgr<Scalar,MV,OP>(
+                         problem, belosParams));
+
+        // Solve linear system
+        solver->solve();
+
+        ParameterList pl_serial;
+        RCP<KokkosClassic::SerialNode> serialnode =
+          rcp(new KokkosClassic::SerialNode(pl_serial));
+        RCP<MV> dx_gpuoncpu = dx_gpu->clone(serialnode);
+        dx_gpuoncpu->update(1.0, *dx, -1.0);
+        dx_gpuoncpu->norm2(Teuchos::arrayView(&gpu_norm,1));
+      }
       Teuchos::TimeMonitor::summarize(std::cout);
       Teuchos::TimeMonitor::zeroOutTimers();
 
-      ParameterList pl_serial;
-      RCP<KokkosClassic::SerialNode> serialnode =
-        rcp(new KokkosClassic::SerialNode(pl_serial));
-      RCP<MV> dx_gpuoncpu = dx_gpu->clone(serialnode);
-      dx_gpuoncpu->update(1.0, *dx, -1.0);
-      dx_gpuoncpu->norm2(Teuchos::arrayView(&gpu_norm,1));
-      if (MyPID == 0)
+      if (my_rank == 0)
         std::cout << "\nNorm of serial node soln - gpu node soln = " << gpu_norm << std::endl;
     }
 
@@ -340,7 +415,7 @@ int main(int argc, char *argv[]) {
     bool passed = false;
     if (gpu_norm < Scalar(1e-12) && tpi_norm < Scalar(1e-12))
         passed = true;
-    if (MyPID == 0) {
+    if (my_rank == 0) {
       if (passed)
         std::cout << "Example Passed!" << std::endl;
       else
