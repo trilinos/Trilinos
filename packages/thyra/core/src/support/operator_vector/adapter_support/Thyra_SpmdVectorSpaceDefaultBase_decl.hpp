@@ -211,7 +211,7 @@ protected:
    * *new* parallel vector space constructed and very few parallel
    * vector spaces will be created per application usually.
    */
-  virtual void updateState( const Ordinal globalDim );
+  virtual void updateState(const Ordinal globalDim, const bool isLocallyReplicated_in);
 
 private:
 

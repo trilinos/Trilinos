@@ -162,9 +162,14 @@ bool SpmdVectorSpaceDefaultBase<Scalar>::isCompatible(
 
 
 template<class Scalar>
-void SpmdVectorSpaceDefaultBase<Scalar>::updateState( const Ordinal globalDim )
+void SpmdVectorSpaceDefaultBase<Scalar>::updateState(const Ordinal globalDim,
+  const bool isLocallyReplicated_in)
 {
   namespace SVSU = SpmdVectorSpaceUtilities;
+
+  //
+  // A) Get the comm, comm info, and local subdim
+  //
 
   localSubDim_ = this->localSubDim(); 
 
@@ -176,41 +181,72 @@ void SpmdVectorSpaceDefaultBase<Scalar>::updateState( const Ordinal globalDim )
     numProcs = comm->getSize();
   }
 
+  //
+  // B) Determine the type of vector space
+  //
+
   Ordinal sumLocalSubDims = localSubDim_;
-  if (numProcs > 1) {
-    sumLocalSubDims = SVSU::computeGlobalDim(*comm, localSubDim_);
+
+  bool isSerialOrLocallyReplicated = false;
+  bool isEmpty = false;
+  bool isDistributed = false;
+
+  if (isLocallyReplicated_in) {
+    // Avoid communication when we know this is locally replicated
+    isSerialOrLocallyReplicated = true;
+    if (sumLocalSubDims == 0) {
+      isEmpty = true;
+    }
+  }
+  else {
+    if (numProcs > 1) {
+      sumLocalSubDims = SVSU::computeGlobalDim(*comm, localSubDim_);
+    }
+    if (sumLocalSubDims == 0) {
+      // This is an uninitialized space (zero on every process)
+      isEmpty = true;
+    }
+    else if (
+      numProcs == 1
+      ||
+      (
+        sumLocalSubDims / numProcs == globalDim
+        &&
+        sumLocalSubDims % numProcs == 0
+        )
+      )
+    {
+      // This is a serial or a locally-replicated parallel
+      // vector space.
+      isSerialOrLocallyReplicated = true;
+      TEUCHOS_TEST_FOR_EXCEPTION(numProcs > 1, std::logic_error,
+        "Error, you are creating a locally replicated vector space implicitly which"
+        " is very inefficient.  Please pass in isLocallyReplicated=true to avoid"
+        " unnecessary global communication!");
+    }
+    else {
+      // This is a regular distributed vector space
+      isDistributed = true;
+    }
   }
 
-  isLocallyReplicated_ = false;
-  if (sumLocalSubDims == 0) {
-    // This is an uninitialized space (zero on every process)
+  //
+  // C) Set the state of the vector space for the given type
+  //
+
+  if (isEmpty) {
     mapCode_  = 0;
     defaultLocalOffset_ = 0;
     defaultGlobalDim_ = 0;
   }
-  else if (
-    numProcs == 1
-    ||
-    (
-      sumLocalSubDims / numProcs == globalDim
-      &&
-      sumLocalSubDims % numProcs == 0
-      )
-    )
-  {
-    // This is a serial or a locally-replicated parallel
-    // vector space.
+  else if (isSerialOrLocallyReplicated) {
     isLocallyReplicated_ = true;
     mapCode_ = localSubDim_;
     defaultLocalOffset_ = 0;
     defaultGlobalDim_ = localSubDim_;
-    // ToDo: Comment this back in!
-    //isLocallyReplicated_ = ( numProcs == 1 ? false : true );
-    // NOTE: If it is just one process, there is no reason to mark the space
-    // as locally replicated because there is no replication!
   }
   else {
-    // This is a regular distributed vector space
+    TEUCHOS_ASSERT(isDistributed);
     defaultGlobalDim_ = sumLocalSubDims;
     mapCode_ = SVSU::computeMapCode(*comm, localSubDim_);
     defaultLocalOffset_ = SVSU::computeLocalOffset(*comm, localSubDim_);

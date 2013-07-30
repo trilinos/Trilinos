@@ -213,7 +213,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, locallyReplicatedPara
   ECHO(const RCP<const Teuchos::Comm<Ordinal> > comm =
     Teuchos::DefaultComm<Teuchos_Ordinal>::getComm());
   ECHO(RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
-    defaultSpmdVectorSpace<Scalar>(comm, g_localDim, g_localDim));
+    defaultSpmdVectorSpace<Scalar>(comm, g_localDim, g_localDim, true));
   TEST_EQUALITY(vs->getComm(), comm);
   TEST_EQUALITY_CONST(vs->localOffset(), as<Ordinal>(0));
   TEST_EQUALITY(vs->localSubDim(), as<Ordinal>(g_localDim));
