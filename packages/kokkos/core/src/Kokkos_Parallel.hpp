@@ -275,6 +275,8 @@ namespace Impl {
 template< class FunctorType , class ScalarType , class >
 struct ReduceAdapter
 {
+  enum { StaticValueSize = sizeof(ScalarType) };
+
   typedef ScalarType & reference_type  ;
   typedef ScalarType * pointer_type  ;
 
@@ -315,6 +317,8 @@ struct ReduceAdapter
 template< class FunctorType , class ScalarType >
 struct ReduceAdapter< FunctorType , ScalarType , typename FunctorType::has_final >
 {
+  enum { StaticValueSize = sizeof(ScalarType) };
+
   typedef ScalarType & reference_type  ;
   typedef ScalarType * pointer_type  ;
 
@@ -357,6 +361,8 @@ struct ReduceAdapter< FunctorType , ScalarType , typename FunctorType::has_final
 template< class FunctorType , class ScalarType , class NoFinal >
 struct ReduceAdapter< FunctorType , ScalarType[] , NoFinal >
 {
+  enum { StaticValueSize = 0 };
+
   typedef ScalarType * reference_type  ;
   typedef ScalarType * pointer_type  ;
 
@@ -397,6 +403,8 @@ struct ReduceAdapter< FunctorType , ScalarType[] , NoFinal >
 template< class FunctorType , class ScalarType >
 struct ReduceAdapter< FunctorType , ScalarType[] , typename FunctorType::has_final >
 {
+  enum { StaticValueSize = 0 };
+
   typedef ScalarType * reference_type  ;
   typedef ScalarType * pointer_type  ;
 

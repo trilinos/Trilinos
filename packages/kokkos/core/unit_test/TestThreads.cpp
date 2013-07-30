@@ -79,7 +79,6 @@ protected:
 
     std::pair<unsigned,unsigned> team_league ;
 
-#if 0
     // Initialize and finalize with no threads:
     Kokkos::Threads::initialize( std::pair<unsigned,unsigned>(1,1) );
     Kokkos::Threads::finalize();
@@ -87,13 +86,11 @@ protected:
     team_league.first = core_top.first ;
     team_league.second = ( core_top.second * core_size );
     Kokkos::Threads::initialize( team_league );
-    Kokkos::Threads::print_configuration( std::cout );
     Kokkos::Threads::finalize();
 
     team_league.first = core_top.first * 2 ;
     team_league.second = ( core_top.second * core_size ) / 2 ;
     Kokkos::Threads::initialize( team_league );
-    Kokkos::Threads::print_configuration( std::cout );
     Kokkos::Threads::finalize();
 
     // Quick attempt to verify thread start/terminate don't have race condition:
@@ -104,12 +101,10 @@ protected:
       Kokkos::Threads::finalize();
     }
 
-#endif
-
     team_league.first  = core_top.first ;
     team_league.second = ( core_top.second * core_size ) / 2 ;
     Kokkos::Threads::initialize( team_league );
-    Kokkos::Threads::print_configuration( std::cout , true );
+    Kokkos::Threads::print_configuration( std::cout );
   }
 
   static void TearDownTestCase()

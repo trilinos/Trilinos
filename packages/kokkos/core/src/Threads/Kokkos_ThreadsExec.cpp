@@ -256,6 +256,11 @@ void ThreadsExec::set_threads_relationships(
   }}
 }
 
+void ThreadsExec::execute_get_binding( ThreadsExec & exec , const void * )
+{
+  s_threads_coord[ exec.m_thread_rank ] = Kokkos::hwloc::get_this_thread_coordinate();
+}
+
 void ThreadsExec::execute_sleep( ThreadsExec & exec , const void * )
 {
   ThreadsExec::global_lock();
@@ -545,15 +550,24 @@ void ThreadsExec::print_configuration( std::ostream & s , const bool detail )
     s << std::endl ;
 
     if ( detail ) {
+
+      execute_serial( & execute_get_binding );
+
       for ( unsigned i = 0 ; i < s_threads_count ; ++i ) {
         ThreadsExec * const th = s_threads_exec[i] ;
-        s << "  Thread" ;
+        s << "  Thread hwloc("
+          << s_threads_coord[i].first << ","
+          << s_threads_coord[i].second << ")" ;
+
+        s_threads_coord[i].first  = ~0u ;
+        s_threads_coord[i].second = ~0u ;
+
         if ( th ) {
-          s << "[" << th->m_league_rank << "." << th->m_team_rank << "]" ;
+          s << " rank(" << th->m_league_rank << "." << th->m_team_rank << ")" ;
           if ( th->m_fan_size ) {
-            s << " Fan" ;
+            s << " Fan ranks" ;
             for ( int j = 0 ; j < th->m_fan_size ; ++j ) {
-              s << " [" << th->m_fan[j]->m_league_rank << "." << th->m_fan[j]->m_team_rank << "]" ;
+              s << " (" << th->m_fan[j]->m_league_rank << "." << th->m_fan[j]->m_team_rank << ")" ;
             }
           }
         }
@@ -652,9 +666,7 @@ void ThreadsExec::initialize(
         if ( s_threads_coord[i].first <= master_coord.first ) {
           --( s_threads_coord[i].first );
         }
-std::cout << "thread_map (" << s_threads_coord[i].first << "," << s_threads_coord[i].second << ")" << std::endl ;
       }
-
 
       asynchronous = true ;
     }

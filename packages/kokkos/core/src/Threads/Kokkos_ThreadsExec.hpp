@@ -96,6 +96,7 @@ private:
   static void execute_sleep( ThreadsExec & , const void * );
   static void execute_reduce_resize( ThreadsExec & , const void * );
   static void execute_shared_resize( ThreadsExec & , const void * );
+  static void execute_get_binding(   ThreadsExec & , const void * );
 
   ThreadsExec( const ThreadsExec & );
   ThreadsExec & operator = ( const ThreadsExec & );
