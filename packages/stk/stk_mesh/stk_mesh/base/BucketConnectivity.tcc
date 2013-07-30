@@ -921,21 +921,17 @@ private:
   unsigned compute_new_connectivity_capacity(unsigned capacity_ratio = 2)
   {
     const unsigned old_capacity = m_targets.capacity();
-    const unsigned careful_threshold = 2048;
+    static const unsigned careful_threshold = 2048;
 
     if (old_capacity < careful_threshold)
     {
-      const unsigned new_capacity = old_capacity > 0 ? old_capacity : 8*chunk_size;
+      const unsigned new_capacity = old_capacity > 0 ? 2 * old_capacity : 8*chunk_size;
       return new_capacity;
     }
 
-    //    unsigned used = 0;
-    //    size_t lim = m_num_connectivities.size();
-    //    for (size_t i = 0; i < lim; ++i)
-    //    {
-    //      used += m_num_connectivities[i];
-    //    }
-
+    // The old capacity is at or above the threshold for being careful about growing
+    // the connectivity representation(and memory footprint).  Only grow the capacity
+    // if compressing the representation will not yield sufficient unused capacity.
     if (capacity_ratio * m_total_connectivities > old_capacity)
     {
       return 2 * old_capacity;
@@ -963,17 +959,6 @@ private:
     if (chunks_available < chunks_needed_by_entity)
     {
       const unsigned new_capacity = compute_new_connectivity_capacity();
-      // Important line, defines how capacity grows. We do doublings for now.
-      // const unsigned new_capacity = m_targets.capacity() > 0 ? 2*m_targets.capacity() : 8*chunk_size;
-
-#if 0
-      if (new_capacity > 1024)
-      {
-        std::cout << "add_connectivity_helper:  old_capacity " <<  m_targets.capacity()
-                  << "  new_capacity = " << new_capacity << "  chunks_available = " << chunks_available
-                  << " chunks_needed_by_entity = " << chunks_needed_by_entity << std::endl;
-      }
-#endif
       resize_and_order_by_index(new_capacity);
     }
 
