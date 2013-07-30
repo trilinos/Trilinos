@@ -15,7 +15,9 @@ IF(${STK_IS_V2} STREQUAL "ON")
   SET(STK_ALT_SRC_DIR "/stk_2.0/")
   SET(STK_TOPOLOGY ${STK_SOURCE_DIR_ALT}/stk_topology)
   # FIXME - need to remove this and get the code running without it, to export to Trilinos/open-source 
-  add_definitions(-DSIERRA_MIGRATION)
+  add_definitions(-DSIERRA_MIGRATION -DSTK_2_0)
+  SET(CMAKE_SWIG_FLAGS "-DSTK_2_0")
+
 ELSE()
   SET(STK_ALT_BIN_DIR "")
   SET(STK_ALT_SRC_DIR "")

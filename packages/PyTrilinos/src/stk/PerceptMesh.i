@@ -215,11 +215,14 @@ namespace std
 //from stk_io/util
 
 //ignore overloaded functions not supported by SWIG
-//srk %ignore stk::io::util::Gmesh_STKmesh_Fixture::getFEMMetaData() const;
-%ignore stk::io::util::Gmesh_STKmesh_Fixture::getMetaData() const;
 %ignore stk::io::util::Gmesh_STKmesh_Fixture::getBulkData() const;
-//srk %include Gmesh_STKmesh_Fixture.hpp
+#ifndef STK_2_0
+%ignore stk::io::util::Gmesh_STKmesh_Fixture::getFEMMetaData() const;
+%include Gmesh_STKmesh_Fixture.hpp
+#else
+%ignore stk::io::util::Gmesh_STKmesh_Fixture::getMetaData() const;
 %include stk_io/util/Gmesh_STKmesh_Fixture.hpp
+#endif
 
 //from stk_mesh/base
 
@@ -252,14 +255,20 @@ namespace std
 
 //from stk_mesh/baseImpl
 %include stk_mesh/baseImpl/FieldRepository.hpp
-//srk %include stk_mesh/fem/CellTopology.hpp
+#ifndef STK_2_0
+%include stk_mesh/fem/CellTopology.hpp
+#else
 %include stk_mesh/base/CellTopology.hpp
+#endif
 
 //from stk_mesh/fem
-//srk %include stk_mesh/fem/FEMMetaData.hpp
+#ifndef STK_2_0
+%include stk_mesh/fem/FEMMetaData.hpp
+%template(get_field) stk::mesh::fem::FEMMetaData::get_field<stk::mesh::FieldBase>;
+#else
 %include stk_mesh/base/MetaData.hpp
-//srk %template(get_field) stk::mesh::fem::FEMMetaData::get_field<stk::mesh::FieldBase>;
 %template(get_field) stk::mesh::MetaData::get_field<stk::mesh::FieldBase>;
+#endif
 
 //from stk_percept/function
 %include MDArray.hpp
