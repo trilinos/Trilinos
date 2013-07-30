@@ -4,19 +4,25 @@ FIND_PATH(MPI4PY_INCLUDE_DIR mpi4py HINTS ${PYTHON_INCLUDE_DIRS}/../../lib/pytho
 #################################################################################
 # NOTE: to build stk_2.0 (new Sierra forked version of stk, forked in
 # December 2012), see packages/stk/CMakeLists.txt, and comment the
-# next two lines and uncomment the following two.
+# next line and uncomment the following one.
 #################################################################################
+#SET(STK_IS_V2 "OFF")
 SET(STK_IS_V2 "ON")
+
 IF(${STK_IS_V2} STREQUAL "ON")
   MESSAGE("STK_IS_V2 is set")
   SET(STK_ALT_BIN_DIR "/stk_2.0/")
   SET(STK_ALT_SRC_DIR "/stk_2.0/")
   SET(STK_TOPOLOGY ${STK_SOURCE_DIR_ALT}/stk_topology)
+  # FIXME - need to remove this and get the code running without it, to export to Trilinos/open-source 
+  add_definitions(-DSIERRA_MIGRATION)
 ELSE()
   SET(STK_ALT_BIN_DIR "")
   SET(STK_ALT_SRC_DIR "")
   SET(STK_TOPOLOGY "")
 ENDIF()
+
+MESSAGE("NumPy_INCLUDE_DIR= "  ${NumPy_INCLUDE_DIR})
 
 SET(STK_BINARY_DIR_ALT ${STK_BINARY_DIR}${STK_ALT_BIN_DIR})
 SET(STK_SOURCE_DIR_ALT ${STK_SOURCE_DIR}${STK_ALT_SRC_DIR})

@@ -20,9 +20,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ON
   )
 
-# FIXME - need to remove this and get the code running without it, to export to Trilinos/open-source 
-add_definitions(-DSIERRA_MIGRATION)
-
 # set fortran mangling options
 
 IF(${FC_FN_UNDERSCORE} STREQUAL "NO_UNDER")
@@ -55,6 +52,9 @@ IF(${STK_IS_V2} STREQUAL "ON")
   MESSAGE("STK_IS_V2 is set")
   SET(STK_ALT_DIR "stk_2.0/")
   ADD_SUBDIRECTORY(${STK_ALT_DIR}stk_topology)
+  # FIXME - need to remove this and get the code running without it, to export to Trilinos/open-source 
+  add_definitions(-DSIERRA_MIGRATION)
+
 ELSE()
   SET(STK_ALT_DIR "")
 ENDIF()
