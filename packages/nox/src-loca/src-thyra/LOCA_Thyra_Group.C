@@ -75,12 +75,7 @@ LOCA::Thyra::Group::Group(
   implement_dfdp(impl_dfdp)
 {
   updateThyraParamView();
-
-  // Create x_dot vector of zeros
-  Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > xs = 
-    model_->get_x_space();
-  x_dot_vec = ::Thyra::createMember(xs);
-  ::Thyra::put_scalar(0.0, x_dot_vec.ptr());
+  updateThyraXDot();
 }
 
 LOCA::Thyra::Group::Group(const LOCA::Thyra::Group& source, 
@@ -94,12 +89,7 @@ LOCA::Thyra::Group::Group(const LOCA::Thyra::Group& source,
   implement_dfdp(source.implement_dfdp)
 {
   updateThyraParamView();
-
-  // Create x_dot vector of zeros
-  Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > xs = 
-    model_->get_x_space();
-  x_dot_vec = ::Thyra::createMember(xs);
-  ::Thyra::put_scalar(0.0, x_dot_vec.ptr());
+  updateThyraXDot();
 }
 
 LOCA::Thyra::Group::~Group() 
@@ -464,4 +454,16 @@ LOCA::Thyra::Group::updateThyraParamView()
   Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > ps =
     model_->get_p_space(param_index);
   param_thyra_vec = ::Thyra::createMemberView(ps,pv);
+}
+
+void
+LOCA::Thyra::Group::updateThyraXDot()
+{
+  // Create x_dot vector of zeros
+  Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > xs =
+    model_->get_x_space();
+  const Teuchos::RCP< ::Thyra::VectorBase<double> > x_dot_vec_setup =
+    ::Thyra::createMember(xs);
+  ::Thyra::put_scalar(0.0, x_dot_vec_setup.ptr());
+  x_dot_vec = x_dot_vec_setup;
 }

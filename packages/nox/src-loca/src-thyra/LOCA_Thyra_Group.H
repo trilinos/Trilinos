@@ -250,7 +250,7 @@ namespace LOCA {
       Teuchos::RCP< const ::Thyra::VectorBase<double> > param_thyra_vec;
 
       //! Pointer to x_dot vector of zeros
-      Teuchos::RCP< ::Thyra::VectorBase<double> > x_dot_vec;
+      Teuchos::RCP< const ::Thyra::VectorBase<double> > x_dot_vec;
 
       //! Strategy object for saving continuation data
       Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> saveDataStrategy;
@@ -262,6 +262,7 @@ namespace LOCA {
     private:
 
       void updateThyraParamView();
+      void updateThyraXDot();
     };
 
   } // namespace Thyra
