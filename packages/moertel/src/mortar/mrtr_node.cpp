@@ -285,7 +285,7 @@ void MOERTEL::Node::Reset()
 /*----------------------------------------------------------------------*
  |  << operator                                              mwgee 06/05|
  *----------------------------------------------------------------------*/
-ostream& operator << (ostream& os, const MOERTEL::Node& node)
+std::ostream& operator << (std::ostream& os, const MOERTEL::Node& node)
 { 
   node.Print();
   return (os);
@@ -325,7 +325,7 @@ bool MOERTEL::Node::Print() const
 	std::cout << ", member of " << NSupportSet() << " support sets";
   }
 
-  std::cout << endl;
+  std::cout << std::endl;
   return true;
 }
 

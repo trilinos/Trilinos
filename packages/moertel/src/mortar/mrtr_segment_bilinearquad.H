@@ -119,7 +119,7 @@ when quads are added to a \ref MOERTEL::Interface they will be split into
 2 triangles internally that are then used to perform the integration. The orientation of
 the 2 triangles resulting from 1 quad is consistent with the orientation of the quad.
 
-The \ref MOERTEL::Segment_BiLinearQuad class supports the ostream& operator <<
+The \ref MOERTEL::Segment_BiLinearQuad class supports the std::ostream& operator <<
 
 \author Glen Hansen (gahanse@sandia.gov)
 
@@ -223,7 +223,7 @@ protected:
 } // namespace MOERTEL
 
 // << operator
-ostream& operator << (ostream& os, const MOERTEL::Segment_BiLinearQuad& seg);
+std::ostream& operator << (std::ostream& os, const MOERTEL::Segment_BiLinearQuad& seg);
 
 
 #endif // MOERTEL_SEGMENT_BILINEARQUAD_H

@@ -131,7 +131,7 @@
   {
     if (A==Teuchos::null)
       {
-        cout << "ERROR: SplitMatrix2x2: A==null on entry" << endl;
+        std::cout << "ERROR: SplitMatrix2x2: A==null on entry" << std::endl;
         return false;
       }
 
@@ -161,7 +161,7 @@
         }
       if (count != A22map.NumGlobalElements())
         {
-          cout << "ERROR SplitMatrix2x2: mismatch in dimensions" << endl;
+          std::cout << "ERROR SplitMatrix2x2: mismatch in dimensions" << std::endl;
           return false;
         }
 
@@ -187,7 +187,7 @@
           int err = A->ExtractMyRowView(i,numentries,values,cindices);
           if (err)
             {
-              cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << endl;
+              std::cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << std::endl;
               return false;
             }
 
@@ -203,17 +203,17 @@
               // see whether we have gcid in a22gmap
               std::map<int,int>::iterator curr = a22gmap.find(gcid);
               if (curr==a22gmap.end()) continue;
-              //cout << gcid << " ";
+              //std::cout << gcid << " ";
               a22gcindices[count] = gcid;
               a22values[count]    = values[j];
               ++count;
             }
-          //cout << endl; fflush(stdout);
+          //std::cout << std::endl; fflush(stdout);
           // add this filtered row to A22
           err = A22->InsertGlobalValues(grid,count,&a22values[0],&a22gcindices[0]);
           if (err<0)
             {
-              cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << endl;
+              std::cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << std::endl;
               return false;
             }
 
@@ -239,7 +239,7 @@
           int err = A->ExtractMyRowView(i,numentries,values,cindices);
           if (err)
             {
-              cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << endl;
+              std::cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << std::endl;
               return false;
             }
 
@@ -262,7 +262,7 @@
           err = A11->InsertGlobalValues(grid,count,&a11values[0],&a11gcindices[0]);
           if (err<0)
             {
-              cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << endl;
+              std::cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << std::endl;
               return false;
             }
 
@@ -288,7 +288,7 @@
           int err = A->ExtractMyRowView(i,numentries,values,cindices);
           if (err)
             {
-              cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << endl;
+              std::cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << std::endl;
               return false;
             }
 
@@ -311,7 +311,7 @@
           err = A12->InsertGlobalValues(grid,count,&a12values[0],&a12gcindices[0]);
           if (err<0)
             {
-              cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << endl;
+              std::cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << std::endl;
               return false;
             }
 
@@ -337,7 +337,7 @@
           int err = A->ExtractMyRowView(i,numentries,values,cindices);
           if (err)
             {
-              cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << endl;
+              std::cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << std::endl;
               return false;
             }
 
@@ -360,7 +360,7 @@
           err = A21->InsertGlobalValues(grid,count,&a21values[0],&a21gcindices[0]);
           if (err<0)
             {
-              cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << endl;
+              std::cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << std::endl;
               return false;
             }
 

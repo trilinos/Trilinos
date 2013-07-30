@@ -68,7 +68,7 @@ class Epetra_InvOperator: public virtual Epetra_Operator {
   */
   Epetra_InvOperator(Epetra_Operator * operatorIn) {
     operator_ = operatorIn; 
-    Label_ = "Inverse of " + string(operatorIn->Label());
+    Label_ = "Inverse of " + std::string(operatorIn->Label());
     return;
   }
     //! Destructor
@@ -127,7 +127,7 @@ class Epetra_InvOperator: public virtual Epetra_Operator {
   //! @name Attribute access functions
   //@{ 
 
-  //! Returns a character string describing the operator
+  //! Returns a character std::string describing the operator
   const char * Label() const {return(Label_.c_str());}
 
   //! Returns a pointer to the Epetra_Operator operator object that was used to create this Epetra_InvOperator object.
@@ -161,7 +161,7 @@ class Epetra_InvOperator: public virtual Epetra_Operator {
  protected:
 
   Epetra_Operator * operator_;
-  string Label_;
+  std::string Label_;
 };
 
 #endif /* EPETRA_INVOPERATOR_H */

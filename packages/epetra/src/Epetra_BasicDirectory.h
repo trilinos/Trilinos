@@ -138,7 +138,7 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
   //! @name I/O Methods
   //@{ 
   //! Print method
-  virtual void Print(ostream & os) const;
+  virtual void Print(std::ostream & os) const;
   //@}
 
  private:

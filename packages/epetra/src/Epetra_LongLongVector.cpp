@@ -197,7 +197,7 @@ Epetra_LongLongVector& Epetra_LongLongVector::operator = (const Epetra_LongLongV
   return(*this);
 }
 
-void Epetra_LongLongVector::Print(ostream& os) const {
+void Epetra_LongLongVector::Print(std::ostream& os) const {
   int MyPID = Map().Comm().MyPID();
   int NumProc = Map().Comm().NumProc();
   
@@ -219,7 +219,7 @@ void Epetra_LongLongVector::Print(ostream& os) const {
     os <<  "     GID/Point";
   os.width(20);
   os <<  "Value  ";
-  os << endl;
+  os << std::endl;
       }
       for (int i=0; i < NumMyElements1; i++) {
   for (int ii=0; ii< Map().ElementSize(i); ii++) {
@@ -237,10 +237,10 @@ void Epetra_LongLongVector::Print(ostream& os) const {
     }
         os.width(20);
         os <<  Values_[iii];
-    os << endl;
+    os << std::endl;
   }
       }
-      os << flush; 
+      os << std::flush; 
     }
 
     // Do a few global ops to give I/O a chance to complete

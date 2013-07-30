@@ -252,7 +252,7 @@
   }
 
   void MANGLE(epetra_vector_print)(EPETRA_OBJECT_REF x) {
-    cout << *(Epetra_Vector *) x;
+    std::cout << *(Epetra_Vector *) x;
   }
 
   void MANGLE(epetra_vector_destroy)(EPETRA_OBJECT_REF x) {

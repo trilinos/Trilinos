@@ -1,7 +1,7 @@
 #include "Epetra_CrsMatrix.h"
 #include <vector>
 
-int TestAllClasses( const std::vector<string> AmesosClasses,
+int TestAllClasses( const std::vector<std::string> AmesosClasses,
 		     int EpetraMatrixType,
 		    const std::vector<bool> AmesosClassesInstalled,
 		    Epetra_CrsMatrix *& Amat, 

@@ -28,12 +28,12 @@
 namespace MLAPI
 {
 
-InverseOperator::InverseOperator(const Operator& Op, const string Type)
+InverseOperator::InverseOperator(const Operator& Op, const std::string Type)
 {
   Reshape(Op, Type);
 }
 
-InverseOperator::InverseOperator(const Operator& Op, const string Type,
+InverseOperator::InverseOperator(const Operator& Op, const std::string Type,
                 Teuchos::ParameterList& List)
 {
   Reshape(Op, Type, List);
@@ -67,7 +67,7 @@ void InverseOperator::Reshape()
   Destroy();
 }
 
-void InverseOperator::Reshape(const Operator& Op, const string Type)
+void InverseOperator::Reshape(const Operator& Op, const std::string Type)
 {
   Teuchos::ParameterList List;
   Reshape(Op, Type, List);
@@ -89,7 +89,7 @@ void InverseOperator::Reshape(Ifpack_Preconditioner* prec, const Operator& Op,
   UpdateTime();
 }
 
-void InverseOperator::Reshape(const Operator& Op, const string Type,
+void InverseOperator::Reshape(const Operator& Op, const std::string Type,
              Teuchos::ParameterList& List, Teuchos::ParameterList* pushlist)
 {
   ResetTimer();
@@ -105,7 +105,7 @@ void InverseOperator::Reshape(const Operator& Op, const string Type,
   int LOF_ilu     = List.get("smoother: ilu fill", 0);
   double LOF_ict  = List.get("smoother: ilut fill", 1.0);
   double LOF_ilut = List.get("smoother: ict fill", 1.0);
-  string reorder  = List.get("schwarz: reordering type","rcm");
+  std::string reorder  = List.get("schwarz: reordering type","rcm");
 
   Teuchos::ParameterList IFPACKList;
 
@@ -135,27 +135,27 @@ void InverseOperator::Reshape(const Operator& Op, const string Type,
 
   if (Type == "Jacobi") {
     if (verbose) {
-      cout << "Damping factor = " << Damping 
-        << ", sweeps = " << NumSweeps << endl;
-      cout << endl;
+      std::cout << "Damping factor = " << Damping 
+        << ", sweeps = " << NumSweeps << std::endl;
+      std::cout << std::endl;
     }
     IFPACKList.set("relaxation: type", "Jacobi");
     Prec = new Ifpack_PointRelaxation(RowMatrix());
   }
   else if (Type == "Gauss-Seidel") {
     if (verbose) {
-      cout << "Damping factor = " << Damping 
-        << ", sweeps = " << NumSweeps << endl;
-      cout << endl;
+      std::cout << "Damping factor = " << Damping 
+        << ", sweeps = " << NumSweeps << std::endl;
+      std::cout << std::endl;
     }
     IFPACKList.set("relaxation: type", "Gauss-Seidel");
     Prec = new Ifpack_PointRelaxation(RowMatrix());
   }
   else if (Type == "symmetric Gauss-Seidel") {
     if (verbose) {
-      cout << "Damping factor = " << Damping 
-        << ", sweeps = " << NumSweeps << endl;
-      cout << endl;
+      std::cout << "Damping factor = " << Damping 
+        << ", sweeps = " << NumSweeps << std::endl;
+      std::cout << std::endl;
     }
     IFPACKList.set("relaxation: type", "symmetric Gauss-Seidel");
 
@@ -163,9 +163,9 @@ void InverseOperator::Reshape(const Operator& Op, const string Type,
   }
   else if (Type == "ILU") {
     if (verbose) {
-      cout << "ILU factorization, ov = 0, no reordering, LOF = "
-        << LOF_ilu << endl;
-      cout << endl;
+      std::cout << "ILU factorization, ov = 0, no reordering, LOF = "
+        << LOF_ilu << std::endl;
+      std::cout << std::endl;
     }
     
     // use the Additive Schwarz class because it does reordering
@@ -173,39 +173,39 @@ void InverseOperator::Reshape(const Operator& Op, const string Type,
   }
   else if (Type == "ILUT") {
     if (verbose) {
-      cout << "ILUT factorization, ov = 0, no reordering, LOF = "
-        << LOF_ilu << endl;
-      cout << endl;
+      std::cout << "ILUT factorization, ov = 0, no reordering, LOF = "
+        << LOF_ilu << std::endl;
+      std::cout << std::endl;
     }
     Prec = new Ifpack_ILUT(RowMatrix());
   }
   else if (Type == "IC") {
     if (verbose) {
-      cout << "IC factorization, ov = 0, no reordering, LOF = "
-        << LOF_ilu << endl;
-      cout << endl;
+      std::cout << "IC factorization, ov = 0, no reordering, LOF = "
+        << LOF_ilu << std::endl;
+      std::cout << std::endl;
     }
     Prec = new Ifpack_IC(RowMatrix());
   }
   else if (Type == "ICT") {
     if (verbose) {
-      cout << "ICT factorization, ov = 0, no reordering, LOF = "
-        << LOF_ilu << endl;
-      cout << endl;
+      std::cout << "ICT factorization, ov = 0, no reordering, LOF = "
+        << LOF_ilu << std::endl;
+      std::cout << std::endl;
     }
     Prec = new Ifpack_ICT(RowMatrix());
   }
   else if (Type == "LU") {
     if (verbose) {
-      cout << "LU factorization, ov = 0, local solver = KLU" << endl;
-      cout << endl;
+      std::cout << "LU factorization, ov = 0, local solver = KLU" << std::endl;
+      std::cout << std::endl;
     }
     Prec = new Ifpack_AdditiveSchwarz<Ifpack_Amesos>(RowMatrix());
   }
   else if (Type == "Amesos" || Type == "Amesos-KLU")  {
     if (verbose) {
-      cout << "Amesos-KLU direct solver" << endl;
-      cout << endl;
+      std::cout << "Amesos-KLU direct solver" << std::endl;
+      std::cout << std::endl;
     }
     Prec = new Ifpack_Amesos(RowMatrix());
   }
@@ -214,8 +214,8 @@ void InverseOperator::Reshape(const Operator& Op, const string Type,
            Type == "ML Gauss-Seidel") 
   {
     if (verbose) {
-      cout << "ML's MLS smoother" << endl;
-      cout << endl;
+      std::cout << "ML's MLS smoother" << std::endl;
+      std::cout << std::endl;
       }
     Teuchos::ParameterList mlparams;
     ML_Epetra::SetDefaults("SA",mlparams);
@@ -385,24 +385,24 @@ InverseOperator::operator()(const MultiVector& LHS,
   return(RHS2);
 }
 
-ostream& 
+std::ostream& 
 InverseOperator::Print(std::ostream& os, const bool verbose) const
 {
 
   StackPush();
 
   if (GetMyPID() == 0) {
-    os << "***MLAPI::InverseOperator" << endl;
-    os << "Label             = " << GetLabel() << endl;
-    os << "Number of rows    = " << GetRangeSpace().GetNumGlobalElements() << endl;
-    os << "Number of columns = " << GetRangeSpace().GetNumGlobalElements() << endl;
-    os << "Flop count        = " << GetFlops() << endl;
-    os << "Cumulative time   = " << GetTime() << endl;
+    os << "***MLAPI::InverseOperator" << std::endl;
+    os << "Label             = " << GetLabel() << std::endl;
+    os << "Number of rows    = " << GetRangeSpace().GetNumGlobalElements() << std::endl;
+    os << "Number of columns = " << GetRangeSpace().GetNumGlobalElements() << std::endl;
+    os << "Flop count        = " << GetFlops() << std::endl;
+    os << "Cumulative time   = " << GetTime() << std::endl;
     if (GetTime() != 0.0)
-      os << "MFlops rate       = " << 1.0e-6 * GetFlops() / GetTime() << endl;
+      os << "MFlops rate       = " << 1.0e-6 * GetFlops() / GetTime() << std::endl;
     else
-      os << "MFlops rate       = 0.0" << endl;
-    os << endl;
+      os << "MFlops rate       = 0.0" << std::endl;
+    os << std::endl;
   }
 
   StackPop();

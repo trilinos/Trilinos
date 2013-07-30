@@ -419,7 +419,7 @@ int run_test(Epetra_Comm& Comm,
   std::string C_file;
   bool transA, transB;
 
-  if(!Comm.MyPID()) cout<<"Testing: "<<filename<<endl;
+  if(!Comm.MyPID()) std::cout<<"Testing: "<<filename<<std::endl;
 
   int err = read_matrix_file_names(Comm, filename, A_file, transA,
                                    B_file, transB, C_file);

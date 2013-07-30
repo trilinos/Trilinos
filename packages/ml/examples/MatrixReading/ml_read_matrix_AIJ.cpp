@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
     char *FileName = argv[1];
     if (FileName == 0)
     {
-      cerr << "Usage: <executable name> <matrix name>" << endl;
+      std::cerr << "Usage: <executable name> <matrix name>" << std::endl;
 #ifdef HAVE_MPI
       MPI_Finalize();
 #endif
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
     data_file.open(FileName);
 
     if (!data_file.good()) {
-      std::cerr << "Error opening file `" << FileName << "'" << endl;
+      std::cerr << "Error opening file `" << FileName << "'" << std::endl;
       exit(EXIT_FAILURE);
     }
 
@@ -104,10 +104,10 @@ int main(int argc, char *argv[])
     data_file >> NumElements;
     data_file >> Offset;
 
-    cout << "Matrix name                = " << FileName << endl;
-    cout << "Number of rows             = " << NumRows << endl;
-    cout << "Number of nonzero elements = " << NumElements << endl;
-    cout << "Offset                     = " << Offset << endl;
+    std::cout << "Matrix name                = " << FileName << std::endl;
+    std::cout << "Number of rows             = " << NumRows << std::endl;
+    std::cout << "Number of nonzero elements = " << NumElements << std::endl;
+    std::cout << "Offset                     = " << Offset << std::endl;
   }
   else
     NumRows = 0;
@@ -129,9 +129,9 @@ int main(int argc, char *argv[])
 
       if (row < Offset || col < Offset || row >= NumRows + Offset || col >= NumRows + Offset)
       {
-        cout << "Something wrong at element " << i << endl;
-        cout << "row = " << row;
-        cout << ", col = " << col << ", while NumRows = " << NumRows << endl;
+        std::cout << "Something wrong at element " << i << std::endl;
+        std::cout << "row = " << row;
+        std::cout << ", col = " << col << ", while NumRows = " << NumRows << std::endl;
         exit(EXIT_FAILURE);
       }
              
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
       ierr = SerialMatrix->InsertGlobalValues(row,1,&val,&col);
       if (ierr < 0)
       {
-        cout << "Error at element " << i << endl;
+        std::cout << "Error at element " << i << std::endl;
         ML_CHK_ERR(ierr);
       }
 #if 0

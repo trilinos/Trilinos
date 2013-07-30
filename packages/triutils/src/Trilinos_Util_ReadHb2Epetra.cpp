@@ -276,12 +276,12 @@ void Trilinos_Util_ReadHb2Epetra_internal(char *data_file,
   A->Multiply(false, *xexact, bcomp);
   double residual;
   bcomp.Norm2(&residual);
-  if (comm.MyPID()==0) cout << "Norm of computed b = " << residual << endl;
+  if (comm.MyPID()==0) std::cout << "Norm of computed b = " << residual << std::endl;
   b->Norm2(&residual);
-  if (comm.MyPID()==0) cout << "Norm of given b    = " << residual << endl;
+  if (comm.MyPID()==0) std::cout << "Norm of given b    = " << residual << std::endl;
   bcomp.Update(-1.0, *b, 1.0);
   bcomp.Norm2(&residual);
-  if (comm.MyPID()==0) cout << "Norm of difference between computed b and given b for xexact = " << residual << endl;
+  if (comm.MyPID()==0) std::cout << "Norm of difference between computed b and given b for xexact = " << residual << std::endl;
   
   /* Release unneeded space */
   if (comm.MyPID()==0) {

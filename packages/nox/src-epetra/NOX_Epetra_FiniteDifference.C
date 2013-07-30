@@ -560,7 +560,7 @@ Epetra_CrsMatrix& FiniteDifference::getUnderlyingMatrix() const
   return *jacobian;
 }
 
-void FiniteDifference::Print(ostream& strm) const
+void FiniteDifference::Print(std::ostream& strm) const
 {
   jacobian->Print(strm);
 }

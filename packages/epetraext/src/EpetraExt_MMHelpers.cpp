@@ -89,17 +89,17 @@ void CrsMatrixStruct::deleteContents()
 
 int dumpCrsMatrixStruct(const CrsMatrixStruct& M)
 {
-  cout << "proc " << M.rowMap->Comm().MyPID()<<endl;
-  cout << "numRows: " << M.numRows<<endl;
+  std::cout << "proc " << M.rowMap->Comm().MyPID()<<std::endl;
+  std::cout << "numRows: " << M.numRows<<std::endl;
   for(int i=0; i<M.numRows; ++i) {
     for(int j=0; j<M.numEntriesPerRow[i]; ++j) {
       if (M.remote[i]) {
-        cout << "  *"<<M.rowMap->GID(i)<<"   "
-             <<M.importColMap->GID(M.indices[i][j])<<"   "<<M.values[i][j]<<endl;
+        std::cout << "  *"<<M.rowMap->GID(i)<<"   "
+             <<M.importColMap->GID(M.indices[i][j])<<"   "<<M.values[i][j]<<std::endl;
       }
       else {
-        cout << "   "<<M.rowMap->GID(i)<<"   "
-             <<M.colMap->GID(M.indices[i][j])<<"   "<<M.values[i][j]<<endl;
+        std::cout << "   "<<M.rowMap->GID(i)<<"   "
+             <<M.colMap->GID(M.indices[i][j])<<"   "<<M.values[i][j]<<std::endl;
       }
     }
   }

@@ -1216,7 +1216,7 @@ void ML_Enforce_Sparsity(ML_Operator * A, struct ML_CSR_MSRdata *Pattern)
 				//if we've reached the end of the row in Pattern, zero the rest of row i in A
 	      if(zero_flag == 1)
 		{
-		  //					if(i == 63) {cout << "Here 6" << std::endl;}
+		  //					if(i == 63) {std::cout << "Here 6" << std::endl;}
 		  for(j = j+1; j < Arow_end; j++)
 		    {	
 		      Acsr_data->values[j] = 0.0; 
@@ -2181,8 +2181,8 @@ exit(1);
 	}
       oldsum = newsum;	
 	
-      //	cout << "newsum = " << newsum << std::endl;
-      //	cout << "pk(1,1) = " << ((struct ML_CSR_MSRdata *) pk->data)->values[0] << std::endl;
+      //	std::cout << "newsum = " << newsum << std::endl;
+      //	std::cout << "pk(1,1) = " << ((struct ML_CSR_MSRdata *) pk->data)->values[0] << std::endl;
 
       //ap = Amat*pk
       if(i > 1)

@@ -150,7 +150,7 @@ class Epetra_SerialDistributor: public Epetra_Object, public virtual Epetra_Dist
                      int & len_import_objs,
                      char *& import_objs);
 
-  virtual void Print(ostream & os) const;
+  virtual void Print(std::ostream & os) const;
 
  private:
   int nrecvs_;

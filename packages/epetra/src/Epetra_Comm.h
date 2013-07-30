@@ -466,7 +466,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Comm {
   //! @name I/O methods
   //@{ 
   //! Print object to an output stream
-  virtual void PrintInfo(ostream & os) const = 0;
+  virtual void PrintInfo(std::ostream & os) const = 0;
   //@}
 };
 #endif /* EPETRA_COMM_H */

@@ -353,7 +353,7 @@ the sond row gives the local size of the row- and column map.
 \param A : Matrix to print
 \param ibase : Index base, should be either 1 or 0 
 */
-bool Print_Matrix(string name, Epetra_CrsMatrix& A, int ibase);
+bool Print_Matrix(std::string name, Epetra_CrsMatrix& A, int ibase);
 
 /*!
 \brief Print graph to file
@@ -368,7 +368,7 @@ the second row gives the local size of the row- and column map.
 \param A : Graph to print
 \param ibase : Index base, should be either 1 or 0 
 */
-bool Print_Graph(string name, Epetra_CrsGraph& A, int ibase);
+bool Print_Graph(std::string name, Epetra_CrsGraph& A, int ibase);
 
 /*!
 \brief Print vector to file
@@ -381,7 +381,7 @@ Index base can either be 0 or 1.
 \param v : Vector to print
 \param ibase : Index base, should be either 1 or 0 
 */
-bool Print_Vector(string name, Epetra_Vector& v, int ibase);
+bool Print_Vector(std::string name, Epetra_Vector& v, int ibase);
 
 //! Error reporting method
 int ReportError(const std::stringstream &Message);

@@ -417,7 +417,7 @@ int main(int argc, char *argv[])
             stepper.describe(*out,verbLevel);
           if (dt_taken != dt)
           {
-            cerr << "Error, stepper took step of dt = " << dt_taken 
+            std::cerr << "Error, stepper took step of dt = " << dt_taken 
               << " when asked to take step of dt = " << dt << std::endl;
             break;
           }
@@ -507,10 +507,10 @@ int main(int argc, char *argv[])
             TEUCHOS_TEST_FOR_EXCEPT(stepStatusMaster.stepSize != stepStatusSlave.stepSize);
             TEUCHOS_TEST_FOR_EXCEPT(stepStatusMaster.time != stepStatusSlave.time);
             if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-              *out << "Master order = " << stepStatusMaster.order << endl;
-              *out << " Slave order = " << stepStatusSlave.order << endl;
-              *out << "Master LET Value = " << stepStatusMaster.stepLETValue << endl;
-              *out << " Slave LET Value = " << stepStatusSlave.stepLETValue << endl;
+              *out << "Master order = " << stepStatusMaster.order << std::endl;
+              *out << " Slave order = " << stepStatusSlave.order << std::endl;
+              *out << "Master LET Value = " << stepStatusMaster.stepLETValue << std::endl;
+              *out << " Slave LET Value = " << stepStatusSlave.stepLETValue << std::endl;
             }
             TEUCHOS_TEST_FOR_EXCEPTION(stepStatusMaster.order != stepStatusSlave.order, std::logic_error,
                 "Error, stepStatusMaster.order = " << stepStatusMaster.order << 
@@ -530,7 +530,7 @@ int main(int argc, char *argv[])
             Thyra::V_StVpStV<double>(vec_temp.ptr(),1.0,*stepStatusMaster.solution,-1.0,*stepStatusSlave.solution);
             double normSolutionDiff = Thyra::norm_inf<double>(*vec_temp);
             if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-              *out << "normSolutionDiff = " << normSolutionDiff << endl;
+              *out << "normSolutionDiff = " << normSolutionDiff << std::endl;
             }
             const double eps = 1.0e6*Teuchos::ScalarTraits<double>::prec();
             TEUCHOS_TEST_FOR_EXCEPTION(normSolutionDiff > eps, std::logic_error,
@@ -544,7 +544,7 @@ int main(int argc, char *argv[])
               Thyra::V_VmV<double>(vec_temp.ptr(),*master_x_dot,*slave_x_dot);
               double normSolutionDotDiff = Thyra::norm_inf<double>(*vec_temp);
               if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-                *out << "normSolutionDotDiff = " << normSolutionDotDiff << endl;
+                *out << "normSolutionDotDiff = " << normSolutionDotDiff << std::endl;
               }
               TEUCHOS_TEST_FOR_EXCEPTION(normSolutionDotDiff > eps, std::logic_error,
                   "Error, normSolutionDotDiff = " << normSolutionDotDiff << " > eps = " << eps << "!");
@@ -556,7 +556,7 @@ int main(int argc, char *argv[])
             stepper.describe(*out,verbLevel);
           if (dt_taken < 0)
           {
-            *out << "Error, stepper failed for some reason with step taken = " << dt_taken << endl;
+            *out << "Error, stepper failed for some reason with step taken = " << dt_taken << std::endl;
             break;
           }
           if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) )
@@ -616,14 +616,14 @@ int main(int argc, char *argv[])
             }
           }
           time += dt_taken;
-          *out << "Took stepsize of: " << dt_taken << " time = " << time << endl;
+          *out << "Took stepsize of: " << dt_taken << " time = " << time << std::endl;
         }
         // Get solution out of stepper:
         stepStatus = stepper.getStepStatus();
         x_computed_thyra_ptr = stepStatus.solution;
       }
     }
-    *out << "Integrated to time = " << time << endl;
+    *out << "Integrated to time = " << time << std::endl;
 
     // Convert solution from Thyra::VectorBase to Epetra_Vector
     RCP<const Epetra_Vector>

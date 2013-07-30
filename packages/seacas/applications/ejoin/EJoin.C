@@ -1197,8 +1197,10 @@ namespace {
 	  break;
 	}
       }
-      steps[p] = min_step+1;
-      part_mesh[p]->begin_state(steps[p]);
+      if (nts > 0) {
+	steps[p] = min_step+1;
+	part_mesh[p]->begin_state(steps[p]);
+      }
     }
 
     output_globals(output_region, part_mesh, time, steps);

@@ -90,7 +90,7 @@ Epetra_BlockMapData::Epetra_BlockMapData(long long NumGlobalElements, int Elemen
     LastContiguousGIDLoc_(0),
     LIDHash_(0)
 {
-  //cout << "--BMD created, addr: " << this << endl; //DATA_DEBUG
+  //cout << "--BMD created, addr: " << this << std::endl; //DATA_DEBUG
 }
 
 //=============================================================================
@@ -110,5 +110,5 @@ Epetra_BlockMapData::~Epetra_BlockMapData()
     delete Comm_;
     Comm_ = 0;
   }
-  //cout << "--BMD destroyed, addr: " << this << endl; //DATA_DEBUG
+  //cout << "--BMD destroyed, addr: " << this << std::endl; //DATA_DEBUG
 }

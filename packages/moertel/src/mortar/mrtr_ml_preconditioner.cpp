@@ -210,10 +210,10 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
   int     nsdim         = mlparams_.get("null space: dimension",1);
   int     numpde        = mlparams_.get("PDE equations",1);
   double  damping       = mlparams_.get("aggregation: damping factor",1.33);
-  string  eigenanalysis = mlparams_.get("eigen-analysis: type", "Anorm");
-  string  smoothertype  = mlparams_.get("smoother: type","symmetric Gauss-Seidel");
-  string  coarsetype    = mlparams_.get("coarse: type","Amesos-KLU");
-  string  ptype         = mlparams_.get("prolongator: type","mod_full");
+  std::string  eigenanalysis = mlparams_.get("eigen-analysis: type", "Anorm");
+  std::string  smoothertype  = mlparams_.get("smoother: type","symmetric Gauss-Seidel");
+  std::string  coarsetype    = mlparams_.get("coarse: type","Amesos-KLU");
+  std::string  ptype         = mlparams_.get("prolongator: type","mod_full");
   
   MLAPI::Space space(A_->RowMatrixRowMap());
   MLAPI::Operator mlapiA(space,space,A_.get(),false);
@@ -287,7 +287,7 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
     if (Comm().MyPID()==0)
     {
       ML_print_line("-", 78);
-      cout << "MOERTEL/ML : creating smoother level " << level << endl; 
+      std::cout << "MOERTEL/ML : creating smoother level " << level << std::endl; 
       fflush(stdout);
     }
     S.Reshape(mlapiAtilde,smoothertype,mlparams_);
@@ -298,7 +298,7 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
     if (Comm().MyPID()==0)
     {
       ML_print_line("-", 80);
-      cout << "MOERTEL/ML : creating level " << level+1 << endl;
+      std::cout << "MOERTEL/ML : creating level " << level+1 << std::endl;
       ML_print_line("-", 80);
       fflush(stdout);
     }
@@ -389,7 +389,7 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
   if (Comm().MyPID()==0)
   {
     ML_print_line("-", 78);
-    cout << "MOERTEL/ML : creating coarse solver level " << level << endl; 
+    std::cout << "MOERTEL/ML : creating coarse solver level " << level << std::endl; 
     fflush(stdout);
   }
   S.Reshape(mlapiAtilde_[level],coarsetype,mlparams_);
@@ -523,10 +523,10 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
   int     nsdim         = mlparams_.get("null space: dimension",1);
   int     numpde        = mlparams_.get("PDE equations",1);
   double  damping       = mlparams_.get("aggregation: damping factor",1.33);
-  string  eigenanalysis = mlparams_.get("eigen-analysis: type", "Anorm");
-  string  smoothertype  = mlparams_.get("smoother: type","symmetric Gauss-Seidel");
-  string  coarsetype    = mlparams_.get("coarse: type","Amesos-KLU");
-  string  ptype         = mlparams_.get("prolongator: type","mod_full");
+  std::string  eigenanalysis = mlparams_.get("eigen-analysis: type", "Anorm");
+  std::string  smoothertype  = mlparams_.get("smoother: type","symmetric Gauss-Seidel");
+  std::string  coarsetype    = mlparams_.get("coarse: type","Amesos-KLU");
+  std::string  ptype         = mlparams_.get("prolongator: type","mod_full");
   
   // create the 2 rowmaps
   Arrmap_ = Teuchos::rcp(MOERTEL::SplitMap(A_->RowMap(),*Annmap_));
@@ -739,10 +739,10 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
   int     nsdim         = mlparams_.get("null space: dimension",1);
   int     numpde        = mlparams_.get("PDE equations",1);
   double  damping       = mlparams_.get("aggregation: damping factor",1.33);
-  string  eigenanalysis = mlparams_.get("eigen-analysis: type", "Anorm");
-  string  smoothertype  = mlparams_.get("smoother: type","symmetric Gauss-Seidel");
-  string  coarsetype    = mlparams_.get("coarse: type","Amesos-KLU");
-  string  ptype         = mlparams_.get("prolongator: type","mod_full");
+  std::string  eigenanalysis = mlparams_.get("eigen-analysis: type", "Anorm");
+  std::string  smoothertype  = mlparams_.get("smoother: type","symmetric Gauss-Seidel");
+  std::string  coarsetype    = mlparams_.get("coarse: type","Amesos-KLU");
+  std::string  ptype         = mlparams_.get("prolongator: type","mod_full");
   
   // create the missing rowmap Arrmap_ 
   Arrmap_ = Teuchos::rcp(MOERTEL::SplitMap(A_->RowMap(),*Annmap_));
@@ -904,7 +904,7 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
     if (Comm().MyPID()==0)
     {
       ML_print_line("-", 78);
-      cout << "MOERTEL/ML : creating smoother level " << level << endl; 
+      std::cout << "MOERTEL/ML : creating smoother level " << level << std::endl; 
       fflush(stdout);
     }
     S.Reshape(mlapiAtildesplit,smoothertype,mlparams_);
@@ -914,7 +914,7 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
     if (Comm().MyPID()==0)
     {
       ML_print_line("-", 80);
-      cout << "MOERTEL/ML : creating level " << level+1 << endl;
+      std::cout << "MOERTEL/ML : creating level " << level+1 << std::endl;
       ML_print_line("-", 80);
       fflush(stdout);
     }

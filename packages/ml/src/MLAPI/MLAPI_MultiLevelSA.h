@@ -140,13 +140,13 @@ public:
     // get parameter from the input list
     int         MaxLevels     = List_.get("max levels", 10);
     double      Damping       = List_.get("aggregation: damping factor", 1.3333);
-    string      EigenAnalysis = List_.get("eigen-analysis: type", "Anorm");
+    std::string      EigenAnalysis = List_.get("eigen-analysis: type", "Anorm");
     int         MaxCoarseSize = List_.get("coarse: max size", 32);
     MultiVector EmptySpace;
     MultiVector ThisNS        = List_.get("aggregation: null space", EmptySpace);
     int         NumPDEEqns    = List_.get("PDE equations", 1);
-    string      SmootherType  = List_.get("smoother: type", "symmetric Gauss-Seidel");
-    string      CoarseType    = List_.get("coarse: type", "Amesos-KLU");
+    std::string      SmootherType  = List_.get("smoother: type", "symmetric Gauss-Seidel");
+    std::string      CoarseType    = List_.get("coarse: type", "Amesos-KLU");
     
     // build up the default null space
     if (ThisNS.GetNumVectors() == 0) {
@@ -194,12 +194,12 @@ public:
 
       if (GetPrintLevel()) {
         ML_print_line("-", 80);
-        cout << "current working level   = " << level << endl;
-        cout << "number of global rows   = " << Aop.GetNumGlobalRows() << endl;
-        cout << "number of global nnz    = " << Aop.GetNumGlobalNonzeros() << endl;
-        cout << "threshold               = " << List_.get("aggregation: threshold", 0.0) << endl;
-        cout << "number of PDE equations = " << NumPDEEqns << endl;
-        cout << "null space dimension    = " << ThisNS.GetNumVectors() << endl;
+        std::cout << "current working level   = " << level << std::endl;
+        std::cout << "number of global rows   = " << Aop.GetNumGlobalRows() << std::endl;
+        std::cout << "number of global nnz    = " << Aop.GetNumGlobalNonzeros() << std::endl;
+        std::cout << "threshold               = " << List_.get("aggregation: threshold", 0.0) << std::endl;
+        std::cout << "number of PDE equations = " << NumPDEEqns << std::endl;
+        std::cout << "null space dimension    = " << ThisNS.GetNumVectors() << std::endl;
       }
 
       // load current level into database
@@ -238,14 +238,14 @@ public:
       }
 
       if (GetPrintLevel()) {
-        cout << "omega                   = " << Damping << endl;
+        std::cout << "omega                   = " << Damping << std::endl;
         if (LambdaMax != -1.0) {
-          cout << "lambda max              = " << LambdaMax << endl;
-          cout << "damping factor          = " << Damping / LambdaMax << endl;
+          std::cout << "lambda max              = " << LambdaMax << std::endl;
+          std::cout << "damping factor          = " << Damping / LambdaMax << std::endl;
         }
-        cout << "smoother type           = " << SmootherType << endl;
-        cout << "relaxation sweeps       = " << List_.get("smoother: sweeps", 1) << endl;
-        cout << "smoother damping        = " << List_.get("smoother: damping factor", 0.67) << endl;
+        std::cout << "smoother type           = " << SmootherType << std::endl;
+        std::cout << "relaxation sweeps       = " << List_.get("smoother: sweeps", 1) << std::endl;
+        std::cout << "smoother damping        = " << List_.get("smoother: damping factor", 0.67) << std::endl;
       }
 
       Rop = GetTranspose(Pop);
@@ -277,11 +277,11 @@ public:
 
     if (GetPrintLevel()) {
       ML_print_line("-", 80);
-      cout << "final level             = " << level << endl;
-      cout << "number of global rows   = " << A_[level].GetNumGlobalRows() << endl;
-      cout << "number of global nnz    = " << A_[level].GetNumGlobalNonzeros() << endl;
-      cout << "coarse solver           = " << CoarseType << endl;
-      cout << "time spent in constr.   = " << GetTime() << " (s)" << endl;
+      std::cout << "final level             = " << level << std::endl;
+      std::cout << "number of global rows   = " << A_[level].GetNumGlobalRows() << std::endl;
+      std::cout << "number of global nnz    = " << A_[level].GetNumGlobalNonzeros() << std::endl;
+      std::cout << "coarse solver           = " << CoarseType << std::endl;
+      std::cout << "time spent in constr.   = " << GetTime() << " (s)" << std::endl;
       ML_print_line("-", 80);
     }
 
@@ -356,17 +356,17 @@ public:
                       const bool verbose = true) const
   {
     if (GetMyPID() == 0) {
-      os << endl;
-      os << "*** MLAPI::MultiLevelSA, label = `" << GetLabel() << "'" << endl;
-      os << endl;
-      os << "Number of levels = " << GetMaxLevels() << endl;
-      os << "Flop count       = " << GetFlops() << endl;
-      os << "Cumulative time  = " << GetTime() << endl;
+      os << std::endl;
+      os << "*** MLAPI::MultiLevelSA, label = `" << GetLabel() << "'" << std::endl;
+      os << std::endl;
+      os << "Number of levels = " << GetMaxLevels() << std::endl;
+      os << "Flop count       = " << GetFlops() << std::endl;
+      os << "Cumulative time  = " << GetTime() << std::endl;
       if (GetTime() != 0.0)
-        os << "MFlops rate      = " << 1.0e-6 * GetFlops() / GetTime() << endl;
+        os << "MFlops rate      = " << 1.0e-6 * GetFlops() / GetTime() << std::endl;
       else
-        os << "MFlops rate      = 0.0" << endl;
-      os << endl;
+        os << "MFlops rate      = 0.0" << std::endl;
+      os << std::endl;
     }
     return(os);
   }

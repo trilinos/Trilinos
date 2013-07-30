@@ -607,7 +607,7 @@ Epetra_SerialDenseMatrix* MOERTEL::Integrator::Integrate(MOERTEL::Segment& sseg,
   } // for (int gp=0; gp<Ngp(); ++gp)  
 
 
-  //cout << *Mdense;
+  //std::cout << *Mdense;
 
   return Mdense;
 }
@@ -816,7 +816,7 @@ Epetra_SerialDenseMatrix* MOERTEL::Integrator::Integrate(MOERTEL::Segment& sseg,
     }
   } // for (int gp=0; gp<Ngp(); ++gp)
 
-  //cout << *Ddense;
+  //std::cout << *Ddense;
 
   return Ddense;
 }
@@ -878,7 +878,7 @@ Epetra_SerialDenseMatrix* MOERTEL::Integrator::Integrate_2D_Mmod(
   } // for (int gp=0; gp<integrator.Ngp(); ++gp)  
 
 
-  //cout << *Mmod;
+  //std::cout << *Mmod;
 
   return Mmod;
 }
@@ -940,9 +940,9 @@ bool MOERTEL::Integrator::Assemble_2D_Mod(MOERTEL::Interface& inter,
           if (err<0) {
 
 			throw ReportError(
-				string("***ERR*** MOERTEL::Interface::Assemble_2D_Mod:\n") +
-				string("***ERR*** Epetra_CrsMatrix::SumIntoGlobalValues returned an error\n") +
-				string("***ERR*** file/line: ") + string(__FILE__) + "/" + toString(__LINE__) + "\n");
+				std::string("***ERR*** MOERTEL::Interface::Assemble_2D_Mod:\n") +
+				std::string("***ERR*** Epetra_CrsMatrix::SumIntoGlobalValues returned an error\n") +
+				std::string("***ERR*** file/line: ") + std::string(__FILE__) + "/" + toString(__LINE__) + "\n");
 
           } // if (err)
         } // for (int mdof=0; mdof<mndof; ++mdof)
@@ -1069,7 +1069,7 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
   if (area<0.0)
   {
     if (OutLevel()>3)
-    cout << "MOERTEL: ***ERR***  MOERTEL::Integrator::Integrate:\n" << "MOERTEL: ***ERR***  overlap segment area is negative: " << area << endl
+    std::cout << "MOERTEL: ***ERR***  MOERTEL::Integrator::Integrate:\n" << "MOERTEL: ***ERR***  overlap segment area is negative: " << area << std::endl
          << "MOERTEL: ***ERR***  skipping....\n"
          << "MOERTEL: ***ERR***  file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -1081,7 +1081,7 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
   if (abs(area/sarea)<eps)
   {
     if (OutLevel()>10)
-      cout << "MOERTEL: ***WRN*** Skipping overlap segment with tiny area " << area << endl;
+      std::cout << "MOERTEL: ***WRN*** Skipping overlap segment with tiny area " << area << std::endl;
     points.clear();
     return false;  
   }
@@ -1140,9 +1140,9 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
           val_mfunc0[i] += val[point]*vals[point][2][i];
       }
       
-      //cout << val_sfunc0[0] << " " << val_sfunc0[1] << " " << val_sfunc0[2] << " " << val_sfunc0[3] << endl;
-      //cout << val_sfunc1[0] << " " << val_sfunc1[1] << " " << val_sfunc1[2] << " " << val_sfunc1[3] << endl;
-      //cout << val_mfunc0[0] << " " << val_mfunc0[1] << " " << val_mfunc0[2] << " " << val_mfunc0[3] << endl;
+      //std::cout << val_sfunc0[0] << " " << val_sfunc0[1] << " " << val_sfunc0[2] << " " << val_sfunc0[3] << std::endl;
+      //std::cout << val_sfunc1[0] << " " << val_sfunc1[1] << " " << val_sfunc1[2] << " " << val_sfunc1[3] << std::endl;
+      //std::cout << val_mfunc0[0] << " " << val_mfunc0[1] << " " << val_mfunc0[2] << " " << val_mfunc0[3] << std::endl;
 
       // loop over all nodes (lm loop)
       for (int lm=0; lm<sseg.Nnode(); ++lm)
@@ -1153,7 +1153,7 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
           // multiply the 2 functions
           double N1N2 = val_sfunc1[lm]*val_mfunc0[dof];
           (**Mdense)(lm,dof) += (N1N2*weight);
-          //cout << "Adding gausspoint M value M(" << lm << "," << dof << ") += " << val_sfunc1[lm] << " * " << val_mfunc0[dof] << " * " << weight << endl;
+          //std::cout << "Adding gausspoint M value M(" << lm << "," << dof << ") += " << val_sfunc1[lm] << " * " << val_mfunc0[dof] << " * " << weight << std::endl;
         }
         
         // loop over all nodes (dof loop slave)
@@ -1162,13 +1162,13 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
           // multiply the 2 functions
           double N1N2 = val_sfunc1[lm]*val_sfunc0[dof];
           (**Ddense)(lm,dof) += (N1N2*weight);
-          //cout << "Adding gausspoint D value D(" << lm << "," << dof << ") += " << val_sfunc1[lm] << " * " << val_sfunc0[dof] << " * " << weight << endl;
+          //std::cout << "Adding gausspoint D value D(" << lm << "," << dof << ") += " << val_sfunc1[lm] << " * " << val_sfunc0[dof] << " * " << weight << std::endl;
         }
       }
       
     } // for (int gp=0; gp<Ngp(); ++gp)
-    //cout << **Ddense;
-    //cout << **Mdense;
+    //std::cout << **Ddense;
+    //std::cout << **Mdense;
     
     vals.clear();
     points.clear();
@@ -1184,7 +1184,7 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
     {
       psxi[i][0] = points[i]->Xi()[0];
       psxi[i][1] = points[i]->Xi()[1];
-      //cout << "psxi[" << i << "] = " << psxi[i][0] << " / " << psxi[i][1] << endl; 
+      //std::cout << "psxi[" << i << "] = " << psxi[i][0] << " / " << psxi[i][1] << std::endl; 
     }
     // create a node to use for projection
     double x[3];
@@ -1211,7 +1211,7 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
         sxi[0] += val[point] * psxi[point][0];
         sxi[1] += val[point] * psxi[point][1];
       }
-      //cout << "sxi = " << sxi[0] << " / " << sxi[1] << endl;
+      //std::cout << "sxi = " << sxi[0] << " / " << sxi[1] << std::endl;
       
       //-------------------------------------------------------------------
       // get shape function values from function 0 and 1 from slave element here
@@ -1233,8 +1233,8 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
         }
       const double length = MOERTEL::length(n,3);
       for (int j=0; j<3; ++j) n[j] /= length;
-      //cout << "x = " << x[0] << " / " << x[1] << " / " << x[2] << endl;
-      //cout << "n = " << n[0] << " / " << n[1] << " / " << n[2] << endl;
+      //std::cout << "x = " << x[0] << " / " << x[1] << " / " << x[2] << std::endl;
+      //std::cout << "n = " << n[0] << " / " << n[1] << " / " << n[2] << std::endl;
       gpnode->SetX(x);             
       gpnode->SetN(n);
       double mxi[2];
@@ -1243,11 +1243,11 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
       // if we have problems projecting here, we better skip this gauss point
       if (!ok)
       { 
-        cout << "MOERTEL: ***WRN***------------------projection failed in integration\n";
+        std::cout << "MOERTEL: ***WRN***------------------projection failed in integration\n";
 		fflush(stdout);
         continue;
       }
-      //cout << "mxi = " << mxi[0] << " / " << mxi[1] << endl;
+      //std::cout << "mxi = " << mxi[0] << " / " << mxi[1] << std::endl;
                    
       //-------------------------------------------------------------------
       // get shape function value from mseg

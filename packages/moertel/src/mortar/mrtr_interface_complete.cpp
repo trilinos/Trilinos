@@ -55,7 +55,7 @@ bool MOERTEL::Interface::Complete()
   if (IsComplete())
   {
     if (OutLevel()>0)
-      cout << "MOERTEL: ***WRN*** MOERTEL::Interface::InterfaceComplete:\n"
+      std::cout << "MOERTEL: ***WRN*** MOERTEL::Interface::InterfaceComplete:\n"
            << "MOERTEL: ***WRN*** InterfaceComplete() was called before, do nothing\n"
            << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return true;
@@ -71,7 +71,7 @@ bool MOERTEL::Interface::Complete()
     {
       if (curr->second == Teuchos::null)
       {
-        cout << "***ERR*** MOERTEL::Interface::Complete:\n"
+        std::cout << "***ERR*** MOERTEL::Interface::Complete:\n"
              << "***ERR*** Interface # " << Id_ << ":\n"
              << "***ERR*** found NULL entry in map of nodes\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -86,7 +86,7 @@ bool MOERTEL::Interface::Complete()
     {
       if (curr->second == Teuchos::null)
       {
-        cout << "***ERR*** MOERTEL::Interface::Complete:\n"
+        std::cout << "***ERR*** MOERTEL::Interface::Complete:\n"
              << "***ERR*** Interface # " << Id_ << ":\n"
              << "***ERR*** found NULL entry in map of segments\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -151,7 +151,7 @@ bool MOERTEL::Interface::Complete()
           if (gfoundit[i]!=1)
           {
             if (gcomm_.MyPID()==proc)
-            cout << "***ERR*** MOERTEL::Interface::Complete:\n"
+            std::cout << "***ERR*** MOERTEL::Interface::Complete:\n"
                  << "***ERR*** cannot find segment's node # " << ids[i] << "\n"
                  << "***ERR*** in map of all nodes on all procs\n"
                  << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -245,7 +245,7 @@ bool MOERTEL::Interface::Complete()
     for (int proc=0; proc<gcomm_.NumProc(); ++proc)
     {
       if (proc==gcomm_.MyPID())
-      cout << "using mpi    comms: I am global rank " << grank << " and local rank " << lrank << endl;
+      std::cout << "using mpi    comms: I am global rank " << grank << " and local rank " << lrank << std::endl;
       gcomm_.Barrier();
     }
     // test this stuff on the epetra level
@@ -253,7 +253,7 @@ bool MOERTEL::Interface::Complete()
       for (int proc=0; proc<lcomm_->NumProc(); ++proc)
       {
         if (proc==lcomm_->MyPID())
-        cout << "using epetra comms: I am global rank " << gcomm_.MyPID() << " and local rank " << lcomm_->MyPID() << endl;
+        std::cout << "using epetra comms: I am global rank " << gcomm_.MyPID() << " and local rank " << lcomm_->MyPID() << std::endl;
         lcomm_->Barrier();
       }
     gcomm_.Barrier();

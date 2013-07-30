@@ -90,15 +90,15 @@ int main(int argc, char *argv[])
   bool verbose = (MyPID==0);
 
   if (verbose)
-    cout << Epetra_Version() << endl << endl;
+    std::cout << Epetra_Version() << std::endl << std::endl;
 
-  cout << Comm << endl;
+  std::cout << Comm << std::endl;
 
   // Get the number of local equations from the command line
   if (argc!=2)
    {
      if (verbose) 
-       cout << "Usage: " << argv[0] << " number_of_equations" << endl;
+       std::cout << "Usage: " << argv[0] << " number_of_equations" << std::endl;
     std::exit(1);
    }
   int NumGlobalElements = std::atoi(argv[1]);
@@ -106,8 +106,8 @@ int main(int argc, char *argv[])
   if (NumGlobalElements < NumProc)
       {
      if (verbose)
-       cout << "numGlobalBlocks = " << NumGlobalElements 
-	    << " cannot be < number of processors = " << NumProc << endl;
+       std::cout << "numGlobalBlocks = " << NumGlobalElements 
+	    << " cannot be < number of processors = " << NumProc << std::endl;
      std::exit(1);
       }
 
@@ -200,12 +200,12 @@ int main(int argc, char *argv[])
   double MFLOPs = total_flops/elapsed_time/1000000.0;
 
   if (verbose) 
-    cout << "\n\nTotal MFLOPs for first solve = " << MFLOPs << endl<< endl;
+    std::cout << "\n\nTotal MFLOPs for first solve = " << MFLOPs << std::endl<< std::endl;
 
   // Increase diagonal dominance
   if (verbose) 
-    cout << "\nIncreasing magnitude of first diagonal term, solving again\n\n"
-		    << endl;
+    std::cout << "\nIncreasing magnitude of first diagonal term, solving again\n\n"
+		    << std::endl;
 
   if (A.MyGlobalRow(0)) {
     int numvals = A.NumGlobalEntries(0);
@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
   MFLOPs = total_flops/elapsed_time/1000000.0;
 
   if (verbose) 
-    cout << "\n\nTotal MFLOPs for second solve = " << MFLOPs << endl<< endl;
+    std::cout << "\n\nTotal MFLOPs for second solve = " << MFLOPs << std::endl<< std::endl;
 
 
   // Release all objects
@@ -272,9 +272,9 @@ int power_method(Epetra_CrsMatrix& A, double &lambda, int niters,
 	{
 	  resid.Update(1.0, z, -lambda, q, 0.0); // Compute A*q - lambda*q
 	  resid.Norm2(&residual);
-	  if (verbose) cout << "Iter = " << iter << "  Lambda = " << lambda 
+	  if (verbose) std::cout << "Iter = " << iter << "  Lambda = " << lambda 
 			    << "  Residual of A*q - lambda*q = " 
-			    << residual << endl;
+			    << residual << std::endl;
 	} 
       if (residual < tolerance) {
 	ierr = 0;

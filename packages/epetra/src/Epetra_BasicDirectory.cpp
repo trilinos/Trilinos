@@ -355,13 +355,13 @@ int Epetra_BasicDirectory::Generate(const Epetra_BlockMap& Map)
   
   //bool MYPID = (Map.Comm().MyPID()==0);
   int curr_LID;
-  //if (MYPID) cout << "Processor " << Map.Comm().MyPID()<< "  num_recvs = "<< num_recvs << endl << flush;
+  //if (MYPID) cout << "Processor " << Map.Comm().MyPID()<< "  num_recvs = "<< num_recvs << std::endl << flush;
   int * ptr = import_elements;
   for( i = 0; i < num_recvs; i++ )
   {
     curr_LID = DirectoryMap_->LID(*(int_type*)ptr); // Convert incoming GID to Directory LID
 	ptr += sizeof(int_type)/sizeof(int);
-    //if (MYPID) cout << " Receive ID = " << i << "  GID = " << import_elements[3*i] << "  LID = " << curr_LID << endl << flush;
+    //if (MYPID) cout << " Receive ID = " << i << "  GID = " << import_elements[3*i] << "  LID = " << curr_LID << std::endl << flush;
     assert(curr_LID !=-1); // Internal error
     int proc = *ptr++;
     if (ProcList_[curr_LID] >= 0) {
@@ -552,7 +552,7 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 		  break;
 		}
 	    //	if (!found) cout << "Internal error:  Epetra_BasicDirectory::GetDirectoryEntries: Global Index " << curr_LID
-	    //	     << " not on processor " << MyPID << endl; abort();
+	    //	     << " not on processor " << MyPID << std::endl; abort();
 	  }
 	
 	if( Size_send_gids != 0 ) delete [] Size_send_gids;
@@ -744,25 +744,25 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 #endif
 
 //==============================================================================
-void Epetra_BasicDirectory::Print( ostream & os) const {
+void Epetra_BasicDirectory::Print(std::ostream & os) const {
   
   int MyPID;
   if( DirectoryMap_ != 0 ) {;
     MyPID = DirectoryMap_->Comm().MyPID();
     os << MyPID << " Epetra_BasicDirectory Object: "
-      << DirectoryMap_->NumMyElements() << endl;
+      << DirectoryMap_->NumMyElements() << std::endl;
     for( int i = 0; i < DirectoryMap_->NumMyElements(); i++ ) {
       os << " " << i << " " << ProcList_[i] << " "
 	 << LocalIndexList_[i];
       if (!SizeIsConst_)
 	os  << " " <<  SizeList_[i];
-      os << endl;
-      os << endl;
+      os << std::endl;
+      os << std::endl;
     }
   }
   else
   {
-    cout << "Epetra_BasicDirectory not setup<<<<<<" << endl;
+    std::cout << "Epetra_BasicDirectory not setup<<<<<<" << std::endl;
   }
 
   return;

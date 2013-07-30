@@ -65,13 +65,13 @@ EpetraExt::MultiPointModelEvaluator::MultiPointModelEvaluator(
 {
   using Teuchos::as;
   if (globalComm->MyPID()==0) {
-     cout  << "----------MultiPoint Partition Info------------"
+     std::cout  << "----------MultiPoint Partition Info------------"
            << "\n\tNumProcs              = " << globalComm->NumProc()
            << "\n\tSpatial Decomposition = " << globalComm->SubDomainComm().NumProc()
            << "\n\tNumber of Domains     = " << numTimeDomains
            << "\n\tSteps on Domain 0     = " << timeStepsOnTimeDomain
            << "\n\tTotal Number of Steps = " << globalComm->NumTimeSteps();
-    cout   << "\n-----------------------------------------------" << endl;
+    std::cout   << "\n-----------------------------------------------" << std::endl;
     }
 
    // Construct global block matrix graph from split W and stencil,

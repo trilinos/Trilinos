@@ -112,33 +112,33 @@ analyze( LinearProblem_CrsSingletonFilter::OriginalTypeRef orig )
   assert( flag >= 0 );
 
   if ( verbose_ && FullMatrix_->Comm().MyPID()==0 ) {
-    cout << "\nAnalyzed Singleton Problem:\n";
-    cout << "---------------------------\n";
+    std::cout << "\nAnalyzed Singleton Problem:\n";
+    std::cout << "---------------------------\n";
   }
   if ( SingletonsDetected() ) {
     if ( verbose_ && FullMatrix_->Comm().MyPID()==0 ) {
-      cout << "Singletons Detected!" << endl;;
-      cout << "Num Singletons:      " << NumSingletons() << endl;
+      std::cout << "Singletons Detected!" << std::endl;;
+      std::cout << "Num Singletons:      " << NumSingletons() << std::endl;
     }
   }
   else {
     if ( verbose_ && FullMatrix_->Comm().MyPID()==0 ) 
-        cout << "No Singletons Detected!" << endl;
+        std::cout << "No Singletons Detected!" << std::endl;
   }
 /*
-    cout << "List of Row Singletons:\n";
+    std::cout << "List of Row Singletons:\n";
     int * slist = RowMapColors_->ColorLIDList(1);
     for( int i = 0; i < RowMapColors_->NumElementsWithColor(1); ++i )
-      cout << slist[i] << " ";
-    cout << "\n";
-    cout << "List of Col Singletons:\n";
+      std::cout << slist[i] << " ";
+    std::cout << "\n";
+    std::cout << "List of Col Singletons:\n";
     slist = ColMapColors_->ColorLIDList(1);
     for( int i = 0; i < ColMapColors_->NumElementsWithColor(1); ++i )
-      cout << slist[i] << " ";
-    cout << "\n";
+      std::cout << slist[i] << " ";
+    std::cout << "\n";
 */
   if ( verbose_ && FullMatrix_->Comm().MyPID()==0 )
-    cout << "---------------------------\n\n";
+    std::cout << "---------------------------\n\n";
  
   return true;
 }
@@ -157,11 +157,11 @@ construct()
 
   if( verbose_ && SingletonsDetected() && FullMatrix_->Comm().MyPID()==0 )
   {
-    cout << "\nConstructedSingleton Problem:\n";
-    cout << "---------------------------\n";
-    cout << "RatioOfDimensions:   " << RatioOfDimensions() << endl;
-    cout << "RatioOfNonzeros:     " << RatioOfNonzeros() << endl;
-    cout << "---------------------------\n\n";
+    std::cout << "\nConstructedSingleton Problem:\n";
+    std::cout << "---------------------------\n";
+    std::cout << "RatioOfDimensions:   " << RatioOfDimensions() << std::endl;
+    std::cout << "RatioOfNonzeros:     " << RatioOfNonzeros() << std::endl;
+    std::cout << "---------------------------\n\n";
   }
 
   return *newObj_;
@@ -171,7 +171,7 @@ construct()
 bool LinearProblem_CrsSingletonFilter::fwd()
 {
   int ierr = UpdateReducedProblem( FullProblem_ );
-  if( ierr ) cout << "EDT_LinearProblem_CrsSingletonFilter::UpdateReducedProblem FAILED!\n";
+  if( ierr ) std::cout << "EDT_LinearProblem_CrsSingletonFilter::UpdateReducedProblem FAILED!\n";
 
   return (ierr==0);
 }
@@ -180,7 +180,7 @@ bool LinearProblem_CrsSingletonFilter::fwd()
 bool LinearProblem_CrsSingletonFilter::rvs()
 {
   int ierr = ComputeFullSolution();
-  if( ierr ) cout << "EDT_LinearProblem_CrsSingletonFilter::ComputeFullSolution FAILED!\n";
+  if( ierr ) std::cout << "EDT_LinearProblem_CrsSingletonFilter::ComputeFullSolution FAILED!\n";
 
   return (ierr==0);
 }

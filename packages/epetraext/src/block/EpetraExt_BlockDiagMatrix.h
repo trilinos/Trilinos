@@ -116,7 +116,7 @@ class EpetraExt_BlockDiagMatrix : public virtual Epetra_Operator, public Epetra_
   //! @name Attribute access functions
   //@{
 
-  //! Returns a character string describing the operator
+  //! Returns a character std::string describing the operator
   virtual const char * Label() const{return "EpetraExt::BlockDiagMatrix";}//HAQ
   
   //! Returns the current UseTranspose setting.
@@ -168,7 +168,7 @@ class EpetraExt_BlockDiagMatrix : public virtual Epetra_Operator, public Epetra_
   int GetApplyMode() {return ApplyMode_;}
 
   //! Print method
-  virtual void Print(ostream & os) const;  
+  virtual void Print(std::ostream & os) const;  
 
   //@}
 

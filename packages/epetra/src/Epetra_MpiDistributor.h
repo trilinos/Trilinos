@@ -294,7 +294,7 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
 
   //! @name Print object to an output stream
   //@{ 
-  void Print(ostream & os) const;
+  void Print(std::ostream & os) const;
   //@}
   private:
   int CreateSendStructures_(int my_proc,

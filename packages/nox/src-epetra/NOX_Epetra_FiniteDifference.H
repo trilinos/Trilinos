@@ -276,7 +276,7 @@ class FiniteDifference : public Epetra_RowMatrix,
   virtual Epetra_CrsMatrix& getUnderlyingMatrix() const;
 
   //! Output the underlying matrix
-  virtual void Print(ostream&) const;
+  virtual void Print(std::ostream&) const;
 
   //! Register a NOX::Abstract::Group derived object and use the computeF() method of that group for the perturbation instead of the NOX::Epetra::Interface::Required::computeF() method.  This is required for LOCA to get the operators correct during homotopy.
   void setGroupForComputeF(NOX::Abstract::Group& group);

@@ -603,7 +603,7 @@ void AnalyzeCheap(const Operator& A)
 // ====================================================================== 
 void PrintSparsity(const Operator& A, int NumPDEEquations)
 {
-  string FileName = A.GetLabel() + ".ps";
+  std::string FileName = A.GetLabel() + ".ps";
   Ifpack_PrintSparsity(*(A.GetRowMatrix()), FileName.c_str(),
                        NumPDEEquations);
 }
