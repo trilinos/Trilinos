@@ -186,7 +186,8 @@ bool BulkData::destroy_relation( Entity e_from ,
   require_valid_relation( "destroy" , *this , e_from , e_to );
 
   const EntityRank end_rank = m_mesh_meta_data.entity_rank_count();
-  EntityRank e_to_entity_rank = entity_rank(e_to);
+  const EntityRank e_to_entity_rank = entity_rank(e_to);
+  const EntityRank e_from_entity_rank = entity_rank(e_from);
 
   //------------------------------
   // When removing a relationship may need to
@@ -206,35 +207,32 @@ bool BulkData::destroy_relation( Entity e_from ,
 
     OrdinalVector del, keep, empty;
 
-
     // For all relations that are *not* being deleted, add induced parts for
     // these relations to the 'keep' vector
-    for (EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
+    for (EntityRank irank = e_to_entity_rank + 1; irank < end_rank; ++irank)
     {
       size_t num_rels = num_connectivity(e_to, irank);
       Entity const *rel_entities = begin(e_to, irank);
       ConnectivityOrdinal const *rel_ordinals = begin_ordinals(e_to, irank);
       for (size_t j = 0; j < num_rels; ++j)
       {
-        if (e_to_entity_rank < irank)
-        { // Need to look at back rels only
-          if ( !(rel_entities[j] == e_from && rel_ordinals[j] == static_cast<ConnectivityOrdinal>(local_id) ) )
-          {
-            induced_part_membership(*this, rel_entities[j], empty, e_to_entity_rank,
-                                    rel_ordinals[j], keep,
-                                    false /*Do not look at supersets*/);
-          }
+        ThrowAssertMsg(is_valid(rel_entities[j]), "Error, entity " << e_to.local_offset() << " has invalid back-relation for ordinal: "
+                       << rel_ordinals[j] << " to rank: " << irank << ", target entity is: " << rel_entities[j].local_offset());
+        if ( !(rel_entities[j] == e_from && rel_ordinals[j] == static_cast<ConnectivityOrdinal>(local_id) ) )
+        {
+          induced_part_membership(*this, rel_entities[j], empty, e_to_entity_rank,
+                                  rel_ordinals[j], keep,
+                                  false /*Do not look at supersets*/);
         }
       }
     }
 
     // Find the relation this is being deleted and add the parts that are
     // induced from that relation (and that are not in 'keep') to 'del'
-    for (EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
     {
-      size_t num_rels = num_connectivity(e_from, irank);
-      Entity const *rel_entities = begin(e_from, irank);
-      ConnectivityOrdinal const *rel_ordinals = begin_ordinals(e_from, irank);
+      size_t num_rels = num_connectivity(e_from, e_to_entity_rank);
+      Entity const *rel_entities = begin(e_from, e_to_entity_rank);
+      ConnectivityOrdinal const *rel_ordinals = begin_ordinals(e_from, e_to_entity_rank);
       for (size_t j = 0; j < num_rels; ++j)
       {
         if ( rel_entities[j] == e_to && rel_ordinals[j] == static_cast<ConnectivityOrdinal>(local_id) )
@@ -254,9 +252,10 @@ bool BulkData::destroy_relation( Entity e_from ,
   //delete relations from the entities
   bool caused_change_fwd = bucket(e_from).destroy_relation(e_from, e_to, local_id);
 
-  //TODO: check connectivity map
   // Relationships should always be symmetrical
-  if ( caused_change_fwd ) {
+  if ( caused_change_fwd &&
+       (e_to_entity_rank > stk::topology::ELEMENT_RANK || e_from_entity_rank > stk::topology::ELEMENT_RANK ||
+        connectivity_map().valid(entity_rank(e_to), entity_rank(e_from))) ) {
     bucket(e_to).destroy_relation(e_to, e_from, local_id);
   }
 

@@ -8,177 +8,298 @@
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 
+using namespace stk::mesh;
+
 namespace {
 
-template <stk::mesh::ConnectivityType Type>
-void do_test(stk::mesh::impl::BucketConnectivity<stk::topology::NODE_RANK, Type>& connectivity,
-             stk::mesh::impl::BucketConnectivity<stk::topology::NODE_RANK, Type>& connectivity2,
-             unsigned num_from_entities,
-             unsigned num_node_connectivity)
+typedef impl::BucketConnectivity<stk::topology::NODE_RANK, FIXED_CONNECTIVITY> fixed_conn;
+typedef impl::BucketConnectivity<stk::topology::NODE_RANK, DYNAMIC_CONNECTIVITY> dynamic_conn;
+
+void check_uninit_conn_size(fixed_conn& conn, unsigned num_conn, unsigned ordinal)
 {
-  using namespace stk::mesh;
+  STKUNIT_EXPECT_EQ(conn.num_connectivity(ordinal), num_conn);
+}
 
-    // Start entities at 1 b/c still discussing whether Entity will be POD.
+void check_uninit_conn_size(dynamic_conn& conn, unsigned num_conn, unsigned ordinal)
+{
+  STKUNIT_EXPECT_EQ(conn.num_connectivity(ordinal), 0u);
+}
 
-  const unsigned from_entities_start_num = 1;
-  std::vector<Entity> from_entities(num_from_entities);
-  for (unsigned i = 0; i < num_from_entities; ++i)
-  {
-    from_entities[i].set_local_offset(i + from_entities_start_num);
+void check_even_conn_removed(fixed_conn& conn, unsigned num_conn, unsigned ordinal)
+{
+  STKUNIT_EXPECT_EQ(conn.num_connectivity(ordinal), num_conn);
+
+  Entity const* targets = conn.begin(ordinal);
+  for (unsigned i = 0; i < num_conn; ++i) {
+    Entity e_to = {ordinal * num_conn + i + 1};
+    if ( (i % 2) == 0 ) {
+      STKUNIT_EXPECT_EQ(targets[i], Entity());
+    }
+    else {
+      STKUNIT_EXPECT_EQ(targets[i], e_to);
+    }
+  }
+}
+
+void check_even_conn_removed(dynamic_conn& conn, unsigned num_conn, unsigned ordinal)
+{
+  STKUNIT_EXPECT_EQ(conn.num_connectivity(ordinal), num_conn / 2);
+
+  Entity const* targets = conn.begin(ordinal);
+  ConnectivityOrdinal const* ordinals = conn.begin_ordinals(ordinal);
+  for (unsigned i = 0; i < num_conn / 2; ++i) {
+    Entity e_to = {ordinal * num_conn + ((2*i) + 1) + 1};
+    STKUNIT_EXPECT_EQ(targets[i], e_to);
+    STKUNIT_EXPECT_EQ(ordinals[i], static_cast<ConnectivityOrdinal>((2*i) + 1));
+  }
+}
+
+template <typename Connectivity>
+void test_simple_add(Connectivity& connectivity, unsigned num_entities_to_add, unsigned num_to_add)
+{
+  // Populate connectivity all at once for each entity
+
+  STKUNIT_EXPECT_EQ(connectivity.size(), 0u);
+
+  for (unsigned ord = 0; ord < num_entities_to_add; ++ord) {
     connectivity.add_entity();
-  }
 
-  const unsigned num_to_entities = num_from_entities * num_node_connectivity;
-  const unsigned to_entities_start_num = 100;
-  std::vector<Entity> to_entities(num_to_entities);
-  for (unsigned i = 0; i < num_to_entities; ++i)
-  {
-    to_entities[i].set_local_offset(i + to_entities_start_num);
-  }
+    STKUNIT_EXPECT_EQ(connectivity.size(), ord + 1);
+    check_uninit_conn_size(connectivity, num_to_add, ord);
 
-  //assign initial connectivities
-  {
-    Permutation dummy_perm = INVALID_PERMUTATION;
-    for (unsigned i = 0; i < num_from_entities; ++i)
-    {
-      for (unsigned ord = 0; ord < num_node_connectivity; ++ord)
-      {
-        connectivity.add_connectivity(i, to_entities[i * num_node_connectivity + ord],
-                                      static_cast<ConnectivityOrdinal>(ord), dummy_perm);
-      }
+    for (uint64_t i = 0; i < num_to_add; ++i) {
+      Entity e_to = {ord * num_to_add + i + 1};
+      connectivity.add_connectivity(ord, e_to, static_cast<ConnectivityOrdinal>(i));
     }
-  }
 
-  STKUNIT_EXPECT_EQ(num_node_connectivity * num_from_entities,
-                    connectivity.end(num_from_entities - 1) - connectivity.begin(0));
+    STKUNIT_EXPECT_EQ(connectivity.num_connectivity(ord), num_to_add);
 
-  {
-    unsigned ilc = 0;
-    for (unsigned i = 0; i < num_from_entities; ++i)
-    {
-      const Entity * b = connectivity.begin(i);
-      const Entity * e = connectivity.end(i);
-      const ConnectivityOrdinal * cb = connectivity.begin_ordinals(i);
-      EXPECT_EQ(e - b, num_node_connectivity);
-      for (unsigned ord = 0; b<e; ++b, ++ord, ++cb, ++ilc)
-      {
-        Entity to = to_entities[i * num_node_connectivity + ord];
-        EXPECT_EQ(*b,  to);
-        EXPECT_EQ(*cb, ord);
-      }
+    Entity const* begin = connectivity.begin(ord);
+    Entity const* end   = connectivity.end(ord);
+    ConnectivityOrdinal const* begin_ord = connectivity.begin_ordinals(ord);
+    ConnectivityOrdinal const* end_ord   = connectivity.end_ordinals(ord);
+
+    STKUNIT_EXPECT_EQ(end - begin, num_to_add);
+    STKUNIT_EXPECT_EQ(end_ord - begin_ord, num_to_add);
+
+    for (uint64_t i = 0; i < num_to_add; ++i) {
+      Entity expected_to = {ord * num_to_add + i + 1};
+      STKUNIT_EXPECT_EQ(expected_to, begin[i]);
+      STKUNIT_EXPECT_EQ(static_cast<ConnectivityOrdinal>(i), begin_ord[i]);
     }
-    STKUNIT_EXPECT_EQ(ilc, num_from_entities * num_node_connectivity);
-  }
-
-  //reverse connectivities by swapping first with last
-
-  {
-    for (unsigned i = 0, e = num_from_entities - 1; i < e; ++i, --e) {
-      connectivity.swap(i, connectivity, e);
-    }
-  }
-
-  {
-    unsigned ilc = 0;
-    for (unsigned i = 0; i < num_from_entities; ++i)
-    {
-      unsigned to_idx = (num_from_entities - i - 1) * num_node_connectivity;
-      const Entity * b = connectivity.begin(i);
-      const Entity * e = connectivity.end(i);
-      const ConnectivityOrdinal * cb = connectivity.begin_ordinals(i);
-      EXPECT_EQ(e - b, num_node_connectivity);
-      for (unsigned ord = 0; b<e; ++b, ++ord, ++cb, ++ilc)
-      {
-        Entity to = to_entities[to_idx++];
-        EXPECT_EQ(*b, to);
-        EXPECT_EQ(*cb, ord);
-      }
-    }
-    STKUNIT_EXPECT_EQ(ilc, num_from_entities * num_node_connectivity);
-  }
-
-  //move entities to new instance
-
-  for (unsigned i = 0; i < num_from_entities; ++i)
-  {
-    connectivity.move_entity(connectivity2);
-  }
-
-  {
-    unsigned ilc = 0;
-    for (unsigned i = 0; i < num_from_entities; ++i)
-    {
-      const Entity * b = connectivity2.begin(i);
-      const Entity * e = connectivity2.end(i);
-      const ConnectivityOrdinal * cb = connectivity2.begin_ordinals(i);
-      EXPECT_EQ(e - b, num_node_connectivity);
-      for (unsigned ord = 0; b<e; ++b, ++ord, ++cb, ++ilc)
-      {
-        Entity to = to_entities[i * num_node_connectivity + ord];
-        EXPECT_EQ(*b, to);
-        EXPECT_EQ(*cb, ord);
-      }
-    }
-    STKUNIT_EXPECT_EQ(ilc, num_from_entities * num_node_connectivity);
-  }
-
-  //move back to original partition
-
-  for (unsigned i = 0; i < num_from_entities; ++i)
-  {
-    connectivity2.move_entity(connectivity);
-  }
-
-  {
-    unsigned ilc = 0;
-    for (unsigned i = 0; i < num_from_entities; ++i)
-    {
-      unsigned to_idx = (num_from_entities - i - 1) * num_node_connectivity;
-      const Entity * b = connectivity.begin(i);
-      const Entity * e = connectivity.end(i);
-      const ConnectivityOrdinal * cb = connectivity.begin_ordinals(i);
-      EXPECT_EQ(e - b, num_node_connectivity);
-      for (unsigned ord = 0; b<e; ++b, ++ord, ++cb, ++ilc)
-      {
-        Entity to = to_entities[to_idx++];
-        EXPECT_EQ(*b, to);
-        EXPECT_EQ(*cb, ord);
-      }
-    }
-    STKUNIT_EXPECT_EQ(ilc, num_from_entities * num_node_connectivity);
   }
 }
 
-}
-
-// Ported from stk_samba unit tests.
-TEST(BucketConnectivity, Fixed)
+template <typename Connectivity>
+void test_complex_add(Connectivity& connectivity, unsigned num_entities_to_add, unsigned num_to_add)
 {
-  using namespace stk::mesh;
+  // Populate connectivity one at a time for each entity
 
-  typedef impl::BucketConnectivity<stk::topology::NODE_RANK, FIXED_CONNECTIVITY> fixed_node_type;
+  STKUNIT_EXPECT_EQ(connectivity.size(), 0u);
 
-  const unsigned num_from_entities = 3;
-  const unsigned num_node_connectivity = 4;
+  for (uint64_t i = 0; i < num_to_add; ++i) {
+    for (unsigned ord = 0; ord < num_entities_to_add; ++ord) {
+      if (i == 0) {
+        connectivity.add_entity();
+      }
 
-  fixed_node_type nodes_rel(num_node_connectivity);
-  fixed_node_type nodes_rel2(num_node_connectivity);
+      if (i == 0) {
+        STKUNIT_EXPECT_EQ(connectivity.size(), ord + 1);
+      }
+      else {
+        STKUNIT_EXPECT_EQ(connectivity.size(), num_entities_to_add);
+      }
 
-  do_test(nodes_rel, nodes_rel2, num_from_entities, num_node_connectivity);
+      Entity e_to = {ord * num_to_add + i + 1};
+      connectivity.add_connectivity(ord, e_to, static_cast<ConnectivityOrdinal>(i));
+    }
+  }
+
+  for (unsigned ord = 0; ord < num_entities_to_add; ++ord) {
+    STKUNIT_EXPECT_EQ(connectivity.num_connectivity(ord), num_to_add);
+
+    Entity const* begin = connectivity.begin(ord);
+    Entity const* end   = connectivity.end(ord);
+    ConnectivityOrdinal const* begin_ord = connectivity.begin_ordinals(ord);
+    ConnectivityOrdinal const* end_ord   = connectivity.end_ordinals(ord);
+
+    STKUNIT_EXPECT_EQ(end - begin, num_to_add);
+    STKUNIT_EXPECT_EQ(end_ord - begin_ord, num_to_add);
+
+    for (uint64_t i = 0; i < num_to_add; ++i) {
+      Entity expected_to = {ord * num_to_add + i + 1};
+      STKUNIT_EXPECT_EQ(expected_to, begin[i]);
+      STKUNIT_EXPECT_EQ(static_cast<ConnectivityOrdinal>(i), begin_ord[i]);
+    }
+  }
 }
 
-TEST(BucketConnectivity, Dynamic)
+template <typename Connectivity>
+void test_remove(Connectivity& connectivity, unsigned num_entities, unsigned num_to_add)
 {
-  using namespace stk::mesh;
+  test_simple_add(connectivity, num_entities, num_to_add);
 
-  typedef impl::BucketConnectivity<stk::topology::NODE_RANK, DYNAMIC_CONNECTIVITY> dynamic_node_type;
+  unsigned ord_to_remove_from = num_entities / 2;
 
-  const unsigned num_from_entities = 3;
-  const unsigned num_node_connectivity = 4;
+  for (uint64_t i = 0; i < num_to_add; ++i) {
+    Entity e_to = {ord_to_remove_from * num_to_add + i + 1};
+    if ( (i % 2) == 0 ) {
+      bool rv = connectivity.remove_connectivity(ord_to_remove_from, e_to, static_cast<ConnectivityOrdinal>(i));
+      STKUNIT_EXPECT_TRUE(rv);
+    }
+  }
 
-  dynamic_node_type nodes_rel(stk::topology::ELEMENT_RANK, 0);
-  dynamic_node_type nodes_rel2(stk::topology::ELEMENT_RANK, 0);
-
-  do_test(nodes_rel, nodes_rel2, num_from_entities, num_node_connectivity);
+  check_even_conn_removed(connectivity, num_to_add, ord_to_remove_from);
 }
 
+template <typename Connectivity>
+void test_inter_conn_copy(Connectivity& connectivity, unsigned num_entities, unsigned num_to_add)
+{
+  // TODO
+}
+
+template <typename Connectivity>
+void test_intra_conn_copy(Connectivity& connectivity, unsigned num_entities, unsigned num_to_add)
+{
+  // TODO
+}
+
+template <typename Connectivity>
+void test_mod_end(Connectivity& connectivity, unsigned num_entities, unsigned num_to_add)
+{
+  // TODO
+}
+
+}
+
+TEST(BucketConnectivity, fixed_simple_add)
+{
+  const unsigned num_to_add   = 8;
+  const unsigned num_entities = 100;
+  BulkData * bulk = NULL;
+  fixed_conn conn(num_to_add);
+
+  test_simple_add(conn, num_entities, num_to_add);
+  conn.end_modification(bulk);
+}
+
+TEST(BucketConnectivity, dynamic_simple_add)
+{
+  const unsigned num_to_add = 8;
+  const unsigned num_entities = 100;
+  BulkData * bulk = NULL;
+  dynamic_conn conn(stk::topology::ELEMENT_RANK, bulk);
+
+  test_simple_add(conn, num_entities, num_to_add);
+  conn.end_modification(bulk);
+}
+
+TEST(BucketConnectivity, fixed_complex_add)
+{
+  const unsigned num_to_add   = 8;
+  const unsigned num_entities = 100;
+  BulkData * bulk = NULL;
+  fixed_conn conn(num_to_add);
+
+  test_complex_add(conn, num_entities, num_to_add);
+  conn.end_modification(bulk);
+}
+
+TEST(BucketConnectivity, dynamic_complex_add)
+{
+  const unsigned num_to_add = 8;
+  const unsigned num_entities = 100;
+  BulkData * bulk = NULL;
+  dynamic_conn conn(stk::topology::ELEMENT_RANK, bulk);
+
+  test_complex_add(conn, num_entities, num_to_add);
+  conn.end_modification(bulk);
+}
+
+TEST(BucketConnectivity, fixed_remove)
+{
+  const unsigned num_to_add   = 8;
+  const unsigned num_entities = 100;
+  BulkData * bulk = NULL;
+  fixed_conn conn(num_to_add);
+
+  test_remove(conn, num_entities, num_to_add);
+  conn.end_modification(bulk);
+}
+
+TEST(BucketConnectivity, dynamic_remove)
+{
+  const unsigned num_to_add = 8;
+  const unsigned num_entities = 100;
+  BulkData * bulk = NULL;
+  dynamic_conn conn(stk::topology::ELEMENT_RANK, bulk);
+
+  test_remove(conn, num_entities, num_to_add);
+  conn.end_modification(bulk);
+}
+
+TEST(BucketConnectivity, fixed_intra_conn_copy)
+{
+  const unsigned num_to_add   = 8;
+  const unsigned num_entities = 100;
+  BulkData * bulk = NULL;
+  fixed_conn conn(num_to_add);
+
+  test_intra_conn_copy(conn, num_entities, num_to_add);
+  conn.end_modification(bulk);
+}
+
+TEST(BucketConnectivity, dynamic_intra_conn_copy)
+{
+  const unsigned num_to_add = 8;
+  const unsigned num_entities = 100;
+  BulkData * bulk = NULL;
+  dynamic_conn conn(stk::topology::ELEMENT_RANK, bulk);
+
+  test_intra_conn_copy(conn, num_entities, num_to_add);
+  conn.end_modification(bulk);
+}
+
+TEST(BucketConnectivity, fixed_inter_conn_copy)
+{
+  const unsigned num_to_add   = 8;
+  const unsigned num_entities = 100;
+  BulkData * bulk = NULL;
+  fixed_conn conn(num_to_add);
+
+  test_inter_conn_copy(conn, num_entities, num_to_add);
+  conn.end_modification(bulk);
+}
+
+TEST(BucketConnectivity, dynamic_inter_conn_copy)
+{
+  const unsigned num_to_add = 8;
+  const unsigned num_entities = 100;
+  BulkData * bulk = NULL;
+  dynamic_conn conn(stk::topology::ELEMENT_RANK, bulk);
+
+  test_inter_conn_copy(conn, num_entities, num_to_add);
+  conn.end_modification(bulk);
+}
+
+TEST(BucketConnectivity, fixed_mod_end)
+{
+  const unsigned num_to_add   = 8;
+  const unsigned num_entities = 100;
+  BulkData * bulk = NULL;
+  fixed_conn conn(num_to_add);
+
+  test_mod_end(conn, num_entities, num_to_add);
+  conn.end_modification(bulk);
+}
+
+TEST(BucketConnectivity, dynamic_mod_end)
+{
+  const unsigned num_to_add = 8;
+  const unsigned num_entities = 100;
+  BulkData * bulk = NULL;
+  dynamic_conn conn(stk::topology::ELEMENT_RANK, bulk);
+
+  test_mod_end(conn, num_entities, num_to_add);
+  conn.end_modification(bulk);
+}

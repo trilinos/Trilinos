@@ -27,6 +27,7 @@ struct SyncToPartitions;
 namespace impl {
 class Partition;
 class BucketRepository;
+struct OverwriteEntityFunctor;
 } // namespace impl
 
 /** \addtogroup stk_mesh_module
@@ -77,6 +78,7 @@ public:
 private:
   friend class impl::BucketRepository;
   friend class impl::Partition;
+  friend class impl::OverwriteEntityFunctor;
   friend class BulkData;                // Replacement friend.
   friend union Entity;
   friend struct utest::ReversePartition;
@@ -310,6 +312,8 @@ public:
 
   bool declare_relation(size_type bucket_ordinal, Entity e_to, const ConnectivityOrdinal ordinal, Permutation permutation);
 
+  void debug_dump(std::ostream& out, unsigned ordinal = -1u) const;
+
 private:
   /** \brief  The \ref stk::mesh::BulkData "bulk data manager"
    *          that owns this bucket.
@@ -331,14 +335,22 @@ private:
 
   const std::vector<unsigned> & key_vector() const { return m_key; }
 
-  void add_entity(Entity entity);
-  void add_entity(); // do not use except when sorting
-  void remove_entity(bool due_to_move=false);
-  void move_entity(Entity entity);
-  void replace_entity(size_type ordinal, Entity entity); // overwrites existing entity
+  // Add a new entity to end of bucket
+  void add_entity(Entity entity = Entity());
+
+  // Remove an entity from the end of this bucket
+  void remove_entity();
+
+  // Copy an existing entity to the end of this bucket
+  void copy_entity(Entity entity);
+
+  // overwrites existing entity at ordinal with entity
+  // bucket[to_ordinal] = entity;
+  // whatever was there before is lost
+  void overwrite_entity(size_type to_ordinal, Entity entity);
 
   void initialize_slot(size_type ordinal, Entity entity);
-  void internal_move_entity(Entity entity, size_type to_ordinal);
+  void reset_entity_location(Entity entity, size_type to_ordinal);
 
   // BucketKey key = ( part-count , { part-ordinals } , counter )
   //  key[ key[0] ] == counter
@@ -358,8 +370,10 @@ private:
   Bucket * last_bucket_in_partition_impl() const;
 
   template <typename T>
-  void modify_connectivity(T& callable, Bucket* other_bucket = NULL);
+  void modify_connectivity(T& callable, EntityRank rank);
 
+  template <typename T>
+  void modify_all_connectivity(T& callable, Bucket* other_bucket=NULL);
 };
 
 struct BucketLess {
@@ -535,33 +549,76 @@ ConnectivityType Bucket::connectivity_type(EntityRank rank) const
 
 template <typename T>
 inline
-void Bucket::modify_connectivity(T& callable, Bucket* other_bucket)
+void Bucket::modify_all_connectivity(T& callable, Bucket* other_bucket)
 {
   switch(m_node_kind) {
-  case FIXED_CONNECTIVITY:   callable(*this, m_fixed_node_connectivity,   other_bucket == NULL ? NULL : &other_bucket->m_fixed_node_connectivity);   break;
-  case DYNAMIC_CONNECTIVITY: callable(*this, m_dynamic_node_connectivity, other_bucket == NULL ? NULL : &other_bucket->m_dynamic_node_connectivity); break;
+  case FIXED_CONNECTIVITY:   callable(*this, m_fixed_node_connectivity,   T::template generate_args<stk::topology::NODE_RANK, FIXED_CONNECTIVITY>(other_bucket)); break;
+  case DYNAMIC_CONNECTIVITY: callable(*this, m_dynamic_node_connectivity, T::template generate_args<stk::topology::NODE_RANK, DYNAMIC_CONNECTIVITY>(other_bucket)); break;
   default: break;
   }
 
   switch(m_edge_kind) {
-  case FIXED_CONNECTIVITY:   callable(*this, m_fixed_edge_connectivity,   other_bucket == NULL ? NULL : &other_bucket->m_fixed_edge_connectivity);   break;
-  case DYNAMIC_CONNECTIVITY: callable(*this, m_dynamic_edge_connectivity, other_bucket == NULL ? NULL : &other_bucket->m_dynamic_edge_connectivity); break;
+  case FIXED_CONNECTIVITY:   callable(*this, m_fixed_edge_connectivity,   T::template generate_args<stk::topology::EDGE_RANK, FIXED_CONNECTIVITY>(other_bucket)); break;
+  case DYNAMIC_CONNECTIVITY: callable(*this, m_dynamic_edge_connectivity, T::template generate_args<stk::topology::EDGE_RANK, DYNAMIC_CONNECTIVITY>(other_bucket)); break;
   default: break;
   }
 
   switch(m_face_kind) {
-  case FIXED_CONNECTIVITY:   callable(*this, m_fixed_face_connectivity,   other_bucket == NULL ? NULL : &other_bucket->m_fixed_face_connectivity);   break;
-  case DYNAMIC_CONNECTIVITY: callable(*this, m_dynamic_face_connectivity, other_bucket == NULL ? NULL : &other_bucket->m_dynamic_face_connectivity); break;
+  case FIXED_CONNECTIVITY:   callable(*this, m_fixed_face_connectivity,   T::template generate_args<stk::topology::FACE_RANK, FIXED_CONNECTIVITY>(other_bucket)); break;
+  case DYNAMIC_CONNECTIVITY: callable(*this, m_dynamic_face_connectivity, T::template generate_args<stk::topology::FACE_RANK, DYNAMIC_CONNECTIVITY>(other_bucket)); break;
   default: break;
   }
 
   switch(m_element_kind) {
-  case FIXED_CONNECTIVITY:   callable(*this, m_fixed_element_connectivity,   other_bucket == NULL ? NULL : &other_bucket->m_fixed_element_connectivity);   break;
-  case DYNAMIC_CONNECTIVITY: callable(*this, m_dynamic_element_connectivity, other_bucket == NULL ? NULL : &other_bucket->m_dynamic_element_connectivity); break;
+  case FIXED_CONNECTIVITY:   callable(*this, m_fixed_element_connectivity,   T::template generate_args<stk::topology::ELEMENT_RANK, FIXED_CONNECTIVITY>(other_bucket)); break;
+  case DYNAMIC_CONNECTIVITY: callable(*this, m_dynamic_element_connectivity, T::template generate_args<stk::topology::ELEMENT_RANK, DYNAMIC_CONNECTIVITY>(other_bucket)); break;
   default: break;
   }
 
-  callable(*this, m_dynamic_other_connectivity, other_bucket == NULL ? NULL : &other_bucket->m_dynamic_other_connectivity);
+  callable(*this, m_dynamic_other_connectivity, T::template generate_args<stk::topology::INVALID_RANK, DYNAMIC_CONNECTIVITY>(other_bucket));
+}
+
+template <typename T>
+inline
+void Bucket::modify_connectivity(T& callable, EntityRank rank)
+{
+  switch(rank) {
+  case stk::topology::NODE_RANK:
+    ThrowAssert(m_node_kind != INVALID_CONNECTIVITY_TYPE);
+    switch(m_node_kind) {
+    case FIXED_CONNECTIVITY:   callable(*this, m_fixed_node_connectivity);   break;
+    case DYNAMIC_CONNECTIVITY: callable(*this, m_dynamic_node_connectivity); break;
+    default: break;
+    }
+    break;
+  case stk::topology::EDGE_RANK:
+    ThrowAssert(m_edge_kind != INVALID_CONNECTIVITY_TYPE);
+    switch(m_edge_kind) {
+    case FIXED_CONNECTIVITY:   callable(*this, m_fixed_edge_connectivity);   break;
+    case DYNAMIC_CONNECTIVITY: callable(*this, m_dynamic_edge_connectivity); break;
+    default: break;
+    }
+    break;
+  case stk::topology::FACE_RANK:
+    ThrowAssert(m_face_kind != INVALID_CONNECTIVITY_TYPE);
+    switch(m_face_kind) {
+    case FIXED_CONNECTIVITY:   callable(*this, m_fixed_face_connectivity); break;
+    case DYNAMIC_CONNECTIVITY: callable(*this, m_dynamic_face_connectivity); break;
+    default: break;
+    }
+    break;
+  case stk::topology::ELEMENT_RANK:
+    ThrowAssert(m_element_kind != INVALID_CONNECTIVITY_TYPE);
+    switch(m_element_kind) {
+    case FIXED_CONNECTIVITY:   callable(*this, m_fixed_element_connectivity);   break;
+    case DYNAMIC_CONNECTIVITY: callable(*this, m_dynamic_element_connectivity); break;
+    default: break;
+    }
+    break;
+  default:
+    callable(*this, m_dynamic_other_connectivity);
+    break;
+  }
 }
 
 typedef Bucket::iterator BucketIterator;

@@ -740,7 +740,12 @@ c_ptr_func_<T, R> c_ptr_func(const T *t, R (T::*pmf)() const) {
  */
 template <class T>
 Writer &operator<<(Writer &dout, const c_ptr_<T> &c) {
-  dout << "(pointer " << (void *) c.m_t << "), ";
+  dout << "(pointer) ";
+
+  // Note, the line below is how this used to work. I've found that displaying
+  // the address causes lots of spurious diffs when comparing traces across
+  // different runs, so I think this should be off by default.
+  //dout << "(pointer " << (void *) c.m_t << "), ";
 
   if (c.m_t)
     dout << *c.m_t;

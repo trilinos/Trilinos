@@ -177,7 +177,7 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
 
   // Modification API
 
-  bool add_connectivity(unsigned bucket_ordinal, Entity to, ConnectivityOrdinal ordinal, Permutation permutation)
+  bool add_connectivity(unsigned bucket_ordinal, Entity to, ConnectivityOrdinal ordinal, Permutation permutation = INVALID_PERMUTATION)
   {
     ThrowAssertMsg(ordinal < m_num_connectivity,
                    "Ordinal " <<  ordinal << " exceeds topological limit: " << m_num_connectivity);
@@ -227,33 +227,6 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
     return true;
   }
 
-  void swap(unsigned my_ordinal, SelfType& to, unsigned to_ordinal)
-  {
-    ThrowAssertMsg(m_num_connectivity == to.m_num_connectivity,
-                   "Incompatible connectivitiess, src connectivity expects " << m_num_connectivity <<
-                   " per entity, target connectivity expects " << to.m_num_connectivity);
-    impl::check_bucket_ordinal(my_ordinal, this);
-    impl::check_bucket_ordinal(to_ordinal, &to);
-
-    const unsigned first_index  = m_num_connectivity * my_ordinal;
-    const unsigned second_index = m_num_connectivity * to_ordinal;
-
-    std::swap_ranges( m_targets.begin()+first_index
-                     ,m_targets.begin()+first_index+m_num_connectivity
-                     ,to.m_targets.begin()+second_index
-                    );
-
-    if (has_permutation()) {
-      std::swap_ranges( m_permutations.begin()+first_index
-                       ,m_permutations.begin()+first_index+m_num_connectivity
-                       ,to.m_permutations.begin()+second_index
-                      );
-    }
-
-    invariant_check_helper(my_ordinal);
-    to.invariant_check_helper(to_ordinal);
-  }
-
   void begin_modification()
   {}
 
@@ -286,31 +259,26 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
     invariant_check_helper();
   }
 
-  void move_entity(SelfType& to)
+  void copy_entity(unsigned from_ordinal, SelfType& to, unsigned to_ordinal=-1u)
   {
     ThrowAssertMsg(size() > 0, "Cannot move, connectivity is empty");
 
-    unsigned to_offset = to.m_targets.size();
-    to.add_entity(); // make room for new entity
-
-    unsigned from_offset = m_targets.size() - m_num_connectivity;
-
-    std::copy(m_targets.begin()+from_offset, m_targets.end(), to.m_targets.begin() + to_offset);
-
-    if (has_permutation()) {
-      std::copy(m_permutations.begin()+from_offset, m_permutations.end(), to.m_permutations.begin() + to_offset);
+    if (to_ordinal == -1u) { // check if we should just append
+      to_ordinal = to.size();
+      to.add_entity(); // make room for new entity
     }
 
-    remove_entity();
+    // Copy connectivity to other BucketConnectivity
+    copy_connectivity(from_ordinal, to, to_ordinal);
 
     invariant_check_helper();
     to.invariant_check_helper();
   }
 
-  void move_to_fixed(SelfType& to)
+  void copy_to_fixed(unsigned from_ordinal, SelfType& to)
   { ThrowAssert(false); }
 
-  void move_to_fixed(OtherType& to)
+  void copy_to_fixed(unsigned from_ordinal, OtherType& to)
   { ThrowAssert(false); }
 
   bool has_permutation() const
@@ -319,7 +287,41 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
     return rv;
   }
 
+  void debug_dump(std::ostream& out) const
+  {
+    out << "For fixed connectivity to rank: " << TargetRank << "\n";
+    out << "  size is: " << size() << "\n";
+    for (int i = 0, ie = size(); i < ie; ++i) {
+      out << "    At ordinal " << i << "\n";
+      debug_dump(out, i);
+    }
+    out << std::endl;
+  }
+
+  void debug_dump(std::ostream& out, unsigned ordinal) const
+  {
+    for (int j = m_num_connectivity * ordinal, je = m_num_connectivity*(ordinal+1); j < je; ++j) {
+      out << "        target:" << m_targets[j].local_offset() << "\n";
+    }
+  }
+
 private:
+
+  void copy_connectivity(unsigned from_ordinal, SelfType& to, unsigned to_ordinal)
+  {
+    unsigned to_offset   = to_ordinal * m_num_connectivity;
+    unsigned from_offset = from_ordinal * m_num_connectivity;
+
+    std::copy(m_targets.begin() + from_offset,
+              m_targets.begin() + from_offset + m_num_connectivity,
+              to.m_targets.begin() + to_offset);
+
+    if (has_permutation()) {
+      std::copy(m_permutations.begin() + from_offset,
+                m_permutations.begin() + from_offset + m_num_connectivity,
+                to.m_permutations.begin() + to_offset);
+    }
+  }
 
   void invariant_check_helper(unsigned bucket_ordinal) const
   {
@@ -395,15 +397,17 @@ private:
 #ifndef NDEBUG
     invariant_check_helper();
 
-    for (size_t i = 0, e = m_targets.size(); i < e; ++i) {
-      Entity entity = m_targets[i];
-      if (mesh->is_valid(entity)) {
-        //        // TODO
-        //        const EntityKey key_converted_from_partition_index =
-        //            mesh->convert<EntityKey>(m_target_by_partition_index[i]);
-        //        ThrowAssertMsg(key == key_converted_from_partition_index,
-        //            (debug_message() << "Key converted from partition index " << key_converted_from_partition_index
-        //                << " does not match expected key " << key));
+    if (mesh != NULL) {
+      for (size_t i = 0, e = m_targets.size(); i < e; ++i) {
+        Entity entity = m_targets[i];
+        if (mesh->is_valid(entity)) {
+          //        // TODO
+          //        const EntityKey key_converted_from_partition_index =
+          //            mesh->convert<EntityKey>(m_target_by_partition_index[i]);
+          //        ThrowAssertMsg(key == key_converted_from_partition_index,
+          //            (debug_message() << "Key converted from partition index " << key_converted_from_partition_index
+          //                << " does not match expected key " << key));
+        }
       }
     }
 #endif
@@ -424,6 +428,12 @@ private:
 
   // friend OtherType; // 1337! Will have to wait for c++11
   friend class BucketConnectivity<TargetRank, DYNAMIC_CONNECTIVITY>;
+};
+
+// Want a way for all dynamic connectivity instantiations to share the same id space
+struct Counter
+{
+  static int counter;
 };
 
 template<EntityRank TargetRank >
@@ -458,7 +468,8 @@ public:
     , m_targets()
     , m_ordinals()
     , m_permutations()
-    , m_bulk_data(0)
+    , m_bulk_data(NULL)
+    , m_id(Counter::counter++)
   {}
 
   BucketConnectivity(EntityRank from_rank, BulkData *bulk_data)
@@ -474,6 +485,7 @@ public:
     , m_ordinals()
     , m_permutations()
     , m_bulk_data(bulk_data)
+    , m_id(Counter::counter++)
     , m_rank_sensitive_higher_connectivity_cmp(*m_bulk_data)
     , m_rank_sensitive_lower_connectivity_cmp(* m_bulk_data)
   {}
@@ -556,7 +568,7 @@ public:
 
   // Modification API
 
-  bool add_connectivity(unsigned bucket_ordinal, Entity to, ConnectivityOrdinal ordinal, Permutation permutation)
+  bool add_connectivity(unsigned bucket_ordinal, Entity to, ConnectivityOrdinal ordinal, Permutation permutation = INVALID_PERMUTATION)
   {
     impl::check_bucket_ordinal(bucket_ordinal, this);
 
@@ -626,77 +638,6 @@ public:
     return found_idx != ~0u;
   }
 
-  void swap(unsigned my_ordinal, SelfType& to, unsigned to_ordinal)
-  {
-    impl::check_bucket_ordinal(my_ordinal, this);
-    impl::check_bucket_ordinal(to_ordinal, &to);
-
-    // Manage activation state
-    if (!m_active && !to.m_active) {
-      return;
-    }
-    else if (!m_active && to.m_active) {
-      activate();
-    }
-    else if (m_active && !to.m_active) {
-      to.activate();
-    }
-
-    // Swap data
-    if (&to == this) {
-      // easy
-      std::swap( m_indices[my_ordinal], to.m_indices[to_ordinal] );
-      std::swap( m_num_connectivities[my_ordinal], to.m_num_connectivities[to_ordinal]);
-
-      m_needs_shrink_to_fit = true;
-      to.m_needs_shrink_to_fit = true;
-    }
-    else if (m_num_connectivities[my_ordinal] == to.m_num_connectivities[to_ordinal]) {
-      // harder, but still relatively easy
-      const unsigned first_index  = m_indices[my_ordinal];
-      const unsigned second_index = to.m_indices[to_ordinal];
-
-      std::swap_ranges( m_targets.begin() + first_index
-                        ,m_targets.begin() + first_index + m_num_connectivities[my_ordinal]
-                        ,to.m_targets.begin() + second_index
-                        );
-
-      std::swap_ranges( m_ordinals.begin() + first_index
-                        ,m_ordinals.begin() + first_index + m_num_connectivities[my_ordinal]
-                        ,to.m_ordinals.begin() + second_index
-                        );
-
-      if (has_permutation()) {
-        std::swap_ranges( m_permutations.begin() + first_index
-                          ,m_permutations.begin() + first_index + to.m_num_connectivities[to_ordinal]
-                          ,to.m_permutations.begin() + second_index
-                          );
-      }
-    }
-    else {
-      // very hard, clearly not the intended use of this data structure, would row-storage be better?
-      const unsigned first_num    = m_num_connectivities[my_ordinal];
-      const unsigned second_num   = to.m_num_connectivities[to_ordinal];
-
-      if (first_num < second_num) {
-        diff_length_connectivity_swap(my_ordinal, *this, to_ordinal, to);
-      }
-      else {
-        diff_length_connectivity_swap(to_ordinal, to, my_ordinal, *this);
-      }
-
-      int connectivities_change = second_num - first_num;
-      m_total_connectivities += connectivities_change;
-      to.m_total_connectivities -= connectivities_change;
-
-      m_needs_shrink_to_fit = true;
-      to.m_needs_shrink_to_fit = true;
-    }
-
-    invariant_check_helper();
-    to.invariant_check_helper();
-  }
-
   void begin_modification()
   {}
 
@@ -706,7 +647,7 @@ public:
   void add_entity()
   {
     if (m_active) {
-      m_indices.push_back(0); // it's OK for entities with no connectivity to have wrong indices
+      m_indices.push_back(m_targets.size());
       m_num_connectivities.push_back(0);
       m_needs_shrink_to_fit = true;
     }
@@ -734,60 +675,69 @@ public:
     invariant_check_helper();
   }
 
-  void move_entity(SelfType & to)
+  void copy_entity(unsigned from_ordinal, SelfType& to, unsigned to_ordinal=-1u)
   {
-    ThrowAssertMsg(size() > 0, "Cannot move, connectivity is empty");
+    ThrowAssert(m_from_rank == to.m_from_rank);
+    impl::check_bucket_ordinal(from_ordinal, this);
+    invariant_check_helper(from_ordinal);
 
-    const unsigned to_num_connectivity_before_move = to.m_targets.size();
-    const unsigned my_start_index                  = m_active ? m_indices.back() : 0;
-    const unsigned num_connectivity_to_move        = m_active ? m_num_connectivities.back() : 0;
-
-    if (!m_active && !to.m_active) {
-      remove_entity();
+    if (to_ordinal == -1u) {
+      to_ordinal = to.size();
       to.add_entity();
+    }
+    impl::check_bucket_ordinal(to_ordinal, &to);
+
+    // Manage activation state
+    if (!m_active) {
+      if (to.m_active) {
+        to.m_total_connectivities -= to.m_num_connectivities[to_ordinal];
+        to.m_num_connectivities[to_ordinal] = 0;
+        to.m_needs_shrink_to_fit = true;
+      }
       return;
     }
     if (m_active && !to.m_active) {
       to.activate();
     }
 
-    m_needs_shrink_to_fit = true;
-    to.m_needs_shrink_to_fit = true;
+    // Copy data
+    if (&to == this) {
+      // easy
+      // note this implements swap semantics instead of copy, but this is necessary
+      // to avoid aliasing in certain situations when sorting Partitions
+      std::swap(m_indices[to_ordinal], m_indices[from_ordinal]);
+      std::swap(m_num_connectivities[to_ordinal], m_num_connectivities[from_ordinal]);
 
-    //move over index and num_connectivity
-    to.m_indices.push_back(to_num_connectivity_before_move);
-
-    to.m_num_connectivities.push_back(num_connectivity_to_move);
-    to.m_total_connectivities += num_connectivity_to_move;
-
-    //move over target, ordinal, and permutation
-    to.m_targets.insert( to.m_targets.end()
-                         ,m_targets.begin() + my_start_index
-                         ,m_targets.begin() + my_start_index + num_connectivity_to_move
-                         );
-
-    to.m_ordinals.insert( to.m_ordinals.end()
-                          ,m_ordinals.begin() + my_start_index
-                          ,m_ordinals.begin() + my_start_index + num_connectivity_to_move
-                        );
-
-
-    if (has_permutation()) {
-      to.m_permutations.insert( to.m_permutations.end()
-                               ,m_permutations.begin() + my_start_index
-                               ,m_permutations.begin() + my_start_index + num_connectivity_to_move
-                               );
+      m_needs_shrink_to_fit = true;
+      to.m_needs_shrink_to_fit = true;
     }
-
-    remove_entity();
+    else {
+      // much harder
+      const unsigned from_num    = m_num_connectivities[from_ordinal];
+      const unsigned to_num   = to.m_num_connectivities[to_ordinal];
+      const int delta_num     = from_num - to_num;
+      if (delta_num > 0) {
+        // If adding additional connectivity, need to reserve space
+        to.add_connectivity_helper(to_ordinal, delta_num);
+      }
+      else {
+        to.m_num_connectivities[to_ordinal] = from_num;
+        to.m_total_connectivities += delta_num;
+      }
+      if (delta_num != 0) {
+        to.m_needs_shrink_to_fit = true;
+      }
+      copy_connectivity(from_ordinal, to, to_ordinal);
+    }
 
     invariant_check_helper();
     to.invariant_check_helper();
+    to.invariant_check_helper(to_ordinal);
   }
 
-  void move_to_fixed(OtherType& to)
+  void copy_to_fixed(unsigned from_ordinal, OtherType& to)
   {
-    const unsigned num_conn_to_move = m_active ? m_num_connectivities.back() : 0;
+    const unsigned num_conn_to_move = m_active ? m_num_connectivities[from_ordinal] : 0;
 
     ThrowAssert(OtherType::connectivity_type == FIXED_CONNECTIVITY);
     ThrowAssertMsg(size() > 0, "Cannot move, connectivity is empty");
@@ -796,7 +746,7 @@ public:
     const unsigned to_offset = to.m_targets.size();
     to.add_entity(); // make room for new entity
 
-    const unsigned from_offset = m_active ? m_indices.back() : 0;
+    const unsigned from_offset = m_active ? m_indices[from_ordinal] : 0;
 
 #ifndef NDEBUG
     // Check the ordinals are compatible with fixed connectivity
@@ -816,20 +766,73 @@ public:
                 to.m_permutations.begin() + to_offset);
     }
 
-    m_needs_shrink_to_fit = true;
-    remove_entity();
-
     invariant_check_helper();
     to.invariant_check_helper();
   }
 
-  void move_to_fixed(SelfType& to)
+  void copy_to_fixed(unsigned from_ordinal, SelfType& to)
   { ThrowAssert(false); }
 
   bool has_permutation() const
   { return TargetRank != stk::topology::NODE_RANK && m_from_rank != stk::topology::NODE_RANK; }
 
+  void debug_dump(std::ostream& out) const
+  {
+    out << "For dynamic connectivity to rank: " << TargetRank << ", with id: " << m_id << "\n";
+    if (m_active) {
+      out << "  size is: " << m_indices.size() << "\n";
+      for (int i = 0, ie = m_indices.size(); i < ie; ++i) {
+        out << "    At ordinal " << i << "\n";
+        debug_dump(out, i, false);
+      }
+      out << std::endl;
+    }
+    else {
+      out << "  size is: " << m_num_inactive << ", but inactive" << std::endl;
+    }
+  }
+
+  void debug_dump(std::ostream& out, unsigned ordinal, bool add_context=true) const
+  {
+    if (m_active) {
+      int idx = m_indices[ordinal];
+      int num = m_num_connectivities[ordinal];
+      if (add_context) {
+        out << "For dynamic connectivity to rank: " << TargetRank << ", with id: " << m_id << "\n";
+      }
+      out << "      Index is: " << idx << ", Num is: " << num << "\n";
+      for (int j = idx, je = idx + num; j < je; ++j) {
+        out << "        (target:" << m_targets[j].local_offset() << ", ordinal:" << m_ordinals[j] << ")\n";
+      }
+    }
+    else {
+      out << "      Index is: 0, Num is: 0\n";
+    }
+  }
+
 private:
+
+  void copy_connectivity(unsigned from_ordinal, SelfType& to, unsigned to_ordinal)
+  {
+    unsigned num_conn    = m_num_connectivities[from_ordinal];
+    unsigned to_offset   = to.m_indices[to_ordinal];
+    unsigned from_offset = m_indices[from_ordinal];
+    ThrowAssert(to.m_num_connectivities[to_ordinal] == num_conn);
+
+    std::copy(m_targets.begin() + from_offset,
+              m_targets.begin() + from_offset + num_conn,
+              to.m_targets.begin() + to_offset);
+
+    std::copy(m_ordinals.begin() + from_offset,
+              m_ordinals.begin() + from_offset + num_conn,
+              to.m_ordinals.begin() + to_offset);
+
+    if (has_permutation()) {
+      std::copy(m_permutations.begin() + from_offset,
+                m_permutations.begin() + from_offset + num_conn,
+                to.m_permutations.begin() + to_offset);
+    }
+  }
 
   static unsigned num_chunks(unsigned num)
   { return (num + chunk_size -1)/chunk_size; }
@@ -843,46 +846,6 @@ private:
 
     m_active = true;
     m_num_inactive = 0;
-  }
-
-  void diff_length_connectivity_swap(unsigned ordinal_for_conn_getting_more, SelfType& conn_getting_more,
-                                     unsigned ordinal_for_conn_getting_less, SelfType& conn_getting_less)
-  {
-    const unsigned getting_more_index  = conn_getting_more.m_indices[ordinal_for_conn_getting_more];
-    const unsigned getting_less_index  = conn_getting_less.m_indices[ordinal_for_conn_getting_less];
-    const unsigned getting_more_num    = conn_getting_more.m_num_connectivities[ordinal_for_conn_getting_more];
-    const unsigned getting_less_num    = conn_getting_less.m_num_connectivities[ordinal_for_conn_getting_less];
-
-    ThrowAssert(getting_more_num < getting_less_num);
-
-    std::copy( conn_getting_less.m_targets.begin() + getting_less_index,
-               conn_getting_less.m_targets.begin() + getting_less_index + getting_less_num,
-               std::back_inserter(conn_getting_more.m_targets) );
-    std::copy( conn_getting_more.m_targets.begin() + getting_more_index,
-               conn_getting_more.m_targets.begin() + getting_more_index + getting_more_num,
-               conn_getting_less.m_targets.begin() + getting_less_index); // no back inserting needed, just overwrite
-
-    std::copy( conn_getting_less.m_ordinals.begin() + getting_less_index,
-               conn_getting_less.m_ordinals.begin() + getting_less_index + getting_less_num,
-               std::back_inserter(conn_getting_more.m_ordinals) );
-    std::copy( conn_getting_more.m_ordinals.begin() + getting_more_index,
-               conn_getting_more.m_ordinals.begin() + getting_more_index + getting_more_num,
-               conn_getting_less.m_ordinals.begin() + getting_less_index );
-
-    if (has_permutation()) {
-      std::copy( conn_getting_less.m_permutations.begin() + getting_less_index,
-                 conn_getting_less.m_permutations.begin() + getting_less_index + getting_less_num,
-                 std::back_inserter(conn_getting_more.m_permutations) );
-      std::copy( conn_getting_more.m_permutations.begin() + getting_more_index,
-                 conn_getting_more.m_permutations.begin() + getting_more_index + getting_more_num,
-                 conn_getting_less.m_permutations.begin() + getting_less_index );
-    }
-
-    conn_getting_more.m_indices[ordinal_for_conn_getting_more] = conn_getting_more.m_targets.size() - getting_less_num;
-    // don't need to change the index of the conn that got less
-
-    std::swap( conn_getting_more.m_num_connectivities[ordinal_for_conn_getting_more],
-               conn_getting_less.m_num_connectivities[ordinal_for_conn_getting_less]);
   }
 
   template <typename Vector>
@@ -962,15 +925,15 @@ private:
     }
   }
 
-  void add_connectivity_helper(unsigned bucket_ordinal)
+  void add_connectivity_helper(unsigned bucket_ordinal, unsigned num_to_add=1)
   {
-    const unsigned chunks_needed_by_entity = num_chunks(m_num_connectivities[bucket_ordinal]+1);
+    const unsigned chunks_needed_by_entity = num_chunks(m_num_connectivities[bucket_ordinal]+num_to_add);
     const unsigned chunks_used_by_entity   = num_chunks(m_num_connectivities[bucket_ordinal]);
 
     if (chunks_needed_by_entity == chunks_used_by_entity)
     {
-      ++m_num_connectivities[bucket_ordinal];
-      ++m_total_connectivities;
+      m_total_connectivities               += num_to_add;
+      m_num_connectivities[bucket_ordinal] += num_to_add;
       return;
     }
 
@@ -1006,15 +969,16 @@ private:
     }
     //add new chunk to end
     else {
-      m_targets.insert(m_targets.end(), chunk_size, invalid);
-      m_ordinals.insert(m_ordinals.end(), chunk_size, INVALID_CONNECTIVITY_ORDINAL);
+      const unsigned extra_chunks_needed = chunks_needed_by_entity - chunks_used_by_entity;
+      m_targets.insert(m_targets.end(), extra_chunks_needed*chunk_size, invalid);
+      m_ordinals.insert(m_ordinals.end(), extra_chunks_needed*chunk_size, INVALID_CONNECTIVITY_ORDINAL);
       if (has_permutation()) {
-        m_permutations.insert(m_permutations.end(), chunk_size, INVALID_PERMUTATION);
+        m_permutations.insert(m_permutations.end(), extra_chunks_needed*chunk_size, INVALID_PERMUTATION);
       }
     }
 
-    ++m_num_connectivities[bucket_ordinal];
-    ++m_total_connectivities;
+    m_total_connectivities               += num_to_add;
+    m_num_connectivities[bucket_ordinal] += num_to_add;
   }
 
   template <typename ConnectivityComparator>
@@ -1123,28 +1087,33 @@ private:
         if (m_direction == Higher) { // back rel
           if (target_rank <= stk::topology::ELEMENT_RANK) {
             ThrowAssertMsg(HigherConnectivityCompare()(*kitr, *oitr, *(kitr + 1), *(oitr + 1)),
-                           "Connectivity out of order; data at " << kitr - keys_begin <<
-                           "\nis (" << *oitr << ", " << kitr->local_offset() << ") rank=?" <<
-                           ",\ndata at next slot is (" << *(oitr + 1) << ", " << (kitr + 1)->local_offset() << ") rank=?");
+                           "Connectivity out of order for bucket_ordinal " << bucket_ordinal << "; data at " << kitr - keys_begin <<
+                           "\nis (ordinal:" << *oitr << ", local_offset:" << kitr->local_offset() << ")" <<
+                           ",\ndata at next slot is (ordinal:" << *(oitr + 1) << ", local_offset:" << (kitr + 1)->local_offset() << ")" <<
+                           "\nConnectivity id is: " << m_id);
           }
           else {
-          ThrowAssertMsg(m_rank_sensitive_higher_connectivity_cmp(*kitr, *oitr, *(kitr + 1), *(oitr + 1)),
-                         "Connectivity out of order; data at " << kitr - keys_begin <<
-                         "\nis (" << *oitr << ", " << kitr->local_offset() << ") rank=?" <<
-                         ",\ndata at next slot is (" << *(oitr + 1) << ", " << (kitr + 1)->local_offset() << ") rank=?");
+            ThrowAssertMsg(m_rank_sensitive_higher_connectivity_cmp(*kitr, *oitr, *(kitr + 1), *(oitr + 1)),
+                           "Connectivity out of order for bucket_ordinal " << bucket_ordinal << "; data at " << kitr - keys_begin <<
+                           "\nis (" << *oitr << ", " << kitr->local_offset() << ")" <<
+                           ",\ndata at next slot is (" << *(oitr + 1) << ", " << (kitr + 1)->local_offset() << ")" <<
+                           "\nConnectivity id is: " << m_id);
           }
         }
         else {
           if (target_rank <= stk::topology::ELEMENT_RANK) {
             ThrowAssertMsg(LowerConnectivityCompare()(*kitr, *oitr, *(kitr + 1), *(oitr + 1)),
-                           "Connectivity out of order; data at " << kitr - keys_begin <<
-                           "\nis (" << *oitr << ", " << kitr->local_offset() << ") rank=?" <<
-                           ",\ndata at next slot is (" << *(oitr + 1) << ", " << (kitr + 1)->local_offset() << ") rank=?");
+                           "Connectivity out of order for bucket_ordinal " << bucket_ordinal << "; data at " << kitr - keys_begin <<
+                           "\nis (" << *oitr << ", " << kitr->local_offset() << ")" <<
+                           ",\ndata at next slot is (" << *(oitr + 1) << ", " << (kitr + 1)->local_offset() << ")" <<
+                           "\nConnectivity id is: " << m_id);
           }
           else {
             ThrowAssertMsg(m_rank_sensitive_lower_connectivity_cmp(*kitr, *oitr, *(kitr + 1), *(oitr + 1)),
-                           "Connectivity out of order; data at " << kitr - keys_begin <<
-                           "\nis (" << *oitr << ", " << kitr->local_offset() << "),\ndata at next slot is (" << *(oitr + 1) << ", " << (kitr + 1)->local_offset() << ")");
+                           "Connectivity out of order for bucket_ordinal " << bucket_ordinal << "; data at " << kitr - keys_begin <<
+                           "\nis (" << *oitr << ", " << kitr->local_offset() << ")" <<
+                           ",\ndata at next slot is (" << *(oitr + 1) << ", " << (kitr + 1)->local_offset() << ")" <<
+                           "\nConnectivity id is: " << m_id);
           }
         }
       }
@@ -1205,7 +1174,19 @@ private:
   {
 #ifndef NDEBUG
     invariant_check_helper();
+
     ThrowAssert(!m_active || !m_needs_shrink_to_fit);
+
+    for (size_t o = 0, e = m_indices.size(); o < e; ++o) {
+      invariant_check_helper(o);
+      if (o > 0) {
+        const size_t curr_index     = m_indices[o];
+        const size_t index_diff     = curr_index - m_indices[o-1];
+        const size_t prior_num_conn = num_connectivity(o-1);
+        ThrowAssertMsg(prior_num_conn == index_diff,
+                       "For offset " << o << ", num_connectivity/index mismatch, index_diff is " << index_diff << ", num conn is " << prior_num_conn);
+      }
+    }
 
     // Check that connectivity is in-sync
     ThrowAssertMsg(m_targets.size() == m_ordinals.size(),
@@ -1236,7 +1217,9 @@ private:
   ConnectivityOrdinalVector m_ordinals;
   PermutationVector         m_permutations;
 
-  BulkData                       * m_bulk_data;
+  BulkData * m_bulk_data;
+  int        m_id;
+
   impl::HigherConnectivityRankSensitiveCompare<BulkData>  m_rank_sensitive_higher_connectivity_cmp;
   impl::LowerConnectivitityRankSensitiveCompare<BulkData>  m_rank_sensitive_lower_connectivity_cmp;
 };

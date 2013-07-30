@@ -30,7 +30,7 @@ using namespace stk::mesh::impl;
 
 std::ostream &Partition::streamit(std::ostream &os) const
 {
-  const MetaData & mesh_meta_data = m_repository->m_mesh.mesh_meta_data();
+  const MetaData & mesh_meta_data = m_mesh.mesh_meta_data();
 
   os << "{Partition m_rank = " << m_rank << ", m_size = " << m_size;
 
@@ -103,8 +103,14 @@ BucketRepository &Partition::getRepository(stk::mesh::BulkData &mesh)
 bool Partition::remove(Entity entity)
 {
   ThrowAssert(belongs(m_mesh.bucket(entity)));
-  internal_swap_to_end(entity);
-  remove_impl(entity);
+
+  Bucket &bucket   = m_mesh.bucket(entity);
+  unsigned ordinal = m_mesh.bucket_ordinal(entity);
+  overwrite_from_end(bucket, ordinal);
+
+  m_mesh.set_mesh_index(entity, 0, 0);
+
+  remove_impl();
   internal_check_invariants();
   return true;
 }
@@ -129,8 +135,7 @@ bool Partition::add(Entity entity)
   ++m_size;
 
   m_updated_since_compress = m_updated_since_sort = true;
-  BulkData& mesh = m_repository->m_mesh;
-  mesh.set_synchronized_count(entity, mesh.synchronized_count());
+  m_mesh.set_synchronized_count(entity, m_mesh.synchronized_count());
 
   // TODO - Too much tracing in this file, REMOVE
   DiagIfWatching(LOG_ENTITY, m_mesh.entity_key(entity),
@@ -150,19 +155,19 @@ bool Partition::move_to(Entity entity, Partition &dst_partition)
 
   ThrowAssert(belongs(m_mesh.bucket(entity)));
 
-  Bucket *src_bucket = m_mesh.bucket_ptr(entity);
+  Bucket *src_bucket   = m_mesh.bucket_ptr(entity);
+  unsigned src_ordinal = m_mesh.bucket_ordinal(entity);
   if (src_bucket && (src_bucket->getPartition() == &dst_partition))
   {
     DiagIfWatching(LOG_ENTITY, m_mesh.entity_key(entity),
-                   " Already on destination partition at bucket " << *src_bucket << ", ordinal "
-                   << m_mesh.bucket_ordinal(entity));
+                   " Already on destination partition at bucket " << *src_bucket << ", ordinal " << src_ordinal);
     return false;
   }
 
   ThrowRequireMsg(src_bucket && (src_bucket->getPartition() == this),
                   "Partition::move_to cannot move an entity that does not belong to it.");
   DiagIfWatching(LOG_ENTITY, m_mesh.entity_key(entity),
-                 " src_bucket: " << *src_bucket << ", src_ordinal: " << m_mesh.bucket_ordinal(entity));
+                 " src_bucket: " << *src_bucket << ", src_ordinal: " << src_ordinal);
 
   // If the last bucket is full, automatically create a new one.
   Bucket *dst_bucket = dst_partition.get_bucket_for_adds();
@@ -176,9 +181,10 @@ bool Partition::move_to(Entity entity, Partition &dst_partition)
 
   dst_bucket->mesh().modified(entity);
 
-  // Move the entity's data to the new bucket before removing the entity from its old bucket.
-  internal_swap_to_end(entity);
-  dst_bucket->move_entity(entity) ;
+  // Copy the entity's data to the new bucket before removing the entity from its old bucket.
+  dst_bucket->copy_entity(entity);
+
+  overwrite_from_end(*src_bucket, src_ordinal);
 
   dst_partition.m_updated_since_compress = dst_partition.m_updated_since_sort = true;
   dst_partition.m_size++;
@@ -186,11 +192,10 @@ bool Partition::move_to(Entity entity, Partition &dst_partition)
   DiagIfWatching(LOG_ENTITY, m_mesh.entity_key(entity),
                  " dst_bucket: " << *dst_bucket << ", dst_ordinal: " << m_mesh.bucket_ordinal(entity));
 
-  remove_impl(entity, true /*due to move*/);
+  remove_impl();
 
   m_updated_since_compress = m_updated_since_sort = true;
-  BulkData& mesh = m_repository->m_mesh;
-  mesh.set_synchronized_count(entity, mesh.synchronized_count());
+  m_mesh.set_synchronized_count(entity, m_mesh.synchronized_count());
 
   DiagIf(LOG_PARTITION, "After move_to, src state is: " << *this);
   DiagIf(LOG_PARTITION, "After move_to, dst state is: " << dst_partition);
@@ -201,12 +206,9 @@ bool Partition::move_to(Entity entity, Partition &dst_partition)
   return true;
 }
 
-void Partition::internal_swap_to_end( Entity entity )
+void Partition::overwrite_from_end(Bucket& bucket, unsigned ordinal)
 {
   Bucket *last = *(end() - 1);
-
-  Bucket &bucket   = m_mesh.bucket(entity);
-  unsigned ordinal = m_mesh.bucket_ordinal(entity);
 
   const bool NOT_last_entity_in_last_bucket =
     (last != &bucket) || (bucket.size() != ordinal + 1);
@@ -214,29 +216,21 @@ void Partition::internal_swap_to_end( Entity entity )
   {
     // Copy last entity to spot being vacated.
     Entity e_swap = (*last)[ last->size() - 1 ];
-    bucket.replace_entity(ordinal, e_swap );
+    bucket.overwrite_entity(ordinal, e_swap );
 
     // Entity field data has relocated.
   }
 }
 
-void Partition::remove_impl(Entity entity, bool due_to_move)
+void Partition::remove_impl()
 {
   TraceIf("stk::mesh::impl::Partition::remove", LOG_PARTITION);
-  DiagIf(LOG_PARTITION, "Removing entity: " << print_entity_key(MetaData::get(m_mesh), m_mesh.entity_key(entity)));
-  TraceIfWatchingDec("stk::mesh::impl::Partition::remove", LOG_ENTITY, m_mesh.entity_key(entity), extra);
 
   ThrowAssert(!empty());
 
   Bucket &last_bucket   = **(end() - 1);
 
-  if (!due_to_move) {
-    // remove_impl was called due to remove, not move_to
-    last_bucket.mesh().set_mesh_index(entity, 0, 0);
-    // entity.m_entityImpl->set_bucket_and_ordinal(0, 0);
-  }
-
-  last_bucket.remove_entity(due_to_move);
+  last_bucket.remove_entity();
 
   if ( 0 == last_bucket.size() )
   {
@@ -307,7 +301,7 @@ void Partition::compress(bool force)
   std::sort( entities.begin(), entities.end(), EntityLess(m_mesh) );
   m_updated_since_sort = false;
 
-// ceiling
+  // ceiling
   const size_t num_new_buckets = (num_entities + (m_repository->max_bucket_capacity - 1u)) / m_repository->max_bucket_capacity;
 
   std::vector< Bucket * > tmp_buckets(num_new_buckets);
@@ -317,9 +311,9 @@ void Partition::compress(bool force)
 
     const size_t bucket_size = ((num_entities - curr_entity) < m_repository->max_bucket_capacity) ? num_entities - curr_entity : m_repository->max_bucket_capacity;
     tmp_buckets[bi] = m_repository->allocate_bucket( m_rank, partition_key, bucket_size );
-    Bucket & b = *tmp_buckets[bi];
-    b.set_first_bucket_in_partition(tmp_buckets[0]);
-    b.m_partition = this;
+    Bucket & new_bucket = *tmp_buckets[bi];
+    new_bucket.set_first_bucket_in_partition(tmp_buckets[0]);
+    new_bucket.m_partition = this;
 
     for (size_t i=0; i<bucket_size; ++i, ++curr_entity) {
 
@@ -327,15 +321,12 @@ void Partition::compress(bool force)
 
       TraceIfWatching("stk::mesh::impl::Partition::compress affects", LOG_ENTITY, m_mesh.entity_key(entity));
       DiagIfWatching(LOG_ENTITY, m_mesh.entity_key(entity),
-                     "  old_bucket: " << entity.bucket() << ", old_ordinal: " << m_mesh.bucket_ordinal(entity) << '\n'
+                     "  old_bucket: " << m_mesh.bucket(entity) << ", old_ordinal: " << m_mesh.bucket_ordinal(entity) << '\n'
                      << dumpit()
-                     << "\n  new_bucket: " << *new_bucket << ", new_ordinal: " << new_ordinal << " of " << curr_entity);
+                     << "\n  new_bucket: " << new_bucket);
 
-
-      // TODO - Paying for symmetry here that we may not need since the old bucket is being deleted
-      internal_swap_to_end( entity );
-      b.move_entity( entity ) ;
-      remove_impl(entity, true /*due to move*/);
+      new_bucket.copy_entity( entity );
+      // Don't worry about deleting from old buckets, they are being deallocated right after this loop
     }
   }
 
@@ -376,6 +367,18 @@ void Partition::sort(bool force)
   buckets_begin = begin();
   buckets_end = end();
 
+  // Copy all the entities in the Partition into a vector for sorting.
+  size_t new_i = 0;
+  for (std::vector<Bucket *>::iterator b_i = buckets_begin; b_i != buckets_end; ++b_i)
+  {
+    Bucket &b = **b_i;
+    size_t b_size = b.size();
+    std::copy(&b.m_entities[0], &b.m_entities[0] + b_size, &entities[0] + new_i);
+    new_i += b_size;
+  }
+
+  std::sort( entities.begin(), entities.end(), EntityLess(m_mesh) );
+
   // Make sure that there is a vacancy somewhere.
   //
   stk::mesh::Bucket *vacancy_bucket = *(buckets_end - 1);
@@ -391,72 +394,51 @@ void Partition::sort(bool force)
     vacancy_ordinal = 0;
   }
 
-  // Copy all the entities in the Partition into a vector for sorting.
-  size_t new_i = 0;
-  for (std::vector<Bucket *>::iterator b_i = begin(); b_i != buckets_end; ++b_i)
-  {
-    Bucket &b = **b_i;
-    size_t b_size = b.size();
-    std::copy(&b.m_entities[0], &b.m_entities[0] + b_size, &entities[0] + new_i);
-    new_i += b_size;
-  }
-
-  std::sort( entities.begin(), entities.end(), EntityLess(m_mesh) );
+  // Allocate space to copy in to
+  vacancy_bucket->add_entity();
 
   // Now that we have the entities sorted, we need to put them and their data
   // in the right order in the buckets.
 
-  std::vector<Entity>::iterator j = entities.begin();
+  std::vector<Entity>::iterator sorted_ent_vector_itr = entities.begin();
 
-  bool needed_to_add = false;
   Bucket* orig_vacancy_bucket = vacancy_bucket;
 
-  for (std::vector<Bucket *>::iterator b_i = begin(); b_i != buckets_end; ++b_i)
+  for (std::vector<Bucket *>::iterator bucket_itr = begin(); bucket_itr != buckets_end; ++bucket_itr)
   {
-    Bucket &b = **b_i;
-    const unsigned n = needed_to_add && *b_i == orig_vacancy_bucket ? b.size() -1 : b.size();
-    for ( unsigned i = 0 ; i < n ; ++i , ++j )
+    Bucket &curr_bucket = **bucket_itr;
+    const unsigned n = *bucket_itr == orig_vacancy_bucket ? curr_bucket.size() -1 : curr_bucket.size(); // skip very last entity in partition
+    for ( unsigned curr_bucket_ord = 0; curr_bucket_ord < n ; ++curr_bucket_ord , ++sorted_ent_vector_itr )
     {
-      ThrowAssert(i < b.size());
-      ThrowAssert(j != entities.end());
+      ThrowAssert(sorted_ent_vector_itr != entities.end());
 
-      Entity const current = b[i];
+      Entity curr_entity = curr_bucket[curr_bucket_ord];
+      ThrowAssert(m_mesh.is_valid(curr_entity));
 
-      if ( current != *j )
+      if ( curr_entity != *sorted_ent_vector_itr ) // check if we need to move
       {
-        if ( m_mesh.is_valid(current) )
-        {
-          // Move current entity to the vacant spot
-          DiagIfWatching(LOG_ENTITY, m_mesh.entity_key(current), "sort affects this entity");
-          if (vacancy_ordinal >= vacancy_bucket->size()) {
-            ThrowAssert(!needed_to_add);
-            ThrowAssert(vacancy_bucket == orig_vacancy_bucket);
-            needed_to_add = true;
-            vacancy_bucket->add_entity();
-          }
-          vacancy_bucket->replace_entity( vacancy_ordinal, current );
+        // Move current entity to the vacant spot
+        DiagIfWatching(LOG_ENTITY, m_mesh.entity_key(curr_entity), "sort affects this entity");
+
+        if (vacancy_bucket != &curr_bucket || vacancy_ordinal != curr_bucket_ord) {
+          vacancy_bucket->overwrite_entity( vacancy_ordinal, curr_entity );
         }
+
         // Set the vacant spot to where the required entity is now.
-        vacancy_bucket  = & (m_mesh.bucket(*j));
-        vacancy_ordinal = m_mesh.bucket_ordinal(*j);
+        vacancy_bucket  = & (m_mesh.bucket(*sorted_ent_vector_itr));
+        vacancy_ordinal = m_mesh.bucket_ordinal(*sorted_ent_vector_itr);
 
         // Move required entity to the required spot
-        b.replace_entity( i, *j );
+        curr_bucket.overwrite_entity( curr_bucket_ord, *sorted_ent_vector_itr );
 
-        // Clear the vacant spot
-        vacancy_bucket->initialize_slot( vacancy_ordinal , Entity() );
-
-        DiagIfWatching(LOG_ENTITY, m_mesh.entity_key(*j), "sort affects this entity");
-        DiagIfWatching(LOG_ENTITY, m_mesh.entity_key(*j), "  new_bucket: " << b << ", new_ordinal: " << i);
+        DiagIfWatching(LOG_ENTITY, m_mesh.entity_key(*sorted_ent_vector_itr), "sort affects this entity");
+        DiagIfWatching(LOG_ENTITY, m_mesh.entity_key(*sorted_ent_vector_itr), "  new_bucket: " << curr_bucket << ", new_ordinal: " << curr_bucket_ord);
       }
     }
   }
   m_updated_since_sort = false;
 
-  //ThrowAssert(vacancy_bucket->
-  if (needed_to_add) {
-    orig_vacancy_bucket->remove_entity();
-  }
+  orig_vacancy_bucket->remove_entity();
 
   if (tmp_bucket) {
     m_repository->deallocate_bucket(tmp_bucket);

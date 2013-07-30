@@ -136,7 +136,7 @@ private:
   // Internal methods
   //
 
-  void remove_impl(Entity entity, bool due_to_move=false);
+  void remove_impl();
 
   // The partition has no buckets, not even an empty one left after removing all its
   // entities.
@@ -159,6 +159,10 @@ private:
   void internal_check_no_null_buckets_invariant() const;
 
   void internal_swap_to_end(Entity entity);
+
+  // Overwrite the location defined by the input arguments with the entity
+  // at the very end of this entire partition
+  void overwrite_from_end( Bucket& bucket, unsigned ordinal);
 };
 
 std::ostream &operator<<(std::ostream &, const stk::mesh::impl::Partition &);

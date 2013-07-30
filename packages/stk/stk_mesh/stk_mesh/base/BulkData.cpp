@@ -36,6 +36,10 @@
 namespace stk {
 namespace mesh {
 
+namespace impl {
+int Counter::counter = 0;
+}
+
 namespace {
 
 parallel::DistributedIndex::KeySpanVector
@@ -880,7 +884,7 @@ void BulkData::new_bucket_callback(EntityRank rank, unsigned const* part_ord_beg
 }
 
 void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_bucket_id, Bucket::size_type dst_bucket_ord,
-                                    EntityRank src_rank, unsigned src_bucket_id, Bucket::size_type src_bucket_ord)
+                                           EntityRank src_rank, unsigned src_bucket_id, Bucket::size_type src_bucket_ord)
 {
   if (!m_keep_fields_updated) {
     return;
@@ -900,12 +904,13 @@ void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_buc
       ThrowAssertMsg( dst_size == src_size,
                       "Incompatible field sizes: " << dst_size << " != " << src_size );
 
-      std::swap_ranges(dst + dst_size * dst_bucket_ord,
-                       dst + dst_size * dst_bucket_ord + dst_size,
-                       src + src_size * src_bucket_ord);
+      std::memcpy( dst + dst_size * dst_bucket_ord,
+                   src + src_size * src_bucket_ord,
+                   dst_size );
     }
   }
 }
+
 
 void BulkData::remove_entity_callback(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord)
 {
