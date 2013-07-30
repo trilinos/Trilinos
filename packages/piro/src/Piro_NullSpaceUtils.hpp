@@ -69,6 +69,9 @@ public:
    //! Set Piro solver parameter list
    void setPiroPL(const Teuchos::RCP<Teuchos::ParameterList>& piroParams);
 
+   //! Update the ML parameter list addresses and pass coordinare array addresses
+   void updateMLPL(const Teuchos::RCP<Teuchos::ParameterList>& mlParams);
+
    //! Access the arrays to store the coordinates
    void getCoordArrays(double **x, double **y, double **z);
 

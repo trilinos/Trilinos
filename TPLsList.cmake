@@ -169,6 +169,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   QT              "cmake/TPLs/"    SS
   gtest           "cmake/TPLs/"    EX
   BoostLib        "cmake/TPLs/"    SS
+  BoostAlbLib     "cmake/TPLs/"    SS
   OpenNURBS       "cmake/TPLs/"    EX
   Portals         "cmake/TPLs/"    SS
   CrayPortals     "cmake/TPLs/"    SS

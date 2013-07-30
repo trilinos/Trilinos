@@ -72,6 +72,15 @@ MLRigidBodyModes::setPiroPL(const Teuchos::RCP<Teuchos::ParameterList>& piroPara
 }
 
 void
+MLRigidBodyModes::updateMLPL(const Teuchos::RCP<Teuchos::ParameterList>& mlParams){
+
+  mlList = mlParams;
+
+  informML();
+
+}
+
+void
 MLRigidBodyModes::resize(const int numSpaceDim_, const int numNodes){
 
   numSpaceDim = numSpaceDim_;
