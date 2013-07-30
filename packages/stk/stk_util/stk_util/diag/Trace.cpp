@@ -16,6 +16,8 @@
 #include <stk_util/diag/Trace.hpp>
 #include <stk_util/diag/Writer.hpp>
 #include <stk_util/environment/FormatTime.hpp>
+#include <stk_util/environment/CPUTime.hpp>
+#include <stk_util/util/memory_util.hpp>
 #include <stk_util/diag/Platform.hpp>
 
 namespace stk {
@@ -85,7 +87,10 @@ prefix_find(
 size_t
 get_heap_used()
 {
-  return sierra::Env::get_heap_usage();
+  //return sierra::Env::get_heap_usage();
+  size_t mem_now=0, hwm=0;
+  stk::get_memory_usage(mem_now, hwm);
+  return mem_now;
 }
 
 std::string::const_iterator
@@ -309,7 +314,8 @@ Trace::Trace(
                                << push << dendl;
 
     if (dout.shouldPrint(LOG_TRACE_STATS)) {
-      m_startCpuTime = sierra::Env::cpu_now();
+      //m_startCpuTime = sierra::Env::cpu_now();
+      m_startCpuTime = stk::cpu_time();
       m_startMemAlloc = get_heap_used();
     }
   }
@@ -320,7 +326,8 @@ Trace::~Trace()
 {
   if (m_do_trace && (m_flags & IN_TRACE_LIST)) {
     if (m_diagWriter.shouldPrint(LOG_TRACE_STATS)) {
-      m_startCpuTime = sierra::Env::cpu_now() - m_startCpuTime;
+      //m_startCpuTime = sierra::Env::cpu_now() - m_startCpuTime;
+      m_startCpuTime = stk::cpu_time() - m_startCpuTime;
       m_startMemAlloc = get_heap_used() - m_startMemAlloc;
     }
 
