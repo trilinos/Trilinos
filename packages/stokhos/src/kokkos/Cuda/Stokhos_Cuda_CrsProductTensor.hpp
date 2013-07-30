@@ -215,16 +215,16 @@ public:
     // Use at most half of shared memory to get 2 blocks per SMP
     const size_type shcap =
       Kokkos::Impl::CudaTraits::SharedMemoryCapacity / 2;
-    int block_size = ((shcap / sizeof(VectorScalar) - dBlock.x*dBlock.y) / tensor_align - 1) / 2;
-    block_size = std::min( block_size, 9 );
-    if (block_size % 2 == 0)
-      --block_size;
+    size_type bs = ((shcap / sizeof(VectorScalar) - dBlock.x*dBlock.y) / tensor_align - 1) / 2;
+    if (bs % 2 == 0)
+      --bs;
+    const size_type block_size_max = 31;
+    const size_type block_size = std::min(bs, block_size_max);
     // const int block_size = 9;
     const size_type shmem =
       sizeof(VectorScalar) * ((2*block_size+1) * tensor_align + dBlock.x*dBlock.y);
 
 #if 0
-
     const size_type mega = 1024*1024;
     const size_type giga = 1024*mega;
     const size_type fem_nnz = A.values.dimension_1();
