@@ -58,6 +58,7 @@ namespace Thyra {
     SOLVER_TYPE_PSEUDO_BLOCK_GMRES,
     SOLVER_TYPE_BLOCK_CG,
     SOLVER_TYPE_PSEUDO_BLOCK_CG,
+    SOLVER_TYPE_PSEUDO_BLOCK_STOCHASTIC_CG,
     SOLVER_TYPE_GCRODR,
     SOLVER_TYPE_RCG,
     SOLVER_TYPE_MINRES
@@ -109,6 +110,8 @@ public:
   static const std::string  BlockCG_name;
   /** \brief . */
   static const std::string  PseudoBlockCG_name;
+  /** \brief . */
+  static const std::string  PseudoBlockStochasticCG_name;
   /** \brief . */
   static const std::string  GCRODR_name;
   /** \brief . */

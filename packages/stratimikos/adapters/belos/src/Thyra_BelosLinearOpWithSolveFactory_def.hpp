@@ -53,6 +53,7 @@
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "BelosBlockCGSolMgr.hpp"
 #include "BelosPseudoBlockCGSolMgr.hpp"
+#include "BelosPseudoBlockStochasticCGSolMgr.hpp"
 #include "BelosGCRODRSolMgr.hpp"
 #include "BelosRCGSolMgr.hpp"
 #include "BelosMinresSolMgr.hpp"
@@ -84,6 +85,8 @@ template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::BlockCG_name = "Block CG";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::PseudoBlockCG_name = "Pseudo Block CG";
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::PseudoBlockStochasticCG_name = "Pseudo Block Stochastic CG";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::GCRODR_name = "GCRODR";
 template<class Scalar>
@@ -376,6 +379,7 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         "Pseudo Block GMRES",
         "Block CG",
         "Pseudo Block CG",
+        "Pseudo Block Stochastic CG",
         "GCRODR",
 	"RCG",
         "MINRES"
@@ -450,6 +454,12 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
     {
       Belos::PseudoBlockCGSolMgr<Scalar,MV_t,LO_t> mgr;
       solverTypesSL.sublist(PseudoBlockCG_name).setParameters(
+        *mgr.getValidParameters()
+        );
+    }
+    {
+      Belos::PseudoBlockStochasticCGSolMgr<Scalar,MV_t,LO_t> mgr;
+      solverTypesSL.sublist(PseudoBlockStochasticCG_name).setParameters(
         *mgr.getValidParameters()
         );
     }
@@ -725,6 +735,27 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
       }
       else {
         iterativeSolver = rcp(new Belos::PseudoBlockCGSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
+      }
+      break;
+    }
+    case SOLVER_TYPE_PSEUDO_BLOCK_STOCHASTIC_CG:
+    {
+      // Set the PL
+      if(paramList_.get()) {
+        Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
+        Teuchos::ParameterList &pbcgPL = solverTypesPL.sublist(PseudoBlockStochasticCG_name);
+        solverPL = Teuchos::rcp( &pbcgPL, false );
+      }
+      // 
+      // Create the solver
+      // 
+      if (oldIterSolver != Teuchos::null) {
+        iterativeSolver = oldIterSolver;
+        iterativeSolver->setProblem( lp );
+        iterativeSolver->setParameters( solverPL );
+      }
+      else {
+        iterativeSolver = rcp(new Belos::PseudoBlockStochasticCGSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
       }
       break;
     }
