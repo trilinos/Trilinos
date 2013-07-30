@@ -56,6 +56,7 @@
 #include "Stokhos_Host_SymmetricDiagonalSpec.hpp"
 #include "Stokhos_Host_CrsProductTensor.hpp"
 #include "Stokhos_Host_TiledCrsProductTensor.hpp"
+#include "Stokhos_Host_CooProductTensor.hpp"
 #include "Stokhos_Host_FlatSparse3Tensor.hpp"
 #include "Stokhos_Host_FlatSparse3Tensor_kji.hpp"
 #include "Stokhos_Host_LexicographicBlockSparse3Tensor.hpp"

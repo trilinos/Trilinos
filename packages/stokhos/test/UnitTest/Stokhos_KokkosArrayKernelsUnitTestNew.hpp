@@ -63,11 +63,12 @@
 #include "Stokhos_BlockCrsMatrix.hpp"
 #include "Stokhos_StochasticProductTensor.hpp"
 #include "Stokhos_CrsProductTensor.hpp"
+#include "Stokhos_TiledCrsProductTensor.hpp"
+#include "Stokhos_CooProductTensor.hpp"
 #include "Stokhos_SymmetricDiagonalSpec.hpp"
 #include "Stokhos_FlatSparse3Tensor.hpp"
 #include "Stokhos_FlatSparse3Tensor_kji.hpp"
 #include "Stokhos_LinearSparse3Tensor.hpp"
-#include "Stokhos_TiledCrsProductTensor.hpp"
 
 namespace KokkosKernelsUnitTest {
 
@@ -174,9 +175,10 @@ struct UnitTestSetup {
 
     p = p_;
     d = d_;
-    // p = 3;
-    // d = 1;
+    // p = 2;
+    // d = 2;
     nGrid = 3;
+    // nGrid = 2;
     rel_tol = 1e-12;
     abs_tol = 1e-12;
 

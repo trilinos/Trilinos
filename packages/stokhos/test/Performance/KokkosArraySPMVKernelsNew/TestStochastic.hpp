@@ -51,6 +51,7 @@
 #include "Stokhos_SymmetricDiagonalSpec.hpp"
 #include "Stokhos_CrsProductTensor.hpp"
 #include "Stokhos_TiledCrsProductTensor.hpp"
+#include "Stokhos_CooProductTensor.hpp"
 #include "Stokhos_FlatSparse3Tensor.hpp"
 #include "Stokhos_FlatSparse3Tensor_kji.hpp"
 #include "Stokhos_LexicographicBlockSparse3Tensor.hpp"
@@ -1345,9 +1346,6 @@ void performance_test_driver_poly( const int pdeg ,
                                    const bool test_block ,
                                    const bool symmetric )
 {
-  // bool do_flat_sparse =
-  //   Kokkos::Impl::is_same<Device,Kokkos::Host>::value ;
-
   std::cout.precision(8);
 
   //------------------------------
@@ -1369,6 +1367,8 @@ void performance_test_driver_poly( const int pdeg ,
             << "\"Original-Matrix-Free-Block-MXV-GFLOPS\" , "
             << "\"Block-Crs-Tensor MXV-Speedup\" , "
             << "\"Block-Crs-Tensor MXV-GFLOPS\" , "
+            << "\"Block-Coo-Tensor MXV-Speedup\" , "
+            << "\"Block-Coo-Tensor MXV-GFLOPS\" , "
             // << "\"Block-Tiled Crs-Tensor MXV-Speedup\" , "
             // << "\"Block-Tiled Crs-3-Tensor MXV-GFLOPS\" , "
             << std::endl ;
@@ -1378,6 +1378,11 @@ void performance_test_driver_poly( const int pdeg ,
 
     const std::vector<double> perf_crs_tensor =
       test_product_tensor_matrix<Scalar,Stokhos::CrsProductTensor<Scalar,Device>,Device>(
+        var_degree , nGrid , nIter , symmetric );
+
+    const bool Pack = Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value;
+    const std::vector<double> perf_coo_tensor =
+      test_product_tensor_matrix<Scalar,Stokhos::CooProductTensor<Scalar,Device,Pack>,Device>(
         var_degree , nGrid , nIter , symmetric );
 
     // const std::vector<double> perf_tiled_crs_tensor =
@@ -1395,11 +1400,13 @@ void performance_test_driver_poly( const int pdeg ,
               << perf_crs_tensor[3] << " , "
               << perf_original_mat_free_block[0] << " , "
               << perf_original_mat_free_block[1] << " , "
-              << perf_original_mat_free_block[1] / perf_original_mat_free_block[1] << " , "
+              << perf_original_mat_free_block[1] /
+                 perf_original_mat_free_block[1] << " , "
               << perf_original_mat_free_block[2] << " , "
               << perf_original_mat_free_block[1] / perf_crs_tensor[1] << " , "
-              // << perf_crs_tensor[1] << " , "
               << perf_crs_tensor[2] << " , "
+              << perf_original_mat_free_block[1] / perf_coo_tensor[1] << " , "
+              << perf_coo_tensor[2] << " , "
               // << perf_original_mat_free_block[1] / perf_tiled_crs_tensor[1] << " , "
               // << perf_tiled_crs_tensor[2]
               << std::endl ;

@@ -36,6 +36,7 @@
 #include "Stokhos_Cuda_SymmetricDiagonalSpec.hpp"
 #include "Stokhos_Cuda_CrsProductTensor.hpp"
 #include "Stokhos_Cuda_TiledCrsProductTensor.hpp"
+#include "Stokhos_Cuda_CooProductTensor.hpp"
 #include "Stokhos_Cuda_FlatSparse3Tensor.hpp"
 #include "Stokhos_Cuda_FlatSparse3Tensor_kji.hpp"
 #include "Stokhos_Cuda_LexicographicBlockSparse3Tensor.hpp"
