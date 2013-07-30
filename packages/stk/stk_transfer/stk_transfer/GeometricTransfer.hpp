@@ -21,6 +21,16 @@
 namespace stk {
 namespace transfer {
 
+template <class T>
+typename T::EntityKeyMap::iterator  insert (typename T::EntityKeyMap &map,
+                                      const typename T::EntityKeyMap::key_type &k,
+                                      const typename T::EntityKeyA &a) {
+  const typename T::EntityKeyMap::mapped_type m(a);
+  const typename T::EntityKeyMap::value_type  v(k, m);
+  const typename T::EntityKeyMap::iterator it = map.insert(v);
+  return it;
+}
+
 template <class INTERPOLATE> class GeometricTransfer : public TransferBase {
 
 public :

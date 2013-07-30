@@ -76,15 +76,6 @@ private :
   
 };
 
-template<class T>
-typename T::EntityKeyMap::iterator insert(typename T::EntityKeyMap &map, 
-                                    const typename T::EntityKeyMap::key_type &k, 
-                                    const typename T::EntityKeyMap::mapped_type &m) {
-  const typename T::EntityKeyMap::value_type val(k, m);
-  const typename T::EntityKeyMap::iterator it = map.insert(val);
-  return it;
-}
-
 template <class MESHA, class MESHB> double LinearInterpolate<MESHA,MESHB>::distance_squared(const double *x, const double *y) {
   double d = 0;
   for (unsigned i=0; i<Dimension; ++i) d += (x[i]-y[i])*(x[i]-y[i]);
