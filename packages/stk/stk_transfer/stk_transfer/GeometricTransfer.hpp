@@ -60,6 +60,7 @@ public :
                     boost::shared_ptr<MeshB> &meshb,
                     const std::string &name,
                     const double expansion_factor = 1.5);
+  virtual ~GeometricTransfer(){};
   virtual void coarse_search();
   virtual void communication();
   virtual void local_search();

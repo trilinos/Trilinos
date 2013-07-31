@@ -17,6 +17,7 @@ namespace transfer {
 class TransferBase {
 public :
   TransferBase(){};
+  virtual ~TransferBase(){};
   void initialize() {
     coarse_search();
     communication();
