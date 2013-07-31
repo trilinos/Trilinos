@@ -309,7 +309,7 @@ public:
 
   ParallelReduce( const FunctorType  & functor ,
                   const size_type      work_count ,
-                  pointer_type         result )
+                  pointer_type         result = 0 )
     : m_reduce( functor )
     , m_work_count( work_count )
     {
@@ -317,8 +317,10 @@ public:
       HostThreadWorker::execute();
       m_reduce.final( Host::root_reduce_scratch() );
 
-      pointer_type ptr = (pointer_type) Host::root_reduce_scratch();
-      for ( unsigned i = 0 ; i < m_reduce.value_count() ; ++i ) result[i] = ptr[i] ;
+      if ( result ) {
+        pointer_type ptr = (pointer_type) Host::root_reduce_scratch();
+        for ( unsigned i = 0 ; i < m_reduce.value_count() ; ++i ) result[i] = ptr[i] ;
+      }
     }
 
   void wait() {}

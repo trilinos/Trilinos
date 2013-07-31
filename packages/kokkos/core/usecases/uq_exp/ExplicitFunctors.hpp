@@ -648,21 +648,9 @@ struct InternalForceFunctor< Explicit::Fields< Scalar , DeviceType > >
     next_time_step = next_time_step < source ? next_time_step : source;
   }
 
-  struct SetNextTimeStep {
-    typedef DeviceType  device_type ;
-    typedef Scalar      value_type;
-
-    const typename Fields::value_view dt ;
-
-    SetNextTimeStep( const typename Fields::value_view & arg_dt )
-      : dt( arg_dt ) {}
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()( const value_type & result ) const
-    {
-      *dt = result ;
-    }
-  };
+  KOKKOS_INLINE_FUNCTION
+  void final( value_type & next_time_step ) const
+  { *dt = next_time_step ; }
 
   //--------------------------------------------------------------------------
 
@@ -708,9 +696,7 @@ struct InternalForceFunctor< Explicit::Fields< Scalar , DeviceType > >
     , user_dt(                arg_user_dt )
     , uq_count(               mesh_fields.displacement.dimension_1() )
   {
-    SetNextTimeStep op_dt( mesh_fields.dt_new );
-
-    Kokkos::parallel_reduce( mesh_fields.num_elements, *this, op_dt );
+    Kokkos::parallel_reduce( mesh_fields.num_elements, *this );
   }
 
   //--------------------------------------------------------------------------

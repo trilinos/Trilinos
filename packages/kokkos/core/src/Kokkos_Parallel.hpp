@@ -62,7 +62,12 @@ template< class FunctorType ,
           class DeviceType = typename FunctorType::device_type >
 class ParallelFor ;
 
-struct VectorParallel {};
+struct VectorParallel
+{
+  const size_t nwork ;
+  VectorParallel( const size_t n ) : nwork(n) {}
+  operator size_t () const { return nwork ; }
+};
 
 } // namespace Impl
 } // namespace Kokkos
@@ -115,7 +120,7 @@ class ParallelReduce ;
 
 template< class FunctorType ,
           class ValueType = typename FunctorType::value_type ,
-          class HasFinal  = Kokkos::Impl::true_type >
+          class Enable    = void >
 struct ReduceAdapter ;
 
 } // namespace Impl
@@ -321,7 +326,8 @@ struct ReduceAdapter
 };
 
 template< class FunctorType , class ScalarType >
-struct ReduceAdapter< FunctorType , ScalarType , typename FunctorType::has_final >
+struct ReduceAdapter< FunctorType , ScalarType ,
+                      typename enable_if< 0 < sizeof( & FunctorType::final ) >::type >
 {
   enum { StaticValueSize = sizeof(ScalarType) };
 
@@ -329,7 +335,7 @@ struct ReduceAdapter< FunctorType , ScalarType , typename FunctorType::has_final
   typedef ScalarType * pointer_type  ;
 
   KOKKOS_INLINE_FUNCTION static
-  reference_type reference( void * p ) { return (ScalarType*) p ; }
+  reference_type reference( void * p ) { return *(ScalarType*) p ; }
 
   KOKKOS_INLINE_FUNCTION static
   pointer_type pointer( reference_type p ) { return & p ; }
@@ -364,8 +370,8 @@ struct ReduceAdapter< FunctorType , ScalarType , typename FunctorType::has_final
 };
 
 
-template< class FunctorType , class ScalarType , class NoFinal >
-struct ReduceAdapter< FunctorType , ScalarType[] , NoFinal >
+template< class FunctorType , class ScalarType , class Enable >
+struct ReduceAdapter< FunctorType , ScalarType[] , Enable >
 {
   enum { StaticValueSize = 0 };
 
@@ -407,7 +413,8 @@ struct ReduceAdapter< FunctorType , ScalarType[] , NoFinal >
 };
 
 template< class FunctorType , class ScalarType >
-struct ReduceAdapter< FunctorType , ScalarType[] , typename FunctorType::has_final >
+struct ReduceAdapter< FunctorType , ScalarType[] ,
+                      typename enable_if< 0 < sizeof( & FunctorType::final ) >::type >
 {
   enum { StaticValueSize = 0 };
 

@@ -116,7 +116,7 @@ public:
   inline
   ParallelReduce( const FunctorType  & functor ,
                   const size_t         work_count ,
-                  pointer_type         result )
+                  pointer_type         result = 0 )
     : reduce( functor )
   {
 #if defined( __INTEL_COMPILER )
@@ -174,10 +174,10 @@ public:
         HostThread & th = * OpenMP::get_host_thread(i);
         reduce.join( root.reduce_data() , th.reduce_data() );
       }
-      // reduce.finalize( root.reduce_data() );
+      reduce.final( root.reduce_data() );
     }
 
-    {
+    if ( result ) {
       pointer_type ptr = (pointer_type) OpenMP::root_reduce_scratch();
 
       for ( unsigned i = 0 ; i < reduce.value_count(); ++i ) {

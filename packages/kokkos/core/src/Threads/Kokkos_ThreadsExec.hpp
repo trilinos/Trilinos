@@ -312,10 +312,10 @@ struct ThreadsExecAdapter< ParallelReduce< FunctorType , ParallelWorkRequest , T
 namespace Kokkos {
 
 inline void Threads::initialize( 
-  const std::pair<unsigned,unsigned> team_league_size ,
+  const std::pair<unsigned,unsigned> league_team ,
   const std::pair<unsigned,unsigned> hardware_topology )
 {
-  Impl::ThreadsExec::initialize( team_league_size , hardware_topology );
+  Impl::ThreadsExec::initialize( league_team , hardware_topology );
 }
 
 inline void Threads::finalize()

@@ -93,7 +93,25 @@ public:
     dst.value[1] += iwork + 1 ;
     dst.value[2] += nwork - iwork ;
   }
+};
 
+template< class DeviceType >
+class ReduceFunctorFinal : public ReduceFunctor< long , DeviceType > {
+public:
+
+  typedef typename ReduceFunctor< long , DeviceType >::value_type value_type ;
+
+  ReduceFunctorFinal( const size_t n )
+    : ReduceFunctor<long,DeviceType>(n)
+    {}
+
+  KOKKOS_INLINE_FUNCTION
+  void final( value_type & dst ) const
+  {
+    dst.value[0] = - dst.value[0] ;
+    dst.value[1] = - dst.value[1] ;
+    dst.value[2] = - dst.value[2] ;
+  }
 };
 
 template< typename ScalarType , class DeviceType >
@@ -141,6 +159,24 @@ public:
   }
 };
 
+template< class DeviceType >
+class RuntimeReduceFunctorFinal : public RuntimeReduceFunctor< long , DeviceType > {
+public:
+
+  typedef RuntimeReduceFunctor< long , DeviceType > base_type ;
+  typedef typename base_type::value_type value_type ;
+  typedef long scalar_type ;
+
+  RuntimeReduceFunctorFinal( const size_t nwork , const size_t count ) : base_type(nwork,count) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void final( value_type dst ) const
+  {
+    for ( unsigned i = 0 ; i < base_type::value_count ; ++i ) {
+      dst[i] = - dst[i] ;
+    }
+  }
+};
 } // namespace Test
 
 namespace {
@@ -157,6 +193,7 @@ public:
   TestReduce( const size_type & nwork )
   {
     run_test(nwork);
+    run_test_final(nwork);
   }
 
   void run_test( const size_type & nwork )
@@ -184,6 +221,32 @@ public:
       }
     }
   }
+
+  void run_test_final( const size_type & nwork )
+  {
+    typedef Test::ReduceFunctorFinal< device_type > functor_type ;
+    typedef typename functor_type::value_type value_type ;
+
+    enum { Count = 3 };
+    enum { Repeat = 100 };
+
+    value_type result[ Repeat ];
+
+    const unsigned long nw   = nwork ;
+    const unsigned long nsum = nw % 2 ? nw * (( nw + 1 )/2 )
+                                      : (nw/2) * ( nw + 1 );
+
+    for ( unsigned i = 0 ; i < Repeat ; ++i ) {
+      Kokkos::parallel_reduce( nwork , functor_type(nwork) , result[i] );
+    }
+
+    for ( unsigned i = 0 ; i < Repeat ; ++i ) {
+      for ( unsigned j = 0 ; j < Count ; ++j ) {
+        const unsigned long correct = 0 == j % 3 ? nw : nsum ;
+        ASSERT_EQ( (ScalarType) correct , - result[i].value[j] );
+      }
+    }
+  }
 };
 
 template< typename ScalarType , class DeviceType >
@@ -198,6 +261,7 @@ public:
   TestReduceDynamic( const size_type nwork )
   {
     run_test_dynamic(nwork);
+    run_test_dynamic_final(nwork);
   }
 
   void run_test_dynamic( const size_type nwork )
@@ -220,7 +284,32 @@ public:
     for ( unsigned i = 0 ; i < Repeat ; ++i ) {
       for ( unsigned j = 0 ; j < Count ; ++j ) {
         const unsigned long correct = 0 == j % 3 ? nw : nsum ;
-        ASSERT_EQ( result[i][j] , (ScalarType) correct );
+        ASSERT_EQ( (ScalarType) correct , result[i][j] );
+      }
+    }
+  }
+
+  void run_test_dynamic_final( const size_type nwork )
+  {
+    typedef Test::RuntimeReduceFunctorFinal< device_type > functor_type ;
+
+    enum { Count = 3 };
+    enum { Repeat = 100 };
+
+    typename functor_type::scalar_type result[ Repeat ][ Count ] ;
+
+    const unsigned long nw   = nwork ;
+    const unsigned long nsum = nw % 2 ? nw * (( nw + 1 )/2 )
+                                      : (nw/2) * ( nw + 1 );
+
+    for ( unsigned i = 0 ; i < Repeat ; ++i ) {
+      Kokkos::parallel_reduce( nwork , functor_type(nwork,Count) , result[i] );
+    }
+
+    for ( unsigned i = 0 ; i < Repeat ; ++i ) {
+      for ( unsigned j = 0 ; j < Count ; ++j ) {
+        const unsigned long correct = 0 == j % 3 ? nw : nsum ;
+        ASSERT_EQ( (ScalarType) correct , - result[i][j] );
       }
     }
   }

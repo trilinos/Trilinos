@@ -469,11 +469,9 @@ public:
       // If one or less blocks then done.
       // Thread 0 has the final reduction value
       if ( ! group_count ) {
-#if 0
         if ( 0 == thread_of_block ) {
           reduce.final( shared_data );
         }
-#endif
         for ( unsigned i = thread_of_block ; i < m_data.value_word_count ; ++i ) {
           m_output_space[i] = shared_data[i] ;
         }
@@ -611,8 +609,8 @@ struct CudaExecAdapter< FunctorType , ParallelWorkRequest >
   }
 };
 
-template< class FunctorType >
-struct CudaExecAdapter< FunctorType , size_t >
+template< class FunctorType , class WorkSpec >
+struct CudaExecAdapter /* < FunctorType , size_t > */
 {
   typedef ReduceAdapter< FunctorType >                    ReduceType ;
   typedef CudaReduceShared< ReduceType::StaticValueSize > ReduceSharedType ;
@@ -681,7 +679,7 @@ public:
 
   ParallelReduce( const FunctorType  & functor ,
                   const WorkSpec     & work ,
-                  pointer_type         result )
+                  pointer_type         result = 0 )
     : m_exec( functor , work )
     , m_host_ptr( result )
   {
@@ -690,7 +688,7 @@ public:
     if ( nb ) {
       m_exec.m_reduce_shared.assign_block_range( 0 , nb );
 
-      const dim3 block( m_exec.thread_count() );
+      const dim3 block( m_exec.thread_count() , 1 , 1 );
       const dim3 grid( nb , 1 , 1 );
 
       CudaParallelLaunch< ExecType >( m_exec , grid , block , m_exec.shmem_size() );
@@ -702,16 +700,19 @@ public:
     typedef typename ReduceType::pointer_type ptr_type ;
 
     Cuda::fence();
-    const int size  = m_exec.m_reduce.value_size();
-    const int count = m_exec.m_reduce.value_count();
-    ptr_type ptr = (ptr_type) cuda_internal_scratch_unified( size );
-    if ( 0 != ptr ) {
-      for ( int i = 0 ; i < count ; ++i )
-        m_host_ptr[i] = ptr[i] ;
-    }
-    else {
-      ptr = (ptr_type) cuda_internal_scratch_space( size );
-      DeepCopy<HostSpace,CudaSpace>( m_host_ptr , ptr , size );
+
+    if ( m_host_ptr ) {
+      const int size  = m_exec.m_reduce.value_size();
+      const int count = m_exec.m_reduce.value_count();
+      ptr_type ptr = (ptr_type) cuda_internal_scratch_unified( size );
+      if ( 0 != ptr ) {
+        for ( int i = 0 ; i < count ; ++i )
+          m_host_ptr[i] = ptr[i] ;
+      }
+      else {
+        ptr = (ptr_type) cuda_internal_scratch_space( size );
+        DeepCopy<HostSpace,CudaSpace>( m_host_ptr , ptr , size );
+      }
     }
   }
 };

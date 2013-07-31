@@ -65,7 +65,40 @@ struct ViewSpecialize< ScalarType , ScalarType ,
                        MemorySpace , MemoryTraits >
 { typedef LayoutScalar type ; };
 
+} // namespace Impl
+} // namespace Kokkos
+
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+
+/** \brief  Deep copy of scalar value in Host space */
+
+template< typename ValueType , class Arg1 , class Arg2 , class Arg3 >
+inline
+void deep_copy( ValueType & dst ,
+                const View< ValueType , Arg1 , Arg2 , Arg3 , Impl::LayoutScalar > & src ,
+                typename Impl::enable_if< (
+                  Impl::is_same< typename ViewTraits<ValueType,Arg1,Arg2,Arg3>::memory_space , HostSpace >::value 
+                ) >::type * = 0 )
+{ dst = src ; }
+
+template< typename ValueType , class Arg1 , class Arg2 , class Arg3 >
+inline
+void deep_copy( const View< ValueType , Arg1 , Arg2 , Arg3 , Impl::LayoutScalar > & dst ,
+                const ValueType & src ,
+                typename Impl::enable_if< (
+                  Impl::is_same< typename ViewTraits<ValueType,Arg1,Arg2,Arg3>::memory_space , HostSpace >::value
+                ) >::type * = 0 )
+{ dst = src ; }
+
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
 
 template<>
 struct ViewAssignment< LayoutScalar , void , void >

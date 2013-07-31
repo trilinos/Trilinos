@@ -141,15 +141,13 @@ public:
    *  resources, but it will take time (latency) to awaken the device
    *  again (via the wake()) method so that it is ready for work.
    *
-   *  Initialize with the number of thread gangs
-   *  and number of thread workers per gang.
-   *  All worker threads of a gang will occupy the same NUMA node.
-   *  The total number of threads = gang_topo.first * gang_topo.second.
+   *  Initialize with ( league_size , team_size ).
+   *  All worker threads of a team will occupy the same NUMA node.
    *
    *  The core topology must be less than or equal to hwloc::get_core_topology().
    *  If core topology is not input then the full hwloc::get_core_topology() is used.
    */
-  static void initialize( const std::pair<unsigned,unsigned> team_league_size ,
+  static void initialize( const std::pair<unsigned,unsigned> league_team ,
                           const std::pair<unsigned,unsigned> hardware_topology = 
                                 std::pair<unsigned,unsigned>(0u,0u) );
 

@@ -58,7 +58,7 @@ int main( int argc , char ** argv )
 {
   comm::Machine machine = comm::Machine::init( & argc , & argv );
 
-  const int comm_size = comm::size( machine );
+  // const int comm_size = comm::size( machine );
   const int comm_rank = comm::rank( machine );
   const std::pair<unsigned,unsigned> core_top = Kokkos::hwloc::get_core_topology();
   const unsigned                     core_cap = Kokkos::hwloc::get_core_capacity();
@@ -113,8 +113,8 @@ int main( int argc , char ** argv )
 
       error = error
             || argc <= i
-            || thread_capacity      < gang_count * gang_worker
-            || gang_worker_capacity < gang_worker
+            || thread_capacity      < unsigned( gang_count * gang_worker )
+            || gang_worker_capacity < unsigned( gang_worker )
             || cuda_device_count <= cuda_device
             ;
     }

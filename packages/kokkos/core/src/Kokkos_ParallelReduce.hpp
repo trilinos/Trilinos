@@ -90,7 +90,7 @@ void vector_parallel_reduce( const size_t work_count ,
 
 {
   Impl::ParallelReduce< FunctorType, Impl::VectorParallel >
-    reduce( work_count , functor , Kokkos::Impl::ReduceAdapter< FunctorType >::pointer( result ) );
+    reduce( functor , work_count , Kokkos::Impl::ReduceAdapter< FunctorType >::pointer( result ) );
 
   reduce.wait();
 }

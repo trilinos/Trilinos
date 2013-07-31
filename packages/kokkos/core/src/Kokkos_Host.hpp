@@ -151,7 +151,6 @@ public:
 
 } // namespace Kokkos
 
-#include <Host/Kokkos_Host_View.hpp>
 #include <Host/Kokkos_Host_Parallel.hpp>
 
 #endif /* #define KOKKOS_HOST_HPP */

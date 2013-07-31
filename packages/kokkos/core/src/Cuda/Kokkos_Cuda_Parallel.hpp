@@ -57,8 +57,8 @@
 namespace Kokkos {
 namespace Impl {
 
-template< class FunctorType >
-class ParallelFor< FunctorType , size_t , Cuda > {
+template< class FunctorType , class WorkSpec >
+class ParallelFor< FunctorType , WorkSpec /* size_t */ , Cuda > {
 private:
 
   const FunctorType     m_functor ;
