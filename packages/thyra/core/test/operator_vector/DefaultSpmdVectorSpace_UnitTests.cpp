@@ -81,6 +81,7 @@ using Thyra::createMember;
 using Thyra::createMembers;
 using Thyra::DefaultSpmdVectorSpace;
 using Thyra::defaultSpmdVectorSpace;
+using Thyra::locallyReplicatedDefaultSpmdVectorSpace;
 using Thyra::ConstDetachedVectorView;
 using Thyra::DetachedVectorView;
 using Thyra::ConstDetachedSpmdVectorView;
@@ -213,7 +214,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, locallyReplicatedPara
   ECHO(const RCP<const Teuchos::Comm<Ordinal> > comm =
     Teuchos::DefaultComm<Teuchos_Ordinal>::getComm());
   ECHO(RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
-    defaultSpmdVectorSpace<Scalar>(comm, g_localDim, g_localDim, true));
+    locallyReplicatedDefaultSpmdVectorSpace<Scalar>(comm, g_localDim));
   TEST_EQUALITY(vs->getComm(), comm);
   TEST_EQUALITY_CONST(vs->localOffset(), as<Ordinal>(0));
   TEST_EQUALITY(vs->localSubDim(), as<Ordinal>(g_localDim));

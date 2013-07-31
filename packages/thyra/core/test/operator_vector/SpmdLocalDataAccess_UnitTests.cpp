@@ -99,7 +99,7 @@ createLocallyReplicatedVS(const Ordinal localDim)
     Teuchos::DefaultComm<Teuchos_Ordinal>::getComm();
 
   RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
-    Thyra::defaultSpmdVectorSpace<Scalar>(comm, localDim, localDim, true);
+    Thyra::locallyReplicatedDefaultSpmdVectorSpace<Scalar>(comm, localDim);
   // ToDo: Pass in argument to state that space is locally replicated!
 
   return vs;
