@@ -276,6 +276,25 @@ defaultSpmdVectorSpace(
 }
 
 
+/** \brief Nonmember consturctor function that creates a locally-replicated
+ * parallel vector space.
+ *
+ * \relates DefaultSpmdVectorSpace
+ */
+template<class Scalar>
+RCP<DefaultSpmdVectorSpace<Scalar> >
+locallyReplicatedDefaultSpmdVectorSpace(
+  const RCP<const Teuchos::Comm<Ordinal> > &comm,
+  const Ordinal globalDim
+  )
+{
+  RCP<DefaultSpmdVectorSpace<Scalar> > vs =
+    DefaultSpmdVectorSpace<Scalar>::create();
+  vs->initialize(comm, globalDim, globalDim, true);
+  return vs;
+}
+
+
 } // end namespace Thyra
 
 

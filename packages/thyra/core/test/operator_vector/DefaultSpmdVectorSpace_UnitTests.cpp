@@ -225,6 +225,28 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,
   locallyReplicatedParallelConstruct )
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace,
+  locallyReplicatedDefaultSpmdVectorSpace, Scalar )
+{
+  ECHO(const RCP<const Teuchos::Comm<Ordinal> > comm =
+    Teuchos::DefaultComm<Teuchos_Ordinal>::getComm());
+  ECHO(RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
+    defaultSpmdVectorSpace<Scalar>(comm, g_localDim, g_localDim, true));
+  TEST_EQUALITY(vs->getComm(), comm);
+  TEST_EQUALITY_CONST(vs->localOffset(), as<Ordinal>(0));
+  TEST_EQUALITY(vs->localSubDim(), as<Ordinal>(g_localDim));
+  TEST_EQUALITY_CONST(vs->isLocallyReplicated(), true);
+  TEST_EQUALITY(vs->dim(), as<Ordinal>(g_localDim));
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,
+  locallyReplicatedDefaultSpmdVectorSpace )
+
+
+// ToDo: Add runtime check for asserting that locally replicated vector spaces
+// are not being created (involving expensive global reductions).
+
+
 //#ifndef THYRA_HIDE_DEPRECATED_CODE
 
 

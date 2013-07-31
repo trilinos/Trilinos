@@ -197,6 +197,8 @@ void SpmdVectorSpaceDefaultBase<Scalar>::updateState(const Ordinal globalDim,
     if (sumLocalSubDims == 0) {
       isEmpty = true;
     }
+    // ToDo: Assert that the vector space is indeed locally replicated in
+    // debug mode!
   }
   else {
     if (numProcs > 1) {
@@ -223,6 +225,7 @@ void SpmdVectorSpaceDefaultBase<Scalar>::updateState(const Ordinal globalDim,
         "Error, you are creating a locally replicated vector space implicitly which"
         " is very inefficient.  Please pass in isLocallyReplicated=true to avoid"
         " unnecessary global communication!");
+      // ToDo: 
     }
     else {
       // This is a regular distributed vector space
