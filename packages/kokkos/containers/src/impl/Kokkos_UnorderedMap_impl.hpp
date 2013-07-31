@@ -120,7 +120,8 @@ union unordered_map_atomic
     new_value.m_value.next = old_value.m_value.next;
     new_value.m_value.state = s;
 
-    return compare_and_swap( &m_atomic, old_value.m_atomic, new_value.m_atomic);
+    volatile uint64_t * addr = &m_atomic;
+    return compare_and_swap( addr, old_value.m_atomic, new_value.m_atomic);
   }
 
   // set the next node in the list
@@ -131,14 +132,16 @@ union unordered_map_atomic
     new_value.m_value.next = n;
     new_value.m_value.state = old_value.m_value.state;
 
-    return compare_and_swap( &m_atomic, old_value.m_atomic, new_value.m_atomic);
+    volatile uint64_t * addr = &m_atomic;
+    return compare_and_swap( addr, old_value.m_atomic, new_value.m_atomic);
   }
 
   // set both state and value at the same time
   KOKKOS_INLINE_FUNCTION
   bool atomic_set( unordered_map_atomic old_value, unordered_map_atomic new_value)
   {
-    return compare_and_swap( &m_atomic, old_value.m_atomic, new_value.m_atomic);
+    volatile uint64_t * addr = &m_atomic;
+    return compare_and_swap( addr, old_value.m_atomic, new_value.m_atomic);
   }
 
   volatile uint64_t m_atomic;  // value used for compare and swap

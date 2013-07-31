@@ -16,7 +16,7 @@ namespace Impl {
 union getblock32_helper
 {
   uint8_t  bytes[4];
-  uint32_t value;
+  uint32_t word;
 };
 
 KOKKOS_FORCEINLINE_FUNCTION
@@ -27,7 +27,7 @@ uint32_t getblock32 ( const uint8_t * p, int i )
   a.bytes[1] = p[i*4+1];
   a.bytes[2] = p[i*4+2];
   a.bytes[3] = p[i*4+3];
-  return a.value;
+  return a.word;
 }
 
 KOKKOS_FORCEINLINE_FUNCTION
