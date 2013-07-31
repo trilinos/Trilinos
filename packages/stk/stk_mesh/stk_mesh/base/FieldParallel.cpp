@@ -372,7 +372,7 @@ void communicate_field_data(
 void communicate_field_data(
   const BulkData & mesh ,
   const unsigned field_count ,
-  const FieldBase * fields[] ,
+  const FieldBase * const *fields ,
   CommAll & sparse )
 {
   const EntityCommListInfoVector & entity_comm = mesh.comm_list();

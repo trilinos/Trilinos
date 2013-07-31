@@ -54,7 +54,7 @@ void communicate_field_data(
 void communicate_field_data(
   const BulkData & mesh ,
   const unsigned field_count ,
-  const FieldBase * fields[] ,
+  const FieldBase * const * fields ,
   CommAll & sparse );
 
 void communicate_field_data_verify_read( CommAll & );
@@ -169,6 +169,52 @@ operator()(const BulkData& mesh, CommAll & sparse ) const
   }
 }
 
+  template< class ReduceOp , class Type>
+  struct ParallelReduceFieldBase {
+    const FieldBase & field ;
+    const stk::mesh::Selector * selector ;
+
+    ParallelReduceFieldBase( const FieldBase & f, const stk::mesh::Selector * s = 0 ) : field(f), selector(s) {}
+    ParallelReduceFieldBase( const ParallelReduceFieldBase & p ) : field(p.field), selector(p.selector) {}
+
+    void operator()( const BulkData& mesh, CommAll & sparse ) const ;
+
+  private:
+    ParallelReduceFieldBase & operator = ( const ParallelReduceFieldBase & );
+  };
+
+
+template< class ReduceOp , class Type >
+void ParallelReduceFieldBase< ReduceOp ,  Type >::
+operator()(const BulkData& mesh, CommAll & sparse ) const
+{
+  const EntityCommListInfoVector& entity_comm = mesh.comm_list();
+  for ( EntityCommListInfoVector::const_iterator
+        i = entity_comm.begin(); i != entity_comm.end() ; ++i ) {
+    Entity entity = i->entity;
+    const MeshIndex& mi = mesh.mesh_index(entity);
+    if (mesh.is_valid(entity) && (0 == selector || (*selector)(mi.bucket) ) ) {
+      unsigned bucket_ord = mi.bucket_ordinal;
+      Type * const ptr_beg = reinterpret_cast<Type*>(mi.bucket->field_data_location(field));
+      Type * const ptr_end = ptr_beg + (mi.bucket->size()-bucket_ord)*sizeof(Type);
+
+      if (ptr_beg == NULL || ptr_end == NULL) continue;
+
+      for ( PairIterEntityComm
+              ec = mesh.entity_comm(i->key); ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
+
+        CommBuffer & b = sparse.recv_buffer( ec->proc );
+
+        for ( Type * ptr = ptr_beg ; ptr < ptr_end ; ++ptr ) {
+          Type tmp ;
+          b.template unpack<unsigned char>( (unsigned char *)(&tmp), sizeof(Type) );
+          ReduceOp( ptr , & tmp );
+        }
+      }
+    }
+  }
+}
+
 }
 
 //----------------------------------------------------------------------
@@ -200,6 +246,80 @@ inline
 min( const Field<Type,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> & f, Selector * selector=0 )
 {
   return ParallelReduceField<Min<1>, Type,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>( f, selector );
+}
+
+template<class Type>
+ParallelReduceFieldBase<Sum<1>, Type>
+inline
+sum(const FieldBase& f, Selector * selector=0 )
+{
+    return ParallelReduceFieldBase<Sum<1>, Type >(f, selector);
+}
+
+template<class Type>
+ParallelReduceFieldBase<Max<1>, Type>
+inline
+max(const FieldBase& f, Selector * selector=0 )
+{
+    return ParallelReduceFieldBase<Max<1>, Type >(f, selector);
+}
+
+template<class Type>
+ParallelReduceFieldBase<Min<1>, Type>
+inline
+min(const FieldBase& f, Selector * selector=0 )
+{
+    return ParallelReduceFieldBase<Min<1>, Type >(f, selector);
+}
+
+inline
+void parallel_sum(const BulkData& mesh, const std::vector<FieldBase*>& fields)
+{
+  if (fields.empty()) return;
+
+  const FieldBase *const* fieldsPtr = &fields[0];
+  CommAll sparse;
+  communicate_field_data(mesh, fields.size(), fieldsPtr, sparse);
+
+  for(size_t i=0; i<fields.size(); ++i) {
+      if (fields[i]->type_is<double>()) {
+        sum<double>(*fields[i])(mesh, sparse);
+      }
+      else if (fields[i]->type_is<float>()) {
+        sum<float>(*fields[i])(mesh, sparse);
+      }
+      else if (fields[i]->type_is<int>()) {
+        sum<int>(*fields[i])(mesh, sparse);
+      }
+      else {
+        ThrowRequireMsg(false, "Error, parallel_sum only operates on fields of type double, float or int.");
+      }
+  }
+}
+
+inline
+void parallel_max(const BulkData& mesh, const std::vector<FieldBase*>& fields)
+{
+  if (fields.empty()) return;
+
+  const FieldBase *const* fieldsPtr = &fields[0];
+  CommAll sparse;
+  communicate_field_data(mesh, fields.size(), fieldsPtr, sparse);
+
+  for(size_t i=0; i<fields.size(); ++i) {
+      if (fields[i]->type_is<double>()) {
+        max<double>(*fields[i])(mesh, sparse);
+      }
+      else if (fields[i]->type_is<float>()) {
+        max<float>(*fields[i])(mesh, sparse);
+      }
+      else if (fields[i]->type_is<int>()) {
+        max<int>(*fields[i])(mesh, sparse);
+      }
+      else {
+        ThrowRequireMsg(false, "Error, parallel_sum only operates on fields of type double, float or int.");
+      }
+  }
 }
 
 } // namespace mesh
