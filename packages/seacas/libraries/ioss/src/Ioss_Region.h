@@ -81,6 +81,7 @@ namespace Ioss {
     ~Region();
 
     std::string type_string() const {return "Region";}
+    std::string short_type_string() const {return "region";}
     EntityType type() const {return REGION;}
 
     void output_summary(std::ostream &strm, bool do_transient=true);
