@@ -73,7 +73,8 @@ void TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize(
   localSubDim_ = tpetraMap->getNodeNumElements();
   numProc_ = comm_->getSize();
   procRank_ = comm_->getRank();
-  this->updateState(tpetraMap->getGlobalNumElements());
+  this->updateState(tpetraMap->getGlobalNumElements(),
+    !tpetraMap->isDistributed());
 }
 
 
