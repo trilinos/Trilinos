@@ -60,6 +60,7 @@
 
 #include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
+#include <TestRequest.hpp>
 #include <TestMultiReduce.hpp>
 
 namespace Test {
@@ -131,6 +132,14 @@ TEST_F( threads, long_reduce) {
 
 TEST_F( threads, double_reduce) {
   TestReduce< double ,   Kokkos::Threads >( 1000000 );
+}
+
+TEST_F( threads, dev_long_reduce) {
+  TestReduceRequest< long ,   Kokkos::Threads >( 1000000 );
+}
+
+TEST_F( threads, dev_double_reduce) {
+  TestReduceRequest< double ,   Kokkos::Threads >( 1000000 );
 }
 
 TEST_F( threads, long_reduce_dynamic ) {

@@ -307,8 +307,8 @@ public:
     this_thread.end_reduce( m_reduce );
   }
 
-  ParallelReduce( const size_type      work_count ,
-                  const FunctorType  & functor ,
+  ParallelReduce( const FunctorType  & functor ,
+                  const size_type      work_count ,
                   pointer_type         result )
     : m_reduce( functor )
     , m_work_count( work_count )

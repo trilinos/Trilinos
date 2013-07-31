@@ -57,6 +57,14 @@
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
+namespace Impl {
+class CudaExec ;
+}
+} // namespace Kokkos
+
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
 
 /// \class Cuda
 /// \brief Kokkos device that uses CUDA to run on GPUs.
@@ -71,9 +79,8 @@ public:
   typedef CudaSpace::size_type  size_type ;
   typedef LayoutLeft            array_layout ;
 
-  //--------------------------------------------------------------------------
-
   //@}
+  //--------------------------------------------------------------------------
   //! \name Functions that all Kokkos devices must implement.
   //@{
 
@@ -139,6 +146,41 @@ public:
   static std::vector<unsigned> detect_device_arch();
 
   //@}
+  //--------------------------------------------------------------------------
+
+#if defined( __CUDA_ARCH__ )
+
+  //! \name Functions for the functor device interface
+  //@{
+
+
+  __device__ inline int league_size() const { return gridDim.x ; }
+  __device__ inline int league_rank() const { return blockIdx.x ; }
+
+  __device__ inline int team_size() const { return blockDim.x ; }
+  __device__ inline int team_rank() const { return threadIdx.x ; }
+
+  __device__ inline Cuda( Impl::CudaExec & exec ) : m_exec(exec) {}
+  __device__ inline Cuda( const Cuda & rhs ) : m_exec(rhs.m_exec) {}
+
+  //@}
+
+private:
+
+  Impl::CudaExec & m_exec ;
+
+#else
+
+  int league_size() const ;
+  int league_rank() const ;
+
+  int team_size() const ;
+  int team_rank() const ;
+
+  Cuda( Impl::CudaExec & );
+
+#endif
+
 };
 
 } // namespace Kokkos
@@ -189,9 +231,10 @@ parallel_reduce( const CudaWorkConfig & work_config ,
 
 /*--------------------------------------------------------------------------*/
 
+#include <Cuda/Kokkos_CudaExec.hpp>
+
 #include <Cuda/Kokkos_Cuda_View.hpp>
 #include <Cuda/Kokkos_Cuda_Parallel.hpp>
-#include <Cuda/Kokkos_Cuda_ParallelFor.hpp>
 #include <Cuda/Kokkos_Cuda_ParallelReduce.hpp>
 
 #endif /* #ifndef KOKKOS_CUDA_HPP */

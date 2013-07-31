@@ -116,7 +116,7 @@ public:
 
   //@}
   /*------------------------------------------------------------------------*/
-  /** \name Functor's local view of a device */
+  /** \name Function for the functor device interface */
   /**@{ */
 
   inline int league_rank() const ;

@@ -93,8 +93,8 @@ public:
   // Create new functor in the asynchronous functor memory space
   // and then launch it.
   inline
-  ParallelReduce( const WorkSpec    & work ,
-                  const FunctorType & functor ,
+  ParallelReduce( const FunctorType & functor ,
+                  const WorkSpec    & work ,
                   const pointer_type  result_ptr = 0 )
     {
       typedef ThreadsExecAdapter< ParallelReduce >  Adapter ;

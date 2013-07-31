@@ -61,6 +61,7 @@
 #include <TestCrsArray.hpp>
 
 #include <TestReduce.hpp>
+#include <TestRequest.hpp>
 #include <TestMultiReduce.hpp>
 
 namespace Test {
@@ -102,6 +103,11 @@ void test_device_cuda_crsarray() {
 void test_device_cuda_reduce() {
   TestReduce< long ,   Kokkos::Cuda >( 10000000 );
   TestReduce< double , Kokkos::Cuda >( 1000000 );
+}
+
+void test_device_cuda_reduce_request() {
+  TestReduceRequest< long ,   Kokkos::Cuda >( 10000000 );
+  TestReduceRequest< double , Kokkos::Cuda >( 1000000 );
 }
 
 void test_device_cuda_reduce_dynamic() {

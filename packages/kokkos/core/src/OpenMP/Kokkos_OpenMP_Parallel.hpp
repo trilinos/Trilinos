@@ -101,8 +101,8 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-template< class FunctorType , class WorkSpec >
-class ParallelReduce< FunctorType , WorkSpec , OpenMP > {
+template< class FunctorType >
+class ParallelReduce< FunctorType , size_t , OpenMP > {
 public:
 
   typedef Kokkos::HostSpace::size_type  size_type ;
@@ -114,8 +114,8 @@ public:
   const ReduceOp reduce ;
 
   inline
-  ParallelReduce( const size_type      work_count ,
-                  const FunctorType  & functor ,
+  ParallelReduce( const FunctorType  & functor ,
+                  const size_t         work_count ,
                   pointer_type         result )
     : reduce( functor )
   {

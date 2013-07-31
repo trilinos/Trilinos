@@ -172,7 +172,7 @@ void parallel_reduce( const size_t work_count ,
                       typename Kokkos::Impl::ReduceAdapter< FunctorType >::reference_type result )
 {
   Impl::ParallelReduce< FunctorType, size_t >
-    reduce( work_count , functor , Kokkos::Impl::ReduceAdapter< FunctorType >::pointer( result ) );
+    reduce( functor , work_count , Kokkos::Impl::ReduceAdapter< FunctorType >::pointer( result ) );
 
   reduce.wait();
 }
@@ -190,9 +190,15 @@ namespace Kokkos {
  *  If the league or team size are too large then they will be reduced.
  */
 struct ParallelWorkRequest {
-  size_t  shared_size ; ///<  Size of team-shared memory (in bytes)
   size_t  league_size ; ///<  Size of league (number of teams in a league)
   size_t  team_size ;   ///<  Size of team (number of threads in a team)
+  size_t  shared_size ; ///<  Size of team-shared memory (in bytes)
+
+  KOKKOS_INLINE_FUNCTION
+  ParallelWorkRequest() : league_size(0), team_size(0), shared_size(0) {}
+
+  KOKKOS_INLINE_FUNCTION
+  ParallelWorkRequest( size_t s0 , size_t s1 , size_t s2 ) : league_size(s0), team_size(s1), shared_size(s2) {}
 };
 
 /** \brief  Execute functor in parallel with work request,
@@ -252,7 +258,7 @@ void parallel_reduce( const Kokkos::ParallelWorkRequest  & request ,
   Impl::ParallelReduce< FunctorType , Kokkos::ParallelWorkRequest > reduce( functor , request );
 }
 
-template< class FunctorType , class ResultType >
+template< class FunctorType >
 inline
 void parallel_reduce( const Kokkos::ParallelWorkRequest  & request ,
                       const FunctorType          & functor ,
