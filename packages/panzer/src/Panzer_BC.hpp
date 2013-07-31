@@ -41,13 +41,14 @@
 // @HEADER
 
 
-#ifndef PANZER_BC_H
-#define PANZER_BC_H
+#ifndef PANZER_BC_HPP
+#define PANZER_BC_HPP
 
 #include <string>
 #include <iostream>
 #include <functional>
 #include <cstddef>
+#include <vector>
 
 #include <boost/unordered_map.hpp>
 
@@ -58,6 +59,13 @@ namespace Teuchos {
 }
 
 namespace panzer {
+
+  class BC;
+
+  /** \brief Nonmember constructor to build BC objects from a ParameterList
+      \relates panzer::BC
+  */
+  void buildBCs(std::vector<panzer::BC>& bcs, const Teuchos::ParameterList& p);
 
   //! Type of boundary condition.
   enum BCType {
@@ -127,6 +135,9 @@ namespace panzer {
     //! Returns a parameter list with user defined parameters for bc.
     Teuchos::RCP<const Teuchos::ParameterList> params() const;
 
+    //! Returns a nonconst parameter list with user defined parameters for bc.  Nonconst is meant to be used for parameter list validation.
+    Teuchos::RCP<Teuchos::ParameterList> nonconstParams() const;
+
     //! A unique string identifier for this boundary condition.
     std::string identifier() const;
 
@@ -135,7 +146,7 @@ namespace panzer {
 
   private:
 
-    void validateParameters(const Teuchos::ParameterList& p) const;
+    void validateParameters(Teuchos::ParameterList& p) const;
 
   private:
 

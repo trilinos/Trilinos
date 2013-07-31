@@ -570,9 +570,9 @@ void NemSpread<T,INT>::load_mesh()
       printf("%sParallel mesh file name is %s\n", yo, Par_Nem_File_Name);
     else {
       if (iproc%10 == 0 || iproc ==Proc_Info[2]-1)
-	fprintf(stderr, "%d", iproc);
+	printf("%d", iproc);
       else
-	fprintf(stderr, ".");
+	printf(".");
     }
 
     int mode = EX_CLOBBER;
@@ -656,6 +656,12 @@ void NemSpread<T,INT>::load_mesh()
   safe_free((void **) &Node_Set_Names);
   safe_free((void **) &Side_Set_Names);
   safe_free((void **) &Elem_Blk_Names);
+
+  safe_free((void **) &Restart_Info.NV_Name);
+  safe_free((void **) &Restart_Info.EV_Name);
+  safe_free((void **) &Restart_Info.GV_Name);
+  safe_free((void **) &Restart_Info.NSV_Name);
+  safe_free((void **) &Restart_Info.SSV_Name);
 
   /*
    * free up some other memory so that there is more

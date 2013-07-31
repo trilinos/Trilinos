@@ -44,8 +44,15 @@
 #include <EpetraExt_ConfigDefs.h>
 
 class Epetra_CrsMatrix;
+class Epetra_Map;
+
+#ifdef HAVE_VECTOR
+#include <vector>
+#endif
 
 namespace EpetraExt {
+  class CrsMatrixStruct;
+
 
   /** Collection of matrix-matrix operations. This class basically
       functions as a namespace, containing only static methods.
@@ -140,6 +147,13 @@ class MatrixMatrix {
                    double scalarB,
                    Epetra_CrsMatrix * & C);
 
+ private:
+    static int mult_A_B(const Epetra_CrsMatrix & A,
+		 CrsMatrixStruct & Aview,
+		 const Epetra_CrsMatrix & B,
+		 CrsMatrixStruct& Bview,
+		 Epetra_CrsMatrix& C,
+		 bool call_FillComplete_on_result);
 };//class MatrixMatrix
 
 

@@ -48,35 +48,20 @@ INCLUDE(TribitsAddTest)
 INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(TriosProcessXDR)
 
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src)
-
 SET(NSSI_HEADERS "")
 SET(NSSI_NONINSTALLHEADERS "")
 SET(NSSI_SOURCES "")
 
-INCLUDE_DIRECTORIES(BEFORE SYSTEM ${CMAKE_CURRENT_BINARY_DIR})
-INCLUDE_DIRECTORIES(BEFORE SYSTEM ${CMAKE_CURRENT_SOURCE_DIR})
-
-############# Special exception for rpcgen extra commas in enum ##########
-IF (CMAKE_COMPILER_IS_GNUCXX)
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive")
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${CMAKE_CURRENT_BINARY_DIR}")
-  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -isystem ${CMAKE_CURRENT_BINARY_DIR}")
-ENDIF (CMAKE_COMPILER_IS_GNUCXX)
-
 
 ############# COMMON ##########################
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../nnti)
-
-
 TRIBITS_SUBPACKAGE(nssi)
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 
 ############# NSSI ##########################
-
-# The rpcgen files should be treated as system files to avoid annoying warnings
-# INCLUDE_DIRECTORIES(SYSTEM ${CMAKE_CURRENT_BINARY_DIR})
 
 TriosProcessXDR(${CMAKE_CURRENT_SOURCE_DIR}/Trios_nssi_types_xdr.x)
 TriosProcessXDR(${CMAKE_CURRENT_SOURCE_DIR}/nssi_service_args.x)

@@ -4,6 +4,26 @@ Release Notes for Trilinos Package Thyra
 ----------------------------------------
 
 
+Trilinos 11.3:
+--------------
+
+(*) Fixed explicit template instantation system in the generation of
+Thyra_XXX.hpp files to *not* include Thyra_XXX_def.hpp when explicit
+instantation is turned on.  The refactoring of Thyra to use subpackages some
+time ago broke the generation of Thyra_XXX.hpp files in that they were always
+including Thyra_XXX_def.hpp files.  That was bad because it increased compile
+time for client code and allowed other includes to get pulled in silently.
+Now client code that includes Thyra_XXX.hpp when explicit instantiation is
+turned on will will *not* get the include of Thyra_XXX_def.hpp.  This might
+break some downstream client code that was not properly including the
+necessary header files and was accidentally getting them from the
+Thyra_XXX_def.hpp files that were being silently included.  However, this
+technically does not break backward compatibility since client code should
+have been including the right headers all along.  For example, when GCC
+cleaned up their standard C++ header files this required existing C++ code to
+add a bunch of missing includes that should have been there the whole time.
+
+
 Trilinos 11.0:
 --------------
 

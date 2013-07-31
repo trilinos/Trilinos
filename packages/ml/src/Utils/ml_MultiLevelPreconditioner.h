@@ -158,7 +158,7 @@ namespace ML_Epetra
                        bool Overwrite=true);
 
   //! Reads in parameter list options from file.
-  int ReadXML(const string &FileName, Teuchos::ParameterList &List,
+  int ReadXML(const std::string &FileName, Teuchos::ParameterList &List,
                    const Epetra_Comm &Comm);
 
   //! Enumerated type indicating the type of AMG solver to be used.
@@ -589,6 +589,9 @@ public:
   int CreateLabel();
 
   void ReportTime();
+
+  //! Return operator complexity and #nonzeros in fine grid matrix.
+  void Complexities(double &complexity, double &fineNnz);
 
 //@}
 

@@ -85,35 +85,35 @@
 #endif
 
 namespace {
-
+  using KokkosClassic::DefaultArithmetic;
+  using KokkosClassic::DefaultKernels;
+  using KokkosClassic::MultiVector;
+  using Teuchos::ArrayRCP;
+  using Teuchos::as;
+  using Teuchos::null;
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
-  using Kokkos::MultiVector;
-  using Kokkos::DefaultArithmetic;
-  using Kokkos::DefaultKernels;
-  using Teuchos::ArrayRCP;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using Teuchos::null;
   using Teuchos::tuple;
   using std::endl;
 
-  using Kokkos::SerialNode;
+  using KokkosClassic::SerialNode;
   RCP<SerialNode> snode;
 #ifdef HAVE_KOKKOSCLASSIC_TBB
-  using Kokkos::TBBNode;
+  using KokkosClassic::TBBNode;
   RCP<TBBNode> tbbnode;
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  using Kokkos::TPINode;
+  using KokkosClassic::TPINode;
   RCP<TPINode> tpinode;
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  using Kokkos::OpenMPNode;
+  using KokkosClassic::OpenMPNode;
   RCP<OpenMPNode> ompnode;
 #endif
 #ifdef TEST_CUDA
-  using Kokkos::ThrustGPUNode;
+  using KokkosClassic::ThrustGPUNode;
   RCP<ThrustGPUNode> gpunode;
 #endif
 
@@ -243,7 +243,7 @@ namespace {
 
     ArrayRCP<Scalar> xdat, axdat, atxdat;
     xdat  = node->template allocBuffer<Scalar>(2);
-    node->template copyToBuffer<Scalar>(2, tuple<Scalar>(1.0,2.0), xdat);
+    node->template copyToBuffer<Scalar> (2, tuple<Scalar> (as<Scalar> (1), as<Scalar> (2)), xdat);
     axdat = node->template allocBuffer<Scalar>(N);
     atxdat = node->template allocBuffer<Scalar>(2);
     MV X(node), AX(node), ATX(node);

@@ -1,5 +1,5 @@
 <ParameterList>
-  <Parameter name="Piro Solver" type="string" value="Trapezoid Rule"/>
+  <Parameter name="Solver Type" type="string" value="Trapezoid Rule"/>
   <ParameterList name="Trapezoid Rule">
     <Parameter name="Num Time Steps" type="int" value="10"/>
     <Parameter name="Final Time" type="double" value="2.0"/>

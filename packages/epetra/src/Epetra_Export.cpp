@@ -45,7 +45,13 @@
 #include "Epetra_Distributor.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Util.h"
+#include "Epetra_Import.h"
 #include <vector>
+
+#ifdef HAVE_MPI
+#include "Epetra_MpiDistributor.h"
+#endif
+
 
 //==============================================================================
 // Epetra_Export constructor function for a Epetra_BlockMap object
@@ -167,6 +173,10 @@ void Epetra_Export::Construct( const Epetra_BlockMap &  sourceMap, const Epetra_
     Epetra_Util util;
 
     if(targetMap.GlobalIndicesLongLong()) {
+      // FIXME (mfh 11 Jul 2013) This breaks ANSI aliasing rules, if
+      // int_type != long long.  On some compilers, it results in
+      // warnings such as this: "dereferencing type-punned pointer
+      // will break strict-aliasing rules".
       util.Sort(true,NumExportIDs_,ExportPIDs_,0,0,1,&ExportLIDs_, 1, (long long **)&ExportGIDs);
     }
     else if(targetMap.GlobalIndicesInt()) {
@@ -314,8 +324,80 @@ Epetra_Export::~Epetra_Export()
   if( ExportPIDs_ != 0 ) delete [] ExportPIDs_; // These were created by GSPlan
   if( ExportLIDs_ != 0 ) delete [] ExportLIDs_;
 }
+
+//==============================================================================
+// Epetra_Export pseudo-copy constructor. 
+Epetra_Export::Epetra_Export(const Epetra_Import& Importer):
+  TargetMap_(Importer.SourceMap_), //reverse
+  SourceMap_(Importer.TargetMap_),//reverse
+  NumSameIDs_(Importer.NumSameIDs_),
+  NumPermuteIDs_(Importer.NumPermuteIDs_),
+  PermuteToLIDs_(0),
+  PermuteFromLIDs_(0),
+  NumRemoteIDs_(Importer.NumExportIDs_),//reverse
+  RemoteLIDs_(0),
+  NumExportIDs_(Importer.NumRemoteIDs_),//reverse
+  ExportLIDs_(0),
+  ExportPIDs_(0),
+  NumSend_(Importer.NumRecv_),//reverse
+  NumRecv_(Importer.NumSend_),//revsese
+  Distor_(0)
+{
+  int i;
+  // Reverse the permutes
+  if (NumPermuteIDs_>0) {
+    PermuteToLIDs_   = new int[NumPermuteIDs_];
+    PermuteFromLIDs_ = new int[NumPermuteIDs_];
+    for (i=0; i< NumPermuteIDs_; i++) {
+      PermuteFromLIDs_[i] = Importer.PermuteToLIDs_[i];
+      PermuteToLIDs_[i]   = Importer.PermuteFromLIDs_[i];
+    }
+  }
+
+  // Copy the exports to the remotes
+  if (NumRemoteIDs_>0) {
+    RemoteLIDs_ = new int[NumRemoteIDs_];
+    for (i=0; i< NumRemoteIDs_; i++) RemoteLIDs_[i] = Importer.ExportLIDs_[i];
+  }
+
+  // Copy the remotes to the exports
+  if (NumExportIDs_>0) {
+    ExportLIDs_ = new int[NumExportIDs_];
+    ExportPIDs_ = new int[NumExportIDs_];
+    for (i=0; i< NumExportIDs_; i++) ExportLIDs_[i] = Importer.RemoteLIDs_[i];
+    
+    
+    // Extract the RemotePIDs from the Distributor
+#ifdef HAVE_MPI
+    Epetra_MpiDistributor *D=dynamic_cast<Epetra_MpiDistributor*>(&Importer.Distributor());
+    if(!D) throw ReportError("Epetra_Export: Can't have ExportPIDs w/o an Epetra::MpiDistributor.",-1);
+    int i,j,k;
+    
+    // Get the distributor's data
+    int NumReceives        = D->NumReceives();
+    const int *ProcsFrom   = D->ProcsFrom();
+    const int *LengthsFrom = D->LengthsFrom();
+    
+    // Now, for each remote ID, record who actually owns it.  This loop follows the operation order in the
+    // MpiDistributor so it ought to duplicate that effect.
+    for(i=0,j=0;i<NumReceives;i++){
+      int pid=ProcsFrom[i];
+      for(k=0;k<LengthsFrom[i];k++){
+	ExportPIDs_[j]=pid;
+	j++;
+      }    
+    }
+#else
+    throw ReportError("Epetra_Export: Can't have ExportPIDs w/o an Epetra::MpiDistributor.",-2);
+#endif
+  }//end NumExportIDs>0
+
+  if (Importer.Distor_!=0) Distor_ = Importer.Distor_->ReverseClone();
+
+}
+
 //=============================================================================
-void Epetra_Export::Print(ostream & os) const
+void Epetra_Export::Print(std::ostream & os) const
 {
   // mfh 05 Jan 2012: The implementation of Print() I found here
   // previously didn't print much at all, and it included a message
@@ -338,13 +420,13 @@ void Epetra_Export::Print(ostream & os) const
   const int numProcs = comm.NumProc();
 
   if (myRank == 0) {
-    os << "Export Data Members:" << endl;
+    os << "Export Data Members:" << std::endl;
   }
   // We don't need a barrier before this for loop, because Proc 0 is
   // the first one to do anything in the for loop anyway.
   for (int p = 0; p < numProcs; ++p) {
     if (myRank == p) {
-      os << "Image ID       : " << myRank << endl;
+      os << "Image ID       : " << myRank << std::endl;
 
       os << "permuteFromLIDs:";
       if (PermuteFromLIDs_ == NULL) {
@@ -365,7 +447,7 @@ void Epetra_Export::Print(ostream & os) const
   }
   os << "}";
       }
-      os << endl;
+      os << std::endl;
 
       os << "permuteToLIDs  :";
       if (PermuteToLIDs_ == NULL) {
@@ -386,7 +468,7 @@ void Epetra_Export::Print(ostream & os) const
   }
   os << "}";
       }
-      os << endl;
+      os << std::endl;
 
       os << "remoteLIDs     :";
       if (RemoteLIDs_ == NULL) {
@@ -407,7 +489,7 @@ void Epetra_Export::Print(ostream & os) const
   }
   os << "}";
       }
-      os << endl;
+      os << std::endl;
 
       // If sorting for output, the export LIDs and export PIDs have
       // to be sorted together.  We can use Epetra_Util::Sort, using
@@ -439,7 +521,7 @@ void Epetra_Export::Print(ostream & os) const
   }
   os << "}";
       }
-      os << endl;
+      os << std::endl;
 
       os << "exportImageIDs :";
       if (ExportPIDs_ == NULL) {
@@ -454,18 +536,18 @@ void Epetra_Export::Print(ostream & os) const
   }
   os << "}";
       }
-      os << endl;
+      os << std::endl;
 
-      os << "numSameIDs     : " << NumSameIDs_ << endl;
-      os << "numPermuteIDs  : " << NumPermuteIDs_ << endl;
-      os << "numRemoteIDs   : " << NumRemoteIDs_ << endl;
-      os << "numExportIDs   : " << NumExportIDs_ << endl;
+      os << "numSameIDs     : " << NumSameIDs_ << std::endl;
+      os << "numPermuteIDs  : " << NumPermuteIDs_ << std::endl;
+      os << "numRemoteIDs   : " << NumRemoteIDs_ << std::endl;
+      os << "numExportIDs   : " << NumExportIDs_ << std::endl;
 
       // Epetra keeps NumSend_ and NumRecv_, whereas in Tpetra, these
       // are stored in the Distributor object.  This is why we print
       // them here.
-      os << "Number of sends: " << NumSend_ << endl;
-      os << "Number of recvs: " << NumRecv_ << endl;
+      os << "Number of sends: " << NumSend_ << std::endl;
+      os << "Number of recvs: " << NumRecv_ << std::endl;
     } // if my rank is p
 
     // A few global barriers give I/O a chance to complete.
@@ -478,26 +560,26 @@ void Epetra_Export::Print(ostream & os) const
   // printing the Maps to the end, for easy comparison with the output
   // of Tpetra::Export::print().
   if (myRank == 0) {
-    os << endl << endl << "Source Map:" << endl << std::flush;
+    os << std::endl << std::endl << "Source Map:" << std::endl << std::flush;
   }
   comm.Barrier();
   SourceMap_.Print(os);
   comm.Barrier();
   
   if (myRank == 0) {
-    os << endl << endl << "Target Map:" << endl << std::flush;
+    os << std::endl << std::endl << "Target Map:" << std::endl << std::flush;
   }
   comm.Barrier();
   TargetMap_.Print(os);
   comm.Barrier();
 
   if (myRank == 0) {
-    os << endl << endl << "Distributor:" << endl << std::flush;
+    os << std::endl << std::endl << "Distributor:" << std::endl << std::flush;
   }
   comm.Barrier();
   if (Distor_ == NULL) {
     if (myRank == 0) {
-      os << " is NULL." << endl;
+      os << " is NULL." << std::endl;
     }
   } else {
     Distor_->Print(os); // Printing the Distributor is itself distributed.

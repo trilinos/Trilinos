@@ -17,17 +17,6 @@
 #include <Ioss_Map.h>
 #include <Ioss_Utils.h>
 
-// with introduction of paraview sierra catalyst plugin, the Iovs stuff is
-// always included and NO_PARAVIEWMESH_SUPPORT is never defined.  With the
-// plugin architecture, there is no overhead for sierra when the plugin is
-// not loaded.  The #define test is left here for now in case developers
-// need to use it.
-#if !defined(NO_PARAVIEWIMESH_SUPPORT)
-#include <iBase.h>
-#include <iMesh.h>
-#include <iField.h>
-#endif
-
 #include <string>
 #include <vector>
 #include <map>
@@ -36,7 +25,13 @@
 #include <sstream>
 #include <time.h>
 
+#include <exodusII.h>
+
+class ParaViewCatalystSierraAdaptorBase;
+
 namespace Iovs {
+
+  typedef std::set<std::pair<int64_t, int64_t> > EntityIdSet;
 
   class DatabaseIO : public Ioss::DatabaseIO
   {
@@ -116,10 +111,10 @@ namespace Iovs {
     int64_t put_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
 			   void *data, size_t data_size) const;
     int64_t put_field_internal(const Ioss::SideBlock* eb, const Ioss::Field& field,
-			   void *data, size_t data_size) const { return 0; }
+			   void *data, size_t data_size) const;
 
     int64_t put_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
+			   void *data, size_t data_size) const;
     int64_t put_field_internal(const Ioss::EdgeSet* ns, const Ioss::Field& field,
 			   void *data, size_t data_size) const {return 0;}
     int64_t put_field_internal(const Ioss::FaceSet* ns, const Ioss::Field& field,
@@ -127,7 +122,7 @@ namespace Iovs {
     int64_t put_field_internal(const Ioss::ElementSet* ns, const Ioss::Field& field,
 			   void *data, size_t data_size) const {return 0;}
     int64_t put_field_internal(const Ioss::SideSet* fs, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
+			   void *data, size_t data_size) const;
     int64_t put_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
 			   void *data, size_t data_size) const {return 0;}
 
@@ -147,14 +142,12 @@ namespace Iovs {
     bool singleProcOnly; // True if history or heartbeat which is only written from proc 0...
     bool doLogging; // True if logging field input/output
 
-    // Private member data...
-#if !defined(NO_PARAVIEWIMESH_SUPPORT)
-    iMesh_Instance mesh_instance; // interface to the vis component
-    iBase_EntitySetHandle rootset;
-#endif
-    // mutable EntityIdSet ids_;
-
     std::string databaseTitle;
+    std::string paraview_script_filename;
+    int underscoreVectors;
+    int applyDisplacements;
+    int createSideSets;
+    int createNodeSets;
     int spatialDimension;
 
     int64_t nodeCount;
@@ -162,6 +155,13 @@ namespace Iovs {
 
     int nodeBlockCount;
     int elementBlockCount;
+
+    // Handle to the ParaView Catalyst dynamic library
+    // that is loaded via Sierra user plugin at runtime.
+    ParaViewCatalystSierraAdaptorBase* pvcsa;
+    mutable bool globalNodeAndElementIDsCreated;
+    void create_global_node_and_element_ids() const;
+    mutable EntityIdSet ids_;
 
     // Bulk Data
 

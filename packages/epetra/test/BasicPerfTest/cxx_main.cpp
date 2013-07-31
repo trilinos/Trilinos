@@ -370,9 +370,10 @@ int main(int argc, char *argv[])
       if (verbose) cout << "\n*************** Results for " << nrhs << " RHS with ";
 
       bool StaticProfile = (j!=0);
-      if (verbose) 
-	if (StaticProfile) cout << " static profile\n";
-	else cout << " dynamic profile\n";
+      if (verbose) {
+        if (StaticProfile) cout << " static profile\n";
+        else cout << " dynamic profile\n";
+      }
       
       GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints,
 			 Xoff.Values(), Yoff.Values(), nrhs, comm, verbose, summary,

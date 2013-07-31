@@ -43,13 +43,32 @@
 #include <Teuchos_ParameterList.hpp>
 #include <iostream>
 
-// tbb::task_scheduler_init Kokkos::TBBNode::tsi_(tbb::task_scheduler_init::deferred);
+// tbb::task_scheduler_init KokkosClassic::TBBNode::tsi_(tbb::task_scheduler_init::deferred);
 
-namespace Kokkos {
+namespace KokkosClassic {
 
-  TBBNode::TBBNode(Teuchos::ParameterList &pl) : alreadyInit_(false), tsi_(tbb::task_scheduler_init::deferred) {
+  TBBNode::TBBNode () :
+    alreadyInit_ (false), 
+    tsi_ (tbb::task_scheduler_init::deferred) 
+  {
     ParameterList params = getDefaultParameters();
-    params.setParameters(pl);
+    int numThreads = params.get<int> ("Num Threads");
+    int verbose = params.get<int> ("Verbose");
+    if (numThreads >= 0) {
+      if (verbose) {
+        std::cout << "TBBNode initializing with numThreads == " << numThreads << std::endl;
+      }
+      init(numThreads);
+    }
+  }
+
+
+  TBBNode::TBBNode (Teuchos::ParameterList &pl) : 
+    alreadyInit_ (false), 
+    tsi_ (tbb::task_scheduler_init::deferred) 
+  {
+    ParameterList params = getDefaultParameters();
+    params.setParameters (pl);
     int numThreads = params.get<int>("Num Threads");
     int verbose = params.get<int>("Verbose");
     if (numThreads >= 0) {

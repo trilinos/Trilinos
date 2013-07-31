@@ -45,7 +45,6 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Panzer_Traits.hpp"
-#include "Panzer_InputEquationSet.hpp"
 #include "Panzer_CellData.hpp"
 #include "Panzer_EquationSet_TemplateManager.hpp"
 #include "Panzer_GlobalData.hpp"
@@ -54,10 +53,11 @@ namespace panzer {
 
   /** \brief Allocates and initializes an equation set template manager
 
-     \param ies [in] Input equation set
-     \param cell_data [in] The cell data
-     \param global_data [in] Global data
-     \param build_transient_support [in] If true, the transient evaluators will be built, registered, and required in the Phalanx evaluation graph.
+     \param[in] params Input parameters to build the equation set
+     \param[in] default_integration_order Default order for the integration rule.  NOTE: individual equation sets can override this based on parameters in the <code>plist</code>
+     \param[in] cell_data The cell data
+     \param[in] global_data  Global data
+     \param[in] build_transient_support If true, the transient evaluators will be built, registered, and required in the Phalanx evaluation graph.
 
      Returns an RCP to a newly allocated EquationSet_TemplateManager.  
   */
@@ -65,7 +65,8 @@ namespace panzer {
     virtual ~EquationSetFactory() = 0;
 
     virtual Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> >
-    buildEquationSet(const panzer::InputEquationSet& ies,
+    buildEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
+		     const int& default_integration_order,
 		     const panzer::CellData& cell_data,
 		     const Teuchos::RCP<panzer::GlobalData>& global_data,
 		     bool build_transient_support) const = 0;

@@ -43,7 +43,6 @@
 #include <cmath>
 
 #include "Piro_Epetra_TrapezoidRuleSolver.hpp"
-#include "Piro_ValidPiroParameters.hpp"
 
 #include "EpetraExt_ModelEvaluator.h"
 
@@ -60,8 +59,6 @@ Piro::Epetra::TrapezoidRuleSolver::TrapezoidRuleSolver(
   appParams(appParams_),
   observer(observer_)
 {
-  //appParams->validateParameters(*Piro::getValidPiroParameters(),0);
-
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -73,7 +70,7 @@ Piro::Epetra::TrapezoidRuleSolver::TrapezoidRuleSolver(
   trPL->validateParameters(*getValidTrapezoidRuleParameters(),0);
 
   {
-    const string verbosity = trPL->get("Verbosity Level", "VERB_DEFAULT");
+    const std::string verbosity = trPL->get("Verbosity Level", "VERB_DEFAULT");
     solnVerbLevel = Teuchos::VERB_DEFAULT;
     if      (verbosity == "VERB_NONE")    solnVerbLevel = Teuchos::VERB_NONE;
     else if (verbosity == "VERB_LOW")     solnVerbLevel = Teuchos::VERB_LOW;
@@ -139,8 +136,12 @@ Teuchos::RCP<const Epetra_Map> Piro::Epetra::TrapezoidRuleSolver::get_g_map(int 
                      "Invalid response index j = " <<
                      j << std::endl);
 
-  if      (j < num_g) return model->get_g_map(j);
-  else if (j == num_g) return model->get_x_map();
+  if (j < num_g) {
+    return model->get_g_map(j);
+  } else {
+    // j == num_g
+    return model->get_x_map();
+  }
 }
 
 Teuchos::RCP<const Epetra_Vector> Piro::Epetra::TrapezoidRuleSolver::get_x_init() const
@@ -224,7 +225,7 @@ void Piro::Epetra::TrapezoidRuleSolver::evalModel( const InArgs& inArgs,
                      std::endl << "Error in Piro::Epetra::TrapezoidRuleSolver " <<
                      "Requires initial x and x_dot: " << std::endl);
    double nrm;
-   v->Norm2(&nrm); *out << "Initial Velocity = " << nrm << endl;
+   v->Norm2(&nrm); *out << "Initial Velocity = " << nrm << std::endl;
 
    double t = t_init;
 
@@ -235,7 +236,7 @@ void Piro::Epetra::TrapezoidRuleSolver::evalModel( const InArgs& inArgs,
      model->injectData(x_pred, x_pred, pert, t);
      noxSolver->evalModel(nox_inargs, nox_outargs);
      a->Update(pert, *gx_out,  -pert, *x_pred,0.0);
-     a->Norm2(&nrm); *out << "Calculated a_init = " << nrm << endl;
+     a->Norm2(&nrm); *out << "Calculated a_init = " << nrm << std::endl;
    }
 
    // Start integration loop

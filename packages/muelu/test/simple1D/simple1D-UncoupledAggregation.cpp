@@ -170,11 +170,16 @@ int main(int argc, char *argv[]) {
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
   // aggregation factory
-  Teuchos::RCP<UncoupledAggregationFactory> UnCoupledAggFact = Teuchos::rcp(new UncoupledAggregationFactory(dropFact));
+  Teuchos::RCP<UncoupledAggregationFactory> UnCoupledAggFact = Teuchos::rcp(new UncoupledAggregationFactory(/*dropFact*/));
+  UnCoupledAggFact->SetFactory("Graph", dropFact);
+  UnCoupledAggFact->SetFactory("DofsPerNode", dropFact);
   //UnCoupledAggFact->SetFactory("Graph", dropFact); // UnCoupledAggFact not changed to new factory handling
-  UnCoupledAggFact->SetMinNodesPerAggregate(minPerAgg);
-  UnCoupledAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-  UnCoupledAggFact->SetOrdering(MueLu::AggOptions::GRAPH);
+  //UnCoupledAggFact->SetMinNodesPerAggregate(minPerAgg);
+  //UnCoupledAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
+  //UnCoupledAggFact->SetOrdering(MueLu::AggOptions::GRAPH);
+  UnCoupledAggFact->SetParameter("MaxNeighAlreadySelected",Teuchos::ParameterEntry(maxNbrAlreadySelected));
+  UnCoupledAggFact->SetParameter("MinNodesPerAggregate",Teuchos::ParameterEntry(minPerAgg));
+  UnCoupledAggFact->SetParameter("Ordering",Teuchos::ParameterEntry(MueLu::AggOptions::GRAPH));
 
   Finest->Request("Graph",dropFact.get());
   Finest->Request("DofsPerNode",dropFact.get());

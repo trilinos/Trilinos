@@ -1,3 +1,42 @@
+# @HEADER
+# ************************************************************************
+#
+#            TriBITS: Tribial Build, Integrate, and Test System
+#                    Copyright 2013 Sandia Corporation
+#
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+# the U.S. Government retains certain rights in this software.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the Corporation nor the names of the
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# ************************************************************************
+# @HEADER
+
 
 INCLUDE(TribitsAddAdvancedTest)
 
@@ -144,10 +183,37 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Final set of enabled packages:  Teuchos 1"
     "Final set of non-enabled packages:  TrilinosFramework RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Stokhos Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Panzer 23"
     "Processing current package Teuchos: libs='ON', tests='ON'"
-    "CONFIGURE_OPTIONS = '-DTrilinos_TRIBITS_DIR=.+-DCTEST_USE_LAUNCHERS:BOOL=1.-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON.-DTrilinos_ENABLE_TESTS:BOOL=ON.-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=-DummyErrFlags.-DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON.-DMPI_EXEC_MAX_NUMPROCS:STRING=4.-DTrilinos_EXTRAREPOS_FILE:STRING=.*/MockTrilinos/cmake.ExtraRepositoriesList.cmake.-DTrilinos_IGNORE_MISSING_EXTRA_REPOSITORIES:BOOL=ON.-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Experimental.-DTrilinos_ENABLE_Teuchos:BOOL=ON'"
+    "CONFIGURE_OPTIONS = '-DTrilinos_TRIBITS_DIR=.+-DCTEST_USE_LAUNCHERS:BOOL=1.-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON.-DTrilinos_ENABLE_TESTS:BOOL=ON.-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=-DummyErrFlags.-DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON.-DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON.-DMPI_EXEC_MAX_NUMPROCS:STRING=4.-DTrilinos_EXTRAREPOS_FILE:STRING=.*/MockTrilinos/cmake.ExtraRepositoriesList.cmake.-DTrilinos_IGNORE_MISSING_EXTRA_REPOSITORIES:BOOL=ON.-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Experimental.-DTrilinos_ENABLE_Teuchos:BOOL=ON'"
   )
 # NOTE: The above test pins down the form of the configure options passed to
 # different package configures to make sure everything in there.
+
+
+CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableRTOp_DisableTeuchos
+  ARGS Trilinos_PACKAGES=RTOp Trilinos_EXCLUDE_PACKAGES=Teuchos
+  PASS_REGULAR_EXPRESSION_ALL
+    "Explicitly enabled packages on input .by user.:  RTOp 1"
+    "WARNING: Setting Trilinos_ENABLE_RTOp=OFF which was 'ON' because RTOp has a required library dependence on disabled package Teuchos but Trilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON!"
+    "Final set of enabled packages:  0"
+    "Trilinos_NUM_ENABLED_PACKAGES=0:  Exiting the script!"
+  )
+# NOTE: The above test ensures that disabled packages turn off explicitly
+#  enabled downstream packages.
+
+
+CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableTeuchos_DisableTPLBLAS
+  ARGS Trilinos_PACKAGES=Teuchos Trilinos_EXCLUDE_TPLS=BLAS
+  PASS_REGULAR_EXPRESSION_ALL
+    "Explicitly enabled packages on input .by user.:  Teuchos 1"
+    "Explicitly disabled TPLs on input .by user or by default.:  BLAS 1"
+    "WARNING: Setting Trilinos_ENABLE_Teuchos=OFF which was 'ON' because Teuchos has a required library dependence on disabled TPL BLAS but Trilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON!"
+    "Final set of enabled packages:  0"
+    "Trilinos_NUM_ENABLED_PACKAGES=0:  Exiting the script!"
+  )
+# NOTE: The above test ensures that disabled TPLS turn off explicitly
+#  enabled downstream packages.
 
 
 CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
@@ -157,10 +223,10 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra 8"
     "Final set of non-enabled packages:  TrilinosFramework Shards Stokhos Sacado Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Panzer 16"
     "Processing current package Teuchos: libs='ON', tests=''"
-    "CONFIGURE_OPTIONS = '-DTrilinos_TRIBITS_DIR=.+-DCTEST_USE_LAUNCHERS:BOOL=1.-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON.-DTrilinos_ENABLE_TESTS:BOOL=.-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=-DummyErrFlags.-DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON.-DMPI_EXEC_MAX_NUMPROCS:STRING=4.-DTrilinos_EXTRAREPOS_FILE:STRING=.+/tribits/package_arch/UnitTests/MockTrilinos/cmake/ExtraRepositoriesList.cmake.-DTrilinos_IGNORE_MISSING_EXTRA_REPOSITORIES:BOOL=ON.-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Experimental.-DTrilinos_ENABLE_Teuchos:BOOL=ON'"
+    "CONFIGURE_OPTIONS = '-DTrilinos_TRIBITS_DIR=.+-DCTEST_USE_LAUNCHERS:BOOL=1.-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON.-DTrilinos_ENABLE_TESTS:BOOL=.-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=-DummyErrFlags.-DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON.-DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON.-DMPI_EXEC_MAX_NUMPROCS:STRING=4.-DTrilinos_EXTRAREPOS_FILE:STRING=.+/tribits/package_arch/UnitTests/MockTrilinos/cmake/ExtraRepositoriesList.cmake.-DTrilinos_IGNORE_MISSING_EXTRA_REPOSITORIES:BOOL=ON.-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Experimental.-DTrilinos_ENABLE_Teuchos:BOOL=ON'"
     "Processing current package Epetra: libs='ON', tests=''"
     "Processing current package Thyra: libs='ON', tests='ON'"
-    "CONFIGURE_OPTIONS = '-DTrilinos_TRIBITS_DIR=.+-DCTEST_USE_LAUNCHERS:BOOL=1.-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON.-DTrilinos_ENABLE_TESTS:BOOL=ON.-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=-DummyErrFlags.-DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON.-DMPI_EXEC_MAX_NUMPROCS:STRING=4.-DTrilinos_EXTRAREPOS_FILE:STRING=.+/tribits/package_arch/UnitTests/MockTrilinos/cmake/ExtraRepositoriesList.cmake.-DTrilinos_IGNORE_MISSING_EXTRA_REPOSITORIES:BOOL=ON.-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Experimental.-DTrilinos_ENABLE_EpetraExt:BOOL=.-DTrilinos_ENABLE_Thyra:BOOL=ON'"
+    "CONFIGURE_OPTIONS = '-DTrilinos_TRIBITS_DIR=.+-DCTEST_USE_LAUNCHERS:BOOL=1.-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON.-DTrilinos_ENABLE_TESTS:BOOL=ON.-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=-DummyErrFlags.-DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON.-DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON.-DMPI_EXEC_MAX_NUMPROCS:STRING=4.-DTrilinos_EXTRAREPOS_FILE:STRING=.+/tribits/package_arch/UnitTests/MockTrilinos/cmake/ExtraRepositoriesList.cmake.-DTrilinos_IGNORE_MISSING_EXTRA_REPOSITORIES:BOOL=ON.-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Experimental.-DTrilinos_ENABLE_EpetraExt:BOOL=.-DTrilinos_ENABLE_Thyra:BOOL=ON'"
     "Processing current package Stokhos: libs='OFF', tests=''"
     "Processing current package Isorropia: libs='', tests=''"
   )
@@ -282,7 +348,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
     "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Panzer Teko Stalix 25"
     "Final set of non-enabled packages:  Stokhos 1"
-    "CTEST_NOTES_FILES=.*/Updates.txt"
+    "CTEST_NOTES_FILES_WO_CACHE=.*/Updates.txt"
     "Processing current package Phalanx: libs='ON', tests='ON'"
     "Processing current package Stalix: libs='ON', tests='ON'"
   )

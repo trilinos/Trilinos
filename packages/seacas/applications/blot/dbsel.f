@@ -35,7 +35,7 @@ C=======================================================================
      &   NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &   IDELB, LENE, IDNPS, IDESS,
      &   NCSTEP, LISNP, NLISEL, LISEL, LISNPS, LISESS,
-     &   LISHV, LISGV, LISNV, LISEV)
+     &   LISHV, LISGV, LISNV, LISEV, MAPEL, MAPND)
 C=======================================================================
 
 C   --*** DBSEL *** (BLOT) Process SELECT commands
@@ -97,6 +97,8 @@ C   --   Uses NUMNPS, NUMESS of /DBNUMG/
       INTEGER NLISEL(0:*), LISEL(0:*)
       INTEGER LISNPS(0:*), LISESS(0:*)
       INTEGER LISHV(0:*), LISGV(0:*), LISNV(0:*), LISEV(0:*)
+      INTEGER MAPEL(*)
+      INTEGER MAPND(*)
 
       CHARACTER*(MXSTLN) STYP
 
@@ -182,8 +184,8 @@ C *** GENESIS Print Commands ***
          CALL FFADDC (STYP, INLINE(1))
          CALL CKNONE (NUMNP, .FALSE., 'nodes', *220)
 
-         CALL RIXINT (INLINE(1), IFLD, INTYP, CFIELD, IFIELD,
-     &      'node number', NUMNP, LISNP(0), LISNP(1), *220)
+         CALL RMIXINT (INLINE(1), IFLD, INTYP, CFIELD, IFIELD,
+     &      'node number', NUMNP, LISNP(0), LISNP(1), MAPND, *220)
 
          IF (LISNP(0) .GT. 0) THEN
             CALL PRNSEL (LISNP(0), NUMNP, 'nodes')
@@ -197,8 +199,8 @@ C *** GENESIS Print Commands ***
          CALL MDSTAT (NERR, MEM)
          IF (NERR .GT. 0) GOTO 220
 
-         CALL RIXINT (INLINE(1), IFLD, INTYP, CFIELD, IFIELD,
-     &      'element number', NUMEL, A(KLEL), A(KLEL+1), *190)
+         CALL RMIXINT (INLINE(1), IFLD, INTYP, CFIELD, IFIELD,
+     &      'element number', NUMEL, A(KLEL), A(KLEL+1), MAPEL, *190)
   190    CONTINUE
 
          CALL DBSBEL (NELBLK, NUMEL, LENE, A(KLEL), NLISEL, LISEL)

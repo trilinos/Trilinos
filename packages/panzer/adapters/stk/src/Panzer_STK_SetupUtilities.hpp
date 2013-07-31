@@ -45,9 +45,7 @@
 
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_Workset.hpp"
-#include "Panzer_BC.hpp"
 #include "Panzer_PhysicsBlock.hpp"
-#include "Panzer_InputPhysicsBlock.hpp"
 
 #include "Teuchos_RCP.hpp"
 
@@ -60,94 +58,48 @@ namespace panzer_stk {
 /** Build volumetric worksets for a STK mesh
   *
   * \param[in] mesh A pointer to the STK_Interface used to construct the worksets
-  * \param[in] eb_to_ipb Map that keys the element block id to the InputPhysicsBlock object for that element block.
-  * \param[in] workset_size The size of each workset measured in the number of elements
+  * \param[in] pb Physics block associated with a particular element block
   *
-  * \returns Map relating block IDs to vectors of worksets on that element block.
-  */
-std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
-buildWorksets(const panzer_stk::STK_Interface & mesh,
-              const std::map<std::string,panzer::InputPhysicsBlock> & eb_to_ipb, 
-              const std::size_t workset_size);
-
-
-/** Build volumetric worksets for a STK mesh
-  *
-  * \param[in] mesh A pointer to the STK_Interface used to construct the worksets
-  * \param[in] eBlock Element block ID to build the worksets from
-  * \param[in] ipb Input physics block to be associated with the element block
-  * \param[in] workset_size The size of each workset measured in the number of elements
-  *
-  * \returns Map relating block IDs to vectors of worksets on that element block.
+  * \returns vector of worksets for the corresponding element block.
   */
 Teuchos::RCP<std::vector<panzer::Workset> >  
 buildWorksets(const panzer_stk::STK_Interface & mesh,
-              const std::string & eBlock,
-              const panzer::InputPhysicsBlock & ipb, 
-              const std::size_t workset_size);
+              const panzer::PhysicsBlock & pb);
 
-/** Build volumetric worksets for a STK mesh
+/** Build volumetric worksets for a STK mesh with elements that touch a particular sideset.
   *
   * \param[in] mesh A pointer to the STK_Interface used to construct the worksets
   * \param[in] pb Physics block associated with the element block
   * \param[in] workset_size The size of each workset measured in the number of elements
+  * \param[in] sideset The sideset id used to locate volume elements associated with the sideset
+  * \param[in] useCascade If true, worksets will be built for every local node, edge and face
+  *                       that touches the side set. Note that this implies that the workset
+  *                       will have repeated elements. This is useful for higher-order surface
+  *                       flux calculations.
   *
-  * \returns Map relating block IDs to vectors of worksets on that element block.
-  */
-Teuchos::RCP<std::vector<panzer::Workset> >  
-buildWorksets(const panzer_stk::STK_Interface & mesh,
-              const panzer::PhysicsBlock & pb, 
-              const std::size_t workset_size);
-
-/** Build volumetric worksets for a STK mesh with elements touch a particular sideset.
-  *
-  * \param[in] mesh A pointer to the STK_Interface used to construct the worksets
-  * \param[in] pb Physics block associated with the element block
-  * \param[in] workset_size The size of each workset measured in the number of elements
-  *
-  * \returns Map relating block IDs to vectors of worksets on that element block.
+  * \returns vector of worksets for the corresponding element block.
   */
 Teuchos::RCP<std::vector<panzer::Workset> >  
 buildWorksets(const panzer_stk::STK_Interface & mesh,
               const panzer::PhysicsBlock & pb,
               const std::string & sideset,
-              const std::size_t workset_size);
+              bool useCascade=false);
 
 /** Build boundary condition worksets for a STK mesh
   *
   * \param[in] mesh A pointer to the STK_Interface used to construct the worksets
-  * \param[in] eb_to_ipb Map that keys the element block id to the InputPhysicsBlock object for that element block.
+  * \param[in] pb Physics block associated with the element block
+  * \param[in] sidesetID Name of sideset
   *
-  * \returns Map relating block IDs to vectors of worksets on that element block.
+  * \returns Map relating local element side IDs to a workset.
   *
-  * \note Current implementation does not use different workset sizes for the 
-  *       boundary conditions.
+  * \note All elements for a bc that are associated with a particular
+  *       side ID are grouped into a single workset
   */
-const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC>
-buildBCWorksets(const panzer_stk::STK_Interface & mesh,
-                const std::map<std::string,panzer::InputPhysicsBlock> & eb_to_ipb,
-                const std::vector<panzer::BC> & bcs);
-
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
 buildBCWorksets(const panzer_stk::STK_Interface & mesh,
                 const panzer::PhysicsBlock & pb,
-                const panzer::BC & bc);
-
-/** Build boundary condition worksets for a STK mesh
-  *
-  * \param[in] mesh A pointer to the STK_Interface used to construct the worksets
-  * \param[in] ipb Input physics block to use
-  * \param[in] bc Boundary condition to build workset over
-  *
-  * \returns Map relating block IDs to vectors of worksets on that element block.
-  *
-  * \note Current implementation does not use different workset sizes for the 
-  *       boundary conditions.
-  */
-Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-buildBCWorksets(const panzer_stk::STK_Interface & mesh,
-                const panzer::InputPhysicsBlock & ipb,
-                const panzer::BC & bc);
+                const std::string & sidesetID);
 
 // namespace may not be neccssary in the future, currently avoids
 // collisions with previously implemented code in tests
@@ -168,7 +120,7 @@ void getIdsAndVertices(const panzer_stk::STK_Interface& mesh,
 			 ArrayT& vertices);
 
 /** This function loops over the passed in set of entities and looks
- * at there related elements. It is then determined which elements
+ * at their related elements. It is then determined which elements
  * belong in the requested element block, and what the local ID of 
  * the entitiy is.
  *
@@ -240,7 +192,48 @@ void getNodeElements(const panzer_stk::STK_Interface & mesh,
 		       const std::string & blockId, 
 		       const std::vector<stk::mesh::Entity*> & nodes,
 		       std::vector<std::size_t> & localNodeIds, 
-		       std::vector<stk::mesh::Entity*> & elements);
+	 	       std::vector<stk::mesh::Entity*> & elements);
+
+/** This function builds the "element cascade" contained within a specfied
+  * element block. That is given a set of "sides" extract all elements that
+  * live in the block and touch those sides on a node, edge or face. It returns
+  * the local sub cell index and sub cell dimension.
+  *
+  * \param[in] 
+  * \param[in] mesh STK mesh interface
+  * \param[in] blockId Requested element block identifier
+  * \param[in] sides Set of sides (entities of dimension-1) where
+  *                  there is assumed part membership (induced or not)
+  *                  in the requested element block.
+  * \param[out] subcellDim On output this will contain the subcell dimensions. 
+  * \param[out] localSubcellIds On output this will contain the local subcell ids. 
+  * \param[out] elements On output this will contain the elements associated
+  *             with each subcell in the requested block. Assumed that on input
+  *             <code>elements.size()==0</code>
+  */
+void getSideElementCascade(const panzer_stk::STK_Interface & mesh,
+                           const std::string & blockId, 
+                           const std::vector<stk::mesh::Entity*> & sides,
+                           std::vector<std::size_t> & localSubcellDim, 
+                           std::vector<std::size_t> & subcellIds, 
+                           std::vector<stk::mesh::Entity*> & elements);
+
+/** Get all the subcells that are contained within the list of entities.
+  * The resulting vector is organized by dimension and it is guranteed that
+  * no entity is included more then once.
+  *
+  * \param[in] mesh STK mesh interface
+  * \param[in] entities Set of entities of the same dimension, these the parent entities
+                        whose subcells are extracted.
+  * \param[out] subcells Set of subcells catoragized by dimension. The first
+  *                      index is the physical dimension. Each 
+  *                      entity in the vector will be unique. Note that this
+  *                      vector is <code>clear</code>ed at the beginning of this method.
+  */
+void getSubcellEntities(const panzer_stk::STK_Interface & mesh,
+		        const std::vector<stk::mesh::Entity*> & entities,
+	 	        std::vector<std::vector<stk::mesh::Entity*> > & subcells);
+
 }
 }
 

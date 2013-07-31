@@ -45,13 +45,16 @@
 /* Define if want to build with OVIS enabled */
 #cmakedefine HAVE_OVIS
 
+/* Define if want to build with OVIS enabled */
+#cmakedefine HAVE_PURIFY
+
 /* Define if DON'T want support for MPI TPL */
 #ifndef HAVE_MPI
 #define NO_MPI_TPL
 #endif
 
 /* Define if want to build with zlib enabled */
-#cmakedefine HAVE_GZIP
+#cmakedefine ZHAVE_GZIP
 
 /* Use to have only filename when debugging memory */
 #define SHORT_FILE

@@ -7,20 +7,33 @@
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
@@ -78,23 +91,24 @@ ReorderFilter<MatrixType>::~ReorderFilter() { }
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Teuchos::Comm<int> > & ReorderFilter<MatrixType>::getComm() const
+Teuchos::RCP<const Teuchos::Comm<int> > ReorderFilter<MatrixType>::getComm() const
 {
   return A_->getComm();
 }
 
 //==========================================================================
 template<class MatrixType>
-Teuchos::RCP <typename MatrixType::node_type> ReorderFilter<MatrixType>::getNode() const
+Teuchos::RCP<typename MatrixType::node_type> 
+ReorderFilter<MatrixType>::getNode() const
 {
   return A_->getNode();
 }
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+			       typename MatrixType::global_ordinal_type,
+			       typename MatrixType::node_type> >
 ReorderFilter<MatrixType>::getRowMap() const
 {
   return A_->getRowMap();
@@ -102,9 +116,9 @@ ReorderFilter<MatrixType>::getRowMap() const
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+			       typename MatrixType::global_ordinal_type,
+			       typename MatrixType::node_type> >
 ReorderFilter<MatrixType>::getColMap() const
 {
   return A_->getColMap();
@@ -112,9 +126,9 @@ ReorderFilter<MatrixType>::getColMap() const
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+			       typename MatrixType::global_ordinal_type,
+			       typename MatrixType::node_type> >
 ReorderFilter<MatrixType>::getDomainMap() const
 {
   return A_->getDomainMap();
@@ -122,9 +136,9 @@ ReorderFilter<MatrixType>::getDomainMap() const
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+			       typename MatrixType::global_ordinal_type,
+			       typename MatrixType::node_type> >
 ReorderFilter<MatrixType>::getRangeMap() const
 {
   return A_->getRangeMap();
@@ -351,14 +365,27 @@ void ReorderFilter<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOrdi
 				       Scalar alpha,
 				       Scalar beta) const
 {  
+  this->template applyTempl<Scalar,Scalar>(X, Y, mode, alpha, beta);
+}
+
+
+//==========================================================================  
+template<class MatrixType> 
+template<class DomainScalar, class RangeScalar>
+void ReorderFilter<MatrixType>::applyTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
+					   Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+					   Teuchos::ETransp mode, 
+					   RangeScalar alpha,
+					   RangeScalar beta) const
+{  
   // Note: This isn't AztecOO compliant.  But neither was Ifpack's version.
   // Note: The localized maps mean the matvec is trivial (and has no import)
   TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
      "Ifpack2::ReorderFilter::apply ERROR: X.getNumVectors() != Y.getNumVectors().");
  
-  Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > x_ptr = X.get2dView();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       y_ptr = Y.get2dViewNonConst();
+  RangeScalar zero = Teuchos::ScalarTraits<RangeScalar>::zero();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const DomainScalar> > x_ptr = X.get2dView();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<RangeScalar> >        y_ptr = Y.get2dViewNonConst();
 
   Y.putScalar(zero);
   size_t NumVectors = Y.getNumVectors();
@@ -370,20 +397,21 @@ void ReorderFilter<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOrdi
     if (mode==Teuchos::NO_TRANS){
       for (size_t j = 0 ; j < Nnz ; ++j) 
 	for (size_t k = 0 ; k < NumVectors ; ++k)
-	  y_ptr[k][i] += Values_[j] * x_ptr[k][Indices_[j]];      
+	  y_ptr[k][i] += (RangeScalar)Values_[j] * (RangeScalar)x_ptr[k][Indices_[j]];      
     }
     else if (mode==Teuchos::TRANS){
       for (size_t j = 0 ; j < Nnz ; ++j) 
 	for (size_t k = 0 ; k < NumVectors ; ++k)
-	  y_ptr[k][Indices_[j]] += Values_[j] * x_ptr[k][i];
+	  y_ptr[k][Indices_[j]] += (RangeScalar)Values_[j] * (RangeScalar)x_ptr[k][i];
     }
     else { //mode==Teuchos::CONJ_TRANS
       for (size_t j = 0 ; j < Nnz ; ++j) 
 	for (size_t k = 0 ; k < NumVectors ; ++k)
-	  y_ptr[k][Indices_[j]] += Teuchos::ScalarTraits<Scalar>::conjugate(Values_[j]) * x_ptr[k][i];
+	  y_ptr[k][Indices_[j]] += Teuchos::ScalarTraits<RangeScalar>::conjugate((RangeScalar)Values_[j]) * (RangeScalar)x_ptr[k][i];
     }
   }
 }
+
   
 //==========================================================================  
 template<class MatrixType> 
@@ -412,15 +440,25 @@ template<class MatrixType>
 void ReorderFilter<MatrixType>::permuteOriginalToReordered(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &originalX, 
 							   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &reorderedY) const
 {
+  this->template permuteOriginalToReorderedTempl<Scalar,Scalar>(originalX, reorderedY);
+}							  
+
+//==========================================================================  
+//! Permute multivector: original-to-reordered
+template<class MatrixType> 
+template<class DomainScalar, class RangeScalar>
+void ReorderFilter<MatrixType>::permuteOriginalToReorderedTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &originalX, 
+								Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &reorderedY) const
+{
   TEUCHOS_TEST_FOR_EXCEPTION(originalX.getNumVectors() != reorderedY.getNumVectors(), std::runtime_error,
 			     "Ifpack2::ReorderFilter::permuteOriginalToReordered ERROR: X.getNumVectors() != Y.getNumVectors().");
 
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > x_ptr = originalX.get2dView();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       y_ptr = reorderedY.get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const DomainScalar> > x_ptr = originalX.get2dView();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<RangeScalar> >        y_ptr = reorderedY.get2dViewNonConst();
 
   for(size_t k=0; k < originalX.getNumVectors(); k++)
     for(LocalOrdinal i=0; (size_t)i< originalX.getLocalLength(); i++)
-      y_ptr[k][perm_[i]] = x_ptr[k][i];
+      y_ptr[k][perm_[i]] = (RangeScalar)x_ptr[k][i];
 }							  
   
 //==========================================================================  
@@ -429,15 +467,25 @@ template<class MatrixType>
 void ReorderFilter<MatrixType>::permuteReorderedToOriginal(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &reorderedX, 
 							   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &originalY) const
 {
+  this->template permuteReorderedToOriginalTempl<Scalar,Scalar>(reorderedX, originalY);
+}
+
+//==========================================================================  
+//! Permute multivector: reordered-to-original
+template<class MatrixType> 
+template<class DomainScalar, class RangeScalar>
+void ReorderFilter<MatrixType>::permuteReorderedToOriginalTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &reorderedX, 
+								Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &originalY) const
+{
   TEUCHOS_TEST_FOR_EXCEPTION(reorderedX.getNumVectors() != originalY.getNumVectors(), std::runtime_error,
 			     "Ifpack2::ReorderFilter::permuteReorderedToOriginal ERROR: X.getNumVectors() != Y.getNumVectors().");
 
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > x_ptr = reorderedX.get2dView();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >       y_ptr = originalY.get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const DomainScalar> > x_ptr = reorderedX.get2dView();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<RangeScalar> >        y_ptr = originalY.get2dViewNonConst();
 
   for(size_t k=0; k < reorderedX.getNumVectors(); k++)
     for(LocalOrdinal i=0; (size_t)i< reorderedX.getLocalLength(); i++)
-      y_ptr[k][reverseperm_[i]] = x_ptr[k][i];
+      y_ptr[k][reverseperm_[i]] = (RangeScalar)x_ptr[k][i];
 }
 
 //==========================================================================  

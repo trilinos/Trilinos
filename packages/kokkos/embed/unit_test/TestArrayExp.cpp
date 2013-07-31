@@ -1,7 +1,7 @@
 /*
 // ************************************************************************
 //
-//                             KokkosArray
+//                             Kokkos
 //         Manycore Performance-Portable Multidimensional Arrays
 //
 //              Copyright (2012) Sandia Corporation
@@ -45,55 +45,54 @@
 #include <iostream>
 #include <typeinfo>
 
-#include <KokkosArray_Cuda.hpp>
-#include <KokkosArray_Host.hpp>
-#include <KokkosArray_Array.hpp>
+#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Host.hpp>
+#include <Kokkos_Array.hpp>
 
-#include <impl/KokkosArray_ArrayAnalyzeShape.hpp>
-#include <impl/KokkosArray_ArrayViewOperRight.hpp>
-#include <impl/KokkosArray_ArrayViewOperLeft.hpp>
+#include <impl/Kokkos_ArrayAnalyzeShape.hpp>
+#include <impl/Kokkos_ArrayViewDefault.hpp>
 
 //----------------------------------------------------------------------------
 
 template< class Space > struct TestDevice ;
 
-template<> struct TestDevice< KokkosArray::HostSpace >
+template<> struct TestDevice< Kokkos::HostSpace >
 {
   enum { value = true };
 
-  typedef KokkosArray::Host type ;
+  typedef Kokkos::Host type ;
 
   TestDevice()
   {
-    KokkosArray::Host::initialize( 1 , 4 );
+    Kokkos::Host::initialize( 1 , 4 );
   }
   ~TestDevice()
   {
-    KokkosArray::Host::finalize();
+    Kokkos::Host::finalize();
   }
 };
 
 template<>
-struct TestDevice< KokkosArray::CudaSpace >
+struct TestDevice< Kokkos::CudaSpace >
 {
 #if defined( __CUDACC__ )
 
   enum { value = true };
 
-  typedef KokkosArray::Cuda type ;
+  typedef Kokkos::Cuda type ;
 
   TestDevice()
   {
-    KokkosArray::Cuda::initialize();
+    Kokkos::Cuda::initialize();
   }
   ~TestDevice()
   {
-    KokkosArray::Cuda::finalize();
+    Kokkos::Cuda::finalize();
   }
 #else
   enum { value = false };
 
-  typedef KokkosArray::Host type ;
+  typedef Kokkos::Host type ;
 #endif
 };
 
@@ -102,14 +101,14 @@ struct TestDevice< KokkosArray::CudaSpace >
 template< class Device > int test();
 
 template<>
-int test< TEST_KOKKOSARRAY_SPACE >()
+int test< TEST_KOKKOS_SPACE >()
 {
-  if ( ! TestDevice< TEST_KOKKOSARRAY_SPACE >::value ) return 0 ;
+  if ( ! TestDevice< TEST_KOKKOS_SPACE >::value ) return 0 ;
 
-  KokkosArray::Array<double,10> a = 1 ;
-  KokkosArray::Array<double,10> b = a + a ;
+  Kokkos::Array<double,10> a = 1 ;
+  Kokkos::Array<double,10> b = a + a ;
 
-  volatile KokkosArray::Array<double,10> c = a ;
+  volatile Kokkos::Array<double,10> c = a ;
 
   for ( unsigned i = 0 ; i < 10 ; ++i ) a[i] = i + 1 ;
 
@@ -128,17 +127,17 @@ int test< TEST_KOKKOSARRAY_SPACE >()
 
   std::cout << ( b = c * ( a + c ) / 10 ) << std::endl ;
 
-  KokkosArray::print_expression( std::cout , a );
-  KokkosArray::print_expression( std::cout , 5 * ( b + a ) / ( b - a ) );
-  KokkosArray::print_expression( std::cout , a * c + b );
+  Kokkos::print_expression( std::cout , a );
+  Kokkos::print_expression( std::cout , 5 * ( b + a ) / ( b - a ) );
+  Kokkos::print_expression( std::cout , a * c + b );
 
   // b + b = c ; // test compilation error
 
   int x_raw[10] ;
   int y_raw[100] ;
 
-  KokkosArray::Array<int,10,KokkosArray::ArrayProxyContiguous> X( x_raw );
-  KokkosArray::Array<int,10,KokkosArray::ArrayProxyStrided> Y( y_raw , 10 );
+  Kokkos::Array<int,10,Kokkos::ArrayProxyContiguous> X( x_raw );
+  Kokkos::Array<int,10,Kokkos::ArrayProxyStrided> Y( y_raw , 10 );
 
   Y = b ;
   X = a ;
@@ -148,7 +147,7 @@ int test< TEST_KOKKOSARRAY_SPACE >()
   X = min( X , 2 );
   X = min( 2 , X );
 
-  KokkosArray::print_expression( std::cout , min( X , Y * 2 ) );
+  Kokkos::print_expression( std::cout , min( X , Y * 2 ) );
 
   a = X ;
 
@@ -190,19 +189,20 @@ int test< TEST_KOKKOSARRAY_SPACE >()
 template< class Device > int testdyn();
 
 template<>
-int testdyn< TEST_KOKKOSARRAY_SPACE >()
+int testdyn< TEST_KOKKOS_SPACE >()
 {
-  if ( ! TestDevice< TEST_KOKKOSARRAY_SPACE >::value ) return 0 ;
+  if ( ! TestDevice< TEST_KOKKOS_SPACE >::value ) return 0 ;
 
   enum { Count = 10 };
 
-  KokkosArray::Array<double,0> a(1, Count);
-  KokkosArray::Array<double,0> b = a + a ;
+  Kokkos::Array<double,0> a(1, Count);
+  Kokkos::Array<double,0> b = a + a ;
 
-  volatile KokkosArray::Array<double,0> c = a ;
+  volatile Kokkos::Array<double,0> c = a ;
 
   for ( unsigned i = 0 ; i < 10 ; ++i ) a[i] = i + 1 ;
 
+  std::cout << a << std::endl ;
   std::cout << -a << std::endl ;
   std::cout << a + b << std::endl ;
   std::cout << b - a << std::endl ;
@@ -218,17 +218,17 @@ int testdyn< TEST_KOKKOSARRAY_SPACE >()
 
   std::cout << ( b = c * ( a + c ) / 10 ) << std::endl ;
 
-  KokkosArray::print_expression( std::cout , a );
-  KokkosArray::print_expression( std::cout , 5 * ( b + a ) / ( b - a ) );
-  KokkosArray::print_expression( std::cout , a * c + b );
+  Kokkos::print_expression( std::cout , a );
+  Kokkos::print_expression( std::cout , 5 * ( b + a ) / ( b - a ) );
+  Kokkos::print_expression( std::cout , a * c + b );
 
   // b + b = c ; // test compilation error
 
   int x_raw[10] ;
   int y_raw[100] ;
 
-  KokkosArray::Array<int,10,KokkosArray::ArrayProxyContiguous> X( x_raw );
-  KokkosArray::Array<int,10,KokkosArray::ArrayProxyStrided> Y( y_raw , 10 );
+  Kokkos::Array<int,10,Kokkos::ArrayProxyContiguous> X( x_raw );
+  Kokkos::Array<int,10,Kokkos::ArrayProxyStrided> Y( y_raw , 10 );
 
   Y = b ;
   X = a ;
@@ -238,7 +238,7 @@ int testdyn< TEST_KOKKOSARRAY_SPACE >()
   X = min( X , 2 );
   X = min( 2 , X );
 
-  KokkosArray::print_expression( std::cout , min( X , Y * 2 ) );
+  Kokkos::print_expression( std::cout , min( X , Y * 2 ) );
 
   a = X ;
 
@@ -284,7 +284,7 @@ struct TestFunctor
   typedef DeviceType                       device_type ;
   typedef typename device_type::size_type  size_type ;
 
-  typedef KokkosArray::View< ValueType * , device_type > vector_type ;
+  typedef Kokkos::View< ValueType * , device_type > vector_type ;
 
   const vector_type x , y , z ;
   const ValueType   a , b ;
@@ -295,7 +295,7 @@ struct TestFunctor
     , a(2), b(3)
     { }
 
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void operator()( const size_type ip ) const
   {
     z(ip) = a * x(ip) + b * y(ip);
@@ -307,16 +307,16 @@ struct TestFunctor
 template< class Space > int test_functor();
 
 template<>
-int test_functor< TEST_KOKKOSARRAY_SPACE >()
+int test_functor< TEST_KOKKOS_SPACE >()
 {
-  typedef TestDevice< TEST_KOKKOSARRAY_SPACE > TestD ;
+  typedef TestDevice< TEST_KOKKOS_SPACE > TestD ;
   typedef TestD::type device_type ;
 
   if ( ! TestD::value ) return 0 ;
   
   enum { Count = 20 };
 
-  typedef KokkosArray::Array<double,Count> value_type ;
+  typedef Kokkos::Array<double,Count> value_type ;
 
   typedef TestFunctor<value_type,device_type> functor_type ;
 
@@ -335,15 +335,15 @@ int test_functor< TEST_KOKKOSARRAY_SPACE >()
   functor_type f( N );
 
   functor_type::vector_type::HostMirror x = 
-    KokkosArray::create_mirror( f.x );
+    Kokkos::create_mirror( f.x );
 
   std::cout << "  distance( x(0)[0] , x(0)[last] ) = "
             << (int)( & x(0)[Count-1] - & x(0)[0] )
             << std::endl
-            << "  x.shape() = { " << x.shape().Stride
-            << " : " << x.shape().N0 
+            << "  x.shape() ="
+            << " { " << x.shape().N0
             << " , " << x.shape().N1
-            << std::endl ;
+            << " }" <<" }" <<  std::endl ;
 
   if ( & x(0)[0] != & x(0,0) ) {
     std::cout << "  FAILED & x(0)[0] != & x(0,0) : "
@@ -355,12 +355,12 @@ int test_functor< TEST_KOKKOSARRAY_SPACE >()
 
   for ( unsigned i = 0 ; i < N ; ++i ) { x(i) = 1 ; }
 
-  KokkosArray::deep_copy( f.x , x );
-  KokkosArray::deep_copy( f.y , x );
+  Kokkos::deep_copy( f.x , x );
+  Kokkos::deep_copy( f.y , x );
 
-  KokkosArray::parallel_for( N , f );
+  Kokkos::parallel_for( N , f );
 
-  KokkosArray::deep_copy( x , f.z );
+  Kokkos::deep_copy( x , f.z );
 
   std::cout << "test_functor z = " << x(0) << std::endl ;
 
@@ -370,9 +370,9 @@ int test_functor< TEST_KOKKOSARRAY_SPACE >()
 //----------------------------------------------------------------------------
 
 template< typename ScalarType , unsigned N , class ProxyX , class ProxyY >
-KOKKOSARRAY_INLINE_FUNCTION
-double dot( const KokkosArray::Array< ScalarType , N , ProxyX > & x ,
-            const KokkosArray::Array< ScalarType , N , ProxyY > & y )
+KOKKOS_INLINE_FUNCTION
+double dot( const Kokkos::Array< ScalarType , N , ProxyX > & x ,
+            const Kokkos::Array< ScalarType , N , ProxyY > & y )
 {
   double r = 0 ;
   for ( unsigned i = 0 ; i < x.size() ; ++i ) {
@@ -389,7 +389,7 @@ struct TestDot
 
   typedef double value_type ;
 
-  typedef KokkosArray::View< ScalarType * , device_type > vector_type ;
+  typedef Kokkos::View< ScalarType * , device_type > vector_type ;
 
   const vector_type x , y ;
 
@@ -397,15 +397,15 @@ struct TestDot
            const vector_type & arg_y )
     : x( arg_x ), y( arg_y ) {}
 
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void operator()( const size_type ip , value_type & update ) const
     { update += dot( x(ip) , y(ip) ); }
 
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   static void init( value_type & update )
     { update = 0 ; }
 
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & input )
     { update += input ; }
@@ -415,9 +415,9 @@ struct TestDot
 template< class Space > int test_inner_product();
 
 template<>
-int test_inner_product< TEST_KOKKOSARRAY_SPACE >()
+int test_inner_product< TEST_KOKKOS_SPACE >()
 {
-  typedef TestDevice< TEST_KOKKOSARRAY_SPACE > TestD ;
+  typedef TestDevice< TEST_KOKKOS_SPACE > TestD ;
   typedef TestD::type device_type ;
 
   if ( ! TestD::value ) return 0 ;
@@ -426,7 +426,7 @@ int test_inner_product< TEST_KOKKOSARRAY_SPACE >()
 
   enum { Count = 20 };
 
-  typedef KokkosArray::Array<double,Count> value_type ;
+  typedef Kokkos::Array<double,Count> value_type ;
 
   typedef TestDot< value_type , device_type > functor_type ;
 
@@ -435,15 +435,17 @@ int test_inner_product< TEST_KOKKOSARRAY_SPACE >()
   functor_type::vector_type x("x",N);
   functor_type::vector_type y("y",N);
 
-  functor_type::vector_type::HostMirror hx = KokkosArray::create_mirror_view( x );
-  functor_type::vector_type::HostMirror hy = KokkosArray::create_mirror_view( y );
+  functor_type::vector_type::HostMirror hx = Kokkos::create_mirror_view( x );
+  functor_type::vector_type::HostMirror hy = Kokkos::create_mirror_view( y );
   
   for ( unsigned i = 0 ; i < N ; ++i ) { hx(i) = 1 ; hy(i) = 2 ; }
 
-  KokkosArray::deep_copy( x , hx );
-  KokkosArray::deep_copy( y , hy );
+  Kokkos::deep_copy( x , hx );
+  Kokkos::deep_copy( y , hy );
 
-  double r = KokkosArray::parallel_reduce( N , functor_type(x,y) );
+  double r = 0 ;
+
+  Kokkos::parallel_reduce( N , functor_type(x,y) , r );
 
   std::cout << "test_inner_product r = " << r << std::endl ;
 

@@ -1,34 +1,52 @@
 // @HEADER
 // ***********************************************************************
-//
-//                 Belos: Block Eigensolvers Package
-//                 Copyright (2004) Sandia Corporation
-//
+// 
+//         Stratimikos: Thyra-based strategies for linear solvers
+//                Copyright (2006) Sandia Corporation
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
 //
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
+// 
 // ***********************************************************************
 // @HEADER
 
 /*! \file BelosThyraAdapter.hpp
-  \brief Specializations of the Belos multi-std::vector and operator traits 
-  classes using Thyra base classes LinearOpBase and MultiVectorBase.
+  \brief Thyra specializations of MultiVecTraits and OperatorTraits.
+
+  This file implements partial specializations of Belos' traits
+  classes for Thyra's abstract linear algebra interface classes.  In
+  particular, the file specializes Belos::MultiVecTraits for
+  Thyra::MultiVectorBase, and Belos::OperatorTraits for
+  Thyra::LinearOpBase.
 */
 
 #ifndef BELOS_THYRA_ADAPTER_HPP
@@ -46,7 +64,7 @@
 #endif // HAVE_BELOS_TSQR
 
 namespace Belos {
-  
+
   ////////////////////////////////////////////////////////////////////////////
   //
   // Implementation of the Belos::MultiVecTraits for Thyra::MultiVectorBase
@@ -73,21 +91,21 @@ namespace Belos {
     //@{
 
     /*! \brief Creates a new empty MultiVectorBase containing \c numvecs columns.
-      
+
     \return Reference-counted pointer to the new MultiVectorBase.
     */
     static Teuchos::RCP<TMVB> Clone( const TMVB& mv, const int numvecs )
-    { 
-      Teuchos::RCP<TMVB> c = Thyra::createMembers( mv.range(), numvecs ); 
+    {
+      Teuchos::RCP<TMVB> c = Thyra::createMembers( mv.range(), numvecs );
       return c;
     }
 
     /*! \brief Creates a new MultiVectorBase and copies contents of \c mv into the new std::vector (deep copy).
-      
+
       \return Reference-counted pointer to the new MultiVectorBase.
     */
     static Teuchos::RCP<TMVB> CloneCopy( const TMVB& mv )
-    { 
+    {
       int numvecs = mv.domain()->dim();
       // create the new multivector
       Teuchos::RCP< TMVB > cc = Thyra::createMembers( mv.range(), numvecs );
@@ -96,13 +114,13 @@ namespace Belos {
       return cc;
     }
 
-    /*! \brief Creates a new MultiVectorBase and copies the selected contents of \c mv into the new std::vector (deep copy).  
+    /*! \brief Creates a new MultiVectorBase and copies the selected contents of \c mv into the new std::vector (deep copy).
 
-      The copied vectors from \c mv are indicated by the \c indeX.size() indices in \c index.      
+      The copied vectors from \c mv are indicated by the \c indeX.size() indices in \c index.
       \return Reference-counted pointer to the new MultiVectorBase.
     */
     static Teuchos::RCP<TMVB> CloneCopy( const TMVB& mv, const std::vector<int>& index )
-    { 
+    {
       int numvecs = index.size();
       // create the new multivector
       Teuchos::RCP<TMVB> cc = Thyra::createMembers( mv.range(), numvecs );
@@ -113,10 +131,10 @@ namespace Belos {
       return cc;
     }
 
-    static Teuchos::RCP<TMVB> 
+    static Teuchos::RCP<TMVB>
     CloneCopy (const TMVB& mv, const Teuchos::Range1D& index)
-    { 
-      const int numVecs = index.size();      
+    {
+      const int numVecs = index.size();
       // Create the new multivector
       Teuchos::RCP<TMVB> cc = Thyra::createMembers (mv.range(), numVecs);
       // Create a view to the relevant part of the source multivector
@@ -130,7 +148,7 @@ namespace Belos {
 
     The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
     \return Reference-counted pointer to the new MultiVectorBase.
-    */      
+    */
     static Teuchos::RCP<TMVB> CloneViewNonConst( TMVB& mv, const std::vector<int>& index )
     {
       int numvecs = index.size();
@@ -166,7 +184,7 @@ namespace Belos {
       return cc;
     }
 
-    static Teuchos::RCP<TMVB> 
+    static Teuchos::RCP<TMVB>
     CloneViewNonConst (TMVB& mv, const Teuchos::Range1D& index)
     {
       // We let Thyra be responsible for checking that the index range
@@ -182,7 +200,7 @@ namespace Belos {
 
     The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
     \return Reference-counted pointer to the new const MultiVectorBase.
-    */      
+    */
     static Teuchos::RCP<const TMVB> CloneView( const TMVB& mv, const std::vector<int>& index )
     {
       int numvecs = index.size();
@@ -218,7 +236,7 @@ namespace Belos {
       return cc;
     }
 
-    static Teuchos::RCP<const TMVB> 
+    static Teuchos::RCP<const TMVB>
     CloneView (const TMVB& mv, const Teuchos::Range1D& index)
     {
       // We let Thyra be responsible for checking that the index range
@@ -249,8 +267,8 @@ namespace Belos {
 
     /*! \brief Update \c mv with \f$ \alpha AB + \beta mv \f$.
      */
-    static void MvTimesMatAddMv( const ScalarType alpha, const TMVB& A, 
-         const Teuchos::SerialDenseMatrix<int,ScalarType>& B, 
+    static void MvTimesMatAddMv( const ScalarType alpha, const TMVB& A,
+         const Teuchos::SerialDenseMatrix<int,ScalarType>& B,
          const ScalarType beta, TMVB& mv )
     {
       using Teuchos::arrayView; using Teuchos::arcpFromArrayView;
@@ -271,9 +289,9 @@ namespace Belos {
 
     /*! \brief Replace \c mv with \f$\alpha A + \beta B\f$.
      */
-    static void MvAddMv( const ScalarType alpha, const TMVB& A, 
+    static void MvAddMv( const ScalarType alpha, const TMVB& A,
                          const ScalarType beta,  const TMVB& B, TMVB& mv )
-    { 
+    {
       typedef Teuchos::ScalarTraits<ScalarType> ST;
       using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::inoutArg;
 
@@ -297,9 +315,9 @@ namespace Belos {
 
     /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply \f$ \alpha A^Tmv \f$.
     */
-    static void MvTransMv( const ScalarType alpha, const TMVB& A, const TMVB& mv, 
+    static void MvTransMv( const ScalarType alpha, const TMVB& A, const TMVB& mv,
       Teuchos::SerialDenseMatrix<int,ScalarType>& B )
-    { 
+    {
       using Teuchos::arrayView; using Teuchos::arcpFromArrayView;
       // Create a multivector to hold the result (m by n)
       int m = A.domain()->dim();
@@ -316,7 +334,7 @@ namespace Belos {
       Thyra::apply<ScalarType>(A, Thyra::CONJTRANS, mv, B_thyra.ptr(), alpha);
     }
 
-    /*! \brief Compute a std::vector \c b where the components are the individual dot-products of the 
+    /*! \brief Compute a std::vector \c b where the components are the individual dot-products of the
         \c i-th columns of \c A and \c mv, i.e.\f$b[i] = A[i]^Tmv[i]\f$.
      */
     static void MvDot( const TMVB& mv, const TMVB& A, std::vector<ScalarType>& b )
@@ -327,7 +345,7 @@ namespace Belos {
     /** \name Norm method */
     //@{
 
-    /*! \brief Compute the 2-norm of each individual std::vector of \c mv.  
+    /*! \brief Compute the 2-norm of each individual std::vector of \c mv.
       Upon return, \c normvec[i] holds the value of \f$||mv_i||_2\f$, the \c i-th column of \c mv.
     */
     static void MvNorm( const TMVB& mv, std::vector<magType>& normvec,
@@ -342,7 +360,7 @@ namespace Belos {
     /*! \brief Copy the vectors in \c A to a set of vectors in \c mv indicated by the indices given in \c index.
      */
     static void SetBlock( const TMVB& A, const std::vector<int>& index, TMVB& mv )
-    { 
+    {
       // Extract the "numvecs" columns of mv indicated by the index std::vector.
       int numvecs = index.size();
       std::vector<int> indexA(numvecs);
@@ -350,7 +368,7 @@ namespace Belos {
       for (int i=0; i<numvecs; i++) {
         indexA[i] = i;
       }
-      // Thyra::assign requires that both arguments have the same number of 
+      // Thyra::assign requires that both arguments have the same number of
       // vectors. Enforce this, by shrinking one to match the other.
       if ( numAcols < numvecs ) {
         // A does not have enough columns to satisfy index_plus. Shrink
@@ -369,9 +387,9 @@ namespace Belos {
       Thyra::assign(reldest.ptr(), *relsource);
     }
 
-    static void 
+    static void
     SetBlock (const TMVB& A, const Teuchos::Range1D& index, TMVB& mv)
-    { 
+    {
       const int numColsA = A.domain()->dim();
       const int numColsMv = mv.domain()->dim();
       // 'index' indexes into mv; it's the index set of the target.
@@ -380,76 +398,76 @@ namespace Belos {
       const bool validSource = index.size() <= numColsA;
 
       if (! validIndex || ! validSource)
-	{
-	  std::ostringstream os;
-	  os << "Belos::MultiVecTraits<Scalar, Thyra::MultiVectorBase<Scalar> "
-	    ">::SetBlock(A, [" << index.lbound() << ", " << index.ubound() 
-	     << "], mv): ";
-	  TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
-			     os.str() << "Range lower bound must be nonnegative.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= numColsMv, std::invalid_argument,
-			     os.str() << "Range upper bound must be less than "
-			     "the number of columns " << numColsA << " in the "
-			     "'mv' output argument.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(index.size() > numColsA, std::invalid_argument,
-			     os.str() << "Range must have no more elements than"
-			     " the number of columns " << numColsA << " in the "
-			     "'A' input argument.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
-	}
+        {
+          std::ostringstream os;
+          os << "Belos::MultiVecTraits<Scalar, Thyra::MultiVectorBase<Scalar> "
+            ">::SetBlock(A, [" << index.lbound() << ", " << index.ubound()
+             << "], mv): ";
+          TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+                             os.str() << "Range lower bound must be nonnegative.");
+          TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= numColsMv, std::invalid_argument,
+                             os.str() << "Range upper bound must be less than "
+                             "the number of columns " << numColsA << " in the "
+                             "'mv' output argument.");
+          TEUCHOS_TEST_FOR_EXCEPTION(index.size() > numColsA, std::invalid_argument,
+                             os.str() << "Range must have no more elements than"
+                             " the number of columns " << numColsA << " in the "
+                             "'A' input argument.");
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+        }
 
       // View of the relevant column(s) of the target multivector mv.
       // We avoid view creation overhead by only creating a view if
       // the index range is different than [0, (# columns in mv) - 1].
       Teuchos::RCP<TMVB> mv_view;
       if (index.lbound() == 0 && index.ubound()+1 == numColsMv)
-	mv_view = Teuchos::rcpFromRef (mv); // Non-const, non-owning RCP
+        mv_view = Teuchos::rcpFromRef (mv); // Non-const, non-owning RCP
       else
-	mv_view = mv.subView (index);
+        mv_view = mv.subView (index);
 
       // View of the relevant column(s) of the source multivector A.
       // If A has fewer columns than mv_view, then create a view of
       // the first index.size() columns of A.
       Teuchos::RCP<const TMVB> A_view;
       if (index.size() == numColsA)
-	A_view = Teuchos::rcpFromRef (A); // Const, non-owning RCP
+        A_view = Teuchos::rcpFromRef (A); // Const, non-owning RCP
       else
-	A_view = A.subView (Teuchos::Range1D(0, index.size()-1));
+        A_view = A.subView (Teuchos::Range1D(0, index.size()-1));
 
       // Copy the data to the destination multivector.
       Thyra::assign(mv_view.ptr(), *A_view);
     }
 
-    static void 
+    static void
     Assign (const TMVB& A, TMVB& mv)
-    { 
+    {
       const int numColsA = A.domain()->dim();
       const int numColsMv = mv.domain()->dim();
       if (numColsA > numColsMv)
-	{
-	  std::ostringstream os;
-	  os << "Belos::MultiVecTraits<Scalar, Thyra::MultiVectorBase<Scalar>"
-	    " >::Assign(A, mv): ";
-	  TEUCHOS_TEST_FOR_EXCEPTION(numColsA > numColsMv, std::invalid_argument,
-			     os.str() << "Input multivector 'A' has " 
-			     << numColsA << " columns, but output multivector "
-			     "'mv' has only " << numColsMv << " columns.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
-	}
+        {
+          std::ostringstream os;
+          os << "Belos::MultiVecTraits<Scalar, Thyra::MultiVectorBase<Scalar>"
+            " >::Assign(A, mv): ";
+          TEUCHOS_TEST_FOR_EXCEPTION(numColsA > numColsMv, std::invalid_argument,
+                             os.str() << "Input multivector 'A' has "
+                             << numColsA << " columns, but output multivector "
+                             "'mv' has only " << numColsMv << " columns.");
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+        }
       // Copy the data to the destination multivector.
       if (numColsA == numColsMv) {
-	Thyra::assign (Teuchos::outArg (mv), A);
+        Thyra::assign (Teuchos::outArg (mv), A);
       } else {
-	Teuchos::RCP<TMVB> mv_view = 
-	  CloneViewNonConst (mv, Teuchos::Range1D(0, numColsA-1));
-	Thyra::assign (mv_view.ptr(), A);
+        Teuchos::RCP<TMVB> mv_view =
+          CloneViewNonConst (mv, Teuchos::Range1D(0, numColsA-1));
+        Thyra::assign (mv_view.ptr(), A);
       }
     }
 
     /*! \brief Replace the vectors in \c mv with random vectors.
      */
     static void MvRandom( TMVB& mv )
-    { 
+    {
       // Thyra::randomize generates via a uniform distribution on [l,u]
       // We will use this to generate on [-1,1]
       Thyra::randomize<ScalarType>(
@@ -459,10 +477,10 @@ namespace Belos {
     }
 
     //! Replace each element of the vectors in \c mv with \c alpha.
-    static void 
+    static void
     MvInit (TMVB& mv, ScalarType alpha = Teuchos::ScalarTraits<ScalarType>::zero())
-    { 
-      Thyra::assign (Teuchos::outArg (mv), alpha); 
+    {
+      Thyra::assign (Teuchos::outArg (mv), alpha);
     }
 
     //@}
@@ -485,13 +503,13 @@ namespace Belos {
     ///
     typedef Thyra::TsqrAdaptor< ScalarType > tsqr_adaptor_type;
 #endif // HAVE_BELOS_TSQR
-  };        
+  };
 
-  ///////////////////////////////////////////////////////////////////////// 
+  /////////////////////////////////////////////////////////////////////////
   //
   // Implementation of the Belos::OperatorTraits for Thyra::LinearOpBase
   //
-  ///////////////////////////////////////////////////////////////////////// 
+  /////////////////////////////////////////////////////////////////////////
 
   /// \brief Specialization of OperatorTraits for Thyra objects.
   ///
@@ -500,10 +518,10 @@ namespace Belos {
   /// Thyra::MultiVectorBase class as the multivector type.  This
   /// interface will ensure that any LinearOpBase and MultiVectorBase
   /// implementations will be accepted by the Belos templated solvers.
-  template<class ScalarType> 
-  class OperatorTraits <ScalarType, 
-			Thyra::MultiVectorBase<ScalarType>, 
-			Thyra::LinearOpBase<ScalarType> >
+  template<class ScalarType>
+  class OperatorTraits <ScalarType,
+                        Thyra::MultiVectorBase<ScalarType>,
+                        Thyra::LinearOpBase<ScalarType> >
   {
   private:
     typedef Thyra::MultiVectorBase<ScalarType> TMVB;
@@ -525,12 +543,12 @@ namespace Belos {
     /// check, for the cases trans=TRANS or CONJTRANS.  If the
     /// operation is not supported, the operator will throw a
     /// Thyra::Exceptions::OpNotSupported exception.
-    static void 
-    Apply (const TLOB& Op, 
-	   const TMVB& x, 
-	   TMVB& y,
-	   ETrans trans = NOTRANS)
-    { 
+    static void
+    Apply (const TLOB& Op,
+           const TMVB& x,
+           TMVB& y,
+           ETrans trans = NOTRANS)
+    {
       Thyra::EOpTransp whichOp;
 
       // We don't check here whether the operator implements the
@@ -539,17 +557,17 @@ namespace Belos {
       // implement NOTRANS.  However, Belos needs NOTRANS
       // (obviously!), so we assume that Op implements NOTRANS.
       if (trans == NOTRANS)
-	whichOp = Thyra::NOTRANS;
+        whichOp = Thyra::NOTRANS;
       else if (trans == TRANS)
-	whichOp = Thyra::TRANS;
+        whichOp = Thyra::TRANS;
       else if (trans == CONJTRANS)
-	whichOp = Thyra::CONJTRANS;
+        whichOp = Thyra::CONJTRANS;
       else
-	TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-			   "Belos::OperatorTraits::Apply (Thyra specialization): "
-			   "'trans' argument must be neither NOTRANS=" << NOTRANS 
-			   << ", TRANS=" << TRANS << ", or CONJTRANS=" << CONJTRANS
-			   << ", but instead has an invalid value of " << trans << ".");
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+                           "Belos::OperatorTraits::Apply (Thyra specialization): "
+                           "'trans' argument must be neither NOTRANS=" << NOTRANS
+                           << ", TRANS=" << TRANS << ", or CONJTRANS=" << CONJTRANS
+                           << ", but instead has an invalid value of " << trans << ".");
       Thyra::apply<ScalarType>(Op, whichOp, x, Teuchos::outArg(y));
     }
 
@@ -564,13 +582,13 @@ namespace Belos {
       // (TRANS) if the operator is real; in that case, Apply() does
       // the same thing with trans = CONJTRANS or TRANS.  If the
       // operator is complex, Belos needs both transpose and conjugate
-      // transpose (CONJTRANS) if the operator is complex.  
-      return Op.opSupported (Thyra::TRANS) && 
-	(! STS::isComplex || Op.opSupported (Thyra::CONJTRANS));
+      // transpose (CONJTRANS) if the operator is complex.
+      return Op.opSupported (Thyra::TRANS) &&
+        (! STS::isComplex || Op.opSupported (Thyra::CONJTRANS));
     }
   };
 
-} // end of Belos namespace 
+} // end of Belos namespace
 
-#endif 
+#endif
 // end of file BELOS_THYRA_ADAPTER_HPP

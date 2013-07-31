@@ -7,20 +7,33 @@
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
@@ -30,47 +43,38 @@
 #ifndef IFPACK2_RELAXATION_DECL_HPP
 #define IFPACK2_RELAXATION_DECL_HPP
 
-#include "Ifpack2_ConfigDefs.hpp"
-#include "Ifpack2_Preconditioner.hpp"
-#include "Ifpack2_Condest.hpp"
-#include "Ifpack2_Parameters.hpp"
-
+#include <Ifpack2_ConfigDefs.hpp>
+#include <Ifpack2_Preconditioner.hpp>
+#include <Ifpack2_Condest.hpp>
+#include <Ifpack2_Parameters.hpp>
 #include <Tpetra_Vector.hpp>
-
 #include <Teuchos_Assert.hpp>
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Time.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
-
-#include <string>
-#include <iostream>
-#include <sstream>
+#include <Tpetra_CrsMatrix_decl.hpp> // Don't need the definition here
 
 namespace Teuchos {
-  // forward declaration
+  // forward declarations
   class ParameterList;
-}
+  class Time;
+} // namespace Teuchos
 
 namespace Ifpack2 {
-enum RelaxationType {
-  JACOBI,
-  GS,
-  SGS
-};
 
 /** \class Relaxation
 \brief Relaxation preconditioners for Tpetra::RowMatrix and Tpetra::CrsMatrix sparse matrices.
 \author Michael A. Heroux (Sandia)
-\tparam MatrixType A specialization of Tpetra::CrsMatrix.
+\tparam MatrixType A specialization of Tpetra::CrsMatrix (better) or
+  Tpetra::RowMatrix (acceptable).
 
 \section Ifpack_Relaxation_Summary Summary
 
 This class implements several different relaxation preconditioners for
-Tpetra::RowMatrix and Tpetra::CrsMatrix.  Relaxation is derived from
-Preconditioner, which is itself derived from Tpetra::Operator.
-Therefore this object can be used as a preconditioner everywhere an
-apply() method is required in the preconditioning step.
+Tpetra::RowMatrix or its subclass Tpetra::CrsMatrix.  Relaxation is
+derived from Preconditioner, which is itself derived from
+Tpetra::Operator.  Therefore this object may be used as a
+preconditioner for Belos linear solvers, and for any linear solver
+that treats preconditioners as instances of Tpetra::Operator.
 
 This class implements the following relaxation methods:
 - Jacobi
@@ -103,7 +107,7 @@ as your code moves away from a "one MPI process per core" model, to a
 "one MPI process per socket or node" model, assuming that you are
 using a threaded Kokkos Node type.
 
-Relaxation works with any Tpetra::RowMatrix.  If your
+Relaxation works with any Tpetra::RowMatrix input.  If your
 Tpetra::RowMatrix happens to be a Tpetra::CrsMatrix, the Gauss-Seidel
 and symmetric Gauss-Seidel relaxations may be able to exploit this for
 better performance.  You normally don't have to do anything to figure
@@ -161,24 +165,21 @@ prec.compute ();
 \section Ifpack_Relaxation_Algorithms Algorithms
 
 We now briefly describe the relaxation algorithms this class
-implements.  Consider a linear system of type
-\f[
-A x = b,
-\f]
-where \f$A\f$ is a square matrix, and \f$x\f$, \f$b\f$ are two vectors
-of compatible dimensions.  Suppose that \f$x^{(0)}\f$ is the starting
-vector and \f$x^{(k)}\f$ is the approximate solution for \f$x\f$
-computed by iteration $k+1$.  Here, \f$x^{(k)}_i\f$ is the $i$-th
-element of vector \f$x^{(k)}\f$.
+implements.  Consider the linear system \f$Ax=b\f$, where \f$A\f$ is a
+square matrix, and \f$x\f$ and \f$b\f$ are two vectors of compatible
+dimensions.  Suppose that \f$x^{(0)}\f$ is the starting vector and
+\f$x^{(k)}\f$ is the approximate solution for \f$x\f$ computed by
+iteration $k+1$ of whatever relaxation method we are using.  Here,
+\f$x^{(k)}_i\f$ is the $i$-th element of vector \f$x^{(k)}\f$.
 
 The Jacobi method computes
 \f[
-x^{(k+1)}_i = A_{ii}^{-1} ( b_i - \sum_{j != i} A_{ij} x^{(k)}_j ).
+x^{(k+1)}_i = A_{ii}^{-1} ( b_i - \sum_{j \neq i} A_{ij} x^{(k)}_j ).
 \f]
 The "damped" Jacobi method generalizes Jacobi.  It introduces a
 damping parameter \f$\omega \f$, and computes
 \f[
-x^{(k+1)}_i = (1 - \omega) x^{(k)}_i + \omega A_{ii}^{-1} ( b_i - \sum_{j != i} A_{ij} x^{(k)}_j ).
+x^{(k+1)}_i = (1 - \omega) x^{(k)}_i + \omega A_{ii}^{-1} ( b_i - \sum_{j \neq i} A_{ij} x^{(k)}_j ).
 \f]
 
 The "damped Gauss-Seidel method" is actually successive over-relaxation
@@ -209,8 +210,19 @@ documentation of the setParameters() method.  For advice on picking
 book: "Templates for the Solution of Linear Systems: Building Blocks
 for Iterative Methods, 2nd Edition," R. Barrett et al., SIAM, 1994.
 
-Note that this class does not actually use the formulae above to apply
-Jacobi or SOR.  For example, we optimize the formulae to avoid branches.
+\note This class does not actually use the formulae above to apply
+Jacobi or SOR.  For example, the computational kernels for the above SOR
+sweeps actually do not require branches in the inner loop to distinguish
+between the lower triangle, diagonal, and upper triangle of A.  One can
+see this by multiplying through the forward sweep expression by \f$A_{ii}\f$
+and combining terms, then dividing through again by \f$A_{ii}\f$.  This
+results in the expression
+\f[
+x^{(k+1)}_i = x^{(k)}_i + \omega b_i - \frac{\omega}{A_{ii}} ( \sum_{j \geq i} A_{ij} x^{(k)}_j + \sum_{j < i} x^{(k+1)}_j ).
+\f]
+Executing this expression in a forward sweep does not require
+distinguishing between the lower and upper triangle of A.  The
+same thing holds for the backward sweep.
 */
 template<class MatrixType>
 class Relaxation :
@@ -324,17 +336,6 @@ public:
   /// factor \f$\omega \f$.  The main documentation of this class
   /// explains how we use this value.  The default value is 1.0.
   ///
-  /// The "relaxation: min diagonal value" (scalar_type) parameter
-  /// limits how close to zero the diagonal elements of the matrix are
-  /// allowed to be.  If the magnitude of a diagonal element of the
-  /// matrix is less than the magnitude of this value, then we set
-  /// that diagonal element to this value.  (We don't actually modify
-  /// the matrix; we just remember the diagonal values.)  The use of
-  /// magnitude rather than the value itself makes this well defined
-  /// if scalar_type is complex.  The default value of this parameter
-  /// is zero, meaning that we do not impose a minimum diagonal value
-  /// by default.
-  ///
   /// The "relaxation: zero starting solution" (bool) parameter
   /// governs whether or not we use the existing values in the output
   /// multivector Y when applying the relaxation.  Its default value
@@ -345,6 +346,39 @@ public:
   /// perform Gauss-Seidel in reverse mode.  The default value is
   /// false, meaning that we do forward-mode Gauss-Seidel.  This only
   /// affects standard Gauss-Seidel, not symmetric Gauss-Seidel.
+  ///
+  /// The "relaxation: fix tiny diagonal entries" (bool) parameter
+  /// defaults to false.  If true, the compute() method will do extra
+  /// work (computation only, no MPI communication) to "fix" diagonal
+  /// entries that are less than or equal to the threshold given by
+  /// the (magnitude of the) "relaxation: min diagonal value"
+  /// parameter.  The default behavior imitates that of Aztec, which
+  /// does not do any special modification of the diagonal.
+  ///
+  /// The "relaxation: min diagonal value" (scalar_type) parameter
+  /// only matters if "relaxation: fix tiny diagonal entries" (see
+  /// above) is true.  This parameter limits how close to zero the
+  /// diagonal elements of the matrix are allowed to be.  If the
+  /// magnitude of a diagonal element of the matrix is less than the
+  /// magnitude of this value, then we set that diagonal element to
+  /// this value.  (We don't actually modify the matrix; we just
+  /// remember the diagonal values.)  The use of magnitude rather than
+  /// the value itself makes this well defined if scalar_type is
+  /// complex.  The default value of this parameter is zero, in which
+  /// case we will replace diagonal entries that are exactly equal to
+  /// zero with a small nonzero value (machine precision for the given
+  /// \c Scalar type) before inverting them.  Note that if
+  /// "relaxation: fix tiny diagonal entries" is false, the default
+  /// value, this parameter does nothing.)
+  ///
+  /// The "relaxation: check diagonal entries" (bool) parameter
+  /// defaults to false.  If true, the compute() method will do extra
+  /// work (both computation and communication) to count diagonal
+  /// entries that are zero, have negative real part, or are small in
+  /// magnitude.  The describe() method will then print this
+  /// information for you.  You may find this useful for checking
+  /// whether your input matrix has issues that make Jacobi or
+  /// Gauss-Seidel a poor choice of preconditioner.
   ///
   /// The last two parameters govern the L1 variant of Gauss-Seidel.
   /// The "relaxation: use l1" (bool) parameter, if true, turns on the
@@ -358,18 +392,35 @@ public:
   /// real-valued floating-point types (like \c float and \c double).
   /// If scalar_type is <tt>std::complex<T></tt> for some type \c T,
   /// then magnitude_type is \c T.
-  void setParameters(const Teuchos::ParameterList& params);
+  void setParameters (const Teuchos::ParameterList& params);
 
-  //! Initialize the preconditioner.
-  void initialize();
+  //! Return a list of all the parameters that this class accepts.
+  Teuchos::RCP<const Teuchos::ParameterList>
+  getValidParameters () const;
+
+  /// \brief Initialize the preconditioner.
+  ///
+  /// You may call this method before calling compute().  If you call
+  /// compute() before initialize() has been called on this object,
+  /// compute() will call initialize() for you.  If you have already
+  /// called compute() and you call initialize(), you must call
+  /// compute() again before you may use the preconditioner (by
+  /// calling apply()).
+  void initialize ();
 
   //! Returns \c true if the preconditioner has been successfully initialized.
   inline bool isInitialized() const {
-    return(IsInitialized_);
+    return isInitialized_;
   }
 
-  //! Compute the preconditioner for the specified matrix, diagonal perturbation thresholds and relaxation parameters.
-  void compute();
+  /// \brief Compute the preconditioner.
+  ///
+  /// You must call this method before calling apply().  You must also
+  /// call this method if the matrix's structure or values have
+  /// changed since the last time compute() has been called.  If
+  /// initialize() has not yet been called, this method will call
+  /// initialize() for you.
+  void compute ();
 
   //! Return true if compute() has been called.
   inline bool isComputed() const {
@@ -402,10 +453,10 @@ public:
                  scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! Returns the Tpetra::Map object associated with the domain of this operator.
-  const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getDomainMap() const;
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap() const;
 
   //! Returns the Tpetra::Map object associated with the range of this operator.
-  const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getRangeMap() const;
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRangeMap() const;
 
   //! Whether apply() and applyMat() let you apply the transpose or conjugate transpose.
   bool hasTransposeApply() const;
@@ -456,7 +507,7 @@ public:
   magnitude_type getCondEst() const;
 
   //! The communicator over which the matrix and vectors are distributed.
-  const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
+  Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
   //! The matrix to be preconditioned.
   Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > getMatrix() const;
@@ -489,15 +540,61 @@ public:
   //! @name Implementation of Teuchos::Describable interface
   //@{
 
-  //! A simple one-line description of this object.
+  /// \brief A simple one-line description of this object.
+  ///
+  /// Be aware that this will print a very long line, because some
+  /// users really like to see all the attributes of the object in a
+  /// single line.  If you prefer multiple lines of output, you should
+  /// call describe() instead.
   std::string description() const;
 
-  //! Print the object with some verbosity level to a Teuchos::FancyOStream.
-  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
-
+  /// \brief Print the object's attributes to the given output stream.
+  ///
+  /// This method will print a constant amount of information (not
+  /// proportional to the matrix's dimensions or number of entries) on
+  /// Process 0 of the communicator over which this object is
+  /// distributed.
+  ///
+  /// You may wrap an std::ostream in a Teuchos::FancyOStream by
+  /// including "Teuchos_FancyOStream.hpp" and calling
+  /// Teuchos::getFancyOStream().  For example:
+  /// \code
+  /// using Teuchos::RCP;
+  /// using Teuchos::rcpFromRef;
+  /// using Teuchos::FancyOStream;
+  ///
+  /// // Wrap std::cout in a FancyOStream.
+  /// RCP<FancyOStream> wrappedCout = getFancyOStream (rcpFromRef (std::cout));
+  ///
+  /// // Wrap an output file in a FancyOStream.
+  /// RCP<std::ofstream> outFile (new std::ofstream ("myFile.txt"));
+  /// RCP<FancyOStream> wrappedFile = getFancyOStream (outFile);
+  /// \endcode
+  void
+  describe (Teuchos::FancyOStream &out,
+            const Teuchos::EVerbosityLevel verbLevel =
+            Teuchos::Describable::verbLevel_default) const;
   //@}
 
 private:
+
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
+  typedef Teuchos::ScalarTraits<magnitude_type> STM;
+
+  // CrsMatrix specialization.  We use this for dynamic casts to
+  // dispatch to the most efficient implementation of various
+  // relaxation kernels.
+  //
+  // FIXME (mfh 07 Jul 2013) This typedef isn't ideal because it won't
+  // catch Tpetra::CrsMatrix specializations with nondefault
+  // LocalMatOps (fifth) template parameter.  The code will still be
+  // correct if the cast fails, but it won't pick up the "cached
+  // offsets" optimization.  An alternate approach would be to push
+  // kernels (like Gauss-Seidel) to the RowMatrix interface, so that
+  // RowMatrix's polymorphism can dispatch to the most efficient
+  // implementation.
+  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, 
+			    global_ordinal_type, node_type> crs_matrix_type;
 
   //! @name Unimplemented methods that you are syntactically forbidden to call.
   //@{
@@ -511,6 +608,12 @@ private:
   //@}
   //! @name Internal methods
   //@{
+
+  /// \brief Variant of setParameters() that takes a nonconst Teuchos::ParameterList.
+  ///
+  /// This variant fills in default values for any valid parameters
+  /// that are not in the input list.
+  void setParametersImpl (Teuchos::ParameterList& params);
 
   //! Apply Jacobi to X, returning the result in Y.
   void ApplyInverseJacobi(
@@ -528,10 +631,10 @@ private:
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   //! Apply Gauss-Seidel for a Tpetra::CrsMatrix specialization.
-  void ApplyInverseGS_CrsMatrix(
-        const MatrixType& A,
-        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+  void 
+  ApplyInverseGS_CrsMatrix (const crs_matrix_type& A,
+			    const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+			    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   //! Apply symmetric Gauss-Seidel to X, returning the result in Y.
   void ApplyInverseSGS(
@@ -544,31 +647,36 @@ private:
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   //! Apply symmetric Gauss-Seidel for a Tpetra::CrsMatrix specialization.
-  void ApplyInverseSGS_CrsMatrix(
-        const MatrixType& A,
-        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+  void 
+  ApplyInverseSGS_CrsMatrix (const crs_matrix_type& A,
+			     const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+			     Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   //@}
   //! @name Internal data and parameters
   //@{
 
+  /// \brief List of valid parameters.
+  ///
+  /// This is created on demand by getValidParameters().  That method
+  /// is const to help comply with the Teuchos::ParameterListAcceptor
+  /// interface (which we might like to use later), which is why we
+  /// have to declare this field \c mutable.
+  mutable Teuchos::RCP<const Teuchos::ParameterList> validParams_;
+
   //! The matrix for which to construct the preconditioner or smoother.
   const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > A_;
-  //! Communicator over whose processes the matrix and vectors are distributed.
-  const Teuchos::RCP<const Teuchos::Comm<int> > Comm_;
   //! Time object to track timing.
   Teuchos::RCP<Teuchos::Time> Time_;
   //! Importer for parallel Gauss-Seidel and symmetric Gauss-Seidel.
   Teuchos::RCP<const Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> > Importer_;
   //! Contains the diagonal elements of \c Matrix.
   mutable Teuchos::RCP<Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Diagonal_;
+
   //! How many times to apply the relaxation per apply() call.
   int NumSweeps_;
   //! Which relaxation method to use.
-  int PrecType_;
-  //! Minimum diagonal value
-  scalar_type MinDiagonalValue_;
+  Details::RelaxationType PrecType_;
   //! Damping factor
   scalar_type DampingFactor_;
   //! If \c true, more than 1 processor is currently used.
@@ -581,10 +689,17 @@ private:
   bool DoL1Method_;
   //! Eta parameter for modified L1 method
   magnitude_type L1Eta_;
+  //! Minimum diagonal value
+  scalar_type MinDiagonalValue_;
+  //! Whether to fix up zero or tiny diagonal entries.
+  bool fixTinyDiagEntries_;
+  //! Whether to spend extra effort and all-reduces checking diagonal entries.
+  bool checkDiagEntries_;
+
   //! Condition number estimate
   magnitude_type Condest_;
   //! If \c true, the preconditioner has been initialized successfully.
-  bool IsInitialized_;
+  bool isInitialized_;
   //! If \c true, the preconditioner has been computed successfully.
   bool IsComputed_;
   //! The number of successful calls to initialize().
@@ -603,13 +718,35 @@ private:
   double ComputeFlops_;
   //! The total number of floating-point operations for all successful calls to apply().
   mutable double ApplyFlops_;
-  //! Number of local rows in the sparse matrix.
-  size_t NumMyRows_;
-  //! Number of global rows in the sparse matrix.
-  global_size_t NumGlobalRows_;
-  //! Number of global nonzeros in the sparse matrix.
-  global_size_t NumGlobalNonzeros_;
 
+  //! Global magnitude of the diagonal entry with the minimum magnitude.
+  magnitude_type globalMinMagDiagEntryMag_;
+  //! Global magnitude of the diagonal entry with the maximum magnitude.
+  magnitude_type globalMaxMagDiagEntryMag_;
+  //! Global number of small (in magnitude) diagonal entries detected by compute().
+  size_t globalNumSmallDiagEntries_;
+  //! Global number of zero diagonal entries detected by compute().
+  size_t globalNumZeroDiagEntries_;
+  //! Global number of negative (real part) diagonal entries detected by compute().
+  size_t globalNumNegDiagEntries_;
+  /// \brief Absolute two-norm difference between computed and actual inverse diagonal.
+  ///
+  /// "Actual inverse diagonal" means the result of 1/diagonal,
+  /// without any protection against zero or small diagonal entries.
+  magnitude_type globalDiagNormDiff_;
+
+  /// \brief Precomputed offsets of local diagonal entries of the matrix.
+  ///
+  /// These are only used if the matrix has a const ("static") graph.
+  /// In that case, the offsets of the diagonal entries will never
+  /// change, even if the values of the diagonal entries change.
+  Teuchos::ArrayRCP<size_t> diagOffsets_;
+  /// \brief Whether we have precomputed offsets of diagonal entries.
+  ///
+  /// We need this flag because it is not enough just to test if
+  /// diagOffsets_ has size zero.  It is perfectly legitimate for the
+  /// matrix to have zero rows on the calling process.
+  bool savedDiagOffsets_;
   //@}
 
 }; //class Relaxation

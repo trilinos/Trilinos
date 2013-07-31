@@ -73,7 +73,7 @@ namespace MueLu {
      @ingroup MueLuTransferClasses
  */
 
-template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
 class BlockedCoarseMapFactory : public MueLu::CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> { //SingleLevelFactoryBase {
 #undef MUELU_BLOCKEDCOARSEMAPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -84,10 +84,12 @@ public:
   //@{
 
   //! Constructor
-  BlockedCoarseMapFactory(RCP<const FactoryBase> prevCoarseMapFact, RCP<const FactoryBase> aggregatesFact = Teuchos::null, RCP<const FactoryBase> nullspaceFact = Teuchos::null);
+  BlockedCoarseMapFactory();
 
   //! Destructor
   virtual ~BlockedCoarseMapFactory();
+
+  RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
 
   //@}
 
@@ -127,7 +129,6 @@ public:
   //@}
 
 private:
-  RCP<const FactoryBase> prevCoarseMapFact_; //! Factory for previous P block, used for defining a proper domain GID offset
 
 }; //class BlockedCoarseMapFactory
 

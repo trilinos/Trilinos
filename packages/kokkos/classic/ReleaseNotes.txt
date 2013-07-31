@@ -2,6 +2,56 @@
 Release Notes for Trilinos Package Kokkos
 -----------------------------------------
 
+Current (Trilinos 11.5)
+------------------------------
+
+* Non-backwards compatible change: In the "Kokkos Classic" subpackage
+  (everything in kokkos/classic), the "Kokkos" namespace has been
+  changed to "KokkosClassic".  
+
+  This will facilitate coexistence of Kokkos Classic with Kokkos Array
+  and the new Kokkos subpackages that depend on Kokkos Array.
+  Coexistence will be necessary for our planned port of Tpetra to use
+  Kokkos Array instead of Kokkos Classic.  Kokkos Classic will
+  eventually be deprecated, and Tpetra (and downstream packages) will
+  use Kokkos Array instead.  This process is beginning now, but will
+  start in earnest once Kokkos Array becomes a Research Stable
+  subpackage.
+
+
+Trilinos 11.4
+------------------------------
+* Non-backwards compatible change: The default Kokkos Node type for
+  Tpetra objects is now Kokkos::SerialNode.
+
+  Most users expect that the default behavior of Tpetra is
+  MPI-only. These users are therefore experiencing unexpected
+  performance when the default Node type is threaded, as is currently
+  the case if any of the threading libraries (Pthreads, TBB, OpenMP)
+  are enabled in the build.  Trilinos' build system automatically
+  detects Pthreads if it exists on the system, so its corresponding
+  Kokkos Node (TPINode) is often the default Node type.
+
+  After some discussion among Kokkos and Tpetra developers, we decided
+  to change the default Kokkos Node (and therefore, the default Node
+  used by Tpetra objects) to Kokkos::SerialNode. This can be
+  overridden at configure time by specifying the following option to
+  CMake when configuring Trilinos:
+
+    -D KokkosClassic_DefaultNode:STRING="node_type"
+
+  where node_type is one of the following Kokkos Node types:
+
+    Kokkos::SerialNode    (current default)
+    Kokkos::TPINode       (Pthreads)
+    Kokkos::TBBNode       (Intel Threading Building Blocks)
+    Kokkos::OpenMPNode    (OpenMP)
+
+  In order to use Nodes other than SerialNode, Trilinos must have been
+  built with the corresponding threading library.  This library is
+  listed to the right of each Node type other than SerialNode above.
+
+
 Trilinos 11.0
 ------------------------------
 * Non-backwards compatible change: row pointers for CRS objects are not longer size_t; instead, they are the same Ordinal type as the columns indices

@@ -162,6 +162,7 @@ void ex_update_max_name_length(int exoid, int length)
   if (length > db_length) {
     /* Update with new value... */
     nc_put_att_int(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &length);
+    nc_sync(exoid);
   }
 }
 
@@ -790,7 +791,7 @@ int ex_id_lkup( int exoid,
 
       /* allocate space for new status array */
 
-      if (!(stat_vals = malloc((int)dim_len*sizeof(int)))) {
+      if (!(stat_vals = malloc(dim_len*sizeof(int)))) {
         exerrval = EX_MEMFAIL;
         sprintf(errmsg,
                  "Error: failed to allocate memory for %s array for file id %d",

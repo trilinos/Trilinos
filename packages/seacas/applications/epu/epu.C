@@ -300,7 +300,7 @@ int main(int argc, char* argv[])
   bool ok = interface.parse_options(argc, argv);
 
   if (!ok) {
-    std::cerr << "\nERROR: Problems parsing command line arguments.\n\n";
+    std::cerr << "\nERROR: (EPU) Problems parsing command line arguments.\n\n";
     exit(EXIT_FAILURE);
   }
 
@@ -342,7 +342,7 @@ int main(int argc, char* argv[])
 
     // Sanity check...
     if (part_count < 1) {
-      std::cerr << "ERROR: The subcycle specification results in less than 1 part per cycle which is not allowd.\n";
+      std::cerr << "ERROR: (EPU) The subcycle specification results in less than 1 part per cycle which is not allowd.\n";
       exit(EXIT_FAILURE);
     }
     interface.subcycle((processor_count+part_count-1) / part_count);
@@ -364,7 +364,7 @@ int main(int argc, char* argv[])
     SMART_ASSERT(start_part + part_count <= processor_count);
 
     if (!ExodusFile::initialize(interface, start_part, part_count)) {
-      std::cerr << "ERROR: Problem initializing input and/or output files.\n";
+      std::cerr << "ERROR: (EPU) Problem initializing input and/or output files.\n";
       exit(EXIT_FAILURE);
     }
 
@@ -400,7 +400,7 @@ int main(int argc, char* argv[])
     interface.step_interval(1);
     
     if (!ExodusFile::initialize(interface, start_part, part_count)) {
-      std::cerr << "ERROR: Problem initializing input and/or output files.\n";
+      std::cerr << "ERROR: (EPU) Problem initializing input and/or output files.\n";
       exit(EXIT_FAILURE);
     }
 
@@ -425,7 +425,7 @@ int main(int argc, char* argv[])
   return (error);
   }
   catch (std::exception &e) {
-    std::cerr << "ERROR: Standard exception: " << e.what() << std::endl;
+    std::cerr << "ERROR: (EPU) Standard exception: " << e.what() << std::endl;
   }
 }
 
@@ -623,7 +623,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     if (interface.append()) {
       bool matches = exodus.check_meta_data(global, glob_blocks, glob_nsets, glob_ssets, comm_data);
       if (!matches) {
-	std::cerr << "\n\nERROR: Current mesh dimensions do not match "
+	std::cerr << "\n\nERROR: (EPU) Current mesh dimensions do not match "
 		  << "the mesh dimensions in the file being appended to.\n\n";
 	exit(EXIT_FAILURE);
       }
@@ -838,7 +838,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   
   // Time steps for output file
   int time_step_out = 0;
-  double min_time_to_write = -1.0;
+  double min_time_to_write = -DBL_MAX;
 
   if (interface.append()) {
     // See how many steps already exist on the output database
@@ -868,7 +868,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   for (time_step = ts_min-1; time_step < ts_max; time_step+=ts_step) {
     time_step_out++;
 
-    T time_val     = 0.0;
+    T time_val     = -DBL_MAX;
     {
       // read in and write out the time step information
       ExodusFile id(0);
@@ -877,10 +877,10 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
       if (time_val <= min_time_to_write)
 	continue;
       
-      if (min_time_to_write >= 0.0) {
+      if (min_time_to_write != -DBL_MAX) {
 	std::cout << "\tAppend Mode: Skipping " << time_step - (ts_min-1)
 		  << " input steps to align times with already written steps on output file.\n\n";
-	min_time_to_write = -1.0;
+	min_time_to_write = -DBL_MAX;
       }
 
       error += ex_put_time(ExodusFile::output(), time_step_out, &time_val);
@@ -890,7 +890,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 	T proc_time_val = 0.0;
 	error += ex_get_time(idp, time_step+1, &proc_time_val);
 	if (proc_time_val != time_val) {
-	  std::cerr << "ERROR: At step " << std::setw(get_width(ts_max+1)) << time_step+1
+	  std::cerr << "ERROR: (EPU) At step " << std::setw(get_width(ts_max+1)) << time_step+1
 		    << ", the time on processor " << 0 + start_part << " is "
 		    << std::setw(15) << std::scientific << std::setprecision(8)
 		    << time_val << " which does not\n       match the time on processor "
@@ -1386,7 +1386,7 @@ namespace {
       if (p > 0) {
 	for (size_t b = 0; b < global.count(EBLK); b++) {
 	  if (blocks[0][b].id != block_id[b]) {
-	    std::cerr << "ERROR: The internal element block id ordering for part "
+	    std::cerr << "ERROR: (EPU) The internal element block id ordering for part "
 		      << p << "\n       is not consistent with the ordering for part 0."
 		      << std::endl;
 	    exit(EXIT_FAILURE);
@@ -1535,7 +1535,7 @@ namespace {
 	  ex_entity_id bid = blocks[p][b].id;
 	  error = ex_get_conn(id, EX_ELEM_BLOCK, bid, TOPTR(local_linkage), 0, 0);
 	  if (error < 0) {
-	    std::cerr << "ERROR: Cannot get element block connectivity for block "
+	    std::cerr << "ERROR: (EPU) Cannot get element block connectivity for block "
 		      << bid << " on part " << p+start_part << ".\n";
 	  }
 	  size_t pos = 0;
@@ -1644,7 +1644,7 @@ namespace {
       if (global_element_map[i-1] == global_element_map[i]) {
 	// Duplicates in the element id list...
 	// This is not yet handled.  Notify the user and continue for now...
-	std::cerr << "\n!!!! POSSIBLE ERROR: There were at least 2"
+	std::cerr << "\n!!!! POSSIBLE ERROR: (EPU) There were at least 2"
 		  << " elements with duplicated ids detected.\n"
 		  << "!!!!\tThis may cause problems in the output file.\n\n";
 	break;
@@ -1758,7 +1758,7 @@ namespace {
 		      << std::endl;
 	    goto REMAP;
 	  } else {
-	    std::cerr << "ERROR: The element ids for element block "
+	    std::cerr << "ERROR: (EPU) The element ids for element block "
 		      << glob_blocks[b].id << " are not consistent."
 		      << std::endl;
 	    std::cerr << "Block " << b << ", Id = " << glob_blocks[b].id
@@ -2011,7 +2011,7 @@ namespace {
 	  }
 	}
 	if (!found) {
-	  std::cerr << "ERROR: Variable '" << variable_list[i].first
+	  std::cerr << "ERROR: (EPU) Variable '" << variable_list[i].first
 		    << "' is not valid." << std::endl;
 	  exit(EXIT_FAILURE);
 	}
@@ -2084,7 +2084,7 @@ namespace {
     }
 
     if (bad_ns != 0) {
-      std::cerr << "ERROR: There were " << bad_ns
+      std::cerr << "ERROR: (EPU) There were " << bad_ns
 		<< " nodesets (counting all files) which had an id equal to "
 		<< "0 which is not allowed.\n";
     }
@@ -2315,7 +2315,7 @@ namespace {
     }
 
     if (bad_ss != 0) {
-      std::cerr << "ERROR: There were " << bad_ss
+      std::cerr << "ERROR: (EPU) There were " << bad_ss
 		<< " sidesets (counting all files) which had an id equal to 0 which is not allowed.\n";
     }
 
@@ -2596,7 +2596,7 @@ namespace {
 	}
 
 	if (block == -1) {
-	  std::cerr << "ERROR: User-specified block id of "
+	  std::cerr << "ERROR: (EPU) User-specified block id of "
 		    << variable_names[i].second
 		    << " for variable '" << variable_names[i].first
 		    << "' does not exist.\n";
@@ -2605,7 +2605,7 @@ namespace {
 
 	int truth_table_loc = block * vars.count(OUT) + out_position;
 	if (global.truthTable[vars.objectType][truth_table_loc] == 0) {
-	  std::cerr << "ERROR: Variable '" << variable_names[i].first
+	  std::cerr << "ERROR: (EPU) Variable '" << variable_names[i].first
 		    << "' does not exist on block " << variable_names[i].second
 		    << ".\n";
 	  exit(EXIT_FAILURE);

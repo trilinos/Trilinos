@@ -46,8 +46,6 @@
 #ifndef MUELU_LWGRAPH_DEF_HPP
 #define MUELU_LWGRAPH_DEF_HPP
 
-#include <Xpetra_MapFactory.hpp>  // TODO: can go away?
-
 #include "MueLu_LWGraph_decl.hpp"
 
 namespace MueLu {
@@ -62,7 +60,7 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   bool LWGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::isLocalNeighborVertex(LocalOrdinal v) const {
-    return graph_->getDomainMap()->isNodeLocalElement(v);
+    return domainMapRef_.isNodeLocalElement(v);
   }
 
   /// Return a simple one-line description of this object.
@@ -77,6 +75,12 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void LWGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
+    // mfh 15 Mar 2013: Apparently, the above macro creates a magic
+    // variable out0, which the code below doesn't use.  For now, I'm
+    // silencing the resulting compiler warning using the standard
+    // idiom.  A MueLu developer might later want to move this idiom
+    // inside the above macro.
+    (void) out0;
 
     if (verbLevel & Parameters0) {
       //out0 << "Prec. type: " << type_ << std::endl;
@@ -90,7 +94,7 @@ namespace MueLu {
     }
 
     if (verbLevel & Debug) {
-      graph_->describe(out0, Teuchos::VERB_EXTREME);
+      // graph_->describe(out0, Teuchos::VERB_EXTREME);
     }
   }
 

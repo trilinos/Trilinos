@@ -293,7 +293,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   ArrayRCP<int> BCedges_arcp(BCrows,0,numBCrows,false);
   
   /* Build the (1,1) Block Preconditioner */ 
-  string solver11=List_.get("refmaxwell: 11solver","edge matrix free");
+  std::string solver11=List_.get("refmaxwell: 11solver","edge matrix free");
   Teuchos::ParameterList List11=List_.get("refmaxwell: 11list",dummy);
   if (List11.name() == "ANONYMOUS") List11.setName("refmaxwell: 11list");
   if(solver11=="edge matrix free")
@@ -307,7 +307,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   if(print_hierarchy) EdgePC->Print();
   /* Build the (2,2) Block Preconditioner */
   if(!HasOnlyDirichletNodes){
-    string solver22=List_.get("refmaxwell: 22solver","multilevel");
+    std::string solver22=List_.get("refmaxwell: 22solver","multilevel");
     Teuchos::ParameterList List22=List_.get("refmaxwell: 22list",dummy);
     if (List22.name() == "ANONYMOUS") List11.setName("refmaxwell: 11list");
     SetDefaults("SA",List22,0,0,false);
@@ -462,7 +462,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ApplyInverse(const Epetra_MultiVector& 
 // ================================================ ====== ==== ==== == = 
 int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList &List){  
 
-  string smoother=List.get("smoother: type","Chebyshev");
+  std::string smoother=List.get("smoother: type","Chebyshev");
   int smoother_sweeps=List.get("smoother: sweeps",2);
   int output=List.get("ML output",0);
 
@@ -752,7 +752,7 @@ int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWr
   List11c.set("cycle applications",1);
   List11c.set("smoother: type","Chebyshev");
   List11c.set("aggregation: threshold",.01);
-  List11c.set("coarse: type","Chebyshev");  
+  List11c.set("coarse: type","Amesos-KLU");  
   List11c.set("ML label","coarse (1,1) block");
   ML_Epetra::UpdateList(List11c,List11c_,OverWrite);
   
@@ -771,7 +771,7 @@ int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWr
   List22.set("smoother: type","Chebyshev");
   List22.set("aggregation: type","Uncoupled");
   List22.set("aggregation: threshold",.01);
-  List22.set("coarse: type","Chebyshev");
+  List22.set("coarse: type","Amesos-KLU");
   List22.set("ML label","(2,2) block");
 
   // This line is commented out due to IFPACK issues
@@ -782,7 +782,7 @@ int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWr
   /* Build Teuchos List: Overall */  
   SetDefaults("maxwell",ListRF,0,0,false);
   ListRF.set("smoother: type","Chebyshev");
-  ListRF.set("smoother: sweeps",2);
+  ListRF.set("smoother: sweeps",2);  
   ListRF.set("refmaxwell: 11solver","edge matrix free");
   ListRF.set("refmaxwell: 11list",List11);
   ListRF.set("refmaxwell: 22solver","multilevel");

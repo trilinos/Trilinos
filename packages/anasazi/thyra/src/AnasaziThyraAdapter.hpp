@@ -41,6 +41,7 @@
 #include <Thyra_DetachedMultiVectorView.hpp>
 #include <Thyra_MultiVectorBase.hpp>
 #include <Thyra_MultiVectorStdOps.hpp>
+#include <Thyra_VectorStdOps.hpp>
 
 #include <Teuchos_Ptr.hpp>
 #include <Teuchos_ArrayRCP.hpp>

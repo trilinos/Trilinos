@@ -68,10 +68,10 @@ using Teuchos::rcp;
 #include "Panzer_ModelEvaluator.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "Panzer_ResponseLibrary.hpp"
-#include "Panzer_ParameterList_ObjectBuilders.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_PauseToAttach.hpp"
+#include "Panzer_ResponseEvaluatorFactory_Functional.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
@@ -96,6 +96,19 @@ using Teuchos::rcp;
 
 namespace panzer {
 
+  struct AssemblyPieces {
+    RCP<panzer::FieldManagerBuilder> fmb;  
+    RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary;
+    RCP<panzer::GlobalData> gd;
+    RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof;
+    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager;
+    Teuchos::ParameterList user_data;
+    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
+    Teuchos::RCP<panzer::EquationSetFactory> eqset_factory;
+    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
+    Teuchos::ParameterList closure_models;
+  };
+
   RCP<Epetra_Vector> basic_ss_f;
   RCP<Epetra_Vector> basic_trans_f;
   RCP<Epetra_CrsMatrix> basic_ss_J;
@@ -106,19 +119,27 @@ namespace panzer {
   Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > sg_exp_null;
   #endif
 
+  struct RespFactoryFunc_Builder {
+    MPI_Comm comm;
+    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linearObjFactory;
+    Teuchos::RCP<const panzer::UniqueGlobalIndexer<int,int> > globalIndexer;
+
+    template <typename T>
+    Teuchos::RCP<ResponseEvaluatorFactoryBase> build() const
+    { return Teuchos::rcp(new ResponseEvaluatorFactory_Functional<T,int,int>(comm,1,true,"",linearObjFactory,globalIndexer)); }
+  };
+
   // store steady-state me for testing parameters
   // RCP<panzer::ModelEvaluator_Epetra> ss_me;
+  Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager_null;
 
-  void testInitialzation(panzer::InputPhysicsBlock& ipb,
+  void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs);
 
   bool testEqualityOfEpetraVectorValues(Epetra_Vector& a, Epetra_Vector& b, double tolerance, bool write_to_cout = false);
 
   void buildAssemblyPieces(bool parameter_on,
-                           Teuchos::RCP<panzer::FieldManagerBuilder> & fmb,  
-                           Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & rLibrary, 
-                           Teuchos::RCP<panzer::GlobalData> & gd,
-                           Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > & ep_lof
+                           AssemblyPieces & ap
                            #ifdef HAVE_STOKHOS
                            , Teuchos::RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,int> > & sg_lof=sg_lof_null
                            , const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > & sgExpansion=sg_exp_null
@@ -132,18 +153,15 @@ namespace panzer {
     // panzer::pauseToAttach();
 
     bool parameter_on = true;
-    Teuchos::RCP<panzer::FieldManagerBuilder> fmb;  
-    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary; 
-    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof;
-    Teuchos::RCP<panzer::GlobalData> gd;
+    AssemblyPieces ap;
   
-    buildAssemblyPieces(parameter_on,fmb,rLibrary,gd,ep_lof);
+    buildAssemblyPieces(parameter_on,ap);
 
     // Test a transient me
     {
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
       bool build_transient_support = true;
-      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof,p_names,gd,build_transient_support));
+      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,ap.ep_lof,p_names,ap.gd,build_transient_support));
 
       EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
       EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
@@ -195,7 +213,7 @@ namespace panzer {
       p_names[0] = Teuchos::rcp(new Teuchos::Array<std::string>(1));
       (*p_names[0])[0] = "SOURCE_TEMPERATURE";
       bool build_transient_support = false;
-      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof,p_names,gd,build_transient_support));
+      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,ap.ep_lof,p_names,ap.gd,build_transient_support));
       
       // store to test parameter capabilities
       // ss_me = me;
@@ -239,6 +257,54 @@ namespace panzer {
       }
     }
 
+  }
+
+  TEUCHOS_UNIT_TEST(model_evaluator, response)
+  {
+    bool parameter_on = true;
+    AssemblyPieces ap;
+  
+    buildAssemblyPieces(parameter_on,ap);
+
+    {
+      std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+      bool build_transient_support = false;
+      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,ap.ep_lof,p_names,ap.gd,build_transient_support));
+ 
+      RespFactoryFunc_Builder builder;
+      builder.comm = MPI_COMM_WORLD;
+      builder.linearObjFactory = ap.ep_lof;
+      builder.globalIndexer = ap.dofManager;
+
+      std::vector<panzer::WorksetDescriptor> blocks;
+      blocks.push_back(panzer::blockDescriptor("eblock-0_0"));
+      blocks.push_back(panzer::blockDescriptor("eblock-1_0"));
+      me->addResponse("TEMPERATURE",blocks,builder);
+      me->buildResponses(ap.physicsBlocks,*ap.eqset_factory,ap.cm_factory,ap.closure_models,ap.user_data);
+
+      EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
+      EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
+
+      RCP<Epetra_Vector> x = Teuchos::rcp(new Epetra_Vector(*me->get_x_map()));
+      x->PutScalar(0.0);
+      in_args.set_x(x);
+      
+      RCP<Epetra_Vector> f = Teuchos::rcp(new Epetra_Vector(*me->get_f_map()));
+      RCP<Epetra_Vector> g = Teuchos::rcp(new Epetra_Vector(*me->get_g_map(0)));
+      RCP<Epetra_Vector> DgDx = Teuchos::rcp(new Epetra_Vector(*me->get_x_map()));
+      out_args.set_f(f);
+      out_args.set_g(0,g);
+      out_args.set_DgDx(0,EpetraExt::ModelEvaluator::Derivative(Teuchos::rcp_static_cast<Epetra_MultiVector>(DgDx)));
+
+      me->evalModel(in_args, out_args);
+
+      out << "RESPONSE = " << std::endl;
+      g->Print(out);
+
+      out << "RESIDUAL | RESPONSE DERIVATIVE = " << std::endl;
+      for(int i=0;i<DgDx->MyLength();i++)
+        out << (*f)[i] << "     " << (*DgDx)[i] << std::endl;
+    }
   }
   
 /*
@@ -377,17 +443,14 @@ namespace panzer {
     RCP<panzer::ModelEvaluator_Epetra> me;
     {
       bool parameter_on = true;
-      Teuchos::RCP<panzer::FieldManagerBuilder> fmb;  
-      Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary; 
-      Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof;
-      Teuchos::RCP<panzer::GlobalData> gd;
+      AssemblyPieces ap;
     
-      buildAssemblyPieces(parameter_on,fmb,rLibrary,gd,ep_lof);
+      buildAssemblyPieces(parameter_on,ap);
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names(1);
       p_names[0] = Teuchos::rcp(new Teuchos::Array<std::string>(1));
       (*p_names[0])[0] = "SOURCE_TEMPERATURE";
       bool build_transient_support = false;
-      me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof,p_names,gd,build_transient_support));
+      me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,ap.ep_lof,p_names,ap.gd,build_transient_support));
     }
 
     TEUCHOS_ASSERT(nonnull(me));
@@ -410,26 +473,32 @@ namespace panzer {
     RCP<Epetra_Vector> f3 = Teuchos::rcp(new Epetra_Vector(*me->get_f_map()));
     RCP<Epetra_Vector> f4 = Teuchos::rcp(new Epetra_Vector(*me->get_f_map()));
 
+    RCP<Epetra_Vector> dfdp = Teuchos::rcp(new Epetra_Vector(*me->get_f_map()));
+
     // set values and evaluate
     in_args.set_x(x);
     in_args.set_p(0,p);
 
     out << "evalModel(f1)" << std::endl;
     out_args.set_f(f1);
+    out_args.set_DfDp(0,EpetraExt::ModelEvaluator::Derivative());
     me->evalModel(in_args,out_args);
     
     out << "evalModel(f2)" << std::endl;
     out_args.set_f(f2);
+    out_args.set_DfDp(0,EpetraExt::ModelEvaluator::Derivative());
     me->evalModel(in_args,out_args);
     
     out << "evalModel(f3)" << std::endl;
     p->PutScalar(20.0);
     out_args.set_f(f3);
+    out_args.set_DfDp(0,EpetraExt::ModelEvaluator::Derivative());
     me->evalModel(in_args,out_args);
     
     out << "evalModel(f4)" << std::endl;
     p->PutScalar(1.0);
     out_args.set_f(f4);
+    out_args.set_DfDp(0,EpetraExt::ModelEvaluator::Derivative());
     me->evalModel(in_args,out_args);
     
     // f1 == f2 == f4, f3 is evaluated with p=20 instead of p=1
@@ -446,6 +515,25 @@ namespace panzer {
 
     // f2 != f3
     TEST_EQUALITY_CONST(testEqualityOfEpetraVectorValues(*f2,*f3,tol), false);
+ 
+
+    // TEST DfDp
+    /////////////////////////////////////////////////////
+
+    x->PutScalar(0.0);
+    f1->PutScalar(0.0);
+
+    out << "evalModel(f2)" << std::endl;
+    p->PutScalar(20.0);
+    out_args.set_f(f1);
+    out_args.set_DfDp(0,EpetraExt::ModelEvaluator::Derivative(dfdp,EpetraExt::ModelEvaluator::DERIV_MV_BY_COL));
+    me->evalModel(in_args,out_args);
+
+    for(int i=0;i<f1->MyLength();i++) {
+      if((*dfdp)[i]!=0.0)
+      { TEST_FLOATING_EQUALITY((*f1)[i],20.0*(*dfdp)[i],1e-10); }
+      out << (*f1)[i] << "    " << (*dfdp)[i] << std::endl;
+    }
 
   }
 
@@ -458,24 +546,21 @@ namespace panzer {
     Teuchos::RCP<Epetra_Vector> ghosted_distributed_parameter;
     {
       bool parameter_on = true;
-      Teuchos::RCP<panzer::FieldManagerBuilder> fmb;  
-      Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary; 
-      Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof;
-      Teuchos::RCP<panzer::GlobalData> gd;
+      AssemblyPieces ap;
     
-      buildAssemblyPieces(parameter_on,fmb,rLibrary,gd,ep_lof);
+      buildAssemblyPieces(parameter_on,ap);
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names(1);
       p_names[0] = Teuchos::rcp(new Teuchos::Array<std::string>(1));
       (*p_names[0])[0] = "SOURCE_TEMPERATURE";
       bool build_transient_support = false;
-      me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof,p_names,gd,build_transient_support));
+      me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,ap.ep_lof,p_names,ap.gd,build_transient_support));
 
       // add a distributed parameter
-      ghosted_distributed_parameter = Teuchos::rcp(new Epetra_Vector(*ep_lof->getGhostedMap()));
+      ghosted_distributed_parameter = Teuchos::rcp(new Epetra_Vector(*ap.ep_lof->getGhostedMap()));
 
       distributed_parameter_index = me->addDistributedParameter("Transient Predictor",
-								ep_lof->getMap(),
-								ep_lof->getGhostedImport(),
+								ap.ep_lof->getMap(),
+								ap.ep_lof->getGhostedImport(),
 								ghosted_distributed_parameter);
     }
 
@@ -540,22 +625,19 @@ namespace panzer {
     RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 
     bool parameter_on = true;
-    Teuchos::RCP<panzer::FieldManagerBuilder> fmb;  
-    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary; 
-    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof;
+    AssemblyPieces ap;
     Teuchos::RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,int> > sg_lof;
-    Teuchos::RCP<panzer::GlobalData> gd;
 
     bool fullExpansion = true;
     RCP<Stokhos::OrthogPolyExpansion<int,double> > sgExpansion = buildExpansion(2,4,fullExpansion);
   
-    buildAssemblyPieces(parameter_on,fmb,rLibrary,gd,ep_lof,sg_lof,sgExpansion);
+    buildAssemblyPieces(parameter_on,ap,sg_lof,sgExpansion);
   
     // Test a transient me, with basic values (no SG)
     {
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
       bool build_transient_support = true;
-      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,sg_lof,p_names,gd,build_transient_support));
+      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,sg_lof,p_names,ap.gd,build_transient_support));
 
       EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
       EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
@@ -605,7 +687,7 @@ namespace panzer {
     {
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
       bool build_transient_support = false;
-      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,sg_lof,p_names,gd,build_transient_support));
+      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,sg_lof,p_names,ap.gd,build_transient_support));
 
       EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
       EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
@@ -650,7 +732,7 @@ namespace panzer {
     {
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
       bool build_transient_support = false;
-      RCP<panzer::ModelEvaluator_Epetra> pan_me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,sg_lof,p_names,gd,build_transient_support));
+      RCP<panzer::ModelEvaluator_Epetra> pan_me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,sg_lof,p_names,ap.gd,build_transient_support));
       RCP<EpetraExt::ModelEvaluator> me = buildStochModel(Comm,pan_me,sgExpansion,fullExpansion);
 
       EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
@@ -723,10 +805,11 @@ namespace panzer {
      Teuchos::RCP<Stokhos::ProductBasis<int,double> > basis = Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
     
      // build Cijk and "expansion"
-     int kExpOrder = basis->size();
+     Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
      if(!fullExpansion)
-        kExpOrder = numDim+1;
-     Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = basis->computeTripleProductTensor(kExpOrder);
+       Cijk = basis->computeLinearTripleProductTensor();
+     else
+       Cijk = basis->computeTripleProductTensor();
      Teuchos::RCP<Stokhos::Quadrature<int,double> > quadrature = Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
     
      return Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(basis,Cijk,quadrature));
@@ -734,27 +817,30 @@ namespace panzer {
 
 #endif
 
-  void testInitialzation(panzer::InputPhysicsBlock& ipb,
+  void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs)
   {
-    panzer::InputEquationSet ies_1;
-    ies_1.name = "Energy";
-    ies_1.basis = "Q1";
-    ies_1.integration_order = 1;
-    ies_1.model_id = "solid";
-    ies_1.prefix = "";
-
-    panzer::InputEquationSet ies_2;
-    ies_2.name = "Energy";
-    ies_2.basis = "Q1";
-    ies_2.integration_order = 1;
-    ies_2.model_id = "ion solid";
-    ies_2.prefix = "ION_";
-
-    ipb.physics_block_id = "4";
-    ipb.eq_sets.push_back(ies_1);
-    ipb.eq_sets.push_back(ies_2);
-
+    // Physics block
+    Teuchos::ParameterList& physics_block = ipb->sublist("test physics");
+    {
+      Teuchos::ParameterList& p = physics_block.sublist("a");
+      p.set("Type","Energy");
+      p.set("Prefix","");
+      p.set("Model ID","solid");
+      p.set("Basis Type","HGrad");
+      p.set("Basis Order",1);
+      p.set("Integration Order",1);
+    }
+    {
+      Teuchos::ParameterList& p = physics_block.sublist("b");
+      p.set("Type","Energy");
+      p.set("Prefix","ION_");
+      p.set("Model ID","ion solid");
+      p.set("Basis Type","HGrad");
+      p.set("Basis Order",1);
+      p.set("Integration Order",1);
+    }
+    
 
     {
       std::size_t bc_id = 0;
@@ -829,10 +915,7 @@ namespace panzer {
   }
 
   void buildAssemblyPieces(bool parameter_on,
-                           Teuchos::RCP<panzer::FieldManagerBuilder> & fmb,  
-                           Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & rLibrary, 
-                           Teuchos::RCP<panzer::GlobalData> & gd,
-                           Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > & ep_lof
+                           AssemblyPieces & ap
                            #ifdef HAVE_STOKHOS
                            , Teuchos::RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,int> > & sg_lof
                            , const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > & sgExpansion
@@ -852,19 +935,18 @@ namespace panzer {
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
     RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 
-    panzer::InputPhysicsBlock ipb;
+    Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
     std::vector<panzer::BC> bcs;
     testInitialzation(ipb, bcs);
 
-    fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
+    ap.fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
 
     // build physics blocks
     //////////////////////////////////////////////////////////////
     const std::size_t workset_size = 20;
-    user_app::MyFactory eqset_factory;
+    ap.eqset_factory = Teuchos::rcp(new user_app::MyFactory);
     user_app::BCFactory bc_factory;
-    gd = panzer::createGlobalData();
-    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
+    ap.gd = panzer::createGlobalData();
     {
       std::map<std::string,std::string> block_ids_to_physics_ids;
       block_ids_to_physics_ids["eblock-0_0"] = "test physics";
@@ -874,19 +956,18 @@ namespace panzer {
       block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
       block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
       
-      std::map<std::string,panzer::InputPhysicsBlock> 
-        physics_id_to_input_physics_blocks;
-      physics_id_to_input_physics_blocks["test physics"] = ipb;
-
+      int default_integration_order = 1;
+      
       bool build_transient_support = true;
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                  block_ids_to_cell_topo,
-                                 physics_id_to_input_physics_blocks,
-                                 Teuchos::as<int>(mesh->getDimension()), workset_size,
-                                 eqset_factory,
-				 gd,
+				 ipb,
+				 default_integration_order,
+				 workset_size,
+                                 ap.eqset_factory,
+				 ap.gd,
 			         build_transient_support,
-                                 physicsBlocks);
+                                 ap.physicsBlocks);
     }
 
     // build worksets
@@ -895,38 +976,36 @@ namespace panzer {
     Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
+       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,ap.physicsBlocks,workset_size));
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
  
     // build the connection manager 
     const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
-         = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
+    ap.dofManager = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),ap.physicsBlocks,conn_manager);
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
-    ep_lof = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager));
-    linObjFactory = ep_lof;
+    ap.ep_lof = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),ap.dofManager));
+    linObjFactory = ap.ep_lof;
     #ifdef HAVE_STOKHOS
     if(sgExpansion!=Teuchos::null) {
-       sg_lof = Teuchos::rcp(new panzer::SGEpetraLinearObjFactory<panzer::Traits,int>(ep_lof,sgExpansion,Teuchos::null));
+       sg_lof = Teuchos::rcp(new panzer::SGEpetraLinearObjFactory<panzer::Traits,int>(ap.ep_lof,sgExpansion,Teuchos::null));
        linObjFactory = sg_lof;
     }
     #endif
 
-    rLibrary = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory)); 
+    ap.rLibrary = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,ap.dofManager,linObjFactory)); 
 
     // setup field manager build
     /////////////////////////////////////////////////////////////
  
     // Add in the application specific closure model factory
     user_app::MyModelFactory_TemplateBuilder cm_builder;
-    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
-    cm_factory.buildObjects(cm_builder);
+    ap.cm_factory.buildObjects(cm_builder);
 
     Teuchos::ParameterList closure_models("Closure Models");
     if(parameter_on)
@@ -945,12 +1024,13 @@ namespace panzer {
     closure_models.sublist("ion solid").sublist("ION_DENSITY").set<double>("Value",1.0);
     #endif
     closure_models.sublist("ion solid").sublist("ION_HEAT_CAPACITY").set<double>("Value",1.0);
+    ap.closure_models = closure_models;
 
-    Teuchos::ParameterList user_data("User Data");
+    ap.user_data = Teuchos::ParameterList("User Data");
 
-    fmb->setWorksetContainer(wkstContainer);
-    fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
-    fmb->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
+    ap.fmb->setWorksetContainer(wkstContainer);
+    ap.fmb->setupVolumeFieldManagers(ap.physicsBlocks,ap.cm_factory,closure_models,*linObjFactory,ap.user_data);
+    ap.fmb->setupBCFieldManagers(bcs,ap.physicsBlocks,*ap.eqset_factory,ap.cm_factory,bc_factory,closure_models,*linObjFactory,ap.user_data);
   }
 
 

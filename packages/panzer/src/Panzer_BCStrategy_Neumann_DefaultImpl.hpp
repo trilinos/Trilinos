@@ -136,6 +136,16 @@ namespace panzer {
 
     //@}
 
+    
+    //! \name Query methods for underlying data
+    //@{ 
+
+    //! Returns the boundary condition data for this object
+    const panzer::BC bc() const;
+
+    //@}
+
+    
   private:
 
     //! \name Utility functions used by default implementation

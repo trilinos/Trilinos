@@ -57,7 +57,7 @@
 
 namespace Xpetra {
 
-  template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+  template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class RowGraph
     : virtual public Teuchos::Describable
   {

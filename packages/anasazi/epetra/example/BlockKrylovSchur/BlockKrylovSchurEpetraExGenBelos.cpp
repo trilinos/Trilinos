@@ -29,8 +29,8 @@
 #include "BelosEpetraOperator.h"
 #include "BelosEpetraAdapter.hpp"
 
-// Include header for Ifpack incomplete Cholesky preconditioner
-#include "Ifpack_IC.h"
+// Include header for Ifpack preconditioner factory
+#include "Ifpack.h"
 
 // Include header for Teuchos serial dense matrix
 #include "Teuchos_SerialDenseMatrix.hpp"
@@ -47,7 +47,7 @@
 #include "Epetra_Map.h"
 
 int main(int argc, char *argv[]) {
-  int i, info;
+  int i;
 
 #ifdef EPETRA_MPI
   // Initialize MPI
@@ -80,46 +80,41 @@ int main(int argc, char *argv[]) {
   Teuchos::RCP<Epetra_CrsMatrix> M = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
   
   //
-  //*****Select the Preconditioner*****
-  //
-  if (MyPID==0) cout << endl << endl;
-  if (MyPID==0) cout << "Constructing IC preconditioner" << endl;
-  int Lfill = 0;
-  if (argc > 1) Lfill = atoi(argv[1]);
-  if (MyPID==0) cout << "Using Lfill = " << Lfill << endl;
-  int Overlap = 0;
-  if (argc > 2) Overlap = atoi(argv[2]);
-  if (MyPID==0) cout << "Using Level Overlap = " << Overlap << endl;
-  double Athresh = 0.0;
-  if (argc > 3) Athresh = atof(argv[3]);
-  if (MyPID==0) cout << "Using Absolute Threshold Value of " << Athresh << endl;
-  double Rthresh = 1.0;
-  if (argc >4) Rthresh = atof(argv[4]);
-  if (MyPID==0) cout << "Using Relative Threshold Value of " << Rthresh << endl;
-  double dropTol = 1.0e-6;
-  //
-  Teuchos::RCP<Ifpack_IC> IC;
-  //
-   
-  if (Lfill > -1) {
-    IC = Teuchos::rcp( new Ifpack_IC( K.get() ) );
+  // ************Construct preconditioner*************
+  // 
+  Teuchos::ParameterList ifpackList;
 
-    Teuchos::ParameterList List;
-    List.set("fact: level-of-fill",Lfill);
-    List.set("fact: absolute threshold", Athresh);
-    List.set("fact: relative threshold", Rthresh);
-    List.set("fact: drop tolerance", dropTol);
-    int initerr = IC->Initialize();
-    if (initerr != 0) cout << "Initialize error = " << initerr;
-    info = IC->Compute();
-    assert( info==0 );
-  } 
-  //
-  double Cond_Est = IC->Condest();
-  if (MyPID==0) {
-    cout << "Condition number estimate for this preconditoner = " << Cond_Est << endl;
-    cout << endl;
-  } 
+  // allocates an IFPACK factory. No data is associated
+  // to this object (only method Create()).
+  Ifpack Factory;
+
+  // create the preconditioner. For valid PrecType values,
+  // please check the documentation
+  std::string PrecType = "ICT"; // incomplete Cholesky
+  int OverlapLevel = 0; // must be >= 0. If Comm.NumProc() == 1,
+                        // it is ignored.
+
+  Teuchos::RCP<Ifpack_Preconditioner> Prec = Teuchos::rcp( Factory.Create(PrecType, &*K, OverlapLevel) );
+  assert(Prec != Teuchos::null);
+
+  // specify parameters for ICT
+  ifpackList.set("fact: drop tolerance", 1e-4);
+  ifpackList.set("fact: ict level-of-fill", 0.);
+  // the combine mode is on the following:
+  // "Add", "Zero", "Insert", "InsertAdd", "Average", "AbsMax"
+  // Their meaning is as defined in file Epetra_CombineMode.h
+  ifpackList.set("schwarz: combine mode", "Add");
+  // sets the parameters
+  IFPACK_CHK_ERR(Prec->SetParameters(ifpackList));
+
+  // initialize the preconditioner. At this point the matrix must
+  // have been FillComplete()'d, but actual values are ignored.
+  IFPACK_CHK_ERR(Prec->Initialize());
+
+  // Builds the preconditioners, by looking for the values of
+  // the matrix.
+  IFPACK_CHK_ERR(Prec->Compute());
+
   //
   //*******************************************************/
   // Set up Belos Block CG operator for inner iteration
@@ -137,7 +132,7 @@ int main(int argc, char *argv[]) {
   // Create the Belos preconditioned operator from the Ifpack preconditioner.
   // NOTE:  This is necessary because Belos expects an operator to apply the 
   //        preconditioner with Apply() NOT ApplyInverse().
-  Teuchos::RCP<Epetra_Operator> belosPrec = Teuchos::rcp( new Epetra_InvOperator( IC.get() ) );
+  Teuchos::RCP<Epetra_Operator> belosPrec = Teuchos::rcp( new Epetra_InvOperator( Prec.get() ) );
   My_LP->setLeftPrec( belosPrec );
   //
   // Create the ParameterList for the Belos Operator

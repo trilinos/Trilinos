@@ -80,9 +80,11 @@ int nthread_lock_init(
         nthread_lock_t *lock)
 {
     int  rc=0;
-    bool done=false;
 
-//    log_debug(thread_debug_level, "nthread_lock_init: initializing lock(%p), lock->lock(%p)", lock, lock->lock);
+#ifdef _DEBUG_LOCKS_
+    fprintf(logger_get_file(), "nthread_lock_init: initializing lock(%p), lock->lock(%p)\n", (void*)lock, (void*)lock->lock_ptr);
+    fflush(logger_get_file());
+#endif
 
 #if defined(HAVE_TRIOS_UNNAMED_SEMAPHORES)
     rc=sem_init(&lock->lock, 0, 1);
@@ -94,6 +96,7 @@ int nthread_lock_init(
     }
     lock->lock_ptr=&lock->lock;
 #elif defined(HAVE_TRIOS_NAMED_SEMAPHORES)
+    bool done=false;
     do {
         lock->name=tempnam("/tmp", "trios.");
         lock->lock_ptr=sem_open(lock->name+4, O_CREAT|O_EXCL, 0600, 1);
@@ -111,10 +114,13 @@ int nthread_lock_init(
         return(-1);
     }
 #else
-
+#warning Semaphores are unavailable on this system.
 #endif
 
-//    log_debug(thread_debug_level, "nthread_lock_init: initialized lock(%p), lock->lock(%p), lock->name(%s)", lock, lock->lock, lock->name);
+#ifdef _DEBUG_LOCKS_
+    fprintf(logger_get_file(), "nthread_lock_init: initialized lock(%p), lock->lock(%p), lock->name(%s)\n", (void*)lock, (void*)lock->lock_ptr, lock->name);
+    fflush(logger_get_file());
+#endif
 
     return(rc);
 }
@@ -125,7 +131,7 @@ int nthread_lock(
     int rc=0;
 
 #ifdef _DEBUG_LOCKS_
-    fprintf(logger_get_file(), "nthread_lock: locking lock(%p), lock->lock(%p)\n", lock, lock->lock_ptr);
+    fprintf(logger_get_file(), "nthread_lock: locking lock(%p), lock->lock(%p)\n", (void*)lock, (void*)lock->lock_ptr);
     fflush(logger_get_file());
 #endif
 
@@ -147,7 +153,7 @@ int nthread_lock(
 #endif
 
 #ifdef _DEBUG_LOCKS_
-    fprintf(logger_get_file(), "nthread_lock: locked lock(%p), lock->lock(%p)\n", lock, lock->lock_ptr);
+    fprintf(logger_get_file(), "nthread_lock: locked lock(%p), lock->lock(%p)\n", (void*)lock, (void*)lock->lock_ptr);
     fflush(logger_get_file());
 #endif
 
@@ -160,7 +166,7 @@ int nthread_unlock(
     int rc=0;
 
 #ifdef _DEBUG_LOCKS_
-    fprintf(logger_get_file(), "nthread_unlock: unlocking lock(%p), lock->lock(%p)\n", lock, lock->lock_ptr);
+    fprintf(logger_get_file(), "nthread_unlock: unlocking lock(%p), lock->lock(%p)\n", (void*)lock, (void*)lock->lock_ptr);
     fflush(logger_get_file());
 #endif
 
@@ -182,12 +188,9 @@ int nthread_unlock(
 #endif
 
 #ifdef _DEBUG_LOCKS_
-    fprintf(logger_get_file(), "nthread_unlock: unlocked lock(%p), lock->lock(%p)\n", lock, lock->lock_ptr);
+    fprintf(logger_get_file(), "nthread_unlock: unlocked lock(%p), lock->lock(%p)\n", (void*)lock, (void*)lock->lock_ptr);
     fflush(logger_get_file());
 #endif
-
-    /* yield to other threads */
-    usleep(0);
 
     return(rc);
 }
@@ -198,7 +201,10 @@ int nthread_lock_fini(
 {
     int rc=0;
 
-//    log_debug(thread_debug_level, "nthread_lock_fini: finalizing lock(%p), lock->lock(%p), lock->name(%s)", lock, lock->lock, lock->name);
+#ifdef _DEBUG_LOCKS_
+    fprintf(logger_get_file(), "nthread_lock_fini: finalizing lock(%p), lock->lock(%p), lock->name(%s)", (void*)lock, (void*)lock->lock_ptr, lock->name);
+    fflush(logger_get_file());
+#endif
 
 #if defined(HAVE_TRIOS_UNNAMED_SEMAPHORES) || defined(HAVE_TRIOS_NAMED_SEMAPHORES)
 
@@ -231,11 +237,15 @@ int nthread_lock_fini(
     }
 
     free(lock->name);
+    lock->name=NULL;
 #else
 
 #endif
 
-//    log_debug(thread_debug_level, "nthread_lock_fini: finalized lock(%p), lock->lock(%p), lock->name(%s)", lock, lock->lock, lock->name);
+#ifdef _DEBUG_LOCKS_
+    fprintf(logger_get_file(), "nthread_lock_fini: finalized lock(%p), lock->lock(%p), lock->name(%s)", (void*)lock, (void*)lock->lock_ptr, lock->name);
+    fflush(logger_get_file());
+#endif
 
     return(rc);
 }
@@ -244,7 +254,6 @@ int nthread_counter_init(
         nthread_counter_t *c)
 {
     int rc=0;
-    int64_t t=0;
 
 //    log_debug(thread_debug_level, "nthread_counter_init(STUB)");
     rc=nthread_lock_init(&c->lock);
@@ -261,7 +270,6 @@ int nthread_counter_init(
 int64_t nthread_counter_increment(
         nthread_counter_t *c)
 {
-    int rc=0;
     int64_t t=0;
 
 //    log_debug(thread_debug_level, "nthread_counter_increment(STUB)");
@@ -314,7 +322,6 @@ int nthread_counter_fini(
         nthread_counter_t *c)
 {
     int rc=0;
-    int64_t t=0;
 
 //    log_debug(thread_debug_level, "nthread_counter_fini(STUB)");
     rc=nthread_lock_fini(&c->lock);

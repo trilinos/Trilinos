@@ -112,7 +112,7 @@ namespace {
 
   typedef std::vector<Ioss::IdPair>::const_iterator RMapI;
 
-  void verify_no_duplicate_ids(std::vector<Ioss::IdPair> &reverse_map, int processor)
+  void verify_no_duplicate_ids(std::vector<Ioss::IdPair> &reverse_map, int processor, const std::string &type)
   {
     // Check for duplicate ids...
     std::vector<Ioss::IdPair>::iterator dup = std::adjacent_find(reverse_map.begin(),
@@ -120,13 +120,14 @@ namespace {
 							   IdPairEqual());
 
     if (dup != reverse_map.end()) {
+      std::vector<Ioss::IdPair>::iterator other = dup+1;
       std::ostringstream errmsg;
-      errmsg << "\nERROR: Duplicate global id detected on processor "
+      errmsg << "\nERROR: Duplicate " << type << " global id detected on processor "
 	     << processor << ".\n"
 	     << "       Global id " << (*dup).first
-	     << " assigned to local entities "
+	     << " assigned to local " << type << "s "
 	     << (*dup).second << " and "
-	     << (*++dup).second << ".\n";
+	     << (*other).second << ".\n";
       IOSS_ERROR(errmsg);
     }
   }
@@ -181,8 +182,8 @@ void Ioss::Map::build_reverse_map(int64_t num_to_get, int64_t offset, int proces
 
     if (map[local_id] <= 0) {
       std::ostringstream errmsg;
-      errmsg << "\nERROR: " << entityType << " mapping routines detected non-positive global id " << map[local_id]
-	     << " for local id " << local_id << " on processor " << processor << ".\n";
+      errmsg << "\nERROR: " << entityType << " map detected non-positive global id " << map[local_id]
+	     << " for " << entityType << " with local id " << local_id << " on processor " << processor << ".\n";
       IOSS_ERROR(errmsg);
     }
   }
@@ -208,7 +209,7 @@ void Ioss::Map::build_reverse_map(int64_t num_to_get, int64_t offset, int proces
     
   }
   // Check for duplicate ids...
-  verify_no_duplicate_ids(reverse, processor);
+  verify_no_duplicate_ids(reverse, processor, entityType);
 }
 
 template void Ioss::Map::set_map(int *ids, size_t count, size_t offset);

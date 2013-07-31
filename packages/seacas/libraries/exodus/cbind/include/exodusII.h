@@ -58,8 +58,8 @@
 #endif
 
 /* EXODUS II version number */
-#define EX_API_VERS 5.24f
-#define EX_API_VERS_NODOT 524
+#define EX_API_VERS 5.26f
+#define EX_API_VERS_NODOT 526
 #define EX_VERS EX_API_VERS
 #define NEMESIS_API_VERSION		EX_API_VERS
 #define NEMESIS_API_VERSION_NODOT	EX_API_VERS_NODOT
@@ -176,6 +176,7 @@ extern "C" {
     EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH  = 48,     /**< inquire size of MAX_NAME_LENGTH dimension on database */
     EX_INQ_DB_MAX_USED_NAME_LENGTH  = 49,     /**< inquire size of MAX_NAME_LENGTH dimension on database */
     EX_INQ_MAX_READ_NAME_LENGTH = 50,     /**< inquire client-specified max size of returned names */
+    EX_INQ_DB_FLOAT_SIZE = 51,      /**< inquire size of floating-point values stored on database */
     EX_INQ_INVALID         = -1};
 
   typedef enum ex_inquiry ex_inquiry;
@@ -228,7 +229,8 @@ extern "C" {
     EX_DEFAULT  = 0,
     EX_VERBOSE  = 1,  /**< verbose mode message flag   */
     EX_DEBUG    = 2,  /**< debug mode def             */
-    EX_ABORT    = 4   /**< abort mode flag def        */
+    EX_ABORT    = 4,   /**< abort mode flag def        */
+    EX_NULLVERBOSE = 8 /**< verbose mode for null entity detection warning */
   };
   typedef enum ex_options ex_options;
   
@@ -345,20 +347,20 @@ extern "C" {
     int  num_glob;
     int  num_node;
     int  num_edge;
-    int* edge_var_tab;
     int  num_face;
-    int* face_var_tab;
     int  num_elem;
-    int* elem_var_tab;
     int  num_nset;
-    int* nset_var_tab;
     int  num_eset;
-    int* eset_var_tab;
     int  num_fset;
-    int* fset_var_tab;
     int  num_sset;
-    int* sset_var_tab;
     int  num_elset;
+    int* edge_var_tab;
+    int* face_var_tab;
+    int* elem_var_tab;
+    int* nset_var_tab;
+    int* eset_var_tab;
+    int* fset_var_tab;
+    int* sset_var_tab;
     int* elset_var_tab;
   } ex_var_params;
   /* @} */

@@ -1,14 +1,15 @@
 # @HEADER
 # ************************************************************************
 #
-#            Trilinos: An Object-Oriented Solver Framework
-#                 Copyright (2001) Sandia Corporation
+#            TriBITS: Tribial Build, Integrate, and Test System
+#                    Copyright 2013 Sandia Corporation
 #
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+# the U.S. Government retains certain rights in this software.
 #
-# Copyright (2001) Sandia Corporation. Under the terms of Contract
-# DE-AC04-94AL85000, there is a non-exclusive license for use of this
-# work by or on behalf of the U.S. Government.  Export of this program
-# may require a license from the United States Government.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
 #
 # 1. Redistributions of source code must retain the above copyright
 # notice, this list of conditions and the following disclaimer.
@@ -32,23 +33,6 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# NOTICE:  The United States Government is granted for itself and others
-# acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
-# license in this data to reproduce, prepare derivative works, and
-# perform publicly and display publicly.  Beginning five (5) years from
-# July 25, 2001, the United States Government is granted for itself and
-# others acting on its behalf a paid-up, nonexclusive, irrevocable
-# worldwide license in this data to reproduce, prepare derivative works,
-# distribute copies to the public, perform publicly and display
-# publicly, and to permit others to do so.
-#
-# NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
-# OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
-# ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
-# RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
-# INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
-# THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
 #
 # ************************************************************************
 # @HEADER
@@ -120,6 +104,14 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
   
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES OFF CACHE BOOL
     "Recursively enable all packages that have required or optional dependencies for set of enabled packages." )
+  
+  IF (${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT STREQUAL "")
+    SET(${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT OFF)
+  ENDIF()
+  SET(${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES
+    ${${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT}
+    CACHE BOOL
+    "Disable (and printing warning) for enabled packages that have hard-disabled upstream dependencies.  Otherwise, is to raises a fatal configure failure." )
   
   SET_CACHE_ON_OFF_EMPTY( ${PROJECT_NAME}_ENABLE_TESTS ""
     "Enable tests in all packages  (set to ON, OFF, or leave empty)." )
@@ -265,6 +257,29 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
     "Determines if ${PROJECT_NAME}Config.cmake and <PACKAGE>Config.cmake files are created or not."
     )
 
+  IF (NOT ${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT)
+    # We need to generate the dependency logic for export dependency files if
+    # asked.
+    IF (${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES OR
+      ${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES
+      )
+      SET(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT ON)
+    ELSE()
+      SET(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT OFF)
+    ENDIF()
+  ENDIF()
+  ADVANCED_SET(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES
+     ${${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT} CACHE BOOL
+    "Allow secondary stable packages and code to be implicitly enabled." )
+
+  IF ("${${PROJECT_NAME}_ELEVATE_SS_TO_PS_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_ELEVATE_SS_TO_PS_DEFAULT OFF)
+  ENDIF()
+  ADVANCED_SET( ${PROJECT_NAME}_ELEVATE_SS_TO_PS
+    ${${PROJECT_NAME}_ELEVATE_SS_TO_PS_DEFAULT}
+    CACHE BOOL
+    "Elevate all defined SS SE packages to PS packages." )
+
   ADVANCED_SET( ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE OFF CACHE BOOL
     "Allow secondary stable packages and code to be implicitly enabled." )
   
@@ -375,11 +390,6 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
     "" CACHE PATH
     "Output the full XML dependency files in the given directory." )
 
-  ADVANCED_SET(${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE
-    ""
-    CACHE STRING
-    "Type of testing to pull in extra respositories (Continuous, or Nightly)" )
-
   #
   # Extra repositories
   #
@@ -402,6 +412,11 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
     CACHE FILENAME
     "File contining the list of extra repositories contining add-on packages to process")
   #PRINT_VAR(${PROJECT_NAME}_EXTRAREPOS_FILE)
+
+  ADVANCED_SET(${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE
+    ""
+    CACHE STRING
+    "Type of testing to pull in extra respositories (Continuous, or Nightly)" )
 
   ADVANCED_SET(${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES
     FALSE CACHE BOOL
@@ -1539,6 +1554,7 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
 
       SET(PACKAGE_NAME ${TRIBITS_PACKAGE}) # Used in CMake code in downstream package
       SET(PARENT_PACKAGE_NAME ${TRIBITS_PACKAGE})
+      STRING(TOUPPER "${PARENT_PACKAGE_NAME}" PARENT_PACKAGE_NAME_UC)
 
       IF (NOT EXISTS ${${TRIBITS_PACKAGE}_SOURCE_DIR}/CMakeLists.txt)
         MESSAGE(FATAL_ERROR
@@ -1734,6 +1750,12 @@ MACRO(TRIBITS_ADD_DASHBOARD_TARGET)
     ENDIF()
 
     #PRINT_VAR(${PROJECT_NAME}_EXTRA_REPOSITORIES)
+    APPEND_SET(EXPR_CMND_ARGS
+      ${PROJECT_NAME}_EXTRAREPOS_FILE=${${PROJECT_NAME}_EXTRAREPOS_FILE})
+    APPEND_SET(EXPR_CMND_ARGS
+      ${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=${${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE})
+    APPEND_SET(EXPR_CMND_ARGS
+      ${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES=${${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES})
     JOIN(${PROJECT_NAME}_EXTRA_REPOSITORIES_JOINED "," FALSE
       ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
     APPEND_SET(EXPR_CMND_ARGS
@@ -1910,7 +1932,11 @@ FUNCTION(TRIBITS_REMIND_ABOUT_UNCOMMITTED_DEPENDENCY_FILES)
       MESSAGE("GIT_EXE=${GIT_EXE}")
     ENDIF()
 
-    IF (GIT_EXE)
+    IF (GIT_EXE AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+
+      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+        MESSAGE("\nChecking for uncommitted changes to generated dependency files ...\n")
+      ENDIF()
 
       EXECUTE_PROCESS(COMMAND ${GIT_EXE} status
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}

@@ -87,18 +87,18 @@ namespace Tpetra {
   };
 
   template <>
-  class ViewAccepter<Kokkos::SerialNode> : public ViewAccepterSupportedNode {};
+  class ViewAccepter<KokkosClassic::SerialNode> : public ViewAccepterSupportedNode {};
 #ifdef HAVE_KOKKOSCLASSIC_TBB
   template <>
-  class ViewAccepter<Kokkos::TBBNode> : public ViewAccepterSupportedNode {};
+  class ViewAccepter<KokkosClassic::TBBNode> : public ViewAccepterSupportedNode {};
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
   template <>
-  class ViewAccepter<Kokkos::TPINode> : public ViewAccepterSupportedNode {};
+  class ViewAccepter<KokkosClassic::TPINode> : public ViewAccepterSupportedNode {};
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
   template <>
-  class ViewAccepter<Kokkos::OpenMPNode> : public ViewAccepterSupportedNode {};
+  class ViewAccepter<KokkosClassic::OpenMPNode> : public ViewAccepterSupportedNode {};
 #endif
 
   } // end of namespace Tpetra::details

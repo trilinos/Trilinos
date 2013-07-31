@@ -176,8 +176,150 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   // Teuchos::RCP<BLOC> blockedContainer 
-   //       = Teuchos::rcp_dynamic_cast<BLOC>(workset.ghostedLinContainer);
+   Teuchos::RCP<ProductVectorBase<double> > x;
+   if (useTimeDerivativeSolutionVector_)
+     x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_dxdt());
+   else
+     x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_x()); 
+
+   // gather operation for each cell in workset
+   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
+      LO cellLocalId = localCellIds[worksetCellIndex];
+ 
+      gidIndexer_->getElementGIDs(cellLocalId,GIDs,blockId); 
+ 
+      // caculate the local IDs for this element
+      LIDs.resize(GIDs.size());
+      for(std::size_t i=0;i<GIDs.size();i++) {
+         // used for doing local ID lookups
+         RCP<const Epetra_Map> x_map = blockedContainer_->getMapForBlock(GIDs[i].first);
+
+         LIDs[i] = x_map->LID(GIDs[i].second);
+         // TEUCHOS_ASSERT(LIDs[i]>=0);
+      }
+
+      // loop over the fields to be gathered
+      Teuchos::ArrayRCP<const double> local_x;
+      for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
+         int fieldNum = fieldIds_[fieldIndex];
+         int indexerId = gidIndexer_->getFieldBlock(fieldNum);
+
+         // grab local data for inputing
+         RCP<SpmdVectorBase<double> > block_x = rcp_dynamic_cast<SpmdVectorBase<double> >(x->getNonconstVectorBlock(indexerId));
+         block_x->getLocalData(ptrFromRef(local_x));
+
+         const std::vector<int> & elmtOffset = gidIndexer_->getGIDFieldOffsets(blockId,fieldNum);
+ 
+         // loop over basis functions and fill the fields
+         for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
+            int offset = elmtOffset[basis];
+            int lid = LIDs[offset];
+
+            // TEUCHOS_ASSERT(indexerId==GIDs[offset].first);
+            // TEUCHOS_ASSERT(lid<local_x.size() && lid>=0);
+
+            (gatherFields_[fieldIndex])(worksetCellIndex,basis) = local_x[lid];
+         }
+      }
+   }
+}
+
+// **********************************************************************
+// Specialization: Tangent
+// **********************************************************************
+
+template<typename Traits,typename LO,typename GO>
+panzer::GatherSolution_BlockedEpetra<panzer::Traits::Tangent, Traits,LO,GO>::
+GatherSolution_BlockedEpetra(
+  const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
+  const Teuchos::ParameterList& p)
+  : gidIndexer_(indexer)
+  , useTimeDerivativeSolutionVector_(false)
+  , globalDataKey_("Solution Gather Container")
+{ 
+  const std::vector<std::string>& names = 
+    *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
+
+  indexerNames_ = p.get< Teuchos::RCP< std::vector<std::string> > >("Indexer Names");
+
+  Teuchos::RCP<panzer::PureBasis> basis = 
+    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis");
+
+  gatherFields_.resize(names.size());
+  for (std::size_t fd = 0; fd < names.size(); ++fd) {
+    gatherFields_[fd] = 
+      PHX::MDField<ScalarT,Cell,NODE>(names[fd],basis->functional);
+    this->addEvaluatedField(gatherFields_[fd]);
+  }
+
+  if (p.isType<bool>("Use Time Derivative Solution Vector"))
+    useTimeDerivativeSolutionVector_ = p.get<bool>("Use Time Derivative Solution Vector");
+
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
+
+  this->setName("Gather Solution");
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO> 
+void panzer::GatherSolution_BlockedEpetra<panzer::Traits::Tangent, Traits,LO,GO>::
+postRegistrationSetup(typename Traits::SetupData d, 
+		      PHX::FieldManager<Traits>& fm)
+{
+  TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
+
+  fieldIds_.resize(gatherFields_.size());
+
+  for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
+    // get field ID from DOF manager
+    const std::string& fieldName = (*indexerNames_)[fd];
+    fieldIds_[fd] = gidIndexer_->getFieldNum(fieldName);
+
+    // setup the field data object
+    this->utils.setFieldData(gatherFields_[fd],fm);
+  }
+
+  indexerNames_ = Teuchos::null;  // Don't need this anymore
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO>
+void panzer::GatherSolution_BlockedEpetra<panzer::Traits::Tangent, Traits,LO,GO>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+   typedef BlockedEpetraLinearObjContainer BLOC;
+
+   // extract linear object container
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.getDataObject(globalDataKey_),true);
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO>
+void panzer::GatherSolution_BlockedEpetra<panzer::Traits::Tangent, Traits,LO,GO>::
+evaluateFields(typename Traits::EvalData workset)
+{ 
+   using Teuchos::RCP;
+   using Teuchos::ArrayRCP;
+   using Teuchos::ptrFromRef;
+   using Teuchos::rcp_dynamic_cast;
+
+   using Thyra::VectorBase;
+   using Thyra::SpmdVectorBase;
+   using Thyra::ProductVectorBase;
+
+   typedef BlockedEpetraLinearObjContainer BLOC;
+
+   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+   out.setShowProcRank(true);
+   out.setOutputToRootOnly(-1);
+
+   std::vector<std::pair<int,GO> > GIDs;
+   std::vector<int> LIDs;
+ 
+   // for convenience pull out some objects from workset
+   std::string blockId = workset.block_id;
+   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
    Teuchos::RCP<ProductVectorBase<double> > x;
    if (useTimeDerivativeSolutionVector_)
@@ -327,9 +469,6 @@ evaluateFields(typename Traits::EvalData workset)
    // for convenience pull out some objects from workset
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
-
-   // Teuchos::RCP<BLOC> blockedContainer 
-   //       = Teuchos::rcp_dynamic_cast<BLOC>(workset.ghostedLinContainer);
 
    double seed_value = 0.0;
    Teuchos::RCP<ProductVectorBase<double> > x;

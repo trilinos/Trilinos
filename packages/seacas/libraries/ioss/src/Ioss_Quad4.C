@@ -78,6 +78,7 @@ Ioss::Quad4::Quad4()
 {
   Ioss::ElementTopology::alias("quad4", "quad");
   Ioss::ElementTopology::alias("quad4", "Solid_Quad_4_2D");
+  Ioss::ElementTopology::alias("quad4", "QUADRILATERAL_4_2D");
   Ioss::ElementTopology::alias("quad4", "Face_Quad_4_3D");
   Ioss::ElementTopology::alias("quad4", "quadface4");
 }
@@ -137,5 +138,5 @@ Ioss::ElementTopology* Ioss::Quad4::face_type(int /* face_number */) const
 Ioss::ElementTopology* Ioss::Quad4::edge_type(int edge_number) const
 {
   assert(edge_number >= 0 && edge_number <= number_edges());
-  return Ioss::ElementTopology::factory("edge2d2");
+  return Ioss::ElementTopology::factory("edge2");
 }

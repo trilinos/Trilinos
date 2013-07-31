@@ -70,8 +70,6 @@ SET(CTEST_TEST_TIMEOUT 900)
 SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
 
 SET(EXTRA_CONFIGURE_OPTIONS
-  "-DMueLu_ENABLE_Amesos2:BOOL=ON" # Amesos2 is experimental and must be explicitly enabled
-
   "-DMueLu_INST_DOUBLE_INT_LONGLONGINT=ON"
   "-DTeuchos_ENABLE_LONG_LONG_INT:BOOL=ON"
 
@@ -79,8 +77,9 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTeuchos_ENABLE_COMPLEX=ON"
 
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
-  "-DTPL_SuperLU_INCLUDE_DIRS=/home/jngaida/opt/stow/superlu/4.1/include"
-  "-DTPL_SuperLU_LIBRARIES=/home/jngaida/opt/stow/superlu/4.1/lib64/libsuperlu_4.1.a"
+  "-DSuperLU_INCLUDE_DIRS=/usr/local/superlu/4.3/include"
+  "-DSuperLU_LIBRARY_DIRS=/usr/local/superlu/4.3/lib64"
+  "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
 )
 
 #

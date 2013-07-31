@@ -1,5 +1,3 @@
-
-ADD_SUBDIRECTORY(simple_example)
 ADD_SUBDIRECTORY(square_mesh)
 ADD_SUBDIRECTORY(PoissonExample)
 ADD_SUBDIRECTORY(CurlLaplacianExample)

@@ -1,13 +1,13 @@
 /*
-// @HEADER
+//@HEADER
 // ***********************************************************************
-// 
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
-// 
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+//
+//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//                 Copyright (2009) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,10 +35,10 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
-// ************************************************************************
-// @HEADER
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ***********************************************************************
+//@HEADER
 */
 
 #include <Teuchos_GlobalMPISession.hpp>
@@ -88,7 +88,7 @@ class ThreadedBlasKiller {
   }
 };
 template <>
-class ThreadedBlasKiller<Kokkos::ThrustGPUNode> {
+class ThreadedBlasKiller<KokkosClassic::ThrustGPUNode> {
   public:
   static void kill() {
     mkl_set_dynamic(false);
@@ -112,12 +112,12 @@ class NodeDetails {
 
 #ifdef HAVE_KOKKOS_THRUST
 template <>
-class NodeDetails<Kokkos::ThrustGPUNode> {
+class NodeDetails<KokkosClassic::ThrustGPUNode> {
   public:
-  static void printDetails(const RCP<FancyOStream> &fos, const RCP<const Kokkos::ThrustGPUNode> &node) {
+  static void printDetails(const RCP<FancyOStream> &fos, const RCP<const KokkosClassic::ThrustGPUNode> &node) {
     node->printStatistics(fos);
   }
-  static void clear(const RCP<Kokkos::ThrustGPUNode> &node) {
+  static void clear(const RCP<KokkosClassic::ThrustGPUNode> &node) {
     node->clearStatistics();
   }
 };
@@ -138,9 +138,9 @@ class runTest {
     typedef Tpetra::Operator<Scalar,LO,GO,Node>    TOP;
     typedef Belos::LinearProblem<Scalar,TMV,TOP>   BLP;
     typedef Belos::SolverManager<Scalar,TMV,TOP>   BSM;
-    typedef Belos::MultiVecTraits<Scalar,TMV>      BMVT;
 
 #ifdef HAVE_BELOS_TPETRA_TIMERS
+    typedef Belos::MultiVecTraits<Scalar,TMV>      BMVT;
     BMVT::mvTimesMatAddMvTimer_ = Teuchos::TimeMonitor::getNewTimer("Belos/Tpetra::MvTimesMatAddMv()");
     BMVT::mvTransMvTimer_ = Teuchos::TimeMonitor::getNewTimer("Belos/Tpetra::MvTransMv()");
 #endif
@@ -252,7 +252,7 @@ namespace Ifpack2 {
 
   // use the Tpetra macros, because they are node-aware
   #define LCLINST(S,LO,GO,N) \
-          template class Diagonal<Tpetra::CrsMatrix<S,LO,GO,N,Kokkos::DefaultKernels<S,LO,N>::SparseOps> >;
+          template class Diagonal<Tpetra::CrsMatrix<S,LO,GO,N,KokkosClassic::DefaultKernels<S,LO,N>::SparseOps> >;
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

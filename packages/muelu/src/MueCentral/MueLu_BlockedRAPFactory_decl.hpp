@@ -66,7 +66,7 @@ namespace MueLu {
     @class BlockedRAPFactory
     @brief Factory for building coarse matrices.
   */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
   class BlockedRAPFactory : public TwoLevelFactoryBase {
 #undef MUELU_BLOCKEDRAPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -106,12 +106,25 @@ namespace MueLu {
       checkAc_ = check;
     }
 
+    //@{
+    /*! @brief Add transfer factory in the end of list of transfer factories in RepartitionAcFactory.
+
+    Transfer factories are derived from TwoLevelFactoryBase and project some data from the fine level to
+    the next coarser level.
+    */
+    void AddTransferFactory(const RCP<const FactoryBase>& factory);
+
+    // TODO add a function to remove a specific transfer factory?
+
+    //! Returns number of transfer factories.
+    size_t NumTransferFactories() const { return transferFacts_.size(); }
+
+    //@}
+
   private:
 
-    //! @name internal print methods.
-    static void PrintMatrixInfo(const Matrix & Ac, const std::string & msgTag);
-
     //! @name internal plausibility check methods
+    //! checks main diagonal entries of (0,0) block. Does not affect entries in (1,1) block!
     static void CheckMainDiagonal(RCP<BlockedCrsMatrix> & bAc, bool repairZeroDiagonals = false);
 
     //! If true, the action of the restriction operator action is implicitly defined by the transpose of the prolongator.
@@ -125,6 +138,13 @@ namespace MueLu {
     //! i.e. if A(i,i) == 0.0 set A(i,i) = 1.0
     //! note, that the repairZeroDiagonals_ flag only is valid for checkAc_ == true
     bool repairZeroDiagonals_;
+
+    //@{
+
+    //! list of user-defined transfer Factories
+    std::vector<RCP<const FactoryBase> > transferFacts_;
+
+    //@}
 
   }; //class BlockedRAPFactory
 

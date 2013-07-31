@@ -50,7 +50,7 @@
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_ArrayView.hpp>
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   /** \brief A default implementation of the Node memory architecture for a single memory space allocated by standard library calls.
       \ingroup kokkos_node_api
@@ -159,6 +159,7 @@ namespace Kokkos {
       //! \brief Return a non-const view of a buffer for use on the host.
       template <class T> inline
       ArrayRCP<T> viewBufferNonConst(ReadWriteOption rw, size_t size, const ArrayRCP<T> &buff) {
+	(void) rw; // Silence "unused parameter" compiler warning
         if (isHostNode == false) {
           CHECK_COMPUTE_BUFFER(buff);
         }
@@ -184,6 +185,6 @@ namespace Kokkos {
       //@}
   };
 
-} // end of namespace Kokkos
+} // end of namespace KokkosClassic
 
 #endif

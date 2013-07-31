@@ -90,12 +90,20 @@ namespace SEAMS {
 		<< apr.ap_file_list.top().lineno + 1 <<")\n";
   }
 
-  void redefined_warning (const SEAMS::Aprepro &apr, const std::string &var)
+  void redefined_warning (const SEAMS::Aprepro &apr, const SEAMS::symrec* var)
   {
-    if (var[0] != '_' && apr.ap_options.warning_msg)
-      std::cerr << "Aprepro: WARN: Variable '"
-		<< var << "' redefined (" << apr.ap_file_list.top().name << ", line "
+    if (var->name[0] != '_' && apr.ap_options.warning_msg) {
+      // See if internal or user-defined variable...
+      std::string type;
+      if (var->isInternal)
+	type = "Pre";
+      else
+	type = "User";
+
+      std::cerr << "Aprepro: WARN: " << type << "-defined Variable '"
+		<< var->name << "' redefined (" << apr.ap_file_list.top().name << ", line "
 		<< apr.ap_file_list.top().lineno + 1 <<")\n";
+    }
   }
 
   void warning (const SEAMS::Aprepro &apr, const std::string &s)

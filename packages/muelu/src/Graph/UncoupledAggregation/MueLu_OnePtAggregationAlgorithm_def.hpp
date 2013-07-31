@@ -74,7 +74,7 @@ OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::OnePt
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-LocalOrdinal OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const {
+LocalOrdinal OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const {
   Monitor m(*this, "BuildAggregates");
 
   const LocalOrdinal nRows = graph.GetNodeNumVertices();

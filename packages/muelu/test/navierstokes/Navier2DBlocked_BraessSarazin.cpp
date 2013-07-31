@@ -86,6 +86,7 @@
 #include "MueLu_Memory.hpp"
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_CoupledAggregationFactory.hpp"
+#include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
@@ -130,7 +131,7 @@
   {
     if (A==Teuchos::null)
       {
-        cout << "ERROR: SplitMatrix2x2: A==null on entry" << endl;
+        std::cout << "ERROR: SplitMatrix2x2: A==null on entry" << std::endl;
         return false;
       }
 
@@ -160,7 +161,7 @@
         }
       if (count != A22map.NumGlobalElements())
         {
-          cout << "ERROR SplitMatrix2x2: mismatch in dimensions" << endl;
+          std::cout << "ERROR SplitMatrix2x2: mismatch in dimensions" << std::endl;
           return false;
         }
 
@@ -186,7 +187,7 @@
           int err = A->ExtractMyRowView(i,numentries,values,cindices);
           if (err)
             {
-              cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << endl;
+              std::cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << std::endl;
               return false;
             }
 
@@ -202,17 +203,17 @@
               // see whether we have gcid in a22gmap
               std::map<int,int>::iterator curr = a22gmap.find(gcid);
               if (curr==a22gmap.end()) continue;
-              //cout << gcid << " ";
+              //std::cout << gcid << " ";
               a22gcindices[count] = gcid;
               a22values[count]    = values[j];
               ++count;
             }
-          //cout << endl; fflush(stdout);
+          //std::cout << std::endl; fflush(stdout);
           // add this filtered row to A22
           err = A22->InsertGlobalValues(grid,count,&a22values[0],&a22gcindices[0]);
           if (err<0)
             {
-              cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << endl;
+              std::cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << std::endl;
               return false;
             }
 
@@ -238,7 +239,7 @@
           int err = A->ExtractMyRowView(i,numentries,values,cindices);
           if (err)
             {
-              cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << endl;
+              std::cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << std::endl;
               return false;
             }
 
@@ -261,7 +262,7 @@
           err = A11->InsertGlobalValues(grid,count,&a11values[0],&a11gcindices[0]);
           if (err<0)
             {
-              cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << endl;
+              std::cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << std::endl;
               return false;
             }
 
@@ -287,7 +288,7 @@
           int err = A->ExtractMyRowView(i,numentries,values,cindices);
           if (err)
             {
-              cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << endl;
+              std::cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << std::endl;
               return false;
             }
 
@@ -310,7 +311,7 @@
           err = A12->InsertGlobalValues(grid,count,&a12values[0],&a12gcindices[0]);
           if (err<0)
             {
-              cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << endl;
+              std::cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << std::endl;
               return false;
             }
 
@@ -336,7 +337,7 @@
           int err = A->ExtractMyRowView(i,numentries,values,cindices);
           if (err)
             {
-              cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << endl;
+              std::cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << std::endl;
               return false;
             }
 
@@ -359,7 +360,7 @@
           err = A21->InsertGlobalValues(grid,count,&a21values[0],&a21gcindices[0]);
           if (err<0)
             {
-              cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << endl;
+              std::cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << std::endl;
               return false;
             }
 
@@ -442,6 +443,9 @@ int main(int argc, char *argv[]) {
 
   EpetraExt::MatrixMarketFileToCrsMatrix("A5932_re1000.txt",*fullmap,*fullmap,*fullmap,ptrA);
   EpetraExt::MatrixMarketFileToVector("b5932_re1000.txt",*fullmap,ptrf);
+  //EpetraExt::MatrixMarketFileToCrsMatrix("/home/tobias/promotion/trilinos/fc17-dyn/packages/muelu/test/navierstokes/A5932_re1000.txt",*fullmap,*fullmap,*fullmap,ptrA);
+  //EpetraExt::MatrixMarketFileToVector("/home/tobias/promotion/trilinos/fc17-dyn/packages/muelu/test/navierstokes/b5932_re1000.txt",*fullmap,ptrf);
+
   RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
   RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
   RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
@@ -526,12 +530,13 @@ int main(int argc, char *argv[]) {
   dropFact11->SetFactory("A", A11Fact);
   dropFact11->SetFactory("UnAmalgamationInfo", amalgFact11);
   dropFact11->setDefaultVerbLevel(Teuchos::VERB_EXTREME);
-  RCP<CoupledAggregationFactory> CoupledAggFact11 = rcp(new CoupledAggregationFactory());
+  //RCP<CoupledAggregationFactory> CoupledAggFact11 = rcp(new CoupledAggregationFactory());
+  RCP<UncoupledAggregationFactory> CoupledAggFact11 = rcp(new UncoupledAggregationFactory());
   CoupledAggFact11->SetFactory("Graph", dropFact11);
   CoupledAggFact11->SetMinNodesPerAggregate(9);
   CoupledAggFact11->SetMaxNeighAlreadySelected(2);
   CoupledAggFact11->SetOrdering(MueLu::AggOptions::NATURAL);
-  CoupledAggFact11->SetPhase3AggCreation(0.5);
+  //CoupledAggFact11->SetPhase3AggCreation(0.5);
 
   ///////////////////////////////////////// define transfer ops for A11
 #if 0
@@ -638,14 +643,14 @@ int main(int argc, char *argv[]) {
   M22->SetFactory("R", R22Fact);
   M22->SetFactory("Aggregates", CoupledAggFact11);
   M22->SetFactory("Nullspace", nspFact22);
-  M11->SetFactory("UnAmalgamationInfo", amalgFact22);
+  M22->SetFactory("UnAmalgamationInfo", amalgFact22); // TODO oops what about that? it was M11 before?
   M22->SetFactory("Ptent", P22Fact);
   M22->SetFactory("CoarseMap", coarseMapFact22);
   M22->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
 #endif
 
   /////////////////////////////////////////// define blocked transfer ops
-  RCP<BlockedPFactory> PFact = rcp(new BlockedPFactory(Teuchos::null)); // use row map index base from bOp
+  RCP<BlockedPFactory> PFact = rcp(new BlockedPFactory()); // use row map index base from bOp
   PFact->AddFactoryManager(M11);
   PFact->AddFactoryManager(M22);
 
@@ -658,7 +663,8 @@ int main(int argc, char *argv[]) {
 
   /* TODO: not available yet for BlockedRAPFactory. Need some inheritence.
   // register aggregation export factory in RAPFactory
-  RCP<MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > aggExpFact = rcp(new MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps>("aggs_level%LEVELID_proc%PROCID.out"));
+  RCP<MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > aggExpFact = rcp(new MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps>());
+  aggExpFact->SetParameter("Output filename","aggs_level%LEVELID_proc%PROCID.out");
   aggExpFact->SetFactory("Aggregates", CoupledAggFact11);
   aggExpFact->SetFactory("DofsPerNode", dropFact11);
 
@@ -673,7 +679,8 @@ int main(int argc, char *argv[]) {
   //Another factory manager for braes sarazin smoother
   //Schur Complement Factory, using the factory to generate AcFact
   SC omega = 1.3;
-    RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory(omega));
+    RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
+    SFact->SetParameter("omega", Teuchos::ParameterEntry(omega));
     SFact->SetFactory("A", MueLu::NoFactory::getRCP());
 
     //Smoother Factory, using SFact as a factory for A
@@ -686,11 +693,11 @@ int main(int argc, char *argv[]) {
     RCP<SmootherPrototype> smoProtoSC     = rcp( new TrilinosSmoother(ifpackSCType, ifpackSCList, 0, SFact) );
     RCP<SmootherFactory> SmooSCFact = rcp( new SmootherFactory(smoProtoSC) );
 
-    RCP<BraessSarazinSmoother> smootherPrototype     = rcp( new BraessSarazinSmoother(3,omega/*,MueLu::NoFactory::getRCP()*//*,SmooSCFact*/) );
+    RCP<BraessSarazinSmoother> smootherPrototype     = rcp( new BraessSarazinSmoother(3,omega) );
 
   RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );
 
-  RCP<BraessSarazinSmoother> coarseSolverPrototype = rcp( new BraessSarazinSmoother(3,omega/*,MueLu::NoFactory::getRCP()*//*,SmooSCFact*/) );
+  RCP<BraessSarazinSmoother> coarseSolverPrototype = rcp( new BraessSarazinSmoother(3,omega) );
 
   RCP<SmootherFactory>   coarseSolverFact      = rcp( new SmootherFactory(coarseSolverPrototype, Teuchos::null) );
 
@@ -716,6 +723,9 @@ int main(int argc, char *argv[]) {
   //////////////////////////////////// setup multigrid
 
   H->Setup(M,0,maxLevels);
+
+  *out << std::endl;
+  *out << "print content of multigrid levels:" << std::endl;
 
   Finest->print(*out);
 

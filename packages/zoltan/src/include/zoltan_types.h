@@ -1,4 +1,4 @@
-/* 
+/*
  * @HEADER
  *
  * ***********************************************************************
@@ -81,7 +81,7 @@ extern "C" {
 
 #include "Zoltan_config.h"
 
-/* The default ZOLTAN_ID_TYPE is "unsigned int" but this can be over-ridden on the compile command line.  
+/* The default ZOLTAN_ID_TYPE is "unsigned int" but this can be over-ridden on the compile command line.
  *
  * The type of a Zoltan object global ID is ZOLTAN_ID_TYPE.  A pointer to it is ZOLTAN_ID_PTR.
  *
@@ -117,7 +117,7 @@ extern "C" {
 #undef ZOLTAN_ID_SPEC
 #undef ZOLTAN_ID_CONSTANT
 
-/* 
+/*
  * Autoconf build: --with-id-type={uint, ulong, ullong}
  *
  * CMake build:    -D Zoltan_ENABLE_UINT_IDS:Bool=ON
@@ -188,7 +188,7 @@ typedef unsigned int ZOLTAN_ID_TYPE;
 
 typedef ZOLTAN_ID_TYPE     *ZOLTAN_ID_PTR;
 
-/* 
+/*
  * The MPI_Datatype for ZOLTAN_GNO_TYPE is returned by Zoltan_mpi_gno_type().
  */
 
@@ -196,11 +196,18 @@ typedef ZOLTAN_ID_TYPE     *ZOLTAN_ID_PTR;
 #define zoltan_gno_datatype_name "ssize_t"
 
 /*
-* 12/21/10: Trilinos compiles with warnings about c99 features (%zd).  
-*           So we use %ld to for a ZOLTAN_GNO_TYPE.
+* 06/26/13: Use the correct specifier %zd if possible,
+*           fall back to %ld otherwise.
 */
-
-#define ZOLTAN_GNO_SPEC   "%ld"
+#if defined(__STDC_VERSION__)
+#  if (__STDC_VERSION__ >= 199901L)
+#    define ZOLTAN_GNO_SPEC   "%zd"
+#  else
+#    define ZOLTAN_GNO_SPEC   "%ld"
+#  endif
+#else
+#  define ZOLTAN_GNO_SPEC   "%ld"
+#endif
 
 /*****************************************************************************/
 /*
@@ -220,7 +227,7 @@ typedef ZOLTAN_ID_TYPE     *ZOLTAN_ID_PTR;
 #define ZOLTAN_MEMERR -2
 
 /*****************************************************************************/
-/* Hypergraph query function types 
+/* Hypergraph query function types
  */
 /*****************************************************************************/
 #define ZOLTAN_COMPRESSED_EDGE   1

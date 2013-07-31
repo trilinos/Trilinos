@@ -289,5 +289,13 @@ buildIntegrationRule(const int integration_order,const panzer::PhysicsBlock& sid
 }
 
 // ***********************************************************************
+template <typename EvalT>
+const panzer::BC
+panzer::BCStrategy_Neumann_DefaultImpl<EvalT>::bc() const
+{
+  return this->m_bc;
+}
+
+// ***********************************************************************
 
 #endif

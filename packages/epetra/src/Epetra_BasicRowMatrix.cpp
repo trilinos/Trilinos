@@ -40,6 +40,7 @@
 // ************************************************************************
 //@HEADER
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_BasicRowMatrix.h"
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
@@ -56,10 +57,12 @@
 //==============================================================================
 Epetra_BasicRowMatrix::Epetra_BasicRowMatrix(const Epetra_Comm & comm) 
   : Comm_(comm.Clone()),
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
     OperatorDomainMap_(Epetra_Map(0,0,comm)),
     OperatorRangeMap_(Epetra_Map(0,0,comm)),
     RowMatrixRowMap_(Epetra_Map(0,0,comm)),
     RowMatrixColMap_(Epetra_Map(0,0,comm)),
+#endif
     NumMyNonzeros_(0),
     NumGlobalNonzeros_(0),
     MaxNumEntries_(0),
@@ -479,7 +482,7 @@ void Epetra_BasicRowMatrix::UpdateExportVector(int NumVectors) const {
 }
 
 //=======================================================================================================
-void Epetra_BasicRowMatrix::Print(ostream& os) const {
+void Epetra_BasicRowMatrix::Print(std::ostream& os) const {
 
   int MyPID = RowMatrixRowMap().Comm().MyPID();
   int NumProc = RowMatrixRowMap().Comm().NumProc();
@@ -487,18 +490,18 @@ void Epetra_BasicRowMatrix::Print(ostream& os) const {
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
       if (MyPID==0) {
-    os <<    "\nNumber of Global Rows         = "; os << NumGlobalRows64();    os << endl;
-    os <<    "Number of Global Cols         = "; os << NumGlobalCols64();    os << endl;
-    os <<    "Number of Global Diagonals    = "; os << NumGlobalDiagonals64(); os << endl;
-	os <<    "Number of Global Nonzeros     = "; os << NumGlobalNonzeros_; os << endl;
+    os <<    "\nNumber of Global Rows         = "; os << NumGlobalRows64();    os << std::endl;
+    os <<    "Number of Global Cols         = "; os << NumGlobalCols64();    os << std::endl;
+    os <<    "Number of Global Diagonals    = "; os << NumGlobalDiagonals64(); os << std::endl;
+	os <<    "Number of Global Nonzeros     = "; os << NumGlobalNonzeros_; os << std::endl;
       }
       
-      os <<  "\nNumber of My Rows               = "; os << NumMyRows_; os << endl;
-      os <<    "Number of My Cols               = "; os << NumMyCols_; os << endl;
-      os <<    "Number of My Diagonals          = "; os << NumMyDiagonals(); os << endl;
-      os <<    "Number of My Nonzeros           = "; os << NumMyNonzeros_; os << endl;
-      os <<    "My Maximum Num Entries          = "; os << MaxNumEntries_; os << endl; os << endl;
-      os << flush;
+      os <<  "\nNumber of My Rows               = "; os << NumMyRows_; os << std::endl;
+      os <<    "Number of My Cols               = "; os << NumMyCols_; os << std::endl;
+      os <<    "Number of My Diagonals          = "; os << NumMyDiagonals(); os << std::endl;
+      os <<    "Number of My Nonzeros           = "; os << NumMyNonzeros_; os << std::endl;
+      os <<    "My Maximum Num Entries          = "; os << MaxNumEntries_; os << std::endl; os << std::endl;
+      os << std::flush;
       
     }
     // Do a few global ops to give I/O a chance to complete
@@ -518,7 +521,7 @@ void Epetra_BasicRowMatrix::Print(ostream& os) const {
 	os <<  "   Col Index ";
 	os.width(20);
 	os <<  "   Value     ";
-	os << endl;
+	os << std::endl;
       }
       Epetra_SerialDenseVector Values(MaxNumEntries());
       Epetra_IntSerialDenseVector Indices(MaxNumEntries());
@@ -538,11 +541,11 @@ void Epetra_BasicRowMatrix::Print(ostream& os) const {
 	  os <<  Index; os << "    ";
 	  os.width(20);
 	  os <<  Values[j]; os << "    ";
-	  os << endl;
+	  os << std::endl;
 	}
       }
     
-      os << flush;
+      os << std::flush;
       
     }
     // Do a few global ops to give I/O a chance to complete

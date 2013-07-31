@@ -48,7 +48,7 @@ double * Epetra_NumPyMultiVector::getArray(PyObject * pyObject)
   // Try to build a contiguous PyArrayObject from the pyObject
   if (!tmp_array)
     tmp_array = (PyArrayObject *)
-      PyArray_ContiguousFromObject(pyObject,PyArray_DOUBLE,0,0);
+      PyArray_ContiguousFromObject(pyObject,NPY_DOUBLE,0,0);
   
   // If this fails, clean up and throw a PythonException
   if (!tmp_array)
@@ -60,7 +60,7 @@ double * Epetra_NumPyMultiVector::getArray(PyObject * pyObject)
   // number of dimensions
   else
   {
-    if (tmp_array->nd < 2)
+    if (PyArray_NDIM(tmp_array) < 2)
     {
       PyObject * tuple = Py_BuildValue("(ii)",1,-1);
       tmp_array = (PyArrayObject *) PyArray_Reshape(tmp_array,tuple);
@@ -68,7 +68,7 @@ double * Epetra_NumPyMultiVector::getArray(PyObject * pyObject)
     }
   }
 
-  return (double *) (tmp_array->data);
+  return (double *) (PyArray_DATA(tmp_array));
 }
 
 // =============================================================================
@@ -81,7 +81,7 @@ double * Epetra_NumPyMultiVector::getArray(const Epetra_BlockMap & blockMap,
     int numVectors = (int) PyInt_AsLong(pyObject);
     npy_intp dimensions[ ] = { numVectors, blockMap.NumMyPoints() };
     tmp_array = (PyArrayObject *)
-      PyArray_SimpleNew(2,dimensions,PyArray_DOUBLE);
+      PyArray_SimpleNew(2,dimensions,NPY_DOUBLE);
     if (!tmp_array)
     {
       cleanup();
@@ -94,7 +94,7 @@ double * Epetra_NumPyMultiVector::getArray(const Epetra_BlockMap & blockMap,
   {
     if (!tmp_array)
       tmp_array = (PyArrayObject *)
-	PyArray_ContiguousFromObject(pyObject,PyArray_DOUBLE,0,0);
+	PyArray_ContiguousFromObject(pyObject,NPY_DOUBLE,0,0);
 
     // If this fails, clean up and throw a PythonException
     if (!tmp_array)
@@ -106,10 +106,10 @@ double * Epetra_NumPyMultiVector::getArray(const Epetra_BlockMap & blockMap,
     // number of dimensions
     else
     {
-      int nd = tmp_array->nd;
+      int nd = PyArray_NDIM(tmp_array);
       npy_intp dimensions[ ] = { 1, blockMap.NumMyPoints() };  // Default dimensions
       bool reallocate = false;
-      npy_intp arraySize = PyArray_MultiplyList(tmp_array->dimensions,nd);
+      npy_intp arraySize = PyArray_MultiplyList(PyArray_DIMS(tmp_array),nd);
 
       if (nd < 2)
       {
@@ -117,10 +117,10 @@ double * Epetra_NumPyMultiVector::getArray(const Epetra_BlockMap & blockMap,
       }
       else
       {
-	arraySize /= tmp_array->dimensions[0];
+	arraySize /= PyArray_DIMS(tmp_array)[0];
 	if (arraySize != dimensions[1])
 	{
-	  dimensions[0] = tmp_array->dimensions[0];
+	  dimensions[0] = PyArray_DIMS(tmp_array)[0];
 	  reallocate = true;
 	}
       }
@@ -129,14 +129,14 @@ double * Epetra_NumPyMultiVector::getArray(const Epetra_BlockMap & blockMap,
       if (reallocate)
       {
 	PyArrayObject * myArray = (PyArrayObject *)
-	  PyArray_SimpleNew(2,dimensions,PyArray_DOUBLE);
+	  PyArray_SimpleNew(2,dimensions,NPY_DOUBLE);
 	if (!myArray)
 	{
 	  cleanup();
 	  throw PythonException();
 	}
-	double        * myData  = (double *) myArray->data;
-	double        * tmpData = (double *) tmp_array->data;
+	double        * myData  = (double *) PyArray_DATA(myArray);
+	double        * tmpData = (double *) PyArray_DATA(tmp_array);
 	for (int i=0; i<dimensions[0]; i++)
 	{
 	  for (int j=0; j<arraySize && j<dimensions[1]; j++)
@@ -149,7 +149,7 @@ double * Epetra_NumPyMultiVector::getArray(const Epetra_BlockMap & blockMap,
       }
     }
   }
-  return (double *) (tmp_array->data);
+  return (double *) (PyArray_DATA(tmp_array));
 }
 
 // =============================================================================
@@ -159,7 +159,7 @@ Epetra_Map & Epetra_NumPyMultiVector::getMap(PyObject * pyObject)
   if (!tmp_map)
   {
     const int totalLength = PyArray_Size((PyObject *)tmp_array);
-    const int numVectors  = tmp_array->dimensions[0];
+    const int numVectors  = PyArray_DIMS(tmp_array)[0];
     tmp_map = new Epetra_Map(totalLength/numVectors,0,defaultComm);
   }
   return *tmp_map;
@@ -169,7 +169,7 @@ Epetra_Map & Epetra_NumPyMultiVector::getMap(PyObject * pyObject)
 int Epetra_NumPyMultiVector::getNumVectors(PyObject * pyObject)
 {
   if (!tmp_array) getArray(pyObject);
-  return tmp_array->dimensions[0];
+  return PyArray_DIMS(tmp_array)[0];
 }
 
 // =============================================================================
@@ -177,7 +177,7 @@ int Epetra_NumPyMultiVector::getNumVectors(const Epetra_BlockMap & blockMap,
 					   PyObject * pyObject)
 {
   if (!tmp_array) getArray(blockMap,pyObject);
-  return tmp_array->dimensions[0];
+  return PyArray_DIMS(tmp_array)[0];
 }
 
 // =============================================================================
@@ -196,20 +196,20 @@ int * Epetra_NumPyMultiVector::getRange(PyObject * range,
   if (range == NULL)
   {
     npy_intp dims[ ] = { (npy_intp) source.NumVectors() };
-    tmp_range = (PyArrayObject *) PyArray_SimpleNew(1,dims,PyArray_INT);
+    tmp_range = (PyArrayObject *) PyArray_SimpleNew(1,dims,NPY_INT);
     if (!tmp_range)
     {
       cleanup();
       throw PythonException();
     }
-    int * data = (int *) tmp_range->data;
+    int * data = (int *) PyArray_DATA(tmp_range);
     for (int i=0; i<dims[0]; i++) data[i] = i;
   }
 
   // Try to create a contiguous array of integers from the PyObject
   if (!tmp_range)
     tmp_range = (PyArrayObject *)
-      PyArray_ContiguousFromObject(range,PyArray_INT,1,1);
+      PyArray_ContiguousFromObject(range,NPY_INT,1,1);
 
   // If this fails, clean up and throw a PythonException
   if (!tmp_range)
@@ -219,7 +219,7 @@ int * Epetra_NumPyMultiVector::getRange(PyObject * range,
   }
 
   // Obtain the length and return the array of integers
-  return (int *) (tmp_range->data);
+  return (int *) (PyArray_DATA(tmp_range));
 }
 
 // =============================================================================
@@ -262,7 +262,7 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMa
   npy_intp dims[ ] = { numVectors, blockMap.NumMyPoints() };
   double **v = NULL;
   Epetra_MultiVector::ExtractView(&v);
-  array = (PyArrayObject *) PyArray_SimpleNewFromData(2,dims,PyArray_DOUBLE,
+  array = (PyArrayObject *) PyArray_SimpleNewFromData(2,dims,NPY_DOUBLE,
 						      (void *)v[0]);
   if (!array)
   {
@@ -281,7 +281,7 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(const Epetra_MultiVector & sour
   npy_intp dims[ ] = { NumVectors(), map->NumMyPoints() };
   double **v = NULL;
   Epetra_MultiVector::ExtractView(&v);
-  array = (PyArrayObject *) PyArray_SimpleNewFromData(2,dims,PyArray_DOUBLE,
+  array = (PyArrayObject *) PyArray_SimpleNewFromData(2,dims,NPY_DOUBLE,
 						      (void *)v[0]);
   if (!array)
   {
@@ -320,15 +320,15 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(Epetra_DataAccess CV,
   int nd;
   // This shouldn't happen, but it does . . .
   if (NULL == src_array) nd = 2;
-  else nd = src_array->nd;
+  else nd = PyArray_NDIM(src_array);
   npy_intp * dims = new npy_intp[nd];
   dims[0] = NumVectors();
   if (NULL == src_array) dims[1] = source.MyLength();
-  else for (int i=1; i<nd; i++) dims[i] = src_array->dimensions[i];
+  else for (int i=1; i<nd; i++) dims[i] = PyArray_DIMS(src_array)[i];
 
   double **v = NULL;
   Epetra_MultiVector::ExtractView(&v);
-  array = (PyArrayObject *) PyArray_SimpleNewFromData(nd,dims,PyArray_DOUBLE,
+  array = (PyArrayObject *) PyArray_SimpleNewFromData(nd,dims,NPY_DOUBLE,
 						      (void *)v[0]);
   delete [] dims;
   if (!array)
@@ -355,7 +355,7 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(Epetra_DataAccess CV,
   npy_intp dims[ ] = { NumVectors(), MyLength() };
   double **v  = NULL;
   Epetra_MultiVector::ExtractView(&v);
-  array = (PyArrayObject *) PyArray_SimpleNewFromData(2,dims,PyArray_DOUBLE,
+  array = (PyArrayObject *) PyArray_SimpleNewFromData(2,dims,NPY_DOUBLE,
 						      (void *)v[0]);
   if (!array)
   {
@@ -393,7 +393,7 @@ Epetra_NumPyMultiVector::~Epetra_NumPyMultiVector()
 // =============================================================================
 PyObject * Epetra_NumPyMultiVector::ExtractCopy() const
 {
-  return PyArray_NewCopy(array,PyArray_ANYORDER);
+  return PyArray_NewCopy(array,NPY_ANYORDER);
 }
 
 // =============================================================================
@@ -419,8 +419,8 @@ PyObject * Epetra_NumPyMultiVector::Dot(const Epetra_MultiVector & a) const
     PyErr_Format(PyExc_RuntimeError, "Dot returned error code %d", status);
     goto fail;
   }
-  po = PyArray_SimpleNew(1, numVectors, PyArray_DOUBLE);
-  data = (double*) (((PyArrayObject*)po)->data);
+  po = PyArray_SimpleNew(1, numVectors, NPY_DOUBLE);
+  data = (double*) PyArray_DATA(((PyArrayObject*)po));
   for (int i=0; i<n; i++) data[i] = result[i];
   delete [] result;
   return PyArray_Return((PyArrayObject*)po);
@@ -445,8 +445,8 @@ PyObject * Epetra_NumPyMultiVector::Norm1() const
     PyErr_Format(PyExc_RuntimeError, "Norm1 returned error code %d", status);
     goto fail;
   }
-  po   = PyArray_SimpleNew(1, numVectors, PyArray_DOUBLE);
-  data = (double*)(((PyArrayObject*)po)->data);
+  po   = PyArray_SimpleNew(1, numVectors, NPY_DOUBLE);
+  data = (double*) PyArray_DATA((PyArrayObject*)po);
   for (int i=0; i<n; i++) data[i] = result[i];
   delete [] result;
   return PyArray_Return((PyArrayObject*)po);
@@ -471,8 +471,8 @@ PyObject * Epetra_NumPyMultiVector::Norm2() const
     PyErr_Format(PyExc_RuntimeError, "Norm2 returned error code %d", status);
     goto fail;
   }
-  po   = PyArray_SimpleNew(1, numVectors, PyArray_DOUBLE);
-  data = (double*)(((PyArrayObject*)po)->data);
+  po   = PyArray_SimpleNew(1, numVectors, NPY_DOUBLE);
+  data = (double*) PyArray_DATA((PyArrayObject*)po);
   for (int i=0; i<n; i++) data[i] = result[i];
   delete [] result;
   return PyArray_Return((PyArrayObject*)po);
@@ -497,8 +497,8 @@ PyObject * Epetra_NumPyMultiVector::NormInf() const
     PyErr_Format(PyExc_RuntimeError, "NormInf returned error code %d", status);
     goto fail;
   }
-  po   = PyArray_SimpleNew(1, numVectors, PyArray_DOUBLE);
-  data = (double*) (((PyArrayObject*)po)->data);
+  po   = PyArray_SimpleNew(1, numVectors, NPY_DOUBLE);
+  data = (double*) PyArray_DATA((PyArrayObject*)po);
   for (int i=0; i<n; i++) data[i] = result[i];
   delete [] result;
   return PyArray_Return((PyArrayObject*)po);
@@ -524,8 +524,8 @@ NormWeighted(const Epetra_MultiVector & weights) const
     PyErr_Format(PyExc_RuntimeError, "NormWeighted returned error code %d", status);
     goto fail;
   }
-  po   = PyArray_SimpleNew(1, numVectors, PyArray_DOUBLE);
-  data = (double*) (((PyArrayObject*)po)->data);
+  po   = PyArray_SimpleNew(1, numVectors, NPY_DOUBLE);
+  data = (double*) PyArray_DATA((PyArrayObject*)po);
   for (int i=0; i<n; i++) data[i] = result[i];
   delete [] result;
   return PyArray_Return((PyArrayObject*)po);
@@ -550,8 +550,8 @@ PyObject * Epetra_NumPyMultiVector::MinValue() const
     PyErr_Format(PyExc_RuntimeError, "MinValue returned error code %d", status);
     goto fail;
   }
-  po   = PyArray_SimpleNew(1, numVectors, PyArray_DOUBLE);
-  data = (double*) (((PyArrayObject*)po)->data);
+  po   = PyArray_SimpleNew(1, numVectors, NPY_DOUBLE);
+  data = (double*) PyArray_DATA((PyArrayObject*)po);
   for (int i=0; i<n; i++) data[i] = result[i];
   delete [] result;
   return PyArray_Return((PyArrayObject*)po);
@@ -576,8 +576,8 @@ PyObject * Epetra_NumPyMultiVector::MaxValue() const
     PyErr_Format(PyExc_RuntimeError, "MaxValue returned error code %d", status);
     goto fail;
   }
-  po   = PyArray_SimpleNew(1, numVectors, PyArray_DOUBLE);
-  data = (double*) (((PyArrayObject*)po)->data);
+  po   = PyArray_SimpleNew(1, numVectors, NPY_DOUBLE);
+  data = (double*) PyArray_DATA((PyArrayObject*)po);
   for (int i=0; i<n; i++) data[i] = result[i];
   delete [] result;
   return PyArray_Return((PyArrayObject*)po);
@@ -602,8 +602,8 @@ PyObject * Epetra_NumPyMultiVector::MeanValue() const
     PyErr_Format(PyExc_RuntimeError, "MeanValue returned error code %d", status);
     goto fail;
   }
-  po = PyArray_SimpleNew(1, numVectors, PyArray_DOUBLE);
-  data = (double*) (((PyArrayObject*)po)->data);
+  po = PyArray_SimpleNew(1, numVectors, NPY_DOUBLE);
+  data = (double*) PyArray_DATA((PyArrayObject*)po);
   for (int i=0; i<n; i++) data[i] = result[i];
   delete [] result;
   return PyArray_Return((PyArrayObject*)po);

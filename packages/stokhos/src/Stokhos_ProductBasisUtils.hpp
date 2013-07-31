@@ -7,20 +7,33 @@
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 // 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//  
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 // 
 // ***********************************************************************
@@ -145,6 +158,34 @@ namespace Stokhos {
 	os << index[i] << " ";
       os << "]";
       return os;
+    }
+
+    //! Replace multiindex with min of this and other multiindex
+    MultiIndex& termWiseMin(const MultiIndex& idx) {
+      for (ordinal_type i=0; i<dimension(); i++)
+	index[i] = index[i] <= idx[i] ? index[i] : idx[i];
+      return *this;
+    }
+
+    //! Replace multiindex with min of this and given value
+    MultiIndex& termWiseMin(const ordinal_type idx) {
+      for (ordinal_type i=0; i<dimension(); i++)
+	index[i] = index[i] <= idx ? index[i] : idx;
+      return *this;
+    }
+
+    //! Replace multiindex with max of this and other multiindex
+    MultiIndex& termWiseMax(const MultiIndex& idx) {
+      for (ordinal_type i=0; i<dimension(); i++)
+	index[i] = index[i] >= idx[i] ? index[i] : idx[i];
+      return *this;
+    }
+
+    //! Replace multiindex with max of this and given value
+    MultiIndex& termWiseMax(const ordinal_type idx) {
+      for (ordinal_type i=0; i<dimension(); i++)
+	index[i] = index[i] >= idx ? index[i] : idx;
+      return *this;
     }
 
   protected:
@@ -839,6 +880,52 @@ namespace Stokhos {
 
   };
 
+  /*! 
+   * \brief A comparison functor implementing a strict weak ordering based
+   * Morton Z-ordering.
+   */
+  /*
+   * A Morton Z-ordering is based on thinking of terms of dimension d as 
+   * coordinates in a d-dimensional space, and forming a linear ordering of
+   * the points in that space by interleaving the bits from each coordinate.
+   * As implemented, this ordering only works with integral types and 
+   * directly uses <.  The code was taken from here:
+   *
+   * http://en.wikipedia.org/wiki/Z-order_curve
+   *
+   * With the idea behind it published here:
+   *
+   * Chan, T. (2002), "Closest-point problems simplified on the RAM", 
+   * ACM-SIAM Symposium on Discrete Algorithms.
+   */
+  template <typename term_type>
+  class MortonZLess {
+  public:
+    
+    typedef term_type product_element_type;
+    typedef typename term_type::ordinal_type ordinal_type;
+    typedef typename term_type::element_type element_type;
+
+    //! Constructor
+    MortonZLess() {}
+
+    bool operator()(const term_type& a, const term_type& b) const {
+      ordinal_type d = a.dimension();
+      ordinal_type j = ordinal_type(0);
+      ordinal_type k = ordinal_type(0);
+      element_type x = element_type(0);
+      for (ordinal_type k=0; k<d; ++k) {
+	element_type y = a[k] ^ b[k];
+	if ( (x < y) && (x < (x^y)) ) {
+	  j = k;
+	  x = y;
+	}
+      }
+      return a[j] < b[j];
+    }
+
+  };
+
   //! A functor for comparing floating-point numbers to some tolerance
   /*!
    * The difference between this and standard < is that if |a-b| < tol, 
@@ -1201,6 +1288,215 @@ namespace Stokhos {
 
 	return Cijk;
       }
+
+    template <typename ordinal_type>
+    struct Cijk_1D_Iterator {
+      ordinal_type i_order, j_order, k_order;
+      bool symmetric;
+      ordinal_type i, j, k;
+
+      Cijk_1D_Iterator(ordinal_type p = 0, bool sym = false) : 
+	i_order(p), j_order(p), k_order(p), 
+	symmetric(sym),
+	i(0), j(0), k(0) {}
+
+      Cijk_1D_Iterator(ordinal_type p_i, ordinal_type p_j, ordinal_type p_k,
+		       bool sym) : 
+	i_order(p_i), j_order(p_j), k_order(p_k), 
+	symmetric(sym),
+	i(0), j(0), k(0) {}
+
+      // Reset i,j,k to first non-zero
+      void reset() { i = 0; j = 0; k = 0; }
+
+      // Increment i,j,k to next non-zero with constraint i >= j >= k
+      // Return false if no more non-zeros
+      bool increment() {
+	bool zero = true;
+
+	// Increment terms to next non-zero
+	while (zero) {
+	  bool more = increment_once();
+	  if (!more) return false;
+	  zero = is_zero();
+	}
+
+	return true;
+      }
+
+      // Increment i,j,k to next non-zero with constraint i >= j >= k
+      // Return false if no more non-zeros
+      bool increment(ordinal_type& delta_i, 
+		     ordinal_type& delta_j, 
+		     ordinal_type& delta_k) {
+	bool zero = true;
+	bool more = true;
+	ordinal_type i0 = i;
+	ordinal_type j0 = j;
+	ordinal_type k0 = k;
+
+	// Increment terms to next non-zero
+	while (more && zero) {
+	  more = increment_once();
+	  if (more)
+	    zero = is_zero();
+	}
+
+	delta_i = i-i0;
+	delta_j = j-j0;
+	delta_k = k-k0;
+
+	if (!more)
+	  return false;
+
+	return true;
+      }
+
+    private:
+      
+      // Increment i,j,k to next term with constraint i >= j >= k
+      // If no more terms, reset to first term and return false
+      bool increment_once() {
+	++i;
+	if (i > i_order) {
+	  ++j;
+	  if (j > j_order) {
+	    ++k;
+	    if (k > k_order) {
+	      i = 0;
+	      j = 0; 
+	      k = 0;
+	      return false;
+	    }
+	    j = 0;
+	  }
+	  i = 0;
+	}
+	return true;
+      }
+
+      // Determine if term is zero
+      bool is_zero() const {
+	if (k+j < i || i+j < k || i+k < j) return true;
+	if (symmetric && ((k+j) % 2) != (i % 2) ) return true;
+	return false;
+      }
+    };
+
+    template <typename ordinal_type, 
+	      typename value_type,
+	      typename basis_set_type, 
+	      typename basis_map_type,
+	      typename coeff_predicate_type,
+	      typename k_coeff_predicate_type>
+    static Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
+    computeTripleProductTensorNew(
+      const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > >& bases,
+      const basis_set_type& basis_set,
+      const basis_map_type& basis_map,
+      const coeff_predicate_type& coeff_pred,
+      const k_coeff_predicate_type& k_coeff_pred,
+      bool symmetric = false,
+      const value_type sparse_tol = 1.0e-12) {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
+      TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Total Triple-Product Tensor Time");
+#endif
+      typedef typename basis_map_type::value_type coeff_type;
+      ordinal_type d = bases.size();
+      
+      // The algorithm for computing Cijk = < \Psi_i \Psi_j \Psi_k > here 
+      // works by factoring 
+      // < \Psi_i \Psi_j \Psi_k > = 
+      //    < \psi^1_{i_1}\psi^1_{j_1}\psi^1_{k_1} >_1 x ... x
+      //    < \psi^d_{i_d}\psi^d_{j_d}\psi^d_{k_d} >_d
+      // We compute the sparse triple product < \psi^l_i\psi^l_j\psi^l_k >_l
+      // for each dimension l, and then compute all non-zero products of these
+      // terms.  The complexity arises from iterating through all possible
+      // combinations, throwing out terms that aren't in the basis and are 
+      // beyond the k-order limit provided
+      Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
+	Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>);
+      
+      // Create 1-D triple products
+      Teuchos::Array< Teuchos::RCP<Sparse3Tensor<ordinal_type,value_type> > > Cijk_1d(d);
+      for (ordinal_type i=0; i<d; i++) {
+	Cijk_1d[i] = 
+	  bases[i]->computeSparseTripleProductTensor(bases[i]->order()+1);
+      }
+      
+      // Create i, j, k iterators for each dimension
+      typedef Cijk_1D_Iterator<ordinal_type> Cijk_Iterator;
+      Teuchos::Array< Cijk_1D_Iterator<ordinal_type> > Cijk_1d_iterators(d);
+      coeff_type terms_i(d), terms_j(d), terms_k(d);
+      for (ordinal_type dim=0; dim<d; dim++) {
+	Cijk_1d_iterators[dim] = Cijk_Iterator(bases[dim]->order(), symmetric);
+	terms_i[dim] = 0;
+	terms_j[dim] = 0;
+	terms_k[dim] = 0;
+      }
+      
+      ordinal_type I = 0;
+      ordinal_type J = 0;
+      ordinal_type K = 0;
+      bool valid_i = coeff_pred(terms_i);
+      bool valid_j = coeff_pred(terms_j);
+      bool valid_k = k_coeff_pred(terms_k);
+      bool stop = !valid_i || !valid_j || !valid_k;
+      ordinal_type cnt = 0;
+      while (!stop) {
+	
+	typename basis_set_type::const_iterator k = basis_set.find(terms_k);
+	typename basis_set_type::const_iterator i = basis_set.find(terms_i);
+	typename basis_set_type::const_iterator j = basis_set.find(terms_j);
+	K = k->second;
+	I = i->second;
+	J = j->second;
+	
+	value_type c = value_type(1.0);
+	for (ordinal_type dim=0; dim<d; dim++) {
+	  c *= Cijk_1d[dim]->getValue(terms_i[dim], terms_j[dim], terms_k[dim]);
+	}
+	if (std::abs(c) > sparse_tol) {
+	  Cijk->add_term(I,J,K,c);
+	  // Cijk->add_term(I,K,J,c);
+	  // Cijk->add_term(J,I,K,c);
+	  // Cijk->add_term(J,K,I,c);
+	  // Cijk->add_term(K,I,J,c);
+	  // Cijk->add_term(K,J,I,c);
+	}
+	
+	// Increment iterators to the next valid term
+	// We keep i >= j >= k for each dimension
+	ordinal_type cdim = 0;
+	bool inc = true;
+	while (inc && cdim < d) {
+	  bool more = Cijk_1d_iterators[cdim].increment();
+	  terms_i[cdim] = Cijk_1d_iterators[cdim].i;
+	  terms_j[cdim] = Cijk_1d_iterators[cdim].j;
+	  terms_k[cdim] = Cijk_1d_iterators[cdim].k;
+	  if (!more) {
+	    ++cdim;
+	  }
+	  else {
+	    valid_i = coeff_pred(terms_i);
+	    valid_j = coeff_pred(terms_j);
+	    valid_k = k_coeff_pred(terms_k);
+	    
+	    if (valid_i && valid_j && valid_k)
+	      inc = false;
+	  }
+	}
+	
+	if (cdim == d)
+	  stop = true;
+	
+	cnt++;
+      }
+      
+      Cijk->fillComplete();
+      
+      return Cijk;
+    }
   };
 
   /*! 

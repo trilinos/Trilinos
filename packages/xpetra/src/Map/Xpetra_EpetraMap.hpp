@@ -75,7 +75,7 @@ namespace Xpetra {
 
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef Kokkos::DefaultNode::DefaultNodeType Node;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
   public:
 
@@ -83,13 +83,13 @@ namespace Xpetra {
     //@{
 
     //! Constructor with Tpetra-defined contiguous uniform distribution.
-    EpetraMap(global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalGlobal lg=GloballyDistributed, const Teuchos::RCP< Node > &node=Kokkos::DefaultNode::getDefaultNode());
+    EpetraMap(global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalGlobal lg=GloballyDistributed, const Teuchos::RCP< Node > &node=KokkosClassic::DefaultNode::getDefaultNode());
 
     //! Constructor with a user-defined contiguous distribution.
-    EpetraMap(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=Kokkos::DefaultNode::getDefaultNode());
+    EpetraMap(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=KokkosClassic::DefaultNode::getDefaultNode());
 
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
-    EpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=Kokkos::DefaultNode::getDefaultNode());
+    EpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=KokkosClassic::DefaultNode::getDefaultNode());
 
     //@}
 
@@ -168,6 +168,19 @@ namespace Xpetra {
 
     //! Get this Map's Node object.
     const Teuchos::RCP< Node >  getNode() const;
+
+    
+    RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > removeEmptyProcesses () const {
+      const Epetra_BlockMap * NewMap = map_->RemoveEmptyProcesses();
+      if(!NewMap) return Teuchos::null;
+      else return toXpetra(*NewMap);
+    }
+
+    RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const{ 
+      throw std::runtime_error("Xpetra::EpetraMap::replaceCommWithSubset has not yet been implemented.");
+      return Teuchos::null;
+    }
+
 
     //@}
 

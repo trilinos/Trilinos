@@ -1131,7 +1131,6 @@ namespace stk {
   }
 
 #include <exodusII.h>
-#include <ne_nemesisI.h>
 
   int main() {
     int num_processors = 8;
@@ -1166,10 +1165,10 @@ namespace stk {
 
         int node_map_ids[1] = {1};
         int node_map_node_cnts[1] = {procs.size()};
-        ne_put_init_info(exoid, num_processors, 1, "p");
-        ne_put_loadbal_param(exoid, 0, 0, 0, 0, 0, 1, 0, proc);
-        ne_put_cmap_params(exoid, node_map_ids, node_map_node_cnts, 0, 0, proc);
-        ne_put_node_cmap(exoid, 1, &nodes[0], &procs[0], proc);
+        ex_put_init_info(exoid, num_processors, 1, "p");
+        ex_put_loadbal_param(exoid, 0, 0, 0, 0, 0, 1, 0, proc);
+        ex_put_cmap_params(exoid, node_map_ids, node_map_node_cnts, 0, 0, proc);
+        ex_put_node_cmap(exoid, 1, &nodes[0], &procs[0], proc);
       }
 
       for (int i=1; i < mesh.block_count(); i++) {

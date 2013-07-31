@@ -50,9 +50,9 @@ void ML_Epetra::IVOUT(const Epetra_IntVector & A, const char *of){
       int MyLength = A.MyLength();
       for (i=0; i<MyLength; i++) {        
           os.width(20);
-          os << A[i]<<endl;
+          os << A[i]<<std::endl;
       }
-      os << flush;      
+      os << std::flush;      
     }/*end if*/
     // Do a few global ops to give I/O a chance to complete
     A.Map().Comm().Barrier();
@@ -169,7 +169,7 @@ static void ML_Init_Aux(ML_Operator* A, Teuchos::ParameterList &List) {
 
   /* Sanity Checks */
   if(dim == 0 || ((!x_coord && (y_coord || z_coord)) || (x_coord && !y_coord && z_coord))){
-    cerr<<"Error: Coordinates not defined.  This is necessary for aux aggregation (found "<<dim<<" coordinates).\n";
+    std::cerr<<"Error: Coordinates not defined.  This is necessary for aux aggregation (found "<<dim<<" coordinates).\n";
     exit(-1);
   }
 
@@ -328,7 +328,7 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   ML_Operator_WrapEpetraCrsMatrix(const_cast<Epetra_CrsMatrix*>(&A),A_ML);
 
  /* Pull Teuchos Options */
-  string CoarsenType  = List.get("aggregation: type", "Uncoupled");
+  std::string CoarsenType  = List.get("aggregation: type", "Uncoupled");
   double Threshold    = List.get("aggregation: threshold", 0.0);  
   int    NodesPerAggr = List.get("aggregation: nodes per aggregate", 
                                   ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate());
@@ -381,7 +381,7 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   if(verbose) ML_Set_PrintLevel(printlevel);
 
   if (NumAggregates == 0){
-    cerr << "Found 0 aggregates, perhaps the problem is too small." << endl;
+    std::cerr << "Found 0 aggregates, perhaps the problem is too small." << std::endl;
     ML_CHK_ERR(-2);
   }/*end if*/
   else if(very_verbose) printf("[%d] %s %d aggregates created invec_leng=%d\n",A.Comm().MyPID(),PrintMsg.c_str(),NumAggregates,P->invec_leng);

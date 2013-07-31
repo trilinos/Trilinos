@@ -287,17 +287,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Tpetra_MatrixMarket, MultiVector_Output_Perm,
   using Teuchos::RCP;
   using Teuchos::TypeNameTraits;
   using std::endl;
-  typedef Kokkos::DefaultNode::DefaultNodeType NT;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType NT;
   typedef Tpetra::Map<LO, GO, NT> map_type;
 
   // Get the default communicator.
   RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
   const int numProcs = comm->getSize ();
-  const int myRank = comm->getRank ();
 
-  if (myRank == 0) {
-    out << "Test with " << numProcs << " process" << (numProcs != 1 ? "es" : "") << endl;
-  }
+  out << "Test with " << numProcs << " process" << (numProcs != 1 ? "es" : "") << endl;
 
   // This test doesn't make much sense if there are multiple MPI processes.
   // We let it pass trivially in that case.
@@ -309,10 +306,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Tpetra_MatrixMarket, MultiVector_Output_Perm,
   // Get a Kokkos Node instance.  It would be nice if we could pass in
   // parameters here, but threads don't matter for this test; it's a
   // test for distributed-memory capabilities.
-  if (myRank == 0) {
-    out << "Creating Kokkos Node of type " << TypeNameTraits<NT>::name () << endl;
-  }
-  RCP<NT> node = Kokkos::DefaultNode::getDefaultNode();
+  out << "Creating Kokkos Node of type " << TypeNameTraits<NT>::name () << endl;
+  RCP<NT> node = KokkosClassic::DefaultNode::getDefaultNode();
   // Run the actual test.
   //RCP<const map_type> map = Test<map_type>::createTestMap (comm, node);
   Test<map_type>::testPermutedMultiVectorOutput (out, comm, node);

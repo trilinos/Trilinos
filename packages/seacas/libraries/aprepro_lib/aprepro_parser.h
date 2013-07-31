@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 2.7.  */
+/* A Bison parser, made by GNU Bison 2.7.12-4996.  */
 
 /* Skeleton interface for Bison LALR(1) parsers in C++
    
-      Copyright (C) 2002-2012 Free Software Foundation, Inc.
+      Copyright (C) 2002-2013 Free Software Foundation, Inc.
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -66,7 +66,7 @@ namespace SEAMS {
     union semantic_type
     {
 /* Line 33 of lalr1.cc  */
-#line 43 "aprepro.yy"
+#line 42 "aprepro.yy"
 
   double  val;		/* For returning numbers.		*/
   struct symrec *tptr;	/* For returning symbol-table pointers	*/
@@ -97,41 +97,40 @@ namespace SEAMS {
      FNCT = 265,
      SFNCT = 266,
      COMMA = 267,
-     RT = 268,
-     LPAR = 269,
-     RPAR = 270,
-     LBRACK = 271,
-     RBRACK = 272,
-     LBRACE = 273,
-     RBRACE = 274,
-     SEMI = 275,
-     EQUAL = 276,
-     EQ_MINUS = 277,
-     EQ_PLUS = 278,
-     EQ_DIV = 279,
-     EQ_TIME = 280,
-     EQ_POW = 281,
-     COLON = 282,
-     QUEST = 283,
-     LOR = 284,
-     LAND = 285,
-     NE = 286,
-     EQ = 287,
-     GE = 288,
-     LE = 289,
-     GT = 290,
-     LT = 291,
-     SUB = 292,
-     PLU = 293,
-     MOD = 294,
-     TIM = 295,
-     DIV = 296,
-     NOT = 297,
-     UNARY = 298,
-     POW = 299,
-     DEC = 300,
-     INC = 301,
-     CONCAT = 302
+     LPAR = 268,
+     RPAR = 269,
+     LBRACK = 270,
+     RBRACK = 271,
+     LBRACE = 272,
+     RBRACE = 273,
+     SEMI = 274,
+     EQUAL = 275,
+     EQ_MINUS = 276,
+     EQ_PLUS = 277,
+     EQ_DIV = 278,
+     EQ_TIME = 279,
+     EQ_POW = 280,
+     COLON = 281,
+     QUEST = 282,
+     LOR = 283,
+     LAND = 284,
+     NE = 285,
+     EQ = 286,
+     GE = 287,
+     LE = 288,
+     GT = 289,
+     LT = 290,
+     SUB = 291,
+     PLU = 292,
+     MOD = 293,
+     TIM = 294,
+     DIV = 295,
+     NOT = 296,
+     UNARY = 297,
+     POW = 298,
+     DEC = 299,
+     INC = 300,
+     CONCAT = 301
    };
 
     };
@@ -161,6 +160,10 @@ namespace SEAMS {
 #endif
 
   private:
+    /// This class is not copyable.
+    Parser (const Parser&);
+    Parser& operator= (const Parser&);
+
     /// Report a syntax error.
     /// \param loc    where the syntax error is found.
     /// \param msg    a description of the syntax error.
@@ -309,7 +312,7 @@ namespace SEAMS {
 
 } // SEAMS
 /* Line 33 of lalr1.cc  */
-#line 313 "aprepro_parser.h"
+#line 316 "aprepro_parser.h"
 
 
 

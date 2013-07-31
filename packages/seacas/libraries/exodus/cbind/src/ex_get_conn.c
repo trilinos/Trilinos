@@ -103,7 +103,7 @@ int ex_get_conn( int   exoid,
 	  sprintf(errmsg,
 		  "Warning: no connectivity array for NULL %s %"PRId64" in file id %d",
 		  ex_name_of_object(blk_type),blk_id,exoid);
-	  ex_err("ex_get_conn",errmsg,EX_MSG);
+	  ex_err("ex_get_conn",errmsg,EX_NULLENTITY);
 	  return (EX_WARN); /* no connectivity array for this element block */
 	}
       else

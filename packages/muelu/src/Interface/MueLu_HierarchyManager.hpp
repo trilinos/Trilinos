@@ -61,6 +61,8 @@
 
 #include "MueLu_Level.hpp"
 
+#include "MueLu_Utilities.hpp"
+
 namespace MueLu {
 
   // This class stores the configuration of a Hierarchy.
@@ -68,7 +70,7 @@ namespace MueLu {
   //
   // See also: FactoryManager
   //
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
   class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> {
 #undef MUELU_HIERARCHYMANAGER_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -76,7 +78,7 @@ namespace MueLu {
   public:
 
     //!
-    HierarchyManager() : numDesiredLevel_(10), maxCoarseSize_(50)   // TODO: default values should be query from Hierarchy class to avoid duplication
+    HierarchyManager() : numDesiredLevel_(10), maxCoarseSize_(50), verbosity_(Medium), graphOutputLevel_(-1)   // TODO: default values should be query from Hierarchy class to avoid duplication
     { }
 
     //!
@@ -96,6 +98,17 @@ namespace MueLu {
       for(int iLevel = startLevel; iLevel <= lastLevel; iLevel++) {
         levelManagers_[iLevel] = manager;
       }
+    }
+
+    //!
+    Teuchos::Ptr<FactoryManagerBase> GetFactoryManager(int levelID) const {
+      if (levelID >= levelManagers_.size()) return levelManagers_[levelManagers_.size()-1](); // last levelManager is used for all the remaining levels.
+      return levelManagers_[levelID](); // throw exception if out of bound.
+    }
+
+    //! returns number of factory managers stored in levelManagers_ vector.
+    size_t getNumFactoryManagers() const {
+      return levelManagers_.size();
     }
 
     //!
@@ -122,21 +135,26 @@ namespace MueLu {
 
       // Setup Matrix
       // TODO: I should certainly undo this somewhere...
-      RCP<Level> l = H.GetLevel(0);
+      RCP<Level>  l  = H.GetLevel(0);
       RCP<Matrix> Op = l->Get<RCP<Matrix> >("A");
       SetupMatrix(*Op);
       SetupExtra(H);
 
       // Setup Hierarchy
       H.SetMaxCoarseSize(maxCoarseSize_);
+      H.SetDefaultVerbLevel(verbosity_);
+      if (graphOutputLevel_ >= 0)
+        H.EnableGraphDumping("dep_graph.dot", graphOutputLevel_);
 
       // TODO: coarsestLevelManager
+
+      H.Clear();
 
       int  levelID     = 0;
       int  lastLevelID = numDesiredLevel_ - 1;
       bool isLastLevel = false;
 
-      while(!isLastLevel) {
+      while (!isLastLevel) {
         bool r = H.Setup(levelID,
                          LvlMngr(levelID-1, lastLevelID),
                          LvlMngr(levelID,   lastLevelID),
@@ -145,7 +163,22 @@ namespace MueLu {
         isLastLevel = r || (levelID == lastLevelID);
         levelID++;
       }
-    }
+      // When we reuse hierarchy, it is necessary that we don't
+      // change the number of levels. We also cannot make requests
+      // for coarser levels, because we don't construct all the
+      // data on previous levels. For instance, let's say our first
+      // run constructed three levels. If we try to do requests during
+      // next setup for the fourth level, it would need Aggregates
+      // which we didn't construct for level 3 because we reused P.
+      // To fix this situation, we change the number of desired levels
+      // here.
+      numDesiredLevel_ = levelID;
+
+      WriteData<Matrix>(H, matricesToPrint_,     "A");
+      WriteData<Matrix>(H, prolongatorsToPrint_, "P");
+      WriteData<Matrix>(H, restrictorsToPrint_,  "R");
+
+    } //SetupHierarchy
 
     //@}
 
@@ -160,15 +193,7 @@ namespace MueLu {
     // TODO: merge with SetupMatrix ?
     virtual void SetupExtra(Hierarchy & H) const { }
 
-    // Hierarchy parameters
-    int                   numDesiredLevel_;
-    Xpetra::global_size_t maxCoarseSize_;
-
-  private:
-    // Levels
-    Array<RCP<FactoryManagerBase> > levelManagers_;        // one FactoryManager per level. The last levelManager is used for all the remaining levels.
-    RCP<FactoryManagerBase>         coarsestLevelManager_; // coarsest level manager
-
+    // TODO this was private
     // Used in SetupHierarchy() to access levelManagers_
     // Inputs i=-1 and i=size() are allowed to simplify calls to hierarchy->Setup()
     Teuchos::Ptr<FactoryManagerBase> LvlMngr(int levelID, int lastLevelID) const {
@@ -187,6 +212,37 @@ namespace MueLu {
 
       return levelManagers_[levelID](); // throw exception if out of bound.
     }
+
+    // Hierarchy parameters
+    mutable int           numDesiredLevel_;
+    Xpetra::global_size_t maxCoarseSize_;
+    MsgType               verbosity_;
+    int                   graphOutputLevel_;
+    Teuchos::Array<int>   matricesToPrint_;
+    Teuchos::Array<int>   prolongatorsToPrint_;
+    Teuchos::Array<int>   restrictorsToPrint_;
+
+  private:
+
+    template<class T>
+    void WriteData(Hierarchy & H, Teuchos::Array<int> const &data, std::string const &name) const {
+      for (int i=0; i<data.size(); ++i) {
+        std::ostringstream buf; buf << data[i];
+        std::string fileName = name + "_" + buf.str() + ".m";
+        if (data[i] < H.GetNumLevels()) {
+          RCP<Level> L = H.GetLevel(data[i]);
+          if (L->IsAvailable(name)) {
+            RCP<T> M = L-> template Get< RCP<T> >(name);
+            if ( !( M.is_null() ) )
+              Utils::Write(fileName,*M);
+          }
+        }
+      }
+    } //WriteData
+
+    // Levels
+    Array<RCP<FactoryManagerBase> > levelManagers_;        // one FactoryManager per level. The last levelManager is used for all the remaining levels.
+    RCP<FactoryManagerBase>         coarsestLevelManager_; // coarsest level manager
 
   }; // class HierarchyManager
 

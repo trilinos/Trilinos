@@ -283,21 +283,28 @@ class Laplace1D_Matrix(Epetra.RowMatrix):
         "Required implementation of Epetra.RowMatrix class"
         return 4.0
 
-    def NumGlobalNonzeros(self):
+    ######################################################################
+    # The following methods with "64" suffixes are temporary and should be
+    # deprecated in the future in favor of the non-"64" versions of these
+    # methods.
+
+    def NumGlobalNonzeros64(self):
         "Required implementation of Epetra.RowMatrix class"
         return 3 * self.__numRows - 2
 
-    def NumGlobalRows(self):
+    def NumGlobalRows64(self):
         "Required implementation of Epetra.RowMatrix class"
         return self.__numRows
 
-    def NumGlobalCols(self):
+    def NumGlobalCols64(self):
         "Required implementation of Epetra.RowMatrix class"
         return self.__numCols
 
-    def NumGlobalDiagonals(self):
+    def NumGlobalDiagonals64(self):
         "Required implementation of Epetra.RowMatrix class"
         return self.__numRows
+
+    ######################################################################
 
     def NumMyNonzeros(self):
         "Required implementation of Epetra.RowMatrix class"

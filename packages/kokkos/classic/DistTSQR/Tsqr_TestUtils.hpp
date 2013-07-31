@@ -81,7 +81,7 @@ namespace TSQR {
     //
     template<>
     Teuchos::RCP<Teuchos::ParameterList> 
-    getValidNodeParameters<Kokkos::TBBNode> () 
+    getValidNodeParameters<KokkosClassic::TBBNode> () 
     {
       using Teuchos::ParameterList;
       using Teuchos::parameterList;
@@ -105,7 +105,7 @@ namespace TSQR {
     //
     template<>
     Teuchos::RCP<Teuchos::ParameterList> 
-    getValidNodeParameters<Kokkos::TPINode> () 
+    getValidNodeParameters<KokkosClassic::TPINode> () 
     {
       using Teuchos::ParameterList;
       using Teuchos::parameterList;
@@ -125,7 +125,7 @@ namespace TSQR {
     //
     template<>
     Teuchos::RCP<Teuchos::ParameterList> 
-    getValidNodeParameters<Kokkos::SerialNode> () 
+    getValidNodeParameters<KokkosClassic::SerialNode> () 
     {
       using Teuchos::ParameterList;
       using Teuchos::parameterList;

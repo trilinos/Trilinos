@@ -88,7 +88,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
   Teuchos::EVerbosityLevel solnVerbLevel = Teuchos::VERB_DEFAULT;
 
   // Allow for Matrix-Free implementation
-  string jacobianSource = piroParams->get("Jacobian Operator", "Have Jacobian");
+  std::string jacobianSource = piroParams->get("Jacobian Operator", "Have Jacobian");
   if (jacobianSource == "Matrix-Free") {
     if (piroParams->isParameter("Matrix-Free Perturbation")) {
       model = Teuchos::rcp(new Piro::Epetra::MatrixFreeDecorator(
@@ -115,7 +115,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
     rythmosPL->validateParameters(*getValidRythmosParameters(),0);
 
     {
-      const string verbosity = rythmosPL->get("Verbosity Level", "VERB_DEFAULT");
+      const std::string verbosity = rythmosPL->get("Verbosity Level", "VERB_DEFAULT");
       if      (verbosity == "VERB_NONE")    solnVerbLevel = Teuchos::VERB_NONE;
       else if (verbosity == "VERB_LOW")     solnVerbLevel = Teuchos::VERB_LOW;
       else if (verbosity == "VERB_MEDIUM")  solnVerbLevel = Teuchos::VERB_MEDIUM;
@@ -131,7 +131,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
     const double delta_t = (finalTime - initialTime) / (double) numTimeSteps;
     *out << "\ndelta_t = " << delta_t;
 
-    const string stepperType = rythmosPL->get("Stepper Type", "Backward Euler");
+    const std::string stepperType = rythmosPL->get("Stepper Type", "Backward Euler");
 
     //
     *out << "\nB) Create the Stratimikos linear solver factory ...\n";
@@ -155,7 +155,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
     if (stepperType == "Explicit RK") {
       if (rythmosPL->get("Invert Mass Matrix", false)) {
         Teuchos::RCP<EpetraExt::ModelEvaluator> origModel = model;
-        const bool lump = rythmosPL->get("Lump Mass Matrix", false);
+        rythmosPL->get("Lump Mass Matrix", false);
         model = Teuchos::rcp(new Piro::Epetra::InvertMassMatrixDecorator(
               sublist(rythmosPL,"Stratimikos", true), origModel));
       }
@@ -196,7 +196,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
     {
       RCP<Teuchos::ParameterList>
         integrationControlPL = sublist(rythmosPL, "Rythmos Integration Control", true);
-      bool var = integrationControlPL->get( "Take Variable Steps", false );
+      integrationControlPL->get( "Take Variable Steps", false );
       integrationControlPL->set( "Fixed dt", Teuchos::as<double>(delta_t) );
 
       RCP<Rythmos::DefaultIntegrator<double> >
@@ -214,7 +214,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
     rythmosSolverPL->validateParameters(*getValidRythmosSolverParameters(),0);
 
     {
-      const string verbosity = rythmosSolverPL->get("Verbosity Level", "VERB_DEFAULT");
+      const std::string verbosity = rythmosSolverPL->get("Verbosity Level", "VERB_DEFAULT");
       if      (verbosity == "VERB_NONE")    solnVerbLevel = Teuchos::VERB_NONE;
       else if (verbosity == "VERB_LOW")     solnVerbLevel = Teuchos::VERB_LOW;
       else if (verbosity == "VERB_MEDIUM")  solnVerbLevel = Teuchos::VERB_MEDIUM;
@@ -225,7 +225,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
     initialTime = rythmosPL->sublist("Integrator Settings").get("Initial Time", 0.0);
     finalTime = rythmosPL->sublist("Integrator Settings").get("Final Time", 0.1);
 
-    const string stepperType = rythmosPL->sublist("Stepper Settings")
+    const std::string stepperType = rythmosPL->sublist("Stepper Settings")
       .sublist("Stepper Selection").get("Stepper Type", "Backward Euler");
 
     //
@@ -251,7 +251,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
     if (stepperType == "Explicit RK") {
       if (rythmosSolverPL->get("Invert Mass Matrix", false)) {
         Teuchos::RCP<EpetraExt::ModelEvaluator> origModel = model;
-        const bool lump = rythmosSolverPL->get("Lump Mass Matrix", false);
+        rythmosSolverPL->get("Lump Mass Matrix", false);
         model = Teuchos::rcp(new Piro::Epetra::InvertMassMatrixDecorator(
               sublist(rythmosSolverPL,"Stratimikos", true), origModel));
       }
@@ -396,8 +396,12 @@ Teuchos::RCP<const Epetra_Map> Piro::Epetra::RythmosSolver::get_g_map(int j) con
       "Invalid response index j = " <<
       j << std::endl);
 
-  if      (j < num_g) return model->get_g_map(j);
-  else if (j == num_g) return model->get_x_map();
+  if (j < num_g) {
+    return model->get_g_map(j);
+  } else {
+    // j == num_g
+    return model->get_x_map();
+  }
 }
 
 Teuchos::RCP<const Epetra_Vector> Piro::Epetra::RythmosSolver::get_x_init() const

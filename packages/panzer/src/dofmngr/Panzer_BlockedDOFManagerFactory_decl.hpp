@@ -50,6 +50,7 @@ namespace panzer {
 template <typename LO,typename GO>
 class BlockedDOFManagerFactory : public virtual UniqueGlobalIndexerFactory<LO,std::pair<int,GO>,LO,GO> {
 public:
+   BlockedDOFManagerFactory() : useDOFManagerFEI_(true) {}
    virtual ~BlockedDOFManagerFactory() {}
 
    /** Does a fieldOrder string require blocking? 
@@ -90,6 +91,15 @@ public:
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                             const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
                             const std::string & fieldOrder="") const;
+
+   void setUseDOFManagerFEI(bool flag)
+   { useDOFManagerFEI_ = flag; }
+
+   bool getUseDOFManagerFEI() const
+   { return useDOFManagerFEI_; }
+
+private:
+   bool useDOFManagerFEI_;
 };
 
 }

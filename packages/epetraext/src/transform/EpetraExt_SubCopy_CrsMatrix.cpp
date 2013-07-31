@@ -70,6 +70,7 @@ operator()( OriginalTypeRef orig )
   const Epetra_Map & oColMap = orig.ColMap();
 
   int oNumRows = oRowMap.NumMyElements();
+  (void) oNumRows; // Silence "unused variable" compiler warning.
   int oNumCols = oColMap.NumMyElements();
   int nNumRows = newRowMap_.NumMyElements();
   int nNumDomain = newDomainMap_.NumMyElements();
@@ -79,7 +80,7 @@ operator()( OriginalTypeRef orig )
   // Make sure all rows in newRowMap are already on this processor
   for( int i = 0; i < nNumRows; ++i )
     matched = matched && ( oRowMap.MyGID(newRowMap_.GID(i)) );
-  if( !matched ) cerr << "EDT_CrsMatrix_SubCopy: Bad new_row_Map.  GIDs of new row map must be GIDs of the original row map on the same processor.\n";
+  if( !matched ) std::cerr << "EDT_CrsMatrix_SubCopy: Bad new_row_Map.  GIDs of new row map must be GIDs of the original row map on the same processor.\n";
 
   // Make sure all GIDs in the new domain map are GIDs in the old domain map
   if( !newRangeMap_.SameAs(newDomainMap_) ) {
@@ -89,7 +90,7 @@ operator()( OriginalTypeRef orig )
       matched = matched && ( pidList[i]>=0 );
   }
 
-  if( !matched ) cout << "EDT_CrsMatrix_SubCopy: Bad newDomainMap.  One or more GIDs in new domain map are not part of original domain map.\n";
+  if( !matched ) std::cout << "EDT_CrsMatrix_SubCopy: Bad newDomainMap.  One or more GIDs in new domain map are not part of original domain map.\n";
   assert( matched );
 
 
@@ -102,7 +103,7 @@ operator()( OriginalTypeRef orig )
   Epetra_IntSerialDenseVector newColMapGidList(oNumCols);
   int * origColGidList = oColMap.MyGlobalElements();
   for( int i = 0; i < oNumCols; ++i )
-    if (pidList[i] >=0) 
+    if (pidList[i] >=0)
       newColMapGidList[numNewCols++]= origColGidList[i];
   newColMap_ = Epetra_Map(-1, numNewCols, newColMapGidList.Values(), 0, oColMap.Comm());
 
@@ -124,7 +125,7 @@ bool CrsMatrix_SubCopy::fwd()
 {
 
   if (newObj_->Filled()) newObj_->PutScalar(0.0); // zero contents
-  
+
   newObj_->Import(*origObj_, *importer_, Add);
 
   newObj_->FillComplete();
@@ -137,7 +138,7 @@ bool CrsMatrix_SubCopy::fwd()
 bool CrsMatrix_SubCopy::rvs()
 {
   if (!newObj_->Filled()) return(false); // Must have fillCompleted
-  
+
   origObj_->Export(*newObj_, *importer_, Add);
 
   origObj_->FillComplete();

@@ -60,7 +60,7 @@ namespace Tpetra {
     is that matrix is lower triangular or upper triangular.
 */
 
-template <class Node=Kokkos::DefaultNode::DefaultNodeType>
+template <class Node=KokkosClassic::DefaultNode::DefaultNodeType>
 class LevelScheduler :  public Isorropia::LevelScheduler, public Isorropia::Tpetra::Operator<Node> {
 
 public:

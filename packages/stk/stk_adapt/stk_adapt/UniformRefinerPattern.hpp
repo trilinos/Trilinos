@@ -363,8 +363,10 @@ namespace stk {
           s_shell_quad_8_key = shards::ShellQuadrilateral<8>::key,
           s_shell_quad_9_key = shards::ShellQuadrilateral<9>::key,
 
-          centroid_node       = (toTopoKey == topo_key_quad9 ? 8 :
-                            (toTopoKey == topo_key_hex27 ? 20 : 0)
+          // Cast the keys to int to avoid warning messages about comparisons
+          // between incompatible enums.
+          centroid_node       = ((int)toTopoKey == (int)topo_key_quad9 ? 8 :
+                            ((int)toTopoKey == (int)topo_key_hex27 ? 20 : 0)
                             )
         };
 
@@ -637,7 +639,7 @@ namespace stk {
         //std::cout << "tmp fieldStride= " << fieldStride << " elem_nodes.size()= " << elem_nodes.size() << std::endl;
 
         PerceptMesh::BasisTypeRCP basis = eMesh.getBasis(cell_topo);
-        basis->getValues(basis_val, input_param_coords, OPERATOR_VALUE);
+        basis->getValues(basis_val, input_param_coords, Intrepid::OPERATOR_VALUE);
         if (0)
           std::cout << "\n tmp input_param_coords= "
                     << input_param_coords(0,0) << " "
@@ -747,7 +749,7 @@ namespace stk {
                         input_param_coords_tmp(0, ip) = param_coord[ip];
                       }
 
-                    basis->getValues(output_tmp, input_param_coords_tmp, OPERATOR_VALUE);
+                    basis->getValues(output_tmp, input_param_coords_tmp, Intrepid::OPERATOR_VALUE);
                     bool found = false;
                     for (unsigned ii=0; ii < elem_nodes.size(); ii++)
                       {

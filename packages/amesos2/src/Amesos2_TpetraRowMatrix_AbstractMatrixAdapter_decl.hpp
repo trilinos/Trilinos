@@ -142,6 +142,10 @@ namespace Amesos2 {
 
     size_t getLocalColNNZ_impl(local_ordinal_t col) const;
 
+    global_size_t getGlobalNumRows_impl() const;
+
+    global_size_t getGlobalNumCols_impl() const;
+
     // Brunt of the work is put on the implementation for converting
     // their maps to a Tpetra::Map
     const RCP<const Tpetra::Map<local_ordinal_t,

@@ -7,9 +7,8 @@
 #cmakedefine HAVE_TRIOS_CRAYPORTALS 1
 #cmakedefine HAVE_TRIOS_PORTALS 1
 #cmakedefine HAVE_TRIOS_INFINIBAND 1
-#cmakedefine HAVE_TRIOS_MTA 1
-#cmakedefine HAVE_TRIOS_LUC 1
 #cmakedefine HAVE_TRIOS_GEMINI 1
+#cmakedefine HAVE_TRIOS_BGPDCMF 1
 #cmakedefine HAVE_TRIOS_MPI 1
 
 /* Special Portals config */
@@ -52,6 +51,11 @@
  * ************************************************ */
 #cmakedefine TRIOS_HAVE_GETIFADDRS 1
 
+/* ************************************************
+ * CommSplitter Config
+ * ************************************************ */
+#cmakedefine TRIOS_ENABLE_COMMSPLITTER 1
+
 
 /* ************************************************
  * Semaphore configuration
@@ -60,6 +64,14 @@
 #cmakedefine HAVE_TRIOS_SEM_T 1
 #cmakedefine HAVE_TRIOS_UNNAMED_SEMAPHORES 1
 #cmakedefine HAVE_TRIOS_NAMED_SEMAPHORES 1
+
+
+/* ************************************************
+ * Semaphore configuration
+ * ************************************************ */
+#cmakedefine HAVE_TRIOS_UNISTD_H 1
+#cmakedefine HAVE_TRIOS_SYSCALL_H 1
+#cmakedefine HAVE_TRIOS_GETTID 1
 
 
 /* ************************************************

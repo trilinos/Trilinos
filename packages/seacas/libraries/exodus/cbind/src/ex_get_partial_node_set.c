@@ -90,7 +90,7 @@ int ex_get_partial_node_set (int   exoid,
       sprintf(errmsg,
               "Warning: node set %"PRId64" is NULL in file id %d",
               node_set_id,exoid);
-      ex_err("ex_get_partial_node_set",errmsg,EX_MSG);
+      ex_err("ex_get_partial_node_set",errmsg,EX_NULLENTITY);
       return (EX_WARN);
     } else {
 

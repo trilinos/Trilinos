@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
 
   for(i=0;i<4;i++) buf[i]=-1;
 
-  cout << "proc " << comm.MyPID() << " is alive of   " << comm.NumProc()<< " Processors" << endl ;
+  std::cout << "proc " << comm.MyPID() << " is alive of   " << comm.NumProc()<< " Processors" << std::endl ;
 
   if( comm.MyPID() == 0 ) {
 
@@ -157,19 +157,19 @@ int main(int argc, char *argv[])
     // Input Data about matrix and distribution
 
    	if (buf[0] < 0) {
-	  cout << "Enter size of matrix " << endl;
+	  std::cout << "Enter size of matrix " << std::endl;
 	  std::cin >> buf[0];
 	}
 	if (buf[1] < 0) { 
-	  cout << "Enter number of processors to which each row is assigned "  << endl;
+	  std::cout << "Enter number of processors to which each row is assigned "  << std::endl;
 	  std::cin >> buf[1];
 	}
 
      }
 
-	cout << " Matrix Size "<< buf[0] <<"\n";
+	std::cout << " Matrix Size "<< buf[0] <<"\n";
 
-        cout << " Processors in a row  " <<  buf[1] << "\n";
+        std::cout << " Processors in a row  " <<  buf[1] << "\n";
 
   }
 
@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
 
 
    if( comm.MyPID() == 0) {
-    cout << " ---- Building Pliris solver ----" << endl;
+    std::cout << " ---- Building Pliris solver ----" << std::endl;
    }
 
    // Instantiate the Solver
@@ -221,17 +221,17 @@ int main(int argc, char *argv[])
    MPI_Comm_split(MPI_COMM_WORLD,my_row,my_col,&rowcomm); 
  
    //if( comm.MyPID() == 0 ){
-   cout << " ------ PARALLEL Distribution Info for : ---------" <<endl;
+   std::cout << " ------ PARALLEL Distribution Info for : ---------" <<std::endl;
 
-   cout << "   Processor  " << comm.MyPID() << endl
-        << "    my rows  " << my_rows << endl
-        << "    my cols  " << my_cols << endl
-        << "    my rhs  " << my_rhs << endl
-        << "    my first col  " << my_first_col  << endl
-        << "    my first row  " << my_first_row << endl
-        << "    my_row  " << my_row << endl
-        << "    num procs row   " << nprocs_row << endl
-        << "    my_col  " << my_col << endl;
+   std::cout << "   Processor  " << comm.MyPID() << std::endl
+        << "    my rows  " << my_rows << std::endl
+        << "    my cols  " << my_cols << std::endl
+        << "    my rhs  " << my_rhs << std::endl
+        << "    my first col  " << my_first_col  << std::endl
+        << "    my first row  " << my_first_row << std::endl
+        << "    my_row  " << my_row << std::endl
+        << "    num procs row   " << nprocs_row << std::endl
+        << "    my_col  " << my_col << std::endl;
 
    //}
    
@@ -268,7 +268,7 @@ int main(int argc, char *argv[])
      // Set Random values 
 
      if( comm.MyPID() == 0 )
-              cout << " ****   Setting Random Matrix    ****" << endl;
+              std::cout << " ****   Setting Random Matrix    ****" << std::endl;
 
       
      ierror = A.SetSeed(seed+comm.MyPID() );
@@ -280,7 +280,7 @@ int main(int argc, char *argv[])
 
 
       if( comm.MyPID() == 0 )
-              cout << " ****   Creating RHS   ****" << endl;
+              std::cout << " ****   Creating RHS   ****" << std::endl;
 
      // Sum the portion of the row that I have
 
@@ -298,7 +298,7 @@ int main(int argc, char *argv[])
      MPI_Allreduce(temp,temp2,my_rows,MPI_DOUBLE,MPI_SUM,rowcomm); 
 
       if( comm.MyPID() == 0 )
-            cout << " ****   Packing RHS in Matrix   ****" << endl;
+            std::cout << " ****   Packing RHS in Matrix   ****" << std::endl;
 
     // Now put the RHS in the Appropriate position
 
@@ -337,7 +337,7 @@ int main(int argc, char *argv[])
     // Now Solve the Problem
 
     if( comm.MyPID() == 0 )
-             cout << " ****   Beginning Matrix Solve   ****" << endl;
+             std::cout << " ****   Beginning Matrix Solve   ****" << std::endl;
 
      solver.FactorSolve(&A,
 		        my_rows,
@@ -350,13 +350,13 @@ int main(int argc, char *argv[])
 
 
       if( comm.MyPID() == 0)   {
-         cout << " ----  Solution time  ----   " 
-	 << secs << "  in secs. " << endl;
+         std::cout << " ----  Solution time  ----   " 
+	 << secs << "  in secs. " << std::endl;
 
          
 	 mflops = 2./3.*pow(matrix_size,3.)/secs/1000000.;
 
-	   cout << " *****   MFLOPS   *****  " << mflops << endl; 
+	   std::cout << " *****   MFLOPS   *****  " << mflops << std::endl; 
       }
      // Now Check the Solution
 
@@ -448,8 +448,8 @@ int main(int argc, char *argv[])
 
      if( comm.MyPID() == 0)   {
 
-       cout <<  "======================================" << endl;
-        cout << " ---- Error Calculation ----" << endl;
+       std::cout <<  "======================================" << std::endl;
+        std::cout << " ---- Error Calculation ----" << std::endl;
         
         axbinf = fabs(temp3[0]-rhs[0]);
 
@@ -472,7 +472,7 @@ int main(int argc, char *argv[])
 
       if ( comm.MyPID() == 0 ) {
 
-	cout << "   Machine eps  " << eps  << endl;
+	std::cout << "   Machine eps  " << eps  << std::endl;
 
       }
 
@@ -482,25 +482,25 @@ int main(int argc, char *argv[])
 
      
 
-       cout << "   ||Ax - b||_oo = " << axbinf << endl;
+       std::cout << "   ||Ax - b||_oo = " << axbinf << std::endl;
 
-       cout << "   ||A||_oo ~  " << ainf*matrix_size << endl;
+       std::cout << "   ||A||_oo ~  " << ainf*matrix_size << std::endl;
 
-       cout << "   ||X||_oo = " << solinf << endl;
+       std::cout << "   ||X||_oo = " << solinf << std::endl;
 
-       cout << "   ||Ax - b||_oo / ||A||_oo/||X||_oo  = " << axbinf/(ainf*matrix_size)/solinf  << endl;
+       std::cout << "   ||Ax - b||_oo / ||A||_oo/||X||_oo  = " << axbinf/(ainf*matrix_size)/solinf  << std::endl;
 
-       cout << "  matrix_size*eps*1.  " << matrix_size*eps*1. << endl;
+       std::cout << "  matrix_size*eps*1.  " << matrix_size*eps*1. << std::endl;
 
       if ( axbinf/(ainf*matrix_size)/solinf  > (matrix_size*eps*1.))
 
-        cout << " ****    Solution Fails   ****" <<  endl;
+        std::cout << " ****    Solution Fails   ****" <<  std::endl;
 
       else 
 
-	cout << " ****   Solution Passes   ****" << endl;
+	std::cout << " ****   Solution Passes   ****" << std::endl;
 
-      cout <<  "======================================" << endl;
+      std::cout <<  "======================================" << std::endl;
 
       
      }

@@ -1,14 +1,15 @@
 # @HEADER
 # ************************************************************************
 #
-#            Trilinos: An Object-Oriented Solver Framework
-#                 Copyright (2001) Sandia Corporation
+#            TriBITS: Tribial Build, Integrate, and Test System
+#                    Copyright 2013 Sandia Corporation
 #
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+# the U.S. Government retains certain rights in this software.
 #
-# Copyright (2001) Sandia Corporation. Under the terms of Contract
-# DE-AC04-94AL85000, there is a non-exclusive license for use of this
-# work by or on behalf of the U.S. Government.  Export of this program
-# may require a license from the United States Government.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
 #
 # 1. Redistributions of source code must retain the above copyright
 # notice, this list of conditions and the following disclaimer.
@@ -32,23 +33,6 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# NOTICE:  The United States Government is granted for itself and others
-# acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
-# license in this data to reproduce, prepare derivative works, and
-# perform publicly and display publicly.  Beginning five (5) years from
-# July 25, 2001, the United States Government is granted for itself and
-# others acting on its behalf a paid-up, nonexclusive, irrevocable
-# worldwide license in this data to reproduce, prepare derivative works,
-# distribute copies to the public, perform publicly and display
-# publicly, and to permit others to do so.
-#
-# NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
-# OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
-# ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
-# RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
-# INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
-# THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
 #
 # ************************************************************************
 # @HEADER
@@ -320,11 +304,15 @@ def executePull(gitRepo, inOptions, baseTestDir, outFile, pullFromRepo=None,
     outFile=outFileFullPath,
     timeCmnd=True, returnTimeCmnd=True, throwExcept=False
     )
-  pullGotChanges = didSinglePullBringChanges(outFileFullPath)
-  if pullGotChanges:
-    print "\n  Pulled changes from this repo!"
+  if updateRtn == 0:
+    pullGotChanges = didSinglePullBringChanges(outFileFullPath)
+    if pullGotChanges:
+      print "\n  ==> '"+gitRepo.repoName+"': Pulled changes from this repo!"
+    else:
+      print "\n  ==> '"+gitRepo.repoName+"': Did not pull any changes from this repo!"
   else:
-    print "\n  Did not pull any changes from this repo!"
+    print "\n  ==> '"+gitRepo.repoName+"': Pull failed!"
+    pullGotChanges = False
   return (updateRtn, updateTimings, pullGotChanges)
 
 
@@ -377,14 +365,19 @@ class GitRepo:
     return str(self)
 
 
-def getExtraReposPyFileFromCmakeFile(inOptions, extraReposPythonOutFile, \
-  consoleOutputFile = None, verbose=False \
-  ):
+def getExtraReposFilePath(inOptions):
   if inOptions.extraReposFile == "project":
     extraReposFile = inOptions.srcDir+"/cmake/ExtraRepositoriesList.cmake"
   else:
     extraReposFile = inOptions.extraReposFile
-  cmnd = "cmake"+ \
+  return extraReposFile
+
+
+def getExtraReposPyFileFromCmakeFile(inOptions, extraReposPythonOutFile, \
+  consoleOutputFile = None, verbose=False \
+  ):
+  extraReposFile = getExtraReposFilePath(inOptions)
+  cmnd = "\""+inOptions.withCmake+"\""+ \
     " -DPROJECT_SOURCE_DIR="+inOptions.srcDir+ \
     " -DTRIBITS_BASE_DIR="+inOptions.tribitsDir+ \
     " -DEXTRA_REPOS_FILE="+extraReposFile+ \
@@ -689,6 +682,23 @@ def getCurrentDiffOutput(gitRepo, inOptions, baseTestDir):
     outFile=os.path.join(baseTestDir, getModifiedFilesOutputFileName(gitRepo.repoName)),
     timeCmnd=True
     )
+
+
+def repoHasModifiedFiles(gitRepo, baseTestDir):
+  modifiedFilesStr = readStrFromFile(
+    baseTestDir+"/"+getModifiedFilesOutputFileName(gitRepo.repoName))
+  if modifiedFilesStr:
+    return True
+  return False
+
+
+def getCurrentDiffOutputAndLogModified(inOptions, gitRepo, baseTestDir):
+  getCurrentDiffOutput(gitRepo, inOptions, baseTestDir)
+  gitRepo.hasChanges = repoHasModifiedFiles(gitRepo, baseTestDir)
+  if gitRepo.hasChanges:
+    print "\n  ==> '"+gitRepo.repoName+"': Has modified files!"
+  else:
+    print "\n  ==> '"+gitRepo.repoName+"': Does *not* have any modified files!"
 
 
 def extractPackageEnablesFromChangeStatus(changedFileDiffOutputStr, inOptions_inout,
@@ -1195,10 +1205,18 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
     print "\nFinal package enable list: [" + ','.join(enablePackagesList) + "]"
 
   if tribitsGitRepos.numTribitsExtraRepos() > 0:
-    cmakePkgOptions.append(cmakeScopedDefine(
-      projectName, "EXTRA_REPOSITORIES:STRING",
-      ','.join(tribitsGitRepos.tribitsExtraRepoNamesList())))
-
+    cmakePkgOptions.extend(
+      [
+        cmakeScopedDefine(
+          projectName, "EXTRA_REPOSITORIES:STRING",
+          ','.join(tribitsGitRepos.tribitsExtraRepoNamesList())),
+        cmakeScopedDefine(
+          projectName, "ENABLE_KNOWN_EXTERNAL_REPOS_TYPE", inOptions.extraReposType),
+        cmakeScopedDefine(
+          projectName, "EXTRAREPOS_FILE", getExtraReposFilePath(inOptions)),
+        ]
+      )
+        
   for pkg in enablePackagesList:
     cmakePkgOptions.append(cmakeScopedDefine(projectName, "ENABLE_"+pkg+":BOOL", "ON"))
 
@@ -1339,6 +1357,7 @@ def runBuildTestCase(inOptions, tribitsGitRepos, buildTestCase, timings):
     elif inOptions.doConfigure:
   
       removeIfExists("CMakeCache.txt")
+      removeDirIfExists("CMakeFiles")
 
       cmnd = "./do-configure"
 
@@ -1474,8 +1493,7 @@ def cleanBuildTestCaseOutputFiles(runBuildTestCaseBool, inOptions, baseTestDir, 
     if inOptions.wipeClean:
 
       print "\nRemoving the existing build directory "+buildTestCaseName+" (--wipe-clean) ..."
-      if os.path.exists(buildTestCaseName):
-        echoRunSysCmnd("rm -rf "+buildTestCaseName)
+      removeDirIfExists(buildTestCaseName)
 
     elif doRemoveOutputFiles(inOptions):
 
@@ -2076,10 +2094,14 @@ def checkinTest(baseDir, inOptions, configuration={}):
     print "*** 4) Get the list of all the modified files ..."
     print "***"
 
+    hasChangesToPush = False
+
     if pullPassed:
 
       for gitRepo in tribitsGitRepos.gitRepoList():
-        getCurrentDiffOutput(gitRepo, inOptions, baseTestDir)
+        getCurrentDiffOutputAndLogModified(inOptions, gitRepo, baseTestDir)
+        if gitRepo.hasChanges:
+          hasChangesToPush = True
 
     else:
 
@@ -2094,15 +2116,25 @@ def checkinTest(baseDir, inOptions, configuration={}):
 
     # Set runBuildCases flag and other logic
     abortGracefullyDueToNoUpdates = False
+    abortGracefullyDueToNoChangesToPush = False
     if not performAnyBuildTestActions(inOptions):
       print "\nNot performing any build cases because no --configure, --build or --test" \
         " was specified!\n"
       runBuildCases = False
     elif doingAtLeastOnePull:
-      if repoIsClean and not pulledSomeChanges and inOptions.abortGracefullyIfNoUpdates:
-        abortGracefullyDueToNoUpdates = True
-        print "\nNot perfoming any build cases because pull did not give any changes" \
+      if repoIsClean and not pulledSomeChanges and \
+        inOptions.abortGracefullyIfNoUpdates \
+        :
+        print "\nNot perfoming any build cases because pull did not bring any commits" \
           " and --abort-gracefully-if-no-updates!\n"
+        abortGracefullyDueToNoUpdates = True
+        runBuildCases = False
+      elif repoIsClean and not hasChangesToPush and \
+        inOptions.abortGracefullyIfNoChangesToPush \
+        :
+        print "\nNot perfoming any build cases because there are no local changes to push" \
+          " and --abort-gracefully-if-no-changes-to-push!\n"
+        abortGracefullyDueToNoChangesToPush = True
         runBuildCases = False
       elif pullPassed:
         print "\nThe updated passsed, running the build/test cases ...\n"
@@ -2451,18 +2483,7 @@ def checkinTest(baseDir, inOptions, configuration={}):
   
           print "\n7.c."+str(repoIdx)+") Git Repo: '"+gitRepo.repoName+"'"
 
-          # ToDo: Determine if there is anything to push by examining
-          # getModifiedFilesOutputFileName(gitRepoName) and only push if that
-          # file is not empty.
-
-          modifiedFilesStr = getCmndOutput(
-            "cat "+getModifiedFilesOutputFileName(gitRepo.repoName),
-            stripTrailingSpaces=True,
-            throwOnError=True,
-            workingDir=baseTestDir
-            );
-
-          if modifiedFilesStr:
+          if gitRepo.hasChanges:
 
             if not debugSkipPush:
               pushRtn = echoRunSysCmnd(
@@ -2547,6 +2568,10 @@ def checkinTest(baseDir, inOptions, configuration={}):
         subjectLine = "ABORTED DUE TO NO UPDATES"
         commitEmailBodyExtra += "\n\nAborted because no updates and --abort-gracefully-if-no-updates was set!\n\n"
         success = True
+      elif abortGracefullyDueToNoChangesToPush:
+        subjectLine = "ABORTED DUE TO NO CHANGES TO PUSH"
+        commitEmailBodyExtra += "\n\nAborted because no changes to push and --abort-gracefully-if-no-changes-to-push was set!\n\n"
+        success = True
       elif allConfiguresAbortedDueToNoEnablesGracefullAbort:
         subjectLine = "ABORTED DUE TO NO ENABLES"
         commitEmailBodyExtra += "\n\nAborted because no enables and --abort-gracefully-if-no-enables was set!\n\n"
@@ -2612,6 +2637,11 @@ def checkinTest(baseDir, inOptions, configuration={}):
 
         print "\nSkipping sending final email because there were no updates" \
           " and --abort-gracefully-if-no-updates was set!"
+
+      elif inOptions.sendEmailTo and abortGracefullyDueToNoChangesToPush:
+
+        print "\nSkipping sending final email because there are no local changes to push" \
+          " and --abort-gracefully-if-no-changes-to-push was set!"
 
       elif inOptions.sendEmailTo and allConfiguresAbortedDueToNoEnablesGracefullAbort:
 

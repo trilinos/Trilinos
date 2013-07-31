@@ -48,7 +48,7 @@
 
 namespace {
 
-  using Kokkos::DefaultNode;
+  using KokkosClassic::DefaultNode;
   using Teuchos::ArrayRCP;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -57,7 +57,7 @@ namespace {
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
 
-  typedef Kokkos::DefaultNode::DefaultNodeType Node;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
   int N = 100;
 
@@ -75,10 +75,10 @@ namespace {
   // intialize using static graph
   TEUCHOS_UNIT_TEST( CrsGraph, RuntimeExceptions )
   {
-    typedef Kokkos::DefaultKernels<double,int,Node>::SparseOps SparseOps;
+    typedef KokkosClassic::DefaultKernels<double,int,Node>::SparseOps SparseOps;
     typedef SparseOps::graph<int,Node>::graph_type             Graph;
     const int N = 10;
-    RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
+    RCP<Node> node = KokkosClassic::DefaultNode::getDefaultNode();
     RCP<Graph> G = rcp(new Graph(N,N,node,parameterList()));
     {
       ArrayRCP<size_t> ptrs_tooSmall(N), ptrs_tooBig(N+2);
@@ -96,12 +96,12 @@ namespace {
 
   TEUCHOS_UNIT_TEST( CrsGraph, StatusTests )
   {
-    typedef Kokkos::DefaultKernels<double,int,Node>::SparseOps SparseOps;
+    typedef KokkosClassic::DefaultKernels<double,int,Node>::SparseOps SparseOps;
     typedef SparseOps::graph<int,Node>::graph_type             Graph;
     const int N = 10;
     ArrayRCP<size_t> ptrs = arcp<size_t>(N+1);
     std::fill(ptrs.begin(), ptrs.end(), 0);
-    RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
+    RCP<Node> node = KokkosClassic::DefaultNode::getDefaultNode();
     RCP<Graph> G = rcp(new Graph(N,N,node,parameterList()));
     G->setStructure(ptrs,null);
     RCP<ParameterList> params = parameterList();
@@ -111,12 +111,12 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsMatrix, StaticGraph, Scalar, Ordinal )
   {
-    typedef typename Kokkos::DefaultKernels<Scalar,Ordinal,Node>::SparseOps     BaseSparseOps;
+    typedef typename KokkosClassic::DefaultKernels<Scalar,Ordinal,Node>::SparseOps     BaseSparseOps;
     typedef typename BaseSparseOps::template bind_scalar<Scalar>::other_type        SparseOps;
     typedef typename SparseOps::template graph<Ordinal,Node>::graph_type                Graph;
     typedef typename SparseOps::template matrix<Scalar,Ordinal,Node>::matrix_type      Matrix;
     const Ordinal N = 10;
-    RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
+    RCP<Node> node = KokkosClassic::DefaultNode::getDefaultNode();
     // build a non-empty graph, tridiagonal
     const Ordinal testNumEntries = 3*N-2;
     ArrayRCP<Ordinal> inds(testNumEntries);
@@ -153,12 +153,12 @@ namespace {
   // intialize using static graph
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsMatrix, DynamicGraph, Scalar, Ordinal )
   {
-    typedef typename Kokkos::DefaultKernels<Scalar,Ordinal,Node>::SparseOps     BaseSparseOps;
+    typedef typename KokkosClassic::DefaultKernels<Scalar,Ordinal,Node>::SparseOps     BaseSparseOps;
     typedef typename BaseSparseOps::template bind_scalar<Scalar>::other_type        SparseOps;
     typedef typename SparseOps::template graph<Ordinal,Node>::graph_type                Graph;
     typedef typename SparseOps::template matrix<Scalar,Ordinal,Node>::matrix_type      Matrix;
     const Ordinal N = 10;
-    RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
+    RCP<Node> node = KokkosClassic::DefaultNode::getDefaultNode();
     // build a non-empty graph, tridiagonal
     const Ordinal testNumEntries = 3*N-2;
     ArrayRCP<Ordinal> inds(testNumEntries);
@@ -194,10 +194,10 @@ namespace {
   // no rows
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( CrsGraph, NoRows, Ordinal )
   {
-    typedef typename Kokkos::DefaultKernels<void  ,Ordinal,Node>::SparseOps     BaseSparseOps;
+    typedef typename KokkosClassic::DefaultKernels<void  ,Ordinal,Node>::SparseOps     BaseSparseOps;
     typedef typename BaseSparseOps::template graph<Ordinal,Node>::graph_type            Graph;
     const Ordinal N = 0;
-    RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
+    RCP<Node> node = KokkosClassic::DefaultNode::getDefaultNode();
 
     // build a null-size graph
     Graph G(N,N,node,null);

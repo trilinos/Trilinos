@@ -1,14 +1,15 @@
 # @HEADER
 # ************************************************************************
 #
-#            Trilinos: An Object-Oriented Solver Framework
-#                 Copyright (2001) Sandia Corporation
+#            TriBITS: Tribial Build, Integrate, and Test System
+#                    Copyright 2013 Sandia Corporation
 #
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+# the U.S. Government retains certain rights in this software.
 #
-# Copyright (2001) Sandia Corporation. Under the terms of Contract
-# DE-AC04-94AL85000, there is a non-exclusive license for use of this
-# work by or on behalf of the U.S. Government.  Export of this program
-# may require a license from the United States Government.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
 #
 # 1. Redistributions of source code must retain the above copyright
 # notice, this list of conditions and the following disclaimer.
@@ -33,23 +34,6 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# NOTICE:  The United States Government is granted for itself and others
-# acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
-# license in this data to reproduce, prepare derivative works, and
-# perform publicly and display publicly.  Beginning five (5) years from
-# July 25, 2001, the United States Government is granted for itself and
-# others acting on its behalf a paid-up, nonexclusive, irrevocable
-# worldwide license in this data to reproduce, prepare derivative works,
-# distribute copies to the public, perform publicly and display
-# publicly, and to permit others to do so.
-#
-# NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
-# OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
-# ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
-# RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
-# INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
-# THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
-#
 # ************************************************************************
 # @HEADER
 
@@ -64,6 +48,11 @@ INCLUDE(PrependGlobalSet)
 INCLUDE(RemoveGlobalDuplicates)
 INCLUDE(TribitsGeneralMacros)
 INCLUDE(SetAndIncDirs)
+
+###
+### WARNING: See "NOTES TO DEVELOPERS" at the bottom of the file
+### TribitsPackageMacros.cmake!
+###
 
 
 #
@@ -80,7 +69,7 @@ FUNCTION(TRIBITS_ADD_CONFIG_DEFINE DEFINE)
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE("--${${PARENT_PACKAGE_NAME}_CONFIG_DEFINES}")
   ENDIF()
-ENDFUNCTION() 
+ENDFUNCTION()
 
 
 #
@@ -92,9 +81,6 @@ FUNCTION(TRIBITS_CONFIGURE_FILE PACKAGE_NAME_CONFIG_FILE)
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE("\nPACKAGE_CONFIGURE_FILE: ${PACKAGE_NAME_CONFIG_FILE}")
   ENDIF()
-
-  # Get an upper case version of the parent package name
-  STRING(TOUPPER "${PARENT_PACKAGE_NAME}" PARENT_PACKAGE_NAME_UC)
 
   # Set up the deprecated attribute if showing deprecated warnings
   IF (${PARENT_PACKAGE_NAME}_SHOW_DEPRECATED_WARNINGS)
@@ -118,9 +104,9 @@ FUNCTION(TRIBITS_CONFIGURE_FILE PACKAGE_NAME_CONFIG_FILE)
   ENDIF()
 
   # Set up the macro to create the define for time monitor
-  SET(TIME_MONITOR_DEFINE_NAME ${PARENT_PACKAGE_NAME_UC}_TEUCHOS_TIME_MONITOR) 
-  SET(FUNC_TIME_MONITOR_MACRO_NAME ${PARENT_PACKAGE_NAME_UC}_FUNC_TIME_MONITOR) 
-  SET(FUNC_TIME_MONITOR_DIFF_MACRO_NAME ${PARENT_PACKAGE_NAME_UC}_FUNC_TIME_MONITOR_DIFF) 
+  SET(TIME_MONITOR_DEFINE_NAME ${PARENT_PACKAGE_NAME_UC}_TEUCHOS_TIME_MONITOR)
+  SET(FUNC_TIME_MONITOR_MACRO_NAME ${PARENT_PACKAGE_NAME_UC}_FUNC_TIME_MONITOR)
+  SET(FUNC_TIME_MONITOR_DIFF_MACRO_NAME ${PARENT_PACKAGE_NAME_UC}_FUNC_TIME_MONITOR_DIFF)
   IF (${PARENT_PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR)
     MULTILINE_SET(${PARENT_PACKAGE_NAME_UC}_TEUCHOS_TIME_MONITOR_DECLARATIONS
       "#ifndef ${FUNC_TIME_MONITOR_MACRO_NAME}\n"
@@ -140,7 +126,7 @@ FUNCTION(TRIBITS_CONFIGURE_FILE PACKAGE_NAME_CONFIG_FILE)
 
   # Configure the file
   CONFIGURE_FILE(
-    ${PACKAGE_SOURCE_DIR}/cmake/${PACKAGE_NAME_CONFIG_FILE}.in 
+    ${PACKAGE_SOURCE_DIR}/cmake/${PACKAGE_NAME_CONFIG_FILE}.in
     ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME_CONFIG_FILE}
     )
 
@@ -177,7 +163,7 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
     )
 
   #if we are doing installation testing we want to skip adding libraries, unless
-  #they are test only libraries which are not installed. 
+  #they are test only libraries which are not installed.
   IF(NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING OR PARSE_TESTONLY)
 
     # Add the link directory for this library.
@@ -276,7 +262,7 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
       #
 
       TRIBITS_SORT_AND_APPEND_PACKAGE_INCLUDE_AND_LINK_DIRS_AND_LIBS(
-        ${PACKAGE_NAME}  ${LIB_OR_TEST_ARG}  LINK_LIBS) 
+        ${PACKAGE_NAME}  ${LIB_OR_TEST_ARG}  LINK_LIBS)
 
       TRIBITS_SORT_AND_APPEND_TPL_INCLUDE_AND_LINK_DIRS_AND_LIBS(
         ${PACKAGE_NAME}  ${LIB_OR_TEST_ARG}  LINK_LIBS)
@@ -303,6 +289,10 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
 
     SET_PROPERTY(TARGET ${LIBRARY_NAME} APPEND PROPERTY
       LABELS ${PACKAGE_NAME})
+
+    SET_TARGET_PROPERTIES(${LIBRARY_NAME} PROPERTIES
+      VERSION ${${PROJECT_NAME}_VERSION}
+      SOVERSION ${${PROJECT_NAME}_MAJOR_VERSION})
 
     PREPEND_GLOBAL_SET(${PARENT_PACKAGE_NAME}_LIB_TARGETS ${LIBRARY_NAME})
     PREPEND_GLOBAL_SET(${PARENT_PACKAGE_NAME}_ALL_TARGETS ${LIBRARY_NAME})
@@ -389,6 +379,8 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
       REMOVE_GLOBAL_DUPLICATES(${PACKAGE_NAME}_LIBRARY_DIRS)
       REMOVE_GLOBAL_DUPLICATES(${PACKAGE_NAME}_LIBRARIES)
 
+      GLOBAL_SET(${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES TRUE)
+
     ELSE()
 
       IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
@@ -423,7 +415,7 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
 
     GET_DIRECTORY_PROPERTY(INCLUDE_DIRS_CURRENT INCLUDE_DIRECTORIES)
     GET_DIRECTORY_PROPERTY(LIBRARY_DIRS_CURRENT PACKAGE_LIBRARY_DIRS)
-    
+
     GLOBAL_SET(${PACKAGE_NAME}_INCLUDE_DIRS ${INCLUDE_DIRS_CURRENT})
     GLOBAL_SET(${PACKAGE_NAME}_LIBRARY_DIRS ${LIBRARY_DIRS_CURRENT})
     GLOBAL_SET(${PACKAGE_NAME}_LIBRARIES    ${${PACKAGE_NAME}_INSTALLATION_LIBRARIES})
@@ -435,5 +427,5 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
     PRINT_VAR(${PACKAGE_NAME}_LIBRARY_DIRS)
     PRINT_VAR(${PACKAGE_NAME}_LIBRARIES)
   ENDIF()
-  
+
 ENDFUNCTION()

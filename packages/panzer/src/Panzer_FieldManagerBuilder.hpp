@@ -47,7 +47,6 @@
 #include <vector>
 #include <map>
 #include "Teuchos_RCP.hpp"
-#include "Panzer_InputPhysicsBlock.hpp"
 #include "Panzer_BC.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"

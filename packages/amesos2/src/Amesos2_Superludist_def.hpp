@@ -133,13 +133,14 @@ namespace Amesos2 {
       in_grid_ = true; my_weight = 1; // I am in the grid, and I get some of the matrix rows
     }
     // TODO: might only need to initialize if parallel symbolic factorization is requested.
+    // TODO: Need to fix this map for indexbase ?
     superlu_rowmap_
       = Tpetra::createWeightedContigMapWithNode<local_ordinal_type,
       global_ordinal_type,
       node_type>(my_weight,
                  this->globalNumRows_,
                  this->getComm(),
-                 Kokkos::DefaultNode::getDefaultNode());
+                 KokkosClassic::DefaultNode::getDefaultNode());
     // TODO: the node above should technically come from the matrix
     // itself.  Might need to add a getNode method to the matrix
     // adapter.

@@ -46,6 +46,8 @@
 
 #ifdef Piro_ENABLE_Rythmos
 #include "Piro_RythmosSolver.hpp"
+#include "Piro_RythmosStepperFactory.hpp"
+#include "Piro_ObserverToRythmosIntegrationObserverAdapter.hpp"
 
 #ifdef Piro_ENABLE_NOX
 #include "Piro_NOXSolver.hpp"
@@ -53,8 +55,12 @@
 
 #include "Piro_Test_ThyraSupport.hpp"
 #include "Piro_Test_WeakenedModelEvaluator.hpp"
+#include "Piro_Test_MockObserver.hpp"
 
 #include "MockModelEval_A.hpp"
+
+#include "Rythmos_BackwardEulerStepper.hpp"
+#include "Rythmos_SimpleIntegrationControlStrategy.hpp"
 
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
@@ -97,8 +103,18 @@ const RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModelNew(const RCP<Epe
   return epetraModelEvaluator(epetraModel, lowsFactory);
 }
 
-RCP<Thyra::ModelEvaluatorDefaultBase<double> > defaultModelNew() {
+RCP<Thyra::ModelEvaluatorDefaultBase<double> > defaultModelNew()
+{
   return thyraModelNew(epetraModelNew());
+}
+
+RCP<Rythmos::IntegrationControlStrategyBase<double> > stepStrategyNew(double fixedTimeStep)
+{
+  const RCP<Teuchos::ParameterList> integrationControlPL =
+    rcp(new Teuchos::ParameterList("Rythmos Integration Control"));
+  integrationControlPL->set("Take Variable Steps", false);
+  integrationControlPL->set("Fixed dt", fixedTimeStep);
+  return Rythmos::simpleIntegrationControlStrategy<double>(integrationControlPL);
 }
 
 const RCP<RythmosSolver<double> > solverNew(
@@ -113,6 +129,45 @@ const RCP<RythmosSolver<double> > solverNew(
     Rythmos::backwardEulerStepper<double>(thyraModel, stepSolver);
 
   return rcp(new RythmosSolver<double>(integrator, stepper, stepSolver, thyraModel, finalTime));
+}
+
+const RCP<RythmosSolver<double> > solverNew(
+    const RCP<Thyra::ModelEvaluatorDefaultBase<double> > &thyraModel,
+    double initialTime,
+    double finalTime,
+    const RCP<Piro::ObserverBase<double> > &observer)
+{
+  const RCP<Rythmos::IntegrationObserverBase<double> > rythmosObserver =
+    rcp(new ObserverToRythmosIntegrationObserverAdapter<double>(observer));
+  const RCP<Rythmos::DefaultIntegrator<double> > integrator =
+    Rythmos::observedDefaultIntegrator(rythmosObserver);
+  const RCP<Thyra::NonlinearSolverBase<double> > stepSolver =
+    Rythmos::timeStepNonlinearSolver<double>();
+  const RCP<Rythmos::SolverAcceptingStepperBase<double> > stepper =
+    Rythmos::backwardEulerStepper<double>(thyraModel, stepSolver);
+
+  return rcp(new RythmosSolver<double>(integrator, stepper, stepSolver, thyraModel, initialTime, finalTime));
+}
+
+const RCP<RythmosSolver<double> > solverNew(
+    const RCP<Thyra::ModelEvaluatorDefaultBase<double> > &thyraModel,
+    double initialTime,
+    double finalTime,
+    double fixedTimeStep,
+    const RCP<Piro::ObserverBase<double> > &observer)
+{
+  const RCP<Rythmos::IntegrationControlStrategyBase<double> > stepStrategy =
+    stepStrategyNew(fixedTimeStep);
+  const RCP<Rythmos::IntegrationObserverBase<double> > rythmosObserver =
+    rcp(new ObserverToRythmosIntegrationObserverAdapter<double>(observer));
+  const RCP<Rythmos::DefaultIntegrator<double> > integrator =
+    Rythmos::defaultIntegrator(stepStrategy, rythmosObserver);
+  const RCP<Thyra::NonlinearSolverBase<double> > stepSolver =
+    Rythmos::timeStepNonlinearSolver<double>();
+  const RCP<Rythmos::SolverAcceptingStepperBase<double> > stepper =
+    Rythmos::backwardEulerStepper<double>(thyraModel, stepSolver);
+
+  return rcp(new RythmosSolver<double>(integrator, stepper, stepSolver, thyraModel, initialTime, finalTime));
 }
 
 const RCP<RythmosSolver<double> > solverNew(
@@ -271,6 +326,48 @@ TEUCHOS_UNIT_TEST(Piro_RythmosSolver, TimeZero_DefaultSolutionSensitivityOp)
     const Array<double> actual = arrayFromLinOp(*dxdp, i);
     TEST_COMPARE_FLOATING_ARRAYS(actual, expected[i], tol);
   }
+}
+
+TEUCHOS_UNIT_TEST(Piro_RythmosSolver, TimeZero_NoDfDpMv_NoSensitivity)
+{
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model(
+      new WeakenedModelEvaluator_NoDfDpMv(defaultModelNew()));
+
+  const double finalTime = 0.0;
+  const RCP<RythmosSolver<double> > solver = solverNew(model, finalTime);
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+
+  const int responseIndex = 0;
+  const int solutionResponseIndex = solver->Ng() - 1;
+  const int parameterIndex = 0;
+
+  TEST_ASSERT(outArgs.supports(Thyra::MEB::OUT_ARG_DgDp, responseIndex, parameterIndex).none());
+  TEST_ASSERT(outArgs.supports(Thyra::MEB::OUT_ARG_DgDp, solutionResponseIndex, parameterIndex).none());
+
+  TEST_NOTHROW(solver->evalModel(inArgs, outArgs));
+}
+
+TEUCHOS_UNIT_TEST(Piro_RythmosSolver, TimeZero_NoDgDp_NoResponseSensitivity)
+{
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model(
+      new WeakenedModelEvaluator_NoDgDp(defaultModelNew()));
+
+  const double finalTime = 0.0;
+  const RCP<RythmosSolver<double> > solver = solverNew(model, finalTime);
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+
+  const int responseIndex = 0;
+  const int solutionResponseIndex = solver->Ng() - 1;
+  const int parameterIndex = 0;
+
+  TEST_ASSERT(outArgs.supports(Thyra::MEB::OUT_ARG_DgDp, responseIndex, parameterIndex).none());
+  TEST_ASSERT(!outArgs.supports(Thyra::MEB::OUT_ARG_DgDp, solutionResponseIndex, parameterIndex).none());
+
+  TEST_NOTHROW(solver->evalModel(inArgs, outArgs));
 }
 
 TEUCHOS_UNIT_TEST(Piro_RythmosSolver, TimeZero_DefaultResponseSensitivity)
@@ -497,6 +594,159 @@ TEUCHOS_UNIT_TEST(Piro_RythmosSolver, TimeZero_ResponseAndDefaultSensitivities)
   }
 }
 
+TEUCHOS_UNIT_TEST(Piro_RythmosSolver, ObserveInitialCondition)
+{
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
+  const RCP<MockObserver<double> > observer(new MockObserver<double>);
+  const double timeStamp = 2.0;
+
+  const RCP<RythmosSolver<double> > solver = solverNew(model, timeStamp, timeStamp, observer);
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+  const Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  solver->evalModel(inArgs, outArgs);
+
+  {
+    const RCP<const Thyra::VectorBase<double> > solution =
+      observer->lastSolution();
+
+    const RCP<const Thyra::VectorBase<double> > initialCondition =
+      model->getNominalValues().get_x();
+
+    TEST_COMPARE_FLOATING_ARRAYS(
+        arrayFromVector(*solution),
+        arrayFromVector(*initialCondition),
+        tol);
+  }
+
+  TEST_FLOATING_EQUALITY(observer->lastStamp(), timeStamp, tol);
+}
+
+TEUCHOS_UNIT_TEST(Piro_RythmosSolver, ObserveInitialConditionWhenSensitivitiesRequested)
+{
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
+  const RCP<MockObserver<double> > observer(new MockObserver<double>);
+  const double timeStamp = 2.0;
+
+  const RCP<RythmosSolver<double> > solver = solverNew(model, timeStamp, timeStamp, observer);
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  {
+    const int solutionResponseIndex = solver->Ng() - 1;
+    const int parameterIndex = 0;
+    const Thyra::MEB::Derivative<double> dxdp_deriv =
+      Thyra::create_DgDp_mv(*solver, solutionResponseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+    const RCP<Thyra::MultiVectorBase<double> > dxdp = dxdp_deriv.getMultiVector();
+    outArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp_deriv);
+  }
+  solver->evalModel(inArgs, outArgs);
+
+  {
+    const RCP<const Thyra::VectorBase<double> > solution =
+      observer->lastSolution();
+
+    const RCP<const Thyra::VectorBase<double> > initialCondition =
+      model->getNominalValues().get_x();
+
+    TEST_COMPARE_FLOATING_ARRAYS(
+        arrayFromVector(*solution),
+        arrayFromVector(*initialCondition),
+        tol);
+  }
+
+  TEST_FLOATING_EQUALITY(observer->lastStamp(), timeStamp, tol);
+}
+
+TEUCHOS_UNIT_TEST(Piro_RythmosSolver, ObserveFinalSolution)
+{
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
+  const RCP<MockObserver<double> > observer(new MockObserver<double>);
+  const double initialTime = 0.0;
+  const double finalTime = 0.1;
+  const double timeStepSize = 0.05;
+
+  const RCP<RythmosSolver<double> > solver =
+    solverNew(model, initialTime, finalTime, timeStepSize, observer);
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  const int solutionResponseIndex = solver->Ng() - 1;
+  const RCP<Thyra::VectorBase<double> > solution =
+    Thyra::createMember(solver->get_g_space(solutionResponseIndex));
+  outArgs.set_g(solutionResponseIndex, solution);
+
+  solver->evalModel(inArgs, outArgs);
+
+  TEST_COMPARE_FLOATING_ARRAYS(
+      arrayFromVector(*observer->lastSolution()),
+      arrayFromVector(*solution),
+      tol);
+
+  TEST_FLOATING_EQUALITY(observer->lastStamp(), finalTime, tol);
+}
+
+// builds a simple backward euler stepper factory
+template <typename Scalar>
+class TestStepperFactory : public Piro::RythmosStepperFactory<Scalar> {
+public:
+  Teuchos::RCP<Rythmos::StepperBase<Scalar> > buildStepper(
+                        const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > & model,
+                        const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > & solver,
+                        const Teuchos::RCP<Teuchos::ParameterList> & paramList)
+  { return Rythmos::backwardEulerStepper<double>(model, solver); }
+};
+
+TEUCHOS_UNIT_TEST(Piro_RythmosSolver, ExternalStepper_Interface)
+{
+  // a simple parameter list to get things started
+  Teuchos::RCP<Teuchos::ParameterList> pl =
+    Teuchos::getParametersFromXmlString("\
+   <ParameterList>\
+     <ParameterList name=\"Rythmos\">\
+       <Parameter name=\"Nonlinear Solver Type\" type=\"string\" value='Rythmos'/>\
+       <Parameter name=\"Final Time\" type=\"double\" value=\"1\"/>\
+       <ParameterList name=\"Stratimikos\">\
+       </ParameterList>\
+       <Parameter name=\"Stepper Type\" type=\"string\" value=\"Test Stepper\"/>\
+       <ParameterList name=\"Rythmos Stepper\">\
+       </ParameterList>\
+       <ParameterList name=\"Rythmos Integrator\">\
+       </ParameterList>\
+       <ParameterList name=\"Rythmos Integration Control\">\
+         <Parameter name=\"Take Variable Steps\" type=\"bool\" value=\"false\"/>\
+         <Parameter name=\"Number of Time Steps\" type=\"int\" value=\"1\"/>\
+       </ParameterList>\
+     </ParameterList>\
+   </ParameterList>");
+
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
+
+  {
+    // this is simply to excercise externally added stepper is easy to use
+    Teuchos::RCP<RythmosStepperFactory<double> > testStepperFactory = Teuchos::rcp(new TestStepperFactory<double>);
+
+    const RCP<RythmosSolver<double> > solver = Teuchos::rcp(new RythmosSolver<double>);
+    solver->addStepperFactory("Test Stepper",testStepperFactory); // now "Stepper Type" can be used
+
+    solver->initialize(pl,model);
+    // should find the "Test Stepper", so this method call should succeed
+    TEST_NOTHROW(solver->initialize(pl,model));
+  }
+
+  {
+    // this is simply to excercise externally added stepper is easy to use
+    Teuchos::RCP<RythmosStepperFactory<double> > testStepperFactory = Teuchos::rcp(new TestStepperFactory<double>);
+
+    const RCP<RythmosSolver<double> > solver = Teuchos::rcp(new RythmosSolver<double>);
+    solver->addStepperFactory("Test Stepper New",testStepperFactory); // now "Stepper Type" can be used
+
+    // There is no "Test Stepper" so this method call should throw
+    TEST_THROW(solver->initialize(pl,model),Teuchos::Exceptions::InvalidParameter);
+  }
+}
+
 #ifdef Piro_ENABLE_NOX
 TEUCHOS_UNIT_TEST(Piro_RythmosSolver, SteadyState_SolutionSensitivity)
 {
@@ -517,7 +767,7 @@ TEUCHOS_UNIT_TEST(Piro_RythmosSolver, SteadyState_SolutionSensitivity)
     steadyStateSolver->evalModel(steadyInArgs, steadyOutArgs);
   }
 
-  const double finalTime = 0.0;
+  const double finalTime =0.0;
   const RCP<RythmosSolver<double> > solver = solverNew(model, finalTime, steadyStateSolver);
   const int solutionResponseIndex = solver->Ng() - 1;
 
@@ -653,6 +903,7 @@ TEUCHOS_UNIT_TEST(Piro_RythmosSolver, SteadyState_ResponseSensitivityOp_NoDgDpMv
     TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
   }
 }
+
 #endif /* Piro_ENABLE_NOX */
 
 #endif /* Piro_ENABLE_Rythmos */

@@ -11,8 +11,6 @@
 
 #include <stk_percept/function/Function.hpp>
 
-using namespace Intrepid;
-
 namespace stk
 {
   namespace percept

@@ -67,14 +67,14 @@ namespace Ifpack2 {
 namespace MueLu {
 
   /*!
-    @class IfpackSmoother2
+    @class Ifpack2Smoother
     @brief Class that encapsulates Ifpack2 smoothers.
 
     //   This class creates an Ifpack2 preconditioner factory. The factory creates a smoother based on the
     //   type and ParameterList passed into the constructor. See the constructor for more information.
     */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class Ifpack2Smoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
   {
 #undef MUELU_IFPACK2SMOOTHER_SHORT
@@ -95,27 +95,27 @@ namespace MueLu {
     Here is how to select some of the most common smoothers.
 
     - Gauss-Seidel
-    - <tt>type</tt> = <tt>point relaxation stand-alone</tt>
-    - parameter list options
-    - <tt>relaxation: type</tt> = <tt>Gauss-Seidel</tt>
-    - <tt>relaxation: damping factor</tt>
+      - <tt>type</tt> = <tt>point relaxation stand-alone</tt>
+      - parameter list options
+        - <tt>relaxation: type</tt> = <tt>Gauss-Seidel</tt>
+        - <tt>relaxation: damping factor</tt>
     - symmetric Gauss-Seidel
-    - <tt>type</tt> = <tt>point relaxation stand-alone</tt>
-    - parameter list options
-    - <tt>relaxation: type</tt> = <tt>symmetric Gauss-Seidel</tt>
-    - <tt>relaxation: damping factor</tt>
+      - <tt>type</tt> = <tt>point relaxation stand-alone</tt>
+      - parameter list options
+        - <tt>relaxation: type</tt> = <tt>symmetric Gauss-Seidel</tt>
+        - <tt>relaxation: damping factor</tt>
     - Chebyshev
-    - <tt>type</tt> = <tt>Chebyshev</tt>
-    - parameter list options
-    - <tt>chebyshev: ratio eigenvalue</tt>
-    - <tt>chebyshev: min eigenvalue</tt>
-    - <tt>chebyshev: max eigenvalue</tt>
-    - <tt>chebyshev: degree</tt>
-    - <tt>chebyshev: zero starting solution</tt> (defaults to <tt>true</tt>)
+      - <tt>type</tt> = <tt>Chebyshev</tt>
+      - parameter list options
+        - <tt>chebyshev: ratio eigenvalue</tt>
+        - <tt>chebyshev: min eigenvalue</tt>
+        - <tt>chebyshev: max eigenvalue</tt>
+        - <tt>chebyshev: degree</tt>
+        - <tt>chebyshev: zero starting solution</tt> (defaults to <tt>true</tt>)
     - ILU
-    - <tt>type</tt> = <tt>ILU</tt>
-    - parameter list options
-    - <tt>fact: level-of-fill</tt>
+      - <tt>type</tt> = <tt>ILU</tt>
+      - parameter list options
+        - <tt>fact: level-of-fill</tt>
 
     See also Ifpack2_Relaxation, Ifpack2_Chebyshev, Ifpack2_ILUT, Ifpac2_Krylov.
     */
@@ -201,6 +201,9 @@ namespace MueLu {
 
     //! pointer to Ifpack2 preconditioner object
     RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_;
+
+    //! matrix, used in apply if solving residual equation
+    RCP<Matrix> A_;
 
   }; // class Ifpack2Smoother
 

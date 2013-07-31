@@ -79,7 +79,6 @@
 #include "MueLu_Memory.hpp"
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_SaPFactory.hpp"
-#include "MueLu_GaussSeidelSmoother.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_Utilities.hpp"
@@ -115,8 +114,8 @@ typedef int    LocalOrdinal;
 typedef int GlobalOrdinal;
 // #endif
 
-typedef Kokkos::DefaultNode::DefaultNodeType Node;
-typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
+typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 
 #include "MueLu_UseShortNames.hpp"
 
@@ -318,7 +317,7 @@ int main(int argc, char *argv[]) {
   M22->SetFactory("Smoother", Smoo22Fact);
   M22->SetIgnoreUserData(true);
 
-  RCP<BlockedPFactory> PFact = rcp(new BlockedPFactory(Teuchos::null/*AFact necessary for row map index base*/));
+  RCP<BlockedPFactory> PFact = rcp(new BlockedPFactory());
   PFact->AddFactoryManager(M11);
   PFact->AddFactoryManager(M22);
 
@@ -327,14 +326,12 @@ int main(int argc, char *argv[]) {
   RCP<Factory> AcFact = rcp(new BlockedRAPFactory());
 
   // Smoothers
-  //RCP<SmootherPrototype> smootherPrototype     = rcp( new GaussSeidelSmoother(1, 1.0) );
   RCP<BlockedGaussSeidelSmoother> smootherPrototype     = rcp( new BlockedGaussSeidelSmoother(2,1.0) );
   smootherPrototype->AddFactoryManager(M11);
   smootherPrototype->AddFactoryManager(M22);
   RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );
 
   // Coarse grid correction
-  //RCP<SmootherPrototype> coarseSolverPrototype = rcp( new DirectSolver() );
   RCP<BlockedGaussSeidelSmoother> coarseSolverPrototype = rcp( new BlockedGaussSeidelSmoother() );
   coarseSolverPrototype->AddFactoryManager(M11);
   coarseSolverPrototype->AddFactoryManager(M22);
@@ -350,6 +347,7 @@ int main(int argc, char *argv[]) {
 
   H.Setup(M);
 
+  std::cout << "main AcFact = " << AcFact.get() << std::endl;
   RCP<Level> l0 = H.GetLevel(0);
   RCP<Level> l1 = H.GetLevel(1);
   RCP<Level> l2 = H.GetLevel(2);

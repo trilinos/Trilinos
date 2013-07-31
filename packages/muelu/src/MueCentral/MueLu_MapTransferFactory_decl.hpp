@@ -61,14 +61,14 @@ namespace MueLu {
   /*!
     @class MapTransferFactory class.
     @brief transfer factory for maps
-    
+
     Factory that transfers a map (given by a variable name and a generating factory) for building
     a coarse version of the map. The coarse map is stored on the coarse level using the same variable name
     and generating factory than the original fine level map.
 
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class MapTransferFactory : public TwoLevelFactoryBase {
 #undef MUELU_MAPTRANSFERFACTORY_SHORT
     #include "MueLu_UseShortNames.hpp"

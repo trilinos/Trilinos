@@ -109,7 +109,7 @@ void NOX::Epetra::Scaling::computeScaling(const Epetra_LinearProblem& problem)
       const Epetra_RowMatrix* test = 0;
       test = dynamic_cast<const Epetra_RowMatrix*>(problem.GetOperator());
       if (test == 0) {
-	cout << "ERROR: NOX::Epetra::Scaling::scaleLinearSystem() - "
+	std::cout << "ERROR: NOX::Epetra::Scaling::scaleLinearSystem() - "
 	     << "For \"Row Sum\" scaling, the Matrix must be an "
 	     << "Epetra_RowMatrix derived object!" << std::endl;
 	throw "NOX Error";
@@ -129,7 +129,7 @@ void NOX::Epetra::Scaling::computeScaling(const Epetra_LinearProblem& problem)
       const Epetra_RowMatrix* test = 0;
       test = dynamic_cast<const Epetra_RowMatrix*>(problem.GetOperator());
       if (test == 0) {
-	cout << "ERROR: NOX::Epetra::Scaling::scaleLinearSystem() - "
+	std::cout << "ERROR: NOX::Epetra::Scaling::scaleLinearSystem() - "
 	     << "For \"Column Sum\" scaling, the Matrix must be an "
 	     << "Epetra_RowMatrix derived object!" << std::endl;
 	throw "NOX Error";
@@ -225,7 +225,7 @@ void NOX::Epetra::Scaling::applyLeftScaling(const Epetra_Vector& input,
   }
 }
 
-void NOX::Epetra::Scaling::print(ostream& os)
+void NOX::Epetra::Scaling::print(std::ostream& os)
 {
 
   os << "\n       LINEAR SOLVER SCALING:" << std::endl;
@@ -251,8 +251,8 @@ void NOX::Epetra::Scaling::print(ostream& os)
   return;
 }
 
-ostream& 
-NOX::Epetra::operator<<(ostream& os, NOX::Epetra::Scaling& scalingObject)
+std::ostream& 
+NOX::Epetra::operator<<(std::ostream& os, NOX::Epetra::Scaling& scalingObject)
 {
   scalingObject.print(os);
   return os;

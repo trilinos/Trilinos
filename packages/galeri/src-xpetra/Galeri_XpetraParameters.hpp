@@ -65,8 +65,11 @@ namespace Galeri {
     public:
 
       Parameters(Teuchos::CommandLineProcessor& clp, GO nx=16, GO ny=-1, GO nz=-1, const std::string & matrixType="Laplace1D", int keepBCs=0,
-                 double stretchx=1.0, double stretchy=1.0, double stretchz=1.0)
-          : nx_(nx), ny_(ny), nz_(nz), stretchx_(stretchx), stretchy_(stretchy), stretchz_(stretchz), matrixType_(matrixType), keepBCs_(keepBCs) {
+                 double stretchx=1.0, double stretchy=1.0, double stretchz=1.0, double h=1.0, double delta=0.0, int PMLXL=0, int PMLXR=0,
+                 int PMLYL=0, int PMLYR=0, int PMLZL=0, int PMLZR=0, double omega=2.0*M_PI, double shift=0.5, int mx=1, int my=1, int mz=1)
+	: nx_(nx), ny_(ny), nz_(nz), mx_(mx), my_(my), mz_(mz), stretchx_(stretchx), stretchy_(stretchy), stretchz_(stretchz), matrixType_(matrixType), keepBCs_(keepBCs),
+          h_(h), delta_(delta), PMLx_left(PMLXL), PMLx_right(PMLXR), PMLy_left(PMLYL), PMLy_right(PMLYR), PMLz_left(PMLZL), PMLz_right(PMLZR),
+          omega_(omega), shift_(shift) {
         clp.setOption("nx",         &nx_,           "mesh points in x-direction.");
         clp.setOption("ny",         &ny_,           "mesh points in y-direction.");
         clp.setOption("nz",         &nz_,           "mesh points in z-direction.");
@@ -75,6 +78,19 @@ namespace Galeri {
         clp.setOption("stretchz",   &stretchz_,     "stretch mesh in z-direction.");
         clp.setOption("matrixType", &matrixType_,   "matrix type: Laplace1D, Laplace2D, Laplace3D, ..."); //TODO: Star2D, numGlobalElements=...
         clp.setOption("keepBCs",    &keepBCs_,      "keep Dirichlet boundary rows in matrix (0=false,1=true)");
+        clp.setOption("h",          &h_,            "mesh width for uniform h");
+        clp.setOption("delta",      &delta_,        "maximum PML damping value");
+        clp.setOption("PMLx_left",  &PMLx_left,     "PML grid points in x-direction (left boundary)");
+        clp.setOption("PMLx_right", &PMLx_right,    "PML grid points in x-direction (right boundary)");
+        clp.setOption("PMLy_left",  &PMLy_left,     "PML grid points in y-direction (left boundary)");
+        clp.setOption("PMLy_right", &PMLy_right,    "PML grid points in y-direction (right boundary)");
+        clp.setOption("PMLz_left",  &PMLz_left,     "PML grid points in z-direction (left boundary)");
+        clp.setOption("PMLz_right", &PMLz_right,    "PML grid points in z-direction (right boundary)");
+        clp.setOption("omega",      &omega_,        "angular frequency omega");
+        clp.setOption("shift",      &shift_,        "complex frequency shift");
+        clp.setOption("mx",         &mx_,           "processors in x-direction.");
+        clp.setOption("my",         &my_,           "processors in y-direction.");
+        clp.setOption("mz",         &mz_,           "processors in z-direction.");
       }
 
       void check() const {
@@ -85,20 +101,21 @@ namespace Galeri {
         check();
 
         GO numGlobalElements=-1;
-        if (matrixType_ == "Laplace1D") {
+        if (matrixType_ == "Laplace1D" || matrixType_ == "Helmholtz1D") {
           ny_ = nz_ = -1;
-          numGlobalElements = static_cast<GO>(nx_);
+          numGlobalElements = nx_;
 
-        } else if (matrixType_ == "Laplace2D" || matrixType_ == "Elasticity2D") {
+        } else if (matrixType_ == "Laplace2D" || matrixType_ == "Elasticity2D" || matrixType_ == "Helmholtz2D") {
           nz_ = -1;
-          numGlobalElements = static_cast<GO>(nx_*ny_);
+          numGlobalElements = nx_*ny_;
 
-        } else if (matrixType_ == "Laplace3D" || matrixType_ == "Elasticity3D") {
-          numGlobalElements = static_cast<GO>(nx_*ny_*nz_);
+        } else if (matrixType_ == "Laplace3D" || matrixType_ == "Elasticity3D" || matrixType_ == "Helmholtz3D") {
+          numGlobalElements = nx_*ny_*nz_;
 
         } //TODO else throw
 
-        if (numGlobalElements < 0) throw std::runtime_error("Gallery: numGlobalElements < 0 (did you forget --ny (or --nz) for 2D (3D) problems?)");
+        if (numGlobalElements < 0)
+          throw std::runtime_error("Gallery: numGlobalElements < 0 (did you forget --ny (or --nz) for 2D (3D) problems?)");
 
         return numGlobalElements;
       }
@@ -113,13 +130,26 @@ namespace Galeri {
 
         check();
 
-        paramList_.set("nx",        static_cast<GO>(nx_));
-        paramList_.set("ny",        static_cast<GO>(ny_));
-        paramList_.set("nz",        static_cast<GO>(nz_));
-        paramList_.set("stretchx",  stretchx_);
-        paramList_.set("stretchy",  stretchy_);
-        paramList_.set("stretchz",  stretchz_);
-        paramList_.set("keepBCs",   static_cast<bool>(keepBCs_));
+        paramList_.set("nx",          nx_);
+        paramList_.set("ny",          ny_);
+        paramList_.set("nz",          nz_);
+        paramList_.set("mx",          mx_);
+        paramList_.set("my",          my_);
+        paramList_.set("mz",          mz_);
+        paramList_.set("stretchx",    stretchx_);
+        paramList_.set("stretchy",    stretchy_);
+        paramList_.set("stretchz",    stretchz_);
+        paramList_.set("keepBCs",     static_cast<bool>(keepBCs_));
+        paramList_.set("h",           h_);
+        paramList_.set("delta",       delta_);
+        paramList_.set("PMLx_left",   PMLx_left);
+        paramList_.set("PMLx_right",  PMLx_right);
+        paramList_.set("PMLy_left",   PMLy_left);
+        paramList_.set("PMLy_right",  PMLy_right);
+        paramList_.set("PMLz_left",   PMLz_left);
+        paramList_.set("PMLz_right",  PMLz_right);
+        paramList_.set("omega",       omega_);
+        paramList_.set("shift",       shift_);
 
         return paramList_;
       }
@@ -149,8 +179,8 @@ namespace Galeri {
           out << "Matrix type: " << matrixType_ << endl
               << "Problem size: " << GetNumGlobalElements();
 
-          if      (matrixType_ == "Laplace2D" || matrixType_ == "Elasticity2D")  out << " (" << nx_ << "x" << ny_ << ")";
-          else if (matrixType_ == "Laplace3D" || matrixType_ == "Elasticity3D")  out << " (" << nx_ << "x" << ny_ << "x" << nz_ << ")";
+          if      (matrixType_ == "Laplace2D" || matrixType_ == "Elasticity2D" || matrixType_ == "Helmholtz2D")  out << " (" << nx_ << "x" << ny_ << ")";
+          else if (matrixType_ == "Laplace3D" || matrixType_ == "Elasticity3D" || matrixType_ == "Helmholtz3D")  out << " (" << nx_ << "x" << ny_ << "x" << nz_ << ")";
 
           out << endl;
         }
@@ -161,17 +191,21 @@ namespace Galeri {
 
     private:
       // See Teuchos BUG 5249: https://software.sandia.gov/bugzilla/show_bug.cgi?id=5249
-      mutable double nx_;
-      mutable double ny_;
-      mutable double nz_;
+      mutable GO nx_, ny_, nz_;
+      mutable int mx_, my_, mz_;
       mutable double stretchx_, stretchy_, stretchz_;
-      // GO nx_;
-      // GO ny_;
-      // GO nz_;
 
       std::string matrixType_;
 
       mutable int keepBCs_;
+
+      mutable double h_;
+      mutable double delta_;
+      mutable int PMLx_left, PMLx_right;
+      mutable int PMLy_left, PMLy_right;
+      mutable int PMLz_left, PMLz_right;
+      mutable double omega_;
+      mutable double shift_;
 
       mutable Teuchos::ParameterList paramList_; // only used by GetParameterList(). It's temporary data. TODO: bad design...
     };

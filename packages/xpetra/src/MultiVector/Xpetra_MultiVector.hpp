@@ -63,7 +63,7 @@ namespace Xpetra {
   template<class S, class LO, class GO, class N> class Vector;
 #endif
 
-  template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+  template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class MultiVector
     : public DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node >
   {
@@ -181,6 +181,8 @@ namespace Xpetra {
 
     //! Print the object with the given verbosity level to a FancyOStream.
     virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
+
+    virtual void replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map) = 0;
 
     //@}
 

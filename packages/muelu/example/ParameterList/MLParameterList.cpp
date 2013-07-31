@@ -169,8 +169,31 @@ int main(int argc, char *argv[]) {
     // Multigrid Hierarchy
     MLParameterListInterpreter mueLuFactory(*params);
     RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
+
+    // build default null space
+    LocalOrdinal numPDEs = 1;
+    if(A->IsView("stridedMaps")==true) {
+      Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
+      numPDEs = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getFixedBlockSize();
+      oldView = A->SwitchToView(oldView);
+    }
+
+    RCP<MultiVector> nullspace = MultiVectorFactory::Build(A->getDomainMap(), numPDEs);
+
+    for (int i=0; i<numPDEs; ++i) {
+      Teuchos::ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(i);
+      int numBlocks = nsValues.size() / numPDEs;
+      for (int j=0; j< numBlocks; ++j) {
+        nsValues[j*numPDEs + i] = 1.0;
+      }
+    }
+
+    H->GetLevel(0)->Set("Nullspace", nullspace);
     H->GetLevel(0)->Set("A", A);
 
+    //
+    // build hierarchy
+    //
     mueLuFactory.SetupHierarchy(*H);
 
     //

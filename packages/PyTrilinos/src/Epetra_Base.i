@@ -150,7 +150,7 @@ except ImportError:
     npy_intp dims[ ] = { self->dimMethod() };
     PyArray_Descr * dtype = PyArray_DescrFromType(NPY_INT);
     PyObject * returnObj = PyArray_NewFromDescr(&PyArray_Type, dtype, 1, dims, NULL,
-						NULL, NPY_FARRAY, NULL);
+						NULL, NPY_ARRAY_FARRAY, NULL);
     if (returnObj == NULL) goto fail;
     data = (int*) array_data(returnObj);
     for (int i=0; i<dims[0]; ++i) data[i] = result[i];
@@ -175,7 +175,7 @@ except ImportError:
     npy_intp dims[ ] = { self->dimMethod() };
     PyArray_Descr * dtype = PyArray_DescrFromType(NPY_DOUBLE);
     PyObject * returnObj = PyArray_NewFromDescr(&PyArray_Type, dtype, 1, dims, NULL,
-						NULL, NPY_FARRAY, NULL);
+						NULL, NPY_ARRAY_FARRAY, NULL);
     if (returnObj == NULL) goto fail;
     data = (double*) array_data(returnObj);
     for (int i=0; i<dims[0]; ++i) data[i] = result[i];
@@ -200,7 +200,7 @@ except ImportError:
     npy_intp dims[ ] = { self->dimMethod1(), self->dimMethod2() };
     PyArray_Descr * dtype = PyArray_DescrFromType(NPY_DOUBLE);
     PyObject * returnObj = PyArray_NewFromDescr(&PyArray_Type, dtype, 2, dims, NULL,
-						NULL, NPY_FARRAY, NULL);
+						NULL, NPY_ARRAY_FARRAY, NULL);
     if (returnObj == NULL) goto fail;
     data = (double*) array_data(returnObj);
     for (int i=0; i<dims[0]*dims[1]; ++i) data[i] = result[i];
@@ -540,10 +540,15 @@ or it will hang your code."
 %rename(FLOPS) Epetra_Flops;
 %include "Epetra_Flops.h"
 
+// The Epetra_Time constructor takes an Epetra_Comm as its argument,
+// so it needs to know how to convert a PyObject to an Epetra_Comm.
+// Since the Epetra_Comm classes get wrapped later in Epetra_Comm.i,
+// we set up the Teuchos::RCP typemaps for Epetra_Comm here.
+%teuchos_rcp(Epetra_Comm)
+
 /////////////////////////
 // Epetra_Time support //
 /////////////////////////
 %teuchos_rcp(Epetra_Time)
 %rename(Time) Epetra_Time;
 %include "Epetra_Time.h"
-

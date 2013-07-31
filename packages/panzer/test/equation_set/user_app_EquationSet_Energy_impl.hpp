@@ -65,89 +65,90 @@
 // ***********************************************************************
 template <typename EvalT>
 user_app::EquationSet_Energy<EvalT>::
-EquationSet_Energy(const panzer::InputEquationSet& ies,
+EquationSet_Energy(const Teuchos::RCP<Teuchos::ParameterList>& params,
+		   const int& default_integration_order,
 		   const panzer::CellData& cell_data,
 		   const Teuchos::RCP<panzer::GlobalData>& global_data,
 		   const bool build_transient_support) :
-  panzer::EquationSet_DefaultImpl<EvalT>(ies, cell_data, global_data, build_transient_support )
+  panzer::EquationSet_DefaultImpl<EvalT>(params,default_integration_order,cell_data,global_data,build_transient_support )
 {
-  this->m_eqset_prefix = ies.prefix;
-
   // ********************
-  // Assemble DOF names and Residual names
-  // ********************
-  {
-    this->m_scatter_name = "Scatter_RESIDUAL_"+this->m_eqset_prefix+"TEMPERATURE";
-    
-    std::string dofName = this->m_eqset_prefix+"TEMPERATURE";
-    std::string dofResidualName = "RESIDUAL_"+this->m_eqset_prefix+"TEMPERATURE";
-    std::string dofGrandientName = "GRAD_"+this->m_eqset_prefix+"TEMPERATURE";
-    std::string dofTimeDerivativeName = "DOT_"+this->m_eqset_prefix+"TEMPERATURE";
-    
-    this->addProvidedDOF(dofName,dofResidualName);
-    this->addDOFGrad(dofName,dofGrandientName);
-    if (this->buildTransientSupport())
-      this->addDOFTimeDerivative(dofName,dofTimeDerivativeName);
-  }
-
-  // ********************
-  // Build Basis Functions and Integration Rules
-  // ********************
-  
-  this->setupDOFs(cell_data.baseCellDimension());
-
-  // ********************
-  // Parse valid options
+  // Validate and parse parameter list
   // ********************
   {    
     Teuchos::ParameterList valid_parameters;
+    this->setDefaultValidParameters(valid_parameters);
+
+    valid_parameters.set("Model ID","","Closure model id associated with this equaiton set");
+    valid_parameters.set("Prefix","","Prefix for using multiple instatiations of thei equation set");
+    valid_parameters.set("Basis Type","HGrad","Type of Basis to use");
+    valid_parameters.set("Basis Order",1,"Order of the basis");
+    valid_parameters.set("Integration Order",-1,"Order of the integration rule");
+
     Teuchos::setStringToIntegralParameter<int>(
       "CONVECTION",
       "OFF",
       "Enables or disables convection term in the energy equation",
       Teuchos::tuple<std::string>("ON","OFF"),
       &valid_parameters
-      );
+      );    
 
-    // Don't corrupt original input, create a copy
-    Teuchos::ParameterList tmp_ies_params = this->getInputEquationSet().params;
-    tmp_ies_params.setName(ies.prefix+"ENERGY");
-    tmp_ies_params.validateParametersAndSetDefaults(valid_parameters);
-    
-    m_do_convection = tmp_ies_params.get<std::string>("CONVECTION");
+    params->validateParametersAndSetDefaults(valid_parameters);
   }
 
+  m_do_convection = params->get<std::string>("CONVECTION");
+  m_prefix = params->get<std::string>("Prefix");
+  std::string basis_type = params->get<std::string>("Basis Type");
+  int basis_order = params->get<int>("Basis Order");
+  std::string model_id = params->get<std::string>("Model ID");
+  int integration_order = params->get<int>("Integration Order");
+
+  // ********************
+  // Setup DOFs and closure models
+  // ********************
+  {
+    m_dof_name = m_prefix+"TEMPERATURE";
+
+    this->addDOF(m_dof_name,basis_type,basis_order,integration_order);
+    this->addDOFGrad(m_dof_name);
+    if (this->buildTransientSupport())
+      this->addDOFTimeDerivative(m_dof_name);
+  }
+
+  this->addClosureModel(model_id);
+
+  this->setupDOFs();
 }
 
 // ***********************************************************************
 template <typename EvalT>
 void user_app::EquationSet_Energy<EvalT>::
 buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-				      const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
+				      const panzer::FieldLibrary& fl,
 				      const Teuchos::ParameterList& user_data) const
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  
-  const std::string& prefix = this->m_eqset_prefix;
-
   // ********************
   // Energy Equation
   // ********************
 
+  Teuchos::RCP<panzer::IntegrationRule> ir = this->getIntRuleForDOF(m_dof_name); 
+  Teuchos::RCP<panzer::BasisIRLayout> basis = this->getBasisIRLayoutForDOF(m_dof_name); 
+
   // Transient Operator
-  if (this->m_build_transient_support) {
+  if (this->buildTransientSupport()) {
     ParameterList p("Transient Residual");
-    p.set("Residual Name", "RESIDUAL_"+prefix+"TEMPERATURE_TRANSIENT_OP");
-    p.set("Value Name", "DOT_"+prefix+"TEMPERATURE");
-    p.set("Basis", this->m_basis);
-    p.set("IR", this->m_int_rule);
+    p.set("Residual Name", "RESIDUAL_"+m_prefix+"TEMPERATURE_TRANSIENT_OP");
+    p.set("Value Name", "DXDT_"+m_prefix+"TEMPERATURE");
+    p.set("Basis", basis);
+    p.set("IR", ir);
     p.set("Multiplier", 1.0);
     Teuchos::RCP<std::vector<std::string> > fms = 
       Teuchos::rcp(new std::vector<std::string>);
-    fms->push_back(prefix+"DENSITY");
-    fms->push_back(prefix+"HEAT_CAPACITY");
+    fms->push_back(m_prefix+"DENSITY");
+    fms->push_back(m_prefix+"HEAT_CAPACITY");
     p.set< Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers",fms);
 
     RCP< PHX::Evaluator<panzer::Traits> > op = 
@@ -161,10 +162,10 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     double thermal_conductivity = 1.0;
 
     ParameterList p("Diffusion Residual");
-    p.set("Residual Name", "RESIDUAL_"+prefix+"TEMPERATURE_DIFFUSION_OP");
-    p.set("Flux Name", "GRAD_"+prefix+"TEMPERATURE");
-    p.set("Basis", this->m_basis);
-    p.set("IR", this->m_int_rule);
+    p.set("Residual Name", "RESIDUAL_"+m_prefix+"TEMPERATURE_DIFFUSION_OP");
+    p.set("Flux Name", "GRAD_"+m_prefix+"TEMPERATURE");
+    p.set("Basis", basis);
+    p.set("IR", ir);
     p.set("Multiplier", thermal_conductivity);
     
     RCP< PHX::Evaluator<panzer::Traits> > op = 
@@ -180,12 +181,12 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     {
       ParameterList p("Velocity: ScalarToVector");
       RCP<std::vector<std::string> > scalar_names = rcp(new std::vector<std::string>);
-      scalar_names->push_back(prefix+"UX");
-      scalar_names->push_back(prefix+"UY");
+      scalar_names->push_back(m_prefix+"UX");
+      scalar_names->push_back(m_prefix+"UY");
       p.set<RCP<const std::vector<std::string> > >("Scalar Names", scalar_names);
-      p.set("Vector Name", prefix+"U");
-      p.set("Data Layout Scalar",this->m_int_rule->dl_scalar);
-      p.set("Data Layout Vector",this->m_int_rule->dl_vector);
+      p.set("Vector Name", m_prefix+"U");
+      p.set("Data Layout Scalar",ir->dl_scalar);
+      p.set("Data Layout Vector",ir->dl_vector);
 
       RCP< PHX::Evaluator<panzer::Traits> > op = 
 	rcp(new panzer::ScalarToVector<EvalT,panzer::Traits>(p));
@@ -196,10 +197,10 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     // Evaluator to assemble convection term
     {
       ParameterList p("Convection Operator");
-      p.set("IR", this->m_int_rule);
-      p.set("Operator Name", prefix+"TEMPERATURE_CONVECTION_OP");
-      p.set("A Name", prefix+"U");
-      p.set("Gradient Name", "GRAD_"+prefix+"TEMPERATURE");
+      p.set("IR", ir);
+      p.set("Operator Name", m_prefix+"TEMPERATURE_CONVECTION_OP");
+      p.set("A Name", m_prefix+"U");
+      p.set("Gradient Name", "GRAD_"+m_prefix+"TEMPERATURE");
       p.set("Multiplier", 1.0);
 
       RCP< PHX::Evaluator<panzer::Traits> > op = 
@@ -211,15 +212,15 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     // Integration operator (could sum this into source for efficiency)
     {
       ParameterList p("Convection Residual");
-      p.set("Residual Name","RESIDUAL_"+prefix+"TEMPERATURE_CONVECTION_OP");
-      p.set("Value Name", prefix+"TEMPERATURE_CONVECTION_OP");
-      p.set("Basis", this->m_basis);
-      p.set("IR", this->m_int_rule);
+      p.set("Residual Name","RESIDUAL_"+m_prefix+"TEMPERATURE_CONVECTION_OP");
+      p.set("Value Name", m_prefix+"TEMPERATURE_CONVECTION_OP");
+      p.set("Basis", basis);
+      p.set("IR", ir);
       p.set("Multiplier", 1.0);
       Teuchos::RCP<std::vector<std::string> > fms = 
 	Teuchos::rcp(new std::vector<std::string>);
-      fms->push_back(prefix+"DENSITY");
-      fms->push_back(prefix+"HEAT_CAPACITY");
+      fms->push_back(m_prefix+"DENSITY");
+      fms->push_back(m_prefix+"HEAT_CAPACITY");
       p.set< Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers",fms);
       
       RCP< PHX::Evaluator<panzer::Traits> > op = 
@@ -232,10 +233,10 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   // Source Operator
   {   
     ParameterList p("Source Residual");
-    p.set("Residual Name", "RESIDUAL_"+prefix+"TEMPERATURE_SOURCE_OP");
-    p.set("Value Name", "SOURCE_"+prefix+"TEMPERATURE");
-    p.set("Basis", this->m_basis);
-    p.set("IR", this->m_int_rule);
+    p.set("Residual Name", "RESIDUAL_"+m_prefix+"TEMPERATURE_SOURCE_OP");
+    p.set("Value Name", "SOURCE_"+m_prefix+"TEMPERATURE");
+    p.set("Basis", basis);
+    p.set("IR", ir);
     p.set("Multiplier", -1.0);
     
     RCP< PHX::Evaluator<panzer::Traits> > op = 
@@ -248,26 +249,16 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   // - this way we avoid loading each operator separately into the
   // global residual and Jacobian
   {
-    ParameterList p;
-    p.set("Sum Name", "RESIDUAL_"+prefix+"TEMPERATURE");
+    std::vector<std::string> residual_operator_names;
 
-    RCP<std::vector<std::string> > sum_names = 
-      rcp(new std::vector<std::string>);
-
-    sum_names->push_back("RESIDUAL_"+prefix+"TEMPERATURE_DIFFUSION_OP");
-    sum_names->push_back("RESIDUAL_"+prefix+"TEMPERATURE_SOURCE_OP");
+    residual_operator_names.push_back("RESIDUAL_"+m_prefix+"TEMPERATURE_DIFFUSION_OP");
+    residual_operator_names.push_back("RESIDUAL_"+m_prefix+"TEMPERATURE_SOURCE_OP");
     if (m_do_convection == "ON")
-      sum_names->push_back("RESIDUAL_"+prefix+"TEMPERATURE_CONVECTION_OP");
-    if (this->m_build_transient_support)
-      sum_names->push_back("RESIDUAL_"+prefix+"TEMPERATURE_TRANSIENT_OP");
+      residual_operator_names.push_back("RESIDUAL_"+m_prefix+"TEMPERATURE_CONVECTION_OP");
+    if (this->buildTransientSupport())
+      residual_operator_names.push_back("RESIDUAL_"+m_prefix+"TEMPERATURE_TRANSIENT_OP");
 
-    p.set("Values Names", sum_names);
-    p.set("Data Layout", this->m_basis->functional);
-
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::Sum<EvalT,panzer::Traits>(p));
-
-    fm.template registerEvaluator<EvalT>(op);
+    this->buildAndRegisterResidualSummationEvalautor(fm,m_dof_name,residual_operator_names);
   }
 
 }

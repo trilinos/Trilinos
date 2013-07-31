@@ -97,7 +97,7 @@ public:
       return *this;
     }
 private:
-  ArrayRCP<T1> arcp_pod_; 
+  ArrayRCP<T1> arcp_pod_;
   void freeMemory()
     {
       typedef typename ArrayRCP<T2>::iterator itr_t;
@@ -112,10 +112,15 @@ private:
 };
 
 
-// Constructors/Destructors/Initializers 
+// Constructors/Destructors/Initializers
 
 template<class T> inline
 ArrayRCP<T>::ArrayRCP( ENull )
+  : ptr_(NULL), lowerOffset_(0), upperOffset_(-1)
+{}
+
+template<class T> inline
+ArrayRCP<const T>::ArrayRCP( ENull )
   : ptr_(NULL), lowerOffset_(0), upperOffset_(-1)
 {}
 
@@ -126,6 +131,16 @@ ArrayRCP<T>::ArrayRCP(size_type n, const T& val)
 {
   *this = arcp<T>(n);
   std::fill_n(begin(), n, val);
+}
+
+template<class T> inline
+ArrayRCP<const T>::ArrayRCP (size_type n, const T& val)
+  : ptr_(0), lowerOffset_(0), upperOffset_(-1)
+{
+  // We can't call std::fill_n on a const T*, so we have to create a
+  // nonconst array first, fill it, and then convert to const.
+  ArrayRCP<T> nonconstArray (n, val);
+  *this = arcp_const_cast<const T> (nonconstArray);
 }
 
 
@@ -162,6 +177,45 @@ ArrayRCP<T>::ArrayRCP(
       nodeDeleter.release();
     }
   }
+#else // NOT TEUCHOS_DEBUG
+  (void) rcpNodeLookup; // Silence "unused variable" compiler warning.
+#endif // TEUCHOS_DEBUG
+}
+
+template<class T> inline
+ArrayRCP<const T>::
+ArrayRCP (const T* p, size_type lowerOffset_in, size_type size_in,
+	  bool has_ownership_in, const ERCPNodeLookup rcpNodeLookup)
+  : ptr_(p),
+#ifndef TEUCHOS_DEBUG
+    node_(ArrayRCP_createNewRCPNodeRawPtr(p, has_ownership_in)),
+#endif // TEUCHOS_DEBUG
+    lowerOffset_(lowerOffset_in),
+    upperOffset_(size_in + lowerOffset_in - 1)
+{
+#ifdef TEUCHOS_DEBUG
+  if (p) {
+    RCPNode* existing_RCPNode = 0;
+    if (! has_ownership_in && rcpNodeLookup == RCP_ENABLE_NODE_LOOKUP) {
+      existing_RCPNode = RCPNodeTracer::getExistingRCPNode (p);
+    }
+    if (existing_RCPNode) {
+      // Will not call add_new_RCPNode(...)
+      node_ = RCPNodeHandle(existing_RCPNode, RCP_WEAK, false);
+    }
+    else {
+      // Will call add_new_RCPNode(...)
+      RCPNodeThrowDeleter nodeDeleter (ArrayRCP_createNewRCPNodeRawPtr (p, has_ownership_in));
+      node_ = RCPNodeHandle(
+        nodeDeleter.get (),
+        p, typeName (*p), concreteTypeName (*p),
+        has_ownership_in
+        );
+      nodeDeleter.release ();
+    }
+  }
+#else // NOT TEUCHOS_DEBUG
+  (void) rcpNodeLookup; // Silence "unused variable" compiler warning.
 #endif // TEUCHOS_DEBUG
 }
 
@@ -192,6 +246,32 @@ ArrayRCP<T>::ArrayRCP(
 #endif // TEUCHOS_DEBUG
 }
 
+template<class T>
+template<class Dealloc_T>
+inline
+ArrayRCP<const T>::ArrayRCP(
+  const T* p, size_type lowerOffset_in, size_type size_in,
+  Dealloc_T dealloc, bool has_ownership_in
+  )
+  : ptr_(p),
+#ifndef TEUCHOS_DEBUG
+    node_(ArrayRCP_createNewDeallocRCPNodeRawPtr(p, dealloc, has_ownership_in)),
+#endif // TEUCHOS_DEBUG
+    lowerOffset_(lowerOffset_in),
+    upperOffset_(size_in + lowerOffset_in - 1)
+{
+#ifdef TEUCHOS_DEBUG
+  if (p) {
+    node_ = RCPNodeHandle(
+      ArrayRCP_createNewDeallocRCPNodeRawPtr(p, dealloc, has_ownership_in),
+      p, typeName(*p), concreteTypeName(*p),
+      has_ownership_in
+      //, RCP_STRONG, false
+      );
+  }
+#endif // TEUCHOS_DEBUG
+}
+
 
 template<class T> inline
 ArrayRCP<T>::ArrayRCP(const ArrayRCP<T>& r_ptr)
@@ -201,10 +281,20 @@ ArrayRCP<T>::ArrayRCP(const ArrayRCP<T>& r_ptr)
    upperOffset_(r_ptr.upperOffset_)
 {}
 
+template<class T> inline
+ArrayRCP<const T>::ArrayRCP (const ArrayRCP<const T>& r_ptr)
+  :ptr_(r_ptr.ptr_),
+   node_(r_ptr.node_),
+   lowerOffset_(r_ptr.lowerOffset_),
+   upperOffset_(r_ptr.upperOffset_)
+{}
+
 
 template<class T> inline
-ArrayRCP<T>::~ArrayRCP()
-{}
+ArrayRCP<T>::~ArrayRCP() {}
+
+template<class T> inline
+ArrayRCP<const T>::~ArrayRCP() {}
 
 
 template<class T> inline
@@ -221,19 +311,47 @@ ArrayRCP<T>& ArrayRCP<T>::operator=(const ArrayRCP<T>& r_ptr)
   // assignment of node_ since node_ might throw an exception!
 }
 
+template<class T> inline
+ArrayRCP<const T>& 
+ArrayRCP<const T>::operator= (const ArrayRCP<const T>& r_ptr)
+{
+  if (this == &r_ptr) {
+    return *this; // Assignment to self
+  }
+  node_ = r_ptr.access_private_node (); // May throw in debug mode!
+  ptr_ = r_ptr.ptr_;
+  lowerOffset_ = r_ptr.lowerOffset_;
+  upperOffset_ = r_ptr.upperOffset_;
+  return *this;
+  // NOTE: The assignment of ptr_ MUST come after the assignment of
+  // node_, since that line of code might throw an exception!
+}
+
 
 // Object/Pointer Access Functions
 
 
 template<class T> inline
-bool ArrayRCP<T>::is_null() const
-{
+bool ArrayRCP<T>::is_null() const {
+  return ptr_ == 0;
+}
+
+template<class T> inline
+bool ArrayRCP<const T>::is_null() const {
   return ptr_ == 0;
 }
 
 
 template<class T> inline
 T* ArrayRCP<T>::operator->() const
+{
+  debug_assert_valid_ptr();
+  debug_assert_in_range(0,1);
+  return ptr_;
+}
+
+template<class T> inline
+const T* ArrayRCP<const T>::operator->() const
 {
   debug_assert_valid_ptr();
   debug_assert_in_range(0,1);
@@ -249,11 +367,29 @@ T& ArrayRCP<T>::operator*() const
   return *ptr_;
 }
 
+template<class T> inline
+const T& ArrayRCP<const T>::operator*() const
+{
+  debug_assert_valid_ptr();
+  debug_assert_in_range(0,1);
+  return *ptr_;
+}
+
 
 template<class T> inline
 T* ArrayRCP<T>::get() const
 {
-  if(ptr_) {
+  if (ptr_) {
+    debug_assert_valid_ptr();
+    debug_assert_in_range(0,1);
+  }
+  return ptr_;
+}
+
+template<class T> inline
+const T* ArrayRCP<const T>::get() const
+{
+  if (ptr_) {
     debug_assert_valid_ptr();
     debug_assert_in_range(0,1);
   }
@@ -262,14 +398,26 @@ T* ArrayRCP<T>::get() const
 
 
 template<class T> inline
-T* ArrayRCP<T>::getRawPtr() const
-{
+T* ArrayRCP<T>::getRawPtr() const {
+  return this->get();
+}
+
+template<class T> inline
+const T* ArrayRCP<const T>::getRawPtr() const {
   return this->get();
 }
 
 
 template<class T> inline
 T& ArrayRCP<T>::operator[](size_type offset) const
+{
+  debug_assert_valid_ptr();
+  debug_assert_in_range(offset,1);
+  return ptr_[offset];
+}
+
+template<class T> inline
+const T& ArrayRCP<const T>::operator[] (size_type offset) const
 {
   debug_assert_valid_ptr();
   debug_assert_in_range(offset,1);
@@ -290,6 +438,16 @@ ArrayRCP<T>& ArrayRCP<T>::operator++()
   return *this;
 }
 
+template<class T> inline
+ArrayRCP<const T>& ArrayRCP<const T>::operator++()
+{
+  debug_assert_valid_ptr();
+  ++ptr_;
+  --lowerOffset_;
+  --upperOffset_;
+  return *this;
+}
+
 
 template<class T> inline
 ArrayRCP<T> ArrayRCP<T>::operator++(int)
@@ -300,9 +458,28 @@ ArrayRCP<T> ArrayRCP<T>::operator++(int)
   return r_ptr;
 }
 
+template<class T> inline
+ArrayRCP<const T> ArrayRCP<const T>::operator++(int)
+{
+  debug_assert_valid_ptr();
+  ArrayRCP<const T> r_ptr = *this;
+  ++(*this);
+  return r_ptr;
+}
+
 
 template<class T> inline
 ArrayRCP<T>& ArrayRCP<T>::operator--()
+{
+  debug_assert_valid_ptr();
+  --ptr_;
+  ++lowerOffset_;
+  ++upperOffset_;
+  return *this;
+}
+
+template<class T> inline
+ArrayRCP<const T>& ArrayRCP<const T>::operator--()
 {
   debug_assert_valid_ptr();
   --ptr_;
@@ -321,9 +498,28 @@ ArrayRCP<T> ArrayRCP<T>::operator--(int)
   return r_ptr;
 }
 
+template<class T> inline
+ArrayRCP<const T> ArrayRCP<const T>::operator--(int)
+{
+  debug_assert_valid_ptr();
+  ArrayRCP<const T> r_ptr = *this;
+  --(*this);
+  return r_ptr;
+}
+
 
 template<class T> inline
 ArrayRCP<T>& ArrayRCP<T>::operator+=(size_type offset)
+{
+  debug_assert_valid_ptr();
+  ptr_ += offset;
+  lowerOffset_ -= offset;
+  upperOffset_ -= offset;
+  return *this;
+}
+
+template<class T> inline
+ArrayRCP<const T>& ArrayRCP<const T>::operator+=(size_type offset)
 {
   debug_assert_valid_ptr();
   ptr_ += offset;
@@ -343,11 +539,29 @@ ArrayRCP<T>& ArrayRCP<T>::operator-=(size_type offset)
   return *this;
 }
 
+template<class T> inline
+ArrayRCP<const T>& ArrayRCP<const T>::operator-=(size_type offset)
+{
+  debug_assert_valid_ptr();
+  ptr_ -= offset;
+  lowerOffset_ += offset;
+  upperOffset_ += offset;
+  return *this;
+}
+
 
 template<class T> inline
 ArrayRCP<T> ArrayRCP<T>::operator+(size_type offset) const
 {
   ArrayRCP<T> r_ptr = *this;
+  r_ptr+=(offset);
+  return r_ptr;
+}
+
+template<class T> inline
+ArrayRCP<const T> ArrayRCP<const T>::operator+(size_type offset) const
+{
+  ArrayRCP<const T> r_ptr = *this;
   r_ptr+=(offset);
   return r_ptr;
 }
@@ -361,12 +575,31 @@ ArrayRCP<T> ArrayRCP<T>::operator-(size_type offset) const
   return r_ptr;
 }
 
+template<class T> inline
+ArrayRCP<const T> ArrayRCP<const T>::operator-(size_type offset) const
+{
+  ArrayRCP<const T> r_ptr = *this;
+  r_ptr-=offset;
+  return r_ptr;
+}
+
 
 // Standard Container-Like Functions
 
 
 template<class T> inline
 typename ArrayRCP<T>::iterator ArrayRCP<T>::begin() const
+{
+  debug_assert_valid_ptr();
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  return *this;
+#else
+  return ptr_;
+#endif
+}
+
+template<class T> inline
+typename ArrayRCP<const T>::iterator ArrayRCP<const T>::begin() const
 {
   debug_assert_valid_ptr();
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
@@ -388,8 +621,19 @@ typename ArrayRCP<T>::iterator ArrayRCP<T>::end() const
 #endif
 }
 
+template<class T> inline
+typename ArrayRCP<const T>::iterator ArrayRCP<const T>::end() const
+{
+  debug_assert_valid_ptr();
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  return *this + (upperOffset_ + 1);
+#else
+  return ptr_ + (upperOffset_ + 1);
+#endif
+}
 
-// ArrayRCP Views 
+
+// ArrayRCP Views
 
 
 template<class T> inline
@@ -401,6 +645,12 @@ ArrayRCP<const T> ArrayRCP<T>::getConst() const
     return ArrayRCP<const T>(cptr, lowerOffset_, size(), node_);
   }
   return null;
+}
+
+template<class T> inline
+ArrayRCP<const T> ArrayRCP<const T>::getConst() const {
+  // Trivial implementation, since no need for conversion.
+  return *this;
 }
 
 
@@ -420,6 +670,22 @@ ArrayRCP<T>::persistingView( size_type lowerOffset_in, size_type size_in ) const
   return ptr;
 }
 
+template<class T> inline
+ArrayRCP<const T>
+ArrayRCP<const T>::persistingView (size_type lowerOffset_in, size_type size_in) const
+{
+  if (size_in == 0) {
+    return null;
+  }
+  debug_assert_valid_ptr();
+  debug_assert_in_range(lowerOffset_in, size_in);
+  ArrayRCP<const T> ptr = *this;
+  ptr.ptr_ = ptr.ptr_ + lowerOffset_in;
+  ptr.lowerOffset_ = 0;
+  ptr.upperOffset_ = size_in - 1;
+  return ptr;
+}
+
 
 // Size and extent query functions
 
@@ -427,6 +693,14 @@ ArrayRCP<T>::persistingView( size_type lowerOffset_in, size_type size_in ) const
 template<class T> inline
 typename ArrayRCP<T>::size_type
 ArrayRCP<T>::lowerOffset() const
+{
+  debug_assert_valid_ptr();
+  return lowerOffset_;
+}
+
+template<class T> inline
+typename ArrayRCP<const T>::size_type
+ArrayRCP<const T>::lowerOffset() const
 {
   debug_assert_valid_ptr();
   return lowerOffset_;
@@ -441,6 +715,14 @@ ArrayRCP<T>::upperOffset() const
   return upperOffset_;
 }
 
+template<class T> inline
+typename ArrayRCP<const T>::size_type
+ArrayRCP<const T>::upperOffset() const
+{
+  debug_assert_valid_ptr();
+  return upperOffset_;
+}
+
 
 template<class T> inline
 typename ArrayRCP<T>::size_type
@@ -450,8 +732,16 @@ ArrayRCP<T>::size() const
   return upperOffset_ - lowerOffset_ + 1;
 }
 
+template<class T> inline
+typename ArrayRCP<const T>::size_type
+ArrayRCP<const T>::size() const
+{
+  debug_assert_valid_ptr();
+  return upperOffset_ - lowerOffset_ + 1;
+}
 
-// ArrayView views 
+
+// ArrayView views
 
 
 template<class T> inline
@@ -470,11 +760,35 @@ ArrayView<T> ArrayRCP<T>::view( size_type lowerOffset_in, size_type size_in ) co
   // ToDo: Implement checks for dangling references!
 }
 
+template<class T> inline
+ArrayView<const T> 
+ArrayRCP<const T>::view (size_type lowerOffset_in, size_type size_in) const
+{
+  if (size_in == 0) {
+    return null;
+  }
+  debug_assert_valid_ptr();
+  debug_assert_in_range(lowerOffset_in,size_in);
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  return ArrayView<const T> (persistingView (lowerOffset_in, size_in).create_weak ());
+#else
+  return arrayView (ptr_ + lowerOffset_in, size_in);
+#endif
+  // ToDo: Implement checks for dangling references!
+}
+
 
 template<class T> inline
 ArrayView<T> ArrayRCP<T>::operator()( size_type lowerOffset_in, size_type size_in ) const
 {
   return view(lowerOffset_in, size_in);
+}
+
+template<class T> inline
+ArrayView<const T> 
+ArrayRCP<const T>::operator() (size_type lowerOffset_in, size_type size_in) const
+{
+  return view (lowerOffset_in, size_in);
 }
 
 
@@ -483,6 +797,15 @@ ArrayView<T> ArrayRCP<T>::operator()() const
 {
   if (size()) {
     return view(lowerOffset_, size());
+  }
+  return null;
+}
+
+template<class T> inline
+ArrayView<const T> ArrayRCP<const T>::operator()() const
+{
+  if (size()) {
+    return view (lowerOffset_, size ());
   }
   return null;
 }
@@ -499,28 +822,35 @@ ArrayRCP<T>::operator ArrayRCP<const T>() const
   }
   return null;
 }
+// The above operator does not exist in the partial specialization for
+// const T, because it doesn't make sense in that case.  (Many
+// compilers warn if one tries to implement that operator, because
+// that code would never get called.)
 
 
 // std::vector like functions
+//
+// Assignment (deep copy) doesn't make sense for the "const T" partial
+// specialization, so the assignment methods (assign() and deepCopy())
+// are omitted in that case.
 
 
 template<class T> inline
-void ArrayRCP<T>::assign(size_type n, const T &val)
-{
-  *this = arcp<T>(n);
-  std::fill_n(this->begin(), n, val);
+void ArrayRCP<T>::assign (size_type n, const T &val) {
+  *this = arcp<T> (n);
+  std::fill_n (this->begin (), n, val);
 }
 
 
 template<class T>
 template<class Iter>
 inline
-void ArrayRCP<T>::assign(Iter first, Iter last)
-{
-  const size_type new_n = std::distance(first, last);
-  if (new_n != size())
-    *this = arcp<T>(new_n);
-  std::copy( first, last, begin() );
+void ArrayRCP<T>::assign (Iter first, Iter last) {
+  const size_type new_n = std::distance (first, last);
+  if (new_n != size ()) {
+    *this = arcp<T> (new_n);
+  }
+  std::copy (first, last, begin ());
 }
 
 
@@ -547,15 +877,49 @@ void ArrayRCP<T>::resize(const size_type n, const T &val)
   }
 }
 
+template<class T> inline
+void ArrayRCP<const T>::resize (const size_type n, const T& val)
+{
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_EQUALITY(lowerOffset(), 0);
+#endif
+  if (n == 0) {
+    clear ();
+    return;
+  }
+  const size_type orig_n = size ();
+  if (n != orig_n) {
+    ArrayRCP<const T> tmp = *this;
+    // It's not allowed to assign to the result of operator[] for a
+    // const right-hand side, so we have to assign to a temporary
+    // nonconst ArrayRCP (nonconstThis) first.
+    ArrayRCP<T> nonconstThis = arcp<T> (n);
+    const size_type small_n = std::min (n, orig_n);
+    for (size_type i = 0; i < small_n; ++i) {
+      nonconstThis[i] = tmp[i];
+    }
+    for (size_type i = orig_n; i < n; ++i) {
+      nonconstThis[i] = val;
+    }
+    *this = arcp_const_cast<const T> (nonconstThis);
+    upperOffset_ = n-1;
+  }
+}
+
 
 template<class T> inline
-void ArrayRCP<T>::clear()
-{
+void ArrayRCP<T>::clear() {
+  *this = null;
+}
+
+template<class T> inline
+void ArrayRCP<const T>::clear() {
   *this = null;
 }
 
 
 // Misc functions
+
 
 template<class T> inline
 void ArrayRCP<T>::deepCopy(const ArrayView<const T>& av)
@@ -572,14 +936,26 @@ void ArrayRCP<T>::deepCopy(const ArrayView<const T>& av)
 
 
 template<class T> inline
-ERCPStrength ArrayRCP<T>::strength() const
-{
+ERCPStrength ArrayRCP<T>::strength() const {
+  return node_.strength();
+}
+
+template<class T> inline
+ERCPStrength ArrayRCP<const T>::strength() const {
   return node_.strength();
 }
 
 
 template<class T> inline
 bool ArrayRCP<T>::is_valid_ptr() const
+{
+  if (ptr_)
+    return node_.is_valid_ptr();
+  return true;
+}
+
+template<class T> inline
+bool ArrayRCP<const T>::is_valid_ptr() const
 {
   if (ptr_)
     return node_.is_valid_ptr();
@@ -593,9 +969,21 @@ int ArrayRCP<T>::strong_count() const
   return node_.strong_count();
 }
 
+template<class T> inline
+int ArrayRCP<const T>::strong_count() const
+{
+  return node_.strong_count();
+}
+
 
 template<class T> inline
 int ArrayRCP<T>::weak_count() const
+{
+  return node_.weak_count();
+}
+
+template<class T> inline
+int ArrayRCP<const T>::weak_count() const
 {
   return node_.weak_count();
 }
@@ -607,6 +995,12 @@ int ArrayRCP<T>::total_count() const
   return node_.total_count();
 }
 
+template<class T> inline
+int ArrayRCP<const T>::total_count() const
+{
+  return node_.total_count();
+}
+
 
 template<class T> inline
 void ArrayRCP<T>::set_has_ownership()
@@ -614,9 +1008,21 @@ void ArrayRCP<T>::set_has_ownership()
   node_.has_ownership(true);
 }
 
+template<class T> inline
+void ArrayRCP<const T>::set_has_ownership()
+{
+  node_.has_ownership(true);
+}
+
 
 template<class T> inline
 bool ArrayRCP<T>::has_ownership() const
+{
+  return node_.has_ownership();
+}
+
+template<class T> inline
+bool ArrayRCP<const T>::has_ownership() const
 {
   return node_.has_ownership();
 }
@@ -630,29 +1036,58 @@ T* ArrayRCP<T>::release()
   return ptr_;
 }
 
-
 template<class T> inline
-ArrayRCP<T> ArrayRCP<T>::create_weak() const
+const T* ArrayRCP<const T>::release()
 {
   debug_assert_valid_ptr();
-  return ArrayRCP<T>(ptr_, lowerOffset_, size(), node_.create_weak());
+  node_.has_ownership(false);
+  return ptr_;
 }
 
 
 template<class T> inline
-ArrayRCP<T> ArrayRCP<T>::create_strong() const
-{
-  debug_assert_valid_ptr();
-  return ArrayRCP<T>(ptr_, lowerOffset_, size(), node_.create_strong());
+ArrayRCP<T> ArrayRCP<T>::create_weak () const {
+  debug_assert_valid_ptr ();
+  return ArrayRCP<T> (ptr_, lowerOffset_, size (), node_.create_weak ());
+}
+
+template<class T> inline
+ArrayRCP<const T> ArrayRCP<const T>::create_weak() const {
+  debug_assert_valid_ptr ();
+  return ArrayRCP<const T> (ptr_, lowerOffset_, size (), node_.create_weak ());
+}
+
+
+template<class T> inline
+ArrayRCP<T> ArrayRCP<T>::create_strong () const {
+  debug_assert_valid_ptr ();
+  return ArrayRCP<T> (ptr_, lowerOffset_, size (), node_.create_strong ());
+}
+
+template<class T> inline
+ArrayRCP<const T> ArrayRCP<const T>::create_strong () const {
+  debug_assert_valid_ptr ();
+  return ArrayRCP<const T> (ptr_, lowerOffset_, size (), node_.create_strong ());
 }
 
 
 template<class T>
 template <class T2>
 inline
-bool ArrayRCP<T>::shares_resource(const ArrayRCP<T2>& r_ptr) const
+bool ArrayRCP<T>::shares_resource (const ArrayRCP<T2>& r_ptr) const
 {
-  return node_.same_node(r_ptr.access_private_node());
+  return node_.same_node (r_ptr.access_private_node ());
+  // Note: above, r_ptr is *not* the same class type as *this so we can not
+  // access its node_ member directly!  This is an interesting detail to the
+  // C++ protected/private protection mechanism!
+}
+
+template<class T>
+template <class T2>
+inline
+bool ArrayRCP<const T>::shares_resource (const ArrayRCP<T2>& r_ptr) const
+{
+  return node_.same_node (r_ptr.access_private_node ());
   // Note: above, r_ptr is *not* the same class type as *this so we can not
   // access its node_ member directly!  This is an interesting detail to the
   // C++ protected/private protection mechanism!
@@ -671,12 +1106,32 @@ ArrayRCP<T>::assert_not_null() const
   return *this;
 }
 
+template<class T> inline
+const ArrayRCP<const T>&
+ArrayRCP<const T>::assert_not_null() const
+{
+  if (! ptr_) {
+    throw_null_ptr_error (typeName (*this));
+  }
+  return *this;
+}
+
 
 template<class T> inline
 const ArrayRCP<T>& ArrayRCP<T>::assert_valid_ptr() const
 {
-  if (ptr_)
-    node_.assert_valid_ptr(*this);
+  if (ptr_) {
+    node_.assert_valid_ptr (*this);
+  }
+  return *this;
+}
+
+template<class T> inline
+const ArrayRCP<const T>& ArrayRCP<const T>::assert_valid_ptr () const
+{
+  if (ptr_) {
+    node_.assert_valid_ptr (*this);
+  }
   return *this;
 }
 
@@ -701,12 +1156,38 @@ ArrayRCP<T>::assert_in_range( size_type lowerOffset_in, size_type size_in ) cons
   return *this;
 }
 
+template<class T> inline
+const ArrayRCP<const T>&
+ArrayRCP<const T>::
+assert_in_range (size_type lowerOffset_in, size_type size_in) const
+{
+  assert_not_null ();
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !(
+      (lowerOffset_ <= lowerOffset_in && lowerOffset_in+size_in-1 <= upperOffset_)
+      &&
+      size_in >= 0
+      ),
+    Teuchos::RangeError,
+    typeName (*this) << "::assert_in_range:"
+    " Error, [lowerOffset,lowerOffset+size-1] = ["
+    <<lowerOffset_in<<","<<(lowerOffset_in+size_in-1)<<"] does not lie in the"
+    " range ["<<lowerOffset_<<","<<upperOffset_<<"]!"
+    );
+  return *this;
+}
+
 
 // Deprecated
 
 
 template<class T> inline
 int ArrayRCP<T>::count() const {
+  return node_.count();
+}
+
+template<class T> inline
+int ArrayRCP<const T>::count() const {
   return node_.count();
 }
 
@@ -725,9 +1206,26 @@ ArrayRCP<T>::ArrayRCP(
    upperOffset_(size_in + lowerOffset_in - 1)
 {}
 
+template<class T> inline
+ArrayRCP<const T>::ArrayRCP(
+  const T* p, size_type lowerOffset_in, size_type size_in,
+  const RCPNodeHandle& node
+  )
+  :ptr_(p),
+   node_(node),
+   lowerOffset_(lowerOffset_in),
+   upperOffset_(size_in + lowerOffset_in - 1)
+{}
+
 
 template<class T> inline
 T* ArrayRCP<T>::access_private_ptr() const
+{
+  return ptr_;
+}
+
+template<class T> inline
+const T* ArrayRCP<const T>::access_private_ptr () const
 {
   return ptr_;
 }
@@ -739,12 +1237,25 @@ RCPNodeHandle& ArrayRCP<T>::nonconst_access_private_node()
   return node_;
 }
 
+template<class T> inline
+RCPNodeHandle& ArrayRCP<const T>::nonconst_access_private_node()
+{
+  return node_;
+}
+
 
 template<class T> inline
 const RCPNodeHandle& ArrayRCP<T>::access_private_node() const
 {
   return node_;
 }
+
+template<class T> inline
+const RCPNodeHandle& ArrayRCP<const T>::access_private_node() const
+{
+  return node_;
+}
+
 
 // Array<void> and Array<const void> specializations
 
@@ -932,7 +1443,7 @@ Teuchos::arcpFromArrayView(const ArrayView<T> &av)
   return av.access_private_arcp();
 #else
   return arcp(av.getRawPtr(), 0, av.size(), false);
-#endif  
+#endif
 }
 
 
@@ -1083,7 +1594,6 @@ inline
 Teuchos::ArrayRCP<T2>
 Teuchos::arcp_const_cast(const ArrayRCP<T1>& p1)
 {
-  typedef typename ArrayRCP<T1>::size_type size_type;
   T2 *ptr2 = const_cast<T2*>(p1.get());
   return ArrayRCP<T2>(
     ptr2, p1.lowerOffset(), p1.size(),
@@ -1098,7 +1608,6 @@ inline
 Teuchos::ArrayRCP<T2>
 Teuchos::arcp_implicit_cast(const ArrayRCP<T1>& p1)
 {
-  typedef typename ArrayRCP<T1>::size_type size_type;
   T2 * raw_ptr2 = p1.get();
   return ArrayRCP<T2>(
     raw_ptr2, p1.lowerOffset(), p1.size(),
@@ -1183,7 +1692,7 @@ Teuchos::get_dealloc( const ArrayRCP<T>& p )
 
 template<class Dealloc_T, class T>
 inline
-Dealloc_T& 
+Dealloc_T&
 Teuchos::get_nonconst_dealloc( const Teuchos::ArrayRCP<T>& p )
 {
   typedef RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T>  requested_type;

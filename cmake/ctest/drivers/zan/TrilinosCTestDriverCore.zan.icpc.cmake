@@ -86,7 +86,11 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DCMAKE_LIBRARY_PATH:PATH=/usr/lib64"
       "-DTPL_LAPACK_LIBRARIES:STRING=-L/opt/intel/Compiler/11.1/064/mkl/lib/em64t -lmkl_lapack"
       "-DTPL_BLAS_LIBRARIES:STRING=-L/opt/intel/Compiler/11.1/064/mkl/lib/em64t/ -L/opt/intel/Compiler/11.1/064/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread"
+    "-DSuperLU_INCLUDE_DIRS:PATH=/home/trilinos/tpl/intel/SuperLU_4.3/SRC"
+    "-DSuperLU_LIBRARY_DIRS:PATH=/home/trilinos/tpl/intel/SuperLU_4.3/lib"
+    "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.3"
     "-DTPL_ENABLE_Matio=OFF"
+    "-DTPL_ENABLE_SuperLU=ON"
     "-DIntrepid_ENABLE_DEBUG_INF_CHECK=OFF"
     )
 

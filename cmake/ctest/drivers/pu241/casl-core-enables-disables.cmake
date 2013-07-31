@@ -17,11 +17,19 @@ FOREACH(EXCLUDED_PACKAGE ${${PROJECT_NAME}_EXCLUDE_PACKAGES})
 ENDFOREACH()
 
 # Turn off float and complex testing because CASL does not need them
-SET(Teuchos_ENABLE_FLOAT OFF CACHE BOOL "")
-SET(Teuchos_ENABLE_COMPLEX OFF CACHE BOOL "")
+SET(Teuchos_ENABLE_FLOAT OFF CACHE BOOL
+  "Disabled in casl-core-enables-disables.cmake")
+SET(Teuchos_ENABLE_COMPLEX OFF CACHE BOOL
+  "Disabled in casl-core-enables-disables.cmake")
+
+# We don't need ThreadPool or the Kokkoss::TPINode instnatiations (VRI Kanban
+# #2852, Trilinos #5861)
+SET(${PROJECT_NAME}_ENABLE_ThreadPool OFF CACHE BOOL
+  "Disabled in casl-core-enables-disables.cmake")
 
 # We don't want or need HDF5 support in EpetraExt
-SET(EpetraExt_ENABLE_HDF5 OFF CACHE BOOL "Disabled in casl-core-enables-disables.cmake")
+SET(EpetraExt_ENABLE_HDF5 OFF CACHE BOOL
+  "Disabled in casl-core-enables-disables.cmake")
 
 # Turn off STK tests since they are constantly failing.  NOTE: Since CASL is
 # not developing on STK, only using it, this should not represent a big risk
@@ -51,6 +59,13 @@ SET(Belos_Tpetra_MVOPTester_complex_test_MPI_4_DISABLE TRUE)
 SET(Belos_Tpetra_MVOPTester_complex_test_DISABLE TRUE)
 SET(Anasazi_Tpetra_MVOPTester_MPI_4_DISABLE TRUE)
 SET(Anasazi_Tpetra_MVOPTester_DISABLE TRUE)
+
+# We don't want PETSC or HYPRE support in Trilinos in case of incompatible version
+SET(EpetraExt_ENABLE_HYPRE OFF CACHE BOOL "")
+SET(EpetraExt_ENABLE_PETSC OFF CACHE BOOL "")
+SET(Ifpack_ENABLE_HYPRE OFF CACHE BOOL "")
+SET(ML_ENABLE_PETSC OFF CACHE BOOL "")
+SET(NOX_ENABLE_PETSC OFF CACHE BOOL "")
 
 # Don't allow Optika GUI tests since they just seem to work and are not tested
 # (see discussion in commit message).

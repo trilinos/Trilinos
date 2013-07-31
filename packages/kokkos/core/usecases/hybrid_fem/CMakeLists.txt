@@ -1,0 +1,40 @@
+INCLUDE(TribitsAddExecutableAndTest)   
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../common)
+
+SET(SOURCES "")
+
+FILE(GLOB SOURCES *.cpp ../common/*.cpp)
+
+SET(LIBRARIES kokkosarray_devicehost kokkosarray_impl)
+  
+
+IF( TPL_ENABLE_CUDA AND TPL_ENABLE_CUSPARSE )
+  SET(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)
+
+  # add MPI include dir to nvcc
+  IF( TPL_ENABLE_MPI )
+    CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
+  ENDIF()
+
+  TRIBITS_ADD_LIBRARY(
+    hybrid_fem_cuda
+    SOURCES TestCuda.cu
+    CUDALIBRARY
+    )
+
+  LIST( APPEND LIBRARIES
+    kokkosarray_devicecuda hybrid_fem_cuda ${CUDA_LIBRARIES} ${CUDA_cusparse_LIBRARY}
+  )
+
+ENDIF()
+
+TRIBITS_ADD_EXECUTABLE(
+  proxyapp
+  SOURCES ${SOURCES}
+  COMM serial mpi
+  DEPLIBS ${LIBRARIES}
+  )
+

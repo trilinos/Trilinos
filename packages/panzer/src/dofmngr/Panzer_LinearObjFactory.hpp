@@ -188,10 +188,13 @@ public:
      *                            <code>globalBCRows</code> then those rows in both the
      *                            matrix and the residual vector are devided by the corresponding
      *                            entry in the <code>globalBCRows</code>.
+     * \param[in] zeroVectorRows Instead of preserving (and scaling) the vector rows, setting this
+                                 to true will zero them instead. 
      */
    virtual void adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                                              const LinearObjContainer & globalBCRows,
-                                             LinearObjContainer & ghostedObjs) const = 0;
+                                             LinearObjContainer & ghostedObjs,
+                                             bool zeroVectorRows=false) const = 0;
 
    /** Acess to the MPI Comm used in constructing this LOF.
      */
@@ -221,6 +224,9 @@ public:
    template <typename EvalT>
    Teuchos::RCP<PHX::Evaluator<Traits> > buildScatterInitialCondition(const Teuchos::ParameterList & pl) const
    { return Teuchos::rcp_dynamic_cast<PHX::Evaluator<Traits> >(scatterInitialConditionManager_->template getAsBase<EvalT>()->clone(pl)); }
+
+   virtual void beginFill(LinearObjContainer & loc) const {}
+   virtual void endFill(LinearObjContainer & loc) const {}
 
 private:
    typedef PHX::TemplateManager<typename Traits::EvalTypes,

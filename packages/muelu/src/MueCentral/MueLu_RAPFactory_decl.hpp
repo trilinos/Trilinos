@@ -67,7 +67,7 @@ namespace MueLu {
     @class RAPFactory
     @brief Factory for building coarse matrices.
   */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
   class RAPFactory : public TwoLevelFactoryBase {
 #undef MUELU_RAPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -84,6 +84,8 @@ namespace MueLu {
 
     //! @name Input
     //@{
+
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
 
     void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
 
@@ -105,7 +107,7 @@ namespace MueLu {
     //! Indicate that zero entries on the diagonal of Ac shall be repaired (i.e. if A(i,i) == 0.0 set A(i,i) = 1.0)
     void SetRepairZeroDiagonal(bool const &repairZeroDiagonals) {
       repairZeroDiagonals_ = repairZeroDiagonals;
-      if(repairZeroDiagonals_) checkAc_ = true; // make sure that plausibility check is performed. Otherwise SetRepairZeroDiagonal(true) has no effect.
+      if (repairZeroDiagonals_) checkAc_ = true; // make sure that plausibility check is performed. Otherwise SetRepairZeroDiagonal(true) has no effect.
     }
 
     //! Indicate that a simple plausibility check shall be done for Ac after building RAP
@@ -130,11 +132,6 @@ namespace MueLu {
 
     //@}
 
-    //! @name internal print methods.
-    static std::string PrintMatrixInfo(const Matrix & Ac, const std::string & msgTag);
-
-    static std::string PrintLoadBalancingInfo(const Matrix & Ac, const std::string & msgTag);
-
   private:
 
     //! @name internal plausibility check methods
@@ -153,6 +150,9 @@ namespace MueLu {
     //! i.e. if A(i,i) == 0.0 set A(i,i) = 1.0
     //! note, that the repairZeroDiagonals_ flag is only valid for checkAc_ == true
     bool repairZeroDiagonals_;
+
+    mutable
+    bool hasDeclaredInput_;
 
     //@}
 

@@ -105,7 +105,7 @@ namespace MueLu {
 
     if(restrictionMode_) {
       SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
-      A = Utils2::Transpose(A, true); // build transpose of A explicitely
+      A = Utils2::Transpose(*A, true); // build transpose of A explicitely
     }
 
     //Build final prolongator
@@ -138,33 +138,40 @@ namespace MueLu {
           optimizeStorage=false;
         }
 
-        //FIXME Improved Epetra MM returns error code -1 optimizeStorage==true.
-#if !defined(HAVE_MUELU_EPETRA) || !defined(HAVE_MUELU_EPETRAEXT) || !defined(HAVE_MUELU_ML)
-        if (A->getRowMap()->lib() == Xpetra::UseEpetra) {
-          optimizeStorage=false;
-        }
+        bool allowMLMultiply = true;
+#ifdef HAVE_MUELU_EXPERIMENTAL
+        // Energy minimization uses AP pattern for restriction. The problem with ML multiply is that it automatically
+        // removes zero valued entries in the matrix product, resulting in incorrect pattern for the minimization.
+        // One could try to mitigate that by multiply matrices with all entries equal to zero, which would produce the
+        // correct graph. However, that is one extra MxM we don't need.
+        // Instead, I disable ML multiply when experimental option is specified.
+        // NOTE: Thanks to C.Siefert, native EPetra MxM multiply version should actually be comparable with ML in time
+        allowMLMultiply      = false;
 #endif
-        //
 
-        //FIXME but once fixed, reenable the next line.
-        //if (A->getRowMap()->lib() == Xpetra::UseTpetra) optimizeStorage=false;
-        AP = Utils::Multiply(*A, false, *Ptent, false, doFillComplete, optimizeStorage);
+        AP = Utils::Multiply(*A, false, *Ptent, false, doFillComplete, optimizeStorage, allowMLMultiply);
       }
 
       {
         SubFactoryMonitor m2(*this, "Scaling (A x Ptentative) by D^{-1}", coarseLevel);
-        bool doFillComplete=false;
+        bool doFillComplete=true;
         bool optimizeStorage=false;
         Teuchos::ArrayRCP<SC> diag = Utils::GetMatrixDiagonal(*A);
-        Utils::MyOldScaleMatrix(AP, diag, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
+        Utils::MyOldScaleMatrix(*AP, diag, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
       }
 
       Scalar lambdaMax;
       {
         SubFactoryMonitor m2(*this, "Eigenvalue estimate", coarseLevel);
-        Magnitude stopTol = 1e-4;
-        lambdaMax = Utils::PowerMethod(*A, true, (LO) 10, stopTol);
-        //Scalar lambdaMax = Utils::PowerMethod(*A, true, (LO) 50, (Scalar)1e-7, true);
+        lambdaMax = A->GetMaxEigenvalueEstimate();
+        if (lambdaMax == -Teuchos::ScalarTraits<SC>::one()) {
+          GetOStream(Statistics1, 0) << "Calculating max eigenvalue estimate now" << std::endl;
+          Magnitude stopTol = 1e-4;
+          lambdaMax = Utils::PowerMethod(*A, true, (LO) 10, stopTol);
+          A->SetMaxEigenvalueEstimate(lambdaMax);
+        } else {
+          GetOStream(Statistics1, 0) << "Using cached max eigenvalue estimate" << std::endl;
+        }
         GetOStream(Statistics1, 0) << "Damping factor = " << dampingFactor/lambdaMax << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
       }
 
@@ -172,12 +179,8 @@ namespace MueLu {
         SubFactoryMonitor m2(*this, "M+M: P = (Ptentative) + (D^{-1} x A x Ptentative)", coarseLevel);
 
         bool doTranspose=false;
-        if (AP->isFillComplete())
-          Utils2::TwoMatrixAdd(Ptent, doTranspose, Teuchos::ScalarTraits<Scalar>::one(), AP, doTranspose, -dampingFactor/lambdaMax, finalP);
-        else {
-          Utils2::TwoMatrixAdd(Ptent, doTranspose, Teuchos::ScalarTraits<Scalar>::one(), AP, -dampingFactor/lambdaMax);
-          finalP = AP;
-        }
+        bool PtentHasFixedNnzPerRow=true;
+        Utils2::TwoMatrixAdd(*Ptent, doTranspose, Teuchos::ScalarTraits<Scalar>::one(), *AP, doTranspose, -dampingFactor/lambdaMax, finalP, PtentHasFixedNnzPerRow);
       }
 
       {
@@ -190,25 +193,27 @@ namespace MueLu {
     }
 
     // Level Set
-    if(!restrictionMode_)
-      {
-        // prolongation factory is in prolongation mode
-        Set(coarseLevel, "P", finalP);
+    if (!restrictionMode_) {
+      // prolongation factory is in prolongation mode
+      Set(coarseLevel, "P", finalP);
 
-        ///////////////////////// EXPERIMENTAL
-        if(Ptent->IsView("stridedMaps")) finalP->CreateView("stridedMaps", Ptent);
-        ///////////////////////// EXPERIMENTAL
-      }
-    else
-      {
-        // prolongation factory is in restriction mode
-        RCP<Matrix> R = Utils2::Transpose(finalP, true); // use Utils2 -> specialization for double
-        Set(coarseLevel, "R", R);
+      // NOTE: EXPERIMENTAL
+      if (Ptent->IsView("stridedMaps"))
+        finalP->CreateView("stridedMaps", Ptent);
 
-        ///////////////////////// EXPERIMENTAL
-        if(Ptent->IsView("stridedMaps")) R->CreateView("stridedMaps", Ptent, true);
-        ///////////////////////// EXPERIMENTAL
-      }
+    } else {
+      // prolongation factory is in restriction mode
+      RCP<Matrix> R = Utils2::Transpose(*finalP, true); // use Utils2 -> specialization for double
+      Set(coarseLevel, "R", R);
+
+      // NOTE: EXPERIMENTAL
+      if (Ptent->IsView("stridedMaps"))
+        R->CreateView("stridedMaps", Ptent, true);
+    }
+
+    RCP<ParameterList> params = rcp(new ParameterList());
+    params->set("printLoadBalancingInfo", true);
+    GetOStream(Statistics0,0) << Utils::PrintMatrixInfo(*finalP, (!restrictionMode_ ? "P" : "R"), params);
 
   } //Build()
 

@@ -1,14 +1,15 @@
 # @HEADER
 # ************************************************************************
 #
-#            Trilinos: An Object-Oriented Solver Framework
-#                 Copyright (2001) Sandia Corporation
+#            TriBITS: Tribial Build, Integrate, and Test System
+#                    Copyright 2013 Sandia Corporation
 #
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+# the U.S. Government retains certain rights in this software.
 #
-# Copyright (2001) Sandia Corporation. Under the terms of Contract
-# DE-AC04-94AL85000, there is a non-exclusive license for use of this
-# work by or on behalf of the U.S. Government.  Export of this program
-# may require a license from the United States Government.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
 #
 # 1. Redistributions of source code must retain the above copyright
 # notice, this list of conditions and the following disclaimer.
@@ -32,23 +33,6 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# NOTICE:  The United States Government is granted for itself and others
-# acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
-# license in this data to reproduce, prepare derivative works, and
-# perform publicly and display publicly.  Beginning five (5) years from
-# July 25, 2001, the United States Government is granted for itself and
-# others acting on its behalf a paid-up, nonexclusive, irrevocable
-# worldwide license in this data to reproduce, prepare derivative works,
-# distribute copies to the public, perform publicly and display
-# publicly, and to permit others to do so.
-#
-# NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
-# OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
-# ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
-# RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
-# INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
-# THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
 #
 # ************************************************************************
 # @HEADER
@@ -94,8 +78,11 @@ ENDMACRO()
 
 
 MACRO(TRIBITS_COMPILE_OPTIONS_COMMON_ACTIONS)
+  IF (NOT PACKAGE_NAME)
+    SET(PACKAGE_NAME "DummyPackage")
+  ENDIF()
   TRIBITS_SETUP_BASIC_COMPILE_LINK_FLAGS()
-  TRIBITS_SETUP_COMPILER_FLASGS()
+  TRIBITS_SETUP_COMPILER_FLAGS(${PACKAGE_NAME})
 ENDMACRO()
 
 
@@ -295,6 +282,32 @@ FUNCTION(UNITEST_GCC_NO_STRONG_WARNINGS_OPTIONS)
   SET(${PROJECT_NAME}_ENABLE_STRONG_C_COMPILE_WARNINGS FALSE)
   SET(${PROJECT_NAME}_ENABLE_STRONG_CXX_COMPILE_WARNINGS FALSE)
   SET(${PROJECT_NAME}_ENABLE_STRONG_Fortran_COMPILE_WARNINGS FALSE)
+
+  TRIBITS_COMPILE_OPTIONS_COMMON_ACTIONS()
+
+  UNITTEST_COMPARE_CONST( CMAKE_C_FLAGS "" )
+  UNITTEST_COMPARE_CONST( CMAKE_CXX_FLAGS "" )
+  UNITTEST_COMPARE_CONST( CMAKE_Fortran_FLAGS "" )
+  UNITTEST_COMPARE_CONST( CMAKE_C_FLAGS_DEBUG "-g -O0" )
+  UNITTEST_COMPARE_CONST( CMAKE_CXX_FLAGS_DEBUG "-g -O0" )
+  UNITTEST_COMPARE_CONST( CMAKE_Fortran_FLAGS_DEBUG "" )
+  UNITTEST_COMPARE_CONST( CMAKE_C_FLAGS_RELEASE "-O3" )
+  UNITTEST_COMPARE_CONST( CMAKE_CXX_FLAGS_RELEASE "-O3" )
+  UNITTEST_COMPARE_CONST( CMAKE_Fortran_FLAGS_RELEASE "" )
+
+ENDFUNCTION()
+
+
+FUNCTION(UNITEST_GCC_NO_PACKAGE_STRONG_WARNINGS_OPTIONS)
+
+  MESSAGE("\n***")
+  MESSAGE("*** Testing GCC without strong warnings for a package")
+  MESSAGE("***\n")
+
+  SET(PACKAGE_NAME "MyPackage")
+
+  TRIBITS_SET_ALL_COMPILER_ID(GNU)
+  SET(${PACKAGE_NAME}_DISABLE_STRONG_WARNINGS TRUE)
 
   TRIBITS_COMPILE_OPTIONS_COMMON_ACTIONS()
 
@@ -607,6 +620,7 @@ UNITEST_GCC_WITH_COVERAGE_OPTIONS()
 UNITEST_GCC_WITH_CHECKED_STL_OPTIONS()
 UNITEST_GCC_WITH_CLEANED_OPTIONS()
 UNITEST_GCC_NO_STRONG_WARNINGS_OPTIONS()
+UNITEST_GCC_NO_PACKAGE_STRONG_WARNINGS_OPTIONS()
 UNITEST_GCC_WITH_SHADOW_CLEANED_CHECKED_STL_COVERAGE_OPTIONS()
 UNITEST_GCC_ADDITIONAL_USER_OPTIONS()
 UNITEST_GCC_USER_DEBUG_OVERRIDE_OPTIONS()
@@ -617,4 +631,4 @@ UNITEST_OTHER_BASE_OPTIONS()
 UNITEST_OTHER_WITH_SHADOW_CLEANED_CHECKED_STL_COVERAGE_OPTIONS()
 
 # Pass in the number of expected tests that must pass!
-UNITTEST_FINAL_RESULT(135)
+UNITTEST_FINAL_RESULT(144)

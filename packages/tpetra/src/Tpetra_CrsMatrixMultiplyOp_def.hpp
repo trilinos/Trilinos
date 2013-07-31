@@ -42,7 +42,8 @@
 #ifndef TPETRA_CRSMATRIXMULTIPLYOP_DEF_HPP
 #define TPETRA_CRSMATRIXMULTIPLYOP_DEF_HPP
 
-#include "Tpetra_CrsMatrix.hpp"
+#include <Tpetra_Util.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 
 #ifdef DOXYGEN_USE_ONLY
   #include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
@@ -64,8 +65,8 @@ namespace Tpetra {
   : matrix_(A) {
     // we don't require that A is fill complete; we will query for the importer/exporter at apply()-time
 #ifdef HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_PROFILING
-    importTimer_ = Teuchos::TimeMonitor::getNewTimer( "CrsMatrixMultiplyOp::import" );
-    exportTimer_ = Teuchos::TimeMonitor::getNewTimer( "CrsMatrixMultiplyOp::export" );
+    importTimer_ = Teuchos::TimeMonitor::getNewCounter ("CrsMatrixMultiplyOp::import");
+    exportTimer_ = Teuchos::TimeMonitor::getNewCounter ("CrsMatrixMultiplyOp::export");
 #endif
   }
 
@@ -90,7 +91,7 @@ namespace Tpetra {
       applyNonTranspose(X_in, Y_in, alpha, beta);
     }
     else {
-      applyTranspose(X_in, Y_in, alpha, beta);
+      applyTranspose(X_in, Y_in, mode, alpha, beta);
     }
   }
 
@@ -112,7 +113,6 @@ namespace Tpetra {
     using Teuchos::rcpFromRef;
     using Teuchos::rcp_const_cast;
     typedef OpScalar OS;
-    typedef Teuchos::ScalarTraits<OS> STS;
     typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
     typedef Export<LocalOrdinal, GlobalOrdinal, Node> export_type;
     typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
@@ -126,16 +126,16 @@ namespace Tpetra {
 
     // Translate from global to local sweep direction.
     // While doing this, validate the input.
-    Kokkos::ESweepDirection localDirection;
+    KokkosClassic::ESweepDirection localDirection;
     if (direction == Forward) {
-      localDirection = Kokkos::Forward;
+      localDirection = KokkosClassic::Forward;
     }
     else if (direction == Backward) {
-      localDirection = Kokkos::Backward;
+      localDirection = KokkosClassic::Backward;
     }
     else if (direction == Symmetric) {
       // We'll control local sweep direction manually.
-      localDirection = Kokkos::Forward;
+      localDirection = KokkosClassic::Forward;
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
@@ -312,14 +312,14 @@ namespace Tpetra {
       else { // direction == Symmetric
         matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
                                                    dampingFactor,
-                                                   Kokkos::Forward);
+                                                   KokkosClassic::Forward);
         // Communicate again before the Backward sweep.
         if (! importer.is_null ()) {
           X_colMap->doImport (*X_domainMap, *importer, INSERT);
         }
         matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
                                                    dampingFactor,
-                                                   Kokkos::Backward);
+                                                   KokkosClassic::Backward);
       }
     }
 
@@ -350,7 +350,6 @@ namespace Tpetra {
     using Teuchos::rcpFromRef;
     using Teuchos::rcp_const_cast;
     typedef OpScalar OS;
-    typedef Teuchos::ScalarTraits<OS> STS;
     typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
     typedef Export<LocalOrdinal, GlobalOrdinal, Node> export_type;
     typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
@@ -364,16 +363,16 @@ namespace Tpetra {
 
     // Translate from global to local sweep direction.
     // While doing this, validate the input.
-    Kokkos::ESweepDirection localDirection;
+    KokkosClassic::ESweepDirection localDirection;
     if (direction == Forward) {
-      localDirection = Kokkos::Forward;
+      localDirection = KokkosClassic::Forward;
     }
     else if (direction == Backward) {
-      localDirection = Kokkos::Backward;
+      localDirection = KokkosClassic::Backward;
     }
     else if (direction == Symmetric) {
       // We'll control local sweep direction manually.
-      localDirection = Kokkos::Forward;
+      localDirection = KokkosClassic::Forward;
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
@@ -529,14 +528,14 @@ namespace Tpetra {
       else { // direction == Symmetric
         matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
                                                    dampingFactor,
-                                                   Kokkos::Forward);
+                                                   KokkosClassic::Forward);
         // Communicate again before the Backward sweep, if necessary.
         if (! importer.is_null ()) {
           X_colMap->doImport (*X_domainMap, *importer, INSERT);
         }
         matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
                                                    dampingFactor,
-                                                   Kokkos::Backward);
+                                                   KokkosClassic::Backward);
       }
     }
 
@@ -733,7 +732,9 @@ namespace Tpetra {
   CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyTranspose(
                const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> & X_in,
                      MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> & Y_in,
-               OpScalar alpha, OpScalar beta) const
+               Teuchos::ETransp mode,
+               OpScalar alpha,
+               OpScalar beta) const
   {
     typedef Teuchos::ScalarTraits<OpScalar> ST;
     using Teuchos::null;
@@ -819,7 +820,7 @@ namespace Tpetra {
     // We will compute solution into the to-be-exported MV; get a view
     if (importer != null) {
       // Do actual computation
-      matrix_->template localMultiply<OpScalar,OpScalar>(*X, *importMV_, Teuchos::CONJ_TRANS, alpha, ST::zero());
+      matrix_->template localMultiply<OpScalar,OpScalar>(*X, *importMV_, mode, alpha, ST::zero());
 #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
       if (myImageID == 0) *out << "Import vector after localMultiply()..." << std::endl;
       importMV_->describe(*out,Teuchos::VERB_EXTREME);
@@ -840,11 +841,11 @@ namespace Tpetra {
       if (Y_in.isConstantStride() == false || X.getRawPtr() == &Y_in) {
         // generate a strided copy of Y
         MV Y(Y_in);
-        matrix_->template localMultiply<OpScalar,OpScalar>(*X, Y, Teuchos::CONJ_TRANS, alpha, beta);
+        matrix_->template localMultiply<OpScalar,OpScalar>(*X, Y, mode, alpha, beta);
         Y_in = Y;
       }
       else {
-        matrix_->template localMultiply<OpScalar,OpScalar>(*X, Y_in, Teuchos::CONJ_TRANS, alpha, beta);
+        matrix_->template localMultiply<OpScalar,OpScalar>(*X, Y_in, mode, alpha, beta);
       }
     }
 #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
@@ -868,13 +869,13 @@ namespace Tpetra {
   }
 
   template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getDomainMap() const {
     return matrix_->getDomainMap();
   }
 
   template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getRangeMap() const {
     return matrix_->getRangeMap();
   }
@@ -1009,7 +1010,7 @@ Tpetra::createCrsMatrixMultiplyOp(const Teuchos::RCP<const Tpetra::CrsMatrix<Mat
               MultiVector<OPSCALAR,LO,GO,NODE> &X, \
         const MultiVector<OPSCALAR,LO,GO,NODE> &D, \
         const OPSCALAR& alpha, \
-        const Kokkos::ESweepDirection direction) const;
+        const KokkosClassic::ESweepDirection direction) const;
 
 #define TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT_SINGLE(SCALAR,LO,GO,NODE) \
         TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(SCALAR,SCALAR,LO,GO,NODE)

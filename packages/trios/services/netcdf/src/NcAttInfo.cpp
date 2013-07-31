@@ -59,20 +59,20 @@
 
 
 #if USE_NC_TYPE
-NcAttInfo::NcAttInfo(const char *nm, const nc_type xt, const size_t l) :
-            name(nm), xtype(xt), len(l)
+NcAttInfo::NcAttInfo(const char *name, const nc_type xtype, const size_t len) :
+             _xtype(xtype), _name(name),_len(len)
 #else
-NcAttInfo::NcAttInfo(const char *nm, const int xt, const size_t l) :
-            name(nm), xtype(xt), len(l)
+NcAttInfo::NcAttInfo(const char *name, const int xtype, const size_t len) :
+             _xtype(xtype), _name(name), _len(len)
 #endif
 {
 }
 
 NcAttInfo::NcAttInfo(const struct nc_att &att) :
-    name(att.name), xtype(att.xtype), len(att.len)
+    _xtype(att.xtype), _name(att.name), _len(att.len)
 {
     log_debug(netcdf_debug_level, "Created attribute (%s, type=%d, len=%d)",
-            name.c_str(), (int)xtype, (int)len);
+            _name.c_str(), (int)_xtype, (int)_len);
 }
 
 NcAttInfo::~NcAttInfo()
@@ -81,9 +81,9 @@ NcAttInfo::~NcAttInfo()
 
 int NcAttInfo::copyTo(struct nc_att &att)
 {
-    att.xtype = this->xtype;
-    att.name = strdup(this->name.c_str());
-    att.len = this->len;
+    att.xtype = this->_xtype;
+    att.name  = strdup(this->_name.c_str());
+    att.len   = this->_len;
 
     return NC_NOERR;
 }
@@ -95,11 +95,11 @@ int NcAttInfo::inq_att(char *name, int *xtypep, size_t *lenp)
 #endif
 {
     if (name != NULL) {
-        strcpy(name, this->name.c_str());
+        strcpy(name, this->_name.c_str());
     }
 
-    *xtypep = static_cast<nc_type>(this->xtype);
-    *lenp = this->len;
+    *xtypep = static_cast<nc_type>(this->_xtype);
+    *lenp = this->_len;
 
     return NC_NOERR;
 }
@@ -108,7 +108,7 @@ int NcAttInfo::inq_att(char *name, int *xtypep, size_t *lenp)
 int NcAttInfo::inq_attname(char *name)
 {
     if (name != NULL) {
-        strcpy(name, this->name.c_str());
+        strcpy(name, this->_name.c_str());
     }
     return NC_NOERR;
 }
@@ -120,14 +120,14 @@ int NcAttInfo::inq_atttype(nc_type *xtypep)
 int NcAttInfo::inq_atttype(int *xtypep)
 #endif
 {
-    *xtypep = static_cast<nc_type>(this->xtype);
+    *xtypep = static_cast<nc_type>(this->_xtype);
     return NC_NOERR;
 }
 
 
 int NcAttInfo::inq_attlen(size_t *attlenp)
 {
-    *attlenp = this->len;
+    *attlenp = this->_len;
     return NC_NOERR;
 }
 

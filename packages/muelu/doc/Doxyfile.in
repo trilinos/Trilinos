@@ -2,4 +2,4 @@
 # This file is used by doxygen for building documentation in the build tree
 #
 @INCLUDE = @CMAKE_CURRENT_SOURCE_DIR@/Doxyfile.options
-INPUT    = @CMAKE_CURRENT_SOURCE_DIR@/../src @CMAKE_CURRENT_SOURCE_DIR@/../gallery @CMAKE_CURRENT_SOURCE_DIR@/MueLu_DoxygenDocumentation.hpp @CMAKE_CURRENT_SOURCE_DIR@/../src/Facade
+INPUT    = @CMAKE_CURRENT_SOURCE_DIR@/../src @CMAKE_CURRENT_SOURCE_DIR@/../adapters @CMAKE_CURRENT_SOURCE_DIR@/MueLu_DoxygenDocumentation.hpp

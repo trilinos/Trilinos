@@ -68,14 +68,17 @@ import subprocess
 # MesquiteConfig.cmake file.
 DEFAULT_ENABLE_DISABLE_LIST = [
   ("Amesos", True),
-  ("Amesos2", False),
+  ("Amesos2", True),
   ("Anasazi", True),
+  ("Aristos", False),
   ("AztecOO", True),
   ("Belos", True),
-  ("CTrilinos", False),
-  ("Didasko", False),
+  ("CTrilinos", True),
+  ("Claps", False),
+  ("Didasko", True),
   ("Epetra", True),
   ("EpetraExt", True),
+  ("FEApp", False),
   ("FEI", True),
   ("ForTrilinos", False),
   ("Galeri", True),
@@ -86,37 +89,48 @@ DEFAULT_ENABLE_DISABLE_LIST = [
   ("Isorropia", True),
   ("Kokkos", True),
   ("Komplex", True),
-  ("Mesquite", False),
+  ("MeshingGenie", False),
+  ("Mesquite", True),
   ("ML", True),
   ("Moertel", True),
   ("MOOCHO", True),
+  ("MueLu", False),
   ("NOX", True),
+  ("NewPackage", False),
   ("Optika", False),
   ("OptiPack", True),
   ("Pamgen", True),
+  ("Panzer", False),
   ("Phalanx", True),
-  ("Piro", False),
+  ("Phdmesh", False),
+  ("Piro", True),
   ("Pliris", True),
   ("PyTrilinos", False),
   ("RBGen", False),
   ("RTOp", True),
   ("Rythmos", True),
   ("Sacado", True),
-  ("SEACAS", False),
+  ("SEACAS", True),
   ("Shards", True),
-  ("STK", False),
-  ("Stokhos", False),
+  ("ShyLU", True),
+  ("STK", True),
+  ("Stokhos", True),
   ("Stratimikos", True),
-  ("Sundance", False),
-  ("Teko", False),
+  ("Sundance", True),
+  ("Teko", True),
   ("Teuchos", True),
   ("ThreadPool", True),
   ("Thyra", True),
   ("Tpetra", True),
   ("TriKota", False),
-  ("TrilinosCouplings", False),
+  ("TrilinosCouplings", True),
+  ("TrilinosFramework", False),
+  ("Trios", False),
   ("Triutils", True),
+  ("WebTrilinos", False),
+  ("Xpetra", True),
   ("Zoltan", True),
+  ("Zoltan2", True),
 ]
 
 #Make reporting errors easier to make consistent between all system calls
@@ -205,6 +219,10 @@ def get_options(workingDir):
     help="Enable secondary stable code. Default=master")
   parser.add_option("--verbose-errors", dest="verboseErrors", action="store_true", default=False, 
     help="Enable verbose error reporting. This will cause the output of the command that failed to be sent to stdout. Default=master")
+  parser.add_option("-j", dest="buildProcs", action="store", default=1, 
+    help="Specify the number of processes to run make with. Default=%default")
+  parser.add_option("--build-type", dest="buildType", action="store", default="RELEASE", 
+    help="Specify the build type to build for the install(eg. RELEASE or DEBUG). Default=%default")
 
   return parser.parse_args()
 
@@ -270,6 +288,7 @@ def main(package_enable_disable_list, options):
     cmake_configure_options.append(("Netcdf_INCLUDE_DIRS",
                                    os.path.join(options.netcdfDir, "include")))
   cmake_configure_options.append(("CMAKE_INSTALL_PREFIX", options.installDir))
+  cmake_configure_options.append(("CMAKE_BUILD_TYPE", options.buildType))
 
   #removing install directory first so that subsequent installs aren't polluted by old installs
   print "attempting to remove the old install dir"
@@ -369,8 +388,8 @@ def main(package_enable_disable_list, options):
   reportError(error, "Configuring from tarball failed, see tarball_configure.out for details.",
               "tarball_configure.out", options.verboseErrors)
 
-  tarballMakeInstallCmd = "make install &> tarball_make_install.out"
-  tarballMakeInstallError = run_command("make install", tarball_cmake_path,
+  tarballMakeInstallCmd = "make install -j " + options.buildProcs
+  tarballMakeInstallError = run_command(tarballMakeInstallCmd, tarball_cmake_path,
                                         file("tarball_make_install.out", "w"))
 
   reportError(tarballMakeInstallError,
@@ -378,7 +397,8 @@ def main(package_enable_disable_list, options):
               "tarball_make_install.out", options.verboseErrors)
 
   if options.doDashboardBuild:
-    makeExperimentalBuildError = run_command("make dashboard", tarball_cmake_path,
+    makeExperimentalBuildCmd = "make dashboard -j " + options.buildProcs
+    makeExperimentalBuildError = run_command(makeExperimentalBuildCmd, tarball_cmake_path,
                                              file("tarball_make_experimental.out", "w"))
 
     reportError(makeExperimentalBuildError,

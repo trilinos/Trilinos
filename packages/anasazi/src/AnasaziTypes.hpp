@@ -143,7 +143,7 @@ typedef Teuchos_Ordinal Array_size_type;
     IterationDetails = 0x2,     /*!< Approximate eigenvalues, errors */
     OrthoDetails = 0x4,         /*!< Orthogonalization/orthonormalization details */
     FinalSummary = 0x8,         /*!< Final computational summary */
-    TimingDetails = 0x10,       /*!< Timing details */
+    TimingDetails = 0x10,       /*!< Timing details, uses MPI_COMM_WORLD by default. */
     StatusTestDetails = 0x20,   /*!< Status test details */
     Debug = 0x40                /*!< Debugging information */
   };

@@ -1,13 +1,13 @@
 /*
-// @HEADER
+//@HEADER
 // ***********************************************************************
-// 
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
-// 
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+//
+//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//                 Copyright (2009) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,10 +35,10 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
-// ************************************************************************
-// @HEADER
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ***********************************************************************
+//@HEADER
 */
 
 #ifndef _build_problem_hpp_
@@ -70,7 +70,6 @@ build_problem(Teuchos::ParameterList& test_params,
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   TCRS;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                TMap;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
-  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>      TV;
   typedef Belos::OperatorTraits<Scalar,TMV,TOP>                       BOPT;
   typedef Belos::MultiVecTraits<Scalar,TMV>                           BMVT;
   typedef Belos::LinearProblem<Scalar,TMV,TOP>                        BLinProb;
@@ -128,7 +127,6 @@ Teuchos::RCP<
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>      TV;
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>    TOP;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   TCRS;
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                TMap;
   typedef Belos::LinearProblem<Scalar,TMV,TOP>                        BLinProb;
 
   Teuchos::RCP<TCRS> A;

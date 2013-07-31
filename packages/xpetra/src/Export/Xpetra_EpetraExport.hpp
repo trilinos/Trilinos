@@ -70,7 +70,7 @@ namespace Xpetra {
 
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef Kokkos::DefaultNode::DefaultNodeType Node;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
     //! The specialization of Map used by this class.
     typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
@@ -121,7 +121,7 @@ namespace Xpetra {
     ArrayView< const LocalOrdinal > getExportLIDs() const;
 
     //! List of processes to which entries will be sent.
-    ArrayView< const int > getExportImageIDs() const;
+    ArrayView< const int > getExportPIDs() const;
 
     //! The source Map used to construct this Export.
     const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getSourceMap() const { XPETRA_MONITOR("EpetraExport::getSourceMap"); return toXpetra(export_->SourceMap()); }

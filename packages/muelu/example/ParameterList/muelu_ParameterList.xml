@@ -20,24 +20,49 @@
         <Parameter name="relaxation: damping factor" type="double" value="1"/>
       </ParameterList>
     </ParameterList>
+
+    <ParameterList name="ILUT">
+      <Parameter name="factory" type="string" value="TrilinosSmoother"/>
+
+      <Parameter name="type"                         type="string" value="ILUT"/>
+      <ParameterList name="ParameterList">
+        <Parameter name="fact: ilut level-of-fill"   type="double" value="1.0"/>
+      </ParameterList>
+    </ParameterList>
+
   </ParameterList>
 
   <!-- Definition of the multigrid preconditioner -->
+
+  <!--
+       Some notes about how this list is parsed.
+       Each sublist takes effect in turn.  By default, each sublist is
+       active for one level.  If you want it to be active for more than
+       one level, you must specify "numDesiredLevels" and "startLevel".
+
+       Note that "startLevel" must be consistent with the level number
+       that the previous sublist controlled.
+  -->
   <ParameterList name="Hierarchy">
 
-    <Parameter name="numDesiredLevel" type="int" value="10"/> <!-- Max number of levels -->
+    <!-- Max number of levels -->
+    <Parameter name="numDesiredLevel" type="int" value="10"/>
 
+    <!-- active for levels 0 and 1 -->
     <ParameterList name="FineLevel">
       <Parameter name="startLevel" type="int" value="0"/>
       <Parameter name="Smoother"   type="string" value="SymGaussSeidel"/>
+      <Parameter name="numDesiredLevel" type="int" value="2"/>
     </ParameterList>
 
+    <!-- active for levels 2,3,...,L-1 -->
     <ParameterList name="OtherLevels">
-      <Parameter name="startLevel" type="int" value="1"/>
+      <Parameter name="startLevel" type="int" value="2"/>
       <Parameter name="P"          type="string" value="SaPFactory"/>
-      <Parameter name="Smoother"   type="string" value="SymGaussSeidel"/>
+      <Parameter name="Smoother"   type="string" value="ILUT"/>
     </ParameterList>
 
+    <!-- active for level L -->
     <ParameterList name="CoarsestLevel">
       <Parameter name="startLevel"   type="int" value="-1"/>
       <Parameter name="CoarseSolver" type="string" value="DirectSolver"/>

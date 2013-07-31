@@ -53,6 +53,11 @@
 #include <mpi.h>
 #include <string>
 #include <vector>
+
+#include "Trios_nssi_fprint_types.h"
+#include "Trios_nnti_fprint_types.h"
+
+
 #include "xfer_service_args.h"
 
 #ifdef __cplusplus

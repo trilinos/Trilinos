@@ -82,7 +82,7 @@
 
 namespace Xpetra
 {
-  template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+  template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class MapExtractor : public Teuchos::Describable
   {
     typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> MapClass;

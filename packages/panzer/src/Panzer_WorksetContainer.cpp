@@ -57,7 +57,7 @@ WorksetContainer::WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> 
    setPhysicsBlockVector(physicsBlocks);
 }
 
-/** Copies the workset factory, the InputPhysicsBlock map, and the workset size, but not constructed
+/** Copies the workset factory and the workset size, but not constructed
   * worksets.
   */
 WorksetContainer::WorksetContainer(const WorksetContainer & wc)
@@ -100,22 +100,6 @@ WorksetContainer::getVolumeWorksets(const std::string & eBlock)
    const WorksetDescriptor wd = blockDescriptor(eBlock);
 
    return getWorksets(wd);
-/*
-   Teuchos::RCP<std::vector<Workset> > worksetVector;
-   VolumeMap::iterator itr = volWorksets_.find(eBlock);
-   if(itr==volWorksets_.end()) {
-      // couldn't find workset, build it!
-      const PhysicsBlock & pb = lookupPhysicsBlock(eBlock);
-      worksetVector = wkstFactory_->getVolumeWorksets(eBlock,pb,worksetSize_);
-
-      // store vector for reuse in the future
-      volWorksets_[eBlock] = worksetVector;
-   }
-   else 
-      worksetVector = itr->second;
-
-   return worksetVector;
-*/
 }
 
 Teuchos::RCP<std::vector<Workset> >  
@@ -126,7 +110,7 @@ WorksetContainer::getWorksets(const WorksetDescriptor & wd)
    if(itr==volWorksets_.end()) {
       // couldn't find workset, build it!
       const PhysicsBlock & pb = lookupPhysicsBlock(wd.getElementBlock());
-      worksetVector = wkstFactory_->getWorksets(wd,pb,worksetSize_);
+      worksetVector = wkstFactory_->getWorksets(wd,pb);
 
       // store vector for reuse in the future
       volWorksets_[wd] = worksetVector;
@@ -137,20 +121,6 @@ WorksetContainer::getWorksets(const WorksetDescriptor & wd)
    return worksetVector;
 }
 
-
-Teuchos::RCP<std::vector<Teuchos::RCP<std::vector<Workset> > > > 
-WorksetContainer::getVolumeWorksets() const
-{
-   Teuchos::RCP<std::vector<Teuchos::RCP<std::vector<Workset> > > > worksets =
-      Teuchos::rcp(new std::vector<Teuchos::RCP<std::vector<Workset> > >);
-
-   // fill vector with RCP pointers
-   for(VolumeMap::const_iterator itr=volWorksets_.begin();itr!=volWorksets_.end();itr++)
-      worksets->push_back(itr->second);
- 
-   return worksets;
-}
- 
 //! Access, and construction of side worksets
 Teuchos::RCP<std::map<unsigned,Workset> > 
 WorksetContainer::getSideWorksets(const BC & bc)
@@ -182,7 +152,7 @@ void WorksetContainer::allocateVolumeWorksets(const std::vector<std::string> & e
       const PhysicsBlock & pb = lookupPhysicsBlock(eBlock);
 
       // store vector for reuse in the future
-      volWorksets_[eBlock] = wkstFactory_->getVolumeWorksets(eBlock,pb,worksetSize_);
+      volWorksets_[eBlock] = wkstFactory_->getVolumeWorksets(eBlock,pb);
    }
 }
 

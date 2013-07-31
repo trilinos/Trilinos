@@ -87,7 +87,7 @@
       std::ostringstream oss; \
       oss \
         << "\np="<<::Teuchos::GlobalMPISession::getRank() \
-        << ": *** Caught an integer std::exception with value = " \
+        << ": *** Caught an integer exception with value = " \
         << excpt_code << std::endl; \
       (ERR_STREAM) << std::flush; \
       (ERR_STREAM) << oss.str(); \

@@ -60,7 +60,7 @@
 #include "Kokkos_DefaultSparseSolveKernelOps.hpp"
 #include "Kokkos_DefaultSparseMultiplyKernelOps.hpp"
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   namespace details {
 
@@ -460,6 +460,15 @@ namespace Kokkos {
     ///   don't keep it around.  (This saves a bit of memory.)
     DefaultHostSparseOps(const RCP<Node> &node, Teuchos::ParameterList& params);
 
+    /// \brief "Sum constructor": compute *this = alpha*A + beta*B.
+    ///
+    /// The resulting matrix shares the Node instance and copies the
+    /// parameters of the matrix A.
+    DefaultHostSparseOps (const Scalar& alpha,
+                          const DefaultHostSparseOps<Scalar, Ordinal, Node, Allocator>& A,
+                          const Scalar& beta,
+                          const DefaultHostSparseOps<Scalar, Ordinal, Node, Allocator>& B);
+
     //! Destructor
     ~DefaultHostSparseOps();
 
@@ -471,7 +480,7 @@ namespace Kokkos {
     std::string description () const {
       using Teuchos::TypeNameTraits;
       std::ostringstream os;
-      os <<  "Kokkos::DefaultHostSparseOps<"
+      os << "KokkosClassic::DefaultHostSparseOps<"
          << "Scalar=" << TypeNameTraits<Scalar>::name()
          << ", Ordinal=" << TypeNameTraits<Ordinal>::name()
          << ", Node=" << TypeNameTraits<Node>::name()
@@ -495,6 +504,7 @@ namespace Kokkos {
       using Teuchos::VERB_HIGH;
       using Teuchos::VERB_EXTREME;
       using std::endl;
+      typedef Teuchos::ArrayRCP<const size_t>::size_type size_type;
 
       // Interpret the default verbosity level as VERB_MEDIUM.
       const EVerbosityLevel vl =
@@ -507,10 +517,10 @@ namespace Kokkos {
         out << this->description();
 
         if (includesVerbLevel (vl, VERB_MEDIUM)) { // vl >= VERB_MEDIUM
-          out << ":" << endl;
+          out << " {" << endl;
           OSTab tab1 (rcpFromRef (out));
 
-          out << "isInitialized_ = " << isInitialized_ << endl;
+          out << "isInitialized_: " << isInitialized_ << endl;
           if (isInitialized_) {
             std::string triUplo ("INVALID");
             if (tri_uplo_ == Teuchos::UNDEF_TRI) {
@@ -530,39 +540,55 @@ namespace Kokkos {
               unitDiag = "UNIT_DIAG";
             }
 
-            out << "numRows_ = " << numRows_ << endl
-                << "numCols_ = " << numCols_ << endl
-                << "isEmpty_ = " << isEmpty_ << endl
-                << "tri_uplo_ = " << triUplo << endl
-                << "unit_diag_ = " << unitDiag << endl;
+            out << "numRows_: " << numRows_ << endl
+                << "numCols_: " << numCols_ << endl
+                << "isEmpty_: " << isEmpty_ << endl
+                << "tri_uplo_: " << triUplo << endl
+                << "unit_diag_: " << unitDiag << endl;
             if (big_ptrs_.size() > 0) {
-              out << "numEntries = " << big_ptrs_[big_ptrs_.size()-1] << endl;
+              out << "numEntries: " << big_ptrs_[big_ptrs_.size()-1] << endl;
             }
             else if (sml_ptrs_.size() > 0) {
-              out << "numEntries = " << sml_ptrs_[sml_ptrs_.size()-1] << endl;
+              out << "numEntries: " << sml_ptrs_[sml_ptrs_.size()-1] << endl;
             }
             else {
-              out << "numEntries = 0" << endl;
+              out << "numEntries: 0" << endl;
             }
 
             if (includesVerbLevel (vl, VERB_EXTREME)) { // vl >= VERB_EXTREME
               // Only print out all the sparse matrix's data in
               // extreme verbosity mode.
-              out << "ptrs = [";
+              out << "ptrs: [";
               if (big_ptrs_.size() > 0) {
-                std::copy (big_ptrs_.begin(), big_ptrs_.end(),
-                           std::ostream_iterator<Ordinal> (out, " "));
+                for (size_type i = 0; i < big_ptrs_.size (); ++i) {
+                  out << big_ptrs_[i];
+                  if (i + 1 < big_ptrs_.size ()) {
+                    out << ", ";
+                  }
+                }
               }
               else {
-                std::copy (sml_ptrs_.begin(), sml_ptrs_.end(),
-                           std::ostream_iterator<Ordinal> (out, " "));
+                for (size_type i = 0; i < sml_ptrs_.size (); ++i) {
+                  out << sml_ptrs_[i];
+                  if (i + 1 < sml_ptrs_.size ()) {
+                    out << ", ";
+                  }
+                }
               }
-              out << "]" << endl << "inds_ = [";
-              std::copy (inds_.begin(), inds_.end(),
-                         std::ostream_iterator<Ordinal> (out, " "));
-              out << "]" << endl << "vals_ = [";
-              std::copy (vals_.begin(), vals_.end(),
-                         std::ostream_iterator<Scalar> (out, " "));
+              out << "]" << endl << "inds_: [";
+              for (size_type i = 0; i < inds_.size (); ++i) {
+                out << inds_[i];
+                if (i + 1 < inds_.size ()) {
+                  out << ", ";
+                }
+              }
+              out << "]" << endl << "vals_: [";
+              for (size_type i = 0; i < vals_.size (); ++i) {
+                out << vals_[i];
+                if (i + 1 < vals_.size ()) {
+                  out << ", ";
+                }
+              }
               out << "]" << endl;
             } // vl >= VERB_EXTREME
           } // if is initialized
@@ -820,6 +846,14 @@ namespace Kokkos {
                  const MultiVector<Scalar,Node> &D,
                  const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
                  const enum ESweepDirection direction = Forward) const;
+
+    /// \brief "Add in place": compute <tt>*this = alpha*A + beta*(*this)</tt>.
+    ///
+    /// This method may choose to reuse storage of <tt>*this</tt>.
+    void
+    addInPlace (const Scalar& alpha,
+                const DefaultHostSparseOps<Scalar, Ordinal, Node, Allocator>& A,
+                const Scalar& beta);
     //@}
 
   protected:
@@ -883,7 +917,7 @@ namespace Kokkos {
   void DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::finalizeGraph(Teuchos::EUplo uplo, Teuchos::EDiag diag, DefaultCrsGraph<Ordinal,Node> &graph, const RCP<ParameterList> &params)
   {
     graph.setMatDesc(uplo,diag);
-    std::string FuncName("Kokkos::DefaultHostSparseOps::finalizeGraph(graph,params)");
+    std::string FuncName("KokkosClassic::DefaultHostSparseOps::finalizeGraph(graph,params)");
     TEUCHOS_TEST_FOR_EXCEPTION(
         graph.isInitialized() == false,
         std::runtime_error, FuncName << ": graph has not yet been initialized."
@@ -903,7 +937,7 @@ namespace Kokkos {
   void DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::finalizeMatrix(const DefaultCrsGraph<Ordinal,Node> &graph, DefaultCrsMatrix<Scalar,Ordinal,Node> &matrix, const RCP<ParameterList> &params)
   {
     // nothing much to do here
-    std::string FuncName("Kokkos::DefaultHostSparseOps::finalizeMatrix(graph,matrix,params)");
+    std::string FuncName("KokkosClassic::DefaultHostSparseOps::finalizeMatrix(graph,matrix,params)");
     TEUCHOS_TEST_FOR_EXCEPTION(
         matrix.isInitialized() == false,
         std::runtime_error, FuncName << ": matrix has not yet been initialized."
@@ -948,6 +982,40 @@ namespace Kokkos {
     // Kokkos Node types that are host Nodes (vs. device Nodes, such
     // as GPU Nodes).
     Teuchos::CompileTimeAssert<Node::isHostNode == false> cta; (void)cta;
+  }
+
+  template<class Scalar, class Ordinal, class Node, class Allocator>
+  DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::
+  DefaultHostSparseOps (const Scalar& alpha,
+                        const DefaultHostSparseOps<Scalar, Ordinal, Node, Allocator>& A,
+                        const Scalar& beta,
+                        const DefaultHostSparseOps<Scalar, Ordinal, Node, Allocator>& B)
+  {
+    // Make sure that users only specialize DefaultHostSparseOps for
+    // Kokkos Node types that are host Nodes (vs. device Nodes, such
+    // as GPU Nodes).
+    Teuchos::CompileTimeAssert<Node::isHostNode == false> cta; (void)cta;
+
+    (void) alpha;
+    (void) A;
+    (void) beta;
+    (void) B;
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "KokkosClassic::"
+      "DefaultHostSparseOps: sum constructor not implemented.");
+  }
+
+  template<class Scalar, class Ordinal, class Node, class Allocator>
+  void
+  DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::
+  addInPlace (const Scalar& alpha,
+              const DefaultHostSparseOps<Scalar, Ordinal, Node, Allocator>& A,
+              const Scalar& beta)
+  {
+    (void) alpha;
+    (void) A;
+    (void) beta;
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "KokkosClassic::"
+      "DefaultHostSparseOps::addInPlace: Not implemented.");
   }
 
   template<class Scalar, class Ordinal, class Node, class Allocator>
@@ -1216,25 +1284,25 @@ namespace Kokkos {
     TEUCHOS_TEST_FOR_EXCEPTION(
       isInitialized_ == false,
       std::runtime_error,
-      "Kokkos::DefaultHostSparseOps::gaussSeidel: "
+      "KokkosClassic::DefaultHostSparseOps::gaussSeidel: "
       "The solve was not fully initialized.");
     TEUCHOS_TEST_FOR_EXCEPTION(
       isEmpty_ && unit_diag_ != Teuchos::UNIT_DIAG && numRows_ > 0,
       std::runtime_error,
-      "Kokkos::DefaultHostSparseOps::gaussSeidel: Local Gauss-Seidel with a "
+      "KokkosClassic::DefaultHostSparseOps::gaussSeidel: Local Gauss-Seidel with a "
       "sparse matrix with no entries, but a nonzero number of rows, is only "
       "valid if the matrix has an implicit unit diagonal.  This matrix does "
       "not.");
     TEUCHOS_TEST_FOR_EXCEPTION(
       (size_t) X.getNumCols() != (size_t) B.getNumCols(),
       std::runtime_error,
-      "Kokkos::DefaultHostSparseOps::gaussSeidel: "
+      "KokkosClassic::DefaultHostSparseOps::gaussSeidel: "
       "The multivectors B and X have different numbers of vectors.  "
       "X has " << X.getNumCols() << ", but B has " << B.getNumCols() << ".");
     TEUCHOS_TEST_FOR_EXCEPTION(
       (size_t) X.getNumRows() < (size_t) numRows_,
       std::runtime_error,
-      "Kokkos::DefaultHostSparseOps::gaussSeidel: "
+      "KokkosClassic::DefaultHostSparseOps::gaussSeidel: "
       "The input/output multivector X does not have enough rows for the "
       "matrix.  X has " << X.getNumRows() << " rows, but the (local) matrix "
       "has " << numRows_ << " rows.  One possible cause is that the column map "
@@ -1243,7 +1311,7 @@ namespace Kokkos {
     TEUCHOS_TEST_FOR_EXCEPTION(
       (size_t) B.getNumRows() < (size_t) numRows_,
       std::runtime_error,
-      "Kokkos::DefaultHostSparseOps::gaussSeidel: "
+      "KokkosClassic::DefaultHostSparseOps::gaussSeidel: "
       "The input multivector B does not have enough rows for the "
       "matrix.  B has " << B.getNumRows() << " rows, but the (local) matrix "
       "has " << numRows_ << " rows.");
@@ -1481,7 +1549,7 @@ namespace Kokkos {
       }
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Kokkos::DefaultHost"
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "KokkosClassic::DefaultHost"
         "SparseOps::asDenseMatrix: both big_ptrs_ and sml_ptrs_ are empty.  "
         "Please report this bug to the Kokkos developers.");
     }
@@ -1587,7 +1655,7 @@ namespace Kokkos {
     //! Constructor that takes a Kokkos Node: DO NOT CALL (Scalar=void specialization).
     DefaultHostSparseOps (const RCP<Node> &node) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Someone attempted to "
-        "instantiate Kokkos::DefaultHostSparseOps with Scalar=void.  "
+        "instantiate KokkosClassic::DefaultHostSparseOps with Scalar=void.  "
         "This is not allowed.  "
         "The Scalar=void specialization exists only for its typedefs.  "
         "Please report this bug to the Kokkos developers.");
@@ -1596,7 +1664,7 @@ namespace Kokkos {
     //! Constructor that takes a Kokkos Node and parameters: DO NOT CALL (Scalar=void specialization).
     DefaultHostSparseOps (const RCP<Node> &node, Teuchos::ParameterList& params) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Someone attempted to "
-        "instantiate Kokkos::DefaultHostSparseOps with Scalar=void.  "
+        "instantiate KokkosClassic::DefaultHostSparseOps with Scalar=void.  "
         "This is not allowed.  "
         "The Scalar=void specialization exists only for its typedefs.  "
         "Please report this bug to the Kokkos developers.");
@@ -1620,7 +1688,7 @@ namespace Kokkos {
     std::string description () const {
       using Teuchos::TypeNameTraits;
       std::ostringstream os;
-      os <<  "Kokkos::DefaultHostSparseOps<"
+      os <<  "KokkosClassic::DefaultHostSparseOps<"
          << "Scalar=void"
          << ", Ordinal=" << TypeNameTraits<Ordinal>::name()
          << ", Node=" << TypeNameTraits<Node>::name()
@@ -1704,7 +1772,7 @@ namespace Kokkos {
       using Teuchos::ArrayRCP;
       using Teuchos::as;
 
-      std::string FuncName("Kokkos::DefaultHostSparseOps::finalizeGraph(graph,params)");
+      std::string FuncName("KokkosClassic::DefaultHostSparseOps::finalizeGraph(graph,params)");
 
       graph.setMatDesc(uplo,diag);
       TEUCHOS_TEST_FOR_EXCEPTION(graph.isInitialized() == false,
@@ -1732,7 +1800,7 @@ namespace Kokkos {
     * This is an example that unit tests and demonstrates the implementation requirements for the DefaultSparseOps class.
     */
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif /* KOKKOS_DEFAULTSPARSEOPS_HPP */
 

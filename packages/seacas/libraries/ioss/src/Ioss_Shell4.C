@@ -99,6 +99,7 @@ Ioss::Shell4::Shell4()
 {
   Ioss::ElementTopology::alias("shell4", "shell");
   Ioss::ElementTopology::alias("shell4", "Shell_Quad_4_3D");
+  Ioss::ElementTopology::alias("shell4", "SHELL_QUADRILATERAL_4");
 }
 
 Ioss::Shell4::~Shell4() {}

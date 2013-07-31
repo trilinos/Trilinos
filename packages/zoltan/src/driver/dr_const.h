@@ -117,7 +117,7 @@ extern "C" {
 #define ZOLTAN_OVIS
 #endif
 
-#ifdef HAVE_GZIP
+#ifdef ZHAVE_GZIP
 #define ZOLTAN_GZIP
 #endif
 
@@ -131,6 +131,12 @@ extern "C" {
 
 #ifdef HAVE_NEMESIS_EXODUS
 #define ZOLTAN_NEMESIS
+#endif
+
+#ifdef HAVE_PURIFY
+#define ZOLTAN_PURIFY
+#define strcasecmp Zoltan_strcasecmp
+#define strncasecmp Zoltan_strncasecmp
 #endif
 
 #endif /* TRILINOS_NO_CONFIG_H */

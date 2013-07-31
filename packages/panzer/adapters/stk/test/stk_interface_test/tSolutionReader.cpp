@@ -85,7 +85,7 @@ TEUCHOS_UNIT_TEST(tSolutionReader, test)
    RCP<panzer_stk::STK_Interface> mesh = buildMesh(2,2);
 
    RCP<panzer::ConnManager<int,int> > connManager 
-         = rcp(new panzer_stk::STKConnManager(mesh));
+         = rcp(new panzer_stk::STKConnManager<int>(mesh));
    RCP<panzer::DOFManagerFEI<int,int> > dofManager 
          = rcp(new panzer::DOFManagerFEI<int,int>(connManager,MPI_COMM_WORLD));
 

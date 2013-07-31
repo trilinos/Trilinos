@@ -74,7 +74,7 @@
 #endif // HAVE_KOKKOSCLASSIC_MKL
 
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   // Forward declaration, for MklBindScalarAndOrdinal below.
   template <class Scalar, class Ordinal, class Node, class Allocator>
@@ -488,6 +488,19 @@ namespace Kokkos {
     ///   don't keep it around.  (This saves a bit of memory.)
     MklSparseOps(const RCP<Node> &node, Teuchos::ParameterList& params);
 
+    /// \brief "Sum constructor": compute *this = alpha*A + beta*B.
+    ///
+    /// The resulting matrix shares the Node instance and copies the
+    /// parameters of the matrix A.
+    MklSparseOps (const Scalar& alpha,
+                  const MklSparseOps<Scalar, Ordinal, Node, Allocator>& A,
+                  const Scalar& beta,
+                  const MklSparseOps<Scalar, Ordinal, Node, Allocator>& B)
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "MklSparseOps: sum constructor not implemented");
+    }
+
     //! Destructor
     ~MklSparseOps();
 
@@ -726,15 +739,27 @@ namespace Kokkos {
            MultiVector<RangeScalar,Node> &X) const;
 
     template <class DomainScalar, class RangeScalar>
-    void 
+    void
     gaussSeidel (const MultiVector<DomainScalar,Node> &B,
-		 MultiVector< RangeScalar,Node> &X,
-		 const MultiVector<Scalar,Node> &D,
-		 const RangeScalar& dampingFactor,
-		 const ESweepDirection direction) const
+                 MultiVector< RangeScalar,Node> &X,
+                 const MultiVector<Scalar,Node> &D,
+                 const RangeScalar& dampingFactor,
+                 const ESweepDirection direction) const
     {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
-				 "MklSparseOps: gaussSeidel not implemented");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                                 "MklSparseOps: gaussSeidel not implemented");
+    }
+
+    /// \brief "Add in place": compute <tt>*this = alpha*A + beta*(*this)</tt>.
+    ///
+    /// This method may choose to reuse storage of <tt>*this</tt>.
+    void
+    addInPlace (const Scalar& alpha,
+                const MklSparseOps<Scalar, Ordinal, Node, Allocator>& A,
+                const Scalar& beta)
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "MklSparseOps: addInPlace not implemented");
     }
     //@}
 
@@ -853,14 +878,14 @@ namespace Kokkos {
     TEUCHOS_TEST_FOR_EXCEPTION(
       graph.isInitialized() == false,
       std::runtime_error,
-      "Kokkos::MklSparseOps::finalizeGraph: Graph has not yet been initialized.");
+      "KokkosClassic::MklSparseOps::finalizeGraph: Graph has not yet been initialized.");
     RCP<Node> node = graph.getNode ();
 
     // Determine how many entries are in the graph, so that we can
     // decide whether the row offsets will fit in MKL_INT.
     ArrayRCP<const size_t> bigPtrs = graph.getPointers();
     TEUCHOS_TEST_FOR_EXCEPTION(
-      bigPtrs.size() == 0, std::logic_error, "Kokkos::MklSparseOps::finalize"
+      bigPtrs.size() == 0, std::logic_error, "KokkosClassic::MklSparseOps::finalize"
       "Graph: DefaultCrsGraph's getPointers() returned a row offsets array of "
       "length 0.  This is not allowed even for a graph of zero rows.  Please "
       "report this bug to the Kokkos developers.");
@@ -891,7 +916,7 @@ namespace Kokkos {
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::invalid_argument, "Kokkos::MklSparseOps::finalizeGraph: "
+        true, std::invalid_argument, "KokkosClassic::MklSparseOps::finalizeGraph: "
         "The given graph has more entries than can fit in MKL's index type "
         "MKL_INT=" << Teuchos::TypeNameTraits<MKL_INT>::name() << ".  MKL "
         "requires that the row offsets array, and therefore the number of "
@@ -906,7 +931,7 @@ namespace Kokkos {
                   DefaultCrsMatrix<Scalar,Ordinal,Node> &matrix,
                   const RCP<ParameterList> &params)
   {
-    std::string FuncName("Kokkos::MklSparseOps::finalizeMatrix(graph,matrix,params)");
+    std::string FuncName("KokkosClassic::MklSparseOps::finalizeMatrix(graph,matrix,params)");
     (void) params; // not using these for now
     // nothing much to do here
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -980,7 +1005,7 @@ namespace Kokkos {
   {
     using Teuchos::TypeNameTraits;
     std::ostringstream os;
-    os <<  "Kokkos::MklSparseOps<"
+    os <<  "KokkosClassic::MklSparseOps<"
        << "Scalar=" << TypeNameTraits<Scalar>::name()
        << ", Ordinal=" << TypeNameTraits<Ordinal>::name()
        << ", Node=" << TypeNameTraits<Node>::name()
@@ -996,7 +1021,7 @@ namespace Kokkos {
   // {
   //   using Teuchos::TypeNameTraits;
   //   std::ostringstream os;
-  //   os <<  "Kokkos::MklSparseOps<"
+  //   os <<  "KokkosClassic::MklSparseOps<"
   //      << "Scalar=void"
   //      << ", Ordinal=" << TypeNameTraits<Ordinal>::name()
   //      << ", Node=" << TypeNameTraits<Node>::name()
@@ -1102,7 +1127,7 @@ namespace Kokkos {
     TEUCHOS_TEST_FOR_EXCEPTION(
       ptr.is_null () && ! opgraph->getPointers ().is_null (),
       std::invalid_argument,
-      "Kokkos::MklSparseOps::setGraphAndMatrix: "
+      "KokkosClassic::MklSparseOps::setGraphAndMatrix: "
       "The given graph and matrix have more entries than can fit in the MKL_INT="
       << Teuchos::TypeNameTraits<MKL_INT>::name() << " type.  MKL requires "
       "that the row offsets array, and therefore the number of entries in the "
@@ -1251,7 +1276,7 @@ namespace Kokkos {
     //   << TypeNameTraits<RangeScalar>::name() << ", Ordinal="
     //   << TypeNameTraits<Ordinal>::name() << ", OffsetType="
     //   << TypeNameTraits<OffsetType>::name() << ".  Please refer to the "
-    //   "documentation of the Kokkos::MklSparseOps class to learn how to access a "
+    //   "documentation of the KokkosClassic::MklSparseOps class to learn how to access a "
     //   "fall-back implementation of sparse kernels in that case.");
 
     // We know at this point that DomainScalar == RangeScalar ==
@@ -1452,7 +1477,7 @@ namespace Kokkos {
     //   << TypeNameTraits<RangeScalar>::name() << ", Ordinal="
     //   << TypeNameTraits<Ordinal>::name() << ", OffsetType="
     //   << TypeNameTraits<OffsetType>::name() << ".  Please refer to the "
-    //   "documentation of the Kokkos::MklSparseOps class to learn how to access a "
+    //   "documentation of the KokkosClassic::MklSparseOps class to learn how to access a "
     //   "fall-back implementation of sparse kernels in that case.");
 
     // We know at this point that DomainScalar == RangeScalar ==
@@ -1611,7 +1636,7 @@ namespace Kokkos {
     multiplyPrivate<DomainScalar, RangeScalar, Ordinal> (trans, alpha, X, beta, Y);
   }
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif /* __Kokkos_MklSparseOps_hpp */
 

@@ -322,7 +322,7 @@ inline bool operator==( const any &a, const any &b )
 }
 
 /*! \relates any
-    \brief Returns true if two any objects <b>do not</tt> have the same value.
+    \brief Returns true if two any objects <b>do not</b> have the same value.
 */
 inline bool operator!=( const any &a, const any &b )
 {

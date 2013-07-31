@@ -41,7 +41,6 @@
 // @HEADER
 
 #include "Piro_Epetra_NOXSolver.hpp"
-#include "Piro_ValidPiroParameters.hpp"
 #include "Piro_Epetra_MatrixFreeDecorator.hpp"
 #include "Piro_Epetra_SensitivityOperator.hpp"
 
@@ -60,13 +59,11 @@ Piro::Epetra::NOXSolver::NOXSolver(
   observer(observer_),
   utils(piroParams->sublist("NOX").sublist("Printing"))
 {
-  //piroParams->validateParameters(*Piro::getValidPiroParameters(),0);
-
   Teuchos::RCP<Teuchos::ParameterList> noxParams =
 	Teuchos::rcp(&(piroParams->sublist("NOX")),false);
   Teuchos::ParameterList& printParams = noxParams->sublist("Printing");
 
-  string jacobianSource = piroParams->get("Jacobian Operator", "Have Jacobian");
+  std::string jacobianSource = piroParams->get("Jacobian Operator", "Have Jacobian");
   bool leanMatrixFree = piroParams->get("Lean Matrix Free",false);
 
   Teuchos::ParameterList& noxstratlsParams = noxParams->
@@ -300,10 +297,10 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 
   // Print status
   if (status == NOX::StatusTest::Converged) 
-    //utils.out() << "Step Converged" << endl;
+    //utils.out() << "Step Converged" << std::endl;
     ;
   else {
-    utils.out() << "Nonlinear solver failed to converge!" << endl;
+    utils.out() << "Nonlinear solver failed to converge!" << std::endl;
     outArgs.setFailed();
   }
 
@@ -314,17 +311,17 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 
   // Print solution
   if (utils.isPrintType(NOX::Utils::Details)) {
-    utils.out() << endl << "Final Solution" << endl
-		<< "****************" << endl;
+    utils.out() << std::endl << "Final Solution" << std::endl
+		<< "****************" << std::endl;
     finalSolution->Print(utils.pout());
   }
 
   // Output the parameter list
   if (utils.isPrintType(NOX::Utils::Parameters)) {
-    utils.out() << endl << "Final Parameters" << endl
-		<< "****************" << endl;
+    utils.out() << std::endl << "Final Parameters" << std::endl
+		<< "****************" << std::endl;
     piroParams->print(utils.out());
-    utils.out() << endl;
+    utils.out() << std::endl;
   }
 
   // Print stats
@@ -346,13 +343,13 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
     utils.out() << "Convergence Stats: for step  #" << stepNum << " : Newton, Krylov, Kr/Ne; LastKrylov, LastTol: " 
 	 << NewtonIters << "  " << KrylovIters << "  " 
 	 << (double) KrylovIters / (double) NewtonIters << "  " 
-         << lastSolveKrylovIters << " " <<  linsys->getAchievedTol() << endl;
+         << lastSolveKrylovIters << " " <<  linsys->getAchievedTol() << std::endl;
 
     if (stepNum > 1)
      utils.out() << "Convergence Stats: running total: Newton, Krylov, Kr/Ne, Kr/Step: " 
            << totalNewtonIters << "  " << totalKrylovIters << "  " 
            << (double) totalKrylovIters / (double) totalNewtonIters 
-           << "  " << (double) totalKrylovIters / (double) stepNum << endl;
+           << "  " << (double) totalKrylovIters / (double) stepNum << std::endl;
     
   }
     

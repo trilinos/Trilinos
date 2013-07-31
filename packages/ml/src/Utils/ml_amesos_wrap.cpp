@@ -52,7 +52,7 @@ static void print_out(const Epetra_Comm& Comm, const int level, const char* what
 #ifdef TFLOP
     printf("Amesos (level %d) : Building %s\n", level, what);
 #else
-    cout << "Amesos (level " << level << ") : Building " << what << "\n";
+    std::cout << "Amesos (level " << level << ") : Building " << what << "\n";
 #endif
 }
 
@@ -111,14 +111,14 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
 
     // sanity check, coarse matrix should not be empty
     if( NumGlobalRows == 0 && Amesos_Matrix->Comm().MyPID() == 0 ) {
-      cerr << endl;
-      cerr << "ERROR : Coarse matrix has no rows!" << endl;
-      cerr << endl;
+      std::cerr << std::endl;
+      std::cerr << "ERROR : Coarse matrix has no rows!" << std::endl;
+      std::cerr << std::endl;
     }
     if( NumGlobalNonzeros == 0 && Amesos_Matrix->Comm().MyPID() == 0 ) {
-      cerr << endl;
-      cerr << "ERROR : Coarse matrix has no nonzero elements!" << endl;
-      cerr << endl;
+      std::cerr << std::endl;
+      std::cerr << "ERROR : Coarse matrix has no nonzero elements!" << std::endl;
+      std::cerr << std::endl;
     }
 
 #   ifdef TFLOP
@@ -129,16 +129,16 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
     }
 #   else
     if( Amesos_Matrix->Comm().MyPID() == 0 && ML_Get_PrintLevel() > 2 ) {
-      cout << "Amesos (level " << curr_level
+      std::cout << "Amesos (level " << curr_level
 	 << ") : NumGlobalRows = "
-	 << NumGlobalRows << endl;
-      cout << "Amesos (level " << curr_level
+	 << NumGlobalRows << std::endl;
+      std::cout << "Amesos (level " << curr_level
 	 << ") : NumGlobalNonzeros = "
-	 << NumGlobalNonzeros << endl;
-      cout << "Amesos (level " << curr_level
+	 << NumGlobalNonzeros << std::endl;
+      std::cout << "Amesos (level " << curr_level
 	 << ") : Fill-in = "
 	 << 100.0*NumGlobalNonzeros/(1.0*NumGlobalRows*NumGlobalRows)
-	 << " %" << endl;
+	 << " %" << std::endl;
     }
 
 #   endif
@@ -215,10 +215,10 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
       {
         if (Amesos_Matrix->Comm().MyPID() == 0 && ML_Get_PrintLevel() > 2)
         {
-          cerr << "Amesos (level " << curr_level
-               << ") : This coarse solver is not available." << endl;
-          cerr << "Amesos (level " << curr_level
-               << ") : Now re-building with KLU" << endl;
+          std::cerr << "Amesos (level " << curr_level
+               << ") : This coarse solver is not available." << std::endl;
+          std::cerr << "Amesos (level " << curr_level
+               << ") : Now re-building with KLU" << std::endl;
         }
         A_Base = A_Factory.Create("Amesos_Klu", *Amesos_LinearProblem);
       }
@@ -226,17 +226,17 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
       {
         if (Amesos_Matrix->Comm().MyPID() == 0) 
         {
-          cerr << "Amesos (level " << curr_level
-               << ") : This coarse solver is not available." << endl;
-          cerr << "Amesos (level " << curr_level
-               << ") : Now re-building with LAPACK" << endl;
+          std::cerr << "Amesos (level " << curr_level
+               << ") : This coarse solver is not available." << std::endl;
+          std::cerr << "Amesos (level " << curr_level
+               << ") : Now re-building with LAPACK" << std::endl;
         }
         A_Base = A_Factory.Create("Amesos_Lapack", *Amesos_LinearProblem);
         if (A_Base == 0) 
         {
           if (Amesos_Matrix->Comm().MyPID() == 0) 
           {
-            cerr << "*ML*ERR* no Amesos solver is available!" << endl;
+            std::cerr << "*ML*ERR* no Amesos solver is available!" << std::endl;
           }
           exit( EXIT_FAILURE );
         }
@@ -275,8 +275,8 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
 #   else
     if( Amesos_Matrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 ) {
       Level__ = curr_level;
-      cout << "Amesos (level " << curr_level << ") : Time for factorization  = "
-	 << Time2 << " (s)" << endl;
+      std::cout << "Amesos (level " << curr_level << ") : Time for factorization  = "
+	 << Time2 << " (s)" << std::endl;
     }
 #   endif
     
@@ -355,24 +355,24 @@ void ML_Amesos_Destroy(void *data)
   }
 #else
   if( false && Level__ != -1 ) { // MS // I don't like this output any more 
-    cout << endl;
-    cout << "Amesos (level " << Level__
+    std::cout << std::endl;
+    std::cout << "Amesos (level " << Level__
 	 << ") : Time for solve = "
-	 << TimeForSolve__ << " (s)" << endl;
+	 << TimeForSolve__ << " (s)" << std::endl;
     if( NumSolves__ ) 
-      cout << "Amesos (level " << Level__
+      std::cout << "Amesos (level " << Level__
 	   << ") : avg time for solve = "
 	   << TimeForSolve__/NumSolves__ << " (s) ( # solves = "
-	   << NumSolves__ << ")" << endl;
+	   << NumSolves__ << ")" << std::endl;
     else
-      cout << "Amesos (level " << Level__
-	   << ") : no solve" << endl;
+      std::cout << "Amesos (level " << Level__
+	   << ") : no solve" << std::endl;
 
 #ifdef ML_AMESOS_DEBUG
-    cout << "Amesos (level " << Level__
-	 << ") : max (over solves) ||Ax - b|| = " << setiosflags(ios::scientific) << MaxError__ << endl;
+    std::cout << "Amesos (level " << Level__
+	 << ") : max (over solves) ||Ax - b|| = " << setiosflags(ios::scientific) << MaxError__ << std::endl;
 #endif
-    cout << endl;
+    std::cout << std::endl;
 
   }
 #endif

@@ -63,7 +63,6 @@ int main(int argc, char *argv[]) {
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
   typedef double Scalar;
-  typedef Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
   typedef int Ordinal;
   using Tpetra::global_size_t;
 

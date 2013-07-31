@@ -84,16 +84,16 @@ int main(int argc, char *argv[])
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
   if(verbose && Comm.MyPID()==0)
-    cout << Epetra_Version() << endl << endl;
+    std::cout << Epetra_Version() << std::endl << std::endl;
 
   int rank = Comm.MyPID();
   //  char tmp;
-  //  if (rank==0) cout << "Press any key to continue..."<< endl;
+  //  if (rank==0) std::cout << "Press any key to continue..."<< std::endl;
   //  if (rank==0) cin >> tmp;
   //  Comm.Barrier();
 
   Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
-  if (verbose) cout << Comm <<endl;
+  if (verbose) std::cout << Comm << std::endl;
 
   //  bool verbose1 = verbose;
 
@@ -157,8 +157,8 @@ int main(int argc, char *argv[])
       assert (ierr>-1);
       delete Matrix;
       if (ierr!=0) {
-	if (verbose) cout << "Factorization failed due to bad conditioning.  This is normal if SCOND is small." 
-			  << endl;
+	if (verbose) std::cout << "Factorization failed due to bad conditioning.  This is normal if SCOND is small." 
+			  << std::endl;
 	break;
       } 
     }
@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
   for (j=0; j<DN; j++)
     for (i=0; i<DM; i++) D[j][i] = (double) (1+i+j*DM) ;
 
-  //cout << D << endl;
+  //std::cout << D << std::endl;
 
   double NormInfD_ref = (double)(DM*(DN*(DN+1))/2);
   double NormOneD_ref = NormInfD_ref;
@@ -193,24 +193,24 @@ int main(int argc, char *argv[])
   double NormOneD = D.NormOne(); 
 
   if (verbose) {
-    cout << " *** Before scaling *** " << endl
-	 << " Computed one-norm of test matrix = " << NormOneD << endl
-	 << " Expected one-norm                = " << NormOneD_ref << endl
-	 << " Computed inf-norm of test matrix = " << NormInfD << endl
-	 << " Expected inf-norm                = " << NormInfD_ref << endl;
+    std::cout << " *** Before scaling *** " << std::endl
+	 << " Computed one-norm of test matrix = " << NormOneD << std::endl
+	 << " Expected one-norm                = " << NormOneD_ref << std::endl
+	 << " Computed inf-norm of test matrix = " << NormInfD << std::endl
+	 << " Expected inf-norm                = " << NormInfD_ref << std::endl;
   }
   D.Scale(ScalarA); // Scale entire D matrix by this value
 
-  //cout << D << endl;
+  //std::cout << D << std::endl;
 
   NormInfD = D.NormInf();
   NormOneD = D.NormOne();
   if (verbose) {
-    cout << " *** After scaling *** " << endl
-	 << " Computed one-norm of test matrix = " << NormOneD << endl
-	 << " Expected one-norm                = " << NormOneD_ref*ScalarA << endl
-	 << " Computed inf-norm of test matrix = " << NormInfD << endl
-	 << " Expected inf-norm                = " << NormInfD_ref*ScalarA << endl;
+    std::cout << " *** After scaling *** " << std::endl
+	 << " Computed one-norm of test matrix = " << NormOneD << std::endl
+	 << " Expected one-norm                = " << NormOneD_ref*ScalarA << std::endl
+	 << " Computed inf-norm of test matrix = " << NormInfD << std::endl
+	 << " Expected inf-norm                = " << NormInfD_ref*ScalarA << std::endl;
   }
 
   
@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
   LDB = N;
   LDX = N;
 
-  if (verbose) cout << "\n\nComputing factor of an " << N << " x " << N << " SPD matrix...Please wait.\n\n" << endl;
+  if (verbose) std::cout << "\n\nComputing factor of an " << N << " x " << N << " SPD matrix...Please wait.\n\n" << std::endl;
 
   // Define A and X
 
@@ -257,13 +257,13 @@ int main(int argc, char *argv[])
   Epetra_Time Timer(Comm);
   double tstart = Timer.ElapsedTime();
   ierr = BigSolver.Factor();
-  if (ierr!=0 && verbose) cout << "Error in factorization = "<<ierr<< endl;
+  if (ierr!=0 && verbose) std::cout << "Error in factorization = "<<ierr<< std::endl;
   assert(ierr==0);
   double time = Timer.ElapsedTime() - tstart;
 
   double FLOPS = counter.Flops();
   double MFLOPS = FLOPS/time/1000000.0; 
-  if (verbose) cout << "MFLOPS for Factorization = " << MFLOPS << endl; 
+  if (verbose) std::cout << "MFLOPS for Factorization = " << MFLOPS << std::endl; 
 
   // Define Left hand side and right hand side 
   Epetra_SerialDenseMatrix LHS(View, X, LDX, N, NRHS);
@@ -282,31 +282,31 @@ int main(int argc, char *argv[])
 
   FLOPS = RHS_counter.Flops();
   MFLOPS = FLOPS/time/1000000.0;
-  if (verbose) cout << "MFLOPS to build RHS (NRHS = " << NRHS <<") = " << MFLOPS << endl;
+  if (verbose) std::cout << "MFLOPS to build RHS (NRHS = " << NRHS <<") = " << MFLOPS << std::endl;
 
   // Set LHS and RHS and solve
   BigSolver.SetVectors(LHS, RHS);
 
   tstart = Timer.ElapsedTime();
   ierr = BigSolver.Solve();
-  if (ierr==1 && verbose) cout << "LAPACK guidelines suggest this matrix might benefit from equilibration." << endl;
-  else if (ierr!=0 && verbose) cout << "Error in solve = "<<ierr<< endl;
+  if (ierr==1 && verbose) std::cout << "LAPACK guidelines suggest this matrix might benefit from equilibration." << std::endl;
+  else if (ierr!=0 && verbose) std::cout << "Error in solve = "<<ierr<< std::endl;
   assert(ierr>=0);
   time = Timer.ElapsedTime() - tstart;
 
   FLOPS = BigSolver.Flops();
   MFLOPS = FLOPS/time/1000000.0;
-  if (verbose) cout << "MFLOPS for Solve (NRHS = " << NRHS <<") = " << MFLOPS << endl;
+  if (verbose) std::cout << "MFLOPS for Solve (NRHS = " << NRHS <<") = " << MFLOPS << std::endl;
 
   double * resid = new double[NRHS];
   bool OK = Residual(N, NRHS, A, LDA, BigSolver.X(), BigSolver.LDX(), 
 		     OrigRHS.A(), OrigRHS.LDA(), resid);
 
   if (verbose) {
-    if (!OK) cout << "************* Residual do not meet tolerance *************" << endl;
+    if (!OK) std::cout << "************* Residual do not meet tolerance *************" << std::endl;
     for (i=0; i<NRHS; i++)
-      cout << "Residual[" << i <<"] = "<< resid[i] << endl;
-    cout  << endl;
+      std::cout << "Residual[" << i <<"] = "<< resid[i] << std::endl;
+    std::cout  << std::endl;
   }
 
   // Solve again using the Epetra_SerialDenseVector class for LHS and RHS
@@ -328,7 +328,7 @@ int main(int argc, char *argv[])
 
   FLOPS = RHS_counter.Flops();
   MFLOPS = FLOPS/time/1000000.0;
-  if (verbose) cout << "MFLOPS to build single RHS = " << MFLOPS << endl;
+  if (verbose) std::cout << "MFLOPS to build single RHS = " << MFLOPS << std::endl;
 
   // Set LHS and RHS and solve
   BigSolver.SetVectors(X2, B2);
@@ -336,20 +336,20 @@ int main(int argc, char *argv[])
   tstart = Timer.ElapsedTime();
   ierr = BigSolver.Solve();
   time = Timer.ElapsedTime() - tstart;
-  if (ierr==1 && verbose) cout << "LAPACK guidelines suggest this matrix might benefit from equilibration." << endl;
-  else if (ierr!=0 && verbose) cout << "Error in solve = "<<ierr<< endl;
+  if (ierr==1 && verbose) std::cout << "LAPACK guidelines suggest this matrix might benefit from equilibration." << std::endl;
+  else if (ierr!=0 && verbose) std::cout << "Error in solve = "<<ierr<< std::endl;
   assert(ierr>=0);
 
   FLOPS = counter.Flops();
   MFLOPS = FLOPS/time/1000000.0;
-  if (verbose) cout << "MFLOPS to solve single RHS = " << MFLOPS << endl;
+  if (verbose) std::cout << "MFLOPS to solve single RHS = " << MFLOPS << std::endl;
 
   OK = Residual(N, 1, A, LDA, BigSolver.X(), BigSolver.LDX(), OrigB2.A(), 
 		OrigB2.LDA(), resid);
 
   if (verbose) {
-    if (!OK) cout << "************* Residual do not meet tolerance *************" << endl;
-      cout << "Residual = "<< resid[0] << endl;
+    if (!OK) std::cout << "************* Residual do not meet tolerance *************" << std::endl;
+      std::cout << "Residual = "<< resid[0] << std::endl;
   }
   delete [] resid;
   delete [] A;
@@ -380,9 +380,9 @@ int main(int argc, char *argv[])
     }
 
   if (verbose)
-    cout << "Default constructor and index operator check OK.  Values of Hilbert matrix = " 
-	 << endl << C << endl
-	 << "Values should be 1/(i+j+1), except value (1,2) should be 1000" << endl; 
+    std::cout << "Default constructor and index operator check OK.  Values of Hilbert matrix = " 
+	 << std::endl << C << std::endl
+	 << "Values should be 1/(i+j+1), except value (1,2) should be 1000" << std::endl; 
   
   delete [] C1;
 
@@ -407,27 +407,27 @@ int check(Epetra_SerialSpdDenseSolver &solver, double * A1, int LDA1,
   // Test query functions
 
   int M= solver.M();
-  if (verbose) cout << "\n\nNumber of Rows = " << M << endl<< endl;
+  if (verbose) std::cout << "\n\nNumber of Rows = " << M << std::endl<< std::endl;
   assert(M==N1);
 
   int N= solver.N();
-  if (verbose) cout << "\n\nNumber of Equations = " << N << endl<< endl;
+  if (verbose) std::cout << "\n\nNumber of Equations = " << N << std::endl<< std::endl;
   assert(N==N1);
 
   int LDA = solver.LDA();
-  if (verbose) cout << "\n\nLDA = " << LDA << endl<< endl;
+  if (verbose) std::cout << "\n\nLDA = " << LDA << std::endl<< std::endl;
   assert(LDA==LDA1);
 
   int LDB = solver.LDB();
-  if (verbose) cout << "\n\nLDB = " << LDB << endl<< endl;
+  if (verbose) std::cout << "\n\nLDB = " << LDB << std::endl<< std::endl;
   assert(LDB==LDB1);
 
   int LDX = solver.LDX();
-  if (verbose) cout << "\n\nLDX = " << LDX << endl<< endl;
+  if (verbose) std::cout << "\n\nLDX = " << LDX << std::endl<< std::endl;
   assert(LDX==LDX1);
 
   int NRHS = solver.NRHS();
-  if (verbose) cout << "\n\nNRHS = " << NRHS << endl<< endl;
+  if (verbose) std::cout << "\n\nNRHS = " << NRHS << std::endl<< std::endl;
   assert(NRHS==NRHS1);
 
   assert(solver.ANORM()==-1.0);
@@ -449,11 +449,11 @@ int check(Epetra_SerialSpdDenseSolver &solver, double * A1, int LDA1,
 
   assert(!solver.SolutionRefined());
       
-  //cout << "Matrix before factorization " << endl << *solver.SymMatrix() << endl << endl;
+  //std::cout << "Matrix before factorization " << std::endl << *solver.SymMatrix() << std::endl << std::endl;
   
   int ierr = solver.Factor();
-  //cout << "Matrix after factorization " << endl << *solver.SymMatrix() << endl << endl;
-  //cout << "Factor after factorization " << endl << *solver.SymFactoredMatrix() << endl << endl;
+  //std::cout << "Matrix after factorization " << std::endl << *solver.SymMatrix() << std::endl << std::endl;
+  //std::cout << "Factor after factorization " << std::endl << *solver.SymFactoredMatrix() << std::endl << std::endl;
   assert(ierr>-1);
   if (ierr!=0) return(ierr); // Factorization failed due to poor conditioning.
   double rcond;
@@ -463,13 +463,13 @@ int check(Epetra_SerialSpdDenseSolver &solver, double * A1, int LDA1,
     
     double rcond1 = 1.0/std::exp(3.5*((double)N));
     if (N==1) rcond1 = 1.0;
-    cout << "\n\nSCOND = "<< rcond << " should be approx = " 
-		    << rcond1 << endl << endl;
+    std::cout << "\n\nSCOND = "<< rcond << " should be approx = " 
+		    << rcond1 << std::endl << std::endl;
   }
   
   ierr = solver.Solve();
   assert(ierr>-1);
-  if (ierr!=0 && verbose) cout << "LAPACK rules suggest system should be equilibrated." << endl;
+  if (ierr!=0 && verbose) std::cout << "LAPACK rules suggest system should be equilibrated." << std::endl;
 
   assert(solver.Factored());
   assert(solver.SymMatrix()->Upper()==Upper);
@@ -478,19 +478,19 @@ int check(Epetra_SerialSpdDenseSolver &solver, double * A1, int LDA1,
 
   if (solver.SolutionErrorsEstimated()) {
     if (verbose) {
-      cout << "\n\nFERR[0] = "<< solver.FERR()[0] << endl;
-      cout << "\n\nBERR[0] = "<< solver.BERR()[0] << endl<< endl;
+      std::cout << "\n\nFERR[0] = "<< solver.FERR()[0] << std::endl;
+      std::cout << "\n\nBERR[0] = "<< solver.BERR()[0] << std::endl<< std::endl;
     }
   }
   
   double * resid = new double[NRHS];
   OK = Residual(N, NRHS, A1, LDA1, solver.X(), solver.LDX(), B1, LDB1, resid);
   if (verbose) {
-    if (!OK) cout << "************* Residual do not meet tolerance *************" << endl;
-    cout << "\n\nResiduals using factorization to solve" << endl;
+    if (!OK) std::cout << "************* Residual do not meet tolerance *************" << std::endl;
+    std::cout << "\n\nResiduals using factorization to solve" << std::endl;
     for (i=0; i<NRHS; i++)
-      cout << "Residual[" << i <<"] = "<< resid[i] << endl;
-    cout  << endl;
+      std::cout << "Residual[" << i <<"] = "<< resid[i] << std::endl;
+    std::cout  << std::endl;
   }
 
 
@@ -512,11 +512,11 @@ int check(Epetra_SerialSpdDenseSolver &solver, double * A1, int LDA1,
   OK = Residual(N, NRHS, A1, LDA1, solver.X(), solver.LDX(), B1, LDB1, resid);
 
   if (verbose) {
-    if (!OK) cout << "************* Residual do not meet tolerance *************" << endl;
-    cout << "Residuals using inverse to solve" << endl;
+    if (!OK) std::cout << "************* Residual do not meet tolerance *************" << std::endl;
+    std::cout << "Residuals using inverse to solve" << std::endl;
     for (i=0; i<NRHS; i++)
-      cout << "Residual[" << i <<"] = "<< resid[i] << endl;
-    cout  << endl;
+      std::cout << "Residual[" << i <<"] = "<< resid[i] << std::endl;
+    std::cout  << std::endl;
   }
   delete [] resid;
   

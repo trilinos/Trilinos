@@ -58,18 +58,18 @@
 
 namespace panzer_stk {
 
-class STKConnManager;
+template <typename GO> class STKConnManager;
 
 /** Implements an interface used by the Teko request handler mechanism.
   * This particular class is usesd most frequently with an ML preconditioner that
   * requres the nodal coordinates for repartitioning.
   */
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node=Kokkos::DefaultNode::DefaultNodeType>
+template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node=KokkosClassic::DefaultNode::DefaultNodeType>
 class ParameterListCallback : public Teko::RequestCallback<Teuchos::RCP<Teuchos::ParameterList> > {
 public:
   ParameterListCallback(const std::string & coordFieldName,
                         const std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fp,
-                        const Teuchos::RCP<const panzer_stk::STKConnManager> & connManager, 
+                        const Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > & connManager, 
                         const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi);
 
    Teuchos::RCP<Teuchos::ParameterList> request(const Teko::RequestMesg & rm);
@@ -78,6 +78,20 @@ public:
 
    void preRequest(const Teko::RequestMesg & rm);
 
+   const std::vector<double> & getCoordsVector(unsigned dim) const 
+   { switch(dim) {
+     case 0:
+       return getXCoordsVector(); 
+     case 1:
+       return getYCoordsVector(); 
+     case 2:
+       return getZCoordsVector(); 
+     default:
+       TEUCHOS_ASSERT(false);
+     }
+     TEUCHOS_ASSERT(false);
+     return xcoords_; // should never get here!
+   }
    const std::vector<double> & getXCoordsVector() const { return xcoords_; }
    const std::vector<double> & getYCoordsVector() const { return ycoords_; }
    const std::vector<double> & getZCoordsVector() const { return zcoords_; }
@@ -95,7 +109,7 @@ private:
 
    std::string coordFieldName_;
    std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > fieldPatterns_;
-   Teuchos::RCP<const panzer_stk::STKConnManager> connManager_;
+   Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > connManager_;
    Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > ugi_;
    bool coordinatesBuilt_;
  

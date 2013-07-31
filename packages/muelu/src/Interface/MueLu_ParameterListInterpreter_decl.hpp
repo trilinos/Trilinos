@@ -65,7 +65,7 @@ namespace MueLu {
 
     Either takes a pre-formed ParameterList or reads an XML file and creates an internal Parameterlist
 */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class ParameterListInterpreter : public HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> {
 #undef MUELU_PARAMETERLISTINTERPRETER_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -85,7 +85,7 @@ namespace MueLu {
 
         XML options are converted to ParameterList entries by Teuchos.
     */
-    ParameterListInterpreter(const std::string & xmlFileName);
+    ParameterListInterpreter(const std::string & xmlFileName, const Teuchos::Comm<int> &comm);
 
     //! Destructor.
     virtual ~ParameterListInterpreter() { }

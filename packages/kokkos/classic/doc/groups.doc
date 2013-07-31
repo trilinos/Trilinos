@@ -1,4 +1,4 @@
-/*! \namespace Kokkos
+/*! \namespace KokkosClassic
  *  \brief Namespace %Kokkos contains the nodes, helpers, linear algebra objects and kernels that constitute the %Kokkos package.
  */
 
@@ -114,7 +114,7 @@
      // * on a CPU node, this will result in viewA == buffA
      // * on a GPU node, this is not the case; however, the WriteOnly flag will 
      //   not initiate a copy to the host; the initial contents of viewA are undefined.
-     ArrayRCP<int> viewA = node->viewBufferNonConst<int>( Kokkos::WriteOnly, 10, buffA );
+     ArrayRCP<int> viewA = node->viewBufferNonConst<int>( KokkosClassic::WriteOnly, 10, buffA );
      for (int i=0; i < 10; ++i) {
        viewA[i] = someFunction(i); // initialize the view on the host
      }

@@ -8,20 +8,33 @@
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
 #
-# This library is free software; you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as
-# published by the Free Software Foundation; either version 2.1 of the
-# License, or (at your option) any later version.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
 #
-# This library is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
 #
-# You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the Corporation nor the names of the
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 # Questions? Contact Glen Hansen (gahanse@sandia.gov)
 #
 # ************************************************************************
@@ -47,7 +60,7 @@ bool MOERTEL::Interface::BuildNormals()
   if (!IsComplete())
   {
     if (gcomm_.MyPID()==0)
-      cout << "***ERR*** MOERTEL::Interface::Project:\n"
+      std::cout << "***ERR*** MOERTEL::Interface::Project:\n"
            << "***ERR*** Complete() not called on interface " << Id_ << "\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -64,7 +77,7 @@ bool MOERTEL::Interface::BuildNormals()
     for (curr=rseg_[side].begin(); curr!=rseg_[side].end(); ++curr){
       if (curr->second->Nfunctions() < 1)
       {
-        cout << "***ERR*** MOERTEL::Interface::Project:\n"
+        std::cout << "***ERR*** MOERTEL::Interface::Project:\n"
              << "***ERR*** interface " << Id_ << ", mortar side\n"
              << "***ERR*** segment " << curr->second->Id() << " needs at least 1 function set\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -81,11 +94,11 @@ bool MOERTEL::Interface::BuildNormals()
     for (ncurr=rnode_[side].begin(); ncurr!=rnode_[side].end(); ++ncurr) {
 
 #if 0
-      cout << "side " << side << ": " << *(ncurr->second);
+      std::cout << "side " << side << ": " << *(ncurr->second);
 #endif
       ncurr->second->BuildAveragedNormal();
 #if 0
-      cout << "side " << side << ": " << *(ncurr->second);
+      std::cout << "side " << side << ": " << *(ncurr->second);
 #endif
 
     } // for(ncurr ...)
@@ -105,7 +118,7 @@ bool MOERTEL::Interface::Project()
   if (!IsComplete())
   {
     if (gcomm_.MyPID()==0)
-      cout << "***ERR*** MOERTEL::Interface::Project:\n"
+      std::cout << "***ERR*** MOERTEL::Interface::Project:\n"
            << "***ERR*** Complete() not called on interface " << Id_ << "\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -122,7 +135,7 @@ bool MOERTEL::Interface::Project()
     for (curr=rseg_[side].begin(); curr!=rseg_[side].end(); ++curr)
       if (curr->second->Nfunctions() < 1)
       {
-        cout << "***ERR*** MOERTEL::Interface::Project:\n"
+        std::cout << "***ERR*** MOERTEL::Interface::Project:\n"
              << "***ERR*** interface " << Id_ << ", mortar side\n"
              << "***ERR*** segment " << curr->second->Id() << " needs at least 1 function set\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -136,11 +149,11 @@ bool MOERTEL::Interface::Project()
     for (ncurr=rnode_[side].begin(); ncurr!=rnode_[side].end(); ++ncurr)
     {
 #if 0
-      cout << "side " << side << ": " << *(ncurr->second);
+      std::cout << "side " << side << ": " << *(ncurr->second);
 #endif
       ncurr->second->BuildAveragedNormal();
 #if 0
-      cout << "side " << side << ": " << *(ncurr->second);
+      std::cout << "side " << side << ": " << *(ncurr->second);
 #endif
     }
 
@@ -164,7 +177,7 @@ bool MOERTEL::Interface::Project()
   }
   else
   {
-    cout << "***ERR*** MOERTEL::Interface::Project:\n"
+    std::cout << "***ERR*** MOERTEL::Interface::Project:\n"
          << "***ERR*** interface " << Id() << "\n"
          << "***ERR*** unknown type of nodal projection\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -244,7 +257,7 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
         mindist = dist;
 	closenode = mnode;
       }
-      cout << "snode " << snode->Id() << " mnode " << mnode->Id() << " mindist " << mindist  << " dist " << dist << endl;
+      std::cout << "snode " << snode->Id() << " mnode " << mnode->Id() << " mindist " << mindist  << " dist " << dist << std::endl;
     }
     if (closenode == Teuchos::null)
     {
@@ -256,8 +269,8 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
     }
 
 #if 0
-    cout << "snode     " << *snode;
-    cout << "closenode " << *closenode;
+    std::cout << "snode     " << *snode;
+    std::cout << "closenode " << *closenode;
 #endif    
 
     // get segments attached to closest node cnode
@@ -348,7 +361,7 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
     else
     {
       if (OutLevel()>6)
-        cout << "MOERTEL: ***WRN***: Projection s->m: Node " << snode->Id() << " does not have projection\n";
+        std::cout << "MOERTEL: ***WRN***: Projection s->m: Node " << snode->Id() << " does not have projection\n";
       snode->SetProjectedNode(NULL);
     }
   } // for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
@@ -472,8 +485,8 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
     if (foundit)
     {
 #if 1
-      cout << "Node without projection:\n" << *snode;        
-      cout << "...get's lagrange multipliers\n\n";
+      std::cout << "Node without projection:\n" << *snode;        
+      std::cout << "...get's lagrange multipliers\n\n";
 #endif
       MOERTEL::ProjectedNode* pnode = new MOERTEL::ProjectedNode(*snode,NULL,NULL);
       snode->SetProjectedNode(pnode);
@@ -543,8 +556,8 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
     }
 
 #if 0
-    cout << "snode     " << *mnode;
-    cout << "closenode " << *closenode;
+    std::cout << "snode     " << *mnode;
+    std::cout << "closenode " << *closenode;
 #endif    
     
     // get segments attached to closest node closenode
@@ -647,7 +660,7 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
     else // this mnode does not have a valid projection
     {
       if (OutLevel()>6)
-        cout << "MOERTEL: ***WRN***: Projection m->s: Node " << mnode->Id() << " does not have projection\n";
+        std::cout << "MOERTEL: ***WRN***: Projection m->s: Node " << mnode->Id() << " does not have projection\n";
       mnode->SetProjectedNode(NULL);
     }
   } // for (scurr=rnode_[mside].begin(); scurr!=rnode_[mside].end(); ++scurr)
@@ -889,7 +902,7 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
     else // this mnode does not have a valid projection
     {
       if (OutLevel()>6)
-      cout << "MOERTEL: ***WRN***: Node " << mnode->Id() << " does not have projection\n\n";
+      std::cout << "MOERTEL: ***WRN***: Node " << mnode->Id() << " does not have projection\n\n";
       //mnode->SetProjectedNode(NULL);
     }
   } // for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
@@ -994,7 +1007,7 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
 	Teuchos::RCP<MOERTEL::Node> snode = scurr->second;
 
 #if 0
-    cout << "now projecting\n " << *snode;
+    std::cout << "now projecting\n " << *snode;
 #endif    
     
     if (NodePID(snode->Id()) != lComm()->MyPID())
@@ -1020,7 +1033,7 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
         mindist = dist;
 	closenode = mnode;
       }
-      //cout << "snode " << snode->Id() << " mnode " << mnode->Id() << " mindist " << mindist  << " dist " << dist << endl;
+      //std::cout << "snode " << snode->Id() << " mnode " << mnode->Id() << " mindist " << mindist  << " dist " << dist << std::endl;
     }
     if (closenode == Teuchos::null)
     {
@@ -1075,9 +1088,9 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
           snode->SetProjectedNode(pnode);
 		  snode->SetGap(gap);
 #if 0
-          cout << " snode id: " << pnode->Id()
+          std::cout << " snode id: " << pnode->Id()
                << " projects on mseg: " << msegs[i]->Id()
-               << " orth to sseg " << ssegs[j]->Id() << endl;
+               << " orth to sseg " << ssegs[j]->Id() << std::endl;
 #endif          
         }
       } // for (int j=0; j<nsseg; ++j)
@@ -1210,8 +1223,8 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
     if (foundit)
     {
 #if 0
-      cout << "Node without projection:\n" << *snode;        
-      cout << "...get's lagrange multipliers\n\n";
+      std::cout << "Node without projection:\n" << *snode;        
+      std::cout << "...get's lagrange multipliers\n\n";
 #endif
       MOERTEL::ProjectedNode* pnode = new MOERTEL::ProjectedNode(*snode,NULL,NULL);
       snode->SetProjectedNode(pnode);

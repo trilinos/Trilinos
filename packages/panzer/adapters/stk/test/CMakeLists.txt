@@ -1,4 +1,3 @@
-ADD_SUBDIRECTORY(simple_test)
 ADD_SUBDIRECTORY(stk_interface_test)
 ADD_SUBDIRECTORY(stk_connmngr)
 ADD_SUBDIRECTORY(panzer_workset_builder)

@@ -55,7 +55,6 @@
 
 #include <Xpetra_ConfigDefs.hpp>   // global_size_t
 #include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_MapFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -75,7 +74,7 @@ namespace MueLu {
   that is used for unamalgamation
 */
 
-  template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class AmalgamationInfo
     : public BaseClass {
 #undef MUELU_AMALGAMATIONINFO_SHORT

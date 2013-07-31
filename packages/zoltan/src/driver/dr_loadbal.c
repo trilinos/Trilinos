@@ -187,7 +187,12 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     else if (strcasecmp(prob->params[i].Name, "NUM_LID_ENTRIES") == 0)
       Num_LID = atoi(prob->params[i].Val);
     else if (strcasecmp(prob->params[i].Name, "RETURN_LISTS") == 0)
-      Export_Lists_Special = (strcasestr(prob->params[i].Val,"part") != NULL);
+      Export_Lists_Special = ((strstr(prob->params[i].Val,"part") != NULL) ||
+                              (strstr(prob->params[i].Val,"Part") != NULL) ||
+                              (strstr(prob->params[i].Val,"PArt") != NULL) ||
+                              (strstr(prob->params[i].Val,"PARt") != NULL) ||
+                              (strstr(prob->params[i].Val,"PART") != NULL));
+                              /* strcasestr not supported in PGI compiler */
   }
 
   /* Set the load-balance method */
@@ -668,6 +673,35 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 			  export_procs, export_to_part);
     }
 #endif
+
+#undef KDDKDD_OUTPUT_PARTITION_AND_SKIP_MIGREATION_AND_END
+#ifdef KDDKDD_OUTPUT_PARTITION_AND_SKIP_MIGREATION_AND_END
+{
+/* This code dumps the part assignments to files (one per rank)
+ * and then exits before performing migration.
+ * This code assumes the initial distribution of the data to
+ * the ranks was INITIAL_LINEAR; if it isn't, one can't infer
+ * the GID associated with a part in the output.
+ */
+char filename[33];
+FILE *fp;
+if (!Export_Lists_Special) {
+  printf("ERROR:  To output partition without migration, need "
+         "RETURN_LISTS = PART\n");
+  exit(-1);
+}
+sprintf(filename, "%s.out.%04d", pio_info->pexo_fname, Proc);
+fp = fopen(filename, "w");
+for (i = 0; i < num_exported; i++)
+  fprintf(fp, "%d\n", export_to_part[i]);
+ /* fprintf(fp, "%d : %d\n", export_gids[(i+1)*Num_GID-1], export_to_part[i]); */
+fclose(fp);
+MPI_Barrier(MPI_COMM_WORLD);
+MPI_Finalize();
+exit(-1);
+}
+#endif
+
 
     /*
      * Call another routine to perform the migration

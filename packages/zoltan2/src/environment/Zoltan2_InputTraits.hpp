@@ -197,7 +197,7 @@ struct InputTraits {
   /*! \brief  The Kokkos node type.  This is only meaningful for users
    *             of Tpetra objects.
    */
-  typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
 
   /*! \brief  The name of the user's input object.
    */
@@ -255,7 +255,7 @@ struct InputTraits<Epetra_CrsMatrix>
   typedef int lno_t;
   typedef int gno_t;
   typedef int gid_t;
-  typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
   static inline string name() {return "Epetra_CrsMatrix";}
 };
 
@@ -320,7 +320,7 @@ struct InputTraits<Epetra_CrsGraph>
   typedef int   lno_t;
   typedef int   gno_t;
   typedef int   gid_t;
-  typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
   static inline string name() {return "Epetra_CrsGraph";}
 };
 
@@ -362,7 +362,7 @@ struct InputTraits<Epetra_Vector>
   typedef int   lno_t;
   typedef int   gno_t;
   typedef int   gid_t;
-  typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
   static inline string name() {return "Epetra_Vector";}
 };
 
@@ -401,7 +401,7 @@ struct InputTraits<Epetra_MultiVector>
   typedef int   lno_t;
   typedef int   gno_t;
   typedef int   gid_t;
-  typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
   static inline string name() {return "Epetra_MultiVector";}
 };
 

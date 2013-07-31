@@ -1,14 +1,15 @@
 # @HEADER
 # ************************************************************************
 #
-#            Trilinos: An Object-Oriented Solver Framework
-#                 Copyright (2001) Sandia Corporation
+#            TriBITS: Tribial Build, Integrate, and Test System
+#                    Copyright 2013 Sandia Corporation
 #
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+# the U.S. Government retains certain rights in this software.
 #
-# Copyright (2001) Sandia Corporation. Under the terms of Contract
-# DE-AC04-94AL85000, there is a non-exclusive license for use of this
-# work by or on behalf of the U.S. Government.  Export of this program
-# may require a license from the United States Government.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
 #
 # 1. Redistributions of source code must retain the above copyright
 # notice, this list of conditions and the following disclaimer.
@@ -32,23 +33,6 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# NOTICE:  The United States Government is granted for itself and others
-# acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
-# license in this data to reproduce, prepare derivative works, and
-# perform publicly and display publicly.  Beginning five (5) years from
-# July 25, 2001, the United States Government is granted for itself and
-# others acting on its behalf a paid-up, nonexclusive, irrevocable
-# worldwide license in this data to reproduce, prepare derivative works,
-# distribute copies to the public, perform publicly and display
-# publicly, and to permit others to do so.
-#
-# NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
-# OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
-# ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
-# RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
-# INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
-# THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
 #
 # ************************************************************************
 # @HEADER
@@ -98,6 +82,36 @@ FUNCTION(UNITTEST_BASIC_PACKAGE_LIST_READ)
   UNITTEST_COMPARE_CONST( ${PROJECT_NAME}_LAST_PACKAGE_IDX 2 )
   UNITTEST_COMPARE_CONST( ${PROJECT_NAME}_REVERSE_PACKAGES
     "Package2;Package1;Package0")
+  UNITTEST_COMPARE_CONST( Package0_CLASSIFICATION PS)
+  UNITTEST_COMPARE_CONST( Package1_CLASSIFICATION SS)
+  UNITTEST_COMPARE_CONST( Package2_CLASSIFICATION EX)
+
+ENDFUNCTION()
+
+
+FUNCTION(UNITTEST_ELEVATE_SS_TO_PS)
+
+  MESSAGE("\n***")
+  MESSAGE("*** Testing elevating SS packages to PS packages")
+  MESSAGE("***\n")
+
+  SET( ${PROJECT_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
+    Package0     packages/package0  PS
+    Package1     packages/package1  SS
+    Package2     packages/package2  EX
+    )
+
+  SET(PACKAGE_ABS_DIR "DummyBase")
+  SET(${PROJECT_NAME}_IGNORE_PACKAGE_EXISTS_CHECK TRUE)
+
+  # Make all SS packages PS packages!
+  SET(${PROJECT_NAME}_ELEVATE_SS_TO_PS TRUE)
+
+  TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS(${PROJECT_NAME} ".")
+
+  UNITTEST_COMPARE_CONST( Package0_CLASSIFICATION PS)
+  UNITTEST_COMPARE_CONST( Package1_CLASSIFICATION PS)
+  UNITTEST_COMPARE_CONST( Package2_CLASSIFICATION EX)
 
 ENDFUNCTION()
 
@@ -118,6 +132,7 @@ GLOBAL_SET(UNITTEST_OVERALL_NUMRUN 0)
 SET(PROJECT_NAME "DummyProject")
 
 UNITTEST_BASIC_PACKAGE_LIST_READ()
+UNITTEST_ELEVATE_SS_TO_PS()
 
 # Pass in the number of expected tests that must pass!
-UNITTEST_FINAL_RESULT(5)
+UNITTEST_FINAL_RESULT(11)

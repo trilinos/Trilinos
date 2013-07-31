@@ -43,7 +43,7 @@
 */
 
 #include "Piro_Epetra_NECoupledModelEvaluator.hpp"
-#include "Piro_Epetra_Factory.hpp"
+#include "Piro_Epetra_SolverFactory.hpp"
 #include "Piro_Epetra_StokhosSolver.hpp"
 
 #include "Epetra_LocalMap.h"
@@ -92,9 +92,10 @@ NECoupledModelEvaluator(
     }
   }
   else {
+    Piro::Epetra::SolverFactory solverFactory;
     for (int i=0; i<n_models; i++)
-      solvers[i] = Piro::Epetra::Factory::createSolver(piroParams[i], 
-						       models[i]);
+      solvers[i] = solverFactory.createSolver(
+          piroParams[i], models[i]);
   }
 
   // Get connectivity information
@@ -707,8 +708,6 @@ evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
   }
   
 
-  int proc = comm->MyPID();
-
   // Evaluate models
   if (n_models == 2) {
     {
@@ -1010,11 +1009,6 @@ do_dimension_projection(
     inArgs.get_sg_basis();
   Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad =
     inArgs.get_sg_quadrature();
-  const Teuchos::Array<double>& weights = quad->getQuadWeights();
-  const Teuchos::Array< Teuchos::Array<double> >& basis_vals = 
-    quad->getBasisAtQuadPoints();
-  int nqp = weights.size();
-  const Teuchos::Array<double>& norms = basis->norm_squared();
   Teuchos::RCP<const Stokhos::ReducedPCEBasis<int,double> > red_basis = 
     Teuchos::rcp_dynamic_cast<const Stokhos::ReducedPCEBasis<int,double> >(reduced_inargs.get_sg_basis());
 

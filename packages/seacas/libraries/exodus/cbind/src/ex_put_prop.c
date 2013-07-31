@@ -371,7 +371,7 @@ int ex_put_prop (int   exoid,
       sprintf(errmsg,
 	      "Warning: no properties allowed for NULL %s id %"PRId64" in file id %d",
 	      ex_name_of_object(obj_type), obj_id,exoid);
-      ex_err("ex_put_prop",errmsg,EX_MSG);
+      ex_err("ex_put_prop",errmsg,EX_NULLENTITY);
       return (EX_WARN);
     } else {
       sprintf(errmsg,

@@ -19,11 +19,13 @@ ASSERT_DEFINED(TeuchosCore_ENABLE_MPI)
 IF (NOT TeuchosCore_ENABLE_MPI)
 
   LIST(REMOVE_ITEM  HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/Teuchos_Details_MpiCommRequest.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Teuchos_DefaultMpiComm.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Teuchos_MpiReductionOpSetter.hpp
     )
 
   LIST(REMOVE_ITEM  SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/Teuchos_Details_MpiCommRequest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Teuchos_DefaultMpiComm.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Teuchos_MpiReductionOpSetter.cpp
     )

@@ -43,6 +43,7 @@
 #define KOKKOS_DEFAULT_KERNELS_HPP
 
 #include "Kokkos_ConfigDefs.hpp"
+#include "Kokkos_AltSparseOps.hpp"
 #include "Kokkos_DefaultSparseOps.hpp"
 #include "Kokkos_DefaultBlockSparseOps.hpp"
 #include "Kokkos_DefaultRelaxation.hpp"
@@ -53,7 +54,7 @@
 #  include "Kokkos_CuspOps.hpp"
 #endif
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   /// \brief Traits class providing default kernel types for CRS,
   ///   block CRS and relaxation kernels.
@@ -99,6 +100,19 @@ namespace Kokkos {
     typedef DefaultBlockSparseOps<Scalar,Ordinal,Node>  BlockSparseOps;
     typedef DefaultRelaxation    <Scalar,Ordinal,Node>  Relaxations;
   };
+
+  // Partial specialization for Node=SerialNode.  AltSparseOps doesn't
+  // use Kokkos' parallel programming programming model, and does not
+  // rely so heavily on inlining.  Thus, it's a reasonable choice when
+  // not using threads.
+  template <class Scalar, class Ordinal>
+  struct DefaultKernels<Scalar, Ordinal, SerialNode> {
+    typedef AltSparseOps<void, Ordinal, SerialNode, 
+			 details::AltSparseOpsDefaultAllocator<Ordinal, SerialNode> > SparseOps;
+    typedef DefaultBlockSparseOps<Scalar, Ordinal, SerialNode>  BlockSparseOps;
+    typedef DefaultRelaxation<Scalar, Ordinal, SerialNode>  Relaxations;
+  };
+
 
 #if defined(HAVE_KOKKOSCLASSIC_TBB)
   class TBBNode;
@@ -160,6 +174,9 @@ namespace Kokkos {
   };
 #endif
 #if defined(HAVE_KOKKOSCLASSIC_CUSPARSE)
+  // cuSPARSE only implements float and double kernels.  Attempts to
+  // refer to DefaultKernels<T,LO,NT> for T != void, float, or double
+  // will result in a compile-time error.
   template <>
   struct DefaultKernels<void,int,ThrustGPUNode> {
     typedef CUSPARSEOps<void,ThrustGPUNode> SparseOps;
@@ -174,6 +191,6 @@ namespace Kokkos {
   };
 #endif
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif // KOKKOS_DEFAULT_KERNELS_HPP

@@ -249,7 +249,8 @@ Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal s
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
   // register aggregation export factory in RAPFactory
-  //RCP<MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > aggExpFact = rcp(new MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps>("aggs_level%LEVELID_proc%PROCID.out", CoupledAggFact.get(), dropFact.get(), NULL));
+  //RCP<MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > aggExpFact = rcp(new MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps>());
+  //aggExpFact->SetParameter("Output filename","aggs_level%LEVELID_proc%PROCID.out");
   //Acfact->AddTransferFactory(aggExpFact);
 
   // build level smoothers

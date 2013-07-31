@@ -56,9 +56,8 @@ Piro::Epetra::AdaptiveSolutionManager::AdaptiveSolutionManager(
            const Teuchos::RCP<const Epetra_Map> &map_,
            const Teuchos::RCP<const Epetra_Map> &overlapMap_,
            const Teuchos::RCP<const Epetra_CrsGraph> &overlapJacGraph_) :
-
-              adaptiveMesh(false),
-              LOCA::Epetra::AdaptiveSolutionManager(map_, overlapMap_, overlapJacGraph_)
+  LOCA::Epetra::AdaptiveSolutionManager(map_, overlapMap_, overlapJacGraph_),
+  adaptiveMesh(false)
 {
 
   // Create problem PL

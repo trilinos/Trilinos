@@ -57,6 +57,10 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_IntegerRangeList.hpp>
+#include <Zoltan2_MachineRepresentation.hpp>
+#include <Zoltan2_TaskMapping.hpp>
+
+#include <unistd.h>
 
 #ifdef HAVE_ZOLTAN2_OVIS
 #include <ovis.h>
@@ -262,7 +266,9 @@ public:
 
   void setPartSizesForCritiera(int criteria, int len, partId_t *partIds, 
     scalar_t *partSizes, bool makeCopy=true) ;
-
+/*
+  void setMachine(MachineRepresentation<typename Adapter::base_adapter_t::scalar_t> *machine);
+*/
   /*! \brief Reset the list of parameters
    */
   void resetParameters(ParameterList *params)
@@ -287,6 +293,8 @@ private:
   void createPartitioningProblem(bool newData);
 
   RCP<PartitioningSolution<Adapter> > solution_;
+
+  RCP<MachineRepresentation <typename Adapter::base_adapter_t::scalar_t>  > machine_;
 
   RCP<Comm<int> > problemComm_;
   RCP<const Comm<int> > problemCommConst_;
@@ -349,7 +357,12 @@ template <typename Adapter>
   initializeProblem();
 }
 #endif
-
+/*
+template <typename Adapter>
+void PartitioningProblem<Adapter>::setMachine(MachineRepresentation<typename Adapter::base_adapter_t::scalar_t> *machine){
+  this->machine_ = RCP<MachineRepresentation<typename Adapter::base_adapter_t::scalar_t> > (machine, false);
+}
+*/
 template <typename Adapter>
   PartitioningProblem<Adapter>::PartitioningProblem(Adapter *A, 
     ParameterList *p):
@@ -386,6 +399,7 @@ template <typename Adapter>
   problemComm_ = this->comm_->duplicate();
   problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
 
+  machine_ = RCP <Zoltan2::MachineRepresentation<typename Adapter::scalar_t> >(new Zoltan2::MachineRepresentation<typename Adapter::scalar_t>(problemComm_));
 #ifdef HAVE_ZOLTAN2_MPI
 
   // TPLs may want an MPI communicator
@@ -539,6 +553,38 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   }
   Z2_FORWARD_EXCEPTIONS;
 
+  //if mapping is requested
+  {
+
+      const Teuchos::ParameterEntry *pe = this->envConst_->getParameters().getEntryPtr("mapping_type");
+      int mapping_type = -1;
+      if (pe){
+          mapping_type = pe->getValue(&mapping_type);
+      }
+      //if mapping is 0 -- coordinate mapping
+
+      if (mapping_type == 0){
+
+          //partId_t *task_communication_xadj = NULL, *task_communication_adj = NULL;
+          Zoltan2::CoordinateTaskMapper <Adapter, zoltan2_partId_t> *ctm=
+                  new Zoltan2::CoordinateTaskMapper<Adapter,zoltan2_partId_t>(
+                          problemComm_.getRawPtr(),
+                          machine_.getRawPtr(),
+                          this->coordinateModel_.getRawPtr(),
+                          solution_.getRawPtr(),
+                          this->envConst_.getRawPtr()
+                          //,task_communication_xadj,
+                          //task_communication_adj
+                          );
+          //for now just delete the object.
+          delete ctm;
+      }
+      else if (mapping_type == 1){
+          //if mapping is 1 -- graph mapping
+      }
+  }
+
+#ifdef KDDKDD_SHOULD_NEVER_CHANGE_PROBLEMCOMM
 #ifdef HAVE_ZOLTAN2_MPI
 
   // The algorithm may have changed the communicator.  Change it back.
@@ -549,6 +595,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   problemComm_ = rcp(new Teuchos::MpiComm<int>(wrappedComm));
   problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
 
+#endif
 #endif
 
   if (metricsRequested_){
@@ -902,7 +949,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     //KDD Not sure why this shadow declaration is needed
     //KDD Comment out for now; revisit later if problems.
     //KDD const Teuchos::ParameterList pl = this->envConst_->getParameters();
-    bool exceptionThrow = true;
+    //bool exceptionThrow = true;
 
     switch (modelType_) {
 
@@ -940,8 +987,9 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       //
       // this->env_ = rcp(new Environment(newParams, oldComm));
       ////////////////////////////////////////////////////////////////////////////
-
+/*
       if(algorithm == string("multijagged")){
+
           //int coordinateCnt = this->coordinateModel_->getCoordinateDim();
           //cout << coordinateCnt << " " << pl.getPtr<Array <int> >("pqParts")->size() << endl;
           //exceptionThrow = coordinateCnt == pl.getPtr<Array <int> >("pqParts")->size();
@@ -974,7 +1022,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
 
       }
-
+*/
 
       this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
         this->coordinateModel_);

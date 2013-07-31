@@ -78,6 +78,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Memory.hpp"
 #include "MueLu_Hierarchy.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
@@ -95,6 +96,13 @@
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_EpetraOperator.hpp"
+#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MUELU_ISORROPIA)
+#include "MueLu_RepartitionFactory.hpp"
+#include "MueLu_RebalanceTransferFactory.hpp"
+//#include "MueLu_ZoltanInterface.hpp"
+#include "MueLu_IsorropiaInterface.hpp"
+#include "MueLu_RebalanceAcFactory.hpp"
+#endif
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
@@ -128,10 +136,40 @@ int main(int argc, char *argv[]) {
   *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
 #endif
 
-  // custom parameters
-  LO maxLevels = 4;
+  //
+  // SET TEST PARAMETERS
+  //
+  // Note: use --help to list available options.
+  Teuchos::CommandLineProcessor clp(false);
 
-  GO maxCoarseSize=1; //FIXME clp doesn't like long long int
+  // - Levels
+  LO  optMaxLevels     = 4;              clp.setOption("maxLevels",      &optMaxLevels,          "maximum number of levels allowed");
+  int optMaxCoarseSize = 1;              clp.setOption("maxCoarseSize",  &optMaxCoarseSize,      "maximum #dofs in coarse operator"); //FIXME clp doesn't like long long int
+
+  // - Repartitioning
+#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MUELU_ISORROPIA)
+  int optRepartition = 1;                 clp.setOption("repartition",    &optRepartition,        "enable repartitioning");
+  LO optMinRowsPerProc = 50;              clp.setOption("minRowsPerProc", &optMinRowsPerProc,     "min #rows allowable per proc before repartitioning occurs");
+  double optNnzImbalance = 1.2;           clp.setOption("nnzImbalance",   &optNnzImbalance,       "max allowable nonzero imbalance before repartitioning occurs");
+#else
+  int optRepartition = 0;
+  LO optMinRowsPerProc = 50;
+  double optNnzImbalance = 1.2;
+#endif // HAVE_MPI && HAVE_MUELU_ZOLTAN
+
+  switch (clp.parse(argc, argv)) {
+  case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+  case Teuchos::CommandLineProcessor::PARSE_ERROR:
+  case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+  case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+  }
+
+
+  /////////////////////////////////////////////
+  // custom parameters
+  LO maxLevels = optMaxLevels;
+
+  GO maxCoarseSize=optMaxCoarseSize;
   std::string aggOrdering = "natural";
   int minPerAgg=3;
   int maxNbrAlreadySelected=0;
@@ -191,9 +229,34 @@ int main(int argc, char *argv[]) {
   Finest->Set("A",Op);
   //Finest->Set("Nullspace",xNS);
 
+  if(optRepartition==1) {
+    // create null space
+
+    RCP<MultiVector> nullspace;
+    // determine numPDEs
+    LocalOrdinal numPDEs = 1;
+    if(Op->IsView("stridedMaps")==true) {
+     Xpetra::viewLabel_t oldView = Op->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
+     //TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const StridedMap>(Op->getRowMap()) == Teuchos::null, Exceptions::BadCast, "cast to strided row map failed.");
+     numPDEs = Teuchos::rcp_dynamic_cast<const StridedMap>(Op->getRowMap())->getFixedBlockSize();
+     oldView = Op->SwitchToView(oldView);
+    }
+
+    //GetOStream(Runtime1, 0) << "Generating canonical nullspace: dimension = " << numPDEs << std::endl;
+    nullspace = MultiVectorFactory::Build(Op->getDomainMap(), numPDEs);
+
+    for (int i=0; i<numPDEs; ++i) {
+     Teuchos::ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(i);
+     int numBlocks = nsValues.size() / numPDEs;
+     for (int j=0; j< numBlocks; ++j) {
+       nsValues[j*numPDEs + i] = 1.0;
+     }
+    }
+    Finest->Set("Nullspace",nullspace);
+  }
+
   RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
   dropFact->SetVerbLevel(MueLu::Extreme);
-
 
   //RCP<PreDropFunctionConstVal> predrop = rcp(new PreDropFunctionConstVal(0.00001));
   //dropFact->SetPreDropFunction(predrop);
@@ -221,7 +284,7 @@ int main(int argc, char *argv[]) {
   CoupledAggFact->SetPhase3AggCreation(0.5);
   *out << "=============================================================================" << std::endl;
 
-  // build transfer operators
+  // build non-rebalanced transfer operators
   RCP<PgPFactory> Pfact = rcp( new PgPFactory() );
   RCP<Factory> Rfact  = rcp( new GenericRFactory());
   //RCP<SaPFactory> Pfact  = rcp( new SaPFactory() );
@@ -256,22 +319,81 @@ int main(int argc, char *argv[]) {
 
   FactoryManager M;
   M.SetFactory("Graph", dropFact);
+  //M.SetFactory("UnAmalgamationInfo", amalgFact);
   M.SetFactory("Aggregates", CoupledAggFact);
-  M.SetFactory("P", Pfact);
-  M.SetFactory("R", Rfact);
-  M.SetFactory("A", Acfact);
   M.SetFactory("Smoother", SmooFact);
   M.SetFactory("CoarseSolver", coarsestSmooFact);
 
+  if(optRepartition == 0) {
+    // no rebalancing
+    M.SetFactory("P", Pfact);
+    M.SetFactory("R", Rfact);
+    M.SetFactory("A", Acfact);
+  } else {
+#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MUELU_ISORROPIA)
+    // The Factory Manager will be configured to return the rebalanced versions of P, R, A by default.
+    // Everytime we want to use the non-rebalanced versions, we need to explicitly define the generating factory.
+    Rfact->SetFactory("P", Pfact);
+    //
+    Acfact->SetFactory("P", Pfact);
+    Acfact->SetFactory("R", Rfact);
+
+    // create "Partition"
+    RCP<MueLu::IsorropiaInterface<LO, GO, NO, LMO> > isoInterface = rcp(new MueLu::IsorropiaInterface<LO, GO, NO, LMO>());
+    isoInterface->SetFactory("A", Acfact);
+
+    // Repartitioning (creates "Importer" from "Partition")
+    RCP<Factory> RepartitionFact = rcp(new RepartitionFactory());
+    {
+      Teuchos::ParameterList paramList;
+      paramList.set("minRowsPerProcessor", optMinRowsPerProc);
+      paramList.set("nonzeroImbalance", optNnzImbalance);
+      RepartitionFact->SetParameterList(paramList);
+    }
+    RepartitionFact->SetFactory("A", Acfact);
+    RepartitionFact->SetFactory("Partition", isoInterface);
+
+    // Reordering of the transfer operators
+    RCP<Factory> RebalancedPFact = rcp(new RebalanceTransferFactory());
+    RebalancedPFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Interpolation")));
+    RebalancedPFact->SetFactory("P", Pfact);
+
+    RCP<Factory> RebalancedRFact = rcp(new RebalanceTransferFactory());
+    RebalancedRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
+    RebalancedRFact->SetFactory("R", Rfact);
+    //RebalancedRFact->SetFactory("Coordinates", TransferCoordinatesFact);
+    RebalancedRFact->SetFactory("Nullspace", M.GetFactory("Ptent")); // TODO
+
+    // Compute Ac from rebalanced P and R
+    RCP<Factory> RebalancedAFact = rcp(new RebalanceAcFactory());
+    RebalancedAFact->SetFactory("A", Acfact);
+
+    // Configure FactoryManager
+    M.SetFactory("A", RebalancedAFact);
+    M.SetFactory("P", RebalancedPFact);
+    M.SetFactory("R", RebalancedRFact);
+    //M.SetFactory("Partition", isoInterface);
+    M.SetFactory("Nullspace",   RebalancedRFact);
+    M.SetFactory("Importer",    RepartitionFact);
+#else
+    // no re-balancing available
+    M.SetFactory("P", Pfact);
+    M.SetFactory("R", Rfact);
+    M.SetFactory("A", Acfact);
+#endif
+  }
+
   H->Setup(M, 0, maxLevels);
 
-  Finest->print(*out);
-
-  RCP<Level> coarseLevel = H->GetLevel(1);
-  coarseLevel->print(*out);
-
-  RCP<Level> coarseLevel2 = H->GetLevel(2);
-  coarseLevel2->print(*out);
+  { // some debug output
+    // print out content of levels
+    std::cout << "FINAL CONTENT of multigrid levels" << std::endl;
+    for(LO l = 0; l < H->GetNumLevels(); l++) {
+      RCP<Level> coarseLevel = H->GetLevel(l);
+      coarseLevel->print(*out);
+    }
+    std::cout << "END FINAL CONTENT of multigrid levels" << std::endl;
+  } // end debug output
 
   RCP<MultiVector> xLsg = MultiVectorFactory::Build(map,1);
 

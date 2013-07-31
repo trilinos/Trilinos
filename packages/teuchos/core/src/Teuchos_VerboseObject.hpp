@@ -214,17 +214,31 @@ private:
  * temporarily change the stream and verbosity level.  To do this saftely, use
  * the class <tt>VerboseObjectTempState</tt> which will revert the output
  * state after it is destroyed.
+ *
+ * If the ParameterList subpackage of Teuchos is enabled (which it is
+ * by default), you may use the readVerboseObjectSublist nonmember
+ * function to pass a verbosity level and output stream filename to a
+ * VerboseObject using a ParameterList.  The parameters are passed
+ * through a "VerboseObject" sublist of the input ParameterList.  The
+ * sublist in turn takes optional parameters "Verbosity Level"
+ * (std::string) and "Output File" (std::string).  "Verbosity Level"
+ * has six valid values: "VERB_DEFAULT", "VERB_NONE", "VERB_LOW",
+ * "VERB_MEDIUM", "VERB_HIGH", and "VERB_EXTREME".  "VERB_DEFAULT"
+ * tells the object to use its default verbosity level, and the
+ * remaining values indicate increasing verbosity starting with
+ * "VERB_NONE" (say nothing).  "Output File" is the name of a file to
+ * use for output; "none" means do not open a file, but write to the
+ * default output stream.
  */
 template<class ObjectType>
 class VerboseObject : virtual public VerboseObjectBase {
 public:
-
   //! @name Public static member functions 
   //@{
 
   /** \brief Set the default verbosity level.
    *
-   * If not called, then the default verbosity level is <tt>VERB_DEFAULT</tt>
+   * If not called, then the default verbosity level is <tt>VERB_DEFAULT</tt>.
    */
   static void setDefaultVerbLevel( const EVerbosityLevel defaultVerbLevel);
 
@@ -232,27 +246,29 @@ public:
   static EVerbosityLevel getDefaultVerbLevel();
 
   //@}
-
   //! @name Constructors/Initializers 
   //@{
   
-  /** \brief Calls <tt>initializeVerboseObject()</tt>.
-   */
+  //! Constructor: calls <tt>initializeVerboseObject()</tt>.
   explicit
   VerboseObject(
     const EVerbosityLevel verbLevel = VERB_DEFAULT,  // Note, this must be the same as the default value for defaultVerbLevel_
     const RCP<FancyOStream> &oStream  = Teuchos::null
     );
   
-  /** \brief Calls <tt>initializeVerboseObject()</tt>.
-   */
+  /// \brief Initialize the VerboseObject.
+  ///
+  /// \param verbLevel [in] Initial verbosity level.
+  /// \param oStream [in/out] Initial output stream.
+  ///
+  /// \note \c verbLevel must be the same as the default value for
+  ///   <tt>defaultVerbLevel_</tt>.
   virtual void initializeVerboseObject(
-    const EVerbosityLevel verbLevel = VERB_DEFAULT,  // Note, this must be the same as the default value for defaultVerbLevel_
+    const EVerbosityLevel verbLevel = VERB_DEFAULT,  
     const RCP<FancyOStream> &oStream  = Teuchos::null
     );
 
-  /** \brief Set the verbosity level for <tt>*this</tt> object.
-   *
+  /** \brief Set this object's verbosity level.
    *
    * This function is supposed by called by general clients to set the output
    * level according to some general logic in the code.
@@ -270,7 +286,6 @@ public:
     const EVerbosityLevel verbLevel) const;
 
   //@}
-
   //! @name Query functions 
   //@{
 

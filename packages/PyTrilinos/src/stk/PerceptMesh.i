@@ -1,5 +1,8 @@
+// -*- c++ -*-
+
 %define %PerceptMesh_docstring 
-"""PyPercept is the Python interface for the Trilinos STK Percept package.
+"""
+PyPercept is the Python interface for the Trilinos STK Percept package.
 
 The following are examples of the actual PyPercept Python interface:
 
@@ -135,25 +138,29 @@ using namespace Teuchos;
 %mpi4py_typemap(Comm, MPI_Comm);
 
 %include numpy.i
-%init %{
-	import_array();
+%init
+%{
+  import_array();
 %}
 
 // handle exceptions thrown from library
-%exception { 
-    try { 
-        $action
-    } 
-    catch (std::runtime_error e) { 
-        PyErr_SetString(PyExc_RuntimeError, e.what()); 
-        SWIG_fail; 
-    } 
-	catch(...)
-	{
-        PyErr_SetString(PyExc_RuntimeError, "Unexpected exception"); 
-        SWIG_fail; 
-	}
-} 
+%exception
+{ 
+  try
+  { 
+    $action
+  } 
+  catch (std::runtime_error e)
+  { 
+    PyErr_SetString(PyExc_RuntimeError, e.what()); 
+    SWIG_fail; 
+  } 
+  catch(...)
+  {
+    PyErr_SetString(PyExc_RuntimeError, "Unexpected exception"); 
+    SWIG_fail; 
+  }
+}
 
 %include stl.i
 namespace std 
@@ -169,7 +176,7 @@ namespace std
 %include cpointer.i
 %include typemaps.i
 
-  //General ignore directives
+//General ignore directives
 %ignore *::operator();
 %ignore *::operator=;
 %ignore *::print;
@@ -187,7 +194,7 @@ namespace std
 
 // from intrepid
 
-  //ignore overloaded operators and functions not supported by SWIG
+//ignore overloaded operators and functions not supported by SWIG
 %ignore Intrepid::FieldContainer::operator [] (const int address) const;
 %ignore Intrepid::FieldContainer::operator [] (const int address);
 %ignore Intrepid::FieldContainer::getData() const;
@@ -204,14 +211,14 @@ namespace std
 
 //from stk_io/util
 
-  //ignore overloaded functions not supported by SWIG
+//ignore overloaded functions not supported by SWIG
 %ignore stk::io::util::Gmesh_STKmesh_Fixture::getFEMMetaData() const;
 %ignore stk::io::util::Gmesh_STKmesh_Fixture::getBulkData() const;
 %include Gmesh_STKmesh_Fixture.hpp
 
 //from stk_mesh/base
 
-  //ignore overloaded operators not supported by SWIG
+//ignore overloaded operators not supported by SWIG
 %ignore stk::mesh::operator << ( std::ostream & , const FieldBase & );
 %include stk_mesh/base/FieldBase.hpp
 
@@ -221,13 +228,14 @@ namespace std
 
   //ignore overloaded operators not supported by SWIG
 %ignore stk::mesh::Selector::operator ! () const;
-%ignore stk::mesh::Selector::operator << ( std::ostream & out, const stk::mesh::Selector & selector);  //FIXME
-%ignore stk::mesh::operator ! ( const Part & A );
+%ignore stk::mesh::Selector::operator << (std::ostream & out,
+                                          const stk::mesh::Selector & selector);  //FIXME
+%ignore stk::mesh::operator!(const Part & A);
 %include stk_mesh/base/Selector.hpp
 
 %include stk_mesh/base/BulkData.hpp
 
-  //ignore overloaded operators not supported by SWIG
+//ignore overloaded operators not supported by SWIG
 %ignore stk::mesh::BucketIterator::operator++();
 %ignore stk::mesh::BucketIterator::operator--();
 %ignore stk::mesh::BucketIterator::operator++(int);
@@ -249,63 +257,76 @@ namespace std
 %include MDArray.hpp
 %template(MDArray) Intrepid::FieldContainer<double>;
 
-%typemap(in) stk::percept::MDArray & (stk::percept::MDArray mdarray) {
-	if (!PyArray_Check($input)) {
-		PyErr_SetString(PyExc_TypeError, "ERROR: input must be numpy array");
-		SWIG_fail;
-	}
-	PyArrayObject* array = (PyArrayObject*) $input;
-  if (PyArray_TYPE(array) != NPY_DOUBLE) {
+%typemap(in) stk::percept::MDArray & (stk::percept::MDArray mdarray)
+{
+  if (!PyArray_Check($input))
+  {
+    PyErr_SetString(PyExc_TypeError, "ERROR: input must be numpy array");
+    SWIG_fail;
+  }
+  PyArrayObject* array = (PyArrayObject*) $input;
+  if (PyArray_TYPE(array) != NPY_DOUBLE)
+  {
     PyErr_SetString(PyExc_TypeError, "ERROR: input must be numpy array of type double");
     SWIG_fail;
   }
-	int nd = array->nd;
-  if (nd > 5) {
-    PyErr_SetString(PyExc_TypeError, "ERROR: array dimensions must be less than or equal to 5");
-		SWIG_fail;
-	}
-	if (nd == 1) {
-    mdarray.resize(array->dimensions[0]);
-		mdarray.setValues((double*) array->data, array->dimensions[0]*sizeof(double));
-		$1 = &mdarray;
-	}
-	else if (nd == 2) {
-		int dim1 = array->dimensions[0];
-		int dim2 = array->dimensions[1];
-		mdarray.resize(dim1, dim2);
-		mdarray.setValues((double*) array->data, dim1*dim2*sizeof(double));
-		$1 = &mdarray;
-	}
-  else if (nd == 3) {
-    int dim1 = array->dimensions[0];
-    int dim2 = array->dimensions[1];
-    int dim3 = array->dimensions[2];
+  int nd = PyArray_NDIM(array);
+  if (nd > 5)
+  {
+    PyErr_SetString(PyExc_TypeError,
+                    "ERROR: array dimensions must be less than or equal to 5");
+    SWIG_fail;
+  }
+  if (nd == 1)
+  {
+    mdarray.resize(PyArray_DIMS(array)[0]);
+    mdarray.setValues((double*) PyArray_DATA(array),
+                      PyArray_DIMS(array)[0]*sizeof(double));
+    $1 = &mdarray;
+  }
+  else if (nd == 2)
+  {
+    int dim1 = PyArray_DIMS(array)[0];
+    int dim2 = PyArray_DIMS(array)[1];
+    mdarray.resize(dim1, dim2);
+    mdarray.setValues((double*) PyArray_DATA(array), dim1*dim2*sizeof(double));
+    $1 = &mdarray;
+  }
+  else if (nd == 3)
+  {
+    int dim1 = PyArray_DIMS(array)[0];
+    int dim2 = PyArray_DIMS(array)[1];
+    int dim3 = PyArray_DIMS(array)[2];
     mdarray.resize(dim1, dim2, dim3);
-    mdarray.setValues((double*) array->data, dim1*dim2*dim3*sizeof(double));
+    mdarray.setValues((double*) PyArray_DATA(array), dim1*dim2*dim3*sizeof(double));
     $1 = &mdarray;
   }
 }
 
-%typemap(typecheck) stk::percept::MDArray& {
+%typemap(typecheck) stk::percept::MDArray&
+{
   void *vptr = 0;
   int res1 = SWIG_ConvertPtr($input, &vptr, $*descriptor, 0);
   int res2 = PyArray_Check($input);
   $1 = (SWIG_CheckState(res1) || res2);
 }
 
-%typemap(in, numinputs=0) stk::percept::MDArray& out (stk::percept::MDArray out){
+%typemap(in, numinputs=0) stk::percept::MDArray& out (stk::percept::MDArray out)
+{
   $1 = &out;
-  }
+}
 
-%typemap(out) stk::percept::MDArray {
+%typemap(out) stk::percept::MDArray
+{
   int numdims = $1.rank();
   int dimensions[5];
   for (int i = 0; i < numdims; i++)
   {
     dimensions[i] = $1.dimension(i);  
   }  
-  PyArrayObject* temp_array = (PyArrayObject*) PyArray_FromDims(numdims, dimensions, PyArray_DOUBLE);
-  double* buffer = (double*) temp_array->data;
+  PyArrayObject* temp_array =
+    (PyArrayObject*) PyArray_FromDims(numdims, dimensions, NPY_DOUBLE);
+  double* buffer = (double*) PyArray_DATA(temp_array);
   Teuchos::ArrayRCP<double> rcp = $1.getData();
   double* md_temp = rcp.access_private_ptr(); 
   for (int i=0; i < $1.size(); i++) 
@@ -317,15 +338,17 @@ namespace std
 
 %module outarg
 
-%typemap(argout) stk::percept::MDArray &MDOutVal {
+%typemap(argout) stk::percept::MDArray &MDOutVal
+{
   int numdims = $1->rank();
   int dimensions[5];
   for (int i = 0; i < numdims; i++)
   {
     dimensions[i] = $1->dimension(i);  
   }  
-  PyArrayObject* temp_array = (PyArrayObject*) PyArray_FromDims(numdims, dimensions, PyArray_DOUBLE);
-  double* buffer = (double*) temp_array->data;
+  PyArrayObject* temp_array =
+    (PyArrayObject*) PyArray_FromDims(numdims, dimensions, NPY_DOUBLE);
+  double* buffer = (double*) PyArray_DATA(temp_array);
   Teuchos::ArrayRCP<double> rcp = $1->getData();
   double* md_temp = rcp.access_private_ptr(); 
   for (int i=0; i < $1->size(); i++) 
@@ -336,93 +359,104 @@ namespace std
   //$result =  (PyObject*) temp_array;
 }
 
-void stk::percept::Function::value(MDArray& domain, MDArray& MDOutVal, double time_value_optional=0.0);
+void stk::percept::Function::value(MDArray& domain,
+                                   MDArray& MDOutVal,
+                                   double time_value_optional=0.0);
 
-%typemap(in) stk::percept::MDArrayString & (stk::percept::MDArrayString mdarray) {
-	if (!PyArray_Check($input)) {
-		PyErr_SetString(PyExc_TypeError, "ERROR: input must be numpy array");
-		SWIG_fail;
-	}
-	PyArrayObject* array = (PyArrayObject*) $input;
-  if (PyArray_TYPE(array) != NPY_STRING) {
+%typemap(in) stk::percept::MDArrayString & (stk::percept::MDArrayString mdarray)
+{
+  if (!PyArray_Check($input))
+  {
+    PyErr_SetString(PyExc_TypeError, "ERROR: input must be numpy array");
+    SWIG_fail;
+  }
+  PyArrayObject* array = (PyArrayObject*) $input;
+  if (PyArray_TYPE(array) != NPY_STRING)
+  {
     PyErr_SetString(PyExc_TypeError, "ERROR: input must be numpy array of type string");
     SWIG_fail;
   }
-	int nd = array->nd;
+  int nd = PyArray_NDIM(array);
   bool debug = false;
   if(debug) std::cout << "nd= " << nd <<  std::endl;
   // FIXME
-  if (nd > 2) {
-    PyErr_SetString(PyExc_TypeError, "ERROR: array dimensions must be less than or equal to 2");
-		SWIG_fail;
-	}
-	if (nd == 1) {
-		int dim1 = array->dimensions[0];
-    if(debug) std::cout << "dim1= " << array->dimensions[0]
-    <<  std::endl;
-    mdarray.resize(array->dimensions[0]);
+  if (nd > 2)
+  {
+    PyErr_SetString(PyExc_TypeError,
+                    "ERROR: array dimensions must be less than or equal to 2");
+    SWIG_fail;
+  }
+  if (nd == 1)
+  {
+    int dim1 = PyArray_DIMS(array)[0];
+    if(debug) std::cout << "dim1= " << PyArray_DIMS(array)[0]
+                        <<  std::endl;
+    mdarray.resize(PyArray_DIMS(array)[0]);
     int itemsize = PyArray_ITEMSIZE(array);
-    if(debug) std::cout << "dim1= " << array->dimensions[0]
-       <<  std::endl;
-    //		mdarray.setValues((std::string*) array->data );
+    if(debug) std::cout << "dim1= " << PyArray_DIMS(array)[0]
+                        <<  std::endl;
+    //		mdarray.setValues((std::string*) PyArray_DATA(array) );
     MDArrayString tmp(dim1);
     char buf[itemsize+1];
     for (int i1=0; i1 < dim1; i1++)
     {
-       // void* PyArray_GETPTR2(PyObject* obj, <npy_intp> i, <npy_intp> j)
-       char *str = (char *)PyArray_GETPTR1(array, i1);
-       for (int ii=0; ii < itemsize; ii++) buf[ii] = str[ii];
-       buf[itemsize] = '\0';
-       if(debug) std::cout << "str= " << buf
-                      <<     std::endl;
-       mdarray(i1) = buf;
+      // void* PyArray_GETPTR2(PyObject* obj, <npy_intp> i, <npy_intp> j)
+      char *str = (char *)PyArray_GETPTR1(array, i1);
+      for (int ii=0; ii < itemsize; ii++) buf[ii] = str[ii];
+      buf[itemsize] = '\0';
+      if(debug) std::cout << "str= " << buf
+                          <<     std::endl;
+      mdarray(i1) = buf;
     }
-    if(debug) std::cout << "dim1= " << array->dimensions[0]
-       <<  std::endl;
-		$1 = &mdarray;
-	}
-	else if (nd == 2) {
-		int dim1 = array->dimensions[0];
-		int dim2 = array->dimensions[1];
+    if(debug) std::cout << "dim1= " << PyArray_DIMS(array)[0]
+                        <<  std::endl;
+    $1 = &mdarray;
+  }
+  else if (nd == 2)
+  {
+    int dim1 = PyArray_DIMS(array)[0];
+    int dim2 = PyArray_DIMS(array)[1];
     if(debug) std::cout << "dim1,2= " << dim1 << " " << dim2
-    <<  std::endl;
-		mdarray.resize(dim1, dim2);
+                        <<  std::endl;
+    mdarray.resize(dim1, dim2);
     int itemsize = PyArray_ITEMSIZE(array);
     if(debug) std::cout << "dim1,2= " << dim1 << " " << dim2
-    << " itemsize = " << itemsize
-    <<  std::endl;
+                        << " itemsize = " << itemsize
+                        <<  std::endl;
     
     MDArrayString tmp(dim1,dim2);
     char buf[itemsize+1];
     for (int i1=0; i1 < dim1; i1++)
-    for (int i2=0; i2 < dim2; i2++)
-    {
-       // void* PyArray_GETPTR2(PyObject* obj, <npy_intp> i, <npy_intp> j)
-       char *str = (char *)PyArray_GETPTR2(array, i1, i2);
-       for (int ii=0; ii < itemsize; ii++) buf[ii] = str[ii];
-       buf[itemsize] = '\0';
-       if(debug) std::cout << "str= " << buf
-                      <<     std::endl;
-       mdarray(i1,i2) = buf;
-    }
-    //		mdarray.setValues((std::string*) array->data );
+      for (int i2=0; i2 < dim2; i2++)
+      {
+        // void* PyArray_GETPTR2(PyObject* obj, <npy_intp> i, <npy_intp> j)
+        char *str = (char *)PyArray_GETPTR2(array, i1, i2);
+        for (int ii=0; ii < itemsize; ii++) buf[ii] = str[ii];
+        buf[itemsize] = '\0';
+        if(debug) std::cout << "str= " << buf
+                            <<     std::endl;
+        mdarray(i1,i2) = buf;
+      }
+    //		mdarray.setValues((std::string*) PyArray_DATA(array) );
     if(debug) std::cout << "dim1,2= " << dim1 << " " << dim2
-    <<  std::endl;
-		$1 = &mdarray;
-	}
+                        <<  std::endl;
+    $1 = &mdarray;
+  }
 /*
-  else if (nd == 3) {
-    int dim1 = array->dimensions[0];
-    int dim2 = array->dimensions[1];
-    int dim3 = array->dimensions[2];
+  else if (nd == 3)
+  {
+    int dim1 = PyArray_DIMS(array)[0];
+    int dim2 = PyArray_DIMS(array)[1];
+    int dim3 = PyArray_DIMS(array)[2];
     mdarray.resize(dim1, dim2, dim3);
-    mdarray.setValues((std::string*) array->data );
+    mdarray.setValues((std::string*) PyArray_DATA(array) );
     $1 = &mdarray;
   }
 */
 }
 
-%typemap(typecheck) stk::percept::MDArrayString& {
+%typemap(typecheck) stk::percept::MDArrayString&
+{
   void *vptr = 0;
   int res1 = SWIG_ConvertPtr($input, &vptr, $*descriptor, 0);
   int res2 = PyArray_Check($input);
@@ -433,16 +467,19 @@ void stk::percept::Function::value(MDArray& domain, MDArray& MDOutVal, double ti
 
 %include stk_percept/Name.hpp
   //Allow user to pass in a string instead of a Name object
-%typemap(in) stk::percept::Name (std::string name) {
+%typemap(in) stk::percept::Name (std::string name)
+{
   if (!PyString_Check($input)) {
-      PyErr_SetString(PyExc_TypeError, "ERROR: name must be a string");
-      SWIG_fail;
-      }
+    PyErr_SetString(PyExc_TypeError, "ERROR: name must be a string");
+    SWIG_fail;
+  }
   name = PyString_AsString($input);
   stk::percept::Name new_name(name);
   $1 = new_name;
 }
-%typemap(typecheck) stk::percept::Name {
+
+%typemap(typecheck) stk::percept::Name
+{
   int res = PyString_Check($input);
   $1 = res;
 }
@@ -461,54 +498,54 @@ void stk::percept::Function::value(MDArray& domain, MDArray& MDOutVal, double ti
 %feature("docstring") generate_mesh "This method generates the mesh.";
 %include QuadFixture.hpp
 
-%feature("immutable","1")     stk::percept::QuadFixture<double>::bulk_data;
-%feature("immutable","1")     stk::percept::QuadFixture<double>::coord_field;
-%feature("immutable","1")     stk::percept::QuadFixture<double>::coord_gather_field;
-%feature("immutable","1")     stk::percept::QuadFixture<double>::meta_data;
-%feature("immutable","1")     stk::percept::QuadFixture<double>::quad_part;
+%feature("immutable","1") stk::percept::QuadFixture<double>::bulk_data;
+%feature("immutable","1") stk::percept::QuadFixture<double>::coord_field;
+%feature("immutable","1") stk::percept::QuadFixture<double>::coord_gather_field;
+%feature("immutable","1") stk::percept::QuadFixture<double>::meta_data;
+%feature("immutable","1") stk::percept::QuadFixture<double>::quad_part;
 %feature("docstring") QuadFixture<double, shards::Quadrilateral<4> > "This class creates a quad mesh.";
 %template(QuadFixture_4) stk::percept::QuadFixture<double, shards::Quadrilateral<4> >;
 
-%feature("immutable","1")     stk::percept::QuadFixture<double, shards::Triangle<3> >::bulk_data;
-%feature("immutable","1")     stk::percept::QuadFixture<double, shards::Triangle<3> >::coord_field;
-%feature("immutable","1")     stk::percept::QuadFixture<double, shards::Triangle<3> >::coord_gather_field;
-%feature("immutable","1")     stk::percept::QuadFixture<double, shards::Triangle<3> >::meta_data;
-%feature("immutable","1")     stk::percept::QuadFixture<double, shards::Triangle<3> >::quad_part;
+%feature("immutable","1") stk::percept::QuadFixture<double, shards::Triangle<3> >::bulk_data;
+%feature("immutable","1") stk::percept::QuadFixture<double, shards::Triangle<3> >::coord_field;
+%feature("immutable","1") stk::percept::QuadFixture<double, shards::Triangle<3> >::coord_gather_field;
+%feature("immutable","1") stk::percept::QuadFixture<double, shards::Triangle<3> >::meta_data;
+%feature("immutable","1") stk::percept::QuadFixture<double, shards::Triangle<3> >::quad_part;
 %feature("docstring") QuadFixture<double, shards::Triangle<3> > "This class creates a tri mesh.";
-%template(QuadFixture_3)  stk::percept::QuadFixture<double, shards::Triangle<3> >;
+%template(QuadFixture_3) stk::percept::QuadFixture<double, shards::Triangle<3> >;
 
 %include WedgeFixture.hpp
 
-%feature("immutable","1")     stk::percept::BeamFixture::m_bulkData;
-%feature("immutable","1")     stk::percept::BeamFixture::m_coordinates_field;
-%feature("immutable","1")     stk::percept::BeamFixture::m_metaData;
-%feature("immutable","1")     stk::percept::BeamFixture::m_block_beam;
-%feature("immutable","1")     stk::percept::BeamFixture::m_centroid_field;
-%feature("immutable","1")     stk::percept::BeamFixture::m_temperature_field;
-%feature("immutable","1")     stk::percept::BeamFixture::m_volume_field;
-%feature("immutable","1")     stk::percept::BeamFixture::m_element_node_coordinates_field;
+%feature("immutable","1") stk::percept::BeamFixture::m_bulkData;
+%feature("immutable","1") stk::percept::BeamFixture::m_coordinates_field;
+%feature("immutable","1") stk::percept::BeamFixture::m_metaData;
+%feature("immutable","1") stk::percept::BeamFixture::m_block_beam;
+%feature("immutable","1") stk::percept::BeamFixture::m_centroid_field;
+%feature("immutable","1") stk::percept::BeamFixture::m_temperature_field;
+%feature("immutable","1") stk::percept::BeamFixture::m_volume_field;
+%feature("immutable","1") stk::percept::BeamFixture::m_element_node_coordinates_field;
 %include BeamFixture.hpp
 
-%feature("immutable","1")     stk::percept::HeterogeneousFixture::m_bulkData;
-%feature("immutable","1")     stk::percept::HeterogeneousFixture::m_metaData;
-%feature("immutable","1")     stk::percept::HeterogeneousFixture::m_block_hex;
-%feature("immutable","1")     stk::percept::HeterogeneousFixture::m_block_wedge;
-%feature("immutable","1")     stk::percept::HeterogeneousFixture::m_block_tet;
-%feature("immutable","1")     stk::percept::HeterogeneousFixture::m_block_pyramid;
-%feature("immutable","1")     stk::percept::HeterogeneousFixture::m_coordinates_field;
-%feature("immutable","1")     stk::percept::HeterogeneousFixture::m_centroid_field;
-%feature("immutable","1")     stk::percept::HeterogeneousFixture::m_temperature_field;
-%feature("immutable","1")     stk::percept::HeterogeneousFixture::m_volume_field;
-%feature("immutable","1")     stk::percept::HeterogeneousFixture::m_element_node_coordinates_field;
+%feature("immutable","1") stk::percept::HeterogeneousFixture::m_bulkData;
+%feature("immutable","1") stk::percept::HeterogeneousFixture::m_metaData;
+%feature("immutable","1") stk::percept::HeterogeneousFixture::m_block_hex;
+%feature("immutable","1") stk::percept::HeterogeneousFixture::m_block_wedge;
+%feature("immutable","1") stk::percept::HeterogeneousFixture::m_block_tet;
+%feature("immutable","1") stk::percept::HeterogeneousFixture::m_block_pyramid;
+%feature("immutable","1") stk::percept::HeterogeneousFixture::m_coordinates_field;
+%feature("immutable","1") stk::percept::HeterogeneousFixture::m_centroid_field;
+%feature("immutable","1") stk::percept::HeterogeneousFixture::m_temperature_field;
+%feature("immutable","1") stk::percept::HeterogeneousFixture::m_volume_field;
+%feature("immutable","1") stk::percept::HeterogeneousFixture::m_element_node_coordinates_field;
 %include HeterogeneousFixture.hpp
 
 // from stk_percept/function  (depends on stk_percept)
 
-  //ignore overloaded function not supported by SWIG
+//ignore overloaded function not supported by SWIG
 %ignore stk::percept::GenericFunction::getNewCodomain() const;
 %include GenericFunction.hpp
 
-  //eval is a Python command so we need to rename it to eval_func
+//eval is a Python command so we need to rename it to eval_func
 %ignore stk::percept::operator<<(std::ostream& out,  Function& func);
 
 %rename(eval_func) *::eval(double x, double y, double z, double t, Function& func);
@@ -530,27 +567,32 @@ void stk::percept::Function::value(MDArray& domain, MDArray& MDOutVal, double ti
 %feature("docstring") StringFunction "Create a function by passing in a function string, a name, and input and output dimensions";
 %feature("docstring") evaluate "Evaluate the function with the given array.  Returns an array."
 %include StringFunction.hpp
-%extend stk::percept::StringFunction {
-	StringFunction __add__(StringFunction *rhs)
-	{
-		std::string newFuncString = "(" + $self->getFunctionString() + ") + (" + rhs->getFunctionString() + ")";
-		return StringFunction(newFuncString.c_str());
-	}
-	StringFunction __div__(StringFunction *rhs)
-	{
-		std::string newFuncString = "(" + $self->getFunctionString() + ") / (" + rhs->getFunctionString() + ")";
-		return StringFunction(newFuncString.c_str());
-	}
-	StringFunction __mul__(StringFunction *rhs)
-	{
-		std::string newFuncString = "(" + $self->getFunctionString() + ") * (" + rhs->getFunctionString() + ")";
-		return StringFunction(newFuncString.c_str());
-	}
-	StringFunction __sub__(StringFunction *rhs)
-	{
-		std::string newFuncString = "(" + $self->getFunctionString() + ") - (" + rhs->getFunctionString() + ")";
-		return StringFunction(newFuncString.c_str());
-	}
+%extend stk::percept::StringFunction
+{
+  StringFunction __add__(StringFunction *rhs)
+  {
+    std::string newFuncString = "(" + $self->getFunctionString() + ") + (" +
+      rhs->getFunctionString() + ")";
+    return StringFunction(newFuncString.c_str());
+  }
+  StringFunction __div__(StringFunction *rhs)
+  {
+    std::string newFuncString = "(" + $self->getFunctionString() + ") / (" +
+      rhs->getFunctionString() + ")";
+    return StringFunction(newFuncString.c_str());
+  }
+  StringFunction __mul__(StringFunction *rhs)
+  {
+    std::string newFuncString = "(" + $self->getFunctionString() + ") * (" +
+      rhs->getFunctionString() + ")";
+    return StringFunction(newFuncString.c_str());
+  }
+  StringFunction __sub__(StringFunction *rhs)
+  {
+    std::string newFuncString = "(" + $self->getFunctionString() + ") - (" +
+      rhs->getFunctionString() + ")";
+    return StringFunction(newFuncString.c_str());
+  }
 };
 
 //from stk_percept/norm
@@ -619,10 +661,9 @@ WEDGE6_WEDGE15_1
 WEDGE6_WEDGE18_1
 WEDGE6_WEDGE6_8";
 %include stk_adapt/Refiner.hpp
-%extend stk::adapt::Refiner {
-  void __basePatterns__() {  //here we add a dummy function for documentation purposes
+%extend stk::adapt::Refiner
+{
+  void __basePatterns__()
+  {  //here we add a dummy function for documentation purposes
   }
 }
-
-
-

@@ -71,7 +71,7 @@ namespace KokkosExamples {
    */
   template <class NODE>
   void initVec(Teuchos::RCP<NODE> node, Teuchos::ArrayRCP<int> data) {
-    Kokkos::ReadyBufferHelper<NODE> rbh(node);
+    KokkosClassic::ReadyBufferHelper<NODE> rbh(node);
     VecInit init;
     // ready the buffer and encapsulate the kernel arguments
     rbh.begin();
@@ -100,7 +100,7 @@ namespace KokkosExamples {
     */
   template <class NODE>
   int reduceVec(Teuchos::RCP<NODE> node, Teuchos::ArrayRCP<const int> data) {
-    Kokkos::ReadyBufferHelper<NODE> rbh(node);
+    KokkosClassic::ReadyBufferHelper<NODE> rbh(node);
     VecReduce reduce;
     // ready the buffer and encapsulate the kernel arguments
     rbh.begin();
@@ -114,6 +114,6 @@ namespace KokkosExamples {
     * This is an example of the simple kernels KokkosExamples::VecInit and KokkosExamples::VecReduce, as well as their wrappers KokkosExamples::reduceVec() and KokkosExamples::initVec().
     */
 
-} // end of namespace KokkosExamples
+} // end of namespace KokkosClassicExamples
 
 #endif

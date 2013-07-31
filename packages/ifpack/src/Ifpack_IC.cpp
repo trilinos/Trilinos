@@ -1,28 +1,41 @@
 /*@HEADER
 // ***********************************************************************
-// 
+//
 //       Ifpack: Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//  
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 //@HEADER
 */
@@ -53,7 +66,7 @@ Ifpack_IC::Ifpack_IC(Epetra_RowMatrix* A) :
   Athresh_(0.0),
   Rthresh_(1.0),
   Droptol_(0.0),
-  Lfil_(0),
+  Lfil_(1.0),
   Aict_(0),
   Lict_(0),
   Ldiag_(0),
@@ -65,6 +78,7 @@ Ifpack_IC::Ifpack_IC(Epetra_RowMatrix* A) :
   InitializeTime_(0.0),
   ComputeTime_(0),
   ApplyInverseTime_(0),
+  Time_(Comm()),
   ComputeFlops_(0.0),
   ApplyInverseFlops_(0.0)
 {
@@ -96,13 +110,14 @@ Ifpack_IC::~Ifpack_IC()
 int Ifpack_IC::SetParameters(Teuchos::ParameterList& List)
 {
 
-  Lfil_ = List.get("fact: level-of-fill",Lfil_);
+  // Lfil_ = List.get("fact: level-of-fill",Lfil_); // Confusing parameter since Ifpack_IC can only do ICT not IC(k)
+  Lfil_ = List.get("fact: ict level-of-fill", Lfil_); // Lfil_ is now the fill ratio as in ICT (1.0 means same #nonzeros as A)
   Athresh_ = List.get("fact: absolute threshold", Athresh_);
   Rthresh_ = List.get("fact: relative threshold", Rthresh_);
   Droptol_ = List.get("fact: drop tolerance", Droptol_);
 
   // set label
-  sprintf(Label_, "IFPACK IC (fill=%d, drop=%f)",
+  sprintf(Label_, "IFPACK IC (fill=%f, drop=%f)",
 	  Lfil_, Droptol_);
   return(0);
 }
@@ -112,8 +127,10 @@ int Ifpack_IC::Initialize()
 {
 
   IsInitialized_ = false;
+
   // FIXME: construction of ILUK graph must be here
   
+  ++NumInitialize_;
   IsInitialized_ = true;
   return(0);
 }
@@ -131,7 +148,7 @@ int Ifpack_IC::ComputeSetup()
 
   int ierr = 0;
   int i, j;
-  int NumIn, NumL, NumU;
+  int NumIn, NumU;
   bool DiagFound;
   int NumNonzeroDiags = 0;
 
@@ -155,7 +172,6 @@ int Ifpack_IC::ComputeSetup()
     Matrix().ExtractMyRowCopy(i, MaxNumEntries, NumIn, &InV[0], &InI[0]); // Get Values and Indices
     
     // Split into L and U (we don't assume that indices are ordered).
-    NumL = 0; 
     NumU = 0; 
     DiagFound = false;
     
@@ -200,6 +216,7 @@ int Ifpack_IC::Compute() {
   if (!IsInitialized()) 
     IFPACK_CHK_ERR(Initialize());
 
+  Time_.ResetStartTime();
   IsComputed_ = false;
   
   // copy matrix into L and U.
@@ -238,7 +255,12 @@ int Ifpack_IC::Compute() {
   double *DV;
   EPETRA_CHK_ERR(D_->ExtractView(&DV)); // Get view of diagonal
     
-  crout_ict(m, Aict, DV, Droptol_, Lfil_, Lict, &Ldiag_);
+  // lfil is average number of nonzeros per row times fill ratio.
+  // Currently crout_ict keeps a constant number of nonzeros per row.
+  // TODO: Pass Lfil_ and make crout_ict keep variable #nonzeros per row.
+  int lfil = (Lfil_ * nz)/n + .5;
+
+  crout_ict(m, Aict, DV, Droptol_, lfil, Lict, &Ldiag_);
 
   // Get rid of unnecessary data
   delete [] ptr;
@@ -272,7 +294,10 @@ int Ifpack_IC::Compute() {
   ComputeFlops_ += (double) U_->NumGlobalNonzeros(); // Accounts for multiplier above
   ComputeFlops_ += (double) D_->GlobalLength(); // Accounts for reciprocal of diagonal
 #endif
-  
+  ++NumCompute_;
+  ComputeTime_ += Time_.ElapsedTime();
+ 
+ 
   IsComputed_ = true;
   
   return(0);
@@ -290,7 +315,9 @@ int Ifpack_IC::ApplyInverse(const Epetra_MultiVector& X,
   
   if (X.NumVectors() != Y.NumVectors()) 
     IFPACK_CHK_ERR(-2); // Return error: X and Y not the same size
-  
+ 
+  Time_.ResetStartTime(); 
+
   bool Upper = true;
   bool UnitDiagonal = true;
   
@@ -306,11 +333,14 @@ int Ifpack_IC::ApplyInverse(const Epetra_MultiVector& X,
   Y.Multiply(1.0, *D_, Y, 0.0); // y = D*y (D_ has inverse of diagonal)
   U_->Solve(Upper, false, UnitDiagonal, Y, Y); // Solve Uy = y
   
-    ++NumApplyInverse_;
 #ifdef IFPACK_FLOPCOUNTERS
   ApplyInverseFlops_ += 4.0 * U_->NumGlobalNonzeros();
   ApplyInverseFlops_ += D_->GlobalLength();
 #endif
+
+  ++NumApplyInverse_;
+  ApplyInverseTime_ += Time_.ElapsedTime();
+
   return(0);
 
 }

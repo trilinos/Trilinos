@@ -78,20 +78,25 @@ struct sockaddr_in {
 
 
 typedef struct {
+    uint8_t  put_data_in_request;
+
     uint8_t  use_buffer_queue;
+
     uint32_t buffer_queue_initial_size;
     uint32_t buffer_queue_max_size;
     uint8_t  buffer_queue_create_if_empty;
+
+    uint32_t rdma_buffer_queue_initial_size;
+    uint32_t rdma_buffer_queue_max_size;
+    uint8_t  rdma_buffer_queue_create_if_empty;
+    uint32_t rdma_buffer_queue_buffer_size;
 } nssi_config_t;
 
 
 
 /* Treat the rpc-generated includes as system includes to avoid warnings */
 #include <Trios_nssi_types_xdr.h>
-#include "Trios_nssi_fprint_types.h"
-
 #include <Trios_nnti_xdr.h>
-#include "Trios_nnti_fprint_types.h"
 
 #ifdef __cplusplus
 extern "C" {

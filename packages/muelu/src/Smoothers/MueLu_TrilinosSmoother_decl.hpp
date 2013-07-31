@@ -66,10 +66,12 @@ namespace MueLu {
 
   /*!
     @class TrilinosSmoother
-    @brief Class that encapsulates external library smoothers. Autoselection of Ifpack or Ifpack2 according to the underlying linear algebra library.
+    @brief Class that encapsulates external library smoothers.
+
+    Autoselection of Ifpack or Ifpack2 according to the underlying linear algebra library.
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class TrilinosSmoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
   {
 #undef MUELU_TRILINOSSMOOTHER_SHORT
@@ -80,7 +82,17 @@ namespace MueLu {
     //! @name Constructors / destructors
     //@{
 
-    //! @brief Constructor
+    /*! @brief Constructor
+
+         @param[in] type Smoother type.  Can currently be
+           - RELAXATION for (symmetric) Gauss-Seidel or Jacobi smoothing
+           - CHEBYSHEV for Chebyshev polynomial smoothing
+           - ILU for incomplete LU smoothing
+
+         @param[in] paramList  A list holding parameters understood by either Ifpack or Ifpack2 to guide the smoother
+         setup.  See MueLu::Ifpack2Smoother for summary of the most commonly used parameters. See the Ifpack/Ifpack2
+         documentation for the full set.
+    */
     TrilinosSmoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0, RCP<FactoryBase> AFact = Teuchos::null);
 
     //! Destructor

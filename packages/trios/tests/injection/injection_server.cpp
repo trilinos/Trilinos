@@ -138,16 +138,13 @@ int injection_server_main(struct injection_args &args, MPI_Comm server_comm)
     int rc = NSSI_OK;
 
     nssi_service injection_svc;
-    log_level debug_level;
     int server_rank;
 
     MPI_Comm_rank(server_comm, &server_rank);
 
     /* options that can be overriden by the command-line */
-    int verbose = 3;  /* default debug_level */
     std::string server_url(NSSI_URL_LEN, '\0');          /* NNTI-style url of the server */
     std::string logfile("");
-    const char *log_str=NULL;
 
 
     memset(&injection_svc, 0, sizeof(nssi_service));

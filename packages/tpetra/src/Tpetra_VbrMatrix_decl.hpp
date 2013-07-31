@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,29 +34,51 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
 #ifndef TPETRA_VBRMATRIX_DECL_HPP
 #define TPETRA_VBRMATRIX_DECL_HPP
 
+/// \file Tpetra_VbrMatrix_decl.hpp
+/// \brief Declarations for the class Tpetra::VbrMatrix.
+
+#include <Tpetra_ConfigDefs.hpp>
+#include <Tpetra_DistObject_decl.hpp>
+#include <Tpetra_Operator.hpp>
+#include <Tpetra_VbrUtils.hpp>
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
-#include <Kokkos_VbrMatrix.hpp>
 
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_Operator.hpp"
-#include "Tpetra_BlockMap.hpp"
-#include "Tpetra_BlockCrsGraph.hpp"
-#include "Tpetra_VbrUtils.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
+// Forward declarations, to avoid including files that we don't really
+// need just for declaring VbrMatrix.  The #ifndef ... #endif prevents
+// Doxygen from generating spurious documentation for the forward
+// declarations.
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+namespace Tpetra {
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  class BlockMap;
 
-/** \file Tpetra_VbrMatrix_decl.hpp
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  class BlockCrsGraph;
 
-  Declarations for the class Tpetra::VbrMatrix.
-*/
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class Vector;
+} // namespace Tpetra
+
+namespace KokkosClassic {
+  template<class Scalar, class LocalOrdinal, class Node>
+  class VbrMatrix;
+} // namespace KokkosClassic
+
+namespace Teuchos {
+  template<class OrdinalType, class ScalarType>
+  class SerialDenseMatrix;
+} // namespace Teuchos
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
 namespace Tpetra {
 
 //! \brief VbrMatrix: Variable block row matrix.
@@ -88,13 +110,15 @@ to the optimized-storage state by calling the method fillComplete().
 Once in the optimized-storage state, the VbrMatrix can not be returned to the
 non-optimized-storage state.
 */
-template <class Scalar, 
-          class LocalOrdinal  = int, 
-          class GlobalOrdinal = LocalOrdinal, 
-          class Node          = Kokkos::DefaultNode::DefaultNodeType, 
-          class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::BlockSparseOps >
-class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, Node>, public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
- public:
+template <class Scalar,
+          class LocalOrdinal  = int,
+          class GlobalOrdinal = LocalOrdinal,
+          class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
+          class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::BlockSparseOps >
+class VbrMatrix :
+    public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, Node>,
+    public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+public:
   typedef Scalar        scalar_type;
   typedef LocalOrdinal  local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
@@ -110,7 +134,9 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
     Block-entries (rectangular, dense submatrices) may be inserted using class
     methods such as setGlobalBlockEntry(...), declared below.
   */
-  VbrMatrix(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > &blkRowMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile);
+  VbrMatrix (const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blkRowMap, 
+	     size_t maxNumEntriesPerRow, 
+	     ProfileType pftype = DynamicProfile);
 
   //! Constructor specifying a pre-filled block-graph.
   /*! Constructing a VbrMatrix with a pre-filled graph means that the matrix will
@@ -123,13 +149,12 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
       to each row in the graph, and a block-entry corresponding to each column-
       index in the graph.
   */
-  VbrMatrix(const Teuchos::RCP<const BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& blkGraph);
+  VbrMatrix (const Teuchos::RCP<const BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& blkGraph);
 
   //! Destructor
   virtual ~VbrMatrix();
 
   //@}
-
   //! @name Advanced Mathematical operations
   //@{
 
@@ -140,7 +165,12 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
       See also the Operator::apply method which is implemented below.
   */
   template <class DomainScalar, class RangeScalar>
-      void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const;
+  void 
+  multiply (const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+	    MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& Y, 
+	    Teuchos::ETransp trans, 
+	    RangeScalar alpha, 
+	    RangeScalar beta) const;
 
   //! Triangular Solve -- Matrix must be triangular.
   /*! Find X such that A*X = Y.
@@ -156,22 +186,24 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
       point-diagonal must be zero.
   */
   template <class DomainScalar, class RangeScalar>
-      void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
+  void 
+  solve (const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& Y, 
+	 MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+	 Teuchos::ETransp trans) const;
 
   //@}
-
   //! @name Operator Methods
   //@{
 
   //! Returns the (point-entry) Map associated with the domain of this operator.
   /*! Note that this is a point-entry map, not a block-map.
   */
-  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
 
   //! Returns the (point-entry) Map associated with the range of this operator.
   /*! Note that this is a point-entry map, not a block-map.
   */
-  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
 
   //! \brief Computes the operator-multivector application.
   /*! Loosely, performs \f$Y = \alpha \cdot A^{\textrm{trans}} \cdot X + \beta \cdot Y\f$. However, the details of operation
@@ -179,19 +211,21 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
       - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
       - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
    */
-  void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-             MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
-             Teuchos::ETransp trans = Teuchos::NO_TRANS,
-             Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-             Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+  void
+  apply (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+	 MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+	 Teuchos::ETransp trans = Teuchos::NO_TRANS,
+	 Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+	 Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
 
   //! Triangular Solve -- Matrix must be triangular.
   /*! Find X such that A*X = Y.
       Both \c X and \c Y are required to have constant stride.
   */
-  void applyInverse(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Y,
-                    MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-                    Teuchos::ETransp trans) const;
+  void
+  applyInverse (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Y,
+		MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+		Teuchos::ETransp trans) const;
 
   //! Indicates whether this operator supports applying the adjoint operator.
   /*!
@@ -205,27 +239,27 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
   //@{
 
   //! Returns the block-row map.
-  const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockRowMap() const;
+  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > getBlockRowMap() const;
 
   //! Returns the block-column map.
-  const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockColMap() const;
+  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > getBlockColMap() const;
 
   //! Returns the block-domain map.
-  const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockDomainMap() const;
+  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > getBlockDomainMap() const;
 
   //! Returns the block-range map.
-  const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockRangeMap() const;
+  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > getBlockRangeMap() const;
 
   //! Returns the point-row map.
-  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getPointRowMap() const;
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getPointRowMap() const;
 
   //! Returns the point-column map.
-  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getPointColMap() const;
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getPointColMap() const;
 
   //! Return true if fillComplete has been called, false otherwise.
   bool isFillComplete() const;
-  //@}
 
+  //@}
   //! @name Insertion Methods
   //@{
 
@@ -367,8 +401,8 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
 
   //! Communicate non-local contributions to the processors that own those contributions.
   void globalAssemble();
-  //@}
 
+  //@}
   //! @name Extraction Methods
   //@{
 
@@ -435,7 +469,7 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
   */
   void getLocalBlockEntryView(LocalOrdinal localBlockRow,
                               LocalOrdinal localBlockCol,
-                              LocalOrdinal& numPtRows, 
+                              LocalOrdinal& numPtRows,
                               LocalOrdinal& numPtCols,
                               Teuchos::ArrayRCP<const Scalar>& blockEntry) const;
 
@@ -464,39 +498,55 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
 
   //! Return a copy of the (point-entry) diagonal values.
   /*!
-    Throws an exception if the input-vector's map is not the same as
+    Throws an exception if the input Vector's Map is not the same as
     getBlockRowMap()->getPointMap().
   */
-  void getLocalDiagCopy(Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag) const;
+  void getLocalDiagCopy (Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag) const;
 
-  const Teuchos::RCP<const BlockCrsGraph<LocalOrdinal, GlobalOrdinal, Node> >& getBlockCrsGraph() {return constBlkGraph_;}
-  //@}
-
-  //! @name Overridden from Teuchos::DistObject
-  //@{
-
-  bool checkSizes(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node>& source);
-
-  void copyAndPermute(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node>& source, size_t numSameIDs, const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs, const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs);
-
-  void packAndPrepare(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node>& source, const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs, Teuchos::Array<char>& exports, const Teuchos::ArrayView<size_t>& numPacketsPerLID, size_t& constantNumPackets, Distributor& distor);
-
-  void unpackAndCombine(const Teuchos::ArrayView<const LocalOrdinal>& importLIDs, const Teuchos::ArrayView<const char>& imports, const Teuchos::ArrayView<size_t>& numPacketsPerLID, size_t constantNumPackets, Distributor& distor, CombineMode CM);
+  Teuchos::RCP<const BlockCrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
+  getBlockCrsGraph () {
+    return constBlkGraph_;
+  }
 
   //@}
-
-  //! @name Overridden from Teuchos::Describable
+  //! @name Implementation of DistObject
   //@{
+
+  virtual bool checkSizes (const SrcDistObject& source);
+
+  virtual void 
+  copyAndPermute (const SrcDistObject& source, 
+		  size_t numSameIDs, 
+		  const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs, 
+		  const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs);
+
+  virtual void 
+  packAndPrepare (const SrcDistObject& source, 
+		  const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs, 
+		  Teuchos::Array<char>& exports, 
+		  const Teuchos::ArrayView<size_t>& numPacketsPerLID, 
+		  size_t& constantNumPackets, 
+		  Distributor& distor);
+
+  virtual void
+  unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal>& importLIDs, 
+		    const Teuchos::ArrayView<const char>& imports, 
+		    const Teuchos::ArrayView<size_t>& numPacketsPerLID, 
+		    size_t constantNumPackets, 
+		    Distributor& distor, 
+		    CombineMode CM);
+
+  //@}
+  //! @name Implementation of Teuchos::Describable
+  //@{
+
   std::string description() const;
 
-  /** \brief Print the object with some verbosity level to a FancyOStream object.
-  */
+  //! Print the object with some verbosity level to a FancyOStream object.
   void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
   //@}
 
  private:
-  //private methods:
-
   Teuchos::RCP<Node> getNode() const;
 
   void updateImport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X) const;
@@ -523,9 +573,15 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
   Teuchos::RCP<BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> > blkGraph_;
   Teuchos::RCP<const BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> > constBlkGraph_;
 
-  Kokkos::VbrMatrix<Scalar,LocalOrdinal,Node> lclMatrix_;
+  typedef KokkosClassic::VbrMatrix<Scalar, LocalOrdinal, Node> local_matrix_type;
 
-  //A variable-block-row matrix is represented by 6 arrays 
+  // We use a pointer so that the _decl header file only needs a
+  // forward declaration, not an include.  We don't really need an RCP
+  // here, since the local matrix object never gets shared outside the
+  // class.  std::unique_ptr (C++11) would be more appropriate.
+  Teuchos::RCP<local_matrix_type> lclMatrix_;
+
+  //A variable-block-row matrix is represented by 6 arrays
   //in packed (contiguous storage) form. For a description of these
   //arrays, see the text at the bottom of this file.
   //(2 of those arrays, rptr and cptr, are represented by arrays in the
@@ -609,12 +665,12 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
 // int nbr = num_block_rows;
 // int total_num_block_nonzeros = bptr[nbr];
 // int total_num_scalar_nonzeros = indx[num_block_nonzeros];
-// 
+//
 // //get arrays for i-th block-row:
 // int* bindx_i = &bindx[bptr[i]];
 // double* vals_i = &val[indx[bptr[i]]];
 // int num_block_nonzeros_in_row_i = bptr[i+1]-bptr[i];
-// 
+//
 //----------------------------------------------------------------------------
 
 #endif //TPETRA_VBRMATRIX_DECL_HPP

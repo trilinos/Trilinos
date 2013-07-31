@@ -116,18 +116,6 @@ bool MueLuPreconditionerFactory::isCompatible(
 }
 
 
-bool MueLuPreconditionerFactory::applySupportsConj(EConj conj) const
-{
-  return false;
-}
-
-
-bool MueLuPreconditionerFactory::applyTransposeSupportsConj(EConj conj) const
-{
-  return false;
-}
-
-
 RCP<PreconditionerBase<double> >
 MueLuPreconditionerFactory::createPrec() const
 {
@@ -153,8 +141,8 @@ void MueLuPreconditionerFactory::initializePrec(
   using Teuchos::get_optional_extra_data;
   using Teuchos::implicit_cast;
 
-  typedef Kokkos::DefaultNode::DefaultNodeType NO;
-  typedef Kokkos::DefaultKernels<double,int,NO>::SparseOps LMO;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
+  typedef KokkosClassic::DefaultKernels<double,int,NO>::SparseOps LMO;
 
   Teuchos::Time totalTimer(""), timer("");
   totalTimer.start(true);

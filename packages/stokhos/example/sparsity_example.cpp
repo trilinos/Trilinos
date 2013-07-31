@@ -9,20 +9,33 @@
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 // 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//  
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 // 
 // ***********************************************************************
@@ -73,6 +86,14 @@ const ProductBasisType prod_basis_type_values[] = {
 const char *prod_basis_type_names[] = { 
   "complete", "tensor", "total", "smolyak" };
 
+// Ordering types
+enum OrderingType { TOTAL_ORDERING, LEXICOGRAPHIC_ORDERING, MORTON_Z_ORDERING };
+const int num_ordering_types = 3;
+const OrderingType ordering_type_values[] = { 
+  TOTAL_ORDERING, LEXICOGRAPHIC_ORDERING, MORTON_Z_ORDERING };
+const char *ordering_type_names[] = { 
+  "total", "lexicographic", "morton-z" };
+
 int main(int argc, char **argv)
 {
   try {
@@ -107,6 +128,11 @@ int main(int argc, char **argv)
 		  num_prod_basis_types, prod_basis_type_values, 
 		  prod_basis_type_names, 
 		  "Product basis type");
+    OrderingType ordering_type = TOTAL_ORDERING;
+    CLP.setOption("ordering", &ordering_type, 
+		  num_ordering_types, ordering_type_values, 
+		  ordering_type_names, 
+		  "Product basis ordering");
     double alpha = 1.0;
     CLP.setOption("alpha", &alpha, "Jacobi alpha index");
     double beta = 1.0;
@@ -117,6 +143,15 @@ int main(int argc, char **argv)
     CLP.setOption("old", "new", &use_old, "Use old or new Cijk algorithm");
     bool print = false;
     CLP.setOption("print", "no-print", &print, "Print Cijk to screen");
+    bool save_3tensor = false;
+    CLP.setOption("save_3tensor", "no-save_3tensor", &save_3tensor, 
+		  "Save full 3tensor to file");
+    std::string file_3tensor = "Cijk.dat";
+    CLP.setOption("filename_3tensor", &file_3tensor, 
+		  "Filename to store full 3-tensor");
+    bool unique = false;
+    CLP.setOption("unique", "no-unique", &unique, 
+		  "Only save the unique non-zeros");
 
     // Parse arguments
     CLP.parse( argc, argv );
@@ -146,39 +181,64 @@ int main(int argc, char **argv)
 				  p, alpha, beta, true, growth_type));
     }
     Teuchos::RCP<const Stokhos::ProductBasis<int,double> > basis;
+    typedef Stokhos::TotalOrderLess< Stokhos::MultiIndex<int> > total_less;
+    typedef Stokhos::LexographicLess< Stokhos::MultiIndex<int> > lexo_less;
+    typedef Stokhos::MortonZLess< Stokhos::MultiIndex<int> > z_less;
     if (prod_basis_type == COMPLETE)
       basis = 
 	Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(
 		       bases, drop, use_old));
-    else if (prod_basis_type == TENSOR)
-      basis = 
-	Teuchos::rcp(new Stokhos::TensorProductBasis<int,double>(
-		       bases, drop));
-    else if (prod_basis_type == TOTAL)
-      basis = 
-	Teuchos::rcp(new Stokhos::TotalOrderBasis<int,double>(
-		       bases, drop));
+    else if (prod_basis_type == TENSOR) {
+      if (ordering_type == TOTAL_ORDERING)
+	basis = 
+	  Teuchos::rcp(new Stokhos::TensorProductBasis<int,double,total_less>(
+			 bases, drop));
+      else if (ordering_type == LEXICOGRAPHIC_ORDERING)
+	basis = 
+	  Teuchos::rcp(new Stokhos::TensorProductBasis<int,double,lexo_less>(
+			 bases, drop));
+      else if (ordering_type == MORTON_Z_ORDERING)
+	basis = 
+	  Teuchos::rcp(new Stokhos::TensorProductBasis<int,double,z_less>(
+			 bases, drop));
+    }
+    else if (prod_basis_type == TOTAL) {
+      if (ordering_type == TOTAL_ORDERING)
+	basis = 
+	  Teuchos::rcp(new Stokhos::TotalOrderBasis<int,double,total_less>(
+			 bases, drop));
+      else if (ordering_type == LEXICOGRAPHIC_ORDERING)
+	basis = 
+	  Teuchos::rcp(new Stokhos::TotalOrderBasis<int,double,lexo_less>(
+			 bases, drop));
+      else if (ordering_type == MORTON_Z_ORDERING)
+	basis = 
+	  Teuchos::rcp(new Stokhos::TotalOrderBasis<int,double,z_less>(
+			 bases, drop));
+    }
     else if (prod_basis_type == SMOLYAK) {
       Stokhos::TotalOrderIndexSet<int> index_set(d, p);
-      basis = 
-	Teuchos::rcp(new Stokhos::SmolyakBasis<int,double>(
-		       bases, index_set, drop));
+       if (ordering_type == TOTAL_ORDERING)
+	 basis = 
+	   Teuchos::rcp(new Stokhos::SmolyakBasis<int,double,total_less>(
+			  bases, index_set, drop));
+       else if (ordering_type == LEXICOGRAPHIC_ORDERING)
+	 basis = 
+	   Teuchos::rcp(new Stokhos::SmolyakBasis<int,double,lexo_less>(
+			  bases, index_set, drop));
+       else if (ordering_type == MORTON_Z_ORDERING)
+	 basis = 
+	   Teuchos::rcp(new Stokhos::SmolyakBasis<int,double,z_less>(
+			  bases, index_set, drop));
     }
 
     // Triple product tensor
-    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
-    if (prod_basis_type == COMPLETE) {
-      if (full)
-	Cijk = basis->computeTripleProductTensor(basis->size());
-      else
-	Cijk = basis->computeTripleProductTensor(basis->dimension()+1);
-    }
-    else {
-      if (full)
-	Cijk = basis->computeTripleProductTensor(p);
-      else
-	Cijk = basis->computeTripleProductTensor(1);
-    }
+    typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;
+    Teuchos::RCP<Cijk_type> Cijk;
+    if (full)
+      Cijk = basis->computeTripleProductTensor();
+    else
+      Cijk = basis->computeLinearTripleProductTensor();
 
     std::cout << "basis size = " << basis->size() 
 	      << " num nonzero Cijk entries = " << Cijk->num_entries() 
@@ -196,6 +256,36 @@ int main(int argc, char **argv)
     
     // Print triple product sparsity to matrix market file
     Stokhos::sparse3Tensor2MatrixMarket(*basis, *Cijk, comm, file);
+
+    // Print full 3-tensor to file
+    if (save_3tensor) {
+      std::ofstream cijk_file(file_3tensor.c_str());
+      cijk_file.precision(14);
+      cijk_file.setf(std::ios::scientific);
+      cijk_file << "i, j, k, cijk" << std::endl;
+      Cijk_type::k_iterator k_begin = Cijk->k_begin();
+      Cijk_type::k_iterator k_end = Cijk->k_end();
+      for (Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
+	int k = index(k_it);
+	Cijk_type::kj_iterator j_begin = Cijk->j_begin(k_it);
+	Cijk_type::kj_iterator j_end = Cijk->j_end(k_it);
+	for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
+	  int j = index(j_it);
+	  Cijk_type::kji_iterator i_begin = Cijk->i_begin(j_it);
+	  Cijk_type::kji_iterator i_end = Cijk->i_end(j_it);
+	  for (Cijk_type::kji_iterator i_it = i_begin; i_it != i_end; ++i_it) {
+	    int i = index(i_it);
+	    double cijk = value(i_it);
+	    if (!unique || ( i >= j && j >= k ))
+	      cijk_file << i << ", " 
+			<< j << ", " 
+			<< k << ", "
+			<< cijk << std::endl;
+	  }
+	}
+      }
+      cijk_file.close();
+    }
 
     Teuchos::TimeMonitor::summarize(std::cout);
     

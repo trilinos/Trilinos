@@ -56,6 +56,7 @@ Tpetra::Utils::generateMatrix(const Teuchos::RCP<Teuchos::ParameterList> &plist,
                               Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A) 
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
+  using Teuchos::as;
   TEUCHOS_TEST_FOR_EXCEPTION( plist == Teuchos::null, std::runtime_error,
       "Tpetra::Utils::generateMatrix(): ParameterList is null.");
   TEUCHOS_TEST_FOR_EXCEPTION( Teuchos::isParameterType<std::string>(*plist,"mat_type") == false, std::runtime_error,
@@ -63,11 +64,11 @@ Tpetra::Utils::generateMatrix(const Teuchos::RCP<Teuchos::ParameterList> &plist,
   std::string mat_type = plist->get<std::string>("mat_type");
   if (mat_type == "Lap3D") {
     // 3D Laplacian, grid is a cube with dimension gridSize x gridSize x gridSize
-    const int gridSize = plist->get<int>("gridSize",100);
-    const GlobalOrdinal gS2 = (GlobalOrdinal)gridSize*(GlobalOrdinal)gridSize;
-    const GlobalOrdinal numRows = gS2*(GlobalOrdinal)gridSize;
+    const GlobalOrdinal gridSize = as<GlobalOrdinal>(plist->get<int>("gridSize",100));
+    const GlobalOrdinal gS2 = gridSize*gridSize;
+    const GlobalOrdinal numRows = gS2*gridSize;
     Teuchos::RCP<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap;
-    rowMap = Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>((global_size_t)numRows,(GlobalOrdinal)0,comm,GloballyDistributed,node));
+    rowMap = Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(as<global_size_t>(numRows),as<GlobalOrdinal>(0),comm,GloballyDistributed,node));
     A = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap,7,Tpetra::StaticProfile));
     // fill matrix, one row at a time
     Teuchos::Array<GlobalOrdinal> neighbors;
@@ -281,16 +282,16 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
 #define TPETRA_MATRIXIO_INSTANT(SCALAR,LO,GO,NODE)                                                                                                      \
   template                                                                                                                                              \
   void                                                                                                                                                  \
-  readHBMatrix<SCALAR,LO,GO,NODE,Kokkos::DefaultKernels<SCALAR,LO,NODE>::SparseOps>(                                                                    \
+  readHBMatrix<SCALAR,LO,GO,NODE,KokkosClassic::DefaultKernels<SCALAR,LO,NODE>::SparseOps>(                                                                    \
           const std::string &, const Teuchos::RCP<const Teuchos::Comm<int> > &, const Teuchos::RCP<NODE > &,                                            \
-          Teuchos::RCP< CrsMatrix<SCALAR,LO,GO,NODE,Kokkos::DefaultKernels<SCALAR,LO,NODE>::SparseOps > > &,                                            \
+          Teuchos::RCP< CrsMatrix<SCALAR,LO,GO,NODE,KokkosClassic::DefaultKernels<SCALAR,LO,NODE>::SparseOps > > &,                                            \
           Teuchos::RCP< const Tpetra::Map<LO,GO,NODE> >,                                                                                                \
           const Teuchos::RCP< Teuchos::ParameterList > & );                                                                                             \
                                                                                                                                                         \
   template                                                                                                                                              \
   void                                                                                                                                                  \
-  generateMatrix<SCALAR,LO,GO,NODE,Kokkos::DefaultKernels<SCALAR,LO,NODE>::SparseOps>(                                                                  \
+  generateMatrix<SCALAR,LO,GO,NODE,KokkosClassic::DefaultKernels<SCALAR,LO,NODE>::SparseOps>(                                                                  \
           const Teuchos::RCP<Teuchos::ParameterList> &plist, const Teuchos::RCP<const Teuchos::Comm<int> > &, const Teuchos::RCP<NODE > &,              \
-          Teuchos::RCP< CrsMatrix<SCALAR,LO,GO,NODE,Kokkos::DefaultKernels<SCALAR,LO,NODE>::SparseOps > > &);
+          Teuchos::RCP< CrsMatrix<SCALAR,LO,GO,NODE,KokkosClassic::DefaultKernels<SCALAR,LO,NODE>::SparseOps > > &);
 
 #endif

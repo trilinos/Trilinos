@@ -183,7 +183,7 @@ public:
    *
    * \param sublistName [in] The name of the sublist.
    *
-   * \param activeQuery [in] If true, then this lookup will be recored as an
+   * \param activeQuery [in] If true, then this lookup will be recorded as an
    * active query which will turn the <tt>isUsed</tt> bool to <tt>true</tt>.
    */
   std::string getStringValue(
@@ -191,10 +191,12 @@ public:
     const std::string &sublistName = "", const bool activeQuery = true
     ) const;
 
-  /** \brief Lookup a parameter from a parameter list, perform a mapping from
-   * a std::string value embedded in the <tt>ParameterEntry</tt> object and return
-   * its associated integral value.
-   */
+  /// \brief Get the integer enum value for the given parameter.
+  ///
+  /// Look up a parameter from a parameter list, map from the
+  /// std::string value in the <tt>ParameterEntry</tt> object to its
+  /// corresponding integer enum value, and return the integer enum
+  /// value.
   IntegralType getIntegralValue(
     ParameterList &paramList, const std::string &paramName,
     const std::string &defaultValue
@@ -626,44 +628,36 @@ public:
   EPreferredType getPreferredType() const;
 
   /** \brief Gets the string representation of a given preferred type enum. */
-  static const std::string&
-    getPrefferedTypeString(EPreferredType enumValue)
+  static const std::string& getPrefferedTypeString (EPreferredType enumValue)
   {
-    switch(enumValue){
+    switch (enumValue) {
       case PREFER_INT:
-        return getIntEnumString();
-        break;
+        return getIntEnumString ();
       case PREFER_DOUBLE:
-        return getDoubleEnumString();
-        break;
+        return getDoubleEnumString ();
       case PREFER_STRING:
-        return getStringEnumString();
-        break;
+        return getStringEnumString ();
       default:
-        static const std::string typeString(toString(enumValue));
+        const std::string typeString (toString (enumValue));
         throw std::runtime_error("Cannot convert enumValue: " + typeString + " to a string");
-        //Should never get here. This code is here so that a warning is not generated.
-        return typeString;
     }
   }
 
   /** \brief Gets the preferred type enum associated with a give string. */
-  static EPreferredType getPrefferedTypeStringEnum(const std::string& enumString)
+  static EPreferredType getPrefferedTypeStringEnum (const std::string& enumString)
   {
-    if(enumString == getIntEnumString()){
+    if (enumString == getIntEnumString ()) {
       return PREFER_INT;
     }
-    else if(enumString == getDoubleEnumString()){
+    else if (enumString == getDoubleEnumString ()) {
       return PREFER_DOUBLE;
     }
-    else if(enumString == getStringEnumString()){
+    else if (enumString == getStringEnumString ()) {
       return PREFER_STRING;
     }
-    else{
-      throw std::runtime_error("Cannot convert enumString: " + enumString + " to an enum");
+    else {
+      throw std::runtime_error ("Cannot convert enumString: " + enumString + " to an enum");
     }
-    //Should never get here. This code is here so that a warning is not generated.
-    return (EPreferredType)-1;
   }
 
   //@}

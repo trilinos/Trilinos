@@ -8,20 +8,33 @@
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
 #
-# This library is free software; you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as
-# published by the Free Software Foundation; either version 2.1 of the
-# License, or (at your option) any later version.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
 #
-# This library is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
 #
-# You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the Corporation nor the names of the
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 # Questions? Contact Glen Hansen (gahanse@sandia.gov)
 #
 # ************************************************************************
@@ -76,31 +89,31 @@ bool MOERTEL::Manager::BuildSaddleMap()
   {
     if (curr->second->IsComplete() == false)
     {
-      cout << "***ERR*** MOERTEL::Manager::BuildSaddleMap:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::BuildSaddleMap:\n"
            << "***ERR*** interface " << curr->second->Id() << " is not Complete()\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
     }
   }
-  
+
   // check whether we have a problemmap_
   if (problemmap_==Teuchos::null)
   {
-      cout << "***ERR*** MOERTEL::Manager::BuildSaddleMap:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::BuildSaddleMap:\n"
            << "***ERR*** No problemmap_ set\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
   }
-  
+
   // check whether we have a constraintsmap_
   if (constraintsmap_==Teuchos::null)
   {
-      cout << "***ERR*** MOERTEL::Manager::BuildSaddleMap:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::BuildSaddleMap:\n"
            << "***ERR*** onstraintsmap is NULL\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
   }
-  
+
   // the saddle point problem rowmap is the problemmap_ + the constraintmap
   int numglobalelements = problemmap_->NumGlobalElements() +
                           constraintsmap_->NumGlobalElements();
@@ -116,7 +129,7 @@ bool MOERTEL::Manager::BuildSaddleMap()
     myglobalelements[count++] = constraintsmyglobalelements[i];
   if (count != nummyelements)
   {
-    cout << "***ERR*** MOERTEL::Manager::BuildSaddleMap:\n"
+    std::cout << "***ERR*** MOERTEL::Manager::BuildSaddleMap:\n"
          << "***ERR*** Mismatch in dimensions\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -124,7 +137,7 @@ bool MOERTEL::Manager::BuildSaddleMap()
   saddlemap_ = Teuchos::rcp(new Epetra_Map(numglobalelements,nummyelements,
                               &(myglobalelements[0]),0,comm_));
   myglobalelements.clear();
-  
+
   return true;
 }
 
@@ -137,49 +150,49 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSaddleProblem()
   // time this process
   Epetra_Time time(Comm());
   time.ResetStartTime();
-  
+
   // check whether all interfaces are complete and integrated
   std::map<int,Teuchos::RCP<MOERTEL::Interface> >::iterator curr;
   for (curr=interface_.begin(); curr != interface_.end(); ++curr)
   {
     if (curr->second->IsComplete() == false)
     {
-      cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
            << "***ERR*** interface " << curr->second->Id() << " is not Complete()\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
     }
     if (curr->second->IsIntegrated() == false)
     {
-      cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
            << "***ERR*** interface " << curr->second->Id() << " is not integrated yet\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
     }
   }
-  
+
   // check whether we have a problemmap_
   if (problemmap_==Teuchos::null)
   {
-      cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
            << "***ERR*** No problemmap_ set\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
   }
-  
+
   // check whether we have a constraintsmap_
   if (constraintsmap_==Teuchos::null)
   {
-      cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
            << "***ERR*** onstraintsmap is NULL\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
   }
-  
+
   // check for saddlemap_
   if (saddlemap_==Teuchos::null)
   {
-      cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
            << "***ERR*** saddlemap_==NULL\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
@@ -188,7 +201,7 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSaddleProblem()
   // check for inputmatrix
   if (inputmatrix_==Teuchos::null)
   {
-      cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
            << "***ERR*** No inputmatrix set\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
@@ -197,25 +210,25 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSaddleProblem()
   // check whether we have M and D matrices
   if (D_==Teuchos::null || M_==Teuchos::null)
   {
-      cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::MakeSaddleProblem:\n"
            << "***ERR*** Matrix M or D is NULL\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
   }
-  
+
   // create a matrix for the saddle problem and fill it
   saddlematrix_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy,*saddlemap_,90));
 
   // add values from inputmatrix
   MOERTEL::MatrixMatrixAdd(*inputmatrix_,false,1.0,*saddlematrix_,0.0);
-  
+
   // add values from D_
   MOERTEL::MatrixMatrixAdd(*D_,false,1.0,*saddlematrix_,1.0);
-  MOERTEL::MatrixMatrixAdd(*D_,true,1.0,*saddlematrix_,1.0);  
+  MOERTEL::MatrixMatrixAdd(*D_,true,1.0,*saddlematrix_,1.0);
 
   // add values from M_
   MOERTEL::MatrixMatrixAdd(*M_,false,1.0,*saddlematrix_,1.0);
-  MOERTEL::MatrixMatrixAdd(*M_,true,1.0,*saddlematrix_,1.0);  
+  MOERTEL::MatrixMatrixAdd(*M_,true,1.0,*saddlematrix_,1.0);
 
   saddlematrix_->FillComplete();
   saddlematrix_->OptimizeStorage();
@@ -223,8 +236,8 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSaddleProblem()
   // time this process
   double t = time.ElapsedTime();
   if (OutLevel()>5 && Comm().MyPID()==0)
-    cout << "MOERTEL (Proc 0): Construct saddle system in " << t << " sec\n";
-  
+    std::cout << "MOERTEL (Proc 0): Construct saddle system in " << t << " sec\n";
+
 
   return saddlematrix_.get();
 }
@@ -246,42 +259,42 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   {
     if (curr->second->IsComplete() == false)
     {
-      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
            << "***ERR*** interface " << curr->second->Id() << " is not Complete()\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
     }
     if (curr->second->IsIntegrated() == false)
     {
-      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
            << "***ERR*** interface " << curr->second->Id() << " is not integrated yet\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
     }
   }
-  
+
   // check whether we have a problemmap_
   if (problemmap_==Teuchos::null)
   {
-      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
            << "***ERR*** No problemmap_ set\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
   }
-  
+
   // check whether we have a constraintsmap_
   if (constraintsmap_==Teuchos::null)
   {
-      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
            << "***ERR*** onstraintsmap is NULL\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
   }
-  
+
   // check for saddlemap_
   if (saddlemap_==Teuchos::null)
   {
-      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
            << "***ERR*** saddlemap_==NULL\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
@@ -290,7 +303,7 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   // check for inputmatrix
   if (inputmatrix_==Teuchos::null)
   {
-      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
            << "***ERR*** No inputmatrix set\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
@@ -299,12 +312,12 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   // check whether we have M and D matrices
   if (D_==Teuchos::null || M_==Teuchos::null)
   {
-      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
            << "***ERR*** Matrix M or D is NULL\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
   }
-  
+
   // we need a map from lagrange multiplier dofs to primal dofs on the same node
   std::vector<MOERTEL::Node*> nodes(0);
   std::map<int,int> lm_to_dof;
@@ -314,13 +327,13 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
     inter->GetNodeView(nodes);
     for (int i=0; i<(int)nodes.size(); ++i)
     {
-      if (!nodes[i]->Nlmdof()) 
+      if (!nodes[i]->Nlmdof())
         continue;
       const int* dof = nodes[i]->Dof();
       const int* lmdof = nodes[i]->LMDof();
       for (int j=0; j<nodes[i]->Nlmdof(); ++j)
       {
-        //cout << "j " << j << " maps lmdof " << lmdof[j] << " to dof " << dof[j] << endl;
+        //std::cout << "j " << j << " maps lmdof " << lmdof[j] << " to dof " << dof[j] << std::endl;
         lm_to_dof[lmdof[j]] = dof[j];
       }
     }
@@ -329,42 +342,42 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   /*
                _              _
               |               |
-              |  Arr  Arn  Mr | 
+              |  Arr  Arn  Mr |
          S =  |               |
-              |  Anr  Ann  D  | 
+              |  Anr  Ann  D  |
               |
               |  MrT  D    0  |
               |_          _   |
 
                _           _
               |            |
-              |  Arr  Arn  | 
+              |  Arr  Arn  |
          A =  |            |
-              |  Anr  Ann  | 
+              |  Anr  Ann  |
               |_          _|
-  
+
         1) Ann is square and we need it's Range/DomainMap annmap
-        
+
                _         _
         WT =  |_ 0 Dinv _|
 
         2) Build WT (has rowmap/rangemap annmap and domainmap problemmap_)
-             
+
                _    _
               |     |
-              |  Mr | 
+              |  Mr |
          B =  |     |
-              |  D  | 
+              |  D  |
               |_   _|
-  
+
         3) Build B (has rowmap/rangemap problemmap_ and domainmap annmap)
-        
+
         4) Build I, the identity matrix with maps problemmap_,problemmap_);
-        
+
         After constructing WT ,B and I we can start building Atilde (spdmatrix_)
-        
+
            Atilde = A + ( B WT - I) A W B^T + B WT A (W B^T - I)
-           
+
         5) Build BWT = B * WT
 
         6) Build BWTmI = BWT - I
@@ -374,14 +387,14 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
         8) Allocate spdmatrix_  = A + BWTmIAWBT
 
         9) Build WBTmI = WT^T * B^T - I
-        
+
         10) Build BWTAWBTmI = BWT * A * WBTmI and add to spdmatrix_
             Call FillComplete on spdmatrix_
-            
+
         11) Build ImBWT = I - BWT and store it
 
-  */    
-  
+  */
+
   int err=0;
   //--------------------------------------------------------------------------
   // 1) create the rangemap of Ann
@@ -390,9 +403,9 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   std::map<int,int>::iterator intintcurr;
   for (intintcurr=lm_to_dof.begin(); intintcurr!=lm_to_dof.end(); ++intintcurr)
   {
-    if (problemmap_->MyGID(intintcurr->second)==false) 
+    if (problemmap_->MyGID(intintcurr->second)==false)
       continue;
-    if ((int)myanngids.size()<=count) 
+    if ((int)myanngids.size()<=count)
       myanngids.resize(myanngids.size()+50);
     myanngids[count] = intintcurr->second;
     ++count;
@@ -415,12 +428,12 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   Teuchos::RCP<Epetra_CrsMatrix> A22    = Teuchos::null;
   MOERTEL::SplitMatrix2x2(inputmatrix_,A11row,A22row,A11,A12,A21,A22);
 #endif
-  
+
 #if 0
   //--------------------------------------------------------------------------
   // 1.7) create a shifted version of M and D
-  Epetra_CrsMatrix* MTshifted = new Epetra_CrsMatrix(Copy,*annmap,1,false); 
-  Epetra_CrsMatrix* Dshifted  = new Epetra_CrsMatrix(Copy,*annmap,1,false); 
+  Epetra_CrsMatrix* MTshifted = new Epetra_CrsMatrix(Copy,*annmap,1,false);
+  Epetra_CrsMatrix* Dshifted  = new Epetra_CrsMatrix(Copy,*annmap,1,false);
   std::vector<int> gindices(500);
   for (intintcurr=lm_to_dof.begin(); intintcurr!=lm_to_dof.end(); ++intintcurr)
   {
@@ -432,36 +445,36 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
     int numentries;
     int* indices;
     double* values;
-    
+
     // do D
     err = D_->ExtractMyRowView(lmlrid,numentries,values,indices);
-    if (err) cout << "D_->ExtractMyRowView returned err=" << err << endl;
+    if (err) std::cout << "D_->ExtractMyRowView returned err=" << err << std::endl;
     if (numentries>(int)gindices.size()) gindices.resize(numentries);
     for (int j=0; j<numentries; ++j)
     {
       gindices[j] = D_->GCID(indices[j]);
-      if (gindices[j]<0) cout << "Cannot find gcid for indices[j]\n";
+      if (gindices[j]<0) std::cout << "Cannot find gcid for indices[j]\n";
     }
-    err = Dshifted->InsertGlobalValues(dof,numentries,values,&gindices[0]);       
-    if (err<0) cout << "Dshifted->InsertGlobalValues returned err=" << err << endl;
-    
+    err = Dshifted->InsertGlobalValues(dof,numentries,values,&gindices[0]);
+    if (err<0) std::cout << "Dshifted->InsertGlobalValues returned err=" << err << std::endl;
+
     // do MT
     err = M_->ExtractMyRowView(lmlrid,numentries,values,indices);
-    if (err) cout << "M_->ExtractMyRowView returned err=" << err << endl;
+    if (err) std::cout << "M_->ExtractMyRowView returned err=" << err << std::endl;
     if (numentries>(int)gindices.size()) gindices.resize(numentries);
     for (int j=0; j<numentries; ++j)
     {
       gindices[j] = M_->GCID(indices[j]);
-      if (gindices[j]<0) cout << "Cannot find gcid for indices[j]\n";
+      if (gindices[j]<0) std::cout << "Cannot find gcid for indices[j]\n";
     }
-    err = MTshifted->InsertGlobalValues(dof,numentries,values,&gindices[0]);       
-    if (err<0) cout << "MTshifted->InsertGlobalValues returned err=" << err << endl;
-    
+    err = MTshifted->InsertGlobalValues(dof,numentries,values,&gindices[0]);
+    if (err<0) std::cout << "MTshifted->InsertGlobalValues returned err=" << err << std::endl;
+
   }
   gindices.clear();
-  Dshifted->FillComplete(*problemmap_,*annmap);  
+  Dshifted->FillComplete(*problemmap_,*annmap);
   Dshifted->OptimizeStorage();
-  MTshifted->FillComplete(*problemmap_,*annmap);  
+  MTshifted->FillComplete(*problemmap_,*annmap);
   MTshifted->OptimizeStorage();
   Dshifted_ = Teuchos::rcp(Dshifted);
   MTshifted_ = Teuchos::rcp(MTshifted);
@@ -469,7 +482,7 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
 
   //--------------------------------------------------------------------------
   // 2) create WT, D and MT
-  Epetra_CrsMatrix* WT        = new Epetra_CrsMatrix(Copy,*annmap,1,false); 
+  Epetra_CrsMatrix* WT        = new Epetra_CrsMatrix(Copy,*annmap,1,false);
   for (intintcurr=lm_to_dof.begin(); intintcurr!=lm_to_dof.end(); ++intintcurr)
   {
     int lmdof = intintcurr->first;
@@ -481,32 +494,32 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
     int* indices;
     double* values;
     err = D_->ExtractMyRowView(lmlrid,numentries,values,indices);
-    if (err) cout << "D_->ExtractMyRowView returned err=" << err << endl;
+    if (err) std::cout << "D_->ExtractMyRowView returned err=" << err << std::endl;
     bool foundit = false;
     for (int j=0; j<numentries; ++j)
     {
       int gcid = D_->GCID(indices[j]);
-      if (gcid<0) cout << "Cannot find gcid for indices[j]\n";
-      //cout << "Proc " << Comm().MyPID() << " lmdof " << lmdof << " dof " << dof << " gcid " << gcid << " val " << values[j] << endl;
+      if (gcid<0) std::cout << "Cannot find gcid for indices[j]\n";
+      //std::cout << "Proc " << Comm().MyPID() << " lmdof " << lmdof << " dof " << dof << " gcid " << gcid << " val " << values[j] << std::endl;
       if (gcid==dof)
       {
         double val = 1./values[j];
         err = WT->InsertGlobalValues(dof,1,&val,&dof);
-        if (err<0) cout << "WT->InsertGlobalValues returned err=" << err << endl;
+        if (err<0) std::cout << "WT->InsertGlobalValues returned err=" << err << std::endl;
         foundit = true;
         break;
       }
     }
     if (!foundit)
     {
-      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
            << "***ERR*** Cannot compute inverse of D_\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      cout << "lmdof " << lmdof << " dof " << dof << endl;
+      std::cout << "lmdof " << lmdof << " dof " << dof << std::endl;
       return NULL;
-    }  
+    }
   }
-  WT->FillComplete(*problemmap_,*annmap);  
+  WT->FillComplete(*problemmap_,*annmap);
   WT_ = Teuchos::rcp(WT);
 
   //--------------------------------------------------------------------------
@@ -521,40 +534,40 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
     if (D_->MyGRID(lmdof)==false)
       continue;
     int lmlrid = D_->LRID(lmdof);
-    if (lmlrid<0) cout << "Cannot find lmlrid for lmdof\n";
+    if (lmlrid<0) std::cout << "Cannot find lmlrid for lmdof\n";
     int numentries;
     int* indices;
     double* values;
-    
+
     // extract and add values from D
     err = D_->ExtractMyRowView(lmlrid,numentries,values,indices);
-    if (err) cout << "D_->ExtractMyRowView returned err=" << err << endl;
+    if (err) std::cout << "D_->ExtractMyRowView returned err=" << err << std::endl;
     if (numentries>(int)newindices.size()) newindices.resize(numentries);
     for (int j=0; j<numentries; ++j)
     {
       newindices[j] = D_->GCID(indices[j]);
-      if (newindices[j]<0) cout << "Cannot find gcid for indices[j]\n";
+      if (newindices[j]<0) std::cout << "Cannot find gcid for indices[j]\n";
     }
-    //cout << "Inserting from D in row " << dof << " cols/val ";
-    //for (int j=0; j<numentries; ++j) cout << newindices[j] << "/" << values[j] << " ";
-    //cout << endl;
+    //std::cout << "Inserting from D in row " << dof << " cols/val ";
+    //for (int j=0; j<numentries; ++j) std::cout << newindices[j] << "/" << values[j] << " ";
+    //std::cout << std::endl;
     err = tmp->InsertGlobalValues(dof,numentries,values,&newindices[0]);
-    if (err) cout << "tmp->InsertGlobalValues returned err=" << err << endl;
-  
+    if (err) std::cout << "tmp->InsertGlobalValues returned err=" << err << std::endl;
+
     // extract and add values from M
     err = M_->ExtractMyRowView(lmlrid,numentries,values,indices);
-    if (err) cout << "M_->ExtractMyRowView returned err=" << err << endl;
+    if (err) std::cout << "M_->ExtractMyRowView returned err=" << err << std::endl;
     if (numentries>(int)newindices.size()) newindices.resize(numentries);
     for (int j=0; j<numentries; ++j)
     {
       newindices[j] = M_->GCID(indices[j]);
-      if (newindices[j]<0) cout << "Cannot find gcid for indices[j]\n";
+      if (newindices[j]<0) std::cout << "Cannot find gcid for indices[j]\n";
     }
-    //cout << "Inserting from M in row " << dof << " cols/val ";
-    //for (int j=0; j<numentries; ++j) cout << newindices[j] << "/" << values[j] << " ";
-    //cout << endl;
+    //std::cout << "Inserting from M in row " << dof << " cols/val ";
+    //for (int j=0; j<numentries; ++j) std::cout << newindices[j] << "/" << values[j] << " ";
+    //std::cout << std::endl;
     err = tmp->InsertGlobalValues(dof,numentries,values,&newindices[0]);
-    if (err) cout << "tmp->InsertGlobalValues returned err=" << err << endl;
+    if (err) std::cout << "tmp->InsertGlobalValues returned err=" << err << std::endl;
   }
   tmp->FillComplete(*(problemmap_.get()),*annmap);
 
@@ -572,37 +585,37 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   {
     double one = 1.0;
     int grid = I->GRID(i);
-    if (grid<0) cout << "Cannot find grid for i\n";
+    if (grid<0) std::cout << "Cannot find grid for i\n";
     err = I->InsertGlobalValues(grid,1,&one,&grid);
-    if (err<0) cout << "I->InsertGlobalValues returned err=" << err << endl;
+    if (err<0) std::cout << "I->InsertGlobalValues returned err=" << err << std::endl;
   }
   I->FillComplete(*problemmap_,*problemmap_);
   I_ = Teuchos::rcp(I);
   //--------------------------------------------------------------------------
   // 5) Build BWT = B * WT
-  Epetra_CrsMatrix* BWT = MOERTEL::MatMatMult(*B,false,*WT,false,OutLevel()); 
-  
+  Epetra_CrsMatrix* BWT = MOERTEL::MatMatMult(*B,false,*WT,false,OutLevel());
+
   //--------------------------------------------------------------------------
   // 6) Build BWTmI = BWT - I
   Epetra_CrsMatrix* BWTmI = new Epetra_CrsMatrix(Copy,*problemmap_,10,false);
   MOERTEL::MatrixMatrixAdd(*BWT,false,1.0,*BWTmI,0.0);
   MOERTEL::MatrixMatrixAdd(*I,false,-1.0,*BWTmI,1.0);
   BWTmI->FillComplete();
-  
+
   //--------------------------------------------------------------------------
   // 7) Build BWTmIAWBT = BWTmI * A * W * B^T
   Epetra_CrsMatrix* BWTmIA = MOERTEL::MatMatMult(*BWTmI,false,*inputmatrix_,false,OutLevel());
   Epetra_CrsMatrix* WBT    = MOERTEL::MatMatMult(*WT,true,*B,true,OutLevel());
   Epetra_CrsMatrix* BWTmIAWBT = MOERTEL::MatMatMult(*BWTmIA,false,*WBT,false,OutLevel());
   delete BWTmIA; BWTmIA = NULL;
-  
+
   //--------------------------------------------------------------------------
   // 8) Allocate spdmatrix_ and add A and BWTmIAWBT
   spdmatrix_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy,*problemmap_,10,false));
   MOERTEL::MatrixMatrixAdd(*BWTmIAWBT,false,1.0,*spdmatrix_,0.0);
   delete BWTmIAWBT; BWTmIAWBT = NULL;
   MOERTEL::MatrixMatrixAdd(*inputmatrix_,false,1.0,*spdmatrix_,1.0);
-  
+
   //--------------------------------------------------------------------------
   // 9) Build WBTmI = WT^T * B^T - I
   Epetra_CrsMatrix* WBTmI = new Epetra_CrsMatrix(Copy,*problemmap_,10,false);
@@ -610,28 +623,28 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   MOERTEL::MatrixMatrixAdd(*WBT,false,1.0,*WBTmI,1.0);
   WBTmI->FillComplete();
   delete WBT; WBT = NULL;
-  
+
   //--------------------------------------------------------------------------
   // 10) Build BWTAWBTmI = BWT * A * WBTmI and add to spdmatrix_
-  Epetra_CrsMatrix* BWTA      = MOERTEL::MatMatMult(*BWT,false,*inputmatrix_,false,OutLevel()); 
-  Epetra_CrsMatrix* BWTAWBTmI = MOERTEL::MatMatMult(*BWTA,false,*WBTmI,false,OutLevel()); 
+  Epetra_CrsMatrix* BWTA      = MOERTEL::MatMatMult(*BWT,false,*inputmatrix_,false,OutLevel());
+  Epetra_CrsMatrix* BWTAWBTmI = MOERTEL::MatMatMult(*BWTA,false,*WBTmI,false,OutLevel());
   delete BWTA; BWTA = NULL;
   delete WBTmI; WBTmI = NULL;
   MOERTEL::MatrixMatrixAdd(*BWTAWBTmI,false,1.0,*spdmatrix_,1.0);
   delete BWTAWBTmI; BWTAWBTmI = NULL;
-  spdmatrix_->FillComplete(); 
+  spdmatrix_->FillComplete();
   spdmatrix_->OptimizeStorage();
 
   //--------------------------------------------------------------------------
   // 11) Build ImBWT = I - BWT and store it as spdrhs_
   spdrhs_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy,*problemmap_,10,false));
-  MOERTEL::MatrixMatrixAdd(*I,false,1.0,*spdrhs_,0.0); 
+  MOERTEL::MatrixMatrixAdd(*I,false,1.0,*spdrhs_,0.0);
   //delete I; I = NULL;
-  MOERTEL::MatrixMatrixAdd(*BWT,false,-1.0,*spdrhs_,1.0);  
+  MOERTEL::MatrixMatrixAdd(*BWT,false,-1.0,*spdrhs_,1.0);
   delete BWT; BWT = NULL;
-  spdrhs_->FillComplete(); 
+  spdrhs_->FillComplete();
   spdrhs_->OptimizeStorage();
-   
+
   //--------------------------------------------------------------------------
   // tidy up
   lm_to_dof.clear();
@@ -642,7 +655,7 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   // time this process
   double t = time.ElapsedTime();
   if (OutLevel()>5 && Comm().MyPID()==0)
-    cout << "MOERTEL (Proc 0): Construct spd system in " << t << " sec\n";
+    std::cout << "MOERTEL (Proc 0): Construct spd system in " << t << " sec\n";
 
   return spdmatrix_.get();
 }
@@ -665,42 +678,42 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   {
     if (curr->second->IsComplete() == false)
     {
-      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
            << "***ERR*** interface " << curr->second->Id() << " is not Complete()\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
     }
     if (curr->second->IsIntegrated() == false)
     {
-      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
            << "***ERR*** interface " << curr->second->Id() << " is not integrated yet\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
     }
   }
-  
+
   // check whether we have a problemmap_
   if (problemmap_==Teuchos::null)
   {
-      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
            << "***ERR*** No problemmap_ set\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
   }
-  
+
   // check whether we have a constraintsmap_
   if (constraintsmap_==Teuchos::null)
   {
-      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
            << "***ERR*** onstraintsmap is NULL\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
   }
-  
+
   // check for saddlemap_
   if (saddlemap_==Teuchos::null)
   {
-      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
            << "***ERR*** saddlemap_==NULL\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
@@ -709,7 +722,7 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   // check for inputmatrix
   if (inputmatrix_==Teuchos::null)
   {
-      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
            << "***ERR*** No inputmatrix set\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
@@ -718,12 +731,12 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   // check whether we have M and D matrices
   if (D_==Teuchos::null || M_==Teuchos::null)
   {
-      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
            << "***ERR*** Matrix M or D is NULL\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
   }
-  
+
   // we need a map from lagrange multiplier dofs to primal dofs on the same node
   std::vector<MOERTEL::Node*> nodes(0);
   std::map<int,int> lm_to_dof;
@@ -733,13 +746,13 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
     inter->GetNodeView(nodes);
     for (int i=0; i<(int)nodes.size(); ++i)
     {
-      if (!nodes[i]->Nlmdof()) 
+      if (!nodes[i]->Nlmdof())
         continue;
       const int* dof = nodes[i]->Dof();
       const int* lmdof = nodes[i]->LMDof();
       for (int j=0; j<nodes[i]->Nlmdof(); ++j)
       {
-        //cout << "j " << j << " maps lmdof " << lmdof[j] << " to dof " << dof[j] << endl;
+        //std::cout << "j " << j << " maps lmdof " << lmdof[j] << " to dof " << dof[j] << std::endl;
         lm_to_dof[lmdof[j]] = dof[j];
       }
     }
@@ -748,40 +761,40 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   /*
                _              _
               |               |
-              |  Arr  Arn  Mr | 
+              |  Arr  Arn  Mr |
          S =  |               |
-              |  Anr  Ann  D  | 
+              |  Anr  Ann  D  |
               |
               |  MrT  D    0  |
               |_          _   |
 
                _           _
               |            |
-              |  Arr  Arn  | 
+              |  Arr  Arn  |
          A =  |            |
-              |  Anr  Ann  | 
+              |  Anr  Ann  |
               |_          _|
-  
+
         1) Ann is square and we need it's Range/DomainMap annmap
-        
+
                _         _
         WT =  |_ 0 Dinv _|
 
         2) Build WT (has rowmap/rangemap annmap and domainmap problemmap_)
-             
+
                _    _
               |     |
-              |  Mr | 
+              |  Mr |
          B =  |     |
-              |  D  | 
+              |  D  |
               |_   _|
-  
+
         3) Build B (has rowmap/rangemap problemmap_ and domainmap annmap)
-        
+
         4) Build I, the identity matrix with maps problemmap_,problemmap_);
-        
-  */    
-  
+
+  */
+
   int err=0;
   //--------------------------------------------------------------------------
   // 1) create the rangemap of Ann
@@ -790,9 +803,9 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   std::map<int,int>::iterator intintcurr;
   for (intintcurr=lm_to_dof.begin(); intintcurr!=lm_to_dof.end(); ++intintcurr)
   {
-    if (problemmap_->MyGID(intintcurr->second)==false) 
+    if (problemmap_->MyGID(intintcurr->second)==false)
       continue;
-    if ((int)myanngids.size()<=count) 
+    if ((int)myanngids.size()<=count)
       myanngids.resize(myanngids.size()+50);
     myanngids[count] = intintcurr->second;
     ++count;
@@ -807,7 +820,7 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
 
   //--------------------------------------------------------------------------
   // 2) create WT
-  Epetra_CrsMatrix* WT        = new Epetra_CrsMatrix(Copy,*annmap,1,false); 
+  Epetra_CrsMatrix* WT        = new Epetra_CrsMatrix(Copy,*annmap,1,false);
   for (intintcurr=lm_to_dof.begin(); intintcurr!=lm_to_dof.end(); ++intintcurr)
   {
     int lmdof = intintcurr->first;
@@ -819,32 +832,32 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
     int* indices;
     double* values;
     err = D_->ExtractMyRowView(lmlrid,numentries,values,indices);
-    if (err) cout << "D_->ExtractMyRowView returned err=" << err << endl;
+    if (err) std::cout << "D_->ExtractMyRowView returned err=" << err << std::endl;
     bool foundit = false;
     for (int j=0; j<numentries; ++j)
     {
       int gcid = D_->GCID(indices[j]);
-      if (gcid<0) cout << "Cannot find gcid for indices[j]\n";
-      //cout << "Proc " << Comm().MyPID() << " lmdof " << lmdof << " dof " << dof << " gcid " << gcid << " val " << values[j] << endl;
+      if (gcid<0) std::cout << "Cannot find gcid for indices[j]\n";
+      //std::cout << "Proc " << Comm().MyPID() << " lmdof " << lmdof << " dof " << dof << " gcid " << gcid << " val " << values[j] << std::endl;
       if (gcid==dof)
       {
         double val = 1./values[j];
         err = WT->InsertGlobalValues(dof,1,&val,&dof);
-        if (err<0) cout << "WT->InsertGlobalValues returned err=" << err << endl;
+        if (err<0) std::cout << "WT->InsertGlobalValues returned err=" << err << std::endl;
         foundit = true;
         break;
       }
     }
     if (!foundit)
     {
-      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
            << "***ERR*** Cannot compute inverse of D_\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      cout << "lmdof " << lmdof << " dof " << dof << endl;
+      std::cout << "lmdof " << lmdof << " dof " << dof << std::endl;
       return NULL;
-    }  
+    }
   }
-  WT->FillComplete(*problemmap_,*annmap);  
+  WT->FillComplete(*problemmap_,*annmap);
   WT_ = Teuchos::rcp(WT);
 
   //--------------------------------------------------------------------------
@@ -859,45 +872,45 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
     if (D_->MyGRID(lmdof)==false)
       continue;
     int lmlrid = D_->LRID(lmdof);
-    if (lmlrid<0) cout << "Cannot find lmlrid for lmdof\n";
+    if (lmlrid<0) std::cout << "Cannot find lmlrid for lmdof\n";
     int numentries;
     int* indices;
     double* values;
-    
+
     // extract and add values from D
     err = D_->ExtractMyRowView(lmlrid,numentries,values,indices);
-    if (err) cout << "D_->ExtractMyRowView returned err=" << err << endl;
+    if (err) std::cout << "D_->ExtractMyRowView returned err=" << err << std::endl;
     if (numentries>(int)newindices.size()) newindices.resize(numentries);
     for (int j=0; j<numentries; ++j)
     {
       newindices[j] = D_->GCID(indices[j]);
-      if (newindices[j]<0) cout << "Cannot find gcid for indices[j]\n";
+      if (newindices[j]<0) std::cout << "Cannot find gcid for indices[j]\n";
     }
-    //cout << "Inserting from D in row " << dof << " cols/val ";
-    //for (int j=0; j<numentries; ++j) cout << newindices[j] << "/" << values[j] << " ";
-    //cout << endl;
+    //std::cout << "Inserting from D in row " << dof << " cols/val ";
+    //for (int j=0; j<numentries; ++j) std::cout << newindices[j] << "/" << values[j] << " ";
+    //std::cout << std::endl;
     err = tmp->InsertGlobalValues(dof,numentries,values,&newindices[0]);
-    if (err) cout << "tmp->InsertGlobalValues returned err=" << err << endl;
-  
+    if (err) std::cout << "tmp->InsertGlobalValues returned err=" << err << std::endl;
+
     // extract and add values from M
     err = M_->ExtractMyRowView(lmlrid,numentries,values,indices);
-    if (err) cout << "M_->ExtractMyRowView returned err=" << err << endl;
+    if (err) std::cout << "M_->ExtractMyRowView returned err=" << err << std::endl;
     if (numentries>(int)newindices.size()) newindices.resize(numentries);
     for (int j=0; j<numentries; ++j)
     {
       newindices[j] = M_->GCID(indices[j]);
-      if (newindices[j]<0) cout << "Cannot find gcid for indices[j]\n";
+      if (newindices[j]<0) std::cout << "Cannot find gcid for indices[j]\n";
     }
-    //cout << "Inserting from M in row " << dof << " cols/val ";
-    //for (int j=0; j<numentries; ++j) cout << newindices[j] << "/" << values[j] << " ";
-    //cout << endl;
+    //std::cout << "Inserting from M in row " << dof << " cols/val ";
+    //for (int j=0; j<numentries; ++j) std::cout << newindices[j] << "/" << values[j] << " ";
+    //std::cout << std::endl;
     err = tmp->InsertGlobalValues(dof,numentries,values,&newindices[0]);
-    if (err) cout << "tmp->InsertGlobalValues returned err=" << err << endl;
+    if (err) std::cout << "tmp->InsertGlobalValues returned err=" << err << std::endl;
   }
   tmp->FillComplete(*(problemmap_.get()),*annmap);
 
   // B is transposed of tmp
-  EpetraExt::RowMatrix_Transpose* trans = new EpetraExt::RowMatrix_Transpose(false);
+  EpetraExt::RowMatrix_Transpose* trans = new EpetraExt::RowMatrix_Transpose();
   Epetra_CrsMatrix* B = &(dynamic_cast<Epetra_CrsMatrix&>(((*trans)(const_cast<Epetra_CrsMatrix&>(*tmp)))));
   delete tmp; tmp = NULL;
   B_ = Teuchos::rcp(new Epetra_CrsMatrix(*B));
@@ -911,7 +924,7 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
 
   //--------------------------------------------------------------------------
   // 5) Build BWT = B * WT
-  Epetra_CrsMatrix* BWT = MOERTEL::MatMatMult(*B,false,*WT,false,OutLevel()); 
+  Epetra_CrsMatrix* BWT = MOERTEL::MatMatMult(*B,false,*WT,false,OutLevel());
 
   //--------------------------------------------------------------------------
   // 6) create CBT = (I-BWT)*A*W*BT
@@ -921,13 +934,13 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   spdrhs->FillComplete();
   spdrhs->OptimizeStorage();
   spdrhs_ = Teuchos::rcp(spdrhs);
-  
+
   Epetra_CrsMatrix* tmp1 = MOERTEL::MatMatMult(*inputmatrix_,false,*WT,true,OutLevel());
-  Epetra_CrsMatrix* tmp2 = MOERTEL::MatMatMult(*tmp1,false,*B,true,OutLevel());   
+  Epetra_CrsMatrix* tmp2 = MOERTEL::MatMatMult(*tmp1,false,*B,true,OutLevel());
   delete tmp1;
-  Epetra_CrsMatrix* CBT  = MOERTEL::MatMatMult(*spdrhs,false,*tmp2,false,OutLevel());   
+  Epetra_CrsMatrix* CBT  = MOERTEL::MatMatMult(*spdrhs,false,*tmp2,false,OutLevel());
   delete tmp2;
-  
+
   //--------------------------------------------------------------------------
   // 7) create spdmatrix_ = A - CBT - (CBT)^T
   spdmatrix_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy,*problemmap_,10,false));
@@ -935,7 +948,7 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   MOERTEL::MatrixMatrixAdd(*CBT,false,-1.0,*spdmatrix_,1.0);
   MOERTEL::MatrixMatrixAdd(*CBT,true,-1.0,*spdmatrix_,1.0);
   delete CBT; CBT = NULL;
-  spdmatrix_->FillComplete(); 
+  spdmatrix_->FillComplete();
   spdmatrix_->OptimizeStorage();
 
   //--------------------------------------------------------------------------
@@ -945,7 +958,7 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   // time this process
   double t = time.ElapsedTime();
   if (OutLevel()>5 && Comm().MyPID()==0)
-    cout << "MOERTEL (Proc 0): Construct spd system in " << t << " sec\n";
+    std::cout << "MOERTEL (Proc 0): Construct spd system in " << t << " sec\n";
 
   return spdmatrix_.get();
 }
@@ -963,7 +976,7 @@ Epetra_CrsMatrix* MOERTEL::Manager::GetRHSMatrix()
     Epetra_CrsMatrix* tmp = MakeSPDProblem();
     if (!tmp)
     {
-      cout << "***ERR*** MOERTEL::Manager::GetRHSMatrix:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::GetRHSMatrix:\n"
            << "***ERR*** Cannot compute reduced system of equations\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
@@ -1016,102 +1029,102 @@ bool MOERTEL::Manager::Solve(Epetra_Vector& sol, const Epetra_Vector& rhs)
   // test for solver parameters
   if (solverparams_==Teuchos::null)
   {
-    cout << "***ERR*** MOERTEL::Manager::Solve:\n"
+    std::cout << "***ERR*** MOERTEL::Manager::Solve:\n"
          << "***ERR*** No solver parameters set, use SetSolverParameters(ParameterList& params)\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
-  
+
   // test for problemmap_
   if (problemmap_==Teuchos::null)
   {
-    cout << "***ERR*** MOERTEL::Manager::Solve:\n"
+    std::cout << "***ERR*** MOERTEL::Manager::Solve:\n"
          << "***ERR*** No problem map set, use SetProblemMap(Epetra_Map* map)\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
-  
+
   // test for inputmatrix
   if (inputmatrix_==Teuchos::null)
   {
-    cout << "***ERR*** MOERTEL::Manager::Solve:\n"
+    std::cout << "***ERR*** MOERTEL::Manager::Solve:\n"
          << "***ERR*** No inputmatrix set, use SetInputMatrix(Epetra_CrsMatrix* inputmatrix, bool DeepCopy = false)\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
-  
+
   // test whether problemmap_ matches RangeMap() of inputmatrix
   if (!problemmap_->PointSameAs(inputmatrix_->RangeMap()))
   {
-    cout << "***ERR*** MOERTEL::Manager::Solve:\n"
+    std::cout << "***ERR*** MOERTEL::Manager::Solve:\n"
          << "***ERR*** problem map does not match range map of input matrix\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
-  
+
   // test whether maps of rhs and sol are ok
-  if (!problemmap_->PointSameAs(rhs.Map()) || 
+  if (!problemmap_->PointSameAs(rhs.Map()) ||
       !problemmap_->PointSameAs(sol.Map()) )
   {
-    cout << "***ERR*** MOERTEL::Manager::Solve:\n"
+    std::cout << "***ERR*** MOERTEL::Manager::Solve:\n"
          << "***ERR*** problem map does not match map of rhs and/or sol\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
-  }  
-  
+  }
+
   // test whether interfaces are complete and have been integrated
   std::map<int,Teuchos::RCP<MOERTEL::Interface> >::iterator curr;
   for (curr=interface_.begin(); curr != interface_.end(); ++curr)
   {
     if (curr->second->IsComplete() == false)
     {
-      cout << "***ERR*** MOERTEL::Manager::Solve:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::Solve:\n"
            << "***ERR*** interface " << curr->second->Id() << " is not IsComplete()\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
     }
     if (curr->second->IsIntegrated() == false)
     {
-      cout << "***ERR*** MOERTEL::Manager::Solve:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::Solve:\n"
            << "***ERR*** interface " << curr->second->Id() << " is not integrated yet\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
     }
   }
-  
+
   // test whether we have M and D matrix
   if (D_==Teuchos::null || M_==Teuchos::null)
   {
-    cout << "***ERR*** MOERTEL::Manager::Solve:\n"
+    std::cout << "***ERR*** MOERTEL::Manager::Solve:\n"
          << "***ERR*** Matrix M or D is NULL\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
-  
+
   //---------------------------------------------------------------------------
   // make solution and rhs vector matching the system
-  Teuchos::RCP<Epetra_Vector> b = Teuchos::rcp(const_cast<Epetra_Vector*>(&rhs)); 
+  Teuchos::RCP<Epetra_Vector> b = Teuchos::rcp(const_cast<Epetra_Vector*>(&rhs));
   b.release();
-  Teuchos::RCP<Epetra_Vector> x = Teuchos::rcp(&sol); 
+  Teuchos::RCP<Epetra_Vector> x = Teuchos::rcp(&sol);
   x.release();
 
   //---------------------------------------------------------------------------
   // get type of system to be used/generated
   Teuchos::RCP<Epetra_CrsMatrix> matrix = Teuchos::null;
-  string system = solverparams_->get("System","None");
+  std::string system = solverparams_->get("System","None");
   if (system=="None")
   {
-    cout << "***WRN*** MOERTEL::Manager::Solve:\n"
+    std::cout << "***WRN*** MOERTEL::Manager::Solve:\n"
          << "***WRN*** parameter 'System' was not chosen, using default\n"
          << "***WRN*** which is 'SaddleSystem'\n"
          << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     solverparams_->set("System","SaddleSystem");
     system = "SaddleSystem";
   }
-  
+
   //---------------------------------------------------------------------------
   // build a saddle point system
-  if (system=="SaddleSystem"  || system=="saddlesystem"  || system=="SADDLESYSTEM" || 
+  if (system=="SaddleSystem"  || system=="saddlesystem"  || system=="SADDLESYSTEM" ||
       system=="Saddle_System" || system=="saddle_system" || system=="SADDLE_SYSTEM")
   {
     if (saddlematrix_==Teuchos::null)
@@ -1119,16 +1132,16 @@ bool MOERTEL::Manager::Solve(Epetra_Vector& sol, const Epetra_Vector& rhs)
       Epetra_CrsMatrix* tmp = MakeSaddleProblem();
       if (!tmp)
       {
-        cout << "***ERR*** MOERTEL::Manager::Solve:\n"
+        std::cout << "***ERR*** MOERTEL::Manager::Solve:\n"
              << "***ERR*** MakeSaddleProblem() returned NULL\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
       }
     }
     matrix = saddlematrix_;
-    b = Teuchos::rcp(new Epetra_Vector(*saddlemap_,true)); 
+    b = Teuchos::rcp(new Epetra_Vector(*saddlemap_,true));
     b.set_has_ownership();
-    x = Teuchos::rcp(new Epetra_Vector(*saddlemap_,false)); 
+    x = Teuchos::rcp(new Epetra_Vector(*saddlemap_,false));
     x.set_has_ownership();
     for (int i=0; i<rhs.MyLength(); ++i)
     {
@@ -1139,7 +1152,7 @@ bool MOERTEL::Manager::Solve(Epetra_Vector& sol, const Epetra_Vector& rhs)
 
   //---------------------------------------------------------------------------
   // build a spd system
-  else if (system=="SPDSystem"  || system=="spdsystem" || system=="spd_system" || 
+  else if (system=="SPDSystem"  || system=="spdsystem" || system=="spd_system" ||
            system=="SPD_System" || system=="SPDSYSTEM" || system=="SPD_SYSTEM")
   {
     if (spdmatrix_==Teuchos::null)
@@ -1147,7 +1160,7 @@ bool MOERTEL::Manager::Solve(Epetra_Vector& sol, const Epetra_Vector& rhs)
       Epetra_CrsMatrix* tmp = MakeSPDProblem();
       if (!tmp)
       {
-        cout << "***ERR*** MOERTEL::Manager::Solve:\n"
+        std::cout << "***ERR*** MOERTEL::Manager::Solve:\n"
              << "***ERR*** MakeSPDProblem() returned NULL\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
@@ -1157,7 +1170,7 @@ bool MOERTEL::Manager::Solve(Epetra_Vector& sol, const Epetra_Vector& rhs)
     // we have to multiply the rhs vector b with spdrhs_ to fit with spdmatrix_
     if (spdrhs_==Teuchos::null)
     {
-      cout << "***ERR*** MOERTEL::Manager::Solve:\n"
+      std::cout << "***ERR*** MOERTEL::Manager::Solve:\n"
            << "***ERR*** Cannot build righthandside for spd problem\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
@@ -1166,8 +1179,8 @@ bool MOERTEL::Manager::Solve(Epetra_Vector& sol, const Epetra_Vector& rhs)
     int err = spdrhs_->Multiply(false,*b,*tmp);
     if (err)
     {
-      cout << "***ERR*** MOERTEL::Manager::Solve:\n"
-           << "***ERR*** spdrhs_->Multiply returned err = " << err << endl
+      std::cout << "***ERR*** MOERTEL::Manager::Solve:\n"
+           << "***ERR*** spdrhs_->Multiply returned err = " << err << std::endl
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
     }
@@ -1179,28 +1192,28 @@ bool MOERTEL::Manager::Solve(Epetra_Vector& sol, const Epetra_Vector& rhs)
   // unknown parameter "System"
   else
   {
-    cout << "***ERR*** MOERTEL::Manager::Solve:\n"
+    std::cout << "***ERR*** MOERTEL::Manager::Solve:\n"
          << "***ERR*** Unknown type of parameter 'System': " << system << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
-  
+
   //---------------------------------------------------------------------------
   // create a mortar solver class instance
   if (solver_==Teuchos::null)
     solver_ = Teuchos::rcp(new MOERTEL::Solver(Comm(),OutLevel()));
-  
+
   //---------------------------------------------------------------------------
   // solve
   bool ok = solver_->Solve(solverparams_,matrix,x,b,*this);
   if (!ok)
   {
     if (Comm().MyPID()==0)
-    cout << "***WRN*** MOERTEL::Manager::Solve:\n"
+    std::cout << "***WRN*** MOERTEL::Manager::Solve:\n"
          << "***WRN*** MOERTEL::Solver::Solve returned an error\n"
          << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
   }
-  
+
   //---------------------------------------------------------------------------
   // copy solution back to sol if neccessary
   if (x.has_ownership())

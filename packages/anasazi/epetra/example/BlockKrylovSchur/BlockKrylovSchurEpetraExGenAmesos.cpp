@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) {
   bool boolret = MyProblem->setProblem();
   if (boolret != true) {
     if (MyPID == 0) {
-      cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << endl;
+      std::cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << std::endl;
     }
 #ifdef HAVE_MPI
     MPI_Finalize() ;
@@ -215,7 +215,7 @@ int main(int argc, char *argv[]) {
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMgr.solve();
   if (returnCode != Anasazi::Converged && MyPID==0) {
-    cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << endl;
+    std::cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << std::endl;
   }
   
   // Get the eigenvalues and eigenvectors from the eigenproblem
@@ -233,19 +233,19 @@ int main(int argc, char *argv[]) {
     
     if (MyPID==0) {
       double compeval = 0.0;
-      cout.setf(std::ios_base::right, std::ios_base::adjustfield);
-      cout<<"Actual Eigenvalues (obtained by Rayleigh quotient) : "<<endl;
-      cout<<"------------------------------------------------------"<<endl;
-      cout<<std::setw(16)<<"Real Part"
-        <<std::setw(16)<<"Rayleigh Error"<<endl;
-      cout<<"------------------------------------------------------"<<endl;
+      std::cout.setf(std::ios_base::right, std::ios_base::adjustfield);
+      std::cout<<"Actual Eigenvalues (obtained by Rayleigh quotient) : "<<std::endl;
+      std::cout<<"------------------------------------------------------"<<std::endl;
+      std::cout<<std::setw(16)<<"Real Part"
+        <<std::setw(16)<<"Rayleigh Error"<<std::endl;
+      std::cout<<"------------------------------------------------------"<<std::endl;
       for (i=0; i<numev; i++) {
         compeval = dmatr(i,i);
-        cout<<std::setw(16)<<compeval
+        std::cout<<std::setw(16)<<compeval
           <<std::setw(16)<<Teuchos::ScalarTraits<double>::magnitude(compeval-1.0/evals[i].realpart)
-          <<endl;
+          <<std::endl;
       }
-      cout<<"------------------------------------------------------"<<endl;
+      std::cout<<"------------------------------------------------------"<<std::endl;
     }
     
   }

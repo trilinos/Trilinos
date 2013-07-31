@@ -83,7 +83,7 @@ int ex_put_attr_names(int   exoid,
       sprintf(errmsg,
 	      "Warning: no attributes allowed for NULL %s %"PRId64" in file id %d",
 	      ex_name_of_object(blk_type),blk_id,exoid);
-      ex_err("ex_put_attr_names",errmsg,EX_MSG);
+      ex_err("ex_put_attr_names",errmsg,EX_NULLENTITY);
       return (EX_WARN);              /* no attributes for this block */
     } else {
       sprintf(errmsg,

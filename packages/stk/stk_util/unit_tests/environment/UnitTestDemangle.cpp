@@ -97,7 +97,8 @@ STKUNIT_UNIT_TEST(UnitTestDemangle, UnitTest)
   }
 
   {
-    std::string linux_name("bool ()()");
+//    std::string linux_name("bool ()()");
+    std::string linux_name("bool ()");
     std::string demangled_name = stk::demangle(typeid(utest_demangle).name());
     STKUNIT_ASSERT_EQUAL(linux_name, demangled_name);
   }

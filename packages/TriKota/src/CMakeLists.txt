@@ -200,6 +200,12 @@ IF(TriKota_ENABLE_DakotaCMake)
 
   # DAKOTA built with CMake
 
+  # Needed to find Dakota components built with ExternalProject_Add
+  # and their dependencies; only defined in recent versions of Dakota
+  IF(DEFINED Dakota_LINK_DIRS)
+    LINK_DIRECTORIES(${Dakota_LINK_DIRS})
+  ENDIF()
+
   # The DEPLIBS part is to tell CMake that trikota depends on the specified
   # Dakota libraries.  The IMPORTEDLIBS part is to get the TRIBITS_ADD_LIBRARY
   # macro to put the Dakota libraries TriKota_LIBRARIES when writing

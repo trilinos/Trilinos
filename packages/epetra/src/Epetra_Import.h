@@ -47,6 +47,7 @@
 #include "Epetra_Object.h"
 #include "Epetra_BlockMap.h"
 class Epetra_Distributor;
+class Epetra_Export;
 
 //! Epetra_Import: This class builds an import object for efficient importing of off-processor elements.
 
@@ -60,7 +61,7 @@ class Epetra_Distributor;
 */
 
 class EPETRA_LIB_DLL_EXPORT Epetra_Import: public Epetra_Object {
-    
+  friend class Epetra_Export;
   public:
 
   //! Constructs a Epetra_Import object from the source and target maps.
@@ -228,13 +229,35 @@ in the above example to do an export operation to y, adding the contributions th
   */ 
 
   Epetra_Import( const Epetra_BlockMap & TargetMap, const Epetra_BlockMap & SourceMap );
-  
+
+  //! Expert-only import constructor.
+  /*! The additional RemotePIDs argument should be filled with the owning PIDs (from the SourceMap) of the remote GIDs 
+    in the TargetMap.  The normal Import constructor computes this for you with a call to RemoteIDList.  However in
+    some cases (MakeImportExport) we already have this information.
+
+    WARNING: THIS METHOD IS FOR INTERNAL USE ONLY.  USERS SHOULD NOT CALL THIS CONSTRUCTOR */
+  Epetra_Import( const Epetra_BlockMap & TargetMap, const Epetra_BlockMap & SourceMap, int NumRemotePIDs,const int * RemotePIDs);
+
+  //! Expert-only import constructor
+  /*! The RemotePIDs argument should be filled with the owning PIDs (from the SourceMap) of the remote GIDs 
+    in the TargetMap.  The normal Import constructor computes this for you with a call to RemoteIDList.  However in
+    some cases (MakeImportExport) we already have this information.  We also require information on the Export PIDs/GIDs so
+    we can use the Distributor's CreateFromSendsAndReceives method.  
+    WARNING: THIS METHOD IS FOR INTERNAL USE ONLY.  USERS SHOULD NOT CALL THIS CONSTRUCTOR */
+  Epetra_Import( const Epetra_BlockMap & TargetMap, const Epetra_BlockMap & SourceMap, int NumRemotePIDs,const int * RemotePIDs,		 
+		 const int & NumExportIDs, const int * ExportLIDs,  const int * ExportPIDs);
+
+
   //! Epetra_Import copy constructor. 
   Epetra_Import(const Epetra_Import& Importer);
-  
-  //! Epetra_Import destructor.
-  
+
+  //! Epetra_Import pseudo-copy constructor.  Creates an Epetra_Import in the reverse direction of the Epetra_Export argument.
+  Epetra_Import(const Epetra_Export& Exporter);
+
+
+  //! Epetra_Import destructor.  
   virtual ~Epetra_Import(void);
+
   //! Returns the number of elements that are identical between the source and target maps, up to the first different ID
   int NumSameIDs() const {return(NumSameIDs_);};
 
@@ -277,7 +300,7 @@ in the above example to do an export operation to y, adding the contributions th
 
   //! @name Print object to an output stream
   //@{ 
-  virtual void Print(ostream & os) const;
+  virtual void Print(std::ostream & os) const;
   //@}
  protected:
 
@@ -316,7 +339,11 @@ in the above example to do an export operation to y, adding the contributions th
   
 
   template<typename int_type>
-  void Construct( const Epetra_BlockMap & TargetMap, const Epetra_BlockMap & SourceMap );
+  void Construct( const Epetra_BlockMap &  targetMap, const Epetra_BlockMap & sourceMap, int NumRemotePIDs=-1, const int * UserRemotePIDs=0);
+
+  template<typename int_type>
+    void Construct_Expert( const Epetra_BlockMap & TargetMap, const Epetra_BlockMap & SourceMap, int NumRemotePIDs,const int * RemotePIDs, const int & NumExportIDs, const int * ExportLIDs,  const int * ExportPIDs);
+
 };
 
 #endif /* EPETRA_IMPORT_H */

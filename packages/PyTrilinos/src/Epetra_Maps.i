@@ -179,8 +179,9 @@ indicates the local element ID that the point belongs to."
 %ignore Epetra_BlockMap::RemoteIDList(int,const int*,int*,int*) const;
 %ignore Epetra_BlockMap::RemoteIDList(int,const int*,int*,int*,int*) const;
 %ignore Epetra_BlockMap::FindLocalElementID(int,int&,int&) const;
-%ignore Epetra_BlockMap::MyGlobalElements(int*) const;
 %ignore Epetra_BlockMap::MyGlobalElements() const;
+%ignore Epetra_BlockMap::MyGlobalElements(int*) const;
+%ignore Epetra_BlockMap::MyGlobalElements(int const *&,long long const *&) const;
 %ignore Epetra_BlockMap::FirstPointInElementList(int*) const;
 %ignore Epetra_BlockMap::FirstPointInElementList() const;
 %ignore Epetra_BlockMap::ElementSizeList(int*) const;

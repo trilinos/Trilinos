@@ -1,14 +1,15 @@
 # @HEADER
 # ************************************************************************
 #
-#            Trilinos: An Object-Oriented Solver Framework
-#                 Copyright (2001) Sandia Corporation
+#            TriBITS: Tribial Build, Integrate, and Test System
+#                    Copyright 2013 Sandia Corporation
 #
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+# the U.S. Government retains certain rights in this software.
 #
-# Copyright (2001) Sandia Corporation. Under the terms of Contract
-# DE-AC04-94AL85000, there is a non-exclusive license for use of this
-# work by or on behalf of the U.S. Government.  Export of this program
-# may require a license from the United States Government.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
 #
 # 1. Redistributions of source code must retain the above copyright
 # notice, this list of conditions and the following disclaimer.
@@ -32,23 +33,6 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# NOTICE:  The United States Government is granted for itself and others
-# acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
-# license in this data to reproduce, prepare derivative works, and
-# perform publicly and display publicly.  Beginning five (5) years from
-# July 25, 2001, the United States Government is granted for itself and
-# others acting on its behalf a paid-up, nonexclusive, irrevocable
-# worldwide license in this data to reproduce, prepare derivative works,
-# distribute copies to the public, perform publicly and display
-# publicly, and to permit others to do so.
-#
-# NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
-# OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
-# ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
-# RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
-# INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
-# THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
 #
 # ************************************************************************
 # @HEADER
@@ -124,31 +108,59 @@ ENDMACRO()
 # Macro that sets up standard user options for each package
 #
 
-MACRO(TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS  PACKAGE_NAME  PACKAGE_CLASSIFICATION)
+MACRO(TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS  PACKAGE_NAME_IN  PACKAGE_CLASSIFICATION_IN)
 
-  #MESSAGE("TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS: ${PACKAGE_NAME} ${PACKAGE_CLASSIFICATION}")
+  IF (TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS_DEBUG)
+    MESSAGE("TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS: ${PACKAGE_NAME_IN} ${PACKAGE_CLASSIFICATION_IN}")
+    PRINT_VAR(${PACKAGE_NAME_IN}_CLASSIFICATION)
+  ENDIF()
 
-  IF (${PACKAGE_CLASSIFICATION} STREQUAL PS OR ${PACKAGE_CLASSIFICATION} STREQUAL SS) 
-    #MESSAGE("PS or SS")
+  SET(PACKAGE_CLASSIFICATION_LOCAL ${PACKAGE_CLASSIFICATION_IN})
+
+  IF (${PACKAGE_CLASSIFICATION_IN} STREQUAL PS OR ${PACKAGE_CLASSIFICATION_IN} STREQUAL SS) 
+    IF (TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS_DEBUG)
+      MESSAGE("-- " "PS or SS")
+      PRINT_VAR(${PROJECT_NAME}_ELEVATE_SS_TO_PS)
+    ENDIF()
+    IF (${PROJECT_NAME}_ELEVATE_SS_TO_PS)
+      SET(PACKAGE_CLASSIFICATION_LOCAL PS)
+    ENDIF()
+    IF (TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS_DEBUG)
+      PRINT_VAR(PACKAGE_CLASSIFICATION_LOCAL)
+    ENDIF()
     SET(PACKAGE_ENABLE "")
-  ELSEIF (${PACKAGE_CLASSIFICATION} STREQUAL EX)
-    #MESSAGE("EX")
+  ELSEIF (${PACKAGE_CLASSIFICATION_IN} STREQUAL EX)
+    IF (TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS_DEBUG)
+      MESSAGE("-- " "EX")
+    ENDIF()
     SET(PACKAGE_ENABLE OFF)
   ELSE()
-    MESSAGE(FATAL_ERROR "Error the package classification '${PACKAGE_CLASSIFICATION}'"
-      " for the package ${PACKAGE_NAME} is not a valid classification." )
+    MESSAGE(FATAL_ERROR "Error the package classification '${PACKAGE_CLASSIFICATION_IN}'"
+      " for the package ${PACKAGE_NAME_IN} is not a valid classification." )
   ENDIF()
-  #PRINT_VAR(PACKAGE_ENABLE)
 
-  IF (NOT ${PACKAGE_NAME}_CLASSIFICATION) # Allow testing override
-    SET(${PACKAGE_NAME}_CLASSIFICATION "${PACKAGE_CLASSIFICATION}")
+  IF (TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS_DEBUG)
+    PRINT_VAR(PACKAGE_ENABLE)
+    PRINT_VAR(${PACKAGE_NAME_IN}_CLASSIFICATION)
+  ENDIF()
+
+  IF ("${${PACKAGE_NAME_IN}_CLASSIFICATION}" STREQUAL "") # Allow testing override
+    IF (TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS_DEBUG)
+      MESSAGE("-- " "Setting classification to ${PACKAGE_CLASSIFICATION_LOCAL}") 
+      PRINT_VAR(PACKAGE_CLASSIFICATION_LOCAL)
+    ENDIF()
+    SET(${PACKAGE_NAME_IN}_CLASSIFICATION "${PACKAGE_CLASSIFICATION_LOCAL}")
+  ENDIF()
+
+  IF (TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS_DEBUG)
+    PRINT_VAR(${PACKAGE_NAME_IN}_CLASSIFICATION)
   ENDIF()
 
   MULTILINE_SET(DOCSTR
-    "Enable the package ${PACKAGE_NAME}.  Set to 'ON', 'OFF', or leave"
+    "Enable the package ${PACKAGE_NAME_IN}.  Set to 'ON', 'OFF', or leave"
     " empty to allow for other logic to decide."
     )
-  SET_CACHE_ON_OFF_EMPTY( ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}
+  SET_CACHE_ON_OFF_EMPTY( ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME_IN}
     "${PACKAGE_ENABLE}" ${DOCSTR} )
 
 ENDMACRO()

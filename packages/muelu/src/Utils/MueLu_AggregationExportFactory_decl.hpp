@@ -68,12 +68,12 @@ namespace MueLu {
   class Level;
 
   /*!
-    @class ThresholdAFilterFactory class.
-    @brief Factory for building a thresholded operator.
+    @class AggregationExportFactory class.
+    @brief Factory for exporting aggregates data
 
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class AggregationExportFactory : public TwoLevelFactoryBase {
 #undef MUELU_AGGREGATIONEXPORTFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -83,11 +83,13 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    AggregationExportFactory(const std::string outputFileName = "aggs_level%LEVELID_proc%PROCID.out");
+    AggregationExportFactory() { }
 
     //! Destructor.
-    virtual ~AggregationExportFactory();
+    virtual ~AggregationExportFactory() { }
     //@}
+
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
 
     //! Input
     //@{
@@ -108,9 +110,6 @@ namespace MueLu {
   private:
 
     std::string replaceAll(std::string result, const std::string& replaceWhat, const std::string& replaceWithWhat) const;
-
-  private:
-    std::string outputFileName_;            ///< filename template for output
 
   }; // class AggregationExportFactory
 

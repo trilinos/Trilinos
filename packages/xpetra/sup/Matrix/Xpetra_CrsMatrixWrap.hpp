@@ -80,8 +80,8 @@ namespace Xpetra {
 template <class Scalar,
           class LocalOrdinal  = int,
           class GlobalOrdinal = LocalOrdinal,
-          class Node          = Kokkos::DefaultNode::DefaultNodeType,
-          class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
+          class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
+          class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
 class CrsMatrixWrap : public Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 
   typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
@@ -116,6 +116,28 @@ public:
   {
     // Set matrix data
     matrixData_ = CrsMatrixFactory::Build(rowMap, NumEntriesPerRowToAlloc, pftype);
+
+    // Default view
+    CreateDefaultView();
+  }
+
+  //! Constructor specifying fixed number of entries for each row and column map
+  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
+    : finalDefaultView_(false)
+  {
+    // Set matrix data
+    matrixData_ = CrsMatrixFactory::Build(rowMap, colMap, maxNumEntriesPerRow, pftype);
+
+    // Default view
+    CreateDefaultView();
+  }
+
+  //! Constructor specifying fixed number of entries for each row and column map
+  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
+    : finalDefaultView_(false)
+  {
+    // Set matrix data
+    matrixData_ = CrsMatrixFactory::Build(rowMap, colMap, NumEntriesPerRowToAlloc, pftype);
 
     // Default view
     CreateDefaultView();
@@ -185,6 +207,9 @@ public:
   void replaceLocalValues(LocalOrdinal localRow,
                           const ArrayView<const LocalOrdinal> &cols,
                           const ArrayView<const Scalar>       &vals) { matrixData_->replaceLocalValues(localRow, cols, vals); }
+
+  //! Set all matrix entries equal to scalar
+  virtual void setAllToScalar(const Scalar &alpha) { matrixData_->setAllToScalar(alpha); }
 
   //! Scale the current values of a matrix, this = alpha*this.
   void scale(const Scalar &alpha) {
@@ -448,6 +473,12 @@ public:
     return Matrix::operatorViewTable_.get(viewLabel)->GetColMap();
   }
 
+  void removeEmptyProcessesInPlace(const Teuchos::RCP<const Map>& newMap) {
+    matrixData_->removeEmptyProcessesInPlace(newMap);
+    this->operatorViewTable_.get(this->GetCurrentViewLabel())->SetRowMap(matrixData_->getRowMap());
+    this->operatorViewTable_.get(this->GetCurrentViewLabel())->SetColMap(matrixData_->getColMap());
+  }
+
   //@}
 
   //! Implements DistObject interface
@@ -520,6 +551,16 @@ public:
 
   //@}
 
+  template<class Node2>
+  RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > clone(const RCP<Node2> &node2) const {
+    RCP<const Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tMatrix =
+        Teuchos::rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(matrixData_);
+    if (tMatrix == Teuchos::null)
+      throw Xpetra::Exceptions::RuntimeError("clone() functionality is only available for Tpetra");
+
+    return RCP<CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >(new CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node2>(tMatrix->clone(node2)));
+    // TODO: inherit strided maps/views ?
+  }
 
 private:
 

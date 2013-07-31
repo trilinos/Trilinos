@@ -17,12 +17,116 @@ IF(Tpetra_ENABLE_Thrust)
   SET(MAXNP NUM_MPI_PROCS 1)
 ENDIF()
 
+#
+# We break up CrsMatrix's unit tests into several files, to reduce
+# compilation time for each file and improve build parallelism.
+#
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_UnitTests
   SOURCES
     CrsMatrix_UnitTests
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
+  ${MAXNP}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_UnitTests2
+  SOURCES
+    CrsMatrix_UnitTests2
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ${ARGS}
+  ${MAXNP}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_UnitTests3
+  SOURCES
+    CrsMatrix_UnitTests3
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ${ARGS}
+  ${MAXNP}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_UnitTests4
+  SOURCES
+    CrsMatrix_UnitTests4
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ${ARGS}
+  ${MAXNP}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_NonlocalAfterResume
+  SOURCES
+    CrsMatrix_NonlocalAfterResume
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  ${MAXNP}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_NodeConversion
+  SOURCES
+    CrsMatrix_NodeConversion
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  ${MAXNP}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_TriSolve
+  SOURCES
+    CrsMatrix_TriSolve
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  ${MAXNP}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_LeftRightScale
+  SOURCES
+    CrsMatrix_LeftRightScale
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  ${MAXNP}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_WithGraph
+  SOURCES
+    CrsMatrix_WithGraph
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ${ARGS}
+  ${MAXNP}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_ReplaceDomainMapAndImporter
+  SOURCES
+    CrsMatrix_ReplaceDomainMapAndImporter
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
   ${MAXNP}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
@@ -47,16 +151,6 @@ ASSERT_DEFINED(Anasazi_SOURCE_DIR)
 TRIBITS_COPY_FILES_TO_BINARY_DIR(CrsTests_CopyFiles2
   SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
   SOURCE_FILES bcsstk14.hb bcsstk15.hb
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CrsMatrix_InOutTests
-  SOURCES
-    CrsMatrix_InOutTests
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  ARGS ${ARGS}
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
   )
 
 # This test only makes sense for > 1 processes.

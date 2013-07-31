@@ -437,11 +437,11 @@ int Zoltan_TPL_Order_Init_Tree (struct Zoltan_TPL_Order_Struct *order, indextype
   order->start = (indextype *) ZOLTAN_MALLOC((blocknbr+1)*sizeof(indextype));
   order->leaves = (indextype *) ZOLTAN_MALLOC((leavesnbr+1)*sizeof(indextype));
   
+  order->needfree = 1;
   if ((order->ancestor == NULL) || (order->start == NULL) || (order->leaves == NULL)) {
     Zoltan_TPL_Order_Free_Struct(order);
     return (ZOLTAN_MEMERR);
   }
-  order->needfree = 1;
   return (ZOLTAN_OK);
 } 
 

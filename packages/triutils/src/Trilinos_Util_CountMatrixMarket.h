@@ -40,15 +40,44 @@
 // @HEADER
 
 #include <vector>
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Comm.h"
 #if 1
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+
 void Trilinos_Util_CountMatrixMarket( const char *data_file, 
 				      std::vector<int> &non_zeros,
 				      int &N_rows, int &nnz, 
 				      const Epetra_Comm  &comm) ;
 
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
+void Trilinos_Util_CountMatrixMarket( const char *data_file, 
+				      std::vector<int> &non_zeros,
+				      long long &N_rows, long long &nnz, 
+				      const Epetra_Comm  &comm) ;
+
+#endif
+
 #else
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+
 void Trilinos_Util_CountMatrixMarket( const char *data_file,
                                       std::vector<int> &non_zeros,
 				      int &N_rows, int &nnz);
+
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
+void Trilinos_Util_CountMatrixMarket( const char *data_file,
+                                      std::vector<int> &non_zeros,
+				      long long &N_rows, long long &nnz);
+
+#endif
+
 #endif

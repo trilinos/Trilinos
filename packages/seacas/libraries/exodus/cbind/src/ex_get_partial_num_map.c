@@ -112,7 +112,7 @@ int ex_get_partial_num_map (int  exoid,
   }
 
   /* Check input parameters for a valid range of numbers */
-  if (ent_start <= 0 || ent_start > (int)num_mobj) {
+  if (ent_start <= 0 || ent_start > num_mobj) {
     exerrval = EX_FATAL;
     sprintf(errmsg,
 	    "Error: start count is invalid in file id %d",
@@ -130,7 +130,7 @@ int ex_get_partial_num_map (int  exoid,
     return (EX_FATAL);
   }
 
-  if (ent_start+ent_count-1 > (int)num_mobj) {
+  if (ent_start+ent_count-1 > num_mobj) {
     exerrval = EX_FATAL;
     sprintf(errmsg,
 	    "Error: start+count-1 is larger than element count in file id %d",

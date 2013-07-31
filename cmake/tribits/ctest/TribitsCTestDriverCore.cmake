@@ -1,14 +1,15 @@
 # @HEADER
 # ************************************************************************
 #
-#            Trilinos: An Object-Oriented Solver Framework
-#                 Copyright (2001) Sandia Corporation
+#            TriBITS: Tribial Build, Integrate, and Test System
+#                    Copyright 2013 Sandia Corporation
 #
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+# the U.S. Government retains certain rights in this software.
 #
-# Copyright (2001)   Sandia Corporation. Under the terms of Contract
-# DE-AC04-94AL85000, there is a non-exclusive license for use of this
-# work by or on behalf of the U.S. Government.  Export of this program
-# may require a license from the United States Government.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
 #
 # 1. Redistributions of source code must retain the above copyright
 # notice, this list of conditions and the following disclaimer.
@@ -32,23 +33,6 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# NOTICE:  The United States Government is granted for itself and others
-# acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
-# license in this data to reproduce, prepare derivative works, and
-# perform publicly and display publicly.  Beginning five (5) years from
-# July 25, 2001, the United States Government is granted for itself and
-# others acting on its behalf a paid-up, nonexclusive, irrevocable
-# worldwide license in this data to reproduce, prepare derivative works,
-# distribute copies to the public, perform publicly and display
-# publicly, and to permit others to do so.
-#
-# NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
-# OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
-# ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
-# RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
-# INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
-# THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
 #
 # ************************************************************************
 # @HEADER
@@ -445,7 +429,7 @@ MACRO(TRIBITS_SETUP_PACKAGES)
   # system).  However, when we configure actual packages, we do set this to
   # TRUE so that the package configures will not fail due to missing extra
   # repositories.
-  SET(${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES FALSE)
+  SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES FALSE)
 
   TRIBITS_READ_IN_NATIVE_REPOSITORIES()
   SET(${PROJECT_NAME}_ALL_REPOSITORIES ${${PROJECT_NAME}_NATIVE_REPOSITORIES}
@@ -651,14 +635,15 @@ ENDMACRO()
 MACRO(SELECT_DEFAULT_GENERATOR)
   # When the build tree is known and exists, use
   # its generator.
-  SET(DEFAULT_GENERATOR "Unix Makefiles")
+  SET(DEFAULT_GENERATOR "DID NOT SET!")
   IF(EXISTS "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt")
-    FILE(STRINGS "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt" CACHE_CONTENTS)
-    FOREACH(line ${CACHE_CONTENTS})
-      IF("${line}" MATCHES "CMAKE_GENERATOR")
-        STRING(REGEX REPLACE "(.*)=(.*)" "\\2" DEFAULT_GENERATOR "${line}")
-      ENDIF()
-    ENDFOREACH(line)
+    FILE(STRINGS "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt"
+      line REGEX "^CMAKE_GENERATOR:" LIMIT_COUNT 1)
+    IF("${line}" MATCHES "=(.+)$")
+      SET(DEFAULT_GENERATOR "${CMAKE_MATCH_1}")
+    ENDIF()
+  ELSE()
+    SET(DEFAULT_GENERATOR "Unix Makefiles")
   ENDIF()
 ENDMACRO()
 
@@ -934,6 +919,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
      "${${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE_DEFAULT}" )
 
   SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_EXTRA_REPOSITORIES "")
+  SPLIT("${${PROJECT_NAME}_EXTRA_REPOSITORIES}"  "," ${PROJECT_NAME}_EXTRA_REPOSITORIES)
 
   # Set as part of CI testing in order to only enable modified packages
   SET_DEFAULT_AND_FROM_ENV( CTEST_ENABLE_MODIFIED_PACKAGES_ONLY OFF )
@@ -946,6 +932,14 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   ENDIF()
   SET_DEFAULT_AND_FROM_ENV( CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES
     ${CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES_DEFAULT})
+
+  # Set if we should disable enabled fwd packages based on disabled required deps.
+  # To make testing robust, we need to do this.
+  IF ("${${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT ON)
+  ENDIF()
+  SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES 
+    ${${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT})
 
   MESSAGE(
     "\n***"
@@ -1267,9 +1261,11 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     )
 
   IF (EXISTS ${CTEST_BINARY_DIRECTORY}/Updates.txt)
-    SET(CTEST_NOTES_FILES "${CTEST_BINARY_DIRECTORY}/Updates.txt;${CTEST_NOTES_FILES}")
+    SET(CTEST_NOTES_FILES_WO_CACHE "${CTEST_BINARY_DIRECTORY}/Updates.txt;${CTEST_NOTES_FILES}")
+  ELSE()
+    SET(CTEST_NOTES_FILES_WO_CACHE "${CTEST_NOTES_FILES}")
   ENDIF()
-  PRINT_VAR(CTEST_NOTES_FILES)
+  PRINT_VAR(CTEST_NOTES_FILES_WO_CACHE)
 
   # Note: We must only do the submit after we have decided if there are any
   # packages to enable or not and otherwise exit the script!
@@ -1332,6 +1328,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
         "-D${PROJECT_NAME}_ENABLE_TESTS:BOOL=${${TRIBITS_PACKAGE}_ENABLE_TESTS}"
         "-D${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS:STRING=${${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS}"
         "-D${PROJECT_NAME}_ALLOW_NO_PACKAGES:BOOL=ON"
+        "-D${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=${${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES}"
         )
       IF (NOT CTEST_GENERATE_DEPS_XML_OUTPUT_FILE)
         LIST(APPEND CONFIGURE_OPTIONS
@@ -1411,7 +1408,9 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
         ENDIF()
 
         IF (EXISTS ${CMAKE_CACHE_CLEAN_FILE})
-          SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES};${CMAKE_CACHE_CLEAN_FILE}")
+          SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES_WO_CACHE};${CMAKE_CACHE_CLEAN_FILE}")
+        ELSE()
+          SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES_WO_CACHE}")
         ENDIF()
         PRINT_VAR(CTEST_NOTES_FILES)
       
@@ -1420,13 +1419,13 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
           MESSAGE("\nSubmitting configure and notes ...")
           CTEST_SUBMIT( PARTS configure notes )
         ENDIF()
-      
-        #
-        # C) If configure passed then try the build.  Otherwise, move on to
-        # to the next package.
-        #
 
       ENDIF()
+      
+      #
+      # C) If configure passed then try the build.  Otherwise, move on to
+      # to the next package.
+      #
     
       IF ("${CONFIGURE_RETURN_VAL}" EQUAL "0" AND NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
     

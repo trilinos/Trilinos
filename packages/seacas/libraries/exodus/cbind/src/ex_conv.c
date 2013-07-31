@@ -81,7 +81,8 @@ int ex_conv_ini( int  exoid,
 		 int* comp_wordsize,
 		 int* io_wordsize,
 		 int  file_wordsize,
-		 int  int64_status)
+		 int  int64_status,
+		 int  is_parallel)
 {
   char errmsg[MAX_ERR_LENGTH];
   struct file_item* new_file;
@@ -190,6 +191,7 @@ int ex_conv_ini( int  exoid,
   new_file->compression_level = 0;
   new_file->shuffle = 0;
   new_file->file_type = filetype-1;
+  new_file->is_parallel = is_parallel;
   
   new_file->next = file_list;
   file_list = new_file;
@@ -399,16 +401,37 @@ int ex_comp_ws( int exoid )
 */
   struct file_item* file = ex_find_file_item(exoid);
 
+    exerrval = 0; /* clear error code */
+
+    if (!file ) {
+      char errmsg[MAX_ERR_LENGTH];
+      exerrval = EX_BADFILEID;
+      sprintf(errmsg,"Error: unknown file id %d",exoid);
+      ex_err("ex_comp_ws",errmsg,exerrval);
+      return(EX_FATAL);
+    }
+    /* Stored as 0 for 4-byte; 1 for 8-byte */
+    return (file->user_compute_wordsize+1)*4;
+  }
+
+int ex_is_parallel(int exoid)
+{
+  /*! ex_is_parallel() returns 1 (true) or 0 (false) depending on whether
+   * the file was opened in parallel or serial/file-per-processor mode.
+   * Note that in this case parallel assumes the output of a single file,
+   * not a parallel run using file-per-processor.
+   */
+  struct file_item* file = ex_find_file_item(exoid);
+
   exerrval = 0; /* clear error code */
 
   if (!file ) {
     char errmsg[MAX_ERR_LENGTH];
     exerrval = EX_BADFILEID;
     sprintf(errmsg,"Error: unknown file id %d",exoid);
-    ex_err("ex_comp_ws",errmsg,exerrval);
+    ex_err("ex_is_parallel",errmsg,exerrval);
     return(EX_FATAL);
   }
-  /* Stored as 0 for 4-byte; 1 for 8-byte */
-  return (file->user_compute_wordsize+1)*4;
+  /* Stored as 1 for parallel, 0 for serial or file-per-processor */
+  return file->is_parallel;
 }
-

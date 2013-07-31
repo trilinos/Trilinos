@@ -76,9 +76,13 @@ extern int az_iterate_id;
    
 static void dgeev_interface(double **H, int n,
 			    double *condnum,
-			    double *smallest, double *largest );
+			    double *smallest,      double *largest,
+			    double *smallest_real, double *largest_real,
+			    double *smallest_imag, double *largest_imag);
 static void print_condnum( int options[], int proc,
 			   char *prefix, int i, double **hh, double *condnum,
+			   double *smallest_real, double *largest_real,
+			   double *smallest_imag, double *largest_imag,
 			   int flag, int kspace);
 
 void AZ_pgmres_condnum (double b[], double x[],double weight[], int options[],
@@ -172,6 +176,7 @@ void AZ_pgmres_condnum (double b[], double x[],double weight[], int options[],
 /* h2 will hold non-rotated Hessenberg, used for eigen-analysis */
   double ** hh2 = NULL;
   double condnum;
+  double smallest_real, largest_real, smallest_imag, largest_imag;
   int itemp;
   int type_orthog, num_orthog_steps;
   
@@ -454,9 +459,15 @@ void AZ_pgmres_condnum (double b[], double x[],double weight[], int options[],
                                   true_scaled_r, actual_residual, options,
                                   proc_config);
 
-	print_condnum(options, proc, prefix, itemp, hh2, &condnum, 
+	print_condnum(options, proc, prefix, itemp, hh2, &condnum,
+		      &smallest_real, &largest_real,
+		      &smallest_imag, &largest_imag,
                       (iter>kspace), kspace_p1);
 	status[AZ_condnum] = condnum;
+	status[AZ_lambda_real_min] = smallest_real;
+	status[AZ_lambda_real_max] = largest_real;
+	status[AZ_lambda_imag_min] = smallest_imag;
+	status[AZ_lambda_imag_max] = largest_imag;
         return;
       }
 
@@ -505,10 +516,15 @@ void AZ_pgmres_condnum (double b[], double x[],double weight[], int options[],
                                   true_scaled_r, actual_residual, options,
                                   proc_config);
 
-	print_condnum(options, proc, prefix, i, hh2,&condnum, 
+	print_condnum(options, proc, prefix, i, hh2, &condnum,
+		      &smallest_real, &largest_real,
+		      &smallest_imag, &largest_imag,
                       (iter>kspace), kspace_p1);
 	status[AZ_condnum] = condnum;
-	    
+	status[AZ_lambda_real_min] = smallest_real;
+	status[AZ_lambda_real_max] = largest_real;
+	status[AZ_lambda_imag_min] = smallest_imag;
+	status[AZ_lambda_imag_max] = largest_imag;	    
         return;
       }
       if ( (i == kspace) || convergence_info->converged || iter == options[AZ_max_iter]) {
@@ -547,10 +563,15 @@ void AZ_pgmres_condnum (double b[], double x[],double weight[], int options[],
 				      true_scaled_r, actual_residual, options,
 				      proc_config);
 
-	    print_condnum(options, proc, prefix, i, hh2, &condnum, 
+	    print_condnum(options, proc, prefix, i, hh2, &condnum,
+			  &smallest_real, &largest_real,
+			  &smallest_imag, &largest_imag,
                           (iter>kspace), kspace_p1);
 	    status[AZ_condnum] = condnum;
-	    
+	    status[AZ_lambda_real_min] = smallest_real;
+	    status[AZ_lambda_real_max] = largest_real;
+	    status[AZ_lambda_imag_min] = smallest_imag;
+	    status[AZ_lambda_imag_max] = largest_imag;
 	    return;
 	  }
 	}
@@ -594,10 +615,15 @@ void AZ_pgmres_condnum (double b[], double x[],double weight[], int options[],
                             scaled_r_norm, actual_residual, options,
                             proc_config);
 
-  print_condnum(options, proc, prefix, itemp, hh2, &condnum, (iter>kspace),
-                kspace_p1);
+  print_condnum(options, proc, prefix, itemp, hh2, &condnum,
+		&smallest_real, &largest_real,
+		&smallest_imag, &largest_imag,
+		(iter>kspace), kspace_p1);
   status[AZ_condnum] = condnum;
-	    
+  status[AZ_lambda_real_min] = smallest_real;
+  status[AZ_lambda_real_max] = largest_real;
+  status[AZ_lambda_imag_min] = smallest_imag;
+  status[AZ_lambda_imag_max] = largest_imag;
   /* This memory is free'd in print_condnum(), since we alqyas return
    * after calling it. Note that the hh2 pointer is not set to
    * NULL anywhere -- but we don't use it anymore. */
@@ -616,7 +642,9 @@ void AZ_pgmres_condnum (double b[], double x[],double weight[], int options[],
 
 static void dgeev_interface(double **H, int n,
 			    double *condnum,
-			    double *smallest, double *largest )
+			    double *smallest,      double *largest,
+			    double *smallest_real, double *largest_real,
+			    double *smallest_imag, double *largest_imag)
 {
 
   int i,j;
@@ -629,7 +657,9 @@ static void dgeev_interface(double **H, int n,
   char T = 'T';
   char N = 'N';
   double one = 1.0, zero = 0.0;
-  double smallest_A = DBL_MAX, largest_A = DBL_MIN;
+  double smallest_A  = DBL_MAX, largest_A  = DBL_MIN;
+  double smallest_Ar = 0.0,     largest_Ar = 0.0;
+  double smallest_Ai = 0.0,     largest_Ai = 0.0;
   double largest_A2 = 0.0, largest_inv_A2 = 0.0;
   double module;
 #ifdef AZ_MATLAB_OUTPUT
@@ -698,6 +728,10 @@ static void dgeev_interface(double **H, int n,
     module = sqrt(pow(Er[i],2) + pow(Ei[i],2));
     if( module > largest_A  ) largest_A  = module;
     if( module < smallest_A ) smallest_A = module;
+    if( Er[i] > largest_Ar  ) largest_Ar = Er[i];
+    if( Er[i] < smallest_Ar ) smallest_Ar = Er[i];
+    if( Ei[i] > largest_Ai  ) largest_Ai = Ei[i];
+    if( Ei[i] < smallest_Ai ) smallest_Ai = Ei[i];
   }
   /* ====================== */
   /* compute the \rho(A'*A) */
@@ -769,6 +803,10 @@ static void dgeev_interface(double **H, int n,
   *condnum = largest_inv_A2 * largest_A2;
   *smallest = smallest_A;
   *largest = largest_A;
+  *smallest_real = smallest_Ar;
+  *largest_real  = largest_Ar;
+  *smallest_imag = smallest_Ai;
+  *largest_imag  = largest_Ai;
 
   return;
   
@@ -782,6 +820,8 @@ static void dgeev_interface(double **H, int n,
 
 static void print_condnum( int options[], int proc,
 			   char *prefix, int i, double **hh, double *condnum,
+			   double *smallest_real, double *largest_real,
+			   double *smallest_imag, double *largest_imag,
 			   int flag, int kspace)
 {
   int k;
@@ -790,7 +830,7 @@ static void print_condnum( int options[], int proc,
   
   if( i > 1 ) {
     
-    dgeev_interface( hh, i, condnum, &smallest, &largest);
+    dgeev_interface( hh, i, condnum, &smallest, &largest, smallest_real, largest_real, smallest_imag, largest_imag);
     
   } else {
 

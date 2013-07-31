@@ -72,7 +72,7 @@ namespace MueLu {
 
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class AmalgamationFactory : public SingleLevelFactoryBase {
 #undef MUELU_AMALGAMATIONFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -106,22 +106,23 @@ namespace MueLu {
     // @param A: input operator (just used to check the maps for validity)
     // @param blockSize (LocalOrdinal): block size (needed for constant block size)
     // @param offset (GlobalOrdinal): global offset for dofs (stored in strided map, default = 0)
-    static const GlobalOrdinal DOFGid2NodeId(GlobalOrdinal gid, const RCP<Matrix>& A, LocalOrdinal blockSize, const GlobalOrdinal offset = 0);
+    // @param indexBase (GlobalOrdinal): indexBase for DOF map (and node map, default = 0)
+    static const GlobalOrdinal DOFGid2NodeId(GlobalOrdinal gid, const RCP<Matrix>& A, LocalOrdinal blockSize, const GlobalOrdinal offset /*= 0*/, const GlobalOrdinal indexBase/* = 0*/);
 
     /*! @brief ComputeUnamalgamatedAggregateSizes
      * computes the size of the aggregates (in DOFs)
      */
-    static void ComputeUnamalgamatedAggregateSizes(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, Teuchos::ArrayRCP<LocalOrdinal> & aggSizes);
 
     /*! @brief UnamalgamateAggregates
-     * puts all dofs for aggregate \c i in aggToRowMap[\c i]
-     */
-    static void UnamalgamateAggregates(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const Teuchos::ArrayRCP<LocalOrdinal> & aggSizes, Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > & aggToRowMap);
+
+       Puts all dofs for aggregate \c i in aggToRowMap[\c i].  Also calculate aggregate sizes.
+    */
+    static void UnamalgamateAggregates(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, Teuchos::ArrayRCP<LocalOrdinal> & aggStart, Teuchos::ArrayRCP<GlobalOrdinal> & aggToRowMap);
 
     /*! @brief ComputeUnamalgamatedImportDofMap
      * build overlapping dof row map from aggregates needed for overlapping null space
      */
-    static Teuchos::RCP< Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo, const Teuchos::ArrayRCP<LocalOrdinal> & aggSizes);
+    static Teuchos::RCP< Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo);
 
 
   private:

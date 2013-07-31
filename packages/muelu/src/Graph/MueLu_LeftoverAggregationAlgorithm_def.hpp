@@ -77,11 +77,12 @@ namespace MueLu {
 
     int minNodesPerAggregate = GetMinNodesPerAggregate();
 
-    const RCP<const Map> nonUniqueMap = aggregates.GetMap();
-    const RCP<const Map> uniqueMap    = graph.GetDomainMap(); // Q: DomainMap or RowMap??
+    const RCP<const Map> nonUniqueMap = aggregates.GetMap(); //column map of underlying graph
+    const RCP<const Map> uniqueMap    = graph.GetDomainMap();
 
     MueLu::CoupledAggregationCommHelper<LO,GO,NO,LMO> myWidget(uniqueMap, nonUniqueMap);
 
+    //TODO JJH We want to skip this call
     RCP<Xpetra::Vector<double,LO,GO,NO> > distWeights = Xpetra::VectorFactory<double,LO,GO,NO>::Build(nonUniqueMap);
 
     // Aggregated vertices not "definitively" assigned to processors are
@@ -104,6 +105,7 @@ namespace MueLu {
       // views on distributed vectors are freed here.
     }
 
+    //TODO JJH We want to skip this call
     myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
     // All tentatively assigned vertices are now definitive
 
@@ -133,6 +135,7 @@ namespace MueLu {
       // views on distributed vectors are freed here.
     }
 
+    //TODO JJH We want to skip this call
     myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
     // All tentatively assigned vertices are now definitive
 
@@ -199,6 +202,7 @@ namespace MueLu {
       // views on distributed vectors are freed here.
     }
 
+    //TODO JJH We want to skip this call
     myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
     //All tentatively assigned vertices are now definitive
 
@@ -339,6 +343,7 @@ namespace MueLu {
           }
           // views on distributed vectors are freed here.
         }
+        //TODO JJH We want to skip this call
         myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
         // All tentatively assigned vertices are now definitive
         nAggregatesLocal=nAggregates;
@@ -553,6 +558,7 @@ namespace MueLu {
         weights      = Teuchos::null;
 
         ++ncalls;
+        //TODO JJH We want to skip this call
         myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
         // All tentatively assigned vertices are now definitive
       }
@@ -649,6 +655,7 @@ namespace MueLu {
       // views on distributed vectors are freed here.
     }
 
+    //TODO JJH We want to skip this call
     myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, false);
 
     if (IsPrint(Statistics1)) {
@@ -730,6 +737,7 @@ namespace MueLu {
     }
     nAggregates = NewNAggs;
 
+    //TODO JJH We want to skip this call
     myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
     // All tentatively assigned vertices are now definitive
 

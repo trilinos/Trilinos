@@ -166,7 +166,6 @@ CreateCartesianCoordinates(const string CoordType,
                            Teuchos::ParameterList& List)
 {
   // FIXME: pdes > 1
-  double length = 1.0;
   double delta_x, delta_y, delta_z;
 
   double lx = List.get("lx", 1.0);

@@ -7,20 +7,33 @@
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
@@ -41,14 +54,13 @@
 #include "Ifpack2_Condest.hpp"
 #include "Ifpack2_Heap.hpp"
 #include "Ifpack2_Parameters.hpp"
-
-#include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_Vector.hpp>
+#include "Ifpack2_Relaxation.hpp"
+#include "Ifpack2_Chebyshev.hpp"
+#include "Ifpack2_ILUT.hpp"
+#include "Ifpack2_AdditiveSchwarz.hpp"
 
 #include <BelosConfigDefs.hpp>
-#include <BelosSolverFactory.hpp>
 #include <BelosSolverManager.hpp>
-#include <BelosLinearProblem.hpp>
 #include <BelosTpetraAdapter.hpp>
 #include <BelosBlockGmresSolMgr.hpp>
 #include <BelosBlockCGSolMgr.hpp>
@@ -75,6 +87,16 @@ namespace Teuchos {
 }
 
 namespace Ifpack2 {
+
+  //! A traits class for determining the scalar type to use for Belos
+  /*
+   * This exists to allow a ScalarType to override what scalar type is used
+   * for Belos, if those are not equal, by specializing this class.
+   */
+  template <typename ScalarType>
+  struct BelosScalarType {
+    typedef ScalarType type;
+  };
   
   //! A class for constructing and using a CG/GMRES smoother
   // for a given Tpetra::RowMatrix.
@@ -93,6 +115,9 @@ namespace Ifpack2 {
     
     //! The type of the entries of the input MatrixType.
     typedef typename MatrixType::scalar_type scalar_type;
+
+    //! The scalar type used by Belos (which may not be scalar_type)
+    typedef typename BelosScalarType<scalar_type>::type belos_scalar_type;
     
     //! Preserved only for backwards compatibility.  Please use "scalar_type".
     TEUCHOS_DEPRECATED typedef typename MatrixType::scalar_type Scalar;
@@ -124,6 +149,10 @@ namespace Ifpack2 {
     
     //! Preserved only for backwards compatibility.  Please use "magnitude_type".
     TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
+
+    //! Tpetra MultiVector/Operator
+    typedef typename Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> TMV;
+    typedef typename Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> TOP;
 
     //@}
     // \name Constructors and Destructors
@@ -186,18 +215,18 @@ namespace Ifpack2 {
       \param
       Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing result.
     */
-    void apply(
-	       const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-	       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-	       Teuchos::ETransp mode = Teuchos::NO_TRANS,
-	       scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-	       scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+    void
+    apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+	   Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+	   Teuchos::ETransp mode = Teuchos::NO_TRANS,
+	   scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+	   scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
     
     //! Tpetra::Map representing the domain of this operator.
-    const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getDomainMap() const;
+    Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap() const;
     
     //! Tpetra::Map representing the range of this operator.
-    const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getRangeMap() const;
+    Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRangeMap() const;
     
     //! Whether this object's apply() method can apply the transpose (or conjugate transpose, if applicable).
     bool hasTransposeApply() const;
@@ -211,7 +240,7 @@ namespace Ifpack2 {
     //! \name Mathematical functions.
     
     //! Returns the Tpetra::BlockMap object associated with the range of this matrix operator.
-    const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
+    Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
     //! Returns a reference to the matrix to be preconditioned.
     Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > getMatrix() const;

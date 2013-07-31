@@ -54,6 +54,8 @@
 #include <limits.h>
 
 #include "Trios_logger.h"
+#include "Trios_nssi_fprint_types.h"
+#include "Trios_nnti_fprint_types.h"
 
 
 

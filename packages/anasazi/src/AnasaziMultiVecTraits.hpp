@@ -193,7 +193,13 @@ namespace Anasazi {
     //! @name Attribute methods
     //@{
 
-    //! Obtain the vector length of \c mv.
+    /// Return the number of rows in the given multivector \c mv.
+    ///
+    /// If you are writing a specialization of MultiVecTraits for your
+    /// own multivector type MV, please see the documentation of
+    /// MultiVecTraitsExt in this file.  Most Anasazi users will not
+    /// need to do this, since MultiVecTraits already has
+    /// specializations for Epetra, Tpetra, and Thyra objects.
     static int GetVecLength( const MV& mv )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return 0; }     
 
@@ -324,14 +330,23 @@ namespace Anasazi {
   /// \brief An extension of the MultiVecTraits class that adds a new vector length method.
   /// \ingroup anasazi_opvec_interfaces
   ///
-  /// This traits class provides an additional method to the multivector
-  /// operations for finding the number of rows that is 64-bit compatible.
-  /// The method in this traits class will replace the GetVecLength()
-  /// method, which will be deprecated, and removed in the next major
-  /// Trilinos release.  At this time, this traits class will call the
-  /// GetVecLength() method by default for any traits implementation that
-  /// does not specialize this template.  However, for 64-bit support this
-  /// template will need to be specialized.
+  /// This traits class provides a 64-bit compatible method,
+  /// GetGlobalLength(), that returns the number of rows in a
+  /// multivector.  GetGlobalLength() will replace the GetVecLength()
+  /// method in MultiVecTraits, which is not 64-bit compatible.
+  /// GetVecLength() will be deprecated, and will be removed in the
+  /// next major Trilinos release.
+  ///
+  /// For now, GetGlobalLength() will call the GetVecLength() method
+  /// by default for any traits implementation that does not
+  /// specialize this class.  If you have written a specialization of
+  /// MultiVecTraits for your own multivector type MV, and if MV does
+  /// <i>not</i> support returning the number of rows as a 64-bit
+  /// integer, then you don't need to do anything.  If your MV class
+  /// <i>does</i> support this, then you should write a specialization
+  /// of MultiVecTraitsExt that reimplements GetGlobalLength().
+  /// Otherwise, you risk overflowing the \c int return value of
+  /// GetVecLength().
   ///
   /// \note You do <i>not</i> need to write a specialization of
   ///   MultiVecTraitsExt if you are using Epetra, Tpetra, or Thyra

@@ -47,6 +47,7 @@
 #include <vector>
 
 #include "Ioss_CommSet.h"
+#include "Ioss_CoordinateFrame.h"
 #include "Ioss_DBUsage.h"
 #include "Ioss_EdgeBlock.h"
 #include "Ioss_EdgeSet.h"
@@ -75,8 +76,9 @@ namespace {
   bool lessOffset(const Ioss::EntityBlock *b1, const Ioss::EntityBlock *b2) {
     assert(b1->property_exists(orig_block_order()));
     assert(b2->property_exists(orig_block_order()));
-    return b1->get_property(orig_block_order()).get_int() <
-	   b2->get_property(orig_block_order()).get_int();
+    int64_t b1_orderInt = b1->get_property(orig_block_order()).get_int();
+    int64_t b2_orderInt = b2->get_property(orig_block_order()).get_int();
+    return ( (b1_orderInt == b2_orderInt) ? (b1->name() < b2->name()) : (b1_orderInt < b2_orderInt) );
   }
 
   std::string uppercase(const std::string &name);
@@ -88,6 +90,18 @@ namespace {
     std::vector<T>(container).swap(container);
   }
 
+  void check_for_duplicate_names(const Ioss::Region *region, const std::string &name)
+  {
+    const Ioss::GroupingEntity *old_ge = region->get_entity(name);
+
+    if (old_ge != NULL && !(old_ge->type() == Ioss::SIDEBLOCK || old_ge->type() == Ioss::SIDESET)) {
+      std::string filename = region->get_database()->get_filename();
+      std::ostringstream errmsg;
+      errmsg << "ERROR: There are multiple blocks or sets with the name '"
+          << name << "' defined in the exodus file '" << filename << "'.";
+      IOSS_ERROR(errmsg);
+    }
+  }
 }
 
 namespace Ioss {
@@ -137,6 +151,8 @@ namespace Ioss {
 			    "face_count",          Property::INTEGER));
     properties.add(Property(this,
 			    "element_count",       Property::INTEGER));
+    properties.add(Property(this,
+			    "coordinate_frame_count", Property::INTEGER));
     properties.add(Property(this,
 			    "state_count",         Property::INTEGER));
     properties.add(Property(this,
@@ -334,31 +350,31 @@ namespace Ioss {
     } else {
       switch (get_state()) {
       case STATE_CLOSED:
-	// Make sure we can go to the specified state.
-	switch (new_state) {
-	default:
-	  success = set_state(new_state);
-	}
-	break;
+        // Make sure we can go to the specified state.
+        switch (new_state) {
+        default:
+          success = set_state(new_state);
+        }
+        break;
 
-	// For the invalid transitions; provide a more meaningful
-	// message in certain cases...
-      case STATE_READONLY:
-	{
-	  std::ostringstream errmsg;
-	  errmsg << "Cannot change state of an input (readonly) database in "
-		 << get_database()->get_filename();
-	  IOSS_ERROR(errmsg);
-	}
+        // For the invalid transitions; provide a more meaningful
+        // message in certain cases...
+        case STATE_READONLY:
+        {
+          std::ostringstream errmsg;
+          errmsg << "Cannot change state of an input (readonly) database in "
+              << get_database()->get_filename();
+          IOSS_ERROR(errmsg);
+        }
 
-	break;
-      default:
-	{
-	  std::ostringstream errmsg;
-	  errmsg << "Invalid nesting of begin/end pairs in "
-		 << get_database()->get_filename();
-	  IOSS_ERROR(errmsg);
-	}
+        break;
+        default:
+        {
+          std::ostringstream errmsg;
+          errmsg << "Invalid nesting of begin/end pairs in "
+              << get_database()->get_filename();
+          IOSS_ERROR(errmsg);
+        }
       }
     }
     // Pass the 'begin state' message on to the database so it can do any
@@ -385,7 +401,7 @@ namespace Ioss {
     }
 
     if (current_state == STATE_DEFINE_MODEL) {
-      // Sort the element blocks based on the idOffset field...
+      // Sort the element blocks based on the idOffset field, followed by name...
       if (!get_database()->is_input()) {
 	std::sort(elementBlocks.begin(), elementBlocks.end(), lessOffset);
 	std::sort(faceBlocks.begin(),    faceBlocks.end(),    lessOffset);
@@ -437,26 +453,26 @@ namespace Ioss {
   int Region::add_state(double time)
   {
     static bool warning_output = false;
-    
+
     // NOTE:  For restart input databases, it is possible that the time
     //        is not monotonically increasing...
     if (!get_database()->is_input() && stateTimes.size() >= 1 && time <= stateTimes[stateTimes.size()-1]) {
       // Check that time is increasing...
       if (!warning_output) {
-	std::ostringstream errmsg;
-	errmsg << "IOSS WARNING: Current time, " << time
-	       << ", is not greater than previous time, " << stateTimes[stateTimes.size()-1]
-	       << " in\n"
-	       << get_database()->get_filename()
-	       << ". This may cause problems in applications that assume monotonically increasing time values.\n";
-	IOSS_WARNING << errmsg.str();
-	warning_output = true;
+        std::ostringstream errmsg;
+        errmsg << "IOSS WARNING: Current time, " << time
+            << ", is not greater than previous time, " << stateTimes[stateTimes.size()-1]
+                                                                     << " in\n"
+                                                                     << get_database()->get_filename()
+                                                                     << ". This may cause problems in applications that assume monotonically increasing time values.\n";
+        IOSS_WARNING << errmsg.str();
+        warning_output = true;
       }
     }
 
     if (get_database()->is_input() ||
-	get_database()->usage() == WRITE_RESULTS ||
-	get_database()->usage() == WRITE_RESTART ) {
+        get_database()->usage() == WRITE_RESULTS ||
+        get_database()->usage() == WRITE_RESTART ) {
       stateTimes.push_back(time);
       assert((int)stateTimes.size() == stateCount+1);
 
@@ -467,9 +483,9 @@ namespace Ioss {
       // a list of times that have been written since they are just streamed out and never read
       // We do sometimes need the list of times written to restart or results files though...
       if (stateTimes.empty()) {
-	stateTimes.push_back(time);
+        stateTimes.push_back(time);
       } else {
-	stateTimes[0] = time;
+        stateTimes[0] = time;
       }
     }
     return ++stateCount;;
@@ -632,12 +648,25 @@ namespace Ioss {
 
   bool Region::add(NodeBlock    *node_block)
   {
+    check_for_duplicate_names(this, node_block->name());
+
     // Check that region is in correct state for adding entities
     if (get_state() == STATE_DEFINE_MODEL) {
+      nodeBlocks.push_back(node_block);
       // Add name as alias to itself to simplify later uses...
       add_alias(node_block);
 
-      nodeBlocks.push_back(node_block);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  bool Region::add(const CoordinateFrame &frame)
+  {
+    // Check that region is in correct state for adding entities
+    if (get_state() == STATE_DEFINE_MODEL) {
+      coordinateFrames.push_back(frame);
       return true;
     } else {
       return false;
@@ -646,6 +675,8 @@ namespace Ioss {
 
   bool Region::add(ElementBlock *element_block)
   {
+    check_for_duplicate_names(this, element_block->name());
+
     // Check that region is in correct state for adding entities
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
@@ -691,6 +722,8 @@ namespace Ioss {
 
   bool Region::add(FaceBlock *face_block)
   {
+    check_for_duplicate_names(this, face_block->name());
+
     // Check that region is in correct state for adding entities
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
@@ -735,6 +768,8 @@ namespace Ioss {
 
   bool Region::add(EdgeBlock *edge_block)
   {
+    check_for_duplicate_names(this, edge_block->name());
+
     // Check that region is in correct state for adding entities
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
@@ -779,6 +814,7 @@ namespace Ioss {
 
   bool Region::add(SideSet      *sideset)
   {
+    check_for_duplicate_names(this, sideset->name());
     // Check that region is in correct state for adding entities
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
@@ -792,6 +828,7 @@ namespace Ioss {
 
   bool Region::add(NodeSet      *nodeset)
   {
+    check_for_duplicate_names(this, nodeset->name());
     // Check that region is in correct state for adding entities
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
@@ -805,6 +842,7 @@ namespace Ioss {
 
   bool Region::add(EdgeSet      *edgeset)
   {
+    check_for_duplicate_names(this, edgeset->name());
     // Check that region is in correct state for adding entities
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
@@ -818,6 +856,7 @@ namespace Ioss {
 
   bool Region::add(FaceSet      *faceset)
   {
+    check_for_duplicate_names(this, faceset->name());
     // Check that region is in correct state for adding entities
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
@@ -831,6 +870,7 @@ namespace Ioss {
 
   bool Region::add(ElementSet      *elementset)
   {
+    check_for_duplicate_names(this, elementset->name());
     // Check that region is in correct state for adding entities
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
@@ -844,6 +884,7 @@ namespace Ioss {
 
   bool Region::add(CommSet      *commset)
   {
+    check_for_duplicate_names(this, commset->name());
     // Check that region is in correct state for adding entities
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
@@ -885,14 +926,17 @@ namespace Ioss {
   const CommSetContainer&  Region::get_commsets() const
   { return commSets; }
 
+  const CoordinateFrameContainer&  Region::get_coordinate_frames() const
+  { return coordinateFrames; }
+
   bool Region::add_alias(const GroupingEntity *ge)
   {
-    // Seeif an entity with this name already exists...
+    // See if an entity with this name already exists...
     std::string db_name = ge->name();
     const GroupingEntity *old_ge = get_entity(db_name);
     if (old_ge != NULL && ge != old_ge) {
       if (!((old_ge->type() == SIDEBLOCK &&     ge->type() == SIDESET) ||
-	    (    ge->type() == SIDEBLOCK && old_ge->type() == SIDESET))) {
+      (    ge->type() == SIDEBLOCK && old_ge->type() == SIDESET))) {
 	ssize_t old_id = -1;
 	ssize_t new_id = -1;
 	if (old_ge->property_exists(id_str())) {
@@ -917,12 +961,26 @@ namespace Ioss {
   {
     // For use with the USTRING type in Sierra, create an uppercase
     // version of all aliases...
-    std::string uname = uppercase(alias);
-    if (uname != alias)
-      aliases_.insert(IOAliasValuePair(uname, db_name));
 
-    std::pair<AliasMap::iterator, bool> result = aliases_.insert(IOAliasValuePair(alias, db_name));
-    return result.second;
+    // Possible that 'db_name' is itself an alias, resolve down to "canonical" name...
+    std::string canon = db_name;
+    if (db_name != alias)
+      canon = get_alias(db_name);
+      
+    if (!canon.empty()) {
+      std::string uname = uppercase(alias);
+      if (uname != alias)
+	aliases_.insert(IOAliasValuePair(uname, canon));
+
+      std::pair<AliasMap::iterator, bool> result = aliases_.insert(IOAliasValuePair(alias, canon));
+      return result.second;
+    } else {
+	std::ostringstream errmsg;
+	errmsg << "\n\nERROR: The entity named '" << db_name << "' which is being aliased to '" << alias
+	       << "' does not exist in region '" << name() << "'.\n";
+	IOSS_ERROR(errmsg);
+	return false;
+    }
   }
 
   std::string Region::get_alias(const std::string &alias) const
@@ -1178,6 +1236,18 @@ namespace Ioss {
     return ge;
   }
 
+  const CoordinateFrame& Region::get_coordinate_frame(int64_t id) const
+  {
+    for (size_t i=0; i < coordinateFrames.size(); i++) {
+      if (coordinateFrames[i].id() == id) {
+	return coordinateFrames[i];
+      }
+    }
+    std::ostringstream errmsg;
+    errmsg << "Error: Invalid id " << id << " specified for coordinate frame.";
+    IOSS_ERROR(errmsg);
+  }
+
   bool Region::is_valid_io_entity(const std::string& my_name, unsigned int io_type,
 				  std::string *my_type) const
   {
@@ -1270,6 +1340,9 @@ namespace Ioss {
 
     if (my_name == "comm_set_count")
       return Property(my_name, (int)commSets.size());
+
+    if (my_name == "coordinate_frame_count")
+      return Property(my_name, (int)coordinateFrames.size());
 
     if (my_name == "state_count") {
       return Property(my_name, stateCount);

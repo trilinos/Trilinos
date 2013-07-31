@@ -384,7 +384,9 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   // print timing information
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor::summarize(printer->stream(TimingDetails));
+  if ( printer->isVerbosity( TimingDetails ) ) {
+    Teuchos::TimeMonitor::summarize( printer->stream( TimingDetails ) );
+  }
 #endif
 
   // send the solution to the eigenproblem

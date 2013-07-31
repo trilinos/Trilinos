@@ -46,6 +46,7 @@
 #include <Teuchos_CompileTimeAssert.hpp>
 #include <Teuchos_TypeTraits.hpp>
 #include <Teuchos_BLAS_types.hpp>
+#include <Teuchos_Describable.hpp>
 
 #include <Kokkos_ConfigDefs.hpp>
 #include <Kokkos_CUDANodeUtils.hpp>
@@ -56,7 +57,7 @@
 #include "Kokkos_NodeHelpers.hpp"
 #include "Kokkos_CuspWrappers.hpp"
 
-namespace Kokkos {
+namespace KokkosClassic {
 
 
   //! \class CuspCrsGraph
@@ -263,7 +264,7 @@ namespace Kokkos {
   /// \tparam Ordinal The type of (local) column indices in the sparse matrix.
   /// \tparam Node The Kokkos Node type.
   template <class Scalar, class Ordinal, class Node>
-  class CuspOps {
+  class CuspOps : public Teuchos::Describable {
   public:
     //@{
     //! @name Typedefs and structs
@@ -314,6 +315,19 @@ namespace Kokkos {
     //! Constructor accepting and retaining a node object.
     CuspOps(const RCP<Node> &node);
 
+    /// \brief "Sum constructor": compute *this = alpha*A + beta*B.
+    ///
+    /// The resulting matrix shares the Node instance and copies the
+    /// parameters of the matrix A.
+    CuspOps (const Scalar& alpha,
+             const CuspOps<Scalar, Ordinal, Node, Allocator>& A,
+             const Scalar& beta,
+             const CuspOps<Scalar, Ordinal, Node, Allocator>& B)
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "CuspOps: sum constructor not implemented.");
+    }
+
     //! Destructor
     ~CuspOps();
 
@@ -325,7 +339,22 @@ namespace Kokkos {
     RCP<Node> getNode() const;
 
     //@}
+    //! \name Implementation of Teuchos::Describable
+    //@{
 
+    //! One-line description of this instance.
+    std::string description () const {
+      using Teuchos::TypeNameTraits;
+      std::ostringstream os;
+      os << "KokkosClassic::CuspOps<"
+         << "Scalar=" << TypeNameTraits<Scalar>::name()
+         << ", Ordinal=" << TypeNameTraits<Ordinal>::name()
+         << ", Node=" << TypeNameTraits<Node>::name()
+         << ">";
+      return os.str();
+    }
+
+    //@}
     //! @name Initialization of graph and matrix
     //@{
 
@@ -447,7 +476,7 @@ namespace Kokkos {
     solve (Teuchos::ETransp trans,
            const MultiVector<DomainScalar,Node> &Y,
            MultiVector<RangeScalar,Node> &X) const {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Kokkos::CuspOps does not support solve() because Cusp library does not provide sparse triangular solve.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "KokkosClassic::CuspOps does not support solve() because Cusp library does not provide sparse triangular solve.");
     }
 
     template <class DomainScalar, class RangeScalar>
@@ -460,6 +489,18 @@ namespace Kokkos {
     {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
         "CuspOps: gaussSeidel not implemented");
+    }
+
+    /// \brief "Add in place": compute <tt>*this = alpha*A + beta*(*this)</tt>.
+    ///
+    /// This method may choose to reuse storage of <tt>*this</tt>.
+    void
+    addInPlace (const Scalar& alpha,
+                const CuspOps<Scalar, Ordinal, Node, Allocator>& A,
+                const Scalar& beta)
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "CuspOps: addInPlace not implemented");
     }
     //@}
 
@@ -504,7 +545,7 @@ namespace Kokkos {
     const size_t numnz = hostinds.size();
     TEUCHOS_TEST_FOR_EXCEPTION(
         numnz > (size_t)MAX_NNZ, std::runtime_error,
-        "Kokkos::CuspOps: Selected ordinal does not support more than " << MAX_NNZ << " non-zeros."
+        "KokkosClassic::CuspOps: Selected ordinal does not support more than " << MAX_NNZ << " non-zeros."
         );
     devptrs = node->template allocBuffer<Ordinal>( numRows+1 );
     ArrayRCP<Ordinal> h_devptrs = node->viewBufferNonConst(WriteOnly, numRows+1, devptrs);
@@ -525,7 +566,7 @@ namespace Kokkos {
                         CuspCrsMatrix<Scalar,Ordinal,Node> &matrix,
                   const RCP<ParameterList> &params)
   {
-    std::string FuncName("Kokkos::CuspOps::finalizeMatrix()");
+    std::string FuncName("KokkosClassic::CuspOps::finalizeMatrix()");
     RCP<Node> node = graph.getNode();
     TEUCHOS_TEST_FOR_EXCEPTION(
         matrix.isInitialized() == false,
@@ -571,7 +612,7 @@ namespace Kokkos {
                                                             CuspCrsMatrix<Scalar,Ordinal,Node> &matrix,
                                                             const RCP<ParameterList> &params)
   {
-    std::string FuncName("Kokkos::CuspOps::finalizeGraphAndMatrix(graph,matrix,params)");
+    std::string FuncName("KokkosClassic::CuspOps::finalizeGraphAndMatrix(graph,matrix,params)");
     TEUCHOS_TEST_FOR_EXCEPTION(
         graph.isInitialized() == false,
         std::runtime_error, FuncName << ": graph has not yet been initialized."
@@ -777,6 +818,6 @@ namespace Kokkos {
     }
   }
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif /* KOKKOS_CUSPOPS_HPP */

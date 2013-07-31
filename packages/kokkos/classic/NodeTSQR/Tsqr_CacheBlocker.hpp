@@ -411,7 +411,6 @@ namespace TSQR {
 		     const bool contiguous_cache_blocks) const
     {
       typedef typename MatrixViewType::ordinal_type ordinal_type;
-      typedef typename MatrixViewType::scalar_type scalar_type;
 
       // Total number of cache blocks.
       const ordinal_type num_cache_blocks = 

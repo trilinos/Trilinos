@@ -7,20 +7,33 @@
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 // 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//  
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 // 
 // ***********************************************************************
@@ -54,8 +67,8 @@ int main(int argc, char *argv[]) {
   int n = 32;                        // spatial discretization (per dimension)
   int num_KL = 2;                    // number of KL terms
   int p = 3;                         // polynomial order
-  double mu = 0.1;                   // mean of exponential random field
-  double s = 0.2;                    // std. dev. of exponential r.f.
+  double mu = 0.2;                   // mean of exponential random field
+  double s = 0.1;                    // std. dev. of exponential r.f.
   bool nonlinear_expansion = false;  // nonlinear expansion of diffusion coeff
                                      // (e.g., log-normal)
   bool symmetric = false;            // use symmetric formulation
@@ -95,9 +108,9 @@ int main(int argc, char *argv[]) {
     int sz = basis->size();
     Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
     if (nonlinear_expansion)
-      Cijk = basis->computeTripleProductTensor(sz);
+      Cijk = basis->computeTripleProductTensor();
     else
-      Cijk = basis->computeTripleProductTensor(num_KL+1);
+      Cijk = basis->computeLinearTripleProductTensor();
     Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
       Teuchos::rcp(new Stokhos::AlgebraicOrthogPolyExpansion<int,double>(basis,
 									 Cijk));
@@ -122,7 +135,7 @@ int main(int argc, char *argv[]) {
 
     // Create application
     Teuchos::RCP<twoD_diffusion_ME> model = 
-      Teuchos::rcp(new twoD_diffusion_ME(app_comm, n, num_KL, mu, s, basis, 
+      Teuchos::rcp(new twoD_diffusion_ME(app_comm, n, num_KL, s, mu, basis, 
 					 nonlinear_expansion, symmetric));
     
     // Setup stochastic Galerkin algorithmic parameters
@@ -143,7 +156,7 @@ int main(int argc, char *argv[]) {
     precParams.set("smoother: sweeps",2);
     precParams.set("smoother: pre or post", "both");
     precParams.set("coarse: max size", 200);
-    //precParams.set("PDE equations",sz);
+    precParams.set("PDE equations",sz);
 #ifdef HAVE_ML_AMESOS
     precParams.set("coarse: type","Amesos-KLU");
 #else
@@ -298,14 +311,14 @@ int main(int argc, char *argv[]) {
   catch (std::exception& e) {
     std::cout << e.what() << std::endl;
   }
-  catch (string& s) {
+  catch (std::string& s) {
     std::cout << s << std::endl;
   }
   catch (char *s) {
     std::cout << s << std::endl;
   }
   catch (...) {
-    std::cout << "Caught unknown exception!" <<std:: endl;
+    std::cout << "Caught unknown exception!" << std::endl;
   }
 
 #ifdef HAVE_MPI

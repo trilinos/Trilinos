@@ -51,6 +51,7 @@
 
 #include "Piro_Test_WeakenedModelEvaluator.hpp"
 #include "Piro_Test_ThyraSupport.hpp"
+#include "Piro_Test_MockObserver.hpp"
 
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
@@ -89,15 +90,19 @@ const RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModelNew(const RCP<Epe
   return epetraModelEvaluator(epetraModel, lowsFactory);
 }
 
-const RCP<NOXSolver<double> > solverNew(const RCP<Thyra::ModelEvaluatorDefaultBase<double> > &thyraModel)
+const RCP<NOXSolver<double> > solverNew(
+    const RCP<Thyra::ModelEvaluatorDefaultBase<double> > &thyraModel,
+    const RCP<Piro::ObserverBase<double> > &observer = Teuchos::null)
 {
   const RCP<ParameterList> piroParams(new ParameterList("Piro Parameters"));
-  return rcp(new NOXSolver<double>(piroParams, thyraModel));
+  return rcp(new NOXSolver<double>(piroParams, thyraModel, observer));
 }
 
-const RCP<NOXSolver<double> > solverNew(const RCP<EpetraExt::ModelEvaluator> &epetraModel)
+const RCP<NOXSolver<double> > solverNew(
+    const RCP<EpetraExt::ModelEvaluator> &epetraModel,
+    const RCP<Piro::ObserverBase<double> > &observer = Teuchos::null)
 {
-  return solverNew(thyraModelNew(epetraModel));
+  return solverNew(thyraModelNew(epetraModel), observer);
 }
 
 // Floating point tolerance
@@ -137,6 +142,20 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, Solution)
   solver->evalModel(inArgs, outArgs);
 
   const Array<double> actual = arrayFromVector(*outArgs.get_g(solutionResponseIndex));
+  const Array<double> expected = tuple(1.0, 2.0, 3.0, 4.0);
+  TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
+}
+
+TEUCHOS_UNIT_TEST(Piro_NOXSolver, SolutionObserver)
+{
+  const RCP<MockObserver<double> > observer(new MockObserver<double>);
+  const RCP<NOXSolver<double> > solver = solverNew(epetraModelNew(), observer);
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  solver->evalModel(inArgs, outArgs);
+
+  const Array<double> actual = arrayFromVector(*observer->lastSolution());
   const Array<double> expected = tuple(1.0, 2.0, 3.0, 4.0);
   TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
 }

@@ -366,6 +366,9 @@ void DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const Teuc
    // now that everything is built, build the global Orientations
    if(getOrientationsRequired())
       buildUnknownsOrientation();
+
+   // build local IDs (calling the base class)
+   this->buildLocalIds();
 }
 
 // build the global unknown numberings

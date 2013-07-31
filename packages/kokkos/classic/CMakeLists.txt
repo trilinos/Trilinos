@@ -15,13 +15,6 @@ SET(KokkosClassic_VERSION "1.3d")
 
 TRIBITS_ADD_DEBUG_OPTION()
 
-# TRIBITS_ADD_OPTION_AND_DEFINE( 
-#   KokkosClassic_ENABLE_DEFAULT_NODE
-#   HAVE_KOKKOSCLASSIC_DEFAULT_NODE
-#   "Kokkos default node: SerialNode, OpenMPNode, TBBNode, TPINode, ThrustGPUNode"
-#   "SerialNode"
-#   )
-
 TRIBITS_ADD_OPTION_AND_DEFINE( 
   KokkosClassic_ENABLE_OpenMP
   HAVE_KOKKOSCLASSIC_OPENMP
@@ -32,11 +25,17 @@ IF(KokkosClassic_ENABLE_OpenMP AND NOT ${PROJECT_NAME}_ENABLE_OpenMP)
   MESSAGE(WARNING "Disabling OpenMP in Kokkos because ${PROJECT_NAME}_ENABLE_OpenMP is ${${PROJECT_NAME}_ENABLE_OpenMP}")
 ENDIF()
 
-
 TRIBITS_ADD_OPTION_AND_DEFINE(
   KokkosClassic_ENABLE_NodeAPI
   HAVE_KOKKOSCLASSIC_NODEAPI
   "Enable Kokkos node programming API."
+  ON
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE( 
+  KokkosClassic_ENABLE_Serial
+  HAVE_KOKKOSCLASSIC_SERIAL
+  "Add SerialNode to the list of enabled Node types"
   ON
   )
 
@@ -95,7 +94,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 TRIBITS_ADD_OPTION_AND_DEFINE(
   KokkosClassic_TREAT_SERIALNODE_AS_DEVICE
   HAVE_KOKKOSCLASSIC_TREAT_SERIALNODE_AS_DEVICE
-  "Treat Kokkos::SerialNode as a device node instead of a host node, for kernels where there is a difference."
+  "Treat KokkosClassic::SerialNode as a device node instead of a host node, for kernels where there is a difference."
   ${KokkosClassic_ENABLE_DEBUG}
   )
 

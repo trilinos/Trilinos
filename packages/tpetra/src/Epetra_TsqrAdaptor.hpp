@@ -122,14 +122,14 @@ namespace Epetra {
     /// \typedef node_type
     ///
     /// TSQR depends on a Kokkos Node type.  We could use the
-    /// Kokkos::DefaultNode::DefaultNodeType typedef, but (a) we want
+    /// KokkosClassic::DefaultNode::DefaultNodeType typedef, but (a) we want
     /// to ensure the expected "sequential within one MPI process"
     /// semantics of Epetra, and (b) we don't have a good
     /// platform-independent automatic mechanism for determining how
     /// many threads each MPI process should use, when running
     /// multiple MPI processes on a node.  Thus, we use
-    /// Kokkos::SerialNode.
-    typedef Kokkos::SerialNode node_type;
+    /// KokkosClassic::SerialNode.
+    typedef KokkosClassic::SerialNode node_type;
 
     /// \typedef dense_matrix_type 
     ///
@@ -243,7 +243,7 @@ namespace Epetra {
                     dense_matrix_type& R,
                     const bool forceNonnegativeDiagonal=false)
     {
-      typedef Kokkos::MultiVector<scalar_type, node_type> KMV;
+      typedef KokkosClassic::MultiVector<scalar_type, node_type> KMV;
 
       prepareTsqr (Q); // Finish initializing TSQR.
       KMV A_view = getNonConstView (A);
@@ -287,7 +287,7 @@ namespace Epetra {
                 dense_matrix_type& R,
                 const magnitude_type& tol)
     {
-      typedef Kokkos::MultiVector<scalar_type, node_type> KMV;
+      typedef KokkosClassic::MultiVector<scalar_type, node_type> KMV;
 
       prepareTsqr (Q); // Finish initializing TSQR.      
 
@@ -350,7 +350,7 @@ namespace Epetra {
     {
       (void) mv; // Epetra objects don't have a Kokkos Node.
 
-      // Kokkos::SerialNode wants an empty ParameterList.
+      // KokkosClassic::SerialNode wants an empty ParameterList.
       Teuchos::ParameterList plist;
       Teuchos::RCP<node_type> node (new node_type (plist));
       node_tsqr_factory_type::prepareNodeTsqr (nodeTsqr_, node);
@@ -381,7 +381,7 @@ namespace Epetra {
     /// \brief Return a nonconstant view of the input MultiVector.
     ///
     /// TSQR represents the local (to each MPI process) part of a
-    /// multivector as a Kokkos::MultiVector (KMV), which gives a
+    /// multivector as a KokkosClassic::MultiVector (KMV), which gives a
     /// nonconstant view of the original multivector's data.  This
     /// class method tells TSQR how to get the KMV from the input
     /// multivector.  The KMV is not a persistent view of the data;
@@ -390,7 +390,7 @@ namespace Epetra {
     /// \warning TSQR does not currently support multivectors with
     ///   nonconstant stride.  This method will raise an exception
     ///   if A has nonconstant stride.
-    static Kokkos::MultiVector<scalar_type, node_type>
+    static KokkosClassic::MultiVector<scalar_type, node_type>
     getNonConstView (MV& A)
     {
       // FIXME (mfh 25 Oct 2010) We should be able to run TSQR even if
@@ -409,12 +409,12 @@ namespace Epetra {
       // doesn't need ownership of the data.
       Teuchos::ArrayRCP<double> A_ptr (A.Values(), 0, numRows*stride, false);
 
-      typedef Kokkos::MultiVector<scalar_type, node_type> KMV;
+      typedef KokkosClassic::MultiVector<scalar_type, node_type> KMV;
       // KMV objects want a Kokkos Node instance.  Epetra objects
       // don't have a Kokkos Node, so we make a temporary node just
       // for the KMV.
       //
-      // Kokkos::SerialNode wants an empty ParameterList.
+      // KokkosClassic::SerialNode wants an empty ParameterList.
       Teuchos::ParameterList plist;
       Teuchos::RCP<node_type> node (new node_type (plist));
       KMV A_kmv (node);

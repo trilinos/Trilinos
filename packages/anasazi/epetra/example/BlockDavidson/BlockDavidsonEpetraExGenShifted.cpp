@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMgr.solve();
   if (returnCode != Anasazi::Converged && MyPID==0) {
-    cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << endl;
+    std::cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << std::endl;
   }
 
   // Get the eigenvalues and eigenvectors from the eigenproblem

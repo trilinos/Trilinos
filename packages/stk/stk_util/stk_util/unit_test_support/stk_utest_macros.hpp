@@ -13,9 +13,10 @@
 #include <STK_config.h>
 #else
 #define HAVE_MPI
+#endif
+#if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
-
 //
 //This file is kind of like a unit-test abstraction layer:
 //A series of STKUNIT_* macros are defined in terms of either

@@ -201,6 +201,12 @@ namespace Amesos2 {
     /// Get the number of columns in this matrix
     global_size_t getGlobalNumCols() const;
 
+    /// Get the indexbase for the row map
+    global_size_t getRowIndexBase() const;
+
+    /// Get the indexbase for the column map
+    global_size_t getColumnIndexBase() const;
+
     /// Get the global number of non-zeros in this sparse matrix
     global_size_t getGlobalNNZ() const;
 
@@ -213,12 +219,12 @@ namespace Amesos2 {
     /// Get the local number of non-zeros on this processor
     size_t getLocalNNZ() const;
 
-    Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t> >
+    Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> >
     getRowMap() const {
       return row_map_;
     }
 
-    Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t> >
+    Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> >
     getColMap() const {
       return col_map_;
     }

@@ -50,27 +50,49 @@
 
 #include "Intrepid_FieldContainer.hpp"
 #include "Intrepid_Basis.hpp"
-
-#include "Panzer_Dimension.hpp"
-#include "Panzer_CellData.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
 
 namespace panzer {
 
+  class CellData;
+
+  //! Description and data layouts associated with a particular basis
   class PureBasis { 
 
   public:
     typedef enum { HGRAD=0, HCURL=1, HDIV=2 } EElementSpace;
     
-    PureBasis(const std::string & basis_type,const CellData & cell_data);
-    PureBasis(const std::string & basis_type,int numCells,const Teuchos::RCP<const shards::CellTopology> & cellTopo);
+    /** Build a basis given a type, order and CellData object
+      \param[in] basis_type String name that describes the type of basis
+      \param[in] basis_order Order of the basis
+      \param[in] cell_data Description of the basis
+    */
+    PureBasis(const std::string & basis_type,const int basis_order,const CellData & cell_data);
 
-    int getCardinality() const;
+    /** Build a basis given a type, order, number of cells (for data layouts) and shards topology
+      \param[in] basis_type String name that describes the type of basis
+      \param[in] basis_order Order of the basis
+      \param[in] num_cells Number of cells used in the data layouts for this basis
+      \param[in] cell_topo A shards topology description
+    */
+    PureBasis(const std::string & basis_type,const int basis_order,const int num_cells,const Teuchos::RCP<const shards::CellTopology> & cell_topo);
 
-    int getNumCells() const;
+    //! Returns the number of basis coefficients
+    int cardinality() const;
+
+    //! Returns the number of cells in the data layouts
+    int numCells() const;
     
-    int getDimension() const;
+    //! Returns the dimension of the basis from the topology
+    int dimension() const;
 
+    //! Returns the basis type
+    std::string type() const;
+    
+    //! Returns the polynomial order of the basis
+    int order() const;
+    
+    //! A unique key that is the combination of the basis type and basis order
     std::string name() const;
     
     std::string fieldName() const;
@@ -85,10 +107,10 @@ namespace panzer {
     template <typename ScalarT,typename ArrayT>
     Teuchos::RCP< Intrepid::Basis<ScalarT,ArrayT> > 
     getIntrepidBasis() const
-    { return panzer::createIntrepidBasis<ScalarT,ArrayT>(name(), getDimension(), getCellTopology()); }
+    { return panzer::createIntrepidBasis<ScalarT,ArrayT>(type(), order(), getCellTopology()); }
 
     EElementSpace getElementSpace() const
-    { return elementSpace; }
+    { return element_space_; }
 
     bool requiresOrientations() const
     { return getElementSpace()==HCURL || getElementSpace()==HDIV; }
@@ -109,12 +131,14 @@ namespace panzer {
     { return getElementSpace()==HGRAD; }
 
     int getBasisRank() const
-    { return basisRank; }
+    { return basis_rank_; }
 
     Teuchos::RCP<const shards::CellTopology> getCellTopology() const
-    { return topology; }
+    { return topology_; }
 
   public:
+    //! <Cell> 
+    Teuchos::RCP<PHX::DataLayout> cell_data;
     //! <Cell,Basis> or <Cell,Basis>
     Teuchos::RCP<PHX::DataLayout> functional;
     //! <Cell,Basis,Dim>
@@ -125,27 +149,25 @@ namespace panzer {
     Teuchos::RCP<PHX::DataLayout> coordinates;
 
   private:
+    
+    //! Initialize the basis object
+    void initialize(const std::string & basis_type,const int basis_order);
 
-    //! Initialize all introspection data for this basis type: Intrepid does not provide this
-    void initializeIntrospection(const std::string & name);
+  private:
 
-    //! Initialize data layouts for this basis: uses num_cells, cardinality, dimension
-    void initializeDataLayouts();
+    Teuchos::RCP<const shards::CellTopology> topology_;
+    Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > intrepid_basis_;
 
-    Teuchos::RCP<const shards::CellTopology> topology;
-    Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > intrepid_basis;
+    std::string basis_type_;
+    std::string basis_name_;
+    std::string field_basis_name_;
+    std::string field_basis_name_D1_;
+    std::string field_basis_name_D2_;
 
-    const std::string basis_name;
-    const std::string field_basis_name;
-    const std::string field_basis_name_D1;
-    const std::string field_basis_name_D2;
+    int num_cells_;
 
-    int cardinality;
-    int num_cells;
-    int dimension;
-
-    EElementSpace elementSpace;
-    int basisRank;
+    EElementSpace element_space_;
+    int basis_rank_;
   };
 
   typedef std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > StrPureBasisPair;

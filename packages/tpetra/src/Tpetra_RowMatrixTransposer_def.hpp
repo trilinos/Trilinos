@@ -42,6 +42,8 @@
 #ifndef TPETRA_ROWMATRIXTRANSPOSER_DEF_HPP
 #define TPETRA_ROWMATRIXTRANSPOSER_DEF_HPP
 
+#include "Tpetra_Export.hpp"
+#include "Tpetra_Import.hpp"
 #include "Tpetra_Map.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #ifdef DOXYGEN_USE_ONLY
@@ -50,58 +52,125 @@
 
 namespace Tpetra {
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
-RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::RowMatrixTransposer(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& origMatrix)
-  : origMatrix_(origMatrix), comm_(origMatrix.getComm()), indexBase_(origMatrix_.getIndexBase()) {}
+template<class Scalar, 
+	 class LocalOrdinal, 
+	 class GlobalOrdinal, 
+	 class Node, 
+	 class SpMatOps>
+RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::
+RowMatrixTransposer (const Teuchos::RCP<const crs_matrix_type>& origMatrix)
+  : origMatrix_ (origMatrix) {}
 
 template<class Scalar, 
-  class LocalOrdinal, 
-  class GlobalOrdinal, 
-  class Node, 
-  class SpMatOps>
-RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::~RowMatrixTransposer() {}
+	 class LocalOrdinal, 
+	 class GlobalOrdinal, 
+	 class Node, 
+	 class SpMatOps>
+TEUCHOS_DEPRECATED
+RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::
+RowMatrixTransposer (const crs_matrix_type& origMatrix)
+  : origMatrix_ (Teuchos::rcpFromRef (origMatrix)) {}
 
+// mfh 03 Feb 2013: In a definition outside the class like this, the
+// return value is considered outside the class scope (for things like
+// resolving typedefs), but the arguments are considered inside the
+// class scope.
 template<class Scalar, 
-  class LocalOrdinal,
-  class GlobalOrdinal, 
-  class Node, 
-  class SpMatOps>
-RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >
-RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::createTranspose (
-  const OptimizeOption optimizeTranspose,
-  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap)
+	 class LocalOrdinal,
+	 class GlobalOrdinal, 
+	 class Node, 
+	 class SpMatOps>
+Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >
+RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::
+createTranspose()
 {
-  optimizeTranspose_ = optimizeTranspose;
-  transposeMatrix_ = rcp(new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>(
-    transposeRowMap == null? origMatrix_.getDomainMap() : transposeRowMap, 0));
-  ArrayView<const LocalOrdinal> localIndicies;
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Tpetra::Import;
+  using Tpetra::Export;
+  typedef LocalOrdinal LO;
+
+  //
+  // This transpose is based upon the approach in EpetraExt.
+  //
+  size_t numLocalCols = origMatrix_->getNodeNumCols();
+  size_t numLocalRows = origMatrix_->getNodeNumRows();
+  size_t numLocalNnz  = origMatrix_->getNodeNumEntries();
+
+  ArrayRCP<size_t> rowptr_rcp(numLocalCols+1);
+  ArrayRCP<LO>     colind_rcp(numLocalNnz);
+  ArrayRCP<Scalar> values_rcp(numLocalNnz);
+
+  // Since ArrayRCP's are slow...
+  ArrayView<size_t> TransRowptr = rowptr_rcp();
+  ArrayView<LO>     TransColind = colind_rcp();
+  ArrayView<Scalar> TransValues = values_rcp();
+
+  // Determine how many nonzeros there are per row in the transpose.
+  Array<size_t> CurrentStart(numLocalCols,0);
+  ArrayView<const LO> localIndices;
   ArrayView<const Scalar> localValues;
-  ArrayView<const GlobalOrdinal> myGlobalRows = origMatrix_.getRowMap()->getNodeElementList();
-  size_t numEntriesInRow;
-  Array<GlobalOrdinal> rowNum(1);
-  RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > origColMap = origMatrix_.getColMap();
-  for(
-    size_t i = Teuchos::OrdinalTraits<size_t>::zero();
-    i < origMatrix_.getNodeNumRows();
-    ++i
-  )
-  {
-    rowNum[0] = origMatrix_.getRowMap()->getGlobalElement(i);
-    numEntriesInRow = origMatrix_.getNumEntriesInLocalRow(i);
-    origMatrix_.getLocalRowView(i, localIndicies, localValues);
-    for(size_t j=0; j<numEntriesInRow; ++j){
-      transposeMatrix_->insertGlobalValues(origColMap->getGlobalElement(localIndicies[j]), rowNum(0,1), localValues(j,1));
+  for (size_t i=0; i<numLocalRows; ++i) {
+    const size_t numEntriesInRow = origMatrix_->getNumEntriesInLocalRow(i);
+    origMatrix_->getLocalRowView(i, localIndices, localValues);
+    for (size_t j=0; j<numEntriesInRow; ++j) {
+      ++CurrentStart[ localIndices[j] ];
     }
   }
 
-  RCP<ParameterList> params = parameterList();
-  if (optimizeTranspose_ == DoOptimizeStorage) params->set("Optimize Storage",true);
-  else                                         params->set("Optimize Storage",false);
-  transposeMatrix_->fillComplete(origMatrix_.getRangeMap(), origMatrix_.getDomainMap(), params);
+  //create temporary row-major storage for the transposed matrix
 
-  return transposeMatrix_;
+  // Scansum the TransRowptr; reset CurrentStart
+  TransRowptr[0]=0;
+  for (size_t i=1; i<numLocalCols+1; ++i) TransRowptr[i]  = CurrentStart[i-1] + TransRowptr[i-1];
+  for (size_t i=0; i<numLocalCols;   ++i) CurrentStart[i] = TransRowptr[i];
+
+  //populate the row-major storage so that the data for the transposed matrix is easy to access
+  for (size_t i=0; i<numLocalRows; ++i) {
+    const size_t numEntriesInRow = origMatrix_->getNumEntriesInLocalRow(i);
+    origMatrix_->getLocalRowView(i, localIndices, localValues);
+
+    for (size_t j=0; j<numEntriesInRow; ++j) {
+      size_t idx = CurrentStart[localIndices[j]];
+      TransColind[idx] = Teuchos::as<LO>(i);
+      TransValues[idx] = localValues[j];
+      ++CurrentStart[localIndices[j]];
+    }    
+  } //for (size_t i=0; i<numLocalRows; ++i)
+
+
+  //Allocate and populate temporary matrix with rows not uniquely owned
+  RCP<crs_matrix_type> transMatrixWithSharedRows(new crs_matrix_type(origMatrix_->getColMap(),origMatrix_->getRowMap(),0));  
+  transMatrixWithSharedRows->setAllValues(rowptr_rcp,colind_rcp,values_rcp);
+
+
+  // Prebuild the importers and exporters the no-communication way, flipping the importers
+  // and exporters around.
+  RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > myImport;
+  RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > myExport;
+  if(!origMatrix_->getGraph()->getImporter().is_null()) 
+    myExport = rcp(new Export<LocalOrdinal,GlobalOrdinal,Node>(*origMatrix_->getGraph()->getImporter()));
+  if(!origMatrix_->getGraph()->getExporter().is_null()) 
+    myImport = rcp(new Import<LocalOrdinal,GlobalOrdinal,Node>(*origMatrix_->getGraph()->getExporter()));
+
+  // Call ESFC
+  transMatrixWithSharedRows->expertStaticFillComplete(origMatrix_->getRangeMap(),origMatrix_->getDomainMap(),myImport,myExport);
+
+  // If transMatrixWithSharedRows has an exporter, that's what we want.  If it doesn't, the rows aren't actually shared,
+  // and we're done!
+  RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > exporter = transMatrixWithSharedRows->getGraph()->getExporter();
+  if(exporter == Teuchos::null) {
+    return transMatrixWithSharedRows;
+  }
+
+  // Finish using fusedexport
+  return exportAndFillCompleteCrsMatrix<crs_matrix_type>(transMatrixWithSharedRows,*exporter);
+
 }
-
 //
 // Explicit instantiation macro
 //

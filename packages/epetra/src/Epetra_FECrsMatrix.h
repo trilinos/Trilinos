@@ -166,9 +166,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 
    enum { ROW_MAJOR = 0, COLUMN_MAJOR = 3 };
 
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
    using Epetra_CrsMatrix::SumIntoGlobalValues;
    using Epetra_CrsMatrix::InsertGlobalValues;
    using Epetra_CrsMatrix::ReplaceGlobalValues;
+#endif
 
    /** override base-class Epetra_CrsMatrix::SumIntoGlobalValues method */
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES

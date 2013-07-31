@@ -7,9 +7,13 @@
 
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_Operator.h"
 
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_VectorBase.hpp"
+#include "Thyra_MultiVectorBase.hpp"
+#include "Thyra_LinearOpBase.hpp"
 
 #include "Panzer_ResponseBase.hpp"
 
@@ -49,6 +53,44 @@ private:
    // hide these methods
    ResponseMESupportBase();
    ResponseMESupportBase(const ResponseMESupportBase<EvalT> &);
+};
+
+template < >
+class ResponseMESupportBase<panzer::Traits::Jacobian> : public ResponseBase {
+public:
+   ResponseMESupportBase(const std::string & responseName)
+     : ResponseBase(responseName) {}
+
+   virtual ~ResponseMESupportBase() {}
+ 
+   //! Does this response support derivative evaluation?
+   virtual bool supportsDerivative() const = 0;
+
+   // This is the epetra view of the world
+   ///////////////////////////////////////////////////////////
+
+   //! Get the <code>Epetra_MultiVector</code> for this response, map is constructed lazily.
+   virtual Teuchos::RCP<Epetra_MultiVector> buildEpetraDerivative() const = 0;
+
+   /** Set the derivative (to be filled) for this response. 
+     */
+   virtual void setDerivative(const Teuchos::RCP<Epetra_MultiVector> & derivative) = 0;
+
+   // This is the Thyra view of the world
+   ///////////////////////////////////////////////////////////
+
+   //! Get an <code>Epetra_Operator</code> for this response, map is constructed lazily.
+   virtual Teuchos::RCP<Thyra::MultiVectorBase<double> > buildDerivative() const = 0;
+
+   /** Set the derivative (to be filled) for this response. This must be 
+     * constructed from the vector space returned by <code>getMap</code>.
+     */
+   virtual void setDerivative(const Teuchos::RCP<Thyra::MultiVectorBase<double> > & derivative) = 0;
+
+private:
+   // hide these methods
+   ResponseMESupportBase();
+   ResponseMESupportBase(const ResponseMESupportBase<panzer::Traits::Jacobian> &);
 };
 
 }

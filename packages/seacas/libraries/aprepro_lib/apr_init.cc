@@ -181,6 +181,11 @@ extern const char
   *do_execute(char *string),
   *do_rescan(char *string),
 
+  *do_if(double x),
+  *do_notif(double x),
+  *do_elseif(double x),
+  *do_switch(double x),
+  *do_case(double x),
   *do_intout(double intval),
   *do_tostring(double x),
 
@@ -232,6 +237,14 @@ struct str_d_init string_d_fncts[] =
   {"IO",             do_intout,      "IO(x)","Convert x to an integer and then to a string. "},
   {"to_string",      do_tostring,    "to_string(x)","Returns a string representation of the numerical variable x. The variable x is unchanged."},
   {"tostring",       do_tostring,    "tostring(x)","Returns a string representation of the numerical variable x. The variable x is unchanged."},
+  {"if",             do_if,          "if(x)", "Handles the if statements. x can be any valid expression; nonzero is true"},
+  {"elseif",         do_elseif,      "elseif(x)", "Handles the if statements. x can be any valid expression; nonzero is true"},
+  {"ifdef",          do_if,          "ifdef(x)", "Handles the if statements. x can be any valid expression; nonzero is true (deprecated, use if)"},
+  {"Ifdef",          do_if,          "Ifdef(x)", "Handles the if statements. x can be any valid expression; nonzero is true (deprecated, use if)"},
+  {"ifndef",         do_notif,       "ifndef(x)", "Handles the if statements. x can be any valid expression; nonzero is true (deprecated, use if)"},
+  {"Ifndef",         do_notif,       "Ifndef(x)", "Handles the if statements. x can be any valid expression; nonzero is true (deprecated, use if)"},
+  {"switch",         do_switch,      "switch(x)", "Switch statement. Select from the following case statements which matches 'x' and execute that one. End with endswitch"},
+  {"case",           do_case,        "case(x)", "Switch statement. A case used in a containing switch statement."},
   {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
   };
 

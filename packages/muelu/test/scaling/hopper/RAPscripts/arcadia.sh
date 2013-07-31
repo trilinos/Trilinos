@@ -31,8 +31,8 @@ calc(){
 ###############################
 template_nodes(){
   MULT=$1
-  
-  expr $MULT \* $MULT 
+
+  expr $MULT \* $MULT
 }
 
 ###############################
@@ -43,16 +43,16 @@ arcadia_build(){
   # Make directory, if needed
   if [ -d $DIR ]; then :
   else mkdir $DIR; fi
- 
+
   # Link Binary file, if needed
   if [ -e $DIR/$BINARY ]; then :
   else cd $DIR; ln -s $CDIR/$BINARY .; cd $CDIR; fi
- 
+
   # Link Binary file, if needed
   if [ -e $DIR/$BINARY2 ]; then :
   else cd $DIR; ln -s $CDIR/$BINARY2 .; cd $CDIR; fi
 
-  # Build SLURM script  
+  # Build SLURM script
   #cat $TEMPLATE | sed "s/_NODES_/$NODES/" | sed "s/_NX_/$NX/g" \
   #    | sed "s/_NMULT_/$MULTIPLIES/" | sed "s/_CPN_/$CPN/" \
   #    | sed "s/_MTYPE_/$MATRIX/" \
@@ -78,7 +78,7 @@ arcadia_clean(){
 ###############################
 arcadia_run(){
   NODES=$1; DIR=$2; BATCH=$3
-  echo "Running $DIR..." 
+  echo "Running $DIR..."
 
   cd $DIR
   #sbatch $SPREF-$NODES.slurm
@@ -96,7 +96,7 @@ arcadia_analyze(){
   if [ $EXEC -eq 0 ]; then
     echo "$DIR: not run"
   else
-    FNAME=`ls -rt screen_1.cms |tail -n 2`   
+    FNAME=`ls -rt screen_1.cms |tail -n 2`
 
    for ((M=0;M<${#TIMELINES[@]};M++)); do
      M2=`expr $M + ${#TIMELINES[@]}`
@@ -105,13 +105,13 @@ arcadia_analyze(){
      TIME[$M2]=`grep "$T" screen_1.ml | cut -f3 -d')' | cut -f1 -d'(' | awk '{printf "%11.1f", $1 }'`
    done
 
-   if [ $NODES == 1 ] ; then 
+   if [ $NODES == 1 ] ; then
      for ((M=0;M<${#TIMELINES[@]};M++)); do
        M2=`expr $M + ${#TIMELINES[@]}`
        BASE_TIME[$M]=${TIME[$M]}
        BASE_TIME[$M2]=${TIME[$M2]}
      done
-   fi 
+   fi
 
    for ((M=0;M<${#TIMELINES[@]};M++)); do
      M2=`expr $M + ${#TIMELINES[@]}`
@@ -142,12 +142,12 @@ OPT=$1
 if [ "$OPT" != "b" ] && [ "$OPT" != "r" ] && [ "$OPT" != "c" ] && [ "$OPT" != "a" ]; then   echo "Syntax: $0 [b|r|c|a]"; exit 1; fi
 
 # Analyze header
-if [ "$OPT" == "a" ]; then 
+if [ "$OPT" == "a" ]; then
   OUTSTR=""
   for ((M=0;M<${#LABELS[@]};M++)); do
-    TL=`echo ${LABELS[$M]} | awk '{ printf "cs%5s-time    eff", $1 }'`  
+    TL=`echo ${LABELS[$M]} | awk '{ printf "cs%5s-time    eff", $1 }'`
     OUTSTR="$OUTSTR $TL"
-    TL=`echo ${LABELS[$M]} | awk '{ printf "ml%5s-time    eff", $1 }'`  
+    TL=`echo ${LABELS[$M]} | awk '{ printf "ml%5s-time    eff", $1 }'`
     OUTSTR="$OUTSTR $TL"
   done
     echo "% file              :       $OUTSTR"
@@ -162,7 +162,7 @@ for I in $MULTX; do
     DIR=${DPREF}_$NODES
     NX=`expr $I \* $NXBASE`
     BIN2=$BINARY_EXE2
- 
+
       # Build Mode
     if [ "$OPT" == "b" ]; then
 	arcadia_build $NODES $DIR $BIN $CPN $NX $BIN2

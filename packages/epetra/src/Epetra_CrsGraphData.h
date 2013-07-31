@@ -68,7 +68,7 @@ class Epetra_Export;
 class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraphData : public Epetra_Data {
   friend class Epetra_CrsGraph;
   friend class Epetra_FECrsGraph;
-
+  friend class Epetra_CrsMatrix;
  private:
 
   //! @name Constructor/Destructor Methods
@@ -95,7 +95,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraphData : public Epetra_Data {
     2 = Just Indices_
     3 = Everything except the BlockMaps
   */
-  void Print(ostream& os, int level = 3) const;
+  void Print(std::ostream& os, int level = 3) const;
 
   //! Epetra_CrsGraphData assignment operator (not defined)
   Epetra_CrsGraphData& operator=(const Epetra_CrsGraphData& CrsGraphData);
@@ -272,13 +272,15 @@ struct Epetra_CrsGraphData::IndexData<int>
   std::vector< EntriesInOneRow<int> > SortedEntries_;
   int* TempColIndices_;
   Epetra_IntSerialDenseVector All_Indices_;
+  Epetra_IntSerialDenseVector All_IndicesPlus1_;
 
   IndexData(int NumMyBlockRows, bool AllocSorted)
     :
     Indices_(NULL),
     SortedEntries_(),
     TempColIndices_(NULL),
-    All_Indices_(0)
+    All_Indices_(0),
+    All_IndicesPlus1_(0)
   {
     Allocate(NumMyBlockRows, AllocSorted);
   }
@@ -306,6 +308,7 @@ struct Epetra_CrsGraphData::IndexData<int>
     TempColIndices_ = 0;
 
     All_Indices_.Resize(0);
+    All_IndicesPlus1_.Resize(0);
   }
 };
 

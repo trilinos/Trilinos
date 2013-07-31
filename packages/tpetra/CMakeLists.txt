@@ -71,13 +71,6 @@ IF(Tpetra_ENABLE_OpenMP AND NOT KokkosClassic_ENABLE_OpenMP)
 ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_UNORDERED_MAP
-  HAVE_TPETRA_UNORDERED_MAP
-  "Whether Tpetra::Map should use std::unordered_map instead of std::map for the global->local index lookup table.  This option requires C++11 support."
-  OFF
-  )
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_BUGTESTS
   HAVE_TPETRA_BUGTESTS
   "Enabling testing of previous Tpetra bugs."
@@ -171,6 +164,14 @@ IF(Tpetra_INST_DD_REAL)
   LIST(APPEND Tpetra_ETI_SCALARS "dd_real")
 ENDIF()
 
+#
+# Set GlobalOrdinal ETI types.  
+#
+# Unfortunately, we have to add these types to the list of Scalar ETI
+# types as well, since some downstream packages use Scalar =
+# GlobalOrdinal to implement certain communication patterns.
+#
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_INT_LONG
   HAVE_TPETRA_INST_INT_LONG
@@ -181,6 +182,32 @@ IF(Tpetra_INST_INT_LONG)
   LIST(APPEND Tpetra_ETI_GORDS   "long")
   LIST(APPEND Tpetra_ETI_SCALARS "long")
 ENDIF()
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_INT_LONG_LONG
+  HAVE_TPETRA_INST_INT_LONG_LONG
+  "If explicit instantiation is enabled, instantiate over global ordinal long long."
+  ${Teuchos_ENABLE_LONG_LONG_INT}
+  )
+IF(Tpetra_INST_INT_LONG_LONG) 
+  LIST(APPEND Tpetra_ETI_GORDS   "long long")
+  LIST(APPEND Tpetra_ETI_SCALARS "long long")
+ENDIF()
+
+SET(Tpetra_INST_UNSIGNED_LONG
+  ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE}
+  CACHE BOOL
+  "If explicit instantiation is enabled, instatiate over global ordinal unsigned int."
+  )
+IF (Tpetra_INST_UNSIGNED_LONG)
+  LIST(APPEND Tpetra_ETI_GORDS   "unsigned int")
+  LIST(APPEND Tpetra_ETI_SCALARS "unsigned int")
+  # NOTE: The above types are used because they help catch errors with caused
+  # when GlobalOrdinal is unsigned and GlobalOrdinal is smaller than
+  # global_size_t (using wrong OrdinalTraits<>::invald(). 
+ENDIF()
+
+
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_Threaded_MKL
@@ -238,6 +265,14 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${KokkosClassic_ENABLE_TSQR}
   )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_USE_MURMUR_HASH
+  TPETRA_USE_MURMUR_HASH
+  "Use the Murmur hash function in Tpetra::Map for global-to-local index lookups, rather than the default hash function.  Murmur hash is more expensive to evaluate, but does a better job of avoiding hash table collisions for Maps that do not look like local permutations of contiguous Maps."
+  OFF
+  )
+
+
 #
 # C) Add the libraries, tests, and examples
 #
@@ -261,6 +296,7 @@ GLOBAL_SET(Tpetra_ETI_NODES   ${Tpetra_ETI_NODES})
 # Exclude files for source package.
 #
 
+TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 TRIBITS_EXCLUDE_FILES(
   doc/CodingGuidelines
   doc/TpetraDesign

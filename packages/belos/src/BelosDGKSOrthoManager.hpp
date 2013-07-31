@@ -251,7 +251,7 @@ namespace Belos {
     {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
       std::string orthoLabel = label_ + ": Orthogonalization";
-      timerOrtho_ = Teuchos::TimeMonitor::getNewTimer( orthoLabel );
+      timerOrtho_ = Teuchos::TimeMonitor::getNewCounter( orthoLabel );
 #endif
     }    
 
@@ -270,7 +270,7 @@ namespace Belos {
 
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
       std::string orthoLabel = label_ + ": Orthogonalization";
-      timerOrtho_ = Teuchos::TimeMonitor::getNewTimer( orthoLabel );
+      timerOrtho_ = Teuchos::TimeMonitor::getNewCounter( orthoLabel );
 #endif
     }    
 
@@ -689,7 +689,7 @@ namespace Belos {
       label_ = label;
       std::string orthoLabel = label_ + ": Orthogonalization";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerOrtho_ = Teuchos::TimeMonitor::getNewTimer(orthoLabel);
+      timerOrtho_ = Teuchos::TimeMonitor::getNewCounter(orthoLabel);
 #endif
     }
   }

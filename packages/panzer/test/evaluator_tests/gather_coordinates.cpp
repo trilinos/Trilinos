@@ -114,8 +114,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
   int quadOrder = 5;
   Teuchos::RCP<shards::CellTopology> topo
     = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
-  panzer::CellData cellData(2,2,1,topo);
-  RCP<PureBasis> basis = rcp(new PureBasis("Q1",2,topo));
+  panzer::CellData cellData(2,1,topo);
+  RCP<PureBasis> basis = rcp(new PureBasis("Q1",1,2,topo));
   Teuchos::RCP<panzer::IntegrationRule> quadRule = Teuchos::rcp(new panzer::IntegrationRule(quadOrder,cellData));
   RCP<BasisIRLayout> basisLayout = rcp(new BasisIRLayout(basis,*quadRule));
 
@@ -236,8 +236,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
   int quadOrder = 5;
   Teuchos::RCP<shards::CellTopology> topo
     = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
-  panzer::CellData cellData(2,2,1,topo);
-  RCP<PureBasis> basis = rcp(new PureBasis("Q1",2,topo));
+  panzer::CellData cellData(2,1,topo);
+  RCP<PureBasis> basis = rcp(new PureBasis("Q1",1,2,topo));
   Teuchos::RCP<panzer::IntegrationRule> quadRule = Teuchos::rcp(new panzer::IntegrationRule(quadOrder,cellData));
   RCP<BasisIRLayout> basisLayout = rcp(new BasisIRLayout(basis,*quadRule));
 

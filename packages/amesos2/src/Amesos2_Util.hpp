@@ -104,7 +104,8 @@ namespace Amesos2 {
     const Teuchos::RCP<const Tpetra::Map<LO,GO,Node> >
     getDistributionMap(EDistribution distribution,
 		       GS num_global_elements,
-		       const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
+		       const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+		       GO indexBase = 0);
     
 
 #ifdef HAVE_AMESOS2_EPETRA
@@ -402,7 +403,8 @@ namespace Amesos2 {
 			 const ArrayView<GO> indices,
 			 const ArrayView<GS> pointers,
 			 GS& nnz, EDistribution distribution,
-			 EStorage_Ordering ordering=ARBITRARY)
+			 EStorage_Ordering ordering=ARBITRARY,
+			 GO indexBase = 0)
       {
 	typedef typename Matrix::local_ordinal_t lo_t;
 	typedef typename Matrix::global_ordinal_t go_t;
@@ -412,7 +414,7 @@ namespace Amesos2 {
 	const Teuchos::RCP<const Tpetra::Map<lo_t,go_t,node_t> > map
 	  = getDistributionMap<lo_t,go_t,gs_t,node_t>(distribution,
 						      Op::get_dimension(mat),
-						      mat->getComm());
+						      mat->getComm(), indexBase);
 	do_get(mat, nzvals, indices, pointers, nnz, Teuchos::ptrInArg(*map), ordering);
       }
 
@@ -595,23 +597,26 @@ namespace Amesos2 {
     const Teuchos::RCP<const Tpetra::Map<LO,GO,Node> >
     getDistributionMap(EDistribution distribution,
 		       GS num_global_elements,
-		       const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+		       const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+		       GO indexBase)
     {
+        // TODO: Need to add indexBase to cases other than ROOTED
+        //  We do not support these maps in any solver now.
       switch( distribution ){
       case DISTRIBUTED:
       case DISTRIBUTED_NO_OVERLAP:
-	return Tpetra::createUniformContigMap<LO,GO>(num_global_elements, comm);
+	return Tpetra::createUniformContigMapWithNode<LO,GO, Node>(num_global_elements, comm);
 	break;
       case GLOBALLY_REPLICATED:
-	return Tpetra::createLocalMap<LO,GO>(num_global_elements, comm);
+	return Tpetra::createLocalMapWithNode<LO,GO, Node>(num_global_elements, comm);
 	break;
       case ROOTED:
 	{
 	  int rank = Teuchos::rank(*comm);
 	  size_t my_num_elems = Teuchos::OrdinalTraits<size_t>::zero();
 	  if( rank == 0 ) my_num_elems = num_global_elements;
-	  return Tpetra::createContigMap<LO,GO>(num_global_elements,
-						my_num_elems, comm);
+	  return rcp(new Tpetra::Map<LO,GO, Node>(num_global_elements,
+						my_num_elems, indexBase, comm));
 	  break;
 	}
       default:

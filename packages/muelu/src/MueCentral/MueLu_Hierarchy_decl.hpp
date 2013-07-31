@@ -85,7 +85,7 @@ namespace MueLu {
     restrictors, and coarse level discretizations.  Additionally, this class contains
     an apply method that supports V and W cycles.
   */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void, LocalOrdinal, Node>::SparseOps> //TODO: or BlockSparseOp ?
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Node>::SparseOps> //TODO: or BlockSparseOp ?
   class Hierarchy : public BaseClass {
 #undef MUELU_HIERARCHY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -131,6 +131,7 @@ namespace MueLu {
     RCP<Level> & GetLevel(const int levelID = 0);
 
     LO GetNumLevels() const;
+    double GetOperatorComplexity() const;
 
     //! Indicate that Iterate should use tranpose of prolongator for restriction operations.
     void SetImplicitTranspose(const bool &implicit);
@@ -185,7 +186,10 @@ namespace MueLu {
                const Teuchos::Ptr<const FactoryManagerBase> nextLevelManager = Teuchos::null);
 
     //!
-    Teuchos::ParameterList Setup(const FactoryManagerBase & manager = FactoryManager(), const int &startLevel = 0, const int &numDesiredLevels = 10); // Setup()
+    void Setup(const FactoryManagerBase & manager = FactoryManager(), const int &startLevel = 0, const int &numDesiredLevels = 10); // Setup()
+
+    //! Clear impermanent data from previous setup
+    void Clear();
 
     /*!
       @brief Apply the multigrid preconditioner.
@@ -201,6 +205,17 @@ namespace MueLu {
     */
     void Iterate(MultiVector const &B, LO nIts, MultiVector &X, //TODO: move parameter nIts and default value = 1
                  const bool &InitialGuessIsZero = false, const CycleType &Cycle = VCYCLE, const LO &startLevel = 0);
+
+    /*!
+      @brief Print matrices in the multigrid hierarchy to file.
+
+      @param[in] start start level
+      @param[in] end   end level
+
+      Default behavior is to print system and transfer matrices from the entire hierarchy.
+      Files are named "A_0.m", "P_1.m", "R_1.m", etc, and are in matrix market coordinate format.
+    */
+    void Write(const LO &start=-1, const LO &end=-1);
 
     //@}
 
@@ -227,10 +242,16 @@ namespace MueLu {
     //! Return a simple one-line description of this object.
     std::string description() const;
 
-    //! Print the object with some verbosity level to an FancyOStream object.
+    /*! @brief Print the Hierarchy with some verbosity level to a FancyOStream object.
+
+        @param[in] out The Teuchos::FancyOstream.
+        @param[in] verbLevel Controls amount of output.
+    */
     //using MueLu::Describable::describe; // overloading, not hiding
     //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const
-    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
+    Teuchos::ParameterList print(Teuchos::FancyOStream &out=*Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout)),
+                                 const VerbLevel verbLevel = (MueLu::Parameters | MueLu::Statistics0)) const;
+    std::ostream& print(std::ostream& out, const VerbLevel verbLevel = (MueLu::Parameters | MueLu::Statistics0)) const;
 
     /*! Indicate whether the multigrid method is a preconditioner or a solver.
 
@@ -244,6 +265,10 @@ namespace MueLu {
       isDumpingEnabled_ = true;
       dumpLevel_ = levelID;
       dumpFile_  = filename;
+    }
+
+    int GetNumberOfLevels() {
+      return Teuchos::as<int>(Levels_.size());
     }
 
   private:

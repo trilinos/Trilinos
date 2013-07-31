@@ -48,8 +48,9 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_Level_fwd.hpp"
+#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 
@@ -59,8 +60,8 @@ namespace MueLu {
     @ingroup MueLuTransferClasses
     */
 
-  template<class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::sparseOps>
-  class PatternFactory : public SingleLevelFactoryBase {
+  template<class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::sparseOps>
+  class PatternFactory : public TwoLevelFactoryBase {
 #undef MUELU_PATTERNFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -82,7 +83,7 @@ namespace MueLu {
     //! @name Input
     //@{
 
-    void DeclareInput(Level& currentLevel) const;
+    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
 
     //@}
 
@@ -94,7 +95,7 @@ namespace MueLu {
 
       Builds nonzero pattern (graph) and returns it in <tt>coarseLevel</tt>.
       */
-    void Build(Level & currentLevel) const;
+    void Build(Level& fineLevel, Level& coarseLevel) const;
 
     //@}
 

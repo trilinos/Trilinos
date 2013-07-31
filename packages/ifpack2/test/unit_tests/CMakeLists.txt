@@ -56,7 +56,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
-  DEPLIBS ifpack2 tpetra
+  DEPLIBS ifpack2 tpetra ifpack2_tpetra_testinst
   STANDARD_PASS_OUTPUT
   )
 

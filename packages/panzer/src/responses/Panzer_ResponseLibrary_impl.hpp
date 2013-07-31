@@ -46,6 +46,7 @@
 #include "Panzer_ResponseContainer.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
 #include "Panzer_ResponseFactory_BCStrategyAdapter.hpp"
+#include "Panzer_EquationSet_Factory.hpp"
 
 #include <boost/unordered_set.hpp>
 
@@ -461,8 +462,10 @@ namespace {
       Teuchos::RCP<const panzer::ResponseEvaluatorFactoryBase> baseObj = respFact_->template getAsBase<T>();
      
       // only build this templated set of objects if the there is something to build them with
-      if(baseObj!=Teuchos::null) {
-        return baseObj->buildResponseObject(respName_,wkstDesc_); 
+      if(baseObj!=Teuchos::null && baseObj->typeSupported()) {
+        Teuchos::RCP<ResponseBase> resp = baseObj->buildResponseObject(respName_,wkstDesc_); 
+
+        return resp;
       }
 
       return Teuchos::null;
@@ -473,7 +476,7 @@ namespace {
 template <typename TraitsT>
 template <typename ResponseEvaluatorFactory_BuilderT>
 void ResponseLibrary<TraitsT>::
-addResponse(const std::string responseName,
+addResponse(const std::string & responseName,
             const std::vector<std::string> & blocks,
             const ResponseEvaluatorFactory_BuilderT & builder) 
 {
@@ -503,7 +506,7 @@ addResponse(const std::string responseName,
 template <typename TraitsT>
 template <typename ResponseEvaluatorFactory_BuilderT>
 void ResponseLibrary<TraitsT>::
-addResponse(const std::string responseName,
+addResponse(const std::string & responseName,
             const std::vector<std::pair<std::string,std::string> > & sideset_blocks,
             const ResponseEvaluatorFactory_BuilderT & builder) 
 {
@@ -543,12 +546,28 @@ addResponse(const std::string responseName,
 template <typename TraitsT>
 template <typename ResponseEvaluatorFactory_BuilderT>
 void ResponseLibrary<TraitsT>::
-addResponse(const std::string responseName,
+addResponse(const std::string & responseName,
             const std::vector<WorksetDescriptor> & wkst_desc,
             const ResponseEvaluatorFactory_BuilderT & builder) 
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
+
+  if(wkst_desc[0].useSideset() && !wkst_desc[0].sideAssembly()) {
+    // this is a simple side integration, use the "other" addResponse method
+
+    std::vector<std::pair<std::string,std::string> > sideset_blocks;
+    for(std::size_t i=0;i<wkst_desc.size();i++) {
+      std::string sideset = wkst_desc[i].getSideset();
+      std::string blockId = wkst_desc[i].getElementBlock();
+      sideset_blocks.push_back(std::make_pair(sideset,blockId));
+    }
+
+    // add in the response (as a side set)
+    addResponse(responseName,sideset_blocks,builder);
+
+    return;
+  }
 
   // build response factory objects for each evaluation type
   RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > modelFact_tm
@@ -573,7 +592,7 @@ addResponse(const std::string responseName,
 template <typename TraitsT>
 template <typename EvalT>
 Teuchos::RCP<ResponseBase> ResponseLibrary<TraitsT>::
-getResponse(const std::string responseName) const
+getResponse(const std::string & responseName) const
 {
    typedef boost::unordered_map<std::string, Response_TemplateManager> HashMap;
    HashMap::const_iterator itr = responseObjects_.find(responseName);
@@ -635,7 +654,7 @@ public:
            rf_itr!=fact->end();++rf_itr) {
 
          // not setup for this template type, ignore it
-         if(rf_itr.rcp()==Teuchos::null) 
+         if(rf_itr.rcp()==Teuchos::null || !rf_itr.rcp()->typeSupported()) 
            continue;
 
          // build and register evaluators, store field tag, make it required
@@ -672,23 +691,6 @@ buildResponseEvaluators(
 
    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > requiredVolPhysicsBlocks;
    std::vector<WorksetDescriptor> requiredWorksetDesc;
-/*
-   for(std::size_t i=0;i<physicsBlocks.size();i++) {
-     std::string blockId = physicsBlocks[i]->elementBlockID();
-     WorksetDescriptor wd = blockDescriptor(blockId);
-     
-     // is this element block required
-     typename RespFactoryTable::const_iterator itr = respFactories_.find(wd);
-
-     if(itr!=respFactories_.end()) {
-       // one last check for nonzero size
-       if(itr->second.size()>0) {
-         requiredVolPhysicsBlocks.push_back(physicsBlocks[i]);
-         requiredWorksetDesc.push_back(wd);
-       }
-     } 
-   }
-*/
    for(typename RespFactoryTable::const_iterator itr=respFactories_.begin();
        itr!=respFactories_.end();++itr) {
      // is there something to do?
@@ -696,7 +698,6 @@ buildResponseEvaluators(
        continue;
 
      const WorksetDescriptor & wd = itr->first;
-     requiredWorksetDesc.push_back(wd);
 
      // find physics block with right element block
      bool failure = true;
@@ -709,7 +710,9 @@ buildResponseEvaluators(
      }
 
      // we must find at least one physics block
-     TEUCHOS_ASSERT(!failure);
+     // TEUCHOS_ASSERT(!failure);
+     if(!failure)
+       requiredWorksetDesc.push_back(wd);
    }
 
    // build boundary response array
@@ -761,8 +764,9 @@ addResponsesToInArgs(panzer::AssemblyEngineInArgs & input_args) const
 
    // add all responses to input args  
    for(std::size_t i=0;i<responses.size();i++) {
-     if(responses[i]!=Teuchos::null)
+     if(responses[i]!=Teuchos::null) {
        input_args.addGlobalEvaluationData(responses[i]->getLookupName(),responses[i]);
+      }
    }
 }
 

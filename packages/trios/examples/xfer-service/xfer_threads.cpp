@@ -64,7 +64,7 @@ pthread_mutex_t pending_mutex;
 
 static volatile bool time_to_exit=false;
 
-static int max_num_reqs;
+static uint32_t max_num_reqs;
 static std::queue<pthread_t> consumer_threads;
 
 /** This is the consumer thread code.
@@ -75,7 +75,7 @@ void *process_pending_reqs(void *arg)
 {
     int rc;
     nssi_svc_rpc_request *req = NULL;
-    log_level debug_level = LOG_ALL;
+    log_level debug_level = xfer_debug_level;
 
     intptr_t id = (intptr_t)arg;
 
@@ -120,10 +120,8 @@ void *process_pending_reqs(void *arg)
 
 
 
-int xfer_start_server_threads(const int num_threads, const int max_reqs)
+void xfer_start_server_threads(const int num_threads, const int max_reqs)
 {
-    pthread_t t;
-
     // initialize the condition and mutex variables for the pending queue
     pthread_cond_init(&pending_cond, NULL);  // default attributes
     pthread_mutex_init(&pending_mutex, NULL); // default attributes
@@ -131,12 +129,11 @@ int xfer_start_server_threads(const int num_threads, const int max_reqs)
     max_num_reqs = max_reqs;
 
     // start the consumer threads
-    for (int i=0; i<num_threads; i++) {
+    for (int64_t i=0; i<num_threads; i++) {
         pthread_t tid;
         pthread_create(&tid, NULL, process_pending_reqs, (void *)i);
         consumer_threads.push(tid);
     }
-
 }
 
 
@@ -146,15 +143,13 @@ int xfer_start_server_threads(const int num_threads, const int max_reqs)
  */
 int xfer_enqueue_rpc_request(nssi_svc_rpc_request *req)
 {
-    int rc = 0;
-
     // We wait if the numbe of pending requests is too large
     pthread_mutex_lock(&pending_mutex);
     while (pending_reqs.size() >= max_num_reqs) {
         pthread_cond_wait(&pending_cond, &pending_mutex);
     }
 
-    log_debug(LOG_ALL, "Adding request %d to the pending queue", req->id);
+    log_debug(xfer_debug_level, "Adding request %d to the pending queue", req->id);
 
     // ok to add the request
     pending_reqs.push(req);
@@ -163,11 +158,13 @@ int xfer_enqueue_rpc_request(nssi_svc_rpc_request *req)
     pthread_cond_signal(&pending_cond);
 
     pthread_mutex_unlock(&pending_mutex);
+
+    return(0);
 }
 
-int xfer_cancel_server_threads()
+void xfer_cancel_server_threads()
 {
-    log_debug(LOG_ALL, "Canceling server threads");
+    log_debug(xfer_debug_level, "Canceling server threads");
 
     pthread_mutex_lock(&pending_mutex);
     time_to_exit = true;
@@ -179,6 +176,5 @@ int xfer_cancel_server_threads()
         consumer_threads.pop();
         pthread_join(tid, NULL);
     }
-
 }
 

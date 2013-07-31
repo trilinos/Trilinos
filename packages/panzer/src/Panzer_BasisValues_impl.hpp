@@ -108,7 +108,7 @@ namespace panzer {
 
     // first grab basis descriptor
     PureBasis::EElementSpace elmtspace = getElementSpace();
-    int spaceDim = basis_layout->getDimension();
+    int spaceDim = basis_layout->dimension();
 
     intrepid_basis->getValues(basis_ref, cub_points, 
 			      Intrepid::OPERATOR_VALUE);
@@ -189,12 +189,12 @@ namespace panzer {
       Teuchos::RCP<Intrepid::DofCoordsInterface<Array> > coords;
       coords = Teuchos::rcp_dynamic_cast<Intrepid::DofCoordsInterface<Array> >(intrepid_basis);
       if (!Teuchos::is_null(coords)) {
-	coords->getDofCoords(basis_coordinates_ref);
-	Intrepid::CellTools<Scalar> cell_tools;
-	cell_tools.mapToPhysicalFrame(basis_coordinates, 
-				      basis_coordinates_ref,
-				      node_coordinates,
-				      intrepid_basis->getBaseCellTopology());
+        coords->getDofCoords(basis_coordinates_ref);
+        Intrepid::CellTools<Scalar> cell_tools;
+        cell_tools.mapToPhysicalFrame(basis_coordinates, 
+        basis_coordinates_ref,
+        node_coordinates,
+        intrepid_basis->getBaseCellTopology());
       }
     }
 

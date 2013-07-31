@@ -76,6 +76,8 @@ SET(HEADERS ${HEADERS}
   Ifpack_RCMReordering.h
   Ifpack_SPARSKIT.h
   Ifpack_Chebyshev.h
+  Ifpack_Polynomial.h
+  Ifpack_Krylov.h
   Ifpack_METISReordering.h
   Ifpack_OverlappingRowMatrix.h
   Ifpack_ValidParameters.h
@@ -118,6 +120,8 @@ SET(SOURCES ${SOURCES}
   Ifpack_Utils.cpp
   Ifpack_SPARSKIT.cpp
   Ifpack_Chebyshev.cpp
+  Ifpack_Polynomial.cpp
+  Ifpack_Krylov.cpp
   Ifpack_OverlappingPartitioner.cpp
   Ifpack_LinearPartitioner.cpp
   Ifpack_GreedyPartitioner.cpp

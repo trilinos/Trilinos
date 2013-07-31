@@ -941,7 +941,6 @@ namespace Iopg {
 	      get_region()->add_alias(side_block);
 
 	      if (split_type != Ioss::SPLIT_BY_DONT_SPLIT
-		  && (number_distribution_factors > 0 || isParallel)
 		  && side_set_name != "universal_sideset") {
 		std::string storage = "Real[";
 		storage += Ioss::Utils::to_string(side_topo->number_nodes());
@@ -1021,7 +1020,10 @@ namespace Iopg {
 	  }
 	}
 
-	else if (field.get_name() == "ids") {
+	// NOTE: The implicit_ids field is ONLY provided for backward-
+	// compatibility and should not be used unless absolutely
+	// required. For generated mesh, the implicit_ids and ids are the same.
+	else if (field.get_name() == "ids" || field.get_name() == "implicit_ids") {
 	  // Map the local ids in this node block
 	  // (1...node_count) to global node ids.
 	  get_node_map().map_implicit_data(data, field, num_to_get, 0);

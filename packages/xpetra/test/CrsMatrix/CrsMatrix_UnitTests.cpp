@@ -149,9 +149,6 @@ namespace {
   {
 #ifdef HAVE_XPETRA_EPETRA
 
-    typedef Teuchos::ScalarTraits<Scalar> ST;
-    typedef Matrix<Scalar, LO, GO, Node> Matrix;
-    typedef CrsMatrix<Scalar, LO, GO, Node> CrsMatrix;
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
 
@@ -203,9 +200,6 @@ namespace {
   {
 #ifdef HAVE_XPETRA_TPETRA
 
-    typedef Teuchos::ScalarTraits<Scalar> ST;
-    typedef Matrix<Scalar, LO, GO, Node> Matrix;
-    typedef CrsMatrix<Scalar, LO, GO, Node> CrsMatrix;
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
 
@@ -258,9 +252,6 @@ namespace {
   {
 #ifdef HAVE_XPETRA_EPETRA
 
-    typedef Teuchos::ScalarTraits<Scalar> ST;
-    typedef Matrix<Scalar, LO, GO, Node> Matrix;
-    typedef CrsMatrix<Scalar, LO, GO, Node> CrsMatrix;
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
 
@@ -324,7 +315,7 @@ namespace {
 #define UNIT_TEST_GROUP_ORDINAL2( SC, LO, GO, Node )                     \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, EpetraDeepCopy, SC, LO, GO, Node )
 
-  typedef Kokkos::DefaultNode::DefaultNodeType DefaultNodeType;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNodeType;
 
   UNIT_TEST_GROUP_ORDINAL(double, int, int, DefaultNodeType)
 #ifdef HAVE_XPETRA_EXPERIMENTAL

@@ -71,7 +71,7 @@ namespace MueLu {
     @class RebalanceAcFactory
     @brief Factory for building coarse matrices.
   */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
   class RebalanceAcFactory : public TwoLevelFactoryBase {
 #undef MUELU_REBALANCEACFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -98,6 +98,23 @@ namespace MueLu {
     //@{
     void Build(Level &fineLevel, Level &coarseLevel) const;
     //@}
+
+    //@{
+    /*! @brief Add rebalancing factory in the end of list of rebalancing factories in RebalanceAcFactory.
+
+    Rebalancing factories are derived from SingleLevelFactoryBase and rebalance the underlaying object
+    (e.g. map, vector,...) to fit to the rebalanced maps.
+    */
+    void AddRebalanceFactory(const RCP<const FactoryBase>& factory);
+
+    //! Returns number of transfer factories.
+    size_t NumRebalanceFactories() const { return rebalanceFacts_.size(); }
+
+    //@}
+
+  private:
+    //! list of user-defined rebalancing Factories
+    std::vector<RCP<const FactoryBase> > rebalanceFacts_;
 
   }; //class RebalanceAcFactory
 

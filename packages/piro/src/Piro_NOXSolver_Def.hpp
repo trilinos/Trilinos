@@ -50,6 +50,8 @@
 #include "Thyra_DefaultInverseLinearOp.hpp"
 #include "Thyra_DefaultIdentityLinearOp.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TestForException.hpp"
@@ -62,10 +64,12 @@
 
 template <typename Scalar>
 Piro::NOXSolver<Scalar>::
-NOXSolver(Teuchos::RCP<Teuchos::ParameterList> appParams_,
-	  Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > model_) :
+NOXSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
+	  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model_,
+          const Teuchos::RCP<ObserverBase<Scalar> > &observer_) :
   appParams(appParams_),
   model(model_),
+  observer(observer_),
   num_p(model->Np()),
   num_g(model->Ng()),
   solver(new Thyra::NOXNonlinearSolver),
@@ -414,7 +418,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
           }
 
           if (Teuchos::nonnull(minus_dxdp_mv)) {
-            assign(minus_dxdp_mv.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+            Thyra::assign(minus_dxdp_mv.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
 
             const Thyra::SolveCriteria<Scalar> defaultSolveCriteria;
             const Thyra::SolveStatus<Scalar> solveStatus =
@@ -543,6 +547,10 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
         }
       }
     }
+  }
+
+  if (Teuchos::nonnull(this->observer)) {
+    this->observer->observeSolution(*convergedSolution);
   }
 }
 

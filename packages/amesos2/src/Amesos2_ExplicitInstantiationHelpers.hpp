@@ -56,11 +56,11 @@
 
 #define AMESOS2_SOLVER_TPETRA_INST(SOLVERNAME,S,LO,GO) \
   template class SOLVERNAME<Tpetra::CrsMatrix<S,LO,GO, \
-					      Kokkos::DefaultNode::DefaultNodeType, \
-					      Kokkos::DefaultKernels<S, \
+					      KokkosClassic::DefaultNode::DefaultNodeType, \
+					      KokkosClassic::DefaultKernels<S, \
 								     LO, \
-								     Kokkos::DefaultNode::DefaultNodeType>::SparseOps>, \
+								     KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>, \
 			    Tpetra::MultiVector<S,LO,GO, \
-						Kokkos::DefaultNode::DefaultNodeType> >
+						KokkosClassic::DefaultNode::DefaultNodeType> >
 
 #endif	// AMESOS2_EXPLICITINSTANTIATIONHELPER_HPP

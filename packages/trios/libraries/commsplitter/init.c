@@ -89,7 +89,7 @@ void commsplitter_init(char *app_name)
     return;
 }
 
-void commsplitter_finalize()
+void commsplitter_fini(void)
 {
     return;
 }

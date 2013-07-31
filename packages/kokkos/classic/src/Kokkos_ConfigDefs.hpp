@@ -50,8 +50,17 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
+// TODO (mfh 07 Feb 2013) We want to move this into CMake.
+#if defined(__GNUC__)
+#  define KOKKOSCLASSIC_RESTRICT __restrict
+#elif defined(__INTEL_COMPILER)
+#  define KOKKOSCLASSIC_RESTRICT restrict
+#else
+#  define KOKKOSCLASSIC_RESTRICT 
+#endif // __GNUC__
+
 //! Namespace for Kokkos classes and methods
-namespace Kokkos {
+namespace KokkosClassic {
   // import Teuchos memory management classes into Kokkos
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -66,12 +75,19 @@ namespace Kokkos {
   using Teuchos::ParameterList;
 }
 
+namespace Kokkos {
+  // For backwards compatibility, bring everything in the 
+  // KokkosClassic namespace into Kokkos for now.  This will 
+  // go away soon.
+  using namespace KokkosClassic;
+}
+
 //! Namespace for Kokkos example classes
 namespace KokkosExamples {
 }
 
 
-namespace Kokkos {
+namespace KokkosClassic {
 
 //! Sweep direction for Gauss-Seidel or Symmetric Over-Relaxation (SOR).
 enum ESweepDirection {
@@ -79,6 +95,6 @@ enum ESweepDirection {
   Backward
 };
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif /* KOKKOS_CONFIGDEFS_H */

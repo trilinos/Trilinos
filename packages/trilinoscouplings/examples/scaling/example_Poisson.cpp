@@ -503,9 +503,6 @@ int main(int argc, char *argv[]) {
       nodeCoord(i,1)=nodeCoordy[i];
       nodeCoord(i,2)=nodeCoordz[i];
     }
-    delete [] nodeCoordx;
-    delete [] nodeCoordy;
-    delete [] nodeCoordz;
 
     /*parallel info*/
     long long num_internal_nodes;
@@ -1069,6 +1066,12 @@ int main(int argc, char *argv[]) {
  // Run the solver
   Teuchos::ParameterList MLList = inputSolverList;
   ML_Epetra::SetDefaults("SA", MLList, 0, 0, false);
+  
+  MLList.set("x-coordinates",nodeCoordx);
+  MLList.set("y-coordinates",nodeCoordy);
+  MLList.set("z-coordinates",nodeCoordz);
+
+
   Epetra_FEVector exactNodalVals(globalMapG);
   Epetra_FEVector femCoefficients(globalMapG);
   double TotalErrorResidual = 0.0;
@@ -1317,6 +1320,10 @@ int main(int argc, char *argv[]) {
       delete [] comm_node_ids;
       delete [] comm_node_proc_ids;
    }
+
+    delete [] nodeCoordx;
+    delete [] nodeCoordy;
+    delete [] nodeCoordz;
 
    // delete mesh
    Delete_Pamgen_Mesh();

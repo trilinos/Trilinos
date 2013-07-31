@@ -22,13 +22,3 @@ SET(SOURCES "")
 APPEND_SET(SOURCES
     io_generated.cpp
 )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    stk_use_cases_io
-    SOURCES ${SOURCES}
-    DEPLIBS stk_io
-    ARGS ""
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    PASS_REGULAR_EXPRESSION "STKUNIT_ALL_PASS"
-    )

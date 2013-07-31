@@ -72,11 +72,17 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level &currentLevel) {
-    //FactoryMonitor m(*this, "Setup Smoother");
-    if (SmootherPrototype::IsSetup() == true) VerboseObject::GetOStream(Warnings0, 0) << "Warning: MueLu::DirectSolver::Setup(): Setup() has already been called";
+    // FactoryMonitor m(*this, "Setup Smoother");
+    if (SmootherPrototype::IsSetup() == true)
+      VerboseObject::GetOStream(Warnings0, 0) << "Warning: MueLu::DirectSolver::Setup(): Setup() has already been called";
     TEUCHOS_TEST_FOR_EXCEPTION(s_ != Teuchos::null, Exceptions::RuntimeError, "IsSetup() == false but s_ != Teuchos::null. This does not make sense");
 
-    Xpetra::UnderlyingLib lib = currentLevel.Get< RCP<Matrix> >("A", AFact_.get())->getRowMap()->lib();
+    RCP<Matrix> A = currentLevel.Get< RCP<Matrix> >("A", AFact_.get());
+
+    if (A.is_null())
+      return;
+
+    Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
 
     if (lib == Xpetra::UseTpetra) {
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
@@ -119,7 +125,7 @@ namespace MueLu {
   std::string TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Ifpack2ToIfpack1Type(std::string const & type) {
     if (type == "RELAXATION") { return "point relaxation stand-alone"; }
     if (type == "CHEBYSHEV")  { return "Chebyshev"; }
-    if (type == "ILU")        { return "ILU"; } //TODO: ILU is not a valid Ifpack2 type. This is just a temporary work-around to use TrilinosSmoother with Epetra + ILU
+    if (type == "ILUT")        { return "ILU"; } //TODO: ILU is not a valid Ifpack2 type. This is just a temporary work-around to use TrilinosSmoother with Epetra + ILU
 
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Cannot convert Ifpack2 preconditioner name to Ifpack: unkown type: " + type);
   }
@@ -142,8 +148,12 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   std::string TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::description() const {
     std::ostringstream out;
-    out << SmootherPrototype::description();
-    out << "{type = " << type_ << "}";
+    if (s_ != Teuchos::null)
+      out << s_->description();
+    else {
+      out << SmootherPrototype::description();
+      out << "{type = " << type_ << "}";
+    }
     return out.str();
   }
 

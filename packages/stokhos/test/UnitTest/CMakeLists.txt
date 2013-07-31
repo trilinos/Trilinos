@@ -1,4 +1,3 @@
-
 INCLUDE(TribitsAddExecutableAndTest)
 
 ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
@@ -111,7 +110,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 IF(TPL_ENABLE_ForUQTK)
- 
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ForUQTKExpansionUnitTest
     SOURCES Stokhos_ForUQTKExpansionUnitTest.cpp
@@ -171,7 +170,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  InterlacedOpUnitTest 
+  InterlacedOpUnitTest
   SOURCES Stokhos_InterlacedOpUnitTest.cpp
           Stokhos_InterlacedTestSupport.cpp
           Stokhos_InterlacedTestSupport.hpp
@@ -182,7 +181,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  BasisInteractionGraphUnitTest 
+  BasisInteractionGraphUnitTest
   SOURCES Stokhos_BasisInteractionGraphUnitTest.cpp
           Stokhos_InterlacedTestSupport.cpp
           Stokhos_InterlacedTestSupport.hpp
@@ -193,7 +192,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  AdaptivityToolsUnitTest 
+  AdaptivityToolsUnitTest
   SOURCES Stokhos_AdaptivityToolsUnitTest.cpp
           Stokhos_InterlacedTestSupport.cpp
           Stokhos_InterlacedTestSupport.hpp
@@ -204,7 +203,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  BuildColBasisUnitTest 
+  BuildColBasisUnitTest
   SOURCES Stokhos_BuildColBasisUnitTest.cpp
           Stokhos_InterlacedTestSupport.cpp
           Stokhos_InterlacedTestSupport.hpp
@@ -215,7 +214,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  InterlacedMapUnitTest 
+  InterlacedMapUnitTest
   SOURCES Stokhos_InterlacedMapUnitTest.cpp
           Stokhos_InterlacedTestSupport.cpp
           Stokhos_InterlacedTestSupport.hpp
@@ -241,7 +240,7 @@ IF(Stokhos_ENABLE_Sacado)
 
   INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/../sacado/test/utils)
 
-  SET(UTILS_SOURCES 
+  SET(UTILS_SOURCES
     ${PACKAGE_SOURCE_DIR}/../sacado/test/utils/Sacado_Random.hpp
     ${PACKAGE_SOURCE_DIR}/../sacado/test/utils/Sacado_RandomImp.hpp
   )
@@ -274,7 +273,7 @@ IF(Stokhos_ENABLE_Sacado)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     SacadoPCESerializationTests
     SOURCES Stokhos_SacadoPCESerializationTests.cpp ${UTILS_SOURCES}
-    ARGS 
+    ARGS
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
@@ -283,7 +282,7 @@ IF(Stokhos_ENABLE_Sacado)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     SacadoPCECommTests
     SOURCES Stokhos_SacadoPCECommTests.cpp ${UTILS_SOURCES}
-    ARGS 
+    ARGS
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
@@ -292,7 +291,7 @@ IF(Stokhos_ENABLE_Sacado)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     SacadoVectorSerializationTests
     SOURCES Stokhos_SacadoVectorSerializationTests.cpp ${UTILS_SOURCES}
-    ARGS 
+    ARGS
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
@@ -301,13 +300,22 @@ IF(Stokhos_ENABLE_Sacado)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     SacadoVectorCommTests
     SOURCES Stokhos_SacadoVectorCommTests.cpp ${UTILS_SOURCES}
-    ARGS 
+    ARGS
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
   )
 
-  IF (Stokhos_ENABLE_KokkosArray)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SacadoTraitsUnitTest
+    SOURCES Stokhos_SacadoTraitsUnitTest.cpp
+    ARGS
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+
+  IF (Stokhos_ENABLE_KokkosCore)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       SacadoMPVectorUnitTest
       SOURCES Stokhos_SacadoMPVectorUnitTest.cpp
@@ -319,7 +327,7 @@ IF(Stokhos_ENABLE_Sacado)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       SacadoMPVectorSerializationTests
       SOURCES Stokhos_SacadoMPVectorSerializationTests.cpp ${UTILS_SOURCES}
-      ARGS 
+      ARGS
       COMM serial mpi
       NUM_MPI_PROCS 1
       STANDARD_PASS_OUTPUT
@@ -328,11 +336,29 @@ IF(Stokhos_ENABLE_Sacado)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       SacadoMPVectorCommTests
       SOURCES Stokhos_SacadoMPVectorCommTests.cpp ${UTILS_SOURCES}
-      ARGS 
+      ARGS
       COMM serial mpi
       NUM_MPI_PROCS 1
       STANDARD_PASS_OUTPUT
       )
+
+    SET(CUDA_SOURCES "")
+    SET(KKUT_DEPLIBS stokhos kokkosarray_impl kokkosarray_devicehost)
+    IF (Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
+      CUDA_COMPILE(CUDA_SOURCES Stokhos_KokkosArrayKernelsUnitTestNew_Cuda.cu)
+      SET(KKUT_DEPLIBS ${KKUT_DEPLIBS} kokkosarray_devicecuda)
+    ENDIF()
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      KokkosArrayKernelsUnitTestNew
+      SOURCES Stokhos_KokkosArrayKernelsUnitTestNew.hpp
+              Stokhos_KokkosArrayKernelsUnitTestNew.cpp
+              ${CUDA_SOURCES}
+      COMM serial mpi
+      STANDARD_PASS_OUTPUT
+      NUM_MPI_PROCS 1
+      DEPLIBS ${KKUT_DEPLIBS}
+      )
+
   ENDIF()
 
 ENDIF()
@@ -389,6 +415,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TensorProductPseudoSpectralOperatorUnitTest
   SOURCES Stokhos_TensorProductPseudoSpectralOperatorUnitTest.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  LexicographicTreeBasisUnitTest
+  SOURCES Stokhos_LexicographicTreeBasisUnitTest.cpp
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1

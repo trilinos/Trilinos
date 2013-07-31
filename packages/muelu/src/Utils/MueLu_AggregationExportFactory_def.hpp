@@ -66,13 +66,22 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AggregationExportFactory(const std::string outputFileName)
-    : outputFileName_(outputFileName)
-  { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~AggregationExportFactory() {}
+  RCP<const ParameterList> AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+    validParamList->set< RCP<const FactoryBase> >("Aggregates",          Teuchos::null,                        "Generating factory for aggregates");
+    validParamList->set< RCP<const FactoryBase> >("DofsPerNode",         Teuchos::null,                        "Generating factory for number of dofs per node");
+    validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo",  Teuchos::null,                        "Generating factory for amalgamation");
+
+    validParamList->set< std::string >           ("Output filename",     "aggs_level%LEVELID_proc%PROCID.out", "Output filename template (%TIMESTEP is replaced by \'Output file: time step\' variable, %ITER is replaced by \'Output file: iter\' variable, %LEVELID is replaced level id, %PROCID is replaced by processor id)");
+
+    validParamList->set< int > ("Output file: time step", 0, "time step variable for output file name");
+    validParamList->set< int > ("Output file: iter", 0, "nonlinear iteration variable for output file name");
+
+    return validParamList;
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
@@ -109,48 +118,56 @@ namespace MueLu {
       minGlobalAggId[i] = numAggsGlobal[i-1];
     }
 
-    GO numAggs = aggregates->GetNumAggregates();
-    ArrayRCP<LO> aggSizes = Teuchos::ArrayRCP<LO>(numAggs,0);
-    AmalgamationFactory::ComputeUnamalgamatedAggregateSizes(*aggregates, *amalgInfo, aggSizes);
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > aggToRowMap(aggSizes.size());
-    AmalgamationFactory::UnamalgamateAggregates(*aggregates, *amalgInfo, aggSizes, aggToRowMap);
+    ArrayRCP<LO> aggStart;
+    ArrayRCP<GlobalOrdinal> aggToRowMap;
+    AmalgamationFactory::UnamalgamateAggregates(*aggregates, *amalgInfo, aggStart, aggToRowMap);
 
     // write to file
-    std::string outFile = outputFileName_;
+    //std::string outFile = outputFileName_;
+    const ParameterList & pL = GetParameterList();
+    std::string outFile = pL.get<std::string> ("Output filename");
+    int timeStep = pL.get< int > ("Output file: time step");
+    int iter = pL.get< int >("Output file: iter");
+
     std::stringstream streamLevel; streamLevel << fineLevel.GetLevelID();
     outFile = replaceAll(outFile,"%LEVELID", streamLevel.str());
     std::stringstream streamProc; streamProc << comm->getRank();
     outFile = replaceAll(outFile,"%PROCID", streamProc.str());
+    std::stringstream streamTimeStep; streamTimeStep << timeStep;
+    outFile = replaceAll(outFile,"%TIMESTEP", streamTimeStep.str());
+    std::stringstream streamIter; streamIter << iter;
+    outFile = replaceAll(outFile,"%ITER", streamIter.str());
 
+    GetOStream(Runtime0, 0) << "AggregationExportFactory: outputfilel \"" << outFile << "\"" << std::endl;
     std::ofstream fout(outFile.c_str());
 
-
-      std::vector<GlobalOrdinal> nodeIds;
-      for (int i=0; i< aggToRowMap.size(); ++i) {
-        fout << "Agg " << minGlobalAggId[comm->getRank()] + i << " Proc " << comm->getRank() << ":";
-        for (int k=0; k< aggToRowMap[i].size(); ++k) {
-          /*std::cout << "proc: " << comm->getRank() << "\t aggToRowMap[" << i << "][" << k << "]=" <<aggToRowMap[i][k] << "\t node GID: " << aggToRowMap[i][k]/DofsPerNode << "\t GID in colMap=" << aggToRowMap[i][k];
+    GO numAggs = aggregates->GetNumAggregates();
+    std::vector<GlobalOrdinal> nodeIds;
+    for (int i=0; i< numAggs; ++i) {
+      fout << "Agg " << minGlobalAggId[comm->getRank()] + i << " Proc " << comm->getRank() << ":";
+      for (int k=aggStart[i]; k< aggStart[i+1]; ++k) {
+        /*std::cout << "proc: " << comm->getRank() << "\t aggToRowMap[" << i << "][" << k << "]=" <<aggToRowMap[i][k] << "\t node GID: " << aggToRowMap[i][k]/DofsPerNode << "\t GID in colMap=" << aggToRowMap[i][k];
           if(colMap->isNodeGlobalElement(aggToRowMap[i][k])==false)
-            std::cout << " NOT ON CUR PROC!";
+          std::cout << " NOT ON CUR PROC!";
           std::cout << std::endl;*/
 
-          nodeIds.push_back(aggToRowMap[i][k]/DofsPerNode);
-        }
-
-        // remove duplicate entries from nodeids
-        std::sort(nodeIds.begin(),nodeIds.end());
-        typename std::vector<GlobalOrdinal>::iterator endLocation = std::unique(nodeIds.begin(),nodeIds.end());
-        nodeIds.erase(endLocation,nodeIds.end());
-
-        // print out nodeids
-        for(typename std::vector<GlobalOrdinal>::iterator printIt = nodeIds.begin(); printIt!=nodeIds.end(); printIt++) {
-          fout << " " << *printIt;
-        }
-        nodeIds.clear();
-        fout << std::endl;
+        nodeIds.push_back(aggToRowMap[k]/DofsPerNode);
       }
 
-      fout.close();
+      // remove duplicate entries from nodeids
+      std::sort(nodeIds.begin(),nodeIds.end());
+      typename std::vector<GlobalOrdinal>::iterator endLocation = std::unique(nodeIds.begin(),nodeIds.end());
+      nodeIds.erase(endLocation,nodeIds.end());
+
+      // print out nodeids
+      for(typename std::vector<GlobalOrdinal>::iterator printIt = nodeIds.begin(); printIt!=nodeIds.end(); printIt++) {
+        fout << " " << *printIt;
+      }
+      nodeIds.clear();
+      fout << std::endl;
+    }
+
+    fout.close();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

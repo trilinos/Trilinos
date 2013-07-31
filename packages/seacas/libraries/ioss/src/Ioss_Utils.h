@@ -130,6 +130,19 @@ namespace Ioss {
 					       int64_t number_sides, 
 					       const Region *region);
 
+    /*! And yet another idiosyncracy of sidesets...
+     * The side of an element (especially shells) can be
+     * either a face or an edge in the same sideset.  The
+     * ordinal of an edge is (local_edge_number+#faces) on the
+     * database, but needs to be (local_edge_number) for
+     * Sierra...
+     *
+     * If the sideblock has a "parent_element_topology" and a
+     * "topology", then we can determine whether to offset the
+     * side ordinals...
+     */
+    static int64_t get_side_offset(const Ioss::SideBlock *sb);
+
     static unsigned int hash (const std::string& name);
 
     /*!

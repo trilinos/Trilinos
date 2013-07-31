@@ -53,7 +53,7 @@
 namespace {
 
 bool seconds_initialized = false;
-LARGE_INTEGER start_count, count_freq;	// counts per sec.
+LARGE_INTEGER start_count, count_freq;  // counts per sec.
 
 inline void seconds_initialize() {
   if( seconds_initialized ) return;
@@ -68,32 +68,36 @@ inline void seconds_initialize() {
   seconds_initialized = true;
 }
 
-}	// end namespace
+}       // end namespace
 
 #endif // defined(__INTEL_COMPILER) && defined(_WIN32)
 
 namespace Teuchos {
 
 //=============================================================================
-Time::Time(const std::string& name_in, bool start_in) 
-  : startTime_(0), totalTime_(0), isRunning_(false), name_(name_in), numCalls_(0)
+Time::Time(const std::string& name_in, bool start_in)
+  : startTime_(0), totalTime_(0), isRunning_(false), enabled_ (true), name_(name_in), numCalls_(0)
 {
   if(start_in) this->start();
 }
 
 void Time::start(bool reset_in)
 {
-  isRunning_ = true;
-  if (reset_in) totalTime_ = 0;
-  startTime_ = wallTime();
+  if (enabled_) {
+    isRunning_ = true;
+    if (reset_in) totalTime_ = 0;
+    startTime_ = wallTime();
+  }
 }
 
 double Time::stop()
 {
-  if (isRunning_) {
-    totalTime_ += ( wallTime() - startTime_ );
-    isRunning_ = false;
-    startTime_ = 0;
+  if (enabled_) {
+    if (isRunning_) {
+      totalTime_ += ( wallTime() - startTime_ );
+      isRunning_ = false;
+      startTime_ = 0;
+    }
   }
   return totalTime_;
 }
@@ -105,31 +109,49 @@ double Time::totalElapsedTime(bool readCurrentTime) const
   return totalTime_;
 }
 
-//=============================================================================
-double Time::wallTime() 
+void Time::reset () {
+  totalTime_ = 0;
+  numCalls_ = 0;
+}
+
+void Time::disable () {
+  enabled_ = false;
+}
+
+void Time::enable () {
+  enabled_ = true;
+}
+
+void Time::incrementNumCalls() {
+  if (enabled_) {
+    ++numCalls_;
+  }
+}
+
+double Time::wallTime()
 {
   /* KL: warning: this code is probably not portable! */
   /* HT: have added some preprocessing to address problem compilers */
-	/* RAB: I modifed so that timer will work if MPI support is compiled in but not initialized */
+        /* RAB: I modifed so that timer will work if MPI support is compiled in but not initialized */
 
 #ifdef HAVE_MPI
 
-	int mpiInitialized;
-	MPI_Initialized(&mpiInitialized);
+        int mpiInitialized;
+        MPI_Initialized(&mpiInitialized);
 
-	if( mpiInitialized ) {
+        if( mpiInitialized ) {
 
-		return(MPI_Wtime());
+                return(MPI_Wtime());
 
-	}
-	else {
+        }
+        else {
 
-		clock_t start;
+                clock_t start;
 
-		start = clock();
-		return( (double)( start ) / CLOCKS_PER_SEC );
+                start = clock();
+                return( (double)( start ) / CLOCKS_PER_SEC );
 
-	}
+        }
 
 #elif defined(__INTEL_COMPILER) && defined(_WIN32)
 

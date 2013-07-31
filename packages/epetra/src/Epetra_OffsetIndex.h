@@ -79,7 +79,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_OffsetIndex: public Epetra_Object {
 
   //! @name Print object to an output stream
   //@{ 
-  virtual void Print(ostream & os) const;
+  virtual void Print(std::ostream & os) const;
   //@}
 
   //! Accessor

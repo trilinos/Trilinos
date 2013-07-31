@@ -244,7 +244,7 @@ namespace ML_Epetra
 #endif    
 
     //! Solver mode
-    string mode;
+    std::string mode;
 
     //! Aggregation info
     bool aggregate_with_sigma;

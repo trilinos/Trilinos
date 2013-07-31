@@ -57,9 +57,9 @@ Piro::Epetra::InvertMassMatrixDecorator::InvertMassMatrixDecorator(
                           Teuchos::RCP<EpetraExt::ModelEvaluator>& model_,
                           bool massMatrixIsConstant_, bool lumpMassMatrix_) :
   model(model_),
-  calcMassMatrix(true),
   massMatrixIsConstant(massMatrixIsConstant_),
-  lumpMassMatrix(lumpMassMatrix_)
+  lumpMassMatrix(lumpMassMatrix_),
+  calcMassMatrix(true)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -153,7 +153,7 @@ void Piro::Epetra::InvertMassMatrixDecorator::evalModel( const InArgs& inArgs,
 
   if (outArgs.Np()>0) {
    if (outArgs.get_DfDp(0).getMultiVector() != Teuchos::null) 
-     cout << "InvertMassMatrixDecorator:: NOT IMPLEMENTED FOR dfdp!! " << endl;
+     std::cout << "InvertMassMatrixDecorator:: NOT IMPLEMENTED FOR dfdp!! " << std::endl;
   }
 
   if (outArgs.get_f() == Teuchos::null) {

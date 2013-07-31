@@ -78,9 +78,9 @@ isinit_(false),
 comm_(comm),                                
 interface_(interface),
 ml_(NULL),
-ag_(NULL)
+ag_(NULL),
+label_("nlnML_Preconditioner")
 {
-  label_    = "nlnML_Preconditioner";
   CheckInputParameters(mlparams);
   params_   = rcp(new Teuchos::ParameterList(mlparams));
   // we make a backup of the nullspace dimension as it might be
@@ -149,7 +149,7 @@ bool NLNML::NLNML_Preconditioner::CheckInputParameters(ParameterList& params)
   if (!params.isParameter("nlnML spatial dimension")) 
     { missingparams[missing] = "\"nlnML spatial dimension\" [int]"; ++missing; }
   if (!params.isParameter("nlnML coarse: type")) 
-    { missingparams[missing] = "\"nlnML coarse: type\" [string]"; ++missing; }
+    { missingparams[missing] = "\"nlnML coarse: type\" [std::string]"; ++missing; }
   if (!params.isParameter("nlnML nodes per aggregate")) 
     { missingparams[missing] = "\"nlnML nodes per aggregate\" [int]"; ++missing; }
   if (!params.isParameter("nlnML use nlncg on fine level")) 
@@ -165,11 +165,11 @@ bool NLNML::NLNML_Preconditioner::CheckInputParameters(ParameterList& params)
   if (!params.isParameter("nlnML max iterations newton-krylov coarsest level")) 
     { missingparams[missing] = "\"nlnML max iterations newton-krylov coarsest level\" [int]"; ++missing; }
   if (!params.isParameter("nlnML linear smoother type fine level")) 
-    { missingparams[missing] = "\"nlnML linear smoother type fine level\" [string]"; ++missing; }
+    { missingparams[missing] = "\"nlnML linear smoother type fine level\" [std::string]"; ++missing; }
   if (!params.isParameter("nlnML linear smoother type medium level")) 
-    { missingparams[missing] = "\"nlnML linear smoother type medium level\" [string]"; ++missing; }
+    { missingparams[missing] = "\"nlnML linear smoother type medium level\" [std::string]"; ++missing; }
   if (!params.isParameter("nlnML linear smoother type coarsest level")) 
-    { missingparams[missing] = "\"nlnML linear smoother type coarsest level\" [string]"; ++missing; }
+    { missingparams[missing] = "\"nlnML linear smoother type coarsest level\" [std::string]"; ++missing; }
   if (!params.isParameter("nlnML linear smoother sweeps fine level")) 
     { missingparams[missing] = "\"nlnML linear smoother sweeps fine level\" [int]"; ++missing; }
   if (!params.isParameter("nlnML linear smoother sweeps medium level")) 
@@ -191,16 +191,16 @@ bool NLNML::NLNML_Preconditioner::CheckInputParameters(ParameterList& params)
   
   if (missing && Comm().MyPID()==0)
   {
-    cout << "======================================================\n";
-    cout << "nlnML (level 0): missing parameters in parameter list:\n";
-    cout << "------------------------------------------------------\n";
+    std::cout << "======================================================\n";
+    std::cout << "nlnML (level 0): missing parameters in parameter list:\n";
+    std::cout << "------------------------------------------------------\n";
     for (int i=0; i<missing; ++i)
-      cout << missingparams[i] << endl;
-    cout << "------------------------------------------------------\n";
-    cout << "nlnML (level 0): Note that depending on what method you would like\n"
+      std::cout << missingparams[i] << std::endl;
+    std::cout << "------------------------------------------------------\n";
+    std::cout << "nlnML (level 0): Note that depending on what method you would like\n"
          << "                 to run it's ok to miss some while for others\n"
          << "                 suboptimal default values will be used.\n";
-    cout << "======================================================\n";
+    std::cout << "======================================================\n";
     fflush(stdout);     
   }
   
@@ -218,7 +218,7 @@ bool NLNML::NLNML_Preconditioner::computePreconditioner(
 {
   if (&M != this)
   {
-    cout << "**ERR**: NLNML::NLNML_Preconditioner::computePreconditioner:\n"
+    std::cout << "**ERR**: NLNML::NLNML_Preconditioner::computePreconditioner:\n"
          << "**ERR**: supplied preconditioner is not this\n"  
          << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
   }
@@ -236,7 +236,7 @@ bool NLNML::NLNML_Preconditioner::computePreconditioner(
   {
     if (noxsolver_ == null)
     {
-      cout << "**ERR**: NLNML::NLNML_Preconditioner::computePreconditioner:\n"
+      std::cout << "**ERR**: NLNML::NLNML_Preconditioner::computePreconditioner:\n"
            << "**ERR**: outer nox solver not registered\n"  
            << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
     }
@@ -253,7 +253,7 @@ bool NLNML::NLNML_Preconditioner::computePreconditioner(
   if (!isinit())
   {
     if (Comm().MyPID() && OutLevel())
-      cout << "ML: NLNML_Preconditioner::computePreconditioner: (re)computing ML-Preconditioner\n";
+      std::cout << "ML: NLNML_Preconditioner::computePreconditioner: (re)computing ML-Preconditioner\n";
       
     // save number of calls to computeF
     int ncalls = interface_->getnumcallscomputeF();
@@ -266,9 +266,9 @@ bool NLNML::NLNML_Preconditioner::computePreconditioner(
     
     if (Comm().MyPID() && OutLevel())
     {
-      cout << "ML: Setup time for preconditioner: " << (t1-t0) << " sec\n";
-      cout << "ML: Number of calls to fineinterface.computeF() in setup: " 
-           << interface_->getnumcallscomputeF() << endl;
+      std::cout << "ML: Setup time for preconditioner: " << (t1-t0) << " sec\n";
+      std::cout << "ML: Number of calls to fineinterface.computeF() in setup: " 
+           << interface_->getnumcallscomputeF() << std::endl;
     }
     
     // reset the number of calls to computeF
@@ -277,7 +277,7 @@ bool NLNML::NLNML_Preconditioner::computePreconditioner(
     if (flag) setinit(true);
     else
     {
-      cout << "**ERR**: NLNML::NLNML_Preconditioner::computePreconditioner:\n"
+      std::cout << "**ERR**: NLNML::NLNML_Preconditioner::computePreconditioner:\n"
            << "**ERR**: setup of Preconditioner failed\n"  
            << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
     }
@@ -322,7 +322,7 @@ bool NLNML::NLNML_Preconditioner::compPrec(const Epetra_Vector& x)
   }
   else
   {
-    cout << "**ERR**: NLNML::NLNML_Preconditioner::compPrec:\n"
+    std::cout << "**ERR**: NLNML::NLNML_Preconditioner::compPrec:\n"
          << "**ERR**: unknown parameter combination for Jacobian\n"  
          << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
   }
@@ -338,7 +338,7 @@ bool NLNML::NLNML_Preconditioner::compPrec(const Epetra_Vector& x)
   EpetraMatrix2MLMatrix(ml_,0,(dynamic_cast<Epetra_RowMatrix*>(fineJac_.get())));
   
   // set coarsening type
-  string coarsentype = getParameter("nlnML coarse: type",(string)"Uncoupled");
+  std::string coarsentype = getParameter("nlnML coarse: type",(std::string)"Uncoupled");
   if (coarsentype=="Uncoupled")
     ML_Aggregate_Set_CoarsenScheme_Uncoupled(ag_);
   else if (coarsentype=="MIS")
@@ -358,10 +358,10 @@ bool NLNML::NLNML_Preconditioner::compPrec(const Epetra_Vector& x)
     bool ok = interface_->getBlockInfo(&nblocks,blocks,block_pde);
     if (!ok)
     {
-      cout << "**WRN**: NLNML::NLNML_Preconditioner::compPrec:\n"
+      std::cout << "**WRN**: NLNML::NLNML_Preconditioner::compPrec:\n"
            << "**WRN**: interface returned no blocks,\n"
            << "**WRN**: using aggregation scheme METIS instead of VBMETIS\n";
-      setParameter("nlnML coarse: type",(string)"METIS");
+      setParameter("nlnML coarse: type",(std::string)"METIS");
       ML_Aggregate_Set_CoarsenScheme_METIS(ag_);
     }
     else
@@ -416,12 +416,12 @@ bool NLNML::NLNML_Preconditioner::compPrec(const Epetra_Vector& x)
   else
   {
      dimnullsp = getParameter("nlnML null space: dimension",1);
-     cout << "**WRN**: NLNML_Preconditioner::compPrec:\n"
+     std::cout << "**WRN**: NLNML_Preconditioner::compPrec:\n"
           << "**WRN**: interface returned no nullspace,\n"
           << "**WRN**: using ML's default nullspace\n";
      if (blocksize != dimnullsp)
      {
-       cout << "**WRN**: ML_Nox_Preconditioner::compPrec:\n"
+       std::cout << "**WRN**: ML_Nox_Preconditioner::compPrec:\n"
             << "**WRN**: with default nullspace, nullspace-dimension must match number of PDEs per node\n"
             << "**WRN**: numPDE = " << blocksize << ", dimnullsp = " << dimnullsp << "\n"
             << "**WRN**: continue with setting dimnullsp = numPDE\n";
@@ -440,7 +440,7 @@ bool NLNML::NLNML_Preconditioner::compPrec(const Epetra_Vector& x)
   
   if (nlevel<2)
   {
-     cout << "**ERR**: NLNML_Preconditioner::compPrec:\n"
+     std::cout << "**ERR**: NLNML_Preconditioner::compPrec:\n"
           << "**ERR**: number of levels generated is " << nlevel << "\n"
           << "**ERR**: this algorithm relies on at least nlevel >=2 !\n"
           << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
@@ -505,7 +505,7 @@ bool NLNML::NLNML_Preconditioner::Compute_Nonlinearpreconditioner(
     (*P)[i]->OptimizeStorage();
     double t2 = GetClock() - t1;
     if (OutLevel()>5 && Comm().MyPID()==0)
-      cout << "nlnML (level " << i << "): extraction of P in " << t2 << " sec\n";
+      std::cout << "nlnML (level " << i << "): extraction of P in " << t2 << " sec\n";
   }
   
   // create the vector of nonlinear levels
@@ -526,7 +526,7 @@ bool NLNML::NLNML_Preconditioner::Compute_Nonlinearpreconditioner(
       numpde=6;
     else
     {
-      cout << "**ERR**: NLNML::NLNML_Preconditioner::Compute_Nonlinearpreconditioner:\n"
+      std::cout << "**ERR**: NLNML::NLNML_Preconditioner::Compute_Nonlinearpreconditioner:\n"
            << "**ERR**: nlnML spatial dimension = " << spatial << " unknown\n"
            << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
     }
@@ -606,9 +606,9 @@ int NLNML::NLNML_Preconditioner::ApplyInverse(
   double t1 = GetClock();
   
   if (OutLevel()>7 && Comm().MyPID()==0)
-    cout << "nlnML (level 0): Preconditioner time " << (t1-t0) 
+    std::cout << "nlnML (level 0): Preconditioner time " << (t1-t0) 
          << " sec, # evaluateF total/this " 
-         << ncalls1 << "/" << (ncalls1-ncalls0) << endl;
+         << ncalls1 << "/" << (ncalls1-ncalls0) << std::endl;
   
   if (!err) return 0;
   else      return -1;
@@ -624,9 +624,9 @@ int NLNML::NLNML_Preconditioner::ApplyInverse_Linear(const Epetra_MultiVector& X
 {
   if (linPrec_==null)
   {
-    cout << "**ERR**: NLNML_Preconditioner::ApplyInverse_Linear:\n";
-    cout << "**ERR**: ptr to ML_Epetra::MultiLevelOperator is NULL\n";
-    cout << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
+    std::cout << "**ERR**: NLNML_Preconditioner::ApplyInverse_Linear:\n";
+    std::cout << "**ERR**: ptr to ML_Epetra::MultiLevelOperator is NULL\n";
+    std::cout << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
   }
   
   // apply ML
@@ -643,7 +643,7 @@ int NLNML::NLNML_Preconditioner::ApplyInverse_NonLinear(const Epetra_MultiVector
 {
   if (noxsolver_==null)
   {
-    cout << "**ERR**: NLNML::NLNML_Preconditioner::ApplyInverse_NonLinear:\n"
+    std::cout << "**ERR**: NLNML::NLNML_Preconditioner::ApplyInverse_NonLinear:\n"
          << "**ERR**: noxsolver not registered, use SetNoxSolver(solver)!\n"
          << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
   }
@@ -663,16 +663,16 @@ int NLNML::NLNML_Preconditioner::ApplyInverse_NonLinear(const Epetra_MultiVector
 
   // call the cycle
   if (OutLevel() && !Comm().MyPID())
-    cout << "\n\nnlnML :============Entering Nonlinear V-cycle============\n";
+    std::cout << "\n\nnlnML :============Entering Nonlinear V-cycle============\n";
   bool converged = false;
   double t3 = GetClock();
   FAS_cycle(f.get(),x.get(),0,&converged,&norm2); 
   double t4 = GetClock();
   if (OutLevel() && !Comm().MyPID())
   {
-    cout << "nlnML :============V-cycle time is : " << (t4-t3) << " sec\n";
+    std::cout << "nlnML :============V-cycle time is : " << (t4-t3) << " sec\n";
     if (converged)
-      cout << "nlnML :============Nonlinear preconditioner converged====\n";
+      std::cout << "nlnML :============Nonlinear preconditioner converged====\n";
   }
   f = null;  
   Y.Scale(1.0,*x);
@@ -700,13 +700,13 @@ int NLNML::NLNML_Preconditioner::solve() const
   // check sanity
   if (!isinit())
   {
-    cout << "**ERR**: NLNML::NLNML_Preconditioner::solve:\n"
+    std::cout << "**ERR**: NLNML::NLNML_Preconditioner::solve:\n"
          << "**ERR**: initflag is false\n"
          << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
   }
   if (getParameter("nlnML is linear preconditioner",true) != false)
   {
-    cout << "**ERR**: NLNML::NLNML_Preconditioner::solve:\n"
+    std::cout << "**ERR**: NLNML::NLNML_Preconditioner::solve:\n"
          << "**ERR**: Preconditioner has to be nonlinear preconditioner to run as solver\n"
          << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
   }
@@ -727,7 +727,7 @@ int NLNML::NLNML_Preconditioner::solve() const
     {
       if (OutLevel() && Comm().MyPID()==0)
       {
-        cout << "\n\nnlnML (level 0):============ nonlinear V-cycle # " << i << " ================\n";
+        std::cout << "\n\nnlnML (level 0):============ nonlinear V-cycle # " << i << " ================\n";
         fflush(stdout);
       }
       double t3 = GetClock();
@@ -766,14 +766,14 @@ int NLNML::NLNML_Preconditioner::solve() const
       if (OutLevel() && Comm().MyPID()==0)
       {
         double t4 = GetClock();
-        cout << "nlnML (level 0):============ time this cycle: " << t4-t3 << " sec\n";
+        std::cout << "nlnML (level 0):============ time this cycle: " << t4-t3 << " sec\n";
         fflush(stdout);
       }
     }
     double t2 = GetClock();
     if (OutLevel() && Comm().MyPID()==0)
     {
-      cout << "nlnML (level 0):============solve time incl. setup " 
+      std::cout << "nlnML (level 0):============solve time incl. setup " 
            << t2-t1+t6-t5 << " sec\n";
       fflush(stdout);
     }
@@ -792,11 +792,11 @@ void NLNML::NLNML_Preconditioner::Set_Smoothers()
 {
   // choose fine grid smoother
   int    maxnlevel   = getParameter("nlnML max levels",2);
-  string fsmoother   = getParameter("nlnML linear smoother type fine level",(string)"SGS");
+  std::string fsmoother   = getParameter("nlnML linear smoother type fine level",(std::string)"SGS");
   int    nsmoothfine = getParameter("nlnML linear smoother sweeps fine level",1);
-  string smoother    = getParameter("nlnML linear smoother type medium level",(string)"SGS");
+  std::string smoother    = getParameter("nlnML linear smoother type medium level",(std::string)"SGS");
   int    nsmooth     = getParameter("nlnML linear smoother sweeps medium level",1);
-  string csmoother   = getParameter("nlnML linear smoother type coarsest level",(string)"AmesosKLU");
+  std::string csmoother   = getParameter("nlnML linear smoother type coarsest level",(std::string)"AmesosKLU");
   int    ncsmooth    = getParameter("nlnML linear smoother sweeps coarsest level",1);
   int    coarsegrid  = maxnlevel - 1;  
   
@@ -852,7 +852,7 @@ void NLNML::NLNML_Preconditioner::Set_Smoothers()
     ML_Gen_Smoother_Amesos(ml_,0,ML_AMESOS_KLU,-1,0.0);
   else
   {
-    cout << "**ERR**: NLNML_Preconditioner::Set_Smoothers:\n"
+    std::cout << "**ERR**: NLNML_Preconditioner::Set_Smoothers:\n"
          << "**ERR**: smoother " << fsmoother << " not recognized\n"
          << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
   }
@@ -910,7 +910,7 @@ void NLNML::NLNML_Preconditioner::Set_Smoothers()
       ML_Gen_Smoother_Amesos(ml_,i,ML_AMESOS_KLU,-1,0.0);
     else
     {
-      cout << "**ERR**: NLNML_Preconditioner::Set_Smoothers:\n"
+      std::cout << "**ERR**: NLNML_Preconditioner::Set_Smoothers:\n"
            << "**ERR**: smoother " << smoother << " not recognized\n"
            << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
     }
@@ -968,7 +968,7 @@ void NLNML::NLNML_Preconditioner::Set_Smoothers()
     ML_Gen_Smoother_Amesos(ml_,coarsegrid,ML_AMESOS_KLU,-1,0.0);
   else
   {
-    cout << "**ERR**: NLNML_Preconditioner::Set_Smoothers:\n"
+    std::cout << "**ERR**: NLNML_Preconditioner::Set_Smoothers:\n"
          << "**ERR**: smoother " << csmoother << " not recognized\n"
          << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
   }
@@ -1005,8 +1005,8 @@ void NLNML::NLNML_Preconditioner::fix_MainDiagonal(
         err = A->ExtractMyRowView(i,numentries,values);
         if (err)
         {
-           cout << "**ERR**: NLNML::NLNML_Preconditioner::fix_MainDiagonal:\n"
-                << "**ERR**: A->ExtractMyRowView returned " << err << endl 
+           std::cout << "**ERR**: NLNML::NLNML_Preconditioner::fix_MainDiagonal:\n"
+                << "**ERR**: A->ExtractMyRowView returned " << err << std::endl 
                 << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
         }
         double sum=0.0;
@@ -1020,8 +1020,8 @@ void NLNML::NLNML_Preconditioner::fix_MainDiagonal(
         err = A->ReplaceMyValues(i,1,&average,&i);
         if (err)
         {
-           cout << "**ERR**: NLNML::NLNML_Preconditioner::fix_MainDiagonal:\n"
-                << "**ERR**: A->ReplaceMyValues returned " << err << endl 
+           std::cout << "**ERR**: NLNML::NLNML_Preconditioner::fix_MainDiagonal:\n"
+                << "**ERR**: A->ReplaceMyValues returned " << err << std::endl 
                 << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
         }
      }
@@ -1036,20 +1036,20 @@ void NLNML::NLNML_Preconditioner::fix_MainDiagonal(
        err = A->ReplaceMyValues(i,1,&small,&i);
        if (err)
        {
-         cout << "**ERR**: NLNML::NLNML_Preconditioner::fix_MainDiagonal:\n"
-              << "**ERR**: A->ReplaceMyValues returned " << err << endl 
+         std::cout << "**ERR**: NLNML::NLNML_Preconditioner::fix_MainDiagonal:\n"
+              << "**ERR**: A->ReplaceMyValues returned " << err << std::endl 
               << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
        }
      }
      if (diag[i]<0.0)
      {
-       cout << "ML: ***WRN*** Found negative main diag entry! Fixing...\n"; fflush(stdout);
+       std::cout << "ML: ***WRN*** Found negative main diag entry! Fixing...\n"; fflush(stdout);
        double small=10.0;
        err = A->ReplaceMyValues(i,1,&small,&i);
        if (err)
        {
-         cout << "**ERR**: NLNML::NLNML_Preconditioner::fix_MainDiagonal:\n"
-              << "**ERR**: A->ReplaceMyValues returned " << err << endl 
+         std::cout << "**ERR**: NLNML::NLNML_Preconditioner::fix_MainDiagonal:\n"
+              << "**ERR**: A->ReplaceMyValues returned " << err << std::endl 
               << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
        }
      }
@@ -1078,7 +1078,7 @@ RefCountPtr<Epetra_CrsMatrix> NLNML::NLNML_Preconditioner::ComputeFineLevelJacob
 
   if (OutLevel()>0 && Comm().MyPID()==0)
   {
-     cout << "nlnML (level 0): Entering Coloring on level 0\n";
+     std::cout << "nlnML (level 0): Entering Coloring on level 0\n";
      fflush(stdout);
   }  
   
@@ -1096,8 +1096,8 @@ RefCountPtr<Epetra_CrsMatrix> NLNML::NLNML_Preconditioner::ComputeFineLevelJacob
   double t1 = GetClock();
   if (OutLevel()>0 && Comm().MyPID()==0)
   {
-     cout << "nlnML (level 0): Proc " << comm_.MyPID() <<" Coloring time is " << (t1-t0) << " sec\n";
-     cout << "nlnML (level 0): Entering Construction FD-Operator on level 0\n";
+     std::cout << "nlnML (level 0): Proc " << comm_.MyPID() <<" Coloring time is " << (t1-t0) << " sec\n";
+     std::cout << "nlnML (level 0): Entering Construction FD-Operator on level 0\n";
      fflush(stdout);
   }
   
@@ -1134,7 +1134,7 @@ RefCountPtr<Epetra_CrsMatrix> NLNML::NLNML_Preconditioner::ComputeFineLevelJacob
   bool err = FD->computeJacobian(x); 
   if (err==false)
   {
-    cout << "**ERR**: NLNML::NLNML_Preconditioner::ComputeFineLevelJacobian:\n"
+    std::cout << "**ERR**: NLNML::NLNML_Preconditioner::ComputeFineLevelJacobian:\n"
          << "**ERR**: NOX::Epetra::FiniteDifferenceColoring returned an error on level 0" 
          << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
   }
@@ -1142,9 +1142,9 @@ RefCountPtr<Epetra_CrsMatrix> NLNML::NLNML_Preconditioner::ComputeFineLevelJacob
   t1 = GetClock();
   if (OutLevel()>0 && Comm().MyPID()==0)
   {
-     cout << "nlnML (level 0): colored Finite Differencing time :" << (t1-t0) << " sec\n";
-     cout << "nlnML (level 0): colored Finite Differencing number of calls to computeF : " 
-          << interface_->getnumcallscomputeF() << endl;
+     std::cout << "nlnML (level 0): colored Finite Differencing time :" << (t1-t0) << " sec\n";
+     std::cout << "nlnML (level 0): colored Finite Differencing number of calls to computeF : " 
+          << interface_->getnumcallscomputeF() << std::endl;
      fflush(stdout);
   }
   interface_->setnumcallscomputeF(ncalls);

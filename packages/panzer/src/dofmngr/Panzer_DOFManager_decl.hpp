@@ -98,11 +98,35 @@ public:
   int addField(const std::string & blockID, const std::string & str, const Teuchos::RCP<const FieldPattern> & pattern);
 
 
-  /** Returns the fieldpattern of the given name
-    * This could also be done using the number you'd get from getFieldNum which
-    * isn't yet included.
+   /** \brief Find a field pattern stored for a particular block and field number. This will
+     *        retrive the pattern added with <code>addField(blockId,fieldNum)</code>.
+     *
+     * Find a field pattern stored for a particular block and field number. This will
+     * retrive the pattern added with <code>addField(blockId,fieldNum)</code>. If no pattern
+     * is found this function returns <code>Teuchos::null</code>.
+     *
+     * \param[in] blockId Element block id
+     * \param[in] fieldNum Field integer identifier
+     *
+     * \returns Pointer to <code>FieldPattern</code> requested if the field exists,
+     *          otherwise <code>Teuchos::null</code> is returned.
+     */
+  Teuchos::RCP<const FieldPattern> getFieldPattern(const std::string & name) const;
+
+  /** \brief Find a field pattern stored for a particular block and field number. This will
+    *        retrive the pattern added with <code>addField(blockId,fieldNum)</code>.
+    *
+    * Find a field pattern stored for a particular block and field number. This will
+    * retrive the pattern added with <code>addField(blockId,fieldNum)</code>. If no pattern
+    * is found this function returns <code>Teuchos::null</code>.
+    *
+    * \param[in] blockId Element block id
+    * \param[in] fieldName Field string identifier
+    *
+    * \returns Pointer to <code>FieldPattern</code> requested if the field exists,
+    *          otherwise <code>Teuchos::null</code> is returned.
     */
-  Teuchos::RCP<const FieldPattern> getFieldPattern(const std::string & name);
+  Teuchos::RCP<const FieldPattern> getFieldPattern(const std::string & blockId, const std::string & fieldName) const;
 
   void getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const;
 
@@ -136,19 +160,24 @@ public:
   void getElementBlockIds(std::vector<std::string> & elementBlockIds) const
   { connMngr_->getElementBlockIds(elementBlockIds); }
   
-  /** Because we only have one element block, if the field is present, and
-    * the block is valid. It works
-    */
   bool fieldInBlock(const std::string & field, const std::string & block) const;
 
-  /** Because we only have one element block, we are guarenteed 
-    * that all fields are going to be in the one block we have
-    */
   const std::vector<int> & getBlockFieldNumbers(const std::string & blockId) const;
 
 //************************************************************************
 
-  //TODO:this.
+  /** \brief Use the field pattern so that you can find a particular
+    *        field in the GIDs array. This version lets you specify the sub
+    *        cell you are interested in and gets the closure. Meaning all the
+    *        IDs of equal or lesser sub cell dimension that are contained within
+    *        the specified sub cell. For instance for an edge, this function would
+    *        return offsets for the edge and the nodes on that edge.
+    *
+    * \param[in] blockId
+    * \param[in] fieldNum
+    * \param[in] subcellDim
+    * \param[in] subcellId
+    */
   const std::pair<std::vector<int>,std::vector<int> > & 
   getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum, int subcellDim,int subcellId) const;
 
@@ -172,7 +201,8 @@ public:
   void setOrientationsRequired(bool ro)
   { requireOrientations_ = ro; }
 
-  //TODO:this
+   /** \brief Get a vector containg the orientation of the GIDs relative to the neighbors.
+     */
   void getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const;
 
   const std::string & getFieldString(int num) const;
@@ -222,11 +252,11 @@ protected:
   //fieldPatterns_ is unchanging storage for FPs.
   std::vector<Teuchos::RCP<const FieldPattern> > fieldPatterns_;
   std::map<std::string,int> fieldNameToAID_;
+
   std::vector<std::string> blockOrder_; //To be got from the ConnManager.
   std::map<std::string,int> blockNameToID_; //I'm not sure the above vector is needed, this might suffice.
   std::vector<std::vector<int> > blockToAssociatedFP_; //each sub-vector is associated by
   //a block, with ordering given in blockOrder_. ints refer to the order in fieldPatterns_;
-  std::vector<int> FPsInAll_;
   std::vector<std::string> fieldStringOrder_;
   std::vector<int> fieldAIDOrder_; //Both of these must be updated and edited together.
   //The AID offers a simpler way to manage FPs internally.

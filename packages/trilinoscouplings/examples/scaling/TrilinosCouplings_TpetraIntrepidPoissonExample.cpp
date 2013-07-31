@@ -540,12 +540,11 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
   *out << "Building Maps" << endl;
 
-  RCP<Teuchos::Time> timerBuildGlobalMaps =
-    TimeMonitor::getNewTimer ("Build global Maps and Export");
   Array<int> ownedGIDs;
   RCP<const map_type> globalMapG;
   {
-    TimeMonitor timerBuildGlobalMapsL (*timerBuildGlobalMaps);
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Build global maps", build_maps);
+
     // Count owned nodes
     int ownedNodes = 0;
     for (int i = 0; i < numNodes; ++i) {
@@ -599,10 +598,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
   RCP<sparse_graph_type> overlappedGraph;
   RCP<sparse_graph_type> ownedGraph;
-  RCP<Teuchos::Time> timerBuildOverlapGraph =
-    TimeMonitor::getNewTimer ("Build graphs for overlapped and owned solutions");
   {
-    TimeMonitor timerBuildOverlapGraphL (*timerBuildOverlapGraph);
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Build matrix graph: 0-Total", graph_total);
 
     // Construct Tpetra::CrsGraph objects.
     overlappedGraph = rcp (new sparse_graph_type (overlappedMapG, 0));
@@ -616,7 +613,6 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
     for (int workset = 0; workset < numWorksets; ++workset) {
       // Compute cell numbers where the workset starts and ends
-      int worksetSize  = 0;
       int worksetBegin = (workset + 0)*desiredWorksetSize;
       int worksetEnd   = (workset + 1)*desiredWorksetSize;
 
@@ -626,10 +622,13 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
       // Now we know the actual workset size and can allocate the
       // array for the cell nodes.
-      worksetSize = worksetEnd - worksetBegin;
+      //int worksetSize = worksetEnd - worksetBegin;
 
       //"WORKSET CELL" loop: local cell ordinal is relative to numElems
       for (int cell = worksetBegin; cell < worksetEnd; ++cell) {
+	TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+	  "Build matrix graph: 1-Insert global indices", graph_insert);
+
         // Compute cell ordinal relative to the current workset
         //int worksetCellOrdinal = cell - worksetBegin;
 
@@ -650,18 +649,31 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
             ArrayView<int> globalColAV = arrayView (&globalCol, 1);
 
             //Update Tpetra overlap Graph
-            overlappedGraph->insertGlobalIndices (globalRowT, globalColAV);
+	    overlappedGraph->insertGlobalIndices (globalRowT, globalColAV);
           }// *** cell col loop ***
         }// *** cell row loop ***
       }// *** workset cell loop **
     }// *** workset loop ***
 
     // Fill-complete overlapping distribution Graph.
-    overlappedGraph->fillComplete ();
+    {
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+	"Build matrix graph: 2-Overlapped fill complete", 
+	overlapped_fill_complete);
+      overlappedGraph->fillComplete ();
+    }
 
     // Export to owned distribution Graph, and fill-complete the latter.
-    ownedGraph->doExport (*overlappedGraph, *exporter, Tpetra::INSERT);
-    ownedGraph->fillComplete ();
+    {
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+	"Build matrix graph: 3-Owned graph export", graph_export);
+      ownedGraph->doExport (*overlappedGraph, *exporter, Tpetra::INSERT);
+    }
+    {
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+	"Build matrix graph: 4-Owned fill complete", owned_fill_complete);
+      ownedGraph->fillComplete ();
+    }
   }
 
   *out << "Constructing stiffness matrix and vectors" << endl;
@@ -699,14 +711,11 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
   *out << "Setting up Dirichlet boundary conditions" << endl;
 
-  // Timer for Dirichlet BC setup
-  RCP<Teuchos::Time> timerDirichletBC =
-    TimeMonitor::getNewTimer ("Get Dirichlet boundary values: Total Time");
   int numBCNodes = 0;
   RCP<vector_type> v;
   Array<int> BCNodes;
   {
-    TimeMonitor timerDirichletBCL(*timerDirichletBC);
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Dirichlet BC setup", bc_setup);
     for (int inode = 0; inode < numNodes; ++inode) {
       if (nodeOnBoundary(inode) && nodeIsOwned[inode]) {
         ++numBCNodes;
@@ -752,6 +761,10 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
   *out << "Building discretization matrix and right hand side" << endl;
 
+  {
+  TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+    "Matrix/RHS fill:  0-Total", fill_total);
+
   // Define desired workset size and count how many worksets there are
   // on this processor's mesh block
   int desiredWorksetSize = numElems; // change to desired workset size!
@@ -771,8 +784,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   }
 
   for (int workset = 0; workset < numWorksets; ++workset) {
+
     // Compute cell numbers where the workset starts and ends
-    int worksetSize  = 0;
     int worksetBegin = (workset + 0)*desiredWorksetSize;
     int worksetEnd   = (workset + 1)*desiredWorksetSize;
 
@@ -782,7 +795,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
     // Now we know the actual workset size and can allocate the array
     // for the cell nodes.
-    worksetSize = worksetEnd - worksetBegin;
+    int worksetSize = worksetEnd - worksetBegin;
     FieldContainer<ST> cellWorkset (worksetSize, numNodesPerElem, spaceDim);
 
     // Copy coordinates into cell workset
@@ -827,6 +840,10 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     // matrix and the right hand side
     FieldContainer<ST> worksetStiffMatrix (worksetSize, numFieldsG, numFieldsG);
     FieldContainer<ST> worksetRHS         (worksetSize, numFieldsG);
+
+    {
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+      "Matrix/RHS fill:  1-Element discretization", elem_discretization);
 
     /**********************************************************************************/
     /*                                Calculate Jacobians                             */
@@ -892,14 +909,15 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                                     worksetHGBValuesWeighted,
                                     COMP_BLAS);
 
+    } // Element discretization timer
+
     /**********************************************************************************/
     /*                         Assemble into Global Matrix                            */
     /**********************************************************************************/
 
-    RCP<Teuchos::Time> timerAssembleGlobalMatrix =
-      TimeMonitor::getNewTimer ("Assemble overlapped global matrix and RHS");
     {
-      TimeMonitor timerAssembleGlobalMatrixL (*timerAssembleGlobalMatrix);
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+	"Matrix/RHS fill:  2-Element assembly", elem_assembly_total);
 
       // "WORKSET CELL" loop: local cell ordinal is relative to numElems
       for (int cell = worksetBegin; cell < worksetEnd; ++cell) {
@@ -914,7 +932,9 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
           ST sourceTermContribution = worksetRHS (worksetCellOrdinal, cellRow);
 
 	  {
-	    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: Element, RHS", elem_rhs);
+	    // TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+	    //   "Matrix/RHS fill:  2a-RHS sum into local values", 
+	    //   elem_rhs);
 	    rhsVector->sumIntoLocalValue (localRow, sourceTermContribution);
 	  }
 
@@ -926,8 +946,9 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 	    arrayView<ST> (&worksetStiffMatrix(worksetCellOrdinal,cellRow,0), 
 			   numFieldsG);
 	  {
-	    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: Element, Matrix", 
-					   elem_matrix);
+	    // TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+	    //   "Matrix/RHS fill:  2b-Matrix sum into local values", 
+	    //   elem_matrix);
 	    StiffMatrix->sumIntoLocalValues (localRow, localColAV,
 					     operatorMatrixContributionAV);
 	  }
@@ -943,30 +964,25 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
   *out << "Exporting matrix and right-hand side from overlapped to owned Map" << endl;
 
-  RCP<Teuchos::Time> timerAssembMultProc =
-    TimeMonitor::getNewTimer ("Export from overlapped to owned");
+  gl_StiffMatrix->setAllToScalar (STS::zero ());
   {
-    TimeMonitor timerAssembMultProcL (*timerAssembMultProc);
-    gl_StiffMatrix->setAllToScalar (STS::zero ());
-    {
-      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: Matrix Export", 
-				     matrix_export);
-      gl_StiffMatrix->doExport (*StiffMatrix, *exporter, Tpetra::ADD);
-    }
-    // If target of export has static graph, no need to do
-    // setAllToScalar(0.0); export will clobber values.
-    {
-      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: Matrix FillComplete", 
-				     matrix_fill_complete);
-      gl_StiffMatrix->fillComplete ();
-    }
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+      "Matrix/RHS fill:  3-Matrix export", matrix_export);
+    gl_StiffMatrix->doExport (*StiffMatrix, *exporter, Tpetra::ADD);
+  }
+  // If target of export has static graph, no need to do
+  // setAllToScalar(0.0); export will clobber values.
+  {
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+      "Matrix/RHS fill:  4-Matrix fill complete", matrix_fill_complete);
+    gl_StiffMatrix->fillComplete ();
+  }
 
-    gl_rhsVector->putScalar (STS::zero ());
-    {
-      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Assembly: RHS Export", 
-				     rhs_export);
-      gl_rhsVector->doExport (*rhsVector, *exporter, Tpetra::ADD);
-    }
+  gl_rhsVector->putScalar (STS::zero ());
+  {
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+      "Matrix/RHS fill:  5-RHS export", rhs_export);
+    gl_rhsVector->doExport (*rhsVector, *exporter, Tpetra::ADD);
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -975,10 +991,9 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
   *out << "Adjusting matrix and right-hand side for BCs" << endl;
 
-  RCP<Teuchos::Time> timerAdjustMatrixBC =
-    TimeMonitor::getNewTimer ("Adjust owned matrix and RHS for BCs");
   {
-    TimeMonitor timerAdjustMatrixBCL (*timerAdjustMatrixBC);
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+      "Matrix/RHS fill:  6-Dirichlet BC assembly", bc_assembly);
 
     // Apply owned stiffness matrix to v: rhs := A*v
     RCP<multivector_type> rhsDir =
@@ -1085,6 +1100,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
   // We're done modifying the owned stiffness matrix.
   gl_StiffMatrix->fillComplete ();
+
+  } // Matrix/RHS fill timing
 
   //
   // We're done with assembly, so we can delete the mesh.

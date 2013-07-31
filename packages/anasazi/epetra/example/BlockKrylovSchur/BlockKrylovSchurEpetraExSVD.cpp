@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
   bool boolret = MyProblem->setProblem();
   if (boolret != true) {
     if (MyPID == 0) {
-      cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << endl;
+      std::cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << std::endl;
     }
 #ifdef HAVE_MPI
     MPI_Finalize() ;
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMgr.solve();
   if (returnCode != Anasazi::Converged && MyPID==0) {
-    cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << endl;
+    std::cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << std::endl;
   }
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
@@ -176,9 +176,9 @@ int main(int argc, char *argv[]) {
     //
     // Compute singular values which are the square root of the eigenvalues
     if (MyPID==0) {
-      cout<<"------------------------------------------------------"<<endl;
-      cout<<"Computed Singular Values: "<<endl;
-      cout<<"------------------------------------------------------"<<endl;
+      std::cout<<"------------------------------------------------------"<<std::endl;
+      std::cout<<"Computed Singular Values: "<<std::endl;
+      std::cout<<"------------------------------------------------------"<<std::endl;
     }
     for (i=0; i<numev; i++) { evals[i].realpart = Teuchos::ScalarTraits<double>::squareroot( evals[i].realpart ); }
     //
@@ -201,17 +201,17 @@ int main(int argc, char *argv[]) {
     Av.MvTimesMatAddMv( -one, u, S, one );
     Av.MvNorm( directnrm );
     if (MyPID==0) {
-      cout.setf(std::ios_base::right, std::ios_base::adjustfield);
-      cout<<std::setw(16)<<"Singular Value"
+      std::cout.setf(std::ios_base::right, std::ios_base::adjustfield);
+      std::cout<<std::setw(16)<<"Singular Value"
         <<std::setw(20)<<"Direct Residual"
-        <<endl;
-      cout<<"------------------------------------------------------"<<endl;
+        <<std::endl;
+      std::cout<<"------------------------------------------------------"<<std::endl;
       for (i=0; i<numev; i++) {
-        cout<<std::setw(16)<<evals[i].realpart
+        std::cout<<std::setw(16)<<evals[i].realpart
           <<std::setw(20)<<directnrm[i] 
-          <<endl;
+          <<std::endl;
       }  
-      cout<<"------------------------------------------------------"<<endl;
+      std::cout<<"------------------------------------------------------"<<std::endl;
     }
   }
   

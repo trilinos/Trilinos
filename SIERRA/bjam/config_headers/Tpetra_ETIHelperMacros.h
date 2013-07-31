@@ -29,7 +29,13 @@
 #define TPETRA_INSTANTIATE_CONVERT(INSTMACRO)
 
 
+#define TPETRA_INSTANTIATE_VECTOR(INSTMACRO)
+
+
 #define TPETRA_INSTANTIATE_SLGN(INSTMACRO)
+
+
+#define TPETRA_INSTANTIATE_PLGN(INSTMACRO)
 
 
 #define TPETRA_INSTANTIATE_LGN(INSTMACRO)
@@ -77,18 +83,9 @@
 #define TPETRA_INSTANTIATE_TESTMV_NOGPU(INSTMACRO)
 
 
-#define TPETRA_INSTANTIATE_SLGNN(INSTMACRO)\
-	INSTMACRO( double , int , int , Kokkos_SerialNode , Kokkos_TPINode )\
-	INSTMACRO( double , int , int , Kokkos_TPINode , Kokkos_SerialNode )
+#define TPETRA_INSTANTIATE_DOUBLE_INT_INT_N(INSTMACRO)
 
 
-#define TPETRA_INSTANTIATE_LGNN(INSTMACRO)\
-	INSTMACRO( int , int , Kokkos_SerialNode , Kokkos_TPINode )\
-	INSTMACRO( int , int , Kokkos_TPINode , Kokkos_SerialNode )
-
-
-#define TPETRA_ETI_MANGLING_TYPEDEFS()  \
-	typedef Kokkos::SerialNode Kokkos_SerialNode; \
-	typedef Kokkos::TPINode Kokkos_TPINode;
+#define TPETRA_ETI_MANGLING_TYPEDEFS() 
 
 #endif // TPETRA_ETIHELPERMACROS_H_

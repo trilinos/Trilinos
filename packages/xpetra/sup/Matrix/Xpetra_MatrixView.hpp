@@ -61,9 +61,10 @@ Declarations for the class Xpetra::MatrixView.
 */
 namespace Xpetra {
 
-  template <class LocalOrdinal  = int,
+  template <class Scalar = double,
+            class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node          = Kokkos::DefaultNode::DefaultNodeType>
+            class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
   class MatrixView { // TODO : virtual public Teuchos::Describable {
     typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
 
@@ -74,7 +75,7 @@ namespace Xpetra {
 
     //! Constructor
     MatrixView(const RCP<const Map> &rowMap, const RCP<const Map> &colMap)
-      : rowMap_ (rowMap), colMap_(colMap)
+      : rowMap_ (rowMap), colMap_(colMap), maxEigValueEstimate_(-Teuchos::ScalarTraits<Scalar>::one())
     { }
 
     //! Destructor
@@ -97,9 +98,17 @@ namespace Xpetra {
     void SetColMap(const RCP<const Map> & colMap) { colMap_ = colMap; }
     //@}
 
+    //! \brief Set an maximum eigenvalue estimate for this matrix.
+    void SetMaxEigenvalueEstimate(Scalar const &sigma) { maxEigValueEstimate_ = sigma; }
+
+    //! \brief Return the maximum eigenvalue estimate for this matrix.
+    Scalar GetMaxEigenvalueEstimate() const { return maxEigValueEstimate_; }
+
   private:
     RCP<const Map> rowMap_;
     RCP<const Map> colMap_;
+
+    Scalar maxEigValueEstimate_;
 
   }; // class MatrixView
 

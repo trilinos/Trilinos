@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -66,7 +66,7 @@ bool WriteHeaderToContFile( const std::string & fileName,
 
   // Looping on the parameters
   Teuchos::ParameterList::ConstIterator i;
-  for (i = fileParams.begin(); i !=fileParams.end(); ++i) 
+  for (i = fileParams.begin(); i !=fileParams.end(); ++i)
     oFile << setw(15) << fileParams.name(i);
   oFile << std::endl;
 
@@ -89,7 +89,7 @@ bool UpdateContFile( const std::string & fileName,
 
   // Looping on the parameters
   Teuchos::ParameterList::ConstIterator i;
-  for (i = fileParams.begin(); i !=fileParams.end(); ++i) 
+  for (i = fileParams.begin(); i !=fileParams.end(); ++i)
     oFile << scientific << setw(15) << fileParams.entry(i);
   oFile << std::endl;
 
@@ -104,16 +104,16 @@ bool RestartContFile( const std::string & fileName, const int & idStep )
   // Copying the continuation in a backup file
   std::string fileNameBak = fileName + ".bak";
   std::string command = "cp " + fileName + " " + fileNameBak;
-  system (command.c_str());
+  TEUCHOS_ASSERT_EQUALITY(0, system(command.c_str()));
 
   // String of the line to cut from
   std::ostringstream os;
-  os << idStep + 1; 
+  os << idStep + 1;
   std::string lineNumber = os.str();
 
   // Cutting the file
   command =  "sed '" + lineNumber + ",$ d' " + fileNameBak + " > " + fileName;
-  system (command.c_str());
+  TEUCHOS_ASSERT_EQUALITY(0, system(command.c_str()));
 
   return true;
 }

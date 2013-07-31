@@ -77,6 +77,7 @@ Ioss::Quad8::Quad8()
   : Ioss::ElementTopology("quad8", "Quadrilateral_8")
 {
   Ioss::ElementTopology::alias("quad8", "Solid_Quad_8_2D");
+  Ioss::ElementTopology::alias("quad8", "QUADRILATERAL_8_2D");
   Ioss::ElementTopology::alias("quad8", "Face_Quad_8_3D");
   Ioss::ElementTopology::alias("quad8", "quadface8");
 }
@@ -137,5 +138,5 @@ Ioss::ElementTopology* Ioss::Quad8::face_type(int /* face_number */) const
 Ioss::ElementTopology* Ioss::Quad8::edge_type(int edge_number) const
 {
   assert(edge_number >= 0 && edge_number <= number_edges());
-  return Ioss::ElementTopology::factory("edge2d3");
+  return Ioss::ElementTopology::factory("edge3");
 }

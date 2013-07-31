@@ -40,6 +40,7 @@
 // ***********************************************************************
 // @HEADER
 
+#include <Panzer_config.hpp>
 #include <Panzer_STK_Interface.hpp>
 
 #include <Teuchos_as.hpp>
@@ -336,6 +337,8 @@ void STK_Interface::addElement(const Teuchos::RCP<ElementDescriptor> & ed,stk::m
 
 void STK_Interface::writeToExodus(const std::string & filename)
 {
+   PANZER_FUNC_TIME_MONITOR("STK_Interface::writeToExodus(filename)");
+
    #ifdef HAVE_IOSS
       TEUCHOS_ASSERT(mpiComm_!=Teuchos::null);
       stk::ParallelMachine comm = *mpiComm_->getRawMpiComm();
@@ -353,6 +356,8 @@ void STK_Interface::writeToExodus(const std::string & filename)
 
 void STK_Interface::setupTransientExodusFile(const std::string & filename)
 {
+   PANZER_FUNC_TIME_MONITOR("STK_Interface::setupTransientExodusFile(filename)");
+
    #ifdef HAVE_IOSS
       TEUCHOS_ASSERT(mpiComm_!=Teuchos::null);
       stk::ParallelMachine comm = *mpiComm_->getRawMpiComm();
@@ -368,9 +373,18 @@ void STK_Interface::setupTransientExodusFile(const std::string & filename)
 
 void STK_Interface::writeToExodus(double timestep)
 {
+   PANZER_FUNC_TIME_MONITOR("STK_Interface::writeToExodus(timestep)");
+
    #ifdef HAVE_IOSS
-      currentStateTime_ = timestep;
-      stk::io::process_output_request(*meshData_, *bulkData_, timestep);
+      if(meshData_!=Teuchos::null) {
+        currentStateTime_ = timestep;
+        stk::io::process_output_request(*meshData_, *bulkData_, timestep);
+      }
+      else {
+        Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+        out.setOutputToRootOnly(0);
+        out << "WARNING: Exodus I/O has been disabled or not setup properly, not writting to Exodus" << std::endl;
+      }
    #else 
       TEUCHOS_ASSERT(false);
    #endif

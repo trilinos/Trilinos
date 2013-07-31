@@ -47,7 +47,7 @@
 
 namespace {
 
-  using Kokkos::ThrustGPUNode;
+  using KokkosClassic::ThrustGPUNode;
   RCP<ThrustGPUNode> thrustNode_;
 
   template <>

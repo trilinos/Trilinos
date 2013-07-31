@@ -519,11 +519,11 @@ int Epetra_SerialDenseSolver::ReciprocalConditionEstimate(double & Value)
   return(0);
 }
 //=============================================================================
-void Epetra_SerialDenseSolver::Print(ostream& os) const {
+void Epetra_SerialDenseSolver::Print(std::ostream& os) const {
 
-  if (Matrix_!=0) os << "Solver Matrix"          << endl << *Matrix_ << endl;
-  if (Factor_!=0) os << "Solver Factored Matrix" << endl << *Factor_ << endl;
-  if (LHS_   !=0) os << "Solver LHS"             << endl << *LHS_    << endl;
-  if (RHS_   !=0) os << "Solver RHS"             << endl << *RHS_    << endl;
+  if (Matrix_!=0) os << "Solver Matrix"          << std::endl << *Matrix_ << std::endl;
+  if (Factor_!=0) os << "Solver Factored Matrix" << std::endl << *Factor_ << std::endl;
+  if (LHS_   !=0) os << "Solver LHS"             << std::endl << *LHS_    << std::endl;
+  if (RHS_   !=0) os << "Solver RHS"             << std::endl << *RHS_    << std::endl;
 
 }

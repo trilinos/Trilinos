@@ -161,11 +161,11 @@ enum nssi_rpc_transport {
     /** @brief Use Cray Gemini to transfer rpc requests. */
     NSSI_RPC_GEMINI,
 
+   /** @brief Use  Blue Gene/P DCMF Lib to transfer rpc requests. */
+    NSSI_RPC_BGPDCMF,
+
     /** @brief Use MPI to transfer rpc requests. */
     NSSI_RPC_MPI,
-
-    /** @brief Use Cray LUC to transfer rpc requests. */
-    NSSI_RPC_LUC,
 
     /** @brief Use a local buffer (not a remote operation). */
     NSSI_RPC_LOCAL
@@ -174,7 +174,7 @@ enum nssi_rpc_transport {
 /**
  * @brief The number of RPC mechanisms supported by NSSI.
  */
-const NSSI_RPC_COUNT = 6;
+const NSSI_RPC_COUNT = 7;
 
 
 /**
@@ -274,6 +274,10 @@ struct nssi_request_header {
      *        <em>\ref args_addr</em>. */
     bool fetch_args;
 
+    /** @brief A flag that tells the server to fetch bulk data from
+     *        <em>\ref data_addr</em>. */
+    bool fetch_data;
+
     /** @brief The remote memory address reserved for
      *        long arguments. */
     NNTI_buffer_t args_addr;
@@ -318,6 +322,9 @@ struct nssi_result_header {
 
     /** @brief The remote memory address reserved for long results. */
     NNTI_buffer_t result_addr;
+
+    /** @brief The remote memory address reserved for long results ACK. */
+    NNTI_buffer_t result_ack_addr;
 
     /** @brief The return code of the function. */
     uint32_t rc;

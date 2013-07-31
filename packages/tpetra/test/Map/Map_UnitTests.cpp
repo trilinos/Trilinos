@@ -74,6 +74,7 @@ namespace {
   using Teuchos::broadcast;
   using Teuchos::OrdinalTraits;
   using Teuchos::Comm;
+  using std::endl;
 
   double errorTolSlack = 1e+1;
 
@@ -130,7 +131,7 @@ namespace {
   }
 #endif
 
-  ////
+  // This test may only pass in a debug build (HAVE_TPETRA_DEBUG).
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, invalidConstructor1, LO, GO )
   {
     typedef Map<LO,GO> M;
@@ -152,8 +153,7 @@ namespace {
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
-
-  ////
+  // This test may only pass in a debug build (HAVE_TPETRA_DEBUG).
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, invalidConstructor2, LO, GO )
   {
     typedef Map<LO,GO> M;
@@ -175,8 +175,7 @@ namespace {
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
-
-  ////
+  // This test may only pass in a debug build (HAVE_TPETRA_DEBUG).
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, invalidConstructor3, LO, GO )
   {
     typedef Map<LO,GO> M;
@@ -186,10 +185,15 @@ namespace {
     const int myImageID = comm->getRank();
     const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
     // bad constructor calls: (num global, entry list, index base)
+
+    out << "Test GID = " << -myImageID << " < indexBase = " << 1 << endl;
     TEST_THROW(M map(numImages, tuple<GO>(-myImageID), 1, comm), std::invalid_argument); // GID less than iB
     if (numImages > 1) {
+      out << "Test number of GIDs too large" << endl;
       TEST_THROW(M map( 1, tuple<GO>(myImageID+1), 1, comm), std::invalid_argument);    // nG != sum nL
+      out << "Test invalid number of GIDs on one process" << endl;
       TEST_THROW(M map((myImageID == 0 ? GSTI :  0),tuple<GO>(myImageID+1),1, comm), std::invalid_argument);
+      out << "Test incorrect number of GIDs on all processes" << endl;
       TEST_THROW(M map(0, tuple<GO>(myImageID+1), (myImageID == 0 ? 0 : 1), comm), std::invalid_argument);
     }
     // All procs fail if any proc fails
@@ -311,6 +315,7 @@ namespace {
 
     const size_t numGlobalEntries = numImages*2;
     const GO indexBase = 0;
+    const LO localIndexBase = 0;
     M map(numGlobalEntries,indexBase,comm);
 
     TEST_EQUALITY_CONST(map.isContiguous(), true);
@@ -318,7 +323,7 @@ namespace {
     TEST_EQUALITY(map.getGlobalNumElements(), numGlobalEntries);
     TEST_EQUALITY_CONST(map.getNodeNumElements(), 2);
     TEST_EQUALITY_CONST(map.getIndexBase(), indexBase);
-    TEST_EQUALITY_CONST(map.getMinLocalIndex(), indexBase);
+    TEST_EQUALITY_CONST(map.getMinLocalIndex(), localIndexBase);
     TEST_EQUALITY_CONST(map.getMaxLocalIndex(), 1);
     TEST_EQUALITY_CONST(map.getMinGlobalIndex(), myGlobal[0]);
     TEST_EQUALITY_CONST(map.getMaxGlobalIndex(), myGlobal[1]);
@@ -390,9 +395,48 @@ namespace {
   }
 
   ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, indexBaseAndAllMin, LO, GO )
+  {
+    typedef Map<LO,GO> Map;
+    // create a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    const int myImageID = comm->getRank();
+    // create a contiguous uniform distributed map with numLocal entries per node
+    const size_t        numLocal  = 5;
+    const global_size_t numGlobal = numImages*numLocal;
+    const GO indexBase = 0;
+    const GO actualBase = 1;
+    //
+    Array<GO> GIDs(numLocal);
+    GIDs[0] = actualBase + myImageID*numLocal;
+    for (size_t i=1; i<numLocal; ++i) {
+      GIDs[i] = GIDs[i-1]+1;
+    }
+    RCP<Map> map = rcp(new Map(numGlobal,GIDs(),indexBase,comm));
+    //
+    TEST_EQUALITY(map->getGlobalNumElements(), numGlobal);
+    TEST_EQUALITY(map->getNodeNumElements(), numLocal);
+    TEST_EQUALITY(map->getIndexBase(), indexBase);
+    TEST_EQUALITY_CONST(map->getMinLocalIndex(), 0);
+    TEST_EQUALITY(map->getMaxLocalIndex(), numLocal-1);
+    TEST_EQUALITY(map->getMinGlobalIndex(), GIDs[0]);
+    TEST_EQUALITY(map->getMaxGlobalIndex(), as<GO>(GIDs[0]+numLocal-1) );
+    TEST_EQUALITY(map->getMinAllGlobalIndex(), actualBase);
+    TEST_EQUALITY(map->getGlobalElement(0), GIDs[0]);
+    TEST_EQUALITY_CONST((global_size_t)map->getMaxAllGlobalIndex(), actualBase+numGlobal-1);
+    ArrayView<const GO> glist = map->getNodeElementList();
+    TEST_COMPARE_ARRAYS( map->getNodeElementList(), GIDs);
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
+  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, NodeConversion, LO, GO, N2 )
   {
-    typedef typename Kokkos::DefaultNode::DefaultNodeType N1;
+    typedef typename KokkosClassic::DefaultNode::DefaultNodeType N1;
     typedef Map<LO,GO,N1> Map1;
     typedef Map<LO,GO,N2> Map2;
     // create a comm
@@ -415,20 +459,61 @@ namespace {
     TEST_EQUALITY_CONST( map1->isSameAs(*map1b), true );
   }
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, ZeroLocalElements, LO, GO )
+  {
+    typedef Map<LO,GO> M;
+    // create a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int rank = comm->getRank();
+
+    // Create maps with zero elements on all but the first processor
+    Array<GO>  elem_list;
+    if (rank == 0)
+      elem_list.push_back(0);
+    M contig_uniform(1, 0, comm);
+    M contig_non_uniform(1, elem_list.size(), 0, comm);
+    M non_contig(1, elem_list, 0, comm);
+
+    // Check LID
+    LO lid_expected = rank == 0 ? 0 : OrdinalTraits<LO>::invalid();
+    TEST_EQUALITY( contig_uniform.getLocalElement(0), lid_expected );
+    TEST_EQUALITY( contig_non_uniform.getLocalElement(0), lid_expected );
+    TEST_EQUALITY( non_contig.getLocalElement(0), lid_expected );
+
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
 
   //
   // INSTANTIATIONS
   //
 
+#ifdef HAVE_TPETRA_DEBUG
   // all ordinals, default node
-#define UNIT_TEST_GROUP( LO, GO ) \
+#  define UNIT_TEST_GROUP( LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor1, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor2, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, invalidConstructor3, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, compatibilityTests, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, sameasTests, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, nonTrivialIndexBase, LO, GO ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, ContigUniformMap, LO, GO )
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, indexBaseAndAllMin, LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, ContigUniformMap, LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, ZeroLocalElements, LO, GO )
+#else
+  // all ordinals, default node
+#  define UNIT_TEST_GROUP( LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, compatibilityTests, LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, sameasTests, LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, nonTrivialIndexBase, LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, indexBaseAndAllMin, LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, ContigUniformMap, LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, ZeroLocalElements, LO, GO )
+#endif // HAVE_TPETRA_DEBUG
 
 #define NC_TESTS(N) \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, NodeConversion, int, int, N )

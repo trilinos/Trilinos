@@ -30,15 +30,15 @@ using namespace ML_Epetra;
 
 namespace ML_Epetra{ 
 
-  Epetra_Operator* ML_Gen_Smoother_Ifpack_Epetra(const Epetra_Operator *A,const Epetra_Vector *InvDiagonal, Teuchos::ParameterList & List,string printMsg,bool verbose){
+  Epetra_Operator* ML_Gen_Smoother_Ifpack_Epetra(const Epetra_Operator *A,const Epetra_Vector *InvDiagonal, Teuchos::ParameterList & List,std::string printMsg,bool verbose){
   /* Variables */
   double lambda_min = 0.0;
   double lambda_max = 0.0;
   Teuchos::ParameterList IFPACKList=List.sublist("smoother: ifpack list");
 
   /* Parameter-list Options */
-  string PreOrPostSmoother = List.get("smoother: pre or post","both");
-  string SmooType = List.get("smoother: type", "Chebyshev");
+  std::string PreOrPostSmoother = List.get("smoother: pre or post","both");
+  std::string SmooType = List.get("smoother: type", "Chebyshev");
   if(SmooType=="IFPACK") SmooType=List.get("smoother: ifpack type","Chebyshev");
   int Sweeps = List.get("smoother: sweeps", 3);
   int IfpackOverlap = List.get("smoother: ifpack overlap",0);
@@ -56,7 +56,7 @@ namespace ML_Epetra{
   if(Arow) Nnz=Arow->NumGlobalNonzeros();
 
   if(verbose && !A->Comm().MyPID())
-    cout <<printMsg<<"# global rows = "<<Nrows<<" # estim. global nnz = "<<Nnz<<endl;
+    std::cout <<printMsg<<"# global rows = "<<Nrows<<" # estim. global nnz = "<<Nnz<<std::endl;
 
 
   /**********************************************/
@@ -65,7 +65,7 @@ namespace ML_Epetra{
   if(SmooType=="Chebyshev" || SmooType=="MLS" || SmooType=="IFPACK-Chebyshev" || SmooType=="IFPACK-Block Chebyshev"){
     bool allocated_inv_diagonal=false;
     int MaximumIterations = List.get("eigen-analysis: max iters", 10);
-    string EigenType_ = List.get("eigen-analysis: type", "cg");
+    std::string EigenType_ = List.get("eigen-analysis: type", "cg");
     double boost = List.get("eigen-analysis: boost for lambda max", 1.0);
     double alpha = List.get("chebyshev: alpha",30.0001);  
     Epetra_Vector *InvDiagonal_=0;
@@ -144,18 +144,18 @@ namespace ML_Epetra{
     // Smoother Info Output
     if(verbose && !A->Comm().MyPID()){
       if(SmooType=="IFPACK-Block Chebyshev") {
-	cout << printMsg << "MLS/Block-Chebyshev, polynomial order = "
+	std::cout << printMsg << "MLS/Block-Chebyshev, polynomial order = "
 	     <<  Sweeps
-	     << ", alpha = " << alpha << endl;
-	cout << printMsg << "lambda_min = " << lambda_min
-	     << ", lambda_max = " << lambda_max << endl;
+	     << ", alpha = " << alpha << std::endl;
+	std::cout << printMsg << "lambda_min = " << lambda_min
+	     << ", lambda_max = " << lambda_max << std::endl;
       }
       else {
-	cout << printMsg << "MLS/Chebyshev, polynomial order = "
+	std::cout << printMsg << "MLS/Chebyshev, polynomial order = "
 	     <<  Sweeps
-	     << ", alpha = " << alpha << endl;
-	cout << printMsg << "lambda_min = " << lambda_min
-             << ", lambda_max = " << boost*lambda_max << endl;
+	     << ", alpha = " << alpha << std::endl;
+	std::cout << printMsg << "lambda_min = " << lambda_min
+             << ", lambda_max = " << boost*lambda_max << std::endl;
       }
     }
 
@@ -172,9 +172,9 @@ namespace ML_Epetra{
 	  || SmooType=="point relaxation stand-alone" || SmooType=="point relaxation" ){      
     const Epetra_CrsMatrix* Acrs=dynamic_cast<const Epetra_CrsMatrix*>(A);
     if(!Acrs) return 0;
-    string MyIfpackType="point relaxation stand-alone";
+    std::string MyIfpackType="point relaxation stand-alone";
     if(IfpackOverlap > 0) MyIfpackType="point relaxation";
-    string MyRelaxType="symmetric Gauss-Seidel";
+    std::string MyRelaxType="symmetric Gauss-Seidel";
     if(SmooType=="symmetric Gauss-Seidel") MyRelaxType=SmooType;
     else if(SmooType=="Jacobi") MyRelaxType=SmooType;
 
@@ -184,8 +184,8 @@ namespace ML_Epetra{
     IFPACKList.set("relaxation: zero starting solution",false);
 
     if(verbose && !A->Comm().MyPID()){
-      cout << printMsg << IFPACKList.get("relaxation: type",MyRelaxType).c_str()<<" (sweeps="
-	   << Sweeps << ",omega=" << omega <<  ")" <<endl;
+      std::cout << printMsg << IFPACKList.get("relaxation: type",MyRelaxType).c_str()<<" (sweeps="
+	   << Sweeps << ",omega=" << omega <<  ")" <<std::endl;
     }
     	
     Ifpack Factory;
@@ -203,9 +203,9 @@ namespace ML_Epetra{
 	  || SmooType=="block relaxation stand-alone" || SmooType=="block relaxation" ){      
     const Epetra_CrsMatrix* Acrs=dynamic_cast<const Epetra_CrsMatrix*>(A);
     if(!Acrs) return 0;
-    string MyIfpackType="block relaxation stand-alone";
+    std::string MyIfpackType="block relaxation stand-alone";
     if(IfpackOverlap > 0) MyIfpackType="block relaxation";
-    string MyRelaxType="symmetric Gauss-Seidel";
+    std::string MyRelaxType="symmetric Gauss-Seidel";
     if(SmooType=="block Gauss-Seidel") MyRelaxType="Gauss-Seidel";
     else if(SmooType=="block Jacobi") MyRelaxType="Jacobi";
 
@@ -215,8 +215,8 @@ namespace ML_Epetra{
     IFPACKList.set("relaxation: zero starting solution",false);
    
     if(verbose && !A->Comm().MyPID()){
-      cout << printMsg << "block " << IFPACKList.get("relaxation: type",MyRelaxType).c_str()<<" (sweeps="
-	   << Sweeps << ",omega=" << omega << ")" <<endl;
+      std::cout << printMsg << "block " << IFPACKList.get("relaxation: type",MyRelaxType).c_str()<<" (sweeps="
+	   << Sweeps << ",omega=" << omega << ")" <<std::endl;
     }
 
     Ifpack Factory;
@@ -259,11 +259,11 @@ namespace ML_Epetra{
     IFPACKList.set("fact: absolute threshold", MyIfpackAT);
 
     if(verbose && !A->Comm().MyPID()){
-      cout << printMsg << "IFPACK, type=`" << SmooType << "'," << endl
-	   << printMsg << PreOrPostSmoother  << ",overlap=" << MyIfpackOverlap << endl;
-      cout << printMsg << "level-of-fill=" << MyLOF;
-      cout << ",rel. threshold=" << MyIfpackRT
-	   << ",abs. threshold=" << MyIfpackAT << endl;
+      std::cout << printMsg << "IFPACK, type=`" << SmooType << "'," << std::endl
+	   << printMsg << PreOrPostSmoother  << ",overlap=" << MyIfpackOverlap << std::endl;
+      std::cout << printMsg << "level-of-fill=" << MyLOF;
+      std::cout << ",rel. threshold=" << MyIfpackRT
+	   << ",abs. threshold=" << MyIfpackAT << std::endl;
     }
 
     Ifpack Factory;
@@ -280,14 +280,14 @@ namespace ML_Epetra{
   else if(SmooType=="SORa"){
     const Epetra_RowMatrix* Arow=dynamic_cast<const Epetra_RowMatrix*>(A);
     if(verbose && !A->Comm().MyPID()){
-      cout << printMsg << "IFPACK/SORa("<<IFPACKList.get("sora: alpha",1.5)<<","<<IFPACKList.get("sora: gamma",1.0)<<")"
-	   << ", sweeps = " <<IFPACKList.get("sora: sweeps",1)<<endl;
+      std::cout << printMsg << "IFPACK/SORa("<<IFPACKList.get("sora: alpha",1.5)<<","<<IFPACKList.get("sora: gamma",1.0)<<")"
+	   << ", sweeps = " <<IFPACKList.get("sora: sweeps",1)<<std::endl;
       if(IFPACKList.get("sora: oaz boundaries",false))
-	cout << printMsg << "oaz boundary handling enabled"<<endl;
+	std::cout << printMsg << "oaz boundary handling enabled"<<std::endl;
       if(IFPACKList.get("sora: use interproc damping",false))
-	cout << printMsg << "interproc damping enabled"<<endl;
+	std::cout << printMsg << "interproc damping enabled"<<std::endl;
       if(IFPACKList.get("sora: use global damping",false))
-	cout << printMsg << "global damping enabled"<<endl;
+	std::cout << printMsg << "global damping enabled"<<std::endl;
     }
     Ifpack Factory;
     SmootherP_ = Factory.Create(SmooType,const_cast<Epetra_RowMatrix*>(Arow),IfpackOverlap);

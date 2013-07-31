@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -45,6 +45,8 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Tpetra_BlockMap.hpp"
+#include "Tpetra_SrcDistObject.hpp"
+#include "Tpetra_Packable.hpp"
 #include <map>
 
 /** \file Tpetra_VbrUtils.hpp
@@ -52,6 +54,11 @@
   Utilities for VbrMatrix INTERNAL USE ONLY.
 */
 namespace Tpetra {
+
+  // Forward declaration
+  class Distributor;
+  
+
 /**
   Utilities for VbrMatrix INTERNAL USE ONLY.
 */
@@ -69,45 +76,36 @@ struct VbrData {
 
   typedef typename std::map<GlobalOrdinal,BlkInfo<LocalOrdinal,Scalar> > RowGlobalCols;
 
-  VbrData()
-   : row_map(),
-     data(Teuchos::rcp(new Teuchos::Array<RowGlobalCols>))
-  {}
+  VbrData() {}
+  ~VbrData() {}
 
-  ~VbrData(){}
+  void zeroEntries () {
+    typedef typename Teuchos::Array<RowGlobalCols>::size_type size_type;
+    typedef typename Teuchos::ScalarTraits<Scalar> STS;
+
+    const size_type numEntries = this->data.size ();
+    for (size_type i = 0; i < numEntries; ++i) {
+      RowGlobalCols& rgc = (this->data)[i];
+      typename RowGlobalCols::iterator rgc_it = rgc.begin(), rgc_end = rgc.end();
+      for ( ; rgc_it != rgc_end; ++rgc_it) {
+	BlkInfo<LocalOrdinal,Scalar>& blk = rgc_it->second;
+	std::fill (blk.blkEntry.begin (), blk.blkEntry.end (), STS::zero ());
+      }
+    }
+  }
 
   std::map<GlobalOrdinal,LocalOrdinal> row_map;
-  Teuchos::RCP<Teuchos::Array<RowGlobalCols> > data;
+  Teuchos::Array<RowGlobalCols> data;
 };
 
 template<typename LocalOrdinal, typename GlobalOrdinal, typename Scalar>
-inline
-void zeroEntries(VbrData<LocalOrdinal,GlobalOrdinal,Scalar>& vbrdata)
-{
-  typedef typename VbrData<LocalOrdinal,GlobalOrdinal,Scalar>::RowGlobalCols RowGlobalCols;
-
-  typedef typename Teuchos::Array<RowGlobalCols>::size_type Tsize_t;
-
-  for(Tsize_t i=0; i<vbrdata.data->size(); ++i) {
-    RowGlobalCols& rgc = (*vbrdata.data)[i];
-    typename RowGlobalCols::iterator
-      rgc_it = rgc.begin(), rgc_end = rgc.end();
-    for(; rgc_it != rgc_end; ++rgc_it) {
-      BlkInfo<LocalOrdinal,Scalar>& blk = rgc_it->second;
-      std::fill(blk.blkEntry.begin(), blk.blkEntry.end(), 0.0);
-    }    
-  }
-}
-
-template<typename LocalOrdinal, typename GlobalOrdinal, typename Scalar>
-inline
-void getGlobalBlockEntryViewNonConst(
-                   VbrData<LocalOrdinal,GlobalOrdinal,Scalar>& vbrdata,
-                   GlobalOrdinal globalBlockRow,
-                   GlobalOrdinal globalBlockCol,
-                   LocalOrdinal& numPtRows,
-                   LocalOrdinal& numPtCols,
-                   Teuchos::ArrayRCP<Scalar>& blockEntry)
+void
+getGlobalBlockEntryViewNonConst (VbrData<LocalOrdinal,GlobalOrdinal,Scalar>& vbrdata,
+				 GlobalOrdinal globalBlockRow,
+				 GlobalOrdinal globalBlockCol,
+				 LocalOrdinal& numPtRows,
+				 LocalOrdinal& numPtCols,
+				 Teuchos::ArrayRCP<Scalar>& blockEntry)
 {
   typename std::map<GlobalOrdinal,LocalOrdinal>::iterator miter =
       vbrdata.row_map.find(globalBlockRow);
@@ -115,16 +113,16 @@ void getGlobalBlockEntryViewNonConst(
   LocalOrdinal localBlockRow = 0;
 
   if (miter == vbrdata.row_map.end()) {
-    localBlockRow = vbrdata.data->size();
+    localBlockRow = vbrdata.data.size ();
     vbrdata.row_map.insert(std::make_pair(globalBlockRow,localBlockRow));
-    vbrdata.data->resize(localBlockRow+1);
+    vbrdata.data.resize (localBlockRow+1);
   }
   else {
     localBlockRow = miter->second;
   }
 
   typedef typename VbrData<LocalOrdinal,GlobalOrdinal,Scalar>::RowGlobalCols RowGlobalCols;
-  RowGlobalCols& blkrow = (*vbrdata.data)[localBlockRow];
+  RowGlobalCols& blkrow = (vbrdata.data)[localBlockRow];
   typename RowGlobalCols::iterator iter = blkrow.find(globalBlockCol);
   if (iter == blkrow.end()) {
     BlkInfo<LocalOrdinal,Scalar> blk;
@@ -176,146 +174,124 @@ createOverlapMap(VbrData<LocalOrdinal,GlobalOrdinal,Scalar>& vbrdata,
   );
 }
 
-template<typename LocalOrdinal,typename GlobalOrdinal,typename Scalar,typename Node>
-struct VbrDataDist : public Tpetra::DistObject<char,LocalOrdinal,GlobalOrdinal,Node> {
-  VbrDataDist(VbrData<LocalOrdinal,GlobalOrdinal,Scalar>& vbr_data,
-              const Tpetra::BlockMap<LocalOrdinal,GlobalOrdinal,Node>& importmap,
-              const Tpetra::BlockMap<LocalOrdinal,GlobalOrdinal,Node>& rowmap)
-   : Tpetra::DistObject<char,LocalOrdinal,GlobalOrdinal,Node>(
-        convertBlockMapToPointMap(importmap)),
-     vbrdata(vbr_data)
+template<class LocalOrdinal, class GlobalOrdinal, class Scalar, class Node>
+class VbrDataDist : public Tpetra::SrcDistObject, 
+		    public Tpetra::Packable<char, LocalOrdinal> {
+private:
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > pointMap_;
+  VbrData<LocalOrdinal,GlobalOrdinal,Scalar>& vbrData_;
+
+public:
+  VbrDataDist (VbrData<LocalOrdinal,GlobalOrdinal,Scalar>& vbrData,
+	       const Tpetra::BlockMap<LocalOrdinal,GlobalOrdinal,Node>& importMap)
+    : pointMap_ (convertBlockMapToPointMap (importMap)),
+      vbrData_ (vbrData)
   {}
 
-  ~VbrDataDist(){}
+  ~VbrDataDist() {}
 
-  VbrData<LocalOrdinal,GlobalOrdinal,Scalar>& vbrdata;
-  Teuchos::RCP<Tpetra::BlockMap<LocalOrdinal,GlobalOrdinal,Node> > importMap;
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > 
+  getMap () const { return pointMap_; }
 
-  bool checkSizes(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node>& source)
+  virtual void 
+  pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+	Teuchos::Array<char>& exports,
+	const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+	size_t& constantNumPackets,
+	Distributor& distor) const
   {
-    bool ok = this->getMap()->getMinAllGlobalIndex() <= source.getMap()->getMinAllGlobalIndex();
-    ok = ok && this->getMap()->getMaxAllGlobalIndex() >= source.getMap()->getMaxAllGlobalIndex();
-    return ok;
-  }
+    (void) distor; // forestall "unused argument" compiler warning
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
+    using Teuchos::as;
+    using Teuchos::av_reinterpret_cast;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef typename ArrayView<const LO>::size_type Tsize_t;
+    typedef typename VbrData<LO,GO,Scalar>::RowGlobalCols RowGlobalCols;
 
-  void copyAndPermute(
-   const DistObject<char, LocalOrdinal, GlobalOrdinal, Node>& source,
-   size_t numSameIDs,
-   const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
-   const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs)
-  {
-    throw std::runtime_error("VbrDataDist hasn't implemented copyAndPermute!!");
-  }
-
-  void packAndPrepare(
-     const DistObject<char, LocalOrdinal, GlobalOrdinal, Node>& source,
-     const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-     Teuchos::Array<char>& exports,
-     const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-     size_t& constantNumPackets,
-     Distributor& distor)
-  {
-    const VbrDataDist<LocalOrdinal,GlobalOrdinal,Scalar,Node>* vdd = dynamic_cast<const VbrDataDist<LocalOrdinal,GlobalOrdinal,Scalar,Node>*>(&source);
-    if (vdd == NULL) {
-      throw std::runtime_error("VbrDataDist::packAndPrepare ERROR, dynamic_cast failed.");
-    }
-    typedef typename Teuchos::ArrayView<const LocalOrdinal>::size_type Tsize_t;
-    typedef typename VbrData<LocalOrdinal,GlobalOrdinal,Scalar>::RowGlobalCols RowGlobalCols;
-  
     //We will pack each row's data into the exports buffer as follows:
     //[num-block-cols,numPtRows,{list-of-blk-cols},{list-of-ptColsPerBlkCol},{all vals}]
     //so the length of the char exports buffer for a row is:
-    //sizeof(LocalOrdinal)*(2+2*(num-block-cols)) + sizeof(Scalar)*numPtRows*sum(numPtCols_i)
-  
+    //sizeof(LO)*(2+2*(num-block-cols)) + sizeof(Scalar)*numPtRows*sum(numPtCols_i)
+
     //For each row corresponding to exportLIDs, accumulate the size that it will
     //occupy in the exports buffer:
     size_t total_exports_size = 0;
-    for(Tsize_t i=0; i<exportLIDs.size(); ++i) {
-      LocalOrdinal numBlkCols = 0;
-      LocalOrdinal numScalars = 0;
-  
-      LocalOrdinal localIndex = exportLIDs[i];
-      const RowGlobalCols& rgc = (*vdd->vbrdata.data)[localIndex];
-      numBlkCols = rgc.size();
-      typename RowGlobalCols::const_iterator rgc_it = rgc.begin(), rgc_end = rgc.end();
-      for(; rgc_it!=rgc_end; ++rgc_it) {
-        const BlkInfo<LocalOrdinal,Scalar>& blk = rgc_it->second;
-        numScalars += blk.numPtRows*blk.numPtCols;
+    for (Tsize_t i = 0; i < exportLIDs.size (); ++i) {
+      const RowGlobalCols& rgc = (this->vbrData_.data)[exportLIDs[i]];
+      typename RowGlobalCols::const_iterator rgc_it = rgc.begin();
+      typename RowGlobalCols::const_iterator rgc_end = rgc.end();
+      size_t numScalars = 0;
+      for ( ; rgc_it != rgc_end; ++rgc_it) {
+        const BlkInfo<LO,Scalar>& blk = rgc_it->second;
+        numScalars += as<size_t> (blk.numPtRows) * as<size_t> (blk.numPtCols);
       }
-  
-      size_t size_for_this_row = sizeof(GlobalOrdinal)*(2+2*numBlkCols)
-                   + sizeof(Scalar)*numScalars;
+      const size_t numBlkCols = as<size_t> (rgc.size ());
+      const size_t size_for_this_row = 
+	sizeof (GO) * (2 + 2*numBlkCols)
+	+ sizeof (Scalar) * numScalars;
       numPacketsPerLID[i] = size_for_this_row;
       total_exports_size += size_for_this_row;
     }
-  
-    exports.resize(total_exports_size);
-  
+
+    exports.resize (total_exports_size);
+
     ArrayView<char> avIndsC, avValsC;
     ArrayView<Scalar> avVals;
-  
-    Teuchos::Array<GlobalOrdinal> blkCols;
-    Teuchos::Array<LocalOrdinal> ptColsPerBlkCol;
-    Teuchos::Array<Scalar> blkEntries;
-  
+
+    Array<GO> blkCols;
+    Array<LO> ptColsPerBlkCol;
+    Array<Scalar> blkEntries;
+
     size_t offset = 0;
-    for(Tsize_t i=0; i<exportLIDs.size(); ++i) {
+    for (Tsize_t i = 0; i < exportLIDs.size (); ++i) {
       blkCols.clear();
       ptColsPerBlkCol.clear();
       blkEntries.clear();
-  
-      LocalOrdinal numPtRows = 0;
-      LocalOrdinal localIndex = exportLIDs[i];
-      const RowGlobalCols& rgc = (*vdd->vbrdata.data)[localIndex];
-      typename RowGlobalCols::const_iterator rgc_it = rgc.begin(), rgc_end = rgc.end();
-      for(; rgc_it!=rgc_end; ++rgc_it) {
-        blkCols.push_back(rgc_it->first);
-        const BlkInfo<LocalOrdinal,Scalar>& blk = rgc_it->second;
-        numPtRows = blk.numPtRows;//should be the same for all cols
-        ptColsPerBlkCol.push_back(blk.numPtCols);
-        for(LocalOrdinal j=0; j<blk.numPtRows*blk.numPtCols; ++j) {
-          blkEntries.push_back(blk.blkEntry[j]);
+
+      const RowGlobalCols& rgc = (this->vbrData_.data)[exportLIDs[i]];
+      typename RowGlobalCols::const_iterator rgc_it = rgc.begin ();
+      typename RowGlobalCols::const_iterator rgc_end = rgc.end ();
+      LO numPtRows = 0;
+      for ( ; rgc_it != rgc_end; ++rgc_it) {
+        blkCols.push_back (rgc_it->first);
+        const BlkInfo<LO,Scalar>& blk = rgc_it->second;
+        numPtRows = blk.numPtRows; // should be the same for all cols
+        ptColsPerBlkCol.push_back (blk.numPtCols);
+        for (LO j = 0; j < blk.numPtRows * blk.numPtCols; ++j) {
+          blkEntries.push_back (blk.blkEntry[j]);
         }
       }
-  
-      LocalOrdinal numBlkCols = blkCols.size();
-      LocalOrdinal numScalars = blkEntries.size();
-  
-      LocalOrdinal num_chars_for_ordinals = (2*numBlkCols+2)*sizeof(GlobalOrdinal);
+
+      LO numBlkCols = blkCols.size();
+      LO numScalars = blkEntries.size();
+
+      LO num_chars_for_ordinals = (2*numBlkCols + 2) * sizeof (GO);
       //get export views
       avIndsC = exports(offset, num_chars_for_ordinals);
       avValsC = exports(offset+ num_chars_for_ordinals, numScalars*sizeof(Scalar));
-      ArrayView<GlobalOrdinal> avInds = av_reinterpret_cast<GlobalOrdinal>(avIndsC);
-      typename ArrayView<GlobalOrdinal>::iterator ind_it = avInds.begin();
+      ArrayView<GO> avInds = av_reinterpret_cast<GO>(avIndsC);
+      typename ArrayView<GO>::iterator ind_it = avInds.begin ();
 
       *ind_it++ = numBlkCols;
       *ind_it++ = numPtRows;
-      for(Tsize_t j=0; j<blkCols.size(); ++j) {
+      for (Tsize_t j = 0; j < blkCols.size (); ++j) {
         *ind_it++ = blkCols[j];
       }
-      for(Tsize_t j=0; j<ptColsPerBlkCol.size(); ++j) {
+      for (Tsize_t j = 0; j < ptColsPerBlkCol.size (); ++j) {
         *ind_it++ = ptColsPerBlkCol[j];
       }
 
-      avVals = av_reinterpret_cast<Scalar>(avValsC);
-      std::copy(blkEntries.begin(), blkEntries.end(), avVals.begin());
+      avVals = av_reinterpret_cast<Scalar> (avValsC);
+      std::copy (blkEntries.begin (), blkEntries.end (), avVals.begin ());
 
-      size_t size_for_this_row = sizeof(GlobalOrdinal)*(2+2*numBlkCols)
-                     + sizeof(Scalar)*numScalars;
+      const size_t size_for_this_row = 
+	sizeof (GO) * (2 + 2*numBlkCols) + 
+	sizeof (Scalar) * numScalars;
       offset += size_for_this_row;
     }
     constantNumPackets = 0;
-  }
-
-  void unpackAndCombine(
-      const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
-      const Teuchos::ArrayView<const char>& imports,
-      const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-      size_t constantNumPackets,
-      Distributor& distor,
-      CombineMode CM)
-  {
-    throw std::runtime_error("VbrDataDist hasn't implemented unpackAndCombine!!");
   }
 
 };

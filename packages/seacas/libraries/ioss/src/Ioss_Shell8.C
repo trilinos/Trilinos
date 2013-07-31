@@ -98,6 +98,7 @@ Ioss::Shell8::Shell8()
   : Ioss::ElementTopology("shell8", "ShellQuadrilateral_8")
 {
   Ioss::ElementTopology::alias("shell8", "Shell_Quad_8_3D");
+  Ioss::ElementTopology::alias("shell8", "SHELL_QUADRILATERAL_8");
 }
 
 Ioss::Shell8::~Shell8() {}

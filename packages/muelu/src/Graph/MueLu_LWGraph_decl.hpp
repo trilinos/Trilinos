@@ -66,7 +66,7 @@ namespace MueLu {
    fillComplete.
    TODO handle systems
 */
-  template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class LWGraph
     : public MueLu::GraphBase<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> { //FIXME  shortnames isn't working
 #undef MUELU_LWGRAPH_SHORT
@@ -76,31 +76,43 @@ namespace MueLu {
 
     //! @name Constructors/Destructors.
     //@{
-    LWGraph(ArrayRCP<LocalOrdinal> const & rowPtrs, ArrayRCP<LocalOrdinal> const & colPtrs,
-            RCP<const CrsGraph> const & graph, std::string const & objectLabel="")
-            : rows_(rowPtrs), columns_(colPtrs), graph_(graph), objectLabel_(objectLabel) {}
+    LWGraph(const ArrayRCP<const LocalOrdinal> & rowPtrs, const ArrayRCP<const LocalOrdinal> & colPtrs,
+            const RCP<const Map>& domainMap, const RCP<const Map>& rangeMap, std::string const & objectLabel="")
+            : rows_(rowPtrs), columns_(colPtrs), domainMap_(domainMap), importMap_(rangeMap), domainMapRef_(*domainMap), objectLabel_(objectLabel) {}
 
     virtual ~LWGraph() {}
     //@}
 
-    size_t GetNodeNumVertices() const { return graph_->getNodeNumRows(); }
-    size_t GetNodeNumEdges()    const { return graph_->getNodeNumEntries(); }
+    size_t GetNodeNumVertices() const { return rows_.size()-1; }
+    size_t GetNodeNumEdges()    const { return rows_[rows_.size()-1]; }
 
-    Xpetra::global_size_t GetGlobalNumEdges() const { return graph_->getGlobalNumEntries(); }
+    // TODO: do we really need this function
+    // It is being called from CoupledAggregation, but do we need it there?
+    Xpetra::global_size_t GetGlobalNumEdges() const {
+      Xpetra::global_size_t in = GetNodeNumEdges(), out;
+      Teuchos::reduceAll(*domainMap_->getComm(), Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
+      return out;
+    }
 
-    const RCP<const Teuchos::Comm<int> > GetComm() const { return graph_->getComm(); }
-    const RCP<const Map> GetDomainMap() const { return graph_->getDomainMap(); }
-
-    void SetBoundaryNodeMap(RCP<const Map> const &map) {throw(Exceptions::NotImplemented("LWGraph: Boundary node map not implemented."));}
-
+    const RCP<const Teuchos::Comm<int> > GetComm() const { return domainMap_->getComm(); }
+    const RCP<const Map> GetDomainMap() const            { return domainMap_; }
     //! Returns overlapping import map (nodes).
-    const RCP<const Map> GetImportMap() const { return graph_->getColMap();    }
+    const RCP<const Map> GetImportMap() const            { return importMap_; }
+
+    void SetBoundaryNodeMap(RCP<const Map> const &map)   {throw(Exceptions::NotImplemented("LWGraph: Boundary node map not implemented."));}
 
     //! Return the list of vertices adjacent to the vertex 'v'.
     Teuchos::ArrayView<const LocalOrdinal> getNeighborVertices(LocalOrdinal v) const;
 
     //! Return true if vertex with local id 'v' is on current process.
     bool isLocalNeighborVertex(LocalOrdinal v) const;
+
+    //! Set boolean array indicating which rows correspond to Dirichlet boundaries.
+    void SetBoundaryNodeMap(const ArrayRCP<const bool>& bndry) { dirichletBoundaries_ = bndry; }
+
+    //! Returns map with global ids of boundary nodes.
+    const ArrayRCP<const bool> GetBoundaryNodeMap() const { return dirichletBoundaries_; }
+
 
     /// Return a simple one-line description of the Graph.
     std::string description() const;
@@ -113,13 +125,16 @@ namespace MueLu {
   private:
 
     //! Indices into columns_ array.  Part of local graph information.
-    const ArrayRCP<LocalOrdinal> rows_;
+    const ArrayRCP<const LocalOrdinal> rows_;
     //! Columns corresponding to connections.  Part of local graph information.
-    const ArrayRCP<LocalOrdinal> columns_;
-    //! CrsGraph of original matrix.  Needed for its maps.
-    const RCP<const CrsGraph> graph_;
+    const ArrayRCP<const LocalOrdinal> columns_;
+    //! Graph maps
+    const RCP<const Map> domainMap_, importMap_;
+    const Map& domainMapRef_;
     //! Name of this graph.
     const std::string & objectLabel_;
+    //! Boolean array marking Dirichlet rows.
+    ArrayRCP<const bool> dirichletBoundaries_;
 
   };
 

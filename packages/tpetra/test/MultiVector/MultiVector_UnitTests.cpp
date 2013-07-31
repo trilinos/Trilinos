@@ -43,9 +43,11 @@
 
 #include <Tpetra_TestingUtilities.hpp>
 
+#include <Teuchos_DefaultSerialComm.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
+#include <iterator>
 
 // FINISH: add test for MultiVector with a node containing zero local entries
 // FINISH: add tests for local MultiVectors
@@ -111,22 +113,22 @@ namespace {
   using Tpetra::createContigMapWithNode;
   using Tpetra::createLocalMapWithNode;
 
-  using Kokkos::SerialNode;
+  using KokkosClassic::SerialNode;
   RCP<SerialNode> snode;
 #ifdef HAVE_KOKKOSCLASSIC_TBB
-  using Kokkos::TBBNode;
+  using KokkosClassic::TBBNode;
   RCP<TBBNode> tbbnode;
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  using Kokkos::TPINode;
+  using KokkosClassic::TPINode;
   RCP<TPINode> tpinode;
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  using Kokkos::OpenMPNode;
+  using KokkosClassic::OpenMPNode;
   RCP<OpenMPNode> ompnode;
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_THRUST
-  using Kokkos::ThrustGPUNode;
+  using KokkosClassic::ThrustGPUNode;
   RCP<ThrustGPUNode> thrustnode;
 #endif
 
@@ -163,7 +165,6 @@ namespace {
     RCP<Node> node = getNode<Node>();
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef Tpetra::Vector<Scalar,LO,GO,Node> V;
-    typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -314,7 +315,6 @@ namespace {
     // ergo, the arrayview doesn't contain enough data to specify the entries
     // also, if bounds checking is enabled, check that bad bounds are caught
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
-    typedef Tpetra::Vector<Scalar,LO,GO,Node>       V;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -325,6 +325,7 @@ namespace {
     // we need 4 scalars to specify values on each proc
     Array<Scalar> values(4);
 #ifdef HAVE_TPETRA_DEBUG
+    typedef Tpetra::Vector<Scalar,LO,GO,Node>       V;
     // too small an ArrayView (less than 4 values) is met with an exception, if debugging is on
     TEST_THROW(MV mvec(map,values(0,3),2,numVecs), std::runtime_error);
     // it could also be too small for the given LDA:
@@ -548,7 +549,7 @@ namespace {
   {
     RCP<Node> node = getNode<Node>();
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
-    const GO INVALID = OrdinalTraits<GO>::invalid();
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
@@ -2159,6 +2160,53 @@ namespace {
     TEST_EQUALITY_CONST( (is_same< node_type           , Node    >::value) == true, true );
   }
 
+#ifdef HAVE_TEUCHOS_COMPLEX
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, ComplexDotOneColumn, RealType, LO, GO, Node )
+  {
+    using Teuchos::as;
+    using Teuchos::rcp_implicit_cast;
+
+    typedef RealType magnitude_type;
+    typedef std::complex<RealType> scalar_type;
+    typedef Teuchos::ScalarTraits<scalar_type> STS;
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
+    typedef Tpetra::MultiVector<scalar_type, LO, GO, Node> MV;
+
+    typedef Teuchos::SerialComm<int> comm_type;
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+
+    // We use a SerialComm so that we don't complicate the test by
+    // introducing interprocess communication.  The point of this test
+    // is to test conjugation, that is, to make sure that the dot
+    // product of x and y is the conjugate transpose of x times y.
+    RCP<const Comm<int> > serialComm =
+      rcp_implicit_cast<const comm_type > (rcp (new comm_type));
+    RCP<Node> node = getNode<Node> ();
+
+    const size_t numLocalElts = 1;
+    const Tpetra::global_size_t numGlobalElts = serialComm->getSize () * numLocalElts;
+    const GO indexBase = 0;
+    RCP<const map_type> map (new map_type (numGlobalElts, indexBase, serialComm,
+                                           Tpetra::GloballyDistributed, node));
+    MV x (map, 1);
+    MV y (map, 1);
+
+    std::vector<scalar_type> results (1, STS::zero ()); // dot product result
+
+    // dot([i], [i]) should be 1, not -1.
+    x.replaceLocalValue (as<LO> (0), 0, scalar_type (STM::zero (), STM::one ()));
+    y.replaceLocalValue (as<LO> (0), 0, scalar_type (STM::zero (), STM::one ()));
+    x.dot (y, results);
+    TEST_EQUALITY( results[0], STS::one() );
+
+    // dot([-i], [i]) should be -1, not +1.
+    x.replaceLocalValue (as<LO> (0), 0, scalar_type (STM::zero (), -STM::one ()));
+    y.replaceLocalValue (as<LO> (0), 0, scalar_type (STM::zero (), STM::one ()));
+    x.dot (y, results);
+    TEST_EQUALITY( results[0], -STS::one() );
+  }
+#endif // HAVE_TEUCHOS_COMPLEX
+
 //
 // INSTANTIATIONS
 //
@@ -2194,6 +2242,20 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Describable       , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Typedefs          , LO, GO, SCALAR, NODE )
 
+#if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
+#  define TPETRA_MULTIVECTOR_COMPLEX_FLOAT_DOT_TEST( NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ComplexDotOneColumn, float, int, int, NODE )
+#else
+#  define TPETRA_MULTIVECTOR_COMPLEX_FLOAT_DOT_TEST( NODE )
+#endif // defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
+
+#if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
+#  define TPETRA_MULTIVECTOR_COMPLEX_DOUBLE_DOT_TEST( NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ComplexDotOneColumn, double, int, int, NODE )
+#else
+#  define TPETRA_MULTIVECTOR_COMPLEX_DOUBLE_DOT_TEST( NODE )
+#endif // defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
+
 #define VIEWMODETEST(NODE) \
         TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, NODE ) \
         TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(      Vector, ViewModeConstructorTests, NODE )
@@ -2201,6 +2263,24 @@ namespace {
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
   TPETRA_INSTANTIATE_N_NOGPU(VIEWMODETEST)
+
+  // mfh 04 June 2013: To avoid explicit instantiation - related link
+  // errors for LO = int and GO = unsigned (long) int, I've forced
+  // this test to use LO = int and GO = int.  LO and GO should not
+  // matter for this test.
+  //
+  // mfh 06 June 2013: To avoid link errors on GPUs, I've forced this
+  // test to build only for non-GPU Node types.
+  TPETRA_INSTANTIATE_N_NOGPU( TPETRA_MULTIVECTOR_COMPLEX_FLOAT_DOT_TEST )
+
+  // mfh 04 June 2013: To avoid explicit instantiation - related link
+  // errors for LO = int and GO = unsigned (long) int, I've forced
+  // this test to use LO = int and GO = int.  LO and GO should not
+  // matter for this test.
+  //
+  // mfh 06 June 2013: To avoid link errors on GPUs, I've forced this
+  // test to build only for non-GPU Node types.
+  TPETRA_INSTANTIATE_N_NOGPU( TPETRA_MULTIVECTOR_COMPLEX_DOUBLE_DOT_TEST )
 
   TPETRA_INSTANTIATE_TESTMV( UNIT_TEST_GROUP )
 

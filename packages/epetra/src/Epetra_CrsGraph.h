@@ -797,6 +797,32 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
   */
   int ReplaceColMap(const Epetra_BlockMap& newmap);
 
+  //! Replaces the current DomainMap & Importer with the user-specified map object.
+  /** Replaces the current DomainMap and Importer with the user-specified map object, but only
+      if the matrix has been FillCompleted, Importer's TargetMap matches the ColMap 
+      and Importer's SourceMap matches the DomainMap (assuming the importer isn't null).  If an Importer
+      is passed in, Epetra_CrsMatrix will copy it.
+      Returns 0 if map/importer is replaced, -1 if not.
+      
+      \pre (!NewImporter && ColMap().PointSameAs(NewDomainMap)) || (NewImporter && ColMap().PointSameAs(NewImporter->TargetMap()) && NewDomainMap.PointSameAs(NewImporter->SourceMap()))
+  */
+  int ReplaceDomainMapAndImporter(const Epetra_BlockMap& NewDomainMap, const Epetra_Import * NewImporter);
+
+  //! Remove processes owning zero rows from the Maps and their communicator.
+  /** Remove processes owning zero rows from the Maps and their communicator.
+     \warning This method is ONLY for use by experts.
+     
+     \warning We make NO promises of backwards compatibility.
+     This method may change or disappear at any time.
+     
+     \param newMap [in] This <i>must</i> be the result of calling
+     the removeEmptyProcesses() method on the row BlockMap.  If it
+     is not, this method's behavior is undefined.  This pointer
+     will be null on excluded processes.
+  */
+  int RemoveEmptyProcessesInPlace(const Epetra_BlockMap * NewMap);
+
+
   //! Returns the Column Map associated with this graph.
   /*!
     \pre HaveColMap()==true
@@ -834,6 +860,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
 #endif
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  int LRID(long long GRID_in) const {return(RowMap().LID(GRID_in));}
+#endif
+
+#if defined(EPETRA_NO_32BIT_GLOBAL_INDICES) && defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
+  // default implementation so that no compiler/linker error in case neither 32 nor 64
+  // bit indices present.
   int LRID(long long GRID_in) const {return(RowMap().LID(GRID_in));}
 #endif
 
@@ -942,10 +974,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
   //@{ 
 
   //! Print method
-  virtual void Print(ostream& os) const;
+  virtual void Print(std::ostream& os) const;
 
-  void PrintGraphData(ostream& os) const {CrsGraphData_->Print(os);}
-  void PrintGraphData(ostream& os, int level) const {CrsGraphData_->Print(os, level);}
+  void PrintGraphData(std::ostream& os) const {CrsGraphData_->Print(os);}
+  void PrintGraphData(std::ostream& os, int level) const {CrsGraphData_->Print(os, level);}
   //@}
 
   //! @name Deprecated methods:  These methods still work, but will be removed in a future version
@@ -1001,6 +1033,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
   int *All_Indices() const {
     if (!StorageOptimized()) throw ReportError("This method: int *All_Indices() cannot be called when StorageOptimized()==false", -1);
     else return(CrsGraphData_->data->All_Indices_.Values());}
+#if defined(Epetra_ENABLE_MKL_SPARSE) && !defined(Epetra_DISABLE_MKL_SPARSE_MM)
+  int *All_IndicesPlus1() const;
+#endif
   int *IndexOffset() const {
     if (!StorageOptimized()) throw ReportError("This method: int *IndexOffset()  cannot be called when StorageOptimized()==false", -1);
     else return(CrsGraphData_->IndexOffset_.Values());}

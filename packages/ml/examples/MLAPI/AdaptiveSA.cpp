@@ -95,10 +95,10 @@ int main(int argc, char *argv[])
 
   }
   catch (const int e) {
-    cerr << "Caught integer exception, code = " << e << endl;
+    std::cerr << "Caught integer exception, code = " << e << std::endl;
   }
   catch (...) {
-    cerr << "Caught exception..." << endl;
+    std::cerr << "Caught exception..." << std::endl;
   }
 
 #ifdef HAVE_MPI

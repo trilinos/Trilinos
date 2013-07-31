@@ -64,7 +64,7 @@ namespace MueLu {
   { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SteepestDescentSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Iterate(const Matrix& Aref, const Constraint& C, const Matrix& P0, const MultiVector& B, RCP<Matrix>& P) const {
+  void SteepestDescentSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Iterate(const Matrix& Aref, const Constraint& C, const Matrix& P0, RCP<Matrix>& P) const {
     RCP<const Matrix> A = rcpFromRef(Aref);
     RCP<Matrix> AP, G;
 
@@ -87,12 +87,12 @@ namespace MueLu {
 #else
       // gradient = - A * P
       SC stepLength = stepLength_;
-      Utils::MyOldScaleMatrix(AP, D, true, false, false);
+      Utils::MyOldScaleMatrix(*AP, D, true, false, false);
       C.Apply(*AP, *Ptmp);
 #endif
 
       RCP<Matrix> newP;
-      Utils2::TwoMatrixAdd(Ptmp, false, -stepLength, P, false, Teuchos::ScalarTraits<Scalar>::one(), newP);
+      Utils2::TwoMatrixAdd(*Ptmp, false, -stepLength, *P, false, Teuchos::ScalarTraits<Scalar>::one(), newP);
       newP->fillComplete(P->getDomainMap(), P->getRangeMap() );
       P = newP;
     }

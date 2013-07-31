@@ -106,9 +106,9 @@ RefCountPtr<Epetra_MapColoring>  NLNML::Collapsedcoloring(Epetra_CrsGraph* cgrap
   {
     lok = 0;
     if (printlevel>5)
-    cout << "**WRN**: NLNML::Collapsedcoloring:\n"
+    std::cout << "**WRN**: NLNML::Collapsedcoloring:\n"
          << "**WRN**: cannot amalgamate cgraph\n"
-         << "**WRN**: numlocalrows%bsize= " << (new_nummyrows % bsize) << " numglobalrows%bsize= " << (new_numglobalrows % bsize) << endl;
+         << "**WRN**: numlocalrows%bsize= " << (new_nummyrows % bsize) << " numglobalrows%bsize= " << (new_numglobalrows % bsize) << std::endl;
   }
   cgraph->Comm().MinAll(&lok,&gok,1);
   if (!gok)
@@ -131,8 +131,8 @@ RefCountPtr<Epetra_MapColoring>  NLNML::Collapsedcoloring(Epetra_CrsGraph* cgrap
     if (old_grow<0)
     {
       if (printlevel>5)
-      cout << "**WRN**: NLNML::Collapsedcoloring:\n"
-           << "**WRN**: cgraph->RowMap().GID() returned " <<  old_grow << endl
+      std::cout << "**WRN**: NLNML::Collapsedcoloring:\n"
+           << "**WRN**: cgraph->RowMap().GID() returned " <<  old_grow << std::endl
            << "**WRN**: switching to none-collapsed coloring\n"
            << "**WRN**: file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       lok=0;
@@ -152,7 +152,7 @@ RefCountPtr<Epetra_MapColoring>  NLNML::Collapsedcoloring(Epetra_CrsGraph* cgrap
   if (counter != new_nummyrows)
   {
     if (printlevel>5)
-    cout << "**WRN**: NLNML::Collapsedcoloring:\n"
+    std::cout << "**WRN**: NLNML::Collapsedcoloring:\n"
          << "**WRN**: collapsed coloring problem, switching to standard coloring\n"
          << "**WRN**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; 
     lok=0;
@@ -182,8 +182,8 @@ RefCountPtr<Epetra_MapColoring>  NLNML::Collapsedcoloring(Epetra_CrsGraph* cgrap
     if (old_grow<0)
     {
       if (printlevel>5)
-      cout << "**WRN**: NLNML::Collapsedcoloring:\n"
-           << "**WRN**: cgraph->RowMap().GID() returned " <<  old_grow << endl
+      std::cout << "**WRN**: NLNML::Collapsedcoloring:\n"
+           << "**WRN**: cgraph->RowMap().GID() returned " <<  old_grow << std::endl
            << "**WRN**: switching to none-collapsed coloring\n"
            << "**WRN**: file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       lok=0;
@@ -201,8 +201,8 @@ RefCountPtr<Epetra_MapColoring>  NLNML::Collapsedcoloring(Epetra_CrsGraph* cgrap
     if (err)
     {
       if (printlevel>5)
-      cout << "**WRN**: NLNML::Collapsedcoloring:\n"
-           << "**WRN**: cgraph->ExtractMyRowView returned " <<  err << endl
+      std::cout << "**WRN**: NLNML::Collapsedcoloring:\n"
+           << "**WRN**: cgraph->ExtractMyRowView returned " <<  err << std::endl
            << "**WRN**: switching to none-collapsed coloring\n"
            << "**WRN**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; 
       lok=0;
@@ -225,8 +225,8 @@ RefCountPtr<Epetra_MapColoring>  NLNML::Collapsedcoloring(Epetra_CrsGraph* cgrap
       if (old_gcol<0)
       {
         if (printlevel>5)
-        cout << "**WRN**: NLNML::Collapsedcoloring:\n"
-             << "**WRN**: cgraph->ColMap().GID(old_colindices[j]) returned " <<  old_gcol << endl
+        std::cout << "**WRN**: NLNML::Collapsedcoloring:\n"
+             << "**WRN**: cgraph->ColMap().GID(old_colindices[j]) returned " <<  old_gcol << std::endl
              << "**WRN**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; 
       }
       if (lok==0)
@@ -244,8 +244,8 @@ RefCountPtr<Epetra_MapColoring>  NLNML::Collapsedcoloring(Epetra_CrsGraph* cgrap
     if (err!=0 && err !=1)
     {
       if (printlevel>5)
-      cout << "**WRN**: NLNML::Collapsedcoloring:\n"
-           << "**WRN**: nodegraph.InsertGlobalIndices returned " <<  err << endl
+      std::cout << "**WRN**: NLNML::Collapsedcoloring:\n"
+           << "**WRN**: nodegraph.InsertGlobalIndices returned " <<  err << std::endl
            << "**WRN**: switching to none-collapsed coloring\n"
            << "**WRN**: file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       lok=0;   
@@ -298,7 +298,7 @@ RefCountPtr<Epetra_MapColoring>  NLNML::Collapsedcoloring(Epetra_CrsGraph* cgrap
   if (j!=cgraph->ColMap().NumMyElements())
   {
     if (printlevel>5)
-    cout << "**ERR**: NLNML::Collapsedcoloring:\n"
+    std::cout << "**ERR**: NLNML::Collapsedcoloring:\n"
          << "**ERR**: error expanding node colors to column colors\n"
          << "**WRN**: switching to none-collapsed coloring\n"
          << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -364,21 +364,21 @@ RefCountPtr<Epetra_CrsMatrix> NLNML::StripZeros(
   for (int lrow=0; lrow<in->NumMyRows(); ++lrow)
   {
     int grow = in->GRID(lrow); 
-    if (grow<0) { cout << "ERROR: grow<0 \n"; exit(0); }
+    if (grow<0) { std::cout << "ERROR: grow<0 \n"; exit(0); }
     int numentries;
     int* lindices;
     double* values;
     int err  = in->ExtractMyRowView(lrow,numentries,values,lindices);
-    if (err) { cout << "ExtractMyRowView returned " << err << endl; exit(0);}
+    if (err) { std::cout << "ExtractMyRowView returned " << err << std::endl; exit(0);}
     for (int j=0; j<numentries; ++j)
     {
       int lcol = lindices[j];  
       int gcol = in->GCID(lcol); 
-      if (gcol<0) { cout << "ERROR: gcol<0 \n"; exit(0); }
+      if (gcol<0) { std::cout << "ERROR: gcol<0 \n"; exit(0); }
       if (fabs(values[j])<eps && gcol != grow)
         continue;
       int err = out->InsertGlobalValues(grow,1,&values[j],&gcol);
-      if (err) { cout << "InsertGlobalValues returned " << err << endl; exit(0);}
+      if (err) { std::cout << "InsertGlobalValues returned " << err << std::endl; exit(0);}
     }
   }
   out->FillComplete();

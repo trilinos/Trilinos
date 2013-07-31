@@ -280,16 +280,16 @@ int Epetra_DistObject::DoTransfer(const Epetra_SrcDistObject& A,
 }
 
 //=============================================================================
-void Epetra_DistObject::Print(ostream& os) const {
+void Epetra_DistObject::Print(std::ostream& os) const {
   int MyPID = Comm().MyPID();
   int NumProc = Comm().NumProc();
   
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
       Comm().PrintInfo(os);
-      os << "Length of Export buffer (in chars) = " << LenExports_ << endl;
-      os << "Length of Import buffer (in chars) = " << LenImports_ << endl;
-      os << flush;
+      os << "Length of Export buffer (in chars) = " << LenExports_ << std::endl;
+      os << "Length of Import buffer (in chars) = " << LenImports_ << std::endl;
+      os << std::flush;
     }
   }
   return;

@@ -73,6 +73,8 @@ SolverCore<ConcreteSolver,Matrix,Vector>::SolverCore(
   , globalNumRows_(matrixA_->getGlobalNumRows())
   , globalNumCols_(matrixA_->getGlobalNumCols())
   , globalNumNonZeros_(matrixA_->getGlobalNNZ())
+  , rowIndexBase_(matrixA_->getRowIndexBase())
+  , columnIndexBase_(matrixA_->getColumnIndexBase())
   , rank_(Teuchos::rank(*this->getComm()))
   , root_(rank_ == 0)
   , nprocs_(Teuchos::size(*this->getComm()))
@@ -366,7 +368,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::describe(
   for( size_t dec = 10; dec < globalNumRows_; dec *= 10 ) {
     ++width;
   }
-  width = std::max<size_t>(width,11) + 2;
+  width = std::max<size_t>(width,size_t(11)) + 2;
   Teuchos::OSTab tab(out);
   //    none: print nothing
   //     low: print O(1) info from node 0

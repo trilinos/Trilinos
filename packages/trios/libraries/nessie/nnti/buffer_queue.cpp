@@ -116,10 +116,14 @@ int trios_buffer_queue_init(
         uint32_t              buffer_size)
 {
     NNTI_result_t nnti_rc=NNTI_OK;
-    int i;
     NNTI_buffer_t *buffer=NULL;
 
     log_debug(bq_debug_level, "enter");
+
+    if (buffer_size <= 0) {
+        log_debug(bq_debug_level, "buffer_size <= 0 - queue not created");
+        return((int)nnti_rc);
+    }
 
     nthread_lock_init(&bq->mutex);
 
@@ -133,7 +137,7 @@ int trios_buffer_queue_init(
     bq->op=op;
     bq->buffer_size=buffer_size;
 
-    for (i=0;i<bq->initial_size;i++) {
+    for (uint32_t i=0;i<bq->initial_size;i++) {
         log_debug(bq_debug_level, "creating queue buffer");
         nnti_rc=create_buffer(
                 bq->trans_hdl,
@@ -213,6 +217,9 @@ void trios_buffer_queue_push(
 
     if (nthread_lock(&bq->mutex)) log_warn(bq_debug_level, "failed to get lock");
     if (bq->queue.size() < bq->max_size) {
+        /* when buffers are popped, the size could be reduced to avoid transferring more bytes than necessary */
+        log_debug(bq_debug_level, "reset buffer size to bq->buffer_size");
+        NNTI_BUFFER_SIZE(buffer)=bq->buffer_size;
         log_debug(bq_debug_level, "returning buffer to queue");
         bq->queue.push_front(buffer);
     } else {

@@ -67,6 +67,8 @@ INCLUDE(TriosProbeTimers)
 INCLUDE(TriosProbeNetwork)
 # Checks for a POSIX semaphore implementation
 INCLUDE(TriosProbeSemaphores)
+# Checks for the gettid() system call
+INCLUDE(TriosProbeGettid)
 # Check XDR implementation
 INCLUDE(TriosProbeXDR)
 
@@ -95,15 +97,17 @@ IF (${PACKAGE_NAME}_ENABLE_Portals OR
     ${PACKAGE_NAME}_ENABLE_CrayPortals OR
     ${PACKAGE_NAME}_ENABLE_InfiniBand OR
     ${PACKAGE_NAME}_ENABLE_Gemini OR
-    ${PACKAGE_NAME}_ENABLE_MPI OR
-    ${PACKAGE_NAME}_ENABLE_LUC)
+    ${PACKAGE_NAME}_ENABLE_BGPDCMF OR
+    ${PACKAGE_NAME}_ENABLE_MPI)
 
   SET(${PACKAGE_NAME}_HAVE_RDMA_TRANSPORT 1)
 ELSE()
   SET(${PACKAGE_NAME}_HAVE_RDMA_TRANSPORT 0)
 ENDIF()
 
-
+IF (${PROJECT_NAME}_ENABLE_Trioscommsplitter)
+  SET(TRIOS_ENABLE_COMMSPLITTER TRUE)
+ENDIF()
 
 # Create the Trios_config.h file in ${CMAKE_BINARY_DIR}
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)

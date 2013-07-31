@@ -1,4 +1,3 @@
-
 INCLUDE(TribitsLibraryMacros)
 INCLUDE(TrilinosCreateClientTemplateHeaders)
 
@@ -7,6 +6,19 @@ INCLUDE(TrilinosCreateClientTemplateHeaders)
 #
 
 SET(HAVE_STOKHOS_DAKOTA ${${PACKAGE_NAME}_ENABLE_TriKota})
+
+# OpenMP support -- Add our own option to turn it off
+# without turning it off globally
+SET(Stokhos_ENABLE_OpenMP_Default OFF)
+IF(Trilinos_ENABLE_OpenMP)
+  SET(Stokhos_ENABLE_OpenMP_Default ON)
+ENDIF()
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Stokhos_ENABLE_OpenMP
+  HAVE_STOKHOS_OPENMP
+  "Enable OpenMP support in Stokhos."
+  ${Stokhos_ENABLE_OpenMP_Default}
+  )
 
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
@@ -108,6 +120,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_Dense3Tensor.hpp
   Stokhos_Dense3TensorImp.hpp
   Stokhos_Sparse3TensorUtilities.hpp
+  Stokhos_Sparse3TensorPartition.hpp
+  Stokhos_LTBSparse3Tensor.hpp
   Stokhos_Quadrature.hpp
   Stokhos_TensorProductQuadrature.hpp
   Stokhos_TensorProductQuadratureImp.hpp
@@ -297,11 +311,13 @@ IF (Stokhos_ENABLE_Sacado)
     sacado/Sacado_ETPCE_OrthogPolyImp.hpp
     sacado/Sacado_ETPCE_OrthogPolyTraits.hpp
     sacado/Sacado_ETPCE_OrthogPolyOps.hpp
+    sacado/Sacado_ETPCE_ExpressionTraits.hpp
     sacado/Sacado_ETV_Vector.hpp
     sacado/Sacado_ETV_VectorImp.hpp
     sacado/Sacado_ETV_VectorOps.hpp
     sacado/Sacado_ETV_ScalarTraitsImp.hpp
     sacado/Sacado_ETV_VectorTraits.hpp
+    sacado/Sacado_ETV_ExpressionTraits.hpp
     sacado/Sacado_ETV_Vector2.hpp
     sacado/Sacado_ETV_Vector2Imp.hpp
     sacado/Sacado_ETV_Vector2Traits.hpp
@@ -310,7 +326,7 @@ IF (Stokhos_ENABLE_Sacado)
     sacado/Sacado_PCE_OrthogPoly.cpp
     sacado/Sacado_ETPCE_OrthogPoly.cpp
     )
-  IF (Stokhos_ENABLE_KokkosArray)
+  IF (Stokhos_ENABLE_KokkosCore)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos)
     SET(HEADERS ${HEADERS}
       sacado/kokkos/Stokhos_Sacado_Kokkos.hpp
@@ -327,9 +343,10 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/Sacado_MP_Vector.hpp
       sacado/kokkos/Sacado_MP_VectorTraits.hpp
       sacado/kokkos/Sacado_MP_Vector_ops.hpp
+      sacado/kokkos/Sacado_MP_ExpressionTraits.hpp
     )
   ENDIF()
-  IF (Stokhos_ENABLE_MueLu)
+  IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_MueLu)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/muelu)
     TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/muelu)
     SET(HEADERS ${HEADERS}
@@ -341,7 +358,7 @@ IF (Stokhos_ENABLE_Sacado)
       APPEND_GLOB(SOURCES muelu/explicit_instantiation/*.cpp)
     ENDIF()
   ENDIF()
-  IF (Stokhos_ENABLE_Tpetra)
+  IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_Tpetra)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/tpetra)
     IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
       SET(SOURCES ${SOURCES}
@@ -352,13 +369,69 @@ IF (Stokhos_ENABLE_Sacado)
 	)
     ENDIF()
   ENDIF()
-  IF (Stokhos_ENABLE_Ifpack2)
+  IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_Belos)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/belos)
+    SET(HEADERS ${HEADERS}
+      belos/BelosPCETpetraAdapter.hpp
+      )
+  ENDIF()
+  IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_Ifpack2 AND Stokhos_ENABLE_Belos)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/ifpack2)
+    SET(HEADERS ${HEADERS}
+      ifpack2/Stokhos_Ifpack2.hpp
+      )
     IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
       SET(SOURCES ${SOURCES}
 	ifpack2/ifpack2_pce_instantiations.cpp
 	)
     ENDIF()
+  ENDIF()
+ENDIF()
+
+IF (Stokhos_ENABLE_KokkosCore)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Host)
+  SET(HEADERS ${HEADERS}
+    kokkos/Stokhos_Multiply.hpp
+    kokkos/Stokhos_CrsMatrix.hpp
+    kokkos/Stokhos_BlockCrsMatrix.hpp
+    kokkos/Stokhos_StochasticProductTensor.hpp
+    kokkos/Stokhos_SymmetricDiagonalSpec.hpp
+    kokkos/Stokhos_CrsProductTensor.hpp
+    kokkos/Stokhos_TiledCrsProductTensor.hpp
+    kokkos/Stokhos_CooProductTensor.hpp
+    kokkos/Stokhos_FlatSparse3Tensor.hpp
+    kokkos/Stokhos_FlatSparse3Tensor_kji.hpp
+    kokkos/Stokhos_LinearSparse3Tensor.hpp
+    kokkos/Stokhos_LexicographicBlockSparse3Tensor.hpp
+    kokkos/Host/Stokhos_Host_TinyVec.hpp
+    kokkos/Host/Stokhos_Host_CrsMatrix.hpp
+    kokkos/Host/Stokhos_Host_BlockCrsMatrix.hpp
+    kokkos/Host/Stokhos_Host_StochasticProductTensor.hpp
+    kokkos/Host/Stokhos_Host_SymmetricDiagonalSpec.hpp
+    kokkos/Host/Stokhos_Host_CrsProductTensor.hpp
+    kokkos/Host/Stokhos_Host_TiledCrsProductTensor.hpp
+    kokkos/Host/Stokhos_Host_CooProductTensor.hpp
+    kokkos/Host/Stokhos_Host_FlatSparse3Tensor.hpp
+    kokkos/Host/Stokhos_Host_FlatSparse3Tensor_kji.hpp
+    kokkos/Host/Stokhos_Host_LinearSparse3Tensor.hpp
+    kokkos/Host/Stokhos_Host_LexicographicBlockSparse3Tensor.hpp
+    )
+  IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Cuda)
+    SET(HEADERS ${HEADERS}
+      kokkos/Cuda/Stokhos_Cuda_CrsMatrix.hpp
+      kokkos/Cuda/Stokhos_Cuda_BlockCrsMatrix.hpp
+      kokkos/Cuda/Stokhos_Cuda_StochasticProductTensor.hpp
+      kokkos/Cuda/Stokhos_Cuda_SymmetricDiagonalSpec.hpp
+      kokkos/Cuda/Stokhos_Cuda_CrsProductTensor.hpp
+      kokkos/Cuda/Stokhos_Cuda_TiledCrsProductTensor.hpp
+      kokkos/Cuda/Stokhos_Cuda_CooProductTensor.hpp
+      kokkos/Cuda/Stokhos_Cuda_FlatSparse3Tensor.hpp
+      kokkos/Cuda/Stokhos_Cuda_FlatSparse3Tensor_kji.hpp
+      kokkos/Cuda/Stokhos_Cuda_LinearSparse3Tensor.hpp
+      kokkos/Cuda/Stokhos_Cuda_LexicographicBlockSparse3Tensor.hpp
+      )
   ENDIF()
 ENDIF()
 
@@ -403,6 +476,34 @@ IF (Stokhos_ENABLE_Thrust)
     )
   SET(SOURCES ${SOURCES} ${CUDA_SOURCES})
 ENDIF()
+
+# Include cusp
+IF (Stokhos_ENABLE_Cusp)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/cusp)
+  SET(HEADERS ${HEADERS}
+    cusp/krylov/blockcg.h
+    cusp/block_monitor.h
+    cusp/block_multilevel.h
+    cusp/MVmultiply.h
+    cusp/detail/block_lu.h
+    cusp/detail/device/MVmultiply.h
+    cusp/detail/device/spmm/array2d.h
+    cusp/detail/device/spmm/csr_vector.h
+    cusp/detail/dispatch/MVmultiply.h
+    cusp/precond/block_smoothed_aggregation.h
+    cusp/relaxation/block_polynomial.h
+    cusp/relaxation/block_jacobi.h     
+    )
+  SET(SOURCES ${SOURCES} ${CUDA_SOURCES}
+    cusp/krylov/blockcg.inl
+    cusp/block_multilevel.inl
+    cusp/detail/MVmultiply.inl
+    cusp/precond/block_smoothed_aggregation.inl
+    cusp/relaxation/block_polynomial.inl
+    cusp/relaxation/block_jacobi.inl
+    )
+ENDIF()
+
 
 #
 # C) Define the targets for package's library(s)

@@ -21,18 +21,28 @@ namespace MueLu {
     os << std::endl;
   }
 
-  // Abstract interface of a class accepting parameter lists.
+  /*! @class ParameterListAcceptor
+      @brief Abstract interface of a class accepting parameter lists.
+
+  */
   class ParameterListAcceptor {
 
   public:
 
+    //! @name Constructors/Destructors
+    //! @{
     ParameterListAcceptor() { }
 
     virtual ~ParameterListAcceptor() { }
 
-    // Return a const parameter list of valid parameters that setParameterList() will accept.
-    // Also define the default values of parameters according to the input parameter list.
-    //
+    //! @}
+    //! @name Get/Set methods.
+    //! @{
+
+    /*! @brief Return a const parameter list of valid parameters that setParameterList() will accept.
+
+       Also define the default values of parameters according to the input parameter list.
+    */
     // Questions:
     // - Do we want this function to be static?
     // => yes, but we also want it virtual. So static is not possible. But this method does not access any instance specific data.
@@ -47,7 +57,7 @@ namespace MueLu {
     //
     virtual RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const = 0;
 
-    // Set parameters from a parameter list and return with default values.
+    //! @brief Set parameters from a parameter list and return with default values.
     //
     // Questions:
     //  - Input: const ParameterList or not const? IE: do we want to modify user paramlist directly?
@@ -69,15 +79,17 @@ namespace MueLu {
     // No need for RCP, it's just a view
     virtual const Teuchos::ParameterList & GetParameterList() const = 0;
 
-    // Set a parameter directly as a ParameterEntry.
+    //! @brief Set a parameter directly as a ParameterEntry.
     virtual void SetParameter(const std::string &name, const ParameterEntry &entry) = 0;
 
-    // Retrieves a const entry with the name name.
+    //! @brief Retrieves a const entry with the name name.
     virtual const ParameterEntry & GetParameter(const std::string &name) const = 0;
 
     virtual void GetDocumentation(std::ostream &os) const = 0;
 
-  };
+    //! @}
+
+  }; //class ParameterListAcceptor
 
   // Partial implementation of ParameterListAcceptor that stores the object parameters in an internal parameterList
   //

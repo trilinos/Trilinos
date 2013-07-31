@@ -43,10 +43,12 @@
 
 
 #include "Thyra_SimpleDenseLinearOp.hpp"
+#include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DefaultSpmdMultiVector.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_LinearOpTester.hpp"
+#include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 
 #include "Teuchos_UnitTestHarness.hpp"

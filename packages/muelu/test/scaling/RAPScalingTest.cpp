@@ -134,6 +134,7 @@ int main(int argc, char *argv[]) {
       Teuchos::ParameterList galeriList;
       galeriList.set("nx", pl.get("nx", nx));
       galeriList.set("ny", pl.get("ny", ny));
+      galeriList.set("nz", pl.get("nz", nz));
 
       if (matrixParameters.GetMatrixType() == "Laplace1D") {
         map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
@@ -144,8 +145,8 @@ int main(int argc, char *argv[]) {
         coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("2D", map, matrixParameters.GetParameterList());
       }
       else if (matrixParameters.GetMatrixType() == "Laplace3D") {
-        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("3D", map, matrixParameters.GetParameterList());
         map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
+        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("3D", map, matrixParameters.GetParameterList());
       }
 
       //FIXME

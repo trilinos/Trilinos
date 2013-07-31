@@ -3824,7 +3824,9 @@ C
         POINTER (PI4, I4)
 
         IF (PI4 .EQ. 0) RETURN
+#ifndef __XLF__
         CALL FREE (PI4)
+#endif
         PI4 = 0
         END
 #endif

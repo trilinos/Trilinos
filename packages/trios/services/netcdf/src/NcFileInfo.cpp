@@ -55,12 +55,12 @@ NcFileInfo::NcFileInfo(
         const int mode,
         const size_t initialsz,
         const size_t chunksize)
-: path(path), mode(mode), initialsz(initialsz), chunksize(chunksize)
+: _path(path), _mode(mode), _initialsz(initialsz), _chunksize(chunksize)
 {
 }
 
 NcFileInfo::NcFileInfo(const NcFileInfo &copy)
-: path(copy.path), mode(copy.mode), initialsz(copy.initialsz), chunksize(copy.chunksize), format(copy.format)
+: _path(copy._path), _mode(copy._mode), _initialsz(copy._initialsz), _chunksize(copy._chunksize), _format(copy._format)
 {
 }
 
@@ -73,7 +73,7 @@ NcFileInfo::~NcFileInfo() {
 int NcFileInfo::set_format(const int format)
 {
     int rc = NC_NOERR;
-    this->format = format;
+    this->_format = format;
     return rc;
 }
 
@@ -81,6 +81,6 @@ int NcFileInfo::set_format(const int format)
 int NcFileInfo::inq_format(int *formatp)
 {
     int rc = NC_NOERR;
-    *formatp = this->format;
+    *formatp = this->_format;
     return rc;
 }

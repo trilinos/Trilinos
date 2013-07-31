@@ -405,9 +405,3 @@ int ex_get_idx(int exoid, const char *ne_var_name, int64_t *my_index, int pos)
 
   return 1;
 }
-
-struct ex_stat_struct {
-  int exoid;
-  int *stats;
-  size_t num;
-} ex_stat_struct;

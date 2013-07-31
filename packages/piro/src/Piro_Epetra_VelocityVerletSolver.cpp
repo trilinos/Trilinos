@@ -44,7 +44,6 @@
 
 #include "Piro_Epetra_VelocityVerletSolver.hpp"
 #include "Piro_Epetra_InvertMassMatrixDecorator.hpp"
-#include "Piro_ValidPiroParameters.hpp"
 
 #include "EpetraExt_ModelEvaluator.h"
 
@@ -56,8 +55,6 @@ Piro::Epetra::VelocityVerletSolver::VelocityVerletSolver(Teuchos::RCP<Teuchos::P
   model(model_),
   observer(observer_)
 {
-  //appParams->validateParameters(*Piro::getValidPiroParameters(),0);
-
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -79,7 +76,7 @@ Piro::Epetra::VelocityVerletSolver::VelocityVerletSolver(Teuchos::RCP<Teuchos::P
   vvPL->validateParameters(*getValidVelocityVerletParameters(),0);
 
   {
-    const string verbosity = vvPL->get("Verbosity Level", "VERB_DEFAULT");
+    const std::string verbosity = vvPL->get("Verbosity Level", "VERB_DEFAULT");
     solnVerbLevel = Teuchos::VERB_DEFAULT;
     if      (verbosity == "VERB_NONE")    solnVerbLevel = Teuchos::VERB_NONE;
     else if (verbosity == "VERB_LOW")     solnVerbLevel = Teuchos::VERB_LOW;
@@ -136,8 +133,12 @@ Teuchos::RCP<const Epetra_Map> Piro::Epetra::VelocityVerletSolver::get_g_map(int
                      "Invalid response index j = " <<
                      j << std::endl);
 
-  if      (j < num_g) return model->get_g_map(j);
-  else if (j == num_g) return model->get_x_map();
+  if (j < num_g) {
+    return model->get_g_map(j);
+  } else {
+    // j == num_g
+    return model->get_x_map();
+  }
 }
 
 Teuchos::RCP<const Epetra_Vector> Piro::Epetra::VelocityVerletSolver::get_x_init() const
@@ -210,7 +211,7 @@ void Piro::Epetra::VelocityVerletSolver::evalModel( const InArgs& inArgs,
                      std::endl << "Error in Piro::Epetra::VelocityVerletSolver " <<
                      "Requires initial x and x_dot: " << std::endl);
   double vo; v->Norm2(&vo);
-  *out << "Initial Velocity = " << vo << endl;
+  *out << "Initial Velocity = " << vo << std::endl;
 
    if (Teuchos::VERB_MEDIUM <= solnVerbLevel) *out << std::endl;
 

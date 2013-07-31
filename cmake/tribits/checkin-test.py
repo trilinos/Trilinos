@@ -3,14 +3,15 @@
 # @HEADER
 # ************************************************************************
 #
-#            Trilinos: An Object-Oriented Solver Framework
-#                 Copyright (2001) Sandia Corporation
+#            TriBITS: Tribial Build, Integrate, and Test System
+#                    Copyright 2013 Sandia Corporation
 #
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+# the U.S. Government retains certain rights in this software.
 #
-# Copyright (2001) Sandia Corporation. Under the terms of Contract
-# DE-AC04-94AL85000, there is a non-exclusive license for use of this
-# work by or on behalf of the U.S. Government.  Export of this program
-# may require a license from the United States Government.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
 #
 # 1. Redistributions of source code must retain the above copyright
 # notice, this list of conditions and the following disclaimer.
@@ -35,23 +36,6 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# NOTICE:  The United States Government is granted for itself and others
-# acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
-# license in this data to reproduce, prepare derivative works, and
-# perform publicly and display publicly.  Beginning five (5) years from
-# July 25, 2001, the United States Government is granted for itself and
-# others acting on its behalf a paid-up, nonexclusive, irrevocable
-# worldwide license in this data to reproduce, prepare derivative works,
-# distribute copies to the public, perform publicly and display
-# publicly, and to permit others to do so.
-#
-# NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
-# OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
-# ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
-# RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
-# INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
-# THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
-#
 # ************************************************************************
 # @HEADER
 
@@ -64,8 +48,20 @@ import sys
 import traceback
 from optparse import OptionParser
 
-_THIS_REAL_PATH = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
-sys.path.append(os.path.join(_THIS_REAL_PATH, 'python'))
+if os.environ.get("TRIBITS_CHECKIN_TEST_DEBUG_DUMP", "") == "ON":
+  debugDump = True
+else:
+  debugDump = False
+
+thisFilePath = __file__
+if debugDump: print "thisFilePath =", thisFilePath
+
+thisFileRealAbsBasePath = os.path.dirname(os.path.abspath(os.path.realpath(thisFilePath)))
+if debugDump: print "thisFileRealAbsBasePath = '"+thisFileRealAbsBasePath+"'"
+
+sys.path.append(os.path.join(thisFileRealAbsBasePath, 'python'))
+if debugDump: print "sys.path =", sys.path
+
 from CheckinTest import *
 from GeneralScriptSupport import *
 
@@ -185,6 +181,9 @@ In order to do a solid checkin, perform the following recommended workflow
   NOTE: Once you start running the checkin-test.py script, you can go off and
   do something else and just check your email to see if all the builds and
   tests passed and if the push happened or not.
+
+  NOTE: The commands 'cmake', 'ctest', and 'make' must be in your default path
+  befor running this script.
 
 For more details on using this script, see the detailed documentation below.
 
@@ -702,6 +701,11 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     help="If set, then all listed extra repos must exist or the script will exit. [default]" )
 
   clp.add_option(
+    "--with-cmake", dest="withCmake", type="string", default="cmake",
+    help="CMake executable to use with cmake -P scripts internally (only set" \
+    +" by unit testing code).")
+
+  clp.add_option(
     "--skip-deps-update", dest="skipDepsUpdate", action="store_true",
     help="If set, skip the update of the dependency XML file (debug only).",
     default=False )
@@ -748,6 +752,15 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   clp.add_option(
     "--abort-gracefully-if-no-updates", dest="abortGracefullyIfNoUpdates", action="store_true",
     help="If set, then the script will abort gracefully if no updates are pulled from any repo.",
+    default=False )
+
+  clp.add_option(
+    "--continue-if-no-changes-to-push", dest="abortGracefullyIfNoChangesToPush", action="store_false",
+    help="If set, then the script will continue if no changes to push from any repo. [default]",
+    default=False )
+  clp.add_option(
+    "--abort-gracefully-if-no-changes-to-push", dest="abortGracefullyIfNoChangesToPush", action="store_true",
+    help="If set, then the script will abort gracefully if no changes to push from any repo.",
     default=False )
 
   clp.add_option(
@@ -1015,6 +1028,10 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     print "  --abort-gracefully-if-no-updates \\"
   else:
     print "  --continue-if-no-updates \\"
+  if options.abortGracefullyIfNoChangesToPush:
+    print "  --abort-gracefully-if-no-changes-to-push \\"
+  else:
+    print "  --continue-if-no-changes-to-push \\"
   if options.abortGracefullyIfNoEnables:
     print "  --abort-gracefully-if-no-enables \\"
   else:
@@ -1128,6 +1145,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   else:
     return True
 
+
 def getConfigurationSearchPaths():
   """
   Gets a list of paths to search for the configuration. If this file
@@ -1140,11 +1158,12 @@ def getConfigurationSearchPaths():
     result.append(os.path.dirname(os.path.abspath(__file__)))
   # Always append the default tribits directory structure where this file lives in
   # <project-root>/cmake/tribits
-  result.append(os.path.join(_THIS_REAL_PATH, '..', '..'))
+  result.append(os.path.join(thisFileRealAbsBasePath, '..', '..'))
   return result
 
+
 def loadConfigurationFile(filepath):
-  print "Loading project configuration from %s..." % filepath
+  if debugDump: print "Loading project configuration from %s..." % filepath
   if os.path.exists(filepath):
     try:
       modulePath = os.path.dirname(filepath)
@@ -1160,6 +1179,7 @@ def loadConfigurationFile(filepath):
       sys.path.pop()
   else:
     raise Exception('The file %s does not exist.' % filepath)
+
 
 def locateAndLoadConfiguration(path_hints = []):
   """

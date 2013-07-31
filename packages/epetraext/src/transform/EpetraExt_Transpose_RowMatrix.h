@@ -63,29 +63,20 @@ class RowMatrix_Transpose : public SameTypeTransform<Epetra_RowMatrix>
   //! Constructor
   /*!
     \param In
-    MakeDataContiguous - Whether to optimize form of matrix to be contiguous data storage.
-    \param In
     TransposeRowMap - Map to be used for row mapping of transpose matrix
     \param In
     IgnoreNonLocalCols - Whether to ignore non-local columns for the transpose
    */
-  RowMatrix_Transpose( bool MakeDataContiguous = false,
-		       Epetra_Map * TransposeRowMap = 0,
+  RowMatrix_Transpose( Epetra_Map * TransposeRowMap = 0,
 		       bool IgnoreNonLocalCols = false)
   : TransposeMatrix_(0),
-    TransposeExporter_(0),
     TransposeRowMap_(TransposeRowMap),
-    MakeDataContiguous_(MakeDataContiguous),
     IgnoreNonLocalCols_(IgnoreNonLocalCols),
     NumMyRows_(0),
     NumMyCols_(0),
     MaxNumEntries_(0),
     Indices_(0),
     Values_(0),
-    TransNumNz_(0),
-    TransIndices_(0),
-    TransValues_(0),
-    TransMyGlobalEquations_(0),
     OrigMatrixIsCrsMatrix_(false)
   {}
 
@@ -98,11 +89,13 @@ class RowMatrix_Transpose : public SameTypeTransform<Epetra_RowMatrix>
   //! Reverse Data Migration
   bool rvs();
 
+  //! Release the pointer to TransposeMatrix_ (so you can take the matrix out w/o worring about deallocation)
+  void ReleaseTranspose() {TransposeMatrix_=0;}
+
  private:
+  Epetra_CrsMatrix * BuildTempTrans();
 
   Epetra_CrsMatrix * TransposeMatrix_;
-
-  Epetra_Export * TransposeExporter_;
 
   Epetra_Map * TransposeRowMap_;
 
@@ -114,11 +107,6 @@ class RowMatrix_Transpose : public SameTypeTransform<Epetra_RowMatrix>
   int MaxNumEntries_;
   int * Indices_;
   double * Values_;
-
-  int * TransNumNz_;
-  int ** TransIndices_;
-  double ** TransValues_;
-  int * TransMyGlobalEquations_;
 
   bool OrigMatrixIsCrsMatrix_;
 

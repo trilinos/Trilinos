@@ -56,8 +56,8 @@ namespace {
 
   using Teuchos::Time;
   using Teuchos::TimeMonitor;
-  using Kokkos::DefaultNode;
-  using Kokkos::ReadyBufferHelper;
+  using KokkosClassic::DefaultNode;
+  using KokkosClassic::ReadyBufferHelper;
   using Teuchos::tuple;
   using Teuchos::ArrayRCP;
   using Teuchos::Tuple;

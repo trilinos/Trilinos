@@ -252,7 +252,6 @@ namespace TSQR {
 
       typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
       typedef NormalGenerator< Ordinal, Scalar > normgen_type;
-      typedef NormalGenerator< Ordinal, magnitude_type > normgen_mag_type;
       typedef MatrixGenerator< Ordinal, Scalar, normgen_type > matgen_type;
       typedef Matrix< Ordinal, Scalar > matrix_type;
       typedef vector< magnitude_type > results_type;
@@ -452,7 +451,6 @@ namespace TSQR {
 
       typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
       typedef NormalGenerator< Ordinal, Scalar > normgen_type;
-      typedef NormalGenerator< Ordinal, magnitude_type > normgen_mag_type;
       typedef MatrixGenerator< Ordinal, Scalar, normgen_type > matgen_type;
       typedef Matrix< Ordinal, Scalar > matrix_type;
       typedef MatView< Ordinal, Scalar > mat_view_type;

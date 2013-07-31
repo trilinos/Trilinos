@@ -41,10 +41,14 @@
 
 #include "Trilinos_Util.h"
 #include "iohb.h"
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Comm.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Vector.h"
 #include "Epetra_VbrMatrix.h"
+
+// CJ TODO FIXME: Trilinos_Util_ReadHb2EpetraVbr available only if 32 bit GIDs available.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 
 void Trilinos_Util_ReadHb2EpetraVbr(char *data_file, char * partitioning,
 				 const Epetra_Comm  &comm, 
@@ -104,8 +108,8 @@ void Trilinos_Util_ReadHb2EpetraVbr(char *data_file, char * partitioning,
     int *BlockIndices = bindx + bpntr[i];
     int ierr = A->BeginInsertGlobalValues(BlockRow, NumBlockEntries, BlockIndices);
     if (ierr!=0) {
-      cerr << "Error in BeginInsertGlobalValues(GlobalBlockRow = " << BlockRow 
-	   << ") = " << ierr << endl; 
+      std::cerr << "Error in BeginInsertGlobalValues(GlobalBlockRow = " << BlockRow 
+	   << ") = " << ierr << std::endl; 
       abort();
     }
     int LDA = ElementSizeList[i];
@@ -115,20 +119,20 @@ void Trilinos_Util_ReadHb2EpetraVbr(char *data_file, char * partitioning,
       double * Values = val + indx[j];
       ierr = A->SubmitBlockEntry(Values, LDA, NumRows, NumCols);
       if (ierr!=0) {
-	cerr << "Error in SubmitBlockEntry, GlobalBlockRow = " << BlockRow 
-	     << "GlobalBlockCol = " << BlockIndices[j] << "Error = " << ierr << endl; 
+	std::cerr << "Error in SubmitBlockEntry, GlobalBlockRow = " << BlockRow 
+	     << "GlobalBlockCol = " << BlockIndices[j] << "Error = " << ierr << std::endl; 
 	abort();
       }
     }
     ierr = A->EndSubmitEntries();
     if (ierr!=0) {
-      cerr << "Error in EndSubmitEntries(GlobalBlockRow = " << BlockRow 
-	   << ") = " << ierr << endl; 
+      std::cerr << "Error in EndSubmitEntries(GlobalBlockRow = " << BlockRow 
+	   << ") = " << ierr << std::endl; 
       abort();
     }
   }}
   int ierr=A->FillComplete();    
-  if (ierr!=0) cerr << "Error in Epetra_VbrMatrix FillComplete ierr = " << ierr << endl;
+  if (ierr!=0) std::cerr << "Error in Epetra_VbrMatrix FillComplete ierr = " << ierr << std::endl;
   
   xexact = new Epetra_Vector(Copy, *map, xexact_in);
   x = new Epetra_Vector(Copy, *map, x_in);
@@ -149,3 +153,5 @@ void Trilinos_Util_ReadHb2EpetraVbr(char *data_file, char * partitioning,
     }
   return;
 }
+
+#endif

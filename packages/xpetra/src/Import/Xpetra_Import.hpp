@@ -56,7 +56,7 @@
 
 namespace Xpetra {
 
-  template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+  template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class Import
     : public Teuchos::Describable
   {
@@ -99,7 +99,7 @@ namespace Xpetra {
     virtual ArrayView< const LocalOrdinal > getExportLIDs() const = 0;
 
     //! List of processes to which entries will be sent.
-    virtual ArrayView< const int > getExportImageIDs() const = 0;
+    virtual ArrayView< const int > getExportPIDs() const = 0;
 
     //! The Source Map used to construct this Import object.
     virtual const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getSourceMap() const = 0;

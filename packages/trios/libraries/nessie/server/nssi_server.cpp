@@ -56,6 +56,8 @@
 #include "Trios_nssi_server.h"
 
 #include "Trios_nssi_types.h"
+#include "Trios_nssi_fprint_types.h"
+#include "Trios_nnti_fprint_types.h"
 #include "Trios_nssi_xdr.h"
 #include "Trios_nnti.h"
 
@@ -96,6 +98,9 @@ extern nssi_config_t nssi_config;
 
 extern trios_buffer_queue_t send_bq;
 extern trios_buffer_queue_t recv_bq;
+extern trios_buffer_queue_t rdma_target_bq;
+extern trios_buffer_queue_t rdma_get_bq;
+extern trios_buffer_queue_t rdma_put_bq;
 
 
 int rpc_get_service(
@@ -122,8 +127,6 @@ int rpc_trace_reset(
 typedef void (*progress_callback)(bool is_idle);
 
 
-//static nthread_lock_t meminfo_mutex;
-
 static bool time_to_die = false;
 
 static nssi_service local_service;
@@ -141,6 +144,11 @@ unsigned long max_mem_allowed=0;
 static int trace_counter_gid;
 static int trace_interval_gid;
 
+
+#ifdef GNI_PERF
+#include <gemini.h>
+gemini_state_t gni_state;
+#endif
 
 /* Need a struct to encapsulate a IB connection addr/port pair.
  * STL does not like arrays in template defs.
@@ -172,7 +180,11 @@ typedef struct {
     int           opcode;
     unsigned long request_id;
     uint64_t      start_time;
-    double arrival_time;
+    double        arrival_time;
+
+    NNTI_buffer_t *data_hdl;
+    NNTI_buffer_t  shadow_data;
+    NNTI_buffer_t *shadow_data_hdl;
 } request_args_t;
 
 static std::map<struct caller_reqid, request_args_t *, caller_reqid_lt> request_args_map;
@@ -181,24 +193,37 @@ typedef std::pair<struct caller_reqid, request_args_t *> request_args_map_pair_t
 
 static nthread_lock_t request_args_map_mutex;
 
+typedef struct {
+    const NNTI_buffer_t *data_buffer;   // this is the original client data buffer
+    const NNTI_buffer_t *shadow_buffer; // this is the shadow buffer on the server
+    bool                 data_was_got;
+    bool                 data_was_put;
+} shadow_buffer_entry;
+static std::map<const NNTI_buffer_t *, shadow_buffer_entry *> shadow_buffer_map;
+typedef std::map<const NNTI_buffer_t *, shadow_buffer_entry *>::iterator shadow_buffer_map_iterator_t;
+static nthread_lock_t shadow_buffer_mutex;
 
-static void print_raw_buf(void *buf, uint32_t size)
-{
-    if (logging_debug(rpc_debug_level)) {
-        FILE* f=logger_get_file();
-        u_int64_t print_limit=(size<96) ? size : 96;
-        fprintf(f, "\nbuf (%p)\n", buf);
-        fflush(f);
-        if (buf != NULL) {
-            int l=0;
-            for (l=0;l<print_limit;l++) {
-                if (l%32 == 0) fprintf(f, "\nbuf (%lu) (offset(%d)) => ", buf, l);
-                fprintf(f, "%02hhX", ((char *)buf)[l]);
-            }
-            fprintf(f, "\n");
-        }
-    }
-}
+static log_level shadow_debug_level = LOG_UNDEFINED;
+
+
+
+//static void print_raw_buf(void *buf, uint32_t size)
+//{
+//    if (logging_debug(rpc_debug_level)) {
+//        FILE* f=logger_get_file();
+//        uint64_t print_limit=(size<96) ? size : 96;
+//        fprintf(f, "\nbuf (%p)\n", buf);
+//        fflush(f);
+//        if (buf != NULL) {
+//            uint64_t l=0;
+//            for (l=0;l<print_limit;l++) {
+//                if (l%32 == 0) fprintf(f, "\nbuf (%lu) (offset(%ld)) => ", (uint64_t)buf, l);
+//                fprintf(f, "%02hhX", ((char *)buf)[l]);
+//            }
+//            fprintf(f, "\n");
+//        }
+//    }
+//}
 
 
 
@@ -255,6 +280,99 @@ void request_args_del(const NNTI_peer_t *caller, const unsigned long reqid)
 
     log_debug(rpc_debug_level, "end");
 }
+
+
+static void print_shadow_buffer_map()
+{
+    log_level debug_level=shadow_debug_level;
+
+    if (!logging_debug(debug_level)) {
+        return;
+    }
+
+    shadow_buffer_map_iterator_t i;
+    if (nthread_lock(&shadow_buffer_mutex)) log_warn(shadow_debug_level, "failed to get thread lock");
+    for (i=shadow_buffer_map.begin(); i != shadow_buffer_map.end(); i++) {
+        log_debug(debug_level, "shadow_buffer_map key=%p sbe=%p", i->first, i->second);
+    }
+    nthread_unlock(&shadow_buffer_mutex);
+}
+static NNTI_result_t insert_shadow_buffer(shadow_buffer_entry *sbe)
+{
+    NNTI_result_t  rc=NNTI_OK;
+
+    if (nthread_lock(&shadow_buffer_mutex)) log_warn(shadow_debug_level, "failed to get thread lock");
+
+    log_debug(shadow_debug_level, "adding shadow buffer (sbe=%p)", sbe);
+
+    assert(shadow_buffer_map.find(sbe->shadow_buffer) == shadow_buffer_map.end());
+    shadow_buffer_map[sbe->shadow_buffer] = sbe;
+
+    log_debug(shadow_debug_level, "added shadow buffer (sbe=%p)", sbe);
+
+    nthread_unlock(&shadow_buffer_mutex);
+
+    return(rc);
+
+}
+static shadow_buffer_entry *get_shadow_buffer(const NNTI_buffer_t *sbuf)
+{
+    shadow_buffer_entry *sbe=NULL;
+
+    if (nthread_lock(&shadow_buffer_mutex)) log_warn(shadow_debug_level, "failed to get thread lock");
+
+    log_debug(shadow_debug_level, "looking for shadow buffer (sbuf=%p)", sbuf);
+
+    if (shadow_buffer_map.find(sbuf) != shadow_buffer_map.end()) {
+        sbe = shadow_buffer_map[sbuf];
+    }
+
+    log_debug(shadow_debug_level, "found shadow buffer entry (sbe=%p)", sbe);
+
+    nthread_unlock(&shadow_buffer_mutex);
+
+    if (sbe != NULL) {
+        log_debug(shadow_debug_level, "shadow buffer entry found (sbe=%p)", sbe);
+        return sbe;
+    }
+
+    log_debug(shadow_debug_level, "shadow buffer entry NOT found");
+
+    print_shadow_buffer_map();
+
+    return(NULL);
+}
+static shadow_buffer_entry *del_shadow_buffer(NNTI_buffer_t *victim)
+{
+    shadow_buffer_entry *sbe=NULL;
+
+    log_level debug_level = shadow_debug_level;
+
+    if (nthread_lock(&shadow_buffer_mutex)) log_warn(shadow_debug_level, "failed to get thread lock");
+
+    log_debug(debug_level, "deleting shadow buffer (victim=%p)", victim);
+
+    if (shadow_buffer_map.find(victim) != shadow_buffer_map.end()) {
+        sbe = shadow_buffer_map[victim];
+    }
+
+    if (sbe != NULL) {
+        log_debug(shadow_debug_level, "shadow buffer entry found and deleted (sbe=%p ; victim=%p)", sbe, victim);
+        shadow_buffer_map.erase(victim);
+    } else {
+        log_debug(debug_level, "shadow buffer entry NOT found");
+    }
+
+    log_debug(debug_level, "deleted (sbe=%p ; victim=%p)", sbe, victim);
+
+    nthread_unlock(&shadow_buffer_mutex);
+
+    print_shadow_buffer_map();
+
+    return(sbe);
+}
+
+
 
 /* ----------- Implementation of core services ----------- */
 
@@ -566,7 +684,10 @@ static int send_result(const NNTI_peer_t   *caller,
     NNTI_status_t wait_status;
     nssi_result_header header;
 
-    int i=0;
+    int8_t        long_res_ack;
+    NNTI_buffer_t long_res_ack_hdl;
+    NNTI_status_t long_res_ack_status;
+
 
     request_args_t *args=request_args_get(caller, request_id);
     int opcode=args->opcode;
@@ -709,6 +830,23 @@ static int send_result(const NNTI_peer_t   *caller,
 
         log_debug(rpc_debug_level, "allocated long_res_buf(%lu) req_id(%lu)", buf, request_id);
 
+        trios_start_timer(call_time);
+        rc=NNTI_register_memory(
+                &transports[caller->peer.transport_id],
+                (char *)&long_res_ack,
+                sizeof(long_res_ack),
+                1,
+                NNTI_RECV_DST,
+                caller,
+                &long_res_ack_hdl);
+        trios_stop_timer("NNTI_register_memory - long result ack", call_time);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed registering long result ack: %s",
+                    nnti_err_str(rc));
+        }
+
+        header.result_ack_addr=long_res_ack_hdl;
+
         /* we want the client to fetch the result */
         /* client needs this information from the header */
         header.fetch_result = TRUE;
@@ -800,17 +938,17 @@ static int send_result(const NNTI_peer_t   *caller,
      * the GET to complete */
     if (header.fetch_result) {
         log_debug(rpc_debug_level, "waiting for client to "
-            "fetch result %lu", request_id);
+            "ACK request %lu", request_id);
 
         trios_start_timer(call_time);
         rc=NNTI_wait(
-                &long_res_hdl,
-                NNTI_GET_SRC,
+                &long_res_ack_hdl,
+                NNTI_RECV_DST,
                 -1,
-                &wait_status);
-        trios_stop_timer("NNTI_wait - long result", call_time);
+                &long_res_ack_status);
+        trios_stop_timer("NNTI_wait - long result ack", call_time);
         if (rc != NNTI_OK) {
-            log_error(rpc_debug_level, "failed waiting for client to fetch long result: %s",
+            log_error(rpc_debug_level, "failed waiting for client to send long result ack: %s",
                     nnti_err_str(rc));
         }
     }
@@ -824,6 +962,12 @@ cleanup:
                     nnti_err_str(rc));
         }
         free(buf);
+
+        rc=NNTI_unregister_memory(&long_res_ack_hdl);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed unregistering long result ack: %s",
+                    nnti_err_str(rc));
+        }
     }
 
     if (nssi_config.use_buffer_queue) {
@@ -949,11 +1093,14 @@ int nssi_process_rpc_request(nssi_svc_rpc_request *rpc_req)
     int req_count = 0;
     log_level debug_level = rpc_debug_level;
 
-    NNTI_buffer_t incoming_hdl;
+    shadow_buffer_entry *sbe=NULL;
+    char          *shadow_data_buf =NULL;
+    nssi_size      shadow_data_size=0;
+
 
     request_args_t *req_args=NULL;
 
-    nssi_service *svc       = rpc_req->svc;
+//    nssi_service *svc       = rpc_req->svc;
     NNTI_peer_t caller      = rpc_req->caller;
     char *req_buf           = rpc_req->req_buf;
     nssi_size short_req_len = rpc_req->short_req_len;
@@ -1069,6 +1216,66 @@ int nssi_process_rpc_request(nssi_svc_rpc_request *rpc_req)
         }
     }
 
+    req_args = (request_args_t *)malloc(sizeof(request_args_t));
+    req_args->opcode = header.opcode;
+    req_args->request_id = header.id;
+    req_args->arrival_time = rpc_req->arrival_time;
+    req_args->start_time = trios_get_time_ms();
+    request_args_add(&caller, header.id, req_args);
+
+    req_args->data_hdl=&header.data_addr;
+
+    shadow_data_size=NNTI_BUFFER_SIZE(&header.data_addr);
+    if (header.fetch_data == TRUE) {
+
+        req_args->shadow_data    =header.data_addr;
+        req_args->shadow_data_hdl=&req_args->shadow_data;
+
+    } else if ((shadow_data_size > 0) && (header.fetch_data == FALSE)) {
+
+        if ((nssi_config.use_buffer_queue) &&
+            (nssi_config.rdma_buffer_queue_buffer_size >= shadow_data_size)) {
+            log_debug(rpc_debug_level, "using buffer queue for SHADOW buffer");
+            req_args->shadow_data_hdl=trios_buffer_queue_pop(&rdma_target_bq);
+            assert(req_args->shadow_data_hdl);
+            NNTI_BUFFER_SIZE(req_args->shadow_data_hdl)=shadow_data_size;
+        } else {
+            log_debug(rpc_debug_level, "allocating buffer for SHADOW buffer");
+            shadow_data_buf=(char*)malloc(shadow_data_size);
+
+            req_args->shadow_data_hdl=&req_args->shadow_data;
+
+            trios_start_timer(call_time);
+            rc=NNTI_register_memory(
+                    &transports[rpc_req->svc->transport_id],
+                    (char *)shadow_data_buf,
+                    shadow_data_size,
+                    1,
+                    (NNTI_buf_ops_t)(NNTI_GET_SRC|NNTI_PUT_DST),
+                    &transports[rpc_req->svc->transport_id].me,
+                    req_args->shadow_data_hdl);
+            trios_stop_timer("NNTI_register_memory - shadow_data_buf", call_time);
+            if (rc != NNTI_OK) {
+                log_error(rpc_debug_level, "failed registering shadow_data: %s",
+                        nnti_err_str(rc));
+                goto cleanup;
+            }
+        }
+
+        nssi_size data_offset=xdr_getpos(&xdrs);
+
+        log_debug(rpc_debug_level,"extracting data (size=%d, offset=%d) from short request", shadow_data_size, data_offset);
+        /* copy small data into the short request */
+        memcpy(NNTI_BUFFER_C_POINTER(req_args->shadow_data_hdl), req_buf+data_offset, shadow_data_size);
+
+        sbe=(shadow_buffer_entry *)malloc(sizeof(shadow_buffer_entry));
+        sbe->data_buffer  =req_args->data_hdl;
+        sbe->shadow_buffer=req_args->shadow_data_hdl;
+        sbe->data_was_got =false;
+        sbe->data_was_put =true;
+        insert_shadow_buffer(sbe);
+    }
+
     /* end the decode args interval */
     trace_end_interval(trace_interval_gid, TRACE_RPC_DECODE,
             0, "decode request");
@@ -1082,21 +1289,38 @@ int nssi_process_rpc_request(nssi_svc_rpc_request *rpc_req)
             req_count, header.id, header.opcode,
             svc_op.func);
 
-    req_args = (request_args_t *)malloc(sizeof(request_args_t));
-    req_args->opcode = header.opcode;
-    req_args->request_id = header.id;
-    req_args->arrival_time = rpc_req->arrival_time;
-    req_args->start_time = trios_get_time_ms();
-    request_args_add(&caller, header.id, req_args);
-
     // is reentrant??
     trios_start_timer(call_time);
-    rc = svc_op.func(header.id, &caller, op_args, &header.data_addr, &header.res_addr);
+    rc = svc_op.func(header.id, &caller, op_args, req_args->shadow_data_hdl, &header.res_addr);
     trios_stop_timer("svc_op", call_time);
     if (rc != NSSI_OK) {
         log_info(rpc_debug_level,
                 "user op failed: %s",
                 nssi_err_str(rc));
+    }
+
+    if ((shadow_data_size > 0) && (header.fetch_data == FALSE)) {
+
+        sbe=del_shadow_buffer(req_args->shadow_data_hdl);
+        free(sbe);
+
+        if ((nssi_config.use_buffer_queue) &&
+            (nssi_config.rdma_buffer_queue_buffer_size >= (uint32_t)shadow_data_size)) {
+            trios_buffer_queue_push(&rdma_target_bq, req_args->shadow_data_hdl);
+        } else {
+
+            shadow_data_buf=NNTI_BUFFER_C_POINTER(req_args->shadow_data_hdl);
+
+            trios_start_timer(call_time);
+            rc=NNTI_unregister_memory(req_args->shadow_data_hdl);
+            trios_stop_timer("NNTI_unregister_memory - shadow_data_buf", call_time);
+            if (rc != NNTI_OK) {
+                log_error(rpc_debug_level, "failed unregistering data: %s",
+                        nnti_err_str(rc));
+            }
+
+            free(shadow_data_buf);
+        }
     }
 
     /* send result back to client */
@@ -1172,34 +1396,65 @@ int nssi_get_data(
         const NNTI_buffer_t *data_addr)
 {
     int rc = NSSI_OK;
-    NNTI_buffer_t rpc_msg;
+    NNTI_buffer_t  rpc_msg;
+    NNTI_buffer_t *rpc_msg_hdl=NULL;
     NNTI_status_t status;
     trios_declare_timer(call_time);
+
+    shadow_buffer_entry *sbe=NULL;
 
     if (len == 0)
         return rc;
 
-    trios_start_timer(call_time);
-    rc=NNTI_register_memory(
-            &transports[data_addr->transport_id],
-            (char *)buf,
-            len,
-            1,
-            NNTI_GET_DST,
-            caller,
-            &rpc_msg);
-    trios_stop_timer("register get dest", call_time);
-    if (rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed registering data: %s",
-                nnti_err_str(rc));
+    if (len < 0)
+        return NSSI_EINVAL;
+
+    sbe=get_shadow_buffer(data_addr);
+    if (sbe != NULL) {
+        memcpy(buf, NNTI_BUFFER_C_POINTER(sbe->shadow_buffer), len);
+        sbe->data_was_got=true;
+        return rc;
     }
+
+    if ((nssi_config.use_buffer_queue) &&
+        (nssi_config.rdma_buffer_queue_buffer_size >= (uint32_t)len)) {
+        log_debug(rpc_debug_level, "using buffer queue for GET buffer");
+        rpc_msg_hdl=trios_buffer_queue_pop(&rdma_get_bq);
+        assert(rpc_msg_hdl);
+        NNTI_BUFFER_SIZE(rpc_msg_hdl)=len;
+    } else {
+        log_debug(rpc_debug_level, "using user buffer for GET buffer");
+        trios_start_timer(call_time);
+        rpc_msg_hdl=&rpc_msg;
+        rc=NNTI_register_memory(
+                &transports[data_addr->transport_id],
+                (char *)buf,
+                len,
+                1,
+                NNTI_GET_DST,
+                caller,
+                rpc_msg_hdl);
+        trios_stop_timer("register get dest", call_time);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed registering data: %s",
+                    nnti_err_str(rc));
+        }
+    }
+
     trios_start_timer(call_time);
+#ifdef GNI_PERF
+    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
+#endif
     rc=NNTI_get(
             data_addr,
             0,
             len,
-            &rpc_msg,
+            rpc_msg_hdl,
             0);
+#ifdef GNI_PERF
+    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
+    gemini_print_counters(MPI_COMM_WORLD, &gni_state, "nssi_get_data - NNTI_get");
+#endif
     trios_stop_timer("get to get dest", call_time);
     if (rc != NNTI_OK) {
         log_error(rpc_debug_level, "failed getting data: %s",
@@ -1207,23 +1462,33 @@ int nssi_get_data(
     }
     trios_start_timer(call_time);
     rc=NNTI_wait(
-            &rpc_msg,
+            rpc_msg_hdl,
             NNTI_GET_DST,
             -1,
             &status);
+#ifdef GNI_PERF
+    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
+    gemini_print_counters(MPI_COMM_WORLD, &gni_state, "nssi_get_data - NNTI_wait");
+#endif
     trios_stop_timer("wait for get dest", call_time);
     if (rc != NNTI_OK) {
         log_error(rpc_debug_level, "failed waiting for data: %s",
                 nnti_err_str(rc));
     }
-    trios_start_timer(call_time);
-    rc=NNTI_unregister_memory(&rpc_msg);
-    trios_stop_timer("deregister get dest", call_time);
-    if (rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed unregistering data: %s",
-                nnti_err_str(rc));
+    if ((nssi_config.use_buffer_queue) &&
+        (nssi_config.rdma_buffer_queue_buffer_size >= (uint32_t)len)) {
+        /* copy the RDMA buffer contents into the user buffer */
+        memcpy(buf, NNTI_BUFFER_C_POINTER(rpc_msg_hdl), len);
+        trios_buffer_queue_push(&rdma_get_bq, rpc_msg_hdl);
+    } else {
+        trios_start_timer(call_time);
+        rc=NNTI_unregister_memory(rpc_msg_hdl);
+        trios_stop_timer("deregister get dest", call_time);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed unregistering data: %s",
+                    nnti_err_str(rc));
+        }
     }
-
 
     return rc;
 }
@@ -1247,31 +1512,62 @@ extern int nssi_put_data(
 {
     int rc = NSSI_OK;
     NNTI_buffer_t rpc_msg;
+    NNTI_buffer_t *rpc_msg_hdl=NULL;
     NNTI_status_t status;
     trios_declare_timer(call_time);
+
+    shadow_buffer_entry *sbe=NULL;
 
     if (len == 0)
         return rc;
 
-    rc=NNTI_register_memory(
-            &transports[data_addr->transport_id],
-            (char *)buf,
-            len,
-            1,
-            NNTI_PUT_SRC,
-            caller,
-            &rpc_msg);
-    if (rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed registering data: %s",
-                nnti_err_str(rc));
+    if (len < 0)
+        return NSSI_EINVAL;
+
+    /* if there is a shadow data buffer in use, then put the shadow data into the client's data_addr */
+    sbe=get_shadow_buffer(data_addr);
+    if (sbe != NULL) {
+        data_addr = sbe->data_buffer;
+    }
+
+    if ((nssi_config.use_buffer_queue) &&
+        (nssi_config.rdma_buffer_queue_buffer_size >= (uint32_t)len)) {
+        log_debug(rpc_debug_level, "using buffer queue for PUT buffer");
+        rpc_msg_hdl=trios_buffer_queue_pop(&rdma_put_bq);
+        assert(rpc_msg_hdl);
+        NNTI_BUFFER_SIZE(rpc_msg_hdl)=len;
+        /* copy the user buffer contents into RDMA buffer */
+        memcpy(NNTI_BUFFER_C_POINTER(rpc_msg_hdl), buf, len);
+    } else {
+        log_debug(rpc_debug_level, "using user buffer for PUT buffer");
+        rpc_msg_hdl=&rpc_msg;
+        rc=NNTI_register_memory(
+                &transports[data_addr->transport_id],
+                (char *)buf,
+                len,
+                1,
+                NNTI_PUT_SRC,
+                caller,
+                rpc_msg_hdl);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed registering data: %s",
+                    nnti_err_str(rc));
+        }
     }
     trios_start_timer(call_time);
+#ifdef GNI_PERF
+    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
+#endif
     rc=NNTI_put(
-            &rpc_msg,
+            rpc_msg_hdl,
             0,
             len,
             data_addr,
             0);
+#ifdef GNI_PERF
+    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
+    gemini_print_counters(MPI_COMM_WORLD, &gni_state, "nssi_put_data - NNTI_put");
+#endif
     trios_stop_timer("NNTI_put - put to put dest", call_time);
     if (rc != NSSI_OK) {
         log_error(rpc_debug_level, "failed putting data: %s",
@@ -1279,19 +1575,28 @@ extern int nssi_put_data(
     }
     trios_start_timer(call_time);
     rc=NNTI_wait(
-            &rpc_msg,
+            rpc_msg_hdl,
             NNTI_PUT_SRC,
             -1,
             &status);
+#ifdef GNI_PERF
+    gemini_read_counters(MPI_COMM_WORLD, &gni_state);
+    gemini_print_counters(MPI_COMM_WORLD, &gni_state, "nssi_put_data - NNTI_wait");
+#endif
     trios_stop_timer("NNTI_wait - put to put dest", call_time);
     if (rc != NNTI_OK) {
         log_error(rpc_debug_level, "failed waiting for data: %s",
                 nnti_err_str(rc));
     }
-    rc=NNTI_unregister_memory(&rpc_msg);
-    if (rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed unregistering data: %s",
-                nnti_err_str(rc));
+    if ((nssi_config.use_buffer_queue) &&
+        (nssi_config.rdma_buffer_queue_buffer_size >= (uint32_t)len)) {
+        trios_buffer_queue_push(&rdma_put_bq, rpc_msg_hdl);
+    } else {
+        rc=NNTI_unregister_memory(rpc_msg_hdl);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed unregistering data: %s",
+                    nnti_err_str(rc));
+        }
     }
 
     return rc;
@@ -1389,9 +1694,14 @@ int nssi_service_init(
 {
     int rc = NSSI_OK;
 
-//    nthread_lock_init(&meminfo_mutex);
+    /* each md can recv reqs_per_queue messages */
+    int reqs_per_queue = 10000;
+    /* two incoming queues */
+    char *req_queue_buffer = NULL;
+
     nthread_lock_init(&supported_ops_mutex);
     nthread_lock_init(&request_args_map_mutex);
+    nthread_lock_init(&shadow_buffer_mutex);
 
     /* initialize the service descriptors */
     memset(service, 0, sizeof(nssi_service));
@@ -1415,13 +1725,32 @@ int nssi_service_init(
     trace_register_group(TRACE_RPC_COUNTER_GNAME, &trace_counter_gid);
     trace_register_group(TRACE_RPC_INTERVAL_GNAME, &trace_interval_gid);
 
-    /* copy the service description to the local service description */
-    memcpy(&local_service, service, sizeof(nssi_service));
-
     /* Register standard services */
     NSSI_REGISTER_SERVER_STUB(NSSI_OP_GET_SERVICE,  rpc_get_service,  void,                   nssi_service);
     NSSI_REGISTER_SERVER_STUB(NSSI_OP_KILL_SERVICE, rpc_kill_service, nssi_kill_service_args, void);
     NSSI_REGISTER_SERVER_STUB(NSSI_OP_TRACE_RESET,  rpc_trace_reset,  nssi_trace_reset_args,  void);
+
+    /* allocate enough memory for 2 request queues */
+    req_queue_buffer = (char *) malloc(2*reqs_per_queue*service->req_size);
+
+    /* initialize the buffer */
+    memset(req_queue_buffer, 0, 2*reqs_per_queue*service->req_size);
+
+    rc=NNTI_register_memory(
+            &transports[service->transport_id],
+            req_queue_buffer,
+            service->req_size,
+            2*reqs_per_queue,
+            NNTI_RECV_QUEUE,
+            &transports[service->transport_id].me,
+            &service->req_addr);
+    if (rc != NNTI_OK) {
+        log_error(rpc_debug_level, "failed registering request queue: %s",
+                nnti_err_str(rc));
+    }
+
+    /* copy the service description to the local service description */
+    memcpy(&local_service, service, sizeof(nssi_service));
 
     return rc;
 }
@@ -1469,9 +1798,23 @@ int nssi_service_add_op(
  */
 int nssi_service_fini(const nssi_service *service)
 {
-//	nthread_lock_fini(&meminfo_mutex);
+    int rc = NSSI_OK;
+    char *req_queue_buffer = NULL;
+
     nthread_lock_fini(&supported_ops_mutex);
     nthread_lock_fini(&request_args_map_mutex);
+    nthread_lock_fini(&shadow_buffer_mutex);
+
+    req_queue_buffer = NNTI_BUFFER_C_POINTER(&service->req_addr);
+
+    rc=NNTI_unregister_memory((NNTI_buffer_t *)&service->req_addr);
+    if (rc != NNTI_OK) {
+        log_error(rpc_debug_level, "failed unregistering request queue: %s",
+                nnti_err_str(rc));
+    }
+
+    log_debug(rpc_debug_level, "Free req_queue_buffer");
+    free(req_queue_buffer);
 
     time_to_die=false;
 
@@ -1554,10 +1897,8 @@ int nssi_service_start_wfn(
         nssi_service *svc,
         int (*process_req)(nssi_svc_rpc_request *))
 {
-    int rc = NSSI_OK, rc2;
+    int rc = NSSI_OK;
     int req_count = 0;
-    int index = 0;
-    int offset = 0;
     double t1;
     double idle_time = 0;
     double processing_time = 0;
@@ -1568,22 +1909,12 @@ int nssi_service_start_wfn(
 
     char *req_buf;
 
-    /* two incoming queues */
-    char *req_queue_buffer = NULL;
-
-    /* each message is no larger than req_size */
-    int   req_size = svc->req_size;
-
-    /* each md can recv reqs_per_queue messages */
-    int reqs_per_queue = 10000;
-
-//    NNTI_peer_t   caller;
     NNTI_buffer_t req_queue;
     NNTI_status_t status;
 
     progress_callback progress_cb       =NULL;
-    int64_t           progress_timeout  = 2000; // needs to be reasonable (2 sec)
-    uint64_t          progress_last_time=0;
+    int64_t           progress_timeout  =2000; // needs to be reasonable (2 sec)
+    int64_t           progress_last_time=0;
     if (svc->progress_callback != 0) {
         progress_cb=(progress_callback)svc->progress_callback;
         progress_timeout=svc->progress_callback_timeout;
@@ -1594,27 +1925,7 @@ int nssi_service_start_wfn(
 
     log_debug(debug_level, "starting single-threaded rpc service");
 
-    /* allocate enough memory for 2 request queues */
-    req_queue_buffer = (char *) malloc(2*reqs_per_queue*req_size);
-
-    /* initialize the buffer */
-    memset(req_queue_buffer, 0, 2*reqs_per_queue*req_size);
-
-    rc=NNTI_register_memory(
-            &transports[svc->transport_id],
-            req_queue_buffer,
-            req_size,
-            2*reqs_per_queue,
-            NNTI_RECV_QUEUE,
-            &transports[svc->transport_id].me,
-            &req_queue);
-    if (rc != NNTI_OK) {
-        log_error(debug_level, "failed registering request queue: %s",
-                nnti_err_str(rc));
-    }
-
-    local_service.req_addr = req_queue;
-
+    req_queue = svc->req_addr;
     /* initialize indices and counters */
     req_count = 0; /* number of reqs processed */
 
@@ -1737,15 +2048,6 @@ cleanup:
     trace_fini();
 
     log_debug(debug_level, "Cleaning up...");
-
-    rc=NNTI_unregister_memory(&req_queue);
-    if (rc != NNTI_OK) {
-        log_error(debug_level, "failed unregistering request queue: %s",
-                nnti_err_str(rc));
-    }
-
-    log_debug(debug_level, "Free req_queue_buffer");
-    free(req_queue_buffer);
 
     /* print out stats about the server */
     log_info(debug_level, "Exiting nssi_service_start: %d "

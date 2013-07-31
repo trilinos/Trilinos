@@ -609,7 +609,7 @@ namespace Belos {
           subR = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType> ( Teuchos::View,*H_,1,1,lclDim,curDim_ ) );
 
         // Project out the previous Krylov vectors and normalize the next vector.
-        int rank = ortho_->projectAndNormalize(*Vnext,AsubH,subR,AVprev);
+        rank = ortho_->projectAndNormalize(*Vnext,AsubH,subR,AVprev);
 
         // Copy over the coefficients to R just in case we run into an error.
         Teuchos::SerialDenseMatrix<int,ScalarType> subR2( Teuchos::View,R_,lclDim+1,1,0,curDim_ );
@@ -669,7 +669,7 @@ namespace Belos {
         Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> >  subR = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType> ( Teuchos::View,*H_,1,1,lclDim,curDim_ ) );
 
         // Project out the previous Krylov vectors and normalize the next vector.
-        int rank = ortho_->projectAndNormalize(*Vnext,AsubH,subR,AVprev);
+        rank = ortho_->projectAndNormalize(*Vnext,AsubH,subR,AVprev);
 
         // Copy over the coefficients to R just in case we run into an error.
         Teuchos::SerialDenseMatrix<int,ScalarType> subR2( Teuchos::View,R_,lclDim+1,1,0,curDim_ );

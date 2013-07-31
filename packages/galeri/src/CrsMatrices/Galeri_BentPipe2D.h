@@ -58,8 +58,6 @@ BentPipe2D(const Epetra_Map* Map, const int nx, const int ny,
            const double lx, const double ly,
            const double conv, const double diff)
 {
-  Epetra_CrsMatrix* Matrix = new Epetra_CrsMatrix(Copy, *Map,  5);
-
   int NumMyElements = Map->NumMyElements();
   int* MyGlobalElements = Map->MyGlobalElements();
 

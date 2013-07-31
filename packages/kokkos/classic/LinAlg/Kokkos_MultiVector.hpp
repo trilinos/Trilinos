@@ -50,7 +50,7 @@
 #include <Teuchos_Assert.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   /** \brief Data structure for local vector and multivector data.
 
@@ -240,7 +240,7 @@ namespace Kokkos {
         contigValues_.persistingView (offset, numEntries);
       // Get a read-write host view of the one entry.
       Teuchos::ArrayRCP<Scalar> hostView =
-        this->getNode ()->template viewBufferNonConst<Scalar> (Kokkos::ReadWrite,
+        this->getNode ()->template viewBufferNonConst<Scalar> (KokkosClassic::ReadWrite,
                                                                numEntries, deviceView);
       // Update the entry.  When hostView falls out of scope at the
       // end of this method, it will copy the updated entry back to
@@ -269,7 +269,7 @@ namespace Kokkos {
       // Get a host view of the one entry.  A write-only view
       //  suffices, since we're just replacing the value.
       Teuchos::ArrayRCP<Scalar> hostView =
-        this->getNode ()->template viewBufferNonConst<Scalar> (Kokkos::WriteOnly,
+        this->getNode ()->template viewBufferNonConst<Scalar> (KokkosClassic::WriteOnly,
                                                                numEntries, deviceView);
       // Update the entry.  When hostView falls out of scope at the
       // end of this method, it will copy the value back to the
@@ -321,11 +321,21 @@ namespace Kokkos {
         << ", but your requested new dimensions are "
         << newNumRows << " x " << newNumCols << ".");
 
-      // Starting position of the view of the data.
+      // Starting position of the view of the data.  Length of the
+      // data is just the whole array's length, minus the offset.
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
-      // Length of the view of the data.
-      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
-
+      const size_t len = contigValues_.size () -
+        Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos);
+#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
+        "KokkosClassic::MultiVector::offsetView: contigValues_.size() = "
+        << contigValues_.size() << " < startPos(=" << startPos
+        << ") + len(=" << len << ").  The original MultiVector had "
+        "dimensions " << origNumRows << " x " << origNumCols << ", and "
+        "we are trying to make a " << newNumRows << " x " << newNumCols
+        << " view starting at (" << offsetRow << ", " << offsetCol << ").");
+#endif // HAVE_KOKKOSCLASSIC_DEBUG
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
@@ -375,11 +385,21 @@ namespace Kokkos {
         << ", but your requested new dimensions are "
         << newNumRows << " x " << newNumCols << ".");
 
-      // Starting position of the view of the data.
+      // Starting position of the view of the data.  Length of the
+      // data is just the whole array's length, minus the offset.
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
-      // Length of the view of the data.
-      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
-
+      const size_t len = contigValues_.size () -
+        Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos);
+#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
+        "KokkosClassic::MultiVector::offsetViewNonConst: contigValues_.size() = "
+        << contigValues_.size() << " < startPos(=" << startPos
+        << ") + len(=" << len << ").  The original MultiVector had "
+        "dimensions " << origNumRows << " x " << origNumCols << ", and "
+        "we are trying to make a " << newNumRows << " x " << newNumCols
+        << " view starting at (" << offsetRow << ", " << offsetCol << ").");
+#endif // HAVE_KOKKOSCLASSIC_DEBUG
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
@@ -575,11 +595,21 @@ namespace Kokkos {
         << ", but your requested new dimensions are "
         << newNumRows << " x " << newNumCols << ".");
 
-      // Starting position of the view of the data.
+      // Starting position of the view of the data.  Length of the
+      // data is just the whole array's length, minus the offset.
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
-      // Length of the view of the data.
-      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
-
+      const size_t len = contigValues_.size () -
+        Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos);
+#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
+        "KokkosClassic::MultiVector::offsetView: contigValues_.size() = "
+        << contigValues_.size() << " < startPos(=" << startPos
+        << ") + len(=" << len << ").  The original MultiVector had "
+        "dimensions " << origNumRows << " x " << origNumCols << ", and "
+        "we are trying to make a " << newNumRows << " x " << newNumCols
+        << " view starting at (" << offsetRow << ", " << offsetCol << ").");
+#endif // HAVE_KOKKOSCLASSIC_DEBUG
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
@@ -623,11 +653,21 @@ namespace Kokkos {
         << ", but your requested new dimensions are "
         << newNumRows << " x " << newNumCols << ".");
 
-      // Starting position of the view of the data.
+      // Starting position of the view of the data.  Length of the
+      // data is just the whole array's length, minus the offset.
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
-      // Length of the view of the data.
-      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
-
+      const size_t len = contigValues_.size () -
+        Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos);
+#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
+        "KokkosClassic::MultiVector::offsetViewNonConst: contigValues_.size() = "
+        << contigValues_.size() << " < startPos(=" << startPos
+        << ") + len(=" << len << ").  The original MultiVector had "
+        "dimensions " << origNumRows << " x " << origNumCols << ", and "
+        "we are trying to make a " << newNumRows << " x " << newNumCols
+        << " view starting at (" << offsetRow << ", " << offsetCol << ").");
+#endif // HAVE_KOKKOSCLASSIC_DEBUG
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
@@ -790,11 +830,21 @@ namespace Kokkos {
         << ", but your requested new dimensions are "
         << newNumRows << " x " << newNumCols << ".");
 
-      // Starting position of the view of the data.
+      // Starting position of the view of the data.  Length of the
+      // data is just the whole array's length, minus the offset.
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
-      // Length of the view of the data.
-      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
-
+      const size_t len = contigValues_.size () -
+        Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos);
+#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
+        "KokkosClassic::MultiVector::offsetView: contigValues_.size() = "
+        << contigValues_.size() << " < startPos(=" << startPos
+        << ") + len(=" << len << ").  The original MultiVector had "
+        "dimensions " << origNumRows << " x " << origNumCols << ", and "
+        "we are trying to make a " << newNumRows << " x " << newNumCols
+        << " view starting at (" << offsetRow << ", " << offsetCol << ").");
+#endif // HAVE_KOKKOSCLASSIC_DEBUG
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
@@ -838,11 +888,21 @@ namespace Kokkos {
         << ", but your requested new dimensions are "
         << newNumRows << " x " << newNumCols << ".");
 
-      // Starting position of the view of the data.
+      // Starting position of the view of the data.  Length of the
+      // data is just the whole array's length, minus the offset.
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
-      // Length of the view of the data.
-      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
-
+      const size_t len = contigValues_.size () -
+        Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos);
+#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
+        "KokkosClassic::MultiVector::offsetViewNonConst: contigValues_.size() = "
+        << contigValues_.size() << " < startPos(=" << startPos
+        << ") + len(=" << len << ").  The original MultiVector had "
+        "dimensions " << origNumRows << " x " << origNumCols << ", and "
+        "we are trying to make a " << newNumRows << " x " << newNumCols
+        << " view starting at (" << offsetRow << ", " << offsetCol << ").");
+#endif // HAVE_KOKKOSCLASSIC_DEBUG
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
@@ -1007,11 +1067,21 @@ namespace Kokkos {
         << ", but your requested new dimensions are "
         << newNumRows << " x " << newNumCols << ".");
 
-      // Starting position of the view of the data.
+      // Starting position of the view of the data.  Length of the
+      // data is just the whole array's length, minus the offset.
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
-      // Length of the view of the data.
-      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
-
+      const size_t len = contigValues_.size () -
+        Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos);
+#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
+        "KokkosClassic::MultiVector::offsetView: contigValues_.size() = "
+        << contigValues_.size() << " < startPos(=" << startPos
+        << ") + len(=" << len << ").  The original MultiVector had "
+        "dimensions " << origNumRows << " x " << origNumCols << ", and "
+        "we are trying to make a " << newNumRows << " x " << newNumCols
+        << " view starting at (" << offsetRow << ", " << offsetCol << ").");
+#endif // HAVE_KOKKOSCLASSIC_DEBUG
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
@@ -1055,11 +1125,21 @@ namespace Kokkos {
         << ", but your requested new dimensions are "
         << newNumRows << " x " << newNumCols << ".");
 
-      // Starting position of the view of the data.
+      // Starting position of the view of the data.  Length of the
+      // data is just the whole array's length, minus the offset.
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
-      // Length of the view of the data.
-      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
-
+      const size_t len = contigValues_.size () -
+        Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos);
+#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
+        "KokkosClassic::MultiVector::offsetViewNonConst: contigValues_.size() = "
+        << contigValues_.size() << " < startPos(=" << startPos
+        << ") + len(=" << len << ").  The original MultiVector had "
+        "dimensions " << origNumRows << " x " << origNumCols << ", and "
+        "we are trying to make a " << newNumRows << " x " << newNumCols
+        << " view starting at (" << offsetRow << ", " << offsetCol << ").");
+#endif // HAVE_KOKKOSCLASSIC_DEBUG
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
@@ -1224,11 +1304,21 @@ namespace Kokkos {
         << ", but your requested new dimensions are "
         << newNumRows << " x " << newNumCols << ".");
 
-      // Starting position of the view of the data.
+      // Starting position of the view of the data.  Length of the
+      // data is just the whole array's length, minus the offset.
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
-      // Length of the view of the data.
-      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
-
+      const size_t len = contigValues_.size () -
+        Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos);
+#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
+        "KokkosClassic::MultiVector::offsetView: contigValues_.size() = "
+        << contigValues_.size() << " < startPos(=" << startPos
+        << ") + len(=" << len << ").  The original MultiVector had "
+        "dimensions " << origNumRows << " x " << origNumCols << ", and "
+        "we are trying to make a " << newNumRows << " x " << newNumCols
+        << " view starting at (" << offsetRow << ", " << offsetCol << ").");
+#endif // HAVE_KOKKOSCLASSIC_DEBUG
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
@@ -1272,11 +1362,21 @@ namespace Kokkos {
         << ", but your requested new dimensions are "
         << newNumRows << " x " << newNumCols << ".");
 
-      // Starting position of the view of the data.
+      // Starting position of the view of the data.  Length of the
+      // data is just the whole array's length, minus the offset.
       const size_t startPos = offsetRow + this->getStride () * offsetCol;
-      // Length of the view of the data.
-      const size_t len = (newNumCols > 0) ? (this->getStride () * newNumCols - offsetRow) : 0;
-
+      const size_t len = contigValues_.size () -
+        Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos);
+#ifdef HAVE_KOKKOSCLASSIC_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
+        "KokkosClassic::MultiVector::offsetViewNonConst: contigValues_.size() = "
+        << contigValues_.size() << " < startPos(=" << startPos
+        << ") + len(=" << len << ").  The original MultiVector had "
+        "dimensions " << origNumRows << " x " << origNumCols << ", and "
+        "we are trying to make a " << newNumRows << " x " << newNumCols
+        << " view starting at (" << offsetRow << ", " << offsetCol << ").");
+#endif // HAVE_KOKKOSCLASSIC_DEBUG
       B.initializeValues (newNumRows,
                           newNumCols,
                           contigValues_.persistingView (startPos, len),
@@ -1304,6 +1404,6 @@ namespace Kokkos {
   };
 #endif // defined (HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPNODE)
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif /* KOKKOS_MULTIVECTOR_H */

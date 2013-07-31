@@ -1,28 +1,41 @@
 /*@HEADER
 // ***********************************************************************
-// 
+//
 //       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//  
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 //@HEADER
 */
@@ -31,133 +44,173 @@
 #define IFPACK2_OVERLAPPINGROWMATRIX_DECL_HPP
 
 #include "Ifpack2_ConfigDefs.hpp"
-#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_RowMatrix.hpp"
+#include "Tpetra_CrsMatrix_decl.hpp" // only need the declaration here
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Map.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+
 
 namespace Ifpack2 {
 
-//! Ifpack2::OverlappingRowMatrix: matrix with ghost rows, based on Tpetra::RowMatrix
-/*! The idea is to provide a low-memory capability to handle overlap.
- */
-
+/// \class OverlappingRowMatrix
+/// \brief Sparse matrix (Tpetra::RowMatrix subclass) with ghost rows.
+/// \tparam MatrixType Tpetra::RowMatrix or Tpetra::CrsMatrix specialization.
 template<class MatrixType>
-class  OverlappingRowMatrix : virtual public Tpetra::RowMatrix<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> {
-
+class OverlappingRowMatrix : 
+    virtual public Tpetra::RowMatrix<typename MatrixType::scalar_type,
+				     typename MatrixType::local_ordinal_type,
+				     typename MatrixType::global_ordinal_type,
+				     typename MatrixType::node_type> {
 public:
-
-  typedef typename MatrixType::scalar_type Scalar;
-  typedef typename MatrixType::local_ordinal_type LocalOrdinal;
-  typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
-  typedef typename MatrixType::node_type Node;
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
-
-  //@{ Constructors/Destructors
-
-  //! Standard constructor
-  OverlappingRowMatrix(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix_in,
-		       int OverlapLevel_in);
-  
-  //! Sub-communicator constructor
-  OverlappingRowMatrix(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & Matrix_in,	       	
-		       int OverlapLevel_in, int subdomainID);
-
-  //! Destructor
-  ~OverlappingRowMatrix();
+  //! \name Typedefs
+  //@{ 
+  typedef typename MatrixType::scalar_type scalar_type;
+  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
+  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
+  typedef typename MatrixType::node_type node_type;
+  typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
+  typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type, 
+			    global_ordinal_type, node_type> row_matrix_type;
   //@}
+  //! \name Constructors and destructor
+  //@{ 
 
+  /// Standard constructor.
+  ///
+  /// \param A [in] The input matrix.  Currently this class requires
+  ///   that A be a Tpetra::CrsMatrix instance with the same first
+  ///   four template parameters as MatrixType, and with a default
+  ///   fifth template parameter.  Furthermore, A must have a
+  ///   nonoverlapping row Map and must be distributed over more than
+  ///   one MPI process.
+  ///
+  /// \param overlapLevel [in] The number of levels of overlap.
+  OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
+			const int overlapLevel);
 
-  //! @name Matrix Query Methods
+  //! Subdomain constructor (NOT CURRENTLY IMPLEMENTED).
+  OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
+			const int overlapLevel,
+			const int subdomainID);
+  //! Destructor
+  ~OverlappingRowMatrix ();
+
+  //@}
+  //! @name Matrix query methods
   //@{ 
   
-  //! Returns the communicator.
-  virtual const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
+  //! The communicator over which the matrix is distributed.
+  virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
   
-  //! Returns the underlying node.
-  virtual Teuchos::RCP<Node> getNode() const;
+  //! The matrix's Kokkos Node instance.
+  virtual Teuchos::RCP<node_type> getNode() const;
   
-  //! Returns the Map that describes the row distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getRowMap() const;
+  //! The Map that describes the distribution of rows over processes.
+  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> > 
+  getRowMap () const;
   
-  //! \brief Returns the Map that describes the column distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getColMap() const;
+  //! The Map that describes the distribution of columns over processes.
+  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> > 
+  getColMap () const;
 
-  //! Returns the Map that describes the row distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
+  /// \brief The Map that describes the domain of this matrix.
+  ///
+  /// The domain is the distribution of valid input vectors of apply().
+  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> >
+  getDomainMap () const;
+
+  /// \brief The Map that describes the range of this matrix.
+  ///
+  /// The domain is the distribution of valid output vectors of apply().
+  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> >
+  getRangeMap () const;
   
-  //! \brief Returns the Map that describes the column distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+  //! This matrix's graph.
+  virtual Teuchos::RCP<const Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type> >
+  getGraph () const;
   
-  //! Returns the RowGraph associated with this matrix. 
-  virtual Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const;
+  //! The global number of rows in this matrix.
+  virtual global_size_t getGlobalNumRows () const;
   
-  //! Returns the number of global rows in this matrix.
-  virtual global_size_t getGlobalNumRows() const;
+  //! The global number of columns in this matrix.
+  virtual global_size_t getGlobalNumCols () const;
   
-  //! \brief Returns the number of global columns in this matrix.
-  virtual global_size_t getGlobalNumCols() const;
+  //! The number of rows owned by the calling process.
+  virtual size_t getNodeNumRows () const;
+
+  /// \brief The number of columns owned by the calling process.
+  ///
+  /// This is the number of columns needed to apply the forward
+  /// operator on the calling process, that is, the number of elements
+  /// listed in the column Map on the calling process.
+  virtual size_t getNodeNumCols () const;
   
-  //! Returns the number of rows owned on the calling node.
-  virtual size_t getNodeNumRows() const;
+  //! The index base for global indices for this matrix. 
+  virtual global_ordinal_type getIndexBase () const;
   
-  //! Returns the number of columns needed to apply the forward operator on this node, i.e., the number of elements listed in the column map.
-  virtual size_t getNodeNumCols() const;
+  //! The global number of entries in this matrix.
+  virtual global_size_t getGlobalNumEntries () const;
   
-  //! Returns the index base for global indices for this matrix. 
-  virtual GlobalOrdinal getIndexBase() const;
+  //! The number of entries in this matrix owned by the calling process.
+  virtual size_t getNodeNumEntries () const;
   
-  //! Returns the global number of entries in this matrix.
-  virtual global_size_t getGlobalNumEntries() const;
+  /// \brief The number of entries in the given global row that are
+  ///   owned by the calling process.
+  ///
+  /// \param globalRow [in] Global index of the row.
+  ///
+  /// \return Teuchos::OrdinalTraits<size_t>::invalid() if the
+  ///   specified row (either in the input matrix or in the overlap
+  ///   matrix) is not owned by the calling process, else the number
+  ///   of entries in that row that are owned by the calling process.
+  virtual size_t getNumEntriesInGlobalRow (global_ordinal_type globalRow) const;
+
+  /// \brief The number of entries in the given local row that are
+  ///   owned by the calling process.
+  ///
+  /// \param globalRow [in] Local index of the row.
+  ///
+  /// \return Teuchos::OrdinalTraits<size_t>::invalid() if the
+  ///   specified row (either in the input matrix or in the overlap
+  ///   matrix) is not owned by the calling process, else the number
+  ///   of entries in that row that are owned by the calling process.
+  virtual size_t getNumEntriesInLocalRow (local_ordinal_type localRow) const;
+
+  //! The global number of diagonal entries.
+  virtual global_size_t getGlobalNumDiags () const;
+
+  //! The number of diagonal entries owned by the calling process.
+  virtual size_t getNodeNumDiags () const;
   
-  //! Returns the local number of entries in this matrix.
-  virtual size_t getNodeNumEntries() const;
+  //! The maximum number of entries in any row on any process.
+  virtual size_t getGlobalMaxNumRowEntries () const;
   
-  //! \brief Returns the current number of entries on this node in the specified global row.
-  /*! Returns Teuchos::OrdinalTraits<size_t>::invalid() if the specified global row does not belong to this graph. */
-  virtual size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const;
-  
-  //! Returns the current number of entries on this node in the specified local row.
-  /*! Returns Teuchos::OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this graph. */
-  virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const;
-  
-  //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons. 
-  virtual global_size_t getGlobalNumDiags() const;
-  
-  //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons. 
-  virtual size_t getNodeNumDiags() const;
-  
-  //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
-  virtual size_t getGlobalMaxNumRowEntries() const;
-  
-  //! \brief Returns the maximum number of entries across all rows/columns on this node.
+  //! The maximum number of entries in any row on the calling process.
   virtual size_t getNodeMaxNumRowEntries() const;
   
-  //! \brief Indicates whether this matrix has a well-defined column map. 
+  //! Whether this matrix has a column Map. 
   virtual bool hasColMap() const;
   
-  //! \brief Indicates whether this matrix is lower triangular.
+  //! Whether this matrix is lower triangular.
   virtual bool isLowerTriangular() const;
   
-  //! \brief Indicates whether this matrix is upper triangular.
+  //! Whether this matrix is upper triangular.
   virtual bool isUpperTriangular() const;
+
+  //! Whether this matrix is locally indexed.
+  virtual bool isLocallyIndexed () const;
+
+  //! Whether this matrix is globally indexed.
+  virtual bool isGloballyIndexed () const;
   
-  //! \brief If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */
-  virtual bool isLocallyIndexed() const;
-  
-  //! \brief If matrix indices are in the global range, this function returns true. Otherwise, this function returns false. */
-  virtual bool isGloballyIndexed() const;
-  
-  //! Returns \c true if fillComplete() has been called.
+  //! \c true if fillComplete() has been called, else \c false.
   virtual bool isFillComplete() const;
 
-  //! Returns \c true if RowViews are supported.
+  //! \c true if row views are supported, else \c false.
   virtual bool supportsRowViews() const;  
 
   //@}
-  
-  //! @name Extraction Methods
+  //! @name Extraction methods
   //@{ 
   
   //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
@@ -171,10 +224,11 @@ public:
     with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c Indices and \c Values are unchanged and \c NumIndices is 
     returned as Teuchos::OrdinalTraits<size_t>::invalid().
   */
-  virtual void getGlobalRowCopy(GlobalOrdinal GlobalRow,
-				const Teuchos::ArrayView<GlobalOrdinal> &Indices,
-				const Teuchos::ArrayView<Scalar> &Values,
-				size_t &NumEntries) const;
+  virtual void 
+  getGlobalRowCopy (global_ordinal_type GlobalRow,
+		    const Teuchos::ArrayView<global_ordinal_type> &Indices,
+		    const Teuchos::ArrayView<scalar_type> &Values,
+		    size_t &NumEntries) const;
   
   //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
   /*!
@@ -187,10 +241,11 @@ public:
     with row \c LocalRow. If \c LocalRow is not valid for this node, then \c Indices and \c Values are unchanged and \c NumIndices is 
     returned as Teuchos::OrdinalTraits<size_t>::invalid().
   */
-  virtual void getLocalRowCopy(LocalOrdinal LocalRow, 
-			       const Teuchos::ArrayView<LocalOrdinal> &Indices, 
-			       const Teuchos::ArrayView<Scalar> &Values,
-			       size_t &NumEntries) const;
+  virtual void
+  getLocalRowCopy (local_ordinal_type LocalRow, 
+		   const Teuchos::ArrayView<local_ordinal_type> &Indices, 
+		   const Teuchos::ArrayView<scalar_type> &Values,
+		   size_t &NumEntries) const;
   
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   /*!
@@ -202,9 +257,10 @@ public:
     
     Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
   */
-  virtual void getGlobalRowView(GlobalOrdinal GlobalRow, 
-				Teuchos::ArrayView<const GlobalOrdinal> &indices, 
-				Teuchos::ArrayView<const Scalar> &values) const;
+  virtual void
+  getGlobalRowView (global_ordinal_type GlobalRow, 
+		    Teuchos::ArrayView<const global_ordinal_type> &indices, 
+		    Teuchos::ArrayView<const scalar_type> &values) const;
   
   //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
   /*!
@@ -216,18 +272,19 @@ public:
     
     Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
   */
-  virtual void getLocalRowView(LocalOrdinal LocalRow, 
-			       Teuchos::ArrayView<const LocalOrdinal> &indices, 
-			       Teuchos::ArrayView<const Scalar> &values) const;
+  virtual void
+  getLocalRowView (local_ordinal_type LocalRow, 
+		   Teuchos::ArrayView<const local_ordinal_type> &indices, 
+		   Teuchos::ArrayView<const scalar_type> &values) const;
   
   //! \brief Get a copy of the diagonal entries owned by this node, with local row indices.
   /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
     the zero and non-zero diagonals owned by this node. */
-  virtual void getLocalDiagCopy(Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const;
+  virtual
+  void getLocalDiagCopy (Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &diag) const;
   
   //@}
-  
-  //! \name Mathematical Methods
+  //! \name Mathematical methods
   //@{
   
   /**
@@ -239,7 +296,8 @@ public:
    *
    * \param x A vector to left scale this matrix.
    */
-  virtual void leftScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
+  virtual void
+  leftScale (const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& x);
   
   /**
    * \brief Scales the RowMatrix on the right with the Vector x.
@@ -250,13 +308,15 @@ public:
    *
    * \param x A vector to right scale this matrix.
    */
-  virtual void rightScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
+  virtual void 
+  rightScale (const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& x);
   
   //! Returns the Frobenius norm of the matrix. 
   /** Computes and returns the Frobenius norm of the matrix, defined as:
       \f$ \|A\|_F = \sqrt{\sum_{i,j} \|\a_{ij}\|^2} \f$
   */
-  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const;
+  virtual typename Teuchos::ScalarTraits<scalar_type>::magnitudeType 
+  getFrobeniusNorm () const;
   
   //! \brief Computes the operator-multivector application.
   /*! Loosely, performs \f$Y = \alpha \cdot A^{\textrm{mode}} \cdot X + \beta \cdot Y\f$. However, the details of operation
@@ -266,41 +326,60 @@ public:
 
     This is analagous to the *Multiply* function in Ifpack, not the *Apply*
   */
-  virtual void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
-		     Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
-		     Teuchos::ETransp mode = Teuchos::NO_TRANS, 
-		     Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-		     Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+  virtual void
+  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X, 
+	 Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &Y, 
+	 Teuchos::ETransp mode = Teuchos::NO_TRANS, 
+	 scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+	 scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+
+  template<class DomainScalar, class RangeScalar>
+  void
+  applyTempl (const Tpetra::MultiVector<DomainScalar,local_ordinal_type,global_ordinal_type,node_type> &X, 
+	      Tpetra::MultiVector<RangeScalar,local_ordinal_type,global_ordinal_type,node_type> &Y, 
+	      Teuchos::ETransp mode = Teuchos::NO_TRANS, 
+	      RangeScalar alpha = Teuchos::ScalarTraits<RangeScalar>::one(),
+	      RangeScalar beta = Teuchos::ScalarTraits<RangeScalar>::zero()) const;
   
-  //! Indicates whether this operator supports applying the adjoint operator.
+  //! Whether this operator's apply() method can apply the adjoint (transpose).
   virtual bool hasTransposeApply() const;
 
-  virtual void importMultiVector(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
-				 Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &OvX, 
-				 Tpetra::CombineMode CM = Tpetra::INSERT);
+  virtual void
+  importMultiVector (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X, 
+		     Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &OvX, 
+		     Tpetra::CombineMode CM = Tpetra::INSERT);
 
-  virtual void exportMultiVector(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &OvX, 
-				 Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
-				 Tpetra::CombineMode CM = Tpetra::ADD);
+  template <class OpScalar>
+  void 
+  importMultiVectorTempl (const Tpetra::MultiVector<OpScalar,local_ordinal_type,global_ordinal_type,node_type> &X, 
+			  Tpetra::MultiVector<OpScalar,local_ordinal_type,global_ordinal_type,node_type> &OvX, 
+			  Tpetra::CombineMode CM = Tpetra::INSERT);
+
+  virtual void
+  exportMultiVector (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &OvX, 
+		     Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X, 
+		     Tpetra::CombineMode CM = Tpetra::ADD);
+
+  template <class OpScalar>
+  void 
+  exportMultiVectorTempl (const Tpetra::MultiVector<OpScalar,local_ordinal_type,global_ordinal_type,node_type> &OvX, 
+			  Tpetra::MultiVector<OpScalar,local_ordinal_type,global_ordinal_type,node_type> &X, 
+			  Tpetra::CombineMode CM = Tpetra::ADD);
   //@}
 
-
 private: 
+  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+  typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
+  typedef Tpetra::Export<local_ordinal_type, global_ordinal_type, node_type> export_type;
+  typedef Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type> row_graph_type;
+  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> crs_matrix_type;
 
-  // Original matrix object
-  Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A_;
-
-  size_t NumMyRows_;
-  size_t NumMyCols_;
-  size_t NumMyDiagonals_;
-  size_t NumMyNonzeros_;
+  //! The input matrix to the constructor.
+  Teuchos::RCP<const row_matrix_type> A_;
 
   Tpetra::global_size_t NumGlobalRows_;
   Tpetra::global_size_t NumGlobalNonzeros_;
   size_t MaxNumEntries_;
-
-  size_t NumMyRowsA_;
-  size_t NumMyRowsB_;
   int OverlapLevel_;
 
   // Subcommunicator stuff
@@ -308,19 +387,22 @@ private:
   int subdomainID_;
 
   // Wrapper matrix objects
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >    RowMap_;
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >    ColMap_;
-  Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > Importer_;
+  Teuchos::RCP<const map_type> RowMap_;
+  Teuchos::RCP<const map_type> ColMap_;
+  Teuchos::RCP<const import_type> Importer_;
 
-  // External matrix objects
-  Teuchos::RCP<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > ExtMatrix_;
-  Teuchos::RCP<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >              ExtMap_;
-  Teuchos::RCP<Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> >           ExtImporter_;
+  //! The matrix containing only the overlap rows.
+  Teuchos::RCP<row_matrix_type> ExtMatrix_;
+  Teuchos::RCP<map_type>        ExtMap_;
+  Teuchos::RCP<import_type>     ExtImporter_;
 
-  //! Used in apply, to avoid allocation each time.
-  mutable Teuchos::Array<LocalOrdinal> Indices_;
-  //! Used in apply, to avoid allocation each time.
-  mutable Teuchos::Array<Scalar> Values_;
+  //! Graph of the matrix (as returned by getGraph()).
+  Teuchos::RCP<const row_graph_type> graph_;
+
+  //! Used in apply(), to avoid allocation each time.
+  mutable Teuchos::Array<local_ordinal_type> Indices_;
+  //! Used in apply(), to avoid allocation each time.
+  mutable Teuchos::Array<scalar_type> Values_;
 
 }; // class OverlappingRowMatrix
 

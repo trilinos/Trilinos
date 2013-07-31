@@ -16,7 +16,7 @@ TRIBITS_ADD_LIBRARY(
 	Ioex
 	HEADERS	${HEADERS}
 	SOURCES ${SOURCES}
-	DEPLIBS Ioss exodus nemesis
+	DEPLIBS Ioss exodus
 )
 
 IF (BUILD_TESTING)

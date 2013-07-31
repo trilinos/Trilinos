@@ -13,13 +13,18 @@
 
 namespace panzer {
 
-template <typename EvalT>
-Teuchos::RCP<ResponseBase> ResponseEvaluatorFactory_Functional<EvalT>::
+template <typename EvalT,typename LO,typename GO>
+Teuchos::RCP<ResponseBase> ResponseEvaluatorFactory_Functional<EvalT,LO,GO>::
 buildResponseObject(const std::string & responseName) const
-{ return Teuchos::rcp(new Response_Functional<EvalT>(responseName,comm_)); }
+{ 
+  Teuchos::RCP<ResponseBase> response = Teuchos::rcp(new Response_Functional<EvalT>(responseName,comm_,linearObjFactory_)); 
+  response->setRequiresDirichletAdjustment(applyDirichletToDerivative_);
+ 
+  return response;
+}
 
-template <typename EvalT>
-void ResponseEvaluatorFactory_Functional<EvalT>::
+template <typename EvalT,typename LO,typename GO>
+void ResponseEvaluatorFactory_Functional<EvalT,LO,GO>::
 buildAndRegisterEvaluators(const std::string & responseName,
                            PHX::FieldManager<panzer::Traits> & fm,
                            const panzer::PhysicsBlock & physicsBlock,
@@ -28,14 +33,17 @@ buildAndRegisterEvaluators(const std::string & responseName,
    using Teuchos::RCP;
    using Teuchos::rcp;
 
+
    // build integration evaluator (integrate over element)
    if(requiresCellIntegral_) {
+     std::string field = (quadPointField_=="" ? responseName : quadPointField_);
+
      // build integration rule to use in cell integral
      RCP<IntegrationRule> ir = rcp(new IntegrationRule(cubatureDegree_,physicsBlock.cellData()));
 
      Teuchos::ParameterList pl;
-     pl.set("Integral Name",responseName);
-     pl.set("Integrand Name",responseName);
+     pl.set("Integral Name",field);
+     pl.set("Integrand Name",field);
      pl.set("IR",ir);
 
      Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval 
@@ -44,17 +52,39 @@ buildAndRegisterEvaluators(const std::string & responseName,
      fm.template registerEvaluator<EvalT>(eval);
    }
 
+
    // build scatter evaluator
    {
+     Teuchos::RCP<FunctionalScatterBase> scatterObj =
+         (globalIndexer_!=Teuchos::null) ?  Teuchos::rcp(new FunctionalScatter<LO,GO>(globalIndexer_)) : Teuchos::null;
+     std::string field = (quadPointField_=="" ? responseName : quadPointField_);
+
      // build useful evaluator
      Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval 
-         = Teuchos::rcp(new ResponseScatterEvaluator_Functional<EvalT,panzer::Traits>(responseName,physicsBlock.cellData()));
+         = Teuchos::rcp(new ResponseScatterEvaluator_Functional<EvalT,panzer::Traits>(field,responseName,physicsBlock.cellData(),scatterObj));
 
      fm.template registerEvaluator<EvalT>(eval);
 
      // require last field
      fm.template requireField<EvalT>(*eval->evaluatedFields()[0]);
    }
+}
+
+template <typename EvalT,typename LO,typename GO>
+bool ResponseEvaluatorFactory_Functional<EvalT,LO,GO>::
+typeSupported() const
+{
+  if(   PHX::TypeString<EvalT>::value==PHX::TypeString<panzer::Traits::Residual>::value 
+#ifdef HAVE_STOKHOS
+     || PHX::TypeString<EvalT>::value==PHX::TypeString<panzer::Traits::SGResidual>::value
+#endif
+    )
+    return true;
+
+  if(PHX::TypeString<EvalT>::value==PHX::TypeString<panzer::Traits::Jacobian>::value)
+    return linearObjFactory_!=Teuchos::null;
+
+  return false;
 }
 
 }

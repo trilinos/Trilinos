@@ -67,7 +67,7 @@ namespace Zoltan2 {
     \li \c lno_t    local indices and local counts
     \li \c gno_t    global indices and global counts
     \li \c gid_t    application global Ids
-    \li \c node_t is a sub class of Kokkos::StandardNodeMemoryModel
+    \li \c node_t is a sub class of KokkosClassic::StandardNodeMemoryModel
 
     See IdentifierTraits to understand why the user's global ID type (\c gid_t)
     may differ from that used by Zoltan2 (\c gno_t).
@@ -230,6 +230,15 @@ public:
   /*! \brief Returns whether a first adjacency combination is available.
    */
   virtual bool availAdjs(entityType source, entityType target);
+
+
+  /*! \brief Returns the global number of edges across all processes
+             Need to define whether an undirected edge A<->B is counted as one
+	      edge or as two edges A->B and B->A.
+	     TODO:  Do we need this function?
+  */
+  virtual size_t getGlobalNumAdjs(entityType source,
+				  entityType target) const = 0;
 
 
   /*! \brief Returns the number of first adjacencies on this process.

@@ -44,7 +44,10 @@ ReverseMapper::ReverseMapper(const VectorSpace& vspace)
 
       for(size_t i=0; i<fieldIDs.size(); ++i) {
         int offset2 = 0;
-        fm->getFieldEqnOffset(fieldIDs[i], offset2);
+        int err = fm->getFieldEqnOffset(fieldIDs[i], offset2);
+        if (err != 0) {
+          continue;
+        }
 
         EqnRecord erec;
         erec.IDType = idTypes[idt];

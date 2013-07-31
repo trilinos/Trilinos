@@ -1439,7 +1439,10 @@ int fei::MatrixGraph_Impl2::createSlaveMatrices()
       fei::FieldMask* mask = masterRecord->getFieldMask();
       int eqnOffset = 0;
       if (!simpleProblem_) {
-        mask->getFieldEqnOffset(masterFieldIDs[j], eqnOffset);
+        int err = mask->getFieldEqnOffset(masterFieldIDs[j], eqnOffset);
+        if (err != 0) {
+          throw std::runtime_error("FEI ERROR, failed to get eqn-offset for constraint master-field.");
+        }
       }
 
       unsigned fieldSize = rowSpace_->getFieldSize(masterFieldIDs[j]);
@@ -2275,7 +2278,13 @@ int fei::MatrixGraph_Impl2::getConnectivityIndices_multiField(const snl_fei::Rec
     for(int nf=0; nf<numFieldsPerID[i]; ++nf) {
       int eqnOffset = 0;
       if (!simpleProblem_) {
-        fieldMask->getFieldEqnOffset(fieldIDs[fld_offset], eqnOffset);
+        int err = fieldMask->getFieldEqnOffset(fieldIDs[fld_offset], eqnOffset);
+        if (err != 0) {
+          for(int fs=0; fs<fieldSizes[fld_offset]; ++fs) {
+            indices[numIndices++] = -1;
+          }
+          continue;
+        }
       }
 
       for(int fs=0; fs<fieldSizes[fld_offset]; ++fs) {
@@ -2463,13 +2472,22 @@ int fei::MatrixGraph_Impl2::getConnectivityIndices_singleField(const snl_fei::Re
     int eqnOffset = 0;
     if (!simpleProblem_) {
       const fei::FieldMask* fieldMask = record->getFieldMask();
-      fieldMask->getFieldEqnOffset(fieldID, eqnOffset);
+      int err = fieldMask->getFieldEqnOffset(fieldID, eqnOffset);
+      if (err != 0) {
+        indices[numIndices++] = -1;
+        if (fieldSize > 1) {
+          for(int fs=1; fs<fieldSize; ++fs) {
+            indices[numIndices++] = -1;
+          }
+        }
+        continue;
+      }
     }
 
     indices[numIndices++] = eqnNumbers[eqnOffset];
     if (fieldSize > 1) {
       for(int fs=1; fs<fieldSize; ++fs) {
-        indices[numIndices++] = eqnNumbers[eqnOffset+fs];
+        indices[numIndices++] = eqnOffset >= 0 ? eqnNumbers[eqnOffset+fs] : -1;
       }
     }
   }

@@ -72,6 +72,12 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
   //! Clone method
   Epetra_Distributor * Clone(){return(dynamic_cast<Epetra_Distributor *>(new Epetra_MpiDistributor(*this)));};
 
+  //! Create and extract the reverse version of the distributor.  
+  /*! This is not a const method since a reverse distributor might need to be created.
+    This works like Clone, returning a new object the user must deallocate.
+   */
+  Epetra_Distributor * ReverseClone();
+
   //! Destructor (declared virtual for memory safety).
   virtual ~Epetra_MpiDistributor();
   //@}
@@ -141,6 +147,53 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
                        long long *& ExportGIDs,
                        int *& ExportPIDs);
 #endif
+
+
+
+
+  /// \brief Create a communication plan from send list and a recv list.
+  ///
+
+  /// Given a list of process IDs to which to send the given number of
+  /// data IDs,  and a list of remote data IDs and corresponding process IDs
+  /// from which to receive data, construct a communication plan for efficiently
+  /// scattering data to these processes.
+  ///
+  /// Needless to say, knowing both of these at the same time is a pretty
+  /// rare occurance.  But if it happens, this routine will avoid a lot
+  /// of communication that CreateFromSends or CreateFromRecvs would have to do.
+  ///
+  /// \return zero if this worked.
+  ///
+  /// \param NumExportIDs [in] Number of data IDs that need to be sent
+  ///   from the calling process.
+  /// \param ExportPIDs [in] List of process IDs that will get the
+  ///   exported data IDs.
+ /// \param NumRemoteIDs [in] Number of data IDs the calling process
+  ///   will be receiving.
+  /// \param RemoteGIDs [in] List of data IDs that the calling process
+  ///   wants to receive.
+  /// \param RemotePIDs [in] List of IDs of the processes that will
+  ///   send the remote data IDs to the calling process.
+  /// \param Deterministic [in] Currently has no effect.
+
+ int CreateFromSendsAndRecvs( const int & NumExportIDs,
+			       const int * ExportPIDs,
+			       const int & NumRemoteIDs,
+			       const int * RemoteGIDs,
+			       const int * RemotePIDs,
+			       bool Deterministic);
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  int CreateFromSendsAndRecvs( const int & NumExportIDs,
+			       const int * ExportPIDs,
+			       const int & NumRemoteIDs,
+			       const long long * RemoteGIDs,
+			       const int * RemotePIDs,
+			       bool Deterministic);
+#endif
+			     
+
   //@}
 
   //! @name Execute Gather/Scatter Operations
@@ -241,14 +294,23 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
 
   //! @name Print object to an output stream
   //@{ 
-  void Print(ostream & os) const;
+  void Print(std::ostream & os) const;
   //@}
   private:
+  int CreateSendStructures_(int my_proc,
+			    int nprocs,
+			    const int & NumExportIDs,
+			    const int * ExportPIDs);
 
-    int ComputeRecvs_( int my_proc,
-	               int nprocs );
 
-	template<typename id_type>
+  int CreateRecvStructures_(const int & NumRemoteIDs,
+			    const int * RemotePIDs);
+
+
+  int ComputeRecvs_( int my_proc,
+		     int nprocs );
+  
+  template<typename id_type>
     int ComputeSends_( int num_imports,
 		       const id_type *& import_ids,
 		       const int *& import_procs,
@@ -264,6 +326,8 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
 
   private:
     Epetra_MpiDistributor& operator=(const Epetra_MpiDistributor& src);
+
+    void CreateReverseDistributor();
 
     int * lengths_to_;
     int * procs_to_;

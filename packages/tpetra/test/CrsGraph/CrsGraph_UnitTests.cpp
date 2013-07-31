@@ -163,6 +163,9 @@ namespace {
   }
 
 
+// mfh 05 Apr 2013: CrsGraph only tests for bad nonowned GIDs in a
+// debug build.  The BadGIDs test fails in a release build.
+#ifdef HAVE_TPETRA_DEBUG
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, BadGIDs, LO, GO , Node )
   {
@@ -172,7 +175,6 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     RCP<Node> node = getNode<Node>();
     const int myImageID = comm->getRank();
-    const int numImages = comm->getSize();
     // create a Map
     const size_t numLocal = 10;
     RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
@@ -184,77 +186,17 @@ namespace {
       goodgraph.insertGlobalIndices(map->getMinGlobalIndex(),gids());
       TEST_THROW( goodgraph.fillComplete(), std::runtime_error );
     }
-    {
-      Array<GO> gids(1);
-      if (myImageID == numImages-1) {
-        gids[0] = myImageID*numLocal+numLocal;   // not in the column map
-      }
-      else {
-        gids[0] = myImageID*numLocal;            // in the column map
-      }
-      // bad gid on the last node (not in column map)
-      // this gid doesn't throw an exception; it is ignored, because the column map acts as a filter
-      GRAPH goodgraph(map,map,1);
-      goodgraph.insertGlobalIndices(map->getMinGlobalIndex(),gids());
-      goodgraph.fillComplete();
-      TEST_EQUALITY( goodgraph.getNumEntriesInLocalRow(0),
-                     (size_t)(myImageID == numImages-1 ? 0 : 1) );
-    }
-    // All procs fail if any node fails
+    // All procs fail if any process fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
-
-
-  ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, BadLIDs, LO, GO , Node )
-  {
-    typedef CrsGraph<LO,GO,Node> GRAPH;
-    // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm
-    RCP<Node> node = getNode<Node>();
-    RCP<const Comm<int> > comm = getDefaultComm();
-    const int myImageID = comm->getRank();
-    const int numImages = comm->getSize();
-    // create a Map
-    const size_t numLocal = 10;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
-    {
-      // bad lids on the last node, not in the column map, ignored
-      Array<LO> lids(1);
-      if (myImageID == numImages-1) {
-        lids[0] = numLocal;
-      }
-      else {
-        lids[0] = 0;
-      }
-      {
-        GRAPH diaggraph(map,map,1);
-        TEST_EQUALITY(diaggraph.hasColMap(), true);
-        // insert on bad row
-        TEST_THROW(diaggraph.insertLocalIndices(numLocal,lids()), std::runtime_error);
-      }
-      {
-        GRAPH diaggraph(map,map,1);
-        TEST_EQUALITY(diaggraph.hasColMap(), true);
-        diaggraph.insertLocalIndices(0,lids());
-        TEST_EQUALITY( diaggraph.getNumEntriesInLocalRow(0), (size_t)(myImageID == numImages-1 ? 0 : 1) );
-      }
-    }
-    // All procs fail if any node fails
-    int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
-    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-  }
-
+#endif // HAVE_TPETRA_DEBUG
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, EmptyFillComplete, LO, GO , Node )
   {
     typedef CrsGraph<LO,GO,Node> GRAPH;
-    // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<Node> node = getNode<Node>();
@@ -364,20 +306,27 @@ namespace {
   {
     typedef CrsGraph<LO,GO,Node> GRAPH;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm
     RCP<Node> node = getNode<Node>();
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
     const size_t numLocal = 10;
     RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
-    //
+
     GRAPH graph(map,map,4);
     TEST_EQUALITY_CONST(graph.isSorted(), true);
-    // insert entires; shouldn't be sorted anymore
-    for (GO i=map->getMinGlobalIndex(); i <= map->getMaxGlobalIndex(); ++i) {
-      graph.insertGlobalIndices(i, tuple<GO>( (i+5)%map->getMaxAllGlobalIndex(),
-                                             i,
-                                             (i-5)%map->getMaxAllGlobalIndex() ) );
+    // insert entries; shouldn't be sorted anymore
+    for (GO i = map->getMinGlobalIndex (); i <= map->getMaxGlobalIndex (); ++i) {
+      Array<GO> curInds;
+      const GO firstInd = (i+5) % map->getMaxAllGlobalIndex ();
+      if (map->isNodeGlobalElement (firstInd)) {
+        curInds.push_back (firstInd);
+      }
+      curInds.push_back (i);
+      const GO lastInd = (i-5) % map->getMaxAllGlobalIndex ();
+      if (map->isNodeGlobalElement (lastInd)) {
+        curInds.push_back (lastInd);
+      }
+      graph.insertGlobalIndices (i, curInds ());
     }
     TEST_EQUALITY_CONST(graph.isSorted(), false);
     // fill complete; should be sorted now
@@ -477,20 +426,29 @@ namespace {
   {
     typedef CrsGraph<LO,GO,Node> GRAPH;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm
     RCP<Node> node = getNode<Node>();
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
-    // test filtering
     if (numImages > 1) {
       const size_t numLocal = 1;
       const RCP<const Map<LO,GO,Node> > rmap = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
       const RCP<const Map<LO,GO,Node> > cmap = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
-      // must allocate enough for all submitted indices, not accounting for filtering.
+      // must allocate enough for all submitted indices.
       RCP<GRAPH> G = rcp(new GRAPH(rmap,cmap,2,StaticProfile) );
       TEST_EQUALITY_CONST( G->hasColMap(), true );
       const GO myrowind = rmap->getGlobalElement(0);
-      TEST_NOTHROW( G->insertGlobalIndices( myrowind, tuple<GO>(myrowind,myrowind+1) ) );
+
+      // mfh 16 May 2013: insertGlobalIndices doesn't do column Map
+      // filtering anymore, so we have to test whether each of the
+      // column indices to insert is invalid.
+      if (cmap->isNodeGlobalElement (myrowind)) {
+        if (cmap->isNodeGlobalElement (myrowind+1)) {
+          TEST_NOTHROW( G->insertGlobalIndices( myrowind, tuple<GO>(myrowind,myrowind+1) ) );
+        }
+        else {
+          TEST_NOTHROW( G->insertGlobalIndices( myrowind, tuple<GO>(myrowind) ) );
+        }
+      }
       TEST_NOTHROW( G->fillComplete() );
       TEST_EQUALITY( G->getRowMap(), rmap );
       TEST_EQUALITY( G->getColMap(), cmap );
@@ -837,6 +795,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, NonLocals, LO, GO , Node )
   {
+    using Teuchos::as;
     typedef CrsGraph<LO,GO,Node> GRAPH;
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -858,7 +817,7 @@ namespace {
         // let node i contribute to row i+1, where node the last node contributes to row 0
         GRAPH diaggraph(map,1,pftype);
         GO grow = myImageID+1;
-        if (grow == numImages) {
+        if (as<int>(grow) == numImages) {
           grow = 0;
         }
         diaggraph.insertGlobalIndices(grow, tuple<GO>(grow));
@@ -950,7 +909,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, Describable, LO, GO , Node )
   {
     typedef CrsGraph<LO,GO,Node> GRAPH;
-    const GO INVALID = OrdinalTraits<GO>::invalid();
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<Node> node = getNode<Node>();
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -1002,7 +961,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, ActiveFill, LO, GO , Node )
   {
     typedef CrsGraph<LO,GO,Node> GRAPH;
-    const GO INVALID = OrdinalTraits<GO>::invalid();
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<Node> node = getNode<Node>();
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -1068,10 +1027,9 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, NodeConversion, LO, GO, N2 )
   {
-    typedef typename Kokkos::DefaultNode::DefaultNodeType N1;
+    typedef typename KokkosClassic::DefaultNode::DefaultNodeType N1;
     typedef Map<LO,GO,N1>      Map1;
     typedef CrsGraph<LO,GO,N1> Graph1;
-    typedef Map<LO,GO,N2>      Map2;
     typedef CrsGraph<LO,GO,N2> Graph2;
     // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -1091,7 +1049,7 @@ namespace {
     {
       RCP<ParameterList> plClone = parameterList();
       // default: plClone->set("fillComplete clone",true);
-      RCP<Graph2> A2 = A1->clone(n2,plClone);
+      RCP<Graph2> A2 = A1->template clone<N2>(n2,plClone);
       TEST_EQUALITY_CONST( A2->isFillComplete(), true );
       TEST_EQUALITY_CONST( A2->isStorageOptimized(), true );
       TEST_EQUALITY_CONST( A2->getNodeNumEntries(), (size_t)0 );
@@ -1113,7 +1071,7 @@ namespace {
       plClone->set("fillComplete clone",false);
       plClone->set("Static profile clone",false);
       // default: plClone->set("Locally indexed clone",false);
-      RCP<Graph2> A2 = A1->clone(n2,plClone);
+      RCP<Graph2> A2 = A1->template clone<N2>(n2,plClone);
       TEST_EQUALITY_CONST( A2->hasColMap(), false );
       TEST_EQUALITY_CONST( A2->isFillComplete(), false );
       TEST_EQUALITY_CONST( A2->isGloballyIndexed(), true );
@@ -1133,7 +1091,7 @@ namespace {
       plClone->set("Static profile clone", false);
       RCP<ParameterList> plCloneFill = sublist(plClone,"fillComplete");
       plCloneFill->set("Optimize Storage",false);
-      RCP<Graph2> A2 = A1->clone(n2,plClone);
+      RCP<Graph2> A2 = A1->template clone<N2>(n2,plClone);
       TEST_EQUALITY_CONST( A2->isFillComplete(), true );
       TEST_EQUALITY_CONST( A2->isStorageOptimized(), false );
       TEST_EQUALITY_CONST( A2->getNodeNumEntries(), A1->getNodeNumEntries() );
@@ -1152,9 +1110,81 @@ namespace {
 
   }
 
+
+ ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, TwoArraysESFC, LO, GO , Node )
+  {
+    typedef CrsGraph<LO,GO,Node> GRAPH;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<Node> node = getNode<Node>();
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    // test filtering
+    if (numImages > 1) {
+      const size_t numLocal = 2;
+      const RCP<const Map<LO,GO,Node> > rmap = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+      ArrayRCP<size_t> rowptr(numLocal+1);
+      ArrayRCP<LO>     colind(numLocal); // one unknown per row
+      rowptr[0] = 0; rowptr[1] = 1; rowptr[2] = 2;
+      colind[0] = Teuchos::as<LO>(0);
+      colind[1] = Teuchos::as<LO>(1);
+
+      RCP<GRAPH> G = rcp(new GRAPH(rmap,rmap,rowptr,colind) );
+      TEST_EQUALITY_CONST( G->hasColMap(), true );
+
+      TEST_NOTHROW( G->expertStaticFillComplete(rmap,rmap) );
+      TEST_EQUALITY( G->getRowMap(), rmap );
+      TEST_EQUALITY( G->getColMap(), rmap );
+    }
+
+    // All procs fail if any node fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
+ ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, SetAllIndices, LO, GO , Node )
+  {
+    typedef CrsGraph<LO,GO,Node> GRAPH;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<Node> node = getNode<Node>();
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    // test filtering
+    if (numImages > 1) {
+      const size_t numLocal = 2;
+      const RCP<const Map<LO,GO,Node> > rmap = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+      ArrayRCP<size_t> rowptr(numLocal+1);
+      ArrayRCP<LO>     colind(numLocal); // one unknown per row
+      rowptr[0] = 0; rowptr[1] = 1; rowptr[2] = 2;
+      colind[0] = Teuchos::as<LO>(0);
+      colind[1] = Teuchos::as<LO>(1);
+
+      RCP<GRAPH> G = rcp(new GRAPH(rmap,rmap,0,StaticProfile) );
+      TEST_NOTHROW( G->setAllIndices(rowptr,colind) );
+      TEST_EQUALITY_CONST( G->hasColMap(), true );
+
+      TEST_NOTHROW( G->expertStaticFillComplete(rmap,rmap) );
+      TEST_EQUALITY( G->getRowMap(), rmap );
+      TEST_EQUALITY( G->getColMap(), rmap );
+    }
+
+    // All procs fail if any node fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
 //
 // INSTANTIATIONS
 //
+
+// mfh 05 Apr 2013: CrsGraph only tests for bad nonowned GIDs in a
+// debug build.  The BadGIDs test fails in a release build.
+#ifdef HAVE_TPETRA_DEBUG
 
 #define UNIT_TEST_GROUP( LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc0, LO, GO, NODE ) \
@@ -1162,7 +1192,6 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ExcessAllocation, LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, BadConst  , LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, BadGIDs   , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, BadLIDs   , LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, insert_remove_LIDs   , LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NonLocals , LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, DottedDiag , LO, GO, NODE ) \
@@ -1174,7 +1203,33 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Typedefs      , LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Bug20100622K  , LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ActiveFill    , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SortingTests  , LO, GO, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SortingTests  , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, TwoArraysESFC , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SetAllIndices , LO, GO, NODE )
+
+#else // NOT HAVE_TPETRA_DEBUG
+
+#define UNIT_TEST_GROUP( LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc0, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc1, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ExcessAllocation, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, BadConst  , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, insert_remove_LIDs   , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NonLocals , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, DottedDiag , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, WithStaticProfile , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, CopiesAndViews, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, WithColMap,     LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Describable   , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyFillComplete, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Typedefs      , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Bug20100622K  , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ActiveFill    , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SortingTests  , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, TwoArraysESFC , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SetAllIndices , LO, GO, NODE )
+
+#endif // HAVE_TPETRA_DEBUG
 
 #define NC_TESTS(N2) \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NodeConversion, int, int, N2 )

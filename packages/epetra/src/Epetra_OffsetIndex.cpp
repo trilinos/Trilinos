@@ -340,11 +340,11 @@ void Epetra_OffsetIndex::GenerateRemoteOffsets_( const Epetra_CrsGraph & SourceG
 }
 
 //=============================================================================
-void Epetra_OffsetIndex::Print(ostream & os) const
+void Epetra_OffsetIndex::Print(std::ostream & os) const
 {
-  os << "Number of Same IDs = " << NumSame_ << endl;
-  os << "Number of Permute IDs = " << NumPermute_ << endl;
-  os << "Number of Remote IDs = " << NumRemote_ << endl;
+  os << "Number of Same IDs = " << NumSame_ << std::endl;
+  os << "Number of Permute IDs = " << NumPermute_ << std::endl;
+  os << "Number of Remote IDs = " << NumRemote_ << std::endl;
   
   return;
 }

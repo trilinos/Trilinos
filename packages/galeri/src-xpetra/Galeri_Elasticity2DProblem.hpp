@@ -62,21 +62,21 @@ namespace Galeri {
     class Elasticity2DProblem : public Problem<Map,Matrix,MultiVector> {
     public:
       Elasticity2DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : Problem<Map,Matrix,MultiVector>(list, map) {
-        E  = list.get("E", 1e9);
+        E  = list.get("E",  1e9);
         nu = list.get("nu", 0.25);
 
         nx_ = list.get("nx", -1);
         ny_ = list.get("ny", -1);
 
         nDim = 2;
-        stretch.push_back(list.get("stretchx", 1.0));
-        stretch.push_back(list.get("stretchy", 1.0));
+        double one = 1.0;
+        stretch.push_back(list.get("stretchx", one));
+        stretch.push_back(list.get("stretchy", one));
 
         // NOTE: -1 is because galeri counts points, not elements
         dims.push_back(nx_-1);
         dims.push_back(ny_-1);
 
-        std::cout << "nx = " << nx_ << ", ny = " << ny_ << std::endl;
         TEUCHOS_TEST_FOR_EXCEPTION(nx_ <= 0 || ny_ <= 0, std::logic_error, "nx and ny must be positive");
         mode_ = list.get<string>("mode", "plane stress");
       }
@@ -100,6 +100,8 @@ namespace Galeri {
       GlobalOrdinal                  nx_, ny_, nz_;
       size_t                         nDim;
       std::vector<GO>                dims;
+      // NOTE: nodes correspond to a local subdomain nodes. I have to construct overlapped subdomains because
+      // InsertGlobalValues in Epetra does not support inserting into rows owned by other processor
       std::vector<Point>             nodes;
       std::vector<std::vector<LO> >  elements;
       std::vector<GO>                local2Global_;
@@ -174,9 +176,8 @@ namespace Galeri {
       this->A_ = MatrixTraits<Map,Matrix>::Build(this->Map_, 9*numDofPerNode);
 
       SC one = Teuchos::ScalarTraits<SC>::one(), zero = Teuchos::ScalarTraits<SC>::zero();
+      SerialDenseMatrix<LO,SC> prevKE(numDofPerElem, numDofPerElem), prevElementNodes(numNodesPerElem, nDim);        // cache
       for (size_t i = 0; i < elements.size(); i++) {
-        SerialDenseMatrix<LO,SC> KE(numDofPerElem, numDofPerElem), K0(D->numRows(), numDofPerElem);
-
         // Select nodes subvector
         SerialDenseMatrix<LO,SC> elementNodes(numNodesPerElem, nDim);
         std::vector<LO>& elemNodes = elements[i];
@@ -185,38 +186,64 @@ namespace Galeri {
           elementNodes(j,1) = nodes[elemNodes[j]].y;
         }
 
-        // Evaluate the stiffness matrix for the element
-        for (size_t j = 0; j < numGaussPoints; j++) {
-          SerialDenseMatrix<LO,SC>& B = Bs[j];
-          SerialDenseMatrix<LO,SC>& S = Ss[j];
+        // Check if element is a translation of the previous element
+        SC xMove = elementNodes(0,0) - prevElementNodes(0,0), yMove = elementNodes(0,1) - prevElementNodes(0,1);
+        SC eps = 1e-15;         // coordinate comparison criteria
+        bool recompute = false;
+        {
+          size_t j = 0;
+          for (j = 0; j < numNodesPerElem; j++)
+            if (Teuchos::ScalarTraits<SC>::magnitude(elementNodes(j,0) - (prevElementNodes(j,0) + xMove)) > eps ||
+                Teuchos::ScalarTraits<SC>::magnitude(elementNodes(j,1) - (prevElementNodes(j,1) + yMove)) > eps)
+              break;
+          if (j != numNodesPerElem)
+            recompute = true;
+        }
 
-          SerialDenseMatrix<LO,SC> JAC(nDim, nDim);
+        SerialDenseMatrix<LO,SC> KE(numDofPerElem, numDofPerElem);
+        if (recompute == false) {
+          // If an element has the same form as previous element, reuse stiffness matrix
+          KE = prevKE;
 
-          for (size_t p = 0; p < nDim; p++)
-            for (size_t q = 0; q < nDim; q++) {
-              JAC(p,q) = zero;
+        } else {
+          // Evaluate new stiffness matrix for the element
+          SerialDenseMatrix<LO,SC> K0(D->numRows(), numDofPerElem);
+          for (size_t j = 0; j < numGaussPoints; j++) {
+            SerialDenseMatrix<LO,SC>& B = Bs[j];
+            SerialDenseMatrix<LO,SC>& S = Ss[j];
 
-              for (size_t k = 0; k < numNodesPerElem; k++)
-                JAC(p,q) += S(k,p)*elementNodes(k,q);
-            }
+            SerialDenseMatrix<LO,SC> JAC(nDim, nDim);
 
-          SC detJ = JAC(0,0)*JAC(1,1) - JAC(0,1)*JAC(1,0);
+            for (size_t p = 0; p < nDim; p++)
+              for (size_t q = 0; q < nDim; q++) {
+                JAC(p,q) = zero;
 
-          // J2 = inv([JAC zeros(2); zeros(2) JAC])
-          SerialDenseMatrix<LO,SC> J2(nDim*nDim,nDim*nDim);
-          J2(0,0) = J2(2,2) =  JAC(1,1) / detJ;
-          J2(0,1) = J2(2,3) = -JAC(0,1) / detJ;
-          J2(1,0) = J2(3,2) = -JAC(1,0) / detJ;
-          J2(1,1) = J2(3,3) =  JAC(0,0) / detJ;
+                for (size_t k = 0; k < numNodesPerElem; k++)
+                  JAC(p,q) += S(k,p)*elementNodes(k,q);
+              }
 
-          SerialDenseMatrix<LO,SC> B2(J2.numRows(), B.numCols());
-          B2.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, Teuchos::ScalarTraits<SC>::one(), J2, B, Teuchos::ScalarTraits<SC>::zero());
+            SC detJ = JAC(0,0)*JAC(1,1) - JAC(0,1)*JAC(1,0);
 
-          // KE = KE + t * J2B' * D * J2B * detJ
-          SerialDenseMatrix<LO,SC> J2B(R.numRows(), B2.numCols());
-          J2B.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS,    one,   R,  B2, zero);
-          K0 .multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS,    one,  *D, J2B, zero);
-          KE .multiply(Teuchos::TRANS,    Teuchos::NO_TRANS, t*detJ, J2B,  K0, one);
+            // J2 = inv([JAC zeros(2); zeros(2) JAC])
+            SerialDenseMatrix<LO,SC> J2(nDim*nDim,nDim*nDim);
+            J2(0,0) = J2(2,2) =  JAC(1,1) / detJ;
+            J2(0,1) = J2(2,3) = -JAC(0,1) / detJ;
+            J2(1,0) = J2(3,2) = -JAC(1,0) / detJ;
+            J2(1,1) = J2(3,3) =  JAC(0,0) / detJ;
+
+            SerialDenseMatrix<LO,SC> B2(J2.numRows(), B.numCols());
+            B2.multiply(Teuchos::NO_TRANS,  Teuchos::NO_TRANS,    one,  J2,   B, zero);
+
+            // KE = KE + t * J2B' * D * J2B * detJ
+            SerialDenseMatrix<LO,SC> J2B(R.numRows(), B2.numCols());
+            J2B.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS,    one,   R,  B2, zero);
+            K0 .multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS,    one,  *D, J2B, zero);
+            KE .multiply(Teuchos::TRANS,    Teuchos::NO_TRANS, t*detJ, J2B,  K0, one);
+          }
+
+          // Cache the matrix and nodes
+          prevKE           = KE;
+          prevElementNodes = elementNodes;
         }
 
         Teuchos::Array<GO> elemDofs(numDofPerElem);
@@ -225,20 +252,59 @@ namespace Galeri {
           elemDofs[numDofPerNode*j + 1] = elemDofs[numDofPerNode*j + 0] + 1;
         }
 
+        // Deal with Dirichlet nodes
+        bool isDirichlet = false;
         for (size_t j = 0; j < numNodesPerElem; j++)
-          if (dirichlet_[elemNodes[j]]) {
-            LO j0 = numDofPerNode*j+0;
-            LO j1 = numDofPerNode*j+1;
+          if (dirichlet_[elemNodes[j]])
+            isDirichlet = true;
 
-            for (size_t k = 0; k < numDofPerElem; k++)
-              KE[j0][k] = KE[k][j0] = KE[j1][k] = KE[k][j1] = zero;
-            KE[j0][j0] = KE[j1][j1] = one;
+        if (isDirichlet) {
+          bool keepBCs = this->list_.get("keepBCs", false);
+          if (keepBCs) {
+            // Simple case: keep Dirichlet DOF
+            // We rewrite rows and columns corresponding to Dirichlet DOF with zeros
+            // The diagonal elements corresponding to Dirichlet DOF are set to 1.
+            for (size_t j = 0; j < numNodesPerElem; j++)
+              if (dirichlet_[elemNodes[j]]) {
+                LO j0 = numDofPerNode*j+0;
+                LO j1 = numDofPerNode*j+1;
+
+                for (size_t k = 0; k < numDofPerElem; k++)
+                  KE[j0][k] = KE[k][j0] = KE[j1][k] = KE[k][j1] = zero;
+                KE[j0][j0] = KE[j1][j1] = one;
+              }
+          } else {
+            // Complex case: get rid of Dirichlet DOF
+            // The case is complex because if we simply reduce the size of the matrix, it would become inconsistent
+            // with maps. So, instead, we modify values of the boundary cells as if we had an additional cell close
+            // to the boundary. For instance, if we have a following cell
+            //  D--.
+            //  |  |
+            //  D--D
+            // we multiply all D-D connections by 2 and multiply diagonals corresponding to D by 2 or 4, depending
+            // whether it is connected to 1 or 2 other D DOFs.
+            for (size_t j = 0; j < numNodesPerElem; j++)
+              if (dirichlet_[elemNodes[j]]) {
+                LO j0 = numDofPerNode*j, j1 = j0+1;
+
+                for (size_t k = 0; k < numNodesPerElem; k++)
+                  if ((j == k) || ((j+k) & 0x1)) {
+                    // Nodes j and k are connected by an edge, or j == k
+                    LO k0 = numDofPerNode*k, k1 = k0+1;
+                    SC f = pow(2*Teuchos::ScalarTraits<SC>::one(), Teuchos::as<int>(std::min(dirichlet_[elemNodes[j]], dirichlet_[elemNodes[k]])));
+
+                    KE(j0,k0) *= f; KE(j0,k1) *= f;
+                    KE(j1,k0) *= f; KE(j1,k1) *= f;
+                }
+              }
           }
+        }
 
         // Insert KE into the global matrix
         // NOTE: KE is symmetric, therefore it does not matter that it is in the CSC format
         for (size_t j = 0; j < numDofPerElem; j++)
-          this->A_->insertGlobalValues(elemDofs[j], elemDofs, Teuchos::ArrayView<SC>(KE[j], numDofPerElem));
+          if (this->Map_->isNodeGlobalElement(elemDofs[j]))
+            this->A_->insertGlobalValues(elemDofs[j], elemDofs, Teuchos::ArrayView<SC>(KE[j], numDofPerElem));
       }
       this->A_->fillComplete();
 
@@ -318,6 +384,12 @@ namespace Galeri {
       Utils::getSubdomainData(dims[0], mx, myPID % mx, nx, shiftx);
       Utils::getSubdomainData(dims[1], my, myPID / mx, ny, shifty);
 
+      // Expand subdomain to do overlap
+      if (shiftx    > 0)        { nx++; shiftx--; }
+      if (shifty    > 0)        { ny++; shifty--; }
+      if (shiftx+nx < dims[0])  { nx++;        }
+      if (shifty+ny < dims[1])  { ny++;        }
+
       nodes        .resize((nx+1)*(ny+1));
       local2Global_.resize((nx+1)*(ny+1));
       dirichlet_   .resize((nx+1)*(ny+1));
@@ -328,14 +400,14 @@ namespace Galeri {
       for (int j = 0; j <= ny; j++)
         for (int i = 0; i <= nx; i++) {
           int ii = shiftx + i, jj = shifty + j;
-          nodes[NODE(i,j)] = Point((ii+1)*hx, (jj+1)*hy);
-          local2Global_[NODE(i,j)] = jj*nx_ + ii;
+          int nodeID = NODE(i,j);
+          nodes[nodeID] = Point((ii+1)*hx, (jj+1)*hy);
+          local2Global_[nodeID] = jj*nx_ + ii;
 
-          if ((ii == 0   && (this->DirichletBC_ & DIR_LEFT))   ||
-              (ii == nx_ && (this->DirichletBC_ & DIR_RIGHT))  ||
-              (jj == 0   && (this->DirichletBC_ & DIR_BOTTOM)) ||
-              (jj == ny_ && (this->DirichletBC_ & DIR_TOP)))
-            dirichlet_[NODE(i,j)] = 1;
+          if (ii == 0   && (this->DirichletBC_ & DIR_LEFT))   dirichlet_[nodeID]++;
+          if (ii == nx_ && (this->DirichletBC_ & DIR_RIGHT))  dirichlet_[nodeID]++;
+          if (jj == 0   && (this->DirichletBC_ & DIR_BOTTOM)) dirichlet_[nodeID]++;
+          if (jj == ny_ && (this->DirichletBC_ & DIR_TOP))    dirichlet_[nodeID]++;
         }
 
       for (int j = 0; j < ny; j++)

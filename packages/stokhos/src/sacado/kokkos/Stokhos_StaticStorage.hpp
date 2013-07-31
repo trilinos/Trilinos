@@ -9,20 +9,33 @@
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 // 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//  
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 // 
 // ***********************************************************************
@@ -33,7 +46,7 @@
 
 #include "Stokhos_StaticArrayTraits.hpp"
 
-#include "KokkosArray_Macros.hpp"
+#include "Kokkos_Macros.hpp"
 
 namespace Stokhos {
 
@@ -62,24 +75,24 @@ namespace Stokhos {
     };
 
     //! Constructor
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     StaticStorage(const ordinal_type& sz,
 		  const value_type& x = value_type(0.0)) : sz_(sz) { 
       ss::fill(coeff_, sz_, x); 
     }
 
     //! Copy constructor
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     StaticStorage(const StaticStorage& s) : sz_(s.sz_) {
       ss::copy(s.coeff_, coeff_, sz_);
     }
 
     //! Destructor
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     ~StaticStorage() {}
 
     //! Assignment operator
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     StaticStorage& operator=(const StaticStorage& s) {
       sz_ = s.sz_;
       ss::copy(s.coeff_, coeff_, sz_);
@@ -87,13 +100,13 @@ namespace Stokhos {
     }
 
     //! Initialize values to a constant value
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     void init(const_reference v) { 
       ss::fill(coeff_, sz_, v); 
     }
 
     //! Initialize values to an array of values
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     void init(const_pointer v, const ordinal_type& sz = 0) {
       if (sz == 0)
       	ss::copy(v, coeff_, sz_);
@@ -102,13 +115,13 @@ namespace Stokhos {
     }
 
     //! Load values to an array of values
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     void load(pointer v) { 
       ss::copy(coeff_, v, sz_); 
     }
 
     //! Resize to new size (values are preserved)
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     void resize(const ordinal_type& sz) { 
       if (sz > sz_)
 	ss::fill(coeff_+sz_, sz-sz_, value_type(0.0));
@@ -116,38 +129,38 @@ namespace Stokhos {
     }
 
     //! Reset storage to given array, size, and stride
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     void shallowReset(pointer v, const ordinal_type& sz, 
 		      const ordinal_type& stride, bool owned) {}
 
     //! Return size
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     ordinal_type size() const { return sz_; }
 
     //! Coefficient access (avoid if possible)
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     const_reference operator[] (const ordinal_type& i) const { 
       return coeff_[i];
     }
 
     //! Coefficient access (avoid if possible)
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     reference operator[] (const ordinal_type& i) { return coeff_[i]; }
 
     template <int i>
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     reference getCoeff() { return coeff_[i]; }
 
     template <int i>
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     const_reference getCoeff() const { return coeff_[i]; }
 
     //! Get coefficients
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     const_pointer coeff() const { return coeff_; }
 
     //! Get coefficients
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     pointer coeff() { return coeff_; }
 
   private:

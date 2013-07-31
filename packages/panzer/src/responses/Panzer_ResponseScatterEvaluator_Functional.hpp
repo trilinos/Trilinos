@@ -50,11 +50,35 @@
 #include "Panzer_Dimension.hpp"
 #include "Panzer_CellData.hpp"
 #include "Panzer_Response_Functional.hpp"
+#include "Panzer_UniqueGlobalIndexer.hpp"
 
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 
 namespace panzer {
+
+class FunctionalScatterBase {
+public:
+  virtual ~FunctionalScatterBase() {}
+
+  virtual void scatterDerivative(const PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
+                                 panzer::Traits::EvalData workset, 
+                                 Teuchos::ArrayRCP<double> & dgdx) const = 0;
+};
+ 
+template <typename LO,typename GO>
+class FunctionalScatter : public FunctionalScatterBase {
+public:
+   FunctionalScatter(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & globalIndexer)
+     : globalIndexer_(globalIndexer) {}
+
+   void scatterDerivative(const PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
+                         panzer::Traits::EvalData workset, 
+                         Teuchos::ArrayRCP<double> & dgdx) const;
+private:
+ 
+   Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
+};
 
 /** This class handles responses with values aggregated
   * on each finite element cell.
@@ -65,7 +89,10 @@ class ResponseScatterEvaluator_Functional : public PHX::EvaluatorWithBaseImpl<Tr
 public:
 
   //! A constructor with concrete arguments instead of a parameter list.
-  ResponseScatterEvaluator_Functional(const std::string & name,const CellData & cd);
+  ResponseScatterEvaluator_Functional(const std::string & name,const CellData & cd,
+                                      const Teuchos::RCP<FunctionalScatterBase> & functionalScatter);
+  ResponseScatterEvaluator_Functional(const std::string & integrandName,const std::string & responseName,const CellData & cd,
+                                      const Teuchos::RCP<FunctionalScatterBase> & functionalScatter);
 
   void postRegistrationSetup(typename Traits::SetupData d,
                              PHX::FieldManager<Traits>& fm);
@@ -82,10 +109,38 @@ private:
 
   Teuchos::RCP<PHX::FieldTag> scatterHolder_; // dummy target
   PHX::MDField<ScalarT,panzer::Cell> cellIntegral_; // holds cell integrals
+  Teuchos::RCP<FunctionalScatterBase> scatterObj_;
 };
+
+template <typename LO,typename GO>
+void FunctionalScatter<LO,GO>::scatterDerivative(const PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
+                                                panzer::Traits::EvalData workset, 
+                                                Teuchos::ArrayRCP<double> & dgdx) const
+{
+  std::vector<LO> LIDs;
+ 
+  // for convenience pull out some objects from workset
+  std::string blockId = workset.block_id;
+  const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+
+  // NOTE: A reordering of these loops will likely improve performance
+  //       The "getGIDFieldOffsets may be expensive.  However the
+  //       "getElementGIDs" can be cheaper. However the lookup for LIDs
+  //       may be more expensive!
+
+  // scatter operation for each cell in workset
+  for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
+    std::size_t cellLocalId = localCellIds[worksetCellIndex];
+    LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
+
+    // loop over basis functions
+    for(std::size_t i=0;i<LIDs.size();i++)
+      dgdx[LIDs[i]] += cellIntegral(worksetCellIndex).dx(i); // its possible functional is independent of solution value!
+  }
+}
 
 }
 
-#include "Panzer_ResponseScatterEvaluator_Functional_impl.hpp"
+// #include "Panzer_ResponseScatterEvaluator_Functional_impl.hpp"
 
 #endif

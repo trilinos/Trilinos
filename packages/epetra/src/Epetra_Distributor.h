@@ -65,8 +65,16 @@ class Epetra_Distributor {
   //@{ 
   //! Epetra_Distributor clone constructor.
   virtual Epetra_Distributor * Clone() = 0;
+
+  //! Create and extract the reverse version of the distributor.  
+  /*! This is not a const method since a reverse distributor might need to be created.
+    This works like Clone, returning a new object the user must deallocate.
+   */
+  virtual Epetra_Distributor * ReverseClone() =0;
+
   //! Epetra_Distributor Destructor.
   virtual ~Epetra_Distributor(){};
+
   //@}
 
   
@@ -188,12 +196,11 @@ class Epetra_Distributor {
                               int *& sizes,
                               int & len_import_objs,
                               char *& import_objs) = 0;
-
   //@}
 
   //! @name Print object to an output stream
   //@{ 
-  virtual void Print(ostream & os) const = 0;
+  virtual void Print(std::ostream & os) const = 0;
   //@}
 };
 #endif /* EPETRA_DISTRIBUTOR_H */

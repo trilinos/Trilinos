@@ -58,7 +58,7 @@ operator()( OriginalTypeRef orig )
 {
   origObj_ = &orig;
 
-  if( orig.IndicesAreGlobal() ) cout << "EDT_CrsMatrix_View: Indices must be LOCAL!\n";
+  if( orig.IndicesAreGlobal() ) std::cout << "EDT_CrsMatrix_View: Indices must be LOCAL!\n";
   assert( !orig.IndicesAreGlobal() );
 
   //test graph, new graph must be contiguous subset of old

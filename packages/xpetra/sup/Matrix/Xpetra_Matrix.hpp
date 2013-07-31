@@ -93,8 +93,8 @@ namespace Xpetra {
   template <class Scalar,
             class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node          = Kokkos::DefaultNode::DefaultNodeType,
-            class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
+            class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
+            class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
   class Matrix : virtual public Teuchos::Describable {
 
     typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
@@ -104,7 +104,7 @@ namespace Xpetra {
     typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
 #endif
     typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixFactory;
-    typedef Xpetra::MatrixView<LocalOrdinal, GlobalOrdinal, Node> MatrixView;
+    typedef Xpetra::MatrixView<Scalar, LocalOrdinal, GlobalOrdinal, Node> MatrixView;
 
   public:
 
@@ -245,6 +245,9 @@ namespace Xpetra {
     virtual void replaceLocalValues(LocalOrdinal localRow,
                                     const ArrayView<const LocalOrdinal> &cols,
                                     const ArrayView<const Scalar>       &vals) = 0;
+
+    //! Set all matrix entries equal to scalar
+    virtual void setAllToScalar(const Scalar &alpha)= 0;
 
     //! Scale the current values of a matrix, this = alpha*this.
     virtual void scale(const Scalar &alpha)= 0;
@@ -460,6 +463,8 @@ namespace Xpetra {
     //! This will be <tt>null</tt> until fillComplete() is called.
     virtual const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const =0;
 
+    virtual void removeEmptyProcessesInPlace(const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> >& newMap) = 0;
+
     //@}
 
     //! Implements DistObject interface
@@ -557,6 +562,18 @@ namespace Xpetra {
         //TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "Xpetra::Matrix::GetFixedBlockSize(): no strided maps available."); // TODO remove this
         return 1;
     }; //TODO: why LocalOrdinal?
+
+    // ----------------------------------------------------------------------------------
+
+    virtual void SetMaxEigenvalueEstimate(Scalar const &sigma) {
+      operatorViewTable_.get(GetCurrentViewLabel())->SetMaxEigenvalueEstimate(sigma);
+    }
+
+    // ----------------------------------------------------------------------------------
+
+    virtual Scalar GetMaxEigenvalueEstimate() const {
+      return operatorViewTable_.get(GetCurrentViewLabel())->GetMaxEigenvalueEstimate();
+    }
 
     // ----------------------------------------------------------------------------------
 

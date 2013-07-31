@@ -47,7 +47,6 @@
 #define MUELU_AGGREGATES_DEF_HPP
 
 #include <Xpetra_Map.hpp>
-#include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
@@ -71,6 +70,9 @@ namespace MueLu {
     isRoot_ = Teuchos::ArrayRCP<bool>(graph.GetImportMap()->getNodeNumElements());
     for (size_t i=0; i < graph.GetImportMap()->getNodeNumElements(); i++)
       isRoot_[i] = false;
+
+    // slow but safe, force TentativePFactory to build column map for P itself
+    aggregatesIncludeGhosts_ = true;
   }
 
   ///////////////////////////////////////////////////////
@@ -87,6 +89,9 @@ namespace MueLu {
     isRoot_ = Teuchos::ArrayRCP<bool>(map->getNodeNumElements());
     for (size_t i=0; i < map->getNodeNumElements(); i++)
       isRoot_[i] = false;
+
+    // slow but safe, force TentativePFactory to build column map for P itself
+    aggregatesIncludeGhosts_ = true;
   }
 
   ///////////////////////////////////////////////////////

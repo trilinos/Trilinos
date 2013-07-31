@@ -36,7 +36,7 @@ namespace {
 // Specializations for Scalar=float
 //////////////////////////////////////////////////////////////////////
 
-namespace Kokkos {
+namespace KokkosClassic {
   namespace Mkl {
 
     template<>
@@ -522,7 +522,7 @@ namespace Kokkos {
   }
 
 } // namespace Mkl
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif // HAVE_TEUCHOS_COMPLEX
 

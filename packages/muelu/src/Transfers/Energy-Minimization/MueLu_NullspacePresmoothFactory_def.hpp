@@ -62,6 +62,7 @@ namespace MueLu {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >("Nullspace", Teuchos::null, "Generating factory for the nonsmoothed nullspace");
+    validParamList->set< RCP<const FactoryBase> >("A"        , Teuchos::null, "Generating factory for A");
 
     return validParamList;
   }
@@ -77,8 +78,6 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void NullspacePresmoothFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
     FactoryMonitor m(*this, "Nullspace presmooth factory", currentLevel);
-
-    RCP<MultiVector> nullspace;
 
     RCP<MultiVector> newB;
     if (currentLevel.GetLevelID() == 0) {

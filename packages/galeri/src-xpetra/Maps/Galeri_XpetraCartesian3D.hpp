@@ -67,7 +67,7 @@ namespace Galeri {
       //TODO: avoid using GlobalOrdinal everywhere?
 
       template <class LocalOrdinal, class GlobalOrdinal, class Map>
-      RCP<Map>
+      Teuchos::RCP<Map>
       Cartesian3D(const Teuchos::RCP<const Teuchos::Comm<int> > & comm, const GlobalOrdinal nx, const GlobalOrdinal ny, const GlobalOrdinal nz,
                   const GlobalOrdinal mx, const GlobalOrdinal my, const GlobalOrdinal mz)
       {
@@ -120,9 +120,9 @@ namespace Galeri {
         vector<GlobalOrdinal> MyGlobalElements(NumMyElements);
         size_t count = 0;
 
-        for (GlobalOrdinal k = startz ; k < endz ; ++k)
+        for (GlobalOrdinal i = startx ; i < endx ; ++i)
           for (GlobalOrdinal j = starty ; j < endy ; ++j)
-            for (GlobalOrdinal i = startx ; i < endx ; ++i)
+            for (GlobalOrdinal k = startz ; k < endz ; ++k)
               MyGlobalElements[count++] = i + j * nx +k * (nx * ny);
 
         global_size_t numGlobalElements = nx * ny * nz;

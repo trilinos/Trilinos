@@ -1,0 +1,6 @@
+INCLUDE(TribitsTplDeclareLibraries)
+
+TRIBITS_TPL_DECLARE_LIBRARIES(BGPDCMF
+  REQUIRED_HEADERS dcmf.h
+  )
+

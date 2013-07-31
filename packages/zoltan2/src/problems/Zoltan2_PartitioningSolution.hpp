@@ -52,19 +52,65 @@
 
 #include <Zoltan2_IdentifierMap.hpp>
 #include <Zoltan2_Solution.hpp>
-
+#include <Zoltan2_GreedyMWM.hpp>
+#include <Zoltan2_CoordinatePartitioningGraph.hpp>
 #include <cmath>
 #include <algorithm>
 #include <vector>
+#include <limits>
+
+namespace Teuchos{
+
+/*! \brief Zoltan2_BoxBoundaries is a reduction operation
+ * to all reduce the all box boundaries.
+*/
+
+template <typename Ordinal, typename T>
+class Zoltan2_BoxBoundaries  : public ValueTypeReductionOp<Ordinal,T>
+{
+private:
+    Ordinal size;
+    T _EPSILON;
+
+public:
+    /*! \brief Default Constructor
+     */
+    Zoltan2_BoxBoundaries ():size(0), _EPSILON (std::numeric_limits<T>::epsilon()){}
+
+    /*! \brief Constructor
+     *   \param nsum  the count of how many sums will be computed at the
+     *             start of the list.
+     *   \param nmin  following the sums, this many minimums will be computed.
+     *   \param nmax  following the minimums, this many maximums will be computed.
+     */
+    Zoltan2_BoxBoundaries (Ordinal s_):
+        size(s_), _EPSILON (std::numeric_limits<T>::epsilon()){}
+
+    /*! \brief Implement Teuchos::ValueTypeReductionOp interface
+     */
+    void reduce( const Ordinal count, const T inBuffer[], T inoutBuffer[]) const
+    {
+        for (Ordinal i=0; i < count; i++){
+            if (Z2_ABS(inBuffer[i]) >  _EPSILON){
+                inoutBuffer[i] = inBuffer[i];
+            }
+        }
+    }
+};
+} // namespace Teuchos
+
 
 namespace Zoltan2 {
+
+long measure_stays(partId_t *, int *, partId_t *, long *, partId_t, partId_t);
+
 
 /*! \brief A PartitioningSolution is a solution to a partitioning problem.
 
     It is initialized by a PartitioningProblem,
     written to by an algorithm, and may be read by the user or by
     a data migration routine in an input adapter.
-    
+
     \todo Problem computes metrics using the Solution.  Should
   Solution have a pointer to the metrics, since it may persist after
   the Problem is gone?
@@ -92,17 +138,17 @@ public:
  *   The rest of the Solution methods do not.
  *
  *    \param env the environment for the application
- *    \param comm the communicator for the problem associated with 
+ *    \param comm the communicator for the problem associated with
  *             this solution
  *    \param idMap  the IdentifierMap corresponding to the solution
- *    \param userWeightDim  the number of weights supplied by the 
+ *    \param userWeightDim  the number of weights supplied by the
  *         application for each object.
  *
  *   It is possible that part sizes were supplied on other processes,
  *   so this constructor does do a check to see if part sizes need
  *   to be globally calculated.
  */
- 
+
   PartitioningSolution( RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<user_t> > &idMap,
@@ -114,20 +160,20 @@ public:
  *   The rest of the Solution methods do not.
  *
  *    \param env the environment for the application
- *    \param comm the communicator for the problem associated with 
+ *    \param comm the communicator for the problem associated with
  *                        this solution
  *    \param idMap  the IdentifierMap corresponding to the solution
- *    \param userWeightDim  the number of weights supplied 
+ *    \param userWeightDim  the number of weights supplied
  *                         by the application
  *    \param reqPartIds  reqPartIds[i] is a list of
  *          of part numbers for weight dimension i.
  *    \param reqPartSizes  reqPartSizes[i] is the list
- *          of part sizes for weight i corresponding to parts in 
+ *          of part sizes for weight i corresponding to parts in
  *          reqPartIds[i]
  *
- *   If <tt>reqPartIds[i].size()</tt> and <tt>reqPartSizes[i].size()</tt> 
- *           are zero for 
- *   all processes, it is assumed that part sizes for weight 
+ *   If <tt>reqPartIds[i].size()</tt> and <tt>reqPartSizes[i].size()</tt>
+ *           are zero for
+ *   all processes, it is assumed that part sizes for weight
  *   dimension "i" are uniform.
  *
  *   If across the application there are some part numbers that are not
@@ -142,22 +188,22 @@ public:
     RCP<const IdentifierMap<user_t> > &idMap,
     int userWeightDim, ArrayView<ArrayRCP<partId_t> > reqPartIds,
     ArrayView<ArrayRCP<scalar_t> > reqPartSizes);
-  
+
   ////////////////////////////////////////////////////////////////////
   // Information that the algorithm may wish to query.
-  
+
 /*! \brief Returns the global number of parts desired in the solution.
  */
   size_t getTargetGlobalNumberOfParts() const { return nGlobalParts_; }
-  
+
 /*! \brief Returns the actual global number of parts provided in setParts().
  */
   size_t getActualGlobalNumberOfParts() const { return nGlobalPartsSolution_; }
-  
+
 /*! \brief Returns the number of parts to be assigned to this process.
  */
   size_t getLocalNumberOfParts() const { return nLocalParts_; }
-  
+
 /*! \brief If parts are divided across processes, return the fraction of
              a part on this process.
     \return zero if parts are not split across processes, approximate
@@ -166,7 +212,7 @@ public:
               not useful at all - remove this?
  */
   scalar_t getLocalFractionOfPart() const { return localFraction_; }
-  
+
 /*! \brief Is the part-to-process distribution is one-to-one.
      \return true if Process p owns part p for all p, and false if the part
                   to process distribution is more complex.
@@ -177,13 +223,13 @@ public:
  */
 
   bool oneToOnePartDistribution() const { return onePartPerProc_; }
-  
+
 /*! \brief Return a distribution by part.
 
     \return If any parts are
-       divided across processes, then a mapping \c A is returned. 
-     \c A such that \c A[i] is the lowest numbered process 
-       owning part \c i.  The length of the array is one greater than the 
+       divided across processes, then a mapping \c A is returned.
+     \c A such that \c A[i] is the lowest numbered process
+       owning part \c i.  The length of the array is one greater than the
        global number of parts.
        The value of the last element is the global number of processes.
 
@@ -194,20 +240,20 @@ public:
      Zoltan2 algorithms than in user applications.
 
    If either oneToOnePartDistribution() is true or getProcDistribution() is
-   non-NULL, then this method returns a NULL pointer.  The three are mutually 
+   non-NULL, then this method returns a NULL pointer.  The three are mutually
    exclusive and collective exhaustive.
  */
   const int *getPartDistribution() const {
     if (partDist_.size() > 0) return &partDist_[0];
     else return NULL;
   }
-  
+
 /*! \brief Return a distribution by process.
 
     \return If the mapping of parts to processes is not one-to-one, and
       if parts are not divided across processes, then the mapping
-      \c A is returned. \c A such that \c A[i] is the first part 
-      assigned to process \c i.  
+      \c A is returned. \c A such that \c A[i] is the first part
+      assigned to process \c i.
       (Parts are assigned sequentially to processes.)
       However if <tt> A[i+1]</tt> is equal to \c A[i], there
       are no parts assigned to process \c i.  The length of the array is
@@ -215,7 +261,7 @@ public:
       the array is the global number of parts.
 
     If the mapping is one-to-one, or if parts are divided across processes,
-    then this method returns NULL pointer, and either 
+    then this method returns NULL pointer, and either
     oneToOnePartDistribution() or getPartDistribution() describes the mapping.
  */
   const partId_t *getProcDistribution() const {
@@ -228,29 +274,29 @@ public:
  */
   int getNumberOfCriteria() const { return weightDim_; }
 
-  
+
 /*! \brief Determine if balancing criteria (weight dimension) has uniform
                 part sizes.  (User can specify differing part sizes.)
-    \param idx   A value from 0 to one less than the number of weights per 
+    \param idx   A value from 0 to one less than the number of weights per
                    object.
     \return true if part sizes are uniform for this criteria.
  */
   bool criteriaHasUniformPartSizes(int idx) const { return pSizeUniform_[idx];}
-  
-/*! \brief Get the size for a given weight dimension and a given part. 
 
-    \param idx   A value from 0 to one less than the number of weights per 
+/*! \brief Get the size for a given weight dimension and a given part.
+
+    \param idx   A value from 0 to one less than the number of weights per
                        object.
-    \param part  A value from 0 to one less than the global number of parts 
+    \param part  A value from 0 to one less than the global number of parts
                    to be computed
-    \return   The size for that part.  Part sizes for a given weight 
+    \return   The size for that part.  Part sizes for a given weight
                     dimension sum to 1.0.
 
       \todo It would be useful to algorithms to get the sum of
            part sizes from a to b, or the sum or a list of parts.
  */
-  scalar_t getCriteriaPartSize(int idx, partId_t part) const { 
-    if (pSizeUniform_[idx]) 
+  scalar_t getCriteriaPartSize(int idx, partId_t part) const {
+    if (pSizeUniform_[idx])
       return 1.0 / nGlobalParts_;
     else if (pCompactIndex_[idx].size())
       return pSize_[idx][pCompactIndex_[idx][part]];
@@ -261,12 +307,12 @@ public:
 /*! \brief Return true if the two weight dimensions have the same
  *          part size information.
 
-    \param c1   A value from 0 through one less than the number of weights. 
-    \param c2   A value from 0 through one less than the number of weights. 
+    \param c1   A value from 0 through one less than the number of weights.
+    \param c2   A value from 0 through one less than the number of weights.
     \return   If weight dimension \c c1 and weight dimension \c c2 have
         the same part size information, the \c true is returned, otherwise
         \c false is returned.
-  
+
     It may be a problem for some algorithms if there are multiple weight
     dimensions with differing part size constraints to be satisfied.
  */
@@ -287,7 +333,7 @@ public:
    *   \param dataDidNotMove The algorithm did not change the order of the
    *      data provided by the model; that is, it did not move the data
    *      to other processes or reorganize within the process.  Thus,
-   *      the gnoList and partList are ordered in the same way as the 
+   *      the gnoList and partList are ordered in the same way as the
    *      array provided by the model.  Setting this flag to true avoids
    *      processing to remap the data to the original process that provided
    *      the data.
@@ -301,10 +347,25 @@ public:
    * the part for each global identifier supplied by each process
    * in its InputAdapter is found and saved in this PartitioningSolution.
    */
-  
-  void setParts(ArrayRCP<const gno_t> &gnoList, 
+
+  void setParts(ArrayRCP<const gno_t> &gnoList,
     ArrayRCP<partId_t> &partList, bool dataDidNotMove);
-  
+
+  ////////////////////////////////////////////////////////////////////
+
+  /*! \brief Remap a new partition for maximum overlap with an input partition.
+   *
+   * Assumptions for this version:
+   * input part assignment == processor rank for every local object.
+   * assuming nGlobalParts <= num ranks
+   * TODO:  Write a version that takes the input part number as input;
+   *        this change requires input parts in adapters to be provided in
+   *        the Adapter.
+   * TODO:  For repartitioning, compare to old remapping results; see Zoltan1.
+   */
+
+  void RemapParts();
+
   ////////////////////////////////////////////////////////////////////
   // Results that may be queried by the user, by migration methods,
   // or by metric calculation methods.
@@ -333,6 +394,121 @@ public:
    */
   const int *getProcList() const { return procs_.getRawPtr();}
 
+
+  /*! \brief set the Part Box boundaries as a result of geometric partitioning algorithm.
+   */
+  void setPartBoxes(RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > outPartBoxes){
+      this->partBoxes = outPartBoxes;
+  }
+
+  /*! \brief returns the part box boundary list.
+   */
+  RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > getPartBoxes(){
+      return this->partBoxes;
+  }
+
+  /*! \brief returns the communication graph as a result of geometric partitioning algorithm.
+   */
+  void getCommunicationGraph(
+          const Teuchos::Comm<int> *comm,
+          ArrayRCP <partId_t> &comXAdj,
+          ArrayRCP <partId_t> &comAdj
+  ) {
+
+      if(comXAdj_.getRawPtr() == NULL && comAdj_.getRawPtr() == NULL){
+
+          partId_t ntasks =  this->getActualGlobalNumberOfParts();
+          if (partId_t (this->getTargetGlobalNumberOfParts()) > ntasks){
+              ntasks = this->getTargetGlobalNumberOfParts();
+          }
+          RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > pBoxes = this->getGlobalBoxBoundaries(comm);
+          int dim = (*pBoxes)[0].getDim();
+          GridHash < scalar_t, partId_t> grid(
+                  pBoxes,
+                  ntasks,
+                  dim);
+          grid.getAdjArrays(comXAdj_, comAdj_);
+      }
+      comAdj = comAdj_;
+      comXAdj = comXAdj_;
+
+  }
+
+  RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > getGlobalBoxBoundaries(
+          const Teuchos::Comm<int> *comm){
+
+      partId_t ntasks =  this->getActualGlobalNumberOfParts();
+      if (partId_t (this->getTargetGlobalNumberOfParts()) > ntasks){
+          ntasks = this->getTargetGlobalNumberOfParts();
+      }
+
+      RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > pBoxes = this->getPartBoxes();
+
+      int dim = (*pBoxes)[0].getDim();
+
+
+      scalar_t *localPartBoundaries = new scalar_t[ntasks * 2 *dim];
+
+      memset(localPartBoundaries, 0, sizeof(scalar_t) * ntasks * 2 *dim);
+
+      scalar_t *globalPartBoundaries = new scalar_t[ntasks * 2 *dim];
+      memset(globalPartBoundaries, 0, sizeof(scalar_t) * ntasks * 2 *dim);
+
+      scalar_t *localPartMins = localPartBoundaries;
+      scalar_t *localPartMaxs = localPartBoundaries + ntasks * dim;
+
+      scalar_t *globalPartMins = globalPartBoundaries;
+      scalar_t *globalPartMaxs = globalPartBoundaries + ntasks * dim;
+
+      partId_t boxCount = pBoxes->size();
+      for (partId_t i = 0; i < boxCount; ++i){
+          partId_t pId = (*pBoxes)[i].getpId();
+          //cout << "me:" << comm->getRank() << " has:" << pId << endl;
+
+          scalar_t *lmins = (*pBoxes)[i].getlmins();
+          scalar_t *lmaxs = (*pBoxes)[i].getlmaxs();
+
+          for (int j = 0; j < dim; ++j){
+              localPartMins[dim * pId + j] = lmins[j];
+              localPartMaxs[dim * pId + j] = lmaxs[j];
+              /*
+              cout << "me:" << comm->getRank()  <<
+                      " dim * pId + j:"<< dim * pId + j <<
+                      " localMin:" << localPartMins[dim * pId + j] <<
+                      " localMax:" << localPartMaxs[dim * pId + j] << endl;
+                      */
+          }
+      }
+
+      Teuchos::Zoltan2_BoxBoundaries<int, scalar_t> reductionOp(ntasks * 2 *dim);
+
+      reduceAll<int, scalar_t>(*comm, reductionOp,
+              ntasks * 2 *dim, localPartBoundaries, globalPartBoundaries
+      );
+      RCP < std::vector <coordinateModelPartBox <scalar_t, partId_t> > > pB(new std::vector <coordinateModelPartBox <scalar_t, partId_t> > (), true) ;
+      for (partId_t i = 0; i < ntasks; ++i){
+          Zoltan2::coordinateModelPartBox <scalar_t, partId_t> tpb(
+                  i,
+                  dim,
+                  globalPartMins + dim * i,
+                  globalPartMaxs + dim * i);
+
+          /*
+          for (int j = 0; j < dim; ++j){
+              cout << "me:" << comm->getRank()  <<
+                      " dim * pId + j:"<< dim * i + j <<
+                      " globalMin:" << globalPartMins[dim * i + j] <<
+                      " globalMax:" << globalPartMaxs[dim * i + j] << endl;
+          }
+          */
+          pB->push_back(tpb);
+      }
+      delete []localPartBoundaries;
+      delete []globalPartBoundaries;
+      //RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > tmpRCPBox(pB, true);
+      this->partBoxes = pB;
+      return this->partBoxes;
+  }
   /*! \brief Create an import list from the export list.
    *
    *  \param numExtra The amount of related information of type
@@ -375,8 +551,8 @@ public:
    *                    to the process.
    *  \param partMin on return will be set to minimum part number
    *  \param partMax on return will be set to maximum part number
-   *  
-   * Normally \c numParts is at least one. But if there are more processes 
+   *
+   * Normally \c numParts is at least one. But if there are more processes
    * than parts, one of two things can happen.  Either there are processes
    * with no parts, and so \c numParts will be zero, or a part may be
    * split across more than one process, in which \c numParts will
@@ -386,7 +562,7 @@ public:
    * processes that share the part.
    */
 
-  void getPartsForProc(int procId, double &numParts, partId_t &partMin, 
+  void getPartsForProc(int procId, double &numParts, partId_t &partMin,
     partId_t &partMax) const
   {
     env_->localInputAssertion(__FILE__, __LINE__, "invalid process id",
@@ -400,7 +576,7 @@ public:
    *                of parts.
    *  \param procMin on return will be set to minimum proc number
    *  \param procMax on return will be set to maximum proc number
-   *  
+   *
    * Normally \c procMin and \c procMax are the same value and a part
    * is assigned to one process.  But if there are more processes than
    * parts, it's possible that a part will be divided across more than
@@ -418,7 +594,7 @@ private:
   void partToProc(bool doCheck, bool haveNumLocalParts, bool haveNumGlobalParts,
     int numLocalParts, int numGlobalParts);
 
-  void procToPartsMap(int procId, double &numParts, partId_t &partMin, 
+  void procToPartsMap(int procId, double &numParts, partId_t &partMin,
     partId_t &partMax) const;
 
   void partToProcsMap(partId_t partId, int &procMin, int &procMax) const;
@@ -428,14 +604,20 @@ private:
   void setPartSizes(ArrayView<ArrayRCP<partId_t> > reqPartIds,
     ArrayView<ArrayRCP<scalar_t> > reqPartSizes);
 
-  void computePartSizes(int wdim, ArrayView<partId_t> ids, 
+  void computePartSizes(int wdim, ArrayView<partId_t> ids,
     ArrayView<scalar_t> sizes);
 
   void broadcastPartSizes(int wdim);
 
+
   RCP<const Environment> env_;             // has application communicator
   RCP<const Comm<int> > comm_;             // the problem communicator
   RCP<const IdentifierMap<user_t> > idMap_;
+
+  //part box boundaries as a result of geometric partitioning algorithm.
+  RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > partBoxes;
+  ArrayRCP <partId_t> comXAdj_; //communication graph xadj
+  ArrayRCP <partId_t> comAdj_; //communication graph adj.
 
   partId_t nGlobalParts_;// target global number of parts
   partId_t nLocalParts_; // number of parts to be on this process
@@ -443,7 +625,7 @@ private:
   scalar_t localFraction_; // approx fraction of a part on this process
   int weightDim_;      // if user has no weights, this is 1
 
-  // If process p is to be assigned part p for all p, then onePartPerProc_ 
+  // If process p is to be assigned part p for all p, then onePartPerProc_
   // is true. Otherwise it is false, and either procDist_ or partDist_
   // describes the allocation of parts to processes.
   //
@@ -471,11 +653,11 @@ private:
   // the range [procId, procIdNext).
   //
   // We use std::vector so we can use upper_bound algorithm
-  
+
   bool             onePartPerProc_;   // either this is true...
   std::vector<int>      partDist_;      // or this is defined ...
   std::vector<partId_t> procDist_;      // or this is defined.
-  bool procDistEquallySpread_;        // if procDist_ is used and 
+  bool procDistEquallySpread_;        // if procDist_ is used and
                                       // #parts > #procs and
                                       // num_local_parts is not specified,
                                       // parts are evenly distributed to procs
@@ -518,7 +700,7 @@ private:
   ////////////////////////////////////////////////////////////////
   // The algorithm sets these values upon completion.
 
-  ArrayRCP<const gid_t>  gids_;   // User's global IDs 
+  ArrayRCP<const gid_t>  gids_;   // User's global IDs
   ArrayRCP<partId_t> parts_;      // part number assigned to gids_[i]
 
   bool haveSolution_;
@@ -538,10 +720,11 @@ private:
 
 template <typename Adapter>
   PartitioningSolution<Adapter>::PartitioningSolution(
-    RCP<const Environment> &env, 
+    RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<user_t> > &idMap, int userWeightDim)
     : env_(env), comm_(comm), idMap_(idMap),
+      partBoxes(),comXAdj_(), comAdj_(),
       nGlobalParts_(0), nLocalParts_(0),
       localFraction_(0),  weightDim_(),
       onePartPerProc_(false), partDist_(), procDist_(),
@@ -550,7 +733,7 @@ template <typename Adapter>
       gids_(), parts_(), haveSolution_(false), nGlobalPartsSolution_(0),
       procs_()
 {
-  weightDim_ = (userWeightDim ? userWeightDim : 1); 
+  weightDim_ = (userWeightDim ? userWeightDim : 1);
 
   setPartDistribution();
 
@@ -569,21 +752,22 @@ template <typename Adapter>
 
 template <typename Adapter>
   PartitioningSolution<Adapter>::PartitioningSolution(
-    RCP<const Environment> &env, 
+    RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<user_t> > &idMap, int userWeightDim,
-    ArrayView<ArrayRCP<partId_t> > reqPartIds, 
+    ArrayView<ArrayRCP<partId_t> > reqPartIds,
     ArrayView<ArrayRCP<scalar_t> > reqPartSizes)
     : env_(env), comm_(comm), idMap_(idMap),
-      nGlobalParts_(0), nLocalParts_(0), 
+      partBoxes(),comXAdj_(), comAdj_(),
+      nGlobalParts_(0), nLocalParts_(0),
       localFraction_(0),  weightDim_(),
-      onePartPerProc_(false), partDist_(), procDist_(), 
+      onePartPerProc_(false), partDist_(), procDist_(),
       procDistEquallySpread_(false),
       pSizeUniform_(), pCompactIndex_(), pSize_(),
-      gids_(), parts_(), haveSolution_(false), nGlobalPartsSolution_(0), 
+      gids_(), parts_(), haveSolution_(false), nGlobalPartsSolution_(0),
       procs_()
 {
-  weightDim_ = (userWeightDim ? userWeightDim : 1); 
+  weightDim_ = (userWeightDim ? userWeightDim : 1);
 
   setPartDistribution();
 
@@ -623,7 +807,7 @@ template <typename Adapter>
   try{
     // Sets onePartPerProc_, partDist_, and procDist_
 
-    partToProc(true, haveLocalNumParts, haveGlobalNumParts, 
+    partToProc(true, haveLocalNumParts, haveGlobalNumParts,
       numLocal, numGlobal);
   }
   Z2_FORWARD_EXCEPTIONS
@@ -634,7 +818,7 @@ template <typename Adapter>
   if (onePartPerProc_){
     nGlobalParts_ = nprocs;
     nLocalParts_ = 1;
-  } 
+  }
   else if (partDist_.size() > 0){   // more procs than parts
     nGlobalParts_ = partDist_.size() - 1;
     int pstart = partDist_[0];
@@ -676,7 +860,7 @@ template <typename Adapter>
     if (ids[w].size() != sizes[w].size()) fail=true;
   }
 
-  env_->globalBugAssertion(__FILE__, __LINE__, "bad argument arrays", fail==0, 
+  env_->globalBugAssertion(__FILE__, __LINE__, "bad argument arrays", fail==0,
     COMPLEX_ASSERTION, comm_);
 
   // Are all part sizes the same?  This is the common case.
@@ -692,7 +876,7 @@ template <typename Adapter>
   for (int w=0; w < wdim; w++)
     pSizeUniform_[w] = true;
 
-  if (nGlobalParts_ == 1){   
+  if (nGlobalParts_ == 1){
     return;   // there's only one part in the whole problem
   }
 
@@ -713,7 +897,7 @@ template <typename Adapter>
     }
 
   if (zero) // Part sizes for all criteria are uniform.
-    return; 
+    return;
 
   // Compute the part sizes for criteria for which part sizes were
   // supplied.  Normalize for each criteria so part sizes sum to one.
@@ -723,13 +907,13 @@ template <typename Adapter>
 
   for (int w=0; w < wdim; w++){
     if (pSizeUniform_[w]) continue;
-    
+
     // Send all ids and sizes to one process.
     // (There is no simple gather method in Teuchos.)
 
     partId_t length = ids[w].size();
     partId_t *allLength = new partId_t [nprocs];
-    Teuchos::gatherAll<int, partId_t>(*comm_, 1, &length, 
+    Teuchos::gatherAll<int, partId_t>(*comm_, 1, &length,
       nprocs, allLength);
 
     if (rank == 0){
@@ -770,7 +954,7 @@ template <typename Adapter>
 
       delete [] idArray.getRawPtr();
       delete [] sizeArray.getRawPtr();
-    } 
+    }
     else{
       delete [] allLength;
       if (length > 0){
@@ -786,9 +970,9 @@ template <typename Adapter>
 template <typename Adapter>
   void PartitioningSolution<Adapter>::broadcastPartSizes(int wdim)
 {
-  env_->localBugAssertion(__FILE__, __LINE__, "preallocations", 
-    pSize_.size()>wdim && 
-    pSizeUniform_.size()>wdim && pCompactIndex_.size()>wdim, 
+  env_->localBugAssertion(__FILE__, __LINE__, "preallocations",
+    pSize_.size()>wdim &&
+    pSizeUniform_.size()>wdim && pCompactIndex_.size()>wdim,
     COMPLEX_ASSERTION);
 
   int rank = comm_->getRank();
@@ -832,14 +1016,14 @@ template <typename Adapter>
       env_->localMemoryAssertion(__FILE__, __LINE__, nparts, idxbuf);
     }
     else{
-      env_->localBugAssertion(__FILE__, __LINE__, "index list size", 
+      env_->localBugAssertion(__FILE__, __LINE__, "index list size",
         pCompactIndex_[wdim].size() == nparts, COMPLEX_ASSERTION);
       idxbuf = pCompactIndex_[wdim].getRawPtr();
     }
 
     try{
       // broadcast of unsigned char is not supported
-      Teuchos::broadcast<int, char>(*comm_, 0, nparts, 
+      Teuchos::broadcast<int, char>(*comm_, 0, nparts,
         reinterpret_cast<char *>(idxbuf));
     }
     Z2_THROW_OUTSIDE_ERROR(*env_);
@@ -854,7 +1038,7 @@ template <typename Adapter>
       if (idxbuf[p] > maxIdx) maxIdx = idxbuf[p];
 
     int numSizes = maxIdx + 1;
-  
+
     scalar_t *sizeList = NULL;
 
     if (rank > 0){
@@ -862,7 +1046,7 @@ template <typename Adapter>
       env_->localMemoryAssertion(__FILE__, __LINE__, numSizes, sizeList);
     }
     else{
-      env_->localBugAssertion(__FILE__, __LINE__, "wrong number of sizes", 
+      env_->localBugAssertion(__FILE__, __LINE__, "wrong number of sizes",
         numSizes == pSize_[wdim].size(), COMPLEX_ASSERTION);
 
       sizeList = pSize_[wdim].getRawPtr();
@@ -890,7 +1074,7 @@ template <typename Adapter>
       env_->localMemoryAssertion(__FILE__, __LINE__, nparts, sizeList);
     }
     else{
-      env_->localBugAssertion(__FILE__, __LINE__, "wrong number of sizes", 
+      env_->localBugAssertion(__FILE__, __LINE__, "wrong number of sizes",
         nparts == pSize_[wdim].size(), COMPLEX_ASSERTION);
 
       sizeList = pSize_[wdim].getRawPtr();
@@ -919,15 +1103,15 @@ template <typename Adapter>
     return;
   }
 
-  env_->localBugAssertion(__FILE__, __LINE__, "bad array sizes", 
+  env_->localBugAssertion(__FILE__, __LINE__, "bad array sizes",
     len>0 && sizes.size()==len, COMPLEX_ASSERTION);
 
-  env_->localBugAssertion(__FILE__, __LINE__, "bad index", 
+  env_->localBugAssertion(__FILE__, __LINE__, "bad index",
     wdim>=0 && wdim<weightDim_, COMPLEX_ASSERTION);
 
-  env_->localBugAssertion(__FILE__, __LINE__, "preallocations", 
-    pSize_.size()>wdim && 
-    pSizeUniform_.size()>wdim && pCompactIndex_.size()>wdim, 
+  env_->localBugAssertion(__FILE__, __LINE__, "preallocations",
+    pSize_.size()>wdim &&
+    pSizeUniform_.size()>wdim && pCompactIndex_.size()>wdim,
     COMPLEX_ASSERTION);
 
   // Check ids and sizes and find min, max and average sizes.
@@ -946,7 +1130,7 @@ template <typename Adapter>
     partId_t id = ids[i];
     scalar_t size = sizes[i];
 
-    env_->localInputAssertion(__FILE__, __LINE__, "invalid part id", 
+    env_->localInputAssertion(__FILE__, __LINE__, "invalid part id",
       id>=0 && id<nparts, BASIC_ASSERTION);
 
     env_->localInputAssertion(__FILE__, __LINE__, "invalid part size", size>=0,
@@ -956,7 +1140,7 @@ template <typename Adapter>
     // part if we add a parameter that says what we are to do with them:
     // add them or take the max.
 
-    env_->localInputAssertion(__FILE__, __LINE__, 
+    env_->localInputAssertion(__FILE__, __LINE__,
       "multiple sizes provided for one part", partIdx[id]==0, BASIC_ASSERTION);
 
     partIdx[id] = 1;    // mark that we have a size for this part
@@ -966,11 +1150,11 @@ template <typename Adapter>
     sum += size;
   }
 
-  if (sum == 0){   
+  if (sum == 0){
 
     // User has given us a list of parts of size 0, we'll set
     // the rest to them to equally sized parts.
-    
+
     scalar_t *allSizes = new scalar_t [2];
     env_->localMemoryAssertion(__FILE__, __LINE__, 2, allSizes);
 
@@ -986,7 +1170,7 @@ template <typename Adapter>
 
     for (int i=0; i < len; i++)
       buf[ids[i]] = 0;            // index to part size zero
-    
+
     pSize_[wdim] = sizeArray;
     pCompactIndex_[wdim] = partIdx;
 
@@ -1047,7 +1231,7 @@ template <typename Adapter>
     // Create a list of all sizes in increasing order
 
     if (!haveAvg) sizeArrayLen++;   // need to include average
-    
+
     scalar_t *allSizes = new scalar_t [sizeArrayLen];
     env_->localMemoryAssertion(__FILE__, __LINE__, sizeArrayLen, allSizes);
     ArrayRCP<scalar_t> sizeArray(allSizes, 0, sizeArrayLen, true);
@@ -1070,7 +1254,7 @@ template <typename Adapter>
       allSizes[idx++] = nextUniqueSize[i];
     }
 
-    env_->localBugAssertion(__FILE__, __LINE__, "finding average in list", 
+    env_->localBugAssertion(__FILE__, __LINE__, "finding average in list",
       newAvgIndex < sizeArrayLen, COMPLEX_ASSERTION);
 
     for (int i=0; i < nparts; i++){
@@ -1089,10 +1273,10 @@ template <typename Adapter>
       if (size < avg && avg - size <= epsilon)
         index = newAvgIndex;
       else{
-        typename ArrayRCP<scalar_t>::iterator found = 
+        typename ArrayRCP<scalar_t>::iterator found =
           std::lower_bound(sizeArray.begin(), sizeArray.end(), size);
 
-        env_->localBugAssertion(__FILE__, __LINE__, "size array", 
+        env_->localBugAssertion(__FILE__, __LINE__, "size array",
           found != sizeArray.end(), COMPLEX_ASSERTION);
 
         index = found - sizeArray.begin();
@@ -1110,7 +1294,7 @@ template <typename Adapter>
     pSize_[wdim] = sizeArray;
   }
   else{
-    // To have access to part sizes, we must store nparts scalar_ts on 
+    // To have access to part sizes, we must store nparts scalar_ts on
     // every process.  We expect this is a rare case.
 
     tmp = new scalar_t [nparts];
@@ -1130,6 +1314,7 @@ template <typename Adapter>
   }
 }
 
+
 template <typename Adapter>
   void PartitioningSolution<Adapter>::setParts(
     ArrayRCP<const gno_t> &gnoList, ArrayRCP<partId_t> &partList,
@@ -1146,13 +1331,13 @@ template <typename Adapter>
   // fewer parts that the desired solution.)
 
   partId_t lMax=0, lMin=0, gMax, gMin;
-  
+
   if (len > 0)
     IdentifierTraits<partId_t>::minMax(partList.getRawPtr(), len, lMin, lMax);
 
   IdentifierTraits<partId_t>::globalMinMax(*comm_, len == 0,
     lMin, lMax, gMin, gMax);
-      
+
   nGlobalPartsSolution_ = gMax - gMin + 1;
 
   if (dataDidNotMove) {
@@ -1166,7 +1351,7 @@ template <typename Adapter>
       gid_t *gidList = new gid_t [len];
       env_->localMemoryAssertion(__FILE__, __LINE__, len, gidList);
       ArrayView<gid_t> gidView(gidList, len);
-  
+
       const gno_t *gnos = gnoList.getRawPtr();
       ArrayView<gno_t> gnoView(const_cast<gno_t *>(gnos), len);
 
@@ -1174,7 +1359,7 @@ template <typename Adapter>
         idMap_->gidTranslate(gidView, gnoView, TRANSLATE_LIB_TO_APP);
       }
       Z2_FORWARD_EXCEPTIONS
-  
+
       gids_ = arcp<const gid_t>(gidList, 0, len);
     }
     parts_ = partList;
@@ -1200,7 +1385,7 @@ template <typename Adapter>
     int remotelyOwned = 0;
     int rank = comm_->getRank();
     int nprocs = comm_->getSize();
-  
+
     for (size_t i=0; !remotelyOwned && i < len; i++){
       if (procList[i] != rank)
         remotelyOwned = 1;
@@ -1217,23 +1402,23 @@ template <typename Adapter>
     if (anyRemotelyOwned){
 
       // Send the owners of these gnos their part assignments.
-    
+
       Array<int> countOutBuf(nprocs, 0);
       Array<int> countInBuf(nprocs, 0);
-  
+
       Array<gno_t> outBuf(len*2, 0);
-  
+
       if (len > 0){
         Array<lno_t> offsetBuf(nprocs+1, 0);
-      
+
         for (size_t i=0; i < len; i++){
           countOutBuf[procList[i]]+=2;
         }
-      
+
         offsetBuf[0] = 0;
         for (int i=0; i < nprocs; i++)
           offsetBuf[i+1] = offsetBuf[i] + countOutBuf[i];
-      
+
         for (size_t i=0; i < len; i++){
           int p = procList[i];
           int off = offsetBuf[p];
@@ -1242,22 +1427,22 @@ template <typename Adapter>
           offsetBuf[p]+=2;
         }
       }
-    
+
       ArrayRCP<gno_t> inBuf;
-    
+
       try{
         AlltoAllv<gno_t>(*comm_, *env_,
           outBuf(), countOutBuf(), inBuf, countInBuf());
       }
       Z2_FORWARD_EXCEPTIONS;
-  
+
       outBuf.clear();
       countOutBuf.clear();
-  
+
       gno_t newLen = 0;
       for (int i=0; i < nprocs; i++)
         newLen += countInBuf[i];
-  
+
       countInBuf.clear();
 
       newLen /= 2;
@@ -1266,30 +1451,30 @@ template <typename Adapter>
       ArrayRCP<const gno_t> myGnos;
 
       if (newLen > 0){
-  
+
         gno_t *tmpGno = new gno_t [newLen];
         env_->localMemoryAssertion(__FILE__, __LINE__, newLen, tmpGno);
-    
+
         partId_t *tmpPart = new partId_t [newLen];
         env_->localMemoryAssertion(__FILE__, __LINE__, newLen, tmpPart);
-    
-        int next = 0;
+
+        size_t next = 0;
         for (lno_t i=0; i < newLen; i++){
           tmpGno[i] = inBuf[next++];
           tmpPart[i] = inBuf[next++];
         }
-  
+
         parts = arcp(tmpPart, 0, newLen);
         myGnos = arcp(tmpGno, 0, newLen);
       }
-  
+
       gnoList = myGnos;
       partList = parts;
       len = newLen;
     }
-  
+
     delete [] procList.getRawPtr();
-  
+
     if (idMap_->gnosAreGids()){
       gids_ = Teuchos::arcp_reinterpret_cast<const gid_t>(gnoList);
     }
@@ -1297,7 +1482,7 @@ template <typename Adapter>
       gid_t *gidList = new gid_t [len];
       env_->localMemoryAssertion(__FILE__, __LINE__, len, gidList);
       ArrayView<gid_t> gidView(gidList, len);
-  
+
       const gno_t *gnos = gnoList.getRawPtr();
       ArrayView<gno_t> gnoView(const_cast<gno_t *>(gnos), len);
 
@@ -1305,7 +1490,7 @@ template <typename Adapter>
         idMap_->gidTranslate(gidView, gnoView, TRANSLATE_LIB_TO_APP);
       }
       Z2_FORWARD_EXCEPTIONS
-  
+
       gids_ = arcp<const gid_t>(gidList, 0, len);
     }
 
@@ -1332,17 +1517,21 @@ template <typename Adapter>
     else{  // harder - we need to split the parts across multiple procs
 
       lno_t *partCounter = new lno_t [nGlobalPartsSolution_];
-      env_->localMemoryAssertion(__FILE__, __LINE__, nGlobalPartsSolution_, 
+      env_->localMemoryAssertion(__FILE__, __LINE__, nGlobalPartsSolution_,
         partCounter);
 
       int numProcs = comm_->getSize();
+
+      //MD NOTE: there was no initialization for partCounter.
+      //I added the line below, correct me if I am wrong.
+      memset(partCounter, 0, sizeof(lno_t) * nGlobalPartsSolution_);
 
       for (ArrayRCP<partId_t>::size_type i=0; i < partList.size(); i++)
         partCounter[parts[i]]++;
 
       lno_t *procCounter = new lno_t [numProcs];
       env_->localMemoryAssertion(__FILE__, __LINE__, numProcs, procCounter);
-      
+
       int proc1;
       int proc2 = partDist_[0];
 
@@ -1353,7 +1542,8 @@ template <typename Adapter>
 
         double dNum = partCounter[part];
         double dProcs = numprocs;
-        
+
+        //cout << "dNum:" << dNum << " dProcs:" << dProcs << endl;
         double each = floor(dNum/dProcs);
         double extra = fmod(dNum,dProcs);
 
@@ -1362,7 +1552,7 @@ template <typename Adapter>
             procCounter[proc] = lno_t(each) + 1;
           else
             procCounter[proc] = lno_t(each);
-        }          
+        }
       }
 
       delete [] partCounter;
@@ -1386,13 +1576,24 @@ template <typename Adapter>
             break;
           }
         }
-        env_->localBugAssertion(__FILE__, __LINE__, "part to proc", 
+        env_->localBugAssertion(__FILE__, __LINE__, "part to proc",
           proc < proc2, COMPLEX_ASSERTION);
       }
 
       delete [] procCounter;
     }
   }
+
+  // Now that parts_ info is back on home process, remap the parts.
+  // TODO:  The parts will be inconsistent with the proc assignments after
+  // TODO:  remapping.  This problem will go away after we separate process
+  // TODO:  mapping from setParts.  But for MueLu's use case, the part
+  // TODO:  remapping is all that matters; they do not use the process mapping.
+  int doRemap = 0;
+  const Teuchos::ParameterEntry *pe =
+                 env_->getParameters().getEntryPtr("remap_parts");
+  if (pe) doRemap = pe->getValue(&doRemap);
+  if (doRemap) RemapParts();
 
   haveSolution_ = true;
 
@@ -1419,7 +1620,7 @@ template <typename Adapter>
   if (onePartPerProc_)
     for (size_t i=0; i < localNumIds; i++)
       counts[parts_[i]]++;
-  else 
+  else
     for (size_t i=0; i < localNumIds; i++)
       counts[procs_[i]]++;
 
@@ -1478,7 +1679,7 @@ template <typename Adapter>
 }
 
 template <typename Adapter>
-  void PartitioningSolution<Adapter>::procToPartsMap(int procId, 
+  void PartitioningSolution<Adapter>::procToPartsMap(int procId,
     double &numParts, partId_t &partMin, partId_t &partMax) const
 {
   if (onePartPerProc_){
@@ -1504,7 +1705,7 @@ template <typename Adapter>
 }
 
 template <typename Adapter>
-  void PartitioningSolution<Adapter>::partToProcsMap(partId_t partId, 
+  void PartitioningSolution<Adapter>::partToProcsMap(partId_t partId,
     int &procMin, int &procMax) const
 {
   if (partId >= nGlobalParts_){
@@ -1564,7 +1765,7 @@ template <typename Adapter>
     bool useIndex = pCompactIndex_[c1].size() > 0;
     if (useIndex){
       for (partId_t p=0; theSame && p < nGlobalParts_; p++)
-        if (pSize_[c1][pCompactIndex_[c1][p]] != 
+        if (pSize_[c1][pCompactIndex_[c1][p]] !=
             pSize_[c2][pCompactIndex_[c2][p]])
           theSame = false;
     }
@@ -1596,7 +1797,7 @@ template <typename Adapter>
 template <typename Adapter>
   void PartitioningSolution<Adapter>::partToProc(
     bool doCheck, bool haveNumLocalParts, bool haveNumGlobalParts,
-    int numLocalParts, int numGlobalParts) 
+    int numLocalParts, int numGlobalParts)
 {
   int nprocs = comm_->getSize();
   ssize_t reducevals[4];
@@ -1624,7 +1825,7 @@ template <typename Adapter>
     env_->localInputAssertion(__FILE__, __LINE__,
       "Either all procs specify num_global/local_parts or none do",
       (sumHaveGlobal == 0 || sumHaveGlobal == nprocs) &&
-      (sumHaveLocal == 0 || sumHaveLocal == nprocs), 
+      (sumHaveLocal == 0 || sumHaveLocal == nprocs),
       BASIC_ASSERTION);
   }
   else{
@@ -1654,10 +1855,10 @@ template <typename Adapter>
           *comm_, Teuchos::REDUCE_MAX, 2, vals, reducevals);
       }
       Z2_THROW_OUTSIDE_ERROR(*env_);
-  
+
       maxGlobal = reducevals[0];
       maxLocal = reducevals[1];
-  
+
       env_->localInputAssertion(__FILE__, __LINE__,
         "Value for num_global_parts is different on different processes.",
         maxGlobal * nprocs == sumGlobal, BASIC_ASSERTION);
@@ -1699,7 +1900,7 @@ template <typename Adapter>
 
     try{
       partId_t tmp = partId_t(numLocalParts);
-      gatherAll<int, partId_t>(*comm_, 1, &tmp, nprocs, procArray + 1); 
+      gatherAll<int, partId_t>(*comm_, 1, &tmp, nprocs, procArray + 1);
     }
     Z2_THROW_OUTSIDE_ERROR(*env_);
 
@@ -1728,19 +1929,19 @@ template <typename Adapter>
 
       double each = floor(fProcs / fParts);
       double extra = fmod(fProcs, fParts);
-      partDist_[0] = 0;     
+      partDist_[0] = 0;
 
       for (partId_t part=0; part < numGlobalParts; part++){
         int numOwners = int(each + ((part<extra) ? 1 : 0));
         partArray[part+1] = partArray[part] + numOwners;
       }
 
-      env_->globalBugAssertion(__FILE__, __LINE__, "#parts != #procs", 
+      env_->globalBugAssertion(__FILE__, __LINE__, "#parts != #procs",
         partDist_[numGlobalParts] == nprocs, COMPLEX_ASSERTION, comm_);
     }
-    else if (fParts > fProcs){ 
+    else if (fParts > fProcs){
 
-      // User did not specify local number of parts per proc; 
+      // User did not specify local number of parts per proc;
       // Distribute the parts evenly among the procs.
 
       procDistEquallySpread_ = true;
@@ -1756,22 +1957,257 @@ template <typename Adapter>
 
       double each = floor(fParts / fProcs);
       double extra = fmod(fParts, fProcs);
-      procArray[0] = 0;     
+      procArray[0] = 0;
 
       for (int proc=0; proc < nprocs; proc++){
         partId_t numParts = partId_t(each + ((proc<extra) ? 1 : 0));
         procArray[proc+1] = procArray[proc] + numParts;
       }
 
-      env_->globalBugAssertion(__FILE__, __LINE__, "#parts != #procs", 
+      env_->globalBugAssertion(__FILE__, __LINE__, "#parts != #procs",
         procDist_[nprocs] == numGlobalParts, COMPLEX_ASSERTION, comm_);
     }
     else{
-      env_->globalBugAssertion(__FILE__, __LINE__, 
+      env_->globalBugAssertion(__FILE__, __LINE__,
         "should never get here", 1, COMPLEX_ASSERTION, comm_);
     }
   }
 }
+
+////////////////////////////////////////////////////////////////////
+// Remap a new part assignment vector for maximum overlap with an input
+// part assignment.
+//
+// Assumptions for this version:
+//   input part assignment == processor rank for every local object.
+//   assuming nGlobalParts_ <= num ranks
+// TODO:  Write a version that takes the input part number as input;
+//        this change requires input parts in adapters to be provided in
+//        the Adapter.
+// TODO:  For repartitioning, compare to old remapping results; see Zoltan1.
+
+template <typename Adapter>
+void PartitioningSolution<Adapter>::RemapParts()
+{
+  size_t len = parts_.size();
+
+  partId_t me = comm_->getRank();
+  int np = comm_->getSize();
+
+  if (np < nGlobalParts_) {
+    if (me == 0)
+      cout << "Remapping not yet supported for "
+           << "num_global_parts " << nGlobalParts_
+           << " > num procs " << np << endl;
+    return;
+  }
+  // Build edges of a bipartite graph with np + nGlobalParts_ vertices,
+  // and edges between a process vtx and any parts to which that process'
+  // objects are assigned.
+  // Weight edge[parts_[i]] by the number of objects that are going from
+  // this rank to parts_[i].
+  // We use a std::map, assuming the number of unique parts in the parts_ array
+  // is small to keep the binary search efficient.
+  // TODO We use the count of objects to move; should change to SIZE of objects
+  // to move; need SIZE function in Adapter.
+
+  std::map<partId_t, long> edges;
+  long lstaying = 0;  // Total num of local objects staying if we keep the
+                      // current mapping. TODO:  change to SIZE of local objs
+  long gstaying = 0;  // Total num of objects staying in the current partition
+
+  for (size_t i = 0; i < len; i++) {
+    edges[parts_[i]]++;                // TODO Use obj size instead of count
+    if (parts_[i] == me) lstaying++;    // TODO Use obj size instead of count
+  }
+
+  Teuchos::reduceAll<int, long>(*comm_, Teuchos::REDUCE_SUM, 1,
+                                &lstaying, &gstaying);
+//TODO  if (gstaying == Adapter::getGlobalNumObjs()) return;  // Nothing to do
+
+  partId_t *remap = NULL;
+
+  int nedges = edges.size();
+
+  // Gather the graph to rank 0.
+  partId_t tnVtx = np + nGlobalParts_;  // total # vertices
+  int *idx = NULL;    // Pointer index into graph adjacencies
+  int *sizes = NULL;  // nedges per rank
+  if (me == 0) {
+    idx = new int[tnVtx+1];
+    sizes = new int[np];
+  }
+  if (np > 1)
+    Teuchos::gather<int, int>(&nedges, 1, sizes, 1, 0, *comm_);
+  else
+    sizes[0] = nedges;
+
+  // prefix sum to build the idx array
+  if (me == 0) {
+    idx[0] = 0;
+    for (int i = 0; i < np; i++)
+      idx[i+1] = idx[i] + sizes[i];
+  }
+
+  // prepare to send edges
+  int cnt = 0;
+  partId_t *bufv = NULL;
+  long *bufw = NULL;
+  if (nedges) {
+    bufv = new partId_t[nedges];
+    bufw = new long[nedges];
+    // Create buffer with edges (me, part[i]) and weight edges[parts_[i]].
+    for (std::map<partId_t, long>::iterator it = edges.begin();
+         it != edges.end(); it++) {
+      bufv[cnt] = it->first;  // target part
+      bufw[cnt] = it->second; // weight
+      cnt++;
+    }
+  }
+
+  // Prepare to receive edges on rank 0
+  partId_t *adj = NULL;
+  long *wgt = NULL;
+  if (me == 0) {
+//SYM    adj = new partId_t[2*idx[np]];  // need 2x space to symmetrize later
+//SYM    wgt = new long[2*idx[np]];  // need 2x space to symmetrize later
+    adj = new partId_t[idx[np]];
+    wgt = new long[idx[np]];
+  }
+
+  Teuchos::gatherv<int, partId_t>(bufv, cnt, adj, sizes, idx, 0, *comm_);
+  Teuchos::gatherv<int, long>(bufw, cnt, wgt, sizes, idx, 0, *comm_);
+  delete [] bufv;
+  delete [] bufw;
+
+  // Now have constructed graph on rank 0.
+  // Call the matching algorithm
+
+  int doRemap;
+  if (me == 0) {
+    // We have the "LHS" vertices of the bipartite graph; need to create
+    // "RHS" vertices.
+    for (int i = 0; i < idx[np]; i++) {
+      adj[i] += np;  // New RHS vertex number; offset by num LHS vertices
+    }
+
+    // Build idx for RHS vertices
+    for (partId_t i = np; i < tnVtx; i++) {
+      idx[i+1] = idx[i];  // No edges for RHS vertices
+    }
+
+#ifdef KDDKDD_DEBUG
+    cout << "IDX ";
+    for (partId_t i = 0; i <= tnVtx; i++) cout << idx[i] << " ";
+    cout << endl;
+
+    cout << "ADJ ";
+    for (partId_t i = 0; i < idx[tnVtx]; i++) cout << adj[i] << " ";
+    cout << endl;
+
+    cout << "WGT ";
+    for (partId_t i = 0; i < idx[tnVtx]; i++) cout << wgt[i] << " ";
+    cout << endl;
+#endif
+
+    // Perform matching on the graph
+    partId_t *match = new partId_t[tnVtx];
+    for (partId_t i = 0; i < tnVtx; i++) match[i] = i;
+    partId_t nmatches =
+             Zoltan2::GreedyMWM<partId_t, long>(idx, adj, wgt, tnVtx, match);
+
+#ifdef KDDKDD_DEBUG
+    cout << "After matching:  " << nmatches << " found" << endl;
+    for (partId_t i = 0; i < tnVtx; i++)
+      cout << "match[" << i << "] = " << match[i]
+           << ((match[i] != i &&
+               (i < np && match[i] != i+np))
+                  ? " *" : " ")
+           << endl;
+#endif
+
+    // See whether there were nontrivial changes in the matching.
+    bool nontrivial = false;
+    if (nmatches) {
+      for (partId_t i = 0; i < np; i++) {
+        if ((match[i] != i) && (match[i] != (i+np))) {
+          nontrivial = true;
+          break;
+        }
+      }
+    }
+
+    // Process the matches
+    if (nontrivial) {
+      remap = new partId_t[nGlobalParts_];
+      for (partId_t i = 0; i < nGlobalParts_; i++) remap[i] = -1;
+
+      bool *used = new bool[nGlobalParts_];
+      for (partId_t i = 0; i < nGlobalParts_; i++) used[i] = false;
+
+      // First, process all matched parts
+      for (partId_t i = 0; i < nGlobalParts_; i++) {
+        partId_t tmp = i + np;
+        if (match[tmp] != tmp) {
+          remap[i] = match[tmp];
+          used[match[tmp]] = true;
+        }
+      }
+
+      // Second, process unmatched parts; keep same part number if possible
+      for (partId_t i = 0; i < nGlobalParts_; i++) {
+        if (remap[i] > -1) continue;
+        if (!used[i]) {
+          remap[i] = i;
+          used[i] = true;
+        }
+      }
+
+      // Third, process unmatched parts; give them the next unused part
+      for (partId_t i = 0, uidx = 0; i < nGlobalParts_; i++) {
+        if (remap[i] > -1) continue;
+        while (used[uidx]) uidx++;
+        remap[i] = uidx;
+        used[uidx] = true;
+      }
+      delete [] used;
+    }
+    delete [] match;
+
+#ifdef KDDKDD_DEBUG
+    cout << "Remap vector: ";
+    for (partId_t i = 0; i < nGlobalParts_; i++) cout << remap[i] << " ";
+    cout << endl;
+#endif
+
+    long newgstaying = Zoltan2::measure_stays(remap, idx, adj, wgt,
+                                              nGlobalParts_, np);
+    doRemap = (newgstaying > gstaying);
+    cout << "gstaying " << gstaying << " measure(input) "
+         << Zoltan2::measure_stays(NULL, idx, adj, wgt,
+                                   nGlobalParts_, np)
+         << " newgstaying " << newgstaying
+         << " nontrivial " << nontrivial
+         << " doRemap " << doRemap << endl;
+  }
+  delete [] idx;
+  delete [] sizes;
+  delete [] adj;
+  delete [] wgt;
+
+  Teuchos::broadcast<int, int>(*comm_, 0, 1, &doRemap);
+
+  if (doRemap) {
+    if (me != 0) remap = new partId_t[nGlobalParts_];
+    Teuchos::broadcast<int, partId_t>(*comm_, 0, nGlobalParts_, remap);
+    for (size_t i = 0; i < len; i++) {
+      parts_[i] = remap[parts_[i]];
+    }
+  }
+
+  delete [] remap;  // TODO May want to keep for repartitioning as in Zoltan
+}
+
 
 }  // namespace Zoltan2
 

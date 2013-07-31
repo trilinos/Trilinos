@@ -55,6 +55,7 @@
 #include "Panzer_ConnManager.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_DOFManagerFEI.hpp"
+#include "Panzer_DOFManager.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
@@ -191,6 +192,16 @@ public:
    //@}
    ////////////////////////////////////////////////////////////////////////////////////////////
    ////////////////////////////////////////////////////////////////////////////////////////////
+ 
+   /** \brief Use the FEI DOF manager internally, or the standard version.
+     */ 
+   void setUseDOFManagerFEI(bool useFEI)
+   { useDOFManagerFEI_ = useFEI; }
+
+   /** \brief which DOF Manager is used internally?
+     */ 
+   bool getUseDOFManagerFEI() const
+   { return useDOFManagerFEI_; }
 
    /** \brief Set the connection manager and MPI_Comm objects.
      *
@@ -347,7 +358,7 @@ public:
    /** Extract the field DOFManagers used underneath to define the
      * global unknowns.
      */ 
-   const std::vector<Teuchos::RCP<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > > &
+   const std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > &
    getFieldDOFManagers() const
    { return fieldBlockManagers_; }
 
@@ -390,6 +401,35 @@ public:
    { requireOrientations_ = ro; }
 
 protected:
+   
+   /** Build a new indexer. The concrete type is specified internally by this object (FEI version standard)
+     */
+   Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > buildNewIndexer(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connManager,
+                                                                                    MPI_Comm mpiComm) const;
+
+   /** Do appropriate casting below and set orientations for a particular indexer. (handles FEI versus standard DOFManager)
+     */
+   void setOrientationsRequired(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & indexer,bool required) const;
+
+   /** Do appropriate casting below and call buildGlobalUnknowns for a particular indexer. (handles FEI versus standard DOFManager)
+     */
+   void buildGlobalUnknowns(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & indexer,const Teuchos::RCP<const FieldPattern> & geomPattern) const;
+
+   /** Do appropriate casting below and call getElementBlockGIDCount for a particular indexer. (handles FEI versus standard DOFManager)
+     */
+   int getElementBlockGIDCount(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & indexer,const std::string & elementBlock) const;
+
+   /** Do appropriate casting below and call printFieldInformation for a particular indexer. (handles FEI versus standard DOFManager)
+     */
+   void printFieldInformation(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & indexer,std::ostream & os) const;
+
+   /** This routine calls the <code>addField</code> method on the fieldBlockManager adding all
+     * the fields it is supposed to control, and then calls registerFields.
+     *
+     * This method assumes that the activeFields are a legitimate ordering for the local field block.
+     */
+   void addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
+                                     UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & fieldBlockManager) const;
   
    /** This routine calls the <code>addField</code> method on the fieldBlockManager adding all
      * the fields it is supposed to control, and then calls registerFields.
@@ -398,6 +438,14 @@ protected:
      */
    void addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
                                      DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> & fieldBlockManager) const;
+
+   /** This routine calls the <code>addField</code> method on the fieldBlockManager adding all
+     * the fields it is supposed to control, and then calls registerFields.
+     *
+     * This method assumes that the activeFields are a legitimate ordering for the local field block.
+     */
+   void addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
+                                     DOFManager<LocalOrdinalT,GlobalOrdinalT> & fieldBlockManager) const;
 
 
    // computes connectivity
@@ -438,7 +486,7 @@ protected:
    Teuchos::RCP<const FieldPattern> geomPattern_;
    Teuchos::RCP<Teuchos::MpiComm<int> > communicator_;
 
-   std::vector<Teuchos::RCP<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > > fieldBlockManagers_;
+   std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > fieldBlockManagers_;
 
    MPI_Comm mpiComm_;
    int maxSubFieldNum_;
@@ -458,6 +506,8 @@ protected:
    mutable std::map<std::string,TupleToVectorPairMap> gidFieldOffsets_closure_;
 
    bool requireOrientations_;
+   
+   bool useDOFManagerFEI_;
 };
 
 }

@@ -76,8 +76,6 @@
 #include "xfer_util.h"
 #include "xfer_threads.h"
 
-//#include <TPI.hpp>   // Thread Pool Interface (Trilinos Package)
-
 
 
 #include <xfer_service_args.h>
@@ -364,16 +362,13 @@ int xfer_server_main(nssi_rpc_transport transport, int num_threads, MPI_Comm ser
     int rc = NSSI_OK;
 
     nssi_service xfer_svc;
-    log_level debug_level;
     int server_rank;
 
     MPI_Comm_rank(server_comm, &server_rank);
 
     /* options that can be overriden by the command-line */
-    int verbose = 3;  /* default debug_level */
     std::string server_url(NSSI_URL_LEN, '\0');          /* NNTI-style url of the server */
     std::string logfile("");
-    const char *log_str=NULL;
 
 
     memset(&xfer_svc, 0, sizeof(nssi_service));
@@ -423,9 +418,9 @@ int xfer_server_main(nssi_rpc_transport transport, int num_threads, MPI_Comm ser
     // enqueue_reqs function and start the process_queue_reqs thread.
 
     if (num_threads > 0) {
-        log_debug(LOG_ALL, "Starting server threads");
+        log_debug(xfer_debug_level, "Starting server threads");
 
-        rc = xfer_start_server_threads(num_threads, 1000);
+        xfer_start_server_threads(num_threads, 1000);
 
         // The main thread will execute unit it receives a "kill" request
         rc = nssi_service_start_wfn(&xfer_svc, &xfer_enqueue_rpc_request);

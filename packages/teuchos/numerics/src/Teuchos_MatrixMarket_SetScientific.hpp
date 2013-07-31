@@ -51,41 +51,45 @@
 namespace Teuchos {
   namespace MatrixMarket {
     namespace details {
-      /// \class SetScientific
-      /// \brief Temporarily make an output stream use scientific
-      ///   notation with sufficient precision.
-      /// \author Mark Hoemmen
+      /// \class SetScientificImpl
+      /// \brief Implementation of SetScientific.
       ///
-      /// On construction, apply the necessary flags to the given
-      /// output stream so that floating-point numbers are written in
-      /// scientific notation with precision (dependent on the Scalar
-      /// type) sufficient to ensure that they can be read in with the
-      /// same value.  On destruction, restore the original
-      /// (pre-construction) flags to the output stream.
-      ///
-      /// This makes SetScientific good for scope-protected alteration
-      /// of the output stream's flags; no matter how the scope exits
-      /// (normally or by a thrown exception), the original flags will
-      /// be restored.  Hence, "temporarily" (or even "politely"): we
-      /// restore the original flags on scope exit.
-      ///
-      /// \tparam Scalar A floating-point type, either real or
-      ///   complex, for which Teuchos::ScalarTraits<Scalar> has a
-      ///   specialization.  Currently we also require that
-      ///   std::log10() take arguments of type Scalar, but this may
-      ///   be relaxed in the future if Teuchos::ScalarTraits gets its
-      ///   own log10() class method.
-      template<class Scalar>
-      class SetScientific {
+      /// This class is an implementation detail of SetScientific.
+      /// Users should use SetScientific, not this class.
+      /// 
+      /// \tparam Scalar A type for which
+      ///   Teuchos::ScalarTraits<Scalar> has a specialization.
+      /// \tparam isFloatingPoint Whether Scalar is a floating-point
+      ///   type (either real or complex).
+      template<class Scalar, const bool isFloatingPoint>
+      class SetScientificImpl {
       public:
         //! The Scalar type with which SetScientific was specialized.
         typedef Scalar scalar_type;
-
-        /// \brief Constructor.
+        /// Constructor.
         ///
         /// \param out [in/out] Output stream to which to apply the
         ///   scientific notation flags.
-        SetScientific (std::ostream& out) :
+        SetScientificImpl (std::ostream& out);
+        /// Destructor.
+        ///
+        /// The destructor sets the output stream's flags back to
+        /// their original state, that is, the state before the
+        /// constructor of this object was called.
+        ~SetScientificImpl ();
+      };
+
+      /// Partial specialization of SetScientificImpl for floating-point types.  
+      ///
+      /// This class currently requires that std::log10() take
+      /// arguments of type Scalar.  This may be relaxed in the future
+      /// if Teuchos::ScalarTraits gets its own log10() method.
+      template<class Scalar>
+      class SetScientificImpl<Scalar, true> {
+      public:
+        typedef Scalar scalar_type;
+
+        SetScientificImpl (std::ostream& out) :
           out_ (out), originalFlags_ (out.flags())
         {
           typedef Teuchos::ScalarTraits<scalar_type> STS;
@@ -126,12 +130,7 @@ namespace Teuchos {
           out.precision (prec);
         }
 
-        /// \brief Destructor.
-        ///
-        /// The destructor sets the output stream's flags back to
-        /// their original state, that is, the state before the
-        /// constructor of this object was called.
-        ~SetScientific () {
+        ~SetScientificImpl () {
           out_.flags (originalFlags_);
         }
 
@@ -143,68 +142,124 @@ namespace Teuchos {
         std::ios_base::fmtflags originalFlags_;
       };
 
-      // Specialization for Scalar=int.  Specializations for built-in
-      // integer types let Tpetra::MatrixMarket::Reader or
-      // Tpetra::MatrixMarket::Writer work with a Tpetra::CrsMatrix
-      // whose Scalar template parameter is a built-in integer type.
-      // These specializations are trivial because there are no
-      // decimal digits to print.
-      template<>
-      class SetScientific<int> {
+      //! Partial specialization of SetScientificImpl for non-floating-point types. 
+      template<class Scalar>
+      class SetScientificImpl<Scalar, false> {
       public:
-        typedef int scalar_type;
-        SetScientific (std::ostream& out) {}
-        ~SetScientific () {}
+        typedef Scalar scalar_type;
+        SetScientificImpl (std::ostream&) {}
+        ~SetScientificImpl () {}
       };
 
-      // Specialization for Scalar=unsigned int.
-      template<>
-      class SetScientific<unsigned int> {
+      /// \class SetScientific
+      /// \brief Temporarily make an output stream use scientific
+      ///   notation with sufficient precision.
+      ///
+      /// On construction, apply the necessary flags to the given
+      /// output stream so that floating-point numbers are written in
+      /// scientific notation with precision (dependent on the Scalar
+      /// type) sufficient to ensure that they can be read in with the
+      /// same value.  On destruction, restore the original
+      /// (pre-construction) flags to the output stream.
+      ///
+      /// This makes SetScientific good for scope-protected alteration
+      /// of the output stream's flags; no matter how the scope exits
+      /// (normally or by a thrown exception), the original flags will
+      /// be restored.  Hence, "temporarily" (or even "politely"): we
+      /// restore the original flags on scope exit.
+      ///
+      /// \tparam Scalar A floating-point type, either real or
+      ///   complex, for which Teuchos::ScalarTraits<Scalar> has a
+      ///   specialization.
+      template<class Scalar>
+      class SetScientific : 
+	public SetScientificImpl<Scalar, ! Teuchos::ScalarTraits<Scalar>::isOrdinal> {
+      private:
+	//! Parent class of this class.
+	typedef SetScientificImpl<Scalar, ! Teuchos::ScalarTraits<Scalar>::isOrdinal> base_type;
+
       public:
-        typedef unsigned int scalar_type;
-        SetScientific (std::ostream& out) {}
-        ~SetScientific () {}
+        //! The Scalar type with which SetScientific was specialized.
+        typedef Scalar scalar_type;
+
+        /// Constructor.
+        ///
+        /// \param out [in/out] Output stream to which to apply the
+        ///   scientific notation flags.
+        SetScientific (std::ostream& out) : base_type (out) {}
+
+        /// Destructor.
+        ///
+        /// The destructor sets the output stream's flags back to
+        /// their original state, that is, the state before the
+        /// constructor of this object was called.
+        ~SetScientific () {
+	  // Parent class' destructor will be called automatically.
+	}
       };
 
-      // Specialization for Scalar=long.
-      template<>
-      class SetScientific<long> {
-      public:
-        typedef long scalar_type;
-        SetScientific (std::ostream& out) {}
-        ~SetScientific () {}
-      };
+//       // Specialization for Scalar=int.  Specializations for built-in
+//       // integer types let Tpetra::MatrixMarket::Reader or
+//       // Tpetra::MatrixMarket::Writer work with a Tpetra::CrsMatrix
+//       // whose Scalar template parameter is a built-in integer type.
+//       // These specializations are trivial because there are no
+//       // decimal digits to print.
+//       template<>
+//       class SetScientific<int> {
+//       public:
+//         typedef int scalar_type;
+//         SetScientific (std::ostream& out) {}
+//         ~SetScientific () {}
+//       };
 
-      // Specialization for Scalar=unsigned long.
-      template<>
-      class SetScientific<unsigned long> {
-      public:
-        typedef unsigned long scalar_type;
-        SetScientific (std::ostream& out) {}
-        ~SetScientific () {}
-      };
+//       // Specialization for Scalar=unsigned int.
+//       template<>
+//       class SetScientific<unsigned int> {
+//       public:
+//         typedef unsigned int scalar_type;
+//         SetScientific (std::ostream& out) {}
+//         ~SetScientific () {}
+//       };
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+//       // Specialization for Scalar=long.
+//       template<>
+//       class SetScientific<long> {
+//       public:
+//         typedef long scalar_type;
+//         SetScientific (std::ostream& out) {}
+//         ~SetScientific () {}
+//       };
 
-      // Specialization for Scalar=long long.
-      template<>
-      class SetScientific<long long> {
-      public:
-        typedef long long scalar_type;
-        SetScientific (std::ostream& out) {}
-        ~SetScientific () {}
-      };
+//       // Specialization for Scalar=unsigned long.
+//       template<>
+//       class SetScientific<unsigned long> {
+//       public:
+//         typedef unsigned long scalar_type;
+//         SetScientific (std::ostream& out) {}
+//         ~SetScientific () {}
+//       };
 
-      // Specialization for Scalar=unsigned long long.
-      template<>
-      class SetScientific<unsigned long long> {
-      public:
-        typedef unsigned long long scalar_type;
-        SetScientific (std::ostream& out) {}
-        ~SetScientific () {}
-      };
+// #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
+//       // Specialization for Scalar=long long.
+//       template<>
+//       class SetScientific<long long> {
+//       public:
+//         typedef long long scalar_type;
+//         SetScientific (std::ostream& out) {}
+//         ~SetScientific () {}
+//       };
+
+//       // Specialization for Scalar=unsigned long long.
+//       template<>
+//       class SetScientific<unsigned long long> {
+//       public:
+//         typedef unsigned long long scalar_type;
+//         SetScientific (std::ostream& out) {}
+//         ~SetScientific () {}
+//       };
+
+// #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 
     } // namespace details

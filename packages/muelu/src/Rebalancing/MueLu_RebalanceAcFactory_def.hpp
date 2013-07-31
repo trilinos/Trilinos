@@ -61,8 +61,10 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<const ParameterList> RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
-    validParamList->set< RCP<const FactoryBase> >("A",        Teuchos::null, "Generating factory of the matrix A (before rebalancing)");
-    validParamList->set< RCP<const FactoryBase> >("Importer", Teuchos::null, "Generating factory of the importer");
+    validParamList->set< RCP<const FactoryBase> >("A",         Teuchos::null, "Generating factory of the matrix A for rebalancing");
+    validParamList->set< RCP<const FactoryBase> >("Importer",  Teuchos::null, "Generating factory of the importer");
+    // The value of "useSubcomm" paramter here must be the same as in RebalanceTransferFactory
+    validParamList->set< bool >                  ("useSubcomm",         true, "Construct subcommunicators");
     return validParamList;
   }
 
@@ -81,34 +83,62 @@ namespace MueLu {
     RCP<const Import> rebalanceImporter = Get< RCP<const Import> >(coarseLevel, "Importer");
 
     if (rebalanceImporter != Teuchos::null) {
-
       RCP<Matrix> rebalancedAc;
       {
         SubFactoryMonitor subM(*this, "Rebalancing existing Ac", coarseLevel);
-
         RCP<const Map> targetMap = rebalanceImporter->getTargetMap();
-        rebalancedAc = MatrixFactory::Build(targetMap, originalAc->getGlobalMaxNumRowEntries());
 
-        rebalancedAc->doImport(*originalAc, *rebalanceImporter, Xpetra::INSERT);
-        rebalancedAc->fillComplete(targetMap, targetMap);
+        const ParameterList & pL = GetParameterList();
+
+        ParameterList XpetraList;
+        if (pL.get<bool>("useSubcomm") == true) {
+          GetOStream(Runtime0,0) << "Replacing maps with a subcommunicator" << std::endl;
+          XpetraList.set("Restrict Communicator",true);
+        }
+        // NOTE: If the communicator is restricted away, Build returns Teuchos::null.
+        rebalancedAc = MatrixFactory::Build(originalAc, *rebalanceImporter, targetMap, targetMap, rcp(&XpetraList,false));
+
+        if (!rebalancedAc.is_null())
+          rebalancedAc->SetFixedBlockSize(originalAc->GetFixedBlockSize());
 
         Set(coarseLevel, "A", rebalancedAc);
       }
 
-      GetOStream(Statistics0, 0) << RAPFactory::PrintMatrixInfo(*rebalancedAc, "Ac (rebalanced)");
-      GetOStream(Statistics0, 0) << RAPFactory::PrintLoadBalancingInfo(*rebalancedAc, "Ac (rebalanced)");
+      if (!rebalancedAc.is_null()) {
+        RCP<ParameterList> params = rcp(new ParameterList());
+        params->set("printLoadBalancingInfo", true);
+        GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebalancedAc, "Ac (rebalanced)", params);
+      }
 
     } else {
-
       // Ac already built by the load balancing process and no load balancing needed
       GetOStream(Warnings0, 0) << "No rebalancing" << std::endl;
-      GetOStream(Warnings0, 0) <<  "Jamming A into Level " << coarseLevel.GetLevelID() << " w/ generating factory "
+      GetOStream(Warnings0, 0) << "Jamming A into Level " << coarseLevel.GetLevelID() << " w/ generating factory "
                                << this << std::endl;
-
       Set(coarseLevel, "A", originalAc);
     }
 
+    if (rebalanceFacts_.begin() != rebalanceFacts_.end()) {
+      SubFactoryMonitor m2(*this, "Rebalance additional data", coarseLevel);
+
+      // call Build of all user-given transfer factories
+      for (std::vector<RCP<const FactoryBase> >::const_iterator it = rebalanceFacts_.begin(); it != rebalanceFacts_.end(); ++it) {
+        GetOStream(Runtime0, 0) << "RebalanceAc: call rebalance factory " << (*it).get() << ": " << (*it)->description() << std::endl;
+        (*it)->CallBuild(coarseLevel);
+      }
+    }
   } //Build()
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddRebalanceFactory(const RCP<const FactoryBase>& factory) {
+
+    /*TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const TwoLevelFactoryBase>(factory) == Teuchos::null, Exceptions::BadCast,
+                               "MueLu::RAPFactory::AddTransferFactory: Transfer factory is not derived from TwoLevelFactoryBase. "
+                               "This is very strange. (Note: you can remove this exception if there's a good reason for)");
+    TEUCHOS_TEST_FOR_EXCEPTION(hasDeclaredInput_, Exceptions::RuntimeError, "MueLu::RAPFactory::AddTransferFactory: Factory is being added after we have already declared input");*/
+    rebalanceFacts_.push_back(factory);
+  } //AddRebalanceFactory()
 
 } //namespace MueLu
 

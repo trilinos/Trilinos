@@ -131,8 +131,8 @@ namespace Tpetra {
             class MatScalar = Scalar,
             class LocalOrdinal = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node = Kokkos::DefaultNode::DefaultNodeType,
-            class LocalMatOps = typename Kokkos::DefaultKernels<MatScalar,LocalOrdinal,Node>::SparseOps >
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType,
+            class LocalMatOps = typename KokkosClassic::DefaultKernels<MatScalar,LocalOrdinal,Node>::SparseOps >
   class CrsMatrixMultiplyOp :
     public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>
   {
@@ -252,10 +252,10 @@ namespace Tpetra {
     bool hasTransposeApply() const;
 
     //! The domain Map of this Operator.
-    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
+    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
 
     //! The range Map of this Operator.
-    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
 
     //@}
 
@@ -302,6 +302,7 @@ namespace Tpetra {
     void
     applyTranspose (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
                     MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+		    Teuchos::ETransp mode, 
                     Scalar alpha,
                     Scalar beta) const;
 

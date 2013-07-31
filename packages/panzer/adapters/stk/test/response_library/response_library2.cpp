@@ -61,7 +61,6 @@ using Teuchos::rcp;
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
-#include "Panzer_ParameterList_ObjectBuilders.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_ResponseEvaluatorFactory_Functional.hpp"
 #include "user_app_EquationSetFactory.hpp"
@@ -88,7 +87,7 @@ using Teuchos::RCP;
 
 namespace panzer {
 
-  void testInitialzation(panzer::InputPhysicsBlock& ipb,
+  void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs);
 
   std::pair<RCP<ResponseLibrary<Traits> >,RCP<LinearObjFactory<panzer::Traits> > > buildResponseLibrary(
@@ -122,10 +121,12 @@ namespace panzer {
 
   struct RespFactoryFunc_Builder {
     MPI_Comm comm;
+    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linearObjFactory;
+    Teuchos::RCP<const panzer::UniqueGlobalIndexer<int,int> > globalIndexer;
 
     template <typename T>
     Teuchos::RCP<ResponseEvaluatorFactoryBase> build() const
-    { return Teuchos::rcp(new ResponseEvaluatorFactory_Functional<T>(comm)); }
+    { return Teuchos::rcp(new ResponseEvaluatorFactory_Functional<T,int,int>(comm,1,true,"",linearObjFactory,globalIndexer)); }
   };
 
   TEUCHOS_UNIT_TEST(response_library2, test)
@@ -247,13 +248,19 @@ namespace panzer {
           = buildResponseLibrary(physics_blocks,cm_factory,closure_models,user_data);
     RCP<ResponseLibrary<Traits> > rLibrary = data.first;
     RCP<panzer::LinearObjFactory<panzer::Traits> > lof = data.second;
+    RCP<const panzer::UniqueGlobalIndexer<int,int> > globalIndexer 
+        = user_data.sublist("Panzer Data").get<RCP<panzer::UniqueGlobalIndexer<int,int> > >("DOF Manager");
 
     RespFactoryFunc_Builder builder;
     builder.comm = MPI_COMM_WORLD;
+    builder.linearObjFactory = lof;
+    builder.globalIndexer = globalIndexer;
     std::vector<std::string> blocks(1);
     blocks[0] = "eblock-0_0";
     rLibrary->addResponse("FIELD_A",blocks,builder);
 
+    builder.linearObjFactory = Teuchos::null;
+    builder.globalIndexer = Teuchos::null;
     std::vector<std::pair<std::string,std::string> > sidesets;
     sidesets.push_back(std::make_pair("bottom","eblock-0_0")); // 0.5
     sidesets.push_back(std::make_pair("top","eblock-0_0"));    // 0.5
@@ -263,6 +270,12 @@ namespace panzer {
     Teuchos::RCP<ResponseBase> blkResp = rLibrary->getResponse<panzer::Traits::Residual>("FIELD_A");
     Teuchos::RCP<ResponseBase> ssResp = rLibrary->getResponse<panzer::Traits::Residual>("FIELD_B");
 
+    Teuchos::RCP<ResponseBase> blkRespJac = rLibrary->getResponse<panzer::Traits::Jacobian>("FIELD_A");
+    TEST_ASSERT(blkRespJac!=Teuchos::null);
+
+    // no response should be build for this one
+    TEST_ASSERT(rLibrary->getResponse<panzer::Traits::Jacobian>("FIELD_B")==Teuchos::null);
+ 
     RCP<Epetra_Vector> eVec, eVec2;
     {
       RCP<const Epetra_Map> map = Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(ssResp)->getMap();
@@ -272,6 +285,9 @@ namespace panzer {
       
       TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(blkResp)->setVector(eVec));
       TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Residual> >(ssResp)->setVector(eVec2));
+
+      RCP<Epetra_MultiVector> dVec = Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Jacobian> >(blkRespJac,true)->buildEpetraDerivative();
+      TEST_NOTHROW(Teuchos::rcp_dynamic_cast<Response_Functional<panzer::Traits::Jacobian> >(blkRespJac,true)->setDerivative(dVec));
     }
 
     rLibrary->buildResponseEvaluators(physics_blocks,
@@ -286,10 +302,19 @@ namespace panzer {
     Teuchos::RCP<panzer::LinearObjContainer> gloc = lof->buildGhostedLinearObjContainer();
     lof->initializeGhostedContainer(panzer::LinearObjContainer::X,*gloc);
 
-    panzer::AssemblyEngineInArgs ae_inargs(gloc,loc);
 
-    rLibrary->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);
-    rLibrary->evaluate<panzer::Traits::Residual>(ae_inargs);
+    {
+      panzer::AssemblyEngineInArgs ae_inargs(gloc,loc);
+      rLibrary->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);
+      rLibrary->evaluate<panzer::Traits::Residual>(ae_inargs);
+    }
+
+    // evaluate derivatives
+    {
+      panzer::AssemblyEngineInArgs ae_inargs(gloc,loc);
+      rLibrary->addResponsesToInArgs<panzer::Traits::Jacobian>(ae_inargs);
+      rLibrary->evaluate<panzer::Traits::Jacobian>(ae_inargs);
+    }
 
     double iValue = -2.3;
     double tValue = 82.9;
@@ -298,27 +323,29 @@ namespace panzer {
     TEST_FLOATING_EQUALITY((*eVec2)[0],2.0*iValue,1e-14);
   }
 
-  void testInitialzation(panzer::InputPhysicsBlock& ipb,
+  void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs)
   {
-    panzer::InputEquationSet ies_1;
-    ies_1.name = "Energy";
-    ies_1.basis = "Q2";
-    ies_1.integration_order = 1;
-    ies_1.model_id = "solid";
-    ies_1.prefix = "";
-
-    panzer::InputEquationSet ies_2;
-    ies_2.name = "Energy";
-    ies_2.basis = "Q1";
-    ies_2.integration_order = 1;
-    ies_2.model_id = "ion solid";
-    ies_2.prefix = "ION_";
-
-    ipb.physics_block_id = "4";
-    ipb.eq_sets.push_back(ies_1);
-    ipb.eq_sets.push_back(ies_2);
-
+    // Physics block
+    Teuchos::ParameterList& physics_block = ipb->sublist("test physics");
+    {
+      Teuchos::ParameterList& p = physics_block.sublist("a");
+      p.set("Type","Energy");
+      p.set("Prefix","");
+      p.set("Model ID","solid");
+      p.set("Basis Type","HGrad");
+      p.set("Basis Order",2);
+      p.set("Integration Order",1);
+    }
+    {
+      Teuchos::ParameterList& p = physics_block.sublist("b");
+      p.set("Type","Energy");
+      p.set("Prefix","ION_");
+      p.set("Model ID","ion solid");
+      p.set("Basis Type","HGrad");
+      p.set("Basis Order",1);
+      p.set("Integration Order",1);
+    }
 
     {
       std::size_t bc_id = 0;
@@ -379,7 +406,7 @@ namespace panzer {
   #endif
 
     panzer_stk::SquareQuadMeshFactory mesh_factory;
-    user_app::MyFactory eqset_factory;
+    Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
     user_app::BCFactory bc_factory;
     const std::size_t workset_size = 20;
 
@@ -400,12 +427,9 @@ namespace panzer {
 
     // setup physic blocks
     /////////////////////////////////////////////
-    panzer::InputPhysicsBlock ipb;
+    Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
     std::vector<panzer::BC> bcs;
     {
-       std::map<std::string,panzer::InputPhysicsBlock> 
-             physics_id_to_input_physics_blocks;
-
        testInitialzation(ipb, bcs);
 
        std::map<std::string,std::string> block_ids_to_physics_ids;
@@ -416,14 +440,15 @@ namespace panzer {
        block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
        block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
     
-       physics_id_to_input_physics_blocks["test physics"] = ipb;
-
        Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
+      int default_integration_order = 1;
+      
        panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                   block_ids_to_cell_topo,
-                                  physics_id_to_input_physics_blocks,
-                                  2,workset_size,
+				  ipb,
+				  default_integration_order,
+				  workset_size,
                                   eqset_factory,
 				  gd,
 		    	          false,
@@ -445,7 +470,7 @@ namespace panzer {
     // setup DOF manager
     /////////////////////////////////////////////
     const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager 
-           = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+           = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     Teuchos::RCP<const panzer::UniqueGlobalIndexerFactory<int,int,int,int> > indexerFactory
           = Teuchos::rcp(new panzer::DOFManagerFactory<int,int>);

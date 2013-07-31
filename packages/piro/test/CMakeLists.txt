@@ -115,6 +115,19 @@ IF (Piro_ENABLE_NOX)
     MockModelEval_A.hpp
     Piro_Test_ThyraSupport.hpp
     Piro_Test_WeakenedModelEvaluator.hpp
+    Piro_Test_MockObserver.hpp
+    NUM_MPI_PROCS 1-4
+    STANDARD_PASS_OUTPUT
+  )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    LOCASolver_UnitTests
+    SOURCES
+    Piro_LOCASolver_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    MockModelEval_A.cpp
+    MockModelEval_A.hpp
+    Piro_Test_ThyraSupport.hpp
     NUM_MPI_PROCS 1-4
     STANDARD_PASS_OUTPUT
   )

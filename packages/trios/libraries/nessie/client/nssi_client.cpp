@@ -55,6 +55,8 @@
 #include "Trios_nssi_client.h"
 #include "Trios_nssi_request.h"
 #include "Trios_nssi_types.h"
+#include "Trios_nssi_fprint_types.h"
+#include "Trios_nnti_fprint_types.h"
 #include "Trios_logger.h"
 #include "Trios_threads.h"
 #include "Trios_timer.h"
@@ -99,6 +101,9 @@ static nthread_counter_t request_count;
 
 extern trios_buffer_queue_t send_bq;
 extern trios_buffer_queue_t recv_bq;
+extern trios_buffer_queue_t rdma_target_bq;
+extern trios_buffer_queue_t rdma_get_bq;
+extern trios_buffer_queue_t rdma_put_bq;
 
 /**
  *   @addtogroup rpc_ptl_impl
@@ -126,8 +131,6 @@ client_init ()
 
     // Initialize the thread counter
     nthread_counter_init(&request_count);
-
-//    register_service_encodings();
 
     NSSI_REGISTER_CLIENT_STUB(NSSI_OP_GET_SERVICE, void, void, nssi_service);
     NSSI_REGISTER_CLIENT_STUB(NSSI_OP_KILL_SERVICE, nssi_kill_service_args, void, void);
@@ -195,8 +198,11 @@ static int process_result(char *encoded_short_res_buf, nssi_request *request)
 
     char *buf=NULL;
     NNTI_buffer_t encoded_long_res_hdl;
-    NNTI_buffer_t incoming_hdl;
     NNTI_status_t status;
+
+    int8_t        long_res_ack;
+    NNTI_buffer_t long_res_ack_hdl;
+    NNTI_status_t long_res_ack_status;
 
     log_level debug_level = rpc_debug_level;
 
@@ -321,6 +327,36 @@ static int process_result(char *encoded_short_res_buf, nssi_request *request)
                 goto cleanup;
             }
             trios_stop_timer("xdr_decode_result - decode", call_time);
+
+            trios_start_timer(call_time);
+            rc=NNTI_register_memory(
+                    &transports[request->svc->transport_id],
+                    (char *)&long_res_ack,
+                    sizeof(long_res_ack),
+                    1,
+                    NNTI_SEND_SRC,
+                    &request->svc->svc_host,
+                    &long_res_ack_hdl);
+            trios_stop_timer("NNTI_register_memory - long result ack", call_time);
+            if (rc != NNTI_OK) {
+                log_error(debug_level, "failed registering long result ack: %s",
+                        nnti_err_str(rc));
+            }
+
+            trios_start_timer(call_time);
+            rc=NNTI_send(&request->svc->svc_host, &long_res_ack_hdl, &header.result_ack_addr);
+            trios_stop_timer("NNTI_send - long result ack", call_time);
+            if (rc != NNTI_OK) {
+                log_error(rpc_debug_level, "failed sending short result: %s",
+                        nnti_err_str(rc));
+            }
+            trios_start_timer(call_time);
+            rc=NNTI_wait(&long_res_ack_hdl, NNTI_SEND_SRC, -1, &long_res_ack_status);
+            trios_stop_timer("NNTI_wait - long result ack", call_time);
+            if (rc != NNTI_OK) {
+                log_error(rpc_debug_level, "failed waiting for short result: %s",
+                        nnti_err_str(rc));
+            }
         }
     }
 
@@ -336,6 +372,12 @@ cleanup:
         }
         if (buf != NULL) {
             free(buf);
+        }
+
+        NNTI_unregister_memory(&long_res_ack_hdl);
+        if (rc != NNTI_OK) {
+            log_error(debug_level, "failed unregistering long result ack: %s",
+                    nnti_err_str(rc));
         }
     }
 
@@ -413,18 +455,14 @@ int nssi_get_service(
 {
     int rc = NSSI_OK;
     int cleanup_rc = NSSI_OK;
-    int rc2 = NSSI_OK;
-    nssi_service svc;
-    nssi_request req;
 
     /* local count does not need protection */
-    static unsigned long local_count;
+    static int64_t local_count;
 
     /* xdrs for the header and the args. */
     XDR hdr_xdrs, res_xdrs;
 
     NNTI_peer_t   peer_hdl;
-    NNTI_buffer_t request_hdl;
 
     nssi_request_header req_header;   /* the request header */
     nssi_result_header  res_header;   /* the request header */
@@ -806,7 +844,7 @@ int nssi_test(nssi_request *req, int *rc) {
 
 int nssi_wait(nssi_request *req, int *rc)
 {
-    log_debug(rpc_debug_level, "calling nssi_timedwait");
+    log_debug(rpc_debug_level, "calling nssi_timedwait(timeout=-1)");
     return nssi_timedwait(req, -1, rc);
 }
 
@@ -820,10 +858,7 @@ static int cleanup_long_args(
         int timeout)
 {
     int rc = NSSI_OK;
-    int rc2=0;
-
     char *buf;
-    NNTI_status_t status;
 
     trios_declare_timer(call_time);
 
@@ -832,21 +867,6 @@ static int cleanup_long_args(
     }
 
     log_debug(rpc_debug_level, "waiting for long args");
-
-    /* If we created a portal for long arguments, we need to wait
-     * for the server to fetch the arguments.
-     */
-    trios_start_timer(call_time);
-    rc=NNTI_wait(
-            &req->long_args_hdl,
-            NNTI_GET_SRC,
-            -1,
-            &status);
-    trios_stop_timer("NNTI_wait - long args", call_time);
-    if (rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed waiting for service to get long args: %s",
-                nnti_err_str(rc));
-    }
 
     buf=NNTI_BUFFER_C_POINTER(&req->long_args_hdl);
     rc=NNTI_unregister_memory(&req->long_args_hdl);
@@ -893,316 +913,6 @@ complete:
 }
 
 
-
-//#ifdef HAVE_TRIOS_PORTALS
-///**
-// * @brief Wait for any request to complete.
-// *
-// * A request is not complete unless we receive the short
-// * result.
-// *
-// */
-//int nssi_waitany(
-//        nssi_request **req_array,
-//        nssi_size size,
-//        int timeout,
-//        int *which,
-//        int *remote_rc)
-//{
-//    int rc=NSSI_OK;
-//    ptl_job_t *ptl_job=NULL;
-//
-//    int i;
-//
-//    ptl_handle_eq_t *eq_handles;
-//
-//    /* initialize which */
-//    *which = -1;
-//
-//    /* allocate handles */
-//    eq_handles = (ptl_handle_eq_t *)malloc(size * sizeof(ptl_handle_eq_t));
-//
-//
-//    /* check the request status of each request */
-//    for (i=0; i<size; i++) {
-//        if (req_array[i]->status != NSSI_PROCESSING_REQUEST) {
-//            *which = i;
-//            goto complete;
-//        }
-//    }
-//
-//
-//    /* setup the event queue array */
-//    for (i=0; i<size; i++) {
-//        eq_handles[i] = req_array[i]->short_result_hdl.eq_h;
-//    }
-//
-//    /* if the request status is not complete, we need to do some work */
-//    ptl_job = nssi_create_ptl_job(PTL_JOB_PUT_TARGET, eq_handles, size, timeout);
-//    if (ptl_job == NULL) {
-//        rc = NSSI_ENOMEM;
-//        goto complete;
-//    }
-//
-//    nssi_job_submit(ptl_job);
-//    log_debug(rpc_debug_level, "calling nssi_job_wait");
-//    nssi_job_wait(ptl_job);
-//
-//    if (ptl_job->result == NSSI_ETIMEDOUT) {
-//        rc = ptl_job->result;
-//        log_debug(rpc_debug_level, "NSSI_ERR_TIMEOUT, rc==%d", rc);
-//        *which = ptl_job->which;
-////        req_array[*which]->status = NSSI_REQUEST_ERROR;
-//        goto complete;
-//    }
-//    if (ptl_job->result != NSSI_OK) {
-//        log_error(rpc_debug_level, "portals job failed");
-//        rc = ptl_job->result;
-////        req_array[*which]->status = NSSI_REQUEST_ERROR;
-//        goto complete;
-//    }
-//
-//    *which = ptl_job->which;
-//
-//    log_debug(rpc_debug_level,"received short result");
-//
-//    /* we are now ready to process the result */
-//    req_array[*which]->status = NSSI_PROCESSING_RESULT;
-//    rc = process_result((char *)ptl_job->event.md.start + ptl_job->event.offset, req_array[*which]);
-//    if (rc != NSSI_OK) {
-//        log_fatal(rpc_debug_level,"unable to process result");
-//        return rc;
-//    }
-//
-//    if (req_array[*which]->use_long_args) {
-//        log_debug(rpc_debug_level,"req_array[*which]->args_eq_h == %d", req_array[*which]->long_args_hdl.eq_h);
-//
-//        /* Now we need to clean up the long arguments (if they were used) */
-//        rc = cleanup_long_args(req_array[*which], timeout);
-//        if (rc != NSSI_OK) {
-//            log_error(rpc_debug_level, "failed to cleanup long args");
-//        }
-//    }
-//
-//    /* release the event queue for the short result */
-//    log_debug(rpc_debug_level, "unpinning req_array[*which]->short_result_hdl");
-//    nssi_ptl_unpin_memory(&req_array[*which]->short_result_hdl);
-////    log_debug(rpc_debug_level,"freeing req_array[*which]->short_result_hdl.eq_h==%d...", req_array[*which]->short_result_hdl.eq_h);
-////    rc = nssi_PtlEQFree(req_array[*which]->short_result_hdl.eq_h);
-////    if (rc != PTL_OK) {
-////        log_error(rpc_debug_level, "failed to free short result EQ");
-////        rc=NSSI_EBADRPC;
-////        goto complete;
-////    }
-//
-//    /* If the request has data associated with it, the data should
-//     * be transferred by now (server would not have sent result).
-//     * We need to unlink the MD and free the event queue.
-//     */
-//    if (req_array[*which]->data != NULL) {
-//        /* Unlink the MD for the data */
-//        log_debug(rpc_debug_level, "unpinning req_array[*which]->data_hdl");
-//        nssi_ptl_unpin_memory(&req_array[*which]->data_hdl);
-////        log_debug(rpc_debug_level, "unlinking req_array[*which]->data_hdl.md_h: %d", req_array[*which]->data_hdl.md_h);
-////        rc = nssi_PtlMDUnlink(req_array[*which]->data_hdl.md_h);
-////        if (rc != PTL_OK) {
-////            log_error(rpc_debug_level, "failed to unlink data MD");
-////            rc=NSSI_EBADRPC;
-////            goto complete;
-////        }
-////
-////        /* free the EQ for the data */
-////        log_debug(rpc_debug_level, "freeing req_array[*which]->data_hdl.eq_h: %d", req_array[*which]->data_hdl.eq_h);
-////        rc = nssi_PtlEQFree(req_array[*which]->data_hdl.eq_h);
-////        if (rc != PTL_OK) {
-////            log_error(rpc_debug_level, "failed to free data EQ");
-////            log_error(rpc_debug_level, "failed to free data EQ: %d", rc);
-////            rc=NSSI_EBADRPC;
-////            goto complete;
-////        }
-//    }
-//
-//
-//complete:
-//
-//    if (ptl_job) {
-//        /* free the memory for the short result buffer */
-//        if (ptl_job->event.md.start) {
-//            free(ptl_job->event.md.start);
-//        }
-//        nssi_destroy_ptl_job (ptl_job);
-//    }
-//
-//    /* at this point, the status should either be complete or error */
-//    free(eq_handles);
-//
-//    /* check for an error in this code */
-//    if (rc != NSSI_OK) {
-//        return rc;
-//    }
-//
-//    /* check for an error */
-//    if (req_array[*which]->status == NSSI_REQUEST_ERROR) {
-//        *remote_rc = req_array[*which]->error_code;
-//        return rc;
-//    }
-//
-//    /* call the callback function associated with the request */
-//    log_debug(rpc_debug_level, "calling callback for wait(): op=%d", req_array[*which]->opcode);
-//    if (req_array[*which]->callback) {
-//        req_array[*which]->callback(req_array[*which]);
-//    }
-//
-//    /* check for completion */
-//    if (req_array[*which]->status == NSSI_REQUEST_COMPLETE) {
-//        log_debug(rpc_debug_level,"waitany finished");
-//        *remote_rc = NSSI_OK;
-//        return rc;
-//    }
-//
-//    /* this should only execute if something went wrong */
-//    log_fatal(rpc_debug_level,"invalid request status %d",req_array[*which]->status);
-//    return NSSI_EBADRPC;
-//
-//}
-//#endif
-//
-//#ifdef HAVE_TRIOS_INFINIBAND
-///**
-// * @brief Wait for any request to complete.
-// *
-// * A request is not complete unless we receive the short
-// * result.
-// *
-// */
-//int nssi_waitany(
-//        nssi_request **req_array,
-//        nssi_size size,
-//        int timeout,
-//        int *which,
-//        int *remote_rc)
-//{
-//    int rc=NSSI_OK;
-//    nssi_ib_job_t *job=NULL;
-//
-//    int i;
-//
-////    struct nssi_ib_message_header *hdrs=NULL;
-//
-//    /* initialize which */
-//    *which = -1;
-//
-////    /* allocate headers */
-////    hdrs = (struct nssi_ib_message_header *)calloc(size, sizeof(struct nssi_ib_message_header));
-//
-//
-//    /* check the request status of each request */
-//    for (i=0; i<size; i++) {
-//        if (req_array[i]->status != NSSI_PROCESSING_REQUEST) {
-//            *which = i;
-//            goto complete;
-//        }
-//    }
-//
-//
-////    /* setup the event queue array */
-////    for (i=0; i<size; i++) {
-////        memcpy(&(hdrs[i]), req_array[i]->ib_msg_hdr, sizeof(struct nssi_ib_message_header));
-////    }
-//
-//    /* if the request status is not complete, we need to do some work */
-//    job = nssi_create_ib_job_list(NSSI_JOB_RESPONSE, timeout, req_array, size);
-//    if (job == NULL) {
-//        rc = NSSI_ENOMEM;
-//        goto complete;
-//    }
-//
-//    nssi_ib_job_submit(job);
-//    log_debug(rpc_debug_level, "calling nssi_ib_job_wait");
-//    nssi_ib_job_wait(job);
-//
-//    if (job->result == NSSI_ETIMEDOUT) {
-//        rc = job->result;
-//        log_debug(rpc_debug_level, "NSSI_ERR_TIMEOUT, rc==%d", rc);
-//        *which = job->which;
-//        goto complete;
-//    }
-//    if (job->result != NSSI_OK) {
-//        log_error(rpc_debug_level, "IB job failed");
-//        rc = job->result;
-//        goto complete;
-//    }
-//
-//    *which = job->which;
-//
-//    log_debug(rpc_debug_level,"received short result");
-//
-//    /* we are now ready to process the result */
-//    req_array[*which]->status = NSSI_PROCESSING_RESULT;
-//    rc = process_result((char *)job->short_result, req_array[*which]);
-//    if (rc != NSSI_OK) {
-//        log_fatal(rpc_debug_level,"unable to process result");
-//        return rc;
-//    }
-//
-//    if (req_array[*which]->use_long_args) {
-//        /* Now we need to clean up the long arguments (if they were used) */
-//        rc = cleanup_long_args(req_array[*which], timeout);
-//        if (rc != NSSI_OK) {
-//            log_error(rpc_debug_level, "failed to cleanup long args");
-//            return NSSI_EBADRPC;
-//        }
-//    }
-//
-//    /* If the request has data associated with it, the data should
-//     * be transferred by now (server would not have sent result).
-//     */
-//    if (req_array[*which]->data != NULL) {
-//        cleanup_data_mr(req_array[*which]);
-//    }
-//
-//
-//complete:
-//
-//    if (job) {
-//        nssi_destroy_ib_job(job);
-//    }
-//
-////    /* at this point, the status should either be complete or error */
-////    free(hdrs);
-//
-//    /* check for an error in this code */
-//    if (rc != NSSI_OK) {
-//        return rc;
-//    }
-//
-//    /* check for an error */
-//    if (req_array[*which]->status == NSSI_REQUEST_ERROR) {
-//        *remote_rc = req_array[*which]->error_code;
-//        return rc;
-//    }
-//
-//    /* call the callback function associated with the request */
-//    log_debug(rpc_debug_level, "calling callback for wait(): op=%d", req_array[*which]->opcode);
-//    if (req_array[*which]->callback) {
-//        req_array[*which]->callback(req_array[*which]);
-//    }
-//
-//    /* check for completion */
-//    if (req_array[*which]->status == NSSI_REQUEST_COMPLETE) {
-//        log_debug(rpc_debug_level,"waitany finished");
-//        *remote_rc = NSSI_OK;
-//        return rc;
-//    }
-//
-//    /* this should only execute if something went wrong */
-//    log_fatal(rpc_debug_level,"invalid request status %d",req_array[*which]->status);
-//    return NSSI_EBADRPC;
-//
-//}
-//#endif
-
-
 /**
  * @brief Wait for a request to complete.
  *
@@ -1227,7 +937,7 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
 
         goto cleanup;
 
-        break;
+//        break;
 
     case NSSI_REQUEST_COMPLETE:
         log_debug(rpc_debug_level,"timedwait finished");
@@ -1235,26 +945,9 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
 
         goto cleanup;
 
-        break;
+//        break;
 
     default:
-        /* if the request status is not complete, we need to do some work */
-        if (req->data != NULL) {
-            log_debug(debug_level, "calling NNTI_wait for data_hdl");
-            trios_start_timer(call_time);
-            rc=NNTI_wait(
-                    &req->data_hdl,
-                    (NNTI_buf_ops_t)(NNTI_GET_SRC|NNTI_PUT_DST),
-                    timeout,
-                    &status);
-            trios_stop_timer("NNTI_wait - data", call_time);
-            if (status.result != NNTI_OK) {
-                log_info(debug_level, "NNTI_wait for data_hdl failed");
-                rc = status.result;
-                req->status = NSSI_REQUEST_ERROR;
-                break;
-            }
-        }
         log_debug(debug_level, "calling NNTI_wait for result");
         trios_start_timer(call_time);
         rc=NNTI_wait(
@@ -1263,6 +956,11 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
                 timeout,
                 &status);
         trios_stop_timer("NNTI_wait - short result", call_time);
+        if (status.result == NNTI_ETIMEDOUT) {
+            log_info(debug_level, "NNTI_wait for result timed out");
+            rc = status.result;
+            return rc;
+        }
         if (status.result != NNTI_OK) {
             log_info(debug_level, "NNTI_wait for result failed");
             rc = status.result;
@@ -1331,11 +1029,22 @@ cleanup:
      * We need to unlink the MD and free the event queue.
      */
     if (req->data != NULL) {
-        log_debug(debug_level, "Unregister memory for data");
-        rc=NNTI_unregister_memory(&req->data_hdl);
-        if (rc != NNTI_OK) {
-            log_error(rpc_debug_level, "failed unregistering data: %s",
-                    nnti_err_str(rc));
+        if ((nssi_config.use_buffer_queue) &&
+            (nssi_config.rdma_buffer_queue_buffer_size >= req->data_size)) {
+            /* copy the RDMA buffer contents into the user buffer.
+             * we can't tell if the server op was get or put.
+             * if it was get, then this is a waste of time.
+             * if it was put, then this is required.
+             */
+            memcpy(req->data, NNTI_BUFFER_C_POINTER(req->bulk_data_hdl), req->data_size);
+            trios_buffer_queue_push(&rdma_target_bq, req->bulk_data_hdl);
+        } else {
+            log_debug(debug_level, "Unregister memory for data");
+            rc=NNTI_unregister_memory(req->bulk_data_hdl);
+            if (rc != NNTI_OK) {
+                log_error(rpc_debug_level, "failed unregistering data: %s",
+                        nnti_err_str(rc));
+            }
         }
     }
 
@@ -1388,6 +1097,12 @@ static int encode_args(
     /* xdrs for the header and the args. */
     XDR hdr_xdrs, args_xdrs;
 
+    nssi_size hdr_size    = 0;
+    nssi_size args_size   = 0;
+    nssi_size data_size   = 0;
+    nssi_size data_offset = 0;
+    nssi_size remaining   = 0;
+
     char *buf=NULL;
 
 
@@ -1414,138 +1129,173 @@ static int encode_args(
             goto cleanup;
     }
 
+    /* set the request ID for the header */
+    header->id = request->id;
+
+
+    /* the size of the encoded header */
+    hdr_size = xdr_sizeof((xdrproc_t)&xdr_nssi_request_header, header);
+
+    if (args == NULL) {
+        /* there are no args */
+        header->fetch_args = FALSE;
+        args_size = 0;
+    } else {
+        /* the size of the encoded args */
+        args_size = xdr_sizeof(request->xdr_encode_args, args);
+        /* what's left after encoding the header */
+        remaining = NNTI_BUFFER_SIZE(short_req_hdl) - hdr_size;
+        if (remaining > args_size) {
+            /* args will fit in the request. fetch not required. */
+            header->fetch_args = FALSE;
+        } else {
+            /* args will not fit in the request. server must fetch. */
+            header->fetch_args = TRUE;
+        }
+    }
+
+    log_debug(rpc_debug_level, "initial hdr_size=%d", hdr_size);
+
+    /**
+     *   If the arguments are too large to fit in an
+     *   \ref short request buffer, the client stores
+     *   excess arguments and waits for the server to
+     *   "fetch" the arguments using the \ref nssi_get_data method.
+     */
+    if (header->fetch_args == TRUE) {
+
+        log_debug(rpc_debug_level,"putting args (len=%d) "
+                "in long request", args_size);
+
+        request->use_long_args=1;
+
+        log_debug(rpc_debug_level,"allocating space for args");
+        /* allocate memory for the encoded arguments. The request
+         * structure keeps track of the buffer so it can free
+         * the memory later. */
+        buf=(char *)malloc(args_size);
+        if (!buf)   {
+            log_fatal(rpc_debug_level, "malloc() failed!");
+            rc = NSSI_ENOMEM;
+            goto cleanup;
+        }
+        rc=NNTI_register_memory(
+                &transports[svc->transport_id],
+                buf,
+                args_size,
+                1,
+                NNTI_GET_SRC,
+                &svc->svc_host,
+                &request->long_args_hdl);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed registering long args: %s",
+                    nnti_err_str(rc));
+            goto cleanup;
+        }
+        header->args_addr=request->long_args_hdl;
+
+        /* create an xdr memory stream for the encoded args */
+        xdrmem_create(&args_xdrs, NNTI_BUFFER_C_POINTER(&request->long_args_hdl),
+                NNTI_BUFFER_SIZE(&request->long_args_hdl), XDR_ENCODE);
+
+        /* if we get here, args should not be NULL */
+        assert(args);
+
+        /* encode the args  */
+        log_debug(rpc_debug_level,"encoding args");
+        trios_start_timer(call_time);
+        if (! request->xdr_encode_args(&args_xdrs, args)) {
+            log_fatal(rpc_debug_level,"failed to encode the args");
+            return NSSI_EENCODE;
+        }
+        trios_stop_timer("xdr_encode_args - encode", call_time);
+
+    } else if ((header->fetch_args == FALSE) && (args != NULL)) {
+
+        log_debug(rpc_debug_level,"putting args (len=%d) "
+                "in short request", args_size);
+
+        request->use_long_args=0;
+
+        /* create an xdr memory stream inside the short request for the encoded args */
+        xdrmem_create(&args_xdrs, NNTI_BUFFER_C_POINTER(short_req_hdl) + hdr_size,
+                NNTI_BUFFER_SIZE(short_req_hdl) - hdr_size, XDR_ENCODE);
+
+        /* if we get here, args should not be NULL */
+        assert(args);
+
+        /* encode the args  */
+        log_debug(rpc_debug_level,"encoding args");
+        trios_start_timer(call_time);
+        if (! request->xdr_encode_args(&args_xdrs, args)) {
+            log_fatal(rpc_debug_level,"failed to encode the args");
+            return NSSI_EENCODE;
+        }
+        trios_stop_timer("xdr_encode_args - encode", call_time);
+
+    }
+
+    /* if the args are being fetched, then the header has changed.
+     * recalculate the size of the encoded header. */
+    if (header->fetch_args == TRUE) {
+        hdr_size = xdr_sizeof((xdrproc_t)&xdr_nssi_request_header, header);
+        log_debug(rpc_debug_level, "using long args. recalculated hdr_size=%d", hdr_size);
+    }
+
+    if (nssi_config.put_data_in_request == FALSE) {
+        header->fetch_data = TRUE;
+    } else {
+        /* the size of the bulk data buffer */
+        data_size=NNTI_BUFFER_SIZE(&header->data_addr);
+        if (data_size > 0) {
+            /* what's left after encoding the header into the short request */
+            remaining = NNTI_BUFFER_SIZE(short_req_hdl) - hdr_size;
+            data_offset = hdr_size;
+            if (header->fetch_args == FALSE) {
+                /* the args are in the short request.  reduce the remaining space by the size of the encoded args. */
+                remaining -= args_size;
+                data_offset += args_size;
+            }
+            if (remaining > data_size) {
+                /* data will fit in the request. fetch not required. */
+                header->fetch_data = FALSE;
+            } else {
+                /* data will not fit in the request.  server must fetch. */
+                header->fetch_data = TRUE;
+            }
+        } else {
+            /* there is no data */
+            header->fetch_data = FALSE;
+        }
+
+        if ((data_size > 0) && (header->fetch_data == FALSE)) {
+            log_debug(rpc_debug_level,"putting data (size=%d, offset=%d) in short request", data_size, data_offset);
+            /* copy small data into the short request */
+            memcpy(NNTI_BUFFER_C_POINTER(short_req_hdl)+data_offset, NNTI_BUFFER_C_POINTER(&header->data_addr), data_size);
+        }
+    }
+
+
+    /*
+     * encode the header
+     */
+    log_debug(rpc_debug_level,"encoding request header");
+
     /* create an xdr memory stream for the short request buffer */
     xdrmem_create(&hdr_xdrs, NNTI_BUFFER_C_POINTER(short_req_hdl),
             NNTI_BUFFER_SIZE(short_req_hdl), XDR_ENCODE);
 
-    /* set the request ID for the header */
-    header->id = request->id;
-
-    if (args == NULL) {
-        header->fetch_args = FALSE;
-
-        /* encode the header  */
-        log_debug(rpc_debug_level,"encoding request header");
-        trios_start_timer(call_time);
-        if (! xdr_nssi_request_header(&hdr_xdrs, header)) {
-            log_fatal(rpc_debug_level,"failed to encode the request header");
-            return NSSI_EENCODE;
-        }
-        trios_stop_timer("xdr_nssi_request_header - encode", call_time);
+    trios_start_timer(call_time);
+    if (! xdr_nssi_request_header(&hdr_xdrs, header)) {
+        log_fatal(rpc_debug_level,"failed to encode the request header");
+        return NSSI_EENCODE;
     }
-    else {
-        if (logging_debug(rpc_debug_level)) {
-            fprint_nssi_request_header(logger_get_file(), "header",
-                                       "DEBUG", header);
-        }
-        /* find out if a short request has room for the args */
-        nssi_size args_size = xdr_sizeof(request->xdr_encode_args, args);
-        nssi_size hdr_size  = xdr_sizeof((xdrproc_t)&xdr_nssi_request_header, header);
-        nssi_size remaining = NNTI_BUFFER_SIZE(short_req_hdl) - hdr_size;
+    trios_stop_timer("xdr_nssi_request_header - encode", call_time);
 
-        log_debug(rpc_debug_level, "short_req_size=%d, "
-                "args_size = %d, hdr_size=%d",
-                NNTI_BUFFER_SIZE(short_req_hdl), args_size, hdr_size);
 
-        /* stuff to do if the args fit into the request buffer */
-        if (args_size < remaining) {
-
-            log_debug(rpc_debug_level,"putting args (len=%d) "
-                    "in short request", args_size);
-            header->fetch_args = FALSE;
-
-            request->use_long_args=0;
-
-            /* encode the header  */
-            log_debug(rpc_debug_level,"encoding request header");
-            trios_start_timer(call_time);
-            if (! xdr_nssi_request_header(&hdr_xdrs, header)) {
-                log_fatal(rpc_debug_level,"failed to encode the request header");
-                return NSSI_EENCODE;
-            }
-            trios_stop_timer("xdr_nssi_request_header - encode", call_time);
-
-            /* encode the args  */
-            if (args != NULL) {
-                log_debug(rpc_debug_level,"encoding args");
-                trios_start_timer(call_time);
-                if (! request->xdr_encode_args(&hdr_xdrs, args)) {
-                    log_fatal(rpc_debug_level,"failed to encode the args");
-                    return NSSI_EENCODE;
-                }
-                trios_stop_timer("xdr_encode_args - encode", call_time);
-            }
-        }
-
-        /**
-         *   If the arguments are too large to fit in an
-         *   \ref short request buffer, the client stores
-         *   excess arguments and waits for the server to
-         *   "fetch" the arguments using the \ref nssi_ptl_get method.
-         */
-        else {
-            static nssi_size args_counter = 1;
-
-            log_debug(rpc_debug_level,"putting args (len=%d) "
-                    "in long request", args_size);
-
-            /* we want the server to fetch the arguments */
-            header->fetch_args = TRUE;
-
-            request->use_long_args=1;
-
-            log_debug(rpc_debug_level,"allocating space for args");
-            /* allocate memory for the encoded arguments. The request
-             * structure keeps track of the buffer so it can free
-             * the memory later. */
-            buf=(char *)malloc(args_size);
-            if (!buf)   {
-                log_fatal(rpc_debug_level, "malloc() failed!");
-                rc = NSSI_ENOMEM;
-                goto cleanup;
-            }
-            rc=NNTI_register_memory(
-                    &transports[svc->transport_id],
-                    buf,
-                    args_size,
-                    1,
-                    NNTI_GET_SRC,
-                    &svc->svc_host,
-                    &request->long_args_hdl);
-            if (rc != NNTI_OK) {
-                log_error(rpc_debug_level, "failed registering long args: %s",
-                        nnti_err_str(rc));
-                goto cleanup;
-            }
-            header->args_addr=request->long_args_hdl;
-//            fprint_NNTI_buffer(logger_get_file(), "request->long_args_hdl",
-//                    "encode_args", &request->long_args_hdl);
-
-            /* create an xdr memory stream for the encoded args */
-            xdrmem_create(&args_xdrs, NNTI_BUFFER_C_POINTER(&request->long_args_hdl),
-                    NNTI_BUFFER_SIZE(&request->long_args_hdl), XDR_ENCODE);
-
-            /* encode the header  */
-            log_debug(rpc_debug_level,"encoding request header");
-            trios_start_timer(call_time);
-            if (! xdr_nssi_request_header(&hdr_xdrs, header)) {
-                log_fatal(rpc_debug_level,"failed to encode the request header");
-                return NSSI_EENCODE;
-            }
-            trios_stop_timer("xdr_nssi_request_header - encode", call_time);
-
-            /* encode the args  */
-            if (args != NULL) {
-                log_debug(rpc_debug_level,"encoding args");
-                trios_start_timer(call_time);
-                if (! request->xdr_encode_args(&args_xdrs, args)) {
-                    log_fatal(rpc_debug_level,"failed to encode the args");
-                    return NSSI_EENCODE;
-                }
-                trios_stop_timer("xdr_encode_args - encode", call_time);
-            }
-        }
-    }
+    log_debug(rpc_debug_level, "short_req_size=%d, "
+            "hdr_size(final)=%d, args_size=%d, data_size=%d",
+            NNTI_BUFFER_SIZE(short_req_hdl), hdr_size, args_size, data_size);
 
     /* print the header for debugging */
     if (logging_debug(rpc_debug_level)) {
@@ -1589,10 +1339,8 @@ int nssi_call_rpc(
         void *result,
         nssi_request *request)
 {
-    long timeout = (10)*(DEFAULT_RPC_TIMEOUT);
-
     /* local count does not need protection */
-    static unsigned long local_count;
+    static int64_t local_count;
 
     /* local variables */
     int rc=NSSI_OK;  /* return code */
@@ -1673,25 +1421,42 @@ int nssi_call_rpc(
 
     if (data_size > 0) {
 
-        log_debug (debug_level, "Registering data buffer (size=%d)", data_size);
-        trios_start_timer(call_time);
-        rc=NNTI_register_memory(
-                &transports[svc->transport_id],
-                (char *)data,
-                data_size,
-                1,
-                (NNTI_buf_ops_t)(NNTI_GET_SRC|NNTI_PUT_DST),
-                &svc->svc_host,
-                &request->data_hdl);
-        trios_stop_timer("NNTI_register_memory - data", call_time);
-        if (rc != NNTI_OK) {
-            log_error(rpc_debug_level, "failed registering data: %s",
-                    nnti_err_str(rc));
-            goto cleanup;
+        if ((nssi_config.use_buffer_queue) &&
+            (nssi_config.rdma_buffer_queue_buffer_size >= data_size)) {
+            log_debug(rpc_debug_level, "using buffer queue for TARGET buffer");
+            request->bulk_data_hdl=trios_buffer_queue_pop(&rdma_target_bq);
+            assert(request->bulk_data_hdl);
+            NNTI_BUFFER_SIZE(request->bulk_data_hdl)=data_size;
+            /* copy the user buffer contents into RDMA buffer */
+            memcpy(NNTI_BUFFER_C_POINTER(request->bulk_data_hdl), (char *)data, data_size);
+        } else {
+            log_debug(rpc_debug_level, "using user buffer for TARGET buffer");
+            log_debug (debug_level, "Registering data buffer (size=%d)", data_size);
+            request->bulk_data_hdl=&request->bulk_data;
+            trios_start_timer(call_time);
+            rc=NNTI_register_memory(
+                    &transports[svc->transport_id],
+                    (char *)data,
+                    data_size,
+                    1,
+                    (NNTI_buf_ops_t)(NNTI_GET_SRC|NNTI_PUT_DST),
+                    &svc->svc_host,
+                    request->bulk_data_hdl);
+            trios_stop_timer("NNTI_register_memory - data", call_time);
+            if (rc != NNTI_OK) {
+                log_error(rpc_debug_level, "failed registering data: %s",
+                        nnti_err_str(rc));
+                goto cleanup;
+            }
         }
-        header.data_addr=request->data_hdl;
+        header.data_addr=*request->bulk_data_hdl;
 
-        log_debug(rpc_debug_level, "Registered long args buffer");
+        if (logging_debug(rpc_debug_level)) {
+            fprint_NNTI_buffer(logger_get_file(), "request->bulk_data_hdl",
+                    "nssi_call_rpc", request->bulk_data_hdl);
+        }
+
+        log_debug(rpc_debug_level, "Registered data buffer");
     }
 
     if (nssi_config.use_buffer_queue) {
@@ -1810,7 +1575,12 @@ cleanup:
 
     if (rc != NSSI_OK) {
         if (data_size > 0) {
-            NNTI_unregister_memory(&request->data_hdl);
+            if ((nssi_config.use_buffer_queue) &&
+                (nssi_config.rdma_buffer_queue_buffer_size >= data_size)) {
+                trios_buffer_queue_push(&rdma_target_bq, request->bulk_data_hdl);
+            } else {
+                NNTI_unregister_memory(request->bulk_data_hdl);
+            }
         }
         if (nssi_config.use_buffer_queue) {
             trios_buffer_queue_push(&recv_bq, request->short_result_hdl);
@@ -1925,7 +1695,6 @@ int nssi_multicast_rpc_sync(
 {
     int rc = NSSI_OK;
     int rc2 = NSSI_OK;
-    nssi_size i;
     std::vector <nssi_request> reqs(num_svcs);
 
     rc = nssi_multicast_rpc(svcs, num_svcs, opcode, args, data, data_size, results, result_size, &reqs[0]);

@@ -41,3 +41,12 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  DOF_BasisToBasis 
+  SOURCES 
+     dof_basistobasis.cpp 
+     ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )

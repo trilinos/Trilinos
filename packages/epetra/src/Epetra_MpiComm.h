@@ -488,7 +488,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MpiComm: public Epetra_Object, public virtual
   //! @name Print object to an output stream
   //@{ 
   //! Print method that implements Epetra_Object virtual Print method
-  inline void Print(ostream & os) const {
+  inline void Print(std::ostream & os) const {
 #ifdef EPETRA_HAVE_OMP
 #pragma omp parallel 
 {
@@ -503,7 +503,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MpiComm: public Epetra_Object, public virtual
 #endif
   return;}
   //! Print method that implements Epetra_Comm virtual PrintInfo method
-  void PrintInfo(ostream & os) const {Epetra_MpiComm::Print(os);return;};
+  void PrintInfo(std::ostream & os) const {Epetra_MpiComm::Print(os);return;};
   //@}
 
   //! @name Expert Users and Developers Only

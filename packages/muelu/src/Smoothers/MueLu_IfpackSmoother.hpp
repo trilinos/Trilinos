@@ -75,8 +75,8 @@ namespace MueLu {
     typedef double Scalar;
     typedef int    LocalOrdinal;
     typedef int    GlobalOrdinal;
-    typedef Kokkos::DefaultNode::DefaultNodeType Node;
-    typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+    typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 #undef MUELU_IFPACKSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -235,7 +235,7 @@ namespace MueLu {
   }
   //
   template <>
-  inline RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > GetIfpackSmoother<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>(std::string const & type, Teuchos::ParameterList const & paramList, int const &overlap, RCP<FactoryBase> AFact) {
+  inline RCP<MueLu::SmootherPrototype<double, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void,int,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps> > GetIfpackSmoother<double, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void,int,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>(std::string const & type, Teuchos::ParameterList const & paramList, int const &overlap, RCP<FactoryBase> AFact) {
     RCP<IfpackSmoother> smoother = rcp( new IfpackSmoother(type, paramList, overlap) );
     smoother->SetFactory("A", AFact);
     return smoother;

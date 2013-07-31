@@ -72,7 +72,6 @@ namespace {
   using Tpetra::MatrixMatrix::Add;
   using Tpetra::RowMatrixTransposer;
 
-
   TEUCHOS_STATIC_SETUP()
   {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
@@ -86,8 +85,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( RowMatrixTransposer, RectangularTranspose, LO, GO, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
-    typedef ScalarTraits<Scalar> ST;
-    typedef OrdinalTraits<LO> LOT;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -99,7 +96,7 @@ namespace {
     RCP<MAT> matrix = Reader<MAT>::readSparseFile("a.mtx", comm, node);
     RCP<MAT> matrixT = Reader<MAT>::readSparseFile("atrans.mtx", comm, node);
 
-    RowMatrixTransposer<Scalar, LO, GO, Node> at(*matrix);
+    RowMatrixTransposer<Scalar, LO, GO, Node> at (matrix);
     RCP<MAT> calculated = at.createTranspose();
 
     RCP<MAT> diffMatrix = rcp(new MAT(matrixT->getRowMap(), matrixT->getNodeMaxNumRowEntries()));
@@ -114,80 +111,14 @@ namespace {
 
     TEST_COMPARE(ScalarTraits<Scalar>::real(epsilon), <, 1e-10)
     TEST_COMPARE(ScalarTraits<Scalar>::imag(epsilon), <, 1e-10)
-
   }
 
 
-//Not doing complex since we don't have a complex matrix to test on
-//typedef std::complex<float>  ComplexFloat;
-//typedef std::complex<double> ComplexDouble;
+#define UNIT_TEST_GROUP( LO, GO, NODE ) \
+            TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( RowMatrixTransposer, RectangularTranspose, LO, GO, double, NODE )
 
-#define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( RowMatrixTransposer, RectangularTranspose, LO, GO, SCALAR, NODE )  \
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
-
-
-
-
-#define UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, SerialNode )
-
-typedef Kokkos::DefaultNode::DefaultNodeType DefaultNode;
-#define UNIT_TEST_DEFAULTNODE(LO, GO, SCALAR) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, DefaultNode )
-
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-#define UNIT_TEST_TBBNODE(LO, GO, SCALAR) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, TBBNode )
-#else
-#define UNIT_TEST_TBBNODE(LO, GO, SCALAR)
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-#define UNIT_TEST_TPINODE(LO, GO, SCALAR) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, TPINode )
-#else
-#define UNIT_TEST_TPINODE(LO, GO, SCALAR)
-#endif
-
-// don't test Kokkos node for MPI builds, because we probably don't have multiple GPUs per node
-#if defined(HAVE_KOKKOSCLASSIC_CUSPARSE) && !defined(HAVE_TPETRA_MPI)
-// float
-#if defined(HAVE_KOKKOSCLASSIC_CUDA_FLOAT)
-#  define UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO) \
-          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, float, ThrustGPUNode )
-#else
-#  define UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO)
-#endif
-// double
-#if defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE)
-#  define UNIT_TEST_THRUSTGPUNODE_DOUBLE(LO, GO) \
-          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, double, ThrustGPUNode )
-#else
-#  define UNIT_TEST_THRUSTGPUNODE_DOUBLE(LO, GO)
-#endif
-#else
-// none
-# define UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO)
-# define UNIT_TEST_THRUSTGPUNODE_DOUBLE(LO, GO)
-# define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(LO, GO)
-# define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(LO, GO)
-#endif
-
-#define UNIT_TEST_ALLCPUNODES(LO, GO, SCALAR) \
-    UNIT_TEST_DEFAULTNODE(LO, GO, SCALAR)
-
-#define UNIT_TEST_FLOAT(LO, GO) \
-    UNIT_TEST_ALLCPUNODES(LO, GO, float) \
-    UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO)
-
-#define UNIT_TEST_DOUBLE(LO, GO) \
-    UNIT_TEST_ALLCPUNODES(LO, GO, double) \
-    UNIT_TEST_THRUSTGPUNODE_DOUBLE(LO, GO)
-
-
-#if defined(HAVE_TPETRA_INST_DOUBLE)
-  UNIT_TEST_DOUBLE(int, int)
-#endif
+  TPETRA_INSTANTIATE_LGN_NOGPU( UNIT_TEST_GROUP )
 
 }

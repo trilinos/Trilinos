@@ -403,17 +403,17 @@ public:
     std::vector<double> Values(Length);
     std::vector<int>    Indices(Length);
 
-    os << endl;
-    os << "*** MLAPI::SerialMatrix ***" << endl;
-    os << "Label = " << GetLabel() << endl;
-    os << "Number of rows = " << Matrix_->NumMyRows() << endl;
-    os << "Number of columns = " << Matrix_->NumMyCols() << endl;
-    os << endl;
+    os << std::endl;
+    os << "*** MLAPI::SerialMatrix ***" << std::endl;
+    os << "Label = " << GetLabel() << std::endl;
+    os << "Number of rows = " << Matrix_->NumMyRows() << std::endl;
+    os << "Number of columns = " << Matrix_->NumMyCols() << std::endl;
+    os << std::endl;
     os.width(10); os << "row ID";
     os.width(10); os << "col ID";
     os.width(30); os << "value";
-    os << endl;
-    os << endl;
+    os << std::endl;
+    os << std::endl;
 
     for (int i = 0 ; i < Matrix_->NumMyRows() ; ++i) {
       int NnzRow = 0;
@@ -422,7 +422,7 @@ public:
         os.width(10); os << i;
         os.width(10); os << Indices[j];
         os.width(30); os << Values[j];
-        os << endl;
+        os << std::endl;
       }
     }
     return(os);

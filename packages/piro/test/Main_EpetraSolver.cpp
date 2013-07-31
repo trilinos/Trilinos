@@ -1,4 +1,4 @@
-// @HEADER
+ // @HEADER
 // ************************************************************************
 //
 //        Piro: Strategy package for embedded analysis capabilitites
@@ -43,18 +43,22 @@
 #include <iostream>
 #include <string>
 
-#include "MockModelEval_A.hpp"
-#include "SaveEigenData_Epetra.hpp"
-
-#include "Piro_Epetra_Factory.hpp"
+#include "Piro_Epetra_SolverFactory.hpp"
+#include "Piro_ProviderHelpers.hpp"
 #include "Piro_Epetra_PerformSolve.hpp"
+
+#include "MockModelEval_A.hpp"
+
+#include "Piro_ConfigDefs.hpp"
+
+#ifdef Piro_ENABLE_NOX
+#include "SaveEigenData_Epetra.hpp"
+#endif /* Piro_ENABLE_NOX */
 
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
-
-#include "Piro_ConfigDefs.hpp"
 
 int main(int argc, char *argv[]) {
 
@@ -78,7 +82,12 @@ int main(int argc, char *argv[]) {
   bool doAll = (argc==1);
   if (argc>1) doAll = !strcmp(argv[1],"-v");
 
-  Piro::Epetra::Factory solverFactory;
+  Piro::Epetra::SolverFactory solverFactory;
+
+#ifdef Piro_ENABLE_NOX
+  solverFactory.setSource<LOCA::SaveEigenData::AbstractStrategy>(
+      Piro::providerFromReferenceAcceptingConstructor<SaveEigenData_Epetra>());
+#endif /* Piro_ENABLE_NOX */
 
 #ifdef Piro_ENABLE_Rythmos
   int numTests=5;
@@ -94,7 +103,7 @@ int main(int argc, char *argv[]) {
        case 2: inputFile="input_Solve_LOCA_1.xml"; break;
        case 3: inputFile="input_Solve_Rythmos_1.xml"; break;
        case 4: inputFile="input_Solve_Rythmos_1new.xml"; break;
-       default : cout << "iTest logic error " << endl; exit(-1);
+       default : std::cout << "iTest logic error " << std::endl; exit(-1);
       }
     }
      else {
@@ -103,10 +112,10 @@ int main(int argc, char *argv[]) {
     }
 
     if (Proc==0)
-     cout << "===================================================\n"
+     std::cout << "===================================================\n"
           << "======  Running input file "<< iTest <<": "<< inputFile <<"\n"
           << "===================================================\n"
-          << endl;
+          << std::endl;
 
     try {
 
@@ -117,21 +126,15 @@ int main(int argc, char *argv[]) {
          rcp(new Teuchos::ParameterList("Piro Parameters"));
       Teuchos::updateParametersFromXmlFile(inputFile, piroParams.ptr());
 
-#ifdef Piro_ENABLE_NOX
-      const std::string &solver = piroParams->get("Piro Solver","NOX");
-      if (solver == "LOCA") {
-        const RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigs =
-            rcp(new SaveEigenData_Epetra(piroParams->sublist("LOCA")));
-        piroParams->set("Save Eigen Data Strategy", saveEigs);
-      }
-#endif
-
       // Wrap original model into a Piro solver to build a response-only application
       const RCP<EpetraExt::ModelEvaluator> piro = solverFactory.createSolver(piroParams, Model);
 
+      const Teuchos::RCP<Teuchos::ParameterList> solveParams =
+        Teuchos::sublist(Teuchos::sublist(piroParams, "Analysis"), "Solve");
+
       Teuchos::Array<Teuchos::RCP<const Epetra_Vector> > responses;
       Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Epetra_MultiVector> > > sensitivities;
-      Piro::Epetra::PerformSolve(*piro, *piroParams, responses, sensitivities);
+      Piro::Epetra::PerformSolve(*piro, *solveParams, responses, sensitivities);
 
       // Extract
       const RCP<const Epetra_Vector> g1 = responses[0];
@@ -142,18 +145,18 @@ int main(int argc, char *argv[]) {
 
       // Print out everything
       if (Proc == 0)
-        cout << "Finished Model Evaluation: Printing everything {Exact in brackets}"
+        std::cout << "Finished Model Evaluation: Printing everything {Exact in brackets}"
              << "\n-----------------------------------------------------------------"
-             << std::setprecision(9) << endl;
+             << std::setprecision(9) << std::endl;
 
-      p1->Print(cout << "\nParameters! {1,1}\n");
-      g1->Print(cout << "\nResponses! {8.0}\n");
-      gx->Print(cout << "\nSolution! {1,2,3,4}\n");
+      p1->Print(std::cout << "\nParameters! {1,1}\n");
+      g1->Print(std::cout << "\nResponses! {8.0}\n");
+      gx->Print(std::cout << "\nSolution! {1,2,3,4}\n");
       if (Teuchos::nonnull(dgdp))
-        dgdp->Print(cout <<"\nSensitivities {2.0, -8.0}\n");
+        dgdp->Print(std::cout <<"\nSensitivities {2.0, -8.0}\n");
 
       if (Proc == 0)
-        cout <<
+        std::cout <<
           "\n-----------------------------------------------------------------\n";
     }
     TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
@@ -164,9 +167,9 @@ int main(int argc, char *argv[]) {
 
   if (Proc==0) {
     if (overall_status==0)
-      cout << "\nTEST PASSED\n" << endl;
+      std::cout << "\nTEST PASSED\n" << std::endl;
     else
-      cout << "\nTEST Failed:  " << overall_status << endl;
+      std::cout << "\nTEST Failed:  " << overall_status << std::endl;
   }
 
   return status;

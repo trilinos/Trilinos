@@ -153,16 +153,18 @@ int main(int argc, char *argv[])
             "read-encode-sync", "read-encode-async",
             "read-rdma-sync", "read-rdma-async"};
 
-    const int num_nssi_transports = 4;
+    const int num_nssi_transports = 5;
     const int nssi_transport_vals[] = {
             NSSI_RPC_PTL,
             NSSI_RPC_IB,
             NSSI_RPC_GEMINI,
+            NSSI_RPC_BGPDCMF,
             NSSI_RPC_MPI};
     const char * nssi_transport_names[] = {
             "ptl",
             "ib",
             "gni",
+            "bgpdcmf",
             "mpi"
     };
 
@@ -186,6 +188,7 @@ int main(int argc, char *argv[])
     args.timeout = 500;
     args.num_retries = 5;
     args.validate_flag = true;
+    args.kill_server_flag = true;
     args.block_distribution = true;
 
 
@@ -231,6 +234,7 @@ int main(int argc, char *argv[])
         parser.setOption("validate", "no-validate", &args.validate_flag, "Validate the data");
         parser.setOption("num-servers", &args.num_servers, "Number of server processes");
         parser.setOption("num-threads", &args.num_threads, "Number of threads used by each server process");
+        parser.setOption("kill-server", "no-kill-server", &args.kill_server_flag, "Kill the server at the end of the experiment");
         parser.setOption("block-distribution", "rr-distribution", &args.block_distribution,
                 "Use a block distribution scheme to assign clients to servers");
 
@@ -344,6 +348,12 @@ int main(int argc, char *argv[])
 
     log_debug(debug_level, "%d: Starting xfer-service test", rank);
 
+#ifdef TRIOS_ENABLE_COMMSPLITTER
+    if (args.transport == NSSI_RPC_MPI) {
+        MPI_Pcontrol(0);
+    }
+#endif
+
     /**
      * Since this test can be run as a server, client, or both, we need to play some fancy
      * MPI games to get the communicators working correctly.  If we're executing as both
@@ -370,15 +380,19 @@ int main(int argc, char *argv[])
         MPI_Comm_split(MPI_COMM_WORLD, color, rank, &comm);
     }
     else {
-        if (args.client_flag)
+        if (args.client_flag) {
             color=1;
-        else if (args.server_flag)
+            log_debug(debug_level, "rank=%d is a client", rank);
+        }
+        else if (args.server_flag) {
             color=0;
+            log_debug(debug_level, "rank=%d is a server", rank);
+        }
         else {
             log_error(debug_level, "Must be either a client or a server");
             MPI_Abort(MPI_COMM_WORLD, -1);
         }
-        MPI_Comm_dup(MPI_COMM_WORLD, &comm);
+        MPI_Comm_split(MPI_COMM_WORLD, color, rank, &comm);
     }
 
     MPI_Comm_rank(comm, &splitrank);
@@ -566,9 +580,14 @@ int main(int argc, char *argv[])
             MPI_Barrier(comm);
 
             // Tell one of the clients to kill the server
-            if (rank_in_server == 0) {
+            if ((args.kill_server_flag) && (rank_in_server == 0)) {
                 log_debug(debug_level, "%d: Halting xfer service", rank);
                 rc = nssi_kill(&xfer_svc, 0, 5000);
+            }
+            rc=nssi_free_service((nssi_rpc_transport)args.transport, &xfer_svc);
+            if (rc != NSSI_OK) {
+                log_error(xfer_debug_level, "could not free svc description: %s",
+                        nssi_err_str(rc));
             }
         }
 

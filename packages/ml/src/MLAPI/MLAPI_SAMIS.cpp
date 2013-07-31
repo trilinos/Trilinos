@@ -81,8 +81,8 @@ int 	prefetchMtx(
            case  0:/* binary file, should check endian type */
 	            fd = open(fileName, O_RDONLY ); 
                     if (fd < 1) { 
-                        cout   << "[SS] prefetchMtx: could not open file\n";
-                        cout   << "[SS] prefetchMtx: could not open file\n";
+                        std::cout   << "[SS] prefetchMtx: could not open file\n";
+                        std::cout   << "[SS] prefetchMtx: could not open file\n";
                         return 2; 
                     }
 //
@@ -90,19 +90,19 @@ int 	prefetchMtx(
 //
                     er = read(fd, &pad0, szInt); 
                     if (er != (ssize_t)szInt) {
-                        cout   << "[SS] prefetchMtx: read pad failed\n";
+                        std::cout   << "[SS] prefetchMtx: read pad failed\n";
                         return 2; 
                     }
                     if (pad0 != 4*(int)szInt) { 
-                        cout   << "[EE] prefetchMtx: incorrect bin format\n";
+                        std::cout   << "[EE] prefetchMtx: incorrect bin format\n";
                         return 1; 
                     }
 
 		    er = read(fd, ibuf, 4*szInt);  
 
                     if (er != (ssize_t) (4*szInt)) {
-                        cout   << "[SS] prefetchMtx: read failed\n";
-                        cout         << "[SS] prefetchMtx: read failed\n"; 
+                        std::cout   << "[SS] prefetchMtx: read failed\n";
+                        std::cout         << "[SS] prefetchMtx: read failed\n"; 
                         return 2; 
                     }
                     nf = ibuf[0]; 
@@ -113,11 +113,11 @@ int 	prefetchMtx(
                     er = read(fd, &pad1, szInt); 
 
                     if (er != (ssize_t)szInt) {
-                        cout   << "[SS] prefetchMtx: read pad failed\n";
+                        std::cout   << "[SS] prefetchMtx: read pad failed\n";
                         return 2; 
                     }
                     if (pad1 != pad0) { 
-                        cout   << "[SS] prefetchMtx: file corrupt ?\n";
+                        std::cout   << "[SS] prefetchMtx: file corrupt ?\n";
                         return 2; 
                     }
                     
@@ -126,7 +126,7 @@ int 	prefetchMtx(
            case  1:/* ASCII file in the (nf, m, n, s; x; r; v) format  */
                     fdS.open(fileName); 
                     if (fdS.fail()) {
-                        cout   << "[SS] prefetchMtx: could not open file " 
+                        std::cout   << "[SS] prefetchMtx: could not open file " 
                                << fileName << "\n";
                         return 2; 
                     }
@@ -138,7 +138,7 @@ int 	prefetchMtx(
 	            fdS.close(); 
 		    break; 
 	   default: /* invalid entry */
-                    cout   << "[SS] prefetchMtx: invalid ascii\n";  
+                    std::cout   << "[SS] prefetchMtx: invalid ascii\n";  
 	            return 2; 
 	}
 
@@ -209,8 +209,8 @@ int     fetchMtx(
         }
 
         if (nf < 1   || m < 1 || n < 1 || s < 1) { 
-            cout << "[SS] fetchMtx: invalid mtx params: nf=" << nf
-                 << " m=" << m << " n=" << n << " s=" << s << endl;
+            std::cout << "[SS] fetchMtx: invalid mtx params: nf=" << nf
+                 << " m=" << m << " n=" << n << " s=" << s << std::endl;
             abort();
         }
 
@@ -218,7 +218,7 @@ int     fetchMtx(
            case  0:/* binary file, should check endian type */
 	            fd = open(fileName, O_RDONLY ); 
                     if (fd < 1) { 
-                        cout   << "[SS] fetchMtx: could not open file\n";  
+                        std::cout   << "[SS] fetchMtx: could not open file\n";  
                         return 2; 
                     }
 //
@@ -228,11 +228,11 @@ int     fetchMtx(
                     er = read(fd, &pad0, szInt); 
 
                     if (er != (ssize_t)szInt) {
-                        cout   << "[SS] fetchMtx: read pad failed\n";
+                        std::cout   << "[SS] fetchMtx: read pad failed\n";
                         return 2; 
                     }
                     if (pad0 != (int)sz) { 
-                        cout   << "[SS] fetchMtx: mtx in wrong bin format\n";
+                        std::cout   << "[SS] fetchMtx: mtx in wrong bin format\n";
                         close(fd); 
                         return 1; 
                     }
@@ -240,22 +240,22 @@ int     fetchMtx(
 		    er = read(fd, ibuf, sz);  
 
                     if (er != (ssize_t)sz) {
-                        cout   << "[SS] fetchMtx: read failed\n"; 
+                        std::cout   << "[SS] fetchMtx: read failed\n"; 
                         return 2; 
                     }
 	            if (ibuf[0]!=nf || ibuf[1]!=m || ibuf[2]!=n || ibuf[3]!=s) {
-                        cout   << "[SS] fetchMtx: incompatible mtx file !\n";
+                        std::cout   << "[SS] fetchMtx: incompatible mtx file !\n";
                         return 2; 
                     }
                     
                     er = read(fd, &pad1, szInt); 
 
                     if (er != (ssize_t)szInt) {
-                        cout   << "[SS] fetchMtx: read pad1 failed\n";
+                        std::cout   << "[SS] fetchMtx: read pad1 failed\n";
                         return 2; 
                     }
                     if (pad1 != pad0) { 
-                        cout   << "[SS] fetchMtx: invalid pad1\n"; 
+                        std::cout   << "[SS] fetchMtx: invalid pad1\n"; 
                         return 2; 
                     }
 //
@@ -265,7 +265,7 @@ int     fetchMtx(
 
                     for (i=0; i<6; i++) { 
                          if (recordMark1[i] != recordMark0[i]) { 
-                             cout   << "[SS] fetchMtx: invalid filemark!\n";
+                             std::cout   << "[SS] fetchMtx: invalid filemark!\n";
                              return 2; 
                          }
                     }
@@ -277,7 +277,7 @@ int     fetchMtx(
                     er = read(fd, &pad1, szInt      ); 
 			
                     if (s != x[n] - x[0]) { 
-                        cout   << "[EE] fetchMtx: param s != x[n] - x[0]\n";
+                        std::cout   << "[EE] fetchMtx: param s != x[n] - x[0]\n";
                         return 2; 
                     }
 //
@@ -286,7 +286,7 @@ int     fetchMtx(
                     er = read(fd, recordMark1, 6*szInt); 
                     for (i=0; i<6; i++) { 
                          if (recordMark1[i] != recordMark0[i]) { 
-                             cout   << "[SS] fetchMtx: invalid filemark!\n";
+                             std::cout   << "[SS] fetchMtx: invalid filemark!\n";
                              return 2; 
                          }
                     }
@@ -302,7 +302,7 @@ int     fetchMtx(
                     er = read(fd, recordMark1, 6*szInt); 
                     for (i=0; i<6; i++) { 
                          if (recordMark1[i] != recordMark0[i]) { 
-                             cout   << "[SS] fetchMtx: invalid filemark!\n";
+                             std::cout   << "[SS] fetchMtx: invalid filemark!\n";
                              return 2; 
                          }
                     }
@@ -318,7 +318,7 @@ int     fetchMtx(
            case  1:/* ASCII file in the (nf, m, n, s; x; r; v) format */
                     fdS.open(fileName); 
                     if (fdS.fail()) { 
-                        cout << "[SS] fetchMtx: could not open file\n";
+                        std::cout << "[SS] fetchMtx: could not open file\n";
                         return 2;
                     }
                     fdS >> ibuf[0]; 
@@ -326,7 +326,7 @@ int     fetchMtx(
                     fdS >> ibuf[2]; 
                     fdS >> ibuf[3]; 
 	            if (ibuf[0]!=nf || ibuf[1]!=m || ibuf[2]!=n || ibuf[3]!=s) {
-                        cout   << "[SS] fetchMtx: incompatible mtx file !\n";
+                        std::cout   << "[SS] fetchMtx: incompatible mtx file !\n";
                         return 2; 
                     }
                     for(i=0; i<n+1;     i++) fdS >> x[i];
@@ -336,11 +336,11 @@ int     fetchMtx(
                     fdS.close(); 
 		    break; 
 	   default:/* invalid entry */
-                    cout   << "[SS] fetchMtx: invalid ascii\n";  
+                    std::cout   << "[SS] fetchMtx: invalid ascii\n";  
 	            return 2; 
 	}
 
-        cout << "[II] extracted matrix from file " << fileName << endl;
+        std::cout << "[II] extracted matrix from file " << fileName << std::endl;
 	
   	return 0; 
 }
@@ -395,7 +395,7 @@ int 	prefetchKers(
            case  0:/* Kernels are stored in a binary file */ 
                     fd = open(fileName, O_RDONLY); 
                     if (fd <1) { 
-                        cout   << "[SS] prefetchKers: could not open file\n";
+                        std::cout   << "[SS] prefetchKers: could not open file\n";
                         return 2; 
                     }
 //
@@ -406,12 +406,12 @@ int 	prefetchKers(
                     er=read(fd, &pad1, szInt); 
 
                     if (er != (ssize_t)szInt) {
-                        cout << "[SS] prefetchKers: reading failed\n";
+                        std::cout << "[SS] prefetchKers: reading failed\n";
                         abort();
                     }
 
                     if (pad0 != (int)szInt) {
-                        cout   << "[SS] prefetchKers: wrong bin format\n";
+                        std::cout   << "[SS] prefetchKers: wrong bin format\n";
                         close(fd); 
                         return 1; 
                     }
@@ -433,18 +433,18 @@ int 	prefetchKers(
                     fdS.close();
                     break; 
            default:/* unsupported value of ascii */
-                    cout   << "[SS] prefetchKers: invalid ascii="
-                             << ascii << endl;
+                    std::cout   << "[SS] prefetchKers: invalid ascii="
+                             << ascii << std::endl;
                     exit(1);
 	}
 
-        cout << "[DD]  G0 prefetchKer: got nNod=" << nNod
-             << ", nDof=" << nDof << ", nKer=" << nKer << endl;
+        std::cout << "[DD]  G0 prefetchKer: got nNod=" << nNod
+             << ", nDof=" << nDof << ", nKer=" << nKer << std::endl;
 
 	if (nKer <1 && nNod < 1 || nDof <1) { 
-            cout   << "[SS] prefetchKers: read invalid dimensions\n"; 
-            cout   << " ...    nNod="<<nNod<<" nDof="<<nDof
-                   << " nKer="<<nKer<<endl; 
+            std::cout   << "[SS] prefetchKers: read invalid dimensions\n"; 
+            std::cout   << " ...    nNod="<<nNod<<" nDof="<<nDof
+                   << " nKer="<<nKer<<std::endl; 
             return 2; 
         }
 
@@ -518,8 +518,8 @@ int	fetchKers(
                     f_ker = open(fileName, O_RDONLY); 
             
             	    if (f_ker < 0) { 
-                        cout   << "[SS] fetchKer: could not open file "
-                               << fileName <<endl;
+                        std::cout   << "[SS] fetchKer: could not open file "
+                               << fileName <<std::endl;
                         return 2; 
                     }
              
@@ -528,17 +528,17 @@ int	fetchKers(
                     rs=read(f_ker, &pad1,   szInt   ); 
             
                     if (pad0 != pad1 ) { 
-                        cout   << "[SS] fetchKer: file corrupt\n";
+                        std::cout   << "[SS] fetchKer: file corrupt\n";
                         return 2;  
                     }
             
                     if ( pad0 !=(int)szInt ) { 
-                        cout   << "[EE] fetchKer: wrong-endian format ?\n";
+                        std::cout   << "[EE] fetchKer: wrong-endian format ?\n";
                         return 1;  
                     }
                     if (nnods != nNod) { 
-                        cout   << "[SS] fetchKer: read nnods=" << nnods
-                               << " incosistent W/" << " nNod=" << nNod << endl;
+                        std::cout   << "[SS] fetchKer: read nnods=" << nnods
+                               << " incosistent W/" << " nNod=" << nNod << std::endl;
                         return 2;  
                     }
             
@@ -547,12 +547,12 @@ int	fetchKers(
                     rs=read(f_ker, &pad1, szInt   ); 
             
                     if (nnf != nf) {
-                        cout   << "[SS] fetchKer: read nnf="
+                        std::cout   << "[SS] fetchKer: read nnf="
                                << nnf << " incosistent\n";
                         return 2;  
                     }
                     if (pad0 != pad1 ) { 
-                        cout   << "[SS] fetchKer: file corrupt\n";
+                        std::cout   << "[SS] fetchKer: file corrupt\n";
                         return 2;  
                     }
             
@@ -562,16 +562,16 @@ int	fetchKers(
             
                     if (nkers != nKer) {
                         if (nKer == limKer) {
-                            cout   << "[WW] fetchKer: limiting nkers="
-                                   << nkers<< " to " << nKer << endl;
+                            std::cout   << "[WW] fetchKer: limiting nkers="
+                                   << nkers<< " to " << nKer << std::endl;
                         } else { 
-                            cout   << "[SS] fetchKer: read nkers="
+                            std::cout   << "[SS] fetchKer: read nkers="
                                    << nkers<<" incosistent\n";
                             return 2;  
                         }
                     }
                     if (pad0 != pad1 ) {
-                        cout   << "[SS] fetchKer: file corrupt\n";
+                        std::cout   << "[SS] fetchKer: file corrupt\n";
                         return 2;  
                     }
             
@@ -582,7 +582,7 @@ int	fetchKers(
                          rs=read(f_ker, &pad0, szInt); 
             
                          if ( pad0 != (int)szKer ) {  
-                              cout   << "[SS] fetchKer: file corrupt\n";
+                              std::cout   << "[SS] fetchKer: file corrupt\n";
                               return 2;  
                          }
             
@@ -590,7 +590,7 @@ int	fetchKers(
                          rs=read(f_ker, &pad1,             szInt); 
                     }
                     if (pad0 != pad1 ) { 
-                        cout   << "[SS] fetchKer: file corrupt\n";
+                        std::cout   << "[SS] fetchKer: file corrupt\n";
                         return 2;  
                     }
             
@@ -600,22 +600,22 @@ int	fetchKers(
            case  2:/* Kernels are stored in a ASCII file */ 
                     fdS.open(fileName);
                     if(fdS.fail()) { 
-                        cout << "[SS] fetchKer: failed to open file\n";
+                        std::cout << "[SS] fetchKer: failed to open file\n";
                         abort();
                     }
 
                     fdS >> nnods >> nnf >> nkers;
 
                     if (nnods!=nNod || nnf != nf ) {
-                        cout << "[SS] fetchKer: header inconsistency\n";
+                        std::cout << "[SS] fetchKer: header inconsistency\n";
                         abort();
                     }
                     if (nkers != nKer) { 
                         if (nKer == limKer) {
-                            cout   << "[WW] fetchKer: limiting nkers="
-                                   << nkers<< " to " << nKer << endl;
+                            std::cout   << "[WW] fetchKer: limiting nkers="
+                                   << nkers<< " to " << nKer << std::endl;
                         } else { 
-                            cout   << "[SS] fetchKer: read nkers="
+                            std::cout   << "[SS] fetchKer: read nkers="
                                    << nkers<<" incosistent\n";
                             return 2;  
                         }
@@ -629,7 +629,7 @@ int	fetchKers(
                     fdS.close();
                     break;
            default:
-                    cout << "[SS] fetchKer: illegal ascii=" << ascii << endl;
+                    std::cout << "[SS] fetchKer: illegal ascii=" << ascii << std::endl;
                     abort();
         }
 

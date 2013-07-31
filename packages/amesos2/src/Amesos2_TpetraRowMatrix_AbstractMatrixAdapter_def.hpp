@@ -142,6 +142,34 @@ namespace Amesos2 {
     return this->mat_->getNodeNumEntries();
   }
 
+  template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node, class DerivedMat>
+  typename AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar,
+		      LocalOrdinal,
+		      GlobalOrdinal,
+		      Node>,
+    DerivedMat>::global_size_t
+  AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
+    DerivedMat>::getGlobalNumRows_impl() const
+  {
+    return this->mat_->getGlobalNumRows();
+  }
+
+  template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node, class DerivedMat>
+  typename AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar,
+		      LocalOrdinal,
+		      GlobalOrdinal,
+		      Node>,
+    DerivedMat>::global_size_t
+  AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
+    DerivedMat>::getGlobalNumCols_impl() const
+  {
+    return this->mat_->getGlobalNumCols();
+  }
+
   template <typename Scalar,
 	    typename LocalOrdinal,
 	    typename GlobalOrdinal,

@@ -1,13 +1,13 @@
 /*
-// @HEADER
+//@HEADER
 // ***********************************************************************
-// 
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
-// 
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+//
+//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//                 Copyright (2009) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,10 +35,10 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
-// ************************************************************************
-// @HEADER
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ***********************************************************************
+//@HEADER
 */
 
 #ifndef _build_solver_hpp_
@@ -61,7 +61,6 @@ build_solver(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
   using Teuchos::ParameterList;
   using Teuchos::rcpFromRef;
 
-  typedef Belos::LinearProblem<Scalar,MV,OP> BLinProb;
   Teuchos::RCP<Belos::SolverManager<Scalar,MV,OP> > solver;
 
   RCP<ParameterList> bparams = Teuchos::sublist(rcpFromRef(test_params),"Belos");

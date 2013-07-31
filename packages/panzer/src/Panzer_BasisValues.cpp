@@ -60,10 +60,10 @@ setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& layout,
   Teuchos::RCP<const panzer::PureBasis> basisDesc = layout->getBasis();
 
   // for convience pull out basis and quadrature information
-  int num_quad = layout->getNumPoints();
-  int dim      = basisDesc->getDimension();
-  int card     = basisDesc->getCardinality();
-  int numcells = basisDesc->getNumCells();
+  int num_quad = layout->numPoints();
+  int dim      = basisDesc->dimension();
+  int card     = basisDesc->cardinality();
+  int numcells = basisDesc->numCells();
   panzer::PureBasis::EElementSpace elmtspace = basisDesc->getElementSpace();
   Teuchos::RCP<const shards::CellTopology> cellTopo = basisDesc->getCellTopology();
   

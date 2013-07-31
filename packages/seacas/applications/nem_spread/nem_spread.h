@@ -6,7 +6,7 @@
 #include "globals.h"
 
 #define UTIL_NAME "nem_spread"
-#define VER_STR   "6.09 (2012/11/26)"
+#define VER_STR   "6.10 (2013/03/29)"
 
 extern void check_exodus_error (int, const char *);
 extern double second               (void);
@@ -56,7 +56,7 @@ template <typename T, typename INT>
 			 INT *Num_Elems_In_SS,
 			 INT *Num_Elems_In_EB);
 
-  void write_var_timestep(int exoid, int proc, int time_step, int blk_cnt,
+  void write_var_timestep(int exoid, int proc, int time_step, 
 			  INT *eb_ids_global, INT *ss_ids_global, INT *ns_ids_global);
   
   void comm_lb_data (int iproc, int proc_for,
@@ -84,25 +84,25 @@ template <typename T, typename INT>
   int read_var_param (int exoid, int max_name_length);
 
   int broadcast_var_param (Restart_Description<T> *restart, int max_name_length);
-  int read_vars(int exoid, int index, int blk_cnt, INT *eb_ids,
+  int read_vars(int exoid, int index, INT *eb_ids,
 		INT *eb_cnts, INT ***eb_map_ptr, INT **eb_cnts_local,
 		INT *ss_ids, INT *ss_cnts, INT *ns_ids, INT *ns_cnts);
-  int read_elem_vars(int exoid, int index, int blk_cnt, INT *eb_ids,
+  int read_elem_vars(int exoid, int index, INT *eb_ids,
 		     INT *eb_cnts, INT ***eb_map_ptr,
 		     INT **eb_cnts_local);
-  int read_elem_vars_1(int exoid, int index, int blk_cnt, INT *eb_ids,
+  int read_elem_vars_1(int exoid, int index, INT *eb_ids,
 		       INT *eb_cnts, INT ***eb_map_ptr,
 		       INT **eb_cnts_local, int iblk,
 		       int eb_offset, INT *local_offset);
-  int read_sset_vars(int exoid, int index, int blk_cnt, INT *ss_ids, INT *ss_cnts);
-  int read_sset_vars_1(int exoid, int index, int blk_cnt, INT *ss_ids,
+  int read_sset_vars(int exoid, int index, INT *ss_ids, INT *ss_cnts);
+  int read_sset_vars_1(int exoid, int index, INT *ss_ids,
 		       INT *ss_cnts, int iblk);
-  int read_nset_vars(int exoid, int index, int blk_cnt, INT *ns_ids,
+  int read_nset_vars(int exoid, int index, INT *ns_ids,
 		     INT *ns_cnts);
-  int read_nset_vars_1(int exoid, int index, int blk_cnt, INT *ns_ids,
+  int read_nset_vars_1(int exoid, int index, INT *ns_ids,
 		       INT *ns_cnts, int iblk);
-  int read_nodal_vars_1 (int exoid, int index, int blk_cnt);
-  int read_nodal_vars (int exoid, int index, int blk_cnt);
+  int read_nodal_vars_1 (int exoid, int index);
+  int read_nodal_vars (int exoid, int index);
   int compare_mesh_param (int exoid);
 
   int int64db;

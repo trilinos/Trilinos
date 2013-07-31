@@ -151,23 +151,29 @@ using std::floor;
 
 #include <iomanip>
 
-using std::string;
+//using std::string;
 using std::memcpy;
 using std::strcpy;
 using std::strcmp;
 using std::strlen;
 using std::strchr;
 using std::strtok;
+/*
+For xlC 12.1, malloc and related functions are provided outside the std
+namespace, so the below three using statements cause conflicting declarations.
+*/
+#if !defined __IBMCPP__ || ( __IBMCPP__ != 1210 )
 using std::realloc;
 using std::malloc;
 using std::free;
+#endif
 
-using std::istream;
-using std::ostream;
-using std::cerr;
-using std::cout;
-using std::endl;
-using std::flush;
+//using std::istream;
+//using std::ostream;
+//using std::cerr;
+//using std::cout;
+//using std::endl;
+//using std::flush;
 
 using std::abort;
 using std::exit;
@@ -231,13 +237,13 @@ const int DefaultTracebackMode = 0;
 #include <math.h>
 #include <string>
 
-using std::string;
-using std::istream;
-using std::ostream;
-using std::cerr;
-using std::cout;
-using std::endl;
-using std::flush;
+//using std::string;
+//using std::istream;
+//using std::ostream;
+//using std::cerr;
+//using std::cout;
+//using std::endl;
+//using std::flush;
 
 #else
 
@@ -248,13 +254,13 @@ using std::flush;
 #include <cmath>
 #include <string>
 
-using std::string;
-using std::istream;
-using std::ostream;
-using std::cerr;
-using std::cout;
-using std::endl;
-using std::flush;
+//using std::string;
+//using std::istream;
+//using std::ostream;
+//using std::cerr;
+//using std::cout;
+//using std::endl;
+//using std::flush;
 
 #endif
 
@@ -300,7 +306,7 @@ const int DefaultTracebackMode = 1;
                               if ((epetra_err < 0 && Epetra_Object::GetTracebackMode() > 0) || \
                                   (epetra_err > 0 && Epetra_Object::GetTracebackMode() > 1)) { \
                       Epetra_Object::GetTracebackStream() << "Epetra ERROR " << epetra_err << ", " \
-                           << __FILE__ << ", line " << __LINE__ << endl; }\
+                           << __FILE__ << ", line " << __LINE__ << std::endl; }\
                       if (epetra_err != 0) return(epetra_err);  }\
                    }
 
@@ -308,14 +314,14 @@ const int DefaultTracebackMode = 1;
 
 #define EPETRA_CHK_PTR(a) { if (a == 0 && Epetra_Object::GetTracebackMode() > 0) { \
                       Epetra_Object::GetTracebackStream() << "Epetra returning zero pointer " << ", " \
-                           << __FILE__ << ", line " << __LINE__ << endl; } \
+                           << __FILE__ << ", line " << __LINE__ << std::endl; } \
                       return(a); \
                    }
 // Extension of same macro for reference, returns a default reference
 
 #define EPETRA_CHK_REF(a) { if (Epetra_Object::GetTracebackMode() > 0) {\
                       Epetra_Object::GetTracebackStream() << "Epetra returning default reference " << ", " \
-                           << __FILE__ << ", line " << __LINE__ << endl; } \
+                           << __FILE__ << ", line " << __LINE__ << std::endl; } \
                       return(a); \
                    }
 

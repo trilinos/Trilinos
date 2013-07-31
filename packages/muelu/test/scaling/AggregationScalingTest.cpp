@@ -69,12 +69,6 @@
 #include <MueLu_UseDefaultTypes.hpp>
 #include <MueLu_UseShortNames.hpp>
 
-#include <BelosConfigDefs.hpp>
-#include <BelosLinearProblem.hpp>
-#include <BelosBlockCGSolMgr.hpp>
-#include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
-#include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
-
 int main(int argc, char *argv[]) {
   using Teuchos::RCP; // reference count pointers
   using Teuchos::rcp;

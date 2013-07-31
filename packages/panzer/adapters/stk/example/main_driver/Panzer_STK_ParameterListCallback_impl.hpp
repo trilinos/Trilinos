@@ -51,7 +51,7 @@ template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::ParameterListCallback(
                                              const std::string & coordFieldName,
                                              const std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fps,
-                                             const Teuchos::RCP<const panzer_stk::STKConnManager> & connManager, 
+                                             const Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > & connManager, 
                                              const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi)
    : coordFieldName_(coordFieldName), fieldPatterns_(fps), connManager_(connManager), ugi_(ugi), coordinatesBuilt_(false)
 { }
@@ -121,6 +121,8 @@ void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::buildArrayToVecto
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinates()
 {
+   TEUCHOS_ASSERT(fieldPatterns_.size()>0); // must be at least one field pattern
+
    std::map<std::string,Intrepid::FieldContainer<double> > data;
 
    std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> >::const_iterator itr; 
@@ -133,8 +135,23 @@ void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinates(
       Intrepid::FieldContainer<double> & fieldData = data[blockId];
       fieldData.resize(connManager_->getElementBlock(blockId).size(),fieldPattern->numberIds());
 
-      // get degree of freedom coordiantes
-      connManager_->getDofCoords(blockId,*fieldPattern,localCellIds,fieldData);
+      if(fieldPattern->supportsInterpolatoryCoordinates()) {
+         // get degree of freedom coordiantes
+         connManager_->getDofCoords(blockId,*fieldPattern,localCellIds,fieldData);
+      }
+      else {
+         Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+         out.setOutputToRootOnly(-1);
+         out << "WARNING: In ParameterListCallback::buildCoordinates(), the Intrepid::FieldPattern in "
+             << "block \"" << blockId << "\" does not support interpolatory coordinates. "
+             << "This may be fine if coordinates are not actually needed. However if they are then bad things "
+             << "will happen. Enjoy!" << std::endl;
+
+         coordinatesBuilt_ = true;
+         return;
+      }
+
+      // std::cout << "BUILDING: " << blockId << ": " << data[blockId].rank() << " " << data[blockId].size() << std::endl;
    }
 
    Teuchos::RCP<Tpetra::MultiVector<double,int,GlobalOrdinalT,Node> > resultVec 

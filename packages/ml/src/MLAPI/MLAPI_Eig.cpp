@@ -76,13 +76,13 @@ double MaxEigAnasazi(const Operator& Op, const bool DiagonalScaling)
 
   double MaxEigen = 0.0;
 
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAxI) && defined(HAVE_ML_TEUCHOS)
   bool DiagScal;
   if (DiagonalScaling)
     DiagScal = ML_TRUE;
   else
     DiagScal = ML_FALSE;
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAxI) && defined(HAVE_ML_TEUCHOS)
   ML_Anasazi_Get_SpectralNorm_Anasazi(Op.GetML_Operator(), 0, 10, 1e-5,
                                       ML_FALSE, DiagScal, &MaxEigen);
 #else

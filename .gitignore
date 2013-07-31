@@ -16,7 +16,7 @@ doxygen_objdb_*.tmp
 
 # Trilinos extra repos
 /preCopyrightTrilinos/
-/Panzer/
+/Drekar/
 /DrekarResearch/
 /LIMEExt/
 /TerminalApplication/
@@ -33,6 +33,9 @@ doxygen_objdb_*.tmp
 /Coupler/
 /DataTransferKit/
 /TeuchosWrappersExt
+
+# RPI SCOREC extra repos
+/SCOREC
 
 # Ignore gtags generated files
 /GPATH

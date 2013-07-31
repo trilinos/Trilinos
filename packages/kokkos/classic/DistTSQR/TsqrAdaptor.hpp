@@ -82,7 +82,7 @@ namespace TSQR {
     /// \c TsqrTypeAdaptor to figure out which variant of TSQR to use on
     /// the given multivector type.  For example, with
     /// \c Tpetra::MultiVector<S, LO, GO, NodeType>, if NodeType is
-    /// \c Kokkos::TBBNode, the TBB-parallel intranode variant of TSQR
+    /// \c KokkosClassic::TBBNode, the TBB-parallel intranode variant of TSQR
     /// will be used.  The caller is responsible for constructing the
     /// intranode and internode TSQR objects.
     ///

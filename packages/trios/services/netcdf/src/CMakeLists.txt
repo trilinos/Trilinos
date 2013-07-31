@@ -55,16 +55,9 @@ SET(HEADERS "")
 SET(NONINSTALLHEADERS "")
 SET(SOURCES "")
 
-INCLUDE_DIRECTORIES(BEFORE SYSTEM ${CMAKE_CURRENT_BINARY_DIR})
-
-############# Special exception for rpcgen extra commas in enum ##########
-IF (CMAKE_COMPILER_IS_GNUCXX)
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive")
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${CMAKE_CURRENT_BINARY_DIR}")
-  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -isystem ${CMAKE_CURRENT_BINARY_DIR}")
-ENDIF (CMAKE_COMPILER_IS_GNUCXX)
-
-############# COMMON ##########################
+# Need to include the source dir so we can find aggregation.h
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 # The rpcgen files should be treated as system files to avoid annoying warnings
 TriosProcessXDR(${CMAKE_CURRENT_SOURCE_DIR}/netcdf_args.x)

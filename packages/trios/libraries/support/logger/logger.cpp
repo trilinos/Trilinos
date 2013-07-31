@@ -54,12 +54,21 @@
  *
  */
 
+#include "Trios_config.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
 #include <iostream>
 #include <sstream>
+
+#ifdef HAVE_TRIOS_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_TRIOS_SYSCALL_H
+#include <syscall.h>
+#endif
 
 #include "Trios_logger.h"
 #include "Trios_threads.h"
@@ -129,7 +138,7 @@ int logger_init(const log_level debug_level,  const char *logfile)
     }
 
     /* initialize the logfile */
-    if (logfile == NULL) {
+    if ((logfile == NULL) || (logfile[0] == '\0')) {
         logger_set_file(stdout);
     }
     else if (strcasecmp("stdout", logfile) == 0) {
@@ -223,11 +232,20 @@ void log_output(const char *prefix,
 
     va_start(ap, msg);
 
+#ifdef HAVE_TRIOS_GETTID
+    sprintf(buf1, "%s [%s:%s:%d:t%lu]: ",
+            prefix,
+            func_name,
+            (file == NULL) ? file_name : &(file[1]),
+            line_num,
+            syscall(SYS_gettid));
+#else
     sprintf(buf1, "%s [%s:%s:%d]: ",
             prefix,
             func_name,
             (file == NULL) ? file_name : &(file[1]),
             line_num);
+#endif
 
     vsprintf(buf2, msg, ap);
     logger_mutex_lock();

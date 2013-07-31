@@ -1,14 +1,15 @@
 # @HEADER
 # ************************************************************************
 #
-#            Trilinos: An Object-Oriented Solver Framework
-#                 Copyright (2001) Sandia Corporation
+#            TriBITS: Tribial Build, Integrate, and Test System
+#                    Copyright 2013 Sandia Corporation
 #
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+# the U.S. Government retains certain rights in this software.
 #
-# Copyright (2001) Sandia Corporation. Under the terms of Contract
-# DE-AC04-94AL85000, there is a non-exclusive license for use of this
-# work by or on behalf of the U.S. Government.  Export of this program
-# may require a license from the United States Government.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
 #
 # 1. Redistributions of source code must retain the above copyright
 # notice, this list of conditions and the following disclaimer.
@@ -32,23 +33,6 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# NOTICE:  The United States Government is granted for itself and others
-# acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
-# license in this data to reproduce, prepare derivative works, and
-# perform publicly and display publicly.  Beginning five (5) years from
-# July 25, 2001, the United States Government is granted for itself and
-# others acting on its behalf a paid-up, nonexclusive, irrevocable
-# worldwide license in this data to reproduce, prepare derivative works,
-# distribute copies to the public, perform publicly and display
-# publicly, and to permit others to do so.
-#
-# NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
-# OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
-# ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
-# RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
-# INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
-# THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
 #
 # ************************************************************************
 # @HEADER
@@ -85,6 +69,7 @@ class MockOptions:
     self.extraReposType = ""
     self.extraRepos = ""
     self.ignoreMissingExtraRepos = ""
+    self.withCmake = "cmake"
 
 
 def assertGrepFileForRegexStrList(testObject, testName, fileName, regexStrList, verbose):
@@ -422,7 +407,8 @@ def run_extrarepo_test(testObject, testName, extraReposFile, expectedReposList, 
   extraCmakeVars=None, expectedErrOutput=None \
   ):
   extraReposPythonOutFile = os.getcwd()+"/"+testName+".py"
-  cmnd = "cmake"+ \
+  global g_withCmake
+  cmnd = "\""+g_withCmake+"\""+ \
     " -DPROJECT_SOURCE_DIR="+mockProjectBaseDir+ \
     " -DTRIBITS_BASE_DIR="+tribitsBaseDir
   if extraCmakeVars:
@@ -633,6 +619,7 @@ def test_TribitsGitRepos_run_case(testObject, testName, inOptions, \
   consoleRegexMatches=None, consoleRegexNotMatches=None, \
   exceptionRegexMatches=None \
   ):
+  inOptions.withCmake = g_withCmake
   currDir = os.getcwd()
   if os.path.exists(testName):
     runSysCmnd("rm -rf "+testName)
@@ -778,7 +765,7 @@ class test_TribitsGitRepos(unittest.TestCase):
       GitRepo('preCopyrightTrilinos', 'preCopyrightTrilinos', "GIT", True),
       ]
     consoleRegexMatches = \
-      "WARNING!  Ignoring missing extra repo .MissingRepo. as requested since\n"
+      "WARNING: Ignoring missing extra repo .MissingRepo. as requested since\n"
     consoleRegexNotMatches = \
       "Adding extra Continuous repository MissingRepo"
     test_TribitsGitRepos_run_case(self, testName, inOptions, expectedPass, \
@@ -1041,6 +1028,10 @@ g_cmndinterceptsPullPasses = \
   g_cmndinterceptsStatusPullPasses \
   +g_cmndinterceptsDiffOnlyPasses
 
+g_cmndinterceptsNoChangesPullPasses = \
+  g_cmndinterceptsStatusPullPasses \
+  +g_cmndinterceptsDiffOnlyNoChangesPasses
+
 g_cmndinterceptsConfigPasses = \
   "IT: \./do-configure; 0; 'do-configure passed'\n"
 
@@ -1083,25 +1074,11 @@ g_cmndinterceptsFinalPushPasses = \
   g_cmnginterceptsEgLogCmnds+ \
   g_cmndinterceptsAmendCommitPasses+ \
   g_cmndinterceptsLogCommitsPasses+ \
-  "IT: cat modifiedFiles.out; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n"\
   "IT: eg push; 0; 'push passes'\n"
-
-g_cmndinterceptsCatModifiedFilesPasses = \
-  "IT: cat modifiedFiles.out; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n"
-
-g_cmndinterceptsCatModifiedFilesNoChanges = \
-  "IT: cat modifiedFiles.out; 0; ''\n"
-
-g_cmndinterceptsCatModifiedFilesPreCoprightTrilinosPasses = \
-  "IT: cat modifiedFiles.preCopyrightTrilinos.out; 0; 'M\tteko/CMakeLists.txt'\n"
-
-g_cmndinterceptsCatModifiedFilesPreCoprightTrilinosNoChanges = \
-  "IT: cat modifiedFiles.preCopyrightTrilinos.out; 0; ''\n"
 
 g_cmndinterceptsFinalPushNoAppendTestResultsPasses = \
   "IT: eg pull && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
   +g_cmndinterceptsLogCommitsPasses\
-  +g_cmndinterceptsCatModifiedFilesPasses\
   +g_cmndinterceptsPushOnlyPasses
 
 g_cmndinterceptsFinalPushNoRebasePasses = \
@@ -1109,7 +1086,6 @@ g_cmndinterceptsFinalPushNoRebasePasses = \
   +g_cmnginterceptsEgLogCmnds+ \
   "IT: eg commit --amend -F .*; 0; 'Amending the last commit passed'\n" \
   +g_cmndinterceptsLogCommitsPasses\
-  +g_cmndinterceptsCatModifiedFilesPasses\
   +g_cmndinterceptsPushOnlyPasses
 
 g_cmndinterceptsSendBuildTestCaseEmail = \
@@ -1119,7 +1095,7 @@ g_cmndinterceptsSendFinalEmail = \
   "IT: mailx -s .*; 0; 'Do not really send email '\n"
 
 g_cmndinterceptsExtraRepo1ThroughStatusPasses = \
-  "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+  "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
   +g_cmndinterceptsCurrentBranch \
   +g_cmndinterceptsStatusPasses \
   +g_cmndinterceptsStatusPasses
@@ -1133,8 +1109,68 @@ g_cmndinterceptsExtraRepo1DoAllThroughTest = \
   +g_cmndinterceptsConfigBuildTestPasses \
   +g_cmndinterceptsSendBuildTestCaseEmail
 
+g_cmndinterceptsExtraRepo1TrilinosChangesDoAllThroughTest = \
+  g_cmndinterceptsExtraRepo1ThroughStatusPasses \
+  +g_cmndinterceptsPullOnlyPasses \
+  +g_cmndinterceptsPullOnlyPasses \
+  +g_cmndinterceptsDiffOnlyPasses \
+  +g_cmndinterceptsDiffOnlyNoChangesPasses \
+  +g_cmndinterceptsConfigBuildTestPasses \
+  +g_cmndinterceptsSendBuildTestCaseEmail
+
+g_cmndinterceptsExtraRepo1ExtraRepoChangesDoAllThroughTest = \
+  g_cmndinterceptsExtraRepo1ThroughStatusPasses \
+  +g_cmndinterceptsPullOnlyPasses \
+  +g_cmndinterceptsPullOnlyPasses \
+  +g_cmndinterceptsDiffOnlyNoChangesPasses \
+  +g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos \
+  +g_cmndinterceptsConfigBuildTestPasses \
+  +g_cmndinterceptsSendBuildTestCaseEmail
+
+g_cmndinterceptsExtraRepo1NoChangesDoAllThroughTest = \
+  g_cmndinterceptsExtraRepo1ThroughStatusPasses \
+  +g_cmndinterceptsPullOnlyPasses \
+  +g_cmndinterceptsPullOnlyPasses \
+  +g_cmndinterceptsDiffOnlyNoChangesPasses \
+  +g_cmndinterceptsDiffOnlyNoChangesPasses \
+  +g_cmndinterceptsConfigBuildTestPasses \
+  +g_cmndinterceptsSendBuildTestCaseEmail
+
 g_cmndinterceptsExtraRepo1DoAllUpToPush = \
   g_cmndinterceptsExtraRepo1DoAllThroughTest \
+  +g_cmndinterceptsFinalPullRebasePasses \
+  +g_cmndinterceptsFinalPullRebasePasses \
+  +g_cmnginterceptsEgLogCmnds \
+  +g_cmndinterceptsAmendCommitPasses \
+  +g_cmnginterceptsEgLogCmnds \
+  +g_cmndinterceptsAmendCommitPasses \
+  +g_cmndinterceptsLogCommitsPasses \
+  +g_cmndinterceptsLogCommitsPasses
+
+g_cmndinterceptsExtraRepo1TrilinosChangesDoAllUpToPush = \
+  g_cmndinterceptsExtraRepo1TrilinosChangesDoAllThroughTest \
+  +g_cmndinterceptsFinalPullRebasePasses \
+  +g_cmndinterceptsFinalPullRebasePasses \
+  +g_cmnginterceptsEgLogCmnds \
+  +g_cmndinterceptsAmendCommitPasses \
+  +g_cmnginterceptsEgLogCmnds \
+  +g_cmndinterceptsAmendCommitPasses \
+  +g_cmndinterceptsLogCommitsPasses \
+  +g_cmndinterceptsLogCommitsPasses
+
+g_cmndinterceptsExtraRepo1ExtraRepoChangesDoAllUpToPush = \
+  g_cmndinterceptsExtraRepo1ExtraRepoChangesDoAllThroughTest \
+  +g_cmndinterceptsFinalPullRebasePasses \
+  +g_cmndinterceptsFinalPullRebasePasses \
+  +g_cmnginterceptsEgLogCmnds \
+  +g_cmndinterceptsAmendCommitPasses \
+  +g_cmnginterceptsEgLogCmnds \
+  +g_cmndinterceptsAmendCommitPasses \
+  +g_cmndinterceptsLogCommitsPasses \
+  +g_cmndinterceptsLogCommitsPasses
+
+g_cmndinterceptsExtraRepo1NoChangesDoAllUpToPush = \
+  g_cmndinterceptsExtraRepo1NoChangesDoAllThroughTest \
   +g_cmndinterceptsFinalPullRebasePasses \
   +g_cmndinterceptsFinalPullRebasePasses \
   +g_cmnginterceptsEgLogCmnds \
@@ -1153,8 +1189,13 @@ g_expectedRegexUpdateWithBuildCasePasses = \
   "Update: Passed\n"
 
 g_expectedRegexConfigPasses = \
-  "Modified file: .packages/teuchos/CMakeLists\.txt\n" \
-  "  => Enabling .Teuchos.!\n" \
+  "Full package enable list:.*Teuchos.*\n" \
+  "Configure passed!\n" \
+  "The configure passed!\n" \
+  "Configure: Passed\n" \
+
+g_expectedRegexExplicitConfigPasses = \
+  "Enabling only the explicitly specified packages .Teuchos.\n" \
   "Configure passed!\n" \
   "The configure passed!\n" \
   "Configure: Passed\n" \
@@ -1228,6 +1269,7 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
     
     cmndArgs = [
       scriptsDir + "/../checkin-test.py",
+      "--with-cmake=\""+g_withCmake+"\"",
       "--project-name=Trilinos",
       "--no-eg-git-version-check",
       "--src-dir="+scriptsDir+"/../package_arch/UnitTests/MockTrilinos",
@@ -1247,7 +1289,7 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
 
     baseCmndInterceptsStr = \
       "FT: .*checkin-test-impl\.py.*\n" \
-      "FT: cmake .*TribitsGetExtraReposForCheckinTest.cmake.*\n" \
+      "FT: .*cmake .*TribitsGetExtraReposForCheckinTest.cmake.*\n" \
       "FT: date\n" \
       "FT: rm [a-zA-Z0-9_/\.]+\n" \
       "FT: touch .*\n" \
@@ -1495,6 +1537,25 @@ class test_checkin_test(unittest.TestCase):
       False)
 
 
+  def test_help_debug_dump(self):
+    testName = "help_debug_dump"
+    checkin_test_run_case(
+      self,
+      testName,
+      "--help",
+      "", # No shell commands!
+      True,
+      "checkin-test.py \[OPTIONS\]\n" \
+      +"thisFilePath\n" \
+      +"thisFileRealAbsBasePath\n" \
+      +"sys.path\n" \
+      +"Loading project configuration from\n" \
+      ,
+      mustHaveCheckinTestOut=False,
+      envVars=["TRIBITS_CHECKIN_TEST_DEBUG_DUMP=ON"]
+      )
+
+
   def test_show_defaults(self):
     testName = "show_defaults"
     checkin_test_run_case(
@@ -1521,7 +1582,8 @@ class test_checkin_test(unittest.TestCase):
       "do_all_push_pass",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      +" --abort-gracefully-if-no-updates --do-all --push" \
+      +" --abort-gracefully-if-no-updates --abort-gracefully-if-no-changes-to-push" \
+      +" --do-all --push" \
       +" --execute-on-ready-to-push=\"ssh -q godel /some/dir/some_command.sh &\"",
       \
       g_cmndinterceptsCurrentBranch \
@@ -1537,7 +1599,7 @@ class test_checkin_test(unittest.TestCase):
       \
       True,
       \
-      "Pulled changes from this repo!\n" \
+      "'': Pulled changes from this repo!\n" \
       +"There where at least some changes pulled!\n" \
       +g_expectedRegexUpdateWithBuildCasePasses \
       +g_expectedRegexConfigPasses \
@@ -1626,7 +1688,6 @@ class test_checkin_test(unittest.TestCase):
       +"IT: "+eg+" log --pretty=format:'%h' currentbranch\^ \^origin/currentbranch; 0; '12345'\n"
       +"IT: "+eg+" commit --amend -F .*; 0; 'Amending the last commit passed'\n"
       +"IT: "+eg+" log --oneline currentbranch \^origin/currentbranch; 0; '54321 Only one commit'\n"
-      +"IT: cat modifiedFiles.out; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n"\
       +"IT: "+eg+" push; 0; 'push passes'\n" \
       +g_cmndinterceptsSendFinalEmail \
       ,
@@ -1717,7 +1778,7 @@ class test_checkin_test(unittest.TestCase):
 
   def test_do_all_default_builds_mpi_debug_then_wipe_clean_pull_pass(self):
 
-    testName = "do_all_default_builds_mpi_debug_then_from_scratch_pull_pass"
+    testName = "do_all_default_builds_mpi_debug_then_wipe_clean_pull_pass"
 
     # Do the build/test only first (ready to push)
     g_test_do_all_default_builds_mpi_debug_pass(self, testName)
@@ -1746,6 +1807,47 @@ class test_checkin_test(unittest.TestCase):
       +"=> A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       +"^NOT READY TO PUSH: Trilinos:\n"
       )
+
+
+  def test_remove_existing_configure_files(self):
+
+    testName = "remove_existing_configure_files"
+
+    testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
+    os.mkdir(testBaseDir+"/MPI_DEBUG")
+    os.mkdir(testBaseDir+"/MPI_DEBUG/CMakeFiles")
+    cmakeCacheFile = testBaseDir+"/MPI_DEBUG/CMakeCache.txt"
+    runSysCmnd("touch "+cmakeCacheFile)
+    cmakeFilesDir = testBaseDir+"/MPI_DEBUG/CMakeFiles"
+    cmakeFilesDummyFile = cmakeFilesDir+"/dummy.txt"
+    runSysCmnd("touch "+cmakeFilesDummyFile)
+
+    checkin_test_run_case(
+      \
+      self,
+      \
+      testName,
+      \
+      " --allow-no-pull --default-builds=MPI_DEBUG" \
+      " --enable-packages=Teuchos --configure", \
+      \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsDiffOnlyPasses \
+      +"FT: rm CMakeCache.txt\n" \
+      +"FT: rm -rf CMakeFiles\n" \
+      +g_cmndinterceptsConfigPasses \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "Enabled Packages: Teuchos\n" \
+      )
+
+    self.assertEqual(os.path.exists(cmakeCacheFile), False)
+    self.assertEqual(os.path.exists(cmakeFilesDir), False)
+    self.assertEqual(os.path.exists(cmakeFilesDummyFile), False)
 
 
   def test_send_email_only_on_failure_do_all_push_pass(self):
@@ -1910,7 +2012,7 @@ class test_checkin_test(unittest.TestCase):
       "--extra-repos=preCopyrightTrilinos --allow-no-pull --without-default-builds" \
       " --extra-builds=MPI_DEBUG_SS --enable-packages=Stalix --configure", \
       \
-      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos \
@@ -1943,7 +2045,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "--extra-repos=preCopyrightTrilinos --allow-no-pull --default-builds=MPI_DEBUG --configure", \
       \
-      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos \
@@ -1980,9 +2082,7 @@ class test_checkin_test(unittest.TestCase):
       " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
       g_cmndinterceptsExtraRepo1DoAllUpToPush \
-      +g_cmndinterceptsCatModifiedFilesPasses \
       +g_cmndinterceptsPushOnlyPasses \
-      +g_cmndinterceptsCatModifiedFilesPreCoprightTrilinosPasses \
       +g_cmndinterceptsPushOnlyPasses \
       +g_cmndinterceptsSendFinalEmail \
       ,
@@ -1993,6 +2093,8 @@ class test_checkin_test(unittest.TestCase):
       +"Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
       +"Enabling .Teko..\n" \
       +"Teko of type SS is being excluded because it is not in the valid list of package types .PS.\n" \
+      +"'': Pulled changes from this repo!\n" \
+      +".preCopyrightTrilinos.: Pulled changes from this repo!\n" \
       +"pullInitial.preCopyrightTrilinos.out\n" \
       +"Update passed!\n"\
       +"All of the tests ran passed!\n" \
@@ -2021,7 +2123,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "--extra-repos=preCopyrightTrilinos --pull --extra-pull-from=somemachine:someotherbranch", \
       \
-      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -2057,16 +2159,16 @@ class test_checkin_test(unittest.TestCase):
       "--make-options=-j3 --ctest-options=-j5" \
       " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
-      g_cmndinterceptsExtraRepo1DoAllUpToPush \
-      +g_cmndinterceptsCatModifiedFilesPasses \
+      g_cmndinterceptsExtraRepo1TrilinosChangesDoAllUpToPush \
       +g_cmndinterceptsPushOnlyPasses \
-      +g_cmndinterceptsCatModifiedFilesPreCoprightTrilinosNoChanges \
       +g_cmndinterceptsSendFinalEmail \
       ,
       \
       True,
       \
-      "Skipping push to .preCopyrightTrilinos. because there are no changes!\n" \
+      "==> ..: Has modified files!\n" \
+      +"==> .preCopyrightTrilinos.: Does .not. have any modified files!\n" \
+      +"Skipping push to .preCopyrightTrilinos. because there are no changes!\n" \
       +"Push passed!\n" \
       +"DID PUSH: Trilinos:\n" \
       +"REQUESTED ACTIONS: PASSED\n" \
@@ -2085,18 +2187,19 @@ class test_checkin_test(unittest.TestCase):
       "extra_repo_1_extra_repo_changes_do_all_push_pass",
       \
       "--make-options=-j3 --ctest-options=-j5" \
+      " --enable-packages=Teuchos" \
       " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
-      g_cmndinterceptsExtraRepo1DoAllUpToPush \
-      +g_cmndinterceptsCatModifiedFilesNoChanges \
-      +g_cmndinterceptsCatModifiedFilesPreCoprightTrilinosPasses \
+      g_cmndinterceptsExtraRepo1ExtraRepoChangesDoAllUpToPush \
       +g_cmndinterceptsPushOnlyPasses \
       +g_cmndinterceptsSendFinalEmail \
       ,
       \
       True,
       \
-      "Skipping push to .. because there are no changes!\n" \
+      "==> ..: Does .not. have any modified files!\n" \
+      +"==> .preCopyrightTrilinos.: Has modified files!\n" \
+      +"Skipping push to .. because there are no changes!\n" \
       +"Push passed!\n" \
       +"DID PUSH: Trilinos:\n" \
       +"REQUESTED ACTIONS: PASSED\n" \
@@ -2128,7 +2231,7 @@ class test_checkin_test(unittest.TestCase):
       "Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
       +"Did not pull any changes from this repo!\n" \
       +"No changes were pulled!\n" \
-      +"Not perfoming any build cases because pull did not give any changes" \
+      +"Not perfoming any build cases because pull did not bring any commits" \
         " and --abort-gracefully-if-no-updates!\n" \
       +"Skipping sending final email because there were no updates" \
           " and --abort-gracefully-if-no-updates was set!\n" \
@@ -2166,7 +2269,7 @@ class test_checkin_test(unittest.TestCase):
       "Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
       +"Did not pull any changes from this repo!\n" \
       +"No changes were pulled!\n" \
-      +"Not perfoming any build cases because pull did not give any changes" \
+      +"Not perfoming any build cases because pull did not bring any commits" \
         " and --abort-gracefully-if-no-updates!\n" \
       +"Skipping sending final email because there were no updates" \
           " and --abort-gracefully-if-no-updates was set!\n" \
@@ -2318,6 +2421,41 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
+  def test_extra_repo_1_abort_gracefully_if_no_changes_to_push_passes(self):
+    projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_repo_1_abort_gracefully_if_no_changes_to_push_passes",
+      \
+      "--extra-repos=preCopyrightTrilinos --abort-gracefully-if-no-changes-to-push" \
+        +" --do-all --pull", \
+      \
+      g_cmndinterceptsExtraRepo1ThroughStatusPasses \
+      +g_cmndinterceptsPullOnlyNoUpdatesPasses \
+      +g_cmndinterceptsPullOnlyNoUpdatesPasses \
+      +g_cmndinterceptsDiffOnlyNoChangesPasses \
+      +g_cmndinterceptsDiffOnlyNoChangesPasses \
+      ,
+      \
+      True,
+      \
+      "Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
+      +"Did not pull any changes from this repo!\n" \
+      +"No changes were pulled!\n" \
+      +"Not perfoming any build cases because there are no local changes to push" \
+        " and --abort-gracefully-if-no-changes-to-push!\n" \
+      +"Skipping sending final email because there are no local changes to push" \
+          " and --abort-gracefully-if-no-changes-to-push was set!\n" \
+      +"ABORTED DUE TO NO CHANGES TO PUSH\n" \
+      +"REQUESTED ACTIONS: PASSED\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
+      )
+
+
   def test_extra_repo_file_2_continuous_pull(self):
 
     projectDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
@@ -2341,7 +2479,7 @@ class test_checkin_test(unittest.TestCase):
       " --extra-repos-type=Continuous" \
       " --extra-builds=MPI_DEBUG_SS --enable-packages=Stalix --pull", \
       \
-      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -2387,7 +2525,7 @@ class test_checkin_test(unittest.TestCase):
       " --extra-repos-type=Nightly" \
       " --extra-builds=MPI_DEBUG_SS --pull", \
       \
-      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -2434,7 +2572,7 @@ class test_checkin_test(unittest.TestCase):
       " --extra-repos-type=Continuous" \
       " --default-builds=MPI_DEBUG --pull --configure", \
       \
-      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -2463,9 +2601,11 @@ class test_checkin_test(unittest.TestCase):
       ,
       [
       ("MPI_DEBUG/do-configure",
-       "\-DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos\n"),
-      ] \
-      ,
+       "\-DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos\n"+ \
+       "\-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous\n"+\
+       "\-DTrilinos_EXTRAREPOS_FILE=.*/ExtraReposListExisting_3.cmake\n" \
+       ), \
+      ],
       \
       envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
@@ -2506,8 +2646,6 @@ class test_checkin_test(unittest.TestCase):
       +g_cmndinterceptsAmendCommitPasses \
       +g_cmndinterceptsLogCommitsPasses \
       +g_cmndinterceptsLogCommitsPasses \
-      +"IT: cat modifiedFiles.out; 0; ''\n"\
-      +"IT: cat modifiedFiles.ExtraTeuchosRepo.out; 0; 'M\tExtraTeuchosStuff.hpp'\n"\
       +"IT: eg push; 0; 'push passes'\n" \
       +g_cmndinterceptsSendFinalEmail \
       ,
@@ -2549,7 +2687,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "ERROR! Skipping missing extra repo .Dakota. since\n" \
       "MockTrilinos/packages/TriKota/Dakota\n" \
-      "Error, the command .cmake .*TribitsGetExtraReposForCheckinTest.cmake\n" \
+      "Error, the command ..*cmake .*TribitsGetExtraReposForCheckinTest.cmake\n" \
       ,
       mustHaveCheckinTestOut=False
       )
@@ -2572,7 +2710,7 @@ class test_checkin_test(unittest.TestCase):
       " --extra-repos=preCopyrightTrilinos" \
       " --pull", \
       \
-      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -2616,7 +2754,7 @@ class test_checkin_test(unittest.TestCase):
       False,
       \
       "ERROR! Skipping missing extra repo .MissingRepo. since\n" \
-      "Error, the command .cmake .*TribitsGetExtraReposForCheckinTest.cmake\n" \
+      "Error, the command ..*cmake .*TribitsGetExtraReposForCheckinTest.cmake\n" \
       ,
       mustHaveCheckinTestOut=False
       )
@@ -2638,7 +2776,7 @@ class test_checkin_test(unittest.TestCase):
       " --extra-repos-file="+scriptsDir+"/UnitTests/ExtraReposListExisting1Missing1.cmake" \
       " --extra-repos-type=Continuous --ignore-missing-extra-repos --pull" , \
       \
-      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -2651,7 +2789,7 @@ class test_checkin_test(unittest.TestCase):
       \
       True,
       \
-      "WARNING!  Ignoring missing extra repo .MissingRepo. as requested since\n" \
+      "WARNING: Ignoring missing extra repo .MissingRepo. as requested since\n" \
       "Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
       ,
       mustHaveCheckinTestOut=False
@@ -2668,7 +2806,7 @@ class test_checkin_test(unittest.TestCase):
 #      \
 #      "--extra-repos-file=default --pull --configure", \
 #      \
-#      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+#      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
 #      +g_cmndinterceptsCurrentBranch \
 #      +g_cmndinterceptsDiffOnlyPasses \
 #      ,
@@ -3447,7 +3585,7 @@ class test_checkin_test(unittest.TestCase):
 
   def test_do_all_default_builds_mpi_debug_then_empty(self):
 
-    testName = "do_all_default_builds_mpi_debug_then_push_pass"
+    testName = "do_all_default_builds_mpi_debug_then_empty"
 
     # Do the build/test only first (ready to push)
     g_test_do_all_default_builds_mpi_debug_pass(self, testName)
@@ -3462,7 +3600,7 @@ class test_checkin_test(unittest.TestCase):
       "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG",
       \
       g_cmndinterceptsCurrentBranch \
-      +"IT: eg diff --name-status origin/currentbranch; 0; 'eg diff passed'\n" 
+      +"IT: eg diff --name-status origin/currentbranch; 0; 'eg diff passed'\n" \
       +g_cmndinterceptsSendFinalEmail \
       ,
       \
@@ -3942,6 +4080,7 @@ class test_checkin_test(unittest.TestCase):
       +g_expectedRegexTestPasses \
       +g_expectedCommonOptionsSummary \
       +"A PUSH IS READY TO BE PERFORMED!\n" \
+      +"'': Pull failed!\n" \
       +"Final update failed!\n" \
       +"Skippng appending test results due to prior errors!\n" \
       +"Not performing push due to prior errors!\n" \
@@ -4006,7 +4145,6 @@ class test_checkin_test(unittest.TestCase):
       +g_cmnginterceptsEgLogCmnds \
       +"IT: eg commit --amend -F .*; 0; 'Amending the last commit passed'\n" \
       +"IT: eg log --oneline currentbranch \^origin/currentbranch; 0; '54321 Only one commit'\n" \
-      +"IT: cat modifiedFiles.out; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n"\
       +"IT: eg push; 1; 'push FAILED'\n"
       +g_cmndinterceptsSendFinalEmail \
       ,
@@ -4033,10 +4171,11 @@ class test_checkin_test(unittest.TestCase):
       \
       "do_all_push_no_local_commits_push_fail",
       \
-      "--make-options=-j3 --ctest-options=-j5 --do-all --push",
+      " --enable-packages=Teuchos" \
+      " --make-options=-j3 --ctest-options=-j5 --do-all --push",
       \
       g_cmndinterceptsCurrentBranch \
-      +g_cmndinterceptsPullPasses \
+      +g_cmndinterceptsNoChangesPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +g_cmndinterceptsConfigBuildTestPasses \
@@ -4046,14 +4185,13 @@ class test_checkin_test(unittest.TestCase):
       +"IT: eg log --oneline currentbranch \^origin/currentbranch; 0; ''\n" \
       +"IT: eg log --pretty=format:'%h' currentbranch\^ \^origin/currentbranch; 0; ''\n" \
       +"IT: eg log --oneline currentbranch \^origin/currentbranch; 0; '54321 Only one commit'\n" \
-      +"IT: cat modifiedFiles.out; 0; ''\n"\
       +g_cmndinterceptsSendFinalEmail \
       ,
       \
       False,
       \
       g_expectedRegexUpdateWithBuildCasePasses \
-      +g_expectedRegexConfigPasses \
+      +g_expectedRegexExplicitConfigPasses \
       +g_expectedRegexBuildPasses \
       +g_expectedRegexTestPasses \
       +"0) MPI_DEBUG => passed: passed=100,notpassed=0\n" \
@@ -4137,11 +4275,10 @@ class test_checkin_test(unittest.TestCase):
       "extra_repo_1_no_changes_do_all_push_fail",
       \
       "--make-options=-j3 --ctest-options=-j5" \
+      " --enable-packages=Teuchos" \
       " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
-      g_cmndinterceptsExtraRepo1DoAllUpToPush \
-      +g_cmndinterceptsCatModifiedFilesNoChanges \
-      +g_cmndinterceptsCatModifiedFilesPreCoprightTrilinosNoChanges \
+      g_cmndinterceptsExtraRepo1NoChangesDoAllUpToPush \
       +g_cmndinterceptsSendFinalEmail \
       ,
       \
@@ -4228,7 +4365,7 @@ class test_checkin_test(unittest.TestCase):
       \
       " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --pull", \
       \
-      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -4259,7 +4396,7 @@ class test_checkin_test(unittest.TestCase):
       \
       " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --pull", \
       \
-      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -4292,7 +4429,7 @@ class test_checkin_test(unittest.TestCase):
       \
       " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --pull --extra-pull-from=ssg:master", \
       \
-      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -4327,7 +4464,7 @@ class test_checkin_test(unittest.TestCase):
       \
       " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --pull --extra-pull-from=ssg:master", \
       \
-      "IT: cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -4406,6 +4543,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "pullFinal.out\n" \
       "pullFinal.preCopyrightTrilinos.out\n" \
+      ".preCopyrightTrilinos.: Pull failed!\n" \
       "Final update failed!\n" \
       "FINAL PULL FAILED: Trilinos:\n" \
       "REQUESTED ACTIONS: FAILED\n" \
@@ -4496,7 +4634,6 @@ class test_checkin_test(unittest.TestCase):
       " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
       g_cmndinterceptsExtraRepo1DoAllUpToPush \
-      +g_cmndinterceptsCatModifiedFilesPasses \
       +g_cmndinterceptsPushOnlyFails \
       +g_cmndinterceptsSendFinalEmail \
       ,
@@ -4524,9 +4661,7 @@ class test_checkin_test(unittest.TestCase):
       " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --do-all --push", \
       \
       g_cmndinterceptsExtraRepo1DoAllUpToPush \
-      +g_cmndinterceptsCatModifiedFilesPasses \
       +g_cmndinterceptsPushOnlyPasses \
-      +g_cmndinterceptsCatModifiedFilesPreCoprightTrilinosPasses \
       +g_cmndinterceptsPushOnlyFails \
       +g_cmndinterceptsSendFinalEmail \
       ,
@@ -4548,7 +4683,24 @@ def suite():
     return suite
 
 
+from optparse import OptionParser
+
+
 if __name__ == '__main__':
+
+  # Look for --with-cmake=??? argument and process and remove it
+  global g_withCmake
+  g_withCmake = "cmake"
+  args = []
+  for arg in sys.argv:
+    arg_find_cmake = arg.find("--with-cmake")
+    if arg_find_cmake == 0:
+      g_withCmake = arg.split("=")[1]
+    else:
+      args.append(arg)
+  sys.argv = args
+  
   if os.path.exists(g_checkin_test_tests_dir):
     echoRunSysCmnd("rm -rf "+g_checkin_test_tests_dir, verbose=g_verbose)
+
   unittest.main()

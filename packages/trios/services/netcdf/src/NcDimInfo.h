@@ -75,7 +75,7 @@ public:
     int inq_dimid(int *dimid);
 
     /** Rename a dimension. */
-    int rename_dim(const char *name);
+    int rename_dim(const char *newname);
 
     /** Convert to struct nc_dim */
     int copyTo(struct nc_dim &);
@@ -91,9 +91,9 @@ public:
     virtual ~NcDimInfo();
 
 private:
-    const int dimid;
-    std::string name;
-    size_t len;
+    const int   _dimid;
+    std::string _name;
+    size_t      _len;
 
     friend class NcGroupInfo;
 

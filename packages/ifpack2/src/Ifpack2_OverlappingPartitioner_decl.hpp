@@ -7,20 +7,33 @@
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
@@ -34,89 +47,89 @@
 #include "Ifpack2_Partitioner.hpp"
 #include "Tpetra_RowGraph.hpp"
 
-/* \brief Ifpack2_OverlappingPartitioner: A class to create overlapping
-    partitions of a local graph.
-
-Class Ifpack2_OverlappingPartitioner enables the extension of 
-non-overlapping partitions to an arbitrary value of overlap.
-Note that overlap refers to the overlap among \e local parts,
-and not the overlap among the processes.
-
-Supported parameters are:
-- \c "partitioner: local parts": the required number of parts;
-- \c "partitioner: overlap": the required amount of overlap is set in 
-  parameter. Default = 0 (integer).
-- \c "partitioner: verbose": if \c true, information are reported on
-  cout. Nothing is reported otherwise.
-
-This class is a semi-virtual class, that contains the basic utilities
-for derived classes Ifpack2_LinearPartitioner, Ifpack2_GreedyPartitioner,
-Ifpack2_METISPartitioner, and Ifpack2_EquationPartitioner. Graphs in
-input to one of these classes are supposed to contain no singletons.
-Usually, this means that the graph is derived from an Tpetra_RowMatrix,
-that has been filtered using Ifpack2_SingletonFilter.
-
-\date Last update: Aug-12.
-*/  
-
 namespace Ifpack2 {
 
+/// \class OverlappingPartitioner
+/// Create overlapping partitions of a local graph.
+/// \tparam GraphType Specialization of Tpetra::CrsGraph or
+///   Tpetra::RowGraph.
+///
+/// This class enables the extension of nonoverlapping partitions to
+/// an arbitrary amount of overlap.  "Overlap" here refers to the
+/// overlap among the local parts, and not the overlap among the
+/// processes.
+///
+/// Supported parameters are:
+/// - "partitioner: local parts" (<tt>local_ordinal_type</tt>): the
+///   number of local partitions.  Default is one (one local
+///   partition, which means "do not partition locally").
+/// - "partitioner: overlap" (int): the amount of overlap between
+///   partitions.  Default is zero (no overlap).
+/// - "partitioner: verbose": if \c true, print verbosely
+///   to stdout.  Default is \c false (print nothing).
+///
+/// This class implements common functionality for derived classes
+/// like LinearPartitioner.  Graphs given as input to any derived
+/// class must contain no singletons.  Usually, this means that the
+/// graph is the graph of a Tpetra::RowMatrix that has been filtered
+/// using SingletonFilter.
 template<class GraphType>
 class OverlappingPartitioner : public Partitioner<GraphType> {
-
 public:
-  typedef typename GraphType::local_ordinal_type LocalOrdinal;
-  typedef typename GraphType::global_ordinal_type GlobalOrdinal;
-  typedef typename GraphType::node_type Node;
+  typedef typename GraphType::local_ordinal_type local_ordinal_type;
+  typedef typename GraphType::global_ordinal_type global_ordinal_type;
+  typedef typename GraphType::node_type node_type;
+  typedef Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type> row_graph_type;
 
   //! Constructor.
-  OverlappingPartitioner(const Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> >& Graph);
+  OverlappingPartitioner (const Teuchos::RCP<const row_graph_type>& graph);
 
   //! Destructor.
   virtual ~OverlappingPartitioner();
 
-  //! Returns the number of computed local partitions.
-  LocalOrdinal numLocalParts() const;
+  /// \brief Number of computed local partitions.
+  ///
+  /// This is a (signed) \c int because negative values are
+  /// significant.  We can't use \c local_ordinal_type here, because
+  /// that type may be either signed or unsigned.
+  int numLocalParts () const;
 
-  //! Returns the overlapping level.
-  size_t overlappingLevel() const;
+  //! The number of levels of overlap.
+  int overlappingLevel() const;
 
-  //! Returns the local non-overlapping partition ID of the specified row.
-  /*! Returns the non-overlapping partition ID of the specified row.
-   \param 
-   MyRow - (In) local row numbe
+  /// \brief Local index of the nonoverlapping partition of the given row.
+  ///
+  /// \param MyRow [in] Local index of the row.
+  local_ordinal_type operator () (const local_ordinal_type MyRow) const;
 
-   \return
-   Local ID of non-overlapping partition for \t MyRow.
-   */
-  LocalOrdinal operator() (LocalOrdinal MyRow) const;
+  //! Local index of the overlapping partition of the j-th vertex in partition i.
+  local_ordinal_type
+  operator () (const local_ordinal_type i, const local_ordinal_type j) const;
 
-  //! Returns the local overlapping partition ID of the j-th node in partition i.
-  LocalOrdinal operator() (LocalOrdinal i, LocalOrdinal j) const;
+  //! the number of rows contained in the given partition.
+  size_t numRowsInPart (const local_ordinal_type Part) const;
 
-  //! Returns the number of rows contained in specified partition.
-  size_t numRowsInPart(const LocalOrdinal Part) const;
+  //! Fill \c List with the local indices of the rows in the (overlapping) partition \c Part.
+  void rowsInPart (const local_ordinal_type Part, Teuchos::ArrayRCP<local_ordinal_type>& List) const;
 
-  //! Copies into List the rows in the (overlapping) partition Part.
-  void rowsInPart(const LocalOrdinal Part,  Teuchos::ArrayRCP<LocalOrdinal> & List) const;
+  //! A view of the local indices of the nonoverlapping partitions of each local row.
+  virtual Teuchos::ArrayView<const local_ordinal_type> 
+  nonOverlappingPartition () const;
 
-  //! Returns an ArrayRCP to the integer vector containing the non-overlapping partition ID of each local row.
-  virtual Teuchos::ArrayView<const LocalOrdinal>  nonOverlappingPartition() const;
-
-  //! Sets all the parameters for the partitioner.
+  //! Set all the parameters for the partitioner.
   /*! The supported parameters are:
    * - \c "partitioner: overlap" (int, default = 0).
    * - \c "partitioner: local parts" (int, default = 1).
    * - \c "partitioner: print level" (int, default = 0).
    */
-  virtual void setParameters(Teuchos::ParameterList& List);
+  virtual void setParameters (Teuchos::ParameterList& List);
 
-  //! Sets all the parameters for the partitioner.
+  //! Set all the parameters for the partitioner.
   /*! This function is used by derived classes to set their own
    * parameters. These classes should not derive SetParameters(),
    * so that common parameters can be set just once.
    */
-  virtual void setPartitionParameters(Teuchos::ParameterList& List) = 0;
+  virtual void setPartitionParameters (Teuchos::ParameterList& List) = 0;
 
   //! Computes the partitions. Returns 0 if successful.
   virtual void compute();
@@ -133,8 +146,7 @@ public:
   //! Prints basic information on iostream. This function is used by operator<<.
   virtual std::ostream& print(std::ostream& os) const;
 
-
-  //! @name Overridden from Teuchos::Describable 
+  //! @name Implementation of Teuchos::Describable 
   //@{
 
   /** \brief Return a simple one-line description of this object. */
@@ -147,22 +159,32 @@ public:
  
 protected:
 
-  //! Number of local subgraphs.  This is a localordinal because negatives mean something.
-  LocalOrdinal NumLocalParts_;
-  //! Partition_[i] contains the ID of non-overlapping part it belongs to
-  Teuchos::Array<LocalOrdinal> Partition_; 
-  //! Parts_[i][j] is the ID of the j-th row contained in the (overlapping) 
-  // partition i
-  Teuchos::Array<Teuchos::ArrayRCP<LocalOrdinal> > Parts_;
-  //! Reference to the graph to be partitioned
-  Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> > Graph_;
-  //! Overlapping level.
-  size_t OverlappingLevel_;
+  /// \brief Number of local subgraphs.
+  ///
+  /// This is a (signed) \c int because negative values are
+  /// significant.  We can't use \c local_ordinal_type here, because
+  /// that type may be either signed or unsigned.
+  int NumLocalParts_;
+
+  /// Partition_[i] contains the local index of the nonoverlapping
+  /// partition to which it belongs.
+  Teuchos::Array<local_ordinal_type> Partition_; 
+
+  /// Parts_[i][j] is the local index of the j-th row contained in the
+  /// (overlapping) partition i.
+  Teuchos::Array<Teuchos::ArrayRCP<local_ordinal_type> > Parts_;
+
+  //! The graph to be partitioned
+  Teuchos::RCP<const row_graph_type> Graph_;
+
+  //! Level of overlap.
+  int OverlappingLevel_;
+
   //! If \c true,  the graph has been successfully partitioned.
   bool IsComputed_;
-  //! If \c true, information are reported on cout.
-  bool verbose_;
 
+  //! If \c true, information are reported to stdout.
+  bool verbose_;
 }; // class Ifpack2::OverlappingPartitioner
 
 }// namespace Ifpack2

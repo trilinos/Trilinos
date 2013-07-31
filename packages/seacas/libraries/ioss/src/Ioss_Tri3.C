@@ -81,6 +81,7 @@ Ioss::Tri3::Tri3()
   Ioss::ElementTopology::alias("tri3", "Solid_Tri_3_2D");
   Ioss::ElementTopology::alias("tri3", "Face_Tri_3_3D");
   Ioss::ElementTopology::alias("tri3", "triface3");
+  Ioss::ElementTopology::alias("tri3", "TRIANGLE_3_2D");
 }
 
 Ioss::Tri3::~Tri3() {}
@@ -133,5 +134,5 @@ Ioss::ElementTopology* Ioss::Tri3::face_type(int /* face_number */) const
 Ioss::ElementTopology* Ioss::Tri3::edge_type(int edge_number) const
 {
   assert(edge_number >= 0 && edge_number <= number_edges());
-  return Ioss::ElementTopology::factory("edge2d2");
+  return Ioss::ElementTopology::factory("edge2");
 }

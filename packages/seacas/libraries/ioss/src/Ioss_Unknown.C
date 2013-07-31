@@ -69,7 +69,10 @@ void Ioss::Unknown::factory()
 }
 
 Ioss::Unknown::Unknown()
-  : Ioss::ElementTopology("unknown", "unknown") {}
+  : Ioss::ElementTopology("unknown", "unknown")
+{
+  Ioss::ElementTopology::alias("unknown", "invalid_topology");
+}
 
 Ioss::Unknown::~Unknown() {}
 

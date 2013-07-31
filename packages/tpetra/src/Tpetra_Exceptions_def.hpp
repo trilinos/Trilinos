@@ -44,42 +44,14 @@
 
 #include "Tpetra_Exceptions_decl.hpp"
 
-namespace Tpetra {
-namespace Details {
-
-  template<class GlobalOrdinal>
-  InvalidGlobalIndex<GlobalOrdinal>::
-  InvalidGlobalIndex (const std::string& msg, const GlobalOrdinal globalIndex) :
-    std::domain_error (msg), glInd_ (globalIndex) 
-  {}
-
-  template<class GlobalOrdinal>
-  GlobalOrdinal
-  InvalidGlobalIndex<GlobalOrdinal>::offendingIndex () const { 
-    return glInd_;
-  }
-
-  template<class GlobalOrdinal>
-  InvalidGlobalRowIndex<GlobalOrdinal>::
-  InvalidGlobalRowIndex (const std::string& msg, const GlobalOrdinal globalIndex) :
-    InvalidGlobalIndex<GlobalOrdinal> (msg, globalIndex)
-  {}
-
-} // namespace Details
-} // namespace Tpetra
-
 //
 // Explicit instantiation macros
 //
 // Must be expanded from within the Tpetra::Details namespace!
 //
 
-#define TPETRA_INVALIDGLOBALINDEX_INSTANT(GO) \
-  \
-  template class InvalidGlobalIndex< GO >; 
+#define TPETRA_INVALIDGLOBALINDEX_INSTANT(GO)
 
-#define TPETRA_INVALIDGLOBALROWINDEX_INSTANT(GO) \
-  \
-  template class InvalidGlobalRowIndex< GO >; 
+#define TPETRA_INVALIDGLOBALROWINDEX_INSTANT(GO)
 
 #endif // TPETRA_EXCEPTIONS_DEF_HPP

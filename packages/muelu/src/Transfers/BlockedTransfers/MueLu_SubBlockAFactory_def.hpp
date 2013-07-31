@@ -66,8 +66,8 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  SubBlockAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SubBlockAFactory(Teuchos::RCP<const FactoryBase> Afact, size_t row, size_t col, LocalOrdinal blksize)
-    : row_(row), col_(col), blksize_(blksize)
+  SubBlockAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SubBlockAFactory(Teuchos::RCP<const FactoryBase> Afact, size_t row, size_t col)
+    : row_(row), col_(col)
   {
     SetFactory("A",Afact);
   }
@@ -124,16 +124,6 @@ namespace MueLu {
     //////////////// EXPERIMENTAL
 
     currentLevel.Set("A", Teuchos::rcp_dynamic_cast<OMatrix>(Op), this);
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SubBlockAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetFixedBlockSize(LocalOrdinal blksize) {
-    blksize_ = blksize;
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  LocalOrdinal SubBlockAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetFixedBlockSize() const {
-    return blksize_;
   }
 
 } // namespace MueLu

@@ -145,6 +145,18 @@ APPEND_SET(SOURCES
 # configuration options.  In Amesos2, each solver interface should be
 # added only if that solver has been enabled by the user.
 
+IF (${PACKAGE_NAME}_ENABLE_LAPACK)
+  APPEND_SET(HEADERS
+    Amesos2_Lapack.hpp
+    Amesos2_Lapack_decl.hpp
+    Amesos2_Lapack_def.hpp
+    )
+
+  APPEND_SET(SOURCES
+    Amesos2_Lapack.cpp
+    )
+ENDIF()
+
 IF (${PACKAGE_NAME}_ENABLE_SuperLU)
   APPEND_SET(HEADERS
     Amesos2_Superlu.hpp
@@ -230,9 +242,9 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     )
 ENDIF()
 
-IF (Trilinos_ENABLE_Amesos)
-    ADD_SUBDIRECTORY(SuiteSparse/KLU2/Source)
-ENDIF()
+#IF (Trilinos_ENABLE_Amesos)
+    #ADD_SUBDIRECTORY(SuiteSparse/KLU2/Source)
+#ENDIF()
 
 #
 # C) Define the targets for package's library(s)

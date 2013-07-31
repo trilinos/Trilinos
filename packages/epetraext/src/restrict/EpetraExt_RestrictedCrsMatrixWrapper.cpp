@@ -127,7 +127,7 @@ int RestrictedCrsMatrixWrapper::restrict_comm(Teuchos::RCP<Epetra_CrsMatrix> inp
     ResColMap_ = new Epetra_Map(Ncols,InColMap->NumMyElements(),InColMap->MyGlobalElements(),
                                 InColMap->IndexBase(),*RestrictedComm_);        
     
-    int *rowptr,*colind,Nr;
+    int *colind,Nr;
     double *values;
     
     /* Allocate the Restricted Matrix */

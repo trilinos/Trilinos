@@ -352,11 +352,11 @@ int main(int argc, char *argv[]) {
 
   H->EnableGraphDumping("graph.dot", 2);
 
-  status = H->Setup(M, 0, maxLevels);
-  if (comm->getRank() == 0) {
-    std::cout  << "======================\n Multigrid statistics \n======================" << std::endl;
-    status.print(std::cout,Teuchos::ParameterList::PrintOptions().indent(2));
-  }
+  H->Setup(M, 0, maxLevels);
+  //if (comm->getRank() == 0) {
+  //  std::cout  << "======================\n Multigrid statistics \n======================" << std::endl;
+  //  status.print(std::cout,Teuchos::ParameterList::PrintOptions().indent(2));
+  //}
 
   // Define RHS
   RCP<MultiVector> X = MultiVectorFactory::Build(map,1);

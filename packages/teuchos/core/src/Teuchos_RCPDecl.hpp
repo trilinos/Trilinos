@@ -490,16 +490,14 @@ public:
    * <tt>DeallocDelete</tt> for the specfication and behavior of this policy
    * interface.
    *
-   * <b>Postconditons:</b><ul>
-   * <li> <tt>this->get() == p</tt>
-   * <li> <tt>this->strength() == RCP_STRONG</tt>
-   * <li> <tt>this->is_vali_ptr() == true</tt>
-   * <li> <tt>this->strong_count() == 1</tt>
-   * <li> <tt>this->weak_count() == 0</tt>
-   * <li> <tt>this->has_ownership() == has_ownership</tt>
-   * <li> <tt>get_dealloc<Delalloc_T>(*this)</tt> returns a copy of the
-   *   custom deallocator object <tt>dealloc>/tt>.
-   * </ul>
+   * \post <tt>this->get() == p</tt>
+   * \post <tt>this->strength() == RCP_STRONG</tt>
+   * \post <tt>this->is_vali_ptr() == true</tt>
+   * \post <tt>this->strong_count() == 1</tt>
+   * \post <tt>this->weak_count() == 0</tt>
+   * \post <tt>this->has_ownership() == has_ownership</tt>
+   * \post <tt> get_dealloc<Delalloc_T>(*this) </tt> returns a copy
+   *   of the custom deallocator object <tt>dealloc>/tt>.
    */
   template<class Dealloc_T>
   inline RCP(T* p, Dealloc_T dealloc, bool has_ownership);
@@ -966,7 +964,9 @@ public:
   /// Gives the type (required)
   typedef T ptr_t;
   /// Deallocates a pointer <tt>ptr</tt> using <tt>delete ptr</tt> (required).
-  void free( T* ptr ) { }
+  void free( T* ptr ) { 
+    (void) ptr; // silence "unused parameter" compiler warning
+  }
 };
 
 

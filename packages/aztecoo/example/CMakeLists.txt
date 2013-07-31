@@ -1,11 +1,12 @@
 IF (NOT Trilinos_NO_32BIT_GLOBAL_INDICES)
-	ADD_SUBDIRECTORY(simple_epetra_aztecoo)
-	ADD_SUBDIRECTORY(UG_Ex1)
-	ADD_SUBDIRECTORY(AztecOO_UserOpUserMat)
+    ADD_SUBDIRECTORY(simple_epetra_aztecoo)
+    ADD_SUBDIRECTORY(UG_Ex1)
+    ADD_SUBDIRECTORY(AztecOO_UserOpUserMat)
 ENDIF()
 
 IF (NOT Trilinos_NO_64BIT_GLOBAL_INDICES)
-	ADD_SUBDIRECTORY(simple_epetra_aztecoo_LL)
-	ADD_SUBDIRECTORY(AztecOO_UserOpUserMat_LL)
+    ADD_SUBDIRECTORY(simple_epetra_aztecoo_LL)
+    ADD_SUBDIRECTORY(UG_Ex1_LL)
+    ADD_SUBDIRECTORY(AztecOO_UserOpUserMat_LL)
 ENDIF()
 

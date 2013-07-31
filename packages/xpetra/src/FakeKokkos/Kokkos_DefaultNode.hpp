@@ -48,7 +48,12 @@
 
 #include <Teuchos_RCP.hpp>
 
-namespace Kokkos {
+namespace KokkosClassic {
+
+  namespace Details {
+    template <class NodeType>
+    Teuchos::RCP<NodeType> getNode() { return Teuchos::null; }
+  } //namespace Details
 
   class DefaultNode {
     public:

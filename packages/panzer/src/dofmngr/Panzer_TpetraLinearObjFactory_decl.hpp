@@ -71,7 +71,7 @@
 
 namespace panzer {
 
-template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=Kokkos::DefaultNode::DefaultNodeType>
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=KokkosClassic::DefaultNode::DefaultNodeType>
 class TpetraLinearObjFactory : public LinearObjFactory<Traits> 
                              , public ThyraObjFactory<ScalarT> {
 public:
@@ -113,7 +113,8 @@ public:
      */
    virtual void adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                                              const LinearObjContainer & globalBCRows,
-                                             LinearObjContainer & ghostedObjs) const;
+                                             LinearObjContainer & ghostedObjs,
+                                             bool zeroVectorRows=false) const;
 
    /** Acess to the MPI Comm used in constructing this LOF.
      */
@@ -207,6 +208,9 @@ public:
 
    //! get exporter for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<const Teuchos::Comm<int> > getTeuchosComm() const;
+
+   virtual void beginFill(LinearObjContainer & loc) const;
+   virtual void endFill(LinearObjContainer & loc) const;
 
 protected:
    Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > getGhostedTpetraVector() const;

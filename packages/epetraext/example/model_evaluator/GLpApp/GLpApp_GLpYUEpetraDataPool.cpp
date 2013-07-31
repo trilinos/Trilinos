@@ -94,13 +94,13 @@ namespace GLpApp {
 
 const double GLp_pi = 3.14159265358979323846;
 
-ostream& operator <<(ostream &, const Usr_Par &);
+std::ostream& operator <<(std::ostream &, const Usr_Par &);
 
-bool CrsMatrix2MATLAB(const Epetra_CrsMatrix &, ostream &);
+bool CrsMatrix2MATLAB(const Epetra_CrsMatrix &, std::ostream &);
 
-bool Vector2MATLAB( const Epetra_Vector &, ostream &);
+bool Vector2MATLAB( const Epetra_Vector &, std::ostream &);
 
-bool FEVector2MATLAB( const Epetra_FEVector &, ostream &);
+bool FEVector2MATLAB( const Epetra_FEVector &, std::ostream &);
 
 int quadrature(const int, const int, Epetra_SerialDenseMatrix &,
                Epetra_SerialDenseVector &);
@@ -353,7 +353,7 @@ int GLpYUEpetraDataPool::solveAugsys(
       kktsolver.SetAztecOption( AZ_output, AZ_last );
       //kktsolver.Iterate(2*numstates+numcontrols,1e-12);
       kktsolver.Iterate(9000,1e-11);
-      //cout << soln;
+      //std::cout << soln;
     }
     else if (solverChoice == 12) {
       // =============================================================== //
@@ -368,7 +368,7 @@ int GLpYUEpetraDataPool::solveAugsys(
 
       // create the preconditioner. For valid PrecType values,
       // please check the documentation
-      string PrecType = "Amesos";
+      std::string PrecType = "Amesos";
       int OverlapLevel = 2; // must be >= 0. If Comm.NumProc() == 1,
                             // it is ignored.
   
@@ -625,8 +625,7 @@ void GLpYUEpetraDataPool::computeAugmat()
                                   indices.Values());
   }
   
-  bool MakeDataContiguous = false;
-  EpetraExt::RowMatrix_Transpose transposer( MakeDataContiguous );
+  EpetraExt::RowMatrix_Transpose transposer;
   Epetra_CrsMatrix & transA = dynamic_cast<Epetra_CrsMatrix&>(transposer(*A_));
   Epetra_CrsMatrix & transB = dynamic_cast<Epetra_CrsMatrix&>(transposer(*B_));
   Epetra_CrsMatrix & transNpy = dynamic_cast<Epetra_CrsMatrix&>(transposer(*Npy_));
@@ -668,10 +667,10 @@ void GLpYUEpetraDataPool::computeAugmat()
                                         values.Values(), indices.Values());
     // This will give a nasty message if something goes wrong with the insertion of B transpose.
     if (err < 0) {
-      cout << "Insertion of entries failed:\n";
-      cout << indices;
-      cout << nummyentries << endl;
-      cout << "at row: " << KKTmapindx.Values()[i]+numstates << endl << endl;
+      std::cout << "Insertion of entries failed:\n";
+      std::cout << indices;
+      std::cout << nummyentries << std::endl;
+      std::cout << "at row: " << KKTmapindx.Values()[i]+numstates << std::endl << std::endl;
     }
   }
 
@@ -682,7 +681,7 @@ void GLpYUEpetraDataPool::computeAugmat()
 
 void GLpYUEpetraDataPool::PrintVec( const Teuchos::RefCountPtr<const Epetra_Vector> & x )
 {
-  Vector2MATLAB(*x, cout);
+  Vector2MATLAB(*x, std::cout);
 }
 
 Usr_Par::Usr_Par() {
@@ -781,8 +780,8 @@ Usr_Par::Usr_Par() {
 
 }
 
-void Usr_Par::Print(ostream& os) const {
-  os << endl;
+void Usr_Par::Print(std::ostream& os) const {
+  os << std::endl;
   os << "\n\nQuadrature nodes:";
   os << "\n-----------------";
   Nodes.Print(os);
@@ -814,7 +813,7 @@ void Usr_Par::Print(ostream& os) const {
   NdNdx2Nw[0].Print(os); NdNdx2Nw[1].Print(os); NdNdx2Nw[2].Print(os);
 }
 
-ostream& operator <<(ostream & out, const Usr_Par & usr_par)
+std::ostream& operator <<(std::ostream & out, const Usr_Par & usr_par)
 {
   usr_par.Print(out);
   return out;
@@ -2122,10 +2121,10 @@ void GLpApp::gfctn(const Epetra_SerialDenseVector & v, Epetra_SerialDenseVector 
  *
  * - Epetra_CrsMatrix  reference to the distributed CrsMatrix to 
  *                     print out
- * - ostream &         reference to output stream 
+ * - std::ostream &         reference to output stream 
  */
 
-bool GLpApp::CrsMatrix2MATLAB(const Epetra_CrsMatrix & A, ostream & outfile) 
+bool GLpApp::CrsMatrix2MATLAB(const Epetra_CrsMatrix & A, std::ostream & outfile) 
 {
 
   int MyPID = A.Comm().MyPID(); 
@@ -2134,11 +2133,11 @@ bool GLpApp::CrsMatrix2MATLAB(const Epetra_CrsMatrix & A, ostream & outfile)
   // work only on transformed matrices;
   if( A.IndicesAreLocal() == false ) {
     if( MyPID == 0 ) { 
-      cerr << "ERROR in "<< __FILE__ << ", line " << __LINE__ << endl;
-      cerr << "Function CrsMatrix2MATLAB accepts\n";
-      cerr << "transformed matrices ONLY. Please call A.TransformToLoca()\n";
-      cerr << "on your matrix A to that purpose.\n";
-      cerr << "Now returning...\n";
+      std::cerr << "ERROR in "<< __FILE__ << ", line " << __LINE__ << std::endl;
+      std::cerr << "Function CrsMatrix2MATLAB accepts\n";
+      std::cerr << "transformed matrices ONLY. Please call A.TransformToLoca()\n";
+      std::cerr << "on your matrix A to that purpose.\n";
+      std::cerr << "Now returning...\n";
     }
     return false;
   }
@@ -2153,7 +2152,7 @@ bool GLpApp::CrsMatrix2MATLAB(const Epetra_CrsMatrix & A, ostream & outfile)
   NumGlobalRows = A.NumGlobalRows();
   NumGlobalNonzeros = A.NumGlobalNonzeros();
 
-  // print out on cout if no filename is provided
+  // print out on std::cout if no filename is provided
 
   int IndexBase = A.IndexBase(); // MATLAB starts from 0
   if( IndexBase == 0 )
@@ -2224,10 +2223,10 @@ bool GLpApp::CrsMatrix2MATLAB(const Epetra_CrsMatrix & A, ostream & outfile)
  * ----------
  *
  * - Epetra_Vector     reference to vector
- * - ostream &         reference to output stream 
+ * - std::ostream &         reference to output stream 
  */
 
-bool GLpApp::Vector2MATLAB( const Epetra_Vector & v, ostream & outfile)
+bool GLpApp::Vector2MATLAB( const Epetra_Vector & v, std::ostream & outfile)
 {
   
   int MyPID = v.Comm().MyPID(); 
@@ -2235,7 +2234,7 @@ bool GLpApp::Vector2MATLAB( const Epetra_Vector & v, ostream & outfile)
   int MyLength = v.MyLength();
   int GlobalLength = v.GlobalLength();
   
-  // print out on cout if no filename is provided
+  // print out on std::cout if no filename is provided
 
   // write on file the dimension of the matrix
 
@@ -2292,10 +2291,10 @@ bool GLpApp::Vector2MATLAB( const Epetra_Vector & v, ostream & outfile)
  * ----------
  *
  * - Epetra_FEVector   reference to FE vector
- * - ostream &         reference to output stream 
+ * - std::ostream &         reference to output stream 
  */
 
-bool GLpApp::FEVector2MATLAB( const Epetra_FEVector & v, ostream & outfile)
+bool GLpApp::FEVector2MATLAB( const Epetra_FEVector & v, std::ostream & outfile)
 {
   
   int MyPID = v.Comm().MyPID(); 
@@ -2303,7 +2302,7 @@ bool GLpApp::FEVector2MATLAB( const Epetra_FEVector & v, ostream & outfile)
   int MyLength = v.MyLength();
   int GlobalLength = v.GlobalLength();
   
-  // print out on cout if no filename is provided
+  // print out on std::cout if no filename is provided
 
   // write on file the dimension of the matrix
 
@@ -2390,8 +2389,8 @@ int GLpApp::quadrature(const int dim, const int order,
       weights(2) = 5.0/18.0;
     }
     else {
-      cout << "Quadrature for dim = " << dim << " and order = ";
-      cout << order << " not available.\n";
+      std::cout << "Quadrature for dim = " << dim << " and order = ";
+      std::cout << order << " not available.\n";
       exit(-1);
     }
 
@@ -2430,14 +2429,14 @@ int GLpApp::quadrature(const int dim, const int order,
       weights(3) = 25.0/96.0;
     }
     else {
-      cout << "Quadrature for dim = " << dim << " and order = ";
-      cout << order << " not available.\n";
+      std::cout << "Quadrature for dim = " << dim << " and order = ";
+      std::cout << order << " not available.\n";
       exit(-1);
     }
 
   }
   else {
-    cout << "Quadrature for dim = " << dim << " not available.\n";
+    std::cout << "Quadrature for dim = " << dim << " not available.\n";
     exit(-1);
   }
 

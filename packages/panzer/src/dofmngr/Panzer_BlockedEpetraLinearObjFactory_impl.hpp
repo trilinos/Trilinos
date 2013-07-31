@@ -56,6 +56,7 @@
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 using Teuchos::RCP;
 
@@ -79,6 +80,8 @@ BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
    // build and register the gather/scatter evaluators with 
    // the base class.
    this->buildGatherScatterEvaluators(*this);
+
+   tComm_ = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(dynamic_cast<const Epetra_MpiComm &>(*comm).Comm())));
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -95,6 +98,8 @@ BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
    // build and register the gather/scatter evaluators with 
    // the base class.
    this->buildGatherScatterEvaluators(*this);
+
+   tComm_ = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(dynamic_cast<const Epetra_MpiComm &>(*comm).Comm())));
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -113,6 +118,8 @@ BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > &
    // build and register the gather/scatter evaluators with 
    // the base class.
    this->buildGatherScatterEvaluators(*this);
+
+   tComm_ = Teuchos::rcp(new Teuchos::MpiComm<int>(rawMpiComm_));
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -200,7 +207,8 @@ template <typename Traits,typename LocalOrdinalT>
 void BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              const LinearObjContainer & globalBCRows,
-                             LinearObjContainer & ghostedObjs) const
+                             LinearObjContainer & ghostedObjs,
+                             bool zeroVectorRows) const
 {
    typedef BlockedEpetraLinearObjContainer BLOC;
 
@@ -264,7 +272,7 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
             e_A = rcp_dynamic_cast<Epetra_CrsMatrix>(get_Epetra_Operator(*th_A),true);
 
          // adjust Block operator
-         adjustForDirichletConditions(*e_local_bcs,*e_global_bcs,e_f.ptr(),e_A.ptr());
+         adjustForDirichletConditions(*e_local_bcs,*e_global_bcs,e_f.ptr(),e_A.ptr(),zeroVectorRows);
 
          e_f = Teuchos::null; // this is so we only adjust it once on the first pass
       }
@@ -276,7 +284,8 @@ void BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 adjustForDirichletConditions(const Epetra_Vector & local_bcs,
                              const Epetra_Vector & global_bcs,
                              const Teuchos::Ptr<Epetra_Vector> & f,
-                             const Teuchos::Ptr<Epetra_CrsMatrix> & A) const
+                             const Teuchos::Ptr<Epetra_CrsMatrix> & A,
+                             bool zeroVectorRows) const
 {
    if(f==Teuchos::null && A==Teuchos::null)
       return;
@@ -290,7 +299,7 @@ adjustForDirichletConditions(const Epetra_Vector & local_bcs,
       double * values = 0;
       int * indices = 0;
 
-      if(local_bcs[i]==0.0) { 
+      if(local_bcs[i]==0.0 || zeroVectorRows) { 
          // this boundary condition was NOT set by this processor
 
          // if they exist put 0.0 in each entry
@@ -323,7 +332,7 @@ template <typename Traits,typename LocalOrdinalT>
 Teuchos::MpiComm<int> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getComm() const
 {
-   return Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(dynamic_cast<const Epetra_MpiComm &>(*getEpetraComm()).Comm()));
+   return *tComm_;
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -384,11 +393,15 @@ initializeGhostedContainer(int mem,BlockedEpetraLinearObjContainer & loc) const
    if((mem & BLOC::DxDt) == BLOC::DxDt)
       loc.set_dxdt(getGhostedThyraDomainVector());
     
-   if((mem & BLOC::F) == BLOC::F)
+   if((mem & BLOC::F) == BLOC::F) {
       loc.set_f(getGhostedThyraRangeVector());
+      loc.setRequiresDirichletAdjustment(true);
+   }
 
-   if((mem & BLOC::Mat) == BLOC::Mat)
+   if((mem & BLOC::Mat) == BLOC::Mat) {
       loc.set_A(getGhostedThyraMatrix());
+      loc.setRequiresDirichletAdjustment(true);
+   }
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -881,7 +894,7 @@ buildEpetraGhostedGraph(int i,int j) const
    // build the map and allocate the space for the graph
    Teuchos::RCP<Epetra_Map> rowMap = getGhostedMap(i);
    Teuchos::RCP<Epetra_Map> colMap = getGhostedMap(j);
-   Teuchos::RCP<Epetra_CrsGraph> graph = Teuchos::rcp(new Epetra_CrsGraph(Copy,*rowMap,0));
+   Teuchos::RCP<Epetra_CrsGraph> graph = Teuchos::rcp(new Epetra_CrsGraph(Copy,*rowMap,*colMap,0));
 
    std::vector<std::string> elementBlockIds;
    
@@ -891,7 +904,7 @@ buildEpetraGhostedGraph(int i,int j) const
    colProvider = getGlobalIndexer(j);
 
    blockProvider_->getElementBlockIds(elementBlockIds); // each sub provider "should" have the
-                                                      // same element blocks
+                                                        // same element blocks
 
    // graph information about the mesh
    std::vector<std::string>::const_iterator blockItr;

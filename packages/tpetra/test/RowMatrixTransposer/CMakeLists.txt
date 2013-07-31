@@ -1,9 +1,8 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-	RowMatrixTansposer_test
+	RowMatrixTransposer_test
 	SOURCES main.cpp)
-
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   RowMatrixTransposer_UnitTests

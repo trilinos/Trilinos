@@ -85,7 +85,7 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+  template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class Aggregates : public BaseClass {
 #undef MUELU_AGGREGATES_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
@@ -96,7 +96,7 @@ namespace MueLu {
      *
      * Standard constructor of aggregates takes a Graph object as parameter.
      * Uses the graph.GetImportMap() to initialize the internal vector for mapping nodes to (local) aggregate ids as well as
-     * th mapping of node to the owning processor id.
+     * the mapping of node to the owning processor id.
      *
      */
     Aggregates(const GraphBase & graph);
@@ -114,14 +114,53 @@ namespace MueLu {
     virtual ~Aggregates() { }
 
     LO GetNumAggregates() const           { return nAggregates_;        } ///< returns the number of aggregates of the current processor. Note: could/should be renamed to GetNumLocalAggregates?
-    void SetNumAggregates(LO nAggregates) { nAggregates_ = nAggregates; } ///< set number of local aggregates on current processor. This has to be done by the aggregation routines.
-    RCP<LOVector> & GetVertex2AggIdNonConst()     { return vertex2AggId_;       } ///< provide access to the underlaying aggregation information. Vertex2AggId provides a mapping of the local node id to the local aggregate id on the current processor
-    RCP<LOVector> & GetProcWinnerNonConst()       { return procWinner_;         } ///< provide access to the underlaying aggregation information. ProcWinner stores the processor id owning the given (local) node id.
-    const RCP<LOVector> & GetVertex2AggId() const { return vertex2AggId_;       } ///< provide access to the underlaying aggregation information. Vertex2AggId provides a mapping of the local node id to the local aggregate id on the current processor
-    const RCP<LOVector> & GetProcWinner() const   { return procWinner_;         } ///< provide access to the underlaying aggregation information. ProcWinner stores the processor id owning the given (local) node id.
 
-    bool IsRoot(LO i) const               { return isRoot_[i];          } ///< returns true if node with given local node id is marked to be a root node
-    void SetIsRoot(LO i, bool value=true) { isRoot_[i] = value;         } ///< set root node information. Used by aggregation methods only.
+    /*! @brief Set number of local aggregates on current processor.
+
+        This has to be done by the aggregation routines.
+    */
+    void SetNumAggregates(LO nAggregates) { nAggregates_ = nAggregates; }
+
+    //! @brief Record whether aggregates include DOFs from other processes.
+    void AggregatesCrossProcessors(const bool &flag) {aggregatesIncludeGhosts_ = flag;};
+
+    /*! @brief Return false if and only if no aggregates include DOFs from other processes.
+
+        Used in construction of tentative prolongator to skip a communication phase.
+    */
+    bool AggregatesCrossProcessors() const {return aggregatesIncludeGhosts_;};
+
+    /*! @brief Returns a nonconstant vector that maps local node IDs to local aggregates IDs.
+
+        For local node ID i, the corresponding vector entry v[i] is the local aggregate id to which i belongs on the current processor.
+    */
+    RCP<LOVector> & GetVertex2AggIdNonConst()     { return vertex2AggId_;       }
+
+    /*! @brief Returns nonconsant vector that maps local node IDs to owning processor IDs.
+
+        For local node ID i, the corresponding vector entry v[i] is the owning processor ID.
+    */
+    RCP<LOVector> & GetProcWinnerNonConst()       { return procWinner_;         }
+    /*! @brief Returns constant vector that maps local node IDs to local aggregates IDs.
+
+        For local node ID i, the corresponding vector entry v[i] is the local aggregate id to which i belongs on the current processor.
+    */
+    const RCP<LOVector> & GetVertex2AggId() const { return vertex2AggId_;       }
+
+    /*! @brief Returns constant vector that maps local node IDs to owning processor IDs.
+
+        For local node ID i, the corresponding vector entry v[i] is the owning processor ID.
+    */
+    const RCP<LOVector> & GetProcWinner() const   { return procWinner_;         }
+
+    //! Returns true if node with given local node id is marked to be a root node
+    bool IsRoot(LO i) const               { return isRoot_[i];          }
+
+    /*! @brief Set root node information.
+
+    Used by aggregation methods only.
+    */
+    void SetIsRoot(LO i, bool value=true) { isRoot_[i] = value;         }
 
     const RCP<const Map> GetMap() const; ///< returns (overlapping) map of aggregate/node distribution
 
@@ -156,6 +195,9 @@ namespace MueLu {
 
     Teuchos::ArrayRCP<bool> isRoot_;/* IsRoot[i] indicates whether vertex i  */
                                     /* is a root node.                       */
+
+    //! Set to false iff aggregates do not include any DOFs belong to other processes.
+    bool aggregatesIncludeGhosts_;
 
     //! Array of sizes of each local aggregate.
     mutable Teuchos::ArrayRCP<LO> aggregateSizes_;

@@ -1,14 +1,15 @@
 # @HEADER
 # ************************************************************************
 #
-#            Trilinos: An Object-Oriented Solver Framework
-#                 Copyright (2001) Sandia Corporation
+#            TriBITS: Tribial Build, Integrate, and Test System
+#                    Copyright 2013 Sandia Corporation
 #
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+# the U.S. Government retains certain rights in this software.
 #
-# Copyright (2001) Sandia Corporation. Under the terms of Contract
-# DE-AC04-94AL85000, there is a non-exclusive license for use of this
-# work by or on behalf of the U.S. Government.  Export of this program
-# may require a license from the United States Government.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
 #
 # 1. Redistributions of source code must retain the above copyright
 # notice, this list of conditions and the following disclaimer.
@@ -32,23 +33,6 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# NOTICE:  The United States Government is granted for itself and others
-# acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
-# license in this data to reproduce, prepare derivative works, and
-# perform publicly and display publicly.  Beginning five (5) years from
-# July 25, 2001, the United States Government is granted for itself and
-# others acting on its behalf a paid-up, nonexclusive, irrevocable
-# worldwide license in this data to reproduce, prepare derivative works,
-# distribute copies to the public, perform publicly and display
-# publicly, and to permit others to do so.
-#
-# NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
-# OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
-# ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
-# RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
-# INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
-# THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
 #
 # ************************************************************************
 # @HEADER
@@ -110,12 +94,13 @@ IF (PYTHON_EXECUTABLE OR PythonInterp_MUST_BE_FOUND)
   ENDIF()
   IF (PythonInterp_FIND_VERSION)
     EXECUTE_PROCESS(COMMAND
-      ${PYTHON_EXECUTABLE} "-V"
-      ERROR_VARIABLE PythonInterp_VERSION
-      ERROR_STRIP_TRAILING_WHITESPACE
+      ${PYTHON_EXECUTABLE} -c "import sys; print sys.version.split()[0]"
+      OUTPUT_VARIABLE PythonInterp_VERSION
+      OUTPUT_STRIP_TRAILING_WHITESPACE
       )
-    SEPARATE_ARGUMENTS(PythonInterp_VERSION)
-    LIST(GET PythonInterp_VERSION -1 PythonInterp_VERSION)
+    MESSAGE(STATUS "Python version ${PythonInterp_VERSION}")
+    #SEPARATE_ARGUMENTS(PythonInterp_VERSION)
+    #LIST(GET PythonInterp_VERSION 1 PythonInterp_VERSION)
     IF(${PythonInterp_VERSION} VERSION_LESS ${PythonInterp_FIND_VERSION})
       MESSAGE(WARNING
         "Python version ${PythonInterp_VERSION}"

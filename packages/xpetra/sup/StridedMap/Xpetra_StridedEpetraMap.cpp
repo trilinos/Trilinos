@@ -97,8 +97,8 @@ namespace Xpetra {
       int gid = nodeMap->GID(i);
       for(int dof = 0; dof < nDofsPerNode; ++dof) {
         // dofs are calculated by
-        // global offset + node_GID * full size of strided map + striding offset of current striding block + dof id of current striding block
-        dofgids.push_back(offset_ + gid*getFixedBlockSize() + nStridedOffset + dof);
+        // global indexBase + offset + (node_GID - nodeIndexBase) * full size of strided map + striding offset of current striding block + dof id of current striding block
+        dofgids.push_back(indexBase + offset_ + (gid-indexBase)*getFixedBlockSize() + nStridedOffset + dof);
       }
     }
 
@@ -158,8 +158,8 @@ namespace Xpetra {
       int gid = nodeMap->GID(i);
       for(int dof = 0; dof < nDofsPerNode; ++dof) {
 	// dofs are calculated by
-	// global offset + node_GID * full size of strided map + striding offset of current striding block + dof id of current striding block
-        dofgids.push_back(offset_ + gid*getFixedBlockSize() + nStridedOffset + dof);
+	// indexBase + global offset + (node_GID-nodeIndexBase) * full size of strided map + striding offset of current striding block + dof id of current striding block
+        dofgids.push_back(indexBase + offset_ + (gid-indexBase)*getFixedBlockSize() + nStridedOffset + dof);
       }
     }
 

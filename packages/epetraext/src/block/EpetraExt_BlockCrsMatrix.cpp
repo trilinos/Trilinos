@@ -152,8 +152,8 @@ void BlockCrsMatrix::LoadBlock(const Epetra_RowMatrix & BaseMatrix, const int Ro
 
     int BaseRow = BaseMap.GID(i);
     ierr = this->ReplaceGlobalValues(BaseRow + RowOffset, NumIndices, &Values[0], &Indices[0]); 
-    if (ierr != 0) cout << "WARNING BlockCrsMatrix::LoadBlock ReplaceGlobalValues err = " << ierr <<
-	    "\n\t  Row " << BaseRow + RowOffset << "Col start" << Indices[0] << endl;
+    if (ierr != 0) std::cout << "WARNING BlockCrsMatrix::LoadBlock ReplaceGlobalValues err = " << ierr <<
+	    "\n\t  Row " << BaseRow + RowOffset << "Col start" << Indices[0] << std::endl;
 
   }
 }
@@ -189,8 +189,8 @@ void BlockCrsMatrix::LoadBlock(const Epetra_RowMatrix & BaseMatrix, const int Ro
 
     int BaseRow = BaseMap.GID(i);
     ierr = this->SumIntoGlobalValues(BaseRow + RowOffset, NumIndices, &Values[0], &Indices[0]); 
-    if (ierr != 0) cout << "WARNING BlockCrsMatrix::SumIntoBlock SumIntoGlobalValues err = " << ierr <<
-	    "\n\t  Row " << BaseRow + RowOffset << "Col start" << Indices[0] << endl;
+    if (ierr != 0) std::cout << "WARNING BlockCrsMatrix::SumIntoBlock SumIntoGlobalValues err = " << ierr <<
+	    "\n\t  Row " << BaseRow + RowOffset << "Col start" << Indices[0] << std::endl;
 
   }
 }
@@ -226,8 +226,8 @@ void BlockCrsMatrix::LoadBlock(const Epetra_RowMatrix & BaseMatrix, const int Ro
 
     int BaseRow = BaseMap.GID(i);
     ierr = this->SumIntoGlobalValues(BaseRow + RowOffset, NumIndices, &Values[0], &Indices[0]); 
-    if (ierr != 0) cout << "WARNING BlockCrsMatrix::SumIntoBlock SumIntoGlobalValues err = " << ierr <<
-	    "\n\t  Row " << BaseRow + RowOffset << "Col start" << Indices[0] << endl;
+    if (ierr != 0) std::cout << "WARNING BlockCrsMatrix::SumIntoBlock SumIntoGlobalValues err = " << ierr <<
+	    "\n\t  Row " << BaseRow + RowOffset << "Col start" << Indices[0] << std::endl;
 
   }
 }
@@ -247,8 +247,8 @@ void BlockCrsMatrix::BlockSumIntoGlobalValues(const int BaseRow, int NumIndices,
   int ierr = this->SumIntoGlobalValues(BaseRow + RowOffset, NumIndices,
                                    Values, &OffsetIndices[0]); 
 
-  if (ierr != 0) cout << "WARNING BlockCrsMatrix::BlockSumIntoGlobalValues err = "
-     << ierr << "\n\t  Row " << BaseRow + RowOffset << "Col start" << Indices[0] << endl;
+  if (ierr != 0) std::cout << "WARNING BlockCrsMatrix::BlockSumIntoGlobalValues err = "
+     << ierr << "\n\t  Row " << BaseRow + RowOffset << "Col start" << Indices[0] << std::endl;
 }
 
 //==============================================================================
@@ -266,8 +266,8 @@ void BlockCrsMatrix::BlockReplaceGlobalValues(const int BaseRow, int NumIndices,
   int ierr = this->ReplaceGlobalValues(BaseRow + RowOffset, NumIndices,
                                    Values, &OffsetIndices[0]); 
 
-  if (ierr != 0) cout << "WARNING BlockCrsMatrix::BlockReplaceGlobalValues err = "
-     << ierr << "\n\t  Row " << BaseRow + RowOffset << "Col start" << Indices[0] << endl;
+  if (ierr != 0) std::cout << "WARNING BlockCrsMatrix::BlockReplaceGlobalValues err = "
+     << ierr << "\n\t  Row " << BaseRow + RowOffset << "Col start" << Indices[0] << std::endl;
 }
 
 //==============================================================================
@@ -289,8 +289,8 @@ void BlockCrsMatrix::BlockExtractGlobalRowView(const int BaseRow,
   Values += ColOffset;
   NumEntries -= ColOffset;
 
-  if (ierr != 0) cout << "WARNING BlockCrsMatrix::BlockExtractGlobalRowView err = "
-     << ierr << "\n\t  Row " << BaseRow + RowOffset << "Col " << Col+ColOffset << endl;
+  if (ierr != 0) std::cout << "WARNING BlockCrsMatrix::BlockExtractGlobalRowView err = "
+     << ierr << "\n\t  Row " << BaseRow + RowOffset << "Col " << Col+ColOffset << std::endl;
 }
 
 //==============================================================================
@@ -316,6 +316,7 @@ void BlockCrsMatrix::ExtractBlock(Epetra_CrsMatrix & BaseMatrix, const int Row, 
   int *BlkIndices;
   int BlkNumIndices;
   int ierr=0;
+  (void) ierr; // Forestall compiler warning for unused variable.
 
   for (int i=0; i<BaseMap.NumMyElements(); i++) {
 

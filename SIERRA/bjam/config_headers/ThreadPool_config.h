@@ -1,2 +1,2 @@
-#define HAVE_MPI
-#define HAVE_PTHREAD
+#include "TrilinosSierraConfig.h"
+#include "ThreadPool_config_fcs.h"

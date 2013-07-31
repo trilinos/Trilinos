@@ -52,9 +52,9 @@
 
 #include "Trios_nssi_server.h"
 
-int xfer_start_server_threads(const int num_threads, const int max_reqs);
+void xfer_start_server_threads(const int num_threads, const int max_reqs);
 int xfer_enqueue_rpc_request(nssi_svc_rpc_request *req);
-int xfer_cancel_server_threads();
+void xfer_cancel_server_threads();
 
 
 #endif /* XFER_THREADS_H_ */

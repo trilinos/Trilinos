@@ -533,7 +533,13 @@ int Epetra_MultiVector::ExtractCopy(double *A, int MyLDA) const {
 //=========================================================================
 int Epetra_MultiVector::ReplaceMap(const Epetra_BlockMap& map)
 {
-  if (Map().PointSameAs(map)) {
+  // mfh 28 Mar 2013: We can't check for compatibility across the
+  // whole communicator, unless we know that the current and new
+  // Maps are nonnull on _all_ participating processes.
+  
+  // So, we'll check to make sure that the maps are the same size on this processor and then
+  // just go with it.
+  if(Map().NumMyElements() == map.NumMyElements() && Map().NumMyPoints() == map.NumMyPoints()) {
     Epetra_DistObject::Map_ = map;
     return(0);
   }
@@ -1598,6 +1604,7 @@ int  Epetra_MultiVector::NormInf (double* Result) const {
 }
       DoubleTemp_[i] = normval;
 #else
+      (void) normval; // silence unused value warning in non-OpenMP build
       int jj = IAMAX(myLength, Pointers_[i]);
       if (jj>-1) DoubleTemp_[i] = std::abs(Pointers_[i][jj]);
 #endif
@@ -2435,7 +2442,7 @@ int Epetra_MultiVector::ResetView(double ** ArrayOfPointers) {
   return(0);
   }
 //=======================================================================
-void Epetra_MultiVector::Print(ostream& os) const {
+void Epetra_MultiVector::Print(std::ostream& os) const {
   int MyPID = Map().Comm().MyPID();
   int NumProc = Map().Comm().NumProc();
   
@@ -2461,7 +2468,7 @@ void Epetra_MultiVector::Print(ostream& os) const {
       os.width(20);
       os <<  "Value  ";
     }
-  os << endl;
+  os << std::endl;
       }
       for (int i=0; i < NumMyElements1; i++) {
   for (int ii=0; ii< Map().ElementSize(i); ii++) {
@@ -2522,10 +2529,10 @@ void Epetra_MultiVector::Print(ostream& os) const {
         os.width(20);
         os <<  A_Pointers[j][iii];
       }
-    os << endl;
+    os << std::endl;
   }
       }
-      os << flush; 
+      os << std::flush; 
     }
 
     // Do a few global ops to give I/O a chance to complete

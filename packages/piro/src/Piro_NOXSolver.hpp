@@ -43,19 +43,21 @@
 #ifndef PIRO_NOXSOLVER_H
 #define PIRO_NOXSOLVER_H
 
-#include <iostream>
-// NOX Objects
+#include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
+
+#include "Piro_ObserverBase.hpp"
+
 #include "NOX.H"
 #include "NOX_Thyra.H"
 
-#include "Thyra_ModelEvaluatorDefaultBase.hpp"
-#include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
 #include "Teuchos_RCP.hpp"
-
-/** \brief Thyra-based Model Evaluator for NOX solves */
+#include "Teuchos_ParameterList.hpp"
 
 namespace Piro {
 
+/** \brief Thyra-based Model Evaluator for NOX solves
+ *  \ingroup Piro_Thyra_solver_grp
+ * */
 template <typename Scalar>
 class NOXSolver
     : public Thyra::ResponseOnlyModelEvaluatorBase<Scalar>
@@ -65,8 +67,9 @@ class NOXSolver
   /** \name Constructors/initializers */
   //@{
   /** \brief Takes the number of elements in the discretization . */
-  NOXSolver(Teuchos::RCP<Teuchos::ParameterList> appParams,
-            Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > model);
+  NOXSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams,
+            const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
+            const Teuchos::RCP<ObserverBase<Scalar> > &observer = Teuchos::null);
   //@}
 
   /** \name Overridden from Thyra::ModelEvaluatorBase . */
@@ -101,7 +104,8 @@ class NOXSolver
   //@}
 
   Teuchos::RCP<Teuchos::ParameterList> appParams;
-  Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Scalar> > model;
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model;
+  Teuchos::RCP<ObserverBase<Scalar> > observer;
 
   int num_p;
   int num_g;

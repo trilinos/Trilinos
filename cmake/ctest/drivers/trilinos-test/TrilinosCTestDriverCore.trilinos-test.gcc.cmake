@@ -77,16 +77,17 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   SET_DEFAULT( Trilinos_ENABLE_SECONDARY_STABLE_CODE OFF)
 
   # Only turn on PyTrilinos for shared libraries
-  SET_DEFAULT( Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} PyTrilinos TriKota)
+  SET_DEFAULT( Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} TriKota)
   
   SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
     "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
     "-DCOVERAGE_COMMAND:FILEPATH=/usr/bin/gcov"
     "-DMEMORYCHECK_COMMAND:FILEPATH=/usr/bin/valgrind"
     "-DTPL_ENABLE_SuperLU:BOOL=ON"
-    "-DSuperLU_INCLUDE_DIRS:PATH=/home/trilinos/tpl/gcc4.1.2/SuperLU_4.1/SRC"
-    "-DSuperLU_LIBRARY_DIRS:PATH=/home/trilinos/tpl/gcc4.1.2/SuperLU_4.1/lib"
-    "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.1"
+    "-DSuperLU_INCLUDE_DIRS:PATH=/home/trilinos/tpl/gcc4.1.2/SuperLU_4.3/SRC"
+    "-DSuperLU_LIBRARY_DIRS:PATH=/home/trilinos/tpl/gcc4.1.2/SuperLU_4.3/lib"
+    "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.3"
+    "-DMPI4PY_INCLUDE_DIR=/home/trilinos/tpl/gcc4.1.2/mpi4py-1.3/include"
     "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE"
     "-DMesquite_ENABLE_TESTS:BOOL=ON"

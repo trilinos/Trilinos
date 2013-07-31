@@ -75,7 +75,7 @@ namespace MueLu {
     @ingroup MueLuTransferClasses
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class PgPFactory : public PFactory {
 #undef MUELU_PGPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -97,6 +97,8 @@ namespace MueLu {
 
     //! @name Set methods.
     //@{
+
+    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
 
     //! Change view of diagonal.
     void SetDiagonalView(std::string const& diagView);
@@ -149,13 +151,7 @@ namespace MueLu {
   private:
 
     //! Factory parameters
-    std::string diagonalView_;
-
-    //! minimization norm
-    MinimizationNorm min_norm_;
-
-    //! flag: reuse row based omegas from prolongator for restriction operator
-    bool bReUseRowBasedOmegas_;
+    std::string diagonalView_; // TODO do we need this?
   };
 
 } //namespace MueLu

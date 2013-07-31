@@ -91,7 +91,8 @@ enum NodeState {
   /* to an aggregate.                         */
 
   ONEPT    = 4,  /* indicates that a node shall be preserved over all multigrid levels as 1 point aggregate */
-  SMALLAGG = 5   /* indicates that a node shall be aggregated separately from standard nodes with small aggregates (only neighbour nodes which are also marked with the SMALLAGG flag) */
+  SMALLAGG = 5,   /* indicates that a node shall be aggregated separately from standard nodes with small aggregates (only neighbour nodes which are also marked with the SMALLAGG flag) */
+  BOUNDARY = 6     // node is a Dirichlet node and should never be aggregated
 };
 } // namespace NodeStats
 
@@ -112,7 +113,7 @@ public:
 
      @ingroup MueLuBaseClasses
  */
-template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
 class AggregationAlgorithmBase
 : public BaseClass
   {
@@ -132,7 +133,7 @@ class AggregationAlgorithmBase
   //@{
 
   //! BuildAggregates routine.
-  virtual LocalOrdinal BuildAggregates(GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const = 0;
+  virtual LocalOrdinal BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const = 0;
   //@}
 
   //! @name Build routines
@@ -143,16 +144,6 @@ class AggregationAlgorithmBase
     const RCP<const Teuchos::Comm<int> > & comm = graph.GetComm();
     const LocalOrdinal nRows = graph.GetNodeNumVertices();
     const LocalOrdinal nLocalAggregates = aggregates.GetNumAggregates();
-
-    if(IsPrint(Warnings0)) {
-      GO localNotAggregated  = 0;
-      GO globalNotAggregated = 0;
-      for(LO i=0; i<nRows; ++i)
-        if(aggStat[i] != NodeStats::AGGREGATED ) localNotAggregated++;
-        sumAll(comm, (GO)localNotAggregated, globalNotAggregated);
-        if(globalNotAggregated > 0)
-          GetOStream(Warnings0,0) << "Aggregation (UC): " << phase << " (WARNING) " << globalNotAggregated << " unaggregated nodes left" << std::endl;
-    }
 
     if(IsPrint(Statistics1)) {
       LO localAggregated  = 0;
@@ -167,29 +158,21 @@ class AggregationAlgorithmBase
       sumAll(comm, (GO)nLocalAggregates, nAggregatesGlobal);
       GetOStream(Statistics1, 0) << "Aggregation (UC): " << phase << " Total aggregates = " << nAggregatesGlobal << std::endl;
     }
+    if(IsPrint(Warnings0)) {
+      GO localNotAggregated  = 0;
+      GO globalNotAggregated = 0;
+      for(LO i=0; i<nRows; ++i)
+        if(aggStat[i] != NodeStats::AGGREGATED ) localNotAggregated++;
+        sumAll(comm, (GO)localNotAggregated, globalNotAggregated);
+        if(globalNotAggregated > 0)
+          GetOStream(Warnings0,0) << "Aggregation (UC): " << phase << " (WARNING) " << globalNotAggregated << " unaggregated nodes left" << std::endl;
+    }
+
   }
 
   //@}
 
-  //! @name Set/get methods.
-  //@{
-
-  void SetOrdering(AggOptions::Ordering ordering)                          { ordering_                = ordering;                }
-  void SetMinNodesPerAggregate(int minNodesPerAggregate)       { minNodesPerAggregate_    = minNodesPerAggregate;    }
-  void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) { maxNeighAlreadySelected_ = maxNeighAlreadySelected; }
-
-  AggOptions::Ordering GetOrdering()                const { return ordering_;                }
-  int      GetMinNodesPerAggregate()    const { return minNodesPerAggregate_;    }
-  int      GetMaxNeighAlreadySelected() const { return maxNeighAlreadySelected_; }
-
-  //@}
-
-
   private:
-    //! Aggregation options (TODO: Teuchos::ParameterList?)
-    AggOptions::Ordering ordering_;                /**<  natural, random, graph           */
-    int      minNodesPerAggregate_;    /**<  aggregate size control           */
-    int      maxNeighAlreadySelected_; /**<  complexity control               */
 
   }; // class AggregationAlgorithmBase
 

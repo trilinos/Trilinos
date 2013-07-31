@@ -225,13 +225,13 @@ public:
   }
 
   //! Returns the smoother solver type.
-  inline string GetSmootherType()
+  inline std::string GetSmootherType()
   {
     return(List_.get("smoother: type", "symmetric Gauss-Seidel"));
   }
 
   //! Returns the coarse solver type.
-  inline string GetCoarseType() 
+  inline std::string GetCoarseType() 
   {
     return(List_.get("coarse: type", "Amesos-KLU"));
   }
@@ -315,10 +315,10 @@ public:
     MultiVector ThisNS = GetNullSpace();
 
     if (GetPrintLevel()) {
-      cout << endl;
+      std::cout << std::endl;
       ML_print_line("-", 80);
-      cout << "Computing the hierarchy, input null space dimension = "
-           << ThisNS.GetNumVectors() << endl;
+      std::cout << "Computing the hierarchy, input null space dimension = "
+           << ThisNS.GetNumVectors() << std::endl;
     }
 
     // build up the default null space
@@ -434,9 +434,9 @@ public:
     SetNumPDEEqns(GetInputNumPDEEqns());
 
     if (GetPrintLevel()) {
-      cout << endl;
+      std::cout << std::endl;
       ML_print_line("-", 80);
-      cout << "Computing the first null space component" << endl;
+      std::cout << "Computing the first null space component" << std::endl;
     }
 
     MultiVector NS(A_[0].GetDomainSpace());
@@ -486,11 +486,11 @@ public:
 
       if (GetPrintLevel()) {
         ML_print_line("-", 80);
-        cout << "current working level   = " << level << endl;
-        cout << "number of global rows   = " 
-          << A(level).GetDomainSpace().GetNumGlobalElements() << endl;
-        cout << "number of PDE equations = " << GetNumPDEEqns() << endl;
-        cout << "null space dimension    = " << NS.GetNumVectors() << endl;
+        std::cout << "current working level   = " << level << std::endl;
+        std::cout << "number of global rows   = " 
+          << A(level).GetDomainSpace().GetNumGlobalElements() << std::endl;
+        std::cout << "number of PDE equations = " << GetNumPDEEqns() << std::endl;
+        std::cout << "null space dimension    = " << NS.GetNumVectors() << std::endl;
       }
 
       GetSmoothedP(A(level), List_, NS, P(level), NewNS);
@@ -512,8 +512,8 @@ public:
       S(level + 1).Apply(locF, NS);
       MyEnergyAfter = sqrt((A(level + 1) * NS) * NS);
       if (GetPrintLevel() == 0) {
-        cout << "Energy before smoothing = " << MyEnergyBefore << endl;
-        cout << "Energy after smoothing  = " << MyEnergyAfter << endl;
+        std::cout << "Energy before smoothing = " << MyEnergyBefore << std::endl;
+        std::cout << "Energy after smoothing  = " << MyEnergyAfter << std::endl;
       }
 
       if (pow(MyEnergyAfter/MyEnergyBefore,1.0/SweepsBefore) < GetMaxReduction()) {
@@ -558,10 +558,10 @@ public:
       ML_THROW("Empty null space not allowed", -1);
 
     if (GetPrintLevel()) {
-      cout << endl;
+      std::cout << std::endl;
       ML_print_line("-", 80);
-      cout << "Incrementing the hierarchy, input null space dimension = "
-           << InputNS.GetNumVectors() << endl;
+      std::cout << "Incrementing the hierarchy, input null space dimension = "
+           << InputNS.GetNumVectors() << std::endl;
     }
 
     int level;
@@ -706,8 +706,8 @@ public:
       ExpandedNS.Scale(NormFirstComponent / NormExpanded, NCand);
 
       if (GetPrintLevel() == 0) {
-        cout << "energy before cycle =" << MyEnergyBefore << endl;
-        cout << "energy after        =" << MyEnergyAfter << endl;
+        std::cout << "energy before cycle =" << MyEnergyBefore << std::endl;
+        std::cout << "energy after        =" << MyEnergyAfter << std::endl;
       }
 
       // FIXME: still to do:
@@ -821,25 +821,25 @@ public:
                       const bool verbose = true) const
   {
     if (GetMyPID() == 0) {
-      os << endl;
-      os << "*** MLAPI::MultiLevelSA, label = `" << GetLabel() << "'" << endl;
-      os << endl;
-      os << "Number of levels = " << GetMaxLevels() << endl;
-      os << "Flop count       = " << GetFlops() << endl;
-      os << "Cumulative time  = " << GetTime() << endl;
+      os << std::endl;
+      os << "*** MLAPI::MultiLevelSA, label = `" << GetLabel() << "'" << std::endl;
+      os << std::endl;
+      os << "Number of levels = " << GetMaxLevels() << std::endl;
+      os << "Flop count       = " << GetFlops() << std::endl;
+      os << "Cumulative time  = " << GetTime() << std::endl;
       if (GetTime() != 0.0)
-        os << "MFlops rate      = " << 1.0e-6 * GetFlops() / GetTime() << endl;
+        os << "MFlops rate      = " << 1.0e-6 * GetFlops() / GetTime() << std::endl;
       else
-        os << "MFlops rate      = 0.0" << endl;
-      os << endl;
+        os << "MFlops rate      = 0.0" << std::endl;
+      os << std::endl;
 
       for (int level = 0 ; level < GetMaxLevels() ; ++level) {
         ML_print_line("-", 80);
-        cout << "Information for level   = " << level;
-        cout << "number of global rows   = " 
-             << A(level).GetNumGlobalRows() << endl;
-        cout << "number of global nnz    = " 
-             << A(level).GetNumGlobalNonzeros() << endl;
+        std::cout << "Information for level   = " << level;
+        std::cout << "number of global rows   = " 
+             << A(level).GetNumGlobalRows() << std::endl;
+        std::cout << "number of global nnz    = " 
+             << A(level).GetNumGlobalNonzeros() << std::endl;
       }
       ML_print_line("-", 80);
     }
@@ -856,7 +856,7 @@ private:
   {
     double LambdaMax;
     Operator IminusA;
-    string EigenAnalysis = List.get("eigen-analysis: type", "Anorm");
+    std::string EigenAnalysis = List.get("eigen-analysis: type", "Anorm");
     double Damping       = List.get("aggregation: damping", 1.333);
 
     Operator Ptent;
@@ -873,9 +873,9 @@ private:
       ML_THROW("incorrect parameter (" + EigenAnalysis + ")", -1);
 
     if (GetPrintLevel()) {
-      cout << "omega                   = " << Damping << endl;
-      cout << "lambda max              = " << LambdaMax << endl;
-      cout << "damping factor          = " << Damping / LambdaMax << endl;
+      std::cout << "omega                   = " << Damping << std::endl;
+      std::cout << "lambda max              = " << LambdaMax << std::endl;
+      std::cout << "damping factor          = " << Damping / LambdaMax << std::endl;
     }
 
     if (Damping != 0.0) {

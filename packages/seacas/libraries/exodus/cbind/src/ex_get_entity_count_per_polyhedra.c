@@ -69,7 +69,7 @@ int ex_get_entity_count_per_polyhedra (int            exoid,
        sprintf(errmsg,
          "Warning: entity_counts array not allowed for NULL %s block %"PRId64" in file id %d",
 	       ex_name_of_object(blk_type),blk_id,exoid);
-       ex_err("ex_get_entity_count_per_polyhedra",errmsg,EX_MSG);
+       ex_err("ex_get_entity_count_per_polyhedra",errmsg,EX_NULLENTITY);
        return (EX_WARN);
        }
      else

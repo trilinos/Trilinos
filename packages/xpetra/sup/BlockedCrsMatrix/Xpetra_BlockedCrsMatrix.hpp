@@ -89,8 +89,8 @@ namespace Xpetra {
 template <class Scalar,
           class LocalOrdinal  = int,
           class GlobalOrdinal = LocalOrdinal,
-          class Node          = Kokkos::DefaultNode::DefaultNodeType,
-          class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
+          class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
+          class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
 class BlockedCrsMatrix : public Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 
   typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> MapClass;
@@ -182,6 +182,11 @@ public:
         "insertLocalValues not supported by BlockedCrsMatrix" );
   }
 
+  void removeEmptyProcessesInPlace(const Teuchos::RCP<const MapClass>& newMap) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "removeEmptyProcesses not supported by BlockedCrsMatrix");
+  }
+
   //! \brief Replace matrix entries, using global IDs.
   /** All index values must be in the global space.
 
@@ -204,6 +209,12 @@ public:
                           const ArrayView<const Scalar>       &vals) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                 "replaceLocalValues not supported by BlockedCrsMatrix" );
+  }
+
+  //! Set all matrix entries equal to scalar
+  virtual void setAllToScalar(const Scalar &alpha) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+                                "setAllToScalar not supported by BlockedCrsMatrix");
   }
 
   //! Scale the current values of a matrix, this = alpha*this.

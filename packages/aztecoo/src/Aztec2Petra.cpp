@@ -43,6 +43,7 @@
 */
 
 #include "Aztec2Petra.h"
+#include "Epetra_ConfigDefs.h"
 
 int Aztec2Petra(int * proc_config,
 		AZ_MATRIX * Amat, double * az_x, double * az_b,
@@ -52,6 +53,29 @@ int Aztec2Petra(int * proc_config,
 		Epetra_Vector * & x,
 		Epetra_Vector * & b,
 		int ** global_indices) {
+
+  bool do_throw = false;
+
+#ifdef EPETRA_NO_32BIT_GLOBAL_INDICES
+  do_throw = true;
+#else
+  do_throw =
+    map->GlobalIndicesLongLong() ||
+    A->RowMatrixRowMap().GlobalIndicesLongLong();
+#endif
+
+  if(do_throw) {
+    // We throw rather than let the compiler error out so that the
+    // rest of the library is available and all possible tests can run.
+
+    const char* error = "Aztec2Petra: Not available for 64-bit Maps.";
+    std::cerr << error << std::endl;
+    throw error;
+  }
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES // REMOVE BEGIN
+  // If no 32 bit indices, remove the code below using the preprocessor
+  // otherwise VbrMatrix functions cause linker issues.
 
   // Build Epetra_Comm object
 
@@ -103,8 +127,12 @@ int Aztec2Petra(int * proc_config,
     
     for (int i=0; i<NumMyElements; i++) ElementSizeList[i] = rpntr[i+1] - rpntr[i];
 
+#ifdef EPETRA_NO_32BIT_GLOBAL_INDICES
+    map = 0;
+#else
     map = new Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements, 
 			     ElementSizeList, 0, *comm);
+#endif
 
     if (map==0) EPETRA_CHK_ERR(-2); // Ran out of memory
 
@@ -121,8 +149,8 @@ int Aztec2Petra(int * proc_config,
       int *BlockIndices = global_bindx + bpntr[i];
       int ierr = AA->BeginInsertGlobalValues(BlockRow, NumBlockEntries, BlockIndices);
       if (ierr!=0) {
-	cerr << "Error in BeginInsertGlobalValues(GlobalBlockRow = " << BlockRow 
-	     << ") = " << ierr << endl; 
+	std::cerr << "Error in BeginInsertGlobalValues(GlobalBlockRow = " << BlockRow 
+	     << ") = " << ierr << std::endl; 
 	EPETRA_CHK_ERR(ierr);
       }
       int LDA = rpntr[i+1] - rpntr[i];
@@ -132,21 +160,21 @@ int Aztec2Petra(int * proc_config,
 	double * Values = val + indx[j];
 	ierr = AA->SubmitBlockEntry(Values, LDA, NumRows, NumCols);
 	if (ierr!=0) {
-	  cerr << "Error in SubmitBlockEntry, GlobalBlockRow = " << BlockRow 
-	       << "GlobalBlockCol = " << BlockIndices[j] << "Error = " << ierr << endl; 
+	  std::cerr << "Error in SubmitBlockEntry, GlobalBlockRow = " << BlockRow 
+	       << "GlobalBlockCol = " << BlockIndices[j] << "Error = " << ierr << std::endl; 
 	  EPETRA_CHK_ERR(ierr);
 	}
       }
       ierr = AA->EndSubmitEntries();
       if (ierr!=0) {
-	cerr << "Error in EndSubmitEntries(GlobalBlockRow = " << BlockRow 
-	     << ") = " << ierr << endl; 
+	std::cerr << "Error in EndSubmitEntries(GlobalBlockRow = " << BlockRow 
+	     << ") = " << ierr << std::endl; 
 	EPETRA_CHK_ERR(ierr);
       }
     }}  
     int ierr=AA->FillComplete();    
     if (ierr!=0) {
-      cerr <<"Error in Epetra_VbrMatrix FillComplete" << ierr << endl;
+      std::cerr <<"Error in Epetra_VbrMatrix FillComplete" << ierr << std::endl;
       EPETRA_CHK_ERR(ierr);
     }
     
@@ -159,8 +187,12 @@ int Aztec2Petra(int * proc_config,
     int * numNz = new int[NumMyElements];
     for (int i=0; i<NumMyElements; i++) numNz[i] = global_bindx[i+1] - global_bindx[i] + 1;
 
+#ifdef EPETRA_NO_32BIT_GLOBAL_INDICES
+    Epetra_Map * map1 = 0;
+#else
     Epetra_Map * map1 = new Epetra_Map(NumGlobalElements, NumMyElements,
 				     MyGlobalElements, 0, *comm);
+#endif
 
     Epetra_CrsMatrix * AA = new Epetra_CrsMatrix(Copy, *map1, numNz);
 
@@ -172,26 +204,34 @@ int Aztec2Petra(int * proc_config,
       double * row_vals = val + global_bindx[row];
       int * col_inds = global_bindx + global_bindx[row];
       int numEntries = global_bindx[row+1] - global_bindx[row];
+#ifdef EPETRA_NO_32BIT_GLOBAL_INDICES
+      int ierr = 1;
+#else
       int ierr = AA->InsertGlobalValues(MyGlobalElements[row], numEntries, row_vals, col_inds);
+#endif
       if (ierr!=0) {
-	cerr << "Error puting row " << MyGlobalElements[row] << endl;
+	std::cerr << "Error puting row " << MyGlobalElements[row] << std::endl;
 	EPETRA_CHK_ERR(ierr);
       }
+#ifdef EPETRA_NO_32BIT_GLOBAL_INDICES
+      ierr = 1;
+#else
       ierr = AA->InsertGlobalValues(MyGlobalElements[row], 1, val+row, MyGlobalElements+row);
+#endif
       if (ierr!=0) {
-	cerr << "Error putting  diagonal" << endl;
+	std::cerr << "Error putting  diagonal" << std::endl;
 	EPETRA_CHK_ERR(ierr);
       }
     }
 
     int ierr=AA->FillComplete();
     if (ierr!=0) {
-      cerr << "Error in Epetra_CrsMatrix_FillComplete" << endl;
+      std::cerr << "Error in Epetra_CrsMatrix_FillComplete" << std::endl;
       EPETRA_CHK_ERR(ierr);
     }
     A = dynamic_cast<Epetra_RowMatrix *> (AA); // cast CRS pointer to RowMatrix pointer
   }
-  else cerr << "Not a supported AZ_MATRIX data type" << endl;
+  else std::cerr << "Not a supported AZ_MATRIX data type" << std::endl;
 
 
   // Create x vector
@@ -216,5 +256,7 @@ int Aztec2Petra(int * proc_config,
    else
      global_indices = &global_bindx;
    }
+#endif // EPETRA_NO_32BIT_GLOBAL_INDICES REMOVE END
+
   return 0;
 }

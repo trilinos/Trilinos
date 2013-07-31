@@ -56,7 +56,7 @@ namespace panzer {
 
 /** Linear object container for SG-Tpetra objects.
   */
-template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=Kokkos::DefaultNode::DefaultNodeType>
+template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=KokkosClassic::DefaultNode::DefaultNodeType>
 class SGTpetraLinearObjContainer : public LinearObjContainer {
 public:
    typedef TpetraLinearObjContainer<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> ObjContainer;

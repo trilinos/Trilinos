@@ -76,15 +76,16 @@
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Exceptions.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
+#include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
-#include "MueLu_MultiVectorTransferFactory.hpp"
+#include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
 
 // Belos
 #ifdef HAVE_MUELU_BELOS
@@ -94,6 +95,10 @@
 #include "BelosBlockGmresSolMgr.hpp"
 #include "BelosXpetraAdapter.hpp" // this header defines Belos::XpetraOp()
 #include "BelosMueLuAdapter.hpp"  // this header defines Belos::MueLuOp()
+#endif
+
+#ifdef HAVE_MUELU_ISORROPIA
+#include "MueLu_IsorropiaInterface.hpp"
 #endif
 
 //
@@ -106,8 +111,8 @@ typedef int    LocalOrdinal;
 typedef int GlobalOrdinal;
 //#endif
 //
-typedef Kokkos::DefaultNode::DefaultNodeType Node;
-typedef Kokkos::DefaultKernels<Scalar, LocalOrdinal, Node>::SparseOps LocalMatOps;
+typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+typedef KokkosClassic::DefaultKernels<Scalar, LocalOrdinal, Node>::SparseOps LocalMatOps;
 //
 #include "MueLu_UseShortNames.hpp"
 
@@ -171,7 +176,7 @@ int main(int argc, char *argv[]) {
 
   // - Repartitioning
 #if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN)
-  int optRepartition = 1;                 clp.setOption("repartition",    &optRepartition,        "enable repartitioning");
+  int optRepartition = 1;                 clp.setOption("repartition",    &optRepartition,        "enable repartitioning (0=no repartitioning, 1=Zoltan RCB, 2=Isorropia+Zoltan PHG");
   LO optMinRowsPerProc = 2000;            clp.setOption("minRowsPerProc", &optMinRowsPerProc,     "min #rows allowable per proc before repartitioning occurs");
   double optNnzImbalance = 1.2;           clp.setOption("nnzImbalance",   &optNnzImbalance,       "max allowable nonzero imbalance before repartitioning occurs");
 #else
@@ -293,7 +298,7 @@ int main(int argc, char *argv[]) {
     //
 
     {
-      RCP<CoupledAggregationFactory> AggregationFact = rcp(new CoupledAggregationFactory());
+      RCP<UncoupledAggregationFactory> AggregationFact = rcp(new UncoupledAggregationFactory());
       *out << "========================= Aggregate option summary =========================" << std::endl;
       *out << "min DOFs per aggregate :                " << optMinPerAgg << std::endl;
       *out << "min # of root nbrs already aggregated : " << optMaxNbrSel << std::endl;
@@ -313,7 +318,7 @@ int main(int argc, char *argv[]) {
         std::string msg = "main: bad aggregation option """ + optAggOrdering + """.";
         throw(MueLu::Exceptions::RuntimeError(msg));
       }
-      AggregationFact->SetPhase3AggCreation(0.5);
+      //AggregationFact->SetPhase3AggCreation(0.5);
       M.SetFactory("Aggregates", AggregationFact);
 
     *out << "=============================================================================" << std::endl;
@@ -345,7 +350,7 @@ int main(int argc, char *argv[]) {
       // Repartitioning (if needed)
       //
 
-      if (!optRepartition) {
+      if (optRepartition == 0) {
         // No repartitioning
 
         // Configure FactoryManager
@@ -365,16 +370,15 @@ int main(int argc, char *argv[]) {
         AFact->SetFactory("R", RFact);
 
         // Transfer coordinates
-        RCP<MultiVectorTransferFactory> TransferCoordinatesFact = rcp(new MultiVectorTransferFactory());
-        RCP<Factory> TentativeRFact = rcp(new TransPFactory()); TentativeRFact->SetFactory("P", M.GetFactory("Ptent")); // Use Ptent for coordinate projection
-        TransferCoordinatesFact->SetParameter("Vector name", Teuchos::ParameterEntry(std::string("Coordinates")));
-        TransferCoordinatesFact->SetFactory("R", TentativeRFact);
+        RCP<CoordinatesTransferFactory> TransferCoordinatesFact = rcp(new CoordinatesTransferFactory());
         AFact->AddTransferFactory(TransferCoordinatesFact); // FIXME REMOVE
 
         // Compute partition (creates "Partition" object)
-        RCP<Factory> ZoltanFact = rcp(new ZoltanInterface());
-        ZoltanFact->SetFactory("A", AFact);
-        ZoltanFact->SetFactory("Coordinates", TransferCoordinatesFact);
+        if(optRepartition == 1) { // use plain Zoltan Interface
+
+        } else if (optRepartition == 2) { // use Isorropia + Zoltan interface
+
+        }
 
         // Repartitioning (creates "Importer" from "Partition")
         RCP<Factory> RepartitionFact = rcp(new RepartitionFactory());
@@ -385,7 +389,26 @@ int main(int argc, char *argv[]) {
           RepartitionFact->SetParameterList(paramList);
         }
         RepartitionFact->SetFactory("A", AFact);
-        RepartitionFact->SetFactory("Partition", ZoltanFact);
+
+        if(optRepartition == 1) {
+          RCP<Factory> ZoltanFact = rcp(new ZoltanInterface());
+          ZoltanFact->SetFactory("A", AFact);
+          ZoltanFact->SetFactory("Coordinates", TransferCoordinatesFact);
+          RepartitionFact->SetFactory("Partition", ZoltanFact);
+        }
+        else if(optRepartition == 2) {
+#if defined(HAVE_MPI) && defined(HAVE_MUELU_ISORROPIA)
+          RCP<MueLu::IsorropiaInterface<LO, GO, NO, LMO> > isoInterface = rcp(new MueLu::IsorropiaInterface<LO, GO, NO, LMO>());
+          isoInterface->SetFactory("A", AFact);
+          // we don't need Coordinates here!
+          RepartitionFact->SetFactory("Partition", isoInterface);
+#else
+          if (comm->getRank() == 0)
+            std::cout << "Please recompile Trilinos with Isorropia support enabled." << std::endl;
+          return EXIT_FAILURE;
+#endif
+        }
+
 
         // Reordering of the transfer operators
         RCP<Factory> RebalancedPFact = rcp(new RebalanceTransferFactory());
@@ -409,6 +432,7 @@ int main(int argc, char *argv[]) {
         M.SetFactory("Nullspace",   RebalancedRFact);
         M.SetFactory("Coordinates", RebalancedRFact);
         M.SetFactory("Importer",    RepartitionFact);
+
 #else
         TEUCHOS_TEST_FOR_EXCEPT(true);
 #endif
@@ -463,6 +487,16 @@ int main(int argc, char *argv[]) {
     H->Setup(M, startLevel, optMaxLevels);
 
   } // end of Setup TimeMonitor
+
+  /*{ // some debug output
+    // print out content of levels
+    std::cout << "FINAL CONTENT of multigrid levels" << std::endl;
+    for(LO l = 0; l < H->GetNumLevels(); l++) {
+      RCP<Level> coarseLevel = H->GetLevel(l);
+      coarseLevel->print(*out);
+    }
+    std::cout << "END FINAL CONTENT of multigrid levels" << std::endl;
+  } // end debug output*/
 
   //
   //

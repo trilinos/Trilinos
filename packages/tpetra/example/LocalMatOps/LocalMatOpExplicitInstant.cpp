@@ -54,8 +54,10 @@
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
 // definitions
+#include "Tpetra_DistObject_def.hpp"
 #include "Tpetra_MultiVector_def.hpp"
 #include "Tpetra_Vector_def.hpp"
+#include "Tpetra_RowMatrix_def.hpp"
 #include "Tpetra_CrsMatrix_def.hpp"
 #include "Tpetra_CrsGraph_def.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp_def.hpp"
@@ -66,9 +68,10 @@ typedef KokkosExamples::EmptySparseKernel<void,DefNode>           SparseOp;
 
 namespace Tpetra {
 
-  // need float multivector
 #if !defined(HAVE_TPETRA_INST_FLOAT)
+  TPETRA_DISTOBJECT_INSTANT(float,int,int,DefNode)
   TPETRA_MULTIVECTOR_INSTANT(float,int,int,DefNode)
+  TPETRA_ROWMATRIX_INSTANT(float,int,int,DefNode)
 #endif
 
   // float matrix support for Empty sparse kernel class

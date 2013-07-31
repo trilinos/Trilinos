@@ -35,7 +35,7 @@
         </ParameterList>
     </ParameterList>
 
-    <ParameterList name="Volume Responses">
+    <ParameterList name="Responses">
       <ParameterList name="Volume Integral">
          <Parameter name="Type" type="string" value="Functional"/>
          <Parameter name="Field Name" type="string" value="Volume_Integral"/>
@@ -48,12 +48,6 @@
          <Parameter name="Element Blocks" type="string" value="eblock-0_0"/>
          <Parameter name="Evaluation Types" type="string" value="Residual"/>
       </ParameterList>
-      <ParameterList name="Integration Point Coordinates">
-         <Parameter name="Type" type="string" value="IP Coordinates"/>
-         <Parameter name="Field Name" type="string" value="My IP Coordinates"/>
-         <Parameter name="Element Blocks" type="string" value="eblock-0_0"/>
-         <Parameter name="Evaluation Types" type="string" value="Residual"/>
-      </ParameterList>
     </ParameterList>
 
     <ParameterList name="Block ID to Physics ID Mapping">
@@ -62,7 +56,7 @@
 
     <ParameterList name="Assembly">
         <Parameter name="Field Order" type="string" value="blocked: TEMPERATURE TEST_TEMPERATURE"/>
-        <Parameter name="Workset Size" type="unsigned long" value="1"/>
+        <Parameter name="Workset Size" type="int" value="1"/>
     </ParameterList>
 
     <ParameterList name="Physics Blocks">
@@ -70,22 +64,20 @@
         <ParameterList name="solid">
 
             <ParameterList name="EQ 0">
-                <Parameter name="Name" type="string" value="Energy"/> 
-                <Parameter name="Basis" type="string" value="Q1"/> 
+                <Parameter name="Type" type="string" value="Energy"/> 
+                <Parameter name="Basis Type" type="string" value="HGrad"/> 
+                <Parameter name="Basis Order" type="int" value="1"/> 
                 <Parameter name="Integration Order" type="int" value="2"/> 
                 <Parameter name="Model ID" type="string" value="fluid model"/> 
                 <Parameter name="Prefix" type="string" value=""/>
-                <ParameterList name="Options">
-                </ParameterList>
             </ParameterList>
             <ParameterList name="EQ 1">
-                <Parameter name="Name" type="string" value="Energy"/> 
-                <Parameter name="Basis" type="string" value="Q1"/> 
+                <Parameter name="Type" type="string" value="Energy"/> 
+                <Parameter name="Basis Type" type="string" value="HGrad"/> 
+                <Parameter name="Basis Order" type="int" value="1"/>
                 <Parameter name="Integration Order" type="int" value="2"/> 
                 <Parameter name="Model ID" type="string" value="fluid model test"/> 
                 <Parameter name="Prefix" type="string" value="TEST_"/>
-                <ParameterList name="Options">
-                </ParameterList>
             </ParameterList>
 
         </ParameterList>

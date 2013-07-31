@@ -92,6 +92,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockDiagonalExtraction, RuntimeExceptions, LO, GO, Scalar, Node )
   {
+    using Teuchos::as;
     typedef Tpetra::Map<LO,GO,Node> Map;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
@@ -102,17 +103,21 @@ namespace {
     Teuchos::Tuple<int,7> block_sizes = Teuchos::tuple<int>(1,3,5,0,5,3,1) ;
     const int maxBlockSize = *std::max_element( block_sizes.begin(), block_sizes.end() );
     // create a Map
-    const size_t numLocal = std::accumulate( block_sizes.begin(), block_sizes.end(), (size_t)0 );
+    const size_t numLocal = std::accumulate (block_sizes.begin(), block_sizes.end(), as<size_t> (0));
     RCP<const Map> map = Tpetra::createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm,node);
     RCP<const RowMatrix<Scalar,LO,GO,Node> > mat;
     {
       RCP<CrsMatrix<Scalar,LO,GO,Node> > mat_crs = Tpetra::createCrsMatrix<Scalar>( map );
       for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
         // add diagonal entries
-        mat_crs->insertGlobalValues( gid, tuple<GO>(gid), tuple<Scalar>(1.0) );
+        mat_crs->insertGlobalValues (gid, tuple<GO> (gid), tuple<Scalar> (as<Scalar> (1)));
         // add some entries outside of the diagonal block
-        if (gid - maxBlockSize >= map->getMinGlobalIndex()) mat_crs->insertGlobalValues( gid, tuple<GO>(gid - maxBlockSize), tuple<Scalar>(1.0) );
-        if (gid + maxBlockSize <= map->getMaxGlobalIndex()) mat_crs->insertGlobalValues( gid, tuple<GO>(gid + maxBlockSize), tuple<Scalar>(1.0) );
+        if (gid >= map->getMinGlobalIndex() + maxBlockSize) {
+          mat_crs->insertGlobalValues (gid, tuple<GO> (gid - maxBlockSize), tuple<Scalar> (as<Scalar> (1)));
+        }
+        if (gid + maxBlockSize <= map->getMaxGlobalIndex()) {
+          mat_crs->insertGlobalValues (gid, tuple<GO> (gid + maxBlockSize), tuple<Scalar> (as<Scalar> (1)));
+        }
       }
       mat_crs->fillComplete();
       mat = mat_crs;
@@ -187,6 +192,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockDiagonalExtraction, SimpleExtraction, LO, GO, Scalar, Node )
   {
+    using Teuchos::as;
     typedef Tpetra::Map<LO,GO,Node>           Map;
     typedef Tpetra::BlockMap<LO,GO,Node> BlockMap;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -197,13 +203,13 @@ namespace {
     //
     // set the block sizes
     // note one block of zero size, to test capability
-    Teuchos::Tuple<int,7> block_sizes = Teuchos::tuple<int>(1,3,5,0,5,3,1) ;
+    Teuchos::Array<int> block_sizes = Teuchos::tuple<int>(1,3,5,0,5,3,1);
     const int maxBlockSize = *std::max_element( block_sizes.begin(), block_sizes.end() );
     const size_t expected_alloc_size = std::inner_product( block_sizes.begin(), block_sizes.end(), block_sizes.begin(), 0 );
     //
     // create a point Map
     //
-    const size_t numLocal = std::accumulate( block_sizes.begin(), block_sizes.end(), (size_t)0 );
+    const size_t numLocal = std::accumulate( block_sizes.begin(), block_sizes.end(), as<size_t>(0) );
     RCP<const Map> map = Tpetra::createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm,node);
     //
     // fill matrix for testing
@@ -213,10 +219,17 @@ namespace {
       RCP<CrsMatrix<Scalar,LO,GO,Node> > mat_crs = Tpetra::createCrsMatrix<Scalar>( map );
       for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
         // add diagonal entries
-        mat_crs->insertGlobalValues( gid, tuple<GO>(gid), tuple<Scalar>(1.0) );
+        mat_crs->insertGlobalValues( gid, tuple<GO>(gid), tuple<Scalar> (as<Scalar> (1)));
+        out << gid << " ";
         // add some entries outside of the diagonal block
-        if (gid - maxBlockSize >= map->getMinGlobalIndex()) mat_crs->insertGlobalValues( gid, tuple<GO>(gid - maxBlockSize), tuple<Scalar>(1.0) );
-        if (gid + maxBlockSize <= map->getMaxGlobalIndex()) mat_crs->insertGlobalValues( gid, tuple<GO>(gid + maxBlockSize), tuple<Scalar>(1.0) );
+        if (gid >= map->getMinGlobalIndex () + maxBlockSize) {
+          mat_crs->insertGlobalValues (gid, tuple<GO> (gid - maxBlockSize), tuple<Scalar> (as<Scalar> (1)));
+          out << gid - maxBlockSize << " ";
+        }
+        if (gid + maxBlockSize <= map->getMaxGlobalIndex ()) {
+          mat_crs->insertGlobalValues (gid, tuple<GO> (gid + maxBlockSize), tuple<Scalar> (as<Scalar> (1)));
+          out << gid + maxBlockSize << " ";
+        }
       }
       mat_crs->fillComplete();
       mat = mat_crs;
@@ -282,6 +295,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockRowExtraction, DiagonalExtraction, LO, GO, Scalar, Node )
   {
+    using Teuchos::as;
     typedef Tpetra::Map<LO,GO,Node>           Map;
     typedef Tpetra::BlockMap<LO,GO,Node> BlockMap;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -310,10 +324,14 @@ namespace {
       RCP<CrsMatrix<Scalar,LO,GO,Node> > mat_crs = Tpetra::createCrsMatrix<Scalar>( map );
       for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
         // add diagonal entries
-        mat_crs->insertGlobalValues( gid, tuple<GO>(gid), tuple<Scalar>(1.0) );
+        mat_crs->insertGlobalValues( gid, tuple<GO>(gid), tuple<Scalar> (as<Scalar> (1)) );
         // add some entries outside of the diagonal block; max
-        if (gid - maxBlockSize >= map->getMinGlobalIndex()) mat_crs->insertGlobalValues( gid, tuple<GO>(gid - maxBlockSize), tuple<Scalar>(1.0) );
-        if (gid + maxBlockSize <= map->getMaxGlobalIndex()) mat_crs->insertGlobalValues( gid, tuple<GO>(gid + maxBlockSize), tuple<Scalar>(1.0) );
+        if (gid >= map->getMinGlobalIndex() + maxBlockSize) {
+          mat_crs->insertGlobalValues (gid, tuple<GO> (gid - maxBlockSize), tuple<Scalar> (as<Scalar> (1)));
+        }
+        if (gid + maxBlockSize <= map->getMaxGlobalIndex()) {
+          mat_crs->insertGlobalValues (gid, tuple<GO> (gid + maxBlockSize), tuple<Scalar> (as<Scalar> (1)));
+        }
       }
       mat_crs->fillComplete();
       mat = mat_crs;

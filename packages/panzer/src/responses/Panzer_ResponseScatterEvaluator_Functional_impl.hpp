@@ -55,6 +55,9 @@
 #include "Panzer_ResponseBase.hpp"
 #include "Panzer_Dimension.hpp"
 
+#include "Thyra_SpmdVectorBase.hpp"
+#include "Teuchos_ArrayRCP.hpp"
+
 namespace panzer {
 
 /** This class handles responses with values aggregated
@@ -63,8 +66,10 @@ namespace panzer {
 template<typename EvalT, typename Traits>
 ResponseScatterEvaluator_Functional<EvalT,Traits>::
 ResponseScatterEvaluator_Functional(const std::string & name,
-                                    const CellData & cd)
+                                    const CellData & cd,
+                                    const Teuchos::RCP<FunctionalScatterBase> & functionalScatter)
   : responseName_(name)
+  , scatterObj_(functionalScatter)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -82,6 +87,34 @@ ResponseScatterEvaluator_Functional(const std::string & name,
   this->addDependentField(cellIntegral_);
 
   std::string n = "Functional Response Scatter: " + name;
+  this->setName(n);
+}
+
+template<typename EvalT, typename Traits>
+ResponseScatterEvaluator_Functional<EvalT,Traits>::
+ResponseScatterEvaluator_Functional(const std::string & integrandName,
+                                    const std::string & responseName,
+                                    const CellData & cd,
+                                    const Teuchos::RCP<FunctionalScatterBase> & functionalScatter)
+  : responseName_(responseName)
+  , scatterObj_(functionalScatter)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  std::string dummyName = ResponseBase::buildLookupName(responseName) + " dummy target";
+
+  // build dummy target tag
+  RCP<PHX::DataLayout> dl_dummy = rcp(new PHX::MDALayout<panzer::Dummy>(0));
+  scatterHolder_ = rcp(new PHX::Tag<ScalarT>(dummyName,dl_dummy));
+  this->addEvaluatedField(*scatterHolder_);
+
+  // build dendent field
+  RCP<PHX::DataLayout> dl_cell = rcp(new PHX::MDALayout<panzer::Cell>(cd.numCells()));
+  cellIntegral_ = PHX::MDField<ScalarT,panzer::Cell>(integrandName,dl_cell);
+  this->addDependentField(cellIntegral_);
+
+  std::string n = "Functional Response Scatter: " + responseName;
   this->setName(n);
 }
 
@@ -110,6 +143,25 @@ evaluateFields(typename Traits::EvalData d)
   for(std::size_t i=0;i<d.num_cells;i++) {
     responseObj_->value += cellIntegral_(i);
   }
+}
+
+template < >
+void ResponseScatterEvaluator_Functional<panzer::Traits::Jacobian,panzer::Traits>::
+evaluateFields(panzer::Traits::EvalData d)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  using Thyra::SpmdVectorBase;
+
+  TEUCHOS_ASSERT(scatterObj_!=Teuchos::null);
+
+  // grab local data for inputing
+  Teuchos::ArrayRCP<double> local_dgdx;
+  RCP<SpmdVectorBase<double> > dgdx = rcp_dynamic_cast<SpmdVectorBase<double> >(responseObj_->getGhostedVector());
+  dgdx->getNonconstLocalData(ptrFromRef(local_dgdx));
+  TEUCHOS_ASSERT(!local_dgdx.is_null());
+
+  scatterObj_->scatterDerivative(cellIntegral_,d,local_dgdx);
 }
 
 }
