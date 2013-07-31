@@ -225,6 +225,15 @@ void BulkData::require_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) co
   ThrowRequireMsg( ok_id, "Bad id : " << ent_id);
 }
 
+bool BulkData::is_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) const
+{
+  const size_t rank_count = m_mesh_meta_data.entity_rank_count();
+  const bool ok_id   = EntityKey::is_valid_id(ent_id);
+  const bool ok_rank = ent_rank < rank_count && !(ent_rank == MetaData::FACE_RANK && mesh_meta_data().spatial_dimension() == 2);
+
+  return ok_id && ok_rank;
+}
+
 void BulkData::require_metadata_committed()
 {
   if (!m_mesh_meta_data.is_commit()) {

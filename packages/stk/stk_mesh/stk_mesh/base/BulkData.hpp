@@ -335,7 +335,9 @@ public:
 
   /** \brief  Get entity with a given rank and id */
   Entity get_entity( EntityRank ent_rank , EntityId entity_id ) const {
-    require_good_rank_and_id(ent_rank, entity_id);
+    if (!is_good_rank_and_id(ent_rank, entity_id)) {
+        return Entity();
+    }
     return m_entity_repo.get_entity( EntityKey(ent_rank, entity_id));
   }
 
@@ -1317,6 +1319,8 @@ private:
   void require_metadata_committed();
 
   void require_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) const;
+
+  bool is_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) const;
 
   void require_valid_relation( const char action[] ,
                                const BulkData & mesh ,
