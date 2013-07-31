@@ -918,7 +918,10 @@ private:
     resize_and_order_by_index_helper(m_targets, capacity, true /*update index*/);
   }
 
-  unsigned compute_new_connectivity_capacity(unsigned capacity_ratio = 2)
+  // The default capacity_ratio enables the most of the speed of the simple doubling
+  // policy, while preventing the O(N^2) memory growth that would occur for
+  // pathologically ordered add_connectivity calls under that policy.
+  unsigned compute_new_connectivity_capacity(unsigned capacity_ratio = 8)
   {
     const unsigned old_capacity = m_targets.capacity();
     static const unsigned careful_threshold = 2048;
