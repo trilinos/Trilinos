@@ -1362,7 +1362,7 @@ bool in_owned_closure(const BulkData& mesh, const Entity entity , int proc )
   return same_proc && mesh.owned_closure(entity);
 }
 
- /** \brief  Comparison operator for entities compares the entities' keys */
+ /** \brief  Comparitor functor for entities compares the entities' keys */
 struct EntityLess {
   EntityLess(const BulkData& mesh) : m_mesh(&mesh) {}
 
