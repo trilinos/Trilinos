@@ -105,7 +105,9 @@ bool VectorSpaceTester<Scalar>::check(
   TEUCHOS_TEST_ASSERT(vs.isCompatible(vs), *out, success);
 
   const RCP<const VectorSpaceBase<Scalar> > vs_clone = vs.clone();
-  TEUCHOS_TEST_ASSERT(vs.isCompatible(*vs_clone), *out, success);
+  if (nonnull(vs_clone)) {
+    TEUCHOS_TEST_ASSERT(vs.isCompatible(*vs_clone), *out, success);
+  }
 
   if (nonnull(out)) *out <<endl<< "C) Creating a randomized vector member v ...\n";
   Teuchos::RCP<Thyra::VectorBase<Scalar> >
