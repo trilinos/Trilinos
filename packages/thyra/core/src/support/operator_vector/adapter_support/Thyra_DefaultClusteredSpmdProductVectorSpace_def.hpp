@@ -58,7 +58,8 @@ namespace Thyra {
 
 template<class Scalar>
 DefaultClusteredSpmdProductVectorSpace<Scalar>::DefaultClusteredSpmdProductVectorSpace()
-  :isEuclidean_(false),globalDim_(0),clusterSubDim_(-1),clusterOffset_(-1)
+  :clusterRootRank_(-1), isEuclidean_(false), globalDim_(0), clusterSubDim_(-1),
+   clusterOffset_(-1)
 {}
 
 template<class Scalar>
@@ -149,12 +150,25 @@ bool DefaultClusteredSpmdProductVectorSpace<Scalar>::isCompatible(
   const VectorSpaceBase<Scalar>& vecSpc
   ) const
 {
-  if( &vecSpc == this )
+  typedef DefaultClusteredSpmdProductVectorSpace<Scalar> DCSPVS;
+  if (&vecSpc==this) {
     return true;
-  // For now, I will just do the dynamic cast but in the future, we could get
-  // more sophisticated.
-  TEUCHOS_TEST_FOR_EXCEPT(true);
-  return false;
+  }
+  const Ptr<const DCSPVS> dcspvs =
+    Teuchos::ptr_dynamic_cast<const DCSPVS>(Teuchos::ptrFromRef(vecSpc), false);
+  if (is_null(dcspvs)) {
+    return false;
+  }
+  if (vecSpaces_.size() != dcspvs->vecSpaces_.size()) {
+    return false;
+  }
+  const int l_numBlocks = vecSpaces_.size();
+  for( int k = 0; k < l_numBlocks; ++k ) {
+    if (!vecSpaces_[k]->isCompatible(*dcspvs->vecSpaces_[k])) {
+      return false;
+    }
+  }
+  return true;
 }
 
 template<class Scalar>

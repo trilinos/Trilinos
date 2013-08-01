@@ -181,3 +181,22 @@ FOREACH(NUM_MPI_PROCS ${NUM_MPI_PROCS_SET})
     STANDARD_PASS_OUTPUT	
   )
 ENDFOREACH()
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  DefaultClusteredSpmdProductVectorSpaceUnitTests
+  SOURCES
+    DefaultClusteredSpmdProductVectorSpace_UnitTests.cpp
+    ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+FOREACH(NUM_MPI_PROCS ${NUM_MPI_PROCS_SET})
+  TRIBITS_ADD_TEST(
+    DefaultClusteredSpmdProductVectorSpaceUnitTests
+    STANDARD_PASS_OUTPUT
+    COMM mpi
+    NUM_MPI_PROCS ${NUM_MPI_PROCS}
+    )
+ENDFOREACH()
+
