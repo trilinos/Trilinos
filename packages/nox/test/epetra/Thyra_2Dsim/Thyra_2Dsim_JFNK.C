@@ -72,7 +72,7 @@
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
-#include <Thyra_SpmdVectorBase_decl.hpp>
+#include "Thyra_SpmdVectorBase.hpp"
 #include "ModelEvaluator2DSim.hpp"
 
 #include "NOX_Thyra_MatrixFreeJacobianOperator.hpp"
