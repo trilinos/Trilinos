@@ -346,6 +346,7 @@ namespace panzer_stk {
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
     Teuchos::RCP<panzer::UniqueGlobalIndexerBase> globalIndexer;
 
+    std::string loadBalanceString = ""; // what is the load balancing information
     bool blockedAssembly = false;
 
     if(panzer::BlockedDOFManagerFactory<int,int>::requiresBlocking(field_order) && !useTpetra) {
@@ -385,6 +386,9 @@ namespace panzer_stk {
        }
 
        linObjFactory = bloLinObjFactory;
+
+       // build load balancing string for informative output
+       loadBalanceString = printUGILoadBalancingInformation(*dofManager);
     }
     else if(panzer::BlockedDOFManagerFactory<int,long>::requiresBlocking(field_order) && useTpetra) {
        const Teuchos::RCP<panzer::ConnManager<int,long> > conn_manager_long
@@ -424,6 +428,9 @@ namespace panzer_stk {
        }
 
        linObjFactory = bloLinObjFactory;
+
+       // build load balancing string for informative output
+       loadBalanceString = printUGILoadBalancingInformation(*dofManager);
     }
     else if(useTpetra) {
        const Teuchos::RCP<panzer::ConnManager<int,long> > conn_manager_long
@@ -440,6 +447,9 @@ namespace panzer_stk {
         
        TEUCHOS_ASSERT(!useDiscreteAdjoint); // safety check
        linObjFactory = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,long>(mpi_comm,dofManager));
+
+       // build load balancing string for informative output
+       loadBalanceString = printUGILoadBalancingInformation(*dofManager);
     }
     else {
        const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager_int
@@ -454,12 +464,18 @@ namespace panzer_stk {
        globalIndexer = dofManager;
     
        linObjFactory = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(mpi_comm,dofManager,useDiscreteAdjoint));
+
+       // build load balancing string for informative output
+       loadBalanceString = printUGILoadBalancingInformation(*dofManager);
     }
 
     TEUCHOS_ASSERT(globalIndexer!=Teuchos::null);
     TEUCHOS_ASSERT(linObjFactory!=Teuchos::null);
     m_global_indexer = globalIndexer;
     m_lin_obj_factory = linObjFactory;
+
+    // print out load balancing information
+    fout << "Degree of freedom load balancing: " << loadBalanceString << std::endl;
 
     // Add mesh objects to user data to make available to user ctors
     /////////////////////////////////////////////////////////////
