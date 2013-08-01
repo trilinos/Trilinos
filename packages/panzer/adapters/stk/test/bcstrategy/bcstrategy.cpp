@@ -106,6 +106,8 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(bcstrategy, constant_bc_strategy)
   {
 
+    using std::cout;
+    using std::endl;
     using Teuchos::RCP;
   
     // pause_to_attach();

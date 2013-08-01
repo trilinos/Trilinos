@@ -144,6 +144,7 @@ void solveTpetraSystem(panzer::LinearObjContainer & container);
 // calls MPI_Init and MPI_Finalize
 int main(int argc,char * argv[])
 {
+   using std::endl; 
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
    using panzer::StrPureBasisPair;
@@ -487,7 +488,7 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
 
   Belos::ReturnType result = solver.solve();
   if (result == Belos::Converged)
-    std::cout << "Result: Converged." << endl;
+    std::cout << "Result: Converged." << std::endl;
   else {
     TEUCHOS_ASSERT(false); // FAILURE!
   }

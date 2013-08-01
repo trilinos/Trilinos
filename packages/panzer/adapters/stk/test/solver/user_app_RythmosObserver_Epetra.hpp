@@ -85,6 +85,8 @@ namespace user_app {
 				  const Rythmos::StepControlInfo<double> &stepCtrlInfo,
 				  const int timeStepIter)
     { 
+      using std::cout;
+      using std::endl;
       cout << "*************************ROGER in Time************************************"  << endl;
       cout << "time = " << stepper.getStepStatus().time << endl;
       cout << *(stepper.getStepStatus().solution);

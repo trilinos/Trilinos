@@ -835,7 +835,7 @@ namespace panzer_stk {
   template<typename ScalarT>
   bool ModelEvaluatorFactory_Epetra<ScalarT>::determineCoordinateField(const panzer::UniqueGlobalIndexerBase & globalIndexer,std::string & fieldName) const
   {
-    std::vector<string> elementBlocks;
+    std::vector<std::string> elementBlocks;
     globalIndexer.getElementBlockIds(elementBlocks);
 
     // grab fields for first block
@@ -917,7 +917,7 @@ namespace panzer_stk {
                                                                   const std::string & fieldName, 
                                                                   std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const
   {
-     std::vector<string> elementBlocks;
+     std::vector<std::string> elementBlocks;
      globalIndexer.getElementBlockIds(elementBlocks);
 
      for(std::size_t e=0;e<elementBlocks.size();e++) {
@@ -935,7 +935,7 @@ namespace panzer_stk {
                                                                   const std::string & fieldName, 
                                                                   std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const
   {
-     std::vector<string> elementBlocks;
+     std::vector<std::string> elementBlocks;
      globalIndexer.getElementBlockIds(elementBlocks);
 
      for(std::size_t e=0;e<elementBlocks.size();e++) {
