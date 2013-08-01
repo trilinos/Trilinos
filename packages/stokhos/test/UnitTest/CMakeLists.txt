@@ -238,7 +238,7 @@ ENDIF()
 
 IF(Stokhos_ENABLE_Sacado)
 
-  INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/../sacado/test/utils)
+  INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/../sacado/test/utils)
 
   SET(UTILS_SOURCES
     ${PACKAGE_SOURCE_DIR}/../sacado/test/utils/Sacado_Random.hpp
