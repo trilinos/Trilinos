@@ -119,8 +119,7 @@ template< class FunctorType ,
 class ParallelReduce ;
 
 template< class FunctorType ,
-          class ValueType = typename FunctorType::value_type ,
-          class Enable    = void >
+          class ValueType = typename FunctorType::value_type >
 struct ReduceAdapter ;
 
 } // namespace Impl
@@ -283,7 +282,22 @@ void parallel_reduce( const Kokkos::ParallelWorkRequest  & request ,
 namespace Kokkos {
 namespace Impl {
 
-template< class FunctorType , class ScalarType , class >
+template< class FunctorType , class Enable = void >
+struct FunctorHasJoin : public false_type {};
+
+template< class FunctorType >
+struct FunctorHasJoin< FunctorType , typename enable_if< 0 < sizeof( & FunctorType::join ) >::type >
+  : public true_type {};
+
+template< class FunctorType , class Enable = void >
+struct FunctorHasFinal : public false_type {};
+
+template< class FunctorType >
+struct FunctorHasFinal< FunctorType , typename enable_if< 0 < sizeof( & FunctorType::final ) >::type >
+  : public true_type {};
+
+
+template< class FunctorType , class ScalarType >
 struct ReduceAdapter
 {
   enum { StaticValueSize = sizeof(ScalarType) };
@@ -300,84 +314,35 @@ struct ReduceAdapter
   KOKKOS_INLINE_FUNCTION static
   pointer_type pointer( reference_type p ) { return & p ; }
 
-  const FunctorType  m_functor ;
-
-  ReduceAdapter( const FunctorType & f ) : m_functor(f) {}
-
-  KOKKOS_INLINE_FUNCTION static
-  void final( const FunctorType & , pointer_type ) {}
-
   KOKKOS_INLINE_FUNCTION static
   unsigned value_count( const FunctorType & ) { return 1 ; }
 
-  KOKKOS_INLINE_FUNCTION
-  unsigned value_count() const { return 1 ; }
+  KOKKOS_INLINE_FUNCTION static
+  unsigned value_size( const FunctorType & ) { return sizeof(ScalarType); }
 
-  KOKKOS_INLINE_FUNCTION
-  unsigned value_size() const { return sizeof(ScalarType); }
+  KOKKOS_INLINE_FUNCTION static
+  void join( const FunctorType & f , volatile void * update , volatile const void * input )
+    { f.join( *((volatile ScalarType*)update) , *((volatile const ScalarType*)input) ); }
 
-  KOKKOS_INLINE_FUNCTION
-  void init( void * update ) const
-    { m_functor.init( *((ScalarType*)update) ); }
+  template< class F >
+  KOKKOS_INLINE_FUNCTION static
+  void final( const F & f ,
+              typename enable_if< ( is_same<F,FunctorType>::value &&
+                                    FunctorHasFinal<F>::value )
+                                >::type * p )
+    { f.final( *((ScalarType *) p ) ); }
 
-  KOKKOS_INLINE_FUNCTION
-  void join( volatile void * update , volatile const void * input ) const
-    { m_functor.join( *((volatile ScalarType*)update) , *((volatile const ScalarType*)input) ); }
-
-  KOKKOS_INLINE_FUNCTION
-  void final( void * ) const {}
+  template< class F >
+  KOKKOS_INLINE_FUNCTION static
+  void final( const F & ,
+              typename enable_if< ( is_same<F,FunctorType>::value &&
+                                    ! FunctorHasFinal<F>::value )
+                                >::type * )
+    {}
 };
 
 template< class FunctorType , class ScalarType >
-struct ReduceAdapter< FunctorType , ScalarType ,
-                      typename enable_if< 0 < sizeof( & FunctorType::final ) >::type >
-{
-  enum { StaticValueSize = sizeof(ScalarType) };
-
-  typedef ScalarType & reference_type  ;
-  typedef ScalarType * pointer_type  ;
-
-  KOKKOS_INLINE_FUNCTION static
-  reference_type reference( void * p ) { return *(ScalarType*) p ; }
-
-  KOKKOS_INLINE_FUNCTION static
-  reference_type reference( void * p , unsigned i ) { return ((ScalarType*) p)[i]; }
-
-  KOKKOS_INLINE_FUNCTION static
-  pointer_type pointer( reference_type p ) { return & p ; }
-
-  const FunctorType  m_functor ;
-
-  ReduceAdapter( const FunctorType & f ) : m_functor(f) {}
-
-  KOKKOS_INLINE_FUNCTION static
-  void final( const FunctorType & f , pointer_type p ) { f.final( *p ); }
-
-  KOKKOS_INLINE_FUNCTION static
-  unsigned value_count( const FunctorType & ) { return 1 ; }
-
-  KOKKOS_INLINE_FUNCTION
-  unsigned value_count() const { return 1 ; }
-
-  KOKKOS_INLINE_FUNCTION
-  unsigned value_size() const { return sizeof(ScalarType); }
-
-  KOKKOS_INLINE_FUNCTION
-  void init( void * update ) const
-    { m_functor.init( *((ScalarType*)update) ); }
-
-  KOKKOS_INLINE_FUNCTION
-  void join( volatile void * update , volatile const void * input ) const
-    { m_functor.join( *((volatile ScalarType*)update) , *((volatile const ScalarType*)input) ); }
-
-  KOKKOS_INLINE_FUNCTION
-  void final( void * result ) const
-    { m_functor.final( *((ScalarType *) result ) ); }
-};
-
-
-template< class FunctorType , class ScalarType , class Enable >
-struct ReduceAdapter< FunctorType , ScalarType[] , Enable >
+struct ReduceAdapter< FunctorType , ScalarType[] >
 {
   enum { StaticValueSize = 0 };
 
@@ -393,79 +358,31 @@ struct ReduceAdapter< FunctorType , ScalarType[] , Enable >
   KOKKOS_INLINE_FUNCTION static
   pointer_type pointer( reference_type p ) { return p ; }
 
-  const FunctorType  m_functor ;
-
-  ReduceAdapter( const FunctorType & f ) : m_functor(f) {}
-
   KOKKOS_INLINE_FUNCTION static
   unsigned value_count( const FunctorType & f ) { return f.value_count ; }
 
   KOKKOS_INLINE_FUNCTION static
-  void final( const FunctorType & , pointer_type ) {}
-
-  KOKKOS_INLINE_FUNCTION
-  unsigned value_count() const { return m_functor.value_count ; }
-
-  KOKKOS_INLINE_FUNCTION
-  unsigned value_size() const { return sizeof(ScalarType) * m_functor.value_count ; }
-
-  KOKKOS_INLINE_FUNCTION
-  void init( void * update ) const
-    { m_functor.init( ((ScalarType*)update) ); }
-
-  KOKKOS_INLINE_FUNCTION
-  void join( volatile void * update , volatile const void * input ) const
-    { m_functor.join( ((volatile ScalarType*)update) , ((volatile const ScalarType*)input) ); }
-
-  KOKKOS_INLINE_FUNCTION
-  void final( void * ) const {}
-};
-
-template< class FunctorType , class ScalarType >
-struct ReduceAdapter< FunctorType , ScalarType[] ,
-                      typename enable_if< 0 < sizeof( & FunctorType::final ) >::type >
-{
-  enum { StaticValueSize = 0 };
-
-  typedef ScalarType * reference_type  ;
-  typedef ScalarType * pointer_type  ;
+  unsigned value_size( const FunctorType & f ) { return f.value_count * sizeof(ScalarType); }
 
   KOKKOS_INLINE_FUNCTION static
-  ScalarType * reference( void * p ) { return (ScalarType*) p ; }
+  void join( const FunctorType & f , volatile void * update , volatile const void * input )
+    { f.join( ((volatile ScalarType*)update) , ((volatile const ScalarType*)input) ); }
 
+  template< class F >
   KOKKOS_INLINE_FUNCTION static
-  reference_type reference( void * p , unsigned i ) { return ((ScalarType*) p)+i; }
+  void final( const F & f ,
+              typename enable_if< ( is_same<F,FunctorType>::value &&
+                                    FunctorHasFinal<F>::value )
+                                >::type * p )
+    { f.final( ((ScalarType *) p ) ); }
 
+  template< class F >
   KOKKOS_INLINE_FUNCTION static
-  pointer_type pointer( reference_type p ) { return p ; }
-
-  const FunctorType  m_functor ;
-
-  ReduceAdapter( const FunctorType & f ) : m_functor(f) {}
-
-  KOKKOS_INLINE_FUNCTION static
-  void final( const FunctorType & f , pointer_type p ) { f.final( p ); }
-
-  KOKKOS_INLINE_FUNCTION static
-  unsigned value_count( const FunctorType & f ) { return f.value_count ; }
-
-  KOKKOS_INLINE_FUNCTION
-  unsigned value_count() const { return m_functor.value_count ; }
-
-  KOKKOS_INLINE_FUNCTION
-  unsigned value_size() const { return sizeof(ScalarType) * m_functor.value_count ; }
-
-  KOKKOS_INLINE_FUNCTION
-  void init( void * update ) const
-    { m_functor.init( ((ScalarType*)update) ); }
-
-  KOKKOS_INLINE_FUNCTION
-  void join( volatile void * update , volatile const void * input ) const
-    { m_functor.join( ((volatile ScalarType*)update) , ((volatile const ScalarType*)input) ); }
-
-  KOKKOS_INLINE_FUNCTION
-  void final( void * result ) const
-    { m_functor.final( ((ScalarType *) result ) ); }
+  void final( const F & ,
+              typename enable_if< ( is_same<F,FunctorType>::value &&
+                                    ! FunctorHasFinal<F>::value )
+                                >::type * )
+    {}
 };
 
 } // namespace Impl

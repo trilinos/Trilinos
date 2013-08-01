@@ -64,13 +64,53 @@ class ParallelFor< FunctorType , WorkSpec , Kokkos::Threads >
 {
 public:
 
-  inline ParallelFor( const FunctorType & f , const WorkSpec & w )
+  const FunctorType  m_func ;
+  const size_t       m_work ;
+
+  static void execute( ThreadsExec & exec , const void * arg )
+  {
+    const ParallelFor & self = * ((const ParallelFor *) arg );
+
+    const std::pair<size_t,size_t> work = exec.work_range( self.m_work );
+
+    for ( size_t iwork = work.first ; iwork < work.second ; ++iwork ) {
+      self.m_func( iwork );
+    }
+
+    exec.fan_in( self.m_func );
+  }
+
+  ParallelFor( const FunctorType & functor , const size_t work )
+    : m_func( functor ), m_work( work )
     {
-      typedef ThreadsExecAdapter< ParallelFor > Adapter ;
+      ThreadsExec::execute( & ParallelFor::execute , this );
+    }
 
-      Adapter tmp( f , w );
+  inline void wait() {}
 
-      ThreadsExec::execute( & Adapter::execute , & tmp );
+  inline ~ParallelFor() { wait(); }
+};
+
+template< class FunctorType >
+class ParallelFor< FunctorType , ParallelWorkRequest , Kokkos::Threads >
+{
+public:
+
+  const FunctorType  m_func ;
+
+  static void execute( ThreadsExec & exec , const void * arg )
+  {
+    const ParallelFor & self = * ((const ParallelFor *) arg );
+
+    self.m_func( exec.threads() );
+
+    exec.fan_in( self.m_func );
+  }
+
+  ParallelFor( const FunctorType & functor , const ParallelWorkRequest & )
+    : m_func( functor )
+    {
+      ThreadsExec::execute( & ParallelFor::execute , this );
     }
 
   inline void wait() {}
@@ -83,30 +123,89 @@ public:
 template< class FunctorType , class WorkSpec >
 class ParallelReduce< FunctorType , WorkSpec , Kokkos::Threads >
 {
-private:
+public:
 
   typedef ReduceAdapter< FunctorType >   Reduce ;
   typedef typename Reduce::pointer_type  pointer_type ;
 
-public:
+  const FunctorType  m_func ;
+  const size_t       m_work ;
 
-  // Create new functor in the asynchronous functor memory space
-  // and then launch it.
-  inline
+  static void execute( ThreadsExec & exec , const void * arg )
+  {
+    const ParallelReduce & self = * ((const ParallelReduce *) arg );
+
+    typename Reduce::reference_type update = exec.reduce_value( self.m_func );
+
+    self.m_func.init( update ); // Initialize thread-local value
+
+    const std::pair<size_t,size_t> work = exec.work_range( self.m_work );
+
+    for ( size_t iwork = work.first ; iwork < work.second ; ++iwork ) {
+      self.m_func( iwork , update );
+    }
+
+    exec.fan_in( self.m_func );
+  }
+
   ParallelReduce( const FunctorType & functor ,
-                  const WorkSpec    & work ,
+                  const size_t        work ,
                   const pointer_type  result_ptr = 0 )
+    : m_func( functor ), m_work( work )
     {
-      typedef ThreadsExecAdapter< ParallelReduce >  Adapter ;
+      ThreadsExec::resize_reduce_scratch( Reduce::value_size( m_func ) );
 
-      Adapter tmp( functor , work );
+      const pointer_type data = (pointer_type) ThreadsExec::execute( & ParallelReduce::execute , this );
 
-      const pointer_type data = (pointer_type) ThreadsExec::execute( & Adapter::execute , & tmp );
-
-      Reduce::final( functor , data );
+      Reduce::final( m_func , data );
 
       if ( result_ptr ) {
-        const unsigned n = Reduce::value_count( functor );
+        const unsigned n = Reduce::value_count( m_func );
+        for ( unsigned i = 0 ; i < n ; ++i ) { result_ptr[i] = data[i]; }
+      }
+    }
+
+  inline void wait() {}
+
+  inline ~ParallelReduce() { wait(); }
+};
+
+template< class FunctorType >
+class ParallelReduce< FunctorType , ParallelWorkRequest , Kokkos::Threads >
+{
+public:
+
+  typedef ReduceAdapter< FunctorType >   Reduce ;
+  typedef typename Reduce::pointer_type  pointer_type ;
+
+  const FunctorType  m_func ;
+
+  static void execute( ThreadsExec & exec , const void * arg )
+  {
+    const ParallelReduce & self = * ((const ParallelReduce *) arg );
+
+    typename Reduce::reference_type update = exec.reduce_value( self.m_func );
+
+    self.m_func.init( update ); // Initialize thread-local value
+
+    self.m_func( exec.threads() , update );
+
+    exec.fan_in( self.m_func );
+  }
+
+  ParallelReduce( const FunctorType & functor ,
+                  const ParallelWorkRequest & work ,
+                  const pointer_type  result_ptr = 0 )
+    : m_func( functor )
+    {
+      ThreadsExec::resize_reduce_scratch( Reduce::value_size( m_func ) + work.shared_size );
+
+      const pointer_type data = (pointer_type) ThreadsExec::execute( & ParallelReduce::execute , this );
+
+      Reduce::final( m_func , data );
+
+      if ( result_ptr ) {
+        const unsigned n = Reduce::value_count( m_func );
         for ( unsigned i = 0 ; i < n ; ++i ) { result_ptr[i] = data[i]; }
       }
     }

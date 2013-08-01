@@ -293,29 +293,36 @@ private:
   //  Declare shared data to be volatile to the prevent compiler
   //  from optimizing away read of updated data.
   //    thread's index within warp = tx < WarpSize
-  template< class ReduceOp >
+  template< class FunctorType >
   __device__ inline
-  void reduce_intra_warp( const ReduceOp & reduce ,
+  void reduce_intra_warp( const FunctorType & functor ,
                           volatile size_type * const thread_data ,
                           const size_type tx ) const
   {
+    typedef ReduceAdapter< FunctorType > Reduce ;
+
     enum { HalfWarpSize = 1 << 4 };
 
     if ( tx < HalfWarpSize ) {
-      reduce.join( thread_data ,
-                   thread_data + ( m_data.value_word_stride << 4 ) );
+      Reduce::join( functor ,
+                    thread_data ,
+                    thread_data + ( m_data.value_word_stride << 4 ) );
 
-      reduce.join( thread_data ,
-                   thread_data + ( m_data.value_word_stride << 3 ) );
+      Reduce::join( functor ,
+                    thread_data ,
+                    thread_data + ( m_data.value_word_stride << 3 ) );
 
-      reduce.join( thread_data ,
-                   thread_data + ( m_data.value_word_stride << 2 ) );
+      Reduce::join( functor ,
+                    thread_data ,
+                    thread_data + ( m_data.value_word_stride << 2 ) );
 
-      reduce.join( thread_data ,
-                   thread_data + ( m_data.value_word_stride << 1 ) );
+      Reduce::join( functor ,
+                    thread_data ,
+                    thread_data + ( m_data.value_word_stride << 1 ) );
 
-      reduce.join( thread_data ,
-                   thread_data + ( m_data.value_word_stride      ) );
+      Reduce::join( functor ,
+                    thread_data ,
+                    thread_data + ( m_data.value_word_stride      ) );
     }
   }
 
@@ -323,13 +330,15 @@ private:
   // Use a single warp to reduce results from each warp.
   // This requires: m_data.warp_count <= WarpSize
   // Only warp #0 should have 'warp_data'.
-  template< class ReduceOp >
+  template< class FunctorType >
   __device__ 
   inline
-  void reduce_inter_warp( const ReduceOp & reduce ,
+  void reduce_inter_warp( const FunctorType & functor ,
                           volatile size_type * const warp_data ,
                           const size_type tx ) const
   {
+    typedef ReduceAdapter< FunctorType > Reduce ;
+
     __syncthreads(); // Wait for all warps
 
     if ( warp_data && tx + 1 < m_data.warp_count ) {
@@ -340,25 +349,25 @@ private:
 // Hard-wired m_data.warp_count <= 16 so don't need this step
 //
 //          if ( tx + 16 < m_data.warp_count ) {
-//            reduce.join( warp_data ,
-//                         warp_data + ( m_data.value_warp_stride << 4 ) ); 
+//            Reduce::join( functor , warp_data ,
+//                          warp_data + ( m_data.value_warp_stride << 4 ) ); 
 //            __threadfence_block();
 //          }
 
-            reduce.join( warp_data ,
-                         warp_data + ( m_data.value_warp_stride << 3 ) );
+            Reduce::join( functor , warp_data ,
+                          warp_data + ( m_data.value_warp_stride << 3 ) );
             __threadfence_block();
           }
-          reduce.join( warp_data ,
-                       warp_data + ( m_data.value_warp_stride << 2 ) );
+          Reduce::join( functor , warp_data ,
+                        warp_data + ( m_data.value_warp_stride << 2 ) );
           __threadfence_block();
         }
-        reduce.join( warp_data ,
-                     warp_data + ( m_data.value_warp_stride << 1 ) );
+        Reduce::join( functor , warp_data ,
+                      warp_data + ( m_data.value_warp_stride << 1 ) );
         __threadfence_block();
       }
-      reduce.join( warp_data ,
-                   warp_data + ( m_data.value_warp_stride ) );
+      Reduce::join( functor , warp_data ,
+                    warp_data + ( m_data.value_warp_stride ) );
     }
   }
 
@@ -408,12 +417,14 @@ public:
 
   //--------------------------------------------------------------------------
 
-  template< class ReduceOp >
+  template< class FunctorType >
   __device__
-  void operator()( const ReduceOp & reduce ,
+  void operator()( const FunctorType & functor ,
                    const size_type thread_of_block ,
                    const size_type block_of_grid ) const
   {
+    typedef ReduceAdapter< FunctorType > Reduce ;
+
     extern __shared__ size_type shared_data[];
 
     // tidx == which thread within the warp
@@ -463,14 +474,15 @@ public:
 
     for (;;) {
 
-      reduce_intra_warp( reduce , thread_data , tidx );
-      reduce_inter_warp( reduce , inter_warp_data , tidx );
+      reduce_intra_warp( functor , thread_data , tidx );
+      reduce_inter_warp( functor , inter_warp_data , tidx );
 
       // If one or less blocks then done.
       // Thread 0 has the final reduction value
       if ( ! group_count ) {
         if ( 0 == thread_of_block ) {
-          reduce.final( shared_data );
+          // Optional finalization:
+          Reduce::final( functor , shared_data );
         }
         for ( unsigned i = thread_of_block ; i < m_data.value_word_count ; ++i ) {
           m_output_space[i] = shared_data[i] ;
@@ -516,7 +528,7 @@ public:
       // A warp's shared memory is contiguous but
       // there is a gap between warps to avoid bank conflicts.
 
-      reduce.init( thread_data );
+      functor.init( Reduce::reference( thread_data ) );
 
       if ( wbeg < group_size ) {
 
@@ -563,16 +575,16 @@ template< class FunctorType , class WorkSpec > struct CudaExecAdapter ;
 template< class FunctorType >
 struct CudaExecAdapter< FunctorType , ParallelWorkRequest >
 {
-  typedef ReduceAdapter< FunctorType >                    ReduceType ;
-  typedef CudaReduceShared< ReduceType::StaticValueSize > ReduceSharedType ;
+  typedef ReduceAdapter< FunctorType >                 Reduce ;
+  typedef CudaReduceShared< Reduce::StaticValueSize >  ReduceSharedType ;
 
-  const ReduceType    m_reduce ;
+  const FunctorType   m_functor ;
   ReduceSharedType    m_reduce_shared ;
   ParallelWorkRequest m_work ;
 
   CudaExecAdapter( const FunctorType & functor , const ParallelWorkRequest & work )
-    : m_reduce( functor )
-    , m_reduce_shared( m_reduce.value_size() , CudaTraits::SharedMemoryUsage - work.shared_size )
+    : m_functor( functor )
+    , m_reduce_shared( Reduce::value_size( functor ) , CudaTraits::SharedMemoryUsage - work.shared_size )
     , m_work( std::min( work.league_size , size_t(m_reduce_shared.m_data.thread_count) ) ,
               m_reduce_shared.m_data.thread_count ,
               work.shared_size )
@@ -594,34 +606,34 @@ struct CudaExecAdapter< FunctorType , ParallelWorkRequest >
   __device__
   void operator()(void) const
   {
-    typedef typename ReduceType::reference_type reference_type ;
+    typedef typename Reduce::reference_type reference_type ;
 
-    reference_type update = ReduceType::reference( m_reduce_shared.reduce_data( threadIdx.x ) );
+    reference_type update = Reduce::reference( m_reduce_shared.reduce_data( threadIdx.x ) );
 
     CudaExec exec( m_reduce_shared.m_data.shmem_size ,
                    m_reduce_shared.m_data.shmem_size + m_work.shared_size );
 
-    m_reduce.m_functor.init( update );
+    m_functor.init( update );
 
-    m_reduce.m_functor( Cuda( exec ) , update );
+    m_functor( Cuda( exec ) , update );
 
-    m_reduce_shared( m_reduce , threadIdx.x , blockIdx.x );
+    m_reduce_shared( m_functor , threadIdx.x , blockIdx.x );
   }
 };
 
 template< class FunctorType , class WorkSpec >
 struct CudaExecAdapter /* < FunctorType , size_t > */
 {
-  typedef ReduceAdapter< FunctorType >                    ReduceType ;
-  typedef CudaReduceShared< ReduceType::StaticValueSize > ReduceSharedType ;
+  typedef ReduceAdapter< FunctorType >                 Reduce ;
+  typedef CudaReduceShared< Reduce::StaticValueSize >  ReduceSharedType ;
 
-  const ReduceType  m_reduce ;
-  ReduceSharedType  m_reduce_shared ;
-  int               m_work_count ;
+  const FunctorType  m_functor ;
+  ReduceSharedType   m_reduce_shared ;
+  int                m_work_count ;
 
   CudaExecAdapter( const FunctorType & functor , const size_t work )
-    : m_reduce( functor )
-    , m_reduce_shared( m_reduce.value_size() , CudaTraits::SharedMemoryUsage )
+    : m_functor( functor )
+    , m_reduce_shared( Reduce::value_size( functor ) , CudaTraits::SharedMemoryUsage )
     , m_work_count( work )
     {}
 
@@ -641,21 +653,21 @@ struct CudaExecAdapter /* < FunctorType , size_t > */
   __device__
   void operator()(void) const
   {
-    typedef typename ReduceType::reference_type reference_type ;
+    typedef typename Reduce::reference_type reference_type ;
 
-    reference_type update = ReduceType::reference( m_reduce_shared.reduce_data( threadIdx.x ) );
+    reference_type update = Reduce::reference( m_reduce_shared.reduce_data( threadIdx.x ) );
 
-    m_reduce.m_functor.init( update );
+    m_functor.init( update );
 
     const int work_stride = blockDim.x * gridDim.x ;
 
     // Reduce to per-thread contributions
     for ( int iwork = threadIdx.x + blockDim.x * blockIdx.x ;
           iwork < m_work_count ; iwork += work_stride ) {
-      m_reduce.m_functor( iwork , update );
+      m_functor( iwork , update );
     }
 
-    m_reduce_shared( m_reduce , threadIdx.x , blockIdx.x );
+    m_reduce_shared( m_functor , threadIdx.x , blockIdx.x );
   }
 };
 
@@ -667,8 +679,8 @@ class ParallelReduce< FunctorType , WorkSpec , Cuda >
 public:
 
   typedef CudaExecAdapter< FunctorType , WorkSpec >  ExecType ;
-  typedef ReduceAdapter< FunctorType >               ReduceType ;
-  typedef typename ReduceType::pointer_type          pointer_type ;
+  typedef ReduceAdapter< FunctorType >               Reduce ;
+  typedef typename Reduce::pointer_type              pointer_type ;
 
 private:
 
@@ -697,20 +709,18 @@ public:
 
   void wait() const
   {
-    typedef typename ReduceType::pointer_type ptr_type ;
-
     Cuda::fence();
 
     if ( m_host_ptr ) {
-      const int size  = m_exec.m_reduce.value_size();
-      const int count = m_exec.m_reduce.value_count();
-      ptr_type ptr = (ptr_type) cuda_internal_scratch_unified( size );
+      const int size  = Reduce::value_size( m_exec.m_functor );
+      const int count = Reduce::value_count( m_exec.m_functor );
+      pointer_type ptr = (pointer_type) cuda_internal_scratch_unified( size );
       if ( 0 != ptr ) {
         for ( int i = 0 ; i < count ; ++i )
           m_host_ptr[i] = ptr[i] ;
       }
       else {
-        ptr = (ptr_type) cuda_internal_scratch_space( size );
+        ptr = (pointer_type) cuda_internal_scratch_space( size );
         DeepCopy<HostSpace,CudaSpace>( m_host_ptr , ptr , size );
       }
     }
@@ -797,14 +807,15 @@ public:
   virtual
   void output( void * arg_ptr ) const
   {
-    typedef ReduceAdapter< FunctorType >      ReduceType ;
-    typedef typename ReduceType::pointer_type ptr_type ;
+    typedef ReduceAdapter< FunctorType >   Reduce ;
+    typedef typename Reduce::pointer_type  ptr_type ;
 
     Cuda::fence();
     ptr_type host_ptr = (ptr_type) arg_ptr ;
     ptr_type cuda_ptr = (ptr_type) Impl::cuda_internal_scratch_unified( m_exec.m_reduce_shared.m_data.value_size );
     if ( 0 != cuda_ptr ) {
-      for ( Cuda::size_type i = 0 ; i < m_exec.m_reduce.value_count() ; ++i )
+      const Cuda::size_type n = Reduce::value_count( m_exec.m_functor );
+      for ( Cuda::size_type i = 0 ; i < n ; ++i )
         host_ptr[i] = cuda_ptr[i] ;
     }
     else {

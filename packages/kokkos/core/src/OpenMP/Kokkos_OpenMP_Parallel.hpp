@@ -111,13 +111,10 @@ public:
 
   typedef ReduceAdapter< FunctorType > ReduceOp ;
 
-  const ReduceOp reduce ;
-
   inline
   ParallelReduce( const FunctorType  & functor ,
                   const size_t         work_count ,
                   pointer_type         result = 0 )
-    : reduce( functor )
   {
 #if defined( __INTEL_COMPILER )
     enum { work_align = is_same<WorkSpec,VectorParallel>::value &&
@@ -131,7 +128,7 @@ public:
 
     OpenMP::assert_ready("Kokkos::OpenMP - parallel_reduce");
 
-    OpenMP::resize_reduce_scratch( reduce.value_size() * work_align );
+    OpenMP::resize_reduce_scratch( ReduceOp::value_size( functor ) * work_align );
 
 #pragma omp parallel
     {
@@ -141,30 +138,31 @@ public:
         thread.work_range( work_count );
 
       if ( ! work_mask ) {
-        reduce.init( thread.reduce_data() );
+        functor.init( ReduceOp::reference( thread.reduce_data() ) );
 
         for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
-          functor( iwork , reduce.reference( thread.reduce_data() ) );
+          functor( iwork , ReduceOp::reference( thread.reduce_data() ) );
         }
       }
       else {
 #if defined( __INTEL_COMPILER )
+        const size_type count = ReduceOp::value_count( functor );
 
 #pragma simd
 #pragma ivdep
         for ( size_type j = 0 ; j < work_align ; ++j ) {
-          reduce.m_functor.init( reduce.reference( thread.reduce_data() , j ) );
+          functor.init( ReduceOp::reference( thread.reduce_data() , count * j ) );
         }
 
 #pragma simd vectorlength(work_align)
 #pragma ivdep
         for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
-          functor( iwork , reduce.reference( thread.reduce_data() , iwork & work_mask ) );
+          functor( iwork , functor.reference( thread.reduce_data() , count * ( iwork & work_mask ) ) );
         }
 
         for ( size_type j = 1 ; j < work_align ; ++j ) {
-          reduce.m_functor.join( reduce.reference( thread.reduce_data() ) ,
-                                 reduce.reference( thread.reduce_data() , j ) );
+          functor.join( ReduceOp::reference( thread.reduce_data() ) ,
+                        ReduceOp::reference( thread.reduce_data() , count * j ) );
         }
 #endif
       }
@@ -175,17 +173,17 @@ public:
       HostThread & root = * OpenMP::get_host_thread();
       for ( unsigned i = 1 ; i < n ; ++i ) {
         HostThread & th = * OpenMP::get_host_thread(i);
-        reduce.join( root.reduce_data() , th.reduce_data() );
+        functor.join( ReduceOp::reference( root.reduce_data() ) ,
+                      ReduceOp::reference( th.reduce_data() ) );
       }
-      reduce.final( root.reduce_data() );
+      ReduceOp::final( functor , root.reduce_data() );
     }
 
     if ( result ) {
-      pointer_type ptr = (pointer_type) OpenMP::root_reduce_scratch();
+      const pointer_type ptr = (pointer_type) OpenMP::root_reduce_scratch();
+      const unsigned n = ReduceOp::value_count( functor );
 
-      for ( unsigned i = 0 ; i < reduce.value_count(); ++i ) {
-        result[i] = ptr[i] ;
-      }
+      for ( unsigned i = 0 ; i < n ; ++i ) { result[i] = ptr[i] ; }
     }
   }
 

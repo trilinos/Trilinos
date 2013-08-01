@@ -70,8 +70,6 @@ public:
 
 private:
 
-  template< class > friend struct ThreadsExecAdapter ;
-
   friend class Kokkos::Threads ;
 
   void        * m_reduce ;    ///< Reduction memory
@@ -89,8 +87,6 @@ private:
   static void activate_threads();
   static void global_lock();
   static void global_unlock();
-  static void wait( volatile int & , const int );
-  static void wait_yield( volatile int & , const int );
   static bool spawn();
 
   static void execute_sleep( ThreadsExec & , const void * );
@@ -133,6 +129,42 @@ public:
 
   Threads threads() { return Threads(*this); }
 
+  static void wait( volatile int & , const int );
+  static void wait_yield( volatile int & , const int );
+
+  template< class FunctorType >
+  typename ReduceAdapter< FunctorType >::reference_type
+  reduce_value( const FunctorType & ) const
+    { return ReduceAdapter< FunctorType >::reference( m_reduce ); }
+
+  template< class Functor >
+  inline
+  typename enable_if< FunctorHasJoin< Functor >::value >::type
+  fan_in( const Functor & f ) const
+    {
+      typedef ReduceAdapter< Functor > Reduce ;
+
+      for ( int i = 0 ; i < m_fan_size ; ++i ) {
+
+        ThreadsExec & fan = *m_fan[i] ;
+
+        ThreadsExec::wait( fan.m_state , ThreadsExec::Active );
+
+        f.join( Reduce::reference( m_reduce ) ,
+                Reduce::reference( fan.m_reduce ) );
+      }
+    }
+
+  template< class Functor >
+  inline
+  typename enable_if< ! FunctorHasJoin< Functor >::value >::type
+  fan_in( const Functor & ) const
+    {
+      for ( int i = 0 ; i < m_fan_size ; ++i ) {
+        ThreadsExec::wait( m_fan[i]->m_state , ThreadsExec::Active );
+      }
+    }
+
   inline
   std::pair< size_t , size_t >
   work_range( const size_t work_count ) const
@@ -168,145 +200,10 @@ public:
   static bool wake();
 };
 
-//----------------------------------------------------------------------------
-
-template< class FunctorType >
-struct ThreadsExecAdapter< ParallelFor< FunctorType , size_t , Threads > >
-{
-  const FunctorType m_func ;
-  const int         m_work ;
-
-  static void execute( ThreadsExec & exec , const void * arg )
-  {
-    const ThreadsExecAdapter & self = * ((const ThreadsExecAdapter *) arg );
-
-    const std::pair<size_t,size_t> work = exec.work_range( self.m_work );
-
-    for ( size_t iwork = work.first ; iwork < work.second ; ++iwork ) {
-      self.m_func( iwork );
-    }
-
-    {
-      const int n = exec.m_fan_size ;
-
-      for ( int i = 0 ; i < n ; ++i ) {
-        ThreadsExec::wait( exec.m_fan[i]->m_state , ThreadsExec::Active );
-      }
-    }
-  }
-
-  ThreadsExecAdapter( const FunctorType & functor , const size_t work )
-    : m_func( functor ), m_work( work ) {}
-};
-
-//----------------------------------------------------------------------------
-
-template< class FunctorType >
-struct ThreadsExecAdapter< ParallelFor< FunctorType , ParallelWorkRequest , Threads > >
-{
-  const FunctorType m_func ;
-
-  static void execute( ThreadsExec & exec , const void * arg )
-  {
-    const ThreadsExecAdapter & self = * ((const ThreadsExecAdapter *) arg );
-
-    self.m_func( exec.threads() );
-
-    {
-      const int n = exec.m_fan_size ;
-
-      for ( int i = 0 ; i < n ; ++i ) {
-        ThreadsExec::wait( exec.m_fan[i]->m_state , ThreadsExec::Active );
-      }
-    }
-  }
-
-  ThreadsExecAdapter( const FunctorType & functor , const ParallelWorkRequest & work )
-    : m_func( functor ) {}
-};
-
-//----------------------------------------------------------------------------
-
-template< class FunctorType >
-struct ThreadsExecAdapter< ParallelReduce< FunctorType , size_t , Threads > >
-{
-  typedef ReduceAdapter< FunctorType > Reduce ;
-
-  const FunctorType m_func ;
-  const int         m_work ;
-
-  static void execute( ThreadsExec & exec , const void * arg )
-  {
-    const ThreadsExecAdapter & self = * ((const ThreadsExecAdapter *) arg );
-
-    typename Reduce::reference_type update = Reduce::reference( exec.m_reduce );
-
-    self.m_func.init( update ); // Initialize thread-local value
-
-    const std::pair<size_t,size_t> work = exec.work_range( self.m_work );
-
-    for ( size_t iwork = work.first ; iwork < work.second ; ++iwork ) {
-      self.m_func( iwork , update );
-    }
-
-    {
-      const int n = exec.m_fan_size ;
-
-      for ( int i = 0 ; i < n ; ++i ) {
-
-        ThreadsExec & fan = * exec.m_fan[i] ;
-
-        ThreadsExec::wait( fan.m_state , ThreadsExec::Active );
-
-        self.m_func.join( update , Reduce::reference( fan.m_reduce ) );
-      }
-    }
-  }
-
-  ThreadsExecAdapter( const FunctorType & functor , const size_t work )
-    : m_func( functor ), m_work( work ) {}
-};
-
-//----------------------------------------------------------------------------
-
-template< class FunctorType >
-struct ThreadsExecAdapter< ParallelReduce< FunctorType , ParallelWorkRequest , Threads > >
-{
-  typedef ReduceAdapter< FunctorType > Reduce ;
-
-  const FunctorType  m_func ;
-
-  static void execute( ThreadsExec & exec , const void * arg )
-  {
-    const ThreadsExecAdapter & self = * ((const ThreadsExecAdapter *) arg );
-
-    typename Reduce::reference_type update = Reduce::reference( exec.m_reduce );
-
-    self.m_func.init( update ); // Initialize thread-local value
-
-    self.m_func( exec.threads() , update );
-
-    {
-      const int n = exec.m_fan_size ;
-
-      for ( int i = 0 ; i < n ; ++i ) {
-
-        ThreadsExec & fan = * exec.m_fan[i] ;
-
-        ThreadsExec::wait( fan.m_state , ThreadsExec::Active );
-
-        self.m_func.join( update , Reduce::reference( fan.m_reduce ) );
-      }
-    }
-  }
-
-  ThreadsExecAdapter( const FunctorType & functor , const ParallelWorkRequest & )
-    : m_func( functor ) {}
-};
-
 } /* namespace Impl */
 } /* namespace Kokkos */
 
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 namespace Kokkos {

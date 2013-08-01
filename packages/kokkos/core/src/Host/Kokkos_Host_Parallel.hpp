@@ -252,11 +252,11 @@ class ParallelReduce< FunctorType , WorkSpec , Host > : public HostThreadWorker
 public:
 
   typedef          Host::size_type      size_type ;
-  typedef ReduceAdapter< FunctorType >  reduce_oper ;
+  typedef ReduceAdapter< FunctorType >  Reduce ;
 
-  typedef typename reduce_oper::pointer_type pointer_type ;
+  typedef typename Reduce::pointer_type pointer_type ;
 
-  const reduce_oper   m_reduce ;
+  const FunctorType   m_functor ;
   const size_type     m_work_count ;
 
   void execute_on_thread( HostThread & this_thread ) const
@@ -278,51 +278,53 @@ public:
 
     if ( ! work_mask ) {
       // This thread's reduction value, initialized
-      m_reduce.init( this_thread.reduce_data() );
+      m_functor.init( Reduce::reference( this_thread.reduce_data() ) );
 
       for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
-        m_reduce.m_functor( iwork , m_reduce.reference( this_thread.reduce_data() ) );
+        m_functor( iwork , Reduce::reference( this_thread.reduce_data() ) );
       }
     }
 #if KOKKOS_ENABLE_SIMD
     else {
+      const size_type count = Reduce::value_count( m_functor );
 
 #pragma simd
 #pragma ivdep
       for ( size_type j = 0 ; j < HostSpace::WORK_ALIGNMENT ; ++j ) {
-        m_reduce.m_functor.init( m_reduce.reference( this_thread.reduce_data() , j ) );
+        m_functor.init( Reduce::reference( this_thread.reduce_data() , count * j ) );
       }
 
 #pragma simd vectorlength(work_align)
 #pragma ivdep
       for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
-        m_reduce.m_functor( iwork , m_reduce.reference( this_thread.reduce_data() , iwork & work_mask ) );
+        m_functor( iwork , Reduce::reference( this_thread.reduce_data() , count * ( iwork & work_mask ) ) );
       }
 
       for ( size_type j = 1 ; j < HostSpace::WORK_ALIGNMENT ; ++j ) {
-        m_reduce.m_functor.join( m_reduce.reference( this_thread.reduce_data() ) ,
-                                 m_reduce.reference( this_thread.reduce_data() , j ) );
+        m_functor.join( Reduce::reference( this_thread.reduce_data() ) ,
+                        Reduce::reference( this_thread.reduce_data() , count * j ) );
       }
     }
 #endif
 
     // End the routine with a reduction.
-    this_thread.end_reduce( m_reduce );
+    this_thread.end_reduce( m_functor );
   }
 
   ParallelReduce( const FunctorType  & functor ,
                   const size_type      work_count ,
                   pointer_type         result = 0 )
-    : m_reduce( functor )
+    : m_functor( functor )
     , m_work_count( work_count )
     {
-      Host::resize_reduce_scratch( m_reduce.value_size() );
+      Host::resize_reduce_scratch( Reduce::value_size( m_functor ) );
       HostThreadWorker::execute();
-      m_reduce.final( Host::root_reduce_scratch() );
+      Reduce::final( m_functor , Host::root_reduce_scratch() );
 
       if ( result ) {
-        pointer_type ptr = (pointer_type) Host::root_reduce_scratch();
-        for ( unsigned i = 0 ; i < m_reduce.value_count() ; ++i ) result[i] = ptr[i] ;
+        const pointer_type ptr = (pointer_type) Host::root_reduce_scratch();
+        const unsigned n = Reduce::value_count( m_functor );
+        for ( unsigned i = 0 ; i < n ; ++i ) result[i] = ptr[i] ;
       }
     }
 
@@ -340,21 +342,21 @@ public:
 namespace Kokkos {
 namespace Impl {
 
-template< class FunctorType , class ReduceOper >
+template< class FunctorType >
 class HostMultiFunctorParallelReduceMember ;
 
-template< class ReduceOper >
-class HostMultiFunctorParallelReduceMember<void,ReduceOper> {
+template<>
+class HostMultiFunctorParallelReduceMember<void> {
 public:
   virtual ~HostMultiFunctorParallelReduceMember() {}
 
-  virtual void apply( HostThread & , const ReduceOper & ) const = 0 ;
+  virtual void apply( HostThread & ) const = 0 ;
 };
 
 
-template< class FunctorType , class ReduceOper >
+template< class FunctorType >
 class HostMultiFunctorParallelReduceMember
-  : public HostMultiFunctorParallelReduceMember<void,ReduceOper> {
+  : public HostMultiFunctorParallelReduceMember<void> {
 public:
   typedef Host::size_type size_type ;
 
@@ -371,56 +373,55 @@ public:
     {}
 
   // virtual method
-  void apply( HostThread & this_thread ,
-              const ReduceOper & reduce ) const
+  void apply( HostThread & this_thread ) const
   {
     const std::pair<size_type,size_type> range =
       this_thread.work_range( m_work_count );
 
     for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
-      m_work_functor( iwork , reduce.reference( this_thread.reduce_data() ) );
+      m_work_functor( iwork , ReduceAdapter< FunctorType >::reference( this_thread.reduce_data() ) );
     }
   }
 };
 
 } // namespace Impl
 
-template< class ReduceOper >
-class MultiFunctorParallelReduce< ReduceOper , Host > : public Impl::HostThreadWorker
+template< class FunctorType >
+class MultiFunctorParallelReduce< FunctorType , Host > : public Impl::HostThreadWorker
 {
 public:
 
-  typedef Impl::ReduceAdapter< ReduceOper > reduce_oper ;
-  typedef          Host::size_type         size_type ;
-  typedef typename ReduceOper::value_type  value_type ;
-  typedef Impl::HostMultiFunctorParallelReduceMember<void,reduce_oper> worker_type ;
+  typedef Impl::ReduceAdapter< FunctorType > reduce_oper ;
+  typedef          Host::size_type           size_type ;
+  typedef typename FunctorType::value_type   value_type ;
+  typedef Impl::HostMultiFunctorParallelReduceMember<void> worker_type ;
 
   typedef std::vector< worker_type * > MemberContainer ;
 
   typedef typename MemberContainer::const_iterator MemberIterator ;
 
   MemberContainer m_member_functors ;
-  reduce_oper     m_reduce ;
+  FunctorType     m_functor ;
 
   void execute_on_thread( Impl::HostThread & this_thread ) const
   {
     // This thread's reduction value, initialized
-    m_reduce.init( this_thread.reduce_data() );
+    m_functor.init( reduce_oper::reference( this_thread.reduce_data() ) );
 
     for ( MemberIterator m  = m_member_functors.begin() ;
                          m != m_member_functors.end() ; ++m ) {
-      (*m)->apply( this_thread , m_reduce );
+      (*m)->apply( this_thread );
     }
 
     // End the routine with a reduction
-    this_thread.end_reduce( m_reduce );
+    this_thread.end_reduce( m_functor );
   }
 
 public:
 
-  explicit MultiFunctorParallelReduce( const ReduceOper & oper )
+  explicit MultiFunctorParallelReduce( const FunctorType & func )
     : m_member_functors()
-    , m_reduce( oper )
+    , m_functor( func )
     { }
 
   ~MultiFunctorParallelReduce()
@@ -431,10 +432,10 @@ public:
     }
   }
 
-  template< class FunctorType >
-  void push_back( const size_type work_count , const FunctorType & functor )
+  template< class T >
+  void push_back( const size_type work_count , const T & functor )
   {
-    typedef Impl::HostMultiFunctorParallelReduceMember<FunctorType,reduce_oper> member_work_type ;
+    typedef Impl::HostMultiFunctorParallelReduceMember<T> member_work_type ;
 
     worker_type * const m = new member_work_type( functor , work_count );
 
@@ -443,16 +444,17 @@ public:
 
   void execute() const
   {
-    Host::resize_reduce_scratch( m_reduce.value_size() );
+    Host::resize_reduce_scratch( reduce_oper::value_size( m_functor ) );
     Impl::HostThreadWorker::execute();
-    m_reduce.final( Host::root_reduce_scratch() );
+    reduce_oper::final( m_functor , Host::root_reduce_scratch() );
   }
 
   void output( typename reduce_oper::pointer_type result )
   {
     typename reduce_oper::pointer_type ptr =
       (typename reduce_oper::pointer_type) Host::root_reduce_scratch();
-    for ( unsigned i = 0 ; i < m_reduce.value_count() ; ++i ) result[i] = ptr[i] ;
+    const unsigned n = reduce_oper::value_count( m_functor );
+    for ( unsigned i = 0 ; i < n ; ++i ) result[i] = ptr[i] ;
   }
 };
 

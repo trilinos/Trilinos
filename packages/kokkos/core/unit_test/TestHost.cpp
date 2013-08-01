@@ -187,13 +187,6 @@ TEST_F( host , view_remap )
 struct HostFunctor
   : public Kokkos::Impl::HostThreadWorker
 {
-  struct Finalize {
-
-    typedef int value_type ;
-
-    Finalize() {}
-  };
-
   struct Reduce {
 
     typedef int value_type ;
@@ -208,27 +201,28 @@ struct HostFunctor
 
   typedef int value_type ;
 
-  const reduce_type m_reduce ;
-        int       & m_flag ;
+  const Reduce m_functor ;
+        int  & m_flag ;
 
-  HostFunctor( int & f ) : m_reduce( Reduce() ), m_flag(f)
+  HostFunctor( int & f ) : m_functor(), m_flag(f)
     {
       Kokkos::Impl::HostThreadWorker::execute();
     }
 
   void execute_on_thread( Kokkos::Impl::HostThread & thread ) const
     {
-      m_reduce.init( thread.reduce_data() );
+      
+      m_functor.init( reduce_type::reference( thread.reduce_data() ) );
 
       thread.barrier();
       thread.barrier();
 
       // Reduce to master thread:
-      thread.reduce( m_reduce );
+      thread.reduce( m_functor );
       if ( 0 == thread.rank() ) { m_flag += 1 + *((int*) thread.reduce_data() ); }
 
       // Reduce to master thread:
-      thread.reduce( m_reduce );
+      thread.reduce( m_functor );
       if ( 0 == thread.rank() ) { m_flag += 1 + *((int*) thread.reduce_data() ); }
 
       thread.end_barrier();

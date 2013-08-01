@@ -45,6 +45,7 @@
 #define KOKKOS_HOST_THREADDATA_HPP
 
 #include <Kokkos_HostSpace.hpp>
+#include <Kokkos_Parallel.hpp>
 #include <impl/Kokkos_ArrayTraits.hpp>
 
 namespace Kokkos {
@@ -144,12 +145,14 @@ __assume_aligned(m_reduce,MEMORY_ALIGNMENT);
   }
 
   /** \brief  End-of-function reduction */
-  template< class ReduceOper >
-  void end_reduce( const ReduceOper & reduce ) const
+  template< class FunctorType >
+  void end_reduce( const FunctorType & functor ) const
   {
+    typedef ReduceAdapter< FunctorType > Reduce ;
+
     for ( size_type i = 0 ; i < m_fan_count ; ++i ) {
       host_thread_wait( & m_fan[i]->m_state , HostThread::ThreadActive );
-      reduce.join( m_reduce , m_fan[i]->m_reduce );
+      Reduce::join( functor , m_reduce , m_fan[i]->m_reduce );
     }
   }
 
@@ -176,10 +179,12 @@ __assume_aligned(m_reduce,MEMORY_ALIGNMENT);
     }
   }
 
-  template< class ReduceOper >
+  template< class FunctorType >
   inline
-  void reduce( const ReduceOper & reduce_op ) const
+  void reduce( const FunctorType & functor ) const
   {
+    typedef ReduceAdapter< FunctorType > Reduce ;
+
     // Fan-in reduction of other threads' reduction data.
 
     for ( size_type i = 0 ; i < m_fan_count ; ++i ) {
@@ -188,7 +193,7 @@ __assume_aligned(m_reduce,MEMORY_ALIGNMENT);
       host_thread_wait( & m_fan[i]->m_state , HostThread::ThreadActive );
 
       // Join source thread reduce data.
-      reduce_op.join( m_reduce , m_fan[i]->m_reduce );
+      Reduce::join( functor , m_reduce , m_fan[i]->m_reduce );
     }
 
     if ( m_thread_rank ) {
