@@ -56,7 +56,7 @@
 #elif defined(__INTEL_COMPILER)
 #  define KOKKOSCLASSIC_RESTRICT restrict
 #else
-#  define KOKKOSCLASSIC_RESTRICT
+#  define KOKKOSCLASSIC_RESTRICT 
 #endif // __GNUC__
 
 //! Namespace for Kokkos classes and methods
@@ -73,6 +73,13 @@ namespace KokkosClassic {
   using Teuchos::arcp_reinterpret_cast;
   using Teuchos::Array;
   using Teuchos::ParameterList;
+}
+
+namespace Kokkos {
+  // For backwards compatibility, bring everything in the 
+  // KokkosClassic namespace into Kokkos for now.  This will 
+  // go away soon.
+  using namespace KokkosClassic;
 }
 
 //! Namespace for Kokkos example classes
