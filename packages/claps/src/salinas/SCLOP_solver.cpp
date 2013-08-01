@@ -191,7 +191,7 @@ void SCLOP_solver::determine_ownership()
   for (i=0; i<NumberMpc; i++) 
     if (MpcVector[i].NumEntriesGlobal() == 0) ncon_zero++;
   if ((MyPID == 0) && (ncon_zero > 0)) {
-    cout << "Warning: number of null constraints = " << ncon_zero;
+    std::cout << "Warning: number of null constraints = " << ncon_zero;
   }
   int *count1 = new int[ndof]; myzero(count1, ndof);
   int *flag_con = new int[NumberMpc]; myzero(flag_con, NumberMpc);
@@ -221,9 +221,9 @@ void SCLOP_solver::determine_ownership()
     int ncon_no_active(0);
     for (i=0; i<NumberMpc; i++) if (flag_con_max[i] == 0) ncon_no_active++;
     if (ncon_no_active > 0) {
-      cout << "Warning: number of constraints with no active dofs = " 
-	   << ncon_no_active << endl;
-      cout << "These constraint equations will be ignored" << endl;
+      std::cout << "Warning: number of constraints with no active dofs = " 
+	        << ncon_no_active << std::endl;
+      std::cout << "These constraint equations will be ignored" << std::endl;
     }
   }
   int *con2 = new int[ndof+1]; con2[0] = 0;
@@ -528,7 +528,7 @@ void SCLOP_solver::EPmat_datfile(Epetra_CrsMatrix* A, char fname[])
     A->ExtractMyRowView(i, NumEntries, Values, Indices);
     for (j=0; j<NumEntries; j++) {
       fout << A->GRID(i)+1 << " " << A->GCID(Indices[j])+1 << std::setw(22) 
-	   << std::setprecision(15) << Values[j] << endl;
+	   << std::setprecision(15) << Values[j] << std::endl;
     }
   }
   fout.close();
