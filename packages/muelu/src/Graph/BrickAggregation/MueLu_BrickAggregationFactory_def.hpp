@@ -46,9 +46,13 @@
 #ifndef MUELU_BRICKAGGREGATIONFACTORY_DEF_HPP_
 #define MUELU_BRICKAGGREGATIONFACTORY_DEF_HPP_
 
+#include <Xpetra_Import.hpp>
+#include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
+#include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVector.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 
 #include "MueLu_BrickAggregationFactory_decl.hpp"
 
@@ -63,7 +67,8 @@ namespace MueLu {
   RCP<const ParameterList> BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory for Coordinates");
+    validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory for coordinates");
+    validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory for matrix");
     validParamList->set< int >                   ("bx",                             2, "Number of brick points for x axis");
     validParamList->set< int >                   ("by",                             2, "Number of brick points for x axis");
     validParamList->set< int >                   ("bz",                             2, "Number of brick points for x axis");
@@ -73,25 +78,63 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
+    Input(currentLevel, "A");
     Input(currentLevel, "Coordinates");
   }
 
+  // The current implementation cannot deal with bricks larger than 3x3(x3).
+  // The reason is that aggregation infrastructure in place has major drawbacks.
+  //
+  // Aggregates class is constructed with a help of a provided map, either taken from
+  // a graph, or provided directly. This map is usually taken to be a column map of a
+  // matrix. The reason for that is that if we have an overlapped aggregation, we want
+  // the processor owning aggregates to store agg id for all nodes in this aggregate.
+  // If we used row map, there would be no way for the processor to know whether there
+  // are some other nodes on a different processor which belong to its aggregate.
+  // On the other hand, using column map allows both vertex2AggId and procWinner arrays
+  // in Aggregates class to store some extra data, such as whether nodes belonging to a
+  // different processor belong to this processor aggregate.
+  // The drawback of this is that it stores only overlap=1 data. For aggressive coarsening,
+  // such a brick aggregation with a large single dimension of brick, it could happen
+  // that we need to know depth two or more extra nodes in the other processor subdomain.
+  //
+  // Another issue is that we may have some implicit connection between aggregate map and
+  // maps of A used in the construction of a tentative prolongator.
+  //
+  // Another issue is that it seems that some info is unused or not required. Specifically,
+  // it seems that if a node belongs to an aggregate on a different processor, we don't
+  // actually need to set vertex2AggId and procWinner, despite the following comment in
+  // Aggregates decl:
+  //      vertex2AggId[k] gives a local id
+  //      corresponding to the aggregate to which
+  //      local id k has been assigned.  While k
+  //      is the local id on my processor (MyPID)
+  //      vertex2AggId[k] is the local id on the
+  //      processor which actually owns the
+  //      aggregate. This owning processor has id
+  //      given by procWinner[k].
+  // It is possible that that info is only used during arbitration in CoupledAggregationFactory.
+  //
+  // The steps that we need to do to resolve this issue:
+  //   - Break the link between maps in TentativePFactory, allowing any maps in Aggregates
+  //   - Allow Aggregates to construct their own maps, if necessary, OR
+  //   - construct aggregates based on row map
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
 
     const ParameterList& pL = GetParameterList();
 
-    typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                   Map;
-    typedef MueLu::Aggregates<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Aggregates;
-
+    // TODO: deal with block size > 1
     RCP<MultiVector> coords = Get< RCP<MultiVector> >(currentLevel, "Coordinates");
-    RCP<const Map>   map    = coords->getMap();
+    RCP<Matrix>      A      = Get< RCP<Matrix> >     (currentLevel, "A");
+    RCP<const Map>   rowMap = A->getRowMap();
+    RCP<const Map>   colMap = A->getColMap();
 
-    RCP<const Teuchos::Comm<int> > comm = map->getComm();
+    RCP<const Teuchos::Comm<int> > comm = rowMap->getComm();
     int myRank = comm->getRank();
 
-    int numPoints = coords->getLocalLength();
+    int numPoints = colMap->getNodeNumElements();
 
     bx_ = pL.get<int>("bx");
     by_ = pL.get<int>("by");
@@ -99,10 +142,12 @@ namespace MueLu {
 
     // Setup misc structures
     // Logically, we construct enough data to query topological information of a rectangular grid
-    Setup(comm, coords);
+    Setup(comm, coords, colMap);
+
+    GetOStream(Runtime0,0) << "Using brick size: " << bx_ << " x " << by_ << (nDim_ == 3 ? "x " + toString(bz_) : "") << std::endl;
 
     // Construct aggregates
-    RCP<Aggregates> aggregates = rcp(new Aggregates(map));
+    RCP<Aggregates> aggregates = rcp(new Aggregates(colMap));
     aggregates->setObjectLabel("Brick");
 
     Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId = aggregates->GetVertex2AggId()->getDataNonConst(0);
@@ -119,9 +164,9 @@ namespace MueLu {
     for (LocalOrdinal LID = 0; LID < numPoints; LID++) {
       GlobalOrdinal aggGID = getAggGID(LID);
 
-      vertex2AggId[LID] = aggGID;
-
-      if (map->isNodeGlobalElement(getRoot(LID))) {
+      if (rowMap->isNodeGlobalElement(getRoot(LID))) {
+        // Root of the brick aggregate containing GID (<- LID) belongs to us
+        vertex2AggId[LID] = aggGID;
         myAggGIDs.insert(aggGID);
 
         if (isRoot(LID))
@@ -150,8 +195,8 @@ namespace MueLu {
     }
 
     // The map is a convenient way to fetch remote local indices from global indices.
-    RCP<Map> aggMap = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(coords->getMap()->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-                                                                                 myAggGIDsArray, map->getIndexBase(), map->getComm());
+    RCP<Map> aggMap = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                                                                 myAggGIDsArray, rowMap->getIndexBase(), comm);
 
     ind = 0;
     for (typename std::set<GlobalOrdinal>::const_iterator it = remoteAggGIDs.begin(); it != remoteAggGIDs.end(); it++)
@@ -170,9 +215,12 @@ namespace MueLu {
 
     // Remap aggregate GIDs to LIDs and set up owning processors
     for (LocalOrdinal LID = 0; LID < numPoints; LID++) {
-      GlobalOrdinal aggGID = vertex2AggId[LID];
-      vertex2AggId[LID] = AggG2L[aggGID];
-      procWinner  [LID] = AggG2R[aggGID];
+      if (rowMap->isNodeGlobalElement(getRoot(LID))) {
+        GlobalOrdinal aggGID = vertex2AggId[LID];
+
+        vertex2AggId[LID] = AggG2L[aggGID];
+        procWinner  [LID] = AggG2R[aggGID];
+      }
     }
 
     GlobalOrdinal numGlobalRemote;
@@ -185,20 +233,25 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(const RCP<const Teuchos::Comm<int> >& comm, const RCP<MultiVector>& coords) const {
+  void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(const RCP<const Teuchos::Comm<int> >& comm, const RCP<MultiVector>& coords, const RCP<const Map>& map) const {
     nDim_ = coords->getNumVectors();
 
-    x_    = coords->getData(0);
+    RCP<const Import> importer = ImportFactory::Build(coords->getMap(), map);
+    RCP<MultiVector> overlappedCoords = MultiVectorFactory::Build(map, nDim_);
+    overlappedCoords->doImport(*coords, *importer, Xpetra::INSERT);
+
+
+    x_    = overlappedCoords->getData(0);
     xMap_ = Construct1DMap(comm, x_);
     nx_   = xMap_->size();
 
-    y_    = coords->getData(1);
+    y_    = overlappedCoords->getData(1);
     yMap_ = Construct1DMap(comm, y_);
     ny_   = yMap_->size();
 
     nz_   = 1;
     if (nDim_ == 3) {
-      z_    = coords->getData(2);
+      z_    = overlappedCoords->getData(2);
       zMap_ = Construct1DMap(comm, z_);
       nz_   = zMap_->size();
     }
@@ -234,7 +287,6 @@ namespace MueLu {
       Displs[i+1] = Displs[i] + recvCnt[i];
     recvSize = Displs[numProcs-1] + recvCnt[numProcs-1];
     recvBuf.resize(recvSize);
-    // TODO: should we use MPI_Scan here?
     MPI_Allgatherv(sendBuf.getRawPtr(), sendCnt, MPI_DOUBLE, recvBuf.getRawPtr(), recvCnt.getRawPtr(), Displs.getRawPtr(), MPI_DOUBLE, rawComm);
 
     RCP<container> gMap = rcp(new container);

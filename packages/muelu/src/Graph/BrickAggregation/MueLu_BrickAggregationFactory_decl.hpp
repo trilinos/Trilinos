@@ -46,9 +46,13 @@
 #ifndef MUELU_BRICKAGGREGATIONFACTORY_DECL_HPP_
 #define MUELU_BRICKAGGREGATIONFACTORY_DECL_HPP_
 
+#include <Xpetra_Import_fwd.hpp>
+#include <Xpetra_ImportFactory_fwd.hpp>
 #include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
+#include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
+#include <Xpetra_MultiVectorFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
@@ -123,7 +127,7 @@ namespace MueLu {
     //@}
 
   private:
-    void Setup(const RCP<const Teuchos::Comm<int> >& comm, const RCP<MultiVector>& coords) const;
+    void Setup(const RCP<const Teuchos::Comm<int> >& comm, const RCP<MultiVector>& coords, const RCP<const Map>& map) const;
     RCP<container> Construct1DMap(const RCP<const Teuchos::Comm<int> >& comm, const ArrayRCP<const double>& x) const;
 
     bool           isRoot  (LocalOrdinal LID) const;
