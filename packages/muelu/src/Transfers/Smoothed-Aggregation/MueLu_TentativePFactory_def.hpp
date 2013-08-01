@@ -270,7 +270,7 @@ namespace MueLu {
       rowptr_temp.resize(numRowsForPtent+1,0);
       rowptr_temp[0]=0;
       for(size_t i=1; i < numRowsForPtent+1; ++i)
-	rowptr_temp[i] = rowptr_temp[i-1] + NSDim;
+        rowptr_temp[i] = rowptr_temp[i-1] + NSDim;
 
       colind_temp.resize(nzEstimate,INVALID);
       values_temp.resize(nzEstimate,Teuchos::ScalarTraits<Scalar>::zero());
@@ -449,7 +449,7 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
         //If it is, the row is inserted.  If not, the row number, columns, and values are saved in
         //MultiVectors that will be sent to other processors.
         GO globalRow = aggToRowMap[aggStart[agg]+j];
-	LO localRow  = rowMapForPtent->getLocalElement(globalRow); // CMS: There has to be an efficient way to do this...
+        LO localRow  = rowMapForPtent->getLocalElement(globalRow); // CMS: There has to be an efficient way to do this...
 
         //TODO is the use of Xpetra::global_size_t below correct?
         if( rowMapForPtentRef.isNodeGlobalElement(globalRow) == false )
@@ -465,10 +465,10 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
           for (size_t k=0; k<NSDim; ++k) {
             try{
               if (localQR(j,k) != Teuchos::ScalarTraits<SC>::zero()) {
-		localColPtr[nnz]  = agg * NSDim + k;
-		globalColPtr[nnz] = coarseMapRef.getGlobalElement(localColPtr[nnz]);
+                localColPtr[nnz]  = agg * NSDim + k;
+                globalColPtr[nnz] = coarseMapRef.getGlobalElement(localColPtr[nnz]);
                 valPtr[nnz] = localQR(j,k);
-		++total_nnz_count;
+                ++total_nnz_count;
                 ++nnz;
               }
             }
@@ -478,17 +478,17 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
           } //for (size_t k=0; k<NSDim; ++k)
 
           try{
-	    if (aggregates.AggregatesCrossProcessors()) {
-	      Ptentative->insertGlobalValues(globalRow,globalColPtr.view(0,nnz),valPtr.view(0,nnz));
-	    }
-	    else {
-	      // Copy all of the *active* cols/vals into the colind_v/values_v arrays.
-	      size_t start = rowptr_v[localRow];
-	      for(size_t i=0; i<nnz; ++i) {
-		colind_v[start+i] = localColPtr[i];
-		values_v[start+i] = valPtr[i];
-	      }
-	    }
+            if (aggregates.AggregatesCrossProcessors()) {
+              Ptentative->insertGlobalValues(globalRow,globalColPtr.view(0,nnz),valPtr.view(0,nnz));
+            }
+            else {
+              // Copy all of the *active* cols/vals into the colind_v/values_v arrays.
+              size_t start = rowptr_v[localRow];
+              for(size_t i=0; i<nnz; ++i) {
+                colind_v[start+i] = localColPtr[i];
+                values_v[start+i] = valPtr[i];
+              }
+            }
           }
           catch(...) {
             std::cout << "pid " << fineA.getRowMap()->getComm()->getRank()
@@ -520,12 +520,12 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
       size_t count=0;
       // Collapse and copy
       for(size_t i=0; i<numRowsForPtent; i++) {
-	rowptr_new[i]=count;
-	for(size_t j=rowptr_v[i]; j<rowptr_v[i+1] && colind_v[j]!=INVALID; j++){
-	  colind_new[count] = colind_v[j];
-	  values_new[count] = values_v[j];
-	    count++;
-	}
+        rowptr_new[i]=count;
+        for(size_t j=rowptr_v[i]; j<rowptr_v[i+1] && colind_v[j]!=INVALID; j++){
+          colind_new[count] = colind_v[j];
+          values_new[count] = values_v[j];
+          count++;
+        }
       }
       rowptr_new[numRowsForPtent]=count;
 
