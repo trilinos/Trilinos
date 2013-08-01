@@ -105,19 +105,21 @@ void Diagonal<MatrixType>::initialize()
 template<class MatrixType>
 void Diagonal<MatrixType>::compute()
 {
-  if (!isInitialized_) initialize();
-
+  if (! isInitialized_) {
+    initialize ();
+  }
   isComputed_ = false;
-
-  if (matrix_ == Teuchos::null) {
+  if (matrix_.is_null ()) {
     isComputed_ = true;
     return;
   }
 
   // Get the diagonal entries using the precomputed offsets and invert them.
-  Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmp_vec = Teuchos::rcp(new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrix_->getRowMap()));
-  matrix_->getLocalDiagCopy(*tmp_vec, offsets_());
-  tmp_vec->reciprocal(*tmp_vec);
+  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
+  Teuchos::RCP<vector_type> tmp_vec = 
+    Teuchos::rcp (new vector_type (matrix_->getRowMap ()));
+  matrix_->getLocalDiagCopy (*tmp_vec, offsets_ ());
+  tmp_vec->reciprocal (*tmp_vec);
 
   inversediag_ = tmp_vec;
 
@@ -126,11 +128,12 @@ void Diagonal<MatrixType>::compute()
 }
 
 template<class MatrixType>
-void Diagonal<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-             Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-             Teuchos::ETransp /*mode*/,
-                 Scalar alpha,
-                 Scalar beta) const
+void Diagonal<MatrixType>::
+apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+       Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+       Teuchos::ETransp /*mode*/,
+       Scalar alpha,
+       Scalar beta) const
 {
   // This method will not just call applyTempl() for now to avoid doing the extra work of
   // copying data to intermediate vectors to convert scalar types.
@@ -144,11 +147,13 @@ void Diagonal<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,G
 
 template<class MatrixType>
 template<class DomainScalar, class RangeScalar>
-void Diagonal<MatrixType>::applyTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-             Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-             Teuchos::ETransp /*mode*/,
-                 RangeScalar alpha,
-                 RangeScalar beta) const
+void
+Diagonal<MatrixType>::
+applyTempl (const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+	    Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+	    Teuchos::ETransp /*mode*/,
+	    RangeScalar alpha,
+	    RangeScalar beta) const
 {
   typedef typename Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> RangeMultiVectorType;
   typedef typename Tpetra::Vector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> RangeVectorType;
@@ -182,11 +187,11 @@ void Diagonal<MatrixType>::applyTempl(const Tpetra::MultiVector<DomainScalar,Loc
 
 template<class MatrixType>
 typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
-Diagonal<MatrixType>::computeCondEst(
-                     CondestType CT,
-                     LocalOrdinal MaxIters,
-                     magnitudeType Tol,
-                     const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix)
+Diagonal<MatrixType>::
+computeCondEst (CondestType CT,
+		LocalOrdinal MaxIters,
+		magnitudeType Tol,
+		const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix)
 {
   const magnitudeType minusOne = Teuchos::ScalarTraits<magnitudeType>::one ();
 

@@ -635,7 +635,7 @@ public:
             }
         }
 
-        this->commCost = totalCost/ commCount;
+        this->commCost = totalCost;//#/ commCount;
     }
 
     double getCommunicationCostMetric(){
@@ -669,7 +669,8 @@ public:
     pcoord_t **proc_coords; //the processor coordinates. allocated outside of the class.
     int task_coord_dim; //dimension of the tasks coordinates.
     tcoord_t **task_coords; //the task coordinates allocated outside of the class.
-
+    int partArraySize;
+    procId_t *partNoArray;
 
     //public:
     CoordinateCommunicationModel():
@@ -677,7 +678,9 @@ public:
         proc_coord_dim(0),
         proc_coords(0),
         task_coord_dim(0),
-        task_coords(0){}
+        task_coords(0),
+        partArraySize(-1),
+        partNoArray(NULL){}
 
     virtual ~CoordinateCommunicationModel(){}
 
@@ -699,10 +702,18 @@ public:
             ):
                 CommunicationModel<procId_t>(no_procs_, no_tasks_),
                 proc_coord_dim(pcoord_dim_), proc_coords(pcoords_),
-                task_coord_dim(tcoord_dim_), task_coords(tcoords_){
+                task_coord_dim(tcoord_dim_), task_coords(tcoords_),
+                partArraySize(min(tcoord_dim_, pcoord_dim_)),
+                partNoArray(NULL){
     }
 
 
+    void setPartArraySize(int psize){
+        this->partArraySize = psize;
+    }
+    void setPartArray(procId_t *pNo){
+        this->partNoArray = pNo;
+    }
 
     /*! \brief Function is called whenever nprocs > no_task.
      * Function returns only the subset of processors that are closest to each other.
@@ -836,6 +847,9 @@ public:
         //obtain the min coordinate dim.
         procId_t minCoordDim = MINOF(this->task_coord_dim, this->proc_coord_dim);
 
+        int recursion_depth = partArraySize;
+        if(partArraySize < minCoordDim) recursion_depth = minCoordDim;
+
         int taskPerm = z2Fact<int>(this->task_coord_dim); //get the number of different permutations for task dimension ordering
         int procPerm = z2Fact<int>(this->proc_coord_dim); //get the number of different permutations for proc dimension ordering
         int permutations =  taskPerm * procPerm; //total number of permutations
@@ -873,6 +887,7 @@ public:
             //cout << permutation[i] << " ";
         }
 
+
         //do the partitioning and renumber the parts.
         env->timerStart(MACRO_TIMERS, "Mapping - Proc Partitioning");
         sequentialTaskPartitioning<pcoord_t, procId_t, procId_t>(
@@ -883,7 +898,9 @@ public:
                 minCoordDim,
                 pcoords,//this->proc_coords,
                 proc_adjList,
-                proc_xadj
+                proc_xadj,
+                recursion_depth,
+                partNoArray
                 //,"proc_partitioning"
         );
         env->timerStop(MACRO_TIMERS, "Mapping - Proc Partitioning");
@@ -914,7 +931,9 @@ public:
                 minCoordDim,
                 tcoords, //this->task_coords,
                 task_adjList,
-                task_xadj
+                task_xadj,
+                recursion_depth,
+                partNoArray
                 //,"task_partitioning"
         );
         env->timerStop(MACRO_TIMERS, "Mapping - Task Partitioning");
@@ -1111,6 +1130,24 @@ public:
                 task_communication_adj
          );
 
+        /*
+        if (myRank == 0){
+            procId_t maxComm = 0;
+            procId_t totalComm = 0;
+            for (procId_t i = 0; i < this->ntasks;++i){
+                procId_t tBegin = 0;
+                if (i > 0){
+                    tBegin = task_communication_xadj[i - 1];
+                }
+                procId_t tEnd = task_communication_xadj[i];
+                if (tEnd - tBegin > maxComm) maxComm = tEnd - tBegin;
+            }
+            totalComm = task_communication_xadj[this->ntasks - 1];
+            cout << "commMax:" << maxComm << " totalComm:"<< totalComm << endl;
+        }
+        */
+
+
 
 
         envConst->timerStop(MACRO_TIMERS, "Mapping - Communication Graph");
@@ -1297,8 +1334,7 @@ public:
 
 
     /*! \brief Constructor
-     * When this constructor is called, it is assumed that the communication graph is already computed.
-     * It is assumed that the communication graph is given in task_communication_xadj_ and task_communication_adj_ parameters.
+     * Constructor called for fortran interface.
      *  \param envConst_ is the environment object.
      *  \param task_communication_xadj_ is the solution object. Holds the assignment of points.
      *  \param task_communication_adj_ is the environment object.
@@ -1314,7 +1350,9 @@ public:
             tcoord_t **task_coords,
             const Environment *envConst_,
             ArrayRCP<procId_t>task_communication_xadj_,
-            ArrayRCP<procId_t>task_communication_adj_
+            ArrayRCP<procId_t>task_communication_adj_,
+            int partArraySize,
+            procId_t *partNoArray
     ):  PartitionMapping<Adapter>(comm_, NULL, NULL, NULL, envConst_),
             proc_to_task_xadj(0),
             proc_to_task_adj(0),
@@ -1346,9 +1384,15 @@ public:
                         this->nprocs,
                         this->ntasks
                 );
+        this->proc_task_comm->setPartArraySize(partArraySize);
+        this->proc_task_comm->setPartArray(partNoArray);
 
         int myRank = comm_->getRank();
+
         this->doMapping(myRank);
+#ifdef gnuPlot
+        this->writeMapping2(myRank);
+#endif
         this->proc_task_comm->calculateCommunicationCost(
                 task_to_proc.getRawPtr(),
                 task_communication_xadj.getRawPtr(),
@@ -1357,7 +1401,8 @@ public:
 
         this->getBestMapping();
 #ifdef gnuPlot
-        this->writeMapping2(comm_->getRank());
+        if(comm_->getRank() == 0)
+        this->writeMapping2(-1);
 #endif
     }
 
@@ -1495,6 +1540,7 @@ public:
         RCP<Comm<int> > subComm = this->create_subCommunicatior();
         //calculate cost.
         double myCost = this->proc_task_comm->getCommunicationCostMetric();
+        //cout << "me:" << this->comm->getRank() << " myCost:" << myCost << endl;
         double localCost[2], globalCost[2];
 
         localCost[0] = myCost;
@@ -1792,6 +1838,100 @@ public:
 };
 
 
+template <typename procId_t,  typename pcoord_t>
+pcoord_t **shiftMachineCoordinates(int machine_dim, procId_t *machine_dimensions, procId_t numProcs, pcoord_t **mCoords){
+    pcoord_t **result_machine_coords = NULL;
+    result_machine_coords = new pcoord_t*[machine_dim];
+    for (int i = 0; i < machine_dim; ++i){
+        result_machine_coords[i] = new pcoord_t [numProcs];
+    }
+
+    for (int i = 0; i < machine_dim; ++i){
+        procId_t numMachinesAlongDim = machine_dimensions[i];
+        procId_t *machineCounts= new procId_t[numMachinesAlongDim];
+        memset(machineCounts, 0, sizeof(procId_t) *numMachinesAlongDim);
+
+        int *filledCoordinates= new int[numMachinesAlongDim];
+
+        pcoord_t *coords = mCoords[i];
+        for(procId_t j = 0; j < numProcs; ++j){
+            procId_t mc = (procId_t) coords[j];
+            ++machineCounts[mc];
+        }
+
+        procId_t filledCoordinateCount = 0;
+        for(procId_t j = 0; j < numMachinesAlongDim; ++j){
+            if (machineCounts[j] > 0){
+                filledCoordinates[filledCoordinateCount++] = j;
+            }
+        }
+
+        procId_t firstProcCoord = filledCoordinates[0];
+        procId_t firstProcCount = machineCounts[firstProcCoord];
+
+        procId_t lastProcCoord = filledCoordinates[filledCoordinateCount - 1];
+        procId_t lastProcCount = machineCounts[lastProcCoord];
+
+        procId_t firstLastGap = numMachinesAlongDim - lastProcCoord + firstProcCoord;
+        procId_t firstLastGapProc = lastProcCount + firstProcCount;
+
+        procId_t leftSideProcCoord = firstProcCoord;
+        procId_t leftSideProcCount = firstProcCount;
+        procId_t biggestGap = 0;
+        procId_t biggestGapProc = numProcs;
+
+        procId_t shiftBorderCoordinate = -1;
+        for(procId_t j = 1; j < filledCoordinateCount; ++j){
+            procId_t rightSideProcCoord= filledCoordinates[j];
+            procId_t rightSideProcCount = machineCounts[rightSideProcCoord];
+
+            procId_t gap = rightSideProcCoord - leftSideProcCoord;
+            procId_t gapProc = rightSideProcCount + leftSideProcCount;
+
+            if (gap > biggestGap || (gap == biggestGap && biggestGapProc > gapProc)){
+                shiftBorderCoordinate = rightSideProcCoord;
+                biggestGapProc = gapProc;
+                biggestGap = gap;
+            }
+            leftSideProcCoord = rightSideProcCoord;
+            leftSideProcCount = rightSideProcCount;
+        }
+
+
+        if (!(biggestGap > firstLastGap || (biggestGap == firstLastGap && biggestGap < firstLastGapProc))){
+            shiftBorderCoordinate = -1;
+        }
+
+/*
+        for(procId_t j = 0; j < filledCoordinateCount; ++j){
+            cout << "dim:" << i << " coord:" << filledCoordinates[j] ;
+
+            if (filledCoordinates[j] < shiftBorderCoordinate){
+                cout << " will be shifted to " << filledCoordinates[j] + numMachinesAlongDim << endl;
+            }
+            else {
+                cout << endl;
+            }
+        }
+*/
+
+        for(procId_t j = 0; j < numProcs; ++j){
+
+            if (coords[j] < shiftBorderCoordinate){
+                result_machine_coords[i][j] = coords[j] + numMachinesAlongDim;
+
+            }
+            else {
+                result_machine_coords[i][j] = coords[j];
+            }
+            //cout << "I:" << i << "j:" << j << " coord:" << coords[j] << " now:" << result_machine_coords[i][j] << endl;
+        }
+        delete [] machineCounts;
+    }
+
+    return result_machine_coords;
+
+}
 
 template <typename procId_t, typename pcoord_t, typename tcoord_t>
 void coordinateTaskMapperInterface(
@@ -1810,13 +1950,16 @@ void coordinateTaskMapperInterface(
         procId_t *task_communication_adj_,
 
         procId_t *proc_to_task_xadj, /*output*/
-        procId_t *proc_to_task_adj /*output*/
+        procId_t *proc_to_task_adj, /*output*/
+        int partArraySize,
+        procId_t *partNoArray,
+        procId_t *machine_dimensions
         ){
 
     const Environment *envConst_ = new Environment();
     //RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
 
-    typedef Tpetra::MultiVector<tcoord_t, procId_t,procId_t, Kokkos::DefaultNode::DefaultNodeType> tMVector_t;
+    typedef Tpetra::MultiVector<tcoord_t, procId_t,procId_t, KokkosClassic::DefaultNode::DefaultNodeType> tMVector_t;
 
 
 
@@ -1824,12 +1967,27 @@ void coordinateTaskMapperInterface(
     //cout << "task_communication_xadj_[numProcessors]:" << task_communication_xadj_[numProcessors - 1] << endl;
     Teuchos::ArrayRCP<procId_t> task_communication_xadj (task_communication_xadj_, 0, numProcessors, false);
     Teuchos::ArrayRCP<procId_t> task_communication_adj (task_communication_adj_, 0, task_communication_xadj_[numProcessors -1], false);
+    /*
+    int machine_dimensions[3];
+    machine_dimensions[0] = 17;
+    machine_dimensions[1] = 8;
+    machine_dimensions[2] = 24;
 
+     */
+    pcoord_t ** updatedMachine  = machine_coords_;
+    if (machine_dimensions){
+        updatedMachine =
+            shiftMachineCoordinates <procId_t, pcoord_t>(
+                            procDim,
+                            machine_dimensions,
+                            numProcessors,
+                            machine_coords_);
+    }
     CoordinateTaskMapper<XpetraMultiVectorInput <tMVector_t>, procId_t> *ctm = new CoordinateTaskMapper<XpetraMultiVectorInput <tMVector_t>, procId_t>(
                 comm_.getRawPtr(),
                 procDim,
                 numProcessors,
-                machine_coords_,
+                updatedMachine,//machine_coords_,
 
                 taskDim,
                 numTasks,
@@ -1837,9 +1995,17 @@ void coordinateTaskMapperInterface(
 
                 envConst_,
                 task_communication_xadj,
-                task_communication_adj
+                task_communication_adj,
+                partArraySize,
+                partNoArray
         );
 
+    if (machine_dimensions){
+        for (int i = 0; i < procDim; ++i){
+            delete [] updatedMachine[i];
+        }
+        delete [] updatedMachine;
+    }
 
     procId_t* proc_to_task_xadj_;
     procId_t* proc_to_task_adj_;
@@ -1879,7 +2045,10 @@ void coordinateTaskMapperInterface_Fortran(
         procId_t *task_communication_adj_,
 
         procId_t *proc_to_task_xadj, /*output*/
-        procId_t *proc_to_task_adj /*output*/
+        procId_t *proc_to_task_adj, /*output*/
+        int partArraySize,
+        procId_t *partNoArray,
+        int *machineDimensions
         ){
 
 #ifdef HAVE_MPI
@@ -1902,7 +2071,10 @@ void coordinateTaskMapperInterface_Fortran(
             task_communication_adj_,
 
             proc_to_task_xadj, /*output*/
-            proc_to_task_adj /*output*/);
+            proc_to_task_adj, /*output*/
+            partArraySize,
+            partNoArray,
+            machineDimensions);
 }
 
 }// namespace Zoltan2

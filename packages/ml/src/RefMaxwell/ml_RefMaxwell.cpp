@@ -293,7 +293,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   ArrayRCP<int> BCedges_arcp(BCrows,0,numBCrows,false);
   
   /* Build the (1,1) Block Preconditioner */ 
-  string solver11=List_.get("refmaxwell: 11solver","edge matrix free");
+  std::string solver11=List_.get("refmaxwell: 11solver","edge matrix free");
   Teuchos::ParameterList List11=List_.get("refmaxwell: 11list",dummy);
   if (List11.name() == "ANONYMOUS") List11.setName("refmaxwell: 11list");
   if(solver11=="edge matrix free")
@@ -307,7 +307,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   if(print_hierarchy) EdgePC->Print();
   /* Build the (2,2) Block Preconditioner */
   if(!HasOnlyDirichletNodes){
-    string solver22=List_.get("refmaxwell: 22solver","multilevel");
+    std::string solver22=List_.get("refmaxwell: 22solver","multilevel");
     Teuchos::ParameterList List22=List_.get("refmaxwell: 22list",dummy);
     if (List22.name() == "ANONYMOUS") List11.setName("refmaxwell: 11list");
     SetDefaults("SA",List22,0,0,false);
@@ -462,7 +462,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ApplyInverse(const Epetra_MultiVector& 
 // ================================================ ====== ==== ==== == = 
 int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList &List){  
 
-  string smoother=List.get("smoother: type","Chebyshev");
+  std::string smoother=List.get("smoother: type","Chebyshev");
   int smoother_sweeps=List.get("smoother: sweeps",2);
   int output=List.get("ML output",0);
 

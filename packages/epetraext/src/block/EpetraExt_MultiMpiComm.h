@@ -183,7 +183,7 @@ class MultiMpiComm: public EpetraExt::MultiComm, public Epetra_MpiComm,
   virtual Epetra_Distributor * CreateDistributor() const { return myComm->CreateDistributor(); };
   virtual Epetra_Directory * CreateDirectory(const Epetra_BlockMap & Map) const 
           { return myComm->CreateDirectory(Map); };
-  virtual void PrintInfo(ostream & os) const { myComm->PrintInfo( os); };
+  virtual void PrintInfo(std::ostream & os) const { myComm->PrintInfo( os); };
 
  protected:
 

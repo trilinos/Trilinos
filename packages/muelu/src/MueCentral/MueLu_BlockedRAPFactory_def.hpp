@@ -121,8 +121,8 @@ namespace MueLu {
 
     // Triple matrix product for BlockedCrsMatrixClass
     TEUCHOS_TEST_FOR_EXCEPTION((bA->Cols() != bP->Rows()) || (bA->Rows() != bR->Cols()), Exceptions::BadCast, "MueLu::BlockedRAPFactory::Build(): block matrix dimensions do not match.");
-    RCP<BlockedCrsMatrixClass> bAP = Utils::TwoMatrixMultiplyBlock(bA, false, bP,  false, true, true);
-    RCP<BlockedCrsMatrixClass> bAc = Utils::TwoMatrixMultiplyBlock(bR, false, bAP, false, true, true);
+    RCP<BlockedCrsMatrixClass> bAP = Utils::TwoMatrixMultiplyBlock(*bA, false, *bP,  false, true, true);
+    RCP<BlockedCrsMatrixClass> bAc = Utils::TwoMatrixMultiplyBlock(*bR, false, *bAP, false, true, true);
 
     if (checkAc_)
       CheckMainDiagonal(bAc);

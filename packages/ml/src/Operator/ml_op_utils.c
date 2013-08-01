@@ -2224,7 +2224,7 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
   time, communication time, and number of applies are set for the operator.
 
   ML_Operator *A            operator to profile
-  char *appendlabel         string to append to operator's label for id purposes
+  char *appendlabel         std::string to append to operator's label for id purposes
   int numits                number of applies to perform
 *******************************************************************************/
 

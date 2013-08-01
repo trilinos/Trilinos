@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
   const ScalarType ONE  = SCT::one();
 
   if (verbose && MyPID == 0) {
-    cout << Anasazi::Anasazi_Version() << endl << endl;
+    std::cout << Anasazi::Anasazi_Version() << std::endl << std::endl;
   }
 
   //  Problem information
@@ -143,8 +143,8 @@ int main(int argc, char *argv[])
   boolret = problem->setProblem();
   if (boolret != true) {
     if (verbose && MyPID == 0) {
-      cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
-           << "End Result: TEST FAILED" << endl;
+      std::cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << std::endl
+           << "End Result: TEST FAILED" << std::endl;
     }
 #ifdef HAVE_MPI
     MPI_Finalize() ;
@@ -188,8 +188,8 @@ int main(int argc, char *argv[])
       MyPL.getEntryPtr("Maximum Restarts")->isUsed() == false ||
       MyPL.getEntryPtr("Convergence Tolerance")->isUsed() == false) {
     if (verbose && MyPID==0) {
-      cout << "Failure! Unused parameters: " << endl;
-      MyPL.unused(cout);
+      std::cout << "Failure! Unused parameters: " << std::endl;
+      MyPL.unused(std::cout);
     }
   }
 
@@ -228,18 +228,18 @@ int main(int argc, char *argv[])
     std::vector<MagnitudeType> resnorm(numev);
     MVT::MvNorm( *Kvecs, resnorm );
 
-    os << "Number of iterations performed in GeneralizedDavidson_test.exe: " << MySolverMgr.getNumIters() << endl
-       << "Direct residual norms computed in GeneralizedDavidson_test.exe" << endl
-       << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual" << endl
-       << "----------------------------------------" << endl;
+    os << "Number of iterations performed in GeneralizedDavidson_test.exe: " << MySolverMgr.getNumIters() << std::endl
+       << "Direct residual norms computed in GeneralizedDavidson_test.exe" << std::endl
+       << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual" << std::endl
+       << "----------------------------------------" << std::endl;
     for (int i=0; i<numev; i++) {
-      os << std::setw(20) << evals[i].realpart << std::setw(20) << resnorm[i] << endl;
+      os << std::setw(20) << evals[i].realpart << std::setw(20) << resnorm[i] << std::endl;
       if ( resnorm[i] > tol ) {
         testFailed = true;
       }
     }
     if (verbose && MyPID==0) {
-      cout << endl << os.str() << endl;
+      std::cout << std::endl << os.str() << std::endl;
     }
   }
 
@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
 
   if (testFailed) {
     if (verbose && MyPID==0) {
-      cout << "End Result: TEST FAILED" << endl;
+      std::cout << "End Result: TEST FAILED" << std::endl;
     }
     return -1;
   }
@@ -257,7 +257,7 @@ int main(int argc, char *argv[])
   // Default return value
   //
   if (verbose && MyPID==0) {
-    cout << "End Result: TEST PASSED" << endl;
+    std::cout << "End Result: TEST PASSED" << std::endl;
   }
   return 0;
 

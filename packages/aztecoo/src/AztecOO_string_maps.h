@@ -50,8 +50,8 @@
 #ifdef HAVE_AZTECOO_TEUCHOS
 #include <Teuchos_map.hpp>
 
-Teuchos::map<string,int>& AztecOO_key_map();
-Teuchos::map<string,int>& AztecOO_value_map();
+Teuchos::map<std::string,int>& AztecOO_key_map();
+Teuchos::map<std::string,int>& AztecOO_value_map();
 void AztecOO_initialize_maps();
 #endif
 

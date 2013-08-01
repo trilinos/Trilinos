@@ -75,7 +75,7 @@ namespace {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::TimeMonitor;
-  using Kokkos::ReadyBufferHelper;
+  using KokkosClassic::ReadyBufferHelper;
   using Teuchos::tuple;
   using Teuchos::ParameterList;
 
@@ -131,7 +131,7 @@ namespace {
     node->template copyBuffers<int>(N,x+Xoff,y+Yoffs[3]);
     // set y = {? ? threes fours} using local viewBuffer(WriteOnly)
     {
-      ArrayRCP<int> view = node->viewBufferNonConst(Kokkos::WriteOnly, N, y+Yoffs[2]);
+      ArrayRCP<int> view = node->viewBufferNonConst(KokkosClassic::WriteOnly, N, y+Yoffs[2]);
       TEST_EQUALITY_CONST( view.size(), N );
       std::fill(view.begin(), view.end(), 3);
     }
@@ -148,7 +148,7 @@ namespace {
     // set y = {ones twos threes fours} using viewBuffer(ReadWrite) and local arithmetic
     // over-size the view, to ensure that we don't affect any more changes than necessary
     {
-      ArrayRCP<int> view = node->viewBufferNonConst(Kokkos::ReadWrite, 2*N, y+Yoffs[1]);
+      ArrayRCP<int> view = node->viewBufferNonConst(KokkosClassic::ReadWrite, 2*N, y+Yoffs[1]);
       // add 1 to all elements of view
       std::transform(view.begin(), view.begin()+N, view.begin(), std::bind2nd(std::plus<int>(), 1));
     }

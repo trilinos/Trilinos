@@ -164,7 +164,7 @@ public:
   }
 
   //! Sets the label of \c this object.
-  inline Operator& operator=(const string& Label)
+  inline Operator& operator=(const std::string& Label)
   {
     SetLabel(Label);
     return(*this);
@@ -324,15 +324,15 @@ public:
   // @{ \name Miscellaneous methods
   
   //! Prints basic information about \c this object.
-  ostream& Print(std::ostream& os, const bool verbose = true) const
+  std::ostream& Print(std::ostream& os, const bool verbose = true) const
   {
     if (GetRCPOperatorBox().get() == 0) {
       if (GetMyPID() == 0) {
-        os << endl;
-        os << "*** MLAPI::Operator ***" << endl;
-        os << "Label  = " << GetLabel() << endl;
-        os << "Status = empty" << endl;
-        os << endl;
+        os << std::endl;
+        os << "*** MLAPI::Operator ***" << std::endl;
+        os << "Label  = " << GetLabel() << std::endl;
+        os << "Status = empty" << std::endl;
+        os << std::endl;
       }
       return(os);
     }
@@ -348,18 +348,18 @@ public:
       ML_THROW("getrow not set", -1);
 
     if (GetMyPID() == 0) {
-      os << endl;
-      os << "*** MLAPI::Operator ***" << endl;
-      os << "Label             = " << GetLabel() << endl;
-      os << "Number of rows    = " << GetRangeSpace().GetNumGlobalElements() << endl;
-      os << "Number of columns = " << GetDomainSpace().GetNumGlobalElements() << endl;
-      os << "Flop count        = " << GetFlops() << endl;
-      os << "Cumulative time   = " << GetTime() << endl;
+      os << std::endl;
+      os << "*** MLAPI::Operator ***" << std::endl;
+      os << "Label             = " << GetLabel() << std::endl;
+      os << "Number of rows    = " << GetRangeSpace().GetNumGlobalElements() << std::endl;
+      os << "Number of columns = " << GetDomainSpace().GetNumGlobalElements() << std::endl;
+      os << "Flop count        = " << GetFlops() << std::endl;
+      os << "Cumulative time   = " << GetTime() << std::endl;
       if (GetTime() != 0.0)
-        os << "MFlops rate       = " << 1.0e-6 * GetFlops() / GetTime() << endl;
+        os << "MFlops rate       = " << 1.0e-6 * GetFlops() / GetTime() << std::endl;
       else
-        os << "MFlops rate       = 0.0" << endl;
-      os << endl;
+        os << "MFlops rate       = 0.0" << std::endl;
+      os << std::endl;
     }
 
     if (!verbose) 
@@ -377,8 +377,8 @@ public:
       os.width(20);
       os << "Global Col";
       os.width(20);
-      os << "Value" << endl;
-      os << endl;
+      os << "Value" << std::endl;
+      os << std::endl;
     }
 
     for (int iproc = 0 ; iproc < GetNumProcs() ; ++iproc) {
@@ -399,7 +399,7 @@ public:
             os.width(20);
             os << GlobalCol;
             os.width(20);
-            os << val[j] << endl;
+            os << val[j] << std::endl;
           }
         }
       }
@@ -407,7 +407,7 @@ public:
     }
 
     if (GetMyPID() == 0)
-      os << endl;
+      os << std::endl;
 
     Barrier();
 

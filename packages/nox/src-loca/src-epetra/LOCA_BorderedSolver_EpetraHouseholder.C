@@ -558,7 +558,7 @@ LOCA::BorderedSolver::EpetraHouseholder::applyInverseTranspose(
     if (ts_grp == Teuchos::null)
       globalData->locaErrorCheck->throwError(
 	"LOCA::BorderedSolver::EpetraHouseholder::applyInverseTranspose()",
-	string("Group must implement the LOCA::Abstract::TransposeSolveGroup")
+	std::string("Group must implement the LOCA::Abstract::TransposeSolveGroup")
 	+ std::string(" interface in order to solve the transpose of the bordered")
 	+ std::string(" system via bordering."));
   }

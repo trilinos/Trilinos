@@ -117,7 +117,7 @@ the orientation of the segments. There is no way for the MOERTEL package to chec
 orientation of the segments as they are passed in by the user and most obscure results
 will be produced when the orientation is uncorrect!
 
-The \ref MOERTEL::Segment_Linear1D class supports the ostream& operator <<
+The \ref MOERTEL::Segment_Linear1D class supports the std::ostream& operator <<
 
 \author Glen Hansen (gahanse@sandia.gov)
 
@@ -223,7 +223,7 @@ protected:
 } // namespace MOERTEL
 
 // << operator
-ostream& operator << (ostream& os, const MOERTEL::Segment_Linear1D& seg);
+std::ostream& operator << (std::ostream& os, const MOERTEL::Segment_Linear1D& seg);
 
 
 #endif // MOERTEL_SEGMENT_LINEAR1D_H

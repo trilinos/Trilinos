@@ -115,10 +115,10 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
     if (Bview.numEntriesPerRow[i] > maxlen) maxlen = Bview.numEntriesPerRow[i];
   }
 
-  //cout << "Aview: " << endl;
+  //std::cout << "Aview: " << std::endl;
   //dumpCrsMatrixStruct(Aview);
 
-  //cout << "Bview: " << endl;
+  //std::cout << "Bview: " << std::endl;
   //dumpCrsMatrixStruct(Bview);
 
   int numBcols = Bview.colMap->NumMyElements();
@@ -358,8 +358,8 @@ int mult_Atrans_B(CrsMatrixStruct& Aview,
     //where Arows[i] is the GID of A's ith row.
     int Bi = Bview.rowMap->LID(Arows[i]);
     if (Bi<0) {
-      cout << "mult_Atrans_B ERROR, proc "<<localProc<<" needs row "
-	   <<Arows[i]<<" of matrix B, but doesn't have it."<<endl;
+      std::cout << "mult_Atrans_B ERROR, proc "<<localProc<<" needs row "
+	   <<Arows[i]<<" of matrix B, but doesn't have it."<<std::endl;
       return(-1);
     }
 
@@ -462,10 +462,10 @@ int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
   double* C_col_j = dwork;
   int* C_inds = iwork;
 
-  //cout << "Aview: " << endl;
+  //std::cout << "Aview: " << std::endl;
   //dumpCrsMatrixStruct(Aview);
 
-  //cout << "Bview: " << endl;
+  //std::cout << "Bview: " << std::endl;
   //dumpCrsMatrixStruct(Bview);
 
 
@@ -698,8 +698,8 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
 
   if (numProcs < 2) {
     if (Mview.numRemote > 0) {
-      cerr << "EpetraExt::MatrixMatrix::Multiply ERROR, numProcs < 2 but "
-	   << "attempting to import remote matrix rows."<<endl;
+      std::cerr << "EpetraExt::MatrixMatrix::Multiply ERROR, numProcs < 2 but "
+	   << "attempting to import remote matrix rows."<<std::endl;
       return(-1);
     }
 
@@ -888,8 +888,8 @@ int import_only(const Epetra_CrsMatrix& M,
 
   if (numProcs < 2) {
     if (Mview.numRemote > 0) {
-      cerr << "EpetraExt::MatrixMatrix::Multiply ERROR, numProcs < 2 but "
-	   << "attempting to import remote matrix rows."<<endl;
+      std::cerr << "EpetraExt::MatrixMatrix::Multiply ERROR, numProcs < 2 but "
+	   << "attempting to import remote matrix rows."<<std::endl;
       return(-1);
     }
 #ifdef ENABLE_MMM_TIMINGS      
@@ -1155,9 +1155,9 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
   int Ainner = transposeA ? A.NumGlobalRows() : A.NumGlobalCols();
   int Binner = transposeB ? B.NumGlobalCols() : B.NumGlobalRows();
   if (Ainner != Binner) {
-    cerr << "MatrixMatrix::Multiply: ERROR, inner dimensions of op(A) and op(B) "
+    std::cerr << "MatrixMatrix::Multiply: ERROR, inner dimensions of op(A) and op(B) "
          << "must match for matrix-matrix product. op(A) is "
-         <<Aouter<<"x"<<Ainner << ", op(B) is "<<Binner<<"x"<<Bouter<<endl;
+         <<Aouter<<"x"<<Ainner << ", op(B) is "<<Binner<<"x"<<Bouter<<std::endl;
     return(-1);
   }
 
@@ -1166,9 +1166,9 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
   //matrices which were constructed with only one map can still end up
   //having the correct capacity and dimensions when filled.
   if (Aouter > C.NumGlobalRows()) {
-    cerr << "MatrixMatrix::Multiply: ERROR, dimensions of result C must "
+    std::cerr << "MatrixMatrix::Multiply: ERROR, dimensions of result C must "
          << "match dimensions of op(A) * op(B). C has "<<C.NumGlobalRows()
-         << " rows, should have at least "<<Aouter << endl;
+         << " rows, should have at least "<<Aouter << std::endl;
     return(-1);
   }
 

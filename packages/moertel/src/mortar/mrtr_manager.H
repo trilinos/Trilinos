@@ -144,7 +144,7 @@ mortar-coupled systems of equations.
   from the slave side to the master side and vice versa to use in domain decomposition methods.
   (not yet impl.)    
   
-The \ref MOERTEL::Manager class supports the ostream& operator <<
+The \ref MOERTEL::Manager class supports the std::ostream& operator <<
 
 The package and this class make use of the other Trilinos packages 
 \b Epetra , \b EpetraExt , \b Teuchos , \b Amesos , \b ML .
@@ -696,9 +696,9 @@ protected:
 /*!
 \brief << operator
 
-outputs all information stored in the \ref MOERTEL::Manager class to ostream
+outputs all information stored in the \ref MOERTEL::Manager class to std::ostream
 
 */
-std::ostream& operator << (ostream& os, const MOERTEL::Manager& node);
+std::ostream& operator << (std::ostream& os, const MOERTEL::Manager& node);
 
 #endif // MOERTEL_MANAGER_H

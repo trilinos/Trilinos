@@ -95,7 +95,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraphData : public Epetra_Data {
     2 = Just Indices_
     3 = Everything except the BlockMaps
   */
-  void Print(ostream& os, int level = 3) const;
+  void Print(std::ostream& os, int level = 3) const;
 
   //! Epetra_CrsGraphData assignment operator (not defined)
   Epetra_CrsGraphData& operator=(const Epetra_CrsGraphData& CrsGraphData);

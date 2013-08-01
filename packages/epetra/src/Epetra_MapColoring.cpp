@@ -276,16 +276,16 @@ Epetra_BlockMap * Epetra_MapColoring::GenerateBlockMap(int Color) const {
   return(map);
 }
 //=========================================================================
-void Epetra_MapColoring::Print(ostream& os) const {
+void Epetra_MapColoring::Print(std::ostream& os) const {
   int MyPID = Map().Comm().MyPID();
   int NumProc = Map().Comm().NumProc();
   
   if (MyPID==0) os 
-    << endl 
-    << " *****************************************" << endl
-    << " Coloring information arranged map element" << endl 
-    << " *****************************************" << endl
-    << endl;
+    << std::endl 
+    << " *****************************************" << std::endl
+    << " Coloring information arranged map element" << std::endl 
+    << " *****************************************" << std::endl
+    << std::endl;
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
       int NumMyElements1 =Map(). NumMyElements();
@@ -297,7 +297,7 @@ void Epetra_MapColoring::Print(ostream& os) const {
   os <<  "GID  ";
   os.width(20);
   os <<  "Color  ";
-  os << endl;
+  os << std::endl;
       }
       for (int i=0; i < NumMyElements1; i++) {
   os.width(10);
@@ -326,9 +326,9 @@ void Epetra_MapColoring::Print(ostream& os) const {
 
   os.width(20);
   os <<  ElementColors_[i];
-  os << endl;
+  os << std::endl;
       }
-      os << flush; 
+      os << std::flush; 
     }
 
     // Do a few global ops to give I/O a chance to complete
@@ -338,17 +338,17 @@ void Epetra_MapColoring::Print(ostream& os) const {
   }
 
   if (MyPID==0) os 
-    << endl 
-    << " **************************************" << endl
-    << " Coloring information arranged by color" << endl 
-    << " **************************************" << endl
-    << endl;
+    << std::endl 
+    << " **************************************" << std::endl
+    << " Coloring information arranged by color" << std::endl 
+    << " **************************************" << std::endl
+    << std::endl;
   {for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
-      if (NumColors()==0) os << " No colored elements on processor " << MyPID << endl;
+      if (NumColors()==0) os << " No colored elements on processor " << MyPID << std::endl;
       else {
-        os << "Number of colors in map = " << NumColors() << endl
-           << "Default color           = " << DefaultColor() << endl << endl;
+        os << "Number of colors in map = " << NumColors() << std::endl
+           << "Default color           = " << DefaultColor() << std::endl << std::endl;
         if (MyPID==0) {
           os.width(8);
           os <<  "     MyPID"; os << "    ";
@@ -356,7 +356,7 @@ void Epetra_MapColoring::Print(ostream& os) const {
           os <<  "LID  ";
           os.width(20);
           os <<  "Color  ";
-          os << endl;
+          os << std::endl;
         }
         int * ColorValues = ListOfColors();
         for (int ii=0; ii<NumColors(); ii++) {
@@ -372,9 +372,9 @@ void Epetra_MapColoring::Print(ostream& os) const {
       os << LIDList[i] << "    ";
       os.width(20);
       os << CV;
-      os << endl;
+      os << std::endl;
     }
-    os << flush; 
+    os << std::flush; 
   }
       }
     }

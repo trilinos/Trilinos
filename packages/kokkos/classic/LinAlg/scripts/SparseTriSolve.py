@@ -755,7 +755,7 @@ def emitHeaderDeclFile (filename):
 ///   If you edit this header by hand, your edits will disappear the 
 ///   next time you run the generator script.
 
-namespace Kokkos {
+namespace KokkosClassic {
 
 /// \\namespace Raw
 /// \\brief "Raw" intranode computational routines.
@@ -778,7 +778,7 @@ namespace Raw {
                      headerizedFilename=headerizedFilename)
     s = s + emitFuncDeclVariants(0) + \
         '} // namespace Raw\n' + \
-        '} // namespace Kokkos\n\n' + \
+        '} // namespace KokkosClassic\n\n' + \
         '#endif // #ifndef __' + headerizedFilename + '\n'
     return s
 
@@ -804,14 +804,14 @@ def emitHeaderDefFile (filename):
 ///   If you edit this header by hand, your edits will disappear the 
 ///   next time you run the generator script.
 
-namespace Kokkos {
+namespace KokkosClassic {
 namespace Raw {
 
 ''').substitute (baseFilename=basename(filename), \
                      headerizedFilename=headerizedFilename)
     s = s + emitFuncDefVariants(0) + \
         '} // namespace Raw\n' + \
-        '} // namespace Kokkos\n\n' + \
+        '} // namespace KokkosClassic\n\n' + \
         '#endif // #ifndef __' + headerizedFilename + '\n'
     return s
 

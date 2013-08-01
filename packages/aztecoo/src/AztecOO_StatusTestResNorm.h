@@ -221,7 +221,7 @@ class AztecOO_StatusTestResNorm: public AztecOO_StatusTest {
 				 bool SolutionUpdated);
   AztecOO_StatusType GetStatus() const {return(status_);};
 
-  ostream& Print(ostream& stream, int indent = 0) const;
+  std::ostream& Print(std::ostream& stream, int indent = 0) const;
   //@}
 
   //@{ \name Method to reset status so that this status test object can be used with another AztecOO instance.

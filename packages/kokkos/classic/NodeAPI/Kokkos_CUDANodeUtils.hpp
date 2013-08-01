@@ -52,7 +52,7 @@
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_ArrayView.hpp>
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   class CUDANodeDeallocator {
     public:
@@ -115,7 +115,7 @@ namespace Kokkos {
     // TODO: review: instead of cudaHostAllocDefault, this might should be cudaHostAllocWriteCombined
     cudaError_t err = cudaHostAlloc( (void**)&hostPtr, devbuf_.size()*sizeof(T), cudaHostAllocDefault);
     TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
-        "Kokkos::CUDANodeCopyBackDeallocator::alloc(): cudaHostAlloc() returned error:\n"
+        "KokkosClassic::CUDANodeCopyBackDeallocator::alloc(): cudaHostAlloc() returned error:\n"
         << cudaGetErrorString(err)
     );
 #ifdef HAVE_KOKKOSCLASSIC_DEBUG
@@ -143,7 +143,7 @@ namespace Kokkos {
     }
     cudaError_t err = cudaFreeHost( hostPtr );
     TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
-        "Kokkos::CUDANodeCopyBackDeallocator::free(): cudaFreeHost() returned error:\n"
+        "KokkosClassic::CUDANodeCopyBackDeallocator::free(): cudaFreeHost() returned error:\n"
         << cudaGetErrorString(err)
     );
     hostPtr = NULL;
@@ -206,7 +206,7 @@ namespace Kokkos {
     // alloc page-locked ("pinned") memory on the host
     cudaError_t err = cudaHostAlloc( (void**)&hostPtr, sz*sizeof(T), cudaHostAllocDefault);
     TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
-        "Kokkos::CUDANodeHostPinnedDeallocator::alloc(): cudaHostAlloc() returned error:\n"
+        "KokkosClassic::CUDANodeHostPinnedDeallocator::alloc(): cudaHostAlloc() returned error:\n"
         << cudaGetErrorString(err)
     );
 #ifdef HAVE_KOKKOSCLASSIC_DEBUG
@@ -227,7 +227,7 @@ namespace Kokkos {
 #endif
     cudaError_t err = cudaFreeHost( hostPtr );
     TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
-        "Kokkos::CUDANodeHostPinnedDeallocator::free(): cudaFreeHost() returned error:\n"
+        "KokkosClassic::CUDANodeHostPinnedDeallocator::free(): cudaFreeHost() returned error:\n"
         << cudaGetErrorString(err)
     );
   }

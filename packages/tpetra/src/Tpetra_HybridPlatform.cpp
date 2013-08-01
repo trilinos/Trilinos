@@ -48,18 +48,18 @@
   template <> bool HybridPlatform::isNodeSupported<N>() {return true;}
 
 namespace Tpetra {
-  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(Kokkos::SerialNode)
+  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(KokkosClassic::SerialNode)
 #ifdef HAVE_KOKKOSCLASSIC_TBB
-  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(Kokkos::TBBNode)
+  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(KokkosClassic::TBBNode)
 #endif        
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(Kokkos::OpenMPNode)
+  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(KokkosClassic::OpenMPNode)
 #endif        
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(Kokkos::TPINode)
+  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(KokkosClassic::TPINode)
 #endif        
 #ifdef HAVE_KOKKOSCLASSIC_THRUST
-  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(Kokkos::ThrustGPUNode)
+  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(KokkosClassic::ThrustGPUNode)
 #endif
 
   HybridPlatform::
@@ -86,24 +86,24 @@ namespace Tpetra {
     // 
     // For example:
     // "%2=0"  ->  
-    //    NodeType     = "Kokkos::ThrustGPUNode"
+    //    NodeType     = "KokkosClassic::ThrustGPUNode"
     //    DeviceNumber = 0
     //    Verbose      = 1
     // "%2=1"  ->
-    //    NodeType     = "Kokkos::TPINode"
+    //    NodeType     = "KokkosClassic::TPINode"
     //    NumThreads   = 8
     // 
     // In this scenario, nodes that are equivalent to zero module 2,
     // that is, even nodes, will be selected to use ThrustGPUNode
     // objects and initialized with the parameter list containing
-    //    NodeType   = "Kokkos::ThrustGPUNode"
+    //    NodeType   = "KokkosClassic::ThrustGPUNode"
     //    DeviceNumber = 0
     //    Verbose      = 1
     //
     // Nodes that are equivalent to one modulo 2, i.e., odd nodes,
     // will be selected to use TPINode objects and initialized with
     // the parameter list containing
-    //    NodeType   = "Kokkos::TPINode"
+    //    NodeType   = "KokkosClassic::TPINode"
     //    NumThreads = 8
     // 
     // If multiple node designation sublists match the process rank,
@@ -151,26 +151,26 @@ namespace Tpetra {
               << "Missing parameter \"NodeType\" on Node " << myrank << " for Node designator " << "\"" << name << "\":" << std::endl 
               << sublist << std::endl);
           }
-          if (desigNode == "Kokkos::SerialNode") {
+          if (desigNode == "KokkosClassic::SerialNode") {
             nodeType_ = SERIALNODE;
           }
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-          else if (desigNode == "Kokkos::TPINode") {
+          else if (desigNode == "KokkosClassic::TPINode") {
             nodeType_ = TPINODE;
           }
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_TBB
-          else if (desigNode == "Kokkos::TBBNode") {
+          else if (desigNode == "KokkosClassic::TBBNode") {
             nodeType_ = TBBNODE;
           }
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
-          else if (desigNode == "Kokkos::OpenMPNode") {
+          else if (desigNode == "KokkosClassic::OpenMPNode") {
             nodeType_ = OMPNODE;
           }
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_THRUST
-          else if (desigNode == "Kokkos::ThrustGPUNode") {
+          else if (desigNode == "KokkosClassic::ThrustGPUNode") {
             nodeType_ = THRUSTGPUNODE;
           }
 #endif
@@ -198,39 +198,39 @@ namespace Tpetra {
     RCP<ParameterList> list = Teuchos::parameterList();
     {
       ParameterList subpl;
-      subpl.set("NodeType","Kokkos::SerialNode");
-      subpl.setParameters( Kokkos::SerialNode::getDefaultParameters() );
+      subpl.set("NodeType","KokkosClassic::SerialNode");
+      subpl.setParameters( KokkosClassic::SerialNode::getDefaultParameters() );
       list->set("=-1",subpl);
     }
 #ifdef HAVE_KOKKOSCLASSIC_TBB
     {
       ParameterList subpl;
-      subpl.set("NodeType","Kokkos::TBBNode");
-      subpl.setParameters( Kokkos::TBBNode::getDefaultParameters() );
+      subpl.set("NodeType","KokkosClassic::TBBNode");
+      subpl.setParameters( KokkosClassic::TBBNode::getDefaultParameters() );
       list->set("=-2",subpl);
     }
 #endif        
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
     {
       ParameterList subpl;
-      subpl.set("NodeType","Kokkos::OpenMPNode");
-      subpl.setParameters( Kokkos::OpenMPNode::getDefaultParameters() );
+      subpl.set("NodeType","KokkosClassic::OpenMPNode");
+      subpl.setParameters( KokkosClassic::OpenMPNode::getDefaultParameters() );
       list->set("=-3",subpl);
     }
 #endif        
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
     {
       ParameterList subpl;
-      subpl.set("NodeType","Kokkos::TPINode");
-      subpl.setParameters( Kokkos::TPINode::getDefaultParameters() );
+      subpl.set("NodeType","KokkosClassic::TPINode");
+      subpl.setParameters( KokkosClassic::TPINode::getDefaultParameters() );
       list->set("=-4",subpl);
     }
 #endif        
 #ifdef HAVE_KOKKOSCLASSIC_THRUST
     {
       ParameterList subpl;
-      subpl.set("NodeType","Kokkos::ThrustGPUNode");
-      subpl.setParameters( Kokkos::ThrustGPUNode::getDefaultParameters() );
+      subpl.set("NodeType","KokkosClassic::ThrustGPUNode");
+      subpl.setParameters( KokkosClassic::ThrustGPUNode::getDefaultParameters() );
       list->set("=-5",subpl);
     }
 #endif        
@@ -250,26 +250,26 @@ namespace Tpetra {
     }
     switch (nodeType_) {
     case SERIALNODE:
-      serialNode_ = rcp (new Kokkos::SerialNode (instList_));
+      serialNode_ = rcp (new KokkosClassic::SerialNode (instList_));
       break;
 #ifdef HAVE_KOKKOSCLASSIC_TBB
     case TBBNODE:
-      tbbNode_ = rcp (new Kokkos::TBBNode (instList_));
+      tbbNode_ = rcp (new KokkosClassic::TBBNode (instList_));
       break;
 #endif        
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
     case OMPNODE:
-      ompNode_ = rcp (new Kokkos::OpenMPNode (instList_));
+      ompNode_ = rcp (new KokkosClassic::OpenMPNode (instList_));
       break;
 #endif        
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
     case TPINODE:
-      tpiNode_  = rcp (new Kokkos::TPINode (instList_));
+      tpiNode_  = rcp (new KokkosClassic::TPINode (instList_));
       break;
 #endif        
 #ifdef HAVE_KOKKOSCLASSIC_THRUST
     case THRUSTGPUNODE:
-      thrustNode_ = rcp (new Kokkos::ThrustGPUNode (instList_));
+      thrustNode_ = rcp (new KokkosClassic::ThrustGPUNode (instList_));
       break;
 #endif        
     default:

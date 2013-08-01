@@ -69,10 +69,10 @@ int main(int argc, char *argv[])
 #endif
 
   if (comm.MyPID()==0)
-    cout << AztecOO_Version() << endl << endl;
+    std::cout << AztecOO_Version() << std::endl << std::endl;
 
   if (argc!=3) {
-    cerr << "Usage: " << argv[0] << " nx ny" << endl;
+    std::cerr << "Usage: " << argv[0] << " nx ny" << std::endl;
     exit(1);
   }
 
@@ -80,8 +80,8 @@ int main(int argc, char *argv[])
 
   int nx = atoi(argv[1]);
   int ny = atoi(argv[2]);
-  if (vb) cout << "Solving an " << nx << " by " << ny 
-               << " grid point Poisson problem. " << endl;
+  if (vb) std::cout << "Solving an " << nx << " by " << ny 
+               << " grid point Poisson problem. " << std::endl;
 
   // Generate nx by ny Poisson operator
 
@@ -96,17 +96,17 @@ int main(int argc, char *argv[])
   xx.Random();
   A.Apply(xx, b);
 
-  if (vb) cout << "Building Tridiagonal Approximation to Poisson" << endl;
+  if (vb) std::cout << "Building Tridiagonal Approximation to Poisson" << std::endl;
   Epetra_CrsMatrix * PrecMatrix = A.GeneratePrecMatrix();
 
-  if (vb) cout << "Building Epetra_LinearProblem" << endl;
+  if (vb) std::cout << "Building Epetra_LinearProblem" << std::endl;
   Epetra_LinearProblem problem(&A, &x, &b);
 
 
-  if (vb) cout << "Building AztecOO solver" << endl;
+  if (vb) std::cout << "Building AztecOO solver" << std::endl;
   AztecOO solver(problem);
 
-  if (vb) cout << "Setting Preconditioner Matrix" << endl;
+  if (vb) std::cout << "Setting Preconditioner Matrix" << std::endl;
   solver.SetPrecMatrix(PrecMatrix);
   //solver.SetAztecOption(AZ_precond, AZ_none);
 
@@ -124,30 +124,30 @@ int main(int argc, char *argv[])
 
   double residual;
   resid.Norm2(&residual);
-  if (vb) cout << "Residual    = " << residual << endl;
+  if (vb) std::cout << "Residual    = " << residual << std::endl;
 
   resid.Update(1.0, xx, -1.0, x, 0.0);
 
   resid.Norm2(&residual);
   if (vb)
-    cout << "2-norm of difference between computed and exact solution  = " 
-         << residual << endl;
+    std::cout << "2-norm of difference between computed and exact solution  = " 
+         << residual << std::endl;
 
   if (residual>1.0e-5) {
-    if (vb) cout << "Difference between computed and exact solution is large." 
-         << endl      
+    if (vb) std::cout << "Difference between computed and exact solution is large." 
+         << std::endl      
          << "Computing norm of A times this difference.  "
-         << endl      
+         << std::endl      
          << "If this norm is small, then matrix is singular"
-         << endl;
+         << std::endl;
     A.Apply(resid, bcomp);
     bcomp.Norm2(&residual);
-  if (vb) cout << "2-norm of A times difference between computed and exact "
-               << "solution  = " << residual << endl;
+  if (vb) std::cout << "2-norm of A times difference between computed and exact "
+               << "solution  = " << residual << std::endl;
   
   }
   else {
-   if (vb) cout << "Solver converged" << endl;
+   if (vb) std::cout << "Solver converged" << std::endl;
   }
   delete PrecMatrix;
 

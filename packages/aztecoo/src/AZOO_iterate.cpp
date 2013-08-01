@@ -65,7 +65,7 @@ void AZOO_iterate(double * xsolve, double * b,
 
   int ierr = Aztec2Petra(proc_config, Amat, xsolve, b, comm, map, A, px, pb, &global_indices);
   if (ierr!=0) {
-    cerr << "Error detected in Aztec2Petra. Value = " << ierr << endl;
+    std::cerr << "Error detected in Aztec2Petra. Value = " << ierr << std::endl;
     exit(1);
   }
 
@@ -115,8 +115,8 @@ void AZOO_iterate(double * xsolve, double * b,
     double norminf = A->NormInf();
     double normone = A->NormOne();
     if (comm->MyPID()==0) 
-      cout << "\n Inf-norm of A before scaling = " << norminf 
-	   << "\n One-norm of A before scaling = " << normone<< endl << endl;
+      std::cout << "\n Inf-norm of A before scaling = " << norminf 
+	   << "\n One-norm of A before scaling = " << normone<< std::endl << std::endl;
   }
   if (doRowScaling) problem.LeftScale(*leftScaleVec);
   if (doColScaling) problem.RightScale(*rightScaleVec);
@@ -125,8 +125,8 @@ void AZOO_iterate(double * xsolve, double * b,
     double norminf = A->NormInf();
     double normone = A->NormOne();
     if (comm->MyPID()==0) 
-      cout << "\n Inf-norm of A after  scaling = " << norminf  
-	   << "\n One-norm of A after  scaling = " << normone << endl << endl;
+      std::cout << "\n Inf-norm of A after  scaling = " << norminf  
+	   << "\n One-norm of A after  scaling = " << normone << std::endl << std::endl;
   }
 
 

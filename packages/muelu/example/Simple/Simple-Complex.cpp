@@ -49,8 +49,8 @@
 // MueLu main header: include most common header files in one line
 #include "MueLu.hpp"
 #include "MueLu_FactoryManager.hpp"
-#include "MueLu_GaussSeidelSmoother.hpp"
 #include "MueLu_SmootherFactory.hpp"
+#include "MueLu_TrilinosSmoother.hpp"
 
 // Define default template types
 typedef std::complex<double> Scalar;
@@ -127,8 +127,13 @@ int main(int argc, char *argv[]) {
   H.setVerbLevel(Teuchos::VERB_HIGH);
 
   MueLu::FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal> M;
+
   //MueLu::SmootherFactory
-  RCP<MueLu::SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal> > smootherPrototype     = rcp( new MueLu::GaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal>(1,1.0) );
+  ParameterList paramList;
+  paramList.set("relaxation: type",           "Gauss-Seidel");
+  paramList.set("relaxation: sweeps",         1);
+  paramList.set("relaxation: damping factor", (Scalar) 1.0);
+  RCP<MueLu::SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal> > smootherPrototype     = rcp( new MueLu::TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal>("RELAXATION", paramList) );
   RCP<MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal> >   smootherFact          = rcp( new MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal>(smootherPrototype) );
   M.SetFactory("Smoother", smootherFact);
   // Multigrid setup phase (using default parameters)

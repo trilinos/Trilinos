@@ -74,13 +74,13 @@ int main(int argc, char *argv[])
     MLList.set("krylov: output level", 10);
     Krylov(FineMatrix, LHS, RHS, Prec, MLList);
 
-    cout << Prec;
+    std::cout << Prec;
   }
   catch (const int e) {
-    cerr << "Caught exception, code = " << e << endl;
+    std::cerr << "Caught exception, code = " << e << std::endl;
   }
   catch (...) {
-    cerr << "Caught exception..." << endl;
+    std::cerr << "Caught exception..." << std::endl;
   }
 
   Finalize();

@@ -326,7 +326,7 @@ IF (Stokhos_ENABLE_Sacado)
     sacado/Sacado_PCE_OrthogPoly.cpp
     sacado/Sacado_ETPCE_OrthogPoly.cpp
     )
-  IF (Stokhos_ENABLE_KokkosArray)
+  IF (Stokhos_ENABLE_KokkosCore)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos)
     SET(HEADERS ${HEADERS}
       sacado/kokkos/Stokhos_Sacado_Kokkos.hpp
@@ -388,7 +388,7 @@ IF (Stokhos_ENABLE_Sacado)
   ENDIF()
 ENDIF()
 
-IF (Stokhos_ENABLE_KokkosArray)
+IF (Stokhos_ENABLE_KokkosCore)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Host)
   SET(HEADERS ${HEADERS}
@@ -396,8 +396,10 @@ IF (Stokhos_ENABLE_KokkosArray)
     kokkos/Stokhos_CrsMatrix.hpp
     kokkos/Stokhos_BlockCrsMatrix.hpp
     kokkos/Stokhos_StochasticProductTensor.hpp
+    kokkos/Stokhos_SymmetricDiagonalSpec.hpp
     kokkos/Stokhos_CrsProductTensor.hpp
     kokkos/Stokhos_TiledCrsProductTensor.hpp
+    kokkos/Stokhos_CooProductTensor.hpp
     kokkos/Stokhos_FlatSparse3Tensor.hpp
     kokkos/Stokhos_FlatSparse3Tensor_kji.hpp
     kokkos/Stokhos_LinearSparse3Tensor.hpp
@@ -406,21 +408,25 @@ IF (Stokhos_ENABLE_KokkosArray)
     kokkos/Host/Stokhos_Host_CrsMatrix.hpp
     kokkos/Host/Stokhos_Host_BlockCrsMatrix.hpp
     kokkos/Host/Stokhos_Host_StochasticProductTensor.hpp
+    kokkos/Host/Stokhos_Host_SymmetricDiagonalSpec.hpp
     kokkos/Host/Stokhos_Host_CrsProductTensor.hpp
     kokkos/Host/Stokhos_Host_TiledCrsProductTensor.hpp
+    kokkos/Host/Stokhos_Host_CooProductTensor.hpp
     kokkos/Host/Stokhos_Host_FlatSparse3Tensor.hpp
     kokkos/Host/Stokhos_Host_FlatSparse3Tensor_kji.hpp
     kokkos/Host/Stokhos_Host_LinearSparse3Tensor.hpp
     kokkos/Host/Stokhos_Host_LexicographicBlockSparse3Tensor.hpp
     )
-  IF(Stokhos_ENABLE_CUDA AND KokkosArray_ENABLE_DeviceCuda)
+  IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Cuda)
     SET(HEADERS ${HEADERS}
       kokkos/Cuda/Stokhos_Cuda_CrsMatrix.hpp
       kokkos/Cuda/Stokhos_Cuda_BlockCrsMatrix.hpp
       kokkos/Cuda/Stokhos_Cuda_StochasticProductTensor.hpp
+      kokkos/Cuda/Stokhos_Cuda_SymmetricDiagonalSpec.hpp
       kokkos/Cuda/Stokhos_Cuda_CrsProductTensor.hpp
       kokkos/Cuda/Stokhos_Cuda_TiledCrsProductTensor.hpp
+      kokkos/Cuda/Stokhos_Cuda_CooProductTensor.hpp
       kokkos/Cuda/Stokhos_Cuda_FlatSparse3Tensor.hpp
       kokkos/Cuda/Stokhos_Cuda_FlatSparse3Tensor_kji.hpp
       kokkos/Cuda/Stokhos_Cuda_LinearSparse3Tensor.hpp

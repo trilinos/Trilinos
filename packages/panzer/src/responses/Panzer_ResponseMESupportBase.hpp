@@ -7,10 +7,12 @@
 
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
+#include "Epetra_MultiVector.h"
 #include "Epetra_Operator.h"
 
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_VectorBase.hpp"
+#include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_LinearOpBase.hpp"
 
 #include "Panzer_ResponseBase.hpp"
@@ -67,23 +69,23 @@ public:
    // This is the epetra view of the world
    ///////////////////////////////////////////////////////////
 
-   //! Get the <code>Epetra_Vector</code> for this response, map is constructed lazily.
-   virtual Teuchos::RCP<Epetra_Vector> buildEpetraDerivative() const = 0;
+   //! Get the <code>Epetra_MultiVector</code> for this response, map is constructed lazily.
+   virtual Teuchos::RCP<Epetra_MultiVector> buildEpetraDerivative() const = 0;
 
    /** Set the derivative (to be filled) for this response. 
      */
-   virtual void setDerivative(const Teuchos::RCP<Epetra_Vector> & derivative) = 0;
+   virtual void setDerivative(const Teuchos::RCP<Epetra_MultiVector> & derivative) = 0;
 
    // This is the Thyra view of the world
    ///////////////////////////////////////////////////////////
 
    //! Get an <code>Epetra_Operator</code> for this response, map is constructed lazily.
-   virtual Teuchos::RCP<Thyra::VectorBase<double> > buildDerivative() const = 0;
+   virtual Teuchos::RCP<Thyra::MultiVectorBase<double> > buildDerivative() const = 0;
 
    /** Set the derivative (to be filled) for this response. This must be 
      * constructed from the vector space returned by <code>getMap</code>.
      */
-   virtual void setDerivative(const Teuchos::RCP<Thyra::VectorBase<double> > & derivative) = 0;
+   virtual void setDerivative(const Teuchos::RCP<Thyra::MultiVectorBase<double> > & derivative) = 0;
 
 private:
    // hide these methods

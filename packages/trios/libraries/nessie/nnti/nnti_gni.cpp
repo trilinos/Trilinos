@@ -1043,7 +1043,7 @@ cleanup:
  * URL format: "transport://address/memory_descriptor"
  *    - transport - (required) identifies how the URL should parsed
  *    - address   - (required) uniquely identifies a location on the network
- *                - ex. "ptl://nid:pid/", "gni://ip_addr:port", "luc://endpoint_id/"
+ *                - ex. "ptl://nid:pid/", "gni://ip_addr:port"
  *    - memory_descriptor - (optional) transport-specific representation of RMA params
  */
 NNTI_result_t NNTI_gni_get_url (
@@ -1345,8 +1345,11 @@ NNTI_result_t NNTI_gni_disconnect (
     log_debug(nnti_ee_debug_level, "enter");
 
     gni_connection *conn=get_conn_peer(peer_hdl);
+
     close_connection(conn);
+
     del_conn_peer(peer_hdl);
+    del_conn_instance(conn->peer_instance);
 
     log_debug(nnti_ee_debug_level, "exit");
 
@@ -5485,6 +5488,8 @@ static int check_for_waiting_connection()
 
         conn->peer=peer;
 
+        del_conn_peer(&peer);
+        del_conn_instance(conn->peer_instance);
         insert_conn_peer(&peer, conn);
         insert_conn_instance(conn->peer_instance, conn);
 

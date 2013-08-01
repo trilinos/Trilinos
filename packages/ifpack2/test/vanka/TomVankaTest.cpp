@@ -63,7 +63,7 @@ int main(int argc, char *argv[]){
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CRS;
   typedef Ifpack2::BlockRelaxation<CRS, Ifpack2::SparseContainer<CRS,Ifpack2::ILUT<CRS> > > BlockRelax;
   
-  //typedef Kokkos::SerialNode node_type;
+  //typedef KokkosClassic::SerialNode node_type;
   using Teuchos::RCP;
   
 

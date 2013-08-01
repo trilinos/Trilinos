@@ -270,7 +270,7 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
 
 #if 0
   if (NumMyRowEntries_[MyRow] > Length) {
-    cerr << MyRow << " " << NumMyRowEntries_[MyRow] << " " << Length << endl;
+    std::cerr << MyRow << " " << NumMyRowEntries_[MyRow] << " " << Length << std::endl;
     ML_CHK_ERR(-2); // need more space
   }
 #endif

@@ -185,7 +185,8 @@ template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename Globa
 void BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              const LinearObjContainer & globalBCRows,
-                             LinearObjContainer & ghostedObjs) const
+                             LinearObjContainer & ghostedObjs,
+                             bool zeroVectorRows) const
 {
    typedef Teuchos::ArrayRCP<const double>::Ordinal Ordinal;
 
@@ -253,7 +254,7 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
            t_A->resumeFill();
          }
 
-         adjustForDirichletConditions(*t_local_bcs,*t_global_bcs,t_f.ptr(),t_A.ptr());
+         adjustForDirichletConditions(*t_local_bcs,*t_global_bcs,t_f.ptr(),t_A.ptr(),zeroVectorRows);
 
          if(t_A!=Teuchos::null) {
            //t_A->fillComplete(map_j,map_i);
@@ -269,7 +270,8 @@ void BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,N
 adjustForDirichletConditions(const VectorType & local_bcs,
                              const VectorType & global_bcs,
                              const Teuchos::Ptr<VectorType> & f,
-                             const Teuchos::Ptr<CrsMatrixType> & A) const
+                             const Teuchos::Ptr<CrsMatrixType> & A,
+                             bool zeroVectorRows) const
 {
    if(f==Teuchos::null && A==Teuchos::null)
       return;
@@ -289,7 +291,7 @@ adjustForDirichletConditions(const VectorType & local_bcs,
       Teuchos::Array<LocalOrdinalT> indices(sz);
       Teuchos::Array<ScalarT> values(sz);
 
-      if(local_bcs_array[i]==0.0) { 
+      if(local_bcs_array[i]==0.0 || zeroVectorRows) { 
          // this boundary condition was NOT set by this processor
 
          // if they exist put 0.0 in each entry

@@ -122,10 +122,10 @@ public:
     return(CoarseSolver_);
   }
 
-  ostream& Print(ostream& os, const bool verbose = true) const 
+  std::ostream& Print(std::ostream& os, const bool verbose = true) const 
   {
     if (GetMyPID() == 0) {
-      os << "*** MLAPI::TwoLevelDDAdditive ***" << endl;
+      os << "*** MLAPI::TwoLevelDDAdditive ***" << std::endl;
     }
 
     return(os);
@@ -214,10 +214,10 @@ int main(int argc, char *argv[])
     
   }
   catch (const int e) {
-    cerr << "Caught integer exception, code = " << e << endl;
+    std::cerr << "Caught integer exception, code = " << e << std::endl;
   }
   catch (...) {
-    cerr << "Caught exception..." << endl;
+    std::cerr << "Caught exception..." << std::endl;
   }
 
 #ifdef HAVE_MPI

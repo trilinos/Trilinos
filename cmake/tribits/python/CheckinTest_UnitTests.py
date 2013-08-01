@@ -2601,9 +2601,11 @@ class test_checkin_test(unittest.TestCase):
       ,
       [
       ("MPI_DEBUG/do-configure",
-       "\-DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos\n"),
-      ] \
-      ,
+       "\-DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos\n"+ \
+       "\-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous\n"+\
+       "\-DTrilinos_EXTRAREPOS_FILE=.*/ExtraReposListExisting_3.cmake\n" \
+       ), \
+      ],
       \
       envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )

@@ -102,10 +102,6 @@ typedef MueLu::FakeSmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,Loca
 typedef MueLu::FilteredAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> FilteredAFactory;
 #endif
 
-#ifdef MUELU_GAUSSSEIDELSMOOTHER_SHORT
-typedef MueLu::GaussSeidelSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> GaussSeidelSmoother;
-#endif
-
 #ifdef MUELU_GENERICRFACTORY_SHORT
 typedef MueLu::GenericRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> GenericRFactory;
 #endif

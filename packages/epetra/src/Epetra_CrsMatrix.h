@@ -1258,7 +1258,7 @@ or if the number of entries in this row exceed the Length parameter.
   //@{ 
 
   //! Print method
-  virtual void Print(ostream& os) const;
+  virtual void Print(std::ostream& os) const;
   //@}
 
   //! @name Additional methods required to support the Epetra_Operator interface

@@ -128,7 +128,7 @@ public:
   typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
   typedef Tpetra::Export<lno_t, gno_t, node_t> export_t;
   typedef Tpetra::Import<lno_t, gno_t, node_t> import_t;
-  typedef Kokkos::DefaultNode::DefaultNodeType default_node_t;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType default_node_t;
 
   /*! \brief Constructor that reads in a matrix/graph from disk.
    *   \param path is the path to the test data.  In the case of
@@ -498,8 +498,8 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
 {
   std::ostringstream fname;
   fname << path << "/" << testData << ".mtx";
-  RCP<Kokkos::DefaultNode::DefaultNodeType> dnode 
-    = Kokkos::DefaultNode::getDefaultNode();
+  RCP<KokkosClassic::DefaultNode::DefaultNodeType> dnode 
+    = KokkosClassic::DefaultNode::getDefaultNode();
 
   if (verbose_ && tcomm_->getRank() == 0)
     std::cout << "UserInputForTests, Read: " << fname.str() << std::endl;

@@ -113,23 +113,25 @@ DropFilter<MatrixType>::~DropFilter() { }
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Teuchos::Comm<int> > & DropFilter<MatrixType>::getComm() const
+Teuchos::RCP<const Teuchos::Comm<int> > 
+DropFilter<MatrixType>::getComm () const
 {
-  return A_->getComm();
+  return A_->getComm ();
 }
 
 //==========================================================================
 template<class MatrixType>
-Teuchos::RCP <typename MatrixType::node_type> DropFilter<MatrixType>::getNode() const
+Teuchos::RCP<typename MatrixType::node_type> 
+DropFilter<MatrixType>::getNode () const
 {
-  return A_->getNode();
+  return A_->getNode ();
 }
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+			       typename MatrixType::global_ordinal_type,
+			       typename MatrixType::node_type> >
 DropFilter<MatrixType>::getRowMap() const
 {
   return A_->getRowMap();
@@ -137,9 +139,9 @@ DropFilter<MatrixType>::getRowMap() const
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+			       typename MatrixType::global_ordinal_type,
+			       typename MatrixType::node_type> >
 DropFilter<MatrixType>::getColMap() const
 {
   return A_->getColMap();
@@ -147,9 +149,9 @@ DropFilter<MatrixType>::getColMap() const
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+			       typename MatrixType::global_ordinal_type,
+			       typename MatrixType::node_type> >
 DropFilter<MatrixType>::getDomainMap() const
 {
   return A_->getDomainMap();
@@ -157,9 +159,9 @@ DropFilter<MatrixType>::getDomainMap() const
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+			       typename MatrixType::global_ordinal_type,
+			       typename MatrixType::node_type> >
 DropFilter<MatrixType>::getRangeMap() const
 {
   return A_->getRangeMap();

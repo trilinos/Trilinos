@@ -195,10 +195,10 @@ void MockModelEval_B::evalModel( const InArgs& inArgs,
 
   // Parse InArgs
   RCP<const Epetra_Vector> p_in = inArgs.get_p(0);
-  if (!p_in.get()) cout << "ERROR: MockModelEval_B requires p as inargs" << endl;
+  if (!p_in.get()) std::cout << "ERROR: MockModelEval_B requires p as inargs" << std::endl;
 
   RCP<const Epetra_Vector> x_in = inArgs.get_x();
-  if (!x_in.get()) cout << "ERROR: MockModelEval_B requires x as inargs" << endl;
+  if (!x_in.get()) std::cout << "ERROR: MockModelEval_B requires x as inargs" << std::endl;
   int myVecLength = x_in->MyLength();
 
   RCP<const Epetra_Vector> x_dot_in = inArgs.get_x_dot();

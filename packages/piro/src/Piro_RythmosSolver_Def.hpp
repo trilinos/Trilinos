@@ -497,7 +497,9 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
 
   // Set paramters p_in as part of initial conditions
   if (num_p > 0) {
-    state_ic.set_p(l, p_in);
+    if (Teuchos::nonnull(p_in)) {
+      state_ic.set_p(l, p_in);
+    }
   }
 
   *out << "\nstate_ic:\n" << Teuchos::describe(state_ic, solnVerbLevel);

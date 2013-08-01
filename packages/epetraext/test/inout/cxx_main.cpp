@@ -82,13 +82,13 @@
 #include "Poisson2dOperator.h"
 // prototypes
 
-int checkValues( double x, double y, string message = "", bool verbose = false) { 
+int checkValues( double x, double y, std::string message = "", bool verbose = false) { 
   if (fabs((x-y)/x) > 0.01 && x > 1.0e-12) {
-    if (verbose) cout << "********** " << message << " check failed.********** " << endl;
+    if (verbose) std::cout << "********** " << message << " check failed.********** " << std::endl;
     return(1); 
   }
   else {
-    if (verbose) cout << message << " check OK." << endl;    
+    if (verbose) std::cout << message << " check OK." << std::endl;    
     return(0);
   }
 }
@@ -118,9 +118,9 @@ int main(int argc, char *argv[]) {
     }
   }
   if (verbose)
-    cout << EpetraExt::EpetraExt_Version() << endl << endl;
+    std::cout << EpetraExt::EpetraExt_Version() << std::endl << std::endl;
 
-  if (verbose1) cout << comm << endl;
+  if (verbose1) std::cout << comm << std::endl;
 
 
   // Uncomment the next three lines to debug in mpi mode
@@ -221,31 +221,31 @@ int runTests(Epetra_Map & map, Epetra_CrsMatrix & A, Epetra_Vector & x, Epetra_V
   double residual;
   std::vector<double> residualmv(2);
   residual = A.NormInf(); double rAInf = residual;
-  if (verbose) cout << "Inf Norm of A                                                     = " << residual << endl;
+  if (verbose) std::cout << "Inf Norm of A                                                     = " << residual << std::endl;
   residual = A.NormOne(); double rAOne = residual;
-  if (verbose) cout << "One Norm of A                                                     = " << residual << endl;
+  if (verbose) std::cout << "One Norm of A                                                     = " << residual << std::endl;
   xexact.Norm2(&residual); double rxx = residual;	
   Xexact.Norm2(&residualmv[0]); std::vector<double> rXX( residualmv );	
-  if (verbose) cout << "Norm of xexact                                                    = " << residual << endl;
-  if (verbose) cout << "Norm of Xexact                                                    = (" << residualmv[0] << ", " <<residualmv[1] <<")"<< endl;
+  if (verbose) std::cout << "Norm of xexact                                                    = " << residual << std::endl;
+  if (verbose) std::cout << "Norm of Xexact                                                    = (" << residualmv[0] << ", " <<residualmv[1] <<")"<< std::endl;
   Epetra_Vector tmp1(map);
   Epetra_MultiVector tmp1mv(map,2,false);
   A.Multiply(false, xexact, tmp1);
   A.Multiply(false, Xexact, tmp1mv);
   tmp1.Norm2(&residual); double rAx = residual;
   tmp1mv.Norm2(&residualmv[0]); std::vector<double> rAX( residualmv );
-  if (verbose) cout << "Norm of Ax                                                        = " << residual << endl;
-  if (verbose) cout << "Norm of AX                                                        = (" << residualmv[0] << ", " << residualmv[1] <<")"<< endl;
+  if (verbose) std::cout << "Norm of Ax                                                        = " << residual << std::endl;
+  if (verbose) std::cout << "Norm of AX                                                        = (" << residualmv[0] << ", " << residualmv[1] <<")"<< std::endl;
   b.Norm2(&residual); double rb = residual;
   B.Norm2(&residualmv[0]); std::vector<double> rB( residualmv );
-  if (verbose) cout << "Norm of b (should equal norm of Ax)                               = " << residual << endl;
-  if (verbose) cout << "Norm of B (should equal norm of AX)                               = (" << residualmv[0] << ", " << residualmv[1] <<")"<< endl;
+  if (verbose) std::cout << "Norm of b (should equal norm of Ax)                               = " << residual << std::endl;
+  if (verbose) std::cout << "Norm of B (should equal norm of AX)                               = (" << residualmv[0] << ", " << residualmv[1] <<")"<< std::endl;
   tmp1.Update(1.0, b, -1.0);
   tmp1mv.Update(1.0, B, -1.0);
   tmp1.Norm2(&residual);
   tmp1mv.Norm2(&residualmv[0]);
-  if (verbose) cout << "Norm of difference between compute Ax and Ax from file            = " << residual << endl;
-  if (verbose) cout << "Norm of difference between compute AX and AX from file            = (" << residualmv[0] << ", " << residualmv[1] <<")"<< endl;
+  if (verbose) std::cout << "Norm of difference between compute Ax and Ax from file            = " << residual << std::endl;
+  if (verbose) std::cout << "Norm of difference between compute AX and AX from file            = (" << residualmv[0] << ", " << residualmv[1] <<")"<< std::endl;
   map.Comm().Barrier();
 
   EPETRA_CHK_ERR(EpetraExt::BlockMapToMatrixMarketFile("Test_map.mm", map, "Official EpetraExt test map", 
@@ -290,10 +290,10 @@ int runTests(Epetra_Map & map, Epetra_CrsMatrix & A, Epetra_Vector & x, Epetra_V
   EpetraExt::MatrixMarketFileToMap("Test_map.mm", map.Comm(), map1);
 
   if (map.SameAs(*map1)) {
-    if (verbose) cout << "Maps are equal.  In/Out works." << endl;
+    if (verbose) std::cout << "Maps are equal.  In/Out works." << std::endl;
   }
   else {
-    if (verbose) cout << "Maps are not equal.  In/Out fails." << endl;
+    if (verbose) std::cout << "Maps are not equal.  In/Out fails." << std::endl;
     ierr += 1;
   }
   EPETRA_CHK_ERR(EpetraExt::MatrixMarketFileToCrsMatrix("Test_A.mm", *map1, A1));
@@ -308,19 +308,19 @@ int runTests(Epetra_Map & map, Epetra_CrsMatrix & A, Epetra_Vector & x, Epetra_V
   EPETRA_CHK_ERR(EpetraExt::MatrixMarketFileToMultiVector("Test_mvB.mm", *map1, B1));
 
   residual = A1->NormInf(); double rA1Inf = residual;
-  if (verbose) cout << "Inf Norm of A1                                                    = " << residual << endl;
+  if (verbose) std::cout << "Inf Norm of A1                                                    = " << residual << std::endl;
   ierr += checkValues(rA1Inf,rAInf,"Inf Norm of A", verbose);
 
   residual = A1->NormOne(); double rA1One = residual;
-  if (verbose) cout << "One Norm of A1                                                    = " << residual << endl;
+  if (verbose) std::cout << "One Norm of A1                                                    = " << residual << std::endl;
   ierr += checkValues(rA1One,rAOne,"One Norm of A", verbose);
 
   xexact1->Norm2(&residual); double rxx1 = residual;
-  if (verbose) cout << "Norm of xexact1                                                   = " << residual << endl;
+  if (verbose) std::cout << "Norm of xexact1                                                   = " << residual << std::endl;
   ierr += checkValues(rxx1,rxx,"Norm of xexact", verbose);
 
   Xexact1->Norm2(&residualmv[0]); std::vector<double> rXX1(residualmv);
-  if (verbose) cout << "Norm of Xexact1                                                   = (" << residualmv[0] <<", " <<residualmv[1]<<")"<< endl;
+  if (verbose) std::cout << "Norm of Xexact1                                                   = (" << residualmv[0] <<", " <<residualmv[1]<<")"<< std::endl;
   ierr += checkValues(rXX1[0],rXX[0],"Norm of Xexact", verbose);
   ierr += checkValues(rXX1[1],rXX[1],"Norm of Xexact", verbose);
 
@@ -331,11 +331,11 @@ int runTests(Epetra_Map & map, Epetra_CrsMatrix & A, Epetra_Vector & x, Epetra_V
   A1->Multiply(false, *Xexact1, tmp11mv);
 
   tmp11.Norm2(&residual); double rAx1 = residual;
-  if (verbose) cout << "Norm of A1*x1                                                     = " << residual << endl;
+  if (verbose) std::cout << "Norm of A1*x1                                                     = " << residual << std::endl;
   ierr += checkValues(rAx1,rAx,"Norm of A1*x", verbose);
 
   tmp11mv.Norm2(&residualmv[0]); std::vector<double> rAX1(residualmv);
-  if (verbose) cout << "Norm of A1*X1                                                     = (" << residualmv[0] <<", "<<residualmv[1]<<")"<< endl;
+  if (verbose) std::cout << "Norm of A1*X1                                                     = (" << residualmv[0] <<", "<<residualmv[1]<<")"<< std::endl;
   ierr += checkValues(rAX1[0],rAX[0],"Norm of A1*X", verbose);
   ierr += checkValues(rAX1[1],rAX[1],"Norm of A1*X", verbose);
 
@@ -344,33 +344,33 @@ int runTests(Epetra_Map & map, Epetra_CrsMatrix & A, Epetra_Vector & x, Epetra_V
     A2->Multiply(false, *xexact1, tmp12);
     
     tmp12.Norm2(&residual); double rAx2 = residual;
-    if (verbose) cout << "Norm of A2*x1                                                     = " << residual << endl;
+    if (verbose) std::cout << "Norm of A2*x1                                                     = " << residual << std::endl;
     ierr += checkValues(rAx2,rAx,"Norm of A2*x", verbose);
 
     Epetra_Vector tmp13(*map1);
     A3->Multiply(false, *xexact1, tmp13);
     
     tmp13.Norm2(&residual); double rAx3 = residual;
-    if (verbose) cout << "Norm of A3*x1                                                     = " << residual << endl;
+    if (verbose) std::cout << "Norm of A3*x1                                                     = " << residual << std::endl;
     ierr += checkValues(rAx3,rAx,"Norm of A3*x", verbose);
   }
   b1->Norm2(&residual); double rb1 = residual;
-  if (verbose) cout << "Norm of b1 (should equal norm of Ax)                              = " << residual << endl;
+  if (verbose) std::cout << "Norm of b1 (should equal norm of Ax)                              = " << residual << std::endl;
   ierr += checkValues(rb1,rb,"Norm of b", verbose);
 
   B1->Norm2(&residualmv[0]); std::vector<double> rB1(residualmv);
-  if (verbose) cout << "Norm of B1 (should equal norm of AX)                              = (" << residualmv[0] <<", "<<residualmv[1]<<")"<< endl;
+  if (verbose) std::cout << "Norm of B1 (should equal norm of AX)                              = (" << residualmv[0] <<", "<<residualmv[1]<<")"<< std::endl;
   ierr += checkValues(rB1[0],rB[0],"Norm of B", verbose);
   ierr += checkValues(rB1[1],rB[1],"Norm of B", verbose);
 
   tmp11.Update(1.0, *b1, -1.0);
   tmp11.Norm2(&residual);
-  if (verbose) cout << "Norm of difference between computed A1x1 and A1x1 from file        = " << residual << endl;
+  if (verbose) std::cout << "Norm of difference between computed A1x1 and A1x1 from file        = " << residual << std::endl;
   ierr += checkValues(residual,0.0,"Norm of difference between computed A1x1 and A1x1 from file", verbose);
 
   tmp11mv.Update(1.0, *B1, -1.0);
   tmp11mv.Norm2(&residualmv[0]);
-  if (verbose) cout << "Norm of difference between computed A1X1 and A1X1 from file        = (" << residualmv[0] << ", "<<residualmv[1]<<")"<< endl;
+  if (verbose) std::cout << "Norm of difference between computed A1X1 and A1X1 from file        = (" << residualmv[0] << ", "<<residualmv[1]<<")"<< std::endl;
   ierr += checkValues(residualmv[0],0.0,"Norm of difference between computed A1X1 and A1X1 from file", verbose);
   ierr += checkValues(residualmv[1],0.0,"Norm of difference between computed A1X1 and A1X1 from file", verbose);
 
@@ -406,9 +406,9 @@ int runOperatorTests(Epetra_Operator & A, bool verbose) {
 
 
   residual = A.NormInf(); double rAInf = residual;
-  if (verbose) cout << "Inf Norm of Operator A                                            = " << residual << endl;
+  if (verbose) std::cout << "Inf Norm of Operator A                                            = " << residual << std::endl;
   residual = A1->NormInf(); double rA1Inf = residual;
-  if (verbose) cout << "Inf Norm of Matrix A1                                             = " << residual << endl;
+  if (verbose) std::cout << "Inf Norm of Matrix A1                                             = " << residual << std::endl;
   ierr += checkValues(rA1Inf,rAInf,"Inf Norm of A", verbose);
 
 
@@ -421,14 +421,14 @@ int runOperatorTests(Epetra_Operator & A, bool verbose) {
   A2->Multiply(false, x, y3);
 
   y1.Norm2(&residual); double rAx1 = residual;
-  if (verbose) cout << "Norm of A*x                                                       = " << residual << endl;
+  if (verbose) std::cout << "Norm of A*x                                                       = " << residual << std::endl;
 
   y2.Norm2(&residual); double rAx2 = residual;
-  if (verbose) cout << "Norm of A1*x                                                      = " << residual << endl;
+  if (verbose) std::cout << "Norm of A1*x                                                      = " << residual << std::endl;
   ierr += checkValues(rAx1,rAx2,"Norm of A1*x", verbose);
 
   y3.Norm2(&residual); double rAx3 = residual;
-  if (verbose) cout << "Norm of A2*x                                                      = " << residual << endl;
+  if (verbose) std::cout << "Norm of A2*x                                                      = " << residual << std::endl;
   ierr += checkValues(rAx1,rAx3,"Norm of A2*x", verbose);
 
   delete A1;
@@ -447,7 +447,7 @@ int generateHyprePrintOut(const char *filename, const Epetra_Comm &comm){
 
   double filePID = (double)MyPID/(double)100000;
   std::ostringstream stream;
-  // Using setprecision() puts it in the string
+  // Using setprecision() puts it in the std::string
   stream << std::setiosflags(std::ios::fixed) << std::setprecision(5) << filePID;
   // Then just ignore the first character
   std::string fileName(filename);
@@ -456,17 +456,17 @@ int generateHyprePrintOut(const char *filename, const Epetra_Comm &comm){
   std::ofstream myfile(fileName.c_str());
 
   if(myfile.is_open()){
-    myfile << ilower << " " << iupper << " " << ilower << " " << iupper << endl;
+    myfile << ilower << " " << iupper << " " << ilower << " " << iupper << std::endl;
     for(int i = ilower; i <= iupper; i++){
       for(int j=i-5; j <= i+5; j++){
         if(j >= 0 && j < N*NumProc)
-          myfile << i << " " << j << " " << (double)rand()/(double)RAND_MAX << endl;
+          myfile << i << " " << j << " " << (double)rand()/(double)RAND_MAX << std::endl;
       }
     }
     myfile.close();
     return 0;
   } else {
-    cout << "\nERROR:\nCouldn't open file.\n";
+    std::cout << "\nERROR:\nCouldn't open file.\n";
     return -1;
   }
 }

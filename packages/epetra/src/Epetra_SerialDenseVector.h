@@ -281,7 +281,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialDenseVector : public Epetra_SerialDense
   //! @name I/O methods
   //@{ 
   //! Print service methods; defines behavior of ostream << operator.
-  virtual void Print(ostream& os) const;
+  virtual void Print(std::ostream& os) const;
   //@}
 };
 

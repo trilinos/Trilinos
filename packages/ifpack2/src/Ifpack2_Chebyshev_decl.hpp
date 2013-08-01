@@ -260,6 +260,9 @@ public:
   /// this type.
   typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vector_type;
 
+  template <class new_matrix_type> friend class Chebyshev;
+
+
   //@}
   // \name Constructors and destructors
   //@{
@@ -491,6 +494,10 @@ public:
     return IsComputed_;
   }
 
+  //! Clone preconditioner to a new node type
+  template <typename new_matrix_type> Teuchos::RCP< Chebyshev< new_matrix_type > > clone(const Teuchos::RCP<const new_matrix_type>& A_newnode) const;
+  //
+
   //@}
   //! @name Implementation of Tpetra::Operator
   //@{ 
@@ -531,10 +538,10 @@ public:
 	 scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! The Tpetra::Map representing the domain of this operator.
-  const Teuchos::RCP<const map_type>& getDomainMap() const;
+  Teuchos::RCP<const map_type> getDomainMap() const;
 
   //! The Tpetra::Map representing the range of this operator.
-  const Teuchos::RCP<const map_type>& getRangeMap() const;
+  Teuchos::RCP<const map_type> getRangeMap() const;
 
   //! Whether it's possible to apply the transpose of this operator.
   bool hasTransposeApply() const;
@@ -583,11 +590,14 @@ public:
   magnitude_type getCondEst() const;
 
   //! The communicator over which the matrix is distributed.
-  const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
+  Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
   //! The matrix for which this is a preconditioner.
   Teuchos::RCP<const row_matrix_type> getMatrix() const;
 
+   //! Returns A as a CRS Matrix
+  Teuchos::RCP<const MatrixType > getCrsMatrix() const;
+   
   //! The total number of floating-point operations taken by all calls to compute().
   double getComputeFlops() const;
 
@@ -651,6 +661,7 @@ public:
   //@}
 
 private:
+
   //! Abbreviation for the Teuchos::ScalarTraits specialization for scalar_type.
   typedef Teuchos::ScalarTraits<typename MatrixType::scalar_type> STS;
 
@@ -725,6 +736,17 @@ private:
 
   //@}
 }; // class Chebyshev
+
+template <class MatrixType>
+template <typename new_matrix_type>
+Teuchos::RCP< Chebyshev< new_matrix_type > >
+Chebyshev<MatrixType>::clone(const Teuchos::RCP< const new_matrix_type>& A_newnode) const{
+    Teuchos::RCP<Ifpack2::Chebyshev<new_matrix_type> > prec = Teuchos::rcp( new Ifpack2::Chebyshev<new_matrix_type> (A_newnode));
+    prec->initialize();
+    prec->compute();
+    return prec;
+}
+
 
 }//namespace Ifpack2
 

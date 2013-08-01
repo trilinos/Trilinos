@@ -125,7 +125,7 @@ void SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatO
   RCP<Matrix> FhatinvG = MatrixFactory::Build(G->getRowMap(), G->getGlobalMaxNumRowEntries());
   RCP<Matrix> emptyMat = MatrixFactory::Build(G->getRowMap(), G->getGlobalMaxNumRowEntries());
   emptyMat->fillComplete(G->getDomainMap(),G->getRowMap());
-  Utils2::TwoMatrixAdd(G,false,1.0,emptyMat,false,-1.0/omega,FhatinvG);
+  Utils2::TwoMatrixAdd(*G,false,1.0,*emptyMat,false,-1.0/omega,FhatinvG);
   FhatinvG->fillComplete(G->getDomainMap(),G->getRowMap()); // complete the matrix. left scaling does not change the pattern of the operator.
 
   bool lumping = pL.get<bool>("lumping");
@@ -136,11 +136,11 @@ void SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatO
       if (Teuchos::ScalarTraits<SC>::magnitude(AdiagFinv[k]) < 1e-4)
         AdiagFinv[k] = Teuchos::ScalarTraits<SC>::one();
     }
-    Utils::MyOldScaleMatrix(FhatinvG,AdiagFinv,true,false,false);  // TODO check the MyOldScaleMatrix routine...
+    Utils::MyOldScaleMatrix(*FhatinvG,AdiagFinv,true,false,false);  // TODO check the MyOldScaleMatrix routine...
   } else {
     // use diagonal of lumped matrix as approximation
     Teuchos::ArrayRCP<SC> AdiagFinv = Utils::GetLumpedMatrixDiagonal(*F);
-    Utils::MyOldScaleMatrix(FhatinvG,AdiagFinv,true,false,false);  // TODO check the MyOldScaleMatrix routine...
+    Utils::MyOldScaleMatrix(*FhatinvG,AdiagFinv,true,false,false);  // TODO check the MyOldScaleMatrix routine...
   }
 
   // build D \hat{F}^{-1} G
@@ -149,7 +149,7 @@ void SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatO
   // build full SchurComplement operator
   // S = - 1/omega D \hat{F}^{-1} G + Z
   RCP<Matrix> S;
-  Utils2::TwoMatrixAdd(Z,false,1.0,DFhatinvG,false,-1.0/omega,S);
+  Utils2::TwoMatrixAdd(*Z,false,1.0,*DFhatinvG,false,-1.0/omega,S);
   S->fillComplete();
 
   {

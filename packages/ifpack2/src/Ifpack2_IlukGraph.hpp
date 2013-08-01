@@ -79,12 +79,9 @@ namespace Ifpack2 {
  called before the graph is used for subsequent operations.
  
  */    
-template<class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
-class IlukGraph : public Teuchos::Describable
-{
-
+template<class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+class IlukGraph : public Teuchos::Describable {
 public:
-  
   //! IlukGraph constuctor.
   /*! Creates a IlukGraph object using the input graph and specified level of fill.  
    
@@ -131,13 +128,22 @@ public:
   int getLevelOverlap() const {return(LevelOverlap_);}
   
   //! Returns the graph of lower triangle of the ILU(k) graph as a Tpetra::CrsGraph.
-  const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& getL_Graph() const {return(L_Graph_);}
+  Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > 
+  getL_Graph () const {
+    return L_Graph_;
+  }
   
   //! Returns the graph of upper triangle of the ILU(k) graph as a Tpetra::CrsGraph.
-  const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& getU_Graph() const {return(U_Graph_);}
+  Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > 
+  getU_Graph () const {
+    return U_Graph_;
+  }
   
   //! Returns the the overlapped graph.
-  const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& getOverlapGraph() const  {return(OverlapGraph_);}
+  Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > 
+  getOverlapGraph () const {
+    return OverlapGraph_;
+  }
 
   //! Returns the global number of diagonals in the ILU(k) graph.
   size_t getNumGlobalDiagonals() const { return NumGlobalDiagonals_; }

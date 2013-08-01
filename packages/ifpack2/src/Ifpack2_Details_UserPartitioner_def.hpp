@@ -42,60 +42,47 @@
 
 #ifndef IFPACK2_USER_PARTITIONER_DEF_HPP
 #define IFPACK2_USER_PARTITIONER_DEF_HPP
-#include "Ifpack2_ConfigDefs.hpp"
-#include "Ifpack2_Details_UserPartitioner_decl.hpp"
-#include "Ifpack2_OverlappingPartitioner_def.hpp"
+
+#include <Ifpack2_ConfigDefs.hpp>
+#include <Ifpack2_Details_UserPartitioner_decl.hpp>
+#include <Ifpack2_OverlappingPartitioner.hpp>
 
 namespace Ifpack2 {
-  namespace Details {
+namespace Details {
 
-//==============================================================================
-// Constructor
 template<class GraphType>
-UserPartitioner<GraphType>::UserPartitioner(const Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> >& Graph) :
-  OverlappingPartitioner<GraphType>(Graph)
-{
-}
-//==============================================================================
-// Destructor.
+UserPartitioner<GraphType>::
+UserPartitioner (const Teuchos::RCP<const row_graph_type>& graph) :
+  OverlappingPartitioner<GraphType> (graph)
+{}
+
 template<class GraphType>
-UserPartitioner<GraphType>::~UserPartitioner()
-{
-}
+UserPartitioner<GraphType>::~UserPartitioner() {}
 
-//==============================================================================
-  //! Sets all the parameters for the partitioner (none for linear partioning).
 template<class GraphType>
-void UserPartitioner<GraphType>::setPartitionParameters(Teuchos::ParameterList& List)
+void 
+UserPartitioner<GraphType>::
+setPartitionParameters (Teuchos::ParameterList& List)
 {
-  Map_ = List.get("partitioner: map",Map_);
-  if (Map_ == Teuchos::null)
-    {
-      throw std::runtime_error("AAAAARRRGGGGGHHHh!");
-
-    }
-
+  map_ = List.get ("partitioner: map", map_);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    map_.is_null (), std::runtime_error, "Ifpack2::UserPartitioner::"
+    "computePartitions: Map_ is null.");
 }
 
-//==============================================================================
 template<class GraphType>
-void UserPartitioner<GraphType>::UserPartitioner::computePartitions()
+void UserPartitioner<GraphType>::UserPartitioner::computePartitions ()
 {
-  
-  if (Map_ == Teuchos::null)
-    {
-      // Throw some exception
-      throw std::runtime_error("AAAAARRRGGGGGHHHh!");
-    }
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    map_.is_null (), std::logic_error, "Ifpack2::UserPartitioner::"
+    "computePartitions: Map_ is null.");
 
-  for (size_t ii=0 ; ii < this->Graph_->getNodeNumRows() ; ++ii)
-    {
-      this->Partition_[ii] = Map_[ii];
-    }
-
-  //IGNORING ALL THE SINGLETON B.S. IN IFPACK_USERPARTITIONER.CPP BY
-  //ORDERS OF CHRIS SIEFERT
-
+  const size_t localNumRows = this->Graph_->getNodeNumRows ();
+  for (size_t ii = 0; ii < localNumRows; ++ii) {
+    this->Partition_[ii] = map_[ii];
+  }
+  // IGNORING ALL THE SINGLETON STUFF IN IFPACK_USERPARTITIONER.CPP BY
+  // ORDERS OF CHRIS SIEFERT
 }
 
 }// namespace Details

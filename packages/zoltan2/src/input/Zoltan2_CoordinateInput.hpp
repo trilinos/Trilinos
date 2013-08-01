@@ -69,7 +69,7 @@ namespace Zoltan2 {
     \li \c lno_t    local indices and local counts
     \li \c gno_t    global indices and global counts
     \li \c gid_t    application global Ids
-    \li \c node_t is a sub class of Kokkos::StandardNodeMemoryModel
+    \li \c node_t is a sub class of KokkosClassic::StandardNodeMemoryModel
 
     See IdentifierTraits to understand why the user's global ID type (\c gid_t)
     may differ from that used by Zoltan2 (\c gno_t).

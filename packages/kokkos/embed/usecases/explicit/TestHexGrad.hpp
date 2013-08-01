@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 //
-//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -42,13 +42,13 @@
 */
 
 #include <stdio.h>
-#include <KokkosArray_View.hpp>
+#include <Kokkos_View.hpp>
 
 namespace Explicit {
 
 template< typename CoordScalarType ,
           typename GradScalarType >
-KOKKOSARRAY_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 void grad( const CoordScalarType * const x ,
            const CoordScalarType * const z ,
                  GradScalarType  * const grad_y )
@@ -91,7 +91,7 @@ void grad( const CoordScalarType * const x ,
 
 template< typename CoordScalarType ,
           typename GradScalarType >
-KOKKOSARRAY_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 void grad( const CoordScalarType x[] ,
            const CoordScalarType y[] ,
            const CoordScalarType z[] ,
@@ -111,12 +111,12 @@ struct TestHexGrad
 {
   typedef Device device_type ;
 
-  typedef KokkosArray::View< CoordScalarType*[3][8] , device_type > coord_type ;
-  typedef KokkosArray::View< GradScalarType *[3][8] , device_type > grad_type ;
+  typedef Kokkos::View< CoordScalarType*[3][8] , device_type > coord_type ;
+  typedef Kokkos::View< GradScalarType *[3][8] , device_type > grad_type ;
 
   enum { NodeCount = 8 };
 
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void operator()( const unsigned i ) const
   {
 
@@ -155,7 +155,7 @@ if ( 0 && i == 0 ) {
 
     InitCoord( const coord_type & c ) : coords( c ) {}
 
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     void operator()( const unsigned ielem ) const
     {
       typedef Device device_type ;
@@ -209,12 +209,12 @@ if ( 0 && i == 0 ) {
               << " " << coord.dimension_2()
               << " " << coord.dimension_3()
               << " )" << std::endl ;
-    KokkosArray::parallel_for(n,InitCoord(coord));
+    Kokkos::parallel_for(n,InitCoord(coord));
   }
 
   void apply() const
   {
-    KokkosArray::parallel_for(coord.dimension_0(),*this);
+    Kokkos::parallel_for(coord.dimension_0(),*this);
   }
 };
 
@@ -223,7 +223,7 @@ void test( const std::string & label ,
            const size_t elem_count ,
            const size_t iter_count )
 {
-  KokkosArray::Impl::Timer timer ;
+  Kokkos::Impl::Timer timer ;
 
   double seconds_scalar ;
   double seconds_multi ;
@@ -260,8 +260,8 @@ void test( const std::string & label ,
   }
 
   { // 16 x elements with Array<1>
-    typedef KokkosArray::Array<double,1> coord_scalar_type ;
-    typedef KokkosArray::Array<float,1>  grad_scalar_type ;
+    typedef Kokkos::Array<double,1> coord_scalar_type ;
+    typedef Kokkos::Array<float,1>  grad_scalar_type ;
 
     Explicit::TestHexGrad<coord_scalar_type,grad_scalar_type,Device>
       test_array( elem_count * 16 );
@@ -278,8 +278,8 @@ void test( const std::string & label ,
   }
 
   { // 4 x elements with Array<4>
-    typedef KokkosArray::Array<double,4> coord_scalar_type ;
-    typedef KokkosArray::Array<float,4>  grad_scalar_type ;
+    typedef Kokkos::Array<double,4> coord_scalar_type ;
+    typedef Kokkos::Array<float,4>  grad_scalar_type ;
 
     Explicit::TestHexGrad<coord_scalar_type,grad_scalar_type,Device>
       test_array( elem_count * 4 );
@@ -296,8 +296,8 @@ void test( const std::string & label ,
   }
 
   { // 1 x elements with Array<16>
-    typedef KokkosArray::Array<double,16> coord_scalar_type ;
-    typedef KokkosArray::Array<float,16>  grad_scalar_type ;
+    typedef Kokkos::Array<double,16> coord_scalar_type ;
+    typedef Kokkos::Array<float,16>  grad_scalar_type ;
 
     Explicit::TestHexGrad<coord_scalar_type,grad_scalar_type,Device> test_array( elem_count );
 

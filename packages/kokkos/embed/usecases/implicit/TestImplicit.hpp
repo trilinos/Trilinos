@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 //
-//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -48,7 +48,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include <KokkosArray_View.hpp>
+#include <Kokkos_View.hpp>
 
 #include <FEMesh.hpp>
 #include <BoxMeshFixture.hpp>
@@ -117,8 +117,8 @@ PerformanceData implicit_run( const typename FixtureType::FEMeshType & mesh , co
   //------------------------------------
   // Sparse linear system types:
 
-  typedef KokkosArray::View< Scalar* , KokkosArray::LayoutRight , device_type >   vector_type ;
-  typedef KokkosArray::CrsMatrix< Scalar , device_type >     matrix_type ;
+  typedef Kokkos::View< Scalar* , Kokkos::LayoutRight , device_type >   vector_type ;
+  typedef Kokkos::CrsMatrix< Scalar , device_type >     matrix_type ;
   typedef typename matrix_type::graph_type    matrix_graph_type ;
   typedef typename matrix_type::values_type   matrix_coefficients_type ;
 
@@ -129,7 +129,7 @@ PerformanceData implicit_run( const typename FixtureType::FEMeshType & mesh , co
   vector_type linsys_x ;
   typename vector_type::HostMirror linsys_host_solution ;
 
-  KokkosArray::Impl::Timer wall_clock ;
+  Kokkos::Impl::Timer wall_clock ;
 
   //------------------------------------
 
@@ -170,11 +170,11 @@ PerformanceData implicit_run( const typename FixtureType::FEMeshType & mesh , co
 
   if ( verify ) {
 
-    const double tolerance = KokkosArray::Impl::is_same<scalar_type,double>::value ? 1.0e-10 : 1.0e-4 ;
+    const double tolerance = Kokkos::Impl::is_same<scalar_type,double>::value ? 1.0e-10 : 1.0e-4 ;
 
-    typename vector_type::HostMirror linsys_host_x = KokkosArray::create_mirror_view( linsys_x );
+    typename vector_type::HostMirror linsys_host_x = Kokkos::create_mirror_view( linsys_x );
 
-    KokkosArray::deep_copy( linsys_host_x , linsys_x );
+    Kokkos::deep_copy( linsys_host_x , linsys_x );
 
     const int comm_rank = comm::rank( mesh.parallel_data_map.machine );
     const int comm_size = comm::size( mesh.parallel_data_map.machine );
@@ -265,7 +265,7 @@ void implicit_driver( const char * const label ,
 
   if ( comm::rank( machine ) == 0 ) {
     std::cout << std::endl ;
-    std::cout << "\"KokkosArray::HybridFE::Implicit " << label << "\"" << std::endl;
+    std::cout << "\"Kokkos::HybridFE::Implicit " << label << "\"" << std::endl;
     std::cout << "\"Size\" ,  \"Graphing\" , \"Element\" , \"Fill\" ,   \"Boundary\" ,  \"CG-Iter\"" << std::endl
               << "\"nodes\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\"" << std::endl ;
   }

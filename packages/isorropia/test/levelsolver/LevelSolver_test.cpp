@@ -162,15 +162,15 @@ int main(int argc, char *argv[])
 
   Teuchos::ParameterList pl;
   pl.set("Num Threads",numThreads);
-  typedef Kokkos::TPINode Node;
+  typedef KokkosClassic::TPINode Node;
 
   Teuchos::RCP<Node> node = Teuchos::rcp(new Node(pl));
 
   //typedef Node::buffer<double>::buffer_t dbuffer;
   //Teuchos::ArrayRCP<double> dbuffer;
 
-  typedef Kokkos::MultiVector<double,Node> MV;
-  typedef Kokkos::CrsMatrix<double,Node> MAT;
+  typedef KokkosClassic::MultiVector<double,Node> MV;
+  typedef KokkosClassic::CrsMatrix<double,Node> MAT;
 
   /////////////////////////////////////////////////////////////
   const int NLRs = L->RowMap().NumMyPoints();

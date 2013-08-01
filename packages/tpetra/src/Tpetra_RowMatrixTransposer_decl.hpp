@@ -68,8 +68,8 @@ class Map;
 template <class Scalar, 
 	  class LocalOrdinal=int, 
 	  class GlobalOrdinal=LocalOrdinal, 
-	  class Node=Kokkos::DefaultNode::DefaultNodeType, 
-	  class SpMatOps=typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
+	  class Node=KokkosClassic::DefaultNode::DefaultNodeType, 
+	  class SpMatOps=typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
 class RowMatrixTransposer {
 public:
   //! @name Typedefs

@@ -120,6 +120,18 @@ IF (Piro_ENABLE_NOX)
     STANDARD_PASS_OUTPUT
   )
 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    LOCASolver_UnitTests
+    SOURCES
+    Piro_LOCASolver_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    MockModelEval_A.cpp
+    MockModelEval_A.hpp
+    Piro_Test_ThyraSupport.hpp
+    NUM_MPI_PROCS 1-4
+    STANDARD_PASS_OUTPUT
+  )
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
     DEST_FILES   input_Solve_NOX_1.xml
                  input_Solve_NOX_2.xml

@@ -220,9 +220,9 @@ private:
     Teuchos::RCP<V> D (new V (A.getGraph ()->getRowMap ()));
     A.getLocalDiagCopy (*D);
 
-    typedef Kokkos::MultiVector<ST, typename MAT::node_type> KMV;
+    typedef KokkosClassic::MultiVector<ST, typename MAT::node_type> KMV;
     KMV& localDiag = D->getLocalMVNonConst ();
-    typedef Kokkos::DefaultArithmetic<KMV> KMVT;
+    typedef KokkosClassic::DefaultArithmetic<KMV> KMVT;
     KMVT::ReciprocalThreshold (localDiag, STS::eps ());
 
     return D;
@@ -363,8 +363,8 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   typedef int LO;
   //typedef long GO;
   typedef int GO;
-  //typedef Kokkos::SerialNode NT;
-  typedef Kokkos::DefaultNode::DefaultNodeType NT;
+  //typedef KokkosClassic::SerialNode NT;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType NT;
 
   // Convenience typedefs.
   typedef Tpetra::Map<LO, GO, NT> map_type;

@@ -677,7 +677,7 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, FadVec_SendReceive ) {			\
 namespace DynamicVecTest {
   Sacado::Random<double> rnd;
   typedef int Ordinal;
-  typedef KokkosArray::Host node_type;
+  typedef Kokkos::Host node_type;
   typedef Stokhos::DynamicStorage<int,double,node_type> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
   typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
@@ -688,7 +688,7 @@ namespace DynamicVecTest {
 namespace DynamicStridedVecTest {
   Sacado::Random<double> rnd;
   typedef int Ordinal;
-  typedef KokkosArray::Host node_type;
+  typedef Kokkos::Host node_type;
   typedef Stokhos::DynamicStridedStorage<int,double,node_type> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
   typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
@@ -699,7 +699,7 @@ namespace DynamicStridedVecTest {
 namespace StaticVecTest {
   Sacado::Random<double> rnd;
   typedef int Ordinal;
-  typedef KokkosArray::Host node_type;
+  typedef Kokkos::Host node_type;
   typedef Stokhos::StaticStorage<int,double,8,node_type> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
   typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
@@ -710,7 +710,7 @@ namespace StaticVecTest {
 namespace StaticFixedVecTest {
   Sacado::Random<double> rnd;
   typedef int Ordinal;
-  typedef KokkosArray::Host node_type;
+  typedef Kokkos::Host node_type;
   typedef Stokhos::StaticFixedStorage<int,double,8,node_type> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
   typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
@@ -721,7 +721,7 @@ namespace StaticFixedVecTest {
 namespace LocalVecTest {
   Sacado::Random<double> rnd;
   typedef int Ordinal;
-  typedef KokkosArray::Host node_type;
+  typedef Kokkos::Host node_type;
   typedef Stokhos::LocalStorage<int,double,8,node_type> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
   typedef Sacado::MP::Vector<storage_type,node_type> vec_type;

@@ -84,6 +84,30 @@ private:
    bool requiresDirichletAdjustment_;
 };
 
+/** This mixin gives an access point for doing the dirichlet adjustment through the
+  * container.
+  */
+class GlobalEvaluationData_BCAdjustment {
+public:
+   /** Adjust the container for applied
+     * dirichlet conditions. The adjustment considers if a boundary condition was
+     * set globally and locally and based on that result adjusts the container
+     * so that when the ghost to global operation is correct across processors.
+     *
+     * \param[in] localBCRows Linear object container uses the X vector to indicate
+     *                        locally set dirichlet conditions. The format is if
+     *                        an entry of the vector is nonzero then it was set
+     *                        as a dirichlet condition.
+     * \param[in] globalBCRows Linear object container uses the X vector to indicate
+     *                         globally set dirichlet conditions. The format is if
+     *                         an entry of the vector is nonzero then it was set
+     *                         as a dirichlet condition.
+     */
+   virtual void adjustForDirichletConditions(const GlobalEvaluationData & localBCRows,
+                                             const GlobalEvaluationData & globalBCRows) = 0;
+  
+};
+
 }
 
 #endif

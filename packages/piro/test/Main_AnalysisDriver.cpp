@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
        case 0: inputFile="input_Analysis_Dakota.xml"; break;
        case 1: inputFile="input_Analysis_OptiPack.xml"; break;
        case 2: inputFile="input_Analysis_MOOCHO.xml"; break;
-       default : cout << "iTest logic error " << endl; exit(-1);
+       default : std::cout << "iTest logic error " << std::endl; exit(-1);
       }
     }
     else {
@@ -98,10 +98,10 @@ int main(int argc, char *argv[]) {
     }
 
     if (Proc==0)
-     cout << "===================================================\n"
+     std::cout << "===================================================\n"
           << "======  Running input file "<< iTest <<": "<< inputFile <<"\n"
           << "===================================================\n"
-          << endl;
+          << std::endl;
 
     try {
 
@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
       if (Teuchos::nonnull(p)) {
         // Can post-process results here
         if (Proc==0) {
-          cout << "\nPiro_AnalysisDrvier:  Optimum printed above has exact soln = {1,3}" << endl;
+          std::cout << "\nPiro_AnalysisDrvier:  Optimum printed above has exact soln = {1,3}" << std::endl;
         }
       }
 
@@ -146,9 +146,9 @@ int main(int argc, char *argv[]) {
 
   if (Proc==0) {
     if (overall_status==0)
-      cout << "\nTEST PASSED\n" << endl;
+      std::cout << "\nTEST PASSED\n" << std::endl;
     else
-      cout << "\nTEST Failed: " << overall_status << "\n" << endl;
+      std::cout << "\nTEST Failed: " << overall_status << "\n" << std::endl;
   }
 
   return status;

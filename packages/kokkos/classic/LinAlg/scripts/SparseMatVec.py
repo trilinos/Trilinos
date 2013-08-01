@@ -1642,14 +1642,14 @@ def emitHeaderDeclFile (filename):
 ///   If you edit this header by hand, your edits will disappear the 
 ///   next time you run the generator script.
 
-namespace Kokkos {
+namespace KokkosClassic {
 namespace Raw {
 
 ''').substitute (baseFilename=basename(filename), \
                      headerizedFilename=headerizedFilename)
     s = s + emitFuncDeclVariants(0) + \
         '''} // namespace Raw
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif // #ifndef __''' + headerizedFilename + '\n'
     return s
@@ -1677,14 +1677,14 @@ def emitHeaderDefFile (filename):
 ///   If you edit this header by hand, your edits will disappear the 
 ///   next time you run the generator script.
 
-namespace Kokkos {
+namespace KokkosClassic {
 namespace Raw {
 
 ''').substitute (baseFilename=basename(filename), \
                      headerizedFilename=headerizedFilename)
     s += emitFuncDefVariants(0) + \
         '''} // namespace Raw
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 //
 // TODO (mfh 26 Jul 2012): Add explicit instantiation macros.

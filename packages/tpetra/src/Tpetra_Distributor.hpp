@@ -383,7 +383,7 @@ namespace Tpetra {
     /// doReversePosts() or doReversePostsAndWaits(), the reverse
     /// Distributor will be created automatically if it does not yet
     /// exist.
-    const RCP<Distributor>& getReverse() const;
+    RCP<Distributor> getReverse() const;
 
     //@}
     //! @name Methods for executing a communication plan

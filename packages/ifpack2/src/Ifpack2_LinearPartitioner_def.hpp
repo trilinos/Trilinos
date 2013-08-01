@@ -50,34 +50,40 @@ namespace Ifpack2 {
 //==============================================================================
 // Constructor
 template<class GraphType>
-LinearPartitioner<GraphType>::LinearPartitioner(const Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> >& Graph) :
-  OverlappingPartitioner<GraphType>(Graph)
-{
-}
-//==============================================================================
-// Destructor.
-template<class GraphType>
-LinearPartitioner<GraphType>::~LinearPartitioner()
-{
-}
+LinearPartitioner<GraphType>::
+LinearPartitioner (const Teuchos::RCP<const row_graph_type>& graph) :
+  OverlappingPartitioner<GraphType> (graph)
+{}
 
-//==============================================================================
-  //! Sets all the parameters for the partitioner (none for linear partioning).
-template<class GraphType>
-void LinearPartitioner<GraphType>::setPartitionParameters(Teuchos::ParameterList& List)
-{
-}
 
-//==============================================================================
+template<class GraphType>
+LinearPartitioner<GraphType>::~LinearPartitioner() {}
+
+
+template<class GraphType>
+void
+LinearPartitioner<GraphType>::
+setPartitionParameters (Teuchos::ParameterList& List) {}
+
+
 template<class GraphType>
 void LinearPartitioner<GraphType>::LinearPartitioner::computePartitions()
 {
-  
-  int mod = this->Graph_->getNodeNumRows() / this->NumLocalParts_;
-  for (size_t i = 0 ; i < this->Graph_->getNodeNumRows() ; ++i) {
-    this->Partition_[i] = i / mod;
-    if (this->Partition_[i] >= this->NumLocalParts_)
+  using Teuchos::as;
+  // Partition_ is an array of local_ordinal_type.  local_ordinal_type
+  // may be signed or unsigned.  NumLocalParts_ is int, and needs to
+  // be signed, since negative values are significant.  Comparisons
+  // between signed and unsigned integers often result in compiler
+  // warnings, which is why we use as() for explicit conversions
+  // below.  We also use as() because in a debug build, it checks for
+  // overflow.
+  const int mod = as<int> (this->Graph_->getNodeNumRows () / 
+			   this->NumLocalParts_);
+  for (size_t i = 0; i < this->Graph_->getNodeNumRows (); ++i) {
+    this->Partition_[i] = as<local_ordinal_type> (i / mod);
+    if (this->Partition_[i] >= as<local_ordinal_type> (this->NumLocalParts_)) {
       this->Partition_[i] = this->NumLocalParts_ - 1;
+    }
   }
 }
 

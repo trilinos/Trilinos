@@ -75,7 +75,7 @@ namespace {
   //
   template<>
   Teuchos::RCP<Teuchos::ParameterList> 
-  getValidNodeParameters<Kokkos::TBBNode> () 
+  getValidNodeParameters<KokkosClassic::TBBNode> () 
   {
     using Teuchos::ParameterList;
     using Teuchos::parameterList;
@@ -98,7 +98,7 @@ namespace {
   //
   template<>
   Teuchos::RCP<Teuchos::ParameterList> 
-  getValidNodeParameters<Kokkos::TPINode> () 
+  getValidNodeParameters<KokkosClassic::TPINode> () 
   {
     using Teuchos::ParameterList;
     using Teuchos::parameterList;
@@ -121,7 +121,7 @@ namespace {
   //
   template<>
   Teuchos::RCP<Teuchos::ParameterList> 
-  getValidNodeParameters<Kokkos::SerialNode> () 
+  getValidNodeParameters<KokkosClassic::SerialNode> () 
   {
     using Teuchos::ParameterList;
     using Teuchos::parameterList;
@@ -551,12 +551,12 @@ main (int argc, char *argv[])
       using std::endl;
 
 #ifdef HAVE_KOKKOSCLASSIC_TBB
-      typedef Kokkos::TBBNode node_type;
+      typedef KokkosClassic::TBBNode node_type;
 #else
 #  ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-      typedef Kokkos::TPINode node_type;
+      typedef KokkosClassic::TPINode node_type;
 #  else
-      typedef Kokkos::SerialNode node_type;
+      typedef KokkosClassic::SerialNode node_type;
 #  endif // HAVE_KOKKOSCLASSIC_THREADPOOL
 #endif // HAVE_KOKKOSCLASSIC_TBB
 

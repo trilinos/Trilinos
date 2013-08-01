@@ -44,8 +44,8 @@
 
 #include <iostream>
 
-#include "KokkosArray_Cuda.hpp"
-#include "Cuda/KokkosArray_Cuda_Parallel.hpp"
+#include "Kokkos_Cuda.hpp"
+#include "Cuda/Kokkos_Cuda_Parallel.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_BlockCrsMatrix.hpp"
@@ -63,20 +63,20 @@ template< typename TensorScalar,
           typename MatrixScalar,
           typename VectorScalar >
 class Multiply<
-  BlockCrsMatrix< CrsProductTensor< TensorScalar, KokkosArray::Cuda >,
-                  MatrixScalar, KokkosArray::Cuda >,
-  KokkosArray::View<VectorScalar**, KokkosArray::LayoutLeft, KokkosArray::Cuda>,
-  KokkosArray::View<VectorScalar**, KokkosArray::LayoutLeft, KokkosArray::Cuda>,
+  BlockCrsMatrix< CrsProductTensor< TensorScalar, Kokkos::Cuda >,
+                  MatrixScalar, Kokkos::Cuda >,
+  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
+  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
   DefaultSparseMatOps >
 {
 public:
 
-  typedef KokkosArray::Cuda                    device_type;
+  typedef Kokkos::Cuda                    device_type;
   typedef device_type::size_type  size_type;
 
   typedef CrsProductTensor< TensorScalar, device_type >       tensor_type;
   typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type;
-  typedef KokkosArray::View< VectorScalar**, KokkosArray::LayoutLeft, KokkosArray::Cuda >           vector_type;
+  typedef Kokkos::View< VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda >           vector_type;
 
   class ProductTensorLoop {
   public:
@@ -209,22 +209,22 @@ public:
 #else
      const size_type nWarp = 20;
 #endif
-    const dim3 dBlock( KokkosArray::Impl::CudaTraits::WarpSize, nWarp, 1 );
+    const dim3 dBlock( Kokkos::Impl::CudaTraits::WarpSize, nWarp, 1 );
     const dim3 dGrid( row_count, 1, 1 );
 
     // Use at most half of shared memory to get 2 blocks per SMP
     const size_type shcap =
-      KokkosArray::Impl::CudaTraits::SharedMemoryCapacity / 2;
-    int block_size = ((shcap / sizeof(VectorScalar) - dBlock.x*dBlock.y) / tensor_align - 1) / 2;
-    block_size = std::min( block_size, 9 );
-    if (block_size % 2 == 0)
-      --block_size;
+      Kokkos::Impl::CudaTraits::SharedMemoryCapacity / 2;
+    size_type bs = ((shcap / sizeof(VectorScalar) - dBlock.x*dBlock.y) / tensor_align - 1) / 2;
+    if (bs % 2 == 0)
+      --bs;
+    const size_type block_size_max = 31;
+    const size_type block_size = std::min(bs, block_size_max);
     // const int block_size = 9;
     const size_type shmem =
       sizeof(VectorScalar) * ((2*block_size+1) * tensor_align + dBlock.x*dBlock.y);
 
 #if 0
-
     const size_type mega = 1024*1024;
     const size_type giga = 1024*mega;
     const size_type fem_nnz = A.values.dimension_1();
@@ -253,7 +253,7 @@ public:
              ;
 #endif
     //cudaProfilerStart();
-    KokkosArray::Impl::cuda_parallel_launch_local_memory<<< dGrid, dBlock, shmem >>>
+    Kokkos::Impl::cuda_parallel_launch_local_memory<<< dGrid, dBlock, shmem >>>
       ( ProductTensorLoop( A, x, y, block_size ) );
     //cudaProfilerStop();
   }
@@ -272,20 +272,20 @@ template< typename TensorScalar,
           typename MatrixScalar,
           typename VectorScalar >
 class Multiply<
-  BlockCrsMatrix< CrsProductTensor< TensorScalar, KokkosArray::Cuda >,
-                  MatrixScalar, KokkosArray::Cuda >,
-  KokkosArray::View<VectorScalar**, KokkosArray::LayoutLeft, KokkosArray::Cuda>,
-  KokkosArray::View<VectorScalar**, KokkosArray::LayoutLeft, KokkosArray::Cuda>,
+  BlockCrsMatrix< CrsProductTensor< TensorScalar, Kokkos::Cuda >,
+                  MatrixScalar, Kokkos::Cuda >,
+  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
+  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
   DefaultSparseMatOps >
 {
 public:
 
-  typedef KokkosArray::Cuda                    device_type;
+  typedef Kokkos::Cuda                    device_type;
   typedef device_type::size_type  size_type;
 
   typedef CrsProductTensor< TensorScalar, device_type >       tensor_type;
   typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type;
-  typedef KokkosArray::View< VectorScalar**, KokkosArray::LayoutLeft, KokkosArray::Cuda >           vector_type;
+  typedef Kokkos::View< VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda >           vector_type;
 
   class ProductTensorLoop {
   public:
@@ -479,7 +479,7 @@ public:
     //   rem > 0 ? tensor_dimension + rem : tensor_dimension;
     const size_type tensor_align = tensor_dimension;
 
-    const size_type warp_size = KokkosArray::Impl::CudaTraits::WarpSize;
+    const size_type warp_size = Kokkos::Impl::CudaTraits::WarpSize;
     const size_type row_size = 4;
     const size_type nWarp = 16;
     const dim3 dBlock( warp_size / row_size, row_size, nWarp );
@@ -487,7 +487,7 @@ public:
 
     // Use at most half of shared memory to get 2 blocks per SMP
     const size_type shcap =
-      KokkosArray::Impl::CudaTraits::SharedMemoryCapacity / 2;
+      Kokkos::Impl::CudaTraits::SharedMemoryCapacity / 2;
     int block_size = (((shcap - sizeof(size_type) * 2 * dBlock.x*dBlock.y*dBlock.z) / sizeof(VectorScalar) - dBlock.x*dBlock.y*dBlock.z) / tensor_align - 1) / 2;
     block_size = std::min( block_size, 9 );
     if (block_size % 2 == 0)
@@ -512,7 +512,7 @@ public:
               ;
 #endif
     //cudaProfilerStart();
-    KokkosArray:: Impl::cuda_parallel_launch_local_memory<<< dGrid, dBlock, shmem >>>
+    Kokkos:: Impl::cuda_parallel_launch_local_memory<<< dGrid, dBlock, shmem >>>
       ( ProductTensorLoop( A, x, y, block_size ) );
     //cudaProfilerStop();
   }

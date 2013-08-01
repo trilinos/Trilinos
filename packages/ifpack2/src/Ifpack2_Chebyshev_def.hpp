@@ -81,7 +81,7 @@ Chebyshev<MatrixType>::setParameters (const Teuchos::ParameterList& List)
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Teuchos::Comm<int> > & 
+Teuchos::RCP<const Teuchos::Comm<int> >
 Chebyshev<MatrixType>::getComm() const {
   return impl_.getMatrix ()->getRowMap ()->getComm ();
 }
@@ -96,7 +96,15 @@ getMatrix() const {
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const typename Chebyshev<MatrixType>::map_type>&
+Teuchos::RCP<const MatrixType>
+Chebyshev<MatrixType>::
+getCrsMatrix() const {
+  return Teuchos::rcp_dynamic_cast<const MatrixType> (impl_.getMatrix ());
+}
+
+//==========================================================================
+template<class MatrixType>
+Teuchos::RCP<const typename Chebyshev<MatrixType>::map_type>
 Chebyshev<MatrixType>::
 getDomainMap() const {
   return impl_.getMatrix ()->getDomainMap ();
@@ -104,7 +112,7 @@ getDomainMap() const {
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const typename Chebyshev<MatrixType>::map_type>&
+Teuchos::RCP<const typename Chebyshev<MatrixType>::map_type>
 Chebyshev<MatrixType>::
 getRangeMap() const {
   return impl_.getMatrix ()->getRangeMap ();
@@ -514,6 +522,7 @@ template<class MatrixType>
 typename MatrixType::scalar_type Chebyshev<MatrixType>::getLambdaMaxForApply() const {
   return impl_.getLambdaMaxForApply();
 }
+
 
 
 }//namespace Ifpack2

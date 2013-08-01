@@ -44,8 +44,8 @@
 
 #include <iostream>
 
-#include "KokkosArray_Cuda.hpp"
-#include "Cuda/KokkosArray_Cuda_Parallel.hpp"
+#include "Kokkos_Cuda.hpp"
+#include "Cuda/Kokkos_Cuda_Parallel.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_BlockCrsMatrix.hpp"
@@ -66,22 +66,22 @@ template< typename TensorScalar,
           typename VectorScalar,
           int BlockSize >
 class Multiply<
-  BlockCrsMatrix< LinearSparse3Tensor< TensorScalar, KokkosArray::Cuda, BlockSize >,
-                  MatrixScalar, KokkosArray::Cuda >,
-  KokkosArray::View<VectorScalar**, KokkosArray::LayoutLeft, KokkosArray::Cuda>,
-  KokkosArray::View<VectorScalar**, KokkosArray::LayoutLeft, KokkosArray::Cuda>,
+  BlockCrsMatrix< LinearSparse3Tensor< TensorScalar, Kokkos::Cuda, BlockSize >,
+                  MatrixScalar, Kokkos::Cuda >,
+  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
+  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
   DefaultSparseMatOps >
 {
 public:
 
-  typedef KokkosArray::Cuda device_type;
+  typedef Kokkos::Cuda device_type;
   typedef device_type::size_type size_type;
 
   typedef LinearSparse3Tensor< TensorScalar, device_type, BlockSize > tensor_type;
   typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type;
-  typedef KokkosArray::View< VectorScalar**,
-                             KokkosArray::LayoutLeft,
-                             KokkosArray::Cuda > vector_type;
+  typedef Kokkos::View< VectorScalar**,
+                             Kokkos::LayoutLeft,
+                             Kokkos::Cuda > vector_type;
 
   template <int MAX_COL>
   class ApplyKernelSymmetric {
@@ -326,7 +326,7 @@ public:
     const size_type num_spatial_rows = A.graph.row_map.dimension_0() - 1;
     const size_type num_stoch_rows = A.block.dimension();
 
-    const size_type warp_size = KokkosArray::Impl::CudaTraits::WarpSize;
+    const size_type warp_size = Kokkos::Impl::CudaTraits::WarpSize;
     const size_type num_rows_per_block = 4;
     size_type num_blocks = num_spatial_rows / num_rows_per_block;
     if (num_blocks * num_rows_per_block < num_spatial_rows)
@@ -352,10 +352,10 @@ public:
 
     //cudaProfilerStart();
     if (A.block.symmetric())
-      KokkosArray::Impl::cuda_parallel_launch_local_memory<<< dGrid, dBlock, shmem >>>
+      Kokkos::Impl::cuda_parallel_launch_local_memory<<< dGrid, dBlock, shmem >>>
         ( ApplyKernelSymmetric<MAX_COL>( A, x, y ) );
     else
-      KokkosArray::Impl::cuda_parallel_launch_local_memory<<< dGrid, dBlock, shmem >>>
+      Kokkos::Impl::cuda_parallel_launch_local_memory<<< dGrid, dBlock, shmem >>>
         ( ApplyKernelAsymmetric<MAX_COL>( A, x, y ) );
     //cudaProfilerStop();
   }

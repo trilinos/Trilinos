@@ -156,7 +156,9 @@ public:
   virtual ~Partitioner() {};
 
   //! Returns the number of computed local partitions.
-  virtual LocalOrdinal numLocalParts() const = 0;
+  // See Ifpack2_OverlappingPartitioner_decl.hpp for explanation
+  // of why this is an "int" instead of "LocalOrdinal"
+  virtual int numLocalParts() const = 0;
 
   //! Returns the overlapping level.
   virtual int overlappingLevel() const = 0;

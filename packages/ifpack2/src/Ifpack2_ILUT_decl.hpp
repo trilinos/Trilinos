@@ -40,13 +40,8 @@
 //@HEADER
 */
 
-//-----------------------------------------------------
-// Ifpack2::ILUT is a translation of the Aztec ILUT
-// implementation. The Aztec ILUT implementation was
-// written by Ray Tuminaro.
-// See notes in the Ifpack2::ILUT::Compute method.
-// ABW.
-//------------------------------------------------------
+/// \file Ifpack2_ILUT_decl.hpp
+/// \brief Declaration of ILUT preconditioner
 
 #ifndef IFPACK2_ILUT_DECL_HPP
 #define IFPACK2_ILUT_DECL_HPP
@@ -75,23 +70,27 @@ namespace Teuchos {
 
 namespace Ifpack2 {
 
-  /// \class ILUT
-  /// \brief ILUT incomplete factorization of a Tpetra sparse matrix.
-  ///
-  /// This class computes an ILUT sparse incomplete factorization with
-  /// specified fill and drop tolerance, of a given sparse matrix
-  /// represented as a Tpetra::RowMatrix.
-  ///
-  /// \warning If the matrix is distributed over multiple MPI
-  ///   processes, this class will not work correctly by itself.  You
-  ///   must use it as a subdomain solver inside of a domain
-  ///   decomposition method like AdditiveSchwarz (which see).  If you
-  ///   use Factory to create an ILUT preconditioner, the Factory will
-  ///   automatically wrap ILUT in AdditiveSchwarz for you, if the
-  ///   matrix's communicator contains multiple processes.
-  ///
-  /// See the documentation of setParameters() for a list of valid
-  /// parameters.
+/// \class ILUT
+/// \brief ILUT (incomplete LU factorization with threshold) of a Tpetra sparse matrix.
+/// \tparam Specialization of Tpetra::CrsMatrix or Tpetra::RowMatrix.
+///
+/// This class computes an ILUT sparse incomplete factorization with
+/// specified fill and drop tolerance, of a given sparse matrix
+/// represented as a Tpetra::RowMatrix.
+///
+/// \warning If the matrix is distributed over multiple MPI processes,
+///   this class will not work correctly by itself.  You must use it
+///   as a subdomain solver inside of a domain decomposition method
+///   like AdditiveSchwarz (which see).  If you use Factory to create
+///   an ILUT preconditioner, the Factory will automatically wrap ILUT
+///   in AdditiveSchwarz for you, if the matrix's communicator
+///   contains multiple processes.
+///
+/// See the documentation of setParameters() for a list of valid
+/// parameters.
+///
+/// This version of ILUT is a translation of Aztec's ILUT
+/// implementation, which was written by Ray Tuminaro.
 template<class MatrixType>
 class ILUT :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
@@ -159,16 +158,31 @@ public:
   //! \name Methods for setting up and computing the incomplete factorization
   //@{
 
-  //! Set parameters for the preconditioner.
-  /**
-    <ul>
-     <li> "fact: ilut level-of-fill" (int)<br>
-     <li> "fact: drop tolerance" (magnitude_type)<br>
-     <li> "fact: absolute threshold" (magnitude_type)<br>
-     <li> "fact: relative threshold" (magnitude_type)<br>
-     <li> "fact: relax value" (magnitude_type)<br>
-    </ul>
-  */
+  /// \brief Set preconditioner parameters.
+  ///
+  /// ILUT implements the following parameters:
+  /// <ul>
+  /// <li> "fact: ilut level-of-fill" (\c int)
+  /// <li> "fact: drop tolerance" (\c magnitude_type)
+  /// <li> "fact: absolute threshold" (\c magnitude_type)
+  /// <li> "fact: relative threshold" (\c magnitude_type)
+  /// <li> "fact: relax value" (\c magnitude_type)
+  /// </ul>
+  /// "fact: drop tolerance" is the magnitude threshold for dropping
+  /// entries.  It corresponds to the \f$\tau\f$ parameter in Saad's
+  /// original description of ILUT.  "fact: ilut level-of-fill" is the
+  /// number of entries to keep in the strict upper triangle of the
+  /// current row, and in the strict lower triangle of the current
+  /// row.  It corresponds to the \f$p\f$ parameter in Saad's original
+  /// description.  ILUT always keeps the diagonal entry in the
+  /// current row, regardless of the drop tolerance or fill level.
+  ///
+  /// The absolute and relative threshold parameters affect how this
+  /// code modifies the diagonal entry of the output factor.  These
+  /// parameters are not part of the original ILUT algorithm, but we
+  /// include them for consistency with other Ifpack2 preconditioners.
+  ///
+  /// The "fact: relax value" parameter currently has no effect.
   void setParameters (const Teuchos::ParameterList& params);
 
   /// \brief Clear any previously computed factors.
@@ -220,10 +234,10 @@ public:
                scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! Tpetra::Map representing the domain of this operator.
-  const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getDomainMap() const;
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap() const;
 
   //! Tpetra::Map representing the range of this operator.
-  const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getRangeMap() const;
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRangeMap() const;
 
   //! Whether this object's apply() method can apply the transpose (or conjugate transpose, if applicable).
   bool hasTransposeApply() const;
@@ -258,16 +272,16 @@ public:
   magnitude_type getCondEst() const { return Condest_; }
 
   //! Returns the Tpetra::BlockMap object associated with the range of this matrix operator.
-  const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
+  Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
   //! Returns a reference to the matrix to be preconditioned.
   Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > getMatrix() const;
 
   //! Returns a reference to the L factor.
-  const Teuchos::RCP<const MatrixType> getL() const { return L_; }
+  Teuchos::RCP<const MatrixType> getL() const { return L_; }
 
   //! Returns a reference to the U factor.
-  const Teuchos::RCP<const MatrixType> getU() const { return U_; }
+  Teuchos::RCP<const MatrixType> getU() const { return U_; }
 
   //! Returns the number of calls to Initialize().
   int getNumInitialize() const;
@@ -287,9 +301,15 @@ public:
   //! Returns the time spent in apply().
   double getApplyTime() const;
 
-  //! The level of fill.
-  inline magnitude_type getLevelOfFill() const {
-    return(LevelOfFill_);
+  /// \brief The level of fill.
+  ///
+  /// For ILUT, this means the maximum number of entries in each row
+  /// of the resulting L and U factors (each considered separately),
+  /// not including the diagonal entry in that row (which is always
+  /// part of U).  This has a different meaning for ILUT than it does
+  /// for ILU(k).
+  inline int getLevelOfFill() const {
+    return LevelOfFill_;
   }
 
   //! Get absolute threshold value
@@ -362,7 +382,7 @@ private:
   magnitude_type Athresh_; //!< Absolute threshold
   magnitude_type Rthresh_; //!< Relative threshold
   magnitude_type RelaxValue_; //!< Relax value
-  magnitude_type LevelOfFill_; //!< Max fill level
+  int LevelOfFill_; //!< Max fill level
   //! Discard all elements below this tolerance
   magnitude_type DropTolerance_;
   //! Condition number estimate

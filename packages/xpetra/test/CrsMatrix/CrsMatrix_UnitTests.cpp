@@ -315,7 +315,7 @@ namespace {
 #define UNIT_TEST_GROUP_ORDINAL2( SC, LO, GO, Node )                     \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, EpetraDeepCopy, SC, LO, GO, Node )
 
-  typedef Kokkos::DefaultNode::DefaultNodeType DefaultNodeType;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNodeType;
 
   UNIT_TEST_GROUP_ORDINAL(double, int, int, DefaultNodeType)
 #ifdef HAVE_XPETRA_EXPERIMENTAL

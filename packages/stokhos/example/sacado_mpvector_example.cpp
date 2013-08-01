@@ -105,7 +105,7 @@ int main(int argc, char **argv)
 
 #ifdef HAVE_KOKKOSCLASSIC_CUDA
     if (test_cuda) {
-      bool status = MPVectorExample<MaxSize,KokkosArray::Cuda>::run(
+      bool status = MPVectorExample<MaxSize,Kokkos::Cuda>::run(
 	storage_method, n, sz, nblocks, nthreads, reset, print);
 
       if (status)
@@ -116,7 +116,7 @@ int main(int argc, char **argv)
 #endif
 
      if (test_host) {
-       bool status = MPVectorExample<MaxSize,KokkosArray::Host>::run(
+       bool status = MPVectorExample<MaxSize,Kokkos::Host>::run(
 	 storage_method, n, sz, nblocks, nthreads, reset, print);
        
        if (status)

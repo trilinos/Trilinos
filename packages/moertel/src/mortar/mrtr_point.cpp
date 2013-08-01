@@ -75,7 +75,7 @@ MOERTEL::Point::~Point()
 /*----------------------------------------------------------------------*
  |  << operator                                              mwgee 10/05|
  *----------------------------------------------------------------------*/
-ostream& operator << (ostream& os, const MOERTEL::Point& point)
+std::ostream& operator << (std::ostream& os, const MOERTEL::Point& point)
 { 
   point.Print();
   return (os);
@@ -85,9 +85,9 @@ ostream& operator << (ostream& os, const MOERTEL::Point& point)
  *----------------------------------------------------------------------*/
 void MOERTEL::Point::Print() const
 {
-  cout << "Point " << id_ << " xi[0]/[1] = " << xi_[0] << " / " << xi_[1] << endl;
+  std::cout << "Point " << id_ << " xi[0]/[1] = " << xi_[0] << " / " << xi_[1] << std::endl;
   if (node_ != Teuchos::null)
-    cout << *node_;
+    std::cout << *node_;
   return;
 }
 

@@ -129,8 +129,8 @@ void Trilinos_Util_ReadHpc2Epetra_internal(char *data_file,
       assert(cnt > 0);
       if (map->MyGID(i)) // See if nnz for row should be added
 	{
-	  if (debug) cout << "Process "<<rank
-			  <<" of "<<size<<" getting row "<<i<<endl;
+	  if (debug) std::cout << "Process "<<rank
+			  <<" of "<<size<<" getting row "<<i<<std::endl;
 	  int nnz_kept = 0;
 	  for (int j=0; j<cur_nnz; j++) 
 	    {
@@ -156,8 +156,8 @@ void Trilinos_Util_ReadHpc2Epetra_internal(char *data_file,
     {
       if (map->MyGID(i)) // See if entry should be added
 	{
-	  if (debug) cout << "Process "<<rank<<" of "
-                       <<size<<" getting RHS "<<i<<endl;
+	  if (debug) std::cout << "Process "<<rank<<" of "
+                       <<size<<" getting RHS "<<i<<std::endl;
 	  cnt = fscanf(in_file, "%lf %lf %lf",&xt, &bt, &xxt);
     assert(cnt > 0);
 	  int cur_local_row = map->LID(i);
@@ -176,10 +176,10 @@ void Trilinos_Util_ReadHpc2Epetra_internal(char *data_file,
 
   
   if (debug)
-    cout << "Process "<<rank<<" of "<<size<<" has "<<numMyEquations
+    std::cout << "Process "<<rank<<" of "<<size<<" has "<<numMyEquations
 	 << " rows. Min global row "<< map->MinMyGID64()
-	 <<" Max global row "<< map->MaxMyGID64() <<endl
-	 <<" and "<<A->NumMyNonzeros()<<" nonzeros."<<endl;
+	 <<" Max global row "<< map->MaxMyGID64() <<std::endl
+	 <<" and "<<A->NumMyNonzeros()<<" nonzeros."<<std::endl;
 
   A->FillComplete();
   
@@ -189,12 +189,12 @@ void Trilinos_Util_ReadHpc2Epetra_internal(char *data_file,
   A->Multiply(false, *xexact, bcomp);
   double residual;
   bcomp.Norm2(&residual);
-  if (comm.MyPID()==0) cout << "Norm of computed b = " << residual << endl;
+  if (comm.MyPID()==0) std::cout << "Norm of computed b = " << residual << std::endl;
   b->Norm2(&residual);
-  if (comm.MyPID()==0) cout << "Norm of given b    = " << residual << endl;
+  if (comm.MyPID()==0) std::cout << "Norm of given b    = " << residual << std::endl;
   bcomp.Update(-1.0, *b, 1.0);
   bcomp.Norm2(&residual);
-  if (comm.MyPID()==0) cout << "Norm of difference between computed b and given b for xexact = " << residual << endl;
+  if (comm.MyPID()==0) std::cout << "Norm of difference between computed b and given b for xexact = " << residual << std::endl;
   
   delete [] list_of_vals;
   delete []list_of_inds;

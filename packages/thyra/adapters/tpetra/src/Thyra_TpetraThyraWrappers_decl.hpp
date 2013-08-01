@@ -170,7 +170,7 @@ createConstLinearOp(
  * \ingroup Tpetra_Thyra_Op_Vec_adapters_grp
  */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal=LocalOrdinal,
-  class Node=Kokkos::DefaultNode::DefaultNodeType >
+  class Node=KokkosClassic::DefaultNode::DefaultNodeType >
 class TpetraOperatorVectorExtraction {
 public:
 

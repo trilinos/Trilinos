@@ -204,7 +204,7 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
       
   FILE * handle = 0;
   if (me == 0) {
-    if (verbose) cout << "Reading MatrixMarket file " << filename << endl;
+    if (verbose) std::cout << "Reading MatrixMarket file " << filename << std::endl;
     handle = fopen(filename,"r");  // Open file
     if (handle == 0)
       EPETRA_CHK_ERR(-1); // file not found
@@ -340,7 +340,7 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
     // Status check
     if (nread / 1000000 > nmillion) {
       nmillion++;
-      if (verbose && me == 0) cout << nmillion << "M ";
+      if (verbose && me == 0) std::cout << nmillion << "M ";
     }
   }
 
@@ -349,7 +349,7 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
   if (!rowmajor) {
     // Sort into row-major order (by iv) so can insert entire rows at once.
     // Reorder jv and vv to parallel iv.
-    if (verbose && me == 0) cout << endl << "   Sorting local nonzeros" << endl;
+    if (verbose && me == 0) std::cout << std::endl << "   Sorting local nonzeros" << std::endl;
     sort_three(iv, jv, vv, 0, lnz-1);
   }
 
@@ -358,7 +358,7 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
 
   //  Now construct the matrix.
   //  Count number of entries in each row so can use StaticProfile=2.
-  if (verbose && me == 0) cout << endl << "   Constructing the matrix" << endl;
+  if (verbose && me == 0) std::cout << std::endl << "   Constructing the matrix" << std::endl;
   int numRows = rowMap1->NumMyElements();
   int *numNonzerosPerRow = new int[numRows];
   for (i = 0; i < numRows; i++) numNonzerosPerRow[i] = 0;
@@ -387,7 +387,7 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
   delete [] gidList;
 
   //  Insert the global values into the matrix row-by-row.
-  if (verbose && me == 0) cout << "   Inserting global values" << endl;
+  if (verbose && me == 0) std::cout << "   Inserting global values" << std::endl;
   for (int sum = 0, i = 0; i < numRows; i++) {
     if (numNonzerosPerRow[i]) {
       int ierr = A->InsertGlobalValues(iv[sum], numNonzerosPerRow[i], 
@@ -402,7 +402,7 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
   free(jv);
   free(vv);
     
-  if (verbose && me == 0) cout << "   Completing matrix fill" << endl;
+  if (verbose && me == 0) std::cout << "   Completing matrix fill" << std::endl;
   if (rangeMap != 0 && domainMap != 0) {
     EPETRA_CHK_ERR(A->FillComplete(*domainMap, *rangeMap));
   }
@@ -418,7 +418,7 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
   
   if (handle!=0) fclose(handle);
   double dt = timer.ElapsedTime();
-  if (verbose && me == 0) cout << "File Read time (secs):  " << dt << endl;
+  if (verbose && me == 0) std::cout << "File Read time (secs):  " << dt << std::endl;
   return(0);
 }
 
@@ -536,14 +536,14 @@ int HypreFileToCrsMatrix(const char *filename, const Epetra_Comm &comm, Epetra_C
   // This double will be in the format we want for the extension besides the leading zero
   double filePID = (double)MyPID/(double)100000;
   std::ostringstream stream;
-  // Using setprecision() puts it in the string
+  // Using setprecision() puts it in the std::string
   stream << std::setiosflags(std::ios::fixed) << std::setprecision(5) << filePID;
   // Then just ignore the first character
   std::string fileName(filename);
   fileName += stream.str().substr(1,7);
   // Open the file
   std::ifstream file(fileName.c_str());
-  string line;
+  std::string line;
   if(file.is_open()){
     std::getline(file, line);
     int ilower, iupper;
@@ -590,7 +590,7 @@ int HypreFileToCrsMatrix(const char *filename, const Epetra_Comm &comm, Epetra_C
     file.close();
     return 0;
   } else {
-    cout << "\nERROR:\nCouldn't open " << fileName << ".\n";
+    std::cout << "\nERROR:\nCouldn't open " << fileName << ".\n";
     return -1;
   }
 }

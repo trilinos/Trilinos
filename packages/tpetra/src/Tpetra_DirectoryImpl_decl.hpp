@@ -329,6 +329,11 @@ namespace Tpetra {
           directoryMap_->template clone<Node2> (cloneMap->getNode ());
         dir->PIDs_ = PIDs_;
         dir->LIDs_ = LIDs_;
+#ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
+        dir->lidToPidTable_ = lidToPidTable_;
+        dir->lidToLidTable_ = lidToLidTable_;
+#endif
+        dir->useHashTables_ = useHashTables_;
         return dir;
       }
 

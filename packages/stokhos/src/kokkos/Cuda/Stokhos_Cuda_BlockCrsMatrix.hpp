@@ -46,8 +46,8 @@
 #include <sstream>
 #include <stdexcept>
 
-#include "KokkosArray_Cuda.hpp"
-#include "Cuda/KokkosArray_Cuda_Parallel.hpp"
+#include "Kokkos_Cuda.hpp"
+#include "Cuda/Kokkos_Cuda_Parallel.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_BlockCrsMatrix.hpp"
@@ -56,20 +56,20 @@ namespace Stokhos {
 
 template< class BlockSpec , typename MatrixValue , typename VectorValue >
 class Multiply<
-  BlockCrsMatrix< BlockSpec , MatrixValue , KokkosArray::Cuda > ,
-  KokkosArray::View< VectorValue** ,
-                     KokkosArray::LayoutLeft ,
-                     KokkosArray::Cuda > ,
-  KokkosArray::View< VectorValue** ,
-                     KokkosArray::LayoutLeft ,
-                     KokkosArray::Cuda > ,
+  BlockCrsMatrix< BlockSpec , MatrixValue , Kokkos::Cuda > ,
+  Kokkos::View< VectorValue** ,
+                     Kokkos::LayoutLeft ,
+                     Kokkos::Cuda > ,
+  Kokkos::View< VectorValue** ,
+                     Kokkos::LayoutLeft ,
+                     Kokkos::Cuda > ,
   DefaultSparseMatOps >
 {
 public:
 
-  typedef KokkosArray::Cuda                         device_type ;
+  typedef Kokkos::Cuda                         device_type ;
   typedef device_type::size_type                    size_type ;
-  typedef KokkosArray::View< VectorValue** ,KokkosArray::LayoutLeft , KokkosArray::Cuda > block_vector_type ;
+  typedef Kokkos::View< VectorValue** ,Kokkos::LayoutLeft , Kokkos::Cuda > block_vector_type ;
   typedef BlockCrsMatrix< BlockSpec , MatrixValue , device_type >  matrix_type ;
 
   const matrix_type  m_A ;
@@ -120,12 +120,12 @@ public:
                      const block_vector_type & y )
   {
     const size_type thread_max =
-      KokkosArray::Impl::cuda_internal_maximum_warp_count() * KokkosArray::Impl::CudaTraits::WarpSize ;
+      Kokkos::Impl::cuda_internal_maximum_warp_count() * Kokkos::Impl::CudaTraits::WarpSize ;
 
     const size_type row_count = A.graph.row_map.dimension_0() - 1 ;
 
     const dim3 grid(
-      std::min( row_count , KokkosArray::Impl::cuda_internal_maximum_grid_count() ) , 1 , 1 );
+      std::min( row_count , Kokkos::Impl::cuda_internal_maximum_grid_count() ) , 1 , 1 );
     const dim3 block = Multiply<BlockSpec>::thread_block( A.block );
 
     const size_type shmem =
@@ -133,13 +133,13 @@ public:
 
     if ( thread_max < block.x * block.y ) {
       std::ostringstream msg ;
-      msg << "KokkosArray::Impl::Multiply< BlockCrsMatrix< Block , Value , Cuda > , ... >"
+      msg << "Kokkos::Impl::Multiply< BlockCrsMatrix< Block , Value , Cuda > , ... >"
           << " ERROR: block dimension = " << block.x * block.y
           << " > " << thread_max << "== maximum Cuda threads per block" ;
       throw std::runtime_error(msg.str());
     }
 
-    KokkosArray::Impl::cuda_parallel_launch_local_memory<<< grid , block , shmem >>>( Multiply(A,x,y) );
+    Kokkos::Impl::cuda_parallel_launch_local_memory<<< grid , block , shmem >>>( Multiply(A,x,y) );
   }
 };
 

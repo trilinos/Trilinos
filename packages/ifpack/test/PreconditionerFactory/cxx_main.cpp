@@ -57,7 +57,7 @@
 #include "Epetra_Map.h"
 #include "Galeri_Maps.h"
 #include "Galeri_CrsMatrices.h"
-#include "Teuchos_ParameterList.hpp"
+ #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack.h"
@@ -65,6 +65,9 @@
 #ifdef HAVE_IFPACK_AMESOS
 #include "Amesos_TestRowMatrix.h"
 #endif
+
+
+
 
 // =======================================================================
 // GOAL: test that the names in the factory do not change. This test
@@ -192,8 +195,36 @@ int main(int argc, char *argv[])
   IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
 
+  
+  
+
+
+#if defined (HAVE_IFPACK_SUPPORTGRAPH) && defined (HAVE_IFPACK_AMESOS)
+  Prec = Teuchos::rcp( Factory.Create("MSF Amesos", &*A) );
+  assert (Prec !=Teuchos::null);
+  IFPACK_CHK_ERR(Prec->Initialize());
+  IFPACK_CHK_ERR(Prec->Compute());
+  cout << *Prec;
+
+
+#endif
+
+
+
+#ifdef HAVE_IFPACK_SUPPORTGRAPH
+  Prec = Teuchos::rcp( Factory.Create("MSF IC", &*A) );
+  assert (Prec != Teuchos::null);
+  IFPACK_CHK_ERR(Prec->Initialize());
+  IFPACK_CHK_ERR(Prec->Compute());
+  cout << *Prec;
+
+
+#endif
+
   if (Comm.MyPID() == 0)
     cout << "Test `PrecondititonerFactory.exe' passed!" << endl;
+
+
 
 #ifdef HAVE_MPI
   MPI_Finalize() ; 

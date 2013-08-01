@@ -39,11 +39,6 @@
       <p>Jump to <a href="#general">general information</a>, <a
       href="#support">preprocessing, postprocessing, and manipulation
       codes</a>, and <a href="#libraries">libraries</a>.</p>
-      
-      <p>NOTE: The SEACAS system uses script files and
-	executables. Your shell path should have $ACCESS/etc and
-	$ACCESS/bin (in that order);<br>where $ACCESS points to the root
-	of your installed SEACAS system.</p>
     </CENTER>
 
       <table class="zebra" WIDTH=90% align=center  BGCOLOR=WHITE CELLPADDING=10>
@@ -62,6 +57,14 @@
 	  analysis codes, database translation codes, support
 	  libraries, UNIX shell scripts, and an installation
 	  system.</TD>
+
+	</TR>
+
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A NAME="changes" HREF="changes.html">Recent Changes</a></TH>
+
+	  <TD>Documents changes to the SEACAS applications and libraries that may not yet 
+	  be covered in the documentation.</TD>
 
 	</TR>
 
@@ -602,7 +605,35 @@
 	  existing software that reads EXODUS II files can be used on
 	  files which contain NEMESIS I information. The NEMESIS I
 	  information is written and read via C or C++ callable
-	  functions which compromise the NEMESIS I API.<br><a HREF="nemesis-fortran-api.html">Fortran to C Function Mapping</a></TD>
+	  functions which compromise the NEMESIS I API.<br>
+	  <a HREF="nemesis-fortran-api.html">Fortran to C Function Mapping</a>
+	  <br><br>NOTE: All nemesis routines are now available in the
+	  exodus library. The function names are the same except that
+	  the <tt>ne_</tt> prefix is changed to <tt>ex_</tt>
+	  in almost all cases.
+	</TD>
+
+	</TR>
+	<TR VALIGN=TOP>
+	  <TH VALIGN=TOP><A name="ioss"
+	  HREF="IOSystem.pdf">IO System (IOSS)</a></TH>
+
+	  <TD>The documentation below is a medium- to low-level view
+	  of the IO system targeted at developers who will be
+	  adding or modifying the database IO portion of the
+	  system. It should give enough detail that a new database
+	  type could be added by reading this document and looking at
+	  an existing database class. It is also helpful to have the
+	  doxygen-generated documentation for the Ioss class hierarchy
+	  available.  The IO Subsystem has been designed to support
+	  multiple database formats simultaneously. It is possible to
+	  have the finite element model read from an ExodusII database;
+	  two results fies being written to an ExodusII file with a
+	  third results file being written to an XDMF file; and the
+	  restart file being written to yet another ExodusII file. Each
+	  of these output databases can have a different schedule for
+	  when to write and what data is to be written.
+	</TD>
 
 	</TR>
 
@@ -631,7 +662,7 @@
       <BR>
       <!-- Created: Thu Sep  5 11:47:06 MDT 1996 -->
       <!-- hhmts start -->
-Last modified: Mon Apr 16 09:30:09 MDT 2012
+Last modified: Tue Jul 23 15:24:44 MDT 2013
 <!-- hhmts end -->
   </BODY>
 </HTML>

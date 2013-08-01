@@ -62,9 +62,9 @@ typedef int local_ordinal_type;
 typedef int global_ordinal_type;
 
 #ifdef HAVE_KOKKOSCLASSIC_TBB
-typedef Kokkos::TBBNode node_type;
+typedef KokkosClassic::TBBNode node_type;
 #else
-typedef Kokkos::SerialNode node_type;
+typedef KokkosClassic::SerialNode node_type;
 #endif // HAVE_KOKKOSCLASSIC_TBB
 
 typedef Teuchos::ScalarTraits<scalar_type> SCT;

@@ -436,7 +436,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, NodeConversion, LO, GO, N2 )
   {
-    typedef typename Kokkos::DefaultNode::DefaultNodeType N1;
+    typedef typename KokkosClassic::DefaultNode::DefaultNodeType N1;
     typedef Map<LO,GO,N1> Map1;
     typedef Map<LO,GO,N2> Map2;
     // create a comm

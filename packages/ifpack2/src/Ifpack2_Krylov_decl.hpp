@@ -215,18 +215,18 @@ namespace Ifpack2 {
       \param
       Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing result.
     */
-    void apply(
-	       const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-	       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-	       Teuchos::ETransp mode = Teuchos::NO_TRANS,
-	       scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-	       scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+    void
+    apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+	   Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+	   Teuchos::ETransp mode = Teuchos::NO_TRANS,
+	   scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+	   scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
     
     //! Tpetra::Map representing the domain of this operator.
-    const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getDomainMap() const;
+    Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap() const;
     
     //! Tpetra::Map representing the range of this operator.
-    const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getRangeMap() const;
+    Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRangeMap() const;
     
     //! Whether this object's apply() method can apply the transpose (or conjugate transpose, if applicable).
     bool hasTransposeApply() const;
@@ -240,7 +240,7 @@ namespace Ifpack2 {
     //! \name Mathematical functions.
     
     //! Returns the Tpetra::BlockMap object associated with the range of this matrix operator.
-    const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
+    Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
     //! Returns a reference to the matrix to be preconditioned.
     Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > getMatrix() const;

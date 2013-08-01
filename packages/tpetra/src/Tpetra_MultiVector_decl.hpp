@@ -50,13 +50,13 @@
 #include <Kokkos_MultiVector.hpp>
 #include <Teuchos_BLAS_types.hpp>
 
-namespace Kokkos {
+namespace KokkosClassic {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration of DefaultArithmetic
   template<class KokkosMultiVectorType>
   class DefaultArithmetic;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 namespace Tpetra {
 
@@ -198,7 +198,7 @@ namespace Tpetra {
   /// running on a Graphics Processing Unit (GPU) device.  You can
   /// tell at compile time whether you are running on a GPU by looking
   /// at the Kokkos Node type.  (Currently, the only GPU Node type we
-  /// provide is Kokkos::ThrustGPUNode.  All other types are CPU
+  /// provide is KokkosClassic::ThrustGPUNode.  All other types are CPU
   /// Nodes.)  If the Kokkos Node is a GPU Node type, then views
   /// always reside in host (CPU) memory, rather than device (GPU)
   /// memory.  When you ask for a view, it copies data from the device
@@ -288,7 +288,7 @@ namespace Tpetra {
   /// vector.  We recommend RTI for most users.
   ///
   /// Another option is to access the local data through its Kokkos
-  /// container data structure, Kokkos::MultiVector, and then use the
+  /// container data structure, KokkosClassic::MultiVector, and then use the
   /// \ref kokkos_node_api "Kokkos Node API" to implement arbitrary
   /// operations on the data.  We do not recommend this approach for
   /// most users.  In particular, the local data structures are likely
@@ -319,7 +319,7 @@ namespace Tpetra {
   template<class Scalar,
            class LocalOrdinal=int,
            class GlobalOrdinal=LocalOrdinal,
-           class Node=Kokkos::DefaultNode::DefaultNodeType>
+           class Node=KokkosClassic::DefaultNode::DefaultNodeType>
   class MultiVector :
     public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   {
@@ -335,6 +335,7 @@ namespace Tpetra {
     typedef GlobalOrdinal global_ordinal_type;
     //! The Kokkos Node type.
     typedef Node          node_type;
+
 
     //@}
     //! @name Constructors and destructor
@@ -389,6 +390,11 @@ namespace Tpetra {
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
                  const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> >&ArrayOfPtrs,
                  size_t NumVectors);
+
+    //! Create a cloned MultiVector for a different node type
+    template <class Node2>
+    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+    clone(const Teuchos::RCP<Node2> &node2) const;
 
     //! Destructor (virtual for memory safety of derived classes).
     virtual ~MultiVector();
@@ -534,7 +540,7 @@ namespace Tpetra {
     ///
     /// \note This method does <i>not</i> do data redistribution.  If
     ///   you need to move data around, use Import or Export.
-    void replaceMap (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map);
+    void replaceMap (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map);
 
     /// \brief Sum values of a locally replicated multivector across all processes.
     ///
@@ -678,11 +684,11 @@ namespace Tpetra {
     //! Return non-const persisting pointers to values.
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst();
 
-    //! Return a const reference to the underlying Kokkos::MultiVector object (advanced use only)
-    const Kokkos::MultiVector<Scalar,Node> & getLocalMV() const;
+    //! Return a const reference to the underlying KokkosClassic::MultiVector object (advanced use only)
+    const KokkosClassic::MultiVector<Scalar,Node> & getLocalMV() const;
 
-    //! Return a non-const reference to the underlying Kokkos::MultiVector object (advanced use only)
-    Kokkos::MultiVector<Scalar,Node> & getLocalMVNonConst();
+    //! Return a non-const reference to the underlying KokkosClassic::MultiVector object (advanced use only)
+    KokkosClassic::MultiVector<Scalar,Node> & getLocalMVNonConst();
 
     //@}
 
@@ -886,10 +892,10 @@ namespace Tpetra {
 
   protected:
 
-    typedef Kokkos::MultiVector<Scalar,Node> KMV;
-    typedef Kokkos::DefaultArithmetic<KMV>   MVT;
+    typedef KokkosClassic::MultiVector<Scalar,Node> KMV;
+    typedef KokkosClassic::DefaultArithmetic<KMV>   MVT;
 
-    //! The Kokkos::MultiVector containing the compute buffer of data.
+    //! The KokkosClassic::MultiVector containing the compute buffer of data.
     KMV lclMV_;
 
     /// \brief Indices of columns this multivector is viewing.
@@ -955,23 +961,23 @@ namespace Tpetra {
     /// \brief Advanced constructor for contiguous views.
     ///
     /// This version of the contiguous view constructor takes a
-    /// previously constructed Kokkos::MultiVector, which is the
+    /// previously constructed KokkosClassic::MultiVector, which is the
     /// correct view of the local data.  The local multivector should
     /// have been made using the appropriate offsetView* method of
-    /// Kokkos::MultiVector.
+    /// KokkosClassic::MultiVector.
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-                 const Kokkos::MultiVector<Scalar, Node>& localMultiVector,
+                 const KokkosClassic::MultiVector<Scalar, Node>& localMultiVector,
                  EPrivateComputeViewConstructor /* dummy */);
 
     /// \brief Advanced constructor for noncontiguous views.
     ///
     /// This version of the noncontiguous view constructor takes a
-    /// previously constructed Kokkos::MultiVector, which is the
+    /// previously constructed KokkosClassic::MultiVector, which is the
     /// correct view of the local data.  The local multivector should
     /// have been made using the appropriate offsetView* method of
-    /// Kokkos::MultiVector.
+    /// KokkosClassic::MultiVector.
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-                 const Kokkos::MultiVector<Scalar, Node>& localMultiVector,
+                 const KokkosClassic::MultiVector<Scalar, Node>& localMultiVector,
                  Teuchos::ArrayView<const size_t> whichVectors,
                  EPrivateComputeViewConstructor /* dummy */);
 
@@ -1012,7 +1018,7 @@ namespace Tpetra {
                       CombineMode CM);
 
     void createViews () const;
-    void createViewsNonConst (Kokkos::ReadWriteOption rwo);
+    void createViewsNonConst (KokkosClassic::ReadWriteOption rwo);
     void releaseViews () const;
 
     //! Nonconst host view created in createViewsNonConst().
@@ -1060,7 +1066,7 @@ namespace Tpetra {
   ///
   /// \warning This function is not supported for all Kokkos Node
   ///   types.  Specifically, it is not typically supported for
-  ///   GPU accelerator-based nodes like Kokkos::ThrustGPUNode.
+  ///   GPU accelerator-based nodes like KokkosClassic::ThrustGPUNode.
   ///
   /// \param map [in] The Map describing the distribution of rows of
   ///   the multivector.
@@ -1098,6 +1104,24 @@ namespace Tpetra {
     return rcp (new MV (map, VAN::template acceptView<Scalar> (view),
                         LDA, numVectors, HOST_VIEW_CONSTRUCTOR));
   }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Node2>
+  Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::clone(const RCP<Node2> &node2) const{
+	typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
+        typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2> MV2;
+        Teuchos::ArrayRCP< Teuchos::ArrayRCP<const Scalar> > MV_view = this->get2dView();
+        Teuchos::RCP<const Map2> clonedMap = this->getMap()->template clone(node2);
+        Teuchos::RCP<MV2> clonedMV = Teuchos::rcp(new MV2(clonedMap, this->getNumVectors()));
+        Teuchos::ArrayRCP< Teuchos::ArrayRCP<Scalar> > clonedMV_view = clonedMV->get2dViewNonConst();
+        for (size_t i = 0; i < this->getNumVectors(); i++)
+		clonedMV_view[i].deepCopy(MV_view[i]());
+        clonedMV_view = Teuchos::null;
+        return clonedMV;
+  }
+      
+
 
 } // namespace Tpetra
 

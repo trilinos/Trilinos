@@ -109,7 +109,7 @@ namespace TSQR {
       typedef SequentialTsqr<ordinal_type, scalar_type> node_tsqr_type;
       typedef DistTsqr<ordinal_type, scalar_type> dist_tsqr_type;
       typedef Tsqr<ordinal_type, scalar_type, node_tsqr_type> tsqr_type;
-      typedef Kokkos::SerialNode node_type;
+      typedef KokkosClassic::SerialNode node_type;
 
     private:
 
@@ -283,7 +283,7 @@ namespace TSQR {
 	// "factorExplicit" is an alternate, hopefully faster way of
 	// factoring the matrix, when only the explicit Q factor is
 	// wanted.
-	typedef Kokkos::MultiVector<scalar_type, node_type> KMV;
+	typedef KokkosClassic::MultiVector<scalar_type, node_type> KMV;
 	if (testFactorExplicit)
 	  {
 	    KMV A_copy_view (node);
@@ -536,7 +536,7 @@ namespace TSQR {
     template<class TypeListType>
     class FullTsqrVerifierCallerImpl {
     public:
-      typedef Kokkos::SerialNode node_type; 
+      typedef KokkosClassic::SerialNode node_type; 
 
       static void
       run (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
@@ -551,7 +551,7 @@ namespace TSQR {
     template<class CarType, class CdrType>
     class FullTsqrVerifierCallerImpl<TSQR::Test::Cons<CarType, CdrType> > {
     public:
-      typedef Kokkos::SerialNode node_type; 
+      typedef KokkosClassic::SerialNode node_type; 
 
       static void
       run (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
@@ -572,7 +572,7 @@ namespace TSQR {
     template<>
     class FullTsqrVerifierCallerImpl<TSQR::Test::NullCons> {
     public:
-      typedef Kokkos::SerialNode node_type; 
+      typedef KokkosClassic::SerialNode node_type; 
 
       static void
       run (const Teuchos::RCP<const Teuchos::Comm<int> >&,
@@ -595,7 +595,7 @@ namespace TSQR {
     public:
       /// \typedef node_type
       /// \brief The Kokkos Node type to use.
-      typedef Kokkos::SerialNode node_type;
+      typedef KokkosClassic::SerialNode node_type;
 
       /// \typedef ordinal_type
       /// \brief The (local) Ordinal type to use for TSQR.

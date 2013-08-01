@@ -31,17 +31,17 @@ INCLUDE(TribitsLibraryMacros)
 
 #
 # Package-specific configuration options
-IF(Trilinos_ENABLE_Epetra)
+IF(PyTrilinos_ENABLE_Epetra)
   SET(HAVE_EPETRA ON)
-ENDIF(Trilinos_ENABLE_Epetra)
+ENDIF()
 
-IF(Trilinos_ENABLE_Teuchos)
+IF(PyTrilinos_ENABLE_Teuchos)
   SET(HAVE_TEUCHOS ON)
-ENDIF(Trilinos_ENABLE_Teuchos)
+ENDIF()
 
-IF(Trilinos_ENABLE_STK)
+IF(PyTrilinos_ENABLE_STK)
   SET(HAVE_STK ON)
-ENDIF(Trilinos_ENABLE_STK)
+ENDIF()
 
 IF(NOX_ENABLE_Epetra)
   SET(HAVE_NOX_EPETRA ON)
@@ -62,7 +62,7 @@ TRIBITS_CONFIGURE_FILE(PyTrilinos_config.h)
 # to the pytrilinos library and PyTrilinos extension modules
 SET(EXTRA_LINK_ARGS "${CMAKE_SHARED_LINKER_FLAGS}")
 IF(APPLE)
-  IF((CMAKE_CXX_COMPILER_ID MATCHES) "GNU" OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+  IF((CMAKE_CXX_COMPILER_ID MATCHES "GNU") OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
     SET(EXTRA_LINK_ARGS "${EXTRA_LINK_ARGS} -undefined dynamic_lookup")
   ENDIF()
 ENDIF(APPLE)

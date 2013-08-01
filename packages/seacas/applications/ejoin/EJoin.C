@@ -112,12 +112,12 @@ namespace {
   void process_sset_omissions(RegionVector &part_mesh, const Omissions &omit);
 
   template <typename T>
-  bool approx_equal(T v1, T v2)
+  bool approx_equal(T v1, T v2, T offset)
   {
 #if 1
     static const T tolerance = 100.0 * std::numeric_limits<float>::epsilon();
     double d1 = std::fabs(v1 - v2);
-    double d2 = std::fabs(v1+v2)*tolerance;
+    double d2 = std::fabs((v1-offset)+(v2-offset))*tolerance;
     return d1 <= d2;
 #else
     return (float)v1 == (float)v2;
@@ -479,8 +479,8 @@ int ejoin(SystemInterface &interface, std::vector<Ioss::Region*> &part_mesh, INT
 	}
 
 	for (size_t i=0; i < global_times.size(); i++) {
-	  if (!approx_equal(global_times[i], times[i])) {
-	    std::cerr << "Time step " << i << " in part " << p+1
+	  if (!approx_equal(global_times[i], times[i], global_times[0])) {
+	    std::cerr << "Time step " << i+1 << " in part " << p+1
 		      << " does not match time steps in previous part(s): previous: "
 		      << global_times[i] << ", current: " << times[i] << "\n";
 	    exit(EXIT_FAILURE);
@@ -1179,14 +1179,27 @@ namespace {
     // Determine which state on each input mesh corresponds to 'time'
     std::vector<int> steps(part_mesh.size());
     for (size_t p=0; p < part_mesh.size(); p++) {
+      double min_delta = 1.0e39;
+      size_t min_step = 0;
+
       size_t nts = part_mesh[p]->get_property("state_count").get_int();
       steps[p] = 0;
       for (size_t i=0; i < nts; i++) {
-	if (approx_equal(part_mesh[p]->get_state_time(i+1), time)) {
-	  steps[p] = i+1;
-	  part_mesh[p]->begin_state(steps[p]);
+	double delta = std::fabs(part_mesh[p]->get_state_time(i+1)-time);
+	if (delta < min_delta) {
+	  min_delta = delta;
+	  min_step = i;
+	  if (delta == 0.0)
+	    break;
+	} else {
+	  // Delta is increasing; times are moving apart...
+	  // (Assumes monotonically increasing time values...)
 	  break;
 	}
+      }
+      if (nts > 0) {
+	steps[p] = min_step+1;
+	part_mesh[p]->begin_state(steps[p]);
       }
     }
 

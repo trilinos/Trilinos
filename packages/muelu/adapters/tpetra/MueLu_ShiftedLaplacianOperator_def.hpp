@@ -67,26 +67,32 @@ namespace MueLu {
 // ------------- getDomainMap -----------------------
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getDomainMap() const {
-
+Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > 
+ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+getDomainMap () const 
+{
   typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> XMatrix;
 
-  RCP<MueLu::Level>  L0 = Hierarchy_->GetLevel(0);
-  RCP<XMatrix> A = L0->Get< RCP<XMatrix> >("A");
+  RCP<MueLu::Level> L0 = Hierarchy_->GetLevel (0);
+  RCP<XMatrix> A = L0->Get<RCP<XMatrix> > ("A");
 
   RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >(A);
-  if(tpbA != Teuchos::null)
-    return Xpetra::toTpetraNonZero(tpbA->getDomainMap());
+  if (tpbA != Teuchos::null) {
+    return Xpetra::toTpetraNonZero (tpbA->getDomainMap ());
+  }
 
-  RCP< Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpA = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2NonConstTpetraCrs(A);
-  return tpA->getDomainMap();
+  RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpA = 
+    Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2NonConstTpetraCrs (A);
+  return tpA->getDomainMap ();
 }
 
 // ------------- getRangeMap -----------------------
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getRangeMap() const {
-
+Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+getRangeMap () const 
+{
   typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> XMatrix;
 
   RCP<MueLu::Level>  L0 = Hierarchy_->GetLevel(0);
@@ -123,11 +129,11 @@ void ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps
   catch(std::exception& e) {
     //FIXME add message and rethrow
     std::cerr << "Caught an exception in MueLu::ShiftedLaplacianOperator::ApplyInverse():" << std::endl
-        << e.what() << std::endl;
+	      << e.what() << std::endl;
   }
 
   // update solution with 2-grid error correction
-  if(option_==1) {
+  /*if(option_==1) {
     for(int j=0; j<cycles_; j++) {
       RCP<XMV> residual       = MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Residual(*A_, tY, tX);
       RCP<XMV> coarseResidual = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(R_->getRangeMap(), tX.getNumVectors());
@@ -144,6 +150,16 @@ void ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps
     }
   }
 
+  try {
+    Hierarchy_->Iterate(tX, 1, tY, false);
+  }
+
+  catch(std::exception& e) {
+    //FIXME add message and rethrow
+    std::cerr << "Caught an exception in MueLu::ShiftedLaplacianOperator::ApplyInverse():" << std::endl
+	      << e.what() << std::endl;
+	      }*/
+  
 }
 
 // ------------- apply -----------------------

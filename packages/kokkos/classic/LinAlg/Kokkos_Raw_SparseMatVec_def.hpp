@@ -49,7 +49,7 @@
 ///   If you edit this header by hand, your edits will disappear the
 ///   next time you run the generator script.
 
-namespace Kokkos {
+namespace KokkosClassic {
 namespace Raw {
 
 template<class Ordinal,
@@ -17995,7 +17995,7 @@ matVecCsrColMajorForifConj4Vec (
 }
 
 } // namespace Raw
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 //
 // TODO (mfh 26 Jul 2012): Add explicit instantiation macros.

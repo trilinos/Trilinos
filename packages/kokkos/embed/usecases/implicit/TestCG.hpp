@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//    KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//    Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -41,17 +41,17 @@
 //@HEADER
 */
 
-#ifndef KOKKOSARRAY_CG_HPP
-#define KOKKOSARRAY_CG_HPP
+#ifndef KOKKOS_CG_HPP
+#define KOKKOS_CG_HPP
 
 #include <cmath>
 #include <istream>
 
-#include <KokkosArray_View.hpp>
-#include <KokkosArray_Array.hpp>
-#include <impl/KokkosArray_ArrayAnalyzeShape.hpp>
-#include <impl/KokkosArray_ArrayViewDefault.hpp>
-#include <impl/KokkosArray_Timer.hpp>
+#include <Kokkos_View.hpp>
+#include <Kokkos_Array.hpp>
+#include <impl/Kokkos_ArrayAnalyzeShape.hpp>
+#include <impl/Kokkos_ArrayViewDefault.hpp>
+#include <impl/Kokkos_Timer.hpp>
 
 #include <ParallelComm.hpp>
 #include <TestBlas1.hpp>
@@ -60,7 +60,7 @@
 
 //----------------------------------------------------------------------------
 
-namespace KokkosArray {
+namespace Kokkos {
 
 template< typename AScalarType , typename VScalarType , class Device >
 void cgsolve(
@@ -93,7 +93,7 @@ void cgsolve(
   normr     = std::sqrt( old_rdot );
   iteration = 0 ;
 
-  KokkosArray::Impl::Timer wall_clock ;
+  Kokkos::Impl::Timer wall_clock ;
 
   while ( tolerance < normr && iteration < maximum_iteration ) {
 
@@ -139,9 +139,9 @@ PerfCGSolve test_cgsolve_scalar( comm::Machine machine ,
 {
   typedef Scalar value_type ;
 
-  typedef KokkosArray::CrsArray<int,Device,void,int>      crsarray_type ;
-  typedef KokkosArray::CrsMatrix<value_type,Device>         matrix_type ;
-  typedef KokkosArray::View<value_type*,KokkosArray::LayoutRight,Device> vector_type ;
+  typedef Kokkos::CrsArray<int,Device,void,int>      crsarray_type ;
+  typedef Kokkos::CrsMatrix<value_type,Device>         matrix_type ;
+  typedef Kokkos::View<value_type*,Kokkos::LayoutRight,Device> vector_type ;
 
   //------------------------------
   // Generate FEM graph:
@@ -157,20 +157,20 @@ PerfCGSolve test_cgsolve_scalar( comm::Machine machine ,
   vector_type x = vector_type( "x" , fem_length );
   vector_type y = vector_type( "y" , fem_length );
 
-  typename vector_type::HostMirror hx        = KokkosArray::create_mirror( x );
-  typename vector_type::HostMirror hy_result = KokkosArray::create_mirror( y );
+  typename vector_type::HostMirror hx        = Kokkos::create_mirror( x );
+  typename vector_type::HostMirror hy_result = Kokkos::create_mirror( y );
 
   for ( unsigned i = 0 ; i < fem_length ; ++i ) {
     hx(i) = Test::generate_vector_coefficient( fem_length , 1 , i , 0 );
   }
 
-  KokkosArray::deep_copy( x , hx );
+  Kokkos::deep_copy( x , hx );
 
   //------------------------------
 
   matrix_type matrix ;
 
-  matrix.graph = KokkosArray::create_crsarray<crsarray_type>( std::string("testing") , fem_graph );
+  matrix.graph = Kokkos::create_crsarray<crsarray_type>( std::string("testing") , fem_graph );
 
   const unsigned fem_graph_length = matrix.graph.entries.dimension_0();
 
@@ -178,7 +178,7 @@ PerfCGSolve test_cgsolve_scalar( comm::Machine machine ,
 
   {
     typename vector_type::HostMirror hM =
-      KokkosArray::create_mirror( matrix.values );
+      Kokkos::create_mirror( matrix.values );
 
     for ( size_t iRow = 0 , iEntry = 0 ; iRow < fem_length ; ++iRow ) {
 
@@ -193,7 +193,7 @@ PerfCGSolve test_cgsolve_scalar( comm::Machine machine ,
       }
     }
 
-    KokkosArray::deep_copy( matrix.values , hM );
+    Kokkos::deep_copy( matrix.values , hM );
   }
 
   size_t iter_count = 0 ;
@@ -219,11 +219,11 @@ PerfCGSolve test_cgsolve_array( comm::Machine machine ,
                                 const int iterMax ,
                                 const char * const /* verify_label */ )
 {
-  typedef KokkosArray::Array<Scalar,N> value_type ;
+  typedef Kokkos::Array<Scalar,N> value_type ;
 
-  typedef KokkosArray::CrsArray<int,Device,void,int>      crsarray_type ;
-  typedef KokkosArray::CrsMatrix<value_type,Device>         matrix_type ;
-  typedef KokkosArray::View<value_type*,KokkosArray::LayoutRight,Device> vector_type ;
+  typedef Kokkos::CrsArray<int,Device,void,int>      crsarray_type ;
+  typedef Kokkos::CrsMatrix<value_type,Device>         matrix_type ;
+  typedef Kokkos::View<value_type*,Kokkos::LayoutRight,Device> vector_type ;
 
   //------------------------------
   // Generate FEM graph:
@@ -239,8 +239,8 @@ PerfCGSolve test_cgsolve_array( comm::Machine machine ,
   vector_type x = vector_type( "x" , fem_length );
   vector_type y = vector_type( "y" , fem_length );
 
-  typename vector_type::HostMirror hx        = KokkosArray::create_mirror( x );
-  typename vector_type::HostMirror hy_result = KokkosArray::create_mirror( y );
+  typename vector_type::HostMirror hx        = Kokkos::create_mirror( x );
+  typename vector_type::HostMirror hy_result = Kokkos::create_mirror( y );
 
   for ( unsigned i = 0 ; i < fem_length ; ++i ) {
     for ( unsigned j = 0 ; j < N ; ++j ) {
@@ -248,13 +248,13 @@ PerfCGSolve test_cgsolve_array( comm::Machine machine ,
     }
   }
 
-  KokkosArray::deep_copy( x , hx );
+  Kokkos::deep_copy( x , hx );
 
   //------------------------------
 
   matrix_type matrix ;
 
-  matrix.graph = KokkosArray::create_crsarray<crsarray_type>( std::string("testing") , fem_graph );
+  matrix.graph = Kokkos::create_crsarray<crsarray_type>( std::string("testing") , fem_graph );
 
   const unsigned fem_graph_length = matrix.graph.entries.dimension_0();
 
@@ -262,7 +262,7 @@ PerfCGSolve test_cgsolve_array( comm::Machine machine ,
 
   {
     typename vector_type::HostMirror hM =
-      KokkosArray::create_mirror( matrix.values );
+      Kokkos::create_mirror( matrix.values );
 
     for ( size_t iRow = 0 , iEntry = 0 ; iRow < fem_length ; ++iRow ) {
 
@@ -279,7 +279,7 @@ PerfCGSolve test_cgsolve_array( comm::Machine machine ,
       }
     }
 
-    KokkosArray::deep_copy( matrix.values , hM );
+    Kokkos::deep_copy( matrix.values , hM );
   }
 
   size_t iter_count = 0 ;

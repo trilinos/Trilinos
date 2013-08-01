@@ -49,7 +49,7 @@ namespace {
 //
 // Define the names of the different parameters.  Since the name of a
 // parameter is used several times, it is a good idea to define a varible that
-// stores the string name so that typing errors get caught at compile-time.
+// stores the std::string name so that typing errors get caught at compile-time.
 //
 
 const std::string AztecSolver_name = "Aztec Solver";
@@ -62,7 +62,7 @@ enum EAztecPreconditioner {
 };
 
 /** Needed for serialization KLN 23/09/2010 */
-inline istream& operator>>(istream& is, EAztecPreconditioner& prec){
+inline std::istream& operator>>(std::istream& is, EAztecPreconditioner& prec){
   int intval;
   is >> intval;
   prec = (EAztecPreconditioner)intval;

@@ -48,7 +48,7 @@
 int main(int argc, char *argv[])
 {
 
-  cout << Epetra_Version() << endl << endl;
+  std::cout << Epetra_Version() << std::endl << std::endl;
 
   Epetra_SerialComm Comm;
 
@@ -68,8 +68,8 @@ int main(int argc, char *argv[])
   x.Norm2(&xnorm);
   b.Norm2(&bnorm);
 
-  cout << "2 norm of x = " << xnorm << endl
-       << "2 norm of b = " << bnorm << endl;
+  std::cout << "2 norm of x = " << xnorm << std::endl
+       << "2 norm of b = " << bnorm << std::endl;
 
   return 0;
 }

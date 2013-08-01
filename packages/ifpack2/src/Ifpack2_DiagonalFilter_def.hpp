@@ -100,7 +100,7 @@ DiagonalFilter<MatrixType>::~DiagonalFilter() { }
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Teuchos::Comm<int> > & DiagonalFilter<MatrixType>::getComm() const
+Teuchos::RCP<const Teuchos::Comm<int> > DiagonalFilter<MatrixType>::getComm() const
 {
   return A_->getComm();
 }
@@ -114,9 +114,9 @@ Teuchos::RCP <typename MatrixType::node_type> DiagonalFilter<MatrixType>::getNod
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+			       typename MatrixType::global_ordinal_type,
+			       typename MatrixType::node_type> >
 DiagonalFilter<MatrixType>::getRowMap() const
 {
   return A_->getRowMap();
@@ -124,9 +124,9 @@ DiagonalFilter<MatrixType>::getRowMap() const
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+			       typename MatrixType::global_ordinal_type,
+			       typename MatrixType::node_type> >
 DiagonalFilter<MatrixType>::getColMap() const
 {
   return A_->getColMap();
@@ -134,9 +134,9 @@ DiagonalFilter<MatrixType>::getColMap() const
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+			       typename MatrixType::global_ordinal_type,
+			       typename MatrixType::node_type> >
 DiagonalFilter<MatrixType>::getDomainMap() const
 {
   return A_->getDomainMap();
@@ -144,9 +144,9 @@ DiagonalFilter<MatrixType>::getDomainMap() const
 
 //==========================================================================
 template<class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+			       typename MatrixType::global_ordinal_type,
+			       typename MatrixType::node_type> >
 DiagonalFilter<MatrixType>::getRangeMap() const
 {
   return A_->getRangeMap();
@@ -157,7 +157,6 @@ template<class MatrixType>
 Teuchos::RCP<const Tpetra::RowGraph<typename MatrixType::local_ordinal_type,
                                      typename MatrixType::global_ordinal_type,
                                      typename MatrixType::node_type> >
-
 DiagonalFilter<MatrixType>::getGraph() const
 {
   return A_->getGraph();

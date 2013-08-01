@@ -44,7 +44,7 @@
 
 #include <ostream>
 
-#include "KokkosArray_View.hpp"
+#include "Kokkos_View.hpp"
 
 #include "Stokhos_ProductBasis.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -86,7 +86,7 @@ public:
 private:
 
   tensor_type                                     m_tensor ;
-  KokkosArray::View< size_type** , device_type >  m_degree_map ;
+  Kokkos::View< size_type** , device_type >  m_degree_map ;
   size_type                                       m_variable ;
 
 public:
@@ -117,22 +117,22 @@ public:
     return *this ;
   }
 
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   const tensor_type & tensor() const { return m_tensor ; }
 
   /** \brief  Dimension: number of bases and
    *          length of the vector block (and tensor).
    */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type dimension() const { return m_tensor.dimension(); }
 
   /** \brief  How many variables are being expanded. */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type variable_count() const { return m_variable ; }
 
   /** \brief  Polynomial degree of a given variable */
   template< typename iType >
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type variable_degree( const iType & iVariable ) const
     { return m_degree_map( 0 , iVariable ); }
 
@@ -141,7 +141,7 @@ public:
    *          polynomial degree of component 'iVariable'.
    */
   template< typename iType , typename jType >
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type bases_degree( const iType & iBasis , const jType & iVariable ) const
     { return m_degree_map( iBasis + 1 , iVariable ); }
 
@@ -166,7 +166,7 @@ public:
 
     // Allocate and transfer data to the device-resident object.
 
-    typedef KokkosArray::View< size_type** , device_type > int_array_type ;
+    typedef Kokkos::View< size_type** , device_type > int_array_type ;
     typedef typename int_array_type::HostMirror host_int_array_type ;
 
     OrdinalType basis_sz = basis.size();
@@ -182,7 +182,7 @@ public:
 
     // Build degree_map
     host_int_array_type degree_map =
-      KokkosArray::create_mirror_view( spt.m_degree_map );
+      Kokkos::create_mirror_view( spt.m_degree_map );
     for ( OrdinalType j = 0 ; j < basis_dim ; ++j )
       degree_map(0,j) = max_orders[j];
     for ( OrdinalType i = 0 ; i < basis_sz ; ++i ) {
@@ -191,7 +191,7 @@ public:
         degree_map(i+1,j) = term[j];
       }
     }
-    KokkosArray::deep_copy( spt.m_degree_map , degree_map );
+    Kokkos::deep_copy( spt.m_degree_map , degree_map );
 
     // Build 3 tensor
     spt.m_tensor = tensor_type::create( basis, Cijk, params );

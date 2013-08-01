@@ -69,9 +69,9 @@ namespace Xpetra {
   public:
     //! Typedef indicating the default platform type specified at compile time. For a serial build, this will be SerialPlatform. Otherwise, it will be MpiPlatform.
 #ifdef HAVE_MPI
-    typedef MpiPlatform<Kokkos::DefaultNode::DefaultNodeType> DefaultPlatformType;
+    typedef MpiPlatform<KokkosClassic::DefaultNode::DefaultNodeType> DefaultPlatformType;
 #else
-    typedef SerialPlatform<Kokkos::DefaultNode::DefaultNodeType> DefaultPlatformType;
+    typedef SerialPlatform<KokkosClassic::DefaultNode::DefaultNodeType> DefaultPlatformType;
 #endif
 
     /** \brief Return the default platform.

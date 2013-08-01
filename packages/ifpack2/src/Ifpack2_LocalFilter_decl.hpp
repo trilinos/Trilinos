@@ -43,11 +43,9 @@
 #ifndef IFPACK2_LOCALFILTER_DECL_HPP
 #define IFPACK2_LOCALFILTER_DECL_HPP
 
-#include "Ifpack2_ConfigDefs.hpp"
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_RowMatrix.hpp"
-#include "Teuchos_RefCountPtr.hpp"
-#include "Teuchos_ScalarTraits.hpp"
+#include <Ifpack2_ConfigDefs.hpp>
+#include <Tpetra_RowMatrix.hpp>
+#include <vector>
 
 
 namespace Ifpack2 {
@@ -162,22 +160,22 @@ public:
   //@{
 
   //! Returns the communicator.
-  virtual const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
+  virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
   //! Returns the underlying Kokkos Node object.
   virtual Teuchos::RCP<node_type> getNode() const;
 
   //! Returns the Map that describes the row distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > & getRowMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRowMap() const;
 
   //! Returns the Map that describes the column distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > & getColMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getColMap() const;
 
   //! Returns the Map that describes the domain distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > & getDomainMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap() const;
 
   //! Returns the Map that describes the range distribution in this matrix.
-  virtual const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > & getRangeMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRangeMap() const;
 
   //! The (locally filtered) matrix's graph.
   virtual Teuchos::RCP<const Tpetra::RowGraph<local_ordinal_type,global_ordinal_type,node_type> > getGraph() const;
@@ -413,11 +411,26 @@ public:
 
 
 private:
+  //! Type of a read-only interface to a graph.
+  typedef Tpetra::RowGraph<local_ordinal_type,
+			   global_ordinal_type,
+			   node_type> row_graph_type;
+
+  //! Type of a read-only interface to a sparse matrix.
+  typedef Tpetra::RowMatrix<scalar_type,
+			    local_ordinal_type,
+			    global_ordinal_type,
+			    node_type> row_matrix_type;
+
+  //! Tpetra::Map specialization corresponding to MatrixType.
+  typedef Tpetra::Map<local_ordinal_type,
+		      global_ordinal_type,
+		      node_type> map_type;
 
   //! Pointer to the matrix to be preconditioned.
-  Teuchos::RCP<const Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> > A_;
+  Teuchos::RCP<const row_matrix_type> A_;
   //! Map based on SerialComm_, containing the local rows only.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> > LocalMap_;
+  Teuchos::RCP<const map_type> localMap_;
   //! Number of rows in the local matrix.
   size_t NumRows_;
   //! Number of nonzeros in the local matrix.

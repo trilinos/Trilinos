@@ -157,7 +157,7 @@ void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
   }
   catch (const std::invalid_argument &ia) {
     if (!invalid) {
-      printer->stream(Warnings) << "Error thrown at instantiation: " << ia.what() << endl;
+      printer->stream(Warnings) << "Error thrown at instantiation: " << ia.what() << std::endl;
     }
     TEUCHOS_TEST_FOR_EXCEPTION(!invalid, get_out, "Instantiating with valid parameters unexpectadly threw exception.");
 
@@ -251,7 +251,7 @@ int main(int argc, char *argv[])
   RCP< OutputManager<ScalarType> > printer =
     rcp( new BasicOutputManager<ScalarType>( verbosity ) );
 
-  printer->stream(Debug) << Anasazi_Version() << endl;
+  printer->stream(Debug) << Anasazi_Version() << std::endl;
 
   //  Problem information
   int space_dim = 1;
@@ -292,8 +292,8 @@ int main(int argc, char *argv[])
   //
   // Inform the eigenproblem that you are finishing passing it information
   if ( probstd->setProblem() != true || probgen->setProblem() != true ) {
-    printer->stream(Warnings) << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
-      << "End Result: TEST FAILED" << endl;
+    printer->stream(Warnings) << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << std::endl
+      << "End Result: TEST FAILED" << std::endl;
 #ifdef HAVE_MPI
     MPI_Finalize() ;
 #endif
@@ -318,73 +318,73 @@ int main(int argc, char *argv[])
     pls.set<int>("Block Size",nev);
     pls.set<int>("Maximum Subspace Dimension",3*nev);
     pls.set<int>("Number of Ritz Vectors",nev);
-    printer->stream(Warnings) << "Testing solver(nev,3*nev) with standard eigenproblem..." << endl;
+    printer->stream(Warnings) << "Testing solver(nev,3*nev) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
     pls.set<int>("Maximum Subspace Dimension",3*nev);
-    printer->stream(Warnings) << "Testing solver(nev,3*nev) with generalized eigenproblem..." << endl;
+    printer->stream(Warnings) << "Testing solver(nev,3*nev) with generalized eigenproblem..." << std::endl;
     testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     pls.set<int>("Block Size",nev);
     pls.set<int>("Maximum Subspace Dimension",4*nev);
-    printer->stream(Warnings) << "Testing solver(nev,4*nev) with standard eigenproblem..." << endl;
+    printer->stream(Warnings) << "Testing solver(nev,4*nev) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
     pls.set<int>("Maximum Subspace Dimension",4*nev);
-    printer->stream(Warnings) << "Testing solver(nev,4*nev) with generalized eigenproblem..." << endl;
+    printer->stream(Warnings) << "Testing solver(nev,4*nev) with generalized eigenproblem..." << std::endl;
     testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     pls.set<int>("Block Size",2*nev);
     pls.set<int>("Maximum Subspace Dimension",4*nev);
-    printer->stream(Warnings) << "Testing solver(2*nev,4*nev) with standard eigenproblem..." << endl;
+    printer->stream(Warnings) << "Testing solver(2*nev,4*nev) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
     pls.set<int>("Maximum Subspace Dimension",4*nev);
-    printer->stream(Warnings) << "Testing solver(2*nev,4*nev) with generalized eigenproblem..." << endl;
+    printer->stream(Warnings) << "Testing solver(2*nev,4*nev) with generalized eigenproblem..." << std::endl;
     testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     pls.set<int>("Block Size",nev/2);
     pls.set<int>("Maximum Subspace Dimension",3*nev);
-    printer->stream(Warnings) << "Testing solver(nev/2,3*nev) with standard eigenproblem..." << endl;
+    printer->stream(Warnings) << "Testing solver(nev/2,3*nev) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
     pls.set<int>("Maximum Subspace Dimension",3*nev);
-    printer->stream(Warnings) << "Testing solver(nev/2,3*nev) with generalized eigenproblem..." << endl;
+    printer->stream(Warnings) << "Testing solver(nev/2,3*nev) with generalized eigenproblem..." << std::endl;
     testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     pls.set<int>("Block Size",nev/2);
     pls.set<int>("Maximum Subspace Dimension",4*nev);
-    printer->stream(Warnings) << "Testing solver(nev/2,4*nev) with standard eigenproblem..." << endl;
+    printer->stream(Warnings) << "Testing solver(nev/2,4*nev) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
     pls.set<int>("Maximum Subspace Dimension",4*nev);
-    printer->stream(Warnings) << "Testing solver(nev/2,4*nev) with generalized eigenproblem..." << endl;
+    printer->stream(Warnings) << "Testing solver(nev/2,4*nev) with generalized eigenproblem..." << std::endl;
     testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     // try with an invalid blocksize
     pls.set<int>("Block Size",0);
     pls.set<int>("Maximum Subspace Dimension",4*nev);
-    printer->stream(Warnings) << "Testing solver(0,4*nev) with standard eigenproblem..." << endl;
+    printer->stream(Warnings) << "Testing solver(0,4*nev) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
 
     // try with an invalid maxdim
     pls.set<int>("Block Size",nev);
     pls.set<int>("Maximum Subspace Dimension",0);
-    printer->stream(Warnings) << "Testing solver(nev,0) with standard eigenproblem..." << endl;
+    printer->stream(Warnings) << "Testing solver(nev,0) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
 
     // try with an invalid maxdim: invalid because it must be greater than nev
     pls.set<int>("Block Size",nev);
     pls.set<int>("Maximum Subspace Dimension",nev);
-    printer->stream(Warnings) << "Testing solver(nev,nev) with standard eigenproblem..." << endl;
+    printer->stream(Warnings) << "Testing solver(nev,nev) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
 
     // try with a too-large subspace
     probstd->setHermitian(true);
     probstd->setProblem();
     pls.set<int>("Maximum Subspace Dimension",100+1);
-    printer->stream(Warnings) << "Testing solver(4,toomany,Hermitian) with standard eigenproblem..." << endl;
+    printer->stream(Warnings) << "Testing solver(4,toomany,Hermitian) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
 
     // try with an unset problem
     // setHermitian will mark the problem as unset
     probstd->setHermitian(true);
-    printer->stream(Warnings) << "Testing solver with unset eigenproblem..." << endl;
+    printer->stream(Warnings) << "Testing solver with unset eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
     // set problem: now hermitian
     probstd->setProblem();
@@ -393,7 +393,7 @@ int main(int argc, char *argv[])
     RCP< StatusTest<ScalarType,MV,OP> > dumtester = rcp( new StatusTestMaxIters<ScalarType,MV,OP>(1) );
 
     // try with a null problem
-    printer->stream(Warnings) << "Testing solver with null eigenproblem..." << endl;
+    printer->stream(Warnings) << "Testing solver with null eigenproblem..." << std::endl;
     try {
       RCP< GeneralizedDavidson<ScalarType,MV,OP> > solver
         = rcp( new GeneralizedDavidson<ScalarType,MV,OP>(Teuchos::null,sorter,printer,dumtester,orthostd,pls) );
@@ -404,7 +404,7 @@ int main(int argc, char *argv[])
     }
 
     // try with a null sortman
-    printer->stream(Warnings) << "Testing solver with null sort manager..." << endl;
+    printer->stream(Warnings) << "Testing solver with null sort manager..." << std::endl;
     try {
       RCP< GeneralizedDavidson<ScalarType,MV,OP> > solver
         = rcp( new GeneralizedDavidson<ScalarType,MV,OP>(probstd,Teuchos::null,printer,dumtester,orthostd,pls) );
@@ -415,7 +415,7 @@ int main(int argc, char *argv[])
     }
 
     // try with a output man problem
-    printer->stream(Warnings) << "Testing solver with null output manager..." << endl;
+    printer->stream(Warnings) << "Testing solver with null output manager..." << std::endl;
     try {
       RCP< GeneralizedDavidson<ScalarType,MV,OP> > solver
         = rcp( new GeneralizedDavidson<ScalarType,MV,OP>(probstd,sorter,Teuchos::null,dumtester,orthostd,pls) );
@@ -426,7 +426,7 @@ int main(int argc, char *argv[])
     }
 
     // try with a null status test
-    printer->stream(Warnings) << "Testing solver with null status test..." << endl;
+    printer->stream(Warnings) << "Testing solver with null status test..." << std::endl;
     try {
       RCP< GeneralizedDavidson<ScalarType,MV,OP> > solver
         = rcp( new GeneralizedDavidson<ScalarType,MV,OP>(probstd,sorter,printer,Teuchos::null,orthostd,pls) );
@@ -437,7 +437,7 @@ int main(int argc, char *argv[])
     }
 
     // try with a null orthoman
-    printer->stream(Warnings) << "Testing solver with null ortho manager..." << endl;
+    printer->stream(Warnings) << "Testing solver with null ortho manager..." << std::endl;
     try {
       RCP< GeneralizedDavidson<ScalarType,MV,OP> > solver
         = rcp( new GeneralizedDavidson<ScalarType,MV,OP>(probstd,sorter,printer,dumtester,Teuchos::null,pls) );
@@ -449,11 +449,11 @@ int main(int argc, char *argv[])
 
   }
   catch (const get_out &go) {
-    printer->stream(Errors) << "Test failed: " << go.what() << endl;
+    printer->stream(Errors) << "Test failed: " << go.what() << std::endl;
     testFailed = true;
   }
   catch (const std::exception &e) {
-    printer->stream(Errors) << "Caught unexpected exception: " << e.what() << endl;
+    printer->stream(Errors) << "Caught unexpected exception: " << e.what() << std::endl;
     testFailed = true;
   }
 
@@ -463,13 +463,13 @@ int main(int argc, char *argv[])
 #endif
 
   if (testFailed) {
-    printer->stream(Warnings) << endl << "End Result: TEST FAILED" << endl;
+    printer->stream(Warnings) << std::endl << "End Result: TEST FAILED" << std::endl;
     return -1;
   }
   //
   // Default return value
   //
-  printer->stream(Warnings) << endl << "End Result: TEST PASSED" << endl;
+  printer->stream(Warnings) << std::endl << "End Result: TEST PASSED" << std::endl;
   return 0;
 
 }

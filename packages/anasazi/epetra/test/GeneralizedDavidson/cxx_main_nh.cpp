@@ -305,7 +305,7 @@ int main(int argc, char *argv[]) {
   boolret = MyProblem->setProblem();
   if (boolret != true) {
     if (verbose && MyPID == 0) {
-      cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << endl;
+      std::cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << std::endl;
     }
 #ifdef HAVE_MPI
     MPI_Finalize() ;
@@ -333,18 +333,18 @@ int main(int argc, char *argv[]) {
   // Output computed eigenvalues and their direct residuals
   if (verbose && MyPID==0) {
     int numritz = (int)evals.size();
-    cout.setf(std::ios_base::right, std::ios_base::adjustfield);
-    cout<<endl<< "Computed Ritz Values"<< endl;
-    cout<< std::setw(16) << "Real Part"
+    std::cout.setf(std::ios_base::right, std::ios_base::adjustfield);
+    std::cout<<std::endl<< "Computed Ritz Values"<< std::endl;
+    std::cout<< std::setw(16) << "Real Part"
         << std::setw(16) << "Imag Part"
-        << endl;
-    cout<<"-----------------------------------------------------------"<<endl;
+        << std::endl;
+    std::cout<<"-----------------------------------------------------------"<<std::endl;
     for (int i=0; i<numritz; i++) {
-      cout<< std::setw(16) << evals[i].realpart
+      std::cout<< std::setw(16) << evals[i].realpart
           << std::setw(16) << evals[i].imagpart
-          << endl;
+          << std::endl;
     }
-    cout<<"-----------------------------------------------------------"<<endl;
+    std::cout<<"-----------------------------------------------------------"<<std::endl;
   }
 
   if (numev > 0) {
@@ -421,21 +421,21 @@ int main(int argc, char *argv[]) {
 
     // Output computed eigenvalues and their direct residuals
     if (verbose && MyPID==0) {
-      cout.setf(std::ios_base::right, std::ios_base::adjustfield);
-      cout<<endl<< "Actual Residuals"<<endl;
-      cout<< std::setw(16) << "Real Part"
+      std::cout.setf(std::ios_base::right, std::ios_base::adjustfield);
+      std::cout<<std::endl<< "Actual Residuals"<<std::endl;
+      std::cout<< std::setw(16) << "Real Part"
           << std::setw(16) << "Imag Part"
-          << std::setw(20) << "Direct Residual"<< endl;
-      cout<<"-----------------------------------------------------------"<<endl;
+          << std::setw(20) << "Direct Residual"<< std::endl;
+      std::cout<<"-----------------------------------------------------------"<<std::endl;
       for (int j=0; j<numev; j++) {
-        cout<< std::setw(16) << evals[j].realpart
+        std::cout<< std::setw(16) << evals[j].realpart
             << std::setw(16) << evals[j].imagpart
-            << std::setw(20) << normA[j] << endl;
+            << std::setw(20) << normA[j] << std::endl;
         if ( normA[j] > tol ) {
           testFailed = true;
         }
       }
-      cout<<"-----------------------------------------------------------"<<endl;
+      std::cout<<"-----------------------------------------------------------"<<std::endl;
     }
   }
 
@@ -445,7 +445,7 @@ int main(int argc, char *argv[]) {
 
   if (testFailed) {
     if (verbose && MyPID==0) {
-      cout << "End Result: TEST FAILED" << endl;
+      std::cout << "End Result: TEST FAILED" << std::endl;
     }
     return -1;
   }
@@ -453,7 +453,7 @@ int main(int argc, char *argv[]) {
   // Default return value
   //
   if (verbose && MyPID==0) {
-    cout << "End Result: TEST PASSED" << endl;
+    std::cout << "End Result: TEST PASSED" << std::endl;
   }
 
   return 0;

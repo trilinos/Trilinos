@@ -70,7 +70,7 @@ Piro::Epetra::TrapezoidRuleSolver::TrapezoidRuleSolver(
   trPL->validateParameters(*getValidTrapezoidRuleParameters(),0);
 
   {
-    const string verbosity = trPL->get("Verbosity Level", "VERB_DEFAULT");
+    const std::string verbosity = trPL->get("Verbosity Level", "VERB_DEFAULT");
     solnVerbLevel = Teuchos::VERB_DEFAULT;
     if      (verbosity == "VERB_NONE")    solnVerbLevel = Teuchos::VERB_NONE;
     else if (verbosity == "VERB_LOW")     solnVerbLevel = Teuchos::VERB_LOW;
@@ -225,7 +225,7 @@ void Piro::Epetra::TrapezoidRuleSolver::evalModel( const InArgs& inArgs,
                      std::endl << "Error in Piro::Epetra::TrapezoidRuleSolver " <<
                      "Requires initial x and x_dot: " << std::endl);
    double nrm;
-   v->Norm2(&nrm); *out << "Initial Velocity = " << nrm << endl;
+   v->Norm2(&nrm); *out << "Initial Velocity = " << nrm << std::endl;
 
    double t = t_init;
 
@@ -236,7 +236,7 @@ void Piro::Epetra::TrapezoidRuleSolver::evalModel( const InArgs& inArgs,
      model->injectData(x_pred, x_pred, pert, t);
      noxSolver->evalModel(nox_inargs, nox_outargs);
      a->Update(pert, *gx_out,  -pert, *x_pred,0.0);
-     a->Norm2(&nrm); *out << "Calculated a_init = " << nrm << endl;
+     a->Norm2(&nrm); *out << "Calculated a_init = " << nrm << std::endl;
    }
 
    // Start integration loop

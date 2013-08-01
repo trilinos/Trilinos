@@ -58,7 +58,7 @@ using namespace Teuchos;
 
 
 class get_out : public std::logic_error {
-  public: get_out(const string &whatarg) : std::logic_error(whatarg) {}
+  public: get_out(const std::string &whatarg) : std::logic_error(whatarg) {}
 };
 
 
@@ -80,8 +80,8 @@ int main(int argc, char *argv[])
   bool testFailed = false;
   bool verbose = false;
   bool debug = false;
-  string filename("mhd1280b.cua");
-  string which("LR");
+  std::string filename("mhd1280b.cua");
+  std::string which("LR");
   bool skinny = true;
 
   bool success = true;
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
     typedef Anasazi::OperatorTraits<ScalarType,MV,OP>  OPT;
 
     if (verbose && MyPID == 0) {
-      cout << Anasazi::Anasazi_Version() << endl << endl;
+      std::cout << Anasazi::Anasazi_Version() << std::endl << std::endl;
     }
 
     //  Problem information
@@ -281,14 +281,14 @@ int main(int argc, char *argv[])
     }
     catch (const get_out &go) {
       if (verbose && MyPID==0) {
-        cout << go.what() << endl;
+        std::cout << go.what() << std::endl;
       }
       testFailed = true;
     }
 
     if (testFailed == false) {
-      cout.setf(std::ios::scientific, std::ios::floatfield);  
-      cout.precision(6);
+      std::cout.setf(std::ios::scientific, std::ios::floatfield);  
+      std::cout.precision(6);
       //
       // check the checkpointed solution against the non-checkpointed solution
       //
@@ -303,22 +303,22 @@ int main(int argc, char *argv[])
       // compare the differences
       double maxd = 0;
       if (verbose && MyPID==0) {
-        cout << std::setw(40) << "Computed Eigenvalues" << endl;
-        cout << std::setw(20) << "Without c/p" << std::setw(20) << "With c/p" << std::setw(20) << "Rel. error" << endl;
-        cout << "============================================================" << endl;
+        std::cout << std::setw(40) << "Computed Eigenvalues" << std::endl;
+        std::cout << std::setw(20) << "Without c/p" << std::setw(20) << "With c/p" << std::setw(20) << "Rel. error" << std::endl;
+        std::cout << "============================================================" << std::endl;
       }
       for (int i=0; i<NEV; i++) {
         double tmpd = SCT::magnitude((Evals1[i].realpart - Evals2[i].realpart)/Evals1[i].realpart);
         maxd = (tmpd > maxd ? tmpd : maxd);
         if (verbose && MyPID==0) {
-          cout << std::setw(20) << Evals1[i].realpart << std::setw(20) << Evals2[i].realpart << std::setw(20) << tmpd << endl;
+          std::cout << std::setw(20) << Evals1[i].realpart << std::setw(20) << Evals2[i].realpart << std::setw(20) << tmpd << std::endl;
         }
       }
       if (maxd > tol) {
         testFailed = true;
       }
       if (verbose && MyPID==0) {
-        cout << endl;
+        std::cout << std::endl;
       }
       //
       // Second, check the eigenspaces
@@ -335,16 +335,16 @@ int main(int argc, char *argv[])
       for (int i=0; i<NEV; i++) vtv(i,i) = SCT::magnitude(vtv(i,i)) - 1.0;
       maxd = vtv.normFrobenius();
       if (verbose && MyPID==0) {
-        cout << std::setw(20) << "|| EV1^H M EV2 - I ||_F" << endl;
-        cout << std::setw(20) << maxd << endl;
-        cout << endl;
+        std::cout << std::setw(20) << "|| EV1^H M EV2 - I ||_F" << std::endl;
+        std::cout << std::setw(20) << maxd << std::endl;
+        std::cout << std::endl;
       }
       if (maxd > SCT::squareroot(tol)*10) {
         testFailed = true;
       }
     }
   }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,cout,success);
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cout,success);
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;
@@ -352,7 +352,7 @@ int main(int argc, char *argv[])
 
   if (testFailed || success==false) {
     if (verbose && MyPID==0) {
-      cout << "End Result: TEST FAILED" << endl;	
+      std::cout << "End Result: TEST FAILED" << std::endl;	
     }
     return -1;
   }
@@ -360,7 +360,7 @@ int main(int argc, char *argv[])
   // Default return value
   //
   if (verbose && MyPID==0) {
-    cout << "End Result: TEST PASSED" << endl;
+    std::cout << "End Result: TEST PASSED" << std::endl;
   }
   return 0;
 

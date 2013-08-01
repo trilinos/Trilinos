@@ -96,7 +96,7 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWith3Billion )
   }
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
   typedef int LO;
-  typedef Kokkos::SerialNode NT;
+  typedef KokkosClassic::SerialNode NT;
   typedef Tpetra::Map<LO, GO, NT> map_type;
 
   const size_t localNumElts = 5;

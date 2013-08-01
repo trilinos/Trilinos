@@ -195,10 +195,10 @@ int EpetraExt_PointToBlockDiagPermute::ApplyInverse(const Epetra_MultiVector& X,
 
 //=========================================================================  
 // Print method
-void EpetraExt_PointToBlockDiagPermute::Print(ostream& os) const{
-  if(Importer_) cout<<*Importer_<<endl;
-  if(Exporter_) cout<<*Exporter_<<endl;
-  if(BDMat_) cout<<*BDMat_<<endl;
+void EpetraExt_PointToBlockDiagPermute::Print(std::ostream& os) const{
+  if(Importer_) std::cout<<*Importer_<<std::endl;
+  if(Exporter_) std::cout<<*Exporter_<<std::endl;
+  if(BDMat_) std::cout<<*BDMat_<<std::endl;
 }
 
 //=========================================================================  

@@ -41,7 +41,7 @@ public:
   // @{ \name Constructors and destructors.
   
   //! Opens the specified file for writing.
-  MATLABStream(const string& FileName, bool UseSparse = true) 
+  MATLABStream(const std::string& FileName, bool UseSparse = true) 
   {
     FileName_ = FileName;
     SetUseSparse(UseSparse);
@@ -89,8 +89,8 @@ public:
     return(*this);
   }
 
-  //! Writes on file the specified string on process 0 only.
-  MATLABStream& operator << (const string obj)
+  //! Writes on file the specified std::string on process 0 only.
+  MATLABStream& operator << (const std::string obj)
   {
     if (GetMyPID() == 0) {
       Open();
@@ -237,7 +237,7 @@ public:
   }
     
   //! Returns the name of the output file.
-  inline string GetFileName() const
+  inline std::string GetFileName() const
   {
     return(FileName_);
   }
@@ -262,7 +262,7 @@ private:
   }
 
   //! Name of output file.
-  string FileName_;
+  std::string FileName_;
   //! If \c true, prints out using sparse MATLAB commands.
   bool UseSparse_;
   //! FILE pointer.

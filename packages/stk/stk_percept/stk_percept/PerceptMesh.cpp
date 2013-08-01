@@ -1046,6 +1046,22 @@ namespace stk {
             field = &vfield;
           }
           break;
+        case 2:
+          // Tensor
+          {
+            TensorFieldType & tfield =  m_metaData->declare_field<TensorFieldType>(name);
+            stk::mesh::put_field( tfield , entity_rank , *part, dimensions[1], dimensions[0] );
+            field = &tfield;
+          }
+          break;
+        case 3:
+          // Quad Point Tensor
+          {
+            QPTensorFieldType & qptfield =  m_metaData->declare_field<QPTensorFieldType>(name);
+            stk::mesh::put_field( qptfield , entity_rank , *part, dimensions[2], dimensions[1], dimensions[0] );
+            field = &qptfield;
+          }
+          break;
         default:
           // error FIXME
           {
@@ -1141,8 +1157,12 @@ namespace stk {
       double * fdata = 0;
 
       if(stride) {
-        const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::fem::FEMMetaData::NODE_RANK, stk::mesh::fem::FEMMetaData::get(*field).universal_part());
-        *stride = r.dimension() ;
+        const stk::mesh::FieldBase::Restriction & r = 
+          field->restriction(stk::mesh::fem::FEMMetaData::NODE_RANK, stk::mesh::fem::FEMMetaData::get(*field).universal_part());
+        if(rank == 0)
+          *stride = r.dimension() ;
+        else
+          *stride = r.stride(rank - 1);
       }
 
       switch(rank)
@@ -1155,6 +1175,16 @@ namespace stk {
         case 1:
           {
             fdata = stk::mesh::field_data( *static_cast<const VectorFieldType *>(field) , node );
+          }
+          break;
+        case 2:
+          {
+            fdata = stk::mesh::field_data( *static_cast<const TensorFieldType *>(field) , node );
+          }
+          break;
+        case 3:
+          {
+            fdata = stk::mesh::field_data( *static_cast<const QPTensorFieldType *>(field) , node );
           }
           break;
         default:
@@ -1178,7 +1208,8 @@ namespace stk {
       double * fdata = 0;
 
       if(stride) {
-        const stk::mesh::FieldBase::Restriction & r = field->restriction(entity.entity_rank(), stk::mesh::fem::FEMMetaData::get(*field).universal_part());
+        const stk::mesh::FieldBase::Restriction & r = 
+          field->restriction(entity.entity_rank(), stk::mesh::fem::FEMMetaData::get(*field).universal_part());
         static const stk::mesh::FieldBase::Restriction empty ;
 
         if (r == empty)
@@ -1193,11 +1224,22 @@ namespace stk {
                   {
                     *stride = field_dimension;
                   }
+                if(rank <= 1){
+                  if (field_dimension > 0)
+                    {
+                      *stride = field_dimension;
+                    }
+                }
+                else
+                  *stride = fr.stride(rank - 1);
               }
           }
         else
           {
-            *stride = r.dimension() ;
+            if(rank == 0)
+              *stride = r.dimension() ;
+            else
+              *stride = r.stride(rank - 1);
           }
       }
 
@@ -1211,6 +1253,16 @@ namespace stk {
         case 1:
           {
             fdata = stk::mesh::field_data( *static_cast<const VectorFieldType *>(field) , entity );
+          }
+          break;
+        case 2:
+          {
+            fdata = stk::mesh::field_data( *static_cast<const TensorFieldType *>(field) , entity );
+          }
+          break;
+        case 3:
+          {
+            fdata = stk::mesh::field_data( *static_cast<const QPTensorFieldType *>(field) , entity );
           }
           break;
         default:
@@ -1235,8 +1287,12 @@ namespace stk {
 
 
       if(stride) {
-        const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::fem::FEMMetaData::NODE_RANK, stk::mesh::fem::FEMMetaData::get(*field).universal_part());
-        *stride = r.dimension() ;
+        const stk::mesh::FieldBase::Restriction & r = 
+          field->restriction(stk::mesh::fem::FEMMetaData::NODE_RANK, stk::mesh::fem::FEMMetaData::get(*field).universal_part());
+        if(rank == 0)
+          *stride = r.dimension() ;
+        else
+          *stride = r.stride(rank - 1);
       }
 
       switch(rank)
@@ -1249,6 +1305,16 @@ namespace stk {
         case 1:
           {
             fdata = stk::mesh::field_data( *static_cast<const VectorFieldType *>(field) , bucket.begin() );
+          }
+          break;
+        case 2:
+          {
+            fdata = stk::mesh::field_data( *static_cast<const TensorFieldType *>(field) , bucket.begin() );
+          }
+          break;
+        case 3:
+          {
+            fdata = stk::mesh::field_data( *static_cast<const QPTensorFieldType *>(field) , bucket.begin() );
           }
           break;
         default:

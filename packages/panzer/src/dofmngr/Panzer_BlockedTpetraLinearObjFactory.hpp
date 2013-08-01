@@ -75,7 +75,7 @@
 
 namespace panzer {
 
-template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=Kokkos::DefaultNode::DefaultNodeType>
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=KokkosClassic::DefaultNode::DefaultNodeType>
 class BlockedTpetraLinearObjFactory : public LinearObjFactory<Traits>
                                     , public ThyraObjFactory<double> {
 public:
@@ -125,7 +125,8 @@ public:
      */
    virtual void adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                                              const LinearObjContainer & globalBCRows,
-                                             LinearObjContainer & ghostedObjs) const;
+                                             LinearObjContainer & ghostedObjs,
+                                             bool zeroVectorRows=false) const;
 
    Teuchos::MpiComm<int> getComm() const;
 
@@ -294,7 +295,8 @@ protected:
    void adjustForDirichletConditions(const VectorType & local_bcs,
                                      const VectorType & global_bcs,
                                      const Teuchos::Ptr<VectorType> & f,
-                                     const Teuchos::Ptr<CrsMatrixType> & A) const;
+                                     const Teuchos::Ptr<CrsMatrixType> & A,
+                                     bool zeroVectorRows) const;
 
    void ghostToGlobalTpetraVector(int i,const VectorType & in,VectorType & out) const;
    void ghostToGlobalTpetraMatrix(int blockRow,const CrsMatrixType & in,CrsMatrixType & out) const;

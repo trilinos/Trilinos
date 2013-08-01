@@ -72,9 +72,9 @@ double power_method(const Epetra_CrsMatrix& A) {
       resid.Update(1.0, z, -lambda, q, 0.0);
       resid.Norm2(&residual);
       if (q.Map().Comm().MyPID()==0)
-	cout << "Iter = " << iter << "  Lambda = " << lambda 
+	std::cout << "Iter = " << iter << "  Lambda = " << lambda 
 	     << "  Two-norm of A*q - lambda*q = " 
-	     << residual << endl;
+	     << residual << std::endl;
     } 
     iter++;
   }

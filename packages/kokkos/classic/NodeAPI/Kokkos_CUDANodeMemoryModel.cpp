@@ -43,7 +43,7 @@
 #include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_FancyOStream.hpp>
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   CUDANodeMemoryModel::CUDANodeMemoryModel() 
   : allocSize_(0)

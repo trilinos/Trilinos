@@ -916,13 +916,13 @@ public:
                                     constPtr, constInd, constVal, uplo, diag);
   }
 
-  /// Return an initialized Kokkos::MultiVector, filled with zeros or random values.
+  /// Return an initialized KokkosClassic::MultiVector, filled with zeros or random values.
   ///
   /// \param node [in] The Kokkos Node instance.
   /// \param numRows [in] The number of rows in the MultiVector.
   /// \param numCols [in] The number of columns in the MultiVector.
   /// \param random [in] If true, fill with random values, else fill with zeros.
-  Teuchos::RCP<Kokkos::MultiVector<scalar_type, node_type> >
+  Teuchos::RCP<KokkosClassic::MultiVector<scalar_type, node_type> >
   makeMultiVector (const Teuchos::RCP<node_type>& node,
                    const ordinal_type numRows,
                    const ordinal_type numCols,
@@ -934,8 +934,8 @@ public:
     using Teuchos::RCP;
     using Teuchos::rcp;
     typedef Teuchos::ScalarTraits<scalar_type> STS;
-    typedef Kokkos::MultiVector<scalar_type, node_type> MV;
-    typedef Kokkos::DefaultArithmetic<MV> MVT;
+    typedef KokkosClassic::MultiVector<scalar_type, node_type> MV;
+    typedef KokkosClassic::DefaultArithmetic<MV> MVT;
 
     RCP<MV> X = rcp (new MV (node));
     const size_t size = as<size_t> (numRows) * as<size_t> (numCols);
@@ -965,16 +965,16 @@ public:
   ///   close to X.
   /// \param Z [in] A "scratch" multivector to use for storing X - Y.
   magnitude_type
-  maxRelativeError (const Teuchos::RCP<const Kokkos::MultiVector<scalar_type, node_type> >& X,
-                    const Teuchos::RCP<const Kokkos::MultiVector<scalar_type, node_type> >& Y,
-                    const Teuchos::RCP<Kokkos::MultiVector<scalar_type, node_type> >& Z) const
+  maxRelativeError (const Teuchos::RCP<const KokkosClassic::MultiVector<scalar_type, node_type> >& X,
+                    const Teuchos::RCP<const KokkosClassic::MultiVector<scalar_type, node_type> >& Y,
+                    const Teuchos::RCP<KokkosClassic::MultiVector<scalar_type, node_type> >& Z) const
   {
     using Teuchos::Array;
     using Teuchos::as;
     typedef Teuchos::ScalarTraits<scalar_type> STS;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
-    typedef Kokkos::MultiVector<scalar_type, node_type> MV;
-    typedef Kokkos::DefaultArithmetic<MV> MVT;
+    typedef KokkosClassic::MultiVector<scalar_type, node_type> MV;
+    typedef KokkosClassic::DefaultArithmetic<MV> MVT;
 
     const ordinal_type numCols = as<ordinal_type> (X->getNumCols ());
     Array<magnitude_type> numerNorms (numCols);
@@ -1048,8 +1048,8 @@ public:
     using std::endl;
     typedef Teuchos::ScalarTraits<scalar_type> STS;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
-    typedef Kokkos::MultiVector<scalar_type, node_type> MV;
-    typedef Kokkos::DefaultArithmetic<MV> MVT;
+    typedef KokkosClassic::MultiVector<scalar_type, node_type> MV;
+    typedef KokkosClassic::DefaultArithmetic<MV> MVT;
 
     Teuchos::FancyOStream& out = *out_;
     if (verbose_) {
@@ -1449,8 +1449,8 @@ public:
     using std::endl;
     typedef Teuchos::ScalarTraits<scalar_type> STS;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
-    typedef Kokkos::MultiVector<scalar_type, node_type> MV;
-    typedef Kokkos::DefaultArithmetic<MV> MVT;
+    typedef KokkosClassic::MultiVector<scalar_type, node_type> MV;
+    typedef KokkosClassic::DefaultArithmetic<MV> MVT;
 
     const ordinal_type numRows = N;
     const ordinal_type numCols = N;
@@ -1978,8 +1978,8 @@ public:
     using Teuchos::UNIT_DIAG;
     typedef Teuchos::ScalarTraits<scalar_type> STS;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
-    typedef Kokkos::MultiVector<scalar_type, node_type> MV;
-    typedef Kokkos::DefaultArithmetic<MV> MVT;
+    typedef KokkosClassic::MultiVector<scalar_type, node_type> MV;
+    typedef KokkosClassic::DefaultArithmetic<MV> MVT;
 
     const bool testTriSolve = (numRows == numCols);
 
@@ -2038,8 +2038,8 @@ public:
                                  const int numTrials) const
   {
     using Teuchos::RCP;
-    typedef Kokkos::MultiVector<scalar_type, node_type> MV;
-    typedef Kokkos::DefaultArithmetic<MV> MVT;
+    typedef KokkosClassic::MultiVector<scalar_type, node_type> MV;
+    typedef KokkosClassic::DefaultArithmetic<MV> MVT;
 
     // SparseOpsType isn't required to tell us how many rows and
     // columns the sparse matrix has, so we find out when we read the
@@ -2102,8 +2102,8 @@ private:
     using Teuchos::Time;
     using Teuchos::TimeMonitor;
     typedef Teuchos::ScalarTraits<scalar_type> STS;
-    typedef Kokkos::MultiVector<scalar_type, node_type> MV;
-    typedef Kokkos::DefaultArithmetic<MV> MVT;
+    typedef KokkosClassic::MultiVector<scalar_type, node_type> MV;
+    typedef KokkosClassic::DefaultArithmetic<MV> MVT;
 
     RCP<MV> X = makeMultiVector (ops.getNode (), numRows, numVecs);
     RCP<MV> Y = makeMultiVector (ops.getNode (), numRows, numVecs);
@@ -2334,8 +2334,8 @@ private:
     using Teuchos::Time;
     using Teuchos::TimeMonitor;
     typedef Teuchos::ScalarTraits<scalar_type> STS;
-    typedef Kokkos::MultiVector<scalar_type, node_type> MV;
-    typedef Kokkos::DefaultArithmetic<MV> MVT;
+    typedef KokkosClassic::MultiVector<scalar_type, node_type> MV;
+    typedef KokkosClassic::DefaultArithmetic<MV> MVT;
 
     RCP<MV> X = makeMultiVector (ops.getNode (), numCols, numVecs);
     RCP<MV> Y = makeMultiVector (ops.getNode (), numRows, numVecs);

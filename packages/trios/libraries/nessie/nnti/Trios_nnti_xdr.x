@@ -114,9 +114,6 @@ enum NNTI_transport_id_t {
     /** @brief Use Cray Gemini to transfer rpc requests. */
     NNTI_TRANSPORT_MPI,
 
-    /** @brief Use Cray LUC to transfer rpc requests. */
-    NNTI_TRANSPORT_LUC,
-
     /** @brief Use a local buffer (no remote operations). */
     NNTI_TRANSPORT_LOCAL,
 
@@ -259,31 +256,12 @@ struct NNTI_ib_process_t {
 
 
 
-
-
-
 /**
- * @brief The ID of a Cray LUC Endpoint.
+ * @brief Remote process identifier for BG/P DCMF.
  *
- * The <tt>\ref NNTI_luc_endpoint_id</tt> type identifies a particular LUC process
+ * The <tt>\ref NNTI_bgpdcmf_process_t</tt> identifies a particular process
  * on a particular node.
  */
-typedef uint64_t NNTI_luc_endpoint_id;    /* id used to contact a LUC program */
-
-/**
- * @brief Remote process identifier for Cray LUC.
- *
- * The <tt>\ref NNTI_luc_process_t</tt> identifies a particular process
- * on a particular node.
- */
-struct NNTI_luc_process_t {
-    /** @brief ID used to contact a LUC program */
-    NNTI_luc_endpoint_id req_endpoint_id;
-    /** @brief ID used to do RDMA transfers with a LUC program */
-    NNTI_luc_endpoint_id rdma_endpoint_id;
-};
-
-
 struct NNTI_bgpdcmf_process_t {
         int     xcoord;
         int     ycoord;
@@ -349,8 +327,6 @@ union NNTI_remote_process_t switch (NNTI_transport_id_t transport_id) {
     case NNTI_TRANSPORT_PORTALS: NNTI_portals_process_t portals;
     /** @brief The IB representation of a process on the network. */
     case NNTI_TRANSPORT_IB:      NNTI_ib_process_t      ib;
-    /** @brief The Cray LUC representation of a process on the network. */
-    case NNTI_TRANSPORT_LUC:     NNTI_luc_process_t     luc;
     /** @brief The Cray Gemini representation of a process on the network. */
     case NNTI_TRANSPORT_GEMINI:  NNTI_gni_process_t     gni;
     /** @brief The BGP  DCMF library usage  on the torus network. */
@@ -364,8 +340,6 @@ union NNTI_remote_process_t {
     NNTI_portals_process_t portals;
     /** @brief The IB representation of a process on the network. */
     NNTI_ib_process_t      ib;
-    /** @brief The Cray LUC representation of a process on the network. */
-    NNTI_luc_process_t     luc;
     /** @brief The Cray Gemini representation of a process on the network. */
     NNTI_gni_process_t     gni;
     /** @brief The BGPDMA representation of a process on the network. */
@@ -454,16 +428,6 @@ struct NNTI_ib_rdma_addr_t {
 
 
 
-
-/**
- * @brief RDMA address used for LUC implementation.
- */
-struct NNTI_luc_rdma_addr_t {
-    /** @brief Address of the memory buffer cast to a uint64_t. */
-    uint64_t buf;
-    /** @brief Size of the the memory buffer. */
-    uint32_t size;
-};
 
 enum NNTI_gni_buffer_type_t {
     NNTI_GNI_RDMA_INITIATOR,
@@ -564,8 +528,6 @@ union NNTI_remote_addr_t switch (NNTI_transport_id_t transport_id) {
     case NNTI_TRANSPORT_PORTALS: NNTI_portals_rdma_addr_t portals;
     /** @brief The IB representation of a memory region. */
     case NNTI_TRANSPORT_IB:      NNTI_ib_rdma_addr_t      ib;
-    /** @brief The Cray LUC representation of a memory region. */
-    case NNTI_TRANSPORT_LUC:     NNTI_luc_rdma_addr_t     luc;
     /** @brief The Cray Gemini representation of a memory region. */
     case NNTI_TRANSPORT_GEMINI:  NNTI_gni_rdma_addr_t     gni;
     /** @brief The BGP DCMF representation of a memory region. */
@@ -579,8 +541,6 @@ union NNTI_remote_addr_t {
     NNTI_portals_rdma_addr_t portals;
     /** @brief The IB representation of a memory region. */
     NNTI_ib_rdma_addr_t      ib;
-    /** @brief The Cray LUC representation of a memory region. */
-    NNTI_luc_rdma_addr_t     luc;
     /** @brief The Cray Gemini representation of a memory region. */
     NNTI_gni_rdma_addr_t     gni;
     /** @brief The BGP DCMF representation of a memory region. */

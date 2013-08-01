@@ -106,9 +106,9 @@ VisualizeSmoothers(int NumPreCycles, int NumPostCycles)
   }
   else
   {
-    cout << PrintMsg_ << "You need to specify `viz: enable' = true" << endl;
-    cout << PrintMsg_ << "in the parameter list before building the ML" << endl;
-    cout << PrintMsg_ << "preconditioner in order to visualize" << endl;
+    std::cout << PrintMsg_ << "You need to specify `viz: enable' = true" << std::endl;
+    std::cout << PrintMsg_ << "in the parameter list before building the ML" << std::endl;
+    std::cout << PrintMsg_ << "preconditioner in order to visualize" << std::endl;
     ML_CHK_ERR(-1);
   }
 
@@ -132,9 +132,9 @@ VisualizeCycle(int NumCycles)
   }
   else
   {
-    cout << PrintMsg_ << "You need to specify `viz: enable' = true" << endl;
-    cout << PrintMsg_ << "in the parameter list before building the ML" << endl;
-    cout << PrintMsg_ << "preconditioner in order to visualize" << endl;
+    std::cout << PrintMsg_ << "You need to specify `viz: enable' = true" << std::endl;
+    std::cout << PrintMsg_ << "in the parameter list before building the ML" << std::endl;
+    std::cout << PrintMsg_ << "preconditioner in order to visualize" << std::endl;
     ML_CHK_ERR(-1);
   }
   return(0);
@@ -171,7 +171,7 @@ Visualize(bool VizAggre, bool VizPreSmoother,
 
     // stats about level matrix sizes
     if( verbose_ ) 
-      cout << endl << "- number of rows for each level's matrix:" << endl << endl;
+      std::cout << std::endl << "- number of rows for each level's matrix:" << std::endl << std::endl;
 
     for( int ilevel=0 ; ilevel < NumLevels_ ; ++ilevel ) {
       int imin, iavg, imax;
@@ -184,13 +184,13 @@ Visualize(bool VizAggre, bool VizPreSmoother,
     printf( "\t(level %d) rows per process (min) = %d\n", ilevel, imin);
     printf( "\t(level %d) rows per process (avg) = %d\n", ilevel, iavg);
     printf( "\t(level %d) rows per process (max) = %d\n", ilevel, imax);
-    cout << endl;
+    std::cout << std::endl;
       }
     } 
  
     if( verbose_ ) 
-      cout << endl << "- analysis of the computational domain (finest level):" 
-    << endl << endl;
+      std::cout << std::endl << "- analysis of the computational domain (finest level):" 
+    << std::endl << std::endl;
     ML_Aggregate_Stats_Analyze(ml_,aggregates);
 
   }
@@ -201,7 +201,7 @@ Visualize(bool VizAggre, bool VizPreSmoother,
   // - Paraview, or any other package that can read .vtk files (1D/2D/3D)
 
   int Format;
-  string FileFormat = List_.get("viz: output format", "vtk");
+  std::string FileFormat = List_.get("viz: output format", "vtk");
   // you are a cool guy if you plot with "xyz"
   if( FileFormat == "xyz" ) Format = 1;
   // you are a poor man if you need "dx". God bless you.
@@ -209,9 +209,9 @@ Visualize(bool VizAggre, bool VizPreSmoother,
   // you are a very cool guy if you plot with the "vtk" option (paraview)
   else if( FileFormat == "vtk" ) Format = 2;
   else {
-    cerr << ErrorMsg_ << "Option `viz: output format' has an incorrect" << endl
-      << ErrorMsg_ << "value (" << FileFormat << "). Possible values are" << endl
-      << ErrorMsg_ << "<dx> / <xyz> / <vtk>" << endl;
+    std::cerr << ErrorMsg_ << "Option `viz: output format' has an incorrect" << std::endl
+      << ErrorMsg_ << "value (" << FileFormat << "). Possible values are" << std::endl
+      << ErrorMsg_ << "<dx> / <xyz> / <vtk>" << std::endl;
     exit( EXIT_FAILURE );
   }
 
@@ -229,18 +229,18 @@ Visualize(bool VizAggre, bool VizPreSmoother,
   // visualization routines. OpenDX cannot visualize vectors.
 
   if( ( VizPreSmoother || VizPostSmoother || VizCycle ) && ( Format == 0) ) {
-    cerr << endl;
-    cerr << ErrorMsg_ << "Option `viz: output format' == `dx' cannot be used"
-         << endl << ErrorMsg_
-         << "to visualize the effect of smoothers and cycle." << endl;
-    cerr << endl;
+    std::cerr << std::endl;
+    std::cerr << ErrorMsg_ << "Option `viz: output format' == `dx' cannot be used"
+         << std::endl << ErrorMsg_
+         << "to visualize the effect of smoothers and cycle." << std::endl;
+    std::cerr << std::endl;
     VizPreSmoother = false;
     VizPostSmoother = false;
     VizCycle = false;
   }
 
   if( verbose_ ) 
-    cout << endl << "- visualization:" << endl << endl;
+    std::cout << std::endl << "- visualization:" << std::endl << std::endl;
 
   // =============================================================== //
   // cycle over all levels. Note that almost the same thing          //
@@ -255,7 +255,7 @@ Visualize(bool VizAggre, bool VizPreSmoother,
   // and it works.                                                   //
   // =============================================================== //
 
-  cout << "cycling thru levels 0 to " << NumLevels_ -1 << endl;
+  std::cout << "cycling thru levels 0 to " << NumLevels_ -1 << std::endl;
 
   for( int ilevel=0 ; ilevel<NumLevels_ ; ++ilevel ) {
 

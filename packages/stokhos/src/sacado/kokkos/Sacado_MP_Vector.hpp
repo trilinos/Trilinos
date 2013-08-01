@@ -48,7 +48,7 @@
 
 #include <ostream>      // for std::ostream
 
-#include "KokkosArray_Macros.hpp"
+#include "Kokkos_Macros.hpp"
 
 #include "Sacado_MP_ExpressionTraits.hpp"
 #include "Sacado_MP_VectorTraits.hpp"
@@ -95,7 +95,7 @@ namespace Sacado {
        * This assumes a CRTP pattern where T is infact derived from
        * Expr<T>.  This will only compile if this infact the case.
        */
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       const derived_type& derived() const {
         return static_cast<const derived_type&>(*this);
       }
@@ -137,30 +137,30 @@ namespace Sacado {
       /*!
        * Sets size to 1 and first coefficient to 0 (represents a constant).
        */
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       Vector() : s(1) {}
 
       //! Constructor with supplied value \c x
       /*!
        * Sets size to 1 and first coefficient to x (represents a constant).
        */
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       Vector(const value_type& x) : s(1) { s.init(x); }
 
       //! Constructor with specified size \c sz
       /*!
        * Creates array of size \c sz and initializes coeffiencts to 0.
        */
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       Vector(ordinal_type sz, const value_type& x) : s(sz,x) {}
 
       //! Copy constructor
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       Vector(const Vector& x) : s(x.s) {}
 
       //! Copy constructor from any Expression object
       template <typename S>
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       Vector(const Expr<S,node_type>& xx) :
         s(xx.derived().size()) {
         typedef typename Expr<S,node_type>::derived_type expr_type;
@@ -183,38 +183,38 @@ namespace Sacado {
       }
 
       //! Destructor
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       ~Vector() {}
 
       //! Initialize coefficients to value
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       void init(const value_type& v) { s.init(v); }
 
       //! Initialize coefficients to an array of values
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       void init(const value_type* v) { s.init(v); }
 
       //! Initialize coefficients from an Vector with different storage
       template <typename S, typename N>
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       void init(const Vector<S,N>& v) {
         s.init(v.s.coeff(), v.s.size());
       }
 
       //! Load coefficients to an array of values
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       void load(value_type* v) { s.load(v); }
 
       //! Load coefficients into an Vector with different storage
       template <typename S, typename N>
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       void load(Vector<S,N>& v) { s.load(v.s.coeff()); }
 
       //! Reset size
       /*!
        * Coefficients are preserved.
        */
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       void reset(ordinal_type sz_new) {
         ordinal_type sz = this->size();
         s.resize(sz_new);
@@ -233,12 +233,12 @@ namespace Sacado {
        * shared and this method is not called, any changes to the coefficients
        * by coeff() or fastAccessCoeff() may change other vector objects.
        */
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       void copyForWrite() {  }
 
       //! Returns whether two ETV objects have the same values
       template <typename S>
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       bool isEqualTo(const Expr<S,node_type>& xx) const {
         const typename Expr<S,node_type>::derived_type& x = xx.derived();
         typedef IsEqual<value_type> IE;
@@ -255,14 +255,14 @@ namespace Sacado {
       //@{
 
       //! Assignment operator with constant right-hand-side
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       Vector& operator=(const value_type& x) {
         s.init(x);
         return *this;
       }
 
       //! Assignment with Vector right-hand-side
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       Vector& operator=(const Vector& x) {
         s = x.s;
         return *this;
@@ -270,7 +270,7 @@ namespace Sacado {
 
       //! Assignment with any expression right-hand-side
       template <typename S>
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       Vector& operator=(const Expr<S,node_type>& xx) {
         typedef typename Expr<S,node_type>::derived_type expr_type;
         const expr_type& x = xx.derived();
@@ -300,11 +300,11 @@ namespace Sacado {
        */
 
       //! Returns storage object
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       const storage_type& storage() const { return s; }
 
       //! Returns storage object
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       storage_type& storage() { return s; }
 
       /*!
@@ -313,11 +313,11 @@ namespace Sacado {
       //@{
 
       //! Returns value
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       const_reference val() const { return s[0]; }
 
       //! Returns value
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       reference val() { return s[0]; }
 
       //@}
@@ -328,40 +328,40 @@ namespace Sacado {
       //@{
 
       //! Returns size of polynomial
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       ordinal_type size() const { return s.size();}
 
       //! Returns true if polynomial has size >= sz
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       bool hasFastAccess(ordinal_type sz) const { return s.size()>=sz;}
 
       //! Returns Hermite coefficient array
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       const_pointer coeff() const { return s.coeff();}
 
       //! Returns Hermite coefficient array
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       pointer coeff() { return s.coeff();}
 
       //! Returns degree \c i term with bounds checking
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       value_type coeff(ordinal_type i) const {
         return i<s.size() ? s[i] : s[0]; }
 
       //! Returns degree \c i term without bounds checking
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       reference fastAccessCoeff(ordinal_type i) { return s[i];}
 
       //! Returns degree \c i term without bounds checking
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       value_type fastAccessCoeff(ordinal_type i) const { return s[i];}
 
       template <int i>
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       value_type getCoeff() const { return s.template getCoeff<i>(); }
 
       template <int i>
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       reference getCoeff() { return s.template getCoeff<i>(); }
 
       //@}
@@ -372,7 +372,7 @@ namespace Sacado {
       //@{
 
       //! Addition-assignment operator with constant right-hand-side
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       Vector& operator += (const value_type& x) {
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] += x;
@@ -380,7 +380,7 @@ namespace Sacado {
       }
 
       //! Subtraction-assignment operator with constant right-hand-side
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       Vector& operator -= (const value_type& x) {
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] -= x;
@@ -388,7 +388,7 @@ namespace Sacado {
       }
 
       //! Multiplication-assignment operator with constant right-hand-side
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       Vector& operator *= (const value_type& x) {
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] *= x;
@@ -396,7 +396,7 @@ namespace Sacado {
       }
 
       //! Division-assignment operator with constant right-hand-side
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       Vector& operator /= (const value_type& x) {
         for (ordinal_type i=0; i<s.size(); i++)
           s[i] /= x;
@@ -405,7 +405,7 @@ namespace Sacado {
 
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       Vector& operator += (const Expr<S,node_type>& x) {
         *this = *this + x;
         return *this;
@@ -413,7 +413,7 @@ namespace Sacado {
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       Vector& operator -= (const Expr<S,node_type>& x) {
         *this = *this - x;
         return *this;
@@ -421,7 +421,7 @@ namespace Sacado {
 
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       Vector& operator *= (const Expr<S,node_type>& x) {
         *this = *this * x;
         return *this;
@@ -429,7 +429,7 @@ namespace Sacado {
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       Vector& operator /= (const Expr<S,node_type>& x) {
         *this = *this / x;
         return *this;
@@ -437,7 +437,7 @@ namespace Sacado {
 
       //@}
 
-      KOKKOSARRAY_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       std::string name() const { return "x"; }
 
     protected:
@@ -449,11 +449,11 @@ namespace Sacado {
         storage_type& s;
         const expr_type& x;
 
-        KOKKOSARRAY_INLINE_FUNCTION
+        KOKKOS_INLINE_FUNCTION
         StaticOp(storage_type& s_, const expr_type& x_) : s(s_), x(x_) {}
 
         template <typename ArgT>
-        KOKKOSARRAY_INLINE_FUNCTION
+        KOKKOS_INLINE_FUNCTION
         void operator() (ArgT arg) const {
           const int Arg = ArgT::value;
           s.template getCoeff<Arg>() = x.template getCoeff<Arg>();
@@ -482,7 +482,7 @@ namespace Sacado {
     };
 
     template <typename Storage, typename Node>
-    KOKKOSARRAY_INLINE_FUNCTION
+    KOKKOS_INLINE_FUNCTION
     std::ostream&
     operator << (std::ostream& os,
                  const Vector<Storage,Node>& a)

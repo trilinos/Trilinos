@@ -49,7 +49,7 @@
 
 namespace {
 
-  using Kokkos::OpenMPNode;
+  using KokkosClassic::OpenMPNode;
 
   template <>
   std::pair<double,double> nativeTimings<float,OpenMPNode>(int N, int numIters, float &result, const RCP<OpenMPNode> &node) {

@@ -44,7 +44,7 @@
 
 #include <Kokkos_ConfigDefs.hpp>
 
-namespace Kokkos {
+namespace KokkosClassic {
 namespace Raw {
 
 template<class OffsetType, class OrdinalType>
@@ -145,7 +145,7 @@ mergeRows (const OffsetType ptrOut[],
   TEUCHOS_TEST_FOR_EXCEPTION(
     markOut >= endOut && (mark1 < end1 || mark2 < end2),
     std::logic_error,
-    "Kokkos::Raw::mergeRows: Row " << i << " of the output array has "
+    "KokkosClassic::Raw::mergeRows: Row " << i << " of the output array has "
     << (end1 - mark1) << " + " << (end2 - mark2) << " too few entries.");
   return markOut;
 }
@@ -308,7 +308,7 @@ addSparseMatrices (OffsetType*& ptrResult,
 }
 
 } // namespace Raw
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif // __Kokkos_Raw_addSparseMatrices_def_hpp
 

@@ -125,10 +125,10 @@ class AztecOO_StatusTest {
   virtual  AztecOO_StatusType GetStatus() const = 0;
 
   //! Output formatted description of stopping test to output stream.
-  virtual ostream& Print(ostream& stream, int indent = 0) const = 0;
+  virtual std::ostream& Print(std::ostream& stream, int indent = 0) const = 0;
   //@}
 
-  virtual void PrintStatus(ostream& os, AztecOO_StatusType type) const {
+  virtual void PrintStatus(std::ostream& os, AztecOO_StatusType type) const {
     os << std::setiosflags(std::ios::left) << std::setw(13) << std::setfill('.');
     switch (type) {
     case  Failed:
