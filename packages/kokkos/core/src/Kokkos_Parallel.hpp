@@ -295,6 +295,9 @@ struct ReduceAdapter
   reference_type reference( void * p ) { return *((ScalarType*) p); }
 
   KOKKOS_INLINE_FUNCTION static
+  reference_type reference( void * p , unsigned i ) { return ((ScalarType*) p)[i]; }
+
+  KOKKOS_INLINE_FUNCTION static
   pointer_type pointer( reference_type p ) { return & p ; }
 
   const FunctorType  m_functor ;
@@ -336,6 +339,9 @@ struct ReduceAdapter< FunctorType , ScalarType ,
 
   KOKKOS_INLINE_FUNCTION static
   reference_type reference( void * p ) { return *(ScalarType*) p ; }
+
+  KOKKOS_INLINE_FUNCTION static
+  reference_type reference( void * p , unsigned i ) { return ((ScalarType*) p)[i]; }
 
   KOKKOS_INLINE_FUNCTION static
   pointer_type pointer( reference_type p ) { return & p ; }
@@ -382,6 +388,9 @@ struct ReduceAdapter< FunctorType , ScalarType[] , Enable >
   ScalarType * reference( void * p ) { return (ScalarType*) p ; }
 
   KOKKOS_INLINE_FUNCTION static
+  reference_type reference( void * p , unsigned i ) { return ((ScalarType*) p)+i; }
+
+  KOKKOS_INLINE_FUNCTION static
   pointer_type pointer( reference_type p ) { return p ; }
 
   const FunctorType  m_functor ;
@@ -423,6 +432,9 @@ struct ReduceAdapter< FunctorType , ScalarType[] ,
 
   KOKKOS_INLINE_FUNCTION static
   ScalarType * reference( void * p ) { return (ScalarType*) p ; }
+
+  KOKKOS_INLINE_FUNCTION static
+  reference_type reference( void * p , unsigned i ) { return ((ScalarType*) p)+i; }
 
   KOKKOS_INLINE_FUNCTION static
   pointer_type pointer( reference_type p ) { return p ; }

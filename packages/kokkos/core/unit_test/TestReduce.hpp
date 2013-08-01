@@ -151,10 +151,10 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator()( size_type iwork , ScalarType dst[] ) const
   {
+    const unsigned tmp[3] = { 1 , iwork + 1 , nwork - iwork };
+
     for ( unsigned i = 0 ; i < value_count ; ++i ) {
-      if      ( 0 == i % 3 ) dst[i] += 1 ;
-      else if ( 1 == i % 3 ) dst[i] += iwork + 1 ;
-      else                   dst[i] += nwork - iwork ;
+      dst[i] += tmp[ i % 3 ];
     }
   }
 };

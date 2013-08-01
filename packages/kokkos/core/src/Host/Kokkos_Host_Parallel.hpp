@@ -290,7 +290,7 @@ public:
 #pragma simd
 #pragma ivdep
       for ( size_type j = 0 ; j < HostSpace::WORK_ALIGNMENT ; ++j ) {
-        m_reduce.init( this_thread.reduce_data() , j );
+        m_reduce.m_functor.init( m_reduce.reference( this_thread.reduce_data() , j ) );
       }
 
 #pragma simd vectorlength(work_align)
@@ -299,7 +299,10 @@ public:
         m_reduce.m_functor( iwork , m_reduce.reference( this_thread.reduce_data() , iwork & work_mask ) );
       }
 
-      m_reduce.template join< HostSpace::WORK_ALIGNMENT >( this_thread.reduce_data() );
+      for ( size_type j = 1 ; j < HostSpace::WORK_ALIGNMENT ; ++j ) {
+        m_reduce.m_functor.join( m_reduce.reference( this_thread.reduce_data() ) ,
+                                 m_reduce.reference( this_thread.reduce_data() , j ) );
+      }
     }
 #endif
 

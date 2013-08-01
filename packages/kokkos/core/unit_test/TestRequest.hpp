@@ -147,6 +147,8 @@ public:
       Kokkos::parallel_reduce( request , functor_type(nwork) , result[i] );
     }
 
+    device_type::fence();
+
     for ( unsigned i = 0 ; i < Repeat ; ++i ) {
       for ( unsigned j = 0 ; j < Count ; ++j ) {
         const unsigned long correct = 0 == j % 3 ? nw : nsum ;

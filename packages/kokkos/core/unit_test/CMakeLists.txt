@@ -7,11 +7,12 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../TPL)
 SET(SOURCES
   UnitTestMain.cpp 
   TestHost.cpp 
+  TestThreads.cpp 
   TestTileHost.cpp 
   ../TPL/gtest/gtest-all.cc
   )
 
-SET(LIBRARIES kokkosarray_devicehost kokkosarray_impl)
+SET(LIBRARIES kokkosarray_devicehost kokkosarray_devicethreads kokkosarray_impl)
 
 IF(Kokkos_ENABLE_OpenMP)
   LIST( APPEND SOURCES

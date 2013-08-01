@@ -101,8 +101,8 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-template< class FunctorType >
-class ParallelReduce< FunctorType , size_t , OpenMP > {
+template< class FunctorType , class WorkSpec >
+class ParallelReduce< FunctorType , WorkSpec , OpenMP > {
 public:
 
   typedef Kokkos::HostSpace::size_type  size_type ;
@@ -153,7 +153,7 @@ public:
 #pragma simd
 #pragma ivdep
         for ( size_type j = 0 ; j < work_align ; ++j ) {
-          reduce.init( thread.reduce_data() , j );
+          reduce.m_functor.init( reduce.reference( thread.reduce_data() , j ) );
         }
 
 #pragma simd vectorlength(work_align)
@@ -162,7 +162,10 @@ public:
           functor( iwork , reduce.reference( thread.reduce_data() , iwork & work_mask ) );
         }
 
-        reduce.template join< work_align >( thread.reduce_data() );
+        for ( size_type j = 1 ; j < work_align ; ++j ) {
+          reduce.m_functor.join( reduce.reference( thread.reduce_data() ) ,
+                                 reduce.reference( thread.reduce_data() , j ) );
+        }
 #endif
       }
     }

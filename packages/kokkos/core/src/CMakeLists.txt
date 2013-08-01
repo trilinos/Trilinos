@@ -20,6 +20,7 @@ INSTALL(FILES ${HEADERS} DESTINATION ${TRILINOS_INCDIR}/)
 #-----------------------------------------------------------------------------
 
 ADD_SUBDIRECTORY(Host)
+ADD_SUBDIRECTORY(Threads)
 ADD_SUBDIRECTORY(impl)
 
 IF(Kokkos_ENABLE_OpenMP)
