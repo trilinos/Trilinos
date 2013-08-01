@@ -213,13 +213,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, locallyReplicatedPara
 {
   ECHO(const RCP<const Teuchos::Comm<Ordinal> > comm =
     Teuchos::DefaultComm<Teuchos_Ordinal>::getComm());
-  ECHO(RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
+  ECHO(const RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
     locallyReplicatedDefaultSpmdVectorSpace<Scalar>(comm, g_localDim));
   TEST_EQUALITY(vs->getComm(), comm);
   TEST_EQUALITY_CONST(vs->localOffset(), as<Ordinal>(0));
   TEST_EQUALITY(vs->localSubDim(), as<Ordinal>(g_localDim));
   TEST_EQUALITY_CONST(vs->isLocallyReplicated(), true);
   TEST_EQUALITY(vs->dim(), as<Ordinal>(g_localDim));
+  ECHO(const RCP<const VectorSpaceBase<Scalar> > vs_clone =
+    vs->clone());
+  TEST_EQUALITY(vs_clone->dim(), as<Ordinal>(g_localDim));
+  TEST_ASSERT(vs->isCompatible(*vs_clone));
+  TEST_ASSERT(vs_clone->isCompatible(*vs));
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,

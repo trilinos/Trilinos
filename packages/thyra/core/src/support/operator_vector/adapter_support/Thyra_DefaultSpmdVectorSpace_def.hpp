@@ -236,7 +236,8 @@ template<class Scalar>
 RCP< const VectorSpaceBase<Scalar> >
 DefaultSpmdVectorSpace<Scalar>::clone() const
 {
-  return defaultSpmdVectorSpace<Scalar>(comm_,localSubDim_,this->dim());
+  return defaultSpmdVectorSpace<Scalar>(comm_, localSubDim_, this->dim(),
+    this->isLocallyReplicated());
 }
 
 
