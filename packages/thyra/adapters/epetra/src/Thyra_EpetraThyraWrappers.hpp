@@ -45,6 +45,7 @@
 
 #include "Thyra_EpetraTypes.hpp"
 
+/// @file
 
 namespace Teuchos { template<class Ordinal> class Comm; }
 

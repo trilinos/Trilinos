@@ -52,12 +52,31 @@
 #include "NOX_StatusTest_Factory.H"
 
 #include "Teuchos_as.hpp"
-#include "Teuchos_toString.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_Assert.hpp"
 
 #include <stdexcept>
 #include <ostream>
+
+
+namespace Piro {
+
+namespace Detail {
+
+class ModelEvaluatorParamName {
+public:
+  explicit ModelEvaluatorParamName(const Teuchos::RCP<const Teuchos::Array<std::string> > &p_names);
+  std::string operator()(Teuchos_Ordinal k) const;
+
+private:
+  Teuchos::RCP<const Teuchos::Array<std::string> > p_names_;
+  enum { Default, OneShared, FullList } type_;
+};
+
+} // namespace Detail
+
+} // namespace Piro
+
 
 template <typename Scalar>
 Piro::LOCASolver<Scalar>::LOCASolver(
@@ -77,11 +96,10 @@ Piro::LOCASolver<Scalar>::LOCASolver(
   stepper_()
 {
   const int l = 0; // TODO: Allow user to select parameter index
-  const Thyra::Ordinal p_entry_count = model->get_p_space(l)->dim();
+  const Detail::ModelEvaluatorParamName paramName(model_->get_p_names(l));
+  const Thyra::Ordinal p_entry_count = model_->get_p_space(l)->dim();
   for (Teuchos_Ordinal k = 0; k < p_entry_count; ++k) {
-    //TODO: Use names from model->get_p_names(l)
-    const std::string label = "Parameter " + Teuchos::toString(k);
-    (void) paramVector_.addParameter(label);
+    (void) paramVector_.addParameter(paramName(k));
   }
 
   const NOX::Thyra::Vector initialGuess(*model->getNominalValues().get_x());

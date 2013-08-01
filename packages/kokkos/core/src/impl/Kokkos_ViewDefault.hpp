@@ -736,6 +736,19 @@ public:
   KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_5() const { return m_shape.N5 ; }
   KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_6() const { return m_shape.N6 ; }
   KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_7() const { return m_shape.N7 ; }
+  KOKKOS_INLINE_FUNCTION typename traits::size_type size() const
+  {
+    return   m_shape.N0
+           * m_shape.N1
+           * m_shape.N2
+           * m_shape.N3
+           * m_shape.N4
+           * m_shape.N5
+           * m_shape.N6
+           * m_shape.N7
+           ;
+  }
+
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION
@@ -799,7 +812,7 @@ public:
         const size_t n7 = 0 )
     : m_ptr_on_device(0)
     {
-	  alloc( *this, ptr, n0, n1, n2, n3, n4, n5, n6, n7 );
+	  (void)alloc( *this, ptr, n0, n1, n2, n3, n4, n5, n6, n7 );
     }
   //------------------------------------
   // Is not allocated

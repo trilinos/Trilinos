@@ -399,6 +399,7 @@ IF (Stokhos_ENABLE_KokkosCore)
     kokkos/Stokhos_SymmetricDiagonalSpec.hpp
     kokkos/Stokhos_CrsProductTensor.hpp
     kokkos/Stokhos_TiledCrsProductTensor.hpp
+    kokkos/Stokhos_CooProductTensor.hpp
     kokkos/Stokhos_FlatSparse3Tensor.hpp
     kokkos/Stokhos_FlatSparse3Tensor_kji.hpp
     kokkos/Stokhos_LinearSparse3Tensor.hpp
@@ -410,6 +411,7 @@ IF (Stokhos_ENABLE_KokkosCore)
     kokkos/Host/Stokhos_Host_SymmetricDiagonalSpec.hpp
     kokkos/Host/Stokhos_Host_CrsProductTensor.hpp
     kokkos/Host/Stokhos_Host_TiledCrsProductTensor.hpp
+    kokkos/Host/Stokhos_Host_CooProductTensor.hpp
     kokkos/Host/Stokhos_Host_FlatSparse3Tensor.hpp
     kokkos/Host/Stokhos_Host_FlatSparse3Tensor_kji.hpp
     kokkos/Host/Stokhos_Host_LinearSparse3Tensor.hpp
@@ -424,6 +426,7 @@ IF (Stokhos_ENABLE_KokkosCore)
       kokkos/Cuda/Stokhos_Cuda_SymmetricDiagonalSpec.hpp
       kokkos/Cuda/Stokhos_Cuda_CrsProductTensor.hpp
       kokkos/Cuda/Stokhos_Cuda_TiledCrsProductTensor.hpp
+      kokkos/Cuda/Stokhos_Cuda_CooProductTensor.hpp
       kokkos/Cuda/Stokhos_Cuda_FlatSparse3Tensor.hpp
       kokkos/Cuda/Stokhos_Cuda_FlatSparse3Tensor_kji.hpp
       kokkos/Cuda/Stokhos_Cuda_LinearSparse3Tensor.hpp

@@ -127,7 +127,7 @@ public:
   // @{ \name Miscellaneous methods
 
   //! Prints out basic information about \c this object.
-  ostream& Print(std::ostream& os, const bool verbose = true) const;
+  std::ostream& Print(std::ostream& os, const bool verbose = true) const;
 
 private:
 

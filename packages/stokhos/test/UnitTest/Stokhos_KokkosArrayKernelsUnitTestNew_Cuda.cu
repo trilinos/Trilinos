@@ -38,6 +38,7 @@
 #include "Stokhos_Cuda_SymmetricDiagonalSpec.hpp"
 #include "Stokhos_Cuda_CrsProductTensor.hpp"
 #include "Stokhos_Cuda_TiledCrsProductTensor.hpp"
+#include "Stokhos_Cuda_CooProductTensor.hpp"
 #include "Stokhos_Cuda_LinearSparse3Tensor.hpp"
 
 #include "Kokkos_Cuda.hpp"
@@ -94,6 +95,22 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, TiledCrsProductTensor_Cuda ) {
   params.set("Tile Size", 10);
   params.set("Max Tiles", 10000);
   success = test_crs_product_tensor<Scalar,Tensor,Device>(setup, out, params);
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CooProductTensorPacked_Cuda ) {
+  typedef double Scalar;
+  typedef Kokkos::Cuda Device;
+  typedef Stokhos::CooProductTensor<Scalar,Device,true> Tensor;
+
+  success = test_crs_product_tensor<Scalar,Tensor,Device>(setup, out);
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CooProductTensorUnpacked_Cuda ) {
+  typedef double Scalar;
+  typedef Kokkos::Cuda Device;
+  typedef Stokhos::CooProductTensor<Scalar,Device,false> Tensor;
+
+  success = test_crs_product_tensor<Scalar,Tensor,Device>(setup, out);
 }
 
 TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, LinearTensorSymmetric_Cuda ) {
