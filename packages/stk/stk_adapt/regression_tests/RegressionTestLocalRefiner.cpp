@@ -1233,15 +1233,16 @@ namespace stk
         }
         ThrowRequire(!(all_marked_for_refinement && all_marked_for_unrefinement));
 
+        int mark=stk::adapt::DO_NOTHING;
         if (all_marked_for_refinement)
         {
-          return stk::adapt::DO_REFINE;
+          mark=stk::adapt::DO_REFINE;
         }
         else if (all_marked_for_unrefinement)
         {
-          return stk::adapt::DO_UNREFINE;
+          mark= stk::adapt::DO_UNREFINE;
         }
-        return stk::adapt::DO_NOTHING;
+        return mark;
       }
 
       void
@@ -1381,13 +1382,13 @@ namespace stk
             element_marker.update_markers();
             breaker.doBreak();
 
-            for (int iunref_pass=0; iunref_pass < 3; iunref_pass++)
+            for (int iunref_pass=0; iunref_pass < 1; iunref_pass++)
             {
               std::cout << "P[" << eMesh.get_rank() << "] iunref_pass= " << iunref_pass << std::endl;
-              mimic_encr_function_and_element_marker(eMesh, time, *function_field, marker_field);
-              element_marker.update_markers();
+              //mimic_encr_function_and_element_marker(eMesh, time, *function_field, marker_field);
+              //element_marker.update_markers();
               ElementUnrefineCollection elements_to_unref = breaker.buildUnrefineList();
-              //std::cout << "elements_to_unref.size() = " << elements_to_unref.size() << std::endl;
+              std::cout << "tmp srk ipass= " << ipass << " elements_to_unref.size() = " << elements_to_unref.size() << std::endl;
               breaker.unrefineTheseElements(elements_to_unref);
             }
 

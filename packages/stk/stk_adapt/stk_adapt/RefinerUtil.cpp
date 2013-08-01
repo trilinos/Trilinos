@@ -396,7 +396,7 @@ addAncestorsToUnrefineList(percept::PerceptMesh& eMesh, int num_levels_to_add, E
                 }
             }
         }
-      std::cout << "RefinerUtil::addAncestorsToUnrefineList ilev= " << ilev << " to_add.size= " << to_add.size() << std::endl;
+      //std::cout << "RefinerUtil::addAncestorsToUnrefineList ilev= " << ilev << " to_add.size= " << to_add.size() << std::endl;
       if (to_add.size())
         {
           elements_to_unref.insert(to_add.begin(), to_add.end());

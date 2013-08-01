@@ -419,10 +419,11 @@ namespace stk {
               }
               subsets += "}";
               stream << "P[" << p_rank << "] info>     Part[" << ipart << "]= " << part.name()
-                        << " topology = " << (topology?shards::CellTopology(topology).getName():"null")
-                        << " primary_entity_rank = " << part.primary_entity_rank()
-                        << " subsets = " << subsets
-                        << mendl;
+                     << " topology = " << (topology?shards::CellTopology(topology).getName():"null")
+                     << " primary_entity_rank = " << part.primary_entity_rank()
+                     << " is io_part= " << stk::io::is_part_io_part(part)
+                     << " subsets = " << subsets
+                     << mendl;
             }
 
           stream << ""<<NL<<" P[" << p_rank << "] info>     Part Uses information:  "<<NL<< "" << mendl;
