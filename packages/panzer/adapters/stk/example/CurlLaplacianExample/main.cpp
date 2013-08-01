@@ -417,9 +417,9 @@ int main(int argc,char * argv[])
    /////////////////////////////////////////////////////////////
 
    if(useTpetra)
-      std::cout << "ALL PASSED: Tpetra" << endl;
+      std::cout << "ALL PASSED: Tpetra" << std::endl;
    else
-      std::cout << "ALL PASSED: Epetra" << endl;
+      std::cout << "ALL PASSED: Epetra" << std::endl;
 
    return 0;
 }
@@ -487,7 +487,7 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
 
   Belos::ReturnType result = solver.solve();
   if (result == Belos::Converged)
-    std::cout << "Result: Converged." << endl;
+    std::cout << "Result: Converged." << std::endl;
   else {
     TEUCHOS_ASSERT(false); // FAILURE!
   }
