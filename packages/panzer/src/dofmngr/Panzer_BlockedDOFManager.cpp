@@ -44,10 +44,12 @@
 
 #ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
 
+#include "Panzer_Traits.hpp"
+
 #include "Panzer_BlockedDOFManager_decl.hpp"
 #include "Panzer_BlockedDOFManager_impl.hpp"
 
-template class panzer::BlockedDOFManager<int,long int>;
+template class panzer::BlockedDOFManager<int,panzer::Ordinal64>;
 template class panzer::BlockedDOFManager<int,int>;
 
 #endif

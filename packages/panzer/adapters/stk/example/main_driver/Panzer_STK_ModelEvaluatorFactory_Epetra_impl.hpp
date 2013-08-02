@@ -49,6 +49,7 @@
 #include "Teuchos_DefaultMpiComm.hpp"
 
 #include "Panzer_config.hpp"
+#include "Panzer_Traits.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_BC.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
@@ -339,7 +340,7 @@ namespace panzer_stk {
     // build the connection manager 
     Teuchos::RCP<panzer::ConnManagerBase<int> > conn_manager;
     if(useTpetra) 
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<long>(mesh));
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<panzer::Ordinal64>(mesh));
     else
       conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
@@ -390,24 +391,24 @@ namespace panzer_stk {
        // build load balancing string for informative output
        loadBalanceString = printUGILoadBalancingInformation(*dofManager);
     }
-    else if(panzer::BlockedDOFManagerFactory<int,long>::requiresBlocking(field_order) && useTpetra) {
-       const Teuchos::RCP<panzer::ConnManager<int,long> > conn_manager_long
-         = Teuchos::rcp_dynamic_cast<panzer::ConnManager<int,long> >(conn_manager,true);
+    else if(panzer::BlockedDOFManagerFactory<int,panzer::Ordinal64>::requiresBlocking(field_order) && useTpetra) {
+       const Teuchos::RCP<panzer::ConnManager<int,panzer::Ordinal64> > conn_manager_long
+         = Teuchos::rcp_dynamic_cast<panzer::ConnManager<int,panzer::Ordinal64> >(conn_manager,true);
 
        // use a blocked DOF manager
        blockedAssembly = true;
 
        TEUCHOS_ASSERT(!use_dofmanager_fei);
-       panzer::BlockedDOFManagerFactory<int,long> globalIndexerFactory;
+       panzer::BlockedDOFManagerFactory<int,panzer::Ordinal64> globalIndexerFactory;
        globalIndexerFactory.setUseDOFManagerFEI(false);
 
-       Teuchos::RCP<panzer::UniqueGlobalIndexer<int,std::pair<int,long> > > dofManager 
+       Teuchos::RCP<panzer::UniqueGlobalIndexer<int,std::pair<int,panzer::Ordinal64> > > dofManager 
          = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager_long,field_order);
        globalIndexer = dofManager;
     
-       Teuchos::RCP<panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,long> > bloLinObjFactory
-        = Teuchos::rcp(new panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,long>(mpi_comm,
-                                                          Teuchos::rcp_dynamic_cast<panzer::BlockedDOFManager<int,long> >(dofManager)));
+       Teuchos::RCP<panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64> > bloLinObjFactory
+        = Teuchos::rcp(new panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>(mpi_comm,
+                                                          Teuchos::rcp_dynamic_cast<panzer::BlockedDOFManager<int,panzer::Ordinal64> >(dofManager)));
  
        // parse any explicitly excluded pairs or blocks
        const std::string excludedBlocks = assembly_params.get<std::string>("Excluded Blocks");
@@ -433,20 +434,20 @@ namespace panzer_stk {
        loadBalanceString = printUGILoadBalancingInformation(*dofManager);
     }
     else if(useTpetra) {
-       const Teuchos::RCP<panzer::ConnManager<int,long> > conn_manager_long
-         = Teuchos::rcp_dynamic_cast<panzer::ConnManager<int,long> >(conn_manager,true);
+       const Teuchos::RCP<panzer::ConnManager<int,panzer::Ordinal64> > conn_manager_long
+         = Teuchos::rcp_dynamic_cast<panzer::ConnManager<int,panzer::Ordinal64> >(conn_manager,true);
 
        // use a flat DOF manager
 
        TEUCHOS_ASSERT(!use_dofmanager_fei);
-       panzer::DOFManagerFactory<int,long> globalIndexerFactory;
+       panzer::DOFManagerFactory<int,panzer::Ordinal64> globalIndexerFactory;
        globalIndexerFactory.setUseDOFManagerFEI(false);
-       Teuchos::RCP<panzer::UniqueGlobalIndexer<int,long> > dofManager 
+       Teuchos::RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > dofManager 
          = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager_long,field_order);
        globalIndexer = dofManager;
         
        TEUCHOS_ASSERT(!useDiscreteAdjoint); // safety check
-       linObjFactory = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,long>(mpi_comm,dofManager));
+       linObjFactory = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>(mpi_comm,dofManager));
 
        // build load balancing string for informative output
        loadBalanceString = printUGILoadBalancingInformation(*dofManager);
@@ -900,7 +901,7 @@ namespace panzer_stk {
       }
     }
     {
-      Ptr<const DOFManager<int,long> > dofManager = ptr_dynamic_cast<const DOFManager<int,long> >(ptrFromRef(globalIndexer));
+      Ptr<const DOFManager<int,panzer::Ordinal64> > dofManager = ptr_dynamic_cast<const DOFManager<int,panzer::Ordinal64> >(ptrFromRef(globalIndexer));
 
       if(dofManager!=Teuchos::null) {
         fillFieldPatternMap(*dofManager,fieldName,fieldPatterns);
@@ -918,7 +919,7 @@ namespace panzer_stk {
       }
     }
     {
-      Ptr<const DOFManagerFEI<int,long> > dofManager = ptr_dynamic_cast<const DOFManagerFEI<int,long> >(ptrFromRef(globalIndexer));
+      Ptr<const DOFManagerFEI<int,panzer::Ordinal64> > dofManager = ptr_dynamic_cast<const DOFManagerFEI<int,panzer::Ordinal64> >(ptrFromRef(globalIndexer));
 
       if(dofManager!=Teuchos::null) {
         fillFieldPatternMap(*dofManager,fieldName,fieldPatterns);
@@ -1069,7 +1070,7 @@ namespace panzer_stk {
                    const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
                    const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm)
   {
-    RCP<panzer_stk::STKConnManager<long> > long_conn = Teuchos::rcp_dynamic_cast<panzer_stk::STKConnManager<long> >(conn_manager);
+    RCP<panzer_stk::STKConnManager<panzer::Ordinal64> > long_conn = Teuchos::rcp_dynamic_cast<panzer_stk::STKConnManager<panzer::Ordinal64> >(conn_manager);
     if(long_conn!=Teuchos::null)
       return buildLOWSFactory(blockedAssembly,globalIndexer,long_conn,mesh,mpi_comm);
 
@@ -1162,8 +1163,8 @@ namespace panzer_stk {
                 callback->preRequest(Teko::RequestMesg(Teuchos::rcp(new Teuchos::ParameterList())));
 
 
-             typedef Tpetra::Map<int,long,KokkosClassic::DefaultNode::DefaultNodeType> Map;
-             typedef Tpetra::MultiVector<double,int,long,KokkosClassic::DefaultNode::DefaultNodeType> MV;
+             typedef Tpetra::Map<int,panzer::Ordinal64,KokkosClassic::DefaultNode::DefaultNodeType> Map;
+             typedef Tpetra::MultiVector<double,int,panzer::Ordinal64,KokkosClassic::DefaultNode::DefaultNodeType> MV;
    
              // extract coordinate vectors and modify strat_params to include coordinate vectors
              unsigned dim = mesh->getDimension();
@@ -1267,7 +1268,7 @@ namespace panzer_stk {
     #ifdef HAVE_MUELU
     {
       Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder); // Register MueLu as a Stratimikos preconditioner strategy for Epetra
-      Stratimikos::enableMueLuTpetra<int,long,KokkosClassic::DefaultNode::DefaultNodeType>(linearSolverBuilder,"MueLu-Tpetra");
+      Stratimikos::enableMueLuTpetra<int,panzer::Ordinal64,KokkosClassic::DefaultNode::DefaultNodeType>(linearSolverBuilder,"MueLu-Tpetra");
     }
     #endif // MUELU
 
