@@ -3,7 +3,22 @@
 Release Notes for Trilinos Package Thyra
 ----------------------------------------
 
-Trilinos 11.3:
+
+Trilinos 11.5:
+--------------
+
+(*) Refactored Thyra support software and Thyra/Epetra adapters to support
+zero-element processes for vector spaces and maps.  Now
+Thyra::SpmdVectorSpaceBase subclass object can have zero elements on a process
+and have everything work as it should.  The Thyra/Epetra and Thyra/Tpetra
+adapters should also be able to take Eptra and Tpetra Map objects that have
+zero elements on a process as well.  For most clients and subclasses, these
+refactorings should maintain 100% perfect backward compatibility except now
+more use cases are supported than before.  See the unit tests and updated
+class documentation for details.
+
+
+Trilinos 11.4:
 --------------
 
 (*) Created true mix-in interoperability interface classes
