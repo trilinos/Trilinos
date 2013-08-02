@@ -80,6 +80,7 @@
 #include "MueLu_CoupledAggregationFactory.hpp" //TMP
 #include "MueLu_UncoupledAggregationFactory.hpp" //TMP
 #include "MueLu_UserAggregationFactory.hpp" //TMP
+#include "MueLu_BrickAggregationFactory.hpp"
 #include "MueLu_DirectSolver.hpp" //TMP
 #include "MueLu_Exceptions.hpp" //TMP
 #include "MueLu_MultiVectorTransferFactory.hpp"
@@ -154,6 +155,7 @@ namespace MueLu {
       if (factoryName == "CoupledAggregationFactory")       return BuildCoupledAggregationFactory       (paramList, factoryMapIn);
       if (factoryName == "UncoupledAggregationFactory")     return BuildUncoupledAggregationFactory     (paramList, factoryMapIn);
       if (factoryName == "UserAggregationFactory")          return Build2<UserAggregationFactory>       (paramList, factoryMapIn);
+      if (factoryName == "BrickAggregationFactory")         return Build2<BrickAggregationFactory>      (paramList, factoryMapIn);
       if (factoryName == "TrilinosSmoother")                return BuildTrilinosSmoother                (paramList, factoryMapIn);
       if (factoryName == "DirectSolver")                    return BuildDirectSolver                    (paramList, factoryMapIn);
       if (factoryName == "NoSmoother")                      return BuildNoSmoother();

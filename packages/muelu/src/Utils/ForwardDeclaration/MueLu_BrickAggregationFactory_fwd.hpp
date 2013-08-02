@@ -43,79 +43,21 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_AggregationExportFactory_decl.hpp
- *
- *  Created on: Feb 10, 2012
- *      Author: wiesner
- */
+#ifndef MUELU_BRICKAGGREGATIONFACTORY_FWD_HPP
+#define MUELU_BRICKAGGREGATIONFACTORY_FWD_HPP
 
-#ifndef MUELU_AGGREGATIONEXPORTFACTORY_DECL_HPP_
-#define MUELU_AGGREGATIONEXPORTFACTORY_DECL_HPP_
 
-#include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_CrsMatrixWrap_fwd.hpp>
 
-#include "MueLu_ConfigDefs.hpp"
-#include "MueLu_TwoLevelFactoryBase.hpp"
-#include "MueLu_AggregationExportFactory_fwd.hpp"
-#include "MueLu_Aggregates_fwd.hpp"
-#include "MueLu_AmalgamationFactory_fwd.hpp"
-#include "MueLu_AmalgamationInfo_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  class BrickAggregationFactory;
+}
 
-  class Level;
-
-  /*!
-    @class AggregationExportFactory class.
-    @brief Factory for exporting aggregates data
-
-  */
-
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class AggregationExportFactory : public TwoLevelFactoryBase {
-#undef MUELU_AGGREGATIONEXPORTFACTORY_SHORT
-#include "MueLu_UseShortNames.hpp"
-
-  public:
-    //! @name Constructors/Destructors.
-    //@{
-
-    //! Constructor.
-    AggregationExportFactory() { }
-
-    //! Destructor.
-    virtual ~AggregationExportFactory() { }
-    //@}
-
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
-
-    //! Input
-    //@{
-
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
-
-    //@}
-
-    //@{
-    //! @name Build methods.
-
-    //! Build an object with this factory.
-    void Build(Level &fineLevel, Level &coarseLevel) const;
-
-    //@}
+#ifndef MUELU_BRICKAGGREGATIONFACTORY_SHORT
+#define MUELU_BRICKAGGREGATIONFACTORY_SHORT
+#endif
 
 
-  private:
 
-    std::string replaceAll(std::string result, const std::string& replaceWhat, const std::string& replaceWithWhat) const;
-
-  }; // class AggregationExportFactory
-
-} // namespace MueLu
-
-#define MUELU_AGGREGATIONEXPORTFACTORY_SHORT
-
-#endif /* MUELU_AGGREGATIONEXPORTFACTORY_DECL_HPP_ */
+#endif // MUELU_BRICKAGGREGATIONFACTORY_FWD_HPP

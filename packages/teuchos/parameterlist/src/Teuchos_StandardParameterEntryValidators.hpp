@@ -1371,6 +1371,21 @@ public:
    */
   bool fileMustExist() const;
 
+  //! \name Attribute/Query Functions
+  //@{
+
+  /** \brief Gets the variable describing whether or not this validator is OK
+   * with file name being empty (even if fileMustExist() returns true).
+   *
+   * Note: This property of the validator is not persistent.  It is not
+   * saved or retrieved.  Its purpose is to work around the fact that
+   * an input file name, for which user has not given the name by selecting
+   * in a GUI, is empty.
+   *
+   * @return Whether or not the validator is OK with file name being empty.
+   */
+  bool fileEmptyNameOK() const;
+
   //@}
 
   //! \name Setter Functions
@@ -1385,6 +1400,16 @@ public:
    * @return The new value of the shouldFileExist variable.
    */
   bool setFileMustExist(bool shouldFileExist);
+
+  /** \brief Sets whether or not the validator is OK with empty file name
+   * (even if fileMustExist() returns true)
+   *
+   * @param isEmptyNameOK True if empty name is all right, false
+   * otherwise.
+   *
+   * @return The new value of the isEmptyNameOK variable.
+   */
+  bool setFileEmptyNameOK(bool isEmptyNameOK);
 
   //@}
 
@@ -1417,6 +1442,7 @@ private:
    * already exist.
    */
   bool mustAlreadyExist_;
+  bool EmptyNameOK_;
 
   //@}
 

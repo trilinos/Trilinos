@@ -43,79 +43,110 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_AggregationExportFactory_decl.hpp
- *
- *  Created on: Feb 10, 2012
- *      Author: wiesner
- */
+#ifndef MUELU_BRICKAGGREGATIONFACTORY_DECL_HPP_
+#define MUELU_BRICKAGGREGATIONFACTORY_DECL_HPP_
 
-#ifndef MUELU_AGGREGATIONEXPORTFACTORY_DECL_HPP_
-#define MUELU_AGGREGATIONEXPORTFACTORY_DECL_HPP_
-
+#include <Xpetra_Import_fwd.hpp>
+#include <Xpetra_ImportFactory_fwd.hpp>
+#include <Xpetra_Map_fwd.hpp>
+#include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_CrsMatrixWrap_fwd.hpp>
+#include <Xpetra_MultiVector_fwd.hpp>
+#include <Xpetra_MultiVectorFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_TwoLevelFactoryBase.hpp"
-#include "MueLu_AggregationExportFactory_fwd.hpp"
+#include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_BrickAggregationFactory_fwd.hpp"
+
+#include "MueLu_Level_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
-#include "MueLu_AmalgamationFactory_fwd.hpp"
-#include "MueLu_AmalgamationInfo_fwd.hpp"
+#include "MueLu_Exceptions.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 
-  class Level;
-
-  /*!
-    @class AggregationExportFactory class.
-    @brief Factory for exporting aggregates data
-
-  */
-
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class AggregationExportFactory : public TwoLevelFactoryBase {
-#undef MUELU_AGGREGATIONEXPORTFACTORY_SHORT
-#include "MueLu_UseShortNames.hpp"
+  class BrickAggregationFactory : public SingleLevelFactoryBase {
+#undef MUELU_BRICKAGGREGATIONFACTORY_SHORT
+#include "MueLu_UseShortNamesScalar.hpp"
+  private:
+    // As we don't include ShortNamesScalar, some typedefs are not available
+    typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                   Map;
+    typedef Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node>                Import;
+    typedef Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>         ImportFactory;
+    typedef MueLu::Aggregates<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Aggregates;
+
+    // Comparator for doubles
+    // Generally, the coordinates for coarser levels would come out of averaging of fine level coordinates
+    // It is possible that the result of the averaging differs slightly between clusters, as we might have
+    // 3x2 and 2x2 cluster which would result in averaging 6 and 4 y-coordinates respectively, leading to
+    // slightly different results.
+    // Therefore, we hardcode a constant so that close points are considered the same.
+    class compare {
+    public:
+      bool operator()(const double& x, const double& y) {
+        if (fabs(x-y) < 1e-14)
+          return false;
+        return x < y;
+      }
+    };
+    typedef std::map<double,int,compare> container;
 
   public:
     //! @name Constructors/Destructors.
     //@{
 
     //! Constructor.
-    AggregationExportFactory() { }
+    BrickAggregationFactory() { };
 
     //! Destructor.
-    virtual ~AggregationExportFactory() { }
-    //@}
+    virtual ~BrickAggregationFactory() { }
 
     RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+
+    //@}
+
+    //! @name Set/get methods.
+    //@{
+
+    // Options shared by all aggregation algorithms
 
     //! Input
     //@{
 
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
+    void DeclareInput(Level &currentLevel) const;
 
     //@}
 
-    //@{
     //! @name Build methods.
+    //@{
 
-    //! Build an object with this factory.
-    void Build(Level &fineLevel, Level &coarseLevel) const;
+    /*! @brief Build aggregates. */
+    void Build(Level &currentLevel) const;
 
     //@}
-
 
   private:
+    void Setup(const RCP<const Teuchos::Comm<int> >& comm, const RCP<MultiVector>& coords, const RCP<const Map>& map) const;
+    RCP<container> Construct1DMap(const RCP<const Teuchos::Comm<int> >& comm, const ArrayRCP<const double>& x) const;
 
-    std::string replaceAll(std::string result, const std::string& replaceWhat, const std::string& replaceWithWhat) const;
+    bool           isRoot  (LocalOrdinal LID) const;
+    GlobalOrdinal getRoot  (LocalOrdinal LID) const;
+    GlobalOrdinal getAggGID(LocalOrdinal LID) const;
 
-  }; // class AggregationExportFactory
+    mutable
+     int nDim_;
+    mutable
+     RCP<container> xMap_, yMap_, zMap_;
+    mutable
+     ArrayRCP<const double> x_, y_, z_;
+    mutable
+     int nx_, ny_, nz_;
+    mutable
+     int bx_, by_, bz_;
+  }; // class BrickAggregationFactory
 
-} // namespace MueLu
+  }
 
-#define MUELU_AGGREGATIONEXPORTFACTORY_SHORT
-
-#endif /* MUELU_AGGREGATIONEXPORTFACTORY_DECL_HPP_ */
+#define MUELU_BRICKAGGREGATIONFACTORY_SHORT
+#endif /* MUELU_BRICKAGGREGATIONFACTORY_DECL_HPP_ */

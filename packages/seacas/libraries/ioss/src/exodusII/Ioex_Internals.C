@@ -223,7 +223,12 @@ Redefine::~Redefine()
 
 NodeBlock::NodeBlock(const Ioss::NodeBlock &other)
 {
-  name = other.name();
+  if (other.property_exists("db_name")) {
+    name = other.get_property("db_name").get_string();
+  } else {
+    name = other.name();
+  }
+
   if (other.property_exists("id")) {
     id = other.get_property("id").get_int();
   } else {
@@ -244,7 +249,12 @@ NodeBlock& NodeBlock::operator=(const NodeBlock& other)
 
 EdgeBlock::EdgeBlock(const Ioss::EdgeBlock &other)
 {
-  name = other.name();
+  if (other.property_exists("db_name")) {
+    name = other.get_property("db_name").get_string();
+  } else {
+    name = other.name();
+  }
+
   id = other.get_property("id").get_int();
   entityCount = other.get_property("entity_count").get_int();
   nodesPerEntity = other.get_property("topology_node_count").get_int();
@@ -281,7 +291,12 @@ bool EdgeBlock::operator==(const EdgeBlock& other) const
 
 FaceBlock::FaceBlock(const Ioss::FaceBlock &other)
 {
-  name = other.name();
+  if (other.property_exists("db_name")) {
+    name = other.get_property("db_name").get_string();
+  } else {
+    name = other.name();
+  }
+
   id = other.get_property("id").get_int();
   entityCount = other.get_property("entity_count").get_int();
   nodesPerEntity = other.get_property("topology_node_count").get_int();
@@ -325,7 +340,12 @@ bool FaceBlock::operator==(const FaceBlock& other) const
 
 ElemBlock::ElemBlock(const Ioss::ElementBlock &other)
 {
-  name = other.name();
+  if (other.property_exists("db_name")) {
+    name = other.get_property("db_name").get_string();
+  } else {
+    name = other.name();
+  }
+
   id = other.get_property("id").get_int();
   entityCount = other.get_property("entity_count").get_int();
   nodesPerEntity = other.get_property("topology_node_count").get_int();
@@ -388,7 +408,12 @@ bool ElemBlock::operator==(const ElemBlock& other) const
 
 NodeSet::NodeSet(const Ioss::NodeSet &other)
 {
-  name = other.name();
+  if (other.property_exists("db_name")) {
+    name = other.get_property("db_name").get_string();
+  } else {
+    name = other.name();
+  }
+
   id = other.get_property("id").get_int();
   entityCount = other.get_property("entity_count").get_int();
   attributeCount = other.get_property("attribute_count").get_int();
@@ -405,7 +430,12 @@ bool NodeSet::operator==(const NodeSet& other) const
 
 EdgeSet::EdgeSet(const Ioss::EdgeSet &other)
 {
-  name = other.name();
+  if (other.property_exists("db_name")) {
+    name = other.get_property("db_name").get_string();
+  } else {
+    name = other.name();
+  }
+
   id = other.get_property("id").get_int();
   entityCount = other.get_property("entity_count").get_int();
   attributeCount = other.get_property("attribute_count").get_int();
@@ -422,7 +452,12 @@ bool EdgeSet::operator==(const EdgeSet& other) const
 
 FaceSet::FaceSet(const Ioss::FaceSet &other)
 {
-  name = other.name();
+  if (other.property_exists("db_name")) {
+    name = other.get_property("db_name").get_string();
+  } else {
+    name = other.name();
+  }
+
   id = other.get_property("id").get_int();
   entityCount = other.get_property("entity_count").get_int();
   attributeCount = other.get_property("attribute_count").get_int();
@@ -439,7 +474,12 @@ bool FaceSet::operator==(const FaceSet& other) const
 
 ElemSet::ElemSet(const Ioss::ElementSet &other)
 {
-  name = other.name();
+  if (other.property_exists("db_name")) {
+    name = other.get_property("db_name").get_string();
+  } else {
+    name = other.name();
+  }
+
   id = other.get_property("id").get_int();
   entityCount = other.get_property("entity_count").get_int();
   attributeCount = other.get_property("attribute_count").get_int();
@@ -456,7 +496,12 @@ bool ElemSet::operator==(const ElemSet& other) const
 
 SideSet::SideSet(const Ioss::SideBlock &other)
 {
-  name = other.name();
+  if (other.property_exists("db_name")) {
+    name = other.get_property("db_name").get_string();
+  } else {
+    name = other.name();
+  }
+
   id = other.get_property("id").get_int();
   sideCount = other.get_property("entity_count").get_int();
   dfCount = other.get_property("distribution_factor_count").get_int();
@@ -469,7 +514,12 @@ SideSet::SideSet(const Ioss::SideBlock &other)
 
 SideSet::SideSet(const Ioss::SideSet &other)
 {
-  name = other.name();
+  if (other.property_exists("db_name")) {
+    name = other.get_property("db_name").get_string();
+  } else {
+    name = other.name();
+  }
+
   id = other.get_property("id").get_int();
   sideCount = other.get_property("entity_count").get_int();
   dfCount = other.get_property("distribution_factor_count").get_int();

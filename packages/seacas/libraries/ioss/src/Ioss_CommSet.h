@@ -47,6 +47,7 @@ namespace Ioss {
 	    const std::string& entity_type, size_t entity_count);
 
     std::string type_string() const {return "CommSet";}
+    std::string short_type_string() const {return "commlist";}
     EntityType type() const {return COMMSET;}
     
     // Handle implicit properties -- These are calcuated from data stored

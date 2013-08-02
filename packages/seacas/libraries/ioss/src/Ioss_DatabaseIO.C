@@ -156,7 +156,7 @@ namespace Ioss {
       dbUsage(db_usage),dbIntSizeAPI(USE_INT32_API), lowerCaseVariableNames(true),
       util_(communicator), region_(region), isInput(is_input_event(db_usage)),
       singleProcOnly(db_usage == WRITE_HISTORY || db_usage == WRITE_HEARTBEAT || SerializeIO::isEnabled()),
-      doLogging(false)
+      doLogging(false), useGenericCanonicalName(false)
   {
     isParallel  = util_.parallel_size() > 1;
     myProcessor = util_.parallel_rank();
@@ -214,6 +214,11 @@ namespace Ioss {
     if (properties.exists("LOGGING")) {
       int logging = properties.get("LOGGING").get_int();
       set_logging(logging != 0);
+    }
+
+    if (properties.exists("USE_GENERIC_CANONICAL_NAMES")) {
+      int generic = properties.get("USE_GENERIC_CANONICAL_NAMES").get_int();
+      useGenericCanonicalName = (generic != 0);
     }
 
   }
