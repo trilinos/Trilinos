@@ -39,6 +39,14 @@
 // ************************************************************************
 //@HEADER
 
+/// \file Kokkos_CUSPARSEOps.hpp
+/// \brief CUSPARSE implementation of local sparse matrix kernels.
+///
+/// This header contains the CUSPARSE implementation of local sparse
+/// matrix kernels. (the \c LocalMatOps fifth template parameter of
+/// Tpetra::CrsMatrix).  "Local" means "within an MPI process."  This
+/// is a KokkosClassic header file.
+
 #ifndef KOKKOS_CUSPARSEOPS_HPP
 #define KOKKOS_CUSPARSEOPS_HPP
 
@@ -328,72 +336,84 @@ namespace KokkosClassic {
 
   } // end of namespace CUSPARSEdetails
 
-  //! \class CUSPARSECrsGraph
-  /** \brief CRS sparse graph class supporting the CUSPARSE library.
-  */
+  /// \class CUSPARSECrsGraph
+  /// \brief Sparse graph class supporting the CUSPARSE library.
+  /// \tparam Node The Kokkos Node type
+  ///
+  /// CUSPARSEOps uses this class to represent the local sparse graph.
+  ///
+  /// \note This class is really an implementation detail of Tpetra.
+  ///   Tpetra users do not normally interact with this class.  In
+  ///   fact, neither Tpetra::CrsGraph nor Tpetra::CrsMatrix give
+  ///   users a way to access an instance of this class.
   template <class Node>
-  class CUSPARSECrsGraph : public CrsGraphBase<int,Node>
-  {
-    public:
-      CUSPARSECrsGraph(int numRows, int numCols, const RCP<Node> &node,
-                       const RCP<ParameterList> &params);
-      bool isEmpty() const;
-      void setStructure(const ArrayRCP<const size_t>  &ptrs,
-                        const ArrayRCP<const int> &inds);
-      void setDeviceData(const ArrayRCP<const int> &devptrs,
-                         const ArrayRCP<const int> &devinds);
-      inline ArrayRCP<const size_t> getPointers() const;
-      inline ArrayRCP<const int> getIndices() const;
-      inline ArrayRCP<const int> getDevPointers() const;
-      inline ArrayRCP<const int> getDevIndices() const;
-      inline bool isInitialized() const;
-      void setMatDesc(Teuchos::EUplo uplo, Teuchos::EDiag diag);
-      void getMatDesc(Teuchos::EUplo &uplo, Teuchos::EDiag &diag) const;
-      RCP<cusparseMatDescr_t> getMatDesc() const;
-    private:
-      bool isInitialized_;
-      bool isEmpty_;
-      // cusparse matrix description handle
-      RCP<cusparseMatDescr_t> matdescr_;
-      Teuchos::EUplo uplo_;
-      Teuchos::EDiag diag_;
-      // graph data
-      ArrayRCP<const size_t> host_rowptrs_;
-      ArrayRCP<const int>    dev_rowptrs_;
-      ArrayRCP<const int>    host_colinds_, dev_colinds_;
-      // TODO: add CSC data, for efficient transpose multiply
+  class CUSPARSECrsGraph : public CrsGraphBase<int,Node> {
+  public:
+    CUSPARSECrsGraph (int numRows, int numCols, const RCP<Node> &node,
+                      const RCP<ParameterList> &params);
+    bool isEmpty() const;
+    void setStructure(const ArrayRCP<const size_t>  &ptrs,
+                      const ArrayRCP<const int> &inds);
+    void setDeviceData(const ArrayRCP<const int> &devptrs,
+                       const ArrayRCP<const int> &devinds);
+    inline ArrayRCP<const size_t> getPointers() const;
+    inline ArrayRCP<const int> getIndices() const;
+    inline ArrayRCP<const int> getDevPointers() const;
+    inline ArrayRCP<const int> getDevIndices() const;
+    inline bool isInitialized() const;
+    void setMatDesc(Teuchos::EUplo uplo, Teuchos::EDiag diag);
+    void getMatDesc(Teuchos::EUplo &uplo, Teuchos::EDiag &diag) const;
+    RCP<cusparseMatDescr_t> getMatDesc() const;
+  private:
+    bool isInitialized_;
+    bool isEmpty_;
+    // cusparse matrix description handle
+    RCP<cusparseMatDescr_t> matdescr_;
+    Teuchos::EUplo uplo_;
+    Teuchos::EDiag diag_;
+    // graph data
+    ArrayRCP<const size_t> host_rowptrs_;
+    ArrayRCP<const int>    dev_rowptrs_;
+    ArrayRCP<const int>    host_colinds_, dev_colinds_;
+    // TODO: add CSC data, for efficient transpose multiply
   };
 
-  //! \class CUSPARSECrsMatrix
-  /** \brief CRS sparse matrix class supporting the CUSPARSE library.
-  */
-  template <class Scalar,
-            class Node>
-  class CUSPARSECrsMatrix : public CrsMatrixBase<Scalar,int,Node>
-  {
-    public:
-      CUSPARSECrsMatrix(const RCP<const CUSPARSECrsGraph<Node> > &graph,
-                        const RCP<ParameterList> &params);
-      void setValues(const ArrayRCP<const Scalar> &vals);
-      void setDeviceData(const ArrayRCP<const Scalar> &devvals);
-      inline ArrayRCP<const Scalar> getValues() const;
-      inline ArrayRCP<const Scalar> getDevValues() const;
-      inline bool isInitialized() const;
-      void setAnalyses(const RCP<cusparseSolveAnalysisInfo_t> &analysisNoTrans,
-                       const RCP<cusparseSolveAnalysisInfo_t> &analysisTrans,
-                       const RCP<cusparseSolveAnalysisInfo_t> &analysisConjTrans);
-      void getAnalyses(RCP<cusparseSolveAnalysisInfo_t> &analysisNoTrans,
-                       RCP<cusparseSolveAnalysisInfo_t> &analysisTrans,
-                       RCP<cusparseSolveAnalysisInfo_t> &analysisConjTrans) const;
-    private:
-      bool isInitialized_;
-      // cusparse analysis handles
-      RCP<cusparseSolveAnalysisInfo_t> analysisNoTrans_,
-                                       analysisConjTrans_,
-                                       analysisTrans_;
-      // matrix data
-      ArrayRCP<const Scalar> vals_, dev_vals_;
-      // TODO: add CSC data, for efficient transpose multiply
+  /// \class CUSPARSECrsGraph
+  /// \brief Sparse matrix class supporting the CUSPARSE library.
+  /// \tparam Scalar The type of each entry in the sparse matrix
+  /// \tparam Node The Kokkos Node type
+  ///
+  /// CUSPARSEOps uses this class to represent the local sparse matrix.
+  ///
+  /// \note This class is really an implementation detail of Tpetra.
+  ///   Tpetra users do not normally interact with this class.  In
+  ///   fact, Tpetra::CrsMatrix does not give users a way to access an
+  ///   instance of this class.
+  template <class Scalar, class Node>
+  class CUSPARSECrsMatrix : public CrsMatrixBase<Scalar,int,Node> {
+  public:
+    CUSPARSECrsMatrix(const RCP<const CUSPARSECrsGraph<Node> > &graph,
+                      const RCP<ParameterList> &params);
+    void setValues(const ArrayRCP<const Scalar> &vals);
+    void setDeviceData(const ArrayRCP<const Scalar> &devvals);
+    inline ArrayRCP<const Scalar> getValues() const;
+    inline ArrayRCP<const Scalar> getDevValues() const;
+    inline bool isInitialized() const;
+    void setAnalyses(const RCP<cusparseSolveAnalysisInfo_t> &analysisNoTrans,
+                     const RCP<cusparseSolveAnalysisInfo_t> &analysisTrans,
+                     const RCP<cusparseSolveAnalysisInfo_t> &analysisConjTrans);
+    void getAnalyses(RCP<cusparseSolveAnalysisInfo_t> &analysisNoTrans,
+                     RCP<cusparseSolveAnalysisInfo_t> &analysisTrans,
+                     RCP<cusparseSolveAnalysisInfo_t> &analysisConjTrans) const;
+  private:
+    bool isInitialized_;
+    // cusparse analysis handles
+    RCP<cusparseSolveAnalysisInfo_t> analysisNoTrans_,
+      analysisConjTrans_,
+      analysisTrans_;
+    // matrix data
+    ArrayRCP<const Scalar> vals_, dev_vals_;
+    // TODO: add CSC data, for efficient transpose multiply
   };
 
   template <class Node>
@@ -588,27 +608,26 @@ namespace KokkosClassic {
   }
 
   /// \class CUSPARSEOps
-  /// \brief Implementation of local sparse operations for GPUs that uses cuSPARSE.
+  /// \brief cuSPARSE implementation of local sparse operations.
+  /// \tparam Scalar The type of entries of the sparse matrix.
+  /// \tparam Node The Kokkos Node type.
   /// \ingroup kokkos_crs_ops
   ///
   /// This class is one of various classes in Kokkos that implement
   /// local sparse matrix-(multi)vector multiply and sparse triangular
   /// solve.  ("Local" means "on a single node; not using MPI.")
   /// Examples include DefaultHostSparseOps, AltSparseOps, and
-  /// MklSparseOps for host-based Kokkos Nodes, and CuspOps for NVIDIA
-  /// GPUs (Graphics Processing Units).  This class provides an
-  /// interface to the local sparse operations provided by
+  /// MklSparseOps for host-based Kokkos Nodes, and this class and
+  /// CuspOps for NVIDIA GPUs (Graphics Processing Units).  This class
+  /// provides an interface to the local sparse operations provided by
   /// <a href="http://developer.nvidia.com/cuda/cusparse">cuSPARSE</a>,
   /// the NVIDIA CUDA Sparse Matrix library.
   ///
-  /// \tparam Scalar The type of entries of the sparse matrix.
-  /// \tparam Node The Kokkos Node type.
-  ///
   /// \note Unlike CuspOps and the other local sparse operations
-  /// classes mentioned above, this class is not templated on the
-  /// Ordinal type (of column indices in the sparse matrix).  This is
-  /// because cuSPARSE currently only supports column indices of type
-  /// int.
+  ///   classes mentioned above, this class is not templated on the
+  ///   Ordinal type (of column indices in the sparse matrix).  This
+  ///   is because cuSPARSE currently only supports column indices of
+  ///   type \c int.
   template <class Scalar, class Node>
   class CUSPARSEOps : public Teuchos::Describable {
   public:
@@ -724,20 +743,19 @@ namespace KokkosClassic {
     RCP<Node> getNode() const;
 
     //@}
-
     //! @name Initialization of graph and matrix
     //@{
 
     //! Allocate and initialize storage for row offsets.
-    static ArrayRCP<size_t> 
+    static ArrayRCP<size_t>
     allocRowPtrs (const RCP<Node> &node,
-		  const ArrayView<const size_t>& numEntriesPerRow);
+                  const ArrayView<const size_t>& numEntriesPerRow);
 
     //! Allocate and initialize the storage for a sparse graph.
     template <class T>
-    static ArrayRCP<T> 
+    static ArrayRCP<T>
     allocStorage (const RCP<Node> &node,
-		  const ArrayView<const size_t>& rowPtrs);
+                  const ArrayView<const size_t>& rowPtrs);
 
     //! Finalize a graph is null for CUSPARSE.
     static void finalizeGraph(Teuchos::EUplo uplo, Teuchos::EDiag diag,
@@ -903,19 +921,20 @@ namespace KokkosClassic {
   };
 
 
-  // ======= matrix finalization ===========
   template <class Scalar, class Node>
-  void CUSPARSEOps<Scalar,Node>::finalizeGraph(Teuchos::EUplo uplo, Teuchos::EDiag diag,
-                                               CUSPARSECrsGraph<Node> &graph,
-                                               const RCP<ParameterList> &params)
+  void CUSPARSEOps<Scalar,Node>::
+  finalizeGraph (Teuchos::EUplo uplo,
+                 Teuchos::EDiag diag,
+                 CUSPARSECrsGraph<Node> &graph,
+                 const RCP<ParameterList> &params)
   {
     const size_t CUDA_MAX_INT = 2147483647;
-    const std::string prefix("finalizeGraph()");
+    const char prefix[] = "finalizeGraph";
     RCP<Node> node = graph.getNode();
     TEUCHOS_TEST_FOR_EXCEPTION(
-        graph.isInitialized() == false,
-        std::runtime_error, prefix << ": graph has not yet been initialized."
-    )
+      graph.isInitialized() == false,
+      std::runtime_error, prefix << ": graph has not yet been initialized.");
+
     // diag: have to allocate and indicate
     ArrayRCP<int>    devinds, devptrs;
     ArrayRCP<const int>    hostinds = graph.getIndices();
@@ -990,7 +1009,7 @@ namespace KokkosClassic {
     graph.setDeviceData(devptrs,devinds);
   }
 
-  // ======= matrix finalization ===========
+
   template <class Scalar, class Node>
   void CUSPARSEOps<Scalar,Node>::
   finalizeMatrix (const CUSPARSECrsGraph<Node> &graph,
@@ -1095,25 +1114,23 @@ namespace KokkosClassic {
     // }
   }
 
-  // ======= graph and matrix finalization ===========
+
   template <class Scalar, class Node>
-  void CUSPARSEOps<Scalar,Node>::finalizeGraphAndMatrix(
-                                    Teuchos::EUplo                  uplo,
-                                    Teuchos::EDiag                  diag,
-                                    CUSPARSECrsGraph<Node>          &graph,
-                                    CUSPARSECrsMatrix<Scalar,Node>  &matrix,
-                                    const RCP<ParameterList>        &params)
+  void CUSPARSEOps<Scalar,Node>::
+  finalizeGraphAndMatrix (Teuchos::EUplo                  uplo,
+                          Teuchos::EDiag                  diag,
+                          CUSPARSECrsGraph<Node>          &graph,
+                          CUSPARSECrsMatrix<Scalar,Node>  &matrix,
+                          const RCP<ParameterList>        &params)
   {
-    std::string FuncName(
-        "KokkosClassic::CUSPARSEOps::finalizeGraphAndMatrix(graph,matrix,params)"
-        );
+    const char FuncName[] = "KokkosClassic::CUSPARSEOps::finalizeGraphAndMatrix"
     TEUCHOS_TEST_FOR_EXCEPTION(
-        graph.isInitialized() == false,
-        std::runtime_error, FuncName << ": graph has not yet been initialized."
+      graph.isInitialized() == false,
+      std::runtime_error, FuncName << ": graph has not yet been initialized."
     )
     TEUCHOS_TEST_FOR_EXCEPTION(
-        matrix.isInitialized() == false,
-        std::runtime_error, FuncName << ": matrix has not yet been initialized."
+      matrix.isInitialized() == false,
+      std::runtime_error, FuncName << ": matrix has not yet been initialized."
     )
     // no benefit to doing them together; do them separately
     finalizeGraph(uplo,diag,graph,params);
@@ -1573,9 +1590,9 @@ namespace KokkosClassic {
     //@{
 
     //! Allocate and initialize storage for row offsets.
-    static ArrayRCP<size_t> 
+    static ArrayRCP<size_t>
     allocRowPtrs (const RCP<Node> &node,
-		  const ArrayView<const size_t>& numEntriesPerRow)
+                  const ArrayView<const size_t>& numEntriesPerRow)
     {
       // alloc page-locked ("pinned") memory on the host,
       // specially allocated and specially deallocated
