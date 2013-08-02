@@ -63,8 +63,7 @@ namespace Thyra {
 
 template<class Scalar>
 SpmdVectorDefaultBase<Scalar>::SpmdVectorDefaultBase()
-  :in_applyOpImpl_(false)
-  ,globalDim_(0)
+  :globalDim_(0)
   ,localOffset_(-1)
   ,localSubDim_(0)
 {}
@@ -93,12 +92,6 @@ void SpmdVectorDefaultBase<Scalar>::applyOpImplWithComm(
   const SpmdVectorSpaceBase<Scalar> &spmdSpc = *this->spmdSpace();
 
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    in_applyOpImpl_, std::invalid_argument,
-    "SpmdVectorDefaultBase<>::applyOp(...): Error, this method is being entered recursively"
-    " which is a clear sign that one of the methods acquireDetachedView(...),"
-    " releaseDetachedView(...) or commitDetachedView(...) was not implemented properly!"
-    );
   Thyra::apply_op_validate_input(
     "SpmdVectorDefaultBase<>::applyOp(...)",*space(),
     op, vecs, targ_vecs, reduct_obj, global_offset_in);
@@ -109,9 +102,6 @@ void SpmdVectorDefaultBase<Scalar>::applyOpImplWithComm(
     comm = Teuchos::rcpFromPtr(comm_in);
   else
     comm = spmdSpc.getComm();
-
-  // Flag that we are in applyOp()
-  in_applyOpImpl_ = true;
 
   // First see if this is a locally replicated vector in which case
   // we treat this as a local operation only.
@@ -124,12 +114,10 @@ void SpmdVectorDefaultBase<Scalar>::applyOpImplWithComm(
   Workspace<RTOpPack::SubVectorView<Scalar> > sub_targ_vecs(wss.get(), num_targ_vecs);
   for(int k = 0; k < num_vecs; ++k ) {
     sub_vecs[k] = getLocalSubVectorView<Scalar>(rcpFromPtr(vecs[k]));
-    //vecs[k]->acquireDetachedView( local_rng, &sub_vecs[k] );
     sub_vecs[k].setGlobalOffset(localOffset_+global_offset_in);
   }
   for(int k = 0; k < num_targ_vecs; ++k ) {
     sub_targ_vecs[k] = getNonconstLocalSubVectorView<Scalar>(rcpFromPtr(targ_vecs[k]));
-    //targ_vecs[k]->acquireDetachedView( local_rng, &sub_targ_vecs[k] );
     sub_targ_vecs[k].setGlobalOffset(localOffset_+global_offset_in);
   }
 
@@ -147,17 +135,10 @@ void SpmdVectorDefaultBase<Scalar>::applyOpImplWithComm(
   // Free and commit the local data
   for (int k = 0; k < num_vecs; ++k ) {
     sub_vecs[k] = RTOpPack::ConstSubVectorView<Scalar>();
-    //sub_vecs[k].setGlobalOffset(local_rng.lbound());
-    //vecs[k]->releaseDetachedView(&sub_vecs[k]);
   }
   for (int k = 0; k < num_targ_vecs; ++k ) {
     sub_targ_vecs[k] = RTOpPack::SubVectorView<Scalar>();
-    //sub_targ_vecs[k].setGlobalOffset(local_rng.lbound());
-    //targ_vecs[k]->commitDetachedView(&sub_targ_vecs[k]);
   }
-
-  // Flag that we are leaving applyOp()
-  in_applyOpImpl_ = false;
 
 }
 

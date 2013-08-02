@@ -199,8 +199,6 @@ private:
 
   // ///////////////////////////////////////
   // Private data members
-  
-  mutable bool in_applyOpImpl_;
 
   // Cached (only on vector space!)
   mutable Ordinal  globalDim_;
