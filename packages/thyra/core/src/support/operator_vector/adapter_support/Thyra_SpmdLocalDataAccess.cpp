@@ -1,12 +1,13 @@
+/*
 // @HEADER
 // ***********************************************************************
-//
-//                    Teuchos: Common Tools Package
+// 
+//    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-//
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,28 +35,23 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
+// 
 // ***********************************************************************
 // @HEADER
+*/
 
-#include "Teuchos_Range1D.hpp"
+#include "Thyra_SpmdLocalDataAccess_decl.hpp"
 
-namespace Teuchos {
+#ifdef HAVE_THYRA_EXPLICIT_INSTANTIATION
 
-const Range1D Range1D::Invalid(Range1D::INVALID);
+#include "Thyra_SpmdLocalDataAccess_def.hpp"
+#include "Teuchos_ExplicitInstantiationHelpers.hpp"
 
-} // end namespace Teuchos
+namespace Thyra {
 
-std::ostream& Teuchos::operator<<(std::ostream &out, const Range1D& rng)
-{
-  out << "Range1D{";
-  if (rng == Range1D::Invalid) {
-    out << "Invalid";
-  }
-  else {
-    out << rng.lbound() << "," << rng.ubound();
-  }
-  out << "}";
-  return out;
-}
+TEUCHOS_MACRO_TEMPLATE_INSTANT_SCALAR_TYPES(THYRA_SPMD_LOCAL_DATA_ACCESS_INSTANT)
+
+} // namespace Thyra
+
+#endif // HAVE_THYRA_EXPLICIT_INSTANTIATION

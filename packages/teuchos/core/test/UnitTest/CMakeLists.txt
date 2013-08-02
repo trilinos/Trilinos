@@ -135,8 +135,24 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 
 #
+# Range1D unit tests
+#
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Range1D_UnitTest
+  SOURCES
+    Range1D_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+
+#
 # GlobalMPISession unit tests
 #
+
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   GlobalMPISessionUnitTests
