@@ -197,8 +197,7 @@ void SpmdVectorSpaceDefaultBase<Scalar>::updateState(const Ordinal globalDim,
     if (sumLocalSubDims == 0) {
       isEmpty = true;
     }
-    // ToDo: Assert that the vector space is indeed locally replicated in
-    // debug mode!
+    TEUCHOS_ASSERT_EQUALITY(localSubDim_, globalDim);
   }
   else {
     if (numProcs > 1) {
@@ -221,11 +220,12 @@ void SpmdVectorSpaceDefaultBase<Scalar>::updateState(const Ordinal globalDim,
       // This is a serial or a locally-replicated parallel
       // vector space.
       isSerialOrLocallyReplicated = true;
-      TEUCHOS_TEST_FOR_EXCEPTION(numProcs > 1, std::logic_error,
-        "Error, you are creating a locally replicated vector space implicitly which"
-        " is very inefficient.  Please pass in isLocallyReplicated=true to avoid"
-        " unnecessary global communication!");
-      // ToDo: 
+      //TEUCHOS_TEST_FOR_EXCEPTION(numProcs > 1, std::logic_error,
+      //  "Error, you are creating a locally replicated vector space implicitly which"
+      //  " is very inefficient.  Please pass in isLocallyReplicated=true to avoid"
+      //  " unnecessary global communication!");
+      // ToDo: Add runtime option to assert that an implicit VS is not being
+      // created which is a performance problem.
     }
     else {
       // This is a regular distributed vector space
