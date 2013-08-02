@@ -199,8 +199,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   const Epetra_Map& Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Map2EpetraMap(const Map& map) {
-    RCP<const Map> rcpToMap = rcpFromRef(map);
-    RCP<const Xpetra::EpetraMap> xeMap = rcp_dynamic_cast<const Xpetra::EpetraMap>(rcpToMap);
+    RCP<const Xpetra::EpetraMap> xeMap = rcp_dynamic_cast<const Xpetra::EpetraMap>(rcpFromRef(map));
     if (xeMap == Teuchos::null)
       throw Exceptions::BadCast("Utils::Map2EpetraMap : Cast from Xpetra::Map to Xpetra::EpetraMap failed");
     return xeMap->getEpetra_Map();
@@ -299,8 +298,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal,Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Map2TpetraMap(const Map& map) {
-    RCP<const Map> rcpToMap = rcpFromRef(map);
-    const RCP<const TpetraMap> &tmp_TMap = rcp_dynamic_cast<const TpetraMap>(rcpToMap);
+    const RCP<const TpetraMap>& tmp_TMap = rcp_dynamic_cast<const TpetraMap>(rcpFromRef(map));
     if (tmp_TMap == Teuchos::null)
       throw Exceptions::BadCast("Utils::Map2TpetraMap : Cast from Xpetra::Map to Xpetra::TpetraMap failed");
     return tmp_TMap->getTpetra_Map();
@@ -839,37 +837,29 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
-  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Read(const std::string &    fileName,
-                                                                      const RCP< const Map > &rowMap,
-                                                                      RCP< const Map >       &colMap,
-                                                                      const RCP< const Map > &domainMap,
-                                                                      const RCP< const Map > &rangeMap,
-                                                                      const bool callFillComplete,
-                                                                      const bool tolerant,
-                                                                      const bool debug
-                                                                     )
-{
-    using Teuchos::null;
+  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Read(const std::string&    fileName,
+                                                                      const RCP<const Map>& rowMap,
+                                                                            RCP<const Map>& colMap,
+                                                                      const RCP<const Map>& domainMap,
+                                                                      const RCP<const Map>& rangeMap,
+                                                                      const bool            callFillComplete,
+                                                                      const bool            tolerant,
+                                                                      const bool            debug
+                                                                     ) {
+    TEUCHOS_TEST_FOR_EXCEPTION(rowMap.is_null(), Exceptions::RuntimeError, "Utils::Read() : rowMap cannot be null");
 
-    if (rowMap == null)
-      throw Exceptions::RuntimeError("Utils::Read() : rowMap cannot be null");
-
-    RCP<const Map> domain;
-    if (domainMap != null) domain = domainMap;
-    else                   domain = rowMap;
-    RCP<const Map> range;
-    if (rangeMap != null) range = rangeMap;
-    else                  range = rowMap;
+    RCP<const Map> domain = (domainMap.is_null() ? rowMap : domainMap);
+    RCP<const Map> range  = (rangeMap .is_null() ? rowMap : rangeMap);
 
     const Xpetra::UnderlyingLib lib = rowMap->lib();
     if (lib == Xpetra::UseEpetra) {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
       Epetra_CrsMatrix *eA;
       const RCP<const Epetra_Comm> epcomm = Xpetra::toEpetra(rowMap->getComm());
-      const Epetra_Map epetraRowMap = Map2EpetraMap(*rowMap);
-      const Epetra_Map epetraColMap = Map2EpetraMap(*colMap);
-      const Epetra_Map epetraRangeMap = Map2EpetraMap(*rangeMap);
-      const Epetra_Map epetraDomainMap = Map2EpetraMap(*domainMap);
+      const Epetra_Map& epetraRowMap    = Map2EpetraMap(*rowMap);
+      const Epetra_Map& epetraColMap    = Map2EpetraMap(*colMap);
+      const Epetra_Map& epetraRangeMap  = Map2EpetraMap(*rangeMap);
+      const Epetra_Map& epetraDomainMap = Map2EpetraMap(*domainMap);
       int rv = EpetraExt::MatrixMarketFileToCrsMatrix(fileName.c_str(),
                                                       epetraRowMap, epetraColMap, epetraRangeMap, epetraDomainMap,
                                                       eA);
@@ -890,10 +880,10 @@ namespace MueLu {
       typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>                            map_type;
       typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>            multivector_type;
 
-      const RCP<const map_type> tpetraRowMap = Map2TpetraMap(*rowMap);
-      RCP<const map_type> tpetraColMap = Map2TpetraMap(*colMap);
-      const RCP<const map_type> tpetraRangeMap = Map2TpetraMap(*rangeMap);
-      const RCP<const map_type> tpetraDomainMap = Map2TpetraMap(*domainMap);
+      const RCP<const map_type> tpetraRowMap    = Map2TpetraMap(*rowMap);
+      RCP<const map_type>       tpetraColMap    = (colMap.is_null()    ? Teuchos::null : Map2TpetraMap(*colMap));
+      const RCP<const map_type> tpetraRangeMap  = (rangeMap.is_null()  ? tpetraRowMap  : Map2TpetraMap(*rangeMap));
+      const RCP<const map_type> tpetraDomainMap = (domainMap.is_null() ? tpetraRowMap  : Map2TpetraMap(*domainMap));
 
       RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, tpetraRowMap, tpetraColMap, tpetraDomainMap, tpetraRangeMap,
                                                                callFillComplete, tolerant, debug);
@@ -913,7 +903,7 @@ namespace MueLu {
     }
 
     return Teuchos::null;
-} //Read
+  } //Read
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write(const std::string& fileName, const MultiVector& x) {

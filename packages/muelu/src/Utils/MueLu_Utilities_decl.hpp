@@ -165,6 +165,7 @@ namespace MueLu {
 
     static const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>&        Op2TpetraCrs(const Matrix& Op);
     static       Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>&        Op2NonConstTpetraCrs(Matrix& Op);
+
     static const RCP<const Tpetra::Map<LO, GO, NO> >        Map2TpetraMap(const Map& map);
 #endif
 
@@ -305,16 +306,16 @@ namespace MueLu {
 
     /*! @brief Read matrix from file in Matrix Market or binary format.
 
-        If only rowMap is specified, then it is used for the domainMap and rangeMap, as well. 
+        If only rowMap is specified, then it is used for the domainMap and rangeMap, as well.
     */
-    static Teuchos::RCP<Matrix> Read(const std::string & filename,
-                                     const RCP< const Map > &rowMap,
-                                     RCP< const Map >       &colMap,
-                                     const RCP< const Map > &domainMap=Teuchos::null,
-                                     const RCP< const Map > &rangeMap=Teuchos::null,
-                                     const bool callFillComplete = true,
-                                     const bool tolerant = false,
-                                     const bool debug = false); 
+    static Teuchos::RCP<Matrix> Read(const std::string&    filename,
+                                     const RCP<const Map>& rowMap,
+                                           RCP<const Map>& colMap           = Teuchos::null,
+                                     const RCP<const Map>& domainMap        = Teuchos::null,
+                                     const RCP<const Map>& rangeMap         = Teuchos::null,
+                                     const bool            callFillComplete = true,
+                                     const bool            tolerant         = false,
+                                     const bool            debug            = false);
     //@}
 
     static void PauseForDebugger();
