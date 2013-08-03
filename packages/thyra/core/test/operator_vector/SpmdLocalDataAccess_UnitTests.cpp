@@ -179,7 +179,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
     PRINT_VAR(val);
     assign<Scalar>(v.ptr(), val);
     const ScalarMag tol = 100.0*ScalarTraits<Scalar>::eps();
-    TEST_FLOATING_EQUALITY(sum<Scalar>(*v), as<Scalar>(val * vs->dim()), tol);
+    TEST_FLOATING_EQUALITY(sum<Scalar>(*v), as<Scalar>(vs->dim())*val, tol);
     RTOpPack::ConstSubVectorView<Scalar> lsv = 
       getLocalSubVectorView<Scalar>(v);
     TEST_EQUALITY(lsv.globalOffset(), as<Ordinal>((procRank*(procRank+1))/2));
@@ -275,7 +275,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
     PRINT_VAR(val);
     assign<Scalar>(v.ptr(), val);
     const ScalarMag tol = 100.0*ScalarTraits<Scalar>::eps();
-    TEST_FLOATING_EQUALITY(sum<Scalar>(*v), as<Scalar>(val * vs->dim()), tol);
+    TEST_FLOATING_EQUALITY(sum<Scalar>(*v), as<Scalar>(vs->dim())*val, tol);
     {
       out << "*** A.1) Get the non-const view and set the local elements ...\n";
       RTOpPack::SubVectorView<Scalar> lsv = 
@@ -296,7 +296,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
       TEST_EQUALITY(lsv.subDim(), procRank+1);
       TEST_EQUALITY_CONST(lsv.stride(), 1);
       for (int k = 0; k < lsv.subDim(); ++k) {
-        TEST_EQUALITY(lsv[k], lsv.globalOffset() + k + 1);
+        TEST_EQUALITY(lsv[k], as<Scalar>(lsv.globalOffset() + k + 1));
       }
     }
   }
@@ -331,7 +331,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
       TEST_EQUALITY(lsv.subDim(), procRank+1);
       TEST_EQUALITY_CONST(lsv.stride(), 1);
       for (int k = 0; k < lsv.subDim(); ++k) {
-        TEST_EQUALITY(lsv[k], lsv.globalOffset() + k + 1);
+        TEST_EQUALITY(lsv[k], as<Scalar>(lsv.globalOffset() + k + 1));
       }
     }
   }
@@ -400,7 +400,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
   const ScalarMag tol = 100.0*ScalarTraits<Scalar>::eps();
   TEST_EQUALITY_CONST(mv->domain()->dim(), g_numCols);
   for (int j = 0; j < g_numCols; ++j) {
-    TEST_FLOATING_EQUALITY(sum<Scalar>(*mv->col(0)), as<Scalar>(val * vs->dim()), tol);
+    TEST_FLOATING_EQUALITY(sum<Scalar>(*mv->col(0)), as<Scalar>(vs->dim())*val, tol);
   }
   out << "*** Test that we get the view correctly ...\n";
   RTOpPack::ConstSubMultiVectorView<Scalar> lsmv = 
@@ -716,7 +716,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SpmdLocalDataAccess,
     TEST_EQUALITY(lsv.subDim(), g_localDim);
     TEST_EQUALITY_CONST(lsv.stride(), 1);
     for (int k = 0; k < lsv.subDim(); ++k) {
-      TEST_EQUALITY(lsv[k], lsv.globalOffset() + k + 1);
+      TEST_EQUALITY(lsv[k], as<Scalar>(lsv.globalOffset() + k + 1));
     }
   }
   

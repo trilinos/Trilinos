@@ -202,8 +202,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcAss
   Thyra::sums<Scalar>(*mv, sums());
   for (int j = 0; j < numCols; ++j) {
     PRINT_VAR(j);
-    TEST_EQUALITY(sums[j],  
-      as<Scalar>(val*localDim*(vs->getComm()->getSize()-1)));
+    TEST_EQUALITY(sums[j],
+      as<Scalar>(localDim*(vs->getComm()->getSize()-1))*val);
   }
 }
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parallel,
@@ -258,7 +258,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcSim
   for (int i = 0; i < numCols1; ++i) {
     for (int j = 0; j < numCols2; ++j) {
       out << "i = " << i << ", j = " << j << ": ";
-      TEST_EQUALITY(Y_smvv(i,j), as<Scalar>(val1 * val2 * vs->dim()));
+      TEST_EQUALITY(Y_smvv(i,j), as<Scalar>(vs->dim())*val1*val2);
     }
   }
 }
@@ -276,7 +276,7 @@ void emptyProcVectorSpaceTester(const int rootRank, FancyOStream &out, bool &suc
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType  ScalarMag;
-  Scalar tol = 1.0e-12;
+  ScalarMag tol = 1.0e-12;
 
   Thyra::VectorSpaceTester<Scalar> vectorSpaceTester;
   vectorSpaceTester.warning_tol(ScalarMag(0.1)*tol);

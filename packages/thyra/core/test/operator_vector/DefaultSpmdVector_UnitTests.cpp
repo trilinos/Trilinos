@@ -127,7 +127,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVector, getMultiVectorLocalData,
     TEST_EQUALITY(localValues.size(), g_localDim);
     TEST_EQUALITY(leadingDim, g_localDim);
     for (int i = 0; i < localValues.size(); ++i) {
-      TEST_EQUALITY(localValues[i], globalOffset + i + 1);
+      TEST_EQUALITY(localValues[i], as<Scalar>(globalOffset + i + 1));
     } 
   }
 }

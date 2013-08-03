@@ -119,7 +119,7 @@ RTOpPack::SubMultiVectorView<Scalar> getLocalSubMultiVectorView(
 template<typename Scalar>
 void assertMultiVectorSums(const Teuchos::Comm<Ordinal> &comm,
   const ConstSubMultiVectorView<Scalar> &mv,
-  const Scalar localDim, const Scalar val, const int numProcsFact,
+  const Ordinal localDim, const Scalar val, const int numProcsFact,
   Teuchos::FancyOStream &out, bool &success)
 {
   const Ordinal numCols = mv.numSubCols();
@@ -139,7 +139,7 @@ void assertMultiVectorSums(const Teuchos::Comm<Ordinal> &comm,
   for (int j = 0; j < numCols; ++j) {
     PRINT_VAR(j);
     Scalar sum_mv_j = sumOp(*sumTargets[j]);
-    TEST_EQUALITY(sum_mv_j, as<Scalar>(localDim*val*numProcsFact));
+    TEST_EQUALITY(sum_mv_j, as<Scalar>(localDim*numProcsFact)*val);
   }
 }
 
@@ -172,7 +172,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, vec_args_1_0_sum, Scalar )
   RTOpPack::SPMD_apply_op<Scalar>(&*comm, sumOp, 1, &x, 0, 0, &*sumTarget);
   Scalar sum_x = sumOp(*sumTarget);
 
-  TEST_EQUALITY(sum_x, as<Scalar>(localDim * val * comm->getSize()))
+  TEST_EQUALITY(sum_x, as<Scalar>(localDim * comm->getSize()) * val )
 
   RTOpPack::set_SPMD_apply_op_dump_out(Teuchos::null);
 
@@ -205,7 +205,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, vec_args_1_0_sum_zero_p0, Scal
   RTOpPack::SPMD_apply_op<Scalar>(&*comm, sumOp, 1, &x, 0, 0, &*sumTarget);
   Scalar sum_x = sumOp(*sumTarget);
 
-  TEST_EQUALITY(sum_x, as<Scalar>(g_localDim * val * (comm->getSize()-1)))
+  TEST_EQUALITY(sum_x, as<Scalar>(g_localDim * (comm->getSize()-1)) * val);
 
   RTOpPack::set_SPMD_apply_op_dump_out(Teuchos::null);
 
@@ -243,7 +243,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SPMD_apply_op, vec_args_1_0_sum_zero_p1, Scal
 
   const Ordinal procFactor = (comm->getSize() == 1 ? 1 : (comm->getSize()-1));
   PRINT_VAR(procFactor);
-  TEST_EQUALITY(sum_x, as<Scalar>(g_localDim * val * procFactor))
+  TEST_EQUALITY(sum_x, as<Scalar>(g_localDim * procFactor) * val);
 
   RTOpPack::set_SPMD_apply_op_dump_out(Teuchos::null);
 
