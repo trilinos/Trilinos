@@ -276,7 +276,7 @@ void emptyProcVectorSpaceTester(const int rootRank, FancyOStream &out, bool &suc
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType  ScalarMag;
-  ScalarMag tol = 1.0e-12;
+  ScalarMag tol = as<ScalarMag>(100.0) * ScalarTraits<ScalarMag>::eps();
 
   Thyra::VectorSpaceTester<Scalar> vectorSpaceTester;
   vectorSpaceTester.warning_tol(ScalarMag(0.1)*tol);
