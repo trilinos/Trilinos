@@ -790,385 +790,494 @@ This will override the global behavior set by
 Disabling deprecated code
 -------------------------
 
-To actually disable deprecated code from being included in compilation, set::
+To actually disable and remove deprecated code from being included in
+compilation, set::
 
   -D <Project>_HIDE_DEPRECATED_CODE:BOOL=ON
 
 and a subset of deprecated code will actually be removed from the build.  This
 is to allow testing of downstream client code that might otherwise ignore
-deprecated warnings and to certify that a downstream client code is free of
-calling deprecated coee.
+deprecated warnings.  This allows one to certify that a downstream client code
+is free of calling deprecated code.
 
-To hide deprecated code or not for a single <Project> package set::
+To hide deprecated code for a single <Project> package set::
 
   -D <TRIBITS_PACKAGE>_HIDE_DEPRECATED_CODE:BOOL=ON
 
 This will override the global behavior set by
-``<Project>_HIDE_DEPRECATED_CODE`` for individual packages
+``<Project>_HIDE_DEPRECATED_CODE`` for individual package
 ``<TRIBITS_PACKAGE>``.
 
 
-(*) Disable update of package dependency information:
+Disable update of package dependency information
+------------------------------------------------
 
-  To turn off the update of the various XML and HTML dependency files back
-  into the <Project> source tree, use the configure option:
+To turn off the update/generation of the various XML and HTML package
+dependency files (and speed up configuration), use the configure option::
 
-    -D <Project>_DEPS_XML_OUTPUT_FILE:FILEPATH=
+  -D <Project>_DEPS_XML_OUTPUT_FILE:FILEPATH=
 
-  NOTE: You must start from a clean cache for this to work.
-
-  NOTE: Disabling the update of these XML and HTML files back into the source
-  tree will speed up successive re-configures by a few seconds.
+NOTE: One must start with a clean CMake cache for this to work.
 
 
-(*) Enabling different test categories:
+Enabling different test categories
+----------------------------------
 
-    -D <Project>_TEST_CATEGORIES:STRING="<CATEGORY1>;<CATEGORY2>;..." 
+To turn on a set a given set of tests by test category, set::
 
-  Valid categories include BASIC, CONTINUOUS, NIGHTLY, and PERFORMANCE.  BASIC
-  tests get built and run for pre-push testing, CI testing, and nightly
-  testing.  CONTINUOUS tests are for post-posh testing and nightly testing.
-  NIGHTLY tests are for nightly testing only.  PERFORMANCE tests are for
-  performance testing only.
+  -D <Project>_TEST_CATEGORIES:STRING="<CATEGORY1>;<CATEGORY2>;..." 
 
-
-(*) Enabling support for coverage testing:
-
-    -D <Project>_ENABLE_COVERAGE_TESTING:BOOL=ON 
-
-  NOTE: The above will set the compile and link options -fprofile-arcs
-  -ftest-coverage when the compiler is GNU.
-
-  NOTE: You can run the coverage tests and submit to the dashboard with
-  'make dashboard' (see below).
+Valid categories include BASIC, CONTINUOUS, NIGHTLY, and PERFORMANCE.  BASIC
+tests get built and run for pre-push testing, CI testing, and nightly testing.
+CONTINUOUS tests are for post-posh testing and nightly testing.  NIGHTLY tests
+are for nightly testing only.  PERFORMANCE tests are for performance testing
+only.
 
 
-(*) Viewing configure options and documentation:
+Enabling support for coverage testing
+-------------------------------------
+
+To turn on support for coverage testing set::
+
+  -D <Project>_ENABLE_COVERAGE_TESTING:BOOL=ON 
+
+This will set compile and link options -fprofile-arcs -ftest-coverage for GCC.
+Use 'make dashboard' (see below) to submit coverage results to CDash
+
+
+Viewing configure options and documentation
+-------------------------------------------
   
-  a) Viewing available configure-time options with documentation
-  
+a) Viewing available configure-time options with documentation:
+
+  ::
+
     $ cd $BUILD_DIR
     $ rm -rf CMakeCache.txt CMakeFiles/
     $ cmake -LAH -D <Project>_ENABLE_ALL_PACKAGES:BOOL=ON \
       $SOURCE_BASE
-  
-    NOTE: You can also just look at the text file CMakeCache.txt after
-    configure which gets created in the build directory and has all of the
-    cache variables and documentation.
-  
-  
-  b) Viewing available configure-time options without documentation
-  
+
+  You can also just look at the text file CMakeCache.txt after configure which
+  gets created in the build directory and has all of the cache variables and
+  documentation.
+
+b) Viewing available configure-time options without documentation:
+
+  ::
+
     $ cd $BUILD_DIR
     $ rm -rf CMakeCache.txt CMakeFiles/
-    $ cmake -LA SAME_AS_ABOVE $SOURCE_BASE
-  
-  
-  c) Viewing current values of cache variables
-  
-      $ cmake -LA $SOURCE_BASE
-  
-    or just examine and grep the file CMakeCache.txt.
+    $ cmake -LA <SAME_AS_ABOVE> $SOURCE_BASE
+
+c) Viewing current values of cache variables:
+
+  ::
+
+    $ cmake -LA $SOURCE_BASE
+
+  or just examine and grep the file CMakeCache.txt.
 
 
-(*) Enabling extra external repositories with add-on packages:
+Enabling extra repositories with add-on packages:
+-------------------------------------------------
 
-    -D<Project>_EXTRA_REPOSITORIES:STRING=<EXTRAREPO>
+To configure <Project> with an extra set of packages in extra TriBITS
+repositoris, configure with::
 
-  Here, <EXTRAREPO> is the name of an extra external repository that has been
-  cloned under the main '<Project>' source directory as:
+  -D<Project>_EXTRA_REPOSITORIES:STRING="<REPO0>,<REPO1>,..."
 
-    <Project>/<EXTRAREPO>
+Here, <REPOi> is the name of an extra repository that typically has been
+cloned under the main '<Project>' source directory as::
 
-  For example, to enable <EXTRAREPO> = preCopyright<Project> you would:
+  <Project>/<REPOi>/
 
-    $ cd $SOURCE_BASE_DIR
-    $ eg clone software.sandia.gov:/space/git/preCopyright<Project>
-    $ cd $BUILD_DIR
-    $ ./do-configure -D<Project>_EXTRA_REPOSITORIES:STRING=preCopyright<Project>
+For example, to add the packages from SomeExtraRepo one would configure as::
 
-  After that, all of the extra packages defined in <EXTRAREPO> will appear in
-  the list of official <Project> packages and you are free to enable any that
-  you would like just like any other <Project> package.
+  $ cd $SOURCE_BASE_DIR
+  $ eg clone some_url.com/some/dir/SomeExtraRepo
+  $ cd $BUILD_DIR
+  $ ./do-configure -D<Project>_EXTRA_REPOSITORIES:STRING=SomeExtraRepo \
+     [Other Options]
 
-  NOTE: If <Project>_EXTRAREPOS_FILE and
-  <Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE are specified then the list of
-  extra repositories <EXTRAREPO> must be a subset of the extra repos read in
-  from this file.
+After that, all of the extra packages defined in SomeExtraRepo will appear in
+the list of official <Project> packages and you are free to enable any that
+you would like just like any other <Project> package.
+
+NOTE: If ``<Project>_EXTRAREPOS_FILE`` and
+``<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE`` are specified then the list of
+extra repositories in ``<REPOi>`` must be a subset of the extra repos read in
+from this file.
 
 
-(*) Enabling extra external repositories through a file
+Enabling extra repositories through a file
+------------------------------------------
 
-  -D<Project>_EXTRAREPOS_FILE:FILEPATH=<EXTRAREPOSFILE>
+In order to provide the list of extra TriBIITS repositories containing add-on
+apckages from a file, configure with::
+
+  -D<Project>_EXTRAREPOS_FILE:FILEPATH=<EXTRAREPOSFILE> \
   -D<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
 
-  NOTE: Specifing extra repositories through an extra repos file allows
-  greater flexibility in the specification of extra repos.  This is not
-  helpful for a basic configure of the project but is useful in automated
-  testing using the TribitsCTestDriverCore.cmake script and the
-  checkin-test.py script.
+Specifing extra repositories through an extra repos file allows greater
+flexibility in the specification of extra repos.  This is not helpful for a
+basic configure of the project but is useful in automated testing using the
+TribitsCTestDriverCore.cmake script and the checkin-test.py script.
 
-  NOTE: If <Project>_IGNORE_MISSING_EXTRA_REPOSITORIES is set to TRUE, then any
-  extra repositories selected who's directory is missing will be ignored.
+The valid values of ``<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE`` include
+``Continuous`` and ``Nightly``.  Only repositories listed in the file
+``<EXTRAREPOSFILE>`` that match this type will be included.  Note that
+``Nightly`` also matches ``Continuous``.
+
+If ``<Project>_IGNORE_MISSING_EXTRA_REPOSITORIES`` is set to ``TRUE``, then
+any extra repositories selected who's directory is missing will be ignored.
+This is useful when the list of extra repos that one developers or tests with
+is variable and one just wants TriBITS to pick up the list of existing repos
+automatically.
 
   
-(*) Reconfiguring completely from scratch
+Reconfiguring completely from scratch
+-------------------------------------
+
+To reconfigure from scratch, one needs to delete the the ``CMakeCache.txt``
+and base-level ``CMakeFiles/`` directory, for example, as::
   
-      $ rm -rf CMakeCache.txt CMakeFiles/
-      $ find . -name CMakeFiles -exec rm -rf {} \;
-      $ ./do-configure
+  $ rm -rf CMakeCache.txt CMakeFiles/
+  $ ./do-configure [options]
   
-    NOTE: Removing the CMakeCache.txt file is often needed when removing
-    variables from the configure line.  Removing the CMakeFiles/ directories is
-    needed if there are changes in some CMake modules or the CMake version
-    itself.  However, usually removing just the top-level CMakeCache.txt and
-    CMakeFiles/ directory is enough to guarantee a clean reconfigure from a
-    dirty build directory.
+Removing the ``CMakeCache.txt`` file is often needed when removing variables
+from the configure line since they are already in the cache.  Removing the
+``CMakeFiles/`` directories is needed if there are changes in some CMake
+modules or the CMake version itself.  However, usually removing just the
+top-level ``CMakeCache.txt`` and ``CMakeFiles/`` directory is enough to
+guarantee a clean reconfigure from a dirty build directory.
 
-    WARNING: Later versions of CMake (2.8.10.2+) require that
-    you remove the top-level CMakeFiles/ directory whenever you remove the
-    CMakeCache.txt file.
+If one really wants a clean slate, then try::
 
+  $ rm -rf `ls | grep -v do-configure`
+  $ ./do-configure [options]
 
-(*) Viewing configure errors:
+WARNING: Later versions of CMake (2.8.10.2+) require that you remove the
+top-level ``CMakeFiles/`` directory whenever you remove the ``CMakeCache.txt``
+file.
 
-  Configure time errors are shown in the file:
 
-      $BUILD_BASE_DIR/CMakeFiles/CMakeError.log
+Viewing configure errors
+-------------------------
 
-(*) Adding configure timers:
+To view various configure errors, read the file::
 
-  To add timers to various configure steps, configure with:
+  $BUILD_BASE_DIR/CMakeFiles/CMakeError.log
 
-    -D <Project>_ENABLE_CONFIGURE_TIMING:BOOL=ON
+This file contains detailed output from try-compile commands, Fortran/C name
+managling determination, and other CMake-specific information.
 
-  NOTE: If you configuring a large number of packages (perhaps including
-  add-on packages in extra repos) then the configure time might be excessive
-  and therefore you might want to be able to add configuration timing.
 
+Adding configure timers
+-----------------------
 
-D) Building (Makefile generator)
---------------------------------
+To add timers to various configure steps, configure with::
 
-(*) Building all targets:
+  -D <Project>_ENABLE_CONFIGURE_TIMING:BOOL=ON
 
-     $ make [-jN]
+If you configuring a large number of packages (perhaps including add-on
+packages in extra repos) then the configure time might be excessive and
+therefore you might want to be able to add configuration timing to see where
+the time is being spent.
 
-   (where N is the number of processes to use)
 
+Building (Makefile generator)
+=============================
 
-(*) Discovering what targets are available to build after configuration:
+This section described building using the default CMake Makefile generator.
+TriBITS supports other CMake generators such as Visual Studio on Windows,
+XCode on Macs, and Eclipe project files but using those build systems are not
+documented here.
 
-     $ make help
+Building all targets
+--------------------
 
+To build all targets use::
 
-(*) See all of the targets to build for a package:
+  $ make [-jN]
 
-     $ make help | grep <TRIBITS_PACKAGE>_
+where ``N`` is the number of processes to use (i.e. 2, 4, 16, etc.) .
 
-  (where <TRIBITS_PACKAGE> = Teuchos, Epetra, NOX, etc.)
 
-  or:
+Discovering what targets are available to build
+-----------------------------------------------
 
-     $ cd packages/<TRIBITS_PACKAGE>
-     $ make help
+CMake generates Makefiles with a 'help' target!  To see the targets at the
+current directory level type::
 
+  $ make help
 
-(*) Building all of the targets for a package:
+NOTE: In general, the ``help`` target only prints targets in the current
+directory, not targets in subdirectories.  These targets can include object
+files and all, anything that CMake defines a target for in the current
+directory.  However, running ``make help`` it from the base build directory
+will print all major targets in the project (i.e. libraries, executables,
+etc.) but not minor targets like object files.  Any of the printed targets can
+be used as a target for ``make <some-target>``.  This is super useful for just
+building a single object file, for example.
 
-     $ make <TRIBITS_PACKAGE>_all
 
-  (where <TRIBITS_PACKAGE> = Teuchos, Epetra, NOX, etc.)
+Building all of the targets for a package
+-----------------------------------------
 
-  or:
+To build only the targets for a given TriBITS package, one can use::
 
-    $ cd packages/<TRIBITS_PACKAGE>
-    $ make
+   $ make <TRIBITS_PACKAGE>_all
 
+or::
 
-(*) Building all of the libraries for a package:
+   $ cd packages/<TRIBITS_PACKAGE>
+   $ make
 
-    $ make <TRIBITS_PACKAGE>_libs
+This will build only the targets for TriBITS package ``<TRIBITS_PACKAGE>`` and
+its required upstream targets.
 
-  (where <TRIBITS_PACKAGE> = Teuchos, Epetra, NOX, etc.)
 
+Building all of the libraries for a package
+-------------------------------------------
 
-(*) Building all of the libraries for all enabled <Project> packages:
+To build only the libraries for given TriBITS package, use::
 
-    $ make libs
+  $ make <TRIBITS_PACKAGE>_libs
 
-  NOTE: This target depends on the <PACKAGE>_libs targets for all of the
-  enabled <Project> packages.
 
-  NOTE: You can also use the target name '<Project>_libs'.
 
+Building all of the libraries for all enabled packages
+------------------------------------------------------
 
-(*) Building a single object file:
+To build only the libraries for all enabled TriBITS packages, use::
 
-  First, look for the name of the object file to build based on the source
-  file SomeSourceFile.cpp:
+  $ make libs
 
-    $ make help | grep SomeSourceFile.o
+NOTE: This target depends on the ``<PACKAGE>_libs`` targets for all of the
+enabled ``<Project>`` packages.  You can also use the target name
+``'<Project>_libs``.
 
-  Build the source file:
 
-    $ rm WHATEVER_WAS_RETURNED_ABOVE ; make WHATEVER_WAS_RETURNED_ABOVE
+Building a single object file
+-----------------------------
 
+To build just a single object file (i.e. to debug a compile problem), first,
+look for the name of the object file to build based on the source file, for
+example for the source file ``SomeSourceFile.cpp``, use::
 
-  NOTE: CMake does not seem to correctly address dependencies when building
-  just object files so you need to always delete the object file first to make
-  sure that it gets rebuilt correctly.
+  $ make help | grep SomeSourceFile
 
+Use the returned name (exactly) for the object file and pass it ``make`` as::
 
-(*) Building with verbose output without reconfiguring:
+    $ rm <WHATEVER_WAS_RETURNED_ABOVE> ; make <WHATEVER_WAS_RETURNED_ABOVE>
 
-    $ make [<SOME_TARGET>] VERBOSE=1
+For this to work, you must be in the subdirectory where the
+``TRIBITS_ADD_LIBRARY()`` or ``TRIBITS_ADD_EXECUTABLE()`` command is called
+from its CMakeList.txt file, otherwise the object file targets will not be
+listed by ``make help``.
 
+NOTE: CMake does not seem to correctly address dependencies when building just
+object files so you need to always delete the object file first to make sure
+that it gets rebuilt correctly.
 
-(*) Relink a target without considering dependencies:
 
-    $ make <SOME_TARGET>/fast
+Building with verbose output without reconfiguring
+--------------------------------------------------
 
+One can get CMake to generate verbose make output at build type by just
+setting the Makefile variable ``VERBOSE=1``, for example, as::
 
+  $ make [<SOME_TARGET>] VERBOSE=1
 
-E) Testing with CTest
----------------------
+Any number of compile or linking problem can be quickly debugged by seeing the
+raw compile and link lines.
 
 
-(*) [Recommended] Testing using 'ctest'
+Relink a target without considering dependencies
+------------------------------------------------
 
-    $ ctest -j4
+CMake provides a way to rebuild a target without considering its dependencies
+using::
 
-  (see output in Testing/Temporary/LastTest.log)
+  $ make <SOME_TARGET>/fast
 
-  NOTE: The -jN argument allows CTest to use more processes to run
-  tests but will not exceed the max number of processes specified at
-  configure time.
 
-  See detailed test output with:
+Testing with CTest
+==================
 
-    $ ctest -j4 -VV
+This section assumes one is using the CMake Makefile generator described
+above.  Also, the ``ctest`` does not consider make dependencies when running
+so the software must be completely built before running ``ctest`` as described
+here.
 
 
-(*) Only running tests for a single package
+Running all tests
+-----------------
 
-  Running a single package test:
+To run all of the defined tests (i.e. created using ``TRIBITS_ADD_TEST()`` or
+``TRIBITS_ADD_ADVANCED_TEST()``) use::
 
-    $ ctest -j4 -R '^<TRIBITS_PACKAGE>_'
+  $ ctest -j4
 
-  (e.g. TRIBITS_PACKAGE = Teuchos, Epetra, etc.)
-  (see output in Testing/Temporary/LastTest.log)
+A summary of what tests are run and their pass/fail status will be printed to
+the screen.  Detailed output about each of the tests is archived in the
+generate file::
 
-  or:
+  Testing/Temporary/LastTest.log
 
-    $ cd packages/<TRIBITS_PACKAGE>
-    $ ctest -j4
+NOTE: The ``-j<N>`` argument allows CTest to use more processes to run tests.
+This will intelligently load ballance the defined tests with multiple
+processes (i.e. MPI tests) and will not exceed the number of processes
+``<N>``.
 
 
-(*) Running a single test with full output to the console:
+Only running tests for a single package
+---------------------------------------
 
-    $ ctest -R ^FULL_TEST_NAME$ -VV
+Tests for just a single TriBITS package can be run with::
 
-  (e.g. FULL_TEST_NAME = Teuchos_Comm_test, Epetra_MultiVector_test, etc. )
+  $ ctest -j4 -L <TRIBITS_PACKAGE>
 
+or::
 
-(*) Running memory checking:
+  $ cd packages/<TRIBITS_PACKAGE>
+  $ ctest -j4
 
-  To run the memory tests for just a single package, from the *base* build
-  directory, run:
+This will run tests for packages and subpackages inside of the parent package
+``<TRIBITS_PACKAGE>``.
 
-    $ ctest -R '^<TRIBITS_PACKAGE>_' -T memcheck
+NOTE: CTest has a number of ways to filter what tests get run.  You can use
+the test name using ``-E``, you can exclude tests using ``-I``, and there are
+other approaches as well.  See ``ctest --help`` and online documentation, and
+experiment for more details.
 
-  (where <TRIBITS_PACKAGE> = Epetra, NOX etc.).
 
-  (see the detailed output in
-  ./Testing/Temporary/LastDynamicAnalysis_DATE_TIME.log)
+Running a single test with full output to the console
+-----------------------------------------------------
 
-  NOTE: If you try to run memory tests from any subdirectories, that does not
-  seem to work.  You have to run them from the base build directory and then
-  use -R '^<TRIBITS_PACKAGE>_' with ctest in order to run your packages tests.
+To run just a single test and send detailed output directly to the console,
+one can run::
 
+  $ ctest -R ^<FULL_TEST_NAME>$ -VV
 
-(*) Testing using 'make test'
+However, when running just a single test, it is usally better to just run the
+test command manually to allow passing in more options.  To see what the actual test command is, use::
 
-    $ make test
 
-  NOTE: This is equivalent to just running 'ctest' without any arguments.
+  $ ctest -R ^<FULL_TEST_NAME>$ -VV -N
 
+This will only print out the test command that ``ctest`` runs and show the
+working directory.  To run the test exactly as ``ctest`` would, cd into the
+shown working directory and run the shown command.
 
 
-F) Installing
--------------
+Running memory checking
+-----------------------
 
+To run the memory tests for just a single package, from the *base* build
+directory, run::
 
-(*) Setting the install prefix at configure time
+  $ ctest -L <TRIBITS_PACKAGE> -T memcheck
 
-    $ ./do-configure \
-      -D CMAKE_INSTALL_PREFIX:PATH=$HOME/PROJECTS/install/trilinos/mpi/opt
+Detailed output form the memory checker (i.e. valgrind) is printed in the
+file::
 
-  NOTE: The script 'do-configure' is just a simple shell script that calls
-  CMake as shown above.
+  Testing/Temporary/LastDynamicAnalysis_<DATE_TIME>.log
 
+NOTE: If you try to run memory tests from any subdirectories, it will not
+work.  You have to run them from the base build directory and then use ``-L
+<TRIBITS_PACKAGE>`` or any CTest test filtering command you would like.
 
-(*) Installing after configuration
 
-    $ make install
+Installing
+==========
 
-    (will build all of the targets needed before the install)
+After a build and test of the software is complete, the software can be
+installed.  Actually, to get ready for the install, the install directory must
+be specified at configure time by setting the variable
+``CMAKE_INSTALL_PREFIX``.  The other commands described below can all be run
+after the build and testing is complete.
 
 
-(*) Uninstall
+Setting the install prefix at configure time
+--------------------------------------------
 
-    $ make uninstall
+In order to set up for the install, the install prefix should be set up at
+configure time by setting, for example::
 
+  -D CMAKE_INSTALL_PREFIX:PATH=$HOME/install/trilinos/mpi/opt
 
 
-G) Packaging
-------------
+Installing the software
+-----------------------
 
+To install the software, type::
 
-(*) Creating a tarball of the source tree:
+  $ make install
 
-   $ make package_source
+Note that CMake actually puts in the build dependencies for installed targets
+so in some cases you can just type ``make -j<N> install`` and it will also
+build the software.  However, it is advanced to always build and test the
+software first before installing with::
 
-   NOTE: The above command will tar up *everything* in the source tree (except
-   for files explicitly excluded in the CMakeLists.txt files) so make sure
-   that you start with a totally clean source tree before you do this.  Or,
-   you could build Doxygen documentation first and then tar up <Project> and
-   that would give you the source with Doxygen documentation.
+  $ make -j<N> && ctest -j<N> && make -j<N> install
 
-   NOTE: You can control what gets put into the tarball by setting the cache
-   variable CPACK_SOURCE_IGNORE_FILES when configuring with CMake.
+This will ensure that everything is built correctly and all tests pass before
+installing.
 
 
-H) Dashboard submissions
-------------------------
+Packaging
+=========
 
-You can use the extended CTest scripting system in <Project> to submit
-package-by-package build, test, coverage, memcheck results to the dashboard.
+Packaged source and binary distributions can also be created using CMake and
+CPack.
 
-First, configure as normal but add the build and test parallel levels with:
 
-  $ ./do-configure -DCTEST_BUILD_FLAGS:STRING=-j4 -DCTEST_PARALLEL_LEVEL:STRING=4 \
-    [OTHER OPTIONS]
+Creating a tarball of the source tree
+-------------------------------------
 
-Then, invoke the build, test and submit with:
+To create a source tarball of the project, use::
+
+ $ make package_source
+
+The above command will tar up *everything* in the source tree (except for
+files explicitly excluded in the CMakeLists.txt files) so make sure that you
+start with a totally clean source tree before you do this.  You can also
+include generated files, such as Doxygen output files first, then run ``make
+package_source`` and it will be included in the distribution.
+
+Note to developers: You can control what gets put into the tarball by setting
+the cache variable ``CPACK_SOURCE_IGNORE_FILES`` when configuring with CMake.
+This variable is set internally the <Project> CMakeLists.txt files.
+
+
+Dashboard submissions
+=====================
+
+You can use the TriBITS scripting code to submit package-by-package build,
+test, coverage, memcheck results to the project's CDash dashboard.
+
+First, configure as normal but add the build and test parallel levels with::
+
+  -DCTEST_BUILD_FLAGS:STRING=-j4 -DCTEST_PARALLEL_LEVEL:STRING=4
+
+(or with some other ``-j<N>``).  Then, invoke the build, test and submit
+with::
 
   $ make dashboard
 
-This invokes the advanced CTest script
-<Project>/cmake/ctest/experimental_build_test.cmake to do an experimental build
+This invokes the advanced TriBiTS CTest scripts to do an experimental build
 for all of the packages that you have explicitly enabled.  The packages that
 are implicitly enabled due to package dependencies are not directly processed
 by the experimental_build_test.cmake script.
 
 There are a number of options that you can set in the environment to control
-what this script does.  This set of options can be found by doing:
+what this script does.  This set of options can be found by doing::
 
   $ grep 'SET_DEFAULT_AND_FROM_ENV(' \
       <Project>/cmake/tribits/ctest/TribitsCTestDriverCore.cmake
 
-Currently, this options includes:
+Currently, this options includes::
 
   SET_DEFAULT_AND_FROM_ENV( CTEST_TEST_TYPE Nightly )
   SET_DEFAULT_AND_FROM_ENV(<Project>_TRACK "")
@@ -1204,7 +1313,7 @@ Currently, this options includes:
   SET_DEFAULT_AND_FROM_ENV( CTEST_SELECT_MODIFIED_PACKAGES_ONLY OFF )
 
 For example, to run an experimental build and in the process change the build
-name and the options to pass to 'make', use:
+name and the options to pass to 'make', use::
 
   $ env CTEST_BUILD_NAME=MyBuild make dashboard
 
@@ -1233,13 +1342,13 @@ environment variable CTEST_DO_COVERAGE_TESTING=TRUE is automatically set by the
 target 'dashboard' so you don't have to set this yourself.
 
 NOTE: Doing a memory check with Valgrind requires that you set
-CTEST_DO_MEMORY_TESTING=TRUE with the 'env' command as:
+CTEST_DO_MEMORY_TESTING=TRUE with the 'env' command as::
 
   $ env CTEST_DO_MEMORY_TESTING=TRUE make dashboard
 
 NOTE: The CMake cache variable <Project>_DASHBOARD_CTEST_ARGS can be set on the
 cmake configure line in order to pass additional arguments to 'ctest -S' when
-invoking the package-by-package CTest driver.  For example:
+invoking the package-by-package CTest driver.  For example::
 
   -D <Project>_DASHBOARD_CTEST_ARGS:STRING="-VV"
 
