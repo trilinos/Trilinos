@@ -1,6 +1,17 @@
 #ifndef KOKKOS_UNORDERED_MAP_IMPL_HPP
 #define KOKKOS_UNORDERED_MAP_IMPL_HPP
 
+#include <Kokkos_Functional.hpp>
+#include <Kokkos_Pair.hpp>
+#include <Kokkos_View.hpp>
+
+#include <stdexcept>
+#include <string>
+#include <stdint.h>
+#include <iostream>
+#include <sstream>
+#include <cstdio>
+
 namespace Kokkos { namespace Impl {
 
 inline uint32_t find_hash_size(uint32_t size)
@@ -54,98 +65,54 @@ inline uint32_t find_hash_size(uint32_t size)
   return hsize;
 }
 
-
-// type used for atomic compare and swap in the unordered map
-union unordered_map_atomic
+struct unordered_map_node_state
 {
-
-  enum node_state
+  enum type
   {
       UNUSED = 0          // not used in a list
     , USED = 1            // used in a list
     , PENDING_INSERT = 2  // not used in a list, but reserved by a thread for inserting
     , MARKED_DELETED = 3  // node in the list is marked deleted
     , INVALID = 4         // the 0th node in the node view is set to invalid
+    , NUM_STATES = 5
   };
+};
 
-  struct value_type {
-    volatile uint32_t next;
-    volatile int32_t state;
-  };
-
+struct unordered_map_node_state_counts
+{
   KOKKOS_INLINE_FUNCTION
-  unordered_map_atomic(uint64_t a = 0u)
-    : m_atomic(a)
+  unordered_map_node_state_counts() : value() {}
+
+  uint32_t value[unordered_map_node_state::NUM_STATES];
+};
+
+struct unordered_map_hash_list_sanity_type
+{
+  KOKKOS_INLINE_FUNCTION
+  unordered_map_hash_list_sanity_type()
+    : duplicate_keys_errors(0)
+    , unordered_list_errors(0)
+    , incorrect_hash_index_errors(0)
   {}
 
-  KOKKOS_INLINE_FUNCTION
-  static bool compare_and_swap( volatile uint64_t * address, uint64_t o, uint64_t n)
-  {
-    return atomic_compare_exchange_strong(address,o,n);
-  }
+  uint32_t duplicate_keys_errors;
+  uint32_t unordered_list_errors;
+  uint32_t incorrect_hash_index_errors;
+};
 
-  KOKKOS_INLINE_FUNCTION
-  uint32_t next() const
-  { return m_value.next; }
+struct unordered_map_sanity_type
+{
+  unordered_map_sanity_type()
+    : state_count()
+    , hash_list()
+    , free_node_count(0)
+    , total_errors(0)
+  {}
 
-  KOKKOS_INLINE_FUNCTION
-  node_state state() const
-  { return static_cast<node_state>(m_value.state); }
-
-  KOKKOS_INLINE_FUNCTION
-  bool unused() const
-  { return m_value.state == UNUSED; }
-
-  KOKKOS_INLINE_FUNCTION
-  bool used() const
-  { return m_value.state == USED; }
-
-  KOKKOS_INLINE_FUNCTION
-  bool pending_insert() const
-  { return m_value.state == PENDING_INSERT; }
-
-  KOKKOS_INLINE_FUNCTION
-  bool marked_deleted() const
-  { return m_value.state == MARKED_DELETED; }
-
-  KOKKOS_INLINE_FUNCTION
-  bool invalid() const
-  { return m_value.state == INVALID; }
-
-  // set the state of the node
-  KOKKOS_INLINE_FUNCTION
-  bool atomic_set_state( unordered_map_atomic old_value, node_state s)
-  {
-    unordered_map_atomic new_value;
-    new_value.m_value.next = old_value.m_value.next;
-    new_value.m_value.state = s;
-
-    volatile uint64_t * addr = &m_atomic;
-    return compare_and_swap( addr, old_value.m_atomic, new_value.m_atomic);
-  }
-
-  // set the next node in the list
-  KOKKOS_INLINE_FUNCTION
-  bool atomic_set_next( unordered_map_atomic old_value, uint32_t n)
-  {
-    unordered_map_atomic new_value;
-    new_value.m_value.next = n;
-    new_value.m_value.state = old_value.m_value.state;
-
-    volatile uint64_t * addr = &m_atomic;
-    return compare_and_swap( addr, old_value.m_atomic, new_value.m_atomic);
-  }
-
-  // set both state and value at the same time
-  KOKKOS_INLINE_FUNCTION
-  bool atomic_set( unordered_map_atomic old_value, unordered_map_atomic new_value)
-  {
-    volatile uint64_t * addr = &m_atomic;
-    return compare_and_swap( addr, old_value.m_atomic, new_value.m_atomic);
-  }
-
-  volatile uint64_t m_atomic;  // value used for compare and swap
-  value_type m_value; // next and state
+  unordered_map_node_state_counts state_count;
+  unordered_map_hash_list_sanity_type hash_list;
+  uint32_t free_node_count;
+  uint32_t total_errors;
 };
 
 
@@ -153,6 +120,22 @@ template <typename ValueType>
 struct unordered_map_node
 {
   typedef ValueType value_type;
+  typedef unordered_map_node_state::type node_state;
+
+  enum { word_mask = 0xFFFFFFFFu };
+  enum { word_shift = 32u };
+
+  KOKKOS_INLINE_FUNCTION
+  static uint32_t next(uint64_t v)
+  { return static_cast<uint32_t>(v & word_mask); }
+
+  KOKKOS_INLINE_FUNCTION
+  static node_state state(uint64_t v)
+  { return static_cast<node_state>((v >> word_shift)); }
+
+  KOKKOS_INLINE_FUNCTION
+  static uint64_t make_atomic( uint32_t n, node_state s)
+  { return (static_cast<uint64_t>(s) << word_shift) | static_cast<uint64_t>(n); }
 
   // contruct a new value at the current node
   KOKKOS_INLINE_FUNCTION
@@ -164,286 +147,488 @@ struct unordered_map_node
   void destruct_value()
   { value.~value_type(); }
 
-  unordered_map_atomic atomic;
-  value_type  value;
+  uint64_t   atomic;
+  value_type value;
 };
 
 
 
-
-template <class MapType, bool is_const_map = MapType::is_const_map>
-struct init_unordered_map
+template <class MapData, bool IsConst = MapData::is_const_map >
+struct unordered_map_init_data_functor
 {
-  typedef typename MapType::device_type    device_type;
-  typedef typename MapType::node_view_type node_view_type;
-  typedef typename MapType::hash_view_type hash_view_type;
-  typedef typename MapType::free_count_view_type free_count_view_type;
-  typedef typename device_type::size_type size_type ;
+  typedef typename MapData::device_type device_type;
+  typedef typename device_type::size_type size_type;
+  typedef typename MapData::node_type node_type;
 
-  init_unordered_map(node_view_type /*nodes*/, free_count_view_type /*free_counts*/, uint32_t /*free_block_size*/ )
+  MapData  map;
+
+  unordered_map_init_data_functor(MapData arg_map)
+    : map(arg_map)
   {
-    printf("Error: calling init_unordered_map from a const view\n");
+    uint64_t * first_atomic = &map.nodes.ptr_on_device()->atomic;
+    uint64_t atomic = node_type::make_atomic(0, unordered_map_node_state::INVALID);
+
+    typedef Kokkos::DeepCopy< typename device_type::memory_space, Kokkos::HostSpace > deep_copy;
+
+    deep_copy(first_atomic, &atomic, sizeof(uint64_t));
   }
 };
 
-template <class MapType>
-struct init_unordered_map<MapType, false /*not a const map*/>
+template <class MapData>
+struct unordered_map_init_data_functor<MapData, true /*is const map*/>
 {
-  typedef typename MapType::device_type    device_type;
-  typedef typename MapType::node_view_type node_view_type;
-  typedef typename MapType::hash_view_type hash_view_type;
-  typedef typename MapType::free_count_view_type free_count_view_type;
-  typedef typename device_type::size_type size_type ;
+  //static_assert(false, "Error: Cannot initiazlize a constant map");
+  struct ERROR_CANNOT_INITIALIZE_A_CONST_UNORDERED_MAP {};
 
-  uint32_t             m_free_block_size;
-  node_view_type       m_nodes;
-  free_count_view_type m_free_counts;
-
-  init_unordered_map(node_view_type nodes, free_count_view_type free_counts, uint32_t free_block_size )
-    : m_free_block_size(free_block_size)
-    , m_nodes(nodes)
-    , m_free_counts(free_counts)
-  {
-    parallel_for( m_free_counts.size(), *this);
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(size_type i) const
-  {
-    //don't count 0th node
-    const uint64_t offset = i * m_free_block_size;
-
-    const uint64_t starting_offset =   ((i > 0u) && (offset < m_nodes.size()))
-                                     ? offset
-                                     : ((i == 0u) ? 1u : m_nodes.size());
-    const uint64_t ending_offset =   (((i+1) * m_free_block_size ) <= m_nodes.size())
-                                   ? ((i+1) * m_free_block_size )
-                                   : m_nodes.size();
-
-    m_free_counts[i] = static_cast<uint32_t>(ending_offset - starting_offset);
-
-    if (i==0u) {
-      m_nodes[0].atomic.m_value.state = Impl::unordered_map_atomic::INVALID;
-    }
-  }
+  StaticAssert<false, ERROR_CANNOT_INITIALIZE_A_CONST_UNORDERED_MAP> msg;
 };
 
-
-
-template <class MapType>
-struct unordered_map_size_functor
+template <class MapData>
+struct unordered_map_count_node_states_functor
 {
-  typedef typename MapType::device_type    device_type;
-  typedef typename MapType::node_view_type node_view_type;
-  typedef typename MapType::hash_view_type hash_view_type;
-  typedef typename MapType::free_count_view_type free_count_view_type;
-  typedef typename device_type::size_type size_type ;
-  typedef uint32_t value_type;
+  typedef typename MapData::device_type device_type;
+  typedef typename device_type::size_type size_type;
+  typedef typename MapData::node_type node_type;
+  typedef unordered_map_node_state_counts value_type;
 
-  node_view_type m_nodes;
+  MapData  map;
 
-  unordered_map_size_functor(node_view_type nodes, value_type & value)
-    : m_nodes(nodes)
+  unordered_map_count_node_states_functor(MapData arg_map, value_type & value)
+    : map(arg_map)
   {
-    parallel_reduce( m_nodes.size(), *this, value);
+    parallel_reduce( map.nodes.size(), *this, value);
   }
 
   KOKKOS_INLINE_FUNCTION
   static void init( value_type & dst)
   {
-    dst = 0;
+    dst = value_type();
   }
 
   KOKKOS_INLINE_FUNCTION
   static void join( volatile value_type & dst, const volatile value_type & src)
-  { dst += src; }
+  {
+    for (int i=0; i<unordered_map_node_state::NUM_STATES; ++i) {
+      dst.value[i] += src.value[i];
+    }
+  }
 
   KOKKOS_INLINE_FUNCTION
   void operator()( size_type i, value_type & dst) const
   {
-    if ( m_nodes[i].atomic.used() ) {
-      ++dst;
-    }
+    unordered_map_node_state::type index = node_type::state(map.nodes[i].atomic);
+    ++dst.value[ index < unordered_map_node_state::NUM_STATES ? index : unordered_map_node_state::INVALID];
   }
 };
 
 
-
-template <class MapType>
-struct unordered_map_count_unused_functor
+template <class MapData>
+struct unordered_map_check_hash_list_functor
 {
-  typedef typename MapType::device_type    device_type;
-  typedef typename MapType::node_view_type node_view_type;
-  typedef typename MapType::hash_view_type hash_view_type;
-  typedef typename MapType::free_count_view_type free_count_view_type;
-  typedef typename device_type::size_type size_type ;
-  typedef uint32_t value_type;
+  typedef typename MapData::device_type device_type;
+  typedef typename device_type::size_type size_type;
+  typedef typename MapData::node_type node_type;
+  typedef unordered_map_hash_list_sanity_type value_type;
 
-  free_count_view_type m_free_counts;
+  MapData map;
 
-  unordered_map_count_unused_functor(free_count_view_type free_counts, value_type & value)
-    : m_free_counts(free_counts)
+  unordered_map_check_hash_list_functor(MapData arg_map, value_type & value)
+    : map(arg_map)
   {
-    parallel_reduce( m_free_counts.size(), *this, value);
+    parallel_reduce( map.hashes.size(), *this, value);
   }
 
   KOKKOS_INLINE_FUNCTION
   static void init( value_type & dst)
   {
-    dst = 0;
+    dst.duplicate_keys_errors       = 0;
+    dst.unordered_list_errors       = 0;
+    dst.incorrect_hash_index_errors = 0;
   }
 
   KOKKOS_INLINE_FUNCTION
   static void join( volatile value_type & dst, const volatile value_type & src)
-  { dst += src; }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( size_type i, value_type & dst) const
   {
-    dst += m_free_counts[i];
+    dst.duplicate_keys_errors       += src.duplicate_keys_errors;
+    dst.unordered_list_errors       += src.unordered_list_errors;
+    dst.incorrect_hash_index_errors += src.incorrect_hash_index_errors;
   }
-};
-
-
-
-
-template <class MapType, bool is_const_map = MapType::is_const_map>
-struct unordered_map_delete_marked_keys_functor
-{
-  typedef typename MapType::device_type    device_type;
-  typedef typename MapType::node_view_type node_view_type;
-  typedef typename MapType::hash_view_type hash_view_type;
-  typedef typename MapType::free_count_view_type free_count_view_type;
-  typedef typename device_type::size_type size_type ;
-  typedef uint32_t value_type;
-
-  unordered_map_delete_marked_keys_functor(  node_view_type //nodes
-      , free_count_view_type //free_counts
-      , hash_view_type //hashes
-      , uint32_t //free_block_size
-      , value_type & //num_deleted
-      )
-  {
-    printf("Error: calling unordered_map_delete_marked_keys from a const view\n");
-  }
-};
-
-
-template <class MapType>
-struct unordered_map_delete_marked_keys_functor<MapType, false /*not a const map*/>
-{
-  typedef typename MapType::device_type    device_type;
-  typedef typename MapType::node_view_type node_view_type;
-  typedef typename MapType::hash_view_type hash_view_type;
-  typedef typename MapType::free_count_view_type free_count_view_type;
-  typedef typename device_type::size_type size_type ;
-  typedef uint32_t value_type;
-  uint32_t             m_free_block_size;
-  node_view_type       m_nodes;
-  free_count_view_type m_free_counts;
-  hash_view_type       m_hashes;
-
-  unordered_map_delete_marked_keys_functor(  node_view_type nodes
-      , free_count_view_type free_counts
-      , hash_view_type hashes
-      , uint32_t free_block_size
-      , value_type & num_deleted
-      )
-    : m_free_block_size(free_block_size)
-      , m_nodes(nodes)
-      , m_free_counts(free_counts)
-      , m_hashes(hashes)
-  {
-    parallel_reduce( m_hashes.size(), *this, num_deleted);
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  static void init( value_type & dst)
-  {
-    dst = 0;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  static void join( volatile value_type & dst, const volatile value_type & src)
-  { dst += src; }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( size_type i, value_type & dst) const
-  {
-    Impl::unordered_map_atomic * prev_atomic = &m_hashes[i];
-    Impl::unordered_map_atomic * curr_atomic = &m_nodes[prev_atomic->next()].atomic;
-
-    while (!curr_atomic->invalid()) {
-      if(curr_atomic->marked_deleted()) {
-
-        prev_atomic->m_value.next = curr_atomic->m_value.next;
-        curr_atomic->m_value.state = Impl::unordered_map_atomic::UNUSED;
-
-        uint32_t free_block = prev_atomic->next() / m_free_block_size;
-
-        volatile uint32_t * addr = &m_free_counts[free_block];
-        atomic_fetch_add( addr, 1u);
-        ++dst;
-      }
-      prev_atomic = curr_atomic;
-      curr_atomic = &m_nodes[prev_atomic->next()].atomic;
-    }
-  }
-};
-
-template <class MapType>
-struct unordered_map_count_duplicate_keys_functor
-{
-  typedef typename MapType::device_type    device_type;
-  typedef typename MapType::node_view_type node_view_type;
-  typedef typename MapType::hash_view_type hash_view_type;
-  typedef typename MapType::free_count_view_type free_count_view_type;
-  typedef typename device_type::size_type size_type ;
-  typedef uint32_t value_type;
-
-  node_view_type       m_nodes;
-  hash_view_type       m_hashes;
-
-  unordered_map_count_duplicate_keys_functor(  node_view_type nodes
-      , hash_view_type hashes
-      , value_type & num_deleted
-      )
-    : m_nodes(nodes)
-      , m_hashes(hashes)
-  {
-    parallel_reduce( m_hashes.size(), *this, num_deleted);
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  static void init( value_type & dst)
-  {
-    dst = 0;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  static void join( volatile value_type & dst, const volatile value_type & src)
-  { dst += src; }
 
   KOKKOS_INLINE_FUNCTION
   void operator()( size_type i, value_type & errors) const
   {
-    Impl::unordered_map_atomic * prev_atomic = &m_hashes[i];
-    Impl::unordered_map_atomic * curr_atomic = &m_nodes[prev_atomic->next()].atomic;
-    Impl::unordered_map_atomic * next_atomic = &m_nodes[curr_atomic->next()].atomic;
+    const uint64_t * prev_atomic = &map.hashes[i];
+    const uint64_t * curr_atomic = &map.nodes[node_type::next(*prev_atomic)].atomic;
+    const uint64_t * next_atomic = &map.nodes[node_type::next(*curr_atomic)].atomic;
 
-    while (!curr_atomic->invalid() && !next_atomic->invalid()) {
-      if (m_nodes[prev_atomic->next()].value.first == m_nodes[curr_atomic->next()].value.first)
-      {
-        ++errors;
-        printf("Duplicate key %d\n", m_nodes[prev_atomic->next()].value.first);
+    uint32_t incorrect_hash_index_errors = 0;
+    uint32_t duplicate_keys_errors = 0;
+    uint32_t unordered_list_errors = 0;
+
+    //traverse the list
+    while ( node_type::state(*curr_atomic) != unordered_map_node_state::INVALID) {
+      const uint32_t curr_index = node_type::next(*prev_atomic);
+      const uint32_t next_index = node_type::next(*curr_atomic);
+
+      //check that the key hashes to this index
+      const uint32_t hash_value = map.key_hash(map.nodes[curr_index].value.first);
+      const uint32_t hash_index = hash_value%map.hashes.size();
+
+      if ( static_cast<uint32_t>(i) != hash_index) {
+        ++incorrect_hash_index_errors;
+      }
+
+      if (next_index != 0u) {
+        //check that the list is ordered and has no duplicates
+        const bool key_less = map.key_compare( map.nodes[curr_index].value.first, map.nodes[next_index].value.first );
+        const bool key_greater = map.key_compare( map.nodes[next_index].value.first, map.nodes[curr_index].value.first );
+        const bool key_equal = !key_less && !key_greater;
+
+        if (key_equal) {
+          ++duplicate_keys_errors;
+        }
+        else if (key_greater) {
+          ++unordered_list_errors;
+        }
       }
 
       prev_atomic = curr_atomic;
       curr_atomic = next_atomic;
-      next_atomic = &m_nodes[curr_atomic->next()].atomic;
+      next_atomic = &map.nodes[node_type::next(*curr_atomic)].atomic;
+    }
+
+    errors.incorrect_hash_index_errors += incorrect_hash_index_errors;
+    errors.duplicate_keys_errors += duplicate_keys_errors;
+    errors.unordered_list_errors += unordered_list_errors;
+
+
+#if 0
+    uint32_t num_failed_inserts = *map.num_failed_inserts;
+    if (( num_failed_inserts == 0u) && (incorrect_hash_index_errors || duplicate_keys_errors || unordered_list_errors)) {
+      print_list(i);
+    }
+#endif
+  }
+
+#if 0
+  KOKKOS_INLINE_FUNCTION
+  void print_list(uint32_t i) const
+  {
+    volatile uint64_t * prev_atomic = &map.hashes[i];
+    volatile uint64_t * curr_atomic = &map.nodes[node_type::next(*prev_atomic)].atomic;
+    volatile uint64_t * next_atomic = &map.nodes[node_type::next(*curr_atomic)].atomic;
+
+    uint32_t n=0;
+    //traverse the list
+    while ( node_type::state(*curr_atomic) != unordered_map_node_state::INVALID) {
+      const uint32_t curr_index = node_type::next(*prev_atomic);
+
+      const uint32_t hash_value = map.key_hash(map.nodes[curr_index].value.first);
+      const uint32_t hash_index = hash_value%map.hashes.size();
+
+      printf("List %d.%d: key(%d) value(%d) hash(%d) hash_index(%d)\n", i, n++, map.nodes[curr_index].value.first, map.nodes[curr_index].value.second, hash_value, hash_index);
+
+      prev_atomic = curr_atomic;
+      curr_atomic = next_atomic;
+      next_atomic = &map.nodes[node_type::next(*curr_atomic)].atomic;
+    }
+  }
+#endif
+
+};
+
+template <class MapData, bool IsConst = MapData::is_const_map>
+struct unordered_map_remove_marked_deleted_keys_functor
+{
+  typedef typename MapData::device_type device_type;
+  typedef typename device_type::size_type size_type;
+  typedef typename MapData::node_type node_type;
+
+  MapData map;
+
+  unordered_map_remove_marked_deleted_keys_functor( MapData arg_map )
+    : map(arg_map)
+  {
+    parallel_for( map.hashes.size(), *this);
+    device_type::fence();
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( size_type i) const
+  {
+    volatile uint64_t * prev_atomic = &map.hashes[i];
+    volatile uint64_t * curr_atomic = &map.nodes[ node_type::next(*prev_atomic)].atomic;
+
+    while (node_type::state(*curr_atomic) != unordered_map_node_state::INVALID) {
+      uint64_t prev = *prev_atomic;
+      uint64_t curr = *curr_atomic;
+      if (node_type::state(curr) == unordered_map_node_state::MARKED_DELETED) {
+        //remove the node
+        const uint32_t curr_index = node_type::next(prev);
+
+        *prev_atomic = node_type::make_atomic( node_type::next(curr), node_type::state(prev) );
+        *curr_atomic = node_type::make_atomic( 0, unordered_map_node_state::UNUSED );
+
+        curr_atomic = &map.nodes[ node_type::next(*prev_atomic)].atomic;
+      }
+      else {
+        prev_atomic = curr_atomic;
+        curr_atomic = &map.nodes[ node_type::next(*prev_atomic)].atomic;
+      }
     }
   }
 };
+
+template <class MapData>
+struct unordered_map_remove_marked_deleted_keys_functor<MapData, true /*is const map*/>
+{
+  //static_assert(false, "Error: Cannot initiazlize a constant map");
+  struct ERROR_CANNOT_MODIFY_A_CONST_UNORDERED_MAP {};
+
+  StaticAssert<false, ERROR_CANNOT_MODIFY_A_CONST_UNORDERED_MAP> msg;
+};
+
+template <typename Key, typename T, typename Device, typename Compare, typename Hash>
+struct unordered_map_data
+{
+  typedef unordered_map_data<Key,T,Device,Compare,Hash> self_type;
+  typedef unordered_map_data< typename remove_const<Key>::type, typename remove_const<T>::type, Device, Compare, Hash> insertable_map_type;
+  typedef unordered_map_data< typename add_const<Key>::type, typename remove_const<T>::type, Device, Compare, Hash> modifiable_map_type;
+  typedef unordered_map_data< typename add_const<Key>::type, typename add_const<T>::type, Device, Compare, Hash> const_map_type;
+
+  enum { has_const_key_type = is_const<Key>::value };
+  enum { has_void_mapped_type = is_same<T,void>::value };
+  enum { has_const_mapped_type = has_void_mapped_type || is_const<T>::value };
+  enum { is_const_map = has_const_key_type && has_const_mapped_type };
+
+  typedef Device device_type;
+  typedef Compare compare_type;
+  typedef Hash hash_type;
+
+  typedef typename remove_const<Key>::type key_type;
+  typedef typename remove_const<T>::type   mapped_type;
+  typedef pair<const key_type, mapped_type> value_type;
+
+  typedef typename if_c< is_const_map, value_type const *, value_type *>::type pointer;
+  typedef value_type const * const_pointer;
+
+  typedef unordered_map_node<value_type> node_type;
+
+  typedef pair<int, pointer> insert_result;
+
+  typedef typename Impl::if_c<  has_void_mapped_type
+                              , int
+                              , mapped_type
+                             >::type insert_mapped_type;
+
+  typedef uint32_t size_type;
+
+  typedef typename if_c<   has_const_key_type
+                         , View< const uint64_t *, device_type, MemoryTraits<RandomRead> >
+                         , View< uint64_t *, device_type >
+                       >::type uint64_t_view;
+
+  typedef typename if_c<   has_const_key_type
+                         , View< const int64_t *, device_type, MemoryTraits<RandomRead> >
+                         , View< int64_t *, device_type >
+                       >::type int64_t_view;
+
+  typedef typename if_c<   is_const_map
+                         , View< const node_type *, device_type, MemoryTraits<RandomRead> >
+                         , View< node_type *, device_type >
+                       >::type node_view;
+
+  typedef View< uint32_t, device_type > scalar_view;
+  typedef typename scalar_view::HostMirror host_scalar_view;
+
+
+  unordered_map_data(  uint32_t num_nodes
+                     , compare_type compare
+                     , hash_type hash
+                    )
+    : nodes("unordered_map_nodes", num_nodes+1)
+    , hashes("unordered_map_hashes", find_hash_size(nodes.size()) )
+    , num_failed_inserts("unordered_map_num_failed_inserts")
+    , key_compare(compare)
+    , key_hash(hash)
+  {
+    unordered_map_init_data_functor<self_type> init(*this);
+  }
+
+  template <typename MMapType>
+  KOKKOS_INLINE_FUNCTION
+  unordered_map_data( const MMapType & m)
+    : nodes(m.nodes)
+    , hashes(m.hashes)
+    , num_failed_inserts(m.num_failed_inserts)
+    , key_compare(m.key_compare)
+    , key_hash(m.key_hash)
+  {}
+
+  template <typename MMapType>
+  KOKKOS_INLINE_FUNCTION
+  unordered_map_data & operator=( const MMapType & m)
+  {
+    nodes = m.nodes;
+    hashes = m.hashes;
+    num_failed_inserts = m.num_failed_inserts;
+    key_compare = m.key_compare;
+    key_hash = m.key_hash;
+
+    return *this;
+  }
+
+  unordered_map_node_state_counts get_node_states() const
+  {
+    unordered_map_node_state_counts result;
+    unordered_map_count_node_states_functor<const_map_type>(*this, result);
+    device_type::fence();
+    return result;
+  }
+
+  unordered_map_hash_list_sanity_type check_hash_sanity() const
+  {
+    unordered_map_hash_list_sanity_type result;
+    unordered_map_check_hash_list_functor<const_map_type>(*this, result);
+    device_type::fence();
+    return result;
+  }
+
+  void check_sanity() const
+  {
+    unordered_map_sanity_type result;
+
+    unordered_map_count_node_states_functor<const_map_type>(*this, result.state_count);
+    unordered_map_check_hash_list_functor<const_map_type>(*this, result.hash_list);
+
+    device_type::fence();
+
+    std::ostringstream out;
+
+    const uint32_t failed_inserts = get_num_failed_inserts();
+
+    if (failed_inserts > 0u) {
+      out << "Error: " << failed_inserts << " failed insertions\n";
+      result.total_errors+=failed_inserts;
+    }
+
+
+    if (result.hash_list.duplicate_keys_errors > 0u) {
+      out << "Error: found " << result.hash_list.duplicate_keys_errors << " duplicate keys found in lists\n";
+      result.total_errors+=result.hash_list.duplicate_keys_errors;
+    }
+
+    if (result.hash_list.unordered_list_errors > 0u) {
+      out << "Error: found " << result.hash_list.unordered_list_errors << " unsorted lists\n";
+      result.total_errors+=result.hash_list.unordered_list_errors;
+    }
+
+    if (result.hash_list.incorrect_hash_index_errors > 0u) {
+      out << "Error: found " << result.hash_list.incorrect_hash_index_errors << " keys incorrectly hashed\n";
+      result.total_errors+=result.hash_list.incorrect_hash_index_errors;
+    }
+
+    // state_count[ INVALID ] == 1
+    if (result.state_count.value[ unordered_map_node_state::INVALID ] != 1u) {
+      out << "Error: found " << result.state_count.value[ unordered_map_node_state::INVALID] << " invalid nodes (should always be 1)\n";
+      ++result.total_errors;
+    }
+
+    // state_count[ PENDING_INSERT ] == 0
+    if (result.state_count.value[ unordered_map_node_state::PENDING_INSERT ] > 0u) {
+      out << "Error: found " << result.state_count.value[ unordered_map_node_state::PENDING_INSERT] << " pending insert nodes (should always be 0)\n";
+      ++result.total_errors;
+    }
+
+    if (result.total_errors > 0u) {
+      out << "  Details:\n";
+      out << "             UNUSED: " << result.state_count.value[ unordered_map_node_state::UNUSED ] << "\n";
+      out << "               USED: " << result.state_count.value[ unordered_map_node_state::USED ] << "\n";
+      out << "     MARKED_DELETED: " << result.state_count.value[ unordered_map_node_state::MARKED_DELETED ] << "\n";
+      out << "     PENDING_INSERT: " << result.state_count.value[ unordered_map_node_state::PENDING_INSERT ] << "\n";
+      out << "            INVALID: " << result.state_count.value[ unordered_map_node_state::INVALID ] << "\n";
+      //out << "    free node count: " << result.free_node_count << "\n";
+      out << "     duplicate keys: " << result.hash_list.duplicate_keys_errors << "\n";
+      out << "    unordered lists: " << result.hash_list.unordered_list_errors << "\n";
+      out << "   incorrect hashes: " << result.hash_list.incorrect_hash_index_errors << "\n";
+      out << " num failed inserts: " << get_num_failed_inserts() << "\n";
+      out << "       TOTAL ERRORS: " << result.total_errors;
+      out << std::endl;
+
+      throw std::runtime_error( out.str() );
+    }
+  }
+
+
+  void remove_keys_marked_deleted() const
+  {
+    unordered_map_remove_marked_deleted_keys_functor<self_type> remove_keys(*this);
+  }
+
+  uint32_t get_num_failed_inserts() const
+  {
+    host_scalar_view tmp = create_mirror_view(num_failed_inserts);
+    deep_copy(tmp, num_failed_inserts);
+    return *tmp;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  uint32_t find_node_index( const key_type & k) const
+  {
+    const uint32_t hash_value = key_hash(k);
+    const uint32_t hash_index = hash_value % hashes.size();
+
+    uint64_t prev = hashes[hash_index];
+
+    uint32_t index = 0;
+    do {
+      const uint32_t curr_index = node_type::next(prev);
+
+      if ( curr_index != 0u ) {
+        const node_type & curr_node = nodes[curr_index];
+        const uint64_t curr = nodes[curr_index].atomic;
+
+        const bool curr_greater = key_compare( k, curr_node.value.first);
+        const bool curr_less =  key_compare( curr_node.value.first, k);
+        const bool curr_equal = !curr_less && !curr_greater;
+
+        if (curr_greater) {
+          index = 0u;
+          break;
+        } else if (curr_equal) {
+          // return existing node
+          index = curr_index;
+          break;
+        }
+        else {
+          // Current is less -- advance to next node
+          prev = curr;
+        }
+      }
+      else {
+        break;
+      }
+    } while (true);
+
+    return index;
+  }
+
+  // Data members
+  node_view     nodes;
+  uint64_t_view hashes;
+  scalar_view   num_failed_inserts;
+  compare_type  key_compare;
+  hash_type     key_hash;
+};
+
+
+
+
+
+
+
+
+
 
 
 

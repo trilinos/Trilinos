@@ -49,14 +49,18 @@
 #include <Kokkos_Cuda.hpp>
 #include <stdint.h>
 
+#include <iomanip>
+
+#include <TestTimes.hpp>
+
 namespace Test {
 
 class cuda : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
-    Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
-    std::cout << "Note: cuda loops each test 10x" << std::endl;
+    std::cout << std::setprecision(5) << std::scientific;
+    Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(3) );
   }
   static void TearDownTestCase()
   {
@@ -64,58 +68,44 @@ protected:
   }
 };
 
-extern void test_device_unordered_map_insert(  uint32_t num_nodes
-                                             , uint32_t num_inserts
-                                             , uint32_t num_duplicates
-                                            );
+extern void cuda_test_insert_close(  uint32_t num_nodes
+                                   , uint32_t num_inserts
+                                   , uint32_t num_duplicates
+                                   , map_test_times & test_times
+                                  );
 
-TEST_F( cuda, unordered_map_insert_10000000_9000000_9000000) {
-  //9 million inserts of the same key
-  uint32_t num_nodes      = 10000000;
-  uint32_t num_inserts    =  9000000;
-  uint32_t num_duplicates =  9000000;
-  test_device_unordered_map_insert(num_nodes,num_inserts,num_duplicates);
-}
+extern void cuda_test_insert_far(  uint32_t num_nodes
+                                   , uint32_t num_inserts
+                                   , uint32_t num_duplicates
+                                   , map_test_times & test_times
+                                  );
 
-TEST_F( cuda, unordered_map_insert_10000000_9000000_3000000) {
-  //9 million inserts of the same key
-  uint32_t num_nodes      = 10000000;
-  uint32_t num_inserts    =  9000000;
-  uint32_t num_duplicates =  3000000;
-  test_device_unordered_map_insert(num_nodes,num_inserts,num_duplicates);
-}
 
-TEST_F( cuda, unordered_map_insert_10000000_9000000_30) {
-  //9 million inserts of the same key
-  uint32_t num_nodes      = 10000000;
-  uint32_t num_inserts    =  9000000;
-  uint32_t num_duplicates =  30;
-  test_device_unordered_map_insert(num_nodes,num_inserts,num_duplicates);
-}
+#define CUDA_INSERT_TEST( name, num_nodes, num_inserts, num_duplicates, repeat )                     \
+  TEST_F( cuda, unordered_map_insert_##name##_##num_nodes##_##num_inserts##_##num_duplicates##_##repeat) {   \
+    map_test_times test_times;                                                                       \
+    for (int i=0; i<repeat; ++i)                                                                     \
+      cuda_test_insert_##name(num_nodes,num_inserts,num_duplicates,test_times);                      \
+    std::cout << "Test Times" << std::endl;                                                          \
+    std::cout << "      Construct: " << test_times.construct / repeat << std::endl;                  \
+    std::cout << "  Santity Check: " << test_times.santity_check / repeat << std::endl;              \
+    std::cout << "         Insert: " << test_times.insert / repeat << std::endl;                     \
+    std::cout << "           Find: " << test_times.find / repeat << std::endl;                       \
+  }
 
-TEST_F( cuda, unordered_map_insert_10000000_9000000_3) {
-  //9 million inserts of the same key
-  uint32_t num_nodes      = 10000000;
-  uint32_t num_inserts    =  9000000;
-  uint32_t num_duplicates =  3;
-  test_device_unordered_map_insert(num_nodes,num_inserts,num_duplicates);
-}
+CUDA_INSERT_TEST(close,     10000,     6000, 100, 10000)
+CUDA_INSERT_TEST(close,    100000,    90000, 100, 5000)
+CUDA_INSERT_TEST(close,   1000000,   900000, 100, 500)
+CUDA_INSERT_TEST(close,  10000000,  9000000, 100, 50)
+CUDA_INSERT_TEST(close, 100000000, 90000000, 100, 5)
+CUDA_INSERT_TEST(close, 100000000, 90000000,  10, 5)
 
-TEST_F( cuda, unordered_map_insert_10000000_9000000_1) {
-  //9 million inserts of the same key
-  uint32_t num_nodes      = 10000000;
-  uint32_t num_inserts    =  9000000;
-  uint32_t num_duplicates =  1;
-  test_device_unordered_map_insert(num_nodes,num_inserts,num_duplicates);
-}
+CUDA_INSERT_TEST(far,     10000,     6000, 100, 10000)
+CUDA_INSERT_TEST(far,    100000,    90000, 100, 5000)
+CUDA_INSERT_TEST(far,   1000000,   900000, 100, 500)
+CUDA_INSERT_TEST(far,  10000000,  9000000, 100, 50)
+CUDA_INSERT_TEST(far, 100000000, 90000000,  10, 5)
 
-TEST_F( cuda, unordered_map_insert_10000000_2000000_1) {
-  //9 million inserts of the same key
-  uint32_t num_nodes      = 10000000;
-  uint32_t num_inserts    = 20000000;
-  uint32_t num_duplicates = 1;
-  test_device_unordered_map_insert(num_nodes,num_inserts,num_duplicates);
-}
-
+#undef CUDA_INSERT_TEST
 
 }

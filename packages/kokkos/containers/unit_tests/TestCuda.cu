@@ -57,15 +57,22 @@
 namespace Test {
 
 
-void test_device_unordered_map_insert(  uint32_t num_nodes
-                                             , uint32_t num_inserts
-                                             , uint32_t num_duplicates
-                                     )
+void cuda_test_insert_close(  uint32_t num_nodes
+                            , uint32_t num_inserts
+                            , uint32_t num_duplicates
+                            , map_test_times & times
+                           )
 {
-  for (int i=0; i<10; ++i) {
-    test_unordered_map_insert< Kokkos::Cuda >( num_nodes, num_inserts, num_duplicates);
-  }
+  test_insert_close< Kokkos::Cuda >( num_nodes, num_inserts, num_duplicates, times);
 }
 
+void cuda_test_insert_far(  uint32_t num_nodes
+                            , uint32_t num_inserts
+                            , uint32_t num_duplicates
+                            , map_test_times & times
+                           )
+{
+  test_insert_far< Kokkos::Cuda >( num_nodes, num_inserts, num_duplicates, times);
+}
 
 }

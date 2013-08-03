@@ -91,6 +91,7 @@ struct pair<T1,void>
   typedef void second_type;
 
   first_type  first;
+  enum { second = 0 };
 
   KOKKOS_FORCEINLINE_FUNCTION
   pair()
