@@ -1,0 +1,102 @@
+#!/bin/bash
+
+# Path to Trilinos source directory root.
+TRILINOS_PATH=$HOME/prj/Trilinos/Trilinos
+
+# Mac's Xcode version of GCC doesn't match CUDA 5.5, so I built GCC
+# myself.  CXX points to the C++ compiler, and CC points to the C
+# compiler.  You could point to the Fortran compiler here too; I've
+# disabled Fortran, since the Trilinos packages that I use do not
+# require it.
+CXX=${HOME}/pkg/gcc-4.7.2/bin/g++
+CC=${HOME}/pkg/gcc-4.7.2/bin/gcc
+EXTRA_ARGS=$@
+
+#
+# My NVIDIA GPU does not have hardware support for double-precison
+# floating-point values, so I disable them in KokkosClassic.
+#
+#-D KokkosClassic_ENABLE_CUDA_DOUBLE:BOOL=ON
+
+#
+# Each one of the "echo" statements below sets up the CMake
+# configuration options for a particular build.  SERIAL_RELEASE_CUDA
+# is a non-MPI ("serial") release (not debug) build with CUDA enabled.
+# SERIAL_DEBUG_CUDA is a non-MPI debug build with CUDA enabled.
+#
+# Building Trilinos (in particular, the KokkosClassic subpackage) with
+# CUDA enabled requires the following CMake options:
+#
+# -D TPL_ENABLE_CUDA:BOOL=ON     
+#    (enable CUDA)
+# -D CUDA_PROPAGATE_HOST_FLAGS:BOOL=OFF
+#    (don't use the host C++ compiler's flags; this prevents 
+#    compiler errors in Thrust due to GCC's -pedantic flag)
+# -D TPL_ENABLE_CUSPARSE=ON      
+#    (enable the cuSPARSE library)
+# -D TPL_ENABLE_Thrust:BOOL=ON
+#    (enable the Thrust library)
+# -D Thrust_INCLUDE_DIRS=/Developer/NVIDIA/CUDA-5.5/include
+#    (tell Trilinos where to find the Thrust header files)
+#
+# Note that nvcc must be in the PATH.  You must tell CMake which C++
+# and C compilers to use:
+#
+# -D CMAKE_CXX_COMPILER:FILEPATH=\"${CXX}\"
+# -D CMAKE_C_COMPILER:FILEPATH=\"${CC}\"
+#
+
+#
+# Configuration options for serial release build with CUDA
+#
+echo "
+-D CUDA_HOST_COMPILER:FILEPATH=\"${CXX}\"
+-D BUILD_SHARED_LIBS:BOOL=ON
+-D Trilinos_ENABLE_Fortran:BOOL=OFF
+-D KokkosClassic_ENABLE_TSQR:BOOL=ON
+-D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON
+-D Teuchos_ENABLE_COMPLEX:BOOL=OFF
+-D Teuchos_ENABLE_LONG_LONG_INT:BOOL=ON
+-D Trilinos_ENABLE_CHECKED_STL:BOOL=OFF
+-D Trilinos_ENABLE_OpenMP:BOOL=OFF
+-D TPL_ENABLE_CUDA:BOOL=ON
+-D TPL_ENABLE_Thrust:BOOL=ON
+-D TPL_ENABLE_CUSPARSE=ON
+-D Thrust_INCLUDE_DIRS=/Developer/NVIDIA/CUDA-5.5/include
+-D CMAKE_BUILD_TYPE:STRING=RELEASE
+-D Teuchos_ENABLE_DEBUG:BOOL=OFF
+-D CMAKE_CXX_COMPILER:FILEPATH=\"${CXX}\"
+-D CMAKE_C_COMPILER:FILEPATH=\"${CC}\"
+-D CUDA_PROPAGATE_HOST_FLAGS:BOOL=OFF
+" > SERIAL_RELEASE_CUDA.config
+
+#
+# Configuration options for serial debug build with CUDA
+#
+echo "
+-D CUDA_HOST_COMPILER:FILEPATH=\"${CXX}\"
+-D BUILD_SHARED_LIBS:BOOL=ON
+-D Trilinos_ENABLE_Fortran:BOOL=OFF
+-D KokkosClassic_ENABLE_TSQR:BOOL=ON
+-D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON
+-D Teuchos_ENABLE_COMPLEX:BOOL=OFF
+-D Teuchos_ENABLE_LONG_LONG_INT:BOOL=ON
+-D Trilinos_ENABLE_CHECKED_STL:BOOL=OFF
+-D Trilinos_ENABLE_OpenMP:BOOL=OFF
+-D TPL_ENABLE_CUDA:BOOL=ON
+-D TPL_ENABLE_Thrust:BOOL=ON
+-D TPL_ENABLE_CUSPARSE=ON
+-D Thrust_INCLUDE_DIRS=/Developer/NVIDIA/CUDA-5.5/include
+-D CMAKE_BUILD_TYPE:STRING=DEBUG
+-D Teuchos_ENABLE_DEBUG:BOOL=ON
+-D CMAKE_CXX_COMPILER:FILEPATH=\"${CXX}\"
+-D CMAKE_C_COMPILER:FILEPATH=\"${CC}\"
+-D CUDA_PROPAGATE_HOST_FLAGS:BOOL=OFF
+" > SERIAL_DEBUG_CUDA.config
+
+# Pass the arguments to this script along to the check-in test script.
+${TRILINOS_PATH}/checkin-test.py \
+--no-eg-git-version-check \
+--ctest-timeout=180 \
+$EXTRA_ARGS
+

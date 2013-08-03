@@ -372,7 +372,8 @@ RCP<AnyNumberParameterEntryValidator>
 
 
 FileNameValidator::FileNameValidator(bool mustAlreadyExist)
-  : ParameterEntryValidator(), mustAlreadyExist_(mustAlreadyExist)
+  : ParameterEntryValidator(), mustAlreadyExist_(mustAlreadyExist),
+    EmptyNameOK_(false)
 {}
 
 
@@ -381,6 +382,10 @@ bool FileNameValidator::fileMustExist() const
   return mustAlreadyExist_;
 }
 
+bool FileNameValidator::fileEmptyNameOK() const
+{
+  return EmptyNameOK_;
+}
 
 bool FileNameValidator::setFileMustExist(bool shouldFileExist)
 {
@@ -388,6 +393,11 @@ bool FileNameValidator::setFileMustExist(bool shouldFileExist)
   return mustAlreadyExist_;
 }
 
+bool FileNameValidator::setFileEmptyNameOK(bool isEmptyNameOK)
+{
+  this->EmptyNameOK_ = isEmptyNameOK;
+  return EmptyNameOK_;
+}
 
 ParameterEntryValidator::ValidStringsList
   FileNameValidator::validStringValues() const
@@ -411,7 +421,7 @@ void FileNameValidator::validate(ParameterEntry const &entry, std::string const 
     "Type specified: " << entryName << std::endl <<
     "Type accepted: " << typeid(std::string).name() << 
     std::endl << std::endl);
-  if(mustAlreadyExist_){
+  if(mustAlreadyExist_ && !EmptyNameOK_){
     std::string fileName = getValue<std::string>(entry);
     TEUCHOS_TEST_FOR_EXCEPTION(!std::ifstream(fileName.c_str()),
       Exceptions::InvalidParameterValue,

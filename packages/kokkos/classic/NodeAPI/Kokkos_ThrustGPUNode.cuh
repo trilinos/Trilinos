@@ -104,7 +104,7 @@ namespace KokkosClassic {
 #endif
     // wrap in Thrust and hand to thrust::for_each
     ThrustGPUNodeDetails::ThrustExecuteWrapper<WDP> body(wd);  
-    thrust::counting_iterator<int,thrust::device_space_tag> bit(begin),
+    thrust::counting_iterator<int,thrust::device_system_tag> bit(begin),
                                                             eit(end);
     thrust::for_each( bit, eit, body );
 #ifdef HAVE_KOKKOSCLASSIC_DEBUG
@@ -128,7 +128,7 @@ namespace KokkosClassic {
         << cudaGetErrorString(err) );
 #endif
     // wrap in Thrust and hand to thrust::transform_reduce
-    thrust::counting_iterator<int,thrust::device_space_tag> bit(begin),
+    thrust::counting_iterator<int,thrust::device_system_tag> bit(begin),
                                                             eit(end);
     ThrustGPUNodeDetails::ThrustReduceWrapper<WDP> ROp(wd);
     ThrustGPUNodeDetails::ThrustGenerateWrapper<WDP> TOp(wd);
