@@ -900,7 +900,7 @@ namespace MueLu {
       if (colMap.is_null()) {
         rv = EpetraExt::MatrixMarketFileToCrsMatrix(fileName.c_str(), epetraRowMap, epetraRangeMap, epetraDomainMap, eA);
 
-      } else if (colMap.is_null() && (!domainMap.is_null() || !rangeMap.is_null())) {
+      } else {
         const Epetra_Map& epetraColMap  = Map2EpetraMap(*colMap);
         rv = EpetraExt::MatrixMarketFileToCrsMatrix(fileName.c_str(), epetraRowMap, epetraColMap, epetraRangeMap, epetraDomainMap, eA);
       }
