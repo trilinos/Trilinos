@@ -278,6 +278,10 @@ typedef MueLu::TransPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
 typedef MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TrilinosSmoother;
 #endif
 
+#ifdef MUELU_USERPFACTORY_SHORT
+typedef MueLu::UserPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> UserPFactory;
+#endif
+
 #ifdef MUELU_UTILITIES_SHORT
 typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils;
 typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils2;
