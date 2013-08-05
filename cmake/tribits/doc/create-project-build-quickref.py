@@ -45,9 +45,11 @@ def openWriteFilePermissions(filePath):
 def setGeneratedFilePermissions(filePath):
   os.chmod(filePath, stat.S_IREAD | stat.S_IRGRP | stat.S_IROTH)
 
-def generateFile(filePath, generateCmnd, outFile=None, workingDir=""):
+def generateFile(filePath, generateCmnd, outFile=None, workingDir="", runTwice=False):
   openWriteFilePermissions(filePath)
   runSysCmnd(generateCmnd, outFile=outFile, workingDir=workingDir)
+  if runTwice:
+    runSysCmnd(generateCmnd, outFile=outFile, workingDir=workingDir)
   setGeneratedFilePermissions(filePath)
 
 
@@ -170,7 +172,8 @@ if options.generateLatex:
     generateFile(outputPdfFile,
       options.generatePDF+" "+outputLatexFile,
       outFile=outputPdfFileLog,
-      workingDir=projectBaseDir)
+      workingDir=projectBaseDir,
+      runTwice=True)
     filesToClean.append(outputPdfFileLog)
 
 #
