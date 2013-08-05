@@ -277,6 +277,7 @@ inline Range1D full_range(const Range1D &rng, Range1D::Ordinal lbound, Range1D::
  *
  * \relates Range1D
  */
+TEUCHOSCORE_LIB_DLL_EXPORT
 std::ostream& operator<<(std::ostream &out, const Range1D& rng);
 
 
