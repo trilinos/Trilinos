@@ -228,6 +228,10 @@ MDComm::getAxisCommSize(int axis) const
 bool
 MDComm::isPeriodic(int axis) const
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    not onSubcommunicator(),
+    SubcommunicatorError,
+    "MDComm::isPeriodic()");
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
     ((axis < 0) || (axis >= getNumDims())),

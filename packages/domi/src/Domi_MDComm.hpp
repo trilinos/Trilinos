@@ -240,6 +240,10 @@ public:
    *
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
+   *
+   * This method will throw a Domi::SubcommunicatorError if the
+   * communicator is a sub-communicator and this processor does not
+   * belong to the sub-communicator.
    */
   bool isPeriodic(int axis) const;
 
