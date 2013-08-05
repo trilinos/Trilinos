@@ -712,9 +712,6 @@ MDMap(const Teuchos::RCP< MDMap< LocalOrd, GlobalOrd, Node > > parent,
     _globalMin +=  start   * _globalStrides[axis];
     _globalMax += (stop-1) * _globalStrides[axis];
   }
-  std::cout << std::endl
-            << "_globalRankBounds = " << _globalRankBounds << std::endl
-            << "_globalBounds     = " << _globalBounds     << std::endl;
 
   // Build the array of slices for the MDComm sub-communicator
   // constructor
@@ -726,15 +723,15 @@ MDMap(const Teuchos::RCP< MDMap< LocalOrd, GlobalOrd, Node > > parent,
     for (int axisRank = 0; axisRank < parent->getAxisCommSize(axis);
          ++axisRank)
     {
-      if ((_globalRankBounds[axis][axisRank].start() - parent->_halos[axis][0]
+      if ((_globalRankBounds[axis][axisRank].start() - _ghosts[axis][0]
            <= _globalBounds[axis].start()) &&
           (_globalBounds[axis].start() <
-           _globalRankBounds[axis][axisRank].stop() + parent->_halos[axis][1]))
+           _globalRankBounds[axis][axisRank].stop() + _ghosts[axis][1]))
         if (start == -1) start = axisRank;
-      if ((_globalRankBounds[axis][axisRank].start() - parent->_halos[axis][0]
+      if ((_globalRankBounds[axis][axisRank].start() - _ghosts[axis][0]
            < _globalBounds[axis].stop()) &&
           (_globalBounds[axis].stop() <=
-           _globalRankBounds[axis][axisRank].stop() + parent->_halos[axis][1]))
+           _globalRankBounds[axis][axisRank].stop() + _ghosts[axis][1]))
         stop = axisRank+1;
     }
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -743,7 +740,6 @@ MDMap(const Teuchos::RCP< MDMap< LocalOrd, GlobalOrd, Node > > parent,
       "error computing axis rank slices");
     axisRankSlices.push_back(ConcreteSlice(start,stop));
   }
-  std::cout << std::endl << "axisRankSlices = " << axisRankSlices << std::endl;
   // Construct the MDComm sub-communicator
   _mdComm = Teuchos::rcp(new MDComm(parent->_mdComm, axisRankSlices));
 
