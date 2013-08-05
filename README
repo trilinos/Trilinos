@@ -6,7 +6,7 @@
 
 Trilinos Website: http://trilinos.sandia.gov
 
-- See <trilinos_base_directory>/cmake/TrilinosCMakeQuickstart.txt for
+- See <trilinos_base_directory>/TrilinosBuildQuickRef.* for
   information about installing Trilinos with the CMake build system.
 
 - See <trilinos_base_directory>/cmake/README.windows for information on
@@ -38,7 +38,7 @@ building Trilinos in MS Windows with MS Visual C++ against CLAPACK.
 - Information on how to extend Trilinos with your own add-on packages in your
 own external repository see:
 
-      <trilinos_base_directory>/cmake/TrilinosCMakeQuickstart.txt
+      <trilinos_base_directory>/TrilinosBuildQuickRef.*
       <trilinos_base_directory>/cmake/HOWTO.ADD_EXTRA_REPO
 
 - If you are having problems, visit:

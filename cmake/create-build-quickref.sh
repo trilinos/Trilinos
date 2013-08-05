@@ -1,8 +1,17 @@
 #!/bin/bash -e
 
-# This simple script regenerates the TrilinosBuildQuickReference.* files from
-# the template file TrilinosBuildQuickReferenceTemplate.rst and the standard
-# TribitsBuildQuickReferenceBody.rst file.
+# This simple script regenerates the (read-only) TrilinosBuildQuickReference.*
+# files from the Trilinos-specific template file:
+#
+#   cmake/TrilinosBuildQuickReferenceTemplate.rst
+#
+# and the standard TriBITS template file:
+#
+#   cmake/tribits/doc/TribitsBuildQuickReferenceBody.rst file.
+#
+# This generated files TrilinosBuildQuickReference.* (rst, html, and pdf) are
+# read-only to avoid direct modification.  To update this output, one must
+# modify the input template files described above.
 #
 # This script gets run from the base Trilinos source directory as:
 #
