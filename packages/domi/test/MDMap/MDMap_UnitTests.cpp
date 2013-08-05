@@ -1219,17 +1219,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapUpperRightNewGhosts, T )
       slices[axis]       = Slice(ghosts[axis], -ghosts[axis]);
     }
   }
-  std::cout << std::endl
-            << "newCommSizes = " << newCommSizes << std::endl
-            << "newDims      = " << newDims      << std::endl
-            << "slices       = " << slices       << std::endl;
 
   // Construct the sub-MDMap
   MDMap< T > subMDMap(mdMap, slices, newGhosts);
 
   // Should this processor be a part of the sub-MDComm?
   bool partOfSubComm = true;
-  if (mdComm->getAxisRank(0) >= newCommSizes[0])
+  if (mdComm->getAxisRank(0) < axisCommSizes[0] - newCommSizes[0])
     partOfSubComm = false;
   if (numDims > 1)
     if (mdComm->getAxisRank(1) < axisCommSizes[1] - newCommSizes[1])
@@ -1364,17 +1360,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapPeriodic, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, indexes, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, exceptions, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapLowerLeft, T ) \
-  //TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapLowerLeftWithHalo, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapLowerLeftWithHalo, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapLowerRight, T )  \
-  //TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapLowerRightWithGhost, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapLowerRightWithGhost, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapUpperLeft, T ) \
-  //TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapUpperLeftHaloGhost, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapUpperLeftHaloGhost, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapUpperRight, T ) \
-  //TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapUpperRightNewGhosts, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapUpperRightNewGhosts, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapPeriodic, T )
 
 UNIT_TEST_GROUP(int)
-#if 0
+#if 1
 UNIT_TEST_GROUP(long)
 #endif
 
