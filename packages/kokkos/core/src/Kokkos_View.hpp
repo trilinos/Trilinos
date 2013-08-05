@@ -241,6 +241,32 @@ bool operator != ( const View<LT,LL,LD,LM,LS> & lhs ,
 
 //----------------------------------------------------------------------------
 
+/** \brief  Reallocate a view without copying old data to new data */
+template< class T , class L , class D , class M , class S >
+inline
+void realloc( View<T,L,D,M,S> & v ,
+              const typename Impl::enable_if< ViewTraits<T,L,D,M>::is_managed , size_t >::type n0 ,
+              const size_t n1 = 0 ,
+              const size_t n2 = 0 ,
+              const size_t n3 = 0 ,
+              const size_t n4 = 0 ,
+              const size_t n5 = 0 ,
+              const size_t n6 = 0 ,
+              const size_t n7 = 0 )
+{
+  typedef View<T,L,D,M,S> view_type ;
+  typedef typename view_type::memory_space memory_space ;
+
+  // Query the current label and reuse it.
+  const std::string label = memory_space::query_label( v.ptr_on_device() );
+
+  v = view_type(); // deallocate first, if the only view to memory.
+  v = view_type( label, n0, n1, n2, n3, n4, n5, n6, n7 );
+}
+
+
+//----------------------------------------------------------------------------
+
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
@@ -451,6 +477,33 @@ void deep_copy( const View< DT, DL, DD, DM, DS> & dst ,
   assert_shapes_equal_dimension( dst.shape() , src.shape() );
 
   Impl::ViewRemap< dst_type , src_type >( dst , src );
+}
+
+//----------------------------------------------------------------------------
+
+/** \brief  Resize a view with copying old data to new data at the corresponding indices. */
+template< class T , class L , class D , class M , class S >
+inline
+void resize( View<T,L,D,M,S> & v ,
+             const typename Impl::enable_if< ViewTraits<T,L,D,M>::is_managed , size_t >::type n0 ,
+             const size_t n1 = 0 ,
+             const size_t n2 = 0 ,
+             const size_t n3 = 0 ,
+             const size_t n4 = 0 ,
+             const size_t n5 = 0 ,
+             const size_t n6 = 0 ,
+             const size_t n7 = 0 )
+{
+  typedef View<T,L,D,M,S> view_type ;
+  typedef typename view_type::memory_space memory_space ;
+
+  const std::string label = memory_space::query_label( v.ptr_on_device() );
+
+  view_type v_resized( label, n0, n1, n2, n3, n4, n5, n6, n7 );
+
+  Impl::ViewRemap< view_type , view_type >( v_resized , v );
+
+  v_resized = v ;
 }
 
 //----------------------------------------------------------------------------
