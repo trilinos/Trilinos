@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include <KokkosArray_Host.hpp>
-#include <KokkosArray_View.hpp>
+#include <Kokkos_Host.hpp>
+#include <Kokkos_View.hpp>
 
 TEST( KokkosArray, basic )
 {
