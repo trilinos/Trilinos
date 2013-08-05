@@ -313,7 +313,7 @@ namespace MueLu {
     ///////////////////////// EXPERIMENTAL
   }
 
-  RCP<Xpetra::MultiVector<double,int,int> > Utils2<double,int,int>::Read(const std::string& fileName, const RCP<const Map>& map) {
+  RCP<Xpetra::MultiVector<double,int,int> > Utils2<double,int,int>::ReadMultiVector(const std::string& fileName, const RCP<const Map>& map) {
     Xpetra::UnderlyingLib lib = map->lib();
 
     if (lib == Xpetra::UseEpetra) {

@@ -63,6 +63,7 @@
 #include <EpetraExt_MultiVectorOut.h>
 #include <EpetraExt_CrsMatrixIn.h>
 #include <EpetraExt_MultiVectorIn.h>
+#include <EpetraExt_BlockMapIn.h>
 #include <Xpetra_EpetraUtils.hpp>
 #include <Xpetra_EpetraMultiVector.hpp>
 #endif // HAVE_MUELU_EPETRAEXT
@@ -724,7 +725,7 @@ namespace MueLu {
   } //Write
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Read(const std::string& fileName, const RCP<const Map>& map){
+  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ReadMultiVector(const std::string& fileName, const RCP<const Map>& map){
     Xpetra::UnderlyingLib lib = map->lib();
 
     if (lib == Xpetra::UseEpetra) {
@@ -750,6 +751,42 @@ namespace MueLu {
 
     return Teuchos::null;
   }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >
+  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ReadMap(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm) {
+    if (lib == Xpetra::UseEpetra) {
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
+        Epetra_Map *eMap;
+        int rv = EpetraExt::MatrixMarketFileToMap(fileName.c_str(), *(Xpetra::toEpetra(comm)), eMap);
+        if (rv != 0)
+          throw Exceptions::RuntimeError("Error reading matrix with EpetraExt::MatrixMarketToMap (returned " + toString(rv) + ")");
+
+        RCP<const Epetra_Map> eMap1= rcp(new Epetra_Map(*eMap));
+        return Xpetra::toXpetra(*eMap1);
+#else
+        throw Exceptions::RuntimeError("MueLu has not been compiled with Epetra and EpetraExt support.");
+#endif
+    } else if (lib == Xpetra::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
+      typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
+      typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>                          reader_type;
+
+      RCP<Node> node = Xpetra::DefaultPlatform::getDefaultPlatform().getNode();
+
+      RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > tMap = reader_type::readMapFile(fileName, comm, node);
+      if (tMap.is_null())
+        throw Exceptions::RuntimeError("The Tpetra::Map returned from readSparseFile() is null.");
+
+      return Xpetra::toXpetra(tMap);
+#else
+      throw Exceptions::RuntimeError("MueLu has not been compiled with Tpetra support.");
+#endif
+    } else {
+      throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
+    }
+  }
+
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
@@ -837,14 +874,14 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
-  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Read(const std::string&    fileName,
-                                                                      const RCP<const Map>& rowMap,
-                                                                            RCP<const Map>& colMap,
-                                                                      const RCP<const Map>& domainMap,
-                                                                      const RCP<const Map>& rangeMap,
-                                                                      const bool            callFillComplete,
-                                                                      const bool            tolerant,
-                                                                      const bool            debug
+  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Read(const std::string&   fileName,
+                                                                      const RCP<const Map> rowMap,
+                                                                            RCP<const Map> colMap,
+                                                                      const RCP<const Map> domainMap,
+                                                                      const RCP<const Map> rangeMap,
+                                                                      const bool           callFillComplete,
+                                                                      const bool           tolerant,
+                                                                      const bool           debug
                                                                      ) {
     TEUCHOS_TEST_FOR_EXCEPTION(rowMap.is_null(), Exceptions::RuntimeError, "Utils::Read() : rowMap cannot be null");
 
@@ -857,12 +894,17 @@ namespace MueLu {
       Epetra_CrsMatrix *eA;
       const RCP<const Epetra_Comm> epcomm = Xpetra::toEpetra(rowMap->getComm());
       const Epetra_Map& epetraRowMap    = Map2EpetraMap(*rowMap);
-      const Epetra_Map& epetraColMap    = Map2EpetraMap(*colMap);
-      const Epetra_Map& epetraRangeMap  = Map2EpetraMap(*rangeMap);
-      const Epetra_Map& epetraDomainMap = Map2EpetraMap(*domainMap);
-      int rv = EpetraExt::MatrixMarketFileToCrsMatrix(fileName.c_str(),
-                                                      epetraRowMap, epetraColMap, epetraRangeMap, epetraDomainMap,
-                                                      eA);
+      const Epetra_Map& epetraDomainMap = (domainMap.is_null() ? epetraRowMap : Map2EpetraMap(*domainMap));
+      const Epetra_Map& epetraRangeMap  = (rangeMap .is_null() ? epetraRowMap : Map2EpetraMap(*rangeMap));
+      int rv;
+      if (colMap.is_null()) {
+        rv = EpetraExt::MatrixMarketFileToCrsMatrix(fileName.c_str(), epetraRowMap, epetraRangeMap, epetraDomainMap, eA);
+
+      } else if (colMap.is_null() && (!domainMap.is_null() || !rangeMap.is_null())) {
+        const Epetra_Map& epetraColMap  = Map2EpetraMap(*colMap);
+        rv = EpetraExt::MatrixMarketFileToCrsMatrix(fileName.c_str(), epetraRowMap, epetraColMap, epetraRangeMap, epetraDomainMap, eA);
+      }
+
       if (rv != 0)
         throw Exceptions::RuntimeError("EpetraExt::MatrixMarketFileToCrsMatrix return value of " + toString(rv));
 

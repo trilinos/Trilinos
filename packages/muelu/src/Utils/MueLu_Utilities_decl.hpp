@@ -299,7 +299,7 @@ namespace MueLu {
     static void Write(const std::string& fileName, const Matrix& Op);
 
     //! @brief Read map from file
-    // static Teuchos::RCP<Map> Read(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm);
+    static Teuchos::RCP<const Map> ReadMap(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm);
 
     //! @brief Read matrix from file in Matrix Market or binary format.
     static Teuchos::RCP<Matrix> Read(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm, bool binary = false);
@@ -308,14 +308,14 @@ namespace MueLu {
 
         If only rowMap is specified, then it is used for the domainMap and rangeMap, as well.
     */
-    static Teuchos::RCP<Matrix> Read(const std::string&    filename,
-                                     const RCP<const Map>& rowMap,
-                                           RCP<const Map>& colMap           = Teuchos::null,
-                                     const RCP<const Map>& domainMap        = Teuchos::null,
-                                     const RCP<const Map>& rangeMap         = Teuchos::null,
-                                     const bool            callFillComplete = true,
-                                     const bool            tolerant         = false,
-                                     const bool            debug            = false);
+    static Teuchos::RCP<Matrix> Read(const std::string&   filename,
+                                     const RCP<const Map> rowMap,
+                                           RCP<const Map> colMap           = Teuchos::null,
+                                     const RCP<const Map> domainMap        = Teuchos::null,
+                                     const RCP<const Map> rangeMap         = Teuchos::null,
+                                     const bool           callFillComplete = true,
+                                     const bool           tolerant         = false,
+                                     const bool           debug            = false);
     //@}
 
     static void PauseForDebugger();
@@ -453,9 +453,7 @@ namespace MueLu {
                              const Matrix& B, bool transposeB, const SC& beta,
                              RCP<Matrix>& C,       bool AHasFixedNnzPerRow = false);
 
-    /*! @brief Read vector from file in Matrix Market format.  */
-    static RCP<MultiVector> Read(const std::string& fileName, const RCP<const Map>& map);
-
+    static RCP<MultiVector> ReadMultiVector         (const std::string& fileName, const RCP<const Map>& map);
   }; // class Utils2
 
   // specialization Utils2 for SC=double, LO=GO=int
@@ -478,7 +476,7 @@ namespace MueLu {
     static void             TwoMatrixAdd            (const Matrix& A, bool transposeA, SC alpha,
                                                      const Matrix& B, bool transposeB, SC beta,
                                                      RCP<Matrix>& C,  bool AHasFixedNnzPerRow = false);
-    static RCP<MultiVector> Read                    (const std::string& fileName, const RCP<const Map>& map);
+    static RCP<MultiVector> ReadMultiVector         (const std::string& fileName, const RCP<const Map>& map);
   };
 
 
