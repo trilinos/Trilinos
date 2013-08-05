@@ -44,6 +44,7 @@
 
 #ifdef Piro_ENABLE_NOX
 #include "Piro_NOXSolver.hpp"
+#include "Piro_LOCASolver.hpp"
 #endif /* Piro_ENABLE_NOX */
 
 #ifdef Piro_ENABLE_Rythmos
@@ -70,6 +71,9 @@ Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::crea
 #ifdef Piro_ENABLE_NOX
   if (solverType == "NOX") {
     result = Teuchos::rcp(new NOXSolver<Scalar>(piroParams, model, observer));
+  } else
+  if (solverType == "LOCA") {
+    result = observedLocaSolver(piroParams, model, observer);
   } else
 #endif /* Piro_ENABLE_NOX */
 #ifdef Piro_ENABLE_Rythmos

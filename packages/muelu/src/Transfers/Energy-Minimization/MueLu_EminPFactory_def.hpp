@@ -27,7 +27,6 @@ namespace MueLu {
 
     validParamList->set< RCP<const FactoryBase> >("A",                 Teuchos::null, "Generating factory for the matrix A used during internal iterations");
     validParamList->set< RCP<const FactoryBase> >("P",                 Teuchos::null, "Generating factory for the initial guess");
-    validParamList->set< RCP<const FactoryBase> >("Nullspace",         Teuchos::null, "Generating factory for the nullspace");
     validParamList->set< RCP<const FactoryBase> >("Constraint",        Teuchos::null, "Generating factory for constraints");
     validParamList->set< int >                   ("Niterations",                   3, "Number of iterations of the internal iterative method");
     validParamList->set< int >                   ("Reuse Niterations",             1, "Number of iterations of the internal iterative method");
@@ -40,10 +39,32 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
-    Input(fineLevel,   "A");
-    Input(fineLevel,   "Nullspace");
-    Input(coarseLevel, "P");
-    Input(coarseLevel, "Constraint");
+    Input(fineLevel, "A");
+
+    static bool isAvailableP0          = false;
+    static bool isAvailableConstraint0 = false;
+
+    // Here is a tricky little piece of code
+    // We don't want to request (aka call Input) when we reuse and P0 is available
+    // However, we cannot run something simple like this:
+    //   if (!coarseLevel.IsAvailable("P0", this))
+    //     Input(coarseLevel, "P");
+    // The reason is that it works fine during the request stage, but fails
+    // in the release stage as we _construct_ P0 during Build process. Therefore,
+    // we need to understand whether we are in Request or Release mode
+    // NOTE: This is a very unique situation, please try not to propagate the
+    // mode check any further
+
+    if (coarseLevel.GetRequestMode() == Level::REQUEST) {
+      isAvailableP0          = coarseLevel.IsAvailable("P0",          this);
+      isAvailableConstraint0 = coarseLevel.IsAvailable("Constraint0", this);
+    }
+
+    if (isAvailableP0 == false)
+      Input(coarseLevel, "P");
+
+    if (isAvailableConstraint0 == false)
+      Input(coarseLevel, "Constraint");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -57,49 +78,60 @@ namespace MueLu {
 
     const ParameterList & pL = GetParameterList();
 
-    // Set keep flags
-    if (pL.isParameter("Keep P0") && pL.get<bool>("Keep P0"))
-      coarseLevel.Keep("P0",this);
-    if (pL.isParameter("Keep Constraint0") && pL.get<bool>("Keep Constraint0"))
-      coarseLevel.Keep("Constraint0",this);
+    // Get the matrix
+    RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel, "A");
 
-    // Reuse
-    int Niterations;
-
-    // Get A, B
-    RCP<Matrix>      A = Get< RCP<Matrix> >     (fineLevel,   "A");
-    RCP<MultiVector> B = Get< RCP<MultiVector> >(fineLevel,   "Nullspace");
-
-    // Get P0 or make P
-    RCP<Matrix>      P0;
+    // Get/make initial guess
+    RCP<Matrix> P0;
+    int         Niterations;
     if (coarseLevel.IsAvailable("P0", this)) {
+      // Reuse data
       P0          = coarseLevel.Get<RCP<Matrix> >("P0", this);
       Niterations = pL.get<int>("Reuse Niterations");
-      GetOStream(Runtime0, 0) << "EminPFactory: Reusing P0"<<std::endl;
+      GetOStream(Runtime0, 0) << "Reusing P0" << std::endl;
 
     } else {
+      // Construct data
       P0          = Get< RCP<Matrix> >(coarseLevel, "P");
       Niterations = pL.get<int>("Niterations");
     }
+    // NOTE: the main assumption here that P0 satisfies both constraints:
+    //   - nonzero pattern
+    //   - nullspace preservation
 
-    // Get Constraint0 or make Constraint
+    // Get/make constraint operator
     RCP<Constraint> X;
     if (coarseLevel.IsAvailable("Constraint0", this)) {
+      // Reuse data
       X = coarseLevel.Get<RCP<Constraint> >("Constraint0", this);
-      GetOStream(Runtime0, 0) << "EminPFactory: Reusing Constraint0"<<std::endl;
+      GetOStream(Runtime0, 0) << "Reusing Constraint0" << std::endl;
 
     } else {
-      X = Get< RCP<Constraint> > (coarseLevel, "Constraint");
+      // Construct data
+      X = Get< RCP<Constraint> >(coarseLevel, "Constraint");
     }
+    GetOStream(Runtime0,0) << "Number of emin iterations = " << Niterations << std::endl;
 
 
     RCP<Matrix> P;
     CGSolver EminSolver(Niterations);
-    EminSolver.Iterate(*A, *X, *P0, *B, P);
+    EminSolver.Iterate(*A, *X, *P0, P);
 
-    Set(coarseLevel, "Constraint0", X);
-    Set(coarseLevel, "P",           P);
-    Set(coarseLevel, "P0",          P);
+    Set(coarseLevel, "P", P);
+    if (pL.get<bool>("Keep P0")) {
+      // NOTE: we must do Keep _before_ set as the Needs class only sets if
+      //  a) data has been requested (which is not the case here), or
+      //  b) data has some keep flag
+      coarseLevel.Keep("P0", this);
+      Set(coarseLevel, "P0", P);
+    }
+    if (pL.get<bool>("Keep Constraint0")) {
+      // NOTE: we must do Keep _before_ set as the Needs class only sets if
+      //  a) data has been requested (which is not the case here), or
+      //  b) data has some keep flag
+      coarseLevel.Keep("Constraint0", this);
+      Set(coarseLevel, "Constraint0", X);
+    }
 
     RCP<ParameterList> params = rcp(new ParameterList());
     params->set("printLoadBalancingInfo", true);

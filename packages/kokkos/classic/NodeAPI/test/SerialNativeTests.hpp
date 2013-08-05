@@ -48,7 +48,7 @@
 
 namespace {
 
-  using Kokkos::SerialNode;
+  using KokkosClassic::SerialNode;
 
   template <>
   std::pair<double,double> nativeTimings<float,SerialNode>(int N, int numIters, float &result, const RCP<SerialNode> &node) {
@@ -64,7 +64,7 @@ namespace {
         }
       }
     }
-    float sum;
+    float sum = 0.0;
     {
       Teuchos::TimeMonitor localTimer(sTime);
       const float *ptr = buff.getRawPtr();

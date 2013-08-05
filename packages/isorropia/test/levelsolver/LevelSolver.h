@@ -102,7 +102,7 @@ class Epetra_LevelSolver : public virtual Epetra_Operator, public virtual Epetra
 
 
   //Epetra_LevelSolver(const Epetra_Map &Map, Node &node);
-  Epetra_LevelSolver(const Epetra_Map &Map, Teuchos::RCP<Kokkos::TPINode>& node);
+  Epetra_LevelSolver(const Epetra_Map &Map, Teuchos::RCP<KokkosClassic::TPINode>& node);
 
   virtual ~Epetra_LevelSolver();
     int Analyze(const Epetra_CrsGraph &G);
@@ -134,15 +134,15 @@ class Epetra_LevelSolver : public virtual Epetra_Operator, public virtual Epetra
 
     const Teuchos::RCP<const tpetraMap > &getTpetraMap() const {return tmap_RCP_;}
 
-    Teuchos::RCP<Kokkos::TPINode> & getNode() const {return node_;}
+    Teuchos::RCP<KokkosClassic::TPINode> & getNode() const {return node_;}
 
   protected:
     //typedef typename Node::template buffer<double>::buffer_t  dbuf;
     //    typedef typename Node::template buffer<int>::buffer_t  obuf;
-    //    typedef typename Node::template buffer<Kokkos::size_type>::buffer_t stbuf;
+    //    typedef typename Node::template buffer<KokkosClassic::size_type>::buffer_t stbuf;
 
     // constant elements of identity
-    Teuchos::RCP<Kokkos::TPINode> &node_;
+    Teuchos::RCP<KokkosClassic::TPINode> &node_;
       //Node &node_;
     const Epetra_Map &map_;
     Teuchos::RCP< const tpetraMap > tmap_RCP_;
@@ -152,7 +152,7 @@ class Epetra_LevelSolver : public virtual Epetra_Operator, public virtual Epetra
     // accounting
     bool setupCalled_, unitDiag_, ignorePerm_;
     int numRows_, numLevels_;
-    //mutable Kokkos::size_type buf_alloc_len_;
+    //mutable KokkosClassic::size_type buf_alloc_len_;
 
     // computational attributes
     Teuchos::ArrayRCP<int> pinds_;
@@ -162,7 +162,7 @@ class Epetra_LevelSolver : public virtual Epetra_Operator, public virtual Epetra
     Teuchos::ArrayRCP<double> dBuffOrig;
     Teuchos::ArrayRCP<double> dInvBuffOrig;
 
-    Teuchos::Array<Teuchos::RCP<Kokkos::DefaultSparseMultiply<double,int,Node> > > BblockOps_;
+    Teuchos::Array<Teuchos::RCP<KokkosClassic::DefaultSparseMultiply<double,int,Node> > > BblockOps_;
     Teuchos::RCP<Epetra_Import> importer_;
     Teuchos::RCP<Tpetra::Import< int, int, Node > >Timporter_;
 
@@ -177,7 +177,7 @@ class Epetra_LevelSolver : public virtual Epetra_Operator, public virtual Epetra
 
 template <class Node>
 //Epetra_LevelSolver<Node>::Epetra_LevelSolver(const Epetra_Map &Map, Node &node)
-Epetra_LevelSolver<Node>::Epetra_LevelSolver(const Epetra_Map &Map, Teuchos::RCP<Kokkos::TPINode> &node)
+Epetra_LevelSolver<Node>::Epetra_LevelSolver(const Epetra_Map &Map, Teuchos::RCP<KokkosClassic::TPINode> &node)
 : node_(node), map_(Map),setupCalled_(false), unitDiag_(false), ignorePerm_(false), numRows_(Map.NumMyPoints()), numLevels_(0), //buf_alloc_len_(0),
   dBuffOrig(Teuchos::null), dInvBuffOrig(Teuchos::null), meanLsize_(-1), stddevLsize_(-1), meanLnnz_(-1), stddevLnnz_(-1)
 {
@@ -379,12 +379,12 @@ int Epetra_LevelSolver<Node>::Setup(const Epetra_CrsMatrix &L)
   // create array of pointers to hold the Vector and TPICrsMatrix objects we will create below
   if (numLevels_ > 1) BblockOps_.resize(numLevels_-1);
 
-  typedef Kokkos::MultiVector<double,Node> MV;
-  typedef Kokkos::CrsMatrix<double,Node> MAT;
-  typedef Kokkos::CrsGraph<int,Node> GRPH;
+  typedef KokkosClassic::MultiVector<double,Node> MV;
+  typedef KokkosClassic::CrsMatrix<double,Node> MAT;
+  typedef KokkosClassic::CrsGraph<int,Node> GRPH;
 
-  //typedef Kokkos::DefaultSparseMultiply<MAT,MV> MATVEC;
-typedef Kokkos::DefaultSparseMultiply<double,int> MATVEC;
+  //typedef KokkosClassic::DefaultSparseMultiply<MAT,MV> MATVEC;
+typedef KokkosClassic::DefaultSparseMultiply<double,int> MATVEC;
 
   Epetra_SerialComm scomm;  // no communication necessary, no communication allowed
   // make this simple: create a single column map for all serial TPICrsMatrix objects
@@ -419,9 +419,9 @@ typedef Kokkos::DefaultSparseMultiply<double,int> MATVEC;
     Teuchos::ArrayRCP<double>    vals = node_->template allocBuffer<double>(nnzInLevel);
 
     // hosts view of data
-    Teuchos::ArrayRCP<size_t>  offsets_h = node_->template viewBufferNonConst<size_t> (Kokkos::WriteOnly,numRowsInLevel+1,offsets);
-    Teuchos::ArrayRCP<int>    inds_h = node_->template viewBufferNonConst<int>(Kokkos::WriteOnly,nnzInLevel,inds);
-    Teuchos::ArrayRCP<double>     vals_h = node_->template viewBufferNonConst<double>(Kokkos::WriteOnly,nnzInLevel,vals);
+    Teuchos::ArrayRCP<size_t>  offsets_h = node_->template viewBufferNonConst<size_t> (KokkosClassic::WriteOnly,numRowsInLevel+1,offsets);
+    Teuchos::ArrayRCP<int>    inds_h = node_->template viewBufferNonConst<int>(KokkosClassic::WriteOnly,nnzInLevel,inds);
+    Teuchos::ArrayRCP<double>     vals_h = node_->template viewBufferNonConst<double>(KokkosClassic::WriteOnly,nnzInLevel,vals);
 
     //B.initializeProfile(lsizes_[i],&NEPR[loffset]);
     //    double tmp = B.getNumEntries() - meanLnnz_;
@@ -533,8 +533,8 @@ template <class Node>
 int Epetra_LevelSolver<Node>::Apply(const Tpetra::MultiVector<double,int,int,Node> &Y, 
                                     Tpetra::MultiVector<double,int,int,Node> &X) const 
 {
-  typedef Kokkos::MultiVector<double,Node>   KMV;
-  typedef Kokkos::DefaultArithmetic<KMV> DMVA;
+  typedef KokkosClassic::MultiVector<double,Node>   KMV;
+  typedef KokkosClassic::DefaultArithmetic<KMV> DMVA;
   if (numLevels_ == 0) return 0;
   // solve L*X = Y into X
   using std::endl;
@@ -554,8 +554,8 @@ int Epetra_LevelSolver<Node>::Apply(const Tpetra::MultiVector<double,int,int,Nod
   // since we can't write to Y, this means temp storage.
   // 
 
-   const Kokkos::MultiVector<double,Node> *lclX = &(X.getLocalMV());
-   const Kokkos::MultiVector<double,Node> *lclY = &(Y.getLocalMV());
+   const KokkosClassic::MultiVector<double,Node> *lclX = &(X.getLocalMV());
+   const KokkosClassic::MultiVector<double,Node> *lclY = &(Y.getLocalMV());
    if(lclX==lclY)
    {
      std::cout << "Not handling case where X=Y Yet!!!" << std::endl;
@@ -689,20 +689,20 @@ int Epetra_LevelSolver<Node>::Apply(const Tpetra::MultiVector<double,int,int,Nod
 /* template <class Node> */
 /* int Epetra_LevelSolver<Node>::Apply(const Epetra_MultiVector &Y, Epetra_MultiVector &X) const  */
 /* { */
-/*   typedef Kokkos::MultiVector<double,Node>   MV; */
-/*   typedef Kokkos::DefaultArithmetic<MV>        DMVA; */
+/*   typedef KokkosClassic::MultiVector<double,Node>   MV; */
+/*   typedef KokkosClassic::DefaultArithmetic<MV>        DMVA; */
 /*   if (numLevels_ == 0) return 0; */
 /*   // solve L*X = Y into X */
 /*   using std::endl; */
 /*   using std::cout; */
 /*   using Teuchos::ArrayRCP; */
 
-/* /\*   using Kokkos::MultiVector; *\/ */
-/* /\*   using Kokkos::CrsMatrix; *\/ */
-/* /\*   using Kokkos::CrsGraph; *\/ */
-/* /\*   using Kokkos::DefaultArithmetic; *\/ */
-/* /\*   using Kokkos::DefaultSparseMultiply; *\/ */
-/* /\*   using Kokkos::SerialNode; *\/ */
+/* /\*   using KokkosClassic::MultiVector; *\/ */
+/* /\*   using KokkosClassic::CrsMatrix; *\/ */
+/* /\*   using KokkosClassic::CrsGraph; *\/ */
+/* /\*   using KokkosClassic::DefaultArithmetic; *\/ */
+/* /\*   using KokkosClassic::DefaultSparseMultiply; *\/ */
+/* /\*   using KokkosClassic::SerialNode; *\/ */
 /* /\*   using Teuchos::RCP; *\/ */
 /* /\*   using Teuchos::rcp; *\/ */
 /* /\*   using Teuchos::null; *\/ */
@@ -827,8 +827,8 @@ int Epetra_LevelSolver<Node>::ApplyInverse(const Epetra_MultiVector &X, Epetra_M
 {
   std::cout << "Epetra_LevelSolver::ApplyInverse currently not implemented" << std::endl;
  
-/*   typedef Kokkos::MultiVector<double,Node>   MV; */
-/*   typedef Kokkos::DefaultArithmetic<MV>        DMVA; */
+/*   typedef KokkosClassic::MultiVector<double,Node>   MV; */
+/*   typedef KokkosClassic::DefaultArithmetic<MV>        DMVA; */
 /*   if (numLevels_ == 0) return 0; */
 /*   // apply L*X into Y */
 /*   using std::endl; */

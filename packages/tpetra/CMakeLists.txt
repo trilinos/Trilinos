@@ -164,6 +164,14 @@ IF(Tpetra_INST_DD_REAL)
   LIST(APPEND Tpetra_ETI_SCALARS "dd_real")
 ENDIF()
 
+#
+# Set GlobalOrdinal ETI types.  
+#
+# Unfortunately, we have to add these types to the list of Scalar ETI
+# types as well, since some downstream packages use Scalar =
+# GlobalOrdinal to implement certain communication patterns.
+#
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_INT_LONG
   HAVE_TPETRA_INST_INT_LONG
@@ -173,6 +181,17 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 IF(Tpetra_INST_INT_LONG) 
   LIST(APPEND Tpetra_ETI_GORDS   "long")
   LIST(APPEND Tpetra_ETI_SCALARS "long")
+ENDIF()
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_INT_LONG_LONG
+  HAVE_TPETRA_INST_INT_LONG_LONG
+  "If explicit instantiation is enabled, instantiate over global ordinal long long."
+  ${Teuchos_ENABLE_LONG_LONG_INT}
+  )
+IF(Tpetra_INST_INT_LONG_LONG) 
+  LIST(APPEND Tpetra_ETI_GORDS   "long long")
+  LIST(APPEND Tpetra_ETI_SCALARS "long long")
 ENDIF()
 
 SET(Tpetra_INST_UNSIGNED_LONG

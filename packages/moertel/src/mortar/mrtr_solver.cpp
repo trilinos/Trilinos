@@ -8,20 +8,33 @@
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
 #
-# This library is free software; you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as
-# published by the Free Software Foundation; either version 2.1 of the
-# License, or (at your option) any later version.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
 #
-# This library is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
 #
-# You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the Corporation nor the names of the
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 # Questions? Contact Glen Hansen (gahanse@sandia.gov)
 #
 # ************************************************************************
@@ -109,7 +122,7 @@ bool MOERTEL::Solver::Solve()
   // check the linear system  
   if (x_==Teuchos::null || b_==Teuchos::null || matrix_==Teuchos::null)
   {
-    cout << "***ERR*** MOERTEL::Solver::Solve:\n"
+    std::cout << "***ERR*** MOERTEL::Solver::Solve:\n"
          << "***ERR*** matrix and/or rhs and/or solution vector are Teuchos::null\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -119,7 +132,7 @@ bool MOERTEL::Solver::Solve()
   // check for parameters
   if (params_==NULL)
   {
-    cout << "***ERR*** MOERTEL::Solver::Solve:\n"
+    std::cout << "***ERR*** MOERTEL::Solver::Solve:\n"
          << "***ERR*** solver parameters are Teuchos::null\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -138,7 +151,7 @@ bool MOERTEL::Solver::Solve()
   linearproblem_->CheckInput();
   //---------------------------------------------------------------------------
   // get type of solver to be used
-  string solver = params_->get("Solver","None");
+  std::string solver = params_->get("Solver","None");
   
   //---------------------------------------------------------------------------
   // time the solution process
@@ -153,7 +166,7 @@ bool MOERTEL::Solver::Solve()
     ok = Solve_Amesos(amesosparams);
     if (!ok)
     {
-      cout << "***WRN*** MOERTEL::Solver::Solve:\n"
+      std::cout << "***WRN*** MOERTEL::Solver::Solve:\n"
            << "***WRN*** Solve_Amesos returned false\n"
            << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     }
@@ -166,11 +179,11 @@ bool MOERTEL::Solver::Solve()
            solver=="AZTEC"    || solver=="aztec")
   {
     // see whether we have a spd system
-    string system = params_->get("System","None");
+    std::string system = params_->get("System","None");
     if (system!="SPDSystem"  && system!="spdsystem" && system!="spd_system" && 
         system!="SPD_System" && system!="SPDSYSTEM" && system!="SPD_SYSTEM")
     {
-      cout << "***ERR*** MOERTEL::Solver::Solve:\n"
+      std::cout << "***ERR*** MOERTEL::Solver::Solve:\n"
            << "***ERR*** To use ML?Aztec for solution, parameter \"System\" hast to be \"SPDSystem\" \n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
@@ -180,7 +193,7 @@ bool MOERTEL::Solver::Solve()
     ok = Solve_MLAztec(mlparams,aztecparams);
     if (!ok)
     {
-      cout << "***WRN*** MOERTEL::Solver::Solve:\n"
+      std::cout << "***WRN*** MOERTEL::Solver::Solve:\n"
            << "***WRN*** Solve_MLAztec returned false\n"
            << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     }
@@ -191,7 +204,7 @@ bool MOERTEL::Solver::Solve()
   // unknown solver
   else
   {
-    cout << "***ERR*** MOERTEL::Solver::Solve:\n"
+    std::cout << "***ERR*** MOERTEL::Solver::Solve:\n"
          << "***ERR*** solver type is unknown\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     ok = false;
@@ -202,7 +215,7 @@ bool MOERTEL::Solver::Solve()
   // time the solution process
   double t = time.ElapsedTime();
   if (OutLevel()>5 && Comm().MyPID()==0)
-    cout << "MOERTEL (Proc 0): Solution of system of equations in " << t << " sec\n";
+    std::cout << "MOERTEL (Proc 0): Solution of system of equations in " << t << " sec\n";
 
   return ok;
 }
@@ -217,11 +230,11 @@ bool MOERTEL::Solver::Solve_Amesos(Teuchos::ParameterList& amesosparams)
 
   //---------------------------------------------------------------------------
   // which amesos solver
-  string solver       = amesosparams.get("Solver","None");
+  std::string solver       = amesosparams.get("Solver","None");
   bool   usetranspose = amesosparams.get("UseTranspose",false);
   if (solver=="None")
   {
-    cout << "***ERR*** MOERTEL::Solver::Solve_Amesos:\n"
+    std::cout << "***ERR*** MOERTEL::Solver::Solve_Amesos:\n"
          << "***ERR*** No Amesos solver chosen\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -235,7 +248,7 @@ bool MOERTEL::Solver::Solve_Amesos(Teuchos::ParameterList& amesosparams)
     Amesos Factory;
     if (!Factory.Query(solver))
     {
-      cout << "***ERR*** MOERTEL::Solver::Solve_Amesos:\n"
+      std::cout << "***ERR*** MOERTEL::Solver::Solve_Amesos:\n"
            << "***ERR*** Amesos solver '" << solver << "' not supported\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
@@ -243,7 +256,7 @@ bool MOERTEL::Solver::Solve_Amesos(Teuchos::ParameterList& amesosparams)
     amesossolver_ = Teuchos::rcp(Factory.Create(solver,*linearproblem_));
     if (amesossolver_.get()==0)
     {
-      cout << "***ERR*** MOERTEL::Solver::Solve_Amesos:\n"
+      std::cout << "***ERR*** MOERTEL::Solver::Solve_Amesos:\n"
            << "***ERR*** Could not create Amesos solver '" << solver << "'\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
@@ -264,7 +277,7 @@ bool MOERTEL::Solver::Solve_Amesos(Teuchos::ParameterList& amesosparams)
   if (ok==0) return true;
   else
   {
-    cout << "***ERR*** MOERTEL::Solver::Solve_Amesos:\n"
+    std::cout << "***ERR*** MOERTEL::Solver::Solve_Amesos:\n"
          << "***ERR*** Amesos returned " << ok << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -281,10 +294,10 @@ bool MOERTEL::Solver::Solve_MLAztec(Teuchos::ParameterList& mlparams,
 {
   
   // create ML preconditioner if aztec parameter indicates user preconditioner
-  string preconditioner = aztecparams.get("AZ_precond","none");
+  std::string preconditioner = aztecparams.get("AZ_precond","none");
   if (preconditioner=="none")
   {
-    cout << "***ERR*** MOERTEL::Solver::Solve_MLAztec:\n"
+    std::cout << "***ERR*** MOERTEL::Solver::Solve_MLAztec:\n"
          << "***ERR*** Aztec parameter \"AZ_precond\" is not set\n"
          << "***ERR*** set to \"AZ_user_precond\" to use ML or to some Aztec internal method\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -336,7 +349,7 @@ bool MOERTEL::Solver::Solve_MLAztec(Teuchos::ParameterList& mlparams,
   else if (azstatus[AZ_why] == AZ_breakdown)
   {
     if (Comm().MyPID() == 0)
-    cout << "MOERTEL: ***WRN*** MOERTEL::Solver::Solve_MLAztec:\n"
+    std::cout << "MOERTEL: ***WRN*** MOERTEL::Solver::Solve_MLAztec:\n"
          << "MOERTEL: ***WRN*** Aztec returned status AZ_breakdown\n"
          << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -344,7 +357,7 @@ bool MOERTEL::Solver::Solve_MLAztec(Teuchos::ParameterList& mlparams,
   else if (azstatus[AZ_why] == AZ_loss)
   {
     if (Comm().MyPID() == 0)
-    cout << "MOERTEL: ***WRN*** MOERTEL::Solver::Solve_MLAztec:\n"
+    std::cout << "MOERTEL: ***WRN*** MOERTEL::Solver::Solve_MLAztec:\n"
          << "MOERTEL: ***WRN*** Aztec returned status AZ_loss\n"
          << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -352,7 +365,7 @@ bool MOERTEL::Solver::Solve_MLAztec(Teuchos::ParameterList& mlparams,
   else if (azstatus[AZ_why] == AZ_ill_cond)
   {
     if (Comm().MyPID() == 0)
-    cout << "MOERTEL: ***WRN*** MOERTEL::Solver::Solve_MLAztec:\n"
+    std::cout << "MOERTEL: ***WRN*** MOERTEL::Solver::Solve_MLAztec:\n"
          << "MOERTEL: ***WRN*** Aztec returned status AZ_ill_cond\n"
          << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -360,7 +373,7 @@ bool MOERTEL::Solver::Solve_MLAztec(Teuchos::ParameterList& mlparams,
   else if (azstatus[AZ_why] == AZ_maxits)
   {
     if (Comm().MyPID() == 0)
-    cout << "MOERTEL: ***WRN*** MOERTEL::Solver::Solve_MLAztec:\n"
+    std::cout << "MOERTEL: ***WRN*** MOERTEL::Solver::Solve_MLAztec:\n"
          << "MOERTEL: ***WRN*** Aztec returned status AZ_maxits\n"
          << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -368,7 +381,7 @@ bool MOERTEL::Solver::Solve_MLAztec(Teuchos::ParameterList& mlparams,
   else
   {
     if (Comm().MyPID() == 0)
-    cout << "MOERTEL: ***WRN*** MOERTEL::Solver::Solve_MLAztec:\n"
+    std::cout << "MOERTEL: ***WRN*** MOERTEL::Solver::Solve_MLAztec:\n"
          << "MOERTEL: ***WRN*** Aztec returned unknown status: " << azstatus[AZ_why] << "\n"
          << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -379,7 +392,7 @@ bool MOERTEL::Solver::Solve_MLAztec(Teuchos::ParameterList& mlparams,
   // B^T e = 0 ok this is true
   Epetra_Vector* BTe = new Epetra_Vector(x_->Map(),true);
   B_->Multiply(true,*x_,*BTe);
-  cout << *BTe;
+  std::cout << *BTe;
 
 #endif
 

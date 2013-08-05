@@ -70,12 +70,6 @@
       <Parameter name="factory"                             type="string" value="TentativePFactory"/>
     </ParameterList>
 
-    <ParameterList name="mySmoothFact">
-      <Parameter name="factory"                             type="string" value="SaPFactory"/>
-      <Parameter name="A"                                   type="string" value="myFilteredAFact"/>
-      <Parameter name="P"                                   type="string" value="myTentativePFact"/>
-    </ParameterList>
-
     <!-- =======================  ENERGY MINIMIZATION  ======================= -->
     <!-- <ParameterList name="myNullspaceFact"> -->
       <!-- <Parameter name="factory"                             type="string" value="NullspacePresmoothFactory"/> -->
@@ -83,8 +77,8 @@
 
     <ParameterList name="myPatternFact">
       <Parameter name="factory"                             type="string" value="PatternFactory"/>
-      <Parameter name="P"                                   type="string" value="mySmoothFact"/>
-      <Parameter name="k"                                   type="int"    value="0"/>
+      <Parameter name="P"                                   type="string" value="myTentativePFact"/>
+      <Parameter name="k"                                   type="int"    value="1"/>
     </ParameterList>
 
     <ParameterList name="myConstraintFact">
@@ -149,7 +143,7 @@
   <!-- Definition of the multigrid preconditioner -->
   <ParameterList name="Hierarchy">
 
-    <Parameter name="numDesiredLevel"                       type="int"      value="2"/>         <!-- Max number of levels -->
+    <Parameter name="numDesiredLevel"                       type="int"      value="6"/>         <!-- Max number of levels -->
     <Parameter name="maxCoarseSize"                         type="int"      value="500"/>       <!-- Min number of rows on coarsest level -->
     <Parameter name="verbosity"                             type="string"   value="High"/>
     <Parameter name="reuse"                                 type="bool"     value="true"/>      <!-- Allow factories to call Build method multiple times -->

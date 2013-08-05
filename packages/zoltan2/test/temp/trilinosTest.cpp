@@ -56,7 +56,7 @@ using std::cerr;
 using std::endl;
 using Teuchos::RCP;
 
-typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
 typedef float scalar_t;
 typedef int lno_t;
 typedef int gno_t;
@@ -80,8 +80,8 @@ int main(int argc, char *argv[])
   //string fname("simple.mtx"); // This file is read without error
 
   RCP<tcrsMatrix_t> M;
-  RCP<Kokkos::DefaultNode::DefaultNodeType> dnode
-    = Kokkos::DefaultNode::getDefaultNode();
+  RCP<KokkosClassic::DefaultNode::DefaultNodeType> dnode
+    = KokkosClassic::DefaultNode::getDefaultNode();
 
   try{
     M = Tpetra::MatrixMarket::Reader<tcrsMatrix_t>::readSparseFile(

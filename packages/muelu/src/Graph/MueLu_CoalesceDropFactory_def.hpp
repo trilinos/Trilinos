@@ -87,6 +87,7 @@ namespace MueLu {
     validParamList->set< SC >                    ("Dirichlet detection threshold", TST::zero(), "Threshold for determining whether entries are zero during Dirichlet row detection");
     validParamList->set< SC >                    ("aggregation threshold", TST::zero(), "Aggregation dropping threshold");
     validParamList->set< std::string >           ("algorithm",          "original",    "Dropping algorithm");
+    validParamList->set< bool >                  ("disable Dirichlet detection",   false, "Experimental option");
 
     return validParamList;
   }
@@ -117,6 +118,7 @@ namespace MueLu {
 
     const ParameterList  & pL = GetParameterList();
     bool doExperimentalWrap = pL.get<bool>("lightweight wrap");
+    bool disableDirichletDetection = pL.get<bool>("disable Dirichlet detection");
 
     GetOStream(Parameters0, 0) << "CoalesceDropFactory::Build : lightweight wrap = " << doExperimentalWrap << std::endl;
 
@@ -160,7 +162,11 @@ namespace MueLu {
           RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
 
           // Detect and record rows that correspond to Dirichlet boundary conditions
-          const ArrayRCP<const bool> boundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+          ArrayRCP<const bool > boundaryNodes;
+          if (!disableDirichletDetection)
+            boundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+          else
+            boundaryNodes = ArrayRCP<const bool>(A->getNodeNumRows(),false);
           graph->SetBoundaryNodeMap(boundaryNodes);
 
           if (GetVerbLevel() & Statistics0) {
@@ -217,8 +223,8 @@ namespace MueLu {
               } else
                 numDropped++;
             }
-            if (rownnz == 1) {
-              // If the only element remaining after filtering is diagonal, mark node as bounday
+            if (rownnz == 1 && !disableDirichletDetection) {
+              // If the only element remaining after filtering is diagonal, mark node as boundary
               // FIXME: this should really be replaced by the following
               //    if (indices.size() == 1 && indices[0] == row)
               //        boundaryNodes[row] = true;
@@ -272,7 +278,12 @@ namespace MueLu {
         // TODO If we use ArrayRCP<LO>, then we can record boundary nodes as usual.  Size
         // TODO the array one bigger than the number of local rows, and the last entry can
         // TODO hold the actual number of boundary nodes.  Clever, huh?
-        const ArrayRCP<const bool > pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+        ArrayRCP<const bool > pointBoundaryNodes;
+        if (!disableDirichletDetection)
+          pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+        else {
+          pointBoundaryNodes = ArrayRCP<const bool>(A->getNodeNumRows(),false);
+        }
 
         if ( (blkSize == 1) && (threshold == STS::zero()) ) {
           // Trivial case: scalar problem, no dropping. Can return original graph
@@ -373,19 +384,7 @@ namespace MueLu {
               } else {
                 // Merge rows of A
                 std::set<LO> cols;
-                for (LO j = 0; j < blkSize; ++j) {
-                  ArrayView<const LO> inds;
-                  ArrayView<const SC> vals;
-                  A->getLocalRowView(row*blkSize+j, inds, vals);
-                  for (LO k = 0; k < inds.size(); k++) {
-                    // TODO: speed this up by using something like map for translation
-                    LO  dofLID = inds[k];
-                    GO  dofGID = colMap->getGlobalElement(dofLID);
-                    GO nodeGID = (dofGID-indexBase)/blkSize + indexBase;
-                    LO nodeLID = nonUniqueMap->getLocalElement(nodeGID);
-                    cols.insert(nodeLID);
-                  }
-                }
+                MergeRows(*A,row,cols,blkSize,*colMap,indexBase,*nonUniqueMap);
                 indicesExtra.resize(cols.size());
                 size_t pos = 0;
                 for (typename std::set<LO>::const_iterator it = cols.begin(); it != cols.end(); it++)
@@ -433,26 +432,15 @@ namespace MueLu {
               // This may not be true in general, for instance we might have mixed b.c.
               // where pressure is Dirichlet and velocities are not
               bool isBoundary = false;
-              for (LO j = 0; j < blkSize; j++)
-                if (pointBoundaryNodes[row*blkSize+j])
-                  isBoundary = true;
+              if (!disableDirichletDetection)
+                for (LO j = 0; j < blkSize; j++)
+                  if (pointBoundaryNodes[row*blkSize+j])
+                    isBoundary = true;
 
               // Merge rows of A
               std::set<LO> cols;
               if (!isBoundary) {
-                for (LO j = 0; j < blkSize; j++) {
-                  ArrayView<const LO> inds;
-                  ArrayView<const SC> vals;
-                  A->getLocalRowView(row*blkSize+j, inds, vals);
-                  for (LO k = 0; k < inds.size(); k++) {
-                    // TODO: speed this up by using something like map for translation
-                    LO  dofLID = inds[k];
-                    GO  dofGID = colMap->getGlobalElement(dofLID);
-                    GO nodeGID = (dofGID-indexBase)/blkSize + indexBase;
-                    LO nodeLID = nonUniqueMap->getLocalElement(nodeGID);
-                    cols.insert(nodeLID);
-                  }
-                }
+                MergeRows(*A,row,cols,blkSize,*colMap,indexBase,*nonUniqueMap);
               } else {
                 cols.insert(row);
               }
@@ -667,6 +655,24 @@ namespace MueLu {
     } //if (doExperimentalWrap) ... else ...
 
   } //Build
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MergeRows(Matrix const & A, LO const &row,
+  std::set<LO> &cols, LO const &blkSize, Map const &colMap, GO const &indexBase, Map const &nonUniqueMap) const {
+    for (LO j = 0; j < blkSize; ++j) {
+      ArrayView<const LO> inds;
+      ArrayView<const SC> vals;
+      A.getLocalRowView(row*blkSize+j, inds, vals);
+      for (LO k = 0; k < inds.size(); k++) {
+        // TODO: speed this up by using something like map for translation
+        LO  dofLID = inds[k];
+        GO  dofGID = colMap.getGlobalElement(dofLID);
+        GO nodeGID = (dofGID-indexBase)/blkSize + indexBase;
+        LO nodeLID = nonUniqueMap.getLocalElement(nodeGID);
+        cols.insert(nodeLID);
+      }
+    }
+  } //MergeRows
 
 } //namespace MueLu
 

@@ -47,6 +47,7 @@ namespace Ioss {
 	       int64_t number_elements);
 
     std::string type_string() const {return "ElementSet";}
+    std::string short_type_string() const {return "elementlist";}
     EntityType type() const {return ELEMENTSET;}
       
     // Handle implicit properties -- These are calcuated from data stored

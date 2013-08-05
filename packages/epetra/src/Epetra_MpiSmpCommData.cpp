@@ -55,10 +55,10 @@ Epetra_MpiSmpCommData::Epetra_MpiSmpCommData(MPI_Comm& Comm)
 	minTag_ = 24050;
 	maxTag_ = 24099;
 	NodeID_ = rank_;
-	//cout << "--MSCD created (dc), addr: " << this << endl; //DATA_DEBUG
+	//cout << "--MSCD created (dc), addr: " << this << std::endl; //DATA_DEBUG
 }
 
 //=============================================================================
 Epetra_MpiSmpCommData::~Epetra_MpiSmpCommData() {
-	//cout << "--MSCD destroyed, addr: " << this << endl; //DATA_DEBUG
+	//cout << "--MSCD destroyed, addr: " << this << std::endl; //DATA_DEBUG
 }

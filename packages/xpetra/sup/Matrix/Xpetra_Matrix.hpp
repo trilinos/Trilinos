@@ -93,8 +93,8 @@ namespace Xpetra {
   template <class Scalar,
             class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node          = Kokkos::DefaultNode::DefaultNodeType,
-            class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
+            class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
+            class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
   class Matrix : virtual public Teuchos::Describable {
 
     typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
@@ -245,6 +245,9 @@ namespace Xpetra {
     virtual void replaceLocalValues(LocalOrdinal localRow,
                                     const ArrayView<const LocalOrdinal> &cols,
                                     const ArrayView<const Scalar>       &vals) = 0;
+
+    //! Set all matrix entries equal to scalar
+    virtual void setAllToScalar(const Scalar &alpha)= 0;
 
     //! Scale the current values of a matrix, this = alpha*this.
     virtual void scale(const Scalar &alpha)= 0;

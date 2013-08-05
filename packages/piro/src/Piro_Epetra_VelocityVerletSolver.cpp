@@ -76,7 +76,7 @@ Piro::Epetra::VelocityVerletSolver::VelocityVerletSolver(Teuchos::RCP<Teuchos::P
   vvPL->validateParameters(*getValidVelocityVerletParameters(),0);
 
   {
-    const string verbosity = vvPL->get("Verbosity Level", "VERB_DEFAULT");
+    const std::string verbosity = vvPL->get("Verbosity Level", "VERB_DEFAULT");
     solnVerbLevel = Teuchos::VERB_DEFAULT;
     if      (verbosity == "VERB_NONE")    solnVerbLevel = Teuchos::VERB_NONE;
     else if (verbosity == "VERB_LOW")     solnVerbLevel = Teuchos::VERB_LOW;
@@ -211,7 +211,7 @@ void Piro::Epetra::VelocityVerletSolver::evalModel( const InArgs& inArgs,
                      std::endl << "Error in Piro::Epetra::VelocityVerletSolver " <<
                      "Requires initial x and x_dot: " << std::endl);
   double vo; v->Norm2(&vo);
-  *out << "Initial Velocity = " << vo << endl;
+  *out << "Initial Velocity = " << vo << std::endl;
 
    if (Teuchos::VERB_MEDIUM <= solnVerbLevel) *out << std::endl;
 

@@ -107,7 +107,7 @@ void Init()
 
   if (j != 0)
   {
-    if (GetMyPID()  == 0) cout << "Host and Process Ids for tasks" << endl;
+    if (GetMyPID()  == 0) std::cout << "Host and Process Ids for tasks" << std::endl;
     for (i = 0; i < GetNumProcs() ; i++) {
       if (i == GetMyPID() ) {
 #if defined(TFLOP) || defined(JANUS_STLPORT) || defined(COUGAR)
@@ -156,19 +156,19 @@ void Finalize()
 }
 
 // ====================================================================== 
-string GetString(const int& x) 
+std::string GetString(const int& x) 
 {
   char s[100];
   sprintf(s, "%d", x);
-  return string(s);
+  return std::string(s);
 }
 
 // ====================================================================== 
-string GetString(const double& x)
+std::string GetString(const double& x)
 {
   char s[100];
   sprintf(s, "%g", x);
-  return string(s);
+  return std::string(s);
 }
 
 // ====================================================================== 

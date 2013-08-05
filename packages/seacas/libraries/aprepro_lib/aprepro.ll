@@ -41,9 +41,16 @@ char  *temp_f;
 
 #define MAX_IF_NESTING 64
 
-int if_state[MAX_IF_NESTING];
-int if_lvl = 0;
-
+ int if_state[MAX_IF_NESTING] = {0}; // INITIAL
+ int if_case_run[MAX_IF_NESTING] = {false}; /* Has any if or elseif condition executed */
+ int if_lvl = 0;
+ int if_skip_level = 0;
+bool suppress_nl = false;
+ bool switch_active = false;   // Are we in a switch
+ bool switch_case_run = false; // has there been a case which matched condition run?
+ bool switch_skip_to_endcase = false;
+ double switch_condition = 0.0; // Value specified in "switch(condition)"
+ 
 %}
 /*** Flex Declarations and Options ***/
 
@@ -71,181 +78,297 @@ NL    "\n"
 number {D}*\.({D}+)?({E})?
 integer {D}+({E})?
 
-%START PARSING GET_FILENAME IF_SKIP GET_VAR VERBATIM IF_WHILE_SKIP GET_LOOP_VAR LOOP LOOP_SKIP
+%START PARSING GET_FILENAME IF_SKIP GET_VAR VERBATIM IF_WHILE_SKIP GET_LOOP_VAR LOOP LOOP_SKIP END_CASE_SKIP
 
 %%
-<INITIAL>"{VERBATIM(ON)}"   { BEGIN(VERBATIM);  }
-<VERBATIM>"{VERBATIM(OFF)}" { BEGIN(INITIAL);   }
-<VERBATIM>[A-Za-z0-9_ ]* |
-<VERBATIM>.                 { if (echo) ECHO; }
-<VERBATIM>"\n"              { if (echo) ECHO; aprepro.ap_file_list.top().lineno++;   }
+<VERBATIM>{
+  "{VERBATIM(OFF)}" { BEGIN(INITIAL);   }
+  [A-Za-z0-9_ ]* |
+    .               { if (echo) ECHO; }
+  "\n"              { if (echo) ECHO; aprepro.ap_file_list.top().lineno++;   }
+}
 
-<INITIAL>{WS}"{ECHO}" |
-{WS}"{ECHO(ON)}"	    { echo = true;	}
-<INITIAL>{WS}"{NOECHO}" |
-{WS}"{ECHO(OFF)}"	    { echo = false;	}
+<INITIAL>{
+  "{VERBATIM(ON)}"   { BEGIN(VERBATIM);  }
+  {WS}"{ECHO}" |
+  {WS}"{ECHO(ON)}"	    { echo = true;	}
+  {WS}"{NOECHO}" |
+  {WS}"{ECHO(OFF)}"	    { echo = false;	}
 
-<INITIAL>{WS}"{IMMUTABLE(ON)}"	    { aprepro.stateImmutable = true;	}
-<INITIAL>{WS}"{IMMUTABLE(OFF)}"	    { aprepro.stateImmutable = aprepro.ap_options.immutable; }
+  {WS}"{IMMUTABLE(ON)}"	    { aprepro.stateImmutable = true;	}
+  {WS}"{IMMUTABLE(OFF)}"	    { aprepro.stateImmutable = aprepro.ap_options.immutable; }
 
-<INITIAL>{WS}"{"[Ll]"oop(" { BEGIN(GET_LOOP_VAR);
-			      if (aprepro.ap_options.debugging) 
-				std::cerr << "DEBUG LOOP - Found loop begin test " << yytext << " in file "
-					  << aprepro.ap_file_list.top().name << "\n";
+  {WS}"{"[Ll]"oop"{WS}"(" {
+    BEGIN(GET_LOOP_VAR);
+    if (aprepro.ap_options.debugging) 
+      std::cerr << "DEBUG LOOP - Found loop begin test " << yytext << " in file "
+		<< aprepro.ap_file_list.top().name << "\n";
+  }
+}
 
-                           }
+<GET_LOOP_VAR>{
+  {number}")".*"\n" |
+  {integer}")}".*"\n" {
+    /* Loop control defined by integer */
+    char *pt = strchr(yytext, ')');
+    *pt = '\0';
+    sscanf (yytext, "%lf", &yylval->val);
 
-<GET_LOOP_VAR>{number}")".*"\n" |
-<GET_LOOP_VAR>{integer}")}".*"\n" {/* Loop control defined by integer */
-                              char *pt = strchr(yytext, ')');
-			      *pt = '\0';
-			      sscanf (yytext, "%lf", &yylval->val);
+    if (yylval->val <= 0) {
+      BEGIN(LOOP_SKIP);
+    }
+    else {/* Value defined and != 0. */
+      temp_f = get_temp_filename();
+      SEAMS::file_rec new_file(temp_f, 0, true, (int)yylval->val);
+      aprepro.ap_file_list.push(new_file);
 
-			      if (yylval->val <= 0) {
-				BEGIN(LOOP_SKIP);
-			      }
-			      else {/* Value defined and != 0. */
-				temp_f = get_temp_filename();
-				SEAMS::file_rec new_file(temp_f, 0, true, (int)yylval->val);
-				aprepro.ap_file_list.push(new_file);
+      if (aprepro.ap_options.debugging) 
+	std::cerr << "DEBUG LOOP VAR = " << aprepro.ap_file_list.top().loop_count
+		  << " in file " << aprepro.ap_file_list.top().name
+		  << " at line " << aprepro.ap_file_list.top().lineno << "\n";
 
-				if (aprepro.ap_options.debugging) 
-				  std::cerr << "DEBUG LOOP VAR = " << aprepro.ap_file_list.top().loop_count
-					    << " in file " << aprepro.ap_file_list.top().name
-					    << " at line " << aprepro.ap_file_list.top().lineno << "\n";
+      tmp_file = new std::fstream(temp_f, std::ios::out);
+      loop_lvl++;
+      BEGIN(LOOP);
+    }
+    aprepro.ap_file_list.top().lineno++;
+  }
 
-				tmp_file = new std::fstream(temp_f, std::ios::out);
-				loop_lvl++;
-				BEGIN(LOOP);
-			      }
-			      aprepro.ap_file_list.top().lineno++;
-                            }
-<GET_LOOP_VAR>.+")}".*"\n"  { /* Loop control defined by variable */
-                              symrec *s;
-			      char *pt = strchr(yytext, ')');
-			      *pt = '\0';
-			      s = aprepro.getsym(yytext);
+  .+")}".*"\n"  {
+    /* Loop control defined by variable */
+    symrec *s;
+    char *pt = strchr(yytext, ')');
+    *pt = '\0';
+    s = aprepro.getsym(yytext);
 
-			      if (s == 0 || (s->type != token::SVAR && s->type != token::IMMSVAR && s->value.var == 0.)) {
-				BEGIN(LOOP_SKIP);
-			      }
-			      else { /* Value defined and != 0. */
-				temp_f = get_temp_filename();
-				SEAMS::file_rec new_file(temp_f, 0, true, (int)s->value.var);
-				aprepro.ap_file_list.push(new_file);
+    if (s == 0 || (s->type != token::SVAR && s->type != token::IMMSVAR && s->value.var == 0.)) {
+      BEGIN(LOOP_SKIP);
+    }
+    else { /* Value defined and != 0. */
+      temp_f = get_temp_filename();
+      SEAMS::file_rec new_file(temp_f, 0, true, (int)s->value.var);
+      aprepro.ap_file_list.push(new_file);
 				
-				if (aprepro.ap_options.debugging) 
-				  std::cerr << "DEBUG LOOP VAR = " << aprepro.ap_file_list.top().loop_count
-					    << " in file " << aprepro.ap_file_list.top().name
-					    << " at line " << aprepro.ap_file_list.top().lineno << "\n";
+      if (aprepro.ap_options.debugging) 
+	std::cerr << "DEBUG LOOP VAR = " << aprepro.ap_file_list.top().loop_count
+		  << " in file " << aprepro.ap_file_list.top().name
+		  << " at line " << aprepro.ap_file_list.top().lineno << "\n";
 
-				tmp_file = new std::fstream(temp_f, std::ios::out);
-				loop_lvl++;
-				BEGIN(LOOP);
-			      }
-			      aprepro.ap_file_list.top().lineno++;
-                             }
-<LOOP>{WS}"{"[Ee]"nd"[Ll]"oop".*"\n" { aprepro.ap_file_list.top().lineno++;
-				   if (--loop_lvl == 0) {
-				     BEGIN(INITIAL);
-				     tmp_file->close();
-				     delete tmp_file;
+      tmp_file = new std::fstream(temp_f, std::ios::out);
+      loop_lvl++;
+      BEGIN(LOOP);
+    }
+    aprepro.ap_file_list.top().lineno++;
+  }
+}
+
+<LOOP>{
+  {WS}"{"[Ee]"nd"[Ll]"oop".*"\n" {
+    aprepro.ap_file_list.top().lineno++;
+    if (--loop_lvl == 0) {
+      BEGIN(INITIAL);
+      tmp_file->close();
+      delete tmp_file;
 				     
-				     yyin = aprepro.open_file(aprepro.ap_file_list.top().name, "r");
-				     yyFlexLexer::yypush_buffer_state (yyFlexLexer::yy_create_buffer( yyin, YY_BUF_SIZE));
-				   }
-				   else {
-				     (*tmp_file) << yytext;
-				   }
-				 }
-<LOOP>{WS}"{"[Ll]"oop(".*"\n"  { loop_lvl++; /* Nested Loop */
-	                         (*tmp_file) << yytext;
-			         aprepro.ap_file_list.top().lineno++;
-			        }
-<LOOP>.*"\n"		        { (*tmp_file) << yytext;
- 			          aprepro.ap_file_list.top().lineno++;
-			        }
+      yyin = aprepro.open_file(aprepro.ap_file_list.top().name, "r");
+      yyFlexLexer::yypush_buffer_state (yyFlexLexer::yy_create_buffer( yyin, YY_BUF_SIZE));
+    }
+    else {
+      (*tmp_file) << yytext;
+    }
+  }
 
+  {WS}"{"[Ll]"oop"{WS}"(".*"\n"  {
+    loop_lvl++; /* Nested Loop */
+    (*tmp_file) << yytext;
+    aprepro.ap_file_list.top().lineno++;
+  }
 
-<LOOP_SKIP>{WS}"{"[Ee]"nd"[Ll]"oop".*"\n" { aprepro.ap_file_list.top().lineno++;
-					if (--loop_lvl == 0)
-					  BEGIN(INITIAL);
-				      }
-<LOOP_SKIP>{WS}"{"[Ll]"oop(".*"\n"        { loop_lvl++; /* Nested Loop */
-					aprepro.ap_file_list.top().lineno++;
-				      }
-<LOOP_SKIP>.*"\n"		      { aprepro.ap_file_list.top().lineno++; }
+  .*"\n" {
+    (*tmp_file) << yytext;
+    aprepro.ap_file_list.top().lineno++;
+  }
+}
 
-<IF_SKIP>{WS}"{"[Ii]"fdef("  { if_lvl++; 
+<LOOP_SKIP>{
+  {WS}"{"[Ee]"nd"[Ll]"oop".*"\n" {
+    aprepro.ap_file_list.top().lineno++;
+    if (--loop_lvl == 0)
+      BEGIN(INITIAL);
+  }
+
+  {WS}"{"[Ll]"oop"{WS}"(".*"\n" {
+    loop_lvl++; /* Nested Loop */
+    aprepro.ap_file_list.top().lineno++;
+  }
+
+  .*"\n" {
+    aprepro.ap_file_list.top().lineno++;
+  }
+}
+
+<END_CASE_SKIP>"{case".*"\n"  {
+  yyless(0);
+  BEGIN(INITIAL);
+  switch_skip_to_endcase = false;
+}
+
+<INITIAL,END_CASE_SKIP>"{default}".*"\n"     {
+ aprepro.ap_file_list.top().lineno++;
+ if (!switch_active) {
+    yyerror("default statement found outside switch statement.");
+  }
+
+  if (!switch_case_run) {
+    switch_case_run = true;
+    BEGIN(INITIAL);
+    switch_skip_to_endcase = false;
     if (aprepro.ap_options.debugging) 
-	fprintf (stderr, "DEBUG IF: 'ifdef'  at level = %d at line %d\n",
-		 if_lvl, aprepro.ap_file_list.top().lineno);
-			   if (if_lvl >= MAX_IF_NESTING)
-			     yyerror("Too many nested if statements");
-			   if_state[if_lvl] = IF_WHILE_SKIP; }
-<IF_SKIP>{WS}"{"[Ii]"fndef(" { if_lvl++; 
+      fprintf (stderr, "DEBUG SWITCH: 'default' code executing at line %d\n",
+	       aprepro.ap_file_list.top().lineno);
+  } 
+  else {
     if (aprepro.ap_options.debugging) 
-	fprintf (stderr, "DEBUG IF: 'ifndef' at level = %d at line %d\n",
-		 if_lvl, aprepro.ap_file_list.top().lineno);
-			   if (if_lvl >= MAX_IF_NESTING)
-			     yyerror("Too many nested if statements");
-			   if_state[if_lvl] = IF_WHILE_SKIP; }
-<INITIAL>{WS}"{"[Ii]"fdef("  { if_lvl++; 
-    if (aprepro.ap_options.debugging) 
-	fprintf (stderr, "DEBUG IF: 'ifdef'  at level = %d at line %d\n",
-		 if_lvl, aprepro.ap_file_list.top().lineno);
-			   if (if_lvl >= MAX_IF_NESTING)
-			     yyerror("Too many nested if statements");
-			   ifdef = 1; BEGIN(GET_VAR); }
-<INITIAL>{WS}"{"[Ii]"fndef(" { if_lvl++; 
-    if (aprepro.ap_options.debugging)
-	fprintf (stderr, "DEBUG IF: 'ifndef' at level = %d at line %d\n",
-		 if_lvl, aprepro.ap_file_list.top().lineno);
-			   if (if_lvl >= MAX_IF_NESTING)
-			     yyerror("Too many nested if statements");
-			   ifdef = 0; BEGIN(GET_VAR); }
+      fprintf (stderr, "DEBUG SWITCH: 'default' not executing since a previous case already ran at line %d\n",
+	       aprepro.ap_file_list.top().lineno);
+    
+    /* Need to skip all code until end of case */
+    BEGIN(END_CASE_SKIP);
+  }
+}
 
-<GET_VAR>.+")}".*"\n"     { symrec *s;
-			      char *pt = strchr(yytext, ')');
-			      *pt = '\0';
-			      s = aprepro.getsym(yytext);
-			      if (s == 0 || (s->type != token::SVAR && s->type != token::IMMSVAR && s->value.var == 0.))
-				{
-				  if (ifdef == 1) {
-				    BEGIN(IF_SKIP);
-				    if_state[if_lvl] = IF_SKIP;
-				  }
-				  else {
-				    BEGIN(INITIAL);
-				    if_state[if_lvl] = INITIAL;
-				  }
-				}
-			      else /* Value defined and != 0. */
-				{
-				  if (ifdef == 1) {
-				    BEGIN(INITIAL);
-				    if_state[if_lvl] = INITIAL;
-				  }
-				  else {
-				    BEGIN(IF_SKIP);
-				    if_state[if_lvl] = IF_SKIP;
-				  }
-				}
-			      aprepro.ap_file_list.top().lineno++;
-			    }
+<END_CASE_SKIP>.*"\n" {  aprepro.ap_file_list.top().lineno++; }
 
-"{"[Ee]"lse}".*"\n"     { aprepro.ap_file_list.top().lineno++; 
+<INITIAL>{WS}"{endswitch}".*"\n"        {
+  aprepro.ap_file_list.top().lineno++;
+  if (!switch_active) {
+    yyerror("endswitch statement found without matching switch.");
+  }
+  switch_active = false;
+}
+
+<IF_WHILE_SKIP>{
+  /* If an if was found while skipping, then eat
+   * that entire if block until endif
+   * found since there is no way that
+   * any of the code in that if block could be executed.
+   * Make sure to handle multiple levels of skipped ifs...
+   *
+   * NOTE: if_lvl was not incremented, so don't need to decrement when
+   *       endif found.
+   */
+  {WS}"{"[Ee]"ndif}".*"\n"     { 
+    aprepro.ap_file_list.top().lineno++;  
+    if (--if_skip_level == 0)
+      BEGIN(IF_SKIP);
+  }
+
+  {WS}"{"[Ii]"fdef"{WS}"(".*"\n"  { 
+    aprepro.ap_file_list.top().lineno++;  
+    if_skip_level++;
+  }
+
+  {WS}"{if"{WS}"(".*"\n"  { 
+    aprepro.ap_file_list.top().lineno++;  
+    if_skip_level++;
+  }
+
+  {WS}"{"[Ii]"fndef"{WS}"(".*"\n" {
+    aprepro.ap_file_list.top().lineno++;  
+    if_skip_level++;
+  }
+
+  .*"\n" {
+    aprepro.ap_file_list.top().lineno++;
+  }
+}
+
+<IF_SKIP>{
+  /* IF an if, ifdef, or ifndef found while skipping, then
+   * skip the entire block up and including the endif.
+   * The (IF_WHILE_SKIP) start condition handles this skipping.
+   */
+  {WS}"{"[Ii]"fdef"{WS}"("  { 
     if (aprepro.ap_options.debugging) 
-	fprintf (stderr, "DEBUG IF: 'else'   at level = %d at line %d\n",
-		 if_lvl, aprepro.ap_file_list.top().lineno);
-			    if (if_state[if_lvl] == IF_SKIP) 
-			      BEGIN(INITIAL);
-			    if (if_state[if_lvl] == INITIAL)
-			      BEGIN(IF_SKIP);
-			    /* If neither is true, this is a nested 
-			       if that should be skipped */
-			  }
-"{"[Ee]"ndif}".*"\n"     { if (if_state[if_lvl] == IF_SKIP ||
+      fprintf (stderr, "DEBUG IF: 'ifdef'  found while skipping at line %d\n",
+	       aprepro.ap_file_list.top().lineno);
+    if_skip_level = 1;
+    BEGIN(IF_WHILE_SKIP);
+  }
+
+  {WS}"{if"{WS}"("  { 
+    if (aprepro.ap_options.debugging) 
+      fprintf (stderr, "DEBUG IF: 'ifdef'  found while skipping at line %d\n",
+	       aprepro.ap_file_list.top().lineno);
+    if_skip_level = 1;
+    BEGIN(IF_WHILE_SKIP);
+  }
+
+  {WS}"{"[Ii]"fndef"{WS}"(" {
+    if (aprepro.ap_options.debugging) 
+      fprintf (stderr, "DEBUG IF: 'ifndef'  found while skipping at line %d\n",
+	       aprepro.ap_file_list.top().lineno);
+    if_skip_level = 1;
+    BEGIN(IF_WHILE_SKIP);
+  }
+}
+
+{WS}"{"[Ee]"lse}".*"\n"  { 
+  aprepro.ap_file_list.top().lineno++; 
+  if (aprepro.ap_options.debugging) 
+    fprintf (stderr, "DEBUG IF: 'else'   at level = %d at line %d\n",
+	     if_lvl, aprepro.ap_file_list.top().lineno);
+  if (if_state[if_lvl] == IF_SKIP) {
+    if (!if_case_run[if_lvl]) {
+      BEGIN(INITIAL);
+      if_state[if_lvl] = INITIAL;
+      if_case_run[if_lvl] = true;
+    } else {
+      BEGIN(IF_SKIP);
+      if_state[if_lvl] = IF_SKIP;
+    }
+  }
+  else if (if_state[if_lvl] == INITIAL) {
+    BEGIN(IF_SKIP);
+    if_state[if_lvl] = IF_SKIP;
+  }
+  
+  /* If neither is true, this is a nested 
+     if that should be skipped */
+}
+
+<IF_SKIP>{
+  {WS}"{"{WS}"elseif".*"\n"  { 
+    /* If any previous 'block' of this if has executed, then
+     * just skip this block; otherwise see if condition is
+     * true and execute this block
+     */
+    if (aprepro.ap_options.debugging) 
+      fprintf (stderr, "DEBUG IF: 'elseif'   at level = %d at line %d\n",
+	       if_lvl, aprepro.ap_file_list.top().lineno);
+
+    if (if_case_run[if_lvl]) { /* A previous else/elseif has run */
+      aprepro.ap_file_list.top().lineno++; 
+      /* Already in IF_SKIP, so don't need to change state */
+    } else {
+      /* Need to check the elseif condition; push back and parse */
+      yyless(0);
+      BEGIN(INITIAL);
+      if_state[if_lvl] = INITIAL;
+    }
+  }
+
+  [A-Za-z0-9_ ]* |
+   \\\{          |
+   \\\}          |
+   .                 { ; }
+
+   "\n" {
+     aprepro.ap_file_list.top().lineno++;
+   }
+}
+
+{WS}"{"[Ee]"ndif}".*"\n"     { if (if_state[if_lvl] == IF_SKIP ||
 			       if_state[if_lvl] == INITIAL)
 			     BEGIN(INITIAL);
 			   /* If neither is true, this is a nested 
@@ -259,15 +382,10 @@ integer {D}+({E})?
 			   }
 			   aprepro.ap_file_list.top().lineno++;  
 			   /* Ignore endif if not skipping */ }
-<IF_SKIP>[A-Za-z0-9_ ]* |
-<IF_SKIP>\\\{           |
-<IF_SKIP>\\\}           |
-<IF_SKIP>.                 { ; }
-<IF_SKIP>"\n"              { aprepro.ap_file_list.top().lineno++; }
 
-<INITIAL>{WS}"{"[Ii]"nclude("           { BEGIN(GET_FILENAME); 
+<INITIAL>{WS}"{"[Ii]"nclude"{WS}"("           { BEGIN(GET_FILENAME); 
                              file_must_exist = true; }
-<INITIAL>{WS}"{"[Cc]"include("          { BEGIN(GET_FILENAME);
+<INITIAL>{WS}"{"[Cc]"include"{WS}"("          { BEGIN(GET_FILENAME);
                              file_must_exist = !true; }
 <GET_FILENAME>.+")"{WS}"}"{NL}* { BEGIN(INITIAL); 
 			     {
@@ -385,7 +503,14 @@ integer {D}+({E})?
                              new_string(yytext+1, &yylval->string);
 			     return token::QSTRING; }
 
-<PARSING>"}"               { BEGIN(INITIAL); return(token::RBRACE); }
+<PARSING>"}" {
+  if (switch_skip_to_endcase)
+    BEGIN(END_CASE_SKIP);
+  else
+    BEGIN(if_state[if_lvl]);
+  return(token::RBRACE);
+}
+
 
 \\\{                      { if (echo) LexerOutput("{", 1); }
 
@@ -410,7 +535,8 @@ integer {D}+({E})?
 {id} |
 .                          { if (echo) ECHO; }
 
-"\n"                       { if (echo) ECHO; aprepro.ap_file_list.top().lineno++; }
+"\n"                       { if (echo && !suppress_nl) ECHO; suppress_nl = false; 
+                             aprepro.ap_file_list.top().lineno++; }
 
 %%
 
@@ -550,6 +676,91 @@ namespace SEAMS {
       yyFlexLexer::yypush_buffer_state(yyFlexLexer::yy_create_buffer(ins, new_string.size()));
     }
     return (NULL);
+  }
+
+  char *Scanner::if_handler(double x)
+  {
+    if_lvl++;
+    if (if_lvl >= MAX_IF_NESTING)
+      yyerror("Too many nested if statements");
+
+    if (x == 0) {
+      if_state[if_lvl] = IF_SKIP;
+      if_case_run[if_lvl] = false;
+    } else {
+      suppress_nl = true;
+      if_state[if_lvl] = INITIAL;
+      if_case_run[if_lvl] = true;
+    }
+    if (aprepro.ap_options.debugging) 
+      std::cerr << "DEBUG IF: If level " << if_lvl << " " << if_state[if_lvl] << "\n"; 
+    return(NULL);
+  }
+
+  char *Scanner::elseif_handler(double x)
+  {
+    if (x == 0 || if_case_run[if_lvl]) {
+      if_state[if_lvl] = IF_SKIP;
+    } else {
+      suppress_nl = 1;
+      if_state[if_lvl] = INITIAL;
+      if_case_run[if_lvl] = true;
+    }
+    if (aprepro.ap_options.debugging) 
+      std::cerr << "DEBUG IF: elseif at level " << if_lvl << " " << if_state[if_lvl] << "\n";
+    return(NULL);
+  }
+
+  char *Scanner::switch_handler(double x)
+  {
+    // save that we are in a switch statement
+    // save the value of 'x' for use in deciding which case to execute
+    if (switch_active) {
+      yyerror("switch statement found while switch already active. Nested switch not supported.");
+    }
+
+    switch_active = true;
+    switch_case_run = false;
+    switch_condition = x;
+    switch_skip_to_endcase = true; /* Skip everything until first case */
+    suppress_nl = true;
+
+    if (aprepro.ap_options.debugging) {
+      std::cerr << "DEBUG SWITCH: 'switch' with condition = " << switch_condition
+		<< " at line " << aprepro.ap_file_list.top().lineno << "\n";
+    }
+    return(NULL);
+  }
+
+  char *Scanner::case_handler(double x)
+  {
+    // make sure we are in a switch statement 
+    // if 'x' matches the value saved in the switch statement 
+    // and no other case has been executed, then
+    // execute the code in the case and set a flag indicating
+    // the switch has run;
+    // if 'x' does not match the value saved, then skip to endcase
+    suppress_nl = true;
+
+    if (!switch_active) {
+      yyerror("case statement found outside switch statement.");
+    }
+
+    if (!switch_case_run && x == switch_condition) {
+      switch_case_run = true;
+      if (aprepro.ap_options.debugging) 
+	fprintf (stderr, "DEBUG SWITCH: 'case' condition = %g matches switch condition = %g at line %d\n",
+		 x, switch_condition, aprepro.ap_file_list.top().lineno);
+    } 
+    else {
+      if (aprepro.ap_options.debugging) 
+	fprintf (stderr, "DEBUG SWITCH: 'case' condition = %g does not match switch condition = %g (or case already matched) at line %d\n",
+		 x, switch_condition, aprepro.ap_file_list.top().lineno);
+
+      // Need to skip all code until end of case
+      switch_skip_to_endcase = true;
+    }
+    return(NULL);
   }
 }
 

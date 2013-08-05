@@ -8,20 +8,33 @@
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
 #
-# This library is free software; you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as
-# published by the Free Software Foundation; either version 2.1 of the
-# License, or (at your option) any later version.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
 #
-# This library is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
 #
-# You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the Corporation nor the names of the
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 # Questions? Contact Glen Hansen (gahanse@sandia.gov)
 #
 # ************************************************************************
@@ -197,10 +210,10 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
   int     nsdim         = mlparams_.get("null space: dimension",1);
   int     numpde        = mlparams_.get("PDE equations",1);
   double  damping       = mlparams_.get("aggregation: damping factor",1.33);
-  string  eigenanalysis = mlparams_.get("eigen-analysis: type", "Anorm");
-  string  smoothertype  = mlparams_.get("smoother: type","symmetric Gauss-Seidel");
-  string  coarsetype    = mlparams_.get("coarse: type","Amesos-KLU");
-  string  ptype         = mlparams_.get("prolongator: type","mod_full");
+  std::string  eigenanalysis = mlparams_.get("eigen-analysis: type", "Anorm");
+  std::string  smoothertype  = mlparams_.get("smoother: type","symmetric Gauss-Seidel");
+  std::string  coarsetype    = mlparams_.get("coarse: type","Amesos-KLU");
+  std::string  ptype         = mlparams_.get("prolongator: type","mod_full");
   
   MLAPI::Space space(A_->RowMatrixRowMap());
   MLAPI::Operator mlapiA(space,space,A_.get(),false);
@@ -274,7 +287,7 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
     if (Comm().MyPID()==0)
     {
       ML_print_line("-", 78);
-      cout << "MOERTEL/ML : creating smoother level " << level << endl; 
+      std::cout << "MOERTEL/ML : creating smoother level " << level << std::endl; 
       fflush(stdout);
     }
     S.Reshape(mlapiAtilde,smoothertype,mlparams_);
@@ -285,7 +298,7 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
     if (Comm().MyPID()==0)
     {
       ML_print_line("-", 80);
-      cout << "MOERTEL/ML : creating level " << level+1 << endl;
+      std::cout << "MOERTEL/ML : creating level " << level+1 << std::endl;
       ML_print_line("-", 80);
       fflush(stdout);
     }
@@ -376,7 +389,7 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
   if (Comm().MyPID()==0)
   {
     ML_print_line("-", 78);
-    cout << "MOERTEL/ML : creating coarse solver level " << level << endl; 
+    std::cout << "MOERTEL/ML : creating coarse solver level " << level << std::endl; 
     fflush(stdout);
   }
   S.Reshape(mlapiAtilde_[level],coarsetype,mlparams_);
@@ -510,10 +523,10 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
   int     nsdim         = mlparams_.get("null space: dimension",1);
   int     numpde        = mlparams_.get("PDE equations",1);
   double  damping       = mlparams_.get("aggregation: damping factor",1.33);
-  string  eigenanalysis = mlparams_.get("eigen-analysis: type", "Anorm");
-  string  smoothertype  = mlparams_.get("smoother: type","symmetric Gauss-Seidel");
-  string  coarsetype    = mlparams_.get("coarse: type","Amesos-KLU");
-  string  ptype         = mlparams_.get("prolongator: type","mod_full");
+  std::string  eigenanalysis = mlparams_.get("eigen-analysis: type", "Anorm");
+  std::string  smoothertype  = mlparams_.get("smoother: type","symmetric Gauss-Seidel");
+  std::string  coarsetype    = mlparams_.get("coarse: type","Amesos-KLU");
+  std::string  ptype         = mlparams_.get("prolongator: type","mod_full");
   
   // create the 2 rowmaps
   Arrmap_ = Teuchos::rcp(MOERTEL::SplitMap(A_->RowMap(),*Annmap_));
@@ -726,10 +739,10 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
   int     nsdim         = mlparams_.get("null space: dimension",1);
   int     numpde        = mlparams_.get("PDE equations",1);
   double  damping       = mlparams_.get("aggregation: damping factor",1.33);
-  string  eigenanalysis = mlparams_.get("eigen-analysis: type", "Anorm");
-  string  smoothertype  = mlparams_.get("smoother: type","symmetric Gauss-Seidel");
-  string  coarsetype    = mlparams_.get("coarse: type","Amesos-KLU");
-  string  ptype         = mlparams_.get("prolongator: type","mod_full");
+  std::string  eigenanalysis = mlparams_.get("eigen-analysis: type", "Anorm");
+  std::string  smoothertype  = mlparams_.get("smoother: type","symmetric Gauss-Seidel");
+  std::string  coarsetype    = mlparams_.get("coarse: type","Amesos-KLU");
+  std::string  ptype         = mlparams_.get("prolongator: type","mod_full");
   
   // create the missing rowmap Arrmap_ 
   Arrmap_ = Teuchos::rcp(MOERTEL::SplitMap(A_->RowMap(),*Annmap_));
@@ -891,7 +904,7 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
     if (Comm().MyPID()==0)
     {
       ML_print_line("-", 78);
-      cout << "MOERTEL/ML : creating smoother level " << level << endl; 
+      std::cout << "MOERTEL/ML : creating smoother level " << level << std::endl; 
       fflush(stdout);
     }
     S.Reshape(mlapiAtildesplit,smoothertype,mlparams_);
@@ -901,7 +914,7 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
     if (Comm().MyPID()==0)
     {
       ML_print_line("-", 80);
-      cout << "MOERTEL/ML : creating level " << level+1 << endl;
+      std::cout << "MOERTEL/ML : creating level " << level+1 << std::endl;
       ML_print_line("-", 80);
       fflush(stdout);
     }

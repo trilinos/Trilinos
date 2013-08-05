@@ -31,20 +31,20 @@ APPEND_SET(HEADERS Piro_ValidPiroParameters.hpp
 		   Piro_Epetra_SolverFactory.hpp
 		   Piro_SolverFactory.hpp
 		   Piro_SolverFactory_Def.hpp
+                   Piro_StratimikosUtils.hpp
                    Piro_ConfigDefs.hpp)
 APPEND_SET(SOURCES Piro_ValidPiroParameters.cpp
                    Piro_Epetra_MatrixFreeDecorator.cpp
                    Piro_Epetra_InvertMassMatrixDecorator.cpp
 		   Piro_Epetra_Factory.cpp
 		   Piro_Epetra_SolverFactory.cpp
+                   Piro_StratimikosUtils.cpp
                    Piro_Version.cpp)
 APPEND_SET(HEADERS Piro_MatrixFreeDecorator.hpp
                    Piro_MatrixFreeDecorator_Def.hpp
                    Piro_MatrixFreeLinearOp.hpp
                    Piro_MatrixFreeLinearOp_Def.hpp
-                   Piro_ObserverBase.hpp
-                   Piro_ObserverToRythmosIntegrationObserverAdapter.hpp
-                   Piro_ObserverToRythmosIntegrationObserverAdapter_Def.hpp)
+                   Piro_ObserverBase.hpp)
 #
 # B.2) epetra files
 #
@@ -54,15 +54,22 @@ IF (Piro_ENABLE_NOX)
                      Piro_NOXSolver.hpp
                      Piro_NOXSolver_Def.hpp
                      Piro_Epetra_LOCASolver.hpp
+                     Piro_LOCASolver.hpp
+                     Piro_LOCASolver_Def.hpp
+                     Piro_ObserverToLOCASaveDataStrategyAdapter.hpp
                      Piro_Epetra_LOCAAdaptiveSolver.hpp
                      Piro_Epetra_AdaptiveSolutionManager.hpp
+                     Piro_NullSpaceUtils.hpp
                      Piro_Epetra_VelocityVerletSolver.hpp
                      Piro_Epetra_TrapezoidRuleSolver.hpp
 		     Piro_Epetra_SensitivityOperator.hpp)
   APPEND_SET(SOURCES Piro_Epetra_NOXSolver.cpp
                      Piro_Epetra_LOCASolver.cpp
+                     Piro_LOCASolver.cpp
+                     Piro_ObserverToLOCASaveDataStrategyAdapter.cpp
                      Piro_Epetra_LOCAAdaptiveSolver.cpp
                      Piro_Epetra_AdaptiveSolutionManager.cpp
+                     Piro_NullSpaceUtils.cpp
                      Piro_Epetra_VelocityVerletSolver.cpp
                      Piro_Epetra_TrapezoidRuleSolver.cpp
 		     Piro_Epetra_SensitivityOperator.cpp)
@@ -72,7 +79,9 @@ IF (Piro_ENABLE_Rythmos)
   APPEND_SET(HEADERS Piro_Epetra_RythmosSolver.hpp
                      Piro_RythmosSolver.hpp
 		     Piro_RythmosStepperFactory.hpp
-                     Piro_RythmosSolver_Def.hpp) 
+                     Piro_RythmosSolver_Def.hpp
+                     Piro_ObserverToRythmosIntegrationObserverAdapter.hpp
+                     Piro_ObserverToRythmosIntegrationObserverAdapter_Def.hpp)
   APPEND_SET(SOURCES Piro_Epetra_RythmosSolver.cpp)
 ENDIF()
 

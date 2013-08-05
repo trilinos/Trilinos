@@ -47,7 +47,7 @@
 #include "Kokkos_NodeHelpers.hpp"
 #include <TPI.h>
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   template <class WDP>
   struct WDPPlusRange {
@@ -189,6 +189,6 @@ namespace Kokkos {
 
   template <> class ArrayOfViewsHelper<TPINode> : public ArrayOfViewsHelperTrivialImpl<TPINode> {};
 
-} // end namespace Kokkos
+} // end namespace KokkosClassic
 
 #endif

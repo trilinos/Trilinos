@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 2.4.2.  */
+/* A Bison parser, made by GNU Bison 2.7.12-4996.  */
 
 /* Skeleton interface for Bison LALR(1) parsers in C++
    
-      Copyright (C) 2002-2010 Free Software Foundation, Inc.
+      Copyright (C) 2002-2013 Free Software Foundation, Inc.
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -30,30 +30,21 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
+/**
+ ** \file aprepro_parser.h
+ ** Define the SEAMS::parser class.
+ */
+
 /* C++ LALR(1) parser skeleton written by Akim Demaille.  */
 
-#ifndef PARSER_HEADER_H
-# define PARSER_HEADER_H
+#ifndef YY_SEAMS_APREPRO_PARSER_H_INCLUDED
+# define YY_SEAMS_APREPRO_PARSER_H_INCLUDED
 
 
 
 #include <string>
 #include <iostream>
 #include "stack.hh"
-
-
-namespace SEAMS {
-
-/* Line 299 of lalr1.cc  */
-#line 49 "aprepro_parser.h"
-  class position;
-  class location;
-
-} // SEAMS
-
-/* Line 299 of lalr1.cc  */
-#line 56 "aprepro_parser.h"
-
 #include "location.hh"
 
 /* Enabling traces.  */
@@ -61,43 +52,10 @@ namespace SEAMS {
 # define YYDEBUG 1
 #endif
 
-/* Enabling verbose error messages.  */
-#ifdef YYERROR_VERBOSE
-# undef YYERROR_VERBOSE
-# define YYERROR_VERBOSE 1
-#else
-# define YYERROR_VERBOSE 1
-#endif
-
-/* Enabling the token table.  */
-#ifndef YYTOKEN_TABLE
-# define YYTOKEN_TABLE 0
-#endif
-
-/* YYLLOC_DEFAULT -- Set CURRENT to span from RHS[1] to RHS[N].
-   If N is 0, then set CURRENT to the empty location which ends
-   the previous symbol: RHS[0] (always defined).  */
-
-#ifndef YYLLOC_DEFAULT
-# define YYLLOC_DEFAULT(Current, Rhs, N)		\
-do {							\
-  if (N)						\
-    {							\
-      (Current).begin = (Rhs)[1].begin;			\
-      (Current).end   = (Rhs)[N].end;			\
-    }							\
-  else							\
-    {							\
-      (Current).begin = (Current).end = (Rhs)[0].end;	\
-    }							\
-} while (false)
-#endif
-
 
 namespace SEAMS {
-
-/* Line 299 of lalr1.cc  */
-#line 101 "aprepro_parser.h"
+/* Line 33 of lalr1.cc  */
+#line 59 "aprepro_parser.h"
 
   /// A Bison parser.
   class Parser
@@ -107,8 +65,7 @@ namespace SEAMS {
 #ifndef YYSTYPE
     union semantic_type
     {
-
-/* Line 299 of lalr1.cc  */
+/* Line 33 of lalr1.cc  */
 #line 42 "aprepro.yy"
 
   double  val;		/* For returning numbers.		*/
@@ -116,9 +73,8 @@ namespace SEAMS {
   char   *string;	/* For returning quoted strings		*/
 
 
-
-/* Line 299 of lalr1.cc  */
-#line 122 "aprepro_parser.h"
+/* Line 33 of lalr1.cc  */
+#line 78 "aprepro_parser.h"
     };
 #else
     typedef YYSTYPE semantic_type;
@@ -204,6 +160,10 @@ namespace SEAMS {
 #endif
 
   private:
+    /// This class is not copyable.
+    Parser (const Parser&);
+    Parser& operator= (const Parser&);
+
     /// Report a syntax error.
     /// \param loc    where the syntax error is found.
     /// \param msg    a description of the syntax error.
@@ -248,6 +208,14 @@ namespace SEAMS {
     /// The location stack.
     location_stack_type yylocation_stack_;
 
+    /// Whether the given \c yypact_ value indicates a defaulted state.
+    /// \param yyvalue   the value to check
+    static bool yy_pact_value_is_default_ (int yyvalue);
+
+    /// Whether the given \c yytable_ value indicates a syntax error.
+    /// \param yyvalue   the value to check
+    static bool yy_table_value_is_error_ (int yyvalue);
+
     /// Internal symbol numbers.
     typedef unsigned char token_number_type;
     /* Tables.  */
@@ -255,7 +223,7 @@ namespace SEAMS {
     static const short int yypact_[];
     static const signed char yypact_ninf_;
 
-    /// For a state, default rule to reduce.
+    /// For a state, default reduction number.
     /// Unless\a  yytable_ specifies something else to do.
     /// Zero means the default is an error.
     static const unsigned char yydefact_[];
@@ -279,18 +247,14 @@ namespace SEAMS {
     /// For a rule, its LHS.
     static const unsigned char yyr1_[];
     /// For a rule, its RHS length.
-    static const unsigned char yyr2_[];
+    static const unsigned char yyr2_[]; 
 
-#if YYDEBUG || YYERROR_VERBOSE || YYTOKEN_TABLE
+    /// Convert the symbol name \a n to a form suitable for a diagnostic.
+    static std::string yytnamerr_ (const char *n);
+
+
     /// For a symbol, its name in clear.
     static const char* const yytname_[];
-#endif
-
-#if YYERROR_VERBOSE
-    /// Convert the symbol name \a n to a form suitable for a diagnostic.
-    virtual std::string yytnamerr_ (const char *n);
-#endif
-
 #if YYDEBUG
     /// A type to store symbol numbers and -1.
     typedef signed char rhs_number_type;
@@ -317,6 +281,7 @@ namespace SEAMS {
 
     /// \brief Reclaim the memory associated to a symbol.
     /// \param yymsg        Why this token is reclaimed.
+    ///                     If null, do not display the symbol, just free it.
     /// \param yytype       The symbol type.
     /// \param yyvaluep     Its semantic value.
     /// \param yylocationp  Its location.
@@ -346,10 +311,9 @@ namespace SEAMS {
   };
 
 } // SEAMS
-
-/* Line 299 of lalr1.cc  */
-#line 352 "aprepro_parser.h"
-
+/* Line 33 of lalr1.cc  */
+#line 316 "aprepro_parser.h"
 
 
-#endif /* ! defined PARSER_HEADER_H */
+
+#endif /* !YY_SEAMS_APREPRO_PARSER_H_INCLUDED  */

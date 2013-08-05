@@ -730,7 +730,7 @@ void AZ_set_ML_preconditioner(AZ_PRECOND **Precond, AZ_MATRIX *Amat,
    }
 #ifdef AZ_ver2_1_0_3
    *Precond = AZ_precond_create(Amat, ML_precondition, ml_handle);
-   /*  take finest and coarsest grid smoothers and stick in string */
+   /*  take finest and coarsest grid smoothers and stick in std::string */
    /*  along with the number of levels                             */
    i = ml_handle->ML_finest_level;
    finest[0]   = '\0';
@@ -1961,8 +1961,8 @@ file specified by the input argument datafile instead from a file called
 
     /*
      * Go through all the rows, for those rows that we own add them to our local
-     * matrix.  Otherwise, read the row into a string, determine which processor
-     * has requested the row, send the string to this processor, and receive
+     * matrix.  Otherwise, read the row into a std::string, determine which processor
+     * has requested the row, send the std::string to this processor, and receive
      * another request from this processor.
      */
 
@@ -2119,7 +2119,7 @@ void AZ_add_new_row_nodiag(int therow, int *nz_ptr, int *current, double **val,
 /*******************************************************************************
 
   Add a new row to the matrix.  If input = 0, the new matrix is read from file
-  pointer dfp.  Otherwise, it is read from the string 'input'.  The form of the
+  pointer dfp.  Otherwise, it is read from the std::string 'input'.  The form of the
   input is as follows:
 
          col_num1 entry1 col_num2 entry2

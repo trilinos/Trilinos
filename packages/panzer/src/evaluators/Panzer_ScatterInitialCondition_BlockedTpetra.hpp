@@ -67,7 +67,7 @@ class BlockedDOFManager; //forward declaration
     Default implementation throws exceptions.  Residual specialization will be used for setting solution.
 
 */
-template <typename EvalT,typename Traits,typename S,typename LO,typename GO,typename NodeT=Kokkos::DefaultNode::DefaultNodeType>
+template <typename EvalT,typename Traits,typename S,typename LO,typename GO,typename NodeT=KokkosClassic::DefaultNode::DefaultNodeType>
 class ScatterInitialCondition_BlockedTpetra
   : public PHX::EvaluatorWithBaseImpl<Traits>,
     public PHX::EvaluatorDerived<EvalT, Traits>,
@@ -141,7 +141,7 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<const BlockedDOFManager<LO,int> > globalIndexer_;
+  Teuchos::RCP<const BlockedDOFManager<LO,GO> > globalIndexer_;
 
   std::string globalDataKey_; // what global data does this fill?
   Teuchos::RCP<const BlockedTpetraLinearObjContainer<S,LO,GO,NodeT> > blockedContainer_;
@@ -197,7 +197,7 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<const BlockedDOFManager<LO,int> > globalIndexer_;
+  Teuchos::RCP<const BlockedDOFManager<LO,GO> > globalIndexer_;
 
   std::vector<int> fieldIds_; // field IDs needing mapping
 

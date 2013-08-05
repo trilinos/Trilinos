@@ -302,13 +302,13 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   Import<LocalOrdinal,GlobalOrdinal,Node>::getSourceMap() const {
     return ImportData_->source_;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   Import<LocalOrdinal,GlobalOrdinal,Node>::getTargetMap() const {
     return ImportData_->target_;
   }

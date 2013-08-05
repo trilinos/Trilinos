@@ -51,6 +51,7 @@ namespace Ioss {
     ~EdgeBlock();
 
     std::string type_string() const {return "EdgeBlock";}
+    std::string short_type_string() const {return "edgeblock";}
     EntityType type() const {return EDGEBLOCK;}
 
     /// Handle implicit properties -- These are calcuated from data stored

@@ -60,7 +60,7 @@
 #endif // __GNUC__
 
 //! Namespace for Kokkos classes and methods
-namespace Kokkos {
+namespace KokkosClassic {
   // import Teuchos memory management classes into Kokkos
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -75,12 +75,19 @@ namespace Kokkos {
   using Teuchos::ParameterList;
 }
 
+namespace Kokkos {
+  // For backwards compatibility, bring everything in the 
+  // KokkosClassic namespace into Kokkos for now.  This will 
+  // go away soon.
+  using namespace KokkosClassic;
+}
+
 //! Namespace for Kokkos example classes
 namespace KokkosExamples {
 }
 
 
-namespace Kokkos {
+namespace KokkosClassic {
 
 //! Sweep direction for Gauss-Seidel or Symmetric Over-Relaxation (SOR).
 enum ESweepDirection {
@@ -88,6 +95,6 @@ enum ESweepDirection {
   Backward
 };
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif /* KOKKOS_CONFIGDEFS_H */

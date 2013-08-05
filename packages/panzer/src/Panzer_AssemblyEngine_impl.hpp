@@ -43,9 +43,6 @@
 #ifndef PANZER_ASSEMBLY_ENGINE_IMPL_HPP
 #define PANZER_ASSEMBLY_ENGINE_IMPL_HPP
 
-#include "Epetra_Vector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_CrsMatrix.h"
 #include "Phalanx_FieldManager.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_AssemblyEngine_InArgs.hpp"
@@ -68,6 +65,9 @@ void panzer::AssemblyEngine<EvalT>::
 evaluate(const panzer::AssemblyEngineInArgs& in)
 {
   typedef LinearObjContainer LOC;
+
+  // make sure this container gets a dirichlet adjustment
+  in.ghostedContainer_->setRequiresDirichletAdjustment(true);
 
   GlobalEvaluationDataContainer gedc;
   in.fillGlobalEvaluationDataContainer(gedc);
@@ -195,8 +195,24 @@ evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
         // right hand side and the ghosted matrix
   }
 
+  panzer::GlobalEvaluationDataContainer gedc;
+  gedc.addDataObject("Residual Scatter Container",in.ghostedContainer_);
+  in.fillGlobalEvaluationDataContainer(gedc);
+
   // adjust ghosted system for boundary conditions
-  m_lin_obj_factory->adjustForDirichletConditions(*localCounter,*summedGhostedCounter,*in.ghostedContainer_);
+  for(GlobalEvaluationDataContainer::iterator itr=gedc.begin();itr!=gedc.end();itr++) {
+    if(itr->second->requiresDirichletAdjustment()) {
+      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LinearObjContainer>(itr->second);
+      if(loc!=Teuchos::null) {
+        m_lin_obj_factory->adjustForDirichletConditions(*localCounter,*summedGhostedCounter,*loc);
+      }
+      else {
+        // it was not a linear object container, so if you want an adjustment it better be a GED_BCAdjustment object
+        Teuchos::RCP<GlobalEvaluationData_BCAdjustment> bc_adjust = Teuchos::rcp_dynamic_cast<GlobalEvaluationData_BCAdjustment>(itr->second,true);
+        bc_adjust->adjustForDirichletConditions(*localCounter,*summedGhostedCounter);
+      }
+    }
+  }
 }
 
 //===========================================================================

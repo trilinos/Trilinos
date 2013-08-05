@@ -30,7 +30,7 @@ void GetPtent(const Operator& A, Teuchos::ParameterList& List,
               const MultiVector& ThisNS, 
               Operator& Ptent, MultiVector& NextNS)
 {
-  string CoarsenType     = List.get("aggregation: type", "Uncoupled");
+  std::string CoarsenType     = List.get("aggregation: type", "Uncoupled");
   /* old version
   int    NodesPerAggr    = List.get("aggregation: per aggregate", 64);
   */
@@ -144,7 +144,7 @@ int GetAggregates(Epetra_RowMatrix& A, Teuchos::ParameterList& List,
   if (!A.RowMatrixRowMap().SameAs(aggrinfo.Map()))
     ML_THROW("map of aggrinfo must match row map of operator", -1);
   
-  string CoarsenType     = List.get("aggregation: type", "Uncoupled");
+  std::string CoarsenType     = List.get("aggregation: type", "Uncoupled");
   double Threshold       = List.get("aggregation: threshold", 0.0);
   int    NumPDEEquations = List.get("PDE equations", 1);
   int    nsdim           = List.get("null space: dimension",-1);
@@ -201,11 +201,11 @@ int GetAggregates(Epetra_RowMatrix& A, Teuchos::ParameterList& List,
   {
     if (A.GetRowMatrix()->Comm().MyPID()==proc)
     {
-      cout << "Proc " << proc << ":" << endl;
-      cout << "aggrcount " << aggrcount << endl;
-      cout << "NextSize " << NextSize << endl;
+      std::cout << "Proc " << proc << ":" << std::endl;
+      std::cout << "aggrcount " << aggrcount << std::endl;
+      std::cout << "NextSize " << NextSize << std::endl;
       for (int i=0; i<size; ++i)
-        cout << "aggrmap[" << i << "] = " << aggrmap[i] << endl;
+        std::cout << "aggrmap[" << i << "] = " << aggrmap[i] << std::endl;
       fflush(stdout);
     }
     A.GetRowMatrix()->Comm().Barrier();
@@ -301,10 +301,10 @@ void GetPtent(const Epetra_RowMatrix& A, Teuchos::ParameterList& List,
     {
       for (fool=aggdofs.begin(); fool!=aggdofs.end(); ++fool)
       {
-        cout << "Proc " << proc << " Aggregate " << fool->first << " Dofs ";
+        std::cout << "Proc " << proc << " Aggregate " << fool->first << " Dofs ";
         std::vector<int>& gids = fool->second;
-        for (int i=0; i<(int)gids.size(); ++i) cout << gids[i] << " ";
-        cout << endl;
+        for (int i=0; i<(int)gids.size(); ++i) std::cout << gids[i] << " ";
+        std::cout << std::endl;
       }
     }
     fflush(stdout);

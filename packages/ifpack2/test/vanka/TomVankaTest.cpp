@@ -1,19 +1,10 @@
 // This will be a driver to test the development and implementation of
-// the Vanka Smoother in Ifpack2. The tasks to be completed are as
-// follows:
-//
-// 1. Translate Ifpack_UserPartition interface into Ifpack2 -- DONE
-// 2. Feed it pressure LIDs -- SORTA DONE (ACTUALLY GIDs IN MY EXAMPLE)
-// 3. Specify overlap = 1 -- DONE
-// 4. Verify that this spits out the correct partitioning for Stokes Vanka -- DONE
-// 5. Write a unit test -- TODO
-// 6. Figure out how to efficiently add magnetics coupling -- EH KINDA SORTA DONE
-// 7. Write a unit test -- TODO
+// the Vanka Smoother in Ifpack2. 
 //
 
 #include <Teuchos_ConfigDefs.hpp>
 #include <Ifpack2_ConfigDefs.hpp>
-
+#include "Teuchos_GlobalMPISession.hpp"
 #include <Teuchos_DefaultComm.hpp>
 #ifdef HAVE_MPI
 #include <Teuchos_DefaultMpiComm.hpp>
@@ -31,9 +22,9 @@
 #include <Ifpack2_Preconditioner.hpp>
 #include <Ifpack2_Partitioner.hpp>
 #include <Ifpack2_OverlappingPartitioner.hpp>
-#include <Ifpack2_UserPartitioner_def.hpp>
+#include <Ifpack2_Details_UserPartitioner_def.hpp>
 #include <Ifpack2_LinearPartitioner_def.hpp>
-#include <Ifpack2_TomBlockRelaxation_def.hpp>
+#include <Ifpack2_BlockRelaxation_def.hpp>
 #include <Ifpack2_ILUT.hpp>
 #include <Ifpack2_SparseContainer.hpp>
 #include <Ifpack2_AdditiveSchwarz_def.hpp>
@@ -48,9 +39,15 @@
 #include <string>
 #include <fstream>
 
-#include <Ifpack2_TomMHDPartitioner_def.hpp>
 
 int main(int argc, char *argv[]){
+
+  Teuchos::GlobalMPISession mpisess(&argc, &argv);\
+
+  //Define communicator:
+  Tpetra::DefaultPlatform::DefaultPlatformType& platform = Tpetra::DefaultPlatform::getDefaultPlatform();
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+
   
   typedef int LocalOrdinal;
   typedef int GlobalOrdinal;
@@ -58,126 +55,137 @@ int main(int argc, char *argv[]){
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
 
   
-  typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> sparse_matrix_type;
-  typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> crsgraph;
-  typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
-  //typedef Kokkos::SerialNode node_type;
+  //typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> sparse_matrix_type;
+  //typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> crsgraph;
+  //typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
+
+  // typedef our matrix/local inverse type to make life a little easier
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CRS;
+  typedef Ifpack2::BlockRelaxation<CRS, Ifpack2::SparseContainer<CRS,Ifpack2::ILUT<CRS> > > BlockRelax;
+  
+  //typedef KokkosClassic::SerialNode node_type;
   using Teuchos::RCP;
   
 
-  LocalOrdinal invalid = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
-
 
   // Initialize a "FancyOStream" to output to standard out (cout)
-  RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   out->setOutputToRootOnly(0);
 
-  //Define communicator:
-  Tpetra::DefaultPlatform::DefaultPlatformType& platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm();
 
 
 
   // **************************************** //
-  // MHD TEST                                 //
+  // 1D Poisson Test                          //
   // **************************************** //
 
+  // ************************************************************************************************** //
+  // Create our matrix!
 
-  std::string mhdFileName = "MHDQ2Q1Q2Matrix_16x16.mm";
-
-  RCP<sparse_matrix_type> myMHDA = reader_type::readSparseFile(mhdFileName, comm, platform.getNode(), true);
-
-  std::cout << "The size of A is: " << myMHDA->getGlobalNumRows() << " x "
-            << myMHDA->getGlobalNumCols() << std::endl;
+  // Parameters
+  GlobalOrdinal numGlobalDOFs = 32;
   
+  // Create a map
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > myMap = Tpetra::createUniformContigMap<LocalOrdinal,GlobalOrdinal>(numGlobalDOFs,comm);
 
-  // START THE PARTITIONER TEST!
-  Teuchos::ArrayRCP<LocalOrdinal> myMHDMap((size_t) 3556,invalid);
-  for (LocalOrdinal jj=2178; jj<2178+289; jj++)
-    {
-      myMHDMap[jj] = jj - 2178;
+  // Get update list and number of local equations from newly created map
+  const size_t numMyDOFs = myMap->getNodeNumElements();
+  Teuchos::ArrayView<const GlobalOrdinal> myGlobalDOFs = myMap->getNodeElementList();
+
+  // Create a CrsMatrix using the map
+  Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A = Teuchos::rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(myMap,3));
+
+  // Add rows
+  for (size_t ii = 0; ii < numMyDOFs; ii++){
+    if (myGlobalDOFs[ii] == 0) { //left boundary
+      A->insertGlobalValues(myGlobalDOFs[ii],
+                            Teuchos::tuple<GlobalOrdinal>(myGlobalDOFs[ii],myGlobalDOFs[ii]+1),
+                            Teuchos::tuple<Scalar>(2.0,-1.0));
     }
+    else if (myGlobalDOFs[ii] == numGlobalDOFs - 1) { //right boundary
+      A->insertGlobalValues(myGlobalDOFs[ii],
+                            Teuchos::tuple<GlobalOrdinal>(myGlobalDOFs[ii]-1,myGlobalDOFs[ii]),
+                            Teuchos::tuple<Scalar>(-1.0,2.0));
+    }
+    else { //interior
+      A->insertGlobalValues(myGlobalDOFs[ii],
+                            Teuchos::tuple<GlobalOrdinal>(myGlobalDOFs[ii]-1,myGlobalDOFs[ii],myGlobalDOFs[ii]+1),
+                            Teuchos::tuple<Scalar>(-1.0,2.0,-1.0));
+    }
+  }
 
-  Teuchos::ParameterList MHDList;
-  MHDList.set("partitioner: type"       ,"TomMHD");
-  MHDList.set("partitioner: local parts",(LocalOrdinal) 289);
-  MHDList.set("partitioner: map"        ,myMHDMap);
-  MHDList.set("partitioner: overlap"    ,(size_t) 1);
-  MHDList.set("partitioner: nv"         ,(GlobalOrdinal) 2178);
-  MHDList.set("partitioner: np"         ,(GlobalOrdinal) 289);
+  // Complete the fill
+  A->fillComplete();
 
-  Ifpack2::TomMHDPartitioner<crsgraph> MyMHDPart(myMHDA->getGraph());
-  MyMHDPart.setParameters(MHDList);
-  MyMHDPart.compute();
+  // ************************************************************************************************** //
+  // Set up ifpack2 parameters
+
+  Teuchos::ParameterList MyList;
+  // Distribute the local dofs linearly across nonoverlapping partitions
+  MyList.set("partitioner: type"       ,"linear");
+  // Distribute the local dofs over how many partitions?
+  MyList.set("partitioner: local parts",(LocalOrdinal) A->getNodeNumRows());
+  // How much overlap in the partitions
+  MyList.set("partitioner: overlap"    ,(int) 1);
+
+  // What type of block relaxation should we use?
+  MyList.set("relaxation: type"        ,"Gauss-Seidel");
+  // How many sweeps?
+  MyList.set("relaxation: sweeps"      ,(int) 1);
+  // How much damping?
+  MyList.set("relaxation: damping factor",1.0);
+  // Do we have a zero initial guess
+  MyList.set("relaxation: zero starting solution", false);
+
+  // Solving local blocks with ILUT, so we need some parameters
+  MyList.set("fact: absolute threshold", 0.0);
+  MyList.set("fact: relative threshold", 1.0);
+  MyList.set("fact: ilut level-of-fill", 3.0);
+
+  // Schwarz for the parallel
+  MyList.set("schwarz: overlap level", (int) 1);
 
 
-  MHDList.set("relaxation: type","Symmetric Gauss-Seidel");
-  MHDList.set("relaxation: sweeps", (size_t) 1);
-  MHDList.set("relaxation: damping factor", 1.0);
-  //  MHDList.set("relaxation: 
 
-  std::cout << std::endl << std::endl << std::endl;
-
-  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CRS;
-  typedef Ifpack2::ILUT< Tpetra::CrsMatrix<Scalar,LocalOrdinal,LocalOrdinal,Node>    > ILUTlo;
-  typedef Ifpack2::ILUT< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   > ILUTgo;
-
-  /*
-  Ifpack2::TomBlockRelaxation<CRS, Ifpack2::SparseContainer<CRS,Ifpack2::ILUT<CRS> > > prec(myMHDA);
+  // Create our preconditioner
+  //  Ifpack2::BlockRelaxation<CRS, Ifpack2::SparseContainer<CRS,Ifpack2::ILUT<CRS> > > prec(A);
+  Ifpack2::AdditiveSchwarz<CRS,BlockRelax> prec(A);
   
-  prec.setParameters(MHDList);
+
+  // Set the parameters
+  prec.setParameters(MyList);
+  // Initialize everything
   prec.initialize();
+  // Compute - this will form the blocks and factor the local matrices
   prec.compute();
-  */
 
-  ///////////////////////////////////////
-
-  std::cout << "Beginning construction of AdditiveSchwarz stuff...\n\n";
+  // Define RHS / Initial Guess
+  Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > X = Tpetra::createVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(myMap);
+  Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > B = Tpetra::createVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(myMap);
   
-  int overlapLevel=0;
-  Ifpack2::AdditiveSchwarz<CRS,Ifpack2::TomBlockRelaxation<CRS, Ifpack2::SparseContainer<CRS,Ifpack2::ILUT<CRS> > > > myprec(myMHDA,overlapLevel);
-  myprec.setParameters(MHDList);
+  Teuchos::ScalarTraits<Scalar>::seedrandom(846930883);
+  B->putScalar((Scalar) 2.0);  
+  //B->randomize();
+  X->putScalar((Scalar) 0.0);
+  //X->randomize();
 
-  std::cout << "Beginning AdditiveSchwarz::initialize()...\n\n";
-  myprec.initialize();
-
-  std::cout << "Beginning AdditiveSchwarz::compute()...\n\n";
-  myprec.compute();  
-
-  //  Ifpack2::AdditiveSchwarz< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>, Ifpack2::TomBlockRelaxation< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>, Ifpack2::ILUT< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > > > addschw(myMHDA,0);
-
-
-
-  //std::ofstream MyOutStream("FullMHDIfpackVerify.txt");
-  //MyMHDPart.print(MyOutStream);
-  //MyMHDPart.print(std::cout);
   
-  //MyOutStream.close();
+  // Apply the preconditioner
+  prec.apply(*B,*X);
 
-  //prec.describe(*out,Teuchos::VERB_HIGH);
+  // This writes B = B - A*x;
+  A->apply(*X,*B,Teuchos::NO_TRANS,-1.0,1.0);
 
-  //typedef Ifpack2::TomBlockRelaxation<CRS, Ifpack2::SparseContainer<CRS,ILUTlo> > TOM_Block_Relax;
+  // Print X and B (multi)vectors
+  //X->describe(*out,Teuchos::VERB_EXTREME);
+  //B->describe(*out,Teuchos::VERB_EXTREME);
+  
+  // Print final residual norm
+  std::cout << B->norm2() << std::endl;
 
-  //Let's try AdditiveSchwarz
-  //Ifpack2::AdditiveSchwarz<CRS, TOM_Block_Relax> addSchwarz(myMHDA,0); 
+  // Print stuff about our precondtioner (timings and whatnot)
+  prec.describe(*out,Teuchos::VERB_EXTREME);
 
-  //  addSchwarz.setParameters(MHDList);
-  //  addSchwarz.initialize();
-  //  addSchwarz.compute();
-
-  /*  for (int kk=0; kk<289; kk++)
-    {
-      Teuchos::ArrayRCP<LocalOrdinal> myMHDList(76,0);
-      MyMHDPart.rowsInPart(kk,myMHDList);
-      MHDFile << std::setw(3) << std::right << kk << ": ";
-      for (int ll=0; ll < myMHDList.size(); ll++)
-        {
-          MHDFile << myMHDList[ll] << " ";
-        }
-      MHDFile << std::endl;
-
-    }
-  */
-
+  
 
 }//int main

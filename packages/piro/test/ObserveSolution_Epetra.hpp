@@ -60,7 +60,7 @@ public:
     {
       double norm; solution.Norm2(&norm);
       if (solution.Comm().MyPID()==0)
-        cout << "ObserveSolution: Norm = " << norm << endl;
+        std::cout << "ObserveSolution: Norm = " << norm << std::endl;
     }
 
   void observeSolution(
@@ -68,8 +68,8 @@ public:
     {
       double norm; solution.Norm2(&norm);
       if (solution.Comm().MyPID()==0)
-        cout << "ObserveSolution: Norm = " << norm 
-             << "  for param/time = " << time_or_param_val << endl;
+        std::cout << "ObserveSolution: Norm = " << norm 
+             << "  for param/time = " << time_or_param_val << std::endl;
     }
 
 private:

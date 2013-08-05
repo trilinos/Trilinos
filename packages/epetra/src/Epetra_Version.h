@@ -44,6 +44,6 @@
 #include "Epetra_ConfigDefs.h"
 #include "Trilinos_version.h"
 
-string Epetra_Version() { 
+std::string Epetra_Version() { 
   return("Epetra in Trilinos " TRILINOS_VERSION_STRING); 
 }

@@ -93,9 +93,9 @@ namespace Tpetra {
     ///
     /// \param node [in/out] The Kokkos Node instance.  If null, this
     ///   class will create a Node with default parameters.
-    explicit MpiPlatform (const RCP<Node> &node) :
+    explicit MpiPlatform (const Teuchos::RCP<Node> &node) :
       comm_ (Teuchos::createMpiComm<int> (Teuchos::opaqueWrapper<MPI_Comm> (MPI_COMM_WORLD))),
-      node_ (node.is_null () ? Kokkos::Details::getNode<Node> () : node)
+      node_ (node.is_null () ? KokkosClassic::Details::getNode<Node> () : node)
     {}
 
     /// \brief Constructor that accepts a Kokkos Node and a wrapped MPI communicator.
@@ -116,10 +116,10 @@ namespace Tpetra {
     ///   class will create a Node with default parameters.
     /// \param rawMpiComm [in] The MPI communicator, wrapped in a
     ///   <tt>Teuchos::OpaqueWrapper</tt>.
-    MpiPlatform (const RCP<Node> &node, 
-                 const RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm)
+    MpiPlatform (const Teuchos::RCP<Node> &node, 
+                 const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm)
       : comm_ (Teuchos::createMpiComm<int> (rawMpiComm)),
-	node_ (node.is_null () ? Kokkos::Details::getNode<Node> () : node)
+	node_ (node.is_null () ? KokkosClassic::Details::getNode<Node> () : node)
     {}
 
     /// \brief Constructor that accepts a Kokkos Node and a raw MPI communicator.
@@ -132,9 +132,9 @@ namespace Tpetra {
     ///   class will create a Node with default parameters.
     /// \param rawMpiComm [in] The "raw" (not wrapped) MPI
     ///   communicator.
-    MpiPlatform (const RCP<Node> &node, MPI_Comm rawMpiComm)
+    MpiPlatform (const Teuchos::RCP<Node> &node, MPI_Comm rawMpiComm)
       : comm_ (Teuchos::createMpiComm<int> (Teuchos::opaqueWrapper<MPI_Comm> (rawMpiComm))),
-	node_ (node.is_null () ? Kokkos::Details::getNode<Node> () : node)
+	node_ (node.is_null () ? KokkosClassic::Details::getNode<Node> () : node)
     {}
 
     //! Destructor (virtual for memory safety of derived classes).
@@ -145,21 +145,21 @@ namespace Tpetra {
     //@{ 
 
     //! The Teuchos::Comm instance with which this object was created.
-    RCP<const Comm<int> > getComm() const {
+    Teuchos::RCP<const Comm<int> > getComm() const {
       return comm_; 
     }
 
     //! The Kokkos Node instance with which this object was created.
-    RCP<Node> getNode() const {
+    Teuchos::RCP<Node> getNode() const {
       return node_;
     }
 
     //@}
   protected: 
     //! Teuchos::Comm object instantiated for the platform.
-    RCP<Teuchos::MpiComm<int> > comm_;
+    Teuchos::RCP<Teuchos::MpiComm<int> > comm_;
     //! Kokkos Node object instantiated for the platform.
-    RCP<Node> node_;
+    Teuchos::RCP<Node> node_;
 
   private:
     //! Unimplemented copy constructor (syntactically forbidden).
@@ -168,14 +168,14 @@ namespace Tpetra {
     MpiPlatform& operator= (const MpiPlatform<Node> &platform);
   };
 
-  /// \class MpiPlatform<Kokkos::DefaultNode::DefaultNodeType>
-  /// \brief MpiPlatform specialization for Kokkos::DefaultNode::DefaultNodeType.
+  /// \class MpiPlatform<KokkosClassic::DefaultNode::DefaultNodeType>
+  /// \brief MpiPlatform specialization for KokkosClassic::DefaultNode::DefaultNodeType.
   ///
-  /// \warning Kokkos::DefaultNode::DefaultNodeType is a typedef, and
+  /// \warning KokkosClassic::DefaultNode::DefaultNodeType is a typedef, and
   ///   may have a different type, depending on Trilinos' build
-  ///   options.  For example, it may be Kokkos::SerialNode if
+  ///   options.  For example, it may be KokkosClassic::SerialNode if
   ///   Trilinos was built without a threading library, or
-  ///   Kokkos::TPINode if Trilinos was built with Pthreads.
+  ///   KokkosClassic::TPINode if Trilinos was built with Pthreads.
   ///
   /// \note In the past (up to and including the 10.8 Trilinos
   ///   release), the specialization of MpiPlatform for the default
@@ -184,14 +184,14 @@ namespace Tpetra {
   ///   simplify the code and make the specialization of MpiPlatform
   ///   conform more closely to the generic version of MpiPlatform.
   template <>
-  class MpiPlatform<Kokkos::DefaultNode::DefaultNodeType> : 
+  class MpiPlatform<KokkosClassic::DefaultNode::DefaultNodeType> : 
     public Teuchos::Describable {
   public:
     //! @name Typedefs
     //@{ 
 
     //! Kokkos Node type; the template parameter of this class.
-    typedef Kokkos::DefaultNode::DefaultNodeType NodeType;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType NodeType;
 
     //@}
     //! @name Constructors and destructor
@@ -201,11 +201,11 @@ namespace Tpetra {
     ///
     /// The specialization of MpiPlatform for the default node type
     /// includes a default constructor.  It instantiates a default
-    /// Node instance using Kokkos::DefaultNode::getDefaultNode(), and
+    /// Node instance using KokkosClassic::DefaultNode::getDefaultNode(), and
     /// uses MPI_COMM_WORLD as the communicator.
     MpiPlatform () :
       comm_ (Teuchos::createMpiComm<int> (Teuchos::opaqueWrapper<MPI_Comm> (MPI_COMM_WORLD))),
-      node_ (Kokkos::DefaultNode::getDefaultNode ())
+      node_ (KokkosClassic::DefaultNode::getDefaultNode ())
     {}
 
     /// \brief Constructor that accepts a Kokkos Node.
@@ -222,9 +222,9 @@ namespace Tpetra {
     /// will instantiate a default Node if node.is_null().
     ///
     /// \param node [in/out] The Kokkos Node instance.
-    explicit MpiPlatform (const RCP<Kokkos::DefaultNode::DefaultNodeType> &node) :
+    explicit MpiPlatform (const RCP<KokkosClassic::DefaultNode::DefaultNodeType> &node) :
       comm_ (Teuchos::createMpiComm<int> (Teuchos::opaqueWrapper<MPI_Comm> (MPI_COMM_WORLD))),
-      node_ (node.is_null() ? Kokkos::DefaultNode::getDefaultNode() : node)
+      node_ (node.is_null() ? KokkosClassic::DefaultNode::getDefaultNode() : node)
     {}
 
     /// \brief Constructor that accepts a Kokkos Node and a wrapped MPI communicator.
@@ -244,10 +244,10 @@ namespace Tpetra {
     /// \param node [in/out] The Kokkos Node instance.
     /// \param rawMpiComm [in] The MPI communicator, wrapped in a
     ///   <tt>Teuchos::OpaqueWrapper</tt>.
-    MpiPlatform (const RCP<Kokkos::DefaultNode::DefaultNodeType> &node, 
+    MpiPlatform (const RCP<KokkosClassic::DefaultNode::DefaultNodeType> &node, 
                  const RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm) 
       : comm_ (Teuchos::createMpiComm<int> (rawMpiComm)),
-        node_ (node.is_null() ? Kokkos::DefaultNode::getDefaultNode() : node)
+        node_ (node.is_null() ? KokkosClassic::DefaultNode::getDefaultNode() : node)
     {}
 
     /// \brief Constructor that accepts a Kokkos Node and a raw MPI communicator.
@@ -259,10 +259,10 @@ namespace Tpetra {
     /// \param node [in/out] The Kokkos Node instance.
     /// \param rawMpiComm [in] The "raw" (not wrapped) MPI
     ///   communicator.
-    MpiPlatform (const RCP<Kokkos::DefaultNode::DefaultNodeType> &node, 
+    MpiPlatform (const RCP<KokkosClassic::DefaultNode::DefaultNodeType> &node, 
 		 MPI_Comm rawMpiComm)
       : comm_ (Teuchos::createMpiComm<int> (Teuchos::opaqueWrapper<MPI_Comm> (rawMpiComm))),
-	node_ (node.is_null() ? Kokkos::DefaultNode::getDefaultNode() : node)
+	node_ (node.is_null() ? KokkosClassic::DefaultNode::getDefaultNode() : node)
     {}
 
     //! Destructor (virtual for memory safety of derived classes).
@@ -278,24 +278,24 @@ namespace Tpetra {
     }
 
     //! The Kokkos Node instance for this platform to use.
-    RCP<Kokkos::DefaultNode::DefaultNodeType> getNode() const {
+    RCP<KokkosClassic::DefaultNode::DefaultNodeType> getNode() const {
       return node_;
     }
 
     //@}
   private:
     //! Unimplemented copy constructor (syntactically forbidden).
-    MpiPlatform (const MpiPlatform<Kokkos::DefaultNode::DefaultNodeType> &platform);
+    MpiPlatform (const MpiPlatform<KokkosClassic::DefaultNode::DefaultNodeType> &platform);
 
     //! Unimplemented assignment operator (syntactically forbidden).
-    MpiPlatform& operator= (const MpiPlatform<Kokkos::DefaultNode::DefaultNodeType> &platform);
+    MpiPlatform& operator= (const MpiPlatform<KokkosClassic::DefaultNode::DefaultNodeType> &platform);
 
   protected: 
     //! Teuchos::Comm object instantiated for the platform.
     RCP<Teuchos::MpiComm<int> > comm_;
 
     //! Kokkos Node object instantiated for the platform.
-    RCP<Kokkos::DefaultNode::DefaultNodeType> node_;
+    RCP<KokkosClassic::DefaultNode::DefaultNodeType> node_;
   };
 
 } // namespace Tpetra

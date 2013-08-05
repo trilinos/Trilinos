@@ -60,7 +60,7 @@
 
 namespace panzer {
 
-template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=Kokkos::DefaultNode::DefaultNodeType>
+template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=KokkosClassic::DefaultNode::DefaultNodeType>
 class TpetraLinearObjContainer : public LinearObjContainer
                                , public ThyraObjContainer<ScalarT> {
    TpetraLinearObjContainer();

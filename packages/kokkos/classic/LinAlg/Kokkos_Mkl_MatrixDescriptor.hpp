@@ -46,13 +46,13 @@
 #include <Teuchos_FancyOStream.hpp>
 #include <string>
 
-namespace Kokkos {
+namespace KokkosClassic {
   namespace Mkl {
     /// \class MatrixDescriptor
     /// \brief Wrapper for MKL's sparse matrix descriptor array.
     ///
     /// \note This class is not meant for end users.  We use it in the
-    ///   implementation of Kokkos::MklSparseOps.
+    ///   implementation of KokkosClassic::MklSparseOps.
     ///
     /// MKL's sparse kernels use an array of characters to describe
     /// the storage format of a sparse matrix.  This class wraps the
@@ -119,7 +119,7 @@ namespace Kokkos {
       ///
       /// \warning This pointer is only valid during the lifetime of
       ///   the MatrixDescriptor object.
-      const char* const getRawPtr () const {
+      const char* getRawPtr () const {
         return &descr_[0];
       }
 
@@ -170,6 +170,6 @@ namespace Kokkos {
       std::string descr_;
     };
   } // namespace Mkl
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif // __Kokkos_Mkl_MatrixDescriptor_hpp

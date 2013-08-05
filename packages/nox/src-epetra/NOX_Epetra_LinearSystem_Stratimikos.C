@@ -429,7 +429,7 @@ applyRightPreconditioning(bool useTranspose,
 			  NOX::Epetra::Vector& result) const
 {
 
-cout << " NOX::Epetra::LinearSystemStratimikos::applyRightPreconditioning\n"
+std::cout << " NOX::Epetra::LinearSystemStratimikos::applyRightPreconditioning\n"
      << " NOT IMPLEMENTED " << std::endl;
 return false;
 }
@@ -560,7 +560,7 @@ bool NOX::Epetra::LinearSystemStratimikos::
 recomputePreconditioner(const NOX::Epetra::Vector& x, 
 			Teuchos::ParameterList& linearSolverParams) const
 {  
-cout << " NOX::Epetra::LinearSystemStratimikos::recomputePreconditioner\n"
+std::cout << " NOX::Epetra::LinearSystemStratimikos::recomputePreconditioner\n"
      << " NOT IMPLEMENTED " << std::endl;
 return false;
 }

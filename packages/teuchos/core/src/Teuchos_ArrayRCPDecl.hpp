@@ -99,12 +99,34 @@ namespace Teuchos {
  * <li> T must be copy constructible.
  * <li> TypeNameTraits must have a specialization for T.
  * </ul>
+ *
+ * \section Teuchos_ArrayView_DesignDiscussion_sec Design discussion
+ *
+ * This class has a partial specialization for <tt>const T</tt> that
+ * omits the conversion operator <tt>operator ArrayRCP<const T>()
+ * const</tt>, and the assign() and deepCopy() methods (which perform
+ * a deep copy).  The conversion operator does not make sense if T is
+ * already <tt>const T'</tt> for some type <tt>T'</tt>, and the
+ * assign() and deepCopy() methods do not make sense if the right-hand
+ * side of the assignment is const.
+ * 
+ * Partial specialization results in duplicated code, so Teuchos
+ * developers should be careful to make modifications in both the
+ * fully generic implementation and in the partial specialization.
+ *
+ * We considered avoiding most of the duplication by making
+ * <tt>ArrayRCP<T></tt> and its partial specialization
+ * <tt>ArrayRCP<const T></tt> inherit from a common base class, which
+ * contains all the common code.  However, the circular dependency
+ * between ArrayRCP and ArrayView would have complicated this
+ * solution.  We chose instead the simple "partial specialization
+ * without a common base class" solution, which does not interfere
+ * with the ArrayRCP / ArrayView circular dependency.
  */
 template<class T>
 class ArrayRCP {
 public:
-
-  //! @name Public types
+  //! @name Public typedefs
   //@{
 
   //! Integer index type used throughout ArrayRCP.
@@ -113,7 +135,7 @@ public:
   //! Type representing the number of elements in an ArrayRCP or view thereof.
   typedef Ordinal size_type;
 
-  //! Type representing the difference between two iterators of an ArrayRCP.
+  //! Type representing the difference between two size_type values.
   typedef Ordinal difference_type;
 
   //! Category of ArrayRCP's iterator type.
@@ -153,22 +175,21 @@ public:
 #endif
 
   //@}
-
   //! @name Constructors/Destructors/Initializers
   //@{
 
-  /** \brief Initialize <tt>ArrayRCP<T></tt> to NULL.
-   *
-   * This lets users write code like:
-   \code
-   ArrayRCP<int> p = null;
-   \endcode
-   * or
-   \code
-   ArrayRCP<int> p;
-   \endcode
-   * Both lines of code above set the raw array pointer to <tt>NULL</tt>.
-   */
+  /// \brief Default constructor; initialize to an empty array.
+  ///
+  /// This lets users write code like:
+  /// \code
+  /// ArrayRCP<int> p = null;
+  /// \endcode
+  /// or
+  /// \code
+  /// ArrayRCP<int> p;
+  /// \endcode
+  /// Both lines of code above set the raw array pointer to
+  /// <tt>NULL</tt>, and the array's length to zero.
   inline ArrayRCP( ENull null_arg = null );
 
   /** \brief Construct from a raw pointer and a valid range.
@@ -300,11 +321,10 @@ public:
   inline ArrayRCP<T>& operator=(const ArrayRCP<T>& r_ptr);
 
   //@}
-
   //! @name Object/Pointer Access Functions
   //@{
 
-  /** \brief Returns true if the underlying pointer is null. */
+  //! True if the underlying pointer is null, else false.
   inline bool is_null() const;
 
   /** \brief Pointer (<tt>-></tt>) access to members of underlying object for
@@ -347,7 +367,6 @@ public:
   inline T& operator[](size_type offset) const;
 
   //@}
-
   //! @name Pointer Arithmetic Functions
   //@{
 
@@ -440,7 +459,6 @@ public:
   inline ArrayRCP<T> operator-(size_type offset) const;
 
   //@}
-
   //! @name Standard Container-Like Functions
   //@{
 
@@ -469,7 +487,6 @@ public:
   inline iterator end() const;
 
   //@}
-
   //! @name ArrayRCP Views
   //@{
 
@@ -496,7 +513,6 @@ public:
   inline ArrayRCP<T> persistingView( size_type lowerOffset, size_type size ) const;
 
   //@}
-
   //! @name Size and extent query functions
   //@{
 
@@ -506,17 +522,17 @@ public:
   /** \brief Return the upper offset to valid data. */
   inline size_type upperOffset() const;
 
-  /** \brief The total number of items in the managed array
-   * (i.e. <tt>upperOffset()-lowerOffset()+1</tt>).
-   */
+  /// \brief The total number of entries in the array.
+  ///
+  /// <tt>x.upperOffset() - x.lowerOffset() + 1 == x.size()</tt> for
+  /// any ArrayRCP x.
   inline size_type size() const;
 
   //@}
-
   //! @name ArrayView views
   //@{
 
-  /** \brief Return view of a contiguous range of elements.
+  /** \brief Return a nonpersisting view of a contiguous range of elements.
    *
    * \pre <tt>this->get() != NULL</tt>
    * \pre <tt>this->lowerOffset() <= lowerOffset</tt>
@@ -547,11 +563,15 @@ public:
   //! @name Implicit conversions
   //@{
 
-  /** \brief Convert from ArrayRCP<T> to ArrayRCP<const T>. */
+  /// \brief Convert from ArrayRCP<T> to ArrayRCP<const T>.
+  ///
+  /// \note This conversion operator does not exist if T is already a
+  ///   const type (that is, if T is <tt>const T'</tt> for some type
+  ///   <tt>T'</tt>).  In that case, the assignment operator and copy
+  ///   constructor achieve the same syntactic effect.
   inline operator ArrayRCP<const T>() const;
 
   //@}
-
   //! @name std::vector like and other misc functions
   //@{
 
@@ -756,8 +776,6 @@ public:
   inline const ArrayRCP<T>& assert_valid_ptr() const;
 
   //@}
-
-
   /** \name Deprecated */
   //@{
 
@@ -767,40 +785,39 @@ public:
   //@}
 
 private:
+  //! Raw pointer to the array; NULL if this array is null.
+  T *ptr_; 
+  //! Reference-counting machinery.
+  RCPNodeHandle node_;
+  //! Lower offset to the data; 0 if this array is null.
+  size_type lowerOffset_;
+  //! Upper offset to the data; -1 if this array is null.
+  size_type upperOffset_; 
 
-  // //////////////////////////////////////////////////////////////
-  // Private data members
-
-  T *ptr_; // NULL if this pointer is null
-  RCPNodeHandle node_; // NULL if this pointer is null
-  size_type lowerOffset_; // 0 if this pointer is null
-  size_type upperOffset_; // -1 if this pointer is null
-
-  inline void debug_assert_not_null() const
-    {
+  inline void debug_assert_not_null () const {
 #ifdef TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
-      assert_not_null();
+    assert_not_null();
 #endif
-    }
+  }
 
-  inline void debug_assert_in_range( size_type lowerOffset_in,
-    size_type size_in ) const
-    {
-      (void)lowerOffset_in; (void)size_in;
+  inline void 
+  debug_assert_in_range (size_type lowerOffset_in,
+			 size_type size_in) const
+  {
+    (void) lowerOffset_in; 
+    (void) size_in;
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-      assert_in_range(lowerOffset_in, size_in);
+    assert_in_range (lowerOffset_in, size_in);
 #endif
-    }
+  }
 
-  inline void debug_assert_valid_ptr() const
-    {
+  inline void debug_assert_valid_ptr() const {
 #ifdef TEUCHOS_DEBUG
-      assert_valid_ptr();
+    assert_valid_ptr ();
 #endif
-    }
+  }
 
 public:
-
 
 #ifndef DOXYGEN_COMPILE
   // These constructors should be private but I have not had good luck making
@@ -814,56 +831,181 @@ public:
   const RCPNodeHandle& access_private_node() const;
 #endif
 
-};  // end class ArrayRCP<...>
+};
 
 
-/** \brief Dummy specialization of ArrayRCP<void>.
+/** \brief Partial specialization of ArrayRCP for const T.
  *
- * ArrayRCP<void> cannot be parsed because of reference and const_reference
- * typedefs resolving to "void &" and "const void &".  This full template
- * specialization ArrayRCP<void> neglects these. This will be mentioned in the
- * context of Kokkos::DefaultSparseOps<void>.  However, DefaultSparseOps<void>
- * is never instantiated, and until there is a need (and the semantics have
- * been decided), ArrayRCP<void> may not be instantiated either.
+ * The main documentation for ArrayRCP explains why this class needs a
+ * partial specialization for const types.
+ *
+ * \ingroup teuchos_mem_mng_grp
+ */
+template<class T>
+class ArrayRCP<const T> {
+public:
+  typedef Teuchos_Ordinal Ordinal;
+  typedef Ordinal size_type;
+  typedef Ordinal difference_type;
+  typedef std::random_access_iterator_tag iterator_category;
+  typedef const T* iterator_type;
+  typedef const T  value_type;
+  typedef const T& reference;
+  typedef const T& const_reference;
+  typedef const T* pointer;
+  typedef const T* const_pointer;
+  typedef const T  element_type;
+
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  typedef ArrayRCP<const T> iterator;
+  typedef ArrayRCP<const T> const_iterator;
+#else
+  typedef const T* iterator;
+  typedef const T* const_iterator;
+#endif
+
+  inline ArrayRCP (ENull null_arg = null);
+  inline ArrayRCP (const T* p, size_type lowerOffset, 
+		   size_type size, bool has_ownership,
+		   const ERCPNodeLookup rcpNodeLookup = RCP_ENABLE_NODE_LOOKUP);
+  template<class Dealloc_T>
+  inline ArrayRCP (const T* p, size_type lowerOffset, size_type size, 
+		   Dealloc_T dealloc, bool has_ownership);
+  inline explicit ArrayRCP (size_type size, const T& val = T ());
+  inline ArrayRCP (const ArrayRCP<const T>& r_ptr);
+  inline ~ArrayRCP();
+
+  inline ArrayRCP<const T>& operator= (const ArrayRCP<const T>& r_ptr);
+  inline bool is_null() const;
+  inline const T* operator->() const;
+  inline const T& operator*() const;
+  inline const T* get() const;
+  inline const T* getRawPtr() const;
+  inline const T& operator[] (size_type offset) const;
+
+  inline ArrayRCP<const T>& operator++ ();
+  inline ArrayRCP<const T> operator++ (int);
+  inline ArrayRCP<const T>& operator-- ();
+  inline ArrayRCP<const T> operator-- (int);
+  inline ArrayRCP<const T>& operator+= (size_type offset);
+  inline ArrayRCP<const T>& operator-= (size_type offset);
+  inline ArrayRCP<const T> operator+ (size_type offset) const;
+  inline ArrayRCP<const T> operator- (size_type offset) const;
+
+  inline iterator begin() const;
+  inline iterator end() const;
+
+  /** \brief Return const reference to the array.
+   *
+   * This method has a trivial implementation for the <tt>const T</tt>
+   * specialization of ArrayRCP.
+   */
+  inline ArrayRCP<const T> getConst () const;
+  inline ArrayRCP<const T> persistingView (size_type lowerOffset, size_type size) const;
+
+  inline size_type lowerOffset() const;
+  inline size_type upperOffset() const;
+  inline size_type size() const;
+
+  inline ArrayView<const T> view (size_type lowerOffset, size_type size) const;
+  inline ArrayView<const T> operator() (size_type lowerOffset, size_type size) const;
+  inline ArrayView<const T> operator() () const;
+
+  inline void resize (const size_type n, const T& val = T ());
+  inline void clear ();
+
+  inline ERCPStrength strength() const;
+  inline bool is_valid_ptr() const;
+  inline int strong_count() const;
+  inline int weak_count() const;
+  inline int total_count() const;
+  inline void set_has_ownership();
+  inline bool has_ownership() const;
+  inline const T* release();
+  inline ArrayRCP<const T> create_weak() const;
+  inline ArrayRCP<const T> create_strong() const;
+
+  template<class T2>
+  inline bool shares_resource (const ArrayRCP<T2>& r_ptr) const;
+
+  inline const ArrayRCP<const T>& assert_not_null () const;
+  inline const ArrayRCP<const T>& assert_in_range (size_type lowerOffset, size_type size) const;
+  inline const ArrayRCP<const T>& assert_valid_ptr() const;
+
+  inline TEUCHOS_DEPRECATED int count() const;
+
+private:
+  const T* ptr_; // NULL if this pointer is null
+  RCPNodeHandle node_; // NULL if this pointer is null
+  size_type lowerOffset_; // 0 if this pointer is null
+  size_type upperOffset_; // -1 if this pointer is null
+
+  inline void debug_assert_not_null() const {
+#ifdef TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
+    assert_not_null ();
+#endif
+  }
+
+  inline void 
+  debug_assert_in_range (size_type lowerOffset_in,
+			 size_type size_in) const
+  {
+    (void) lowerOffset_in; (void) size_in;
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+    assert_in_range (lowerOffset_in, size_in);
+#endif
+  }
+
+  inline void debug_assert_valid_ptr() const {
+#ifdef TEUCHOS_DEBUG
+    assert_valid_ptr ();
+#endif
+  }
+
+public:
+
+#ifndef DOXYGEN_COMPILE
+  // These constructors should be private but I have not had good luck making
+  // this portable (i.e. using friendship etc.) in the past
+  // This is a very bad breach of encapsulation that is needed since MS VC++
+  // 5.0 will not allow me to declare template functions as friends.
+  ArrayRCP (const T* p, size_type lowerOffset, 
+	    size_type size, const RCPNodeHandle& node);
+  const T* access_private_ptr() const;
+  RCPNodeHandle& nonconst_access_private_node();
+  const RCPNodeHandle& access_private_node() const;
+#endif
+};
+
+
+/** \brief Full specialization of ArrayRCP for T = void.
+ *
+ * The generic implementation of ArrayRCP<T> does not make syntactic
+ * sense for T = void, because the reference and const_reference
+ * typedefs would resolve to the invalid "types" <tt>void&</tt> resp.
+ * <tt>const void&</tt>.  This full template specialization
+ * ArrayRCP<void> neglects these invalid "types."
  */
 template<>
 class ArrayRCP<void> {
 public:
-
-  //! @name Public types
-  //@{
-
-  /** \brief. */
   typedef Teuchos_Ordinal Ordinal;
-
-  /** \brief . */
   typedef Ordinal size_type;
-  /** \brief . */
   typedef Ordinal difference_type;
-  /** \brief . */
   typedef std::random_access_iterator_tag iterator_category;
-  /** \brief . */
   typedef  void* iterator_type;
-  /** \brief . */
   typedef  void value_type;
   /** \brief . */
   // typedef T& reference;              // these are not valid
   /** \brief . */
   // typedef const T& const_reference;  // these are not valid
-  /** \brief . */
   typedef void* pointer;
-  /** \brief . */
   typedef void* const_pointer;
-  /** \brief . */
   typedef void  element_type;
 
-  /** \brief Default constructor, thows an exception.
-   */
-  inline ArrayRCP( );
-
-  //@}
-
-};  // end class ArrayRCP<void>
+  //! Default constructor; thows an exception.
+  inline ArrayRCP ();
+};
 
 /** \brief Dummy specialization of ArrayRCP<const void>.
  *
@@ -872,41 +1014,23 @@ public:
 template<>
 class ArrayRCP<const void> {
 public:
-
-  //! @name Public types
-  //@{
-
-  /** \brief. */
   typedef Teuchos_Ordinal Ordinal;
-
-  /** \brief . */
   typedef Ordinal size_type;
-  /** \brief . */
   typedef Ordinal difference_type;
-  /** \brief . */
   typedef std::random_access_iterator_tag iterator_category;
-  /** \brief . */
   typedef  const void* iterator_type;
-  /** \brief . */
   typedef  const void value_type;
   /** \brief . */
   // typedef T& reference;              // these are not valid
   /** \brief . */
   // typedef const T& const_reference;  // these are not valid
-  /** \brief . */
   typedef const void* pointer;
-  /** \brief . */
   typedef const void* const_pointer;
-  /** \brief . */
   typedef const void  element_type;
 
-  /** \brief Default constructor, thows an exception.
-   */
-  inline ArrayRCP( );
-
-  //@}
-
-};  // end class ArrayRCP<void>
+  //! Default constructor; thows an exception.
+  inline ArrayRCP ();
+};
 
 // 2008/09/22: rabartl: NOTE: I removed the TypeNameTraits<ArrayRCP<T> >
 // specialization since I want to be able to print the type name of an

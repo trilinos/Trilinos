@@ -47,7 +47,7 @@
 
 #include <Teuchos_ScalarTraits.hpp>
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   /*! @class CrsMatrixBase
       @brief An abstract base class providing a template for Kokkos-level sparse matrix objects.
@@ -116,6 +116,6 @@ namespace Kokkos {
   CrsMatrixBase<Scalar,Ordinal,Node>::~CrsMatrixBase() {
   }
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif /* KOKKOS_CRSMATRIXBASE_HPP */

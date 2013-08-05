@@ -487,7 +487,7 @@ int Epetra_SerialDenseSVD::Invert( double rthresh, double athresh )
   for( int i = 0; i < M_; ++i )
     if( S_[i] < thresh )
     {
-//cout <<  num_replaced << thresh << " " << S_[0] << " " << S_[i] << endl;
+//cout <<  num_replaced << thresh << " " << S_[0] << " " << S_[i] << std::endl;
 //      S_[i] = thresh;
       S_[i] = 0.0;
       ++num_replaced;
@@ -557,11 +557,11 @@ int Epetra_SerialDenseSVD::ReciprocalConditionEstimate(double & Value)
 */
 
 //=============================================================================
-void Epetra_SerialDenseSVD::Print(ostream& os) const {
+void Epetra_SerialDenseSVD::Print(std::ostream& os) const {
 
   if (Matrix_!=0) os << *Matrix_;
 //  if (Factor_!=0) os << *Factor_;
-  if (S_!=0) for( int i = 0; i < M_; ++i ) cout << "(" << i << "," << S_[i] << ")\n";
+  if (S_!=0) for( int i = 0; i < M_; ++i ) std::cout << "(" << i << "," << S_[i] << ")\n";
   if (Inverse_!=0) os << *Inverse_;
   if (LHS_!=0) os << *LHS_;
   if (RHS_!=0) os << *RHS_;

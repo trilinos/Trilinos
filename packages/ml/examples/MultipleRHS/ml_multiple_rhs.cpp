@@ -190,18 +190,18 @@ int main(int argc, char *argv[]) {
     delete[] y2Norm; 
 
     if (myPid == 0) {
-      cout << " --- Block size " << iBlock << " --- " << endl;
-      cout << " >> Blocking factor " << ML_MULTIPLE_RHS_BLOCK_FACTOR;
-      cout << " ... Error " << maxError1 << " Speedup " << t0/t1 << endl;
-      cout << " >> Blocking factor " << iBlock;
-      cout << " ... Error " << maxError2 << " Speedup " << t0/t2 << endl;
-      cout << endl;
+      std::cout << " --- Block size " << iBlock << " --- " << std::endl;
+      std::cout << " >> Blocking factor " << ML_MULTIPLE_RHS_BLOCK_FACTOR;
+      std::cout << " ... Error " << maxError1 << " Speedup " << t0/t1 << std::endl;
+      std::cout << " >> Blocking factor " << iBlock;
+      std::cout << " ... Error " << maxError2 << " Speedup " << t0/t2 << std::endl;
+      std::cout << std::endl;
     }
 
   }
 #else
   if (Comm.MyPID() == 0)
-    cout << "Please configure ML with the option --with-ml_multiple_rhs=NN,\nwhere NN is the blocking factor.";
+    std::cout << "Please configure ML with the option --with-ml_multiple_rhs=NN,\nwhere NN is the blocking factor.";
 #endif //ifdef ML_MULTIPLE_RHS_BLOCK_FACTOR
   ML_Aggregate_Destroy(&agg_object);
   ML_Destroy(&ml_handle);

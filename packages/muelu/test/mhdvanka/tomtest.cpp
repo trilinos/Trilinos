@@ -72,7 +72,7 @@ int main(int argc, char *argv[]){
   // First, we start with an Xpetra::Map
   Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
   //  Teuchos::ParameterList defaultParameters;
-  //  RCP<Kokkos::SerialNode> node = rcp(new Kokkos::SerialNode(defaultParameters));
+  //  RCP<KokkosClassic::SerialNode> node = rcp(new KokkosClassic::SerialNode(defaultParameters));
   
   string fileNameA00 = "./Matrices/J_00_3.mm";
   string fileNameA01 = "./Matrices/J_01_3.mm";

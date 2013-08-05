@@ -456,7 +456,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
 // INSTANTIATE THE TEMPLATED UNIT TESTS
 //////////////////////////////////////////////////////////////////////
 
-typedef Kokkos::SerialNode serial_node_type;
+typedef KokkosClassic::SerialNode serial_node_type;
 #define UNIT_TEST_GROUP( SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, gaussSeidelSerial, LO, GO, SCALAR, serial_node_type )
 

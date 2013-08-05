@@ -139,10 +139,10 @@ sexp:     QSTRING		{ $$ = $1;				}
 		                  set_type(aprepro, $1, Parser::token::SVAR);	}
         | SVAR EQUAL sexp	{ $$ = $3; 
 				  $1->value.svar = $3;
-				  redefined_warning(aprepro, $1->name);          }
+				  redefined_warning(aprepro, $1);          }
         | VAR EQUAL sexp	{ $$ = $3; 
 				  $1->value.svar= $3;
-				  redefined_warning(aprepro, $1->name);          
+				  redefined_warning(aprepro, $1);          
 		                  set_type(aprepro, $1, token::SVAR);		}
 	| IMMSVAR EQUAL sexp	{ immutable_modify(aprepro, $1); YYERROR; }
         | IMMVAR EQUAL sexp	{ immutable_modify(aprepro, $1); YYERROR; }
@@ -168,9 +168,9 @@ exp:	  NUM			{ $$ = $1; 				}
 	| VAR INC		{ $$ = ($1->value.var)++;		}
 	| VAR DEC		{ $$ = ($1->value.var)--;		}
 	| VAR EQUAL exp		{ $$ = $3; $1->value.var = $3;
-				  redefined_warning(aprepro, $1->name);          }
+				  redefined_warning(aprepro, $1);          }
 	| SVAR EQUAL exp		{ $$ = $3; $1->value.var = $3;
-				  redefined_warning(aprepro, $1->name);          
+				  redefined_warning(aprepro, $1);          
 		                  set_type(aprepro, $1, token::VAR);			}
 	| VAR EQ_PLUS exp	{ $1->value.var += $3; $$ = $1->value.var; }
 	| VAR EQ_MINUS exp	{ $1->value.var -= $3; $$ = $1->value.var; }

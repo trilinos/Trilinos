@@ -198,7 +198,8 @@ void
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              const LinearObjContainer & globalBCRows,
-                             LinearObjContainer & ghostedObjs) const
+                             LinearObjContainer & ghostedObjs,
+                             bool zeroVectorRows) const
 {
    typedef Teuchos::ArrayRCP<const double>::Ordinal Ordinal;
 
@@ -229,7 +230,7 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
       Teuchos::Array<LocalOrdinalT> indices(sz);
       Teuchos::Array<double> values(sz);
 
-      if(local_bcs_array[i]==0.0) { 
+      if(local_bcs_array[i]==0.0 || zeroVectorRows) { 
          // this boundary condition was NOT set by this processor
 
          // if they exist put 0.0 in each entry
@@ -362,11 +363,15 @@ initializeGhostedContainer(int mem,TpetraLinearObjContainer<ScalarT,LocalOrdinal
    if((mem & LOC::DxDt) == LOC::DxDt)
       loc.set_dxdt(getGhostedTpetraVector());
     
-   if((mem & LOC::F) == LOC::F)
+   if((mem & LOC::F) == LOC::F) {
       loc.set_f(getGhostedTpetraVector());
+      loc.setRequiresDirichletAdjustment(true);
+   }
 
-   if((mem & LOC::Mat) == LOC::Mat)
+   if((mem & LOC::Mat) == LOC::Mat) {
       loc.set_A(getGhostedTpetraMatrix());
+      loc.setRequiresDirichletAdjustment(true);
+   }
 }
 
 // "Get" functions

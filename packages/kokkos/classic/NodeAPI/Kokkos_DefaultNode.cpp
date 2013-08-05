@@ -44,9 +44,9 @@
 #include <iostream>
 #include <Teuchos_CompileTimeAssert.hpp>
 
-Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> Kokkos::DefaultNode::node_ = Teuchos::null;
+Teuchos::RCP<KokkosClassic::DefaultNode::DefaultNodeType> KokkosClassic::DefaultNode::node_ = Teuchos::null;
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   RCP<DefaultNode::DefaultNodeType> DefaultNode::getDefaultNode()
   {

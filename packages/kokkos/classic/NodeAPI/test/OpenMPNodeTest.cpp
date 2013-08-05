@@ -47,7 +47,7 @@
 
 namespace {
 
-  using Kokkos::OpenMPNode;
+  using KokkosClassic::OpenMPNode;
   RCP<OpenMPNode> ompNode_;
 
   template <>

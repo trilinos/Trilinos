@@ -92,10 +92,10 @@ CLOP_solver::CLOP_solver(const Epetra_CrsMatrix* AStandard_,
     print_flag = prt_summary + 10*prt_debug;
     fout.open("CLOP_solver.data");
     fout << "----------------- CLOP solver summary information "
-	 << "-----------------" << endl;
+	 << "-----------------" << std::endl;
   }
   if (print_flag > 0) fout << "number of global dofs        = " << ndof_global 
-			   << endl;
+			   << std::endl;
   zero_pointers();
   //
   // process constraints
@@ -105,16 +105,16 @@ CLOP_solver::CLOP_solver(const Epetra_CrsMatrix* AStandard_,
   // construct AOverlap, LDOverlap, and COverlap
   //
   construct_Overlap();
-  //  cout << *AOverlap << endl;
-  //  cout << *LDOverlap << endl;
-  //  cout << *COverlap << endl;
+  //  std::cout << *AOverlap << std::endl;
+  //  std::cout << *LDOverlap << std::endl;
+  //  std::cout << *COverlap << std::endl;
   construct_subdomains();
   initialize_subdomains();
   //
   // calculate coarse stiffness matrix
   //
   calculate_coarse_stiff();
-  //  cout << *Kc << endl;
+  //  std::cout << *Kc << std::endl;
   //
   // gather coarse stiffness matrix
   //
@@ -131,7 +131,7 @@ CLOP_solver::CLOP_solver(const Epetra_CrsMatrix* AStandard_,
   if (print_flag > 0) {
     endtime = MPI_Wtime();
     fout << "elapsed time for clop solver init  = " 
-	 << endtime-starttime << " seconds" << endl;
+	 << endtime-starttime << " seconds" << std::endl;
     fout.close();
   }
 }
@@ -206,7 +206,7 @@ void CLOP_solver::process_constraints()
   ncon_global = 0;
   if (ConStandard) ncon_global = ConStandard->NumGlobalCols();
   if (print_flag > 0) fout << "number of global constraints = " 
-			   << ncon_global << endl;
+			   << ncon_global << std::endl;
   if (ncon_global == 0) {
     ASt_red = AStandard;
     return;
@@ -228,7 +228,7 @@ void CLOP_solver::process_constraints()
   Epetra_CrsMatrix *KTran;
   EpetraExtCD::MatrixMatrix::Multiply(*AStandard, *Tran, KTran);
   EpetraExtCD::MatrixMatrix::Multiply(*TranT, *KTran, ASt_red_keep);
-  //  cout << *ASt_red_keep << endl;
+  //  std::cout << *ASt_red_keep << std::endl;
   ASt_red = ASt_red_keep;
 
   uSt_red = new Epetra_Vector(ASt_red->RowMap());
@@ -244,15 +244,15 @@ void CLOP_solver::process_constraints()
     double nnz_before = AStandard->NumGlobalNonzeros();
     double nnz_after  =   ASt_red->NumGlobalNonzeros();
     if (print_flag > 0) {
-      fout << "constraint data ------------------------------" << endl;
+      fout << "constraint data ------------------------------" << std::endl;
       fout << "ratio of nnzs after static condensation = "
-	   << nnz_after/nnz_before << endl;
+	   << nnz_after/nnz_before << std::endl;
       fout << "normalized constraint error check       = " << con_error_norm 
-	   << endl;
+	   << std::endl;
       fout << "maximum nnz in any row of T matrix      = " << max_nnz_row 
-	   << endl;
+	   << std::endl;
       fout << "infinity norm of T matrix               = " << inf_norm_Tran 
-	   << endl;
+	   << std::endl;
     }
   }
   assert(con_error_norm < 1e-10);
@@ -325,7 +325,7 @@ void CLOP_solver::construct_transpose(Epetra_CrsMatrix* & A,
 
 void CLOP_solver::construct_Overlap()
 {
-  if (print_flag > 9) fout << "in construct_Overlap " << endl;
+  if (print_flag > 9) fout << "in construct_Overlap " << std::endl;
   ndof_global_red = ASt_red->NumGlobalRows();
   int i;
   assert (overlap >= 0);
@@ -340,17 +340,17 @@ void CLOP_solver::construct_Overlap()
   sprintf(fname, "%s.dat", fname);
   std::ofstream ffout;
   ffout.open(fname);
-  ffout << ASt_red->NumMyRows() << endl;
-  for (i=0; i<ASt_red->NumMyRows(); i++) ffout << ASt_red->GRID(i) << endl;
-  ffout << ASt_red->NumMyCols() << endl;
-  for (i=0; i<ASt_red->NumMyCols(); i++) ffout << ASt_red->GCID(i) << endl;
-  ffout << RowMap->NumMyElements() << endl;
-  for (i=0; i<RowMap->NumMyElements(); i++) ffout << RowMap->GID(i) << endl;
-  ffout << ASt_red->Graph().MaxNumIndices() << endl;
+  ffout << ASt_red->NumMyRows() << std::endl;
+  for (i=0; i<ASt_red->NumMyRows(); i++) ffout << ASt_red->GRID(i) << std::endl;
+  ffout << ASt_red->NumMyCols() << std::endl;
+  for (i=0; i<ASt_red->NumMyCols(); i++) ffout << ASt_red->GCID(i) << std::endl;
+  ffout << RowMap->NumMyElements() << std::endl;
+  for (i=0; i<RowMap->NumMyElements(); i++) ffout << RowMap->GID(i) << std::endl;
+  ffout << ASt_red->Graph().MaxNumIndices() << std::endl;
   for (i=0; i<ASt_red->Graph().NumMyRows(); i++) {
     ASt_red->Graph().ExtractMyRowView(i, NumIndices, Indices);
-    ffout << NumIndices << endl;
-    for (int j=0; j<NumIndices; j++) ffout << Indices[j] << endl;
+    ffout << NumIndices << std::endl;
+    for (int j=0; j<NumIndices; j++) ffout << Indices[j] << std::endl;
   }
   ffout.close();
   */
@@ -395,7 +395,7 @@ void CLOP_solver::construct_Overlap()
   if (GNStandard) GNOverlap->Import(*GNStandard, Importer3, Insert);
   COverlap->Import(*CStandard, Importer3, Insert);
   assert (COverlap->ConstantStride() == true);
-  //  cout << *AOverlap << endl;
+  //  std::cout << *AOverlap << std::endl;
   // symmetry check
   //
   /*
@@ -440,15 +440,15 @@ void CLOP_solver::construct_Overlap()
   }
   delete [] rowbeg_loc; delete [] colidx_loc; delete [] val_loc;
   double normA = AOverlap->NormInf();
-  if (MyPID == 0) cout << "infinity norm of AOverlap = " << normA << endl;
-  cout << "maximum symmetry error    = " << max_val << endl;
-  cout << "values = " << val1 << " " << val2 << endl;
+  if (MyPID == 0) std::cout << "infinity norm of AOverlap = " << normA << std::endl;
+  std::cout << "maximum symmetry error    = " << max_val << std::endl;
+  std::cout << "values = " << val1 << " " << val2 << std::endl;
   */
 }
 
 void CLOP_solver::construct_subdomains()
 {
-  if (print_flag > 9) fout << "in construct_subdomains" << endl;
+  if (print_flag > 9) fout << "in construct_subdomains" << std::endl;
   int i, partition_option(0);
   ndof_overlap = AOverlap->NumMyRows();
   count1 = new int[ndof_overlap];
@@ -464,11 +464,11 @@ void CLOP_solver::construct_subdomains()
     x = &coords[0]; y = &coords[ndof_overlap]; z = &coords[2*ndof_overlap];
     if (MyPID == 0) {
       for (i=0; i<npart; i++) {
-	cout << "MyPID = " << MyPID 
-	     << ", dof coordinates for overlapping subdomain " << i << endl;
+	std::cout << "MyPID = " << MyPID 
+	     << ", dof coordinates for overlapping subdomain " << i << std::endl;
 	for (j=dofpart2[i]; j<dofpart2[i+1]; j++) {
 	  int dof = dofpart1[j];
-	  cout << x[dof] << " " << y[dof] << endl;
+	  std::cout << x[dof] << " " << y[dof] << std::endl;
 	}
       }
     }
@@ -484,12 +484,12 @@ void CLOP_solver::construct_subdomains()
   int npart_sum;
   Comm.SumAll(&npart, &npart_sum, 1);
   if (print_flag > 9) fout << "Total number of subdomains = " << npart_sum
-			   << endl;
+			   << std::endl;
 }
 
 int CLOP_solver::initialize_subdomains()
 {
-  if (print_flag > 9) fout << "in initialize_subdomains" << endl;
+  if (print_flag > 9) fout << "in initialize_subdomains" << std::endl;
   int i, max_nnz(0), nnz, ipres, ipres_max, *locdof;
   max_ndof = 0; gmres_flag = 0;
   if ((krylov_method == 1) || (krylov_method == 7)) gmres_flag = 1;
@@ -505,7 +505,7 @@ int CLOP_solver::initialize_subdomains()
   Comm.MaxAll(&ipres, &ipres_max, 1);
   if (ipres_max > 0) {
     gmres_flag = 1;
-    if (print_flag > 0) fout << "Note: pressure dofs present" << endl;
+    if (print_flag > 0) fout << "Note: pressure dofs present" << std::endl;
   }
   //
   // initialize variables to be used later
@@ -558,8 +558,8 @@ int CLOP_solver::initialize_subdomains()
     double *x, *y, *z;
     x = &coords[0]; y = &coords[ndof_overlap]; z = &coords[2*ndof_overlap];
     for (i=0; i<ndof_overlap; i++) {
-      cout << x[i] << " " << y[i] << " " << z[i] << " " <<
-	1*nsubdof[i] << " " << 1*on_sub_bound[i] << endl;
+      std::cout << x[i] << " " << y[i] << " " << z[i] << " " <<
+	1*nsubdof[i] << " " << 1*on_sub_bound[i] << std::endl;
     }
   }
   */
@@ -577,7 +577,7 @@ int CLOP_solver::initialize_subdomains()
     //
     // factor stiffness matrix of each subdomain
     //
-    if (print_flag > 9) fout << "factoring subdomain matrices" << endl;
+    if (print_flag > 9) fout << "factoring subdomain matrices" << std::endl;
     for (i=0; i<npart; i++) {
       Asub[i].factormatrix(AOverlap, imap, rowbeg_work, colidx_work, A_work);
     }
@@ -603,18 +603,18 @@ int CLOP_solver::initialize_subdomains()
     if (nneg_max > 0) {
       gmres_flag = 1;
       if (print_flag >= 0) {
-	fout << "Warning: stiffness matrix is not positive definite " << endl;
-	fout << "         gmres_flag set to 1" << endl;
+	fout << "Warning: stiffness matrix is not positive definite " << std::endl;
+	fout << "         gmres_flag set to 1" << std::endl;
       }
     }
     Epetra_Vector Edof_Overlap( View, AOverlap->RowMap(), Edof);
-    //    cout << Edof_Overlap << endl;
+    //    std::cout << Edof_Overlap << std::endl;
     Epetra_Vector Edof_Standard(ASt_red->RowMap());
-    //    cout << Edof_Overlap << endl;
+    //    std::cout << Edof_Overlap << std::endl;
     Edof_Standard.Export(Edof_Overlap, *ExporterO2ST, Add);
-    //    cout << Edof_Standard << endl;
+    //    std::cout << Edof_Standard << std::endl;
     Edof_Overlap.Import(Edof_Standard, *ImporterST2O, Insert);
-    //    cout << Edof_Overlap << endl;
+    //    std::cout << Edof_Overlap << std::endl;
     for (i=0; i<npart; i++) Asub[i].normalpu(Edof, nsubdof);
     //
     // construct coarse space (pass 1)
@@ -627,7 +627,7 @@ int CLOP_solver::initialize_subdomains()
       ncdof_proc += csdima[i];
       if (csdima[i] > max_csdim) max_csdim = csdima[i];
     }
-    //    cout << "MyPID, ncdof_proc = " << MyPID << " " << ncdof_proc << endl;
+    //    std::cout << "MyPID, ncdof_proc = " << MyPID << " " << ncdof_proc << std::endl;
     cs_local = new int[ncdof_proc];
     xcent = new double[npart]; 
     ycent = new double[npart]; 
@@ -639,19 +639,19 @@ int CLOP_solver::initialize_subdomains()
       ncdof_proc += csdima[i];
     }
     /*
-    cout << "subdomain centroids" << endl;
-    for (i=0; i<npart; i++) cout << xcent[i] << " " << ycent[i] << " " 
-				 << zcent[i] << endl;
-    cout << "cs_local = "; for (i=0; i<ncdof_proc; i++) cout << cs_local[i] 
+    std::cout << "subdomain centroids" << std::endl;
+    for (i=0; i<npart; i++) std::cout << xcent[i] << " " << ycent[i] << " " 
+				 << zcent[i] << std::endl;
+    std::cout << "cs_local = "; for (i=0; i<ncdof_proc; i++) std::cout << cs_local[i] 
 	 << " ";
-    cout << endl;
+    std::cout << std::endl;
     */
     //
     // correct coarse space if rotational dofs present in model
     //
     int max_ndof_rot;
     Comm.MaxAll(&ndof_rot, &max_ndof_rot, 1);
-    //    cout << "max_ndof_rot = " << max_ndof_rot << endl;
+    //    std::cout << "max_ndof_rot = " << max_ndof_rot << std::endl;
     if (max_ndof_rot > 0) {
       if ((atype == 2) && (ndim == 3)) {
 	for (int rbm=1; rbm<7; rbm++) {
@@ -728,11 +728,11 @@ void CLOP_solver::construct_Overlap_Subs(Epetra_CrsGraph* & Overlap_Subs)
   std::ofstream ffout;
   ffout.open(fname);
   int NumEntries, *Indices;
-  ffout << Overlap_Graph.MaxNumIndices() << endl;
+  ffout << Overlap_Graph.MaxNumIndices() << std::endl;
   for (i=0; i<Overlap_Graph.NumMyRows(); i++) {
     Overlap_Graph.ExtractMyRowView(i, NumEntries, Indices);
-    ffout << NumEntries << endl;
-    for (j=0; j<NumEntries; j++) ffout << Indices[j] << endl;
+    ffout << NumEntries << std::endl;
+    for (j=0; j<NumEntries; j++) ffout << Indices[j] << std::endl;
   }
   ffout.close();
   */
@@ -849,7 +849,7 @@ void CLOP_solver::correct_shape_dkt(int rbm, double Edof[],
 
 void CLOP_solver::assemble_Phi()
 {
-  if (print_flag > 9) fout << "in assemble_Phi" << endl;
+  if (print_flag > 9) fout << "in assemble_Phi" << std::endl;
   int i, j, k, ldof, row, ibeg, jbeg, col, ierr;
   //
   // determine starting coarse dof number for each processor
@@ -886,7 +886,7 @@ void CLOP_solver::assemble_Phi()
     }
   }
   PhiT->FillComplete(ASt_red->RowMap(), PhiTRowMap);
-  //  cout << *PhiT << endl;
+  //  std::cout << *PhiT << std::endl;
   delete [] NumEntriesPerRow;
   //
   // construct Epetra CrsMatrix for Phi (Phi_overlap, on-processor coarse 
@@ -932,11 +932,11 @@ void CLOP_solver::assemble_Phi()
   }
   ierr = Phi_Overlap.FillComplete(PhiTRowMap, ASt_red->RowMap());
   assert (ierr == 0);
-  //  cout << Phi_Overlap << endl;
+  //  std::cout << Phi_Overlap << std::endl;
   Phi = new Epetra_CrsMatrix(Copy, ASt_red->RowMap(), 0);
-  //  cout << Phi_Overlap.RowMap() << endl;
-  //  cout << Phi->RowMap() << endl;
-  //  cout << *ExporterO2ST << endl;
+  //  std::cout << Phi_Overlap.RowMap() << std::endl;
+  //  std::cout << Phi->RowMap() << std::endl;
+  //  std::cout << *ExporterO2ST << std::endl;
   Epetra_Export newExporter(Phi_Overlap.RowMap(), Phi->RowMap());
 
   //  assert (newExporter.SourceMap().SameAs(ExporterO2ST->SourceMap()));
@@ -952,23 +952,23 @@ void CLOP_solver::assemble_Phi()
   int N, NumEntries, *Indices;
   double *Values;
   N = ExporterO2ST->SourceMap().NumMyElements();
-  ffout << N << endl;
-  for (i=0; i<N; i++) ffout << ExporterO2ST->SourceMap().GID(i) << endl;
+  ffout << N << std::endl;
+  for (i=0; i<N; i++) ffout << ExporterO2ST->SourceMap().GID(i) << std::endl;
 
   N = ExporterO2ST->TargetMap().NumMyElements();
-  ffout << N << endl;
-  for (i=0; i<N; i++) ffout << ExporterO2ST->TargetMap().GID(i) << endl;
+  ffout << N << std::endl;
+  for (i=0; i<N; i++) ffout << ExporterO2ST->TargetMap().GID(i) << std::endl;
 
   N = PhiTRowMap.NumMyElements();
-  ffout << N << endl;
-  for (i=0; i<N; i++) ffout << PhiTRowMap.GID(i) << endl;
+  ffout << N << std::endl;
+  for (i=0; i<N; i++) ffout << PhiTRowMap.GID(i) << std::endl;
 
-  ffout << Phi_Overlap.MaxNumEntries() << endl;
+  ffout << Phi_Overlap.MaxNumEntries() << std::endl;
   for (i=0; i<Phi_Overlap.NumMyRows(); i++) {
     Phi_Overlap.ExtractMyRowView(i, NumEntries, Values, Indices);
-    ffout << NumEntries << endl;
+    ffout << NumEntries << std::endl;
     for (j=0; j<NumEntries; j++) ffout << Indices[j] << " " 
-				      << Values[j] << endl;
+				      << Values[j] << std::endl;
   }
   ffout.close();
   }
@@ -983,11 +983,11 @@ void CLOP_solver::assemble_Phi()
     double dsum = 0;
     Phi->ExtractMyRowView(i, NumEntries, Values, Indices);
     for (j=0; j<NumEntries; j++) dsum += Values[j];
-    if (MyPID == 3) cout << Phi->GRID(i) << ": " << dsum << endl;
+    if (MyPID == 3) std::cout << Phi->GRID(i) << ": " << dsum << std::endl;
   }
   */
-  //  cout << *Phi << endl;
-  //  cout << *Phi << endl;
+  //  std::cout << *Phi << std::endl;
+  //  std::cout << *Phi << std::endl;
   delete [] NumEntriesPerRow;
   delete [] rowbeg_Phi;
   delete [] colidx_Phi;
@@ -997,7 +997,7 @@ void CLOP_solver::assemble_Phi()
 
 void CLOP_solver::calculate_coarse_stiff()
 {
-  if (print_flag > 9) fout << "in calculate_coarse_stiff" << endl;
+  if (print_flag > 9) fout << "in calculate_coarse_stiff" << std::endl;
   Epetra_CrsMatrix *KPhi;
   EpetraExtCD::MatrixMatrix::Multiply(*ASt_red, *Phi, KPhi);
   EpetraExtCD::MatrixMatrix::Multiply(*PhiT, *KPhi, Kc);
@@ -1006,11 +1006,11 @@ void CLOP_solver::calculate_coarse_stiff()
 
 void CLOP_solver::gather_coarse_stiff()
 {
-  if (print_flag > 9) fout << "in gather_coarse_stiff" << endl;
+  if (print_flag > 9) fout << "in gather_coarse_stiff" << std::endl;
   int i, ncdof_solver;
   assert (Kc->NumGlobalCols() == Kc->NumGlobalRows());
   ncdof = Kc->NumGlobalRows();
-  if (print_flag > 0) fout << "coarse problem dimension = " << ncdof << endl;
+  if (print_flag > 0) fout << "coarse problem dimension = " << ncdof << std::endl;
   if (MyPID == 0) ncdof_solver = ncdof;
   if (MyPID != 0) ncdof_solver = 0;
   int *allrows = NULL;
@@ -1023,7 +1023,7 @@ void CLOP_solver::gather_coarse_stiff()
   Kc_gathered->Import(*Kc, *Importer_coarse, Insert);
   Kc_gathered->FillComplete();
   Kc_gathered->MakeDataContiguous();
-  //  cout << *Kc_gathered << endl;
+  //  std::cout << *Kc_gathered << std::endl;
   /*
   char fname[101];
   sprintf(fname,"%s","coarse_mat.dat");
@@ -1033,7 +1033,7 @@ void CLOP_solver::gather_coarse_stiff()
 
 void CLOP_solver::factor_coarse_stiff()
 {
-  if (print_flag > 9) fout << "factoring coarse matrix" << endl;
+  if (print_flag > 9) fout << "factoring coarse matrix" << std::endl;
   int i;
   Kc_gathered->MakeDataContiguous();
   int *rowbeg_KC(0), *colidx_KC(0), NumEntries;
@@ -1056,20 +1056,20 @@ void CLOP_solver::factor_coarse_stiff()
 			      num_tied_down, tied_down, AA, Xvecs);
     if (print_flag > 0) fout << "num_rigid_mode, num_tied_down = " 
 			     << num_rigid_mode << " "
-			     << num_tied_down << endl;
+			     << num_tied_down << std::endl;
     /*
-    cout << "ncdof, nnz_KC = " << ncdof << " " << nnz_KC << endl;
+    std::cout << "ncdof, nnz_KC = " << ncdof << " " << nnz_KC << std::endl;
     for (i=0; i<ncdof; i++) {
       for (j=rowbeg_KC[i]; j<rowbeg_KC[i+1]; j++) {
-	cout << i << " " << colidx_KC[j] << " " << KC[j] << endl;
+	std::cout << i << " " << colidx_KC[j] << " " << KC[j] << std::endl;
       }
     }
     std::ofstream ffout;
     ffout.open("coarse_rcv.dat");
-    ffout << ncdof << endl;
-    ffout << nnz_KC << endl;
-    for (i=0; i<=ncdof; i++) ffout << rowbeg_KC[i] << endl;
-    for (i=0; i<nnz_KC; i++) ffout << colidx_KC[i] << " " << KC[i] << endl;
+    ffout << ncdof << std::endl;
+    ffout << nnz_KC << std::endl;
+    for (i=0; i<=ncdof; i++) ffout << rowbeg_KC[i] << std::endl;
+    for (i=0; i<nnz_KC; i++) ffout << colidx_KC[i] << " " << KC[i] << std::endl;
     ffout.close();
     */
     Kc_fac = new CLAPS_sparse_lu();
@@ -1167,7 +1167,7 @@ void CLOP_solver::solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
   if (print_flag > 0) {
     endtime = MPI_Wtime();
     fout << "elapsed time for clop solver solve = " << endtime-starttime
-	 << " seconds" << endl;
+	 << " seconds" << std::endl;
   }
   if (print_flag >= 0) fout.close();
 }
@@ -1189,7 +1189,7 @@ void CLOP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
   //
   rSt_red->Dot(*rSt_red, &dprod);
   rorig = sqrt(dprod);
-  if (print_flag > 0) fout << "rorig = " << rorig << endl;
+  if (print_flag > 0) fout << "rorig = " << rorig << std::endl;
   rcurra[0] = rorig;
   if (rorig == 0) {
     uStand->PutScalar(0);
@@ -1219,9 +1219,9 @@ void CLOP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
     rSt_red->Update(-1.0, *ApSt_red, 1.0);
     rSt_red->Dot(*rSt_red, &dprod);
     if (print_flag > 0) {
-      cout << "residual after initial orthog correction = " << sqrt(dprod) 
-	   << endl << "number of search directions used = "
-	   << n_orthog_used << endl;
+      std::cout << "residual after initial orthog correction = " << sqrt(dprod) 
+	   << std::endl << "number of search directions used = "
+	   << n_orthog_used << std::endl;
     }
     uSt_red->Update(1.0, *pSt_red, 1.0);
     if ((iflag > 0) && (sqrt(dprod)/rorig <= solver_tol)) {
@@ -1234,8 +1234,8 @@ void CLOP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
   pre_type_orthog = 0; if (n_orthog_used == max_orthog) pre_type_orthog = 1;
   pcg_iter = 0;
   for (int iter=0; iter<max_iter_new; iter++) {
-    //    if (MyPID == 0) cout << "iteration " << iter+1 << " of maxiter = "
-    //			 << maxiter << endl;
+    //    if (MyPID == 0) std::cout << "iteration " << iter+1 << " of maxiter = "
+    //			 << maxiter << std::endl;
     apply_preconditioner(rSt_red, zSt_red);
 
     if (pre_type_orthog == 0) { // project off stored search directions
@@ -1280,8 +1280,8 @@ void CLOP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
     rcurr = sqrt(rcurr);
     rcurra[iter+1] = rcurr;
     num_iter = iter+1;
-    //    if (MyPID == 0) cout << "alpha, dprod, rtol = " << alpha << " " 
-    //			 << dprod << " " << rcurr/rorig << endl;
+    //    if (MyPID == 0) std::cout << "alpha, dprod, rtol = " << alpha << " " 
+    //			 << dprod << " " << rcurr/rorig << std::endl;
     if ((iflag > 0) && (rcurr/rorig <= solver_tol)) {
       pcg_status = 0;
       break;
@@ -1311,20 +1311,20 @@ void CLOP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
     calculate_multipliers(uStand, norm_rconstraint, norm_conerror);
   }
   if (MyPID == 0) {
-    //    cout << "rorig                 = " << rorig << endl;
+    //    std::cout << "rorig                 = " << rorig << std::endl;
     if (print_flag > 0) {
-      if (num_iter > 0) fout << "rcurr(recursive)      = " << rcurr << endl;
-      fout << "rcurr(actual)         = " << ractual << endl;
+      if (num_iter > 0) fout << "rcurr(recursive)      = " << rcurr << std::endl;
+      fout << "rcurr(actual)         = " << ractual << std::endl;
       if (ncon_global > 0) {
-	fout << "rcurr(constraint)     = " << norm_rconstraint << endl;
-	fout << "constraint error norm = " << norm_conerror << endl;
+	fout << "rcurr(constraint)     = " << norm_rconstraint << std::endl;
+	fout << "constraint error norm = " << norm_conerror << std::endl;
       }
-      fout << "number of iterations  = " << num_iter << endl;
-      fout << "solver tolerance      = " << solver_tol << endl;
+      fout << "number of iterations  = " << num_iter << std::endl;
+      fout << "solver tolerance      = " << solver_tol << std::endl;
     }
     if ((print_flag == 2) || (print_flag == 12)) {
       fout << "condition # estimate      relative residual" 
-	   << "   iteration" << endl;
+	   << "   iteration" << std::endl;
       if (pcg_iter == num_iter) calculate_condition(pcg_iter);
       fout << std::setiosflags(std::ios::scientific | std::ios::uppercase);
       for (i=0; i<num_iter; i++) {
@@ -1335,7 +1335,7 @@ void CLOP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
 	     << "       " 
 	     << std::setw(17) << std::setprecision(10) << rcurra[i+1]/rorig
 	     << "        " 
-	     << i+1 << endl;
+	     << i+1 << std::endl;
       }
     }
     fout << std::resetiosflags(std::ios::scientific);
@@ -1361,15 +1361,15 @@ void CLOP_solver::gmres_solve(Epetra_Vector* uStand,
   if (krylov_method == 7) {
     rSt_red->Norm2(&rorig_nopre);
     if (print_flag > 0) fout << "rorig (not preconditioned) = " << rorig_nopre
-			     << endl;
+			     << std::endl;
     apply_preconditioner(rSt_red, zSt_red);
     rSt_red->Update(1.0, *zSt_red, 0.0);
   }
   rSt_red->Dot(*rSt_red, &dprod);
   rorig = sqrt(dprod);
   if (print_flag > 0) {
-    if (krylov_method != 7) fout << "rorig = " << rorig << endl;
-    else fout << "rorig (preconditioned)     = " << rorig << endl;
+    if (krylov_method != 7) fout << "rorig = " << rorig << std::endl;
+    else fout << "rorig (preconditioned)     = " << rorig << std::endl;
   }
   uSt_red->PutScalar(0);
   if (rorig == 0) {
@@ -1391,8 +1391,8 @@ void CLOP_solver::gmres_solve(Epetra_Vector* uStand,
   }
   pre_type_orthog = 0; pre_type_coarse = 1;
   for (gmres_iter=0; gmres_iter<maxiter; gmres_iter++) {
-    //    if (MyPID == 0) cout << "iteration " << gmres_iter+1 
-    //			 << " of maxiter = " << maxiter << endl;
+    //    if (MyPID == 0) std::cout << "iteration " << gmres_iter+1 
+    //			 << " of maxiter = " << maxiter << std::endl;
     //
     // gmres stuff
     //
@@ -1452,40 +1452,40 @@ void CLOP_solver::gmres_solve(Epetra_Vector* uStand,
     calculate_multipliers(uStand, norm_rconstraint, norm_conerror);
   }
   if (MyPID == 0) {
-    //    cout << "rorig                 = " << rorig << endl;
+    //    std::cout << "rorig                 = " << rorig << std::endl;
     if (print_flag > 0) {
       if (krylov_method != 7) {
-	fout << "rcurr(gmres)          = " << rcurr << endl;
-	fout << "rcurr(actual)         = " << ractual << endl;
+	fout << "rcurr(gmres)          = " << rcurr << std::endl;
+	fout << "rcurr(actual)         = " << ractual << std::endl;
       }
       else {
-	fout << "rcurr_pre(gmres)      = " << rcurr << endl;
-	fout << "rcurr_pre(actual)     = " << ractual_pre << endl;
-	fout << "rcurr    (actual)     = " << ractual << endl;
-	fout << "rrtol nopre           = " << ractual/rorig_nopre << endl;
+	fout << "rcurr_pre(gmres)      = " << rcurr << std::endl;
+	fout << "rcurr_pre(actual)     = " << ractual_pre << std::endl;
+	fout << "rcurr    (actual)     = " << ractual << std::endl;
+	fout << "rrtol nopre           = " << ractual/rorig_nopre << std::endl;
       }
       if (ncon_global > 0) {
-	fout << "rcurr(constraint)     = " << norm_rconstraint << endl;
-	fout << "constraint error norm = " << norm_conerror << endl;
+	fout << "rcurr(constraint)     = " << norm_rconstraint << std::endl;
+	fout << "constraint error norm = " << norm_conerror << std::endl;
       }
-      fout << "number of iterations  = " << num_iter << endl;
-      fout << "solver tolerance      = " << solver_tol << endl;
+      fout << "number of iterations  = " << num_iter << std::endl;
+      fout << "solver tolerance      = " << solver_tol << std::endl;
       if (iflag == 2) {
-	cout << "condition # estimate      relative residual" 
-	     << "   iteration" << endl;
-	cout << std::setiosflags(std::ios::scientific | std::ios::uppercase);
+	std::cout << "condition # estimate      relative residual" 
+	     << "   iteration" << std::endl;
+	std::cout << std::setiosflags(std::ios::scientific | std::ios::uppercase);
 	for (i=0; i<num_iter; i++) {
-	  cout << " " 
+	  std::cout << " " 
 	       << std::setw(17) << std::setprecision(10) << 0
 	       << "       " 
 	       << std::setw(17) << std::setprecision(10) << fabs(norms[i])
 	       << "        " 
-	       << i+1 << endl;
+	       << i+1 << std::endl;
 	}
       }
-      cout << std::resetiosflags(std::ios::scientific);
-      cout << std::resetiosflags(std::ios::uppercase);
-      cout << std::setprecision(6);
+      std::cout << std::resetiosflags(std::ios::scientific);
+      std::cout << std::resetiosflags(std::ios::uppercase);
+      std::cout << std::setprecision(6);
     }
   }
 }
@@ -1504,7 +1504,7 @@ void CLOP_solver::apply_preconditioner(Epetra_Vector* r, Epetra_Vector* z)
       /*
       PhiT->Multiply(false, *r, *PhiTr);
       PhiTr_gathered->Import(*PhiTr, *Importer_coarse, Insert);
-      cout << *PhiTr_gathered << endl;
+      std::cout << *PhiTr_gathered << std::endl;
       */
       search_correction(r, z, 0.0);
       mat_vec_prod(z, ApSt_red);
@@ -1594,8 +1594,8 @@ void CLOP_solver::two_steps_CGS(int gmres_iter, Epetra_Vector* r)
     EB.GEMV(TRANS, M, N+1, ALPHA, A, LDA, &VV[M*i], BETA, Y);
     Comm.SumAll(gmres_vec, gmres_sum, N+1);
     if (MyPID == 0) {
-      cout << "orthogonality for i = " << i << endl;
-      for (int j=0; j<N+1; j++) cout << gmres_sum[j] << endl;
+      std::cout << "orthogonality for i = " << i << std::endl;
+      for (int j=0; j<N+1; j++) std::cout << gmres_sum[j] << std::endl;
     }
   }
   */
@@ -1733,8 +1733,8 @@ void CLOP_solver::remove_projection_search(Epetra_Vector* v)
       Comm.SumAll(ortho_vec, ortho_sum, N);
       if (MyPID == 0) {
       if (MyPID == 0) {
-      cout << "orthog_sum_after = " << endl;
-      for (int i=0; i<n_orthog_used; i++) cout << ortho_sum[i] << endl;
+      std::cout << "orthog_sum_after = " << std::endl;
+      for (int i=0; i<n_orthog_used; i++) std::cout << ortho_sum[i] << std::endl;
       }
       }
     */
@@ -1847,46 +1847,46 @@ void CLOP_solver::calculate_multipliers(Epetra_Vector* uStand,
   ffout.open(fname);
   int N;
   N = Exporter_lam->SourceMap().NumMyElements();
-  ffout << N << endl;
-  for (i=0; i<N; i++) ffout << Exporter_lam->SourceMap().GID(i) << endl;
+  ffout << N << std::endl;
+  for (i=0; i<N; i++) ffout << Exporter_lam->SourceMap().GID(i) << std::endl;
 
   N = Exporter_lam->TargetMap().NumMyElements();
-  ffout << N << endl;
-  for (i=0; i<N; i++) ffout << Exporter_lam->TargetMap().GID(i) << endl;
+  ffout << N << std::endl;
+  for (i=0; i<N; i++) ffout << Exporter_lam->TargetMap().GID(i) << std::endl;
 
   N = ConStandard->NumMyRows();
-  ffout << N << endl;
-  for (i=0; i<N; i++) ffout << ConStandard->GRID(i) << endl;
+  ffout << N << std::endl;
+  for (i=0; i<N; i++) ffout << ConStandard->GRID(i) << std::endl;
 
   N = ConStandard->NumMyCols();
-  ffout << N << endl;
-  for (i=0; i<N; i++) ffout << ConStandard->GCID(i) << endl;
+  ffout << N << std::endl;
+  for (i=0; i<N; i++) ffout << ConStandard->GCID(i) << std::endl;
 
   N = CtT->NumMyCols();
-  ffout << N << endl;
-  for (i=0; i<N; i++) ffout << CtT->GCID(i) << endl;
+  ffout << N << std::endl;
+  for (i=0; i<N; i++) ffout << CtT->GCID(i) << std::endl;
   
-  ffout << ConStandard->MaxNumEntries() << endl;
+  ffout << ConStandard->MaxNumEntries() << std::endl;
   for (i=0; i<ConStandard->NumMyRows(); i++) {
     ConStandard->ExtractMyRowView(i, NumEntries, Values, Indices);
-    ffout << NumEntries << endl;
+    ffout << NumEntries << std::endl;
     for (j=0; j<NumEntries; j++) ffout << Indices[j] << " " 
-				      << Values[j] << endl;
+				      << Values[j] << std::endl;
   }
 
-  ffout << CtT->MaxNumEntries() << endl;
+  ffout << CtT->MaxNumEntries() << std::endl;
   for (i=0; i<CtT->NumMyRows(); i++) {
     CtT->ExtractMyRowView(i, NumEntries, Values, Indices);
-    ffout << NumEntries << endl;
+    ffout << NumEntries << std::endl;
     for (j=0; j<NumEntries; j++) ffout << Indices[j] << " " 
-				      << Values[j] << endl;
+				      << Values[j] << std::endl;
   }
 
   ffout.close();
   */
   Lambda->Export(*Lambda_local, *Exporter_lam, Insert);
   CtT->Multiply(false, *Lambda, *wStand);
-  //  cout << *wStand << endl;
+  //  std::cout << *wStand << std::endl;
   vStand->Update(-1.0, *wStand, 1.0); 
   vStand->Dot(*vStand, &norm_rconstraint);
   norm_rconstraint = sqrt(norm_rconstraint);
@@ -1929,9 +1929,9 @@ void CLOP_solver::calculate_condition(int miter)
     }
     DSTEV_F77(&N, &ip1, Dtri, Etri, &Z, &one, &WORK, &INFO, 1); 
     if (INFO != 0) {
-      cout << "error in call to DSTEV in CLASP_solver::calculate_condition" 
-	   << endl;
-      cout << "INFO = " << INFO << endl;
+      std::cout << "error in call to DSTEV in CLASP_solver::calculate_condition" 
+	   << std::endl;
+      std::cout << "INFO = " << INFO << std::endl;
     }
     econa[i] = Dtri[i]/Dtri[0];
   }
@@ -1949,11 +1949,11 @@ void CLOP_solver::spmat_datfile(const Epetra_CrsMatrix & A, char fname[],
     for (j=0; j<NumEntries; j++) {
       if (opt == 1)
 	ffout << i+1 << " " << Indices[j]+1 << std::setw(22) << std::setprecision(15)
-	     << Values[j] << endl;
+	     << Values[j] << std::endl;
       if (opt == 2) {
 	grow = A.GRID(i); gcol = A.GCID(Indices[j]);
 	ffout << grow+1 << " " << gcol+1 << std::setw(22) 
-	     << std::setprecision(15) << Values[j] << endl;
+	     << std::setprecision(15) << Values[j] << std::endl;
       }
     }
   }

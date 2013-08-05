@@ -159,6 +159,9 @@ public:
    * </ul>
    */
   virtual Ordinal mapCode() const = 0;
+ 
+  /** \brief Returns true if vector space is locally replicated space. */
+  virtual bool isLocallyReplicated() const = 0;
 
   //@}
 

@@ -57,8 +57,8 @@
 typedef double Scalar;
 typedef int LocalOrdinal;
 typedef long long int GlobalOrdinal; // <<<<<<
-typedef Kokkos::DefaultNode::DefaultNodeType Node;
-typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
+typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 
 // Skip template names
 #include <MueLu_UseShortNames.hpp>

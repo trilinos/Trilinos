@@ -281,7 +281,7 @@ int main(int argc, char *argv[])
   RCP< OutputManager<ScalarType> > printer = 
     rcp( new BasicOutputManager<ScalarType>( verbosity ) );
 
-  printer->stream(Debug) << Anasazi_Version() << endl << endl;
+  printer->stream(Debug) << Anasazi_Version() << std::endl << std::endl;
 
   //  Problem information
   const int veclength = 99;
@@ -319,8 +319,8 @@ int main(int argc, char *argv[])
   // Inform the eigenproblem that you are finishing passing it information
   if ( probstd->setProblem() != true || probgen->setProblem() != true ) {
     if (verbose) {
-      printer->stream(Errors) << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
-                              << "End Result: TEST FAILED" << endl;
+      printer->stream(Errors) << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << std::endl
+                              << "End Result: TEST FAILED" << std::endl;
     }
 #ifdef HAVE_MPI
     MPI_Finalize() ;
@@ -344,74 +344,74 @@ int main(int argc, char *argv[])
     BlockDavidsonState<ScalarType,MV> istate;
 
     // try with default args
-    if (verbose) printer->stream(Errors) << "Testing solver(default,default) with standard eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(default,default) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
-    if (verbose) printer->stream(Errors) << "Testing solver(default,default) with generalized eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(default,default) with generalized eigenproblem..." << std::endl;
     testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     pls.set<int>("Num Blocks",4);
 
     // try with blocksize == getInitVec() size
     pls.set<int>("Block Size",nev);
-    if (verbose) printer->stream(Errors) << "Testing solver(nev,4) with standard eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(nev,4) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
     TEUCHOS_TEST_FOR_EXCEPTION(pls.getEntryPtr("Block Size")->isUsed() == false, get_out, "Solver did not consume parameter \"Block Size\".");
     TEUCHOS_TEST_FOR_EXCEPTION(pls.getEntryPtr("Num Blocks")->isUsed() == false, get_out, "Solver did not consume parameter \"Num Blocks\".");
-    if (verbose) printer->stream(Errors) << "Testing solver(nev,4) with generalized eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(nev,4) with generalized eigenproblem..." << std::endl;
     testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     // try with getInitVec() too small
     pls.set<int>("Block Size",2*nev);
-    if (verbose) printer->stream(Errors) << "Testing solver(2*nev,4) with standard eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(2*nev,4) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
-    if (verbose) printer->stream(Errors) << "Testing solver(2*nev,4) with generalized eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(2*nev,4) with generalized eigenproblem..." << std::endl;
     testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     // try with getInitVec() == two blocks
     pls.set<int>("Block Size",nev/2);
-    if (verbose) printer->stream(Errors) << "Testing solver(nev/2,4) with standard eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(nev/2,4) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
-    if (verbose) printer->stream(Errors) << "Testing solver(nev/2,4) with generalized eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(nev/2,4) with generalized eigenproblem..." << std::endl;
     testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     // try with a larger number of blocks; leave room for some expansion
     pls.set<int>("Block Size",nev);
     pls.set<int>("Num Blocks",15);
-    if (verbose) printer->stream(Errors) << "Testing solver(nev,15) with standard eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(nev,15) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
-    if (verbose) printer->stream(Errors) << "Testing solver(nev,15) with generalized eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(nev,15) with generalized eigenproblem..." << std::endl;
     testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     // try with a larger number of blocks+1
     pls.set<int>("Block Size",nev);
     pls.set<int>("Num Blocks",16);
-    if (verbose) printer->stream(Errors) << "Testing solver(nev,16) with standard eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(nev,16) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
-    if (verbose) printer->stream(Errors) << "Testing solver(nev,16) with generalized eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(nev,16) with generalized eigenproblem..." << std::endl;
     testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     // try with an invalid blocksize
     pls.set<int>("Block Size",0);
     pls.set<int>("Num Blocks",4);
-    if (verbose) printer->stream(Errors) << "Testing solver(0,4) with standard eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(0,4) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
 
     // try with an invalid numblocks
     pls.set<int>("Block Size",4);
     pls.set<int>("Num Blocks",1);
-    if (verbose) printer->stream(Errors) << "Testing solver(4,1) with standard eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(4,1) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
 
     // try with a too-large subspace
     pls.set<int>("Block Size",4);
     pls.set<int>("Num Blocks",veclength/4+1);
-    if (verbose) printer->stream(Errors) << "Testing solver(4,toomany) with standard eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(4,toomany) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
 
     // try with a non-Hermitian problem
     probstd->setHermitian(false);
     probstd->setProblem();
-    if (verbose) printer->stream(Errors) << "Testing solver with non-Hermitian eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver with non-Hermitian eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
     // fix it now
     probstd->setHermitian(true);
@@ -420,14 +420,14 @@ int main(int argc, char *argv[])
     // try with an unset problem
     // setHermitian will mark the problem as unset
     probstd->setHermitian(false);
-    if (verbose) printer->stream(Errors) << "Testing solver with unset eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver with unset eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
     // restore to hermitian, set problem
     probstd->setHermitian(true);
     probstd->setProblem();
 
     // try with a too-small initial basis
-    if (verbose) printer->stream(Errors) << "Initializing solver with too-small basis..." << endl;
+    if (verbose) printer->stream(Errors) << "Initializing solver with too-small basis..." << std::endl;
     pls.set("Block Size",4);
     pls.set("Num Blocks",2);
     istate.V  = MVT::Clone(*ivec,3);
@@ -435,7 +435,7 @@ int main(int argc, char *argv[])
     testsolver(probstd,printer,orthostd,sorter,pls,false,istate,true);
 
     // try with a non-integral initial basis
-    if (verbose) printer->stream(Errors) << "Initializing solver with oddly sized basis..." << endl;
+    if (verbose) printer->stream(Errors) << "Initializing solver with oddly sized basis..." << std::endl;
     pls.set("Block Size",4);
     pls.set("Num Blocks",2);
     istate.V  = MVT::Clone(*ivec,5);
@@ -443,7 +443,7 @@ int main(int argc, char *argv[])
     testsolver(probstd,printer,orthostd,sorter,pls,false,istate,true);
 
     // try with a inconsistent KK and V
-    if (verbose) printer->stream(Errors) << "Initializing solver with inconsistent KK and V..." << endl;
+    if (verbose) printer->stream(Errors) << "Initializing solver with inconsistent KK and V..." << std::endl;
     pls.set("Block Size",4);
     pls.set("Num Blocks",2);
     istate.V  = MVT::Clone(*ivec,4);
@@ -455,7 +455,7 @@ int main(int argc, char *argv[])
     RCP< StatusTest<ScalarType,MV,OP> > dumtester = rcp( new StatusTestMaxIters<ScalarType,MV,OP>(1) );
 
     // try with a null problem
-    if (verbose) printer->stream(Errors) << "Testing solver with null eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver with null eigenproblem..." << std::endl;
     try {
       RCP< BlockDavidson<ScalarType,MV,OP> > solver 
         = rcp( new BlockDavidson<ScalarType,MV,OP>(Teuchos::null,sorter,printer,dumtester,orthostd,pls) );
@@ -466,7 +466,7 @@ int main(int argc, char *argv[])
     }
 
     // try with a null sortman
-    if (verbose) printer->stream(Errors) << "Testing solver with null sort manager..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver with null sort manager..." << std::endl;
     try {
       RCP< BlockDavidson<ScalarType,MV,OP> > solver 
         = rcp( new BlockDavidson<ScalarType,MV,OP>(probstd,Teuchos::null,printer,dumtester,orthostd,pls) );
@@ -477,7 +477,7 @@ int main(int argc, char *argv[])
     }
 
     // try with a output man problem
-    if (verbose) printer->stream(Errors) << "Testing solver with null output manager..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver with null output manager..." << std::endl;
     try {
       RCP< BlockDavidson<ScalarType,MV,OP> > solver 
         = rcp( new BlockDavidson<ScalarType,MV,OP>(probstd,sorter,Teuchos::null,dumtester,orthostd,pls) );
@@ -488,7 +488,7 @@ int main(int argc, char *argv[])
     }
 
     // try with a null status test
-    if (verbose) printer->stream(Errors) << "Testing solver with null status test..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver with null status test..." << std::endl;
     try {
       RCP< BlockDavidson<ScalarType,MV,OP> > solver 
         = rcp( new BlockDavidson<ScalarType,MV,OP>(probstd,sorter,printer,Teuchos::null,orthostd,pls) );
@@ -499,7 +499,7 @@ int main(int argc, char *argv[])
     }
 
     // try with a null orthoman
-    if (verbose) printer->stream(Errors) << "Testing solver with null ortho manager..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver with null ortho manager..." << std::endl;
     try {
       RCP< BlockDavidson<ScalarType,MV,OP> > solver 
         = rcp( new BlockDavidson<ScalarType,MV,OP>(probstd,sorter,printer,dumtester,Teuchos::null,pls) );
@@ -511,11 +511,11 @@ int main(int argc, char *argv[])
 
   }
   catch (const get_out &go) {
-    printer->stream(Errors) << "Test failed: " << go.what() << endl;
+    printer->stream(Errors) << "Test failed: " << go.what() << std::endl;
     testFailed = true;
   }
   catch (const std::exception &e) {
-    printer->stream(Errors) << "Caught unexpected exception: " << e.what() << endl;
+    printer->stream(Errors) << "Caught unexpected exception: " << e.what() << std::endl;
     testFailed = true;
   }
 
@@ -526,7 +526,7 @@ int main(int argc, char *argv[])
 
   if (testFailed) {
     if (verbose) {
-      printer->stream(Errors) << endl << "End Result: TEST FAILED" << endl;
+      printer->stream(Errors) << std::endl << "End Result: TEST FAILED" << std::endl;
     }
     return -1;
   }
@@ -534,7 +534,7 @@ int main(int argc, char *argv[])
   // Default return value
   //
   if (verbose) {
-    printer->stream(Errors) << endl << "End Result: TEST PASSED" << endl;
+    printer->stream(Errors) << std::endl << "End Result: TEST PASSED" << std::endl;
   }
   return 0;
 

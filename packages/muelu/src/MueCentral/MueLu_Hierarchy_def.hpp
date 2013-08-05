@@ -304,6 +304,8 @@ namespace MueLu {
     GetOStream(Runtime0, 0) << "Loop: startLevel=" << startLevel << ", lastLevel=" << lastLevel
         << " (stop if numLevels = " << numDesiredLevels << " or Ac.size() = " << maxCoarseSize_ << ")" << std::endl;
 
+    Clear();
+
     // Setup multigrid levels
     Teuchos::Ptr<const FactoryManagerBase> ptrmanager = Teuchos::ptrInArg(manager);
     bool bIsLastLevel = Setup(startLevel, Teuchos::null, ptrmanager, ptrmanager);    // setup finest level (level 0) (first manager is Teuchos::null)
@@ -328,6 +330,14 @@ namespace MueLu {
     GetOStream(Statistics0,0) << ss.str();
 
   } // Setup()
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Clear() {
+    GetOStream(Runtime0, 0) << "Clearing old data" << std::endl;
+    for (int iLevel = 0; iLevel < GetNumberOfLevels(); iLevel++) {
+      Levels_[iLevel]->Clear();
+    }
+  }
 
   // ---------------------------------------- Iterate -------------------------------------------------------
 
@@ -643,10 +653,8 @@ namespace MueLu {
 
     if (verbLevel & Statistics1) {
       Teuchos::OSTab tab2(out);
-      for(int i = 0; i < GetNumLevels(); ++i) {
-        out << Levels_[i]->print(out, verbLevel);
-        out << std::endl;
-      }
+      for (int i = 0; i < GetNumLevels(); ++i)
+        Levels_[i]->print(out, verbLevel);
     }
 
     return out;

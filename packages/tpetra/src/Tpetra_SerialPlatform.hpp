@@ -89,7 +89,7 @@ namespace Tpetra {
     ///   class will create a Node with default parameters.
     explicit SerialPlatform (const RCP<Node> &node) :
       comm_ (rcp (new Teuchos::SerialComm<int>())),
-      node_ (node.is_null () ? Kokkos::Details::getNode<Node> () : node)
+      node_ (node.is_null () ? KokkosClassic::Details::getNode<Node> () : node)
     {}
 
     //! Destructor (virtual for memory safety of derived classes).
@@ -123,14 +123,14 @@ namespace Tpetra {
     SerialPlatform& operator= (const SerialPlatform<Node> &platform);
   };
 
-  /// \class SerialPlatform<Kokkos::DefaultNode::DefaultNodeType>
-  /// \brief SerialPlatform specialization for Kokkos::DefaultNode::DefaultNodeType.
+  /// \class SerialPlatform<KokkosClassic::DefaultNode::DefaultNodeType>
+  /// \brief SerialPlatform specialization for KokkosClassic::DefaultNode::DefaultNodeType.
   ///
-  /// \warning Kokkos::DefaultNode::DefaultNodeType is a typedef, and
+  /// \warning KokkosClassic::DefaultNode::DefaultNodeType is a typedef, and
   ///   may have a different type, depending on Trilinos' build
-  ///   options.  For example, it may be Kokkos::SerialNode if
+  ///   options.  For example, it may be KokkosClassic::SerialNode if
   ///   Trilinos was built without a threading library, or
-  ///   Kokkos::TPINode if Trilinos was built with Pthreads.
+  ///   KokkosClassic::TPINode if Trilinos was built with Pthreads.
   ///
   /// \note In the past (up to and including the 10.8 Trilinos
   ///   release), the specialization of SerialPlatform for the default
@@ -140,14 +140,14 @@ namespace Tpetra {
   ///   SerialPlatform conform more closely to the generic version of
   ///   SerialPlatform.
   template <>
-  class SerialPlatform<Kokkos::DefaultNode::DefaultNodeType> : 
+  class SerialPlatform<KokkosClassic::DefaultNode::DefaultNodeType> : 
     public Teuchos::Describable {
   public:
     //! @name Typedefs
     //@{ 
 
     //! Kokkos Node type; the template parameter of this class.
-    typedef Kokkos::DefaultNode::DefaultNodeType NodeType;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType NodeType;
 
     //@}
     //! @name Constructors and destructor
@@ -157,10 +157,10 @@ namespace Tpetra {
     ///
     /// The specialization of SerialPlatform for the default Node type
     /// includes a default constructor.  It instantiates a default
-    /// Node instance using Kokkos::DefaultNode::getDefaultNode().
+    /// Node instance using KokkosClassic::DefaultNode::getDefaultNode().
     SerialPlatform() : 
       comm_ (rcp (new Teuchos::SerialComm<int> ())),
-      node_ (Kokkos::DefaultNode::getDefaultNode ())
+      node_ (KokkosClassic::DefaultNode::getDefaultNode ())
     {}
 
     /// \brief Constructor that accepts a Kokkos Node.
@@ -176,9 +176,9 @@ namespace Tpetra {
     /// type will instantiate a default Node if node.is_null().
     ///
     /// \param node [in/out] The Kokkos Node instance.
-    explicit SerialPlatform (const RCP<Kokkos::DefaultNode::DefaultNodeType> &node) :
+    explicit SerialPlatform (const RCP<KokkosClassic::DefaultNode::DefaultNodeType> &node) :
       comm_ (rcp (new Teuchos::SerialComm<int> ())),
-      node_ (node.is_null() ? Kokkos::DefaultNode::getDefaultNode() : node)
+      node_ (node.is_null() ? KokkosClassic::DefaultNode::getDefaultNode() : node)
     {}
 
     //! Destructor (virtual for memory safety of derived classes).
@@ -194,24 +194,24 @@ namespace Tpetra {
     }
 
     //! The Kokkos Node instance for this platform to use.
-    RCP<Kokkos::DefaultNode::DefaultNodeType> getNode() const {
+    RCP<KokkosClassic::DefaultNode::DefaultNodeType> getNode() const {
       return node_;
     }
 
     //@}
   private:
     //! Unimplemented copy constructor (syntactically forbidden).
-    SerialPlatform (const SerialPlatform<Kokkos::DefaultNode::DefaultNodeType> &platform);
+    SerialPlatform (const SerialPlatform<KokkosClassic::DefaultNode::DefaultNodeType> &platform);
 
     //! Unimplemented assignment operator (syntactically forbidden).
-    SerialPlatform& operator= (const SerialPlatform<Kokkos::DefaultNode::DefaultNodeType> &platform);
+    SerialPlatform& operator= (const SerialPlatform<KokkosClassic::DefaultNode::DefaultNodeType> &platform);
 
   protected: 
     //! Teuchos::Comm object instantiated for the platform.
     RCP<const Teuchos::SerialComm<int> > comm_;
 
     //! Node object instantiated for the platform.
-    RCP<Kokkos::DefaultNode::DefaultNodeType> node_;
+    RCP<KokkosClassic::DefaultNode::DefaultNodeType> node_;
   };
 
 } // namespace Tpetra

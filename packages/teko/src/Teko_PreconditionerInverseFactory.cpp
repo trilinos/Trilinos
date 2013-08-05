@@ -313,8 +313,8 @@ bool PreconditionerInverseFactory::updateRequestedParameters(const Teuchos::Para
    // find name of settings sublist
    std::string subName = "";
    for(itr=srcPl->begin();itr!=srcPl->end();++itr) {
-      // search for string with "Settings" in name
-      if(itr->first.find("Settings")!=string::npos) {
+      // search for std::string with "Settings" in name
+      if(itr->first.find("Settings")!=std::string::npos) {
          subName = itr->first;
          continue;
       }
@@ -350,8 +350,8 @@ void PreconditionerInverseFactory::setupParameterListFromRequestHandler()
    // find name of settings sublist
    std::string subName = "";
    for(itr=srcPl->begin();itr!=srcPl->end();++itr) {
-      // search for string with "Settings" in name
-      if(itr->first.find("Settings")!=string::npos) {
+      // search for std::string with "Settings" in name
+      if(itr->first.find("Settings")!=std::string::npos) {
          subName = itr->first;
          continue;
       }

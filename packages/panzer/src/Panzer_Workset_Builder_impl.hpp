@@ -267,8 +267,7 @@ panzer::buildWorksets(const panzer::PhysicsBlock& pb,
 
 template<typename ArrayT>
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-panzer::buildBCWorkset(const panzer::BC& bc,
-		       const panzer::PhysicsBlock & volume_pb,
+panzer::buildBCWorkset(const panzer::PhysicsBlock & volume_pb,
 		       const std::vector<std::size_t>& local_cell_ids,
 		       const std::vector<std::size_t>& local_side_ids,
 		       const ArrayT& vertex_coordinates)
@@ -320,7 +319,7 @@ panzer::buildBCWorkset(const panzer::BC& bc,
 	  coords(cell,vertex,dim) = vertex_coordinates(side->second[cell].first,vertex,dim);
     }
     worksets[side->first].num_cells = worksets[side->first].cell_local_ids.size();
-    worksets[side->first].block_id = bc.elementBlockID();
+    worksets[side->first].block_id = volume_pb.elementBlockID();
     worksets[side->first].subcell_dim = volume_pb.cellData().baseCellDimension() - 1;
     worksets[side->first].subcell_index = side->first;
   }

@@ -1028,7 +1028,12 @@ int Epetra_CrsGraph::ComputeGlobalConstants()
   }}
   
   // Case 1:  Constant block size (including blocksize = 1)
-  if(RowMap().ConstantElementSize()) {
+  if(RowMap().ConstantElementSize() && ColMap().ConstantElementSize() && RowMap().ElementSize() == ColMap().ElementSize()) {
+    // Jim Westfall reported a fix on 22 June 2013 where the second two conditions
+    // above are necessary.  The added conditions check for the case when the row map
+    // and col map are constant but different as possible with VBR sub matrices used
+    // in global assemble
+
     tempvec[0] = CrsGraphData_->NumMyEntries_;
     tempvec[1] = CrsGraphData_->NumMyBlockDiagonals_;
 
@@ -1373,7 +1378,7 @@ int Epetra_CrsGraph::MakeColMap_int(const Epetra_BlockMap& domainMap,
   // and the number of block rows.
   const int numMyBlockRows = NumMyBlockRows();
   int  hashsize = numMyBlockRows; if (hashsize < 100) hashsize = 100;
-  //cout << "numMyBlockRows = " << numMyBlockRows << " hashsize = " << hashsize << endl;
+  //cout << "numMyBlockRows = " << numMyBlockRows << " hashsize = " << hashsize << std::endl;
   Epetra_HashTable<int> RemoteGIDs(hashsize); 
   Epetra_HashTable<int> RemoteGIDList(hashsize);
 
@@ -1553,7 +1558,7 @@ int Epetra_CrsGraph::MakeColMap_LL(const Epetra_BlockMap& domainMap,
   // and the number of block rows.
   const int numMyBlockRows = NumMyBlockRows();
   int  hashsize = numMyBlockRows; if (hashsize < 100) hashsize = 100;
-  //cout << "numMyBlockRows = " << numMyBlockRows << " hashsize = " << hashsize << endl;
+  //cout << "numMyBlockRows = " << numMyBlockRows << " hashsize = " << hashsize << std::endl;
   Epetra_HashTable<int> RemoteGIDs(hashsize); 
   Epetra_HashTable<long long> RemoteGIDList(hashsize);
 
@@ -2942,39 +2947,39 @@ int *Epetra_CrsGraph::All_IndicesPlus1() const {
 #endif // defined(Epetra_ENABLE_MKL_SPARSE) && !defined(Epetra_DISABLE_MKL_SPARSE_MM)
 
 //==============================================================================
-void Epetra_CrsGraph::Print (ostream& os) const {
+void Epetra_CrsGraph::Print (std::ostream& os) const {
   int MyPID = RowMap().Comm().MyPID();
   int NumProc = RowMap().Comm().NumProc();
 
   for(int iproc = 0; iproc < NumProc; iproc++) {
     if(MyPID == iproc) {
       if(MyPID == 0) {
-  os << "\nNumber of Global Block Rows  = " << NumGlobalBlockRows64()      << endl;
-  os <<   "Number of Global Block Cols  = " << NumGlobalBlockCols64()      << endl;
-  os <<   "Number of Global Block Diags = " << NumGlobalBlockDiagonals64() << endl;
-  os <<   "Number of Global Entries     = " << NumGlobalEntries64()        << endl;
-  os << "\nNumber of Global Rows        = " << NumGlobalRows64()           << endl;
-  os <<   "Number of Global Cols        = " << NumGlobalCols64()           << endl;
-  os <<   "Number of Global Diagonals   = " << NumGlobalDiagonals64()      << endl;
-  os <<   "Number of Global Nonzeros    = " << NumGlobalNonzeros64()       << endl;
-  os << "\nGlobal Maximum Block Row Dim = " << GlobalMaxRowDim()         << endl;
-  os <<   "Global Maximum Block Col Dim = " << GlobalMaxColDim()         << endl;
-  os <<   "Global Maximum Num Indices   = " << GlobalMaxNumIndices()     << endl;
-  if(LowerTriangular()) os << " ** Matrix is Lower Triangular **"        << endl;
-  if(UpperTriangular()) os << " ** Matrix is Upper Triangular **"        << endl;
-  if(NoDiagonal())      os << " ** Matrix has no diagonal     **"        << endl << endl;
+  os << "\nNumber of Global Block Rows  = " << NumGlobalBlockRows64()      << std::endl;
+  os <<   "Number of Global Block Cols  = " << NumGlobalBlockCols64()      << std::endl;
+  os <<   "Number of Global Block Diags = " << NumGlobalBlockDiagonals64() << std::endl;
+  os <<   "Number of Global Entries     = " << NumGlobalEntries64()        << std::endl;
+  os << "\nNumber of Global Rows        = " << NumGlobalRows64()           << std::endl;
+  os <<   "Number of Global Cols        = " << NumGlobalCols64()           << std::endl;
+  os <<   "Number of Global Diagonals   = " << NumGlobalDiagonals64()      << std::endl;
+  os <<   "Number of Global Nonzeros    = " << NumGlobalNonzeros64()       << std::endl;
+  os << "\nGlobal Maximum Block Row Dim = " << GlobalMaxRowDim()         << std::endl;
+  os <<   "Global Maximum Block Col Dim = " << GlobalMaxColDim()         << std::endl;
+  os <<   "Global Maximum Num Indices   = " << GlobalMaxNumIndices()     << std::endl;
+  if(LowerTriangular()) os << " ** Matrix is Lower Triangular **"        << std::endl;
+  if(UpperTriangular()) os << " ** Matrix is Upper Triangular **"        << std::endl;
+  if(NoDiagonal())      os << " ** Matrix has no diagonal     **"        << std::endl << std::endl;
       }
-      os << "\nNumber of My Block Rows  = " << NumMyBlockRows()      << endl;
-      os <<   "Number of My Block Cols  = " << NumMyBlockCols()      << endl;
-      os <<   "Number of My Block Diags = " << NumMyBlockDiagonals() << endl;
-      os <<   "Number of My Entries     = " << NumMyEntries()        << endl;
-      os << "\nNumber of My Rows        = " << NumMyRows()           << endl;
-      os <<   "Number of My Cols        = " << NumMyCols()           << endl;
-      os <<   "Number of My Diagonals   = " << NumMyDiagonals()      << endl;
-      os <<   "Number of My Nonzeros    = " << NumMyNonzeros()       << endl;
-      os << "\nMy Maximum Block Row Dim = " << MaxRowDim()           << endl;
-      os <<   "My Maximum Block Col Dim = " << MaxColDim()           << endl;
-      os <<   "My Maximum Num Indices   = " << MaxNumIndices()       << endl << endl;
+      os << "\nNumber of My Block Rows  = " << NumMyBlockRows()      << std::endl;
+      os <<   "Number of My Block Cols  = " << NumMyBlockCols()      << std::endl;
+      os <<   "Number of My Block Diags = " << NumMyBlockDiagonals() << std::endl;
+      os <<   "Number of My Entries     = " << NumMyEntries()        << std::endl;
+      os << "\nNumber of My Rows        = " << NumMyRows()           << std::endl;
+      os <<   "Number of My Cols        = " << NumMyCols()           << std::endl;
+      os <<   "Number of My Diagonals   = " << NumMyDiagonals()      << std::endl;
+      os <<   "Number of My Nonzeros    = " << NumMyNonzeros()       << std::endl;
+      os << "\nMy Maximum Block Row Dim = " << MaxRowDim()           << std::endl;
+      os <<   "My Maximum Block Col Dim = " << MaxColDim()           << std::endl;
+      os <<   "My Maximum Num Indices   = " << MaxNumIndices()       << std::endl << std::endl;
 
       int NumMyBlockRows1 = NumMyBlockRows();
       int MaxNumIndices1 = MaxNumIndices();
@@ -3006,7 +3011,7 @@ void Epetra_CrsGraph::Print (ostream& os) const {
   os.width(12);
   os <<  "Col Index"; os << "      ";
       }
-      os << endl;
+      os << std::endl;
       for(i = 0; i < NumMyBlockRows1; i++) {
        if(RowMap().GlobalIndicesInt()) {
          int Row = (int) GRID64(i); // Get global row number
@@ -3017,7 +3022,7 @@ void Epetra_CrsGraph::Print (ostream& os) const {
            os.width(12);
            os <<  Indices1_int[j]; os << "    ";
          }
-         os << endl;
+         os << std::endl;
        }
        else if(RowMap().GlobalIndicesLongLong()) {
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
@@ -3029,13 +3034,13 @@ void Epetra_CrsGraph::Print (ostream& os) const {
            os.width(12);
            os <<  Indices1_LL[j]; os << "    ";
          }
-         os << endl;
+         os << std::endl;
 #else
          throw ReportError("Epetra_CrsGraph::Print: Unable to determine source global index type",-1);
 #endif
        }
       }      
-      os << flush;
+      os << std::flush;
     }
     // Do a few global ops to give I/O a chance to complete
     RowMap().Comm().Barrier();

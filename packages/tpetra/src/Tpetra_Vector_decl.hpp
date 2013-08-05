@@ -57,10 +57,12 @@ namespace Tpetra {
 template<class Scalar,
          class LocalOrdinal=int,
          class GlobalOrdinal=LocalOrdinal,
-         class Node=Kokkos::DefaultNode::DefaultNodeType>
+         class Node=KokkosClassic::DefaultNode::DefaultNodeType>
 class Vector : public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
   // need this so that MultiVector::operator() can call Vector's private view constructor
   friend class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+
+  
 public:
   //! @name Constructor/Destructor Methods
   //@{
@@ -80,6 +82,12 @@ public:
   //@}
   //! @name Post-construction modification routines
   //@{
+
+  //!Create a cloned Vector for a different node type
+  template <class Node2>
+  RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+  clone(const RCP<Node2> &node2);
+
 
   //! Replace current value at the specified location with specified value.
   /** \pre \c globalRow must be a valid global element on this node, according to the row map.
@@ -182,8 +190,8 @@ protected:
           const ArrayRCP<Scalar> & data,
           EPrivateComputeViewConstructor /* dummy tag */);
 
-  typedef Kokkos::MultiVector<Scalar,Node> KMV;
-  typedef Kokkos::DefaultArithmetic<KMV>   MVT;
+  typedef KokkosClassic::MultiVector<Scalar,Node> KMV;
+  typedef KokkosClassic::DefaultArithmetic<KMV>   MVT;
 }; // class Vector
 
 /** \brief Non-member function to create a Vector from a specified Map.
@@ -198,7 +206,7 @@ createVector (const RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map)
 }
 
 //! \brief Non-member function to create a Vector with view semantics using user-allocated data.
-/*! This use case is not supported for all nodes. Specifically, it is not typically supported for accelerator-based nodes like Kokkos::ThrustGPUNode.
+/*! This use case is not supported for all nodes. Specifically, it is not typically supported for accelerator-based nodes like KokkosClassic::ThrustGPUNode.
     \relatesalso Vector
  */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -215,6 +223,21 @@ createVectorFromView (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &ma
       HOST_VIEW_CONSTRUCTOR)
   );
 }
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class Node2>
+RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::clone(const RCP<Node2> &node2){
+        typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
+        typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node2> V2;
+        Teuchos::ArrayRCP<const Scalar> V_view = this->getData();
+        Teuchos::RCP<const Map2> clonedMap = this->getMap()->template clone(node2);
+        Teuchos::RCP<V2> clonedV = Teuchos::rcp(new V2(clonedMap));
+        Teuchos::ArrayRCP<Scalar> clonedV_view = clonedV->getDataNonConst();
+        clonedV_view.deepCopy(V_view());
+        clonedV_view = Teuchos::null;
+        return clonedV;
+  }
 
 } // namespace Tpetra
 

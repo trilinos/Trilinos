@@ -46,7 +46,7 @@
 #ifndef FAKEKOKKOS_DEFAULT_KERNELS_
 #define FAKEKOKKOS_DEFAULT_KERNELS_
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   template <class Scalar, class Ordinal, class Node>
   struct DefaultKernels {

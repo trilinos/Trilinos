@@ -93,6 +93,15 @@ void Ioss::GroupingEntity::really_delete_database()
   new_db = NULL;
 }
 
+std::string Ioss::GroupingEntity::generic_name() const
+{
+  int64_t id = 0;
+  if (property_exists("id")) {
+    id = get_property("id").get_int();
+  }
+  return Ioss::Utils::encode_entity_name(short_type_string(), id);  
+}
+
 bool Ioss::GroupingEntity::is_alias(const std::string &my_name) const
 {
   Region *region = database_->get_region();

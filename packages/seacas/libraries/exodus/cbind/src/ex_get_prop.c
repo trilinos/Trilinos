@@ -186,7 +186,7 @@ int ex_get_prop (int   exoid,
        sprintf(errmsg,
               "Warning: %s id %"PRId64" is NULL in file id %d",
                ex_name_of_object(obj_type), obj_id, exoid);
-       ex_err("ex_get_prop",errmsg,EX_MSG);
+       ex_err("ex_get_prop",errmsg,EX_NULLENTITY);
        return (EX_WARN);
      } else {
        exerrval = status;

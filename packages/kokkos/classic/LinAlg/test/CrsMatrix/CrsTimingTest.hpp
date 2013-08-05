@@ -73,8 +73,8 @@ namespace {
   using Teuchos::null;
   using Teuchos::TimeMonitor;
   using Teuchos::ParameterList;
-  using Kokkos::MultiVector;
-  using Kokkos::DefaultArithmetic;
+  using KokkosClassic::MultiVector;
+  using KokkosClassic::DefaultArithmetic;
 
   template <class NODE>
   RCP<NODE> getNode() {

@@ -290,6 +290,146 @@ namespace Tpetra {
     return rcp_implicit_cast<this_type> (C);
   }
 
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+	Teuchos::Array<char>& exports,
+	const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+	size_t& constantNumPackets,
+	Distributor &distor) const
+  {
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
+    using Teuchos::as;
+    using Teuchos::av_reinterpret_cast;
+    using Teuchos::RCP;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef typename ArrayView<const LO>::size_type size_type;
+    typedef Map<LO, GO, Node> map_type;
+    const char tfecfFuncName[] = "pack";
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      exportLIDs.size() != numPacketsPerLID.size(),
+      std::invalid_argument, "exportLIDs.size() = " << exportLIDs.size()
+      << "!= numPacketsPerLID.size() = " << numPacketsPerLID.size() << ".");
+
+    // Row Map of the source matrix.
+    RCP<const map_type> rowMapPtr = this->getRowMap ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      rowMapPtr.is_null (), std::runtime_error,
+      "The source object's row Map is null.");
+    const map_type& rowMap = *rowMapPtr;
+
+    // Each input LID corresponds to a different row of the sparse
+    // matrix.  In general, a RowMatrix doesn't have the same number
+    // of entries in each row.
+    constantNumPackets = 0;
+
+    // Get the GIDs of the rows we want to pack.
+    Array<GO> exportGIDs (exportLIDs.size ());
+    const size_type numExportGIDs = exportGIDs.size ();
+    for (size_type i = 0; i < numExportGIDs; ++i) {
+      exportGIDs[i] = rowMap.getGlobalElement (exportLIDs[i]);
+    }
+
+    // We say "Packet" is char (really a "byte"), but the actual unit
+    // of packing is a (GID, value) pair.  The GID is the column index
+    // in that row of the sparse matrix, and the value is the value at
+    // that entry of the sparse matrix.  Thus, we have to scale
+    // numPacketsPerLID by the number of bytes in a _packed_ (GID,
+    // value) pair.  (We pack the GID and value in each pair
+    // separately, so the number of bytes in a packed pair is actually
+    // sizeof(GO) + sizeof(Scalar).)
+    //
+    // FIXME (mfh 24 Feb 2013) This code is only correct if
+    // sizeof(Scalar) is a meaningful representation of the amount of
+    // data in a Scalar instance.  (GO is always a built-in integer
+    // type.)
+    //
+    // Compute the number of packets per export LID, and accumulate
+    // the total number of packages.  While doing so, find the max
+    // number of entries in each row owned by this process; we will
+    // use that to size temporary arrays below.
+    const size_t sizeOfOrdValPair = sizeof (GO) + sizeof (Scalar);
+    size_t totalNumEntries = 0;
+    size_t maxRowLength = 0;
+    for (size_type i = 0; i < exportGIDs.size(); ++i) {
+      const size_t curNumEntries =
+        this->getNumEntriesInGlobalRow (exportGIDs[i]);
+      numPacketsPerLID[i] = curNumEntries * sizeOfOrdValPair;
+      totalNumEntries += curNumEntries;
+      maxRowLength = std::max (curNumEntries, maxRowLength);
+    }
+
+    // Pack export data by interleaving rows' indices and values in
+    // the following way:
+    //
+    // [inds_row0 vals_row0 inds_row1 vals_row1 ... ]
+    if (totalNumEntries > 0) {
+      // exports is an array of char (bytes), so scale the total
+      // number of entries by the number of bytes per entry (where
+      // "entry" includes both the column index and the value).
+      const size_t totalNumBytes = totalNumEntries * sizeOfOrdValPair;
+      exports.resize (totalNumBytes);
+
+      // Temporary buffers for a copy of the entries in each row.
+      Array<GO> inds (as<size_type> (maxRowLength));
+      Array<Scalar> vals (as<size_type> (maxRowLength));
+      // Current position in the 'exports' output array.
+      size_t curOffsetInBytes = 0;
+
+      // For each row of the matrix owned by the calling process, pack
+      // that row's column indices and values into the exports array.
+      // We'll use getGlobalRowCopy, since it will always work, no
+      // matter how the subclass stores its data.  Subclasses (like
+      // CrsMatrix) should reimplement this method to use (e.g.,)
+      // getGlobalRowView if appropriate, since that will likely be
+      // more efficient.
+      //
+      // FIXME (mfh 28 Jun 2013) This could be made a (shared-memory)
+      // parallel kernel, by using the CSR data layout to calculate
+      // positions in the output buffer.
+      for (size_type i = 0; i < exportGIDs.size(); ++i) {
+	// Get a copy of the current row's data.
+	size_t curNumEntries = 0;
+	this->getGlobalRowCopy (exportGIDs[i], inds (), vals (), curNumEntries);
+	// inds and vals arrays might have more entries than the row.
+	// curNumEntries is the number of valid entries of these arrays.
+	ArrayView<const GO> curInds = inds (0, as<size_type> (curNumEntries));
+	ArrayView<const Scalar> curVals = vals (0, as<size_type> (curNumEntries));
+
+	// Get views of the spots in the exports array in which to
+	// put the indices resp. values.  See notes and FIXME above.
+	ArrayView<char> outIndsChar = 
+	  exports (curOffsetInBytes, curNumEntries * sizeof (GO));
+	ArrayView<char> outValsChar = 
+	  exports (curOffsetInBytes + curNumEntries * sizeof (GO),
+		   curNumEntries * sizeof (Scalar));
+
+	// Cast the above views of char as views of GO resp. Scalar.
+	ArrayView<GO> outInds = av_reinterpret_cast<GO> (outIndsChar);
+	ArrayView<Scalar> outVals = av_reinterpret_cast<Scalar> (outValsChar);
+
+	// Copy the source matrix's row data into the views of the
+	// exports array for indices resp. values.
+	std::copy (curInds.begin(), curInds.end(), outInds.begin());
+	std::copy (curVals.begin(), curVals.end(), outVals.begin());
+	curOffsetInBytes += sizeOfOrdValPair * curNumEntries;
+      }
+
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(curOffsetInBytes != totalNumBytes,
+        std::logic_error, ": At end of method, the final offset bytes count "
+        "curOffsetInBytes=" << curOffsetInBytes << " does not equal the total "
+        "number of bytes packed totalNumBytes=" << totalNumBytes << ".  Please "
+        "report this bug to the Tpetra developers.");
+#endif //  HAVE_TPETRA_DEBUG
+    }
+  }
+
 } // namespace Tpetra
 
 //

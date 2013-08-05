@@ -47,6 +47,7 @@ namespace Ioss {
 	    int64_t number_edges);
 
     std::string type_string() const {return "EdgeSet";}
+    std::string short_type_string() const {return "edgelist";}
     EntityType type() const {return EDGESET;}
       
     // Handle implicit properties -- These are calcuated from data stored

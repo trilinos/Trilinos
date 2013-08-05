@@ -52,7 +52,7 @@
 #include <Teuchos_ScalarTraits.hpp>
 #endif
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   // Extract Matrix Diagonal for Type 1 storage
   template <class Scalar, class OffsetType, class Ordinal>
@@ -239,6 +239,6 @@ namespace Kokkos {
 
   };
 
-}// namespace Kokkos
+}// namespace KokkosClassic
 
 #endif /* KOKKOS_DEFAULTRELAXATION_KERNELOPS_HPP */

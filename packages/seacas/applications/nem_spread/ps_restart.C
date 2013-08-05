@@ -416,7 +416,7 @@ void NemSpread<T,INT>::read_restart_data ()
   
   int open_file_count = get_free_descriptor_count();
   if (open_file_count >Proc_Info[5]) {
-    fprintf(stderr, "All output files opened simultaneously.\n");
+    printf("All output files opened simultaneously.\n");
     for (int iproc=Proc_Info[4]; iproc <Proc_Info[4]+Proc_Info[5]; iproc++) {
      
       gen_par_filename(cTemp, Par_Nem_File_Name, Proc_Ids[iproc],
@@ -433,7 +433,7 @@ void NemSpread<T,INT>::read_restart_data ()
       }
     }
   } else {
-    fprintf(stderr, "All output files opened one-at-a-time.\n");
+    printf("All output files opened one-at-a-time.\n");
   }
 
   /* Now loop over the number of time steps */
@@ -480,10 +480,10 @@ void NemSpread<T,INT>::read_restart_data ()
 			 TOPTR(eb_ids_global), TOPTR(ss_ids_global), TOPTR(ns_ids_global));
 
       if (iproc%10 == 0 || iproc ==Proc_Info[2]-1)
-	fprintf(stderr, "%d", iproc);
+	printf("%d", iproc);
       else
-	fprintf(stderr, ".");
-
+	printf(".");
+      
       if (open_file_count <Proc_Info[5]) {
 	if (ex_close(par_exoid[iproc]) == -1) {
 	  fprintf(stderr, "[%d] %s Could not close the parallel Exodus II file.\n",

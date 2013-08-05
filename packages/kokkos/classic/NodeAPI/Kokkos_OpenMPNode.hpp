@@ -53,7 +53,7 @@ namespace Teuchos {
   class ParameterList;
 }
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   /// \class OpenMPNode
   /// \brief Kokkos Node using OpenMP for parallelization.

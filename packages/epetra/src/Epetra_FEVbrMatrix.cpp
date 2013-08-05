@@ -378,12 +378,12 @@ int Epetra_FEVbrMatrix::GlobalAssemble(bool callFillComplete)
   //Now we need to call FillComplete on our temp matrix. We need to
   //pass a DomainMap and RangeMap, which are not the same as the RowMap
   //and ColMap that we constructed the matrix with.
-  EPETRA_CHK_ERR(tempMat.FillComplete(RowMap(), sourceMap));
+  EPETRA_CHK_ERR(tempMat.FillComplete(DomainMap(), RangeMap()));
 
   //Finally, we're ready to create the exporter and export non-local data to
   //the appropriate owning processors.
 
-  Epetra_Export exporter(sourceMap, RowMap());
+  Epetra_Export exporter(tempMat.RowMap(), RowMap());
 
   EPETRA_CHK_ERR( Export(tempMat, exporter, Add) );
 

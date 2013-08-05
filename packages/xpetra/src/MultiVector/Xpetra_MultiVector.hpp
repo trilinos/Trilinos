@@ -63,7 +63,7 @@ namespace Xpetra {
   template<class S, class LO, class GO, class N> class Vector;
 #endif
 
-  template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+  template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class MultiVector
     : public DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node >
   {

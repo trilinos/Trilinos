@@ -7,26 +7,38 @@
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
 //@HEADER
 */
-
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack.h"
 #include "Ifpack_Preconditioner.h"
@@ -49,6 +61,9 @@
 #endif
 #ifdef HAVE_IFPACK_SUPERLU
 #include "Ifpack_SILU.h"
+#endif
+#ifdef HAVE_IFPACK_SUPPORTGRAPH
+#include "Ifpack_SupportGraph.h"
 #endif
 
 #include "Ifpack_Chebyshev.h"
@@ -79,6 +94,7 @@ const Ifpack::EPrecType Ifpack::precTypeValues[Ifpack::numPrecTypes] =
   ,BLOCK_RELAXATION
   ,BLOCK_RELAXATION_STAND_ALONE
   ,BLOCK_RELAXATION_STAND_ALONE_ILU
+  ,BLOCK_RELAXATION_STAND_ALONE_ILUT
   ,BLOCK_RELAXATION_STAND_ALONE_IC
 #ifdef HAVE_IFPACK_SUPERLU
   ,BLOCK_RELAXATION_STAND_ALONE_SILU
@@ -109,6 +125,12 @@ const Ifpack::EPrecType Ifpack::precTypeValues[Ifpack::numPrecTypes] =
 #ifdef HAVE_IFPACK_SUPERLU
   ,SILU
 #endif
+#if defined (HAVE_IFPACK_SUPPORTGRAPH) && defined (HAVE_IFPACK_AMESOS)
+  ,MSF_AMESOS
+#endif
+#ifdef HAVE_IFPACK_SUPPORTGRAPH
+  ,MSF_IC
+#endif
   ,CHEBYSHEV
   ,POLYNOMIAL
   ,KRYLOV
@@ -124,6 +146,7 @@ const char* Ifpack::precTypeNames[Ifpack::numPrecTypes] =
   ,"block relaxation"
   ,"block relaxation stand-alone"
   ,"block relaxation stand-alone (ILU)"
+  ,"block relaxation stand-alone (ILUT)"
   ,"block relaxation stand-alone (IC)"
 #ifdef HAVE_IFPACK_SUPERLU
   ,"block relaxation stand-alone (SILU)"
@@ -154,6 +177,12 @@ const char* Ifpack::precTypeNames[Ifpack::numPrecTypes] =
 #ifdef HAVE_IFPACK_SUPERLU
   ,"SILU"
 #endif
+#if defined (HAVE_IFPACK_SUPPORTGRAPH) && defined (HAVE_IFPACK_AMESOS)
+  ,"MSF Amesos"
+#endif
+#ifdef HAVE_IFPACK_SUPPORTGRAPH
+  ,"MSF IC"
+#endif
   ,"Chebyshev"
   ,"Polynomial"
   ,"Krylov"
@@ -169,6 +198,7 @@ const bool Ifpack::supportsUnsymmetric[Ifpack::numPrecTypes] =
   ,true // block relaxation
   ,true // block relaxation stand-alone
   ,true // block relaxation stand-alone (ILU)
+  ,true // block relaxation stand-alone (ILUT)
   ,false // block relaxation stand-alone (IC)
 #ifdef HAVE_IFPACK_SUPERLU
   ,true // block relaxation stand-alone (SILU)
@@ -198,6 +228,12 @@ const bool Ifpack::supportsUnsymmetric[Ifpack::numPrecTypes] =
 #endif
 #ifdef HAVE_IFPACK_SUPERLU
   ,true // SuperLU's Supernodal ILUTP
+#endif
+#if defined (HAVE_IFPACK_SUPPORTGRAPH) && defined (HAVE_IFPACK_AMESOS)
+  ,false
+#endif
+#ifdef HAVE_IFPACK_SUPPORTGRAPH
+  ,false
 #endif
   ,false // CHEBYSHEV
   ,true  // POLYNOMIAL
@@ -232,6 +268,8 @@ Ifpack_Preconditioner* Ifpack::Create(EPrecType PrecType,
       return(new Ifpack_BlockRelaxation<Ifpack_DenseContainer>(Matrix));
     case BLOCK_RELAXATION_STAND_ALONE_ILU:
       return(new Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_ILU> >(Matrix));
+    case BLOCK_RELAXATION_STAND_ALONE_ILUT:
+      return(new Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_ILUT> >(Matrix));
     case BLOCK_RELAXATION_STAND_ALONE_IC:
       return(new Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_IC> >(Matrix));
 #ifdef HAVE_IFPACK_SUPERLU
@@ -295,6 +333,20 @@ Ifpack_Preconditioner* Ifpack::Create(EPrecType PrecType,
 #ifdef HAVE_IFPACK_SUPERLU
     case SILU:
       return(new Ifpack_SILU(Matrix));
+#endif
+#if defined (HAVE_IFPACK_SUPPORTGRAPH) && defined (HAVE_IFPACK_AMESOS)
+    case MSF_AMESOS:
+      if (serial && !overrideSerialDefault)
+	return(new Ifpack_SupportGraph<Ifpack_Amesos>(Matrix));
+      else
+	return(new Ifpack_AdditiveSchwarz<Ifpack_SupportGraph<Ifpack_Amesos> >(Matrix,Overlap));
+#endif
+#ifdef HAVE_IFPACK_SUPPORTGRAPH
+    case MSF_IC:
+      if (serial && !overrideSerialDefault)
+	return(new Ifpack_SupportGraph<Ifpack_SupportGraph<Ifpack_IC> >(Matrix));
+      else
+	return(new Ifpack_AdditiveSchwarz<Ifpack_SupportGraph<Ifpack_IC> >(Matrix,Overlap));
 #endif
     case CHEBYSHEV:
       return(new Ifpack_Chebyshev(Matrix));

@@ -73,8 +73,8 @@
 typedef std::complex<double>                         SC;
 typedef int                                          LO;
 typedef int                                          GO;
-typedef Kokkos::DefaultNode::DefaultNodeType         NO;
-typedef Kokkos::DefaultKernels<SC,LO,NO>::SparseOps  LMO;
+typedef KokkosClassic::DefaultNode::DefaultNodeType         NO;
+typedef KokkosClassic::DefaultKernels<SC,LO,NO>::SparseOps  LMO;
 
 typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
 typedef Tpetra::MultiVector<SC,LO,GO,NO>             MV;

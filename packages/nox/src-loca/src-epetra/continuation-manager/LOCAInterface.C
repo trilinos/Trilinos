@@ -136,7 +136,7 @@ computeShiftedMatrix (double alpha, double beta,
                            const Epetra_Vector &x, Epetra_Operator &A)
 {
 
-cout << " AGS HACK -- LOCAInterface::computeShiftedMatrix RETURNS JACOBIAN!!! " << std::endl;
+std::cout << " AGS HACK -- LOCAInterface::computeShiftedMatrix RETURNS JACOBIAN!!! " << std::endl;
   problem->ComputeJacF(x);
   problem->GetJacF()->Scale(alpha);
 

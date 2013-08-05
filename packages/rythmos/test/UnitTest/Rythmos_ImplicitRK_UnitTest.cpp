@@ -808,8 +808,18 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, setDirk ) {
   Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
   RCP<Rythmos::TimeStepNonlinearSolver<double> >
     nonlinearSolver = Rythmos::timeStepNonlinearSolver<double>();
+  const RCP<ParameterList> paramList = Teuchos::parameterList();
+  {
+    const RCP<Teuchos::ParameterList> stratPl =
+      sublist(paramList, Stratimikos_name);
+    const RCP<Teuchos::ParameterList> modelPl =
+      sublist(paramList, DiagonalTransientModel_name);
+    stratPl->set("Linear Solver Type","Belos");
+    stratPl->set("Preconditioner Type","None");
+  }
+
   RCP<Thyra::LinearOpWithSolveFactoryBase<double> > irk_W_factory =
-    getWFactory<double>();
+    getWFactory<double>(paramList);
   {
     // create stepper with DIRK tableau
     RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Singly Diagonal IRK 5 Stage 4th order");

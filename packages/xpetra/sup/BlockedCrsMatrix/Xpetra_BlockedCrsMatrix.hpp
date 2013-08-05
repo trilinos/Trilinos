@@ -89,8 +89,8 @@ namespace Xpetra {
 template <class Scalar,
           class LocalOrdinal  = int,
           class GlobalOrdinal = LocalOrdinal,
-          class Node          = Kokkos::DefaultNode::DefaultNodeType,
-          class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
+          class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
+          class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
 class BlockedCrsMatrix : public Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 
   typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> MapClass;
@@ -211,6 +211,12 @@ public:
                                 "replaceLocalValues not supported by BlockedCrsMatrix" );
   }
 
+  //! Set all matrix entries equal to scalar
+  virtual void setAllToScalar(const Scalar &alpha) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+                                "setAllToScalar not supported by BlockedCrsMatrix");
+  }
+
   //! Scale the current values of a matrix, this = alpha*this.
   void scale(const Scalar &alpha) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
@@ -284,6 +290,7 @@ public:
 
     // TODO: check me, clean up, use only ArrayView instead of std::vector
     // build full col map
+    fullcolmap_ = Teuchos::null; // delete old full column map
     if (fullcolmap_ == Teuchos::null)
     {
       std::vector<GlobalOrdinal> colmapentries;
@@ -848,15 +855,17 @@ private:
             Values[j] *= scalarA;
 
 
-#if 0
+#if 1
+        std::vector<GlobalOrdinal> tempVec;
+        std::vector<Scalar> tempVal;
         for (size_t j=0; j<NumEntries; ++j)
         {
-          std::vector<GlobalOrdinal> tempVec; tempVec.push_back(Indices[j]);
-          std::vector<Scalar> tempVal; tempVal.push_back(Values[j]);
-          Teuchos::ArrayView<GlobalOrdinal> tempIndex(&tempVec[0], 1);
-          Teuchos::ArrayView<Scalar>        tempValue(&tempVal[0],  1);
-          B->insertGlobalValues(Row, tempIndex, tempValue); // insert should be ok, since blocks in BlockedCrsOpeartor do not overlap!
+          tempVec.push_back(A->getColMap()->getGlobalElement(Indices[j]));
+          tempVal.push_back(Values[j]);
         }
+        Teuchos::ArrayView<GlobalOrdinal> tempIndex(&tempVec[0], tempVec.size());
+        Teuchos::ArrayView<Scalar>        tempValue(&tempVal[0], tempVal.size());
+        B->insertGlobalValues(Row, tempIndex, tempValue); // insert should be ok, since blocks in BlockedCrsOpeartor do not overlap!
 #else
 
         std::vector<GlobalOrdinal> tempvecIndices(NumEntries);

@@ -8,20 +8,33 @@
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
 #
-# This library is free software; you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as
-# published by the Free Software Foundation; either version 2.1 of the
-# License, or (at your option) any later version.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
 #
-# This library is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
 #
-# You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the Corporation nor the names of the
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 # Questions? Contact Glen Hansen (gahanse@sandia.gov)
 #
 # ************************************************************************
@@ -445,7 +458,7 @@ int MOERTEL::MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,double s
 			std::stringstream oss;
           oss << "***ERR*** MOERTEL::MatrixMatrixAdd:\n"
                << "***ERR*** InsertGlobalValues returned " << err << "\n"
-               << "Row " << Row << " Col " << Indices[j] << endl
+               << "Row " << Row << " Col " << Indices[j] << std::endl
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 			throw ReportError(oss);
         }
@@ -479,7 +492,7 @@ Epetra_CrsMatrix* MOERTEL::MatMatMult(Epetra_CrsMatrix& A, bool transA,
     Atrans = &(dynamic_cast<Epetra_CrsMatrix&>(((*transposerA)(const_cast<Epetra_CrsMatrix&>(A)))));
     if (!Atrans)
     {
-      cout << "***ERR*** MOERTEL::MatMatMult:\n"
+      std::cout << "***ERR*** MOERTEL::MatMatMult:\n"
            << "***ERR*** transpose of A failed\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
@@ -495,7 +508,7 @@ Epetra_CrsMatrix* MOERTEL::MatMatMult(Epetra_CrsMatrix& A, bool transA,
     Btrans = &(dynamic_cast<Epetra_CrsMatrix&>(((*transposerB)(const_cast<Epetra_CrsMatrix&>(B)))));
     if (!Btrans)
     {
-      cout << "***ERR*** MOERTEL::MatMatMult:\n"
+      std::cout << "***ERR*** MOERTEL::MatMatMult:\n"
            << "***ERR*** transpose of B failed\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return NULL;
@@ -505,14 +518,14 @@ Epetra_CrsMatrix* MOERTEL::MatMatMult(Epetra_CrsMatrix& A, bool transA,
   // make sure FillComplete was called on the matrices
   if (!Atrans->Filled()) 
   {
-    cout << "***ERR*** MOERTEL::MatMatMult:\n"
+    std::cout << "***ERR*** MOERTEL::MatMatMult:\n"
          << "***ERR*** FillComplete() was not called on matrix A\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return NULL;
   }
   if (!Btrans->Filled()) 
   {
-    cout << "***ERR*** MOERTEL::MatMatMult:\n"
+    std::cout << "***ERR*** MOERTEL::MatMatMult:\n"
          << "***ERR*** FillComplete() was not called on matrix B\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return NULL;
@@ -528,7 +541,7 @@ Epetra_CrsMatrix* MOERTEL::MatMatMult(Epetra_CrsMatrix& A, bool transA,
   if (!mpiecomm)
   {
     ML_Comm_Destroy(&ml_comm);
-    cout << "***ERR*** MOERTEL::MatMatMult:\n"
+    std::cout << "***ERR*** MOERTEL::MatMatMult:\n"
          << "***ERR*** dynamic_cast from Epetra_Comm to Epetra_MpiComm failed\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return NULL;
@@ -559,7 +572,7 @@ Epetra_CrsMatrix* MOERTEL::MatMatMult(Epetra_CrsMatrix& A, bool transA,
   Epetra_CrsMatrix* result = static_cast<Epetra_CrsMatrix*>(mlC->data);
   if (!result->Filled())
   {
-    cout << "***ERR*** MOERTEL::MatMatMult:\n"
+    std::cout << "***ERR*** MOERTEL::MatMatMult:\n"
          << "***ERR*** FillComplete() was not called on result!\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
   }
@@ -590,14 +603,14 @@ Epetra_CrsMatrix* MOERTEL::MatMatMult(const Epetra_CrsMatrix& A, bool transA,
   // make sure FillComplete was called on the matrices
   if (!A.Filled()) 
   {
-    cout << "***ERR*** MOERTEL::MatMatMult:\n"
+    std::cout << "***ERR*** MOERTEL::MatMatMult:\n"
          << "***ERR*** FillComplete() was not called on matrix A\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return NULL;
   }
   if (!B.Filled()) 
   {
-    cout << "***ERR*** MOERTEL::MatMatMult:\n"
+    std::cout << "***ERR*** MOERTEL::MatMatMult:\n"
          << "***ERR*** FillComplete() was not called on matrix B\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return NULL;
@@ -616,11 +629,11 @@ Epetra_CrsMatrix* MOERTEL::MatMatMult(const Epetra_CrsMatrix& A, bool transA,
     time.ResetStartTime();
 
   int err = EpetraExt::MatrixMatrix::Multiply(A,transA,B,transB,*C);
-  if (err) cout << "MOERTEL: EpetraExt::MatrixMatrix::Multiply returned err = " << err << endl;
+  if (err) std::cout << "MOERTEL: EpetraExt::MatrixMatrix::Multiply returned err = " << err << std::endl;
 
   if (outlevel>9 && A.Comm().MyPID()==0)
   {
-    cout << "MOERTEL (Proc 0): Time for matrix-matrix product " << time.ElapsedTime() << " sec\n";
+    std::cout << "MOERTEL (Proc 0): Time for matrix-matrix product " << time.ElapsedTime() << " sec\n";
     fflush(stdout);
   }
 
@@ -640,7 +653,7 @@ Epetra_CrsMatrix* MOERTEL::PaddedMatrix(const Epetra_Map rowmap, double val, con
     int err = tmp->InsertGlobalValues(grid,1,&val,&grid);
     if (err<0)
     {
-      cout << "***ERR*** MOERTEL::PaddedMatrix:\n"
+      std::cout << "***ERR*** MOERTEL::PaddedMatrix:\n"
            << "***ERR*** Cannot insert values into matrix\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       delete tmp;
@@ -661,7 +674,7 @@ Epetra_CrsMatrix* MOERTEL::StripZeros(Epetra_CrsMatrix& A, double eps)
     int grow = A.GRID(lrow); 
     if (grow<0) 
     { 
-      cout << "***ERR*** MOERTEL::StripZeros:\n"
+      std::cout << "***ERR*** MOERTEL::StripZeros:\n"
            << "***ERR*** Cannot gind global row indes from local row index\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       delete out;
@@ -673,8 +686,8 @@ Epetra_CrsMatrix* MOERTEL::StripZeros(Epetra_CrsMatrix& A, double eps)
     int err  = A.ExtractMyRowView(lrow,numentries,values,lindices);
     if (err) 
     { 
-      cout << "***ERR*** MOERTEL::StripZeros:\n"
-           << "***ERR*** A.ExtractMyRowView returned " << err << endl
+      std::cout << "***ERR*** MOERTEL::StripZeros:\n"
+           << "***ERR*** A.ExtractMyRowView returned " << err << std::endl
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       delete out;
       return NULL;
@@ -693,8 +706,8 @@ Epetra_CrsMatrix* MOERTEL::StripZeros(Epetra_CrsMatrix& A, double eps)
       int err = out->InsertGlobalValues(grow,1,&values[j],&gcol);
       if (err != 0 && err != 1) 
       { 
-        cout << "***ERR*** MOERTEL::StripZeros:\n"
-             << "***ERR*** out->InsertGlobalValues returned " << err << endl
+        std::cout << "***ERR*** MOERTEL::StripZeros:\n"
+             << "***ERR*** out->InsertGlobalValues returned " << err << std::endl
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         delete out;
         return NULL;
@@ -708,7 +721,7 @@ Epetra_CrsMatrix* MOERTEL::StripZeros(Epetra_CrsMatrix& A, double eps)
 /*----------------------------------------------------------------------*
  | print matrix                                              m.gee 01/06|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Print_Matrix(string name, Epetra_CrsMatrix& A, int ibase)
+bool MOERTEL::Print_Matrix(std::string name, Epetra_CrsMatrix& A, int ibase)
 {
   char mypidc[100];
   sprintf(mypidc,"%d",A.Comm().MyPID());
@@ -717,7 +730,7 @@ bool MOERTEL::Print_Matrix(string name, Epetra_CrsMatrix& A, int ibase)
   FILE* out = fopen(nameptr,"w");
   if (!out)
   {
-    cout << "***ERR*** MOERTEL::Print_Matrix:\n"
+    std::cout << "***ERR*** MOERTEL::Print_Matrix:\n"
          << "***ERR*** Cannot open file " << name << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -730,7 +743,7 @@ bool MOERTEL::Print_Matrix(string name, Epetra_CrsMatrix& A, int ibase)
     int grow = A.GRID(lrow); 
     if (grow<0) 
     { 
-      cout << "***ERR*** MOERTEL::Print_Matrix:\n"
+      std::cout << "***ERR*** MOERTEL::Print_Matrix:\n"
            << "***ERR*** Cannot gind global row index from local row index\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
@@ -741,8 +754,8 @@ bool MOERTEL::Print_Matrix(string name, Epetra_CrsMatrix& A, int ibase)
     int err  = A.ExtractMyRowView(lrow,numentries,values,lindices);
     if (err) 
     { 
-      cout << "***ERR*** MOERTEL::Print_Matrix:\n"
-           << "***ERR*** A.ExtractMyRowView returned " << err << endl
+      std::cout << "***ERR*** MOERTEL::Print_Matrix:\n"
+           << "***ERR*** A.ExtractMyRowView returned " << err << std::endl
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       delete out;
       return false;
@@ -761,7 +774,7 @@ bool MOERTEL::Print_Matrix(string name, Epetra_CrsMatrix& A, int ibase)
   }
   fflush(out);
   fclose(out);
-  cout << "Epetra_CrsMatrix is written to file " << name << endl;
+  std::cout << "Epetra_CrsMatrix is written to file " << name << std::endl;
   fflush(stdout);
   return true;
 }
@@ -770,7 +783,7 @@ bool MOERTEL::Print_Matrix(string name, Epetra_CrsMatrix& A, int ibase)
 /*----------------------------------------------------------------------*
  | print matrix                                              m.gee 02/06|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Print_Vector(string name, Epetra_Vector& v, int ibase)
+bool MOERTEL::Print_Vector(std::string name, Epetra_Vector& v, int ibase)
 {
   char mypidc[100];
   sprintf(mypidc,"%d",v.Comm().MyPID());
@@ -779,7 +792,7 @@ bool MOERTEL::Print_Vector(string name, Epetra_Vector& v, int ibase)
   FILE* out = fopen(nameptr,"w");
   if (!out)
   {
-    cout << "***ERR*** MOERTEL::Print_Vector:\n"
+    std::cout << "***ERR*** MOERTEL::Print_Vector:\n"
          << "***ERR*** Cannot open file " << name << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -790,7 +803,7 @@ bool MOERTEL::Print_Vector(string name, Epetra_Vector& v, int ibase)
     int grow = v.Map().GID(lrow); 
     if (grow<0) 
     { 
-      cout << "***ERR*** MOERTEL::Print_Vector:\n"
+      std::cout << "***ERR*** MOERTEL::Print_Vector:\n"
            << "***ERR*** Cannot gind global row index from local row index\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
@@ -800,7 +813,7 @@ bool MOERTEL::Print_Vector(string name, Epetra_Vector& v, int ibase)
   }
   fflush(out);
   fclose(out);
-  cout << "Epetra_Vector is written to file " << name << endl;
+  std::cout << "Epetra_Vector is written to file " << name << std::endl;
   fflush(stdout);
   return true;
 }
@@ -809,7 +822,7 @@ bool MOERTEL::Print_Vector(string name, Epetra_Vector& v, int ibase)
 /*----------------------------------------------------------------------*
  | print matrix                                              m.gee 04/06|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Print_Graph(string name, Epetra_CrsGraph& A, int ibase)
+bool MOERTEL::Print_Graph(std::string name, Epetra_CrsGraph& A, int ibase)
 {
   char mypidc[100];
   sprintf(mypidc,"%d",A.Comm().MyPID());
@@ -818,7 +831,7 @@ bool MOERTEL::Print_Graph(string name, Epetra_CrsGraph& A, int ibase)
   FILE* out = fopen(nameptr,"w");
   if (!out)
   {
-    cout << "***ERR*** MOERTEL::Print_Graph:\n"
+    std::cout << "***ERR*** MOERTEL::Print_Graph:\n"
          << "***ERR*** Cannot open file " << name << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -831,7 +844,7 @@ bool MOERTEL::Print_Graph(string name, Epetra_CrsGraph& A, int ibase)
     int grow = A.GRID(lrow); 
     if (grow<0) 
     { 
-      cout << "***ERR*** MOERTEL::Print_Graph:\n"
+      std::cout << "***ERR*** MOERTEL::Print_Graph:\n"
            << "***ERR*** Cannot gind global row index from local row index\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
@@ -841,8 +854,8 @@ bool MOERTEL::Print_Graph(string name, Epetra_CrsGraph& A, int ibase)
     int err  = A.ExtractMyRowView(lrow,numentries,lindices);
     if (err) 
     { 
-      cout << "***ERR*** MOERTEL::Print_Graph:\n"
-           << "***ERR*** A.ExtractMyRowView returned " << err << endl
+      std::cout << "***ERR*** MOERTEL::Print_Graph:\n"
+           << "***ERR*** A.ExtractMyRowView returned " << err << std::endl
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       delete out;
       return false;
@@ -861,7 +874,7 @@ bool MOERTEL::Print_Graph(string name, Epetra_CrsGraph& A, int ibase)
   }
   fflush(out);
   fclose(out);
-  cout << "Epetra_CrsGraph is written to file " << name << endl;
+  std::cout << "Epetra_CrsGraph is written to file " << name << std::endl;
   fflush(stdout);
   return true;
 }
@@ -947,7 +960,7 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
       const int grid = A->GRID(i);
       if (A22map.MyGID(grid)==false)
         continue;
-      //cout << "Row " << grid << " in A22 Columns ";
+      //std::cout << "Row " << grid << " in A22 Columns ";
       int     numentries;
       double* values;
       int*    cindices;
@@ -956,7 +969,7 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
       {
 		std::stringstream oss;
         oss << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
-             << "***ERR*** A->ExtractMyRowView returned " << err << endl
+             << "***ERR*** A->ExtractMyRowView returned " << err << std::endl
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 		throw ReportError(oss);
       }
@@ -972,19 +985,19 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
         // see whether we have gcid in a22gmap
 		std::map<int,int>::iterator curr = a22gmap.find(gcid);
         if (curr==a22gmap.end()) continue;
-        //cout << gcid << " ";
+        //std::cout << gcid << " ";
         a22gcindices[count] = gcid;
         a22values[count]    = values[j];
         ++count;
       }
-      //cout << endl; fflush(stdout);
+      //std::cout << std::endl; fflush(stdout);
       // add this filtered row to A22
       err = A22->InsertGlobalValues(grid,count,&a22values[0],&a22gcindices[0]);
       if (err<0)
       {
 		std::stringstream oss;
         oss << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
-             << "***ERR*** A22->InsertGlobalValues returned " << err << endl
+             << "***ERR*** A22->InsertGlobalValues returned " << err << std::endl
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 		throw ReportError(oss);
       }
@@ -1012,7 +1025,7 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
       {
 		std::stringstream oss;
         oss << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
-             << "***ERR*** A->ExtractMyRowView returned " << err << endl
+             << "***ERR*** A->ExtractMyRowView returned " << err << std::endl
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 		throw ReportError(oss);
       }
@@ -1037,7 +1050,7 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
       {
 		std::stringstream oss;
         oss << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
-             << "***ERR*** A11->InsertGlobalValues returned " << err << endl
+             << "***ERR*** A11->InsertGlobalValues returned " << err << std::endl
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 		throw ReportError(oss);
       }
@@ -1065,7 +1078,7 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
       {
 		std::stringstream oss;
         oss << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
-             << "***ERR*** A->ExtractMyRowView returned " << err << endl
+             << "***ERR*** A->ExtractMyRowView returned " << err << std::endl
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 		throw ReportError(oss);
       }
@@ -1090,7 +1103,7 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
       {
 		std::stringstream oss;
         oss << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
-             << "***ERR*** A12->InsertGlobalValues returned " << err << endl
+             << "***ERR*** A12->InsertGlobalValues returned " << err << std::endl
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 		throw ReportError(oss);
       }
@@ -1118,7 +1131,7 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
       {
 		std::stringstream oss;
         oss << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
-             << "***ERR*** A->ExtractMyRowView returned " << err << endl
+             << "***ERR*** A->ExtractMyRowView returned " << err << std::endl
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 		throw ReportError(oss);
       }
@@ -1143,7 +1156,7 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
       {
 		std::stringstream oss;
         oss << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
-             << "***ERR*** A12->InsertGlobalValues returned " << err << endl
+             << "***ERR*** A12->InsertGlobalValues returned " << err << std::endl
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 		throw ReportError(oss);
       }
@@ -1207,7 +1220,7 @@ bool MOERTEL::SplitVector(const Epetra_Vector& x,
   {
 	std::stringstream oss;
     oss << "***ERR*** MOERTEL::SplitVector:\n"
-         << "***ERR*** Export returned " << err << endl
+         << "***ERR*** Export returned " << err << std::endl
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 	throw ReportError(oss);
   }
@@ -1217,7 +1230,7 @@ bool MOERTEL::SplitVector(const Epetra_Vector& x,
   {
 	std::stringstream oss;
     oss << "***ERR*** MOERTEL::SplitVector:\n"
-         << "***ERR*** Export returned " << err << endl
+         << "***ERR*** Export returned " << err << std::endl
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 	throw ReportError(oss);
   }
@@ -1241,7 +1254,7 @@ bool MOERTEL::MergeVector(const Epetra_Vector& x1,
   {
 	std::stringstream oss;
     oss << "***ERR*** MOERTEL::SplitVector:\n"
-         << "***ERR*** Export returned " << err << endl
+         << "***ERR*** Export returned " << err << std::endl
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 	throw ReportError(oss);
   }
@@ -1251,7 +1264,7 @@ bool MOERTEL::MergeVector(const Epetra_Vector& x1,
   {
 	std::stringstream oss;
     oss << "***ERR*** MOERTEL::SplitVector:\n"
-         << "***ERR*** Export returned " << err << endl
+         << "***ERR*** Export returned " << err << std::endl
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 	throw ReportError(oss);
   }

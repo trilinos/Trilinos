@@ -103,34 +103,34 @@ namespace Belos {
         "Belos or Tpetra developers to implement this specialization.");
     }
 
-    // Specialization of getNode for Kokkos::SerialNode.
+    // Specialization of getNode for KokkosClassic::SerialNode.
     template<>
-    Teuchos::RCP<Kokkos::SerialNode>
+    Teuchos::RCP<KokkosClassic::SerialNode>
     getNode (Teuchos::RCP<Teuchos::ParameterList> params) {
       if (params.is_null()) {
 	params = Teuchos::parameterList ();
       }
-      return Teuchos::rcp (new Kokkos::SerialNode (*params));
+      return Teuchos::rcp (new KokkosClassic::SerialNode (*params));
     }
 
 #if defined(HAVE_KOKKOSCLASSIC_TBB)
-    // Specialization of getNode for Kokkos::TBBNode.
+    // Specialization of getNode for KokkosClassic::TBBNode.
     template<>
-    Teuchos::RCP<Kokkos::TBBNode>
+    Teuchos::RCP<KokkosClassic::TBBNode>
     getNode (Teuchos::RCP<Teuchos::ParameterList> params) {
       // "Num Threads" specifies the number of threads.  Defaults to
       // an automatically chosen value.
       if (params.is_null()) {
 	params = Teuchos::parameterList ();
       }
-      return Teuchos::rcp (new Kokkos::TBBNode (*params));
+      return Teuchos::rcp (new KokkosClassic::TBBNode (*params));
     }
 #endif // defined(HAVE_KOKKOSCLASSIC_TBB)
 
 #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-    // Specialization of getNode for Kokkos::TPINode.
+    // Specialization of getNode for KokkosClassic::TPINode.
     template<>
-    Teuchos::RCP<Kokkos::TPINode>
+    Teuchos::RCP<KokkosClassic::TPINode>
     getNode (Teuchos::RCP<Teuchos::ParameterList> params) {
       using Teuchos::isParameterType;
 
@@ -154,26 +154,26 @@ namespace Belos {
 	params->set ("Num Threads", static_cast<int>(0));
       }
 
-      return Teuchos::rcp (new Kokkos::TPINode (*params));
+      return Teuchos::rcp (new KokkosClassic::TPINode (*params));
     }
 #endif // defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
 
 #if defined(HAVE_KOKKOSCLASSIC_OPENMP)
-    // Specialization of getNode for Kokkos::OpenMPNode.
+    // Specialization of getNode for KokkosClassic::OpenMPNode.
     template<>
-    Teuchos::RCP<Kokkos::OpenMPNode>
+    Teuchos::RCP<KokkosClassic::OpenMPNode>
     getNode (Teuchos::RCP<Teuchos::ParameterList> params) {
       if (params.is_null()) {
 	params = Teuchos::parameterList ();
       }
-      return Teuchos::rcp (new Kokkos::OpenMPNode (*params));
+      return Teuchos::rcp (new KokkosClassic::OpenMPNode (*params));
     }
 #endif // defined(HAVE_KOKKOSCLASSIC_OPENMP)
 
 #if defined(HAVE_KOKKOSCLASSIC_THRUST)
-    // Specialization of getNode for Kokkos::ThrustGPUNode.
+    // Specialization of getNode for KokkosClassic::ThrustGPUNode.
     template<>
-    Teuchos::RCP<Kokkos::ThrustGPUNode>
+    Teuchos::RCP<KokkosClassic::ThrustGPUNode>
     getNode (Teuchos::RCP<Teuchos::ParameterList> params) {
       using Teuchos::isParameterType;
 
@@ -186,7 +186,7 @@ namespace Belos {
 	params->set ("Verbose", verbosity);
       }
 
-      return Teuchos::rcp (new Kokkos::ThrustGPUNode (*params));
+      return Teuchos::rcp (new KokkosClassic::ThrustGPUNode (*params));
     }
 #endif // defined(HAVE_KOKKOSCLASSIC_THRUST)
 

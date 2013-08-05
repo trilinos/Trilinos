@@ -28,5 +28,6 @@ IF(NOT "${SOURCES}" STREQUAL "")
     ifpack2-adapters
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
+    DEPLIBS ifpack2
   )
 ENDIF(NOT "${SOURCES}" STREQUAL "")

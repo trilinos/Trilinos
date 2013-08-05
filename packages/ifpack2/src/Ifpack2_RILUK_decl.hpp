@@ -1,26 +1,39 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2002) Sandia Corporation
+//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
@@ -235,6 +248,8 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
   //! Preserved only for backwards compatibility.  Please use "magnitude_type".
   TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
 
+  template <class new_matrix_type> friend class RILUK;
+
   //! RILUK constuctor with variable number of indices per row.
   /*! Creates a RILUK object and allocates storage.
 
@@ -244,10 +259,16 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
   RILUK(const Teuchos::RCP<const MatrixType>& A_in);
 
  private:
+
   //! Copy constructor.
   RILUK(const RILUK<MatrixType> & src);
 
  public:
+
+
+  //! Clone preconditioner to a new node type
+  template <typename new_matrix_type> Teuchos::RCP< RILUK< new_matrix_type > > clone(const Teuchos::RCP<const new_matrix_type>& A_newnode) const;
+
   //! Ifpack2_RILUK Destructor
   virtual ~RILUK();
 
@@ -363,6 +384,7 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
     ConditionNumberEstimate - The maximum across all processors of
     the infinity-norm estimate of the condition number of the inverse of LDU.
   */
+
   magnitude_type computeCondEst(Teuchos::ETransp mode) const;
   magnitude_type computeCondEst(CondestType CT = Ifpack2::Cheap,
                                local_ordinal_type MaxIters = 1550,
@@ -404,22 +426,32 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
 
   //! Returns the L factor associated with this factored matrix.
   const MatrixType& getL() const {return(*L_);}
-
   //! Returns the D factor associated with this factored matrix.
   const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> & getD() const {return(*D_);}
 
   //! Returns the U factor associated with this factored matrix.
   const MatrixType& getU() const {return(*U_);}
 
+  //! Returns A as a CRS Matrix
+  Teuchos::RCP<const MatrixType > getCrsMatrix() const
+  {
+    return A_;
+  }
+
+
   //@{ \name Additional methods required to support the Tpetra::Operator interface.
 
   //! Returns the Tpetra::Map object associated with the domain of this operator.
-  const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getDomainMap() const
-  { return Graph_->getL_Graph()->getDomainMap(); }
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > 
+  getDomainMap () const {
+    return Graph_->getL_Graph ()->getDomainMap (); 
+  }
 
   //! Returns the Tpetra::Map object associated with the range of this operator.
-  const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getRangeMap() const
-  { return Graph_->getU_Graph()->getRangeMap(); }
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > 
+  getRangeMap () const {
+    return Graph_->getU_Graph ()->getRangeMap (); 
+  }
 
   //@}
 
@@ -430,8 +462,6 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
   void setAllocated(bool Flag) {isAllocated_ = Flag;}
 
  private:
-
-
   void allocate_L_and_U();
   void initAllValues(const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> & overlapA);
   void generateXY(Teuchos::ETransp mode,
@@ -465,7 +495,66 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
   mutable Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > OverlapX_;
   mutable Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > OverlapY_;
   Tpetra::CombineMode OverlapMode_;
+
+
 };
+
+//Set necessary local solve parameters when using ThrustGPU node
+namespace detail{
+   template<class MatrixType, class NodeType, class MatSolveType>
+   struct setLocalSolveParams{
+	static Teuchos::RCP<Teuchos::ParameterList> setParams (const Teuchos::RCP<Teuchos::ParameterList>& param){
+		return param;
+	}
+    };
+#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUSPARSE)
+   template<class MatrixType, class Scalar>
+   struct setLocalSolveParams<MatrixType, KokkosClassic::ThrustGPUNode, KokkosClassic::CUSPARSEOps<Scalar, KokkosClassic::ThrustGPUNode> >{
+	static Teuchos::RCP<Teuchos::ParameterList> setParams (const Teuchos::RCP<Teuchos::ParameterList>& param){
+	 	 param->sublist("fillComplete").sublist("Local Sparse Ops").set("Prepare Solve",true);
+		 return param;
+	}
+    };
+#endif
+} //end namespace detail
+
+template <class MatrixType> 
+template <typename new_matrix_type>
+Teuchos::RCP< RILUK< new_matrix_type > >  
+RILUK<MatrixType>::clone(const Teuchos::RCP< const new_matrix_type>& A_newnode) const{
+  typedef typename new_matrix_type::global_ordinal_type global_ordinal_type;
+  typedef typename new_matrix_type::local_ordinal_type local_ordinal_type;
+  typedef typename new_matrix_type::scalar_type scalar_type;
+  typedef typename new_matrix_type::node_type new_node_type;
+  typedef typename new_matrix_type::mat_solve_type mat_solve_type;
+  typedef RILUK< new_matrix_type > new_riluk_type;
+  Teuchos::RCP<new_riluk_type> new_riluk = Teuchos::rcp(new new_riluk_type(A_newnode));
+
+  Teuchos::RCP<Teuchos::ParameterList> plClone = Teuchos::parameterList();
+  plClone = detail::setLocalSolveParams<new_matrix_type, new_node_type, mat_solve_type>::setParams(plClone);
+  
+  Teuchos::RCP<new_node_type> new_node = A_newnode->getNode();
+  new_riluk->L_ = L_->clone(new_node, plClone);
+  new_riluk->U_ = U_->clone(new_node, plClone);
+  new_riluk->D_ = D_->clone(new_node);
+  new_riluk->isOverlapped_ = isOverlapped_;
+  new_riluk->UseTranspose_ = UseTranspose_;
+  new_riluk->LevelOfFill_ = LevelOfFill_;
+  new_riluk->LevelOfOverlap_ = LevelOfOverlap_;
+  new_riluk->NumMyDiagonals_ = NumMyDiagonals_;
+  new_riluk->isAllocated_ = isAllocated_;
+  new_riluk->isInitialized_ = isInitialized_;
+  new_riluk->numInitialize_ = numInitialize_;
+  new_riluk->numCompute_ = numCompute_;
+  new_riluk->numApply_ =  numApply_;
+  new_riluk->Factored_ = Factored_;
+  new_riluk->RelaxValue_ = RelaxValue_;
+  new_riluk->Athresh_ = Athresh_;
+  new_riluk->Rthresh_ = Rthresh_;
+  new_riluk->Condest_ = Condest_;
+  new_riluk->OverlapMode_ = OverlapMode_;
+  return new_riluk;
+}
 
 }//namespace Ifpack2
 

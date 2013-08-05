@@ -336,7 +336,8 @@ namespace {
   void write_coordinate_frames(int exoid, const Ioss::CoordinateFrameContainer &frames);
 
   std::string get_entity_name(int exoid, ex_entity_type type, int64_t id,
-                              const std::string &basename, int length)
+                              const std::string &basename, int length,
+			      bool &db_has_name)
   {
     std::vector<char> buffer(length+1);
     buffer[0] = '\0';
@@ -359,12 +360,15 @@ namespace {
                 << " which does not match the embedded id " << name_id
                 << ".\n         This can cause issues later on; the entity will be renamed to '"
                 << new_name << "' (IOSS)\n\n";
+	    db_has_name = false;
             return new_name;
           }
         }
       }
+      db_has_name = true;
       return (std::string(TOPTR(buffer)));
     } else {
+      db_has_name = false;
       return Ioss::Utils::encode_entity_name(basename, id);
     }
   }
@@ -1186,7 +1190,14 @@ namespace Iopx {
         int64_t id = decomp->el_blocks[iblk].id();
 
         std::string alias = Ioss::Utils::encode_entity_name(basename, id);
-        std::string block_name = get_entity_name(get_file_pointer(), entity_type, id, basename, maximumNameLength);
+	bool db_has_name = false;
+        std::string block_name = get_entity_name(get_file_pointer(), entity_type, id, basename,
+						 maximumNameLength, db_has_name);
+	if (get_use_generic_canonical_name()) {
+	  std::string temp = block_name;
+	  block_name = alias;
+	  alias = temp;
+	}
 
         std::string save_type = decomp->el_blocks[iblk].topologyType;
         std::string type = Ioss::Utils::fixup_type(decomp->el_blocks[iblk].topologyType,
@@ -1198,17 +1209,38 @@ namespace Iopx {
           Ioss::ElementBlock *eblock = new Ioss::ElementBlock(this, block_name, type, decomp->el_blocks[iblk].ioss_count());
           io_block = eblock;
           io_block->property_add(Ioss::Property("id", id));
+	  if (db_has_name) {
+	    std::string *db_name = &block_name;
+	    if (get_use_generic_canonical_name()) {
+	      db_name = &alias;
+	    }
+	    io_block->property_add(Ioss::Property("db_name", *db_name));
+	  }
           get_region()->add(eblock);
 #if 0
         } else if (entity_type == EX_FACE_BLOCK) {
           Ioss::FaceBlock *fblock = new Ioss::FaceBlock(this, block_name, type, block.num_entry);
           io_block = fblock;
           io_block->property_add(Ioss::Property("id", id));
+	  if (db_has_name) {
+	    std::string *db_name = &block_name;
+	    if (get_use_generic_canonical_name()) {
+	      db_name = &alias;
+	    }
+	    io_block->property_add(Ioss::Property("db_name", *db_name));
+	  }
           get_region()->add(fblock);
         } else if (entity_type == EX_EDGE_BLOCK) {
           Ioss::EdgeBlock *eblock = new Ioss::EdgeBlock(this, block_name, type, block.num_entry);
           io_block = eblock;
           io_block->property_add(Ioss::Property("id", id));
+	  if (db_has_name) {
+	    std::string *db_name = &block_name;
+	    if (get_use_generic_canonical_name()) {
+	      db_name = &alias;
+	    }
+	    io_block->property_add(Ioss::Property("db_name", *db_name));
+	  }
           get_region()->add(eblock);
 #endif
         } else {
@@ -1694,8 +1726,11 @@ namespace Iopx {
 
         int64_t number_distribution_factors = 0;
         {
+	  bool db_has_name = false;
           side_set_name = get_entity_name(get_file_pointer(), EX_SIDE_SET, id, "surface",
-              maximumNameLength);
+					  maximumNameLength, db_has_name);
+
+	  std::string alias = Ioss::Utils::encode_entity_name("surface", id);
 
           if (side_set_name == "universal_sideset") {
             split_type = Ioss::SPLIT_BY_DONT_SPLIT;
@@ -1709,11 +1744,23 @@ namespace Iopx {
             side_set = get_region()->get_sideset(efs_name);
             check_non_null(side_set, "sideset", efs_name);
           } else {
+	    if (get_use_generic_canonical_name()) {
+	      std::string temp = side_set_name;
+	      side_set_name = alias;
+	      alias = temp;
+	    }
             side_set = new Ioss::SideSet(this, side_set_name);
             side_set->property_add(Ioss::Property("id", id));
+	    if (db_has_name) {
+	      std::string *db_name = &side_set_name;
+	      if (get_use_generic_canonical_name()) {
+		db_name = &alias;
+	      }
+	      side_set->property_add(Ioss::Property("db_name", *db_name));
+	    }
             get_region()->add((Ioss::SideSet*)side_set);
 
-            get_region()->add_alias(side_set_name, Ioss::Utils::encode_entity_name("surface", id));
+            get_region()->add_alias(side_set_name, alias);
             get_region()->add_alias(side_set_name, Ioss::Utils::encode_entity_name("sideset", id));
           }
 
@@ -2163,13 +2210,28 @@ namespace Iopx {
         if (ierr < 0)
           exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
+	bool db_has_name = false;
         std::string Xset_name = get_entity_name(get_file_pointer(), type, id, base+"list",
-            maximumNameLength);
+						maximumNameLength, db_has_name);
+
+	std::string alias = Ioss::Utils::encode_entity_name(base+"list", id);
+	if (get_use_generic_canonical_name()) {
+	  std::string temp = Xset_name;
+	  Xset_name = alias;
+	  alias = temp;
+	}
 
         T* Xset = new T(this, Xset_name, decomp->node_sets[ins].ioss_count());
         Xset->property_add(Ioss::Property("id", id));
+	if (db_has_name) {
+	  std::string *db_name = &Xset_name;
+	  if (get_use_generic_canonical_name()) {
+	    db_name = &alias;
+	  }
+	  Xset->property_add(Ioss::Property("db_name", *db_name));
+	}
         get_region()->add(Xset);
-        get_region()->add_alias(Xset_name, Ioss::Utils::encode_entity_name(base+"list", id));
+        get_region()->add_alias(Xset_name, alias);
         get_region()->add_alias(Xset_name, Ioss::Utils::encode_entity_name(base+"set",  id));
         add_attribute_fields(type, Xset, num_attr, "");
         add_results_fields(type, Xset, ins);

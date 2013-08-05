@@ -23,6 +23,7 @@ SET(BDIR ${CMAKE_CURRENT_BINARY_DIR})
 
 INCLUDE_DIRECTORIES(${DIR})
 INCLUDE_DIRECTORIES(${DIR}/Graph)
+INCLUDE_DIRECTORIES(${DIR}/Graph/BrickAggregation)
 INCLUDE_DIRECTORIES(${DIR}/Graph/UncoupledAggregation)
 INCLUDE_DIRECTORIES(${DIR}/Graph/UserAggregation)
 INCLUDE_DIRECTORIES(${DIR}/Headers)
@@ -87,6 +88,7 @@ APPEND_GLOB(SOURCES Utils/ForwardDeclaration/*.cpp)
 # Header file
 # TODO: make a loop
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/BrickAggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/UncoupledAggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/UserAggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Interface NOSIERRABJAM)
@@ -151,6 +153,4 @@ TRIBITS_ADD_LIBRARY(
 #get_directory_property(output INCLUDE_DIRECTORIES)
 #message(STATUS ${output})
 #
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration

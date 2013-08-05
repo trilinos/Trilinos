@@ -80,8 +80,8 @@ namespace Xpetra {
 template <class Scalar,
           class LocalOrdinal  = int,
           class GlobalOrdinal = LocalOrdinal,
-          class Node          = Kokkos::DefaultNode::DefaultNodeType,
-          class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
+          class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
+          class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
 class CrsMatrixWrap : public Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 
   typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
@@ -207,6 +207,9 @@ public:
   void replaceLocalValues(LocalOrdinal localRow,
                           const ArrayView<const LocalOrdinal> &cols,
                           const ArrayView<const Scalar>       &vals) { matrixData_->replaceLocalValues(localRow, cols, vals); }
+
+  //! Set all matrix entries equal to scalar
+  virtual void setAllToScalar(const Scalar &alpha) { matrixData_->setAllToScalar(alpha); }
 
   //! Scale the current values of a matrix, this = alpha*this.
   void scale(const Scalar &alpha) {
@@ -548,6 +551,16 @@ public:
 
   //@}
 
+  template<class Node2>
+  RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > clone(const RCP<Node2> &node2) const {
+    RCP<const Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tMatrix =
+        Teuchos::rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(matrixData_);
+    if (tMatrix == Teuchos::null)
+      throw Xpetra::Exceptions::RuntimeError("clone() functionality is only available for Tpetra");
+
+    return RCP<CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >(new CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node2>(tMatrix->clone(node2)));
+    // TODO: inherit strided maps/views ?
+  }
 
 private:
 

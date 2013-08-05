@@ -68,7 +68,7 @@ AztecOO_StatusTestMaxIters::CheckStatus(int CurrentIter,
 }
 
 
-ostream& AztecOO_StatusTestMaxIters::Print(ostream& stream, int indent) const {
+std::ostream& AztecOO_StatusTestMaxIters::Print(std::ostream& stream, int indent) const {
 
   for (int j = 0; j < indent; j ++)
     stream << ' ';
@@ -77,6 +77,6 @@ ostream& AztecOO_StatusTestMaxIters::Print(ostream& stream, int indent) const {
   stream << Niters_;
   stream << ((Niters_<MaxIters_) ? " < " : ((Niters_==MaxIters_) ? " = " : " > "));
   stream << MaxIters_;
-  stream << endl;
+  stream << std::endl;
  return stream;
 }

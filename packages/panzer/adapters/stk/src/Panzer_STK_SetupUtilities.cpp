@@ -183,7 +183,7 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
 buildBCWorksets(const panzer_stk::STK_Interface & mesh,
                 const panzer::PhysicsBlock & pb,
-                const panzer::BC & bc)
+                const std::string & sidesetID)
 {
   using namespace workset_utils;
   using Teuchos::RCP;
@@ -193,7 +193,7 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
   try {
      // grab local entities on this side
      // ...catch any failure...primarily wrong side set and element block info
-     mesh.getMySides(bc.sidesetID(),bc.elementBlockID(),sideEntities);
+     mesh.getMySides(sidesetID,pb.elementBlockID(),sideEntities);
   } 
   catch(STK_Interface::SidesetException & e) {
      std::stringstream ss;
@@ -229,7 +229,7 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
   std::vector<stk::mesh::Entity*> elements;
   std::vector<std::size_t> local_cell_ids;
   std::vector<std::size_t> local_side_ids;
-  getSideElements(mesh, bc.elementBlockID(),
+  getSideElements(mesh, pb.elementBlockID(),
 		      sideEntities,local_side_ids,elements);
 
   // loop over elements of this block
@@ -245,13 +245,12 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
   // on this processor
   if(elements.size()!=0) {
       Teuchos::RCP<const shards::CellTopology> topo 
-         = mesh.getCellTopology(bc.elementBlockID());
+         = mesh.getCellTopology(pb.elementBlockID());
 
       Intrepid::FieldContainer<double> vertices;
       mesh.getElementVertices(local_cell_ids,vertices);
   
-      return panzer::buildBCWorkset(bc, pb, local_cell_ids, local_side_ids,
-				    vertices);
+      return panzer::buildBCWorkset(pb, local_cell_ids, local_side_ids, vertices);
   }
   
   return Teuchos::null;
@@ -267,6 +266,7 @@ void getSubcellElements(const panzer_stk::STK_Interface & mesh,
 {
   // for verifying that an element is in specified block
   stk::mesh::Part * blockPart = mesh.getElementBlockPart(blockId);
+  stk::mesh::Part * ownedPart = mesh.getOwnedPart();
   stk::mesh::EntityRank elementRank = mesh.getElementRank();
   
   // loop over each entitiy extracting elements and local entity ID that
@@ -283,7 +283,8 @@ void getSubcellElements(const panzer_stk::STK_Interface & mesh,
 	
       // is this element in requested block
       bool inBlock = element->bucket().member(*blockPart);
-      if(inBlock) {
+      bool onProc = element->bucket().member(*ownedPart);
+      if(inBlock && onProc) {
         // add element and Side ID to output vectors
         elements.push_back(element);
         localEntityIds.push_back(entityId);

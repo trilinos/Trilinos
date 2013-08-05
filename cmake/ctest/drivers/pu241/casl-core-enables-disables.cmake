@@ -16,12 +16,6 @@ FOREACH(EXCLUDED_PACKAGE ${${PROJECT_NAME}_EXCLUDE_PACKAGES})
     "Disabled in casl-core-enables-disables.cmake")
 ENDFOREACH()
 
-# Turn off float and complex testing because CASL does not need them
-SET(Teuchos_ENABLE_FLOAT OFF CACHE BOOL
-  "Disabled in casl-core-enables-disables.cmake")
-SET(Teuchos_ENABLE_COMPLEX OFF CACHE BOOL
-  "Disabled in casl-core-enables-disables.cmake")
-
 # We don't need ThreadPool or the Kokkoss::TPINode instnatiations (VRI Kanban
 # #2852, Trilinos #5861)
 SET(${PROJECT_NAME}_ENABLE_ThreadPool OFF CACHE BOOL

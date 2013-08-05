@@ -501,7 +501,7 @@ static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent, i
   nc_inq_dimid(exoid, DIM_TIME, &time_dim);
 
   if (var_tab == NULL) {
-    exerrval = EX_NULLENTITY;
+    exerrval = EX_BADPARAM;
     sprintf(errmsg,
             "Error: %s variable truth table is NULL in file id %d", label, exoid);
     ex_err("ex_put_all_var_param_ext",errmsg, exerrval);

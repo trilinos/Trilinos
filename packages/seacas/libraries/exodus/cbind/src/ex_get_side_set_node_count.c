@@ -113,7 +113,7 @@ int ex_get_side_set_node_count(int exoid,
 	  sprintf(errmsg,
 		  "Warning: side set %"PRId64" is NULL in file id %d",
 		  side_set_id,exoid);
-	  ex_err("ex_get_side_set_node_count",errmsg,EX_MSG);
+	  ex_err("ex_get_side_set_node_count",errmsg,EX_NULLENTITY);
 	  return (EX_WARN);
 	}
       else

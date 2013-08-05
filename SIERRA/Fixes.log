@@ -5,6 +5,10 @@ easy pasting into a spreadsheet.
 ---------|--------------|---------------------------------|------------| ------------|------------------------------------------------------------------------------
 Date     | Package      | File(s)                         |Platform    | @sandia.gov | Detail
 ---------|--------------|---------------------------------|------------| ------------|------------------------------------------------------------------------------
+06/26/13 | Intrepid     | Intrepid_MiniTensor             | Intel vers.| amota       | The intel compilers complained about an accented e (é). The workaround was to 
+         |              |  _LinearAlgebra.t.h             | not given  |             | change the offending character to e'
+         |              |                                 | assume 12.1|             |
+---------|--------------|---------------------------------|------------| ------------|------------------------------------------------------------------------------
 06/17/10 | Intrepid     | Intrepid_CellTools.hpp          | PGI 7.1    | srkenno     | The pgi compilers have a known issue with switch statements in template      
          |              | Intrepid_HGRAD_HEX_C1_FEMDef.hpp|            |             | definition code.  Workaround is to avoid including the XXXDef.hpp file in    
          |              |                                 |            |             | the parent header file and include that Def file in client code (once).      

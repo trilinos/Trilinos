@@ -81,7 +81,7 @@ int ex_put_conn (int   exoid,
        sprintf(errmsg,
          "Warning: connectivity array not allowed for NULL %s %"PRId64" in file id %d",
 	       ex_name_of_object(blk_type),blk_id,exoid);
-       ex_err("ex_put_conn",errmsg,EX_MSG);
+       ex_err("ex_put_conn",errmsg,EX_NULLENTITY);
        return (EX_WARN);
        }
      else {

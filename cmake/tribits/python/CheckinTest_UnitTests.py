@@ -765,7 +765,7 @@ class test_TribitsGitRepos(unittest.TestCase):
       GitRepo('preCopyrightTrilinos', 'preCopyrightTrilinos', "GIT", True),
       ]
     consoleRegexMatches = \
-      "WARNING!  Ignoring missing extra repo .MissingRepo. as requested since\n"
+      "WARNING: Ignoring missing extra repo .MissingRepo. as requested since\n"
     consoleRegexNotMatches = \
       "Adding extra Continuous repository MissingRepo"
     test_TribitsGitRepos_run_case(self, testName, inOptions, expectedPass, \
@@ -2601,9 +2601,11 @@ class test_checkin_test(unittest.TestCase):
       ,
       [
       ("MPI_DEBUG/do-configure",
-       "\-DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos\n"),
-      ] \
-      ,
+       "\-DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos\n"+ \
+       "\-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous\n"+\
+       "\-DTrilinos_EXTRAREPOS_FILE=.*/ExtraReposListExisting_3.cmake\n" \
+       ), \
+      ],
       \
       envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+projectDepsXmlFileOverride ]
       )
@@ -2787,7 +2789,7 @@ class test_checkin_test(unittest.TestCase):
       \
       True,
       \
-      "WARNING!  Ignoring missing extra repo .MissingRepo. as requested since\n" \
+      "WARNING: Ignoring missing extra repo .MissingRepo. as requested since\n" \
       "Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
       ,
       mustHaveCheckinTestOut=False

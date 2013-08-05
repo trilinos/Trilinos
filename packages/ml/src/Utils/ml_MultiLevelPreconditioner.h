@@ -158,7 +158,7 @@ namespace ML_Epetra
                        bool Overwrite=true);
 
   //! Reads in parameter list options from file.
-  int ReadXML(const string &FileName, Teuchos::ParameterList &List,
+  int ReadXML(const std::string &FileName, Teuchos::ParameterList &List,
                    const Epetra_Comm &Comm);
 
   //! Enumerated type indicating the type of AMG solver to be used.

@@ -201,7 +201,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_DistObject: public Epetra_Object, public virt
   //! @name Miscellaneous
   //@{ 
   //! Print method
-  virtual void Print(ostream& os) const;
+  virtual void Print(std::ostream& os) const;
   //@}
 
  protected:

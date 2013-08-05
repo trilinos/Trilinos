@@ -73,9 +73,9 @@ namespace {
   using Teuchos::null;
   using Teuchos::TimeMonitor;
   using Teuchos::ParameterList;
-  using Kokkos::MultiVector;
-  using Kokkos::DefaultArithmetic;
-  using Kokkos::DefaultHostSparseOps;
+  using KokkosClassic::MultiVector;
+  using KokkosClassic::DefaultArithmetic;
+  using KokkosClassic::DefaultHostSparseOps;
 
   template <class NODE>
   RCP<NODE> getNode() {
@@ -187,8 +187,8 @@ namespace {
 
   #define TEST_NODE( NODE ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( AAAAA_Is_First, InitNode, NODE ) \
-    typedef DefaultHostSparseOps<void,int,NODE,Kokkos::details::DefaultCRSAllocator   >   NoFirstTouch; \
-    typedef DefaultHostSparseOps<void,int,NODE,Kokkos::details::FirstTouchCRSAllocator>  YesFirstTouch; \
+    typedef DefaultHostSparseOps<void,int,NODE,KokkosClassic::details::DefaultCRSAllocator   >   NoFirstTouch; \
+    typedef DefaultHostSparseOps<void,int,NODE,KokkosClassic::details::FirstTouchCRSAllocator>  YesFirstTouch; \
     TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, TimingTest, NoFirstTouch) \
     TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, TimingTest, YesFirstTouch)
 

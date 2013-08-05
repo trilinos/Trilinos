@@ -78,7 +78,7 @@ namespace Xpetra {
   class CrsMatrix;
 #endif
 
-  template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class TpetraCrsGraph
     : public CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
   {

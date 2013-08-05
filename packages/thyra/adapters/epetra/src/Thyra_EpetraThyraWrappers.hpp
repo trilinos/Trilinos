@@ -45,6 +45,7 @@
 
 #include "Thyra_EpetraTypes.hpp"
 
+/// @file
 
 namespace Teuchos { template<class Ordinal> class Comm; }
 
@@ -250,7 +251,15 @@ create_MultiVector(
 /** \brief Get (or create) and <tt>Epetra_Comm</tt> given a
  * <tt>Teuchos::Comm</tt> object.
  *
- * ToDo: Finish documentation!
+ * This function returns a *new* Epetra_Comm object from the input
+ * Teuchos::Comm object.  If an Epetra_Comm was used to create this
+ * Tpetra::Comm object using the function create_Comm() then the Epetra_Comm
+ * object returned from this function will *not* be the same!
+ *
+ * NOTE: The behavior of the implementation of this function is likely not the
+ * desired behavior and would likely surpise clients and is not consistent
+ * with the other functions that actually return the same Epetra object passed
+ * in.
  *
  * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */

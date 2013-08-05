@@ -80,11 +80,13 @@
 #include "MueLu_CoupledAggregationFactory.hpp" //TMP
 #include "MueLu_UncoupledAggregationFactory.hpp" //TMP
 #include "MueLu_UserAggregationFactory.hpp" //TMP
+#include "MueLu_BrickAggregationFactory.hpp"
 #include "MueLu_DirectSolver.hpp" //TMP
 #include "MueLu_Exceptions.hpp" //TMP
 #include "MueLu_MultiVectorTransferFactory.hpp"
 #include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
+#include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
 #include "MueLu_RepartitionFactory.hpp"
@@ -105,7 +107,7 @@ namespace MueLu {
 
 
   */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
   class FactoryFactory : public BaseClass {
 #undef MUELU_FACTORYFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -153,6 +155,7 @@ namespace MueLu {
       if (factoryName == "CoupledAggregationFactory")       return BuildCoupledAggregationFactory       (paramList, factoryMapIn);
       if (factoryName == "UncoupledAggregationFactory")     return BuildUncoupledAggregationFactory     (paramList, factoryMapIn);
       if (factoryName == "UserAggregationFactory")          return Build2<UserAggregationFactory>       (paramList, factoryMapIn);
+      if (factoryName == "BrickAggregationFactory")         return Build2<BrickAggregationFactory>      (paramList, factoryMapIn);
       if (factoryName == "TrilinosSmoother")                return BuildTrilinosSmoother                (paramList, factoryMapIn);
       if (factoryName == "DirectSolver")                    return BuildDirectSolver                    (paramList, factoryMapIn);
       if (factoryName == "NoSmoother")                      return BuildNoSmoother();
@@ -180,6 +183,13 @@ namespace MueLu {
         return Build2<Zoltan2Interface>(paramList, factoryMapIn);
 #else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a Zoltan2Interface object: Zoltan2 is disabled: HAVE_MUELU_ZOLTAN2 && HAVE_MPI == false.");
+#endif // HAVE_MUELU_ZOLTAN2 && HAVE_MPI
+      }
+      if (factoryName == "IsorropiaInterface") {
+#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
+        return Build2<IsorropiaInterface>(paramList, factoryMapIn);
+#else
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a IsorropiaInterface object: Isorropia is disabled: HAVE_MUELU_ISORROPIA && HAVE_MPI == false.");
 #endif // HAVE_MUELU_ZOLTAN2 && HAVE_MPI
       }
 
@@ -249,15 +259,23 @@ namespace MueLu {
       RCP<const ParameterList> validParamList = factory->GetValidParameterList();
       for (ParameterList::ConstIterator param = validParamList->begin(); param != validParamList->end(); ++param) {
         const std::string & pName = validParamList->name(param);
-        if (validParamList->isType< RCP<const FactoryBase> >(pName)) {
-          if (paramList.isParameter(pName)) {
-            // Generate or get factory described by param
-            RCP<const FactoryBase> generatingFact = BuildFactory(paramList.getEntry(pName), factoryMapIn);
 
-            // Replace <std::string> or sub-list entry by an RCP<Factory> in paramListWithFactories
-            paramListWithFactories.remove(pName);
-            paramListWithFactories.set(pName, generatingFact);
-          }
+        if (validParamList->isType< RCP<const FactoryBase> >(pName) && paramList.isParameter(pName)) {
+          // Generate or get factory described by param
+          RCP<const FactoryBase> generatingFact = BuildFactory(paramList.getEntry(pName), factoryMapIn);
+
+          // Replace <std::string> or sub-list entry by an RCP<Factory> in paramListWithFactories
+          paramListWithFactories.remove(pName);
+          paramListWithFactories.set(pName, generatingFact);
+        }
+
+        if (pName == "ParameterList" && validParamList->isType<RCP<const ParameterList> >(pName) && paramList.isParameter(pName)) {
+          // NOTE: we cannot use
+          //     subList = sublist(rcpFromRef(paramList), pName)
+          // here as that would result in sublist also being a reference to a temporary object.
+          // The resulting dereferencing in the corresponding factory would then segfault
+          RCP<const ParameterList> subList = sublist(rcp(new ParameterList(paramList)), pName);
+          paramListWithFactories.set(pName, subList);
         }
       }
 

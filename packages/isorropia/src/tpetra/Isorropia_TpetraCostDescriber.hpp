@@ -119,7 +119,7 @@ namespace Tpetra {
 // Forward declarations of friends
 
 
-template <typename Node=Kokkos::DefaultNode::DefaultNodeType>
+template <typename Node=KokkosClassic::DefaultNode::DefaultNodeType>
 class CostDescriber : public Isorropia::CostDescriber {
 
   // public methods are part of API, private methods are used by different

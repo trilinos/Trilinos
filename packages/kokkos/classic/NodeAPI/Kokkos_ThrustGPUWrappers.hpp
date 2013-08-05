@@ -44,7 +44,7 @@
 
 #include "KokkosClassic_config.h"
 
-namespace Kokkos {
+namespace KokkosClassic {
   namespace ThrustGPUNodeDetails {
 
     template <class WDP>
@@ -55,6 +55,6 @@ namespace Kokkos {
     void parallel_for(int begin, int end, WDP wd);
 
   } // end namespace ThrustGPUNodeDetails
-} // end namespace Kokkos
+} // end namespace KokkosClassic
 
 #endif // KOKKOS_THRUSTGPU_WRAPPERS_HPP_

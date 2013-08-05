@@ -193,8 +193,8 @@ public:
 
   bool computePrecMatrix(const Epetra_Vector & x, Epetra_RowMatrix & M) 
   {
-    cout << "*ERR* SimpleProblem::preconditionVector()\n";
-    cout << "*ERR* don't use explicit preconditioning" << std::endl;
+    std::cout << "*ERR* SimpleProblem::preconditionVector()\n";
+    std::cout << "*ERR* don't use explicit preconditioning" << std::endl;
     throw 1;
   }  
   

@@ -94,8 +94,8 @@ int BlockVector::ExtractBlockValues(Epetra_Vector & BaseVector, int GlobalBlockR
    for (int i=0; i<BaseMap_.NumMyElements(); i++) {
       localIndex = this->Map().LID((IndexOffset + BaseMap_.GID(i)));
       if (localIndex==-1) { 
-	     cout << "Error in  BlockVector::GetBlock: " << i << " " 
-		  << IndexOffset << " " << BaseMap_.GID(i) << endl;
+	     std::cout << "Error in  BlockVector::GetBlock: " << i << " " 
+		  << IndexOffset << " " << BaseMap_.GID(i) << std::endl;
 	     return -1;
       }
       BaseVector[i] = Values_[localIndex]; 
@@ -115,8 +115,8 @@ int BlockVector::LoadBlockValues(const Epetra_Vector & BaseVector, int GlobalBlo
    for (int i=0; i<BaseMap_.NumMyElements(); i++) {
       localIndex = this->Map().LID((IndexOffset + BaseMap_.GID(i)));
       if (localIndex==-1) { 
-	     cout << "Error in  BlockVector::GetBlock: " << i << " " 
-		  << IndexOffset << " " << BaseMap_.GID(i) << endl;
+	     std::cout << "Error in  BlockVector::GetBlock: " << i << " " 
+		  << IndexOffset << " " << BaseMap_.GID(i) << std::endl;
 	     return -1;
       }
       (*this)[localIndex] = BaseVector[i];
@@ -136,8 +136,8 @@ int BlockVector::BlockSumIntoGlobalValues(int NumIndices, double* Values,
    for (int i=0; i<NumIndices; i++) {
       localIndex = this->Map().LID((IndexOffset + Indices[i]));
       if (localIndex==-1) { 
-	     cout << "Error in  BlockVector::BlockSumIntoGlobalValues: " << i
-                  << " " << IndexOffset << " " << Indices[i] << endl;
+	     std::cout << "Error in  BlockVector::BlockSumIntoGlobalValues: " << i
+                  << " " << IndexOffset << " " << Indices[i] << std::endl;
 	     return -1;
       }
       (*this)[localIndex] += Values[i];
@@ -157,8 +157,8 @@ int BlockVector::BlockReplaceGlobalValues(int NumIndices, double* Values,
    for (int i=0; i<NumIndices; i++) {
       localIndex = this->Map().LID((IndexOffset + Indices[i]));
       if (localIndex==-1) { 
-	     cout << "Error in  BlockVector::BlockReplaceGlobalValues: " << i
-                  << " " << IndexOffset << " " << Indices[i] << endl;
+	     std::cout << "Error in  BlockVector::BlockReplaceGlobalValues: " << i
+                  << " " << IndexOffset << " " << Indices[i] << std::endl;
 	     return -1;
       }
       (*this)[localIndex] = Values[i];

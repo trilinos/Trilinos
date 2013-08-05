@@ -114,8 +114,8 @@ operator()( OriginalTypeRef orig )
 
   if( debug_ )
   {
-    cout << "Original (serial) Matrix:\n";
-    cout << *serialMatrix << endl;
+    std::cout << "Original (serial) Matrix:\n";
+    std::cout << *serialMatrix << std::endl;
   }
 
   // Obtain the current row and column orderings
@@ -168,8 +168,8 @@ operator()( OriginalTypeRef orig )
   
   if( debug_ )
   {
-    cout << "Original (serial) Matrix permuted via BTF:\n";
-    cout << newSerialMatrixT << endl;
+    std::cout << "Original (serial) Matrix permuted via BTF:\n";
+    std::cout << newSerialMatrixT << std::endl;
   }
 
   // Perform reindexing on the full serial matrix (needed for balancing).
@@ -262,10 +262,10 @@ operator()( OriginalTypeRef orig )
   
   if( debug_ )
   {
-    cout << "New Row Map\n";
-    cout << *NewRowMap_ << endl;
-    //cout << "New Col Map\n";
-    //cout << *NewColMap_ << endl;
+    std::cout << "New Row Map\n";
+    std::cout << *NewRowMap_ << std::endl;
+    //std::cout << "New Col Map\n";
+    //std::cout << *NewColMap_ << std::endl;
   }
 
   // Generate New Graph
@@ -279,8 +279,8 @@ operator()( OriginalTypeRef orig )
 
   if( debug_ )
   {
-    cout << "NewGraph\n";
-    cout << *NewGraph_;
+    std::cout << "NewGraph\n";
+    std::cout << *NewGraph_;
   }
 
   // Create new linear problem and import information from old linear problem
@@ -296,8 +296,8 @@ operator()( OriginalTypeRef orig )
 
   if( debug_ )
   {
-    cout << "New Matrix\n";
-    cout << *NewMatrix_ << endl;
+    std::cout << "New Matrix\n";
+    std::cout << *NewMatrix_ << std::endl;
   }
 
   newObj_ = new Epetra_LinearProblem( &*NewMatrix_, &*NewLHS_, &*NewRHS_ );
@@ -320,8 +320,8 @@ bool
 AmesosBTFGlobal_LinearProblem::
 rvs()
 {
-  //  cout << "AmesosBTFGlobal_LinearProblem: NewLHS_" << endl;
-  //  cout << *NewLHS_ << endl;
+  //  std::cout << "AmesosBTFGlobal_LinearProblem: NewLHS_" << std::endl;
+  //  std::cout << *NewLHS_ << std::endl;
 
   OldLHS_->Import( *NewLHS_, *Importer2_, Insert );
   int numrhs = OldLHS_->NumVectors();
@@ -336,8 +336,8 @@ rvs()
       std::cout << "Problem " << i << " (in AmesosBTFGlobal): \t" << actual_resids[i]/rhs_norm[i] << std::endl;
     }
   }
-  //cout << "AmesosBTFGlobal_LinearProblem: OldLHS_" << endl;
-  //cout << *OldLHS_ << endl;
+  //std::cout << "AmesosBTFGlobal_LinearProblem: OldLHS_" << std::endl;
+  //std::cout << *OldLHS_ << std::endl;
 
   return true;
 }

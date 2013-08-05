@@ -355,7 +355,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMapFactory, CreateStridedEpetraMap2, LO, GO, Node ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMapFactory, CreateStridedTpetraMap2, LO, GO, Node )
 
-  typedef Kokkos::DefaultNode::DefaultNodeType DefaultNodeType;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNodeType;
 
   UNIT_TEST_GROUP_ORDINAL(int, int, DefaultNodeType)
 

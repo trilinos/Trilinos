@@ -141,16 +141,21 @@ namespace {
     // const size_t rank     = comm->getRank();
     // create a Map
     const size_t numLocal = 10;
+
+    out << "Creating Map" << std::endl;
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
 
+    out << "Creating MultiVector" << std::endl;
     RCP<MV> mv = rcp(new MV(map,11));
     mv->randomize();
     // RCP<FancyOStream> os = getDefaultOStream();
     // mv->describe(*os,Teuchos::VERB_EXTREME);
 
+    out << "Creating adapter" << std::endl;
     RCP<ADAPT> adapter = createMultiVecAdapter(mv);
 
     // The following should all pass at compile time
+    out << "Running compile-time tests" << std::endl;
     TEST_ASSERT( (is_same<SCALAR,        typename ADAPT::scalar_t>::value) );
     TEST_ASSERT( (is_same<LO,            typename ADAPT::local_ordinal_t>::value) );
     TEST_ASSERT( (is_same<GO,            typename ADAPT::global_ordinal_t>::value) );
@@ -208,11 +213,14 @@ namespace {
     // create a Map
     const size_t numVectors = 7;
     const size_t numLocal = 13;
+    out << "Creating Map" << std::endl;
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
 
+    out << "Creating MultiVector" << std::endl;
     RCP<MV> mv = rcp(new MV(map,numVectors));
     mv->randomize();
 
+    out << "Creating adapter" << std::endl;
     RCP<ADAPT> adapter = createMultiVecAdapter(mv);
     Array<SCALAR> original(numVectors*numLocal*numprocs);
     Array<SCALAR> copy(numVectors*numLocal*numprocs);
@@ -221,6 +229,7 @@ namespace {
     // Check a global copy at rank=0 //
     ///////////////////////////////////
 
+    out << "Checking global copy" << std::endl;
     get_1d_copy_helper<ADAPT,SCALAR>::do_get(ptrInArg(*adapter), copy(), numLocal*numprocs, ROOTED);
 
     // Only rank=0 process has global copy of the mv data, check against an import
@@ -239,6 +248,7 @@ namespace {
     // Check a local copy at all ranks //
     /////////////////////////////////////
 
+    out << "Checking local copy" << std::endl;
     original.clear();
     original.resize(numVectors*numLocal);
     copy.clear();
@@ -250,6 +260,7 @@ namespace {
     
     // Check that the values remain the same
     TEST_COMPARE_ARRAYS( original, copy );
+    out << "Done!" << std::endl;
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVecAdapter, Copy_Map, SCALAR, LO, GO )

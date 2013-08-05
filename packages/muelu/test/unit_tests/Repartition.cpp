@@ -211,10 +211,10 @@ namespace MueLuTests {
     RCP<RepartitionFactory> repart = rcp(new RepartitionFactory());
     Teuchos::ParameterList paramList;
     paramList.set("startLevel", 1);
-    paramList.set("minRowsPerProcessor", 1000);
+    paramList.set("minRowsPerProcessor", 1);
     paramList.set("nonzeroImbalance", 1.2);
     paramList.set("diffusiveHeuristic", 10);
-    paramList.set< RCP<const FactoryBase> >("number of partitions", Teuchos::null); // use user-defined #partitions
+    paramList.set< RCP<const FactoryBase> >("number of partitions", MueLu::NoFactory::getRCP()); // use user-defined #partitions
     repart->SetParameterList(paramList);
     repart->SetFactory("Partition", zoltan);
 
@@ -359,10 +359,10 @@ namespace MueLuTests {
 
     Teuchos::ParameterList paramList;
     paramList.set("startLevel", 1);
-    paramList.set("minRowsPerProcessor", 1000);
+    paramList.set("minRowsPerProcessor", 1);
     paramList.set("nonzeroImbalance", 1.2);
     paramList.set("diffusiveHeuristic", 10);
-    paramList.set< RCP<const FactoryBase> >("number of partitions", Teuchos::null); // use user-defined #partitions
+    paramList.set< RCP<const FactoryBase> >("number of partitions", MueLu::NoFactory::getRCP()); // use user-defined #partitions
     repart->SetParameterList(paramList);
 
     repart->SetFactory("Partition", zoltan);
@@ -509,10 +509,10 @@ namespace MueLuTests {
     RCP<RepartitionFactory> repart = rcp(new RepartitionFactory());
     Teuchos::ParameterList paramList;
     paramList.set("startLevel", 1);
-    paramList.set("minRowsPerProcessor", 1000);
+    paramList.set("minRowsPerProcessor", 1);
     paramList.set("nonzeroImbalance", 1.2);
     paramList.set("diffusiveHeuristic", 10);
-    paramList.set< RCP<const FactoryBase> >("number of partitions", Teuchos::null); // use user-defined #partitions
+    paramList.set< RCP<const FactoryBase> >("number of partitions", MueLu::NoFactory::getRCP()); // use user-defined #partitions
     repart->SetParameterList(paramList);
     repart->SetFactory("Partition", zoltan);
 
@@ -650,10 +650,11 @@ namespace MueLuTests {
     RCP<RepartitionFactory> repart = rcp(new RepartitionFactory());
     Teuchos::ParameterList paramList;
     paramList.set("startLevel", 1);
-    paramList.set("minRowsPerProcessor", 1000);
+    paramList.set("minRowsPerProcessor", 1);
     paramList.set("nonzeroImbalance", 1.2);
     paramList.set("diffusiveHeuristic", 10);
-    paramList.set< RCP<const FactoryBase> >("number of partitions", Teuchos::null); // use user-defined #partitions
+    paramList.set("alwaysKeepProc0", false);
+    paramList.set< RCP<const FactoryBase> >("number of partitions", MueLu::NoFactory::getRCP()); // use user-defined #partitions
     repart->SetParameterList(paramList);
     repart->SetFactory("Partition", zoltan);
 
@@ -789,10 +790,10 @@ namespace MueLuTests {
     RCP<RepartitionFactory> repart = rcp(new RepartitionFactory());
     Teuchos::ParameterList paramList;
     paramList.set("startLevel", 1);
-    paramList.set("minRowsPerProcessor", 1000);
+    paramList.set("minRowsPerProcessor", 1);
     paramList.set("nonzeroImbalance", 1.2);
     paramList.set("diffusiveHeuristic", 10);
-    paramList.set< RCP<const FactoryBase> >("number of partitions", Teuchos::null); // use user-defined #partitions
+    paramList.set< RCP<const FactoryBase> >("number of partitions", MueLu::NoFactory::getRCP()); // use user-defined #partitions
     repart->SetParameterList(paramList);
     repart->SetFactory("Partition", zoltan);
     level.Request("Importer",repart.get());  // request permutation matrix

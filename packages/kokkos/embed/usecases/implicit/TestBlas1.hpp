@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//    KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//    Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOSARRAY_BLAS1_HPP
-#define KOKKOSARRAY_BLAS1_HPP
+#ifndef KOKKOS_BLAS1_HPP
+#define KOKKOS_BLAS1_HPP
 
 #include <cmath>
 #include <limits>
@@ -50,7 +50,7 @@
 
 //----------------------------------------------------------------------------
 
-namespace KokkosArray {
+namespace Kokkos {
 
 template < typename TypeScalar , typename TypeVector , class Device >
 struct WAXPBY
@@ -68,7 +68,7 @@ public:
   typedef Device  device_type ;
 
   template< typename iType >
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void operator()( const iType inode ) const
   { w[inode] = alpha * x[inode] + beta * y[inode]; }
 
@@ -104,7 +104,7 @@ public:
   typedef Device  device_type ;
 
   template< typename iType >
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void operator()( const iType inode ) const
   { y[inode] = alpha * x[inode] + y[inode]; }
 
@@ -136,7 +136,7 @@ public:
   typedef Device  device_type ;
 
   template< typename iType >
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void operator()( const iType inode ) const
   { y[inode] = x[inode] + beta * y[inode]; }
 
@@ -164,17 +164,17 @@ struct Dot
   const TypeX * const x ;
   const TypeY * const y ;
 
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & source )
   { update += source;    }
 
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   static void init( value_type & update )
   { update = 0 ; }
 
   template< typename iType >
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void operator()( const iType & i , value_type & update ) const
   { update += x[i] * y[i] ; }
 
@@ -184,7 +184,7 @@ struct Dot
        double & result )
   : x( arg_x ), y( arg_y )
   {
-    result = parallel_reduce( count , *this );
+    parallel_reduce( count , *this , result );
   }
 };
 
@@ -196,17 +196,17 @@ struct Dot< TypeX , void , Device >
 
   const TypeX * const x ;
 
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   static void join( volatile value_type & update ,
                     const volatile value_type & source )
   { update += source;    }
 
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   static void init( value_type & update )
   { update = 0 ; }
 
   template< typename iType >
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void operator()( const iType & i , value_type & update ) const
   { update += x[i] * x[i] ; }
 
@@ -215,7 +215,7 @@ struct Dot< TypeX , void , Device >
        double & result )
   : x( arg_x )
   {
-    result = parallel_reduce( count , *this );
+    parallel_reduce( count , *this , result );
   }
 };
 
@@ -223,7 +223,7 @@ struct Dot< TypeX , void , Device >
 
 //----------------------------------------------------------------------------
 
-namespace KokkosArray {
+namespace Kokkos {
 
 template< typename TypeScalar ,
           class    TypeVector ,

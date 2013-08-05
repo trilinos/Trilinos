@@ -1,6 +1,6 @@
 $ Test program for Aprepro
 $
-Test number reprsentations
+Test number representations
 1	1	1	1	1
 1	1	1	1	1
 	
@@ -21,7 +21,7 @@ Test trigonometric functions (radians)
 
 Test trigonometric functions (degrees)
 180	180	180
-0.7071067812	-2.842170943e-14	$ sin(180/4)
+0.7071067812	2.842170943e-14	$ sin(180/4)
 0.7071067812	0	$ cos(180/4)
 1	0	$ tan(180/4)
 
@@ -39,15 +39,33 @@ This line should be echoed. (b)
 This line should be echoed. (c)
 This line should be echoed. (d)
 
-$ Test if - else lines
+$ Test ifdef - else lines
 This line should be echoed. (1)
 This line should be echoed (4)
 
-$ Test if - else lines
+$ Test ifndef - else lines
 This line should be echoed (6)
 This line should be echoed. (7)
 $ Lines a, b, c, d, 1, 4, 6, 7 should be echoed
 $ Check line counting -- should be on line 74: 
+
+$ ========================================================================
+$ Test if lines
+  This line should be echoed. (a)
+  This line should be echoed. (b)
+This line should be echoed. (c)
+
+-4.440892099e-16
+$ Test if - else lines
+ complex if works
+
+       square roots work
+
+1 2
+     good nested if
+  good
+  make sure it is still good
+$ ========================================================================
 
 $ Test int and [] (shortcut for int)
 5	-5
@@ -73,7 +91,7 @@ $ Test looping - print sin, cos from 0 to 90 by 5
 75	0.9659258263	0.2588190451 1 
 80	0.984807753	0.1736481777 1 
 85	0.9961946981	0.08715574275 1 
-90	1	1.273937553e-18 1 
+90	1	6.123233996e-17 1 
 
 $$$$ Test formatting and string concatenation
 0 %.10g
@@ -142,3 +160,4 @@ word 3 = "three"
 $ Check parsing of escaped braces...
 { int a = b + 1.570796327 }
 { }
+

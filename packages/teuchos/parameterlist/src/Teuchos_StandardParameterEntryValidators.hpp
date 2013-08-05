@@ -628,44 +628,36 @@ public:
   EPreferredType getPreferredType() const;
 
   /** \brief Gets the string representation of a given preferred type enum. */
-  static const std::string&
-    getPrefferedTypeString(EPreferredType enumValue)
+  static const std::string& getPrefferedTypeString (EPreferredType enumValue)
   {
-    switch(enumValue){
+    switch (enumValue) {
       case PREFER_INT:
-        return getIntEnumString();
-        break;
+        return getIntEnumString ();
       case PREFER_DOUBLE:
-        return getDoubleEnumString();
-        break;
+        return getDoubleEnumString ();
       case PREFER_STRING:
-        return getStringEnumString();
-        break;
+        return getStringEnumString ();
       default:
-        static const std::string typeString(toString(enumValue));
+        const std::string typeString (toString (enumValue));
         throw std::runtime_error("Cannot convert enumValue: " + typeString + " to a string");
-        //Should never get here. This code is here so that a warning is not generated.
-        return typeString;
     }
   }
 
   /** \brief Gets the preferred type enum associated with a give string. */
-  static EPreferredType getPrefferedTypeStringEnum(const std::string& enumString)
+  static EPreferredType getPrefferedTypeStringEnum (const std::string& enumString)
   {
-    if(enumString == getIntEnumString()){
+    if (enumString == getIntEnumString ()) {
       return PREFER_INT;
     }
-    else if(enumString == getDoubleEnumString()){
+    else if (enumString == getDoubleEnumString ()) {
       return PREFER_DOUBLE;
     }
-    else if(enumString == getStringEnumString()){
+    else if (enumString == getStringEnumString ()) {
       return PREFER_STRING;
     }
-    else{
-      throw std::runtime_error("Cannot convert enumString: " + enumString + " to an enum");
+    else {
+      throw std::runtime_error ("Cannot convert enumString: " + enumString + " to an enum");
     }
-    //Should never get here. This code is here so that a warning is not generated.
-    return (EPreferredType)-1;
   }
 
   //@}
@@ -1379,6 +1371,21 @@ public:
    */
   bool fileMustExist() const;
 
+  //! \name Attribute/Query Functions
+  //@{
+
+  /** \brief Gets the variable describing whether or not this validator is OK
+   * with file name being empty (even if fileMustExist() returns true).
+   *
+   * Note: This property of the validator is not persistent.  It is not
+   * saved or retrieved.  Its purpose is to work around the fact that
+   * an input file name, for which user has not given the name by selecting
+   * in a GUI, is empty.
+   *
+   * @return Whether or not the validator is OK with file name being empty.
+   */
+  bool fileEmptyNameOK() const;
+
   //@}
 
   //! \name Setter Functions
@@ -1393,6 +1400,16 @@ public:
    * @return The new value of the shouldFileExist variable.
    */
   bool setFileMustExist(bool shouldFileExist);
+
+  /** \brief Sets whether or not the validator is OK with empty file name
+   * (even if fileMustExist() returns true)
+   *
+   * @param isEmptyNameOK True if empty name is all right, false
+   * otherwise.
+   *
+   * @return The new value of the isEmptyNameOK variable.
+   */
+  bool setFileEmptyNameOK(bool isEmptyNameOK);
 
   //@}
 
@@ -1425,6 +1442,7 @@ private:
    * already exist.
    */
   bool mustAlreadyExist_;
+  bool EmptyNameOK_;
 
   //@}
 

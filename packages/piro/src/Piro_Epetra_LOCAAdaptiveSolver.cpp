@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 //
 // Questions? Contact Glen Hansen (gahanse@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
@@ -222,23 +222,23 @@ void Piro::Epetra::LOCAAdaptiveSolver::evalModel( const InArgs& inArgs,
 {
   // Parse InArgs
   Teuchos::RCP<const Epetra_Vector> p_in = inArgs.get_p(0);
-  if (!p_in.get()) cout << "ERROR: Piro::Epetra::LOCASolver requires p as inargs" << endl;
+  if (!p_in.get()) std::cout << "ERROR: Piro::Epetra::LOCASolver requires p as inargs" << std::endl;
   int numParameters = p_in->GlobalLength();
 
   for (int i=0; i< numParameters; i++) pVector->setValue(i, (*p_in)[i]);
-  utils.out() << "eval pVector   " << std::setprecision(10) << *pVector << endl;
+  utils.out() << "eval pVector   " << std::setprecision(10) << *pVector << std::endl;
   interface->setParameters(*pVector);
 
   // Solve
 
   LOCA::Abstract::Iterator::IteratorStatus status = stepper->run();
 
-  if (status ==  LOCA::Abstract::Iterator::Finished) 
-    utils.out() << "Continuation Stepper Finished" << endl;
-  else if (status ==  LOCA::Abstract::Iterator::NotFinished) 
-    utils.out() << "Continuation Stepper did not reach final value." << endl;
+  if (status ==  LOCA::Abstract::Iterator::Finished)
+    utils.out() << "Continuation Stepper Finished" << std::endl;
+  else if (status ==  LOCA::Abstract::Iterator::NotFinished)
+    utils.out() << "Continuation Stepper did not reach final value." << std::endl;
   else {
-    utils.out() << "Nonlinear solver failed to converge!" << endl;
+    utils.out() << "Nonlinear solver failed to converge!" << std::endl;
     outArgs.setFailed();
   }
 
@@ -247,23 +247,23 @@ void Piro::Epetra::LOCAAdaptiveSolver::evalModel( const InArgs& inArgs,
 
   // Print solution
   if (utils.isPrintType(NOX::Utils::Details)) {
-    utils.out() << endl << "Final Solution" << endl
-		<< "****************" << endl;
+    utils.out() << std::endl << "Final Solution" << std::endl
+		<< "****************" << std::endl;
     finalSolution->Print(std::cout);
   }
 
   // Output the parameter list
   if (utils.isPrintType(NOX::Utils::Parameters)) {
-    utils.out() << endl << "Final Parameters" << endl
-		<< "****************" << endl;
+    utils.out() << std::endl << "Final Parameters" << std::endl
+		<< "****************" << std::endl;
     piroParams->print(utils.out());
-    utils.out() << endl;
+    utils.out() << std::endl;
   }
 
   // Don't explicitly observe finalSolution:
   // This is already taken care of by the stepper which observes the solution after each
   // continuation step by default.
- 
+
   // Print stats
   bool print_stats = piroParams->get("Print Convergence Stats", true);
   if (print_stats) {
@@ -288,22 +288,22 @@ void Piro::Epetra::LOCAAdaptiveSolver::evalModel( const InArgs& inArgs,
     totalLinSolves += linSolves;
     stepNum++;
 
-    utils.out() << "Convergence Stats: for step  #" 
-     << stepNum << " : NumLinSolves, Krylov, Kr/Solve; LastKrylov, LastTol: " 
-	 << linSolves << "  " << KrylovIters << "  " 
-	 << (double) KrylovIters / (double) linSolves << "  " 
-         << lastSolveKrylovIters << " " <<  achtol << endl;
+    utils.out() << "Convergence Stats: for step  #"
+     << stepNum << " : NumLinSolves, Krylov, Kr/Solve; LastKrylov, LastTol: "
+	 << linSolves << "  " << KrylovIters << "  "
+	 << (double) KrylovIters / (double) linSolves << "  "
+         << lastSolveKrylovIters << " " <<  achtol << std::endl;
 
     if (stepNum > 1)
-     utils.out() << "Convergence Stats: running total: NumLinSolves, Krylov, Kr/Solve, Kr/Step: " 
-           << totalLinSolves << "  " << totalKrylovIters << "  " 
-           << (double) totalKrylovIters / (double) totalLinSolves 
-           << "  " << (double) totalKrylovIters / (double) stepNum << endl;
-    
+     utils.out() << "Convergence Stats: running total: NumLinSolves, Krylov, Kr/Solve, Kr/Step: "
+           << totalLinSolves << "  " << totalKrylovIters << "  "
+           << (double) totalKrylovIters / (double) totalLinSolves
+           << "  " << (double) totalKrylovIters / (double) stepNum << std::endl;
+
   }
 
   //
-  // Do Sensitivity Calc, if requested. See 3 main steps 
+  // Do Sensitivity Calc, if requested. See 3 main steps
   //
 
   // Set inargs and outargs
@@ -314,16 +314,16 @@ void Piro::Epetra::LOCAAdaptiveSolver::evalModel( const InArgs& inArgs,
   for (int i=0; i<num_p; i++) {
     // p
     model_inargs.set_p(i, inArgs.get_p(i));
-    
+
     // df/dp
     bool do_sens = false;
     for (int j=0; j<num_g; j++) {
-      if (!outArgs.supports(OUT_ARG_DgDp, i, j).none() && 
+      if (!outArgs.supports(OUT_ARG_DgDp, i, j).none() &&
 	  outArgs.get_DgDp(i,j).getMultiVector() != Teuchos::null) {
 	do_sens = true;
-	Teuchos::Array<int> p_indexes = 
+	Teuchos::Array<int> p_indexes =
 	  outArgs.get_DgDp(i,j).getDerivativeMultiVector().getParamIndexes();
-	TEUCHOS_TEST_FOR_EXCEPTION(p_indexes.size() > 0, 
+	TEUCHOS_TEST_FOR_EXCEPTION(p_indexes.size() > 0,
 			   Teuchos::Exceptions::InvalidParameter,
 			   std::endl <<
 			   "Piro::Epetra::LOCASolver::evalModel():  " <<
@@ -339,14 +339,14 @@ void Piro::Epetra::LOCAAdaptiveSolver::evalModel( const InArgs& inArgs,
       // columns in df/dp should be the number of chosen p's, not the total
       // number of p's.
       Teuchos::RCP<const Epetra_Map> p_map = model->get_p_map(i);
-      Teuchos::RCP<Epetra_MultiVector> dfdp = 
-	Teuchos::rcp(new Epetra_MultiVector(*(model->get_f_map()), 
+      Teuchos::RCP<Epetra_MultiVector> dfdp =
+	Teuchos::rcp(new Epetra_MultiVector(*(model->get_f_map()),
 					    p_map->NumGlobalElements()));
-      // Teuchos::Array<int> p_indexes = 
+      // Teuchos::Array<int> p_indexes =
       // 	outArgs.get_DgDp(i,0).getDerivativeMultiVector().getParamIndexes();
-      // EpetraExt::ModelEvaluator::DerivativeMultiVector 
+      // EpetraExt::ModelEvaluator::DerivativeMultiVector
       // 	dmv_dfdp(dfdp, DERIV_MV_BY_COL, p_indexes);
-      EpetraExt::ModelEvaluator::DerivativeMultiVector 
+      EpetraExt::ModelEvaluator::DerivativeMultiVector
 	dmv_dfdp(dfdp, DERIV_MV_BY_COL);
       model_outargs.set_DfDp(i,dmv_dfdp);
     }
@@ -372,7 +372,7 @@ void Piro::Epetra::LOCAAdaptiveSolver::evalModel( const InArgs& inArgs,
     }
     if (do_sens) {
       Teuchos::RCP<const Epetra_Map> g_map = model->get_g_map(j);
-      Teuchos::RCP<Epetra_MultiVector> dgdx = 
+      Teuchos::RCP<Epetra_MultiVector> dgdx =
 	Teuchos::rcp(new Epetra_MultiVector(finalSolution->Map(),
 					    g_map->NumGlobalElements()));
       model_outargs.set_DgDx(j,dgdx);
@@ -380,13 +380,13 @@ void Piro::Epetra::LOCAAdaptiveSolver::evalModel( const InArgs& inArgs,
       for (int i=0; i<num_p; i++) {
 	// dg/dp
 	if (!outArgs.supports(OUT_ARG_DgDp, i, j).none()) {
-	  Teuchos::RCP<Epetra_MultiVector> dgdp_out = 
+	  Teuchos::RCP<Epetra_MultiVector> dgdp_out =
 	    outArgs.get_DgDp(i,j).getMultiVector();
 	  if (dgdp_out != Teuchos::null) {
 	    dgdp_out->PutScalar(0.0);
-	    Teuchos::Array<int> p_indexes = 
+	    Teuchos::Array<int> p_indexes =
 	      outArgs.get_DgDp(i,j).getDerivativeMultiVector().getParamIndexes();
-	    EpetraExt::ModelEvaluator::DerivativeMultiVector 
+	    EpetraExt::ModelEvaluator::DerivativeMultiVector
 	      dmv_dgdp(dgdp_out, DERIV_MV_BY_COL,p_indexes);
 	    model_outargs.set_DgDp(i,j,dmv_dgdp);
 	  }
@@ -394,40 +394,40 @@ void Piro::Epetra::LOCAAdaptiveSolver::evalModel( const InArgs& inArgs,
       }
     }
   }
-    
+
   // (1) Calculate g, df/dp, dg/dp, dg/dx
   model->evalModel(model_inargs, model_outargs);
-    
+
   for (int i=0; i<num_p; i++) {
     if (!model_outargs.supports(OUT_ARG_DfDp, i).none()) {
-      Teuchos::RCP<Epetra_MultiVector> dfdp  = 
+      Teuchos::RCP<Epetra_MultiVector> dfdp  =
 	model_outargs.get_DfDp(i).getMultiVector();
       if (dfdp != Teuchos::null) {
 	int numParameters = dfdp->NumVectors();
-	
+
 	// (2) Calculate dx/dp multivector from -(J^{-1}*df/dp)
-	Teuchos::RCP<Epetra_MultiVector> dxdp = 
-	  Teuchos::rcp(new Epetra_MultiVector(*(model->get_x_map()), 
+	Teuchos::RCP<Epetra_MultiVector> dxdp =
+	  Teuchos::rcp(new Epetra_MultiVector(*(model->get_x_map()),
 					      numParameters) );
-	NOX::Epetra::MultiVector dfdp_nox(dfdp, NOX::DeepCopy,  
+	NOX::Epetra::MultiVector dfdp_nox(dfdp, NOX::DeepCopy,
 					  NOX::Epetra::MultiVector::CreateView);
-	NOX::Epetra::MultiVector dxdp_nox(dxdp, NOX::DeepCopy,  
+	NOX::Epetra::MultiVector dxdp_nox(dxdp, NOX::DeepCopy,
 					  NOX::Epetra::MultiVector::CreateView);
-	
+
 	solnManager->applyJacobianInverseMultiVector(dfdp_nox, dxdp_nox);
 	dxdp_nox.scale(-1.0);
-	
+
 	// (3) Calculate dg/dp = dg/dx*dx/dp + dg/dp
 	// This may be the transpose of what we want since we specified
-	// we want dg/dp by column in createOutArgs(). 
+	// we want dg/dp by column in createOutArgs().
 	// In this case just interchange the order of dgdx and dxdp
 	// We should really probably check what the underlying ME does
 	for (int j=0; j<num_g; j++) {
 	  if (!outArgs.supports(OUT_ARG_DgDp, i, j).none()) {
-	    Teuchos::RCP<Epetra_MultiVector> dgdp_out = 
+	    Teuchos::RCP<Epetra_MultiVector> dgdp_out =
 	      outArgs.get_DgDp(i,j).getMultiVector();
 	    if (dgdp_out != Teuchos::null) {
-	      Teuchos::RCP<Epetra_MultiVector> dgdx = 
+	      Teuchos::RCP<Epetra_MultiVector> dgdx =
 		model_outargs.get_DgDx(j).getMultiVector();
 	      dgdp_out->Multiply('T', 'N', 1.0, *dgdx, *dxdp, 1.0);
 	    }
@@ -438,17 +438,25 @@ void Piro::Epetra::LOCAAdaptiveSolver::evalModel( const InArgs& inArgs,
   }
 
   // return the final solution as an additional g-vector, if requested
-  Teuchos::RCP<Epetra_Vector> gx_out = outArgs.get_g(num_g); 
+  Teuchos::RCP<Epetra_Vector> gx_out = outArgs.get_g(num_g);
 
-  // GAH - FIXME resize gx as problem changes
-  if(gx_out->MyLength() != finalSolution->MyLength()){
+  if (gx_out != Teuchos::null){
 
-    std::cout << "FIXME - must resize gx: not returning final solution." << std::endl;
+    // Resize gx if problem size has changed
+    if(gx_out->MyLength() != finalSolution->MyLength()){
 
-    return;
- }
+//      const Teuchos::RCP<Epetra_Vector> gx_new = Teuchos::rcp(new Epetra_Vector(*finalSolution));
+      std::cout << "FIXME GAH - must resize gx: not returning final solution." << std::endl;
 
-   
-  if (gx_out != Teuchos::null)  *gx_out = *finalSolution; 
+      //outArgs.set_g(num_g, gx_new);
+
+    }
+    else
+
+     *gx_out = *finalSolution;
+
+  }
+
+
 }
 

@@ -44,7 +44,7 @@
 
 #include "Kokkos_ConfigDefs.hpp"
 
-namespace Kokkos {
+namespace KokkosClassic {
   /// \namespace Mkl
   /// \brief Access to Intel Math Kernel Library (MKL) functionality.
   ///
@@ -166,7 +166,7 @@ namespace Kokkos {
              const Ordinal LDC);
     };
   } // namespace Mkl
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif // __Kokkos_Mkl_RawSparseKernels_hpp
 

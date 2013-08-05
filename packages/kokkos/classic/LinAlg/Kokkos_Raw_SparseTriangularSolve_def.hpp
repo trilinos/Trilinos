@@ -51,7 +51,7 @@
 ///   bug in the script.  Please use the hand-edited version of this
 ///   file for now until I have a chance to fix the script.
 
-namespace Kokkos {
+namespace KokkosClassic {
 namespace Raw {
 
 template<class Ordinal,
@@ -1729,6 +1729,6 @@ upperTriSolveCscRowMajorUnitDiagInPlaceConj (
 }
 
 } // namespace Raw
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif // #ifndef __Kokkos_Raw_SparseTriangularSolve_def_hpp

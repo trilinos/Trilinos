@@ -48,6 +48,7 @@
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_RowGraph.hpp"
+#include "Tpetra_Packable.hpp"
 
 namespace Tpetra {
   //
@@ -63,30 +64,51 @@ namespace Tpetra {
   class Vector;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
-  //! \brief An interface for row-partitioned matrices.
-  /*!
-     This class is templated on \c Scalar, \c LocalOrdinal, \c GlobalOrdinal and \c Node.
-     The \c LocalOrdinal type, if omitted, defaults to \c int.
-     The \c GlobalOrdinal type defaults to the \c LocalOrdinal type.
-     The \c Node type defaults to the default node in Kokkos.
-   */
+  /// \class RowMatrix
+  /// \brief A read-only, row-oriented interface to a sparse matrix.
+  ///
+  /// \tparam Scalar The type of the entries in the sparse matrix.
+  ///   Same as the \c Scalar typedef of Operator.
+  /// \tparam LocalOrdinal The type of local indices; defaults to
+  ///   <tt>int</tt>.  Same as the \c LocalOrdinal typedef of
+  ///   Operator.
+  /// \tparam GlobalOrdinal The type of global indices; defaults to
+  ///   <tt>LocalOrdinal</tt>.  Same as the \c GlobalOrdinal typedef
+  ///   of Operator.
+  /// \tparam Node Kokkos Node type; defaults to Kokkos' default Node
+  ///   type.  Same as the \c Node typedef of Operator.
+  ///
+  /// RowMatrix provides a read-only, row-oriented interface to view
+  /// the entries of a sparse matrix, which is distributed over one or
+  /// more (MPI) processes.  "Read only" means that you may view the
+  /// entries, but not modify them.  "Row-oriented" means that you may
+  /// view all the entries owned by the calling process, in any
+  /// particular row of the matrix that is owned by the calling
+  /// process.
+  ///
+  /// CrsMatrix implements this interface, but also lets you add or
+  /// modify entries of the sparse matrix.  Ifpack2 provides other
+  /// implementations of RowMatrix, which do useful things like
+  /// wrapping an existing matrix to view only certain desired
+  /// entries.
   template <class Scalar,
             class LocalOrdinal = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node = Kokkos::DefaultNode::DefaultNodeType>
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class RowMatrix :
-    virtual public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+    virtual public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
+    public Packable<char, LocalOrdinal> {
   public:
     //! @name Typedefs
     //@{
 
-    //! Same as the \c Scalar typedef of Operator.
+    //! The type of the entries in the sparse matrix.
     typedef Scalar        scalar_type;
-    //! Same as the \c LocalOrdinal typedef of Operator.
+    //! The type of local indices.
     typedef LocalOrdinal  local_ordinal_type;
-    //! Same as the \c GlobalOrdinal typedef of Operator.
+    //! The type of global indices.
     typedef GlobalOrdinal global_ordinal_type;
-    //! Same as the \c Node typedef of Operator.
+    //! The Kokkos Node type.
     typedef Node          node_type;
 
     //@}
@@ -101,16 +123,16 @@ namespace Tpetra {
     //@{
 
     //! The communicator over which this matrix is distributed.
-    virtual const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const = 0;
+    virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const = 0;
 
     //! The Kokkos Node instance.
     virtual Teuchos::RCP<Node> getNode() const = 0;
 
     //! The Map that describes the distribution of rows over processes.
-    virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRowMap() const = 0;
+    virtual Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const = 0;
 
     //! The Map that describes the distribution of columns over processes.
-    virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getColMap() const = 0;
+    virtual Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getColMap() const = 0;
 
     //! The RowGraph associated with this matrix.
     virtual Teuchos::RCP<const RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const = 0;
@@ -424,6 +446,24 @@ namespace Tpetra {
          const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& domainMap=Teuchos::null,
          const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& rangeMap=Teuchos::null,
          const Teuchos::RCP<Teuchos::ParameterList>& params=Teuchos::null) const;
+    //@}
+    //! \name Implementation of Packable interface
+    //@{
+
+    /// \brief Pack this object's data for an Import or Export.
+    /// 
+    /// \warning To be called only by the packAndPrepare method of
+    ///   appropriate classes of DistObject.
+    ///
+    /// Subclasses may override this method to speed up or otherwise
+    /// improve the implementation by exploiting more specific details
+    /// of the subclass.
+    virtual void
+    pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+	  Teuchos::Array<char>& exports,
+	  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+	  size_t& constantNumPackets,
+	  Distributor& distor) const;
     //@}
   }; // class RowMatrix
 } // namespace Tpetra

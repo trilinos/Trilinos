@@ -86,8 +86,16 @@ extern FILE *check_open_file(char *file, char *mode);
  
 #define MAX_IF_NESTING 64
 
-int if_state[MAX_IF_NESTING];
+int if_state[MAX_IF_NESTING] = {0}; /* INITIAL */
+int if_case_run[MAX_IF_NESTING] = {False}; /* Has any if or elseif condition executed */
 int if_lvl = 0;
+int if_skip_level = 0;
+int suppress_nl = 0; /* Used by some constructs to temporarily suppress a newline */
+
+int switch_active = 0; /* Are we in a switch */
+int switch_case_run = 0; /* has there been a case which matched condition run? */
+int switch_skip_to_endcase = 0;
+double switch_condition = 0.0; /* Value specified in "switch(condition)" */
 
 %}
 
@@ -104,319 +112,448 @@ NL    "\n"
 number {D}*\.({D}+)?({E})?
 integer {D}+({E})?
 
-%START PARSING GET_FILENAME IF_SKIP GET_VAR VERBATIM IF_WHILE_SKIP GET_LOOP_VAR LOOP LOOP_SKIP
+%START PARSING GET_FILENAME IF_SKIP GET_VAR VERBATIM IF_WHILE_SKIP GET_LOOP_VAR LOOP LOOP_SKIP END_CASE_SKIP
 
 %%
-<INITIAL>"{VERBATIM(ON)}"   { BEGIN(VERBATIM);  }
-<VERBATIM>"{VERBATIM(OFF)}" { BEGIN(INITIAL);   }
-<VERBATIM>[A-Za-z0-9_: ]* |
-<VERBATIM>.                 { if (echo) ECHO; }
-<VERBATIM>"\n"              { if (echo) ECHO; LINENUM_INC;   }
+<VERBATIM>{
+  "{VERBATIM(OFF)}"   { BEGIN(INITIAL);   }
+  [A-Za-z0-9_: ]* | 
+  .                   { if (echo) ECHO; }
+  "\n"                { if (echo) ECHO; LINENUM_INC; }
+}
 
-<INITIAL>{WS}"{ECHO}" |
-{WS}"{ECHO(ON)}"	    { echo = True;	}
-<INITIAL>{WS}"{NOECHO}" |
-{WS}"{ECHO(OFF)}"	    { echo = False;	}
+<INITIAL>{
+  "{VERBATIM(ON)}"   { BEGIN(VERBATIM);  }
+  {WS}"{ECHO}"   | 
+  {WS}"{ECHO(ON)}"	    { echo = True;	}
+  {WS}"{NOECHO}" | 
+  {WS}"{ECHO(OFF)}"	    { echo = False;	}
 
-<INITIAL>{WS}"{IMMUTABLE(ON)}"	    { state_immutable = True;	}
-<INITIAL>{WS}"{IMMUTABLE(OFF)}"	    { state_immutable = ap_options.immutable; }
+  {WS}"{IMMUTABLE(ON)}"	    { state_immutable = True;	}
+  {WS}"{IMMUTABLE(OFF)}"    { state_immutable = ap_options.immutable; }
 
-<INITIAL>{WS}"{"[Ll]"oop(" { BEGIN(GET_LOOP_VAR); }
+  {WS}"{"[Ll]"oop"{WS}"(" { BEGIN(GET_LOOP_VAR); }
+}
 
-<GET_LOOP_VAR>{number}")".*"\n" |
-<GET_LOOP_VAR>{integer}")}".*"\n" {/* Loop control defined by integer */
-                              char *pt = strchr(yytext, ')');
-			      *pt = '\0';
-			      sscanf (yytext, "%lf", &yylval.val);
-			      ap_file_list[nfile+1].loop_count = (int)yylval.val;
-			      if (ap_file_list[nfile+1].loop_count <= 0)
-				{
-				  BEGIN(LOOP_SKIP);
-				}
-			      else /* Value defined and != 0. */
-				{
-				  temp_f = get_temp_filename();
-				  tmp_file = open_file(temp_f, "w");
-				  loop_lvl++;
-				  BEGIN(LOOP);
-				}
-				 LINENUM_INC;
-			       }
-<GET_LOOP_VAR>.+")}".*"\n"  { /* Loop control defined by variable */
-                              symrec *s;
-			      char *pt = strchr(yytext, ')');
-			      *pt = '\0';
-			      s = getsym(yytext);
+<GET_LOOP_VAR>{
+  {number}")".*"\n" | 
+  {integer}")}".*"\n" {
+    /* Loop control defined by integer */
+    char *pt = strchr(yytext, ')');
+    *pt = '\0';
+    sscanf (yytext, "%lf", &yylval.val);
+    ap_file_list[nfile+1].loop_count = (int)yylval.val;
+    if (ap_file_list[nfile+1].loop_count <= 0)
+      {
+	BEGIN(LOOP_SKIP);
+      }
+    else /* Value defined and != 0. */
+      {
+	temp_f = get_temp_filename();
+	tmp_file = open_file(temp_f, "w");
+	loop_lvl++;
+	BEGIN(LOOP);
+      }
+    LINENUM_INC;
+  }
 
-			      if (s == 0 || (s->type != SVAR && s->type != IMMSVAR && s->value.var == 0.))
-				{
-				  BEGIN(LOOP_SKIP);
-				}
-			      else /* Value defined and != 0. */
-				{
-				  ap_file_list[nfile+1].loop_count = s->value.var;
-				  temp_f = get_temp_filename();
-				  tmp_file = open_file(temp_f, "w");
-				  loop_lvl++;
-				  BEGIN(LOOP);
-				}
-				 LINENUM_INC;
-			       }
-<LOOP>{WS}"{"[Ee]"nd"[Ll]"oop".*"\n" { LINENUM_INC;
-				   if (--loop_lvl == 0)
-				     {
-				       BEGIN(INITIAL);
-				       fclose(tmp_file);
-				       file_pointer[nfile++] = YY_CURRENT_BUFFER;
-				       NEWSTR(temp_f, ap_file_list[nfile].name);
-				       SET_FILE_LIST(nfile, 0, True, -1);
-				       yyin = open_file(temp_f, "r");
-				       yy_switch_to_buffer (
-					 yy_create_buffer( yyin, YY_BUF_SIZE));
-				     }
-				   else
-				     fprintf(tmp_file, "%s", yytext);
-				 }
-<LOOP>{WS}"{"[Ll]"oop(".*"\n"  { loop_lvl++; /* Nested Loop */
-			     fprintf(tmp_file, "%s", yytext);
-			     LINENUM_INC;
-			   }
-<LOOP>.*"\n"		   { fprintf(tmp_file, "%s", yytext);
-			     LINENUM_INC;
-			   }
+  .+")}".*"\n"  {
+    /* Loop control defined by variable */
+    symrec *s;
+    char *pt = strchr(yytext, ')');
+    *pt = '\0';
+    s = getsym(yytext);
+    
+    if (s == 0 || (s->type != SVAR && s->type != IMMSVAR && s->value.var == 0.))
+      {
+	BEGIN(LOOP_SKIP);
+      }
+    else /* Value defined and != 0. */
+      {
+	ap_file_list[nfile+1].loop_count = s->value.var;
+	temp_f = get_temp_filename();
+	tmp_file = open_file(temp_f, "w");
+	loop_lvl++;
+	BEGIN(LOOP);
+      }
+    LINENUM_INC;
+  }
+ } /* End of <GET_LOOP_VAR> start condition block */
+
+<LOOP>{
+  {WS}"{"[Ee]"nd"[Ll]"oop".*"\n" {
+    LINENUM_INC;
+    if (--loop_lvl == 0)
+      {
+	BEGIN(INITIAL);
+	fclose(tmp_file);
+	file_pointer[nfile++] = YY_CURRENT_BUFFER;
+	NEWSTR(temp_f, ap_file_list[nfile].name);
+	SET_FILE_LIST(nfile, 0, True, -1);
+	yyin = open_file(temp_f, "r");
+	yy_switch_to_buffer (
+			     yy_create_buffer( yyin, YY_BUF_SIZE));
+      }
+    else
+      fprintf(tmp_file, "%s", yytext);
+  }
+
+  {WS}"{"[Ll]"oop"{WS}"(".*"\n"  { 
+    loop_lvl++; /* Nested Loop */
+    fprintf(tmp_file, "%s", yytext);
+    LINENUM_INC;
+  }
+
+  .*"\n"  { 
+    fprintf(tmp_file, "%s", yytext);
+    LINENUM_INC;
+  }
+} /* End of <LOOP> start condition block */
 
 
-<LOOP_SKIP>{WS}"{"[Ee]"nd"[Ll]"oop".*"\n" { LINENUM_INC;
-					if (--loop_lvl == 0)
-					  BEGIN(INITIAL);
-				      }
-<LOOP_SKIP>{WS}"{"[Ll]"oop(".*"\n"        { loop_lvl++; /* Nested Loop */
-					LINENUM_INC;
-				      }
-<LOOP_SKIP>.*"\n"		      { LINENUM_INC; }
+<LOOP_SKIP>{
+  /* IF in a loop that has 0 or negative iteration count, then
+   * just need to skip until the end of that loop.  If 
+   * there is a nested loop in the skipped loop body,
+   * detect that so the correct "endloop" is recognized
+   * to turn off the loop skipping
+   */
+  {WS}"{"[Ee]"nd"[Ll]"oop".*"\n" {
+    LINENUM_INC;
+    if (--loop_lvl == 0)
+      BEGIN(INITIAL);
+  }
 
-<IF_SKIP>{WS}"{"[Ii]"fdef("  { if_lvl++; 
+  {WS}"{"[Ll]"oop"{WS}"(".*"\n" {
+    loop_lvl++; /* Nested Loop */
+    LINENUM_INC;
+  }
+
+  .*"\n" {
+    LINENUM_INC; 
+  }
+} /* End of <LOOP_SKIP> start condition block */
+
+
+<END_CASE_SKIP>"{case".*"\n"  {
+  yyless(0);
+  BEGIN(INITIAL);
+  switch_skip_to_endcase = 0;
+}
+
+<INITIAL,END_CASE_SKIP>"{default}".*"\n"     {
+  LINENUM_INC;
+  if (!switch_active) {
+    yyerror("default statement found outside switch statement.");
+  }
+
+  if (!switch_case_run) {
+    switch_case_run = 1;
+    BEGIN(INITIAL);
+    switch_skip_to_endcase = 0;
     if (ap_options.debugging) 
-	fprintf (stderr, "DEBUG IF: 'ifdef'  at level = %d at line %d\n",
-		 if_lvl, ap_file_list[nfile].lineno);
-			   if (if_lvl >= MAX_IF_NESTING)
-			     yyerror("Too many nested if statements");
-			   if_state[if_lvl] = IF_WHILE_SKIP; }
-<IF_SKIP>{WS}"{"[Ii]"fndef(" { if_lvl++; 
+      fprintf (stderr, "DEBUG SWITCH: 'default' code executing at line %d\n",
+	       ap_file_list[nfile].lineno);
+  } 
+  else {
     if (ap_options.debugging) 
-	fprintf (stderr, "DEBUG IF: 'ifndef' at level = %d at line %d\n",
-		 if_lvl, ap_file_list[nfile].lineno);
-			   if (if_lvl >= MAX_IF_NESTING)
-			     yyerror("Too many nested if statements");
-			   if_state[if_lvl] = IF_WHILE_SKIP; }
-<INITIAL>{WS}"{"[Ii]"fdef("  { if_lvl++; 
-    if (ap_options.debugging) 
-	fprintf (stderr, "DEBUG IF: 'ifdef'  at level = %d at line %d\n",
-		 if_lvl, ap_file_list[nfile].lineno);
-			   if (if_lvl >= MAX_IF_NESTING)
-			     yyerror("Too many nested if statements");
-			   ifdef = 1; BEGIN(GET_VAR); }
-<INITIAL>{WS}"{"[Ii]"fndef(" { if_lvl++; 
-    if (ap_options.debugging)
-	fprintf (stderr, "DEBUG IF: 'ifndef' at level = %d at line %d\n",
-		 if_lvl, ap_file_list[nfile].lineno);
-			   if (if_lvl >= MAX_IF_NESTING)
-			     yyerror("Too many nested if statements");
-			   ifdef = 0; BEGIN(GET_VAR); }
+      fprintf (stderr, "DEBUG SWITCH: 'default' not executing since a previous case already ran at line %d\n",
+	       ap_file_list[nfile].lineno);
+    
+    /* Need to skip all code until end of case */
+    BEGIN(END_CASE_SKIP);
+  }
+}
 
-<GET_VAR>.+")}".*"\n"     { symrec *s;
-			      char *pt = strchr(yytext, ')');
-			      *pt = '\0';
-			      s = getsym(yytext);
-			      if (s == 0 || (s->type != SVAR && s->type != IMMSVAR && s->value.var == 0.))
-				{
-				  if (ifdef == 1) {
-				    BEGIN(IF_SKIP);
-				    if_state[if_lvl] = IF_SKIP;
-				  }
-				  else {
-				    BEGIN(INITIAL);
-				    if_state[if_lvl] = INITIAL;
-				  }
-				}
-			      else /* Value defined and != 0. */
-				{
-				  if (ifdef == 1) {
-				    BEGIN(INITIAL);
-				    if_state[if_lvl] = INITIAL;
-				  }
-				  else {
-				    BEGIN(IF_SKIP);
-				    if_state[if_lvl] = IF_SKIP;
-				  }
-				}
-			      LINENUM_INC;
-			    }
+<END_CASE_SKIP>.*"\n" { LINENUM_INC; }
 
-{WS}"{"[Ee]"lse}".*"\n"     { LINENUM_INC; 
+<INITIAL>{WS}"{endswitch}".*"\n"        {
+  LINENUM_INC;
+  if (!switch_active) {
+    yyerror("endswitch statement found without matching switch.");
+  }
+  switch_active = 0;
+}
+
+<IF_WHILE_SKIP>{
+  /* If an if was found while skipping, then eat
+   * that entire if block until endif
+   * found since there is no way that
+   * any of the code in that if block could be executed.
+   * Make sure to handle multiple levels of skipped ifs...
+   *
+   * NOTE: if_lvl was not incremented, so don't need to decrement when
+   *       endif found.
+   */
+  {WS}"{"[Ee]"ndif}".*"\n"     { 
+    LINENUM_INC;  
+    if (--if_skip_level == 0)
+      BEGIN(IF_SKIP);
+  }
+
+  {WS}"{"[Ii]"fdef"{WS}"(".*"\n"  { 
+    LINENUM_INC;  
+    if_skip_level++;
+  }
+
+  {WS}"{if"{WS}"(".*"\n"  { 
+    LINENUM_INC;  
+    if_skip_level++;
+  }
+
+  {WS}"{"[Ii]"fndef"{WS}"(".*"\n" {
+    LINENUM_INC;  
+    if_skip_level++;
+  }
+
+  .*"\n" {
+    LINENUM_INC;
+  }
+}
+
+<IF_SKIP>{
+  /* IF an if, ifdef, or ifndef found while skipping, then
+   * skip the entire block up and including the endif.
+   * The (IF_WHILE_SKIP) start condition handles this skipping.
+   */
+  {WS}"{"[Ii]"fdef"{WS}"("  { 
     if (ap_options.debugging) 
-	fprintf (stderr, "DEBUG IF: 'else'   at level = %d at line %d\n",
-		 if_lvl, ap_file_list[nfile].lineno);
-			    if (if_state[if_lvl] == IF_SKIP) 
-			      BEGIN(INITIAL);
-			    if (if_state[if_lvl] == INITIAL)
-			      BEGIN(IF_SKIP);
-			    /* If neither is true, this is a nested 
-			       if that should be skipped */
-			  }
-{WS}"{"[Ee]"ndif}".*"\n"     { if (if_state[if_lvl] == IF_SKIP ||
-			       if_state[if_lvl] == INITIAL)
-			     BEGIN(INITIAL);
-			   /* If neither is true, this is a nested 
-			      if that should be skipped */
+      fprintf (stderr, "DEBUG IF: 'ifdef'  found while skipping at line %d\n",
+	       ap_file_list[nfile].lineno);
+    if_skip_level = 1;
+    BEGIN(IF_WHILE_SKIP);
+  }
+
+  {WS}"{if"{WS}"("  { 
     if (ap_options.debugging) 
-	printf ("DEBUG IF: 'endif'  at level = %d at line %d\n",
-		if_lvl, ap_file_list[nfile].lineno);
-			   if (--if_lvl < 0) {
-			     if_lvl = 0;
-			     yyerror("Improperly Nested ifdef/ifndef statements");
-			   }
-			   LINENUM_INC;  
-			   /* Ignore endif if not skipping */ }
+      fprintf (stderr, "DEBUG IF: 'ifdef'  found while skipping at line %d\n",
+	       ap_file_list[nfile].lineno);
+    if_skip_level = 1;
+    BEGIN(IF_WHILE_SKIP);
+  }
+
+  {WS}"{"[Ii]"fndef"{WS}"(" {
+    if (ap_options.debugging) 
+      fprintf (stderr, "DEBUG IF: 'ifndef'  found while skipping at line %d\n",
+	       ap_file_list[nfile].lineno);
+    if_skip_level = 1;
+    BEGIN(IF_WHILE_SKIP);
+  }
+}
+
+{WS}"{"[Ee]"lse}".*"\n"  { 
+  LINENUM_INC; 
+  if (ap_options.debugging) 
+    fprintf (stderr, "DEBUG IF: 'else'   at level = %d at line %d\n",
+	     if_lvl, ap_file_list[nfile].lineno);
+  if (if_state[if_lvl] == IF_SKIP) {
+    if (!if_case_run[if_lvl]) {
+      BEGIN(INITIAL);
+      if_state[if_lvl] = INITIAL;
+      if_case_run[if_lvl] = True;
+    } else {
+      BEGIN(IF_SKIP);
+      if_state[if_lvl] = IF_SKIP;
+    }
+  }
+  else if (if_state[if_lvl] == INITIAL) {
+    BEGIN(IF_SKIP);
+    if_state[if_lvl] = IF_SKIP;
+  }
+  
+  /* If neither is true, this is a nested 
+     if that should be skipped */
+}
+
+<IF_SKIP>{WS}"{"{WS}"elseif".*"\n"  { 
+  /* If any previous 'block' of this if has executed, then
+   * just skip this block; otherwise see if condition is
+   * true and execute this block
+   */
+  if (ap_options.debugging) 
+    fprintf (stderr, "DEBUG IF: 'elseif'   at level = %d at line %d\n",
+	     if_lvl, ap_file_list[nfile].lineno);
+
+  if (if_case_run[if_lvl]) { /* A previous else/elseif has run */
+    LINENUM_INC; 
+    /* Already in IF_SKIP, so don't need to change state */
+  } else {
+    /* Need to check the elseif condition; push back and parse */
+    yyless(0);
+    BEGIN(INITIAL);
+    if_state[if_lvl] = INITIAL;
+  }
+}
+
+{WS}"{"[Ee]"ndif}".*"\n"     { 
+  if (if_state[if_lvl] == IF_SKIP || if_state[if_lvl] == INITIAL)
+    BEGIN(INITIAL);
+  /* If neither is true, this is a nested if that should be skipped */
+  if (ap_options.debugging) 
+    printf ("DEBUG IF: 'endif'  at level = %d at line %d\n",
+	    if_lvl, ap_file_list[nfile].lineno);
+  if (--if_lvl < 0) {
+    if_lvl = 0;
+    yyerror("Improperly Nested ifdef/ifndef statements");
+  }
+  LINENUM_INC;  
+  /* Ignore endif if not skipping */
+}
+
 <IF_SKIP>[A-Za-z0-9_ ]* |
 <IF_SKIP>\\\{           |
 <IF_SKIP>\\\}           |
 <IF_SKIP>.                 { ; }
 <IF_SKIP>"\n"              { LINENUM_INC; }
 
-<INITIAL>{WS}"{"[Ii]"nclude("           { BEGIN(GET_FILENAME); 
+<INITIAL>{WS}"{"[Ii]"nclude"{WS}"("           { BEGIN(GET_FILENAME); 
                              file_must_exist = True; }
-<INITIAL>{WS}"{"[Cc]"include("          { BEGIN(GET_FILENAME);
+<INITIAL>{WS}"{"[Cc]"include"{WS}"("          { BEGIN(GET_FILENAME);
                              file_must_exist = !True; }
-<GET_FILENAME>.+")"{WS}"}"{NL}* { BEGIN(INITIAL); 
-			     {
-			       symrec *s;
-			       int quoted = False;
-			       FILE *yytmp;
-			       char *pt = strchr(yytext, ')');
-			       *pt = '\0';
-			       /* Check to see if surrounded by double quote */ 
-			       if ((pt = strchr(yytext, '"')) != NULL) {
-				 yytext++;
-				 quoted = True;
-			       }
-			       if ((pt = strrchr(yytext, '"')) != NULL) {
-				 *pt = '\0';
-				 quoted = True;
-			       }
+<GET_FILENAME>.+")"{WS}"}"{NL}* {
+  BEGIN(INITIAL); 
+  {
+    symrec *s;
+    int quoted = False;
+    FILE *yytmp;
+    char *pt = strchr(yytext, ')');
+    *pt = '\0';
+    /* Check to see if surrounded by double quote */ 
+    if ((pt = strchr(yytext, '"')) != NULL) {
+      yytext++;
+      quoted = True;
+    }
+    if ((pt = strrchr(yytext, '"')) != NULL) {
+      *pt = '\0';
+      quoted = True;
+    }
+    
+    if (quoted == False) {
+      /* See if this is an aprepro variable referring to a name */
+      s = getsym(yytext);
+      if (s == 0 || (s->type != SVAR && s->type != IMMSVAR)) {
+	pt = yytext;
+      } else {
+	pt = s->value.svar;
+      }
+    } else {
+      pt = yytext;
+    }
+    
+    if (file_must_exist)
+      yytmp = open_file(pt, "r");
+    else
+      yytmp = check_open_file(pt, "r");
+    if (yytmp != NULL) {
+      yyin = yytmp;
+      if (ap_options.info_msg == True) {
+	fprintf(stderr,
+		"Aprepro: INFO: Included File: '%s' (%s, line %d)\n", pt,
+		ap_file_list[nfile].name,
+		ap_file_list[nfile].lineno);
+      }
+      if (nfile+1 >= MAX_INCLUDE_DEPTH) {
+	yyerror("Too Many Includes");
+	exit(EXIT_FAILURE);
+      }
+      file_pointer[nfile++] = YY_CURRENT_BUFFER;
+      NEWSTR(pt, ap_file_list[nfile].name);
+      SET_FILE_LIST(nfile, 0, False, 0);
+      yy_switch_to_buffer (
+			   yy_create_buffer( yyin, YY_BUF_SIZE));
+    } else {
+      if (ap_options.warning_msg == True) {
+	fprintf(stderr,
+		"Aprepro: WARN: Can't open '%s'\n",
+		yytext);
+      }
+    }
+    LINENUM_INC;
+  }
+}
 
-			       if (quoted == False) {
-				 /* See if this is an aprepro variable referring to a name */
-				 s = getsym(yytext);
-				 if (s == 0 || (s->type != SVAR && s->type != IMMSVAR)) {
-				   pt = yytext;
-				 } else {
-				   pt = s->value.svar;
-				 }
-			       } else {
-				 pt = yytext;
-			       }
-			       
-			       if (file_must_exist)
-				 yytmp = open_file(pt, "r");
-			       else
-				 yytmp = check_open_file(pt, "r");
-			       if (yytmp != NULL) {
-				 yyin = yytmp;
-				 if (ap_options.info_msg == True) {
-				   fprintf(stderr,
-	         "Aprepro: INFO: Included File: '%s' (%s, line %d)\n", pt,
-					   ap_file_list[nfile].name,
-					   ap_file_list[nfile].lineno);
-				 }
-				 if (nfile+1 >= MAX_INCLUDE_DEPTH)
-				   {
-				     yyerror("Too Many Includes");
-				     exit(EXIT_FAILURE);
-				   }
-				 file_pointer[nfile++] = YY_CURRENT_BUFFER;
-				 NEWSTR(pt, ap_file_list[nfile].name);
-				 SET_FILE_LIST(nfile, 0, False, 0);
-				 yy_switch_to_buffer (
-				    yy_create_buffer( yyin, YY_BUF_SIZE));
-			       } else {
-				 if (ap_options.warning_msg == True) {
-				   fprintf(stderr,
-					   "Aprepro: WARN: Can't open '%s'\n",
-					   yytext);
-				 }
-			       }
-			       LINENUM_INC;
-			     }
-			   }
+<PARSING>{
+  {integer} |        
+  {number} {
+    sscanf (yytext, "%lf", &yylval.val);
+    return(NUM); 
+  }
 
+  {WS}              ; /* Empty Rule */
 
-<PARSING>{integer}  |        
-<PARSING>{number}	   { sscanf (yytext, "%lf", &yylval.val);
-                             return(NUM); }
+  {id} {
+    symrec *s;
+    s = getsym(yytext);
+    if (s == 0)
+      s = putsym (yytext, UNDVAR, 0);
+    yylval.tptr = s;
+    return(s->type);
+  }
 
-<PARSING>{WS}              ; /* Empty Rule */
+  "="               return('=');
+  "+="              return(EQ_PLUS);
+  "-="              return(EQ_MINUS);
+  "*="              return(EQ_TIME);
+  "/="              return(EQ_DIV);
+  "^="              return(EQ_POW);
+  "**="             return(EQ_POW);
+  "++"              return(INC);
+  "--"              return(DEC);
+  "+"               return('+');
+  "-"               return('-');
+  "*"               return('*');
+  "~"               return('*');         /* ~ is same as multiply */
+  "//"              return(CONCAT);      /* String concatenation */
+  "/"               return('/');
+  "%"               return('%');
+  "^"               return(POW);
+  "**"              return(POW);
+  "\n"              LINENUM_INC;
+  "("               return('(');
+  ")"               return(')');
+  ","               return(',');
+  ";"               return(';');
+  ":"               return(':');
+  "?"               return('?');
+  "<"               return('<');
+  ">"               return('>');
+  "<="              return(LE);
+  ">="              return(GE);
+  "=="              return(EQ);
+  "!="              return(NE);
+  "&&"              return(LAND);
+  "||"              return(LOR);
+  "!"               return(NOT);
+  "["               return('[');
+  "]"               return(']');
+  {qstring} {
+    char *pt = strrchr(yytext, '"');
+    *pt = '\0';
+    NEWSTR(yytext+1, yylval.string);
+    return QSTRING; 
+  }
+  
+  {mlstring} {
+    char *pt = strrchr(yytext, '\'');
+    *pt = '\0';
+    NEWSTR(yytext+1, yylval.string);
+    return QSTRING; 
+  }
 
-<PARSING>{id}              { symrec *s;
-			     s = getsym(yytext);
-			     if (s == 0)
-			       s = putsym (yytext, UNDVAR, 0);
-			     yylval.tptr = s;
-			     return(s->type);
-			   }
-<PARSING>"="               return('=');
-<PARSING>"+="              return(EQ_PLUS);
-<PARSING>"-="              return(EQ_MINUS);
-<PARSING>"*="              return(EQ_TIME);
-<PARSING>"/="              return(EQ_DIV);
-<PARSING>"^="              return(EQ_POW);
-<PARSING>"**="             return(EQ_POW);
-<PARSING>"++"              return(INC);
-<PARSING>"--"              return(DEC);
-<PARSING>"+"               return('+');
-<PARSING>"-"               return('-');
-<PARSING>"*"               return('*');
-<PARSING>"~"		   return('*');		/* ~ is same as multiply */
-<PARSING>"//"		   return(CONCAT);	/* String concatenation */
-<PARSING>"/"               return('/');
-<PARSING>"%"               return('%');
-<PARSING>"^"               return(POW);
-<PARSING>"**"              return(POW);
-<PARSING>"\n"              LINENUM_INC;
-<PARSING>"("               return('(');
-<PARSING>")"               return(')');
-<PARSING>","               return(',');
-<PARSING>";"               return(';');
-<PARSING>":"               return(':');
-<PARSING>"?"               return('?');
-<PARSING>"<"               return('<');
-<PARSING>">"               return('>');
-<PARSING>"<="              return(LE);
-<PARSING>">="              return(GE);
-<PARSING>"=="              return(EQ);
-<PARSING>"!="              return(NE);
-<PARSING>"&&"              return(LAND);
-<PARSING>"||"              return(LOR);
-<PARSING>"!"               return(NOT);
-<PARSING>"["               return('[');
-<PARSING>"]"               return(']');
-<PARSING>{qstring}	   { char *pt = strrchr(yytext, '"');
-			     *pt = '\0';
-                             NEWSTR(yytext+1, yylval.string);
-			     return QSTRING; }
-
-<PARSING>{mlstring}	   { char *pt = strrchr(yytext, '\'');
-			     *pt = '\0';
-                             NEWSTR(yytext+1, yylval.string);
-			     return QSTRING; }
-
-<PARSING>"}"               { BEGIN(INITIAL); return('}'); }
+  "}" {
+    if (switch_skip_to_endcase)
+      BEGIN(END_CASE_SKIP);
+    else
+      BEGIN(if_state[if_lvl]);
+    return('}');
+  }
+} /* End of <PARSING> start condition block */
 
 \\\{                      { if (echo) fwrite( "{", 1, 1, yyout ); }
 
 \\\}                      { if (echo) fwrite( "}", 1, 1, yyout ); }
 
-"{"                        { BEGIN(PARSING); return('{');  }
+"{"                        { BEGIN(PARSING); return('{'); }
 
 [Ee][Xx][Ii][Tt] |
 [Qq][Uu][Ii][Tt]           { if (ap_options.end_on_exit)
@@ -435,7 +572,7 @@ integer {D}+({E})?
 {id} |
 .                          { if (echo) ECHO; }
 
-"\n"                       { if (echo) ECHO; LINENUM_INC; }
+"\n"                       { if (echo && !suppress_nl) ECHO; suppress_nl = 0; LINENUM_INC; }
 
 %%
 int yywrap(void)
@@ -530,12 +667,13 @@ void immutable_modify(symrec *var)
 	   var->name, ap_file_list[nfile].name, ap_file_list[nfile].lineno + 1);
 }
 
-void redefined_warning (char *var)
+void redefined_warning (symrec *var)
 {
-  if (*var != '_' && ap_options.warning_msg == True)
+  if (*var->name != '_' && ap_options.warning_msg == True)
     fprintf (stderr,
-             "Aprepro: WARN: Variable '%s' redefined (%s, line %d)\n",
-             var, ap_file_list[nfile].name, ap_file_list[nfile].lineno + 1);
+             "Aprepro: WARN: %s Variable '%s' redefined (%s, line %d)\n",
+	     var->isInternal ? "Pre-defined" : "User-defined",
+             var->name, ap_file_list[nfile].name, ap_file_list[nfile].lineno + 1);
 }
 
 void warning (char *string)
@@ -561,7 +699,7 @@ char *do_execute (char string[])
    *       therefore, we read it ourselves using input(), then we push:
    *       '}{' + our string + '}' 
    */
-  while ((i = input ()) != '}' && i != EOF)
+  while ((i = input()) != '}' && i != EOF)
     ;				/* eat up values */
   if (i == EOF) {
     yyerror ("End-of-file in execute() command");
@@ -621,6 +759,100 @@ char *do_rescan (char *string)
     free(new_string);
   }
   return (NULL);
+}
+
+char *do_switch(double x)
+{
+  /* save that we are in a switch statement */
+  /* save the value of 'x' for use in deciding which case to execute */
+  if (switch_active) {
+    yyerror("switch statement found while switch already active. Nested switch not supported.");
+  }
+
+  switch_active = 1;
+  switch_case_run = 0;
+  switch_condition = x;
+  switch_skip_to_endcase = 1; /* Skip everything until first case */
+  suppress_nl = 1;
+
+  if (ap_options.debugging) 
+    fprintf (stderr, "DEBUG SWITCH: 'switch' with condition = %g at line %d\n",
+	     switch_condition, ap_file_list[nfile].lineno);
+
+  return(NULL);
+}
+
+char *do_case(double x)
+{
+  /* make sure we are in a switch statement */
+  /* if 'x' matches the value saved in the switch statement 
+   * and no other case has been executed, then
+   * execute the code in the case and set a flag indicating
+   * the switch has run;
+   * if 'x' does not match the value saved, then skip to endcase
+   */
+  suppress_nl = 1;
+
+  if (!switch_active) {
+    yyerror("case statement found outside switch statement.");
+  }
+
+  if (!switch_case_run && x == switch_condition) {
+    switch_case_run = 1;
+    if (ap_options.debugging) 
+      fprintf (stderr, "DEBUG SWITCH: 'case' condition = %g matches switch condition = %g at line %d\n",
+	       x, switch_condition, ap_file_list[nfile].lineno);
+  } 
+  else {
+    if (ap_options.debugging) 
+      fprintf (stderr, "DEBUG SWITCH: 'case' condition = %g does not match switch condition = %g (or case already matched) at line %d\n",
+	       x, switch_condition, ap_file_list[nfile].lineno);
+
+    /* Need to skip all code until end of case */
+    switch_skip_to_endcase = 1;
+  }
+  return(NULL);
+}
+
+char *do_if(double x)
+{
+  if_lvl++;
+  if (if_lvl >= MAX_IF_NESTING)
+    yyerror("Too many nested if statements");
+
+  if (x == 0) {
+    if_state[if_lvl] = IF_SKIP;
+    if_case_run[if_lvl] = False;
+  } else {
+    suppress_nl = 1;
+    if_state[if_lvl] = INITIAL;
+    if_case_run[if_lvl] = True;
+  }
+  if (ap_options.debugging) 
+    fprintf(stderr, "DEBUG IF: If level %d %d\n", if_lvl, if_state[if_lvl]); 
+  return(NULL);
+}
+
+char *do_elseif(double x)
+{
+  /* Check if in an if */
+  /* See if any of the 'cases' in the if have executed */
+
+  if (x == 0 || if_case_run[if_lvl]) {
+    if_state[if_lvl] = IF_SKIP;
+  } else {
+    suppress_nl = 1;
+    if_state[if_lvl] = INITIAL;
+    if_case_run[if_lvl] = True;
+  }
+  if (ap_options.debugging) 
+    fprintf(stderr, "DEBUG IF: elseif at level %d %d\n", if_lvl, if_state[if_lvl]); 
+  return(NULL);
+}
+
+char *do_notif(double x)
+{
+  return do_if(x == 0);
 }
 
 char *do_error (char *error_string)

@@ -8,28 +8,28 @@
 #include <cmath>
 
 #ifdef _OPENMP
-#include <KokkosArray_OpenMP.hpp>
+#include <Kokkos_OpenMP.hpp>
 #else
-#include <KokkosArray_Host.hpp>
+#include <Kokkos_Host.hpp>
 #endif
-#include <KokkosArray_Cuda.hpp>
-#include <KokkosArray_MultiVector.hpp>
-#include <KokkosArray_CRSMatrix.hpp>
+#include <Kokkos_Cuda.hpp>
+#include <Kokkos_MultiVector.hpp>
+#include <Kokkos_CRSMatrix.hpp>
 #ifndef DEVICE
 #define DEVICE 1
 #endif
 #if DEVICE==1
 #ifdef _OPENMP
-typedef KokkosArray::OpenMP device_type;
+typedef Kokkos::OpenMP device_type;
 #else
-typedef KokkosArray::Host device_type;
+typedef Kokkos::Host device_type;
 #endif
-#define KokkosArrayHost(a) a
-#define KokkosArrayCUDA(a)
+#define KokkosHost(a) a
+#define KokkosCUDA(a)
 #else
-typedef KokkosArray::Cuda device_type;
-#define KokkosArrayHost(a)
-#define KokkosArrayCUDA(a) a
+typedef Kokkos::Cuda device_type;
+#define KokkosHost(a)
+#define KokkosCUDA(a) a
 #endif
 
 #define EPSILON 1e-5;
@@ -88,11 +88,11 @@ int test_crs_matrix(test_data &test_sum, Matrix A, RangeVector y, DomainVector x
 {
 	typedef Matrix matrix_type ;
 	typedef DomainVector mv_type;
-	typedef typename KokkosArray::MultiVectorDynamic<Scalar,device_type>::random_read_type mv_random_read_type;
+	typedef typename Kokkos::MultiVectorDynamic<Scalar,device_type>::random_read_type mv_random_read_type;
 	typedef typename mv_type::HostMirror h_mv_type;
-    typename matrix_type::CrsArrayType::HostMirror h_graph = KokkosArray::create_mirror(A.graph);
-    typename matrix_type::values_type::HostMirror h_values = KokkosArray::create_mirror_view(A.values);
-    typedef KokkosArray::View<Scalar*,device_type> vector;
+    typename matrix_type::CrsArrayType::HostMirror h_graph = Kokkos::create_mirror(A.graph);
+    typename matrix_type::values_type::HostMirror h_values = Kokkos::create_mirror_view(A.values);
+    typedef Kokkos::View<Scalar*,device_type> vector;
     typedef typename vector::HostMirror h_vector;
 
     int numVecs = x.dimension_1();
@@ -101,9 +101,9 @@ int test_crs_matrix(test_data &test_sum, Matrix A, RangeVector y, DomainVector x
 
     bool print_report_always = test_sum.print_report;
     vector a("a",numVecs);
-    h_vector h_a = KokkosArray::create_mirror_view(a);
+    h_vector h_a = Kokkos::create_mirror_view(a);
     vector b("b",numVecs);
-    h_vector h_b = KokkosArray::create_mirror_view(b);
+    h_vector h_b = Kokkos::create_mirror_view(b);
 
     for(int k=0;k<numVecs;k++){
 	  h_a(k) = (Scalar) (1.0*(rand()%40)-20.);
@@ -141,18 +141,18 @@ int test_crs_matrix(test_data &test_sum, Matrix A, RangeVector y, DomainVector x
 	}
 
 
-	KokkosArray::deep_copy(x,h_x);
-	KokkosArray::deep_copy(y,h_y);
-	KokkosArray::deep_copy(A.graph.entries,h_graph.entries);
-	KokkosArray::deep_copy(A.values,h_values);
-	KokkosArray::deep_copy(a,h_a);
-	KokkosArray::deep_copy(b,h_b);
+	Kokkos::deep_copy(x,h_x);
+	Kokkos::deep_copy(y,h_y);
+	Kokkos::deep_copy(A.graph.entries,h_graph.entries);
+	Kokkos::deep_copy(A.values,h_values);
+	Kokkos::deep_copy(a,h_a);
+	Kokkos::deep_copy(b,h_b);
 
 	if(vector_scalar)
-	  KokkosArray::MV_Multiply(b,y,a,A,x);
+	  Kokkos::MV_Multiply(b,y,a,A,x);
 	else
-	  KokkosArray::MV_Multiply(s_b,y,s_a,A,x);
-	KokkosArray::deep_copy(h_y,y);
+	  Kokkos::MV_Multiply(s_b,y,s_a,A,x);
+	Kokkos::deep_copy(h_y,y);
 	Scalar* error = new Scalar[numVecs];
 	Scalar* sum = new Scalar[numVecs];
 	for(int k = 0; k<numVecs; k++)
@@ -197,9 +197,9 @@ int test_crs_matrix(test_data &test_sum, Matrix A, RangeVector y, DomainVector x
 
 template<typename Scalar>
 int test_crs_matrix_test(test_data &test_sum, int numRows, int numCols, int nnz, int numVecs, int test, const char* typestring) {
-	typedef KokkosArray::CrsMatrix<Scalar,int,device_type> matrix_type ;
-	typedef typename KokkosArray::MultiVectorDynamic<Scalar,device_type>::type mv_type;
-	typedef typename KokkosArray::MultiVectorDynamic<Scalar,device_type>::random_read_type mv_random_read_type;
+	typedef Kokkos::CrsMatrix<Scalar,int,device_type> matrix_type ;
+	typedef typename Kokkos::MultiVectorDynamic<Scalar,device_type>::type mv_type;
+	typedef typename Kokkos::MultiVectorDynamic<Scalar,device_type>::random_read_type mv_random_read_type;
 	typedef typename mv_type::HostMirror h_mv_type;
 
 	Scalar* val = NULL;
@@ -213,9 +213,9 @@ int test_crs_matrix_test(test_data &test_sum, int numRows, int numCols, int nnz,
 	mv_type x("X",numCols,numVecs);
 	mv_random_read_type t_x(x);
 	mv_type y("Y",numRows,numVecs);
-	h_mv_type h_x = KokkosArray::create_mirror_view(x);
-	h_mv_type h_y = KokkosArray::create_mirror_view(y);
-	h_mv_type h_y_compare = KokkosArray::create_mirror(y);
+	h_mv_type h_x = Kokkos::create_mirror_view(x);
+	h_mv_type h_y = Kokkos::create_mirror_view(y);
+	h_mv_type h_y_compare = Kokkos::create_mirror(y);
 
 	int num_errors = 0;
 	if(test==-1) {
@@ -274,17 +274,17 @@ int main(int argc, char **argv)
  }
 
 
- KokkosArrayCUDA(
-   KokkosArray::Cuda::SelectDevice select_device(device);
-   KokkosArray::Cuda::initialize( select_device );
+ KokkosCUDA(
+   Kokkos::Cuda::SelectDevice select_device(device);
+   Kokkos::Cuda::initialize( select_device );
  )
 
 #ifdef _OPENMP
    omp_set_num_threads(numa*threads);
-   KokkosArray::OpenMP::initialize( numa);
+   Kokkos::OpenMP::initialize( numa);
 #pragma message "Compile OpenMP"
 #else
-   KokkosArray::Host::initialize( numa , threads );
+   Kokkos::Host::initialize( numa , threads );
 #pragma message "Compile PThreads"
 #endif
 
@@ -311,11 +311,11 @@ int main(int argc, char **argv)
    printf("Kokkos::MatVec Test: Failed %i of %i tests\n",test_sum.num_errors,test_sum.num_tests);
 
 
- KokkosArrayCUDA(
+ KokkosCUDA(
 #ifdef _OPENMP
- KokkosArray::OpenMP::finalize();
+ Kokkos::OpenMP::finalize();
 #else
- KokkosArray::Host::finalize();
+ Kokkos::Host::finalize();
 #endif
  )
  device_type::finalize(  );

@@ -59,7 +59,6 @@
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Version.hpp"
-#include "MueLu_Needs.hpp"
 
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_SaPFactory.hpp"

@@ -49,10 +49,10 @@
 
 // cusp doesn't currently support mixed precision, but maybe it will one day...
 #define INSTANTIATE_CUSP_ORDINAL_SCALAR(OFFSET,ORDINAL,SCALARA,SCALARX,SCALARY)                       \
-  template void Kokkos::Cuspdetails::cuspCrsMultiply<OFFSET,ORDINAL,SCALARA,SCALARX,SCALARY>          \
+  template void KokkosClassic::Cuspdetails::cuspCrsMultiply<OFFSET,ORDINAL,SCALARA,SCALARX,SCALARY>          \
                        ( ORDINAL, ORDINAL, ORDINAL, const OFFSET *, const ORDINAL *, const SCALARA *, \
                          ORDINAL, const SCALARX *, ORDINAL, SCALARY *, ORDINAL );                     \
-  template void Kokkos::Cuspdetails::cuspCrsTranspose<OFFSET,ORDINAL,SCALARA>(ORDINAL, ORDINAL, ORDINAL, \
+  template void KokkosClassic::Cuspdetails::cuspCrsTranspose<OFFSET,ORDINAL,SCALARA>(ORDINAL, ORDINAL, ORDINAL, \
                         const OFFSET *, const ORDINAL *, const SCALARA *,                                \
                         OFFSET *, ORDINAL *, SCALARA *);
 

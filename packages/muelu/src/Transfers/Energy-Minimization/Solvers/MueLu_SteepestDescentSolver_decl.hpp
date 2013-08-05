@@ -63,7 +63,7 @@ namespace MueLu {
     @brief Implements steepest descent algorithm for energy-minimization
     */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class SteepestDescentSolver : public SolverBase<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> {
 #undef MUELU_STEEPESTDESCENTSOLVER_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -84,7 +84,7 @@ namespace MueLu {
     //@{
 
     //! Iterate
-    void Iterate(const Matrix& A, const Constraint& C, const Matrix& P0, const MultiVector& B, RCP<Matrix>& P) const;
+    void Iterate(const Matrix& A, const Constraint& C, const Matrix& P0, RCP<Matrix>& P) const;
 
     //@}
 

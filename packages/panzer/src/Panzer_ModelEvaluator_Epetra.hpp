@@ -246,11 +246,21 @@ namespace panzer {
       */
     void evalModel_basic_dgdx(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArgs & outArgs) const;
 
+    /** handles evaluation of residual derivatives dfdp
+      *
+      * \note This method should (basically) be a no-op if <code>required_basic_dfdp(outArgs)==false</code>.
+      *       However, for efficiency this is not checked.
+      */
+    void evalModel_basic_dfdp(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArgs & outArgs) const;
+
     //! Are their required responses in the out args? g and DgDx
     bool required_basic_g(const OutArgs & outArgs) const;
 
     //! Are their required responses in the out args? DgDx 
     bool required_basic_dgdx(const OutArgs & outArgs) const;
+
+    //! Are derivatives of the residual with respect to the parameters in the out args? DfDp 
+    bool required_basic_dfdp(const OutArgs & outArgs) const;
 
     #ifdef HAVE_STOKHOS
        //! Are their required SG responses in the out args? sg

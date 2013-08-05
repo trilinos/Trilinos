@@ -61,7 +61,7 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> piroPa
   Teuchos::ParameterList& noxParams = piroParams->sublist("NOX");
   Teuchos::ParameterList& printParams = noxParams.sublist("Printing");
 
-  string jacobianSource = piroParams->get("Jacobian Operator", "Have Jacobian");
+  std::string jacobianSource = piroParams->get("Jacobian Operator", "Have Jacobian");
   bool leanMatrixFree = piroParams->get("Lean Matrix Free",false);
 
   Teuchos::ParameterList& noxstratlsParams = noxParams.
@@ -310,11 +310,11 @@ void Piro::Epetra::LOCASolver::evalModel( const InArgs& inArgs,
 {
   // Parse InArgs
   Teuchos::RCP<const Epetra_Vector> p_in = inArgs.get_p(0);
-  if (!p_in.get()) cout << "ERROR: Piro::Epetra::LOCASolver requires p as inargs" << endl;
+  if (!p_in.get()) std::cout << "ERROR: Piro::Epetra::LOCASolver requires p as inargs" << std::endl;
   int numParameters = p_in->GlobalLength();
 
   for (int i=0; i< numParameters; i++) pVector->setValue(i, (*p_in)[i]);
-  utils.out() << "eval pVector   " << std::setprecision(10) << *pVector << endl;
+  utils.out() << "eval pVector   " << std::setprecision(10) << *pVector << std::endl;
   interface->setParameters(*pVector);
 
   // Solve
@@ -322,11 +322,11 @@ void Piro::Epetra::LOCASolver::evalModel( const InArgs& inArgs,
   LOCA::Abstract::Iterator::IteratorStatus status = stepper->run();
 
   if (status ==  LOCA::Abstract::Iterator::Finished) 
-    utils.out() << "Continuation Stepper Finished" << endl;
+    utils.out() << "Continuation Stepper Finished" << std::endl;
   else if (status ==  LOCA::Abstract::Iterator::NotFinished) 
-    utils.out() << "Continuation Stepper did not reach final value." << endl;
+    utils.out() << "Continuation Stepper did not reach final value." << std::endl;
   else {
-    utils.out() << "Nonlinear solver failed to converge!" << endl;
+    utils.out() << "Nonlinear solver failed to converge!" << std::endl;
     outArgs.setFailed();
   }
 
@@ -337,17 +337,17 @@ void Piro::Epetra::LOCASolver::evalModel( const InArgs& inArgs,
 
   // Print solution
   if (utils.isPrintType(NOX::Utils::Details)) {
-    utils.out() << endl << "Final Solution" << endl
-		<< "****************" << endl;
+    utils.out() << std::endl << "Final Solution" << std::endl
+		<< "****************" << std::endl;
     finalSolution->Print(std::cout);
   }
 
   // Output the parameter list
   if (utils.isPrintType(NOX::Utils::Parameters)) {
-    utils.out() << endl << "Final Parameters" << endl
-		<< "****************" << endl;
+    utils.out() << std::endl << "Final Parameters" << std::endl
+		<< "****************" << std::endl;
     piroParams->print(utils.out());
-    utils.out() << endl;
+    utils.out() << std::endl;
   }
 
   // Don't explicitly observe finalSolution:
@@ -376,13 +376,13 @@ void Piro::Epetra::LOCASolver::evalModel( const InArgs& inArgs,
     utils.out() << "Convergence Stats: for step  #" << stepNum << " : NumLinSolves, Krylov, Kr/Solve; LastKrylov, LastTol: " 
 	 << linSolves << "  " << KrylovIters << "  " 
 	 << (double) KrylovIters / (double) linSolves << "  " 
-         << lastSolveKrylovIters << " " <<  linsys->getAchievedTol() << endl;
+         << lastSolveKrylovIters << " " <<  linsys->getAchievedTol() << std::endl;
 
     if (stepNum > 1)
      utils.out() << "Convergence Stats: running total: NumLinSolves, Krylov, Kr/Solve, Kr/Step: " 
            << totalLinSolves << "  " << totalKrylovIters << "  " 
            << (double) totalKrylovIters / (double) totalLinSolves 
-           << "  " << (double) totalKrylovIters / (double) stepNum << endl;
+           << "  " << (double) totalKrylovIters / (double) stepNum << std::endl;
     
   }
 
@@ -459,7 +459,9 @@ void Piro::Epetra::LOCASolver::evalModel( const InArgs& inArgs,
       Teuchos::RCP<Epetra_MultiVector> dgdx = 
 	Teuchos::rcp(new Epetra_MultiVector(finalSolution->Map(),
 					    g_map->NumGlobalElements()));
-      model_outargs.set_DgDx(j,dgdx);
+      EpetraExt::ModelEvaluator::DerivativeMultiVector
+	dmv_dgdx(dgdx, DERIV_TRANS_MV_BY_ROW);
+      model_outargs.set_DgDx(j,dmv_dgdx);
 
       for (int i=0; i<num_p; i++) {
 	// dg/dp

@@ -7,20 +7,33 @@
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
@@ -38,33 +51,30 @@
 #include <Teuchos_Assert.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ScalarTraits.hpp>
-
+#include <Tpetra_CrsMatrix_decl.hpp> // Don't need the definition here
 
 namespace Teuchos {
   // forward declarations
   class ParameterList;
   class Time;
-}
+} // namespace Teuchos
 
 namespace Ifpack2 {
-enum RelaxationType {
-  JACOBI,
-  GS,
-  SGS
-};
 
 /** \class Relaxation
 \brief Relaxation preconditioners for Tpetra::RowMatrix and Tpetra::CrsMatrix sparse matrices.
 \author Michael A. Heroux (Sandia)
-\tparam MatrixType A specialization of Tpetra::CrsMatrix.
+\tparam MatrixType A specialization of Tpetra::CrsMatrix (better) or
+  Tpetra::RowMatrix (acceptable).
 
 \section Ifpack_Relaxation_Summary Summary
 
 This class implements several different relaxation preconditioners for
-Tpetra::RowMatrix and Tpetra::CrsMatrix.  Relaxation is derived from
-Preconditioner, which is itself derived from Tpetra::Operator.
-Therefore this object can be used as a preconditioner everywhere an
-apply() method is required in the preconditioning step.
+Tpetra::RowMatrix or its subclass Tpetra::CrsMatrix.  Relaxation is
+derived from Preconditioner, which is itself derived from
+Tpetra::Operator.  Therefore this object may be used as a
+preconditioner for Belos linear solvers, and for any linear solver
+that treats preconditioners as instances of Tpetra::Operator.
 
 This class implements the following relaxation methods:
 - Jacobi
@@ -97,7 +107,7 @@ as your code moves away from a "one MPI process per core" model, to a
 "one MPI process per socket or node" model, assuming that you are
 using a threaded Kokkos Node type.
 
-Relaxation works with any Tpetra::RowMatrix.  If your
+Relaxation works with any Tpetra::RowMatrix input.  If your
 Tpetra::RowMatrix happens to be a Tpetra::CrsMatrix, the Gauss-Seidel
 and symmetric Gauss-Seidel relaxations may be able to exploit this for
 better performance.  You normally don't have to do anything to figure
@@ -388,16 +398,29 @@ public:
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters () const;
 
-  //! Initialize the preconditioner.
-  void initialize();
+  /// \brief Initialize the preconditioner.
+  ///
+  /// You may call this method before calling compute().  If you call
+  /// compute() before initialize() has been called on this object,
+  /// compute() will call initialize() for you.  If you have already
+  /// called compute() and you call initialize(), you must call
+  /// compute() again before you may use the preconditioner (by
+  /// calling apply()).
+  void initialize ();
 
   //! Returns \c true if the preconditioner has been successfully initialized.
   inline bool isInitialized() const {
-    return(IsInitialized_);
+    return isInitialized_;
   }
 
-  //! Compute the preconditioner for the specified matrix, diagonal perturbation thresholds and relaxation parameters.
-  void compute();
+  /// \brief Compute the preconditioner.
+  ///
+  /// You must call this method before calling apply().  You must also
+  /// call this method if the matrix's structure or values have
+  /// changed since the last time compute() has been called.  If
+  /// initialize() has not yet been called, this method will call
+  /// initialize() for you.
+  void compute ();
 
   //! Return true if compute() has been called.
   inline bool isComputed() const {
@@ -430,10 +453,10 @@ public:
                  scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! Returns the Tpetra::Map object associated with the domain of this operator.
-  const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getDomainMap() const;
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap() const;
 
   //! Returns the Tpetra::Map object associated with the range of this operator.
-  const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getRangeMap() const;
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRangeMap() const;
 
   //! Whether apply() and applyMat() let you apply the transpose or conjugate transpose.
   bool hasTransposeApply() const;
@@ -484,7 +507,7 @@ public:
   magnitude_type getCondEst() const;
 
   //! The communicator over which the matrix and vectors are distributed.
-  const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
+  Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
   //! The matrix to be preconditioned.
   Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > getMatrix() const;
@@ -558,6 +581,21 @@ private:
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
+  // CrsMatrix specialization.  We use this for dynamic casts to
+  // dispatch to the most efficient implementation of various
+  // relaxation kernels.
+  //
+  // FIXME (mfh 07 Jul 2013) This typedef isn't ideal because it won't
+  // catch Tpetra::CrsMatrix specializations with nondefault
+  // LocalMatOps (fifth) template parameter.  The code will still be
+  // correct if the cast fails, but it won't pick up the "cached
+  // offsets" optimization.  An alternate approach would be to push
+  // kernels (like Gauss-Seidel) to the RowMatrix interface, so that
+  // RowMatrix's polymorphism can dispatch to the most efficient
+  // implementation.
+  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, 
+			    global_ordinal_type, node_type> crs_matrix_type;
+
   //! @name Unimplemented methods that you are syntactically forbidden to call.
   //@{
 
@@ -593,10 +631,10 @@ private:
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   //! Apply Gauss-Seidel for a Tpetra::CrsMatrix specialization.
-  void ApplyInverseGS_CrsMatrix(
-        const MatrixType& A,
-        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+  void 
+  ApplyInverseGS_CrsMatrix (const crs_matrix_type& A,
+			    const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+			    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   //! Apply symmetric Gauss-Seidel to X, returning the result in Y.
   void ApplyInverseSGS(
@@ -609,10 +647,10 @@ private:
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   //! Apply symmetric Gauss-Seidel for a Tpetra::CrsMatrix specialization.
-  void ApplyInverseSGS_CrsMatrix(
-        const MatrixType& A,
-        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+  void 
+  ApplyInverseSGS_CrsMatrix (const crs_matrix_type& A,
+			     const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+			     Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   //@}
   //! @name Internal data and parameters
@@ -638,7 +676,7 @@ private:
   //! How many times to apply the relaxation per apply() call.
   int NumSweeps_;
   //! Which relaxation method to use.
-  int PrecType_;
+  Details::RelaxationType PrecType_;
   //! Damping factor
   scalar_type DampingFactor_;
   //! If \c true, more than 1 processor is currently used.
@@ -661,7 +699,7 @@ private:
   //! Condition number estimate
   magnitude_type Condest_;
   //! If \c true, the preconditioner has been initialized successfully.
-  bool IsInitialized_;
+  bool isInitialized_;
   //! If \c true, the preconditioner has been computed successfully.
   bool IsComputed_;
   //! The number of successful calls to initialize().

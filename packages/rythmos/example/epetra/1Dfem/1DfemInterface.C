@@ -161,8 +161,8 @@ bool Interface::computePreconditioner(const Epetra_Vector& x,
 				      Epetra_Operator& my_Prec,
 				      Teuchos::ParameterList* precParams)
 {
-  cout << "ERROR: Interface::preconditionVector() - "
-       << "Use Explicit Jaciban only for this test problem!" << endl;
+  std::cout << "ERROR: Interface::preconditionVector() - "
+       << "Use Explicit Jaciban only for this test problem!" << std::endl;
   throw "Interface Error";
 }
 

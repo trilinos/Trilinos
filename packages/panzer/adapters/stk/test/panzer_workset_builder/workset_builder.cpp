@@ -60,6 +60,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_GlobalData.hpp"
+#include "Panzer_BC.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
 
@@ -249,8 +250,7 @@ namespace panzer {
       }
       
       Teuchos::RCP<std::map<unsigned,panzer::Workset> > workset = 
-	buildBCWorkset(*bc,
-		       *(panzer::findPhysicsBlock(bc->elementBlockID(),physicsBlocks)),
+	buildBCWorkset(*(panzer::findPhysicsBlock(bc->elementBlockID(),physicsBlocks)),
 		       local_cell_ids,
 		       local_side_ids,
 		       vertices);

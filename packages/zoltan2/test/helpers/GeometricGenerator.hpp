@@ -58,6 +58,7 @@
 #include <Zoltan2_XpetraMultiVectorInput.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Teuchos_ArrayViewDecl.hpp>
+#include <Teuchos_RCP.hpp>
 
 enum shape {SQUARE, RECTANGLE, CIRCLE, CUBE, RECTANGULAR_PRISM, SPHERE};
 const std::string shapes[] = {"SQUARE", "RECTANGLE", "CIRCLE", "CUBE", "RECTANGULAR_PRISM", "SPHERE"};

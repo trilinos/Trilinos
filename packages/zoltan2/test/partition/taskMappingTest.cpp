@@ -5,6 +5,7 @@
 #include <GeometricGenerator.hpp>
 #include <string>
 #include "Teuchos_XMLParameterListHelpers.hpp"
+//#include "Teuchos_MPIComm.hpp"
 #define partDIM 3
 #define procDIM 3
 #define nProcs 200;
@@ -121,10 +122,18 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
         getline (inParam,str);
     }
 }
-string convert_to_string(char *args){
+string convert2string(char *args){
+#ifdef HAVE_ZOLTAN2_OMP
+    int actual_num_threads = omp_get_num_threads();
+    omp_set_num_threads(1);
+#endif
     string tmp = "";
     for(int i = 0; args[i] != 0; i++)
         tmp += args[i];
+
+#ifdef HAVE_ZOLTAN2_OMP
+    omp_set_num_threads(actual_num_threads);
+#endif
     return tmp;
 }
 bool getArgumentValue(string &argumentid, double &argumentValue, string argumentline){
@@ -148,7 +157,8 @@ void getArgVals(
     bool ispartset = false;
 
     for(int i = 0; i < argc; ++i){
-        string tmp = convert_to_string(argv[i]);
+
+        string tmp = convert2string(argv[i]);
         string identifier = "";
         long long int value = -1; double fval = -1;
         if(!getArgumentValue(identifier, fval, tmp)) continue;
@@ -183,8 +193,12 @@ void getArgVals(
 }
 int main(int argc, char *argv[]){
     Teuchos::GlobalMPISession session(&argc, &argv);
+#ifdef HAVE_ZOLTAN2_OMP
+    omp_set_num_threads(1);
+#endif
+
     if (argc != 3){
-        cout << "Usage: " << argv[0] << " partGeoParams.txt procGeoParams.txt" << endl;
+        cout << "Usage: " << argv[0] << " PART=partGeoParams.txt PROC=procGeoParams.txt" << endl;
         exit(1);
     }
     zoltan2_partId_t numParts = 0;
@@ -213,6 +227,7 @@ int main(int argc, char *argv[]){
                 procfile ,
                 partfile);
         //cout << "part:" << partfile << " proc:" << procfile << endl;
+
         {
             Teuchos::ParameterList geoparams;
             //getPartCenters(partCenters, numParts, coordDim);
@@ -263,14 +278,49 @@ int main(int argc, char *argv[]){
                         numProcs, numParts);
 
         Zoltan2::Environment *env = new Zoltan2::Environment();
-        Zoltan2::TaskMapper <inputAdapter_t, zoltan2_partId_t> *ctm=
-                new Zoltan2::TaskMapper<inputAdapter_t,zoltan2_partId_t>(env, cm);
+        Zoltan2::CoordinateTaskMapper <inputAdapter_t, zoltan2_partId_t> *ctm=
+                new Zoltan2::CoordinateTaskMapper<inputAdapter_t,zoltan2_partId_t>(env, cm);
 
-        ctm->writeMapping2();
+
+        zoltan2_partId_t *task_communication_xadj_ = new zoltan2_partId_t[numParts];
+        zoltan2_partId_t *task_communication_adj_ = new zoltan2_partId_t[numParts * 4];
+
+        for (zoltan2_partId_t i = 0; i < numParts; ++i){
+            task_communication_xadj_[i] = (i+1) * 4;
+            for (int j = 0; j < 4; ++j){
+                task_communication_adj_[i*4+j] = (i + j) % numParts;
+            }
+        }
+
+
+        RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
+        zoltan2_partId_t *proc_to_task_xadj_ = new zoltan2_partId_t[numProcs], *proc_to_task_adj_ = new zoltan2_partId_t[numParts];
+        Zoltan2::coordinateTaskMapperInterface<zoltan2_partId_t, scalar_t, scalar_t>(
+                tcomm,
+                procDim,
+                numProcs,
+                procCoordinates,
+
+                coordDim,
+                numParts,
+                partCenters,
+
+                task_communication_xadj_,
+                task_communication_adj_,
+
+                proc_to_task_xadj_, /*output*/
+                proc_to_task_adj_, /*output*/
+                -1,
+                NULL,
+                NULL
+                );
+
         cout << "PASS" << endl;
         delete ctm;
         delete cm;
         delete env;
+        delete []proc_to_task_xadj_;
+        delete [] proc_to_task_adj_;
     }
     catch(std::string &s){
         cerr << s << endl;

@@ -21,7 +21,7 @@
 namespace MLAPI {
 
 // ====================================================================== 
-Operator Gallery(const string ProblemType,
+Operator Gallery(const std::string ProblemType,
                  const Space& MySpace)
 {
 #if defined(HAVE_ML_GALERI)
@@ -282,11 +282,11 @@ Teuchos::ParameterList ReadParameterList(const char* FileName)
 
   fp.open(FileName);
   if (!fp.good()) 
-    ML_THROW("Error opening file " + string(FileName), -1);
+    ML_THROW("Error opening file " + std::string(FileName), -1);
 
   Teuchos::ParameterList List;
 
-  string line;
+  std::string line;
   while (getline(fp, line, '\n'))
   {
     char type = line[0];
@@ -294,8 +294,8 @@ Teuchos::ParameterList ReadParameterList(const char* FileName)
       continue;
 
     int i = line.find(" = ");
-    string name = line.substr(2, i - 2);
-    string value = line.substr(i + 3);
+    std::string name = line.substr(2, i - 2);
+    std::string value = line.substr(i + 3);
 
     if (type == 'i') 
       List.set(name, atoi(value.c_str()));

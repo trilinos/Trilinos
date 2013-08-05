@@ -17,18 +17,34 @@ public:
     int numProcs;
 
     pcoord_t **procCoords;
-    RCP<Comm<int> > comm;
-
+    RCP<const Comm<int> > comm;
 
     /*! \brief Constructor MachineRepresentation Class
      *  \param comm_ Communication object.
      */
-    MachineRepresentation(RCP<Comm<int> > comm_):
-        networkDim(0), numProcs(comm_->getSize()), procCoords(0), comm(comm_){
+    MachineRepresentation(RCP<const Comm<int> > comm_):
+        networkDim(0), numProcs(comm_->getSize()), procCoords(0), comm(Teuchos::rcp_const_cast<const Comm<int> >(comm_)){
+        // WIll need this constructor to be specific to RAAMP (MD).
+        // Will need a default constructor using, e.g., GeometricGenerator
+        // or nothing at all, for when RAAMP is not available as TPL.
+        //
+        // (AG) In addition, need to be able to run without special
+        // privileges in system (e.g., on hopper).
+        // Notes:  For now, all cores connected to same NIC will get the
+        // same coordinates; later, we could add extra coordinate dimensions
+        // to represent nodes or dies (using hwloc info through RAAMP
+        // data object).
+
+        // (MD) will modify mapping test to use machine representation
+        // #ifdef HAVE_ZOLTAN2_OVIS
+
+        // Call initializer for RAAMP data object (AG)
 
         //get network dimension.
         //TODO change.
+        // Call RAAMP Data Object to get the network dimension (AG)
         networkDim = 3;
+
         //allocate memory for processor coordinates.
         procCoords = new pcoord_t *[networkDim];
         for (int i = 0; i < networkDim; ++i){
@@ -36,7 +52,50 @@ public:
             memset (procCoords[i], 0, sizeof(pcoord_t) * numProcs);
         }
         //obtain the coordinate of the processor.
-        this->getMyCoordinate();
+        this->getMyCoordinate(/*pcoord_t &xyz[networkDim]*/);
+        // copy xyz into appropriate spot in procCoords. (MD)
+
+        //reduceAll the coordinates of each processor.
+        this->gatherMachineCoordinates();
+    }
+
+
+    /*! \brief Constructor MachineRepresentation Class
+     *  \param comm_ Communication object.
+     */
+    MachineRepresentation(RCP<Comm<int> > comm_):
+        networkDim(0), numProcs(comm_->getSize()), procCoords(0), comm(comm_){
+        // WIll need this constructor to be specific to RAAMP (MD).
+        // Will need a default constructor using, e.g., GeometricGenerator
+        // or nothing at all, for when RAAMP is not available as TPL.
+        //
+        // (AG) In addition, need to be able to run without special
+        // privileges in system (e.g., on hopper).  
+        // Notes:  For now, all cores connected to same NIC will get the
+        // same coordinates; later, we could add extra coordinate dimensions
+        // to represent nodes or dies (using hwloc info through RAAMP
+        // data object).
+
+        // (MD) will modify mapping test to use machine representation
+        // #ifdef HAVE_ZOLTAN2_OVIS
+
+        // Call initializer for RAAMP data object (AG)
+
+        //get network dimension.
+        //TODO change.
+        // Call RAAMP Data Object to get the network dimension (AG)
+        networkDim = 3;
+
+        //allocate memory for processor coordinates.
+        procCoords = new pcoord_t *[networkDim];
+        for (int i = 0; i < networkDim; ++i){
+            procCoords[i] = new pcoord_t [numProcs];
+            memset (procCoords[i], 0, sizeof(pcoord_t) * numProcs);
+        }
+        //obtain the coordinate of the processor.
+        this->getMyCoordinate(/*pcoord_t &xyz[networkDim]*/);
+        // copy xyz into appropriate spot in procCoords. (MD)
+
         //reduceAll the coordinates of each processor.
         this->gatherMachineCoordinates();
     }
@@ -45,10 +104,18 @@ public:
     /*! \brief getMyCoordinate function
      *  stores the coordinate of the current processor in procCoords[*][rank]
      */
-    void getMyCoordinate(){
+    void getMyCoordinate(/* pcoord_t &xyz[networkDim]*/){
+
+        // Call RAAMP system to get coordinates and store in xyz (MD)
+        // What is the RAAMP call?  (AG)
+        // AG will return a view (pointer) to RAAMP's data.
+        // We will copy it into xyz.
+
+        // The code below may be good for the default constructor, perhaps,
+        // but it should copy the data into xyz instead of the procCoords.
         int myRank = comm->getRank();
 
-        int slice = pow( double(numProcs), double(1.0 / networkDim)) + 0.5 ;
+        int slice = int (pow( double(numProcs), double(1.0 / networkDim)) + 0.5 );
 
         int m = myRank;
         for (int i = 0; i < networkDim; ++i){
@@ -85,6 +152,8 @@ public:
             delete [] procCoords[i];
         }
         delete []procCoords;
+        // Free/release THE RAAMP Data Object.
+        // Deinitialize/finalize/whatever (AG)
     }
 
     /*! \brief getProcDim function

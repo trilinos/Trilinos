@@ -70,8 +70,8 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
-            class Node = Kokkos::DefaultNode::DefaultNodeType,
-            class LocalMatOps = typename Kokkos::DefaultKernels<Scalar, LocalOrdinal, Node>::SparseOps >
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType,
+            class LocalMatOps = typename KokkosClassic::DefaultKernels<Scalar, LocalOrdinal, Node>::SparseOps >
   class ShiftedLaplacianOperator
     : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>
   {
@@ -91,11 +91,11 @@ namespace MueLu {
 
     //! Auxiliary Constructor
     ShiftedLaplacianOperator(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & H,
-		   const RCP<Matrix> A, int cycles, int iters, double tol, int option) : Hierarchy_(H), A_(A), cycles_(cycles), iters_(iters), tol_(tol), option_(option)
+                             const RCP<Matrix> A, int cycles, int iters, int option, double tol) : Hierarchy_(H), A_(A), cycles_(cycles), iters_(iters), option_(option), tol_(tol)
     {
 
       // setup 2-level correction
-      RCP< MueLu::Level > Level1 = H -> GetLevel(1);
+      /*RCP< MueLu::Level > Level1 = H -> GetLevel(1);
       R_ = Level1 -> Get< RCP<Matrix> >("R");
       P_ = Level1 -> Get< RCP<Matrix> >("P");
       //RCP<Matrix> AP = Level1 -> Get< RCP<Matrix> >("AP Pattern");
@@ -115,7 +115,7 @@ namespace MueLu {
       BelosList_ -> set("Convergence Tolerance", tol_ );
       BelosLP_   = rcp( new Belos::LinearProblem<Scalar,MV,OP> );
       BelosLP_   -> setOperator ( Ac_ );
-      BelosSM_   = rcp( new Belos::BlockGmresSolMgr<Scalar,MV,OP>(BelosLP_, BelosList_) );
+      BelosSM_   = rcp( new Belos::BlockGmresSolMgr<Scalar,MV,OP>(BelosLP_, BelosList_) );*/
 
     }
 
@@ -127,10 +127,10 @@ namespace MueLu {
     //@}
 
     //! Returns the Tpetra::Map object associated with the domain of this operator.
-    const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
+    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
 
     //! Returns the Tpetra::Map object associated with the range of this operator.
-    const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
 
     //! Returns in Y the result of a Tpetra::Operator applied to a Tpetra::MultiVector X.
     /*!
@@ -155,7 +155,7 @@ namespace MueLu {
     RCP< Teuchos::ParameterList >  BelosList_;
     RCP< Belos::LinearProblem<Scalar,MV,OP> > BelosLP_;
     RCP< Belos::SolverManager<Scalar,MV,OP> > BelosSM_;
-    // cycles -> number of 2-level corrections
+    // cycles -> number of V-cycles
     // iters  -> number of GMRES iterations per correction
     // option -> 0 if no correction is desired
     int cycles_, iters_, option_;

@@ -51,7 +51,7 @@
 #endif
 
 /* Define if want to build with zlib enabled */
-/* #undef HAVE_GZIP */
+/* #undef ZHAVE_GZIP */
 
 /* Use to have only filename when debugging memory */
 #define SHORT_FILE

@@ -7,20 +7,33 @@
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
@@ -93,16 +106,14 @@ namespace Ifpack2 {
 
   } // namespace (anonymous)
 
-//Definitions for the ILUT methods:
 
-//==============================================================================
 template <class MatrixType>
 ILUT<MatrixType>::ILUT(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& A) :
   A_ (A),
   Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
   Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
   RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
-  LevelOfFill_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
+  LevelOfFill_ (1),
   DropTolerance_ (ilutDefaultDropTolerance<scalar_type> ()),
   Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
   InitializeTime_(0.0),
@@ -119,12 +130,12 @@ ILUT<MatrixType>::ILUT(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,lo
     "Ifpack2::ILUT: Input matrix is null.");
 }
 
-//==========================================================================
+
 template <class MatrixType>
 ILUT<MatrixType>::~ILUT() {
 }
 
-//==========================================================================
+
 template <class MatrixType>
 void ILUT<MatrixType>::setParameters(const Teuchos::ParameterList& params) {
   using Teuchos::as;
@@ -132,30 +143,51 @@ void ILUT<MatrixType>::setParameters(const Teuchos::ParameterList& params) {
   using Teuchos::Exceptions::InvalidParameterType;
 
   // Default values of the various parameters.
-  magnitude_type fillLevel = STM::one ();
+  int fillLevel = 1;
   magnitude_type absThresh = STM::zero ();
   magnitude_type relThresh = STM::one ();
   magnitude_type relaxValue = STM::zero ();
   magnitude_type dropTol = ilutDefaultDropTolerance<scalar_type> ();
 
+  bool gotFillLevel = false;
   try {
-    fillLevel = params.get<magnitude_type> ("fact: ilut level-of-fill");
-  }
-  catch (InvalidParameterType&) {
-    // Try double, for backwards compatibility.
-    // The cast from double to magnitude_type must succeed.
-    fillLevel = as<magnitude_type> (params.get<double> ("fact: ilut level-of-fill"));
+    fillLevel = params.get<int> ("fact: ilut level-of-fill");
+    gotFillLevel = true;
   }
   catch (InvalidParameterName&) {
-    // Accept the default value.
+    // We didn't really get it, but this tells us to stop looking.
+    gotFillLevel = true;
+  }
+  catch (InvalidParameterType&) {
+    // The name is right, but the type is wrong; try different types.
+    // We don't have to check InvalidParameterName again, since we
+    // checked it above, and it has nothing to do with the type.
   }
 
-  // FIXME (mfh 28 Nov 2012) This doesn't make any sense.  Isn't zero
-  // fill allowed?  The exception test doesn't match the exception
-  // message.  However, I'm leaving it alone for now, so as not to
-  // change current behavior.
-  TEUCHOS_TEST_FOR_EXCEPTION(fillLevel <= 0.0, std::runtime_error,
-    "Ifpack2::ILUT::SetParameters ERROR, level-of-fill must be >= 0.");
+  if (! gotFillLevel) {
+    // Try magnitude_type, for backwards compatibility.
+    try {
+      fillLevel = as<int> (params.get<magnitude_type> ("fact: ilut level-of-fill"));
+    }
+    catch (InvalidParameterType&) {}
+  }
+  if (! gotFillLevel) {
+    // Try double, for backwards compatibility.
+    try {
+      fillLevel = as<int> (params.get<double> ("fact: ilut level-of-fill"));
+    }
+    catch (InvalidParameterType&) {}
+  }
+  // If none of the above attempts succeed, accept the default value.
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    fillLevel <= 0, std::runtime_error,
+    "Ifpack2::ILUT: The \"fact: ilut level-of-fill\" parameter must be "
+    "strictly greater than zero, but you specified a value of " << fillLevel
+    << ".  Remember that for ILUT, the fill level p means something different "
+    "than it does for ILU(k).  ILU(0) produces factors with the same sparsity "
+    "structure as the input matrix A; ILUT with p = 0 always produces a "
+    "diagonal matrix, and is thus probably not what you want.");
 
   try {
     absThresh = params.get<magnitude_type> ("fact: absolute threshold");
@@ -229,91 +261,91 @@ void ILUT<MatrixType>::setParameters(const Teuchos::ParameterList& params) {
   }
 }
 
-//==========================================================================
+
 template <class MatrixType>
-const Teuchos::RCP<const Teuchos::Comm<int> > &
+Teuchos::RCP<const Teuchos::Comm<int> >
 ILUT<MatrixType>::getComm() const{
   return A_->getComm ();
 }
 
-//==========================================================================
+
 template <class MatrixType>
 Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
 ILUT<MatrixType>::getMatrix() const {
   return A_;
 }
 
-//==========================================================================
+
 template <class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
 ILUT<MatrixType>::getDomainMap() const
 {
   return A_->getDomainMap();
 }
 
-//==========================================================================
+
 template <class MatrixType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >&
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
 ILUT<MatrixType>::getRangeMap() const
 {
   return A_->getRangeMap();
 }
 
-//==============================================================================
+
 template <class MatrixType>
 bool ILUT<MatrixType>::hasTransposeApply() const {
   return true;
 }
 
-//==========================================================================
+
 template <class MatrixType>
 int ILUT<MatrixType>::getNumInitialize() const {
   return(NumInitialize_);
 }
 
-//==========================================================================
+
 template <class MatrixType>
 int ILUT<MatrixType>::getNumCompute() const {
   return(NumCompute_);
 }
 
-//==========================================================================
+
 template <class MatrixType>
 int ILUT<MatrixType>::getNumApply() const {
   return(NumApply_);
 }
 
-//==========================================================================
+
 template <class MatrixType>
 double ILUT<MatrixType>::getInitializeTime() const {
   return(InitializeTime_);
 }
 
-//==========================================================================
+
 template<class MatrixType>
 double ILUT<MatrixType>::getComputeTime() const {
   return(ComputeTime_);
 }
 
-//==========================================================================
+
 template<class MatrixType>
 double ILUT<MatrixType>::getApplyTime() const {
   return(ApplyTime_);
 }
 
-//==========================================================================
+
 template<class MatrixType>
 global_size_t ILUT<MatrixType>::getGlobalNumEntries() const {
   return(L_->getGlobalNumEntries() + U_->getGlobalNumEntries());
 }
 
-//==========================================================================
+
 template<class MatrixType>
 size_t ILUT<MatrixType>::getNodeNumEntries() const {
   return(L_->getNodeNumEntries() + U_->getNodeNumEntries());
 }
 
-//=============================================================================
+
 template<class MatrixType>
 typename ILUT<MatrixType>::magnitude_type
 ILUT<MatrixType>::
@@ -332,7 +364,7 @@ computeCondEst (CondestType CT,
   return(Condest_);
 }
 
-//==========================================================================
+
 template<class MatrixType>
 void ILUT<MatrixType>::initialize() {
   Teuchos::Time timer ("ILUT::initialize");
@@ -356,13 +388,15 @@ void ILUT<MatrixType>::initialize() {
   InitializeTime_ += timer.totalElapsedTime ();
 }
 
+
 template<typename ScalarType>
-typename Teuchos::ScalarTraits<ScalarType>::magnitudeType scalar_mag(const ScalarType& s)
+typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
+scalar_mag (const ScalarType& s)
 {
   return Teuchos::ScalarTraits<ScalarType>::magnitude(s);
 }
 
-//==========================================================================
+
 template<class MatrixType>
 void ILUT<MatrixType>::compute() {
   using Teuchos::Array;
@@ -425,17 +459,15 @@ void ILUT<MatrixType>::compute() {
     std::ofstream ofsU("U.tif.mtx", std::ios::out);
 #endif
 
-    // mfh 28 Nov 2012: The code here uses double for fill calculations.
-    // This really has nothing to do with magnitude_type.  The point is
-    // to avoid rounding and overflow for integer calculations.  That
-    // should work just fine for reasonably-sized integer values, so I'm
-    // leaving it.  However, the fill level parameter is a
-    // magnitude_type, so I do need to cast to double.  Typical values
-    // of the fill level are small, so this should not cause overflow.
+    // The code here uses double for fill calculations, even though
+    // the fill level is actually an integer.  The point is to avoid
+    // rounding and overflow for integer calculations.  If int is <=
+    // 32 bits, it can never overflow double, so this cast is always
+    // OK as long as int has <= 32 bits.
 
-    // Calculate how much fill will be allowed in addition to the space that
-    // corresponds to the input matrix entries.
-    double local_nnz = static_cast<double>(A_->getNodeNumEntries());
+    // Calculate how much fill will be allowed in addition to the
+    // space that corresponds to the input matrix entries.
+    double local_nnz = static_cast<double> (A_->getNodeNumEntries ());
     double fill;
     {
       const double fillLevel = as<double> (getLevelOfFill ());
@@ -700,7 +732,7 @@ void ILUT<MatrixType>::compute() {
   ++NumCompute_;
 }
 
-//==========================================================================
+
 template <class MatrixType>
 void ILUT<MatrixType>::apply(
            const Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& X,
@@ -712,7 +744,7 @@ void ILUT<MatrixType>::apply(
   this->template applyTempl<scalar_type,scalar_type>(X, Y, mode, alpha, beta);
 }
 
-//==========================================================================
+
 template <class MatrixType>
 template <class DomainScalar, class RangeScalar>
 void ILUT<MatrixType>::applyTempl(
@@ -772,7 +804,7 @@ void ILUT<MatrixType>::applyTempl(
   ApplyTime_ += timer.totalElapsedTime ();
 }
 
-//=============================================================================
+
 template <class MatrixType>
 std::string ILUT<MatrixType>::description() const {
   std::ostringstream oss;
@@ -794,7 +826,7 @@ std::string ILUT<MatrixType>::description() const {
   return oss.str();
 }
 
-//=============================================================================
+
 template <class MatrixType>
 void ILUT<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
   using std::endl;

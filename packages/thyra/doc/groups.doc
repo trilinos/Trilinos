@@ -602,7 +602,7 @@ of MPI or any other concrete interprocess communication protocol.
 
 \ingroup Thyra_Op_Vec_Adapters_grp
 
-\brief The \ref Thyra_Op_Vec_interfaces_code_grp define an interface
+The \ref Thyra_Op_Vec_interfaces_code_grp define an interface
 for providing ANAs with the functionality they need concerning
 application-specific scalar products without concern for how such scalar
 products are implemented or how such scalar products relate to the
@@ -709,10 +709,13 @@ implementation of a SPMD multi-vector.
 
 </ul>
 
-One of the big advantages of deriving concrete SPMD
-implementations from these base subclasses is that they provide automatic
-interoperability between different concrete subclasses.  This type of
-automatic interoperability is demonstrated in ???this testing program???.
+One of the big advantages of deriving concrete SPMD implementations from these
+base subclasses is that they provide automatic interoperability between
+different concrete subclasses that all derive from these interfaces..
+
+In addition, there is support software for accessing local data in SPMD
+vectors and multi-vectors described \ref
+Thyra_Op_Vec_adapters_spmd_local_data_access_grp.
 
 */
 

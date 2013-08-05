@@ -92,10 +92,10 @@ int main(int argc, char *argv[])
   int NumProc = Comm.NumProc();
 
   if(verbose && MyPID==0)
-    cout << Epetra_Version() << std::endl << std::endl;
+    std::cout << Epetra_Version() << std::endl << std::endl;
 
-  if (verbose) cout << "Processor "<<MyPID<<" of "<< NumProc
-		    << " is alive."<<endl;
+  if (verbose) std::cout << "Processor "<<MyPID<<" of "<< NumProc
+		    << " is alive."<< std::endl;
 
   // unused: bool verbose1 = verbose;
 
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
   if(verbose && rank!=0) 
     verbose = false;
 
-  if (verbose) cout << "Test the memory management system of the class CrsMatrix (memory leak, invalid free)" << std::endl;
+  if (verbose) std::cout << "Test the memory management system of the class CrsMatrix (memory leak, invalid free)" << std::endl;
 
   //
   // Test 1: code initially proposed to illustrate bug #5499
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
   
   if(Comm.NumProc() == 1) { // this is a sequential test
 
-    if (verbose) cout << "* Using Copy, ColMap, Variable number of indices per row and Static profile (cf. bug #5499)." << std::endl;
+    if (verbose) std::cout << "* Using Copy, ColMap, Variable number of indices per row and Static profile (cf. bug #5499)." << std::endl;
 
     // Row Map
     Epetra_Map RowMap(2, 0, Comm);
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
   
   if(Comm.NumProc() == 1) { // this is a sequential test
 
-    if (verbose) cout << "* Using Copy, Fixed number of indices per row and Static profile" << std::endl;
+    if (verbose) std::cout << "* Using Copy, Fixed number of indices per row and Static profile" << std::endl;
 
     Epetra_Map RowMap(2, 0, Comm);
 
@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
 
   if(Comm.NumProc() == 1) {
 
-    if (verbose) cout << "* Using Copy, Fixed number of indices per row and Static profile + InsertGlobalValues()." << std::endl;
+    if (verbose) std::cout << "* Using Copy, Fixed number of indices per row and Static profile + InsertGlobalValues()." << std::endl;
 
     Epetra_Map RowMap(2, 0, Comm);
 
@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
 
   if(Comm.NumProc() == 1) {
     
-    if (verbose) cout << "* Using Copy, Fixed number of indices per row and Dynamic profile" << std::endl;
+    if (verbose) std::cout << "* Using Copy, Fixed number of indices per row and Dynamic profile" << std::endl;
     
     Epetra_Map RowMap(2, 0, Comm);
 
@@ -196,7 +196,7 @@ int main(int argc, char *argv[])
 
   if(Comm.NumProc() == 1) {
     
-    if (verbose) cout << "* Using Copy, Fixed number of indices per row and Dynamic profile + InsertGlobalValues()." << std::endl;
+    if (verbose) std::cout << "* Using Copy, Fixed number of indices per row and Dynamic profile + InsertGlobalValues()." << std::endl;
     
     Epetra_Map RowMap(2, 0, Comm);
 
@@ -214,7 +214,7 @@ int main(int argc, char *argv[])
 
   if(Comm.NumProc() == 1) {
     
-    if (verbose) cout << "* Using Copy, Static Graph()." << std::endl;
+    if (verbose) std::cout << "* Using Copy, Static Graph()." << std::endl;
     
     Epetra_Map RowMap(1, 0, Comm);
 
@@ -231,8 +231,8 @@ int main(int argc, char *argv[])
     A.ReplaceGlobalValues(0, 1, &Values[0], &Indices[0]);
     A.FillComplete();
     double norminf = A.NormInf();
-    if (verbose) cout << "** Inf Norm of Matrix = " << norminf << "." << std::endl;
-    cout << A << std::endl;
+    if (verbose) std::cout << "** Inf Norm of Matrix = " << norminf << "." << std::endl;
+    std::cout << A << std::endl;
 
     
   }
@@ -240,7 +240,7 @@ int main(int argc, char *argv[])
 
   if(Comm.NumProc() == 1) {
     
-    if (verbose) cout << "* Using Copy, Fixed number of indices per row and static profile + InsertGlobalValues() for a single row." << std::endl;
+    if (verbose) std::cout << "* Using Copy, Fixed number of indices per row and static profile + InsertGlobalValues() for a single row." << std::endl;
     
     Epetra_Map RowMap(1, 0, Comm);
 
@@ -258,10 +258,10 @@ int main(int argc, char *argv[])
 
   /*
     if (bool) {
-    if (verbose) cout << endl << "tests FAILED" << endl << endl;
+    if (verbose) std::cout << std::endl << "tests FAILED" << std::endl << std::endl;
     }
     else {*/
-  if (verbose) cout << endl << "tests PASSED" << endl << endl;
+  if (verbose) std::cout << std::endl << "tests PASSED" << std::endl << std::endl;
   /*    } */
 
 #ifdef EPETRA_MPI

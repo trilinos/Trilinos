@@ -46,16 +46,16 @@ inline void StackPrint() {std::cout << "Compile with -DMLAPI_CHECK to get the fu
 #ifdef HAVE_ML_CFUNC
 // some old compilers do not have __func__
 #define ML_THROW(str,val) { \
-  std::cerr << "ERROR: In " << __PRETTY_FUNCTION__ << "()" << endl; \
-  std::cerr << "ERROR: File " << __FILE__ << ", line " << __LINE__ << endl; \
-  std::cerr << "ERROR: " << str << endl; \
+  std::cerr << "ERROR: In " << __PRETTY_FUNCTION__ << "()" << std::endl; \
+  std::cerr << "ERROR: File " << __FILE__ << ", line " << __LINE__ << std::endl; \
+  std::cerr << "ERROR: " << str << std::endl; \
   StackPrint(); \
   throw(val); \
   }
 #else
 #define ML_THROW(str,val) { \
-  std::cerr << "ERROR: File " << __FILE__ << ", line " << __LINE__ << endl; \
-  std::cerr << "ERROR: " << str << endl; \
+  std::cerr << "ERROR: File " << __FILE__ << ", line " << __LINE__ << std::endl; \
+  std::cerr << "ERROR: " << str << std::endl; \
   StackPrint(); \
   throw(val); \
   }

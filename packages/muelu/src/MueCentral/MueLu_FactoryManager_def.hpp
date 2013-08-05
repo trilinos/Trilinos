@@ -58,7 +58,6 @@
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
-//#include "MueLu_GaussSeidelSmoother.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_CoupledAggregationFactory.hpp"
@@ -114,53 +113,46 @@ namespace MueLu {
 
     } else {
 
-      if (varName == "A")             return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory()));
-      if (varName == "RAP Pattern")   return GetFactory("A");
-      if (varName == "AP Pattern")    return GetFactory("A");
+      if (varName == "A")                               return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory()));
+      if (varName == "RAP Pattern")                     return GetFactory("A");
+      if (varName == "AP Pattern")                      return GetFactory("A");
+      if (varName == "Ptent")                           return SetAndReturnDefaultFactory(varName, rcp(new TentativePFactory()));
       if (varName == "P") {
         RCP<Factory> factory = rcp(new SaPFactory());
-        factory->SetFactory("P", GetFactory("Ptent")); // GetFactory("Ptent"): Use the same factory instance for both "P" and "Nullspace"
+        factory->SetFactory("P", GetFactory("Ptent"));          // GetFactory("Ptent"): Use the same factory instance for both "P" and "Nullspace"
+        return SetAndReturnDefaultFactory(varName, factory);
+      }
+      if (varName == "Nullspace") {
+        RCP<Factory> factory = rcp(new NullspaceFactory());
+        factory->SetFactory("Nullspace", GetFactory("Ptent"));  // GetFactory("Ptent"): Use the same factory instance for both "P" and "Nullspace"
         return SetAndReturnDefaultFactory(varName, factory);
       }
 
-      if (varName == "R")             return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
+
+      if (varName == "R")                               return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
-      if (varName == "Partition")     {
-        return SetAndReturnDefaultFactory(varName, rcp(new ZoltanInterface()));
-      }
+      if (varName == "Partition")                       return SetAndReturnDefaultFactory(varName, rcp(new ZoltanInterface()));
 #endif //ifdef HAVE_MPI
 
       if (varName == "Importer") {
 #ifdef HAVE_MPI
-        return SetAndReturnDefaultFactory(varName, rcp(new RepartitionFactory()));
+                                                        return SetAndReturnDefaultFactory(varName, rcp(new RepartitionFactory()));
 #else
-        return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
+                                                        return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
 #endif
       }
-      if (varName == "number of partitions") {
-        return GetFactory("Importer");
-      }
-      //JJH FIXME is this going to bite me in the backside?
-//       if (varName == "Coordinates") {
-//         return SetAndReturnDefaultFactory(varName, rcp(new MueLu::MultiVectorTransferFactory<SC,LO,GO,NO,LMO>(varName,"R")));
-//       }
+      if (varName == "number of partitions")            return GetFactory("Importer");
 
-      if (varName == "Nullspace") {
-        RCP<Factory> factory = rcp(new NullspaceFactory());
-        factory->SetFactory("Nullspace", GetFactory("Ptent")); // GetFactory("Ptent"): Use the same factory instance for both "P" and "Nullspace"
-        return SetAndReturnDefaultFactory(varName, factory);
-      }
-
-      if (varName == "Graph")               return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
-      if (varName == "UnAmalgamationInfo")  return SetAndReturnDefaultFactory(varName, rcp(new AmalgamationFactory())); //GetFactory("Graph"));
-      if (varName == "Aggregates")          return SetAndReturnDefaultFactory(varName, rcp(new CoupledAggregationFactory()));
-      if (varName == "CoarseMap")           return SetAndReturnDefaultFactory(varName, rcp(new CoarseMapFactory()));
-      if (varName == "DofsPerNode")         return GetFactory("Graph");
-      if (varName == "Filtering")           return GetFactory("Graph");
+      if (varName == "Graph")                           return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
+      if (varName == "UnAmalgamationInfo")              return SetAndReturnDefaultFactory(varName, rcp(new AmalgamationFactory())); //GetFactory("Graph"));
+      if (varName == "Aggregates")                      return SetAndReturnDefaultFactory(varName, rcp(new CoupledAggregationFactory()));
+      if (varName == "CoarseMap")                       return SetAndReturnDefaultFactory(varName, rcp(new CoarseMapFactory()));
+      if (varName == "DofsPerNode")                     return GetFactory("Graph");
+      if (varName == "Filtering")                       return GetFactory("Graph");
 
       // Same factory for both Pre and Post Smoother. Factory for key "Smoother" can be set by users.
-      if (varName == "PreSmoother")         return GetFactory("Smoother");
-      if (varName == "PostSmoother")        return GetFactory("Smoother");
+      if (varName == "PreSmoother")                     return GetFactory("Smoother");
+      if (varName == "PostSmoother")                    return GetFactory("Smoother");
 
 #ifdef HAVE_MUELU_EXPERIMENTAL
       if (varName == "Ppattern") {
@@ -168,10 +160,9 @@ namespace MueLu {
         PpFact->SetFactory("P", GetFactory("Ptent"));
         return SetAndReturnDefaultFactory(varName, PpFact);
       }
-      if (varName == "Constraint")          return SetAndReturnDefaultFactory(varName, rcp(new ConstraintFactory()));
+      if (varName == "Constraint")                      return SetAndReturnDefaultFactory(varName, rcp(new ConstraintFactory()));
 #endif
 
-      //if (varName == "Smoother")    return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new GaussSeidelSmoother()))));
       if (varName == "Smoother") {
         Teuchos::ParameterList smootherParamList;
         smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
@@ -179,10 +170,7 @@ namespace MueLu {
         smootherParamList.set("relaxation: damping factor", (Scalar) 1.0); //FIXME once Ifpack2's parameter list validator is fixed, change this back to Scalar
         return SetAndReturnDefaultFactory(varName, rcp( new SmootherFactory(rcp(new TrilinosSmoother("RELAXATION", smootherParamList)))));
       }
-
-      if (varName == "CoarseSolver")  return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new DirectSolver()),Teuchos::null)));
-
-      if (varName == "Ptent") return SetAndReturnDefaultFactory(varName, rcp(new TentativePFactory())); // Use the same factory instance for both "P" and "Nullspace"
+      if (varName == "CoarseSolver")                    return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new DirectSolver()),Teuchos::null)));
 
       TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MueLu::FactoryManager::GetDefaultFactory(): No default factory available for building '"+varName+"'.");
     }

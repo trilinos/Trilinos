@@ -115,7 +115,8 @@ public:
      */
    virtual void adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                                              const LinearObjContainer & globalBCRows,
-                                             LinearObjContainer & ghostedObjs) const;
+                                             LinearObjContainer & ghostedObjs,
+                                             bool zeroVectorRows=false) const;
 
    virtual Teuchos::MpiComm<int> getComm() const;
 
@@ -284,7 +285,8 @@ protected:
    void adjustForDirichletConditions(const Epetra_Vector & local_bcs,
                                      const Epetra_Vector & global_bcs,
                                      const Teuchos::Ptr<Epetra_Vector> & f,
-                                     const Teuchos::Ptr<Epetra_CrsMatrix> & A) const;
+                                     const Teuchos::Ptr<Epetra_CrsMatrix> & A,
+                                     bool zeroVectorRows) const;
 
    void ghostToGlobalEpetraVector(int i,const Epetra_Vector & in,Epetra_Vector & out) const;
    void ghostToGlobalEpetraMatrix(int blockRow,const Epetra_CrsMatrix & in,Epetra_CrsMatrix & out) const;

@@ -8,20 +8,33 @@
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
 #
-# This library is free software; you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as
-# published by the Free Software Foundation; either version 2.1 of the
-# License, or (at your option) any later version.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
 #
-# This library is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
 #
-# You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the Corporation nor the names of the
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 # Questions? Contact Glen Hansen (gahanse@sandia.gov)
 #
 # ************************************************************************
@@ -65,11 +78,11 @@ bool MOERTEL::Projector::ProjectNodetoSegment_NodalNormal(MOERTEL::Node& node,
   if (IsTwoDimensional())
   {
 #if 0
-    cout << "----- Projector: Node " << node.Id() << " Segment " << seg.Id() << endl;
-    cout << "Segment\n" << seg;
+    std::cout << "----- Projector: Node " << node.Id() << " Segment " << seg.Id() << std::endl;
+    std::cout << "Segment\n" << seg;
     MOERTEL::Node** nodes = seg.Nodes();
-    cout << *nodes[0];
-    cout << *nodes[1];
+    std::cout << *nodes[0];
+    std::cout << *nodes[1];
 #endif
     // we do a newton iteration for the projection coordinates xi
     // set starting value to the middle of the segment
@@ -88,15 +101,15 @@ bool MOERTEL::Projector::ProjectNodetoSegment_NodalNormal(MOERTEL::Node& node,
     {
       ok = false;
       if (OutLevel()>3)
-      cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_NodalNormal:\n"
+      std::cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_NodalNormal:\n"
       	   << "MOERTEL: ***WRN*** Newton iteration failed to converge\n"
-      	   << "MOERTEL: ***WRN*** #iterations = " << i << endl
+      	   << "MOERTEL: ***WRN*** #iterations = " << i << std::endl
       	   << "MOERTEL: ***WRN*** F(eta) = " << F << " gradF(eta) = " 
 		   << dF << " eta = " << eta << " delta(eta) = " << deta << "\n"
            << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     }
 #if 0
-    cout << "#iterations = " << i << " F = " << F << " eta = " << eta << endl;
+    std::cout << "#iterations = " << i << " F = " << F << " eta = " << eta << std::endl;
 #endif
     xi[0] = eta;
     return ok;
@@ -105,12 +118,12 @@ bool MOERTEL::Projector::ProjectNodetoSegment_NodalNormal(MOERTEL::Node& node,
   else
   {
 #if 0
-    cout << "----- Projector: Node " << node.Id() << " Segment " << seg.Id() << endl;
-    cout << "Segment " << seg;
+    std::cout << "----- Projector: Node " << node.Id() << " Segment " << seg.Id() << std::endl;
+    std::cout << "Segment " << seg;
     MOERTEL::Node** nodes = seg.Nodes();
-    cout << *nodes[0];
-    cout << *nodes[1];
-    cout << *nodes[2];
+    std::cout << *nodes[0];
+    std::cout << *nodes[1];
+    std::cout << *nodes[2];
 #endif
     // we do a newton iteration for the projection coordinates xi
     // set starting value to the middle of the segment
@@ -128,7 +141,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_NodalNormal(MOERTEL::Node& node,
       evaluate_FgradF_3D_NodalNormal(F,dF,node,seg,eta,alpha,gap);
       eps = MOERTEL::dot(F,F,3);
       if (eps < 1.0e-10) break;
-      // cout << eps << endl;
+      // std::cout << eps << std::endl;
       MOERTEL::solve33(dF,deta,F);
       eta[0] -= deta[0];
       eta[1] -= deta[1];
@@ -138,15 +151,15 @@ bool MOERTEL::Projector::ProjectNodetoSegment_NodalNormal(MOERTEL::Node& node,
     {
       ok = false;
       if (OutLevel()>3)
-      cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_NodalNormal:\n"
+      std::cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_NodalNormal:\n"
       	   << "MOERTEL: ***WRN*** 3D Newton iteration failed to converge\n"
-      	   << "MOERTEL: ***WRN*** #iterations = " << i << endl
+      	   << "MOERTEL: ***WRN*** #iterations = " << i << std::endl
       	   << "MOERTEL: ***WRN*** eps = " << eps << " eta[3] = " << eta[0] << "/" << eta[1] << "/" << alpha << "\n"
            << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     }
 #if 0
     if (i>10)
-      cout << "#iterations = " << i << " eps = " << eps << " eta = " << eta[0] << "/" << eta[1] << endl;
+      std::cout << "#iterations = " << i << " eps = " << eps << " eta = " << eta[0] << "/" << eta[1] << std::endl;
 #endif
     xi[0] = eta[0];
     xi[1] = eta[1];
@@ -226,10 +239,10 @@ double MOERTEL::Projector::evaluate_F_2D_NodalNormal(MOERTEL::Node& node,
 //  gap = (Nx[0] * n[0] + Nx[1] * n[1])
 //		  / sqrt(n[0] * n[0] + n[1] * n[1]);  // ||gap|| cos theta
 #if 0
-  cout << "node " << node.Id() << " seg " << seg.Id() << " n[0] " << n[0] << " n[1] " << n[1] << endl;
-  cout << "X[0] " << X[0] << " X[1] " << X[1] << endl;
-  cout << "Nx[0] " << Nx[0] << " Nx[1] " << Nx[1] << " gap " << gap << endl;
-  cout << "norm " << sqrt(n[0] * n[0] + n[1] * n[1]) << endl;
+  std::cout << "node " << node.Id() << " seg " << seg.Id() << " n[0] " << n[0] << " n[1] " << n[1] << std::endl;
+  std::cout << "X[0] " << X[0] << " X[1] " << X[1] << std::endl;
+  std::cout << "Nx[0] " << Nx[0] << " Nx[1] " << Nx[1] << " gap " << gap << std::endl;
+  std::cout << "norm " << sqrt(n[0] * n[0] + n[1] * n[1]) << std::endl;
 #endif
   
   return F;
@@ -303,7 +316,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal(MOERTEL::Node& node,
 														 double &gap)
 {
 #if 0
-  cout << "----- Projector: Node " << node.Id() << " Segment " << seg.Id() << endl;
+  std::cout << "----- Projector: Node " << node.Id() << " Segment " << seg.Id() << std::endl;
 #endif
 
   // 2D case
@@ -325,14 +338,14 @@ bool MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal(MOERTEL::Node& node,
     if (abs(F)>1.0e-9)
     {
       if (OutLevel()>3)
-      cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal:\n"
+      std::cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal:\n"
       	   << "MOERTEL: ***WRN*** Newton iteration failed to converge\n"
-      	   << "MOERTEL: ***WRN*** #iterations = " << i << endl
+      	   << "MOERTEL: ***WRN*** #iterations = " << i << std::endl
       	   << "MOERTEL: ***WRN*** F(eta) = " << F << " gradF(eta) = " << dF << " eta = " << eta << " delta(eta) = " << deta << "\n"
            << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     }
 #if 0
-    cout << "#iterations = " << i << " F = " << F << " eta = " << eta << endl;
+    std::cout << "#iterations = " << i << " F = " << F << " eta = " << eta << std::endl;
 #endif
     xi[0] = eta;
     return true;
@@ -341,12 +354,12 @@ bool MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal(MOERTEL::Node& node,
   else
   {
 #if 0
-    cout << "----- Projector: Node " << node.Id() << " Segment " << seg.Id() << endl;
-    cout << "Segment " << seg;
+    std::cout << "----- Projector: Node " << node.Id() << " Segment " << seg.Id() << std::endl;
+    std::cout << "Segment " << seg;
     MOERTEL::Node** nodes = seg.Nodes();
-    cout << *nodes[0];
-    cout << *nodes[1];
-    cout << *nodes[2];
+    std::cout << *nodes[0];
+    std::cout << *nodes[1];
+    std::cout << *nodes[2];
 #endif
     // we do a newton iteration for the projection coordinates xi
     // set starting value to the middle of the segment
@@ -369,7 +382,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal(MOERTEL::Node& node,
       eps = MOERTEL::dot(F,F,3);
 
       if (eps < 1.0e-10) break;
-      //cout << eps << endl;
+      //std::cout << eps << std::endl;
 
       MOERTEL::solve33(dF,deta,F);
 
@@ -382,16 +395,16 @@ bool MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal(MOERTEL::Node& node,
     if (eps>1.0e-10) {
 
       if (OutLevel()>3)
-      cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal:\n"
+      std::cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal:\n"
       	   << "MOERTEL: ***WRN*** 3D Newton iteration failed to converge\n"
-      	   << "MOERTEL: ***WRN*** #iterations = " << i << endl
+      	   << "MOERTEL: ***WRN*** #iterations = " << i << std::endl
       	   << "MOERTEL: ***WRN*** eps = " << eps << " eta[3] = " << eta[0] << "/" << eta[1] << "/" << alpha << "\n"
            << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 
     }
 #if 0
     if (i>10)
-      cout << "#iterations = " << i << " eps = " << eps << " eta = " << eta[0] << "/" << eta[1] << endl;
+      std::cout << "#iterations = " << i << " eps = " << eps << " eta = " << eta[0] << "/" << eta[1] << std::endl;
 #endif
 
     xi[0] = eta[0];
@@ -565,7 +578,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_SegmentOrthogonal(MOERTEL::Node& n
 															 double &gap)
 {
 #if 0
-  cout << "----- Projector: Node " << node.Id() << " Segment " << seg.Id() << endl;
+  std::cout << "----- Projector: Node " << node.Id() << " Segment " << seg.Id() << std::endl;
 #endif
   if (IsTwoDimensional())
   {
@@ -585,14 +598,14 @@ bool MOERTEL::Projector::ProjectNodetoSegment_SegmentOrthogonal(MOERTEL::Node& n
     if (abs(F)>1.0e-10)
     {
       if (OutLevel()>3)
-      cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_SegmentOrthogonal:\n"
+      std::cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_SegmentOrthogonal:\n"
       	   << "MOERTEL: ***WRN*** Newton iteration failed to converge\n"
-      	   << "MOERTEL: ***WRN*** #iterations = " << i << endl
+      	   << "MOERTEL: ***WRN*** #iterations = " << i << std::endl
       	   << "MOERTEL: ***WRN*** F(eta) = " << F << " gradF(eta) = " << dF << " eta = " << eta << " delta(eta) = " << deta << "\n"
            << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     }
 #if 0
-    cout << "#iterations = " << i << " F = " << F << " eta = " << eta << endl;
+    std::cout << "#iterations = " << i << " F = " << F << " eta = " << eta << std::endl;
 #endif
     xi[0] = eta;
     return true;
@@ -748,8 +761,8 @@ bool MOERTEL::Projector::ProjectNodetoSegment_Orthogonal_to_Slave(
                                                              MOERTEL::Segment& sseg)
 {
 #if 0
-  cout << "----- Projector: Node " << snode.Id() << " Segment " << seg.Id() << endl;
-  cout << "      orthogonal to Slave Segment " << sseg.Id() << endl;
+  std::cout << "----- Projector: Node " << snode.Id() << " Segment " << seg.Id() << std::endl;
+  std::cout << "      orthogonal to Slave Segment " << sseg.Id() << std::endl;
 #endif
 
   if (IsTwoDimensional())
@@ -788,14 +801,14 @@ bool MOERTEL::Projector::ProjectNodetoSegment_Orthogonal_to_Slave(
     if (abs(F)>1.0e-10)
     {
       if (OutLevel()>3)
-      cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_Orthogonal_to_Slave:\n"
+      std::cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_Orthogonal_to_Slave:\n"
       	   << "MOERTEL: ***WRN*** Newton iteration failed to converge\n"
-      	   << "MOERTEL: ***WRN*** #iterations = " << i << endl
+      	   << "MOERTEL: ***WRN*** #iterations = " << i << std::endl
       	   << "MOERTEL: ***WRN*** F(eta) = " << F << " gradF(eta) = " << dF << " eta = " << eta << " delta(eta) = " << deta << "\n"
            << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     }
 #if 0
-    cout << "#iterations = " << i << " F = " << F << " eta = " << eta << endl;
+    std::cout << "#iterations = " << i << " F = " << F << " eta = " << eta << std::endl;
 #endif
     xi[0] = eta;
     return true;

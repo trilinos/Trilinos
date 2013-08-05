@@ -68,6 +68,15 @@ namespace panzer {
     return entry;
   }
 
+  template<typename EvaluationType>
+  Teuchos::RCP<panzer::ScalarParameterEntry<EvaluationType> >
+  accessScalarParameter(const std::string name, panzer::ParamLib& pl)
+  {
+    Teuchos::RCP<Sacado::ScalarParameterEntry<EvaluationType,panzer::EvaluationTraits> > sacado_entry =
+      pl.getEntry<EvaluationType>(name);
+    return Teuchos::rcp_dynamic_cast<panzer::ScalarParameterEntry<EvaluationType> >(sacado_entry,true);
+  }
+
 }
 
 #endif

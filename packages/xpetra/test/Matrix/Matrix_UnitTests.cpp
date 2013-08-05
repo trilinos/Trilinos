@@ -234,7 +234,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Matrix, ViewSwitching, SC, LO, GO, Node ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Matrix, StridedMaps, SC, LO, GO, Node )
 
-  typedef Kokkos::DefaultNode::DefaultNodeType DefaultNodeType;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNodeType;
   UNIT_TEST_GROUP_ORDINAL(double, int, int, DefaultNodeType)
 
 }

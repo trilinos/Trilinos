@@ -50,6 +50,7 @@
 
 #include "Kokkos_DefaultNode.hpp"
 
-template class panzer::TpetraLinearObjFactory<panzer::Traits,double,int,int>;
+// template class panzer::TpetraLinearObjFactory<panzer::Traits,double,int,int>;
+template class panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>;
 
 #endif

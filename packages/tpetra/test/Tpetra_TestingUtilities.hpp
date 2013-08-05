@@ -61,22 +61,22 @@ namespace Tpetra {
 
     bool testMpi = true;
 
-    using Kokkos::SerialNode;
+    using KokkosClassic::SerialNode;
     RCP<SerialNode> snode;
 #ifdef HAVE_KOKKOSCLASSIC_TBB
-    using Kokkos::TBBNode;
+    using KokkosClassic::TBBNode;
     RCP<TBBNode> tbbnode;
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-    using Kokkos::TPINode;
+    using KokkosClassic::TPINode;
     RCP<TPINode> tpinode;
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
-    using Kokkos::OpenMPNode;
+    using KokkosClassic::OpenMPNode;
     RCP<OpenMPNode> ompnode;
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_THRUST
-    using Kokkos::ThrustGPUNode;
+    using KokkosClassic::ThrustGPUNode;
     RCP<ThrustGPUNode> thrustnode;
 #endif
 

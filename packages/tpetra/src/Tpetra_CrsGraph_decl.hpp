@@ -162,8 +162,8 @@ namespace Tpetra {
    */
   template <class LocalOrdinal,
             class GlobalOrdinal = LocalOrdinal,
-            class Node = Kokkos::DefaultNode::DefaultNodeType,
-            class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps >
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType,
+            class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps >
   class CrsGraph :
     public RowGraph<LocalOrdinal,GlobalOrdinal,Node>,
     public DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>,
@@ -332,7 +332,7 @@ namespace Tpetra {
     ///   being cloned, if they exist. Otherwise, the row map is used.
     template<class Node2>
     RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node2,
-                 typename Kokkos::DefaultKernels<void, LocalOrdinal, Node2>::SparseOps> >
+                 typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Node2>::SparseOps> >
     clone (const Teuchos::RCP<Node2> &node2,
            const Teuchos::RCP<Teuchos::ParameterList> &params = null) const
     {
@@ -342,7 +342,7 @@ namespace Tpetra {
       using Teuchos::ParameterList;
       using std::endl;
       typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node2,
-        typename Kokkos::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> CrsGraph2;
+        typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps> CrsGraph2;
       typedef Map<LocalOrdinal, GlobalOrdinal, Node2> Map2;
       const char tfecfFuncName[] = "clone()";
 
@@ -657,22 +657,22 @@ namespace Tpetra {
     //@{
 
     //! Returns the communicator.
-    const RCP<const Comm<int> > & getComm() const;
+    RCP<const Comm<int> > getComm() const;
 
     //! Returns the underlying node.
     RCP<Node> getNode() const;
 
     //! Returns the Map that describes the row distribution in this graph.
-    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRowMap() const;
+    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const;
 
     //! \brief Returns the Map that describes the column distribution in this graph.
-    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getColMap() const;
+    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getColMap() const;
 
     //! Returns the Map associated with the domain of this graph.
-    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
+    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
 
     //! Returns the Map associated with the domain of this graph.
-    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
 
     //! Returns the importer associated with this graph.
     RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > getImporter() const;
@@ -894,29 +894,40 @@ namespace Tpetra {
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
     //@}
-    //! @name Methods implementing Tpetra::DistObject
+    //! @name Implementation of DistObject
     //@{
 
-    bool checkSizes(const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>& source);
+    virtual bool 
+    checkSizes (const SrcDistObject& source);
 
-    void copyAndPermute(const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> & source,
-                        size_t numSameIDs,
-                        const ArrayView<const LocalOrdinal> &permuteToLIDs,
-                        const ArrayView<const LocalOrdinal> &permuteFromLIDs);
+    virtual void 
+    copyAndPermute (const SrcDistObject& source,
+		    size_t numSameIDs,
+		    const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
+		    const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs);
 
-    void packAndPrepare(const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> & source,
-                        const ArrayView<const LocalOrdinal> &exportLIDs,
-                        Array<GlobalOrdinal> &exports,
-                        const ArrayView<size_t> & numPacketsPerLID,
-                        size_t& constantNumPackets,
-                        Distributor &distor);
+    virtual void
+    packAndPrepare (const SrcDistObject& source,
+		    const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
+		    Teuchos::Array<GlobalOrdinal> &exports,
+		    const Teuchos::ArrayView<size_t> & numPacketsPerLID,
+		    size_t& constantNumPackets,
+		    Distributor &distor);
 
-    void unpackAndCombine(const ArrayView<const LocalOrdinal> &importLIDs,
-                          const ArrayView<const GlobalOrdinal> &imports,
-                          const ArrayView<size_t> &numPacketsPerLID,
-                          size_t constantNumPackets,
-                          Distributor &distor,
-                          CombineMode CM);
+    virtual void
+    pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+	  Teuchos::Array<GlobalOrdinal>& exports,
+	  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+	  size_t& constantNumPackets,
+	  Distributor& distor) const;
+
+    virtual void 
+    unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
+		      const Teuchos::ArrayView<const GlobalOrdinal> &imports,
+		      const Teuchos::ArrayView<size_t> &numPacketsPerLID,
+		      size_t constantNumPackets,
+		      Distributor &distor,
+		      CombineMode CM);
     //@}
     //! \name Advanced methods, at increased risk of deprecation.
     //@{
@@ -1418,7 +1429,7 @@ namespace Tpetra {
     /// is necessary in that case for sparse matrix-vector multiply.
     RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > exporter_;
 
-    // local data, stored in a Kokkos::CrsGraph. only initialized after fillComplete()
+    // local data, stored in a KokkosClassic::CrsGraph. only initialized after fillComplete()
     RCP<local_graph_type> lclGraph_;
 
     // Local and Global Counts
@@ -1507,7 +1518,7 @@ namespace Tpetra {
     bool haveGlobalConstants_;
 
     //! Nonlocal data given to insertGlobalValues or sumIntoGlobalValues.
-    std::map<GlobalOrdinal, std::deque<GlobalOrdinal> > nonlocals_;
+    std::map<GlobalOrdinal, std::vector<GlobalOrdinal> > nonlocals_;
 
     bool haveRowInfo_;
 

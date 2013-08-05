@@ -1125,7 +1125,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
   //@{ 
 
   //! Print method
-  virtual void Print(ostream & os) const;
+  virtual void Print(std::ostream & os) const;
   //@}
 
   //! @name Additional methods required to support the Epetra_Operator interface

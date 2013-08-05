@@ -56,15 +56,37 @@ namespace Teuchos {
 
 template<class T> inline
 ArrayView<T>::ArrayView( ENull )
-  :ptr_(0), size_(0)
+  : ptr_(0), size_(0)
+{
+  setUpIterators();
+}
+
+template<class T> inline
+ArrayView<const T>::ArrayView( ENull )
+  : ptr_(0), size_(0)
 {
   setUpIterators();
 }
 
 
+
 template<class T> inline
 ArrayView<T>::ArrayView( T* p, size_type size_in, const ERCPNodeLookup rcpNodeLookup )
   :ptr_(p), size_(size_in)
+{
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  TEUCHOS_TEST_FOR_EXCEPT( p != 0 && size_in <= 0 );
+  TEUCHOS_TEST_FOR_EXCEPT( p == 0 && size_in != 0 );
+  // This only does something if HAVE_TEUCHOS_ARRAY_BOUNDSCHECK is defined.
+  setUpIterators(rcpNodeLookup);
+#else
+  (void) rcpNodeLookup; // Silence "unused variable" compiler warning.
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+}
+
+template<class T> inline
+ArrayView<const T>::ArrayView(const T* p, size_type size_in, const ERCPNodeLookup rcpNodeLookup )
+  : ptr_(p), size_(size_in)
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPT( p != 0 && size_in <= 0 );
@@ -85,6 +107,14 @@ ArrayView<T>::ArrayView(const ArrayView<T>& array)
 #endif
 {}
 
+template<class T> inline
+ArrayView<const T>::ArrayView(const ArrayView<const T>& array)
+  :ptr_(array.ptr_), size_(array.size_)
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  ,arcp_(array.arcp_)
+#endif
+{}
+
 
 template<class T> inline
 ArrayView<T>::ArrayView(
@@ -95,9 +125,27 @@ ArrayView<T>::ArrayView(
   setUpIterators();
 }
 
+template<class T> inline
+ArrayView<const T>::ArrayView(
+  std::vector<typename ConstTypeTraits<T>::NonConstType>& vec
+  )
+  : ptr_( vec.empty() ? 0 : &vec[0] ), size_(vec.size())
+{
+  setUpIterators();
+}
+
 
 template<class T> inline
 ArrayView<T>::ArrayView(
+  const std::vector<typename ConstTypeTraits<T>::NonConstType>& vec
+  )
+  : ptr_( vec.empty() ? 0 : &vec[0] ), size_(vec.size())
+{
+  setUpIterators();
+}
+
+template<class T> inline
+ArrayView<const T>::ArrayView(
   const std::vector<typename ConstTypeTraits<T>::NonConstType>& vec
   )
   : ptr_( vec.empty() ? 0 : &vec[0] ), size_(vec.size())
@@ -117,9 +165,24 @@ ArrayView<T>& ArrayView<T>::operator=(const ArrayView<T>& array)
   return *this;
 }
 
+template<class T> inline
+ArrayView<const T>& ArrayView<const T>::operator= (const ArrayView<const T>& array)
+{
+  ptr_ = array.ptr_;
+  size_ = array.size_;
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  arcp_ = array.arcp_;
+#endif
+  return *this;
+}
+
 
 template<class T> inline
 ArrayView<T>::~ArrayView()
+{}
+
+template<class T> inline
+ArrayView<const T>::~ArrayView()
 {}
 
 
@@ -133,9 +196,23 @@ bool ArrayView<T>::is_null() const
   return ptr_ == 0;
 }
 
+template<class T>
+inline
+bool ArrayView<const T>::is_null() const
+{
+  return ptr_ == 0;
+}
+
 
 template<class T> inline
 typename ArrayView<T>::size_type ArrayView<T>::size() const
+{
+  debug_assert_valid_ptr();
+  return size_;
+}
+
+template<class T> inline
+typename ArrayView<const T>::size_type ArrayView<const T>::size() const
 {
   debug_assert_valid_ptr();
   return size_;
@@ -145,7 +222,26 @@ typename ArrayView<T>::size_type ArrayView<T>::size() const
 template<typename T>
 std::string ArrayView<T>::toString() const
 {
+  using Teuchos::as;
+  std::ostringstream ss;
 
+  debug_assert_valid_ptr();
+
+  ss << "{";
+  for (size_type i = 0; i < size (); ++i) {
+    // NOTE: This depends on std::ostream::operator<<(const T&).
+    ss << operator[] (i);
+    if (i + 1 < size ()) {
+      ss << ", ";
+    }
+  }
+  ss << "}";
+  return ss.str ();
+}
+
+template<typename T>
+std::string ArrayView<const T>::toString() const
+{
   using Teuchos::as;
   std::ostringstream ss;
 
@@ -199,9 +295,24 @@ T* ArrayView<T>::getRawPtr() const
   return ptr_;
 }
 
+template<class T> inline
+const T* ArrayView<const T>::getRawPtr() const
+{
+  debug_assert_valid_ptr();
+  return ptr_;
+}
+
 
 template<class T> inline
 T& ArrayView<T>::operator[](size_type i) const
+{
+  debug_assert_valid_ptr();
+  debug_assert_in_range(i,1);
+  return ptr_[i];
+}
+
+template<class T> inline
+const T& ArrayView<const T>::operator[](size_type i) const
 {
   debug_assert_valid_ptr();
   debug_assert_in_range(i,1);
@@ -217,9 +328,24 @@ T& ArrayView<T>::front() const
   return *ptr_;
 }
 
+template<class T> inline
+const T& ArrayView<const T>::front() const
+{
+  debug_assert_not_null();
+  debug_assert_valid_ptr();
+  return *ptr_;
+}
 
 template<class T> inline
 T& ArrayView<T>::back() const
+{
+  debug_assert_not_null();
+  debug_assert_valid_ptr();
+  return *(ptr_+size_-1);
+}
+
+template<class T> inline
+const T& ArrayView<const T>::back() const
 {
   debug_assert_not_null();
   debug_assert_valid_ptr();
@@ -246,6 +372,22 @@ ArrayView<T> ArrayView<T>::view(size_type offset, size_type size_in) const
   // pointer arithmetic!
 }
 
+template<class T> inline
+ArrayView<const T> ArrayView<const T>::view(size_type offset, size_type size_in) const
+{
+  if (size_in == 0) {
+    return null;
+  }
+  debug_assert_valid_ptr();
+  debug_assert_in_range(offset, size_in);
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  return arcp_(offset, size_in);
+#endif
+  return ArrayView<const T> (ptr_+offset, size_in);
+  // WARNING: The above code had better be correct since we are using raw
+  // pointer arithmetic!
+}
+
 
 template<class T> inline
 ArrayView<T> ArrayView<T>::operator()(size_type offset, size_type size_in) const
@@ -253,9 +395,22 @@ ArrayView<T> ArrayView<T>::operator()(size_type offset, size_type size_in) const
   return view(offset, size_in);
 }
 
+template<class T> inline
+ArrayView<const T> ArrayView<const T>::operator()(size_type offset, size_type size_in) const
+{
+  return view(offset, size_in);
+}
+
 
 template<class T> inline
 const ArrayView<T>& ArrayView<T>::operator()() const
+{
+  debug_assert_valid_ptr();
+  return *this;
+}
+
+template<class T> inline
+const ArrayView<const T>& ArrayView<const T>::operator()() const
 {
   debug_assert_valid_ptr();
   return *this;
@@ -270,6 +425,11 @@ ArrayView<const T> ArrayView<T>::getConst() const
   return arcp_.getConst()();
 #endif
   return ArrayView<const T>(ptr_, size_);
+}
+
+template<class T> inline
+ArrayView<const T> ArrayView<const T>::getConst() const {
+  return *this;
 }
 
 
@@ -311,9 +471,31 @@ typename ArrayView<T>::iterator ArrayView<T>::begin() const
 #endif
 }
 
+template<class T>
+typename ArrayView<const T>::iterator ArrayView<const T>::begin() const
+{
+  debug_assert_valid_ptr();
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  return arcp_.create_weak();
+#else
+  return ptr_;
+#endif
+}
+
 
 template<class T>
 typename ArrayView<T>::iterator ArrayView<T>::end() const
+{
+  debug_assert_valid_ptr();
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  return arcp_.create_weak() + size_;
+#else
+  return ptr_ + size_;
+#endif
+}
+
+template<class T>
+typename ArrayView<const T>::iterator ArrayView<const T>::end() const
 {
   debug_assert_valid_ptr();
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
@@ -329,6 +511,14 @@ typename ArrayView<T>::iterator ArrayView<T>::end() const
 
 template<class T>
 const ArrayView<T>& ArrayView<T>::assert_not_null() const
+{
+  if(!ptr_)
+    throw_null_ptr_error(typeName(*this));
+  return *this;
+}
+
+template<class T>
+const ArrayView<const T>& ArrayView<const T>::assert_not_null() const
 {
   if(!ptr_)
     throw_null_ptr_error(typeName(*this));
@@ -357,6 +547,27 @@ ArrayView<T>::assert_in_range(size_type offset, size_type size_in) const
   return*this;
 }
 
+template<class T>
+const ArrayView<const T>&
+ArrayView<const T>::assert_in_range(size_type offset, size_type size_in) const
+{
+  assert_not_null();
+  TEUCHOS_TEST_FOR_EXCEPTION( size_in == as<size_type>(0), RangeError,
+    "Error, size=0 is not allowed!" );
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !(
+      ( 0 <= offset && offset+size_in <= this->size() )
+      &&
+      size_in >= 0
+      ),
+    RangeError,
+    typeName(*this)<<"::assert_in_range():"
+    " Error, [offset,offset+size) = ["<<offset<<","<<(offset+size_in)<<")"
+    " does not lie in the range [0,"<<this->size()<<")!"
+    );
+  return*this;
+}
+
 
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
@@ -365,9 +576,19 @@ ArrayView<T>::ArrayView( const ArrayRCP<T> &arcp )
   : ptr_(arcp.getRawPtr()), size_(arcp.size()), arcp_(arcp)
 {}
 
+template<class T>
+ArrayView<const T>::ArrayView( const ArrayRCP<const T> &arcp )
+  : ptr_(arcp.getRawPtr()), size_(arcp.size()), arcp_(arcp)
+{}
+
 
 template<class T>
 ArrayView<T>::ArrayView(T* p, size_type size_in, const ArrayRCP<T> &arcp)
+  : ptr_(p), size_(size_in), arcp_(arcp)
+{}
+
+template<class T>
+ArrayView<const T>::ArrayView(const T* p, size_type size_in, const ArrayRCP<const T> &arcp)
   : ptr_(p), size_(size_in), arcp_(arcp)
 {}
 
@@ -384,6 +605,18 @@ void ArrayView<T>::setUpIterators(const ERCPNodeLookup rcpNodeLookup)
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   if (ptr_ && arcp_.is_null()) {
     arcp_ = ArrayRCP<T>(ptr_, 0, size_, false, rcpNodeLookup);
+  }
+#else
+  (void) rcpNodeLookup; // Silence "unused variable" compiler warning.
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+}
+
+template<class T>
+void ArrayView<const T>::setUpIterators(const ERCPNodeLookup rcpNodeLookup)
+{
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  if (ptr_ && arcp_.is_null()) {
+    arcp_ = ArrayRCP<const T>(ptr_, 0, size_, false, rcpNodeLookup);
   }
 #else
   (void) rcpNodeLookup; // Silence "unused variable" compiler warning.

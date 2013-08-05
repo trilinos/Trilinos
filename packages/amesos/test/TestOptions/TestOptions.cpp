@@ -74,7 +74,7 @@
 
 #endif 
 
-std::vector<std::string> AmesosClasses;
+std::vector<string> AmesosClasses;
 
 int NumAmesosClasses;
 

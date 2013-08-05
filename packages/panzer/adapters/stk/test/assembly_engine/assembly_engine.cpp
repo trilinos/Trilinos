@@ -63,6 +63,7 @@ using Teuchos::rcp;
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_TpetraLinearObjFactory.hpp"
 #include "Panzer_AssemblyEngine.hpp"
+#include "Panzer_AssemblyEngine_InArgs.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
@@ -169,7 +170,7 @@ namespace panzer {
 
     // build the connection manager 
     const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     panzer::DOFManagerFactory<int,int> globalIndexerFactory;
     RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
@@ -294,15 +295,15 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
 
     // build the connection manager 
-    const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+    const Teuchos::RCP<panzer::ConnManager<int,panzer::Ordinal64> > 
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<panzer::Ordinal64>(mesh));
 
-    panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
+    panzer::DOFManagerFactory<int,panzer::Ordinal64> globalIndexerFactory;
+    RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > dofManager 
          = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
  
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory 
-          = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,int>(comm,dofManager));
+          = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>(comm,dofManager));
 
     // setup field manager build
     /////////////////////////////////////////////////////////////
@@ -348,15 +349,15 @@ namespace panzer {
     ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
     ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
 
-    RCP<panzer::TpetraLinearObjContainer<double,int,int> > globalCont 
-       = Teuchos::rcp_dynamic_cast<panzer::TpetraLinearObjContainer<double,int,int> >(tGlobal);
+    RCP<panzer::TpetraLinearObjContainer<double,int,panzer::Ordinal64> > globalCont 
+       = Teuchos::rcp_dynamic_cast<panzer::TpetraLinearObjContainer<double,int,panzer::Ordinal64> >(tGlobal);
 
-    Teuchos::RCP<const Tpetra::Operator<double,int,int> > baseOp = globalCont->get_A();
+    Teuchos::RCP<const Tpetra::Operator<double,int,panzer::Ordinal64> > baseOp = globalCont->get_A();
     Teuchos::RCP<const Thyra::VectorSpaceBase<double> > rangeSpace = Thyra::createVectorSpace<double>(baseOp->getRangeMap());
     Teuchos::RCP<const Thyra::VectorSpaceBase<double> > domainSpace = Thyra::createVectorSpace<double>(baseOp->getDomainMap());
 
-    tLinearOp = Thyra::constTpetraLinearOp<double,int,int>(rangeSpace, domainSpace, baseOp);
-    tVector = Thyra::constTpetraVector<double,int,int>(Thyra::tpetraVectorSpace<double,int,int>(baseOp->getRangeMap()).getConst(),
+    tLinearOp = Thyra::constTpetraLinearOp<double,int,panzer::Ordinal64>(rangeSpace, domainSpace, baseOp);
+    tVector = Thyra::constTpetraVector<double,int,panzer::Ordinal64>(Thyra::tpetraVectorSpace<double,int,panzer::Ordinal64>(baseOp->getRangeMap()).getConst(),
                                                        globalCont->get_f().getConst());
   }
 

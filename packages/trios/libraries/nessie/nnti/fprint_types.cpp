@@ -186,10 +186,6 @@ void fprint_NNTI_remote_addr(
         out << subprefix << "   ack_buf  = " << addr->NNTI_remote_addr_t_u.ib.ack_buf << std::endl;
         out << subprefix << "   ack_size = " << addr->NNTI_remote_addr_t_u.ib.ack_size << std::endl;
         break;
-    case NNTI_TRANSPORT_LUC:
-        out << subprefix << "   buf  = " << addr->NNTI_remote_addr_t_u.luc.buf << std::endl;
-        out << subprefix << "   size = " << addr->NNTI_remote_addr_t_u.luc.size << std::endl;
-        break;
     case NNTI_TRANSPORT_GEMINI:
         out << subprefix << "   type       = " << addr->NNTI_remote_addr_t_u.gni.type << std::endl;
         out << subprefix << "   buf        = " << addr->NNTI_remote_addr_t_u.gni.buf << std::endl;
@@ -274,10 +270,6 @@ void fprint_NNTI_peer(
         out << subprefix << " addr = " << addr->peer.NNTI_remote_process_t_u.ib.addr << std::endl;
         out << subprefix << " port = " << addr->peer.NNTI_remote_process_t_u.ib.port << std::endl;
         out << subprefix << " qpn  = " << addr->peer.NNTI_remote_process_t_u.ib.qpn << std::endl;
-        break;
-    case NNTI_TRANSPORT_LUC:
-        out << subprefix << " nid = " << addr->peer.NNTI_remote_process_t_u.portals.nid << std::endl;
-        out << subprefix << " pid = " << addr->peer.NNTI_remote_process_t_u.portals.pid << std::endl;
         break;
     case NNTI_TRANSPORT_GEMINI:
         out << subprefix << " addr    = " << addr->peer.NNTI_remote_process_t_u.gni.addr << std::endl;

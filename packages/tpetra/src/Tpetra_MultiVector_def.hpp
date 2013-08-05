@@ -140,7 +140,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-               const Kokkos::MultiVector<Scalar,Node>& localMultiVector,
+               const KokkosClassic::MultiVector<Scalar,Node>& localMultiVector,
                EPrivateComputeViewConstructor /* dummy */) :
     DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map),
     lclMV_ (localMultiVector),
@@ -154,7 +154,7 @@ namespace Tpetra {
       std::invalid_argument,
       "Tpetra::MultiVector constructor: The Map contains " << localNumElts
       << " on process " << map->getComm ()->getRank () << ", but the given "
-      "Kokkos::MultiVector only has " << localMultiVector.getNumRows ()
+      "KokkosClassic::MultiVector only has " << localMultiVector.getNumRows ()
       << " rows.");
   }
 
@@ -266,7 +266,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
-               const Kokkos::MultiVector<Scalar,Node>& localMultiVector,
+               const KokkosClassic::MultiVector<Scalar,Node>& localMultiVector,
                Teuchos::ArrayView<const size_t> WhichVectors,
                EPrivateComputeViewConstructor /* dummy */) :
     DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map),
@@ -282,7 +282,7 @@ namespace Tpetra {
       std::invalid_argument,
       "Tpetra::MultiVector constructor: The Map contains " << localNumElts
       << " on process " << map->getComm ()->getRank () << ", but the given "
-      "Kokkos::MultiVector only has " << localMultiVector.getNumRows ()
+      "KokkosClassic::MultiVector only has " << localMultiVector.getNumRows ()
       << " rows.");
     TEUCHOS_TEST_FOR_EXCEPTION(
       WhichVectors.size () == 0,
@@ -342,7 +342,7 @@ namespace Tpetra {
       // contiguous storage case (constant stride, and the stride
       // equals the local number of rows).
       KOKKOS_NODE_TRACE("MultiVector::MultiVector(1D)")
-      ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,myLen*NumVectors,mydata);
+      ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(KokkosClassic::WriteOnly,myLen*NumVectors,mydata);
       typename ArrayView<const Scalar>::iterator srcit = A.begin();
       for (size_t j = 0; j < NumVectors; ++j) {
         std::copy(srcit,srcit+myLen,myview);
@@ -384,7 +384,7 @@ namespace Tpetra {
       ArrayRCP<Scalar> mydata = node->template allocBuffer<Scalar>(myLen*NumVectors);
       MVT::initializeValues(lclMV_,myLen,NumVectors,mydata,myLen);
       KOKKOS_NODE_TRACE("MultiVector::MultiVector(2D)")
-      ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,myLen*NumVectors,mydata);
+      ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(KokkosClassic::WriteOnly,myLen*NumVectors,mydata);
       for (size_t j = 0; j < NumVectors; ++j) {
 #ifdef HAVE_TPETRA_DEBUG
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -404,7 +404,6 @@ namespace Tpetra {
       MVT::initializeValues(lclMV_,0,NumVectors,Teuchos::null,0);
     }
   }
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~MultiVector() {
@@ -441,29 +440,31 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-  checkSizes (const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &sourceObj)
+  checkSizes (const SrcDistObject& sourceObj)
   {
-    using Teuchos::RCP;
-    using Teuchos::rcp_dynamic_cast;
-    using Teuchos::rcpFromRef;
-
-    typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
-    // rcp_dynamic_cast gives us superior cast failure output to dynamic_cast.
-    RCP<const MV> A = rcp_dynamic_cast<const MV> (rcpFromRef (sourceObj), true);
-
-    // This method is called in DistObject::doTransfer().  By that
-    // point, we've already constructed an Import or Export object
-    // using the two multivectors' Maps, which means that (hopefully)
-    // we've already checked other attributes of the multivectors.
-    // Thus, all we need to do here is check the number of columns.
-    return A->getNumVectors() == this->getNumVectors ();
+    // Check whether the source object is a MultiVector.  If not, then
+    // we can't even compare sizes, so it's definitely not OK to
+    // Import or Export from it.
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> this_type;
+    const this_type* src = dynamic_cast<const this_type*> (&sourceObj);
+    if (src == NULL) {
+      return false; 
+    } else {
+      // The target of the Import or Export calls checkSizes() in
+      // DistObject::doTransfer().  By that point, we've already
+      // constructed an Import or Export object using the two
+      // multivectors' Maps, which means that (hopefully) we've
+      // already checked other attributes of the multivectors.  Thus,
+      // all we need to do here is check the number of columns.
+      return src->getNumVectors () == this->getNumVectors ();
+    }
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-  copyAndPermute (const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> & sourceObj,
+  copyAndPermute (const SrcDistObject& sourceObj,
                   size_t numSameIDs,
                   const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
                   const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs)
@@ -473,16 +474,18 @@ namespace Tpetra {
     using Teuchos::RCP;
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
     typedef typename ArrayView<const LocalOrdinal>::size_type size_type;
+    const char tfecfFuncName[] = "copyAndPermute";
 
-    // We've already called checkSizes(), so we know this will succeed.
-    const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
-    TEUCHOS_TEST_FOR_EXCEPTION(
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       permuteToLIDs.size() != permuteFromLIDs.size(), std::runtime_error,
-      "Tpetra::MultiVector::copyAndPermute(): permuteToLIDs and permuteFromLIDs"
-      " must have the same size." << std::endl << "permuteToLIDs.size() = "
-      << permuteToLIDs.size() << " != permuteFromLIDs.size() = "
-      << permuteFromLIDs.size() << ".");
-    const size_t numCols = getNumVectors ();
+      ": permuteToLIDs and permuteFromLIDs must have the same size." 
+      << std::endl << "permuteToLIDs.size() = " << permuteToLIDs.size () 
+      << " != permuteFromLIDs.size() = " << permuteFromLIDs.size () << ".");
+
+    // We've already called checkSizes(), so this cast must succeed.
+    const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
+
+    const size_t numCols = this->getNumVectors ();
 
     // Copy rows [0, numSameIDs-1] of the local multivectors.
     //
@@ -576,7 +579,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-  packAndPrepare (const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> & sourceObj,
+  packAndPrepare (const SrcDistObject& sourceObj,
                   const ArrayView<const LocalOrdinal> &exportLIDs,
                   Array<Scalar> &exports,
                   const ArrayView<size_t> &numExportPacketsPerLID,
@@ -589,7 +592,7 @@ namespace Tpetra {
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
     typedef Array<size_t>::size_type size_type;
 
-    // This cast should always succeed, since checkSizes() does the cast.
+    // We've already called checkSizes(), so this cast must succeed.
     const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
 
     // We don't need numExportPacketsPerLID; forestall "unused
@@ -1164,7 +1167,7 @@ namespace Tpetra {
     // Case 3 means that the calling process is excluded from the
     // current Map's communicator, but will be included in the new
     // Map's communicator.  This means we need to (re)allocate the
-    // local (Kokkos::)MultiVector if it does not have the right
+    // local (KokkosClassic::)MultiVector if it does not have the right
     // number of rows.  If the new number of rows is nonzero, we'll
     // fill the newly allocated local data with zeros, as befits a
     // projection operation.
@@ -1522,7 +1525,7 @@ namespace Tpetra {
   {
     Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
     KOKKOS_NODE_TRACE("MultiVector::getDataNonConst()")
-    return node->template viewBufferNonConst<Scalar> (Kokkos::ReadWrite, getLocalLength (), getSubArrayRCP (MVT::getValuesNonConst (lclMV_), j));
+    return node->template viewBufferNonConst<Scalar> (KokkosClassic::ReadWrite, getLocalLength (), getSubArrayRCP (MVT::getValuesNonConst (lclMV_), j));
   }
 
 
@@ -1644,14 +1647,14 @@ namespace Tpetra {
     }
     RCP<const MV> constViewMV;
     if (isConstantStride()) {
-      Kokkos::MultiVector<Scalar, Node> newLocalMV =
+      KokkosClassic::MultiVector<Scalar, Node> newLocalMV =
         lclMV_.offsetView (newNumRows, lclMV_.getNumCols (), offset, 0);
       constViewMV = rcp (new MV (subMap, newLocalMV, COMPUTE_VIEW_CONSTRUCTOR));
     }
     else {
       // Compute the max column being viewed.  This tells us where to stop the view.
       const size_t maxCol = *std::max_element (whichVectors_.begin(), whichVectors_.end());
-      Kokkos::MultiVector<Scalar, Node> newLocalMV =
+      KokkosClassic::MultiVector<Scalar, Node> newLocalMV =
         lclMV_.offsetView (newNumRows, maxCol+1, offset, 0);
       constViewMV = rcp (new MV (subMap, newLocalMV, whichVectors_, COMPUTE_VIEW_CONSTRUCTOR));
     }
@@ -1683,14 +1686,14 @@ namespace Tpetra {
     }
     RCP<MV> subViewMV;
     if (isConstantStride()) {
-      Kokkos::MultiVector<Scalar, Node> newLocalMV =
+      KokkosClassic::MultiVector<Scalar, Node> newLocalMV =
         lclMV_.offsetViewNonConst (newNumRows, lclMV_.getNumCols (), offset, 0);
       subViewMV = rcp (new MV (subMap, newLocalMV, COMPUTE_VIEW_CONSTRUCTOR));
     }
     else {
       // Compute the max column being viewed.  This tells us where to stop the view.
       const size_t maxCol = *std::max_element (whichVectors_.begin(), whichVectors_.end());
-      Kokkos::MultiVector<Scalar, Node> newLocalMV =
+      KokkosClassic::MultiVector<Scalar, Node> newLocalMV =
         lclMV_.offsetViewNonConst (newNumRows, maxCol+1, offset, 0);
       subViewMV = rcp (new MV (subMap, newLocalMV, whichVectors_, COMPUTE_VIEW_CONSTRUCTOR));
     }
@@ -1981,7 +1984,7 @@ namespace Tpetra {
       "Tpetra::MultiVector::get1dViewNonConst(): requires that this MultiVector have constant stride.");
     Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
     KOKKOS_NODE_TRACE("MultiVector::get1dViewNonConst()")
-    return node->template viewBufferNonConst<Scalar>( Kokkos::ReadWrite, getStride()*(getNumVectors()-1)+getLocalLength(), MVT::getValuesNonConst(lclMV_) );
+    return node->template viewBufferNonConst<Scalar>( KokkosClassic::ReadWrite, getStride()*(getNumVectors()-1)+getLocalLength(), MVT::getValuesNonConst(lclMV_) );
   }
 
 
@@ -2001,7 +2004,7 @@ namespace Tpetra {
                     myLen   = getLocalLength();
       if (myLen > 0) {
         KOKKOS_NODE_TRACE("MultiVector::get2dViewNonConst()")
-        ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(Kokkos::ReadWrite,myStride*(numCols-1)+myLen,MVT::getValuesNonConst(lclMV_));
+        ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(KokkosClassic::ReadWrite,myStride*(numCols-1)+myLen,MVT::getValuesNonConst(lclMV_));
         for (size_t j=0; j<numCols; ++j) {
           views[j] = myview.persistingView(0,myLen);
           myview += myStride;
@@ -2015,7 +2018,7 @@ namespace Tpetra {
                      myLen  = MVT::getNumRows(lclMV_);
       if (myLen > 0) {
         KOKKOS_NODE_TRACE("MultiVector::get2dViewNonConst()")
-        ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(Kokkos::ReadWrite,myStride*(numCols-1)+myLen,MVT::getValuesNonConst(lclMV_));
+        ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(KokkosClassic::ReadWrite,myStride*(numCols-1)+myLen,MVT::getValuesNonConst(lclMV_));
         for (size_t j=0; j<myCols; ++j) {
           views[j] = myview.persistingView(whichVectors_[j]*myStride,myLen);
         }
@@ -2267,7 +2270,7 @@ namespace Tpetra {
     bool packed = isConstantStride() && (myStride == myLen);
     KOKKOS_NODE_TRACE("MultiVector::reduce()")
     ArrayRCP<Scalar> bufView = node->template viewBufferNonConst<Scalar>(
-                                          Kokkos::ReadWrite,myStride*(numCols-1)+myLen,
+                                          KokkosClassic::ReadWrite,myStride*(numCols-1)+myLen,
                                           MVT::getValuesNonConst(lclMV_) );
     if (packed) {
       // copy data from view to sourceBuffer, reduce into view below
@@ -2429,13 +2432,13 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  const Kokkos::MultiVector<Scalar,Node>&
+  const KokkosClassic::MultiVector<Scalar,Node>&
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalMV() const {
     return lclMV_;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Kokkos::MultiVector<Scalar,Node>&
+  KokkosClassic::MultiVector<Scalar,Node>&
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalMVNonConst() {
     return lclMV_;
   }
@@ -2563,7 +2566,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-  createViewsNonConst (Kokkos::ReadWriteOption rwo)
+  createViewsNonConst (KokkosClassic::ReadWriteOption rwo)
   {
     if (! createViewsNonConstRaisedEfficiencyWarning_) {
       TPETRA_EFFICIENCY_WARNING(! ncview_.is_null (), std::runtime_error,

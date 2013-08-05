@@ -58,6 +58,13 @@ namespace panzer {
   createAndRegisterScalarParameter(const std::string name,
 				   panzer::ParamLib& pl);
 
+  template<typename EvaluationType>
+  Teuchos::RCP<panzer::ScalarParameterEntry<EvaluationType> >
+  accessScalarParameter(const std::string name, panzer::ParamLib& pl);
+
+  void registerScalarParameter(const std::string name,panzer::ParamLib& pl,double realValue);
+  
+
 }
 
 #include "Panzer_ParameterLibraryUtilities_impl.hpp"

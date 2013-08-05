@@ -45,7 +45,6 @@
 
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_Workset.hpp"
-#include "Panzer_BC.hpp"
 #include "Panzer_PhysicsBlock.hpp"
 
 #include "Teuchos_RCP.hpp"
@@ -90,7 +89,7 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
   *
   * \param[in] mesh A pointer to the STK_Interface used to construct the worksets
   * \param[in] pb Physics block associated with the element block
-  * \param[in] bc Boundary condition object
+  * \param[in] sidesetID Name of sideset
   *
   * \returns Map relating local element side IDs to a workset.
   *
@@ -100,7 +99,7 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
 buildBCWorksets(const panzer_stk::STK_Interface & mesh,
                 const panzer::PhysicsBlock & pb,
-                const panzer::BC & bc);
+                const std::string & sidesetID);
 
 // namespace may not be neccssary in the future, currently avoids
 // collisions with previously implemented code in tests
@@ -121,7 +120,7 @@ void getIdsAndVertices(const panzer_stk::STK_Interface& mesh,
 			 ArrayT& vertices);
 
 /** This function loops over the passed in set of entities and looks
- * at there related elements. It is then determined which elements
+ * at their related elements. It is then determined which elements
  * belong in the requested element block, and what the local ID of 
  * the entitiy is.
  *
@@ -195,7 +194,7 @@ void getNodeElements(const panzer_stk::STK_Interface & mesh,
 		       std::vector<std::size_t> & localNodeIds, 
 	 	       std::vector<stk::mesh::Entity*> & elements);
 
-/** This function builds the "element cascade" contained within an specfied
+/** This function builds the "element cascade" contained within a specfied
   * element block. That is given a set of "sides" extract all elements that
   * live in the block and touch those sides on a node, edge or face. It returns
   * the local sub cell index and sub cell dimension.

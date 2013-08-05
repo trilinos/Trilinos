@@ -153,6 +153,6 @@ const Epetra_Map & EpetraOperator::OperatorRangeMap() const {
   return epA->RangeMap();
 }
 
-RCP<MueLu::Hierarchy<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<double,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > EpetraOperator::GetHierarchy() const { return Hierarchy_; }
+RCP<MueLu::Hierarchy<double, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<double,int,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps> > EpetraOperator::GetHierarchy() const { return Hierarchy_; }
 
 } // namespace

@@ -130,7 +130,7 @@ namespace MueLu {
         }
       }
 
-      const Teuchos::ArrayView<const LocalOrdinal> localGIDs_view(&localGIDs[0],localGIDs.size());
+      const Teuchos::ArrayView<const GlobalOrdinal> localGIDs_view(&localGIDs[0],localGIDs.size());
 
       Teuchos::RCP<const Map> localGIDsMap = MapFactory::Build(
           map->lib(),

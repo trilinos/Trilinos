@@ -773,7 +773,7 @@ def makeHeaderDeclFile (filename):
 ///   If you edit this header by hand, your edits will disappear the next time
 ///   we run the generator script.
 
-namespace Kokkos {
+namespace KokkosClassic {
 
 /// \\namespace Raw
 /// \\brief "Raw" intranode computational routines.
@@ -805,7 +805,7 @@ namespace Raw {
                     s = s + makeFunctionDoc (defDict) + \
                         makeFunctionDeclaration (defDict) + '\n\n'
     s = s + '} // namespace Raw\n' + \
-        '} // namespace Kokkos\n\n' + \
+        '} // namespace KokkosClassic\n\n' + \
         '#endif // #ifndef __' + headerizedFilename + '\n'
     return s
 
@@ -833,7 +833,7 @@ def makeHeaderDefFile (filename):
 ///   If you edit this header by hand, your edits will disappear the next time
 ///   we run the generator script.
 
-namespace Kokkos {
+namespace KokkosClassic {
 namespace Raw {
 
 ''').substitute (baseFilename=basename(filename), \
@@ -855,7 +855,7 @@ namespace Raw {
                                'conjugateMatrixElements': conjugateMatrixElements}
                     s = s + makeFunctionDefinition (defDict) + '\n\n'
     s = s + '} // namespace Raw\n' + \
-        '} // namespace Kokkos\n\n' + \
+        '} // namespace KokkosClassic\n\n' + \
         '#endif // #ifndef __' + headerizedFilename + '\n'
     return s
 

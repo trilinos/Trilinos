@@ -137,10 +137,10 @@ void Epetra_JadMatrix::Allocate(const Epetra_RowMatrix & Matrix) {
   Epetra_Util sorter;
   int * RowPerm = RowPerm_.Values();
   sorter.Sort(false, numMyRows, Profile_.Values(), 0, 0, 1, &RowPerm, 0, 0);
-  //cout << "Profile = " << Profile_ << endl;
-  //cout << "RowPerm = " << RowPerm_ << endl;
+  //cout << "Profile = " << Profile_ << std::endl;
+  //cout << "RowPerm = " << RowPerm_ << std::endl;
   for (int i=0; i<numMyRows; i++) InvRowPerm_[RowPerm[i]] = i; // Compute inverse row permutation
-  //cout << "InvRowPerm = " << InvRowPerm_ << endl;
+  //cout << "InvRowPerm = " << InvRowPerm_ << std::endl;
 
   // Now build IndexOffsets:  These contain the lengths of the jagged diagonals
 
@@ -171,7 +171,7 @@ void Epetra_JadMatrix::Allocate(const Epetra_RowMatrix & Matrix) {
 
       A.ExtractMyRowView(i1, NumEntries, Values, Indices); // Get the current row
       int i = InvRowPerm_[i1]; // Determine permuted row location
-      //cout << "i1, i, NumEntries = " << i1 <<" "<< i <<" "<< NumEntries << endl;
+      //cout << "i1, i, NumEntries = " << i1 <<" "<< i <<" "<< NumEntries << std::endl;
       for (int j=0; j< NumEntries; j++) {
 	Values_[IndexOffset_[j]+i] = Values[j];
 	Indices_[IndexOffset_[j]+i] = Indices[j];

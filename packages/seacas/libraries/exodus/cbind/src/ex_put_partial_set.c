@@ -98,7 +98,7 @@ int ex_put_partial_set (int   exoid,
       sprintf(errmsg,
               "Warning: no data allowed for NULL %s %"PRId64" in file id %d",
 	      ex_name_of_object(set_type),set_id,exoid);
-      ex_err("ex_put_set",errmsg,EX_MSG);
+      ex_err("ex_put_set",errmsg,EX_NULLENTITY);
       return (EX_WARN);
     } else {
       sprintf(errmsg,

@@ -938,6 +938,7 @@ int Epetra_CrsMatrix::TSumIntoGlobalValues(int_type Row,
   int ierr = 0;
   int Loc = 0;
 
+
   int locRow = Graph_.LRID(Row); // Normalize row range
     
   if (locRow < 0 || locRow >= NumMyRows_) {
@@ -954,6 +955,11 @@ int Epetra_CrsMatrix::TSumIntoGlobalValues(int_type Row,
     for (j=0; j<NumEntries; j++) {
       int_type Index = Indices[j];
       if (Graph_.FindGlobalIndexLoc(locRow,Index,j,Loc))
+#ifdef EPETRA_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
+#pragma omp atomic
+#endif
+#endif
         RowValues[Loc] += srcValues[j];
       else
         ierr = 2; // Value Excluded
@@ -972,10 +978,20 @@ int Epetra_CrsMatrix::TSumIntoGlobalValues(int_type Row,
         // Check whether the next added element is the subsequent element in
         // the graph indices, then we can skip the binary search
         if (Loc < NumColIndices && Index == ColIndices[Loc])
+#ifdef EPETRA_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
+#pragma omp atomic
+#endif
+#endif
           RowValues[Loc] += srcValues[j];
         else {
           Loc = Epetra_Util_binary_search(Index, ColIndices, NumColIndices, insertPoint);
           if (Loc > -1)
+#ifdef EPETRA_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
+#pragma omp atomic
+#endif
+#endif
             RowValues[Loc] += srcValues[j];
           else 
             ierr = 2; // Value Excluded
@@ -987,6 +1003,11 @@ int Epetra_CrsMatrix::TSumIntoGlobalValues(int_type Row,
       for (j=0; j<NumEntries; j++) {
         int Index = colmap.LID(Indices[j]);
         if (Graph_.FindMyIndexLoc(NumColIndices,ColIndices,Index,j,Loc)) 
+#ifdef EPETRA_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP_NONASSOCIATIVE
+#pragma omp atomic
+#endif
+#endif
           RowValues[Loc] += srcValues[j];
         else 
           ierr = 2; // Value Excluded
@@ -2837,7 +2858,7 @@ int Epetra_CrsMatrix::UnpackAndCombine(const Epetra_SrcDistObject & Source,
 
 //=========================================================================
 
-void Epetra_CrsMatrix::Print(ostream& os) const {
+void Epetra_CrsMatrix::Print(std::ostream& os) const {
   int MyPID = RowMap().Comm().MyPID();
   int NumProc = RowMap().Comm().NumProc();
 
@@ -2847,23 +2868,23 @@ void Epetra_CrsMatrix::Print(ostream& os) const {
         const Epetra_fmtflags oldf = os.setf(ios::scientific,ios::floatfield);
         const int             oldp = os.precision(12); */
       if (MyPID==0) {
-  os <<  "\nNumber of Global Rows        = "; os << NumGlobalRows64(); os << endl;
-  os <<    "Number of Global Cols        = "; os << NumGlobalCols64(); os << endl;
-  os <<    "Number of Global Diagonals   = "; os << NumGlobalDiagonals64(); os << endl;
-  os <<    "Number of Global Nonzeros    = "; os << NumGlobalNonzeros64(); os << endl;
-  os <<    "Global Maximum Num Entries   = "; os << GlobalMaxNumEntries(); os << endl;
-  if (LowerTriangular()) os <<    " ** Matrix is Lower Triangular **"; os << endl;
-  if (UpperTriangular()) os <<    " ** Matrix is Upper Triangular **"; os << endl;
-  if (NoDiagonal())      os <<    " ** Matrix has no diagonal     **"; os << endl; os << endl;
+  os <<  "\nNumber of Global Rows        = "; os << NumGlobalRows64(); os << std::endl;
+  os <<    "Number of Global Cols        = "; os << NumGlobalCols64(); os << std::endl;
+  os <<    "Number of Global Diagonals   = "; os << NumGlobalDiagonals64(); os << std::endl;
+  os <<    "Number of Global Nonzeros    = "; os << NumGlobalNonzeros64(); os << std::endl;
+  os <<    "Global Maximum Num Entries   = "; os << GlobalMaxNumEntries(); os << std::endl;
+  if (LowerTriangular()) os <<    " ** Matrix is Lower Triangular **"; os << std::endl;
+  if (UpperTriangular()) os <<    " ** Matrix is Upper Triangular **"; os << std::endl;
+  if (NoDiagonal())      os <<    " ** Matrix has no diagonal     **"; os << std::endl; os << std::endl;
       }
       
-      os <<  "\nNumber of My Rows        = "; os << NumMyRows(); os << endl;
-      os <<    "Number of My Cols        = "; os << NumMyCols(); os << endl;
-      os <<    "Number of My Diagonals   = "; os << NumMyDiagonals(); os << endl;
-      os <<    "Number of My Nonzeros    = "; os << NumMyNonzeros(); os << endl;
-      os <<    "My Maximum Num Entries   = "; os << MaxNumEntries(); os << endl; os << endl;
+      os <<  "\nNumber of My Rows        = "; os << NumMyRows(); os << std::endl;
+      os <<    "Number of My Cols        = "; os << NumMyCols(); os << std::endl;
+      os <<    "Number of My Diagonals   = "; os << NumMyDiagonals(); os << std::endl;
+      os <<    "Number of My Nonzeros    = "; os << NumMyNonzeros(); os << std::endl;
+      os <<    "My Maximum Num Entries   = "; os << MaxNumEntries(); os << std::endl; os << std::endl;
 
-      os << flush;
+      os << std::flush;
       
       // Reset os flags
       
@@ -2909,7 +2930,7 @@ void Epetra_CrsMatrix::Print(ostream& os) const {
   os <<  "   Col Index ";
   os.width(20);
   os <<  "   Value     ";
-  os << endl;
+  os << std::endl;
       }
       for (i=0; i<NumMyRows1; i++) {
         if(RowMap().GlobalIndicesInt()) {
@@ -2926,7 +2947,7 @@ void Epetra_CrsMatrix::Print(ostream& os) const {
               os <<  Indices_int[j]; os << "    ";
               os.width(20);
               os <<  values[j]; os << "    ";
-              os << endl;
+              os << std::endl;
            }
 #else
     throw ReportError("Epetra_CrsMatrix::Print: ERROR, GlobalIndicesInt but no API for it.",-1);
@@ -2946,7 +2967,7 @@ void Epetra_CrsMatrix::Print(ostream& os) const {
               os <<  Indices_LL[j]; os << "    ";
               os.width(20);
               os <<  values[j]; os << "    ";
-              os << endl;
+              os << std::endl;
            }
 #else
     throw ReportError("Epetra_CrsMatrix::Print: ERROR, GlobalIndicesLongLong but no API for it.",-1);
@@ -2962,7 +2983,7 @@ void Epetra_CrsMatrix::Print(ostream& os) const {
       }
       delete [] values;
       
-      os << flush;
+      os << std::flush;
       
     }
     // Do a few global ops to give I/O a chance to complete

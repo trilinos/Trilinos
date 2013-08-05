@@ -79,33 +79,26 @@ namespace MueLu {
  RCP<const ParameterList> RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set<int>        ("startLevel",                   1, "First level at which repartitioning can possibly occur. Repartitioning at finer levels is suppressed");
-    validParamList->set<LO>         ("minRowsPerProcessor",       1000, "Minimum number of rows over all processes. If any process falls below this, repartitioning is initiated");
-    validParamList->set<double>     ("nonzeroImbalance",           1.2, "Imbalance threshold, below which repartitioning is initiated. Imbalance is measured by "
-                                                                        "ratio of maximum nonzeros over all processes to minimum number of nonzeros over all processes");
-    validParamList->set<bool>       ("fixedOrder",                true, "Use sorting of recv PIDs to force reproducibility");
-    // FIXME: Unused; LO instead of GO?
-    // validParamList->set<GO>         ("minNnzPerProcessor",          -1, "Minimum number of nonzeros over all processes. If any process falls below this, repartitioning is initiated.");
-    validParamList->set<std::string>("adjustNumPartitions",     "none", "Algorithm for adjusting number of partitions (none|2k)");
+    validParamList->set<int>        ("startLevel",               1, "First level at which repartitioning can possibly occur. Repartitioning at finer levels is suppressed");
+    validParamList->set<LO>         ("minRowsPerProcessor",   1000, "Minimum number of rows over all processes. If any process falls below this, repartitioning is initiated");
+    validParamList->set<double>     ("nonzeroImbalance",       1.2, "Imbalance threshold, below which repartitioning is initiated. Imbalance is measured by "
+                                                                    "ratio of maximum nonzeros over all processes to minimum number of nonzeros over all processes");
+    validParamList->set<bool>       ("fixedOrder",            true, "Use sorting of recv PIDs to force reproducibility");
+    validParamList->set<LO>         ("diffusiveHeuristic",       0, "0:   put on procs 0..N\n"
+                                                                    "1:   use diffusive heuristic\n"
+                                                                    "K>1: if #partitions is > K, put on procs 0..N, otherwise use diffusive heuristic\n"
+                                                                    "-1:  put on procs 0..N the first time only, then use diffusive in remaining rounds\n");
+    validParamList->set<LO>         ("maxNumArbitrationRounds", 10, "Maximum number of arbitration rounds for diffusive heuristic");
+    validParamList->set<bool>       ("alwaysKeepProc0",       true, "Always keep processor 0 in subcommunicator");
 
-    {
-      std::stringstream docDiffusiveHeuristic;
-      docDiffusiveHeuristic << "0:   put on procs 0..N" << std::endl
-                            << "1:   use diffusive heuristic" << std::endl
-                            << "K>1: if #partitions is > K, put on procs 0..N, otherwise use diffusive heuristic" << std::endl
-                            << "-1:  put on procs 0..N the first time only, then use diffusive in remaining rounds" << std::endl;
-
-      validParamList->set<LO>("diffusiveHeuristic",     0, docDiffusiveHeuristic.str());
-    }
-    validParamList->set<LO>("maxNumArbitrationRounds",     10, "Maximum number of arbitration rounds for diffusive heuristic");
-
-    validParamList->set< RCP<const FactoryBase> >("A",                   Teuchos::null, "Factory of the matrix A");
-    validParamList->set< RCP<const FactoryBase> >("Partition",           Teuchos::null, "Factory of the partition");
+    validParamList->set< RCP<const FactoryBase> >("A",         Teuchos::null, "Factory of the matrix A");
+    validParamList->set< RCP<const FactoryBase> >("Partition", Teuchos::null, "Factory of the partition");
 
     // One can specify a number of partition on the level class to override what is computed internally by this class.
     // By default, the generation factory is 'this', not Teuchos::null, which means that by default, neither user defined data nor
     // the factory manager are used. This is unusual.
-    // To manually set a "number of partition" entry in the level, it has to either be associated with the generating factory 'this' or the generating factory of this class has to be set to Teuchos::null:
+    // To manually set a "number of partition" entry in the level, it has to either be associated with the generating factory 'this'
+    // or the generating factory of this class has to be set to Teuchos::null:
     // Ex: level.Set("numbers of partitions"); myRepartitionFact.set< RCP<FactoryBase> >("number of partitions", Teuchos::null);
     //  or level.Set("numbers of partitions", myRepartitionFact); and approrpiate requests
     RCP<const FactoryBase> rcpThis = rcpFromRef(*this);
@@ -181,7 +174,7 @@ namespace MueLu {
         LO     minNumRows;
         size_t numMyRows = A->getNodeNumRows();
         LO LOMAX = Teuchos::OrdinalTraits<LO>::max(); // processors without rows do not participate to minAll()
-        minAll(comm, (LO)((numMyRows > 0) ? numMyRows : LOMAX), minNumRows);
+        minAll(comm, Teuchos::as<LO>((numMyRows > 0) ? numMyRows : LOMAX), minNumRows);
         TEUCHOS_TEST_FOR_EXCEPTION(minNumRows >= LOMAX, Exceptions::RuntimeError, "internal error");
         msg3 << std::endl << "    min # rows per proc = "   << minNumRows << ", min allowable = " << minRowsPerProcessor;
         if (minNumRows < minRowsPerProcessor) {
@@ -233,16 +226,6 @@ namespace MueLu {
       if (numPartitions > comm->getSize())
         numPartitions = comm->getSize();
 
-      std::string adjustment = pL.get<std::string>("adjustNumPartitions");
-      if (adjustment == "2k") {
-        GetOStream(Statistics0, 0) << "Number of partitions to use = " << numPartitions << std::endl;
-
-        int i2 = Teuchos::as<int>(floor(log(numPartitions)/log(2)));
-        numPartitions = Teuchos::as<int>(std::pow(2.,i2));
-
-        GetOStream(Runtime0,0) << "Adjusting number of partitions using \"2k\" algorithm to " << numPartitions << std::endl;
-      }
-
       Set(currentLevel, "number of partitions", numPartitions);
     }
     GetOStream(Statistics0, 0) << "Number of partitions to use = " << numPartitions << std::endl;
@@ -259,24 +242,10 @@ namespace MueLu {
       // TODO: can we skip more work (ie: building the hashtable, etc.)?
       GetOStream(Warnings0, 0) << "Only one partition: Skip call to the repartitioner." << std::endl;
       decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(A->getRowMap(), true);
+
     } else {
       decomposition = Get<RCP<GOVector> >(currentLevel, "Partition");
-
-      // Zoltan2 changes the number of partitions. There is no good mechanism to propagate that new number
-      // to this factory, but we can do that by finding out the max number of partition across all processors
-      GO maxPartLocal = 0;
-      if (decomposition->getLocalLength()) {
-        // NOTE: this is a stupid check. We would not be here if we didn't have any data.
-        // But one of the unit tests (Repartition_Build) constructs a stupid map in which processor
-        // 2 does not have any data. I'll add this check here.
-        maxPartLocal = *std::max_element(decomposition->getData(0).begin(), decomposition->getData(0).end());
-      }
-      maxAll(decomposition->getMap()->getComm(), maxPartLocal, numPartitions);
-      numPartitions++;
-
-      Set(currentLevel, "number of partitions", numPartitions);
-
-      if (decomposition == Teuchos::null) {
+      if (decomposition.is_null()) {
         GetOStream(Warnings0, 0) << "No repartitioning necessary: partitions were left unchanged by the repartitioner" << std::endl;
         Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
         return;
@@ -284,6 +253,7 @@ namespace MueLu {
     }
 
     // Use a hashtable to record how many local rows belong to each partition.
+    // FIXME: why do we use a hashtable here???
     RCP<Teuchos::Hashtable<GO, GO> > hashTable;
     hashTable = rcp(new Teuchos::Hashtable<GO, GO>(numPartitions + numPartitions/2));
     Teuchos::Hashtable<GO,GO>& htref = *hashTable;
@@ -627,41 +597,45 @@ namespace MueLu {
   //----------------------------------------------------------------------
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeterminePartitionPlacement(Level & currentLevel, GO &myPartitionNumber,
+  void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeterminePartitionPlacement(Level& currentLevel, GO& myPartitionNumber,
   Array<int> &partitionOwners) const
   {
     FactoryMonitor m(*this, "DeterminePartitionPlacement", currentLevel);
 
-    GO numPartitions = Get<GO>(currentLevel, "number of partitions");
-    RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
+    GO          numPartitions = Get<GO>           (currentLevel, "number of partitions");
+    RCP<Matrix> A             = Get< RCP<Matrix> >(currentLevel, "A");
+
     RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
     int mypid = comm->getRank();
 
-    const Teuchos::ParameterList & pL = GetParameterList();
+    const Teuchos::ParameterList& pL = GetParameterList();
     const LO diffusiveHeuristic = pL.get<LO>("diffusiveHeuristic");
-    static bool forceDiffusive = false; // FIXME: we need a mecanism to reset this variable (if several Hierarchy::Setup() using same factories)
+    static bool forceDiffusive = false; // FIXME: we need a mechanism to reset this variable (if several Hierarchy::Setup() using same factories)
 
     // If not diffusive, compute (partitionOwners, myPartitionNumber) and return.
     if (diffusiveHeuristic != 1 && numPartitions > diffusiveHeuristic && !forceDiffusive) {
+      if (diffusiveHeuristic == -1) {
+        // Put on procs 0..N the first time only, then use diffusive in remaining rounds
+        forceDiffusive = true;
+      }
 
-      // if diffusiveHeuristic == -1:  put on procs 0..N the first time only, then use diffusive in remaining rounds
-      if (diffusiveHeuristic == -1) forceDiffusive = true;
-
-      if (numPartitions==1)
-        GetOStream(Runtime0, 0) << "Placing partitions on proc. 0." << std::endl;
+      if (numPartitions == 1)
+        GetOStream(Runtime0, 0) << "Placing partitions on proc. 0" << std::endl;
       else
-        GetOStream(Runtime0, 0) << "Placing partitions on proc. 0-" << numPartitions-1 << "." << std::endl;
+        GetOStream(Runtime0, 0) << "Placing partitions on proc. 0-" << numPartitions-1 << std::endl;
 
       myPartitionNumber = -1;
-      for (int i=0; i<(int)numPartitions; ++i) {
-        partitionOwners.push_back(i);
-        if (i==mypid) myPartitionNumber = i;
+      partitionOwners.resize(Teuchos::as<size_t>(numPartitions));
+      for (GO i = 0; i < numPartitions; i++) {
+        partitionOwners[i] = i;
+        if (i == mypid)
+          myPartitionNumber = i;
       }
 
       return;
     }
 
-    GetOStream(Runtime0, 0) << "Using diffusive heuristic for partition placement." << std::endl;
+    GetOStream(Runtime0, 0) << "Using diffusive heuristic for partition placement" << std::endl;
 
     RCP<SubFactoryMonitor> m1 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: Setup", currentLevel));
 
@@ -673,7 +647,7 @@ namespace MueLu {
     ArrayRCP<GO> nnzPerRow;
     if (nnzPerRowVector->getLocalLength() > 0)
       nnzPerRow = nnzPerRowVector->getDataNonConst(0);
-    for (int i=0; i<nnzPerRow.size(); ++i)
+    for (int i = 0; i < nnzPerRow.size(); ++i)
       nnzPerRow[i] = A->getNumEntriesInLocalRow(i);
 
     // Use a hashtable to record how many nonzeros in the local matrix belong to each partition.
@@ -892,32 +866,33 @@ namespace MueLu {
     // clean up phase
     ///////////////////////////////////////////
 
-#ifdef MUELU_NEVER_DROP_PROC0
-    //If all partitions have been assigned but PID 0 doesn't own one, reassign a partition PID 0.
-    if (numAlreadyOwned == numPartitions && mypid==0 && myPartitionNumber==-1 ) {
-      // Grab ownership of the partition for which 0 has the most dofs.
-      GO maxSize=0;
-      for (int i=0; i<allPartitionsIContributeTo.size(); ++i) {
-        if (localNnzPerPartition[i] > maxSize) {
-          maxSize=localNnzPerPartition[i];
-          myPartitionNumber=allPartitionsIContributeTo[i];
+    const bool alwaysKeepProc0 = pL.get<bool>("alwaysKeepProc0");
+    if (alwaysKeepProc0) {
+      //If all partitions have been assigned but PID 0 doesn't own one, reassign a partition PID 0.
+      if (numAlreadyOwned == numPartitions && mypid==0 && myPartitionNumber==-1 ) {
+        // Grab ownership of the partition for which 0 has the most dofs.
+        GO maxSize=0;
+        for (int i=0; i<allPartitionsIContributeTo.size(); ++i) {
+          if (localNnzPerPartition[i] > maxSize) {
+            maxSize=localNnzPerPartition[i];
+            myPartitionNumber=allPartitionsIContributeTo[i];
+          }
         }
+        GetOStream(Statistics0, 0) << "Reassigning partition " << myPartitionNumber << " to pid 0." << std::endl;
       }
-      GetOStream(Statistics0, 0) << "Reassigning partition " << myPartitionNumber << " to pid 0." << std::endl;
-    }
-    // Broadcast PID 0's partition number.  Whichever PID was the previous owner gives up ownership.
-    // + It may be that PID 0 didn't own a partition, in which case the number broadcast is -1.
-    //   No other PID gives up ownership because partition numbers start at 0.
-    // + It may be that PID 0 already owns a partition from the arbitration round.  This is ok
-    //   because no other PID will have that partition number.
-    int root=0;
-    int mpn=-1;
-    if (mypid==0) mpn=Teuchos::as<int>(myPartitionNumber);
-    MPI_Bcast(&mpn, 1, MPI_INT, root,*rawMpiComm);
-    if ( (mypid > 0) && (myPartitionNumber >= 0) && (Teuchos::as<int>(myPartitionNumber) == mpn) ) {
-      myPartitionNumber=-1;
-    }
-#endif //ifdef MUELU_NEVER_DROP_PROC0
+      // Broadcast PID 0's partition number.  Whichever PID was the previous owner gives up ownership.
+      // + It may be that PID 0 didn't own a partition, in which case the number broadcast is -1.
+      //   No other PID gives up ownership because partition numbers start at 0.
+      // + It may be that PID 0 already owns a partition from the arbitration round.  This is ok
+      //   because no other PID will have that partition number.
+      int root=0;
+      int mpn=-1;
+      if (mypid==0) mpn=Teuchos::as<int>(myPartitionNumber);
+      MPI_Bcast(&mpn, 1, MPI_INT, root,*rawMpiComm);
+      if ( (mypid > 0) && (myPartitionNumber >= 0) && (Teuchos::as<int>(myPartitionNumber) == mpn) ) {
+        myPartitionNumber=-1;
+      }
+    } //if (alwaysKeepProc0)
 
     // 1) all pids get global snapshot of partition #s and their owners
     Array<int> allAssignedPartitions(comm->getSize());

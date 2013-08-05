@@ -15,10 +15,6 @@ TRIBITS_ADD_EXECUTABLE(
   DEPLIBS stokhos
   )
 
-
-
-
-
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   hermite_example
   SOURCES hermite_example.cpp
@@ -107,6 +103,18 @@ TRIBITS_ADD_EXECUTABLE(
 TRIBITS_ADD_EXECUTABLE(
   cijk_nonzeros
   SOURCES cijk_nonzeros.cpp
+  DEPLIBS stokhos
+  )
+
+TRIBITS_ADD_EXECUTABLE(
+  cijk_ltb_partition
+  SOURCES cijk_ltb_partition.cpp
+  DEPLIBS stokhos
+  )
+
+TRIBITS_ADD_EXECUTABLE(
+  cijk_ltb_partition_level
+  SOURCES cijk_ltb_partition_level.cpp
   DEPLIBS stokhos
   )
 
@@ -363,7 +371,7 @@ IF(Stokhos_ENABLE_Sacado)
     DEPLIBS stokhos
     )
 
-  IF(Stokhos_ENABLE_KokkosArray)
+  IF(Stokhos_ENABLE_KokkosCore)
     
     SET(CUDA_SOURCES "")
     IF (Stokhos_ENABLE_CUDA)
@@ -441,6 +449,12 @@ IF (Stokhos_ENABLE_Thrust)
 
 ENDIF()
 
+TRIBITS_ADD_EXECUTABLE(
+  cijk_partition_rcb
+  SOURCES cijk_partition_rcb.cpp
+  DEPLIBS stokhos
+  )
+
 IF(Stokhos_ENABLE_Isorropia)
 
   TRIBITS_ADD_EXECUTABLE(
@@ -451,6 +465,44 @@ IF(Stokhos_ENABLE_Isorropia)
 
 ENDIF()
 
+IF(Stokhos_ENABLE_Zoltan)
+
+  TRIBITS_ADD_EXECUTABLE(
+    cijk_partition_zoltan
+    SOURCES cijk_partition_zoltan.cpp
+    DEPLIBS stokhos
+    )
+
+  TRIBITS_ADD_EXECUTABLE(
+    cijk_partition_zoltan_3d
+    SOURCES cijk_partition_zoltan_3d.cpp
+    DEPLIBS stokhos
+    )
+
+  TRIBITS_ADD_EXECUTABLE(
+    cijk_partition_zoltan_rcb
+    SOURCES cijk_partition_zoltan_rcb.cpp
+    DEPLIBS stokhos
+    )
+
+ENDIF()
+
+IF(Stokhos_ENABLE_Cusp)
+
+  SET(CUDA_SOURCES "")
+
+  CUDA_COMPILE(CUDA_SOURCES cusp_sa_blockcg.cu)
+
+  TRIBITS_ADD_EXECUTABLE(
+    cusp_sa_blockcg_example
+    SOURCES ${CUDA_SOURCES}
+    COMM serial mpi
+    DEPLIBS stokhos
+    )
+ENDIF() 
+
 IF(Stokhos_ENABLE_Experimental)
   ADD_SUBDIRECTORY(experimental)
 ENDIF()
+
+ADD_SUBDIRECTORY(sarah)

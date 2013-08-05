@@ -89,10 +89,9 @@ test: check
 
 check: aprepro
 	@echo "****Test should produce the following 4 lines of output to stderr:"
-	@echo "	Aprepro: WARN: Variable \`b' redefined (test.inp_app, line 19)"
 	@echo "	Aprepro: WARN: Undefined variable \`Parse' (test.inp_app, line 74)"
 	@echo "	Aprepro: ERR:  syntax error (test.inp_app, line 74)"
-	@echo "	Aprepro: WARN: Undefined variable \`T' (test.inp_app, line 106)"
+	@echo "	Aprepro: WARN: Undefined variable \`T' (test.inp_app, line 159)"
 	@echo " "
 	rm -f distribution.out
 	./aprepro test.inp_app | grep -v Revision > distribution.out
@@ -100,6 +99,6 @@ check: aprepro
 	@echo "****'<' denotes standard, '>' denotes current output"
 	@echo "****Differences should be limited to small differences in"
 	@echo "	numerical precision only."
-	-spiff test_standard.out distribution.out
+	-diff --ignore-all-space test_standard.out distribution.out
 
 DependTarget()

@@ -118,6 +118,16 @@ public:
           soln(0),
           env(envConst_){};
 
+  PartitionMapping(
+          const Environment *envConst_,
+          const Teuchos::Comm<int> *comm_,
+          const MachineRepresentation<scalar_t> *machine_
+          ):
+          comm(comm_),
+          machine(machine_),
+          model(0),
+          soln(0),
+          env(envConst_){};
 
 
   virtual ~PartitionMapping(){}

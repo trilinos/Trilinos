@@ -71,12 +71,12 @@ AztecOO_StatusTestCombo& AztecOO_StatusTestCombo::AddStatusTest(AztecOO_StatusTe
     // if (Utils::doPrint(Utils::Warning)) 
     {
       const int indent = 2;
-      cout << "\n*** WARNING! ***\n";
-      cout << "This combo test currently consists of the following:\n";
-      this->Print(cout, indent);
-      cout << "Unable to add the following test:\n";
-      a.Print(cout, indent);
-      cout << "\n";
+      std::cout << "\n*** WARNING! ***\n";
+      std::cout << "This combo test currently consists of the following:\n";
+      this->Print(std::cout, indent);
+      std::cout << "Unable to add the following test:\n";
+      a.Print(std::cout, indent);
+      std::cout << "\n";
     }
   return *this;
 }
@@ -219,13 +219,13 @@ void AztecOO_StatusTestCombo::SeqOp(int CurrentIter, Epetra_MultiVector * Curren
 }
 
 
-ostream& AztecOO_StatusTestCombo::Print(ostream& stream, int indent) const {
+std::ostream& AztecOO_StatusTestCombo::Print(std::ostream& stream, int indent) const {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   PrintStatus(stream, status_);
   stream << ((type_ == OR) ? "OR" : (type_ == AND) ? "AND" :"SEQ");
   stream << " Combination";
-  stream << " -> " << endl;
+  stream << " -> " << std::endl;
 
   for (std::vector<AztecOO_StatusTest*>::const_iterator i = tests_.begin(); i != tests_.end(); ++i) 
     (*i)->Print(stream, indent+2);

@@ -50,6 +50,7 @@ namespace Ioss {
     ~NodeBlock();
 
     std::string type_string() const {return "NodeBlock";}
+    std::string short_type_string() const {return "nodeblock";}
     EntityType type() const {return NODEBLOCK;}
 
     // Handle implicit properties -- These are calcuated from data stored
