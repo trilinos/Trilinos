@@ -216,7 +216,7 @@ protected:
   ///
   /// TensorBase components
   ///
-  MiniTensor::StorageRCPArray<T>
+  MiniTensor::Storage<T, MiniTensor::DYNAMIC>
   components_;
 
 };
