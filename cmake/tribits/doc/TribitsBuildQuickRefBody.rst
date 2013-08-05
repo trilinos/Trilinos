@@ -19,7 +19,7 @@ Download and install the binary (currently version 2.8 is required) from:
 Installing CMake from source [developers and experienced users]
 ---------------------------------------------------------------
 
-If you have access to the <Project> CVS repository, then install CMake with::
+If you have access to the <Project> git repositories, then install CMake with::
 
   $ $TRIBITS_BASE_DIR/python/install-cmake.py \
      --install-dir=<INSTALL_BASE_DIR> \
