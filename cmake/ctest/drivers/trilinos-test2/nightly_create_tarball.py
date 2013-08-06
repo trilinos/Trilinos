@@ -110,7 +110,7 @@ DEFAULT_ENABLE_DISABLE_LIST = [
   ("RTOp", True),
   ("Rythmos", True),
   ("Sacado", True),
-  ("SEACAS", True),
+  ("SEACAS", False),
   ("Shards", True),
   ("ShyLU", True),
   ("STK", True),
