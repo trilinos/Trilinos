@@ -515,8 +515,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapLowerLeft, T )
     dimensions[axis] = 10 * axisCommSizes[axis];
 
   // Construct an MDMap
-  Teuchos::RCP< MDMap< T > > mdMap =
-    Teuchos::rcp(new MDMap< T >(mdComm, dimensions));
+  MDMap< T > mdMap(mdComm, dimensions);
   
   // Figure out the lower left slice
   Array< Slice > slices(numDims);
@@ -547,7 +546,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapLowerLeft, T )
   // Should this processor be a part of the sub-MDComm?
   bool partOfSubComm = true;
   for (int axis = 0; axis < numDims; ++axis)
-    if (mdMap->getGlobalBounds(axis).start() >= newDims[axis])
+    if (mdMap.getGlobalBounds(axis).start() >= newDims[axis])
       partOfSubComm = false;
 
   // Do some unit tests
@@ -593,8 +592,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapLowerLeftWithHalo, T )
   }
 
   // Construct an MDMap
-  Teuchos::RCP< MDMap< T > > mdMap =
-    Teuchos::rcp(new MDMap< T >(mdComm, dimensions, halos));
+  MDMap< T > mdMap(mdComm, dimensions, halos);
   
   // Figure out the lower left slice
   Array< Slice > slices(numDims);
@@ -625,7 +623,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapLowerLeftWithHalo, T )
   // Should this processor be a part of the sub-MDComm?
   bool partOfSubComm = true;
   for (int axis = 0; axis < numDims; ++axis)
-    if (mdMap->getGlobalBounds(axis).start() >= newDims[axis])
+    if (mdMap.getGlobalBounds(axis).start() >= newDims[axis])
       partOfSubComm = false;
 
   // Do some unit tests
@@ -691,8 +689,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapLowerRight, T )
     dimensions[axis] = 10 * axisCommSizes[axis];
 
   // Construct an MDMap
-  Teuchos::RCP< MDMap< T > > mdMap =
-    Teuchos::rcp(new MDMap< T >(mdComm, dimensions));
+  MDMap< T > mdMap(mdComm, dimensions);
   
   // Figure out the lower right slice
   Array< Slice > slices(numDims);
@@ -787,8 +784,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapLowerRightWithGhost, T )
   }
 
   // Construct an MDMap
-  Teuchos::RCP< MDMap< T > > mdMap =
-    Teuchos::rcp(new MDMap< T >(mdComm, dimensions, ArrayView<int>(), ghosts));
+  MDMap< T > mdMap(mdComm, dimensions, ArrayView<int>(), ghosts);
   
   // Figure out the lower right slice
   Array< Slice > slices(numDims);
@@ -883,8 +879,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapUpperLeft, T )
     dimensions[axis] = 10 * axisCommSizes[axis];
 
   // Construct an MDMap
-  Teuchos::RCP< MDMap< T > > mdMap =
-    Teuchos::rcp(new MDMap< T >(mdComm, dimensions));
+  MDMap< T > mdMap(mdComm, dimensions);
   
   // Figure out the upper left slice
   Array< Slice > slices(numDims);
@@ -981,8 +976,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapUpperLeftHaloGhost, T )
   }
 
   // Construct an MDMap
-  Teuchos::RCP< MDMap< T > > mdMap =
-    Teuchos::rcp(new MDMap< T >(mdComm, dimensions, halos, ghosts));
+  MDMap< T > mdMap(mdComm, dimensions, halos, ghosts);
 
   // Figure out the upper left slice
   Array< Slice > slices(numDims);
@@ -1101,8 +1095,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapUpperRight, T )
     dimensions[axis] = 10 * axisCommSizes[axis];
 
   // Construct an MDMap
-  Teuchos::RCP< MDMap< T > > mdMap =
-    Teuchos::rcp(new MDMap< T >(mdComm, dimensions));
+  MDMap< T > mdMap(mdComm, dimensions);
   
   // Figure out the upper right slice
   Array< Slice > slices(numDims);
@@ -1192,8 +1185,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapUpperRightNewGhosts, T )
   }
 
   // Construct an MDMap
-  Teuchos::RCP< MDMap< T > > mdMap =
-    Teuchos::rcp(new MDMap< T >(mdComm, dimensions, halos, ghosts));
+  MDMap< T > mdMap(mdComm, dimensions, halos, ghosts);
 
   // Compute the new ghost sizes and figure out the upper right slice
   Array< Slice > slices(numDims);
