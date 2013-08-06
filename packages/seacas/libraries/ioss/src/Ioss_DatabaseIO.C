@@ -146,6 +146,8 @@ namespace {
 }
 
 namespace Ioss {
+  bool DatabaseIO::useGenericCanonicalNameDefault = false;
+  
   DatabaseIO::DatabaseIO(Region* region, const std::string& filename,
 			 DatabaseUsage db_usage,
 			 MPI_Comm communicator,
@@ -156,7 +158,7 @@ namespace Ioss {
       dbUsage(db_usage),dbIntSizeAPI(USE_INT32_API), lowerCaseVariableNames(true),
       util_(communicator), region_(region), isInput(is_input_event(db_usage)),
       singleProcOnly(db_usage == WRITE_HISTORY || db_usage == WRITE_HEARTBEAT || SerializeIO::isEnabled()),
-      doLogging(false), useGenericCanonicalName(false)
+      doLogging(false), useGenericCanonicalName(useGenericCanonicalNameDefault)
   {
     isParallel  = util_.parallel_size() > 1;
     myProcessor = util_.parallel_rank();
