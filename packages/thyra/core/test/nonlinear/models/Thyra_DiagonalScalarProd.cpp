@@ -42,6 +42,7 @@
 */
 
 #include "Thyra_DiagonalScalarProd_decl.hpp"
+#include "Thyra_SpmdVectorSpaceBase.hpp"
 
 #ifdef HAVE_THYRA_EXPLICIT_INSTANTIATION
 
