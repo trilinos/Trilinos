@@ -47,8 +47,6 @@
 #define MUELU_BRICKAGGREGATIONFACTORY_DEF_HPP_
 
 #include "MueLu_BrickAggregationFactory_decl.hpp"
-#if defined(HAVE_MPI)
-#include <mpi.h>
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
@@ -130,7 +128,6 @@ namespace MueLu {
 
     const ParameterList& pL = GetParameterList();
 
-    // TODO: deal with block size > 1
     RCP<MultiVector> coords = Get< RCP<MultiVector> >(currentLevel, "Coordinates");
     RCP<Matrix>      A      = Get< RCP<Matrix> >     (currentLevel, "A");
     RCP<const Map>   rowMap = A->getRowMap();
@@ -145,9 +142,19 @@ namespace MueLu {
     by_ = pL.get<int>("by");
     bz_ = pL.get<int>("bz");
 
+    // TODO: deal with block size > 1
+    TEUCHOS_TEST_FOR_EXCEPTION(bx_ > 3 || by_ > 3 || bz_ > 3, Exceptions::RuntimeError, "Currently cannot deal with brick size > 3");
+
+    RCP<MultiVector> overlappedCoords = coords;
+    RCP<const Import> importer = ImportFactory::Build(coords->getMap(), colMap);
+    if (!importer.is_null()) {
+      overlappedCoords = Xpetra::MultiVectorFactory<double,int,int>::Build(colMap, coords->getNumVectors());
+      overlappedCoords->doImport(*coords, *importer, Xpetra::INSERT);
+    }
+
     // Setup misc structures
     // Logically, we construct enough data to query topological information of a rectangular grid
-    Setup(comm, coords, colMap);
+    Setup(comm, overlappedCoords, colMap);
 
     GetOStream(Runtime0,0) << "Using brick size: " << bx_ << " x " << by_ << (nDim_ == 3 ? "x " + toString(bz_) : "") << std::endl;
 
@@ -169,7 +176,7 @@ namespace MueLu {
     for (LocalOrdinal LID = 0; LID < numPoints; LID++) {
       GlobalOrdinal aggGID = getAggGID(LID);
 
-      if (rowMap->isNodeGlobalElement(getRoot(LID))) {
+      if ((revMap_.find(getRoot(LID)) != revMap_.end()) && rowMap->isNodeGlobalElement(colMap->getGlobalElement(revMap_[getRoot(LID)]))) {
         // Root of the brick aggregate containing GID (<- LID) belongs to us
         vertex2AggId[LID] = aggGID;
         myAggGIDs.insert(aggGID);
@@ -201,7 +208,7 @@ namespace MueLu {
 
     // The map is a convenient way to fetch remote local indices from global indices.
     RCP<Map> aggMap = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-                                                                                 myAggGIDsArray, rowMap->getIndexBase(), comm);
+                                                                                 myAggGIDsArray, 0, comm);
 
     ind = 0;
     for (typename std::set<GlobalOrdinal>::const_iterator it = remoteAggGIDs.begin(); it != remoteAggGIDs.end(); it++)
@@ -220,7 +227,7 @@ namespace MueLu {
 
     // Remap aggregate GIDs to LIDs and set up owning processors
     for (LocalOrdinal LID = 0; LID < numPoints; LID++) {
-      if (rowMap->isNodeGlobalElement(getRoot(LID))) {
+      if (revMap_.find(getRoot(LID)) != revMap_.end() && rowMap->isNodeGlobalElement(colMap->getGlobalElement(revMap_[getRoot(LID)]))) {
         GlobalOrdinal aggGID = vertex2AggId[LID];
 
         vertex2AggId[LID] = AggG2L[aggGID];
@@ -241,26 +248,30 @@ namespace MueLu {
   void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(const RCP<const Teuchos::Comm<int> >& comm, const RCP<MultiVector>& coords, const RCP<const Map>& map) const {
     nDim_ = coords->getNumVectors();
 
-    RCP<const Import> importer = ImportFactory::Build(coords->getMap(), map);
-    RCP<MultiVector> overlappedCoords = MultiVectorFactory::Build(map, nDim_);
-    overlappedCoords->doImport(*coords, *importer, Xpetra::INSERT);
-
-
-    x_    = overlappedCoords->getData(0);
+    x_    = coords->getData(0);
     xMap_ = Construct1DMap(comm, x_);
     nx_   = xMap_->size();
 
-    y_    = overlappedCoords->getData(1);
+    y_    = coords->getData(1);
     yMap_ = Construct1DMap(comm, y_);
     ny_   = yMap_->size();
 
     nz_   = 1;
     if (nDim_ == 3) {
-      z_    = overlappedCoords->getData(2);
+      z_    = coords->getData(2);
       zMap_ = Construct1DMap(comm, z_);
       nz_   = zMap_->size();
     }
 
+    for (size_t ind = 0; ind < coords->getLocalLength(); ind++) {
+      GlobalOrdinal i = (*xMap_)[(coords->getData(0))[ind]];
+      GlobalOrdinal j = (*yMap_)[(coords->getData(1))[ind]];
+      GlobalOrdinal k = 0;
+      if (nDim_ == 3)
+        k = (*zMap_)[(coords->getData(2))[ind]];
+
+      revMap_[k*ny_*nx_ + j*nx_ + i] = ind;
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -268,36 +279,43 @@ namespace MueLu {
     int numProcs = comm->getSize();
     int n = x.size();
 
-    // TODO: fix for serial run
     RCP<const Teuchos::MpiComm<int> > mpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
-    MPI_Comm rawComm = (*mpiComm->getRawMpiComm())();
+    bool isMPI = !mpiComm.is_null();
 
     // Step 1: Create a local vector with unique coordinate points
-    std::set<double> localSet;
+    RCP<container> gMap = rcp(new container);
     for (int i = 0; i < n; i++)
-      localSet.insert(x[i]);
+      (*gMap)[x[i]] = 0;
 
     // Step 2: exchange coordinates
-    int           sendCnt = localSet.size(), cnt = 0, recvSize = 0;
-    Array<int>    recvCnt(numProcs), Displs(numProcs);
-    Array<double> sendBuf, recvBuf;
+    Array<double>  recvBuf;
+    int recvSize = 0;
+    if (isMPI && numProcs > 1) {
+      MPI_Comm rawComm;
+      if (isMPI)
+        rawComm = (*mpiComm->getRawMpiComm())();
 
-    sendBuf.resize(sendCnt);
-    for (std::set<double>::const_iterator cit = localSet.begin(); cit != localSet.end(); cit++)
-      sendBuf[cnt++] = *cit;
+      int           sendCnt = gMap->size(), cnt = 0;
+      Array<int>    recvCnt(numProcs), Displs(numProcs);
+      Array<double> sendBuf, recvBuf;
 
-    MPI_Allgather(&sendCnt, 1, MPI_INT, recvCnt.getRawPtr(), 1, MPI_INT, rawComm);
-    Displs[0] = 0;
-    for (int i = 0; i < numProcs-1; i++)
-      Displs[i+1] = Displs[i] + recvCnt[i];
-    recvSize = Displs[numProcs-1] + recvCnt[numProcs-1];
-    recvBuf.resize(recvSize);
-    MPI_Allgatherv(sendBuf.getRawPtr(), sendCnt, MPI_DOUBLE, recvBuf.getRawPtr(), recvCnt.getRawPtr(), Displs.getRawPtr(), MPI_DOUBLE, rawComm);
+      sendBuf.resize(sendCnt);
+      for (typename container::const_iterator cit = gMap->begin(); cit != gMap->end(); cit++)
+        sendBuf[cnt++] = cit->first;
 
-    RCP<container> gMap = rcp(new container);
-    for (int i = 0; i < recvSize; i++)
-      (*gMap)[recvBuf[i]] = 0;
-    cnt = 0;
+      MPI_Allgather(&sendCnt, 1, MPI_INT, recvCnt.getRawPtr(), 1, MPI_INT, rawComm);
+      Displs[0] = 0;
+      for (int i = 0; i < numProcs-1; i++)
+        Displs[i+1] = Displs[i] + recvCnt[i];
+      recvSize = Displs[numProcs-1] + recvCnt[numProcs-1];
+      recvBuf.resize(recvSize);
+      MPI_Allgatherv(sendBuf.getRawPtr(), sendCnt, MPI_DOUBLE, recvBuf.getRawPtr(), recvCnt.getRawPtr(), Displs.getRawPtr(), MPI_DOUBLE, rawComm);
+
+      for (int i = 0; i < recvSize; i++)
+        (*gMap)[recvBuf[i]] = 0;
+    }
+
+    GlobalOrdinal cnt = 0;
     for (typename container::iterator it = gMap->begin(); it != gMap->end(); it++)
       it->second = cnt++;
 
@@ -344,7 +362,5 @@ namespace MueLu {
 
 
 } //namespace MueLu
-
-#endif //if defined(HAVE_MPI)
 
 #endif /* MUELU_BRICKAGGREGATIONFACTORY_DEF_HPP_ */

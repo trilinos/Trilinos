@@ -47,7 +47,6 @@
 #define MUELU_BRICKAGGREGATIONFACTORY_DECL_HPP_
 
 #include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MPI)
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
@@ -88,13 +87,13 @@ namespace MueLu {
     // Therefore, we hardcode a constant so that close points are considered the same.
     class compare {
     public:
-      bool operator()(const double& x, const double& y) {
-        if (fabs(x-y) < 1e-14)
+      bool operator()(const Scalar& x, const Scalar& y) {
+        if (Teuchos::ScalarTraits<Scalar>::magnitude(x - y) < 1e-14)
           return false;
         return x < y;
       }
     };
-    typedef std::map<double,int,compare> container;
+    typedef std::map<Scalar,GlobalOrdinal,compare> container;
 
   public:
     //! @name Constructors/Destructors.
@@ -143,16 +142,17 @@ namespace MueLu {
     mutable
      RCP<container> xMap_, yMap_, zMap_;
     mutable
-     ArrayRCP<const double> x_, y_, z_;
+     ArrayRCP<const Scalar> x_, y_, z_;
     mutable
      int nx_, ny_, nz_;
     mutable
      int bx_, by_, bz_;
+    mutable
+     std::map<GlobalOrdinal,GlobalOrdinal> revMap_;
   }; // class BrickAggregationFactory
 
   }
 
 #define MUELU_BRICKAGGREGATIONFACTORY_SHORT
-#endif //if defined(HAVE_MPI)
 
 #endif /* MUELU_BRICKAGGREGATIONFACTORY_DECL_HPP_ */
