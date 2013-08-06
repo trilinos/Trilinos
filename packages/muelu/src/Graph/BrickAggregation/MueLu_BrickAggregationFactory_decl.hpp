@@ -46,6 +46,9 @@
 #ifndef MUELU_BRICKAGGREGATIONFACTORY_DECL_HPP_
 #define MUELU_BRICKAGGREGATIONFACTORY_DECL_HPP_
 
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MPI)
+
 #include <Xpetra_Import_fwd.hpp>
 #include <Xpetra_ImportFactory_fwd.hpp>
 #include <Xpetra_Map_fwd.hpp>
@@ -54,7 +57,6 @@
 #include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
 
-#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_BrickAggregationFactory_fwd.hpp"
 
@@ -149,4 +151,6 @@ namespace MueLu {
   }
 
 #define MUELU_BRICKAGGREGATIONFACTORY_SHORT
+#endif //if defined(HAVE_MPI)
+
 #endif /* MUELU_BRICKAGGREGATIONFACTORY_DECL_HPP_ */
