@@ -160,8 +160,8 @@ public:
 
   /** \brief Parent/slice sub-map constructor
    *
-   * \param parent [in] an RCP of an MDMap, from which this sub-map
-   *        will be derived.
+   * \param parent [in] an MDMap, from which this sub-map will be
+   *        derived.
    *
    * \param slices [in] an array of Slices of global axis indexes that
    *        defines the sub-map.  These slices must not include
@@ -171,7 +171,7 @@ public:
    *        may include indexes from the ghost region of the parent
    *        MDMap, but they do not have to.
    */
-  MDMap(const Teuchos::RCP< MDMap< LocalOrd, GlobalOrd, Node > > parent,
+  MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
         const Teuchos::ArrayView< Slice > & slices,
         const Teuchos::ArrayView< int > & ghosts =
           Teuchos::ArrayView< int >());
@@ -640,30 +640,30 @@ MDMap(const MDCommRCP mdComm,
 
 template< class LocalOrd, class GlobalOrd, class Node >
 MDMap< LocalOrd, GlobalOrd, Node >::
-MDMap(const Teuchos::RCP< MDMap< LocalOrd, GlobalOrd, Node > > parent,
+MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
       const Teuchos::ArrayView< Slice > & slices,
       const Teuchos::ArrayView< int > & ghosts) :
   _mdComm(),
-  _globalDims(parent->getNumDims()),
+  _globalDims(parent.getNumDims()),
   _globalBounds(),
-  _globalRankBounds(parent->_globalRankBounds),
-  _globalStrides(parent->_globalStrides),
+  _globalRankBounds(parent._globalRankBounds),
+  _globalStrides(parent._globalStrides),
   _globalMin(0),
   _globalMax(0),
-  _localDims(parent->getNumDims(), 0),
+  _localDims(parent.getNumDims(), 0),
   _localBounds(),
-  _localStrides(parent->_localStrides),
+  _localStrides(parent._localStrides),
   _localMin(0),
   _localMax(0),
-  _haloSizes(parent->_haloSizes),
-  _halos(parent->_halos),
-  _ghostSizes(parent->getNumDims(), 0),
-  _ghosts(parent->getNumDims()),
-  _storageOrder(parent->getStorageOrder()),
-  _node(parent->_node)
+  _haloSizes(parent._haloSizes),
+  _halos(parent._halos),
+  _ghostSizes(parent.getNumDims(), 0),
+  _ghosts(parent.getNumDims()),
+  _storageOrder(parent.getStorageOrder()),
+  _node(parent._node)
 {
   // Temporarily store the number of dimensions
-  int numDims = parent->getNumDims();
+  int numDims = parent.getNumDims();
 
   // Sanity check on dimensions
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -687,14 +687,14 @@ MDMap(const Teuchos::RCP< MDMap< LocalOrd, GlobalOrd, Node > > parent,
   for (int axis = 0; axis < numDims; ++axis)
   {
     Slice bounds =
-      slices[axis].bounds(parent->getGlobalBounds(axis,true).stop());
+      slices[axis].bounds(parent.getGlobalBounds(axis,true).stop());
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ((bounds.start() < parent->getGlobalBounds(axis).start()) ||
-       (bounds.stop() > parent->getGlobalBounds(axis).stop())),
+      ((bounds.start() < parent.getGlobalBounds(axis).start()) ||
+       (bounds.stop() > parent.getGlobalBounds(axis).stop())),
       RangeError,
       "Slice along axis " << axis << " is " << bounds << " but must be within"
-      " [" << parent->getGlobalBounds(axis).start() << ":" <<
-      parent->getGlobalBounds(axis).stop() << "]");
+      " [" << parent.getGlobalBounds(axis).start() << ":" <<
+      parent.getGlobalBounds(axis).stop() << "]");
     GlobalOrd start = bounds.start() - _ghostSizes[axis];
     if (start < 0)
     {
@@ -702,10 +702,10 @@ MDMap(const Teuchos::RCP< MDMap< LocalOrd, GlobalOrd, Node > > parent,
       start = 0;
     }
     GlobalOrd stop = bounds.stop() + _ghostSizes[axis];
-    if (stop > parent->getGlobalDim(axis,true))
+    if (stop > parent.getGlobalDim(axis,true))
     {
-      _ghosts[axis][1] = parent->getGlobalDim(axis,true) - bounds.stop();
-      stop = parent->getGlobalDim(axis,true);
+      _ghosts[axis][1] = parent.getGlobalDim(axis,true) - bounds.stop();
+      stop = parent.getGlobalDim(axis,true);
     }
     _globalBounds.push_back(ConcreteSlice(start,stop));
     _globalDims[axis] = stop - start;
@@ -720,7 +720,7 @@ MDMap(const Teuchos::RCP< MDMap< LocalOrd, GlobalOrd, Node > > parent,
   {
     int start = -1;
     int stop  = -1;
-    for (int axisRank = 0; axisRank < parent->getAxisCommSize(axis);
+    for (int axisRank = 0; axisRank < parent.getAxisCommSize(axis);
          ++axisRank)
     {
       if ((_globalRankBounds[axis][axisRank].start() - _ghosts[axis][0]
@@ -741,7 +741,7 @@ MDMap(const Teuchos::RCP< MDMap< LocalOrd, GlobalOrd, Node > > parent,
     axisRankSlices.push_back(ConcreteSlice(start,stop));
   }
   // Construct the MDComm sub-communicator
-  _mdComm = Teuchos::rcp(new MDComm(parent->_mdComm, axisRankSlices));
+  _mdComm = Teuchos::rcp(new MDComm(parent._mdComm, axisRankSlices));
 
   // We now have a sub-communicator, and should only construct this
   // MDMap if this processor is on it.  If this processor is off the
@@ -755,7 +755,7 @@ MDMap(const Teuchos::RCP< MDMap< LocalOrd, GlobalOrd, Node > > parent,
         _halos[axis][0] = _ghosts[axis][0];
       if (axisRank == _mdComm->getAxisCommSize(axis)-1)
         _halos[axis][1] = _ghosts[axis][1];
-      LocalOrd start = parent->_localBounds[axis].start();
+      LocalOrd start = parent._localBounds[axis].start();
       if (_globalBounds[axis].start() >
           _globalRankBounds[axis][axisRank].start())
       {
@@ -771,7 +771,7 @@ MDMap(const Teuchos::RCP< MDMap< LocalOrd, GlobalOrd, Node > > parent,
             _globalBounds[axis].start();
         }
       }
-      LocalOrd stop = parent->_localBounds[axis].stop();
+      LocalOrd stop = parent._localBounds[axis].stop();
       if (_globalBounds[axis].stop() <
           _globalRankBounds[axis][axisRank].stop())
       {
