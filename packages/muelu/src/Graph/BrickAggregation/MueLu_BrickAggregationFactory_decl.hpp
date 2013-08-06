@@ -48,6 +48,8 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #if defined(HAVE_MPI)
+#include <Teuchos_DefaultMpiComm.hpp>
+#include <Teuchos_CommHelpers.hpp>
 
 #include <Xpetra_Import_fwd.hpp>
 #include <Xpetra_ImportFactory_fwd.hpp>
