@@ -145,6 +145,8 @@ namespace MueLu {
 
     static const Epetra_CrsMatrix&                          Op2EpetraCrs(const Matrix& Op);
     static       Epetra_CrsMatrix&                          Op2NonConstEpetraCrs(Matrix& Op);
+
+    static const Epetra_Map&                                Map2EpetraMap(const Map& map);
     // @}
 #endif
 
@@ -163,6 +165,7 @@ namespace MueLu {
 
     static const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>&        Op2TpetraCrs(const Matrix& Op);
     static       Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>&        Op2NonConstTpetraCrs(Matrix& Op);
+    static const RCP<const Tpetra::Map<LO, GO, NO> >        Map2TpetraMap(const Map& map);
 #endif
 
     /*! @brief Helper function to do matrix-matrix multiply
@@ -299,6 +302,19 @@ namespace MueLu {
 
     //! @brief Read matrix from file in Matrix Market or binary format.
     static Teuchos::RCP<Matrix> Read(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm, bool binary = false);
+
+    /*! @brief Read matrix from file in Matrix Market or binary format.
+
+        If only rowMap is specified, then it is used for the domainMap and rangeMap, as well. 
+    */
+    static Teuchos::RCP<Matrix> Read(const std::string & filename,
+                                     const RCP< const Map > &rowMap,
+                                     RCP< const Map >       &colMap,
+                                     const RCP< const Map > &domainMap=Teuchos::null,
+                                     const RCP< const Map > &rangeMap=Teuchos::null,
+                                     const bool callFillComplete = true,
+                                     const bool tolerant = false,
+                                     const bool debug = false); 
     //@}
 
     static void PauseForDebugger();

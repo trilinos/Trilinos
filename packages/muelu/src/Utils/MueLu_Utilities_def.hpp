@@ -196,6 +196,15 @@ namespace MueLu {
       throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
     }
   }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  const Epetra_Map& Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Map2EpetraMap(const Map& map) {
+    RCP<const Map> rcpToMap = rcpFromRef(map);
+    RCP<const Xpetra::EpetraMap> xeMap = rcp_dynamic_cast<const Xpetra::EpetraMap>(rcpToMap);
+    if (xeMap == Teuchos::null)
+      throw Exceptions::BadCast("Utils::Map2EpetraMap : Cast from Xpetra::Map to Xpetra::EpetraMap failed");
+    return xeMap->getEpetra_Map();
+  }
 #endif
 
 #ifdef HAVE_MUELU_TPETRA
@@ -286,6 +295,15 @@ namespace MueLu {
     } catch (std::bad_cast) {
       throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
     }
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal,Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Map2TpetraMap(const Map& map) {
+    RCP<const Map> rcpToMap = rcpFromRef(map);
+    const RCP<const TpetraMap> &tmp_TMap = rcp_dynamic_cast<const TpetraMap>(rcpToMap);
+    if (tmp_TMap == Teuchos::null)
+      throw Exceptions::BadCast("Utils::Map2TpetraMap : Cast from Xpetra::Map to Xpetra::TpetraMap failed");
+    return tmp_TMap->getTpetra_Map();
   }
 #endif
 
@@ -818,6 +836,84 @@ namespace MueLu {
     return Teuchos::null;
 
   } //Read()
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
+  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Read(const std::string &    fileName,
+                                                                      const RCP< const Map > &rowMap,
+                                                                      RCP< const Map >       &colMap,
+                                                                      const RCP< const Map > &domainMap,
+                                                                      const RCP< const Map > &rangeMap,
+                                                                      const bool callFillComplete,
+                                                                      const bool tolerant,
+                                                                      const bool debug
+                                                                     )
+{
+    using Teuchos::null;
+
+    if (rowMap == null)
+      throw Exceptions::RuntimeError("Utils::Read() : rowMap cannot be null");
+
+    RCP<const Map> domain;
+    if (domainMap != null) domain = domainMap;
+    else                   domain = rowMap;
+    RCP<const Map> range;
+    if (rangeMap != null) range = rangeMap;
+    else                  range = rowMap;
+
+    const Xpetra::UnderlyingLib lib = rowMap->lib();
+    if (lib == Xpetra::UseEpetra) {
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
+      Epetra_CrsMatrix *eA;
+      const RCP<const Epetra_Comm> epcomm = Xpetra::toEpetra(rowMap->getComm());
+      const Epetra_Map epetraRowMap = Map2EpetraMap(*rowMap);
+      const Epetra_Map epetraColMap = Map2EpetraMap(*colMap);
+      const Epetra_Map epetraRangeMap = Map2EpetraMap(*rangeMap);
+      const Epetra_Map epetraDomainMap = Map2EpetraMap(*domainMap);
+      int rv = EpetraExt::MatrixMarketFileToCrsMatrix(fileName.c_str(),
+                                                      epetraRowMap, epetraColMap, epetraRangeMap, epetraDomainMap,
+                                                      eA);
+      if (rv != 0)
+        throw Exceptions::RuntimeError("EpetraExt::MatrixMarketFileToCrsMatrix return value of " + toString(rv));
+
+      RCP<Epetra_CrsMatrix> tmpA = rcp(eA);
+      RCP<Matrix>           A    = Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(tmpA);
+
+      return A;
+#else
+      throw Exceptions::RuntimeError("MueLu has not been compiled with Epetra and EpetraExt support.");
+#endif
+    } else if (lib == Xpetra::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
+      typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
+      typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>                          reader_type;
+      typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>                            map_type;
+      typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>            multivector_type;
+
+      const RCP<const map_type> tpetraRowMap = Map2TpetraMap(*rowMap);
+      RCP<const map_type> tpetraColMap = Map2TpetraMap(*colMap);
+      const RCP<const map_type> tpetraRangeMap = Map2TpetraMap(*rangeMap);
+      const RCP<const map_type> tpetraDomainMap = Map2TpetraMap(*domainMap);
+
+      RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, tpetraRowMap, tpetraColMap, tpetraDomainMap, tpetraRangeMap,
+                                                               callFillComplete, tolerant, debug);
+      if (tA.is_null())
+        throw Exceptions::RuntimeError("The Tpetra::CrsMatrix returned from readSparseFile() is null.");
+
+      RCP<TpetraCrsMatrix> tmpA1 = rcp(new TpetraCrsMatrix(tA));
+      RCP<CrsMatrix>       tmpA2 = rcp_implicit_cast<CrsMatrix>(tmpA1);
+      RCP<Matrix>          A     = rcp(new CrsMatrixWrap(tmpA2));
+
+      return A;
+#else
+      throw Exceptions::RuntimeError("MueLu has not been compiled with Tpetra support.");
+#endif
+    } else {
+      throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
+    }
+
+    return Teuchos::null;
+} //Read
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write(const std::string& fileName, const MultiVector& x) {
