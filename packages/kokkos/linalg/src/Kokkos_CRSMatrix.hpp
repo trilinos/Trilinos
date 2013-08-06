@@ -9,7 +9,9 @@
 #define KOKKOS_CRSMATRIX_H_
 
 #include <Kokkos_View.hpp>
+#ifdef KOKKOS_HAVE_CUDA
 #include <Kokkos_Cuda.hpp>
+#endif
 #include <Kokkos_Macros.hpp>
 #include <Kokkos_CrsArray.hpp>
 #include <Kokkos_MultiVector.hpp>
@@ -232,6 +234,12 @@ public:
 	    OrdinalType varianz_nel_row, 
 	    OrdinalType width_row);
 
+  void
+  generate (const std::string &label,
+      OrdinalType nrows,
+      OrdinalType ncols,
+      OrdinalType cols_per_row);
+
   template<typename aScalarType, typename aOrdinalType, class aDevice, class aMemoryTraits>
   CrsMatrix& 
   operator= (const CrsMatrix<aScalarType,aOrdinalType,aDevice,aMemoryTraits>& mtx) 
@@ -371,6 +379,45 @@ generate (const std::string &label,
   Kokkos::deep_copy(graph.row_map, h_row_map);
 }
 
+template<typename ScalarType, typename OrdinalType, class Device, class MemoryTraits>
+void
+CrsMatrix<ScalarType, OrdinalType, Device, MemoryTraits >::
+generate (const std::string &label,
+    OrdinalType nrows,
+    OrdinalType ncols,
+    OrdinalType cols_per_row)
+{
+  _numRows = nrows;
+  _numCols = ncols;
+  _nnz = nrows*cols_per_row;
+
+  std::string str = label;
+  values = values_type (str.append (".values"), _nnz);
+
+
+  std::vector<int> row_lengths (_numRows, 0);
+
+  // FIXME (mfh 21 Jun 2013) This calls for a parallel_for kernel.
+  for (int i = 0; i < _numRows; ++i) {
+    row_lengths[i] = cols_per_row;
+  }
+
+  str = label;
+  graph = Kokkos::create_crsarray<CrsArrayType> (str.append (".graph"), row_lengths);
+  typename values_type::HostMirror h_values = Kokkos::create_mirror_view (values);
+  typename index_type::HostMirror h_entries = Kokkos::create_mirror_view (graph.entries);
+
+  // FIXME (mfh 21 Jun 2013) Why is this copy not a parallel copy?
+  // Furthermore, why are the arrays copied twice? -- once here, to a
+  // host view, and once below, in the deep copy?
+  for (OrdinalType i = 0; i < _nnz; ++i) {
+    h_values(i) = ScalarType();
+    h_entries(i) = OrdinalType();
+  }
+
+  Kokkos::deep_copy (values, h_values);
+  Kokkos::deep_copy (graph.entries, h_entries);
+}
 // FIXME (mfh 21 Jun 2013) Does the generic version of this function
 // do anything at all?
 template<typename Scalar>
