@@ -48,6 +48,9 @@
 
 #include "MueLu_BrickAggregationFactory_decl.hpp"
 #if defined(HAVE_MPI)
+#include <mpi.h>
+#include <Teuchos_DefaultMpiComm.hpp>
+#include <Teuchos_CommHelpers.hpp>
 
 #include <Xpetra_Import.hpp>
 #include <Xpetra_ImportFactory.hpp>
