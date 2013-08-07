@@ -92,7 +92,6 @@
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_FilteredAFactory.hpp"
-#include "MueLu_BrickAggregationFactory.hpp"
 #ifdef HAVE_MUELU_EXPERIMENTAL
 #include "MueLu_EminPFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
@@ -156,7 +155,12 @@ namespace MueLu {
       if (factoryName == "CoupledAggregationFactory")       return BuildCoupledAggregationFactory       (paramList, factoryMapIn);
       if (factoryName == "UncoupledAggregationFactory")     return BuildUncoupledAggregationFactory     (paramList, factoryMapIn);
       if (factoryName == "UserAggregationFactory")          return Build2<UserAggregationFactory>       (paramList, factoryMapIn);
-      if (factoryName == "BrickAggregationFactory")         return Build2<BrickAggregationFactory>      (paramList, factoryMapIn);
+      if (factoryName == "BrickAggregationFactory")
+#if defined(HAVE_MPI)
+        return Build2<BrickAggregationFactory>      (paramList, factoryMapIn);
+#else
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a BrickAggregation object: HAVE_MPI == false.");
+#endif // HAVE_MPI
       if (factoryName == "TrilinosSmoother")                return BuildTrilinosSmoother                (paramList, factoryMapIn);
       if (factoryName == "DirectSolver")                    return BuildDirectSolver                    (paramList, factoryMapIn);
       if (factoryName == "NoSmoother")                      return BuildNoSmoother();
