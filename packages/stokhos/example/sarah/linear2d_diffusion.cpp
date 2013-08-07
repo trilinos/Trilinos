@@ -126,7 +126,7 @@ Scalar MGclone_and_solve(
   //Convert f, dx to clone node type
   RCP<Clone_MV> f_clone = f->clone(node_clone);
   RCP<Clone_MV> dx_clone = dx->clone(node_clone);
-  dx_clone->putScalar(Scalar(0.0));
+//  dx_clone->putScalar(Scalar(0.0));
   // Define Operator and Preconditioner
   RCP<Clone_OP> OP_clone = rcp(new Belos::XpetraOp<Scalar,LocalOrdinal,GlobalOrdinal,CloneNode,CloneLocalMatOps>(J_clone));  // Turns a Xpetra::Matrix object into a Belos operator
   const RCP<const CloneBelos_MueLuOperator> M_clone = rcp(new CloneBelos_MueLuOperator(H_clone)); // Turns a MueLu::Hierarchy object into a Belos operator
@@ -149,7 +149,7 @@ Scalar MGclone_and_solve(
 
   // Solve linear system for clone node
   solver->solve();
-/*
+
   // Compute norm of difference
   ParameterList serial_params;
   RCP<Node> node = rcp(new Node(serial_params));
@@ -159,7 +159,7 @@ Scalar MGclone_and_solve(
   dx_cpu->norm2(Teuchos::arrayView(&norm,1));
 
   return norm;
-*/
+
   return 0.0;
 }
   
@@ -176,6 +176,8 @@ Scalar clone_and_solve(
   RCP< Preconditioner<Scalar, LocalOrdinal, GlobalOrdinal, Node> > M,
   ParameterList& nodeParams,
   RCP<ParameterList> belosParams,
+  ParameterList& precParams,
+
   bool symmetric)
 {
   typedef CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Mat;
@@ -195,7 +197,7 @@ Scalar clone_and_solve(
 
   //Clone preconditioner
   Ifpack2::Factory factory;
-  RCP<Clone_Prec> M_clone = factory.clone<Mat, Clone_Mat>(M, J_clone);
+  RCP<Clone_Prec> M_clone = factory.clone<Mat, Clone_Mat>(M, J_clone, precParams);
 
   //Convert f, dx to clone node type
   RCP<Clone_MV> f_clone = f->clone(node_clone);
@@ -334,15 +336,15 @@ int main(int argc, char *argv[]) {
 
     
     //Create RILUK preconditioner using Prec factory
-    ParameterList precParams;
+    ParameterList iluprecParams;
     std::string prec_name = "RILUK";
-    precParams.set("fact: iluk level-of-fill", 1);
-    precParams.set("fact: iluk level-of-overlap", 0);
+    iluprecParams.set("fact: iluk level-of-fill", 1);
+    iluprecParams.set("fact: iluk level-of-overlap", 0);
     typedef Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tprec;
     RCP<Tprec> M;
     Ifpack2::Factory factory;
     M = factory.create<Tpetra_CrsMatrix>(prec_name, J);
-    M->setParameters(precParams);
+    M->setParameters(iluprecParams);
     M->initialize();
     M->compute();
 
@@ -490,13 +492,14 @@ int main(int argc, char *argv[]) {
     else {
       RCP< BLinProb > problem = rcp(new BLinProb(J, dx, f));
       RCP<Tprec> prec; 
+      ParameterList precParams;
       if(precMethod == ILU){
 	prec = M;
-        //problem->setRightPrec(M);
+        precParams = iluprecParams; 
       }
       if(precMethod == CHEBY){
-        //problem->setRightPrec(M_chev);
-	prec = M_chev;
+        prec = M_chev;
+	precParams = chevprecParams;
       }
       problem->setRightPrec(prec);
       problem->setProblem();
@@ -530,7 +533,7 @@ int main(int argc, char *argv[]) {
 	
         tpi_norm =
           clone_and_solve<Scalar,LocalOrdinal,GlobalOrdinal,Node,TPINode>(
-            J, f, dx, prec, node_params, belosParams, symmetric);
+            J, f, dx, prec, node_params, belosParams, precParams, symmetric);
         if (my_rank == 0)
           std::cout << "\nNorm of serial node soln - tpi node soln = "
                   << tpi_norm << std::endl;
@@ -575,7 +578,7 @@ int main(int argc, char *argv[]) {
 
         gpu_norm =
           clone_and_solve<Scalar,LocalOrdinal,GlobalOrdinal,Node,GPUNode>(
-            J, f, dx, prec, node_params, belosParams, symmetric);
+            J, f, dx, prec, node_params, belosParams, precParams, symmetric);
       }
       else {
         // Note for the non-GPU ranks, we still have to clone since new
@@ -583,7 +586,7 @@ int main(int argc, char *argv[]) {
         // communication)
         gpu_norm =
           clone_and_solve<Scalar,LocalOrdinal,GlobalOrdinal,Node,Node>(
-            J, f, dx, prec, node_params, belosParams, symmetric);
+            J, f, dx, prec, node_params, belosParams, precParams, symmetric);
       }
 
       if (my_rank == 0)
