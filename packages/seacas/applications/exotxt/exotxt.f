@@ -78,15 +78,12 @@ C     C(1) dynamic memory base array for character data
       DIMENSION A(1)
       CHARACTER*1 C(1)
 
-C     Set ExodusII error reporting level
-C     Set level to EXABRT for production use
-      call exopts(EXABRT, ierr)
 
 C     Program Information
 C.
       QAINFO(1) = 'exotxt                          '
-      QAINFO(2) = '2012/11/07                      '
-      QAINFO(3) = ' 1.22                           '
+      QAINFO(2) = '2013/08/07                      '
+      QAINFO(3) = ' 1.23                           '
       QAINFO(4) = '                                '
       QAINFO(5) = '                                '
       QAINFO(6) = '                                '
@@ -144,7 +141,6 @@ C     Open the input database; Exit on error
       END IF
 
 C   --Read the initial variables
-
       CALL EXGINI (NDB, TITLE, NNDIM, NUMNP, NUMEL, NELBLK,
      &             NUMNPS, NUMESS, IERR)
 
