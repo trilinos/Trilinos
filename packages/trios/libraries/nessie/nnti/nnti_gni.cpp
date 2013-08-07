@@ -1380,6 +1380,72 @@ NNTI_result_t NNTI_gni_register_memory (
     NNTI_buffer_t     *old_buf=NULL;
     gni_memory_handle *gni_mem_hdl=NULL;
 
+    if (trans_hdl == NULL) {
+        log_error(nnti_debug_level, "********** trans_hdl == NULL");
+        log_error(nnti_debug_level, "trans_hdl    == %p", trans_hdl);
+        log_error(nnti_debug_level, "buffer       == %p", buffer);
+        log_error(nnti_debug_level, "element_size == %llu", element_size);
+        log_error(nnti_debug_level, "num_elements == %llu", num_elements);
+        log_error(nnti_debug_level, "ops          == %lld", (int64_t)ops);
+        log_error(nnti_debug_level, "reg_buf      == %p", reg_buf);
+        fprint_NNTI_peer(logger_get_file(), "peer",
+                "ERROR trans_hdl==NULL %", peer);
+    }
+    if (buffer == NULL) {
+        log_error(nnti_debug_level, "********** buffer == NULL");
+        log_error(nnti_debug_level, "trans_hdl    == %p", trans_hdl);
+        log_error(nnti_debug_level, "buffer       == %p", buffer);
+        log_error(nnti_debug_level, "element_size == %llu", element_size);
+        log_error(nnti_debug_level, "num_elements == %llu", num_elements);
+        log_error(nnti_debug_level, "ops          == %lld", (int64_t)ops);
+        log_error(nnti_debug_level, "reg_buf      == %p", reg_buf);
+        fprint_NNTI_peer(logger_get_file(), "peer",
+                "ERROR buffer==NULL %", peer);
+    }
+    if (element_size <= 0) {
+        log_error(nnti_debug_level, "********** element_size <= 0");
+        log_error(nnti_debug_level, "trans_hdl    == %p", trans_hdl);
+        log_error(nnti_debug_level, "buffer       == %p", buffer);
+        log_error(nnti_debug_level, "element_size == %llu", element_size);
+        log_error(nnti_debug_level, "num_elements == %llu", num_elements);
+        log_error(nnti_debug_level, "ops          == %lld", (int64_t)ops);
+        log_error(nnti_debug_level, "reg_buf      == %p", reg_buf);
+        fprint_NNTI_peer(logger_get_file(), "peer",
+                "ERROR element_size<=0 %", peer);
+    }
+    if (num_elements <= 0) {
+        log_error(nnti_debug_level, "********** num_elements <= 0");
+        log_error(nnti_debug_level, "trans_hdl    == %p", trans_hdl);
+        log_error(nnti_debug_level, "buffer       == %p", buffer);
+        log_error(nnti_debug_level, "element_size == %llu", element_size);
+        log_error(nnti_debug_level, "num_elements == %llu", num_elements);
+        log_error(nnti_debug_level, "ops          == %lld", (int64_t)ops);
+        log_error(nnti_debug_level, "reg_buf      == %p", reg_buf);
+        fprint_NNTI_peer(logger_get_file(), "peer",
+                "ERROR num_elements<=0 %", peer);
+    }
+    if (ops <= 0) {
+        log_error(nnti_debug_level, "********** ops <= 0");
+        log_error(nnti_debug_level, "trans_hdl    == %p", trans_hdl);
+        log_error(nnti_debug_level, "buffer       == %p", buffer);
+        log_error(nnti_debug_level, "element_size == %llu", element_size);
+        log_error(nnti_debug_level, "num_elements == %llu", num_elements);
+        log_error(nnti_debug_level, "ops          == %lld", (int64_t)ops);
+        log_error(nnti_debug_level, "reg_buf      == %p", reg_buf);
+        fprint_NNTI_peer(logger_get_file(), "peer",
+                "ERROR ops<=0 %", peer);
+    }
+    if (reg_buf == NULL) {
+        log_error(nnti_debug_level, "********** reg_buf == NULL");
+        log_error(nnti_debug_level, "trans_hdl    == %p", trans_hdl);
+        log_error(nnti_debug_level, "buffer       == %p", buffer);
+        log_error(nnti_debug_level, "element_size == %llu", element_size);
+        log_error(nnti_debug_level, "num_elements == %llu", num_elements);
+        log_error(nnti_debug_level, "ops          == %lld", (int64_t)ops);
+        log_error(nnti_debug_level, "reg_buf      == %p", reg_buf);
+        fprint_NNTI_peer(logger_get_file(), "peer",
+                "ERROR reg_buf==NULL %", peer);
+    }
     assert(trans_hdl);
     assert(buffer);
     assert(element_size>0);
