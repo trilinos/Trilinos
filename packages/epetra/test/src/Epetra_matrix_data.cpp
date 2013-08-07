@@ -230,16 +230,16 @@ double* matrix_data::coefs(int row, int col)
   int row_idx = Epetra_Util_binary_search(row, rows_, numrows_,
                                           insertPoint);
   if (row_idx < 0) {
-    cerr << "ERROR, row " << row
-         << " not found in matrix_data"<<endl;
+    std::cerr << "ERROR, row " << row
+         << " not found in matrix_data"<<std::endl;
     return 0;
   }
 
   int col_idx = Epetra_Util_binary_search(col, colindices_[row_idx],
                                           rowlengths_[row_idx], insertPoint);
   if (col_idx < 0) {
-    cerr << "ERROR, col " << col
-         << " not found in matrix_data"<<endl;
+    std::cerr << "ERROR, col " << col
+         << " not found in matrix_data"<<std::endl;
     return 0;
   }
 

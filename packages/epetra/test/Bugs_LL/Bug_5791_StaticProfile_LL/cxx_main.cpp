@@ -102,7 +102,7 @@ int main(int narg, char *arg[])
         if (verbose)
           cout << "(" << iv[nMyNonzeros] << "," << jv[nMyNonzeros] << ")="
                << vv[nMyNonzeros] << " on processor " << me
-               << " in " << myrowcnt << endl;
+               << " in " << myrowcnt << std::endl;
         nMyNonzeros++;
         nnzPerRow[myrowcnt]++;
       }
@@ -113,7 +113,7 @@ int main(int narg, char *arg[])
       if (verbose) 
         cout << "(" << iv[nMyNonzeros] << "," << jv[nMyNonzeros] << ")="
              << vv[nMyNonzeros] << " on processor " << me
-             << " in " << myrowcnt << endl;
+             << " in " << myrowcnt << std::endl;
       nMyNonzeros++;
       nnzPerRow[myrowcnt]++;
 
@@ -124,7 +124,7 @@ int main(int narg, char *arg[])
         if (verbose) 
           cout << "(" << iv[nMyNonzeros] << "," << jv[nMyNonzeros] << ")="
                << vv[nMyNonzeros] << " on processor " << me
-               << " in " << myrowcnt << endl;
+               << " in " << myrowcnt << std::endl;
         nMyNonzeros++;
         nnzPerRow[myrowcnt]++;
       }
@@ -145,7 +145,7 @@ int main(int narg, char *arg[])
              << " count " << nnzPerRow[i] 
              << " cols " << jv[sum] << " " << jv[sum+1] << " ";
         if (nnzPerRow[i] == 3) cout << jv[sum+2];
-        cout << endl;
+        cout << std::endl;
       }
       info = A->InsertGlobalValues(iv[sum],nnzPerRow[i],&vv[sum],&jv[sum]);
       assert(info==0);
@@ -171,7 +171,7 @@ int main(int narg, char *arg[])
   sanityres.NormInf(&jjmax);
   if (me == 0)
     cout << "SanityTest norms 1/2/inf: " << jjone << " "
-                                         << jjtwo << " " << jjmax << endl;
+                                         << jjtwo << " " << jjmax << std::endl;
 
   bool test_failed = (jjone != 0) || (jjtwo != 0) || (jjmax != 0);
 
@@ -180,13 +180,13 @@ int main(int narg, char *arg[])
   sanityres.MaxValue(&jjmax);
   if (me == 0)
     cout << "SanityTest values min/max/avg: " << jjone << " "
-                                              << jjmax << " " << jjtwo << endl;
+                                              << jjmax << " " << jjtwo << std::endl;
 
   test_failed = test_failed || (jjone != 0) || (jjtwo != 0) || (jjmax != 0);
 
   if (me == 0) {
     if(test_failed)
-      cout << "Bug_5791_StaticProifle_LL tests FAILED" << endl;
+      cout << "Bug_5791_StaticProifle_LL tests FAILED" << std::endl;
   }
 
   delete A;

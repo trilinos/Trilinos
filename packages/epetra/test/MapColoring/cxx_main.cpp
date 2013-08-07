@@ -80,11 +80,11 @@ int main(int argc, char *argv[]) {
   if (argc>2) if (argv[2][0]=='-' && argv[2][1]=='v') veryVerbose = true;
 
   if (verbose && Comm.MyPID()==0)
-    cout << Epetra_Version() << endl << endl;
+    std::cout << Epetra_Version() << std::endl << std::endl;
 
   if (!verbose) Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
 
-  if (verbose) cout << Comm << endl << flush;
+  if (verbose) std::cout << Comm << std::endl << std::flush;
 
   bool verbose1 = verbose;
   if (verbose) verbose = (Comm.MyPID()==0);
@@ -131,9 +131,9 @@ int main(int argc, char *argv[]) {
   }
   
   if (veryVerbose)
-    cout << "Original Map Coloring using element-by-element definitions" << endl;
+    std::cout << "Original Map Coloring using element-by-element definitions" << std::endl;
   if (veryVerbose1)
-    cout <<  C0 << endl;
+    std::cout <<  C0 << std::endl;
 
   int numColors = 0;
   for (i=0; i<maxcolor; i++) 
@@ -149,17 +149,17 @@ int main(int argc, char *argv[]) {
   int newDefaultColor = -1;
   Epetra_MapColoring C1(Map, elementColors, newDefaultColor);
   if (veryVerbose)
-    cout << "Same Map Coloring using one-time construction" << endl;
+    std::cout << "Same Map Coloring using one-time construction" << std::endl;
   if (veryVerbose1)
-    cout <<  C1 << endl;
+    std::cout <<  C1 << std::endl;
   assert(C1.DefaultColor()==newDefaultColor);
   for (i=0; i<Map.NumMyElements(); i++) assert(C1[i]==C0[i]);
 
   Epetra_MapColoring C2(C1);
   if (veryVerbose)
-    cout << "Same Map Coloring using copy constructor" << endl;
+    std::cout << "Same Map Coloring using copy constructor" << std::endl;
   if (veryVerbose1)
-    cout <<  C1 << endl;
+    std::cout <<  C1 << std::endl;
   for (i=0; i<Map.NumMyElements(); i++) assert(C2[i]==C0[i]);
   assert(C2.DefaultColor()==newDefaultColor);
 
@@ -220,23 +220,23 @@ int main(int argc, char *argv[]) {
     assert(ColoringOnPE0[i]==elementColorValues0[i]);
 
   if (veryVerbose)
-    cout << "Same Map Coloring on PE 0 only" << endl;
+    std::cout << "Same Map Coloring on PE 0 only" << std::endl;
   if (veryVerbose1)
-    cout <<  ColoringOnPE0 << endl;
+    std::cout <<  ColoringOnPE0 << std::endl;
   Epetra_MapColoring C3(Map);
   C3.Export(ColoringOnPE0, importer1, Insert);
   for (i=0; i<Map.NumMyElements(); i++) assert(C3[i]==C2[i]);
   if (veryVerbose)
-    cout << "Same Map Coloring after Import/Export exercise" << endl;
+    std::cout << "Same Map Coloring after Import/Export exercise" << std::endl;
   if (veryVerbose1)
-    cout <<  ColoringOnPE0 << endl;
+    std::cout <<  ColoringOnPE0 << std::endl;
    
   
-  if (verbose) cout << "Checked OK\n\n" <<endl;
+  if (verbose) std::cout << "Checked OK\n\n" <<std::endl;
 
   if (verbose1) {
-    if (verbose) cout << "Test ostream << operator" << endl << flush;
-    cout << C0 << endl;
+    if (verbose) std::cout << "Test ostream << operator" << std::endl << std::flush;
+    std::cout << C0 << std::endl;
   }
 	
 
