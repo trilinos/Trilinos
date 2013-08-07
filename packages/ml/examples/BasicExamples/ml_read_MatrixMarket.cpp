@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
   RHS.Norm2(&mynorm);
   workvec.Scale(1./mynorm);
   workvec.Norm2(&mynorm);
-  if (Comm.MyPID() == 0) cout << "||r||_2 = " << mynorm << endl;
+  if (Comm.MyPID() == 0) std::cout << "||r||_2 = " << mynorm << std::endl;
   //Calculate a relative error
 
   // delete the preconditioner. Do it BEFORE calling MPI_Finalize
