@@ -63,8 +63,6 @@
 #include "MueLu_Ifpack2Smoother.hpp"
 #include <MueLu_Utilities.hpp>
 
-//#include <MueLu_UseDefaultTypes.hpp>
-//#include <MueLu_UseShortNames.hpp>
 #include <MueLu_MutuallyExclusiveTime.hpp>
 
 #ifdef HAVE_MUELU_BELOS
@@ -357,16 +355,13 @@ int main(int argc, char *argv[]) {
       fancyout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
     else
       fancyout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
-//#endif //ifdef HAVE_MUELU_BELOS
-  
 
-    //Clone the preconditioner to a different node type
+    //Clone the preconditioner to ThrustGPU node type
     typedef KokkosClassic::ThrustGPUNode NO2;
     typedef KokkosClassic::DefaultKernels<void, LO, NO2>::SparseOps LMO2;
     typedef MueLu::Hierarchy<SC,LO,GO,NO2, LMO2> Hierarchy2;
     typedef Xpetra::MultiVector<SC,LO,GO,NO2> MV2;
     typedef Belos::OperatorT<MV2> OP2;
-
 
     ParameterList plClone;
     plClone.set<LocalOrdinal>("Verbose", 1);
@@ -391,7 +386,7 @@ int main(int argc, char *argv[]) {
 
     bool set2 = belosProblem2->setProblem();
     if (set2 == false) {
-      fancyout << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+      fancyout << "\nERROR:  Belos::LinearProblem for new node failed to set up correctly!" << std::endl;
       return EXIT_FAILURE;
     }
     // Create an iterative solver manager
@@ -424,7 +419,7 @@ int main(int argc, char *argv[]) {
     clonedXcpu->update(1.0, *X, -1.0); 
     Scalar norm;
     clonedXcpu->norm2(Teuchos::arrayView(&norm,1)); 
-    std::cout <<"\nNorm of serial node soln - new node soln = " 
+    std::cout <<"\nNorm of serial node soln - ThrustGPU node soln = " 
 		<< norm << std::endl;
 
     bool passed = false;

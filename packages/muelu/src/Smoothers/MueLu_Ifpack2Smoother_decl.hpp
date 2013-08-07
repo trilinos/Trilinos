@@ -230,8 +230,9 @@ namespace MueLu {
 	//Get Tpetra::CrsMatrix from Xpetra::Matrix	
 	RCP<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> > crsOp = rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >(A_newnode);
         const RCP<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> > &tmp = rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >(crsOp->getCrsMatrix());
+	
 	Ifpack2::Factory factory;
-	cloneSmoother->prec_ = factory.clone<Matrix1, Matrix2>(prec_, tmp->getTpetra_CrsMatrix());
+	cloneSmoother->prec_ = factory.clone<Matrix1, Matrix2>(prec_, tmp->getTpetra_CrsMatrix(), this->paramList_);
 	cloneSmoother->type_ = type_;
 	cloneSmoother->paramList_ = paramList_;
 	cloneSmoother->IsSetup(this->IsSetup());
