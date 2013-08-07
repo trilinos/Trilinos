@@ -10,11 +10,11 @@
 
 #ifdef HAVE_MPI
 #include "mpi.h"
-#include "Teuchos_CommandLineProcessor.hpp"
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_SerialComm.h"
 #endif
+#include "Teuchos_CommandLineProcessor.hpp"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
