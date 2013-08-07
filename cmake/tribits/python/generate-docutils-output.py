@@ -60,16 +60,8 @@ def generateFile(filePath, generateCmnd, outFile=None, workingDir="", runTwice=F
   setGeneratedFilePermissions(filePath)
 
 
-if __name__ == '__main__':
+def addCmndLineOptions(clp):
 
-
-
-  #
-  # C) Read in the commandline options
-  #
-    
-  clp = OptionParser(usage=usageHelp)
-  
   clp.add_option(
     "--file-base", dest="fileBase", type="string",
     default="",
@@ -95,17 +87,10 @@ if __name__ == '__main__':
     help="Generate the PDF output file from the latex file using provided" \
       " script (i.e. pdflatex) [Default 'pdflatex']",
     default="pdflatex" )
-  
-  (options, args) = clp.parse_args(sys.argv)
-  
-  if not options.fileBase:
-    print "Error, --file-base=<fileBase> must be specified!"
-    sys.exit(1)
-  
-  #
-  # D) Generate the output files
-  #
-  
+
+
+def generateDocutilsOuputFiles(options):
+
   filesToClean = []
   
   # Base name including path (must just be relative)
@@ -136,7 +121,7 @@ if __name__ == '__main__':
       filesToClean.append(outputPdfFileLog)
   
   #
-  # G) Clean the intermediate files
+  # Clean the intermediate files
   #
   
   print "Cleaning intermediate files ..."
@@ -154,4 +139,31 @@ if __name__ == '__main__':
   for tempFile in filesToClean:
     if os.path.exists(tempFile):
       runSysCmnd("rm "+tempFile)
+
+
+#
+# C) Main program 
+#
+
+if __name__ == '__main__':
+
+
+  #
+  # Read in the commandline options
+  #
+    
+  clp = OptionParser(usage=usageHelp)
+
+  addCmndLineOptions(clp)
   
+  (options, args) = clp.parse_args(sys.argv)
+  
+  if not options.fileBase:
+    print "Error, --file-base=<fileBase> must be specified!"
+    sys.exit(1)
+  
+  #
+  # Generate the output files
+  #
+
+  generateDocutilsOuputFiles(options)
