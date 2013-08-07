@@ -89,7 +89,15 @@ void BulkData::change_entity_parts( Entity entity,
 
   require_ok_to_modify();
 
+// When stk parallel is used within Fmwk, this assertion (require_entity_owner) is violated
+// So, temporarily, don't test this assertion if SIERRA_MIGRATION is defined, and the bulk
+// data point is set.  (Any other use case will go ahead and test this assertion.)
+#ifdef SIERRA_MIGRATION
+  if (NULL == get_fmwk_bulk_data())
+    require_entity_owner( entity , m_parallel_rank );
+#else
   require_entity_owner( entity , m_parallel_rank );
+#endif
 
   const EntityRank ent_rank = entity_rank(entity);
   const EntityRank undef_rank  = InvalidEntityRank;

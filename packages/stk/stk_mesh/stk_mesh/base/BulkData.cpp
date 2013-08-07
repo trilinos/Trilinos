@@ -521,8 +521,11 @@ Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id)
 
 void BulkData::change_entity_id( EntityId id, Entity entity)
 {
+// When stk parallel is used within Fmwk, this assertion is violated
+#ifndef SIERRA_MIGRATION
   ThrowAssertMsg(parallel_size() == 1,
                  "change_entity_id only supported in serial");
+#endif
 
   EntityRank e_rank = entity_rank(entity);
 
