@@ -9,6 +9,7 @@
 #define KOKKOS_CRSMATRIX_H_
 
 #include <Kokkos_View.hpp>
+#include <Kokkos_Atomic.hpp>
 #ifdef KOKKOS_HAVE_CUDA
 #include <Kokkos_Cuda.hpp>
 #endif
@@ -141,6 +142,10 @@ public:
   CrsArrayType graph;
   values_type values;
 
+  std::vector<OrdinalType> h_entries_;
+  std::vector<OrdinalType> rows_;
+
+
   //! Default constructor; constructs an empty sparse matrix.
   CrsMatrix() : _numRows (0), _numCols (0), _nnz (0) {}
 
@@ -240,6 +245,51 @@ public:
       OrdinalType ncols,
       OrdinalType cols_per_row);
 
+  void
+  generate (const std::string &label);
+
+  void
+  generateHostGraph (OrdinalType nrows,
+      OrdinalType ncols,
+      OrdinalType cols_per_row);
+
+  void
+  insertInGraph(OrdinalType row, OrdinalType col)
+  {
+    insertInGraph(row, &col, 1);
+  }
+
+  void
+  insertInGraph(OrdinalType row, OrdinalType *cols, size_t ncol)
+  {
+    OrdinalType *start = &h_entries_[rows_[row] ];
+    OrdinalType *end   = &h_entries_[rows_[row+1] ];
+    for (size_t i=0; i < ncol; ++i) {
+      OrdinalType *iter = start;
+      while (iter < end && *iter != -1 && *iter != cols[i])
+        ++iter;
+      assert (iter != end );
+      *iter = cols[i];
+    }
+  }
+
+  void
+  sumIntoValues(OrdinalType row, OrdinalType *cols, size_t ncol, ScalarType *vals, bool force_atomic = false) {
+    SparseRowView<CrsMatrix> row_view = this->row (row);
+    int length = row_view.length;
+    for (size_t i = 0; i<ncol; ++i) {
+      for (int j=0; j<length; ++j)
+        if (row_view.colidx(j) == cols[i] ) {
+          if ( force_atomic )
+            atomic_fetch_add(&row_view.value(j), vals[i]);
+          else
+            row_view.value(j) += vals[i];
+        }
+    }
+  }
+
+
+
   template<typename aScalarType, typename aOrdinalType, class aDevice, class aMemoryTraits>
   CrsMatrix& 
   operator= (const CrsMatrix<aScalarType,aOrdinalType,aDevice,aMemoryTraits>& mtx) 
@@ -318,7 +368,8 @@ import (const std::string &label,
   // Furthermore, why are the arrays copied twice? -- once here, to a
   // host view, and once below, in the deep copy?
   for (OrdinalType i = 0; i < _nnz; ++i) {
-    h_values(i) = val[i];
+    if ( val )
+      h_values(i) = val[i];
     h_entries(i) = cols[i];
   }
 
@@ -377,6 +428,7 @@ generate (const std::string &label,
   Kokkos::deep_copy(values, h_values);
   Kokkos::deep_copy(graph.entries, h_entries);
   Kokkos::deep_copy(graph.row_map, h_row_map);
+
 }
 
 template<typename ScalarType, typename OrdinalType, class Device, class MemoryTraits>
@@ -418,6 +470,59 @@ generate (const std::string &label,
   Kokkos::deep_copy (values, h_values);
   Kokkos::deep_copy (graph.entries, h_entries);
 }
+template<typename ScalarType, typename OrdinalType, class Device, class MemoryTraits>
+void
+CrsMatrix<ScalarType, OrdinalType, Device, MemoryTraits >::
+generate (const std::string &label)
+{
+  // Compress the entries
+  size_t ptr_from= 0, ptr_to = 0;
+  int cur_row = 0;
+  while ( ptr_from < h_entries_.size()) {
+    size_t  row_stop = rows_[cur_row+1];
+    while (ptr_from < row_stop) {
+      if ( h_entries_[ptr_from] == OrdinalType(-1)) {
+        ptr_from = row_stop;
+      } else {
+        h_entries_[ptr_to++] = h_entries_[ptr_from++];
+      }
+    }
+    rows_[++cur_row] = ptr_to;
+  }
+  OrdinalType nrows = rows_.size()-1;
+  OrdinalType nnz = ptr_to;
+
+  h_entries_.resize(nnz);
+
+  //sort the rows
+  for (OrdinalType i=0; i<nrows; ++i )
+    std::sort(&h_entries_[i], &h_entries_[i+1]);
+
+  // generate the matrix
+  import(label, nrows, nrows, nnz, NULL, &rows_[0], &h_entries_[0]);
+
+}
+
+
+template<typename ScalarType, typename OrdinalType, class Device, class MemoryTraits>
+void
+CrsMatrix<ScalarType, OrdinalType, Device, MemoryTraits >::
+generateHostGraph ( OrdinalType nrows,
+    OrdinalType ncols,
+    OrdinalType cols_per_row)
+{
+  _numRows = nrows;
+  _numCols = ncols;
+  _nnz = nrows*cols_per_row;
+
+  h_entries_.resize(_nnz, OrdinalType(-1));
+  rows_.resize(_numRows);
+  rows_[0] = 0;
+  for (int i = 0; i < _numRows; ++i)
+    rows_[i+1] = rows_[i]+cols_per_row;
+
+}
+
 // FIXME (mfh 21 Jun 2013) Does the generic version of this function
 // do anything at all?
 template<typename Scalar>
