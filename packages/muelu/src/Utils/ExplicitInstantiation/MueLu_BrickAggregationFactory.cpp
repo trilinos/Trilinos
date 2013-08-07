@@ -43,7 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MPI)
 
 #include "MueLu_ExplicitInstantiation.hpp"
 
@@ -71,3 +72,4 @@ template class MueLu::BrickAggregationFactory<std::complex<double>, int, int, Ko
 #endif
 
 
+#endif //if defined(HAVE_MPI)

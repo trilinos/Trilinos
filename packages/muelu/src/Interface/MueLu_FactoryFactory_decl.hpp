@@ -92,6 +92,7 @@
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_FilteredAFactory.hpp"
+#include "MueLu_BrickAggregationFactory.hpp"
 #ifdef HAVE_MUELU_EXPERIMENTAL
 #include "MueLu_EminPFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
