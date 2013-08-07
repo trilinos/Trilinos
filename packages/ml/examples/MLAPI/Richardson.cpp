@@ -99,12 +99,12 @@ int main(int argc, char *argv[])
       double NewNorm = sqrt((x - x_ex) * (A * (x - x_ex)));
 
       if (GetMyPID() == 0 && i) {
-        cout << "||x - x_ex||_A = ";
-        cout.width(15);
-        cout << NewNorm << ", ";
-        cout << "reduction = ";
-        cout.width(15);
-        cout << NewNorm / OldNorm << endl;
+        std::cout << "||x - x_ex||_A = ";
+        std::cout.width(15);
+        std::cout << NewNorm << ", ";
+        std::cout << "reduction = ";
+        std::cout.width(15);
+        std::cout << NewNorm / OldNorm << std::endl;
       }
 
       if (NewNorm < Tolerance)
@@ -119,10 +119,10 @@ int main(int argc, char *argv[])
 
   }
   catch (const int e) {
-    cout << "Caught integer exception, code = " << e << endl;
+    std::cout << "Caught integer exception, code = " << e << std::endl;
   } 
   catch (...) {
-    cout << "problems here..." << endl;
+    std::cout << "problems here..." << std::endl;
   }
 
 #ifdef HAVE_MPI

@@ -157,9 +157,9 @@ int main(int argc, char *argv[])
   ierr = resid.Norm2(&residual);
   assert(ierr==0);
   if (proc_config[AZ_node] == 0) {
-    cout << endl;
-    cout << "==> Residual = " << residual << endl;
-    cout << endl;
+    std::cout << std::endl;
+    std::cout << "==> Residual = " << residual << std::endl;
+    std::cout << std::endl;
   }
 
   // =============== //
@@ -200,7 +200,7 @@ int main(int argc, char *argv[])
   ML_Operator_Destroy(&ML_Tmat);
 
   if (residual > 1e-5) {
-    cout << "`MultiLevelPreconditioner_Maxwell.exe' failed!" << endl;
+    std::cout << "`MultiLevelPreconditioner_Maxwell.exe' failed!" << std::endl;
     exit(EXIT_FAILURE);
   }
 
@@ -209,7 +209,7 @@ int main(int argc, char *argv[])
 #endif
 		
   if (proc_config[AZ_node] == 0)
-    cout << "`MultiLevelPreconditioner_Maxwell.exe' passed!" << endl;
+    std::cout << "`MultiLevelPreconditioner_Maxwell.exe' passed!" << std::endl;
   exit(EXIT_SUCCESS);
 		
 }

@@ -128,26 +128,26 @@ int main(int argc, char *argv[])
 #ifdef CurlCurlAndMassAreSeparate
   if (argc != 5 && argc != 7) {
     if (Comm.MyPID() == 0) {
-      cout << "usage: ml_maxwell.exe <S> <M> <T> <Kn> [edge map] [node map]"
-           << endl;
-      cout << "        S = edge stiffness matrix file" << endl;
-      cout << "        M = edge mass matrix file" << endl;
-      cout << "        T = discrete gradient file" << endl;
-      cout << "       Kn = auxiliary nodal FE matrix file" << endl;
-      cout << " edge map = edge distribution over processors" << endl;
-      cout << " node map = node distribution over processors" << endl;
-      cout << argc << endl;
+      std::cout << "usage: ml_maxwell.exe <S> <M> <T> <Kn> [edge map] [node map]"
+           << std::endl;
+      std::cout << "        S = edge stiffness matrix file" << std::endl;
+      std::cout << "        M = edge mass matrix file" << std::endl;
+      std::cout << "        T = discrete gradient file" << std::endl;
+      std::cout << "       Kn = auxiliary nodal FE matrix file" << std::endl;
+      std::cout << " edge map = edge distribution over processors" << std::endl;
+      std::cout << " node map = node distribution over processors" << std::endl;
+      std::cout << argc << std::endl;
     }
 #else //ifdef CurlCurlAndMassAreSeparate
   if (argc != 4 && argc != 6) {
     if (Comm.MyPID() == 0) {
-      cout << "usage: ml_maxwell.exe <A> <T> <Kn> [edge map] [node map]" <<endl;
-      cout << "        A = edge element matrix file" << endl;
-      cout << "        T = discrete gradient file" << endl;
-      cout << "       Kn = auxiliary nodal FE matrix file" << endl;
-      cout << " edge map = edge distribution over processors" << endl;
-      cout << " node map = node distribution over processors" << endl;
-      cout << argc << endl;
+      std::cout << "usage: ml_maxwell.exe <A> <T> <Kn> [edge map] [node map]" <<std::endl;
+      std::cout << "        A = edge element matrix file" << std::endl;
+      std::cout << "        T = discrete gradient file" << std::endl;
+      std::cout << "       Kn = auxiliary nodal FE matrix file" << std::endl;
+      std::cout << " edge map = edge distribution over processors" << std::endl;
+      std::cout << " node map = node distribution over processors" << std::endl;
+      std::cout << argc << std::endl;
     }
 #endif //ifdef CurlCurlAndMassAreSeparate
 #ifdef ML_MPI
@@ -312,7 +312,7 @@ int main(int argc, char *argv[])
   // double vectors.
 
   if (Comm.MyPID() == 0)
-    cout << "Putting in a zero initial guess and random rhs (in the range of S+M)" << endl;
+    std::cout << "Putting in a zero initial guess and random rhs (in the range of S+M)" << std::endl;
   Epetra_Vector x(CCplusM->DomainMap());
   x.Random();
   Epetra_Vector rhs(CCplusM->DomainMap());
@@ -321,9 +321,9 @@ int main(int argc, char *argv[])
 
   double vecnorm;
   rhs.Norm2(&vecnorm);
-  if (Comm.MyPID() == 0) cout << "||rhs|| = " << vecnorm << endl;
+  if (Comm.MyPID() == 0) std::cout << "||rhs|| = " << vecnorm << std::endl;
   x.Norm2(&vecnorm);
-  if (Comm.MyPID() == 0) cout << "||x|| = " << vecnorm << endl;
+  if (Comm.MyPID() == 0) std::cout << "||x|| = " << vecnorm << std::endl;
 
   // for AztecOO, we need an Epetra_LinearProblem
   Epetra_LinearProblem Problem(CCplusM,&x,&rhs);
