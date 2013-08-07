@@ -154,6 +154,11 @@ TEST_F( threads, long_reduce_dynamic_view ) {
   TestReduceDynamicView< long ,   Kokkos::Threads >( 1000000 );
 }
 
+TEST_F( threads, dev_shared_request) {
+  TestSharedRequest< Kokkos::Threads >();
+}
+
+
 TEST_F( threads , view_remap )
 {
   enum { N0 = 3 , N1 = 2 , N2 = 8 , N3 = 9 };

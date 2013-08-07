@@ -67,7 +67,7 @@ template< typename ScalarType , class ValueType ,
           class MemorySpace , class MemoryTraits >
 struct ViewSpecialize ;
 
-}
+} /* namespace Impl */
 
 /** \brief  ViewTraits
  *
@@ -277,6 +277,62 @@ namespace Impl {
 
 template< class DstViewSpecialize , class SrcViewSpecialize = void , class Enable = void >
 struct ViewAssignment ;
+
+/** \brief  Evaluate if LHS = RHS view assignment is allowed. */
+template< class ViewLHS , class ViewRHS >
+struct ViewAssignable
+{
+  enum { assignable_value =
+    ( is_same< typename ViewLHS::value_type ,
+               typename ViewRHS::value_type >::value 
+      ||
+      is_same< typename ViewLHS::value_type ,
+               typename ViewRHS::const_value_type >::value )
+    &&
+    is_same< typename ViewLHS::memory_space ,
+             typename ViewRHS::memory_space >::value };
+
+  enum { assignable_shape =
+    // Compatible shape and matching layout:
+    ( ShapeCompatible< typename ViewLHS::shape_type ,
+                       typename ViewRHS::shape_type >::value
+      &&
+      is_same< typename ViewLHS::array_layout ,
+               typename ViewRHS::array_layout >::value )
+    ||
+    // Matching layout, same rank, and LHS dynamic rank
+    ( is_same< typename ViewLHS::array_layout ,
+               typename ViewRHS::array_layout >::value
+      &&
+      int(ViewLHS::rank) == int(ViewRHS::rank)
+      &&
+      int(ViewLHS::rank) == int(ViewLHS::rank_dynamic) )
+    ||
+    // Both rank-0, any shape and layout
+    ( int(ViewLHS::rank) == 0 && int(ViewRHS::rank) == 0 )
+    ||
+    // Both rank-1 and LHS is dynamic rank-1, any shape and layout
+    ( int(ViewLHS::rank) == 1 && int(ViewRHS::rank) == 1 &&
+      int(ViewLHS::rank_dynamic) == 1 )
+    };
+
+  enum { assignable_traits =
+    ! ( ViewLHS::is_managed && ! ViewRHS::is_managed )
+    };
+
+  enum { value = assignable_value &&
+                 assignable_shape &&
+                 assignable_traits };
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
 
 template< class OutputView , unsigned Rank = OutputView::Rank >
 struct ViewInit
@@ -512,21 +568,13 @@ template< class DstViewType ,
           class T , class L , class D , class M , class S ,
           class ArgType0 >
 KOKKOS_INLINE_FUNCTION
-View< typename DstViewType::data_type ,
-      typename DstViewType::array_layout ,
-      typename DstViewType::device_type ,
-      MemoryUnmanaged >
+DstViewType
 subview( const View<T,L,D,M,S> & src ,
          const ArgType0 & arg0 )
 {
-  typedef View< typename DstViewType::data_type ,
-                typename DstViewType::array_layout ,
-                typename DstViewType::device_type ,
-                MemoryUnmanaged > dst_type ;
+  DstViewType dst ;
 
-  dst_type dst ;
-
-  Impl::ViewAssignment<typename dst_type::specialize,S>( dst , src , arg0 );
+  Impl::ViewAssignment<typename DstViewType::specialize,S>( dst , src , arg0 );
 
   return dst ;
 }
@@ -535,22 +583,14 @@ template< class DstViewType ,
           class T , class L , class D , class M , class S ,
           class ArgType0 , class ArgType1 >
 KOKKOS_INLINE_FUNCTION
-View< typename DstViewType::data_type ,
-      typename DstViewType::array_layout ,
-      typename DstViewType::device_type ,
-      MemoryUnmanaged >
+DstViewType
 subview( const View<T,L,D,M,S> & src ,
          const ArgType0 & arg0 ,
          const ArgType1 & arg1 )
 {
-  typedef View< typename DstViewType::data_type ,
-                typename DstViewType::array_layout ,
-                typename DstViewType::device_type ,
-                MemoryUnmanaged > dst_type ;
+  DstViewType dst ;
 
-  dst_type dst ;
-
-  Impl::ViewAssignment<typename dst_type::specialize,S>( dst, src, arg0, arg1 );
+  Impl::ViewAssignment<typename DstViewType::specialize,S>( dst, src, arg0, arg1 );
 
   return dst ;
 }
@@ -559,23 +599,15 @@ template< class DstViewType ,
           class T , class L , class D , class M , class S ,
           class ArgType0 , class ArgType1 , class ArgType2 >
 KOKKOS_INLINE_FUNCTION
-View< typename DstViewType::data_type ,
-      typename DstViewType::array_layout ,
-      typename DstViewType::device_type ,
-      MemoryUnmanaged >
+DstViewType
 subview( const View<T,L,D,M,S> & src ,
          const ArgType0 & arg0 ,
          const ArgType1 & arg1 ,
          const ArgType2 & arg2 )
 {
-  typedef View< typename DstViewType::data_type ,
-                typename DstViewType::array_layout ,
-                typename DstViewType::device_type ,
-                MemoryUnmanaged > dst_type ;
+  DstViewType dst ;
 
-  dst_type dst ;
-
-  Impl::ViewAssignment<typename dst_type::specialize,S>( dst, src, arg0, arg1, arg2 );
+  Impl::ViewAssignment<typename DstViewType::specialize,S>( dst, src, arg0, arg1, arg2 );
 
   return dst ;
 }
@@ -584,24 +616,16 @@ template< class DstViewType ,
           class T , class L , class D , class M , class S ,
           class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 >
 KOKKOS_INLINE_FUNCTION
-View< typename DstViewType::data_type ,
-      typename DstViewType::array_layout ,
-      typename DstViewType::device_type ,
-      MemoryUnmanaged >
+DstViewType
 subview( const View<T,L,D,M,S> & src ,
          const ArgType0 & arg0 ,
          const ArgType1 & arg1 ,
          const ArgType2 & arg2 ,
          const ArgType3 & arg3 )
 {
-  typedef View< typename DstViewType::data_type ,
-                typename DstViewType::array_layout ,
-                typename DstViewType::device_type ,
-                MemoryUnmanaged > dst_type ;
+  DstViewType dst ;
 
-  dst_type dst ;
-
-  Impl::ViewAssignment<typename dst_type::specialize,S>( dst, src, arg0, arg1, arg2, arg3 );
+  Impl::ViewAssignment<typename DstViewType::specialize,S>( dst, src, arg0, arg1, arg2, arg3 );
 
   return dst ;
 }
@@ -611,10 +635,7 @@ template< class DstViewType ,
           class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
           class ArgType4 >
 KOKKOS_INLINE_FUNCTION
-View< typename DstViewType::data_type ,
-      typename DstViewType::array_layout ,
-      typename DstViewType::device_type ,
-      MemoryUnmanaged >
+DstViewType
 subview( const View<T,L,D,M,S> & src ,
          const ArgType0 & arg0 ,
          const ArgType1 & arg1 ,
@@ -622,14 +643,9 @@ subview( const View<T,L,D,M,S> & src ,
          const ArgType3 & arg3 ,
          const ArgType4 & arg4 )
 {
-  typedef View< typename DstViewType::data_type ,
-                typename DstViewType::array_layout ,
-                typename DstViewType::device_type ,
-                MemoryUnmanaged > dst_type ;
+  DstViewType dst ;
 
-  dst_type dst ;
-
-  Impl::ViewAssignment<typename dst_type::specialize,S>( dst, src, arg0, arg1, arg2, arg3, arg4 );
+  Impl::ViewAssignment<typename DstViewType::specialize,S>( dst, src, arg0, arg1, arg2, arg3, arg4 );
 
   return dst ;
 }
@@ -639,10 +655,7 @@ template< class DstViewType ,
           class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
           class ArgType4 , class ArgType5 >
 KOKKOS_INLINE_FUNCTION
-View< typename DstViewType::data_type ,
-      typename DstViewType::array_layout ,
-      typename DstViewType::device_type ,
-      MemoryUnmanaged >
+DstViewType
 subview( const View<T,L,D,M,S> & src ,
          const ArgType0 & arg0 ,
          const ArgType1 & arg1 ,
@@ -651,14 +664,9 @@ subview( const View<T,L,D,M,S> & src ,
          const ArgType4 & arg4 ,
          const ArgType5 & arg5 )
 {
-  typedef View< typename DstViewType::data_type ,
-                typename DstViewType::array_layout ,
-                typename DstViewType::device_type ,
-                MemoryUnmanaged > dst_type ;
+  DstViewType dst ;
 
-  dst_type dst ;
-
-  Impl::ViewAssignment<typename dst_type::specialize,S>( dst, src, arg0, arg1, arg2, arg3, arg4, arg5 );
+  Impl::ViewAssignment<typename DstViewType::specialize,S>( dst, src, arg0, arg1, arg2, arg3, arg4, arg5 );
 
   return dst ;
 }
@@ -668,10 +676,7 @@ template< class DstViewType ,
           class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
           class ArgType4 , class ArgType5 , class ArgType6 >
 KOKKOS_INLINE_FUNCTION
-View< typename DstViewType::data_type ,
-      typename DstViewType::array_layout ,
-      typename DstViewType::device_type ,
-      MemoryUnmanaged >
+DstViewType
 subview( const View<T,L,D,M,S> & src ,
          const ArgType0 & arg0 ,
          const ArgType1 & arg1 ,
@@ -681,14 +686,9 @@ subview( const View<T,L,D,M,S> & src ,
          const ArgType5 & arg5 ,
          const ArgType6 & arg6 )
 {
-  typedef View< typename DstViewType::data_type ,
-                typename DstViewType::array_layout ,
-                typename DstViewType::device_type ,
-                MemoryUnmanaged > dst_type ;
+  DstViewType dst ;
 
-  dst_type dst ;
-
-  Impl::ViewAssignment<typename dst_type::specialize,S>( dst, src, arg0, arg1, arg2, arg3, arg4, arg5, arg6 );
+  Impl::ViewAssignment<typename DstViewType::specialize,S>( dst, src, arg0, arg1, arg2, arg3, arg4, arg5, arg6 );
 
   return dst ;
 }
@@ -698,10 +698,7 @@ template< class DstViewType ,
           class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
           class ArgType4 , class ArgType5 , class ArgType6 , class ArgType7 >
 KOKKOS_INLINE_FUNCTION
-View< typename DstViewType::data_type ,
-      typename DstViewType::array_layout ,
-      typename DstViewType::device_type ,
-      MemoryUnmanaged >
+DstViewType
 subview( const View<T,L,D,M,S> & src ,
          const ArgType0 & arg0 ,
          const ArgType1 & arg1 ,
@@ -712,14 +709,9 @@ subview( const View<T,L,D,M,S> & src ,
          const ArgType6 & arg6 ,
          const ArgType7 & arg7 )
 {
-  typedef View< typename DstViewType::data_type ,
-                typename DstViewType::array_layout ,
-                typename DstViewType::device_type ,
-                MemoryUnmanaged > dst_type ;
+  DstViewType dst ;
 
-  dst_type dst ;
-
-  Impl::ViewAssignment<typename dst_type::specialize,S>( dst, src, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7 );
+  Impl::ViewAssignment<typename DstViewType::specialize,S>( dst, src, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7 );
 
   return dst ;
 }

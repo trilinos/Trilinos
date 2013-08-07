@@ -160,6 +160,11 @@ public:
   __device__ inline int team_size() const { return blockDim.x ; }
   __device__ inline int team_rank() const { return threadIdx.x ; }
 
+  __device__ inline void team_barrier() const { __syncthreads(); }
+
+  template< typename T >
+  __device__ inline T * get_shmem( const int count );
+
   __device__ inline Cuda( Impl::CudaExec & exec ) : m_exec(exec) {}
   __device__ inline Cuda( const Cuda & rhs ) : m_exec(rhs.m_exec) {}
 
@@ -169,6 +174,7 @@ private:
 
   Impl::CudaExec & m_exec ;
 
+  //--------------------------------------------------------------------------
 #else
 
   int league_size() const ;
@@ -176,6 +182,10 @@ private:
 
   int team_size() const ;
   int team_rank() const ;
+
+  void team_barrier() const ;
+
+  template< typename T > T * get_shmem( const int count );
 
   Cuda( Impl::CudaExec & );
 

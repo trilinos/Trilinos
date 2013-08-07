@@ -124,7 +124,14 @@ public:
   inline int team_rank() const ;
   inline int team_size() const ;
 
+  inline void team_barrier();
+
+  template< typename T >
+  inline T * get_shmem( const int count );
+
   inline std::pair<size_t,size_t> work_range( size_t ) const ;
+
+  explicit inline Threads( Impl::ThreadsExec & );
 
   /**@} */
   /*------------------------------------------------------------------------*/
@@ -159,8 +166,6 @@ private:
   friend class Impl::ThreadsExec ;
 
   Impl::ThreadsExec & m_exec ;
-
-  Threads( Impl::ThreadsExec & t ) : m_exec(t) {}
 };
 
 /*--------------------------------------------------------------------------*/

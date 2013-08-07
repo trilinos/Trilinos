@@ -397,7 +397,6 @@ struct Shape< ScalarSize , Rank , 0,s1,s2,s3, s4,s5,s6,s7 >
 
   unsigned N0 ;
 
-  // enum { N1 = s1 };
   enum { N1 = s1 };
   enum { N2 = s2 };
   enum { N3 = s3 };

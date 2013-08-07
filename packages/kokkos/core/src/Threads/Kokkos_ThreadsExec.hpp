@@ -74,8 +74,11 @@ private:
 
   void        * m_reduce ;    ///< Reduction memory
   void        * m_shared ;    ///< Shared memory
+  int           m_shared_end ;
+  int           m_shared_iter ;
   int volatile  m_state ;
   int           m_fan_size ;
+  int           m_fan_team_size ;
   int           m_team_rank ;
   int           m_team_size ;
   int           m_league_rank ;
@@ -127,10 +130,10 @@ public:
 
   //------------------------------------
 
-  Threads threads() { return Threads(*this); }
-
   static void wait( volatile int & , const int );
   static void wait_yield( volatile int & , const int );
+
+  void * get_shmem( const int size );
 
   template< class FunctorType >
   typename ReduceAdapter< FunctorType >::reference_type
@@ -162,6 +165,20 @@ public:
     {
       for ( int i = 0 ; i < m_fan_size ; ++i ) {
         ThreadsExec::wait( m_fan[i]->m_state , ThreadsExec::Active );
+      }
+    }
+
+  void team_barrier()
+    {
+      for ( int i = 0 ; i < m_fan_team_size ; ++i ) {
+        ThreadsExec::wait( m_fan[i]->m_state , ThreadsExec::Active );
+      }
+      if ( m_team_rank ) {
+        m_state = Rendezvous ;
+        ThreadsExec::wait( m_state , ThreadsExec::Rendezvous );
+      }
+      for ( int i = 0 ; i < m_fan_team_size ; ++i ) {
+        m_fan[i]->m_state = ThreadsExec::Active ;
       }
     }
 
@@ -240,10 +257,21 @@ inline int Threads::team_rank() const
 inline int Threads::team_size() const
 { return m_exec.m_team_size ; }
 
+inline void Threads::team_barrier()
+{ return m_exec.team_barrier(); }
+
 inline
 std::pair< size_t , size_t >
 Threads::work_range( const size_t work_count ) const
 { return m_exec.work_range( work_count ); }
+
+inline Threads::Threads( Impl::ThreadsExec & t )
+  : m_exec( t ) { m_exec.m_shared_iter = 0 ; }
+
+template< typename T >
+inline
+T * Threads::get_shmem( const int count )
+{ return (T*) m_exec.get_shmem( sizeof(T) * count ); }
 
 } /* namespace Kokkos */
 

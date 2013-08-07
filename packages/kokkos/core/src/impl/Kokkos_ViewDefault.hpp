@@ -66,34 +66,6 @@ struct ViewSpecialize< ScalarType , ScalarType ,
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-/** \brief  Value is compatible for reference assignment: */
-
-template< class DstView , class SrcView ,
-          class DstValueType  = typename DstView::value_type ,
-          class DstValueSpace = typename DstView::memory_space ,
-          class SrcValueType  = typename SrcView::value_type ,
-          class SrcValueSpace = typename SrcView::memory_space >
-struct ValueCompatible ;
-
-template< class DstView , class SrcView , class ValueType , class ValueSpace >
-struct ValueCompatible< DstView , SrcView ,
-                        ValueType , ValueSpace ,
-                        ValueType , ValueSpace >
-{
-  typedef ValueType type ;
-  enum { value = true };
-};
-
-template< class DstView , class SrcView , class ValueType , class ValueSpace >
-struct ValueCompatible< DstView , SrcView ,
-                        const ValueType , ValueSpace ,
-                              ValueType , ValueSpace >
-{
-  typedef ValueType type ;
-  enum { value = true };
-};
-
-//----------------------------------------------------------------------------
 /** \brief  View tracking increment/decrement only happens when
  *          view memory is managed and executing in the host space.
  */
@@ -174,7 +146,7 @@ struct ViewAssignment< LayoutDefault , void , void >
   template< class T , class L , class D, class M >
   KOKKOS_INLINE_FUNCTION
   ViewAssignment( View<T,L,D,M,Specialize> & dst ,
-  		          const typename enable_if< !(ViewTraits<T,L,D,M>::is_managed) , typename ViewTraits<T,L,D,M>::scalar_type >::type* ptr ,
+                  const typename enable_if< !(ViewTraits<T,L,D,M>::is_managed) , typename ViewTraits<T,L,D,M>::scalar_type >::type* ptr ,
                   const size_t n0 = 0 ,
                   const size_t n1 = 0 ,
                   const size_t n2 = 0 ,
@@ -266,27 +238,22 @@ struct ViewAssignment< LayoutDefault , void , void >
   }
 };
 
+//----------------------------------------------------------------------------
+
 template<>
 struct ViewAssignment< LayoutDefault , LayoutDefault , void >
 {
   typedef LayoutDefault Specialize ;
 
-  /** \brief  Assign view with compatible shape and same layout */
+  /** \brief  Assign compatible view */
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
   KOKKOS_INLINE_FUNCTION
   ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
                   const View<ST,SL,SD,SM,Specialize> & src ,
                   const typename enable_if<(
-                    ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                     ViewTraits<ST,SL,SD,SM> >::value
-                    &&
-                    is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout ,
-                             typename ViewTraits<ST,SL,SD,SM>::array_layout >::value
-                    &&
-                    ShapeCompatible< typename ViewTraits<DT,DL,DD,DM>::shape_type ,
-                                     typename ViewTraits<ST,SL,SD,SM>::shape_type >::value
-                  )>::type * = 0 )
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
+                                    ViewTraits<ST,SL,SD,SM> >::value ) >::type * = 0 )
   {
     typedef View<DT,DL,DD,DM,Specialize> DstViewType ;
     typedef typename DstViewType::shape_type    shape_type ;
@@ -305,40 +272,6 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
     ViewTracking< DstViewType >::increment( dst.m_ptr_on_device );
   }
 
-  /** \brief  Assign view with different layout and rank=1 */
-
-  template< class DT , class DL , class DD , class DM ,
-            class ST , class SL , class SD , class SM >
-  KOKKOS_INLINE_FUNCTION
-  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
-                  const View<ST,SL,SD,SM,Specialize> & src ,
-                  const typename enable_if<(
-                    ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                     ViewTraits<ST,SL,SD,SM> >::value
-                    &&
-                    ( ! is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout ,
-                                 typename ViewTraits<ST,SL,SD,SM>::array_layout >::value )
-                    &&
-                    ( ViewTraits<DT,DL,DD,DM>::rank == 1 )
-                    &&
-                    ( ViewTraits<ST,SL,SD,SM>::rank == 1 )
-                  )>::type * = 0 )
-  {
-    typedef View<DT,DL,DD,DM,Specialize> DstViewType ;
-    typedef typename DstViewType::shape_type    shape_type ;
-    typedef typename DstViewType::memory_space  memory_space ;
-    typedef typename DstViewType::memory_traits memory_traits ;
-
-    ViewTracking< DstViewType >::decrement( dst.m_ptr_on_device );
-
-    shape_type::assign( dst.m_shape, src.m_shape.N0 );
-
-    dst.m_stride        = src.m_stride ;
-    dst.m_ptr_on_device = src.m_ptr_on_device ;
-
-    ViewTracking< DstViewType >::increment( dst.m_ptr_on_device );
-  }
-
   /** \brief  Extract Rank-1 array from LayoutLeft Rank-2 array. */
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
@@ -346,8 +279,8 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
   ViewAssignment(       View<DT,DL,DD,DM,LayoutDefault> & dst ,
                   const View<ST,SL,SD,SM,LayoutDefault> & src ,
                   const typename enable_if< (
-                    ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                     ViewTraits<ST,SL,SD,SM> >::value
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
+                                    ViewTraits<ST,SL,SD,SM> >::assignable_value
                     &&
                     ( ViewTraits<DT,DL,DD,DM>::rank == 1 )
                     &&
@@ -376,14 +309,11 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
                   const View<ST,SL,SD,SM,LayoutDefault> & src ,
                   const std::pair<iType,iType> & range ,
                   typename enable_if< (
-                    ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                     ViewTraits<ST,SL,SD,SM> >::value
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
                     &&
-                    ( ViewTraits<ST,SL,SD,SM>::rank == 1 )
+                    ViewTraits<DT,DL,DD,DM>::rank == 1
                     &&
-                    ( ViewTraits<DT,DL,DD,DM>::rank == 1 )
-                    &&
-                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1 )
+                    ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1
                   ) >::type * = 0 )
   {
     typedef ViewTraits<DT,DL,DD,DM> traits_type ;
@@ -407,6 +337,48 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
     }
   }
 
+  /** \brief  Extract LayoutRight Rank-N array from range of LayoutRight Rank-N array */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM ,
+            typename iType >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,LayoutDefault> & dst ,
+                  const View<ST,SL,SD,SM,LayoutDefault> & src ,
+                  const std::pair<iType,iType> & range ,
+                  typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
+                    &&
+                    Impl::is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout , LayoutRight >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank > 1 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic > 0 )
+                  )>::type * = 0 )
+  {
+    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
+    typedef typename traits_type::shape_type shape_type ;
+
+    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
+
+    shape_type::assign( dst.m_shape, 0, 0, 0, 0, 0, 0, 0, 0 );
+    dst.m_stride        = 0 ;
+    dst.m_ptr_on_device = 0 ;
+
+    if ( range.first < range.second ) {
+      assert_shape_bounds( src.m_shape , 8 , range.first ,      0,0,0,0,0,0,0);
+      assert_shape_bounds( src.m_shape , 8 , range.second - 1 , 0,0,0,0,0,0,0);
+
+      shape_type::assign( dst.m_shape, range.second - range.first ,
+                          src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
+                          src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
+
+      dst.m_stride        = src.m_stride ; // aligned( product[ N1 .. N7 ] )
+      dst.m_ptr_on_device = src.m_ptr_on_device + range.first * src.m_stride ;
+
+      ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+    }
+  }
+
   /** \brief  Rank-2 to Rank-2 array */
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM ,
@@ -417,18 +389,11 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
                   const std::pair<iType0,iType0> & range0 ,
                   const std::pair<iType1,iType1> & range1 ,
                   typename enable_if< (
-                    ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                     ViewTraits<ST,SL,SD,SM> >::value
-                    &&
-                    ( ViewTraits<ST,SL,SD,SM>::rank == 2 )
-                    &&
-                    ( ViewTraits<DT,DL,DD,DM>::rank == 2 )
-                    &&
-                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
-                    &&
-                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutLeft >::value
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
                     &&
                     is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout , LayoutLeft >::value
+                    &&
+                    ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2
                   ) >::type * = 0 )
   {
     typedef ViewTraits<DT,DL,DD,DM> traits_type ;
@@ -465,18 +430,11 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
                   const std::pair<iType0,iType0> & range0 ,
                   const std::pair<iType1,iType1> & range1 ,
                   typename enable_if< (
-                    ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                     ViewTraits<ST,SL,SD,SM> >::value
-                    &&
-                    ( ViewTraits<ST,SL,SD,SM>::rank == 2 )
-                    &&
-                    ( ViewTraits<DT,DL,DD,DM>::rank == 2 )
-                    &&
-                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
-                    &&
-                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
                     &&
                     is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout , LayoutRight >::value
+                    &&
+                    ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2
                   ) >::type * = 0 )
   {
     typedef ViewTraits<DT,DL,DD,DM> traits_type ;
@@ -498,54 +456,6 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
       dst.m_stride   = src.m_stride ;
       dst.m_ptr_on_device = src.m_ptr_on_device + range0.first * dst.m_stride + range1.first ;
       // dst.m_ptr_on_device[ i0 * dst.m_stride + i1 ]
-
-      ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
-    }
-  }
-
-  /** \brief  Extract LayoutRight Rank-N array from range of LayoutRight Rank-N array */
-  template< class DT , class DL , class DD , class DM ,
-            class ST , class SL , class SD , class SM ,
-            typename iType >
-  KOKKOS_INLINE_FUNCTION
-  ViewAssignment(       View<DT,DL,DD,DM,LayoutDefault> & dst ,
-                  const View<ST,SL,SD,SM,LayoutDefault> & src ,
-                  const std::pair<iType,iType> & range ,
-                  typename enable_if< (
-                    ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                     ViewTraits<ST,SL,SD,SM> >::value
-                    &&
-                    Impl::is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
-                    &&
-                    Impl::is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout , LayoutRight >::value
-                    &&
-                    ShapeCompatible< typename ViewTraits<DT,DL,DD,DM>::shape_type ,
-                                     typename ViewTraits<ST,SL,SD,SM>::shape_type >::value
-                    &&
-                    ( ViewTraits<ST,SL,SD,SM>::rank > 1 )
-                    &&
-                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic > 0 )
-                  )>::type * = 0 )
-  {
-    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
-    typedef typename traits_type::shape_type shape_type ;
-
-    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
-
-    shape_type::assign( dst.m_shape, 0, 0, 0, 0, 0, 0, 0, 0 );
-    dst.m_stride        = 0 ;
-    dst.m_ptr_on_device = 0 ;
-
-    if ( range.first < range.second ) {
-      assert_shape_bounds( src.m_shape , 8 , range.first ,      0,0,0,0,0,0,0);
-      assert_shape_bounds( src.m_shape , 8 , range.second - 1 , 0,0,0,0,0,0,0);
-
-      shape_type::assign( dst.m_shape, range.second - range.first ,
-                          src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
-                          src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
-
-      dst.m_stride        = src.m_stride ; // aligned( product[ N1 .. N7 ] )
-      dst.m_ptr_on_device = src.m_ptr_on_device + range.first * src.m_stride ;
 
       ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
     }
@@ -627,11 +537,14 @@ struct EnableViewOper< Traits , OperLayout , OperRank ,
 
 
 template< class ShapeType, class LayoutType , unsigned RankDynamic = ShapeType::rank_dynamic >
-struct StaticStride { enum { Stride = 0 }; };
+struct StaticStride {
+  enum { Stride = 0 };
+};
 
 
 template< class S >
 struct StaticStride< S , LayoutRight , 0 > {
+
   enum { count = S::N1*S::N2*S::N3*S::N4*S::N5*S::N6*S::N7  };
   enum { div   = MEMORY_ALIGNMENT / S::scalar_size };
   enum { mod   = MEMORY_ALIGNMENT % S::scalar_size };
@@ -648,6 +561,7 @@ public:
 
 template< class S >
 struct StaticStride< S , LayoutRight , 1 > {
+
   enum { count = S::N1*S::N2*S::N3*S::N4*S::N5*S::N6*S::N7  };
   enum { div   = MEMORY_ALIGNMENT / S::scalar_size };
   enum { mod   = MEMORY_ALIGNMENT % S::scalar_size };
@@ -664,6 +578,7 @@ public:
 
 template< class S >
 struct StaticStride< S , LayoutLeft , 0 > {
+
   enum { count = S::N0 };
   enum { div   = MEMORY_ALIGNMENT / S::scalar_size };
   enum { mod   = MEMORY_ALIGNMENT % S::scalar_size };
@@ -702,15 +617,15 @@ private:
   template< class , class , class > friend struct Impl::ViewAssignment ;
 
   typedef Impl::ViewAssignment<Impl::LayoutDefault> alloc ;
-  typedef Impl::ViewAssignment<Impl::LayoutDefault,Impl::LayoutDefault> assign ;
 
   typename traits::value_type * m_ptr_on_device ;
   typename traits::shape_type   m_shape ;
 
 public:
   unsigned                      m_stride ;
+
   enum { m_stride_static = Impl::StaticStride<typename traits::shape_type,
-	                                          typename traits::array_layout >::Stride };
+                                          typename traits::array_layout >::Stride };
 
   typedef View< typename traits::const_data_type ,
                 typename traits::array_layout ,
@@ -765,10 +680,19 @@ public:
   View() : m_ptr_on_device(0), m_stride(0) { traits::shape_type::assign(m_shape,0,0,0,0,0,0,0,0); }
 
   KOKKOS_INLINE_FUNCTION
-  View( const View & rhs ) : m_ptr_on_device(0) { (void)assign( *this , rhs ); }
+  View( const View & rhs ) : m_ptr_on_device(0)
+    {
+      (void) Impl::ViewAssignment< typename traits::specialize ,
+                                   typename traits::specialize >( *this , rhs );
+    }
 
   KOKKOS_INLINE_FUNCTION
-  View & operator = ( const View & rhs ) { (void)assign( *this , rhs ); return *this ; }
+  View & operator = ( const View & rhs )
+    {
+      (void) Impl::ViewAssignment< typename traits::specialize ,
+                                   typename traits::specialize >( *this , rhs );
+      return *this ;
+    }
 
   //------------------------------------
   // Copy or assign compatible array:
@@ -776,12 +700,31 @@ public:
   template< class RT , class RL , class RD , class RM >
   KOKKOS_INLINE_FUNCTION
   View( const View<RT,RL,RD,RM,typename traits::specialize> & rhs )
-    : m_ptr_on_device(0) { (void)assign( *this , rhs ); }
+    : m_ptr_on_device(0)
+    {
+      typedef View<RT,RL,RD,RM,typename traits::specialize> ViewRHS ;
+
+      enum { OK = Impl::ViewAssignable< View , ViewRHS >::value };
+
+      (void) Impl::ViewAssignment< typename traits::specialize ,
+                                   typename traits::specialize ,
+                                   typename Impl::enable_if< OK >::type >( *this , rhs );
+    }
 
   template< class RT , class RL , class RD , class RM >
   KOKKOS_INLINE_FUNCTION
   View & operator = ( const View<RT,RL,RD,RM,typename traits::specialize> & rhs )
-    { (void)assign( *this , rhs ); return *this ; }
+    {
+      typedef View<RT,RL,RD,RM,typename traits::specialize> ViewRHS ;
+
+      enum { OK = Impl::ViewAssignable< View , ViewRHS >::value };
+
+      (void) Impl::ViewAssignment< typename traits::specialize ,
+                                   typename traits::specialize ,
+                                   typename Impl::enable_if< OK >::type >( *this , rhs );
+
+      return *this ;
+    }
 
   //------------------------------------
   // Allocation.
@@ -802,7 +745,7 @@ public:
   // Create unmanaged View from ptr, can be called in functors, NOTE: no alignment padding is performed
   KOKKOS_INLINE_FUNCTION
   View( const typename traits::scalar_type* ptr,
-		const size_t n0 = 0 ,
+        const size_t n0 = 0 ,
         const size_t n1 = 0 ,
         const size_t n2 = 0 ,
         const size_t n3 = 0 ,
@@ -812,7 +755,7 @@ public:
         const size_t n7 = 0 )
     : m_ptr_on_device(0)
     {
-	  (void)alloc( *this, ptr, n0, n1, n2, n3, n4, n5, n6, n7 );
+      (void)alloc( *this, ptr, n0, n1, n2, n3, n4, n5, n6, n7 );
     }
   //------------------------------------
   // Is not allocated

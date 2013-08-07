@@ -47,50 +47,67 @@
 #define KOKKOS_CUDAEXEC_HPP
 
 #include <string>
-#include <impl/Kokkos_Error.hpp>
+#include <Kokkos_Parallel.hpp>
+#include <Cuda/Kokkos_Cuda_abort.hpp>
 
 /*--------------------------------------------------------------------------*/
 
+#if defined( __CUDACC__ )
+
 namespace Kokkos {
 namespace Impl {
-
-#if defined( __CUDACC__ )
 
 class CudaExec {
 public:
 
   __device__ inline
   CudaExec( const int shmem_begin , const int shmem_end )
-    : m_shmem_begin( shmem_begin )
-    , m_shmem_end(   shmem_end )
+    : m_shmem_end(   shmem_end )
     , m_shmem_iter(  shmem_begin )
     {}
 
   __device__ inline
-  int get_shmem( const int size )
+  void * get_shmem( const int size )
   {
-    const int offset = m_shmem_iter ;
+    enum { MASK  = ParallelWorkRequest::shared_align - 1 };
 
-    m_shmem_iter += size ;
+    extern __shared__ int sh[];
+
+    // m_shmem_iter is in bytes, convert to integer offsets
+    const int offset = m_shmem_iter >> power_of_two<sizeof(int)>::value ;
+
+    // Round up size alignment
+    m_shmem_iter += ( size + int(MASK) ) & ~int(MASK);
 
     if ( m_shmem_end < m_shmem_iter ) {
-      // abort!
+      cuda_abort("Cuda::get_shmem");
     }
-    return offset ;
+
+    return sh + offset ;
   }
 
 private:
 
-  const int m_shmem_begin ;
   const int m_shmem_end ;
         int m_shmem_iter ;
-
 };
-
-#endif
 
 } // namespace Impl
 } // namespace Kokkos
+
+#if defined( __CUDA_ARCH__ )
+
+namespace Kokkos {
+
+template< typename T >
+inline __device__ 
+T * Cuda::get_shmem( const int count )
+{ return (T*) m_exec.get_shmem( sizeof(T) * count ); }
+
+} // namespace Kokkos
+
+#endif /* defined( __CUDA_ARCH__ ) */
+#endif /* defined( __CUDACC__ ) */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

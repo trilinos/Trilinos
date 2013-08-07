@@ -147,8 +147,7 @@ struct ViewAssignment< LayoutScalar , LayoutScalar , void >
   ViewAssignment( View<DT,DL,DD,DM,LayoutScalar> & dst ,
                   const View<ST,SL,SD,SM,LayoutScalar> & src ,
                   typename enable_if< (
-                    ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                     ViewTraits<ST,SL,SD,SM> >::value
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
                   ) >::type * = 0 )
   {
     typedef ViewTraits<DT,DL,DD,DM> traits ;
@@ -202,8 +201,8 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
   ViewAssignment(       View<DT,DL,DD,DM,LayoutScalar> & dst ,
                   const View<ST,SL,SD,SM,LayoutDefault> & src ,
                   const typename enable_if< (
-                    ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                     ViewTraits<ST,SL,SD,SM> >::value &&
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
+                                    ViewTraits<ST,SL,SD,SM> >::assignable_value &&
                     ( ViewTraits<ST,SL,SD,SM>::rank == 1 )
                   ), unsigned >::type i0 )
   {
@@ -226,10 +225,9 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
                   const View<ST,SL,SD,SM,LayoutDefault> & src ,
                   const unsigned i0 ,
                   const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
+                                    ViewTraits<ST,SL,SD,SM> >::assignable_value &&
                     ( ViewTraits<ST,SL,SD,SM>::rank == 2 )
-                    &&
-                    ( ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                       ViewTraits<ST,SL,SD,SM> >::value )
                   ) , unsigned >::type i1 )
   {
     typedef ViewTraits<DT,DL,DD,DM> view_traits ;
@@ -261,10 +259,10 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
                   const unsigned i0 ,
                   const unsigned i1 ,
                   const typename enable_if< (
-                    ( ViewTraits<ST,SL,SD,SM>::rank == 3 )
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
+                                    ViewTraits<ST,SL,SD,SM> >::assignable_value
                     &&
-                    ( ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                       ViewTraits<ST,SL,SD,SM> >::value )
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 3 )
                   ) , unsigned >::type i2 )
   {
     typedef ViewTraits<DT,DL,DD,DM> view_traits ;
@@ -303,10 +301,10 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
                   const unsigned i1 ,
                   const unsigned i2 ,
                   const typename enable_if< (
-                    ( ViewTraits<ST,SL,SD,SM>::rank == 4 )
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
+                                    ViewTraits<ST,SL,SD,SM> >::assignable_value
                     &&
-                    ( ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                       ViewTraits<ST,SL,SD,SM> >::value )
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 4 )
                   ) , unsigned >::type i3 )
   {
     typedef ViewTraits<DT,DL,DD,DM> view_traits ;
@@ -348,10 +346,10 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
                   const unsigned i2 ,
                   const unsigned i3 ,
                   const typename enable_if< (
-                    ( ViewTraits<ST,SL,SD,SM>::rank == 5 )
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
+                                    ViewTraits<ST,SL,SD,SM> >::assignable_value
                     &&
-                    ( ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                       ViewTraits<ST,SL,SD,SM> >::value )
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 5 )
                   ) , unsigned >::type i4 )
   {
     typedef ViewTraits<DT,DL,DD,DM> view_traits ;
@@ -396,10 +394,10 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
                   const unsigned i3 ,
                   const unsigned i4 ,
                   const typename enable_if< (
-                    ( ViewTraits<ST,SL,SD,SM>::rank == 6 )
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
+                                    ViewTraits<ST,SL,SD,SM> >::assignable_value
                     &&
-                    ( ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                       ViewTraits<ST,SL,SD,SM> >::value )
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 6 )
                   ) , unsigned >::type i5 )
   {
     typedef ViewTraits<DT,DL,DD,DM> view_traits ;
@@ -447,10 +445,10 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
                   const unsigned i4 ,
                   const unsigned i5 ,
                   const typename enable_if< (
-                    ( ViewTraits<ST,SL,SD,SM>::rank == 7 )
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
+                                    ViewTraits<ST,SL,SD,SM> >::assignable_value
                     &&
-                    ( ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                       ViewTraits<ST,SL,SD,SM> >::value )
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 7 )
                   ) , unsigned >::type i6 )
   {
     typedef ViewTraits<DT,DL,DD,DM> view_traits ;
@@ -501,10 +499,10 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
                   const unsigned i5 ,
                   const unsigned i6 ,
                   const typename enable_if< (
-                    ( ViewTraits<ST,SL,SD,SM>::rank == 8 )
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
+                                    ViewTraits<ST,SL,SD,SM> >::assignable_value
                     &&
-                    ( ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                       ViewTraits<ST,SL,SD,SM> >::value )
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 8 )
                   ) , unsigned >::type i7 )
   {
     typedef ViewTraits<DT,DL,DD,DM> view_traits ;

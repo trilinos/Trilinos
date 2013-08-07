@@ -162,3 +162,76 @@ public:
 
 /*--------------------------------------------------------------------------*/
 
+namespace Test {
+
+template< class Device >
+struct SharedRequestFunctor {
+
+  typedef Device device_type ;
+  typedef int    value_type ;
+
+  KOKKOS_INLINE_FUNCTION
+  void init( value_type & update ) const
+  { update = 0 ; }
+
+  KOKKOS_INLINE_FUNCTION
+  void join( volatile value_type & update ,
+             volatile const value_type & input ) const
+  { update += input ; }
+  
+
+  enum { SHARED_COUNT = 1000 };
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( device_type dev , value_type & update ) const
+  {
+    int * const shared = dev.template get_shmem<int>( SHARED_COUNT );
+
+    for ( int i = dev.team_rank() ; i < SHARED_COUNT ; i += dev.team_size() ) {
+      shared[i] = i + dev.league_rank();
+    }
+
+    dev.team_barrier();
+
+    if ( dev.team_rank() + 1 == dev.team_size() ) {
+      for ( int i = 0 ; i < SHARED_COUNT ; ++i ) {
+        if ( shared[i] != i + dev.league_rank() ) {
+          ++update ;
+        }
+      }
+    }
+  }
+};
+
+}
+
+namespace {
+
+template< class Device >
+struct TestSharedRequest {
+
+  TestSharedRequest()
+  { run(); }
+
+  void run()
+  {
+    Kokkos::ParallelWorkRequest request ;
+    request.shared_size = 0 ;
+    request.team_size   = 256 ;
+    request.league_size = 64 ;
+
+    typedef Test::SharedRequestFunctor<Device> Functor ;
+
+    request.add_shmem<int>( Functor::SHARED_COUNT );
+
+    int error_count = 0 ;
+
+    Kokkos::parallel_reduce( request , Functor() , error_count );
+
+    ASSERT_EQ( error_count , 0 );
+  }
+};
+
+}
+
+/*--------------------------------------------------------------------------*/

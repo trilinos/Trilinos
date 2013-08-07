@@ -145,11 +145,7 @@ struct ViewAssignment< LayoutTileLeftFast , LayoutTileLeftFast, void >
   ViewAssignment(       View<DT,DL,DD,DM,LayoutTileLeftFast> & dst ,
                   const View<ST,SL,SD,SM,LayoutTileLeftFast> & src ,
                   const typename enable_if<(
-                    ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                     ViewTraits<ST,SL,SD,SM> >::value
-                    &&
-                    ShapeCompatible< typename ViewTraits<DT,DL,DD,DM>::shape_type ,
-                                     typename ViewTraits<ST,SL,SD,SM>::shape_type >::value
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
                   )>::type * = 0 )
   {
     typedef View<DT,DL,DD,DM,LayoutTileLeftFast> DstViewType ;

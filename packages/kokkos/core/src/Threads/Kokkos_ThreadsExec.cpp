@@ -184,8 +184,11 @@ ThreadsExec::~ThreadsExec()
 {
   m_reduce      = 0 ;
   m_shared      = 0 ;
+  m_shared_end  = 0 ;
+  m_shared_iter = 0 ;
   m_state       = ThreadsExec::Terminating ;
   m_fan_size    = 0 ;
+  m_fan_team_size = 0 ;
   m_team_rank   = 0 ;
   m_team_size   = 0 ;
   m_league_rank = 0 ;
@@ -199,8 +202,11 @@ ThreadsExec::~ThreadsExec()
 ThreadsExec::ThreadsExec()
   : m_reduce(0)
   , m_shared(0)
+  , m_shared_end(0)
+  , m_shared_iter(0)
   , m_state( ThreadsExec::Terminating )
   , m_fan_size(0)
+  , m_fan_team_size(0)
   , m_team_rank(0)
   , m_team_size(0)
   , m_league_rank(0)
@@ -236,11 +242,14 @@ void ThreadsExec::set_threads_relationships(
     th.m_thread_size = th.m_team_size * th.m_league_size ;
 
     th.m_fan_size = 0 ;
+    th.m_fan_team_size = 0 ;
 
     // Intra-team reduction:
     for ( int n = 1 ; ( th.m_team_rank + n < th.m_team_size ) &&
                       ( 0 == ( n & th.m_team_rank ) ) ; n <<= 1 ) {
-      th.m_fan[ th.m_fan_size++ ] = threads[ ( th.m_team_rank + n ) + ( th.m_league_rank * th.m_team_size ) ];
+      th.m_fan[ th.m_fan_size ] = threads[ ( th.m_team_rank + n ) + ( th.m_league_rank * th.m_team_size ) ];
+      ++th.m_fan_size ;
+      ++th.m_fan_team_size ;
     }
 
     // Inter-team (intra-league) reduction:
@@ -323,6 +332,25 @@ void ThreadsExec::execute_shared_resize( ThreadsExec & exec , const void * )
       while ( ptr < end ) *ptr++ = 0 ;
     }
   }
+
+  exec.m_shared_end = s_threads_shared_size ;
+}
+
+void * ThreadsExec::get_shmem( const int size )
+{
+  enum { MASK  = ParallelWorkRequest::shared_align - 1 };
+
+  // m_shared_iter is in bytes, convert to integer offsets
+  const int offset = m_shared_iter >> power_of_two<sizeof(int)>::value ;
+
+  // Round up size alignment
+  m_shared_iter += ( size + int(MASK) ) & ~int(MASK);
+
+  if ( m_shared_end < m_shared_iter ) {
+    Kokkos::Impl::throw_runtime_exception( std::string("ThreadsExec::get_shmem FAILED : exceeded shared memory size" ) );
+  }
+
+  return ((int*)m_shared) + offset ;
 }
 
 }

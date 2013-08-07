@@ -110,6 +110,10 @@ void test_device_cuda_reduce_request() {
   TestReduceRequest< double , Kokkos::Cuda >( 1000000 );
 }
 
+void test_device_cuda_shared_request() {
+  TestSharedRequest< Kokkos::Cuda >();
+}
+
 void test_device_cuda_reduce_dynamic() {
   TestReduceDynamic< long ,   Kokkos::Cuda >( 10000000 );
   TestReduceDynamic< double , Kokkos::Cuda >( 1000000 );

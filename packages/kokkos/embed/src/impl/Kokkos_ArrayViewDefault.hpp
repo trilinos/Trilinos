@@ -166,11 +166,7 @@ struct ViewAssignment< LayoutEmbedArray , LayoutEmbedArray , void >
   ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
                   const View<ST,SL,SD,SM,Specialize> & src ,
                   const typename enable_if<(
-                    ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                     ViewTraits<ST,SL,SD,SM> >::value
-                    &&
-                    ShapeCompatible< typename ViewTraits<DT,DL,DD,DM>::shape_type ,
-                                     typename ViewTraits<ST,SL,SD,SM>::shape_type >::value
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
                   )>::type * = 0 )
   {
     typedef View<DT,DL,DD,DM,Specialize> DstViewType ;
@@ -201,15 +197,9 @@ struct ViewAssignment< LayoutEmbedArray , LayoutEmbedArray , void >
                   const View<ST,SL,SD,SM,Specialize> & src ,
                   const std::pair<iType,iType> & range ,
                   typename enable_if< (
-                    ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                     ViewTraits<ST,SL,SD,SM> >::value
-                    &&
-                    Impl::is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
                     &&
                     Impl::is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout , LayoutRight >::value
-                    &&
-                    ShapeCompatible< typename ViewTraits<DT,DL,DD,DM>::shape_type ,
-                                     typename ViewTraits<ST,SL,SD,SM>::shape_type >::value
                     &&
                     ( ViewTraits<ST,SL,SD,SM>::rank > 1 )
                     &&
