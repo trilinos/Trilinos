@@ -772,10 +772,10 @@ namespace MueLu {
 #   ifdef HAVE_MUELU_DEBUG
     // At the moment we assume that first GIDs in nonUniqueMap coincide with those in uniqueMap.
     if (uniqueMap != Teuchos::null)
-      for (LO row = 0; row < Teuchos::as<LO> (uniqueMap.getNodeNumElements ()); ++row) {
-        TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap.getGlobalElement(row) != elementList[row], Exceptions::RuntimeError,
+      for (LO row = 0; row < Teuchos::as<LO> (uniqueMap->getNodeNumElements ()); ++row) {
+        TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap->getGlobalElement(row) != elementList[row], Exceptions::RuntimeError,
                                    "row = " << row << ", uniqueMap GID = "
-                                   << uniqueMap.getGlobalElement(row) << ", nonUniqueMap GID = "
+                                   << uniqueMap->getGlobalElement(row) << ", nonUniqueMap GID = "
                                    << elementList[row] << std::endl);
       }
 #   endif
