@@ -522,9 +522,6 @@ template <class MatrixType>
 template <typename new_matrix_type>
 Teuchos::RCP< RILUK< new_matrix_type > >  
 RILUK<MatrixType>::clone(const Teuchos::RCP< const new_matrix_type>& A_newnode) const{
-  typedef typename new_matrix_type::global_ordinal_type global_ordinal_type;
-  typedef typename new_matrix_type::local_ordinal_type local_ordinal_type;
-  typedef typename new_matrix_type::scalar_type scalar_type;
   typedef typename new_matrix_type::node_type new_node_type;
   typedef typename new_matrix_type::mat_solve_type mat_solve_type;
   typedef RILUK< new_matrix_type > new_riluk_type;
