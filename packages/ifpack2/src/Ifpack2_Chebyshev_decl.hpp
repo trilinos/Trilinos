@@ -495,7 +495,7 @@ public:
   }
 
   //! Clone preconditioner to a new node type
-  template <typename new_matrix_type> Teuchos::RCP< Chebyshev< new_matrix_type > > clone(const Teuchos::RCP<const new_matrix_type>& A_newnode) const;
+  template <typename new_matrix_type> Teuchos::RCP< Chebyshev< new_matrix_type > > clone(const Teuchos::RCP<const new_matrix_type>& A_newnode, const Teuchos::ParameterList& params) const;
   //
 
   //@}
@@ -740,8 +740,9 @@ private:
 template <class MatrixType>
 template <typename new_matrix_type>
 Teuchos::RCP< Chebyshev< new_matrix_type > >
-Chebyshev<MatrixType>::clone(const Teuchos::RCP< const new_matrix_type>& A_newnode) const{
+Chebyshev<MatrixType>::clone(const Teuchos::RCP< const new_matrix_type>& A_newnode,const Teuchos::ParameterList& params) const{
     Teuchos::RCP<Ifpack2::Chebyshev<new_matrix_type> > prec = Teuchos::rcp( new Ifpack2::Chebyshev<new_matrix_type> (A_newnode));
+    prec->setParameters(params);
     prec->initialize();
     prec->compute();
     return prec;

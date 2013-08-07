@@ -148,7 +148,7 @@ public:
                                        typename MatrixType::local_ordinal_type,
                                        typename MatrixType::global_ordinal_type,
                                        typename MatrixType::node_type> >& prec,
-		const Teuchos::RCP<const M2>& matrix);
+		const Teuchos::RCP<const M2>& matrix, const Teuchos::ParameterList& params = Teuchos::null);
 
 };
 
@@ -221,7 +221,7 @@ Factory::clone(const Teuchos::RCP<Ifpack2::Preconditioner<typename MatrixType::s
                 typename MatrixType::local_ordinal_type,
                 typename MatrixType::global_ordinal_type,
                 typename MatrixType::node_type> >& prec,
-                const Teuchos::RCP<const M2>& matrix) {
+                const Teuchos::RCP<const M2>& matrix, const Teuchos::ParameterList& params) {
   typedef typename M2::scalar_type scalar_type;
   typedef typename M2::local_ordinal_type local_ordinal_type;
   typedef typename M2::global_ordinal_type global_ordinal_type;
@@ -231,24 +231,12 @@ Factory::clone(const Teuchos::RCP<Ifpack2::Preconditioner<typename MatrixType::s
   Teuchos::RCP<Ifpack2::Chebyshev<MatrixType> > chebyPrec;
   chebyPrec = Teuchos::rcp_dynamic_cast<Ifpack2::Chebyshev<MatrixType> >(prec);
   if (chebyPrec != Teuchos::null){
-/*	if (matrix == Teuchos::null){
-               	Teuchos::RCP<const MatrixType> A = chebyPrec->getCrsMatrix();
-		Teuchos::RCP<new_node_type> new_node = A->getNode();
-		matrix = A->clone(new_node);
-	}
-*/
-	new_prec = chebyPrec->clone(matrix);
+	new_prec = chebyPrec->clone(matrix, params);
 	return new_prec;
   }
   Teuchos::RCP<Ifpack2::RILUK<MatrixType> > luPrec;
   luPrec = Teuchos::rcp_dynamic_cast<Ifpack2::RILUK<MatrixType> >(prec);
   if (luPrec != Teuchos::null){	
-/*	if (matrix == Teuchos::null){
-		Teuchos::RCP<const MatrixType> A = luPrec->getCrsMatrix();
-                Teuchos::RCP<new_node_type> new_node = A->getNode();
-		matrix = A ->clone(new_node);
-	}
-*/
 	new_prec = luPrec->clone(matrix);
 	return new_prec;
   }

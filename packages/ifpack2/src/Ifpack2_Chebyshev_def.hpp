@@ -78,7 +78,6 @@ Chebyshev<MatrixType>::setParameters (const Teuchos::ParameterList& List)
   impl_.setParameters (const_cast<Teuchos::ParameterList&> (List));
 }
 
-
 //==========================================================================
 template<class MatrixType>
 Teuchos::RCP<const Teuchos::Comm<int> >
