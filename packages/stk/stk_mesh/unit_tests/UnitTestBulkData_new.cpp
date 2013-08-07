@@ -219,15 +219,6 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyDetectsNonOwnerChange )
   bulk.modification_end();
 }
 
-STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyGetEntityGuards )
-{
-  TestBoxFixture fixture;
-
-  stk::mesh::BulkData      &bulk = fixture.bulk_data();
-  STKUNIT_ASSERT_THROW ( bulk.get_entity ( 1 , 0 ) , std::logic_error );
-}
-
-
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyExplicitAddInducedPart )
 {
   TestBoxFixture fixture;
