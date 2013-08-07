@@ -32,29 +32,11 @@ sys.path.append(os.path.join(tribitsBaseDir, 'python'))
 
 from GeneralScriptSupport import *
 from CheckinTest import *
-
-#
-# B) Define some helper functions
-#
-
-def openWriteFilePermissions(filePath):
-  if os.path.exists(filePath):
-    os.chmod(filePath, stat.S_IREAD | stat.S_IWRITE \
-      | stat.S_IRGRP | stat.S_IWGRP)
-
-def setGeneratedFilePermissions(filePath):
-  os.chmod(filePath, stat.S_IREAD | stat.S_IRGRP | stat.S_IROTH)
-
-def generateFile(filePath, generateCmnd, outFile=None, workingDir="", runTwice=False):
-  openWriteFilePermissions(filePath)
-  runSysCmnd(generateCmnd, outFile=outFile, workingDir=workingDir)
-  if runTwice:
-    runSysCmnd(generateCmnd, outFile=outFile, workingDir=workingDir)
-  setGeneratedFilePermissions(filePath)
+import GenerateDocUtilsOutput
 
 
 #
-# C) Read in the commandline options
+# B) Read in the commandline options
 #
   
 clp = OptionParser(usage=usageHelp)
@@ -67,34 +49,12 @@ clp.add_option(
     " cmake/tribits."
   )
 
-clp.add_option(
-  "--output-file-base", dest="outputFileBase", type="string",
-  default="",
-  help="Project-specific build quickref file base name." \
-    "  If not set, then set to <projectBaseDir>/<Project>BuildQuickRef"
-  )
-  
-clp.add_option(
-  "--generate-html", dest="generateHtml", type="string",
-  help="Generate the HTML output file using provided script (i.e. rst2html)",
-  default="rst2html.py" )
-  
-clp.add_option(
-  "--generate-latex", dest="generateLatex", type="string",
-  help="Generate the Latex (*.tex) output file using provided script" \
-    " (i.e. rst2latex)",
-  default="rst2latex.py" )
-  
-clp.add_option(
-  "--generate-pdf", dest="generatePDF", type="string",
-  help="Generate the PDF output file from the latex file using provided" \
-    " script (i.e. pdflatex)",
-  default="pdflatex" )
+GenerateDocUtilsOutput.addCmndLineOptions(clp)
 
 (options, args) = clp.parse_args(sys.argv)
 
 #
-# D) Get information for everything
+# C) Get information for everything
 #
 
 if options.projectBaseDir:
@@ -107,15 +67,15 @@ else:
 projectName = getProjectName(projectBaseDir)
 #print "projectName =", projectName
 
-if options.outputFileBase:
-  outputFileBase = options.outputFileBase
+if options.fileBase:
+  options.fileBase = options.fileBase
 else:
-  outputFileBase = os.path.join(projectBaseDir,
+  options.fileBase = os.path.join(projectBaseDir,
     projectName+"BuildQuickRef")
-#print "outputFileBase =", outputFileBase
+#print "options.fileBase =", options.fileBase
 
 #
-# E) Read in standard body and make substitution
+# D) Read in standard body and make substitution
 #
 
 tribitsBuildQuickRefBodyFile = \
@@ -129,10 +89,8 @@ substitutedTribitsBuildQuickRefBodyStr = \
   tribitsBuildQuickRefBodyStr.replace("<Project>", projectName)
 
 #
-# F) Generate the output files
+# E) Generate the output files
 #
-
-filesToClean = []
 
 projectBuildQuickRefTemplateFile = \
   os.path.join(projectBaseDir, "cmake", \
@@ -147,51 +105,12 @@ projectBuildQuickRefStr = \
   + "\n\n" \
   + substitutedTribitsBuildQuickRefBodyStr
 
-outputFileBaseName = os.path.basename(outputFileBase)
+fileBaseName = os.path.basename(options.fileBase)
 
-outputRstFile = outputFileBase+".rst"
+outputRstFile = options.fileBase+".rst"
 print "Writing rst file ..."
-openWriteFilePermissions(outputRstFile)
+GenerateDocUtilsOutput.openWriteFilePermissions(outputRstFile)
 writeStrToFile(outputRstFile, projectBuildQuickRefStr)
-setGeneratedFilePermissions(outputRstFile)
+GenerateDocUtilsOutput.setGeneratedFilePermissions(outputRstFile)
 
-if options.generateHtml:
-  print "Generating "+outputFileBaseName+".html ..."
-  outputHtmlFile = outputFileBase+".html"
-  generateFile(outputHtmlFile,
-    options.generateHtml+" "+outputRstFile+" "+outputHtmlFile)
-
-if options.generateLatex:
-  print "Generating "+outputFileBaseName+".tex ..."
-  outputLatexFile = outputFileBase+".tex"
-  runSysCmnd(options.generateLatex+" "+outputRstFile+" "+outputLatexFile)
-  if options.generatePDF:
-    print "Generating "+outputFileBaseName+".pdf ..."
-    outputPdfFile = outputFileBase+".pdf"
-    outputPdfFileLog = outputLatexFile+".log"
-    generateFile(outputPdfFile,
-      options.generatePDF+" "+outputLatexFile,
-      outFile=outputPdfFileLog,
-      workingDir=projectBaseDir,
-      runTwice=True)
-    filesToClean.append(outputPdfFileLog)
-
-#
-# G) Clean the intermediate files
-#
-
-print "Cleaning intermediate files ..."
-
-filesToClean.extend(
-  [
-    outputFileBase+".aux",
-    outputFileBase+".log",
-    outputFileBase+".out",
-    outputFileBase+".tex",
-    outputFileBase+".toc",
-    ]
-  )
-
-for tempFile in filesToClean:
-  if os.path.exists(tempFile):
-    runSysCmnd("rm "+tempFile)
+GenerateDocUtilsOutput.generateDocutilsOuputFiles(options)
