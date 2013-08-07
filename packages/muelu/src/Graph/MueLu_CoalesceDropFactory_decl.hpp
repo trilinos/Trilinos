@@ -126,7 +126,8 @@ namespace MueLu {
                    LO const &blkSize, Map const &colMap, GO const &indexBase, Map const &nonUniqueMap) const;
 
     //! Method to create merged column map for systems of PDEs.
-    void AmalgamateColumnMap(Matrix const & A, Map const &uniqueMap, RCP<const Map> &nonUniqueMap) const;
+    void AmalgamateColumnMap(LO const blockSize, Map const & sourceMap, RCP<const Map> &nonUniqueMap,
+                        RCP<const Map> const &uniqueMap = Teuchos::null) const;
 
   }; //class CoalesceDropFactory
 
