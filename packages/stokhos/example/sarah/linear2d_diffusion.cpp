@@ -69,6 +69,9 @@
 #include <Kokkos_ThrustGPUNode.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
+#include "KokkosCore_config.h"
+#include "Kokkos_Cuda.hpp"
+
 #include <iostream>
 
 using Teuchos::ArrayRCP;
@@ -87,18 +90,16 @@ using Ifpack2::Preconditioner;
 enum Prec { ILU, CHEBY, MG };
 const int num_prec = 3;
 const Prec prec_values[] = {ILU, CHEBY, MG};
-const char *prec_names[] = { "ILU",
-                                "Chebyshev",
-                                "Multigrid"};
+const char *prec_names[] = { "ILU", "Chebyshev", "Multigrid"};
 template <typename Scalar,
           typename LocalOrdinal,
           typename GlobalOrdinal,
           typename Node,
-	  typename LocalMatOps,
+          typename LocalMatOps,
           typename CloneNode,
-	  typename CloneLocalMatOps>
+          typename CloneLocalMatOps>
 Scalar MGclone_and_solve(
-  RCP< Xpetra::Matrix <Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > mueluJ, 
+  RCP< Xpetra::Matrix <Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > mueluJ,
   RCP< const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > f,
   RCP< const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > dx,
   RCP< MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > H,
@@ -120,7 +121,7 @@ Scalar MGclone_and_solve(
   RCP<CloneNode> node_clone = rcp(new CloneNode(nodeParams));
   RCP<Clone_Mat> J_clone = Xpetra::clone(*mueluJ, node_clone);
 
-  //Clone the hierarchy 
+  //Clone the hierarchy
   RCP<Clone_Hierarchy> H_clone = H->template clone< CloneNode, CloneLocalMatOps >(node_clone);
 
   //Convert f, dx to clone node type
@@ -131,7 +132,7 @@ Scalar MGclone_and_solve(
   RCP<Clone_OP> OP_clone = rcp(new Belos::XpetraOp<Scalar,LocalOrdinal,GlobalOrdinal,CloneNode,CloneLocalMatOps>(J_clone));  // Turns a Xpetra::Matrix object into a Belos operator
   const RCP<const CloneBelos_MueLuOperator> M_clone = rcp(new CloneBelos_MueLuOperator(H_clone)); // Turns a MueLu::Hierarchy object into a Belos operator
 
-  //Create problem for clone node 
+  //Create problem for clone node
   RCP< BLinProb > problem = rcp(new BLinProb(OP_clone, dx_clone,f_clone));
   problem->setRightPrec(M_clone);
   problem->setProblem();
@@ -159,9 +160,8 @@ Scalar MGclone_and_solve(
   dx_cpu->norm2(Teuchos::arrayView(&norm,1));
 
   return norm;
-
 }
-  
+
 
 template <typename Scalar,
           typename LocalOrdinal,
@@ -286,14 +286,14 @@ int main(int argc, char *argv[]) {
     CLP.setOption("device_offset", &device_offset,
                   "Offset for attaching MPI ranks to CUDA devices");
     int chebyDeg = 5;
-    CLP.setOption("chebyDeg",         &chebyDeg,             "Chebyshev degree");
+    CLP.setOption("chebyDeg", &chebyDeg, "Chebyshev degree");
 
-    Prec precMethod = ILU;
+    Prec precMethod = MG;
     CLP.setOption("prec_method", &precMethod,
-		  num_prec, prec_values, prec_names,
+                  num_prec, prec_values, prec_names,
                   "Preconditioner method");
 
-		  
+
     CLP.parse( argc, argv );
     if (my_rank == 0)
       std::cout << "Summary of command line options:" << std::endl
@@ -305,8 +305,8 @@ int main(int argc, char *argv[]) {
                 << "\tranks_per_node     = " << ranks_per_node << std::endl
                 << "\tgpu_ranks_per_node = " << gpu_ranks_per_node << std::endl
                 << "\tdevice_offset      = " << device_offset << std::endl
-		<< "\tpreconditioner     = " << prec_names[precMethod] << std::endl
-		<< "\tChebyshev poly deg = " << chebyDeg << std::endl;
+                << "\tpreconditioner     = " << prec_names[precMethod] << std::endl
+                << "\tChebyshev poly deg = " << chebyDeg << std::endl;
 
     // Create application
     typedef twoD_diffusion_problem<Scalar,MeshScalar,BasisScalar,LocalOrdinal,GlobalOrdinal,Node> problem_type;
@@ -333,31 +333,32 @@ int main(int argc, char *argv[]) {
     model->computeResidual(*x, *p, *f);
     model->computeJacobian(*x, *p, *J);
 
-    
-    //Create RILUK preconditioner using Prec factory
-    ParameterList iluprecParams;
-    std::string prec_name = "RILUK";
-    iluprecParams.set("fact: iluk level-of-fill", 1);
-    iluprecParams.set("fact: iluk level-of-overlap", 0);
+    //Create preconditioners
     typedef Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tprec;
     RCP<Tprec> M;
     Ifpack2::Factory factory;
-    M = factory.create<Tpetra_CrsMatrix>(prec_name, J);
-    M->setParameters(iluprecParams);
-    M->initialize();
-    M->compute();
+    ParameterList precParams;
+
+    //Create RILUK preconditioner using Prec factory
+    if(precMethod==ILU){
+      std::string prec_name = "RILUK";
+      precParams.set("fact: iluk level-of-fill", 1);
+      precParams.set("fact: iluk level-of-overlap", 0);
+      M = factory.create<Tpetra_CrsMatrix>(prec_name, J);
+      M->setParameters(precParams);
+      M->initialize();
+      M->compute();
+    }
 
     //Create Chebyshev preconditioner using Prec factory
-    ParameterList chevprecParams;
-    RCP<Tprec> M_chev;
-    M_chev = factory.create<Tpetra_CrsMatrix>("CHEBYSHEV", J);
-    chevprecParams.set("chebyshev: degree", (LocalOrdinal) chebyDeg);
-    chevprecParams.set("chebyshev: ratio eigenvalue", (Scalar) 7);
-
-    M_chev->setParameters(chevprecParams);
-    M_chev->initialize();
-    M_chev->compute();
-
+    else if(precMethod==CHEBY){
+      M = factory.create<Tpetra_CrsMatrix>("CHEBYSHEV", J);
+      precParams.set("chebyshev: degree", (LocalOrdinal) chebyDeg);
+      precParams.set("chebyshev: ratio eigenvalue", (Scalar) 7);
+      M->setParameters(precParams);
+      M->initialize();
+      M->compute();
+    }
 
     RCP<ParameterList> belosParams = rcp(new ParameterList);
     belosParams->set("Num Blocks", 20);
@@ -368,7 +369,7 @@ int main(int argc, char *argv[]) {
     belosParams->set("Output Frequency", 10);
 
     if(precMethod == MG){
-      //Create MueLu precondtioner with coasre grid solver = RILUK and smoother = Chebyshev
+      //Create MueLu precondtioner with coasre grid solver and smoother = Chebyshev
       // Turns a Tpetra::CrsMatrix into a MueLu::Matrix
       RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > mueluA_ = rcp(new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(J));
       RCP<Xpetra::Matrix <Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > mueluA  = rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(mueluA_));
@@ -384,15 +385,19 @@ int main(int argc, char *argv[]) {
       RCP<MueLu::SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > smootherPrototype = rcp(new MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(ifpackType, ifpackList));
       FM.SetFactory("Smoother", rcp(new MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(smootherPrototype)));
 
-      //Setup coarse grid smoother (RILUK)
+      //Setup coarse grid smoother (chebyshev)
       Teuchos::ParameterList coarsestSmooList;
       RCP<MueLu::SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > coarsestSmooProto = rcp( new MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>("RILUK",coarsestSmooList) );
-      FM.SetFactory("CoarseSolver", rcp(new MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(coarsestSmooProto)));
+      FM.SetFactory("CoarseSolver", rcp(new MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(smootherPrototype)));
+
       //Setup hierarchy with startlevel=0 and max levels = 10
       H->Setup(FM, 0, 10);
-      RCP<BelosOP> belosOp = rcp(new Belos::XpetraOp<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(mueluA));
-      const RCP<const Belos_MueLuOperator> belosPrec = rcp(new Belos_MueLuOperator(H));  
-      RCP< Belos::LinearProblem<Scalar, MV, BelosOP > > MGproblem = rcp(new Belos::LinearProblem<Scalar, MV, BelosOP >(belosOp, dx,f));
+      RCP<BelosOP> belosOp =
+        rcp(new Belos::XpetraOp<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(mueluA));
+      const RCP<const Belos_MueLuOperator> belosPrec =
+        rcp(new Belos_MueLuOperator(H));
+      RCP< Belos::LinearProblem<Scalar, MV, BelosOP > > MGproblem =
+        rcp(new Belos::LinearProblem<Scalar, MV, BelosOP >(belosOp, dx,f));
       MGproblem->setRightPrec(belosPrec);
       MGproblem->setProblem();
 
@@ -467,9 +472,19 @@ int main(int argc, char *argv[]) {
         node_params.set("Verbose", 1);
         node_params.set("Device Number", device_id);
 
+#if TPETRA_USE_KOKKOS_DISTOBJECT && defined(KOKKOS_HAVE_CUDA)
+        // Initialize Cuda
+        if (!Kokkos::Cuda::is_initialized())
+          Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device_id) );
+#endif
+
         gpu_norm =
           MGclone_and_solve<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps,GPUNode,GPULocalMatOps>(
             mueluA, f, dx, H, node_params, belosParams, symmetric);
+
+#if TPETRA_USE_KOKKOS_DISTOBJECT && defined(KOKKOS_HAVE_CUDA)
+        Kokkos::Cuda::finalize();
+#endif
       }
       else {
         // Note for the non-GPU ranks, we still have to clone since new
@@ -487,22 +502,23 @@ int main(int argc, char *argv[]) {
       Teuchos::TimeMonitor::zeroOutTimers();
       }
 
+    //Determine if example passed
+    bool passed = false;
+    if (gpu_norm < Scalar(1e-12) && tpi_norm < Scalar(1e-12))
+      passed = true;
+    if (my_rank == 0) {
+      if (passed)
+        std::cout << "Example Passed!" << std::endl;
+      else
+        std::cout << "Example Failed!" << std::endl;
+    }
+
     }
     else {
       RCP< BLinProb > problem = rcp(new BLinProb(J, dx, f));
-      RCP<Tprec> prec; 
-      ParameterList precParams;
-      if(precMethod == ILU){
-	prec = M;
-        precParams = iluprecParams; 
-      }
-      if(precMethod == CHEBY){
-        prec = M_chev;
-	precParams = chevprecParams;
-      }
-      problem->setRightPrec(prec);
+      problem->setRightPrec(M);
       problem->setProblem();
-    
+
       //Create solver
       RCP<Belos::SolverManager<Scalar,MV,OP> > solver;
       if (symmetric)
@@ -529,10 +545,10 @@ int main(int argc, char *argv[]) {
 
         if (my_rank == 0)
           std::cout << "Solving with TPI node..." << std::endl;
-	
+
         tpi_norm =
           clone_and_solve<Scalar,LocalOrdinal,GlobalOrdinal,Node,TPINode>(
-            J, f, dx, prec, node_params, belosParams, precParams, symmetric);
+            J, f, dx, M, node_params, belosParams, precParams, symmetric);
         if (my_rank == 0)
           std::cout << "\nNorm of serial node soln - tpi node soln = "
                   << tpi_norm << std::endl;
@@ -575,9 +591,19 @@ int main(int argc, char *argv[]) {
         node_params.set("Verbose", 1);
         node_params.set("Device Number", device_id);
 
+#if TPETRA_USE_KOKKOS_DISTOBJECT && defined(KOKKOS_HAVE_CUDA)
+        // Initialize Cuda
+        if (!Kokkos::Cuda::is_initialized())
+          Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device_id) );
+#endif
+
         gpu_norm =
           clone_and_solve<Scalar,LocalOrdinal,GlobalOrdinal,Node,GPUNode>(
-            J, f, dx, prec, node_params, belosParams, precParams, symmetric);
+            J, f, dx, M, node_params, belosParams, precParams, symmetric);
+
+#if TPETRA_USE_KOKKOS_DISTOBJECT && defined(KOKKOS_HAVE_CUDA)
+        Kokkos::Cuda::finalize();
+#endif
       }
       else {
         // Note for the non-GPU ranks, we still have to clone since new
@@ -585,7 +611,7 @@ int main(int argc, char *argv[]) {
         // communication)
         gpu_norm =
           clone_and_solve<Scalar,LocalOrdinal,GlobalOrdinal,Node,Node>(
-            J, f, dx, prec, node_params, belosParams, precParams, symmetric);
+            J, f, dx, M, node_params, belosParams, precParams, symmetric);
       }
 
       if (my_rank == 0)
@@ -595,7 +621,7 @@ int main(int argc, char *argv[]) {
       Teuchos::TimeMonitor::summarize(std::cout);
       Teuchos::TimeMonitor::zeroOutTimers();
     }
-  
+
     //Determine if example passed
     bool passed = false;
     if (gpu_norm < Scalar(1e-12) && tpi_norm < Scalar(1e-12))
@@ -607,7 +633,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Example Failed!" << std::endl;
     }
 
-   } 
+   }
   }
 
   catch (std::exception& e) {

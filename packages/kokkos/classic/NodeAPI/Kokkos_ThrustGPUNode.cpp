@@ -44,6 +44,13 @@
 #include <iostream>
 #include <cuda_runtime.h>
 
+#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCORE
+#include "KokkosCore_config.h"
+#ifdef KOKKOS_HAVE_CUDA
+#include "Kokkos_Cuda.hpp"
+#endif
+#endif
+
 namespace KokkosClassic {
 
   ThrustGPUNode::ThrustGPUNode () {
@@ -87,6 +94,11 @@ namespace KokkosClassic {
         << endl;
     }
     totalMem_ = deviceProp.totalGlobalMem;
+
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+    if (!Kokkos::Cuda::is_initialized())
+      Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device) );
+#endif
   } 
 
   ThrustGPUNode::ThrustGPUNode(ParameterList &pl)
@@ -132,6 +144,11 @@ namespace KokkosClassic {
         << endl;
     }
     totalMem_ = deviceProp.totalGlobalMem;
+
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+    if (!Kokkos::Cuda::is_initialized())
+      Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device) );
+#endif
   } 
 
   ThrustGPUNode::~ThrustGPUNode() {}
