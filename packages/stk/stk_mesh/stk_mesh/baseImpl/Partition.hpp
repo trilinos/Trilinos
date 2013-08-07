@@ -35,7 +35,7 @@ public:
   ////
 
   /// Rank of the entities in this partition.
-  const EntityRank get_rank() const { return m_rank; }
+  EntityRank get_rank() const { return m_rank; }
 
   bool empty() const { return m_size == 0; }
 
