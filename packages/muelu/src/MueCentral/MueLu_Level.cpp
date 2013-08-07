@@ -239,19 +239,33 @@ namespace MueLu {
   }
 
   void Level::Clear() {
-    for (TwoKeyMap::const_iterator kt = map_.begin(); kt != map_.end(); kt++) {
-      const FactoryBase* factory = kt->first;
+    // TODO: needs some love, ugly as it is
+    // The ugliness is the fact that we restart both loops when we remove a single element
+    bool wasRemoved;
+    do {
+      wasRemoved = false;
+      for (TwoKeyMap::const_iterator kt = map_.begin(); kt != map_.end(); kt++) {
+        const FactoryBase* factory = kt->first;
 
-      for (SubMap::const_iterator it = kt->second.begin(); it != kt->second.end(); it++) {
-        const std::string& ename = it->first;
+        for (SubMap::const_iterator it = kt->second.begin(); it != kt->second.end(); it++) {
+          const std::string& ename = it->first;
 
-        // We clear all the data that
-        //   a) has not been requested
-        //   b) is not being kept using NextRun (e.g., we clear out Final data)
-        if (!IsKept(ename, factory, MueLu::NextRun))
-          RemoveKeepFlag(ename, factory, MueLu::All); // will delete the data if counter == 0
+          // We clear all the data that
+          //   a) has not been requested
+          //   b) is not being kept using NextRun (e.g., we clear out Final data)
+          if (!IsKept(ename, factory, MueLu::NextRun)) {
+            RemoveKeepFlag(ename, factory, MueLu::All); // will delete the data if counter == 0
+
+            wasRemoved = true;
+            break;
+          }
+        }
+
+        if (wasRemoved)
+          break;
       }
-    }
+
+    } while (wasRemoved == true);
   }
 
   std::string Level::description() const {
