@@ -663,7 +663,7 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
 //  is not set to Teuchos::VERB_NONE, so I'm commenting this out for now.
 //  if (out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
 //    *out << "\nTotal solve time in Belos = "<<totalTimer.totalElapsedTime()<<" sec\n";
-
+  
   return solveStatus;
 
 }

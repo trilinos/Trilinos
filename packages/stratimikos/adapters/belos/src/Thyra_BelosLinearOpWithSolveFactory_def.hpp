@@ -381,49 +381,55 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         "Pseudo Block CG",
         "Pseudo Block Stochastic CG",
         "GCRODR",
-	"RCG",
+        "RCG",
         "MINRES"
         ),
       tuple<std::string>(
         "Block GMRES solver for nonsymmetric linear systems.  It can also solve "
-	"single right-hand side systems, and can also perform Flexible GMRES "
-	"(where the preconditioner may change at every iteration, for example "
-	"for inner-outer iterations), by setting options in the \"Block GMRES\" "
-	"sublist.",
+        "single right-hand side systems, and can also perform Flexible GMRES "
+        "(where the preconditioner may change at every iteration, for example "
+        "for inner-outer iterations), by setting options in the \"Block GMRES\" "
+        "sublist.",
 
         "GMRES solver for nonsymmetric linear systems, that performs single "
-	"right-hand side solves on multiple right-hand sides at once.  It "
-	"exploits operator multivector multiplication in order to amortize "
+        "right-hand side solves on multiple right-hand sides at once.  It "
+        "exploits operator multivector multiplication in order to amortize "
         "global communication costs.  Individual linear systems are deflated "
-	"out as they are solved.",
+        "out as they are solved.",
 
         "Block CG solver for symmetric (Hermitian in complex arithmetic) "
-	"positive definite linear systems.  It can also solve single "
-	"right-hand-side systems.",
+        "positive definite linear systems.  It can also solve single "
+        "right-hand-side systems.",
 
         "CG solver that performs single right-hand side CG on multiple right-hand "
-	"sides at once.  It exploits operator multivector multiplication in order "
-	"to amortize global communication costs.  Individual linear systems are "
-	"deflated out as they are solved.",
+        "sides at once.  It exploits operator multivector multiplication in order "
+        "to amortize global communication costs.  Individual linear systems are "
+        "deflated out as they are solved.",
+
+        "stochastic CG solver that performs single right-hand side CG on multiple right-hand "
+        "sides at once.  It exploits operator multivector multiplication in order "
+        "to amortize global communication costs.  Individual linear systems are "
+        "deflated out as they are solved. [EXPERIMENTAL]",
 
         "GMRES solver for nonsymmetric linear systems, that performs subspace "
-	"recycling to accelerate convergence for sequences of related linear "
-	"systems.",
+        "recycling to accelerate convergence for sequences of related linear "
+        "systems.",
 
-	"CG solver for symmetric (Hermitian in complex arithmetic) positive "
-	"definite linear systems, that performs subspace recycling to "
-	"accelerate convergence for sequences of related linear systems.",
+        "CG solver for symmetric (Hermitian in complex arithmetic) positive "
+        "definite linear systems, that performs subspace recycling to "
+        "accelerate convergence for sequences of related linear systems.",
 
         "MINRES solver for symmetric indefinite linear systems.  It performs "
-	"single-right-hand-side solves on multiple right-hand sides sequentially."
+        "single-right-hand-side solves on multiple right-hand sides sequentially."
         ),
       tuple<EBelosSolverType>(
         SOLVER_TYPE_BLOCK_GMRES,
         SOLVER_TYPE_PSEUDO_BLOCK_GMRES,
         SOLVER_TYPE_BLOCK_CG,
         SOLVER_TYPE_PSEUDO_BLOCK_CG,
+        SOLVER_TYPE_PSEUDO_BLOCK_STOCHASTIC_CG,
         SOLVER_TYPE_GCRODR,
-	SOLVER_TYPE_RCG,
+        SOLVER_TYPE_RCG,
         SOLVER_TYPE_MINRES
         ),
       &*validParamList
