@@ -258,7 +258,8 @@ namespace MueLu {
           // Case 3:  Multiple DOF/node problem without dropping
 
           RCP<const Map> uniqueMap, nonUniqueMap;
-          AmalgamateColumnMap(A->GetFixedBlockSize(),*(A->getColMap()), nonUniqueMap, uniqueMap);
+          AmalgamateMap(A->GetFixedBlockSize(),*(A->getRowMap()), uniqueMap);
+          AmalgamateMap(A->GetFixedBlockSize(),*(A->getColMap()), nonUniqueMap);
           LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
 
           // allocate space for the local graph
@@ -425,7 +426,7 @@ namespace MueLu {
             uniqueMap    = Coords->getMap();
             TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap->getIndexBase() != indexBase, Exceptions::Incompatible,
                                        "Different index bases for matrix and coordinates");
-            AmalgamateColumnMap(A->GetFixedBlockSize(), *(A->getColMap()), nonUniqueMap, uniqueMap);
+            AmalgamateMap(A->GetFixedBlockSize(), *(A->getColMap()), nonUniqueMap);
           }
           LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
 
@@ -653,7 +654,7 @@ namespace MueLu {
         GO grid = rowMap->getGlobalElement(row);
 
         // translate grid to nodeid
-        GO nodeId = AmalgamationFactory::DOFGid2NodeId(grid, A, blockdim, offset, indexBase);
+        GO nodeId = AmalgamationFactory::DOFGid2NodeId(grid, blockdim, offset, indexBase);
 
         size_t nnz = A->getNumEntriesInLocalRow(row);
         Teuchos::ArrayView<const LO> indices;
@@ -669,7 +670,7 @@ namespace MueLu {
 
           if((predrop_ == Teuchos::null && vals[col]!=0.0) ||
              (predrop_ != Teuchos::null && predrop_->Drop(row,grid, col,indices[col],gcid,indices,vals) == false)) {
-            GO cnodeId = AmalgamationFactory::DOFGid2NodeId(gcid, A, blockdim, offset, indexBase);
+            GO cnodeId = AmalgamationFactory::DOFGid2NodeId(gcid, blockdim, offset, indexBase);
             cnodeIds->push_back(cnodeId);
             realnnz++; // increment number of nnz in matrix row
           }
@@ -730,6 +731,12 @@ namespace MueLu {
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MergeRows(
                 Matrix const & A, LO const &row, std::set<LO> &cols, LO const &blkSize,
                 Map const &colMap, GO const &indexBase, Map const &nonUniqueMap) const {
+
+    RCP<const StridedMap> strMap = rcp_dynamic_cast<const StridedMap>(A.getRowMap());
+    GO offset;
+    if (strMap != Teuchos::null) offset = strMap->getOffset();
+    else                         offset = 0;
+
     for (LO j = 0; j < blkSize; ++j) {
       ArrayView<const LO> inds;
       ArrayView<const SC> vals;
@@ -738,7 +745,7 @@ namespace MueLu {
         // TODO: speed this up by using something like map for translation
         LO  dofLID = inds[k];
         GO  dofGID = colMap.getGlobalElement(dofLID);
-        GO nodeGID = (dofGID-indexBase)/blkSize + indexBase;
+        GO nodeGID = AmalgamationFactory::DOFGid2NodeId(dofGID, blkSize, offset, indexBase);
         LO nodeLID = nonUniqueMap.getLocalElement(nodeGID);
         cols.insert(nodeLID);
       }
@@ -748,20 +755,21 @@ namespace MueLu {
   // ///////////////////////////////////////////////////////
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AmalgamateColumnMap(
-                             LO const blkSize, Map const &sourceMap,
-                             RCP<const Map> &nonUniqueMap,
-                             RCP<const Map> const &uniqueMap
-                             ) const {
+  void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AmalgamateMap(
+                             LO const blkSize, Map const &sourceMap, RCP<const Map> &amalgamatedMap) const {
     GO indexBase = sourceMap.getIndexBase();
     ArrayView<const GO> elementAList = sourceMap.getNodeElementList();
     size_t              numElements  = elementAList.size();
     Array<GO>           elementList(numElements);
     std::set<GO>        filter; // TODO:  replace std::set with an object having faster lookup/insert, hashtable for instance
 
+    const StridedMap *strMap = dynamic_cast<const StridedMap*>(&sourceMap);
+    GO offset;
+    if (strMap != 0) offset = strMap->getOffset();
+    else             offset = 0;
     LO numRows = 0;
     for (LO id = 0; id < Teuchos::as<LO>(numElements); id++) {
-      GO amalgID = (elementAList[id] - indexBase)/blkSize + indexBase;
+      GO amalgID = AmalgamationFactory::DOFGid2NodeId(elementAList[id], blkSize, offset, indexBase);
       if (filter.find(amalgID) == filter.end()) {
         elementList[numRows++] = amalgID;
         filter.insert(amalgID);
@@ -769,20 +777,9 @@ namespace MueLu {
     }
     elementList.resize(numRows);
 
-#   ifdef HAVE_MUELU_DEBUG
-    // At the moment we assume that first GIDs in nonUniqueMap coincide with those in uniqueMap.
-    if (uniqueMap != Teuchos::null)
-      for (LO row = 0; row < Teuchos::as<LO> (uniqueMap->getNodeNumElements ()); ++row) {
-        TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap->getGlobalElement(row) != elementList[row], Exceptions::RuntimeError,
-                                   "row = " << row << ", uniqueMap GID = "
-                                   << uniqueMap->getGlobalElement(row) << ", nonUniqueMap GID = "
-                                   << elementList[row] << std::endl);
-      }
-#   endif
+    amalgamatedMap = MapFactory::Build(sourceMap.lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, sourceMap.getComm());
 
-    nonUniqueMap = MapFactory::Build(sourceMap.lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, sourceMap.getComm());
-
-  } //AmalgamateColumnMap
+  } //AmalgamateMap
 
 } //namespace MueLu
 

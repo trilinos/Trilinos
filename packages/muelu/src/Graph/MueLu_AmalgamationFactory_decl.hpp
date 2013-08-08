@@ -103,11 +103,10 @@ namespace MueLu {
 
     //! translate global (row/column) id to global amalgamation block id
     // @param gid (GlobalOrdinal): input global id (row gid or column gid)
-    // @param A: input operator (just used to check the maps for validity)
     // @param blockSize (LocalOrdinal): block size (needed for constant block size)
     // @param offset (GlobalOrdinal): global offset for dofs (stored in strided map, default = 0)
     // @param indexBase (GlobalOrdinal): indexBase for DOF map (and node map, default = 0)
-    static const GlobalOrdinal DOFGid2NodeId(GlobalOrdinal gid, const RCP<Matrix>& A, LocalOrdinal blockSize, const GlobalOrdinal offset /*= 0*/, const GlobalOrdinal indexBase/* = 0*/);
+    static const GlobalOrdinal DOFGid2NodeId(GlobalOrdinal gid, LocalOrdinal blockSize, const GlobalOrdinal offset /*= 0*/, const GlobalOrdinal indexBase/* = 0*/);
 
     /*! @brief ComputeUnamalgamatedAggregateSizes
      * computes the size of the aggregates (in DOFs)
