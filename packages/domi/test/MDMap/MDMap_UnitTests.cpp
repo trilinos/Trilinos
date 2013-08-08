@@ -135,6 +135,38 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, dimensionsConstructor, T )
     TEST_EQUALITY_CONST(mdMap.getUpperGhost(axis), 0);
     TEST_EQUALITY_CONST(mdMap.getGhostSize(axis), 0);
   }
+#ifdef HAVE_EPETRA
+  if (typeid(T) == typeid(int))
+  {
+    Teuchos::Array<int> gstrides(numDims);
+    Teuchos::Array<int> lstrides(numDims);
+    gstrides[0] = 1;
+    lstrides[0] = 1;
+    for (int axis=1; axis < numDims; ++axis)
+    {
+      gstrides[axis] = dims[axis-1] * gstrides[axis-1];
+      lstrides[axis] = localDim     * lstrides[axis-1];
+    }
+    int gll = 0;
+    int gur = 0;
+    int lur = 0;
+    for (int axis=0; axis < numDims; ++axis)
+    {
+      int axisRank = mdMap.getAxisRank(axis);
+      gll += ( axisRank   *localDim  ) * gstrides[axis];
+      gur += ((axisRank+1)*localDim-1) * gstrides[axis];
+      lur += (localDim-1) * lstrides[axis];
+    }
+    Teuchos::RCP< const Epetra_Map > epetraMap = mdMap.getEpetraMap();
+    TEST_EQUALITY(epetraMap->GID(  0), gll);
+    TEST_EQUALITY(epetraMap->GID(lur), gur);
+  }
+  else
+  {
+    TEST_THROW(mdMap.getEpetraMap(true ), Domi::MapOrdinalError);
+    TEST_THROW(mdMap.getEpetraMap(false), Domi::MapOrdinalError);
+  }
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, halosConstructor, T )
@@ -197,6 +229,49 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, halosConstructor, T )
     TEST_EQUALITY_CONST(mdMap.getUpperGhost(axis), 0);
     TEST_EQUALITY_CONST(mdMap.getGhostSize(axis), 0);
   }
+#ifdef HAVE_EPETRA
+  if (typeid(T) == typeid(int))
+  {
+    Teuchos::Array<int> gstrides(numDims);
+    Teuchos::Array<int> lstrides(numDims);
+    gstrides[0] = 1;
+    lstrides[0] = 1;
+    for (int axis=1; axis < numDims; ++axis)
+    {
+      int axisRank = mdMap.getAxisRank(axis-1);
+      int myHalos = 0;
+      if (axisRank > 0) myHalos += halos[axis-1];
+      if (axisRank != mdMap.getAxisCommSize(axis-1)-1) myHalos += halos[axis-1];
+      gstrides[axis] = dims[axis-1]       * gstrides[axis-1];
+      lstrides[axis] = (localDim+myHalos) * lstrides[axis-1];
+    }
+    int gll = 0;
+    int gur = 0;
+    int lll = 0;
+    int lur = 0;
+    for (int axis=0; axis < numDims; ++axis)
+    {
+      int axisRank = mdMap.getAxisRank(axis);
+      gll += ( axisRank   *localDim) * gstrides[axis];
+      gur += ((axisRank+1)*localDim-1) * gstrides[axis];
+      if (axisRank == 0)
+        lur += (localDim-1) * lstrides[axis];
+      else
+      {
+        lll += halos[axis] * lstrides[axis];
+        lur += (localDim+halos[axis]-1) * lstrides[axis];
+      }
+    }
+    Teuchos::RCP< const Epetra_Map > epetraMap = mdMap.getEpetraMap();
+    TEST_EQUALITY(epetraMap->GID(lll), gll);
+    TEST_EQUALITY(epetraMap->GID(lur), gur);
+  }
+  else
+  {
+    TEST_THROW(mdMap.getEpetraMap(true ), Domi::MapOrdinalError);
+    TEST_THROW(mdMap.getEpetraMap(false), Domi::MapOrdinalError);
+  }
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, ghostsConstructor, T )
@@ -274,6 +349,50 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, ghostsConstructor, T )
     TEST_EQUALITY(mdMap.getUpperGhost(axis), ghosts[axis]);
     TEST_EQUALITY(mdMap.getGhostSize(axis), ghosts[axis]);
   }
+#ifdef HAVE_EPETRA
+  if (typeid(T) == typeid(int))
+  {
+    Teuchos::Array<int> gstrides(numDims);
+    Teuchos::Array<int> lstrides(numDims);
+    gstrides[0] = 1;
+    lstrides[0] = 1;
+    for (int axis=1; axis < numDims; ++axis)
+    {
+      gstrides[axis] = (dims[axis-1]+2*ghosts[axis-1]) * gstrides[axis-1];
+      int myGhosts = 0;
+      int axisRank = mdMap.getAxisRank(axis-1);
+      if (axisRank == 0) myGhosts += ghosts[axis-1];
+      if (axisRank == mdMap.getAxisCommSize(axis-1)-1)
+        myGhosts += ghosts[axis-1];
+      lstrides[axis] = (localDim+myGhosts) * lstrides[axis-1];
+    }
+    int gll = 0;
+    int gur = 0;
+    int lll = 0;
+    int lur = 0;
+    for (int axis=0; axis < numDims; ++axis)
+    {
+      int axisRank = mdMap.getAxisRank(axis);
+      gll += (axisRank*localDim+ghosts[axis]) * gstrides[axis];
+      gur += ((axisRank+1)*localDim+ghosts[axis]-1) * gstrides[axis];
+      if (axisRank == 0)
+      {
+        lll += ghosts[axis] * lstrides[axis];
+        lur += (localDim+ghosts[axis]-1) * lstrides[axis];
+      }
+      else
+        lur += (localDim-1) * lstrides[axis];
+    }
+    Teuchos::RCP< const Epetra_Map > epetraMap = mdMap.getEpetraMap();
+    TEST_EQUALITY(epetraMap->GID(lll), gll);
+    TEST_EQUALITY(epetraMap->GID(lur), gur);
+  }
+  else
+  {
+    TEST_THROW(mdMap.getEpetraMap(true ), Domi::MapOrdinalError);
+    TEST_THROW(mdMap.getEpetraMap(false), Domi::MapOrdinalError);
+  }
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, halosAndGhostsConstructor, T )
