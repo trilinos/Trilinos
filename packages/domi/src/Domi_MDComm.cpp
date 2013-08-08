@@ -204,7 +204,7 @@ MDComm::getTeuchosComm() const
 ////////////////////////////////////////////////////////////////////////
 
 #ifdef HAVE_EPETRA
-Teuchos::RCP< const Epetra_Comm >
+EpetraCommRCP
 MDComm::getEpetraComm() const
 {
   if (_epetraComm.is_null())

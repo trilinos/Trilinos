@@ -66,6 +66,12 @@ namespace Domi
  */
 typedef Teuchos::RCP< const Teuchos::Comm<int> > TeuchosCommRCP;
 
+#ifdef HAVE_EPETRA
+/** \brief Provide a simple typedef for the Epetra communicator
+ */
+typedef Teuchos::RCP< const Epetra_Comm > EpetraCommRCP;
+#endif
+
 // Forward declaration
 class MDComm;
 
@@ -232,7 +238,7 @@ public:
    * sub-communicator, that the underlying Comm pointer may be NULL,
    * depending on this processor's rank.
    */
-  Teuchos::RCP< const Epetra_Comm > getEpetraComm() const;
+  EpetraCommRCP getEpetraComm() const;
 #endif
 
   /** \brief Get the number of dimensions
@@ -321,7 +327,7 @@ private:
 #ifdef HAVE_EPETRA
   // An equivalent Epetra communicator.  This is mutable because we
   // only compute it if requested by a get method that is const.
-  mutable Teuchos::RCP< const Epetra_Comm > _epetraComm;
+  mutable EpetraCommRCP _epetraComm;
 #endif
 
   // An array of the sizes of the communicator along each axis

@@ -429,17 +429,41 @@ public:
 
 #ifdef HAVE_EPETRA
 
-  Teuchos::RCP< const Epetra_Map > getEpetraMap(bool withHalos=true) const;
+  /** \brief Return an Epetra_Map that is equivalent to this MDMap
+   *
+   * \param withHalos [in] flag whether to include the halo points in
+   *        the map
+   */
+  Teuchos::RCP< const Epetra_Map >
+  getEpetraMap(bool withHalos=true) const;
 
-  Teuchos::ArrayRCP< const Epetra_Map > getEpetraAxisMaps() const;
+  /** \brief Return an array of Epetra_Maps that represent the
+   * decomposition along each axis
+   *
+   * \param withHalos [in] flag whether to include the halo points in
+   *        the map
+   */
+  Teuchos::ArrayRCP< const Epetra_Map >
+  getEpetraAxisMaps(bool withHalos=true) const;
 
 #endif
 
 #ifdef HAVE_TPETRA
 
+  /** \brief Return a Tpetra::Map that is equivalent to this MDMap
+   *
+   * \param withHalos [in] flag whether to include the halo points in
+   *        the map
+   */
   Teuchos::RCP< const Tpetra::Map< LocalOrd, GlobalOrd, Node > >
   getTpetraMap(bool withHalos=true) const;
 
+  /** \brief Return an array of Tpetra::Maps that represent the
+   * decomposition along each axis
+   *
+   * \param withHalos [in] flag whether to include the halo points in
+   *        the map
+   */
   Teuchos::ArrayRCP< const Tpetra::Map< LocalOrd, GlobalOrd, Node > >
   getTpetraAxisMaps() const;  
 
@@ -527,8 +551,8 @@ private:
   // number of axis processors along that axis.
   Teuchos::Array< Teuchos::Array< Slice > > _globalRankBounds;
 
-  // The global stride between adjacent elements.  This quantity is
-  // "virtual" as it does not describe actual memory layot, but it is
+  // The global stride between adjacent IDs.  This quantity is
+  // "virtual" as it does not describe actual memory layout, but it is
   // useful for index conversion algorithms.
   Teuchos::Array< GlobalOrd > _globalStrides;
 
@@ -1219,12 +1243,15 @@ MDMap< int, int >::getEpetraMap(bool withHalos) const
   {
     if (_epetraMap.is_null())
     {
+      // Allocate the myElements MDArray and the index array
       int numDims = getNumDims();
       Teuchos::Array<size_type> localDims(numDims);
       for (int axis = 0; axis < numDims; ++axis)
         localDims[axis] = _localDims[axis];
       MDArray<int> myElements(localDims);
       Teuchos::Array<int> index(numDims);
+
+      // Iterate over the local MDArray and assign global IDs
       for (MDArray<int>::iterator it = myElements.begin();
            it != myElements.end(); ++it)
       {
@@ -1238,7 +1265,9 @@ MDMap< int, int >::getEpetraMap(bool withHalos) const
         }
         *it = globalID;
       }
-      Teuchos::RCP< const Epetra_Comm > epetraComm = _mdComm->getEpetraComm();
+
+      // Construct the Epetra_Map
+      EpetraCommRCP epetraComm = _mdComm->getEpetraComm();
       _epetraMap = Teuchos::rcp(new Epetra_Map(-1,
                                                myElements.size(),
                                                myElements.getRawPtr(),
@@ -1251,6 +1280,7 @@ MDMap< int, int >::getEpetraMap(bool withHalos) const
   {
     if (_epetraOwnMap.is_null())
     {
+      // Allocate the myElements MDArray and the index array
       int numDims = getNumDims();
       Teuchos::Array<int> index(numDims);
       Teuchos::Array<size_type> myDims(numDims);
@@ -1264,6 +1294,8 @@ MDMap< int, int >::getEpetraMap(bool withHalos) const
           myDims[axis] += _ghosts[axis][1];
       }
       MDArray<int> myElements(myDims());
+
+      // Iterate over the local MDArray and assign global IDs
       for (MDArray<int>::iterator it = myElements.begin();
            it != myElements.end(); ++it)
       {
@@ -1279,12 +1311,14 @@ MDMap< int, int >::getEpetraMap(bool withHalos) const
             globalID += (start + it.index(axis)) * _globalStrides[axis];
           }
       }
-      Teuchos::RCP< const Epetra_Comm > epetraComm = _mdComm->getEpetraComm();
-      _epetraMap = Teuchos::rcp(new Epetra_Map(-1,
-                                               myElements.size(),
-                                               myElements.getRawPtr(),
-                                               0,
-                                               *epetraComm));
+
+      // Construct the Epetra_Map
+      EpetraCommRCP epetraComm = _mdComm->getEpetraComm();
+      _epetraOwnMap = Teuchos::rcp(new Epetra_Map(-1,
+                                                  myElements.size(),
+                                                  myElements.getRawPtr(),
+                                                  0,
+                                                  *epetraComm));
     }
     return _epetraOwnMap;
   }
