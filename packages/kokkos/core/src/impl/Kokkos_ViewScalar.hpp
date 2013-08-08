@@ -239,10 +239,10 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
     ViewTracking< view_traits >::decrement( dst.m_ptr_on_device );
 
     if ( is_left ) {
-      dst.m_ptr_on_device = src.m_ptr_on_device + i0 + src.m_stride * i1 ;
+      dst.m_ptr_on_device = src.m_ptr_on_device + i0 + src.m_stride.value * i1 ;
     }
     else {
-      dst.m_ptr_on_device = src.m_ptr_on_device + i1 + i0 * src.m_stride ;
+      dst.m_ptr_on_device = src.m_ptr_on_device + i1 + i0 * src.m_stride.value ;
     }
 
     ViewTracking< view_traits >::increment( dst.m_ptr_on_device );
@@ -276,14 +276,14 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
     if ( is_left ) {
       dst.m_ptr_on_device =
         src.m_ptr_on_device +
-          i0 + src.m_stride * (
+          i0 + src.m_stride.value * (
           i1 + src.m_shape.N1 * i2 );
     }
     else {
       dst.m_ptr_on_device =
         src.m_ptr_on_device +
         i2 + src.m_shape.N2 * (
-        i1 ) + i0 * src.m_stride ;
+        i1 ) + i0 * src.m_stride.value ;
     }
 
     ViewTracking< view_traits >::increment( dst.m_ptr_on_device );
@@ -318,7 +318,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
     if ( is_left ) {
       dst.m_ptr_on_device =
         src.m_ptr_on_device +
-          i0 + src.m_stride * (
+          i0 + src.m_stride.value * (
           i1 + src.m_shape.N1 * (
           i2 + src.m_shape.N2 * i3 ));
     }
@@ -327,7 +327,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
         src.m_ptr_on_device +
         i3 + src.m_shape.N3 * (
         i2 + src.m_shape.N2 * (
-        i1 )) + i0 * src.m_stride ;
+        i1 )) + i0 * src.m_stride.value ;
     }
 
     ViewTracking< view_traits >::increment( dst.m_ptr_on_device );
@@ -363,7 +363,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
     if ( is_left ) {
       dst.m_ptr_on_device =
         src.m_ptr_on_device +
-          i0 + src.m_stride * (
+          i0 + src.m_stride.value * (
           i1 + src.m_shape.N1 * (
           i2 + src.m_shape.N2 * (
           i3 + src.m_shape.N3 * i4 )));
@@ -374,7 +374,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
           i4 + src.m_shape.N4 * (
           i3 + src.m_shape.N3 * (
           i2 + src.m_shape.N2 * (
-          i1 ))) + i0 * src.m_stride ;
+          i1 ))) + i0 * src.m_stride.value ;
     }
 
     ViewTracking< view_traits >::increment( dst.m_ptr_on_device );
@@ -411,7 +411,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
     if ( is_left ) {
       dst.m_ptr_on_device =
         src.m_ptr_on_device +
-          i0 + src.m_stride * (
+          i0 + src.m_stride.value * (
           i1 + src.m_shape.N1 * (
           i2 + src.m_shape.N2 * (
           i3 + src.m_shape.N3 * (
@@ -424,7 +424,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
           i4 + src.m_shape.N4 * (
           i3 + src.m_shape.N3 * (
           i2 + src.m_shape.N2 * (
-          i1 )))) + i0 * src.m_stride ;
+          i1 )))) + i0 * src.m_stride.value ;
     }
 
     ViewTracking< view_traits >::increment( dst.m_ptr_on_device );
@@ -462,7 +462,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
     if ( is_left ) {
       dst.m_ptr_on_device =
         src.m_ptr_on_device +
-          i0 + src.m_stride * (
+          i0 + src.m_stride.value * (
           i1 + src.m_shape.N1 * (
           i2 + src.m_shape.N2 * (
           i3 + src.m_shape.N3 * (
@@ -477,7 +477,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
           i4 + src.m_shape.N4 * (
           i3 + src.m_shape.N3 * (
           i2 + src.m_shape.N2 * (
-          i1 ))))) + i0 * src.m_stride ;
+          i1 ))))) + i0 * src.m_stride.value ;
     }
 
     ViewTracking< view_traits >::increment( dst.m_ptr_on_device );
@@ -516,7 +516,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
     if ( is_left ) {
       dst.m_ptr_on_device =
         src.m_ptr_on_device +
-          i0 + src.m_stride * (
+          i0 + src.m_stride.value * (
           i1 + src.m_shape.N1 * (
           i2 + src.m_shape.N2 * (
           i3 + src.m_shape.N3 * (
@@ -533,7 +533,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
           i4 + src.m_shape.N4 * (
           i3 + src.m_shape.N3 * (
           i2 + src.m_shape.N2 * (
-          i1 )))))) + i0 * src.m_stride ;
+          i1 )))))) + i0 * src.m_stride.value ;
     }
 
     ViewTracking< view_traits >::increment( dst.m_ptr_on_device );

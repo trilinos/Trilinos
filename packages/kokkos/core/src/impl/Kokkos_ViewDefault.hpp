@@ -66,6 +66,202 @@ struct ViewSpecialize< ScalarType , ScalarType ,
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+
+template< class ShapeType , class LayoutType , class Enable = void >
+class LayoutStride ;
+
+/* Arrays with no stride
+ *   (1) rank <= 1
+ *   (2a) LayoutLeft  OR
+ *   (2b) LayoutRight
+ */
+template< class ShapeType , class LayoutType >
+class LayoutStride< ShapeType , LayoutType ,
+                    typename enable_if<(
+                      ( ShapeType::rank <= 1 ) &&
+                      ( is_same<LayoutType,LayoutLeft >::value ||
+                        is_same<LayoutType,LayoutRight>::value )
+                    )>::type >
+{
+public:
+
+  enum { dynamic = false };
+  enum { value = 0 };
+
+  KOKKOS_INLINE_FUNCTION static
+  void assign( LayoutStride & , const unsigned ) {}
+
+  KOKKOS_INLINE_FUNCTION static
+  void assign( LayoutStride & , const ShapeType & , const bool = true ) {}
+};
+
+/* Arrays with compile-time stride that is not padded:
+ *   (1) rank > 1
+ *   (2) rank_dynamic == 0
+ *   (3) LayoutLeft OR LayoutRight
+ */
+template< class ShapeType , class LayoutType >
+class LayoutStride< ShapeType , LayoutType ,
+                    typename enable_if<(
+                      ( is_same<LayoutType,LayoutLeft >::value ||
+                        is_same<LayoutType,LayoutRight>::value ) &&
+                      ( 1 <  ShapeType::rank ) &&
+                      ( 0 == ShapeType::rank_dynamic )
+                    )>::type >
+{
+private:
+
+  enum { left = is_same< LayoutType , LayoutLeft >::value };
+
+public:
+
+  enum { dynamic = false };
+
+  // Left layout arrays are aligned on the first dimension.
+  // Right layout arrays are aligned on blocks of the 2-7th dimensions.
+
+  enum { value = left ? ShapeType::N0
+                      : ShapeType::N1 * ShapeType::N2 * ShapeType::N3 *
+                        ShapeType::N4 * ShapeType::N5 * ShapeType::N6 * ShapeType::N7 };
+
+  KOKKOS_INLINE_FUNCTION static
+  void assign( LayoutStride & , const unsigned ) {}
+
+  KOKKOS_INLINE_FUNCTION static
+  void assign( LayoutStride & , const ShapeType & , const bool = true ) {}
+};
+
+/* Arrays with compile-time stride that is padded:
+ *   (1) rank-N with 1 < N
+ *   (2) LayoutRight and rank_dynamic == 1 
+ */
+template< class ShapeType, class LayoutType >
+class LayoutStride< ShapeType , LayoutType ,
+                    typename enable_if<(
+                      is_same< LayoutType, LayoutRight>::value &&
+                      ( 1 <  ShapeType::rank ) && 
+                      ( 1 == ShapeType::dynamic_rank )
+                    )>::type >
+{
+private:
+
+  enum { div   = MEMORY_ALIGNMENT / ShapeType::scalar_size };
+  enum { mod   = MEMORY_ALIGNMENT % ShapeType::scalar_size };
+  enum { align = ( ShapeType::rank_dynamic && 0 == mod ) ? div : 0 };
+
+  // Left layout arrays are aligned on the first dimension.
+  // Right layout arrays are aligned on blocks of the 2-7th dimensions.
+  enum { count = ShapeType::N1 * ShapeType::N2 * ShapeType::N3 *
+                 ShapeType::N4 * ShapeType::N5 * ShapeType::N6 * ShapeType::N7 };
+
+  enum { count_mod = count % ( div ? div : 1 ) };
+
+public:
+
+  enum { dynamic = false };
+  enum { value = ( align && count_mod && ( MEMORY_ALIGNMENT_THRESHOLD * align < count ) )
+               ? ( count + align - count_mod )
+               : count };
+
+  KOKKOS_INLINE_FUNCTION static
+  void assign( LayoutStride & , const unsigned , const bool = true ) {}
+
+  KOKKOS_INLINE_FUNCTION static
+  void assign( LayoutStride & , const ShapeType & ) {}
+};
+
+/* Otherwise array has runtime stride that is padded. */
+template< class ShapeType , class LayoutType , class Enable >
+class LayoutStride
+{
+public:
+
+  enum { dynamic = true };
+
+  unsigned value ;
+
+  KOKKOS_INLINE_FUNCTION static
+  void assign( LayoutStride & stride , const unsigned n ) { stride.value = n ; }
+
+  KOKKOS_INLINE_FUNCTION static
+  void assign_no_padding( LayoutStride & vs , const ShapeType & sh )
+    {
+      enum { left = is_same< LayoutType , LayoutLeft >::value };
+
+      // Left  layout arrays are aligned on the first dimension.
+      // Right layout arrays are aligned on blocks of the 2-8th dimensions.
+      vs.value = ShapeType::rank <= 1 ? 0 : (
+                 left ? sh.N0
+                      : sh.N1 * sh.N2 * sh.N3 * sh.N4 * sh.N5 * sh.N6 * sh.N7 );
+    }
+
+  KOKKOS_INLINE_FUNCTION static
+  void assign( LayoutStride & vs , const ShapeType & sh )
+    {
+      enum { div   = MEMORY_ALIGNMENT / ShapeType::scalar_size };
+      enum { mod   = MEMORY_ALIGNMENT % ShapeType::scalar_size };
+      enum { align = 0 == mod ? div : 0 };
+
+      assign_no_padding( vs , sh );
+
+      if ( align && MEMORY_ALIGNMENT_THRESHOLD * align < vs.value ) {
+
+        const unsigned count_mod = vs.value % ( div ? div : 1 );
+
+        if ( count_mod ) { vs.value += align - count_mod ; }
+      }
+    }
+};
+
+template< class ShapeType , class LayoutType >
+KOKKOS_INLINE_FUNCTION
+size_t capacity( const ShapeType & shape ,
+                 const LayoutStride< ShapeType , LayoutType > & stride )
+{
+  enum { left = is_same< LayoutType , LayoutLeft >::value };
+
+  return ShapeType::rank <= 1 ? size_t(shape.N0) : (
+         left ? size_t( stride.value * shape.N1 * shape.N2 * shape.N3 * shape.N4 * shape.N5 * shape.N6 * shape.N7 )
+              : size_t( stride.value * shape.N0 ));
+}
+
+template< typename iType , class ShapeType , class LayoutType >
+KOKKOS_INLINE_FUNCTION
+void stride( iType * const s , const ShapeType & shape ,
+                               const LayoutStride< ShapeType , LayoutType > & stride )
+{
+  enum { rank = ShapeType::rank };
+  enum { left = is_same< LayoutType , LayoutLeft >::value };
+
+  if ( 0 < rank ) {
+    if ( 1 == rank ) {
+      s[0] = 1 ;
+    }
+    else if ( left ) {
+      s[0] = 1 ;
+      s[1] = stride.value ;
+      if ( 2 < rank ) { s[2] = s[1] * shape.N1 ; }
+      if ( 3 < rank ) { s[3] = s[2] * shape.N2 ; }
+      if ( 4 < rank ) { s[4] = s[3] * shape.N3 ; }
+      if ( 5 < rank ) { s[5] = s[4] * shape.N4 ; }
+      if ( 6 < rank ) { s[6] = s[5] * shape.N5 ; }
+      if ( 7 < rank ) { s[7] = s[6] * shape.N6 ; }
+    }
+    else {
+      s[rank-1] = 1 ;
+      if ( 7 < rank ) { s[6] = s[7] * shape.N7 ; }
+      if ( 6 < rank ) { s[5] = s[6] * shape.N6 ; }
+      if ( 5 < rank ) { s[4] = s[5] * shape.N5 ; }
+      if ( 4 < rank ) { s[3] = s[4] * shape.N4 ; }
+      if ( 3 < rank ) { s[2] = s[3] * shape.N3 ; }
+      if ( 2 < rank ) { s[1] = s[2] * shape.N2 ; }
+      s[0] = stride.value ;
+    }
+  }
+}
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 /** \brief  View tracking increment/decrement only happens when
  *          view memory is managed and executing in the host space.
  */
@@ -96,8 +292,7 @@ struct ViewAssignment< LayoutDefault , void , void >
 {
   typedef LayoutDefault Specialize ;
 
-  // Allocation from dimensions:
-
+  // Allocate a managed view from dimensions:
   template< class T , class L , class D , class M >
   inline
   ViewAssignment( View<T,L,D,M,Specialize> & dst ,
@@ -111,88 +306,29 @@ struct ViewAssignment< LayoutDefault , void , void >
                   const size_t n6 = 0 ,
                   const size_t n7 = 0 )
   {
-    typedef ViewTraits<T,L,D,M> traits ;
-    typedef typename traits::shape_type   shape_type ;
-    typedef typename traits::memory_space memory_space ;
-    typedef typename traits::scalar_type  scalar_type ;
+    typedef View<T,L,D,M,Specialize> view_type ;
+    typedef typename view_type::device_type   device_type ;
+    typedef typename view_type::memory_space  memory_space ;
+    typedef typename view_type::scalar_type   scalar_type ;
+    typedef typename view_type::shape_type    shape_type ;
+    typedef typename view_type::stride_type   stride_type ;
 
-    enum { is_left = is_same< typename traits::array_layout , LayoutLeft >::value };
+    ViewTracking< view_type >::decrement( dst.m_ptr_on_device );
 
-    ViewTracking< traits >::decrement( dst.m_ptr_on_device );
+    shape_type ::assign( dst.m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
+    stride_type::assign( dst.m_stride , dst.m_shape );
 
-    shape_type::assign( dst.m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
-
-    // Left layout arrays are aligned on the first dimension.
-    // Right layout arrays are aligned on blocks of the 2-7th dimensions.
-
-    dst.m_stride =
-      is_left ? dst.m_shape.N0
-              : dst.m_shape.N1 * dst.m_shape.N2 * dst.m_shape.N3 *
-                dst.m_shape.N4 * dst.m_shape.N5 * dst.m_shape.N6 * dst.m_shape.N7 ;
-
-    if ( 1 < traits::rank ) {
-      // If greater than rank 1 insert padding for alignment
-      dst.m_stride = memory_space::preferred_alignment( dst.m_shape.scalar_size , dst.m_stride );
-    }
+    const size_t cap = capacity( dst.m_shape , dst.m_stride );
 
     dst.m_ptr_on_device = (scalar_type *)
-      memory_space::allocate( label , typeid(scalar_type) , sizeof(scalar_type) , dst.capacity() );
+      memory_space::allocate( label , typeid(scalar_type) , sizeof(scalar_type) , cap );
 
-    ViewInitialize< typename traits::device_type > init( dst );
+    ViewInitialize< device_type > init( dst );
   }
 
-  // Creating unmanaged view from ptr and dimensions:
-
-  template< class T , class L , class D, class M >
-  KOKKOS_INLINE_FUNCTION
-  ViewAssignment( View<T,L,D,M,Specialize> & dst ,
-                  const typename enable_if< !(ViewTraits<T,L,D,M>::is_managed) , typename ViewTraits<T,L,D,M>::scalar_type >::type* ptr ,
-                  const size_t n0 = 0 ,
-                  const size_t n1 = 0 ,
-                  const size_t n2 = 0 ,
-                  const size_t n3 = 0 ,
-                  const size_t n4 = 0 ,
-                  const size_t n5 = 0 ,
-                  const size_t n6 = 0 ,
-                  const size_t n7 = 0 )
-  {
-    typedef ViewTraits<T,L,D,M> traits ;
-    typedef typename traits::shape_type   shape_type ;
-    typedef typename traits::memory_space memory_space ;
-    typedef typename traits::scalar_type  scalar_type ;
-
-    if ( traits::rank == 1 && traits::rank_dynamic == 1 && n0 < n1 ) {
-
-      // Rank=1 array allocation may be larger than the initial dimension
-      // to allow resizing up to the allocated size.
-
-      shape_type::assign( dst.m_shape, n0, 0, 0, 0, 0, 0, 0, 0 );
-
-      dst.m_stride = n1;
-    }
-    else {
-      enum { is_left = is_same< typename traits::array_layout , LayoutLeft >::value };
-
-      shape_type::assign( dst.m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
-
-      // Rank=1 and left-layout arrays are aligned on the first dimension.
-      // Rank>1 and right-layout arrays are aligned on blocks of the 2-7th dimensions.
-
-      const size_t base_count =
-        ( traits::rank == 1 || is_left )
-        ? dst.m_shape.N0
-        : dst.m_shape.N1 * dst.m_shape.N2 * dst.m_shape.N3 * dst.m_shape.N4 *
-          dst.m_shape.N5 * dst.m_shape.N6 * dst.m_shape.N7 ;
-
-      dst.m_stride = base_count;
-    }
-
-    dst.m_ptr_on_device = (scalar_type *) ptr;
-  }
   // Allocate using the dimensions and stride of the input array.
   // The specialization, layout, and rank must be compatible.
   // Primarily used for creating mirrors.
-
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
   inline
@@ -207,15 +343,17 @@ struct ViewAssignment< LayoutDefault , void , void >
                     ( unsigned(ViewTraits<DT,DL,DD,DM>::rank_dynamic) >= unsigned(ViewTraits<ST,SL,SD,SM>::rank_dynamic) )
                   ) >::type * = 0 )
   {
-    typedef ViewTraits<DT,DL,DD,DM>           dst_traits ;
-    typedef typename dst_traits::memory_space dst_memory_space ;
-    typedef typename dst_traits::scalar_type  dst_scalar_type ;
-    typedef typename dst_traits::shape_type   dst_shape_type ;
+    typedef View<DT,DL,DD,DM>  dst_view_type ;
+    typedef View<ST,SL,SD,SM>  src_view_type ;
 
-    typedef ViewTraits<ST,SL,SD,SM>           src_traits ;
-    typedef typename src_traits::memory_space src_memory_space ;
+    typedef typename src_view_type::memory_space  src_memory_space ;
+    typedef typename dst_view_type::device_type   dst_device_type ;
+    typedef typename dst_view_type::memory_space  dst_memory_space ;
+    typedef typename dst_view_type::scalar_type   dst_scalar_type ;
+    typedef typename dst_view_type::shape_type    dst_shape_type ;
+    typedef typename dst_view_type::stride_type   dst_stride_type ;
 
-    ViewTracking< dst_traits >::decrement( dst.m_ptr_on_device );
+    ViewTracking< dst_view_type >::decrement( dst.m_ptr_on_device );
 
     if ( src.m_ptr_on_device ) {
       std::string label = src_memory_space::query_label( src.m_ptr_on_device );
@@ -223,18 +361,53 @@ struct ViewAssignment< LayoutDefault , void , void >
 
       dst_shape_type::assign( dst.m_shape, src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
                                            src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
-      dst.m_stride = src.m_stride ;
+
+      dst_stride_type::assign( dst.m_stride , src.m_stride.value );
+
+      const size_t cap = capacity( dst.m_shape , dst.m_stride );
 
       dst.m_ptr_on_device = (dst_scalar_type *)
-        dst_memory_space::allocate( label , typeid(dst_scalar_type) , sizeof(dst_scalar_type) , dst.capacity() );
+        dst_memory_space::allocate( label , typeid(dst_scalar_type) , sizeof(dst_scalar_type) , cap );
 
-      ViewInitialize< typename dst_traits::device_type > init( dst );
+      ViewInitialize< dst_device_type > init( dst );
     }
     else {
-      dst_shape_type::assign( dst.m_shape, 0, 0, 0, 0, 0, 0, 0, 0 );
-      dst.m_stride = 0 ;
+      dst_shape_type ::assign( dst.m_shape, 0, 0, 0, 0, 0, 0, 0, 0 );
+      dst_stride_type::assign( dst.m_stride , 0 );
       dst.m_ptr_on_device = 0 ;
     }
+  }
+
+  // Creating unmanaged view from ptr and dimensions.
+  // Must have a dynamic stride that can be set.
+  template< class T , class L , class D, class M >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment( View<T,L,D,M,Specialize> & dst ,
+                  const typename enable_if<
+                    (
+                      ! ViewTraits<T,L,D,M>::is_managed
+                      &&
+                      LayoutStride< typename ViewTraits<T,L,D,M>::shape_type ,
+                                    typename ViewTraits<T,L,D,M>::array_layout >::dynamic
+                    ) , typename ViewTraits<T,L,D,M>::scalar_type >::type * ptr ,
+                  const size_t n0 = 0 ,
+                  const size_t n1 = 0 ,
+                  const size_t n2 = 0 ,
+                  const size_t n3 = 0 ,
+                  const size_t n4 = 0 ,
+                  const size_t n5 = 0 ,
+                  const size_t n6 = 0 ,
+                  const size_t n7 = 0 )
+  {
+    typedef View<T,L,D,M> view_type ;
+    typedef typename view_type::scalar_type   scalar_type ;
+    typedef typename view_type::shape_type    shape_type ;
+    typedef typename view_type::stride_type   stride_type ;
+
+    shape_type ::assign( dst.m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
+    stride_type::assign_no_padding( dst.m_stride , dst.m_shape );
+
+    dst.m_ptr_on_device = (scalar_type *) ptr;
   }
 };
 
@@ -259,6 +432,7 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
     typedef typename DstViewType::shape_type    shape_type ;
     typedef typename DstViewType::memory_space  memory_space ;
     typedef typename DstViewType::memory_traits memory_traits ;
+    typedef typename View<DT,DL,DD,DM,Specialize>::stride_type stride_type ;
 
     ViewTracking< DstViewType >::decrement( dst.m_ptr_on_device );
 
@@ -266,41 +440,15 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
                         src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
                         src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
 
-    dst.m_stride        = src.m_stride ;
+    stride_type::assign( dst.m_stride , src.m_stride.value );
+
     dst.m_ptr_on_device = src.m_ptr_on_device ;
 
     ViewTracking< DstViewType >::increment( dst.m_ptr_on_device );
   }
 
-  /** \brief  Extract Rank-1 array from LayoutLeft Rank-2 array. */
-  template< class DT , class DL , class DD , class DM ,
-            class ST , class SL , class SD , class SM >
-  KOKKOS_INLINE_FUNCTION
-  ViewAssignment(       View<DT,DL,DD,DM,LayoutDefault> & dst ,
-                  const View<ST,SL,SD,SM,LayoutDefault> & src ,
-                  const typename enable_if< (
-                    ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
-                                    ViewTraits<ST,SL,SD,SM> >::assignable_value
-                    &&
-                    ( ViewTraits<DT,DL,DD,DM>::rank == 1 )
-                    &&
-                    ( ViewTraits<ST,SL,SD,SM>::rank == 2 )
-                    &&
-                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutLeft >::value
-                  ), unsigned >::type i1 )
-  {
-    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
-
-    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
-
-    dst.m_shape.N0      = src.m_shape.N0 ;
-    dst.m_stride        = src.m_stride ;
-    dst.m_ptr_on_device = src.m_ptr_on_device + src.m_stride * i1 ;
-
-    ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
-  }
-
-  /** \brief  Extract Rank-1 array from range of Rank-1 array */
+  //------------------------------------
+  /** \brief  Extract Rank-1 array from range of Rank-1 array, either layout */
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM ,
             typename iType >
@@ -309,11 +457,13 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
                   const View<ST,SL,SD,SM,LayoutDefault> & src ,
                   const std::pair<iType,iType> & range ,
                   typename enable_if< (
-                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
                     &&
-                    ViewTraits<DT,DL,DD,DM>::rank == 1
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 1 )
                     &&
-                    ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 1 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1 )
                   ) >::type * = 0 )
   {
     typedef ViewTraits<DT,DL,DD,DM> traits_type ;
@@ -322,7 +472,6 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
     ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
 
     dst.m_shape.N0      = 0 ;
-    dst.m_stride        = 0 ;
     dst.m_ptr_on_device = 0 ;
 
     if ( range.first < range.second ) {
@@ -330,13 +479,42 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
       assert_shape_bounds( src.m_shape , 1 , range.second - 1 );
 
       dst.m_shape.N0 = range.second - range.first ;
-      dst.m_stride   = src.m_stride - range.first ;
       dst.m_ptr_on_device = src.m_ptr_on_device + range.first ;
 
       ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
     }
   }
 
+  //------------------------------------
+  /** \brief  Extract Rank-1 array from LayoutLeft Rank-2 array. */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,LayoutDefault> & dst ,
+                  const View<ST,SL,SD,SM,LayoutDefault> & src ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutLeft >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 2 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 1 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1 )
+                  ), unsigned >::type i1 )
+  {
+    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
+
+    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
+
+    dst.m_shape.N0      = src.m_shape.N0 ;
+    dst.m_ptr_on_device = src.m_ptr_on_device + src.m_stride.value * i1 ;
+
+    ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+  }
+
+  //------------------------------------
   /** \brief  Extract LayoutRight Rank-N array from range of LayoutRight Rank-N array */
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM ,
@@ -357,11 +535,12 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
   {
     typedef ViewTraits<DT,DL,DD,DM> traits_type ;
     typedef typename traits_type::shape_type shape_type ;
+    typedef typename View<DT,DL,DD,DM,LayoutDefault>::stride_type stride_type ;
 
     ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
 
-    shape_type::assign( dst.m_shape, 0, 0, 0, 0, 0, 0, 0, 0 );
-    dst.m_stride        = 0 ;
+    shape_type ::assign( dst.m_shape, 0, 0, 0, 0, 0, 0, 0, 0 );
+    stride_type::assign( dst.m_stride , 0 );
     dst.m_ptr_on_device = 0 ;
 
     if ( range.first < range.second ) {
@@ -372,14 +551,16 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
                           src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
                           src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
 
-      dst.m_stride        = src.m_stride ; // aligned( product[ N1 .. N7 ] )
-      dst.m_ptr_on_device = src.m_ptr_on_device + range.first * src.m_stride ;
+      stride_type::assign( dst.m_stride , src.m_stride.value );
+
+      dst.m_ptr_on_device = src.m_ptr_on_device + range.first * src.m_stride.value ;
 
       ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
     }
   }
 
-  /** \brief  Rank-2 to Rank-2 array */
+  //------------------------------------
+  /** \brief  Extract rank-2 from rank-2 array */
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM ,
             typename iType0 , typename iType1 >
@@ -391,19 +572,20 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
                   typename enable_if< (
                     ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
                     &&
-                    is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout , LayoutLeft >::value
+                    ViewTraits<DT,DL,DD,DM>::rank == 2
                     &&
                     ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2
                   ) >::type * = 0 )
   {
     typedef ViewTraits<DT,DL,DD,DM> traits_type ;
     typedef typename traits_type::shape_type shape_type ;
+    enum { left = is_same< typename traits_type::array_layout , LayoutLeft >::value };
 
     ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
 
     dst.m_shape.N0      = 0 ;
     dst.m_shape.N1      = 0 ;
-    dst.m_stride        = 0 ;
+    dst.m_stride.value  = 0 ;
     dst.m_ptr_on_device = 0 ;
 
     if ( range0.first < range0.second && range1.first < range1.second ) {
@@ -413,49 +595,15 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
       dst.m_shape.N0 = range0.second - range0.first ;
       dst.m_shape.N1 = range1.second - range1.first ;
       dst.m_stride   = src.m_stride ;
-      dst.m_ptr_on_device = src.m_ptr_on_device + range0.first + dst.m_stride * range1.first ;
-      // dst.m_ptr_on_device[ i0 + dst.m_stride * i1 ]
 
-      ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
-    }
-  }
-
-  /** \brief  Rank-2 to Rank-2 array */
-  template< class DT , class DL , class DD , class DM ,
-            class ST , class SL , class SD , class SM ,
-            typename iType0 , typename iType1 >
-  KOKKOS_INLINE_FUNCTION
-  ViewAssignment(       View<DT,DL,DD,DM,LayoutDefault> & dst ,
-                  const View<ST,SL,SD,SM,LayoutDefault> & src ,
-                  const std::pair<iType0,iType0> & range0 ,
-                  const std::pair<iType1,iType1> & range1 ,
-                  typename enable_if< (
-                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
-                    &&
-                    is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout , LayoutRight >::value
-                    &&
-                    ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2
-                  ) >::type * = 0 )
-  {
-    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
-    typedef typename traits_type::shape_type shape_type ;
-
-    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
-
-    dst.m_shape.N0      = 0 ;
-    dst.m_shape.N1      = 0 ;
-    dst.m_stride        = 0 ;
-    dst.m_ptr_on_device = 0 ;
-
-    if ( range0.first < range0.second && range1.first < range1.second ) {
-      assert_shape_bounds( src.m_shape , 2 , range0.first , range1.first );
-      assert_shape_bounds( src.m_shape , 2 , range0.second - 1 , range1.second - 1 );
-
-      dst.m_shape.N0 = range0.second - range0.first ;
-      dst.m_shape.N1 = range1.second - range1.first ;
-      dst.m_stride   = src.m_stride ;
-      dst.m_ptr_on_device = src.m_ptr_on_device + range0.first * dst.m_stride + range1.first ;
-      // dst.m_ptr_on_device[ i0 * dst.m_stride + i1 ]
+      if ( left ) {
+        // operator: dst.m_ptr_on_device[ i0 + dst.m_stride * i1 ]
+        dst.m_ptr_on_device = src.m_ptr_on_device + range0.first + dst.m_stride.value * range1.first ;
+      }
+      else {
+        // operator: dst.m_ptr_on_device[ i0 * dst.m_stride + i1 ]
+        dst.m_ptr_on_device = src.m_ptr_on_device + range0.first * dst.m_stride.value + range1.first ;
+      }
 
       ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
     }
@@ -480,23 +628,16 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
                     ( unsigned(ViewTraits<DT,DL,DD,DM>::rank) == unsigned(ViewTraits<ST,SL,SD,SM>::rank) )
                   )>::type * = 0 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> dst_traits ;
-    typedef ViewTraits<ST,SL,SD,SM> src_traits ;
-
-    enum { is_right = Impl::is_same<typename dst_traits::array_layout,LayoutRight>::value };
+    typedef typename ViewTraits<DT,DL,DD,DM>::memory_space dst_memory_space ;
+    typedef typename ViewTraits<ST,SL,SD,SM>::memory_space src_memory_space ;
 
     if ( dst.m_ptr_on_device != src.m_ptr_on_device ) {
 
       Impl::assert_shapes_are_equal( dst.m_shape , src.m_shape );
 
-      const size_t nbytes = dst.m_shape.scalar_size *
-        ( 1 == dst_traits::rank ? dst.m_shape.N0 : (
-          is_right  ? dst.m_shape.N0 * dst.m_stride : (
-                      dst.m_stride   * dst.m_shape.N1 * dst.m_shape.N2 * dst.m_shape.N3 *
-                      dst.m_shape.N4 * dst.m_shape.N5 * dst.m_shape.N6 * dst.m_shape.N7 )));
+      const size_t nbytes = dst.m_shape.scalar_size * capacity( dst.m_shape , dst.m_stride );
 
-      DeepCopy< typename dst_traits::memory_space ,
-                typename src_traits::memory_space >( dst.m_ptr_on_device , src.m_ptr_on_device , nbytes );
+      DeepCopy< dst_memory_space , src_memory_space >( dst.m_ptr_on_device , src.m_ptr_on_device , nbytes );
     }
   }
 };
@@ -535,63 +676,7 @@ struct EnableViewOper< Traits , OperLayout , OperRank ,
                          iType7(0) == 0 >::type >
 { typedef typename Traits::value_type type ; };
 
-
-template< class ShapeType, class LayoutType , unsigned RankDynamic = ShapeType::rank_dynamic >
-struct StaticStride {
-  enum { Stride = 0 };
-};
-
-
-template< class S >
-struct StaticStride< S , LayoutRight , 0 > {
-
-  enum { count = S::N1*S::N2*S::N3*S::N4*S::N5*S::N6*S::N7  };
-  enum { div   = MEMORY_ALIGNMENT / S::scalar_size };
-  enum { mod   = MEMORY_ALIGNMENT % S::scalar_size };
-  enum { align = 0 == mod ? div : 0 };
-  enum { count_mod = count % ( div ? div : 1 ) };
-
-public:
-
-  enum {Stride = ( align && ( MEMORY_ALIGNMENT_THRESHOLD * align < count ) && count_mod )
-               ? ( count + align - count_mod )
-               : count };
-
-};
-
-template< class S >
-struct StaticStride< S , LayoutRight , 1 > {
-
-  enum { count = S::N1*S::N2*S::N3*S::N4*S::N5*S::N6*S::N7  };
-  enum { div   = MEMORY_ALIGNMENT / S::scalar_size };
-  enum { mod   = MEMORY_ALIGNMENT % S::scalar_size };
-  enum { align = 0 == mod ? div : 0 };
-  enum { count_mod = count % ( div ? div : 1 ) };
-
-public:
-
-  enum {Stride = ( align && ( MEMORY_ALIGNMENT_THRESHOLD * align < count ) && count_mod )
-               ? ( count + align - count_mod )
-               : count };
-
-};
-
-template< class S >
-struct StaticStride< S , LayoutLeft , 0 > {
-
-  enum { count = S::N0 };
-  enum { div   = MEMORY_ALIGNMENT / S::scalar_size };
-  enum { mod   = MEMORY_ALIGNMENT % S::scalar_size };
-  enum { align = 0 == mod ? div : 0 };
-  enum { count_mod = count % ( div ? div : 1 ) };
-
-public:
-
-  enum {Stride = ( align && ( MEMORY_ALIGNMENT_THRESHOLD * align < count ) && count_mod )
-               ? ( count + align - count_mod )
-               : count };
-
-};
+//----------------------------------------------------------------------------
 
 } /* namespace Impl */
 } /* namespace Kokkos */
@@ -618,14 +703,14 @@ private:
 
   typedef Impl::ViewAssignment<Impl::LayoutDefault> alloc ;
 
+  typedef Impl::LayoutStride< typename traits::shape_type ,
+                              typename traits::array_layout > stride_type ;
+
   typename traits::value_type * m_ptr_on_device ;
   typename traits::shape_type   m_shape ;
-
+  stride_type                   m_stride ;
+  
 public:
-  unsigned                      m_stride ;
-
-  enum { m_stride_static = Impl::StaticStride<typename traits::shape_type,
-                                          typename traits::array_layout >::Stride };
 
   typedef View< typename traits::const_data_type ,
                 typename traits::array_layout ,
@@ -677,7 +762,11 @@ public:
   ~View() { Impl::ViewTracking< traits >::decrement( m_ptr_on_device ); }
 
   KOKKOS_INLINE_FUNCTION
-  View() : m_ptr_on_device(0), m_stride(0) { traits::shape_type::assign(m_shape,0,0,0,0,0,0,0,0); }
+  View() : m_ptr_on_device(0)
+    {
+      traits::shape_type::assign(m_shape,0,0,0,0,0,0,0,0);
+      stride_type::assign(m_stride,0);
+    }
 
   KOKKOS_INLINE_FUNCTION
   View( const View & rhs ) : m_ptr_on_device(0)
@@ -778,7 +867,6 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 ];
     }
@@ -790,7 +878,6 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 ];
     }
@@ -803,7 +890,6 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 ];
     }
@@ -817,9 +903,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * i1 ];
+      return m_ptr_on_device[ i0 + m_stride.value * i1 ];
     }
 
   template< typename iType0 , typename iType1 >
@@ -830,9 +915,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * i1 ];
+      return m_ptr_on_device[ i0 + m_stride.value * i1 ];
     }
 
   // LayoutLeft, rank 3:
@@ -844,9 +928,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
+      return m_ptr_on_device[ i0 + m_stride.value * (
                               i1 + m_shape.N1 * i2 ) ];
     }
 
@@ -858,9 +941,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
+      return m_ptr_on_device[ i0 + m_stride.value * (
                               i1 + m_shape.N1 * i2 ) ];
     }
 
@@ -873,9 +955,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
+      return m_ptr_on_device[ i0 + m_stride.value * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * i3 )) ];
     }
@@ -888,9 +969,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
+      return m_ptr_on_device[ i0 + m_stride.value * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * i3 )) ];
     }
@@ -908,9 +988,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
+      return m_ptr_on_device[ i0 + m_stride.value * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * i4 ))) ];
@@ -927,9 +1006,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
+      return m_ptr_on_device[ i0 + m_stride.value * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * i4 ))) ];
@@ -948,9 +1026,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
+      return m_ptr_on_device[ i0 + m_stride.value * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * (
@@ -968,9 +1045,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
+      return m_ptr_on_device[ i0 + m_stride.value * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * (
@@ -990,9 +1066,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
+      return m_ptr_on_device[ i0 + m_stride.value * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * (
@@ -1011,9 +1086,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
+      return m_ptr_on_device[ i0 + m_stride.value * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * (
@@ -1034,9 +1108,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0,i1,i2,i3,i4,i5,i6,i7 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
+      return m_ptr_on_device[ i0 + m_stride.value * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * (
@@ -1055,7 +1128,6 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 ];
     }
@@ -1067,7 +1139,6 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 ];
     }
@@ -1080,7 +1151,6 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 ];
     }
@@ -1094,9 +1164,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i1 + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
+      return m_ptr_on_device[ i1 + i0 * m_stride.value ];
     }
 
   template< typename iType0 , typename iType1 >
@@ -1107,9 +1176,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i1 + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
+      return m_ptr_on_device[ i1 + i0 * m_stride.value ];
     }
 
   // LayoutRight, rank 3:
@@ -1122,10 +1190,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i2 + m_shape.N2 * (
-                              i1 ) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
+      return m_ptr_on_device[ i2 + m_shape.N2 * ( i1 ) + i0 * m_stride.value ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 >
@@ -1135,9 +1201,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i2 + m_shape.N2 * ( i1 ) + i0 * (m_stride_static==0 ? m_stride : static_cast<unsigned> (m_stride_static)) ];
+      return m_ptr_on_device[ i2 + m_shape.N2 * ( i1 ) + i0 * m_stride.value ];
     }
 
   // LayoutRight, rank 4:
@@ -1151,11 +1216,10 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 )) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
+                              i1 )) + i0 * m_stride.value ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
@@ -1168,11 +1232,10 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 )) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
+                              i1 )) + i0 * m_stride.value ];
     }
 
   // LayoutRight, rank 5:
@@ -1188,12 +1251,11 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 ))) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
+                              i1 ))) + i0 * m_stride.value ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -1207,12 +1269,11 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 ))) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
+                              i1 ))) + i0 * m_stride.value ];
     }
 
   // LayoutRight, rank 6:
@@ -1228,13 +1289,12 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i5 + m_shape.N5 * (
                               i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 )))) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
+                              i1 )))) + i0 * m_stride.value ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -1248,13 +1308,12 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i5 + m_shape.N5 * (
                               i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 )))) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
+                              i1 )))) + i0 * m_stride.value ];
     }
 
   // LayoutRight, rank 7:
@@ -1270,14 +1329,13 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i6 + m_shape.N6 * (
                               i5 + m_shape.N5 * (
                               i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 ))))) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
+                              i1 ))))) + i0 * m_stride.value ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -1291,14 +1349,13 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i6 + m_shape.N6 * (
                               i5 + m_shape.N5 * (
                               i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 ))))) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
+                              i1 ))))) + i0 * m_stride.value ];
     }
 
   // LayoutRight, rank 8:
@@ -1314,7 +1371,6 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0,i1,i2,i3,i4,i5,i6,i7 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i7 + m_shape.N7 * (
                               i6 + m_shape.N6 * (
@@ -1322,7 +1378,7 @@ public:
                               i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 )))))) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
+                              i1 )))))) + i0 * m_stride.value ];
     }
 
   //------------------------------------
@@ -1336,35 +1392,12 @@ public:
   template< typename iType >
   KOKKOS_INLINE_FUNCTION
   void stride( iType * const s ) const
-  {
-    enum { is_left = Impl::is_same< typename traits::array_layout , LayoutLeft >::value };
-
-    if ( 1 == Rank ) {
-      s[0] = 1 ;
-    }
-    else if ( is_left ) {
-      s[0] = 1 ;
-      s[1] = m_stride ;
-      for ( int i = 2 ; i < Rank ; ++i ) { s[i] = s[i-1] * dimension(i-1); }
-    }
-    else {
-      s[0] = m_stride ;
-      s[Rank-1] = 1 ;
-      for ( int i = Rank - 2 ; 0 < i ; --i ) { s[i] = s[i+1] * dimension(i+1); }
-    }
-  }
+  { Impl::stride( s , m_shape , m_stride ); }
 
   // Count of contiguously allocated data members including padding.
   KOKKOS_INLINE_FUNCTION
   typename traits::size_type capacity() const
-  {
-    enum { is_left = Impl::is_same< typename traits::array_layout , LayoutLeft >::value };
-
-    return Rank == 1 ? typename traits::size_type( m_shape.N0 ) : (
-           is_left   ? typename traits::size_type( m_stride   * m_shape.N1 * m_shape.N2 * m_shape.N3 *
-                                                   m_shape.N4 * m_shape.N5 * m_shape.N6 * m_shape.N7 )
-                     : typename traits::size_type( m_stride * m_shape.N0 ) );
-  }
+  { return Impl::capacity( m_shape , m_stride ); }
 };
 
 } /* namespace Kokkos */
