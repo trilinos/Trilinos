@@ -289,7 +289,7 @@ void Brusselator::setParameters(const double alpha_, const double beta_)
 {
   alpha = alpha_;
   beta  = beta_;
-  std::cout<<" Brusselator::setParameters: alpha = "<<alpha<<"  beta = "<<beta<<endl;
+  std::cout<<" Brusselator::setParameters: alpha = "<<alpha<<"  beta = "<<beta<<std::endl;
 }
 
 // Matrix and Residual Fills
