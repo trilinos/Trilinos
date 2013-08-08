@@ -51,8 +51,6 @@
 
 #include <iomanip>
 
-#include <TestTimes.hpp>
-
 namespace Test {
 
 class cuda : public ::testing::Test {
@@ -71,26 +69,31 @@ protected:
 extern void cuda_test_insert_close(  uint32_t num_nodes
                                    , uint32_t num_inserts
                                    , uint32_t num_duplicates
-                                   , map_test_times & test_times
                                   );
 
 extern void cuda_test_insert_far(  uint32_t num_nodes
                                    , uint32_t num_inserts
                                    , uint32_t num_duplicates
-                                   , map_test_times & test_times
                                   );
 
+extern void cuda_test_failed_insert(  uint32_t num_nodes );
 
-#define CUDA_INSERT_TEST( name, num_nodes, num_inserts, num_duplicates, repeat )                     \
-  TEST_F( cuda, unordered_map_insert_##name##_##num_nodes##_##num_inserts##_##num_duplicates##_##repeat) {   \
-    map_test_times test_times;                                                                       \
-    for (int i=0; i<repeat; ++i)                                                                     \
-      cuda_test_insert_##name(num_nodes,num_inserts,num_duplicates,test_times);                      \
-    std::cout << "Test Times" << std::endl;                                                          \
-    std::cout << "      Construct: " << test_times.construct / repeat << std::endl;                  \
-    std::cout << "  Santity Check: " << test_times.santity_check / repeat << std::endl;              \
-    std::cout << "         Insert: " << test_times.insert / repeat << std::endl;                     \
-    std::cout << "           Find: " << test_times.find / repeat << std::endl;                       \
+void cuda_test_insert_mark_pending_delete(  uint32_t num_nodes
+                            , uint32_t num_inserts
+                            , uint32_t num_duplicates
+                           );
+
+
+#define CUDA_INSERT_TEST( name, num_nodes, num_inserts, num_duplicates, repeat )                                \
+  TEST_F( cuda, unordered_map_insert_##name##_##num_nodes##_##num_inserts##_##num_duplicates##_##repeat##x) {   \
+    for (int i=0; i<repeat; ++i)                                                                                \
+      cuda_test_insert_##name(num_nodes,num_inserts,num_duplicates);                                            \
+  }
+
+#define CUDA_FAILED_INSERT_TEST( num_nodes, repeat )                           \
+  TEST_F( cuda, unordered_map_failed_insert_##num_nodes##_##repeat##x) {       \
+    for (int i=0; i<repeat; ++i)                                               \
+      cuda_test_failed_insert(num_nodes);                                      \
   }
 
 CUDA_INSERT_TEST(close,     10000,     6000, 100, 10000)
@@ -98,14 +101,22 @@ CUDA_INSERT_TEST(close,    100000,    90000, 100, 5000)
 CUDA_INSERT_TEST(close,   1000000,   900000, 100, 500)
 CUDA_INSERT_TEST(close,  10000000,  9000000, 100, 50)
 CUDA_INSERT_TEST(close, 100000000, 90000000, 100, 5)
-CUDA_INSERT_TEST(close, 100000000, 90000000,  10, 5)
 
 CUDA_INSERT_TEST(far,     10000,     6000, 100, 10000)
 CUDA_INSERT_TEST(far,    100000,    90000, 100, 5000)
 CUDA_INSERT_TEST(far,   1000000,   900000, 100, 500)
 CUDA_INSERT_TEST(far,  10000000,  9000000, 100, 50)
-CUDA_INSERT_TEST(far, 100000000, 90000000,  10, 5)
+CUDA_INSERT_TEST(far, 100000000, 90000000, 100, 5)
+
+CUDA_INSERT_TEST(mark_pending_delete,     10000,     6000, 100, 10000)
+CUDA_INSERT_TEST(mark_pending_delete,    100000,    90000, 100, 5000)
+CUDA_INSERT_TEST(mark_pending_delete,   1000000,   900000, 100, 500)
+CUDA_INSERT_TEST(mark_pending_delete,  10000000,  9000000, 100, 50)
+CUDA_INSERT_TEST(mark_pending_delete, 100000000, 90000000, 100, 5)
+
+CUDA_FAILED_INSERT_TEST( 10000, 10000 )
 
 #undef CUDA_INSERT_TEST
+#undef CUDA_FAILED_INSERT_TEST
 
 }

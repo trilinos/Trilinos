@@ -43,7 +43,7 @@
 
 #include <gtest/gtest.h>
 
-#include <Kokkos_Host.hpp>
+#include <Kokkos_Threads.hpp>
 #include <Kokkos_hwloc.hpp>
 
 #include <Kokkos_UnorderedMap.hpp>
@@ -56,54 +56,62 @@
 
 namespace Test {
 
-class host : public ::testing::Test {
+class threads : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
     std::cout << std::setprecision(5) << std::scientific;
-    Kokkos::Host::initialize(1,1);
+    const std::pair<unsigned,unsigned> core_top =  Kokkos::hwloc::get_core_topology();
+
+    std::pair<unsigned, unsigned> team_league;
+    team_league.first  = core_top.first ;
+    //team_league.second = core_top.second * Kokkos::hwloc::get_core_capacity();
+    team_league.second = core_top.second;
+
+    Kokkos::Threads::initialize( team_league );
   }
 
   static void TearDownTestCase()
   {
-    Kokkos::Host::finalize();
+    Kokkos::Threads::finalize();
   }
 };
 
-#define HOST_INSERT_TEST( name, num_nodes, num_inserts, num_duplicates, repeat )                                \
-  TEST_F( host, unordered_map_insert_##name##_##num_nodes##_##num_inserts##_##num_duplicates##_##repeat##x) {   \
+#define THREADS_INSERT_TEST( name, num_nodes, num_inserts, num_duplicates, repeat )                                \
+  TEST_F( threads, unordered_map_insert_##name##_##num_nodes##_##num_inserts##_##num_duplicates##_##repeat##x) {   \
     for (int i=0; i<repeat; ++i)                                                                                \
-      test_insert_##name<Kokkos::Host>(num_nodes,num_inserts,num_duplicates);                                   \
+      test_insert_##name<Kokkos::Threads>(num_nodes,num_inserts,num_duplicates);                                   \
   }
 
-#define HOST_FAILED_INSERT_TEST( num_nodes, repeat )                            \
-  TEST_F( host, unordered_map_failed_insert_##num_nodes##_##repeat##x) {       \
+#define THREADS_FAILED_INSERT_TEST( num_nodes, repeat )                            \
+  TEST_F( threads, unordered_map_failed_insert_##num_nodes##_##repeat##x) {       \
     for (int i=0; i<repeat; ++i)                                               \
-      test_failed_insert<Kokkos::Host>(num_nodes);                             \
+      test_failed_insert<Kokkos::Threads>(num_nodes);                             \
   }
 
-HOST_INSERT_TEST(close,     10000,     6000, 100, 1)
-HOST_INSERT_TEST(close,    100000,    90000, 100, 1)
-HOST_INSERT_TEST(close,   1000000,   900000, 100, 1)
-HOST_INSERT_TEST(close,  10000000,  9000000, 100, 1)
-HOST_INSERT_TEST(close, 100000000, 90000000, 100, 1)
+THREADS_INSERT_TEST(close,     10000,     6000, 100, 10000)
+THREADS_INSERT_TEST(close,    100000,    90000, 100, 5000)
+THREADS_INSERT_TEST(close,   1000000,   900000, 100, 500)
+THREADS_INSERT_TEST(close,  10000000,  9000000, 100, 50)
+THREADS_INSERT_TEST(close, 100000000, 90000000, 100, 5)
 
-HOST_INSERT_TEST(far,     10000,     6000, 100, 1)
-HOST_INSERT_TEST(far,    100000,    90000, 100, 1)
-HOST_INSERT_TEST(far,   1000000,   900000, 100, 1)
-HOST_INSERT_TEST(far,  10000000,  9000000, 100, 1)
-HOST_INSERT_TEST(far, 100000000, 90000000, 100, 1)
+THREADS_INSERT_TEST(far,     10000,     6000, 100, 10000)
+THREADS_INSERT_TEST(far,    100000,    90000, 100, 5000)
+THREADS_INSERT_TEST(far,   1000000,   900000, 100, 500)
+THREADS_INSERT_TEST(far,  10000000,  9000000, 100, 50)
+THREADS_INSERT_TEST(far, 100000000, 90000000, 100, 5)
 
-HOST_INSERT_TEST(mark_pending_delete,     10000,     6000, 100, 1)
-HOST_INSERT_TEST(mark_pending_delete,    100000,    90000, 100, 1)
-HOST_INSERT_TEST(mark_pending_delete,   1000000,   900000, 100, 1)
-HOST_INSERT_TEST(mark_pending_delete,  10000000,  9000000, 100, 1)
-HOST_INSERT_TEST(mark_pending_delete, 100000000, 90000000, 100, 1)
+THREADS_INSERT_TEST(mark_pending_delete,     10000,     6000, 100, 10000)
+THREADS_INSERT_TEST(mark_pending_delete,    100000,    90000, 100, 5000)
+THREADS_INSERT_TEST(mark_pending_delete,   1000000,   900000, 100, 500)
+THREADS_INSERT_TEST(mark_pending_delete,  10000000,  9000000, 100, 50)
+THREADS_INSERT_TEST(mark_pending_delete, 100000000, 90000000, 100, 5)
 
-HOST_FAILED_INSERT_TEST( 10000, 1 )
+THREADS_FAILED_INSERT_TEST( 10000, 10000 )
 
-#undef HOST_INSERT_TEST
-#undef HOST_FAILED_INSERT_TEST
+#undef THREADS_INSERT_TEST
+#undef THREADS_FAILED_INSERT_TEST
 
 } // namespace Test
+
 

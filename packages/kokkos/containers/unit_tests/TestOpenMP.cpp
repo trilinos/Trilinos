@@ -54,7 +54,7 @@
 #include <Kokkos_UnorderedMap.hpp>
 
 //----------------------------------------------------------------------------
-#include <TestUnorderedMapInsert.hpp>
+#include <TestUnorderedMap.hpp>
 
 #include <iomanip>
 
@@ -66,10 +66,10 @@ protected:
   {
     std::cout << std::setprecision(5) << std::scientific;
     const std::pair<unsigned,unsigned> core_top =  Kokkos::hwloc::get_core_topology();
-    const unsigned core_size = Kokkos::hwloc::get_core_capacity();
 
     const unsigned gang_count        = core_top.first ;
-    const unsigned gang_worker_count = core_top.second * core_size;
+    //const unsigned gang_worker_count = core_top.second * Kokkos::hwloc::get_core_capacity();
+    const unsigned gang_worker_count = core_top.second;
 
     Kokkos::OpenMP::initialize( gang_count , gang_worker_count );
   }
@@ -84,16 +84,16 @@ protected:
   }
 };
 
-#define OPENMP_INSERT_TEST( name, num_nodes, num_inserts, num_duplicates, repeat )                   \
-  TEST_F( openmp, unordered_map_insert_##name##_##num_nodes##_##num_inserts##_##num_duplicates##_##repeat) {   \
-    map_test_times test_times;                                                                       \
-    for (int i=0; i<repeat; ++i)                                                                     \
-      test_insert_##name<Kokkos::OpenMP>(num_nodes,num_inserts,num_duplicates,test_times);           \
-    std::cout << "Test Times" << std::endl;                                                          \
-    std::cout << "      Construct: " << test_times.construct / repeat << std::endl;                  \
-    std::cout << "  Santity Check: " << test_times.santity_check / repeat << std::endl;              \
-    std::cout << "         Insert: " << test_times.insert / repeat << std::endl;                     \
-    std::cout << "           Find: " << test_times.find / repeat << std::endl;                       \
+#define OPENMP_INSERT_TEST( name, num_nodes, num_inserts, num_duplicates, repeat )                                \
+  TEST_F( openmp, unordered_map_insert_##name##_##num_nodes##_##num_inserts##_##num_duplicates##_##repeat##x) {   \
+    for (int i=0; i<repeat; ++i)                                                                                  \
+      test_insert_##name<Kokkos::OpenMP>(num_nodes,num_inserts,num_duplicates);                                   \
+  }
+
+#define OPENMP_FAILED_INSERT_TEST( num_nodes, repeat )                         \
+  TEST_F( openmp, unordered_map_failed_insert_##num_nodes##_##repeat##x) {     \
+    for (int i=0; i<repeat; ++i)                                               \
+      test_failed_insert<Kokkos::Host>(num_nodes);                             \
   }
 
 OPENMP_INSERT_TEST(close,     10000,     6000, 100, 10000)
@@ -101,16 +101,23 @@ OPENMP_INSERT_TEST(close,    100000,    90000, 100, 5000)
 OPENMP_INSERT_TEST(close,   1000000,   900000, 100, 500)
 OPENMP_INSERT_TEST(close,  10000000,  9000000, 100, 50)
 OPENMP_INSERT_TEST(close, 100000000, 90000000, 100, 5)
-OPENMP_INSERT_TEST(close, 100000000, 90000000,  10, 5)
 
 OPENMP_INSERT_TEST(far,     10000,     6000, 100, 10000)
 OPENMP_INSERT_TEST(far,    100000,    90000, 100, 5000)
 OPENMP_INSERT_TEST(far,   1000000,   900000, 100, 500)
 OPENMP_INSERT_TEST(far,  10000000,  9000000, 100, 50)
 OPENMP_INSERT_TEST(far, 100000000, 90000000, 100, 5)
-OPENMP_INSERT_TEST(far, 100000000, 90000000,  10, 5)
+
+OPENMP_INSERT_TEST(mark_pending_delete,     10000,     6000, 100, 10000)
+OPENMP_INSERT_TEST(mark_pending_delete,    100000,    90000, 100, 5000)
+OPENMP_INSERT_TEST(mark_pending_delete,   1000000,   900000, 100, 500)
+OPENMP_INSERT_TEST(mark_pending_delete,  10000000,  9000000, 100, 50)
+OPENMP_INSERT_TEST(mark_pending_delete, 100000000, 90000000, 100, 5)
+
+OPENMP_FAILED_INSERT_TEST( 10000, 10000 )
 
 #undef OPENMP_INSERT_TEST
+#undef OPENMP_FAILED_INSERT_TEST
 
 } // namespace test
 

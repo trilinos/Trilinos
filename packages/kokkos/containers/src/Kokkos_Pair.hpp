@@ -2,6 +2,7 @@
 #define KOKKOS_CONTAINERS_PAIR_HPP
 
 #include <Kokkos_Macros.hpp>
+#include <Kokkos_Functional.hpp>
 #include <utility>
 
 namespace Kokkos {
@@ -148,6 +149,22 @@ bool operator>= (const pair<T1,void>& lhs, const pair<T1,void>& rhs)
 { return !(lhs<rhs); }
 
 
+template <class T1, class T2>
+struct hash< pair<T1,T2> >
+{
+  typedef pair<T1,T2> argument_type;
+  typedef pair<T1,T2> first_argument_type;
+  typedef uint32_t second_argument_type;
+  typedef uint32_t result_type;
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  uint32_t operator()( const pair<T1,T2> & p, uint32_t seed = 0u) const
+  {
+    typedef hash<T1> hash1;
+    typedef hash<T2> hash2;
+    return hash1(p.first, hash2(p.second,seed));
+  }
+};
 
 
 } // namespace Kokkos

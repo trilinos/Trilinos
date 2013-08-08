@@ -10,24 +10,15 @@ namespace Impl {
 
 // MurmurHash3 was written by Austin Appleby, and is placed in the public
 // domain. The author hereby disclaims copyright to this source code.
-
-// used to avoid aliasing error which could cause errors with
-// forced inlining
-union getblock32_helper
-{
-  uint8_t  bytes[4];
-  uint32_t word;
-};
-
 KOKKOS_FORCEINLINE_FUNCTION
 uint32_t getblock32 ( const uint8_t * p, int i )
 {
-  getblock32_helper a;
-  a.bytes[0] = p[i*4+0];
-  a.bytes[1] = p[i*4+1];
-  a.bytes[2] = p[i*4+2];
-  a.bytes[3] = p[i*4+3];
-  return a.word;
+// used to avoid aliasing error which could cause errors with
+// forced inlining
+  return    ((uint32_t)p[i*4+0])
+          | ((uint32_t)p[i*4+1] << 8)
+          | ((uint32_t)p[i*4+2] << 16)
+          | ((uint32_t)p[i*4+3] << 24);
 }
 
 KOKKOS_FORCEINLINE_FUNCTION

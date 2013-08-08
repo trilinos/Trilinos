@@ -72,7 +72,7 @@ struct unordered_map_node_state
       UNUSED = 0          // not used in a list
     , USED = 1            // used in a list
     , PENDING_INSERT = 2  // not used in a list, but reserved by a thread for inserting
-    , MARKED_DELETED = 3  // node in the list is marked deleted
+    , PENDING_DELETE = 3  // node in the list is marked deleted
     , INVALID = 4         // the 0th node in the node view is set to invalid
     , NUM_STATES = 5
   };
@@ -151,37 +151,6 @@ struct unordered_map_node
   value_type value;
 };
 
-
-
-template <class MapData, bool IsConst = MapData::is_const_map >
-struct unordered_map_init_data_functor
-{
-  typedef typename MapData::device_type device_type;
-  typedef typename device_type::size_type size_type;
-  typedef typename MapData::node_type node_type;
-
-  MapData  map;
-
-  unordered_map_init_data_functor(MapData arg_map)
-    : map(arg_map)
-  {
-    uint64_t * first_atomic = &map.nodes.ptr_on_device()->atomic;
-    uint64_t atomic = node_type::make_atomic(0, unordered_map_node_state::INVALID);
-
-    typedef Kokkos::DeepCopy< typename device_type::memory_space, Kokkos::HostSpace > deep_copy;
-
-    deep_copy(first_atomic, &atomic, sizeof(uint64_t));
-  }
-};
-
-template <class MapData>
-struct unordered_map_init_data_functor<MapData, true /*is const map*/>
-{
-  //static_assert(false, "Error: Cannot initiazlize a constant map");
-  struct ERROR_CANNOT_INITIALIZE_A_CONST_UNORDERED_MAP {};
-
-  StaticAssert<false, ERROR_CANNOT_INITIALIZE_A_CONST_UNORDERED_MAP> msg;
-};
 
 template <class MapData>
 struct unordered_map_count_node_states_functor
@@ -300,126 +269,82 @@ struct unordered_map_check_hash_list_functor
     errors.incorrect_hash_index_errors += incorrect_hash_index_errors;
     errors.duplicate_keys_errors += duplicate_keys_errors;
     errors.unordered_list_errors += unordered_list_errors;
-
-
-#if 0
-    uint32_t num_failed_inserts = *map.num_failed_inserts;
-    if (( num_failed_inserts == 0u) && (incorrect_hash_index_errors || duplicate_keys_errors || unordered_list_errors)) {
-      print_list(i);
-    }
-#endif
   }
-
-#if 0
-  KOKKOS_INLINE_FUNCTION
-  void print_list(uint32_t i) const
-  {
-    volatile uint64_t * prev_atomic = &map.hashes[i];
-    volatile uint64_t * curr_atomic = &map.nodes[node_type::next(*prev_atomic)].atomic;
-    volatile uint64_t * next_atomic = &map.nodes[node_type::next(*curr_atomic)].atomic;
-
-    uint32_t n=0;
-    //traverse the list
-    while ( node_type::state(*curr_atomic) != unordered_map_node_state::INVALID) {
-      const uint32_t curr_index = node_type::next(*prev_atomic);
-
-      const uint32_t hash_value = map.key_hash(map.nodes[curr_index].value.first);
-      const uint32_t hash_index = hash_value%map.hashes.size();
-
-      printf("List %d.%d: key(%d) value(%d) hash(%d) hash_index(%d)\n", i, n++, map.nodes[curr_index].value.first, map.nodes[curr_index].value.second, hash_value, hash_index);
-
-      prev_atomic = curr_atomic;
-      curr_atomic = next_atomic;
-      next_atomic = &map.nodes[node_type::next(*curr_atomic)].atomic;
-    }
-  }
-#endif
-
 };
 
-template <class MapData, bool IsConst = MapData::is_const_map>
-struct unordered_map_remove_marked_deleted_keys_functor
+template <class MapData>
+struct unordered_map_remove_pending_delete_keys_functor
 {
   typedef typename MapData::device_type device_type;
   typedef typename device_type::size_type size_type;
   typedef typename MapData::node_type node_type;
 
-  MapData map;
+  node_type * nodes;
+  uint64_t  * hashes;
 
-  unordered_map_remove_marked_deleted_keys_functor( MapData arg_map )
-    : map(arg_map)
+  unordered_map_remove_pending_delete_keys_functor( MapData arg_map )
+    : nodes( const_cast<node_type *>(arg_map.nodes.ptr_on_device()) )
+    , hashes( const_cast<uint64_t *>(arg_map.hashes.ptr_on_device()) )
   {
-    parallel_for( map.hashes.size(), *this);
+    parallel_for( arg_map.hashes.size(), *this);
     device_type::fence();
   }
 
   KOKKOS_INLINE_FUNCTION
   void operator()( size_type i) const
   {
-    volatile uint64_t * prev_atomic = &map.hashes[i];
-    volatile uint64_t * curr_atomic = &map.nodes[ node_type::next(*prev_atomic)].atomic;
+    volatile uint64_t * prev_atomic = &hashes[i];
+    volatile uint64_t * curr_atomic = &nodes[ node_type::next(*prev_atomic)].atomic;
 
     while (node_type::state(*curr_atomic) != unordered_map_node_state::INVALID) {
       uint64_t prev = *prev_atomic;
       uint64_t curr = *curr_atomic;
-      if (node_type::state(curr) == unordered_map_node_state::MARKED_DELETED) {
+      if (node_type::state(curr) == unordered_map_node_state::PENDING_DELETE) {
         //remove the node
-        const uint32_t curr_index = node_type::next(prev);
-
         *prev_atomic = node_type::make_atomic( node_type::next(curr), node_type::state(prev) );
         *curr_atomic = node_type::make_atomic( 0, unordered_map_node_state::UNUSED );
 
-        curr_atomic = &map.nodes[ node_type::next(*prev_atomic)].atomic;
+        curr_atomic = &nodes[ node_type::next(*prev_atomic)].atomic;
       }
       else {
         prev_atomic = curr_atomic;
-        curr_atomic = &map.nodes[ node_type::next(*prev_atomic)].atomic;
+        curr_atomic = &nodes[ node_type::next(*prev_atomic)].atomic;
       }
     }
   }
-};
-
-template <class MapData>
-struct unordered_map_remove_marked_deleted_keys_functor<MapData, true /*is const map*/>
-{
-  //static_assert(false, "Error: Cannot initiazlize a constant map");
-  struct ERROR_CANNOT_MODIFY_A_CONST_UNORDERED_MAP {};
-
-  StaticAssert<false, ERROR_CANNOT_MODIFY_A_CONST_UNORDERED_MAP> msg;
 };
 
 template <typename Key, typename T, typename Device, typename Compare, typename Hash>
 struct unordered_map_data
 {
   typedef unordered_map_data<Key,T,Device,Compare,Hash> self_type;
-  typedef unordered_map_data< typename remove_const<Key>::type, typename remove_const<T>::type, Device, Compare, Hash> insertable_map_type;
-  typedef unordered_map_data< typename add_const<Key>::type, typename remove_const<T>::type, Device, Compare, Hash> modifiable_map_type;
-  typedef unordered_map_data< typename add_const<Key>::type, typename add_const<T>::type, Device, Compare, Hash> const_map_type;
 
-  enum { has_const_key_type = is_const<Key>::value };
-  enum { has_void_mapped_type = is_same<T,void>::value };
-  enum { has_const_mapped_type = has_void_mapped_type || is_const<T>::value };
-  enum { is_const_map = has_const_key_type && has_const_mapped_type };
+  typedef typename remove_const<Key>::type key_type;
+  typedef typename add_const<Key>::type const_key_type;
+
+  typedef typename remove_const<T>::type mapped_type;
+  typedef typename add_const<T>::type const_mapped_type;
 
   typedef Device device_type;
   typedef Compare compare_type;
   typedef Hash hash_type;
 
-  typedef typename remove_const<Key>::type key_type;
-  typedef typename remove_const<T>::type   mapped_type;
-  typedef pair<const key_type, mapped_type> value_type;
+  typedef unordered_map_data< key_type, mapped_type, Device, Compare, Hash>              insertable_map_type;
+  typedef unordered_map_data< const_key_type, mapped_type, Device, Compare, Hash>        modifiable_map_type;
+  typedef unordered_map_data< const_key_type, const_mapped_type, Device, Compare, Hash>  const_map_type;
+
+  static const bool has_const_key_type = is_const<Key>::value;
+  static const bool has_void_mapped_type = is_same<T,void>::value;
+  static const bool has_const_mapped_type = has_void_mapped_type || is_const<T>::value;
+  static const bool is_const_map = has_const_key_type && has_const_mapped_type;
+
+
+  typedef pair<const_key_type, mapped_type> value_type;
 
   typedef typename if_c< is_const_map, value_type const *, value_type *>::type pointer;
   typedef value_type const * const_pointer;
 
   typedef unordered_map_node<value_type> node_type;
-
-  typedef pair<int, pointer> insert_result;
-
-  typedef typename Impl::if_c<  has_void_mapped_type
-                              , int
-                              , mapped_type
-                             >::type insert_mapped_type;
 
   typedef uint32_t size_type;
 
@@ -428,19 +353,14 @@ struct unordered_map_data
                          , View< uint64_t *, device_type >
                        >::type uint64_t_view;
 
-  typedef typename if_c<   has_const_key_type
-                         , View< const int64_t *, device_type, MemoryTraits<RandomRead> >
-                         , View< int64_t *, device_type >
-                       >::type int64_t_view;
-
   typedef typename if_c<   is_const_map
                          , View< const node_type *, device_type, MemoryTraits<RandomRead> >
                          , View< node_type *, device_type >
                        >::type node_view;
 
+
   typedef View< uint32_t, device_type > scalar_view;
   typedef typename scalar_view::HostMirror host_scalar_view;
-
 
   unordered_map_data(  uint32_t num_nodes
                      , compare_type compare
@@ -452,7 +372,11 @@ struct unordered_map_data
     , key_compare(compare)
     , key_hash(hash)
   {
-    unordered_map_init_data_functor<self_type> init(*this);
+    uint64_t * first_atomic = &nodes.ptr_on_device()->atomic;
+    uint64_t atomic = node_type::make_atomic(0, unordered_map_node_state::INVALID);
+
+    typedef Kokkos::DeepCopy< typename device_type::memory_space, Kokkos::HostSpace > deep_copy;
+    deep_copy(first_atomic, &atomic, sizeof(uint64_t));
   }
 
   template <typename MMapType>
@@ -505,11 +429,11 @@ struct unordered_map_data
 
     std::ostringstream out;
 
-    const uint32_t failed_inserts = get_num_failed_inserts();
+    const uint32_t failed = failed_inserts();
 
-    if (failed_inserts > 0u) {
-      out << "Error: " << failed_inserts << " failed insertions\n";
-      result.total_errors+=failed_inserts;
+    if (failed > 0u) {
+      out << "Error: " << failed << " failed insertions\n";
+      result.total_errors+=failed;
     }
 
 
@@ -542,17 +466,18 @@ struct unordered_map_data
 
     if (result.total_errors > 0u) {
       out << "  Details:\n";
-      out << "             UNUSED: " << result.state_count.value[ unordered_map_node_state::UNUSED ] << "\n";
-      out << "               USED: " << result.state_count.value[ unordered_map_node_state::USED ] << "\n";
-      out << "     MARKED_DELETED: " << result.state_count.value[ unordered_map_node_state::MARKED_DELETED ] << "\n";
-      out << "     PENDING_INSERT: " << result.state_count.value[ unordered_map_node_state::PENDING_INSERT ] << "\n";
-      out << "            INVALID: " << result.state_count.value[ unordered_map_node_state::INVALID ] << "\n";
-      //out << "    free node count: " << result.free_node_count << "\n";
-      out << "     duplicate keys: " << result.hash_list.duplicate_keys_errors << "\n";
-      out << "    unordered lists: " << result.hash_list.unordered_list_errors << "\n";
-      out << "   incorrect hashes: " << result.hash_list.incorrect_hash_index_errors << "\n";
-      out << " num failed inserts: " << get_num_failed_inserts() << "\n";
-      out << "       TOTAL ERRORS: " << result.total_errors;
+      out << "    Node States: ";
+      out << " {UNUSED: " << result.state_count.value[ unordered_map_node_state::UNUSED ] << "}";
+      out << " {USED: " << result.state_count.value[ unordered_map_node_state::USED ] << "}";
+      out << " {PENDING_DELETE: " << result.state_count.value[ unordered_map_node_state::PENDING_DELETE ] << "}";
+      out << " {PENDING_INSERT: " << result.state_count.value[ unordered_map_node_state::PENDING_INSERT ] << "}";
+      out << " {INVALID: " << result.state_count.value[ unordered_map_node_state::INVALID ] << "}\n";
+      out << "   Errors: ";
+      out << " {duplicate_keys: " << result.hash_list.duplicate_keys_errors << "}";
+      out << " {unordered_lists: " << result.hash_list.unordered_list_errors << "}";
+      out << " {incorrect hashes: " << result.hash_list.incorrect_hash_index_errors << "}";
+      out << " {failed inserts: " << failed << "}\n";
+      out << "   TOTAL Errors: " << result.total_errors;
       out << std::endl;
 
       throw std::runtime_error( out.str() );
@@ -560,12 +485,12 @@ struct unordered_map_data
   }
 
 
-  void remove_keys_marked_deleted() const
+  void remove_pending_delete_keys() const
   {
-    unordered_map_remove_marked_deleted_keys_functor<self_type> remove_keys(*this);
+    unordered_map_remove_pending_delete_keys_functor<self_type> remove_keys(*this);
   }
 
-  uint32_t get_num_failed_inserts() const
+  uint32_t failed_inserts() const
   {
     host_scalar_view tmp = create_mirror_view(num_failed_inserts);
     deep_copy(tmp, num_failed_inserts);
