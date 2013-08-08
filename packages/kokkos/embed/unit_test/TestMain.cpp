@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <KokkosCore_config.h>
 #include <Kokkos_Macros.hpp>
 
 template< class Space > int test();
@@ -32,6 +33,8 @@ int main()
   std::cout << std::endl << "test_inner_product< Host >()" << std::endl ;
   test_inner_product< Kokkos::HostSpace >();
 
+#if defined( KOKKOS_HAVE_CUDA )
+
   std::cout << std::endl << "test< Cuda >()" << std::endl ;
   test< Kokkos::CudaSpace >();
 
@@ -43,6 +46,8 @@ int main()
 
   std::cout << std::endl << "test_inner_product< Cuda >()" << std::endl ;
   test_inner_product< Kokkos::CudaSpace >();
+
+#endif
 
   return 0 ;
 }

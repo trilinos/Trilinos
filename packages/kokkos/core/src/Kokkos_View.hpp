@@ -338,7 +338,7 @@ template< class OutputView , unsigned Rank = OutputView::Rank >
 struct ViewInit
 {
   typedef typename OutputView::device_type device_type ;
-  typedef typename OutputView::value_type  value_type ;
+  typedef typename OutputView::scalar_type scalar_type ;
   typedef typename device_type::size_type  size_type ;
 
   const OutputView output ;
@@ -349,7 +349,7 @@ struct ViewInit
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i0 ) const
   {
-    value_type default_value = value_type();
+    const scalar_type default_value = scalar_type();
 
     for ( size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
     for ( size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
@@ -358,7 +358,7 @@ struct ViewInit
     for ( size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
     for ( size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
     for ( size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
-      new (&output(i0,i1,i2,i3,i4,i5,i6,i7)) value_type(default_value) ;
+      new (&output(i0,i1,i2,i3,i4,i5,i6,i7)) scalar_type(default_value) ;
     }}}}}}}
   }
 };

@@ -457,6 +457,21 @@ public:
       return m_ptr_on_device[ i0 ];
     }
 
+  template< typename iType0 >
+  KOKKOS_INLINE_FUNCTION
+  typename Impl::EnableArrayViewOper<
+    traits, LayoutRight, 1, 1, iType0
+  >::type & operator()
+    ( const iType0 & i0 , const int     , const int = 0 , const int = 0 ,
+      const int = 0     , const int = 0 , const int = 0 , const int = 0 ) const
+    {
+      KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i0 ];
+    }
+
   // LayoutRight rank 2:
 
   template< typename iType0 , typename iType1 >
@@ -473,6 +488,21 @@ public:
       return m_ptr_on_device[ i1 + i0 * m_stride ];
     }
 
+  template< typename iType0 , typename iType1 >
+  KOKKOS_INLINE_FUNCTION
+  typename Impl::EnableArrayViewOper<
+    traits, LayoutRight, 2, 2, iType0, iType1
+  >::type & operator()
+    ( const iType0 & i0 , const iType1 & i1 , const int     , const int = 0 ,
+      const int = 0     , const int = 0     , const int = 0 , const int = 0 ) const
+    {
+      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i1 + i0 * m_stride ];
+    }
+
   // LayoutRight rank 3:
 
   template< typename iType0 , typename iType1 , typename iType2 >
@@ -481,6 +511,22 @@ public:
     traits, LayoutRight, 3, 3, iType0, iType1, iType2
   >::type & operator()
     ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
+    {
+      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i2 + m_shape.N2 * (
+                              i1 ) + i0 * m_stride ];
+    }
+
+  template< typename iType0 , typename iType1 , typename iType2 >
+  KOKKOS_INLINE_FUNCTION
+  typename Impl::EnableArrayViewOper<
+    traits, LayoutRight, 3, 3, iType0, iType1, iType2
+  >::type & operator()
+    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const int ,
+      const int = 0     , const int = 0     , const int = 0     , const int = 0 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
@@ -509,6 +555,24 @@ public:
     }
 
   // LayoutRight rank 5:
+  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
+  KOKKOS_INLINE_FUNCTION
+  typename Impl::EnableArrayViewOper<
+    traits, LayoutRight, 4, 4, iType0, iType1, iType2, iType3
+  >::type & operator()
+    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+      const int         , const int = 0     , const int = 0     , const int = 0 ) const
+    {
+      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i3 + m_shape.N3 * (
+                              i2 + m_shape.N2 * (
+                              i1 )) + i0 * m_stride ];
+    }
+
+  // LayoutRight rank 5:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 >
@@ -518,6 +582,25 @@ public:
   >::type & operator()
     ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
       const iType4 & i4 ) const
+    {
+      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i4 + m_shape.N4 * (
+                              i3 + m_shape.N3 * (
+                              i2 + m_shape.N2 * (
+                              i1 ))) + i0 * m_stride ];
+    }
+
+  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
+            typename iType4 >
+  KOKKOS_INLINE_FUNCTION
+  typename Impl::EnableArrayViewOper<
+    traits, LayoutRight, 5, 5, iType0, iType1, iType2, iType3, iType4 
+  >::type & operator()
+    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+      const iType4 & i4 , const int         , const int = 0     , const int = 0 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
@@ -551,6 +634,26 @@ public:
                               i1 )))) + i0 * m_stride ];
     }
 
+  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
+            typename iType4 , typename iType5 >
+  KOKKOS_INLINE_FUNCTION
+  typename Impl::EnableArrayViewOper<
+    traits, LayoutRight, 6, 6, iType0, iType1, iType2, iType3, iType4, iType5
+  >::type & operator()
+    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+      const iType4 & i4 , const iType5 & i5 , const int         , const int = 0 ) const
+    {
+      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i5 + m_shape.N5 * (
+                              i4 + m_shape.N4 * (
+                              i3 + m_shape.N3 * (
+                              i2 + m_shape.N2 * (
+                              i1 )))) + i0 * m_stride ];
+    }
+
   // LayoutRight rank 7:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -561,6 +664,27 @@ public:
   >::type & operator()
     ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
       const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
+    {
+      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i6 + m_shape.N6 * (
+                              i5 + m_shape.N5 * (
+                              i4 + m_shape.N4 * (
+                              i3 + m_shape.N3 * (
+                              i2 + m_shape.N2 * (
+                              i1 ))))) + i0 * m_stride ];
+    }
+
+  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
+            typename iType4 , typename iType5 , typename iType6 >
+  KOKKOS_INLINE_FUNCTION
+  typename Impl::EnableArrayViewOper<
+    traits, LayoutRight, 7, 7, iType0, iType1, iType2, iType3, iType4, iType5, iType6
+  >::type & operator()
+    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+      const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const int ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
@@ -614,6 +738,20 @@ public:
       return m_ptr_on_device[ i0 ];
     }
 
+  template< typename iType0 >
+  KOKKOS_INLINE_FUNCTION
+  typename Impl::EnableArrayViewOper< traits, LayoutLeft, 1, 1, iType0 >
+    ::type & operator()
+    ( const iType0 & i0 , const int     , const int = 0 , const int = 0 ,
+      const int = 0 ,     const int = 0 , const int = 0 , const int = 0 ) const
+    {
+      KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i0 ];
+    }
+
   // LayoutLeft rank 2:
 
   template< typename iType0 , typename iType1 >
@@ -629,6 +767,20 @@ public:
       return m_ptr_on_device[ i0 + m_stride * i1 ];
     }
 
+  template< typename iType0 , typename iType1 >
+  KOKKOS_INLINE_FUNCTION
+  typename Impl::EnableArrayViewOper< traits, LayoutLeft, 2, 2, iType0, iType1 >
+    ::type & operator()
+    ( const iType0 & i0 , const iType1 & i1 , const int     , const int = 0 ,
+      const int = 0     , const int = 0     , const int = 0 , const int = 0 ) const
+    {
+      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i0 + m_stride * i1 ];
+    }
+
   // LayoutLeft rank 3:
 
   template< typename iType0 , typename iType1 , typename iType2 >
@@ -636,6 +788,21 @@ public:
   typename Impl::EnableArrayViewOper< traits, LayoutLeft, 3, 3, iType0, iType1, iType2 >
     ::type & operator()
     ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
+    {
+      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i0 + m_stride * (
+                              i1 + m_shape.N1 * i2 ) ];
+    }
+
+  template< typename iType0 , typename iType1 , typename iType2 >
+  KOKKOS_INLINE_FUNCTION
+  typename Impl::EnableArrayViewOper< traits, LayoutLeft, 3, 3, iType0, iType1, iType2 >
+    ::type & operator()
+    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const int ,
+      const int = 0     , const int = 0     , const int = 0     , const int = 0 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
@@ -662,6 +829,22 @@ public:
                               i2 + m_shape.N2 * i3 )) ];
     }
 
+  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
+  KOKKOS_INLINE_FUNCTION
+  typename Impl::EnableArrayViewOper< traits, LayoutLeft, 4, 4, iType0, iType1, iType2, iType3 >
+    ::type & operator()
+    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+      const int         , const int = 0     , const int = 0     , const int = 0 ) const
+    {
+      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i0 + m_stride * (
+                              i1 + m_shape.N1 * (
+                              i2 + m_shape.N2 * i3 )) ];
+    }
+
   // LayoutLeft rank 5:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -671,6 +854,24 @@ public:
     ::type & operator()
     ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
       const iType4 & i4 ) const
+    {
+      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i0 + m_stride * (
+                              i1 + m_shape.N1 * (
+                              i2 + m_shape.N2 * (
+                              i3 + m_shape.N3 * i4 ))) ];
+    }
+
+  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
+            typename iType4 >
+  KOKKOS_INLINE_FUNCTION
+  typename Impl::EnableArrayViewOper< traits, LayoutLeft, 5, 5, iType0, iType1, iType2, iType3, iType4 >
+    ::type & operator()
+    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+      const iType4 & i4 , const int         , const int = 0     , const int = 0 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
@@ -703,6 +904,25 @@ public:
                               i4 + m_shape.N4 * i5 )))) ];
     }
 
+  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
+            typename iType4 , typename iType5 >
+  KOKKOS_INLINE_FUNCTION
+  typename Impl::EnableArrayViewOper< traits, LayoutLeft, 6, 6, iType0, iType1, iType2, iType3, iType4, iType5 >
+    ::type & operator()
+    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+      const iType4 & i4 , const iType5 & i5 , const int         , const int = 0 ) const
+    {
+      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i0 + m_stride * (
+                              i1 + m_shape.N1 * (
+                              i2 + m_shape.N2 * (
+                              i3 + m_shape.N3 * (
+                              i4 + m_shape.N4 * i5 )))) ];
+    }
+
   // LayoutLeft rank 7:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -712,6 +932,26 @@ public:
     ::type & operator()
     ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
       const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
+    {
+      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
+      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
+      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
+
+      return m_ptr_on_device[ i0 + m_stride * (
+                              i1 + m_shape.N1 * (
+                              i2 + m_shape.N2 * (
+                              i3 + m_shape.N3 * (
+                              i4 + m_shape.N4 * (
+                              i5 + m_shape.N5 * i6 ))))) ];
+    }
+
+  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
+            typename iType4 , typename iType5 , typename iType6 >
+  KOKKOS_INLINE_FUNCTION
+  typename Impl::EnableArrayViewOper< traits, LayoutLeft, 7, 7, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >
+    ::type & operator()
+    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+      const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const int ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
