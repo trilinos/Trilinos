@@ -8,6 +8,8 @@
 #ifndef KOKKOS_CRSMATRIX_H_
 #define KOKKOS_CRSMATRIX_H_
 
+#include <assert.h>
+
 #include <Kokkos_View.hpp>
 #include <Kokkos_Atomic.hpp>
 #ifdef KOKKOS_HAVE_CUDA
@@ -26,11 +28,6 @@
 #  include <mkl_spblas.h>
 #  include <Kokkos_CRSMatrix_MKL.hpp>
 #endif // KOKKOS_USE_MKL
-
-// FIXME (mfh 21 Jun 2013) What's this for?
-#ifndef KOKKOS_INLINE_FUNCTION
-#define KOKKOS_INLINE_FUNCTION
-#endif
 
 namespace Kokkos {
 
