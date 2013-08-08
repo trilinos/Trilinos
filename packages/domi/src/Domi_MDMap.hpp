@@ -42,17 +42,26 @@
 #ifndef DOMI_MDMAP_HPP
 #define DOMI_MDMAP_HPP
 
+// Domi includes
+#include "Domi_ConfigDefs.hpp"
+#include "Domi_Utils.hpp"
+#include "Domi_Slice.hpp"
+#include "Domi_MDComm.hpp"
+#include "Domi_MDArray.hpp"
+
 // Teuchos includes
 #include "Teuchos_Tuple.hpp"
 
 // Kokkos includes
 #include "Kokkos_DefaultNode.hpp"
 
-// Domi includes
-#include "Domi_ConfigDefs.hpp"
-#include "Domi_Utils.hpp"
-#include "Domi_Slice.hpp"
-#include "Domi_MDComm.hpp"
+#ifdef HAVE_EPETRA
+#include "Epetra_Map.h"
+#endif
+
+#ifdef HAVE_TPETRA
+#include "Tpetra_Map.hpp"
+#endif
 
 namespace Domi
 {
@@ -123,6 +132,8 @@ template< class LocalOrd,
 class MDMap
 {
 public:
+
+  typedef typename MDArray< LocalOrd >::size_type size_type;
 
   /** \name Constructors and destructor */
   //@{
@@ -413,10 +424,28 @@ public:
 
   //@}
 
-  // GlobalOrd getGlobalStride(int axis) const;
-  // LocalOrd getLocalStride(int axis) const;
-  // // Axis map methods should go here ...
-  // // Conversion to Epetra, Tpetra or Xpetra Maps should go here ...
+  /** \name Conversions to other Maps */
+  //@{
+
+#ifdef HAVE_EPETRA
+
+  Teuchos::RCP< const Epetra_Map > getEpetraMap(bool withHalos=true) const;
+
+  Teuchos::ArrayRCP< const Epetra_Map > getEpetraAxisMaps() const;
+
+#endif
+
+#ifdef HAVE_TPETRA
+
+  Teuchos::RCP< const Tpetra::Map< LocalOrd, GlobalOrd, Node > >
+  getTpetraMap(bool withHalos=true) const;
+
+  Teuchos::ArrayRCP< const Tpetra::Map< LocalOrd, GlobalOrd, Node > >
+  getTpetraAxisMaps() const;  
+
+#endif
+
+  //@}
 
   /** \name GLobal/local index conversion methods */
   //@{
@@ -468,7 +497,7 @@ public:
 
 private:
 
-  // Typedef for the exteriior buffer type, a tuple that stores lower
+  // Typedef for the exterior buffer type, a tuple that stores lower
   // and upper ghost or halo sizes, which can be different due to
   // processors on domain boundaries.
   typedef Teuchos::Tuple< int, 2 > ext_buffer;
@@ -554,6 +583,50 @@ private:
 
   // The Kokkos node type
   Teuchos::RCP< Node > _node;
+
+#ifdef HAVE_EPETRA
+  // An RCP pointing to an Epetra_Map that is equivalent to this
+  // MDMap, including halos.  It is mutable because we do not
+  // construct it until it asked for by a get method that is const.
+  mutable Teuchos::RCP< const Epetra_Map > _epetraMap;
+
+  // An RCP pointing to an Epetra_Map that is equivalent to this
+  // MDMap, excluding halos.  The returned Epetra_Map thus indicates
+  // what IDs are owned by this processor.  It is mutable because we
+  // do not construct it until it asked for by a get method that is
+  // const.
+  mutable Teuchos::RCP< const Epetra_Map > _epetraOwnMap;
+
+  // An ArrayRCP that stores Epetra_Maps that represent the
+  // distribution of axis IDs along each axis.  It is mutable because
+  // we do not construct it until it asked for by a get method that is
+  // const.
+  mutable Teuchos::ArrayRCP< const Epetra_Map > _epetraAxisMaps;
+#endif
+
+#ifdef HAVE_TPETRA
+  // An RCP pointing to a Tpetra::Map that is equivalent to this
+  // MDMap, including halos.  It is mutable because we do not
+  // construct it until it asked for by a get method that is const.
+  mutable Teuchos::RCP< const Tpetra::Map< LocalOrd, GlobalOrd, Node > >
+  _tpetraMap;
+
+  // An RCP pointing to a Tpetra::Map that is equivalent to this
+  // MDMap, excluding halos.  The returned Tpetra::Map thus indicates
+  // what IDs are owned by this processor.  It is mutable because we
+  // do not construct it until it asked for by a get method that is
+  // const.
+  mutable Teuchos::RCP< const Tpetra::Map< LocalOrd, GlobalOrd, Node > >
+  _tpetraOwnMap;
+
+  // An ArrayRCP that stores Tpetra::Maps that represent the
+  // distribution of axis IDs along each axis.  It is mutable because
+  // we do not construct it until it asked for by a get method that is
+  // const.
+  mutable Teuchos::ArrayRCP< const Tpetra::Map< LocalOrd, GlobalOrd, Node > >
+  _tpetraAxisMaps;
+#endif
+
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -1125,25 +1198,136 @@ MDMap< LocalOrd, GlobalOrd, Node >::getStorageOrder() const
   return _storageOrder;
 }
 
-// ////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
 
-// template< class LocalOrd, class GlobalOrd, class Node >
-// GlobalOrd
-// MDMap< LocalOrd, GlobalOrd, Node >::getGlobalStride(int axis) const
-// {
+#ifdef HAVE_EPETRA
+// Default implementation for arbitrary LocalOrd, GlobalOrd
+template< class LocalOrd, class GlobalOrd, class Node >
+Teuchos::RCP< const Epetra_Map >
+MDMap< LocalOrd, GlobalOrd, Node >::getEpetraMap(bool withHalos) const
+{
+  throw MapOrdinalError("MDMap must use int GlobalOrd and LocalOrd to be "
+                        "converted to an Epetra_Map");
+}
 
-// }
-
-// ////////////////////////////////////////////////////////////////////////
-
-// template< class LocalOrd, class GlobalOrd, class Node >
-// LocalOrd
-// MDMap< LocalOrd, GlobalOrd, Node >::getLocalStride(int axis) const
-// {
-
-// }
+// Specialized implementation for int LocalOrd and GlobalOrd
+template< >
+Teuchos::RCP< const Epetra_Map >
+MDMap< int, int >::getEpetraMap(bool withHalos) const
+{
+  if (withHalos)
+  {
+    if (_epetraMap.is_null())
+    {
+      int numDims = getNumDims();
+      Teuchos::Array<size_type> localDims(numDims);
+      for (int axis = 0; axis < numDims; ++axis)
+        localDims[axis] = _localDims[axis];
+      MDArray<int> myElements(localDims);
+      Teuchos::Array<int> index(numDims);
+      for (MDArray<int>::iterator it = myElements.begin();
+           it != myElements.end(); ++it)
+      {
+        int globalID = 0;
+        for (int axis = 0; axis < numDims; ++axis)
+        {
+          int axisRank = getAxisRank(axis);
+          int start    = _globalRankBounds[axis][axisRank].start() -
+                         _halos[axis][0];
+          globalID += (start + it.index(axis)) * _globalStrides[axis];
+        }
+        *it = globalID;
+      }
+      Teuchos::RCP< const Epetra_Comm > epetraComm = _mdComm->getEpetraComm();
+      _epetraMap = Teuchos::rcp(new Epetra_Map(-1,
+                                               myElements.size(),
+                                               myElements.getRawPtr(),
+                                               0,
+                                               *epetraComm));
+    }
+    return _epetraMap;
+  }
+  else
+  {
+    if (_epetraOwnMap.is_null())
+    {
+      int numDims = getNumDims();
+      Teuchos::Array<int> index(numDims);
+      Teuchos::Array<size_type> myDims(numDims);
+      for (int axis = 0; axis < numDims; ++axis)
+      {
+        myDims[axis] = _localDims[axis] - _halos[axis][0] - _halos[axis][1];
+        int axisRank = getAxisRank(axis);
+        if (axisRank == 0)
+          myDims[axis] += _ghosts[axis][0];
+        if (axisRank == getAxisCommSize(axis)-1)
+          myDims[axis] += _ghosts[axis][1];
+      }
+      MDArray<int> myElements(myDims());
+      for (MDArray<int>::iterator it = myElements.begin();
+           it != myElements.end(); ++it)
+      {
+        int globalID = 0;
+          for (int axis = 0; axis < numDims; ++axis)
+          {
+            int axisRank = getAxisRank(axis);
+            int start    = _globalRankBounds[axis][axisRank].start();
+            if (axisRank == 0)
+              start -= _ghosts[axis][0];
+            if (axisRank == getAxisCommSize(axis)-1)
+              start += _ghosts[axis][1];
+            globalID += (start + it.index(axis)) * _globalStrides[axis];
+          }
+      }
+      Teuchos::RCP< const Epetra_Comm > epetraComm = _mdComm->getEpetraComm();
+      _epetraMap = Teuchos::rcp(new Epetra_Map(-1,
+                                               myElements.size(),
+                                               myElements.getRawPtr(),
+                                               0,
+                                               *epetraComm));
+    }
+    return _epetraOwnMap;
+  }
+}
+#endif
 
 ////////////////////////////////////////////////////////////////////////
+
+#ifdef HAVE_EPETRA
+// template< class LocalOrd, class GlobalOrd, class Node >
+// Teuchos::ArrayRCP< const Epetra_Map >
+// MDMap< LocalOrd, GlobalOrd, Node >::getEpetraAxisMaps() const
+// {
+// }
+#endif
+
+////////////////////////////////////////////////////////////////////////
+
+#ifdef HAVE_TPETRA
+template< class LocalOrd, class GlobalOrd, class Node >
+Teuchos::RCP< const Tpetra::Map< LocalOrd, GlobalOrd, Node > >
+MDMap< LocalOrd, GlobalOrd, Node >::getTpetraMap(bool withHalos) const
+{
+  if (withHalos)
+  {
+    if (not _tpetraMap.is_null()) return _tpetraMap;
+  }
+  else
+  {
+    if (not _tpetraOwnMap.is_null()) return _tpetraOwnMap;
+  }
+}
+#endif
+
+////////////////////////////////////////////////////////////////////////
+
+#ifdef HAVE_TPETRA
+template< class LocalOrd, class GlobalOrd, class Node >
+Teuchos::ArrayRCP< const Tpetra::Map< LocalOrd, GlobalOrd, Node > >
+MDMap< LocalOrd, GlobalOrd, Node >::getTpetraAxisMaps() const
+{
+}
+#endif
 
 template< class LocalOrd, class GlobalOrd, class Node >
 Teuchos::Array< GlobalOrd >
