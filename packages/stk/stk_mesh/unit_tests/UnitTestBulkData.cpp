@@ -1357,7 +1357,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting)
           stk::mesh::Entity const *to_e = mesh.end(node, irank);
           for (; to_i != to_e; ++to_i)
           {
-            std::cout << "P[" << p_rank << "] rel = " << mesh.parallel_owner_rank(*to_i) << std::endl;
+            std::cout << "P[" << p_rank << "] related entity = " << mesh.entity_key(*to_i) << " owner_rank = " << mesh.parallel_owner_rank(*to_i) << std::endl;
           }
         }
       }
@@ -1376,12 +1376,13 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting)
     }
   mesh.modification_end();
 
-  if (1 || p_rank == 2)
+  if (1)
     {
       unsigned id=4;
       Entity node = mesh.get_entity(MetaData::NODE_RANK, id);
       //
 
+      if (mesh.is_valid(node))
       {
         for (stk::mesh::EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
         {
@@ -1464,7 +1465,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityPartsOfShared)
 
     // On the processor that does *not* end up as the owner of the node, change its parts
     Entity changing_node = mesh.get_entity(node_key_to_move);
-    if (p_rank == 0) {
+    if (p_rank == 1) {
       PartVector add_parts(1, &extra_node_part);
       mesh.change_entity_parts(changing_node, add_parts);
     }
@@ -1482,7 +1483,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityPartsOfShared)
 
 
     // On the processor that owns the node, change its parts
-    if (p_rank == 1) {
+    if (p_rank == 0) {
 
       std::cout << "On the processor that owns the node, change its parts" << std::endl;
 

@@ -52,7 +52,7 @@ int BulkData::determine_new_owner( Entity entity ) const
   for ( PairIterEntityComm
         share = entity_comm_sharing(entity_key(entity)); ! share.empty() ; ++share ) {
     if ( share->proc < m_parallel_size &&
-         ( new_owner < share->proc || m_parallel_size <= new_owner ) ) {
+         ( share->proc < new_owner || m_parallel_size <= new_owner ) ) {
       new_owner = share->proc ;
     }
   }
