@@ -41,14 +41,15 @@
 // @HEADER
 */
 
-// Teuchos includes
-#include "Teuchos_UnitTestHarness.hpp"
-#include "Teuchos_DefaultComm.hpp"
-
 // Domi includes
+#include "Domi_ConfigDefs.hpp"
 #include "Domi_Utils.hpp"
 #include "Domi_MDComm.hpp"
 #include "Domi_Exceptions.hpp"
+
+// Teuchos includes
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_DefaultComm.hpp"
 
 namespace
 {
@@ -113,6 +114,11 @@ TEUCHOS_UNIT_TEST( MDComm, axisCommSizesConstructor )
     }
     TEST_ASSERT(not mdComm.isPeriodic(axis));
   }
+#ifdef HAVE_EPETRA
+  Teuchos::RCP< const Epetra_Comm > epetraComm = mdComm.getEpetraComm();
+  TEST_EQUALITY(epetraComm->NumProc(), comm->getSize());
+  TEST_EQUALITY(epetraComm->MyPID(), comm->getRank());
+#endif
 }
 
 TEUCHOS_UNIT_TEST( MDComm, axisCommSizesPeriodicConstructor )
@@ -493,6 +499,15 @@ TEUCHOS_UNIT_TEST( MDComm, subCommLowerLeft )
   {
     TEST_EQUALITY(subMDComm.getNumDims(), 0);
   }
+#ifdef HAVE_EPETRA
+  if (partOfSubComm)
+  {
+    Teuchos::RCP< const Epetra_Comm > epetraComm = subMDComm.getEpetraComm();
+    TeuchosCommRCP teuchosComm = subMDComm.getTeuchosComm();
+    TEST_EQUALITY(epetraComm->NumProc(), teuchosComm->getSize());
+    TEST_EQUALITY(epetraComm->MyPID(), teuchosComm->getRank());
+  }
+#endif
 }
 
 TEUCHOS_UNIT_TEST( MDComm, subCommLowerRight )
@@ -566,6 +581,15 @@ TEUCHOS_UNIT_TEST( MDComm, subCommLowerRight )
   {
     TEST_EQUALITY_CONST(subMDComm.getNumDims(), 0);
   }
+#ifdef HAVE_EPETRA
+  if (partOfSubComm)
+  {
+    Teuchos::RCP< const Epetra_Comm > epetraComm = subMDComm.getEpetraComm();
+    TeuchosCommRCP teuchosComm = subMDComm.getTeuchosComm();
+    TEST_EQUALITY(epetraComm->NumProc(), teuchosComm->getSize());
+    TEST_EQUALITY(epetraComm->MyPID(), teuchosComm->getRank());
+  }
+#endif
 }
 
 TEUCHOS_UNIT_TEST( MDComm, subCommUpperLeft )
@@ -639,6 +663,15 @@ TEUCHOS_UNIT_TEST( MDComm, subCommUpperLeft )
   {
     TEST_EQUALITY_CONST(subMDComm.getNumDims(), 0);
   }
+#ifdef HAVE_EPETRA
+  if (partOfSubComm)
+  {
+    Teuchos::RCP< const Epetra_Comm > epetraComm = subMDComm.getEpetraComm();
+    TeuchosCommRCP teuchosComm = subMDComm.getTeuchosComm();
+    TEST_EQUALITY(epetraComm->NumProc(), teuchosComm->getSize());
+    TEST_EQUALITY(epetraComm->MyPID(), teuchosComm->getRank());
+  }
+#endif
 }
 
 TEUCHOS_UNIT_TEST( MDComm, subCommUpperRight )
@@ -713,6 +746,15 @@ TEUCHOS_UNIT_TEST( MDComm, subCommUpperRight )
     TEST_THROW(subMDComm.getLowerNeighbor(0), Domi::SubcommunicatorError);
     TEST_THROW(subMDComm.getUpperNeighbor(0), Domi::SubcommunicatorError);
   }
+#ifdef HAVE_EPETRA
+  if (partOfSubComm)
+  {
+    Teuchos::RCP< const Epetra_Comm > epetraComm = subMDComm.getEpetraComm();
+    TeuchosCommRCP teuchosComm = subMDComm.getTeuchosComm();
+    TEST_EQUALITY(epetraComm->NumProc(), teuchosComm->getSize());
+    TEST_EQUALITY(epetraComm->MyPID(), teuchosComm->getRank());
+  }
+#endif
 }
 
 TEUCHOS_UNIT_TEST( MDComm, subCommPeriodic )
