@@ -95,6 +95,7 @@ public:
  */
 class MapOrdinalError : public std::runtime_error
 {
+public:
   /** \brief Constructor
    *
    * \param msg [in] Error message
