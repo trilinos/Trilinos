@@ -91,6 +91,19 @@ public:
   { }
 };
 
+/** \brief Map Ordinal Error exception type
+ */
+class MapOrdinalError : public std::runtime_error
+{
+  /** \brief Constructor
+   *
+   * \param msg [in] Error message
+   */
+  MapOrdinalError(std::string msg) :
+    std::runtime_error(msg)
+  { }
+};
+
 }
 
 #endif
