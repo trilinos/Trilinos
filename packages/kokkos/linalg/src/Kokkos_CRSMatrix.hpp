@@ -516,7 +516,7 @@ generateHostGraph ( OrdinalType nrows,
   _nnz = nrows*cols_per_row;
 
   h_entries_.resize(_nnz, OrdinalType(-1));
-  rows_.resize(_numRows);
+  rows_.resize(_numRows+1);
   rows_[0] = 0;
   for (int i = 0; i < _numRows; ++i)
     rows_[i+1] = rows_[i]+cols_per_row;
