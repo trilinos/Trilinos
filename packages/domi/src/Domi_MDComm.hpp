@@ -51,6 +51,14 @@
 #include "Domi_ConfigDefs.hpp"
 #include "Domi_Slice.hpp"
 
+#ifdef HAVE_EPETRA
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
+#endif
+
 namespace Domi
 {
 
@@ -217,6 +225,16 @@ public:
    */
   TeuchosCommRCP getTeuchosComm() const;
 
+#ifdef HAVE_EPETRA
+  /** \brief Get an equivalent Epetra communicator
+   *
+   * Note that if the communicator is not a full communicator, i.e. a
+   * sub-communicator, that the underlying Comm pointer may be NULL,
+   * depending on this processor's rank.
+   */
+  Teuchos::RCP< const Epetra_Comm > getEpetraComm() const;
+#endif
+
   /** \brief Get the number of dimensions
    *
    * This method will return 0 if the communicator is a
@@ -298,7 +316,13 @@ protected:
 private:
 
   // The Teuchos communicator
-  TeuchosCommRCP        _teuchosComm;
+  TeuchosCommRCP _teuchosComm;
+
+#ifdef HAVE_EPETRA
+  // An equivalent Epetra communicator.  This is mutable because we
+  // only compute it if requested by a get method that is const.
+  mutable Teuchos::RCP< const Epetra_Comm > _epetraComm;
+#endif
 
   // An array of the sizes of the communicator along each axis
   Teuchos::Array< int > _axisCommSizes;

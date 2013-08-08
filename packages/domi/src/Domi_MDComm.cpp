@@ -39,13 +39,18 @@
 // ***********************************************************************
 // @HEADER
 
-// Teuchos includes
-#include "Teuchos_TestForException.hpp"
-
 // Domi includes
 #include "Domi_Exceptions.hpp"
 #include "Domi_Utils.hpp"
 #include "Domi_MDComm.hpp"
+
+// Teuchos includes
+#include "Teuchos_TestForException.hpp"
+#ifdef HAVE_EPETRA
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
+#endif
 
 namespace Domi
 {
@@ -195,6 +200,32 @@ MDComm::getTeuchosComm() const
 {
   return _teuchosComm;
 }
+
+////////////////////////////////////////////////////////////////////////
+
+#ifdef HAVE_EPETRA
+Teuchos::RCP< const Epetra_Comm >
+MDComm::getEpetraComm() const
+{
+  if (_epetraComm.is_null())
+  {
+#ifdef HAVE_MPI
+    Teuchos::RCP< const Teuchos::MpiComm<int> > teuchosMpiComm =
+      Teuchos::rcp_dynamic_cast< const Teuchos::MpiComm<int> >(_teuchosComm);
+    Teuchos::RCP< const Teuchos::OpaqueWrapper< MPI_Comm > > opaqueMpiComm =
+      teuchosMpiComm->getRawMpiComm();
+    MPI_Comm mpiComm = opaqueMpiComm->operator()();
+    _epetraComm =
+      Teuchos::rcp< const Epetra_Comm >(new Epetra_MpiComm(mpiComm));
+#else
+    _epetraComm =
+      Teuchos::rcp< const Epetra_Comm >(new Epetra_SerialComm());
+#endif
+  }
+
+  return _epetraComm;
+}
+#endif
 
 ////////////////////////////////////////////////////////////////////////
 
