@@ -927,7 +927,7 @@ namespace stk
 
       //  ====================================================================================================================================
       //  ====================================================================================================================================
-      //  Local quad refinement
+      //  Local quad hanging-node refinement
       //  ====================================================================================================================================
       //  ====================================================================================================================================
 
@@ -1173,7 +1173,264 @@ namespace stk
         }
       }
 
+      //  ====================================================================================================================================
+      //  ====================================================================================================================================
+      //  Local hex hanging-node refinement
+      //  ====================================================================================================================================
+      //  ====================================================================================================================================
+
+      class SetElementFieldHexCorner : public percept::ElementOp
+      {
+        percept::PerceptMesh& m_eMesh;
+        stk::mesh::FieldBase *m_field;
+      public:
+        SetElementFieldHexCorner(percept::PerceptMesh& eMesh, stk::mesh::FieldBase *field) : m_eMesh(eMesh), m_field(field) {
+        }
+
+        virtual bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
+        {
+          double *f_data = m_eMesh.field_data(field, element);
+          stk::mesh::FieldBase* coord_field = m_eMesh.get_coordinates_field();
+
+          const MyPairIterRelation elem_nodes(bulkData, element, stk::mesh::MetaData::NODE_RANK );
+
+          unsigned num_node = elem_nodes.size();
+          double c[] = {0,0,0};
+          for (unsigned inode=0; inode < num_node; inode++)
+            {
+              mesh::Entity node = elem_nodes[ inode ].entity();
+              double *c_data = m_eMesh.field_data(coord_field, node);
+              c[0] += c_data[0]/double(num_node);
+              c[1] += c_data[1]/double(num_node);
+              c[2] += c_data[2]/double(num_node);
+            }
+          if ((-0.1 < c[0] && c[0] < 0.1) &&
+              (-0.1 < c[1] && c[1] < 0.1) &&
+              (-0.1 < c[2] && c[2] < 0.1) )
+            {
+              f_data[0] = 1.0;
+            }
+          else
+            {
+              f_data[0] = -1.0;
+            }
+          // FIXME tmp
+          //f_data[0] = 1.0;
+          return false;  // don't terminate the loop
+        }
+        virtual void init_elementOp()
+        {
+          std::vector< const stk::mesh::FieldBase *> fields(1,m_field);
+          //stk::mesh::copy_owned_to_shared( *m_eMesh.get_bulk_data(), fields);
+          stk::mesh::communicate_field_data(m_eMesh.get_bulk_data()->shared_aura(), fields);
+        }
+        virtual void fini_elementOp() {
+          std::vector< const stk::mesh::FieldBase *> fields(1,m_field);
+          //stk::mesh::copy_owned_to_shared( *m_eMesh.get_bulk_data(), fields);
+          stk::mesh::communicate_field_data(m_eMesh.get_bulk_data()->shared_aura(), fields);
+        }
+
+      };
+
+
+      static void do_hex_local_corner_refine_sidesets(PerceptMesh& eMesh, int num_time_steps, bool save_intermediate=false, bool delete_parents=false)
+      {
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        if (p_size==1 || p_size == 3)
+          {
+            Local_Hex8_Hex8_N break_hex_to_hex_N(eMesh);
+            int scalarDimension = 0; // a scalar
+            stk::mesh::FieldBase* proc_rank_field    = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+            stk::mesh::FieldBase* refine_field       = eMesh.add_field("refine_field", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+
+            // for plotting, use doubles, for internal use, use int
+            stk::mesh::FieldBase* refine_level_d     = eMesh.add_field("refine_level_d", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+            ScalarIntFieldType& refine_level       = eMesh.get_fem_meta_data()->declare_field<ScalarIntFieldType>("refine_level");
+            stk::mesh::put_field( refine_level , stk::mesh::MetaData::ELEMENT_RANK , eMesh.get_fem_meta_data()->universal_part());
+            stk::io::set_field_role(refine_level, Ioss::Field::TRANSIENT);
+
+            eMesh.commit();
+            if (1)
+              {
+                SetElementRefineFieldValue sr(eMesh);
+                eMesh.elementOpLoop(sr, refine_level_d);
+              }
+
+            std::cout << "hex_local initial number elements= " << eMesh.get_number_elements() << std::endl;
+
+            eMesh.save_as( output_files_loc+"hex_local_"+post_fix[p_size]+".e.0");
+
+            stk::mesh::Selector univ_selector(eMesh.get_fem_meta_data()->universal_part());
+
+            ElementRefinePredicate erp(eMesh, &univ_selector, refine_field, 0.0);
+            PredicateBasedElementAdapter<ElementRefinePredicate>
+              breaker(erp, eMesh, break_hex_to_hex_N, proc_rank_field);
+
+            // special for local adaptivity
+            breaker.setRemoveOldElements(false);
+            breaker.setAlwaysInitializeNodeRegistry(false);
+            breaker.setNeedsRemesh(false); // special for quad/hex hanging node
+
+            SetElementFieldHexCorner set_ref_field(eMesh, refine_field);
+
+            int num_ref_passes = 6;
+            int num_unref_passes = 4;
+            int iplot=0;
+            if (1)
+              {
+                char buf[1000];
+                sprintf(buf, "%04d", iplot);
+                if (iplot == 0)
+                  eMesh.save_as("hex_cube_anim.e");
+                else
+                  eMesh.save_as("hex_cube_anim.e-s"+std::string(buf));
+                ++iplot;
+              }
+            for (int ipass=0; ipass < num_ref_passes; ipass++)
+              {
+
+                eMesh.elementOpLoop(set_ref_field, refine_field);
+                //eMesh.save_as(output_files_loc+"hex_anim_set_field_"+post_fix[p_size]+".e.s-"+toString(ipass+1));
+                if (1)
+                  {
+                    char buf[1000];
+                    sprintf(buf, "%04d", ipass);
+                    if (ipass == 0)
+                      eMesh.save_as("hex_set_field.e");
+                    else
+                      eMesh.save_as("hex_set_field.e-s"+std::string(buf));
+                  }
+
+                // {node-, edge-, face-neighors}
+                bool enforce_what[3] = {false, true, true};
+                erp.refine(breaker, enforce_what);
+                //breaker.doBreak();
+
+                MPI_Barrier( MPI_COMM_WORLD );
+                //VERIFY_OP_ON(true,==,false,"here");
+                bool check_what[3] = {false, false, true};
+                bool is_valid_2_to_1 = erp.check_two_to_one(check_what);
+                bool check_what_1[3] = {true, false, false};
+                bool is_valid_2_to_1_1 = erp.check_two_to_one(check_what_1);
+                std::cout << "P[" << eMesh.get_rank() << "] done... ipass= " << ipass << " hex_local number elements= "
+                          << eMesh.get_number_elements() << " check_two_to_one= " << is_valid_2_to_1
+                          << " node check_two_to_one= " << is_valid_2_to_1_1 << std::endl;
+                STKUNIT_EXPECT_TRUE(is_valid_2_to_1);
+                STKUNIT_EXPECT_TRUE(is_valid_2_to_1_1);
+                //breaker.deleteParentElements();
+                //eMesh.save_as("square_anim."+toString(ipass+1)+".e");
+                if (1)
+                  {
+                    char buf[1000];
+                    sprintf(buf, "%04d", iplot);
+                    if (iplot == 0)
+                      eMesh.save_as("hex_cube_anim.e");
+                    else
+                      eMesh.save_as("hex_cube_anim.e-s"+std::string(buf));
+                    ++iplot;
+                  }
+
+              }
+
+            for (int iunref_pass=0; iunref_pass < num_unref_passes; iunref_pass++)
+              {
+                eMesh.elementOpLoop(set_ref_field, refine_field);
+
+                bool enforce_what[3] = {false, false, true};
+                erp.unrefine(breaker, enforce_what);
+                std::cout << "P[" << eMesh.get_rank() << "] done... iunref_pass= " << iunref_pass << " hex_local number elements= " << eMesh.get_number_elements() << std::endl;
+                if (1)
+                  {
+                    char buf[1000];
+                    sprintf(buf, "%04d", iplot);
+                    if (iplot == 0)
+                      eMesh.save_as("hex_cube_anim.e");
+                    else
+                      eMesh.save_as("hex_cube_anim.e-s"+std::string(buf));
+                    ++iplot;
+                  }
+              }
+
+            SetElementRefineFieldValue set_ref_field_val_unref_all(eMesh, -1.0);
+
+            eMesh.save_as(output_files_loc+"hex_tmp_square_sidesets_hex_local_unref_"+post_fix[p_size]+".e");
+
+            eMesh.save_as(output_files_loc+"hex_cube_sidesets_final_hex_local_"+post_fix[p_size]+".e.s-"+toString(num_time_steps) );
+
+            for (int iunref=0; iunref < 10; iunref++)
+              {
+                eMesh.elementOpLoop(set_ref_field_val_unref_all, refine_field);
+                std::cout << "P[" << eMesh.get_rank() << "] iunrefAll_pass= " << iunref <<  std::endl;
+                bool enforce_what[3] = {false, false, true};
+                erp.unrefine(breaker, enforce_what);
+
+                if (1)
+                  {
+                    char buf[1000];
+                    sprintf(buf, "%04d", iplot);
+                    if (iplot == 0)
+                      eMesh.save_as("hex_cube_anim.e");
+                    else
+                      eMesh.save_as("hex_cube_anim.e-s"+std::string(buf));
+                    ++iplot;
+                  }
+
+                std::cout << "P[" << eMesh.get_rank() << "] done... iunrefAll_pass= " << iunref << " hex_local number elements= " << eMesh.get_number_elements() << std::endl;
+              }
+
+            if (delete_parents)
+              breaker.deleteParentElements();
+            std::cout << "hex_local final number elements= " << eMesh.get_number_elements() << std::endl;
+            eMesh.save_as(output_files_loc+"hex_cube_sidesets_final_unrefed_hex_local_"+post_fix[p_size]+".e."+toString(num_time_steps) );
+            //exit(123);
+
+            // end_demo
+          }
+      }
+
+      STKUNIT_UNIT_TEST(regr_localRefiner, break_hex_to_hex_N_5_ElementBased_hex_local_square_sidesets)
+      {
+        bool do_test = true;
+        //stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        if (do_test) {
+
+          // if this is a fresh installation, set to true to generate the initial meshes needed for this test (once only)
+          bool do_bootstrap_mesh = true;
+          if (do_bootstrap_mesh)
+          {
+            const unsigned n = 5;
+            const unsigned nx = n , ny = n, nz = n;
+
+            percept::PerceptMesh eMesh(3u);
+            std::string gmesh_spec = toString(nx)+"x"+toString(ny)+"x"+toString(nz)+"|bbox:-1,-1,-1,1,1,1";
+            eMesh.new_mesh(percept::GMeshSpec(gmesh_spec));
+            eMesh.commit();
+
+            eMesh.save_as(input_files_loc+"hex_cube_hex4_0.e");
+            //eMesh.print_info("test1",2);
+            //eMesh.dump_vtk("sqhex3.vtk",false);
+          }
+          //if (1) return;
+
+          {
+            PerceptMesh eMesh;
+            eMesh.open(input_files_loc+"hex_cube_hex4_0.e");
+
+            eMesh.output_active_children_only(true);
+
+            //int num_time_steps = 10;  // 10 for stress testing
+            //for (int istep=1; istep <= num_time_steps; istep++)
+            do_hex_local_corner_refine_sidesets(eMesh, 10, false, true);
+          }
+        }
+      }
+
       //=============================================================================
+      // Encore/Percept mimic
       //=============================================================================
       //=============================================================================
 

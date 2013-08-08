@@ -2947,6 +2947,7 @@ namespace stk {
 #include "RefinerPattern_Tet4_Tet4_N.hpp"
 
 #include "RefinerPattern_Quad4_Quad4_HangingNode.hpp"
+#include "RefinerPattern_Hex8_Hex8_HangingNode.hpp"
 
 namespace stk {
   namespace adapt {
@@ -3017,7 +3018,8 @@ namespace stk {
 
     typedef  RefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<4>,  -1  >            Local_Tet4_Tet4_N;
 
-    typedef  RefinerPattern<shards::Quadrilateral<4>,   shards::Quadrilateral<4>,  -1  >        Local_Quad4_Quad4_N;
+    typedef  RefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>,  -1  >          Local_Quad4_Quad4_N;
+    typedef  RefinerPattern<shards::Hexahedron<8>,    shards::Hexahedron<8>,  -1  >             Local_Hex8_Hex8_N;
 
     //DPM adding enum for use in initializing empty UniformRefiner objects
     enum Pattern
