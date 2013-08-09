@@ -61,7 +61,7 @@
 
 #ifdef KOKKOS_USE_CUSPARSE
 #  include <cusparse_v2.h>
-#  include <Kokkos_CRSMatrix_CuSparse.hpp>
+#  include <Kokkos_CrsMatrix_CuSparse.hpp>
 #endif // KOKKOS_USE_CUSPARSE
 
 #ifdef KOKKOS_USE_MKL
