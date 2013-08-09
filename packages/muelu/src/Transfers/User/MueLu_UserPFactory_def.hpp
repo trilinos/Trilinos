@@ -67,39 +67,60 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void UserPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & fineLevel, Level & coarseLevel) const {
+  void UserPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
     Input(fineLevel, "A");
     Input(fineLevel, "Nullspace");
-    Input(fineLevel, "CoarseMap");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void UserPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level & coarseLevel) const {
+  void UserPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& fineLevel, Level& coarseLevel) const {
     return BuildP(fineLevel, coarseLevel);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void UserPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level & fineLevel, Level & coarseLevel) const {
+  void UserPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
     RCP<Matrix>      A             = Get< RCP<Matrix> >      (fineLevel, "A");
     RCP<MultiVector> fineNullspace = Get< RCP<MultiVector> > (fineLevel, "Nullspace");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() == 1, Exceptions::RuntimeError, "Block size > 1 has not been implemented");
+    TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() != 1, Exceptions::RuntimeError, "Block size > 1 has not been implemented");
 
     const Teuchos::ParameterList& pL = GetParameterList();
-    std::string matrixFile = pL.get<std::string>("matrixFileName");
-    std::string mapFile    = pL.get<std::string>("mapFileName");
 
+    std::string    mapFile   = pL.get<std::string>("mapFileName");
     RCP<const Map> rowMap    = A->getRowMap();
     RCP<const Map> coarseMap = Utils::ReadMap(mapFile, rowMap->lib(), rowMap->getComm());
+    Set(coarseLevel, "CoarseMap", coarseMap);
 
-    RCP<Matrix> P = Utils::Read(matrixFile, rowMap, coarseMap);
+    std::string matrixFile = pL.get<std::string>("matrixFileName");
+    RCP<Matrix> P          = Utils::Read(matrixFile, rowMap, coarseMap, coarseMap, rowMap);
+#if 1
     Set(coarseLevel, "P", P);
+#else
+    // Expand column map by 1
+    RCP<Matrix> P1 = Utils::Multiply(*A, false, *P, false);
+    P = Utils::Read(matrixFile, rowMap, P1->getColMap(), coarseMap, rowMap);
+    Set(coarseLevel, "P", P);
+#endif
 
     RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(coarseMap, fineNullspace->getNumVectors());
-    P->apply(*fineNullspace, *coarseNullspace, Teuchos::NO_TRANS, Teuchos::ScalarTraits<SC>::one(), Teuchos::ScalarTraits<SC>::zero());
+    P->apply(*fineNullspace, *coarseNullspace, Teuchos::TRANS, Teuchos::ScalarTraits<SC>::one(), Teuchos::ScalarTraits<SC>::zero());
     Set(coarseLevel, "Nullspace", coarseNullspace);
+
+    // Coordinates transfer
+    int n = sqrt(coarseMap->getGlobalNumElements());
+    TEUCHOS_TEST_FOR_EXCEPTION(n*n != coarseMap->getGlobalNumElements(), Exceptions::RuntimeError, "Unfortunately, this is not the case, don't know what to do");
+
+    RCP<MultiVector> coarseCoords = MultiVectorFactory::Build(coarseMap, 2);
+    ArrayRCP<Scalar> x = coarseCoords->getDataNonConst(0), y = coarseCoords->getDataNonConst(1);
+    for (int LID = 0; LID < coarseMap->getNodeNumElements(); LID++) {
+      GlobalOrdinal GID = coarseMap->getGlobalElement(LID) - coarseMap->getIndexBase();
+      GlobalOrdinal i = GID % n, j = GID/n;
+      x[LID] = i;
+      y[LID] = j;
+    }
+    Set(coarseLevel, "Coordinates", coarseCoords);
 
     RCP<ParameterList> params = rcp(new ParameterList());
     params->set("printLoadBalancingInfo", true);
