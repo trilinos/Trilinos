@@ -56,7 +56,9 @@
 #include "Xpetra_Exceptions.hpp"
 
 #include "Xpetra_Map.hpp"
+#ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraMap.hpp"
+#endif
 
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
@@ -71,10 +73,13 @@ namespace Xpetra {
   RCP<Map<LocalOrdinal,GlobalOrdinal,Node2> > clone(const Map<LocalOrdinal,GlobalOrdinal,Node1>& map, const RCP<Node2>& node2) {
     if (map.lib() == UseEpetra)
       throw std::invalid_argument("Map::clone() functionality is only available for Tpetra");
-
+#ifdef HAVE_XPETRA_TPETRA
     RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node1> > tMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node1> >(rcpFromRef(map));
 
     return tMap->clone(node2);
+#else
+    return Teuchos::null;
+#endif
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node1, class Node2>
@@ -92,11 +97,14 @@ namespace Xpetra {
   RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > clone(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node1>& MV, const RCP<Node2>& node2) {
     if (MV.getMap()->lib() == UseEpetra)
       throw std::invalid_argument("MultiVector::clone() functionality is only available for Tpetra");
-
+#ifdef HAVE_XPETRA_TPETRA
     RCP<const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node1> > tMV =
         Teuchos::rcp_dynamic_cast<const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node1> >(rcpFromRef(MV));
 
     return tMV->clone(node2);
+#else
+    return Teuchos::null;
+#endif
   }
 
 

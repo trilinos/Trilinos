@@ -56,9 +56,11 @@
 
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_IfpackSmoother_fwd.hpp"
-#include "MueLu_Ifpack2Smoother_fwd.hpp"
 
+#if defined(HAVE_MUELU_IFPACK2)
+#include "MueLu_Ifpack2Smoother_fwd.hpp"
 #include "MueLu_Ifpack2Smoother.hpp"
+#endif
 
 // Note: TrilinosSmoother is a SmootherPrototype that cannot be turned into a smoother using Setup().
 //       When this prototype is cloned using Copy(), the clone is an Ifpack or an Ifpack2 smoother.
@@ -186,28 +188,33 @@ namespace MueLu {
 
   }; // class TrilinosSmoother
 
-   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-   template<typename Node2, typename LocalMatOps2>
-   Teuchos::RCP<MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node2,LocalMatOps2> >
-   TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::clone(const RCP<Node2>& node2, const Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2, LocalMatOps2> >& A_newnode) const {
-	
-        RCP<TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > cloneSmoother = rcp(new TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2>(type_, paramList_, overlap_, AFact_));
-	Teuchos::RCP<MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >  cloneSB;
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template<typename Node2, typename LocalMatOps2>
+  Teuchos::RCP<MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node2,LocalMatOps2> >
+  TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::clone(const RCP<Node2>& node2, const Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2, LocalMatOps2> >& A_newnode) const {
+#if defined(HAVE_MUELU_IFPACK2)
+    RCP<TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > cloneSmoother = rcp(new TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2>(type_, paramList_, overlap_, AFact_));
+    Teuchos::RCP<MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >  cloneSB;
 
-        Teuchos::RCP<MueLu::Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > ifpack2Smoother = Teuchos::rcp_dynamic_cast<MueLu::Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >(this->s_);
-        if (ifpack2Smoother != Teuchos::null){
-                cloneSB = ifpack2Smoother->template clone<Node2, LocalMatOps2>(node2, A_newnode);
-        }
-	else {
-		 TEUCHOS_TEST_FOR_EXCEPTION(
-                      true, std::invalid_argument, "MueLu::TrilinosSmoother: "
-                      "Invalid smoother type to clone (not type Ifpack2)\"");
- }	
-	RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> > clonedProto = Teuchos::rcp_dynamic_cast<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2>  >(cloneSB);
-	cloneSmoother->s_ = clonedProto;
-	cloneSmoother->IsSetup(true);	
-        return cloneSmoother;
-   }
+    Teuchos::RCP<MueLu::Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > ifpack2Smoother = Teuchos::rcp_dynamic_cast<MueLu::Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >(this->s_);
+    if (ifpack2Smoother != Teuchos::null){
+      cloneSB = ifpack2Smoother->template clone<Node2, LocalMatOps2>(node2, A_newnode);
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::invalid_argument, "MueLu::TrilinosSmoother: "
+          "Invalid smoother type to clone (not type Ifpack2)\"");
+    }
+    RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> > clonedProto = Teuchos::rcp_dynamic_cast<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2>  >(cloneSB);
+    cloneSmoother->s_ = clonedProto;
+    cloneSmoother->IsSetup(true);
+    return cloneSmoother;
+#else
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::invalid_argument, "MueLu::SmootherClone: "
+      "clone() only available with IFPACK2 enabled.");
+#endif
+  }
 
 
 } // namespace MueLu
