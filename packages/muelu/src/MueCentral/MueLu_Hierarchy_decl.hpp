@@ -306,7 +306,7 @@ Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::clone(const T
 	typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> CloneMatrix;
 	typedef MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> CloneSmoother;	
 	Teuchos::RCP<New_H_Type> new_h = Teuchos::rcp(new New_H_Type());	
-	new_h->Levels_ = Levels_;
+	new_h->Levels_.resize(this->GetNumLevels());
 	new_h->maxCoarseSize_ = maxCoarseSize_;
 	new_h->implicitTranspose_ = implicitTranspose_;
 	new_h->isPreconditioner_ = isPreconditioner_;
@@ -318,35 +318,34 @@ Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::clone(const T
 	RCP<CloneMatrix> cloneA, cloneR, cloneP;
 	RCP<Matrix> A, R, P;
 	for (int i = 0; i < GetNumLevels(); ++i) {
-		if (this->Levels_[i]->IsAvailable("A")){
-		        A = this->Levels_[i]->template Get<RCP<Matrix> >("A");
+		RCP<Level> level = this->Levels_[i];
+		RCP<Level> clonelevel = rcp(new Level());
+		if (level->IsAvailable("A")){
+		        A = level->template Get<RCP<Matrix> >("A");
 			cloneA = Xpetra::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node2>(*A, node2);
-			new_h->Levels_[i]-> template Set<RCP<CloneMatrix> >("A", cloneA);	
+			clonelevel->template Set<RCP<CloneMatrix> >("A", cloneA);
 		}
-
-		if (this->Levels_[i]->IsAvailable("R")){
-			R = this->Levels_[i]->template Get<RCP<Matrix> >("R");
+		if (level->IsAvailable("R")){
+			R = level->template Get<RCP<Matrix> >("R");
                 	cloneR = Xpetra::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node2>(*R, node2);
-                	new_h->Levels_[i]-> template Set<RCP<CloneMatrix> >("R", cloneR);    
+			clonelevel->template Set<RCP<CloneMatrix> >("R", cloneR);   
 		}
-		if (this->Levels_[i]->IsAvailable("P")){
-			P = this->Levels_[i]->template Get<RCP<Matrix> >("P");
+		if (level->IsAvailable("P")){
+			P = level->template Get<RCP<Matrix> >("P");
                 	cloneP = Xpetra::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node2>(*P,  node2);
-	               	new_h->Levels_[i]-> template Set<RCP<CloneMatrix> >("P", cloneP);    
+			clonelevel->template Set<RCP<CloneMatrix> >("P", cloneP);  
 		}	
-		if (this->Levels_[i]->IsAvailable("PreSmoother")){
-                        Pre = this->Levels_[i]->template Get<RCP<SmootherBase> >("PreSmoother");
+		if (level->IsAvailable("PreSmoother")){
+                        Pre = level->template Get<RCP<SmootherBase> >("PreSmoother");
 			clonePre = MueLu::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps, Node2, LocalMatOps2>(Pre, cloneA, node2);
-			new_h->Levels_[i]-> template Set<RCP<CloneSmoother> >("PreSmoother", clonePre);
+			clonelevel->template Set<RCP<CloneSmoother> >("PreSmoother", clonePre);
 		}
-
-		if (this->Levels_[i]->IsAvailable("PostSmoother")){
-                        Post = this->Levels_[i]->template Get<RCP<SmootherBase> >("PostSmoother");
+		if (level->IsAvailable("PostSmoother")){
+                        Post = level->template Get<RCP<SmootherBase> >("PostSmoother");
                         clonePost = MueLu::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps, Node2, LocalMatOps2>(Post, cloneA, node2);
-                        new_h->Levels_[i]-> template Set<RCP<CloneSmoother> >("PostSmoother", clonePost);
+			clonelevel-> template Set<RCP<CloneSmoother> >("PostSmoother", clonePost);
                 }
-
-	
+		new_h->Levels_[i] = clonelevel;
 	}	
 	return new_h;
 }

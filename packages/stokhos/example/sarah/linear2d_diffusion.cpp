@@ -126,26 +126,26 @@ Scalar MGclone_and_solve(
   //Convert f, dx to clone node type
   RCP<Clone_MV> f_clone = f->clone(node_clone);
   RCP<Clone_MV> dx_clone = dx->clone(node_clone);
-//  dx_clone->putScalar(Scalar(0.0));
+  dx_clone->putScalar(Scalar(0.0));
   // Define Operator and Preconditioner
   RCP<Clone_OP> OP_clone = rcp(new Belos::XpetraOp<Scalar,LocalOrdinal,GlobalOrdinal,CloneNode,CloneLocalMatOps>(J_clone));  // Turns a Xpetra::Matrix object into a Belos operator
   const RCP<const CloneBelos_MueLuOperator> M_clone = rcp(new CloneBelos_MueLuOperator(H_clone)); // Turns a MueLu::Hierarchy object into a Belos operator
 
   //Create problem for clone node 
-  RCP< BLinProb > roblem = rcp(new BLinProb(OP_clone, dx_clone,f_clone));
-  roblem->setRightPrec(M_clone);
-  roblem->setProblem();
+  RCP< BLinProb > problem = rcp(new BLinProb(OP_clone, dx_clone,f_clone));
+  problem->setRightPrec(M_clone);
+  problem->setProblem();
 
   // Create solver for clone node type
   RCP<Belos::SolverManager<Scalar,Clone_MV,Clone_OP> > solver;
   if (symmetric)
     solver =
       rcp(new Belos::PseudoBlockCGSolMgr<Scalar,Clone_MV,Clone_OP>(
-            roblem, belosParams));
+            problem, belosParams));
   else
     solver =
       rcp(new Belos::PseudoBlockGmresSolMgr<Scalar,Clone_MV,Clone_OP>(
-            roblem, belosParams));
+            problem, belosParams));
 
   // Solve linear system for clone node
   solver->solve();
@@ -160,7 +160,6 @@ Scalar MGclone_and_solve(
 
   return norm;
 
-  return 0.0;
 }
   
 
@@ -445,7 +444,7 @@ int main(int argc, char *argv[]) {
       int num_ranks = comm->getSize();
       int num_node = num_ranks / ranks_per_node;
       int node_rank = num_node == 1 ? my_rank : my_rank % num_node;
-      bool gpu_rank = my_rank < gpu_ranks_per_node;
+      bool gpu_rank = node_rank < gpu_ranks_per_node;
       int num_device; cudaGetDeviceCount(&num_device);
       int device_id = node_rank + device_offset;
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -553,7 +552,7 @@ int main(int argc, char *argv[]) {
       int num_ranks = comm->getSize();
       int num_node = num_ranks / ranks_per_node;
       int node_rank = num_node == 1 ? my_rank : my_rank % num_node;
-      bool gpu_rank = my_rank < gpu_ranks_per_node;
+      bool gpu_rank = node_rank < gpu_ranks_per_node;
       int num_device; cudaGetDeviceCount(&num_device);
       int device_id = node_rank + device_offset;
       TEUCHOS_TEST_FOR_EXCEPTION(

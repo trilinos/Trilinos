@@ -148,7 +148,7 @@ public:
                                        typename MatrixType::local_ordinal_type,
                                        typename MatrixType::global_ordinal_type,
                                        typename MatrixType::node_type> >& prec,
-		const Teuchos::RCP<const M2>& matrix, const Teuchos::ParameterList& params = Teuchos::null);
+		const Teuchos::RCP<const M2>& matrix, const Teuchos::ParameterList& params);
 
 };
 
