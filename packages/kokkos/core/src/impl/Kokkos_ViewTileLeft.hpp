@@ -234,7 +234,6 @@ struct ViewAssignment< LayoutDefault , LayoutTileLeftFast, void >
     const unsigned NT0 = ( src.dimension_0() + MASK_0 ) >> SHIFT_0 ;
 
     dst.m_ptr_on_device = src.m_ptr_on_device + (( i0 + i1 * NT0 ) << ( SHIFT_0 + SHIFT_1 ));
-    dst.m_stride        = N0 ;
 
     ViewTracking< DstViewType >::increment( dst.m_ptr_on_device );
   }

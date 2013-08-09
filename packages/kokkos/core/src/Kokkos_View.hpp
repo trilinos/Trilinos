@@ -282,6 +282,10 @@ struct ViewAssignment ;
 template< class ViewLHS , class ViewRHS >
 struct ViewAssignable
 {
+  // Same memory space.
+  // Same value type.
+  // Compatible 'const' qualifier
+  // Cannot assign managed = unmannaged
   enum { assignable_value =
     ( is_same< typename ViewLHS::value_type ,
                typename ViewRHS::value_type >::value 
@@ -290,7 +294,10 @@ struct ViewAssignable
                typename ViewRHS::const_value_type >::value )
     &&
     is_same< typename ViewLHS::memory_space ,
-             typename ViewRHS::memory_space >::value };
+             typename ViewRHS::memory_space >::value
+    &&
+    ( ! ( ViewLHS::is_managed && ! ViewRHS::is_managed ) )
+  };
 
   enum { assignable_shape =
     // Compatible shape and matching layout:
@@ -316,13 +323,7 @@ struct ViewAssignable
       int(ViewLHS::rank_dynamic) == 1 )
     };
 
-  enum { assignable_traits =
-    ! ( ViewLHS::is_managed && ! ViewRHS::is_managed )
-    };
-
-  enum { value = assignable_value &&
-                 assignable_shape &&
-                 assignable_traits };
+  enum { value = assignable_value && assignable_shape };
 };
 
 } // namespace Impl
