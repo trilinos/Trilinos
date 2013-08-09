@@ -1344,11 +1344,94 @@ MDMap< LocalOrd, GlobalOrd, Node >::getTpetraMap(bool withHalos) const
 {
   if (withHalos)
   {
-    if (not _tpetraMap.is_null()) return _tpetraMap;
+    if (_tpetraMap.is_null())
+    {
+      // Allocate the elementsMDArray and the index array
+      int numDims = getNumDims();
+      Teuchos::Array<size_type> localDims(numDims);
+      for (int axis = 0; axis < numDims; ++axis)
+        localDims[axis] = _localDims[axis];
+      MDArray<GlobalOrd> elementMDArray(localDims);
+      Teuchos::Array<LocalOrd> index(numDims);
+
+      // Iterate over the local MDArray and assign global IDs
+      for (typename MDArray<GlobalOrd>::iterator it = elementMDArray.begin();
+           it != elementMDArray.end(); ++it)
+      {
+        GlobalOrd globalID = 0;
+        for (int axis = 0; axis < numDims; ++axis)
+        {
+          int axisRank    = getAxisRank(axis);
+          GlobalOrd start = _globalRankBounds[axis][axisRank].start() -
+                            _halos[axis][0];
+          globalID += (start + it.index(axis)) * _globalStrides[axis];
+        }
+        *it = globalID;
+      }
+
+      // Construct the Tpetra::Map
+      const Teuchos::Array<GlobalOrd> & myElements = elementMDArray.array();
+      TeuchosCommRCP teuchosComm = _mdComm->getTeuchosComm();
+      _tpetraMap =
+        Teuchos::rcp(new Tpetra::Map<LocalOrd,
+                                     GlobalOrd,
+                                     Node>(Teuchos::OrdinalTraits<
+                                             Tpetra::global_size_t>::invalid(),
+                                           myElements(),
+                                           0,
+                                           teuchosComm));
+    }
+    return _tpetraMap;
   }
   else
   {
-    if (not _tpetraOwnMap.is_null()) return _tpetraOwnMap;
+    if (_tpetraOwnMap.is_null())
+    {
+      // Allocate the elementMDArray MDArray and the index array
+      int numDims = getNumDims();
+      Teuchos::Array<LocalOrd> index(numDims);
+      Teuchos::Array<size_type> myDims(numDims);
+      for (int axis = 0; axis < numDims; ++axis)
+      {
+        myDims[axis] = _localDims[axis] - _halos[axis][0] - _halos[axis][1];
+        int axisRank = getAxisRank(axis);
+        if (axisRank == 0)
+          myDims[axis] += _ghosts[axis][0];
+        if (axisRank == getAxisCommSize(axis)-1)
+          myDims[axis] += _ghosts[axis][1];
+      }
+      MDArray<GlobalOrd> elementMDArray(myDims());
+
+      // Iterate over the local MDArray and assign global IDs
+      for (typename MDArray<GlobalOrd>::iterator it = elementMDArray.begin();
+           it != elementMDArray.end(); ++it)
+      {
+        GlobalOrd globalID = 0;
+          for (int axis = 0; axis < numDims; ++axis)
+          {
+            int axisRank    = getAxisRank(axis);
+            GlobalOrd start = _globalRankBounds[axis][axisRank].start();
+            if (axisRank == 0)
+              start -= _ghosts[axis][0];
+            if (axisRank == getAxisCommSize(axis)-1)
+              start += _ghosts[axis][1];
+            globalID += (start + it.index(axis)) * _globalStrides[axis];
+          }
+      }
+
+      // Construct the Tpetra::Map
+      const Teuchos::Array<GlobalOrd> & myElements = elementMDArray.array();
+      TeuchosCommRCP teuchosComm = _mdComm->getTeuchosComm();
+      _tpetraOwnMap =
+        Teuchos::rcp(new Tpetra::Map<LocalOrd,
+                                     GlobalOrd,
+                                     Node>(Teuchos::OrdinalTraits<
+                                             Tpetra::global_size_t>::invalid(),
+                                           myElements(),
+                                           0,
+                                           teuchosComm));
+    }
+    return _tpetraOwnMap;
   }
 }
 #endif
@@ -1356,12 +1439,14 @@ MDMap< LocalOrd, GlobalOrd, Node >::getTpetraMap(bool withHalos) const
 ////////////////////////////////////////////////////////////////////////
 
 #ifdef HAVE_TPETRA
-template< class LocalOrd, class GlobalOrd, class Node >
-Teuchos::ArrayRCP< const Tpetra::Map< LocalOrd, GlobalOrd, Node > >
-MDMap< LocalOrd, GlobalOrd, Node >::getTpetraAxisMaps() const
-{
-}
+// template< class LocalOrd, class GlobalOrd, class Node >
+// Teuchos::ArrayRCP< const Tpetra::Map< LocalOrd, GlobalOrd, Node > >
+// MDMap< LocalOrd, GlobalOrd, Node >::getTpetraAxisMaps() const
+// {
+// }
 #endif
+
+////////////////////////////////////////////////////////////////////////
 
 template< class LocalOrd, class GlobalOrd, class Node >
 Teuchos::Array< GlobalOrd >
