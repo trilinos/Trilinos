@@ -97,7 +97,7 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   MDMap_UnitTests
-  NAME MDMap_UnitTests_2D_4,1
+  NAME MDMap_UnitTests_2D_4_1
   COMM mpi
   NUM_MPI_PROCS 4
   ARGS "--teuchos-suppress-startup-banner --numDims=2 --axisCommSizes=4,1"
