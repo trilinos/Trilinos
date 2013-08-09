@@ -742,7 +742,7 @@
     <Dependency name="RTOp" type="ILR"/>
     <Dependency name="Kokkos" type="LR"/>
     <Dependency name="Epetra" type="LR"/>
-    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Zoltan" type="LR"/>
     <Dependency name="Shards" type="ILR"/>
     <Dependency name="GlobiPack" type="ITO"/>
     <Dependency name="Triutils" type="ILO"/>
