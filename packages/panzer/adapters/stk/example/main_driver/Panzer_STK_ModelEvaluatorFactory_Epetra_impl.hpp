@@ -74,6 +74,7 @@
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_String_Utilities.hpp"
 
+#include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_ExodusReaderFactory.hpp"
 #include "Panzer_STK_LineMeshFactory.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
@@ -700,6 +701,24 @@ namespace panzer_stk {
 	*in_mesh = mesh_params.sublist("Inline Mesh").sublist("Mesh Factory Parameter List");
 	mesh_factory->setParameterList(in_mesh);
       }
+    }
+
+    // get rebalancing parameters
+    if(mesh_params.isSublist("Rebalance")) {
+      const Teuchos::ParameterList & rebalance = mesh_params.sublist("Rebalance");
+
+      // check to see if its enabled
+      bool enabled = false;
+      if(rebalance.isType<bool>("Enabled"))
+        enabled = rebalance.get<bool>("Enabled");
+
+      // we can also use a list description of what to load balance
+      Teuchos::RCP<Teuchos::ParameterList> rebalanceCycles;
+      if(enabled && rebalance.isSublist("Cycles"))
+        rebalanceCycles = Teuchos::rcp(new Teuchos::ParameterList(rebalance.sublist("Cycles")));
+
+      // setup rebalancing as neccessary
+      mesh_factory->enableRebalance(enabled,rebalanceCycles);
     }
 
     return mesh_factory;
