@@ -54,6 +54,11 @@
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/fem/CreateAdjacentEntities.hpp>
 
+#include <stk_rebalance/Rebalance.hpp>
+#include <stk_rebalance/Partition.hpp>
+#include <stk_rebalance/ZoltanPartition.hpp>
+#include <stk_rebalance_utils/RebalanceUtils.hpp>
+
 #include <stk_util/parallel/ParallelReduce.hpp>
 
 #ifdef HAVE_IOSS
@@ -178,6 +183,7 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
    stk::mesh::put_field( *coordinatesField_ , nodeRank, metaData_->universal_part(), getDimension());
    stk::mesh::put_field( *processorIdField_ , elementRank, metaData_->universal_part());
    stk::mesh::put_field( *localIdField_ , elementRank, metaData_->universal_part());
+   stk::mesh::put_field( *loadBalField_ , elementRank, metaData_->universal_part());
 
    initializeFieldsInSTK(fieldNameToSolution_,nodeRank,setupIO);
    initializeFieldsInSTK(fieldNameToCellField_,elementRank,setupIO);
@@ -772,6 +778,7 @@ void STK_Interface::initializeFromMetaData()
    coordinatesField_ = &metaData_->declare_field<VectorFieldType>(coordsString);
    processorIdField_ = &metaData_->declare_field<ProcIdFieldType>("PROC_ID");
    localIdField_     = &metaData_->declare_field<LocalIdFieldType>("LOCAL_ID");
+   loadBalField_     = &metaData_->declare_field<SolutionFieldType>("LOAD_BAL");
 
    // stk::mesh::put_field( *coordinatesField_ , getNodeRank() , metaData_->universal_part() );
 
@@ -801,6 +808,10 @@ void STK_Interface::buildLocalElementIDs()
       std::size_t * localId = stk::mesh::field_data(*localIdField_,element);
       localId[0] = currentLocalId_;
       currentLocalId_++;
+
+      // set local element ID
+      double * loadBal = stk::mesh::field_data(*loadBalField_,element);
+      loadBal[0] = 1.0;
    }
 
    orderedElementVector_ = elements; 
@@ -941,6 +952,28 @@ Teuchos::RCP<Teuchos::MpiComm<int> > STK_Interface::getSafeCommunicator(stk::Par
      << Teuchos::mpiErrorCodeToString (err) << "\".");
 
    return Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper (newComm,MPI_Comm_free)));
+}
+
+void STK_Interface::rebalance(const Teuchos::ParameterList & params)
+{
+  stk::mesh::Selector selector(getMetaData()->universal_part());
+  stk::mesh::Selector owned_selector(getMetaData()->locally_owned_part());
+
+  Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+  out.setOutputToRootOnly(0);
+  out << "Load balance before: " << stk::rebalance::check_balance(*getBulkData(), loadBalField_, getElementRank(), &selector) << std::endl;
+
+  // perform reblance
+  Teuchos::ParameterList graph;
+  if(params.begin()!=params.end())
+    graph.sublist(stk::rebalance::Zoltan::default_parameters_name()) = params;
+  stk::rebalance::Zoltan zoltan_partition(*mpiComm_->getRawMpiComm(), getDimension(), graph);
+  stk::rebalance::rebalance(*getBulkData(), owned_selector, &getCoordinatesField(), loadBalField_, zoltan_partition);
+
+  out << "Load balance after: " << stk::rebalance::check_balance(*getBulkData(), loadBalField_, getElementRank(), &selector) << std::endl;
+
+  currentLocalId_ = 0;
+  orderedElementVector_ = Teuchos::null; // forces rebuild of ordered lists
 }
 
 } // end namespace panzer_stk

@@ -553,6 +553,10 @@ public:
      */
    void setInitialStateTime(double value) { initialStateTime_ = value; }
 
+   /** Rebalance using zoltan. Note that this will void the local element ids.
+     */
+   void rebalance(const Teuchos::ParameterList & params);
+
 public: // static operations
    static const std::string coordsString;
    static const std::string nodesString;
@@ -599,6 +603,7 @@ protected:
    VectorFieldType * coordinatesField_;
    ProcIdFieldType * processorIdField_;
    LocalIdFieldType * localIdField_;
+   SolutionFieldType * loadBalField_;
    
    // maps field names to solution field stk mesh handles
    std::map<std::pair<std::string,std::string>,SolutionFieldType*> fieldNameToSolution_;
