@@ -81,21 +81,6 @@ struct ViewAssignment<LayoutEmbedArray,void,void>
 private:
 
   template< class T , class L , class D , class M >
-  inline static
-  size_t stride( const View<T,L,D,M,Specialize> & dst )
-  {
-    typedef ViewTraits<T,L,D,M> traits ;
-    typedef typename traits::memory_space memory_space ;
-
-    return
-      memory_space::preferred_alignment( dst.m_shape.scalar_size ,
-       ( is_same< typename traits::array_layout , LayoutLeft >::value
-         ? dst.m_shape.N0
-         : dst.m_shape.N1 * dst.m_shape.N2 * dst.m_shape.N3 * dst.m_shape.N4 *
-           dst.m_shape.N5 * dst.m_shape.N6 * dst.m_shape.N7 ) );
-  }
-
-  template< class T , class L , class D , class M >
   inline
   void allocate( View<T,L,D,M,Specialize> & dst , const std::string & label )
   {
@@ -103,8 +88,10 @@ private:
     typedef typename DstViewType::scalar_type   scalar_type ;
     typedef typename DstViewType::memory_space  memory_space ;
 
+    const size_t cap = Impl::capacity( dst.m_shape , dst.m_stride );
+
     dst.m_ptr_on_device = (scalar_type *)
-      memory_space::allocate( label , typeid(scalar_type) , sizeof(scalar_type) , dst.capacity() );
+      memory_space::allocate( label , typeid(scalar_type) , sizeof(scalar_type) , cap );
 
     ViewInitialize< DstViewType > init( dst );
   }
@@ -128,12 +115,12 @@ public:
     typedef typename DstViewType::scalar_type   scalar_type ;
     typedef typename DstViewType::shape_type    shape_type ;
     typedef typename DstViewType::memory_space  memory_space ;
+    typedef typename DstViewType::stride_type   stride_type ;
 
     ViewTracking< DstViewType >::decrement( dst.m_ptr_on_device );
 
-    shape_type::assign( dst.m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
-
-    dst.m_stride = stride( dst );
+    shape_type ::assign( dst.m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
+    stride_type::assign( dst.m_stride , dst.m_shape );
 
     allocate( dst , label );
   }
@@ -173,6 +160,7 @@ struct ViewAssignment< LayoutEmbedArray , LayoutEmbedArray , void >
     typedef typename DstViewType::shape_type    shape_type ;
     typedef typename DstViewType::memory_space  memory_space ;
     typedef typename DstViewType::memory_traits memory_traits ;
+    typedef typename DstViewType::stride_type   stride_type ;
 
     ViewTracking< DstViewType >::decrement( dst.m_ptr_on_device );
 
@@ -180,7 +168,8 @@ struct ViewAssignment< LayoutEmbedArray , LayoutEmbedArray , void >
                         src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
                         src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 );
 
-    dst.m_stride        = src.m_stride ;
+    stride_type::assign( dst.m_stride , src.m_stride.value );
+
     dst.m_ptr_on_device = src.m_ptr_on_device ;
 
     ViewTracking< DstViewType >::increment( dst.m_ptr_on_device );
@@ -207,12 +196,13 @@ struct ViewAssignment< LayoutEmbedArray , LayoutEmbedArray , void >
                   )>::type * = 0 )
   {
     typedef ViewTraits<DT,DL,DD,DM> traits_type ;
-    typedef typename traits_type::shape_type shape_type ;
+    typedef typename traits_type::shape_type   shape_type ;
+    typedef typename View<DT,DL,DD,DM,Specialize>::stride_type  stride_type ;
 
     ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
 
-    shape_type::assign( dst.m_shape, 0, 0, 0, 0, 0, 0, 0, 0 );
-    dst.m_stride        = 0 ;
+    shape_type ::assign( dst.m_shape, 0, 0, 0, 0, 0, 0, 0, 0 );
+    stride_type::assign( dst.m_stride , 0 );
     dst.m_ptr_on_device = 0 ;
 
     if ( range.first < range.second ) {
@@ -223,8 +213,9 @@ struct ViewAssignment< LayoutEmbedArray , LayoutEmbedArray , void >
                           src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
                           src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
 
-      dst.m_stride        = src.m_stride ; // aligned( product[ N1 .. N7 ] )
-      dst.m_ptr_on_device = src.m_ptr_on_device + range.first * src.m_stride ;
+      stride_type::assign( dst.m_stride , src.m_stride.value );
+
+      dst.m_ptr_on_device = src.m_ptr_on_device + range.first * src.m_stride.value ;
 
       ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
     }
@@ -260,8 +251,8 @@ struct ViewAssignment< LayoutEmbedArray , LayoutEmbedArray , void >
 
       const size_t nbytes = dst.m_shape.scalar_size *
         ( 1 == dst_traits::rank ? dst.m_shape.N0 : (
-          is_right  ? dst.m_shape.N0 * dst.m_stride : (
-                      dst.m_stride   * dst.m_shape.N1 * dst.m_shape.N2 * dst.m_shape.N3 *
+          is_right  ? dst.m_shape.N0 * dst.m_stride.value : (
+                      dst.m_stride.value  * dst.m_shape.N1 * dst.m_shape.N2 * dst.m_shape.N3 *
                       dst.m_shape.N4 * dst.m_shape.N5 * dst.m_shape.N6 * dst.m_shape.N7 )));
 
       DeepCopy< typename dst_traits::memory_space ,
@@ -354,6 +345,8 @@ private:
 
   typedef Impl::ViewAssignment<Impl::LayoutEmbedArray> alloc ;
   typedef Impl::ViewAssignment<Impl::LayoutEmbedArray,Impl::LayoutEmbedArray> assign ;
+  typedef Impl::LayoutStride< typename traits::shape_type ,
+                              typename traits::array_layout > stride_type ;
 
   typedef Array< typename traits::scalar_type ,
                  ArrayTypeCount< typename traits::value_type >::value ,
@@ -364,8 +357,8 @@ private:
                  ArrayProxyContiguous > ArrayProxyRightType ;
 
   typename traits::scalar_type * m_ptr_on_device ;
-  unsigned                       m_stride ;
   typename traits::shape_type    m_shape ;
+  stride_type                    m_stride ;
 
 public:
 
@@ -401,7 +394,11 @@ public:
   bool is_null() const { return 0 == m_ptr_on_device ; }
 
   KOKKOS_INLINE_FUNCTION
-  View() : m_ptr_on_device(0), m_stride(0) { traits::shape_type::assign(m_shape,0,0,0,0,0,0,0,0); }
+  View() : m_ptr_on_device(0)
+    {
+      traits::shape_type::assign(m_shape,0,0,0,0,0,0,0,0);
+      stride_type::assign( m_stride , 0 );
+    }
 
   KOKKOS_INLINE_FUNCTION
   ~View() { Impl::ViewTracking< traits >::decrement( m_ptr_on_device ); }
@@ -452,7 +449,6 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 ];
     }
@@ -467,7 +463,6 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 ];
     }
@@ -483,9 +478,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i1 + i0 * m_stride ];
+      return m_ptr_on_device[ i1 + i0 * m_stride.value ];
     }
 
   template< typename iType0 , typename iType1 >
@@ -498,9 +492,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i1 + i0 * m_stride ];
+      return m_ptr_on_device[ i1 + i0 * m_stride.value ];
     }
 
   // LayoutRight rank 3:
@@ -514,10 +507,9 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i2 + m_shape.N2 * (
-                              i1 ) + i0 * m_stride ];
+                              i1 ) + i0 * m_stride.value ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 >
@@ -530,10 +522,9 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i2 + m_shape.N2 * (
-                              i1 ) + i0 * m_stride ];
+                              i1 ) + i0 * m_stride.value ];
     }
 
   // LayoutRight rank 4:
@@ -547,11 +538,10 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 )) + i0 * m_stride ];
+                              i1 )) + i0 * m_stride.value ];
     }
 
   // LayoutRight rank 5:
@@ -565,11 +555,10 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 )) + i0 * m_stride ];
+                              i1 )) + i0 * m_stride.value ];
     }
 
   // LayoutRight rank 5:
@@ -585,12 +574,11 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 ))) + i0 * m_stride ];
+                              i1 ))) + i0 * m_stride.value ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -604,12 +592,11 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 ))) + i0 * m_stride ];
+                              i1 ))) + i0 * m_stride.value ];
     }
 
   // LayoutRight rank 6:
@@ -625,13 +612,12 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i5 + m_shape.N5 * (
                               i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 )))) + i0 * m_stride ];
+                              i1 )))) + i0 * m_stride.value ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -645,13 +631,12 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i5 + m_shape.N5 * (
                               i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 )))) + i0 * m_stride ];
+                              i1 )))) + i0 * m_stride.value ];
     }
 
   // LayoutRight rank 7:
@@ -667,14 +652,13 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i6 + m_shape.N6 * (
                               i5 + m_shape.N5 * (
                               i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 ))))) + i0 * m_stride ];
+                              i1 ))))) + i0 * m_stride.value ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -688,14 +672,13 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i6 + m_shape.N6 * (
                               i5 + m_shape.N5 * (
                               i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 ))))) + i0 * m_stride ];
+                              i1 ))))) + i0 * m_stride.value ];
     }
 
   // LayoutRight rank 8:
@@ -711,7 +694,6 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0,i1,i2,i3,i4,i5,i6,i7 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i7 + m_shape.N7 * (
                               i6 + m_shape.N6 * (
@@ -719,7 +701,7 @@ public:
                               i4 + m_shape.N4 * (
                               i3 + m_shape.N3 * (
                               i2 + m_shape.N2 * (
-                              i1 )))))) + i0 * m_stride ];
+                              i1 )))))) + i0 * m_stride.value ];
     }
 
   //------------------------------------
@@ -733,7 +715,6 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 ];
     }
@@ -747,7 +728,6 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return m_ptr_on_device[ i0 ];
     }
@@ -762,9 +742,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride * i1 ];
+      return m_ptr_on_device[ i0 + m_stride.value * i1 ];
     }
 
   template< typename iType0 , typename iType1 >
@@ -776,9 +755,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride * i1 ];
+      return m_ptr_on_device[ i0 + m_stride.value * i1 ];
     }
 
   // LayoutLeft rank 3:
@@ -791,9 +769,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride * (
+      return m_ptr_on_device[ i0 + m_stride.value * (
                               i1 + m_shape.N1 * i2 ) ];
     }
 
@@ -806,9 +783,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride * (
+      return m_ptr_on_device[ i0 + m_stride.value * (
                               i1 + m_shape.N1 * i2 ) ];
     }
 
@@ -822,9 +798,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride * (
+      return m_ptr_on_device[ i0 + m_stride.value * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * i3 )) ];
     }
@@ -838,9 +813,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride * (
+      return m_ptr_on_device[ i0 + m_stride.value * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * i3 )) ];
     }
@@ -857,9 +831,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride * (
+      return m_ptr_on_device[ i0 + m_stride.value * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * i4 ))) ];
@@ -875,9 +848,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride * (
+      return m_ptr_on_device[ i0 + m_stride.value * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * i4 ))) ];
@@ -895,9 +867,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride * (
+      return m_ptr_on_device[ i0 + m_stride.value * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * (
@@ -914,9 +885,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride * (
+      return m_ptr_on_device[ i0 + m_stride.value * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * (
@@ -935,9 +905,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride * (
+      return m_ptr_on_device[ i0 + m_stride.value * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * (
@@ -955,9 +924,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride * (
+      return m_ptr_on_device[ i0 + m_stride.value * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * (
@@ -977,9 +945,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0,i1,i2,i3,i4,i5,i6,i7 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride * (
+      return m_ptr_on_device[ i0 + m_stride.value * (
                               i1 + m_shape.N1 * (
                               i2 + m_shape.N2 * (
                               i3 + m_shape.N3 * (
@@ -994,7 +961,6 @@ public:
   ArrayProxyRightType operator * () const
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyRightType( m_ptr_on_device );
     }
@@ -1011,9 +977,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return ArrayProxyRightType( m_ptr_on_device + m_stride * i0 );
+      return ArrayProxyRightType( m_ptr_on_device + m_stride.value * i0 );
     }
 
   template< typename iType0 , typename iType1 >
@@ -1026,9 +991,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return ArrayProxyRightType( m_ptr_on_device + m_shape.N2 * i1 + m_stride * i0 );
+      return ArrayProxyRightType( m_ptr_on_device + m_shape.N2 * i1 + m_stride.value * i0 );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 >
@@ -1041,12 +1005,11 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyRightType( m_ptr_on_device +
                                   m_shape.N3 * ( i2 +
                                   m_shape.N2 * ( i1 )) +
-                                  m_stride * i0 );
+                                  m_stride.value * i0 );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
@@ -1059,13 +1022,12 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyRightType( m_ptr_on_device +
                                   m_shape.N4 * ( i3 +
                                   m_shape.N3 * ( i2 +
                                   m_shape.N2 * ( i1 ))) +
-                                  m_stride * i0 );
+                                  m_stride.value * i0 );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -1080,14 +1042,13 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyRightType( m_ptr_on_device +
                                   m_shape.N5 * ( i4 +
                                   m_shape.N4 * ( i3 +
                                   m_shape.N3 * ( i2 +
                                   m_shape.N2 * ( i1 )))) +
-                                  m_stride * i0 );
+                                  m_stride.value * i0 );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -1102,7 +1063,6 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyRightType( m_ptr_on_device +
                                   m_shape.N6 * ( i5 +
@@ -1110,7 +1070,7 @@ public:
                                   m_shape.N4 * ( i3 +
                                   m_shape.N3 * ( i2 +
                                   m_shape.N2 * ( i1 ))))) +
-                                  m_stride * i0 );
+                                  m_stride.value * i0 );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -1125,7 +1085,6 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0,i1,i2,i3,i4,i5,i6,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyRightType( m_ptr_on_device +
                                   m_shape.N7 * ( i6 +
@@ -1134,7 +1093,7 @@ public:
                                   m_shape.N4 * ( i3 +
                                   m_shape.N3 * ( i2 +
                                   m_shape.N2 * ( i1 )))))) +
-                                  m_stride * i0 );
+                                  m_stride.value * i0 );
     }
 
   //------------------------------------
@@ -1147,9 +1106,8 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
-      return ArrayProxyLeftType( m_ptr_on_device + i0 , m_stride );
+      return ArrayProxyLeftType( m_ptr_on_device + i0 , m_stride.value );
     }
 
   template< typename iType0 , typename iType1 >
@@ -1160,11 +1118,10 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyLeftType( m_ptr_on_device +
-                                 i0 + m_stride * ( i1 ) ,
-                                 m_stride   * m_shape.N1 );
+                                 i0 + m_stride.value * ( i1 ) ,
+                                 m_stride.value   * m_shape.N1 );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 >
@@ -1175,12 +1132,11 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyLeftType( m_ptr_on_device +
-                                 i0 + m_stride * (
+                                 i0 + m_stride.value * (
                                  i1 + m_shape.N1 * ( i2 )) ,
-                                 m_stride   * m_shape.N1 *
+                                 m_stride.value   * m_shape.N1 *
                                  m_shape.N2 );
     }
 
@@ -1192,13 +1148,12 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyLeftType( m_ptr_on_device +
-                                 i0 + m_stride * (
+                                 i0 + m_stride.value * (
                                  i1 + m_shape.N1 * (
                                  i2 + m_shape.N2 * ( i3 ))) ,
-                                 m_stride   * m_shape.N1 *
+                                 m_stride.value   * m_shape.N1 *
                                  m_shape.N2 * m_shape.N3 );
     }
 
@@ -1212,14 +1167,13 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyLeftType( m_ptr_on_device +
-                                 i0 + m_stride * (
+                                 i0 + m_stride.value * (
                                  i1 + m_shape.N1 * (
                                  i2 + m_shape.N2 * (
                                  i3 + m_shape.N3 * ( i4 )))) ,
-                                 m_stride   * m_shape.N1 *
+                                 m_stride.value   * m_shape.N1 *
                                  m_shape.N2 * m_shape.N3 *
                                  m_shape.N4 );
     }
@@ -1234,15 +1188,14 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyLeftType( m_ptr_on_device +
-                                 i0 + m_stride * (
+                                 i0 + m_stride.value * (
                                  i1 + m_shape.N1 * (
                                  i2 + m_shape.N2 * (
                                  i3 + m_shape.N3 * (
                                  i4 + m_shape.N4 * ( i5 ))))) ,
-                                 m_stride   * m_shape.N1 *
+                                 m_stride.value   * m_shape.N1 *
                                  m_shape.N2 * m_shape.N3 *
                                  m_shape.N4 * m_shape.N5 );
     }
@@ -1257,16 +1210,15 @@ public:
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0,i1,i2,i3,i4,i5,i6,0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSUME_ALIGNED( typename traits::memory_space , m_ptr_on_device );
 
       return ArrayProxyLeftType( m_ptr_on_device +
-                                 i0 + m_stride * (
+                                 i0 + m_stride.value * (
                                  i1 + m_shape.N1 * (
                                  i2 + m_shape.N2 * (
                                  i3 + m_shape.N3 * (
                                  i4 + m_shape.N4 * (
                                  i5 + m_shape.N5 * ( i6 )))))) ,
-                                 m_stride   * m_shape.N1 *
+                                 m_stride.value   * m_shape.N1 *
                                  m_shape.N2 * m_shape.N3 *
                                  m_shape.N4 * m_shape.N5 * m_shape.N6 );
     }
@@ -1278,14 +1230,7 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   typename traits::size_type capacity() const
-  {
-    return
-      Rank == 1 ? m_shape.N0 : (
-      Impl::is_same< typename traits::array_layout , LayoutLeft >::value
-      ? ( m_stride   * m_shape.N1 * m_shape.N2 * m_shape.N3 *
-          m_shape.N4 * m_shape.N5 * m_shape.N6 * m_shape.N7 )
-      : ( m_shape.N0 * m_stride ) );
-  }
+  { return Impl::capacity( m_shape , m_stride ); }
 };
 
 } // namespace Kokkos

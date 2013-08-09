@@ -57,16 +57,6 @@ struct DummyMemorySpace
 {
   typedef DummyMemorySpace memory_space ;
   typedef unsigned size_type ;
-
-  static const unsigned align = 64 ; // Byte alignment
-
-  inline static
-  size_t preferred_alignment( size_t type_size , size_t n )
-  {
-    // goal: ( n * type_size ) % align == 0
-    while ( 0 != ( n * type_size ) % align ) ++n ;
-    return n ;
-  }
 };
 
 /*--------------------------------------------------------------------------*/

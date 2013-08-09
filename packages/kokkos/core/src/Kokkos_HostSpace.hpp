@@ -51,22 +51,6 @@
 #include <Kokkos_Macros.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 
-#if defined( __INTEL_COMPILER ) && 0
-  /*
-   *  Optimization level -O3 generates a seg-fault
-   *  with this parameter in the hybrid parallel
-   *  nonlinear use case boundary condition
-   *  residual enforcement function.
-   */
-
-#define KOKKOS_ASSUME_ALIGNED( M , P ) __assume_aligned( P , MEMORY_ALIGNMENT )
-
-#else
-
-#define KOKKOS_ASSUME_ALIGNED( M , P ) /* */
-
-#endif
-
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
@@ -122,11 +106,6 @@ public:
 
   /** \brief  Retrieve label associated with the input pointer */
   static std::string query_label( const void * );
-
-  /*--------------------------------*/
-
-  static 
-  size_t preferred_alignment( size_t scalar_size , size_t scalar_count );
 
   /*--------------------------------*/
   /* Functions unique to the Host memory space */

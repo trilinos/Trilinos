@@ -892,7 +892,7 @@ public:
   typedef Kokkos::View< T*[N1][N2][N3] , device > dView4 ;
   typedef Kokkos::View< const T*[N1][N2][N3] , device > const_dView4 ;
 
-  typedef Kokkos::View< T*[N1][N2][N3], device, Kokkos::MemoryUnmanaged > dView4_unmanaged ;
+  typedef Kokkos::View< T****, device, Kokkos::MemoryUnmanaged > dView4_unmanaged ;
 
   static void run_test_mirror()
   {
@@ -962,7 +962,11 @@ public:
 
 
     dView4_unmanaged unmanaged_dx = dx;
-    dView4_unmanaged unmanaged_from_ptr_dx = dView4_unmanaged(dx.ptr_on_device(),dx.dimension_0());
+    dView4_unmanaged unmanaged_from_ptr_dx = dView4_unmanaged(dx.ptr_on_device(),
+                                                              dx.dimension_0(),
+                                                              dx.dimension_1(),
+                                                              dx.dimension_2(),
+                                                              dx.dimension_3());
     const_dView4 const_dx = dx ;
 
 

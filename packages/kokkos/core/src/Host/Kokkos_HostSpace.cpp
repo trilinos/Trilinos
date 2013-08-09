@@ -205,25 +205,6 @@ std::string HostSpace::query_label( const void * p )
   return 0 != info ? info->label : std::string("ERROR NOT DEFINED");
 }
 
-size_t HostSpace::preferred_alignment(
-  size_t scalar_size , size_t scalar_count )
-{
-  // Padding 'large' array dimensions to be memory aligned
-  // where 'large' greater than 4 * cacheline-size
-
-  const size_t align = 0 == Impl::MEMORY_ALIGNMENT % scalar_size
-                     ? Impl::MEMORY_ALIGNMENT / scalar_size : 0 ;
-
-  const size_t threshold = Impl::MEMORY_ALIGNMENT_THRESHOLD * align ;
-
-  if ( align && threshold < scalar_count && scalar_count % align ) {
-    scalar_count += align - scalar_count % align ;
-  }
-
-  return scalar_count ;
-}
-
-
 DeepCopy<HostSpace,HostSpace>
   ::DeepCopy( void * dst , const void * src , size_t n )
 {
