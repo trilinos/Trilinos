@@ -175,6 +175,9 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
 
    // clean up mesh data object
    delete meshData;
+
+   // calls Stk_MeshFactory::rebalance
+   this->rebalance(mesh);
 }
 
 //! From ParameterListAcceptor

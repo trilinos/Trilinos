@@ -121,6 +121,9 @@ void CubeHexMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::Para
    // now that edges are built, side and node sets can be added
    addSideSets(mesh);
    addNodeSets(mesh);
+
+   // calls Stk_MeshFactory::rebalance
+   this->rebalance(mesh);
 }
 
 //! From ParameterListAcceptor
