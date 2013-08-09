@@ -135,6 +135,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, dimensionsConstructor, T )
     TEST_EQUALITY_CONST(mdMap.getUpperGhost(axis), 0);
     TEST_EQUALITY_CONST(mdMap.getGhostSize(axis), 0);
   }
+
 #ifdef HAVE_EPETRA
   if (typeid(T) == typeid(int))
   {
@@ -160,11 +161,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, dimensionsConstructor, T )
     Teuchos::RCP< const Epetra_Map > epetraMap = mdMap.getEpetraMap();
     TEST_EQUALITY(epetraMap->GID(  0), gll);
     TEST_EQUALITY(epetraMap->GID(lur), gur);
+
+    for (int axis = 0; axis < numDims; ++axis)
+    {
+      int axisRank = mdMap.getAxisRank(axis);
+      Teuchos::RCP< const Epetra_Map > epetraMap = mdMap.getEpetraAxisMap(axis);
+      TEST_EQUALITY(epetraMap->GID(         0),  axisRank   *localDim  );
+      TEST_EQUALITY(epetraMap->GID(localDim-1), (axisRank+1)*localDim-1);
+    }
   }
   else
   {
     TEST_THROW(mdMap.getEpetraMap(true ), Domi::MapOrdinalError);
     TEST_THROW(mdMap.getEpetraMap(false), Domi::MapOrdinalError);
+    TEST_THROW(mdMap.getEpetraAxisMap(0,true ), Domi::MapOrdinalError);
+    TEST_THROW(mdMap.getEpetraAxisMap(0,false), Domi::MapOrdinalError);
   }
 #endif
 
@@ -193,6 +204,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, dimensionsConstructor, T )
     mdMap.getTpetraMap();
   TEST_EQUALITY(tpetraMap->getGlobalElement(lll), gll);
   TEST_EQUALITY(tpetraMap->getGlobalElement(lur), gur);
+
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int axisRank = mdMap.getAxisRank(axis);
+    Teuchos::RCP< const Tpetra::Map<T,T> > tpetraMap =
+      mdMap.getTpetraAxisMap(axis);
+    TEST_EQUALITY(tpetraMap->getGlobalElement(0), axisRank*localDim);
+    TEST_EQUALITY(tpetraMap->getGlobalElement(localDim-1),
+                  (axisRank+1)*localDim-1);
+  }
 #endif
 }
 
@@ -293,11 +314,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, halosConstructor, T )
     Teuchos::RCP< const Epetra_Map > epetraMap = mdMap.getEpetraMap();
     TEST_EQUALITY(epetraMap->GID(lll), gll);
     TEST_EQUALITY(epetraMap->GID(lur), gur);
+
+    for (int axis = 0; axis < numDims; ++axis)
+    {
+      int axisRank = mdMap.getAxisRank(axis);
+      int myHalo   = 0;
+      if (axisRank > 0) myHalo = halos[axis];
+      Teuchos::RCP< const Epetra_Map > epetraMap = mdMap.getEpetraAxisMap(axis);
+      TEST_EQUALITY(epetraMap->GID(0), axisRank*localDim-myHalo);
+      TEST_EQUALITY(epetraMap->GID(localDim+myHalo-1), (axisRank+1)*localDim-1);
+    }
   }
   else
   {
     TEST_THROW(mdMap.getEpetraMap(true ), Domi::MapOrdinalError);
     TEST_THROW(mdMap.getEpetraMap(false), Domi::MapOrdinalError);
+    TEST_THROW(mdMap.getEpetraAxisMap(0,true ), Domi::MapOrdinalError);
+    TEST_THROW(mdMap.getEpetraAxisMap(0,false), Domi::MapOrdinalError);
   }
 #endif
 
@@ -335,6 +368,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, halosConstructor, T )
   Teuchos::RCP< const Tpetra::Map<T,T> > tpetraMap = mdMap.getTpetraMap();
   TEST_EQUALITY(tpetraMap->getGlobalElement(lll), gll);
   TEST_EQUALITY(tpetraMap->getGlobalElement(lur), gur);
+
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int axisRank = mdMap.getAxisRank(axis);
+    int myHalo   = 0;
+    if (axisRank > 0) myHalo = halos[axis];
+    Teuchos::RCP< const Tpetra::Map<T> > tpetraMap =
+      mdMap.getTpetraAxisMap(axis);
+    TEST_EQUALITY(tpetraMap->getGlobalElement(0), axisRank*localDim-myHalo);
+    TEST_EQUALITY(tpetraMap->getGlobalElement(localDim+myHalo-1),
+                  (axisRank+1)*localDim-1);
+  }
 #endif
 }
 
@@ -451,11 +496,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, ghostsConstructor, T )
     Teuchos::RCP< const Epetra_Map > epetraMap = mdMap.getEpetraMap();
     TEST_EQUALITY(epetraMap->GID(lll), gll);
     TEST_EQUALITY(epetraMap->GID(lur), gur);
+
+    for (int axis = 0; axis < numDims; ++axis)
+    {
+      int axisRank = mdMap.getAxisRank(axis);
+      int myHalo   = 0;
+      if (axisRank == 0) myHalo = ghosts[axis];
+      Teuchos::RCP< const Epetra_Map > epetraMap =
+        mdMap.getEpetraAxisMap(axis);
+      TEST_EQUALITY(epetraMap->GID(myHalo), axisRank*localDim+ghosts[axis]);
+      TEST_EQUALITY(epetraMap->GID(myHalo+localDim-1),
+                    ghosts[axis]+(axisRank+1)*localDim-1);
+    }
   }
   else
   {
     TEST_THROW(mdMap.getEpetraMap(true ), Domi::MapOrdinalError);
     TEST_THROW(mdMap.getEpetraMap(false), Domi::MapOrdinalError);
+    TEST_THROW(mdMap.getEpetraAxisMap(0,true ), Domi::MapOrdinalError);
+    TEST_THROW(mdMap.getEpetraAxisMap(0,false), Domi::MapOrdinalError);
   }
 #endif
 
@@ -494,6 +553,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, ghostsConstructor, T )
   Teuchos::RCP< const Tpetra::Map<T,T> > tpetraMap = mdMap.getTpetraMap();
   TEST_EQUALITY(tpetraMap->getGlobalElement(lll), gll);
   TEST_EQUALITY(tpetraMap->getGlobalElement(lur), gur);
+
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int axisRank = mdMap.getAxisRank(axis);
+    int myHalo   = 0;
+    if (axisRank == 0) myHalo = ghosts[axis];
+    Teuchos::RCP< const Tpetra::Map<T> > tpetraMap =
+      mdMap.getTpetraAxisMap(axis);
+    TEST_EQUALITY(tpetraMap->getGlobalElement(myHalo),
+                  axisRank*localDim+ghosts[axis]);
+    TEST_EQUALITY(tpetraMap->getGlobalElement(myHalo+localDim-1),
+                  ghosts[axis]+(axisRank+1)*localDim-1);
+  }
 #endif
 }
 
@@ -1636,7 +1708,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapPeriodic, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapPeriodic, T )
 
 UNIT_TEST_GROUP(int)
-#if 1
+#if 0
 UNIT_TEST_GROUP(long)
 #endif
 
