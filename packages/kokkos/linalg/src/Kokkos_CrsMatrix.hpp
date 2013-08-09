@@ -43,10 +43,8 @@
 #ifndef KOKKOS_CRSMATRIX_H_
 #define KOKKOS_CRSMATRIX_H_
 
-/// \file Kokkos_CRSMatrix.hpp
+/// \file Kokkos_CrsMatrix.hpp
 /// \brief Kokkos' sparse matrix interface
-/// \date Jul 30, 2012
-/// \author crtrott
 
 #include <assert.h>
 
@@ -67,6 +65,7 @@
 #ifdef KOKKOS_USE_MKL
 #  include <mkl.h>
 #  include <mkl_spblas.h>
+// FIXME (mfh 09 Aug 2013) This file is missing; please check it in.
 #  include <Kokkos_CRSMatrix_MKL.hpp>
 #endif // KOKKOS_USE_MKL
 
@@ -79,7 +78,9 @@ namespace Kokkos {
 /// This class provides a generic view of a row of a sparse matrix.
 /// The view is suited for computational kernels like sparse
 /// matrix-vector multiply, as well as for modifying entries in the
-/// sparse matrix.
+/// sparse matrix.  Whether the view is const or not, depends on
+/// whether MatrixType is a const or nonconst view of the matrix.  If
+/// you always want a const view, use SparseRowViewConst (see below).
 ///
 /// Here is an example loop over the entries in the row:
 /// \code
@@ -88,9 +89,9 @@ namespace Kokkos {
 ///
 /// SparseRowView<MatrixType> A_i = ...;
 /// const int numEntries = A_i.length;
-/// for (int i = 0; i < numEntries; ++i) {
-///   const scalar_type A_ij = A_i.value (i);
-///   const ordinal_type j = A_i.colidx (i);
+/// for (int k = 0; k < numEntries; ++k) {
+///   scalar_type A_ij = A_i.value (k);
+///   ordinal_type j = A_i.colidx (k);
 ///   // ... do something with A_ij and j ...
 /// }
 /// \endcode
@@ -132,7 +133,7 @@ public:
   /// compiler is unable to inline that method call.
   const int length;
 
-  /// \brief Nonconst reference to the value of entry i in this row of the sparse matrix.
+  /// \brief Reference to the value of entry i in this row of the sparse matrix.
   ///
   /// "Entry i" is not necessarily the entry with column index i, nor
   /// does i necessarily correspond to the (local) row index.
@@ -141,16 +142,7 @@ public:
     return values_[i*stride_];
   }
 
-  /// \brief Const reference to the value of entry i in this row of the sparse matrix.
-  ///
-  /// "Entry i" is not necessarily the entry with column index i, nor
-  /// does i necessarily correspond to the (local) row index.
-  KOKKOS_INLINE_FUNCTION
-  const scalar_type& value (const int& i) const {
-    return values_[i*stride_];
-  }
-
-  /// \brief Nonconst reference to the column index of entry i in this row of the sparse matrix.
+  /// \brief Reference to the column index of entry i in this row of the sparse matrix.
   ///
   /// "Entry i" is not necessarily the entry with column index i, nor
   /// does i necessarily correspond to the (local) row index.
@@ -158,16 +150,73 @@ public:
   ordinal_type& colidx (const int& i) const {
     return colidx_[i*stride_];
   }
+};
 
-  /// \brief Const reference to the column index of entry i in this row of the sparse matrix.
+
+/// \class SparseRowViewConst
+/// \brief Const view of a row of a sparse matrix.
+/// \tparam MatrixType Sparse matrix type, such as (but not limited to) CrsMatrix.
+///
+/// This class is like SparseRowView, except that it provides a const
+/// view.  This class exists in order to let users get a const view of
+/// a row of a nonconst matrix.
+template<class MatrixType>
+struct SparseRowViewConst {
+  //! The type of the values in the row.
+  typedef const typename MatrixType::nonconst_scalar_type scalar_type;
+  //! The type of the column indices in the row.
+  typedef const typename MatrixType::nonconst_ordinal_type ordinal_type;
+
+private:
+  //! Array of values in the row.
+  scalar_type* values_;
+  //! Array of (local) column indices in the row.
+  ordinal_type* colidx_;
+  //! Stride between successive entries in the row.
+  const int stride_;
+
+public:
+  /// \brief Constructor
+  ///
+  /// \param values [in] Array of the row's values.
+  /// \param colidx [in] Array of the row's column indices.
+  /// \param stride [in] (Constant) stride between matrix entries in
+  ///   each of the above arrays.
+  /// \param count [in] Number of entries in the row.
+  KOKKOS_INLINE_FUNCTION
+  SparseRowViewConst (scalar_type* const values,
+                      ordinal_type* const colidx,
+                      const int stride,
+                      const int count) :
+    values_ (values), colidx_ (colidx), stride_ (stride), length (count)
+  {}
+
+  /// \brief Number of entries in the row.
+  ///
+  /// This is a public const field rather than a public const method,
+  /// in order to avoid possible overhead of a method call if the
+  /// compiler is unable to inline that method call.
+  const int length;
+
+  /// \brief (Const) reference to the value of entry i in this row of the sparse matrix.
   ///
   /// "Entry i" is not necessarily the entry with column index i, nor
   /// does i necessarily correspond to the (local) row index.
   KOKKOS_INLINE_FUNCTION
-  const ordinal_type& colidx (const int& i) const {
+  scalar_type& value (const int& i) const {
+    return values_[i*stride_];
+  }
+
+  /// \brief (Const) reference to the column index of entry i in this row of the sparse matrix.
+  ///
+  /// "Entry i" is not necessarily the entry with column index i, nor
+  /// does i necessarily correspond to the (local) row index.
+  KOKKOS_INLINE_FUNCTION
+  ordinal_type& colidx (const int& i) const {
     return colidx_[i*stride_];
   }
 };
+
 
 /// \class CrsMatrix
 /// \brief Compressed sparse row implementation of a sparse matrix.
@@ -186,13 +235,14 @@ public:
   typedef ScalarType  scalar_type;
   typedef OrdinalType ordinal_type;
 
-  // FIXME (mfh 21 Jun 2013) Do we always want OpenMP to be the host
-  // device type?  Why not some other device type?  Well, OpenMP is a
-  // reasonable default if one has it, so perhaps this is OK.
+  // OpenMP is the default host type if you turned on OpenMP when
+  // building.  OpenMP is not on by default, so if you specified in
+  // the build that you wanted OpenMP, then we say that the default
+  // host type is OpenMP instead of Threads.
 #ifdef _OPENMP
   typedef Kokkos::OpenMP host_device_type;
 #else
-  typedef Kokkos::Host host_device_type;
+  typedef Kokkos::Threads host_device_type;
 #endif
 
   //! Type of a host-memory mirror of the sparse matrix.
@@ -221,7 +271,11 @@ public:
   std::vector<OrdinalType> rows_;
 
 
-  //! Default constructor; constructs an empty sparse matrix.
+  /// \brief Default constructor; constructs an empty sparse matrix.
+  ///
+  /// FIXME (mfh 09 Aug 2013) numRows, numCols, and nnz should be
+  /// properties of the graph, not the matrix.  Then CrsMatrix needs
+  /// methods to get these from the graph.
   CrsMatrix() : _numRows (0), _numCols (0), _nnz (0) {}
 
   /// \brief Constructor that copies raw arrays of host data in
@@ -258,8 +312,18 @@ public:
              bool pad = false)
   {
     import (label, nrows, ncols, annz, val, rows, cols);
+
+    // FIXME (mfh 09 Aug 2013) Specialize this on the Device type.
+    // Only use cuSPARSE for the Cuda Device.
 #ifdef KOKKOS_USE_CUSPARSE
+    // FIXME (mfh 09 Aug 2013) This is actually static initialization
+    // of the library; you should do it once for the whole program,
+    // not once per matrix.  We need to protect this somehow.
     cusparseCreate (&cusparse_handle);
+
+    // This is a per-matrix attribute.  It encapsulates things like
+    // whether the matrix is lower or upper triangular, etc.  Ditto
+    // for other TPLs like MKL.
     cusparseCreateMatDescr (&cusparse_descr);
 #endif // KOKKOS_USE_CUSPARSE
   }
@@ -306,6 +370,7 @@ public:
           OrdinalType* rows,
           OrdinalType* cols);
 
+  //! This is a method only for testing that creates a random sparse matrix.
   void
   generate (const std::string &label,
             OrdinalType nrows,
@@ -403,6 +468,14 @@ public:
     return SparseRowView<CrsMatrix> (&values(start), &graph.entries(start), 1, end - start);
   }
 
+  //! Return a const view of row i of the matrix.
+  KOKKOS_INLINE_FUNCTION
+  SparseRowViewConst<CrsMatrix> rowConst (int i) const {
+    const int start = graph.row_map(i);
+    const int end = graph.row_map(i+1);
+    return SparseRowViewConst<CrsMatrix> (&values(start), &graph.entries(start), 1, end - start);
+  }
+
 private:
   ordinal_type _numRows;
   ordinal_type _numCols;
@@ -427,6 +500,8 @@ import (const std::string &label,
   _numCols = ncols;
   _nnz = annz;
 
+  // FIXME (09 Aug 2013) CrsArray only takes std::vector for now.
+  // We'll need to fix that.
   std::vector<int> row_lengths (_numRows, 0);
 
   // FIXME (mfh 21 Jun 2013) This calls for a parallel_for kernel.
@@ -439,12 +514,13 @@ import (const std::string &label,
   typename values_type::HostMirror h_values = Kokkos::create_mirror_view (values);
   typename index_type::HostMirror h_entries = Kokkos::create_mirror_view (graph.entries);
 
-  // FIXME (mfh 21 Jun 2013) Why is this copy not a parallel copy?
+  // FIXME (mfh 21 Jun 2013) This needs to be a parallel copy.
   // Furthermore, why are the arrays copied twice? -- once here, to a
   // host view, and once below, in the deep copy?
   for (OrdinalType i = 0; i < _nnz; ++i) {
-    if ( val )
+    if (val) {
       h_values(i) = val[i];
+    }
     h_entries(i) = cols[i];
   }
 
@@ -598,8 +674,17 @@ generateHostGraph ( OrdinalType nrows,
 
 }
 
-// FIXME (mfh 21 Jun 2013) Does the generic version of this function
-// do anything at all?
+// FIXME (mfh 09 Aug 2013) These "shuffle" operations need to move
+// into kokkos/core, because they are fundamental to Kokkos and not
+// specific to sparse matrices.
+//
+// Shuffle only makes sense on >= Kepler GPUs; it doesn't work on CPUs
+// or other GPUs.  We provide a generic definition (which is trivial
+// and doesn't do what it claims to do) because we don't actually use
+// this function unless we are on a suitable GPU, with a suitable
+// Scalar type.  (For example, in the mat-vec, the "ThreadsPerRow"
+// internal parameter depends both on the Device and the Scalar type,
+// and it controls whether shfl_down() gets called.)
 template<typename Scalar>
 KOKKOS_INLINE_FUNCTION
 Scalar shfl_down(const Scalar &val, const int& delta, const int& width){
@@ -703,12 +788,9 @@ struct MV_MultiplyFunctor {
 #pragma ivdep
 #pragma unroll
     for (size_type k = 0 ; k < UNROLL ; ++k) {
-      // FIXME (mfh 21 Jun 2013) This requires that assignment from
-      // int (in this case, 0) to scalar_type be defined.  It's not
-      // for types like arprec and dd_real.  This would be a good
-      // opportunity to reuse Teuchos::ScalarTraits, which we could by
-      // defining kokkos/linalg to be a new subpackage and having that
-      // subpackage depend on both Kokkos and TeuchosCore.
+      // NOTE (mfh 09 Aug 2013) This requires that assignment from int
+      // (in this case, 0) to scalar_type be defined.  It's not for
+      // types like arprec and dd_real.
       sum[k] = 0;
     }
 
@@ -855,8 +937,7 @@ struct MV_MultiplyFunctor {
       strip_mine<1>(iRow, kk);
     }
 #else
-    // FIXME (mfh 21 Jun 2013) What does "DEVICE" mean?
-#if (DEVICE == 2)
+#  ifdef __CUDA_ARCH__
     if ((n > 8) && (n % 8 == 1)) {
       strip_mine<9>(iRow, kk);
       kk += 9;
@@ -865,7 +946,7 @@ struct MV_MultiplyFunctor {
       strip_mine<8>(iRow, kk);
     if(kk < n)
       switch(n - kk) {
-#else // DEVICE != 2
+#  else // NOT a CUDA device
         if ((n > 16) && (n % 16 == 1)) {
           strip_mine<17>(iRow, kk);
           kk += 17;
@@ -908,7 +989,7 @@ struct MV_MultiplyFunctor {
           case 8:
             strip_mine<8>(iRow, kk);
             break;
-#endif // DEVICE == 2
+#  endif // __CUDA_ARCH__
           case 7:
             strip_mine<7>(iRow, kk);
             break;
@@ -1409,6 +1490,11 @@ MV_Multiply (const RangeVector& y,
   // that it tests at run time for each TPL in turn.  Shouldn't it
   // rather dispatch on the Device type?  But I suppose the "try"
   // functions do that.
+  //
+  // We want to condense this a bit: "Try TPLs" function that tests
+  // all the suitable TPLs at run time.  This would be a run-time test
+  // that compares the Scalar and Device types to those accepted by
+  // the TPL(s).
 #ifdef KOKKOS_USE_CUSPARSE
   if (MV_Multiply_Try_CuSparse (0.0, y, 1.0, A, x)) {
     return;
@@ -1570,15 +1656,22 @@ namespace KokkosCrsMatrix {
   /// The two CrsMatrix specializations CrsMatrixDst and CrsMatrixSrc
   /// need not be the same.  However, it must be possible to deep_copy
   /// their column indices and their values.
+  ///
+  /// The target matrix must already be allocated, and must have the
+  /// same number of rows and number of entries as the source matrix.
+  /// It need not have the same row map as the source matrix.
   template <class CrsMatrixDst, class CrsMatrixSrc>
   void deep_copy (CrsMatrixDst A, CrsMatrixSrc B) {
-    // FIXME (mfh 21 Jun 2013) Why can we just copy like this?  How do
-    // we know that the two matrices have the same row map?  Do they
-    // even need to have the same row map?
-
     Kokkos::deep_copy(A.graph.entries, B.graph.entries);
+    // FIXME (mfh 09 Aug 2013) This _should_ copy the row map.  We
+    // couldn't do it before because the row map was const, forbidding
+    // deep_copy.
+    //
     //Kokkos::deep_copy(A.graph.row_map,B.graph.row_map);
     Kokkos::deep_copy(A.values, B.values);
+
+    // FIXME (mfh 09 Aug 2013) Be sure to copy numRows, numCols, and
+    // nnz as well.
   }
 } // namespace KokkosCrsMatrix
 
