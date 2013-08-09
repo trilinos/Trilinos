@@ -208,8 +208,9 @@ int GMRESManager< Map, MultiVector,
 
     // bq = \omega_n^T (0...0 bp(n+1))^T
     for (i = mm-1; i >= 0; i--) {
-        bq[i] = - sn[i] * bq[i + 1];
-        bq[i + 1] = cs[i] * bq[i + 1];
+    	ApplyPlaneRotation(bq[i], bq[i + 1], cs[i], -sn[i]);
+//        bq[i] = - sn[i] * bq[i + 1];
+//        bq[i + 1] = cs[i] * bq[i + 1];
     }
 
     // x = x + Q_n bq
