@@ -557,6 +557,12 @@ public:
      */
    void rebalance(const Teuchos::ParameterList & params);
 
+   /** Set the weight for a particular element block. Larger means more costly
+     * to assemble and evaluate.
+     */
+   void setBlockWeight(const std::string & blockId,double weight)
+   { blockWeights_[blockId] = weight; }
+
 public: // static operations
    static const std::string coordsString;
    static const std::string nodesString;
@@ -583,6 +589,13 @@ protected:
      * existence so the outer user can do whatever they'd like with the original.
      */
    Teuchos::RCP<Teuchos::MpiComm<int> > getSafeCommunicator(stk::ParallelMachine parallelMach) const;
+
+   /** In a pure local operation apply the user specified block weights for each
+     * element block to the field that defines the load balance weighting. This
+     * uses the blockWeights_ member to determine the user value that has been
+     * set for a particular element block.
+     */
+   void applyElementLoadBalanceWeights();
 
    std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > periodicBCs_;
 
@@ -634,6 +647,9 @@ protected:
 
    // uses lazy evaluation
    mutable Teuchos::RCP<std::vector<stk::mesh::Entity*> > orderedElementVector_;
+
+   // for element block weights
+   std::map<std::string,double> blockWeights_;
 
    // Object describing how to sort a vector of elements using
    // local ID as the key, very short lived object

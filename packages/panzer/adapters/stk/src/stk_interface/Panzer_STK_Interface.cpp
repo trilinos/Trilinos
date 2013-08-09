@@ -223,6 +223,7 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
 
       stk::io::set_field_role(*coordinatesField_, Ioss::Field::MESH);
       stk::io::set_field_role(*processorIdField_, Ioss::Field::TRANSIENT);
+      // stk::io::set_field_role(*loadBalField_, Ioss::Field::TRANSIENT);
    }
 #endif
 
@@ -808,13 +809,30 @@ void STK_Interface::buildLocalElementIDs()
       std::size_t * localId = stk::mesh::field_data(*localIdField_,element);
       localId[0] = currentLocalId_;
       currentLocalId_++;
-
-      // set local element ID
-      double * loadBal = stk::mesh::field_data(*loadBalField_,element);
-      loadBal[0] = 1.0;
    }
 
    orderedElementVector_ = elements; 
+}
+
+void STK_Interface::applyElementLoadBalanceWeights()
+{
+  std::vector<std::string> names;
+  getElementBlockNames(names);
+
+  for(std::size_t b=0;b<names.size();b++) {
+    // find user specified block weight, otherwise use 1.0
+    std::map<std::string,double>::const_iterator bw_itr = blockWeights_.find(names[b]);
+    double blockWeight = (bw_itr!=blockWeights_.end()) ? bw_itr->second : 1.0;
+
+    std::vector<stk::mesh::Entity*> elements;
+    getMyElements(names[b],elements);
+
+    for(std::size_t index=0;index<elements.size();++index) {
+      // set local element ID
+      double * loadBal = stk::mesh::field_data(*loadBalField_,*elements[index]);
+      loadBal[0] = blockWeight;
+    }
+  }
 }
 
 Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > > 
@@ -956,6 +974,9 @@ Teuchos::RCP<Teuchos::MpiComm<int> > STK_Interface::getSafeCommunicator(stk::Par
 
 void STK_Interface::rebalance(const Teuchos::ParameterList & params)
 {
+  // make sure weights have been set (a local operation)
+  applyElementLoadBalanceWeights();
+
   stk::mesh::Selector selector(getMetaData()->universal_part());
   stk::mesh::Selector owned_selector(getMetaData()->locally_owned_part());
 

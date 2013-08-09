@@ -734,6 +734,9 @@ namespace panzer_stk {
     {
       std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator physIter;
       for(physIter=physicsBlocks.begin();physIter!=physicsBlocks.end();++physIter) {
+        // what is the block weight for this element block?
+        double blockWeight = 0.0;
+
 	Teuchos::RCP<const panzer::PhysicsBlock> pb = *physIter;
 	const std::vector<panzer::StrPureBasisPair> & blockFields = pb->getProvidedDOFs();
 	
@@ -743,8 +746,15 @@ namespace panzer_stk {
 	
 	// add basis to DOF manager: block specific
 	std::set<panzer::StrPureBasisPair,panzer::StrPureBasisComp>::const_iterator fieldItr;
-	for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr)
+	for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr) {
 	  mesh.addSolutionField(fieldItr->first,pb->elementBlockID());
+
+          blockWeight += double(fieldItr->second->cardinality());
+        }
+
+        // set the compute block weight (this is the sum of the cardinality of all basis
+        // functions on this block
+        mesh.setBlockWeight(pb->elementBlockID(),blockWeight);
       }
    
       mesh_factory.completeMeshConstruction(mesh,*(mpi_comm.getRawMpiComm()));
