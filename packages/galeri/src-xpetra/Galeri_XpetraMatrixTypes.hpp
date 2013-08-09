@@ -221,9 +221,10 @@ namespace Galeri {
 
       Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 5);
 
-      LocalOrdinal NumMyElements = map->getNodeNumElements();
-      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
-      GlobalOrdinal indexBase = map->getIndexBase();
+      LocalOrdinal  numMyElements = map->getNodeNumElements();
+      GlobalOrdinal indexBase     = map->getIndexBase();
+
+      Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
 
       GlobalOrdinal center, left, right, lower, upper;
       LocalOrdinal nnz = 5;
@@ -233,13 +234,12 @@ namespace Galeri {
       //    e
       //  b a c
       //    d
-
-      for (LocalOrdinal i = 0; i < NumMyElements; ++i)  {
+      for (LocalOrdinal i = 0; i < numMyElements; ++i)  {
         size_t n = 0;
 
-        center = MyGlobalElements[i];
+        center = myGlobalElements[i] - indexBase;
         // GetNeighboursCartesian2d is zero-based, so shift the center point to get the correct neighbors
-        GetNeighboursCartesian2d(center-indexBase, nx, ny, left, right, lower, upper);
+        GetNeighboursCartesian2d(center, nx, ny, left, right, lower, upper);
 
         bool isDirichlet = (left  == -1 && (DirichletBC & DIR_LEFT))   ||
                            (right == -1 && (DirichletBC & DIR_RIGHT))  ||
@@ -248,8 +248,8 @@ namespace Galeri {
 
         if (isDirichlet && keepBCs) {
           // Dirichlet unknown we want to keep
-          mtx->insertGlobalValues(center,
-                                  Teuchos::tuple<GlobalOrdinal>(center),
+          mtx->insertGlobalValues(myGlobalElements[i],
+                                  Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i]),
                                   Teuchos::tuple<Scalar>(Teuchos::ScalarTraits<Scalar>::one()) );
         } else {
           // The Neumann b.c. are treated in a sane way. The Dirichlet b.c., however, are treated
@@ -278,7 +278,7 @@ namespace Galeri {
 
           Teuchos::ArrayView<GlobalOrdinal> iv(&inds[0], n);
           Teuchos::ArrayView<Scalar>        av(&vals[0], n);
-          mtx->insertGlobalValues(center, iv, av);
+          mtx->insertGlobalValues(myGlobalElements[i], iv, av);
         }
       }
 
@@ -302,9 +302,10 @@ namespace Galeri {
     {
       Teuchos::RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 9);
 
-      LocalOrdinal numMyElements = map->getNodeNumElements();
+      LocalOrdinal  numMyElements = map->getNodeNumElements();
+      GlobalOrdinal indexBase     = map->getIndexBase();
+
       Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
-      GlobalOrdinal indexBase = map->getIndexBase();
 
       GlobalOrdinal center, left, right, lower, upper;
       std::vector<Scalar>        vals(9);
