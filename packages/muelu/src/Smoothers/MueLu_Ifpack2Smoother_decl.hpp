@@ -50,6 +50,7 @@
 #include <Xpetra_Matrix_fwd.hpp>
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
+#include <Xpetra_MultiVectorFactory_fwd.hpp>
 #ifdef HAVE_XPETRA_TPETRA // needed for clone()
 #include "Xpetra_TpetraCrsMatrix.hpp"
 #endif
