@@ -76,9 +76,9 @@ int main(int argc, char *argv[]) {
   }
   
   if (verbose1)
-    cout << AztecOO_Version() << endl << endl;
+    std::cout << AztecOO_Version() << std::endl << std::endl;
   if (verbose)
-    cout << Comm <<endl;
+    std::cout << Comm <<std::endl;
   
   int NumGlobalElements = 5;
   int IndexBase = 0;
@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
   Epetra_Vector xx(Map);
 
   if (verbose)
-    cout << "Proc = " << Comm.MyPID() << "  NumMyElements=" << NumMyElements << endl;
+    std::cout << "Proc = " << Comm.MyPID() << "  NumMyElements=" << NumMyElements << std::endl;
     
   for (int i=0; i<NumMyElements; i++) {
     int index = MyGlobalElements[i]; // Global Diagonal location
@@ -108,14 +108,14 @@ int main(int argc, char *argv[]) {
 
   A.FillComplete();	// Signal that data entries are complete.
    
-  if (verbose1) cout << "A = " << endl;
-  if (verbose) cout << A << endl;
-  if (verbose1) cout << "xx = " << endl;
-  if (verbose) cout << xx << endl;
-  if (verbose1) cout << "x = " << endl;
-  if (verbose) cout << x << endl;
-  if (verbose1) cout << "b = " << endl;
-  if (verbose) cout << b << endl;
+  if (verbose1) std::cout << "A = " << std::endl;
+  if (verbose) std::cout << A << std::endl;
+  if (verbose1) std::cout << "xx = " << std::endl;
+  if (verbose) std::cout << xx << std::endl;
+  if (verbose1) std::cout << "x = " << std::endl;
+  if (verbose) std::cout << x << std::endl;
+  if (verbose1) std::cout << "b = " << std::endl;
+  if (verbose) std::cout << b << std::endl;
 
   // Want to solve Ax=b
   Epetra_LinearProblem problem(&A, &x, &b);
@@ -165,30 +165,30 @@ int main(int argc, char *argv[]) {
     }
 
     if (verbose1)
-      cout << "Solver performed " << solver.NumIters() << " iterations." << endl
-	   << "Norm of Recursive residual = " << solver.RecursiveResidual() << endl << endl;
+      std::cout << "Solver performed " << solver.NumIters() << " iterations." << std::endl
+	   << "Norm of Recursive residual = " << solver.RecursiveResidual() << std::endl << std::endl;
 
     assert(solver.NumIters()==NumGlobalElements);
       
 
   // Print out the result
-    if (verbose1) cout << "Computed Solution = " << endl;
-    if (verbose) cout << x << endl;
+    if (verbose1) std::cout << "Computed Solution = " << std::endl;
+    if (verbose) std::cout << x << std::endl;
 
     x.PutScalar(0.0);    
   }
 
   if (verbose1)
-    cout << "Computed solution for 5x5 matrix diag(1, -10, -100, -1000, -10000) using the following unpreconditioned unscaled methods:" << endl
-	 << "  1) GMRES with single step classical Gram-Schmidt" << endl
-	 << "  2) GMRES with double step classical Gram-Schmidt" << endl
-	 << "  3) GMRES with single step modified Gram-Schmidt" << endl
-	 << "  4) GMRES with double step modified Gram-Schmidt" << endl
-	 << "  5) BiCGSTAB" << endl << endl
-	 << "Confirmed that double steps provide superior answer to single step" << endl
-	 << "and that GMRES is superior to BiCGSTAB" << endl << endl;
+    std::cout << "Computed solution for 5x5 matrix diag(1, -10, -100, -1000, -10000) using the following unpreconditioned unscaled methods:" << std::endl
+	 << "  1) GMRES with single step classical Gram-Schmidt" << std::endl
+	 << "  2) GMRES with double step classical Gram-Schmidt" << std::endl
+	 << "  3) GMRES with single step modified Gram-Schmidt" << std::endl
+	 << "  4) GMRES with double step modified Gram-Schmidt" << std::endl
+	 << "  5) BiCGSTAB" << std::endl << std::endl
+	 << "Confirmed that double steps provide superior answer to single step" << std::endl
+	 << "and that GMRES is superior to BiCGSTAB" << std::endl << std::endl;
   if (Comm.MyPID()==0)
-    cout << "All tests passed." << endl;
+    std::cout << "All tests passed." << std::endl;
     
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
