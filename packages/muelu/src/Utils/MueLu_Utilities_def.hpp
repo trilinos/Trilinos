@@ -772,7 +772,7 @@ namespace MueLu {
       typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
       typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>                          reader_type;
 
-      RCP<Node> node = Xpetra::DefaultPlatform::getDefaultPlatform().getNode();
+      RCP<Node> node = rcp(new Node());
 
       RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > tMap = reader_type::readMapFile(fileName, comm, node);
       if (tMap.is_null())
