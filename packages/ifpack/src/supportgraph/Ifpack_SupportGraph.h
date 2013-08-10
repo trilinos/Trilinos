@@ -709,17 +709,8 @@ int Ifpack_SupportGraph<T>::AMST()
       std::cout << children[i] << std::endl;
       }*/
 
-  std::vector<int> ExtraIndices[num_verts];
-  std::vector<double> ExtraValues[num_verts];
-
-  for(int i = 0; i < num_verts; i++)
-    {
-      std::vector<int> temp;
-      std::vector<double> temp2;
-      ExtraIndices[i] = temp;
-      ExtraValues[i] = temp2;
-    }
-
+  std::vector<std::vector<int> > ExtraIndices(num_verts);
+  std::vector<std::vector<double> > ExtraValues(num_verts);
 
 
   for(int i = 0; i < roots.size(); i++)
