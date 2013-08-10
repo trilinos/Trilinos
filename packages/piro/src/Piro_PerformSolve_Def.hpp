@@ -98,6 +98,7 @@ void PerformSolveImpl(
   model.evalModel(inArgs, outArgs);
 
   // On adaptive problems, the length of the response vectors change. Refresh the response vector.
+#if 0
   {
     for (int j = 0; j < responseCount; ++j) {
       if (computeResponses[j]) {
@@ -107,6 +108,7 @@ void PerformSolveImpl(
       }
     }
   }
+#endif
 }
 
 template <typename Scalar>
