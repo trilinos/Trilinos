@@ -445,15 +445,13 @@ void Piro::Epetra::LOCAAdaptiveSolver::evalModel( const InArgs& inArgs,
     // Resize gx if problem size has changed
     if(gx_out->MyLength() != finalSolution->MyLength()){
 
-//      const Teuchos::RCP<Epetra_Vector> gx_new = Teuchos::rcp(new Epetra_Vector(*finalSolution));
-      std::cout << "FIXME GAH - must resize gx: not returning final solution." << std::endl;
-
-      //outArgs.set_g(num_g, gx_new);
+      std::cout << "Mismatch in storage sizes between final solution and response vector - not returning final solution." 
+                << std::endl;
 
     }
     else
 
-     *gx_out = *finalSolution;
+      *gx_out = *finalSolution;
 
   }
 

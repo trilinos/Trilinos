@@ -96,6 +96,17 @@ void PerformSolveImpl(
   // Solve the problem using the default values for the parameters
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = model.createInArgs();
   model.evalModel(inArgs, outArgs);
+
+  // On adaptive problems, the length of the response vectors change. Refresh the response vector.
+  {
+    for (int j = 0; j < responseCount; ++j) {
+      if (computeResponses[j]) {
+        const Teuchos::RCP<Thyra::VectorBase<Scalar> > g = Thyra::createMember(*model.get_g_space(j));
+        outArgs.set_g(j, g);
+        responses[j] = g;
+      }
+    }
+  }
 }
 
 template <typename Scalar>
