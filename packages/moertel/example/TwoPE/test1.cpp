@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
   NumProc = Comm.NumProc();
   if (NumProc != 2)
   {
-    cout << "test1.exe needs to be run on 2 processors\n";
+    std::cout << "test1.exe needs to be run on 2 processors\n";
 	return 1;
   }
   // ------------------------------------------------------------- //
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
     nodeid[i] = ScanSum - nnode + i;
     MOERTEL::Node node(nodeid[i], coord, 1, &nodeid[i], false, printlevel);
     if(!interface.AddNode(node, side)){
-    	cout << "interface AddNode returned false\n";
+    	std::cout << "interface AddNode returned false\n";
     	return 1;
 	}
   }
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
     seg_id = ScanSum - nedge + i + 1;
     MOERTEL::Segment_Linear1D segment(seg_id, 2, econ, printlevel);
     if(!interface.AddSegment(segment, side)){
-    	cout << "interface AddSegment returned false\n";
+    	std::cout << "interface AddSegment returned false\n";
 		return 1;
 	}
   }
@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
   interface.SetFunctionTypes(MOERTEL::Function::func_Linear1D,       // primal trace space
 			     MOERTEL::Function::func_DualLinear1D);  // dual mortar space (recommended)
   if (!interface.Complete()) {
-    cout << "Interface completion returned false\n";
+    std::cout << "Interface completion returned false\n";
 	return -1;
   }
   // ------------------------------------------------------------- //
@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
     
   // print interface information
   // (Manager, Interface, Segment, Node implement the << operator)
-  if (printlevel) cout << manager;
+  if (printlevel) std::cout << manager;
   
   
   // get the 2 pieces of the constraint equation
@@ -193,11 +193,11 @@ int main(int argc, char *argv[])
   MOERTEL::MatrixMatrixAdd(*M,false,1.0,constraints,1.0);
   constraints.FillComplete(D->DomainMap(),D->RangeMap());
   constraints.OptimizeStorage();
-  cout << constraints;
+  std::cout << constraints;
         
   MPI_Finalize();
 
-  cout << "\nTest passed!" << endl;
+  std::cout << "\nTest passed!" << std::endl;
 
   return 0;
 
