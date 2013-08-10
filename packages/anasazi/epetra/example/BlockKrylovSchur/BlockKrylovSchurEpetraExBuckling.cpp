@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
   int addErr = EpetraExt::MatrixMatrix::Add( *M, false, -sigma, Kcopy, 1.0 );
   if (addErr != 0) {
     if (MyPID == 0) {
-      cout << "EpetraExt::MatrixMatrix::Add returned with error: " << addErr << endl;
+      std::cout << "EpetraExt::MatrixMatrix::Add returned with error: " << addErr << std::endl;
     }
 #ifdef HAVE_MPI
     MPI_Finalize() ;
@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
   bool boolret = MyProblem->setProblem();
   if (boolret != true) {
     if (MyPID == 0) {
-      cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << endl;
+      std::cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << std::endl;
     }
 #ifdef HAVE_MPI
     MPI_Finalize() ;
@@ -235,7 +235,7 @@ int main(int argc, char *argv[]) {
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMgr.solve();
   if (returnCode != Anasazi::Converged && MyPID==0) {
-    cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << endl;
+    std::cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << std::endl;
   }
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
@@ -261,19 +261,19 @@ int main(int argc, char *argv[]) {
     
     if (MyPID==0) {
       double rq_eval = 0.0;
-      cout.setf(std::ios_base::right, std::ios_base::adjustfield);
-      cout<<"Actual Eigenvalues (obtained by Rayleigh quotient) : "<<endl;
-      cout<<"------------------------------------------------------"<<endl;
-      cout<<std::setw(16)<<"Real Part"
-        <<std::setw(16)<<"Rayleigh Error"<<endl;
-      cout<<"------------------------------------------------------"<<endl;
+      std::cout.setf(std::ios_base::right, std::ios_base::adjustfield);
+      std::cout<<"Actual Eigenvalues (obtained by Rayleigh quotient) : "<<std::endl;
+      std::cout<<"------------------------------------------------------"<<std::endl;
+      std::cout<<std::setw(16)<<"Real Part"
+        <<std::setw(16)<<"Rayleigh Error"<<std::endl;
+      std::cout<<"------------------------------------------------------"<<std::endl;
       for (i=0; i<numev; i++) {
         rq_eval = 1.0 / dmatr(i,i);
-        cout<<std::setw(16)<<rq_eval
+        std::cout<<std::setw(16)<<rq_eval
           <<std::setw(16)<<Teuchos::ScalarTraits<double>::magnitude(rq_eval-compEvals[i])
-          <<endl;
+          <<std::endl;
       }
-      cout<<"------------------------------------------------------"<<endl;
+      std::cout<<"------------------------------------------------------"<<std::endl;
     }
     
   }

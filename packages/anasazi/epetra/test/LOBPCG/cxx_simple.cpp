@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
   const ScalarType ONE  = SCT::one();
 
   if (verbose && MyPID == 0) {
-    cout << Anasazi::Anasazi_Version() << endl << endl;
+    std::cout << Anasazi::Anasazi_Version() << std::endl << std::endl;
   }
 
   //  Problem information
@@ -131,8 +131,8 @@ int main(int argc, char *argv[])
   boolret = problem->setProblem();
   if (boolret != true) {
     if (verbose && MyPID == 0) {
-      cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
-           << "End Result: TEST FAILED" << endl;	
+      std::cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << std::endl
+           << "End Result: TEST FAILED" << std::endl;	
     }
 #ifdef HAVE_MPI
     MPI_Finalize() ;
@@ -231,7 +231,7 @@ int main(int argc, char *argv[])
 
   if (testFailed) {
     if (verbose && MyPID==0) {
-      cout << "End Result: TEST FAILED" << endl;	
+      std::cout << "End Result: TEST FAILED" << std::endl;	
     }
     return -1;
   }
@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
   // Default return value
   //
   if (verbose && MyPID==0) {
-    cout << "End Result: TEST PASSED" << endl;
+    std::cout << "End Result: TEST PASSED" << std::endl;
   }
   return 0;
 
