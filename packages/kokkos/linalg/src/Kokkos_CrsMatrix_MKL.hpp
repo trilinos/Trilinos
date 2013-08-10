@@ -4,16 +4,16 @@ namespace Kokkos {
 
 template<typename T, class RangeVector,class CrsMatrix,class DomainVector>
 bool MV_Multiply_DoMKL(typename Kokkos::Impl::enable_if<
-		!Kokkos::Impl::is_same<T,double>::value && !Kokkos::Impl::is_same<T,float>::value, typename RangeVector::scalar_type  >::type s_b
-		,const RangeVector & y, typename DomainVector::scalar_type s_a,
-		const CrsMatrix & A , const DomainVector & x) {
-	return false;
+                !Kokkos::Impl::is_same<T,double>::value && !Kokkos::Impl::is_same<T,float>::value, typename RangeVector::scalar_type  >::type s_b
+                ,const RangeVector & y, typename DomainVector::scalar_type s_a,
+                const CrsMatrix & A , const DomainVector & x) {
+        return false;
 }
 
 template<typename T, class RangeVector,class CrsMatrix,class DomainVector>
 bool MV_Multiply_DoMKL(typename Kokkos::Impl::enable_if<Kokkos::Impl::is_same<T,double>::value, double  >::type s_b
-		,const RangeVector & y, double s_a,
-		const CrsMatrix & A , const DomainVector & x) {
+                ,const RangeVector & y, double s_a,
+                const CrsMatrix & A , const DomainVector & x) {
 
   char matdescra[6] = "GLNC0";
   char transa = 'N';
@@ -26,9 +26,14 @@ bool MV_Multiply_DoMKL(typename Kokkos::Impl::enable_if<Kokkos::Impl::is_same<T,
     Impl::PhysicalLayout layout_x(x);
     Impl::PhysicalLayout layout_y(y);
     if((layout_x.layout_type!=layout_x.Right) || layout_y.layout_type!=layout_y.Right) return false;
-  
+
     int stride_x = layout_x.stride[0];
     int stride_y = layout_y.stride[0];
+    // FIXME (mfh 09 Aug 2013) Doesn't this interface only work with
+    // row-major multivectors?  I recall that only the "Fortran"
+    // version works with column-major multivectors, and it requires
+    // that the column indices be one-based.  See
+    // KokkosClassic::MklSparseOps for an example.
     mkl_dcsrmm(&transa,
                &m, &n, &k,
                &s_a,
@@ -59,9 +64,9 @@ bool MV_Multiply_DoMKL(typename Kokkos::Impl::enable_if<Kokkos::Impl::is_same<T,
 
 template<typename T, class RangeVector,class CrsMatrix,class DomainVector>
 bool MV_Multiply_DoMKL(typename Kokkos::Impl::enable_if<Kokkos::Impl::is_same<T,float>::value, float  >::type s_b
-		,const RangeVector & y, float s_a,
-		const CrsMatrix & A , const DomainVector & x) {
-	
+                ,const RangeVector & y, float s_a,
+                const CrsMatrix & A , const DomainVector & x) {
+
   char matdescra[6] = "GLNC0";
   int stride_x = layout_x.stride[0];
   int stride_y = layout_y.stride[0];
@@ -108,19 +113,19 @@ bool MV_Multiply_DoMKL(typename Kokkos::Impl::enable_if<Kokkos::Impl::is_same<T,
 //ToDo: strip compatible type attributes (const, volatile); make type of s_b and s_a independent
 template<class RangeVector,class CrsMatrix,class DomainVector>
 bool MV_Multiply_Try_MKL( typename RangeVector::scalar_type s_b,const RangeVector & y, typename DomainVector::scalar_type s_a,
-		const CrsMatrix & A , const DomainVector & x)
+                const CrsMatrix & A , const DomainVector & x)
 {
   if(!(Kokkos::Impl::is_same<typename RangeVector::device_type,typename Kokkos::Host>::value ||
-	   Kokkos::Impl::is_same<typename RangeVector::device_type,typename Kokkos::OpenMP>::value)  ) return false;
+           Kokkos::Impl::is_same<typename RangeVector::device_type,typename Kokkos::OpenMP>::value)  ) return false;
   if(Kokkos::Impl::is_same<typename RangeVector::non_const_scalar_type,float>::value&&
-	 Kokkos::Impl::is_same<typename DomainVector::non_const_scalar_type,float>::value&&
-	 Kokkos::Impl::is_same<typename CrsMatrix::values_type::non_const_scalar_type,float>::value) {
-	   return MV_Multiply_DoMKL<typename RangeVector::scalar_type,RangeVector,CrsMatrix,DomainVector>(s_b,y,s_a,A,x);
+         Kokkos::Impl::is_same<typename DomainVector::non_const_scalar_type,float>::value&&
+         Kokkos::Impl::is_same<typename CrsMatrix::values_type::non_const_scalar_type,float>::value) {
+           return MV_Multiply_DoMKL<typename RangeVector::scalar_type,RangeVector,CrsMatrix,DomainVector>(s_b,y,s_a,A,x);
   } else
   if(Kokkos::Impl::is_same<typename RangeVector::non_const_scalar_type,double>::value&&
-	 Kokkos::Impl::is_same<typename DomainVector::non_const_scalar_type,double>::value&&
-	 Kokkos::Impl::is_same<typename CrsMatrix::values_type::non_const_scalar_type,double>::value) {
-	   return MV_Multiply_DoMKL<typename RangeVector::scalar_type,RangeVector,CrsMatrix,DomainVector>(s_b,y,s_a,A,x);
+         Kokkos::Impl::is_same<typename DomainVector::non_const_scalar_type,double>::value&&
+         Kokkos::Impl::is_same<typename CrsMatrix::values_type::non_const_scalar_type,double>::value) {
+           return MV_Multiply_DoMKL<typename RangeVector::scalar_type,RangeVector,CrsMatrix,DomainVector>(s_b,y,s_a,A,x);
   } else
   return false;
 }
