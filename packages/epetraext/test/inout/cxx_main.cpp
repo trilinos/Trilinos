@@ -447,7 +447,7 @@ int generateHyprePrintOut(const char *filename, const Epetra_Comm &comm){
 
   double filePID = (double)MyPID/(double)100000;
   std::ostringstream stream;
-  // Using setprecision() puts it in the string
+  // Using setprecision() puts it in the std::string
   stream << std::setiosflags(std::ios::fixed) << std::setprecision(5) << filePID;
   // Then just ignore the first character
   std::string fileName(filename);
