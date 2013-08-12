@@ -2779,7 +2779,7 @@ namespace stk {
 
 #ifndef NDEBUG
         // owning_elementId < non_owning_elementId && owning_elementRank >= non_owning_elementRank
-        if (owning_element_rank >= non_owning_elementRank)
+        if (owning_element_rank == non_owning_elementRank)
           {
             VERIFY_OP(owning_element_id, !=, non_owning_elementId, "createNodeAndConnect:: bad elem ids");
             VERIFY_OP(owning_element_id, < , non_owning_elementId, "createNodeAndConnect:: bad elem ids 2");
