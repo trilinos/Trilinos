@@ -272,7 +272,9 @@ TEUCHOS_UNIT_TEST(PgPFactory, NonStandardMaps)
     Location: /home/jngaida/dev/MueLu/src/preCopyrightTrilinos/muelu/test/unit_tests/PgPFactory.cpp:216
   */
 
+#ifdef __GNUC__
 #warning Unit test PgPFactory NonStandardMaps disabled
+#endif
   return;
 
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();

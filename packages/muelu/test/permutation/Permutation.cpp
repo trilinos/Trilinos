@@ -79,7 +79,9 @@ typedef int    LocalOrdinal;
 typedef int    GlobalOrdinal;
 #else
 typedef int GlobalOrdinal;
-#warning Teuchos support for long long not enabled.
+#  ifdef __GNUC__
+#    warning Teuchos support for long long not enabled.
+#  endif
 #endif
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
