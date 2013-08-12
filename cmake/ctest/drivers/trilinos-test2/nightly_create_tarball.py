@@ -75,7 +75,7 @@ DEFAULT_ENABLE_DISABLE_LIST = [
   ("Belos", True),
   ("CTrilinos", True),
   ("Claps", False),
-  ("Didasko", True),
+  ("Didasko", False),
   ("Epetra", True),
   ("EpetraExt", True),
   ("FEApp", False),
