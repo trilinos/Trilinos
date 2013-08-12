@@ -148,7 +148,7 @@ namespace MueLu {
     RCP<MultiVector> overlappedCoords = coords;
     RCP<const Import> importer = ImportFactory::Build(coords->getMap(), colMap);
     if (!importer.is_null()) {
-      overlappedCoords = Xpetra::MultiVectorFactory<double,int,int>::Build(colMap, coords->getNumVectors());
+      overlappedCoords = MultiVectorFactory::Build(colMap, coords->getNumVectors());
       overlappedCoords->doImport(*coords, *importer, Xpetra::INSERT);
     }
 
