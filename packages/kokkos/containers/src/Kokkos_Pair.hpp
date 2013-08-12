@@ -33,6 +33,15 @@ struct pair
     : first(p.first), second(p.second)
   {}
 
+  template <class U, class V>
+  KOKKOS_FORCEINLINE_FUNCTION
+  pair<T1, T2> & operator=(const pair<U,V> &p)
+  {
+    first = p.first;
+    second = p.second;
+    return *this;
+  }
+
   // from std::pair<U,V>
   template <class U, class V>
   pair( const std::pair<U,V> &p)
@@ -84,6 +93,10 @@ pair<T1,T2> make_pair (T1 x, T2 y)
 { return ( pair<T1,T2>(x,y) ); }
 
 
+template <class T1,class T2>
+KOKKOS_FORCEINLINE_FUNCTION
+pair<T1 &,T2 &> tie (T1 & x, T2 & y)
+{ return ( pair<T1 &,T2 &>(x,y) ); }
 
 template <class T1>
 struct pair<T1,void>
@@ -114,6 +127,14 @@ struct pair<T1,void>
   pair( const pair<U,void> &p)
     : first(p.first)
   {}
+
+  template <class U>
+  KOKKOS_FORCEINLINE_FUNCTION
+  pair<T1, void> & operator=(const pair<U,void> &p)
+  {
+    first = p.first;
+    return *this;
+  }
 };
 
 

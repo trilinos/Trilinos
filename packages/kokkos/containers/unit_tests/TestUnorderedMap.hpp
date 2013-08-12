@@ -157,11 +157,11 @@ void test_insert_close(  uint32_t num_nodes
   map.check_sanity();
 
   const uint32_t map_size = map.size();
-  const uint32_t failed_inserts = map.failed_inserts();
+  const bool failed_inserts = map.failed_inserts();
 
-  ASSERT_EQ( failed_inserts, 0u);
+  ASSERT_FALSE( failed_inserts );
 
-  if (failed_inserts == 0u) {
+  if (!failed_inserts) {
     ASSERT_EQ(map_size, expected_inserts);
 
     uint32_t find_errors = 0;
@@ -190,11 +190,11 @@ void test_insert_far(  uint32_t num_nodes
   map.check_sanity();
 
   const uint32_t map_size = map.size();
-  const uint32_t failed_inserts = map.failed_inserts();
+  const bool failed_inserts = map.failed_inserts();
 
-  ASSERT_EQ( failed_inserts, 0u);
+  ASSERT_FALSE( failed_inserts );
 
-  if (failed_inserts == 0u) {
+  if (!failed_inserts) {
     ASSERT_EQ(map_size, expected_inserts);
 
     uint32_t find_errors = 0;
@@ -215,7 +215,7 @@ void test_failed_insert( uint32_t num_nodes)
 
   Impl::test_insert_far<map_type> test_insert_far(map, 2u*num_nodes, 1u);
   Device::fence();
-  ASSERT_GT( map.failed_inserts(), 0u);
+  ASSERT_TRUE( map.failed_inserts() );
   ASSERT_THROW(map.check_sanity(), std::runtime_error);
 }
 
@@ -240,11 +240,11 @@ void test_insert_mark_pending_delete(  uint32_t num_nodes
 
   const uint32_t map_size = map.size();
   const uint32_t pending_delete = map.pending_delete();
-  const uint32_t failed_inserts = map.failed_inserts();
+  const bool failed_inserts = map.failed_inserts();
 
-  ASSERT_EQ( failed_inserts, 0u);
+  ASSERT_FALSE( failed_inserts );
 
-  if (failed_inserts == 0u) {
+  if (!failed_inserts) {
     ASSERT_EQ(map_size, 0u);
     ASSERT_EQ(pending_delete, expected_inserts);
 
