@@ -82,14 +82,14 @@ namespace MueLu {
 
 #undef MUELU_SHIFTEDLAPLACIAN_SHORT
 #include "MueLu_UseShortNames.hpp"
-    
+
     typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
     typedef Tpetra::MultiVector<SC,LO,GO,NO>             TMV;
     typedef Tpetra::Operator<SC,LO,GO,NO>                OP;
     typedef Belos::LinearProblem<SC,TMV,OP>              BelosLinearProblem;
     typedef Belos::SolverManager<SC,TMV,OP>              BelosSolverManager;
     typedef Belos::BlockGmresSolMgr<SC,TMV,OP>           BelosGMRES;
-    
+
   public:
 
     //! Constructors
@@ -105,7 +105,7 @@ namespace MueLu {
 
     // Destructor
     virtual ~ShiftedLaplacian();
-    
+
     // Input
     void setParameters(const Teuchos::ParameterList List);
 
@@ -121,7 +121,7 @@ namespace MueLu {
     void setcoords(RCP<MultiVector>& Coords);
     void setProblemShifts(Scalar ashift1, Scalar ashift2);
     void setPreconditioningShifts(Scalar pshift1, Scalar pshift2);
-    void setLevelShifts(vector<Scalar> levelshifts);
+    void setLevelShifts(std::vector<Scalar> levelshifts);
     void setAggregation(int stype);
     void setSmoother(int stype);
     void setSolver(int stype);
@@ -144,8 +144,8 @@ namespace MueLu {
     // Problem options
     // Problem  -> acoustic, elastic, acoustic-elastic
     // numPDEs_ -> number of DOFs at each node
-    
-    std::string Problem_; 
+
+    std::string Problem_;
     int numPDEs_;
     int numSetups_;
 
@@ -167,7 +167,7 @@ namespace MueLu {
     double     omega_;
     SC         ashift1_, ashift2_;
     SC         pshift1_, pshift2_;
-    vector<SC> levelshifts_;
+    std::vector<SC> levelshifts_;
 
     // Krylov solver inputs
     // iters  -> max number of iterations
@@ -217,7 +217,7 @@ namespace MueLu {
     Teuchos::ParameterList            coarsestSmooList_;
     std::string                       ifpack2Type_;
     Teuchos::ParameterList            ifpack2List_;
-    
+
     // Operator and Preconditioner
     RCP< MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO> > MueLuOp_;
     RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >           TpetraA_;

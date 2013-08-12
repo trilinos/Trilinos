@@ -70,7 +70,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPa
   iters_          =  List.get<int>              (  "muelu: number of iterations"  );
   blksize_        =  List.get<int>              (  "muelu: block size"            );
   FGMRESoption_   =  List.get<bool>             (  "muelu: fgmres on/off"         );
-  tol_            =  List.get<double>           (  "muelu: residual tolerance"    );  
+  tol_            =  List.get<double>           (  "muelu: residual tolerance"    );
   omega_          =  List.get<double>           (  "muelu: omega"                 );
 
 }
@@ -160,7 +160,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPr
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setLevelShifts(vector<Scalar> levelshifts) {
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setLevelShifts(std::vector<Scalar> levelshifts) {
 
   levelshifts_=levelshifts;
   numLevels_=levelshifts_.size();
@@ -198,14 +198,14 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setSo
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setSweeps(int nsweeps) {
-  
+
   nsweeps_=nsweeps;
 
 }
-  
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setCycles(int ncycles) {
-  
+
   ncycles_=ncycles;
 
 }
@@ -294,7 +294,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   smooFact_  = rcp( new SmootherFactory(smooProto_) );
   coarsestSmooProto_ = rcp( new DirectSolver("Superlu",coarsestSmooList_) );
   coarsestSmooFact_  = rcp( new SmootherFactory(coarsestSmooProto_, Teuchos::null) );
-  
+
   // Use stiffness matrix to setup prolongation/restriction operators
   Hierarchy_ = rcp( new Hierarchy(K_)  );
   Hierarchy_ -> Keep("P", Pfact_.get());
@@ -397,7 +397,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   smooFact_  = rcp( new SmootherFactory(smooProto_) );
   coarsestSmooProto_ = rcp( new DirectSolver("Superlu",coarsestSmooList_) );
   coarsestSmooFact_  = rcp( new SmootherFactory(coarsestSmooProto_, Teuchos::null) );
-  
+
   // Use stiffness matrix to setup prolongation/restriction operators
   Hierarchy_ = rcp( new Hierarchy(K_)  );
   Hierarchy_ -> Keep("P", Pfact_.get());
@@ -424,7 +424,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   Hierarchy_ -> GetLevel(0) -> Set("K", K_);
   Hierarchy_ -> GetLevel(0) -> Set("M", M_);
   Hierarchy_ -> Setup(*Manager_, 0, numLevels);
-  
+
   // Define Operator and Preconditioner
   MueLuOp_ = rcp( new MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO>(Hierarchy_, A_, ncycles_, subiters_, option_, tol_) );
   TpetraA_ = Utils::Op2NonConstTpetraCrs(A_);
@@ -497,7 +497,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
       ifpack2List_.set("relaxation: zero starting solution", true);
     }
     smooProto_ = rcp( new Ifpack2Smoother(ifpack2Type_,ifpack2List_) );
-    smooFact_  = rcp( new SmootherFactory(smooProto_) );    
+    smooFact_  = rcp( new SmootherFactory(smooProto_) );
     coarsestSmooProto_ = rcp( new DirectSolver("Superlu",coarsestSmooList_) );
     coarsestSmooFact_  = rcp( new SmootherFactory(coarsestSmooProto_, Teuchos::null) );
 
@@ -529,7 +529,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
     Hierarchy_ -> SetMaxCoarseSize( coarseGridSize_ );
     Hierarchy_ -> Setup(*Manager_, 0, numLevels_);
     Hierarchy_ -> Delete("Smoother");
-    Hierarchy_ -> Delete("CoarseSolver");    
+    Hierarchy_ -> Delete("CoarseSolver");
 
     GridTransfersExist_=true;
 
@@ -604,7 +604,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   }
 
   // Define Operator and Preconditioner
-  RCP< MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO> > MueLuOp 
+  RCP< MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO> > MueLuOp
     = rcp( new MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO>(Hierarchy_, A_, ncycles_, subiters_, option_, tol_) );
   RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > TpetraA = Utils::Op2NonConstTpetraCrs(A_);
 
@@ -624,7 +624,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
 
 }
-  
+
 // Solve phase
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::solve(const RCP<TMV> B, RCP<TMV>& X)
