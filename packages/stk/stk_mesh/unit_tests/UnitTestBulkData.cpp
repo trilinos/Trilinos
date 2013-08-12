@@ -1505,6 +1505,131 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityPartsOfShared)
   }
 }
 
+STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testParallelSideCreation)
+{
+  //
+  // This unit-test is designed to test what happens when a shared sides are created on
+  // both processors that share the side with different global ids.  Then synchonization
+  // is done as a second step.
+  //
+  // 1---3---5
+  // | 1 | 2 |
+  // 2---4---6
+  //
+  // To test this, we use the mesh above, with each elem going on a separate
+  // proc, one elem per proc. Node 3 is the node we'll be testing.
+  //
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  // Set up meta and bulk data
+  const unsigned spatial_dim = 2;
+  MetaData meta_data(spatial_dim);
+  const EntityRank node_rank = MetaData::NODE_RANK;
+  const EntityRank elem_rank = MetaData::ELEMENT_RANK;
+  const EntityRank side_rank = MetaData::EDGE_RANK;
+
+  meta_data.commit();
+
+  BulkData mesh(meta_data, pm);
+  int p_rank = mesh.parallel_rank();
+  int p_size = mesh.parallel_size();
+
+  // Bail unless in parallel
+  if (p_size == 1) {
+    return;
+  }
+
+  // Begin modification cycle so we can create the entities and relations
+  if (p_rank < 2) {
+    mesh.modification_begin();
+
+    const unsigned nodes_per_elem = 4, nodes_per_side = 2;
+    EntityKey node_key_to_move(node_rank, 3 /*id*/);
+
+    // We're just going to add everything to the universal part
+    stk::mesh::PartVector empty_parts;
+
+    // Create nodes
+    EntityVector nodes;
+    const unsigned starting_node_id = p_rank * nodes_per_side + 1;
+    for (unsigned id = starting_node_id; id < starting_node_id + nodes_per_elem; ++id) {
+      nodes.push_back(mesh.declare_entity(NODE_RANK, id, empty_parts));
+    }
+
+    // Create element
+    const EntityId elem_id = p_rank+1;
+    Entity elem = mesh.declare_entity(elem_rank, elem_id, empty_parts);
+
+    // Create local version of side (with different, artificial id on each processor)
+    const EntityId tmp_side_id = p_rank+51;
+    Entity side = mesh.declare_entity(side_rank, tmp_side_id, empty_parts);
+
+    // Add element relations to nodes
+    unsigned elem_rel_id = 0;
+    for (EntityVector::iterator itr = nodes.begin(); itr != nodes.end(); ++itr, ++elem_rel_id) {
+      mesh.declare_relation( elem, *itr, elem_rel_id );
+    }
+
+    // Add side relations to nodes and element
+    EntityVector side_nodes;
+    side_nodes.push_back( mesh.get_entity( NODE_RANK, 3 ) );
+    side_nodes.push_back( mesh.get_entity( NODE_RANK, 4 ) );
+    unsigned side_rel_id = 0;
+    for (EntityVector::iterator itr = side_nodes.begin(); itr != side_nodes.end(); ++itr, ++side_rel_id) {
+      mesh.declare_relation( side, *itr, side_rel_id );
+    }
+    mesh.declare_relation( elem, side, 0 );
+
+    mesh.modification_end();
+
+    // Expect that the side is not shared, but the nodes of side are shared
+    STKUNIT_EXPECT_TRUE(mesh.entity_comm_sharing(mesh.entity_key(side)).empty());
+    STKUNIT_EXPECT_FALSE(mesh.entity_comm_sharing(mesh.entity_key(side_nodes[0])).empty());
+    STKUNIT_EXPECT_FALSE(mesh.entity_comm_sharing(mesh.entity_key(side_nodes[1])).empty());
+
+    // Now "detect" that there is a duplicate aura side using the side nodes
+    EntityVector sides;
+    get_entities_through_relations(mesh, side_nodes, side_rank, sides);
+    STKUNIT_EXPECT_EQUAL(2u, sides.size());
+
+    mesh.modification_begin();
+
+    // Delete the local side and create new, shared side
+    mesh.destroy_relation(elem, side, 0);
+    bool successfully_destroyed = mesh.destroy_entity(side);
+    STKUNIT_EXPECT_TRUE(successfully_destroyed);
+
+    const EntityId side_id = 1;
+    side = mesh.declare_entity(side_rank, side_id, empty_parts);
+
+    // Add side relations to nodes and element
+    side_rel_id = 0;
+    for (EntityVector::iterator itr = side_nodes.begin(); itr != side_nodes.end(); ++itr, ++side_rel_id) {
+      mesh.declare_relation( side, *itr, side_rel_id );
+    }
+    mesh.declare_relation( elem, side, 0 );
+
+    mesh.modification_end();
+
+    // Expect that the side is shared, and nodes of side are shared
+    STKUNIT_EXPECT_FALSE(mesh.entity_comm_sharing(mesh.entity_key(side)).empty());
+    STKUNIT_EXPECT_FALSE(mesh.entity_comm_sharing(mesh.entity_key(side_nodes[0])).empty());
+    STKUNIT_EXPECT_FALSE(mesh.entity_comm_sharing(mesh.entity_key(side_nodes[1])).empty());
+
+    // Check that there is only a single side using the side nodes
+    get_entities_through_relations(mesh, side_nodes, side_rank, sides);
+    STKUNIT_EXPECT_EQUAL(1u, sides.size());
+  }
+  else {
+    // On extra procs, do bare minimum
+    mesh.modification_begin();
+    mesh.modification_end();
+    mesh.modification_begin();
+    mesh.modification_end();
+  }
+}
+
 STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_final_modification_end)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
