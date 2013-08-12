@@ -197,6 +197,7 @@ template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::local_search()
 template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::apply(){
   m_mesha->update_values();
   INTERPOLATE::apply(*m_meshb, *m_mesha, m_local_range_to_domain);
+  m_meshb->update_values();
 }
 
 template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::determine_entities_to_copy(
@@ -293,9 +294,9 @@ template <class INTERPOLATE>  void GeometricTransfer<INTERPOLATE>::coarse_search
   search::FactoryOrder order;
   order.m_communicator = mesha.comm();
 
-  unsigned range_vector_empty = range_vector.empty();
-  stk::all_reduce( mesha.comm(), stk::ReduceSum<1>(&range_vector_empty));
-  while (!range_vector_empty) { // Keep going until all range points are processed.
+  unsigned range_vector_not_empty = !range_vector.empty();
+  stk::all_reduce( mesha.comm(), stk::ReduceSum<1>(&range_vector_not_empty));
+  while (range_vector_not_empty) { // Keep going until all range points are processed.
     // Slightly confusing: coarse_search documentation has domain->range
     // relations sorted by domain key.  We want range->domain type relations
     // sorted on range key. It might appear we have the arguments revered
@@ -313,8 +314,8 @@ template <class INTERPOLATE>  void GeometricTransfer<INTERPOLATE>::coarse_search
       // If points were missed, increase search radius.
       i->scale(expansion_factor);
     }
-    range_vector_empty = range_vector.empty();
-    stk::all_reduce( mesha.comm(), stk::ReduceSum<1>(&range_vector_empty));
+    range_vector_not_empty = !range_vector.empty();
+    stk::all_reduce( mesha.comm(), stk::ReduceSum<1>(&range_vector_not_empty));
   } 
   sort (range_to_domain.begin(), range_to_domain.end());
 }
