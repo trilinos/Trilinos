@@ -109,6 +109,8 @@
 
 #include <Kokkos_DefaultNode.hpp>
 
+#include "Tpetra_CrsMatrix.hpp"
+
 #ifdef HAVE_TEKO
 #include "Teko_StratimikosFactory.hpp"
 #endif
@@ -116,6 +118,10 @@
 #ifdef HAVE_MUELU
 #include <Thyra_MueLuPreconditionerFactory.hpp>
 #include "Stratimikos_MueluTpetraHelpers.hpp"
+#endif
+
+#ifdef HAVE_IFPACK2
+#include <Thyra_Ifpack2PreconditionerFactory.hpp>
 #endif
 
 namespace panzer_stk {
@@ -1298,6 +1304,14 @@ namespace panzer_stk {
     {
       Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder); // Register MueLu as a Stratimikos preconditioner strategy for Epetra
       Stratimikos::enableMueLuTpetra<int,panzer::Ordinal64,KokkosClassic::DefaultNode::DefaultNodeType>(linearSolverBuilder,"MueLu-Tpetra");
+    }
+    #endif // MUELU
+    #ifdef HAVE_IFPACK2
+    {
+      typedef Thyra::PreconditionerFactoryBase<double> Base;
+      typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double, int, panzer::Ordinal64,KokkosClassic::DefaultNode::DefaultNodeType> > Impl;
+
+      linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
     }
     #endif // MUELU
 

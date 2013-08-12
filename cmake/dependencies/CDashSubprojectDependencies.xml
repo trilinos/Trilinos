@@ -762,7 +762,7 @@
     <Dependency name="Belos" type="ILO"/>
     <Dependency name="Anasazi" type="ILO"/>
     <Dependency name="Zoltan2" type="ILO"/>
-    <Dependency name="Ifpack2" type="ILO"/>
+    <Dependency name="Ifpack2" type="LO"/>
     <Dependency name="Stratimikos" type="TO"/>
     <Dependency name="FEI" type="LR"/>
     <Dependency name="Teko" type="LO"/>
