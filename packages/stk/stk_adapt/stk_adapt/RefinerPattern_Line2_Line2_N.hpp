@@ -72,10 +72,11 @@ namespace stk {
           }
 
         // FIXME
-        nodeRegistry.makeCentroidCoords(element, m_primaryEntityRank, 0u);
+        //nodeRegistry.makeCentroidCoords(element, m_primaryEntityRank, 0u);
+
         nodeRegistry.addToExistingParts(element, m_primaryEntityRank, 0u);
 
-        nodeRegistry.interpolateFields(element, m_primaryEntityRank, 0u);
+        //nodeRegistry.interpolateFields(element, m_primaryEntityRank, 0u);
 
         Elem::CellTopology elem_celltopo = Elem::getCellTopology< FromTopology >();
         const Elem::RefinementTopology* ref_topo_p = Elem::getRefinementTopology(elem_celltopo);
@@ -165,6 +166,9 @@ namespace stk {
             eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
 
             set_parent_child_relations(eMesh, element, newElement, ielem);
+
+            std::vector<stk::mesh::Entity> elements(1,element);
+            interpolateElementFields(eMesh, elements, newElement);
 
             element_pool++;
 
