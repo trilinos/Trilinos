@@ -215,7 +215,7 @@ int main(int argc, char *argv[]) {
       nullspace->putScalar(one);
     }
   } else {
-    RCP<const Map> map = (mapFile.empty() ? Teuchos::null : Utils::ReadMap(mapFile, xpetraParameters.GetLib(), comm));
+    RCP<const Map> map = (mapFile.empty() ? Teuchos::null : Utils2::ReadMap(mapFile, xpetraParameters.GetLib(), comm));
     comm->barrier();
 
     A = Utils::Read(matrixFile, map);

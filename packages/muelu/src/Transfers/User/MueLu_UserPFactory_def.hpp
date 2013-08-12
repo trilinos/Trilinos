@@ -90,7 +90,7 @@ namespace MueLu {
 
     std::string    mapFile   = pL.get<std::string>("mapFileName");
     RCP<const Map> rowMap    = A->getRowMap();
-    RCP<const Map> coarseMap = Utils::ReadMap(mapFile, rowMap->lib(), rowMap->getComm());
+    RCP<const Map> coarseMap = Utils2::ReadMap(mapFile, rowMap->lib(), rowMap->getComm());
     Set(coarseLevel, "CoarseMap", coarseMap);
 
     std::string matrixFile = pL.get<std::string>("matrixFileName");

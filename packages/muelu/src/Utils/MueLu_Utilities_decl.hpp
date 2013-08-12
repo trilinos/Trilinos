@@ -298,9 +298,6 @@ namespace MueLu {
     /*! @brief Save matrix to file in Matrix Market format. */
     static void Write(const std::string& fileName, const Matrix& Op);
 
-    //! @brief Read map from file
-    static Teuchos::RCP<const Map> ReadMap(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm);
-
     //! @brief Read matrix from file in Matrix Market or binary format.
     static Teuchos::RCP<Matrix> Read(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm, bool binary = false);
 
@@ -453,20 +450,21 @@ namespace MueLu {
                              const Matrix& B, bool transposeB, const SC& beta,
                              RCP<Matrix>& C,       bool AHasFixedNnzPerRow = false);
 
-    static RCP<MultiVector> ReadMultiVector         (const std::string& fileName, const RCP<const Map>& map);
+    static RCP<MultiVector> ReadMultiVector (const std::string& fileName, const RCP<const Map>& map);
+    static RCP<const Map>   ReadMap         (const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm);
   }; // class Utils2
 
   // specialization Utils2 for SC=double, LO=GO=int
   template<>
   class Utils2<double,int,int> {
-    typedef double                                              SC;
-    typedef int                                                 LO;
-    typedef int                                                 GO;
+    typedef double                                                     SC;
+    typedef int                                                        LO;
+    typedef int                                                        GO;
     typedef KokkosClassic::DefaultNode::DefaultNodeType                NO;
     typedef KokkosClassic::DefaultKernels<double,int,NO>::SparseOps    LMO;
-    typedef Xpetra::Map<int,int,NO>                             Map;
-    typedef Xpetra::Matrix<double,int,int,NO,LMO>               Matrix;
-    typedef Xpetra::MultiVector<double,int,int,NO>              MultiVector;
+    typedef Xpetra::Map<int,int,NO>                                    Map;
+    typedef Xpetra::Matrix<double,int,int,NO,LMO>                      Matrix;
+    typedef Xpetra::MultiVector<double,int,int,NO>                     MultiVector;
 
   public:
 
@@ -477,6 +475,7 @@ namespace MueLu {
                                                      const Matrix& B, bool transposeB, SC beta,
                                                      RCP<Matrix>& C,  bool AHasFixedNnzPerRow = false);
     static RCP<MultiVector> ReadMultiVector         (const std::string& fileName, const RCP<const Map>& map);
+    static RCP<const Map>   ReadMap                 (const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm);
   };
 
 

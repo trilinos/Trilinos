@@ -345,4 +345,37 @@ namespace MueLu {
     return Teuchos::null;
   }
 
+  RCP<const Xpetra::Map<int,int> > Utils2<double,int,int>::ReadMap(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm) {
+    if (lib == Xpetra::UseEpetra) {
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
+        Epetra_Map *eMap;
+        int rv = EpetraExt::MatrixMarketFileToMap(fileName.c_str(), *(Xpetra::toEpetra(comm)), eMap);
+        if (rv != 0)
+          throw Exceptions::RuntimeError("Error reading matrix with EpetraExt::MatrixMarketToMap (returned " + toString(rv) + ")");
+
+        RCP<Epetra_Map> eMap1 = rcp(new Epetra_Map(*eMap));
+        return Xpetra::toXpetra(*eMap1);
+#else
+        throw Exceptions::RuntimeError("MueLu has not been compiled with Epetra and EpetraExt support.");
+#endif
+    } else if (lib == Xpetra::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
+      typedef Tpetra::CrsMatrix<double,int,int,NO,LMO> sparse_matrix_type;
+      typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>                          reader_type;
+
+      RCP<NO> node = rcp(new NO());
+
+      RCP<const Tpetra::Map<int,int,NO> > tMap = reader_type::readMapFile(fileName, comm, node);
+      if (tMap.is_null())
+        throw Exceptions::RuntimeError("The Tpetra::Map returned from readSparseFile() is null.");
+
+      return Xpetra::toXpetra(tMap);
+#else
+      throw Exceptions::RuntimeError("MueLu has not been compiled with Tpetra support.");
+#endif
+    } else {
+      throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
+    }
+  }
+
 }
