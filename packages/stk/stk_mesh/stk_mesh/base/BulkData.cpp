@@ -1053,15 +1053,17 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
         }
 
         // Print field data
-        BOOST_FOREACH(FieldBase* field, all_fields) {
-          FieldMetaData field_meta_data = m_field_meta_data[m_num_fields * i + field->mesh_meta_data_ordinal()][bucket->bucket_id()];
+        if (m_num_fields > 0) {
+          BOOST_FOREACH(FieldBase* field, all_fields) {
+            FieldMetaData field_meta_data = m_field_meta_data[m_num_fields * i + field->mesh_meta_data_ordinal()][bucket->bucket_id()];
 
-          unsigned data_size = field_meta_data.m_size;
-          if (data_size > 0) { // entity has this field?
-            void* data = field_meta_data.m_data + field_meta_data.m_size * b_ord;
-            out << "        For field: " << *field << ", has data: ";
-            field->print_data(out, data, data_size);
-            out << std::endl;
+            unsigned data_size = field_meta_data.m_size;
+            if (data_size > 0) { // entity has this field?
+              void* data = field_meta_data.m_data + field_meta_data.m_size * b_ord;
+              out << "        For field: " << *field << ", has data: ";
+              field->print_data(out, data, data_size);
+              out << std::endl;
+            }
           }
         }
       }
