@@ -207,7 +207,7 @@ MDComm::getTeuchosComm() const
 EpetraCommRCP
 MDComm::getEpetraComm() const
 {
-  if (_epetraComm.is_null())
+  if (_epetraComm.is_null() && not _teuchosComm.is_null())
   {
 #ifdef HAVE_MPI
     Teuchos::RCP< const Teuchos::MpiComm<int> > teuchosMpiComm =
