@@ -6,7 +6,7 @@ DemoFactory
 EmergencyAggregationAlgorithm
 Graph
 IsolatedNodeAggregationAlgorithm
-IsorropiaInterface
+IsorropiaInterface - #if defined (HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
 LWGraph
 LeftoverAggregationAlgorithm
 LocalAggregationAlgorithm

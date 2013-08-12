@@ -78,3 +78,4 @@ template class MueLu::TrilinosSmoother<double, int, int, KokkosClassic::ThrustGP
 template class MueLu::TrilinosSmoother<double, int, int, KokkosClassic::TPINode, KokkosClassic::DefaultKernels<void, int, KokkosClassic::TPINode>::SparseOps>;
 #endif
 
+
