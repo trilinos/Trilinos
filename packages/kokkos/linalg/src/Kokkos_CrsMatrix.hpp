@@ -57,6 +57,10 @@
 #include <Kokkos_CrsArray.hpp>
 #include <Kokkos_MultiVector.hpp>
 
+#ifndef _OPENMP
+#include <Kokkos_Threads.hpp>
+#endif // ! _OPENMP
+
 #ifdef KOKKOS_USE_CUSPARSE
 #  include <cusparse_v2.h>
 #  include <Kokkos_CrsMatrix_CuSparse.hpp>
