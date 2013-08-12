@@ -5,6 +5,8 @@ HierarchyFactory
 HierarchyManager
 PreDropFunctionBaseClass
 PRFactory
+ShiftedLaplacian
+ShiftedLaplacianOperator
 Smoother
-SolverBase
 SmootherBase
+SolverBase
