@@ -127,6 +127,7 @@ namespace Iovs {
 			   void *data, size_t data_size) const {return 0;}
 
     void write_meta_data();
+    void load_plugin_library();
 
     int64_t handle_node_ids(void* ids, int64_t num_to_get);
     int64_t handle_element_ids(const Ioss::ElementBlock *eb, void* ids, size_t num_to_get);
@@ -144,6 +145,8 @@ namespace Iovs {
 
     std::string databaseTitle;
     std::string paraview_script_filename;
+    std::string paraview_json_parse;
+    std::string sierra_input_deck_name;
     int underscoreVectors;
     int applyDisplacements;
     int createSideSets;

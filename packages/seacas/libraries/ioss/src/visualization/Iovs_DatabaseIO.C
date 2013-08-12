@@ -24,7 +24,21 @@
 #include <Ioss_FileInfo.h>
 #include <Ioss_SurfaceSplit.h>
 
+#include <stk_util/diag/UserPlugin.hpp>
+
+#include <boost/filesystem/path.hpp>
+#include <boost/filesystem/operations.hpp>
+
 #include <assert.h>
+
+#if defined(__APPLE__)
+ const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY = "libParaViewCatalystSierraAdapter.dylib";
+#else
+ const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY = "libParaViewCatalystSierraAdapter.so";
+#endif
+
+const char* CATALYST_PLUGIN_PYTHON_MODULE = "PhactoriDriver.py";
+const char* CATALYST_PLUGIN_PATH= "viz/catalyst/install";
 
 namespace { // Internal helper functions
   int64_t get_id(const Ioss::GroupingEntity *entity,
@@ -35,6 +49,8 @@ namespace { // Internal helper functions
 		      Iovs::EntityIdSet *idset);
   int64_t extract_id(const std::string &name_id);
 
+  void build_catalyst_plugin_paths(std::string& plugin_library_path,
+		                           std::string& plugin_python_path);
 } // End anonymous namespace
 
 namespace Iovs {
@@ -43,24 +59,26 @@ namespace Iovs {
 
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string& filename,
                          Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
-			 const Ioss::PropertyManager &props) :
-    Ioss::DatabaseIO (region, filename, db_usage, communicator, props)
+			             const Ioss::PropertyManager &props) :
+                         Ioss::DatabaseIO (region, filename, db_usage, communicator, props)
 
   {
     dbState = Ioss::STATE_UNKNOWN;
     this->pvcsa = 0;
     this->globalNodeAndElementIDsCreated = false;
 
-    if(props.exists("VISUALIZATION_SCRIPT"))
+    if(props.exists("VISUALIZATION_BLOCK_PARSE_JSON_STRING"))
       {
-      this->paraview_script_filename = props.get("VISUALIZATION_SCRIPT").get_string();
+      this->paraview_json_parse = props.get("VISUALIZATION_BLOCK_PARSE_JSON_STRING").get_string();
       }
     else
       {
-      std::ostringstream errmsg;
-      errmsg << "Property VISUALIZATION_SCRIPT not given in results output \n"
-             << "block, unable to initialize ParaView Catalyst";
-      IOSS_ERROR(errmsg);
+      this->paraview_json_parse = "{}";
+      }
+
+    if(props.exists("CATALYST_SCRIPT"))
+      {
+      this->paraview_script_filename = props.get("CATALYST_SCRIPT").get_string();
       }
 
     this->underscoreVectors = 1;
@@ -86,6 +104,11 @@ namespace Iovs {
       {
       this->createSideSets = props.get("VISUALIZATION_CREATE_SIDE_SETS").get_int();
       }
+
+    if(props.exists("VISUALIZATION_BLOCK_PARSE_INPUT_DECK_NAME"))
+      {
+  	  this->sierra_input_deck_name = props.get("VISUALIZATION_BLOCK_PARSE_INPUT_DECK_NAME").get_string();
+      }
   }
 
   DatabaseIO::~DatabaseIO() 
@@ -103,6 +126,39 @@ namespace Iovs {
     elemMap.release_memory();
   }
 
+  void DatabaseIO::load_plugin_library() {
+	  std::string plugin_library_path;
+	  std::string plugin_python_module_path;
+
+	  if(!ParaViewCatalystSierraAdaptorBaseFactory::exists("ParaViewCatalystSierraAdaptor")) {
+	      build_catalyst_plugin_paths(plugin_library_path,
+	      		                      plugin_python_module_path);
+	      sierra::Plugin::Registry::rootInstance().registerDL(plugin_library_path.c_str(), "");
+	      if(!ParaViewCatalystSierraAdaptorBaseFactory::exists("ParaViewCatalystSierraAdaptor")) {
+	    	  std::ostringstream errmsg;
+	    	  errmsg << "Unable to load catalyst plug-in dynamic library.\n"
+	    	    	 << "Path: " << plugin_library_path << "\n";
+	    	  IOSS_ERROR(errmsg);
+	    	  return;
+	      }
+	  }
+
+	  if(this->paraview_script_filename.empty()) {
+		  if(plugin_python_module_path.empty()) {
+	          build_catalyst_plugin_paths(plugin_library_path,
+	      	                              plugin_python_module_path);
+		  }
+	      if ( !boost::filesystem::exists(plugin_python_module_path) ) {
+	    	  std::ostringstream errmsg;
+	    	  errmsg << "Catalyst Python module path does not exist.\n"
+	                 << "Python module path: " << plugin_python_module_path << "\n";
+	    	  IOSS_ERROR(errmsg);
+	  		  return;
+	      }
+	      this->paraview_script_filename = plugin_python_module_path;
+	  }
+  }
+
   bool DatabaseIO::begin(Ioss::State state)
   {
     dbState = state;
@@ -110,11 +166,18 @@ namespace Iovs {
     Ioss::Region *region = this->get_region();
     if(region->model_defined() && !this->pvcsa)
       {
+      this->load_plugin_library();
       this->pvcsa = ParaViewCatalystSierraAdaptorBaseFactory::create("ParaViewCatalystSierraAdaptor")();
+
+      std::string separator(1, this->get_field_separator());
+
       if(this->pvcsa)
         this->pvcsa->InitializeParaViewCatalyst(this->paraview_script_filename.c_str(),
-        		                                this->underscoreVectors,
-        		                                this->applyDisplacements);
+        		                        this->paraview_json_parse.c_str(),
+        		                        separator.c_str(),
+        		                        this->sierra_input_deck_name.c_str(),
+        		                        this->underscoreVectors,
+        		                        this->applyDisplacements);
       std::vector<int> element_block_id_list;
       Ioss::ElementBlockContainer const & ebc = region->get_element_blocks();
       for(int i = 0;i<ebc.size();i++)
@@ -965,4 +1028,89 @@ namespace {
      return 0;
    }
 
+  void build_catalyst_plugin_paths(std::string& plugin_library_path,
+		                           std::string& plugin_python_path) {
+	  std::string sierra_ins_dir;
+	  if(getenv("SIERRA_INSTALL_DIR")) {
+		  sierra_ins_dir = getenv("SIERRA_INSTALL_DIR");
+	  }
+	  else {
+	      std::ostringstream errmsg;
+	      errmsg << "Environment variable SIERRA_INSTALL_DIR not set.\n"
+		         << " Unable to find ParaView catalyst dynamic library.\n";
+	      IOSS_ERROR(errmsg);
+		  return;
+	  }
+
+	  std::string sierra_system;
+	  if(getenv("SIERRA_SYSTEM")) {
+		  sierra_system = getenv("SIERRA_SYSTEM");
+	  }
+	  else {
+	      std::ostringstream errmsg;
+	      errmsg << "Environment variable SIERRA_SYSTEM not set.\n"
+		         << " Unable to find ParaView catalyst dynamic library.\n";
+	      IOSS_ERROR(errmsg);
+	      return;
+	  }
+
+	  std::string sierra_version;
+	  if(getenv("SIERRA_VERSION")) {
+		  sierra_version = getenv("SIERRA_VERSION");
+	  }
+	  else {
+	      std::ostringstream errmsg;
+	      errmsg << "Environment variable SIERRA_VERSION not set.\n"
+		         << " Unable to find ParaView catalyst dynamic library.\n";
+	      IOSS_ERROR(errmsg);
+		  return;
+	  }
+
+      try {
+        boost::filesystem::path sierra_ins_path(sierra_ins_dir);
+        sierra_ins_path = boost::filesystem::system_complete(sierra_ins_path);
+
+        if ( !boost::filesystem::exists(sierra_ins_path) ) {
+  	      std::ostringstream errmsg;
+  	      errmsg << "SIERRA_INSTALL_DIR directory does not exist.\n"
+		         << "Directory path: " << sierra_ins_path << "\n"
+		         << " Unable to find ParaView catalyst dynamic library.\n";
+  	      IOSS_ERROR(errmsg);
+  		  return;
+        }
+
+        while(!sierra_ins_path.parent_path().empty() &&
+        	   sierra_ins_path.filename() != "sierra") {
+        	sierra_ins_path = sierra_ins_path.parent_path();
+        }
+
+        if(sierra_ins_path.filename() == "sierra")
+            sierra_ins_path = sierra_ins_path.parent_path();
+
+        boost::filesystem::path pip = sierra_ins_path / CATALYST_PLUGIN_PATH / sierra_system
+        		                      / sierra_version / CATALYST_PLUGIN_DYNAMIC_LIBRARY;
+
+        boost::filesystem::path pmp = sierra_ins_path / CATALYST_PLUGIN_PATH / sierra_system
+        		                      / sierra_version / CATALYST_PLUGIN_PYTHON_MODULE;
+
+        if ( !boost::filesystem::exists(pip) ) {
+    	    std::ostringstream errmsg;
+    	    errmsg << "Catalyst dynamic library plug-in does not exist.\n"
+			       << "File path: " << pip << "\n";
+    	    IOSS_ERROR(errmsg);
+  		    return;
+        }
+
+        plugin_library_path = pip.string();
+        plugin_python_path = pmp.string();
+      }
+      catch(boost::filesystem::filesystem_error& e) {
+          std::cerr << e.what() << std::endl;
+	   	  std::ostringstream errmsg;
+	      errmsg << "Unable to find ParaView catalyst dynamic library.\n";
+	      IOSS_ERROR(errmsg);
+		  return;
+      }
+
+  }
 }
