@@ -507,6 +507,10 @@ TEUCHOS_UNIT_TEST( MDComm, subCommLowerLeft )
     TEST_EQUALITY(epetraComm->NumProc(), teuchosComm->getSize());
     TEST_EQUALITY(epetraComm->MyPID(), teuchosComm->getRank());
   }
+  else
+  {
+    TEST_ASSERT(subMDComm.getEpetraComm().is_null());
+  }
 #endif
 }
 
@@ -588,6 +592,10 @@ TEUCHOS_UNIT_TEST( MDComm, subCommLowerRight )
     TeuchosCommRCP teuchosComm = subMDComm.getTeuchosComm();
     TEST_EQUALITY(epetraComm->NumProc(), teuchosComm->getSize());
     TEST_EQUALITY(epetraComm->MyPID(), teuchosComm->getRank());
+  }
+  else
+  {
+    TEST_ASSERT(subMDComm.getEpetraComm().is_null());
   }
 #endif
 }
@@ -671,6 +679,10 @@ TEUCHOS_UNIT_TEST( MDComm, subCommUpperLeft )
     TEST_EQUALITY(epetraComm->NumProc(), teuchosComm->getSize());
     TEST_EQUALITY(epetraComm->MyPID(), teuchosComm->getRank());
   }
+  else
+  {
+    TEST_ASSERT(subMDComm.getEpetraComm().is_null());
+  }
 #endif
 }
 
@@ -753,6 +765,10 @@ TEUCHOS_UNIT_TEST( MDComm, subCommUpperRight )
     TeuchosCommRCP teuchosComm = subMDComm.getTeuchosComm();
     TEST_EQUALITY(epetraComm->NumProc(), teuchosComm->getSize());
     TEST_EQUALITY(epetraComm->MyPID(), teuchosComm->getRank());
+  }
+  else
+  {
+    TEST_ASSERT(subMDComm.getEpetraComm().is_null());
   }
 #endif
 }
