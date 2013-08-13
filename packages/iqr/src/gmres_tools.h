@@ -221,7 +221,7 @@ int GMRESManager< Map, MultiVector,
     }
 
 
-    //x.Scale(scaling);
+    x.Scale(scaling);
 
 
     // solving R_{n} y_{n} = bp and setting x = x + Q_{n} y_{n} 
