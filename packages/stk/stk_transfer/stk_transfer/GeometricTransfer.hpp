@@ -320,6 +320,12 @@ template <class INTERPOLATE>  void GeometricTransfer<INTERPOLATE>::coarse_search
       // If points were missed, increase search radius.
       i->scale(expansion_factor);
     }
+    if (!range_vector.empty()) {
+      // If points were missed, increase search radius.
+      for (typename std::vector<BoundingBoxA>::iterator i=domain_vector.begin(); i!=domain_vector.end(); ++i) {
+        i->scale(expansion_factor);
+      }
+    }
     range_vector_not_empty = !range_vector.empty();
     stk::all_reduce( mesha.comm(), stk::ReduceSum<1>(&range_vector_not_empty));
   } 
