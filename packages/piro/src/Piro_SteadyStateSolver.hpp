@@ -40,55 +40,84 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PIRO_NOXSOLVER_H
-#define PIRO_NOXSOLVER_H
+#ifndef PIRO_STEADYSTATESOLVER_HPP
+#define PIRO_STEADYSTATESOLVER_HPP
 
-#include "Piro_SteadyStateSolver.hpp"
-
-#include "Piro_ObserverBase.hpp"
-
-#include "NOX.H"
-#include "NOX_Thyra.H"
-
-#include "Teuchos_ParameterList.hpp"
+#include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
 
 namespace Piro {
 
-/** \brief Thyra-based Model Evaluator for NOX solves
+/** \brief Thyra-based abstract Model Evaluator for steady-states solves
  *  \ingroup Piro_Thyra_solver_grp
  * */
 template <typename Scalar>
-class NOXSolver
-    : public SteadyStateSolver<Scalar>
+class SteadyStateSolver
+    : public Thyra::ResponseOnlyModelEvaluatorBase<Scalar>
 {
   public:
 
   /** \name Constructors/initializers */
   //@{
   /** \brief . */
-  NOXSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams,
-            const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-            const Teuchos::RCP<ObserverBase<Scalar> > &observer = Teuchos::null);
+  explicit SteadyStateSolver(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model);
+  //@}
+
+  /** \name Overridden from Thyra::ModelEvaluatorBase . */
+  //@{
+  /** \brief . */
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
+  /** \brief . */
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int l) const;
+  /** \brief . */
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
+  //@}
+
+  /** \name Overridden from Thyra::ResponseOnlyModelEvaluatorBase . */
+  //@{
+  /** \brief . */
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
+  //@}
+
+  protected:
+  /** \name Service methods for subclasses. */
+  //@{
+  /** \brief . */
+  const Thyra::ModelEvaluator<Scalar> &getModel() const;
+
+  /** \brief . */
+  int num_p() const;
+  /** \brief . */
+  int num_g() const;
+
+  /** \brief . */
+  void evalConvergedModel(
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar>& modelInArgs,
+      const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
   //@}
 
   private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase . */
   //@{
   /** \brief . */
-  void evalModelImpl(
-      const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
-      const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
+
+  /** \brief . */
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_DgDp_op_impl(int j, int l) const;
   //@}
 
-  Teuchos::RCP<Teuchos::ParameterList> appParams;
-  Teuchos::RCP<ObserverBase<Scalar> > observer;
+  /** \name Internal implemention methods. */
+  //@{
+  /** \brief Implementation of createInArgs . */
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgsImpl() const;
+  //@}
 
-  Teuchos::RCP<Thyra::NOXNonlinearSolver> solver;
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_;
 
-  Teuchos::RCP<Teuchos::FancyOStream> out;
+  int num_p_;
+  int num_g_;
 };
 
 }
 
-#include "Piro_NOXSolver_Def.hpp"
-#endif
+#include "Piro_SteadyStateSolver_Def.hpp"
+#endif /*PIRO_STEADYSTATESOLVER_HPP*/

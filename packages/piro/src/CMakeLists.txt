@@ -52,6 +52,8 @@ APPEND_SET(HEADERS Piro_MatrixFreeDecorator.hpp
 # Optional NOX Dependency (which includes LOCA)
 IF (Piro_ENABLE_NOX) 
   APPEND_SET(HEADERS Piro_Epetra_NOXSolver.hpp
+                     Piro_SteadyStateSolver.hpp
+                     Piro_SteadyStateSolver_Def.hpp
                      Piro_NOXSolver.hpp
                      Piro_NOXSolver_Def.hpp
                      Piro_Epetra_LOCASolver.hpp
