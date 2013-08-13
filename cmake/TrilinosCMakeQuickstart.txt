@@ -1,0 +1,8 @@
+The Trilinos build instructions have been moved.  You can find them in the
+top-level directory (the same directory as the README file).  There are three
+versions:
+
+pdf: TrilinosBuildQuickRef.pdf
+html: TrilinosBuildQuickRef.html
+restructuredtext: TrilinosBuildQuickRef.rst
+
