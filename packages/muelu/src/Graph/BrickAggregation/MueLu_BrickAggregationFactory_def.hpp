@@ -288,14 +288,12 @@ namespace MueLu {
       (*gMap)[x[i]] = 0;
 
     // Step 2: exchange coordinates
-    Array<double>  recvBuf;
-    int recvSize = 0;
     if (isMPI && numProcs > 1) {
       MPI_Comm rawComm;
       if (isMPI)
         rawComm = (*mpiComm->getRawMpiComm())();
 
-      int           sendCnt = gMap->size(), cnt = 0;
+      int           sendCnt = gMap->size(), cnt = 0, recvSize;
       Array<int>    recvCnt(numProcs), Displs(numProcs);
       Array<double> sendBuf, recvBuf;
 
