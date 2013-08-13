@@ -10,10 +10,16 @@
 #ifndef  STK_GEOMETRICTRANSFER_HPP
 #define  STK_GEOMETRICTRANSFER_HPP
 
+#include <set>
+#include <vector>
+#include <string>
+#include <algorithm>
+
 #include <boost/shared_ptr.hpp>
 
 #include <stk_util/util/StaticAssert.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
 
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_transfer/TransferBase.hpp>
