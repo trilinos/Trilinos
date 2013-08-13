@@ -251,7 +251,16 @@ int main(int argc, char *argv[]) {
                                TotalErrorResidual, TotalErrorExactSol);
 
 
-
+  // =========================== //
+  // Ifpack w/ L1
+  // =========================== //
+#ifdef HAVE_ML_IFPACK
+  if (Comm.MyPID() == 0) PrintLine();
+  ML_Epetra::SetDefaults("SA",MLList);  
+  MLList.set("smoother: use l1 Gauss-Seidel",true);
+  TestMultiLevelPreconditioner(mystring, MLList, Problem, 
+                               TotalErrorResidual, TotalErrorExactSol);
+#endif
 
   // ===================== //
   // print out total error //
