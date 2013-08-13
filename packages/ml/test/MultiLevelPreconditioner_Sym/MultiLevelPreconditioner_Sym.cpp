@@ -219,8 +219,10 @@ int main(int argc, char *argv[]) {
   if (Comm.MyPID() == 0) PrintLine();
   ML_Epetra::SetDefaults("SA",MLList);  
 
-  MLList.set("ML print initial list",1);
-  MLList.set("ML print final list",1);
+  if(!Comm.MyPID()) {
+    MLList.set("ML print initial list",1);
+    MLList.set("ML print final list",1);
+  }
 
   MLList.set("smoother: type","ILU");
   MLList.set("coarse: type","ILUT");
