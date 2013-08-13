@@ -1561,7 +1561,7 @@
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS value="ExodusII"/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="CppUnit"/>
     <EmailAddresses>
       <Regression address="mesquite-regression@software.sandia.gov"/>
     </EmailAddresses>
