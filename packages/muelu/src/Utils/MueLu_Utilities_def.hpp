@@ -101,9 +101,6 @@
 #include <ml_epetra_utils.h>
 #endif
 
-#define scan(rcpComm, in, out)                                        \
-  Teuchos::scan(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
-
 namespace MueLu {
 
 #ifdef HAVE_MUELU_EPETRA
