@@ -40,6 +40,9 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef PIRO_NOXSOLVER_DEF_HPP
+#define PIRO_NOXSOLVER_DEF_HPP
+
 #include "Piro_NOXSolver.hpp"
 
 #include "Thyra_ModelEvaluatorHelpers.hpp"
@@ -124,3 +127,5 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
     this->observer->observeSolution(*convergedSolution);
   }
 }
+
+#endif /*PIRO_NOXSOLVER_DEF_HPP*/

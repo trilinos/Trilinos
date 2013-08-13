@@ -40,54 +40,13 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PIRO_NOXSOLVER_HPP
-#define PIRO_NOXSOLVER_HPP
-
-#include "Piro_SteadyStateSolver.hpp"
-
-#include "Piro_ObserverBase.hpp"
-
-#include "NOX.H"
-#include "NOX_Thyra.H"
-
-#include "Teuchos_ParameterList.hpp"
+#include "Piro_NOXSolver_Def.hpp"
 
 namespace Piro {
 
-/** \brief Thyra-based Model Evaluator for NOX solves
- *  \ingroup Piro_Thyra_solver_grp
- * */
-template <typename Scalar>
-class NOXSolver
-    : public SteadyStateSolver<Scalar>
-{
-  public:
+// Explicit template instantiation
+// NOX currently only supports Scalar = double
 
-  /** \name Constructors/initializers */
-  //@{
-  /** \brief . */
-  NOXSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams,
-            const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-            const Teuchos::RCP<ObserverBase<Scalar> > &observer = Teuchos::null);
-  //@}
+template class NOXSolver<double>;
 
-  private:
-  /** \name Overridden from Thyra::ModelEvaluatorDefaultBase . */
-  //@{
-  /** \brief . */
-  void evalModelImpl(
-      const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
-      const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
-  //@}
-
-  Teuchos::RCP<Teuchos::ParameterList> appParams;
-  Teuchos::RCP<ObserverBase<Scalar> > observer;
-
-  Teuchos::RCP<Thyra::NOXNonlinearSolver> solver;
-
-  Teuchos::RCP<Teuchos::FancyOStream> out;
-};
-
-}
-
-#endif /*PIRO_NOXSOLVER_HPP*/
+} // namespace Piro

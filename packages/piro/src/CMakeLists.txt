@@ -68,6 +68,7 @@ IF (Piro_ENABLE_NOX)
 		     Piro_Epetra_SensitivityOperator.hpp)
   APPEND_SET(SOURCES Piro_Epetra_NOXSolver.cpp
                      Piro_Epetra_LOCASolver.cpp
+                     Piro_NOXSolver.cpp
                      Piro_LOCASolver.cpp
                      Piro_ObserverToLOCASaveDataStrategyAdapter.cpp
                      Piro_Epetra_LOCAAdaptiveSolver.cpp
