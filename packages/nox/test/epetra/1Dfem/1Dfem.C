@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
   else if ((argc > 1) && (!verbose))
     NumGlobalElements = atoi(argv[1]) + 1;
   else 
-    NumGlobalElements = 201;
+    NumGlobalElements = 101;
 
   // The number of unknowns must be at least equal to the 
   // number of processors.
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList& nlParams = *(nlParamsPtr.get());
 
   // Set the nonlinear solver method
-  nlParams.set("Nonlinear Solver", "Anderson Accelerated Fixed-Point");
+  nlParams.set("Nonlinear Solver", "Line Search Based");
 
   // Set the printing parameters in the "Printing" sublist
   Teuchos::ParameterList& printParams = nlParams.sublist("Printing");
