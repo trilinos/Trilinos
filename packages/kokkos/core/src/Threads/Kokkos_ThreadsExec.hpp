@@ -119,7 +119,7 @@ public:
 
   static bool is_process();
 
-  static void verify_is_process( const std::string & );
+  static void verify_is_process( const std::string & , const bool initialized );
 
   static void initialize( const std::pair<unsigned,unsigned> team_topo ,
                                 std::pair<unsigned,unsigned> core_topo );

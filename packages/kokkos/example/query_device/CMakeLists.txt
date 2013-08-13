@@ -1,0 +1,28 @@
+INCLUDE(TribitsAddExecutableAndTest)   
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+SET(SOURCES "")
+
+FILE(GLOB SOURCES *.cpp)
+
+SET(LIBRARIES kokkosarray_devicehost kokkosarray_devicethreads kokkosarray_impl)
+
+IF( TPL_ENABLE_CUDA AND TPL_ENABLE_CUSPARSE )
+
+  SET(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)
+
+  LIST( APPEND LIBRARIES
+    kokkosarray_devicecuda
+  )
+
+ENDIF()
+
+TRIBITS_ADD_EXECUTABLE(
+  query_device
+  SOURCES ${SOURCES}
+  COMM serial mpi
+  DEPLIBS ${LIBRARIES}
+  )
+

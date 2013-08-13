@@ -361,11 +361,17 @@ void * ThreadsExec::get_shmem( const int size )
 namespace Kokkos {
 namespace Impl {
 
-void ThreadsExec::verify_is_process( const std::string & name )
+void ThreadsExec::verify_is_process( const std::string & name , const bool initialized )
 {
   if ( ! is_process() ) {
     std::string msg( name );
     msg.append( " FAILED : Called by a worker thread, can only be called by the master process." );
+    Kokkos::Impl::throw_runtime_exception( msg );
+  }
+
+  if ( initialized && 0 == s_threads_count ) {
+    std::string msg( name );
+    msg.append( " FAILED : Threads not initialized." );
     Kokkos::Impl::throw_runtime_exception( msg );
   }
 }
@@ -397,7 +403,7 @@ void ThreadsExec::activate_threads()
 /** \brief  Begin execution of the asynchronous functor */
 void ThreadsExec::start( void (*func)( ThreadsExec & , const void * ) , const void * arg )
 {
-  verify_is_process("ThreadsExec::start");
+  verify_is_process("ThreadsExec::start" , true );
 
   if ( s_current_function_lock && 
        s_current_function_lock != arg ) {
@@ -419,6 +425,8 @@ void ThreadsExec::start( void (*func)( ThreadsExec & , const void * ) , const vo
 
 void * ThreadsExec::execute( void (*func)( ThreadsExec & , const void * ) , const void * arg )
 {
+  verify_is_process("ThreadsExec::execute" , true );
+
   if ( s_current_function || s_current_function_arg ) {
     Kokkos::Impl::throw_runtime_exception( std::string( "ThreadsExec::execute() FAILED : already executing" ) );
   }
@@ -449,7 +457,7 @@ void * ThreadsExec::execute( void (*func)( ThreadsExec & , const void * ) , cons
 
 bool ThreadsExec::sleep()
 {
-  verify_is_process("ThreadsExec::sleep");
+  verify_is_process("ThreadsExec::sleep", true );
 
   if ( & execute_sleep == s_current_function ) return false ;
 
@@ -468,7 +476,7 @@ bool ThreadsExec::sleep()
 
 bool ThreadsExec::wake()
 {
-  verify_is_process("ThreadsExec::wake");
+  verify_is_process("ThreadsExec::wake", true );
 
   if ( & execute_sleep != s_current_function ) return false ;
 
@@ -561,7 +569,7 @@ void ThreadsExec::resize_shared_scratch( size_t size )
 
 void ThreadsExec::print_configuration( std::ostream & s , const bool detail )
 {
-  verify_is_process("ThreadsExec::print_configuration");
+  verify_is_process("ThreadsExec::print_configuration",false);
 
   fence();
 
@@ -616,7 +624,7 @@ void ThreadsExec::initialize(
 {
   static const Sentinel sentinel ;
 
-  verify_is_process("ThreadsExec::initialize");
+  verify_is_process("ThreadsExec::initialize",false);
 
   std::ostringstream msg ;
 
@@ -792,7 +800,7 @@ void ThreadsExec::initialize(
 
 void ThreadsExec::finalize()
 {
-  verify_is_process("ThreadsExec::finalize");
+  verify_is_process("ThreadsExec::finalize",false);
 
   fence();
 

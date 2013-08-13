@@ -3,6 +3,7 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Classic               classic           PS       OPTIONAL
   Core                  core              EX       OPTIONAL
   Containers            containers        EX       OPTIONAL
+  Example               example           EX       OPTIONAL
   Compat                compat            EX       OPTIONAL
   )
 

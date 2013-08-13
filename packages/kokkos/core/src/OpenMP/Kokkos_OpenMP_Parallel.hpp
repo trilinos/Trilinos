@@ -157,7 +157,7 @@ public:
 #pragma simd vectorlength(work_align)
 #pragma ivdep
         for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
-          functor( iwork , functor.reference( thread.reduce_data() , count * ( iwork & work_mask ) ) );
+          functor( iwork , ReduceOp::reference( thread.reduce_data() , count * ( iwork & work_mask ) ) );
         }
 
         for ( size_type j = 1 ; j < work_align ; ++j ) {
