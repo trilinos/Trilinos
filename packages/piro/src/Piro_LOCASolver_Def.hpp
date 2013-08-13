@@ -83,11 +83,9 @@ Piro::LOCASolver<Scalar>::LOCASolver(
     const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
     const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> &saveDataStrategy) :
+  SteadyStateSolver<Scalar>(model, model->Np() > 0), // Only one parameter supported
   piroParams_(piroParams),
-  model_(model),
   saveDataStrategy_(saveDataStrategy),
-  num_p_(model->Np() > 0), // Only one parameter supported
-  num_g_(model->Ng()),
   globalData_(LOCA::createGlobalData(piroParams)),
   paramVector_(),
   group_(),
@@ -96,14 +94,14 @@ Piro::LOCASolver<Scalar>::LOCASolver(
   stepper_()
 {
   const int l = 0; // TODO: Allow user to select parameter index
-  const Detail::ModelEvaluatorParamName paramName(model_->get_p_names(l));
-  const Thyra::Ordinal p_entry_count = model_->get_p_space(l)->dim();
+  const Detail::ModelEvaluatorParamName paramName(this->getModel().get_p_names(l));
+  const Thyra::Ordinal p_entry_count = this->getModel().get_p_space(l)->dim();
   for (Teuchos_Ordinal k = 0; k < p_entry_count; ++k) {
     (void) paramVector_.addParameter(paramName(k));
   }
 
   const NOX::Thyra::Vector initialGuess(*model->getNominalValues().get_x());
-  group_ = Teuchos::rcp(new LOCA::Thyra::Group(globalData_, initialGuess, model_, paramVector_, l));
+  group_ = Teuchos::rcp(new LOCA::Thyra::Group(globalData_, initialGuess, model, paramVector_, l));
   group_->setSaveDataStrategy(saveDataStrategy_);
 
   // TODO: Create non-trivial stopping criterion for the stepper
@@ -121,78 +119,6 @@ template<typename Scalar>
 Piro::LOCASolver<Scalar>::~LOCASolver()
 {
   LOCA::destroyGlobalData(globalData_);
-}
-
-template<typename Scalar>
-Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-Piro::LOCASolver<Scalar>::get_p_space(int l) const
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(l >= num_p_ || l < 0, Teuchos::Exceptions::InvalidParameter,
-                     std::endl <<
-                     "Error in Piro::LOCASolver::get_p_space():  " <<
-                     "Invalid parameter index l = " <<
-                     l << std::endl);
-  return model_->get_p_space(l);
-}
-
-template<typename Scalar>
-Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-Piro::LOCASolver<Scalar>::get_g_space(int j) const
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(j > num_g_ || j < 0, Teuchos::Exceptions::InvalidParameter,
-                     std::endl <<
-                     "Error in Piro::LOCASolver::get_g_space():  " <<
-                     "Invalid response index j = " <<
-                     j << std::endl);
-
-  if (j < num_g_) {
-    return model_->get_g_space(j);
-  } else {
-    // j == num_g_, corresponding to the solution by convention
-    return model_->get_x_space();
-  }
-}
-
-template <typename Scalar>
-Thyra::ModelEvaluatorBase::InArgs<Scalar>
-Piro::LOCASolver<Scalar>::createInArgsImpl() const
-{
-  Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> result;
-  result.setModelEvalDescription(this->description());
-  result.set_Np(num_p_);
-  return result;
-}
-
-template<typename Scalar>
-Thyra::ModelEvaluatorBase::InArgs<Scalar>
-Piro::LOCASolver<Scalar>::getNominalValues() const
-{
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> result = this->createInArgsImpl();
-  result.setArgs(
-      model_->getNominalValues(),
-      /* ignoreUnsupported = */ true,
-      /* cloneObjects = */ false);
-  return result;
-}
-
-template <typename Scalar>
-Thyra::ModelEvaluatorBase::InArgs<Scalar>
-Piro::LOCASolver<Scalar>::createInArgs() const
-{
-  return this->createInArgsImpl();
-}
-
-template <typename Scalar>
-Thyra::ModelEvaluatorBase::OutArgs<Scalar>
-Piro::LOCASolver<Scalar>::createOutArgsImpl() const
-{
-  Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar> result;
-  result.setModelEvalDescription(this->description());
-  // One additional response slot for the solution vector
-  result.set_Np_Ng(num_p_, num_g_ + 1);
-
-  // TODO: Enable sensitivities
-  return result;
 }
 
 template <typename Scalar>
@@ -231,9 +157,9 @@ Piro::LOCASolver<Scalar>::evalModelImpl(
     outArgs.setFailed();
   }
 
-  const Teuchos::RCP<Thyra::VectorBase<Scalar> > x_outargs = outArgs.get_g(num_g_);
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> > x_outargs = outArgs.get_g(this->num_g());
   const Teuchos::RCP<Thyra::VectorBase<Scalar> > x_final =
-    Teuchos::nonnull(x_outargs) ? x_outargs : Thyra::createMember(this->get_g_space(num_g_));
+    Teuchos::nonnull(x_outargs) ? x_outargs : Thyra::createMember(this->get_g_space(this->num_g()));
 
   {
     // Deep copy final solution from LOCA group
@@ -243,21 +169,15 @@ Piro::LOCASolver<Scalar>::evalModelImpl(
 
   // Compute responses for the final solution
   {
-    Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs = model_->createInArgs();
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs =
+      this->getModel().createInArgs();
     {
       modelInArgs.set_x(x_final);
       modelInArgs.set_p(l, p_inargs);
     }
 
-    Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model_->createOutArgs();
-    for (int j = 0; j < num_g_; ++j) {
-      modelOutArgs.set_g(j, outArgs.get_g(j));
-    }
-
-    model_->evalModel(modelInArgs, modelOutArgs);
+    this->evalConvergedModel(modelInArgs, outArgs);
   }
-
-  // TODO: Compute sensitivities
 }
 
 

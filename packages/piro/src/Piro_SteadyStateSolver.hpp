@@ -60,6 +60,11 @@ class SteadyStateSolver
   //@{
   /** \brief . */
   explicit SteadyStateSolver(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model);
+
+  /** \brief . */
+  SteadyStateSolver(
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model,
+      int numParameters);
   //@}
 
   /** \name Overridden from Thyra::ModelEvaluatorBase . */

@@ -73,6 +73,16 @@ SteadyStateSolver(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &mode
   num_g_(model->Ng())
 {}
 
+template <typename Scalar>
+Piro::SteadyStateSolver<Scalar>::
+SteadyStateSolver(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model,
+    int numParameters) :
+  model_(model),
+  num_p_(numParameters),
+  num_g_(model->Ng())
+{}
+
 template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::SteadyStateSolver<Scalar>::get_p_space(int l) const

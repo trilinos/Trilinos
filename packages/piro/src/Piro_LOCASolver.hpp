@@ -43,7 +43,7 @@
 #ifndef PIRO_LOCASOLVER_HPP
 #define PIRO_LOCASOLVER_HPP
 
-#include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
+#include "Piro_SteadyStateSolver.hpp"
 
 #include "Piro_ObserverBase.hpp"
 
@@ -59,7 +59,7 @@ namespace Piro {
  *  \ingroup Piro_Thyra_solver_grp
  * */
 template <typename Scalar>
-class LOCASolver : public Thyra::ResponseOnlyModelEvaluatorBase<Scalar> {
+class LOCASolver : public SteadyStateSolver<Scalar> {
 public:
   /** \name Constructor/Destructor */
   //@{
@@ -72,46 +72,17 @@ public:
   ~LOCASolver();
   //@}
 
-  /** \name Overridden from Thyra::ModelEvaluatorBase . */
-  //@{
-  /** \brief . */
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
-  /** \brief . */
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int i) const;
-  /** \brief . */
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int i) const;
-  //@}
-
-  /** \name Overridden from Thyra::ResponseOnlyModelEvaluatorBase . */
-  //@{
-  /** \brief . */
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
-  //@}
-
 private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase . */
   //@{
-  /** \brief . */
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
-
   /** \brief . */
   void evalModelImpl(
       const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
   //@}
 
-  /** \name Internal implemention methods. */
-  //@{
-  /** \brief Implementation of createInArgs . */
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgsImpl() const;
-  //@}
-
   Teuchos::RCP<Teuchos::ParameterList> piroParams_;
-  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
   Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> saveDataStrategy_;
-
-  int num_p_;
-  int num_g_;
 
   Teuchos::RCP<LOCA::GlobalData> globalData_;
   mutable LOCA::ParameterVector paramVector_;
