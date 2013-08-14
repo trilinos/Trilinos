@@ -236,9 +236,21 @@ public:
   MDComm(const MDComm & parent,
          const Teuchos::ArrayView< Slice > & slices);
 
+  /** \brief Copy constructor
+   *
+   * \param source [in] Source MDComm to be copied
+   */
+  MDComm(const MDComm & source);
+
   /** Destructor
    */
   ~MDComm();
+
+  /** \brief Assignment operator
+   *
+   * \param source [in] MDComm to be copied
+   */
+  MDComm & operator=(const MDComm & source);
 
   //@}
 
@@ -371,10 +383,6 @@ private:
 
   // An array of the strides between processor ranks along each axis.
   Teuchos::Array< int > _axisStrides;
-
-  // The processor rank of the processor that represents the origin,
-  // i.e. axis ranks (0,0,...)
-  int _originRank;
 
 };
 

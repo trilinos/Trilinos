@@ -66,8 +66,7 @@ MDComm::MDComm(const TeuchosCommRCP teuchosComm,
   _axisRanks(computeAxisRanks(teuchosComm->getRank(),
                               _axisCommSizes)),
   _axisStrides(computeStrides(_axisCommSizes,
-                              DEFAULT_ORDER)),
-  _originRank(0)
+                              DEFAULT_ORDER))
 {
 }
 
@@ -83,8 +82,7 @@ MDComm::MDComm(const TeuchosCommRCP teuchosComm,
   _axisRanks(computeAxisRanks(teuchosComm->getRank(),
                               _axisCommSizes)),
   _axisStrides(computeStrides(_axisCommSizes,
-                              DEFAULT_ORDER)),
-  _originRank(0)
+                              DEFAULT_ORDER))
 {
 }
 
@@ -102,8 +100,7 @@ MDComm::MDComm(const TeuchosCommRCP teuchosComm,
   _axisRanks(computeAxisRanks(teuchosComm->getRank(),
                               _axisCommSizes)),
   _axisStrides(computeStrides(_axisCommSizes,
-                              DEFAULT_ORDER)),
-  _originRank(0)
+                              DEFAULT_ORDER))
 {
 }
 
@@ -115,8 +112,7 @@ MDComm::MDComm(const TeuchosCommRCP teuchosComm,
 //   _axisCommSizes(),
 //   _periodic(),
 //   _axisRanks(),
-//   _axisStrides(),
-//   _originRank(parent._originRank)
+//   _axisStrides()
 // {
 //   TEUCHOS_TEST_FOR_EXCEPTION(
 //     ((axis < 0) || (axis >= parent.getNumDims())),
@@ -170,84 +166,89 @@ MDComm::MDComm(const MDComm & parent,
   _axisCommSizes(parent._axisCommSizes),
   _periodic(parent._periodic),
   _axisRanks(parent._axisRanks),
-  _axisStrides(parent._axisStrides),  
-  _originRank(parent._originRank)
+  _axisStrides(parent.getNumDims())
 {
-  // Sanity check
-  size_type numDims = parent.getNumDims();
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ((axis < 0) || (axis >= numDims)),
-    RangeError,
-    "axis = " << axis  << " is invalid for communicator with " <<
-      numDims << " dimensions");
-
-  // Make sure the Slice we work with is concrete, and adjust
-  // _axisCommSizes, _axisRanks, and _originRank
-  Slice bounds = slice.bounds(parent.getAxisCommSize(axis));
-  _axisCommSizes[axis] = (bounds.stop() - bounds.start());
-  _axisRanks[axis] -= bounds.start();
-  _originRank += bounds.start() * _axisStrides[axis];
-  // Fix the periodic flag
-  if ((bounds.start() == 0) &&
-      (bounds.stop() == parent.getAxisCommSize(axis)))
-    _periodic[axis] = parent._periodic[axis];
-  else
-    _periodic[axis] = 0;
-  // Compute the ranks of the subcommunicator
-  size_type rankSize = 1;
-  for (int myAxis = 0; myAxis < numDims; ++myAxis)
-    rankSize *= _axisCommSizes[myAxis];
-  Teuchos::Array< int > ranks(rankSize);
-  Teuchos::Array< int > mdIndex(numDims, 0);
-  bool done = false;
-  for (int index = 0; index < rankSize; ++index)
+  if (parent.onSubcommunicator())
   {
-    // Compute ranks[index]
-    int val = _originRank;
+    // Sanity check
+    size_type numDims = parent.getNumDims();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ((axis < 0) || (axis >= numDims)),
+      RangeError,
+      "axis = " << axis  << " is invalid for communicator with " <<
+        numDims << " dimensions");
+
+    // Make sure the Slice we work with is concrete, and adjust
+    // _axisCommSizes, _axisRanks, and _axisStrides
+    Slice bounds = slice.bounds(parent.getAxisCommSize(axis));
+    _axisCommSizes[axis] = (bounds.stop() - bounds.start());
+    _axisRanks[axis] -= bounds.start();
+
+    // Fix the periodic flag
+    if ((bounds.start() == 0) &&
+        (bounds.stop() == parent.getAxisCommSize(axis)))
+      _periodic[axis] = parent._periodic[axis];
+    else
+      _periodic[axis] = 0;
+
+    // Compute the new strides of the new sub-communicator
+    _axisStrides[0] = 1;
+    for (int myAxis = 1; myAxis < numDims; ++myAxis)
+      _axisStrides[myAxis] = _axisStrides[myAxis-1] * _axisCommSizes[myAxis-1];
+
+    // Compute the ranks of the subcommunicator
+    size_type rankSize = 1;
     for (int myAxis = 0; myAxis < numDims; ++myAxis)
+      rankSize *= _axisCommSizes[myAxis];
+    Teuchos::Array< int > ranks(rankSize);
+    Teuchos::Array< int > mdIndex(numDims, 0);
+    bool done = false;
+    for (int index = 0; index < rankSize; ++index)
     {
-      int start = (axis == myAxis) ? bounds.start() : 0;
-      val += (mdIndex[axis] + start) * _axisStrides[axis];
-    }
-    ranks[index] = val;
-    // Increment mdIndex
-    int myAxis = 0;
-    done = false;
-    while (not done)
-    {
-      ++mdIndex[myAxis];
-      done = (mdIndex[myAxis] < _axisCommSizes[myAxis]);
-      if (not done)
+      // Compute ranks[index]
+      int val = 0;
+      for (int myAxis = 0; myAxis < numDims; ++myAxis)
       {
-        mdIndex[myAxis] = 0;
-        ++myAxis;
-        if (myAxis >= numDims)
-          done = true;
+        int start = (axis == myAxis) ? bounds.start() : 0;
+        val += (mdIndex[myAxis] + start) * parent._axisStrides[myAxis];
+      }
+      ranks[index] = val;
+      // Increment mdIndex
+      int myAxis = 0;
+      done = false;
+      while (not done)
+      {
+        ++mdIndex[myAxis];
+        done = (mdIndex[myAxis] < _axisCommSizes[myAxis]);
+        if (not done)
+        {
+          mdIndex[myAxis] = 0;
+          ++myAxis;
+          if (myAxis >= numDims)
+            done = true;
+        }
       }
     }
-  }
-  // Set the communicator
-  _teuchosComm =
-    parent.getTeuchosComm()->createSubcommunicator(ranks()).getConst();
-  // On processors that are not a part of the subcommunicator, reset
-  // the data attributes.
-  if (_teuchosComm.getRawPtr() == 0)
-  {
-    _axisCommSizes.clear();
-    _axisRanks.clear();
-    _axisStrides.clear();
+
+    // Set the communicator
+    _teuchosComm =
+      parent.getTeuchosComm()->createSubcommunicator(ranks()).getConst();
+
+    // On processors that are not a part of the subcommunicator, reset
+    // the data attributes.
+    if (_teuchosComm.getRawPtr() == 0)
+    {
+      _axisCommSizes.clear();
+      _axisRanks.clear();
+      _axisStrides.clear();
+    }
   }
 }
 
 ////////////////////////////////////////////////////////////////////////
 
 MDComm::MDComm(const MDComm & parent,
-               const Teuchos::ArrayView< Slice > & slices) :
-  _axisCommSizes(parent.getNumDims()),  // just allocate the size
-  _periodic(parent.getNumDims(), 0),    // will be adjusted below...
-  _axisRanks(parent._axisRanks),        // will be adjusted below...
-  _axisStrides(parent._axisStrides),    // copy constructor
-  _originRank(parent._originRank)
+               const Teuchos::ArrayView< Slice > & slices)
 {
   // Sanity check
   size_type numDims = parent.getNumDims();
@@ -256,69 +257,50 @@ MDComm::MDComm(const MDComm & parent,
     InvalidArgument,
     "Length of array of slices does not match "
     "number of dimension of parent MDComm");
-  // Make sure the array of Slices we work with is concrete, compute
-  // the _axisCommSizes and _axisRanks arrays, and compute the size of
-  // the ranks array
-  size_type rankSize = 1;
-  Teuchos::Array< Slice > bounds;
+
+  // Apply the single-Slice constructor to each axis in succession
+  MDComm tempMDComm1(parent);
   for (int axis = 0; axis < numDims; ++axis)
   {
-    bounds.push_back(slices[axis].bounds(parent.getAxisCommSize(axis)));
-    _axisCommSizes[axis] = (bounds[axis].stop() - bounds[axis].start());
-    _axisRanks[axis] -= bounds[axis].start();
-    rankSize *= _axisCommSizes[axis];
+    MDComm tempMDComm2 = MDComm(tempMDComm1, axis, slices[axis]);
+    tempMDComm1 = tempMDComm2;
   }
-  // Compute the ranks of the subcommunicator
-  Teuchos::Array< int > ranks(rankSize);
-  Teuchos::Array< int > mdIndex(numDims, 0);
-  bool done = false;
-  for (int index = 0; index < rankSize; ++index)
-  {
-    // Compute ranks[index]
-    int val = _originRank;
-    for (int axis = 0; axis < numDims; ++axis)
-      val += (mdIndex[axis] + bounds[axis].start()) * _axisStrides[axis];
-    ranks[index] = val;
-    // Increment mdIndex
-    int axis = 0;
-    done = false;
-    while (not done)
-    {
-      ++mdIndex[axis];
-      done = (mdIndex[axis] < _axisCommSizes[axis]);
-      if (not done)
-      {
-        mdIndex[axis] = 0;
-        ++axis;
-        if (axis >= numDims)
-          done = true;
-      }
-    }
-  }
-  // Set the communicator
-  _teuchosComm =
-    parent.getTeuchosComm()->createSubcommunicator(ranks()).getConst();
-  // On processors that are not a part of the subcommunicator, reset
-  // the data attributes.
-  if (_teuchosComm.getRawPtr() == 0)
-  {
-    _axisCommSizes.clear();
-    _axisRanks.clear();
-    _axisStrides.clear();
-  }
-  // Fix the periodic flags
-  for (int axis = 0; axis < numDims; ++axis)
-  {
-    if ((bounds[axis].start() == 0) &&
-        (bounds[axis].stop() == parent.getAxisCommSize(axis)))
-      _periodic[axis] = parent._periodic[axis];
-  }
+  *this = tempMDComm1;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+MDComm::MDComm(const MDComm & source) :
+  _teuchosComm(source._teuchosComm),
+#ifdef HAVE_EPETRA
+  _epetraComm(source._epetraComm),
+#endif
+  _axisCommSizes(source._axisCommSizes),
+  _periodic(source._periodic),
+  _axisRanks(source._axisRanks),
+  _axisStrides(source._axisStrides)
+{
 }
 
 ////////////////////////////////////////////////////////////////////////
 
 MDComm::~MDComm()
 {
+}
+
+////////////////////////////////////////////////////////////////////////
+
+MDComm & MDComm::operator=(const MDComm & source)
+{
+  _teuchosComm   = source._teuchosComm;
+#ifdef HAVE_EPETRA
+  _epetraComm    = source._epetraComm;
+#endif
+  _axisCommSizes = source._axisCommSizes;
+  _periodic      = source._periodic;
+  _axisRanks     = source._axisRanks;
+  _axisStrides   = source._axisStrides;
+  return *this;
 }
 
 ////////////////////////////////////////////////////////////////////////
