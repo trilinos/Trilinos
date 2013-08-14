@@ -29,7 +29,7 @@ CXX_SOURCES="${CXX_SOURCES} *.cpp"
 
 if [ -n "${NVCC}" ] ;
 then
-  NVCC_SOURCES="${NVCC_SOURCES} TestFixture.cpp"
+  NVCC_SOURCES="${NVCC_SOURCES} TestFixture.cu"
   CXX_SOURCES="${CXX_SOURCES}"
 
   echo ${NVCC} ${INC_PATH} ${NVCC_SOURCES}

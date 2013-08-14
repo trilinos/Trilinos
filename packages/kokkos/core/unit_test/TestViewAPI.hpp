@@ -1088,31 +1088,31 @@ public:
     typedef Kokkos::View< const T** , Kokkos::LayoutLeft , host > const_multivector_type ;
 
     multivector_type mv = multivector_type( "mv" , Length , Count );
-    multivector_right_type mv_right = multivector_right_type( "mv" , Length , Count );
+    multivector_right_type mv_right = multivector_right_type( "mv" , Count , Length );
 
-    vector_type v1 = Kokkos::subview< vector_type >( mv , 0 );
-    vector_type v2 = Kokkos::subview< vector_type >( mv , 1 );
-    vector_type v3 = Kokkos::subview< vector_type >( mv , 2 );
+    vector_type v1 = Kokkos::subview< vector_type >( mv , Kokkos::ALL() , 0 );
+    vector_type v2 = Kokkos::subview< vector_type >( mv , Kokkos::ALL() , 1 );
+    vector_type v3 = Kokkos::subview< vector_type >( mv , Kokkos::ALL() , 2 );
 
     multivector_type mv1 = Kokkos::subview< multivector_type >( mv , std::make_pair( 1 , 998 ) ,
-                                                                          std::make_pair( 2 , 5 ) );
+                                                                     std::make_pair( 2 , 5 ) );
 
     multivector_right_type mvr1 =
       Kokkos::subview< multivector_right_type >( mv_right ,
-                                                      std::make_pair( 1 , 998 ) ,
-                                                      std::make_pair( 2 , 5 ) );
+                                                 std::make_pair( 1 , 998 ) ,
+                                                 std::make_pair( 2 , 5 ) );
 
-    const_vector_type cv1 = Kokkos::subview< const_vector_type >( mv , 0 );
-    const_vector_type cv2 = Kokkos::subview< const_vector_type >( mv , 1 );
-    const_vector_type cv3 = Kokkos::subview< const_vector_type >( mv , 2 );
+    const_vector_type cv1 = Kokkos::subview< const_vector_type >( mv , Kokkos::ALL(), 0 );
+    const_vector_type cv2 = Kokkos::subview< const_vector_type >( mv , Kokkos::ALL(), 1 );
+    const_vector_type cv3 = Kokkos::subview< const_vector_type >( mv , Kokkos::ALL(), 2 );
 
-    vector_right_type vr1 = Kokkos::subview< vector_right_type >( mv , 0 );
-    vector_right_type vr2 = Kokkos::subview< vector_right_type >( mv , 1 );
-    vector_right_type vr3 = Kokkos::subview< vector_right_type >( mv , 2 );
+    vector_right_type vr1 = Kokkos::subview< vector_right_type >( mv , Kokkos::ALL() , 0 );
+    vector_right_type vr2 = Kokkos::subview< vector_right_type >( mv , Kokkos::ALL() , 1 );
+    vector_right_type vr3 = Kokkos::subview< vector_right_type >( mv , Kokkos::ALL() , 2 );
 
-    const_vector_right_type cvr1 = Kokkos::subview< const_vector_right_type >( mv , 0 );
-    const_vector_right_type cvr2 = Kokkos::subview< const_vector_right_type >( mv , 1 );
-    const_vector_right_type cvr3 = Kokkos::subview< const_vector_right_type >( mv , 2 );
+    const_vector_right_type cvr1 = Kokkos::subview< const_vector_right_type >( mv , Kokkos::ALL() , 0 );
+    const_vector_right_type cvr2 = Kokkos::subview< const_vector_right_type >( mv , Kokkos::ALL() , 1 );
+    const_vector_right_type cvr3 = Kokkos::subview< const_vector_right_type >( mv , Kokkos::ALL() , 2 );
 
     ASSERT_TRUE( & v1[0] == & mv(0,0) );
     ASSERT_TRUE( & v2[0] == & mv(0,1) );

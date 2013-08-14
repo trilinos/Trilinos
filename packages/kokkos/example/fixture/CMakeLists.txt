@@ -20,7 +20,7 @@ IF( TPL_ENABLE_CUDA AND TPL_ENABLE_CUSPARSE )
 
   TRIBITS_ADD_LIBRARY(
     test_fixture_cuda
-    SOURCES TestFixture.cpp
+    SOURCES TestFixture.cu
     CUDALIBRARY
     )
 
