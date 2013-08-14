@@ -114,14 +114,15 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level& currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
-    if (SmootherPrototype::IsSetup() == true) this->GetOStream(Warnings0, 0) << "Warning: MueLu::Amesos2Smoother::Setup(): Setup() has already been called" << std::endl;
+    if (SmootherPrototype::IsSetup() == true)
+        this->GetOStream(Warnings0, 0) << "Warning: MueLu::Amesos2Smoother::Setup(): Setup() has already been called" << std::endl;
 
-    RCP<Matrix> A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
-
-    RCP<Tpetra_CrsMatrix> tA = Utils::Op2NonConstTpetraCrs(A_);
+    RCP<Matrix> A = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
     if (CheckNodeType<Node>::val) {
       // template metaprogramming: if node type is inapplicable, it should not instantiate
+      RCP<Tpetra_CrsMatrix> tA = Utils::Op2NonConstTpetraCrs(A);
+
       prec_ = Amesos2::create<Tpetra_CrsMatrix,Tpetra_MultiVector>(type_, tA);
     }
 
@@ -145,11 +146,12 @@ namespace MueLu {
   {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::Amesos2Smoother::Apply(): Setup() has not been called");
 
-    RCP<Tpetra_MultiVector> tX = Utils::MV2NonConstTpetraMV2(X);
-    MultiVector & BNonC = const_cast<MultiVector&>(B);
-    RCP<Tpetra_MultiVector> tB = Utils::MV2NonConstTpetraMV2(BNonC);
     if (CheckNodeType<Node>::val) {
       // template metaprogramming: if node type is inapplicable, it should not instantiate
+      RCP<Tpetra_MultiVector> tX = Utils::MV2NonConstTpetraMV2(X);
+      MultiVector& BNonC = const_cast<MultiVector&>(B);
+      RCP<Tpetra_MultiVector> tB = Utils::MV2NonConstTpetraMV2(BNonC);
+
       prec_->setX(tX);
       prec_->setB(tB);
 
@@ -162,7 +164,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Copy() const {
-    return rcp( new Amesos2Smoother(*this) );
+    return rcp(new Amesos2Smoother(*this));
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -195,8 +197,10 @@ namespace MueLu {
         out << paramList_;
       }
 
-      if ((verbLevel & External) && (prec_ != Teuchos::null))
-        Teuchos::OSTab tab2(out); out << *prec_ << std::endl;
+      if ((verbLevel & External) && (prec_ != Teuchos::null)) {
+        Teuchos::OSTab tab2(out);
+        out << *prec_ << std::endl;
+      }
 
       if (verbLevel & Debug)
         out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl
