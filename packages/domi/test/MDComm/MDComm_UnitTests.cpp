@@ -450,12 +450,12 @@ TEUCHOS_UNIT_TEST( MDComm, subCommLowerLeft )
   // Construct the MDComm from command-line arguments
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
+  MDComm mdComm(comm, numDims, axisCommSizes);
 
   // Get the final axisCommSizes
   axisCommSizes.resize(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    axisCommSizes[axis] = mdComm->getAxisCommSize(axis);
+    axisCommSizes[axis] = mdComm.getAxisCommSize(axis);
   
   // Figure out the lower left slice
   Array< Slice > slices(numDims);
@@ -482,7 +482,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommLowerLeft )
   // Should this processor be a part of the sub-MDComm?
   bool partOfSubComm = true;
   for (int axis = 0; axis < numDims; ++axis)
-    if (mdComm->getAxisRank(axis) >= newSizes[axis])
+    if (mdComm.getAxisRank(axis) >= newSizes[axis])
       partOfSubComm = false;
 
   // Do some unit tests
@@ -519,12 +519,12 @@ TEUCHOS_UNIT_TEST( MDComm, subCommLowerRight )
   // Construct the MDComm from command-line arguments
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
+  MDComm mdComm(comm, numDims, axisCommSizes);
 
   // Get the final axisCommSizes
   axisCommSizes.resize(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    axisCommSizes[axis] = mdComm->getAxisCommSize(axis);
+    axisCommSizes[axis] = mdComm.getAxisCommSize(axis);
   
   // Figure out the lower right slice
   Array< Slice > slices(numDims);
@@ -556,10 +556,10 @@ TEUCHOS_UNIT_TEST( MDComm, subCommLowerRight )
 
   // Should this processor be a part of the sub-MDComm?
   bool partOfSubComm = true;
-  if (mdComm->getAxisRank(0) < axisCommSizes[0] - newSizes[0])
+  if (mdComm.getAxisRank(0) < axisCommSizes[0] - newSizes[0])
     partOfSubComm = false;
   if (numDims > 1)
-    if (mdComm->getAxisRank(1) >= newSizes[1])
+    if (mdComm.getAxisRank(1) >= newSizes[1])
       partOfSubComm = false;
 
 #if 0
@@ -605,12 +605,12 @@ TEUCHOS_UNIT_TEST( MDComm, subCommUpperLeft )
   // Construct the MDComm from command-line arguments
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
+  MDComm mdComm(comm, numDims, axisCommSizes);
 
   // Get the final axisCommSizes
   axisCommSizes.resize(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    axisCommSizes[axis] = mdComm->getAxisCommSize(axis);
+    axisCommSizes[axis] = mdComm.getAxisCommSize(axis);
   
   // Figure out the upper left slice
   Array< Slice > slices(numDims);
@@ -642,10 +642,10 @@ TEUCHOS_UNIT_TEST( MDComm, subCommUpperLeft )
 
   // Should this processor be a part of the sub-MDComm?
   bool partOfSubComm = true;
-  if (mdComm->getAxisRank(0) >= newSizes[0])
+  if (mdComm.getAxisRank(0) >= newSizes[0])
     partOfSubComm = false;
   if (numDims > 1)
-    if (mdComm->getAxisRank(1) < axisCommSizes[1] - newSizes[1])
+    if (mdComm.getAxisRank(1) < axisCommSizes[1] - newSizes[1])
       partOfSubComm = false;
 
 #if 0
@@ -691,12 +691,12 @@ TEUCHOS_UNIT_TEST( MDComm, subCommUpperRight )
   // Construct the MDComm from command-line arguments
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
-  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
+  MDComm mdComm(comm, numDims, axisCommSizes);
 
   // Get the final axisCommSizes
   axisCommSizes.resize(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    axisCommSizes[axis] = mdComm->getAxisCommSize(axis);
+    axisCommSizes[axis] = mdComm.getAxisCommSize(axis);
   
   // Figure out the upper right slice
   Array< Slice > slices(numDims);
@@ -721,10 +721,10 @@ TEUCHOS_UNIT_TEST( MDComm, subCommUpperRight )
 
   // Should this processor be a part of the sub-MDComm?
   bool partOfSubComm = true;
-  if (mdComm->getAxisRank(0) < axisCommSizes[0] - newSizes[0])
+  if (mdComm.getAxisRank(0) < axisCommSizes[0] - newSizes[0])
     partOfSubComm = false;
   if (numDims > 1)
-    if (mdComm->getAxisRank(1) < axisCommSizes[1] - newSizes[1])
+    if (mdComm.getAxisRank(1) < axisCommSizes[1] - newSizes[1])
       partOfSubComm = false;
 
 #if 0
@@ -781,13 +781,12 @@ TEUCHOS_UNIT_TEST( MDComm, subCommPeriodic )
   // Construct the periodic flags
   Array< int > periodic(numDims, 0);
   periodic[0] = 1;
-  MDCommRCP mdComm =
-    Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes, periodic));
+  MDComm mdComm(comm, numDims, axisCommSizes, periodic);
 
   // Get the final axisCommSizes
   axisCommSizes.resize(numDims);
   for (int axis = 0; axis < numDims; ++axis)
-    axisCommSizes[axis] = mdComm->getAxisCommSize(axis);
+    axisCommSizes[axis] = mdComm.getAxisCommSize(axis);
   
   // Figure out the lower slice
   Array< Slice > slices(numDims);
@@ -814,7 +813,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommPeriodic )
   // Should this processor be a part of the sub-MDComm?
   bool partOfSubComm = true;
   for (int axis = 0; axis < numDims; ++axis)
-    if (mdComm->getAxisRank(axis) >= newSizes[axis])
+    if (mdComm.getAxisRank(axis) >= newSizes[axis])
       partOfSubComm = false;
 
   // Do some unit tests
