@@ -438,18 +438,19 @@ C     Delete temporary dynamic memory
 C     Request the number of time steps from the database
       CALL EXINQ (NDBIN, EXTIMS, NSTEPS, RDUM, CDUM, IERR)
 C     Reserve memory to hold the time step values
-      IF (nsteps .gt. 0) THEN
-C        Reserve memory for step times
-         CALL MDRSRV ('TIMES', KTIMES, NSTEPS)
-         CALL MDSTAT (NERR, MEM)
-         IF (NERR .GT. 0) THEN
-            CALL MEMERR
-            MERR = 1
-            GO TO 130
-         END IF
-         CALL EXGATM(NDBIN, A(KTIMES), IERR)
-       ELSE
-         KTIMES=1
+C     Reserve memory for step times
+      CALL MDRSRV ('TIMES', KTIMES, max(1,NSTEPS))
+      CALL MDSTAT (NERR, MEM)
+      IF (NERR .GT. 0) THEN
+        CALL MEMERR
+        MERR = 1
+        GO TO 130
+      END IF
+      if (nsteps .gt. 0) then
+        CALL EXGATM(NDBIN, A(KTIMES), IERR)
+      else
+C        Add a dummy step at time 0 in case user is trying to add a new step
+        A(KTIMES) = 0.0
       END IF
 
 C     Displays the number of time steps and the minimum and
