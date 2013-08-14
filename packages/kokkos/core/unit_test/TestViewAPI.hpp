@@ -1088,7 +1088,7 @@ public:
     typedef Kokkos::View< const T** , Kokkos::LayoutLeft , host > const_multivector_type ;
 
     multivector_type mv = multivector_type( "mv" , Length , Count );
-    multivector_right_type mv_right = multivector_right_type( "mv" , Count , Length );
+    multivector_right_type mv_right = multivector_right_type( "mv" , Length , Count );
 
     vector_type v1 = Kokkos::subview< vector_type >( mv , Kokkos::ALL() , 0 );
     vector_type v2 = Kokkos::subview< vector_type >( mv , Kokkos::ALL() , 1 );

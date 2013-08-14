@@ -129,16 +129,16 @@ struct ModifiedGramSchmidt
   typedef typename device_type::size_type  size_type ;
 
   typedef Kokkos::View< Scalar** ,
-                             Kokkos::LayoutLeft ,
-                             device_type > multivector_type ;
+                        Kokkos::LayoutLeft ,
+                        device_type > multivector_type ;
 
   typedef Kokkos::View< Scalar* ,
-                             Kokkos::LayoutLeft ,
-                             device_type > vector_type ;
+                        Kokkos::LayoutLeft ,
+                        device_type > vector_type ;
 
   typedef Kokkos::View< Scalar ,
-                             Kokkos::LayoutLeft ,
-                             device_type > value_view ;
+                        Kokkos::LayoutLeft ,
+                        device_type > value_view ;
 
 
   multivector_type Q ;
@@ -147,6 +147,7 @@ struct ModifiedGramSchmidt
   static double factorization( const multivector_type Q ,
                                const multivector_type R )
   {
+    const Kokkos::ALL ALL ;
     const size_type count  = Q.dimension_1();
     value_view tmp("tmp");
     value_view one("one");
@@ -158,7 +159,7 @@ struct ModifiedGramSchmidt
     for ( size_type j = 0 ; j < count ; ++j ) {
       // Reduction   : tmp = dot( Q(:,j) , Q(:,j) );
       // PostProcess : tmp = sqrt( tmp ); R(j,j) = tmp ; tmp = 1 / tmp ;
-      const vector_type Qj  = Kokkos::subview< vector_type >( Q , j );
+      const vector_type Qj  = Kokkos::subview< vector_type >( Q , ALL , j );
       const value_view  Rjj = Kokkos::subview< value_view >( R , j , j );
 
       invnorm2( Qj , Rjj , tmp );
@@ -167,7 +168,7 @@ struct ModifiedGramSchmidt
       Kokkos::scale( tmp , Qj );
 
       for ( size_t k = j + 1 ; k < count ; ++k ) {
-        const vector_type Qk = Kokkos::subview< vector_type >( Q , k );
+        const vector_type Qk = Kokkos::subview< vector_type >( Q , ALL , k );
         const value_view  Rjk = Kokkos::subview< value_view >( R , j , k );
 
         // Reduction   : R(j,k) = dot( Q(:,j) , Q(:,k) );

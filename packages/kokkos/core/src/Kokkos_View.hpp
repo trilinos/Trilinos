@@ -565,7 +565,7 @@ void resize( View<T,L,D,M,S> & v ,
 
 //----------------------------------------------------------------------------
 
-struct ALL {};
+struct ALL { KOKKOS_INLINE_FUNCTION ALL(){} };
 
 template< class DstViewType ,
           class T , class L , class D , class M , class S ,

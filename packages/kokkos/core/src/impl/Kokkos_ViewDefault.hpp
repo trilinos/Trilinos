@@ -70,18 +70,10 @@ struct ViewSpecialize< ScalarType , ScalarType ,
 template< class ShapeType , class LayoutType , class Enable = void >
 class LayoutStride ;
 
-/* Arrays with no stride
- *   (1) rank <= 1
- *   (2a) LayoutLeft  OR
- *   (2b) LayoutRight
- */
+/* Arrays with rank <= 1 have no stride */
 template< class ShapeType , class LayoutType >
 class LayoutStride< ShapeType , LayoutType ,
-                    typename enable_if<(
-                      ( ShapeType::rank <= 1 ) &&
-                      ( is_same<LayoutType,LayoutLeft >::value ||
-                        is_same<LayoutType,LayoutRight>::value )
-                    )>::type >
+                    typename enable_if< ShapeType::rank <= 1 >::type >
 {
 public:
 
@@ -92,83 +84,59 @@ public:
   void assign( LayoutStride & , const unsigned ) {}
 
   KOKKOS_INLINE_FUNCTION static
-  void assign( LayoutStride & , const ShapeType & , const bool = true ) {}
+  void assign_no_padding( LayoutStride & , const ShapeType & ) {}
+
+  KOKKOS_INLINE_FUNCTION static
+  void assign_with_padding( LayoutStride & , const ShapeType & ) {}
 };
 
-/* Arrays with compile-time stride that is not padded:
- *   (1) rank > 1
- *   (2) rank_dynamic == 0
- *   (3) LayoutLeft OR LayoutRight
- */
-template< class ShapeType , class LayoutType >
-class LayoutStride< ShapeType , LayoutType ,
+/* Array with LayoutLeft and 0 == rank_dynamic have static stride that are is not padded. */
+template< class ShapeType >
+class LayoutStride< ShapeType , LayoutLeft ,
                     typename enable_if<(
-                      ( is_same<LayoutType,LayoutLeft >::value ||
-                        is_same<LayoutType,LayoutRight>::value ) &&
                       ( 1 <  ShapeType::rank ) &&
                       ( 0 == ShapeType::rank_dynamic )
                     )>::type >
 {
-private:
-
-  enum { left = is_same< LayoutType , LayoutLeft >::value };
-
 public:
 
   enum { dynamic = false };
-
-  // Left layout arrays are aligned on the first dimension.
-  // Right layout arrays are aligned on blocks of the 2-7th dimensions.
-
-  enum { value = left ? ShapeType::N0
-                      : ShapeType::N1 * ShapeType::N2 * ShapeType::N3 *
-                        ShapeType::N4 * ShapeType::N5 * ShapeType::N6 * ShapeType::N7 };
+  enum { value   = ShapeType::N0 };
 
   KOKKOS_INLINE_FUNCTION static
   void assign( LayoutStride & , const unsigned ) {}
 
   KOKKOS_INLINE_FUNCTION static
-  void assign( LayoutStride & , const ShapeType & , const bool = true ) {}
+  void assign_no_padding( LayoutStride & , const ShapeType & ) {}
+
+  KOKKOS_INLINE_FUNCTION static
+  void assign_with_padding( LayoutStride & , const ShapeType & ) {}
 };
 
-/* Arrays with compile-time stride that is padded:
- *   (1) rank-N with 1 < N
- *   (2) LayoutRight and rank_dynamic == 1 
- */
-template< class ShapeType, class LayoutType >
-class LayoutStride< ShapeType , LayoutType ,
+/* Array with LayoutRight and 1 >= rank_dynamic have static stride that is not padded */
+template< class ShapeType >
+class LayoutStride< ShapeType , LayoutRight ,
                     typename enable_if<(
-                      is_same< LayoutType, LayoutRight>::value &&
-                      ( 1 <  ShapeType::rank ) && 
-                      ( 1 == ShapeType::dynamic_rank )
+                      ( 1 <  ShapeType::rank ) &&
+                      ( 1 >= ShapeType::rank_dynamic )
                     )>::type >
 {
-private:
-
-  enum { div   = MEMORY_ALIGNMENT / ShapeType::scalar_size };
-  enum { mod   = MEMORY_ALIGNMENT % ShapeType::scalar_size };
-  enum { align = ( ShapeType::rank_dynamic && 0 == mod ) ? div : 0 };
-
-  // Left layout arrays are aligned on the first dimension.
-  // Right layout arrays are aligned on blocks of the 2-7th dimensions.
-  enum { count = ShapeType::N1 * ShapeType::N2 * ShapeType::N3 *
-                 ShapeType::N4 * ShapeType::N5 * ShapeType::N6 * ShapeType::N7 };
-
-  enum { count_mod = count % ( div ? div : 1 ) };
-
 public:
 
   enum { dynamic = false };
-  enum { value = ( align && count_mod && ( MEMORY_ALIGNMENT_THRESHOLD * align < count ) )
-               ? ( count + align - count_mod )
-               : count };
+  enum { value   = ShapeType::N1 * ShapeType::N2 * ShapeType::N3 *
+                   ShapeType::N4 * ShapeType::N5 * ShapeType::N6 * ShapeType::N7 };
 
   KOKKOS_INLINE_FUNCTION static
-  void assign( LayoutStride & , const unsigned , const bool = true ) {}
+  void assign( LayoutStride & , const unsigned ) {}
 
   KOKKOS_INLINE_FUNCTION static
-  void assign( LayoutStride & , const ShapeType & ) {}
+  void assign_no_padding( LayoutStride & , const ShapeType & ) {}
+
+  KOKKOS_INLINE_FUNCTION static
+  void assign_with_padding( LayoutStride & , const ShapeType & ) {}
 };
+
 
 /* Otherwise array has runtime stride that is padded. */
 template< class ShapeType , class LayoutType , class Enable >
@@ -196,7 +164,7 @@ public:
     }
 
   KOKKOS_INLINE_FUNCTION static
-  void assign( LayoutStride & vs , const ShapeType & sh )
+  void assign_with_padding( LayoutStride & vs , const ShapeType & sh )
     {
       enum { div   = MEMORY_ALIGNMENT / ShapeType::scalar_size };
       enum { mod   = MEMORY_ALIGNMENT % ShapeType::scalar_size };
@@ -316,7 +284,7 @@ struct ViewAssignment< LayoutDefault , void , void >
     ViewTracking< view_type >::decrement( dst.m_ptr_on_device );
 
     shape_type ::assign( dst.m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
-    stride_type::assign( dst.m_stride , dst.m_shape );
+    stride_type::assign_with_padding( dst.m_stride , dst.m_shape );
 
     const size_t cap = capacity( dst.m_shape , dst.m_stride );
 
@@ -337,6 +305,8 @@ struct ViewAssignment< LayoutDefault , void , void >
                   typename enable_if< (
                     is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout ,
                              typename ViewTraits<ST,SL,SD,SM>::array_layout >::value
+                    &&
+                    ViewTraits<DT,DL,DD,DM>::is_managed
                     &&
                     ( unsigned(ViewTraits<DT,DL,DD,DM>::rank) == unsigned(ViewTraits<ST,SL,SD,SM>::rank) )
                     &&
@@ -362,7 +332,7 @@ struct ViewAssignment< LayoutDefault , void , void >
       dst_shape_type::assign( dst.m_shape, src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
                                            src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
 
-      dst_stride_type::assign( dst.m_stride , src.m_stride.value );
+      dst_stride_type::assign( dst.m_stride , src.m_stride.value ); // Match the stride
 
       const size_t cap = capacity( dst.m_shape , dst.m_stride );
 
@@ -378,18 +348,15 @@ struct ViewAssignment< LayoutDefault , void , void >
     }
   }
 
-  // Creating unmanaged view from ptr and dimensions.
-  // Must have a dynamic stride that can be set.
+  //----------------------------------------
+  // Creating unmanaged view from ptr and dimensions,
+  // dynamic stride is unpadded from dimensions.
   template< class T , class L , class D, class M >
   KOKKOS_INLINE_FUNCTION
   ViewAssignment( View<T,L,D,M,Specialize> & dst ,
-                  const typename enable_if<
-                    (
+                  const typename enable_if<(
                       ! ViewTraits<T,L,D,M>::is_managed
-                      &&
-                      LayoutStride< typename ViewTraits<T,L,D,M>::shape_type ,
-                                    typename ViewTraits<T,L,D,M>::array_layout >::dynamic
-                    ) , typename ViewTraits<T,L,D,M>::scalar_type >::type * ptr ,
+                    ), typename ViewTraits<T,L,D,M>::scalar_type >::type * ptr ,
                   const size_t n0 = 0 ,
                   const size_t n1 = 0 ,
                   const size_t n2 = 0 ,
@@ -492,35 +459,6 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
   KOKKOS_INLINE_FUNCTION
   ViewAssignment(       View<DT,DL,DD,DM,LayoutDefault> & dst ,
                   const View<ST,SL,SD,SM,LayoutDefault> & src ,
-                  const typename enable_if< (
-                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
-                    &&
-                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutLeft >::value
-                    &&
-                    ( ViewTraits<ST,SL,SD,SM>::rank == 2 )
-                    &&
-                    ( ViewTraits<DT,DL,DD,DM>::rank == 1 )
-                    &&
-                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1 )
-                  ), unsigned >::type i1 )
-  {
-    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
-
-    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
-
-    dst.m_shape.N0      = src.m_shape.N0 ;
-    dst.m_ptr_on_device = src.m_ptr_on_device + src.m_stride.value * i1 ;
-
-    ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
-  }
-
-  //------------------------------------
-  /** \brief  Extract Rank-1 array from LayoutLeft Rank-2 array. */
-  template< class DT , class DL , class DD , class DM ,
-            class ST , class SL , class SD , class SM >
-  KOKKOS_INLINE_FUNCTION
-  ViewAssignment(       View<DT,DL,DD,DM,LayoutDefault> & dst ,
-                  const View<ST,SL,SD,SM,LayoutDefault> & src ,
                   const ALL & ,
                   const typename enable_if< (
                     ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
@@ -540,36 +478,6 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
 
     dst.m_shape.N0      = src.m_shape.N0 ;
     dst.m_ptr_on_device = src.m_ptr_on_device + src.m_stride.value * i1 ;
-
-    ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
-  }
-
-  //------------------------------------
-  /** \brief  Extract Rank-1 array from LayoutRight Rank-2 array. */
-  template< class DT , class DL , class DD , class DM ,
-            class ST , class SL , class SD , class SM >
-  KOKKOS_INLINE_FUNCTION
-  ViewAssignment(       View<DT,DL,DD,DM,LayoutDefault> & dst ,
-                  const View<ST,SL,SD,SM,LayoutDefault> & src ,
-                  const typename enable_if< (
-                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
-                    &&
-                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
-                    &&
-                    ( ViewTraits<ST,SL,SD,SM>::rank == 2 )
-                    &&
-                    ( ViewTraits<DT,DL,DD,DM>::rank == 1 )
-                    &&
-                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1 )
-                  ), unsigned >::type i0 ,
-                  const ALL & )
-  {
-    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
-
-    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
-
-    dst.m_shape.N0      = src.m_shape.N1 ;
-    dst.m_ptr_on_device = src.m_ptr_on_device + src.m_stride.value * i0 ;
 
     ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
   }

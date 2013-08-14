@@ -638,10 +638,15 @@ void ThreadsExec::initialize(
     Kokkos::Impl::throw_runtime_exception( msg.str() );
   }
 
+  const unsigned thread_count = team_topo.first * team_topo.second ;
+
+  if ( 0 == thread_count ) {
+    msg << " FAILED : zero thread count" ;
+    Kokkos::Impl::throw_runtime_exception( msg.str() );
+  }
   //------------------------------------
   // Query hardware topology and capacity, if available.
 
-  const unsigned                     thread_count = team_topo.first * team_topo.second ;
   const bool                         hwloc_avail  = Kokkos::hwloc::available();
   const std::pair<unsigned,unsigned> core_topo    = Kokkos::hwloc::get_core_topology();
   const unsigned                     core_cap     = Kokkos::hwloc::get_core_capacity();

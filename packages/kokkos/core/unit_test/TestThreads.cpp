@@ -84,26 +84,26 @@ protected:
     Kokkos::Threads::initialize( std::pair<unsigned,unsigned>(1,1) );
     Kokkos::Threads::finalize();
 
-    team_league.first = core_top.first ;
-    team_league.second = ( core_top.second * core_size );
+    team_league.first  = std::max( 1u , core_top.first );
+    team_league.second = std::max( 2u , core_top.second * core_size );
     Kokkos::Threads::initialize( team_league );
     Kokkos::Threads::finalize();
 
-    team_league.first = core_top.first * 2 ;
-    team_league.second = ( core_top.second * core_size ) / 2 ;
+    team_league.first  = std::max( 1u , core_top.first * 2 );
+    team_league.second = std::max( 2u , ( core_top.second * core_size ) / 2 );
     Kokkos::Threads::initialize( team_league );
     Kokkos::Threads::finalize();
 
     // Quick attempt to verify thread start/terminate don't have race condition:
-    team_league.first  = core_top.first ;
-    team_league.second = ( core_top.second * core_size ) / 2 ;
+    team_league.first  = std::max( 1u , core_top.first );
+    team_league.second = std::max( 2u , ( core_top.second * core_size ) / 2 );
     for ( unsigned i = 0 ; i < 10 ; ++i ) {
       Kokkos::Threads::initialize( team_league );
       Kokkos::Threads::finalize();
     }
 
-    team_league.first  = core_top.first ;
-    team_league.second = ( core_top.second * core_size ) / 2 ;
+    team_league.first  = std::max( 1u , core_top.first );
+    team_league.second = std::max( 2u , ( core_top.second * core_size ) / 2 );
     Kokkos::Threads::initialize( team_league );
     Kokkos::Threads::print_configuration( std::cout );
   }
