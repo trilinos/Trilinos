@@ -728,7 +728,7 @@ static int send_result(const NNTI_peer_t   *caller,
 
     /* allocated an xdr memory stream for the short result buffer */
     if (res_buf_size <= 0) {
-        log_error(rpc_debug_level, "********** res_buf_size <= 0");
+        log_error(rpc_debug_level, "********** res_buf_size (%lu) <= 0", res_buf_size);
         fprint_NNTI_buffer(logger_get_file(), "dest_addr", "ERROR res_buf_size<=0 %", dest_addr);
     }
     assert(res_buf_size > 0);
