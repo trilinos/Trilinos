@@ -18,6 +18,7 @@
 #include <Teuchos_RCP.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/ConnectivityMap.hpp>
 
 namespace Ioss {
   class DatabaseIO;
@@ -29,7 +30,6 @@ namespace stk {
     class Part;
     class BulkData;
     class Selector;
-    struct ConnectivityMap;
   }
   namespace io {
     static std::string CoordinateFieldName("coordinates");
@@ -450,7 +450,7 @@ namespace stk {
          * *anded* with the normal selectors use for output
          */
         Teuchos::RCP<stk::mesh::Selector> m_anded_selector;
-        stk::mesh::ConnectivityMap * m_connectivity_map;
+        stk::mesh::ConnectivityMap m_connectivity_map;
 
       
         MeshData(const MeshData&); // Do not implement

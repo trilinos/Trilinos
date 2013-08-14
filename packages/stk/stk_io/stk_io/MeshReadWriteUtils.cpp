@@ -801,14 +801,15 @@ namespace stk {
   namespace io {
 
     MeshData::MeshData()
-      : m_communicator_(MPI_COMM_NULL), m_anded_selector(NULL), m_connectivity_map(NULL),
+      : m_communicator_(MPI_COMM_NULL), m_anded_selector(NULL), m_connectivity_map(stk::mesh::ConnectivityMap::default_map()),
 	useNodesetForPartNodesFields(true)
     {
       Ioss::Init::Initializer::initialize_ioss();
     }
 
     MeshData::MeshData(MPI_Comm comm, stk::mesh::ConnectivityMap * connectivity_map)
-      : m_communicator_(comm), m_anded_selector(NULL), m_connectivity_map(connectivity_map),
+      : m_communicator_(comm), m_anded_selector(NULL)
+      , m_connectivity_map(connectivity_map != NULL ? *connectivity_map : stk::mesh::ConnectivityMap::default_map()),
 	useNodesetForPartNodesFields(true)
     {
       Ioss::Init::Initializer::initialize_ioss();
@@ -1033,7 +1034,7 @@ namespace stk {
 #ifdef SIERRA_MIGRATION
 							       , false
 #endif
-							       , m_connectivity_map
+							       , &m_connectivity_map
 							       )));
       }
 
@@ -1114,7 +1115,7 @@ namespace stk {
 #ifdef SIERRA_MIGRATION
                                                              , false
 #endif
-                                                             , m_connectivity_map
+                                                             , &m_connectivity_map
                                                            )));
       }
 
