@@ -149,7 +149,22 @@ namespace MueLu {
 
   void Level::DeclareInput(const std::string& ename, const FactoryBase* factory, const FactoryBase* requestedBy) {
     if (requestMode_ == REQUEST) {
-      Request(ename, factory, requestedBy);
+      try {
+        Request(ename, factory, requestedBy);
+      }
+      catch(Exceptions::DependencyError &de) {
+        std::string previousMsg(de.what());
+        std::string msg = requestedBy->ShortClassName() + "::DeclareInput : (" + previousMsg + ") unable to find or generate requested data \""
+                          + ename + "\"" + ((factory != NULL) ? " with generating factory " + factory->ShortClassName() + "." : ".");
+        TEUCHOS_TEST_FOR_EXCEPTION(true,Exceptions::RuntimeError,msg);
+        throw Exceptions::RuntimeError(msg);
+      }
+      catch(Exceptions::RuntimeError &rte) {
+        std::string previousMsg(rte.what());
+        std::string msg = previousMsg + "\n    during request for data \"" + ename + "\" by factory " + requestedBy->ShortClassName();
+        TEUCHOS_TEST_FOR_EXCEPTION(true,Exceptions::RuntimeError,msg);
+        throw Exceptions::RuntimeError(msg);
+      }
     }
     else if (requestMode_ == RELEASE) {
       Release(ename, factory, requestedBy);
