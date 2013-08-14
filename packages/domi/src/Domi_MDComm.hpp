@@ -194,16 +194,46 @@ public:
          const Teuchos::ArrayView< int > & periodic =
            Teuchos::ArrayView< int >());
 
-  /** \brief Sub-communicator constructor
+  /** \brief Axis rank sub-communicator constructor
    *
-   * \param parent [in] A <tt>Teuchos::RCP</tt> of the parent
-   *        <tt>MDComm</tt> object.
+   * \param parent [in] The parent <tt>MDComm</tt> object.
+   *
+   * \param axis [in] The axis to which the axisRank argument applies
+   *
+   * \param axisRank [in] The value of the rank along the given axis
+   *
+   * This constructor will return an MDComm that is one dimension less
+   * than the parent MDComm (unless the parent MDComm is already
+   * one-dimensional), equivalent to a slice of the parent at the
+   * given axis rank value.
+   */
+   MDComm(const MDComm & parent,
+         int axis,
+         int axisRank);
+
+  /** \brief Slice sub-communicator constructor
+   *
+   * \param parent [in] The parent <tt>MDComm</tt> object.
+   *
+   * \param axis [in] The axis to which the slice argument applies
+   *
+   * \param slice [in] A <tt>Slice</tt> object that defines what
+   *        portion of the parent will be translated to the
+   *        sub-communicator along the given axis axis.
+   */
+  MDComm(const MDComm & parent,
+         int axis,
+         const Slice & slice);
+
+  /** \brief Array of Slices sub-communicator constructor
+   *
+   * \param parent [in] The parent <tt>MDComm</tt> object.
    *
    * \param slices [in] An array of <tt>Slice</tt> objects that
    *        defines what portions of the parent will be translated to
    *        the sub-communicator along each axis.
    */
-  MDComm(const Teuchos::RCP< const MDComm > parent,
+  MDComm(const MDComm & parent,
          const Teuchos::ArrayView< Slice > & slices);
 
   /** Destructor
@@ -341,6 +371,10 @@ private:
 
   // An array of the strides between processor ranks along each axis.
   Teuchos::Array< int > _axisStrides;
+
+  // The processor rank of the processor that represents the origin,
+  // i.e. axis ranks (0,0,...)
+  int _originRank;
 
 };
 
