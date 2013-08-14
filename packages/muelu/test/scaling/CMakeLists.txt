@@ -109,7 +109,7 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
    )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(ReadMatrix_cp
-    SOURCE_FILES A.mm
+    SOURCE_FILES A.mm simple.xml
   )
 
 ENDIF()
@@ -191,7 +191,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
   TRIBITS_ADD_TEST(
     ReadMatrix
     NAME "ReadMatrixEpetra"
-    ARGS "--linAlgebra=Epetra"
+    ARGS "--linAlgebra=Epetra --xml=simple.xml"
     NUM_MPI_PROCS 4
     COMM serial mpi
     )
@@ -256,7 +256,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
   TRIBITS_ADD_TEST(
     ReadMatrix
     NAME "ReadMatrixTpetra"
-    ARGS "--linAlgebra=Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=simple.xml"
     NUM_MPI_PROCS 4
     COMM serial mpi
     )
