@@ -121,11 +121,11 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
   const RCP<const Thyra::VectorBase<Scalar> > convergedSolution = solver->get_current_x();
   modelInArgs.set_x(convergedSolution);
 
-  this->evalConvergedModel(modelInArgs, outArgs);
-
   if (Teuchos::nonnull(this->observer)) {
     this->observer->observeSolution(*convergedSolution);
   }
+
+  this->evalConvergedModel(modelInArgs, outArgs);
 }
 
 #endif /*PIRO_NOXSOLVER_DEF_HPP*/
