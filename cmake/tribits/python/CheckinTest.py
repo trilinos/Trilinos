@@ -1283,11 +1283,12 @@ def runBuildTestCase(inOptions, tribitsGitRepos, buildTestCase, timings):
     if inOptions.extraCmakeOptions:
       cmakeBaseOptions.extend(commandLineOptionsToList(inOptions.extraCmakeOptions))
   
-    cmakeBaseOptions.append(cmakeScopedDefine(projectName, "ENABLE_TESTS:BOOL", "ON"))
-  
-    cmakeBaseOptions.append(cmakeScopedDefine(projectName, "TEST_CATEGORIES:STRING", "BASIC"))
-
-    cmakeBaseOptions.append(cmakeScopedDefine(projectName, "ALLOW_NO_PACKAGES:BOOL", "OFF"))
+    cmakeBaseOptions.append(cmakeScopedDefine(projectName,
+      "ENABLE_TESTS:BOOL", "ON"))
+    cmakeBaseOptions.append(cmakeScopedDefine(projectName,
+      "TEST_CATEGORIES:STRING", inOptions.testCategories))
+    cmakeBaseOptions.append(cmakeScopedDefine(projectName,
+      "ALLOW_NO_PACKAGES:BOOL", "OFF"))
 
     if inOptions.ctestTimeOut:
       cmakeBaseOptions.append(("-DDART_TESTING_TIMEOUT:STRING="+str(inOptions.ctestTimeOut)))

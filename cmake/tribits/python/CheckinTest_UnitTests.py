@@ -2887,12 +2887,31 @@ class test_checkin_test(unittest.TestCase):
       ("MPI_DEBUG/do-configure.base",
        "\-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\n" \
        +"\-DBUILD_SHARED:BOOL=ON\n" \
+       +"\-DTrilinos_TEST_CATEGORIES:STRING=BASIC\n" \
        +"\-DTPL_BLAS_LIBRARIES:PATH=/usr/local/libblas.a\n" \
        +"\-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n"
        +"\-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi/1.2.7-gcc\n" \
        +"\-DMPI_CXX_COMPILER:PATHNAME=/usr/lib64/openmpi/1.2.7-gcc/mpicxx\n" \
        +"\-DMPI_C_COMPILER:PATHNAME=/usr/lib64/openmpi/1.2.7-gcc/mpicc\n" \
        +"\-DMPI_Fortran_COMPILER:PATHNAME=/usr/lib64/openmpi/1.2.7-gcc/mpif77\n" \
+       ),
+      ]
+      )
+
+
+  def test_set_test_categories(self):
+ 
+    checkin_test_configure_test(
+      \
+      self,
+      \
+      "set_test_categories",
+      \
+      "--default-builds=MPI_DEBUG --test-categories=NIGHTLY",
+      \
+      [
+      ("MPI_DEBUG/do-configure.base",
+       "\-DTrilinos_TEST_CATEGORIES:STRING=NIGHTLY\n" \
        ),
       ]
       )
