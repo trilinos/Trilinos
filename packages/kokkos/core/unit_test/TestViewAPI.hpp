@@ -1094,6 +1094,10 @@ public:
     vector_type v2 = Kokkos::subview< vector_type >( mv , Kokkos::ALL() , 1 );
     vector_type v3 = Kokkos::subview< vector_type >( mv , Kokkos::ALL() , 2 );
 
+    vector_type rv1 = Kokkos::subview< vector_type >( mv_right , 0 , Kokkos::ALL() );
+    vector_type rv2 = Kokkos::subview< vector_type >( mv_right , 1 , Kokkos::ALL() );
+    vector_type rv3 = Kokkos::subview< vector_type >( mv_right , 2 , Kokkos::ALL() );
+
     multivector_type mv1 = Kokkos::subview< multivector_type >( mv , std::make_pair( 1 , 998 ) ,
                                                                      std::make_pair( 2 , 5 ) );
 

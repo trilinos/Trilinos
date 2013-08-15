@@ -57,6 +57,9 @@
 namespace Kokkos {
 namespace Example {
 
+/** \brief  Generate a distributed unstructured finite element mesh
+ *          from a partitioned NX*NY*NZ box of elements.
+ */
 template< class Device , BoxElemPart::ElemOrder Order >
 class BoxElemFixture {
 public:
@@ -160,11 +163,12 @@ public:
       }
     }
 
-    size_t nwork = m_recv_node.dimension_0() 
-                 + m_send_node.dimension_0()
-                 + m_send_node_id.dimension_0()
-                 + m_node_grid.dimension_0()
-                 + m_elem_node.dimension_0() * m_elem_node.dimension_1() ;
+    const size_t nwork = 
+      std::max( m_recv_node.dimension_0() ,
+      std::max( m_send_node.dimension_0() ,
+      std::max( m_send_node_id.dimension_0() ,
+      std::max( m_node_grid.dimension_0() ,
+                m_elem_node.dimension_0() * m_elem_node.dimension_1() ))));
 
     Kokkos::parallel_for( nwork , *this );
   }
@@ -177,49 +181,43 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator()( size_t i ) const
   {
+    if ( i < m_elem_node.dimension_0() * m_elem_node.dimension_1() ) {
+
+      const size_t ielem = i / ElemNode ;
+      const size_t inode = i % ElemNode ;
+
+      unsigned elem_coord[3] ;
+      unsigned node_coord[3] ;
+
+      m_box_part.uses_elem_coord( ielem , elem_coord );
+
+      node_coord[0] = elem_coord[0] + m_elem_node_local[inode][0] ;
+      node_coord[1] = elem_coord[1] + m_elem_node_local[inode][1] ;
+      node_coord[2] = elem_coord[2] + m_elem_node_local[inode][2] ;
+
+      m_elem_node(ielem,inode) = m_box_part.local_node_id( node_coord );
+    }
+
+    if ( i < m_node_grid.dimension_0() ) {
+      unsigned node_coord[3] ;
+      m_box_part.local_node_coord( i , node_coord );
+      m_node_grid(i,0) = node_coord[0] ;
+      m_node_grid(i,1) = node_coord[1] ;
+      m_node_grid(i,2) = node_coord[2] ;
+    }
+
     if ( i < m_recv_node.dimension_0() ) {
       m_recv_node(i,0) = m_box_part.recv_node_rank(i);
       m_recv_node(i,1) = m_box_part.recv_node_count(i);
     }
-    else {
-      i -= m_recv_node.dimension_0();
-      if ( i < m_send_node.dimension_0() ) {
-        m_send_node(i,0) = m_box_part.send_node_rank(i);
-        m_send_node(i,1) = m_box_part.send_node_count(i);
-      }
-      else {
-        i -= m_send_node.dimension_0();
-        if ( i < m_send_node_id.dimension_0() ) {
-          m_send_node_id(i) = m_box_part.send_node_id(i);
-        }
-        else {
-          i -= m_send_node_id.dimension_0();
-          if ( i < m_node_grid.dimension_0() ) {
-            unsigned node_coord[3] ;
-            m_box_part.local_node_coord( i , node_coord );
-            m_node_grid(i,0) = node_coord[0] ;
-            m_node_grid(i,1) = node_coord[1] ;
-            m_node_grid(i,2) = node_coord[2] ;
-          }
-          else {
-            i -= m_node_grid.dimension_0();
 
-            const size_t ielem = i / ElemNode ;
-            const size_t inode = i % ElemNode ;
+    if ( i < m_send_node.dimension_0() ) {
+      m_send_node(i,0) = m_box_part.send_node_rank(i);
+      m_send_node(i,1) = m_box_part.send_node_count(i);
+    }
 
-            unsigned elem_coord[3] ;
-            unsigned node_coord[3] ;
-
-            m_box_part.uses_elem_coord( ielem , elem_coord );
-
-            node_coord[0] = elem_coord[0] + m_elem_node_local[inode][0] ;
-            node_coord[1] = elem_coord[1] + m_elem_node_local[inode][1] ;
-            node_coord[2] = elem_coord[2] + m_elem_node_local[inode][2] ;
-
-            m_elem_node(ielem,inode) = m_box_part.local_node_id( node_coord );
-          }
-        }
-      }
+    if ( i < m_send_node_id.dimension_0() ) {
+      m_send_node_id(i) = m_box_part.send_node_id(i);
     }
   }
 };

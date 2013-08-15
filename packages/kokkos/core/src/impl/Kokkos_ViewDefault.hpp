@@ -483,6 +483,36 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
   }
 
   //------------------------------------
+  /** \brief  Extract Rank-1 array from LayoutRight Rank-2 array. */
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,LayoutDefault> & dst ,
+                  const View<ST,SL,SD,SM,LayoutDefault> & src ,
+                  const unsigned i0 ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout , LayoutRight >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 2 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank == 1 )
+                    &&
+                    ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1 )
+                  ), ALL >::type & )
+  {
+    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
+
+    ViewTracking< traits_type >::decrement( dst.m_ptr_on_device );
+
+    dst.m_shape.N0      = src.m_shape.N1 ;
+    dst.m_ptr_on_device = src.m_ptr_on_device + src.m_stride.value * i0 ;
+
+    ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
+  }
+
+  //------------------------------------
   /** \brief  Extract LayoutRight Rank-N array from range of LayoutRight Rank-N array */
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM ,
