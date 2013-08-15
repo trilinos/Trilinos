@@ -313,7 +313,7 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   MDComm_UnitTests
-  NAME MDComm_UnitTests_3D_2_1_8
+  NAME MDComm_UnitTests_3D_2_1_4
   COMM mpi
   NUM_MPI_PROCS 8
   ARGS "--teuchos-suppress-startup-banner --numDims=3 --axisCommSizes=2,1"
@@ -322,7 +322,7 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   MDComm_UnitTests
-  NAME MDComm_UnitTests_3D_2_2_4
+  NAME MDComm_UnitTests_3D_2_2_2
   COMM mpi
   NUM_MPI_PROCS 8
   ARGS "--teuchos-suppress-startup-banner --numDims=3 --axisCommSizes=2,2"
