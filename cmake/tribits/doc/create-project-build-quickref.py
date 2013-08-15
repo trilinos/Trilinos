@@ -48,6 +48,12 @@ clp.add_option(
     " to <tribitsBaseDir>/../.. which assumes that Tribits is under" \
     " cmake/tribits."
   )
+   
+clp.add_option(
+  "--min-cmake-version", dest="minCMakeVersion", type="string",
+  help="Minimum version of CMake needed for given project" \
+    " [Default '2.8.1']",
+  default="2.8.1" )
 
 GenerateDocUtilsOutput.addCmndLineOptions(clp)
 
@@ -85,8 +91,13 @@ tribitsBuildQuickRefBodyFile = \
 tribitsBuildQuickRefBodyStr = \
   readStrFromFile(tribitsBuildQuickRefBodyFile)
 
+substitutedTribitsBuildQuickRefBodyStr = tribitsBuildQuickRefBodyStr
 substitutedTribitsBuildQuickRefBodyStr = \
-  tribitsBuildQuickRefBodyStr.replace("<Project>", projectName)
+    substitutedTribitsBuildQuickRefBodyStr.replace("<Project>",
+      projectName)
+substitutedTribitsBuildQuickRefBodyStr = \
+    substitutedTribitsBuildQuickRefBodyStr.replace("<MinCMakeVer>",
+      options.minCMakeVersion)
 
 #
 # E) Generate the output files

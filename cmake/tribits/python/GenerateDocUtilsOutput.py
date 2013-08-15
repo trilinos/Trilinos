@@ -43,7 +43,7 @@ def addCmndLineOptions(clp):
       " relative or absolute path up to but not including the '.rst' extension." \
       "  [Required]"
     )
-    
+
   clp.add_option(
     "--generate-html", dest="generateHtml", type="string",
     help="Generate the HTML output file using provided script (i.e. rst2html)" \

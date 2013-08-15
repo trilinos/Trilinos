@@ -3,15 +3,16 @@ Getting set up to use CMake
 ===========================
 
 Before one can configure <Project> to be built, one must first obtain a
-version of CMake on the system newer than 2.8.1.  This guide assumes that once
-CMake is installed that it will be in the default path with the name
+version of CMake on the system newer than <MinCMakeVer> This guide assumes
+that once CMake is installed that it will be in the default path with the name
 ``cmake``.
 
 
 Installing a binary release of CMake [casual users]
 ---------------------------------------------------
 
-Download and install the binary (currently version 2.8 is required) from:
+Download and install the binary (version <MinCMakeVer> or greater is
+recommended) from:
 
   http://www.cmake.org/cmake/resources/software.html
 
@@ -118,6 +119,12 @@ a) Create a 'do-configure' script such as [Recommended]::
   explicitly).
 
   See `<Project>/sampleScripts/*cmake` for real examples.
+
+  NOTE: If one has already configured once and one needs to configure from
+  scratch (needs to wipe clean defaults for cache variables, updates
+  compilers, other types of changes) then one will want to delete the local
+  CASL and other CMake-generated files before configuring again (see
+  `Reconfiguring completely from scratch`_).
 
 b) Create a CMake file fragment and point to it [Recommended].
 
@@ -315,7 +322,7 @@ c) Overriding debug/release compiler options:
 
   and to override default release options use::
 
-    -D CMAKE_C_FLAGS_RELEASE_OVERRIDE:STRING="-04 -funroll-loops" \
+    -D CMAKE_C_FLAGS_RELEASE_OVERRIDE:STRING="-O3 -funroll-loops" \
     -D CMAKE_CXX_FLAGS_RELEASE_OVERRIDE:STRING="-03 -fexceptions"
 
   NOTES: The new CMake variable CMAKE_${LANG}_FLAGS_${BUILDTYPE}_OVERRIDE is
@@ -356,7 +363,7 @@ f) Overriding all (strong warnings and debug/release) compiler options:
   To override all compiler options, including both strong warning options
   and debug/release options, configure with::
 
-    -D CMAKE_C_FLAGS:STRING="-04 -funroll-loops" \
+    -D CMAKE_C_FLAGS:STRING="-O3 -funroll-loops" \
     -D CMAKE_CXX_FLAGS:STRING="-03 -fexceptions" \
     -D CMAKE_BUILD_TYPE:STRING=NONE \
     -D <Project>_ENABLE_STRONG_C_COMPILE_WARNINGS:BOOL=OFF \
@@ -402,14 +409,12 @@ set::
 
   -D <Project>_ENABLE_Fortran:BOOL=OFF
 
-The user cache variable <Project>_ENABLE_Fortran is used as a trigger in the
-<Project> CMake build system to enable Fortran support or not.
-
 NOTE: The fortran compiler will be disabled automatically by default on
 systems like MS Windows.
 
-NOTE: Macs do not come with a compatible Fortran compiler by default so you
-must turn off Fortran if you don't have a compatible Fortran compiler.
+NOTE: Most Apple Macs do not come with a compatible Fortran compiler by
+default so you must turn off Fortran if you don't have a compatible Fortran
+compiler.
 
 
 Enabling runtime debug checking
