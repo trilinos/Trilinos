@@ -167,6 +167,7 @@ public:
   //------------------------------------
   /** \brief  The meta data manager for this bulk data manager. */
   const MetaData & mesh_meta_data() const { return m_mesh_meta_data ; }
+        MetaData & mesh_meta_data()       { return m_mesh_meta_data ; }
 
   /** \brief  The parallel machine */
   ParallelMachine parallel() const { return m_parallel_machine ; }

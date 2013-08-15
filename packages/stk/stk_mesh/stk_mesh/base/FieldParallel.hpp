@@ -192,11 +192,11 @@ operator()(const BulkData& mesh, CommAll & sparse ) const
   for ( EntityCommListInfoVector::const_iterator
         i = entity_comm.begin(); i != entity_comm.end() ; ++i ) {
     Entity entity = i->entity;
-    const MeshIndex& mi = mesh.mesh_index(entity);
-    if (mesh.is_valid(entity) && (0 == selector || (*selector)(mi.bucket) ) ) {
-      unsigned bucket_ord = mi.bucket_ordinal;
-      Type * const ptr_beg = reinterpret_cast<Type*>(mi.bucket->field_data_location(field));
-      Type * const ptr_end = ptr_beg + (mi.bucket->size()-bucket_ord)*sizeof(Type);
+    const Bucket& bucket = mesh.bucket(entity);
+    if (mesh.is_valid(entity) && (0 == selector || (*selector)(bucket) ) ) {
+      Type * const ptr_beg = reinterpret_cast<Type*>(mesh.field_data(field, entity));
+      const unsigned num_scalars_per_entity = mesh.field_data_size_per_entity(field, bucket)/sizeof(Type);
+      Type * const ptr_end = ptr_beg + num_scalars_per_entity;
 
       if (ptr_beg == NULL || ptr_end == NULL) continue;
 
@@ -317,7 +317,32 @@ void parallel_max(const BulkData& mesh, const std::vector<FieldBase*>& fields)
         max<int>(*fields[i])(mesh, sparse);
       }
       else {
-        ThrowRequireMsg(false, "Error, parallel_sum only operates on fields of type double, float or int.");
+        ThrowRequireMsg(false, "Error, parallel_min only operates on fields of type double, float or int.");
+      }
+  }
+}
+
+inline
+void parallel_min(const BulkData& mesh, const std::vector<FieldBase*>& fields)
+{
+  if (fields.empty()) return;
+
+  const FieldBase *const* fieldsPtr = &fields[0];
+  CommAll sparse;
+  communicate_field_data(mesh, fields.size(), fieldsPtr, sparse);
+
+  for(size_t i=0; i<fields.size(); ++i) {
+      if (fields[i]->type_is<double>()) {
+        min<double>(*fields[i])(mesh, sparse);
+      }
+      else if (fields[i]->type_is<float>()) {
+        min<float>(*fields[i])(mesh, sparse);
+      }
+      else if (fields[i]->type_is<int>()) {
+        min<int>(*fields[i])(mesh, sparse);
+      }
+      else {
+        ThrowRequireMsg(false, "Error, parallel_min only operates on fields of type double, float or int.");
       }
   }
 }

@@ -393,8 +393,8 @@ void communicate_field_data(
       Entity e = i->entity;
       const unsigned size = mesh.field_data_size( f , e );
       if ( size ) {
-        for ( PairIterEntityComm
-              ec = mesh.entity_comm(i->key) ; ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
+        PairIterEntityComm ec = mesh.entity_comm(i->key);
+        for (; ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
           msg_size[ ec->proc ] += size ;
         }
       }
@@ -419,8 +419,8 @@ void communicate_field_data(
       if ( size ) {
         unsigned char * ptr =
           reinterpret_cast<unsigned char *>(mesh.field_data( f , e ));
-        for ( PairIterEntityComm
-              ec = mesh.entity_comm(i->key) ; ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
+        PairIterEntityComm ec = mesh.entity_comm(i->key);
+        for (; ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
           CommBuffer & b = sparse.send_buffer( ec->proc );
           b.pack<unsigned char>( ptr , size );
         }
