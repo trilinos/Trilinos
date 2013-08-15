@@ -773,6 +773,57 @@ TEUCHOS_UNIT_TEST( MDComm, subCommUpperRight )
 #endif
 }
 
+TEUCHOS_UNIT_TEST( MDComm, subCommReduce )
+{
+  // Construct the MDComm from command-line arguments
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  MDComm mdComm(comm, numDims, axisCommSizes);
+
+  // Get the actual axisCommSizes, in case the command-line
+  // specification was incomplete
+  Array< int > finalCommSizes(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    finalCommSizes[axis] = mdComm.getAxisCommSize(axis);
+
+  // We will reduce this MDComm several times by using the axis-rank
+  // constructor along each dimension
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int axisRank = finalCommSizes[axis] / 2;
+    int newDims = (numDims > 1) ? numDims - 1 : numDims;
+    bool partOfSubComm = true;
+    if (mdComm.getAxisRank(axis) != axisRank)
+      partOfSubComm = false;
+    MDComm reducedMdComm(mdComm, axis, axisRank);
+    if (partOfSubComm)
+    {
+      TEST_EQUALITY(reducedMdComm.getNumDims(), newDims);
+      for (int newAxis = 0; newAxis < newDims; ++newAxis)
+      {
+        if (numDims == 1)
+        {
+          TEST_EQUALITY(reducedMdComm.getAxisCommSize(newAxis), 1);
+        }
+        else if (newAxis < axis)
+        {
+          TEST_EQUALITY(reducedMdComm.getAxisCommSize(newAxis),
+                        finalCommSizes[newAxis]);
+        }
+        else
+        {
+          TEST_EQUALITY(reducedMdComm.getAxisCommSize(newAxis),
+                        finalCommSizes[newAxis+1])
+        }
+      }
+    }
+    else
+    {
+      TEST_EQUALITY_CONST(reducedMdComm.onSubcommunicator(), false);
+    }
+  }
+}
+
 TEUCHOS_UNIT_TEST( MDComm, subCommPeriodic )
 {
   // Construct the MDComm from command-line arguments
