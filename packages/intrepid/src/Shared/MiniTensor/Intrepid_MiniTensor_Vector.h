@@ -57,8 +57,8 @@ namespace Intrepid {
 ///
 /// Vector class.
 ///
-template<typename T>
-class Vector : public TensorBase<T>
+template<typename T, Index N = DYNAMIC>
+class Vector : public TensorBase<T, Storage<T, dimension_order<N, 1>::value > >
 {
 public:
 
@@ -66,7 +66,18 @@ public:
   /// Order
   ///
   static Index const
-  order = 1U;
+  ORDER = 1;
+
+  ///
+  /// Storage type
+  ///
+  typedef Storage<T, dimension_order<N, ORDER>::value > Store;
+
+  ///
+  /// Vector order
+  ///
+  Index
+  get_order() const {return ORDER;}
 
   ///
   /// Default constructor
@@ -119,7 +130,7 @@ public:
   ///
   /// Copy constructor
   ///
-  Vector(Vector<T> const & v);
+  Vector(Vector<T, N> const & v);
 
   ///
   /// Simple destructor
@@ -140,61 +151,55 @@ public:
   T &
   operator()(Index const i);
 
-  ///
-  /// Vector order
-  ///
-  Index
-  get_order() const {return order;}
-
 };
 
 ///
 /// Vector addition
 /// \return \f$ u + v \f$
 ///
-template<typename S, typename T>
-Vector<typename Promote<S, T>::type>
-operator+(Vector<S> const & u, Vector<T> const & v);
+template<typename S, typename T, Index N>
+Vector<typename Promote<S, T>::type, N>
+operator+(Vector<S, N> const & u, Vector<T, N> const & v);
 
 ///
 /// Vector substraction
 /// \return \f$ u - v \f$
 ///
-template<typename S, typename T>
-Vector<typename Promote<S, T>::type>
-operator-(Vector<S> const & u, Vector<T> const & v);
+template<typename S, typename T, Index N>
+Vector<typename Promote<S, T>::type, N>
+operator-(Vector<S, N> const & u, Vector<T, N> const & v);
 
 ///
 /// Vector minus
 /// \return \f$ -u \f$
 ///
-template<typename T>
-Vector<T>
-operator-(Vector<T> const & u);
+template<typename T, Index N>
+Vector<T, N>
+operator-(Vector<T, N> const & u);
 
 ///
 /// Vector dot product
 /// \return \f$ u \cdot v \f$
 ///
-template<typename S, typename T>
+template<typename S, typename T, Index N>
 typename Promote<S, T>::type
-operator*(Vector<S> const & u, Vector<T> const & v);
+operator*(Vector<S, N> const & u, Vector<T, N> const & v);
 
 ///
 /// Vector equality tested by components
 /// \return \f$ u \equiv v \f$
 ///
-template<typename T>
+template<typename T, Index N>
 bool
-operator==(Vector<T> const & u, Vector<T> const & v);
+operator==(Vector<T, N> const & u, Vector<T, N> const & v);
 
 ///
 /// Vector inequality tested by components
 /// \return \f$ u \neq v \f$
 ///
-template<typename T>
+template<typename T, Index N>
 bool
-operator!=(Vector<T> const & u, Vector<T> const & v);
+operator!=(Vector<T, N> const & u, Vector<T, N> const & v);
 
 ///
 /// Scalar vector product
@@ -202,9 +207,9 @@ operator!=(Vector<T> const & u, Vector<T> const & v);
 /// \param u vector factor
 /// \return \f$ s u \f$
 ///
-template<typename S, typename T>
-typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T> > >::type
-operator*(S const & s, Vector<T> const & u);
+template<typename S, typename T, Index N>
+typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T>, N > >::type
+operator*(S const & s, Vector<T, N> const & u);
 
 ///
 /// Vector scalar product
@@ -212,9 +217,9 @@ operator*(S const & s, Vector<T> const & u);
 /// \param s scalar factor
 /// \return \f$ s u \f$
 ///
-template<typename S, typename T>
-typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T> > >::type
-operator*(Vector<T> const & u, S const & s);
+template<typename S, typename T, Index N>
+typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T>, N > >::type
+operator*(Vector<T, N> const & u, S const & s);
 
 ///
 /// Vector scalar division
@@ -222,58 +227,58 @@ operator*(Vector<T> const & u, S const & s);
 /// \param s scalar that divides each component of vector
 /// \return \f$ u / s \f$
 ///
-template<typename S, typename T>
-Vector<typename Promote<S, T>::type>
-operator/(Vector<T> const & u, S const & s);
+template<typename S, typename T, Index N>
+Vector<typename Promote<S, T>::type, N>
+operator/(Vector<T, N> const & u, S const & s);
 
 ///
 /// Vector dot product
 /// \return \f$ u \cdot v \f$
 ///
-template<typename S, typename T>
+template<typename S, typename T, Index N>
 typename Promote<S, T>::type
-dot(Vector<S> const & u, Vector<T> const & v);
+dot(Vector<S, N> const & u, Vector<T, N> const & v);
 
 ///
 /// Cross product only valid for R^3.
 /// R^N with N != 3 will produce an error.
 /// \return \f$ u \times v \f$
 ///
-template<typename S, typename T>
-Vector<typename Promote<S, T>::type>
-cross(Vector<S> const & u, Vector<T> const & v);
+template<typename S, typename T, Index N>
+Vector<typename Promote<S, T>::type, N>
+cross(Vector<S, N> const & u, Vector<T, N> const & v);
 
 ///
 /// Vector 2-norm
 /// \return \f$ \sqrt{u \cdot u} \f$
 ///
-template<typename T>
+template<typename T, Index N>
 T
-norm(Vector<T> const & u);
+norm(Vector<T, N> const & u);
 
 ///
 /// Vector 2-norm square. Used for fast distance calculation.
 /// \return \f$ u \cdot u \f$
 ///
-template<typename T>
+template<typename T, Index N>
 T
-norm_square(Vector<T> const & u);
+norm_square(Vector<T, N> const & u);
 
 ///
 /// Vector 1-norm
 /// \return \f$ |u_0|+|u_1|+|u_2| \f$
 ///
-template<typename T>
+template<typename T, Index N>
 T
-norm_1(Vector<T> const & u);
+norm_1(Vector<T, N> const & u);
 
 ///
 /// Vector infinity-norm
 /// \return \f$ \max(|u_0|,|u_1|,|u_2|) \f$
 ///
-template<typename T>
+template<typename T, Index N>
 T
-norm_infinity(Vector<T> const & u);
+norm_infinity(Vector<T, N> const & u);
 
 ///
 /// Vector input
@@ -281,9 +286,9 @@ norm_infinity(Vector<T> const & u);
 /// \param is input stream
 /// \return is input stream
 ///
-template<typename T>
+template<typename T, Index N>
 std::istream &
-operator>>(std::istream & is, Vector<T> & u);
+operator>>(std::istream & is, Vector<T, N> & u);
 
 ///
 /// Vector output
@@ -291,9 +296,9 @@ operator>>(std::istream & is, Vector<T> & u);
 /// \param os output stream
 /// \return os output stream
 ///
-template<typename T>
+template<typename T, Index N>
 std::ostream &
-operator<<(std::ostream & os, Vector<T> const & u);
+operator<<(std::ostream & os, Vector<T, N> const & u);
 
 } // namespace Intrepid
 

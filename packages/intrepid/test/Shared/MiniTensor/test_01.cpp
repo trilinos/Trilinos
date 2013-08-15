@@ -85,7 +85,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, VectorFundamental)
   dimension = 3;
 
   Index const
-  number_components = integer_power(dimension, Vector<Real>::order);
+  number_components = integer_power(dimension, Vector<Real>::ORDER);
 
   std::vector<Real> const
   X = generate_sequence<Real>(number_components, 1.0, 1.0);
@@ -158,7 +158,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, TensorFundamental)
   dimension = 3;
 
   Index const
-  number_components = integer_power(dimension, Tensor<Real>::order);
+  number_components = integer_power(dimension, Tensor<Real>::ORDER);
 
   std::vector<Real> const
   X = generate_sequence<Real>(number_components, 1.0, 1.0);
@@ -233,7 +233,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, Tensor3Fundamental)
   dimension = 3;
 
   Index const
-  number_components = integer_power(dimension, Tensor3<Real>::order);
+  number_components = integer_power(dimension, Tensor3<Real>::ORDER);
 
   std::vector<Real> const
   X = generate_sequence<Real>(number_components, 1.0, 1.0);
@@ -310,7 +310,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, Tensor4Fundamental)
   dimension = 3;
 
   Index const
-  number_components = integer_power(dimension, Tensor4<Real>::order);
+  number_components = integer_power(dimension, Tensor4<Real>::ORDER);
 
   std::vector<Real> const
   X = generate_sequence<Real>(number_components, 1.0, 1.0);
@@ -402,7 +402,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, VectorFilling)
   v(dimension, ONES);
 
   Index const
-  number_components = integer_power(dimension, Vector<Real>::order);
+  number_components = integer_power(dimension, Vector<Real>::ORDER);
 
   error = norm_f_square(v) - number_components;
 
@@ -459,7 +459,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, TensorFilling)
   B(dimension, ONES);
 
   Index const
-  number_components = integer_power(dimension, Tensor<Real>::order);
+  number_components = integer_power(dimension, Tensor<Real>::ORDER);
 
   error = norm_f_square(B) - number_components;
 
@@ -515,7 +515,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, Tensor3Filling)
   B(dimension, ONES);
 
   Index const
-  number_components = integer_power(dimension, Tensor3<Real>::order);
+  number_components = integer_power(dimension, Tensor3<Real>::ORDER);
 
   error = norm_f_square(B) - number_components;
 
@@ -571,7 +571,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, Tensor4Filling)
   B(dimension, ONES);
 
   Index const
-  number_components = integer_power(dimension, Tensor4<Real>::order);
+  number_components = integer_power(dimension, Tensor4<Real>::ORDER);
 
   error = norm_f_square(B) - number_components;
 
@@ -1147,13 +1147,13 @@ TEUCHOS_UNIT_TEST(MiniTensor, MechanicsTransforms)
 
   Tensor<Real> P = piola(F, sigma);
 
-  Real error = abs(P(1, 0) - 100.0) / 100.0;
+  Real error = std::abs(P(1, 0) - 100.0) / 100.0;
 
   TEST_COMPARE(error, <=, machine_epsilon<Real>());
 
   sigma = piola_inverse(F, P);
 
-  error = abs(sigma(1, 1) - 50.0) / 50.0;
+  error = std::abs(sigma(1, 1) - 50.0) / 50.0;
 
   TEST_COMPARE(error, <=, machine_epsilon<Real>());
 

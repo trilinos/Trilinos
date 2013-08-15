@@ -43,7 +43,6 @@
 #define Intrepid_MiniTensor_Storage_i_h
 
 namespace Intrepid {
-namespace MiniTensor {
 
 //
 // Raw pointer storage
@@ -132,7 +131,6 @@ Storage<T, DYNAMIC>::clear()
   return;
 }
 
-} // namespace MiniTensor
 } // namespace Intrepid
 
 #endif // Intrepid_MiniTensor_Storage_i_h

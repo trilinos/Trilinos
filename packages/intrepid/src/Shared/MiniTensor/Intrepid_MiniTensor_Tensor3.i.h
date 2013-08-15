@@ -47,65 +47,70 @@ namespace Intrepid {
 //
 // 3rd-order tensor default constructor
 //
-template<typename T>
+template<typename T, Index N>
 inline
-Tensor3<T>::Tensor3() :
-TensorBase<T>::TensorBase()
+Tensor3<T, N>::Tensor3() :
+TensorBase<T, Store>::TensorBase(ORDER)
 {
+  this->dimension_ = N;
   return;
 }
 
 //
 // 3rd-order tensor constructor with NaNs
 //
-template<typename T>
+template<typename T, Index N>
 inline
-Tensor3<T>::Tensor3(Index const dimension) :
-TensorBase<T>::TensorBase(dimension, order)
+Tensor3<T, N>::Tensor3(Index const dimension) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER)
 {
+  this->dimension_ = N;
   return;
 }
 
 //
 // 3rd-order tensor constructor with a specified value
 //
-template<typename T>
+template<typename T, Index N>
 inline
-Tensor3<T>::Tensor3(Index const dimension, ComponentValue value) :
-TensorBase<T>::TensorBase(dimension, order, value)
+Tensor3<T, N>::Tensor3(Index const dimension, ComponentValue value) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
 {
+  this->dimension_ = N;
   return;
 }
 
 //
 // 3rd-order tensor constructor with a scalar
 //
-template<typename T>
+template<typename T, Index N>
 inline
-Tensor3<T>::Tensor3(Index const dimension, T const & s) :
-TensorBase<T>::TensorBase(dimension, order, s)
+Tensor3<T, N>::Tensor3(Index const dimension, T const & s) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER, s)
 {
+  this->dimension_ = N;
   return;
 }
 
 //
 //  Create 3rd-order tensor from array
 //
-template<typename T>
+template<typename T, Index N>
 inline
-Tensor3<T>::Tensor3(Index const dimension, T const * data_ptr) :
-TensorBase<T>::TensorBase(dimension, order, data_ptr)
+Tensor3<T, N>::Tensor3(Index const dimension, T const * data_ptr) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER, data_ptr)
 {
+  this->dimension_ = N;
   return;
 }
 
 //
 // Copy constructor
 //
-template<typename T>
+template<typename T, Index N>
 inline
-Tensor3<T>::Tensor3(Tensor3<T> const & A) :
-TensorBase<T>::TensorBase(A)
+Tensor3<T, N>::Tensor3(Tensor3<T, N> const & A) :
+TensorBase<T, Store>::TensorBase(A)
 {
   return;
 }
@@ -113,9 +118,9 @@ TensorBase<T>::TensorBase(A)
 //
 // 3rd-order tensor simple destructor
 //
-template<typename T>
+template<typename T, Index N>
 inline
-Tensor3<T>::~Tensor3()
+Tensor3<T, N>::~Tensor3()
 {
   return;
 }
@@ -123,12 +128,12 @@ Tensor3<T>::~Tensor3()
 //
 // 3rd-order tensor addition
 //
-template<typename S, typename T>
+template<typename S, typename T, Index N>
 inline
-Tensor3<typename Promote<S, T>::type>
-operator+(Tensor3<S> const & A, Tensor3<T> const & B)
+Tensor3<typename Promote<S, T>::type, N>
+operator+(Tensor3<S, N> const & A, Tensor3<T, N> const & B)
 {
-  Tensor3<typename Promote<S, T>::type>
+  Tensor3<typename Promote<S, T>::type, N>
   C;
 
   add(A, B, C);
@@ -139,12 +144,12 @@ operator+(Tensor3<S> const & A, Tensor3<T> const & B)
 //
 // 3rd-order tensor subtraction
 //
-template<typename S, typename T>
+template<typename S, typename T, Index N>
 inline
-Tensor3<typename Promote<S, T>::type>
-operator-(Tensor3<S> const & A, Tensor3<T> const & B)
+Tensor3<typename Promote<S, T>::type, N>
+operator-(Tensor3<S, N> const & A, Tensor3<T, N> const & B)
 {
-  Tensor3<typename Promote<S, T>::type>
+  Tensor3<typename Promote<S, T>::type, N>
   C;
 
   subtract(A, B, C);
@@ -155,12 +160,12 @@ operator-(Tensor3<S> const & A, Tensor3<T> const & B)
 //
 // 3rd-order tensor minus
 //
-template<typename T>
+template<typename T, Index N>
 inline
-Tensor3<T>
-operator-(Tensor3<T> const & A)
+Tensor3<T, N>
+operator-(Tensor3<T, N> const & A)
 {
-  Tensor3<T>
+  Tensor3<T, N>
   B;
 
   minus(A, B);
@@ -171,10 +176,10 @@ operator-(Tensor3<T> const & A)
 //
 // 3rd-order tensor equality
 //
-template<typename T>
+template<typename T, Index N>
 inline
 bool
-operator==(Tensor3<T> const & A, Tensor3<T> const & B)
+operator==(Tensor3<T, N> const & A, Tensor3<T, N> const & B)
 {
   return equal(A, B);
 }
@@ -182,10 +187,10 @@ operator==(Tensor3<T> const & A, Tensor3<T> const & B)
 //
 // 3rd-order tensor inequality
 //
-template<typename T>
+template<typename T, Index N>
 inline
 bool
-operator!=(Tensor3<T> const & A, Tensor3<T> const & B)
+operator!=(Tensor3<T, N> const & A, Tensor3<T, N> const & B)
 {
   return not_equal(A, B);
 }
@@ -193,12 +198,12 @@ operator!=(Tensor3<T> const & A, Tensor3<T> const & B)
 //
 // Scalar 3rd-order tensor product
 //
-template<typename S, typename T>
+template<typename S, typename T, Index N>
 inline
-typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T> > >::type
-operator*(S const & s, Tensor3<T> const & A)
+typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T>, N> >::type
+operator*(S const & s, Tensor3<T, N> const & A)
 {
-  Tensor3<typename Promote<S, T>::type>
+  Tensor3<typename Promote<S, T>::type, N>
   B;
 
   scale(A, s, B);
@@ -209,12 +214,12 @@ operator*(S const & s, Tensor3<T> const & A)
 //
 // 3rd-order tensor scalar product
 //
-template<typename S, typename T>
+template<typename S, typename T, Index N>
 inline
-typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T> > >::type
-operator*(Tensor3<T> const & A, S const & s)
+typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T>, N> >::type
+operator*(Tensor3<T, N> const & A, S const & s)
 {
-  Tensor3<typename Promote<S, T>::type>
+  Tensor3<typename Promote<S, T>::type, N>
   B;
 
   scale(A, s, B);
@@ -225,12 +230,12 @@ operator*(Tensor3<T> const & A, S const & s)
 //
 // 3rd-order tensor scalar division
 //
-template<typename S, typename T>
+template<typename S, typename T, Index N>
 inline
-Tensor3<typename Promote<S, T>::type>
-operator/(Tensor3<T> const & A, S const & s)
+Tensor3<typename Promote<S, T>::type, N>
+operator/(Tensor3<T, N> const & A, S const & s)
 {
-  Tensor3<typename Promote<S, T>::type>
+  Tensor3<typename Promote<S, T>::type, N>
   B;
 
   divide(A, s, B);
@@ -241,43 +246,35 @@ operator/(Tensor3<T> const & A, S const & s)
 //
 // Indexing for constant 3rd order tensor
 //
-template<typename T>
+template<typename T, Index N>
 inline
 T const &
-Tensor3<T>::operator()(Index const i, Index const j, Index const k) const
+Tensor3<T, N>::operator()(Index const i, Index const j, Index const k) const
 {
-  Tensor3<T> const &
+  Tensor3<T, N> const &
   self = (*this);
 
   Index const
-  N = self.get_dimension();
+  dimension = self.get_dimension();
 
-  assert(i < N);
-  assert(j < N);
-  assert(k < N);
-
-  return self[(i * N + j) * N + k];
+  return self[(i * dimension + j) * dimension + k];
 }
 
 //
 // 3rd-order tensor indexing
 //
-template<typename T>
+template<typename T, Index N>
 inline
 T &
-Tensor3<T>::operator()(Index const i, Index const j, Index const k)
+Tensor3<T, N>::operator()(Index const i, Index const j, Index const k)
 {
-  Tensor3<T> &
+  Tensor3<T, N> &
   self = (*this);
 
   Index const
-  N = self.get_dimension();
+  dimension = self.get_dimension();
 
-  assert(i < N);
-  assert(j < N);
-  assert(k < N);
-
-  return self[(i * N + j) * N + k];
+  return self[(i * dimension + j) * dimension + k];
 }
 
 } // namespace Intrepid

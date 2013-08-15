@@ -49,8 +49,8 @@ namespace Intrepid {
 ///
 /// Fourth-order tensor.
 ///
-template<typename T>
-class Tensor4 : public TensorBase<T>
+template<typename T, Index N = DYNAMIC>
+class Tensor4 : public TensorBase<T, Storage<T, dimension_order<N, 4>::value > >
 {
 public:
 
@@ -58,7 +58,18 @@ public:
   /// Order
   ///
   static Index const
-  order = 4U;
+  ORDER = 4;
+
+  ///
+  /// Storage type
+  ///
+  typedef Storage<T, dimension_order<N, ORDER>::value > Store;
+
+  ///
+  /// Tensor order
+  ///
+  Index
+  get_order() const {return ORDER;}
 
   ///
   /// Default constructor
@@ -98,7 +109,7 @@ public:
   /// Copy constructor
   /// 4th-order tensor constructor with 4th-order tensor
   ///
-  Tensor4(Tensor4<T> const & A);
+  Tensor4(Tensor4<T, N> const & A);
 
   ///
   /// 4th-order tensor simple destructor
@@ -133,12 +144,6 @@ public:
       Index const k,
       Index const l);
 
-  ///
-  /// Tensor order
-  ///
-  Index
-  get_order() const {return order;}
-
 };
 
 ///
@@ -147,9 +152,9 @@ public:
 /// \param B 4th-order tensor
 /// \return \f$ A + B \f$
 ///
-template<typename S, typename T>
-Tensor4<typename Promote<S, T>::type>
-operator+(Tensor4<S> const & A, Tensor4<T> const & B);
+template<typename S, typename T, Index N>
+Tensor4<typename Promote<S, T>::type, N>
+operator+(Tensor4<S, N> const & A, Tensor4<T, N> const & B);
 
 ///
 /// 4th-order tensor substraction
@@ -157,33 +162,33 @@ operator+(Tensor4<S> const & A, Tensor4<T> const & B);
 /// \param B 4th-order tensor
 /// \return \f$ A - B \f$
 ///
-template<typename S, typename T>
-Tensor4<typename Promote<S, T>::type>
-operator-(Tensor4<S> const & A, Tensor4<T> const & B);
+template<typename S, typename T, Index N>
+Tensor4<typename Promote<S, T>::type, N>
+operator-(Tensor4<S, N> const & A, Tensor4<T, N> const & B);
 
 ///
 /// 4th-order tensor minus
 /// \return \f$ -A \f$
 ///
-template<typename T>
-Tensor4<T>
-operator-(Tensor4<T> const & A);
+template<typename T, Index N>
+Tensor4<T, N>
+operator-(Tensor4<T, N> const & A);
 
 ///
 /// 4th-order equality
 /// Tested by components
 ///
-template<typename T>
+template<typename T, Index N>
 bool
-operator==(Tensor4<T> const & A, Tensor4<T> const & B);
+operator==(Tensor4<T, N> const & A, Tensor4<T, N> const & B);
 
 ///
 /// 4th-order inequality
 /// Tested by components
 ///
-template<typename T>
+template<typename T, Index N>
 bool
-operator!=(Tensor4<T> const & A, Tensor4<T> const & B);
+operator!=(Tensor4<T, N> const & A, Tensor4<T, N> const & B);
 
 ///
 /// Scalar 4th-order tensor product
@@ -191,9 +196,9 @@ operator!=(Tensor4<T> const & A, Tensor4<T> const & B);
 /// \param A 4th-order tensor
 /// \return \f$ s A \f$
 ///
-template<typename S, typename T>
-typename lazy_disable_if< order_1234<S>, apply_tensor4< Promote<S,T> > >::type
-operator*(S const & s, Tensor4<T> const & A);
+template<typename S, typename T, Index N>
+typename lazy_disable_if< order_1234<S>, apply_tensor4< Promote<S,T>, N> >::type
+operator*(S const & s, Tensor4<T, N> const & A);
 
 ///
 /// 4th-order tensor scalar product
@@ -201,9 +206,9 @@ operator*(S const & s, Tensor4<T> const & A);
 /// \param s scalar
 /// \return \f$ s A \f$
 ///
-template<typename S, typename T>
-typename lazy_disable_if< order_1234<S>, apply_tensor4< Promote<S,T> > >::type
-operator*(Tensor4<T> const & A, S const & s);
+template<typename S, typename T, Index N>
+typename lazy_disable_if< order_1234<S>, apply_tensor4< Promote<S,T>, N> >::type
+operator*(Tensor4<T, N> const & A, S const & s);
 
 ///
 /// 4th-order tensor scalar division
@@ -211,40 +216,64 @@ operator*(Tensor4<T> const & A, S const & s);
 /// \param s scalar
 /// \return \f$ A / s \f$
 ///
-template<typename S, typename T>
-Tensor4<typename Promote<S, T>::type>
-operator/(Tensor4<T> const & A, S const & s);
+template<typename S, typename T, Index N>
+Tensor4<typename Promote<S, T>::type, N>
+operator/(Tensor4<T, N> const & A, S const & s);
 
 ///
 /// 4th-order tensor transpose
 ///
-template<typename T>
-Tensor4<T>
-transpose(Tensor4<T> const & A);
+template<typename T, Index N>
+Tensor4<T, N>
+transpose(Tensor4<T, N> const & A);
 
 ///
 /// 4th-order identity I1
 /// \return \f$ \delta_{ik} \delta_{jl} \f$ such that \f$ A = I_1 A \f$
 ///
+template<typename T, Index N>
+const Tensor4<T, N>
+identity_1();
+
+template<typename T, Index N>
+const Tensor4<T, N>
+identity_1(Index const dimension);
+
 template<typename T>
-const Tensor4<T>
-identity_1(Index const N);
+const Tensor4<T, DYNAMIC>
+identity_1(Index const dimension);
 
 ///
 /// 4th-order identity I2
 /// \return \f$ \delta_{il} \delta_{jk} \f$ such that \f$ A^T = I_2 A \f$
 ///
+template<typename T, Index N>
+const Tensor4<T, N>
+identity_2();
+
+template<typename T, Index N>
+const Tensor4<T, N>
+identity_2(Index const dimension);
+
 template<typename T>
-const Tensor4<T>
-identity_2(Index const N);
+const Tensor4<T, DYNAMIC>
+identity_2(Index const dimension);
 
 ///
 /// 4th-order identity I3
 /// \return \f$ \delta_{ij} \delta_{kl} \f$ such that \f$ I_A I = I_3 A \f$
 ///
+template<typename T, Index N>
+const Tensor4<T, N>
+identity_3();
+
+template<typename T, Index N>
+const Tensor4<T, N>
+identity_3(Index const dimension);
+
 template<typename T>
-const Tensor4<T>
-identity_3(Index const N);
+const Tensor4<T, DYNAMIC>
+identity_3(Index const dimension);
 
 ///
 /// 4th-order tensor vector dot product
@@ -252,9 +281,9 @@ identity_3(Index const N);
 /// \param u vector
 /// \return 3rd-order tensor \f$ B = A \cdot u := B_{ijk}=A_{ijkp} u_{p} \f$
 ///
-template<typename S, typename T>
-Tensor3<typename Promote<S, T>::type>
-dot(Tensor4<T> const & A, Vector<S> const & u);
+template<typename S, typename T, Index N>
+Tensor3<typename Promote<S, T>::type, N>
+dot(Tensor4<T, N> const & A, Vector<S, N> const & u);
 
 ///
 /// vector 4th-order tensor dot product
@@ -262,9 +291,9 @@ dot(Tensor4<T> const & A, Vector<S> const & u);
 /// \param u vector
 /// \return 3rd-order tensor \f$ u dot A \f$ as \f$ B_{ijk}=u_{p} A_{pijk} \f$
 ///
-template<typename S, typename T>
-Tensor3<typename Promote<S, T>::type>
-dot(Vector<S> const & u, Tensor4<T> const & A);
+template<typename S, typename T, Index N>
+Tensor3<typename Promote<S, T>::type, N>
+dot(Vector<S, N> const & u, Tensor4<T, N> const & A);
 
 ///
 /// 4th-order tensor vector dot2 product
@@ -272,9 +301,9 @@ dot(Vector<S> const & u, Tensor4<T> const & A);
 /// \param u vector
 /// \return 3rd-order tensor \f$ B = A \cdot u := B_{ijk} = A_{ijpk} u_{p} \f$
 ///
-template<typename S, typename T>
-Tensor3<typename Promote<S, T>::type>
-dot2(Tensor4<T> const & A, Vector<S> const & u);
+template<typename S, typename T, Index N>
+Tensor3<typename Promote<S, T>::type, N>
+dot2(Tensor4<T, N> const & A, Vector<S, N> const & u);
 
 ///
 /// vector 4th-order tensor dot2 product
@@ -282,9 +311,9 @@ dot2(Tensor4<T> const & A, Vector<S> const & u);
 /// \param u vector
 /// \return 3rd-order tensor \f$ u dot2 A \f$ as \f$ B_{ijk}=u_{p} A_{ipjk} \f$
 ///
-template<typename S, typename T>
-Tensor3<typename Promote<S, T>::type>
-dot2(Vector<S> const & u, Tensor4<T> const & A);
+template<typename S, typename T, Index N>
+Tensor3<typename Promote<S, T>::type, N>
+dot2(Vector<S, N> const & u, Tensor4<T, N> const & A);
 
 ///
 /// 4th-order tensor 2nd-order tensor double dot product
@@ -292,9 +321,9 @@ dot2(Vector<S> const & u, Tensor4<T> const & A);
 /// \param B 2nd-order tensor
 /// \return 2nd-order tensor \f$ C = A : B := C_{ij} = A_{ijpq} B_{pq} \f$
 ///
-template<typename S, typename T>
-Tensor<typename Promote<S, T>::type>
-dotdot(Tensor4<T> const & A, Tensor<S> const & B);
+template<typename S, typename T, Index N>
+Tensor<typename Promote<S, T>::type, N>
+dotdot(Tensor4<T, N> const & A, Tensor<S, N> const & B);
 
 ///
 /// 2nd-order tensor 4th-order tensor double dot product
@@ -302,9 +331,9 @@ dotdot(Tensor4<T> const & A, Tensor<S> const & B);
 /// \param A 4th-order tensor
 /// \return 2nd-order tensor \f$ C = B : A := C_{ij} = B_{pq} A_{pqij} \f$
 ///
-template<typename S, typename T>
-Tensor<typename Promote<S, T>::type>
-dotdot(Tensor<S> const & B, Tensor4<T> const & A);
+template<typename S, typename T, Index N>
+Tensor<typename Promote<S, T>::type, N>
+dotdot(Tensor<S, N> const & B, Tensor4<T, N> const & A);
 
 ///
 /// 4th-order tensor 4th-order tensor double dot product
@@ -312,9 +341,9 @@ dotdot(Tensor<S> const & B, Tensor4<T> const & A);
 /// \param B 4th-order tensor
 /// \return 2nd-order tensor \f$ C = A : B := C_{ij} = A_{ijpq} B_{pq} \f$
 ///
-template<typename S, typename T>
-Tensor4<typename Promote<S, T>::type>
-dotdot(Tensor4<S> const & A, Tensor4<T> const & B);
+template<typename S, typename T, Index N>
+Tensor4<typename Promote<S, T>::type, N>
+dotdot(Tensor4<S, N> const & A, Tensor4<T, N> const & B);
 
 ///
 /// 2nd-order tensor 2nd-order tensor tensor product
@@ -322,9 +351,9 @@ dotdot(Tensor4<S> const & A, Tensor4<T> const & B);
 /// \param B 2nd-order tensor
 /// \return \f$ C = A \otimes B := C_{ijkl} = A_{ij} B_{kl} \f$
 ///
-template<typename S, typename T>
-Tensor4<typename Promote<S, T>::type>
-tensor(Tensor<S> const & A, Tensor<T> const & B);
+template<typename S, typename T, Index N>
+Tensor4<typename Promote<S, T>::type, N>
+tensor(Tensor<S, N> const & A, Tensor<T, N> const & B);
 
 ///
 /// 2nd-order tensor 2nd-order tensor tensor product
@@ -332,9 +361,9 @@ tensor(Tensor<S> const & A, Tensor<T> const & B);
 /// \param B 2nd-order tensor
 /// \return \f$ C_{ijkl} = A_{ik} B_{jl} \f$
 ///
-template<typename S, typename T>
-Tensor4<typename Promote<S, T>::type>
-tensor2(Tensor<S> const & A, Tensor<T> const & B);
+template<typename S, typename T, Index N>
+Tensor4<typename Promote<S, T>::type, N>
+tensor2(Tensor<S, N> const & A, Tensor<T, N> const & B);
 
 ///
 /// 2nd-order tensor 2nd-order tensor tensor product
@@ -342,9 +371,9 @@ tensor2(Tensor<S> const & A, Tensor<T> const & B);
 /// \param B 2nd-order tensor
 /// \return \f$ C_{ijkl} = A_{il} B_{kj} \f$
 ///
-template<typename S, typename T>
-Tensor4<typename Promote<S, T>::type>
-tensor3(Tensor<S> const & A, Tensor<T> const & B);
+template<typename S, typename T, Index N>
+Tensor4<typename Promote<S, T>::type, N>
+tensor3(Tensor<S, N> const & A, Tensor<T, N> const & B);
 
 ///
 /// 4th-order tensor 2nd-order tensor dot product
@@ -352,9 +381,9 @@ tensor3(Tensor<S> const & A, Tensor<T> const & B);
 /// \param B 2nd-order tensor
 /// \return \f$ C = A \cdot B := C_{ijkl} = A_{ijkp} B_{pl} \f$
 ///
-template<typename S, typename T>
-Tensor4<typename Promote<S, T>::type>
-dot(Tensor4<T> const & A, Tensor<S> const & B);
+template<typename S, typename T, Index N>
+Tensor4<typename Promote<S, T>::type, N>
+dot(Tensor4<T, N> const & A, Tensor<S, N> const & B);
 
 ///
 /// 4th-order tensor 2nd-order tensor transpose dot product
@@ -362,9 +391,9 @@ dot(Tensor4<T> const & A, Tensor<S> const & B);
 /// \param B 2nd-order tensor
 /// \return \f$ C = A \cdot B^T := C_{ijkl} = A_{ijkp} B_{lp} \f$
 ///
-template<typename S, typename T>
-Tensor4<typename Promote<S, T>::type>
-dot_t(Tensor4<T> const & A, Tensor<S> const & B);
+template<typename S, typename T, Index N>
+Tensor4<typename Promote<S, T>::type, N>
+dot_t(Tensor4<T, N> const & A, Tensor<S, N> const & B);
 
 ///
 /// 2nd-order tensor 4th-order tensor dot product
@@ -372,9 +401,9 @@ dot_t(Tensor4<T> const & A, Tensor<S> const & B);
 /// \param B 4th-order tensor
 /// \return \f$ C = A \cdot B := C_{ijkl} = A_{ip} B_{pjkl} \f$
 ///
-template<typename S, typename T>
-Tensor4<typename Promote<S, T>::type>
-dot(Tensor<S> const & A, Tensor4<T> const & B);
+template<typename S, typename T, Index N>
+Tensor4<typename Promote<S, T>::type, N>
+dot(Tensor<S> const & A, Tensor4<T, N> const & B);
 
 ///
 /// 2nd-order tensor transpose 4th-order tensor dot product
@@ -382,9 +411,9 @@ dot(Tensor<S> const & A, Tensor4<T> const & B);
 /// \param B 4th-order tensor
 /// \return \f$ C = A^T \cdot B := C_{ijkl} = A_{pi} B_{pjkl} \f$
 ///
-template<typename S, typename T>
-Tensor4<typename Promote<S, T>::type>
-t_dot(Tensor<S> const & A, Tensor4<T> const & B);
+template<typename S, typename T, Index N>
+Tensor4<typename Promote<S, T>::type, N>
+t_dot(Tensor<S, N> const & A, Tensor4<T, N> const & B);
 
 ///
 /// 4th-order tensor 2nd-order tensor dot product
@@ -392,9 +421,9 @@ t_dot(Tensor<S> const & A, Tensor4<T> const & B);
 /// \param B 2nd-order tensor
 /// \return \f$ C = A \cdot B := C_{ijkl} = A_{ijpl} B_{pk} \f$
 ///
-template<typename S, typename T>
-Tensor4<typename Promote<S, T>::type>
-dot2(Tensor4<T> const & A, Tensor<S> const & B);
+template<typename S, typename T, Index N>
+Tensor4<typename Promote<S, T>::type, N>
+dot2(Tensor4<T, N> const & A, Tensor<S, N> const & B);
 
 ///
 /// 4th-order tensor 2nd-order tensor transpose dot product
@@ -402,9 +431,9 @@ dot2(Tensor4<T> const & A, Tensor<S> const & B);
 /// \param B 2nd-order tensor
 /// \return \f$ C = A \cdot B^T := C_{ijkl} = A_{ijpl} B_{kp} \f$
 ///
-template<typename S, typename T>
-Tensor4<typename Promote<S, T>::type>
-dot2_t(Tensor4<T> const & A, Tensor<S> const & B);
+template<typename S, typename T, Index N>
+Tensor4<typename Promote<S, T>::type, N>
+dot2_t(Tensor4<T, N> const & A, Tensor<S, N> const & B);
 
 ///
 /// 2nd-order tensor 4th-order tensor dot product
@@ -412,9 +441,9 @@ dot2_t(Tensor4<T> const & A, Tensor<S> const & B);
 /// \param B 4th-order tensor
 /// \return \f$ C = A \cdot B := C_{ijkl} = A_{jp} B_{ipkl} \f$
 ///
-template<typename S, typename T>
-Tensor4<typename Promote<S, T>::type>
-dot2(Tensor<S> const & A, Tensor4<T> const & B);
+template<typename S, typename T, Index N>
+Tensor4<typename Promote<S, T>::type, N>
+dot2(Tensor<S, N> const & A, Tensor4<T, N> const & B);
 
 ///
 /// 2nd-order tensor transpose 4th-order tensor dot product
@@ -422,9 +451,9 @@ dot2(Tensor<S> const & A, Tensor4<T> const & B);
 /// \param B 4th-order tensor
 /// \return \f$ C = A^T \cdot B := C_{ijkl} = A_{pj} B_{ipkl} \f$
 ///
-template<typename S, typename T>
-Tensor4<typename Promote<S, T>::type>
-t_dot2(Tensor<S> const & A, Tensor4<T> const & B);
+template<typename S, typename T, Index N>
+Tensor4<typename Promote<S, T>::type, N>
+t_dot2(Tensor<S, N> const & A, Tensor4<T, N> const & B);
 
 ///
 /// odot operator useful for \f$ \frac{\partial A^{-1}}{\partial A} \f$
@@ -434,9 +463,9 @@ t_dot2(Tensor<S> const & A, Tensor4<T> const & B);
 /// \return \f$ A \odot B \f$ which is
 /// \f$ C_{ijkl} = \frac{1}{2}(A_{ik} B_{jl} + A_{il} B_{jk}) \f$
 ///
-template<typename S, typename T>
-Tensor4<typename Promote<S, T>::type>
-odot(Tensor<S> const & A, Tensor<T> const & B);
+template<typename S, typename T, Index N>
+Tensor4<typename Promote<S, T>::type, N>
+odot(Tensor<S, N> const & A, Tensor<T, N> const & B);
 
 ///
 /// 4th-order input
@@ -444,9 +473,9 @@ odot(Tensor<S> const & A, Tensor<T> const & B);
 /// \param is input stream
 /// \return is input stream
 ///
-template<typename T>
+template<typename T, Index N>
 std::istream &
-operator>>(std::istream & is, Tensor4<T> & A);
+operator>>(std::istream & is, Tensor4<T, N> & A);
 
 ///
 /// 4th-order output
@@ -454,9 +483,9 @@ operator>>(std::istream & is, Tensor4<T> & A);
 /// \param os output stream
 /// \return os output stream
 ///
-template<typename T>
+template<typename T, Index N>
 std::ostream &
-operator<<(std::ostream & os, Tensor4<T> const & A);
+operator<<(std::ostream & os, Tensor4<T, N> const & A);
 
 } // namespace Intrepid
 

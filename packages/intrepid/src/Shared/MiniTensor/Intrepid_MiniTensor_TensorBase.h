@@ -61,7 +61,7 @@ enum ComponentValue {ZEROS, ONES, RANDOM};
 ///
 /// Base class for all vector and tensor types.
 ///
-template<typename T>
+template<typename T, typename Store>
 class TensorBase
 {
 public:
@@ -75,6 +75,14 @@ public:
   /// Default constructor
   ///
   TensorBase();
+
+  ///
+  /// Constructor that initializes to NaNs
+  /// \param dimension the space dimension
+  /// \param order the order of the tensor
+  ///
+  explicit
+  TensorBase(Index const order);
 
   ///
   /// Constructor that initializes to NaNs
@@ -111,13 +119,13 @@ public:
   /// Copy constructor
   /// \param X the values of its components are copied to the new vector
   ///
-  TensorBase(TensorBase<T> const & X);
+  TensorBase(TensorBase<T, Store> const & X);
 
   ///
   /// Simple destructor
   ///
   virtual
-  ~TensorBase();
+  ~TensorBase() = 0;
 
   ///
   /// Linear access to components
@@ -169,22 +177,22 @@ public:
   /// Copy assignment
   /// \param X the values of its components are copied to this vector
   ///
-  TensorBase<T> &
-  operator=(TensorBase<T> const & X);
+  TensorBase<T, Store> &
+  operator=(TensorBase<T, Store> const & X);
 
   ///
   /// Component increment
   /// \param X components are added to current components
   ///
-  TensorBase<T> &
-  operator+=(TensorBase<T> const & X);
+  TensorBase<T, Store> &
+  operator+=(TensorBase<T, Store> const & X);
 
   ///
   /// Component decrement
   /// \param X components are subtracted to current components
   ///
-  TensorBase<T> &
-  operator-=(TensorBase<T> const & X);
+  TensorBase<T, Store> &
+  operator-=(TensorBase<T, Store> const & X);
 
   ///
   /// Fill with zeros
@@ -216,7 +224,7 @@ protected:
   ///
   /// TensorBase components
   ///
-  MiniTensor::Storage<T, MiniTensor::DYNAMIC>
+  Store
   components_;
 
 };
@@ -224,65 +232,71 @@ protected:
 ///
 /// Frobenius norm
 ///
-template<typename T>
+template<typename T, typename Store>
 T
-norm_f(TensorBase<T> const & X);
+norm_f(TensorBase<T, Store> const & X);
 
 ///
 /// Square of Frobenius norm
 ///
-template<typename T>
+template<typename T, typename Store>
 T
-norm_f_square(TensorBase<T> const & X);
+norm_f_square(TensorBase<T, Store> const & X);
 
 ///
 /// Base addition
 ///
-template<typename R, typename S, typename T>
+template<typename R, typename S, typename T, typename Store>
 void
-add(TensorBase<R> const & A, TensorBase<S> const & B, TensorBase<T> & C);
+add(
+    TensorBase<R, Store> const & A,
+    TensorBase<S, Store> const & B,
+    TensorBase<T, Store> & C);
 
 ///
 /// Base subtraction
 ///
-template<typename R, typename S, typename T>
+template<typename R, typename S, typename T, typename Store>
 void
-subtract(TensorBase<R> const & A, TensorBase<S> const & B, TensorBase<T> & C);
+subtract(
+    TensorBase<R, Store> const & A,
+    TensorBase<S, Store> const & B,
+    TensorBase<T, Store> & C);
 
 ///
 /// Base minus
 ///
-template<typename T>
+template<typename T, typename Store>
 void
-minus(TensorBase<T> const & A, TensorBase<T> & B);
+minus(TensorBase<T, Store> const & A, TensorBase<T, Store> & B);
 
 ///
 /// Base equality
 ///
-template<typename T>
+template<typename T, typename Store>
 bool
-equal(TensorBase<T> const & A, TensorBase<T> const & B);
+equal(TensorBase<T, Store> const & A, TensorBase<T, Store> const & B);
 
 ///
 /// Base not equality
 ///
-template<typename T>
+template<typename T, typename Store>
 bool
-not_equal(TensorBase<T> const & A, TensorBase<T> const & B);
+not_equal(TensorBase<T, Store> const & A, TensorBase<T, Store> const & B);
 
 ///
 /// Base scaling
 ///
-template<typename R, typename S, typename T>
+template<typename R, typename S, typename T, typename Store>
 void
-scale(TensorBase<R> const & A, S const & s, TensorBase<T> & B);
+scale(TensorBase<R, Store> const & A, S const & s, TensorBase<T, Store> & B);
 
 ///
 /// Base division
 ///
-template<typename R, typename S, typename T>
+template<typename R, typename S, typename T, typename Store>
 void
-divide(TensorBase<R> const & A, S const & s, TensorBase<T> & B);
+divide(TensorBase<R, Store> const & A, S const & s, TensorBase<T, Store> & B);
 
 } // namespace Intrepid
 

@@ -47,10 +47,73 @@
 
 namespace Intrepid {
 
-namespace MiniTensor {
+/// Check whether storage is static or dynamic
+template <Index N>
+struct is_static {
+  static const bool value = true;
+};
 
-Index const
-DYNAMIC = 0;
+template <>
+struct is_static<DYNAMIC> {
+  static const bool value = false;
+};
+
+template <Index N>
+struct is_dynamic {
+  static const bool value = false;
+};
+
+template <>
+struct is_dynamic<DYNAMIC> {
+  static const bool value = true;
+};
+
+/// Integer power template restricted to orders defined below
+template <Index D, Index O>
+struct dimension_order {
+  static const Index value = 0;
+};
+
+template <Index D>
+struct dimension_order<D, 1> {
+  static const Index value = D;
+};
+
+template <Index D>
+struct dimension_order<D, 2> {
+  static const Index value = D * D;
+};
+
+template <Index D>
+struct dimension_order<D, 3> {
+  static const Index value = D * D * D;
+};
+
+template <Index D>
+struct dimension_order<D, 4> {
+  static const Index value = D * D * D * D;
+};
+
+/// Manipulation of static and dynamic dimensions.
+template <Index N, Index P>
+struct dimension_add {
+  static const Index value = N + P;
+};
+
+template <Index P>
+struct dimension_add<DYNAMIC, P> {
+  static const Index value = DYNAMIC;
+};
+
+template <Index N, Index P>
+struct dimension_subtract {
+  static const Index value = N - P;
+};
+
+template <Index P>
+struct dimension_subtract<DYNAMIC, P> {
+  static const Index value = DYNAMIC;
+};
 
 ///
 /// Base static storage class. Simple linear access memory model.
@@ -92,7 +155,8 @@ private:
   Storage<T, N> &
   operator=(Storage<T, N> const & s);
 
-  T storage_[N];
+  T
+  storage_[N];
 
 };
 
@@ -142,7 +206,6 @@ private:
 
 };
 
-} // namespace MiniTensor
 } // namespace Intrepid
 
 #include "Intrepid_MiniTensor_Storage.i.h"

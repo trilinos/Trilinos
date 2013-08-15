@@ -49,8 +49,8 @@ namespace Intrepid {
 ///
 /// Third-order tensor.
 ///
-template<typename T>
-class Tensor3 : public TensorBase<T>
+template<typename T, Index N = DYNAMIC>
+class Tensor3 : public TensorBase<T, Storage<T, dimension_order<N, 3>::value > >
 {
 public:
 
@@ -58,7 +58,18 @@ public:
   /// Order
   ///
   static Index const
-  order = 3U;
+  ORDER = 3;
+
+  ///
+  /// Storage type
+  ///
+  typedef Storage<T, dimension_order<N, ORDER>::value > Store;
+
+  ///
+  /// Tensor order
+  ///
+  Index
+  get_order() const {return ORDER;}
 
   ///
   /// Default constructor
@@ -98,7 +109,7 @@ public:
   /// Copy constructor
   /// 3rd-order tensor constructor from 3rd-order tensor
   ///
-  Tensor3(Tensor3<T> const & A);
+  Tensor3(Tensor3<T, N> const & A);
 
   ///
   /// 3rd-order tensor simple destructor
@@ -123,12 +134,6 @@ public:
   T &
   operator()(Index const i, Index const j, Index const k);
 
-  ///
-  /// Tensor order
-  ///
-  Index
-  get_order() const {return order;}
-
 };
 
 ///
@@ -137,9 +142,9 @@ public:
 /// \param B 3rd-order tensor
 /// \return \f$ A + B \f$
 ///
-template<typename S, typename T>
-Tensor3<typename Promote<S, T>::type>
-operator+(Tensor3<S> const & A, Tensor3<T> const & B);
+template<typename S, typename T, Index N>
+Tensor3<typename Promote<S, T>::type, N>
+operator+(Tensor3<S, N> const & A, Tensor3<T, N> const & B);
 
 ///
 /// 3rd-order tensor substraction
@@ -147,33 +152,33 @@ operator+(Tensor3<S> const & A, Tensor3<T> const & B);
 /// \param B 3rd-order tensor
 /// \return \f$ A - B \f$
 ///
-template<typename S, typename T>
-Tensor3<typename Promote<S, T>::type>
-operator-(Tensor3<S> const & A, Tensor3<T> const & B);
+template<typename S, typename T, Index N>
+Tensor3<typename Promote<S, T>::type, N>
+operator-(Tensor3<S, N> const & A, Tensor3<T, N> const & B);
 
 ///
 /// 3rd-order tensor minus
 /// \return \f$ -A \f$
 ///
-template<typename T>
-Tensor3<T>
-operator-(Tensor3<T> const & A);
+template<typename T, Index N>
+Tensor3<T, N>
+operator-(Tensor3<T, N> const & A);
 
 ///
 /// 3rd-order tensor equality
 /// Tested by components
 ///
-template<typename T>
+template<typename T, Index N>
 bool
-operator==(Tensor3<T> const & A, Tensor3<T> const & B);
+operator==(Tensor3<T, N> const & A, Tensor3<T, N> const & B);
 
 ///
 /// 3rd-order tensor inequality
 /// Tested by components
 ///
-template<typename T>
+template<typename T, Index N>
 bool
-operator!=(Tensor3<T> const & A, Tensor3<T> const & B);
+operator!=(Tensor3<T, N> const & A, Tensor3<T, N> const & B);
 
 ///
 /// Scalar 3rd-order tensor product
@@ -181,9 +186,9 @@ operator!=(Tensor3<T> const & A, Tensor3<T> const & B);
 /// \param A 3rd-order tensor
 /// \return \f$ s A \f$
 ///
-template<typename S, typename T>
-typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T> > >::type
-operator*(S const & s, Tensor3<T> const & A);
+template<typename S, typename T, Index N>
+typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T>, N> >::type
+operator*(S const & s, Tensor3<T, N> const & A);
 
 ///
 /// 3rd-order tensor scalar product
@@ -191,9 +196,9 @@ operator*(S const & s, Tensor3<T> const & A);
 /// \param s scalar
 /// \return \f$ s A \f$
 ///
-template<typename S, typename T>
-typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T> > >::type
-operator*(Tensor3<T> const & A, S const & s);
+template<typename S, typename T, Index N>
+typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T>, N> >::type
+operator*(Tensor3<T, N> const & A, S const & s);
 
 ///
 /// 3rd-order tensor scalar division
@@ -201,9 +206,9 @@ operator*(Tensor3<T> const & A, S const & s);
 /// \param s scalar
 /// \return \f$ A / s \f$
 ///
-template<typename S, typename T>
-Tensor3<typename Promote<S, T>::type>
-operator/(Tensor3<T> const & A, S const & s);
+template<typename S, typename T, Index N>
+Tensor3<typename Promote<S, T>::type, N>
+operator/(Tensor3<T, N> const & A, S const & s);
 
 ///
 /// 3rd-order tensor vector product
@@ -211,9 +216,9 @@ operator/(Tensor3<T> const & A, S const & s);
 /// \param u vector
 /// \return \f$ B = A \cdot u := B_{ij} = A_{ijp} u_p \f$
 ///
-template<typename S, typename T>
-Tensor<typename Promote<S, T>::type>
-dot(Tensor3<T> const & A, Vector<S> const & u);
+template<typename S, typename T, Index N>
+Tensor<typename Promote<S, T>::type, N>
+dot(Tensor3<T, N> const & A, Vector<S, N> const & u);
 
 ///
 /// vector 3rd-order tensor product
@@ -221,9 +226,9 @@ dot(Tensor3<T> const & A, Vector<S> const & u);
 /// \param u vector
 /// \return \f$ B = u \cdot A := B_{ij} = u_p A{pij} \f$
 ///
-template<typename S, typename T>
-Tensor<typename Promote<S, T>::type>
-dot(Vector<S> const & u, Tensor3<T> const & A);
+template<typename S, typename T, Index N>
+Tensor<typename Promote<S, T>::type, N>
+dot(Vector<S, N> const & u, Tensor3<T, N> const & A);
 
 ///
 /// 3rd-order tensor vector product
@@ -231,9 +236,9 @@ dot(Vector<S> const & u, Tensor3<T> const & A);
 /// \param u vector
 /// \return \f$ B = A \cdot u := B_{ij} = A_{ipj} u_p \f$
 ///
-template<typename S, typename T>
-Tensor<typename Promote<S, T>::type>
-dot2(Tensor3<T> const & A, Vector<S> const & u);
+template<typename S, typename T, Index N>
+Tensor<typename Promote<S, T>::type, N>
+dot2(Tensor3<T, N> const & A, Vector<S> const & u);
 
 ///
 /// vector 3rd-order tensor product
@@ -241,9 +246,9 @@ dot2(Tensor3<T> const & A, Vector<S> const & u);
 /// \param A 3rd-order tensor
 /// \return \f$ B = u \cdot A := B_{ij} = u_p A_{ipj} \f$
 ///
-template<typename S, typename T>
-Tensor<typename Promote<S, T>::type>
-dot2(Vector<S> const & u, Tensor3<T> const & A);
+template<typename S, typename T, Index N>
+Tensor<typename Promote<S, T>::type, N>
+dot2(Vector<S, N> const & u, Tensor3<T, N> const & A);
 
 ///
 /// 3rd-order tensor 2nd-order tensor product
@@ -251,9 +256,9 @@ dot2(Vector<S> const & u, Tensor3<T> const & A);
 /// \param B 2nd-order tensor
 /// \return \f$ C = A \cdot B := C_{ijk} = A_{ijp} B_{pk} \f$
 ///
-template<typename S, typename T>
-Tensor3<typename Promote<S, T>::type>
-dot(Tensor3<T> const & A, Tensor<S> const & B);
+template<typename S, typename T, Index N>
+Tensor3<typename Promote<S, T>::type, N>
+dot(Tensor3<T, N> const & A, Tensor<S, N> const & B);
 
 ///
 /// 2nd-order tensor 3rd-order tensor product
@@ -261,9 +266,9 @@ dot(Tensor3<T> const & A, Tensor<S> const & B);
 /// \param B 3rd-order tensor
 /// \return \f$ C = A \cdot B := C_{ijk} = A_{ip} B_{pjk} \f$
 ///
-template<typename S, typename T>
-Tensor3<typename Promote<S, T>::type>
-dot(Tensor<S> const & A, Tensor3<T> const & B);
+template<typename S, typename T, Index N>
+Tensor3<typename Promote<S, T>::type, N>
+dot(Tensor<S, N> const & A, Tensor3<T, N> const & B);
 
 ///
 /// 3rd-order tensor 2nd-order tensor product
@@ -271,9 +276,9 @@ dot(Tensor<S> const & A, Tensor3<T> const & B);
 /// \param B 2nd-order tensor
 /// \return \f$ C = A \cdot B := C_{ijk} = A_{ipj} B_{pk} \f$
 ///
-template<typename S, typename T>
-Tensor3<typename Promote<S, T>::type>
-dot2(Tensor3<T> const & A, Tensor<S> const & B);
+template<typename S, typename T, Index N>
+Tensor3<typename Promote<S, T>::type, N>
+dot2(Tensor3<T, N> const & A, Tensor<S, N> const & B);
 
 ///
 /// 2nd-order tensor 3rd-order tensor product
@@ -281,9 +286,9 @@ dot2(Tensor3<T> const & A, Tensor<S> const & B);
 /// \param B 3rd-order tensor
 /// \return \f$ C = A \cdot B := C_{ijk} = A_{ip} B_{jpk} \f$
 ///
-template<typename S, typename T>
-Tensor3<typename Promote<S, T>::type>
-dot2(Tensor<S> const & A, Tensor3<T> const & B);
+template<typename S, typename T, Index N>
+Tensor3<typename Promote<S, T>::type, N>
+dot2(Tensor<S, N> const & A, Tensor3<T, N> const & B);
 
 ///
 /// 3rd-order tensor input
@@ -291,9 +296,9 @@ dot2(Tensor<S> const & A, Tensor3<T> const & B);
 /// \param is input stream
 /// \return is input stream
 ///
-template<typename T>
+template<typename T, Index N>
 std::istream &
-operator>>(std::istream & is, Tensor3<T> & A);
+operator>>(std::istream & is, Tensor3<T, N> & A);
 
 ///
 /// 3rd-order tensor output
@@ -301,9 +306,9 @@ operator>>(std::istream & is, Tensor3<T> & A);
 /// \param os output stream
 /// \return os output stream
 ///
-template<typename T>
+template<typename T, Index N>
 std::ostream &
-operator<<(std::ostream & os, Tensor3<T> const & A);
+operator<<(std::ostream & os, Tensor3<T, N> const & A);
 
 } // namespace Intrepid
 

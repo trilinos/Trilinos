@@ -48,55 +48,58 @@ namespace Intrepid
 //
 // Default constructor
 //
-template<typename T>
+template<typename T, Index N>
 inline
-Vector<T>::Vector() :
-TensorBase<T>::TensorBase()
+Vector<T, N>::Vector() :
+TensorBase<T, Store>::TensorBase(ORDER)
 {
+  this->dimension_ = N;
   return;
 }
 
 //
 // Constructor that initializes to NaNs
 //
-template<typename T>
+template<typename T, Index N>
 inline
-Vector<T>::Vector(Index const dimension) :
-TensorBase<T>::TensorBase(dimension, order)
+Vector<T, N>::Vector(Index const dimension)
 {
+  this->dimension_ = N;
   return;
 }
 
 ///
 /// Create vector from a specified value
 ///
-template<typename T>
+template<typename T, Index N>
 inline
-Vector<T>::Vector(Index const dimension, ComponentValue value) :
-TensorBase<T>::TensorBase(dimension, order, value)
+Vector<T, N>::Vector(Index const dimension, ComponentValue value) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
 {
+  this->dimension_ = N;
   return;
 }
 
 //
 // Create vector from a scalar
 //
-template<typename T>
+template<typename T, Index N>
 inline
-Vector<T>::Vector(Index const dimension, T const & s) :
-TensorBase<T>::TensorBase(dimension, order, s)
+Vector<T, N>::Vector(Index const dimension, T const & s) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER, s)
 {
+  this->dimension_ = N;
   return;
 }
 
 //
 // Create vector specifying components
 //
-template<typename T>
+template<typename T, Index N>
 inline
-Vector<T>::Vector(T const & s0, T const & s1)
+Vector<T, N>::Vector(T const & s0, T const & s1)
 {
-  Vector<T> &
+  Vector<T, N> &
   self = (*this);
 
   self.set_dimension(2);
@@ -110,11 +113,11 @@ Vector<T>::Vector(T const & s0, T const & s1)
 //
 // Create vector specifying components
 //
-template<typename T>
+template<typename T, Index N>
 inline
-Vector<T>::Vector(T const & s0, T const & s1, T const & s2)
+Vector<T, N>::Vector(T const & s0, T const & s1, T const & s2)
 {
-  Vector<T> &
+  Vector<T, N> &
   self = (*this);
 
   self.set_dimension(3);
@@ -129,21 +132,22 @@ Vector<T>::Vector(T const & s0, T const & s1, T const & s2)
 //
 // Create vector from array
 //
-template<typename T>
+template<typename T, Index N>
 inline
-Vector<T>::Vector(Index const dimension, T const * data_ptr) :
-TensorBase<T>::TensorBase(dimension, order, data_ptr)
+Vector<T, N>::Vector(Index const dimension, T const * data_ptr) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER, data_ptr)
 {
+  this->dimension_ = N;
   return;
 }
 
 //
 // Copy constructor
 //
-template<typename T>
+template<typename T, Index N>
 inline
-Vector<T>::Vector(Vector<T> const & v) :
-TensorBase<T>::TensorBase(v)
+Vector<T, N>::Vector(Vector<T, N> const & v) :
+TensorBase<T, Store>::TensorBase(v)
 {
   return;
 }
@@ -151,9 +155,9 @@ TensorBase<T>::TensorBase(v)
 //
 // Simple destructor
 //
-template<typename T>
+template<typename T, Index N>
 inline
-Vector<T>::~Vector()
+Vector<T, N>::~Vector()
 {
   return;
 }
@@ -161,10 +165,10 @@ Vector<T>::~Vector()
 //
 // Indexing for constant vector
 //
-template<typename T>
+template<typename T, Index N>
 inline
 T const &
-Vector<T>::operator()(Index const i) const
+Vector<T, N>::operator()(Index const i) const
 {
   return (*this)[i];
 }
@@ -172,10 +176,10 @@ Vector<T>::operator()(Index const i) const
 //
 // Vector indexing
 //
-template<typename T>
+template<typename T, Index N>
 inline
 T &
-Vector<T>::operator()(Index const i)
+Vector<T, N>::operator()(Index const i)
 {
   return (*this)[i];
 }
@@ -183,12 +187,12 @@ Vector<T>::operator()(Index const i)
 //
 // Vector addition
 //
-template<typename S, typename T>
+template<typename S, typename T, Index N>
 inline
-Vector<typename Promote<S, T>::type>
-operator+(Vector<S> const & u, Vector<T> const & v)
+Vector<typename Promote<S, T>::type, N>
+operator+(Vector<S, N> const & u, Vector<T, N> const & v)
 {
-  Vector<typename Promote<S, T>::type>
+  Vector<typename Promote<S, T>::type, N>
   w;
 
   add(u, v, w);
@@ -199,12 +203,12 @@ operator+(Vector<S> const & u, Vector<T> const & v)
 //
 // Vector subtraction
 //
-template<typename S, typename T>
+template<typename S, typename T, Index N>
 inline
-Vector<typename Promote<S, T>::type>
-operator-(Vector<S> const & u, Vector<T> const & v)
+Vector<typename Promote<S, T>::type, N>
+operator-(Vector<S, N> const & u, Vector<T, N> const & v)
 {
-  Vector<typename Promote<S, T>::type>
+  Vector<typename Promote<S, T>::type, N>
   w;
 
   subtract(u, v, w);
@@ -215,12 +219,12 @@ operator-(Vector<S> const & u, Vector<T> const & v)
 //
 // Vector minus
 //
-template<typename T>
+template<typename T, Index N>
 inline
-Vector<T>
-operator-(Vector<T> const & u)
+Vector<T, N>
+operator-(Vector<T, N> const & u)
 {
-  Vector<T>
+  Vector<T, N>
   v;
 
   minus(u, v);
@@ -231,10 +235,10 @@ operator-(Vector<T> const & u)
 //
 // Vector dot product
 //
-template<typename S, typename T>
+template<typename S, typename T, Index N>
 inline
 typename Promote<S, T>::type
-operator*(Vector<S> const & u, Vector<T> const & v)
+operator*(Vector<S, N> const & u, Vector<T, N> const & v)
 {
   return dot(u, v);
 }
@@ -242,10 +246,10 @@ operator*(Vector<S> const & u, Vector<T> const & v)
 //
 // Vector equality tested by components
 //
-template<typename T>
+template<typename T, Index N>
 inline
 bool
-operator==(Vector<T> const & u, Vector<T> const & v)
+operator==(Vector<T, N> const & u, Vector<T, N> const & v)
 {
   return equal(u, v);
 }
@@ -253,10 +257,10 @@ operator==(Vector<T> const & u, Vector<T> const & v)
 //
 // Vector inequality tested by components
 //
-template<typename T>
+template<typename T, Index N>
 inline
 bool
-operator!=(Vector<T> const & u, Vector<T> const & v)
+operator!=(Vector<T, N> const & u, Vector<T, N> const & v)
 {
   return not_equal(u, v);
 }
@@ -264,12 +268,12 @@ operator!=(Vector<T> const & u, Vector<T> const & v)
 //
 // Scalar vector product
 //
-template<typename S, typename T>
+template<typename S, typename T, Index N>
 inline
-typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T> > >::type
-operator*(S const & s, Vector<T> const & u)
+typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T>, N> >::type
+operator*(S const & s, Vector<T, N> const & u)
 {
-  Vector<typename Promote<S, T>::type>
+  Vector<typename Promote<S, T>::type, N>
   v;
 
   scale(u, s, v);
@@ -280,12 +284,12 @@ operator*(S const & s, Vector<T> const & u)
 //
 // Vector scalar product
 //
-template<typename S, typename T>
+template<typename S, typename T, Index N>
 inline
-typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T> > >::type
-operator*(Vector<T> const & u, S const & s)
+typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T>, N> >::type
+operator*(Vector<T, N> const & u, S const & s)
 {
-  Vector<typename Promote<S, T>::type>
+  Vector<typename Promote<S, T>::type, N>
   v;
 
   scale(u, s, v);
@@ -296,12 +300,12 @@ operator*(Vector<T> const & u, S const & s)
 //
 // Vector scalar division
 //
-template<typename S, typename T>
+template<typename S, typename T, Index N>
 inline
-Vector<typename Promote<S, T>::type>
-operator/(Vector<T> const & u, S const & s)
+Vector<typename Promote<S, T>::type, N>
+operator/(Vector<T, N> const & u, S const & s)
 {
-  Vector<typename Promote<S, T>::type>
+  Vector<typename Promote<S, T>::type, N>
   v;
 
   divide(u, s, v);
@@ -312,23 +316,23 @@ operator/(Vector<T> const & u, S const & s)
 //
 // Vector dot product
 //
-template<typename S, typename T>
+template<typename S, typename T, Index N>
 inline
 typename Promote<S, T>::type
-dot(Vector<S> const & u, Vector<T> const & v)
+dot(Vector<S, N> const & u, Vector<T, N> const & v)
 {
   Index const
-  N = u.get_dimension();
+  dimension = u.get_dimension();
 
-  assert(v.get_dimension() == N);
+  assert(v.get_dimension() == dimension);
 
   typename Promote<S, T>::type
   s = 0.0;
 
-  switch (N) {
+  switch (dimension) {
 
     default:
-      for (Index i = 0; i < N; ++i) {
+      for (Index i = 0; i < dimension; ++i) {
         s += u(i) * v(i);
       }
       break;
@@ -349,20 +353,20 @@ dot(Vector<S> const & u, Vector<T> const & v)
 //
 // Cross product only valid for R^3.
 //
-template<typename S, typename T>
+template<typename S, typename T, Index N>
 inline
-Vector<typename Promote<S, T>::type>
-cross(Vector<S> const & u, Vector<T> const & v)
+Vector<typename Promote<S, T>::type, N>
+cross(Vector<S, N> const & u, Vector<T, N> const & v)
 {
   Index const
-  N = u.get_dimension();
+  dimension = u.get_dimension();
 
-  assert(v.get_dimension() == N);
+  assert(v.get_dimension() == dimension);
 
-  Vector<typename Promote<S, T>::type>
-  w(N);
+  Vector<typename Promote<S, T>::type, N>
+  w(dimension);
 
-  switch (N) {
+  switch (dimension) {
 
     case 3:
       w(0) = u(1) * v(2) - u(2) * v(1);
@@ -373,7 +377,7 @@ cross(Vector<S> const & u, Vector<T> const & v)
     default:
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
       std::cerr << std::endl;
-      std::cerr << "Cross product undefined for R^" << N;
+      std::cerr << "Cross product undefined for R^" << dimension;
       std::cerr << std::endl;
       exit(1);
       break;
@@ -387,18 +391,18 @@ cross(Vector<S> const & u, Vector<T> const & v)
 // R^N vector 2-norm
 // \return \f$ \sqrt{u \cdot u} \f$
 //
-template<typename T>
+template<typename T, Index N>
 inline
 T
-norm(Vector<T> const & u)
+norm(Vector<T, N> const & u)
 {
   Index const
-  N = u.get_dimension();
+  dimension = u.get_dimension();
 
   T
   s = 0.0;
 
-  switch (N) {
+  switch (dimension) {
 
     default:
       s = std::sqrt(dot(u, u));
@@ -421,18 +425,18 @@ norm(Vector<T> const & u)
 // R^N vector 2-norm square for fast distance calculations.
 // \return \f$ u \cdot u \f$
 //
-template<typename T>
+template<typename T, Index N>
 inline
 T
-norm_square(Vector<T> const & u)
+norm_square(Vector<T, N> const & u)
 {
   Index const
-  N = u.get_dimension();
+  dimension = u.get_dimension();
 
   T
   s = 0.0;
 
-  switch (N) {
+  switch (dimension) {
 
     default:
       s = dot(u, u);
@@ -455,21 +459,21 @@ norm_square(Vector<T> const & u)
 // R^N vector 1-norm
 // \return \f$ \sum_i |u_i| \f$
 //
-template<typename T>
+template<typename T, Index N>
 inline
 T
-norm_1(Vector<T> const & u)
+norm_1(Vector<T, N> const & u)
 {
   Index const
-  N = u.get_dimension();
+  dimension = u.get_dimension();
 
   T
   s = 0.0;
 
-  switch (N) {
+  switch (dimension) {
 
     default:
-      for (Index i = 0; i < N; ++i) {
+      for (Index i = 0; i < dimension; ++i) {
         s += std::abs(u(i));
       }
       break;
@@ -491,21 +495,21 @@ norm_1(Vector<T> const & u)
 // R^N vector infinity-norm
 // \return \f$ \max(|u_0|,...|u_i|,...|u_N|) \f$
 //
-template<typename T>
+template<typename T, Index N>
 inline
 T
-norm_infinity(Vector<T> const & u)
+norm_infinity(Vector<T, N> const & u)
 {
   Index const
-  N = u.get_dimension();
+  dimension = u.get_dimension();
 
   T
   s = 0.0;
 
-  switch (N) {
+  switch (dimension) {
 
     default:
-      for (Index i = 0; i < N; ++i) {
+      for (Index i = 0; i < dimension; ++i) {
         s = std::max(s, std::abs(u(i)));
       }
       break;

@@ -49,24 +49,24 @@ namespace Intrepid {
 //
 // Length of a segment
 //
-template<typename T>
+template<typename T, Index N>
 T
-length(Vector<T> const & p0, Vector<T> const & p1)
+length(Vector<T, N> const & p0, Vector<T, N> const & p1)
 {
-  Vector<T> v = p1 - p0;
+  Vector<T, N> v = p1 - p0;
   return norm(v);
 }
 
 //
 // Area of a triangle
 //
-template<typename T>
+template<typename T, Index N>
 T
-area(Vector<T> const & p0, Vector<T> const & p1,
-    Vector<T> const & p2)
+area(Vector<T, N> const & p0, Vector<T, N> const & p1,
+    Vector<T, N> const & p2)
 {
-  Vector<T> u = p1 - p0;
-  Vector<T> v = p2 - p0;
+  Vector<T, N> u = p1 - p0;
+  Vector<T, N> v = p2 - p0;
   T a = 0.5 * norm(cross(u,v));
   return a;
 }
@@ -75,10 +75,10 @@ area(Vector<T> const & p0, Vector<T> const & p1,
 // Area of a quadrilateral, assumed planar. If not planar, returns
 // the sum of the areas of the two triangles p0,p1,p2 and p0,p2,p3
 //
-template<typename T>
+template<typename T, Index N>
 T
-area(Vector<T> const & p0, Vector<T> const & p1,
-    Vector<T> const & p2, Vector<T> const & p3)
+area(Vector<T, N> const & p0, Vector<T, N> const & p1,
+    Vector<T, N> const & p2, Vector<T, N> const & p3)
 {
   return area(p0, p1, p2) + area(p0, p2, p3);
 }
@@ -86,20 +86,20 @@ area(Vector<T> const & p0, Vector<T> const & p1,
 //
 // Volume of tetrahedron
 //
-template<typename T>
+template<typename T, Index N>
 T
-volume(Vector<T> const & p0, Vector<T> const & p1,
-    Vector<T> const & p2, Vector<T> const & p3)
+volume(Vector<T, N> const & p0, Vector<T, N> const & p1,
+    Vector<T, N> const & p2, Vector<T, N> const & p3)
 {
   // Area of base triangle
   T A = area(p0, p1, p2);
 
   // Height
-  Vector<T> u = p1 - p0;
-  Vector<T> v = p2 - p0;
-  Vector<T> n = cross(u, v);
+  Vector<T, N> u = p1 - p0;
+  Vector<T, N> v = p2 - p0;
+  Vector<T, N> n = cross(u, v);
   n = n / norm(n);
-  Vector<T> w = p3 - p0;
+  Vector<T, N> w = p3 - p0;
   T h = std::abs(dot(w, n));
 
   // Volume
@@ -113,21 +113,21 @@ volume(Vector<T> const & p0, Vector<T> const & p1,
 // Base is p0,p1,p2,p3
 // Apex is p4
 //
-template<typename T>
+template<typename T, Index N>
 T
-volume(Vector<T> const & p0, Vector<T> const & p1,
-    Vector<T> const & p2, Vector<T> const & p3,
-    Vector<T> const & p4)
+volume(Vector<T, N> const & p0, Vector<T, N> const & p1,
+    Vector<T, N> const & p2, Vector<T, N> const & p3,
+    Vector<T, N> const & p4)
 {
   // Area of base quadrilateral
   T A = area(p0, p1, p2, p3);
 
   // Height
-  Vector<T> u = p1 - p0;
-  Vector<T> v = p2 - p0;
-  Vector<T> n = cross(u, v);
+  Vector<T, N> u = p1 - p0;
+  Vector<T, N> v = p2 - p0;
+  Vector<T, N> n = cross(u, v);
   n = n / norm(n);
-  Vector<T> w = p4 - p0;
+  Vector<T, N> w = p4 - p0;
   T h = std::abs(dot(w, n));
 
   // Volume
@@ -140,12 +140,12 @@ volume(Vector<T> const & p0, Vector<T> const & p1,
 // Assumption: all faces are planar
 // Decompose into 3 pyramids
 //
-template<typename T>
+template<typename T, Index N>
 T
-volume(Vector<T> const & p0, Vector<T> const & p1,
-    Vector<T> const & p2, Vector<T> const & p3,
-    Vector<T> const & p4, Vector<T> const & p5,
-    Vector<T> const & p6, Vector<T> const & p7)
+volume(Vector<T, N> const & p0, Vector<T, N> const & p1,
+    Vector<T, N> const & p2, Vector<T, N> const & p3,
+    Vector<T, N> const & p4, Vector<T, N> const & p5,
+    Vector<T, N> const & p6, Vector<T, N> const & p7)
 {
   // 1st pyramid
   T V1 = volume(p4, p7, p6, p5, p0);
@@ -165,13 +165,13 @@ volume(Vector<T> const & p0, Vector<T> const & p1,
 // For these we can just take the average of the vertices.
 // WARNING: This is not the center of mass.
 //
-template<typename T>
-Vector<T>
-centroid(std::vector<Vector<T> > const & points)
+template<typename T, Index N>
+Vector<T, N>
+centroid(std::vector<Vector<T, N> > const & points)
 {
-  Vector<T> C(points[0].get_dimension());
+  Vector<T, N> C(points[0].get_dimension());
   C.clear();
-  typedef typename std::vector<Vector<T> >::size_type sizeT;
+  typedef typename std::vector<Vector<T, N> >::size_type sizeT;
   sizeT n = points.size();
 
   for (sizeT i = 0; i < n; ++i) {
@@ -185,17 +185,17 @@ centroid(std::vector<Vector<T> > const & points)
 // Input: 3 independent nodes on the face
 // Output: unit normal vector
 //
-template<typename T>
-Vector<T>
-normal(Vector<T> const & p0,
-    Vector<T> const & p1,
-    Vector<T> const & p2)
+template<typename T, Index N>
+Vector<T, N>
+normal(Vector<T, N> const & p0,
+    Vector<T, N> const & p1,
+    Vector<T, N> const & p2)
     {
   // Construct 2 independent vectors
-  Vector<T> v0 = p1 - p0;
-  Vector<T> v1 = p2 - p0;
+  Vector<T, N> v0 = p1 - p0;
+  Vector<T, N> v1 = p2 - p0;
 
-  Vector<T> n = cross(v0,v1);
+  Vector<T, N> n = cross(v0,v1);
   n = n / norm(n);
   return n;
     }
@@ -205,19 +205,19 @@ normal(Vector<T> const & p0,
 // determine if point p is in the same side of the normal
 // to the plane as defined by the right hand rule.
 //
-template<typename T>
+template<typename T, Index N>
 bool
 in_normal_side(
-    Vector<T> const & p,
-    Vector<T> const & p0,
-    Vector<T> const & p1,
-    Vector<T> const & p2)
+    Vector<T, N> const & p,
+    Vector<T, N> const & p0,
+    Vector<T, N> const & p1,
+    Vector<T, N> const & p2)
 {
-  Vector<T> v0 = p1 - p0;
-  Vector<T> v1 = p2 - p0;
+  Vector<T, N> v0 = p1 - p0;
+  Vector<T, N> v1 = p2 - p0;
 
-  Vector<T> n = cross(v0, v1);
-  Vector<T> v = p - p0;
+  Vector<T, N> n = cross(v0, v1);
+  Vector<T, N> v = p - p0;
 
   T s = dot(v, n);
 
@@ -232,30 +232,30 @@ in_normal_side(
 // \param start, end: define sequence of points
 // \return vectors that define the bounding box
 //
-template<typename T, typename I>
-std::pair< Vector<T>, Vector<T> >
+template<typename T, typename I, Index N>
+std::pair< Vector<T, N>, Vector<T, N> >
 bounding_box(I start, I end)
 {
   I
   it = start;
 
-  Vector<T>
+  Vector<T, N>
   min = (*it);
 
-  Vector<T>
+  Vector<T, N>
   max = min;
 
   const Index
-  N = min.get_dimension();
+  dimension = min.get_dimension();
 
   ++it;
 
   for (; it != end; ++it) {
 
-    Vector<T> const &
+    Vector<T, N> const &
     point = (*it);
 
-    for (Index i = 0; i < N; ++i) {
+    for (Index i = 0; i < dimension; ++i) {
       const T s = point(i);
       if (s < min(i)) min(i) = s;
       if (s > max(i)) max(i) = s;
@@ -272,20 +272,20 @@ bounding_box(I start, I end)
 // \param min, max points defining the box
 // \return whether the point is inside
 //
-template<typename T>
+template<typename T, Index N>
 bool
 in_box(
-    Vector<T> const & p,
-    Vector<T> const & min,
-    Vector<T> const & max)
+    Vector<T, N> const & p,
+    Vector<T, N> const & min,
+    Vector<T, N> const & max)
 {
   const Index
-  N = p.get_dimension();
+  dimension = p.get_dimension();
 
   assert(min.get_dimension() == N);
   assert(max.get_dimension() == N);
 
-  for (Index i = 0; i < N; ++i) {
+  for (Index i = 0; i < dimension; ++i) {
     T const & s = p(i);
     if (s < min(i)) return false;
     if (s > max(i)) return false;
@@ -299,18 +299,18 @@ in_box(
 // \param min, max the bounding box
 // \return p point inside box
 //
-template<typename T>
-Vector<T>
-random_in_box(Vector<T> const & min, Vector<T> const & max)
+template<typename T, Index N>
+Vector<T, N>
+random_in_box(Vector<T, N> const & min, Vector<T, N> const & max)
 {
   const Index
-  N = min.get_dimension();
+  dimension = min.get_dimension();
 
   assert(max.get_dimension() == N);
 
-  Vector<T> p(N);
+  Vector<T, N> p(N);
 
-  for (Index i = 0; i < N; ++i) {
+  for (Index i = 0; i < dimension; ++i) {
     p(i) = (max(i) - min(i)) * T(std::rand())/T(RAND_MAX) + min(i);
   }
 
@@ -321,14 +321,14 @@ random_in_box(Vector<T> const & min, Vector<T> const & max)
 // Given 4 points p0, p1, p2, p3 that define a tetrahedron
 // determine if point p is inside it.
 //
-template<typename T>
+template<typename T, Index N>
 bool
 in_tetrahedron(
-    Vector<T> const & p,
-    Vector<T> const & p0,
-    Vector<T> const & p1,
-    Vector<T> const & p2,
-    Vector<T> const & p3)
+    Vector<T, N> const & p,
+    Vector<T, N> const & p0,
+    Vector<T, N> const & p1,
+    Vector<T, N> const & p2,
+    Vector<T, N> const & p3)
 {
   if (in_normal_side(p, p0, p1, p2) == false) {
 
@@ -356,18 +356,18 @@ in_tetrahedron(
 // determine if point p is inside it.
 // Assumption: faces are planar
 //
-template<typename T>
+template<typename T, Index N>
 bool
 in_hexahedron(
-    Vector<T> const & p,
-    Vector<T> const & p0,
-    Vector<T> const & p1,
-    Vector<T> const & p2,
-    Vector<T> const & p3,
-    Vector<T> const & p4,
-    Vector<T> const & p5,
-    Vector<T> const & p6,
-    Vector<T> const & p7)
+    Vector<T, N> const & p,
+    Vector<T, N> const & p0,
+    Vector<T, N> const & p1,
+    Vector<T, N> const & p2,
+    Vector<T, N> const & p3,
+    Vector<T, N> const & p4,
+    Vector<T, N> const & p5,
+    Vector<T, N> const & p6,
+    Vector<T, N> const & p7)
 {
   if (in_normal_side(p, p0, p1, p2) == false) {
 
@@ -404,13 +404,13 @@ in_hexahedron(
 // \param n vector of points to test
 // \return index to closest point
 //
-template<typename T>
-typename std::vector< Vector<T> >::size_type
-closest_point(Vector<T> const & p, std::vector< Vector<T> > const & n)
+template<typename T, Index N>
+typename std::vector< Vector<T, N> >::size_type
+closest_point(Vector<T, N> const & p, std::vector< Vector<T, N> > const & n)
 {
   assert(n.size() > 0);
 
-  typename std::vector< Vector<T> >::size_type
+  typename std::vector< Vector<T, N> >::size_type
   index = 0;
 
   const Vector<double>
@@ -419,7 +419,7 @@ closest_point(Vector<T> const & p, std::vector< Vector<T> > const & n)
   T
   min = norm_square(v0);
 
-  for (typename std::vector< Vector<T> >::size_type i = 1;
+  for (typename std::vector< Vector<T, N> >::size_type i = 1;
       i < n.size();
       ++i) {
 
@@ -502,14 +502,14 @@ median(Iterator begin, Iterator end)
 // \param p0 ... corner nodes
 // \return interpolated position
 //
-template<typename T>
-Vector<T>
+template<typename T, Index N>
+Vector<T, N>
 interpolate_quadrilateral(
-    Vector<T> & xi,
-    Vector<T> const & p0,
-    Vector<T> const & p1,
-    Vector<T> const & p2,
-    Vector<T> const & p3)
+    Vector<T, N> & xi,
+    Vector<T, N> const & p0,
+    Vector<T, N> const & p1,
+    Vector<T, N> const & p2,
+    Vector<T, N> const & p3)
     {
 
   T
@@ -524,7 +524,7 @@ interpolate_quadrilateral(
   T
   N3 = 0.25 * (1 - xi(0)) * (1 + xi(1));
 
-  const Vector<T>
+  const Vector<T, N>
   p = N0 * p0 + N1 * p1 + N2 * p2 + N3 * p3;
 
   return p;
@@ -537,17 +537,17 @@ interpolate_quadrilateral(
 // \param p0 ... corner nodes
 // \return interpolated position
 //
-template<typename T>
-Vector<T>
+template<typename T, Index N>
+Vector<T, N>
 interpolate_triangle(
-    Vector<T> & xi,
-    Vector<T> const & p0,
-    Vector<T> const & p1,
-    Vector<T> const & p2)
+    Vector<T, N> & xi,
+    Vector<T, N> const & p0,
+    Vector<T, N> const & p1,
+    Vector<T, N> const & p2)
     {
   xi(2) = 1.0 - xi(0) - xi(1);
 
-  const Vector<T>
+  const Vector<T, N>
   p = xi(0) * p0 + xi(1) * p1 + xi(2) * p2;
 
   return p;
@@ -560,18 +560,18 @@ interpolate_triangle(
 // \param p0 ... corner nodes
 // \return interpolated position
 //
-template<typename T>
-Vector<T>
+template<typename T, Index N>
+Vector<T, N>
 interpolate_hexahedron(
-    Vector<T> & xi,
-    Vector<T> const & p0,
-    Vector<T> const & p1,
-    Vector<T> const & p2,
-    Vector<T> const & p3,
-    Vector<T> const & p4,
-    Vector<T> const & p5,
-    Vector<T> const & p6,
-    Vector<T> const & p7)
+    Vector<T, N> & xi,
+    Vector<T, N> const & p0,
+    Vector<T, N> const & p1,
+    Vector<T, N> const & p2,
+    Vector<T, N> const & p3,
+    Vector<T, N> const & p4,
+    Vector<T, N> const & p5,
+    Vector<T, N> const & p6,
+    Vector<T, N> const & p7)
     {
 
   T
@@ -598,7 +598,7 @@ interpolate_hexahedron(
   T
   N7 = 0.125 * (1 - xi(0)) * (1 + xi(1)) * (1 + xi(2));
 
-  const Vector<T>
+  const Vector<T, N>
   p =
       N0 * p0 + N1 * p1 + N2 * p2 + N3 * p3 +
       N4 * p4 + N5 * p5 + N6 * p6 + N7 * p7;
@@ -613,18 +613,18 @@ interpolate_hexahedron(
 // \param p0 ... corner nodes
 // \return interpolated position
 //
-template<typename T>
-Vector<T>
+template<typename T, Index N>
+Vector<T, N>
 interpolate_tetrahedron(
-    Vector<T> & xi,
-    Vector<T> const & p0,
-    Vector<T> const & p1,
-    Vector<T> const & p2,
-    Vector<T> const & p3)
+    Vector<T, N> & xi,
+    Vector<T, N> const & p0,
+    Vector<T, N> const & p1,
+    Vector<T, N> const & p2,
+    Vector<T, N> const & p3)
     {
   xi(3) = 1.0 - xi(0) - xi(1) - xi(2);
 
-  const Vector<T>
+  const Vector<T, N>
   p = xi(0) * p0 + xi(1) * p1 + xi(2) * p2 + xi(3) * p3;
 
   return p;
@@ -638,12 +638,12 @@ interpolate_tetrahedron(
 /// \param v ... corner nodes
 /// \return interpolated position
 ///
-template<typename T>
-Vector<T>
+template<typename T, Index N>
+Vector<T, N>
 interpolate_element(
     ELEMENT::Type element_type,
-    Vector<T> & xi,
-    std::vector< Vector<T> > const & v)
+    Vector<T, N> & xi,
+    std::vector< Vector<T, N> > const & v)
     {
   Vector<double> p;
 
@@ -686,9 +686,9 @@ interpolate_element(
 // \param vector of points
 // \return distance matrix
 //
-template<typename T>
+template<typename T, Index N>
 std::vector< std::vector<T> >
-distance_matrix(std::vector< Vector<T> > const & points)
+distance_matrix(std::vector< Vector<T, N> > const & points)
 {
   const Index
   number_points = points.size();
@@ -723,7 +723,7 @@ distance_matrix(std::vector< Vector<T> > const & points)
 // \param distance matrix
 // \return minimum distance
 //
-template<typename T>
+template<typename T, Index N>
 std::vector<T>
 minimum_distances(std::vector< std::vector<T> > const & distances)
 {
