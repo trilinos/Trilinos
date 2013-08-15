@@ -72,7 +72,6 @@ namespace {
 
     // Iterate all fields and set them as restart fields...
     const stk::mesh::FieldVector &fields = mesh_data.meta_data().get_fields();
-    std::string name;
     for (size_t i=0; i < fields.size(); i++) {
       std::string name = fields[i]->name();
       mesh_data.add_restart_field(*fields[i], name);
