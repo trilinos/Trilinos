@@ -78,4 +78,3 @@ template class MueLu::RAPFactory<double, int, int, KokkosClassic::ThrustGPUNode,
 template class MueLu::RAPFactory<double, int, int, KokkosClassic::TPINode, KokkosClassic::DefaultKernels<void, int, KokkosClassic::TPINode>::SparseOps>;
 #endif
 
-

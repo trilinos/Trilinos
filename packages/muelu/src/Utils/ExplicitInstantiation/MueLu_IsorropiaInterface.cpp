@@ -43,10 +43,11 @@
 // ***********************************************************************
 //
 // @HEADER
-#include "MueLu_ConfigDefs.hpp"
-#if defined (HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
-#include "MueLu_ExplicitInstantiation.hpp"
 
+#include "MueLu_ConfigDefs.hpp"
+
+#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
+#include "MueLu_ExplicitInstantiation.hpp"
 #include "MueLu_IsorropiaInterface_def.hpp"
 
 #ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
@@ -59,14 +60,6 @@ template class MueLu::IsorropiaInterface<int, long long int, KokkosClassic::Defa
 # else
 # warning To compile MueLu with 'long long int' support, please turn on Teuchos_ENABLE_LONG_LONG_INT
 # endif
-#endif
-
-#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
-template class MueLu::IsorropiaInterface<int, int, KokkosClassic::ThrustGPUNode, KokkosClassic::DefaultKernels<void, int, KokkosClassic::ThrustGPUNode>::SparseOps>;
-#endif
-
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
-template class MueLu::IsorropiaInterface<int, int, KokkosClassic::TPINode, KokkosClassic::DefaultKernels<void, int, KokkosClassic::TPINode>::SparseOps>;
 #endif
 
 #endif

@@ -60,17 +60,10 @@
 
 namespace MueLu {
 
-  // Metaprogramming: CheckNodeType<T>::val would be 1 only for the default node type
-  template<typename T> struct CheckNodeType                                              { enum { val = 0 }; };
-  template <>          struct CheckNodeType<KokkosClassic::DefaultNode::DefaultNodeType> { enum { val = 1 }; };
-
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Amesos2Smoother(const std::string& type, const Teuchos::ParameterList& paramList)
+  Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Amesos2Smoother(std::string const & type, Teuchos::ParameterList const & paramList)
     : type_(type), paramList_(paramList)
   {
-    if (!CheckNodeType<Node>::val)
-      throw Exceptions::NotImplemented("Amesos2Smoother works only with serial node type");
-
     // Set default solver type
     // TODO: It would be great is Amesos2 provides directly this kind of logic for us
     if(type_ == "") {
@@ -107,26 +100,21 @@ namespace MueLu {
   Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~Amesos2Smoother() { }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& currentLevel) const {
+  void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
     this->Input(currentLevel, "A");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level& currentLevel) {
+  void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level &currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
-    if (SmootherPrototype::IsSetup() == true)
-        this->GetOStream(Warnings0, 0) << "Warning: MueLu::Amesos2Smoother::Setup(): Setup() has already been called" << std::endl;
+    if (SmootherPrototype::IsSetup() == true) this->GetOStream(Warnings0, 0) << "Warning: MueLu::Amesos2Smoother::Setup(): Setup() has already been called" << std::endl;
 
-    RCP<Matrix> A = Factory::Get< RCP<Matrix> >(currentLevel, "A");
+    RCP<Matrix> A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
-    if (CheckNodeType<Node>::val) {
-      // template metaprogramming: if node type is inapplicable, it should not instantiate
-      RCP<Tpetra_CrsMatrix> tA = Utils::Op2NonConstTpetraCrs(A);
+    RCP<Tpetra_CrsMatrix> tA = Utils::Op2NonConstTpetraCrs(A_);
 
-      prec_ = Amesos2::create<Tpetra_CrsMatrix,Tpetra_MultiVector>(type_, tA);
-    }
-
-    TEUCHOS_TEST_FOR_EXCEPTION(prec_ == Teuchos::null, Exceptions::RuntimeError, "Could not create Amesos2 solver");
+    prec_ = Amesos2::create<Tpetra_CrsMatrix,Tpetra_MultiVector>(type_, tA);
+    TEUCHOS_TEST_FOR_EXCEPTION(prec_ == Teuchos::null, Exceptions::RuntimeError, "Amesos2::create returns Teuchos::null");
 
     //TODO      prec_->setParameters(paramList_);
     //TODO
@@ -142,70 +130,59 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(MultiVector& X, const MultiVector& B, const bool& InitialGuessIsZero) const
+  void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::Amesos2Smoother::Apply(): Setup() has not been called");
 
-    if (CheckNodeType<Node>::val) {
-      // template metaprogramming: if node type is inapplicable, it should not instantiate
-      RCP<Tpetra_MultiVector> tX = Utils::MV2NonConstTpetraMV2(X);
-      MultiVector& BNonC = const_cast<MultiVector&>(B);
-      RCP<Tpetra_MultiVector> tB = Utils::MV2NonConstTpetraMV2(BNonC);
+    RCP<Tpetra_MultiVector> tX = Utils::MV2NonConstTpetraMV2(X);
+    MultiVector & BNonC = const_cast<MultiVector&>(B);
+    RCP<Tpetra_MultiVector> tB = Utils::MV2NonConstTpetraMV2(BNonC);
+    prec_->setX(tX);
+    prec_->setB(tB);
 
-      prec_->setX(tX);
-      prec_->setB(tB);
+    prec_->solve();
 
-      prec_->solve();
-
-      prec_->setX(Teuchos::null);
-      prec_->setB(Teuchos::null);
-    }
+    prec_->setX(Teuchos::null);
+    prec_->setB(Teuchos::null);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Copy() const {
-    return rcp(new Amesos2Smoother(*this));
+    return rcp( new Amesos2Smoother(*this) );
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   std::string Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::description() const {
     std::ostringstream out;
-    if (CheckNodeType<Node>::val) {
-      // template metaprogramming: if node type is inapplicable, it should not instantiate
-      if (SmootherPrototype::IsSetup() == true) {
-        out << prec_->description();
-      } else {
-        out << SmootherPrototype::description();
-        out << "{type = " << type_ << "}";
-      }
+    if (SmootherPrototype::IsSetup() == true) {
+      out << prec_->description();
+    } else {
+      out << SmootherPrototype::description();
+      out << "{type = " << type_ << "}";
     }
     return out.str();
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
+  void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
 
-    if (CheckNodeType<Node>::val) {
-      // template metaprogramming: if node type is inapplicable, it should not instantiate
-      if (verbLevel & Parameters0)
-        out0 << "Prec. type: " << type_ << std::endl;
+    if (verbLevel & Parameters0) {
+      out0 << "Prec. type: " << type_ << std::endl;
+    }
 
-      if (verbLevel & Parameters1) {
-        out0 << "Parameter list: " << std::endl;
-        Teuchos::OSTab tab2(out);
-        out << paramList_;
-      }
+    if (verbLevel & Parameters1) {
+      out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
+    }
 
-      if ((verbLevel & External) && (prec_ != Teuchos::null)) {
-        Teuchos::OSTab tab2(out);
-        out << *prec_ << std::endl;
-      }
+    if (verbLevel & External) {
+      if (prec_ != Teuchos::null) { Teuchos::OSTab tab2(out); out << *prec_ << std::endl; }
+    }
 
-      if (verbLevel & Debug)
-        out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl
-            << "-" << std::endl
-            << "RCP<prec_>: " << prec_ << std::endl;
+    if (verbLevel & Debug) {
+      out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl
+           << "-" << std::endl
+           << "RCP<prec_>: " << prec_ << std::endl;
     }
   }
 

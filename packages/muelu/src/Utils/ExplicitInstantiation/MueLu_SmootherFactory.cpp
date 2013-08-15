@@ -78,4 +78,3 @@ template class MueLu::SmootherFactory<double, int, int, KokkosClassic::ThrustGPU
 template class MueLu::SmootherFactory<double, int, int, KokkosClassic::TPINode, KokkosClassic::DefaultKernels<void, int, KokkosClassic::TPINode>::SparseOps>;
 #endif
 
-
