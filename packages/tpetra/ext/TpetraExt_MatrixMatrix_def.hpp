@@ -207,7 +207,7 @@ void Multiply(
 
   //Now call the appropriate method to perform the actual multiplication.
 
-  CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crsmat(C);
+  CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> crsmat(C);
 
   MMdetails::mult_A_B(Aview, Bview, crsmat);
 
