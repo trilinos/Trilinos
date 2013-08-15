@@ -1196,47 +1196,53 @@ void write_side_data_to_ioss( Ioss::GroupingEntity & io ,
                               const mesh::BulkData & bulk_data,
                               const stk::mesh::Selector *anded_selector, INT /*dummy*/ )
 {
-  //std::cout << "tmp write_side_data_to_ioss part= " << part->name() << std::endl;
   const mesh::MetaData & meta_data = mesh::MetaData::get(*part);
 
   std::vector<mesh::Entity> sides ;
   stk::mesh::EntityRank type = part_primary_entity_rank(*part);
   size_t num_sides = get_entities(*part, type, bulk_data, sides, false, anded_selector);
 
+  stk::mesh::EntityRank elem_rank = stk::mesh::MetaData::ELEMENT_RANK;
+
   std::vector<INT> elem_side_ids; elem_side_ids.reserve(num_sides*2);
 
   for(size_t i=0; i<num_sides; ++i) {
+    std::vector<mesh::Entity> side;
+    side.push_back(sides[i]);
+    std::vector<mesh::Entity> side_elements;
+    std::vector<mesh::Entity> side_nodes( bulk_data.begin_nodes(sides[i]), bulk_data.end_nodes(sides[i]) );
 
-    const mesh::Entity side = sides[i] ;
-    mesh::Entity const *side_elem = bulk_data.begin_elements(side);
-    mesh::ConnectivityOrdinal const *side_ordinal = bulk_data.begin_element_ordinals(side);
+    get_entities_through_relations(bulk_data, side_nodes, elem_rank, side_elements);
+    const size_t num_side_elem = side_elements.size();
 
-    // Which element to use?
-    // Any locally owned element that has the "correct" orientation
+    std::sort( side_elements.begin() , side_elements.end() , mesh::EntityLess(bulk_data));
 
-    const size_t num_side_elem = bulk_data.num_elements(side);
-    size_t suitable = std::numeric_limits<size_t>::max();
-
-    for ( size_t j = 0 ; (j < num_side_elem) && (suitable >= num_side_elem) ; ++j )
+    mesh::Entity suitable_elem = mesh::Entity();
+    mesh::ConnectivityOrdinal suitable_ordinal = mesh::INVALID_CONNECTIVITY_ORDINAL;
+    for ( size_t j = 0 ; j < num_side_elem ; ++j )
     {
-      const mesh::Entity elem = side_elem[j];
-
-      if ( bulk_data.bucket(elem).member( meta_data.locally_owned_part() ) &&
-           (num_side_elem == 1 || bulk_data.element_side_polarity(elem, side, side_ordinal[j])) )
-      {
-        suitable = j;
+      const mesh::Entity elem = side_elements[j];
+      const mesh::Entity * elem_sides =  bulk_data.begin(elem, type);
+      mesh::ConnectivityOrdinal const * side_ordinal = bulk_data.begin_ordinals(elem, type);
+      const size_t num_sides = bulk_data.num_connectivity(elem, type);
+      for(size_t k = 0; k < num_sides; ++k){
+        if(elem_sides[k] == side[0]){
+          suitable_elem = elem;
+          suitable_ordinal = side_ordinal[k];
+          break;
+        }
       }
     }
 
-    if (suitable >= num_side_elem)
+    if (!bulk_data.is_valid(suitable_elem))
     {
       std::ostringstream oss;
       oss << "ERROR, no suitable element found";
       throw std::runtime_error(oss.str());
     }
 
-    elem_side_ids.push_back(bulk_data.identifier(side_elem[suitable]));
-    elem_side_ids.push_back(side_ordinal[suitable] + 1) ; // Ioss is 1-based, mesh is 0-based.
+    elem_side_ids.push_back(bulk_data.identifier(suitable_elem));
+    elem_side_ids.push_back(suitable_ordinal + 1) ; // Ioss is 1-based, mesh is 0-based.
   }
 
   const size_t num_side_written = io.put_field_data("element_side",elem_side_ids);
