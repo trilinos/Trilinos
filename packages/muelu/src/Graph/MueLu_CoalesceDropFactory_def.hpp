@@ -164,7 +164,7 @@ namespace MueLu {
           // Detect and record rows that correspond to Dirichlet boundary conditions
           ArrayRCP<const bool > boundaryNodes;
           if (!disableDirichletDetection)
-            boundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+            boundaryNodes = MueLu::Utils<SC,LO,GO,NO,LMO>::DetectDirichletRows(*A, dirichletThreshold);
           else
             boundaryNodes = ArrayRCP<const bool>(A->getNodeNumRows(),false);
           graph->SetBoundaryNodeMap(boundaryNodes);
@@ -191,7 +191,7 @@ namespace MueLu {
           ArrayRCP<LO> rows   (A->getNodeNumRows()+1);
           ArrayRCP<LO> columns(A->getNodeNumEntries());
 
-          RCP<Vector> ghostedDiag = MueLu::Utils<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
+          RCP<Vector> ghostedDiag = MueLu::Utils<SC,LO,GO,NO,LMO>::GetMatrixOverlappedDiagonal(*A);
           const ArrayRCP<const SC> ghostedDiagVals = ghostedDiag->getData(0);
           const ArrayRCP<bool>     boundaryNodes(A->getNodeNumRows(), false);
 
@@ -274,7 +274,7 @@ namespace MueLu {
           // TODO hold the actual number of boundary nodes.  Clever, huh?
           ArrayRCP<const bool > pointBoundaryNodes;
           if (!disableDirichletDetection)
-            pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+            pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO,LMO>::DetectDirichletRows(*A, dirichletThreshold);
           else {
             pointBoundaryNodes = ArrayRCP<const bool>(A->getNodeNumRows(),false);
           }
@@ -376,7 +376,7 @@ namespace MueLu {
         // TODO hold the actual number of boundary nodes.  Clever, huh?
         ArrayRCP<const bool > pointBoundaryNodes;
         if (!disableDirichletDetection)
-          pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+          pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO,LMO>::DetectDirichletRows(*A, dirichletThreshold);
         else {
           pointBoundaryNodes = ArrayRCP<const bool>(A->getNodeNumRows(),false);
         }
@@ -466,7 +466,7 @@ namespace MueLu {
                 LO col = indices[colID];
 
                 if (row != col)
-                  localLaplDiagData[row] += STS::one()/MueLu::Utils<SC,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
+                  localLaplDiagData[row] += STS::one()/MueLu::Utils<SC,LO,GO,NO,LMO>::Distance2(*ghostedCoords, row, col);
               }
             }
             ghostedLaplDiag = VectorFactory::Build(nonUniqueMap);
@@ -532,7 +532,7 @@ namespace MueLu {
                   continue;
                 }
 
-                SC laplVal = STS::one() / MueLu::Utils<SC,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
+                SC laplVal = STS::one() / MueLu::Utils<SC,LO,GO,NO,LMO>::Distance2(*ghostedCoords, row, col);
                 typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
                 typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
 

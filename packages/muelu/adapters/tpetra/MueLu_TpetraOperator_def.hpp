@@ -79,7 +79,7 @@ getDomainMap () const {
     return Xpetra::toTpetraNonZero (tpbA->getDomainMap ());
   }
 
-  RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpA = 
+  RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpA = 
     Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2NonConstTpetraCrs (A);
   return tpA->getDomainMap ();
 }
@@ -100,7 +100,7 @@ getRangeMap () const {
     return Xpetra::toTpetraNonZero (tpbA->getRangeMap ());
   }
 
-  RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpA = 
+  RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpA = 
     Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2NonConstTpetraCrs (A);
   return tpA->getRangeMap ();
 }
