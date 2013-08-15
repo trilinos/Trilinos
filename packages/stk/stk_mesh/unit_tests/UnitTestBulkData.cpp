@@ -1860,5 +1860,143 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testFieldComm)
         }
     }
   }
+}
+
+// testing comm lists and custom ghosting
+
+STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testCommList)
+{
+  /**
+   * This is a boiled-down version of a stk_adapt situation that is failing
+   *   where a custom ghosted node is later shared because it becomes part
+   *   of an element (this occurs during hanging-node refinement).  It is
+   *   a definite edge case, but exposed an assumption in the comm_mesh_verify_parallel_consistency()
+   *   function, that a comm list can't have both a shared and custom ghosted node.
+   * This test currently just verifies the issue exists.  When comm_mesh_verify_parallel_consistency()
+   *   is fixed, this test should be modified to enforce no failure under debug mode.
+   *
+   *  Mesh
+   *    7---8---9  P0 owns nodes 1,2,4,5; P, elem 1
+   *    | 3 | 4 |  P1 : 3,6, elem 2
+   *    4---5---6  P2 : 7,8, elem 3
+   *    | 1 | 2 |  P3 : 9,   elem 4
+   *    1---2---3
+   *
+   *  node 5 ghosted to proc 3, node 9 ghosted to proc 0
+   * 
+   *  Comm list looks like this after the ghosting operations (obtained from print_comm_list()):
+   *    legend: (ghost_id, proc)
+   *    P3: NODE[9] owner(3)     (1,0) (1,1) (1,2) (2,0)
+   *    P0: NODE[9] owner(3)     (1,3) (2,3)
+   *
+   *  elem 1 modified to replace relation elem[1] -> node[1] with node[9] (previously ghosted)
+   *
+   *  This last step induces a comm list like this 
+   *
+   *    P3: NODE[9] owner(3) mod (0,0) (1,1) (1,2) (2,0)
+   *    P0: NODE[9] owner(3) mod (0,3) (2,3)
+   *
+   *  Note the repetition of proc 3 in both the shared (ghost_id=0) and ghosted (id=2) list
+   *  for P0 (and repetition of proc 0 in P3's list).  This causes the
+   *  comm_mesh_verify_parallel_consistency() test to fail, although
+   *  this should be a valid mesh, e.g., for periodic b.c.'s we might want this situation.
+   *
+   */
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  MPI_Barrier( pm );
+
+  const unsigned p_size = stk::parallel_machine_size( pm );
+  const unsigned p_rank = stk::parallel_machine_rank( pm );
+
+  //------------------------------
+  if (p_size == 4)
+  {
+    stk::mesh::fixtures::QuadFixture fixture(pm, 2 /*nx*/, 2 /*ny*/);
+    fixture.m_meta.commit();
+    fixture.generate_mesh();
+    stk::mesh::BulkData & bulk = fixture.m_bulk_data;
+    bulk.modification_begin();
+    bulk.modification_end();
+  }
+
+  //------------------------------
+  if (p_size == 4)
+  {
+    stk::mesh::fixtures::QuadFixture fixture(pm, 2 /*nx*/, 2 /*ny*/);
+    fixture.m_meta.commit();
+    fixture.generate_mesh();
+    stk::mesh::BulkData & bulk = fixture.m_bulk_data;
+    bulk.modification_begin();
+    bulk.modification_end();
+
+    bulk.modification_begin();
+
+    // add some custom ghosting
+    stk::mesh::Ghosting & ghosting = bulk.create_ghosting( std::string("new_nodes") );
+    std::vector<stk::mesh::EntityKey> receive;
+    ghosting.receive_list( receive );
+    if (receive.size()) std::cout << "receive.size() = " << receive.size() << std::endl;
+    std::vector<stk::mesh::EntityProc> nodes_to_ghost;
+    if(1)
+      {
+        if (p_rank == 0)
+          {
+            stk::mesh::Entity node_5 = bulk.get_entity(MetaData::NODE_RANK, 5);
+            STKUNIT_EXPECT_TRUE(bulk.is_valid(node_5));
+            nodes_to_ghost.push_back( stk::mesh::EntityProc(node_5, 3) );
+          }
+      }
+
+    if(1)
+      {
+        if (p_rank == 3)
+          {
+            stk::mesh::Entity node = bulk.get_entity(MetaData::NODE_RANK, 9);
+            STKUNIT_EXPECT_TRUE(bulk.is_valid(node));
+            nodes_to_ghost.push_back( stk::mesh::EntityProc(node, 0) );
+          }
+      }
+
+    bulk.change_ghosting( ghosting, nodes_to_ghost, receive);
+
+    bulk.modification_end();
+
+    bulk.modification_begin();
+
+    if(1)
+      {
+        if (p_rank == 0)
+          {
+            stk::mesh::Entity node = bulk.get_entity(MetaData::NODE_RANK, 9);
+            STKUNIT_EXPECT_TRUE(bulk.is_valid(node));
+            stk::mesh::Entity node1 = bulk.get_entity(MetaData::NODE_RANK, 1);
+            STKUNIT_EXPECT_TRUE(bulk.is_valid(node1));
+            stk::mesh::Entity elem = bulk.get_entity(MetaData::ELEMENT_RANK, 1);
+            STKUNIT_EXPECT_TRUE(bulk.is_valid(elem));
+            //nodes_to_ghost.push_back( stk::mesh::EntityProc(node, 0) );
+            bulk.destroy_relation( elem, node1, 0);
+            bulk.declare_relation( elem , node , 0 );
+          }
+      }
+    bool should_fail = false;
+#ifndef NDEBUG
+    should_fail = true;
+#endif
+    bool failed=false;
+    try {
+      bulk.modification_end();
+    }
+    catch ( const std::exception & X ) {
+      failed = true;
+#ifndef NDEBUG
+      std::cout << " expected exception: " << X.what() << std::endl;
+#else
+      std::cout << " unexpected exception: " << X.what() << std::endl;
+#endif
+    }
+    STKUNIT_EXPECT_EQUAL(failed, should_fail);
+
+  }
 
 }

@@ -25,11 +25,59 @@
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/EntityCommDatabase.hpp>
 #include <stk_mesh/base/Comm.hpp>
+#include <fstream>
 
 namespace stk {
 namespace mesh {
 
 namespace {
+
+#define DEBUG_COMM_LIST 0
+#define DEBUG_COMM_LIST_UNPACK 0
+
+#if DEBUG_COMM_LIST
+
+// Very, very handy for debugging parallel resolution...
+static int s_step = 0;
+
+void par_verify_print_comm_list( const BulkData & mesh , bool doit, const std::string message )
+{
+  ++s_step;
+  if ( doit ) {
+    std::ostringstream file ;
+    file << "comm-list." << s_step << "." << mesh.parallel_rank() << ".dat";
+    std::ofstream fout(file.str().c_str());
+    std::ostringstream msg ;
+    msg << message;
+    msg << std::endl ;
+
+    for ( EntityCommListInfoVector::const_iterator
+          i =  mesh.comm_list().begin() ;
+          i != mesh.comm_list().end() ; ++i ) {
+
+      Entity entity = i->entity;
+      msg << "S< " << s_step << " > P" << mesh.parallel_rank() << ": " ;
+
+      print_entity_key( msg , MetaData::get(mesh) , i->key );
+
+      msg << " owner(" << i->owner << ")" ;
+
+      if ( !mesh.is_valid(entity) ) { msg << " del" ; }
+      else if ( Modified == mesh.state(entity) ) { msg << " mod" ; }
+      else { msg << "    " ; }
+
+      for ( PairIterEntityComm ec = mesh.entity_comm(i->key); ! ec.empty() ; ++ec ) {
+        msg << " (" << ec->ghost_id << "," << ec->proc << ")" ;
+      }
+      msg << std::endl ;
+    }
+
+    //std::cout << msg.str();
+    fout << msg.str();
+  }
+}
+
+#endif
 
 bool verify_parallel_attributes( BulkData & M , std::ostream & error_log );
 
@@ -368,6 +416,10 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
   const int               p_rank = mesh.parallel_rank();
   const EntityCommListInfoVector & entity_comm = mesh.comm_list();
   const EntityRank   entity_rank = meta.entity_rank_count();
+
+#if DEBUG_COMM_LIST && DEBUG_COMM_LIST_UNPACK
+  par_verify_print_comm_list(mesh, true, "unpack_not_owned_verify");
+#endif
 
   bool result = true ;
 
