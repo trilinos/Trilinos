@@ -81,6 +81,14 @@ typename Sacado::ScalarType<T>::type
 machine_epsilon();
 
 ///
+/// Random number generation. Uniform distribution between 0 and RAND_MAX
+/// inclusive.
+///
+template<typename T>
+typename Sacado::ScalarType<T>::type
+random();
+
+///
 /// Compute a non-negative integer power by binary manipulation.
 ///
 template<typename T>

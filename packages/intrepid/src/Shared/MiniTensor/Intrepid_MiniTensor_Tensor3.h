@@ -57,29 +57,37 @@ public:
   ///
   /// Order
   ///
-  static Index const
+  static
+  Index const
   ORDER = 3;
+
+  ///
+  /// Static or dynamic
+  ///
+  static
+  bool const
+  IS_DYNAMIC = N == DYNAMIC;
 
   ///
   /// Storage type
   ///
-  typedef Storage<T, dimension_order<N, ORDER>::value > Store;
+  typedef Storage<T, dimension_order<N, ORDER>::value >
+  Store;
 
   ///
   /// Tensor order
   ///
+  static
   Index
-  get_order() const {return ORDER;}
-
-  ///
-  /// Default constructor
-  ///
-  Tensor3();
+  get_order() {return ORDER;}
 
   ///
   /// 3rd-order tensor constructor with NaNs
   /// \param dimension the space dimension
   ///
+  explicit
+  Tensor3();
+
   explicit
   Tensor3(Index const dimension);
 
@@ -89,20 +97,20 @@ public:
   /// \param value all components are set equal to this
   ///
   explicit
-  Tensor3(Index const dimension, ComponentValue value);
+  Tensor3(ComponentValue const value);
 
-  ///
-  /// 3rd-order tensor constructor with a scalar
-  /// \param dimension the space dimension
-  /// \param s all components set to this scalar
-  ///
-  Tensor3(Index const dimension, T const & s);
+  explicit
+  Tensor3(Index const dimension, ComponentValue const value);
 
   ///
   /// Create 3rd-order tensor from array
   /// \param dimension the space dimension
   /// \param data_ptr pointer into the array
   ///
+  explicit
+  Tensor3(T const * data_ptr);
+
+  explicit
   Tensor3(Index const dimension, T const * data_ptr);
 
   ///
@@ -133,6 +141,18 @@ public:
   ///
   T &
   operator()(Index const i, Index const j, Index const k);
+
+  ///
+  /// \return dimension
+  ///
+  Index
+  get_dimension() const;
+
+  ///
+  /// \param dimension of vector
+  ///
+  void
+  set_dimension(Index const dimension);
 
 };
 

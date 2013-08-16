@@ -56,7 +56,7 @@ namespace Intrepid {
 ///
 /// Type for setting components all at once
 ///
-enum ComponentValue {ZEROS, ONES, RANDOM};
+enum ComponentValue {ZEROS, ONES, RANDOM, NANS};
 
 ///
 /// Base class for all vector and tensor types.
@@ -79,30 +79,21 @@ public:
   ///
   /// Constructor that initializes to NaNs
   /// \param dimension the space dimension
-  /// \param order the order of the tensor
   ///
   explicit
-  TensorBase(Index const order);
-
-  ///
-  /// Constructor that initializes to NaNs
-  /// \param dimension the space dimension
-  /// \param order the order of the tensor
-  ///
   TensorBase(Index const dimension, Index const order);
 
   ///
   /// Create with specified value
   /// \param dimension the space dimension
-  /// \param order the order of the tensor
   /// \param value all components are set equal to this
   ///
-  TensorBase(Index const dimension, Index const order, ComponentValue value);
+  TensorBase(Index const dimension, Index const order,
+      ComponentValue const value);
 
   ///
   /// Create from a scalar
   /// \param dimension the space dimension
-  /// \param order the order of the tensor
   /// \param s all components are set equal to this value
   ///
   TensorBase(Index const dimension, Index const order, T const & s);
@@ -110,16 +101,22 @@ public:
   ///
   /// Create from array
   /// \param dimension the space dimension
-  /// \param order the order of the tensor
   /// \param data_ptr pointer into the array
   ///
   TensorBase(Index const dimension, Index const order, T const * data_ptr);
 
   ///
   /// Copy constructor
-  /// \param X the values of its components are copied to the new vector
+  /// \param X the values of its components are copied to the new tensor
   ///
   TensorBase(TensorBase<T, Store> const & X);
+
+  ///
+  /// Copy assignment
+  /// \param X the values of its components are copied to this tensor
+  ///
+  TensorBase<T, Store> &
+  operator=(TensorBase<T, Store> const & X);
 
   ///
   /// Simple destructor
@@ -142,18 +139,6 @@ public:
   operator[](Index const i);
 
   ///
-  /// \return dimension
-  ///
-  Index
-  get_dimension() const;
-
-  ///
-  /// \param dimension of vector
-  ///
-  void
-  set_dimension(Index const dimension);
-
-  ///
   /// \return total number of components
   ///
   Index
@@ -161,10 +146,17 @@ public:
 
   ///
   /// Fill components with value
-  /// \param value all components are set equal to this
+  /// \param value all components are set equal to this specification
   ///
   void
-  fill(ComponentValue value);
+  fill(ComponentValue const value);
+
+  ///
+  /// Fill components with value
+  /// \param value all components are set equal to this parameter
+  ///
+  void
+  fill(T const & s);
 
   ///
   /// Fill components from array defined by pointer.
@@ -172,13 +164,6 @@ public:
   ///
   void
   fill(T const * data_ptr);
-
-  ///
-  /// Copy assignment
-  /// \param X the values of its components are copied to this vector
-  ///
-  TensorBase<T, Store> &
-  operator=(TensorBase<T, Store> const & X);
 
   ///
   /// Component increment
@@ -200,13 +185,6 @@ public:
   void
   clear();
 
-  ///
-  /// TensorBase order
-  ///
-  virtual
-  Index
-  get_order() const = 0;
-
 protected:
 
   ///
@@ -216,7 +194,20 @@ protected:
   set_number_components(Index const number_components);
 
   ///
-  /// TensorBase dimension
+  /// \return dimension
+  ///
+  Index
+  get_dimension() const;
+
+  ///
+  /// \param dimension
+  /// \param order
+  ///
+  void
+  set_dimension(Index const dimension, Index const order);
+
+  ///
+  /// dimension
   ///
   Index
   dimension_;

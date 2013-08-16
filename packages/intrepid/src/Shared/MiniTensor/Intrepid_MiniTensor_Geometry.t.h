@@ -266,6 +266,13 @@ bounding_box(I start, I end)
   return std::make_pair(min, max);
 }
 
+template<typename T, typename I>
+std::pair< Vector<T, DYNAMIC>, Vector<T, DYNAMIC> >
+bounding_box(I start, I end)
+{
+  return bounding_box<T, I, DYNAMIC>(start, end);
+}
+
 //
 // Determine if a given point is inside a bounding box.
 // \param p the point

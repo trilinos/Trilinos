@@ -69,29 +69,37 @@ public:
   ///
   /// Order
   ///
-  static Index const
+  static
+  Index const
   ORDER = 2;
+
+  ///
+  /// Static or dynamic
+  ///
+  static
+  bool const
+  IS_DYNAMIC = N == DYNAMIC;
 
   ///
   /// Storage type
   ///
-  typedef Storage<T, dimension_order<N, ORDER>::value > Store;
+  typedef Storage<T, dimension_order<N, ORDER>::value >
+  Store;
 
   ///
   /// Tensor order
   ///
+  static
   Index
-  get_order() const {return ORDER;}
-
-  ///
-  /// Default constructor
-  ///
-  Tensor();
+  get_order() {return ORDER;}
 
   ///
   /// Constructor that initializes to NaNs
   /// \param dimension the space dimension
   ///
+  explicit
+  Tensor();
+
   explicit
   Tensor(Index const dimension);
 
@@ -101,14 +109,31 @@ public:
   /// \param value all components are set equal to this
   ///
   explicit
-  Tensor(Index const dimension, ComponentValue value);
+  Tensor(ComponentValue const value);
+
+  explicit
+  Tensor(Index const dimension, ComponentValue const value);
 
   ///
-  /// Create tensor from a scalar
+  /// Create tensor from array
   /// \param dimension the space dimension
-  /// \param s all components are set equal to this value
+  /// \param data_ptr pointer into the array
   ///
-  Tensor(Index const dimension, T const & s);
+  explicit
+  Tensor(T const * data_ptr);
+
+  explicit
+  Tensor(Index const dimension, T const * data_ptr);
+
+  ///
+  /// Copy constructor
+  ///
+  Tensor(Tensor<T, N> const & A);
+
+  ///
+  /// 2nd-order tensor from 4th-order tensor
+  ///
+  Tensor(Tensor4<T, N> const & A);
 
   ///
   /// Create tensor specifying components
@@ -127,30 +152,15 @@ public:
 
   ///
   /// Create tensor from array
-  /// \param dimension the space dimension
-  /// \param data_ptr pointer into the array
-  ///
-  Tensor(Index const dimension, T const * data_ptr);
-
-  ///
-  /// Create tensor from array
   /// \param data_ptr pointer into the array
   /// \param component_order component convention (3D only)
   ///
-  Tensor(
-      Index const dimension,
-      T const * data_ptr,
+  explicit
+  Tensor(T const * data_ptr, ComponentOrder const component_order);
+
+  explicit
+  Tensor(Index const dimension, T const * data_ptr,
       ComponentOrder const component_order);
-
-  ///
-  /// Copy constructor
-  ///
-  Tensor(Tensor<T, N> const & A);
-
-  ///
-  /// 2nd-order tensor from 4th-order tensor
-  ///
-  Tensor(Tensor4<T, N> const & A);
 
   ///
   /// Simple destructor
@@ -174,11 +184,37 @@ public:
   operator()(Index const i, Index const j);
 
   ///
-  /// Fill components with value
-  /// \param value all components are set equal to this
+  /// \return dimension
+  ///
+  Index
+  get_dimension() const;
+
+  ///
+  /// \param dimension of vector
   ///
   void
-  fill(ComponentValue value);
+  set_dimension(Index const dimension);
+
+  ///
+  /// Fill components with value specification
+  /// \param value all components are set equal to this specification
+  ///
+  void
+  fill(ComponentValue const value);
+
+  ///
+  /// Fill components with value as parameter
+  /// \param value all components are set equal to this parameter
+  ///
+  void
+  fill(T const & s);
+
+  ///
+  /// Fill components from array defined by pointer.
+  /// \param data_ptr pointer into array for filling components
+  ///
+  void
+  fill(T const * data_ptr);
 
   ///
   /// Fill components from array defined by pointer.
@@ -186,9 +222,7 @@ public:
   /// \param component_order component convention (3D only)
   ///
   void
-  fill(
-      T const * data_ptr,
-      ComponentOrder const component_order = CANONICAL);
+  fill(T const * data_ptr, ComponentOrder const component_order);
 
 };
 

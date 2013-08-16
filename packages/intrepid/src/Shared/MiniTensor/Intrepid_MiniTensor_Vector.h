@@ -65,29 +65,37 @@ public:
   ///
   /// Order
   ///
-  static Index const
+  static
+  Index const
   ORDER = 1;
+
+  ///
+  /// Static or dynamic
+  ///
+  static
+  bool const
+  IS_DYNAMIC = N == DYNAMIC;
 
   ///
   /// Storage type
   ///
-  typedef Storage<T, dimension_order<N, ORDER>::value > Store;
+  typedef Storage<T, dimension_order<N, ORDER>::value >
+  Store;
 
   ///
   /// Vector order
   ///
+  static
   Index
-  get_order() const {return ORDER;}
-
-  ///
-  /// Default constructor
-  ///
-  Vector();
+  get_order() {return ORDER;}
 
   ///
   /// Construction that initializes to NaNs
   /// \param dimension the space dimension
   ///
+  explicit
+  Vector();
+
   explicit
   Vector(Index const dimension);
 
@@ -97,15 +105,24 @@ public:
   /// \param value all components are set equal to this
   ///
   explicit
-  Vector(Index const dimension, ComponentValue value);
+  Vector(ComponentValue const value);
+
+  explicit
+  Vector(Index const dimension, ComponentValue const value);
 
   ///
-  /// Create vector from a scalar
+  /// Create vector from array.
   /// \param dimension the space dimension
-  /// \param s all components are set equal to this value
+  /// \param data_ptr pointer into the array
   ///
-  explicit
-  Vector(Index const dimension, T const & s);
+  Vector(T const * data_ptr);
+
+  Vector(Index const dimension, T const * data_ptr);
+
+  ///
+  /// Copy constructor
+  ///
+  Vector(Vector<T, N> const & v);
 
   ///
   /// Create vector specifying components
@@ -119,18 +136,6 @@ public:
   /// \param s0 s1 s2 are the vector components in the R^3 canonical basis
   ///
   Vector(T const & s0, T const & s1, T const & s2);
-
-  ///
-  /// Create vector from array.
-  /// \param dimension the space dimension
-  /// \param data_ptr pointer into the array
-  ///
-  Vector(Index const dimension, T const * data_ptr);
-
-  ///
-  /// Copy constructor
-  ///
-  Vector(Vector<T, N> const & v);
 
   ///
   /// Simple destructor
@@ -150,6 +155,18 @@ public:
   ///
   T &
   operator()(Index const i);
+
+  ///
+  /// \return dimension
+  ///
+  Index
+  get_dimension() const;
+
+  ///
+  /// \param dimension of vector
+  ///
+  void
+  set_dimension(Index const dimension);
 
 };
 

@@ -51,9 +51,8 @@ namespace Intrepid
 template<typename T, Index N>
 inline
 Vector<T, N>::Vector() :
-TensorBase<T, Store>::TensorBase(ORDER)
+TensorBase<T, Store>::TensorBase()
 {
-  this->dimension_ = N;
   return;
 }
 
@@ -62,9 +61,9 @@ TensorBase<T, Store>::TensorBase(ORDER)
 //
 template<typename T, Index N>
 inline
-Vector<T, N>::Vector(Index const dimension)
+Vector<T, N>::Vector(Index const dimension) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER)
 {
-  this->dimension_ = N;
   return;
 }
 
@@ -73,22 +72,47 @@ Vector<T, N>::Vector(Index const dimension)
 ///
 template<typename T, Index N>
 inline
-Vector<T, N>::Vector(Index const dimension, ComponentValue value) :
+Vector<T, N>::Vector(Index const dimension, ComponentValue const value) :
 TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
 {
-  this->dimension_ = N;
+  return;
+}
+
+template<typename T, Index N>
+inline
+Vector<T, N>::Vector(ComponentValue const value) :
+TensorBase<T, Store>::TensorBase(N, ORDER, value)
+{
   return;
 }
 
 //
-// Create vector from a scalar
+// Create vector from array
 //
 template<typename T, Index N>
 inline
-Vector<T, N>::Vector(Index const dimension, T const & s) :
-TensorBase<T, Store>::TensorBase(dimension, ORDER, s)
+Vector<T, N>::Vector(Index const dimension, T const * data_ptr) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER, data_ptr)
 {
-  this->dimension_ = N;
+  return;
+}
+
+template<typename T, Index N>
+inline
+Vector<T, N>::Vector(T const * data_ptr) :
+TensorBase<T, Store>::TensorBase(N, ORDER, data_ptr)
+{
+  return;
+}
+
+//
+// Copy constructor
+//
+template<typename T, Index N>
+inline
+Vector<T, N>::Vector(Vector<T, N> const & v) :
+TensorBase<T, Store>::TensorBase(v)
+{
   return;
 }
 
@@ -130,35 +154,41 @@ Vector<T, N>::Vector(T const & s0, T const & s1, T const & s2)
 }
 
 //
-// Create vector from array
-//
-template<typename T, Index N>
-inline
-Vector<T, N>::Vector(Index const dimension, T const * data_ptr) :
-TensorBase<T, Store>::TensorBase(dimension, ORDER, data_ptr)
-{
-  this->dimension_ = N;
-  return;
-}
-
-//
-// Copy constructor
-//
-template<typename T, Index N>
-inline
-Vector<T, N>::Vector(Vector<T, N> const & v) :
-TensorBase<T, Store>::TensorBase(v)
-{
-  return;
-}
-
-//
 // Simple destructor
 //
 template<typename T, Index N>
 inline
 Vector<T, N>::~Vector()
 {
+  return;
+}
+
+//
+// Get dimension
+//
+template<typename T, Index N>
+inline
+Index
+Vector<T, N>::get_dimension() const
+{
+  return IS_DYNAMIC == true ? TensorBase<T, Store>::get_dimension() : N;
+}
+
+//
+// Set dimension
+//
+template<typename T, Index N>
+inline
+void
+Vector<T, N>::set_dimension(Index const dimension)
+{
+  if (IS_DYNAMIC == true) {
+    TensorBase<T, Store>::set_dimension(dimension, ORDER);
+  }
+  else {
+    assert(dimension == N);
+  }
+
   return;
 }
 
@@ -193,7 +223,7 @@ Vector<typename Promote<S, T>::type, N>
 operator+(Vector<S, N> const & u, Vector<T, N> const & v)
 {
   Vector<typename Promote<S, T>::type, N>
-  w;
+  w(u.get_dimension());
 
   add(u, v, w);
 
@@ -209,7 +239,7 @@ Vector<typename Promote<S, T>::type, N>
 operator-(Vector<S, N> const & u, Vector<T, N> const & v)
 {
   Vector<typename Promote<S, T>::type, N>
-  w;
+  w(u.get_dimension());
 
   subtract(u, v, w);
 
@@ -225,7 +255,7 @@ Vector<T, N>
 operator-(Vector<T, N> const & u)
 {
   Vector<T, N>
-  v;
+  v(u.get_dimension());
 
   minus(u, v);
 
@@ -274,7 +304,7 @@ typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T>, N> >::type
 operator*(S const & s, Vector<T, N> const & u)
 {
   Vector<typename Promote<S, T>::type, N>
-  v;
+  v(u.get_dimension());
 
   scale(u, s, v);
 
@@ -290,7 +320,7 @@ typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T>, N> >::type
 operator*(Vector<T, N> const & u, S const & s)
 {
   Vector<typename Promote<S, T>::type, N>
-  v;
+  v(u.get_dimension());
 
   scale(u, s, v);
 
@@ -306,7 +336,7 @@ Vector<typename Promote<S, T>::type, N>
 operator/(Vector<T, N> const & u, S const & s)
 {
   Vector<typename Promote<S, T>::type, N>
-  v;
+  v(u.get_dimension());
 
   divide(u, s, v);
 

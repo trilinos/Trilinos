@@ -124,6 +124,10 @@ class Storage
 public:
   typedef T type;
 
+  static
+  bool const
+  IS_DYNAMIC = false;
+
   Storage() {}
 
   explicit
@@ -168,6 +172,10 @@ class Storage<T, DYNAMIC>
 {
 public:
   typedef T type;
+
+  static
+  bool const
+  IS_DYNAMIC = true;
 
   Storage();
 

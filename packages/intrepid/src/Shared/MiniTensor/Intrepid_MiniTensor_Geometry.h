@@ -162,6 +162,10 @@ template<typename T, typename I, Index N>
 std::pair< Vector<T, N>, Vector<T, N> >
 bounding_box(I start, I end);
 
+template<typename T, typename I>
+std::pair< Vector<T, DYNAMIC>, Vector<T, DYNAMIC> >
+bounding_box(I start, I end);
+
 ///
 /// Determine if a given point is inside a bounding box.
 /// \param p the point

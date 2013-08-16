@@ -57,29 +57,37 @@ public:
   ///
   /// Order
   ///
-  static Index const
+  static
+  Index const
   ORDER = 4;
+
+  ///
+  /// Static or dynamic
+  ///
+  static
+  bool const
+  IS_DYNAMIC = N == DYNAMIC;
 
   ///
   /// Storage type
   ///
-  typedef Storage<T, dimension_order<N, ORDER>::value > Store;
+  typedef Storage<T, dimension_order<N, ORDER>::value >
+  Store;
 
   ///
   /// Tensor order
   ///
+  static
   Index
-  get_order() const {return ORDER;}
-
-  ///
-  /// Default constructor
-  ///
-  Tensor4();
+  get_order() {return ORDER;}
 
   ///
   /// 4th-order tensor constructor with NaNs
   /// \param dimension the space dimension
- ///
+  ///
+  explicit
+  Tensor4();
+
   explicit
   Tensor4(Index const dimension);
 
@@ -89,20 +97,20 @@ public:
   /// \param value all components are set equal to this
   ///
   explicit
-  Tensor4(Index const dimension, ComponentValue value);
+  Tensor4(ComponentValue const value);
 
-  ///
-  /// 4th-order tensor constructor with a scalar
-  /// \param dimension the space dimension
-  /// \param s all components set to this scalar
-  ///
-  Tensor4(Index const dimension, T const & s);
+  explicit
+  Tensor4(Index const dimension, ComponentValue const value);
 
   ///
   /// Create 4th-order tensor from array
   /// \param dimension the space dimension
   /// \param data_ptr pointer into the array
   ///
+  explicit
+  Tensor4(T const * data_ptr);
+
+  explicit
   Tensor4(Index const dimension, T const * data_ptr);
 
   ///
@@ -143,6 +151,18 @@ public:
       Index const j,
       Index const k,
       Index const l);
+
+  ///
+  /// \return dimension
+  ///
+  Index
+  get_dimension() const;
+
+  ///
+  /// \param dimension of vector
+  ///
+  void
+  set_dimension(Index const dimension);
 
 };
 

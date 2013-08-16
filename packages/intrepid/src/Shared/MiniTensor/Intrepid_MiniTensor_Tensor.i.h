@@ -45,14 +45,304 @@
 namespace Intrepid {
 
 //
-// Fill components with value.
+// Constructor that initializes to NaNs
+//
+template<typename T, Index N>
+inline
+Tensor<T, N>::Tensor() :
+TensorBase<T, Store>::TensorBase()
+{
+  return;
+}
+
+template<typename T, Index N>
+inline
+Tensor<T, N>::Tensor(Index const dimension) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER)
+{
+  return;
+}
+
+///
+/// Create tensor from a specified value
+///
+template<typename T, Index N>
+inline
+Tensor<T, N>::Tensor(ComponentValue const value) :
+TensorBase<T, Store>::TensorBase(N, ORDER, value)
+{
+  return;
+}
+
+template<typename T, Index N>
+inline
+Tensor<T, N>::Tensor(Index const dimension, ComponentValue const value) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
+{
+  return;
+}
+
+//
+//  Create tensor from array
+//
+template<typename T, Index N>
+inline
+Tensor<T, N>::Tensor(T const * data_ptr) :
+TensorBase<T, Store>::TensorBase(N, ORDER, data_ptr)
+{
+  return;
+}
+
+template<typename T, Index N>
+inline
+Tensor<T, N>::Tensor(Index const dimension, T const * data_ptr) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER, data_ptr)
+{
+  return;
+}
+
+//
+// Copy constructor
+//
+template<typename T, Index N>
+inline
+Tensor<T, N>::Tensor(Tensor<T, N> const & A) :
+TensorBase<T, Store>::TensorBase(A)
+{
+  return;
+}
+
+//
+// Create tensor specifying components
+// \param  s00, s01, ... components in the R^2 canonical basis
+//
+template<typename T, Index N>
+inline
+Tensor<T, N>::Tensor(
+    T const & s00, T const & s01,
+    T const & s10, T const & s11)
+{
+  Tensor<T, N> &
+  self = (*this);
+
+  self.set_dimension(2);
+
+  self[0] = s00;
+  self[1] = s01;
+
+  self[2] = s10;
+  self[3] = s11;
+
+  return;
+}
+
+//
+// Create tensor specifying components
+// \param  s00, s01, ... components in the R^3 canonical basis
+//
+template<typename T, Index N>
+inline
+Tensor<T, N>::Tensor(
+    T const & s00, T const & s01, T const & s02,
+    T const & s10, T const & s11, T const & s12,
+    T const & s20, T const & s21, T const & s22)
+{
+  Tensor<T, N> &
+  self = (*this);
+
+  self.set_dimension(3);
+
+  self[0] = s00;
+  self[1] = s01;
+  self[2] = s02;
+
+  self[3] = s10;
+  self[4] = s11;
+  self[5] = s12;
+
+  self[6] = s20;
+  self[7] = s21;
+  self[8] = s22;
+
+  return;
+}
+
+//
+//  Create tensor from array with component order
+//
+template<typename T, Index N>
+inline
+Tensor<T, N>::Tensor(T const * data_ptr, ComponentOrder const component_order)
+{
+  assert(data_ptr != NULL);
+
+  fill(data_ptr, component_order);
+
+  return;
+}
+
+template<typename T, Index N>
+inline
+Tensor<T, N>::Tensor(
+    Index const dimension,
+    T const * data_ptr,
+    ComponentOrder const component_order)
+{
+  assert(data_ptr != NULL);
+
+  Tensor<T, N> &
+  self = (*this);
+
+  self.set_dimension(dimension);
+
+  fill(data_ptr, component_order);
+
+  return;
+}
+
+//
+// 2nd-order tensor from 4th-order tensor, static
+//
+template<typename T, Index N>
+inline
+Tensor<T, N>::Tensor(Tensor4<T, N> const & A)
+{
+  if (IS_DYNAMIC == false) {
+    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
+    std::cerr << std::endl;
+    std::cerr << "Cannot convert 4th-order to 2nd-order tensor";
+    std::cerr << " with static storage.";
+    std::cerr << std::endl;
+    exit(1);
+  }
+
+  Index const
+  dimension_4th = A.get_dimension();
+
+  Index const
+  dimension_2nd = dimension_4th * dimension_4th;
+
+  Tensor<T, N> &
+  self = (*this);
+
+  self.set_dimension(dimension_2nd);
+
+  Index const
+  number_components = dimension_2nd * dimension_2nd;
+
+  for (Index i = 0; i < number_components; ++i) {
+    self[i] = A[i];
+  }
+
+  return;
+}
+
+//
+// Simple destructor
+//
+template<typename T, Index N>
+inline
+Tensor<T, N>::~Tensor()
+{
+  return;
+}
+
+//
+// Get dimension
+//
+template<typename T, Index N>
+inline
+Index
+Tensor<T, N>::get_dimension() const
+{
+  return IS_DYNAMIC == true ? TensorBase<T, Store>::get_dimension() : N;
+}
+
+//
+// Set dimension
 //
 template<typename T, Index N>
 inline
 void
-Tensor<T, N>::fill(ComponentValue value)
+Tensor<T, N>::set_dimension(Index const dimension)
+{
+  if (IS_DYNAMIC == true) {
+    TensorBase<T, Store>::set_dimension(dimension, ORDER);
+  }
+  else {
+    assert(dimension == N);
+  }
+
+  return;
+}
+
+//
+// Indexing for constant tensor
+//
+template<typename T, Index N>
+inline
+T const &
+Tensor<T, N>::operator()(Index const i, Index const j) const
+{
+  Tensor<T, N> const &
+  self = (*this);
+
+  Index const
+  dimension = self.get_dimension();
+
+  return self[i * dimension + j];
+}
+
+//
+//Tensor indexing
+//
+template<typename T, Index N>
+inline
+T &
+Tensor<T, N>::operator()(Index const i, Index const j)
+{
+  Tensor<T, N> &
+  self = (*this);
+
+  Index const
+  dimension = self.get_dimension();
+
+  return self[i * dimension + j];
+}
+
+//
+// Fill components with value specification
+//
+template<typename T, Index N>
+inline
+void
+Tensor<T, N>::fill(ComponentValue const value)
 {
   TensorBase<T, Store>::fill(value);
+  return;
+}
+
+//
+// Fill components with value as parameter
+//
+template<typename T, Index N>
+inline
+void
+Tensor<T, N>::fill(T const & s)
+{
+  TensorBase<T, Store>::fill(s);
+  return;
+}
+
+//
+// Fill components from array defined by pointer.
+//
+template<typename T, Index N>
+inline
+void
+Tensor<T, N>::fill(T const * data_ptr)
+{
+  TensorBase<T, Store>::fill(data_ptr);
   return;
 }
 
@@ -135,236 +425,6 @@ Tensor<T, N>::fill(T const * data_ptr, ComponentOrder const component_order)
 }
 
 //
-// Default constructor
-//
-template<typename T, Index N>
-inline
-Tensor<T, N>::Tensor() :
-TensorBase<T, Store>::TensorBase(ORDER)
-{
-  this->dimension_ = N;
-  return;
-}
-
-//
-// Constructor that initializes to NaNs
-//
-template<typename T, Index N>
-inline
-Tensor<T, N>::Tensor(Index const dimension) :
-TensorBase<T, Store>::TensorBase(dimension, ORDER)
-{
-  this->dimension_ = N;
-  return;
-}
-
-///
-/// Create tensor from a specified value
-///
-template<typename T, Index N>
-inline
-Tensor<T, N>::Tensor(Index const dimension, ComponentValue value) :
-TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
-{
-  this->dimension_ = N;
-  return;
-}
-
-//
-// Create tensor from a scalar
-//
-template<typename T, Index N>
-inline
-Tensor<T, N>::Tensor(Index const dimension, T const & s) :
-TensorBase<T, Store>::TensorBase(dimension, ORDER, s)
-{
-  this->dimension_ = N;
-  return;
-}
-
-//
-// Create tensor specifying components
-// \param  s00, s01, ... components in the R^2 canonical basis
-//
-template<typename T, Index N>
-inline
-Tensor<T, N>::Tensor(
-    T const & s00, T const & s01,
-    T const & s10, T const & s11)
-{
-  Tensor<T, N> &
-  self = (*this);
-
-  self.set_dimension(2);
-
-  self[0] = s00;
-  self[1] = s01;
-
-  self[2] = s10;
-  self[3] = s11;
-
-  return;
-}
-
-//
-// Create tensor specifying components
-// \param  s00, s01, ... components in the R^3 canonical basis
-//
-template<typename T, Index N>
-inline
-Tensor<T, N>::Tensor(
-    T const & s00, T const & s01, T const & s02,
-    T const & s10, T const & s11, T const & s12,
-    T const & s20, T const & s21, T const & s22)
-{
-  Tensor<T, N> &
-  self = (*this);
-
-  self.set_dimension(3);
-
-  self[0] = s00;
-  self[1] = s01;
-  self[2] = s02;
-
-  self[3] = s10;
-  self[4] = s11;
-  self[5] = s12;
-
-  self[6] = s20;
-  self[7] = s21;
-  self[8] = s22;
-
-  return;
-}
-
-//
-//  Create tensor from array
-//
-template<typename T, Index N>
-inline
-Tensor<T, N>::Tensor(Index const dimension, T const * data_ptr) :
-TensorBase<T, Store>::TensorBase(dimension, ORDER, data_ptr)
-{
-  this->dimension_ = N;
-  return;
-}
-
-//
-//  Create tensor from array with component order
-//
-template<typename T, Index N>
-inline
-Tensor<T, N>::Tensor(
-    Index const dimension,
-    T const * data_ptr,
-    ComponentOrder const component_order)
-{
-  this->dimension_ = N;
-  assert(data_ptr != NULL);
-
-  Tensor<T, N> &
-  self = (*this);
-
-  self.set_dimension(dimension);
-
-  fill(data_ptr, component_order);
-
-  return;
-}
-
-//
-// Copy constructor
-//
-template<typename T, Index N>
-inline
-Tensor<T, N>::Tensor(Tensor<T, N> const & A) :
-TensorBase<T, Store>::TensorBase(A)
-{
-  return;
-}
-
-//
-// 2nd-order tensor from 4th-order tensor, static
-//
-template<typename T, Index N>
-inline
-Tensor<T, N>::Tensor(Tensor4<T, N> const & A)
-{
-  if (N != DYNAMIC) {
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << std::endl;
-    std::cerr << "Cannot convert 4th-order to 2nd-order tensor";
-    std::cerr << " with static storage.";
-    std::cerr << std::endl;
-    exit(1);
-  }
-
-  Index const
-  dimension_4th = A.get_dimension();
-
-  Index const
-  dimension_2nd = dimension_4th * dimension_4th;
-
-  Tensor<T, N> &
-  self = (*this);
-
-  self.set_dimension(dimension_2nd);
-
-  Index const
-  number_components = dimension_2nd * dimension_2nd;
-
-  for (Index i = 0; i < number_components; ++i) {
-    self[i] = A[i];
-  }
-
-  return;
-}
-
-//
-// Simple destructor
-//
-template<typename T, Index N>
-inline
-Tensor<T, N>::~Tensor()
-{
-  return;
-}
-
-//
-// Indexing for constant tensor
-//
-template<typename T, Index N>
-inline
-T const &
-Tensor<T, N>::operator()(Index const i, Index const j) const
-{
-  Tensor<T, N> const &
-  self = (*this);
-
-  Index const
-  dimension = self.get_dimension();
-
-  return self[i * dimension + j];
-}
-
-//
-//Tensor indexing
-//
-template<typename T, Index N>
-inline
-T &
-Tensor<T, N>::operator()(Index const i, Index const j)
-{
-  Tensor<T, N> &
-  self = (*this);
-
-  Index const
-  dimension = self.get_dimension();
-
-  return self[i * dimension + j];
-}
-
-//
 // Tensor addition
 //
 template<typename S, typename T, Index N>
@@ -373,7 +433,7 @@ Tensor<typename Promote<S, T>::type, N>
 operator+(Tensor<S, N> const & A, Tensor<T, N> const & B)
 {
   Tensor<typename Promote<S, T>::type, N>
-  C;
+  C(A.get_dimension());
 
   add(A, B, C);
 
@@ -389,7 +449,7 @@ Tensor<typename Promote<S, T>::type, N>
 operator-(Tensor<S, N> const & A, Tensor<T, N> const & B)
 {
   Tensor<typename Promote<S, T>::type, N>
-  C;
+  C(A.get_dimension());
 
   subtract(A, B, C);
 
@@ -405,7 +465,7 @@ Tensor<T, N>
 operator-(Tensor<T, N> const & A)
 {
   Tensor<T, N>
-  B;
+  B(A.get_dimension());
 
   minus(A, B);
 
@@ -443,7 +503,7 @@ typename lazy_disable_if< order_1234<S>, apply_tensor< Promote<S,T>, N> >::type
 operator*(S const & s, Tensor<T, N> const & A)
 {
   Tensor<typename Promote<S, T>::type, N>
-  B;
+  B(A.get_dimension());
 
   scale(A, s, B);
 
@@ -459,7 +519,7 @@ typename lazy_disable_if< order_1234<S>, apply_tensor< Promote<S,T>, N> >::type
 operator*(Tensor<T, N> const & A, S const & s)
 {
   Tensor<typename Promote<S, T>::type, N>
-  B;
+  B(A.get_dimension());
 
   scale(A, s, B);
 
@@ -475,7 +535,7 @@ Tensor<typename Promote<S, T>::type, N>
 operator/(Tensor<T, N> const & A, S const & s)
 {
   Tensor<typename Promote<S, T>::type, N>
-  B;
+  B(A.get_dimension());
 
   divide(A, s, B);
 
@@ -1213,6 +1273,8 @@ inline
 Tensor<T, N> const
 zero(Index const dimension)
 {
+  if (N == DYNAMIC) return zero<T>(dimension);
+
   assert(dimension == N);
   return Tensor<T, N>(N, ZEROS);
 }
@@ -1281,6 +1343,8 @@ inline
 Tensor<T, N> const
 identity(Index const dimension)
 {
+  if (N == DYNAMIC) return identity<T>(dimension);
+
   assert(dimension == N);
   return identity<T, N>();
 }
@@ -1314,8 +1378,7 @@ inline
 Tensor<T, N> const
 eye(Index const dimension)
 {
-  assert(dimension == N);
-  return identity<T, N>();
+  return identity<T, N>(dimension);
 }
 
 template<typename T>
@@ -1323,7 +1386,7 @@ inline
 Tensor<T, DYNAMIC> const
 eye(Index const dimension)
 {
-  return identity<T, DYNAMIC>(dimension);
+  return identity<T>(dimension);
 }
 
 //

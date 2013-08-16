@@ -767,9 +767,9 @@ TEUCHOS_UNIT_TEST(MiniTensor, TensorInstantiation)
 
 TEUCHOS_UNIT_TEST(MiniTensor, TensorAddition)
 {
-  Tensor<Real> const A(3, 1.0);
-  Tensor<Real> const B(3, 2.0);
-  Tensor<Real> const C(3, 3.0);
+  Tensor<Real> const A(1, 1, 1, 1, 1, 1, 1, 1, 1);
+  Tensor<Real> const B(2, 2, 2, 2, 2, 2, 2, 2, 2);
+  Tensor<Real> const C(3, 3, 3, 3, 3, 3, 3, 3, 3);
 
   TEST_COMPARE( C == A + B, !=, 0);
 }
@@ -900,7 +900,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, LogRotation)
 
   Tensor<Real> logR = log_rotation(R);
 
-  Tensor<Real> Rref(3, 0.0);
+  Tensor<Real> Rref(3, ZEROS);
   Rref(0, 1) = -theta;
   Rref(1, 0) = theta;
 
@@ -925,8 +925,8 @@ TEUCHOS_UNIT_TEST(MiniTensor, BakerCampbellHausdorff)
   u(1) = u(0);
   u(2) = 0.0;
 
-  Tensor<Real> R1(3, 0.0);
-  Tensor<Real> logR2(3, 0.0);
+  Tensor<Real> R1(3, ZEROS);
+  Tensor<Real> logR2(3, ZEROS);
   logR2(0, 2) = u(1);
   logR2(1, 2) = -u(0);
   logR2(2, 0) = -u(1);

@@ -46,26 +46,21 @@ namespace Intrepid
 {
 
 //
-// 4th-order tensor default constructor
+// 4th-order tensor constructor with NaNs
 //
 template<typename T, Index N>
 inline
 Tensor4<T, N>::Tensor4() :
-TensorBase<T, Store>::TensorBase(ORDER)
+TensorBase<T, Store>::TensorBase()
 {
-  this->dimension_ = N;
   return;
 }
 
-//
-// 4th-order tensor constructor with NaNs
-//
 template<typename T, Index N>
 inline
 Tensor4<T, N>::Tensor4(Index const dimension) :
 TensorBase<T, Store>::TensorBase(dimension, ORDER)
 {
-  this->dimension_ = N;
   return;
 }
 
@@ -74,22 +69,17 @@ TensorBase<T, Store>::TensorBase(dimension, ORDER)
 //
 template<typename T, Index N>
 inline
-Tensor4<T, N>::Tensor4(Index const dimension, ComponentValue value) :
-TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
+Tensor4<T, N>::Tensor4(ComponentValue const value) :
+TensorBase<T, Store>::TensorBase(N, ORDER, value)
 {
-  this->dimension_ = N;
   return;
 }
 
-//
-// 4th-order tensor constructor with a scalar
-//
 template<typename T, Index N>
 inline
-Tensor4<T, N>::Tensor4(Index const dimension, T const & s) :
-TensorBase<T, Store>::TensorBase(dimension, ORDER, s)
+Tensor4<T, N>::Tensor4(Index const dimension, ComponentValue const value) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
 {
-  this->dimension_ = N;
   return;
 }
 
@@ -98,10 +88,17 @@ TensorBase<T, Store>::TensorBase(dimension, ORDER, s)
 //
 template<typename T, Index N>
 inline
+Tensor4<T, N>::Tensor4(T const * data_ptr) :
+TensorBase<T, Store>::TensorBase(N, ORDER, data_ptr)
+{
+  return;
+}
+
+template<typename T, Index N>
+inline
 Tensor4<T, N>::Tensor4(Index const dimension, T const * data_ptr) :
 TensorBase<T, Store>::TensorBase(dimension, ORDER, data_ptr)
 {
-  this->dimension_ = N;
   return;
 }
 
@@ -127,6 +124,35 @@ Tensor4<T, N>::~Tensor4()
 }
 
 //
+// Get dimension
+//
+template<typename T, Index N>
+inline
+Index
+Tensor4<T, N>::get_dimension() const
+{
+  return IS_DYNAMIC == true ? TensorBase<T, Store>::get_dimension() : N;
+}
+
+//
+// Set dimension
+//
+template<typename T, Index N>
+inline
+void
+Tensor4<T, N>::set_dimension(Index const dimension)
+{
+  if (IS_DYNAMIC == true) {
+    TensorBase<T, Store>::set_dimension(dimension, ORDER);
+  }
+  else {
+    assert(dimension == N);
+  }
+
+  return;
+}
+
+//
 // 4th-order tensor addition
 //
 template<typename S, typename T, Index N>
@@ -135,7 +161,7 @@ Tensor4<typename Promote<S, T>::type, N>
 operator+(Tensor4<S, N> const & A, Tensor4<T, N> const & B)
 {
   Tensor4<typename Promote<S, T>::type, N>
-  C;
+  C(A.get_dimension());
 
   add(A, B, C);
 
@@ -151,7 +177,7 @@ Tensor4<typename Promote<S, T>::type, N>
 operator-(Tensor4<S, N> const & A, Tensor4<T, N> const & B)
 {
   Tensor4<typename Promote<S, T>::type, N>
-  C;
+  C(A.get_dimension());
 
   subtract(A, B, C);
 
@@ -167,7 +193,7 @@ Tensor4<T, N>
 operator-(Tensor4<T, N> const & A)
 {
   Tensor4<T, N>
-  B;
+  B(A.get_dimension());
 
   minus(A, B);
 
@@ -205,7 +231,7 @@ typename lazy_disable_if< order_1234<S>, apply_tensor4< Promote<S,T>, N> >::type
 operator*(S const & s, Tensor4<T, N> const & A)
 {
   Tensor4<typename Promote<S, T>::type, N>
-  B;
+  B(A.get_dimension());
 
   scale(A, s, B);
 
@@ -221,7 +247,7 @@ typename lazy_disable_if< order_1234<S>, apply_tensor4< Promote<S,T>, N> >::type
 operator*(Tensor4<T, N> const & A, S const & s)
 {
   Tensor4<typename Promote<S, T>::type, N>
-  B;
+  B(A.get_dimension());
 
   scale(A, s, B);
 
@@ -237,7 +263,7 @@ Tensor4<typename Promote<S, T>::type, N>
 operator/(Tensor4<T, N> const & A, S const & s)
 {
   Tensor4<typename Promote<S, T>::type, N>
-  B;
+  B(A.get_dimension());
 
   divide(A, s, B);
 
