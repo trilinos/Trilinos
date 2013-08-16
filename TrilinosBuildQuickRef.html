@@ -423,12 +423,13 @@ that support them.  To print the timers at the end of the program, call
 <div class="section" id="getting-set-up-to-use-cmake">
 <h1><a class="toc-backref" href="#id4">3&nbsp;&nbsp;&nbsp;Getting set up to use CMake</a></h1>
 <p>Before one can configure Trilinos to be built, one must first obtain a
-version of CMake on the system newer than 2.8.1.  This guide assumes that once
-CMake is installed that it will be in the default path with the name
+version of CMake on the system newer than 2.8.1 This guide assumes
+that once CMake is installed that it will be in the default path with the name
 <tt class="docutils literal">cmake</tt>.</p>
 <div class="section" id="installing-a-binary-release-of-cmake-casual-users">
 <h2><a class="toc-backref" href="#id5">3.1&nbsp;&nbsp;&nbsp;Installing a binary release of CMake [casual users]</a></h2>
-<p>Download and install the binary (currently version 2.8 is required) from:</p>
+<p>Download and install the binary (version 2.8.1 or greater is
+recommended) from:</p>
 <blockquote>
 <a class="reference external" href="http://www.cmake.org/cmake/resources/software.html">http://www.cmake.org/cmake/resources/software.html</a></blockquote>
 </div>
@@ -524,6 +525,11 @@ cmake \
 to the Trilinos source base directory (or your can just give it
 explicitly).</p>
 <p>See <cite>Trilinos/sampleScripts/*cmake</cite> for real examples.</p>
+<p>NOTE: If one has already configured once and one needs to configure from
+scratch (needs to wipe clean defaults for cache variables, updates
+compilers, other types of changes) then one will want to delete the local
+CASL and other CMake-generated files before configuring again (see
+<a class="reference internal" href="#reconfiguring-completely-from-scratch">Reconfiguring completely from scratch</a>).</p>
 </blockquote>
 <ol class="loweralpha simple" start="2">
 <li>Create a CMake file fragment and point to it [Recommended].</li>
@@ -733,7 +739,7 @@ CMAKE_&lt;LANG&gt;_FLAGS_&lt;CMAKE_BUILD_TYPE&gt;!</p>
 </pre>
 <p>and to override default release options use:</p>
 <pre class="literal-block">
--D CMAKE_C_FLAGS_RELEASE_OVERRIDE:STRING=&quot;-04 -funroll-loops&quot; \
+-D CMAKE_C_FLAGS_RELEASE_OVERRIDE:STRING=&quot;-O3 -funroll-loops&quot; \
 -D CMAKE_CXX_FLAGS_RELEASE_OVERRIDE:STRING=&quot;-03 -fexceptions&quot;
 </pre>
 <p>NOTES: The new CMake variable CMAKE_${LANG}_FLAGS_${BUILDTYPE}_OVERRIDE is
@@ -778,7 +784,7 @@ downstream packages or client code.</p>
 <p>To override all compiler options, including both strong warning options
 and debug/release options, configure with:</p>
 <pre class="literal-block">
--D CMAKE_C_FLAGS:STRING=&quot;-04 -funroll-loops&quot; \
+-D CMAKE_C_FLAGS:STRING=&quot;-O3 -funroll-loops&quot; \
 -D CMAKE_CXX_FLAGS:STRING=&quot;-03 -fexceptions&quot; \
 -D CMAKE_BUILD_TYPE:STRING=NONE \
 -D Trilinos_ENABLE_STRONG_C_COMPILE_WARNINGS:BOOL=OFF \
@@ -828,12 +834,11 @@ set:</p>
 <pre class="literal-block">
 -D Trilinos_ENABLE_Fortran:BOOL=OFF
 </pre>
-<p>The user cache variable Trilinos_ENABLE_Fortran is used as a trigger in the
-Trilinos CMake build system to enable Fortran support or not.</p>
 <p>NOTE: The fortran compiler will be disabled automatically by default on
 systems like MS Windows.</p>
-<p>NOTE: Macs do not come with a compatible Fortran compiler by default so you
-must turn off Fortran if you don't have a compatible Fortran compiler.</p>
+<p>NOTE: Most Apple Macs do not come with a compatible Fortran compiler by
+default so you must turn off Fortran if you don't have a compatible Fortran
+compiler.</p>
 </div>
 <div class="section" id="enabling-runtime-debug-checking">
 <h2><a class="toc-backref" href="#id16">5.6&nbsp;&nbsp;&nbsp;Enabling runtime debug checking</a></h2>
