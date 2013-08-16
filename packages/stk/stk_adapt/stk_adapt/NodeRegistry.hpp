@@ -60,6 +60,10 @@
 #include <boost/tuple/tuple_io.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
 
+#define DEBUG_PRINT_11 1
+#define NR_PRINT(a) do { if (DEBUG_PRINT_11) std::cout << #a << " = " << a ; } while(0)
+#define NR_PRINT_OUT(a,out) do { if (DEBUG_PRINT_11) out << #a << " = " << a << std::endl; } while(0)
+
 /// define only one of these to be 1
 /// current best setting is NODE_REGISTRY_MAP_TYPE_BOOST = 1
 #define NODE_REGISTRY_MAP_TYPE_BOOST 1
@@ -1081,9 +1085,11 @@ namespace stk {
         stk::mesh::EntityId db_id = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().id();
         stk::mesh::EntityId db_rank = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>().rank();
 
-        bool should_put_in_id = (m_eMesh.identifier(element)  < db_id);
-        bool should_put_in_rank_gt = (m_eMesh.entity_rank(element) > db_rank);
-        bool should_put_in_rank_gte = (m_eMesh.entity_rank(element) >= db_rank);
+        stk::mesh::EntityId element_id = m_eMesh.identifier(element);
+        stk::mesh::EntityId element_rank = m_eMesh.entity_rank(element);
+        bool should_put_in_id = (element_id < db_id);
+        bool should_put_in_rank_gt = (element_rank > db_rank);
+        bool should_put_in_rank_gte = (element_rank >= db_rank);
         bool should_put_in = should_put_in_rank_gt || (should_put_in_id && should_put_in_rank_gte);
 
         unsigned smark=0;
@@ -1422,7 +1428,8 @@ namespace stk {
                           std::cout << sout.str() << std::endl;
                       }
 
-                    m_nodes_to_ghost.push_back( stk::mesh::EntityProc(new_node, owner_proc_rank) );
+                    if (m_eMesh.owner_rank(new_node) == m_eMesh.get_rank())
+                      m_nodes_to_ghost.push_back( stk::mesh::EntityProc(new_node, owner_proc_rank) );
                   }
 
                 if (isParallelRun(proc_size))
@@ -2723,7 +2730,7 @@ namespace stk {
         //stk::mesh::EntityId&                  non_owning_elementId = buffer_entry.get<CDT_NON_OWNING_ELEMENT_KEY>();
 
         stk::mesh::EntityRank& needed_entity_rank                    = buffer_entry.get<CDT_NEEDED_ENTITY_RANK>();
-        unsigned    iSubDimOrd                            = buffer_entry.get<CDT_SUB_DIM_ENTITY_ORDINAL>();
+        unsigned    iSubDimOrd                                       = buffer_entry.get<CDT_SUB_DIM_ENTITY_ORDINAL>();
         stk::mesh::EntityKey&  non_owning_elementKey                 = buffer_entry.get<CDT_NON_OWNING_ELEMENT_KEY>();
         stk::mesh::EntityId    non_owning_elementId                  = non_owning_elementKey.id();
         stk::mesh::EntityRank  non_owning_elementRank                = non_owning_elementKey.rank();
@@ -2781,6 +2788,24 @@ namespace stk {
         // owning_elementId < non_owning_elementId && owning_elementRank >= non_owning_elementRank
         if (owning_element_rank == non_owning_elementRank)
           {
+            if (owning_element_id == non_owning_elementId)
+              {
+                NR_PRINT(owning_element_id);
+                NR_PRINT(non_owning_elementId);
+                NR_PRINT(owning_element_rank);
+
+                  {
+                    std::cout << "P[" << m_eMesh.get_rank() << "] unpacking edge, from_proc= " << from_proc << " with new node= " << m_eMesh.identifier(nodeIds_onSE[0])
+                              << " buffer_entry= " << buffer_entry
+                              << " new node id= " << nodeIds_onSE.m_entity_id_vector[0]
+                              << " owning_element_id= " << owning_element_id << " owning_element_rank= " << owning_element_rank
+                              << " subdim.size()= " << subDimEntity.size()
+                              << " edge= " << m_eMesh.identifier(subDimEntity[0])
+                              << " " << m_eMesh.identifier(subDimEntity[1])
+                              << std::endl;
+                  }
+              }
+            VERIFY_OP(owning_element_id, !=, non_owning_elementId, "createNodeAndConnect:: bad elem ids");
             VERIFY_OP(owning_element_id, !=, non_owning_elementId, "createNodeAndConnect:: bad elem ids");
             VERIFY_OP(owning_element_id, < , non_owning_elementId, "createNodeAndConnect:: bad elem ids 2");
           }

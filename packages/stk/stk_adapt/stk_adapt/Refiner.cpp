@@ -1589,7 +1589,7 @@ namespace stk {
           const bool check_for_family_tree = false;
           bool isParent = m_eMesh.isParentElement(element, check_for_family_tree);
 
-          if (isParent)
+          if (0 && isParent)
             continue;
 
           bool elementIsGhost = m_eMesh.isGhostElement(element);
