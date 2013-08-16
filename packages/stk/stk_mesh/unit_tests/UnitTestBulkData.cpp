@@ -1981,7 +1981,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testCommList)
       }
     bool should_fail = false;
 #ifndef NDEBUG
-    should_fail = true;
+    should_fail = false;
 #endif
     bool failed=false;
     try {
