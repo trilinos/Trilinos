@@ -77,110 +77,39 @@ generate_sequence(
   return v;
 }
 
-} // anonymous namescape
-
-TEUCHOS_UNIT_TEST(MiniTensor, VectorFundamental)
+template <typename Tensor, typename Scalar>
+bool
+test_fundamentals(Index const dimension)
 {
-  Index const
-  dimension = 3;
+  bool
+  passed = true;
 
   Index const
-  number_components = integer_power(dimension, Vector<Real>::ORDER);
+  number_components = integer_power(dimension, Tensor::ORDER);
 
-  std::vector<Real> const
-  X = generate_sequence<Real>(number_components, 1.0, 1.0);
+  std::vector<Scalar> const
+  X = generate_sequence<Scalar>(number_components, 1.0, 1.0);
 
   // Test constructor with pointer
-  Vector<Real> const
-  u(dimension, &X[0]);
-
-  // Test copy constructor
-  Vector<Real>
-  v = u;
-
-  Vector<Real>
-  w;
-
-  // Test copy assignment
-  w = v - u;
-
-  Real
-  error = norm_f(w);
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-
-  // Test fill with pointer
-  v.fill(&X[0]);
-
-  w = v - u;
-
-  error = norm_f(w);
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-
-  std::vector<Real> const
-  Y = generate_sequence<Real>(number_components, -1.0, -1.0);
-
-  w.fill(&Y[0]);
-
-  // Test increment
-  w += u;
-
-  error = norm_f(w);
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-
-  w.fill(&X[0]);
-
-  // Test decrement
-  w -= u;
-
-  error = norm_f(w);
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-
-  // Test access to components
-  Index
-  counter = 0;
-  error = 0.0;
-  for (Index i = 0; i < dimension; ++i) {
-    error += integer_power(u(i) - u[counter], 2);
-    error += integer_power(v(i) - v[counter], 2);
-    ++counter;
-  }
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-}
-
-TEUCHOS_UNIT_TEST(MiniTensor, TensorFundamental)
-{
-  Index const
-  dimension = 3;
-
-  Index const
-  number_components = integer_power(dimension, Tensor<Real>::ORDER);
-
-  std::vector<Real> const
-  X = generate_sequence<Real>(number_components, 1.0, 1.0);
-
-  // Test constructor with pointer
-  Tensor<Real> const
+  Tensor const
   A(dimension, &X[0]);
 
   // Test copy constructor
-  Tensor<Real>
+  Tensor
   B = A;
 
-  Tensor<Real>
+  Tensor
   C;
 
   // Test copy assignment
   C = B - A;
 
-  Real
+  Scalar
   error = norm_f(C);
 
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+  bool const
+  copy_assignment_passed = error <= machine_epsilon<Scalar>();
+  passed = passed && copy_assignment_passed;
 
   // Test fill with pointer
   B.fill(&X[0]);
@@ -189,10 +118,12 @@ TEUCHOS_UNIT_TEST(MiniTensor, TensorFundamental)
 
   error = norm_f(C);
 
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+  bool const
+  fill_pointer_passed = error <= machine_epsilon<Scalar>();
+  passed = passed && fill_pointer_passed;
 
-  std::vector<Real> const
-  Y = generate_sequence<Real>(number_components, -1.0, -1.0);
+  std::vector<Scalar> const
+  Y = generate_sequence<Scalar>(number_components, -1.0, -1.0);
 
   C.fill(&Y[0]);
 
@@ -201,7 +132,9 @@ TEUCHOS_UNIT_TEST(MiniTensor, TensorFundamental)
 
   error = norm_f(C);
 
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+  bool const
+  increment_passed = error <= machine_epsilon<Scalar>();
+  passed = passed && increment_passed;
 
   C.fill(&X[0]);
 
@@ -210,177 +143,58 @@ TEUCHOS_UNIT_TEST(MiniTensor, TensorFundamental)
 
   error = norm_f(C);
 
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+  bool const
+  decrement_passed = error <= machine_epsilon<Scalar>();
+  passed = passed && decrement_passed;
 
-  // Test access to components
-  Index
-  counter = 0;
-  error = 0.0;
-  for (Index i = 0; i < dimension; ++i) {
-    for (Index j = 0; j < dimension; ++j) {
-      error += integer_power(A(i,j) - A[counter], 2);
-      error += integer_power(B(i,j) - B[counter], 2);
-      ++counter;
-    }
-  }
 
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+  return passed;
 }
 
-TEUCHOS_UNIT_TEST(MiniTensor, Tensor3Fundamental)
+} // anonymous namespace
+
+TEUCHOS_UNIT_TEST(MiniTensor, Fundamentals)
 {
-  Index const
-  dimension = 3;
+  bool const
+  vector_dynamic_passed = test_fundamentals<Vector<Real>, Real>(3);
 
-  Index const
-  number_components = integer_power(dimension, Tensor3<Real>::ORDER);
+  TEST_COMPARE(vector_dynamic_passed, ==, true);
 
-  std::vector<Real> const
-  X = generate_sequence<Real>(number_components, 1.0, 1.0);
+  bool const
+  vector_static_passed = test_fundamentals<Vector<Real, 3>, Real>(3);
 
-  // Test constructor with pointer
-  Tensor3<Real> const
-  A(dimension, &X[0]);
+  TEST_COMPARE(vector_static_passed, ==, true);
 
-  // Test copy constructor
-  Tensor3<Real>
-  B = A;
+  bool const
+  tensor_dynamic_passed = test_fundamentals<Tensor<Real>, Real>(3);
 
-  Tensor3<Real>
-  C;
+  TEST_COMPARE(tensor_dynamic_passed, ==, true);
 
-  // Test copy assignment
-  C = B - A;
+  bool const
+  tensor_static_passed = test_fundamentals<Tensor<Real, 3>, Real>(3);
 
-  Real
-  error = norm_f(C);
+  TEST_COMPARE(tensor_static_passed, ==, true);
 
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+  bool const
+  tensor3_dynamic_passed = test_fundamentals<Tensor3<Real>, Real>(3);
 
-  // Test fill with pointer
-  B.fill(&X[0]);
+  TEST_COMPARE(tensor3_dynamic_passed, ==, true);
 
-  C = B - A;
+  bool const
+  tensor3_static_passed = test_fundamentals<Tensor3<Real, 3>, Real>(3);
 
-  error = norm_f(C);
+  TEST_COMPARE(tensor3_static_passed, ==, true);
 
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+  bool const
+  tensor4_dynamic_passed = test_fundamentals<Tensor4<Real>, Real>(3);
 
-  std::vector<Real> const
-  Y = generate_sequence<Real>(number_components, -1.0, -1.0);
+  TEST_COMPARE(tensor4_dynamic_passed, ==, true);
 
-  C.fill(&Y[0]);
+  bool const
+  tensor4_static_passed = test_fundamentals<Tensor4<Real, 3>, Real>(3);
 
-  // Test increment
-  C += A;
+  TEST_COMPARE(tensor4_static_passed, ==, true);
 
-  error = norm_f(C);
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-
-  C.fill(&X[0]);
-
-  // Test decrement
-  C -= A;
-
-  error = norm_f(C);
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-
-  // Test access to components
-  Index
-  counter = 0;
-  error = 0.0;
-  for (Index i = 0; i < dimension; ++i) {
-    for (Index j = 0; j < dimension; ++j) {
-      for (Index k = 0; k < dimension; ++k) {
-        error += integer_power(A(i,j,k) - A[counter], 2);
-        error += integer_power(B(i,j,k) - B[counter], 2);
-        ++counter;
-      }
-    }
-  }
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-}
-
-TEUCHOS_UNIT_TEST(MiniTensor, Tensor4Fundamental)
-{
-  Index const
-  dimension = 3;
-
-  Index const
-  number_components = integer_power(dimension, Tensor4<Real>::ORDER);
-
-  std::vector<Real> const
-  X = generate_sequence<Real>(number_components, 1.0, 1.0);
-
-  // Test constructor with pointer
-  Tensor4<Real> const
-  A(dimension, &X[0]);
-
-  // Test copy constructor
-  Tensor4<Real>
-  B = A;
-
-  Tensor4<Real>
-  C;
-
-  // Test copy assignment
-  C = B - A;
-
-  Real
-  error = norm_f(C);
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-
-  // Test fill with pointer
-  B.fill(&X[0]);
-
-  C = B - A;
-
-  error = norm_f(C);
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-
-  std::vector<Real> const
-  Y = generate_sequence<Real>(number_components, -1.0, -1.0);
-
-  C.fill(&Y[0]);
-
-  // Test increment
-  C += A;
-
-  error = norm_f(C);
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-
-  C.fill(&X[0]);
-
-  // Test decrement
-  C -= A;
-
-  error = norm_f(C);
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-
-  // Test access to components
-  Index
-  counter = 0;
-  error = 0.0;
-  for (Index i = 0; i < dimension; ++i) {
-    for (Index j = 0; j < dimension; ++j) {
-      for (Index k = 0; k < dimension; ++k) {
-        for (Index l = 0; l < dimension; ++l) {
-          error += integer_power(A(i,j,k,l) - A[counter], 2);
-          error += integer_power(B(i,j,k,l) - B[counter], 2);
-          ++counter;
-        }
-      }
-    }
-  }
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, VectorFilling)

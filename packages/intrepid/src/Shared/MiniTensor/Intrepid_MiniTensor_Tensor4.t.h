@@ -137,6 +137,8 @@ template<typename T, Index N>
 const Tensor4<T, N>
 identity_1(Index const dimension)
 {
+  if (N == DYNAMIC) return identity_1<T>(dimension);
+
   assert(dimension == N);
   return identity_1<T, N>();
 }
@@ -173,6 +175,8 @@ template<typename T, Index N>
 const Tensor4<T, N>
 identity_2(Index const dimension)
 {
+  if (N == DYNAMIC) return identity_2<T>(dimension);
+
   assert(dimension == N);
   return identity_2<T, N>();
 }
@@ -209,6 +213,8 @@ template<typename T, Index N>
 const Tensor4<T, N>
 identity_3(Index const dimension)
 {
+  if (N == DYNAMIC) return identity_3<T>(dimension);
+
   assert(dimension == N);
   return identity_3<T, N>();
 }
