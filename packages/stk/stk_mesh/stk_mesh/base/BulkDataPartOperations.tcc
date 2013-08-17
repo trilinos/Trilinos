@@ -368,18 +368,14 @@ void BulkData::internal_propagate_part_changes(
   const EntityRank end_rank = m_mesh_meta_data.entity_rank_count();
 
   OrdinalVector to_del , to_add , empty ;
-
-  for (EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
+  EntityVector temp_entities;
+  for (EntityRank irank = stk::topology::BEGIN_RANK; irank < erank; ++irank)
   {
     size_t num_rels = num_connectivity(entity, irank);
-    Entity const *rel_entities = begin(entity, irank);
-    ConnectivityOrdinal const *rel_ordinals = begin_ordinals(entity, irank);
-    for (size_t j = 0; j < num_rels; ++j)
-    {
-      const unsigned rel_ident = rel_ordinals[j];
-
-      if ( irank < erank ) { // a 'to' entity
-
+    if (num_rels > 0) {
+      Entity const *rel_entities = begin(entity, irank);
+      for (size_t j = 0; j < num_rels; ++j)
+      {
         Entity e_to = rel_entities[j];
 
         if (e_to == Entity::InvalidEntity)
@@ -393,7 +389,7 @@ void BulkData::internal_propagate_part_changes(
 
         // Induce part membership from this relationship to
         // pick up any additions.
-        induced_part_membership(*this, entity, empty, irank, rel_ident, to_add );
+        induced_part_membership(*this, entity, empty, irank, to_add );
 
         if ( ! removed.empty() ) {
           // Something was removed from the 'from' entity,
@@ -405,18 +401,25 @@ void BulkData::internal_propagate_part_changes(
 
           EntityRank e_to_rank = entity_rank(e_to);
 
+          Entity const* back_rel_entities;
+          int num_back_rels;
           for (EntityRank to_rel_rank_i = e_to_rank + 1; to_rel_rank_i < end_rank; ++to_rel_rank_i)
           {
-            size_t num_back_rels = num_connectivity(e_to, to_rel_rank_i);
-            Entity const* back_rel_entities = begin(e_to, to_rel_rank_i);
-            ConnectivityOrdinal const *rel_ords = begin_ordinals(e_to, to_rel_rank_i);
-            for (size_t k = 0; k < num_back_rels; ++k)
+            if (connectivity_map().valid(e_to_rank, to_rel_rank_i)) {
+              num_back_rels     = num_connectivity(e_to, to_rel_rank_i);
+              back_rel_entities = begin(e_to, to_rel_rank_i);
+            }
+            else {
+              num_back_rels = get_connectivity(*this, e_to, to_rel_rank_i, temp_entities);
+              back_rel_entities = &*temp_entities.begin();
+            }
+
+            for (int k = 0; k < num_back_rels; ++k)
             {
               if (entity != back_rel_entities[k])  // Already did this entity
               {
                 // Relation from to_rel->entity() to e_to
-                induced_part_membership(*this, back_rel_entities[k], empty,
-                                        e_to_rank, rel_ords[k], to_add );
+                induced_part_membership(*this, back_rel_entities[k], empty, e_to_rank, to_add );
               }
             }
           }
@@ -425,9 +428,9 @@ void BulkData::internal_propagate_part_changes(
             to_add_end   = to_add.end();
 
           for ( typename std::vector<PartT>::const_iterator
-              k = removed.begin() ; k != removed.end() ; ++k ) {
+                  k = removed.begin() ; k != removed.end() ; ++k ) {
             if ( ! contains_ordinal( to_add_begin, to_add_end , impl::get_ordinal(*k) ) ) {
-              induced_part_membership( impl::get_part(*k, m_mesh_meta_data), erank, irank, rel_ident, to_del );
+              induced_part_membership( impl::get_part(*k, m_mesh_meta_data), erank, irank, to_del );
             }
           }
         }

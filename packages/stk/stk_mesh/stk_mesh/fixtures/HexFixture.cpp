@@ -29,7 +29,7 @@ namespace fixtures {
               , unsigned nx
               , unsigned ny
               , unsigned nz
-              , ConnectivityMap * connectivity_map
+              , ConnectivityMap const* connectivity_map
             )
   : m_spatial_dimension(3),
     m_nx(nx),

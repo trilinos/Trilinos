@@ -31,7 +31,6 @@ enum IgnoreMe
   DUMMY_VALUE = 0
 };
 
-
 // TODO: When we get C++11, use lambdas instead of these functors
 
 struct CheckSizeFunctor
@@ -789,6 +788,33 @@ void Bucket::debug_dump(std::ostream& out, unsigned ordinal) const
   DebugPrintFunctor functor(out, ordinal);
   const_cast<Bucket*>(this)->modify_all_connectivity(functor);
 }
+
+#ifndef NDEBUG
+void Bucket::check_for_invalid_connectivity_request(ConnectivityType const* type) const
+{
+  EntityRank rank = -1u;
+  if (type == &m_node_kind) {
+    rank = stk::topology::NODE_RANK;
+  }
+  else if (type == &m_edge_kind) {
+    rank = stk::topology::EDGE_RANK;
+  }
+  else if (type == &m_face_kind) {
+    rank = stk::topology::FACE_RANK;
+  }
+  else if (type == &m_element_kind) {
+    rank = stk::topology::ELEMENT_RANK;
+  }
+  else {
+    ThrowAssert(false);
+  }
+  // Asking for connectivity between entities of equal rank is always invalid and ok to ask for
+  // Asking for connectivity between for FACE_RANK in 2d is always invalid and ok to ask for
+  bool isThisEntityAskingForConnectivityToItsOwnRank = entity_rank() == rank;
+  bool isThisEntityAskingForFaceConnectivityOnTwoDimensionalMesh = rank == stk::topology::FACE_RANK && mesh().mesh_meta_data().spatial_dimension() == 2;
+  ThrowAssert( isThisEntityAskingForConnectivityToItsOwnRank || isThisEntityAskingForFaceConnectivityOnTwoDimensionalMesh);
+}
+#endif
 
 namespace impl {
 

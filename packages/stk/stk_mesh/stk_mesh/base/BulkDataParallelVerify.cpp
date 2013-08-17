@@ -462,7 +462,7 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
   const PartVector & mesh_parts  = meta.get_parts();
   const int               p_rank = mesh.parallel_rank();
   const EntityCommListInfoVector & entity_comm = mesh.comm_list();
-  const EntityRank   entity_rank = meta.entity_rank_count();
+  const EntityRank      end_rank = meta.entity_rank_count();
 
 #if DEBUG_PRINT_COMM_LIST && DEBUG_PRINT_COMM_LIST_UNPACK
   par_verify_print_comm_list(mesh, true, "unpack_not_owned_verify");
@@ -604,6 +604,7 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
       if ( ! bad_key && ! bad_own && ! bad_comm && ! bad_part )
       {
         EntityRank irank = stk::topology::BEGIN_RANK;
+
         Entity const *rels_itr = bucket.begin(bucket_ordinal, irank);
         Entity const *rels_end = bucket.end(bucket_ordinal, irank);
         ConnectivityOrdinal const *ords_itr = bucket.begin_ordinals(bucket_ordinal, irank);
@@ -614,7 +615,7 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
         for ( ; ! bad_rel && jr != recv_relations.end() &&
                 jr->entity_rank() < erank; ++jr , ++rels_itr, ++ords_itr )
         {
-          while ((rels_itr == rels_end) && (irank < entity_rank))
+          while ((rels_itr == rels_end) && (irank < end_rank))
           {
             // There are no more relations of the current, so try the next
             // higher rank if there is one.

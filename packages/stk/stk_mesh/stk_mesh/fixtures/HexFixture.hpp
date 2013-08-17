@@ -47,7 +47,7 @@ class HexFixture
               , unsigned nx
               , unsigned ny
               , unsigned nz
-              , ConnectivityMap * connectivity_map = NULL
+              , ConnectivityMap const* connectivity_map = NULL
             );
 
   const int                     m_spatial_dimension;

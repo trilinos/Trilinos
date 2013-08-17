@@ -80,13 +80,23 @@ void insert_transitive_ghost(const BulkData& mesh, Entity const entity ,
 
   // Recurse over upward relations
   const EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
+  EntityVector temp_entities;
+  Entity const* rels;
+  int num_rels;
   for (EntityRank irank = erank + 1; irank < end_rank; ++irank)
   {
-    Entity const *irels_j = mesh.begin(entity, irank);
-    Entity const *irels_e = mesh.end(entity, irank);
-    for (; irels_j != irels_e; ++irels_j)
+    if (mesh.connectivity_map().valid(erank, irank)) {
+      num_rels = mesh.num_connectivity(entity, irank);
+      rels     = mesh.begin(entity, irank);
+    }
+    else {
+      num_rels = get_connectivity( mesh, entity, irank, temp_entities);
+      rels     = &*temp_entities.begin();
+    }
+
+    for (int r = 0; r < num_rels; ++r)
     {
-      insert_transitive_ghost(mesh, *irels_j , proc_local , work_list );
+      insert_transitive_ghost(mesh, rels[r] , proc_local , work_list );
     }
   }
 }
@@ -132,35 +142,36 @@ void insert_closure_send(
 
 bool member_of_owned_closure(const BulkData& mesh, const Entity e , const int p_rank )
 {
-  bool result = p_rank == mesh.parallel_owner_rank(e);
+  if (p_rank == mesh.parallel_owner_rank(e)) {
+    return true;
+  }
 
   const unsigned erank = mesh.entity_rank(e);
   const EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
 
   // Any higher ranking entities locally owned?
-  for (EntityRank irank = erank + 1; irank < end_rank; ++irank)
+  EntityVector temp_entities;
+  Entity const* rels;
+  int num_rels;
+  for (EntityRank irank = end_rank - 1; irank > erank; --irank)
   {
-    Entity const *irels_j = mesh.begin(e, irank);
-    Entity const *irels_e = mesh.end(e, irank);
-    for ( ; !result && (irels_j != irels_e); ++irels_j)
-    {
-      result =  p_rank == mesh.parallel_owner_rank( *irels_j );
+    if (mesh.connectivity_map().valid(erank, irank)) {
+      num_rels = mesh.num_connectivity(e, irank);
+      rels     = mesh.begin(e, irank);
+    }
+    else {
+      num_rels = get_connectivity( mesh, e, irank, temp_entities);
+      rels     = &*temp_entities.begin();
+    }
+
+    for (int r = 0; r < num_rels; ++r) {
+      if (p_rank == mesh.parallel_owner_rank(rels[r]) ||  member_of_owned_closure(mesh, rels[r], p_rank) ) {
+        return true;
+      }
     }
   }
 
-  // Any higher ranking entity member of an owned closure?
-  for (EntityRank irank = erank + 1; irank < end_rank; ++irank)
-  {
-    Entity const *irels_j = mesh.begin(e, irank);
-    Entity const *irels_e = mesh.end(e, irank);
-    for ( ; !result && (irels_j != irels_e); ++irels_j)
-    {
-      // irank < erank due to loop initialization
-      result = member_of_owned_closure(mesh, *irels_j , p_rank );
-    }
-  }
-
-  return result ;
+  return false;
 }
 
 //----------------------------------------------------------------------

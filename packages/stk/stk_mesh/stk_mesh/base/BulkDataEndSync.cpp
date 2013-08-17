@@ -271,18 +271,25 @@ void destroy_dependent_ghosts( BulkData & mesh , Entity entity )
   EntityRank entity_rank = mesh.entity_rank(entity);
 
   const EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
-  for (EntityRank irank = end_rank; irank > entity_rank; )
+  EntityVector temp_entities;
+  Entity const* rels;
+  int num_rels;
+  for (EntityRank irank = end_rank - 1; irank > entity_rank; --irank)
   {
-    --irank;
+    if (mesh.connectivity_map().valid(entity_rank, irank)) {
+      num_rels = mesh.num_connectivity(entity, irank);
+      rels     = mesh.begin(entity, irank);
+    }
+    else {
+      num_rels = get_connectivity(mesh, entity, irank, temp_entities);
+      rels     = &*temp_entities.begin();
+    }
 
-    Entity const *irels_ri = mesh.end(entity, irank);
-    Entity const *irels_b  = mesh.begin(entity, irank);
-    for ( ; irels_ri != irels_b ; --irels_ri)
-    {
-      Entity e = *(irels_ri - 1);
+    for (int r = num_rels - 1; r >= 0; --r) {
+      Entity e = rels[r];
 
       ThrowRequireMsg( !in_owned_closure(mesh, e , mesh.parallel_rank()),
-          "Entity " << mesh.identifier(e) << " should not be in closure." );
+                       "Entity " << mesh.identifier(e) << " should not be in closure." );
 
       destroy_dependent_ghosts( mesh , e );
     }

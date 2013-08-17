@@ -167,7 +167,7 @@ public:
 #ifdef SIERRA_MIGRATION
             , bool add_fmwk_data = false
 #endif
-            , ConnectivityMap* arg_connectivity_map = NULL
+            , ConnectivityMap const* arg_connectivity_map = NULL
             );
 
   //------------------------------------
@@ -1406,9 +1406,38 @@ private:
 #endif /* DOXYGEN_COMPILE */
 };
 
+///////////////////////////////////////////////////////////////////////////////
+// The following get_connectivity API is designed for *internal* STK_Mesh usage
+// to support algorithms that must always be able to get connectivity even
+// when it is disabled in the connectivity map. These functions are designed
+// to support connectivity-retrieval callsites that need to work regardless of
+// the connectivity map. The scratch vectors will be used for allocation when it
+// is needed; otherwise, they are ignored. The overloads are provided for the
+// common cases where not all connectivity data is needed.
+///////////////////////////////////////////////////////////////////////////////
 
-size_t get_upward_elements( const BulkData & mesh, Entity entity, EntityVector & elements );
-size_t get_upward_elements( const BulkData & mesh, Entity entity, EntityVector & elements, OrdinalVector & ordinals );
+size_t get_connectivity( const BulkData & mesh,
+                         Entity entity,
+                         EntityRank to_rank,
+                         EntityVector & entity_scratch_storage );
+
+size_t get_connectivity( const BulkData & mesh,
+                         Entity entity, EntityRank to_rank,
+                         EntityVector & entity_scratch_storage,
+                         std::vector<ConnectivityOrdinal> & ordinal_scratch_storage );
+
+size_t get_connectivity( const BulkData & mesh,
+                         Entity entity,
+                         EntityRank to_rank,
+                         EntityVector & entity_scratch_storage,
+                         std::vector<Permutation> & permutation_scratch_storage );
+
+size_t get_connectivity( const BulkData & mesh,
+                         Entity entity,
+                         EntityRank to_rank,
+                         EntityVector & entity_scratch_storage,
+                         std::vector<ConnectivityOrdinal> & ordinal_scratch_storage,
+                         std::vector<Permutation> & permutation_scratch_storage );
 
 
 /** \brief  Is in owned closure of the given process,

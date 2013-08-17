@@ -233,12 +233,14 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_ring)
     for (stk::mesh::EntityRank irank = end_rank; irank != stk::topology::BEGIN_RANK; )
     {
       --irank;
-      stk::mesh::Entity const *to_b = bulk.begin(node, irank);
-      stk::mesh::Entity const *to_e = bulk.end(node, irank);
-      for (; to_b != to_e;
-            to_b = bulk.begin(node, irank), to_e = bulk.end(node, irank))
-      {
-        STKUNIT_ASSERT( bulk.destroy_entity(*(to_e -1)) );
+      if (bulk.connectivity_map().valid(stk::topology::NODE_RANK, irank)) {
+        stk::mesh::Entity const *to_b = bulk.begin(node, irank);
+        stk::mesh::Entity const *to_e = bulk.end(node, irank);
+        for (; to_b != to_e;
+             to_b = bulk.begin(node, irank), to_e = bulk.end(node, irank))
+        {
+          STKUNIT_ASSERT( bulk.destroy_entity(*(to_e -1)) );
+        }
       }
     }
     STKUNIT_ASSERT( bulk.destroy_entity( node ) );
@@ -296,12 +298,14 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_ring)
     for (stk::mesh::EntityRank irank = end_rank; irank != stk::topology::BEGIN_RANK; )
     {
       --irank;
-      stk::mesh::Entity const *to_b = bulk.begin(node_owned, irank);
-      stk::mesh::Entity const *to_e = bulk.end(node_owned, irank);
-      for ( ; to_b != to_e;
-          bulk.begin(node_owned, irank), to_e = bulk.end(node_owned, irank))
-      {
-        STKUNIT_ASSERT( bulk.destroy_entity(*(to_e - 1)) );
+      if (bulk.connectivity_map().valid(stk::topology::NODE_RANK, irank)) {
+        stk::mesh::Entity const *to_b = bulk.begin(node_owned, irank);
+        stk::mesh::Entity const *to_e = bulk.end(node_owned, irank);
+        for ( ; to_b != to_e;
+              bulk.begin(node_owned, irank), to_e = bulk.end(node_owned, irank))
+        {
+          STKUNIT_ASSERT( bulk.destroy_entity(*(to_e - 1)) );
+        }
       }
     }
     STKUNIT_ASSERT( bulk.destroy_entity( node_owned ) );

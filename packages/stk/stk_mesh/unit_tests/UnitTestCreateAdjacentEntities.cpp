@@ -32,7 +32,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x1x1 )
   const size_t NY = 1;
   const size_t NZ = 1;
 
-  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, NX, NY, NZ, &stk::mesh::ConnectivityMap::classic_stk_mesh());
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -73,7 +73,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3x3 )
   const size_t NY = 3;
   const size_t NZ = 3;
 
-  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, NX, NY, NZ, &stk::mesh::ConnectivityMap::classic_stk_mesh());
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -152,6 +152,11 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3 )
   const size_t NY = 3;
 
   stk::mesh::fixtures::QuadFixture fixture(MPI_COMM_WORLD, NX, NY);
+
+  // skip this test unless using standard connectivity
+  if (&stk::mesh::ConnectivityMap::default_map() != &stk::mesh::ConnectivityMap::classic_stk_mesh()) {
+    return;
+  }
 
   fixture.m_meta.commit();
   fixture.generate_mesh();

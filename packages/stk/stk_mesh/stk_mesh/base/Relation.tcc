@@ -274,7 +274,6 @@ bool membership_is_induced( const Part & part , unsigned entity_rank );
 void induced_part_membership( const Part & part ,
                               unsigned entity_rank_from ,
                               unsigned entity_rank_to ,
-                              RelationIdentifier relation_identifier ,
                               OrdinalVector & induced_parts,
                               bool include_supersets=true);
 
@@ -284,7 +283,6 @@ void induced_part_membership( const Part & part ,
 void induced_part_membership(const BulkData& mesh, const Entity entity_from ,
                               const OrdinalVector       & omit ,
                                     unsigned           entity_rank_to ,
-                                    RelationIdentifier relation_identifier ,
                                     OrdinalVector       & induced_parts,
                                     bool include_supersets=true);
 

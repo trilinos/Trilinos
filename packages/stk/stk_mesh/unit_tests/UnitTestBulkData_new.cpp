@@ -967,19 +967,16 @@ void new_insert_transitive_closure( stk::mesh::BulkData& bulk_data, std::set<stk
     if ( result.second ) {
       // A new insertion, must also insert the closure
 
-      const unsigned etype = bulk_data.entity_rank(entry.first);
-      const stk::mesh::EntityRank end_rank = bulk_data.mesh_meta_data().entity_rank_count();
+      const unsigned erank = bulk_data.entity_rank(entry.first);
 
-      for (stk::mesh::EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
+      for (stk::mesh::EntityRank irank = stk::topology::BEGIN_RANK; irank < erank; ++irank)
       {
         stk::mesh::Entity const *rels_i = bulk_data.begin(entry.first, irank);
         stk::mesh::Entity const *rels_e = bulk_data.end(entry.first, irank);
         for ( ; rels_i != rels_e; ++rels_i)
         {
-          if ( irank < etype ) {
-            stk::mesh::EntityProc tmp( *rels_i , entry.second );
-            new_insert_transitive_closure( bulk_data, new_send , tmp );
-          }
+          stk::mesh::EntityProc tmp( *rels_i , entry.second );
+          new_insert_transitive_closure( bulk_data, new_send , tmp );
         }
       }
     }

@@ -30,6 +30,8 @@ void pack_entity_info(const BulkData& mesh, CommBuffer & buf , const Entity enti
 
   const unsigned nparts = part_ordinals.second - part_ordinals.first ;
   const unsigned tot_rel = mesh.count_relations(entity);
+  Bucket& bucket = mesh.bucket(entity);
+  unsigned ebo   = mesh.bucket_ordinal(entity);
 
   buf.pack<EntityKey>( key );
   buf.pack<unsigned>( owner );
@@ -37,33 +39,32 @@ void pack_entity_info(const BulkData& mesh, CommBuffer & buf , const Entity enti
   buf.pack<unsigned>( part_ordinals.first , nparts );
   buf.pack<unsigned>( tot_rel );
 
-  const MeshIndex e_idx = mesh.mesh_index(entity);
-  ThrowAssertMsg(e_idx.bucket, "BulkData at " << &mesh << " does not know Entity " << mesh.identifier(entity));
-  const Bucket &bucket = *e_idx.bucket;
-  const Ordinal ebo = e_idx.bucket_ordinal;
+  ThrowAssertMsg(mesh.is_valid(entity), "BulkData at " << &mesh << " does not know Entity " << entity.local_offset());
   const EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
 
   for (EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
   {
     const unsigned nrel = bucket.num_connectivity(ebo, irank);
-    Entity const *rel_entities = bucket.begin(ebo, irank);
-    ConnectivityOrdinal const *rel_ordinals = bucket.begin_ordinals(ebo, irank);
-    Permutation const *rel_permutations = bucket.begin_permutations(ebo, irank);
+    if (nrel > 0) {
+      Entity const *rel_entities = bucket.begin(ebo, irank);
+      ConnectivityOrdinal const *rel_ordinals = bucket.begin_ordinals(ebo, irank);
+      Permutation const *rel_permutations = bucket.begin_permutations(ebo, irank);
 
-    for ( unsigned i = 0 ; i < nrel ; ++i ) {
-      if (mesh.is_valid(rel_entities[i])) {
-        buf.pack<EntityKey>( mesh.entity_key(rel_entities[i]) );
-        buf.pack<unsigned>( rel_ordinals[i] );
-        if (bucket.has_permutation(irank)) {
-          buf.pack<unsigned>( rel_permutations[i] );
-        } else {
-          buf.pack<unsigned>(0u);
+      for ( unsigned i = 0 ; i < nrel ; ++i ) {
+        if (mesh.is_valid(rel_entities[i])) {
+          buf.pack<EntityKey>( mesh.entity_key(rel_entities[i]) );
+          buf.pack<unsigned>( rel_ordinals[i] );
+          if (bucket.has_permutation(irank)) {
+            buf.pack<unsigned>( rel_permutations[i] );
+          } else {
+            buf.pack<unsigned>(0u);
+          }
+        } else { // relation to invalid entity (FIXED CONNECTIVITY CASE)
+          // TODO:  Consider not communicating relations to invalid entities...
+          buf.pack<EntityKey>( EntityKey() ); // invalid EntityKey
+          buf.pack<unsigned>( rel_ordinals[i] );
+          buf.pack<unsigned>(0u); // permutation
         }
-      } else { // relation to invalid entity (FIXED CONNECTIVITY CASE)
-        // TODO:  Consider not communicating relations to invalid entities...
-        buf.pack<EntityKey>( EntityKey() ); // invalid EntityKey
-        buf.pack<unsigned>( rel_ordinals[i] );
-        buf.pack<unsigned>(0u); // permutation
       }
     }
   }

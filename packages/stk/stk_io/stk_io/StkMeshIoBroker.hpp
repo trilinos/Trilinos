@@ -464,7 +464,7 @@ namespace stk {
          * *anded* with the normal selectors used for output
          */
         Teuchos::RCP<stk::mesh::Selector> m_anded_selector;
-        stk::mesh::ConnectivityMap m_connectivity_map;
+        stk::mesh::ConnectivityMap* m_connectivity_map;
 
         std::vector<OutputFile> m_output_files;
 

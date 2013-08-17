@@ -277,10 +277,7 @@ void BulkData::internal_change_ghosting(
 
       Entity e = get_entity(*i); // Could be performance issue? Not if you're just doing full regens
 
-      for (EntityRank irank = stk::topology::BEGIN_RANK;
-          irank < erank;
-          ++irank)
-      {
+      for (EntityRank irank = stk::topology::BEGIN_RANK; irank < erank; ++irank) {
         Entity const *rels_i = begin(e, irank);
         Entity const *rels_e = end(e, irank);
         for (; rels_i != rels_e; ++rels_i)
@@ -377,44 +374,35 @@ void BulkData::internal_change_ghosting(
 
     CommAll comm( m_parallel_machine );
 
-    for ( std::set< EntityProc , EntityLess >::iterator
-          j = new_send.begin(); j != new_send.end() ; ++j ) {
+    for ( int phase = 0; phase < 2; ++phase ) {
+      for ( std::set< EntityProc , EntityLess >::iterator
+              j = new_send.begin(); j != new_send.end() ; ++j ) {
 
-      Entity entity = j->first;
-      const int proc = j->second;
+        Entity entity = j->first;
+        const int proc = j->second;
 
-      if ( ! in_ghost( ghosts , entity_key(entity) , proc ) ) {
-        // Not already being sent , must send it.
-        CommBuffer & buf = comm.send_buffer( proc );
-        buf.pack<unsigned>( entity_rank(entity) );
-        pack_entity_info(*this, buf , entity );
-        pack_field_values(*this, buf , entity );
+        if ( ! in_ghost( ghosts , entity_key(entity) , proc ) ) {
+          // Not already being sent , must send it.
+          CommBuffer & buf = comm.send_buffer( proc );
+          buf.pack<unsigned>( entity_rank(entity) );
+          pack_entity_info(*this, buf , entity );
+          pack_field_values(*this, buf , entity );
+
+          if (phase == 1) {
+            entity_comm_insert(entity, EntityCommInfo(ghosts.ordinal(), proc));
+            EntityCommListInfo comm_info = {entity_key(entity), entity, parallel_owner_rank(entity)};
+            m_entity_comm_list.push_back( comm_info );
+          }
+        }
+      }
+
+      if (phase == 0) {
+        comm.allocate_buffers( p_size / 4 );
+      }
+      else {
+        comm.communicate();
       }
     }
-
-    comm.allocate_buffers( p_size / 4 );
-
-    for ( std::set< EntityProc , EntityLess >::iterator
-          j = new_send.begin(); j != new_send.end() ; ++j ) {
-
-      Entity entity = j->first;
-      const int proc = j->second;
-
-      if ( ! in_ghost( ghosts , entity_key(entity) , proc ) ) {
-        // Not already being sent , must send it.
-        CommBuffer & buf = comm.send_buffer( proc );
-        buf.pack<unsigned>( entity_rank(entity) );
-        pack_entity_info(*this,  buf , entity );
-        pack_field_values(*this, buf , entity );
-
-        entity_comm_insert(entity, EntityCommInfo(ghosts.ordinal(), proc));
-
-        EntityCommListInfo comm_info = {entity_key(entity), entity, parallel_owner_rank(entity)};
-        m_entity_comm_list.push_back( comm_info );
-      }
-    }
-
-    comm.communicate();
 
     std::ostringstream error_msg ;
     int error_count = 0 ;
@@ -677,11 +665,11 @@ void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
                              std::vector<EntityProc>& send)
 {
   EntityRank rel_entity_rank = bulk_data.entity_rank(rel_entity);
+  ThrowAssert(rel_entity_rank > rank_of_orig_entity);
 
   // If related entity is higher rank, I own it, and it is not
   // already shared by proc, ghost it to the sharing processor.
-  if ( rank_of_orig_entity < rel_entity_rank &&
-       bulk_data.parallel_owner_rank(rel_entity) == my_rank &&
+  if ( bulk_data.parallel_owner_rank(rel_entity) == my_rank &&
        ! bulk_data.in_shared( bulk_data.entity_key(rel_entity) , share_proc ) ) {
 
     EntityProc entry( rel_entity , share_proc );
@@ -689,13 +677,23 @@ void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
 
     // There may be even higher-ranking entities that need to be ghosted, so we must recurse
     const EntityRank end_rank = bulk_data.mesh_meta_data().entity_rank_count();
-    for (EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
+    EntityVector temp_entities;
+    Entity const* rels;
+    int num_rels;
+    for (EntityRank irank = rel_entity_rank + 1; irank < end_rank; ++irank)
     {
-      Entity const *irels_j = bulk_data.begin(rel_entity, irank);
-      Entity const *irels_e = bulk_data.end(rel_entity, irank);
-      for ( ; irels_j != irels_e; ++irels_j)
+      if (bulk_data.connectivity_map().valid(rel_entity_rank, irank)) {
+        num_rels = bulk_data.num_connectivity(rel_entity, irank);
+        rels     = bulk_data.begin(rel_entity, irank);
+      }
+      else {
+        num_rels = get_connectivity(bulk_data, rel_entity, irank, temp_entities);
+        rels     = &*temp_entities.begin();
+      }
+
+      for (int r = 0; r < num_rels; ++r)
       {
-        Entity const rel_of_rel_entity = *irels_j;
+        Entity const rel_of_rel_entity = rels[r];
         if (bulk_data.is_valid(rel_of_rel_entity)) {
           insert_upward_relations(bulk_data, rel_of_rel_entity, rel_entity_rank, my_rank, share_proc, send);
         }
@@ -722,6 +720,9 @@ void BulkData::internal_regenerate_shared_aura()
   // Iterate over all entities with communication info, get the sharing
   // comm info for each entity, and ensure that upwardly related
   // entities to the shared entity are ghosted on the sharing proc.
+  EntityVector temp_entities;
+  Entity const* rels;
+  int num_rels;
   for ( EntityCommListInfoVector::const_iterator
       i = comm_list().begin() ; i != comm_list().end() ; ++i ) {
 
@@ -733,14 +734,21 @@ void BulkData::internal_regenerate_shared_aura()
 
       const int share_proc = sharing[j].proc ;
 
-      for (EntityRank k_rank = stk::topology::BEGIN_RANK; k_rank < end_rank; ++k_rank)
+      for (EntityRank k_rank = erank + 1; k_rank < end_rank; ++k_rank)
       {
-        Entity const *rels_itr = begin(i->entity, k_rank);
-        Entity const *rels_end = end(i->entity, k_rank);
-        for ( ; rels_itr != rels_end; ++rels_itr)
+        if (connectivity_map().valid(erank, k_rank)) {
+          num_rels = num_connectivity(i->entity, k_rank);
+          rels     = begin(i->entity, k_rank);
+        }
+        else {
+          num_rels = get_connectivity(*this, i->entity, k_rank, temp_entities);
+          rels     = &*temp_entities.begin();
+        }
+
+        for (int r = 0; r < num_rels; ++r)
         {
-          if (is_valid(*rels_itr)) {
-            insert_upward_relations(*this, *rels_itr, erank, m_parallel_rank, share_proc, send);
+          if (is_valid(rels[r])) {
+            insert_upward_relations(*this, rels[r], erank, m_parallel_rank, share_proc, send);
           }
         }
       }

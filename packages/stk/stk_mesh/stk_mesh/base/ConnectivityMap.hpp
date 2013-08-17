@@ -66,7 +66,7 @@ struct ConnectivityMap
     return r;
   }
 
-  static ConnectivityMap const& default_map()
+  static ConnectivityMap const& classic_stk_mesh()
   {
     static const map_type map =
     {{
@@ -81,6 +81,31 @@ struct ConnectivityMap
     return r;
   }
 
+  static ConnectivityMap const& classic_stk_mesh_2d()
+  {
+    static const map_type map =
+    {{
+      //         TO
+      //FROM       node       edge        face       element
+      /*node*/  {{ invalid(), dynamic(),  invalid(), dynamic()}},
+      /*edge*/  {{ fixed()  , invalid(),  invalid(), dynamic()}},
+      /*face*/  {{ invalid(), invalid(),  invalid(), invalid()}},
+      /*elem*/  {{ fixed()  , dynamic(),  invalid(), invalid()}}
+    }};
+    static ConnectivityMap r = {map};
+    return r;
+  }
+
+  static ConnectivityMap const& default_map()
+  {
+    return classic_stk_mesh();
+  }
+
+  static ConnectivityMap const& default_map_2d()
+  {
+    return classic_stk_mesh_2d();
+  }
+
   static ConnectivityMap const& minimal_back_relations_map()
   {
     static const map_type map =
@@ -91,21 +116,6 @@ struct ConnectivityMap
       /*edge*/  {{ fixed()  , invalid(),  invalid(), invalid()}},
       /*face*/  {{ fixed()  , dynamic(),  invalid(), invalid()}},
       /*elem*/  {{ fixed()  , dynamic(),  dynamic(), invalid()}}
-    }};
-    static ConnectivityMap r = {map};
-    return r;
-  }
-
-  static ConnectivityMap const& default_map_2d()
-  {
-    static const map_type map =
-    {{
-      //         TO
-      //FROM       node       edge        face       element
-      /*node*/  {{ invalid(), dynamic(),  invalid(), dynamic()}},
-      /*edge*/  {{ fixed()  , invalid(),  invalid(), dynamic()}},
-      /*face*/  {{ invalid(), invalid(),  invalid(), invalid()}},
-      /*elem*/  {{ fixed()  , dynamic(),  invalid(), invalid()}}
     }};
     static ConnectivityMap r = {map};
     return r;
@@ -182,7 +192,10 @@ struct ConnectivityMap
   { return m_map[from][to]; }
 
   bool valid(EntityRank from, EntityRank to) const
-  { return m_map[from][to] != INVALID_CONNECTIVITY_TYPE; }
+  {
+    // You can always have dynamic connectivity to "beyond-element" entities
+    return (from > 3 || to > 3) ? true : m_map[from][to] != INVALID_CONNECTIVITY_TYPE;
+  }
 
   map_type m_map;
 };

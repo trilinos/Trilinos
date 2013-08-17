@@ -1392,7 +1392,6 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting)
           {
             std::cout << "P[" << p_rank << "] node " << mesh.identifier(node) << " own= "
                       << mesh.parallel_owner_rank(node) << " rel = " << mesh.parallel_owner_rank(*to_i) << std::endl;
-
           }
         }
       }

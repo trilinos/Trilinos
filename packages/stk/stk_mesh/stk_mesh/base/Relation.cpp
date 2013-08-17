@@ -44,6 +44,9 @@ void get_entities_through_relations(
   const std::vector<Entity>::const_iterator i_end ,
   std::vector<Entity> & entities_related )
 {
+  EntityVector temp_entities;
+  Entity const* irels_j;
+  int num_conn;
   for (Entity const *rels_left = rels_begin ; rels_left != rels_end ; ++rels_left )
   {
     // Do all input entities have a relation to this entity ?
@@ -54,8 +57,16 @@ void get_entities_through_relations(
     std::vector<Entity>::const_iterator i = i_beg ;
     for ( ; i != i_end ; ++i )
     {
-      Entity const *irels_j = mesh.begin(*i, erank);
-      Entity const *irels_end = mesh.end(*i, erank);
+      if (mesh.connectivity_map().valid(mesh.entity_rank(*i), erank)) {
+        num_conn = mesh.num_connectivity(*i, erank);
+        irels_j  = mesh.begin(*i, erank);
+      }
+      else {
+        num_conn = get_connectivity(mesh, *i, erank, temp_entities);
+        irels_j  = &*temp_entities.begin();
+      }
+
+      Entity const *irels_end = irels_j + num_conn;
 
       while ( irels_j != irels_end && e != *irels_j) {
         ++irels_j ;
@@ -109,11 +120,21 @@ void get_entities_through_relations(
     const EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
 
     std::vector<Entity>::const_iterator next_i = i + 1;
+    EntityVector temp_entities;
+    Entity const* rels_begin;
+    int num_conn;
     for (EntityRank rank = stk::topology::BEGIN_RANK; rank < end_rank; ++rank)
     {
-      Entity const *rels_begin = ibucket.begin(ibordinal, rank);
-      Entity const *rels_end = ibucket.end(ibordinal, rank);
-      get_entities_through_relations(mesh, rels_begin, rels_end, next_i, j,
+      if (mesh.connectivity_map().valid(ibucket.entity_rank(), rank)) {
+        num_conn   = mesh.num_connectivity(ibucket[ibordinal], rank);
+        rels_begin = mesh.begin(ibucket[ibordinal], rank);
+      }
+      else {
+        num_conn   = get_connectivity(mesh, ibucket[ibordinal], rank, temp_entities);
+        rels_begin = &*temp_entities.begin();
+      }
+
+      get_entities_through_relations(mesh, rels_begin, rels_begin + num_conn, next_i, j,
                                      entities_related);
     }
   }
@@ -122,19 +143,30 @@ void get_entities_through_relations(
 void get_entities_through_relations(
   const BulkData& mesh,
   const std::vector<Entity> & entities ,
-        unsigned               entities_related_rank ,
+        unsigned              entities_related_rank ,
         std::vector<Entity> & entities_related )
 {
   entities_related.clear();
 
   if ( ! entities.empty() ) {
+
           std::vector<Entity>::const_iterator i = entities.begin();
     const std::vector<Entity>::const_iterator j = entities.end();
 
-    Entity const *rels_begin = mesh.begin(*i, entities_related_rank );
-    Entity const *rels_end = mesh.end(*i, entities_related_rank );
+    EntityVector temp_entities;
+    Entity const* rel_entities;
+    int num_rels;
+    if (mesh.connectivity_map().valid(mesh.entity_rank(*i), entities_related_rank)) {
+      num_rels     = mesh.num_connectivity(*i, entities_related_rank);
+      rel_entities = mesh.begin(*i, entities_related_rank);
+    }
+    else {
+      num_rels    = get_connectivity(mesh, *i, entities_related_rank, temp_entities);
+      rel_entities = &*temp_entities.begin();
+    }
+
     ++i;
-    get_entities_through_relations(mesh, rels_begin, rels_end, i, j, entities_related);
+    get_entities_through_relations(mesh, rel_entities, rel_entities + num_rels, i, j, entities_related);
   }
 }
 
@@ -161,7 +193,6 @@ bool membership_is_induced( const Part & part , unsigned entity_rank )
 void induced_part_membership( const Part & part ,
                               unsigned entity_rank_from ,
                               unsigned entity_rank_to ,
-                              RelationIdentifier relation_identifier ,
                               OrdinalVector & induced_parts,
                               bool include_supersets)
 {
@@ -180,22 +211,22 @@ void induced_part_membership( const Part & part ,
 //  this entity's relationship.  Can only trust 'entity_from' to be
 //  accurate if it is owned by the local process.
 
-void induced_part_membership(const BulkData& mesh, const Entity entity_from ,
-                              const OrdinalVector       & omit ,
-                                    unsigned           entity_rank_to ,
-                                    RelationIdentifier relation_identifier ,
-                                    OrdinalVector       & induced_parts,
-                                    bool include_supersets)
+void induced_part_membership(const BulkData& mesh,
+                             const Entity entity_from ,
+                             const OrdinalVector       & omit ,
+                                   unsigned           entity_rank_to ,
+                                   OrdinalVector       & induced_parts,
+                                   bool include_supersets)
 {
   const Bucket   & bucket_from    = mesh.bucket(entity_from);
   const int      local_proc_rank  = mesh.parallel_rank();
   const unsigned entity_rank_from = bucket_from.entity_rank();
   const bool dont_check_owner     = mesh.parallel_size() == 1; // critical for fmwk
+  ThrowAssert(entity_rank_from > entity_rank_to);
 
   // Only induce parts for normal (not back) relations. Can only trust
   // 'entity_from' to be accurate if it is owned by the local process.
-  if ( entity_rank_to < entity_rank_from &&
-       ( dont_check_owner || local_proc_rank == mesh.parallel_owner_rank(entity_from) ) ) {
+  if ( dont_check_owner || local_proc_rank == mesh.parallel_owner_rank(entity_from) ) {
     const PartVector & all_parts   = mesh.mesh_meta_data().get_parts();
 
     const std::pair<const unsigned *, const unsigned *>
@@ -214,7 +245,6 @@ void induced_part_membership(const BulkData& mesh, const Entity entity_from ,
         induced_part_membership( part,
                                  entity_rank_from ,
                                  entity_rank_to ,
-                                 relation_identifier ,
                                  induced_parts,
                                  include_supersets);
       }
@@ -229,23 +259,28 @@ void induced_part_membership(const BulkData& mesh, const Entity entity ,
                                     OrdinalVector & induced_parts,
                                     bool include_supersets)
 {
-  const MeshIndex e_idx = mesh.mesh_index(entity);
-  ThrowAssertMsg(e_idx.bucket, "BulkData at " << &mesh << " does not know Entity" << mesh.identifier(entity));
-  const Bucket &e_bucket = *e_idx.bucket;
-  const Ordinal e_ordinal = e_idx.bucket_ordinal;
+  ThrowAssertMsg(mesh.is_valid(entity), "BulkData at " << &mesh << " does not know Entity" << entity.local_offset());
 
   const EntityRank e_rank = mesh.entity_rank(entity);
   const EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
 
-  for (EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
+  EntityVector temp_entities;
+  Entity const* rels;
+  int num_rels;
+  for (EntityRank irank = e_rank + 1; irank < end_rank; ++irank)
   {
-    int num_rels = e_bucket.num_connectivity(e_ordinal, irank);
-    Entity const *rels = e_bucket.begin(e_ordinal, irank);
-    ConnectivityOrdinal const *ords = e_bucket.begin_ordinals(e_ordinal, irank);
+    if (mesh.connectivity_map().valid(e_rank, irank)) {
+      num_rels = mesh.num_connectivity(entity, irank);
+      rels     = mesh.begin(entity, irank);
+    }
+    else {
+      num_rels = get_connectivity(mesh, entity, irank, temp_entities);
+      rels     = &*temp_entities.begin();
+    }
+
     for (int j = 0; j < num_rels; ++j)
     {
-      induced_part_membership(mesh, rels[j] , omit , e_rank, ords[j], induced_parts,
-                              include_supersets);
+      induced_part_membership(mesh, rels[j], omit, e_rank, induced_parts, include_supersets);
     }
   }
 }
