@@ -61,12 +61,15 @@ protected:
   static void SetUpTestCase()
   {
     std::cout << std::setprecision(5) << std::scientific;
-    const std::pair<unsigned,unsigned> core_top =  Kokkos::hwloc::get_core_topology();
 
-    std::pair<unsigned, unsigned> team_league;
-    team_league.first  = core_top.first ;
-    //team_league.second = core_top.second * Kokkos::hwloc::get_core_capacity();
-    team_league.second = core_top.second;
+    std::pair<unsigned, unsigned> team_league(1,4);
+    if (Kokkos::hwloc::available()) {
+      const std::pair<unsigned,unsigned> core_top =  Kokkos::hwloc::get_core_topology();
+      team_league.first  = core_top.first ;
+      team_league.second = core_top.second;
+    }
+
+    std::cout << "Threads: " << team_league.first << "x" << team_league.second << std::endl;
 
     Kokkos::Threads::initialize( team_league );
   }
