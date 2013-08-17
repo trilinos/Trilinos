@@ -47,6 +47,7 @@
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Map_decl.hpp"
 #include "Tpetra_DirectoryImpl_decl.hpp"
+#include "Tpetra_TieBreak.hpp"
 
 namespace Tpetra {
 
@@ -136,6 +137,17 @@ namespace Tpetra {
     /// \note This constructor is invoked by Map's constructor, using
     ///   the Map's <tt>this</tt> pointer as the input argument.
     explicit Directory (const Teuchos::RCP<const map_type>& map);
+
+    /// \brief Constructor (using a tie break class to decide ownership)
+    ///
+    /// \param map [in] The Map object for which to create the Directory.
+    /// \param tie_break [in] An instance of a TieBreak to determine 
+    ///                       ownership.
+    ///
+    /// \note This constructor is NOT invoked by Map's constructor, and for
+    ///       now only works with continguous maps
+    explicit Directory (const Teuchos::RCP<const map_type>& map,
+                        const Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal> & tie_break);
 
     //! Destructor.
     ~Directory ();

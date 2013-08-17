@@ -43,6 +43,7 @@
 #define __Tpetra_DirectoryImpl_decl_hpp
 
 #include <Tpetra_ConfigDefs.hpp>
+#include "Tpetra_TieBreak.hpp"
 
 //
 // mfh 13-15 May 2013: HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX governs
@@ -70,6 +71,8 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node> class Map;
 
   namespace Details {
+    template <class LocalOrdinal, class GlobalOrdinal> class TieBreak;
+
     /// \class Directory
     /// \brief Computes the local ID and process ID corresponding to given global IDs.
     ///
@@ -312,11 +315,17 @@ namespace Tpetra {
       DistributedNoncontiguousDirectory() {}
 
     public:
+      typedef Tpetra::Details::TieBreak<LocalOrdinal, GlobalOrdinal> tie_break_type;
       typedef Directory<LocalOrdinal, GlobalOrdinal, NodeType> base_type;
       typedef typename base_type::map_type map_type;
 
       //! Constructor.
       DistributedNoncontiguousDirectory (const Teuchos::RCP<const map_type>& map);
+
+      //! Constructor.
+      DistributedNoncontiguousDirectory (const Teuchos::RCP<const map_type>& map,
+                                         const tie_break_type & tie_break);
+
 
       template <class Node2>
       RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> >
@@ -351,6 +360,15 @@ namespace Tpetra {
                       const Teuchos::ArrayView<LocalOrdinal> &localIDs,
                       const bool computeLIDs) const;
     private:
+      /// \brief Initialization routine that unifies the implementation of 
+      ///        the two constructors
+      /// 
+      /// If the pointer to the TieBreak object is null this proceeds using
+      /// a simple ordering to break any ownership ties. Otherwise the
+      /// tie_break object is used to determine ownership.
+      void initialize (const Teuchos::RCP<const map_type>& map,
+                       const Teuchos::Ptr<const tie_break_type>& tie_break);
+
       /// \brief This Directory's Map which describes the distribution of its data.
       ///
       /// The Directory Map describes where to find the distributed
