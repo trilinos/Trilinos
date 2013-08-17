@@ -72,7 +72,6 @@ void par_verify_print_comm_list( const BulkData & mesh , bool doit, const std::s
       msg << std::endl ;
     }
 
-    //std::cout << msg.str();
     fout << msg.str();
   }
 }
@@ -325,16 +324,36 @@ void insert( std::vector<int> & vec , int val )
   }
 }
 
-// these are for debugging
-#define USE_TAGS 0
-enum Tags {
-  PACK_0 = 100000,
-  PACK_SHARED_COUNT, 
-  PACK_GHOST_COUNT, 
-  PACK_GHOST_COUNT_AFTER_SHARED, 
-  PACK_ENTITY_SHARED,
-  PACK_ENTITY_GHOST
+// these are for debugging, they're used to mark where we are in the packing/unpacking process
+#define USE_PACK_TAGS !defined(NDEBUG)
+enum PackTags {
+  PACK_TAG_INVALID = 12345600,
+  PACK_TAG_SHARED_COUNT,
+  PACK_TAG_GHOST_COUNT,
+  PACK_TAG_GHOST_COUNT_AFTER_SHARED,
+  PACK_TAG_ENTITY_SHARED,
+  PACK_TAG_ENTITY_GHOST
 };
+
+static void check_tag(const BulkData& mesh, CommBuffer& buf, PackTags expected_tag, PackTags expected_tag2 = PACK_TAG_INVALID)
+{
+#if USE_PACK_TAGS
+  int tag;
+  buf.unpack<int>(tag);
+  if (tag != expected_tag && tag != expected_tag2) {
+    std::ostringstream msg;
+    msg << "P[" << mesh.parallel_rank() << "] bad tag = " << tag << " expecting " << expected_tag << " or " << expected_tag2;
+    ThrowRequireMsg(tag == expected_tag || tag == expected_tag2, msg.str());
+  }
+#endif
+}
+
+static void put_tag(CommBuffer& buf, PackTags tag)
+{
+#if USE_PACK_TAGS
+  buf.pack<int>(tag);
+#endif
+}
 
 void pack_owned_verify( CommAll & all , const BulkData & mesh )
 {
@@ -372,14 +391,10 @@ void pack_owned_verify( CommAll & all , const BulkData & mesh )
 
         CommBuffer & buf = all.send_buffer( share_proc );
 
-#if USE_TAGS
-        buf.pack<int>(PACK_ENTITY_SHARED);
-#endif
+        put_tag(buf,PACK_TAG_ENTITY_SHARED);
         pack_entity_info(mesh, buf , i->entity );
 
-#if USE_TAGS
-        buf.pack<int>(PACK_SHARED_COUNT);
-#endif
+        put_tag(buf,PACK_TAG_SHARED_COUNT);
         buf.pack<unsigned>( share_count );
 
         // Pack what the receiver should have:
@@ -396,16 +411,13 @@ void pack_owned_verify( CommAll & all , const BulkData & mesh )
         // see if we also have ghosts
         unsigned ghost_count = 0 ;
         for ( size_t k = 0 ; k < comm.size() ; ++k ) {
-          if (comm[k].ghost_id == 1 && comm[k].proc == share_proc ) {
-            // error - shouldn't have shared and aura, only shared and custom ghost
-          }
-          if ( comm[k].ghost_id != 0 && comm[k].proc == share_proc ) {
+          ThrowRequireMsg( !(comm[k].ghost_id == 1 && comm[k].proc == share_proc ) ,
+                           "error - shouldn't have shared and aura, only shared and custom ghost");
+          if ( comm[k].ghost_id > 1 && comm[k].proc == share_proc ) {
             ++ghost_count ;
           }
         }
-#if USE_TAGS
-        buf.pack<int>(PACK_GHOST_COUNT_AFTER_SHARED);
-#endif
+        put_tag(buf,PACK_TAG_GHOST_COUNT_AFTER_SHARED);
         buf.pack<unsigned>(ghost_count);
       }
 
@@ -414,9 +426,7 @@ void pack_owned_verify( CommAll & all , const BulkData & mesh )
 
         CommBuffer & buf = all.send_buffer( ghost_proc );
 
-#if USE_TAGS
-        buf.pack<int>(PACK_ENTITY_GHOST);
-#endif
+        put_tag(buf,PACK_TAG_ENTITY_GHOST);
         pack_entity_info(mesh, buf , i->entity );
 
         // What ghost subsets go to this process?
@@ -426,9 +436,7 @@ void pack_owned_verify( CommAll & all , const BulkData & mesh )
             ++count ;
           }
         }
-#if USE_TAGS
-        buf.pack<int>(PACK_GHOST_COUNT);
-#endif
+        put_tag(buf,PACK_TAG_GHOST_COUNT);
         buf.pack<unsigned>( count );
         for ( size_t k = 0 ; k < comm.size() ; ++k ) {
           if ( comm[k].ghost_id != 0 && comm[k].proc == ghost_proc ) {
@@ -439,6 +447,7 @@ void pack_owned_verify( CommAll & all , const BulkData & mesh )
     }
   }
 }
+
 
 //----------------------------------------------------------------------------
 // Unpacking all of my not-owned entities.
@@ -485,29 +494,15 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
 
       CommBuffer & buf = comm_all.recv_buffer( i->owner );
 
-#if USE_TAGS
-#define EXPECT_TAG_2(tag1,tag2) do { int tag;  buf.unpack<int>(tag);\
-          if (tag != tag1 && tag != tag2) {                               \
-            std::cout << "P[" << p_rank << "] bad tag = "                 \
-                    << tag << " expecting " << tag1 << " or " << tag2 << std::endl; \
-            throw std::runtime_error("EXPECT_TAG error"); }  } while(0)
-#define EXPECT_TAG(tag) EXPECT_TAG_2(tag,tag)
-
-#endif
-
-#if USE_TAGS
-      EXPECT_TAG_2(PACK_ENTITY_SHARED, PACK_ENTITY_GHOST);
-#endif
+      check_tag(mesh, buf, PACK_TAG_ENTITY_SHARED, PACK_TAG_ENTITY_GHOST);
       unpack_entity_info( buf , mesh ,
                           recv_entity_key , recv_owner_rank ,
                           recv_parts , recv_relations );
 
-#if USE_TAGS
       if (mesh.in_shared(key))
-        EXPECT_TAG(PACK_SHARED_COUNT);
+        check_tag(mesh, buf, PACK_TAG_SHARED_COUNT);
       else
-        EXPECT_TAG(PACK_GHOST_COUNT);
-#endif
+        check_tag(mesh, buf, PACK_TAG_GHOST_COUNT);
       recv_comm_count = 0 ;
       buf.unpack<unsigned>( recv_comm_count );
       recv_comm.resize( recv_comm_count );
@@ -536,49 +531,39 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
               ec_idx_not_shared.push_back(iec);
           }
         //bad_comm = ec_size != recv_comm.size();
+        unsigned ghost_after_shared_count=0;
         if ( mesh.in_shared( key ) ) {
           // only packed shared size, so only compare with shared here
           bad_comm = ec_idx_shared.size() != recv_comm.size();
-          if (bad_comm) std::cout << "bad_comm packed shared size..." << std::endl;
-        }
-        unsigned ghost_after_shared_count=0;
-        if ( ! bad_comm ) {
-          if ( mesh.in_shared( key ) ) {
+          if ( ! bad_comm ) {
             size_t j = 0 ;
             for ( ; j < ec_idx_shared.size() &&
                     ec[ec_idx_shared[j]].ghost_id == 0 &&
                     ec[ec_idx_shared[j]].proc   == recv_comm[j] ; ++j );
             bad_comm = j != ec_idx_shared.size() ;
-            if (bad_comm) std::cout << "bad_comm shared" << std::endl;
 
             // unpack count of additional ghosts
-#if USE_TAGS
-            EXPECT_TAG(PACK_GHOST_COUNT_AFTER_SHARED);
-#endif
+            check_tag(mesh, buf, PACK_TAG_GHOST_COUNT_AFTER_SHARED);
             buf.unpack<unsigned>( ghost_after_shared_count);
-
           }
         }
 
         if ( ! bad_comm ) {
+
+          if (ghost_after_shared_count)
+            {
+              check_tag(mesh, buf, PACK_TAG_ENTITY_GHOST);
+              unpack_entity_info( buf , mesh ,
+                                  recv_entity_key , recv_owner_rank ,
+                                  recv_parts , recv_relations );
+
+              check_tag(mesh, buf, PACK_TAG_GHOST_COUNT);
+              buf.unpack<unsigned>(recv_comm_count);
+              recv_comm.resize( recv_comm_count);
+              buf.unpack<int>( & recv_comm[0] , recv_comm_count);
+            }
+
           if ( !mesh.in_shared( key ) || ghost_after_shared_count) {
-
-            if (ghost_after_shared_count)
-              {
-#if USE_TAGS
-                EXPECT_TAG(PACK_ENTITY_GHOST);
-#endif
-                unpack_entity_info( buf , mesh ,
-                                    recv_entity_key , recv_owner_rank ,
-                                    recv_parts , recv_relations );
-
-#if USE_TAGS
-                EXPECT_TAG(PACK_GHOST_COUNT);
-#endif
-                buf.unpack<unsigned>(recv_comm_count);
-                recv_comm.resize( recv_comm_count);
-                buf.unpack<int>( & recv_comm[0] , recv_comm_count);
-              }
 
             size_t j = 0;
             // recv_comm contains ghost_ids for ghosted entities
@@ -586,37 +571,6 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
                     static_cast<int>(ec[ec_idx_not_shared[j]].ghost_id) == recv_comm[j] &&
                       ec[ec_idx_not_shared[j]].proc   == mesh.parallel_owner_rank(entity) ; ++j );
             bad_comm = j != ec_idx_not_shared.size() ;
-            if (bad_comm) {
-              std::ostringstream msg;
-              msg << "P[" << p_rank << "] bad_comm not shared "
-                        << "\n key = " << key
-                        << "\n j = " << j
-                        << "\n ec_idx_not_shared.size= " << ec_idx_not_shared.size()
-                        << "\n ec_idx_shared.size= " << ec_idx_shared.size()
-                        << "\n mesh.in_shared(key) = " << mesh.in_shared(key)
-                        << "\n ghost_after_shared_count = " << ghost_after_shared_count
-                        << std::endl;
-
-              msg << " list= " ;
-              for ( PairIterEntityComm ecp = mesh.entity_comm(key); ! ecp.empty() ; ++ecp ) {
-                msg << " (" << ecp->ghost_id << "," << ecp->proc << ")" ;
-              }
-              msg << std::endl;
-              j = 0;
-              for ( ; j < ec_idx_not_shared.size(); ++j)
-                {
-                  msg << " j= " << j 
-                      << "\n (ec[ec_idx_not_shared[j]].ghost_id= " << ec[ec_idx_not_shared[j]].ghost_id
-                      << "\n , recv_comm[j]= " << recv_comm[j] << " ) " 
-                      << "\n (ec[ec_idx_not_shared[j]].proc= " << ec[ec_idx_not_shared[j]].proc 
-                      << "\n , mesh.parallel_owner_rank(entity) =" << mesh.parallel_owner_rank(entity) << " )"
-                      << "\n static_cast<int>(ec[ec_idx_not_shared[j]].ghost_id) == recv_comm[j] = " << (static_cast<int>(ec[ec_idx_not_shared[j]].ghost_id) == recv_comm[j])
-                      << "\n ec[ec_idx_not_shared[j]].proc   == mesh.parallel_owner_rank(entity) = " << (ec[ec_idx_not_shared[j]].proc   == mesh.parallel_owner_rank(entity) )
-                      << std::endl;
-                }
-              std::cout << msg.str();
-            }
-
           }
         }
       }
