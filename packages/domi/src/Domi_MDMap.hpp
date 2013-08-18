@@ -169,7 +169,32 @@ public:
         const Teuchos::RCP< Node > & node =
           Kokkos::DefaultNode::getDefaultNode());
 
-  /** \brief Parent/slice sub-map constructor
+  /** \brief Parent/array of slices sub-map constructor
+   *
+   * \param parent [in] an MDMap, from which this sub-map will be
+   *        derived.
+   *
+   * \param axis [in] the axis to which the slice argument applies
+   *
+   * \param slice [in] a Slice of global axis indexes that
+   *        defines the sub-map.  These slices must not include
+   *        indexes from the ghost regions along each axis.
+   *
+   * \param ghosts [in] The ghost region along the altered axis of the
+   *        new sub-map.  This may include indexes from the ghost
+   *        region of the parent MDMap, but it does not have to.
+   *
+   * This constructor will return an MDMap that is the same number of
+   * dimensions as the parent MDMap, but with a smaller dimension
+   * along the given axis (unless the given Slice represents the
+   * entire axis).
+   */
+  MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
+        int axis,
+        const Slice & slice,
+        int ghosts = 0);
+
+  /** \brief Parent/array of slices sub-map constructor
    *
    * \param parent [in] an MDMap, from which this sub-map will be
    *        derived.
@@ -578,7 +603,7 @@ private:
   // Slices.  These bounds DO include the halos.
   Teuchos::Array< Slice > _localBounds;
 
-  // The local stride between adjecent elements in memory.
+  // The local stride between adjacent elements in memory.
   Teuchos::Array< LocalOrd > _localStrides;
 
   // The minimum 1D index of the local data structure, including halo
@@ -759,60 +784,65 @@ MDMap(const MDCommRCP mdComm,
 template< class LocalOrd, class GlobalOrd, class Node >
 MDMap< LocalOrd, GlobalOrd, Node >::
 MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
-      const Teuchos::ArrayView< Slice > & slices,
-      const Teuchos::ArrayView< int > & ghosts) :
-  _mdComm(),
-  _globalDims(parent.getNumDims()),
-  _globalBounds(),
+      int axis,
+      const Slice & slice,
+      int ghosts) :
+  _mdComm(parent._mdComm),
+  _globalDims(parent._globalDims),
+  _globalBounds(parent._globalBounds),
   _globalRankBounds(parent._globalRankBounds),
   _globalStrides(parent._globalStrides),
-  _globalMin(0),
-  _globalMax(0),
-  _localDims(parent.getNumDims(), 0),
-  _localBounds(),
+  _globalMin(parent._globalMin),
+  _globalMax(parent._globalMax),
+  _localDims(parent._localDims),
+  _localBounds(parent._localBounds),
   _localStrides(parent._localStrides),
-  _localMin(0),
-  _localMax(0),
+  _localMin(parent._localMin),
+  _localMax(parent._localMax),
   _haloSizes(parent._haloSizes),
   _halos(parent._halos),
-  _ghostSizes(parent.getNumDims(), 0),
-  _ghosts(parent.getNumDims()),
-  _storageOrder(parent.getStorageOrder()),
+  _ghostSizes(parent._ghostSizes),
+  _ghosts(parent._ghosts),
+  _storageOrder(parent._storageOrder),
   _node(parent._node)
 {
-  // Temporarily store the number of dimensions
-  int numDims = parent.getNumDims();
-
-  // Sanity check on dimensions
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    (slices.size() != numDims),
-    InvalidArgument,
-    "number of slices = " << slices.size() << " != parent MDMap number of "
-    "dimensions = " << numDims);
-
-  // Copy the ghost sizes and set initial values for _ghosts
-  for (int axis = 0; axis < numDims; ++axis)
+  if (parent.onSubcommunicator())
   {
-    if (axis < ghosts.size())
-      _ghostSizes[axis] = ghosts[axis];
-    _ghosts[axis][0] = _ghostSizes[axis];
-    _ghosts[axis][1] = _ghostSizes[axis];
-  }
+    // Temporarily store the number of dimensions
+    int numDims = parent.getNumDims();
 
-  // Convert the slices to concrete, add the ghost points, and store
-  // in _globalBounds, altering _ghosts if necessary.  Compute
-  // _globalDims, _globalMax, and _globalMin.
-  for (int axis = 0; axis < numDims; ++axis)
-  {
+    // Sanity check
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ((axis < 0) || (axis >= numDims)),
+      RangeError,
+      "axis = " << axis  << " is invalid for MDMap with " <<
+        numDims << " dimensions");
+
+    // Copy the ghost sizes and set initial values for _ghosts
+    _ghostSizes[axis] = ghosts;
+    _ghosts[axis][0]  = ghosts;
+    _ghosts[axis][1]  = ghosts;
+
+    // Convert the slice to concrete and check
     Slice bounds =
-      slices[axis].bounds(parent.getGlobalBounds(axis,true).stop());
+      slice.bounds(parent.getGlobalBounds(axis,true).stop());
     TEUCHOS_TEST_FOR_EXCEPTION(
       ((bounds.start() < parent.getGlobalBounds(axis).start()) ||
        (bounds.stop() > parent.getGlobalBounds(axis).stop())),
       RangeError,
-      "Slice along axis " << axis << " is " << bounds << " but must be within"
-      " [" << parent.getGlobalBounds(axis).start() << ":" <<
-      parent.getGlobalBounds(axis).stop() << "]");
+      "Slice along axis " << axis << " is " << bounds << " but must be within "
+      << parent.getGlobalBounds(axis));
+    // Adjust _globalRankBounds
+    for (int axisRank = 0; axisRank < parent.getAxisCommSize(axis);
+         ++axisRank)
+    {
+      typename Slice::Ordinal start = _globalRankBounds[axis][axisRank].start();
+      typename Slice::Ordinal stop  = _globalRankBounds[axis][axisRank].stop();
+      if (start < bounds.start()) start = bounds.start();
+      if (stop  > bounds.stop() ) stop  = bounds.stop();
+      _globalRankBounds[axis][axisRank] = ConcreteSlice(start, stop);
+    }
+    // Alter _ghosts if necessary
     GlobalOrd start = bounds.start() - _ghostSizes[axis];
     if (start < 0)
     {
@@ -820,24 +850,22 @@ MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
       start = 0;
     }
     GlobalOrd stop = bounds.stop() + _ghostSizes[axis];
-    if (stop > parent.getGlobalDim(axis,true))
+    if (stop > parent.getGlobalBounds(axis,true).stop())
     {
-      _ghosts[axis][1] = parent.getGlobalDim(axis,true) - bounds.stop();
-      stop = parent.getGlobalDim(axis,true);
+      _ghosts[axis][1] = parent.getGlobalBounds(axis,true).stop() -
+        bounds.stop();
+      stop = parent.getGlobalBounds(axis,true).stop();
     }
-    _globalBounds.push_back(ConcreteSlice(start,stop));
-    _globalDims[axis] = stop - start;
-    _globalMin +=  start   * _globalStrides[axis];
-    _globalMax += (stop-1) * _globalStrides[axis];
-  }
+    // Compute _globalBounds, _globalDims, _globalMax, and _globalMin
+    _globalBounds[axis] = ConcreteSlice(start,stop);
+    _globalDims[axis]   = stop - start;
+    _globalMin         += start * _globalStrides[axis];
+    _globalMax         -= (parent.getGlobalDim(axis,true) - stop) *
+                          _globalStrides[axis];
 
-  // Build the array of slices for the MDComm sub-communicator
-  // constructor
-  Teuchos::Array< Slice > axisRankSlices;
-  for (int axis = 0; axis < numDims; ++axis)
-  {
-    int start = -1;
-    int stop  = -1;
+    // Build the slice for the MDComm sub-communicator constructor
+    int pStart = -1;
+    int pStop  = -1;
     for (int axisRank = 0; axisRank < parent.getAxisCommSize(axis);
          ++axisRank)
     {
@@ -845,28 +873,25 @@ MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
            <= _globalBounds[axis].start()) &&
           (_globalBounds[axis].start() <
            _globalRankBounds[axis][axisRank].stop() + _ghosts[axis][1]))
-        if (start == -1) start = axisRank;
+        if (pStart == -1) pStart = axisRank;
       if ((_globalRankBounds[axis][axisRank].start() - _ghosts[axis][0]
            < _globalBounds[axis].stop()) &&
           (_globalBounds[axis].stop() <=
            _globalRankBounds[axis][axisRank].stop() + _ghosts[axis][1]))
-        stop = axisRank+1;
+        pStop = axisRank+1;
     }
     TEUCHOS_TEST_FOR_EXCEPTION(
-      (start == -1 || stop == -1),
+      (pStart == -1 || pStop == -1),
       InvalidArgument,
-      "error computing axis rank slices");
-    axisRankSlices.push_back(ConcreteSlice(start,stop));
-  }
-  // Construct the MDComm sub-communicator
-  _mdComm = Teuchos::rcp(new MDComm(parent._mdComm, axisRankSlices));
+      "error computing axis rank slice");
+    Slice axisRankSlice = ConcreteSlice(pStart,pStop);
+    // Construct the MDComm sub-communicator
+    _mdComm = Teuchos::rcp(new MDComm(*(parent._mdComm), axis, axisRankSlice));
 
-  // We now have a sub-communicator, and should only construct this
-  // MDMap if this processor is on it.  If this processor is off the
-  // communicator, then we clear many of the data members.
-  if (_mdComm->onSubcommunicator())
-  {
-    for (int axis = 0; axis < numDims; ++axis)
+    // We now have a sub-communicator, and should only construct this
+    // MDMap if this processor is on it.  If this processor is off the
+    // communicator, then we clear many of the data members.
+    if (_mdComm->onSubcommunicator())
     {
       int axisRank = getAxisRank(axis);
       if (axisRank == 0)
@@ -905,24 +930,66 @@ MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
             _globalRankBounds[axis][axisRank].stop();
         }
       }
-      _localBounds.push_back(ConcreteSlice(start,stop));
-      _localDims[axis] = stop - start;
-      _localMin +=  start   * _localStrides[axis];
-      _localMax += (stop-1) * _localStrides[axis];
+      _localBounds[axis] = ConcreteSlice(start,stop);
+      _localDims[axis]   = stop - start;
+      _localMin         += start * _localStrides[axis];
+      _localMax         -= (parent.getLocalBounds(axis,true).stop() - stop) *
+                           _localStrides[axis];
+      // The new sub-communicator may have fewer processors than the
+      // parent communicator, so we need to fix _globalRankBounds
+      Teuchos::Array< Slice > newRankBounds;
+      for (int axisRank = 0; axisRank < parent.getAxisCommSize(axis);
+           ++axisRank)
+        if ((axisRank >= axisRankSlice.start()) &&
+            (axisRank <  axisRankSlice.stop() )   )
+          newRankBounds.push_back(_globalRankBounds[axis][axisRank]);
+      _globalRankBounds[axis] = newRankBounds;
+    }
+    else
+    {
+      _localDims.clear();
+      _localMin = 0;
+      _localMax = 0;
+      _localBounds.clear();
+      _haloSizes.clear();
+      _halos.clear();
+      _ghostSizes.clear();
+      _ghosts.clear();
+      _localStrides.clear();
     }
   }
-  else
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class LocalOrd, class GlobalOrd, class Node >
+MDMap< LocalOrd, GlobalOrd, Node >::
+MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
+      const Teuchos::ArrayView< Slice > & slices,
+      const Teuchos::ArrayView< int > & ghosts)
+{
+  // Temporarily store the number of dimensions
+  int numDims = parent.getNumDims();
+
+  // Sanity check on dimensions
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (slices.size() != numDims),
+    InvalidArgument,
+    "number of slices = " << slices.size() << " != parent MDMap number of "
+    "dimensions = " << numDims);
+
+  // Apply the single-Slice constructor to each axis in succession
+  MDMap< LocalOrd, GlobalOrd, Node > tempMDMap1(parent);
+  for (int axis = 0; axis < numDims; ++axis)
   {
-    _localDims.clear();
-    _localMin = 0;
-    _localMax = 0;
-    _localBounds.clear();
-    _haloSizes.clear();
-    _halos.clear();
-    _ghostSizes.clear();
-    _ghosts.clear();
-    _localStrides.clear();
+    int ghost = (axis < ghosts.size()) ? ghosts[axis] : 0;
+    MDMap< LocalOrd, GlobalOrd, Node > tempMDMap2(tempMDMap1,
+                                                  axis,
+                                                  slices[axis],
+                                                  ghost);
+    tempMDMap1 = tempMDMap2;
   }
+  *this = tempMDMap1;
 }
 
 ////////////////////////////////////////////////////////////////////////
