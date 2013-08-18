@@ -1643,32 +1643,31 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapPeriodic, T )
     Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes, periodic));
   
   // Figure out the lower slice
-  Array< Slice > slices(numDims);
-  Array< int >   newCommSizes(numDims);
+  Array< Slice > slices(numDims);  
+  Array< T >     dimensions(numDims);
   for (int axis = 0; axis < numDims; ++axis)
   {
+    dimensions[axis] = 10 * axisCommSizes[axis];
     if (axis == 1)
-    {
-      int n = axisCommSizes[axis] / 2;
-      if (n == 0) n = 1;
-      slices[axis] = Slice(n);
-      newCommSizes[axis] = n;
-    }
+      slices[axis] = Slice(dimensions[axis]/2);
     else
-    {
       slices[axis] = Slice();
-      newCommSizes[axis] = axisCommSizes[axis];
-    }
   }
 
-  // Construct the sub-MDComm
-  MDComm subMDMap(mdComm, slices);
+  // Construct the MDMap and the sub-MDMap
+  std::cout << std::endl << "Constructing mdMap" << std::endl;
+  MDMap<T> mdMap(mdComm, dimensions);
+  std::cout << "Constructed mdMap.  Constructing subMDMap" << std::endl;
+  MDMap<T> subMDMap(mdMap, slices);
+  std::cout << "Constructed subMDMap" << std::endl;
 
-  // Should this processor be a part of the sub-MDComm?
+  // Should this processor be a part of the sub-MDMap?
   bool partOfSubComm = true;
-  for (int axis = 0; axis < numDims; ++axis)
-    if (mdComm->getAxisRank(axis) >= newCommSizes[axis])
+  if (mdComm->getNumDims() > 1)
+    if (mdComm->getAxisRank(1) > (mdComm->getAxisCommSize(1)-1)/2)
       partOfSubComm = false;
+  std::cout << comm->getRank() << ": part of subcomm = " << partOfSubComm
+            << std::endl;
 
   // Do some unit tests
   if (partOfSubComm)
@@ -1676,7 +1675,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapPeriodic, T )
     TEST_EQUALITY(subMDMap.getNumDims(), numDims);
     for (int axis = 0; axis < numDims; ++axis)
     {
-      TEST_EQUALITY(subMDMap.getAxisCommSize(axis), newCommSizes[axis]);
+      if (axis == 1)
+      {
+        TEST_EQUALITY(subMDMap.getAxisCommSize(axis), (axisCommSizes[axis]+1)/2);
+        TEST_EQUALITY(subMDMap.getGlobalDim(axis), 5*axisCommSizes[axis]);
+      }
+      else
+      {
+        TEST_EQUALITY(subMDMap.getAxisCommSize(axis), axisCommSizes[axis]);
+        TEST_EQUALITY(subMDMap.getGlobalDim(axis), 10*axisCommSizes[axis]);
+      }
       TEST_EQUALITY(subMDMap.isPeriodic(axis), (axis == 0));
     }
   }
@@ -1697,9 +1705,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapPeriodic, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, halosAndGhostsConstructor, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, indexes, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, exceptions, T ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapLowerLeft, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapLowerLeft, T )   \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapLowerLeftWithHalo, T ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapLowerRight, T )  \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapLowerRight, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapLowerRightWithGhost, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapUpperLeft, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapUpperLeftHaloGhost, T ) \
@@ -1708,7 +1716,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapPeriodic, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapPeriodic, T )
 
 UNIT_TEST_GROUP(int)
-#if 0
+#if 1
 UNIT_TEST_GROUP(long)
 #endif
 
