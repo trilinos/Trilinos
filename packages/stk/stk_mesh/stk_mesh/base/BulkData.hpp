@@ -930,11 +930,24 @@ public:
    */
   void modified(Entity entity);
 
-  ////
-  //// NEW SAMBA-LIKE RELATIONS GETTERS
-  ////
+  //
+  // Connectivity getter methods. For each entity, you can get connected entities
+  // of any rank (i.e. node, edge, face, element, constraint).
+  // (Some of those connectivities are empty, for example an element may not
+  // have any connected edges, depending whether edges exist in the mesh or not.)
+  //
+  // For each rank of connected entities, you can get the number of connected entities,
+  // pointers to the connected entities themselves,
+  // ordinals of those connected entities,
+  // and permutations of the connected entities.
+  //
 
-  // TODO: support beyond-element rank (e.g. constaint) connectivity
+  // Nodal connectivities are usually contiguous within a bucket. For example, an element-bucket
+  // has all connected nodes for those elements allocated in contiguous memory. This should not be
+  // assumed for other kinds of connectivity.
+
+  //These connectivity getter methods are implemented by macros which are located further
+  //down in this header. (Search for BEGIN_END_PAIR.)
 
   Entity const* begin(Entity entity, EntityRank rank) const;
   Entity const* begin_nodes(Entity entity) const;
@@ -944,6 +957,17 @@ public:
   Entity const* begin_others(Entity entity) const
   { return begin(entity, stk::topology::CONSTRAINT_RANK); }
 
+  // The ordinal of a connected entity is that entity's local index on the entity it
+  // is connected to, as defined by standard exodus conventions. For example, the
+  // connected nodes of a hex-8 element will have ordinals in the range 0 .. 7.
+
+  // Connected entities are stored in order of ascending ordinal.
+  // For cases like element-node connectivity, where an element always has all of its nodes,
+  // the array of connected nodes can be indexed by ordinal.
+  // For cases like element-face connectivity, where an element may not have all faces defined,
+  // the array of connected faces can not always be indexed by ordinal even
+  // though those faces are sorted by ordinal. e.g., an element may only have faces 3 and 4.
+
   ConnectivityOrdinal const* begin_ordinals(Entity entity, EntityRank rank) const;
   ConnectivityOrdinal const* begin_node_ordinals(Entity entity) const;
   ConnectivityOrdinal const* begin_edge_ordinals(Entity entity) const;
@@ -951,6 +975,9 @@ public:
   ConnectivityOrdinal const* begin_element_ordinals(Entity entity) const;
   ConnectivityOrdinal const* begin_other_ordinals(Entity entity) const
   { return begin_ordinals(entity, stk::topology::CONSTRAINT_RANK); }
+
+  // The permutation of a connected entity is an integer type which is used
+  // to store the polarity and orientation of the entity.
 
   Permutation const* begin_permutations(Entity entity, EntityRank rank) const;
   Permutation const* begin_node_permutations(Entity entity) const;
