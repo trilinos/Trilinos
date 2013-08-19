@@ -238,6 +238,13 @@ public:
     */
   void printFieldInformation(std::ostream & os) const;
 
+  /** Turn on/off the use of a tie break object in the
+    * createOneToOne algorithm. Turning this one gives 
+    * better load balancing.
+    */
+  void enableTieBreak(bool enable)   
+  { useTieBreak_ = enable; }
+
 protected:
 
    /** Using the natural ordering associated with the std::vector
@@ -280,6 +287,8 @@ protected:
 
   bool requireOrientations_;
   std::vector<std::vector<char> > orientation_;
+
+  bool useTieBreak_;
 };
 
 }

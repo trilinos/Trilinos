@@ -73,6 +73,27 @@
 
 namespace panzer {
 
+namespace {
+template <typename LocalOrdinal,typename GlobalOrdinal>
+class HashTieBreak : public Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal> {
+  const unsigned int seed_;
+
+public:
+  HashTieBreak(const unsigned int seed = (2654435761U))
+    : seed_(seed) { }
+
+  virtual std::size_t selectedIndex(GlobalOrdinal GID,
+      const std::vector<std::pair<int,LocalOrdinal> > & pid_and_lid) const
+  {
+    // this is Epetra's hash/Tpetra's default hash: See Tpetra HashTable
+    int intkey = (int) ((GID & 0x000000007fffffffLL) +
+       ((GID & 0x7fffffff80000000LL) >> 31));
+    return std::size_t((seed_ ^ intkey) % pid_and_lid.size());
+  }
+};
+
+}
+
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::ArrayRCP;
@@ -82,12 +103,12 @@ using KokkosClassic::DefaultArithmetic;
 
 template <typename LO, typename GO>
 DOFManager<LO,GO>::DOFManager()
-  : numFields_(0),buildConnectivityRun_(false),requireOrientations_(false)
+  : numFields_(0),buildConnectivityRun_(false),requireOrientations_(false), useTieBreak_(false)
 { }
 
 template <typename LO, typename GO>
 DOFManager<LO,GO>::DOFManager(const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,MPI_Comm mpiComm)
-  : numFields_(0),buildConnectivityRun_(false),requireOrientations_(false)
+  : numFields_(0),buildConnectivityRun_(false),requireOrientations_(false), useTieBreak_(false)
 { 
   setConnManager(connMngr,mpiComm);
 }
@@ -425,7 +446,16 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
   
  /* 6.  Create a OneToOne map from the overlap map.
    */
-  RCP<const Map> non_overlap_map = Tpetra::createOneToOne<LO,GO,Node>(overlapmap);
+  
+  RCP<const Map> non_overlap_map;
+  if(!useTieBreak_) {
+    non_overlap_map = Tpetra::createOneToOne<LO,GO,Node>(overlapmap);
+  }
+  else {
+    // use a hash tie break to get better load balancing from create one to one
+    HashTieBreak<LO,GO> tie_break; 
+    non_overlap_map = Tpetra::createOneToOne<LO,GO,Node>(overlapmap,tie_break);
+  }
 
  /* 7.  Create a non-overlapped multivector from OneToOne map.
    */

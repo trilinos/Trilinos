@@ -163,6 +163,7 @@ namespace panzer_stk {
 	p.set<int>("Default Integration Order",-1);
 	p.set<std::string>("Field Order","");
 	p.set<bool>("Use DOFManager FEI",false);
+	p.set<bool>("Load Balance DOFs",false);
 	p.set<bool>("Use Tpetra",false);
 	p.set<Teuchos::RCP<const panzer::EquationSetFactory> >("Equation Set Factory", Teuchos::null);
 	p.set<Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >("Closure Model Factory", Teuchos::null);
@@ -246,6 +247,7 @@ namespace panzer_stk {
     std::string field_order  = assembly_params.get<std::string>("Field Order"); // control nodal ordering of unknown
                                                                                    // global IDs in linear system
     bool use_dofmanager_fei  = assembly_params.get<bool>("Use DOFManager FEI"); // use FEI if true, otherwise use internal dof manager
+    bool use_load_balance = assembly_params.get<bool>("Load Balance DOFs");
     bool useTpetra = assembly_params.get<bool>("Use Tpetra");
 
     // this is weird...we are accessing the solution control to determine if things are transient
@@ -451,6 +453,7 @@ namespace panzer_stk {
        TEUCHOS_ASSERT(!use_dofmanager_fei);
        panzer::DOFManagerFactory<int,panzer::Ordinal64> globalIndexerFactory;
        globalIndexerFactory.setUseDOFManagerFEI(false);
+       globalIndexerFactory.setUseTieBreak(use_load_balance);
        Teuchos::RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > dofManager
          = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager_long,field_order);
        globalIndexer = dofManager;
@@ -469,6 +472,7 @@ namespace panzer_stk {
 
        panzer::DOFManagerFactory<int,int> globalIndexerFactory;
        globalIndexerFactory.setUseDOFManagerFEI(use_dofmanager_fei);
+       globalIndexerFactory.setUseTieBreak(use_load_balance);
        Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager
          = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager_int,field_order);
        globalIndexer = dofManager;
