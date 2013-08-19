@@ -1268,23 +1268,21 @@ zero()
   return Tensor<T, N>(N, ZEROS);
 }
 
-template<typename T, Index N>
-inline
-Tensor<T, N> const
-zero(Index const dimension)
-{
-  if (N == DYNAMIC) return zero<T>(dimension);
-
-  assert(dimension == N);
-  return Tensor<T, N>(N, ZEROS);
-}
-
 template<typename T>
 inline
 Tensor<T, DYNAMIC> const
 zero(Index const dimension)
 {
   return Tensor<T, DYNAMIC>(dimension, ZEROS);
+}
+
+template<typename T, Index N>
+inline
+Tensor<T, N> const
+zero(Index const dimension)
+{
+  if (N != DYNAMIC) assert(dimension == N);
+  return Tensor<T, N>(dimension, ZEROS);
 }
 
 //
@@ -1330,11 +1328,18 @@ inline
 Tensor<T, N> const
 identity()
 {
-  Tensor<T, N>
-  A(N, ZEROS);
-
+  Tensor<T, N> A(N, ZEROS);
   ones_in_diagonal(A);
+  return A;
+}
 
+template<typename T>
+inline
+Tensor<T, DYNAMIC> const
+identity(Index const dimension)
+{
+  Tensor<T, DYNAMIC> A(dimension, ZEROS);
+  ones_in_diagonal(A);
   return A;
 }
 
@@ -1343,22 +1348,10 @@ inline
 Tensor<T, N> const
 identity(Index const dimension)
 {
-  if (N == DYNAMIC) return identity<T>(dimension);
+  if (N != DYNAMIC) assert(dimension == N);
 
-  assert(dimension == N);
-  return identity<T, N>();
-}
-
-template<typename T>
-inline
-Tensor<T, DYNAMIC> const
-identity(Index const dimension)
-{
-  Tensor<T, DYNAMIC>
-  A(dimension, ZEROS);
-
+  Tensor<T, N> A(dimension, ZEROS);
   ones_in_diagonal(A);
-
   return A;
 }
 
@@ -1373,20 +1366,20 @@ eye()
   return identity<T, N>();
 }
 
-template<typename T, Index N>
-inline
-Tensor<T, N> const
-eye(Index const dimension)
-{
-  return identity<T, N>(dimension);
-}
-
 template<typename T>
 inline
 Tensor<T, DYNAMIC> const
 eye(Index const dimension)
 {
   return identity<T>(dimension);
+}
+
+template<typename T, Index N>
+inline
+Tensor<T, N> const
+eye(Index const dimension)
+{
+  return identity<T, N>(dimension);
 }
 
 //

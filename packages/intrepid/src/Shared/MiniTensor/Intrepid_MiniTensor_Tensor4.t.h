@@ -125,11 +125,17 @@ template<typename T, Index N>
 const Tensor4<T, N>
 identity_1()
 {
-  Tensor4<T, N>
-  I(N, ZEROS);
-
+  Tensor4<T, N> I(N, ZEROS);
   ones_in_ikjl(I);
+  return I;
+}
 
+template<typename T>
+const Tensor4<T, DYNAMIC>
+identity_1(Index const dimension)
+{
+  Tensor4<T, DYNAMIC> I(dimension, ZEROS);
+  ones_in_ikjl(I);
   return I;
 }
 
@@ -137,21 +143,10 @@ template<typename T, Index N>
 const Tensor4<T, N>
 identity_1(Index const dimension)
 {
-  if (N == DYNAMIC) return identity_1<T>(dimension);
+  if (N != DYNAMIC) assert(dimension == N);
 
-  assert(dimension == N);
-  return identity_1<T, N>();
-}
-
-template<typename T>
-const Tensor4<T, DYNAMIC>
-identity_1(Index const dimension)
-{
-  Tensor4<T, DYNAMIC>
-  I(dimension, ZEROS);
-
+  Tensor4<T, N> I(dimension, ZEROS);
   ones_in_ikjl(I);
-
   return I;
 }
 
@@ -163,11 +158,17 @@ template<typename T, Index N>
 const Tensor4<T, N>
 identity_2()
 {
-  Tensor4<T, N>
-  I(N, ZEROS);
-
+  Tensor4<T, N> I(N, ZEROS);
   ones_in_iljk(I);
+  return I;
+}
 
+template<typename T>
+const Tensor4<T, DYNAMIC>
+identity_2(Index const dimension)
+{
+  Tensor4<T, DYNAMIC> I(dimension, ZEROS);
+  ones_in_iljk(I);
   return I;
 }
 
@@ -175,21 +176,10 @@ template<typename T, Index N>
 const Tensor4<T, N>
 identity_2(Index const dimension)
 {
-  if (N == DYNAMIC) return identity_2<T>(dimension);
+  if (N != DYNAMIC) assert(dimension == N);
 
-  assert(dimension == N);
-  return identity_2<T, N>();
-}
-
-template<typename T>
-const Tensor4<T, DYNAMIC>
-identity_2(Index const dimension)
-{
-  Tensor4<T, DYNAMIC>
-  I(dimension, ZEROS);
-
+  Tensor4<T, N> I(dimension, ZEROS);
   ones_in_iljk(I);
-
   return I;
 }
 
@@ -201,11 +191,17 @@ template<typename T, Index N>
 const Tensor4<T, N>
 identity_3()
 {
-  Tensor4<T, N>
-  I(N, ZEROS);
-
+  Tensor4<T, N> I(N, ZEROS);
   ones_in_ijkl(I);
+  return I;
+}
 
+template<typename T>
+const Tensor4<T, DYNAMIC>
+identity_3(Index const dimension)
+{
+  Tensor4<T, DYNAMIC> I(dimension, ZEROS);
+  ones_in_ijkl(I);
   return I;
 }
 
@@ -213,21 +209,10 @@ template<typename T, Index N>
 const Tensor4<T, N>
 identity_3(Index const dimension)
 {
-  if (N == DYNAMIC) return identity_3<T>(dimension);
+  if (N != DYNAMIC) assert(dimension == N);
 
-  assert(dimension == N);
-  return identity_3<T, N>();
-}
-
-template<typename T>
-const Tensor4<T, DYNAMIC>
-identity_3(Index const dimension)
-{
-  Tensor4<T, DYNAMIC>
-  I(dimension, ZEROS);
-
+  Tensor4<T, N> I(dimension, ZEROS);
   ones_in_ijkl(I);
-
   return I;
 }
 

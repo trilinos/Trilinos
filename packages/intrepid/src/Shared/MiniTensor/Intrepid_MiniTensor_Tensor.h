@@ -492,12 +492,12 @@ template<typename T, Index N>
 const Tensor<T, N>
 zero();
 
-template<typename T, Index N>
-const Tensor<T, N>
-zero(Index const dimension);
-
 template<typename T>
 const Tensor<T, DYNAMIC>
+zero(Index const dimension);
+
+template<typename T, Index N>
+const Tensor<T, N>
 zero(Index const dimension);
 
 ///
@@ -507,12 +507,12 @@ template<typename T, Index N>
 const Tensor<T, N>
 identity();
 
-template<typename T, Index N>
-const Tensor<T, N>
-identity(Index const dimension);
-
 template<typename T>
 const Tensor<T, DYNAMIC>
+identity(Index const dimension);
+
+template<typename T, Index N>
+const Tensor<T, N>
 identity(Index const dimension);
 
 ///
@@ -522,12 +522,12 @@ template<typename T, Index N>
 const Tensor<T, N>
 eye();
 
-template<typename T, Index N>
-const Tensor<T, N>
-eye(Index const dimension);
-
 template<typename T>
 const Tensor<T, DYNAMIC>
+eye(Index const dimension);
+
+template<typename T, Index N>
+const Tensor<T, N>
 eye(Index const dimension);
 
 ///

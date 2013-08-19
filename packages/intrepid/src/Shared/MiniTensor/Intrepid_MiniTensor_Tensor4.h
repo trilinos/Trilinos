@@ -255,12 +255,12 @@ template<typename T, Index N>
 const Tensor4<T, N>
 identity_1();
 
-template<typename T, Index N>
-const Tensor4<T, N>
-identity_1(Index const dimension);
-
 template<typename T>
 const Tensor4<T, DYNAMIC>
+identity_1(Index const dimension);
+
+template<typename T, Index N>
+const Tensor4<T, N>
 identity_1(Index const dimension);
 
 ///
@@ -271,12 +271,12 @@ template<typename T, Index N>
 const Tensor4<T, N>
 identity_2();
 
-template<typename T, Index N>
-const Tensor4<T, N>
-identity_2(Index const dimension);
-
 template<typename T>
 const Tensor4<T, DYNAMIC>
+identity_2(Index const dimension);
+
+template<typename T, Index N>
+const Tensor4<T, N>
 identity_2(Index const dimension);
 
 ///
@@ -287,12 +287,12 @@ template<typename T, Index N>
 const Tensor4<T, N>
 identity_3();
 
-template<typename T, Index N>
-const Tensor4<T, N>
-identity_3(Index const dimension);
-
 template<typename T>
 const Tensor4<T, DYNAMIC>
+identity_3(Index const dimension);
+
+template<typename T, Index N>
+const Tensor4<T, N>
 identity_3(Index const dimension);
 
 ///
