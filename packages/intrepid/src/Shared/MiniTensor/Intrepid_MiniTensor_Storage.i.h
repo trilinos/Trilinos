@@ -59,7 +59,7 @@ Storage<T, DYNAMIC>::Storage() :
 template<typename T>
 inline
 Storage<T, DYNAMIC>::Storage(Index const number_entries) :
-  size_(number_entries),
+  size_(0),
   storage_(NULL)
 {
   resize(number_entries);
@@ -105,14 +105,10 @@ inline
 void
 Storage<T, DYNAMIC>::resize(Index const number_entries)
 {
-  if (number_entries == size()) {
-    return;
-  }
+  if (number_entries == size()) return;
 
   clear();
-
   storage_ = new T[number_entries];
-
   size_ = number_entries;
 
   return;
@@ -123,11 +119,12 @@ inline
 void
 Storage<T, DYNAMIC>::clear()
 {
-  if (storage_ != NULL) {
-    delete [] storage_;
-    storage_ = NULL;
-    size_ = 0;
-  }
+  if (storage_ == NULL) return;
+
+  delete [] storage_;
+  storage_ = NULL;
+  size_ = 0;
+
   return;
 }
 
