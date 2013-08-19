@@ -2556,20 +2556,26 @@ namespace stk {
         // a part to hold active elements (i.e. leaf elements), and parent (non-active) elements
         if (1)
           {
-            stk::mesh::Part* active_elements_part = eMesh.get_non_const_part("refine_active_elements_part");
-            if (!active_elements_part)
-              {
-                stk::mesh::Part& part = eMesh.get_fem_meta_data()->declare_part("refine_active_elements_part", stk::mesh::MetaData::ELEMENT_RANK);
-                mesh::MetaData & meta = mesh::MetaData::get(part);
-                meta.declare_attribute_no_delete(part, &stk_adapt_auto_part);
-              }
-            stk::mesh::Part* inactive_elements_part = eMesh.get_non_const_part("refine_inactive_elements_part");
-            if (!inactive_elements_part)
-              {
-                stk::mesh::Part& part = eMesh.get_fem_meta_data()->declare_part("refine_inactive_elements_part", stk::mesh::MetaData::ELEMENT_RANK);
-                mesh::MetaData & meta = mesh::MetaData::get(part);
-                meta.declare_attribute_no_delete(part, &stk_adapt_auto_part);
-              }
+            stk::mesh::EntityRank part_ranks[] = {eMesh.element_rank(), eMesh.side_rank()};
+            for (unsigned irank=0; irank < 2; irank++)
+            {
+              std::string active_part_name = "refine_active_elements_part_"+toString(part_ranks[irank]);
+              std::string inactive_part_name = "refine_inactive_elements_part_"+toString(part_ranks[irank]);
+              stk::mesh::Part* active_elements_part = eMesh.get_non_const_part(active_part_name);
+              if (!active_elements_part)
+                {
+                  stk::mesh::Part& part = eMesh.get_fem_meta_data()->declare_part(active_part_name, part_ranks[irank]);
+                  mesh::MetaData & meta = mesh::MetaData::get(part);
+                  meta.declare_attribute_no_delete(part, &stk_adapt_auto_part);
+                }
+              stk::mesh::Part* inactive_elements_part = eMesh.get_non_const_part(inactive_part_name);
+              if (!inactive_elements_part)
+                {
+                  stk::mesh::Part& part = eMesh.get_fem_meta_data()->declare_part(inactive_part_name, part_ranks[irank]);
+                  mesh::MetaData & meta = mesh::MetaData::get(part);
+                  meta.declare_attribute_no_delete(part, &stk_adapt_auto_part);
+                }
+            }
           }
 
         if (block_names_ranks.size() == 0)

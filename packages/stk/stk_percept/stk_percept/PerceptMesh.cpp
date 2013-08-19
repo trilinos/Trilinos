@@ -2480,22 +2480,35 @@ namespace stk {
         {
           if (Teuchos::is_null(mesh_data.selector()))
             {
-              Teuchos::RCP<stk::mesh::Selector> io_mesh_selector = Teuchos::rcp(new stk::mesh::Selector(get_fem_meta_data()->universal_part()));
+              Teuchos::RCP<stk::mesh::Selector> io_mesh_selector =
+                Teuchos::rcp(new stk::mesh::Selector(get_fem_meta_data()->universal_part()));
               mesh_data.set_selector(io_mesh_selector);
             }
           stk::mesh::Selector & io_mesh_selector = *(mesh_data.selector());
 
-          stk::mesh::Part* active_child_elements_part = get_part("refine_active_elements_part");
-          stk::mesh::Part* inactive_parent_elements_part = get_part("refine_inactive_elements_part");
+          stk::mesh::Selector new_selector;
+          unsigned num_inactive = 0;
+          stk::mesh::EntityRank part_ranks[] = {element_rank(), side_rank()};
+          unsigned num_part_ranks = 1; // set to 2 to induce IossBridge error
+          for (unsigned irank=0; irank < num_part_ranks; irank++)
+            {
+              std::string active_part_name = "refine_active_elements_part_"+toString(part_ranks[irank]);
+              std::string inactive_part_name = "refine_inactive_elements_part_"+toString(part_ranks[irank]);
 
-          unsigned num_inactive = stk::mesh::count_selected_entities(stk::mesh::Selector(*inactive_parent_elements_part), bulk_data.buckets(stk::mesh::MetaData::ELEMENT_RANK));
+              stk::mesh::Part* active_child_elements_part = get_part(active_part_name);
+              stk::mesh::Part* inactive_parent_elements_part = get_part(inactive_part_name);
+
+              num_inactive += stk::mesh::count_selected_entities(stk::mesh::Selector(*inactive_parent_elements_part),
+                                                                 bulk_data.buckets(part_ranks[irank]));
+              new_selector |= stk::mesh::Selector(*active_child_elements_part);
+            }
           if (0 == num_inactive)
             {
               io_mesh_selector = stk::mesh::Selector(get_fem_meta_data()->universal_part());
             }
           else
             {
-              io_mesh_selector = stk::mesh::Selector(*active_child_elements_part);
+              io_mesh_selector = new_selector;
             }
         }
 

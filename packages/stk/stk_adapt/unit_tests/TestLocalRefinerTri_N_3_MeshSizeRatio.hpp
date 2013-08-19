@@ -17,9 +17,9 @@ namespace stk {
       const double twopi = 8.0*atan(1.0);
 
       if (xdiff > 0.0 && xdiff < 0.5)
-	field[0] = 1.0 + amp*(1.0-cos(twopi*xdiff/lambda));
+        field[0] = 1.0 + amp*(1.0-cos(twopi*xdiff/lambda));
       else
-	field[0] = 0.0;
+        field[0] = 0.0;
     }
 
     double triangle_area(const std::vector<double> & nodal_coords)
@@ -31,20 +31,20 @@ namespace stk {
     }
 
     void compute_elem_mesh_size_ratio(
-      PerceptMesh& eMesh,
-      ScalarFieldType* elem_ratio_field,
-      const double &global_error_tol)
+                                      PerceptMesh& eMesh,
+                                      ScalarFieldType* elem_ratio_field,
+                                      const double &global_error_tol)
     {
       const int spatial_dim = eMesh.get_spatial_dim();
       double local_error_tol = global_error_tol;
 
       static bool first_run = true;
 
-      stk::mesh::Part * activeElementsPart = eMesh.get_non_const_part("refine_active_elements_part");
+      stk::mesh::Part * activeElementsPart = eMesh.get_non_const_part("refine_active_elements_part_"+toString(stk::mesh::MetaData::ELEMENT_RANK));
 
       stk::mesh::Selector selector = first_run  ?
-	eMesh.get_fem_meta_data()->locally_owned_part() :
-	( eMesh.get_fem_meta_data()->locally_owned_part() & (*activeElementsPart) );
+        eMesh.get_fem_meta_data()->locally_owned_part() :
+        ( eMesh.get_fem_meta_data()->locally_owned_part() & (*activeElementsPart) );
 
       first_run = false;
 
@@ -59,60 +59,60 @@ namespace stk {
 
       for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) {
 
-	stk::mesh::Bucket & bucket = **k ;
+        stk::mesh::Bucket & bucket = **k ;
 
-	shards::CellTopology ct = stk::mesh::get_cell_topology(bucket);
-	const int Nnpe = ct.getNodeCount();
+        shards::CellTopology ct = stk::mesh::get_cell_topology(bucket);
+        const int Nnpe = ct.getNodeCount();
 
-	std::vector<double> nodal_interp(Nnpe);
-	std::vector<double> nodal_coords(Nnpe*spatial_dim);
+        std::vector<double> nodal_interp(Nnpe);
+        std::vector<double> nodal_coords(Nnpe*spatial_dim);
 
-	const unsigned num_elems_in_bucket = bucket.size();
-	for (unsigned i = 0; i < num_elems_in_bucket; i++) {
+        const unsigned num_elems_in_bucket = bucket.size();
+        for (unsigned i = 0; i < num_elems_in_bucket; i++) {
 
-	  stk::mesh::Entity element = bucket[i];
+          stk::mesh::Entity element = bucket[i];
 
-	  // gather nodal coords and compute centroid
-	  std::vector<double> centroid(spatial_dim, 0.0);
-	  percept::MyPairIterRelation elem_nodes (eMesh, element, stk::mesh::MetaData::NODE_RANK);
-	  for (unsigned inode=0; inode < elem_nodes.size(); inode++) {
-	    stk::mesh::Entity node = elem_nodes[inode].entity();
-	    double *coords = eMesh.field_data( *eMesh.get_coordinates_field() , node);
+          // gather nodal coords and compute centroid
+          std::vector<double> centroid(spatial_dim, 0.0);
+          percept::MyPairIterRelation elem_nodes (eMesh, element, stk::mesh::MetaData::NODE_RANK);
+          for (unsigned inode=0; inode < elem_nodes.size(); inode++) {
+            stk::mesh::Entity node = elem_nodes[inode].entity();
+            double *coords = eMesh.field_data( *eMesh.get_coordinates_field() , node);
 
-	    for (int d=0; d<spatial_dim; d++) {
-	      centroid[d] += coords[d];
-	      nodal_coords[inode*spatial_dim+d] = coords[d];
-	    }
+            for (int d=0; d<spatial_dim; d++) {
+              centroid[d] += coords[d];
+              nodal_coords[inode*spatial_dim+d] = coords[d];
+            }
 
-	    exact_nodal_solution(coords, &nodal_interp[inode], spatial_dim);
-	  }
+            exact_nodal_solution(coords, &nodal_interp[inode], spatial_dim);
+          }
 
-	  for (int d=0; d<spatial_dim; d++) {
-	    centroid[d] /= (double) Nnpe;
-	  }
+          for (int d=0; d<spatial_dim; d++) {
+            centroid[d] /= (double) Nnpe;
+          }
 
-	  // calc interpolation error at midpoint
-	  double eval_centroid;
-	  exact_nodal_solution(&centroid[0], &eval_centroid, spatial_dim);
+          // calc interpolation error at midpoint
+          double eval_centroid;
+          exact_nodal_solution(&centroid[0], &eval_centroid, spatial_dim);
 
-	  double interp_centroid = 0.0;
-	  for (unsigned inode=0; inode < elem_nodes.size(); inode++) {
-	    interp_centroid += nodal_interp[inode];
-	  }
-	  interp_centroid /= (double) Nnpe;
+          double interp_centroid = 0.0;
+          for (unsigned inode=0; inode < elem_nodes.size(); inode++) {
+            interp_centroid += nodal_interp[inode];
+          }
+          interp_centroid /= (double) Nnpe;
 
-	  const double err_centroid = eval_centroid - interp_centroid;
+          const double err_centroid = eval_centroid - interp_centroid;
 
-	  // HACK triangles for now
-	  const double area = triangle_area(nodal_coords);
+          // HACK triangles for now
+          const double area = triangle_area(nodal_coords);
 
-	  const double local_error = fabs(err_centroid) * area;
+          const double local_error = fabs(err_centroid) * area;
 
-	  double *ratio = eMesh.field_data( *elem_ratio_field , element);
+          double *ratio = eMesh.field_data( *elem_ratio_field , element);
 
-	  // calc elem ratio
-	  *ratio = sqrt(local_error / local_error_tol);
-	}
+          // calc elem ratio
+          *ratio = sqrt(local_error / local_error_tol);
+        }
       }
     }
 
@@ -125,11 +125,11 @@ namespace stk {
     class TestLocalRefinerTri_N_3_MeshSizeRatio : public IElementAdapter
     {
     public:
-      TestLocalRefinerTri_N_3_MeshSizeRatio(
-        percept::PerceptMesh& eMesh,
-	UniformRefinerPatternBase & bp,
-	ScalarFieldType * elem_ratio_field,
-	stk::mesh::FieldBase *proc_rank_field=0);
+      TestLocalRefinerTri_N_3_MeshSizeRatio
+      (percept::PerceptMesh& eMesh,
+       UniformRefinerPatternBase & bp,
+       ScalarFieldType * elem_ratio_field,
+       stk::mesh::FieldBase *proc_rank_field=0);
 
     protected:
 
@@ -144,11 +144,11 @@ namespace stk {
 
     // This is a very specialized test that is used in unit testing only
 
-    TestLocalRefinerTri_N_3_MeshSizeRatio::TestLocalRefinerTri_N_3_MeshSizeRatio(
-      percept::PerceptMesh& eMesh,
-      UniformRefinerPatternBase &  bp,
-      ScalarFieldType * elem_ratio_field,
-      stk::mesh::FieldBase *proc_rank_field)
+    TestLocalRefinerTri_N_3_MeshSizeRatio::TestLocalRefinerTri_N_3_MeshSizeRatio
+    (percept::PerceptMesh& eMesh,
+     UniformRefinerPatternBase &  bp,
+     ScalarFieldType * elem_ratio_field,
+     stk::mesh::FieldBase *proc_rank_field)
       :
       IElementAdapter(eMesh, bp, proc_rank_field),
       m_elem_ratio_field(elem_ratio_field),
@@ -164,7 +164,7 @@ namespace stk {
       const double & ratio = *( m_eMesh.field_data( *m_elem_ratio_field , element) );
 
       if (ratio > m_Rup)
-	mark |= DO_REFINE;
+        mark |= DO_REFINE;
 
       return mark;
     }

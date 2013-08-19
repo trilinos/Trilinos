@@ -2670,9 +2670,11 @@ namespace stk {
                 {
                   if ( stk::mesh::is_auto_declared_part(*side_parts[isp]) )
                     continue;
-                  //const CellTopologyData *const topology = m_eMesh.get_cell_topology(*side_parts[isp]);
-                  //if (!topology)
-                  //  continue;
+
+                  const STK_Adapt_Auto_Part *side_auto_part = side_parts[isp]->attribute<STK_Adapt_Auto_Part>();
+                  if (side_auto_part)
+                    continue;
+
                   unsigned per = side_parts[isp]->primary_entity_rank();
                   if (per != side_rank_iter)
                     continue;
@@ -3126,6 +3128,10 @@ namespace stk {
           for (unsigned isp = 0; isp < side_parts.size(); isp++)
             {
               if ( stk::mesh::is_auto_declared_part(*side_parts[isp]) )
+                continue;
+
+              const STK_Adapt_Auto_Part *side_auto_part = side_parts[isp]->attribute<STK_Adapt_Auto_Part>();
+              if (side_auto_part)
                 continue;
 
               SidePartMap::iterator found = m_side_part_map.find(side_parts[isp]);
@@ -3886,68 +3892,62 @@ namespace stk {
     void Refiner::set_active_part()
     {
       // deal with parts
-      stk::mesh::Part* child_elements_part = m_eMesh.get_non_const_part("refine_active_elements_part");
-      stk::mesh::Part* parent_elements_part = m_eMesh.get_non_const_part("refine_inactive_elements_part");
-      if (child_elements_part && parent_elements_part)
+      stk::mesh::EntityRank part_ranks[] = {m_eMesh.element_rank(), m_eMesh.side_rank()};
+      for (unsigned irank=0; irank < 2; irank++)
         {
-          //m_eMesh.get_bulk_data()->modification_begin();
-          std::vector<stk::mesh::Part*> child_parts(1, child_elements_part);
-          std::vector<stk::mesh::Part*> parent_parts(1, parent_elements_part);
-          //mesh::Selector in_child_part(*child_elements_part);
-          mesh::Selector on_locally_owned_part =  ( m_eMesh.get_fem_meta_data()->locally_owned_part() );
-
-          std::vector<stk::mesh::Entity> child_entities;
-          std::vector<stk::mesh::Entity> parent_entities;
-
-          const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::ELEMENT_RANK );
-
-          for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+          std::string active_part_name = "refine_active_elements_part_"+toString(part_ranks[irank]);
+          std::string inactive_part_name = "refine_inactive_elements_part_"+toString(part_ranks[irank]);
+          stk::mesh::Part* child_elements_part = m_eMesh.get_non_const_part(active_part_name);
+          stk::mesh::Part* parent_elements_part = m_eMesh.get_non_const_part(inactive_part_name);
+          if (child_elements_part && parent_elements_part)
             {
-              stk::mesh::Bucket & bucket = **k ;
+              std::vector<stk::mesh::Part*> child_parts(1, child_elements_part);
+              std::vector<stk::mesh::Part*> parent_parts(1, parent_elements_part);
+              mesh::Selector on_locally_owned_part =  ( m_eMesh.get_fem_meta_data()->locally_owned_part() );
 
-              if (on_locally_owned_part(bucket))
+              std::vector<stk::mesh::Entity> child_entities;
+              std::vector<stk::mesh::Entity> parent_entities;
+
+              const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( part_ranks[irank] );
+
+              for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
                 {
+                  stk::mesh::Bucket & bucket = **k ;
 
-                  const unsigned num_entity_in_bucket = bucket.size();
-                  for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
+                  if (on_locally_owned_part(bucket))
                     {
-                      stk::mesh::Entity element = bucket[ientity];
-                      if (m_eMesh.hasFamilyTree(element) && m_eMesh.isParentElement(element, true))
+                      const unsigned num_entity_in_bucket = bucket.size();
+                      for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
                         {
-                          //if (in_child_part(element))
+                          stk::mesh::Entity element = bucket[ientity];
+                          if (m_eMesh.hasFamilyTree(element) && m_eMesh.isParentElement(element, true))
                             {
-                              parent_entities.push_back(element);
+                              //if (in_child_part(element))
+                              {
+                                parent_entities.push_back(element);
+                              }
                             }
-                        }
-                      else
-                        {
-                          //if (!in_child_part(element))
+                          else
                             {
-                              child_entities.push_back(element);
+                              //if (!in_child_part(element))
+                              {
+                                child_entities.push_back(element);
+                              }
                             }
                         }
                     }
+                }
 
+              //std::cout << "tmp Refiner::set_active_part: child_entities= " << child_entities.size() << " parent_entities= " << parent_entities.size() << std::endl;
+              for (unsigned iv=0; iv < child_entities.size(); iv++)
+                {
+                  m_eMesh.get_bulk_data()->change_entity_parts( child_entities[iv],   child_parts, parent_parts );
+                }
+              for (unsigned iv=0; iv < parent_entities.size(); iv++)
+                {
+                  m_eMesh.get_bulk_data()->change_entity_parts( parent_entities[iv],  parent_parts, child_parts );
                 }
             }
-
-          //std::cout << "tmp Refiner::set_active_part: child_entities= " << child_entities.size() << " parent_entities= " << parent_entities.size() << std::endl;
-          for (unsigned iv=0; iv < child_entities.size(); iv++)
-            {
-              m_eMesh.get_bulk_data()->change_entity_parts( child_entities[iv],   child_parts, parent_parts );
-            }
-          for (unsigned iv=0; iv < parent_entities.size(); iv++)
-            {
-              m_eMesh.get_bulk_data()->change_entity_parts( parent_entities[iv],  parent_parts, child_parts );
-            }
-
-          /* for future
-          if (!m_doIOSaveInactiveElements)
-            {
-              m_eMesh.set_io_omitted_parts(parent_parts);
-            }
-          */
-          //m_eMesh.get_bulk_data()->modification_end();
         }
 
     }
