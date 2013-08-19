@@ -954,7 +954,7 @@ public:
   Entity const* begin_edges(Entity entity) const;
   Entity const* begin_faces(Entity entity) const;
   Entity const* begin_elements(Entity entity) const;
-  Entity const* begin_others(Entity entity) const
+  Entity const* begin_constraints(Entity entity) const
   { return begin(entity, stk::topology::CONSTRAINT_RANK); }
 
   // The ordinal of a connected entity is that entity's local index on the entity it
@@ -973,7 +973,7 @@ public:
   ConnectivityOrdinal const* begin_edge_ordinals(Entity entity) const;
   ConnectivityOrdinal const* begin_face_ordinals(Entity entity) const;
   ConnectivityOrdinal const* begin_element_ordinals(Entity entity) const;
-  ConnectivityOrdinal const* begin_other_ordinals(Entity entity) const
+  ConnectivityOrdinal const* begin_constraint_ordinals(Entity entity) const
   { return begin_ordinals(entity, stk::topology::CONSTRAINT_RANK); }
 
   // The permutation of a connected entity is an integer type which is used
@@ -984,7 +984,7 @@ public:
   Permutation const* begin_edge_permutations(Entity entity) const;
   Permutation const* begin_face_permutations(Entity entity) const;
   Permutation const* begin_element_permutations(Entity entity) const;
-  Permutation const* begin_other_permutations(Entity entity) const
+  Permutation const* begin_constraint_permutations(Entity entity) const
   { return begin_permutations(entity, stk::topology::CONSTRAINT_RANK); }
 
   unsigned num_connectivity(Entity entity, EntityRank rank) const;
@@ -992,8 +992,8 @@ public:
   unsigned num_edges(Entity entity) const;
   unsigned num_faces(Entity entity) const;
   unsigned num_elements(Entity entity) const;
-  unsigned num_other(Entity entity) const
-  { return end_others(entity) - begin_others(entity); }
+  unsigned num_constraints(Entity entity) const
+  { return end_constraints(entity) - begin_constraints(entity); }
 
   unsigned count_valid_connectivity(Entity entity, EntityRank rank) const;
   unsigned count_valid_connectivity(Entity entity) const;
@@ -1003,7 +1003,7 @@ public:
   Entity const* end_edges(Entity entity) const;
   Entity const* end_faces(Entity entity) const;
   Entity const* end_elements(Entity entity) const;
-  Entity const* end_others(Entity entity) const
+  Entity const* end_constraints(Entity entity) const
   { return end(entity, stk::topology::CONSTRAINT_RANK); }
 
   ConnectivityOrdinal const* end_ordinals(Entity entity, EntityRank rank) const;

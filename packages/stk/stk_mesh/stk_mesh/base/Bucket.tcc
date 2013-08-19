@@ -246,15 +246,12 @@ public:
   void check_size_invariant() const;
 
   // Samba-like interface...
-  // TODO: support beyond-element rank (e.g. constaint) connectivity generally
 
   Entity const* begin(size_type bucket_ordinal, EntityRank rank) const;
   Entity const* begin_nodes(size_type bucket_ordinal) const;
   Entity const* begin_edges(size_type bucket_ordinal) const;
   Entity const* begin_faces(size_type bucket_ordinal) const;
   Entity const* begin_elements(size_type bucket_ordinal) const;
-  Entity const* begin_others(size_type bucket_ordinal) const
-  { return m_dynamic_other_connectivity.begin(bucket_ordinal); }
 
   bool other_entities_have_single_rank(size_type bucket_ordinal, EntityRank rank) const;
 
@@ -263,48 +260,36 @@ public:
   ConnectivityOrdinal const* begin_edge_ordinals(size_type bucket_ordinal) const;
   ConnectivityOrdinal const* begin_face_ordinals(size_type bucket_ordinal) const;
   ConnectivityOrdinal const* begin_element_ordinals(size_type bucket_ordinal) const;
-  ConnectivityOrdinal const* begin_other_ordinals(size_type bucket_ordinal) const
-  { return m_dynamic_other_connectivity.begin_ordinals(bucket_ordinal); }
 
   Permutation const* begin_permutations(size_type bucket_ordinal, EntityRank rank) const;
   Permutation const* begin_node_permutations(size_type bucket_ordinal) const;
   Permutation const* begin_edge_permutations(size_type bucket_ordinal) const;
   Permutation const* begin_face_permutations(size_type bucket_ordinal) const;
   Permutation const* begin_element_permutations(size_type bucket_ordinal) const;
-  Permutation const* begin_other_permutations(size_type bucket_ordinal) const
-  { return m_dynamic_other_connectivity.begin_permutations(bucket_ordinal); }
 
   unsigned num_connectivity(size_type bucket_ordinal, EntityRank rank) const;
   unsigned num_nodes(size_type bucket_ordinal) const;
   unsigned num_edges(size_type bucket_ordinal) const;
   unsigned num_faces(size_type bucket_ordinal) const;
   unsigned num_elements(size_type bucket_ordinal) const;
-  unsigned num_other(size_type bucket_ordinal) const
-  { return m_dynamic_other_connectivity.num_connectivity(bucket_ordinal); }
 
   Entity const* end(size_type bucket_ordinal, EntityRank rank) const;
   Entity const* end_nodes(size_type bucket_ordinal) const;
   Entity const* end_edges(size_type bucket_ordinal) const;
   Entity const* end_faces(size_type bucket_ordinal) const;
   Entity const* end_elements(size_type bucket_ordinal) const;
-  Entity const* end_others(size_type bucket_ordinal) const
-  { return m_dynamic_other_connectivity.end(bucket_ordinal); }
 
   ConnectivityOrdinal const* end_ordinals(size_type bucket_ordinal, EntityRank rank) const;
   ConnectivityOrdinal const* end_node_ordinals(size_type bucket_ordinal) const;
   ConnectivityOrdinal const* end_edge_ordinals(size_type bucket_ordinal) const;
   ConnectivityOrdinal const* end_face_ordinals(size_type bucket_ordinal) const;
   ConnectivityOrdinal const* end_element_ordinals(size_type bucket_ordinal) const;
-  ConnectivityOrdinal const* end_other_ordinals(size_type bucket_ordinal) const
-  { return m_dynamic_other_connectivity.end_ordinals(bucket_ordinal); }
 
   Permutation const* end_permutations(size_type bucket_ordinal, EntityRank rank) const;
   Permutation const* end_node_permutations(size_type bucket_ordinal) const;
   Permutation const* end_edge_permutations(size_type bucket_ordinal) const;
   Permutation const* end_face_permutations(size_type bucket_ordinal) const;
   Permutation const* end_element_permutations(size_type bucket_ordinal) const;
-  Permutation const* end_other_permutations(size_type bucket_ordinal) const
-  { return m_dynamic_other_connectivity.end_permutations(bucket_ordinal); }
 
   bool has_permutation(EntityRank rank) const;
 
@@ -315,6 +300,33 @@ public:
   void debug_dump(std::ostream& out, unsigned ordinal = -1u) const;
 
 private:
+  
+  // The following *_other* functions should not be made available externally, in 
+  // order to avoid external confusion with "constraint" and "other" connectivities.
+  // They are currently used within this class to provide connectivities 
+  // externally through another interface.
+  Entity const* begin_others(size_type bucket_ordinal) const { 
+    return m_dynamic_other_connectivity.begin(bucket_ordinal); 
+  }
+  ConnectivityOrdinal const* begin_other_ordinals(size_type bucket_ordinal) const { 
+    return m_dynamic_other_connectivity.begin_ordinals(bucket_ordinal); 
+  }
+  Permutation const* begin_other_permutations(size_type bucket_ordinal) const { 
+    return m_dynamic_other_connectivity.begin_permutations(bucket_ordinal); 
+  }
+  unsigned num_other(size_type bucket_ordinal) const { 
+    return m_dynamic_other_connectivity.num_connectivity(bucket_ordinal); 
+  }
+  Entity const* end_others(size_type bucket_ordinal) const { 
+    return m_dynamic_other_connectivity.end(bucket_ordinal); 
+  }
+  ConnectivityOrdinal const* end_other_ordinals(size_type bucket_ordinal) const { 
+    return m_dynamic_other_connectivity.end_ordinals(bucket_ordinal); 
+  }
+  Permutation const* end_other_permutations(size_type bucket_ordinal) const { 
+    return m_dynamic_other_connectivity.end_permutations(bucket_ordinal); 
+  }
+
   /** \brief  The \ref stk::mesh::BulkData "bulk data manager"
    *          that owns this bucket.
    */

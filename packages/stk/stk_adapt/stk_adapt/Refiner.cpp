@@ -1294,19 +1294,6 @@ namespace stk {
                 {
                   node_list.insert(node);
                 }
-#if 0
-              else if (1 == num_rels && 1 == bucket.num_other(iElement))
-              {
-                stk::mesh::Entity const * const up_rels = bucket.begin_other_entities(iElement);
-                if (mesh.entity_rank(up_rels[0]) == stk::mesh::MetaData::ELEMENT_RANK + PSEUDO_ELEMENT_RANK_SHIFT)
-                {
-                  //pseudos.insert( node.relations()[0].entity() );
-                  MyPairIterRelation node_elems(m_eMesh, node, m_eMesh.element_rank());
-                  pseudos.insert( node_elems[0].entity() );
-                  node_list.insert(node);
-                }
-              }
-#endif
             }
         }
 
