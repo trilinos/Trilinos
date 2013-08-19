@@ -205,16 +205,14 @@ inline
 void
 TensorBase<T, Store>::set_dimension(Index const dimension, Index const order)
 {
-  if (Store::IS_DYNAMIC == true) {
+  if (Store::IS_STATIC == true) return;
 
-    dimension_ = dimension;
+  dimension_ = dimension;
 
-    Index const
-    number_components = integer_power(dimension, order);
+  Index const
+  number_components = integer_power(dimension, order);
 
-    set_number_components(number_components);
-
-  }
+  set_number_components(number_components);
 
   return;
 }

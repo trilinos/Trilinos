@@ -108,8 +108,8 @@ test_fundamentals(Index const dimension)
   error = norm_f(C);
 
   bool const
-  copy_assignment_passed = error <= machine_epsilon<Scalar>();
-  passed = passed && copy_assignment_passed;
+  copy_assigned = error <= machine_epsilon<Scalar>();
+  passed = passed && copy_assigned;
 
   // Test fill with pointer
   B.fill(&X[0]);
@@ -119,8 +119,8 @@ test_fundamentals(Index const dimension)
   error = norm_f(C);
 
   bool const
-  fill_pointer_passed = error <= machine_epsilon<Scalar>();
-  passed = passed && fill_pointer_passed;
+  filled_pointer = error <= machine_epsilon<Scalar>();
+  passed = passed && filled_pointer;
 
   std::vector<Scalar> const
   Y = generate_sequence<Scalar>(number_components, -1.0, -1.0);
@@ -133,8 +133,8 @@ test_fundamentals(Index const dimension)
   error = norm_f(C);
 
   bool const
-  increment_passed = error <= machine_epsilon<Scalar>();
-  passed = passed && increment_passed;
+  incremented = error <= machine_epsilon<Scalar>();
+  passed = passed && incremented;
 
   C.fill(&X[0]);
 
@@ -144,9 +144,145 @@ test_fundamentals(Index const dimension)
   error = norm_f(C);
 
   bool const
-  decrement_passed = error <= machine_epsilon<Scalar>();
-  passed = passed && decrement_passed;
+  decremented = error <= machine_epsilon<Scalar>();
+  passed = passed && decremented;
 
+  return passed;
+}
+
+template <typename Tensor, typename Scalar>
+bool
+test_filling(Index const dimension)
+{
+  bool
+  passed = true;
+
+  Index const
+  number_components = integer_power(dimension, Tensor::ORDER);
+
+  // Test construct with zeros
+  Tensor
+  A(dimension, ZEROS);
+
+  Real
+  error = norm_f_square(A);
+
+  bool const
+  zeros_constructed = error <= machine_epsilon<Scalar>();
+  passed = passed && zeros_constructed;
+
+  // Test construct with ones
+  Tensor
+  B(dimension, ONES);
+
+  error = norm_f_square(B) - number_components;
+
+  bool const
+  ones_constructed = error <= machine_epsilon<Scalar>();
+  passed = passed && ones_constructed;
+
+  // Test construct with random entries
+  Tensor
+  C(dimension, RANDOM);
+
+  error = norm_f(C);
+
+  bool const
+  random_constructed = error > 0.0 && error < number_components;
+  passed = passed && random_constructed;
+
+  // Test fill with random components
+  A.fill(RANDOM);
+
+  error = norm_f(A);
+
+  bool const
+  random_filled = error > 0.0 && error < number_components;
+  passed = passed && random_filled;
+
+  // Test fill with zeros
+  B.fill(ZEROS);
+
+  error = norm_f_square(B);
+
+  bool const
+  zeros_filled = error <= machine_epsilon<Scalar>();
+  passed = passed && zeros_filled;
+
+  // Test fill with ones
+  C.fill(ZEROS);
+
+  error = norm_f_square(C) - number_components;
+
+  bool const
+  ones_filled = error <= machine_epsilon<Scalar>();
+  passed = passed && ones_filled;
+
+  return passed;
+}
+
+template <typename Tensor, typename Scalar>
+bool
+test_arithmetic(Index const dimension)
+{
+  bool
+  passed = true;
+
+  Index const
+  number_components = integer_power(dimension, Tensor::ORDER);
+
+  std::vector<Scalar> const
+  X = generate_sequence<Scalar>(number_components, 1.0, 1.0);
+
+  Real const
+  sum_squares = number_components * (number_components + 1) *
+  (2 * number_components + 1) / 6;
+
+  // Test addition
+  Tensor const
+  A(dimension, &X[0]);
+
+  Tensor const
+  B = -1.0 * A;
+
+  Tensor const
+  C = -1.0 * B;
+
+  Tensor const
+  D = A + B;
+
+  Real
+  error = norm_f_square(D);
+
+  bool const
+  added = error <= machine_epsilon<Scalar>();
+  passed = passed && added;
+
+  // Test subtraction
+  Tensor const
+  E = A - C;
+
+  error = norm_f_square(E);
+
+  bool const
+  subtracted = error <= machine_epsilon<Scalar>();
+  passed = passed && subtracted;
+
+  // Test scaling
+  error = norm_f_square(C) - sum_squares;
+
+  bool const
+  scaled = error <= machine_epsilon<Scalar>();
+  passed = passed && scaled;
+
+  Tensor const
+  F = C / -1.0;
+
+  error = norm_f_square(F) - sum_squares;
+
+  bool const
+  divided = error <= machine_epsilon<Scalar>();
+  passed = passed && divided;
 
   return passed;
 }
@@ -194,398 +330,92 @@ TEUCHOS_UNIT_TEST(MiniTensor, Fundamentals)
   tensor4_static_passed = test_fundamentals<Tensor4<Real, 3>, Real>(3);
 
   TEST_COMPARE(tensor4_static_passed, ==, true);
-
 }
 
-TEUCHOS_UNIT_TEST(MiniTensor, VectorFilling)
+TEUCHOS_UNIT_TEST(MiniTensor, Filling)
 {
-  Index const
-  dimension = 3;
+  bool const
+  vector_dynamic_passed = test_filling<Vector<Real>, Real>(3);
 
-  // Test construct with zeros
-  Vector<Real>
-  u(dimension, ZEROS);
+  TEST_COMPARE(vector_dynamic_passed, ==, true);
 
-  Real
-  error = norm_f_square(u);
+  bool const
+  vector_static_passed = test_filling<Vector<Real, 3>, Real>(3);
 
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+  TEST_COMPARE(vector_static_passed, ==, true);
 
-  // Test construct with ones
-  Vector<Real>
-  v(dimension, ONES);
+  bool const
+  tensor_dynamic_passed = test_filling<Tensor<Real>, Real>(3);
 
-  Index const
-  number_components = integer_power(dimension, Vector<Real>::ORDER);
+  TEST_COMPARE(tensor_dynamic_passed, ==, true);
 
-  error = norm_f_square(v) - number_components;
+  bool const
+  tensor_static_passed = test_filling<Tensor<Real, 3>, Real>(3);
 
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+  TEST_COMPARE(tensor_static_passed, ==, true);
 
-  // Test construct random components
-  Vector<Real>
-  w(dimension, RANDOM);
+  bool const
+  tensor3_dynamic_passed = test_filling<Tensor3<Real>, Real>(3);
 
-  error = norm_f(w);
+  TEST_COMPARE(tensor3_dynamic_passed, ==, true);
 
-  TEST_COMPARE(error, >, 0.0);
-  TEST_COMPARE(error, <, number_components);
+  bool const
+  tensor3_static_passed = test_filling<Tensor3<Real, 3>, Real>(3);
 
-  // Test fill with random components
-  u.fill(RANDOM);
+  TEST_COMPARE(tensor3_static_passed, ==, true);
 
-  error = norm_f(u);
+  bool const
+  tensor4_dynamic_passed = test_filling<Tensor4<Real>, Real>(3);
 
-  TEST_COMPARE(error, >, 0.0);
-  TEST_COMPARE(error, <, number_components);
+  TEST_COMPARE(tensor4_dynamic_passed, ==, true);
 
-  // Test fill with zeros
-  v.fill(ZEROS);
+  bool const
+  tensor4_static_passed = test_filling<Tensor4<Real, 3>, Real>(3);
 
-  error = norm_f_square(v);
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-
-  // Test fill with ones
-  w.fill(ZEROS);
-
-  error = norm_f_square(w) - number_components;
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+  TEST_COMPARE(tensor4_static_passed, ==, true);
 }
 
-TEUCHOS_UNIT_TEST(MiniTensor, TensorFilling)
+TEUCHOS_UNIT_TEST(MiniTensor, Arithmetic)
 {
-  Index const
-  dimension = 3;
+  bool const
+  vector_dynamic_passed = test_arithmetic<Vector<Real>, Real>(3);
 
-  // Test construct with zeros
-  Tensor<Real>
-  A(dimension, ZEROS);
+  TEST_COMPARE(vector_dynamic_passed, ==, true);
 
-  Real
-  error = norm_f_square(A);
+  bool const
+  vector_static_passed = test_arithmetic<Vector<Real, 3>, Real>(3);
 
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+  TEST_COMPARE(vector_static_passed, ==, true);
 
-  // Test construct with ones
-  Tensor<Real>
-  B(dimension, ONES);
+  bool const
+  tensor_dynamic_passed = test_arithmetic<Tensor<Real>, Real>(3);
 
-  Index const
-  number_components = integer_power(dimension, Tensor<Real>::ORDER);
+  TEST_COMPARE(tensor_dynamic_passed, ==, true);
 
-  error = norm_f_square(B) - number_components;
+  bool const
+  tensor_static_passed = test_arithmetic<Tensor<Real, 3>, Real>(3);
 
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+  TEST_COMPARE(tensor_static_passed, ==, true);
 
-  Tensor<Real>
-  C(dimension, RANDOM);
+  bool const
+  tensor3_dynamic_passed = test_arithmetic<Tensor3<Real>, Real>(3);
 
-  error = norm_f(C);
+  TEST_COMPARE(tensor3_dynamic_passed, ==, true);
 
-  TEST_COMPARE(error, >, 0.0);
-  TEST_COMPARE(error, <, number_components);
+  bool const
+  tensor3_static_passed = test_arithmetic<Tensor3<Real, 3>, Real>(3);
 
-  // Test fill with random components
-  A.fill(RANDOM);
+  TEST_COMPARE(tensor3_static_passed, ==, true);
 
-  error = norm_f(A);
+  bool const
+  tensor4_dynamic_passed = test_arithmetic<Tensor4<Real>, Real>(3);
 
-  TEST_COMPARE(error, >, 0.0);
-  TEST_COMPARE(error, <, number_components);
+  TEST_COMPARE(tensor4_dynamic_passed, ==, true);
 
-  // Test fill with zeros
-  B.fill(ZEROS);
+  bool const
+  tensor4_static_passed = test_arithmetic<Tensor4<Real, 3>, Real>(3);
 
-  error = norm_f_square(B);
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-
-  // Test fill with ones
-  C.fill(ZEROS);
-
-  error = norm_f_square(C) - number_components;
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-}
-
-TEUCHOS_UNIT_TEST(MiniTensor, Tensor3Filling)
-{
-  Index const
-  dimension = 3;
-
-  // Test construct with zeros
-  Tensor3<Real>
-  A(dimension, ZEROS);
-
-  Real
-  error = norm_f_square(A);
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-
-  // Test construct with ones
-  Tensor3<Real>
-  B(dimension, ONES);
-
-  Index const
-  number_components = integer_power(dimension, Tensor3<Real>::ORDER);
-
-  error = norm_f_square(B) - number_components;
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-
-  Tensor3<Real>
-  C(dimension, RANDOM);
-
-  error = norm_f(C);
-
-  TEST_COMPARE(error, >, 0.0);
-  TEST_COMPARE(error, <, number_components);
-
-  // Test fill with random components
-  A.fill(RANDOM);
-
-  error = norm_f(A);
-
-  TEST_COMPARE(error, >, 0.0);
-  TEST_COMPARE(error, <, number_components);
-
-  // Test fill with zeros
-  B.fill(ZEROS);
-
-  error = norm_f_square(B);
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-
-  // Test fill with ones
-  C.fill(ZEROS);
-
-  error = norm_f_square(C) - number_components;
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-}
-
-TEUCHOS_UNIT_TEST(MiniTensor, Tensor4Filling)
-{
-  Index const
-  dimension = 3;
-
-  // Test construct with zeros
-  Tensor4<Real>
-  A(dimension, ZEROS);
-
-  Real
-  error = norm_f_square(A);
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-
-  // Test construct with ones
-  Tensor4<Real>
-  B(dimension, ONES);
-
-  Index const
-  number_components = integer_power(dimension, Tensor4<Real>::ORDER);
-
-  error = norm_f_square(B) - number_components;
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-
-  Tensor4<Real>
-  C(dimension, RANDOM);
-
-  error = norm_f(C);
-
-  TEST_COMPARE(error, >, 0.0);
-  TEST_COMPARE(error, <, number_components);
-
-  // Test fill with random components
-  A.fill(RANDOM);
-
-  error = norm_f(A);
-
-  TEST_COMPARE(error, >, 0.0);
-  TEST_COMPARE(error, <, number_components);
-
-  // Test fill with zeros
-  B.fill(ZEROS);
-
-  error = norm_f_square(B);
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-
-  // Test fill with ones
-  C.fill(ZEROS);
-
-  error = norm_f_square(C) - number_components;
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-}
-
-TEUCHOS_UNIT_TEST(MiniTensor, Tensor4Products)
-{
-  Index const
-  dimension = 3;
-
-  Tensor4<Real> const
-  A(dimension, ONES);
-
-  Real const
-  factor = 2.0;
-
-  Tensor4<Real> const
-  B = factor * A;
-
-  Real
-  error = norm_f_square(B) - factor * factor * B.get_number_components();
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-
-  Tensor4<Real> const
-  C = A * factor;
-
-  error = norm_f_square(C) - factor * factor * C.get_number_components();
-
-  TEST_COMPARE(error, <=, machine_epsilon<Real>());
-}
-
-TEUCHOS_UNIT_TEST(MiniTensor, Initialization)
-{
-  FieldContainer<Real> FC(3, 3);
-  FC(0, 0) = 1.0;
-  FC(0, 1) = 2.0;
-  FC(0, 2) = 3.0;
-  FC(1, 0) = 4.0;
-  FC(1, 1) = 5.0;
-  FC(1, 2) = 6.0;
-  FC(2, 0) = 7.0;
-  FC(2, 1) = 8.0;
-  FC(2, 2) = 9.0;
-
-  Real const * dataPtr0 = &FC(0, 0);
-
-  Index const N = 3;
-  Vector<Real> u(N, dataPtr0);
-
-  TEST_COMPARE( u(0), ==, 1.0);
-  TEST_COMPARE( u(1), ==, 2.0);
-  TEST_COMPARE( u(2), ==, 3.0);
-
-  Real const * dataPtr1 = &FC(1, 0);
-
-  u = Vector<Real>(N, dataPtr1);
-
-  TEST_COMPARE( u(0), ==, 4.0);
-  TEST_COMPARE( u(1), ==, 5.0);
-  TEST_COMPARE( u(2), ==, 6.0);
-
-  Real const * dataPtr2 = &FC(2, 0);
-
-  u = Vector<Real>(N, dataPtr2);
-
-  TEST_COMPARE( u(0), ==, 7.0);
-  TEST_COMPARE( u(1), ==, 8.0);
-  TEST_COMPARE( u(2), ==, 9.0);
-}
-
-TEUCHOS_UNIT_TEST(MiniTensor, VectorAddition)
-{
-  Vector<Real> const u(1.0, 0.0, 0.0);
-  Vector<Real> const v(0.0, 1.0, 0.0);
-  Vector<Real> const w(1.0, 1.0, 0.0);
-
-  TEST_COMPARE( u + v == w, !=, 0);
-}
-
-TEUCHOS_UNIT_TEST(MiniTensor, VectorSubtraction)
-{
-  Vector<Real> u(3);
-  Vector<Real> v(3);
-  u(0) = 1.0;
-  u(1) = 2.0;
-  u(2) = 3.0;
-
-  v = u - u;
-
-  TEST_COMPARE(norm(v), <=, machine_epsilon<Real>());
-}
-
-TEUCHOS_UNIT_TEST(MiniTensor, VectorScalarMultipliaction)
-{
-  Vector<Real> u(3);
-  Vector<Real> v(3);
-  Vector<Real> w(3);
-  u(0) = 1.0;
-  u(1) = 2.0;
-  u(2) = 3.0;
-
-  v(0) = -2.0;
-  v(1) = -4.0;
-  v(2) = -6.0;
-
-  w = 4.0 * u + 2.0 * v;
-
-  TEST_COMPARE( norm(w), <=, machine_epsilon<Real>());
-}
-
-TEUCHOS_UNIT_TEST(MiniTensor, TensorInstantiation)
-{
-  FieldContainer<Real> FC(2, 3, 3);
-  FC(0, 0, 0) = 1.0;
-  FC(0, 0, 1) = 2.0;
-  FC(0, 0, 2) = 3.0;
-  FC(0, 1, 0) = 4.0;
-  FC(0, 1, 1) = 5.0;
-  FC(0, 1, 2) = 6.0;
-  FC(0, 2, 0) = 7.0;
-  FC(0, 2, 1) = 8.0;
-  FC(0, 2, 2) = 9.0;
-  FC(1, 0, 0) = 10.0;
-  FC(1, 0, 1) = 11.0;
-  FC(1, 0, 2) = 12.0;
-  FC(1, 1, 0) = 13.0;
-  FC(1, 1, 1) = 14.0;
-  FC(1, 1, 2) = 15.0;
-  FC(1, 2, 0) = 16.0;
-  FC(1, 2, 1) = 17.0;
-  FC(1, 2, 2) = 18.0;
-
-  Real const * dataPtr0 = &FC(0, 0, 0);
-
-  Tensor<Real> const A(3, dataPtr0);
-
-  TEST_COMPARE( A(0,0), ==, 1.0);
-  TEST_COMPARE( A(0,1), ==, 2.0);
-  TEST_COMPARE( A(0,2), ==, 3.0);
-  TEST_COMPARE( A(1,0), ==, 4.0);
-  TEST_COMPARE( A(1,1), ==, 5.0);
-  TEST_COMPARE( A(1,2), ==, 6.0);
-  TEST_COMPARE( A(2,0), ==, 7.0);
-  TEST_COMPARE( A(2,1), ==, 8.0);
-  TEST_COMPARE( A(2,2), ==, 9.0);
-
-  Real const * dataPtr1 = &FC(1, 0, 0);
-
-  Tensor<Real> const B(3, dataPtr1);
-
-  TEST_COMPARE( B(0,0), ==, 10.0);
-  TEST_COMPARE( B(0,1), ==, 11.0);
-  TEST_COMPARE( B(0,2), ==, 12.0);
-  TEST_COMPARE( B(1,0), ==, 13.0);
-  TEST_COMPARE( B(1,1), ==, 14.0);
-  TEST_COMPARE( B(1,2), ==, 15.0);
-  TEST_COMPARE( B(2,0), ==, 16.0);
-  TEST_COMPARE( B(2,1), ==, 17.0);
-  TEST_COMPARE( B(2,2), ==, 18.0);
-}
-
-TEUCHOS_UNIT_TEST(MiniTensor, TensorAddition)
-{
-  Tensor<Real> const A(1, 1, 1, 1, 1, 1, 1, 1, 1);
-  Tensor<Real> const B(2, 2, 2, 2, 2, 2, 2, 2, 2);
-  Tensor<Real> const C(3, 3, 3, 3, 3, 3, 3, 3, 3);
-
-  TEST_COMPARE( C == A + B, !=, 0);
+  TEST_COMPARE(tensor4_static_passed, ==, true);
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, Inverse)
@@ -600,6 +430,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, Inverse)
     for (Index j = 0; j < N; ++j) {
       A(i, j) = double(std::rand()) / double(RAND_MAX) * 20.0 - 10.0;
     }
+    A(i, i) += 1.0;
   }
 
   B = inverse(A);

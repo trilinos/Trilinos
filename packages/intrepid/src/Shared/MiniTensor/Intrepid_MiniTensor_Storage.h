@@ -126,6 +126,10 @@ public:
 
   static
   bool const
+  IS_STATIC = true;
+
+  static
+  bool const
   IS_DYNAMIC = false;
 
   Storage() {}
@@ -176,6 +180,10 @@ public:
   static
   bool const
   IS_DYNAMIC = true;
+
+  static
+  bool const
+  IS_STATIC = false;
 
   Storage();
 
