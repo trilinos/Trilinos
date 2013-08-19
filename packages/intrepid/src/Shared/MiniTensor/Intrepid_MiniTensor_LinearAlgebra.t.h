@@ -495,8 +495,11 @@ exp_pade(Tensor<T, N> const & A)
       Real const
       theta_highest = scaling_squaring_theta<Real>(order);
 
+      int const
+      signed_power = static_cast<int>(std::ceil(log2(norm / theta_highest)));
+
       Index const
-      power_two = Index(std::ceil(log2(norm / theta_highest)));
+      power_two = signed_power > 0 ? static_cast<Index>(signed_power) : 0;
 
       Real
       scale = 1.0;
