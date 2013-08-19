@@ -1910,7 +1910,11 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testCommList)
   const unsigned p_rank = stk::parallel_machine_rank( pm );
 
   //------------------------------
-  if (p_size == 4)
+  if (p_size != 4)
+    return;
+
+  //------------------------------
+  // test begin/end pair
   {
     stk::mesh::fixtures::QuadFixture fixture(pm, 2 /*nx*/, 2 /*ny*/);
     fixture.m_meta.commit();
@@ -1921,7 +1925,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testCommList)
   }
 
   //------------------------------
-  if (p_size == 4)
+  // test begin/end pair with mesh mods
   {
     stk::mesh::fixtures::QuadFixture fixture(pm, 2 /*nx*/, 2 /*ny*/);
     fixture.m_meta.commit();
@@ -1938,24 +1942,19 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testCommList)
     ghosting.receive_list( receive );
     if (receive.size()) std::cout << "receive.size() = " << receive.size() << std::endl;
     std::vector<stk::mesh::EntityProc> nodes_to_ghost;
-    if(1)
+
+    if (p_rank == 0)
       {
-        if (p_rank == 0)
-          {
-            stk::mesh::Entity node_5 = bulk.get_entity(MetaData::NODE_RANK, 5);
-            STKUNIT_EXPECT_TRUE(bulk.is_valid(node_5));
-            nodes_to_ghost.push_back( stk::mesh::EntityProc(node_5, 3) );
-          }
+        stk::mesh::Entity node_5 = bulk.get_entity(MetaData::NODE_RANK, 5);
+        STKUNIT_EXPECT_TRUE(bulk.is_valid(node_5));
+        nodes_to_ghost.push_back( stk::mesh::EntityProc(node_5, 3) );
       }
 
-    if(1)
+    if (p_rank == 3)
       {
-        if (p_rank == 3)
-          {
-            stk::mesh::Entity node = bulk.get_entity(MetaData::NODE_RANK, 9);
-            STKUNIT_EXPECT_TRUE(bulk.is_valid(node));
-            nodes_to_ghost.push_back( stk::mesh::EntityProc(node, 0) );
-          }
+        stk::mesh::Entity node = bulk.get_entity(MetaData::NODE_RANK, 9);
+        STKUNIT_EXPECT_TRUE(bulk.is_valid(node));
+        nodes_to_ghost.push_back( stk::mesh::EntityProc(node, 0) );
       }
 
     bulk.change_ghosting( ghosting, nodes_to_ghost, receive);
@@ -1964,38 +1963,26 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testCommList)
 
     bulk.modification_begin();
 
-    if(1)
+    if (p_rank == 0)
       {
-        if (p_rank == 0)
-          {
-            stk::mesh::Entity node = bulk.get_entity(MetaData::NODE_RANK, 9);
-            STKUNIT_EXPECT_TRUE(bulk.is_valid(node));
-            stk::mesh::Entity node1 = bulk.get_entity(MetaData::NODE_RANK, 1);
-            STKUNIT_EXPECT_TRUE(bulk.is_valid(node1));
-            stk::mesh::Entity elem = bulk.get_entity(MetaData::ELEMENT_RANK, 1);
-            STKUNIT_EXPECT_TRUE(bulk.is_valid(elem));
-            //nodes_to_ghost.push_back( stk::mesh::EntityProc(node, 0) );
-            bulk.destroy_relation( elem, node1, 0);
-            bulk.declare_relation( elem , node , 0 );
-          }
+        stk::mesh::Entity node = bulk.get_entity(MetaData::NODE_RANK, 9);
+        STKUNIT_EXPECT_TRUE(bulk.is_valid(node));
+        stk::mesh::Entity node1 = bulk.get_entity(MetaData::NODE_RANK, 1);
+        STKUNIT_EXPECT_TRUE(bulk.is_valid(node1));
+        stk::mesh::Entity elem = bulk.get_entity(MetaData::ELEMENT_RANK, 1);
+        STKUNIT_EXPECT_TRUE(bulk.is_valid(elem));
+        bulk.destroy_relation( elem, node1, 0);
+        bulk.declare_relation( elem , node , 0 );
       }
-    bool should_fail = false;
-#ifndef NDEBUG
-    should_fail = false;
-#endif
+
     bool failed=false;
     try {
       bulk.modification_end();
     }
     catch ( const std::exception & X ) {
       failed = true;
-#ifndef NDEBUG
-      std::cout << " expected exception: " << X.what() << std::endl;
-#else
-      std::cout << " unexpected exception: " << X.what() << std::endl;
-#endif
     }
-    STKUNIT_EXPECT_EQUAL(failed, should_fail);
+    STKUNIT_EXPECT_FALSE(failed);
 
   }
 
