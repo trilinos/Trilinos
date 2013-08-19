@@ -1112,7 +1112,7 @@ namespace Tpetra {
 	typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
         typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2> MV2;
         Teuchos::ArrayRCP< Teuchos::ArrayRCP<const Scalar> > MV_view = this->get2dView();
-        Teuchos::RCP<const Map2> clonedMap = this->getMap()->template clone(node2);
+        Teuchos::RCP<const Map2> clonedMap = this->getMap()->template clone<Node2> (node2);
         Teuchos::RCP<MV2> clonedMV = Teuchos::rcp(new MV2(clonedMap, this->getNumVectors()));
         Teuchos::ArrayRCP< Teuchos::ArrayRCP<Scalar> > clonedMV_view = clonedMV->get2dViewNonConst();
         for (size_t i = 0; i < this->getNumVectors(); i++)

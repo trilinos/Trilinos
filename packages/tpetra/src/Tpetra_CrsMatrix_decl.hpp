@@ -439,7 +439,7 @@ namespace Tpetra {
       typedef typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node2>::SparseOps LocalMatOps2;
       typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> CrsMatrix2;
       typedef Map<LocalOrdinal, GlobalOrdinal, Node2> Map2;
-      RCP<const Map2> clonedRowMap = this->getRowMap ()->template clone (node2);
+      RCP<const Map2> clonedRowMap = this->getRowMap ()->template clone<Node2> (node2);
 
       RCP<CrsMatrix2> clonedMatrix;
       ArrayRCP<const size_t> numEntries;
@@ -481,7 +481,7 @@ namespace Tpetra {
         params.is_null () ? null : sublist (params,"CrsMatrix");
       if (useLocalIndices) {
         RCP<const Map2> clonedColMap =
-          this->getColMap ()->template clone (node2);
+          this->getColMap ()->template clone<Node2> (node2);
         if (numEntries.is_null ()) {
           clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, clonedColMap,
                                               numEntriesForAll, pftype,
@@ -589,14 +589,14 @@ namespace Tpetra {
           RCP<const Map2> clonedDomainMap;
           if (! this->getRangeMap ().is_null () &&
               this->getRangeMap () != clonedRowMap) {
-            clonedRangeMap  = this->getRangeMap ()->template clone (node2);
+            clonedRangeMap  = this->getRangeMap ()->template clone<Node2> (node2);
           }
           else {
             clonedRangeMap = clonedRowMap;
           }
           if (! this->getDomainMap ().is_null () &&
               this->getDomainMap () != clonedRowMap) {
-            clonedDomainMap = this->getDomainMap ()->template clone (node2);
+            clonedDomainMap = this->getDomainMap ()->template clone<Node2> (node2);
           }
           else {
             clonedDomainMap = clonedRowMap;
