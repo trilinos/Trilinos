@@ -109,12 +109,12 @@ namespace MueLu {
     Set(coarseLevel, "Nullspace", coarseNullspace);
 
     // Coordinates transfer
-    int n = sqrt(coarseMap->getGlobalNumElements());
+    size_t n = Teuchos::as<size_t>(sqrt(coarseMap->getGlobalNumElements()));
     TEUCHOS_TEST_FOR_EXCEPTION(n*n != coarseMap->getGlobalNumElements(), Exceptions::RuntimeError, "Unfortunately, this is not the case, don't know what to do");
 
     RCP<MultiVector> coarseCoords = MultiVectorFactory::Build(coarseMap, 2);
     ArrayRCP<Scalar> x = coarseCoords->getDataNonConst(0), y = coarseCoords->getDataNonConst(1);
-    for (int LID = 0; LID < coarseMap->getNodeNumElements(); LID++) {
+    for (size_t LID = 0; LID < coarseMap->getNodeNumElements(); LID++) {
       GlobalOrdinal GID = coarseMap->getGlobalElement(LID) - coarseMap->getIndexBase();
       GlobalOrdinal i = GID % n, j = GID/n;
       x[LID] = i;
@@ -129,10 +129,6 @@ namespace MueLu {
 
 
 } //namespace MueLu
-
-//TODO: noQR_
-
-// TODO ReUse: If only P or Nullspace is missing, UserPFactory can be smart and skip part of the computation.
 
 #define MUELU_USERPFACTORY_SHORT
 #endif // MUELU_USERPFACTORY_DEF_HPP

@@ -12,7 +12,7 @@
 #ifdef __GNUC__
 # if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 406
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wall"
+#pragma GCC diagnostic ignored "-Wshadow"
 #endif // GCC_VERSION
 #endif // __GNUC__
 
