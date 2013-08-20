@@ -240,11 +240,11 @@ void test_insert_mark_pending_delete(  uint32_t num_nodes
 
   const uint32_t map_size = map.size();
   const uint32_t pending_delete = map.pending_delete();
-  const bool failed_inserts = map.failed_inserts();
+  const uint32_t failed_inserts = map.failed_inserts();
 
   ASSERT_FALSE( failed_inserts );
 
-  if (!failed_inserts) {
+  if (failed_inserts == 0u) {
     ASSERT_EQ(map_size, 0u);
     ASSERT_EQ(pending_delete, expected_inserts);
 

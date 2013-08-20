@@ -67,12 +67,11 @@ inline uint32_t find_hash_size(uint32_t size)
 
 enum node_state
 {
-      UNUSED = 0          // not used in a list
-    , USED = 1            // used in a list
-    , PENDING_INSERT = 2  // not used in a list, but reserved by a thread for inserting
-    , PENDING_DELETE = 3  // node in the list is marked deleted
-    , INVALID = 4         // the 0th node in the node view is set to invalid
-    , NUM_STATES = 5
+    UNUSED          // not used in a list
+  , USED            // used in a list
+  , PENDING_INSERT  // not used in a list, but reserved by a thread for inserting
+  , PENDING_DELETE  // node in the list is marked deleted
+  , INVALID         // the 0th node in the node view is set to invalid
 };
 
 struct node_atomic
@@ -131,29 +130,6 @@ struct node
   node_atomic atomic;
 };
 
-template <typename Node>
-struct node_block
-{
-  typedef Node node_type;
-
-  static const uint32_t size = 32;
-  static const uint32_t mask = 31;
-  static const uint32_t shift = 5;
-
-  typedef typename StaticAssert< (sizeof(node_type) % 16u == 0u)>::type node_okay;
-
-  KOKKOS_FORCEINLINE_FUNCTION
-  node_block()
-    : used_count(0)
-    , failed_insert_count(0)
-    , nodes()
-  {}
-
-  int used_count;
-  int failed_insert_count;
-  node_type nodes[size];
-};
-
 template <typename ValueType>
 struct node<ValueType, 0u>
 {
@@ -173,12 +149,28 @@ struct node<ValueType, 0u>
   node_atomic atomic;
 };
 
-struct node_state_counts
+template <typename Node>
+struct node_block
 {
-  KOKKOS_INLINE_FUNCTION
-  node_state_counts() : value() {}
+  typedef Node node_type;
+  typedef typename StaticAssert<(sizeof(node_type) % 16u == 0u)>::type node_okay;
 
-  uint32_t value[NUM_STATES];
+  static const uint32_t shift = 5;
+  static const uint32_t size = 1u << shift;
+  static const uint32_t mask = size - 1u;
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  node_block()
+    : used_count(0)
+    , failed_inserts(0)
+    , pad(0)
+    , nodes()
+  {}
+
+  int32_t used_count;
+  int32_t failed_inserts;
+  uint64_t pad;
+  node_type nodes[size];
 };
 
 struct hash_list_sanity_type
@@ -195,38 +187,49 @@ struct hash_list_sanity_type
   uint32_t incorrect_hash_index_errors;
 };
 
-struct sanity_type
+struct node_state_counts
 {
-  sanity_type()
-    : state_count()
-    , hash_list()
-    , free_node_count(0)
-    , total_errors(0)
+  KOKKOS_INLINE_FUNCTION
+  node_state_counts()
+    : in_sync(true)
+    , no_failed_inserts(true)
+    , unused(0)
+    , used_count(0)
+    , used(0)
+    , pending_insert(0)
+    , pending_delete(0)
+    , invalid(0)
+    , failed_inserts(0)
   {}
 
-  node_state_counts state_count;
-  hash_list_sanity_type hash_list;
-  uint32_t free_node_count;
-  uint32_t total_errors;
+  bool in_sync;
+  bool no_failed_inserts;
+  uint32_t unused;
+  uint32_t used_count;
+  uint32_t used;
+  uint32_t pending_insert;
+  uint32_t pending_delete;
+  uint32_t invalid;
+  uint32_t failed_inserts;
 };
 
 
-
-
 template <class MapData>
-struct count_node_states_functor
+struct sync_node_states_functor
 {
   typedef typename MapData::device_type device_type;
   typedef typename device_type::size_type size_type;
+  typedef typename MapData::node_block_type node_block_type;
   typedef typename MapData::node_type node_type;
+
   typedef node_state_counts value_type;
 
   MapData  map;
 
-  count_node_states_functor(MapData arg_map, value_type & value)
+  sync_node_states_functor(MapData arg_map)
     : map(arg_map)
   {
-    parallel_reduce( map.capacity(), *this, value);
+    parallel_reduce( map.capacity(), *this);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -238,16 +241,45 @@ struct count_node_states_functor
   KOKKOS_INLINE_FUNCTION
   static void join( volatile value_type & dst, const volatile value_type & src)
   {
-    for (int i=0; i<NUM_STATES; ++i) {
-      dst.value[i] += src.value[i];
-    }
+    dst.unused         += src.unused;
+    dst.used_count     += src.used_count;
+    dst.used           += src.used;
+    dst.pending_insert += src.pending_insert;
+    dst.pending_delete += src.pending_delete;
+    dst.invalid        += src.invalid;
+    dst.failed_inserts += src.failed_inserts;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void final( value_type & result ) const
+  {
+    result.in_sync = true;
+    result.no_failed_inserts = map.counts().no_failed_inserts;
+
+    map.counts = result;
   }
 
   KOKKOS_INLINE_FUNCTION
   void operator()( size_type i, value_type & dst) const
   {
-    node_state index = node_atomic::state(map.get_node(i).atomic);
-    ++dst.value[ index < NUM_STATES ? index : INVALID];
+    // count block properties
+    if ((i%node_block_type::size) == 0u) {
+      dst.used_count += map.node_blocks[i>>node_block_type::shift].used_count;
+      dst.failed_inserts += map.node_blocks[i>>node_block_type::shift].failed_inserts;
+    }
+
+    const node_state state = node_atomic::state(map.get_node(i).atomic);
+
+    if (state == UNUSED)
+      ++dst.unused;
+    else if (state == USED)
+      ++dst.used;
+    else if (state == PENDING_INSERT)
+      ++dst.pending_insert;
+    else if (state == PENDING_DELETE)
+      ++dst.pending_delete;
+    else
+      ++dst.invalid;
   }
 };
 
@@ -339,12 +371,14 @@ struct remove_pending_delete_keys_functor
   typedef typename MapData::node_type node_type;
   typedef typename MapData::node_block_type node_block_type;
 
-  node_block_type * node_blocks;
-  node_atomic     * hashes;
+  node_block_type   * node_blocks;
+  node_atomic       * hashes;
+  node_state_counts * counts;
 
   remove_pending_delete_keys_functor( MapData arg_map )
     : node_blocks( const_cast<node_block_type *>(arg_map.node_blocks.ptr_on_device()) )
     , hashes( const_cast<node_atomic *>(arg_map.hashes.ptr_on_device()) )
+    , counts( const_cast<node_state_counts *>(arg_map.counts.ptr_on_device()) )
   {
     parallel_for( arg_map.hashes.size(), *this);
     device_type::fence();
@@ -359,6 +393,10 @@ struct remove_pending_delete_keys_functor
   KOKKOS_INLINE_FUNCTION
   void operator()( size_type i) const
   {
+    if (i == static_cast<size_type>(0)) {
+      counts->in_sync = false;
+    }
+
     uint64_t * prev_atomic = &hashes[i].value;
 
     while (node_atomic::next(*prev_atomic) != node_atomic::invalid_next) {
@@ -366,9 +404,14 @@ struct remove_pending_delete_keys_functor
       uint64_t prev = *prev_atomic;
       uint64_t curr = *curr_atomic;
       if (node_atomic::state(curr) == PENDING_DELETE) {
+        const uint32_t curr_index = node_atomic::next(prev);
+        const uint32_t curr_block = curr_index >> node_block_type::shift;
+
         //remove the node
         *prev_atomic = node_atomic::make_atomic( node_atomic::next(curr), node_atomic::state(prev) );
         *curr_atomic = node_atomic::make_atomic( node_atomic::invalid_next, UNUSED );
+        volatile int * used_count = &node_blocks[curr_block].used_count;
+        atomic_fetch_add(used_count, -1);
       }
       else {
         prev_atomic = curr_atomic;
@@ -424,7 +467,7 @@ struct map_data
                        >::type node_block_view;
 
 
-  typedef View< bool, device_type > bool_view;
+  typedef View< node_state_counts, device_type > counts_view;
 
   map_data(  uint32_t num_nodes
                      , compare_type compare
@@ -432,21 +475,17 @@ struct map_data
                     )
     : node_blocks("unordered_map_nodes", find_hash_size(static_cast<uint32_t>((num_nodes+node_block_type::size-1u)/node_block_type::size)))
     , hashes("unordered_map_hashes", find_hash_size(capacity()) )
-    , no_failed_inserts("unordered_map_no_failed_inserts")
+    , counts("unordered_map_counts")
     , key_compare(compare)
     , key_hash(hash)
-  {
-    typedef Kokkos::DeepCopy< typename device_type::memory_space, Kokkos::HostSpace > deep_copy;
-    const bool true_ = true;
-    deep_copy(no_failed_inserts.ptr_on_device(), &true_, sizeof(bool));
-  }
+  {}
 
   template <typename MMapType>
   KOKKOS_INLINE_FUNCTION
   map_data( const MMapType & m)
     : node_blocks(m.node_blocks)
     , hashes(m.hashes)
-    , no_failed_inserts(m.no_failed_inserts)
+    , counts(m.counts)
     , key_compare(m.key_compare)
     , key_hash(m.key_hash)
   {}
@@ -456,10 +495,10 @@ struct map_data
   map_data & operator=( const MMapType & m)
   {
     node_blocks = m.node_blocks;
-    hashes = m.hashes;
-    no_failed_inserts = m.no_failed_inserts;
+    hashes      = m.hashes;
+    counts      = m.counts;
     key_compare = m.key_compare;
-    key_hash = m.key_hash;
+    key_hash    = m.key_hash;
 
     return *this;
   }
@@ -470,11 +509,88 @@ struct map_data
     return node_blocks.size() * node_block_type::size;
   }
 
-  node_state_counts get_node_states() const
+  KOKKOS_INLINE_FUNCTION
+  uint32_t hash_capacity() const
   {
-    node_state_counts result;
-    count_node_states_functor<const_map_type>(*this, result);
-    device_type::fence();
+    return static_cast<uint32_t>(hashes.size());
+  }
+
+  bool in_sync() const
+  {
+    typedef Kokkos::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
+    bool result = false;
+    deep_copy(&result, &counts.ptr_on_device()->in_sync, sizeof(bool) );
+    return result;
+  }
+
+  void sync_node_states() const
+  {
+    if (!in_sync()) {
+      sync_node_states_functor<const_map_type>(*this);
+      device_type::fence();
+    }
+  }
+
+  uint32_t size() const
+  {
+    sync_node_states();
+    typedef Kokkos::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
+    uint32_t result = 0;
+    deep_copy(&result, &counts.ptr_on_device()->used, sizeof(uint32_t) );
+    return result;
+  }
+
+  uint32_t unused() const
+  {
+    sync_node_states();
+    typedef Kokkos::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
+    uint32_t result = 0;
+    deep_copy(&result, &counts.ptr_on_device()->unused, sizeof(uint32_t) );
+    return result;
+  }
+
+  uint32_t pending_insert() const
+  {
+    sync_node_states();
+    typedef Kokkos::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
+    uint32_t result = 0;
+    deep_copy(&result, &counts.ptr_on_device()->pending_insert, sizeof(uint32_t) );
+    return result;
+  }
+
+  uint32_t pending_delete() const
+  {
+    sync_node_states();
+    typedef Kokkos::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
+    uint32_t result = 0;
+    deep_copy(&result, &counts.ptr_on_device()->pending_delete, sizeof(uint32_t) );
+    return result;
+  }
+
+  uint32_t failed_inserts() const
+  {
+    sync_node_states();
+    typedef Kokkos::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
+    uint32_t result = 0;
+    deep_copy(&result, &counts.ptr_on_device()->failed_inserts, sizeof(uint32_t) );
+    return result;
+  }
+
+  uint32_t used_count() const
+  {
+    sync_node_states();
+    typedef Kokkos::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
+    uint32_t result = 0;
+    deep_copy(&result, &counts.ptr_on_device()->used_count, sizeof(uint32_t) );
+    return result;
+  }
+
+  uint32_t invalid_count() const
+  {
+    sync_node_states();
+    typedef Kokkos::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
+    uint32_t result = 0;
+    deep_copy(&result, &counts.ptr_on_device()->invalid, sizeof(uint32_t) );
     return result;
   }
 
@@ -488,82 +604,63 @@ struct map_data
 
   void check_sanity() const
   {
-    sanity_type result;
+    sync_node_states();
 
-    count_node_states_functor<const_map_type>(*this, result.state_count);
-    check_hash_list_functor<const_map_type>(*this, result.hash_list);
+    hash_list_sanity_type list_check;
+
+    check_hash_list_functor<const_map_type>(*this, list_check);
 
     device_type::fence();
 
     std::ostringstream out;
 
-    const bool failed = failed_inserts();
+    int total_errors = 0;
 
-    if (failed) {
-      //out << "Error: " << failed << " failed insertions\n";
-      result.total_errors+=failed;
+    if (failed_inserts() > 0u) {
+      out << "Error: " << failed_inserts() << " failed insertions\n";
+      total_errors += failed_inserts();
     }
 
-
-    if (result.hash_list.duplicate_keys_errors > 0u) {
-      out << "Error: found " << result.hash_list.duplicate_keys_errors << " duplicate keys found in lists\n";
-      result.total_errors+=result.hash_list.duplicate_keys_errors;
+    if (list_check.duplicate_keys_errors > 0u) {
+      out << "Error: found " << list_check.duplicate_keys_errors << " duplicate keys found in lists\n";
+      ++total_errors;
     }
 
-    if (result.hash_list.unordered_list_errors > 0u) {
-      out << "Error: found " << result.hash_list.unordered_list_errors << " unsorted lists\n";
-      result.total_errors+=result.hash_list.unordered_list_errors;
+    if (list_check.unordered_list_errors > 0u) {
+      out << "Error: found " << list_check.unordered_list_errors << " unsorted lists\n";
+      ++total_errors;
     }
 
-    if (result.hash_list.incorrect_hash_index_errors > 0u) {
-      out << "Error: found " << result.hash_list.incorrect_hash_index_errors << " keys incorrectly hashed\n";
-      result.total_errors+=result.hash_list.incorrect_hash_index_errors;
+    if (list_check.incorrect_hash_index_errors > 0u) {
+      out << "Error: found " << list_check.incorrect_hash_index_errors << " keys incorrectly hashed\n";
+      ++total_errors;
     }
 
-    // state_count[ INVALID ] == 1
-    if (result.state_count.value[ INVALID ] > 0u) {
-      out << "Error: found " << result.state_count.value[ INVALID] << " invalid nodes \n";
-      ++result.total_errors;
+    if (invalid_count() > 0u) {
+      out << "Error: found " << invalid_count() << " invalid nodes \n";
+      ++total_errors;
     }
 
-    // state_count[ PENDING_INSERT ] == 0
-    if (result.state_count.value[ PENDING_INSERT ] > 0u) {
-      out << "Error: found " << result.state_count.value[ PENDING_INSERT] << " pending insert nodes (should always be 0)\n";
-      ++result.total_errors;
+    if (pending_insert() > 0u) {
+      out << "Error: found " << pending_insert() << " pending insert nodes (should always be 0)\n";
+      ++total_errors;
     }
 
-    if (result.total_errors > 0u) {
-      out << "  Details:\n";
-      out << "    Node States: ";
-      out << " {UNUSED: " << result.state_count.value[ UNUSED ] << "}";
-      out << " {USED: " << result.state_count.value[ USED ] << "}";
-      out << " {PENDING_DELETE: " << result.state_count.value[ PENDING_DELETE ] << "}";
-      out << " {PENDING_INSERT: " << result.state_count.value[ PENDING_INSERT ] << "}";
-      out << " {INVALID: " << result.state_count.value[ INVALID ] << "}\n";
-      out << "   Errors: ";
-      out << " {duplicate_keys: " << result.hash_list.duplicate_keys_errors << "}";
-      out << " {unordered_lists: " << result.hash_list.unordered_list_errors << "}";
-      out << " {incorrect hashes: " << result.hash_list.incorrect_hash_index_errors << "}";
-      out << " {failed inserts: " << failed << "}\n";
-      out << "   TOTAL Errors: " << result.total_errors;
-      out << std::endl;
+    if (used_count() != size() + pending_delete()) {
+      out << "Error: used_count(" << used_count() << ") != size(" << size() << ") + pending_delete("
+          << pending_delete() << ") = " << size() + pending_delete() << "\n";
+      ++total_errors;
+    }
 
+    if (total_errors > 0) {
+      out << "Total Errors: " << total_errors << std::endl;
       throw std::runtime_error( out.str() );
     }
   }
 
-
   void remove_pending_delete_keys() const
   {
     remove_pending_delete_keys_functor<self_type> remove_keys(*this);
-  }
-
-  bool failed_inserts() const
-  {
-    typedef Kokkos::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
-    bool result = false;
-    deep_copy(&result, no_failed_inserts.ptr_on_device(), sizeof(bool));
-    return !result;
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -614,12 +711,40 @@ struct map_data
     return node_blocks[i>>node_block_type::shift].nodes[i&node_block_type::mask];
   }
 
+  KOKKOS_FORCEINLINE_FUNCTION
+  void set_modified() const
+  {
+    if (counts().in_sync) {
+      counts().in_sync = false;
+#if defined( __CUDA_ARCH__ )
+        __threadfence();
+#endif
+    }
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  bool no_failed_inserts() const
+  {
+    return counts().no_failed_inserts;
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  void set_failed_insert() const
+  {
+    if (counts().no_failed_inserts) {
+      counts().no_failed_inserts = false;
+#if defined( __CUDA_ARCH__ )
+        __threadfence();
+#endif
+    }
+  }
+
   // Data members
   node_block_view node_blocks;
-  hash_view       hashes;
-  bool_view       no_failed_inserts;
-  compare_type    key_compare;
-  hash_type       key_hash;
+  hash_view         hashes;
+  counts_view       counts;
+  compare_type      key_compare;
+  hash_type         key_hash;
 };
 
 
