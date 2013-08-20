@@ -58,11 +58,17 @@ namespace Intrepid {
 ///
 enum ComponentOrder {CANONICAL, SIERRA_FULL, SIERRA_SYMMETRIC};
 
+template<typename T, Index N>
+struct tensor_store
+{
+  typedef Storage<T, dimension_order<N, 2>::value> type;
+};
+
 ///
 /// Second order tensor.
 ///
 template<typename T, Index N = DYNAMIC>
-class Tensor : public TensorBase<T, Storage<T, dimension_order<N, 2>::value > >
+class Tensor : public TensorBase<T, typename tensor_store<T, N>::type>
 {
 public:
 
@@ -83,7 +89,7 @@ public:
   ///
   /// Storage type
   ///
-  typedef Storage<T, dimension_order<N, ORDER>::value >
+  typedef typename tensor_store<T, N>::type
   Store;
 
   ///
@@ -133,7 +139,7 @@ public:
   ///
   /// 2nd-order tensor from 4th-order tensor
   ///
-  Tensor(Tensor4<T, N> const & A);
+  Tensor(Tensor4<T, second_to_fourth_dimension<N>::value> const & A);
 
   ///
   /// Create tensor specifying components

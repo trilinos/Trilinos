@@ -46,11 +46,17 @@
 
 namespace Intrepid {
 
+template<typename T, Index N>
+struct tensor4_store
+{
+  typedef Storage<T, dimension_order<N, 4>::value> type;
+};
+
 ///
 /// Fourth-order tensor.
 ///
 template<typename T, Index N = DYNAMIC>
-class Tensor4 : public TensorBase<T, Storage<T, dimension_order<N, 4>::value > >
+class Tensor4 : public TensorBase<T, typename tensor4_store<T, N>::type>
 {
 public:
 
@@ -71,7 +77,7 @@ public:
   ///
   /// Storage type
   ///
-  typedef Storage<T, dimension_order<N, ORDER>::value >
+  typedef typename tensor4_store<T, N>::type
   Store;
 
   ///

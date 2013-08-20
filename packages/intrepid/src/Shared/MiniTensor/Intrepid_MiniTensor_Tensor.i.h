@@ -201,21 +201,12 @@ Tensor<T, N>::Tensor(
 }
 
 //
-// 2nd-order tensor from 4th-order tensor, static
+// 2nd-order tensor from 4th-order tensor
 //
 template<typename T, Index N>
 inline
-Tensor<T, N>::Tensor(Tensor4<T, N> const & A)
+Tensor<T, N>::Tensor(Tensor4<T, second_to_fourth_dimension<N>::value> const & A)
 {
-  if (IS_DYNAMIC == false) {
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << std::endl;
-    std::cerr << "Cannot convert 4th-order to 2nd-order tensor";
-    std::cerr << " with static storage.";
-    std::cerr << std::endl;
-    exit(1);
-  }
-
   Index const
   dimension_4th = A.get_dimension();
 

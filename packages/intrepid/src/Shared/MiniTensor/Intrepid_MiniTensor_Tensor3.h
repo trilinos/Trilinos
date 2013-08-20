@@ -46,11 +46,17 @@
 
 namespace Intrepid {
 
+template<typename T, Index N>
+struct tensor3_store
+{
+  typedef Storage<T, dimension_order<N, 3>::value> type;
+};
+
 ///
 /// Third-order tensor.
 ///
 template<typename T, Index N = DYNAMIC>
-class Tensor3 : public TensorBase<T, Storage<T, dimension_order<N, 3>::value > >
+class Tensor3 : public TensorBase<T, typename tensor3_store<T, N>::type>
 {
 public:
 
@@ -71,7 +77,7 @@ public:
   ///
   /// Storage type
   ///
-  typedef Storage<T, dimension_order<N, ORDER>::value >
+  typedef typename tensor3_store<T, N>::type
   Store;
 
   ///

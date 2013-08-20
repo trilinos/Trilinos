@@ -94,6 +94,39 @@ struct dimension_order<D, 4> {
   static const Index value = D * D * D * D;
 };
 
+/// Integer square template restricted to dimensions defined below.
+/// Useful for constructing a 2nd-order tensor from a 4th-order
+/// tensor with static storage.
+template <Index N>
+struct second_to_fourth_dimension {
+  static const Index value = 0;
+};
+
+template <>
+struct second_to_fourth_dimension<DYNAMIC> {
+  static const Index value = DYNAMIC;
+};
+
+template <>
+struct second_to_fourth_dimension<1> {
+  static const Index value = 1;
+};
+
+template <>
+struct second_to_fourth_dimension<4> {
+  static const Index value = 2;
+};
+
+template <>
+struct second_to_fourth_dimension<9> {
+  static const Index value = 3;
+};
+
+template <>
+struct second_to_fourth_dimension<16> {
+  static const Index value = 4;
+};
+
 /// Manipulation of static and dynamic dimensions.
 template <Index N, Index P>
 struct dimension_add {
