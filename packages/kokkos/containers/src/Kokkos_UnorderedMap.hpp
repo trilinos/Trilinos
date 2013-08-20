@@ -71,17 +71,16 @@ public: //public member functions
   void check_sanity() const
   { m_data.check_sanity(); }
 
-
   uint32_t size() const
-  {  return m_data.get_node_states().value[ Impl::UnorderedMap::USED ]; }
+  {  return m_data.size(); }
 
   uint32_t unused() const
-  {  return m_data.get_node_states().value[ Impl::UnorderedMap::UNUSED ]; }
+  {  return m_data.unused(); }
 
   uint32_t pending_delete() const
-  {  return m_data.get_node_states().value[ Impl::UnorderedMap::PENDING_DELETE ]; }
+  {  return m_data.pending_delete(); }
 
-  bool failed_inserts() const
+  uint32_t failed_inserts() const
   { return m_data.failed_inserts(); }
 
   KOKKOS_INLINE_FUNCTION
@@ -89,19 +88,21 @@ public: //public member functions
   { return m_data.capacity(); }
 
   KOKKOS_INLINE_FUNCTION
-  uint32_t hash_length() const
-  { return static_cast<uint32_t>(m_data.hashes.size()); }
+  uint32_t hash_capacity() const
+  { return m_data.hash_capacity(); }
 
-
-  //---------------------------------------------------------------------------
-  //---------------------------------------------------------------------------
   void remove_pending_delete() const
   {  return m_data.remove_pending_delete_keys(); }
+
+  //---------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
 
   KOKKOS_INLINE_FUNCTION
   insert_result insert(const key_type & k, const insert_mapped_type & v = insert_mapped_type()) const
   {
+    m_data.set_modified();
+
     insert_result result(INSERT_FAILED,NULL);
 
     const uint32_t hash_value = m_data.key_hash(k);
@@ -168,6 +169,8 @@ public: //public member functions
   KOKKOS_INLINE_FUNCTION
   void mark_pending_delete(const key_type & k) const
   {
+    m_data.set_modified();
+
     const uint32_t hash_value = m_data.key_hash(k);
     const uint32_t hash_index = hash_value % m_data.hashes.size();
 
@@ -267,10 +270,10 @@ private: // private member functions
     const uint32_t start_block = hash_value % num_blocks;
     const uint32_t end_block = start_block + num_blocks;
 
-    if (*m_data.no_failed_inserts) {
+    if (m_data.no_failed_inserts()) {
 
       for (uint32_t i = start_block; i < end_block; ++i) {
-        if (!(*m_data.no_failed_inserts)) break;
+        if (!m_data.no_failed_inserts()) break;
 
         const uint32_t block = i % num_blocks;
         volatile int * used_count = &m_data.node_blocks[block].used_count;
@@ -281,7 +284,7 @@ private: // private member functions
           if (static_cast<unsigned>(old_count) < node_block_type::size) {
             //claimed a node in this block keep looping block utill successful at claming a node
             for (uint32_t start_node = (hash_value & node_block_type::mask); true; ++start_node) {
-              if (!(*m_data.no_failed_inserts)) break;
+              if (!m_data.no_failed_inserts()) break;
               const uint32_t n = (block*node_block_type::size) + (start_node & node_block_type::mask);
               volatile uint64_t * atomic = &m_data.get_node(n).atomic.value;
               uint64_t value = *atomic;
@@ -299,14 +302,11 @@ private: // private member functions
         }
       }
       // unable to get a free node -- insert failed
-      *m_data.no_failed_inserts = false;
-#if defined( __CUDA_ARCH__ )
-      __threadfence();
-#endif
+      m_data.set_failed_insert();
     }
     // count the failed insert
-    volatile int * failed_insert_count = &m_data.node_blocks[start_block].failed_insert_count;
-    atomic_fetch_add(failed_insert_count, 1);
+    volatile int * failed_inserts = &m_data.node_blocks[start_block].failed_inserts;
+    atomic_fetch_add(failed_inserts, 1);
     return node_atomic::invalid_next;
   }
 
@@ -374,27 +374,28 @@ public: //public member functions
   void check_sanity() const
   { m_data.check_sanity(); }
 
-
   uint32_t size() const
-  {  return m_data.get_node_states().value[ Impl::UnorderedMap::USED ]; }
+  {  return m_data.size(); }
 
   uint32_t unused() const
-  {  return m_data.get_node_states().value[ Impl::UnorderedMap::UNUSED ]; }
+  {  return m_data.unused(); }
 
   uint32_t pending_delete() const
-  {  return m_data.get_node_states().value[ Impl::UnorderedMap::PENDING_DELETE ]; }
+  {  return m_data.pending_delete(); }
 
   uint32_t failed_inserts() const
   { return m_data.failed_inserts(); }
-
 
   KOKKOS_INLINE_FUNCTION
   uint32_t capacity() const
   { return m_data.capacity(); }
 
   KOKKOS_INLINE_FUNCTION
-  uint32_t hash_length() const
-  { return static_cast<uint32_t>(m_data.hashes.size()); }
+  uint32_t hash_capacity() const
+  { return m_data.hash_capacity(); }
+
+  void remove_pending_delete() const
+  {  return m_data.remove_pending_delete_keys(); }
 
 
   KOKKOS_INLINE_FUNCTION
@@ -416,10 +417,65 @@ public: //public member functions
   }
 
 
+  KOKKOS_INLINE_FUNCTION
+  void mark_pending_delete(const key_type & k) const
+  {
+    m_data.set_modified();
+
+    const uint32_t hash_value = m_data.key_hash(k);
+    const uint32_t hash_index = hash_value % m_data.hashes.size();
+
+    bool curr_equal = false;
+    uint32_t curr_index = node_atomic::invalid_next;
+    const volatile uint64_t * prev_atomic = & m_data.hashes[hash_index].value;
+    uint64_t prev = 0u;
+
+    find_previous(k,prev_atomic,prev,curr_equal,curr_index);
+
+    do {
+      if (curr_equal) {
+        // mark the current node as deleted
+        volatile uint64_t * curr_atomic_ptr = &m_data.get_node(curr_index).atomic.value;
+        uint64_t curr_atomic = *curr_atomic_ptr;
+        while ( node_atomic::state(curr_atomic) == Impl::UnorderedMap::USED) {
+          uint64_t new_atomic = node_atomic::make_atomic( node_atomic::next(curr_atomic), Impl::UnorderedMap::PENDING_DELETE);
+          curr_atomic = atomic_compare_exchange(curr_atomic_ptr,curr_atomic,new_atomic);
+        }
+        return;
+      }
+    } while (true);
+  }
+
+
+private:
+  KOKKOS_INLINE_FUNCTION
+  void find_previous(const key_type & k, const volatile uint64_t *& prev_atomic, uint64_t & prev, bool &curr_equal, uint32_t & curr_index) const
+  {
+    curr_equal = false;
+    do {
+      prev = *prev_atomic;
+      curr_index = node_atomic::next(prev);
+      const bool curr_invalid = curr_index == node_atomic::invalid_next;
+
+      if (curr_invalid) break;
+
+       // global read of the key
+      volatile const key_type * const key_ptr = &m_data.get_node(curr_index).value.first;
+      const key_type curr_key = *key_ptr;
+
+      const bool curr_less = m_data.key_compare( curr_key, k);
+      const bool curr_greater = m_data.key_compare( k, curr_key);
+      curr_equal = !curr_less && !curr_greater;
+
+      if (!curr_less) break;
+
+      prev_atomic = & m_data.get_node(node_atomic::next(prev)).atomic.value;
+    } while (true);
+  }
+
 //private: // private members
 public:
   map_data m_data;
-
 };
 
 
@@ -456,28 +512,28 @@ public: //public member functions
   void check_sanity() const
   { m_data.check_sanity(); }
 
-
   uint32_t size() const
-  {  return m_data.get_node_states().value[ Impl::UnorderedMap::USED ]; }
+  {  return m_data.size(); }
 
   uint32_t unused() const
-  {  return m_data.get_node_states().value[ Impl::UnorderedMap::UNUSED ]; }
+  {  return m_data.unused(); }
 
   uint32_t pending_delete() const
-  {  return m_data.get_node_states().value[ Impl::UnorderedMap::PENDING_DELETE ]; }
+  {  return m_data.pending_delete(); }
 
   uint32_t failed_inserts() const
   { return m_data.failed_inserts(); }
-
 
   KOKKOS_INLINE_FUNCTION
   uint32_t capacity() const
   { return m_data.capacity(); }
 
   KOKKOS_INLINE_FUNCTION
-  uint32_t hash_length() const
-  { return static_cast<uint32_t>(m_data.hashes.size()); }
+  uint32_t hash_capacity() const
+  { return m_data.hash_capacity(); }
 
+  void remove_pending_delete() const
+  {  return m_data.remove_pending_delete_keys(); }
 
   KOKKOS_INLINE_FUNCTION
   const_pointer find( const key_type & k) const
@@ -485,7 +541,6 @@ public: //public member functions
     const uint32_t node_index = m_data.find_node_index(k);
     return (node_index != node_atomic::invalid_next) ? &m_data.get_node(node_index).value : NULL;
   }
-
 
   KOKKOS_INLINE_FUNCTION
   const_pointer get_value(uint64_t i) const
@@ -535,28 +590,28 @@ public: //public member functions
   void check_sanity() const
   { m_data.check_sanity(); }
 
-
   uint32_t size() const
-  {  return m_data.get_node_states().value[ Impl::UnorderedMap::USED ]; }
+  {  return m_data.size(); }
 
   uint32_t unused() const
-  {  return m_data.get_node_states().value[ Impl::UnorderedMap::UNUSED ]; }
+  {  return m_data.unused(); }
 
   uint32_t pending_delete() const
-  {  return m_data.get_node_states().value[ Impl::UnorderedMap::PENDING_DELETE ]; }
+  {  return m_data.pending_delete(); }
 
   uint32_t failed_inserts() const
   { return m_data.failed_inserts(); }
-
 
   KOKKOS_INLINE_FUNCTION
   uint32_t capacity() const
   { return m_data.capacity(); }
 
   KOKKOS_INLINE_FUNCTION
-  uint32_t hash_length() const
-  { return static_cast<uint32_t>(m_data.hashes.size()); }
+  uint32_t hash_capacity() const
+  { return m_data.hash_capacity(); }
 
+  void remove_pending_delete() const
+  {  return m_data.remove_pending_delete_keys(); }
 
   KOKKOS_INLINE_FUNCTION
   const_pointer find( const key_type & k) const
@@ -564,7 +619,6 @@ public: //public member functions
     const uint32_t node_index = m_data.find_node_index(k);
     return (node_index != node_atomic::invalid_next) ? &m_data.get_node(node_index).value : NULL;
   }
-
 
   KOKKOS_INLINE_FUNCTION
   const_pointer get_value(uint64_t i) const
@@ -579,7 +633,6 @@ public: //public member functions
 //private: // private members
 public:
   map_data m_data;
-
 };
 
 } // namespace Kokkos
