@@ -62,7 +62,7 @@ norm(Tensor<T, N> const & A)
   switch (dimension) {
 
     default:
-      s = dotdot(A, A);
+      s = norm_f_square(A);
       break;
 
     case 3:
@@ -264,10 +264,9 @@ det(Tensor<T, N> const & A)
     break;
 
     case 3:
-      s =
-          -A(0,2)*A(1,1)*A(2,0) + A(0,1)*A(1,2)*A(2,0) +
-          A(0,2)*A(1,0)*A(2,1) - A(0,0)*A(1,2)*A(2,1) -
-          A(0,1)*A(1,0)*A(2,2) + A(0,0)*A(1,1)*A(2,2);
+      s = -A(0,2)*A(1,1)*A(2,0) + A(0,1)*A(1,2)*A(2,0) +
+           A(0,2)*A(1,0)*A(2,1) - A(0,0)*A(1,2)*A(2,1) -
+           A(0,1)*A(1,0)*A(2,2) + A(0,0)*A(1,1)*A(2,2);
       break;
 
     case 2:
@@ -344,7 +343,7 @@ I2(Tensor<T, N> const & A)
   T
   s = 0.0;
 
-  const T
+  T const
   trA = trace(A);
 
   switch (dimension) {

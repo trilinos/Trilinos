@@ -47,27 +47,6 @@
 
 namespace Intrepid {
 
-/// Check whether storage is static or dynamic
-template <Index N>
-struct is_static {
-  static const bool value = true;
-};
-
-template <>
-struct is_static<DYNAMIC> {
-  static const bool value = false;
-};
-
-template <Index N>
-struct is_dynamic {
-  static const bool value = false;
-};
-
-template <>
-struct is_dynamic<DYNAMIC> {
-  static const bool value = true;
-};
-
 /// Integer power template restricted to orders defined below
 template <Index D, Index O>
 struct dimension_order {
@@ -94,7 +73,7 @@ struct dimension_order<D, 4> {
   static const Index value = D * D * D * D;
 };
 
-/// Integer square template restricted to dimensions defined below.
+/// Integer square root template restricted to dimensions defined below.
 /// Useful for constructing a 2nd-order tensor from a 4th-order
 /// tensor with static storage.
 template <Index N>

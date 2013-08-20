@@ -59,6 +59,38 @@ inverse(Tensor<T, N> const & A)
   Index const
   dimension = A.get_dimension();
 
+  switch (dimension) {
+
+  case 3:
+    {
+      T const determinant = det(A);
+      assert(determinant != 0.0);
+      return Tensor<T, N>(
+        -A(1,2)*A(2,1) + A(1,1)*A(2,2),
+         A(0,2)*A(2,1) - A(0,1)*A(2,2),
+        -A(0,2)*A(1,1) + A(0,1)*A(1,2),
+         A(1,2)*A(2,0) - A(1,0)*A(2,2),
+        -A(0,2)*A(2,0) + A(0,0)*A(2,2),
+         A(0,2)*A(1,0) - A(0,0)*A(1,2),
+        -A(1,1)*A(2,0) + A(1,0)*A(2,1),
+         A(0,1)*A(2,0) - A(0,0)*A(2,1),
+        -A(0,1)*A(1,0) + A(0,0)*A(1,1)
+        ) / determinant;
+    }
+    break;
+
+  case 2:
+    {
+      T const determinant = det(A);
+      assert(determinant != 0.0);
+      return Tensor<T, N>(A(1,1), -A(0,1), -A(1,0), A(0,0)) / determinant;
+    }
+    break;
+
+  default:
+    break;
+  }
+
   Tensor<T, N> S = A;
   Tensor<T, N> B = identity<T, N>(dimension);
 
@@ -718,7 +750,7 @@ log_eig_sym(Tensor<T, N> const & A)
 }
 
 //
-// R^N logarithmic map of a rotation. Not implemented yet.
+// R^N logarithmic map of a rotation.
 // \param R with \f$ R \in SO(N) \f$
 // \return \f$ r = \log R \f$ with \f$ r \in so(N) \f$
 //
@@ -860,7 +892,7 @@ log_rotation_pi(Tensor<T, N> const & R)
       T theta = std::acos(-1.0);
 
       if (R(0,0) > 0.0) {
-        theta = - theta;
+        theta = -theta;
       }
 
       r(0,0) = 0.0;
@@ -1314,10 +1346,10 @@ svd_NxN(Tensor<T, N> const & A)
     }
 
     // Obtain left and right Givens rotations by using 2x2 SVD
-    Tensor <T, N>
+    Tensor <T, 2>
     Spq(S(p,p), S(p,q), S(q,p), S(q,q));
 
-    Tensor <T, N>
+    Tensor <T, 2>
     L(2), D(2), R(2);
 
     boost::tie(L, D, R) = svd_2x2(Spq);
