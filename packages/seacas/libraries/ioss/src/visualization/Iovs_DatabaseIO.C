@@ -63,6 +63,25 @@ namespace Iovs {
                          Ioss::DatabaseIO (region, filename, db_usage, communicator, props)
 
   {
+    std::ostringstream errmsg;
+    if( (db_usage == Ioss::WRITE_RESTART)||
+        (db_usage == Ioss::READ_RESTART) ){
+        errmsg << "ParaView catalyst database type cannot be used in a RESTART block.\n";
+        IOSS_ERROR(errmsg);
+    }
+    else if(db_usage == Ioss::WRITE_HEARTBEAT) {
+        errmsg << "ParaView catalyst database type cannot be used in a HEARTBEAT block.\n";
+        IOSS_ERROR(errmsg);
+    }
+    else if(db_usage == Ioss::WRITE_HISTORY) {
+        errmsg << "ParaView catalyst database type cannot be used in a HISTORY block.\n";
+        IOSS_ERROR(errmsg);
+    }
+    else if(db_usage == Ioss::READ_MODEL) {
+        errmsg << "ParaView catalyst database type cannot be used to read a model.\n";
+        IOSS_ERROR(errmsg);
+    }
+
     dbState = Ioss::STATE_UNKNOWN;
     this->pvcsa = 0;
     this->globalNodeAndElementIDsCreated = false;
@@ -131,8 +150,13 @@ namespace Iovs {
       std::string plugin_python_module_path;
 
       if(!ParaViewCatalystSierraAdaptorBaseFactory::exists("ParaViewCatalystSierraAdaptor")) {
-          build_catalyst_plugin_paths(plugin_library_path,
-                                        plugin_python_module_path);
+          if(getenv("CATALYST_PLUGIN")) {
+              plugin_library_path = getenv("CATALYST_PLUGIN");
+          }
+          else {
+              build_catalyst_plugin_paths(plugin_library_path,
+                                          plugin_python_module_path);
+          }
           sierra::Plugin::Registry::rootInstance().registerDL(plugin_library_path.c_str(), "");
           if(!ParaViewCatalystSierraAdaptorBaseFactory::exists("ParaViewCatalystSierraAdaptor")) {
               std::ostringstream errmsg;
@@ -146,7 +170,7 @@ namespace Iovs {
       if(this->paraview_script_filename.empty()) {
           if(plugin_python_module_path.empty()) {
               build_catalyst_plugin_paths(plugin_library_path,
-                                            plugin_python_module_path);
+                                          plugin_python_module_path);
           }
           if ( !boost::filesystem::exists(plugin_python_module_path) ) {
               std::ostringstream errmsg;
