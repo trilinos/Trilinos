@@ -147,6 +147,10 @@ public:
   //----------------------------------------
 
   KOKKOS_INLINE_FUNCTION
+  unsigned global_coord_max( unsigned axis ) const
+  { return m_global_node_box[axis][1]; }
+
+  KOKKOS_INLINE_FUNCTION
   void local_node_coord( size_t lid , unsigned coord[] ) const
   {
     // Local id within an 'owns' block (has sentinal)
