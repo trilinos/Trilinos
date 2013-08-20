@@ -682,7 +682,7 @@ namespace stk {
             double r = input_param_coords(0,0);
             double s = input_param_coords(0,1);
             double t = input_param_coords(0,2);
-            // transform to [0,1]x[0,1]x[0,0.49999] 
+            // transform to [0,1]x[0,1]x[0,0.49999]
             r = (1+r)/2;
             s = (1+s)/2;
             t = t*0.49999;
@@ -790,12 +790,14 @@ namespace stk {
               {
                 entered = true;
 
-                std::cout << "tmp testing basis functions " << std::endl;
-                std::cout << "tmp toTopoKey: " << toTopoKey << " topo_key_quad8      = " << topo_key_quad8 << " cell_topo= " << cell_topo.getName() << std::endl;
-                std::cout << "tmp toTopoKey: " << toTopoKey << " topo_key_shellquad8 = " << topo_key_shellquad8 << " cell_topo= " << cell_topo.getName() << std::endl;
-                std::cout << "tmp toTopoKey: " << toTopoKey << " topo_key_hex20      = " << topo_key_hex20 << " cell_topo= " << cell_topo.getName() << std::endl;
+                if (0)
+                  {
+                    std::cout << "tmp testing basis functions " << std::endl;
+                    std::cout << "tmp toTopoKey: " << toTopoKey << " topo_key_quad8      = " << topo_key_quad8 << " cell_topo= " << cell_topo.getName() << std::endl;
+                    std::cout << "tmp toTopoKey: " << toTopoKey << " topo_key_shellquad8 = " << topo_key_shellquad8 << " cell_topo= " << cell_topo.getName() << std::endl;
+                    std::cout << "tmp toTopoKey: " << toTopoKey << " topo_key_hex20      = " << topo_key_hex20 << " cell_topo= " << cell_topo.getName() << std::endl;
+                  }
                 percept::MyPairIterRelation elem_nodes (m_eMesh, element, mesh::MetaData::NODE_RANK);
-
 
                 PerceptMesh::BasisTypeRCP basis = eMesh.getBasis(cell_topo);
                 MDArray output_tmp(elem_nodes.size(), 1);
@@ -848,14 +850,13 @@ namespace stk {
 
             /// unfortunately, Intrepid doesn't support a quadratic Line<3> element
 
-            if (toTopoKey == topo_key_wedge15 || toTopoKey == topo_key_quad8 || toTopoKey == topo_key_shellquad8 
-                || toTopoKey == topo_key_hex20 
+            if (toTopoKey == topo_key_wedge15 || toTopoKey == topo_key_quad8 || toTopoKey == topo_key_shellquad8
+                || toTopoKey == topo_key_hex20
                 || toTopoKey == topo_key_pyramid13 || toTopoKey == topo_key_pyramid5
                 || toTopoKey == topo_key_tet10)
               {
                 //std::cout << "tmp here 1 i_new_node= " << i_new_node << " base element= " << std::endl;
                 if ( EXTRA_PRINT_URP_IF) eMesh.print_entity(std::cout, element, eMesh.get_coordinates_field() );
-
 
                 interpolateIntrepid(eMesh, field, cell_topo, output_pts, element, input_param_coords, time_val);
                 if (0) // field == eMesh.get_coordinates_field())

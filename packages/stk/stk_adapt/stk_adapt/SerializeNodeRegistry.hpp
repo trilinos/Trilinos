@@ -1040,7 +1040,7 @@ namespace stk {
         SubDimCellToDataMap::iterator iter;
         for (iter = localMap.begin(); iter != localMap.end(); ++iter)
           {
-            const SubDimCell_SDSEntityType& subDimEntity = iter->first;
+            const SubDimCell_SDCEntityType& subDimEntity = iter->first;
             SubDimCellData& nodeId_elementOwnderId = iter->second;
 
             // special case for "interior" subDimEntity's which are centroid nodes for quad or hex elements -
@@ -1131,15 +1131,15 @@ namespace stk {
       }
 
       /// clones {KEY,VALUE} into {key,value} and puts it in globalNR
-      void addKeyValuePair(NodeRegistry& globalNR, NodeRegistry& localNR, const SubDimCell_SDSEntityType& KEY,
+      void addKeyValuePair(NodeRegistry& globalNR, NodeRegistry& localNR, const SubDimCell_SDCEntityType& KEY,
                            SubDimCellData& VALUE )
       {
         bool force_have_node=false;
         PerceptMesh& eMesh = globalNR.getMesh();
 
-        typedef stk::mesh::EntityId SDSEntityType_ID;
-        SDSEntityType_ID key_nodeId;
-        SubDimCell_SDSEntityType key(eMesh); // subDimEntity = (*iter).first;
+        typedef stk::mesh::EntityId SDCEntityType_ID;
+        SDCEntityType_ID key_nodeId;
+        SubDimCell_SDCEntityType key(eMesh); // subDimEntity = (*iter).first;
         stk::mesh::EntityId value_nodeId;
 
         SubDimCellData value; // nodeId_elementOwnderId = (*iter).second;
@@ -1149,7 +1149,7 @@ namespace stk {
         for(unsigned ikeyd=0; ikeyd < KEY.size(); ++ikeyd) 
           {
             key_nodeId = localNR.getMesh().identifier(KEY[ikeyd]);
-            SDSEntityType node = eMesh.get_bulk_data()->get_entity(0, key_nodeId);
+            SDCEntityType node = eMesh.get_bulk_data()->get_entity(0, key_nodeId);
             if (!eMesh.is_valid(node))
               {
                 if (force_have_node)
@@ -1211,7 +1211,7 @@ namespace stk {
 
         for (iter = localMap.begin(); iter != localMap.end(); ++iter)
           {
-            const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+            const SubDimCell_SDCEntityType& subDimEntity = (*iter).first;
             SubDimCellData& nodeId_elementOwnderId = (*iter).second;
             if (m_debug)
               {
@@ -1392,7 +1392,7 @@ namespace stk {
           {
             for (iter = map.begin(); iter != map.end(); ++iter)
               {
-                //const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+                //const SubDimCell_SDCEntityType& subDimEntity = (*iter).first;
                 SubDimCellData& nodeId_elementOwnderId = (*iter).second;
                 NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
                 unsigned nnodes = nodeIds_onSE.size();
@@ -1430,7 +1430,7 @@ namespace stk {
 
         for (iter = map.begin(); iter != map.end(); ++iter)
           {
-            //const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+            //const SubDimCell_SDCEntityType& subDimEntity = (*iter).first;
             SubDimCellData& nodeId_elementOwnderId = (*iter).second;
             NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
             unsigned nnodes = nodeIds_onSE.size();
@@ -1460,7 +1460,7 @@ namespace stk {
           {
             for (iter = map.begin(); iter != map.end(); ++iter)
               {
-                //const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+                //const SubDimCell_SDCEntityType& subDimEntity = (*iter).first;
                 SubDimCellData& nodeId_elementOwnderId = (*iter).second;
                 NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
                 unsigned nnodes = nodeIds_onSE.size();
@@ -1477,7 +1477,7 @@ namespace stk {
 
         for (iter = map.begin(); iter != map.end(); ++iter)
           {
-            //const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+            //const SubDimCell_SDCEntityType& subDimEntity = (*iter).first;
             SubDimCellData& nodeId_elementOwnderId = (*iter).second;
             NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
             unsigned nnodes = nodeIds_onSE.size();
@@ -1520,7 +1520,7 @@ namespace stk {
         int jj=0;
         for (iter = map.begin(); iter != map.end(); ++iter)
           {
-            const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+            const SubDimCell_SDCEntityType& subDimEntity = (*iter).first;
             SubDimCellData& nodeId_elementOwnderId = (*iter).second;
 
             // check if all nodes are on the boundary (defined by shared nodes in the NodeMap)
@@ -1608,11 +1608,11 @@ namespace stk {
             if (doc.Type() == YAML::NodeType::Map)
               {
                 for(YAML::Iterator it=doc.begin();it!=doc.end();++it) {
-                  typedef stk::mesh::EntityId SDSEntityType_ID;
-                  //typedef stk::mesh::Entity SDSEntityType;
-                  SDSEntityType_ID key_quantum;
-                  //typedef SubDimCell<SDSEntityType> SubDimCell_SDSEntityType;
-                  SubDimCell_SDSEntityType key(eMesh); // subDimEntity = (*iter).first;
+                  typedef stk::mesh::EntityId SDCEntityType_ID;
+                  //typedef stk::mesh::Entity SDCEntityType;
+                  SDCEntityType_ID key_quantum;
+                  //typedef SubDimCell<SDCEntityType> SubDimCell_SDCEntityType;
+                  SubDimCell_SDCEntityType key(eMesh); // subDimEntity = (*iter).first;
 
                   //struct NodeIdsOnSubDimEntityType : public std::vector<NodeIdsOnSubDimEntityTypeQuantum>
                   // {
@@ -1638,7 +1638,7 @@ namespace stk {
                   for(YAML::Iterator itk=keySeq.begin();itk!=keySeq.end();++itk) {
                     *itk >> key_quantum;
                     if (DEBUG_YAML) std::cout << "s_r key_quantum= " << key_quantum << std::endl;
-                    SDSEntityType node = eMesh.get_bulk_data()->get_entity(0, key_quantum);
+                    SDCEntityType node = eMesh.get_bulk_data()->get_entity(0, key_quantum);
                     //key.insert(const_cast<stk::mesh::Entity>(&element) );
                     if (!eMesh.is_valid(node))
                       {

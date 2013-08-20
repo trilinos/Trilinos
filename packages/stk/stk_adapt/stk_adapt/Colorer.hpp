@@ -24,21 +24,11 @@
 
 /// define only one of these to be 1
 #define STK_ADAPT_COLORER_SET_TYPE_BOOST 1
-#define STK_ADAPT_COLORER_SET_TYPE_TR1 0
-#define STK_ADAPT_COLORER_SET_TYPE_STD 0
-
 
 #if STK_ADAPT_COLORER_SET_TYPE_BOOST
 #include <boost/unordered_set.hpp>
 #endif
 
-#if STK_ADAPT_COLORER_SET_TYPE_STD
-#include <set>
-#endif
-
-#if STK_ADAPT_COLORER_SET_TYPE_TR1
-#include <tr1/unordered_set>
-#endif
 
 namespace stk {
   namespace adapt {
@@ -60,23 +50,6 @@ namespace stk {
     typedef boost::unordered_set<mesh::EntityId> ColorerNodeSetType;
     typedef boost::unordered_set<mesh::EntityId> ColorerElementSetType;
 #endif
-
-#if STK_ADAPT_COLORER_SET_TYPE_TR1
-#  if !STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR
-    typedef tr1::unordered_set<ColorerStoredEntity> ColorerSetType;
-#  endif
-    typedef tr1::unordered_set<mesh::EntityId> ColorerNodeSetType;
-    typedef tr1::unordered_set<mesh::EntityId> ColorerElementSetType;
-#endif
-
-#if STK_ADAPT_COLORER_SET_TYPE_STD
-#  if !STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR
-    typedef std::set<ColorerStoredEntity> ColorerSetType;
-#  endif
-    typedef std::set<mesh::EntityId> ColorerNodeSetType;
-    typedef std::set<mesh::EntityId> ColorerElementSetType;
-#endif
-
 
     class Colorer
     {

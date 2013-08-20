@@ -54,9 +54,6 @@
 // if this is set, use stk_mesh relations to hold parent/child information, else use special data structures for this
 #define PERCEPT_USE_FAMILY_TREE 1
 
-// if this is set, extra high-rank entities are allowed to be created for use in generating shared nodes (see stk_adapt/NodeRegistry)
-#define PERCEPT_USE_PSEUDO_ELEMENTS 0
-
 //using namespace shards;
 
 namespace Intrepid {

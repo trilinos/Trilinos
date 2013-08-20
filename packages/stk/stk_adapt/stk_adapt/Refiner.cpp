@@ -521,7 +521,7 @@ namespace stk {
           for (unsigned iSubDimOrd = 0; iSubDimOrd < numSubDimNeededEntities; iSubDimOrd++)
             {
               /// note: at this level of granularity we can do single edge refinement, hanging nodes, etc.
-              //SubDimCell_SDSEntityType subDimEntity;
+              //SubDimCell_SDCEntityType subDimEntity;
               //getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
 
               (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
@@ -1112,9 +1112,6 @@ namespace stk {
       m_nodeRegistry->checkDB("after removeDanglingNodes");
 #endif
 
-      // remove pseudo elements
-      //m_nodeRegistry->removePseudoEntities();
-
       set_active_part();
 
       /**/                                                TRACE_PRINT("Refiner: modification_end...start... ");
@@ -1123,16 +1120,6 @@ namespace stk {
       bulkData.modification_begin();
       bulkData.modification_end();
       /**/                                                TRACE_PRINT("Refiner: modification_end...done ");
-
-      // remove pseudo elements
-      if (0)
-        {
-          bulkData.modification_begin();
-          // FIXME  - remove only those that are not shared?
-          //removeNodesWithOnlyPseudoNodeRelations();
-          m_nodeRegistry->removePseudoEntities();
-          bulkData.modification_end();
-        }
 
       //std::cout << "tmp dump_elements 3" << std::endl;
       //m_eMesh.dump_elements();
@@ -4102,7 +4089,7 @@ namespace stk {
                               for (unsigned iSubDimOrd = 0; iSubDimOrd < numSubDimNeededEntities; iSubDimOrd++)
                                 {
                                   static SubDimCellData empty_SubDimCellData;
-                                  SubDimCell_SDSEntityType subDimEntity(m_eMesh);
+                                  SubDimCell_SDCEntityType subDimEntity(m_eMesh);
                                   m_nodeRegistry->getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
 
                                   SubDimCellData* nodeId_elementOwnderId_ptr = m_nodeRegistry->getFromMapPtr(subDimEntity);

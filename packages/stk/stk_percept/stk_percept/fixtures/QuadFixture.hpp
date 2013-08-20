@@ -69,9 +69,6 @@ namespace stk {
 #if PERCEPT_USE_FAMILY_TREE
           names.push_back("FAMILY_TREE");
 #endif
-#if PERCEPT_USE_PSEUDO_ELEMENTS
-          names.push_back("PSEUDO_ELEMENT");
-#endif
           return names;
         }
 

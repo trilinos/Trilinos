@@ -62,7 +62,7 @@ namespace stk {
           for (unsigned iSubDimOrd = 0; iSubDimOrd < numSubDimNeededEntities; iSubDimOrd++)
             {
               /// note: at this level of granularity we can do single edge refinement, hanging nodes, etc.
-              //SubDimCell_SDSEntityType subDimEntity;
+              //SubDimCell_SDCEntityType subDimEntity;
               //getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
               //bool is_empty = m_nodeRegistry->is_empty( element, needed_entity_rank, iSubDimOrd);
               //if(1||!is_empty)

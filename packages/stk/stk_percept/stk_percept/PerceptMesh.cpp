@@ -146,9 +146,6 @@ namespace stk {
 #if PERCEPT_USE_FAMILY_TREE
       entity_rank_names.push_back("FAMILY_TREE");
 #endif
-#if PERCEPT_USE_PSEUDO_ELEMENTS
-      entity_rank_names.push_back("PSEUDO_ELEMENT");
-#endif
 
       m_metaData = new stk::mesh::MetaData();
       m_metaData->initialize(m_spatialDim, entity_rank_names);
@@ -1411,9 +1408,6 @@ namespace stk {
       std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names();
 #if PERCEPT_USE_FAMILY_TREE
       entity_rank_names.push_back("FAMILY_TREE");
-#endif
-#if PERCEPT_USE_PSEUDO_ELEMENTS
-      entity_rank_names.push_back("PSEUDO_ELEMENT");
 #endif
       m_iossMeshData->set_rank_name_vector(entity_rank_names);
 

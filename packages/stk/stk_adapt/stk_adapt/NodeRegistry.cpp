@@ -4,19 +4,6 @@
 
 #include <set>
 
-#if 0 && NODE_REGISTRY_MAP_TYPE_TEUCHOS_HASHTABLE
-namespace Teuchos
-{
-  //template <class T> int hashCode(const T& x);
-
-  template <> int hashCode(const SDCell_HashTable_Key& x)
-  {
-    return (int)x.getHash();
-  }
-
-}
-#endif
-
 namespace stk {
   namespace adapt {
 
@@ -30,31 +17,15 @@ namespace stk {
     //static double m_min_spacing_factor = 0.5;  // reproduce (mostly) old behavior (centroids will be slightly diff)
     static double m_min_spacing_factor = 0.05;
 
-#if !NODE_REGISTRY_MAP_ACCESSORS_INLINED
-    SubDimCellData& NodeRegistry::getFromMap(SubDimCell_EntityId& subDimEntity)
-    {
-      //ftest(subDimEntity);
-      return m_cell_2_data_map[subDimEntity];
-    }
-    void NodeRegistry::putInMap(SubDimCell_EntityId& subDimEntity, SubDimCellData& data)
-    {
-      //m_cell_2_data_map.insert(std::subDimEntity, data);
-      //SubDimCellData& dataInMap = m_cell_2_data_map[subDimEntity];
-      //dataInMap = data;
-      //ftest(subDimEntity);
-      m_cell_2_data_map[subDimEntity] = data;
-    }
-#endif
-
-      /// fill
-      ///    @param subDimEntity with the stk::mesh::EntityId's of
-      ///    the ordinal @param iSubDimOrd sub-dimensional entity of
-      ///    @param element of rank
-      ///    @param needed_entity_rank
-      ///
+    /// fill
+    ///    @param subDimEntity with the stk::mesh::EntityId's of
+    ///    the ordinal @param iSubDimOrd sub-dimensional entity of
+    ///    @param element of rank
+    ///    @param needed_entity_rank
+    ///
     void NodeRegistry::
-      noInline_getSubDimEntity(SubDimCell_SDSEntityType& subDimEntity, const stk::mesh::Entity element, stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd)
-      {
+    noInline_getSubDimEntity(SubDimCell_SDCEntityType& subDimEntity, const stk::mesh::Entity element, stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd)
+    {
         subDimEntity.clear();
         // in the case of elements, we don't share any nodes so we just make a map of element id to node
         if (needed_entity_rank == stk::mesh::MetaData::ELEMENT_RANK)
@@ -126,7 +97,7 @@ namespace stk {
                                         unsigned iv0, unsigned iv1, unsigned nsz, unsigned nsp,  double lspc[8][3], double den_xyz[3], double *coord[8])
       {
         VERIFY_OP_ON(nsz, ==, 2, "hmmm");
-        SubDimCell_SDSEntityType subDimEntity(m_eMesh);
+        SubDimCell_SDCEntityType subDimEntity(m_eMesh);
         subDimEntity.clear();
         subDimEntity.insert(nodes[iv0]);
         subDimEntity.insert(nodes[iv1]);
@@ -467,7 +438,7 @@ namespace stk {
 
         for (iter = m_cell_2_data_map.begin(); iter != m_cell_2_data_map.end(); ++iter)
           {
-            const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+            const SubDimCell_SDCEntityType& subDimEntity = (*iter).first;
             if (do_respect_spacing && *subDimSize_in == 2 && subDimEntity.size() != 2)
               continue;
 
@@ -531,7 +502,7 @@ namespace stk {
               {
                 EXCEPTWATCH;
                 {
-                  SDSEntityType elementId = *subDimEntity.begin();
+                  SDCEntityType elementId = *subDimEntity.begin();
                   //!!element_p = get_entity_element(*m_eMesh.get_bulk_data(), stk::mesh::MetaData::ELEMENT_RANK, elementId);
                   element_p = elementId;
                   if (!m_eMesh.is_valid(element_p))
@@ -598,9 +569,9 @@ namespace stk {
                 else
                   {
                     unsigned ipts=0;
-                    for (SubDimCell_SDSEntityType::const_iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ++ids, ++ipts)
+                    for (SubDimCell_SDCEntityType::const_iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ++ids, ++ipts)
                       {
-                        SDSEntityType nodeId = *ids;
+                        SDCEntityType nodeId = *ids;
                         stk::mesh::Entity node = nodeId;
                         nodes[ipts]=node;
                       }
@@ -900,7 +871,7 @@ namespace stk {
 
           for (iter = m_cell_2_data_map.begin(); iter != m_cell_2_data_map.end(); ++iter)
             {
-              const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+              const SubDimCell_SDCEntityType& subDimEntity = (*iter).first;
               SubDimCellData& nodeId_elementOwnderId = (*iter).second;
 
               NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
@@ -930,9 +901,9 @@ namespace stk {
 
               std::vector<stk::mesh::Entity> attached_rbars;
 
-              for (SubDimCell_SDSEntityType::const_iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ++ids)
+              for (SubDimCell_SDCEntityType::const_iterator ids = subDimEntity.begin(); ids != subDimEntity.end(); ++ids)
                 {
-                  SDSEntityType nodeId = *ids;
+                  SDCEntityType nodeId = *ids;
                   stk::mesh::Entity node = nodeId;
                   found = false;
                   percept::MyPairIterRelation beams (m_eMesh, node, m_eMesh.element_rank());
