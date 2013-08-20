@@ -362,6 +362,7 @@ std::string Chebyshev<MatrixType>::description() const {
 
   oss << ", global rows = " << impl_.getMatrix ()->getGlobalNumRows()
       << ", global cols = " << impl_.getMatrix ()->getGlobalNumCols()
+      << ", global nnz  = " << impl_.getMatrix ()->getGlobalNumEntries()
       << "}";
   return oss.str();
 }
