@@ -691,12 +691,25 @@ namespace Tpetra {
     KokkosClassic::MultiVector<Scalar,Node> & getLocalMVNonConst();
 
     //@}
-
     //! @name Mathematical methods
     //@{
 
-    //! Compute dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i])
-    void dot(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Teuchos::ArrayView<Scalar> &dots) const;
+    /// \brief Compute the dot product of each corresponding pair of
+    ///   vectors (columns) in A and B.
+    ///
+    /// The "dot product" is the standard Euclidean inner product.  If
+    /// the type of entries of the vectors (scalar_type) is complex,
+    /// then A is transposed, not <tt>*this</tt>.  For example, if x
+    /// and y each have one column, then <tt>x.dot (y, dots)</tt>
+    /// computes \f$y^* x = \bar{y}^T x = \sum_i \bar{y}_i \cdot x_i\f$.
+    ///
+    /// \pre <tt>*this</tt> and A have the same number of columns (vectors).
+    /// \pre \c dots has at least as many entries as the number of columns in A.
+    ///
+    /// \post <tt>dots[j] == (this->getVector[j])->dot (* (A.getVector[j]))</tt>
+    void
+    dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+         const Teuchos::ArrayView<Scalar>& dots) const;
 
     //! Put element-wise absolute values of input Multi-vector in target: A = abs(this)
     void abs(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A);
@@ -1109,18 +1122,18 @@ namespace Tpetra {
   template <class Node2>
   Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::clone(const RCP<Node2> &node2) const{
-	typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
+        typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
         typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2> MV2;
         Teuchos::ArrayRCP< Teuchos::ArrayRCP<const Scalar> > MV_view = this->get2dView();
         Teuchos::RCP<const Map2> clonedMap = this->getMap()->template clone<Node2> (node2);
         Teuchos::RCP<MV2> clonedMV = Teuchos::rcp(new MV2(clonedMap, this->getNumVectors()));
         Teuchos::ArrayRCP< Teuchos::ArrayRCP<Scalar> > clonedMV_view = clonedMV->get2dViewNonConst();
         for (size_t i = 0; i < this->getNumVectors(); i++)
-		clonedMV_view[i].deepCopy(MV_view[i]());
+                clonedMV_view[i].deepCopy(MV_view[i]());
         clonedMV_view = Teuchos::null;
         return clonedMV;
   }
-      
+
 
 
 } // namespace Tpetra

@@ -448,7 +448,7 @@ namespace Tpetra {
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> this_type;
     const this_type* src = dynamic_cast<const this_type*> (&sourceObj);
     if (src == NULL) {
-      return false; 
+      return false;
     } else {
       // The target of the Import or Export calls checkSizes() in
       // DistObject::doTransfer().  By that point, we've already
@@ -478,8 +478,8 @@ namespace Tpetra {
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       permuteToLIDs.size() != permuteFromLIDs.size(), std::runtime_error,
-      ": permuteToLIDs and permuteFromLIDs must have the same size." 
-      << std::endl << "permuteToLIDs.size() = " << permuteToLIDs.size () 
+      ": permuteToLIDs and permuteFromLIDs must have the same size."
+      << std::endl << "permuteToLIDs.size() = " << permuteToLIDs.size ()
       << " != permuteFromLIDs.size() = " << permuteFromLIDs.size () << ".");
 
     // We've already called checkSizes(), so this cast must succeed.
@@ -2127,8 +2127,14 @@ namespace Tpetra {
 
     Scalar beta_local = beta; // local copy of beta; might be reassigned below
 
-    TEUCHOS_TEST_FOR_EXCEPTION( getLocalLength() != A_nrows || getNumVectors() != B_ncols || A_ncols != B_nrows, std::runtime_error,
-        errPrefix << "dimension of *this, op(A) and op(B) must be consistent.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      getLocalLength() != A_nrows || getNumVectors() != B_ncols || A_ncols != B_nrows,
+      std::runtime_error,
+      errPrefix << "dimension of *this, op(A) and op(B) must be consistent.  "
+      << std::endl << "The local part of *this is "
+      << getLocalLength() << " x " << getNumVectors()
+      << ", A is " << A_nrows << " x " << A_ncols
+      << ", and B is " << B_nrows << " x " << B_ncols << ".");
 
     bool A_is_local = !A.isDistributed();
     bool B_is_local = !B.isDistributed();
