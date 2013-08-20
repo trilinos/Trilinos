@@ -19,10 +19,10 @@ CUDA_COMPILE(CUDA_OBJECTS ${CUDA_SOURCES})
 SET(SOURCES ${SOURCES} ${CUDA_OBJECTS})
 
 TRIBITS_ADD_LIBRARY(
-  kokkosarray_devicecuda
+  kokkoscore_devicecuda
   NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS kokkosarray_impl
+  DEPLIBS kokkoscore_impl
   CUDALIBRARY
 )
 

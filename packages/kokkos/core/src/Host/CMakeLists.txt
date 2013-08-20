@@ -13,10 +13,10 @@ FILE(GLOB SOURCES *.cpp)
 #-----------------------------------------------------------------------------
 
 TRIBITS_ADD_LIBRARY(
-  kokkosarray_devicehost
+  kokkoscore_devicehost
   NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS kokkosarray_impl
+  DEPLIBS kokkoscore_impl
   )
 
 SET(TRILINOS_INCDIR ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR})

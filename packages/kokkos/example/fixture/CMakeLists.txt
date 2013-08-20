@@ -7,7 +7,7 @@ SET(SOURCES "")
 
 FILE(GLOB SOURCES *.cpp)
 
-SET(LIBRARIES kokkosarray_devicehost kokkosarray_devicethreads kokkosarray_impl)
+SET(LIBRARIES kokkoscore_devicehost kokkoscore_devicethreads kokkoscore_impl)
 
 IF( TPL_ENABLE_CUDA AND TPL_ENABLE_CUSPARSE )
 
@@ -25,7 +25,7 @@ IF( TPL_ENABLE_CUDA AND TPL_ENABLE_CUSPARSE )
     )
 
   LIST( APPEND LIBRARIES
-    kokkosarray_devicecuda test_fixture_cuda
+    kokkoscore_devicecuda test_fixture_cuda
   )
 
 ENDIF()

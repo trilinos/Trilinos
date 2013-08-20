@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_ARRAYVIEWDEFAULT_HPP
-#define KOKKOS_ARRAYVIEWDEFAULT_HPP
+#ifndef KOKKOS_COREVIEWDEFAULT_HPP
+#define KOKKOS_COREVIEWDEFAULT_HPP
 
 #include <Kokkos_Macros.hpp>
 #include <Kokkos_View.hpp>
@@ -1238,5 +1238,5 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#endif /* #ifndef KOKKOS_ARRAYVIEWDEFAULT_HPP */
+#endif /* #ifndef KOKKOS_COREVIEWDEFAULT_HPP */
 

@@ -343,10 +343,10 @@ IF(Stokhos_ENABLE_Sacado)
       )
 
     SET(CUDA_SOURCES "")
-    SET(KKUT_DEPLIBS stokhos kokkosarray_impl kokkosarray_devicehost)
+    SET(KKUT_DEPLIBS stokhos kokkoscore_impl kokkoscore_devicehost)
     IF (Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
       CUDA_COMPILE(CUDA_SOURCES Stokhos_KokkosArrayKernelsUnitTestNew_Cuda.cu)
-      SET(KKUT_DEPLIBS ${KKUT_DEPLIBS} kokkosarray_devicecuda)
+      SET(KKUT_DEPLIBS ${KKUT_DEPLIBS} kokkoscore_devicecuda)
     ENDIF()
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       KokkosArrayKernelsUnitTestNew

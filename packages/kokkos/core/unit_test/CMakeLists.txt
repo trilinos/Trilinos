@@ -12,7 +12,7 @@ SET(SOURCES
   ../TPL/gtest/gtest-all.cc
   )
 
-SET(LIBRARIES kokkosarray_devicehost kokkosarray_devicethreads kokkosarray_impl)
+SET(LIBRARIES kokkoscore_devicehost kokkoscore_devicethreads kokkoscore_impl)
 
 IF(Kokkos_ENABLE_OpenMP)
   LIST( APPEND SOURCES
@@ -32,7 +32,7 @@ IF(Kokkos_ENABLE_Cuda)
     TestCuda.cpp
   )
   LIST( APPEND LIBRARIES
-    kokkosarray_devicecuda unit_cuda
+    kokkoscore_devicecuda unit_cuda
   )
 ENDIF()
 

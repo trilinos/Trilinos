@@ -220,8 +220,8 @@ CONFIG="KokkosCore_config.h"
 
 rm -f ${CONFIG}
 
-echo "#ifndef KOKKOS_ARRAY_CONFIG_H" >> ${CONFIG}
-echo "#define KOKKOS_ARRAY_CONFIG_H" >> ${CONFIG}
+echo "#ifndef KOKKOS_CORE_CONFIG_H" >> ${CONFIG}
+echo "#define KOKKOS_CORE_CONFIG_H" >> ${CONFIG}
 
 if [ -n "${KOKKOS_HAVE_MPI}" ] ;
 then

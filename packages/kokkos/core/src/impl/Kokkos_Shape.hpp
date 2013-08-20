@@ -890,5 +890,5 @@ size_t cardinality_count(
 } /* namespace Impl */
 } /* namespace Kokkos */
 
-#endif /* #ifndef KOKKOS_ARRAYSHAPE_HPP */
+#endif /* #ifndef KOKKOS_CORESHAPE_HPP */
 

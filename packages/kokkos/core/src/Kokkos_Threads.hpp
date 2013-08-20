@@ -155,7 +155,7 @@ public:
    *  If core topology is not input then the full hwloc::get_core_topology() is used.
    */
   static void initialize( const std::pair<unsigned,unsigned> league_team ,
-                          const std::pair<unsigned,unsigned> hardware_topology = 
+                          const std::pair<unsigned,unsigned> hardware_topology =
                                 std::pair<unsigned,unsigned>(0u,0u) );
 
   //@}
@@ -176,7 +176,7 @@ private:
 #include <Threads/Kokkos_ThreadsExec.hpp>
 #include <Threads/Kokkos_Threads_Parallel.hpp>
 
-#endif /* #define KOKKOSARRAY_THREADS_HPP */
+#endif /* #define KOKKOS_THREADS_HPP */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
