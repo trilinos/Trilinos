@@ -483,7 +483,7 @@ struct map_data
            , compare_type compare
            , hash_type hash
           )
-    : node_blocks("unordered_map_nodes", find_hash_size(static_cast<uint32_t>((num_nodes+node_block_type::size-1u)/node_block_type::size)))
+    : node_blocks("unordered_map_nodes", (static_cast<uint32_t>((num_nodes+node_block_type::size-1u)/node_block_type::size)))
     , hashes("unordered_map_hashes", find_hash_size(capacity()) )
     , counts("unordered_map_counts")
     , key_compare(compare)
