@@ -50,8 +50,8 @@ namespace Intrepid {
 template<typename T>
 inline
 Storage<T, DYNAMIC>::Storage() :
-  size_(0),
-  storage_(NULL)
+  storage_(NULL),
+  size_(0)
 {
   return;
 }
@@ -59,8 +59,8 @@ Storage<T, DYNAMIC>::Storage() :
 template<typename T>
 inline
 Storage<T, DYNAMIC>::Storage(Index const number_entries) :
-  size_(0),
-  storage_(NULL)
+  storage_(NULL),
+  size_(0)
 {
   resize(number_entries);
   return;

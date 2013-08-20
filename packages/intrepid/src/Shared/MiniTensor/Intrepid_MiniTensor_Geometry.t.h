@@ -190,15 +190,15 @@ Vector<T, N>
 normal(Vector<T, N> const & p0,
     Vector<T, N> const & p1,
     Vector<T, N> const & p2)
-    {
+{
   // Construct 2 independent vectors
   Vector<T, N> v0 = p1 - p0;
   Vector<T, N> v1 = p2 - p0;
 
-  Vector<T, N> n = cross(v0,v1);
+  Vector< T, N > n = cross(v0, v1);
   n = n / norm(n);
   return n;
-    }
+}
 
 //
 // Given 3 points p0, p1, p2 that define a plane
@@ -517,7 +517,7 @@ interpolate_quadrilateral(
     Vector<T, N> const & p1,
     Vector<T, N> const & p2,
     Vector<T, N> const & p3)
-    {
+{
 
   T
   N0 = 0.25 * (1 - xi(0)) * (1 - xi(1));
@@ -535,7 +535,7 @@ interpolate_quadrilateral(
   p = N0 * p0 + N1 * p1 + N2 * p2 + N3 * p3;
 
   return p;
-    }
+}
 
 //
 // Given triangle nodes and a position
@@ -551,14 +551,14 @@ interpolate_triangle(
     Vector<T, N> const & p0,
     Vector<T, N> const & p1,
     Vector<T, N> const & p2)
-    {
+{
   xi(2) = 1.0 - xi(0) - xi(1);
 
   const Vector<T, N>
   p = xi(0) * p0 + xi(1) * p1 + xi(2) * p2;
 
   return p;
-    }
+}
 
 //
 // Given hexahedron nodes and a position
@@ -579,7 +579,7 @@ interpolate_hexahedron(
     Vector<T, N> const & p5,
     Vector<T, N> const & p6,
     Vector<T, N> const & p7)
-    {
+{
 
   T
   N0 = 0.125 * (1 - xi(0)) * (1 - xi(1)) * (1 - xi(2));
@@ -611,7 +611,7 @@ interpolate_hexahedron(
       N4 * p4 + N5 * p5 + N6 * p6 + N7 * p7;
 
   return p;
-    }
+}
 
 //
 // Given tetrahedron nodes and a position
@@ -628,14 +628,14 @@ interpolate_tetrahedron(
     Vector<T, N> const & p1,
     Vector<T, N> const & p2,
     Vector<T, N> const & p3)
-    {
+{
   xi(3) = 1.0 - xi(0) - xi(1) - xi(2);
 
   const Vector<T, N>
   p = xi(0) * p0 + xi(1) * p1 + xi(2) * p2 + xi(3) * p3;
 
   return p;
-    }
+}
 
 ///
 /// Given element type and nodes and a position
@@ -651,7 +651,7 @@ interpolate_element(
     ELEMENT::Type element_type,
     Vector<T, N> & xi,
     std::vector< Vector<T, N> > const & v)
-    {
+{
   Vector<double> p;
 
   switch (element_type) {
@@ -684,8 +684,7 @@ interpolate_element(
   }
 
   return p;
-
-    }
+}
 
 //
 // Given a vector of points, determine

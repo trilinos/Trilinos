@@ -207,16 +207,16 @@ protected:
   set_dimension(Index const dimension, Index const order);
 
   ///
-  /// dimension
-  ///
-  Index
-  dimension_;
-
-  ///
   /// TensorBase components
   ///
   Store
   components_;
+
+  ///
+  /// dimension
+  ///
+  Index
+  dimension_;
 
 };
 

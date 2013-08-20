@@ -247,12 +247,11 @@ private:
   Storage<T, DYNAMIC> &
   operator=(Storage<T, DYNAMIC> const & s);
 
-  Index
-  size_;
-
   T *
   storage_;
 
+  Index
+  size_;
 };
 
 } // namespace Intrepid
