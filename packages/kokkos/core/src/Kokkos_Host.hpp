@@ -141,6 +141,12 @@ public:
     initialize( std::pair<unsigned,unsigned>( gang_count , worker_count ) );
   }
 
+  inline
+  static void initialize()
+  {
+    initialize( std::pair<unsigned,unsigned>( 1 , 1 ) );
+  }
+
   static void resize_reduce_scratch( unsigned );
 
   static void * root_reduce_scratch();

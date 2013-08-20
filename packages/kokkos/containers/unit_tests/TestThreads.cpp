@@ -60,13 +60,15 @@ class threads : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
+    Kokkos::Host::initialize();
     std::cout << std::setprecision(5) << std::scientific;
 
     std::pair<unsigned, unsigned> team_league(1,4);
     if (Kokkos::hwloc::available()) {
       const std::pair<unsigned,unsigned> core_top =  Kokkos::hwloc::get_core_topology();
+      const unsigned num_hyper_threads =  Kokkos::hwloc::get_core_capacity();
       team_league.first  = core_top.first ;
-      team_league.second = core_top.second;
+      team_league.second = core_top.second * num_hyper_threads;
     }
 
     std::cout << "Threads: " << team_league.first << "x" << team_league.second << std::endl;
@@ -77,6 +79,7 @@ protected:
   static void TearDownTestCase()
   {
     Kokkos::Threads::finalize();
+    Kokkos::Host::finalize();
   }
 };
 
@@ -92,28 +95,29 @@ protected:
       test_failed_insert<Kokkos::Threads>(num_nodes);                             \
   }
 
-THREADS_INSERT_TEST(close,     10000,     6000, 100, 10000)
-THREADS_INSERT_TEST(close,    100000,    90000, 100, 5000)
-THREADS_INSERT_TEST(close,   1000000,   900000, 100, 500)
-THREADS_INSERT_TEST(close,  10000000,  9000000, 100, 50)
-THREADS_INSERT_TEST(close, 100000000, 90000000, 100, 5)
+#define THREADS_ASSIGNEMENT_TEST( num_nodes, repeat )                             \
+  TEST_F( threads, unordered_map_assignment_operators_##num_nodes##_##repeat##x) {       \
+    for (int i=0; i<repeat; ++i)                                               \
+      test_assignement_operators<Kokkos::Host>(num_nodes);                     \
+  }
 
-THREADS_INSERT_TEST(far,     10000,     6000, 100, 10000)
-THREADS_INSERT_TEST(far,    100000,    90000, 100, 5000)
-THREADS_INSERT_TEST(far,   1000000,   900000, 100, 500)
-THREADS_INSERT_TEST(far,  10000000,  9000000, 100, 50)
-THREADS_INSERT_TEST(far, 100000000, 90000000, 100, 5)
+#define THREADS_DEEP_COPY( num_nodes, repeat )                             \
+  TEST_F( threads, unordered_map_deep_copy##num_nodes##_##repeat##x) {       \
+    for (int i=0; i<repeat; ++i)                                               \
+      test_deep_copy<Kokkos::Host>(num_nodes);                     \
+  }
 
-THREADS_INSERT_TEST(mark_pending_delete,     10000,     6000, 100, 10000)
-THREADS_INSERT_TEST(mark_pending_delete,    100000,    90000, 100, 5000)
-THREADS_INSERT_TEST(mark_pending_delete,   1000000,   900000, 100, 500)
-THREADS_INSERT_TEST(mark_pending_delete,  10000000,  9000000, 100, 50)
-THREADS_INSERT_TEST(mark_pending_delete, 100000000, 90000000, 100, 5)
-
-THREADS_FAILED_INSERT_TEST( 10000, 10000 )
+THREADS_INSERT_TEST(close,               100000, 90000, 100, 500)
+THREADS_INSERT_TEST(far,                 100000, 90000, 100, 500)
+THREADS_INSERT_TEST(mark_pending_delete, 100000, 90000, 100, 500)
+THREADS_FAILED_INSERT_TEST( 10000, 5000 )
+THREADS_ASSIGNEMENT_TEST( 10000, 5000 )
+THREADS_DEEP_COPY( 10000, 5000 )
 
 #undef THREADS_INSERT_TEST
 #undef THREADS_FAILED_INSERT_TEST
+#undef THREADS_ASSIGNEMENT_TEST
+#undef THREADS_DEEP_COPY
 
 } // namespace Test
 

@@ -61,7 +61,7 @@ protected:
   static void SetUpTestCase()
   {
     std::cout << std::setprecision(5) << std::scientific;
-    Kokkos::Host::initialize(1,1);
+    Kokkos::Host::initialize();
   }
 
   static void TearDownTestCase()
@@ -82,28 +82,31 @@ protected:
       test_failed_insert<Kokkos::Host>(num_nodes);                             \
   }
 
-HOST_INSERT_TEST(close,     10000,     6000, 100, 1)
-HOST_INSERT_TEST(close,    100000,    90000, 100, 1)
-HOST_INSERT_TEST(close,   1000000,   900000, 100, 1)
-HOST_INSERT_TEST(close,  10000000,  9000000, 100, 1)
-HOST_INSERT_TEST(close, 100000000, 90000000, 100, 1)
+#define HOST_ASSIGNEMENT_TEST( num_nodes, repeat )                             \
+  TEST_F( host, unordered_map_assignment_operators_##num_nodes##_##repeat##x) {       \
+    for (int i=0; i<repeat; ++i)                                               \
+      test_assignement_operators<Kokkos::Host>(num_nodes);                     \
+  }
 
-HOST_INSERT_TEST(far,     10000,     6000, 100, 1)
-HOST_INSERT_TEST(far,    100000,    90000, 100, 1)
-HOST_INSERT_TEST(far,   1000000,   900000, 100, 1)
-HOST_INSERT_TEST(far,  10000000,  9000000, 100, 1)
-HOST_INSERT_TEST(far, 100000000, 90000000, 100, 1)
+#define HOST_DEEP_COPY( num_nodes, repeat )                             \
+  TEST_F( host, unordered_map_deep_copy##num_nodes##_##repeat##x) {       \
+    for (int i=0; i<repeat; ++i)                                               \
+      test_deep_copy<Kokkos::Host>(num_nodes);                     \
+  }
 
-HOST_INSERT_TEST(mark_pending_delete,     10000,     6000, 100, 1)
-HOST_INSERT_TEST(mark_pending_delete,    100000,    90000, 100, 1)
-HOST_INSERT_TEST(mark_pending_delete,   1000000,   900000, 100, 1)
-HOST_INSERT_TEST(mark_pending_delete,  10000000,  9000000, 100, 1)
-HOST_INSERT_TEST(mark_pending_delete, 100000000, 90000000, 100, 1)
-
+HOST_INSERT_TEST(close,               100000, 90000, 100, 1)
+HOST_INSERT_TEST(far,                 100000, 90000, 100, 1)
+HOST_INSERT_TEST(mark_pending_delete, 100000, 90000, 100, 1)
 HOST_FAILED_INSERT_TEST( 10000, 1 )
+HOST_ASSIGNEMENT_TEST( 10000, 1 )
+HOST_DEEP_COPY( 10000, 1 )
+
+
 
 #undef HOST_INSERT_TEST
 #undef HOST_FAILED_INSERT_TEST
+#undef HOST_ASSIGNEMENT_TEST
+#undef HOST_DEEP_COPY
 
 } // namespace Test
 

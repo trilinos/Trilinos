@@ -64,14 +64,19 @@ class openmp : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
+    Kokkos::Host::initialize();
     std::cout << std::setprecision(5) << std::scientific;
-    const std::pair<unsigned,unsigned> core_top =  Kokkos::hwloc::get_core_topology();
 
-    const unsigned gang_count        = core_top.first ;
-    //const unsigned gang_worker_count = core_top.second * Kokkos::hwloc::get_core_capacity();
-    const unsigned gang_worker_count = core_top.second;
+    std::pair<unsigned, unsigned> team_league(1,4);
+    if (Kokkos::hwloc::available()) {
+      const std::pair<unsigned,unsigned> core_top =  Kokkos::hwloc::get_core_topology();
+      team_league.first  = core_top.first ;
+      team_league.second = core_top.second;
+    }
 
-    Kokkos::OpenMP::initialize( gang_count , gang_worker_count );
+    std::cout << "Threads: " << team_league.first << "x" << team_league.second << std::endl;
+
+    Kokkos::OpenMP::initialize( team_league.first , team_league.second );
   }
 
   static void TearDownTestCase()
@@ -81,6 +86,7 @@ protected:
     omp_set_num_threads(0);
 
     ASSERT_EQ( 1 , omp_get_max_threads() );
+    Kokkos::Host::finalize();
   }
 };
 
@@ -96,28 +102,29 @@ protected:
       test_failed_insert<Kokkos::Host>(num_nodes);                             \
   }
 
-OPENMP_INSERT_TEST(close,     10000,     6000, 100, 10000)
-OPENMP_INSERT_TEST(close,    100000,    90000, 100, 5000)
-OPENMP_INSERT_TEST(close,   1000000,   900000, 100, 500)
-OPENMP_INSERT_TEST(close,  10000000,  9000000, 100, 50)
-OPENMP_INSERT_TEST(close, 100000000, 90000000, 100, 5)
+#define OPENMP_ASSIGNEMENT_TEST( num_nodes, repeat )                             \
+  TEST_F( openmp, unordered_map_assignment_operators_##num_nodes##_##repeat##x) {       \
+    for (int i=0; i<repeat; ++i)                                               \
+      test_assignement_operators<Kokkos::Host>(num_nodes);                     \
+  }
 
-OPENMP_INSERT_TEST(far,     10000,     6000, 100, 10000)
-OPENMP_INSERT_TEST(far,    100000,    90000, 100, 5000)
-OPENMP_INSERT_TEST(far,   1000000,   900000, 100, 500)
-OPENMP_INSERT_TEST(far,  10000000,  9000000, 100, 50)
-OPENMP_INSERT_TEST(far, 100000000, 90000000, 100, 5)
+#define OPENMP_DEEP_COPY( num_nodes, repeat )                             \
+  TEST_F( openmp, unordered_map_deep_copy##num_nodes##_##repeat##x) {       \
+    for (int i=0; i<repeat; ++i)                                               \
+      test_deep_copy<Kokkos::Host>(num_nodes);                     \
+  }
 
-OPENMP_INSERT_TEST(mark_pending_delete,     10000,     6000, 100, 10000)
-OPENMP_INSERT_TEST(mark_pending_delete,    100000,    90000, 100, 5000)
-OPENMP_INSERT_TEST(mark_pending_delete,   1000000,   900000, 100, 500)
-OPENMP_INSERT_TEST(mark_pending_delete,  10000000,  9000000, 100, 50)
-OPENMP_INSERT_TEST(mark_pending_delete, 100000000, 90000000, 100, 5)
-
-OPENMP_FAILED_INSERT_TEST( 10000, 10000 )
+OPENMP_INSERT_TEST(close,               100000, 90000, 100, 500)
+OPENMP_INSERT_TEST(far,                 100000, 90000, 100, 500)
+OPENMP_INSERT_TEST(mark_pending_delete, 100000, 90000, 100, 500)
+OPENMP_FAILED_INSERT_TEST( 10000, 5000 )
+OPENMP_ASSIGNEMENT_TEST( 10000, 5000 )
+OPENMP_DEEP_COPY( 10000, 5000 )
 
 #undef OPENMP_INSERT_TEST
 #undef OPENMP_FAILED_INSERT_TEST
+#undef OPENMP_ASSIGNEMENT_TEST
+#undef OPENMP_DEEP_COPY
 
 } // namespace test
 

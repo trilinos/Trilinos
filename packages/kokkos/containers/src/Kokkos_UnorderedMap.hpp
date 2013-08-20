@@ -15,6 +15,27 @@
 #include <stdint.h>
 
 namespace Kokkos {
+
+template <   typename Key
+           , typename T
+           , typename Device
+           , typename Compare = less<typename Impl::remove_const<Key>::type>
+           , typename Hash = hash<typename Impl::remove_const<Key>::type>
+        >
+class unordered_map;
+
+
+template <  typename DKey, typename DT, typename DDevice
+          , typename SKey, typename ST, typename SDevice
+          , typename Compare, typename Hash >
+inline void deep_copy(         unordered_map<DKey, DT, DDevice, Compare, Hash> & dst
+                       , const unordered_map<SKey, ST, SDevice, Compare, Hash> & src )
+{
+  Impl::UnorderedMap::deep_copy_impl(dst, src);
+}
+
+
+
 enum unordered_map_insert_state
 {
     INSERT_FAILED
@@ -25,8 +46,8 @@ enum unordered_map_insert_state
 template <   typename Key
            , typename T
            , typename Device
-           , typename Compare = less<typename Impl::remove_const<Key>::type>
-           , typename Hash = hash<typename Impl::remove_const<Key>::type>
+           , typename Compare
+           , typename Hash
         >
 class unordered_map
 {
@@ -48,6 +69,8 @@ public: // public types and constants
 
   typedef pair<unordered_map_insert_state, pointer> insert_result;
 
+  typedef unordered_map<Key,T,Kokkos::Host,Compare,Hash> HostMirror;
+
 private:
 
   typedef typename Impl::if_c<  map_data::has_void_mapped_type
@@ -58,7 +81,7 @@ private:
 
 public: //public member functions
 
-  unordered_map(  uint32_t arg_num_nodes
+  unordered_map(  uint32_t arg_num_nodes = 0
                 , compare_type compare = compare_type()
                 , hash_type hash = hash_type()
                )
@@ -67,6 +90,28 @@ public: //public member functions
              , hash
             )
   {}
+
+  void clear()
+  {
+    m_data = map_data(0, m_data.key_compare, m_data.key_hash);
+  }
+
+  void shrink_to_fit()
+  { reserve(0); }
+
+  void reserve(unsigned new_capacity)
+  {
+    const uint32_t curr_size = size();
+    new_capacity = new_capacity < curr_size ? curr_size : new_capacity;
+
+    unordered_map<key_type, mapped_type, device_type, compare_type, hash_type>
+      tmp(new_capacity, m_data.key_compare, m_data.key_hash);
+
+    if (new_capacity > 0u && failed_inserts() == 0u ) {
+      Impl::UnorderedMap::copy_map(tmp,*this);
+    }
+    *this = tmp;
+  }
 
   void check_sanity() const
   { m_data.check_sanity(); }
@@ -101,6 +146,8 @@ public: //public member functions
   KOKKOS_INLINE_FUNCTION
   insert_result insert(const key_type & k, const insert_mapped_type & v = insert_mapped_type()) const
   {
+    //KOKKOS_RESTRICT_EXECUTION_TO( typename Device::memory_space );
+
     m_data.set_modified();
 
     insert_result result(INSERT_FAILED,NULL);
@@ -169,6 +216,8 @@ public: //public member functions
   KOKKOS_INLINE_FUNCTION
   void mark_pending_delete(const key_type & k) const
   {
+    //KOKKOS_RESTRICT_EXECUTION_TO( typename Device::memory_space );
+
     m_data.set_modified();
 
     const uint32_t hash_value = m_data.key_hash(k);
@@ -246,6 +295,8 @@ public: //public member functions
   KOKKOS_INLINE_FUNCTION
   pointer find( const key_type & k) const
   {
+    //KOKKOS_RESTRICT_EXECUTION_TO( typename Device::memory_space );
+
     const uint32_t node_index = m_data.find_node_index(k);
     return (node_index != node_atomic::invalid_next) ? &m_data.get_node(node_index).value : NULL;
   }
@@ -254,6 +305,8 @@ public: //public member functions
   KOKKOS_INLINE_FUNCTION
   pointer get_value(uint64_t i) const
   {
+    //KOKKOS_RESTRICT_EXECUTION_TO( typename Device::memory_space );
+
     // add one to pass 0th node
     const bool valid_range = i < m_data.capacity();
     const bool used_node  = node_atomic::state(m_data.get_node(i).atomic) == Impl::UnorderedMap::USED;
@@ -266,6 +319,8 @@ private: // private member functions
   KOKKOS_INLINE_FUNCTION
   uint32_t find_unused_node(uint32_t hash_value) const
   {
+    //KOKKOS_RESTRICT_EXECUTION_TO( typename Device::memory_space );
+
     const uint32_t num_blocks = m_data.node_blocks.size();
     const uint32_t start_block = hash_value % num_blocks;
     const uint32_t end_block = start_block + num_blocks;
@@ -313,6 +368,8 @@ private: // private member functions
   KOKKOS_INLINE_FUNCTION
   void find_previous(const key_type & k, volatile uint64_t *& prev_atomic, uint64_t & prev, bool &curr_equal, uint32_t & curr_index) const
   {
+    //KOKKOS_RESTRICT_EXECUTION_TO( typename Device::memory_space );
+
     curr_equal = false;
     do {
       prev = *prev_atomic;
@@ -335,10 +392,14 @@ private: // private member functions
     } while (true);
   }
 
-//private: // private members
-public:
+private: // private members
   map_data m_data;
 
+  template <typename KKey, typename TT, typename DDevice, typename CCompare, typename HHash>
+  friend class unordered_map;
+
+  template <  class MapDst, class MapSrc >
+  friend void Impl::UnorderedMap::deep_copy_impl( MapDst & dst, const MapSrc & src);
 };
 
 template <   typename Key
@@ -364,12 +425,40 @@ public: // public types and constants
   typedef typename map_data::node_type node_type;
   typedef typename map_data::size_type size_type;
 
+  typedef unordered_map<Key,T,Kokkos::Host,Compare,Hash> HostMirror;
+
 public: //public member functions
+
+  unordered_map()
+    : m_data()
+  {}
 
   template <typename UMap>
   unordered_map(  const UMap & umap )
     : m_data( umap.m_data )
   {}
+
+  void clear()
+  {
+    m_data = map_data(0, m_data.key_compare, m_data.key_hash);
+  }
+
+  void shrink_to_fit()
+  { reserve(0); }
+
+  void reserve(unsigned new_capacity)
+  {
+    const uint32_t curr_size = size();
+    new_capacity = new_capacity < curr_size ? curr_size : new_capacity;
+
+    unordered_map<key_type, mapped_type, device_type, compare_type, hash_type>
+      tmp(new_capacity, m_data.key_compare, m_data.key_hash);
+
+    if (new_capacity > 0u && failed_inserts() == 0u ) {
+      Impl::UnorderedMap::copy_map(tmp,*this);
+    }
+    *this = tmp;
+  }
 
   void check_sanity() const
   { m_data.check_sanity(); }
@@ -397,18 +486,18 @@ public: //public member functions
   void remove_pending_delete() const
   {  return m_data.remove_pending_delete_keys(); }
 
-
   KOKKOS_INLINE_FUNCTION
   pointer find( const key_type & k) const
   {
+    //KOKKOS_RESTRICT_EXECUTION_TO( typename Device::memory_space );
     const uint32_t node_index = m_data.find_node_index(k);
     return (node_index != node_atomic::invalid_next) ? &m_data.get_node(node_index).value : NULL;
   }
 
-
   KOKKOS_INLINE_FUNCTION
   pointer get_value(uint64_t i) const
   {
+    //KOKKOS_RESTRICT_EXECUTION_TO( typename Device::memory_space );
     // add one to pass 0th node
     const bool valid_range = i < m_data.capacity();
     const bool used_node  = node_atomic::state(m_data.get_node(i).atomic) == Impl::UnorderedMap::USED;
@@ -420,6 +509,7 @@ public: //public member functions
   KOKKOS_INLINE_FUNCTION
   void mark_pending_delete(const key_type & k) const
   {
+    //KOKKOS_RESTRICT_EXECUTION_TO( typename Device::memory_space );
     m_data.set_modified();
 
     const uint32_t hash_value = m_data.key_hash(k);
@@ -451,6 +541,7 @@ private:
   KOKKOS_INLINE_FUNCTION
   void find_previous(const key_type & k, const volatile uint64_t *& prev_atomic, uint64_t & prev, bool &curr_equal, uint32_t & curr_index) const
   {
+    //KOKKOS_RESTRICT_EXECUTION_TO( typename Device::memory_space );
     curr_equal = false;
     do {
       prev = *prev_atomic;
@@ -473,9 +564,14 @@ private:
     } while (true);
   }
 
-//private: // private members
-public:
+private: // private members
   map_data m_data;
+
+  template <typename KKey, typename TT, typename DDevice, typename CCompare, typename HHash>
+  friend class unordered_map;
+
+  template <  class MapDst, class MapSrc >
+  friend void Impl::UnorderedMap::deep_copy_impl( MapDst & dst, const MapSrc & src);
 };
 
 
@@ -502,12 +598,40 @@ public: // public types and constants
   typedef typename map_data::node_type node_type;
   typedef typename map_data::size_type size_type;
 
+  typedef unordered_map<Key,T,Kokkos::Host,Compare,Hash> HostMirror;
+
 public: //public member functions
+
+  unordered_map()
+    : m_data()
+  {}
 
   template <typename UMap>
   unordered_map(  const UMap & umap )
     : m_data( umap.m_data )
   {}
+
+  void clear()
+  {
+    m_data = map_data(0, m_data.key_compare, m_data.key_hash);
+  }
+
+  void shrink_to_fit()
+  { reserve(0); }
+
+  void reserve(unsigned new_capacity)
+  {
+    const uint32_t curr_size = size();
+    new_capacity = new_capacity < curr_size ? curr_size : new_capacity;
+
+    unordered_map<key_type, mapped_type, device_type, compare_type, hash_type>
+      tmp(new_capacity, m_data.key_compare, m_data.key_hash);
+
+    if (new_capacity > 0u && failed_inserts() == 0u ) {
+      Impl::UnorderedMap::copy_map(tmp,*this);
+    }
+    *this = tmp;
+  }
 
   void check_sanity() const
   { m_data.check_sanity(); }
@@ -538,6 +662,7 @@ public: //public member functions
   KOKKOS_INLINE_FUNCTION
   const_pointer find( const key_type & k) const
   {
+    //KOKKOS_RESTRICT_EXECUTION_TO( typename Device::memory_space );
     const uint32_t node_index = m_data.find_node_index(k);
     return (node_index != node_atomic::invalid_next) ? &m_data.get_node(node_index).value : NULL;
   }
@@ -545,6 +670,7 @@ public: //public member functions
   KOKKOS_INLINE_FUNCTION
   const_pointer get_value(uint64_t i) const
   {
+    //KOKKOS_RESTRICT_EXECUTION_TO( typename Device::memory_space );
     // add one to pass 0th node
     const bool valid_range = i < m_data.capacity();
     const bool used_node  = node_atomic::state(m_data.get_node(i).atomic) == Impl::UnorderedMap::USED;
@@ -552,10 +678,14 @@ public: //public member functions
     return valid_range && used_node ? &m_data.get_node(i).value : NULL;
   }
 
-//private: // private members
-public:
+private: // private members
   map_data m_data;
 
+  template <typename KKey, typename TT, typename DDevice, typename CCompare, typename HHash>
+  friend class unordered_map;
+
+  template <  class MapDst, class MapSrc >
+  friend void Impl::UnorderedMap::deep_copy_impl( MapDst & dst, const MapSrc & src);
 };
 
 template <   typename Key
@@ -580,12 +710,40 @@ public: // public types and constants
   typedef typename map_data::node_type node_type;
   typedef typename map_data::size_type size_type;
 
+  typedef unordered_map<Key,void,Kokkos::Host,Compare,Hash> HostMirror;
+
 public: //public member functions
+
+  unordered_map()
+    : m_data()
+  {}
 
   template <typename UMap>
   unordered_map(  const UMap & umap )
     : m_data( umap.m_data )
   {}
+
+  void clear()
+  {
+    m_data = map_data(0, m_data.key_compare, m_data.key_hash);
+  }
+
+  void shrink_to_fit()
+  { reserve(0); }
+
+  void reserve(unsigned new_capacity)
+  {
+    const uint32_t curr_size = size();
+    new_capacity = new_capacity < curr_size ? curr_size : new_capacity;
+
+    unordered_map<key_type, mapped_type, device_type, compare_type, hash_type>
+      tmp(new_capacity, m_data.key_compare, m_data.key_hash);
+
+    if (new_capacity > 0u && failed_inserts() == 0u ) {
+      Impl::UnorderedMap::copy_map(tmp,*this);
+    }
+    *this = tmp;
+  }
 
   void check_sanity() const
   { m_data.check_sanity(); }
@@ -616,6 +774,7 @@ public: //public member functions
   KOKKOS_INLINE_FUNCTION
   const_pointer find( const key_type & k) const
   {
+    //KOKKOS_RESTRICT_EXECUTION_TO( typename Device::memory_space );
     const uint32_t node_index = m_data.find_node_index(k);
     return (node_index != node_atomic::invalid_next) ? &m_data.get_node(node_index).value : NULL;
   }
@@ -623,6 +782,7 @@ public: //public member functions
   KOKKOS_INLINE_FUNCTION
   const_pointer get_value(uint64_t i) const
   {
+    //KOKKOS_RESTRICT_EXECUTION_TO( typename Device::memory_space );
     // add one to pass 0th node
     const bool valid_range = i < m_data.capacity();
     const bool used_node  = node_atomic::state(m_data.get_node(i).atomic) == Impl::UnorderedMap::USED;
@@ -630,10 +790,16 @@ public: //public member functions
     return valid_range && used_node ? &m_data.get_node(i).value : NULL;
   }
 
-//private: // private members
-public:
+private: // private members
   map_data m_data;
+
+  template <typename KKey, typename TT, typename DDevice, typename CCompare, typename HHash>
+  friend class unordered_map;
+
+  template <  class MapDst, class MapSrc >
+  friend void Impl::UnorderedMap::deep_copy_impl( MapDst & dst, const MapSrc & src);
 };
+
 
 } // namespace Kokkos
 

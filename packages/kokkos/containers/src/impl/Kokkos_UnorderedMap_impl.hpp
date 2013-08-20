@@ -16,6 +16,8 @@ namespace Kokkos { namespace Impl { namespace UnorderedMap {
 
 inline uint32_t find_hash_size(uint32_t size)
 {
+  if (size == 0u) return 0u;
+
   // these primes try to preserve randomness of hash
   static const uint32_t primes [] = {
         3, 7, 13, 23, 53, 97, 193, 389, 769, 1543
@@ -469,10 +471,18 @@ struct map_data
 
   typedef View< node_state_counts, device_type > counts_view;
 
+  map_data()
+    : node_blocks()
+    , hashes()
+    , counts()
+    , key_compare()
+    , key_hash()
+  {}
+
   map_data(  uint32_t num_nodes
-                     , compare_type compare
-                     , hash_type hash
-                    )
+           , compare_type compare
+           , hash_type hash
+          )
     : node_blocks("unordered_map_nodes", find_hash_size(static_cast<uint32_t>((num_nodes+node_block_type::size-1u)/node_block_type::size)))
     , hashes("unordered_map_hashes", find_hash_size(capacity()) )
     , counts("unordered_map_counts")
@@ -666,6 +676,8 @@ struct map_data
   KOKKOS_INLINE_FUNCTION
   uint32_t find_node_index( const key_type & k) const
   {
+    //KOKKOS_RESTRICT_EXECUTION_TO( typename Device::memory_space );
+
     const uint32_t hash_value = key_hash(k);
     const uint32_t hash_index = hash_value % hashes.size();
 
@@ -708,12 +720,14 @@ struct map_data
   KOKKOS_FORCEINLINE_FUNCTION
   get_node_type get_node(uint32_t i) const
   {
+    //KOKKOS_RESTRICT_EXECUTION_TO( typename Device::memory_space );
     return node_blocks[i>>node_block_type::shift].nodes[i&node_block_type::mask];
   }
 
   KOKKOS_FORCEINLINE_FUNCTION
   void set_modified() const
   {
+    //KOKKOS_RESTRICT_EXECUTION_TO( typename Device::memory_space );
     if (counts().in_sync) {
       counts().in_sync = false;
 #if defined( __CUDA_ARCH__ )
@@ -725,12 +739,14 @@ struct map_data
   KOKKOS_FORCEINLINE_FUNCTION
   bool no_failed_inserts() const
   {
+    //KOKKOS_RESTRICT_EXECUTION_TO( typename Device::memory_space );
     return counts().no_failed_inserts;
   }
 
   KOKKOS_FORCEINLINE_FUNCTION
   void set_failed_insert() const
   {
+    //KOKKOS_RESTRICT_EXECUTION_TO( typename Device::memory_space );
     if (counts().no_failed_inserts) {
       counts().no_failed_inserts = false;
 #if defined( __CUDA_ARCH__ )
@@ -740,23 +756,69 @@ struct map_data
   }
 
   // Data members
-  node_block_view node_blocks;
-  hash_view         hashes;
-  counts_view       counts;
-  compare_type      key_compare;
-  hash_type         key_hash;
+  node_block_view  node_blocks;
+  hash_view        hashes;
+  counts_view      counts;
+  compare_type     key_compare;
+  hash_type        key_hash;
 };
 
 
+template <  class MapDst, class MapSrc >
+inline void deep_copy_impl( MapDst & dst, const MapSrc & src )
+{
+  deep_copy_data_impl(dst.m_data, src.m_data);
+}
+
+template < class MapDst, class MapSrc >
+struct copy_map_functor
+{
+  typedef typename MapDst::device_type device_type;
+  typedef typename device_type::size_type size_type;
+  typedef typename MapDst::const_pointer const_pointer;
 
 
+  MapDst dst;
+  MapSrc src;
 
+  copy_map_functor( const MapDst & arg_dst, const MapSrc & arg_src )
+    : dst(arg_dst), src(arg_src)
+  {
+    parallel_for(src.capacity(), *this);
+  }
 
+  KOKKOS_INLINE_FUNCTION
+  void operator()(size_type i) const
+  {
+    const_pointer ptr = src.get_value(i);
 
+    if (ptr != NULL) {
+      dst.insert(ptr->first,ptr->second);
+    }
+  }
+};
 
+template < class MapDst, class MapSrc >
+void copy_map(MapDst & dst, const MapSrc & src)
+{
+  copy_map_functor<MapDst,MapSrc> func(dst,src);
+}
 
+template <  class MapDst, class MapSrc >
+inline void deep_copy_data_impl( MapDst & dst, const MapSrc & src )
+{
+  typedef typename MapDst::node_block_type node_block_type;
+  typedef Kokkos::DeepCopy< typename MapDst::device_type::memory_space, typename MapSrc::device_type::memory_space > raw_deep_copy;
+  dst.node_blocks = typename MapDst::node_block_view("unordered_map_nodes", src.node_blocks.size());
+  dst.hashes = typename MapDst::hash_view("unordered_map_hashes", src.hashes.size());
 
+  raw_deep_copy(const_cast<node_block_type*>(dst.node_blocks.ptr_on_device()), src.node_blocks.ptr_on_device(), sizeof(node_block_type) * src.node_blocks.size());
+  raw_deep_copy(const_cast<node_atomic*>(dst.hashes.ptr_on_device()), src.hashes.ptr_on_device(), sizeof(node_atomic) * src.hashes.size());
+  raw_deep_copy(const_cast<node_state_counts*>(dst.counts.ptr_on_device()), src.counts.ptr_on_device(), sizeof(node_state_counts));
 
+  dst.key_compare = src.key_compare;
+  dst.key_hash = src.key_hash;
+}
 
 }}} // namespace Kokkos::Impl::UnorderedMap
 

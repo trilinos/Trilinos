@@ -288,7 +288,7 @@ struct ViewAssignable
   // Cannot assign managed = unmannaged
   enum { assignable_value =
     ( is_same< typename ViewLHS::value_type ,
-               typename ViewRHS::value_type >::value 
+               typename ViewRHS::value_type >::value
       ||
       is_same< typename ViewLHS::value_type ,
                typename ViewRHS::const_value_type >::value )
@@ -431,14 +431,14 @@ struct ViewRemap
 
   ViewRemap( const OutputView & arg_out , const InputView & arg_in )
     : output( arg_out ), input( arg_in )
-    , n0( std::min( arg_out.dimension_0() , arg_in.dimension_0() ) )
-    , n1( std::min( arg_out.dimension_1() , arg_in.dimension_1() ) )
-    , n2( std::min( arg_out.dimension_2() , arg_in.dimension_2() ) )
-    , n3( std::min( arg_out.dimension_3() , arg_in.dimension_3() ) )
-    , n4( std::min( arg_out.dimension_4() , arg_in.dimension_4() ) )
-    , n5( std::min( arg_out.dimension_5() , arg_in.dimension_5() ) )
-    , n6( std::min( arg_out.dimension_6() , arg_in.dimension_6() ) )
-    , n7( std::min( arg_out.dimension_7() , arg_in.dimension_7() ) )
+    , n0( std::min( (size_t)arg_out.dimension_0() , (size_t)arg_in.dimension_0() ) )
+    , n1( std::min( (size_t)arg_out.dimension_1() , (size_t)arg_in.dimension_1() ) )
+    , n2( std::min( (size_t)arg_out.dimension_2() , (size_t)arg_in.dimension_2() ) )
+    , n3( std::min( (size_t)arg_out.dimension_3() , (size_t)arg_in.dimension_3() ) )
+    , n4( std::min( (size_t)arg_out.dimension_4() , (size_t)arg_in.dimension_4() ) )
+    , n5( std::min( (size_t)arg_out.dimension_5() , (size_t)arg_in.dimension_5() ) )
+    , n6( std::min( (size_t)arg_out.dimension_6() , (size_t)arg_in.dimension_6() ) )
+    , n7( std::min( (size_t)arg_out.dimension_7() , (size_t)arg_in.dimension_7() ) )
     {
       parallel_for( n0 , *this );
     }
