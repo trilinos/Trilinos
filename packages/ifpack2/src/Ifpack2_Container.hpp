@@ -43,12 +43,14 @@
 #ifndef IFPACK2_CONTAINER_HPP
 #define IFPACK2_CONTAINER_HPP
 
+/// \file Ifpack2_Container.hpp
+/// \brief Ifpack2::Container class declaration
+
 #include <Ifpack2_ConfigDefs.hpp>
 #include <Tpetra_RowMatrix.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_Describable.hpp>
 #include <iostream>
-
 
 namespace Ifpack2 {
 
@@ -91,9 +93,9 @@ namespace Ifpack2 {
 /// types, and may have different template parameters (e.g., local or
 /// global ordinal types).  You may mix and match so long as implicit
 /// conversions are available.  The most obvious use case for this are:
-/// - <tt>MatrixType::global_ordinal_type=long long</tt> and 
+/// - <tt>MatrixType::global_ordinal_type=long long</tt> and
 ///   <tt>InverseType::global_ordinal_type=short</tt>
-/// - <tt>MatrixType::scalar_type=float</tt> and 
+/// - <tt>MatrixType::scalar_type=float</tt> and
 ///   <tt>InverseType::scalar_type=double</tt>
 template<class MatrixType, class InverseType>
 class Container : public Teuchos::Describable {
@@ -120,7 +122,7 @@ public:
   /// by calling ID(i) = j, where i (from 0 to NumRows()) indicates
   /// the container-row, and j indicates the local row in the calling
   /// process.
-  /// 
+  ///
   /// This method is usually used to recorder the local row index (on
   /// the calling process) of the i-th row in the container.
   virtual MatrixLocalOrdinal & ID (const size_t i) = 0;
@@ -146,10 +148,10 @@ public:
   /// problem from which the container was originally extracted.
   virtual void
   apply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& X,
-	 Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& Y,
-	 Teuchos::ETransp mode = Teuchos::NO_TRANS,
-	 MatrixScalar alpha = Teuchos::ScalarTraits<MatrixScalar>::one (),
-	 MatrixScalar beta = Teuchos::ScalarTraits<MatrixScalar>::zero ()) = 0;
+         Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& Y,
+         Teuchos::ETransp mode = Teuchos::NO_TRANS,
+         MatrixScalar alpha = Teuchos::ScalarTraits<MatrixScalar>::one (),
+         MatrixScalar beta = Teuchos::ScalarTraits<MatrixScalar>::zero ()) = 0;
 
   /// \brief Compute Y = alpha * diag(D) * M^{-1} (diag(D) X) + beta*Y
   ///
@@ -159,18 +161,18 @@ public:
   /// overlap, such as Schwarz methods.
   virtual void
   weightedApply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& X,
-		 Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& Y,
-		 const Tpetra::Vector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& D,
-		 Teuchos::ETransp mode = Teuchos::NO_TRANS,
-		 MatrixScalar alpha = Teuchos::ScalarTraits<MatrixScalar>::one (),
-		 MatrixScalar beta = Teuchos::ScalarTraits<MatrixScalar>::zero ()) = 0;
+                 Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& Y,
+                 const Tpetra::Vector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& D,
+                 Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                 MatrixScalar alpha = Teuchos::ScalarTraits<MatrixScalar>::one (),
+                 MatrixScalar beta = Teuchos::ScalarTraits<MatrixScalar>::zero ()) = 0;
 
   //! Print basic information about the container to \c os.
   virtual std::ostream& print (std::ostream& os) const = 0;
 };
 
 template <class MatrixType, class InverseType>
-inline std::ostream& 
+inline std::ostream&
 operator<< (std::ostream& os, const Ifpack2::Container<MatrixType,InverseType>& obj)
 {
   return obj.print (os);
