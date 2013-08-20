@@ -2218,18 +2218,10 @@ namespace Tpetra {
 
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! this->getMap()->isCompatible(*A.getMap()) ||
-      ! this->getMap()->isCompatible(*B.getMap()), std::runtime_error,
-      ": MultiVectors do not have compatible Maps:" << std::endl
-      << "this->getMap(): " << std::endl << *this->getMap()
-      << "A.getMap(): " << std::endl << *A.getMap() << std::endl
-      << "B.getMap(): " << std::endl << *B.getMap() << std::endl);
-#else
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       getLocalLength() != A.getLocalLength() ||
       getLocalLength() != B.getLocalLength(), std::runtime_error,
       ": MultiVectors do not have the same local length.");
-#endif
+#endif // HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       B.getNumVectors() != this->getNumVectors(), std::runtime_error,
       ": MultiVectors 'this' and B must have the same number of vectors.");

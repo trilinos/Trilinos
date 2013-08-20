@@ -815,6 +815,14 @@ namespace Tpetra {
     ///
     /// B must have the same dimensions as <tt>*this</tt>, while A
     /// must have the same number of rows but a single column.
+    ///
+    /// We do not require that A, B, and <tt>*this</tt> have
+    /// compatible Maps, as long as the number of rows in A, B, and
+    /// <tt>*this</tt> on each process is the same.  For example, one
+    /// or more of these vectors might have a locally replicated Map,
+    /// or a Map with a local communicator (<tt>MPI_COMM_SELF</tt>).
+    /// This case may occur in block relaxation algorithms when
+    /// applying a diagonal scaling.
     void
     elementWiseMultiply (Scalar scalarAB,
                          const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,

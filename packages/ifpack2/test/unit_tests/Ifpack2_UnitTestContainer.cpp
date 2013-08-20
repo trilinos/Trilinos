@@ -42,29 +42,29 @@
 */
 
 // ***********************************************************************
-// 
+//
 //      Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 
 
@@ -95,16 +95,17 @@ typedef tif_utest::Node Node;
 //this macro declares the unit-test-class:
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Container, Test0, Scalar, LocalOrdinal, GlobalOrdinal)
 {
+  using std::endl;
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CRS;
+  typedef Ifpack2::ILUT< Tpetra::CrsMatrix<Scalar,LocalOrdinal,LocalOrdinal,Node>    > ILUTlo;
+  typedef Ifpack2::ILUT< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   > ILUTgo;
+
 //we are now in a class method declared by the above macro, and
 //that method has these input arguments:
 //Teuchos::FancyOStream& out, bool& success
 
-  std::string version = Ifpack2::Version();
-  out << "Ifpack2::Version(): " << version << std::endl;
-
-  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CRS;
-  typedef Ifpack2::ILUT< Tpetra::CrsMatrix<Scalar,LocalOrdinal,LocalOrdinal,Node>    > ILUTlo;
-  typedef Ifpack2::ILUT< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   > ILUTgo;
+  out << "Ifpack2::Version(): " << Ifpack2::Version () << endl
+      << "Creating test problem" << endl;
 
   // The simple joy of tridiagonal matrices
   global_size_t num_rows_per_proc = 5;
@@ -114,6 +115,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Container, Test0, Scalar, LocalOrdinal,
   Teuchos::ArrayRCP<Scalar> x_ptr = x.get1dViewNonConst();
   Teuchos::ArrayRCP<Scalar> y_ptr = y.get1dViewNonConst();
 
+  out << "Filling x with pseudorandom numbers" << endl;
+
   // Fill x for all time
   Teuchos::ScalarTraits<double>::seedrandom(24601);
   x.randomize();
@@ -121,39 +124,49 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Container, Test0, Scalar, LocalOrdinal,
   // ====================================== //
   //        Sparse Container + ILUT         //
   // ====================================== //
-  // 
+
+  out << "SparseContainer constructor" << endl;
   Ifpack2::SparseContainer<CRS,ILUTlo> MyContainer((size_t)num_rows_per_proc);
   Teuchos::ParameterList params;
   params.set("fact: ilut level-of-fill", 1.0);
   params.set("fact: drop tolerance", 0.0);
+  out << "Setting SparseContainer parameters" << endl;
   MyContainer.setParameters(params);
 
+  out << "Initializing SparseContainer" << endl;
   // Set IDs to grab the whole matrix
   MyContainer.initialize();
   for(size_t i=0; i<num_rows_per_proc; i++)
     MyContainer.ID(i) = i;
+  out << "Computing SparseContainer" << endl;
   MyContainer.compute(crsmatrix);
 
   // Reference ILUT
+  out << "Setting up reference ILUT implementation" << endl;
   ILUTgo prec(crsmatrix);
   prec.setParameters(params);
   prec.initialize();
   prec.compute();
 
   // Apply the SparseContainer
+  out << "Applying the SparseContainer" << endl;
   MyContainer.apply(x,y);
-  
+
   // Apply raw ILUT
+  out << "Applying reference ILUT" << endl;
   prec.apply(x,z);
 
   // Diff
+  out << "Computing results" << endl;
   TEST_COMPARE_FLOATING_ARRAYS(y.get1dView(), z.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
 
   // Weighted Apply the SparseContainer
+  out << "Testing SparseContainer::weightedApply" << endl;
   d.putScalar(1.0);
   MyContainer.weightedApply(x,y,d);
 
   // Diff
+  out << "Computing results" << endl;
   TEST_COMPARE_FLOATING_ARRAYS(y.get1dView(), z.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
 
 }
@@ -161,7 +174,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Container, Test0, Scalar, LocalOrdinal,
 
 
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Container, Test0, Scalar, LocalOrdinal,GlobalOrdinal) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Container, Test0, Scalar, LocalOrdinal,GlobalOrdinal)
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
 #ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION

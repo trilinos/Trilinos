@@ -240,7 +240,7 @@ private:
   virtual void extract(const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> >& Matrix);
 
   //! Number of rows in the local matrix.
-  size_t NumRows_;
+  size_t numRows_;
   //! Number of vectors in the local linear system.
   size_t NumVectors_;
   //! Linear map on which the local matrix is based.
@@ -264,6 +264,8 @@ private:
 
   Teuchos::ParameterList List_;
 
+  //! Whether apply() and weightedApply() need to permute the input X and output Y.
+  bool needPermutation_;
 };
 
 }// namespace Ifpack2
