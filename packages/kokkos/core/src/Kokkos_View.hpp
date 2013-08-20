@@ -560,7 +560,7 @@ void resize( View<T,L,D,M,S> & v ,
 
   Impl::ViewRemap< view_type , view_type >( v_resized , v );
 
-  v_resized = v ;
+  v = v_resized ;
 }
 
 //----------------------------------------------------------------------------
