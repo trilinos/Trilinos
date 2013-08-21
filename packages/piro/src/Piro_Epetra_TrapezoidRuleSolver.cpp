@@ -211,6 +211,10 @@ void Piro::Epetra::TrapezoidRuleSolver::evalModel( const InArgs& inArgs,
     nox_outargs.set_g(0, g_out);
   }
   RCP<Epetra_Vector> gx_out = outArgs.get_g(num_g); 
+  if (Teuchos::is_null(gx_out)) {
+    // Solution not requested by caller as a response, create local temporary instead
+    gx_out = rcp(new Epetra_Vector(*model->get_x_map()));
+  }
   nox_outargs.set_g(num_g, gx_out);
 
 
