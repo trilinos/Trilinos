@@ -83,7 +83,8 @@ public:
   ParallelFor( const FunctorType & functor , const size_t work )
     : m_func( functor ), m_work( work )
     {
-      ThreadsExec::execute( & ParallelFor::execute , this );
+      ThreadsExec::start( & ParallelFor::execute , this );
+      ThreadsExec::fence();
     }
 
   inline void wait() {}
@@ -111,7 +112,8 @@ public:
     : m_func( functor )
     {
       ThreadsExec::resize_shared_scratch( work.shared_size );
-      ThreadsExec::execute( & ParallelFor::execute , this );
+      ThreadsExec::start( & ParallelFor::execute , this );
+      ThreadsExec::fence();
     }
 
   inline void wait() {}
@@ -156,7 +158,11 @@ public:
     {
       ThreadsExec::resize_reduce_scratch( Reduce::value_size( m_func ) );
 
-      const pointer_type data = (pointer_type) ThreadsExec::execute( & ParallelReduce::execute , this );
+      ThreadsExec::start( & ParallelReduce::execute , this );
+
+      const pointer_type data = (pointer_type) ThreadsExec::root_reduce_scratch();
+
+      ThreadsExec::fence();
 
       Reduce::final( m_func , data );
 
@@ -202,7 +208,11 @@ public:
       ThreadsExec::resize_shared_scratch( work.shared_size );
       ThreadsExec::resize_reduce_scratch( Reduce::value_size( m_func ) );
 
-      const pointer_type data = (pointer_type) ThreadsExec::execute( & ParallelReduce::execute , this );
+      ThreadsExec::start( & ParallelReduce::execute , this );
+
+      const pointer_type data = (pointer_type) ThreadsExec::root_reduce_scratch();
+
+      ThreadsExec::fence();
 
       Reduce::final( m_func , data );
 

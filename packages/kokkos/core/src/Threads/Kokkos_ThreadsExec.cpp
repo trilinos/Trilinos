@@ -69,8 +69,6 @@ namespace Kokkos {
 namespace Impl {
 namespace {
 
-enum { CURRENT_MEMORY_FUNCTOR_SIZE = 0x08000 /* 32k words , 128k bytes */ };
-
 ThreadsExec                  s_threads_process ;
 ThreadsExec                * s_threads_exec[  ThreadsExec::MAX_THREAD_COUNT ];
 std::pair<unsigned,unsigned> s_threads_coord[ ThreadsExec::MAX_THREAD_COUNT ];
@@ -79,8 +77,6 @@ std::string                  s_exception_msg ;
 unsigned s_threads_count       = 0 ;
 unsigned s_threads_reduce_size = 0 ;
 unsigned s_threads_shared_size = 0 ;
-
-const void * s_current_function_lock = 0 ;
 
 void (* volatile s_current_function)( ThreadsExec & , const void * );
 const void * volatile s_current_function_arg = 0 ;
@@ -215,6 +211,16 @@ ThreadsExec::ThreadsExec()
   , m_thread_size(0)
 {
   for ( unsigned i = 0 ; i < MAX_FAN_COUNT ; ++i ) { m_fan[i] = 0 ; }
+
+  if ( & s_threads_process == this ) {
+    m_state = ThreadsExec::Inactive ;
+    m_team_rank = 0 ;
+    m_team_size = 1 ;
+    m_league_rank = 0 ;
+    m_league_size = 1 ;
+    m_thread_rank = 0 ;
+    m_thread_size = 1 ;
+  }
 }
 
 void ThreadsExec::set_threads_relationships(
@@ -380,15 +386,16 @@ void ThreadsExec::verify_is_process( const std::string & name , const bool initi
 void ThreadsExec::fence()
 {
   if ( s_threads_count ) {
+    // Wait for the root thread to complete:
     wait( s_threads_exec[0]->m_state , ThreadsExec::Active );
-
-    s_current_function     = 0 ;
-    s_current_function_arg = 0 ;
 
     if ( s_exception_msg.size() ) {
       Kokkos::Impl::throw_runtime_exception( s_exception_msg );
     }
   }
+
+  s_current_function     = 0 ;
+  s_current_function_arg = 0 ;
 }
 
 inline
@@ -403,11 +410,10 @@ void ThreadsExec::activate_threads()
 /** \brief  Begin execution of the asynchronous functor */
 void ThreadsExec::start( void (*func)( ThreadsExec & , const void * ) , const void * arg )
 {
-  verify_is_process("ThreadsExec::start" , true );
+  verify_is_process("ThreadsExec::start" , false );
 
-  if ( s_current_function_lock && 
-       s_current_function_lock != arg ) {
-    Kokkos::Impl::throw_runtime_exception( std::string( "ThreadsExec::start() FAILED : otherwise acquired" ) );
+  if ( s_current_function || s_current_function_arg ) {
+    Kokkos::Impl::throw_runtime_exception( std::string( "ThreadsExec::start() FAILED : already executing" ) );
   }
 
   s_exception_msg.clear();
@@ -418,39 +424,11 @@ void ThreadsExec::start( void (*func)( ThreadsExec & , const void * ) , const vo
   activate_threads();
 
   if ( s_threads_process.m_thread_size ) {
+    // Master process is the root thread:
+    s_threads_process.m_state = ThreadsExec::Active ;
     (*func)( s_threads_process , arg );
     s_threads_process.m_state = ThreadsExec::Inactive ;
   }
-}
-
-void * ThreadsExec::execute( void (*func)( ThreadsExec & , const void * ) , const void * arg )
-{
-  verify_is_process("ThreadsExec::execute" , true );
-
-  if ( s_current_function || s_current_function_arg ) {
-    Kokkos::Impl::throw_runtime_exception( std::string( "ThreadsExec::execute() FAILED : already executing" ) );
-  }
-
-  s_current_function     = func ;
-  s_current_function_arg = arg ;
-
-  for ( unsigned i = s_threads_count ; 0 < i ; ) {
-    --i ;
-    s_threads_exec[i]->m_state = ThreadsExec::Active ;
-  }
-
-  if ( s_threads_process.m_thread_size ) {
-    (*func)( s_threads_process , arg );
-    s_threads_process.m_state = ThreadsExec::Inactive ;
-  }
-  else {
-    wait( s_threads_exec[0]->m_state , ThreadsExec::Active );
-  }
-
-  s_current_function     = 0 ;
-  s_current_function_arg = 0 ;
-
-  return s_threads_exec[0]->m_reduce ;
 }
 
 //----------------------------------------------------------------------------
@@ -523,7 +501,7 @@ void ThreadsExec::execute_serial( void (*func)( ThreadsExec & , const void * ) )
 
 void * ThreadsExec::root_reduce_scratch()
 {
-  return s_threads_count ? s_threads_exec[0]->m_reduce : (void*) 0 ;
+  return s_threads_process.m_reduce ;
 }
 
 void ThreadsExec::resize_reduce_scratch( size_t size )
@@ -534,11 +512,15 @@ void ThreadsExec::resize_reduce_scratch( size_t size )
 
   if ( rem ) size += Kokkos::Impl::MEMORY_ALIGNMENT - rem ;
 
-  if ( s_threads_reduce_size < size || 0 == size ) {
+  if ( s_threads_reduce_size < size || ( 0 == size && s_threads_reduce_size ) ) {
+
+    verify_is_process( "ThreadsExec::resize_reduce_scratch" , true );
 
     s_threads_reduce_size = size ;
 
     execute_serial( & execute_reduce_resize );
+
+    s_threads_process.m_reduce = s_threads_exec[0]->m_reduce ;
   }
 }
 
@@ -550,18 +532,23 @@ void ThreadsExec::resize_shared_scratch( size_t size )
 
   if ( rem ) size += Kokkos::Impl::MEMORY_ALIGNMENT - rem ;
 
-  if ( s_threads_shared_size < size || 0 == size ) {
+  if ( s_threads_shared_size < size || ( 0 == size && s_threads_shared_size ) ) {
+
+    verify_is_process( "ThreadsExec::resize_shared_scratch" , true );
+
     s_threads_shared_size = size ;
 
     execute_serial( & execute_shared_resize );
-  }
 
-  for ( unsigned i = 0 ; i < s_threads_count ; ) {
-    ThreadsExec & team_th = * s_threads_exec[i] ;
+    for ( unsigned i = 0 ; i < s_threads_count ; ) {
+      ThreadsExec & team_th = * s_threads_exec[i] ;
 
-    for ( int j = 0 ; j < team_th.m_team_size ; ++j , ++i ) {
-      s_threads_exec[i]->m_shared = team_th.m_shared ;
+      for ( int j = 0 ; j < team_th.m_team_size ; ++j , ++i ) {
+        s_threads_exec[i]->m_shared = team_th.m_shared ;
+      }
     }
+
+    s_threads_process.m_shared = s_threads_exec[0]->m_shared ;
   }
 }
 
@@ -785,10 +772,20 @@ void ThreadsExec::initialize(
 
     Kokkos::hwloc::bind_this_thread( master_coord );
 
-    if ( thread_spawn_begin ) { // Include the master thread
-      new( & s_threads_process ) ThreadsExec();
-      s_threads_process.m_state = ThreadsExec::Inactive ;
-      s_threads_exec[0] = & s_threads_process ;
+    // Clear master thread data.
+    // The master thread will be unused or initialized
+    // as part of the thread pool.
+
+    s_threads_process.m_team_rank = 0 ;
+    s_threads_process.m_team_size = 0 ;
+    s_threads_process.m_league_rank = 0 ;
+    s_threads_process.m_league_size = 0 ;
+    s_threads_process.m_thread_rank = 0 ;
+    s_threads_process.m_thread_size = 0 ;
+    s_threads_process.m_state = ThreadsExec::Inactive ;
+
+    if ( thread_spawn_begin ) {
+      s_threads_exec[0] = & s_threads_process ; // Include the master thread in pool.
     }
   }
 
@@ -834,6 +831,15 @@ void ThreadsExec::finalize()
   Kokkos::hwloc::unbind_this_thread();
 
   s_threads_count = 0 ;
+
+  // Reset master thread to run solo.
+  s_threads_process.m_team_rank = 0 ;
+  s_threads_process.m_team_size = 1 ;
+  s_threads_process.m_league_rank = 0 ;
+  s_threads_process.m_league_size = 1 ;
+  s_threads_process.m_thread_rank = 0 ;
+  s_threads_process.m_thread_size = 1 ;
+  s_threads_process.m_state = ThreadsExec::Inactive ;
 }
 
 //----------------------------------------------------------------------------

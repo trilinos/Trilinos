@@ -62,11 +62,11 @@ public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
 
-  typedef Host                  type ;
   typedef Host                  device_type ;
   typedef HostSpace::size_type  size_type ;
   typedef HostSpace             memory_space ;
   typedef LayoutRight           array_layout ;
+  typedef Host                  host_mirror_device_type ;
 
   //@}
   //! \name Functions that all Kokkos devices must implement.

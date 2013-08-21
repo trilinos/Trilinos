@@ -48,7 +48,9 @@
 
 #include <iosfwd>
 #include <vector>
-#include <Kokkos_Host.hpp>
+
+#include <Kokkos_Macros.hpp>
+#include <Kokkos_Threads.hpp>
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_CudaSpace.hpp>
@@ -73,11 +75,11 @@ public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
 
-  typedef Cuda                  type ;
   typedef Cuda                  device_type ;
   typedef CudaSpace             memory_space ;
   typedef CudaSpace::size_type  size_type ;
   typedef LayoutLeft            array_layout ;
+  typedef Kokkos::Threads       host_mirror_device_type ;
 
   //@}
   //--------------------------------------------------------------------------

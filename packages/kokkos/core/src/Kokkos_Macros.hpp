@@ -188,9 +188,6 @@ namespace Kokkos { typedef HostSpace ExecutionSpace ; }
   Kokkos::VerifyExecutionSpaceCanAccessDataSpace< \
     Kokkos::ExecutionSpace , DATA_SPACE >::verify()
 
-
-
-
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 

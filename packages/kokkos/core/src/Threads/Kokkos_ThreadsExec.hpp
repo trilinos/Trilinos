@@ -203,8 +203,6 @@ public:
     return std::pair< size_t , size_t >( work_begin , work_end );
   }
 
-  static void * execute( void (*)( ThreadsExec & , const void * ) , const void * );
-
   /** \brief  Wait for previous asynchronous functor to
    *          complete and release the Threads device.
    *          Acquire the Threads device and start this functor.

@@ -72,6 +72,7 @@ public:
   typedef Kokkos::HostSpace        memory_space ;
   typedef memory_space::size_type  size_type ;
   typedef Kokkos::LayoutRight      array_layout ;
+  typedef Kokkos::Threads          host_mirror_device_type ;
 
   //@}
   /*------------------------------------------------------------------------*/
