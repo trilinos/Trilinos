@@ -841,7 +841,7 @@ MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
     // Determine the axis rank for the processor on which the index
     // lives, and construct the MDComm
     int thisAxisRank = -1;
-    for (int axisRank = 0; axisRank < parent.getAxisCommSize(); ++axisRank)
+    for (int axisRank = 0; axisRank < parent.getAxisCommSize(axis); ++axisRank)
       if (index >= parent._globalRankBounds[axis][axisRank].start() &&
           index < parent._globalRankBounds[axis][axisRank].stop())
         thisAxisRank = axisRank;
@@ -849,7 +849,7 @@ MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
       (thisAxisRank == -1),
       InvalidArgument,
       "error computing axis rank for sub-communicator");
-    _mdComm = Teuchos::rcp(new MDComm(parent._mdComm, axis, thisAxisRank));
+    _mdComm = Teuchos::rcp(new MDComm(*(parent._mdComm), axis, thisAxisRank));
   }
 
   // There are now two ways for this processor to be off the
@@ -905,7 +905,7 @@ MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
         }
         else
         {
-          int axisRank = parent._axisRanks[axis];
+          int axisRank = parent.getAxisRank(axis);
           _globalMin += index * parent._globalStrides[axis];
           _globalMax -= (parent._globalBounds[axis].stop() - index) *
             parent._globalStrides[axis];
