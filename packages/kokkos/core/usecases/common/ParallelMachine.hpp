@@ -59,15 +59,15 @@
 
 namespace Parallel {
 
-/** \brief  Hybrid parallel machine with MPI+Kokkos::Host or MPI+Kokkos::Cuda.
+/** \brief  Hybrid parallel machine with MPI+Kokkos::Threads or MPI+Kokkos::Cuda.
  *
  *  Initialization of MPI and Kokkos device has interdependencies which this
  *  class manages.  The command line and environment variables are queried to initialize
- *  the Host or Cuda device:
+ *  the Threads or Cuda device:
  *
  *    1)  cuda               : initializes Cuda device
- *    2)  host               : initializes Host device with all hwloc detected cores.
- *    3)  host #gang #worker : initializes Host with specified
+ *    2)  host               : initializes Threads device with all hwloc detected cores.
+ *    3)  host #gang #worker : initializes Threads with specified
  */
 class Machine {
 private:
@@ -84,7 +84,7 @@ private:
 
 public:
 
-  /** \brief  Coordinated initialize MPI, Cuda, or Host devices from 'main'.  */
+  /** \brief  Coordinated initialize MPI, Cuda, or Threads devices from 'main'.  */
   Machine( int * argc , char *** argv );
 
   ~Machine();

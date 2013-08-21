@@ -335,6 +335,9 @@ struct ViewAssignable
 namespace Kokkos {
 namespace Impl {
 
+template< class DstMemorySpace , class SrcMemorySpace >
+struct DeepCopy ;
+
 template< class OutputView , unsigned Rank = OutputView::Rank >
 struct ViewInit
 {
@@ -485,7 +488,6 @@ namespace Kokkos {
 /** \brief  A deep copy between views of the same specialization, compatible type,
  *          same rank, same layout are handled by that specialization.
  */
-
 template< class DT , class DL , class DD , class DM , class DS ,
           class ST , class SL , class SD , class SM , class SS >
 inline
@@ -500,7 +502,22 @@ void deep_copy( const View<DT,DL,DD,DM,DS> & dst ,
                   &&
                   ( unsigned(ViewTraits<DT,DL,DD,DM>::rank) == unsigned(ViewTraits<ST,SL,SD,SM>::rank) )
                 )>::type * = 0 )
-{ Impl::ViewAssignment<DS,SS>::deep_copy( dst , src ); }
+{
+  typedef  ViewTraits<DT,DL,DD,DM>  dst_traits ;
+  typedef  ViewTraits<ST,SL,SD,SM>  src_traits ;
+
+  typedef typename dst_traits::memory_space  dst_memory_space ;
+  typedef typename src_traits::memory_space  src_memory_space ;
+
+  if ( dst.ptr_on_device() != src.ptr_on_device() ) {
+
+    Impl::assert_shapes_are_equal( dst.shape() , src.shape() );
+
+    const size_t nbytes = sizeof(typename dst_traits::scalar_type) * dst.capacity();
+
+    Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.ptr_on_device() , src.ptr_on_device() , nbytes );
+  }
+}
 
 
 /** \brief Deep copy equal dimension arrays in the host space which

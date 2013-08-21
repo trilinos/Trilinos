@@ -116,16 +116,6 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class DstSpace , class SrcSpace >
-struct DeepCopy ;
-
-template<>
-struct DeepCopy<HostSpace,HostSpace> {
-  DeepCopy( void * dst , const void * src , size_t );
-};
-
-//----------------------------------------------------------------------------
-
 template< class ExecutionSpace , class DataSpace >
 struct VerifyExecutionSpaceCanAccessDataSpace ;
 
@@ -136,8 +126,22 @@ struct VerifyExecutionSpaceCanAccessDataSpace< HostSpace , HostSpace >
   inline static void verify(const void *) {}
 };
 
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
+namespace Kokkos {
+namespace Impl {
+
+template< class , class > struct DeepCopy ;
+
+template<>
+struct DeepCopy<HostSpace,HostSpace> {
+  DeepCopy( void * dst , const void * src , size_t n );
+};
+
+} // namespace Impl
 } // namespace Kokkos
 
 #endif /* #define KOKKOS_HOSTSPACE_HPP */

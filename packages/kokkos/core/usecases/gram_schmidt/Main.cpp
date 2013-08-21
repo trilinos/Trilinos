@@ -155,10 +155,10 @@ int main( int argc , char ** argv )
   if ( 0 == error ) {
 
     if ( gang_count && gang_worker ) {
-      Kokkos::Host::initialize( gang_count , gang_worker );
+      Kokkos::Threads::initialize( std::pair<unsigned,unsigned>( gang_count , gang_worker ) );
 
       if ( test_iter ) {
-        Test::driver_modified_gram_schmidt<Kokkos::Host>
+        Test::driver_modified_gram_schmidt<Kokkos::Threads>
           ( test_length_begin ,
             test_length_end ,
             test_count ,
@@ -166,10 +166,10 @@ int main( int argc , char ** argv )
             machine );
       }
       else {
-        Kokkos::Host::print_configuration( std::cout );
+        Kokkos::Threads::print_configuration( std::cout );
       }
 
-      Kokkos::Host::finalize();
+      Kokkos::Threads::finalize();
     }
 
 #if defined( KOKKOS_HAVE_CUDA )
