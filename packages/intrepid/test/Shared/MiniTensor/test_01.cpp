@@ -418,24 +418,55 @@ TEUCHOS_UNIT_TEST(MiniTensor, Arithmetic)
   TEST_COMPARE(tensor4_static_passed, ==, true);
 }
 
-TEUCHOS_UNIT_TEST(MiniTensor, Inverse)
+TEUCHOS_UNIT_TEST(MiniTensor, Inverse2x2)
 {
   std::srand(std::time(NULL));
-  Index const N = double(std::rand()) / double(RAND_MAX) * 7.0 + 3.0;
-  Tensor<Real> A(N);
-  Tensor<Real> B(N);
-  Tensor<Real> C(N);
 
-  for (Index i = 0; i < N; ++i) {
-    for (Index j = 0; j < N; ++j) {
-      A(i, j) = double(std::rand()) / double(RAND_MAX) * 20.0 - 10.0;
-    }
-    A(i, i) += 1.0;
-  }
+  Tensor<Real, 2>
+  A = 2.0 * (Tensor<Real, 2>(RANDOM)) + eye<Real, 2>() - Tensor<Real, 2>(ONES);
 
+  Tensor<Real, 2>
   B = inverse(A);
 
-  C = A * B;
+  Tensor<Real, 2>
+  C = A * B;;
+
+  Real const error = norm(C - eye<Real, 2>()) / norm(A);
+
+  TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
+}
+
+TEUCHOS_UNIT_TEST(MiniTensor, Inverse3x3)
+{
+  std::srand(std::time(NULL));
+  Tensor<Real, 3>
+  A = 2.0 * (Tensor<Real, 3>(RANDOM)) + eye<Real, 3>() - Tensor<Real, 3>(ONES);
+
+  Tensor<Real, 3>
+  B = inverse(A);
+
+  Tensor<Real, 3>
+  C = A * B;;
+
+  Real const error = norm(C - eye<Real, 3>()) / norm(A);
+
+  TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
+}
+
+TEUCHOS_UNIT_TEST(MiniTensor, InverseNxN)
+{
+  std::srand(std::time(NULL));
+
+  Index const N = double(std::rand()) / double(RAND_MAX) * 7.0 + 4.0;
+
+  Tensor<Real>
+  A = 2.0 * (Tensor<Real>(N, RANDOM)) + eye<Real>(N) - Tensor<Real>(N, ONES);
+
+  Tensor<Real>
+  B = inverse(A);
+
+  Tensor<Real>
+  C = A * B;;
 
   Real const error = norm(C - eye<Real>(N)) / norm(A);
 
@@ -720,30 +751,6 @@ TEUCHOS_UNIT_TEST(MiniTensor, SymmetricEigen3x3)
   Tensor<Real> const B = V * D * transpose(V);
 
   Real const error = norm(A - B) / norm(A);
-
-  TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
-}
-
-TEUCHOS_UNIT_TEST(MiniTensor, Inverse4x4)
-{
-  Tensor<Real> A = 2.0 * identity<Real>(4);
-
-  A(0, 1) = 1.0;
-  A(1, 0) = 1.0;
-
-  A(1, 2) = 1.0;
-  A(2, 1) = 1.0;
-
-  A(2, 3) = 1.0;
-  A(3, 2) = 1.0;
-
-  Tensor<Real> const B = inverse(A);
-
-  Tensor<Real> const C = A * B;
-
-  Tensor<Real> const I = eye<Real>(4);
-
-  Real const error = norm(C - I) / norm(A);
 
   TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
 }

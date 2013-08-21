@@ -2093,7 +2093,7 @@ eig_spd_cos(Tensor<T, N> const & A)
   I = identity<T, N>(dimension);
 
   int
-  ii[N][N - 1] = { { 1, 2 }, { 2, 0 }, { 0, 1 } };
+  ii[3][2] = { { 1, 2 }, { 2, 0 }, { 0, 1 } };
 
   Tensor<T, N>
   rm = zero<T, N>(dimension);

@@ -75,7 +75,7 @@ length(Vector<T, N> const & p0, Vector<T, N> const & p1);
 template<typename T, Index N>
 T
 area(Vector<T, N> const & p0, Vector<T, N> const & p1,
-    Vector<T, N> const & p2);
+     Vector<T, N> const & p2);
 
 ///
 /// Area of a quadrilateral, assummed planar. If not planar, returns
@@ -84,7 +84,7 @@ area(Vector<T, N> const & p0, Vector<T, N> const & p1,
 template<typename T, Index N>
 T
 area(Vector<T, N> const & p0, Vector<T, N> const & p1,
-    Vector<T, N> const & p2, Vector<T, N> const & p3);
+     Vector<T, N> const & p2, Vector<T, N> const & p3);
 
 ///
 /// Volume of tetrahedron
@@ -92,7 +92,7 @@ area(Vector<T, N> const & p0, Vector<T, N> const & p1,
 template<typename T, Index N>
 T
 volume(Vector<T, N> const & p0, Vector<T, N> const & p1,
-    Vector<T, N> const & p2, Vector<T, N> const & p3);
+       Vector<T, N> const & p2, Vector<T, N> const & p3);
 
 ///
 /// Volume of pyramid of quadrilateral base
@@ -103,8 +103,8 @@ volume(Vector<T, N> const & p0, Vector<T, N> const & p1,
 template<typename T, Index N>
 T
 volume(Vector<T, N> const & p0, Vector<T, N> const & p1,
-    Vector<T, N> const & p2, Vector<T, N> const & p3,
-    Vector<T, N> const & p4);
+       Vector<T, N> const & p2, Vector<T, N> const & p3,
+       Vector<T, N> const & p4);
 
 ///
 /// Volume of hexahedron
@@ -114,9 +114,9 @@ volume(Vector<T, N> const & p0, Vector<T, N> const & p1,
 template<typename T, Index N>
 T
 volume(Vector<T, N> const & p0, Vector<T, N> const & p1,
-    Vector<T, N> const & p2, Vector<T, N> const & p3,
-    Vector<T, N> const & p4, Vector<T, N> const & p5,
-    Vector<T, N> const & p6, Vector<T, N> const & p7);
+       Vector<T, N> const & p2, Vector<T, N> const & p3,
+       Vector<T, N> const & p4, Vector<T, N> const & p5,
+       Vector<T, N> const & p6, Vector<T, N> const & p7);
 
 ///
 /// Centroids of segment, triangle, tetrahedron, quadrilateral
@@ -136,8 +136,8 @@ centroid(std::vector<Vector<T, N> > const & points);
 template<typename T, Index N>
 Vector<T, N>
 normal(Vector<T, N> const & p0,
-    Vector<T, N> const & p1,
-    Vector<T, N> const & p2);
+       Vector<T, N> const & p1,
+       Vector<T, N> const & p2);
 
 ///
 /// Given 3 points p0, p1, p2 that define a plane

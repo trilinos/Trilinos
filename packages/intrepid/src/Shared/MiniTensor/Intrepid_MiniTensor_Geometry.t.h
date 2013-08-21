@@ -53,7 +53,7 @@ template<typename T, Index N>
 T
 length(Vector<T, N> const & p0, Vector<T, N> const & p1)
 {
-  Vector<T, N> v = p1 - p0;
+  Vector<T, N> const v = p1 - p0;
   return norm(v);
 }
 
@@ -65,10 +65,15 @@ T
 area(Vector<T, N> const & p0, Vector<T, N> const & p1,
     Vector<T, N> const & p2)
 {
-  Vector<T, N> u = p1 - p0;
+  Vector<T, N> const u = p1 - p0;
+  T const base = norm(u);
+  Vector<T, N> const e = u / base;
   Vector<T, N> v = p2 - p0;
-  T a = 0.5 * norm(cross(u,v));
-  return a;
+  Vector<T, N> const n = v - dot(e, v) * e;
+  T const height = norm(n);
+  T const area = 0.5 * base * height;
+
+  return area;
 }
 
 //
@@ -499,7 +504,6 @@ median(Iterator begin, Iterator end)
   }
 
   return median;
-
 }
 
 //
