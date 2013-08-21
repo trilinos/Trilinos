@@ -476,7 +476,6 @@ void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Jacobian, Traits,LO
 evaluateFields(typename Traits::EvalData workset)
 { 
    std::vector<GO> GIDs;
-   std::vector<LO> LIDs;
  
    // for convenience pull out some objects from workset
    std::string blockId = workset.block_id;
@@ -498,11 +497,7 @@ evaluateFields(typename Traits::EvalData workset)
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
       globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
-
-      // caculate the local IDs for this element
-      LIDs.resize(GIDs.size());
-      for(std::size_t i=0;i<GIDs.size();i++)
-         LIDs[i] = r->getMap()->getLocalElement(GIDs[i]);
+      const std::vector<LO> & LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
 
       std::vector<bool> is_owned(GIDs.size(), false);
       globalIndexer_->ownedIndices(GIDs,is_owned);
@@ -541,7 +536,7 @@ evaluateFields(typename Traits::EvalData workset)
             }
  
             int basisId = basisIdMap[basis];
-            int gid = GIDs[offset];
+            GO gid = GIDs[offset];
             const ScalarT & scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
     
             r_array[lid] = scatterField.val();
