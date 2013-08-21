@@ -994,6 +994,7 @@ public:
   { return begin_permutations(entity, stk::topology::CONSTRAINT_RANK); }
 
   unsigned num_connectivity(Entity entity, EntityRank rank) const;
+
   unsigned num_nodes(Entity entity) const;
   unsigned num_edges(Entity entity) const;
   unsigned num_faces(Entity entity) const;
@@ -1011,18 +1012,17 @@ public:
   Entity const* end_elements(Entity entity) const;
   Entity const* end_constraints(Entity entity) const
   { return end(entity, stk::topology::CONSTRAINT_RANK); }
-
   ConnectivityOrdinal const* end_ordinals(Entity entity, EntityRank rank) const;
   ConnectivityOrdinal const* end_node_ordinals(Entity entity) const;
   ConnectivityOrdinal const* end_edge_ordinals(Entity entity) const;
   ConnectivityOrdinal const* end_face_ordinals(Entity entity) const;
   ConnectivityOrdinal const* end_element_ordinals(Entity entity) const;
-
   Permutation const* end_permutations(Entity entity, EntityRank rank) const;
   Permutation const* end_node_permutations(Entity entity) const;
   Permutation const* end_edge_permutations(Entity entity) const;
   Permutation const* end_face_permutations(Entity entity) const;
   Permutation const* end_element_permutations(Entity entity) const;
+
 
   // Return index (offset) of query ordinal if found, num_connectivity otherwise.
   unsigned find_ordinal(Entity entity, EntityRank rank, ConnectivityOrdinal ordinal) const;
@@ -1363,6 +1363,15 @@ private:
 
   bool is_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) const;
 
+  bool is_valid_connectivity(Entity entity, EntityRank rank) const
+  {
+    if (!is_valid(entity)) return false;
+    if (bucket_ptr(entity) == NULL) return false;
+    require_same_bulk_data(entity);
+    internal_check_unpopulated_relations(entity, rank);
+    return true;
+  }
+
   void require_valid_relation( const char action[] ,
                                const BulkData & mesh ,
                                const Entity e_from ,
@@ -1477,106 +1486,6 @@ BulkData & BulkData::get( const impl::BucketRepository & bucket_repo ) {
   return bucket_repo.mesh();
 }
 
-#define RANK_VAL_node stk::topology::NODE_RANK
-#define RANK_VAL_edge stk::topology::EDGE_RANK
-#define RANK_VAL_face stk::topology::FACE_RANK
-#define RANK_VAL_element stk::topology::ELEMENT_RANK
-
-//
-// Define a begin/end pair
-//
-#define BEGIN_END_PAIR(rank_name, return_type, data_type)       \
-                                                                \
-inline                                                          \
-return_type const* BulkData::begin_##rank_name##data_type(Entity entity) const \
-{                                                                       \
-  ThrowAssert(is_valid(entity));                                        \
-  ThrowAssert(bucket_ptr(entity));                                      \
-  require_same_bulk_data(entity);                                       \
-  const MeshIndex &mesh_idx = mesh_index(entity);                       \
-  const Bucket &b = *mesh_idx.bucket;                                   \
-  Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;               \
-  internal_check_unpopulated_relations(entity, RANK_VAL_##rank_name);   \
-  return b.begin_##rank_name##data_type(bucket_ord);                    \
-}                                                                       \
-                                                                        \
-inline                                                                  \
-return_type const* BulkData::end_##rank_name##data_type(Entity entity) const \
-{                                                                       \
-  ThrowAssert(is_valid(entity));                                        \
-  ThrowAssert(bucket_ptr(entity));                                      \
-  require_same_bulk_data(entity);                                       \
-  const MeshIndex &mesh_idx = mesh_index(entity);                       \
-  const Bucket &b = *mesh_idx.bucket;                                   \
-  Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;               \
-  return b.end_##rank_name##data_type(bucket_ord);                      \
-}
-
-//
-// Define all methods for a rank
-//
-#define RANK_FUNCTION_DEFS(rank_name)                                  \
-                                                                       \
-BEGIN_END_PAIR(rank_name, Entity, s)                                   \
-                                                                       \
-BEGIN_END_PAIR(rank_name, ConnectivityOrdinal, _ordinals)              \
-                                                                       \
-BEGIN_END_PAIR(rank_name, Permutation, _permutations)                  \
-                                                                       \
-inline                                                                 \
-unsigned BulkData::num_##rank_name##s(Entity entity) const             \
-{                                                                      \
-  ThrowAssert(is_valid(entity));                                       \
-  ThrowAssert(bucket_ptr(entity));                                     \
-  require_same_bulk_data(entity);                                      \
-  const MeshIndex &mesh_idx = mesh_index(entity);                      \
-  const Bucket &b = *mesh_idx.bucket;                                  \
-  Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;              \
-  return b.num_##rank_name##s(bucket_ord);                             \
-}
-
-//
-// Define method for runtime rank
-//
-#define FUNCTION_DEF(begin_str, end_str, return_type)  \
-                                                        \
-inline                                                  \
-return_type const* BulkData::begin_str##end_str(Entity entity, EntityRank rank) const \
-{                                                                       \
-  ThrowAssert(is_valid(entity));                                        \
-  ThrowAssert(bucket_ptr(entity));                                      \
-  require_same_bulk_data(entity);                                       \
-  const MeshIndex &mesh_idx = mesh_index(entity);                       \
-  const Bucket &b = *mesh_idx.bucket;                                   \
-  Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;               \
-  internal_check_unpopulated_relations(entity, rank);                   \
-  return b.begin_str##end_str(bucket_ord, rank);                        \
-}
-
-//
-// Methods defined here!
-//
-
-RANK_FUNCTION_DEFS(node);
-RANK_FUNCTION_DEFS(edge);
-RANK_FUNCTION_DEFS(face);
-RANK_FUNCTION_DEFS(element);
-
-FUNCTION_DEF(begin, , Entity);
-FUNCTION_DEF(end,   , Entity);
-FUNCTION_DEF(begin, _ordinals, ConnectivityOrdinal);
-FUNCTION_DEF(end,   _ordinals, ConnectivityOrdinal);
-FUNCTION_DEF(begin, _permutations, Permutation);
-FUNCTION_DEF(end,   _permutations, Permutation);
-
-#undef FUNCTION_DEFS
-#undef RANK_FUNCTION_DEFS
-#undef BEGIN_END_PAIR
-#undef RANK_VAL_node
-#undef RANK_VAL_edge
-#undef RANK_VAL_face
-#undef RANK_VAL_element
-
 inline
 unsigned BulkData::num_connectivity(Entity entity, EntityRank rank) const
 {
@@ -1600,6 +1509,278 @@ unsigned BulkData::find_ordinal(Entity entity, EntityRank rank, ConnectivityOrdi
       break;
   }
   return i;
+}
+
+inline
+Entity const* BulkData::begin(Entity entity, EntityRank rank) const
+{
+  ThrowAssert(is_valid_connectivity(entity, rank));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->begin(mesh_idx.bucket_ordinal, rank);
+}
+
+inline
+Entity const* BulkData::begin_nodes(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::NODE_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->begin_nodes(mesh_idx.bucket_ordinal);
+}
+
+inline
+Entity const* BulkData::begin_edges(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->begin_edges(mesh_idx.bucket_ordinal);
+}
+
+inline
+Entity const* BulkData::begin_faces(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->begin_faces(mesh_idx.bucket_ordinal);
+}
+
+inline
+Entity const* BulkData::begin_elements(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->begin_elements(mesh_idx.bucket_ordinal);
+}
+
+inline
+ConnectivityOrdinal const* BulkData::begin_ordinals(Entity entity, EntityRank rank) const
+{
+  ThrowAssert(is_valid_connectivity(entity, rank));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->begin_ordinals(mesh_idx.bucket_ordinal, rank);
+}
+
+inline
+ConnectivityOrdinal const* BulkData::begin_node_ordinals(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::NODE_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->begin_node_ordinals(mesh_idx.bucket_ordinal);
+}
+
+inline
+ConnectivityOrdinal const* BulkData::begin_edge_ordinals(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->begin_edge_ordinals(mesh_idx.bucket_ordinal);
+}
+
+inline
+ConnectivityOrdinal const* BulkData::begin_face_ordinals(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->begin_face_ordinals(mesh_idx.bucket_ordinal);
+}
+
+inline
+ConnectivityOrdinal const* BulkData::begin_element_ordinals(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->begin_element_ordinals(mesh_idx.bucket_ordinal);
+}
+
+inline
+Permutation const* BulkData::begin_permutations(Entity entity, EntityRank rank) const
+{
+  ThrowAssert(is_valid_connectivity(entity, rank));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->begin_permutations(mesh_idx.bucket_ordinal, rank);
+}
+
+inline
+Permutation const* BulkData::begin_node_permutations(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::NODE_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->begin_node_permutations(mesh_idx.bucket_ordinal);
+}
+
+inline
+Permutation const* BulkData::begin_edge_permutations(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->begin_edge_permutations(mesh_idx.bucket_ordinal);
+}
+
+inline
+Permutation const* BulkData::begin_face_permutations(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->begin_face_permutations(mesh_idx.bucket_ordinal);
+}
+
+inline
+Permutation const* BulkData::begin_element_permutations(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->begin_element_permutations(mesh_idx.bucket_ordinal);
+}
+
+inline
+unsigned BulkData::num_nodes(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::NODE_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->num_nodes(mesh_idx.bucket_ordinal);
+}
+
+inline
+unsigned BulkData::num_edges(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->num_edges(mesh_idx.bucket_ordinal);
+}
+
+inline
+unsigned BulkData::num_faces(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->num_faces(mesh_idx.bucket_ordinal);
+}
+
+inline
+unsigned BulkData::num_elements(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->num_elements(mesh_idx.bucket_ordinal);
+}
+
+inline
+Entity const* BulkData::end(Entity entity, EntityRank rank) const
+{
+  ThrowAssert(is_valid_connectivity(entity, rank));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->end(mesh_idx.bucket_ordinal, rank);
+}
+
+inline
+Entity const* BulkData::end_nodes(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::NODE_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->end_nodes(mesh_idx.bucket_ordinal);
+}
+
+inline
+Entity const* BulkData::end_edges(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->end_edges(mesh_idx.bucket_ordinal);
+}
+
+inline
+Entity const* BulkData::end_faces(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->end_faces(mesh_idx.bucket_ordinal);
+}
+
+inline
+Entity const* BulkData::end_elements(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->end_elements(mesh_idx.bucket_ordinal);
+}
+
+inline
+ConnectivityOrdinal const* BulkData::end_ordinals(Entity entity, EntityRank rank) const
+{
+  ThrowAssert(is_valid_connectivity(entity, rank));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->end_ordinals(mesh_idx.bucket_ordinal, rank);
+}
+
+inline
+ConnectivityOrdinal const* BulkData::end_node_ordinals(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::NODE_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->end_node_ordinals(mesh_idx.bucket_ordinal);
+}
+
+inline
+ConnectivityOrdinal const* BulkData::end_edge_ordinals(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->end_edge_ordinals(mesh_idx.bucket_ordinal);
+}
+
+inline
+ConnectivityOrdinal const* BulkData::end_face_ordinals(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->end_face_ordinals(mesh_idx.bucket_ordinal);
+}
+
+inline
+ConnectivityOrdinal const* BulkData::end_element_ordinals(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->end_element_ordinals(mesh_idx.bucket_ordinal);
+}
+
+inline
+Permutation const* BulkData::end_permutations(Entity entity, EntityRank rank) const
+{
+  ThrowAssert(is_valid_connectivity(entity, rank));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->end_permutations(mesh_idx.bucket_ordinal, rank);
+}
+
+inline
+Permutation const* BulkData::end_node_permutations(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::NODE_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->end_node_permutations(mesh_idx.bucket_ordinal);
+}
+
+inline
+Permutation const* BulkData::end_edge_permutations(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->end_edge_permutations(mesh_idx.bucket_ordinal);
+}
+
+inline
+Permutation const* BulkData::end_face_permutations(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->end_face_permutations(mesh_idx.bucket_ordinal);
+}
+
+inline
+Permutation const* BulkData::end_element_permutations(Entity entity) const
+{
+  ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->end_element_permutations(mesh_idx.bucket_ordinal);
 }
 
 inline
