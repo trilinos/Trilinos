@@ -181,31 +181,22 @@ public:
   virtual void
   compute (const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> >& Matrix);
 
-  /// \brief Computes Y = alpha * M^{-1} X + beta*Y
-  ///
-  /// Here X and Y are the size of the global problem the container
-  /// was extracted from to begin with.
+  //! Compute <tt>Y := alpha * M^{-1} X + beta*Y</tt>.
   virtual void
   apply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& X,
          Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& Y,
          Teuchos::ETransp mode=Teuchos::NO_TRANS,
          MatrixScalar alpha=Teuchos::ScalarTraits< MatrixScalar >::one(),
-         MatrixScalar beta=Teuchos::ScalarTraits< MatrixScalar >::zero());
+         MatrixScalar beta=Teuchos::ScalarTraits< MatrixScalar >::zero()) const;
 
-  /// \brief Computes Y = alpha * diag(D) * M^{-1} (diag(D) X) + beta*Y
-  ///
-  /// Here D, X and Y are the size of the global problem the container
-  /// was extracted from to begin with.  D has to be
-  /// a single Vector, while X and Y can be MultiVectors.  This
-  /// function is designed to support techniques with overlap,
-  /// such as Schwarz methods.
+  //! Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>.
   virtual void
   weightedApply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& X,
                  Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& Y,
                  const Tpetra::Vector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& D,
                  Teuchos::ETransp mode=Teuchos::NO_TRANS,
                  MatrixScalar alpha=Teuchos::ScalarTraits< MatrixScalar >::one(),
-                 MatrixScalar beta=Teuchos::ScalarTraits< MatrixScalar >::zero());
+                 MatrixScalar beta=Teuchos::ScalarTraits< MatrixScalar >::zero()) const;
 
   //@}
   //! \name Miscellaneous methods
@@ -233,16 +224,11 @@ private:
   //! Copy constructor: Declared but not implemented, to forbid copy construction.
   SparseContainer(const SparseContainer<MatrixType,InverseType>& rhs);
 
-  //! Sets the number of vectors for LHS/RHS.
-  virtual void setNumVectors(const size_t NumVectors);
-
   //! Extract the submatrices identified by the ID set int ID().
   virtual void extract(const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> >& Matrix);
 
   //! Number of rows in the local matrix.
   size_t numRows_;
-  //! Number of vectors in the local linear system.
-  size_t NumVectors_;
   //! Linear map on which the local matrix is based.
   Teuchos::RCP<Tpetra::Map<InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> > Map_;
   //! Pointer to the local matrix.

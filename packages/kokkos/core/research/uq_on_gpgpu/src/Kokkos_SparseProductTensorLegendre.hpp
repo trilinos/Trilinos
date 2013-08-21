@@ -49,6 +49,7 @@
 #include <vector>
 #include <stdexcept>
 #include <Kokkos_Macros.hpp>
+#include <Kokkos_Threads.hpp>
 #include <Kokkos_View.hpp>
 #include <Kokkos_BlockCrsMatrix.hpp>
 #include <Kokkos_ProductTensorLegendre.hpp>
@@ -215,20 +216,20 @@ template< typename MatrixScalar ,
           typename VectorScalar >
 class Multiply<
   BlockCrsMatrix<
-    SparseProductTensorLegendre< MatrixScalar , Host ,
+    SparseProductTensorLegendre< MatrixScalar , Threads ,
                                  SparseProductTensorLegendreVariant_Default > ,
-    MatrixScalar , Host > ,
-  View< VectorScalar** , LayoutLeft , Host > ,
-  View< VectorScalar** , LayoutLeft , Host > >
+    MatrixScalar , Threads > ,
+  View< VectorScalar** , LayoutLeft , Threads > ,
+  View< VectorScalar** , LayoutLeft , Threads > >
 {
 private:
 
   typedef BlockCrsMatrix<
-            SparseProductTensorLegendre< MatrixScalar , Host ,
+            SparseProductTensorLegendre< MatrixScalar , Threads ,
                                          SparseProductTensorLegendreVariant_Default > ,
-            MatrixScalar , Host > matrix_type ;
+            MatrixScalar , Threads > matrix_type ;
 
-  typedef View< VectorScalar** , LayoutLeft , Host > vector_type ;
+  typedef View< VectorScalar** , LayoutLeft , Threads > vector_type ;
 
   const matrix_type m_A ;
   const vector_type m_x ;
@@ -236,7 +237,7 @@ private:
 
 public:
 
-  typedef Host                             device_type ;
+  typedef Threads                          device_type ;
   typedef typename device_type::size_type  size_type ;
 
   KOKKOS_INLINE_FUNCTION

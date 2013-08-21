@@ -111,7 +111,12 @@ public:
   static void access_error( const void * const );
 };
 
+} // namespace Kokkos
+
 //----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
 
 template<>
 struct DeepCopy<HostSpace,CudaSpace> {
@@ -128,6 +133,7 @@ struct DeepCopy<CudaSpace,CudaSpace> {
   DeepCopy( void * dst , const void * src , size_t );
 };
 
+} // namespace Impl
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------

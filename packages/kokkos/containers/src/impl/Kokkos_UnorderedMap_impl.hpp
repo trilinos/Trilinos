@@ -527,7 +527,7 @@ struct map_data
 
   bool in_sync() const
   {
-    typedef Kokkos::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
+    typedef Kokkos::Impl::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
     bool result = false;
     deep_copy(&result, &counts.ptr_on_device()->in_sync, sizeof(bool) );
     return result;
@@ -544,7 +544,7 @@ struct map_data
   uint32_t size() const
   {
     sync_node_states();
-    typedef Kokkos::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
+    typedef Kokkos::Impl::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
     uint32_t result = 0;
     deep_copy(&result, &counts.ptr_on_device()->used, sizeof(uint32_t) );
     return result;
@@ -553,7 +553,7 @@ struct map_data
   uint32_t unused() const
   {
     sync_node_states();
-    typedef Kokkos::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
+    typedef Kokkos::Impl::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
     uint32_t result = 0;
     deep_copy(&result, &counts.ptr_on_device()->unused, sizeof(uint32_t) );
     return result;
@@ -562,7 +562,7 @@ struct map_data
   uint32_t pending_insert() const
   {
     sync_node_states();
-    typedef Kokkos::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
+    typedef Kokkos::Impl::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
     uint32_t result = 0;
     deep_copy(&result, &counts.ptr_on_device()->pending_insert, sizeof(uint32_t) );
     return result;
@@ -571,7 +571,7 @@ struct map_data
   uint32_t pending_delete() const
   {
     sync_node_states();
-    typedef Kokkos::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
+    typedef Kokkos::Impl::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
     uint32_t result = 0;
     deep_copy(&result, &counts.ptr_on_device()->pending_delete, sizeof(uint32_t) );
     return result;
@@ -580,7 +580,7 @@ struct map_data
   uint32_t failed_inserts() const
   {
     sync_node_states();
-    typedef Kokkos::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
+    typedef Kokkos::Impl::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
     uint32_t result = 0;
     deep_copy(&result, &counts.ptr_on_device()->failed_inserts, sizeof(uint32_t) );
     return result;
@@ -589,7 +589,7 @@ struct map_data
   uint32_t used_count() const
   {
     sync_node_states();
-    typedef Kokkos::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
+    typedef Kokkos::Impl::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
     uint32_t result = 0;
     deep_copy(&result, &counts.ptr_on_device()->used_count, sizeof(uint32_t) );
     return result;
@@ -598,7 +598,7 @@ struct map_data
   uint32_t invalid_count() const
   {
     sync_node_states();
-    typedef Kokkos::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
+    typedef Kokkos::Impl::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > deep_copy;
     uint32_t result = 0;
     deep_copy(&result, &counts.ptr_on_device()->invalid, sizeof(uint32_t) );
     return result;
@@ -808,7 +808,7 @@ template <  class MapDst, class MapSrc >
 inline void deep_copy_data_impl( MapDst & dst, const MapSrc & src )
 {
   typedef typename MapDst::node_block_type node_block_type;
-  typedef Kokkos::DeepCopy< typename MapDst::device_type::memory_space, typename MapSrc::device_type::memory_space > raw_deep_copy;
+  typedef Kokkos::Impl::DeepCopy< typename MapDst::device_type::memory_space, typename MapSrc::device_type::memory_space > raw_deep_copy;
   dst.node_blocks = typename MapDst::node_block_view("unordered_map_nodes", src.node_blocks.size());
   dst.hashes = typename MapDst::hash_view("unordered_map_hashes", src.hashes.size());
 

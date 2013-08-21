@@ -57,6 +57,33 @@
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
+namespace Impl {
+
+DeepCopy<HostSpace,CudaSpace>
+  ::DeepCopy( void * dst , const void * src , size_t n )
+{
+  CUDA_SAFE_CALL( cudaMemcpy( dst , src , n , cudaMemcpyDefault ) );
+}
+
+DeepCopy<CudaSpace,HostSpace>
+  ::DeepCopy( void * dst , const void * src , size_t n )
+{
+  CUDA_SAFE_CALL( cudaMemcpy( dst , src , n , cudaMemcpyDefault ) );
+}
+
+DeepCopy<CudaSpace,CudaSpace>
+  ::DeepCopy( void * dst , const void * src , size_t n )
+{
+  CUDA_SAFE_CALL( cudaMemcpy( dst , src , n , cudaMemcpyDefault ) );
+}
+
+} // namespace Impl
+} // namespace Kokkos
+
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
 namespace {
 
 class CudaMemoryTrackingEntry : public Impl::MemoryTrackingEntry
@@ -108,24 +135,6 @@ Impl::MemoryTracking & cuda_space_singleton()
 }
 
 /*--------------------------------------------------------------------------*/
-
-DeepCopy<HostSpace,CudaSpace>
-  ::DeepCopy( void * dst , const void * src , size_t n )
-{
-  CUDA_SAFE_CALL( cudaMemcpy( dst , src , n , cudaMemcpyDefault ) );
-}
-
-DeepCopy<CudaSpace,HostSpace>
-  ::DeepCopy( void * dst , const void * src , size_t n )
-{
-  CUDA_SAFE_CALL( cudaMemcpy( dst , src , n , cudaMemcpyDefault ) );
-}
-
-DeepCopy<CudaSpace,CudaSpace>
-  ::DeepCopy( void * dst , const void * src , size_t n )
-{
-  CUDA_SAFE_CALL( cudaMemcpy( dst , src , n , cudaMemcpyDefault ) );
-}
 
 /*--------------------------------------------------------------------------*/
 

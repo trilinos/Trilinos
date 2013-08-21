@@ -46,7 +46,7 @@
 
 #include <ParallelComm.hpp>
 #include <Kokkos_Macros.hpp>
-#include <Kokkos_Host.hpp>
+#include <Kokkos_Threads.hpp>
 
 #include <iostream>
 
@@ -63,7 +63,7 @@ void driver_modified_gram_schmidt( const int length_begin ,
                                    comm::Machine machine );
 
 template<>
-void driver_modified_gram_schmidt<Kokkos::Host>(
+void driver_modified_gram_schmidt<Kokkos::Threads>(
   const int length_begin ,
   const int length_end ,
   const int count ,

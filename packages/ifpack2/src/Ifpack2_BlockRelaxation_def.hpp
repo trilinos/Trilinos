@@ -477,29 +477,26 @@ void BlockRelaxation<MatrixType,ContainerType>::compute()
 template<class MatrixType,class ContainerType>
 void BlockRelaxation<MatrixType,ContainerType>::ExtractSubmatrices()
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(Partitioner_==Teuchos::null, std::runtime_error,
-                             "Ifpack2::BlockRelaxation::ExtractSubmatrices, partitioner is null.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    Partitioner_.is_null (), std::runtime_error,
+    "Ifpack2::BlockRelaxation::ExtractSubmatrices: Partitioner object is null.");
 
-  NumLocalBlocks_ = Partitioner_->numLocalParts();
+  NumLocalBlocks_ = Partitioner_->numLocalParts ();
+  Containers_.resize (NumLocalBlocks_);
 
-  Containers_.resize(NumLocalBlocks_);
-
-  for (local_ordinal_type i = 0 ; i < NumLocalBlocks_ ; ++i) {
-    size_t rows = Partitioner_->numRowsInPart(i);
-    Containers_[i] = Teuchos::rcp( new ContainerType(rows) );
-    TEUCHOS_TEST_FOR_EXCEPTION(Containers_[i]==Teuchos::null, std::runtime_error,
-                             "Ifpack2::BlockRelaxation::ExtractSubmatrices, container consturctor failed.");
-
-    Containers_[i]->setParameters(List_);
-    Containers_[i]->initialize();
+  for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
+    const size_t numRows = Partitioner_->numRowsInPart (i);
+    Containers_[i] = Teuchos::rcp (new ContainerType (numRows));
+    Containers_[i]->setParameters (List_);
+    Containers_[i]->initialize ();
     // flops in initialize() will be computed on-the-fly in method initializeFlops().
 
     // set "global" ID of each partitioner row
-    for (size_t j = 0 ; j < rows ; ++j) {
-      Containers_[i]->ID(j) = (*Partitioner_)(i,j);
+    for (size_t j = 0; j < numRows; ++j) {
+      Containers_[i]->ID (j) = (*Partitioner_) (i,j);
     }
+    Containers_[i]->compute (A_);
 
-    Containers_[i]->compute(A_);
     // flops in compute() will be computed on-the-fly in method computeFlops().
   }
 }

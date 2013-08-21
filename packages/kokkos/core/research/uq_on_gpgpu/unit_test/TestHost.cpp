@@ -43,7 +43,7 @@
 
 #include <iostream>
 
-#include <Kokkos_Host.hpp>
+#include <Kokkos_Threads.hpp>
 #include <Kokkos_hwloc.hpp>
 
 #include <Kokkos_LegendrePolynomial.hpp>
@@ -66,10 +66,10 @@
 namespace unit_test {
 
 template<typename Scalar>
-struct performance_test_driver<Scalar,Kokkos::Host> {
+struct performance_test_driver<Scalar,Kokkos::Threads> {
 
   static void run(bool test_flat, bool test_orig, bool test_block, bool check) {
-    typedef Kokkos::Host Device;
+    typedef Kokkos::Threads Device;
 
     int nGrid;
     int nIter; 
@@ -132,12 +132,11 @@ int mainHost(bool test_flat, bool test_orig, bool test_block, bool check)
 {
   const std::pair<unsigned,unsigned> core_topo = Kokkos::hwloc::get_core_topology();
 
-  const size_t gang_count = core_topo.first ;
-  const size_t gang_worker_count = ( core_topo.second + 1 ) / 2 ;
+  const std::pair<unsigned,unsigned> league_gang( core_topo.first , ( core_topo.second + 1 ) / 2 );
 
-  Kokkos::Host::initialize( gang_count , gang_worker_count );
+  Kokkos::Threads::initialize( league_gang );
 
-  typedef Kokkos::Host device ;
+  typedef Kokkos::Threads device ;
 
   //------------------------------------
   // Quick correctness check:
@@ -162,13 +161,13 @@ int mainHost(bool test_flat, bool test_orig, bool test_block, bool check)
 
   //------------------------------------
 
-  std::cout << std::endl << "\"Host Performance with "
-            << gang_count * gang_worker_count << " threads\"" << std::endl ;
+  std::cout << std::endl << "\"Threads Performance with "
+            << league_gang.first * league_gang.second << " threads\"" << std::endl ;
 
   unit_test::performance_test_driver<Scalar,device>::run(
     test_flat, test_orig, test_block, check);
 
-  Kokkos::Host::finalize();
+  Kokkos::Threads::finalize();
 
   return 0 ;
 }

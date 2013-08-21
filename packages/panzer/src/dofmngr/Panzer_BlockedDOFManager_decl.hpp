@@ -400,6 +400,11 @@ public:
    void setOrientationsRequired(bool ro) 
    { requireOrientations_ = ro; }
 
+   /** Enable TieBreak in sub dofmanger
+     */
+   void enableTieBreak(bool useTieBreak) 
+   { useTieBreak_ = useTieBreak; }
+
 protected:
    
    /** Build a new indexer. The concrete type is specified internally by this object (FEI version standard)
@@ -508,6 +513,7 @@ protected:
    bool requireOrientations_;
    
    bool useDOFManagerFEI_;
+   bool useTieBreak_;
 };
 
 }

@@ -50,8 +50,8 @@
 #define DEVICE 1
 #endif
 #if DEVICE==1
-#include "Kokkos_Host.hpp"
-typedef Kokkos::Host device_type;
+#include "Kokkos_Threads.hpp"
+typedef Kokkos::Threads device_type;
 #endif
 #if DEVICE==2
 #include "Kokkos_Cuda.hpp"
@@ -488,7 +488,7 @@ int main(int argc, char* argv[])
   }
 
 #if DEVICE==1
-  Kokkos::Host::initialize(numa,threads);
+  Kokkos::Threads::initialize(std::pair<unsigned,unsigned>(numa,threads));
 #endif
 
 #if DEVICE==2
@@ -530,7 +530,7 @@ int main(int argc, char* argv[])
   }
 
 #if DEVICE==1
-  Kokkos::Host::finalize();
+  Kokkos::Threads::finalize();
 #endif
 #if DEVICE==2
   Kokkos::Cuda::finalize();

@@ -71,6 +71,14 @@
 
 #include <boost/unordered_set.hpp> // a hash table
 
+/*
+#define HAVE_ZOLTAN2
+#ifdef HAVE_ZOLTAN2
+#include "Zoltan2_XpetraCrsGraphInput.hpp"
+#include "Zoltan2_OrderingProblem.hpp"
+#endif
+*/
+
 namespace panzer {
 
 namespace {
@@ -556,6 +564,29 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
     }
   }
 
+  //////////////////////////////////////////////////////////////////
+  // this is where the code is modified to artificial induce GIDs
+  // over 2 Billion unknowns
+  //////////////////////////////////////////////////////////////////
+  #if 0
+  {
+    panzer::Ordinal64 offset = 0xFFFFFFFFLL;
+
+    for (size_t b = 0; b < blockOrder_.size(); ++b) {
+      const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
+      for (std::size_t l = 0; l < myElements.size(); ++l) {
+        std::vector<GO> & localGIDs = elementGIDs_[myElements[l]];
+        for(std::size_t c=0;c<localGIDs.size();c++)
+          localGIDs[c] += offset;
+      }
+    }
+
+    Teuchos::ArrayRCP<GO> nvals = non_overlap_mv->get1dViewNonConst();
+    for (int j = 0; j < nvals.size(); ++j) 
+      nvals[j] += offset;
+  }
+  #endif
+
   // build owned vector
   {
     typedef boost::unordered_set<GO> HashTable;
@@ -917,6 +948,69 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::printFieldInformation(std::ostrea
       os << "      \"" << getFieldString(fieldIds[f]) << "\" is field ID " << fieldIds[f] << std::endl;
   }
 }
+
+/*
+template <typename LO,typename GO>
+Teuchos::RCP<const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> >
+DOFManager<LO,GO>::runLocalRCMReordering(const Teuchos::RCP<const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> > & map)
+{
+  typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+  typedef Tpetra::Map<LO, GO, Node> Map;
+  typedef Tpetra::CrsGraph<LO, GO, Node> Graph;
+
+  Teuchos::RCP<Graph> graph = Teuchos::rcp(new Graph(map,0));
+
+  // build Crs Graph from the mesh
+  for (size_t b = 0; b < blockOrder_.size(); ++b) {
+    if(fa_fps_[b]==Teuchos::null)
+      continue;
+
+    const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
+    for (size_t l = 0; l < myElements.size(); ++l) {
+      LO connSize = connMngr_->getConnectivitySize(myElements[l]);
+      const GO * elmtConn = connMngr_->getConnectivity(myElements[l]);
+      for (int c = 0; c < connSize; ++c) {
+        LO lid = map->getLocalElement(elmtConn[c]);
+        if(Teuchos::OrdinalTraits<LO>::invalid()!=lid)
+          continue;
+
+        graph->insertGlobalIndices(elmtConn[c],Teuchos::arrayView(elmtConn,connSize));
+      }
+    }
+  }
+ 
+  graph->fillComplete();
+
+  std::vector<GO> newOrder(map->getNodeNumElements());
+  {
+    // graph is constructed, now run RCM using zoltan2
+    typedef Zoltan2::XpetraCrsGraphInput<Graph> SparseGraphAdapter;
+
+    Teuchos::ParameterList params;
+    params.set("order_method", "rcm");
+    SparseGraphAdapter adapter(graph);
+
+    Zoltan2::OrderingProblem<SparseGraphAdapter> problem(&adapter, &params,MPI_COMM_SELF);
+    problem.solve();
+
+    // build a new global ording array using permutation
+    Zoltan2::OrderingSolution<GO,LO> * soln = problem.getSolution();
+
+    size_t dummy;
+    size_t checkLength = soln->getPermutationSize();
+    LO * checkPerm = soln->getPermutation(&dummy);
+
+    Teuchos::ArrayView<const GO > oldOrder = map->getNodeElementList();
+    TEUCHOS_ASSERT(checkLength==oldOrder.size());
+    TEUCHOS_ASSERT(checkLength==newOrder.size());
+
+    for(size_t i=0;i<checkLength;i++)
+      newOrder[checkPerm[i]] = oldOrder[i];
+  }
+
+  return Tpetra::createNonContigMap<LO,GO>(newOrder,communicator_);
+}
+*/
 
 } /*panzer*/
 

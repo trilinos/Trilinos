@@ -157,6 +157,11 @@ void host_decrement_not_thread_safe( const void * ptr )
   host_space_singleton().decrement( ptr );
 }
 
+DeepCopy<HostSpace,HostSpace>::DeepCopy( void * dst , const void * src , size_t n )
+{
+  memcpy( dst , src , n );
+}
+
 }
 }
 
@@ -204,13 +209,6 @@ std::string HostSpace::query_label( const void * p )
 
   return 0 != info ? info->label : std::string("ERROR NOT DEFINED");
 }
-
-DeepCopy<HostSpace,HostSpace>
-  ::DeepCopy( void * dst , const void * src , size_t n )
-{
-  memcpy( dst , src , n );
-}
-
 
 } // namespace Kokkos
 

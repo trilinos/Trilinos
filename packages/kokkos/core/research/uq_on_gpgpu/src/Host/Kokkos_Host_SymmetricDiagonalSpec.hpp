@@ -49,9 +49,9 @@ namespace Kokkos {
 namespace Impl {
 
 template<>
-class Multiply< SymmetricDiagonalSpec< Host > , void , void > {
+class Multiply< SymmetricDiagonalSpec< Threads > , void , void > {
 public:
-  typedef Host                    device_type ;
+  typedef Threads                    device_type ;
   typedef device_type::size_type  size_type ;
   typedef SymmetricDiagonalSpec< device_type > block_type ;
 

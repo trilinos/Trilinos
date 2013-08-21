@@ -89,11 +89,20 @@ public:
   typedef Kokkos::View< const unsigned *     , Device , Kokkos::MemoryUnmanaged > send_nodeid_type ;
 
   KOKKOS_INLINE_FUNCTION
+  unsigned node_count() const { return m_node_grid.dimension_0(); }
+
+  KOKKOS_INLINE_FUNCTION
+  unsigned elem_count() const { return m_elem_node.dimension_0(); }
+
+  KOKKOS_INLINE_FUNCTION
   unsigned elem_node_local( unsigned inode , unsigned k ) const
     { return m_elem_node_local[inode][k] ; }
 
   KOKKOS_INLINE_FUNCTION
   unsigned node_grid( unsigned inode , unsigned iaxis ) const { return m_node_grid(inode,iaxis); }
+
+  KOKKOS_INLINE_FUNCTION
+  unsigned node_grid_max( unsigned iaxis ) const { return m_box_part.global_coord_max(iaxis); }
 
   KOKKOS_INLINE_FUNCTION
   unsigned elem_node( unsigned ielem , unsigned inode ) const { return m_elem_node(ielem,inode); }
