@@ -112,8 +112,12 @@ int main(int argc, char *argv[]) {
   int    writeMatricesOPT = -2;                clp.setOption("write",                 &writeMatricesOPT, "write matrices to file (-1 means all; i>=0 means level i)");
   double tol              = 1e-12;             clp.setOption("tol",                   &tol,              "solver convergence tolerance");
   std::string krylovMethod = "cg"; clp.setOption("krylov",                   &krylovMethod,     "outer Krylov method");
+  int maxIts = 100; clp.setOption("maxits",           &maxIts,   "maximum number of Krylov iterations");
+  int output = 1; clp.setOption("output",           &output,   "how often to print Krylov residual history");
   std::string matrixFileName = "A.mm"; clp.setOption("matrixfile",           &matrixFileName,   "matrix market file containing matrix");
+  std::string rhsFileName = ""; clp.setOption("rhsfile",           &rhsFileName,   "matrix market file containing right-hand side");
   int nPDE = 1; clp.setOption("numpdes",           &nPDE,   "number of PDE equations");
+  std::string convType = "r0"; clp.setOption("convtype",                   &convType,     "convergence type (r0 or none)");
 
   switch (clp.parse(argc,argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -135,6 +139,7 @@ int main(int argc, char *argv[]) {
   RCP<Matrix> A = Utils::Read(string(matrixFileName), xpetraParameters.GetLib(), comm);
   RCP<const Map>   map = A->getRowMap();
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(A->getDomainMap(),nPDE);
+  //RCP<MultiVector> fakeCoordinates = MultiVectorFactory::Build(A->getDomainMap(),1);
   A->SetFixedBlockSize(nPDE);
   std::cout << "#pdes = " << A->GetFixedBlockSize() << std::endl;
   if (nPDE == 1)
@@ -173,6 +178,7 @@ int main(int argc, char *argv[]) {
 
   H->GetLevel(0)->Set("A",           A);
   H->GetLevel(0)->Set("Nullspace",   nullspace);
+  //H->GetLevel(0)->Set("Coordinates", fakeCoordinates);
 
   mueLuFactory.SetupHierarchy(*H);
 
@@ -189,20 +195,24 @@ int main(int argc, char *argv[]) {
   comm->barrier();
   tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3 - LHS and RHS initialization")));
 
-  RCP<Vector> X = VectorFactory::Build(map);
-  RCP<Vector> B = VectorFactory::Build(map);
+  RCP<Vector> X = VectorFactory::Build(map,1);
+  RCP<MultiVector> B = VectorFactory::Build(map,1);
 
+  if (rhsFileName != "")
+    B = Utils2::ReadMultiVector(string(rhsFileName), A->getRowMap());
+  else
   {
     // we set seed for reproducibility
     X->setSeed(846930886);
-    X->randomize();
+    bool useSameRandomGen = false;
+    X->randomize(useSameRandomGen);
     A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
 
     Teuchos::Array<ST::magnitudeType> norms(1);
     B->norm2(norms);
-    B->scale(1.0/norms[0]);
-    X->putScalar(zero);
+    //B->scale(1.0/norms[0]);
   }
+  X->putScalar(zero);
   tm = Teuchos::null;
 
   if (writeMatricesOPT > -2)
@@ -213,7 +223,14 @@ int main(int argc, char *argv[]) {
     tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Fixed Point Solve")));
 
     H->IsPreconditioner(false);
-    H->Iterate(*B, 25, *X);
+    Teuchos::Array<ST::magnitudeType> norms(1);
+    norms = Utils::ResidualNorm(*A,*X,*B);
+    std::cout << "                iter:    0           residual = " << norms[0] << std::endl;
+    for (int i=0; i< maxIts; ++i) {
+      H->Iterate(*B, 1, *X);
+      norms = Utils::ResidualNorm(*A,*X,*B);
+      std::cout << "                iter:    " << i+1 << "           residual = " << norms[0] << std::endl;
+    }
 
   } else if (amgAsPrecond) {
 #ifdef HAVE_MUELU_BELOS
@@ -229,7 +246,7 @@ int main(int argc, char *argv[]) {
 
     // Construct a Belos LinearProblem object
     RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
-    belosProblem->setLeftPrec(belosPrec);
+    belosProblem->setRightPrec(belosPrec);
 
     bool set = belosProblem->setProblem();
     if (set == false) {
@@ -238,13 +255,17 @@ int main(int argc, char *argv[]) {
     }
 
     // Belos parameter list
-    int maxIts = 2000;
     Teuchos::ParameterList belosList;
     belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
     belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
     belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
-    belosList.set("Output Frequency",      1);
+    belosList.set("Output Frequency",      output);
     belosList.set("Output Style",          Belos::Brief);
+    //belosList.set("Orthogonalization",     "ICGS");
+    if (convType == "none") {
+      belosList.set("Explicit Residual Scaling",  "None");
+      belosList.set("Implicit Residual Scaling",  "None");
+    }
 
     // Create an iterative solver manager
     RCP< Belos::SolverManager<SC, MV, OP> > solver;
