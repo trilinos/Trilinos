@@ -61,7 +61,7 @@ class Cuda ;
 #if defined( __CUDACC__ )
 
 #if ! defined( KOKKOS_HAVE_CUDA )
-#error "Compiling Kokkos with Cuda compiler but KOKKOS_CORE_CUDA is undefined"
+#error "Compiling Kokkos with Cuda compiler but KOKKOS_HAVE_CUDA is undefined"
 #endif
 
 /*  Compiling with a CUDA compiler for host and device code.

@@ -93,7 +93,7 @@ private:
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-
+//TODO: Needs constructor for Kokkos::ParallelWorkRequest CRT
 template< class FunctorType , class WorkSpec >
 class ParallelFor< FunctorType , WorkSpec , Host > : public HostThreadWorker
 {

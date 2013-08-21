@@ -443,7 +443,7 @@ struct ViewRemap
       parallel_for( n0 , *this );
     }
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i0 ) const
   {
     for ( size_type i1 = 0 ; i1 < n1 ; ++i1 ) {
@@ -560,7 +560,7 @@ void resize( View<T,L,D,M,S> & v ,
 
   Impl::ViewRemap< view_type , view_type >( v_resized , v );
 
-  v_resized = v ;
+  v = v_resized ;
 }
 
 //----------------------------------------------------------------------------

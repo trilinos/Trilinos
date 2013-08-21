@@ -161,7 +161,8 @@ public:
   __device__ inline int team_rank() const { return threadIdx.x ; }
 
   __device__ inline void team_barrier() const { __syncthreads(); }
-
+  __device__ inline unsigned int team_barrier_count(bool value) const
+             { return __syncthreads_count(value); }
   template< typename T >
   __device__ inline T * get_shmem( const int count );
 
@@ -184,6 +185,7 @@ private:
   int team_rank() const ;
 
   void team_barrier() const ;
+  unsigned int team_barrier_count(bool) const ;
 
   template< typename T > T * get_shmem( const int count );
 

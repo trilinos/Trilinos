@@ -430,6 +430,19 @@ struct ViewSpecialize< const ScalarType , const ScalarType ,
                        CudaSpace , MemoryRandomRead >
 { typedef CudaTexture type ; };
 
+/** \brief Scalar View matching **/
+template< typename ScalarType >
+struct ViewSpecialize< const ScalarType , const ScalarType ,
+                       LayoutLeft , unsigned_<0> , unsigned_<0> ,
+                       CudaSpace , MemoryRandomRead >
+{ typedef CudaTexture type ; };
+
+template< typename ScalarType >
+struct ViewSpecialize< const ScalarType , const ScalarType ,
+                       LayoutRight , unsigned_<0> , unsigned_<0> ,
+                       CudaSpace , MemoryRandomRead >
+{ typedef CudaTexture type ; };
+
 #endif
 
 //----------------------------------------------------------------------------
