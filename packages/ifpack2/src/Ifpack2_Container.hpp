@@ -57,42 +57,44 @@ namespace Ifpack2 {
 /// \class Container
 /// \brief Interface for creating and solving a local linear problem.
 ///
-/// This class provides an abstract interface for containers. A
-/// <i>container</i> can create, populate, and solve a local linear
+/// This class is mainly useful for BlockRelaxation and other
+/// operators that need to solve linear systems with diagonal blocks
+/// of a sparse matrix.  Users of BlockRelaxation do not normally need
+/// to interact with the Container interface.  However, they do need
+/// to specify a specific Container subclass to use.  Implementations
+/// of Container specify
+/// - the kind of data structure used to store diagonal blocks, and
+/// - how linear systems with those diagonal blocks are solved.
+///
+/// For example, the SparseContainer subclass uses a Tpetra sparse
+/// matrix to store each diagonal block, and can use any given Ifpack2
+/// Preconditioner subclass to solve linear systems.
+///
+/// A Container can create, populate, and solve a local linear
 /// system. The local linear system matrix, B, is a submatrix of the
-/// local components of a distributed matrix, A. The idea of container
+/// local components of a distributed matrix, A. The idea of Container
 /// is to specify the rows of A that are contained in B, then extract
 /// B from A, and compute all it is necessary to solve a linear system
 /// in B.  Then, set the initial guess (if necessary) and right-hand
 /// side for B, and solve the linear system in B.
 ///
-/// A container should be used in the following manner:
-/// - Create an container object, specifying the number of rows of B.
-/// - If necessary, set parameters for the solution using
-///   setParameters().
-/// - Initialize the container by calling initialize().
-/// - Specify the ID of the local rows of A that are contained in B,
-///   using ID().
-/// - Prepare the linear system solver using compute().
-/// - set X and/or Y elements using getX() and getY().
-/// - Solve the linear system using apply().
-/// - Get the components of the computed solution using getY().
-///
-/// The number of vectors can be set using setNumVectors(); it
-/// defaults to 1.
-///
-/// Containers are currently used by class Ifpack2::BlockRelaxation.
-///
-/// Ifpack2::Container is a pure virtual class.  Two concrete
-/// implementations are provided in classes Ifpack2::SparseContainer
-/// (that stores matrices in sparse the format Tpetra::CrsMatrix) and
-/// Ifpack2::DenseContainer (for relatively small matrices, as
-/// matrices are stored as Tpetra::SerialDenseMatrix).
+/// If you are writing a class (comparable to BlockRelaxation) that
+/// uses Container, you should use it in the following way:
+/// <ol>
+/// <li> Create an container object, specifying the number of rows of B.</li>
+/// <li> Optionally, set linear solve parameters using setParameters().</li>
+/// <li> Initialize the container by calling initialize().</li>
+/// <li> Specify the ID of the local rows of A that are contained in B,
+///      using ID().</li>
+/// <li> Prepare the linear system solver using compute().</li>
+/// <li> Solve the linear system using apply().</li>
+/// </ol>
 ///
 /// \c MatrixType and \c InverseType may store values of different
 /// types, and may have different template parameters (e.g., local or
 /// global ordinal types).  You may mix and match so long as implicit
-/// conversions are available.  The most obvious use case for this are:
+/// conversions are available.  The most obvious use case for this
+/// are:
 /// - <tt>MatrixType::global_ordinal_type=long long</tt> and
 ///   <tt>InverseType::global_ordinal_type=short</tt>
 /// - <tt>MatrixType::scalar_type=float</tt> and
@@ -110,10 +112,17 @@ public:
   typedef typename InverseType::global_ordinal_type InverseGlobalOrdinal;
   typedef typename InverseType::node_type           InverseNode;
 
+  typedef typename MatrixType::scalar_type          scalar_type;
+  typedef typename MatrixType::local_ordinal_type   local_ordinal_type;
+  typedef typename MatrixType::global_ordinal_type  global_ordinal_type;
+  typedef typename MatrixType::node_type            node_type;
+
+  typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> row_matrix_type;
+
   //! Destructor.
   virtual ~Container() {};
 
-  //! Returns the number of rows of the matrix and X/Y.
+  //! The number of rows in the diagonal block.
   virtual size_t getNumRows() const = 0;
 
   /// \brief A nonconst reference to the local index associated with local row i.
@@ -131,7 +140,7 @@ public:
   virtual void initialize () = 0;
 
   //! Finalize the linear system matrix and prepare for the application of the inverse.
-  virtual void compute (const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> >& Matrix) = 0;
+  virtual void compute (const Teuchos::RCP<const row_matrix_type>& Matrix) = 0;
 
   //! Set parameters.
   virtual void setParameters (const Teuchos::ParameterList& List) = 0;

@@ -43,6 +43,9 @@
 #ifndef IFPACK2_BLOCKRELAXATION_DECL_HPP
 #define IFPACK2_BLOCKRELAXATION_DECL_HPP
 
+/// \file Ifpack2_BlockRelaxation_decl.hpp
+/// \brief Ifpack2::BlockRelaxation class declaration
+
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Condest.hpp"
@@ -73,8 +76,10 @@ namespace Ifpack2 {
 ///   Tpetra::RowMatrix and Tpetra::CrsMatrix sparse matrices.
 /// \tparam MatrixType A specialization of Tpetra::CrsMatrix (better)
 ///   or Tpetra::RowMatrix (acceptable).
-/// \tparam ContainerType Type representing a diagonal block of a
-///   sparse matrix of type MatrixType.
+/// \tparam ContainerType A specialization or subclass of Container; a
+///   type that knows how to solve linear systems with diagonal blocks
+///   of MatrixType.  Those blocks may be either sparse or dense; the
+///   subclass of Container controls the representation.
 ///
 /// This class implements the construction and application of block
 /// relaxation preconditioners and smoothers, for sparse matrices
@@ -90,11 +95,11 @@ namespace Ifpack2 {
 /// For a list of supported parameters, please refer to the
 /// documentation of setParameters().
 template<class MatrixType, class ContainerType>
-class BlockRelaxation : 
+class BlockRelaxation :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
-					   typename MatrixType::local_ordinal_type,
-					   typename MatrixType::global_ordinal_type,
-					   typename MatrixType::node_type> 
+                                           typename MatrixType::local_ordinal_type,
+                                           typename MatrixType::global_ordinal_type,
+                                           typename MatrixType::node_type>
 {
 public:
   //! @name Typedefs
@@ -177,7 +182,7 @@ public:
 
   //@}
   //! \name Preconditioner computation methods
-  //@{ 
+  //@{
 
   //! Sets all the parameters for the preconditioner
   /**
@@ -217,10 +222,10 @@ public:
 
   //@}
   //! @name Methods implementing the Tpetra::Operator interface.
-  //@{ 
+  //@{
 
   //! Applies the preconditioner to X, returns the result in Y.
-  /*! 
+  /*!
     \param
     X - (In) A Tpetra::MultiVector of dimension NumVectors to be preconditioned.
     \param
@@ -233,8 +238,8 @@ public:
   void apply(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
              Teuchos::ETransp mode = Teuchos::NO_TRANS,
-	     scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-	     scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+             scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+             scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! Returns the Tpetra::Map object associated with the domain of this operator.
   Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap() const;
@@ -245,10 +250,10 @@ public:
   bool hasTransposeApply() const;
 
   //! Applies the matrix to a Tpetra::MultiVector.
-  /*! 
-    \param 
+  /*!
+    \param
     X - (In) A Tpetra::MultiVector of dimension NumVectors to multiply with matrix.
-    \param 
+    \param
     Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing the result.
     */
   void applyMat(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
@@ -260,15 +265,15 @@ public:
   //@{
 
   //! Compute and return the estimated condition number.
-  magnitude_type 
-  computeCondEst (CondestType CT = Cheap, 
-		  local_ordinal_type MaxIters = 1550,
-		  magnitude_type Tol = 1e-9,
-		  const Teuchos::Ptr<const row_matrix_type>& matrix = 
-		  Teuchos::null);
+  magnitude_type
+  computeCondEst (CondestType CT = Cheap,
+                  local_ordinal_type MaxIters = 1550,
+                  magnitude_type Tol = 1e-9,
+                  const Teuchos::Ptr<const row_matrix_type>& matrix =
+                  Teuchos::null);
   //@}
   //! \name Attribute accessor methods
-  //@{ 
+  //@{
 
   //! Return the computed condition number estmate, or -1 if it has not been computed.
   magnitude_type getCondEst() const;
@@ -311,18 +316,18 @@ public:
   std::string description() const;
 
   //! Print the object with some verbosity level to an FancyOStream object.
-  void 
-  describe (Teuchos::FancyOStream& out, 
-	    const Teuchos::EVerbosityLevel verbLevel = 
-	    Teuchos::Describable::verbLevel_default) const;
+  void
+  describe (Teuchos::FancyOStream& out,
+            const Teuchos::EVerbosityLevel verbLevel =
+            Teuchos::Describable::verbLevel_default) const;
 
   //@}
 
 private:
   //! \name Internal typedefs (handy for brevity and code clarity)
-  //@{ 
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, 
-			      global_ordinal_type, node_type> MV;
+  //@{
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
+                              global_ordinal_type, node_type> MV;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
   //@}
@@ -331,7 +336,7 @@ private:
   BlockRelaxation (const BlockRelaxation<MatrixType, ContainerType> & RHS);
 
   //! Assignment operator; do not use (declared but unimplemented)
-  BlockRelaxation<MatrixType,ContainerType>& 
+  BlockRelaxation<MatrixType,ContainerType>&
   operator= (const BlockRelaxation<MatrixType, ContainerType>& RHS);
 
   virtual void ApplyInverseJacobi (const MV& X, MV& Y) const;
@@ -345,12 +350,12 @@ private:
   virtual void ApplyInverseSGS (const MV& X, MV& Y) const;
 
   virtual void DoSGS (MV& X, MV& Y) const;
- 
+
   void ExtractSubmatrices ();
 
   //@}
   //! \name Internal data and parameters
-  //@{ 
+  //@{
 
   //! The sparse matrix to be preconditioned.
   Teuchos::RCP<const row_matrix_type> A_;
@@ -399,7 +404,7 @@ private:
   //! If \c true, the starting solution is always the zero vector.
   bool ZeroStartingSolution_;
 
-  //! Backward-Mode Gauss Seidel 
+  //! Backward-Mode Gauss Seidel
   bool DoBackwardGS_;
 
   //! Condition number estimate

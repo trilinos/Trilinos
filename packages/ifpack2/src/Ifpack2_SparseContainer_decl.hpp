@@ -233,16 +233,11 @@ private:
   //! Copy constructor: Declared but not implemented, to forbid copy construction.
   SparseContainer(const SparseContainer<MatrixType,InverseType>& rhs);
 
-  //! Sets the number of vectors for LHS/RHS.
-  virtual void setNumVectors(const size_t NumVectors);
-
   //! Extract the submatrices identified by the ID set int ID().
   virtual void extract(const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> >& Matrix);
 
   //! Number of rows in the local matrix.
   size_t numRows_;
-  //! Number of vectors in the local linear system.
-  size_t NumVectors_;
   //! Linear map on which the local matrix is based.
   Teuchos::RCP<Tpetra::Map<InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> > Map_;
   //! Pointer to the local matrix.

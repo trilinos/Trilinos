@@ -58,7 +58,6 @@ template<class MatrixType, class InverseType>
 SparseContainer<MatrixType,InverseType>::
 SparseContainer (const size_t NumRows, const size_t NumVectors) :
   numRows_ (NumRows),
-  NumVectors_ (NumVectors),
   IsInitialized_ (false),
   IsComputed_ (false),
 #ifdef HAVE_MPI
@@ -67,7 +66,9 @@ SparseContainer (const size_t NumRows, const size_t NumVectors) :
   LocalComm_ (Teuchos::rcp (new Teuchos::SerialComm<int> ())),
 #endif // HAVE_MPI
   needPermutation_ (true)
-{}
+{
+  (void) NumVectors;
+}
 
 //==============================================================================
 template<class MatrixType, class InverseType>
@@ -82,21 +83,6 @@ size_t SparseContainer<MatrixType,InverseType>::getNumRows() const
 {
   if (isInitialized()) return numRows_;
   else return 0;
-}
-
-//==============================================================================
-// Sets the number of vectors for X/Y
-template<class MatrixType, class InverseType>
-void SparseContainer<MatrixType,InverseType>::setNumVectors(const size_t NumVectors_in)
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    NumVectors_in <= 0, std::runtime_error, "Ifpack2::SparseContainer::"
-    "setNumVectors: The input argument must be positive, but you specified "
-    "NumVectors_in = " << NumVectors_in << " <= 0.");
-
-  if (! IsInitialized_  || NumVectors_ != NumVectors_in) {
-    NumVectors_=NumVectors_in;
-  }
 }
 
 //==============================================================================
@@ -142,7 +128,6 @@ void SparseContainer<MatrixType,InverseType>::initialize()
   Map_ = Teuchos::rcp( new Tpetra::Map<InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode>(numRows_,0,LocalComm_) );
   Matrix_ = Teuchos::rcp( new Tpetra::CrsMatrix<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode>(Map_,0) );
   GID_.resize(numRows_);
-  setNumVectors(NumVectors_);
 
   // create the inverse
   Inverse_ = Teuchos::rcp( new InverseType(Matrix_) );
@@ -656,7 +641,6 @@ void SparseContainer<MatrixType,InverseType>::describe(Teuchos::FancyOStream &os
   os << "================================================================================" << endl;
   os << "Ifpack2_SparseContainer" << endl;
   os << "Number of rows          = " << numRows_ << endl;
-  os << "Number of vectors       = " << NumVectors_ << endl;
   os << "isInitialized()         = " << IsInitialized_ << endl;
   os << "isComputed()            = " << IsComputed_ << endl;
   os << "================================================================================" << endl;
@@ -666,7 +650,8 @@ void SparseContainer<MatrixType,InverseType>::describe(Teuchos::FancyOStream &os
 //==============================================================================
 // Extract the submatrices identified by the ID set int ID().
 template<class MatrixType, class InverseType>
-void SparseContainer<MatrixType,InverseType>::extract(const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> >& Matrix_in)
+void SparseContainer<MatrixType,InverseType>::
+extract (const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> >& Matrix_in)
 {
   size_t MatrixInNumRows= Matrix_in->getNodeNumRows();
 
