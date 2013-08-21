@@ -169,7 +169,24 @@ public:
         const Teuchos::RCP< Node > & node =
           Kokkos::DefaultNode::getDefaultNode());
 
-  /** \brief Parent/array of slices sub-map constructor
+  /** \brief Parent/single global ordinal sub-map constructor
+   *
+   * \param parent [in] an MDMap, from which this sub-map will be
+   *        derived.
+   *
+   * \param axis [in] the axis to which the slice argument applies
+   *
+   * \param index [in] a global ordinal that defines the sub-map.
+   *
+   * This constructor will return an MDMap that is one dimension less
+   * than the dimensions of the parent MDMap (unless the parent MDMap
+   * is already one dimension).
+   */
+  MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
+        int axis,
+        GlobalOrd index);
+
+  /** \brief Parent/single slice sub-map constructor
    *
    * \param parent [in] an MDMap, from which this sub-map will be
    *        derived.
@@ -177,7 +194,7 @@ public:
    * \param axis [in] the axis to which the slice argument applies
    *
    * \param slice [in] a Slice of global axis indexes that
-   *        defines the sub-map.  These slices must not include
+   *        defines the sub-map.  This slice must not include
    *        indexes from the ghost regions along each axis.
    *
    * \param ghosts [in] The ghost region along the altered axis of the
@@ -777,6 +794,129 @@ MDMap(const MDCommRCP mdComm,
   // Compute the strides
   _globalStrides = computeStrides(_globalDims, _storageOrder);
   _localStrides  = computeStrides(_localDims , _storageOrder);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class LocalOrd, class GlobalOrd, class Node >
+MDMap< LocalOrd, GlobalOrd, Node >::
+MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
+      int axis,
+      GlobalOrd index) :
+  _mdComm(parent._mdComm),
+  _globalDims(),
+  _globalBounds(),
+  _globalRankBounds(),
+  _globalStrides(),
+  _globalMin(),
+  _globalMax(),
+  _localDims(),
+  _localBounds(),
+  _localStrides(),
+  _localMin(),
+  _localMax(),
+  _haloSizes(),
+  _halos(),
+  _ghostSizes(),
+  _ghosts(),
+  _storageOrder(parent._storageOrder),
+  _node(parent._node)
+{
+  if (parent.onSubcommunicator())
+  {
+    int numDims = parent.getNumDims();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ((axis < 0) || (axis >= numDims)),
+      RangeError,
+      "axis = " << axis  << " is invalid for communicator with " <<
+        numDims << " dimensions");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ((index < parent.getGlobalBounds(axis,true).start()) ||
+       (index >= parent.getGlobalBounds(axis,true).stop())),
+      RangeError,
+      "index = " << index  << " is invalid for MDMap axis " <<
+      axis << " with bounds " << parent.getGlobalBounds(axis,true));
+
+    // Determine the axis rank for the processor on which the index
+    // lives, and construct the MDComm
+    int thisAxisRank = -1;
+    for (int axisRank = 0; axisRank < parent.getAxisCommSize(); ++axisRank)
+      if (index >= parent._globalRankBounds[axis][axisRank].start() &&
+          index < parent._globalRankBounds[axis][axisRank].stop())
+        thisAxisRank = axisRank;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (thisAxisRank == -1),
+      InvalidArgument,
+      "error computing axis rank for sub-communicator");
+    _mdComm = Teuchos::rcp(new MDComm(parent._mdComm, axis, thisAxisRank));
+  }
+
+  // There are now two ways for this processor to be off the
+  // sub-communicator: (1) it came in that way, or (2) it is not on
+  // the new sub-communicator.  Either way, this will be reflected in
+  // the new _mdComm, so we check it now.
+  if (_mdComm->onSubcommunicator())
+  {
+    int numDims = parent.getNumDims();
+    if (numDims == 1)
+    {
+      _globalDims.push_back(1);
+      _globalBounds.push_back(ConcreteSlice(index,index+1));
+      Teuchos::Array< Slice > bounds(1);
+      bounds[0] = ConcreteSlice(index, index+1);
+      _globalRankBounds.push_back(bounds);
+      _globalStrides.push_back(1);
+      _globalMin = index * parent._globalStrides[axis];
+      _globalMax = _globalMin;
+      _localDims.push_back(1);
+      _localBounds.push_back(ConcreteSlice(0,1));
+      _localStrides.push_back(1);
+      _localMin = parent._localMin +
+        (index - parent._globalRankBounds[axis][0].start()) *
+        parent._localStrides[axis];
+      _localMax = _localMin;
+      _haloSizes.push_back(0);
+      _halos.push_back(Teuchos::tuple(0,0));
+      _ghostSizes.push_back(0);
+      _ghosts.push_back(Teuchos::tuple(0,0));
+    }
+    else
+    {
+      _globalMin = parent._globalMin;
+      _globalMax = parent._globalMax;
+      _localMin  = parent._localMin;
+      _localMax  = parent._localMax;
+      for (int myAxis = 0; myAxis < numDims; ++myAxis)
+      {
+        if (myAxis != axis)
+        {
+          _globalDims.push_back(parent._globalDims[myAxis]);
+          _globalBounds.push_back(parent._globalBounds[myAxis]);
+          _globalRankBounds.push_back(parent._globalRankBounds[myAxis]);
+          _globalStrides.push_back(parent._globalStrides[myAxis]);
+          _localDims.push_back(parent._localDims[myAxis]);
+          _localBounds.push_back(parent._localBounds[myAxis]);
+          _localStrides.push_back(parent._localStrides[myAxis]);
+          _haloSizes.push_back(parent._haloSizes[myAxis]);
+          _halos.push_back(parent._halos[myAxis]);
+          _ghostSizes.push_back(parent._ghostSizes[myAxis]);
+          _ghosts.push_back(parent._ghosts[myAxis]);
+        }
+        else
+        {
+          int axisRank = parent._axisRanks[axis];
+          _globalMin += index * parent._globalStrides[axis];
+          _globalMax -= (parent._globalBounds[axis].stop() - index) *
+            parent._globalStrides[axis];
+          _localMin += (index-parent._globalRankBounds[axis][axisRank].start())
+            * parent._localStrides[axis];
+          _localMax -= (parent._globalRankBounds[axis][axisRank].stop()-index-1)
+            * parent._localStrides[axis];
+        }
+      }
+    }
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
