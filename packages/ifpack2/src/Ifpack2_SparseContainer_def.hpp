@@ -173,18 +173,17 @@ compute (const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdi
 
   // Determine whether apply() and weightedApply() need to permute X and Y.
   // If ID(i) == i for all i in [0, numRows-1], then we don't need to permute.
-  // bool needPermutation = false;
-  // const size_t numRows = Inverse_->getRangeMap ()->getNodeNumElements ();
-  // if (numRows == this->GID_.size ()) {
-  //   for (size_t i = 0; i < numRows; ++i) {
-  //     if (this->ID(i) != i) {
-  //       needPermutation = true;
-  //       break;
-  //     }
-  //   }
-  // }
-  // needPermutation_ = needPermutation;
-  needPermutation_ = true;
+  bool needPermutation = false;
+  const size_t numRows = Inverse_->getRangeMap ()->getNodeNumElements ();
+  if (numRows == this->GID_.size ()) {
+    for (size_t i = 0; i < numRows; ++i) {
+      if (this->ID(i) != i) {
+        needPermutation = true;
+        break;
+      }
+    }
+  }
+  needPermutation_ = needPermutation;
 
   IsComputed_ = true;
 }
@@ -250,7 +249,32 @@ apply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrd
   RCP<MV> Y_local = Y.offsetViewNonConst (map_Y_local, 0);
 
   if (! needPermutation_) {
-    Inverse_->apply (*X_local, *Y_local, mode, alpha, beta);
+    // Even if we don't need a permutation step, we still might need
+    // to restrict X_local and Y_local further.
+    RCP<const MV> X_local_subview =
+      Inverse_->getDomainMap ()->getNodeNumElements () == X_local->getLocalLength () ?
+      X_local :
+      X_local->offsetView (Inverse_->getDomainMap (), 0);
+    RCP<MV> Y_local_subview =
+      Inverse_->getRangeMap ()->getNodeNumElements () == Y_local->getLocalLength () ?
+      Y_local :
+      Y_local->offsetViewNonConst (Inverse_->getRangeMap (), 0);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      Inverse_->getDomainMap ()->getNodeNumElements () != X_local_subview->getLocalLength (),
+      std::logic_error, "Ifpack2::SparseContainer::apply: Inverse_ "
+      "operator and X_local_subview have incompatible dimensions (" <<
+      Inverse_->getDomainMap ()->getNodeNumElements () << " resp. "
+      << X_local_subview->getLocalLength () << ").  Please report this bug to "
+      "the Ifpack2 developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      Inverse_->getRangeMap ()->getNodeNumElements () != Y_local_subview->getLocalLength (),
+      std::logic_error, "Ifpack2::SparseContainer::apply: Inverse_ "
+      "operator and Y_local_subview have incompatible dimensions (" <<
+      Inverse_->getRangeMap ()->getNodeNumElements () << " resp. "
+      << Y_local_subview->getLocalLength () << ").  Please report this bug to "
+      "the Ifpack2 developers.");
+    Inverse_->apply (*X_local_subview, *Y_local_subview, mode, alpha, beta);
   }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -313,6 +337,21 @@ apply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrd
       }
     }
 
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      Inverse_->getDomainMap ()->getNodeNumElements () != X_local_perm->getLocalLength (),
+      std::logic_error, "Ifpack2::SparseContainer::apply: Inverse_ "
+      "operator and X_local_perm have incompatible dimensions (" <<
+      Inverse_->getDomainMap ()->getNodeNumElements () << " resp. "
+      << X_local_perm->getLocalLength () << ").  Please report this bug to the "
+      "Ifpack2 developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      Inverse_->getRangeMap ()->getNodeNumElements () != Y_local_perm->getLocalLength (),
+      std::logic_error, "Ifpack2::SparseContainer::apply: Inverse_ "
+      "operator and Y_local_perm have incompatible dimensions (" <<
+      Inverse_->getRangeMap ()->getNodeNumElements () << " resp. "
+      << Y_local_perm->getLocalLength () << ").  Please report this bug to the "
+      "Ifpack2 developers.");
     // Apply the local Inverse_ operator to the permuted input and output.
     Inverse_->apply (*X_local_perm, *Y_local_perm, mode, alpha, beta);
 
@@ -460,11 +499,20 @@ weightedApply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixG
       }
     }
   } else {
-    // Don't worry about the const cast, since we won't actually write
-    // to X_local_perm in this case.  The only reason for it is to
-    // avoid code duplication.
-    X_local_perm = rcp_const_cast<MV> (X_local);
-    Y_local_perm = Y_local;
+    // Even if we don't need a permutation step, we still might need
+    // to restrict X_local and Y_local further.
+    //
+    // Don't worry about the const cast of X_local, since we won't
+    // actually write to X_local_perm in this case.  The only reason
+    // for it is to avoid code duplication.
+    X_local_perm =
+      Inverse_->getDomainMap ()->getNodeNumElements () == X_local->getLocalLength () ?
+      rcp_const_cast<MV> (X_local) :
+      rcp_const_cast<MV> (X_local->offsetView (Inverse_->getDomainMap (), 0));
+    Y_local_perm =
+      Inverse_->getRangeMap ()->getNodeNumElements () == Y_local->getLocalLength () ?
+      Y_local :
+      Y_local->offsetViewNonConst (Inverse_->getRangeMap (), 0);
   }
 
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -474,6 +522,20 @@ weightedApply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixG
   TEUCHOS_TEST_FOR_EXCEPTION(
     Y_local_perm.is_null (), std::logic_error, "Ifpack2::SparseContainer::"
     "weightedApply: Y_local_perm is null.  Please report this bug to the "
+    "Ifpack2 developers.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    Inverse_->getDomainMap ()->getNodeNumElements () != X_local_perm->getLocalLength (),
+    std::logic_error, "Ifpack2::SparseContainer::weightedApply: Inverse_ "
+    "operator and X_local_perm have incompatible dimensions (" <<
+    Inverse_->getDomainMap ()->getNodeNumElements () << " resp. "
+    << X_local_perm->getLocalLength () << ").  Please report this bug to the "
+    "Ifpack2 developers.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    Inverse_->getRangeMap ()->getNodeNumElements () != Y_local_perm->getLocalLength (),
+    std::logic_error, "Ifpack2::SparseContainer::weightedApply: Inverse_ "
+    "operator and Y_local_perm have incompatible dimensions (" <<
+    Inverse_->getRangeMap ()->getNodeNumElements () << " resp. "
+    << Y_local_perm->getLocalLength () << ").  Please report this bug to the "
     "Ifpack2 developers.");
 
   // Create a temporary vector (if necessary) X_scaled for diag(D) * X.
