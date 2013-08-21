@@ -966,7 +966,8 @@ public:
   // the array of connected nodes can be indexed by ordinal.
   // For cases like element-face connectivity, where an element may not have all faces defined,
   // the array of connected faces can not always be indexed by ordinal even
-  // though those faces are sorted by ordinal. e.g., an element may only have faces 3 and 4.
+  // though those faces are sorted by ordinal.
+  // e.g., a hex-8 element may only have two of its six possible faces.
 
   ConnectivityOrdinal const* begin_ordinals(Entity entity, EntityRank rank) const;
   ConnectivityOrdinal const* begin_node_ordinals(Entity entity) const;
