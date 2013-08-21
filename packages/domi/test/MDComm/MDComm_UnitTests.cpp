@@ -803,7 +803,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommReduce )
       {
         if (numDims == 1)
         {
-          TEST_EQUALITY(reducedMdComm.getAxisCommSize(newAxis), 1);
+          TEST_EQUALITY_CONST(reducedMdComm.getAxisCommSize(newAxis), 1);
         }
         else if (newAxis < axis)
         {
