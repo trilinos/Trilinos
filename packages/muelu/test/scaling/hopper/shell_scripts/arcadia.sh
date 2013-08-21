@@ -174,5 +174,3 @@ for I in $MULTX; do
 	arcadia_analyze $NODES $DIR
     fi
 done
-
-
