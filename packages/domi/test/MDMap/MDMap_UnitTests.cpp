@@ -1631,6 +1631,64 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapUpperRightNewGhosts, T )
   }
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapReduce, T )
+{
+  // Construct the MDComm from command-line arguments
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
+
+  // Construct the parent MDMap
+  Array< T > dimensions(numDims);
+  Array<int> halos(numDims);
+  Array<int> ghosts(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    dimensions[axis] = 10*axisCommSizes[axis];
+    halos[axis] = axis + 1;
+    ghosts[axis] = axis + 2;
+  }
+  MDMap<T> mdMap(mdComm, dimensions, halos, ghosts);
+
+  // We will reduce this parent MDMap several times by using the
+  // single GlobalOrd constructor along each dimension
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    T myOrd = dimensions[axis] / 2;
+    int newDims = (numDims > 1) ? numDims-1 : numDims;
+    Slice bounds = mdMap.getGlobalRankBounds(axis);
+    bool partOfSubMap = true;
+    if ((myOrd < bounds.start()) || (bounds.stop() <= myOrd))
+      partOfSubMap = false;
+    MDMap<T> reducedMdMap(mdMap, axis, myOrd);
+    if (partOfSubMap)
+    {
+      TEST_EQUALITY(reducedMdMap.getNumDims(), newDims);
+      for (int newAxis = 0; newAxis < newDims; ++newAxis)
+      {
+        if (numDims == 1)
+        {
+          TEST_EQUALITY_CONST(reducedMdMap.getGlobalDim(newAxis), 1);
+        }
+        else if (newAxis < axis)
+        {
+          TEST_EQUALITY(reducedMdMap.getGlobalDim(newAxis),
+                        dimensions[newAxis]);
+        }
+        else
+        {
+          TEST_EQUALITY(reducedMdMap.getGlobalDim(newAxis),
+                        dimensions[newAxis+1]);
+        }
+      }
+    }
+    else
+    {
+      TEST_EQUALITY_CONST(reducedMdMap.onSubcommunicator(), false);
+    }
+  }
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapPeriodic, T )
 {
   // Construct the MDComm from command-line arguments
@@ -1655,19 +1713,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapPeriodic, T )
   }
 
   // Construct the MDMap and the sub-MDMap
-  std::cout << std::endl << "Constructing mdMap" << std::endl;
   MDMap<T> mdMap(mdComm, dimensions);
-  std::cout << "Constructed mdMap.  Constructing subMDMap" << std::endl;
   MDMap<T> subMDMap(mdMap, slices);
-  std::cout << "Constructed subMDMap" << std::endl;
 
   // Should this processor be a part of the sub-MDMap?
   bool partOfSubComm = true;
   if (mdComm->getNumDims() > 1)
     if (mdComm->getAxisRank(1) > (mdComm->getAxisCommSize(1)-1)/2)
       partOfSubComm = false;
-  std::cout << comm->getRank() << ": part of subcomm = " << partOfSubComm
-            << std::endl;
 
   // Do some unit tests
   if (partOfSubComm)
@@ -1713,6 +1766,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapPeriodic, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapUpperLeftHaloGhost, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapUpperRight, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapUpperRightNewGhosts, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapReduce, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapPeriodic, T )
 
 UNIT_TEST_GROUP(int)
