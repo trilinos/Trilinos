@@ -120,7 +120,7 @@ namespace MueLu {
     bool doExperimentalWrap = pL.get<bool>("lightweight wrap");
     bool disableDirichletDetection = pL.get<bool>("disable Dirichlet detection");
 
-    GetOStream(Parameters0, 0) << "CoalesceDropFactory::Build : lightweight wrap = " << doExperimentalWrap << std::endl;
+    GetOStream(Parameters0, 0) << "lightweight wrap = " << doExperimentalWrap << std::endl;
 
     if (doExperimentalWrap) {
       std::string algo = pL.get<std::string>("algorithm");
@@ -129,12 +129,13 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(algo != "original" && algo != "laplacian", Exceptions::RuntimeError, "\"algorithm\" must be one of (original|laplacian)");
 
       SC threshold = Teuchos::as<SC>(pL.get<double>("aggregation threshold"));
-      GetOStream(Runtime0, 0) << "algorithm = \"" << algo << "\": threshold = " << threshold << std::endl;
+      GetOStream(Runtime0, 0) << "algorithm = \"" << algo << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
       Set(currentLevel, "Filtering", (threshold != STS::zero()));
 
       const typename STS::magnitudeType dirichletThreshold = STS::magnitude(pL.get<SC>("Dirichlet detection threshold"));
 
       GO numDropped = 0, numTotal = 0;
+      std::string graphType="unamalgamated"; //for description purposes only
       if (algo == "original") {
         if (predrop_ == null) {
           // ap: this is a hack: had to declare predrop_ as mutable
@@ -158,7 +159,6 @@ namespace MueLu {
         // Therefore, it is sufficient to check only threshold
 
         if (A->GetFixedBlockSize() == 1 && threshold == STS::zero()) {
-          GetOStream(Runtime0,0) << "blocksize=1, no dropping" << std::endl;
           // Case 1:  scalar problem, no dropping => just use matrix graph
           RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
 
@@ -169,6 +169,7 @@ namespace MueLu {
           else
             boundaryNodes = ArrayRCP<const bool>(A->getNodeNumRows(),false);
           graph->SetBoundaryNodeMap(boundaryNodes);
+          numTotal = A->getNodeNumEntries();
 
           if (GetVerbLevel() & Statistics0) {
             GO numLocalBoundaryNodes  = 0;
@@ -187,7 +188,6 @@ namespace MueLu {
         } else if (A->GetFixedBlockSize() == 1 && threshold != STS::zero()) {
           // Case 2:  scalar problem with dropping => record the column indices of undropped entries, but still use original
           //                                          graph's map information, e.g., whether index is local
-          GetOStream(Runtime0,0) << "blocksize=1, threshold=" << threshold << std::endl;
 
           // allocate space for the local graph
           ArrayRCP<LO> rows   (A->getNodeNumRows()+1);
@@ -259,7 +259,7 @@ namespace MueLu {
 
           // Case 3:  Multiple DOF/node problem without dropping
 
-          GetOStream(Runtime0,0) << "blocksize=" << A->GetFixedBlockSize() << ", threshold=" << threshold << std::endl;
+          graphType="amalgamated";
 
           RCP<const Map> uniqueMap, nonUniqueMap;
           AmalgamateMap(A->GetFixedBlockSize(),*(A->getRowMap()), uniqueMap);
@@ -355,12 +355,11 @@ namespace MueLu {
 
           Set(currentLevel, "Graph",       graph);
           Set(currentLevel, "DofsPerNode", blkSize);
-          std::cout << "setting DofsPerNode on level structure to " << blkSize << std::endl;
-          // TODO end of work <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
         } else if (A->GetFixedBlockSize() > 1 && threshold != STS::zero()) {
           // Case 4:  Multiple DOF/node problem with dropping
           // TODO
+          graphType="amalgamated";
           throw Exceptions::NotImplemented("Fast CoalesceDrop with multiple DOFs and dropping is not yet implemented.");
         }
 
@@ -389,6 +388,8 @@ namespace MueLu {
           // Trivial case: scalar problem, no dropping. Can return original graph
           RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
           graph->SetBoundaryNodeMap(pointBoundaryNodes);
+          graphType="unamalgamated";
+          numTotal = A->getNodeNumEntries();
 
           if (GetVerbLevel() & Statistics0) {
             GO numLocalBoundaryNodes  = 0;
@@ -425,12 +426,14 @@ namespace MueLu {
           if (blkSize == 1) {
             uniqueMap    = A->getRowMap();
             nonUniqueMap = A->getColMap();
+            graphType="unamalgamated";
 
           } else {
             uniqueMap    = Coords->getMap();
             TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap->getIndexBase() != indexBase, Exceptions::Incompatible,
                                        "Different index bases for matrix and coordinates");
             AmalgamateMap(A->GetFixedBlockSize(), *(A->getColMap()), nonUniqueMap);
+            graphType="amalgamated";
           }
           LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
 
@@ -597,8 +600,10 @@ namespace MueLu {
           GO numGlobalTotal, numGlobalDropped;
           sumAll(comm, numTotal,   numGlobalTotal);
           sumAll(comm, numDropped, numGlobalDropped);
-          GetOStream(Statistics0, -1) << "Number of dropped entries in amalgamated graph: " << numGlobalDropped << "/" << numGlobalTotal
-              << " (" << 100*Teuchos::as<double>(numGlobalDropped)/Teuchos::as<double>(numGlobalTotal) << "%)" << std::endl;
+          GetOStream(Statistics0, 0) << "Number of dropped entries in " << graphType << " matrix graph: " << numGlobalDropped << "/" << numGlobalTotal;
+          if (numGlobalTotal != 0)
+            GetOStream(Statistics0, 0) << " (" << 100*Teuchos::as<double>(numGlobalDropped)/Teuchos::as<double>(numGlobalTotal) << "%)";
+          GetOStream(Statistics0, 0) << std::endl;
       }
 
     } else {

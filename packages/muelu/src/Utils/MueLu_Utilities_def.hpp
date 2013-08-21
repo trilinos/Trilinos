@@ -308,6 +308,7 @@ namespace MueLu {
   Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Multiply(const Matrix& A, bool transposeA,
                                                                           const Matrix& B, bool transposeB,
                                                                           RCP<Matrix> C_in,
+                                                                          Teuchos::FancyOStream &fos,
                                                                           bool doFillComplete,
                                                                           bool doOptimizeStorage,
                                                                           bool allowMLMultiply) {
@@ -324,7 +325,7 @@ namespace MueLu {
     if (allowMLMultiply && B.getDomainMap()->lib() == Xpetra::UseEpetra && !transposeA && !transposeB) {
       RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(rcpFromRef(A));
       RCP<const Epetra_CrsMatrix> epB = Op2EpetraCrs(rcpFromRef(B));
-      RCP<Epetra_CrsMatrix>       epC = MLTwoMatrixMultiply(*epA, *epB);
+      RCP<Epetra_CrsMatrix>       epC = MLTwoMatrixMultiply(*epA, *epB, fos);
 
       RCP<Matrix> C = Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(epC);
       if (doFillComplete) {
@@ -357,9 +358,7 @@ namespace MueLu {
           totalNnz = minNnz;
         nnzPerRow = totalNnz / A.getGlobalNumRows();
 
-        RCP<Teuchos::FancyOStream> fos = MakeFancy(std::cout);
-        fos->setOutputToRootOnly(0);
-        *fos << "Utils::Multiply : Estimate for nnz per row of product matrix = " << Teuchos::as<LO>(nnzPerRow) << std::endl;
+        fos << "Utils::Multiply : Estimate for nnz per row of product matrix = " << Teuchos::as<LO>(nnzPerRow) << std::endl;
       }
 
       if (transposeA) C = MatrixFactory::Build(A.getDomainMap(), Teuchos::as<LO>(nnzPerRow));
@@ -367,7 +366,7 @@ namespace MueLu {
 
     } else {
       C->resumeFill(); // why this is not done inside of Tpetra MxM?
-      std::cout << "Reuse C pattern" << std::endl;
+      fos << "Reuse C pattern" << std::endl;
     }
 
     Xpetra::MatrixMatrix::Multiply(A, transposeA, B, transposeB, *C, doFillComplete, doOptimizeStorage);
@@ -378,16 +377,15 @@ namespace MueLu {
     C->CreateView("stridedMaps", rcpFromRef(A), transposeA, rcpFromRef(B), transposeB);
 
     return C;
-  }
+  } //Multiply()
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Epetra_CrsMatrix> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLTwoMatrixMultiply(const Epetra_CrsMatrix& epA, const Epetra_CrsMatrix& epB) {
+  RCP<Epetra_CrsMatrix> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLTwoMatrixMultiply(const Epetra_CrsMatrix& epA, const Epetra_CrsMatrix& epB, Teuchos::FancyOStream &fos) {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_ML)
     ML_Comm* comm;
     ML_Comm_Create(&comm);
-    if (comm->ML_mypid == 0)
-      std::cout << "****** USING ML's MATRIX MATRIX MULTIPLY (LNM version) ******" << std::endl;
+    fos << "****** USING ML's MATRIX MATRIX MULTIPLY (LNM version) ******" << std::endl;
 #ifdef HAVE_MPI
     // ML_Comm uses MPI_COMM_WORLD, so try to use the same communicator as epA.
     const Epetra_MpiComm * Mcomm = dynamic_cast<const Epetra_MpiComm*>(&(epA.Comm()));
@@ -400,8 +398,8 @@ namespace MueLu {
     const Epetra_CrsMatrix& A = Atransform(const_cast<Epetra_CrsMatrix&>(epA));
     const Epetra_CrsMatrix& B = Btransform(const_cast<Epetra_CrsMatrix&>(epB));
 
-    if (!A.Filled())    throw Exceptions::RuntimeError("A has to be FillCompeleted");
-    if (!B.Filled())    throw Exceptions::RuntimeError("B has to be FillCompeleted");
+    if (!A.Filled())    throw Exceptions::RuntimeError("A has to be FillCompleted");
+    if (!B.Filled())    throw Exceptions::RuntimeError("B has to be FillCompleted");
 
     // create ML operators from EpetraCrsMatrix
     ML_Operator* ml_As = ML_Operator_Create(comm);
@@ -547,7 +545,8 @@ namespace MueLu {
           RCP<CrsMatrixWrap> crop1 = rcp(new CrsMatrixWrap(crmat1));
           RCP<CrsMatrixWrap> crop2 = rcp(new CrsMatrixWrap(crmat2));
 
-          RCP<Matrix> temp = MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Multiply(*crop1, false, *crop2, false);
+          RCP<Matrix> temp = MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Multiply(*crop1, false, *crop2, false,
+          *(Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout))));
 
           // sum up
           MueLu::Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(*temp, false, 1.0, *Cij, 1.0);
@@ -1367,7 +1366,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(const Matrix& A, bool transposeA, SC const &alpha,
                            const Matrix& B, bool transposeB, SC const &beta,
-                           RCP<Matrix>& C, bool AHasFixedNnzPerRow) {
+                           RCP<Matrix>& C, Teuchos::FancyOStream & fos, bool AHasFixedNnzPerRow) {
     if (!(A.getRowMap()->isSameAs(*(B.getRowMap()))))
       throw Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same.");
 
@@ -1378,9 +1377,6 @@ namespace MueLu {
       size_t maxNzInA     = A.getGlobalMaxNumRowEntries();
       size_t maxNzInB     = B.getGlobalMaxNumRowEntries();
       size_t numLocalRows = A.getNodeNumRows();
-
-      RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      fos->setOutputToRootOnly(0);
 
       if (maxNzInA == 1 || maxNzInB == 1 || AHasFixedNnzPerRow) {
         // first check if either A or B has at most 1 nonzero per row
@@ -1396,7 +1392,7 @@ namespace MueLu {
             exactNnzPerRow[i] = A.getNumEntriesInLocalRow(Teuchos::as<LO>(i)) + maxNzInB;
         }
 
-        *fos << "Utils::TwoMatrixAdd : special case detected (one matrix has a fixed nnz per row)"
+        fos << "Utils::TwoMatrixAdd : special case detected (one matrix has a fixed nnz per row)"
              << ", using static profiling" << std::endl;
         C = rcp(new CrsMatrixWrap(A.getRowMap(), exactNnzPerRow, Xpetra::StaticProfile));
 
@@ -1411,15 +1407,15 @@ namespace MueLu {
         //possible nnz's in any single row of the result.
         Xpetra::ProfileType pft = (maxPossible) > nnzToAllocate ? Xpetra::DynamicProfile : Xpetra::StaticProfile;
 
-        *fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
-        *fos << "Utils::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
+        fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
+        fos << "Utils::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
              << ", max possible nnz per row in sum = " << maxPossible
              << ", using " << (pft == Xpetra::DynamicProfile ? "dynamic" : "static" ) << " profiling"
              << std::endl;
         C = rcp(new CrsMatrixWrap(A.getRowMap(), nnzToAllocate, pft));
       }
       if (transposeB)
-        *fos << "Utils::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
+        fos << "Utils::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
     }
 
     if (C->getRowMap()->lib() == Xpetra::UseEpetra) {

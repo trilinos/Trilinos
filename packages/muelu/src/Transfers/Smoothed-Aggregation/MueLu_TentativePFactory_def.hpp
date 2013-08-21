@@ -120,7 +120,7 @@ namespace MueLu {
 
     RCP<ParameterList> params = rcp(new ParameterList());
     params->set("printLoadBalancingInfo", true);
-    GetOStream(Statistics0,0) << Utils::PrintMatrixInfo(*Ptentative, "Ptent", params);
+    GetOStream(Statistics1,0) << Utils::PrintMatrixInfo(*Ptentative, "Ptent", params);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

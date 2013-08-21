@@ -114,7 +114,7 @@ namespace MueLu {
 
     RCP<MultiVector> coarseCoords = MultiVectorFactory::Build(coarseMap, 2);
     ArrayRCP<Scalar> x = coarseCoords->getDataNonConst(0), y = coarseCoords->getDataNonConst(1);
-    for (size_t LID = 0; LID < coarseMap->getNodeNumElements(); LID++) {
+    for (size_t LID = 0; LID < coarseMap->getNodeNumElements(); ++LID) {
       GlobalOrdinal GID = coarseMap->getGlobalElement(LID) - coarseMap->getIndexBase();
       GlobalOrdinal i = GID % n, j = GID/n;
       x[LID] = i;
@@ -124,7 +124,7 @@ namespace MueLu {
 
     RCP<ParameterList> params = rcp(new ParameterList());
     params->set("printLoadBalancingInfo", true);
-    GetOStream(Statistics0,0) << Utils::PrintMatrixInfo(*P, "P", params);
+    GetOStream(Statistics1,0) << Utils::PrintMatrixInfo(*P, "P", params);
   }
 
 

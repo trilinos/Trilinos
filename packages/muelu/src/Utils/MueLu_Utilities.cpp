@@ -198,7 +198,7 @@ namespace MueLu {
 
   void Utils2<double,int,int>::TwoMatrixAdd(const Matrix& A, bool transposeA, SC alpha,
                                             const Matrix& B, bool transposeB, SC beta,
-                                            RCP<Matrix>& C,  bool AHasFixedNnzPerRow) {
+                                            RCP<Matrix>& C,  Teuchos::FancyOStream &fos, bool AHasFixedNnzPerRow) {
     if (!(A.getRowMap()->isSameAs(*(B.getRowMap()))))
       throw Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same.");
 
@@ -209,9 +209,6 @@ namespace MueLu {
       size_t maxNzInA     = A.getGlobalMaxNumRowEntries();
       size_t maxNzInB     = B.getGlobalMaxNumRowEntries();
       size_t numLocalRows = A.getNodeNumRows();
-
-      RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      fos->setOutputToRootOnly(0);
 
       if (maxNzInA == 1 || maxNzInB == 1 || AHasFixedNnzPerRow) {
         // first check if either A or B has at most 1 nonzero per row
@@ -227,7 +224,7 @@ namespace MueLu {
             exactNnzPerRow[i] = A.getNumEntriesInLocalRow(Teuchos::as<LO>(i)) + maxNzInB;
         }
 
-        *fos << "Utils::TwoMatrixAdd : special case detected (one matrix has a fixed nnz per row)"
+        fos << "Utils::TwoMatrixAdd : special case detected (one matrix has a fixed nnz per row)"
              << ", using static profiling" << std::endl;
         C = rcp(new Xpetra::CrsMatrixWrap<double,int,int,NO,LMO>(A.getRowMap(), exactNnzPerRow, Xpetra::StaticProfile));
 
@@ -242,8 +239,8 @@ namespace MueLu {
         //possible nnz's in any single row of the result.
         Xpetra::ProfileType pft = (maxPossible) > nnzToAllocate ? Xpetra::DynamicProfile : Xpetra::StaticProfile;
 
-        *fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
-        *fos << "Utils::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
+        fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
+        fos << "Utils::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
              << ", max possible nnz per row in sum = " << maxPossible
              << ", using " << (pft == Xpetra::DynamicProfile ? "dynamic" : "static" ) << " profiling"
              << std::endl;
@@ -251,7 +248,7 @@ namespace MueLu {
         C = rcp(new Xpetra::CrsMatrixWrap<double,int,int,NO,LMO>(A.getRowMap(), nnzToAllocate, pft));
       }
       if (transposeB)
-        *fos << "Utils::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
+        fos << "Utils::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
     }
 
     if (C == Teuchos::null) {
@@ -266,9 +263,8 @@ namespace MueLu {
       //Use static profiling (more efficient) if the estimate is at least as big as the max possible nnz's in any single row of the result.
       Xpetra::ProfileType pft = (maxPossible) > nnzToAllocate ? Xpetra::DynamicProfile : Xpetra::StaticProfile;
 
-      RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); fos->setOutputToRootOnly(0);
-      *fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
-      *fos << "Utils::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
+      fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
+      fos << "Utils::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
            << ", max possible nnz per row in sum = " << maxPossible
            << ", using " << (pft == Xpetra::DynamicProfile ? "dynamic" : "static" ) << " profiling"
            << std::endl;
@@ -276,7 +272,7 @@ namespace MueLu {
       C = rcp(new Xpetra::CrsMatrixWrap<double,int,int,NO,LMO>(A.getRowMap(), nnzToAllocate, pft));
 
       if (transposeB)
-        *fos << "Utils::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
+        fos << "Utils::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
     }
 
     if (C->getRowMap()->lib() == Xpetra::UseEpetra) {
@@ -311,7 +307,10 @@ namespace MueLu {
     if (A.IsView("stridedMaps")) C->CreateView("stridedMaps", rcpFromRef(A));
     if (B.IsView("stridedMaps")) C->CreateView("stridedMaps", rcpFromRef(B));
     ///////////////////////// EXPERIMENTAL
-  }
+
+  } //TwoMatrixAdd()
+
+  // -- ------------------------------------------------------- --
 
   RCP<Xpetra::MultiVector<double,int,int> > Utils2<double,int,int>::ReadMultiVector(const std::string& fileName, const RCP<const Map>& map) {
     Xpetra::UnderlyingLib lib = map->lib();

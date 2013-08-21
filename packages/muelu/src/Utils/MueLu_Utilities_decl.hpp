@@ -183,10 +183,12 @@ namespace MueLu {
                                 bool transposeA,
                                 const Matrix & B,
                                 bool transposeB,
+                                //Teuchos::FancyOStream &fos = *(Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout))),
+                                Teuchos::FancyOStream &fos,
                                 bool callFillCompleteOnResult = true,
                                 bool doOptimizeStorage        = true,
                                 bool allowMLMultiply          = true) {
-      return Utils<SC,LO,GO,NO,LMO>::Multiply(A, transposeA, B, transposeB, Teuchos::null, callFillCompleteOnResult, doOptimizeStorage, allowMLMultiply);
+      return Utils<SC,LO,GO,NO,LMO>::Multiply(A, transposeA, B, transposeB, Teuchos::null, fos, callFillCompleteOnResult, doOptimizeStorage, allowMLMultiply);
     }
 
 
@@ -198,12 +200,14 @@ namespace MueLu {
     @param transposeA if true, use the transpose of A
     @param B right matrix
     @param transposeB if true, use the transpose of B
-    @param callFillCompleteOnResult if true, the resulting matrix should be fillComplete'd
 
     @param C_in advanced usage. Use Teuchos::null by default.
            When C_in is available, its memory is reused to build
            This is useful in the case of multiple solve: if the pattern of C does not change, we can keep the memory and pattern of previous C matrix (C_in)
            C_in is modified in place and is not valid after the call.
+    @param callFillCompleteOnResult if true, the resulting matrix should be fillComplete'd
+    @param doOptimizedStorage if true, optimize storage
+    @param allowMLMultiply    if true, allow usage of ML's matrix matrix multiply
 
            ML MxM multiply does not reuse the pattern of C_in. If a C_in matrix is provided, then it is ignored.
            This can create a memory penalty if both the useless C_in and the new C are present in memory at the same time
@@ -214,14 +218,18 @@ namespace MueLu {
                                 const Matrix& B,
                                 bool transposeB,
                                 RCP<Matrix> C_in,
+                                //Teuchos::FancyOStream &fos = *(Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)))
+                                Teuchos::FancyOStream &fos,
                                 bool callFillCompleteOnResult = true,
                                 bool doOptimizeStorage        = true,
-                                bool allowMLMultiply          = true);
+                                bool allowMLMultiply          = true
+                                );
 
 #ifdef HAVE_MUELU_EPETRAEXT
     // Michael Gee's MLMultiply
     static RCP<Epetra_CrsMatrix> MLTwoMatrixMultiply(const Epetra_CrsMatrix& epA,
-                                                     const Epetra_CrsMatrix& epB);
+                                                     const Epetra_CrsMatrix& epB,
+                                                     Teuchos::FancyOStream& fos);
 #endif //ifdef HAVE_MUELU_EPETRAEXT
 
     /*! @brief Helper function to do matrix-matrix multiply "in-place"
@@ -448,7 +456,7 @@ namespace MueLu {
     */
     static void TwoMatrixAdd(const Matrix& A, bool transposeA, const SC& alpha,
                              const Matrix& B, bool transposeB, const SC& beta,
-                             RCP<Matrix>& C,       bool AHasFixedNnzPerRow = false);
+                             RCP<Matrix>& C,  Teuchos::FancyOStream &fos, bool AHasFixedNnzPerRow = false);
 
     static RCP<MultiVector> ReadMultiVector (const std::string& fileName, const RCP<const Map>& map);
     static RCP<const Map>   ReadMap         (const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm);
@@ -473,7 +481,7 @@ namespace MueLu {
     static void             TwoMatrixAdd            (const Matrix& A, bool transposeA, SC alpha, Matrix& B, SC beta);
     static void             TwoMatrixAdd            (const Matrix& A, bool transposeA, SC alpha,
                                                      const Matrix& B, bool transposeB, SC beta,
-                                                     RCP<Matrix>& C,  bool AHasFixedNnzPerRow = false);
+                                                     RCP<Matrix>& C,  Teuchos::FancyOStream & fos, bool AHasFixedNnzPerRow = false);
     static RCP<MultiVector> ReadMultiVector         (const std::string& fileName, const RCP<const Map>& map);
     static RCP<const Map>   ReadMap                 (const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm);
   };

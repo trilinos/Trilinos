@@ -127,7 +127,7 @@ namespace MueLu {
     if (checkAc_)
       CheckMainDiagonal(bAc);
 
-    GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*bAc, "Ac (blocked)");
+    GetOStream(Statistics1, 0) << Utils::PrintMatrixInfo(*bAc, "Ac (blocked)");
 
     Set<RCP <Matrix> >(coarseLevel, "A", bAc);
 

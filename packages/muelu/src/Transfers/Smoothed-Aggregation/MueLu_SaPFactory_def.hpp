@@ -149,7 +149,7 @@ namespace MueLu {
         allowMLMultiply      = false;
 #endif
 
-        AP = Utils::Multiply(*A, false, *Ptent, false, doFillComplete, optimizeStorage, allowMLMultiply);
+        AP = Utils::Multiply(*A, false, *Ptent, false, GetOStream(Statistics2,0), doFillComplete, optimizeStorage, allowMLMultiply);
       }
 
       {
@@ -172,7 +172,7 @@ namespace MueLu {
         } else {
           GetOStream(Statistics1, 0) << "Using cached max eigenvalue estimate" << std::endl;
         }
-        GetOStream(Statistics1, 0) << "Damping factor = " << dampingFactor/lambdaMax << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
+        GetOStream(Statistics0, 0) << "Prolongator damping factor = " << dampingFactor/lambdaMax << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
       }
 
       {
@@ -180,7 +180,8 @@ namespace MueLu {
 
         bool doTranspose=false;
         bool PtentHasFixedNnzPerRow=true;
-        Utils2::TwoMatrixAdd(*Ptent, doTranspose, Teuchos::ScalarTraits<Scalar>::one(), *AP, doTranspose, -dampingFactor/lambdaMax, finalP, PtentHasFixedNnzPerRow);
+        Utils2::TwoMatrixAdd(*Ptent, doTranspose, Teuchos::ScalarTraits<Scalar>::one(), *AP, doTranspose, -dampingFactor/lambdaMax, finalP,
+                             GetOStream(Statistics2,0), PtentHasFixedNnzPerRow);
       }
 
       {
@@ -213,7 +214,7 @@ namespace MueLu {
 
     RCP<ParameterList> params = rcp(new ParameterList());
     params->set("printLoadBalancingInfo", true);
-    GetOStream(Statistics0,0) << Utils::PrintMatrixInfo(*finalP, (!restrictionMode_ ? "P" : "R"), params);
+    GetOStream(Statistics1,0) << Utils::PrintMatrixInfo(*finalP, (!restrictionMode_ ? "P" : "R"), params);
 
   } //Build()
 
