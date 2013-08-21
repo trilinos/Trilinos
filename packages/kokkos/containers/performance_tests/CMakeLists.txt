@@ -6,7 +6,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../src)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../core/TPL)
 
 SET(SOURCES
-  UnitTestMain.cpp 
+  TestMain.cpp 
   TestHost.cpp 
   TestThreads.cpp
   ../../core/TPL/gtest/gtest-all.cc
@@ -23,7 +23,7 @@ ENDIF()
 IF(Kokkos_ENABLE_Cuda)
 
   TRIBITS_ADD_LIBRARY(
-    kokkos_containers_unit_cuda
+    kokkos_containers_performance_cuda
     SOURCES TestCuda.cu 
     DEPLIBS
     CUDALIBRARY
@@ -32,12 +32,12 @@ IF(Kokkos_ENABLE_Cuda)
     TestCuda.cpp
   )
   LIST( APPEND LIBRARIES
-    kokkoscore_devicecuda kokkos_containers_unit_cuda
+    kokkoscore_devicecuda kokkos_containers_performance_cuda
   )
 ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  UnitTest
+  PerformanceTest
   SOURCES ${SOURCES}
   COMM serial mpi
   NUM_MPI_PROCS 1
