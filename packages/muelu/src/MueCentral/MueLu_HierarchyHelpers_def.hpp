@@ -137,15 +137,18 @@ namespace MueLu {
   void TopSmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & level) const {
     typedef MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> SmootherBase2; //TODO
 
+    if (presmootherFact_.is_null() && postsmootherFact_.is_null())
+      return;
+
     if (presmootherFact_.get() == postsmootherFact_.get()) {
       // Only call factory if at least one smoother is missing (mimic behavior of level.Get<> but level.Get<> cannot be used here as we don't know if the factory will produce both Pre and Post smoother)
-      if (!level.IsAvailable("PreSmoother", presmootherFact_.get()) || !level.IsAvailable("PostSmoother", postsmootherFact_.get())) {
+      if (!level.IsAvailable("PreSmoother", presmootherFact_.get()) || !level.IsAvailable("PostSmoother", postsmootherFact_.get()))
         presmootherFact_->CallBuild(level);
-      }
+
     } else {
-      if (!level.IsAvailable("PreSmoother",  presmootherFact_.get()))
+      if (!presmootherFact_.is_null() && !level.IsAvailable("PreSmoother",  presmootherFact_.get()))
         presmootherFact_->CallBuild(level);
-      if (!level.IsAvailable("PostSmoother", postsmootherFact_.get()))
+      if (!postsmootherFact_.is_null() && !level.IsAvailable("PostSmoother", postsmootherFact_.get()))
         postsmootherFact_->CallBuild(level);
     }
 
