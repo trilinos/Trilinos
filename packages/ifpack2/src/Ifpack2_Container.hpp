@@ -151,30 +151,50 @@ public:
   //! Return \c true if the container has been successfully computed.
   virtual bool isComputed () const = 0;
 
-  /// \brief Compute Y = alpha * M^{-1} X + beta*Y
+  /// \brief Compute <tt>Y := alpha * M^{-1} X + beta*Y</tt>.
   ///
-  /// X and Y have as many global rows as the dimension of the global
-  /// problem from which the container was originally extracted.
+  /// X is in the domain Map of the original matrix (the argument to
+  /// compute()), and Y is in the range Map of the original matrix.
+  /// This method only reads resp. modifies the permuted subset of
+  /// entries of X resp. Y related to the diagonal block M.  That
+  /// permuted subset is defined by the ID() method.
+  ///
+  /// This method is marked \c const for compatibility with
+  /// Tpetra::Operator's method of the same name.  This might require
+  /// subclasses to mark some of their instance data as \c mutable.
   virtual void
   apply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& X,
          Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& Y,
          Teuchos::ETransp mode = Teuchos::NO_TRANS,
          MatrixScalar alpha = Teuchos::ScalarTraits<MatrixScalar>::one (),
-         MatrixScalar beta = Teuchos::ScalarTraits<MatrixScalar>::zero ()) = 0;
+         MatrixScalar beta = Teuchos::ScalarTraits<MatrixScalar>::zero ()) const = 0;
 
-  /// \brief Compute Y = alpha * diag(D) * M^{-1} (diag(D) X) + beta*Y
+  /// \brief Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>.
   ///
-  /// D, X, and Y have as many global rows as the dimension of the
-  /// global problem from which the container was originally
-  /// extracted.  The method is designed to support techniques with
-  /// overlap, such as Schwarz methods.
+  /// X is in the domain Map of the original matrix (the argument to
+  /// compute()), and Y is in the range Map of the original matrix.
+  /// This method only reads resp. modifies the permuted subset of
+  /// entries of X resp. Y related to the diagonal block M.  That
+  /// permuted subset is defined by the ID() method.  The D scaling
+  /// vector must have the same number of entries on each process as X
+  /// and Y, but otherwise need not have the same Map.  (For example,
+  /// D could be locally replicated, or could be a different object on
+  /// each process with a local (\c MPI_COMM_SELF) communicator.)
+  ///
+  /// This method supports overlap techniques, such as those used in
+  /// Schwarz methods.
+  ///
+  /// This method is marked \c const by analogy with apply(), which
+  /// itself is marked \c const for compatibility with
+  /// Tpetra::Operator's method of the same name.  This might require
+  /// subclasses to mark some of their instance data as \c mutable.
   virtual void
   weightedApply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& X,
                  Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& Y,
                  const Tpetra::Vector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& D,
                  Teuchos::ETransp mode = Teuchos::NO_TRANS,
                  MatrixScalar alpha = Teuchos::ScalarTraits<MatrixScalar>::one (),
-                 MatrixScalar beta = Teuchos::ScalarTraits<MatrixScalar>::zero ()) = 0;
+                 MatrixScalar beta = Teuchos::ScalarTraits<MatrixScalar>::zero ()) const = 0;
 
   //! Print basic information about the container to \c os.
   virtual std::ostream& print (std::ostream& os) const = 0;

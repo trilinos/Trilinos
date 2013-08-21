@@ -147,7 +147,9 @@ void SparseContainer<MatrixType,InverseType>::
 compute (const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> >& Matrix)
 {
   IsComputed_=false;
-  this->initialize ();
+  if (! this->isInitialized ()) {
+    this->initialize ();
+  }
 
   // extract the submatrices
   this->extract (Matrix);
@@ -162,7 +164,7 @@ compute (const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdi
   const size_t numRows = Inverse_->getRangeMap ()->getNodeNumElements ();
   if (numRows == this->GID_.size ()) {
     for (size_t i = 0; i < numRows; ++i) {
-      if (this->ID(i) != i) {
+      if (this->GID_[i] != i) {
         needPermutation = true;
         break;
       }
@@ -181,7 +183,7 @@ apply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrd
        Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& Y,
        Teuchos::ETransp mode,
        MatrixScalar alpha,
-       MatrixScalar beta)
+       MatrixScalar beta) const
 {
   using Teuchos::ArrayRCP;
   using Teuchos::Range1D;
@@ -297,7 +299,7 @@ apply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrd
       ArrayRCP<MatrixScalar> X_local_perm_j =
         X_local_perm->getVectorNonConst (j)->get1dViewNonConst ();
       for (size_t i = 0; i < numRows_; ++i) {
-        const size_t i_perm = this->ID (i);
+        const size_t i_perm = this->GID_[i];
         X_local_perm_j[i] = X_local_j[i_perm];
       }
     }
@@ -317,7 +319,7 @@ apply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrd
       ArrayRCP<MatrixScalar> Y_local_perm_j =
         Y_local_perm->getVectorNonConst (j)->get1dViewNonConst ();
       for (size_t i = 0; i < numRows_; ++i) {
-        const size_t i_perm = this->ID (i);
+        const size_t i_perm = this->GID_[i];
         Y_local_perm_j[i] = Y_local_j[i_perm];
       }
     }
@@ -348,7 +350,7 @@ apply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrd
       ArrayRCP<const MatrixScalar> Y_local_perm_j =
         Y_local_perm->getVector (j)->get1dView ();
       for (size_t i = 0; i < numRows_; ++i) {
-        const size_t i_perm = this->ID (i);
+        const size_t i_perm = this->GID_[i];
         Y_local_j[i_perm] = Y_local_perm_j[i];
       }
     }
@@ -365,7 +367,7 @@ weightedApply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixG
                const Tpetra::Vector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& D,
                Teuchos::ETransp mode,
                MatrixScalar alpha,
-               MatrixScalar beta)
+               MatrixScalar beta) const
 {
   using Teuchos::ArrayRCP;
   using Teuchos::Range1D;
@@ -459,7 +461,7 @@ weightedApply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixG
       ArrayRCP<MatrixScalar> X_local_perm_j =
         X_local_perm->getVectorNonConst (j)->get1dViewNonConst ();
       for (size_t i = 0; i < numRows_; ++i) {
-        const size_t i_perm = this->ID (i);
+        const size_t i_perm = this->GID_[i];
         X_local_perm_j[i] = X_local_j[i_perm];
       }
     }
@@ -479,7 +481,7 @@ weightedApply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixG
       ArrayRCP<MatrixScalar> Y_local_perm_j =
         Y_local_perm->getVectorNonConst (j)->get1dViewNonConst ();
       for (size_t i = 0; i < numRows_; ++i) {
-        const size_t i_perm = this->ID (i);
+        const size_t i_perm = this->GID_[i];
         Y_local_perm_j[i] = Y_local_j[i_perm];
       }
     }
@@ -584,7 +586,7 @@ weightedApply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixG
       ArrayRCP<const MatrixScalar> Y_local_perm_j =
         Y_local_perm->getVector (j)->get1dView ();
       for (size_t i = 0; i < numRows_; ++i) {
-        const size_t i_perm = this->ID (i);
+        const size_t i_perm = this->GID_[i];
         Y_local_j[i_perm] = Y_local_perm_j[i];
       }
     }
