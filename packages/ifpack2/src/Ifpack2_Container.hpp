@@ -81,14 +81,19 @@ namespace Ifpack2 {
 /// If you are writing a class (comparable to BlockRelaxation) that
 /// uses Container, you should use it in the following way:
 /// <ol>
-/// <li> Create an container object, specifying the number of rows of B.</li>
+/// <li> Create an container object, specifying the number of rows of B.
+///      The number of rows is supposed to come from a Partitioner object.</li>
 /// <li> Optionally, set linear solve parameters using setParameters().</li>
 /// <li> Initialize the container by calling initialize().</li>
-/// <li> Specify the ID of the local rows of A that are contained in B,
-///      using ID().</li>
-/// <li> Prepare the linear system solver using compute().</li>
+/// <li> Specify the indices of the local rows of A that are contained in B,
+///      using ID().  The indices come from the Partitioner object.</li>
+/// <li> Prepare the linear system solver using compute(), passing in
+///      the original matrix from which to extract the diagonal block.</li>
 /// <li> Solve the linear system using apply().</li>
 /// </ol>
+/// For an example of Steps 1-5 above, see the implementation of
+/// BlockRelaxation::ExtractSubmatrices() in
+/// Ifpack2_BlockRelaxation_def.hpp.
 ///
 /// \c MatrixType and \c InverseType may store values of different
 /// types, and may have different template parameters (e.g., local or
@@ -127,13 +132,18 @@ public:
 
   /// \brief A nonconst reference to the local index associated with local row i.
   ///
-  /// The set of (local) rows assigned to this container is defined
-  /// by calling ID(i) = j, where i (from 0 to NumRows()) indicates
-  /// the container-row, and j indicates the local row in the calling
-  /// process.
+  /// The set of (local) rows assigned to this container is defined by
+  /// calling ID(i) = j, where i (from 0 to <tt>getNumRows() - 1</tt>)
+  /// indicates the Container's row, and j indicates the local row in
+  /// the calling process.
   ///
-  /// This method is usually used to recorder the local row index (on
+  /// This method is usually used to reorder the local row index (on
   /// the calling process) of the i-th row in the container.
+  ///
+  /// For an example of how to use this method to define the
+  /// reordering, see the implementation of
+  /// BlockRelaxation::ExtractSubmatrices() in
+  /// Ifpack2_BlockRelaxation_def.hpp.
   virtual MatrixLocalOrdinal & ID (const size_t i) = 0;
 
   //! Initialize the container, by performing all operations that only require matrix structure.
