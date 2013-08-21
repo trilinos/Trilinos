@@ -57,7 +57,10 @@ int main(int argc, char *argv[])
   std::string coordFile = ""; clp.setOption("coord", &coordFile, "File containing coordinate vectors. [OPTIONAL]");
   std::string rhsFile = ""; clp.setOption("rhs", &rhsFile, "File containing right-hand side vector.  [OPTIONAL]");
   int numPDEs = 1; clp.setOption("npdes", &numPDEs, "Number of PDEs. [Default=1]");
-  std::string krylovSolver = "gmres"; clp.setOption("krylov", &krylovSolver, "outer Krylov solver. [Default=gmres]");
+  std::string krylovSolver = "gmres"; clp.setOption("krylov", &krylovSolver, "outer Krylov solver.");
+  int output=10; clp.setOption("output", &output, "how often to print residual history.");
+  int maxits=100; clp.setOption("maxits", &maxits, "maximum number of Krylov iterations.  [OPTIONAL]");
+  double tol=1e-8; clp.setOption("tol", &tol, "Krylov solver tolerance.  [OPTIONAL]");
   //bool   printTimings     = true;              clp.setOption("timings", "notimings",  &printTimings, "print timings to screen");
   switch (clp.parse(argc,argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -191,10 +194,10 @@ int main(int argc, char *argv[])
   double mynorm;
   Epetra_Vector trueX(Map);
   if (populateRhs) {
-    trueX.SetSeed(90201);
+    trueX.SetSeed(846930886);
     trueX.Random();
     trueX.Norm2(&mynorm);
-    trueX.Scale(1.0/mynorm);
+    //trueX.Scale(1.0/mynorm);
     A->Multiply(false,trueX,RHS);
   }
 
@@ -206,13 +209,16 @@ int main(int argc, char *argv[])
     solver.SetAztecOption(AZ_solver, AZ_gmres);
   else if (krylovSolver=="cg")
     solver.SetAztecOption(AZ_solver, AZ_cg);
+  else if (krylovSolver=="fixedpt")
+    solver.SetAztecOption(AZ_solver, AZ_fixed_pt);
   else
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Bad Krylov solver option");
   //solver.SetAztecOption(AZ_kspace, 100);
-  solver.SetAztecOption(AZ_output, 10);
+  solver.SetAztecOption(AZ_output, output);
+  //solver.SetAztecOption(AZ_conv, AZ_noscaled);
   solver.SetPrecOperator(MLPrec);
 
-  solver.Iterate(100, 1e-8);
+  solver.Iterate(maxits, tol);
 
   //Calculate a final residual
   Epetra_Vector workvec(Map);
