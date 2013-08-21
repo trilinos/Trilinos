@@ -188,6 +188,7 @@ apply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrd
   using Teuchos::ArrayRCP;
   using Teuchos::Range1D;
   using Teuchos::RCP;
+  using Teuchos::rcp_const_cast;
   typedef Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> MV;
   typedef Tpetra::Map<MatrixLocalOrdinal, MatrixGlobalOrdinal, MatrixNode> map_type;
   const size_t numVecs = X.getNumVectors ();
@@ -261,7 +262,8 @@ apply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrd
       Inverse_->getRangeMap ()->getNodeNumElements () << " resp. "
       << Y_local_subview->getLocalLength () << ").  Please report this bug to "
       "the Ifpack2 developers.");
-    Inverse_->apply (*X_local_subview, *Y_local_subview, mode, alpha, beta);
+    Inverse_->apply (const_cast<const MV&> (*X_local_subview),
+                     *Y_local_subview, mode, alpha, beta);
   }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -340,7 +342,8 @@ apply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrd
       << Y_local_perm->getLocalLength () << ").  Please report this bug to the "
       "Ifpack2 developers.");
     // Apply the local Inverse_ operator to the permuted input and output.
-    Inverse_->apply (*X_local_perm, *Y_local_perm, mode, alpha, beta);
+    Inverse_->apply (const_cast<const MV&> (*X_local_perm),
+                     *Y_local_perm, mode, alpha, beta);
 
     // Copy the permuted subset output vector Y_local_perm into the
     // original output multivector (view) Y_local.
@@ -573,7 +576,7 @@ weightedApply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixG
     "developers.");
 
   // Y_temp := M^{-1} * X_scaled
-  Inverse_->apply (*X_scaled, *Y_temp, mode);
+  Inverse_->apply (const_cast<const MV&> (*X_scaled), *Y_temp, mode);
   // Y_local_perm := beta * Y_local_perm + alpha * diag(D) * Y_temp
   Y_local_perm->elementWiseMultiply (alpha, D, *Y_temp, beta);
 
