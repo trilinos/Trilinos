@@ -1682,6 +1682,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapReduce, T )
           bounds = reducedMdMap.getLocalBounds(newAxis);
           TEST_EQUALITY(bounds.start(), 0);
           TEST_EQUALITY(bounds.stop(),  1);
+          TEST_ASSERT(not reducedMdMap.hasHalos());
+          TEST_EQUALITY_CONST(reducedMdMap.getLowerHalo(newAxis), 0);
+          TEST_EQUALITY_CONST(reducedMdMap.getUpperHalo(newAxis), 0);
+          TEST_EQUALITY_CONST(reducedMdMap.getHaloSize(newAxis), 0);
+          TEST_EQUALITY_CONST(reducedMdMap.getLowerGhost(newAxis), 0);
+          TEST_EQUALITY_CONST(reducedMdMap.getUpperGhost(newAxis), 0);
+          TEST_EQUALITY_CONST(reducedMdMap.getGhostSize(newAxis), 0);
         }
         else if (newAxis < axis)
         {
@@ -1695,16 +1702,31 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapReduce, T )
           TEST_EQUALITY(bounds.stop() , ghosts[newAxis]+localSize*(axisRank+1));
           TEST_EQUALITY(reducedMdMap.getLocalDim(newAxis), localSize);
           bounds = reducedMdMap.getLocalBounds(newAxis);
+          TEST_ASSERT(reducedMdMap.hasHalos());
           if (reducedMdMap.getAxisRank(newAxis) == 0)
           {
             TEST_EQUALITY(bounds.start(), ghosts[newAxis]          );
             TEST_EQUALITY(bounds.stop() , ghosts[newAxis]+localSize);
+            TEST_EQUALITY(reducedMdMap.getLowerHalo(newAxis), ghosts[newAxis]);
+          }
+          else if (reducedMdMap.getAxisRank(newAxis) ==
+                   reducedMdMap.getAxisCommSize(newAxis)-1)
+          {
+            TEST_EQUALITY(bounds.start(), halos[newAxis]          );
+            TEST_EQUALITY(bounds.stop() , halos[newAxis]+localSize);
+            TEST_EQUALITY(reducedMdMap.getLowerHalo(newAxis), halos[newAxis]);
+            TEST_EQUALITY(reducedMdMap.getUpperHalo(newAxis), ghosts[newAxis]);
           }
           else
           {
             TEST_EQUALITY(bounds.start(), halos[newAxis]          );
             TEST_EQUALITY(bounds.stop() , halos[newAxis]+localSize);
+            TEST_EQUALITY(reducedMdMap.getLowerHalo(newAxis), halos[newAxis]);
+            TEST_EQUALITY(reducedMdMap.getUpperHalo(newAxis), halos[newAxis]);
           }
+          TEST_EQUALITY(reducedMdMap.getLowerGhost(newAxis), ghosts[newAxis]);
+          TEST_EQUALITY(reducedMdMap.getUpperGhost(newAxis), ghosts[newAxis]);
+          TEST_EQUALITY(reducedMdMap.getGhostSize(newAxis) , ghosts[newAxis]);
         }
         else
         {
@@ -1721,16 +1743,32 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapReduce, T )
                         ghosts[newAxis+1]+localSize*(axisRank+1));
           TEST_EQUALITY(reducedMdMap.getLocalDim(newAxis), localSize);
           bounds = reducedMdMap.getLocalBounds(newAxis);
+          TEST_ASSERT(reducedMdMap.hasHalos());
           if (reducedMdMap.getAxisRank(newAxis) == 0)
           {
             TEST_EQUALITY(bounds.start(), ghosts[newAxis+1]          );
             TEST_EQUALITY(bounds.stop() , ghosts[newAxis+1]+localSize);
+            TEST_EQUALITY(reducedMdMap.getLowerHalo(newAxis),
+                          ghosts[newAxis+1]);
+          }
+          else if (reducedMdMap.getAxisRank(newAxis) ==
+                   reducedMdMap.getAxisCommSize(newAxis)-1)
+          {
+            TEST_EQUALITY(bounds.start(), halos[newAxis+1]          );
+            TEST_EQUALITY(bounds.stop() , halos[newAxis+1]+localSize);
+            TEST_EQUALITY(reducedMdMap.getLowerHalo(newAxis),halos[newAxis+1]);
+            TEST_EQUALITY(reducedMdMap.getUpperHalo(newAxis),ghosts[newAxis+1]);
           }
           else
           {
             TEST_EQUALITY(bounds.start(), halos[newAxis+1]          );
             TEST_EQUALITY(bounds.stop() , halos[newAxis+1]+localSize);
+            TEST_EQUALITY(reducedMdMap.getLowerHalo(newAxis), halos[newAxis+1]);
+            TEST_EQUALITY(reducedMdMap.getUpperHalo(newAxis), halos[newAxis+1]);
           }
+          TEST_EQUALITY(reducedMdMap.getLowerGhost(newAxis), ghosts[newAxis+1]);
+          TEST_EQUALITY(reducedMdMap.getUpperGhost(newAxis), ghosts[newAxis+1]);
+          TEST_EQUALITY(reducedMdMap.getGhostSize(newAxis) , ghosts[newAxis]+1);
         }
       }
     }
