@@ -51,6 +51,8 @@
 #include <cuda_runtime.h>
 #include <cusparse.h>
 
+#include <Kokkos_Serial.hpp>
+
 namespace Kokkos {
 namespace Impl {
 
@@ -443,7 +445,7 @@ template< typename MatrixValue>
 class MatrixMarketWriter<MatrixValue,Kokkos::Cuda>
 {
 public:
-  typedef Host                                      device_type ;
+  typedef Serial                                    device_type ;
   typedef device_type::size_type                    size_type ;
   typedef CrsMatrix< MatrixValue , device_type >    matrix_type ;
 

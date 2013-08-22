@@ -56,7 +56,7 @@
 
 #include <KokkosCompat_config.h>
 #include <Kokkos_View.hpp>
-#include <Kokkos_Host.hpp>
+#include <Kokkos_Threads.hpp>
 #include <Teuchos_ArrayView.hpp>
 
 #if 0
@@ -77,8 +77,8 @@ namespace Impl {
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
   template<class ValueType>
-  struct ViewAssignment<View<ValueType, Host>, Teuchos::ArrayView<const ValueType> > {
-    ViewAssignment (View<ValueType, Host>& dst, 
+  struct ViewAssignment<View<ValueType, Threads>, Teuchos::ArrayView<const ValueType> > {
+    ViewAssignment (View<ValueType, Threads>& dst, 
 		    const Teuchos::ArrayView<const ValueType>& src,
                     typename enable_if< (
                       is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout ,
@@ -91,7 +91,7 @@ namespace Impl {
 
 
 
-      View<ValueType, LayoutRight, Host, MemoryUnmanaged> srcView; // (src.getRawPtr (), src.size ());
+      View<ValueType, LayoutRight, Threads, MemoryUnmanaged> srcView; // (src.getRawPtr (), src.size ());
       srcView.m_shape.N0 = src.size ();
       
       
@@ -113,15 +113,15 @@ namespace Kokkos {
 
     template<class ValueType>
     inline void
-    deep_copy (const Kokkos::View<ValueType, Kokkos::Host>& dst,
+    deep_copy (const Kokkos::View<ValueType, Kokkos::Threads>& dst,
 	       const Teuchos::ArrayView<ValueType>& src)
     {
       using Kokkos::LayoutRight;
-      using Kokkos::Host;
+      using Kokkos::Threads;
       using Kokkos::MemoryUnmanaged;
       using Kokkos::View;
 
-      View<ValueType, LayoutRight, Host, MemoryUnmanaged> srcView (src.getRawPtr (), src.size ());
+      View<ValueType, LayoutRight, Threads, MemoryUnmanaged> srcView (src.getRawPtr (), src.size ());
       Kokkos::deep_copy (dst, srcView);
     }
 

@@ -44,8 +44,6 @@
 #include <KokkosCore_config.h>
 #include <Host/Kokkos_Host_Thread.hpp>
 
-/* #include <Kokkos_Host.hpp> */
-
 #include <limits>
 #include <algorithm>
 #include <stdexcept>

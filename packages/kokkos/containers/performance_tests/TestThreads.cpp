@@ -58,7 +58,6 @@ class threads : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
-    Kokkos::Host::initialize();
     std::cout << std::setprecision(5) << std::scientific;
 
     std::pair<unsigned, unsigned> team_league(1,4);
@@ -78,7 +77,6 @@ protected:
   static void TearDownTestCase()
   {
     Kokkos::Threads::finalize();
-    Kokkos::Host::finalize();
   }
 };
 

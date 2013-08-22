@@ -57,7 +57,7 @@
 #include <TestMemoryTracking.hpp>
 #include <TestViewAPI.hpp>
 #include <TestAtomic.hpp>
-
+#include <TestTile.hpp>
 #include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
 
@@ -65,11 +65,8 @@ namespace Test {
 
 class serial : public ::testing::Test {
 protected:
-  static void SetUpTestCase()
-  {}
-
-  static void TearDownTestCase()
-  {}
+  static void SetUpTestCase() {}
+  static void TearDownTestCase() {}
 };
 
 TEST_F( serial, memory_tracking) {
@@ -186,6 +183,66 @@ TEST_F( serial , atomics )
 }
 
 //----------------------------------------------------------------------------
+
+TEST_F( serial, tile_1x1)
+{
+  static const size_t dim = 9;
+  typedef Kokkos::LayoutTileLeft<1,1> tile_layout;
+  typedef ReduceTileErrors< Kokkos::Serial, tile_layout > functor_type;
+
+  functor_type::array_type array("",dim,dim);
+  ptrdiff_t errors = 0 ;
+  Kokkos::parallel_reduce(dim, functor_type(array) , errors );
+  EXPECT_EQ( errors, 0u);
+}
+
+TEST_F( serial, tile_2x2)
+{
+  static const size_t dim = 9;
+  typedef Kokkos::LayoutTileLeft<2,2> tile_layout;
+  typedef ReduceTileErrors< Kokkos::Serial, tile_layout > functor_type;
+
+  functor_type::array_type array("",dim,dim);
+  ptrdiff_t errors = 0 ;
+  Kokkos::parallel_reduce(dim, functor_type(array) , errors );
+  EXPECT_EQ( errors, ptrdiff_t(0) );
+}
+
+TEST_F( serial, tile_4x4)
+{
+  static const size_t dim = 9;
+  typedef Kokkos::LayoutTileLeft<4,4> tile_layout;
+  typedef ReduceTileErrors< Kokkos::Serial, tile_layout > functor_type;
+
+  functor_type::array_type array("",dim,dim);
+  ptrdiff_t errors = 0 ;
+  Kokkos::parallel_reduce(dim, functor_type(array) , errors );
+  EXPECT_EQ( errors, ptrdiff_t(0) );
+}
+
+TEST_F( serial, tile_8x8)
+{
+  static const size_t dim = 9;
+  typedef Kokkos::LayoutTileLeft<8,8> tile_layout;
+  typedef ReduceTileErrors< Kokkos::Serial, tile_layout > functor_type;
+
+  functor_type::array_type array("",dim,dim);
+  ptrdiff_t errors = 0 ;
+  Kokkos::parallel_reduce(dim, functor_type(array) , errors );
+  EXPECT_EQ( errors, ptrdiff_t(0) );
+}
+
+TEST_F( serial, tile_16x16)
+{
+  static const size_t dim = 9;
+  typedef Kokkos::LayoutTileLeft<16,16> tile_layout;
+  typedef ReduceTileErrors< Kokkos::Serial, tile_layout > functor_type;
+
+  functor_type::array_type array("",dim,dim);
+  ptrdiff_t errors = 0 ;
+  Kokkos::parallel_reduce(dim, functor_type(array) , errors );
+  EXPECT_EQ( errors, ptrdiff_t(0) );
+}
 
 } // namespace test
 

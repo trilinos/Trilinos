@@ -69,7 +69,7 @@ public: // public types and constants
 
   typedef pair<unordered_map_insert_state, pointer> insert_result;
 
-  typedef unordered_map<Key,T,Kokkos::Host,Compare,Hash> HostMirror;
+  typedef unordered_map<Key,T,typename Device::host_mirror_device_type,Compare,Hash> HostMirror;
 
 private:
 
@@ -425,7 +425,7 @@ public: // public types and constants
   typedef typename map_data::node_type node_type;
   typedef typename map_data::size_type size_type;
 
-  typedef unordered_map<Key,T,Kokkos::Host,Compare,Hash> HostMirror;
+  typedef unordered_map<Key,T,typename Device::host_mirror_device_type,Compare,Hash> HostMirror;
 
 public: //public member functions
 
@@ -598,7 +598,7 @@ public: // public types and constants
   typedef typename map_data::node_type node_type;
   typedef typename map_data::size_type size_type;
 
-  typedef unordered_map<Key,T,Kokkos::Host,Compare,Hash> HostMirror;
+  typedef unordered_map<Key,T,typename Device::host_mirror_device_type,Compare,Hash> HostMirror;
 
 public: //public member functions
 
@@ -710,7 +710,7 @@ public: // public types and constants
   typedef typename map_data::node_type node_type;
   typedef typename map_data::size_type size_type;
 
-  typedef unordered_map<Key,void,Kokkos::Host,Compare,Hash> HostMirror;
+  typedef unordered_map<Key,void,typename Device::host_mirror_device_type,Compare,Hash> HostMirror;
 
 public: //public member functions
 

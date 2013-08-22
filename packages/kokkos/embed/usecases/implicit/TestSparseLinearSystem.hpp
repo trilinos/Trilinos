@@ -60,7 +60,7 @@ namespace Kokkos {
 
 //----------------------------------------------------------------------------
 
-#if defined( HAVE_MPI )
+#if defined( KOKKOS_HAVE_MPI )
 
 template< typename AScalarType ,
           typename VScalarType ,

@@ -1,8 +1,11 @@
 #ifndef KOKKOS_MULTIVECTOR_H_
 #define KOKKOS_MULTIVECTOR_H_
 
+#include <KokkosCore_config.h>
+
 #include <Kokkos_View.hpp>
-#include <Kokkos_Host.hpp>
+#include <Kokkos_Threads.hpp>
+
 #ifdef KOKKOS_HAVE_OPENMP
 #include <Kokkos_OpenMP.hpp>
 #endif

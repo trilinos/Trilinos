@@ -10,7 +10,7 @@
 #ifdef _OPENMP
 #include <Kokkos_OpenMP.hpp>
 #else
-#include <Kokkos_Host.hpp>
+#include <Kokkos_Threads.hpp>
 #endif
 #include <Kokkos_Cuda.hpp>
 #include <Kokkos_MultiVector.hpp>
@@ -22,7 +22,7 @@
 #ifdef _OPENMP
 typedef Kokkos::OpenMP device_type;
 #else
-typedef Kokkos::Host device_type;
+typedef Kokkos::Threads device_type;
 #endif
 #define KokkosHost(a) a
 #define KokkosCUDA(a)
@@ -284,7 +284,7 @@ int main(int argc, char **argv)
    Kokkos::OpenMP::initialize( numa);
 #pragma message "Compile OpenMP"
 #else
-   Kokkos::Host::initialize( numa , threads );
+   Kokkos::Threads::initialize( std::pair<unsigned,unsigned>( numa , threads ) );
 #pragma message "Compile PThreads"
 #endif
 
@@ -315,7 +315,7 @@ int main(int argc, char **argv)
 #ifdef _OPENMP
  Kokkos::OpenMP::finalize();
 #else
- Kokkos::Host::finalize();
+ Kokkos::Threads::finalize();
 #endif
  )
  device_type::finalize(  );

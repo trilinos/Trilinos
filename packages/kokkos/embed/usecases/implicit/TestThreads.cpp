@@ -1,7 +1,8 @@
+#include <KokkosCore_config.h>
 #include <ParallelComm.hpp>
 
 #include <sstream>
-#include <Kokkos_Host.hpp>
+#include <Kokkos_Threads.hpp>
 #include <Kokkos_hwloc.hpp>
 
 #include <TestImplicit.hpp>
@@ -45,32 +46,32 @@ int test_host( comm::Machine machine , std::istream & input )
               << ": hwloc[ " << core_top.first
               << " x " << core_top.second
               << " x " << core_size
-              << " ] Host[ " << gang_top.first
+              << " ] Threads[ " << gang_top.first
               << " x " << gang_top.second
               << " ]\"" << std::endl ;
   }
 
-  Kokkos::Host::initialize( gang_top , core_top );
+  Kokkos::Threads::initialize( gang_top , core_top );
 
   {
     std::ostringstream label ;
 
-    label << "Scalar, Host[" << gang_top.first << "x" << gang_top.second << "]" ;
+    label << "Scalar, Threads[" << gang_top.first << "x" << gang_top.second << "]" ;
 
-    implicit_driver<double,Kokkos::Host>(
+    implicit_driver<double,Kokkos::Threads>(
       label.str().c_str() , machine , gang_top.first , elem_beg , elem_end , run );
   }
 
   {
     std::ostringstream label ;
 
-    label << "Ensemble[32], Host[" << gang_top.first << "x" << gang_top.second << "]" ;
+    label << "Ensemble[32], Threads[" << gang_top.first << "x" << gang_top.second << "]" ;
 
-    implicit_driver< Kokkos::Array<double,32> , Kokkos::Host>(
+    implicit_driver< Kokkos::Array<double,32> , Kokkos::Threads>(
       label.str().c_str() , machine , gang_top.first , elem_beg , elem_end , run );
   }
 
-  Kokkos::Host::finalize();
+  Kokkos::Threads::finalize();
 
   return 0 ;
 }

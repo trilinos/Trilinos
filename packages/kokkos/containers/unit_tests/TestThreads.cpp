@@ -60,7 +60,6 @@ class threads : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
-    Kokkos::Host::initialize();
     std::cout << std::setprecision(5) << std::scientific;
 
     std::pair<unsigned, unsigned> team_league(1,4);
@@ -79,7 +78,6 @@ protected:
   static void TearDownTestCase()
   {
     Kokkos::Threads::finalize();
-    Kokkos::Host::finalize();
   }
 };
 
@@ -98,13 +96,13 @@ protected:
 #define THREADS_ASSIGNEMENT_TEST( num_nodes, repeat )                             \
   TEST_F( threads, unordered_map_assignment_operators_##num_nodes##_##repeat##x) {       \
     for (int i=0; i<repeat; ++i)                                               \
-      test_assignement_operators<Kokkos::Host>(num_nodes);                     \
+      test_assignement_operators<Kokkos::Threads>(num_nodes);                     \
   }
 
 #define THREADS_DEEP_COPY( num_nodes, repeat )                             \
   TEST_F( threads, unordered_map_deep_copy##num_nodes##_##repeat##x) {       \
     for (int i=0; i<repeat; ++i)                                               \
-      test_deep_copy<Kokkos::Host>(num_nodes);                     \
+      test_deep_copy<Kokkos::Threads>(num_nodes);                     \
   }
 
 THREADS_INSERT_TEST(close,               100000, 90000, 100, 500)

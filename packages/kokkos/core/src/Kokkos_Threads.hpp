@@ -48,7 +48,7 @@
 #include <iosfwd>
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_MemoryTraits.hpp>
-#include <Kokkos_Host.hpp>
+#include <Kokkos_HostSpace.hpp>
 
 /*--------------------------------------------------------------------------*/
 

@@ -45,7 +45,6 @@
 
 #include <gtest/gtest.h>
 
-#include <Kokkos_Host.hpp>
 #include <Kokkos_Cuda.hpp>
 
 namespace Test {

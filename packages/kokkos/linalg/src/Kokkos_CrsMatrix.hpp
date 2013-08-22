@@ -47,6 +47,7 @@
 /// \brief Kokkos' sparse matrix interface
 
 #include <assert.h>
+#include <algorithm>
 
 #include <Kokkos_View.hpp>
 #include <Kokkos_Atomic.hpp>

@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <vector>
+#include <algorithm>
 #include <Kokkos_View.hpp>
 #include <Kokkos_Array.hpp>
 #include <TestCrsMatrix.hpp>

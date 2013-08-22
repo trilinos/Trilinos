@@ -330,12 +330,14 @@ void test_assignement_operators( uint32_t num_nodes )
 template <typename Device>
 void test_deep_copy( uint32_t num_nodes )
 {
+  typedef typename Device::host_mirror_device_type host_type ;
+
   typedef Kokkos::unordered_map<uint32_t,uint32_t, Device> map_type;
   typedef Kokkos::unordered_map<const uint32_t, uint32_t, Device> non_insertable_map_type;
   typedef Kokkos::unordered_map<const uint32_t, const uint32_t, Device> const_map_type;
 
-  typedef Kokkos::unordered_map<uint32_t, uint32_t, Kokkos::Host> host_map_type;
-  typedef Kokkos::unordered_map<const uint32_t, const uint32_t, Kokkos::Host> const_host_map_type;
+  typedef Kokkos::unordered_map<uint32_t, uint32_t, host_type> host_map_type;
+  typedef Kokkos::unordered_map<const uint32_t, const uint32_t, host_type> const_host_map_type;
 
   map_type map(num_nodes);
   Device::fence();

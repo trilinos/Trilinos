@@ -63,7 +63,6 @@ class openmp : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
-    Kokkos::Host::initialize();
     std::cout << std::setprecision(5) << std::scientific;
 
     std::pair<unsigned, unsigned> team_league(1,4);
@@ -85,7 +84,6 @@ protected:
     omp_set_num_threads(0);
 
     ASSERT_EQ( 1 , omp_get_max_threads() );
-    Kokkos::Host::finalize();
   }
 };
 

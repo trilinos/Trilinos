@@ -43,9 +43,11 @@
 
 #include <gtest/gtest.h>
 
-// Force OMP atomics
+#include <KokkosCore_config.h>
 
-#define KOKKOS_ATOMICS_USE_OMP31
+// To force use of OMP atomics instead of intrinsics
+// #define KOKKOS_ATOMICS_USE_OMP31
+
 #include <Kokkos_Atomic.hpp>
 
 #include <Kokkos_OpenMP.hpp>
@@ -64,7 +66,6 @@ class openmp : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
-    Kokkos::Host::initialize();
     std::cout << std::setprecision(5) << std::scientific;
 
     std::pair<unsigned, unsigned> team_league(1,4);
@@ -86,7 +87,6 @@ protected:
     omp_set_num_threads(0);
 
     ASSERT_EQ( 1 , omp_get_max_threads() );
-    Kokkos::Host::finalize();
   }
 };
 
@@ -99,19 +99,19 @@ protected:
 #define OPENMP_FAILED_INSERT_TEST( num_nodes, repeat )                         \
   TEST_F( openmp, unordered_map_failed_insert_##num_nodes##_##repeat##x) {     \
     for (int i=0; i<repeat; ++i)                                               \
-      test_failed_insert<Kokkos::Host>(num_nodes);                             \
+      test_failed_insert<Kokkos::OpenMP>(num_nodes);                             \
   }
 
 #define OPENMP_ASSIGNEMENT_TEST( num_nodes, repeat )                             \
   TEST_F( openmp, unordered_map_assignment_operators_##num_nodes##_##repeat##x) {       \
     for (int i=0; i<repeat; ++i)                                               \
-      test_assignement_operators<Kokkos::Host>(num_nodes);                     \
+      test_assignement_operators<Kokkos::OpenMP>(num_nodes);                     \
   }
 
 #define OPENMP_DEEP_COPY( num_nodes, repeat )                             \
   TEST_F( openmp, unordered_map_deep_copy##num_nodes##_##repeat##x) {       \
     for (int i=0; i<repeat; ++i)                                               \
-      test_deep_copy<Kokkos::Host>(num_nodes);                     \
+      test_deep_copy<Kokkos::OpenMP>(num_nodes);                     \
   }
 
 OPENMP_INSERT_TEST(close,               100000, 90000, 100, 500)

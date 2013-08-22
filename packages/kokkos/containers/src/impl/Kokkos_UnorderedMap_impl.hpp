@@ -4,6 +4,7 @@
 #include <Kokkos_Functional.hpp>
 #include <Kokkos_Pair.hpp>
 #include <Kokkos_View.hpp>
+#include <Kokkos_HostSpace.hpp>
 
 #include <stdexcept>
 #include <string>

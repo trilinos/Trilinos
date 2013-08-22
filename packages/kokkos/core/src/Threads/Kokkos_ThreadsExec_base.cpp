@@ -41,6 +41,9 @@
 //@HEADER
 */
 
+#include <string>
+#include <stdexcept>
+
 #include <KokkosCore_config.h>
 #include <Kokkos_Threads.hpp>
 
@@ -258,7 +261,14 @@ void ThreadsExec::wait_yield( volatile int & flag , const int value ) {}
 namespace Kokkos {
 namespace Impl {
 
-bool ThreadsExec::spawn() { return false ; }
+bool ThreadsExec::spawn()
+{
+  std::string msg("Kokkos::Threads ERROR : Attempting to spawn threads without configuring with a threading library.  Try configuring with KOKKOS_HAVE_PTHREAD");
+  throw std::runtime_error( msg );
+
+  return false ;
+}
+
 bool ThreadsExec::is_process() { return true ; }
 void ThreadsExec::global_lock() {}
 void ThreadsExec::global_unlock() {}

@@ -45,7 +45,6 @@
 
 #include <iostream>
 
-#include <Kokkos_Host.hpp>
 #include <Kokkos_Cuda.hpp>
 
 #include <Kokkos_UnorderedMap.hpp>

@@ -78,26 +78,6 @@ struct ViewAssignment<LayoutEmbedArray,void,void>
 {
   typedef LayoutEmbedArray Specialize ;
 
-private:
-
-  template< class T , class L , class D , class M >
-  inline
-  void allocate( View<T,L,D,M,Specialize> & dst , const std::string & label )
-  {
-    typedef View<T,L,D,M,Specialize> DstViewType ;
-    typedef typename DstViewType::scalar_type   scalar_type ;
-    typedef typename DstViewType::memory_space  memory_space ;
-
-    const size_t cap = Impl::capacity( dst.m_shape , dst.m_stride );
-
-    dst.m_ptr_on_device = (scalar_type *)
-      memory_space::allocate( label , typeid(scalar_type) , sizeof(scalar_type) , cap );
-
-    ViewInitialize< DstViewType > init( dst );
-  }
-
-public:
-
   template< class T , class L , class D , class M >
   inline
   ViewAssignment( View<T,L,D,M,Specialize> & dst ,
@@ -112,6 +92,7 @@ public:
                   const size_t n7 = 0 )
   {
     typedef View<T,L,D,M,Specialize> DstViewType ;
+    typedef typename DstViewType::device_type   device_type ;
     typedef typename DstViewType::scalar_type   scalar_type ;
     typedef typename DstViewType::shape_type    shape_type ;
     typedef typename DstViewType::memory_space  memory_space ;
@@ -120,9 +101,14 @@ public:
     ViewTracking< DstViewType >::decrement( dst.m_ptr_on_device );
 
     shape_type ::assign( dst.m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
-    stride_type::assign( dst.m_stride , dst.m_shape );
+    stride_type::assign_with_padding( dst.m_stride , dst.m_shape );
 
-    allocate( dst , label );
+    const size_t cap = capacity( dst.m_shape , dst.m_stride );
+
+    dst.m_ptr_on_device = (scalar_type *)
+      memory_space::allocate( label , typeid(scalar_type) , sizeof(scalar_type) , cap );
+
+    ViewInitialize< device_type > init( dst );
   }
 
   template< class DT , class DL , class DD , class DM ,
@@ -134,9 +120,39 @@ public:
                              typename View<ST,SL,SD,SM,Specialize>::HostMirror >::value
                   >::type * = 0 )
   {
-    dst.m_shape  = src.m_shape ;
-    dst.m_stride = src.m_stride ;
-    allocate( dst , "mirror" );
+    typedef View<DT,DL,DD,DM>  dst_view_type ;
+    typedef View<ST,SL,SD,SM>  src_view_type ;
+
+    typedef typename src_view_type::memory_space  src_memory_space ;
+    typedef typename dst_view_type::device_type   dst_device_type ;
+    typedef typename dst_view_type::memory_space  dst_memory_space ;
+    typedef typename dst_view_type::scalar_type   dst_scalar_type ;
+    typedef typename dst_view_type::shape_type    dst_shape_type ;
+    typedef typename dst_view_type::stride_type   dst_stride_type ;
+
+    ViewTracking< dst_view_type >::decrement( dst.m_ptr_on_device );
+
+    if ( src.m_ptr_on_device ) {
+      std::string label = src_memory_space::query_label( src.m_ptr_on_device );
+      label.append("_mirror");
+
+      dst_shape_type::assign( dst.m_shape, src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
+                                           src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
+
+      dst_stride_type::assign( dst.m_stride , src.m_stride.value ); // Match the stride
+
+      const size_t cap = capacity( dst.m_shape , dst.m_stride );
+
+      dst.m_ptr_on_device = (dst_scalar_type *)
+        dst_memory_space::allocate( label , typeid(dst_scalar_type) , sizeof(dst_scalar_type) , cap );
+
+      ViewInitialize< dst_device_type > init( dst );
+    }
+    else {
+      dst_shape_type ::assign( dst.m_shape, 0, 0, 0, 0, 0, 0, 0, 0 );
+      dst_stride_type::assign( dst.m_stride , 0 );
+      dst.m_ptr_on_device = 0 ;
+    }
   }
 };
 
@@ -345,6 +361,7 @@ private:
 
   typedef Impl::ViewAssignment<Impl::LayoutEmbedArray> alloc ;
   typedef Impl::ViewAssignment<Impl::LayoutEmbedArray,Impl::LayoutEmbedArray> assign ;
+
   typedef Impl::LayoutStride< typename traits::shape_type ,
                               typename traits::array_layout > stride_type ;
 

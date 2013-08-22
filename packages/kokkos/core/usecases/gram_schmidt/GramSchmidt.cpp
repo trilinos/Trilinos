@@ -45,7 +45,8 @@
 
 #include <Kokkos_Macros.hpp>
 #include <Kokkos_View.hpp>
-#include <Kokkos_Host.hpp>
+#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Threads.hpp>
 
 #include <impl/Kokkos_Timer.hpp>
 
@@ -192,7 +193,7 @@ Kokkos::Threads
   if ( comm_rank == 0 ) {
 
     std::cout << ( Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value ?
-                   "\"Cuda\"" : "\"Host\"" )
+                   "\"Cuda\"" : "\"Threads\"" )
               << " , \"Double Precision\""
               << std::endl ;
 

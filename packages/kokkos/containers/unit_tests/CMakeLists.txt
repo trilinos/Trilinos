@@ -7,7 +7,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../core/TPL)
 
 SET(SOURCES
   UnitTestMain.cpp 
-  TestHost.cpp 
   TestThreads.cpp
   ../../core/TPL/gtest/gtest-all.cc
   )

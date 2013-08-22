@@ -45,7 +45,6 @@
 
 #include <gtest/gtest.h>
 
-#include <Kokkos_Host.hpp>
 #include <Kokkos_Cuda.hpp>
 #include <stdint.h>
 
@@ -57,14 +56,12 @@ class cuda : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
-    Kokkos::Host::initialize();
     std::cout << std::setprecision(5) << std::scientific;
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(3) );
   }
   static void TearDownTestCase()
   {
     Kokkos::Cuda::finalize();
-    Kokkos::Host::finalize();
   }
 };
 

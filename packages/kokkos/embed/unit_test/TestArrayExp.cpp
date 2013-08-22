@@ -46,7 +46,7 @@
 #include <typeinfo>
 
 #include <Kokkos_Cuda.hpp>
-#include <Kokkos_Host.hpp>
+#include <Kokkos_Threads.hpp>
 #include <Kokkos_Array.hpp>
 
 #include <impl/Kokkos_ArrayAnalyzeShape.hpp>
@@ -60,15 +60,15 @@ template<> struct TestDevice< Kokkos::HostSpace >
 {
   enum { value = true };
 
-  typedef Kokkos::Host type ;
+  typedef Kokkos::Threads type ;
 
   TestDevice()
   {
-    Kokkos::Host::initialize( 1 , 4 );
+    Kokkos::Threads::initialize( std::pair<unsigned,unsigned>( 1 , 4 ) );
   }
   ~TestDevice()
   {
-    Kokkos::Host::finalize();
+    Kokkos::Threads::finalize();
   }
 };
 
@@ -92,7 +92,7 @@ struct TestDevice< Kokkos::CudaSpace >
 #else
   enum { value = false };
 
-  typedef Kokkos::Host type ;
+  typedef Kokkos::Threads type ;
 #endif
 };
 

@@ -48,7 +48,6 @@
 
 #include <impl/Kokkos_Timer.hpp>
 
-#include <Kokkos_Host.hpp>
 #include <Kokkos_Cuda.hpp>
 
 #include <PerfTestHexGrad.hpp>

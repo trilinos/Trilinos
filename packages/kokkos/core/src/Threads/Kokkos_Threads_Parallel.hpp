@@ -44,8 +44,7 @@
 #ifndef KOKKOS_THREADS_PARALLEL_HPP
 #define KOKKOS_THREADS_PARALLEL_HPP
 
-// #include <vector>
-// #include <algorithm>
+#include <vector>
 
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_ParallelReduce.hpp>

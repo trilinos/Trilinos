@@ -6,9 +6,8 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../TPL)
 
 SET(SOURCES
   UnitTestMain.cpp 
-  TestHost.cpp 
+  TestSerial.cpp 
   TestThreads.cpp 
-  TestTileHost.cpp 
   ../TPL/gtest/gtest-all.cc
   )
 
@@ -24,7 +23,7 @@ IF(Kokkos_ENABLE_Cuda)
 
   TRIBITS_ADD_LIBRARY(
     unit_cuda
-    SOURCES TestCudaFunctions.cu TestTileCuda.cu
+    SOURCES TestCudaFunctions.cu
     DEPLIBS
     CUDALIBRARY
   )
