@@ -159,7 +159,6 @@ namespace MueLu {
         // Therefore, it is sufficient to check only threshold
 
         if (A->GetFixedBlockSize() == 1 && threshold == STS::zero()) {
-          GetOStream(Runtime0,0) << "blocksize=1, no dropping" << std::endl;
           // Case 1:  scalar problem, no dropping => just use matrix graph
           RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
 
@@ -189,7 +188,6 @@ namespace MueLu {
         } else if (A->GetFixedBlockSize() == 1 && threshold != STS::zero()) {
           // Case 2:  scalar problem with dropping => record the column indices of undropped entries, but still use original
           //                                          graph's map information, e.g., whether index is local
-          GetOStream(Runtime0,0) << "blocksize=1, threshold=" << threshold << std::endl;
 
           // allocate space for the local graph
           ArrayRCP<LO> rows   (A->getNodeNumRows()+1);
