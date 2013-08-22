@@ -873,7 +873,7 @@ namespace stk {
 
       size_t colon = mesh_filename.find(':');
       if (colon != std::string::npos && colon > 0) {
-        type = mesh_filename.substr(0, colon-1);
+        type = mesh_filename.substr(0, colon);
         filename = mesh_filename.substr(colon+1);
       }
       return open_mesh_database(filename, type);
