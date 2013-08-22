@@ -786,40 +786,117 @@ TEUCHOS_UNIT_TEST( MDComm, subCommReduce )
   for (int axis = 0; axis < numDims; ++axis)
     finalCommSizes[axis] = mdComm.getAxisCommSize(axis);
 
+  // Compute the axis strides
+  Array< int > axisStrides(numDims);
+  Array< int > newAxisStrides;
+  axisStrides[0] = 1;
+  for (int axis = 1; axis < numDims; ++axis)
+    axisStrides[axis] = axisStrides[axis-1] * finalCommSizes[axis-1];
+
   // We will reduce this MDComm several times by using the axis-rank
   // constructor along each dimension
   for (int axis = 0; axis < numDims; ++axis)
   {
-    int axisRank = finalCommSizes[axis] / 2;
+    // Compute the new axis strides
+    newAxisStrides.clear();
+    for (int newAxis = 0; newAxis < numDims; ++newAxis)
+      if (newAxis != axis)
+        newAxisStrides.push_back(axisStrides[newAxis]);
+
+    int redAxisRank = finalCommSizes[axis] / 2;
     int newDims = (numDims > 1) ? numDims - 1 : numDims;
     bool partOfSubComm = true;
-    if (mdComm.getAxisRank(axis) != axisRank)
+    if (mdComm.getAxisRank(axis) != redAxisRank)
       partOfSubComm = false;
-    MDComm reducedMdComm(mdComm, axis, axisRank);
+    MDComm reducedMdComm(mdComm, axis, redAxisRank);
     if (partOfSubComm)
     {
+      TEST_ASSERT(reducedMdComm.onSubcommunicator());
       TEST_EQUALITY(reducedMdComm.getNumDims(), newDims);
       for (int newAxis = 0; newAxis < newDims; ++newAxis)
       {
+        int axisRank = reducedMdComm.getAxisRank(newAxis);
         if (numDims == 1)
         {
           TEST_EQUALITY_CONST(reducedMdComm.getAxisCommSize(newAxis), 1);
+          TEST_ASSERT(not reducedMdComm.isPeriodic(newAxis));
+          TEST_EQUALITY_CONST(reducedMdComm.getAxisRank(newAxis),0);
+          TEST_EQUALITY_CONST(reducedMdComm.getLowerNeighbor(newAxis),-1);
+          TEST_EQUALITY_CONST(reducedMdComm.getUpperNeighbor(newAxis),-1);
         }
         else if (newAxis < axis)
         {
           TEST_EQUALITY(reducedMdComm.getAxisCommSize(newAxis),
                         finalCommSizes[newAxis]);
+          TEST_ASSERT(not reducedMdComm.isPeriodic(newAxis));
+          TEST_EQUALITY(reducedMdComm.getAxisRank(newAxis),
+                        mdComm.getAxisRank(newAxis));
+          if (axisRank == 0)
+          {
+            TEST_EQUALITY_CONST(reducedMdComm.getLowerNeighbor(newAxis),-1);
+          }
+          else
+          {
+            int lowerNeighbor = 0;
+            for (int i = 0; i < newDims; ++i)
+              lowerNeighbor += reducedMdComm.getAxisRank(i) * newAxisStrides[i];
+            lowerNeighbor -= newAxisStrides[newAxis];
+            TEST_EQUALITY(reducedMdComm.getLowerNeighbor(newAxis),
+                          lowerNeighbor);
+          }
+          if (axisRank == reducedMdComm.getAxisCommSize(newAxis)-1)
+          {
+            TEST_EQUALITY_CONST(reducedMdComm.getUpperNeighbor(newAxis),-1);
+          }
+          else
+          {
+            int upperNeighbor = 0;
+            for (int i = 0; i < newDims; ++i)
+              upperNeighbor += reducedMdComm.getAxisRank(i) * newAxisStrides[i];
+            upperNeighbor += newAxisStrides[newAxis];
+            TEST_EQUALITY(reducedMdComm.getUpperNeighbor(newAxis),
+                          upperNeighbor);
+          }
         }
         else
         {
           TEST_EQUALITY(reducedMdComm.getAxisCommSize(newAxis),
                         finalCommSizes[newAxis+1])
+          TEST_ASSERT(not reducedMdComm.isPeriodic(newAxis));
+          TEST_EQUALITY(reducedMdComm.getAxisRank(newAxis),
+                        mdComm.getAxisRank(newAxis+1));
+          if (axisRank == 0)
+          {
+            TEST_EQUALITY_CONST(reducedMdComm.getLowerNeighbor(newAxis),-1);
+          }
+          else
+          {
+            int lowerNeighbor = 0;
+            for (int i = 0; i < newDims; ++i)
+              lowerNeighbor += reducedMdComm.getAxisRank(i) * newAxisStrides[i];
+            lowerNeighbor -= newAxisStrides[newAxis];
+            TEST_EQUALITY(reducedMdComm.getLowerNeighbor(newAxis),
+                          lowerNeighbor);
+          }
+          if (axisRank == reducedMdComm.getAxisCommSize(newAxis)-1)
+          {
+            TEST_EQUALITY_CONST(reducedMdComm.getUpperNeighbor(newAxis),-1);
+          }
+          else
+          {
+            int upperNeighbor = 0;
+            for (int i = 0; i < newDims; ++i)
+              upperNeighbor += reducedMdComm.getAxisRank(i) * newAxisStrides[i];
+            upperNeighbor += newAxisStrides[newAxis];
+            TEST_EQUALITY(reducedMdComm.getUpperNeighbor(newAxis),
+                          upperNeighbor);
+          }
         }
       }
     }
     else
     {
-      TEST_EQUALITY_CONST(reducedMdComm.onSubcommunicator(), false);
+      TEST_ASSERT(not reducedMdComm.onSubcommunicator());
     }
   }
 }
