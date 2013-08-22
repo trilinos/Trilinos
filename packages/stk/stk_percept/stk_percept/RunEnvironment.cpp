@@ -287,7 +287,7 @@ namespace stk {
         }
       }
 
-      int success = processCLP(parallel_rank, argc, argv);
+      int error = processCLP(parallel_rank, argc, argv);
 
       if (found_help)
         {
@@ -298,7 +298,7 @@ namespace stk {
 #endif
           std::exit(0);
         }
-      if (!success)
+      if (error)
         {
           std::cerr << std::endl;
           std::cout << std::endl;
