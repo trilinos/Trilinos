@@ -41,15 +41,15 @@ def controller():
     # parse
     options, arguments = p.parse_args()
 
+    if   options.petra == 'both'  : petra = 3
+    elif options.petra == 'epetra': petra = 1
+    elif options.petra == 'tpetra': petra = 2
+    else:
+        print("Unknown petra type %s" % options.petra)
+        return
+
     if options.action == 'build':
         # validate options
-        if   options.petra == 'both'  : petra = 3
-        elif options.petra == 'epetra': petra = 1
-        elif options.petra == 'tpetra': petra = 2
-        else:
-            print("Unknown petra type %s" % options.petra)
-            return
-
         if   options.matrix == "Laplace3D" or options.matrix == "Elasticity3D":
             dim = 3
         elif options.matrix == "Laplace2D" or options.matrix == "Elasticity2D":
@@ -79,8 +79,8 @@ def controller():
             clean()
 
     elif options.action == 'analyze':
-        r = analyze()
-        if r : print(analyze())
+        r = analyze(petra)
+        if r : print(r)
 
     else:
         print("You need to specify at least one action option")
@@ -88,10 +88,10 @@ def controller():
 
 
 # ========================= main functions =========================
-def analyze():
+def analyze(petra):
     # test which of [et]petra is being run
-    has_epetra = (len(glob.glob(DIR_PREFIX + "**/*.epetra")) > 0)
-    has_tpetra = (len(glob.glob(DIR_PREFIX + "**/*.tpetra")) > 0)
+    has_epetra = (len(glob.glob(DIR_PREFIX + "**/*.epetra")) > 0) and (petra & 1)
+    has_tpetra = (len(glob.glob(DIR_PREFIX + "**/*.tpetra")) > 0) and (petra & 2)
 
     if has_epetra == False and has_tpetra == False:
         return "Cannot find any of *.[et]petra files"
