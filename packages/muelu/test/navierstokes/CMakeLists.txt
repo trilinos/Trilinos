@@ -54,6 +54,14 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND
       DEPLIBS muelu xpetra
       )
 
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Navier2DBlocked_test
+      SOURCES Navier2DBlocked_test.cpp
+      COMM serial mpi
+      DEPLIBS muelu xpetra
+      )
+
+
     #TRIBITS_ADD_EXECUTABLE_AND_TEST(
     #  Navier2DBlocked_Simple
     #  SOURCES Navier2DBlocked_Simple.cpp
