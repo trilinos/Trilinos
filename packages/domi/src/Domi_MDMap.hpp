@@ -241,8 +241,8 @@ public:
   /** \brief Query whether this processor is on the sub-communicator
    *
    * Sub-communicators are formed when a parent MDComm is sliced by
-   * using the (parent,slices) constructor.  For a full communicator,
-   * this method will always return true.
+   * using the (parent,ordinal) or (parent,slices) constructor.  For a
+   * full communicator, this method will always return true.
    */
   bool onSubcommunicator() const;
 
