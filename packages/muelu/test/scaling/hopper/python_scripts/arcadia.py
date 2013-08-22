@@ -12,7 +12,7 @@ import re
 CPN          = 24                                               # cores per node
 BASECASE     = 1                                                # number of nodes in the smallest run
 DIR_PREFIX   = 'run_'                                           # directory prefix for runs (run with 2 nodes is stores in ${DIR_PREFIX}_2 (shell notation)
-PETRA_PREFIX = 'petra'                                          # actual PBS script prefix
+PETRA_PREFIX = 'petra-'                                         # actual PBS script prefix
 TEMPLATE     = "petra.pbs.template"                             # template pbs file for all runs
 ANALYSIS_RUN = "screen_1"                                       # run for analysis
 LABELS       = ['setup', 'solve', 'total']                      # analysis header labels
@@ -172,7 +172,7 @@ def build(nnodes, nx, binary, petra, matrix, xmlfile):
             " | sed \"s/_NX_/"      + str(nx)          + "/g\"" +
             " | sed \"s/_EPETRA_/"  + str(petra & 1)   + "/g\"" +
             " | sed \"s/_TPETRA_/"  + str(petra & 2)   + "/g\"" +
-            " > " + dir + "/" + PETRA_PREFIX + "-" + str(nnodes) + ".pbs")
+            " > " + dir + "/" + PETRA_PREFIX + str(nnodes) + ".pbs")
 
 def clean():
     for dir in sort_nicely(glob.glob(DIR_PREFIX + "*")):
