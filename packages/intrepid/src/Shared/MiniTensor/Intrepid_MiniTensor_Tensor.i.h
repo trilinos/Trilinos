@@ -205,7 +205,7 @@ Tensor<T, N>::Tensor(
 //
 template<typename T, Index N>
 inline
-Tensor<T, N>::Tensor(Tensor4<T, second_to_fourth_dimension<N>::value> const & A)
+Tensor<T, N>::Tensor(Tensor4<T, dimension_sqrt<N>::value> const & A)
 {
   Index const
   dimension_4th = A.get_dimension();

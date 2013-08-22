@@ -250,7 +250,7 @@ median(Iterator begin, Iterator end);
 template<typename T, Index N>
 Vector<T, N>
 interpolate_quadrilateral(
-    Vector<T, N> & xi,
+    Vector<T, dimension_const<N, 2>::value> & xi,
     Vector<T, N> const & p0,
     Vector<T, N> const & p1,
     Vector<T, N> const & p2,
@@ -266,7 +266,7 @@ interpolate_quadrilateral(
 template<typename T, Index N>
 Vector<T, N>
 interpolate_triangle(
-    Vector<T, N> & xi,
+    Vector<T, dimension_const<N, 3>::value> & xi,
     Vector<T, N> const & p0,
     Vector<T, N> const & p1,
     Vector<T, N> const & p2);
@@ -281,7 +281,7 @@ interpolate_triangle(
 template<typename T, Index N>
 Vector<T, N>
 interpolate_hexahedron(
-    Vector<T, N> & xi,
+    Vector<T, dimension_const<N, 3>::value> & xi,
     Vector<T, N> const & p0,
     Vector<T, N> const & p1,
     Vector<T, N> const & p2,
@@ -301,7 +301,7 @@ interpolate_hexahedron(
 template<typename T, Index N>
 Vector<T, N>
 interpolate_tetrahedron(
-    Vector<T, N> & xi,
+    Vector<T, dimension_const<N, 4>::value> & xi,
     Vector<T, N> const & p0,
     Vector<T, N> const & p1,
     Vector<T, N> const & p2,
@@ -315,11 +315,11 @@ interpolate_tetrahedron(
 /// \param v ... corner nodes
 /// \return interpolated position
 ///
-template<typename T, Index N>
+template<typename T, Index M, Index N>
 Vector<T, N>
 interpolate_element(
     ELEMENT::Type element_type,
-    Vector<T, N> & xi,
+    Vector<T, M> & xi,
     std::vector< Vector<T, N> > const & v);
 
 ///
@@ -338,7 +338,7 @@ distance_matrix(std::vector< Vector<T, N> > const & points);
 /// \param distances distance matrix
 /// \return minimum distance
 ///
-template<typename T, Index N>
+template<typename T>
 std::vector<T>
 minimum_distances(std::vector< std::vector<T> > const & distances);
 
@@ -360,7 +360,7 @@ public:
   SphericalParametrization(Tensor4<T, N> const & A);
 
   void
-  operator()(Vector<T, 2> const & parameters);
+  operator()(Vector<T, dimension_const<N, 2>::value> const & parameters);
 
   T
   get_minimum() const {return minimum_;}
@@ -403,7 +403,7 @@ public:
   StereographicParametrization(Tensor4<T, N> const & A);
 
   void
-  operator()(Vector<T, 2> const & parameters);
+  operator()(Vector<T, dimension_const<N, 2>::value> const & parameters);
 
   T
   get_minimum() const {return minimum_;}
@@ -452,7 +452,7 @@ public:
   ///
   ///
   void
-  operator()(Vector<T, 4> const & parameters);
+  operator()(Vector<T, dimension_const<N, 4>::value> const & parameters);
 
   T
   get_minimum() const {return minimum_;}
@@ -501,7 +501,7 @@ public:
   ///
   ///
   void
-  operator()(Vector<T, 2> const & parameters);
+  operator()(Vector<T, dimension_const<N, 2>::value> const & parameters);
 
   T
   get_minimum() const {return minimum_;}
@@ -544,7 +544,7 @@ public:
   CartesianParametrization(Tensor4<T, N> const & A);
 
   void
-  operator()(Vector<T, 3> const & parameters);
+  operator()(Vector<T, dimension_const<N, 3>::value> const & parameters);
 
   T
   get_minimum() const {return minimum_;}

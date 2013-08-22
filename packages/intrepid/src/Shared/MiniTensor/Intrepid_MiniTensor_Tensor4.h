@@ -49,7 +49,7 @@ namespace Intrepid {
 template<typename T, Index N>
 struct tensor4_store
 {
-  typedef Storage<T, dimension_order<N, 4>::value> type;
+  typedef Storage<T, dimension_power<N, 4>::value> type;
 };
 
 ///

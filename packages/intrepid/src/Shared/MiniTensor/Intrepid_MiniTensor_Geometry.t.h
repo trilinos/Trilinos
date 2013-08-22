@@ -66,10 +66,13 @@ area(Vector<T, N> const & p0, Vector<T, N> const & p1,
     Vector<T, N> const & p2)
 {
   Vector<T, N> const u = p1 - p0;
+  Vector<T, N> const v = p2 - p0;
+
   T const base = norm(u);
-  Vector<T, N> const e = u / base;
-  Vector<T, N> v = p2 - p0;
-  Vector<T, N> const n = v - dot(e, v) * e;
+
+  Vector<T, N> const i = u / base;
+  Vector<T, N> const n = v - dot(v, i) * i;
+
   T const height = norm(n);
   T const area = 0.5 * base * height;
 
@@ -97,19 +100,25 @@ volume(Vector<T, N> const & p0, Vector<T, N> const & p1,
     Vector<T, N> const & p2, Vector<T, N> const & p3)
 {
   // Area of base triangle
-  T A = area(p0, p1, p2);
+  T const
+  base = area(p0, p1, p2);
 
   // Height
-  Vector<T, N> u = p1 - p0;
-  Vector<T, N> v = p2 - p0;
-  Vector<T, N> n = cross(u, v);
-  n = n / norm(n);
-  Vector<T, N> w = p3 - p0;
-  T h = std::abs(dot(w, n));
+  Vector<T, N> const u = p1 - p0;
+  Vector<T, N> const v = p2 - p0;
+  Vector<T, N> const w = p3 - p0;
+
+  Vector<T, N> const i = u / norm(u);
+  Vector<T, N> const j = v / norm(v);
+
+  Vector<T, N> const n = w - dot(w, i) * i - dot(w, j) * j;
+
+  T const height = norm(n);
 
   // Volume
-  T V = A * h / 3.0;
-  return V;
+  T const volume = base * height / 3.0;
+
+  return volume;
 }
 
 //
@@ -125,19 +134,25 @@ volume(Vector<T, N> const & p0, Vector<T, N> const & p1,
     Vector<T, N> const & p4)
 {
   // Area of base quadrilateral
-  T A = area(p0, p1, p2, p3);
+  T const
+  base = area(p0, p1, p2, p3);
 
   // Height
-  Vector<T, N> u = p1 - p0;
-  Vector<T, N> v = p2 - p0;
-  Vector<T, N> n = cross(u, v);
-  n = n / norm(n);
-  Vector<T, N> w = p4 - p0;
-  T h = std::abs(dot(w, n));
+  Vector<T, N> const u = p1 - p0;
+  Vector<T, N> const v = p2 - p0;
+  Vector<T, N> const w = p4 - p0;
+
+  Vector<T, N> const i = u / norm(u);
+  Vector<T, N> const j = v / norm(v);
+
+  Vector<T, N> const n = w - dot(w, i) * i - dot(w, j) * j;
+
+  T const height = norm(n);
 
   // Volume
-  T V = A * h / 3.0;
-  return V;
+  T const volume = base * height / 3.0;
+
+  return volume;
 }
 
 //
@@ -153,13 +168,13 @@ volume(Vector<T, N> const & p0, Vector<T, N> const & p1,
     Vector<T, N> const & p6, Vector<T, N> const & p7)
 {
   // 1st pyramid
-  T V1 = volume(p4, p7, p6, p5, p0);
+  T const V1 = volume(p4, p7, p6, p5, p0);
 
   // 2nd pyramid
-  T V2 = volume(p3, p2, p6, p7, p0);
+  T const V2 = volume(p3, p2, p6, p7, p0);
 
   // 3rd pyramid
-  T V3 = volume(p1, p5, p6, p2, p0);
+  T const V3 = volume(p1, p5, p6, p2, p0);
 
   return V1 + V2 + V3;
 }
@@ -177,7 +192,7 @@ centroid(std::vector<Vector<T, N> > const & points)
   Vector<T, N> C(points[0].get_dimension());
   C.clear();
   typedef typename std::vector<Vector<T, N> >::size_type sizeT;
-  sizeT n = points.size();
+  sizeT const n = points.size();
 
   for (sizeT i = 0; i < n; ++i) {
     C += points[i];
@@ -197,11 +212,11 @@ normal(Vector<T, N> const & p0,
     Vector<T, N> const & p2)
 {
   // Construct 2 independent vectors
-  Vector<T, N> v0 = p1 - p0;
-  Vector<T, N> v1 = p2 - p0;
+  Vector<T, N> const v0 = p1 - p0;
+  Vector<T, N> const v1 = p2 - p0;
 
-  Vector< T, N > n = cross(v0, v1);
-  n = n / norm(n);
+  Vector<T, N> const n = unit(cross(v0, v1));
+
   return n;
 }
 
@@ -218,13 +233,13 @@ in_normal_side(
     Vector<T, N> const & p1,
     Vector<T, N> const & p2)
 {
-  Vector<T, N> v0 = p1 - p0;
-  Vector<T, N> v1 = p2 - p0;
+  Vector<T, N> const v0 = p1 - p0;
+  Vector<T, N> const v1 = p2 - p0;
 
-  Vector<T, N> n = cross(v0, v1);
-  Vector<T, N> v = p - p0;
+  Vector<T, N> const n = cross(v0, v1);
+  Vector<T, N> const v = p - p0;
 
-  T s = dot(v, n);
+  T const s = dot(v, n);
 
   if (s < 0.0) return false;
 
@@ -250,7 +265,7 @@ bounding_box(I start, I end)
   Vector<T, N>
   max = min;
 
-  const Index
+  Index const
   dimension = min.get_dimension();
 
   ++it;
@@ -261,7 +276,7 @@ bounding_box(I start, I end)
     point = (*it);
 
     for (Index i = 0; i < dimension; ++i) {
-      const T s = point(i);
+      T const s = point(i);
       if (s < min(i)) min(i) = s;
       if (s > max(i)) max(i) = s;
     }
@@ -291,11 +306,11 @@ in_box(
     Vector<T, N> const & min,
     Vector<T, N> const & max)
 {
-  const Index
+  Index const
   dimension = p.get_dimension();
 
-  assert(min.get_dimension() == N);
-  assert(max.get_dimension() == N);
+  assert(min.get_dimension() == dimension);
+  assert(max.get_dimension() == dimension);
 
   for (Index i = 0; i < dimension; ++i) {
     T const & s = p(i);
@@ -315,12 +330,12 @@ template<typename T, Index N>
 Vector<T, N>
 random_in_box(Vector<T, N> const & min, Vector<T, N> const & max)
 {
-  const Index
+  Index const
   dimension = min.get_dimension();
 
-  assert(max.get_dimension() == N);
+  assert(max.get_dimension() == dimension);
 
-  Vector<T, N> p(N);
+  Vector<T, N> p(dimension);
 
   for (Index i = 0; i < dimension; ++i) {
     p(i) = (max(i) - min(i)) * T(std::rand())/T(RAND_MAX) + min(i);
@@ -425,7 +440,7 @@ closest_point(Vector<T, N> const & p, std::vector< Vector<T, N> > const & n)
   typename std::vector< Vector<T, N> >::size_type
   index = 0;
 
-  const Vector<double>
+  Vector<T, N> const
   v0 = p - n[0];
 
   T
@@ -435,10 +450,10 @@ closest_point(Vector<T, N> const & p, std::vector< Vector<T, N> > const & n)
       i < n.size();
       ++i) {
 
-    const Vector<double>
+    Vector<T, N> const
     vi = p - n[i];
 
-    const T
+    T const
     s = norm_square(vi);
 
     if (s < min) {
@@ -474,7 +489,7 @@ median(Iterator begin, Iterator end)
   T
   median;
 
-  Index
+  Index const
   mid_index = size / 2;
 
   Iterator
@@ -485,13 +500,13 @@ median(Iterator begin, Iterator end)
   if (size % 2 == 0) {
 
     // Even number of elements
-    T
+    T const
     b = *mid_iterator;
 
     Iterator
     previous = mid_iterator - 1;
 
-    T
+    T const
     a = *previous;
 
     median = (a + b) / 2.0;
@@ -516,26 +531,26 @@ median(Iterator begin, Iterator end)
 template<typename T, Index N>
 Vector<T, N>
 interpolate_quadrilateral(
-    Vector<T, N> & xi,
+    Vector<T, dimension_const<N, 2>::value> & xi,
     Vector<T, N> const & p0,
     Vector<T, N> const & p1,
     Vector<T, N> const & p2,
     Vector<T, N> const & p3)
 {
 
-  T
+  T const
   N0 = 0.25 * (1 - xi(0)) * (1 - xi(1));
 
-  T
+  T const
   N1 = 0.25 * (1 + xi(0)) * (1 - xi(1));
 
-  T
+  T const
   N2 = 0.25 * (1 + xi(0)) * (1 + xi(1));
 
-  T
+  T const
   N3 = 0.25 * (1 - xi(0)) * (1 + xi(1));
 
-  const Vector<T, N>
+  Vector<T, N> const
   p = N0 * p0 + N1 * p1 + N2 * p2 + N3 * p3;
 
   return p;
@@ -551,14 +566,14 @@ interpolate_quadrilateral(
 template<typename T, Index N>
 Vector<T, N>
 interpolate_triangle(
-    Vector<T, N> & xi,
+    Vector<T, dimension_const<N, 3>::value> & xi,
     Vector<T, N> const & p0,
     Vector<T, N> const & p1,
     Vector<T, N> const & p2)
 {
   xi(2) = 1.0 - xi(0) - xi(1);
 
-  const Vector<T, N>
+  Vector<T, N> const
   p = xi(0) * p0 + xi(1) * p1 + xi(2) * p2;
 
   return p;
@@ -574,7 +589,7 @@ interpolate_triangle(
 template<typename T, Index N>
 Vector<T, N>
 interpolate_hexahedron(
-    Vector<T, N> & xi,
+    Vector<T, dimension_const<N, 3>::value> & xi,
     Vector<T, N> const & p0,
     Vector<T, N> const & p1,
     Vector<T, N> const & p2,
@@ -585,31 +600,31 @@ interpolate_hexahedron(
     Vector<T, N> const & p7)
 {
 
-  T
+  T const
   N0 = 0.125 * (1 - xi(0)) * (1 - xi(1)) * (1 - xi(2));
 
-  T
+  T const
   N1 = 0.125 * (1 + xi(0)) * (1 - xi(1)) * (1 - xi(2));
 
-  T
+  T const
   N2 = 0.125 * (1 + xi(0)) * (1 + xi(1)) * (1 - xi(2));
 
-  T
+  T const
   N3 = 0.125 * (1 - xi(0)) * (1 + xi(1)) * (1 - xi(2));
 
-  T
+  T const
   N4 = 0.125 * (1 - xi(0)) * (1 - xi(1)) * (1 + xi(2));
 
-  T
+  T const
   N5 = 0.125 * (1 + xi(0)) * (1 - xi(1)) * (1 + xi(2));
 
-  T
+  T const
   N6 = 0.125 * (1 + xi(0)) * (1 + xi(1)) * (1 + xi(2));
 
-  T
+  T const
   N7 = 0.125 * (1 - xi(0)) * (1 + xi(1)) * (1 + xi(2));
 
-  const Vector<T, N>
+  Vector<T, N> const
   p =
       N0 * p0 + N1 * p1 + N2 * p2 + N3 * p3 +
       N4 * p4 + N5 * p5 + N6 * p6 + N7 * p7;
@@ -627,7 +642,7 @@ interpolate_hexahedron(
 template<typename T, Index N>
 Vector<T, N>
 interpolate_tetrahedron(
-    Vector<T, N> & xi,
+    Vector<T, dimension_const<N, 4>::value> & xi,
     Vector<T, N> const & p0,
     Vector<T, N> const & p1,
     Vector<T, N> const & p2,
@@ -635,7 +650,7 @@ interpolate_tetrahedron(
 {
   xi(3) = 1.0 - xi(0) - xi(1) - xi(2);
 
-  const Vector<T, N>
+  Vector<T, N> const
   p = xi(0) * p0 + xi(1) * p1 + xi(2) * p2 + xi(3) * p3;
 
   return p;
@@ -649,14 +664,14 @@ interpolate_tetrahedron(
 /// \param v ... corner nodes
 /// \return interpolated position
 ///
-template<typename T, Index N>
+template<typename T, Index M, Index N>
 Vector<T, N>
 interpolate_element(
     ELEMENT::Type element_type,
-    Vector<T, N> & xi,
+    Vector<T, M> & xi,
     std::vector< Vector<T, N> > const & v)
 {
-  Vector<double> p;
+  Vector<T, N> p;
 
   switch (element_type) {
 
@@ -700,7 +715,7 @@ template<typename T, Index N>
 std::vector< std::vector<T> >
 distance_matrix(std::vector< Vector<T, N> > const & points)
 {
-  const Index
+  Index const
   number_points = points.size();
 
   std::vector< std::vector<T> >
@@ -714,7 +729,7 @@ distance_matrix(std::vector< Vector<T, N> > const & points)
 
     for (Index j = i + 1; j < number_points; ++j) {
 
-      const T
+      T const
       distance = norm(points[i] - points[j]);
 
       distances[i][j] = distance;
@@ -733,11 +748,11 @@ distance_matrix(std::vector< Vector<T, N> > const & points)
 // \param distance matrix
 // \return minimum distance
 //
-template<typename T, Index N>
+template<typename T>
 std::vector<T>
 minimum_distances(std::vector< std::vector<T> > const & distances)
 {
-  const Index
+  Index const
   number_points = distances.size();
 
   std::vector<T>

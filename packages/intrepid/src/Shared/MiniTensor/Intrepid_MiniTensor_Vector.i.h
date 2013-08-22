@@ -557,6 +557,17 @@ norm_infinity(Vector<T, N> const & u)
   return s;
 }
 
+//
+// \return u / |u|, fails for |u| = 0
+//
+template<typename T, Index N>
+inline
+Vector<T, N>
+unit(Vector<T, N> const & u)
+{
+  return u / norm(u);
+}
+
 } // namespace Intrepid
 
 #endif // Intrepid_MiniTensor_Vector_i_h

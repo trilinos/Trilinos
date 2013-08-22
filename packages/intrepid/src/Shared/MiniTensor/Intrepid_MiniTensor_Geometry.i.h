@@ -149,7 +149,9 @@ SphericalParametrization<T, N>::SphericalParametrization(
 template<typename T, Index N>
 inline
 void
-SphericalParametrization<T, N>::operator()(Vector<T, 2> const & parameters)
+SphericalParametrization<T, N>::operator()(
+    Vector<T, dimension_const<N, 2>::value> const & parameters
+)
 {
   T const &
   phi = parameters(0);
@@ -199,7 +201,9 @@ StereographicParametrization<T, N>::StereographicParametrization(
 template<typename T, Index N>
 inline
 void
-StereographicParametrization<T, N>::operator()(Vector<T, 2> const & parameters)
+StereographicParametrization<T, N>::operator()(
+    Vector<T, dimension_const<N, 2>::value> const & parameters
+)
 {
   T const &
   x = parameters(0);
@@ -254,7 +258,9 @@ ProjectiveParametrization<T, N>::ProjectiveParametrization(
 template<typename T, Index N>
 inline
 void
-ProjectiveParametrization<T, N>::operator()(Vector<T, 4> const & parameters)
+ProjectiveParametrization<T, N>::operator()(
+    Vector<T, dimension_const<N, 4>::value> const & parameters
+)
 {
   T const &
   x = parameters(0);
@@ -313,7 +319,9 @@ TangentParametrization<T, N>::TangentParametrization(
 template<typename T, Index N>
 inline
 void
-TangentParametrization<T, N>::operator()(Vector<T, 2> const & parameters)
+TangentParametrization<T, N>::operator()(
+    Vector<T, dimension_const<N, 2>::value> const & parameters
+)
 {
   assert(parameters.get_dimension() == 2);
 
@@ -374,7 +382,9 @@ CartesianParametrization<T, N>::CartesianParametrization(
 template<typename T, Index N>
 inline
 void
-CartesianParametrization<T, N>::operator()(Vector<T, 3> const & parameters)
+CartesianParametrization<T, N>::operator()(
+    Vector<T, dimension_const<N, 3>::value> const & parameters
+)
 {
   T const &
   x = parameters(0);
@@ -462,7 +472,7 @@ ParametricGrid<T, N>::traverse(Visitor & visitor) const
   Vector<T, N>
   position_in_grid(number_parameters, ZEROS);
 
-  Vector<T, N>
+  Vector<T, N> const
   span = upper_ - lower_;
 
   for (LongCount point = 1;  point <= total_number_points; ++point) {

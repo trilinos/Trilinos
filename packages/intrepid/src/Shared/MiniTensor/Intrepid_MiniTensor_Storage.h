@@ -47,84 +47,126 @@
 
 namespace Intrepid {
 
+/// Set to constant value if not dynamic
+template <Index N, Index C>
+struct dimension_const {
+  static Index const value = C;
+};
+
+template <Index C>
+struct dimension_const<DYNAMIC, C> {
+  static Index const value = DYNAMIC;
+};
+
 /// Integer power template restricted to orders defined below
 template <Index D, Index O>
-struct dimension_order {
-  static const Index value = 0;
+struct dimension_power {
+  static Index const value = 0;
 };
 
 template <Index D>
-struct dimension_order<D, 1> {
-  static const Index value = D;
+struct dimension_power<D, 1> {
+  static Index const value = D;
 };
 
 template <Index D>
-struct dimension_order<D, 2> {
-  static const Index value = D * D;
+struct dimension_power<D, 2> {
+  static Index const value = D * D;
 };
 
 template <Index D>
-struct dimension_order<D, 3> {
-  static const Index value = D * D * D;
+struct dimension_power<D, 3> {
+  static Index const value = D * D * D;
 };
 
 template <Index D>
-struct dimension_order<D, 4> {
-  static const Index value = D * D * D * D;
+struct dimension_power<D, 4> {
+  static Index const value = D * D * D * D;
+};
+
+/// Integer square for manipulations between 2nd and 4rd-order tensors.
+template <Index N>
+struct dimension_square {
+  static Index const value = 0;
+};
+
+template <>
+struct dimension_square<DYNAMIC> {
+  static Index const value = DYNAMIC;
+};
+
+template <>
+struct dimension_square<1> {
+  static Index const value = 1;
+};
+
+template <>
+struct dimension_square<2> {
+  static Index const value = 4;
+};
+
+template <>
+struct dimension_square<3> {
+  static Index const value = 9;
+};
+
+template <>
+struct dimension_square<4> {
+  static Index const value = 16;
 };
 
 /// Integer square root template restricted to dimensions defined below.
 /// Useful for constructing a 2nd-order tensor from a 4th-order
 /// tensor with static storage.
 template <Index N>
-struct second_to_fourth_dimension {
-  static const Index value = 0;
+struct dimension_sqrt {
+  static Index const value = 0;
 };
 
 template <>
-struct second_to_fourth_dimension<DYNAMIC> {
-  static const Index value = DYNAMIC;
+struct dimension_sqrt<DYNAMIC> {
+  static Index const value = DYNAMIC;
 };
 
 template <>
-struct second_to_fourth_dimension<1> {
-  static const Index value = 1;
+struct dimension_sqrt<1> {
+  static Index const value = 1;
 };
 
 template <>
-struct second_to_fourth_dimension<4> {
-  static const Index value = 2;
+struct dimension_sqrt<4> {
+  static Index const value = 2;
 };
 
 template <>
-struct second_to_fourth_dimension<9> {
-  static const Index value = 3;
+struct dimension_sqrt<9> {
+  static Index const value = 3;
 };
 
 template <>
-struct second_to_fourth_dimension<16> {
-  static const Index value = 4;
+struct dimension_sqrt<16> {
+  static Index const value = 4;
 };
 
 /// Manipulation of static and dynamic dimensions.
 template <Index N, Index P>
 struct dimension_add {
-  static const Index value = N + P;
+  static Index const value = N + P;
 };
 
 template <Index P>
 struct dimension_add<DYNAMIC, P> {
-  static const Index value = DYNAMIC;
+  static Index const value = DYNAMIC;
 };
 
 template <Index N, Index P>
 struct dimension_subtract {
-  static const Index value = N - P;
+  static Index const value = N - P;
 };
 
 template <Index P>
 struct dimension_subtract<DYNAMIC, P> {
-  static const Index value = DYNAMIC;
+  static Index const value = DYNAMIC;
 };
 
 ///

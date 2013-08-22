@@ -61,7 +61,7 @@ enum ComponentOrder {CANONICAL, SIERRA_FULL, SIERRA_SYMMETRIC};
 template<typename T, Index N>
 struct tensor_store
 {
-  typedef Storage<T, dimension_order<N, 2>::value> type;
+  typedef Storage<T, dimension_power<N, 2>::value> type;
 };
 
 ///
@@ -139,7 +139,7 @@ public:
   ///
   /// 2nd-order tensor from 4th-order tensor
   ///
-  Tensor(Tensor4<T, second_to_fourth_dimension<N>::value> const & A);
+  Tensor(Tensor4<T, dimension_sqrt<N>::value> const & A);
 
   ///
   /// Create tensor specifying components

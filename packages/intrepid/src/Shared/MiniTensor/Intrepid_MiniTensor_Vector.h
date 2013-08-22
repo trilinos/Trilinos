@@ -57,7 +57,7 @@ namespace Intrepid {
 template<typename T, Index N>
 struct vector_store
 {
-  typedef Storage<T, dimension_order<N, 1>::value> type;
+  typedef Storage<T, dimension_power<N, 1>::value> type;
 };
 
 ///
@@ -302,6 +302,13 @@ norm_1(Vector<T, N> const & u);
 template<typename T, Index N>
 T
 norm_infinity(Vector<T, N> const & u);
+
+///
+/// \return u / |u|, fails for |u| = 0
+///
+template<typename T, Index N>
+Vector<T, N>
+unit(Vector<T, N> const & u);
 
 ///
 /// Vector input
