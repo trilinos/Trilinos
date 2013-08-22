@@ -121,7 +121,7 @@ namespace MueLu {
         stridedblocksize = blockdim;
       }
       oldView = A->SwitchToView(oldView);
-      GetOStream(Statistics0, -1) << "IsorropiaInterface::Build():" << " found blockdim=" << blockdim << " from strided maps. offset=" << offset << std::endl;
+      GetOStream(Statistics0, -1) << "IsorropiaInterface::Build():" << " found blockdim=" << blockdim << " from strided maps (blockid=" << blockid << ", strided block size=" << stridedblocksize << "). offset=" << offset << std::endl;
     } else GetOStream(Statistics0, -1) << "IsorropiaInterface::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
 
     // 2) build (un)amalgamation information
@@ -255,7 +255,7 @@ namespace MueLu {
       isoPart->extractPartsView(size,array);
 
       // consistency check
-      TEUCHOS_TEST_FOR_EXCEPTION(size*blockdim != Teuchos::as<int>(rowMap->getNodeNumElements()), Exceptions::RuntimeError, "length of array returned from extractPartsView does not match local length of rowMap");
+      TEUCHOS_TEST_FOR_EXCEPTION(size*stridedblocksize/*blockdim*/ != Teuchos::as<int>(rowMap->getNodeNumElements()), Exceptions::RuntimeError, "length of array returned from extractPartsView does not match local length of rowMap");
 
       RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, false);
       ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
@@ -264,9 +264,29 @@ namespace MueLu {
       // TODO: we assume simple block maps here
       // TODO: adapt this to usage of nodegid2dofgids
       for(int i = 0; i<size; i++) {
-       for (LO j=0; j<blockdim; j++) {
-          decompEntries[i*blockdim + j] = Teuchos::as<GO>(array[i]);
+        // not fully sure about this. We're filling local ids in the decomposition vector with
+        // the results stored in array. The decomposition vector is created using the rowMap of A
+#if 0
+        for (LO j=0; j<stridedblocksize/*blockdim*/; j++) {
+          decompEntries[i*stridedblocksize/*blockdim*/ + j] = Teuchos::as<GO>(array[i]);
         }
+#else
+        // transform local node id to global node id.
+        GO gNodeId = nodeMap->getGlobalElement(i);
+
+        // extract global DOF ids that belong to gNodeId
+        std::vector<GlobalOrdinal> DOFs = nodegid2dofgids[gNodeId];
+
+        for(size_t j=0; j<DOFs.size(); j++) {
+          // transform global DOF ids to local DOF ids using rowMap
+          // note: The vector decomposition is based on rowMap
+          LO lDofId = rowMap->getLocalElement(DOFs[j]);
+
+          // put the same domain id to all DOFs of the same node
+          decompEntries[i*stridedblocksize + j] = Teuchos::as<GO>(array[i]);
+        }
+#endif
+
       }
 
       Set(level, "Partition", decomposition);
@@ -286,7 +306,7 @@ namespace MueLu {
       const int* array = NULL;
       isoPart->extractPartsView(size,array);
 
-      TEUCHOS_TEST_FOR_EXCEPTION(size*blockdim != Teuchos::as<int>(rowMap->getNodeNumElements()), Exceptions::RuntimeError, "length of array returned from extractPartsView does not match local length of rowMap");
+      TEUCHOS_TEST_FOR_EXCEPTION(size*stridedblocksize/*blockdim*/ != Teuchos::as<int>(rowMap->getNodeNumElements()), Exceptions::RuntimeError, "length of array returned from extractPartsView does not match local length of rowMap");
 
       RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, false);
       ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
@@ -295,8 +315,8 @@ namespace MueLu {
       // TODO: we assume simple block maps here
       // TODO: adapt this to usage of nodegid2dofgids
       for(int i = 0; i<size; i++) {
-       for (LO j=0; j<blockdim; j++) {
-          decompEntries[i*blockdim + j] = Teuchos::as<GO>(array[i]);
+       for (LO j=0; j<stridedblocksize/*blockdim*/; j++) {
+          decompEntries[i*stridedblocksize/*blockdim*/ + j] = Teuchos::as<GO>(array[i]);
         }
       }
 
