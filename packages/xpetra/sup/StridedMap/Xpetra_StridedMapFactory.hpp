@@ -153,20 +153,45 @@ namespace Xpetra {
       XPETRA_FACTORY_END;
     }
 
-#if 0  // TODO
-    //! Map constructor with user-defined non-contiguous (arbitrary) distribution.
-    static Teuchos::RCP<StridedMap<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = KokkosClassic::Details::getNode<Node> ()) {
+    //! Create copy of existing map (this just creates a copy of your map, it's not a clone in the sense of Tpetra)
+    static Teuchos::RCP<StridedMap<LocalOrdinal,GlobalOrdinal, Node> > Build(const StridedMap<LocalOrdinal,GlobalOrdinal, Node>& map) {
+      XPETRA_MONITOR("MapFactory::Build");
+
+      LocalOrdinal N = map.getNodeNumElements();
+      Teuchos::ArrayView<const GlobalOrdinal> oldElements = map.getNodeElementList();
+      Teuchos::Array<GlobalOrdinal> newElements(map.getNodeNumElements());
+      for (LocalOrdinal i = 0; i < N; i++)
+          newElements[i] = oldElements[i];
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (map.lib() == UseTpetra) {
+        std::vector<size_t> strData = map.getStridingData();
+        return rcp( new StridedTpetraMap<LocalOrdinal,GlobalOrdinal, Node> (map.getGlobalNumElements(), newElements, map.getIndexBase(), strData, map.getComm(), map.getStridedBlockId(), map.getOffset(), map.getNode()) );
+      }
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+      if (map.lib() == UseEpetra) {
+        std::vector<size_t> strData = map.getStridingData();
+        return rcp( new StridedEpetraMap (map.getGlobalNumElements(), newElements, map.getIndexBase(), strData, map.getComm(), map.getStridedBlockId(), map.getOffset(), map.getNode()) );
+      }
+
+#endif
+
+      XPETRA_FACTORY_END;
+    }
+
+    //! Map constructor with a user-defined contiguous distribution. (for experts only. There is no special check whether the generated strided maps are valid)
+    static Teuchos::RCP<StridedMap<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, std::vector<size_t>& stridingInfo, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, LocalOrdinal stridedBlockId=-1, GlobalOrdinal offset = 0, const Teuchos::RCP<Node> &node = KokkosClassic::Details::getNode<Node> ()) {
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
-        return rcp( new StridedTpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, elementList, indexBase, comm, node) );
+        return rcp( new StridedTpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, elementList, indexBase, stridingInfo, comm, stridedBlockId, offset, node) );
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
       XPETRA_FACTORY_END;
     }
-#endif
-
 
   };
 
@@ -256,7 +281,9 @@ namespace Xpetra {
         size_t numMyBlockDofs = stridingInfo[stridedBlockId] / map->getFixedBlockSize() * map->getNodeNumElements();
         std::vector<GlobalOrdinal> subBlockDofGids(numMyBlockDofs);
 
-        // TODO fill vector with dofs
+        GlobalOrdinal offset = map->getOffset();
+
+        // fill vector with dofs
 
         for(Teuchos::ArrayView< const GlobalOrdinal >::iterator it = dofGids.begin(); it!=dofGids.end(); ++it) {
           if(map->GID2StridingBlockId( *it ) == Teuchos::as<size_t>(stridedBlockId)) {
@@ -267,7 +294,7 @@ namespace Xpetra {
         const Teuchos::ArrayView<const LocalOrdinal> subBlockDofGids_view(&subBlockDofGids[0],subBlockDofGids.size());
 
         // call constructor for TpetraMap
-        return rcp( new StridedTpetraMap<LocalOrdinal,GlobalOrdinal, Node> (/*subBlockDofGids.size()*/Teuchos::OrdinalTraits<global_size_t>::invalid(), subBlockDofGids_view, map->getIndexBase(), stridingInfo, map->getComm(), stridedBlockId, map->getNode()) );
+        return rcp( new StridedTpetraMap<LocalOrdinal,GlobalOrdinal, Node> (/*subBlockDofGids.size()*/Teuchos::OrdinalTraits<global_size_t>::invalid(), subBlockDofGids_view, map->getIndexBase(), stridingInfo, map->getComm(), stridedBlockId, offset, map->getNode()) );
         ////////////////////////////////////////
 
       }
@@ -290,6 +317,8 @@ namespace Xpetra {
         size_t numMyBlockDofs = stridingInfo[stridedBlockId] / map->getFixedBlockSize() * map->getNodeNumElements();
         std::vector<GlobalOrdinal> subBlockDofGids(numMyBlockDofs);
 
+        GlobalOrdinal offset = map->getOffset();
+
         // TODO fill vector with dofs
         //Teuchos::ArrayView< const GlobalOrdinal >::iterator it;
         for(Teuchos::ArrayView< const GlobalOrdinal >::iterator it = dofGids.begin(); it!=dofGids.end(); ++it) {
@@ -301,7 +330,7 @@ namespace Xpetra {
         const Teuchos::ArrayView<const LocalOrdinal> subBlockDofGids_view(&subBlockDofGids[0],subBlockDofGids.size());
 
         // call constructor for TpetraMap
-        return rcp( new StridedEpetraMap(Teuchos::OrdinalTraits<global_size_t>::invalid(), subBlockDofGids_view, map->getIndexBase(), stridingInfo, map->getComm(), stridedBlockId, map->getNode()) );
+        return rcp( new StridedEpetraMap(Teuchos::OrdinalTraits<global_size_t>::invalid(), subBlockDofGids_view, map->getIndexBase(), stridingInfo, map->getComm(), stridedBlockId, offset, map->getNode()) );
         ////////////////////////////////////////
 
       }
@@ -309,21 +338,48 @@ namespace Xpetra {
       XPETRA_FACTORY_END;
     }
 
-#if 0 // TODO
-    static RCP<StridedMap<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<KokkosClassic::DefaultNode::DefaultNodeType> &node = KokkosClassic::Details::getNode<Node> ()) {
+    //! Create copy of existing map (this just creates a copy of your map, it's not a clone in the sense of Tpetra)
+    static Teuchos::RCP<StridedMap<LocalOrdinal,GlobalOrdinal, Node> > Build(const StridedMap<LocalOrdinal,GlobalOrdinal, Node>& map) {
+      XPETRA_MONITOR("MapFactory::Build");
+
+      LocalOrdinal N = map.getNodeNumElements();
+      Teuchos::ArrayView<const GlobalOrdinal> oldElements = map.getNodeElementList();
+      Teuchos::Array<GlobalOrdinal> newElements(map.getNodeNumElements());
+      for (LocalOrdinal i = 0; i < N; i++)
+          newElements[i] = oldElements[i];
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (map.lib() == UseTpetra) {
+        std::vector<size_t> strData = map.getStridingData();
+        return rcp( new StridedTpetraMap<LocalOrdinal,GlobalOrdinal, Node> (map.getGlobalNumElements(), newElements, map.getIndexBase(), strData, map.getComm(), map.getStridedBlockId(), map.getOffset(), map.getNode()) );
+      }
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+      if (map.lib() == UseEpetra) {
+        std::vector<size_t> strData = map.getStridingData();
+        return rcp( new StridedEpetraMap (map.getGlobalNumElements(), newElements, map.getIndexBase(), strData, map.getComm(), map.getStridedBlockId(), map.getOffset(), map.getNode()) );
+      }
+
+#endif
+
+      XPETRA_FACTORY_END;
+    }
+
+    //! Map constructor with a user-defined contiguous distribution. (for experts only. There is no special check whether the generated strided maps are valid)
+    static Teuchos::RCP<StridedMap<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, std::vector<size_t>& stridingInfo, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, LocalOrdinal stridedBlockId=-1, GlobalOrdinal offset = 0, const Teuchos::RCP<Node> &node = KokkosClassic::Details::getNode<Node> ()) {
+
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
-        return rcp( new StridedTpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, elementList, indexBase, comm, node) );
+        return rcp( new StridedTpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, elementList, indexBase, stridingInfo, comm, stridedBlockId, offset, node) );
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (lib == UseEpetra)
-        return rcp( new StridedEpetraMap(numGlobalElements, elementList, indexBase, comm, node) );
+        return rcp( new StridedEpetraMap(numGlobalElements, elementList, indexBase, stridingInfo, comm, stridedBlockId, offset, node) );
 #endif
       XPETRA_FACTORY_END;
     }
-#endif
-
 
   };
 
