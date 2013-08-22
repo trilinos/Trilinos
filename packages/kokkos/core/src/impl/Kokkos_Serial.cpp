@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,41 +35,51 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
 
-#ifndef KOKKOS_PARALLELREDUCE_HPP
-#define KOKKOS_PARALLELREDUCE_HPP
+#include <stdlib.h>
+#include <Kokkos_Serial.hpp>
 
-#include <cstddef>
-#include <sstream>
-#include <Kokkos_Parallel.hpp>
-#include <impl/Kokkos_Error.hpp>
+/*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
+namespace {
 
-//----------------------------------------------------------------------------
+struct Sentinel {
 
-template< class FunctorType >
-void vector_parallel_reduce( const size_t work_count ,
-                             const FunctorType & functor ,
-                             typename Impl::ReduceAdapter< FunctorType >::reference_type result )
+  void *   m_reduce ;
+  unsigned m_reduce_size ;
 
-{
-  Impl::ParallelReduce< FunctorType, Impl::VectorParallel >
-    reduce( functor , work_count , Kokkos::Impl::ReduceAdapter< FunctorType >::pointer( result ) );
+  Sentinel() : m_reduce(0), m_reduce_size(0) {}
 
-  reduce.wait();
+  ~Sentinel() { if ( m_reduce ) { free( m_reduce ); } }
+};
+
 }
 
-//----------------------------------------------------------------------------
+void * Serial::resize_reduce_scratch( unsigned size )
+{
+  static Sentinel s ;
+
+  const unsigned rem = size % Impl::MEMORY_ALIGNMENT ;
+
+  if ( rem ) size += Impl::MEMORY_ALIGNMENT - rem ;
+
+  if ( ( 0 == size ) || ( s.m_reduce_size < size ) ) {
+
+    if ( s.m_reduce ) { free( s.m_reduce ); }
+  
+    s.m_reduce_size = size ;
+
+    s.m_reduce = malloc( size );
+  }
+
+  return s.m_reduce ;
+}
 
 } // namespace Kokkos
-
-//----------------------------------------------------------------------------
-
-#endif /* KOKKOS_PARALLELREDUCE_HPP */
 

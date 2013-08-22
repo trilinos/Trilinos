@@ -181,6 +181,9 @@ void parallel_reduce( const size_t work_count ,
   reduce.wait();
 }
 
+template< class DeviceType >
+class MultiFunctorParallelReduce ;
+
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------

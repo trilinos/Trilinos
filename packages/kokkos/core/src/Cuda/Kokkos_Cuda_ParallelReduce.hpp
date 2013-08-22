@@ -829,16 +829,13 @@ public:
 
 } // namespace Impl
 
-template < class ValueOper >
-class MultiFunctorParallelReduce< ValueOper , Cuda > {
+template <>
+class MultiFunctorParallelReduce< Cuda > {
 public:
   typedef  Cuda               device_type ;
   typedef  Cuda::size_type    size_type ;
 
 private:
-
-  typedef Impl::ReduceAdapter< ValueOper >    ReduceType ;
-  typedef Impl::CudaReduceShared< ReduceType::StaticValueSize > ReduceSharedType ;
 
   typedef Impl::CudaMultiFunctorParallelReduceMember< void > MemberType ;
   typedef std::vector< MemberType * > MemberVector ;
@@ -847,7 +844,7 @@ private:
 
 public:
 
-  explicit MultiFunctorParallelReduce( const ValueOper & f )
+  MultiFunctorParallelReduce()
     : m_member_functors()
     {}
 
@@ -898,10 +895,10 @@ public:
     }
   }
 
-  void output( typename ReduceType::pointer_type host_pointer ) const
+  void output( void * host_pointer ) const
   {
     if ( m_member_functors.size() ) {
-      m_member_functors[0]->output( host_pointer );
+      m_member_functors.back()->output( host_pointer );
     }
   }
 

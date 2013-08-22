@@ -142,8 +142,7 @@ public:
 
   void run_test( const size_type nwork , const size_type nfunctor )
   {
-    const reduce_type tmp ;
-    Kokkos::MultiFunctorParallelReduce< reduce_type > reduce_op( tmp );
+    Kokkos::MultiFunctorParallelReduce< DeviceType > reduce_op ;
 
     for ( size_type j = 0 ; j < nfunctor ; ) {
       const size_type work_beg = (size_t(nwork) * size_t(j) ) / nfunctor ;

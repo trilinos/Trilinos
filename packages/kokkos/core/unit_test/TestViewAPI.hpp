@@ -858,7 +858,7 @@ class TestViewAPI
 {
 public:
   typedef DeviceType        device ;
-  typedef Kokkos::Host host ;
+  typedef typename DeviceType::host_mirror_device_type host ;
 
   TestViewAPI()
   {

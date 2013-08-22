@@ -200,11 +200,11 @@ TEST_F( threads , view_remap )
   }}}}
 }
 
-#if 0
-
 TEST_F( threads, long_multi_reduce) {
   TestReduceMulti< long , Kokkos::Threads >( 1000000 , 7 );
 }
+
+#if 0
 
 //----------------------------------------------------------------------------
 

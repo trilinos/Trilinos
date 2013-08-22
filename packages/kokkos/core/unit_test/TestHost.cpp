@@ -60,7 +60,6 @@
 
 #include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
-#include <TestMultiReduce.hpp>
 
 namespace Test {
 
@@ -135,10 +134,6 @@ TEST_F( host, double_reduce_dynamic ) {
 
 TEST_F( host, long_reduce_dynamic_view ) {
   TestReduceDynamicView< long ,   Kokkos::Host >( 1000000 );
-}
-
-TEST_F( host, long_multi_reduce) {
-  TestReduceMulti< long , Kokkos::Host >( 1000000 , 7 );
 }
 
 TEST_F( host , view_remap )
