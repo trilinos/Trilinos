@@ -1642,9 +1642,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapReduce, T )
   Array< T > dimensions(numDims);
   Array<int> halos(numDims);
   Array<int> ghosts(numDims);
+  int localSize = 10;
   for (int axis = 0; axis < numDims; ++axis)
   {
-    dimensions[axis] = 10*axisCommSizes[axis];
+    dimensions[axis] = localSize*axisCommSizes[axis];
     halos[axis] = axis + 1;
     ghosts[axis] = axis + 2;
   }
@@ -1654,7 +1655,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapReduce, T )
   // single GlobalOrd constructor along each dimension
   for (int axis = 0; axis < numDims; ++axis)
   {
-    T myOrd = dimensions[axis] / 2;
+    T myOrd = ghosts[axis] + dimensions[axis] / 2;
     int newDims = (numDims > 1) ? numDims-1 : numDims;
     Slice bounds = mdMap.getGlobalRankBounds(axis);
     bool partOfSubMap = true;
@@ -1667,20 +1668,43 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapReduce, T )
       TEST_EQUALITY(reducedMdMap.getNumDims(), newDims);
       for (int newAxis = 0; newAxis < newDims; ++newAxis)
       {
+        int axisRank = reducedMdMap.getAxisRank(newAxis);
         if (numDims == 1)
         {
           TEST_EQUALITY_CONST(reducedMdMap.getGlobalDim(newAxis), 1);
           Slice bounds = reducedMdMap.getGlobalBounds(newAxis);
-          TEST_EQUALITY(bounds.start(), ghosts[newAxis]+myOrd  );
-          TEST_EQUALITY(bounds.stop() , ghosts[newAxis]+myOrd+1);
+          TEST_EQUALITY(bounds.start(), myOrd  );
+          TEST_EQUALITY(bounds.stop() , myOrd+1);
+          bounds = reducedMdMap.getGlobalRankBounds(newAxis);
+          TEST_EQUALITY(bounds.start(), myOrd  );
+          TEST_EQUALITY(bounds.stop() , myOrd+1);
+          TEST_EQUALITY_CONST(reducedMdMap.getLocalDim(newAxis), 1);
+          bounds = reducedMdMap.getLocalBounds(newAxis);
+          TEST_EQUALITY(bounds.start(), 0);
+          TEST_EQUALITY(bounds.stop(),  1);
         }
         else if (newAxis < axis)
         {
           TEST_EQUALITY(reducedMdMap.getGlobalDim(newAxis),
                         dimensions[newAxis]);
           Slice bounds = reducedMdMap.getGlobalBounds(newAxis);
-          TEST_EQUALITY(bounds.start(), ghosts[newAxis]                      );
-          TEST_EQUALITY(bounds.stop() , ghosts[newAxis]+dimensions[newAxis]-1);
+          TEST_EQUALITY(bounds.start(), ghosts[newAxis]                    );
+          TEST_EQUALITY(bounds.stop() , ghosts[newAxis]+dimensions[newAxis]);
+          bounds = reducedMdMap.getGlobalRankBounds(newAxis);
+          TEST_EQUALITY(bounds.start(), ghosts[newAxis]+localSize* axisRank   );
+          TEST_EQUALITY(bounds.stop() , ghosts[newAxis]+localSize*(axisRank+1));
+          TEST_EQUALITY(reducedMdMap.getLocalDim(newAxis), localSize);
+          bounds = reducedMdMap.getLocalBounds(newAxis);
+          if (reducedMdMap.getAxisRank(newAxis) == 0)
+          {
+            TEST_EQUALITY(bounds.start(), ghosts[newAxis]          );
+            TEST_EQUALITY(bounds.stop() , ghosts[newAxis]+localSize);
+          }
+          else
+          {
+            TEST_EQUALITY(bounds.start(), halos[newAxis]          );
+            TEST_EQUALITY(bounds.stop() , halos[newAxis]+localSize);
+          }
         }
         else
         {
@@ -1689,7 +1713,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapReduce, T )
           Slice bounds = reducedMdMap.getGlobalBounds(newAxis);
           TEST_EQUALITY(bounds.start(), ghosts[newAxis+1]);
           TEST_EQUALITY(bounds.stop() , ghosts[newAxis+1]+
-                        dimensions[newAxis+1]-1);
+                        dimensions[newAxis+1]);
+          bounds = reducedMdMap.getGlobalRankBounds(newAxis);
+          TEST_EQUALITY(bounds.start(),
+                        ghosts[newAxis+1]+localSize* axisRank   );
+          TEST_EQUALITY(bounds.stop() ,
+                        ghosts[newAxis+1]+localSize*(axisRank+1));
+          TEST_EQUALITY(reducedMdMap.getLocalDim(newAxis), localSize);
+          bounds = reducedMdMap.getLocalBounds(newAxis);
+          if (reducedMdMap.getAxisRank(newAxis) == 0)
+          {
+            TEST_EQUALITY(bounds.start(), ghosts[newAxis+1]          );
+            TEST_EQUALITY(bounds.stop() , ghosts[newAxis+1]+localSize);
+          }
+          else
+          {
+            TEST_EQUALITY(bounds.start(), halos[newAxis+1]          );
+            TEST_EQUALITY(bounds.stop() , halos[newAxis+1]+localSize);
+          }
         }
       }
     }
