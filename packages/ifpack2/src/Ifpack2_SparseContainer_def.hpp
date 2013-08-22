@@ -346,6 +346,8 @@ weightedApply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixG
   typedef Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> MV_mat;
   // Tpetra::MultiVector specialization corresponding to InverseType.
   typedef Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> MV_inv;
+  // Tpetra::Vector specialization corresponding to InverseType.
+  typedef Tpetra::Vector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> V_inv;
   MultiVectorLocalGatherScatter<MV_mat, MV_inv> mvgs;
   const size_t numVecs = X.getNumVectors ();
 
@@ -412,11 +414,20 @@ weightedApply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixG
   RCP<MV_inv> Y_local = Y_;
   mvgs.gather (*Y_local, Y, this->GID_, numRows_);
 
-  // Create a temporary vector X_scaled for diag(D) * X.
-  RCP<MV_inv> X_scaled = rcp (new MV_inv (Inverse_->getDomainMap (), numVecs));
+  // Apply the diagonal scaling D to the input X.  It's our choice
+  // whether the result has the original input Map of X, or the
+  // permuted subset Map of X_local.  If the latter, we also need to
+  // gather D into the permuted subset Map.  We choose the latter, to
+  // save memory and computation.  Thus, we do the following:
+  //
+  // 1. Gather D into a temporary vector D_local.
+  // 2. Create a temporary X_scaled to hold diag(D_local) * X_local.
+  // 3. Compute X_scaled := diag(D_loca) * X_local.
 
-  // X_scaled := diag(D) * X
-  X_scaled->elementWiseMultiply (STS::one (), D, *X_local, STS::zero ());
+  RCP<V_inv> D_local = rcp (new V_inv (Inverse_->getDomainMap ()));
+  mvgs.gather (*D_local, D, this->GID_, numRows_);
+  RCP<MV_inv> X_scaled = rcp (new MV_inv (Inverse_->getDomainMap (), numVecs));
+  X_scaled->elementWiseMultiply (STS::one (), *D_local, *X_local, STS::zero ());
 
   // Y_temp will hold the result of M^{-1}*X_scaled.  If beta == 0, we
   // can write the result of Inverse_->apply() directly to Y_local, so
@@ -432,8 +443,12 @@ weightedApply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixG
 
   // Apply the local operator: Y_temp := M^{-1} * X_scaled
   Inverse_->apply (*X_scaled, *Y_temp, mode);
-  // Y_local := beta * Y_local + alpha * diag(D) * Y_temp
-  Y_local->elementWiseMultiply (alpha, D, *Y_temp, beta);
+  // Y_local := beta * Y_local + alpha * diag(D_local) * Y_temp.
+  //
+  // Note that we still use the permuted subset scaling D_local here,
+  // because Y_temp has the same permuted subset Map.  That's good, in
+  // fact, because it's a subset: less data to read and multiply.
+  Y_local->elementWiseMultiply (alpha, *D_local, *Y_temp, beta);
 
   // Copy the permuted subset output vector Y_local into the original
   // output multivector Y.
