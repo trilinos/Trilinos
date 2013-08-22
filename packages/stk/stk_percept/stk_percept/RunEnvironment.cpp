@@ -11,7 +11,7 @@
 #include <fstream>
 
 #include <stdio.h>
-#include <stdlib.h>      
+#include <stdlib.h>
 
 #define USE_GETCWD 1
 #if USE_GETCWD
@@ -41,12 +41,12 @@
 
 #define STK_PERCEPT_DEBUG_INPUT_ARGS 0
 
-/// copied and edited from stk_util/use_cases/UseCaseEnvironment 
+/// copied and edited from stk_util/use_cases/UseCaseEnvironment
 
 namespace {
 
-  OptionMaskParser dw_option_mask("stk_percept diagnostic writer");
-  OptionMaskParser timer_option_mask("stk_percept timers");
+  OptionMaskParser dw_option_mask("Percept diagnostic writer");
+  OptionMaskParser timer_option_mask("Percept timers");
 
   //!stk::Bootstrap x(bootstrap);
 
@@ -161,9 +161,9 @@ namespace stk {
                                    int  *        argc,
                                    char ***      argv, bool debug)
       : ParallelMachineFinalize(false),
-      m_comm( stk::parallel_machine_init(argc, argv)),
-      m_need_to_finalize(true), m_debug(debug), m_processCommandLine_invoked(false), m_argv_new(0),m_argc(0),m_argv(0)
-      //,m_par_finalize(false)
+        m_comm( stk::parallel_machine_init(argc, argv)),
+        m_need_to_finalize(true), m_debug(debug), m_processCommandLine_invoked(false), m_argv_new(0),m_argc(0),m_argv(0)
+        //,m_par_finalize(false)
     {
       internal_initialize(*argc, *argv);
     }
@@ -252,15 +252,15 @@ namespace stk {
       stk::Bootstrap::bootstrap();
 
       if (0)
-      for (int i = 0; i < m_argc; ++i) {
-        const std::string s((m_argv)[i]);
-        if ( s == "-h" || s == "-help" || s == "--help") {
-          //std::cout << "Found Help:: Usage: " << (*argv)[0] << " [options...]" << std::endl;
-          printHelp();
-          std::exit(0);
-          return; 
+        for (int i = 0; i < m_argc; ++i) {
+          const std::string s((m_argv)[i]);
+          if ( s == "-h" || s == "-help" || s == "--help") {
+            //std::cout << "Found Help:: Usage: " << (*argv)[0] << " [options...]" << std::endl;
+            printHelp();
+            std::exit(0);
+            return;
+          }
         }
-      }
 
       Util::setRank(parallel_rank);
       stk::BroadcastArg b_arg(m_comm, argc, argv);
@@ -276,12 +276,29 @@ namespace stk {
       int parallel_rank = stk::parallel_machine_rank(m_comm);
       int parallel_size = stk::parallel_machine_size(m_comm);
 
-      unsigned failed = 0;
+      bool found_help = false;
+      if (!parallel_rank) {
+        for (int i = 0; i < argc; ++i) {
+          const std::string s(argv[i]);
+          if ( s == "-h" || s == "-help" || s == "--help") { // || s == "-H" || s == "-Help" || s == "--Help") {
+            found_help = true;
+            //std::cout << "Found Help:: Usage: " << (*argv)[0] << " [options...]" << std::endl;
+          }
+        }
+      }
 
       int success = processCLP(parallel_rank, argc, argv);
-      failed = success == 0 ? 0u : 1u;
 
-      if (failed)
+      if (found_help)
+        {
+          //printHelp();
+#if defined( STK_HAS_MPI )
+          MPI_Barrier( m_comm );
+          MPI_Finalize();
+#endif
+          std::exit(0);
+        }
+      if (!success)
         {
           std::cerr << std::endl;
           std::cout << std::endl;
@@ -366,7 +383,7 @@ namespace stk {
 
     void RunEnvironment::printHelp()
     {
-      std::cout << "Usage: stk_adapt_exe  [options...]" << std::endl;
+      //std::cout << "Usage: stk_adapt_exe  [options...]" << std::endl;
       clp.printHelpMessage("RunEnvironment",std::cout);
     }
 
@@ -384,21 +401,21 @@ namespace stk {
       Teuchos::oblackholestream blackhole;
       std::ostream &out = ( procRank == 0 ? std::cout : blackhole );
 
-        if (m_debug)
-          out << Teuchos::Teuchos_Version() << std::endl << std::endl;
-    
-        clp.setDocString("Run environment options" );
-        clp.setOption("help",         &help_opt,        "help flag");
-        clp.setOption("directory",    &directory_opt,   "working directory");
-        clp.setOption("d",            &directory_opt,   "working directory");
-        clp.setOption("output-log",   &output_log_opt,  "output log path");
-        clp.setOption("o",            &output_log_opt,  "output log path");
-        clp.setOption("pout",         &pout_opt,        "per-processor log file path");
-        clp.setOption("dout",         &dout_opt,        "diagnostic output stream one of: 'cout', 'cerr', 'out' or a file path");
-        clp.setOption("dw",           &dw_opt,          dw_option_mask.describe().c_str());
-        clp.setOption("timer",        &timer_opt,       timer_option_mask.describe().c_str());
-        clp.setOption("runtest",      &runtest_opt,     "runtest pid file");;
-        //("exit", "do nothing and then exit");
+      if (m_debug)
+        out << Teuchos::Teuchos_Version() << std::endl << std::endl;
+
+      //clp.setDocString("Run environment options" );
+      //clp.setOption("help",         &help_opt,        "help flag");
+      //clp.setOption("directory",    &directory_opt,   "working directory");
+      //clp.setOption("d",            &directory_opt,   "working directory");
+      clp.setOption("output-log",   &output_log_opt,  "output log path");
+      clp.setOption("o",            &output_log_opt,  "output log path");
+      clp.setOption("pout",         &pout_opt,        "per-processor log file path");
+      clp.setOption("dout",         &dout_opt,        "diagnostic output stream one of: 'cout', 'cerr', 'out' or a file path");
+      //clp.setOption("dw",           &dw_opt,          dw_option_mask.describe().c_str());
+      //clp.setOption("timer",        &timer_opt,       timer_option_mask.describe().c_str());
+      //clp.setOption("runtest",      &runtest_opt,     "runtest pid file");;
+      //("exit", "do nothing and then exit");
 
     }
 
@@ -409,7 +426,7 @@ namespace stk {
       std::ostream &out = ( procRank == 0 ? std::cout : blackhole );
 
       bool success = true;
-  
+
       try {
 
         /* There are also two methods that control the behavior of the
@@ -419,7 +436,7 @@ namespace stk {
         */
 
         clp.recogniseAllOptions(true);
-  
+
         /* Second, by default, if the parser finds a command line option it
            doesn't recognize or finds the --help option, it will throw an
            std::exception.  If you want prevent a command line processor from
@@ -491,9 +508,9 @@ namespace stk {
 
       } // try
       TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);
-  
+
       if(success && m_debug)
-        out << "\nEnd Result: TEST PASSED" << std::endl;	
+        out << "\nEnd Result: TEST PASSED" << std::endl;
 
       return ( success ? 0 : 1 );
     }
@@ -622,7 +639,7 @@ namespace stk {
               perror("Problems with pipe");
               exit(1);
             }
-	 
+
           while ( fgets( line, sizeof line, fpipe))
             {
               //printf("%s", line);
@@ -684,7 +701,7 @@ namespace stk {
           perror("Problems with pipe");
           exit(1);
         }
-	 
+
       while ( fgets( line, sizeof line, fpipe))
         {
           //printf("%s", line);
@@ -694,7 +711,7 @@ namespace stk {
     }
 
     /**
-     * 
+     *
      * input fullpath=meshFilename = some file name with a path...
      *
      * output: fullpath = /some/file/path/ending/with/slash/
@@ -737,7 +754,7 @@ namespace stk {
         {
           fullpath = fullpath.substr(0,found);
         }
-      if(fullpath == ".") 
+      if(fullpath == ".")
         fullpath = "./";
       else
         fullpath += "/";

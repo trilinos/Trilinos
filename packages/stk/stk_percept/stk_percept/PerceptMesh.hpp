@@ -928,44 +928,6 @@ namespace stk {
       }
     };
 
-    class MeshTransformer : public GenericFunction
-    {
-      Math::Matrix m_rotMat;
-    public:
-
-      MeshTransformer(){}
-      MeshTransformer(Math::Matrix& m) : m_rotMat(m) {}
-      virtual void operator()(MDArray& domain, MDArray& codomain, double time_value_optional=0.0)
-      {
-        double x = domain(0);
-        double y = domain(1);
-        double z = (domain.dimension(0) == 2 ?  0 : domain(2));
-        Math::Vector v;
-        v(0)=x;
-        v(1)=y;
-        v(2)=z;
-        v = m_rotMat * v;
-        codomain(0)=v(0);
-        codomain(1)=v(1);
-        if (codomain.dimension(0) == 3 ) codomain(2)= v(2);
-      }
-
-    };
-
-//     template<>
-//     const CellTopologyData *
-//     PerceptMesh::get_cell_topology(const mesh::Part& part) ;
-
-
-
-#if 0
-		inline
-		std::string &operator<<(std::string& out, const char *str)
-		{
-			return out.append(str);
-		}
-#endif
-
     // static
     template<class ArrayType>
     void PerceptMesh::fillCellNodes(const stk::mesh::BulkData & bulkD, const mesh::Bucket &bucket,

@@ -53,6 +53,7 @@
 #define ALLOW_MEM_TEST 1
 #define DEBUG_ADAPT_MAIN 0
 
+#include "AdaptMain.hpp"
 namespace stk {
 
   namespace adapt {
@@ -477,7 +478,7 @@ namespace stk {
       for (int i = 1; i < argc; i++)
         {
           std::string av(argv[i]);
-          if (av == "--help") continue;
+          if (av == "--help" || av == "--Help" || av == "-h" || av == "--h" || av == "-H" || av == "--H") continue;
           size_t equal_pos = av.find("=",0);
           if (equal_pos == std::string::npos)
             {
@@ -520,6 +521,14 @@ namespace stk {
       unsigned p_rank = stk::parallel_machine_rank(run_environment.m_comm);
       unsigned p_size = stk::parallel_machine_size(run_environment.m_comm);
 
+      bool found_Help = false;
+      for (int i = 0; i < argc; ++i) {
+        const std::string s(argv[i]);
+        if ( s == "-H" || s == "-Help" || s == "--Help" || s == "--H") {
+            found_Help = true;
+            //std::cout << "Found Help:: Usage: " << (*argv)[0] << " [options...]" << std::endl;
+          }
+      }
 
       std::string options_description_desc = "stk_adapt options";
 
@@ -530,8 +539,8 @@ namespace stk {
       std::string block_name_inc = "";
       std::string block_name_exc = "";
 
-      // for Salinas 
-#if defined(STK_BUILT_IN_SIERRA) 
+      // for Salinas
+#if defined(STK_BUILT_IN_SIERRA)
       std::string rbar_blocks= "";
 #endif
       // for Salinas and other codes
@@ -591,7 +600,7 @@ namespace stk {
 
       //  Hex8_Tet4_24 (default), Quad4_Quad4_4, Qu
       std::string block_name_desc =
-        "block name(s) to convert: there are 4 options\n"
+        "block name(s) to convert: there are several options\n"
         "  (1) empty string or option not specified: convert all blocks in the input mesh file\n"
         "  (2) file:my_filename.my_ext (e.g. file:filelist.dat) which will read input block names\n"
         "            from the given file\n"
@@ -600,7 +609,7 @@ namespace stk {
         "  (5) -block_3,-block_5 to exclude blocks from those included (all blocks or include-only blocks), minus sign is mandatory\n"
         "  (6) block_1..block_10 include the range of blocks #1 to #10 \n"
         "  (7) any combination of [+] and - options and range (..) option can be specified \n"
-        "Note: wherever you specify block_# this can be replaced with just the #, e.g. \"1,2,4,5\" ";
+        "Note: wherever you specify block_# this can be replaced with just the #, e.g. \"1,2,4,5\"";
 
       std::string convert_options = UniformRefinerPatternBase::s_convert_options;
       std::string refine_options  = UniformRefinerPatternBase::s_refine_options;
@@ -623,55 +632,60 @@ namespace stk {
       int help = 0;
 
       run_environment.clp.setOption("help"                     , &help                     , "print this usage message");
-      run_environment.clp.setOption("convert"                  , &convert                  , convert_options.c_str());
-      run_environment.clp.setOption("refine"                   , &refine                   , refine_options.c_str());
-      run_environment.clp.setOption("enrich"                   , &enrich                   , enrich_options.c_str());
+
+      // files
       run_environment.clp.setOption("input_mesh"               , &input_mesh               , "input mesh name");
       run_environment.clp.setOption("output_mesh"              , &output_mesh              , "output mesh name");
+      run_environment.clp.setOption("load_balance"             , &load_balance             , "load balance (decomp/slice/spread) input mesh file");
 
-      run_environment.clp.setOption("query_only"               , &query_only               , "query only, no refinement done");
-      run_environment.clp.setOption("progress_meter"           , &progress_meter           , "progress meter on or off");
-      run_environment.clp.setOption("smooth_geometry"          , &smooth_geometry          , "smooth geometry - moves nodes after geometry projection to try to avoid bad meshes");
-      run_environment.clp.setOption("smooth_use_reference_mesh", &smooth_use_reference_mesh, "for most cases, set to 1 (default) - can be used for smoothing with no reference mesh");
-      run_environment.clp.setOption("ioss_read_options"        , &ioss_read_options        , 
-                                    "options to IOSS/Exodus for e.g. large files | auto-decomp | auto-join\n"
-                                    "to use, set the string to a combination of {\"large\", \"auto-decomp:yes\",  \"auto-decomp:no\",  \"auto-join:yes\", \"auto-join:no\" }\n"
-                                    "   e.g. \"large,auto-decomp:yes\" \n"
-                                    " Note: set options for read and/or write (ioss_write_options)");
-      run_environment.clp.setOption("ioss_write_options"       , &ioss_write_options       , "see ioss_read_options");
-      run_environment.clp.setOption("fix_all_block_boundaries" , &fix_all_block_boundaries , "when smoothing without geometry, fix all inner and outer block boundaries");
-      run_environment.clp.setOption("snap_geometry"            , &snap_geometry            , "project nodes to geometry - used for internal testing only");
-      run_environment.clp.setOption("internal_test"            , &internal_test            , "run the specified internal test");
-#if !defined(__IBMCPP__) 
+      // operation type
+      run_environment.clp.setOption("refine"                   , &refine                   , refine_options.c_str());
+      run_environment.clp.setOption("number_refines"           , &number_refines           , "number of refinement passes");
+      run_environment.clp.setOption("convert"                  , &convert                  , convert_options.c_str());
+      run_environment.clp.setOption("enrich"                   , &enrich                   , enrich_options.c_str());
+
+      // spacing
+#if !defined(__IBMCPP__)
       run_environment.clp.setOption("respect_spacing"          , &respect_spacing          , "respect the initial mesh spacing during refinement");
 #endif
-      run_environment.clp.setOption("smooth_surfaces"          , &smooth_surfaces          , "allow nodes to move on surfaces when smoothing");
-      run_environment.clp.setOption("remove_geometry_blocks"   , &remove_geometry_blocks   , "remove geometry blocks from output Exodus file after refinement/geometry projection");
-      run_environment.clp.setOption("dump_geometry_file"       , &dump_geometry_file       , "debug print geometry (OpenNURBS 3dm) file contents");
+
+      // query/control
       run_environment.clp.setOption("verify_meshes"            , &verify_meshes            , "verify positive volumes for input and output meshes");
+      run_environment.clp.setOption("query_only"               , &query_only               , "query only, no refinement done");
+      run_environment.clp.setOption("progress_meter"           , &progress_meter           , "progress meter on or off");
+      run_environment.clp.setOption("print_info"               , &print_info               , ">= 0  (higher values print more info)");
+      run_environment.clp.setOption("print_memory_usage"       , &print_memory_usage       , "print memory usage");
+      run_environment.clp.setOption("estimate_memory_usage"    , &estimate_memory_usage    ,
+                                    " use internal or memory_multipliers_file values to estimate memory needed.\n"
+                                    "   if query_only=1, use multipliers from memory_multipliers_file to estimate memory to be used in refinements, if memory_multipliers_file is set.\n"
+                                    "   if query_only=1, and no memory_multipliers_file is set, use internal values for memory_multipliers.\n"
+                                    "   If query_only=0, print actual memory data and estimates.");
+
+      // geometry
+      run_environment.clp.setOption("input_geometry"           , &input_geometry           , "input geometry name");
+      run_environment.clp.setOption("smooth_geometry"          , &smooth_geometry          , "smooth geometry - moves nodes after geometry projection to try to avoid bad meshes");
+      run_environment.clp.setOption("smooth_surfaces"          , &smooth_surfaces          , "allow nodes to move on surfaces when smoothing");
+      run_environment.clp.setOption("dump_geometry_file"       , &dump_geometry_file       , "debug print geometry (OpenNURBS 3dm) file contents");
+
+      // smoothing
+      run_environment.clp.setOption("smooth_use_reference_mesh", &smooth_use_reference_mesh, "for most cases, set to 1 (default) - can be used for smoothing with no reference mesh");
+      run_environment.clp.setOption("fix_all_block_boundaries" , &fix_all_block_boundaries , "when smoothing without geometry, fix all inner and outer block boundaries");
+
+      // mesh query
       run_environment.clp.setOption("compute_hmesh"            , &compute_hmesh            , "compute mesh parameter using method eigens|edges");
       run_environment.clp.setOption("print_hmesh_surface_normal"  , &print_hmesh_surface_normal            , "prints a table of normal mesh spacing at each surface");
-      run_environment.clp.setOption("sync_io_regions"          , &sync_io_regions          , "synchronize input/output region's Exodus id's");
-      run_environment.clp.setOption("save_internal_fields"     , &save_internal_fields     , "save internally created fields to the output file");
-      run_environment.clp.setOption("delete_parents"           , &delete_parents           , "DEBUG: delete parents from a nested, multi-refine mesh - used for debugging");
 
-      run_environment.clp.setOption("number_refines"           , &number_refines           , "number of refinement passes");
-      run_environment.clp.setOption("blocks"               , &block_name_inc           , block_name_desc_inc.c_str());
-#if defined(STK_BUILT_IN_SIERRA) 
-      run_environment.clp.setOption("rbar_blocks"              , &rbar_blocks              , "list of blocks to treat in special Salinas fashion for RBARs - see block_name description for format.");
-#endif
-      //run_environment.clp.setOption("exclude"                  , &block_name_exc           , block_name_desc_exc.c_str());
-      run_environment.clp.setOption("print_info"               , &print_info               , ">= 0  (higher values print more info)");
-      run_environment.clp.setOption("load_balance"             , &load_balance             , " load balance (slice/spread) input mesh file");
+      // subsetting
+      run_environment.clp.setOption("blocks"                   , &block_name_inc           , block_name_desc_inc.c_str());
 
-
-      run_environment.clp.setOption("histogram_file_root"      , &histograms_root          , " if cout, use screen, else use this as the root name of histogram files");
+      // histograms
 #if STK_ADAPT_HAVE_YAML_CPP
-
       run_environment.clp.setOption("histogram"  , &histogram_options  ,
-                                    "  either a single filename, which reads further commands from that file, or\n"
-                                    "  a string of the form \"{ fields: [field_1,...,field_n], file_root: my_histograms, mesh: [edge_length, quality_edge, quality_vol_edge_ratio, volume], time: 0.1, step: 2 }\" \n"
-                                    "  where field_i are field names to get stats for, file_root is a root filename, and mesh: gives options for mesh quality histograms.\n"
+                                    "\n  either a single filename, which reads further commands in YAML format (yaml.org) from that file, or\n"
+                                    "  a string of the form \"{ fields: [field_1,...,field_n], file_root: my_histograms, \n"
+                                    "     mesh: [edge_length, quality_edge, quality_vol_edge_ratio, volume], time: 0.1, step: 2 }\" \n"
+                                    "  where field_i are field names to get stats for, file_root is a root filename, \n"
+                                    "  and mesh: gives options for mesh quality histograms.\n"
                                     "  time: or step: options allow specifying which timestep in the database should be used.\n"
                                     "  If read from a file, file format is like this: \n"
                                     "    fields:\n"
@@ -683,26 +697,48 @@ namespace stk {
                                     "      - edge_length\n"
                                     "      - quality_edge\n"
                                     "      - quality_vol_edge_ratio\n"
-                                    "      - volume\n");
+                                    "      - volume");
 #endif
+      run_environment.clp.setOption("histogram_file_root"      , &histograms_root          , " if cout, use screen, else use this as the root name of histogram files.");
+
+      // ioss options
+      run_environment.clp.setOption("ioss_read_options"        , &ioss_read_options        ,
+                                    "options to IOSS/Exodus for e.g. large files | auto-decomp | auto-join\n"
+                                    "to use, set the string to a combination of \n"
+                                    "{\"large\", \"auto-decomp:yes\",  \"auto-decomp:no\", \n"
+                                    "   \"auto-join:yes\", \"auto-join:no\" }\n"
+                                    "   e.g. \"large,auto-decomp:yes\" \n"
+                                    " Note: set options for read and/or write (ioss_write_options)");
+      run_environment.clp.setOption("ioss_write_options"       , &ioss_write_options       , "see ioss_read_options");
+
+      // debugging/advanced
+      run_environment.clp.setOption("proc_rank_field"          , &proc_rank_field          , " add an element field to show processor rank");
+      run_environment.clp.setOption("remove_original_elements" , &remove_original_elements , " remove original (converted) elements (default=true)");
+      run_environment.clp.setOption("remove_geometry_blocks"   , &remove_geometry_blocks   , "remove geometry blocks from output Exodus file after refinement/geometry projection");
+
+      // internal
+      run_environment.clp.setOption("delete_parents"           , &delete_parents           , "DEBUG: delete parents from a nested, multi-refine mesh - used for debugging");
+      run_environment.clp.setOption("snap_geometry"            , &snap_geometry            , "project nodes to geometry - used for internal testing only");
+      run_environment.clp.setOption("internal_test"            , &internal_test            , "run the specified internal test");
+      run_environment.clp.setOption("sync_io_regions"          , &sync_io_regions          , "synchronize input/output region's Exodus id's");
+      run_environment.clp.setOption("save_internal_fields"     , &save_internal_fields     , "save internally created fields to the output file");
+
+#if defined(STK_BUILT_IN_SIERRA)
+      // Salinas
+      run_environment.clp.setOption("rbar_blocks"              , &rbar_blocks              , "list of blocks to treat in special Salinas fashion for RBARs - see block_name description for format.");
+#endif
+      //run_environment.clp.setOption("exclude"                  , &block_name_exc           , block_name_desc_exc.c_str());
 
       run_environment.clp.setOption("memory_multipliers_file"  , &memory_multipliers_file  ,
-                                    "  filename with 3 space-separated entries, with estimate for bytes-per-hex8 tet4 and nodes, e.g. 300 280 200\n"
+                                    "[experimental]  filename with 3 space-separated entries, with estimate for bytes-per-hex8 tet4 and nodes, e.g. 300 280 200\n"
                                     "  If not set, use internal estimates for memory multipliers.");
-      run_environment.clp.setOption("estimate_memory_usage"    , &estimate_memory_usage    ,
-                                    " use internal or memory_multipliers_file values to estimate memory needed.\n"
-                                    "   if query_only=1, use multipliers from memory_multipliers_file to estimate memory to be used in refinements, if memory_multipliers_file is set.\n"
-                                    "   if query_only=1, and no memory_multipliers_file is set, use internal values for memory_multipliers.\n"
-                                    "   If query_only=0, print actual memory data and estimates.");
 
 #if ALLOW_MEM_TEST
       run_environment.clp.setOption("test_memory_elements"     , &test_memory_elements     , " give a number of elements");
       run_environment.clp.setOption("test_memory_nodes"        , &test_memory_nodes        , " give a number of nodes");
 #endif
-      run_environment.clp.setOption("proc_rank_field"          , &proc_rank_field          , " add an element field to show processor rank");
-      run_environment.clp.setOption("remove_original_elements" , &remove_original_elements , " remove original (converted) elements (default=true)");
-      run_environment.clp.setOption("serialized_io_group_size" , &serialized_io_group_size , " set to non-zero to use this many i/o groups to minimize disk contention");
-      run_environment.clp.setOption("input_geometry"           , &input_geometry           , "input geometry name");
+      run_environment.clp.setOption("serialized_io_group_size" , &serialized_io_group_size , "[experimental] set to non-zero to use this many i/o groups to minimize disk contention");
+
       run_environment.clp.setOption("streaming_size"           , &streaming_size      ,
                                     "INTERNAL use only by python script streaming refinement interface:\n"
                                     "  run in streaming mode - this number specifies how many virtual procs the mesh is split into\n"
@@ -711,17 +747,43 @@ namespace stk {
                                     "INTERNAL use only by python script streaming refinement interface:\n"
                                     "  run in streaming mode - this number specifies which virtual proc this is.");
       run_environment.clp.setOption("streaming_pass_start"     , &streaming_pass_start           ,
-                                    "INTERNAL use only by python script streaming refinement interface:\n");
+                                    "INTERNAL use only by python script streaming refinement interface:");
       run_environment.clp.setOption("streaming_pass_end"       , &streaming_pass_end           ,
-                                    "INTERNAL use only by python script streaming refinement interface:\n");
+                                    "INTERNAL use only by python script streaming refinement interface:");
       run_environment.clp.setOption("streaming_W"              , &streaming_W           ,
-                                    "INTERNAL use only by python script streaming refinement interface:\n");
+                                    "INTERNAL use only by python script streaming refinement interface:");
       run_environment.clp.setOption("streaming_iW"             , &streaming_iW          ,
-                                    "INTERNAL use only by python script streaming refinement interface:\n");
-      run_environment.clp.setOption("print_memory_usage"       , &print_memory_usage       , "print memory usage");
+                                    "INTERNAL use only by python script streaming refinement interface:");
+
+      // Detailed doc
+      std::string docString = s_docString;
+
+#ifdef STK_BUILT_IN_SIERRA
+      std::string docStringSalinas =
+        "Salinas Special Command --rbar_blocks\n"
+        "\n"
+        "Percept can refine a mesh that contains Salinas RBAR elements (beams connecting nodes of one surface\n"
+        "to another, e.g. to model a joint or spring).  The new mesh will contain RBARs connecting new nodes\n"
+        "on one surface to new nodes on the other.  Specify a list of block names that contain the RBAR\n"
+        "elements (see the --blocks command for format).\n";
+
+      docString = docString + docStringSalinas;
+#endif
+
+      if (!found_Help) docString = "";
+      run_environment.clp.setDocString(docString.c_str());
 
       int err_clp = run_environment.processCommandLine();
       if (err_clp) return err_clp;
+
+      if (found_Help) {
+        run_environment.printHelp();
+#if defined( STK_HAS_MPI )
+          MPI_Barrier( run_environment.m_comm );
+          MPI_Finalize();
+#endif
+          std::exit(0);
+      }
 
       std::string histogram_basic_options = "{file_root: "+histograms_root + ", mesh: [edge_length, quality_edge, quality_vol_edge_ratio, volume] }";
       int result = 0;
@@ -734,11 +796,11 @@ namespace stk {
 
       if (serialized_io_group_size)
       {
-        std::cout << "Info: found non-zero serialized_io_group_size on command-line= " 
+        std::cout << "Info: found non-zero serialized_io_group_size on command-line= "
                               << serialized_io_group_size << std::endl;
         if (serialized_io_group_size < 0 || serialized_io_group_size > (int)p_size || (int)p_size % serialized_io_group_size != 0)
           {
-            if (p_rank==0) 
+            if (p_rank==0)
               std::cout << "Error: Job requested serialized_io_group_size of " << serialized_io_group_size
                    << " which is incompatible with MPI size= " << p_size
                    << "... shutting down." << std::endl;
@@ -772,7 +834,7 @@ namespace stk {
       if (help
           || input_mesh.length() == 0
           || output_mesh.length() == 0
-          || (convert.length() == 0 && refine.length()==0 && enrich.length()==0)
+          || ((convert.length() == 0 && refine.length()==0 && enrich.length()==0) && number_refines)
           //||  not (convert == "Hex8_Tet4_24" || convert == "Quad4_Quad4_4" || convert == "Quad4_Tri3_6")
           )
         {
@@ -867,7 +929,7 @@ namespace stk {
           std::string mesh_name = Ioss::Utils::decode_filename(input_mesh_save, 0, m_M);
           eMesh.open(mesh_name);
           if (smooth_geometry == 1) eMesh.add_coordinate_state_fields();
-#if !defined(__IBMCPP__) 
+#if !defined(__IBMCPP__)
           if (respect_spacing == 1) {
             eMesh.set_respect_spacing(true);
             eMesh.add_spacing_fields();
@@ -999,7 +1061,7 @@ namespace stk {
 
                     if (do_normal_pass)
                       {
-                        if (ioss_read_options.length() || ioss_write_options.length()) 
+                        if (ioss_read_options.length() || ioss_write_options.length())
                           {
                             if (!eMesh.get_rank())
                               {
@@ -1014,7 +1076,7 @@ namespace stk {
                         eMesh.open(input_mesh);
                         eMesh.set_save_internal_fields(save_internal_fields);
                         if (smooth_geometry == 1) eMesh.add_coordinate_state_fields();
-#if !defined(__IBMCPP__) 
+#if !defined(__IBMCPP__)
                         if (respect_spacing == 1) {
                           eMesh.set_respect_spacing(true);
                           eMesh.add_spacing_fields();
@@ -1033,7 +1095,7 @@ namespace stk {
                             // FIXME move this next block of code to a method on UniformRefiner
                             BlockNamesType block_names(stk::percept::EntityRankEnd+1u);
 
-#if defined(STK_BUILT_IN_SIERRA) 
+#if defined(STK_BUILT_IN_SIERRA)
                             if (rbar_blocks.length())
                               {
                                 BlockNamesType rbar_names(stk::percept::EntityRankEnd+1u);
@@ -1049,7 +1111,7 @@ namespace stk {
                                     Util::replace(srb, "+", "-");
                                     block_name_inc = block_name_inc+(block_name_inc.length()?",":"")+srb;
                                   }
-                                if (!eMesh.get_rank()) 
+                                if (!eMesh.get_rank())
                                   std::cout << "rbar: original block_name option = " << block_name_inc_orig << " new = " << block_name_inc << std::endl;
                               }
 #endif
@@ -1065,7 +1127,7 @@ namespace stk {
                                     eMesh.close();
                                     eMesh.open(input_mesh);
                                     if (smooth_geometry == 1) eMesh.add_coordinate_state_fields();
-#if !defined(__IBMCPP__) 
+#if !defined(__IBMCPP__)
                                     if (respect_spacing == 1) {
                                       eMesh.set_respect_spacing(true);
                                       eMesh.add_spacing_fields();
@@ -1131,7 +1193,7 @@ namespace stk {
 
                         // print message about rbars being treated and beams being refined
 //                         if (!eMesh.get_rank())
-//                           std::cout << "P[" << eMesh.get_rank() << "] Adding rbar elements as requested by user for block[" << ipart << "]= " << part.name() 
+//                           std::cout << "P[" << eMesh.get_rank() << "] Adding rbar elements as requested by user for block[" << ipart << "]= " << part.name()
 //                                     << "\n  NOTE:  This block is automatically ignored during refinement."
 //                                     << std::endl;
 
@@ -1237,7 +1299,7 @@ namespace stk {
                             eMesh.print_hmesh_surface_normal(msg, std::cout);
                             eMesh.print_hmesh_surface_normal(msg, stk::percept::pout());
                           }
-#if !defined(__IBMCPP__) 
+#if !defined(__IBMCPP__)
                         if (respect_spacing)
                           {
                             SpacingFieldUtil sfu(eMesh);
@@ -1323,7 +1385,7 @@ namespace stk {
                             breaker.setQueryPassOnly(query_only == 1);
                             breaker.setDoProgressMeter(progress_meter == 1 && 0 == p_rank);
                             //breaker.setIgnoreSideSets(true);
-#if defined(STK_BUILT_IN_SIERRA) 
+#if defined(STK_BUILT_IN_SIERRA)
                             if (rbar_blocks.length())
                               {
                                 BlockNamesType rbar_names(stk::percept::EntityRankEnd+1u);
