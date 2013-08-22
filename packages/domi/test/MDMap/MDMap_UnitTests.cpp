@@ -1663,28 +1663,39 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapReduce, T )
     MDMap<T> reducedMdMap(mdMap, axis, myOrd);
     if (partOfSubMap)
     {
+      TEST_ASSERT(reducedMdMap.onSubcommunicator());
       TEST_EQUALITY(reducedMdMap.getNumDims(), newDims);
       for (int newAxis = 0; newAxis < newDims; ++newAxis)
       {
         if (numDims == 1)
         {
           TEST_EQUALITY_CONST(reducedMdMap.getGlobalDim(newAxis), 1);
+          Slice bounds = reducedMdMap.getGlobalBounds(newAxis);
+          TEST_EQUALITY(bounds.start(), ghosts[newAxis]+myOrd  );
+          TEST_EQUALITY(bounds.stop() , ghosts[newAxis]+myOrd+1);
         }
         else if (newAxis < axis)
         {
           TEST_EQUALITY(reducedMdMap.getGlobalDim(newAxis),
                         dimensions[newAxis]);
+          Slice bounds = reducedMdMap.getGlobalBounds(newAxis);
+          TEST_EQUALITY(bounds.start(), ghosts[newAxis]                      );
+          TEST_EQUALITY(bounds.stop() , ghosts[newAxis]+dimensions[newAxis]-1);
         }
         else
         {
           TEST_EQUALITY(reducedMdMap.getGlobalDim(newAxis),
                         dimensions[newAxis+1]);
+          Slice bounds = reducedMdMap.getGlobalBounds(newAxis);
+          TEST_EQUALITY(bounds.start(), ghosts[newAxis+1]);
+          TEST_EQUALITY(bounds.stop() , ghosts[newAxis+1]+
+                        dimensions[newAxis+1]-1);
         }
       }
     }
     else
     {
-      TEST_EQUALITY_CONST(reducedMdMap.onSubcommunicator(), false);
+      TEST_ASSERT(not reducedMdMap.onSubcommunicator());
     }
   }
 }
@@ -1770,7 +1781,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapPeriodic, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapPeriodic, T )
 
 UNIT_TEST_GROUP(int)
-#if 1
+#if 0
 UNIT_TEST_GROUP(long)
 #endif
 
