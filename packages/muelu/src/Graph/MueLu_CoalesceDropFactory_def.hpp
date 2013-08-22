@@ -260,7 +260,6 @@ namespace MueLu {
           // Case 3:  Multiple DOF/node problem without dropping
 
           graphType="amalgamated";
-          GetOStream(Runtime0,0) << "blocksize=" << A->GetFixedBlockSize() << ", threshold=" << threshold << std::endl;
 
           RCP<const Map> uniqueMap, nonUniqueMap;
           AmalgamateMap(A->GetFixedBlockSize(),*(A->getRowMap()), uniqueMap);
