@@ -245,10 +245,6 @@ int main(int argc, char *argv[]) {
 
   RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
 
-  // By default, we use Extreme. However, typically the xml file contains verbosity parameter
-  // which is used instead
-  H->SetDefaultVerbLevel(MueLu::Extreme);
-
   H->GetLevel(0)->Set("A",           A);
   H->GetLevel(0)->Set("Nullspace",   nullspace);
   H->GetLevel(0)->Set("Coordinates", coordinates);
@@ -257,10 +253,6 @@ int main(int argc, char *argv[]) {
 
   comm->barrier();
   tm = Teuchos::null;
-
-  // Print out the hierarchy stats. We should not need this line, but for some reason the
-  // print out in the hierarchy construction does not work.
-  H->print(fancyout);
 
   // =========================================================================
   // System solution (Ax = b)

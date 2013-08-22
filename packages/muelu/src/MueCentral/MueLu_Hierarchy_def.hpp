@@ -313,7 +313,7 @@ namespace MueLu {
     manager.Clean();
 
     std::ostringstream ss;
-    ss << print(ss, GetVerbLevel());
+    print(ss, GetVerbLevel());
     GetOStream(Statistics0,0) << ss.str();
 
   } // Setup()
@@ -551,7 +551,7 @@ namespace MueLu {
     MUELU_DESCRIBE; //macro that defines out0
 
     std::ostringstream ss;
-    ss << print(ss, verbLevel);
+    print(ss, verbLevel);
 
     out0 << ss.str();
 
@@ -564,7 +564,7 @@ namespace MueLu {
 
   // NOTE: at some point this should be replaced by a friend operator <<
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::ostream& Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(std::ostream& out, const VerbLevel verbLevel) const {
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(std::ostream& out, const VerbLevel verbLevel) const {
     if (verbLevel & Statistics0) {
       out << std::endl << "--------------------------------------------------------------------------------"
            << std::endl << "---                            Multigrid Summary                             ---"
@@ -638,13 +638,12 @@ namespace MueLu {
     }
 
 
-    if (verbLevel & Statistics1) {
+    if (verbLevel & Statistics2) {
       Teuchos::OSTab tab2(out);
       for (int i = 0; i < GetNumLevels(); ++i)
         Levels_[i]->print(out, verbLevel);
     }
 
-    return out;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

@@ -113,8 +113,6 @@ namespace MueLu {
     } else {
       // Ac already built by the load balancing process and no load balancing needed
       GetOStream(Warnings0, 0) << "No rebalancing" << std::endl;
-      GetOStream(Warnings0, 0) << "Jamming A into Level " << coarseLevel.GetLevelID() << " w/ generating factory "
-                               << this << std::endl;
       Set(coarseLevel, "A", originalAc);
     }
 
