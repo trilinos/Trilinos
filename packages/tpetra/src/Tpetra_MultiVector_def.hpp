@@ -262,6 +262,24 @@ namespace Tpetra {
     }
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+               const Teuchos::ArrayRCP<Scalar>& data,
+               const size_t LDA,
+               const size_t numVecs) :
+    DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map),
+    lclMV_ (map->getNode ()),
+    releaseViewsRaisedEfficiencyWarning_ (false),
+    createViewsRaisedEfficiencyWarning_ (false),
+    createViewsNonConstRaisedEfficiencyWarning_ (false)
+  {
+    const char tfecfFuncName[] = "MultiVector(map,data,LDA,numVecs)";
+    const size_t numRows = this->getLocalLength ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < numRows, std::runtime_error,
+      ": LDA = " << LDA << " < numRows = " << numRows << ".");
+    MVT::initializeValues (lclMV_, numRows, numVecs, data, LDA);
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::

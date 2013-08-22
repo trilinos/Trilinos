@@ -54,6 +54,54 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 
+namespace { // anonymous
+
+template<class MV_in, class MV_out>
+class MultiVectorLocalGatherScatter {
+public:
+  void
+  gather (MV_out& X_out,
+          const MV_in& X_in,
+          const std::vector<typename MV_in::local_ordinal_type>& perm,
+          const size_t numRows) const
+  {
+    using Teuchos::ArrayRCP;
+
+    const size_t numVecs = X_in.getNumVectors ();
+    for (size_t j = 0; j < numVecs; ++j) {
+      ArrayRCP<const typename MV_in::scalar_type> X_in_j = X_in.getData (j);
+      ArrayRCP<typename MV_out::scalar_type> X_out_j = X_out.getDataNonConst (j);
+
+      for (size_t i = 0; i < numRows; ++i) {
+        const size_t i_perm = perm[i];
+        X_out_j[i] = X_in_j[i_perm];
+      }
+    }
+  }
+
+  void
+  scatter (MV_in& X_in,
+           const MV_out& X_out,
+           const std::vector<typename MV_in::local_ordinal_type>& perm,
+           const size_t numRows) const
+  {
+    using Teuchos::ArrayRCP;
+
+    const size_t numVecs = X_in.getNumVectors ();
+    for (size_t j = 0; j < numVecs; ++j) {
+      ArrayRCP<typename MV_in::scalar_type> X_in_j = X_in.getDataNonConst (j);
+      ArrayRCP<const typename MV_out::scalar_type> X_out_j = X_out.getData (j);
+
+      for (size_t i = 0; i < numRows; ++i) {
+        const size_t i_perm = perm[i];
+        X_in_j[i_perm] = X_out_j[i];
+      }
+    }
+  }
+};
+
+} // namespace (anonymous)
+
 namespace Ifpack2 {
 
 /// \class SparseContainer
@@ -227,6 +275,47 @@ private:
   //! Extract the submatrices identified by the ID set int ID().
   virtual void extract(const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> >& Matrix);
 
+  /// \brief Post-permutation, post-view version of apply().
+  ///
+  /// apply() first does any necessary subset permutation and view
+  /// creation (or copying data), then calls this method to solve the
+  /// linear system with the diagonal block.
+  ///
+  /// \param X [in] Subset permutation of the input X of apply(),
+  ///   suitable for the first argument of Inverse_->apply().
+  ///
+  /// \param Y [in] Subset permutation of the input/output Y of apply(),
+  ///   suitable for the second argument of Inverse_->apply().
+  void
+  applyImpl (const Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode>& X,
+             Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode>& Y,
+             Teuchos::ETransp mode,
+             InverseScalar alpha,
+             InverseScalar beta) const;
+
+  /// \brief Return a read-only local "view" of the input Tpetra::MultiVector X_in.
+  ///
+  /// The "view" is either a true view of X_in's data, or a copy.  In
+  /// either case, its Map has a local communicator (that is,
+  /// <tt>MPI_COMM_SELF</tt> and has the same number of local entries
+  /// as X_in's Map.
+  ///
+  /// This is useful for apply() and weightedApply(), if
+  /// MatrixType::apply and InverseType::apply have different
+  /// MultiVector types.
+  Teuchos::RCP<const Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> >
+  viewConst (const Teuchos::RCP<const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> >& X_in) const;
+
+  /// \brief Return a read-and-write "view" of the input Tpetra::MultiVector X_in.
+  ///
+  /// The "view" is either a true view of X_in's data, or a copy.  If the latter, it automatically
+  ///
+  /// This is useful for apply() and weightedApply(), if
+  /// MatrixType::apply and InverseType::apply have different
+  /// MultiVector types.
+  Teuchos::RCP<Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> >
+  viewNonConst (Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& X_in) const;
+
   //! Number of rows in the local matrix.
   size_t numRows_;
   //! Linear map on which the local matrix is based.
@@ -245,7 +334,7 @@ private:
   bool IsComputed_;
   //! Serial communicator (containing only MPI_COMM_SELF if MPI is used).
   Teuchos::RCP<Teuchos::Comm<int> > LocalComm_;
-  //! Pointer to an Ifpack2_Preconditioner object whose ApplyInverse() defined the action of the inverse of the local matrix.
+  //! Ifpack2::Preconditioner whose apply() method defines the action of the inverse of the local matrix.
   Teuchos::RCP<InverseType> Inverse_;
 
   Teuchos::ParameterList List_;

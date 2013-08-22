@@ -391,6 +391,21 @@ namespace Tpetra {
                  const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> >&ArrayOfPtrs,
                  size_t NumVectors);
 
+    /// \brief Expert mode constructor.
+    ///
+    /// \warning This constructor is only for expert users.  We make
+    ///   no promises about backwards compatibility for this interface.
+    ///   It may change or go away at any time.
+    ///
+    /// \param map [in] Map describing the distribution of rows.
+    /// \param data [in] Device pointer to the data (column-major)
+    /// \param LDA [in] Leading dimension (stride) of the data
+    /// \param numVecs [in] Number of vectors (columns)
+    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+                 const Teuchos::ArrayRCP<Scalar>& data,
+                 const size_t LDA,
+                 const size_t numVectors);
+
     //! Create a cloned MultiVector for a different node type
     template <class Node2>
     Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
