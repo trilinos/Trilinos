@@ -47,6 +47,8 @@ ProjectorSmoother
 RAPFactory
 RAPShiftFactory
 RebalanceAcFactory
+RebalanceBlockAcFactory
+RebalanceBlockTransferFactory
 RebalanceTransferFactory
 RepartitionFactory - #ifdef HAVE_MPI
 RigidBodyModeFactory
