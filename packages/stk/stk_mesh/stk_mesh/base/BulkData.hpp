@@ -1037,6 +1037,13 @@ public:
     return m_field_meta_data[m_num_fields * rank + f.mesh_meta_data_ordinal()][b.bucket_id()].m_size;
   }
 
+  bool field_is_allocated_for_bucket(const FieldBase& f, const Bucket& b) const
+  {
+     const EntityRank rank = b.entity_rank();
+     //return true if field-data size is not zero
+     return 0 != m_field_meta_data[m_num_fields * rank + f.mesh_meta_data_ordinal()][b.bucket_id()].m_size;
+  }
+
   size_t total_field_data_footprint(const FieldBase &f, EntityRank rank) const
   {
     return m_bucket_repository.total_field_data_footprint(f, rank);

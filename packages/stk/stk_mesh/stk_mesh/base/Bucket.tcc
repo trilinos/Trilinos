@@ -234,6 +234,8 @@ public:
 
   unsigned char* field_data_location(const FieldBase& field) const;
 
+  bool field_data_is_allocated(const FieldBase& field) const;
+
   ///
   /// Entity member functions are moved here:
   ///

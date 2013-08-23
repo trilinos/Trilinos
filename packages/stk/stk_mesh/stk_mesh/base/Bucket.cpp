@@ -438,6 +438,11 @@ bool Bucket::assert_correct() const {
   return true;
 }
 
+bool Bucket::field_data_is_allocated(const FieldBase& field) const
+{
+    return mesh().field_is_allocated_for_bucket(field, *this);
+}
+
 //----------------------------------------------------------------------
 
 std::ostream & operator << ( std::ostream & s , const Bucket & k )
