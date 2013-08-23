@@ -243,7 +243,7 @@ public:
 };
 
 template< typename MatrixValue>
-class MatrixMarketWriter<MatrixValue,Host>
+class MatrixMarketWriter<MatrixValue,Threads>
 {
 public:
   typedef Threads                                      device_type ;

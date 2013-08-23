@@ -52,7 +52,7 @@
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
 
-#include <Host/Kokkos_Host_Thread.hpp>
+#include <OpenMP/Kokkos_Host_Thread.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -74,6 +74,8 @@ public:
   //@}
   //! \name Functions that all Kokkos devices must implement.
   //@{
+
+  inline static bool in_parallel() { return omp_in_parallel(); }
 
   /** \brief  Set the device in a "sleep" state. A noop for OpenMP.  */
   static bool sleep();

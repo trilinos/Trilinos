@@ -109,6 +109,8 @@ public:
 
   static void access_error();
   static void access_error( const void * const );
+
+  /*--------------------------------*/
 };
 
 } // namespace Kokkos
@@ -154,10 +156,10 @@ template<>
 struct VerifyExecutionSpaceCanAccessDataSpace< CudaSpace , HostSpace >
 {
   KOKKOS_INLINE_FUNCTION static void verify(void)
-  { Kokkos::cuda_abort("Cuda code called function restricted to Host"); }
+  { Kokkos::cuda_abort("Cuda code called function restricted to HostSpace"); }
 
   KOKKOS_INLINE_FUNCTION static void verify( const void * )
-  { Kokkos::cuda_abort("Cuda code attempted to access Host memory"); }
+  { Kokkos::cuda_abort("Cuda code attempted to access HostSpace memory"); }
 };
 
 /** \brief  Produce error message when trying to access Cuda 

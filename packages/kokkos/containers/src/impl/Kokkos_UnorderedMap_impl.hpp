@@ -717,9 +717,8 @@ struct map_data
     return index;
   }
 
-  typedef typename if_c< is_const_map, const node_type &, node_type &>::type get_node_type;
   KOKKOS_FORCEINLINE_FUNCTION
-  get_node_type get_node(uint32_t i) const
+  typename if_c< is_const_map, const node_type, node_type>::type & get_node(uint32_t i) const
   {
     //KOKKOS_RESTRICT_EXECUTION_TO( typename Device::memory_space );
     return node_blocks[i>>node_block_type::shift].nodes[i&node_block_type::mask];

@@ -50,6 +50,7 @@
 
 #include <Kokkos_Macros.hpp>
 #include <Kokkos_MemoryTraits.hpp>
+#include <impl/Kokkos_ArrayTraits.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -63,12 +64,7 @@ public:
   enum { WORK_ALIGNMENT   =  8 };
 
   typedef HostSpace  memory_space ;
-
-#if defined( __INTEL_COMPILER )
-  typedef int        size_type ;
-#else
   typedef size_t     size_type ;
-#endif
 
   /** \brief  Allocate a contiguous block of memory on the Cuda device
    *          with size = scalar_size * scalar_count.
@@ -108,10 +104,11 @@ public:
   static std::string query_label( const void * );
 
   /*--------------------------------*/
-  /* Functions unique to the Host memory space */
+  /* Functions unique to the HostSpace */
 
-  /** \brief  Assert called from the original, master thread.  */
-  static void assert_master_thread( const char * const );
+  static int in_parallel();
+
+  static void register_in_parallel( int (*)() );
 };
 
 //----------------------------------------------------------------------------

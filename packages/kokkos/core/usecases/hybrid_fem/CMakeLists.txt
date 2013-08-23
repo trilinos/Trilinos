@@ -8,7 +8,7 @@ SET(SOURCES "")
 
 FILE(GLOB SOURCES *.cpp ../common/*.cpp)
 
-SET(LIBRARIES kokkoscore_devicehost kokkoscore_devicethreads kokkoscore_impl)
+SET(LIBRARIES kokkoscore_devicethreads kokkoscore_impl)
   
 
 IF( TPL_ENABLE_CUDA AND TPL_ENABLE_CUSPARSE )

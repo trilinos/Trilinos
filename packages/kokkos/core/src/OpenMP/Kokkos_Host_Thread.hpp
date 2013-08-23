@@ -55,23 +55,12 @@ namespace Impl {
 /** \name  Internal interface to threading runtime. */
 /**@{ */
 
-/** \brief  Spawn a thread and call C11 compatible 'driver' */
-bool host_thread_spawn( int (*driver)(void*) , void * );
-
-/** \brief  Query if called on the master thread */
-bool host_thread_is_master();
-
 /** \brief  Wait for *flag != value */
 void host_thread_wait( volatile int * const flag , const int value );
 
 /** \brief  Wait for *flag != value and yield resources while waiting. */
 void host_thread_wait_yield( volatile int * const flag , const int value );
 
-/** \brief  Hard lock the current thread (e.g., via pthread_mutex */
-void host_thread_lock();
-
-/** \brief  Unlock the current thread */
-void host_thread_unlock();
 /**@} */
 
 //----------------------------------------------------------------------------

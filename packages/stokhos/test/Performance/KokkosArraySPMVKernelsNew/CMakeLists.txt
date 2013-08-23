@@ -8,7 +8,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 IF (Stokhos_ENABLE_KokkosCore)
 
-  SET(DEPLIBS stokhos kokkoscore_impl kokkoscore_devicehost)
+  SET(DEPLIBS stokhos kokkoscore_impl)
   SET(CUDA_SOURCES "")
   IF (Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
     GET_PROPERTY(Stokhos_CUDA_INC_DIRS DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
@@ -33,7 +33,7 @@ IF (Stokhos_ENABLE_KokkosCore)
     SOURCES TestStochastic.hpp
             HostScaling.cpp
     COMM serial mpi
-    DEPLIBS stokhos kokkoscore_impl kokkoscore_devicehost
+    DEPLIBS stokhos kokkoscore_impl
     )
 
 ENDIF()

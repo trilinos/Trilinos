@@ -65,7 +65,7 @@ class Multiply< SparseProductTensor< 3 , ValueType , Threads > , void , void >
 {
 public:
 
-  typedef Host::size_type size_type ;
+  typedef Threads::size_type size_type ;
   typedef SparseProductTensor< 3 , ValueType , Threads > tensor_type ;
 
   template< typename MatrixValue , typename VectorValue >
@@ -345,7 +345,7 @@ class Multiply< CrsProductTensor< 3 , ValueType , Threads > , void , void >
 {
 public:
 
-  typedef Host::size_type size_type ;
+  typedef Threads::size_type size_type ;
   typedef CrsProductTensor< 3 , ValueType , Threads > tensor_type ;
 
   template< typename MatrixValue , typename VectorValue >
@@ -430,7 +430,7 @@ class Multiply< SparseProductTensor< 3 , ValueType , Threads > ,
                 SymmetricDiagonalSpec< Kokkos::Threads > , void >
 {
 public:
-  typedef Host::size_type size_type ;
+  typedef Threads::size_type size_type ;
   typedef SparseProductTensor< 3 , ValueType , Threads > tensor_type ;
 
   template< typename MatrixValue >

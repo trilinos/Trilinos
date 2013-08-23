@@ -209,8 +209,8 @@ public:
    */
   static void start( void (*)( ThreadsExec & , const void * ) , const void * );
 
+  static int  in_parallel();
   static void fence();
-
   static bool sleep();
   static bool wake();
 };
@@ -222,6 +222,9 @@ public:
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
+
+inline int Threads::in_parallel()
+{ return Impl::ThreadsExec::in_parallel(); }
 
 inline void Threads::initialize( 
   const std::pair<unsigned,unsigned> league_team ,

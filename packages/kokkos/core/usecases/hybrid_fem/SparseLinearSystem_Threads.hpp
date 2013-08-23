@@ -55,12 +55,11 @@ namespace Impl {
 template< typename AScalarType ,
           typename VScalarType ,
           class LayoutType >
-struct Multiply< CrsMatrix<AScalarType,Host> ,
-                 View<VScalarType*,LayoutType,Host > ,
-                 View<VScalarType*,LayoutType,Host > >
-  : public HostThreadWorker
+struct Multiply< CrsMatrix<AScalarType,Threads> ,
+                 View<VScalarType*,LayoutType,Threads > ,
+                 View<VScalarType*,LayoutType,Threads > >
 {
-  typedef Host                             device_type ;
+  typedef Threads                          device_type ;
   typedef typename device_type::size_type  size_type ;
 
   typedef View<       VScalarType*, LayoutType, device_type, MemoryUnmanaged >  vector_type ;
@@ -79,10 +78,10 @@ public:
   //--------------------------------------------------------------------------
 
   inline
-  void execute_on_thread( HostThread & this_thread ) const
+  void operator()( Threads dev ) const
   {
     const std::pair<size_type,size_type> range =
-      this_thread.work_range( m_y.dimension_0() );
+      dev.work_range( m_y.dimension_0() );
 
     size_type iEntryBegin = m_A.graph.row_map[range.first];
 
@@ -113,7 +112,8 @@ public:
             const vector_type & y )
     : m_A( A ), m_x( x ), m_y( y )
   {
-    HostThreadWorker::execute();
+    Kokkos::ParallelWorkRequest request ;
+    Kokkos::parallel_for( request , *this );
   }
 };
 

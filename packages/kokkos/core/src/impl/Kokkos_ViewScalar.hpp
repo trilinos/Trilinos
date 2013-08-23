@@ -73,7 +73,7 @@ struct ViewSpecialize< ScalarType , ScalarType ,
 
 namespace Kokkos {
 
-/** \brief  Deep copy of scalar value in Host space */
+/** \brief  Deep copy of scalar value in HostSpace */
 
 template< typename ValueType , class Arg1 , class Arg2 , class Arg3 >
 inline

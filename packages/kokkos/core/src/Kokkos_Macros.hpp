@@ -51,8 +51,6 @@
 namespace Kokkos {
 class HostSpace ;
 class CudaSpace ;
-class Host ;
-class Cuda ;
 }
 
 //----------------------------------------------------------------------------
@@ -71,27 +69,26 @@ class Cuda ;
 
 #if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ )
 
+#include <cuda.h>
+
 /*  Compiling with a CUDA compiler for device code.
  *
  *  Include <cuda.h> to pick up the CUDA_VERSION macro defined as:
- *    CUDA_VERSION = ( MAJOR_VERSION * 100 ) | ( MINOR_VERSION )
+ *    CUDA_VERSION = ( MAJOR_VERSION * 1000 ) + ( MINOR_VERSION * 10 )
  *
  *  When generating device code the __CUDA_ARCH__ macro is defined as:
- *    __CUDA_ARCH__ = ( MAJOR_CAPABILITY * 100 ) | ( MINOR_CAPABILITY )
+ *    __CUDA_ARCH__ = ( MAJOR_CAPABILITY * 100 ) + ( MINOR_CAPABILITY * 10 )
  */
-
-#if ( __CUDA_ARCH__ < 200 )
-#error "Cuda device capability >= 2.0 is required"
-#endif
-
-#include <cuda.h>
-
 #if ! defined( CUDA_VERSION )
 #error "#include <cuda.h> did not define CUDA_VERSION"
 #endif
 
-#if ( CUDA_VERSION < 401 )
+#if ( CUDA_VERSION < 4010 )
 #error "Cuda version 4.1 or greater required"
+#endif
+
+#if ( __CUDA_ARCH__ < 200 )
+#error "Cuda device capability >= 2.0 is required"
 #endif
 
 #define KOKKOS_FORCEINLINE_FUNCTION  __device__  __host__  __forceinline__
@@ -124,7 +121,7 @@ class Cuda ;
 #if defined( __MIC__ )
 
 /*  Compiling with Intel compiler for execution on an Intel MIC device.
- *  These devices are used in no-offload mode so the Host space is the MIC space.
+ *  These devices are used in no-offload mode so the HostSpace is the MIC space.
  */
 
 #endif

@@ -48,7 +48,7 @@
 
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_ParallelReduce.hpp>
-#include <Host/Kokkos_Host_Thread.hpp>
+#include <OpenMP/Kokkos_Host_Thread.hpp>
 
 namespace Kokkos {
 namespace Impl {

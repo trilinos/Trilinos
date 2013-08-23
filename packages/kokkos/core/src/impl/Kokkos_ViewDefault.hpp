@@ -230,30 +230,6 @@ void stride( iType * const s , const ShapeType & shape ,
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-/** \brief  View tracking increment/decrement only happens when
- *          view memory is managed and executing in the host space.
- */
-template< class ViewTraits ,
-          class MemorySpace  = typename ViewTraits::memory_space ,
-          class MemoryTraits = typename ViewTraits::memory_traits ,
-          class ExecSpec     = Kokkos::ExecutionSpace >
-struct ViewTracking {
-  KOKKOS_INLINE_FUNCTION static void increment( const void * ) {}
-  KOKKOS_INLINE_FUNCTION static void decrement( const void * ) {}
-};
-
-template< class ViewTraits , class MemorySpace , class MemoryTraits >
-struct ViewTracking< ViewTraits , MemorySpace , MemoryTraits ,
-          typename enable_if< MemoryTraits::Unmanaged == 0 , HostSpace >::type >
-{
-  KOKKOS_INLINE_FUNCTION static void increment( const void * ptr )
-    { MemorySpace::increment( ptr ); }
-
-  KOKKOS_INLINE_FUNCTION static void decrement( const void * ptr )
-    { MemorySpace::decrement( ptr ); }
-};
-
-//----------------------------------------------------------------------------
 
 template<>
 struct ViewAssignment< LayoutDefault , void , void >

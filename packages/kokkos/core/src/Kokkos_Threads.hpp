@@ -79,6 +79,9 @@ public:
   //! \name Static functions that all Kokkos devices must implement.
   //@{
 
+  /** \brief  Query if called within a thread-parallel function */
+  static int in_parallel();
+
   /** \brief  Set the device in a "sleep" state.
    *
    * This function sets the device in a "sleep" state in which it is
@@ -109,7 +112,7 @@ public:
 
   /// \brief Free any resources being consumed by the device.
   ///
-  /// For the Host device, this terminates spawned worker threads.
+  /// For the Threads device, this terminates spawned worker threads.
   static void finalize();
 
   /** \brief  Print configuration information */

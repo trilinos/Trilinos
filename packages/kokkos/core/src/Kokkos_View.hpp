@@ -81,11 +81,32 @@ struct ViewSpecialize ;
  */
 
 template< class DataType ,
-          class ArrayLayout ,
-          class DeviceType ,
-          class MemoryTraits >
+          class Arg1 ,
+          class Arg2 ,
+          class Arg3 >
 class ViewTraits {
 private:
+
+  // Arg1 is either Device or Layout, both of which must have 'typedef ... array_layout'.
+  // If Arg1 is not Layout then Arg1 must be Device
+  enum { Arg1IsDevice = ! Impl::is_same< Arg1 , typename Arg1::array_layout >::value };
+  enum { Arg2IsDevice = ! Arg1IsDevice };
+
+  // If Arg1 is device and Arg2 is not void then Arg2 is MemoryTraits.
+  // If Arg1 is device and Arg2 is void and Arg3 is not void then Arg3 is MemoryTraits.
+  // If Arg2 is device and Arg3 is not void then Arg3 is MemoryTraits.
+  enum { Arg2IsVoid = Impl::is_same< Arg2 , void >::value };
+  enum { Arg3IsVoid = Impl::is_same< Arg3 , void >::value };
+  enum { Arg2IsMemory = ! Arg2IsVoid && Arg1IsDevice && Arg3IsVoid };
+  enum { Arg3IsMemory = ! Arg3IsVoid && ( ( Arg1IsDevice && Arg2IsVoid ) || Arg2IsDevice ) };
+
+
+  typedef typename Arg1::array_layout  ArrayLayout ;
+  typedef typename Impl::if_c< Arg1IsDevice , Arg1 , Arg2 >::type::device_type  DeviceType ;
+
+  typedef typename Impl::if_c< Arg2IsMemory , Arg2 ,
+          typename Impl::if_c< Arg3IsMemory , Arg3 , MemoryManaged
+          >::type >::type::memory_traits  MemoryTraits ;
 
   typedef Impl::AnalyzeShape<DataType> analysis ;
 
@@ -146,41 +167,6 @@ public:
                           memory_traits
                         >::type specialize ;
 };
-
-/** \brief  Traits for View<DataType,DeviceType,void,void> */
-
-template< class DataType ,
-          class DeviceType >
-class ViewTraits<DataType,DeviceType,void,void>
-  : public ViewTraits< DataType , typename DeviceType::array_layout , DeviceType , MemoryManaged > {};
-
-/** \brief  Traits for View<DataType,DeviceType,void,MemoryTraits> */
-
-template< class DataType ,
-          class DeviceType ,
-          class MemoryTraits >
-class ViewTraits<DataType,DeviceType,void,MemoryTraits>
-  : public ViewTraits< DataType , typename DeviceType::array_layout , DeviceType , MemoryTraits > {};
-
-/** \brief  Traits for View<DataType,DeviceType,MemoryTraits,void> */
-
-template< class DataType , class DeviceType , class MemoryTraits >
-class ViewTraits< DataType , DeviceType , MemoryTraits ,
-  typename Impl::enable_if< (
-    Impl::is_same< DeviceType   , typename DeviceType  ::device_type   >::value &&
-    Impl::is_same< MemoryTraits , typename MemoryTraits::memory_traits >::value
-  ) >::type >
-  : public ViewTraits< DataType , typename DeviceType::array_layout , DeviceType , MemoryTraits > {};
-
-/** \brief  Traits for View<DataType,ArrayLayout,DeviceType,void> */
-
-template< class DataType , class ArrayLayout , class DeviceType >
-class ViewTraits< DataType , ArrayLayout , DeviceType ,
-  typename Impl::enable_if< (
-    Impl::is_same< ArrayLayout , typename ArrayLayout::array_layout >::value &&
-    Impl::is_same< DeviceType  , typename DeviceType ::device_type  >::value
-  ) >::type >
-  : public ViewTraits< DataType , ArrayLayout , DeviceType , MemoryManaged > {};
 
 //----------------------------------------------------------------------------
 
@@ -324,6 +310,31 @@ struct ViewAssignable
     };
 
   enum { value = assignable_value && assignable_shape };
+};
+
+/** \brief  View tracking increment/decrement only happens when
+ *          view memory is managed and executing in the host space.
+ */
+template< class ViewTraits , class Enable = void >
+struct ViewTracking {
+  KOKKOS_INLINE_FUNCTION static void increment( const void * ) {}
+  KOKKOS_INLINE_FUNCTION static void decrement( const void * ) {}
+};
+
+template< class ViewTraits >
+struct ViewTracking< ViewTraits ,
+                     typename enable_if<(
+                       ViewTraits::is_managed &&
+                       Impl::is_same< HostSpace , ExecutionSpace >::value
+                     )>::type >
+{
+  typedef typename ViewTraits::memory_space memory_space ;
+
+  KOKKOS_INLINE_FUNCTION static void increment( const void * ptr )
+    { memory_space::increment( ptr ); }
+
+  KOKKOS_INLINE_FUNCTION static void decrement( const void * ptr )
+    { memory_space::decrement( ptr ); }
 };
 
 } // namespace Impl

@@ -11,7 +11,7 @@ SET(SOURCES
   ../TPL/gtest/gtest-all.cc
   )
 
-SET(LIBRARIES kokkoscore_devicehost kokkoscore_devicethreads kokkoscore_impl)
+SET(LIBRARIES kokkoscore_devicethreads kokkoscore_impl)
 
 IF(Kokkos_ENABLE_OpenMP)
   LIST( APPEND SOURCES

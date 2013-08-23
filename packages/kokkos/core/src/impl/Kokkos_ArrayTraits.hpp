@@ -135,18 +135,22 @@ template <typename T> struct add_const<const T> { typedef const T type; };
 //----------------------------------------------------------------------------
 // if_
 
-template <bool Cond, typename TrueType, typename FalseType>
+template < bool Cond , typename TrueType, typename FalseType>
 struct if_c
 {
   typedef TrueType type;
-  static inline TrueType select(const TrueType a,const FalseType b) {return a;};
+
+  template< class T >
+  static inline const TrueType & select(const TrueType & a, const T & ) {return a;}
 };
 
 template <typename TrueType, typename FalseType>
 struct if_c<false, TrueType, FalseType>
 {
   typedef FalseType type;
-  static inline FalseType select(const TrueType a,const FalseType b) {return b;};
+
+  template< class T >
+  static inline const FalseType & select(const T & , const FalseType & b) {return b;}
 };
 
 template <typename Cond, typename TrueType, typename FalseType>

@@ -48,9 +48,19 @@
 #include <sstream>
 
 #include <Kokkos_HostSpace.hpp>
-#include <Host/Kokkos_Host_Thread.hpp>
 #include <impl/Kokkos_Error.hpp>
 #include <impl/Kokkos_MemoryTracking.hpp>
+
+/*--------------------------------------------------------------------------*/
+// If compiled with OpenMP check if in parallel region.
+
+#if defined( _OPENMP )
+#include <omp.h>
+#else
+namespace {
+int omp_in_parallel() { return 0 ; }
+}
+#endif
 
 /*--------------------------------------------------------------------------*/
 
@@ -166,6 +176,63 @@ DeepCopy<HostSpace,HostSpace>::DeepCopy( void * dst , const void * src , size_t 
 }
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace {
+
+static const int QUERY_DEVICE_IN_PARALLEL_MAX = 16 ;
+
+typedef int (* QueryDeviceInParallelPtr )();
+
+QueryDeviceInParallelPtr s_in_parallel_query[ QUERY_DEVICE_IN_PARALLEL_MAX ] = { omp_in_parallel };
+int s_in_parallel_query_count = 1 ;
+
+} // namespace <empty>
+
+void HostSpace::register_in_parallel( int (*device_in_parallel)() )
+{
+  if ( 0 == device_in_parallel ) {
+    Kokkos::Impl::throw_runtime_exception( std::string("Kokkos::HostSpace::register_in_parallel ERROR : given NULL" ) );
+  }
+
+  int i = -1 ;
+
+  if ( ! (device_in_parallel)() ) {
+    for ( i = 0 ; i < s_in_parallel_query_count && ! (*(s_in_parallel_query[i]))() ; ++i );
+  }
+
+  if ( i < s_in_parallel_query_count ) {
+    Kokkos::Impl::throw_runtime_exception( std::string("Kokkos::HostSpace::register_in_parallel_query ERROR : called in_parallel" ) );
+
+  }
+
+  if ( QUERY_DEVICE_IN_PARALLEL_MAX <= i ) {
+    Kokkos::Impl::throw_runtime_exception( std::string("Kokkos::HostSpace::register_in_parallel_query ERROR : exceeded maximum" ) );
+
+  }
+
+  for ( i = 0 ; i < s_in_parallel_query_count && s_in_parallel_query[i] != device_in_parallel ; ++i );
+
+  if ( i == s_in_parallel_query_count ) {
+    s_in_parallel_query[s_in_parallel_query_count++] = device_in_parallel ;
+  }
+}
+
+int HostSpace::in_parallel()
+{
+  const int n = s_in_parallel_query_count ;
+
+  int i = 0 ;
+
+  while ( i < n && ! (*(s_in_parallel_query[i]))() ) { ++i ; }
+
+  return i < n ;
+}
+
+} // namespace Kokkos
+
+/*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
 
@@ -175,7 +242,9 @@ void * HostSpace::allocate(
   const size_t           scalar_size ,
   const size_t           scalar_count )
 {
-  assert_master_thread( "Kokkos::HostSpace::allocate" );
+  if ( HostSpace::in_parallel() ) {
+    Kokkos::Impl::throw_runtime_exception( "Kokkos::HostSpace::allocate ERROR : called in parallel" );
+  }
 
   void * const ptr =
     Impl::host_allocate_not_thread_safe( label , scalar_type , scalar_size , scalar_count );
@@ -185,14 +254,14 @@ void * HostSpace::allocate(
 
 void HostSpace::increment( const void * ptr )
 {
-  if ( Impl::host_thread_is_master() ) {
+  if ( ! HostSpace::in_parallel() ) {
     host_space_singleton().increment( ptr );
   }
 }
 
 void HostSpace::decrement( const void * ptr )
 {
-  if ( Impl::host_thread_is_master() ) {
+  if ( ! HostSpace::in_parallel() ) {
     Impl::host_decrement_not_thread_safe( ptr );
   }
 }
@@ -208,24 +277,6 @@ std::string HostSpace::query_label( const void * p )
     host_space_singleton().query( p );
 
   return 0 != info ? info->label : std::string("ERROR NOT DEFINED");
-}
-
-} // namespace Kokkos
-
-/*--------------------------------------------------------------------------*/
-/*--------------------------------------------------------------------------*/
-
-namespace Kokkos {
-
-void HostSpace::assert_master_thread( const char * const name )
-{
-  if ( ! Impl::host_thread_is_master() ) {
-    std::string msg ;
-    msg.append( "Kokkos::HostSpace::assert_master_thread( " );
-    msg.append( name );
-    msg.append( " ) FAILED " );
-    Kokkos::Impl::throw_runtime_exception( msg );
-  }
 }
 
 } // namespace Kokkos

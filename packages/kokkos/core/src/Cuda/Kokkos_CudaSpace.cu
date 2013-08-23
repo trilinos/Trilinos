@@ -144,7 +144,9 @@ void * CudaSpace::allocate(
   const size_t           scalar_size ,
   const size_t           scalar_count )
 {
-  HostSpace::assert_master_thread( "Kokkos::CudaSpace::allocate" );
+  if ( HostSpace::in_parallel() ) {
+    Kokkos::Impl::throw_runtime_exception( "Kokkos::CudaSpace::allocate ERROR : Called with HostSpace::in_parallel" );
+  }
 
   const size_t size = scalar_size * scalar_count ;
 
@@ -179,14 +181,18 @@ void * CudaSpace::allocate(
 
 void CudaSpace::increment( const void * ptr )
 {
-  HostSpace::assert_master_thread( "Kokkos::CudaSpace::increment" );
+  if ( HostSpace::in_parallel() ) {
+    Kokkos::Impl::throw_runtime_exception( "Kokkos::CudaSpace::increment ERROR : Called with HostSpace::in_parallel" );
+  }
 
   cuda_space_singleton().increment( ptr );
 }
 
 void CudaSpace::decrement( const void * ptr )
 {
-  HostSpace::assert_master_thread( "Kokkos::CudaSpace::decrement" );
+  if ( HostSpace::in_parallel() ) {
+    Kokkos::Impl::throw_runtime_exception( "Kokkos::CudaSpace::decrement ERROR : Called with HostSpace::in_parallel" );
+  }
 
   cuda_space_singleton().decrement( ptr );
 }

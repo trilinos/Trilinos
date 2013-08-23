@@ -42,7 +42,7 @@
 */
 
 #include <KokkosCore_config.h>
-#include <Host/Kokkos_Host_Thread.hpp>
+#include <OpenMP/Kokkos_Host_Thread.hpp>
 
 #include <limits>
 #include <algorithm>
@@ -368,91 +368,6 @@ HostThread * HostThread::clear_thread( const unsigned rank )
 
 namespace Kokkos {
 namespace Impl {
-
-//----------------------------------------------------------------------------
-// Driver for each created pthread
-
-namespace {
-
-pthread_mutex_t host_internal_pthread_mutex = PTHREAD_MUTEX_INITIALIZER ;
-
-struct HostInternalPthreadDriver {
-  int (* m_driver )( void * );
-  void * m_arg ;
-  volatile int m_start ;
-};
-
-void * host_internal_pthread_driver( void * global )
-{
-  try {
-    int ( * const driver )( void * ) = ((HostInternalPthreadDriver*) global )->m_driver ;
-    void * const arg                 = ((HostInternalPthreadDriver*) global )->m_arg ;
-
-    // Tell the spawn function that the data has been copied
-    ((HostInternalPthreadDriver*) global )->m_start = 1 ;
-
-    global = 0 ; // Don't touch data again
-
-    (*driver)(arg);
-  }
-  catch( const std::exception & x ) {
-    // mfh 29 May 2012: Doesn't calling std::terminate() seem a
-    // little violent?  On the other hand, C++ doesn't define how
-    // to transport exceptions between threads (until C++11).
-    // Since this is a worker thread, it would be hard to tell the
-    // master thread what happened.
-    std::cerr << "Worker thread uncaught exception : " << x.what() << std::endl ;
-    std::terminate();
-  }
-  catch( ... ) {
-    // mfh 29 May 2012: See note above on std::terminate().
-    std::cerr << "Worker thread uncaught exception" << std::endl ;
-    std::terminate();
-  }
-
-  return NULL ;
-}
-
-}
-
-//----------------------------------------------------------------------------
-// Spawn a thread
-
-bool host_thread_spawn( int (*driver)(void*) , void * arg )
-{
-  bool result = false ;
-
-  pthread_attr_t attr ;
-
-  if ( 0 == pthread_attr_init( & attr ) ||
-       0 == pthread_attr_setscope(       & attr, PTHREAD_SCOPE_SYSTEM ) ||
-       0 == pthread_attr_setdetachstate( & attr, PTHREAD_CREATE_DETACHED ) ) {
-
-    pthread_t pt ;
-
-    HostInternalPthreadDriver global = { driver , arg , 0 };
-
-    result = 0 == pthread_create( & pt, & attr, host_internal_pthread_driver, & global );
-
-    host_thread_wait_yield( & global.m_start , 0 );
-  }
-
-  pthread_attr_destroy( & attr );
-
-  return result ;
-}
-
-//----------------------------------------------------------------------------
-
-bool host_thread_is_master()
-{
-  static const pthread_t master_pid = pthread_self();
-
-  return pthread_equal( master_pid , pthread_self() );
-}
-
-//----------------------------------------------------------------------------
-
 namespace {
 
 template< unsigned N > inline void noop_cycle();
@@ -485,16 +400,6 @@ void host_thread_wait( volatile int * const flag , const int value )
 void host_thread_wait_yield( volatile int * const flag , const int value )
 {
   while ( value == *flag ) { sched_yield(); }
-}
-
-void host_thread_lock()
-{
-  pthread_mutex_lock( & host_internal_pthread_mutex );
-}
-
-void host_thread_unlock()
-{
-  pthread_mutex_unlock( & host_internal_pthread_mutex );
 }
 
 } // namespace Impl
@@ -577,17 +482,6 @@ bool HostInternal::spawn( const size_t thread_rank )
 }
 
 //----------------------------------------------------------------------------
-
-void HostWorkerBlock::execute_on_thread( HostThread & this_thread ) const
-{
-  ThreadLockWindows & lock = ThreadLockWindows::singleton();
-  lock.lock();
-  lock.unlock();
-
-  this_thread.barrier();
-}
-
-//----------------------------------------------------------------------------
 // Performance critical function: thread waits while value == *state
 
 void HostMulticoreThread::wait( const HostMulticoreThread::State flag )
@@ -604,63 +498,13 @@ void HostMulticoreThread::wait( const HostMulticoreThread::State flag )
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-namespace Kokkos {
-
-bool Host::sleep()
-{
-  Impl::HostInternal & h = Impl::HostInternal::singleton();
-  ThreadLockWindows & lock = ThreadLockWindows::singleton();
-
-  const bool is_ready   = NULL == h.m_worker ;
-        bool is_blocked = & h.m_worker_block == h.m_worker ;
-
-  if ( is_ready ) {
-    ThreadLockWindows::singleton().lock();
-
-    h.m_worker = & h.m_worker_block ;
-
-    Impl::HostThread::activate( h.m_thread + 1 ,
-                                h.m_thread + h.m_thread_count );
-
-    is_blocked = true ;
-  }
-
-  return is_blocked ;
-}
-
-bool Host::wake()
-{
-  Impl::HostInternal & h = Impl::HostInternal::singleton();
-
-  const bool is_blocked = & h.m_worker_block != h.m_worker ;
-        bool is_ready   = NULL == h.m_worker ;
-
-  if ( is_blocked ) {
-    ThreadLockWindows::singleton().unlock();
-
-    h.m_thread->barrier();
-
-    h.m_worker = NULL ;
-
-    is_ready = true ;
-  }
-
-  return is_ready ;
-}
-
-} // namespace Kokkos
-
 #else /* NO Threads */
 
 namespace Kokkos {
 namespace Impl {
 
-bool host_thread_is_master() { return true ; }
-bool host_thread_spawn( int (*)(void*) , void * ) { return false ; }
 void host_thread_wait( volatile int * const , const int ) {}
 void host_thread_wait_yield( volatile int * const , const int ) {}
-void host_thread_lock() {}
-void host_thread_unlock() {}
 
 } // namespace Impl
 } // namespace Kokkos

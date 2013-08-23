@@ -71,6 +71,8 @@ public:
   //! \name Functions that all Kokkos devices must implement.
   //@{
 
+  static bool in_parallel() { return false ; }
+
   /** \brief  Set the device in a "sleep" state.
    *
    * This function sets the device in a "sleep" state in which it is
@@ -101,10 +103,10 @@ public:
 
   /// \brief Free any resources being consumed by the device.
   ///
-  /// For the Host device, this terminates spawned worker threads.
+  /// For the Serial device, this terminates spawned worker threads.
   static void finalize();
 
-  /** \brief  Print Host configuration information */
+  /** \brief  Print Serial configuration information */
   static void print_configuration( std::ostream & );
 
   //----------------------------------------

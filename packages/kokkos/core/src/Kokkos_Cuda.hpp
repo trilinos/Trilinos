@@ -86,6 +86,12 @@ public:
   //! \name Functions that all Kokkos devices must implement.
   //@{
 
+#if defined( __CUDA_ARCH__ ) 
+  KOKKOS_INLINE_FUNCTION static bool in_parallel() { return true ; }
+#else
+  KOKKOS_INLINE_FUNCTION static bool in_parallel() { return false ; }
+#endif
+
   /** \brief  Set the device in a "sleep" state.
    *
    * This function sets the device in a "sleep" state in which it is

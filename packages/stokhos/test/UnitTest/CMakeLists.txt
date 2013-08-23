@@ -343,7 +343,7 @@ IF(Stokhos_ENABLE_Sacado)
       )
 
     SET(CUDA_SOURCES "")
-    SET(KKUT_DEPLIBS stokhos kokkoscore_impl kokkoscore_devicehost)
+    SET(KKUT_DEPLIBS stokhos kokkoscore_impl)
     IF (Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
       CUDA_COMPILE(CUDA_SOURCES Stokhos_KokkosArrayKernelsUnitTestNew_Cuda.cu)
       SET(KKUT_DEPLIBS ${KKUT_DEPLIBS} kokkoscore_devicecuda)

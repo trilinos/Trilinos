@@ -50,23 +50,6 @@
 
 namespace Kokkos {
 namespace Impl {
-
-void * host_allocate_not_thread_safe(
-  const std::string    & label ,
-  const std::type_info & scalar_type ,
-  const size_t           scalar_size ,
-  const size_t           scalar_count );
-
-void host_decrement_not_thread_safe( const void * ptr );
-
-}
-}
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
-namespace Impl {
 namespace {
 
 ThreadsExec                  s_threads_process ;
@@ -82,7 +65,11 @@ void (* volatile s_current_function)( ThreadsExec & , const void * );
 const void * volatile s_current_function_arg = 0 ;
 
 struct Sentinel {
-  Sentinel() {}
+  Sentinel()
+  {
+    HostSpace::register_in_parallel( ThreadsExec::in_parallel );
+  }
+
   ~Sentinel()
   {
     if ( s_threads_count ||
@@ -293,14 +280,14 @@ void ThreadsExec::execute_sleep( ThreadsExec & exec , const void * )
 void ThreadsExec::execute_reduce_resize( ThreadsExec & exec , const void * )
 {
   if ( exec.m_reduce ) {
-    Kokkos::Impl::host_decrement_not_thread_safe( exec.m_reduce );
+    HostSpace::decrement( exec.m_reduce );
     exec.m_reduce = 0 ;
   }
 
   if ( s_threads_reduce_size ) {
 
     exec.m_reduce =
-      Kokkos::Impl::host_allocate_not_thread_safe( "reduce_scratch_space" , typeid(unsigned char) , 1 , s_threads_reduce_size );
+      HostSpace::allocate( "reduce_scratch_space" , typeid(unsigned char) , 1 , s_threads_reduce_size );
 
     // Guaranteed multiple of 'unsigned'
 
@@ -320,14 +307,14 @@ void ThreadsExec::execute_shared_resize( ThreadsExec & exec , const void * )
   else {
 
     if ( exec.m_shared ) {
-      Kokkos::Impl::host_decrement_not_thread_safe( exec.m_shared );
+      HostSpace::decrement( exec.m_shared );
       exec.m_shared = 0 ;
     }
 
     if ( s_threads_shared_size ) {
 
       exec.m_shared =
-        Kokkos::Impl::host_allocate_not_thread_safe( "shared_scratch_space" , typeid(unsigned char) , 1 , s_threads_shared_size );
+        HostSpace::allocate( "shared_scratch_space" , typeid(unsigned char) , 1 , s_threads_shared_size );
 
       // Guaranteed multiple of 'unsigned'
 
@@ -380,6 +367,16 @@ void ThreadsExec::verify_is_process( const std::string & name , const bool initi
     msg.append( " FAILED : Threads not initialized." );
     Kokkos::Impl::throw_runtime_exception( msg );
   }
+}
+
+int ThreadsExec::in_parallel()
+{
+  // A thread function is in execution and
+  // the function argument is not the special threads process argument and
+  // the master process is a worker or is not the master process.
+  return s_current_function &&
+         ( & s_threads_process != s_current_function_arg ) &&
+         ( s_threads_process.m_thread_size || ! is_process() );
 }
 
 // Wait for root thread to become inactive
@@ -477,6 +474,7 @@ void ThreadsExec::execute_serial( void (*func)( ThreadsExec & , const void * ) )
   s_exception_msg.clear();
 
   s_current_function = func ;
+  s_current_function_arg = & s_threads_process ;
 
   const unsigned begin = s_threads_process.m_thread_size ? 1 : 0 ;
 
@@ -494,6 +492,7 @@ void ThreadsExec::execute_serial( void (*func)( ThreadsExec & , const void * ) )
     s_threads_process.m_state = ThreadsExec::Inactive ;
   }
 
+  s_current_function_arg = 0 ;
   s_current_function = 0 ;
 }
 

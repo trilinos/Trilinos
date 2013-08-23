@@ -67,18 +67,18 @@ void test_Host( int beg, int end, int runs, int threads)
 
     Kokkos::Threads::initialize( std::pair<unsigned,unsigned>( core_topo.first , node_thread_count ) );
 
-    std::cout << std::endl << "\"Host with manually set threads = \" , "
+    std::cout << std::endl << "\"Threads with manually set threads = \" , "
               << core_topo.first * node_thread_count << std::endl ;
   }
   else {
     Kokkos::Threads::initialize( std::pair<unsigned,unsigned>( core_topo.first , core_topo.second * core_cap ) );
 
-    std::cout << std::endl << "\"Host with detected sequential threads = \" , "
+    std::cout << std::endl << "\"Threads with detected sequential threads = \" , "
               << core_topo.first * node_thread_count << std::endl ;
   }
 
-  explicit_dynamics::driver<float,Kokkos::Threads>("Host-float", beg, end, runs);
-  explicit_dynamics::driver<double,Kokkos::Threads>("Host-double", beg, end, runs);
+  explicit_dynamics::driver<float,Kokkos::Threads>("Threads-float", beg, end, runs);
+  explicit_dynamics::driver<double,Kokkos::Threads>("Threads-double", beg, end, runs);
 
   Kokkos::Threads::finalize();
 }//test_host

@@ -58,6 +58,8 @@
 
 namespace Kokkos {
 
+class Cuda ; // In case Kokkos_Cuda.hpp has not been included
+
 enum CrsProductTensorLegendreVariant {
   CrsProductTensorLegendreVariant_SeparateDiagonal , 
   CrsProductTensorLegendreVariant_HalfDiagonal ,
