@@ -348,7 +348,10 @@ void update_shared_edges_global_ids( BulkData & mesh, shared_edge_map_type & sha
 void create_edges( BulkData & mesh, const Selector & element_selector )
 {
 
-  static size_t next_edge = static_cast<size_t>(mesh.parallel_rank()+1) << 32;
+  //  static size_t next_edge = static_cast<size_t>(mesh.parallel_rank()+1) << 32;
+  // NOTE: This is a workaround to eliminate some bad behavior with the equation above when
+  //       the #proc is a power of two.  The 256 below is the bin size of the Distributed Index.
+  static size_t next_edge = (static_cast<size_t>(mesh.parallel_rank()+1) << 32) + 256 * mesh.parallel_rank();
 
   mesh.modification_begin();
 
