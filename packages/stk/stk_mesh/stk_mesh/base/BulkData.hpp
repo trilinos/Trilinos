@@ -774,7 +774,12 @@ public:
 
 #ifdef SIERRA_MIGRATION
 
-  int global_id(Entity entity) const
+  //this typedef for FmwkId must use the same type as the typedef
+  //in the sierra-framework header framewk/mesh/Fmwk_Id.h
+  //In other words, if you change this one, make the same change to the
+  //one in Fmwk_Id.h.
+  typedef int FmwkId; //must be a signed type -- fmwk uses negative values sometimes
+  FmwkId global_id(Entity entity) const
   {
     ThrowAssert(m_add_fmwk_data);
     entity_getter_debug_check(entity);
@@ -1213,7 +1218,7 @@ private:
   // Extra data that fmwk needs to have on an entity. These vectors are indexed by local offset.
 
   mutable std::vector<RelationVector* > m_fmwk_aux_relations;   // Relations that can't be managed by STK such as PARENT/CHILD
-  std::vector<int>                      m_fmwk_global_ids;
+  std::vector<FmwkId>                   m_fmwk_global_ids;
   std::vector<const void*>              m_fmwk_shared_attrs;
   std::vector<unsigned short>           m_fmwk_connect_counts;
 #endif
