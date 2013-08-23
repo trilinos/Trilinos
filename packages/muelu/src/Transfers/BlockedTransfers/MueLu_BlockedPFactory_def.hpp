@@ -182,24 +182,25 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bu
     // check if prolongator/restrictor operators have strided maps
     TEUCHOS_TEST_FOR_EXCEPTION(subBlockP.back()->IsView("stridedMaps")==false, Exceptions::BadCast, "MueLu::BlockedPFactory::Build: subBlock P operator has no strided map information. error.");
 
-
     // append strided row map (= range map) to list of range maps.
-    Teuchos::RCP<const Map> rangeMap = subBlockP.back()->getRangeMap(); //getRowMap("stridedMaps");
+    Teuchos::RCP<const Map> rangeMap = subBlockP.back()->getRowMap("stridedMaps"); /* getRangeMap(); //*/
     subBlockPRangeMaps.push_back(rangeMap);
+
+    // use plain range map to determine the DOF ids
     Teuchos::ArrayView< const GlobalOrdinal > nodeRangeMap = subBlockP.back()->getRangeMap()->getNodeElementList(); //subBlockPRangeMaps.back()->getNodeElementList();
     fullRangeMapVector.insert(fullRangeMapVector.end(), nodeRangeMap.begin(), nodeRangeMap.end());
     sort(fullRangeMapVector.begin(), fullRangeMapVector.end());
 
     // append strided col map (= domain map) to list of range maps.
-    Teuchos::RCP<const Map> domainMap = subBlockP.back()->getDomainMap(); //getColMap("stridedMaps");
+    Teuchos::RCP<const Map> domainMap = subBlockP.back()->getColMap("stridedMaps"); /* getDomainMap(); //*/
     subBlockPDomainMaps.push_back(domainMap);
+
+    // use plain domain map to determine the DOF ids
     Teuchos::ArrayView< const GlobalOrdinal > nodeDomainMap = subBlockP.back()->getDomainMap()->getNodeElementList(); //subBlockPDomainMaps.back()->getNodeElementList();
     fullDomainMapVector.insert(fullDomainMapVector.end(), nodeDomainMap.begin(), nodeDomainMap.end());
     sort(fullDomainMapVector.begin(), fullDomainMapVector.end());
 
   }
-  //std::cout << "TEST22REF" << subBlockPDomainMapsRef.back().getNodeNumElements() << std::endl;
-  //std::cout << "TEST22 " << subBlockPRangeMaps.back()->getNodeNumElements() << std::endl;
 
   // extract map index base from maps of blocked A
   GO rangeIndexBase  = 0;
@@ -212,44 +213,61 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bu
     domainIndexBase= bA->getRangeMap()->getIndexBase();
   }
 
+  // build full range map.
+  // If original range map has striding information, then transfer it to the new range map
   RCP<const MapExtractorClass> rangeAMapExtractor = bA->getRangeMapExtractor();
   Teuchos::ArrayView<GO> fullRangeMapGIDs(&fullRangeMapVector[0],fullRangeMapVector.size());
   Teuchos::RCP<const StridedMap> stridedRgFullMap = Teuchos::rcp_dynamic_cast<const StridedMap>(rangeAMapExtractor->getFullMap());
-  TEUCHOS_TEST_FOR_EXCEPTION(stridedRgFullMap==Teuchos::null, Exceptions::BadCast, "MueLu::BlockedPFactory::Build: full map in range map extractor has no striding information! error.");
-  std::vector<size_t> stridedData = stridedRgFullMap->getStridingData();
-
-
-  Teuchos::RCP<const StridedMap > fullRangeMap =
-      StridedMapFactory::Build(
-          bA->getRangeMap()->lib(),
-          Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-          fullRangeMapGIDs,
-          rangeIndexBase,
-          stridedData,
-          bA->getRangeMap()->getComm(),
-          stridedRgFullMap->getStridedBlockId(),
-          stridedRgFullMap->getOffset());
-
+  Teuchos::RCP<const Map > fullRangeMap = Teuchos::null;
+  if(stridedRgFullMap != Teuchos::null) {
+    std::vector<size_t> stridedData = stridedRgFullMap->getStridingData();
+    fullRangeMap =
+        StridedMapFactory::Build(
+            bA->getRangeMap()->lib(),
+            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+            fullRangeMapGIDs,
+            rangeIndexBase,
+            stridedData,
+            bA->getRangeMap()->getComm(),
+            stridedRgFullMap->getStridedBlockId(),
+            stridedRgFullMap->getOffset());
+  } else {
+    fullRangeMap =
+        MapFactory::Build(
+            bA->getRangeMap()->lib(),
+            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+            fullRangeMapGIDs,
+            rangeIndexBase,
+            bA->getRangeMap()->getComm());
+  }
 
   RCP<const MapExtractorClass> domainAMapExtractor = bA->getDomainMapExtractor();
   Teuchos::ArrayView<GO> fullDomainMapGIDs(&fullDomainMapVector[0],fullDomainMapVector.size());
   Teuchos::RCP<const StridedMap> stridedDoFullMap = Teuchos::rcp_dynamic_cast<const StridedMap>(domainAMapExtractor->getFullMap());
-  TEUCHOS_TEST_FOR_EXCEPTION(stridedDoFullMap==Teuchos::null, Exceptions::BadCast, "MueLu::BlockedPFactory::Build: full map in domain map extractor has no striding information! error.");
-  std::vector<size_t> stridedData2 = stridedDoFullMap->getStridingData();
+  Teuchos::RCP<const Map > fullDomainMap = Teuchos::null;
+  if(stridedDoFullMap != Teuchos::null) {
+    TEUCHOS_TEST_FOR_EXCEPTION(stridedDoFullMap==Teuchos::null, Exceptions::BadCast, "MueLu::BlockedPFactory::Build: full map in domain map extractor has no striding information! error.");
+    std::vector<size_t> stridedData2 = stridedDoFullMap->getStridingData();
+    fullDomainMap =
+        StridedMapFactory::Build(
+            bA->getDomainMap()->lib(),
+            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+            fullDomainMapGIDs,
+            domainIndexBase,
+            stridedData2,
+            bA->getDomainMap()->getComm(),
+            stridedDoFullMap->getStridedBlockId(),
+            stridedDoFullMap->getOffset());
+  } else {
 
-  //std::cout << "create strided blocked domain map stridedblockid: " << stridedDoFullMap->getStridedBlockId() << std::endl;
-  //std::cout << "fullDomainMapGIDs: " << fullDomainMapGIDs.size() << " nDofsPerNode: " << stridedDoFullMap->getFixedBlockSize() << std::endl;
-  Teuchos::RCP<const StridedMap > fullDomainMap =
-      StridedMapFactory::Build(
-          bA->getDomainMap()->lib(),
-          Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-          fullDomainMapGIDs,
-          domainIndexBase,
-          stridedData2,
-          bA->getDomainMap()->getComm(),
-          stridedDoFullMap->getStridedBlockId(),
-          stridedDoFullMap->getOffset());
-
+    fullDomainMap =
+        MapFactory::Build(
+            bA->getDomainMap()->lib(),
+            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+            fullDomainMapGIDs,
+            domainIndexBase,
+            bA->getDomainMap()->getComm());
+  }
 
   // build map extractors
   Teuchos::RCP<const MapExtractorClass> rangeMapExtractor  = MapExtractorFactoryClass::Build(fullRangeMap,  subBlockPRangeMaps);
