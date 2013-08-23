@@ -68,6 +68,8 @@ namespace MueLu {
     RCP<const Matrix> A = rcpFromRef(Aref);
     RCP<Matrix> AP, G;
 
+    Teuchos::FancyOStream& mmfancy = this->GetOStream(Statistics2, 0);
+
     Teuchos::ArrayRCP<const SC> D = Utils::GetMatrixDiagonal(*A);
 
     RCP<CrsMatrix> Ptmp_ = CrsMatrixFactory::Build(C.GetPattern());
@@ -78,7 +80,7 @@ namespace MueLu {
     P = rcp_const_cast<Matrix>(rcpFromRef(P0));
 
     for (size_t k = 0; k < nIts_; k++) {
-      AP = Utils::Multiply(*A, false, *P, false, true, false);
+      AP = Utils::Multiply(*A, false, *P, false, mmfancy, true, false);
 #if 0
       // gradient = -2 A^T * A * P
       SC stepLength = 2*stepLength_;
@@ -92,7 +94,7 @@ namespace MueLu {
 #endif
 
       RCP<Matrix> newP;
-      Utils2::TwoMatrixAdd(*Ptmp, false, -stepLength, *P, false, Teuchos::ScalarTraits<Scalar>::one(), newP);
+      Utils2::TwoMatrixAdd(*Ptmp, false, -stepLength, *P, false, Teuchos::ScalarTraits<Scalar>::one(), newP, mmfancy);
       newP->fillComplete(P->getDomainMap(), P->getRangeMap() );
       P = newP;
     }
