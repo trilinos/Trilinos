@@ -53,10 +53,11 @@ inline
 Tensor<T, N>
 vol(Tensor<T, N> const & A)
 {
-  const Index
+  Index const
   dimension = A.get_dimension();
 
-  const T theta = (1.0/dimension) * trace(A);
+  T const
+  theta = (1.0/dimension) * trace(A);
 
   return theta * eye<T, N>(dimension);
 }

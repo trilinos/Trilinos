@@ -49,43 +49,29 @@
 
 namespace Intrepid {
 
-///
 /// Indexing type
-///
 typedef unsigned int Index;
 
-///
 /// High count type
-///
 typedef long unsigned int LongCount;
 
-///
 /// Floating point type
-///
 typedef double Real;
 
-///
 /// Complex type
-///
 typedef std::complex<Real> Complex;
 
-///
 /// The classes
-///
 template <typename T, Index N> class Vector;
 template <typename T, Index N> class Tensor;
 template <typename T, Index N> class Tensor3;
 template <typename T, Index N> class Tensor4;
 
-///
 /// Indicator for dynamic storage
-///
 Index const
 DYNAMIC = 0;
 
-///
 /// For use with type promotion
-///
 using Sacado::Promote;
 using Sacado::mpl::lazy_disable_if;
 using Sacado::mpl::disable_if_c;
@@ -180,435 +166,412 @@ struct order_1234< Tensor4<T, N> > {
   static const bool value = true;
 };
 
+/// For Sacado traits
+
+using std::string;
+
+template <Index N>
+struct dimension_string {
+  static string eval() {return string("INVALID");}
+};
+
+template <>
+struct dimension_string<DYNAMIC> {
+  static string eval() {return string("DYNAMIC");}
+};
+
+template <>
+struct dimension_string<1> {
+  static string eval() {return string("1");}
+};
+
+template <>
+struct dimension_string<2> {
+  static string eval() {return string("2");}
+};
+
+template <>
+struct dimension_string<3> {
+  static string eval() {return string("3");}
+};
+
+template <>
+struct dimension_string<4> {
+  static string eval() {return string("4");}
+};
+
 } // namespace Intrepid
 
 namespace Sacado {
 
-///
-/// Specialization of Promote for Intrepid::Index
-///
+using Intrepid::DYNAMIC;
+using Intrepid::Index;
+using Intrepid::Vector;
+using Intrepid::Tensor;
+using Intrepid::Tensor3;
+using Intrepid::Tensor4;
+using Intrepid::dimension_string;
+using std::complex;
+using std::string;
+
+/// Specialization of Promote for Index
 template <>
-struct Promote<double, Intrepid::Index> {
+struct Promote<double, Index> {
   typedef double type;
 };
 
 template <>
-struct Promote<Intrepid::Index, double> {
+struct Promote<Index, double> {
   typedef double type;
 };
 
 template <>
-struct Promote<float, Intrepid::Index> {
+struct Promote<float, Index> {
   typedef float type;
 };
 
 template <>
-struct Promote<Intrepid::Index, float> {
+struct Promote<Index, float> {
   typedef float type;
 };
 
 template <>
-struct Promote<std::complex<double>, Intrepid::Index> {
-  typedef std::complex<double> type;
+struct Promote<complex<double>, Index> {
+  typedef complex<double> type;
 };
 
 template <>
-struct Promote<Intrepid::Index, std::complex<double> > {
-  typedef std::complex<double> type;
+struct Promote<Index, complex<double> > {
+  typedef complex<double> type;
 };
 
 template <>
-struct Promote<std::complex<float>, Intrepid::Index> {
-  typedef std::complex<float> type;
+struct Promote<complex<float>, Index> {
+  typedef complex<float> type;
 };
 
 template <>
-struct Promote<Intrepid::Index, std::complex<float> > {
-  typedef std::complex<float> type;
+struct Promote<Index, complex<float> > {
+  typedef complex<float> type;
 };
 
-///
 /// Sacado traits specializations for Vector
-///
-template <typename T, Intrepid::Index N>
-struct ScalarType< Intrepid::Vector<T, N> > {
+template <typename T, Index N>
+struct ScalarType< Vector<T, N> > {
   typedef T type;
 };
 
-template <typename T, Intrepid::Index N>
-struct ValueType< Intrepid::Vector<T, N> > {
+template <typename T, Index N>
+struct ValueType< Vector<T, N> > {
   typedef T type;
 };
 
-template <typename T, Intrepid::Index N>
-struct IsADType< Intrepid::Vector<T, N> > {
+template <typename T, Index N>
+struct IsADType< Vector<T, N> > {
   static bool const value = IsADType<T>::value;
 };
 
-template <typename T, Intrepid::Index N>
-struct IsScalarType< Intrepid::Vector<T, N> > {
+template <typename T, Index N>
+struct IsScalarType< Vector<T, N> > {
   static bool const value = false;
 };
 
-template <typename T, Intrepid::Index N>
-struct Value< Intrepid::Vector<T, N> > {
+template <typename T, Index N>
+struct Value< Vector<T, N> > {
   typedef typename ValueType<T>::type value_type;
-  static const Intrepid::Vector<value_type, N> &
-  eval(Intrepid::Vector<T, N> const & x)
+  static const Vector<value_type, N> &
+  eval(Vector<T, N> const & x)
   {
-    Intrepid::Index const
-    dimension = x.get_dimension();
+    Vector<value_type, N> v(x.get_dimension());
 
-    Intrepid::Vector<value_type, N>
-    v(dimension);
-
-    for (Intrepid::Index i = 0; i < dimension; ++i) {
-      v(i) = x(i).val();
+    for (Index i = 0; i < x.get_number_components(); ++i) {
+      v[i] = x[i].val();
     }
 
     return v;
   }
 };
 
-template <typename T, Intrepid::Index N>
-struct ScalarValue< Intrepid::Vector<T, N> > {
+template <typename T, Index N>
+struct ScalarValue< Vector<T, N> > {
   typedef typename ValueType<T>::type value_type;
   typedef typename ScalarType<T>::type scalar_type;
-  static const Intrepid::Vector<scalar_type, N> &
-  eval(Intrepid::Vector<T, N> const & x)
+  static const Vector<scalar_type, N> &
+  eval(Vector<T, N> const & x)
   {
-    Intrepid::Index const
-    dimension = x.get_dimension();
+    Vector<scalar_type, N> v(x.get_dimension());
 
-    Intrepid::Vector<scalar_type, N>
-    v(dimension);
-
-    for (Intrepid::Index i = 0; i < dimension; ++i) {
-      v(i) = ScalarValue<value_type>::eval(x(i).val());
+    for (Index i = 0; i < x.get_number_components(); ++i) {
+      v[i] = ScalarValue<value_type>::eval(x[i].val());
     }
-
     return v;
   }
 };
 
-template <typename T, Intrepid::Index N>
-struct StringName< Intrepid::Vector<T, N> > {
-  static std::string
+template <typename T, Index N>
+struct StringName< Vector<T, N> > {
+  static string
   eval()
   {
-    return std::string("Intrepid::Vector< ") +
-        StringName<T>::eval() + std::string(" >");
+    return string("Vector<") + StringName<T>::eval() + string(", ") +
+        dimension_string<N>::eval() + string(">");
   }
 };
 
-template <typename T, Intrepid::Index N>
-struct IsEqual< Intrepid::Vector<T, N> > {
+template <typename T, Index N>
+struct IsEqual< Vector<T, N> > {
   static bool eval(T const & x, T const & y) { return x == y; }
 };
 
-template <typename T, Intrepid::Index N>
-struct IsStaticallySized< Intrepid::Vector<T, N> > {
+template <typename T, Index N>
+struct IsStaticallySized< Vector<T, N> > {
   static const bool value = true;
 };
 
 template <typename T>
-struct IsStaticallySized< Intrepid::Vector<T, Intrepid::DYNAMIC> >
+struct IsStaticallySized< Vector<T, DYNAMIC> >
 {
   static const bool value = false;
 };
 
-///
 /// Sacado traits specializations for Tensor
-///
-template <typename T, Intrepid::Index N>
-struct ScalarType< Intrepid::Tensor<T, N> > {
+template <typename T, Index N>
+struct ScalarType< Tensor<T, N> > {
   typedef T type;
 };
 
-template <typename T, Intrepid::Index N>
-struct ValueType< Intrepid::Tensor<T, N> > {
+template <typename T, Index N>
+struct ValueType< Tensor<T, N> > {
   typedef T type;
 };
 
-template <typename T, Intrepid::Index N>
-struct IsADType< Intrepid::Tensor<T, N> > {
+template <typename T, Index N>
+struct IsADType< Tensor<T, N> > {
   static bool const value = IsADType<T>::value;
 };
 
-template <typename T, Intrepid::Index N>
-struct IsScalarType< Intrepid::Tensor<T, N> > {
+template <typename T, Index N>
+struct IsScalarType< Tensor<T, N> > {
   static bool const value = false;
 };
 
-template <typename T, Intrepid::Index N>
-struct Value< Intrepid::Tensor<T, N> > {
+template <typename T, Index N>
+struct Value< Tensor<T, N> > {
   typedef typename ValueType<T>::type value_type;
-  static const Intrepid::Tensor<value_type, N> &
-  eval(Intrepid::Tensor<T, N> const & x)
+  static const Tensor<value_type, N> &
+  eval(Tensor<T, N> const & x)
   {
-    Intrepid::Index const
-    dimension = x.get_dimension();
+    Tensor<value_type, N> v(x.get_dimension());
 
-    Intrepid::Tensor<value_type, N>
-    v(dimension);
-
-    for (Intrepid::Index i = 0; i < dimension; ++i) {
-      for (Intrepid::Index j = 0; j < dimension; ++j) {
-        v(i,j) = x(i,j).val();
-      }
+    for (Index i = 0; i < x.get_number_components(); ++i) {
+      v[i] = x[i].val();
     }
 
     return v;
   }
 };
 
-template <typename T, Intrepid::Index N>
-struct ScalarValue< Intrepid::Tensor<T, N> > {
+template <typename T, Index N>
+struct ScalarValue< Tensor<T, N> > {
   typedef typename ValueType<T>::type value_type;
   typedef typename ScalarType<T>::type scalar_type;
-  static const Intrepid::Tensor<scalar_type, N> &
-  eval(Intrepid::Tensor<T, N> const & x)
+  static const Tensor<scalar_type, N> &
+  eval(Tensor<T, N> const & x)
   {
-    Intrepid::Index const
-    dimension = x.get_dimension();
+    Tensor<scalar_type, N> v(x.get_dimension());
 
-    Intrepid::Tensor<scalar_type, N>
-    v(dimension);
-
-    for (Intrepid::Index i = 0; i < dimension; ++i) {
-      for (Intrepid::Index j = 0; j < dimension; ++j) {
-        v(i,j) = ScalarValue<value_type>::eval(x(i,j).val());
-      }
+    for (Index i = 0; i < x.get_number_components(); ++i) {
+      v[i] = ScalarValue<value_type>::eval(x[i].val());
     }
 
     return v;
   }
 };
 
-template <typename T, Intrepid::Index N>
-struct StringName< Intrepid::Tensor<T, N> > {
-  static std::string
+template <typename T, Index N>
+struct StringName< Tensor<T, N> > {
+  static string
   eval()
   {
-    return std::string("Intrepid::Tensor< ") +
-        StringName<T>::eval() + std::string(" >");
+    return string("Tensor<") + StringName<T>::eval() + string(", ") +
+        dimension_string<N>::eval() + string(">");
   }
 };
 
-template <typename T, Intrepid::Index N>
-struct IsEqual< Intrepid::Tensor<T, N> > {
+template <typename T, Index N>
+struct IsEqual< Tensor<T, N> > {
   static bool eval(T const & x, T const & y) { return x == y; }
 };
 
-template <typename T, Intrepid::Index N>
-struct IsStaticallySized< Intrepid::Tensor<T, N> > {
+template <typename T, Index N>
+struct IsStaticallySized< Tensor<T, N> > {
   static const bool value = true;
 };
 
 template <typename T>
-struct IsStaticallySized< Intrepid::Tensor<T, Intrepid::DYNAMIC> >
+struct IsStaticallySized< Tensor<T, DYNAMIC> >
 {
   static const bool value = false;
 };
 
-///
 /// Sacado traits specializations for Tensor3
-///
-template <typename T, Intrepid::Index N>
-struct ScalarType< Intrepid::Tensor3<T, N> > {
+template <typename T, Index N>
+struct ScalarType< Tensor3<T, N> > {
   typedef T type;
 };
 
-template <typename T, Intrepid::Index N>
-struct ValueType< Intrepid::Tensor3<T, N> > {
+template <typename T, Index N>
+struct ValueType< Tensor3<T, N> > {
   typedef T type;
 };
 
-template <typename T, Intrepid::Index N>
-struct IsADType< Intrepid::Tensor3<T, N> > {
+template <typename T, Index N>
+struct IsADType< Tensor3<T, N> > {
   static bool const value = IsADType<T>::value;
 };
 
-template <typename T, Intrepid::Index N>
-struct IsScalarType< Intrepid::Tensor3<T, N> > {
+template <typename T, Index N>
+struct IsScalarType< Tensor3<T, N> > {
   static bool const value = false;
 };
 
-template <typename T, Intrepid::Index N>
-struct Value< Intrepid::Tensor3<T, N> > {
+template <typename T, Index N>
+struct Value< Tensor3<T, N> > {
   typedef typename ValueType<T>::type value_type;
-  static const Intrepid::Tensor3<value_type, N> &
-  eval(Intrepid::Tensor3<T, N> const & x)
+  static const Tensor3<value_type, N> &
+  eval(Tensor3<T, N> const & x)
   {
-    Intrepid::Index const
-    dimension = x.get_dimension();
+    Tensor3<value_type, N> v(x.get_dimension());
 
-    Intrepid::Tensor3<value_type, N>
-    v(dimension);
-
-    for (Intrepid::Index i = 0; i < dimension; ++i) {
-      for (Intrepid::Index j = 0; j < dimension; ++j) {
-        for (Intrepid::Index k = 0; k < dimension; ++k) {
-          v(i,j,k) = x(i,j,k).val();
-        }
-      }
+    for (Index i = 0; i < x.get_number_components(); ++i) {
+      v[i] = x[i].val();
     }
 
     return v;
   }
 };
 
-template <typename T, Intrepid::Index N>
-struct ScalarValue< Intrepid::Tensor3<T, N> > {
+template <typename T, Index N>
+struct ScalarValue< Tensor3<T, N> > {
   typedef typename ValueType<T>::type value_type;
   typedef typename ScalarType<T>::type scalar_type;
-  static const Intrepid::Tensor3<scalar_type, N> &
-  eval(Intrepid::Tensor3<T, N> const & x)
+  static const Tensor3<scalar_type, N> &
+  eval(Tensor3<T, N> const & x)
   {
-    Intrepid::Index const
-    dimension = x.get_dimension();
+    Tensor3<scalar_type, N> v(x.get_dimension());
 
-    Intrepid::Tensor3<scalar_type, N>
-    v(dimension);
-
-    for (Intrepid::Index i = 0; i < dimension; ++i) {
-      for (Intrepid::Index j = 0; j < dimension; ++j) {
-        for (Intrepid::Index k = 0; k < dimension; ++k) {
-          v(i,j,k) = ScalarValue<value_type>::eval(x(i,j,k).val());
-        }
-      }
+    for (Index i = 0; i < x.get_number_components(); ++i) {
+      v[i] = ScalarValue<value_type>::eval(x[i].val());
     }
 
     return v;
   }
 };
 
-template <typename T, Intrepid::Index N>
-struct StringName< Intrepid::Tensor3<T, N> > {
-  static std::string
+template <typename T, Index N>
+struct StringName< Tensor3<T, N> > {
+  static string
   eval()
   {
-    return std::string("Intrepid::Tensor3< ") +
-        StringName<T>::eval() + std::string(" >");
+    return string("Tensor3<") + StringName<T>::eval() + string(", ") +
+        dimension_string<N>::eval() + string(">");
   }
 };
 
-template <typename T, Intrepid::Index N>
-struct IsEqual< Intrepid::Tensor3<T, N> > {
+template <typename T, Index N>
+struct IsEqual< Tensor3<T, N> > {
   static bool eval(T const & x, T const & y) { return x == y; }
 };
 
-template <typename T, Intrepid::Index N>
-struct IsStaticallySized< Intrepid::Tensor3<T, N> >
+template <typename T, Index N>
+struct IsStaticallySized< Tensor3<T, N> >
 {
   static const bool value = true;
 };
 
 template <typename T>
-struct IsStaticallySized< Intrepid::Tensor3<T, Intrepid::DYNAMIC> >
+struct IsStaticallySized< Tensor3<T, DYNAMIC> >
 {
   static const bool value = false;
 };
 
-///
 /// Sacado traits specializations for Tensor4
-///
-template <typename T, Intrepid::Index N>
-struct ScalarType< Intrepid::Tensor4<T, N> > {
+template <typename T, Index N>
+struct ScalarType< Tensor4<T, N> > {
   typedef T type;
 };
 
-template <typename T, Intrepid::Index N>
-struct ValueType< Intrepid::Tensor4<T, N> > {
+template <typename T, Index N>
+struct ValueType< Tensor4<T, N> > {
   typedef T type;
 };
 
-template <typename T, Intrepid::Index N>
-struct IsADType< Intrepid::Tensor4<T, N> > {
+template <typename T, Index N>
+struct IsADType< Tensor4<T, N> > {
   static bool const value = IsADType<T>::value;
 };
 
-template <typename T, Intrepid::Index N>
-struct IsScalarType< Intrepid::Tensor4<T, N> > {
+template <typename T, Index N>
+struct IsScalarType< Tensor4<T, N> > {
   static bool const value = false;
 };
 
-template <typename T, Intrepid::Index N>
-struct Value< Intrepid::Tensor4<T, N> > {
+template <typename T, Index N>
+struct Value< Tensor4<T, N> > {
   typedef typename ValueType<T>::type value_type;
-  static const Intrepid::Tensor4<value_type, N> &
-  eval(Intrepid::Tensor4<T, N> const & x)
+  static const Tensor4<value_type, N> &
+  eval(Tensor4<T, N> const & x)
   {
-    Intrepid::Index const
-    dimension = x.get_dimension();
+    Tensor4<value_type, N> v(x.get_dimension());
 
-    Intrepid::Tensor4<value_type, N>
-    v(dimension);
-
-    for (Intrepid::Index i = 0; i < dimension; ++i) {
-      for (Intrepid::Index j = 0; j < dimension; ++j) {
-        for (Intrepid::Index k = 0; k < dimension; ++k) {
-          for (Intrepid::Index l = 0; l < dimension; ++l) {
-            v(i,j,k,l) = x(i,j,k,l).val();
-          }
-        }
-      }
+    for (Index i = 0; i < x.get_number_components(); ++i) {
+      v[i] = x[i].val();
     }
 
     return v;
   }
 };
 
-template <typename T, Intrepid::Index N>
-struct ScalarValue< Intrepid::Tensor4<T, N> > {
+template <typename T, Index N>
+struct ScalarValue< Tensor4<T, N> > {
   typedef typename ValueType<T>::type value_type;
   typedef typename ScalarType<T>::type scalar_type;
-  static const Intrepid::Tensor4<scalar_type, N> &
-  eval(Intrepid::Tensor4<T, N> const & x)
+  static const Tensor4<scalar_type, N> &
+  eval(Tensor4<T, N> const & x)
   {
-    Intrepid::Index const
-    dimension = x.get_dimension();
+    Tensor4<scalar_type, N> v(x.get_dimension());
 
-    Intrepid::Tensor4<scalar_type, N>
-    v(dimension);
-
-    for (Intrepid::Index i = 0; i < dimension; ++i) {
-      for (Intrepid::Index j = 0; j < dimension; ++j) {
-        for (Intrepid::Index k = 0; k < dimension; ++k) {
-          for (Intrepid::Index l = 0; l < dimension; ++l) {
-            v(i,j,k,l) = ScalarValue<value_type>::eval(x(i,j,k,l).val());
-          }
-        }
-      }
+    for (Index i = 0; i < x.get_number_components(); ++i) {
+      v[i] = ScalarValue<value_type>::eval(x[i].val());
     }
 
     return v;
   }
 };
 
-template <typename T, Intrepid::Index N>
-struct StringName< Intrepid::Tensor4<T, N> > {
-  static std::string
+template <typename T, Index N>
+struct StringName< Tensor4<T, N> > {
+  static string
   eval()
   {
-    return std::string("Intrepid::Tensor4< ") +
-        StringName<T>::eval() + std::string(" >");
+    return string("Tensor4<") + StringName<T>::eval() + string(", ") +
+        dimension_string<N>::eval() + string(">");
   }
 };
 
-template <typename T, Intrepid::Index N>
-struct IsEqual< Intrepid::Tensor4<T, N> > {
+template <typename T, Index N>
+struct IsEqual< Tensor4<T, N> > {
   static bool eval(T const & x, T const & y) { return x == y; }
 };
 
-template <typename T, Intrepid::Index N>
-struct IsStaticallySized< Intrepid::Tensor4<T, N> >
+template <typename T, Index N>
+struct IsStaticallySized< Tensor4<T, N> >
 {
   static const bool value = true;
 };
 
 template <typename T>
-struct IsStaticallySized< Intrepid::Tensor4<T, Intrepid::DYNAMIC> >
+struct IsStaticallySized< Tensor4<T, DYNAMIC> >
 {
   static const bool value = false;
 };
