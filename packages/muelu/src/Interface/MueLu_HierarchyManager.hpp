@@ -164,6 +164,7 @@ namespace MueLu {
         levelID++;
       }
       RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      fos->setOutputToRootOnly(0);
       H.print(*fos,verbosity_);
 
       // When we reuse hierarchy, it is necessary that we don't
