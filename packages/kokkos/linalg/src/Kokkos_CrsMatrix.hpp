@@ -417,8 +417,9 @@ public:
     }
   }
 
+  KOKKOS_INLINE_FUNCTION
   void
-  sumIntoValues(OrdinalType row, OrdinalType *cols, size_t ncol, ScalarType *vals, bool force_atomic = false) {
+  sumIntoValues(OrdinalType row, OrdinalType *cols, size_t ncol, ScalarType *vals, bool force_atomic = false) const {
     SparseRowView<CrsMatrix> row_view = this->row (row);
     int length = row_view.length;
     for (size_t i = 0; i<ncol; ++i) {
