@@ -945,7 +945,7 @@ namespace MueLu {
                                "Number of partition owners (" + Teuchos::toString(numPartitionOwners) + ") is not equal to number of partitions");
 
     // print the grid of processors
-    GetOStream(Statistics1, 0) << "Partition distribution over cores, + indicates partition ownership" << std::endl;
+    GetOStream(Statistics2, 0) << "Partition distribution over cores, + indicates partition ownership" << std::endl;
     int numProc = comm->getSize();
     ArrayRCP<char> grid(numProc, '.');
     for (int i=0; i<partitionOwners.size(); ++i) grid[ partitionOwners[i] ] = '+';
@@ -956,17 +956,17 @@ namespace MueLu {
     int pidCtr=0;
     for (int i=0; i<numRows; ++i) {
       for (int j=0; j<sizeOfARow; ++j)
-        GetOStream(Statistics1, 0) << grid[ctr++];
-      GetOStream(Statistics1, 0) << "      " << pidCtr << ":" << pidCtr+sizeOfARow-1 << std::endl;;
+        GetOStream(Statistics2, 0) << grid[ctr++];
+      GetOStream(Statistics2, 0) << "      " << pidCtr << ":" << pidCtr+sizeOfARow-1 << std::endl;;
       pidCtr += sizeOfARow;
     }
     if (leftOvers > 0) {
       for (int i=0; i<leftOvers; ++i)
-        GetOStream(Statistics1, 0) << grid[ctr++];
+        GetOStream(Statistics2, 0) << grid[ctr++];
 
       Array<char> aos(sizeOfARow-leftOvers, ' ');
       std::string spaces(aos.begin(), aos.end());
-      GetOStream(Statistics1, 0) << spaces << "      " << pidCtr << ":" << pidCtr+leftOvers-1 << std::endl;;
+      GetOStream(Statistics2, 0) << spaces << "      " << pidCtr << ":" << pidCtr+leftOvers-1 << std::endl;;
     }
 
   } //DeterminePartitionPlacement
