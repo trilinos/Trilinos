@@ -67,7 +67,7 @@ class CudaSpace ;
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ )
+#if defined( __CUDACC__ ) 
 
 #include <cuda.h>
 
@@ -87,6 +87,12 @@ class CudaSpace ;
 #error "Cuda version 4.1 or greater required"
 #endif
 
+#endif /* #if defined( __CUDACC__ ) */
+
+//----------------------------------------------------------------------------
+
+#if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ )
+
 #if ( __CUDA_ARCH__ < 200 )
 #error "Cuda device capability >= 2.0 is required"
 #endif
@@ -95,9 +101,8 @@ class CudaSpace ;
 #define KOKKOS_INLINE_FUNCTION  __device__  __host__  inline
 #define KOKKOS_FUNCTION         __device__  __host__
 
-#endif /* #if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ ) */
+#endif /* #if defined( __CUDACC__ ) && #if defined( __CUDA_ARCH__ ) */
 
-//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 #if defined( __CUDACC__ ) && ! defined( __CUDA_ARCH__ )

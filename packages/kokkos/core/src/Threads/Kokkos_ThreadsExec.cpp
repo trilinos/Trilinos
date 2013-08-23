@@ -562,6 +562,13 @@ void ThreadsExec::print_configuration( std::ostream & s , const bool detail )
   const std::pair<unsigned,unsigned> core_topo = Kokkos::hwloc::get_core_topology();
   const unsigned core_size = Kokkos::hwloc::get_core_capacity();
 
+#if defined( KOKKOS_HAVE_HWLOC )
+  s << "macro  KOKKOS_HAVE_HWLOC   : defined" << std::endl ;
+#endif
+#if defined( KOKKOS_HAVE_PTHREAD )
+  s << "macro  KOKKOS_HAVE_PTHREAD : defined" << std::endl ;
+#endif
+
   s << "Kokkos::Threads hwloc[" << core_topo.first << "x" << core_topo.second << "x" << core_size << "]" ;
 
   if ( s_threads_exec[0] ) {
