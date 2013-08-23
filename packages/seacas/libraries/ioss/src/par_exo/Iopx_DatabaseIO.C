@@ -959,7 +959,7 @@ namespace Iopx {
     Ioss::Region *this_region = get_region();
     for (int i=0; i < timestep_count; i++) {
       if (tsteps[i] <= last_time) {
-        this_region->add_state(tsteps[i]);
+        this_region->add_state(tsteps[i]*timeScaleFactor);
       } else {
         if (myProcessor == 0) {
           // NOTE: Don't want to warn on all processors if there are
@@ -968,8 +968,8 @@ namespace Iopx {
           // 0... Need better warnings which won't overload in the
           // worst case...
           IOSS_WARNING << "Skipping step " << i+1 << " at time " << tsteps[i]
-                                                                           << " in database file\n\t" << get_filename()
-                                                                           << ".\nThe data for that step is possibly corrupt.\n";
+		       << " in database file\n\t" << get_filename()
+		       << ".\nThe data for that step is possibly corrupt.\n";
         }
       }
     }
@@ -5035,6 +5035,7 @@ namespace Iopx {
     {
       state = get_database_step(state);
       if (!is_input()) {
+	time /= timeScaleFactor;
         int ierr = ex_put_time(get_file_pointer(), state, &time);
         if (ierr < 0)
           exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -5053,7 +5054,7 @@ namespace Iopx {
     {
       if (!is_input()) {
         write_reduction_fields();
-        finalize_write(time);
+        finalize_write(time/timeScaleFactor);
       }
       return true;
     }

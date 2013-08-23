@@ -971,7 +971,7 @@ namespace Ioex {
     Ioss::Region *this_region = get_region();
     for (int i=0; i < timestep_count; i++) {
       if (tsteps[i] <= last_time) {
-        this_region->add_state(tsteps[i]);
+        this_region->add_state(tsteps[i]*timeScaleFactor);
       } else {
         if (myProcessor == 0) {
           // NOTE: Don't want to warn on all processors if there are
@@ -980,9 +980,9 @@ namespace Ioex {
           // 0... Need better warnings which won't overload in the
           // worst case...
           IOSS_WARNING << "Skipping step " << i+1 << " at time " << tsteps[i]
-                                                                           << " in database file\n\t" << get_filename()
-                                                                           << ".\n\tThe data for that step is possibly corrupt since the last time written successfully was "
-                                                                           << last_time << ".\n";
+		       << " in database file\n\t" << get_filename()
+		       << ".\n\tThe data for that step is possibly corrupt since the last time written successfully was "
+		       << last_time << ".\n";
         }
       }
     }
@@ -5684,6 +5684,8 @@ namespace Ioex {
     {
       Ioss::SerializeIO	serializeIO__(this);
 
+      time /= timeScaleFactor;
+      
       state = get_database_step(state);
       if (!is_input()) {
         int ierr = ex_put_time(get_file_pointer(), state, &time);
@@ -5718,6 +5720,7 @@ namespace Ioex {
 
       if (!is_input()) {
         write_reduction_fields();
+	time /= timeScaleFactor;
         finalize_write(time);
         if (minimizeOpenFiles)
           free_file_pointer();

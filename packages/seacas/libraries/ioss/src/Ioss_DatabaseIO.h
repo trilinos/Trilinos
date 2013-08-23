@@ -229,6 +229,8 @@ namespace Ioss {
     void set_cycle_count(int count) const {cycleCount = count;}
     void set_overlay_count(int count) const {overlayCount = count;}
 
+    void set_time_scale_factor(double factor) {timeScaleFactor = factor;}
+    
     const Ioss::ParallelUtils &util() const {return util_;}
     protected:
 
@@ -315,6 +317,16 @@ namespace Ioss {
     mutable int cycleCount;
 
     mutable int overlayCount;
+
+    /*! Scale the time read/written from/to the file by the specified
+      scaleFactor.  If the datbase times are 0.1, 0.2, 0.3 and the
+      scaleFactor is 20, then the application will think that the
+      times read are 20, 40, 60.
+      
+      If specified for an output database, then the analysis time
+      is divided by the scaleFactor time prior to output.
+    */
+    double timeScaleFactor;
 
     Ioss::SurfaceSplitType splitType;
     Ioss::DatabaseUsage dbUsage;
