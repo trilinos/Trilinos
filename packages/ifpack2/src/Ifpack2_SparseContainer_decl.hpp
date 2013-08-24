@@ -56,18 +56,40 @@
 
 namespace { // anonymous
 
+// This is an implementation detail of SparseContainer.  This class
+// may cease to exist or change its interface at any time.
+//
+// Ifpack2::SparseContainer uses this class to copy data between the
+// input ordering (of apply() and weightedApply()) and the ordering of
+// the InverseType operator (where InverseType is the second template
+// parameter of SparseContainer).  The latter ordering is a permuted
+// subset of the former.  Hence, we've chosen the terms "gather" and
+// "scatter" to refer to the copy operation to resp. from the
+// InverseType operator's ordering.
+//
+// MV_in and MV_out are possibly different specializations of
+// Tpetra::MultiVector.  MV_in corresponds to the input arguments of
+// apply() and weightedApply(), and MV_out to the input arguments of
+// InverseType::apply().  The two specializations of
+// Tpetra::MultiVector may have entirely different template
+// parameters, even different Scalar types.  This is a good way to
+// experiment with mixed-precision computation.  Since MV_in and
+// MV_out may be different types, it makes sense to implement "local
+// gather / scatter" as a separate class that uses the public
+// interface of Tpetra::MultiVector, rather than an instance method
+// (which would have to be templated).
 template<class MV_in, class MV_out>
 class MultiVectorLocalGatherScatter {
 public:
   void
   gather (MV_out& X_out,
           const MV_in& X_in,
-          const std::vector<typename MV_in::local_ordinal_type>& perm,
-          const size_t numRows) const
+          const std::vector<typename MV_in::local_ordinal_type>& perm) const
   {
     using Teuchos::ArrayRCP;
-
+    const size_t numRows = X_out.getLocalLength ();
     const size_t numVecs = X_in.getNumVectors ();
+
     for (size_t j = 0; j < numVecs; ++j) {
       ArrayRCP<const typename MV_in::scalar_type> X_in_j = X_in.getData (j);
       ArrayRCP<typename MV_out::scalar_type> X_out_j = X_out.getDataNonConst (j);
@@ -82,12 +104,12 @@ public:
   void
   scatter (MV_in& X_in,
            const MV_out& X_out,
-           const std::vector<typename MV_in::local_ordinal_type>& perm,
-           const size_t numRows) const
+           const std::vector<typename MV_in::local_ordinal_type>& perm) const
   {
     using Teuchos::ArrayRCP;
-
+    const size_t numRows = X_out.getLocalLength ();
     const size_t numVecs = X_in.getNumVectors ();
+
     for (size_t j = 0; j < numVecs; ++j) {
       ArrayRCP<typename MV_in::scalar_type> X_in_j = X_in.getDataNonConst (j);
       ArrayRCP<const typename MV_out::scalar_type> X_out_j = X_out.getData (j);
@@ -145,6 +167,15 @@ namespace Ifpack2 {
 /// <li> \c global_ordinal_type </li>
 /// <li> \c node_type </li>
 /// </ul>
+///
+/// SparseContainer assumes the following about the column and row
+/// Maps of the input matrix:
+/// <ol>
+/// <li> The column and row Maps begin with the same set of
+///      on-process entries.</li>
+/// <li> All off-process indices in the column Map of the input
+///      matrix occur after that initial set.</li>
+/// </ol>
 ///
 /// \warning Please don't rely too much on this interface, because the
 ///   interface needs to be reworked to make it more rational.
@@ -334,9 +365,15 @@ private:
   bool IsComputed_;
   //! Serial communicator (containing only MPI_COMM_SELF if MPI is used).
   Teuchos::RCP<Teuchos::Comm<int> > LocalComm_;
-  //! Ifpack2::Preconditioner whose apply() method defines the action of the inverse of the local matrix.
+
+  /// \brief Local operator.
+  ///
+  /// InverseType must be a specialization of Ifpack2::Preconditioner.
+  /// (See the class documentation above.)  Its apply() method defines
+  /// the action of the inverse of the local matrix.
   Teuchos::RCP<InverseType> Inverse_;
 
+  //! Parameters for Inverse_.
   Teuchos::ParameterList List_;
 
   //! Whether apply() and weightedApply() need to permute the input X and output Y.

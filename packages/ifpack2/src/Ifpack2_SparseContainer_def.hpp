@@ -61,11 +61,10 @@ SparseContainer (const size_t NumRows, const size_t NumVectors) :
   IsInitialized_ (false),
   IsComputed_ (false),
 #ifdef HAVE_MPI
-  LocalComm_ (Teuchos::rcp (new Teuchos::MpiComm<int> (MPI_COMM_SELF))),
+  LocalComm_ (Teuchos::rcp (new Teuchos::MpiComm<int> (MPI_COMM_SELF)))
 #else
-  LocalComm_ (Teuchos::rcp (new Teuchos::SerialComm<int> ())),
+  LocalComm_ (Teuchos::rcp (new Teuchos::SerialComm<int> ()))
 #endif // HAVE_MPI
-  needPermutation_ (true)
 {
   (void) NumVectors;
 }
@@ -121,56 +120,48 @@ void SparseContainer<MatrixType,InverseType>::setParameters(const Teuchos::Param
 template<class MatrixType, class InverseType>
 void SparseContainer<MatrixType,InverseType>::initialize()
 {
-  if(IsInitialized_) destroy();
-  IsInitialized_=false;
+  using Teuchos::rcp;
+  typedef Tpetra::Map<InverseLocalOrdinal, InverseGlobalOrdinal,
+                      InverseNode> map_type;
+  typedef Tpetra::CrsMatrix<InverseScalar, InverseLocalOrdinal,
+                            InverseGlobalOrdinal, InverseNode> crs_matrix_type;
+  if (IsInitialized_) {
+    destroy ();
+  }
+  IsInitialized_ = false;
 
-  // Allocations
-  Map_ = Teuchos::rcp( new Tpetra::Map<InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode>(numRows_,0,LocalComm_) );
-  Matrix_ = Teuchos::rcp( new Tpetra::CrsMatrix<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode>(Map_,0) );
-  GID_.resize(numRows_);
+  Map_ = rcp (new map_type (numRows_, 0, LocalComm_));
+  Matrix_ = rcp (new crs_matrix_type (Map_, 0));
+  GID_.resize (numRows_);
 
-  // create the inverse
-  Inverse_ = Teuchos::rcp( new InverseType(Matrix_) );
-  TEUCHOS_TEST_FOR_EXCEPTION( Inverse_ == Teuchos::null, std::runtime_error, "Ifpack2::SparseContainer::initialize error in inverse constructor.");
-  Inverse_->setParameters(List_);
+  // Create the inverse operator on the local block.  We give it the
+  // matrix here, but don't call its initialize() or compute() methods
+  // yet, since we haven't initialized the matrix yet.
+  Inverse_ = rcp (new InverseType (Matrix_));
+  Inverse_->setParameters (List_);
 
-  // Note from IFPACK: Call Inverse_->Initialize() in Compute(). This saves
-  // some time, because the diagonal blocks can be extracted faster,
-  // and only once.
+  // Note from IFPACK: Call Inverse_->initialize() in compute(). This
+  // saves some time, because the diagonal blocks can be extracted
+  // faster, and only once.
   IsInitialized_ = true;
 }
 
 //==============================================================================
-// Finalizes the linear system matrix and prepares for the application of the inverse.
 template<class MatrixType, class InverseType>
 void SparseContainer<MatrixType,InverseType>::
 compute (const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> >& Matrix)
 {
-  IsComputed_=false;
+  IsComputed_ = false;
   if (! this->isInitialized ()) {
     this->initialize ();
   }
 
-  // extract the submatrices
+  // Extract the submatrix.
   this->extract (Matrix);
 
   // initialize & compute the inverse operator
   Inverse_->initialize ();
   Inverse_->compute ();
-
-  // Determine whether apply() and weightedApply() need to permute X and Y.
-  // If ID(i) == i for all i in [0, numRows-1], then we don't need to permute.
-  bool needPermutation = false;
-  const size_t numRows = Inverse_->getRangeMap ()->getNodeNumElements ();
-  if (numRows == this->GID_.size ()) {
-    for (size_t i = 0; i < numRows; ++i) {
-      if (this->GID_[i] != i) {
-        needPermutation = true;
-        break;
-      }
-    }
-  }
-  needPermutation_ = needPermutation;
 
   IsComputed_ = true;
 }
@@ -290,7 +281,13 @@ apply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrd
     X_ = rcp (new MV_inv (Inverse_->getDomainMap (), numVecs));
   }
   RCP<MV_inv> X_local = X_;
-  mvgs.gather (*X_local, X, this->GID_, numRows_);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    X_local->getLocalLength () != numRows_, std::logic_error,
+    "Ifpack2::SparseContainer::apply: "
+    "X_local has length " << X_local->getLocalLength () << ", which does "
+    "not match numRows_ = " << numRows_ << ".  Please report this bug to "
+    "the Ifpack2 developers.");
+  mvgs.gather (*X_local, X, this->GID_);
 
   // We must gather the output multivector Y even on input to
   // Inverse_->apply(), since the Inverse_ operator might use it as an
@@ -301,7 +298,13 @@ apply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrd
     Y_ = rcp (new MV_inv (Inverse_->getRangeMap (), numVecs));
   }
   RCP<MV_inv> Y_local = Y_;
-  mvgs.gather (*Y_local, Y, this->GID_, numRows_);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    Y_local->getLocalLength () != numRows_, std::logic_error,
+    "Ifpack2::SparseContainer::apply: "
+    "Y_local has length " << X_local->getLocalLength () << ", which does "
+    "not match numRows_ = " << numRows_ << ".  Please report this bug to "
+    "the Ifpack2 developers.");
+  mvgs.gather (*Y_local, Y, this->GID_);
 
   // Apply the local operator:
   // Y_local := beta*Y_local + alpha*M^{-1}*X_local
@@ -310,7 +313,7 @@ apply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrd
 
   // Scatter the permuted subset output vector Y_local back into the
   // original output multivector Y.
-  mvgs.scatter (Y, *Y_local, this->GID_, numRows_);
+  mvgs.scatter (Y, *Y_local, this->GID_);
 }
 
 //==============================================================================
@@ -401,7 +404,13 @@ weightedApply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixG
     X_ = rcp (new MV_inv (Inverse_->getDomainMap (), numVecs));
   }
   RCP<MV_inv> X_local = X_;
-  mvgs.gather (*X_local, X, this->GID_, numRows_);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    X_local->getLocalLength () != numRows_, std::logic_error,
+    "Ifpack2::SparseContainer::weightedApply: "
+    "X_local has length " << X_local->getLocalLength () << ", which does "
+    "not match numRows_ = " << numRows_ << ".  Please report this bug to "
+    "the Ifpack2 developers.");
+  mvgs.gather (*X_local, X, this->GID_);
 
   // We must gather the output multivector Y even on input to
   // Inverse_->apply(), since the Inverse_ operator might use it as an
@@ -412,7 +421,13 @@ weightedApply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixG
     Y_ = rcp (new MV_inv (Inverse_->getRangeMap (), numVecs));
   }
   RCP<MV_inv> Y_local = Y_;
-  mvgs.gather (*Y_local, Y, this->GID_, numRows_);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    Y_local->getLocalLength () != numRows_, std::logic_error,
+    "Ifpack2::SparseContainer::weightedApply: "
+    "Y_local has length " << X_local->getLocalLength () << ", which does "
+    "not match numRows_ = " << numRows_ << ".  Please report this bug to "
+    "the Ifpack2 developers.");
+  mvgs.gather (*Y_local, Y, this->GID_);
 
   // Apply the diagonal scaling D to the input X.  It's our choice
   // whether the result has the original input Map of X, or the
@@ -425,7 +440,13 @@ weightedApply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixG
   // 3. Compute X_scaled := diag(D_loca) * X_local.
 
   RCP<V_inv> D_local = rcp (new V_inv (Inverse_->getDomainMap ()));
-  mvgs.gather (*D_local, D, this->GID_, numRows_);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    D_local->getLocalLength () != numRows_, std::logic_error,
+    "Ifpack2::SparseContainer::weightedApply: "
+    "D_local has length " << X_local->getLocalLength () << ", which does "
+    "not match numRows_ = " << numRows_ << ".  Please report this bug to "
+    "the Ifpack2 developers.");
+  mvgs.gather (*D_local, D, this->GID_);
   RCP<MV_inv> X_scaled = rcp (new MV_inv (Inverse_->getDomainMap (), numVecs));
   X_scaled->elementWiseMultiply (STS::one (), *D_local, *X_local, STS::zero ());
 
@@ -452,7 +473,7 @@ weightedApply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixG
 
   // Copy the permuted subset output vector Y_local into the original
   // output multivector Y.
-  mvgs.scatter (Y, *Y_local, this->GID_, numRows_);
+  mvgs.scatter (Y, *Y_local, this->GID_);
 }
 
 //==============================================================================
@@ -538,33 +559,39 @@ extract (const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdi
   Values_insert.resize (Length);
   Indices_insert.resize (Length);
 
+  const InverseLocalOrdinal INVALID =
+    Teuchos::OrdinalTraits<InverseLocalOrdinal>::invalid ();
   for (size_t j = 0; j < numRows_; ++j) {
-    MatrixLocalOrdinal LRID = ID(j);
+    const MatrixLocalOrdinal LRID = this->ID (j);
     size_t NumEntries;
+    Matrix_in->getLocalRowCopy (LRID, Indices (), Values (), NumEntries);
 
-    Matrix_in->getLocalRowCopy(LRID,Indices(),Values(),NumEntries);
+    size_t num_entries_found = 0;
+    for (size_t k = 0; k < NumEntries; ++k) {
+      const MatrixLocalOrdinal LCID = Indices[k];
 
-    size_t num_entries_found=0;
-    for (size_t k = 0 ; k < NumEntries ; ++k) {
-      MatrixLocalOrdinal LCID = Indices[k];
-
-      // skip off-processor elements
-      if ((size_t)LCID >= MatrixInNumRows)
+      // Skip off-process elements
+      //
+      // FIXME (mfh 24 Aug 2013) This assumes the following:
+      //
+      // 1. The column and row Maps begin with the same set of
+      //    on-process entries.
+      //
+      // 2. All off-process indices in the column Map of the input
+      //    matrix occur after that initial set.
+      if (static_cast<size_t> (LCID) >= MatrixInNumRows) {
         continue;
-
+      }
       // for local column IDs, look for each ID in the list
       // of columns hosted by this object
-      //
-      // FIXME (mfh 21 Aug 2013) Using -1 as the "invalid value"
-      // probably will not work if InverseLocalOrdinal is unsigned.
-      InverseLocalOrdinal jj = -1;
+      InverseLocalOrdinal jj = INVALID;
       for (size_t kk = 0; kk < numRows_; ++kk) {
         if (ID(kk) == LCID) {
           jj = kk;
         }
       }
 
-      if (jj != -1) {
+      if (jj != INVALID) {
         Indices_insert[num_entries_found] = Map_->getGlobalElement(jj);
         Values_insert[num_entries_found]  = Values[k];
         num_entries_found++;
