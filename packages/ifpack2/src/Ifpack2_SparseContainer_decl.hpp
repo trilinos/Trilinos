@@ -168,19 +168,27 @@ namespace Ifpack2 {
 /// <li> \c node_type </li>
 /// </ul>
 ///
-/// SparseContainer assumes the following about the column and row
-/// Maps of the input matrix:
+/// SparseContainer currently assumes the following about the column
+/// and row Maps of the input matrix:
 /// <ol>
-/// <li> The column and row Maps begin with the same set of
-///      on-process entries.</li>
-/// <li> All off-process indices in the column Map of the input
-///      matrix occur after that initial set.</li>
+/// <li> On all processes, the column and row Maps begin with the same
+///      set of on-process entries, in the same order.  That is,
+///      on-process row and column indices are the same.</li>
+/// <li> On all processes, all off-process indices in the column Map
+///      of the input matrix occur after that initial set.</li>
 /// </ol>
+/// These assumptions may be violated if \c MatrixType is a
+/// Tpetra::CrsMatrix specialization and was constructed with a
+/// user-provided column Map.  The assumptions are not mathematically
+/// necessary and could be relaxed at any time.  Implementers who wish
+/// to do so will need to modify the extract() method, so that it
+/// translates explicitly between local row and column indices,
+/// instead of just assuming that they are the same.
 ///
 /// \warning Please don't rely too much on this interface, because the
 ///   interface needs to be reworked to make it more rational.
-template<typename MatrixType, typename InverseType >
-class SparseContainer : public Container<MatrixType,InverseType> {
+template<typename MatrixType, typename InverseType>
+class SparseContainer : public Container<MatrixType, InverseType> {
 public:
   typedef typename MatrixType::scalar_type          MatrixScalar;
   typedef typename MatrixType::local_ordinal_type   MatrixLocalOrdinal;
@@ -197,17 +205,14 @@ public:
 
   /// \brief Constructor
   ///
-  /// \param NumRows [in] Number of rows in the local matrix on each
+  /// \param numRows [in] Number of rows in the local matrix on each
   ///   process.  This may be different on different processes.
-  ///
-  /// \param NumVectors [in] Hint for the number of columns to expect
-  ///   in the \c X multivector input argument of apply().
   ///
   /// \warning FIXME (mfh 20 Aug 2013) It should not be necessary to
   ///   ask for the number of rows in the local matrix on each
   ///   process, if the local matrix is a Tpetra::RowMatrix
   ///   specialization.  We do need to revise this interface.
-  SparseContainer (const size_t NumRows, const size_t NumVectors = 1);
+  SparseContainer (const size_t numRows);
 
   //! Destructor (declared virtual for memory safety of derived classes).
   virtual ~SparseContainer();
@@ -280,9 +285,6 @@ public:
   //@}
   //! \name Miscellaneous methods
   //@{
-
-  //! Destroy all data.
-  virtual void destroy();
 
   //! Prints basic information on iostream. This function is used by operator<<.
   virtual std::ostream& print(std::ostream& os) const;
