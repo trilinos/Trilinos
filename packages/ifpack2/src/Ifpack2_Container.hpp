@@ -100,11 +100,6 @@ namespace Ifpack2 {
 template<class MatrixType>
 class Container : public Teuchos::Describable {
 public:
-  typedef typename MatrixType::scalar_type          MatrixScalar;
-  typedef typename MatrixType::local_ordinal_type   MatrixLocalOrdinal;
-  typedef typename MatrixType::global_ordinal_type  MatrixGlobalOrdinal;
-  typedef typename MatrixType::node_type            MatrixNode;
-
   typedef typename MatrixType::scalar_type          scalar_type;
   typedef typename MatrixType::local_ordinal_type   local_ordinal_type;
   typedef typename MatrixType::global_ordinal_type  global_ordinal_type;
@@ -162,7 +157,7 @@ public:
   /// For an example of how to use these indices, see the
   /// implementation of BlockRelaxation::ExtractSubmatrices() in
   /// Ifpack2_BlockRelaxation_def.hpp.
-  Teuchos::ArrayView<const MatrixLocalOrdinal> getLocalRows () const {
+  Teuchos::ArrayView<const local_ordinal_type> getLocalRows () const {
     return localRows_ ();
   }
 
@@ -205,11 +200,11 @@ public:
   /// Tpetra::Operator's method of the same name.  This might require
   /// subclasses to mark some of their instance data as \c mutable.
   virtual void
-  apply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& X,
-         Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& Y,
+  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
          Teuchos::ETransp mode = Teuchos::NO_TRANS,
-         MatrixScalar alpha = Teuchos::ScalarTraits<MatrixScalar>::one (),
-         MatrixScalar beta = Teuchos::ScalarTraits<MatrixScalar>::zero ()) const = 0;
+         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one (),
+         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero ()) const = 0;
 
   /// \brief Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>.
   ///
@@ -232,12 +227,12 @@ public:
   /// Tpetra::Operator's method of the same name.  This might require
   /// subclasses to mark some of their instance data as \c mutable.
   virtual void
-  weightedApply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& X,
-                 Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& Y,
-                 const Tpetra::Vector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& D,
+  weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                 Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+                 const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& D,
                  Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                 MatrixScalar alpha = Teuchos::ScalarTraits<MatrixScalar>::one (),
-                 MatrixScalar beta = Teuchos::ScalarTraits<MatrixScalar>::zero ()) const = 0;
+                 scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one (),
+                 scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero ()) const = 0;
 
   //! Print basic information about the container to \c os.
   virtual std::ostream& print (std::ostream& os) const = 0;
@@ -247,7 +242,7 @@ private:
   Teuchos::RCP<const row_matrix_type> inputMatrix_;
 
   //! Local indices of the rows of the input matrix that belong to this block.
-  Teuchos::Array<MatrixLocalOrdinal> localRows_;
+  Teuchos::Array<local_ordinal_type> localRows_;
 };
 
 //! Print information about the given Container to the output stream \c os.

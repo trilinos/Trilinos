@@ -197,18 +197,43 @@ namespace Ifpack2 {
 template<typename MatrixType, typename InverseType>
 class SparseContainer : public Container<MatrixType> {
 public:
-  typedef typename MatrixType::scalar_type          MatrixScalar;
-  typedef typename MatrixType::local_ordinal_type   MatrixLocalOrdinal;
-  typedef typename MatrixType::global_ordinal_type  MatrixGlobalOrdinal;
-  typedef typename MatrixType::node_type            MatrixNode;
+  //! \name Public typedefs
+  //@{
 
-  typedef typename InverseType::scalar_type         InverseScalar;
-  typedef typename InverseType::local_ordinal_type  InverseLocalOrdinal;
-  typedef typename InverseType::global_ordinal_type InverseGlobalOrdinal;
-  typedef typename InverseType::node_type           InverseNode;
+  /// \brief The first template parameter of this class.
+  ///
+  /// This must be either a Tpetra::RowMatrix specialization or a
+  /// Tpetra::CrsMatrix specialization.  It may have entirely
+  /// different template parameters (e.g., \c scalar_type) than
+  /// <tt>InverseType</tt>.
+  typedef MatrixType matrix_type;
+  /// \brief The second template parameter of this class.
+  ///
+  /// This must be a specialization of Ifpack2::Preconditioner or one
+  /// of its subclasses.  It may have entirely different template
+  /// parameters (e.g., \c scalar_type) than \c MatrixType.
+  typedef InverseType inverse_type;
 
+  //! The type of entries in the input (global) matrix.
+  typedef typename MatrixType::scalar_type scalar_type;
+  //! The type of local indices in the input (global) matrix.
+  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
+  //! The type of global indices in the input (global) matrix.
+  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
+  //! The Kokkos Node type of the input (global) matrix.
+  typedef typename MatrixType::node_type node_type;
+
+  /// \brief The (base class) type of the input matrix.
+  ///
+  /// The input matrix to the constructor may be either a
+  /// Tpetra::RowMatrix specialization or a Tpetra::CrsMatrix
+  /// specialization.  However, we want to make the constructor as
+  /// general as possible, so we always accept the matrix as a
+  /// Tpetra::RowMatrix.  This typedef is the appropriate
+  /// specialization of Tpetra::RowMatrix.
   typedef typename Container<MatrixType>::row_matrix_type row_matrix_type;
 
+  //@}
   //! \name Constructor and destructor
   //@{
 
@@ -226,7 +251,7 @@ public:
   ///   local matrix on each process.  This may be different on
   ///   different processes.
   SparseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                   const Teuchos::ArrayView<const MatrixLocalOrdinal>& localRows);
+                   const Teuchos::ArrayView<const local_ordinal_type>& localRows);
 
   //! Destructor (declared virtual for memory safety of derived classes).
   virtual ~SparseContainer();
@@ -262,20 +287,20 @@ public:
 
   //! Compute <tt>Y := alpha * M^{-1} X + beta*Y</tt>.
   virtual void
-  apply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& X,
-         Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& Y,
+  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
          Teuchos::ETransp mode=Teuchos::NO_TRANS,
-         MatrixScalar alpha=Teuchos::ScalarTraits< MatrixScalar >::one(),
-         MatrixScalar beta=Teuchos::ScalarTraits< MatrixScalar >::zero()) const;
+         scalar_type alpha=Teuchos::ScalarTraits< scalar_type >::one(),
+         scalar_type beta=Teuchos::ScalarTraits< scalar_type >::zero()) const;
 
   //! Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>.
   virtual void
-  weightedApply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& X,
-                 Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& Y,
-                 const Tpetra::Vector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& D,
+  weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                 Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+                 const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& D,
                  Teuchos::ETransp mode=Teuchos::NO_TRANS,
-                 MatrixScalar alpha=Teuchos::ScalarTraits< MatrixScalar >::one(),
-                 MatrixScalar beta=Teuchos::ScalarTraits< MatrixScalar >::zero()) const;
+                 scalar_type alpha=Teuchos::ScalarTraits< scalar_type >::one(),
+                 scalar_type beta=Teuchos::ScalarTraits< scalar_type >::zero()) const;
 
   //@}
   //! \name Miscellaneous methods
@@ -301,6 +326,11 @@ public:
 
   //@}
 private:
+  typedef typename InverseType::scalar_type         InverseScalar;
+  typedef typename InverseType::local_ordinal_type  InverseLocalOrdinal;
+  typedef typename InverseType::global_ordinal_type InverseGlobalOrdinal;
+  typedef typename InverseType::node_type           InverseNode;
+
   //! Copy constructor: Declared but not implemented, to forbid copy construction.
   SparseContainer (const SparseContainer<MatrixType,InverseType>& rhs);
 
@@ -325,29 +355,6 @@ private:
              InverseScalar alpha,
              InverseScalar beta) const;
 
-  /// \brief Return a read-only local "view" of the input Tpetra::MultiVector X_in.
-  ///
-  /// The "view" is either a true view of X_in's data, or a copy.  In
-  /// either case, its Map has a local communicator (that is,
-  /// <tt>MPI_COMM_SELF</tt> and has the same number of local entries
-  /// as X_in's Map.
-  ///
-  /// This is useful for apply() and weightedApply(), if
-  /// MatrixType::apply and InverseType::apply have different
-  /// MultiVector types.
-  Teuchos::RCP<const Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> >
-  viewConst (const Teuchos::RCP<const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> >& X_in) const;
-
-  /// \brief Return a read-and-write "view" of the input Tpetra::MultiVector X_in.
-  ///
-  /// The "view" is either a true view of X_in's data, or a copy.  If the latter, it automatically
-  ///
-  /// This is useful for apply() and weightedApply(), if
-  /// MatrixType::apply and InverseType::apply have different
-  /// MultiVector types.
-  Teuchos::RCP<Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> >
-  viewNonConst (Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& X_in) const;
-
   //! Number of rows in the local matrix.
   size_t numRows_;
   //! Row Map of the local diagonal block.
@@ -367,9 +374,11 @@ private:
 
   /// \brief Local operator.
   ///
-  /// InverseType must be a specialization of Ifpack2::Preconditioner.
-  /// (See the class documentation above.)  Its apply() method defines
-  /// the action of the inverse of the local matrix.
+  /// InverseType must be a specialization of Ifpack2::Preconditioner,
+  /// with the same template parameters (in the same order) as those
+  /// of \c diagBlock_ above.  Its apply() method defines the action
+  /// of the inverse of the local matrix.  See the class documentation
+  /// for more details.
   Teuchos::RCP<InverseType> Inverse_;
 
   //! Parameters for the InverseType linear solve operator.

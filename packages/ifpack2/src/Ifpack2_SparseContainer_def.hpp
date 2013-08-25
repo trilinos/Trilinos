@@ -57,7 +57,7 @@ namespace Ifpack2 {
 template<class MatrixType, class InverseType>
 SparseContainer<MatrixType,InverseType>::
 SparseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                 const Teuchos::ArrayView<const MatrixLocalOrdinal>& localRows) :
+                 const Teuchos::ArrayView<const local_ordinal_type>& localRows) :
   Container<MatrixType> (matrix, localRows),
   numRows_ (localRows.size ()),
   IsInitialized_ (false),
@@ -191,11 +191,11 @@ applyImpl (const Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGl
 //==============================================================================
 template<class MatrixType, class InverseType>
 void SparseContainer<MatrixType,InverseType>::
-apply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& X,
-       Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& Y,
+apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
        Teuchos::ETransp mode,
-       MatrixScalar alpha,
-       MatrixScalar beta) const
+       scalar_type alpha,
+       scalar_type beta) const
 {
   using Teuchos::ArrayView;
   using Teuchos::as;
@@ -212,7 +212,7 @@ apply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrd
   // the right type for InverseType, so we can use those as targets.
 
   // Tpetra::MultiVector specialization corresponding to MatrixType.
-  typedef Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> MV_mat;
+  typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV_mat;
   // Tpetra::MultiVector specialization corresponding to InverseType.
   typedef Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> MV_inv;
   MultiVectorLocalGatherScatter<MV_mat, MV_inv> mvgs;
@@ -268,7 +268,7 @@ apply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrd
     "X_local has length " << X_local->getLocalLength () << ", which does "
     "not match numRows_ = " << numRows_ << ".  Please report this bug to "
     "the Ifpack2 developers.");
-  ArrayView<const MatrixLocalOrdinal> localRows = this->getLocalRows ();
+  ArrayView<const local_ordinal_type> localRows = this->getLocalRows ();
   mvgs.gather (*X_local, X, localRows);
 
   // We must gather the output multivector Y even on input to
@@ -301,12 +301,12 @@ apply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrd
 //==============================================================================
 template<class MatrixType, class InverseType>
 void SparseContainer<MatrixType,InverseType>::
-weightedApply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& X,
-               Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& Y,
-               const Tpetra::Vector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& D,
+weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+               const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& D,
                Teuchos::ETransp mode,
-               MatrixScalar alpha,
-               MatrixScalar beta) const
+               scalar_type alpha,
+               scalar_type beta) const
 {
   using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
@@ -316,7 +316,7 @@ weightedApply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixG
   using Teuchos::rcp_const_cast;
   using std::cerr;
   using std::endl;
-  typedef Teuchos::ScalarTraits<MatrixScalar> STS;
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
 
   // The InverseType template parameter might have different template
   // parameters (Scalar, LO, GO, and/or Node) than MatrixType.  For
@@ -328,11 +328,14 @@ weightedApply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixG
   // the right type for InverseType, so we can use those as targets.
 
   // Tpetra::MultiVector specialization corresponding to MatrixType.
-  typedef Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> MV_mat;
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
+                              global_ordinal_type, node_type> MV_mat;
   // Tpetra::MultiVector specialization corresponding to InverseType.
-  typedef Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> MV_inv;
+  typedef Tpetra::MultiVector<InverseScalar, InverseLocalOrdinal,
+                              InverseGlobalOrdinal, InverseNode> MV_inv;
   // Tpetra::Vector specialization corresponding to InverseType.
-  typedef Tpetra::Vector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> V_inv;
+  typedef Tpetra::Vector<InverseScalar, InverseLocalOrdinal,
+                         InverseGlobalOrdinal, InverseNode> V_inv;
   MultiVectorLocalGatherScatter<MV_mat, MV_inv> mvgs;
   const size_t numVecs = X.getNumVectors ();
 
@@ -391,7 +394,7 @@ weightedApply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixG
     "X_local has length " << X_local->getLocalLength () << ", which does "
     "not match numRows_ = " << numRows_ << ".  Please report this bug to "
     "the Ifpack2 developers.");
-  ArrayView<const MatrixLocalOrdinal> localRows = this->getLocalRows ();
+  ArrayView<const local_ordinal_type> localRows = this->getLocalRows ();
   mvgs.gather (*X_local, X, localRows);
 
   // We must gather the output multivector Y even on input to
@@ -516,7 +519,7 @@ extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
   const size_t MatrixInNumRows = globalMatrix->getNodeNumRows ();
 
   // Sanity checking
-  ArrayView<const MatrixLocalOrdinal> localRows = this->getLocalRows ();
+  ArrayView<const local_ordinal_type> localRows = this->getLocalRows ();
   for (size_t j = 0; j < numRows_; ++j) {
     TEUCHOS_TEST_FOR_EXCEPTION(
       localRows[j] < 0 ||
@@ -527,8 +530,8 @@ extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
   }
 
   const size_t maxNumEntriesInRow = globalMatrix->getNodeMaxNumRowEntries();
-  Array<MatrixScalar>         Values;
-  Array<MatrixLocalOrdinal>   Indices;
+  Array<scalar_type>         Values;
+  Array<local_ordinal_type>   Indices;
   Array<InverseScalar>        Values_insert;
   Array<InverseGlobalOrdinal> Indices_insert;
 
@@ -540,13 +543,13 @@ extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
   const InverseLocalOrdinal INVALID =
     Teuchos::OrdinalTraits<InverseLocalOrdinal>::invalid ();
   for (size_t j = 0; j < numRows_; ++j) {
-    const MatrixLocalOrdinal localRow = localRows[j];
+    const local_ordinal_type localRow = localRows[j];
     size_t numEntries;
     globalMatrix->getLocalRowCopy (localRow, Indices (), Values (), numEntries);
 
     size_t num_entries_found = 0;
     for (size_t k = 0; k < numEntries; ++k) {
-      const MatrixLocalOrdinal localCol = Indices[k];
+      const local_ordinal_type localCol = Indices[k];
 
       // Skip off-process elements
       //
