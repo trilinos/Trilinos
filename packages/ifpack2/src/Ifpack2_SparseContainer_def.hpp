@@ -58,7 +58,7 @@ template<class MatrixType, class InverseType>
 SparseContainer<MatrixType,InverseType>::
 SparseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                  const Teuchos::ArrayView<const MatrixLocalOrdinal>& localRows) :
-  Container<MatrixType, InverseType> (matrix, localRows),
+  Container<MatrixType> (matrix, localRows),
   numRows_ (localRows.size ()),
   IsInitialized_ (false),
   IsComputed_ (false),

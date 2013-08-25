@@ -67,10 +67,8 @@ namespace Ifpack2 {
 /// use, for example as the second template parameter
 /// (<tt>ContainerType</tt>) of BlockRelaxation.  Implementations of
 /// Container specify
-/// - \c MatrixType: the kind of data structure used to store the
-///   local matrix, and
-/// - \c InverseType: how to solve a linear system with the local
-///   matrix.
+/// - the kind of data structure used to store the local matrix, and
+/// - how to solve a linear system with the local matrix.
 ///
 /// For example, the SparseContainer subclass uses a sparse matrix (in
 /// particular, Tpetra::CrsMatrix) to store each diagonal block, and
@@ -99,28 +97,13 @@ namespace Ifpack2 {
 /// For an example of Steps 1-5 above, see the implementation of
 /// BlockRelaxation::ExtractSubmatrices() in
 /// Ifpack2_BlockRelaxation_def.hpp.
-///
-/// \c MatrixType and \c InverseType may store values of different
-/// types, and may have different template parameters (e.g., local or
-/// global ordinal types).  You may mix and match so long as implicit
-/// conversions are available.  The most obvious use case for this
-/// are:
-/// - <tt>MatrixType::global_ordinal_type=long long</tt> and
-///   <tt>InverseType::global_ordinal_type=short</tt>
-/// - <tt>MatrixType::scalar_type=float</tt> and
-///   <tt>InverseType::scalar_type=double</tt>
-template<class MatrixType, class InverseType>
+template<class MatrixType>
 class Container : public Teuchos::Describable {
 public:
   typedef typename MatrixType::scalar_type          MatrixScalar;
   typedef typename MatrixType::local_ordinal_type   MatrixLocalOrdinal;
   typedef typename MatrixType::global_ordinal_type  MatrixGlobalOrdinal;
   typedef typename MatrixType::node_type            MatrixNode;
-
-  typedef typename InverseType::scalar_type         InverseScalar;
-  typedef typename InverseType::local_ordinal_type  InverseLocalOrdinal;
-  typedef typename InverseType::global_ordinal_type InverseGlobalOrdinal;
-  typedef typename InverseType::node_type           InverseNode;
 
   typedef typename MatrixType::scalar_type          scalar_type;
   typedef typename MatrixType::local_ordinal_type   local_ordinal_type;
@@ -267,9 +250,10 @@ private:
   Teuchos::Array<MatrixLocalOrdinal> localRows_;
 };
 
-template <class MatrixType, class InverseType>
+//! Print information about the given Container to the output stream \c os.
+template <class MatrixType>
 inline std::ostream&
-operator<< (std::ostream& os, const Ifpack2::Container<MatrixType,InverseType>& obj)
+operator<< (std::ostream& os, const Ifpack2::Container<MatrixType>& obj)
 {
   return obj.print (os);
 }

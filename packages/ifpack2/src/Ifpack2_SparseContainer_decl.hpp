@@ -141,12 +141,12 @@ namespace Ifpack2 {
 /// <li> \c MatrixType, which stores a sparse matrix </li>
 /// <li> \c InverseType, which solves linear systems with that matrix </li>
 /// </ol>
-/// This class stores each block as a sparse matrix.  Thus, \c
-/// MatrixType must be a specialization of Tpetra::RowMatrix or of its
-/// subclass Tpetra::CrsMatrix.  Using a sparse matrix for each block
-/// is a good idea when the blocks are large and sparse.  For small
-/// and / or dense blocks, it would probably be better to use an
-/// implementation of Container that stores the blocks densely.
+/// This class stores each block as a sparse matrix.  Thus,
+/// <tt>MatrixType</tt> must be a specialization of Tpetra::RowMatrix
+/// or of its subclass Tpetra::CrsMatrix.  Using a sparse matrix for
+/// each block is a good idea when the blocks are large and sparse.
+/// For small and / or dense blocks, it would probably be better to
+/// use an implementation of Container that stores the blocks densely.
 ///
 /// The \c InverseType template parameter represents the class to use
 /// for solving linear systems with a block.  In SparseContainer, this
@@ -168,6 +168,16 @@ namespace Ifpack2 {
 /// <li> \c node_type </li>
 /// </ul>
 ///
+/// \c MatrixType and \c InverseType may store values of different
+/// types, and may have different template parameters (e.g., local or
+/// global ordinal types).  You may mix and match so long as implicit
+/// conversions are available.  The most obvious use case for this
+/// are:
+/// - <tt>MatrixType::global_ordinal_type=long long</tt> and
+///   <tt>InverseType::global_ordinal_type=short</tt>
+/// - <tt>MatrixType::scalar_type=float</tt> and
+///   <tt>InverseType::scalar_type=double</tt>
+///
 /// SparseContainer currently assumes the following about the column
 /// and row Maps of the input matrix:
 /// <ol>
@@ -184,11 +194,8 @@ namespace Ifpack2 {
 /// to do so will need to modify the extract() method, so that it
 /// translates explicitly between local row and column indices,
 /// instead of just assuming that they are the same.
-///
-/// \warning Please don't rely too much on this interface, because the
-///   interface needs to be reworked to make it more rational.
 template<typename MatrixType, typename InverseType>
-class SparseContainer : public Container<MatrixType, InverseType> {
+class SparseContainer : public Container<MatrixType> {
 public:
   typedef typename MatrixType::scalar_type          MatrixScalar;
   typedef typename MatrixType::local_ordinal_type   MatrixLocalOrdinal;
@@ -200,7 +207,7 @@ public:
   typedef typename InverseType::global_ordinal_type InverseGlobalOrdinal;
   typedef typename InverseType::node_type           InverseNode;
 
-  typedef typename Container<MatrixType, InverseType>::row_matrix_type row_matrix_type;
+  typedef typename Container<MatrixType>::row_matrix_type row_matrix_type;
 
   //! \name Constructor and destructor
   //@{
