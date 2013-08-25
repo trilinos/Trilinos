@@ -590,7 +590,12 @@ template<class MatrixType,class ContainerType>
 void BlockRelaxation<MatrixType,ContainerType>::
 DoGaussSeidel (MV& X, MV& Y) const
 {
+  using Teuchos::Array;
   using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
 
   // Note: Flop counts copied naively from Ifpack.
 
@@ -598,19 +603,19 @@ DoGaussSeidel (MV& X, MV& Y) const
   const scalar_type negone = -STS::one ();
   int Length = A_->getNodeMaxNumRowEntries();
   int NumVectors = X.getNumVectors();
-  Teuchos::Array<scalar_type>         Values;
-  Teuchos::Array<local_ordinal_type>   Indices;
+  Array<scalar_type>         Values;
+  Array<local_ordinal_type>   Indices;
   Values.resize(Length);
   Indices.resize(Length);
 
   // an additonal vector is needed by parallel computations
   // (note that applications through Ifpack2_AdditiveSchwarz
   // are always seen are serial)
-  Teuchos::RCP<MV> Y2;
+  RCP<MV> Y2;
   if (IsParallel_) {
-    Y2 = Teuchos::rcp (new MV (Importer_->getTargetMap(), NumVectors));
+    Y2 = rcp (new MV (Importer_->getTargetMap(), NumVectors));
   } else {
-    Y2 = Teuchos::rcpFromRef (Y);
+    Y2 = rcpFromRef (Y);
   }
 
   // I think I decided I need two extra vectors:
@@ -635,17 +640,19 @@ DoGaussSeidel (MV& X, MV& Y) const
     A_->apply(*Y2,X,Teuchos::NO_TRANS,negone,one);
   // else r = b already, so nothing to do
 
-  for (local_ordinal_type i = 0 ; i < NumLocalBlocks_ ; i++) {
+  for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
     if (Containers_[i]->getNumRows() == 0) {
       continue; // Skip empty partitions
     }
 
     // update from previous block
     // i.e. write the appropriate elements of the temporary residual
+    ArrayView<const local_ordinal_type> localRows =
+      Containers_[i]->getLocalRows ();
     for (size_t j = 0 ; j < Containers_[i]->getNumRows(); j++) {
-      const local_ordinal_type LID = Containers_[i]->ID (j);
+      const local_ordinal_type LID = localRows[j]; // Containers_[i]->ID (j);
       size_t NumEntries;
-      A_->getLocalRowCopy(LID,Indices(),Values(),NumEntries);
+      A_->getLocalRowCopy (LID, Indices (), Values (), NumEntries);
 
       //Set tmpresid = initresid
       for (int kk = 0 ; kk < NumVectors ; kk++)
@@ -705,25 +712,30 @@ template<class MatrixType,class ContainerType>
 void
 BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
 {
+  using Teuchos::Array;
   using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
 
   const scalar_type    one =  STS::one ();
   const scalar_type negone = -STS::one ();
   int Length = A_->getNodeMaxNumRowEntries();
   const size_t NumVectors = X.getNumVectors();
-  Teuchos::Array<scalar_type>         Values;
-  Teuchos::Array<local_ordinal_type>   Indices;
+  Array<scalar_type>         Values;
+  Array<local_ordinal_type>   Indices;
   Values.resize(Length);
   Indices.resize(Length);
 
   // an additonal vector is needed by parallel computations
   // (note that applications through Ifpack2_AdditiveSchwarz
   // are always seen are serial)
-  Teuchos::RCP<MV> Y2;
+  RCP<MV> Y2;
   if (IsParallel_) {
-    Y2 = Teuchos::rcp (new MV (Importer_->getTargetMap (), NumVectors));
+    Y2 = rcp (new MV (Importer_->getTargetMap (), NumVectors));
   } else {
-    Y2 = Teuchos::rcpFromRef (Y);
+    Y2 = rcpFromRef (Y);
   }
 
   // I think I decided I need two extra vectors:
@@ -753,12 +765,14 @@ BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
 
   // Forward Sweep
   for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
-    if (Containers_[i]->getNumRows() == 0) {
+    if (Containers_[i]->getNumRows () == 0) {
       continue; // Skip empty partitions
     }
     // update from previous block
+    ArrayView<const local_ordinal_type> localRows =
+      Containers_[i]->getLocalRows ();
     for (size_t j = 0; j < Containers_[i]->getNumRows (); ++j) {
-      const local_ordinal_type LID = Containers_[i]->ID (j);
+      const local_ordinal_type LID = localRows[j]; // Containers_[i]->ID (j);
       size_t NumEntries;
       A_->getLocalRowCopy (LID, Indices (), Values (), NumEntries);
 
@@ -800,8 +814,10 @@ BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
       continue; // Skip empty partitions
     }
     // update from previous block
+    ArrayView<const local_ordinal_type> localRows =
+      Containers_[i-1]->getLocalRows ();
     for (size_t j = 0; j < Containers_[i-1]->getNumRows (); ++j) {
-      const local_ordinal_type LID = Containers_[i-1]->ID (j);
+      const local_ordinal_type LID = localRows[j]; // Containers_[i-1]->ID (j);
       size_t NumEntries;
       A_->getLocalRowCopy (LID, Indices (), Values (), NumEntries);
 

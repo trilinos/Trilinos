@@ -535,10 +535,12 @@ extract (const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdi
   Values_insert.resize (maxNumEntriesInRow);
   Indices_insert.resize (maxNumEntriesInRow);
 
+
+
   const InverseLocalOrdinal INVALID =
     Teuchos::OrdinalTraits<InverseLocalOrdinal>::invalid ();
   for (size_t j = 0; j < numRows_; ++j) {
-    const MatrixLocalOrdinal localRow = this->ID (j);
+    const MatrixLocalOrdinal localRow = localRows[j];
     size_t numEntries;
     Matrix_in->getLocalRowCopy (localRow, Indices (), Values (), numEntries);
 
@@ -562,7 +564,7 @@ extract (const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdi
       // of columns hosted by this object
       InverseLocalOrdinal jj = INVALID;
       for (size_t kk = 0; kk < numRows_; ++kk) {
-        if (this->ID (kk) == localCol) {
+        if (localRows[kk] == localCol) {
           jj = kk;
         }
       }

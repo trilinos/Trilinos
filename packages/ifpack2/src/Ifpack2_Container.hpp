@@ -141,14 +141,9 @@ public:
   //! The number of rows in the diagonal block.
   virtual size_t getNumRows() const = 0;
 
-  //! Local indices of the rows of the input matrix that belong to this block.
-  Teuchos::ArrayView<const MatrixLocalOrdinal> getLocalRows () const {
-    return localRows_ ();
-  }
-
-  /// \brief The local index associated with local row i.
+  /// \brief Local indices of the rows of the input matrix that belong to this block.
   ///
-  /// The set of (local) rows assigned to this container is defined by
+  /// The set of (local) rows assigned to this Container is defined by
   /// passing in a set of indices <tt>localRows[i] = j</tt> to the
   /// constructor, where i (from 0 to <tt>getNumRows() - 1</tt>)
   /// indicates the Container's row, and j indicates the local row in
@@ -161,8 +156,8 @@ public:
   /// For an example of how to use these indices, see the
   /// implementation of BlockRelaxation::ExtractSubmatrices() in
   /// Ifpack2_BlockRelaxation_def.hpp.
-  MatrixLocalOrdinal ID (const size_t i) const {
-    return localRows_[i];
+  Teuchos::ArrayView<const MatrixLocalOrdinal> getLocalRows () const {
+    return localRows_ ();
   }
 
   //! Initialize the container, by performing all operations that only require matrix structure.
