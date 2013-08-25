@@ -57,18 +57,25 @@ namespace Ifpack2 {
 /// \class Container
 /// \brief Interface for creating and solving a local linear problem.
 ///
-/// This class is mainly useful for BlockRelaxation and other
-/// operators that need to solve linear systems with diagonal blocks
-/// of a sparse matrix.  Users of BlockRelaxation do not normally need
-/// to interact with the Container interface.  However, they do need
-/// to specify a specific Container subclass to use.  Implementations
-/// of Container specify
-/// - the kind of data structure used to store diagonal blocks, and
-/// - how linear systems with those diagonal blocks are solved.
+/// This class is mainly useful for the implementation of
+/// BlockRelaxation, and other preconditioners that need to solve
+/// linear systems with diagonal blocks of a sparse matrix.
 ///
-/// For example, the SparseContainer subclass uses a Tpetra sparse
-/// matrix to store each diagonal block, and can use any given Ifpack2
-/// Preconditioner subclass to solve linear systems.
+/// Users of BlockRelaxation (and any analogous preconditioners) do
+/// not normally need to interact with the Container interface.
+/// However, they do need to specify a specific Container subclass to
+/// use, for example as the second template parameter
+/// (<tt>ContainerType</tt>) of BlockRelaxation.  Implementations of
+/// Container specify
+/// - \c MatrixType: the kind of data structure used to store the
+///   local matrix, and
+/// - \c InverseType: how to solve a linear system with the local
+///   matrix.
+///
+/// For example, the SparseContainer subclass uses a sparse matrix (in
+/// particular, Tpetra::CrsMatrix) to store each diagonal block, and
+/// can use any given Ifpack2 Preconditioner subclass to solve linear
+/// systems.
 ///
 /// A Container can create, populate, and solve a local linear
 /// system. The local linear system matrix, B, is a submatrix of the
@@ -81,14 +88,12 @@ namespace Ifpack2 {
 /// If you are writing a class (comparable to BlockRelaxation) that
 /// uses Container, you should use it in the following way:
 /// <ol>
-/// <li> Create a Container object, specifying the number of rows of B
-///      and the indices of the local rows of A that are contained in
-///      B.  Both of these come from a Partitioner object.</li>
+/// <li> Create a Container object, specifying the global matrix A and
+///      the indices of the local rows of A that are contained in B.
+///      The latter indices come from a Partitioner object.</li>
 /// <li> Optionally, set linear solve parameters using setParameters().</li>
 /// <li> Initialize the container by calling initialize().</li>
-/// <li> Prepare the linear system solver using compute(), passing in
-///      the original matrix from which to extract the diagonal
-///      block.</li>
+/// <li> Prepare the linear system solver using compute().</li>
 /// <li> Solve the linear system using apply().</li>
 /// </ol>
 /// For an example of Steps 1-5 above, see the implementation of
@@ -126,17 +131,35 @@ public:
 
   /// \brief Constructor.
   ///
+  /// \brief matrix [in] The original input matrix.  This Container
+  ///   will construct a local diagonal block from the rows given by
+  ///   <tt>localRows</tt>.
+  ///
   /// \param localRows [in] The set of (local) rows assigned to this
   ///   container.  <tt>localRows[i] == j</tt>, where i (from 0 to
   ///   <tt>getNumRows() - 1</tt>) indicates the Container's row, and
   ///   j indicates the local row in the calling process.  Subclasses
   ///   must always pass along these indices to the base class.
-  Container (const Teuchos::ArrayView<const MatrixLocalOrdinal>& localRows) :
+  Container (const Teuchos::RCP<const row_matrix_type>& matrix,
+             const Teuchos::ArrayView<const local_ordinal_type>& localRows) :
+    inputMatrix_ (matrix),
     localRows_ (localRows.begin (), localRows.end ())
   {}
 
   //! Destructor.
   virtual ~Container() {};
+
+  /// \brief The input matrix to the constructor.
+  ///
+  /// This is not the local diagonal block that the Container
+  /// extracts; this is the original input matrix, of which that
+  /// diagonal block is a submatrix.  You can't get the local diagonal
+  /// block through the Container interface, because the subclass of
+  /// container can store that block in any format it likes (e.g.,
+  /// dense or sparse).
+  Teuchos::RCP<const row_matrix_type> getMatrix() const {
+    return inputMatrix_;
+  }
 
   //! The number of rows in the diagonal block.
   virtual size_t getNumRows() const = 0;
@@ -160,11 +183,22 @@ public:
     return localRows_ ();
   }
 
-  //! Initialize the container, by performing all operations that only require matrix structure.
+  /// \brief Do all set-up operations that only require matrix structure.
+  ///
+  /// If the input matrix's structure changes, you must call this
+  /// method before you may call compute().  You must then call
+  /// compute() before you may call apply() or weightedApply().
+  ///
+  /// "Structure" refers to the graph of the matrix: the local and
+  /// global dimensions, and the populated entries in each row.
   virtual void initialize () = 0;
 
-  //! Finalize the linear system matrix and prepare for the application of the inverse.
-  virtual void compute (const Teuchos::RCP<const row_matrix_type>& Matrix) = 0;
+  /// \brief Extract the local diagonal block and prepare the solver.
+  ///
+  /// If any entries' values in the input matrix have changed, you
+  /// must call this method before you may call apply() or
+  /// weightedApply().
+  virtual void compute () = 0;
 
   //! Set parameters.
   virtual void setParameters (const Teuchos::ParameterList& List) = 0;
@@ -226,6 +260,9 @@ public:
   virtual std::ostream& print (std::ostream& os) const = 0;
 
 private:
+  //! The input matrix to the constructor.
+  Teuchos::RCP<const row_matrix_type> inputMatrix_;
+
   //! Local indices of the rows of the input matrix that belong to this block.
   Teuchos::Array<MatrixLocalOrdinal> localRows_;
 };

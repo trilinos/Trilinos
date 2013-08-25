@@ -493,12 +493,10 @@ void BlockRelaxation<MatrixType,ContainerType>::ExtractSubmatrices()
       localRows[j] = (*Partitioner_) (i,j);
     }
 
-    Containers_[i] = Teuchos::rcp (new ContainerType (localRows ()));
+    Containers_[i] = Teuchos::rcp (new ContainerType (A_, localRows ()));
     Containers_[i]->setParameters (List_);
     Containers_[i]->initialize ();
-    Containers_[i]->compute (A_);
-
-    // flops in compute() will be computed on-the-fly in method computeFlops().
+    Containers_[i]->compute ();
   }
 }
 
@@ -602,7 +600,7 @@ DoGaussSeidel (MV& X, MV& Y) const
   const scalar_type    one =  STS::one ();
   const scalar_type negone = -STS::one ();
   int Length = A_->getNodeMaxNumRowEntries();
-  int NumVectors = X.getNumVectors();
+  const size_t NumVectors = X.getNumVectors();
   Array<scalar_type>         Values;
   Array<local_ordinal_type>   Indices;
   Values.resize(Length);
@@ -641,7 +639,7 @@ DoGaussSeidel (MV& X, MV& Y) const
   // else r = b already, so nothing to do
 
   for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
-    if (Containers_[i]->getNumRows() == 0) {
+    if (Containers_[i]->getNumRows () == 0) {
       continue; // Skip empty partitions
     }
 
@@ -649,18 +647,19 @@ DoGaussSeidel (MV& X, MV& Y) const
     // i.e. write the appropriate elements of the temporary residual
     ArrayView<const local_ordinal_type> localRows =
       Containers_[i]->getLocalRows ();
-    for (size_t j = 0 ; j < Containers_[i]->getNumRows(); j++) {
+    const size_t localNumRows = Containers_[i]->getNumRows ();
+    for (size_t j = 0; j < localNumRows; ++j) {
       const local_ordinal_type LID = localRows[j]; // Containers_[i]->ID (j);
       size_t NumEntries;
       A_->getLocalRowCopy (LID, Indices (), Values (), NumEntries);
 
       //Set tmpresid = initresid
-      for (int kk = 0 ; kk < NumVectors ; kk++)
+      for (size_t kk = 0; kk < NumVectors; ++kk)
         tmpresidual_ptr[kk][LID] = x_ptr[kk][LID];
 
-      for (size_t k = 0 ; k < NumEntries ; k++) {
-        local_ordinal_type col = Indices[k];
-        for (int kk = 0 ; kk < NumVectors ; kk++)
+      for (size_t k = 0; k < NumEntries; ++k) {
+        const local_ordinal_type col = Indices[k];
+        for (size_t kk = 0; kk < NumVectors; ++kk)
           tmpresidual_ptr[kk][LID] -= Values[k] * correction_ptr[kk][col];
       }
     }
@@ -684,8 +683,8 @@ DoGaussSeidel (MV& X, MV& Y) const
   // Attention: this is delicate... Not all combinations
   // of Y2 and Y will always work (tough for ML it should be ok)
   if (IsParallel_) {
-    for (int m = 0 ; m < NumVectors ; ++m) {
-      for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
+    for (size_t m = 0; m < NumVectors; ++m) {
+      for (size_t i = 0; i < NumMyRows_; ++i) {
         y_ptr[m][i] = y2_ptr[m][i];
       }
     }

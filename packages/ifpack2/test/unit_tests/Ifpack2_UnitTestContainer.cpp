@@ -133,7 +133,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Container, Test0, Scalar, LocalOrdinal,
 
   out << "SparseContainer constructor" << endl;
 
-  Ifpack2::SparseContainer<CRS,ILUTlo> MyContainer (localRows);
+  Ifpack2::SparseContainer<CRS,ILUTlo> MyContainer (crsmatrix, localRows);
 
   out << "Setting SparseContainer parameters" << endl;
 
@@ -143,9 +143,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Container, Test0, Scalar, LocalOrdinal,
   MyContainer.setParameters (params);
 
   out << "Initializing SparseContainer" << endl;
-  MyContainer.initialize();
+  MyContainer.initialize ();
   out << "Computing SparseContainer" << endl;
-  MyContainer.compute(crsmatrix);
+  MyContainer.compute ();
 
   // Reference ILUT
   out << "Setting up reference ILUT implementation" << endl;

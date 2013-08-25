@@ -56,15 +56,16 @@ namespace Ifpack2 {
 //==============================================================================
 template<class MatrixType, class InverseType>
 SparseContainer<MatrixType,InverseType>::
-SparseContainer (const Teuchos::ArrayView<const MatrixLocalOrdinal>& localRows) :
-  Container<MatrixType, InverseType> (localRows),
+SparseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
+                 const Teuchos::ArrayView<const MatrixLocalOrdinal>& localRows) :
+  Container<MatrixType, InverseType> (matrix, localRows),
   numRows_ (localRows.size ()),
   IsInitialized_ (false),
   IsComputed_ (false),
 #ifdef HAVE_MPI
-  LocalComm_ (Teuchos::rcp (new Teuchos::MpiComm<int> (MPI_COMM_SELF)))
+  localComm_ (Teuchos::rcp (new Teuchos::MpiComm<int> (MPI_COMM_SELF)))
 #else
-  LocalComm_ (Teuchos::rcp (new Teuchos::SerialComm<int> ()))
+  localComm_ (Teuchos::rcp (new Teuchos::SerialComm<int> ()))
 #endif // HAVE_MPI
 {}
 
@@ -117,21 +118,23 @@ void SparseContainer<MatrixType,InverseType>::initialize ()
                             InverseGlobalOrdinal, InverseNode> crs_matrix_type;
   // We assume that if you called this method, you intend to recompute
   // everything.  Thus, we release references to all the internal
-  // objects.  We do this first in order to avoid duplicates.
+  // objects.  We do this first to save memory.  (In an RCP
+  // assignment, the right-hand side and left-hand side coexist before
+  // the left-hand side's reference count gets updated.)
   IsInitialized_ = false;
   IsComputed_ = false;
-  Map_ = null;
-  Matrix_ = null;
+  localMap_ = null;
+  diagBlock_ = null;
 
   // (Re)create the local Map, and the CrsMatrix that will contain the
   // local matrix to use for solves.
-  Map_ = rcp (new map_type (numRows_, 0, LocalComm_));
-  Matrix_ = rcp (new crs_matrix_type (Map_, 0));
+  localMap_ = rcp (new map_type (numRows_, 0, localComm_));
+  diagBlock_ = rcp (new crs_matrix_type (localMap_, 0));
 
   // Create the inverse operator using the local matrix.  We give it
   // the matrix here, but don't call its initialize() or compute()
   // methods yet, since we haven't initialized the matrix yet.
-  Inverse_ = rcp (new InverseType (Matrix_));
+  Inverse_ = rcp (new InverseType (diagBlock_));
   Inverse_->setParameters (List_);
 
   IsInitialized_ = true;
@@ -139,8 +142,7 @@ void SparseContainer<MatrixType,InverseType>::initialize ()
 
 //==============================================================================
 template<class MatrixType, class InverseType>
-void SparseContainer<MatrixType,InverseType>::
-compute (const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> >& Matrix)
+void SparseContainer<MatrixType,InverseType>::compute ()
 {
   IsComputed_ = false;
   if (! this->isInitialized ()) {
@@ -148,7 +150,7 @@ compute (const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdi
   }
 
   // Extract the submatrix.
-  this->extract (Matrix);
+  this->extract (this->getMatrix ());
 
   // The inverse operator already has a pointer to the submatrix.  Now
   // that the submatrix is filled in, we can initialize and compute
@@ -495,7 +497,7 @@ void SparseContainer<MatrixType,InverseType>::describe(Teuchos::FancyOStream &os
   using std::endl;
   if(verbLevel==Teuchos::VERB_NONE) return;
   os << "================================================================================" << endl;
-  os << "Ifpack2_SparseContainer" << endl;
+  os << "Ifpack2::SparseContainer" << endl;
   os << "Number of rows          = " << numRows_ << endl;
   os << "isInitialized()         = " << IsInitialized_ << endl;
   os << "isComputed()            = " << IsComputed_ << endl;
@@ -506,12 +508,12 @@ void SparseContainer<MatrixType,InverseType>::describe(Teuchos::FancyOStream &os
 //==============================================================================
 template<class MatrixType, class InverseType>
 void SparseContainer<MatrixType,InverseType>::
-extract (const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> >& Matrix_in)
+extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
 {
   using Teuchos::Array;
   using Teuchos::ArrayView;
 
-  const size_t MatrixInNumRows = Matrix_in->getNodeNumRows ();
+  const size_t MatrixInNumRows = globalMatrix->getNodeNumRows ();
 
   // Sanity checking
   ArrayView<const MatrixLocalOrdinal> localRows = this->getLocalRows ();
@@ -524,7 +526,7 @@ extract (const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdi
       "This probably means that compute() has not yet been called.");
   }
 
-  const size_t maxNumEntriesInRow = Matrix_in->getNodeMaxNumRowEntries();
+  const size_t maxNumEntriesInRow = globalMatrix->getNodeMaxNumRowEntries();
   Array<MatrixScalar>         Values;
   Array<MatrixLocalOrdinal>   Indices;
   Array<InverseScalar>        Values_insert;
@@ -535,14 +537,12 @@ extract (const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdi
   Values_insert.resize (maxNumEntriesInRow);
   Indices_insert.resize (maxNumEntriesInRow);
 
-
-
   const InverseLocalOrdinal INVALID =
     Teuchos::OrdinalTraits<InverseLocalOrdinal>::invalid ();
   for (size_t j = 0; j < numRows_; ++j) {
     const MatrixLocalOrdinal localRow = localRows[j];
     size_t numEntries;
-    Matrix_in->getLocalRowCopy (localRow, Indices (), Values (), numEntries);
+    globalMatrix->getLocalRowCopy (localRow, Indices (), Values (), numEntries);
 
     size_t num_entries_found = 0;
     for (size_t k = 0; k < numEntries; ++k) {
@@ -570,19 +570,19 @@ extract (const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdi
       }
 
       if (jj != INVALID) {
-        Indices_insert[num_entries_found] = Map_->getGlobalElement(jj);
-        Values_insert[num_entries_found]  = Values[k];
+        Indices_insert[num_entries_found] = localMap_->getGlobalElement (jj);
+        Values_insert[num_entries_found] = Values[k];
         num_entries_found++;
       }
     }
-    Matrix_->insertGlobalValues (j, Indices_insert (0, num_entries_found),
-                                 Values_insert (0, num_entries_found));
+    diagBlock_->insertGlobalValues (j, Indices_insert (0, num_entries_found),
+                                    Values_insert (0, num_entries_found));
   }
 
   // FIXME (mfh 24 Aug 2013) If we generalize the current set of
   // assumptions on the column and row Maps (see note above), we may
   // need to supply custom domain and range Maps to fillComplete().
-  Matrix_->fillComplete ();
+  diagBlock_->fillComplete ();
 }
 
 } // namespace Ifpack2

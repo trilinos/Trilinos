@@ -200,10 +200,16 @@ public:
   typedef typename InverseType::global_ordinal_type InverseGlobalOrdinal;
   typedef typename InverseType::node_type           InverseNode;
 
+  typedef typename Container<MatrixType, InverseType>::row_matrix_type row_matrix_type;
+
   //! \name Constructor and destructor
   //@{
 
-  /// \brief Constructor
+  /// \brief Constructor.
+  ///
+  /// \brief matrix [in] The original input matrix.  This Container
+  ///   will construct a local diagonal block from the rows given by
+  ///   <tt>localRows</tt>.
   ///
   /// \param localRows [in] The set of (local) rows assigned to this
   ///   container.  <tt>localRows[i] == j</tt>, where i (from 0 to
@@ -212,15 +218,8 @@ public:
   ///   <tt>localRows.size()</tt> gives the number of rows in the
   ///   local matrix on each process.  This may be different on
   ///   different processes.
-  ///
-  /// \param numRows [in] Number of rows in the local matrix on each
-  ///   process.  This may be different on different processes.
-  ///
-  /// \warning FIXME (mfh 20 Aug 2013) It should not be necessary to
-  ///   ask for the number of rows in the local matrix on each
-  ///   process, if the local matrix is a Tpetra::RowMatrix
-  ///   specialization.  We do need to revise this interface.
-  SparseContainer (const Teuchos::ArrayView<const MatrixLocalOrdinal>& localRows);
+  SparseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
+                   const Teuchos::ArrayView<const MatrixLocalOrdinal>& localRows);
 
   //! Destructor (declared virtual for memory safety of derived classes).
   virtual ~SparseContainer();
@@ -248,18 +247,11 @@ public:
   //! \name Mathematical functions
   //@{
 
-  /*!
-   * \brief Initializes the container, by completing all the operations based
-   * on matrix structure.
-   *
-   * \note After a call to Initialize(), no new matrix entries can be
-   * added.
-   */
+  //! Do all set-up operations that only require matrix structure.
   virtual void initialize();
 
-  //! Finalizes the linear system matrix and prepares for the application of the inverse.
-  virtual void
-  compute (const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> >& Matrix);
+  //! Extract the local diagonal block and prepare the solver.
+  virtual void compute ();
 
   //! Compute <tt>Y := alpha * M^{-1} X + beta*Y</tt>.
   virtual void
@@ -282,27 +274,31 @@ public:
   //! \name Miscellaneous methods
   //@{
 
-  //! Prints basic information on iostream. This function is used by operator<<.
+  /// \brief Print information about this object to the given output stream.
+  ///
+  /// operator<< uses this method.
   virtual std::ostream& print(std::ostream& os) const;
 
   //@}
   //! @name Implementation of Teuchos::Describable
   //@{
 
-  /** \brief Return a simple one-line description of this object. */
-  virtual std::string description() const;
+  //! A one-line description of this object.
+  virtual std::string description () const;
 
-  /** \brief Print the object with some verbosity level to an FancyOStream object. */
-  virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+  //! Print the object with some verbosity level to the given FancyOStream.
+  virtual void
+  describe (Teuchos::FancyOStream &out,
+            const Teuchos::EVerbosityLevel verbLevel =
+            Teuchos::Describable::verbLevel_default) const;
 
   //@}
-
 private:
   //! Copy constructor: Declared but not implemented, to forbid copy construction.
   SparseContainer (const SparseContainer<MatrixType,InverseType>& rhs);
 
   //! Extract the submatrices identified by the local indices set by the constructor.
-  virtual void extract (const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> >& Matrix);
+  void extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix);
 
   /// \brief Post-permutation, post-view version of apply().
   ///
@@ -347,10 +343,10 @@ private:
 
   //! Number of rows in the local matrix.
   size_t numRows_;
-  //! Linear map on which the local matrix is based.
-  Teuchos::RCP<Tpetra::Map<InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> > Map_;
-  //! Pointer to the local matrix.
-  Teuchos::RCP<Tpetra::CrsMatrix<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> > Matrix_;
+  //! Row Map of the local diagonal block.
+  Teuchos::RCP<Tpetra::Map<InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> > localMap_;
+  //! The local diagonal block, which compute() extracts.
+  Teuchos::RCP<Tpetra::CrsMatrix<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> > diagBlock_;
   //! Solution vector.
   mutable Teuchos::RCP<Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> > Y_;
   //! Input vector for local problems
@@ -360,7 +356,7 @@ private:
   //! If \c true, the container has been successfully computed.
   bool IsComputed_;
   //! Serial communicator (containing only MPI_COMM_SELF if MPI is used).
-  Teuchos::RCP<Teuchos::Comm<int> > LocalComm_;
+  Teuchos::RCP<Teuchos::Comm<int> > localComm_;
 
   /// \brief Local operator.
   ///
@@ -369,11 +365,8 @@ private:
   /// the action of the inverse of the local matrix.
   Teuchos::RCP<InverseType> Inverse_;
 
-  //! Parameters for Inverse_.
+  //! Parameters for the InverseType linear solve operator.
   Teuchos::ParameterList List_;
-
-  //! Whether apply() and weightedApply() need to permute the input X and output Y.
-  bool needPermutation_;
 };
 
 }// namespace Ifpack2
