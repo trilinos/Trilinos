@@ -125,19 +125,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Container, Test0, Scalar, LocalOrdinal,
   //        Sparse Container + ILUT         //
   // ====================================== //
 
+  // Set IDs to grab the whole matrix
+  Teuchos::Array<typename CRS::local_ordinal_type> localRows (num_rows_per_proc);
+  for (size_t i = 0; i < num_rows_per_proc; ++i) {
+    localRows[i] = i;
+  }
+
   out << "SparseContainer constructor" << endl;
-  Ifpack2::SparseContainer<CRS,ILUTlo> MyContainer((size_t)num_rows_per_proc);
-  Teuchos::ParameterList params;
-  params.set("fact: ilut level-of-fill", 1.0);
-  params.set("fact: drop tolerance", 0.0);
+
+  Ifpack2::SparseContainer<CRS,ILUTlo> MyContainer (localRows);
+
   out << "Setting SparseContainer parameters" << endl;
-  MyContainer.setParameters(params);
+
+  Teuchos::ParameterList params;
+  params.set ("fact: ilut level-of-fill", 1.0);
+  params.set ("fact: drop tolerance", 0.0);
+  MyContainer.setParameters (params);
 
   out << "Initializing SparseContainer" << endl;
-  // Set IDs to grab the whole matrix
   MyContainer.initialize();
-  for(size_t i=0; i<num_rows_per_proc; i++)
-    MyContainer.ID(i) = i;
   out << "Computing SparseContainer" << endl;
   MyContainer.compute(crsmatrix);
 

@@ -81,14 +81,14 @@ namespace Ifpack2 {
 /// If you are writing a class (comparable to BlockRelaxation) that
 /// uses Container, you should use it in the following way:
 /// <ol>
-/// <li> Create an container object, specifying the number of rows of B.
-///      The number of rows is supposed to come from a Partitioner object.</li>
+/// <li> Create a Container object, specifying the number of rows of B
+///      and the indices of the local rows of A that are contained in
+///      B.  Both of these come from a Partitioner object.</li>
 /// <li> Optionally, set linear solve parameters using setParameters().</li>
 /// <li> Initialize the container by calling initialize().</li>
-/// <li> Specify the indices of the local rows of A that are contained in B,
-///      using ID().  The indices come from the Partitioner object.</li>
 /// <li> Prepare the linear system solver using compute(), passing in
-///      the original matrix from which to extract the diagonal block.</li>
+///      the original matrix from which to extract the diagonal
+///      block.</li>
 /// <li> Solve the linear system using apply().</li>
 /// </ol>
 /// For an example of Steps 1-5 above, see the implementation of
@@ -124,27 +124,46 @@ public:
 
   typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> row_matrix_type;
 
+  /// \brief Constructor.
+  ///
+  /// \param localRows [in] The set of (local) rows assigned to this
+  ///   container.  <tt>localRows[i] == j</tt>, where i (from 0 to
+  ///   <tt>getNumRows() - 1</tt>) indicates the Container's row, and
+  ///   j indicates the local row in the calling process.  Subclasses
+  ///   must always pass along these indices to the base class.
+  Container (const Teuchos::ArrayView<const MatrixLocalOrdinal>& localRows) :
+    localRows_ (localRows.begin (), localRows.end ())
+  {}
+
   //! Destructor.
   virtual ~Container() {};
 
   //! The number of rows in the diagonal block.
   virtual size_t getNumRows() const = 0;
 
-  /// \brief A nonconst reference to the local index associated with local row i.
+  //! Local indices of the rows of the input matrix that belong to this block.
+  Teuchos::ArrayView<const MatrixLocalOrdinal> getLocalRows () const {
+    return localRows_ ();
+  }
+
+  /// \brief The local index associated with local row i.
   ///
   /// The set of (local) rows assigned to this container is defined by
-  /// calling ID(i) = j, where i (from 0 to <tt>getNumRows() - 1</tt>)
+  /// passing in a set of indices <tt>localRows[i] = j</tt> to the
+  /// constructor, where i (from 0 to <tt>getNumRows() - 1</tt>)
   /// indicates the Container's row, and j indicates the local row in
-  /// the calling process.
+  /// the calling process.  Subclasses must always pass along these
+  /// indices to the base class.
   ///
-  /// This method is usually used to reorder the local row index (on
-  /// the calling process) of the i-th row in the container.
+  /// The indices are usually used to reorder the local row index (on
+  /// the calling process) of the i-th row in the Container.
   ///
-  /// For an example of how to use this method to define the
-  /// reordering, see the implementation of
-  /// BlockRelaxation::ExtractSubmatrices() in
+  /// For an example of how to use these indices, see the
+  /// implementation of BlockRelaxation::ExtractSubmatrices() in
   /// Ifpack2_BlockRelaxation_def.hpp.
-  virtual MatrixLocalOrdinal & ID (const size_t i) = 0;
+  MatrixLocalOrdinal ID (const size_t i) const {
+    return localRows_[i];
+  }
 
   //! Initialize the container, by performing all operations that only require matrix structure.
   virtual void initialize () = 0;
@@ -167,7 +186,8 @@ public:
   /// compute()), and Y is in the range Map of the original matrix.
   /// This method only reads resp. modifies the permuted subset of
   /// entries of X resp. Y related to the diagonal block M.  That
-  /// permuted subset is defined by the ID() method.
+  /// permuted subset is defined by the indices passed into the
+  /// constructor.
   ///
   /// This method is marked \c const for compatibility with
   /// Tpetra::Operator's method of the same name.  This might require
@@ -185,11 +205,12 @@ public:
   /// compute()), and Y is in the range Map of the original matrix.
   /// This method only reads resp. modifies the permuted subset of
   /// entries of X resp. Y related to the diagonal block M.  That
-  /// permuted subset is defined by the ID() method.  The D scaling
-  /// vector must have the same number of entries on each process as X
-  /// and Y, but otherwise need not have the same Map.  (For example,
-  /// D could be locally replicated, or could be a different object on
-  /// each process with a local (\c MPI_COMM_SELF) communicator.)
+  /// permuted subset is defined by the indices passed into the
+  /// constructor.  The D scaling vector must have the same number of
+  /// entries on each process as X and Y, but otherwise need not have
+  /// the same Map.  (For example, D could be locally replicated, or
+  /// could be a different object on each process with a local (\c
+  /// MPI_COMM_SELF) communicator.)
   ///
   /// This method supports overlap techniques, such as those used in
   /// Schwarz methods.
@@ -208,6 +229,10 @@ public:
 
   //! Print basic information about the container to \c os.
   virtual std::ostream& print (std::ostream& os) const = 0;
+
+private:
+  //! Local indices of the rows of the input matrix that belong to this block.
+  Teuchos::Array<MatrixLocalOrdinal> localRows_;
 };
 
 template <class MatrixType, class InverseType>

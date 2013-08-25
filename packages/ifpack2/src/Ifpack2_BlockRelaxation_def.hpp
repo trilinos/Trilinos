@@ -486,15 +486,16 @@ void BlockRelaxation<MatrixType,ContainerType>::ExtractSubmatrices()
 
   for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
     const size_t numRows = Partitioner_->numRowsInPart (i);
-    Containers_[i] = Teuchos::rcp (new ContainerType (numRows));
+
+    // Extract a list of the indices of each partitioner row.
+    Teuchos::Array<local_ordinal_type> localRows (numRows);
+    for (size_t j = 0; j < numRows; ++j) {
+      localRows[j] = (*Partitioner_) (i,j);
+    }
+
+    Containers_[i] = Teuchos::rcp (new ContainerType (localRows ()));
     Containers_[i]->setParameters (List_);
     Containers_[i]->initialize ();
-    // flops in initialize() will be computed on-the-fly in method initializeFlops().
-
-    // set "global" ID of each partitioner row
-    for (size_t j = 0; j < numRows; ++j) {
-      Containers_[i]->ID (j) = (*Partitioner_) (i,j);
-    }
     Containers_[i]->compute (A_);
 
     // flops in compute() will be computed on-the-fly in method computeFlops().
@@ -642,7 +643,7 @@ DoGaussSeidel (MV& X, MV& Y) const
     // update from previous block
     // i.e. write the appropriate elements of the temporary residual
     for (size_t j = 0 ; j < Containers_[i]->getNumRows(); j++) {
-      const local_ordinal_type LID = Containers_[i]->ID(j);
+      const local_ordinal_type LID = Containers_[i]->ID (j);
       size_t NumEntries;
       A_->getLocalRowCopy(LID,Indices(),Values(),NumEntries);
 
@@ -800,7 +801,7 @@ BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
     }
     // update from previous block
     for (size_t j = 0; j < Containers_[i-1]->getNumRows (); ++j) {
-      const local_ordinal_type LID = Containers_[i-1]->ID(j);
+      const local_ordinal_type LID = Containers_[i-1]->ID (j);
       size_t NumEntries;
       A_->getLocalRowCopy (LID, Indices (), Values (), NumEntries);
 

@@ -84,7 +84,7 @@ public:
   void
   gather (MV_out& X_out,
           const MV_in& X_in,
-          const std::vector<typename MV_in::local_ordinal_type>& perm) const
+          const Teuchos::ArrayView<const typename MV_in::local_ordinal_type>& perm) const
   {
     using Teuchos::ArrayRCP;
     const size_t numRows = X_out.getLocalLength ();
@@ -104,7 +104,7 @@ public:
   void
   scatter (MV_in& X_in,
            const MV_out& X_out,
-           const std::vector<typename MV_in::local_ordinal_type>& perm) const
+           const Teuchos::ArrayView<const typename MV_in::local_ordinal_type>& perm) const
   {
     using Teuchos::ArrayRCP;
     const size_t numRows = X_out.getLocalLength ();
@@ -205,6 +205,14 @@ public:
 
   /// \brief Constructor
   ///
+  /// \param localRows [in] The set of (local) rows assigned to this
+  ///   container.  <tt>localRows[i] == j</tt>, where i (from 0 to
+  ///   <tt>getNumRows() - 1</tt>) indicates the SparseContainer's
+  ///   row, and j indicates the local row in the calling process.
+  ///   <tt>localRows.size()</tt> gives the number of rows in the
+  ///   local matrix on each process.  This may be different on
+  ///   different processes.
+  ///
   /// \param numRows [in] Number of rows in the local matrix on each
   ///   process.  This may be different on different processes.
   ///
@@ -212,7 +220,7 @@ public:
   ///   ask for the number of rows in the local matrix on each
   ///   process, if the local matrix is a Tpetra::RowMatrix
   ///   specialization.  We do need to revise this interface.
-  SparseContainer (const size_t numRows);
+  SparseContainer (const Teuchos::ArrayView<const MatrixLocalOrdinal>& localRows);
 
   //! Destructor (declared virtual for memory safety of derived classes).
   virtual ~SparseContainer();
@@ -226,18 +234,6 @@ public:
   /// Local matrices must be square.  Each process has exactly one matrix.
   /// Those matrices may vary in dimensions.
   virtual size_t getNumRows() const;
-
-  //! Returns the ID associated to local row i.
-  /*!
-   * The set of (local) rows assigned to this container is defined
-   * by calling ID(i) = j, where i (from 0 to NumRows()) indicates
-   * the container-row, and j indicates the local row in the calling
-   * process.
-   *
-   * This is usually used to recorder the local row ID (on calling process)
-   * of the i-th row in the container.
-   */
-  virtual MatrixLocalOrdinal & ID(const size_t i);
 
   //! Whether the container has been successfully initialized.
   virtual bool isInitialized() const;
@@ -303,10 +299,10 @@ public:
 
 private:
   //! Copy constructor: Declared but not implemented, to forbid copy construction.
-  SparseContainer(const SparseContainer<MatrixType,InverseType>& rhs);
+  SparseContainer (const SparseContainer<MatrixType,InverseType>& rhs);
 
-  //! Extract the submatrices identified by the ID set int ID().
-  virtual void extract(const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> >& Matrix);
+  //! Extract the submatrices identified by the local indices set by the constructor.
+  virtual void extract (const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> >& Matrix);
 
   /// \brief Post-permutation, post-view version of apply().
   ///
@@ -359,8 +355,6 @@ private:
   mutable Teuchos::RCP<Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> > Y_;
   //! Input vector for local problems
   mutable Teuchos::RCP<Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> > X_;
-  //! Contains the subrows/subcols of A that will be inserted in Matrix_.
-  std::vector<MatrixLocalOrdinal> GID_;
   //! If \c true, the container has been successfully initialized.
   bool IsInitialized_;
   //! If \c true, the container has been successfully computed.
