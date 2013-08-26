@@ -27,7 +27,7 @@ public:
 
     virtual bool is_surface(GeometryHandle geom) const;
 
-    
+
 
 private:
     ONX_Model onModel;
