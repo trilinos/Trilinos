@@ -1935,26 +1935,22 @@ pcoord_t **shiftMachineCoordinates(int machine_dim, procId_t *machine_dimensions
 
 template <typename procId_t, typename pcoord_t, typename tcoord_t>
 void coordinateTaskMapperInterface(
-
-        RCP<const Teuchos::Comm<int> > comm_,
-        int procDim,
-        int numProcessors,
-        pcoord_t **machine_coords_,
-
-
-        int taskDim,
-        procId_t numTasks,
-        tcoord_t **task_coords,
-
-        procId_t *task_communication_xadj_,
-        procId_t *task_communication_adj_,
-
-        procId_t *proc_to_task_xadj, /*output*/
-        procId_t *proc_to_task_adj, /*output*/
-        int partArraySize,
-        procId_t *partNoArray,
-        procId_t *machine_dimensions
-        ){
+  RCP<const Teuchos::Comm<int> > comm_,
+  int procDim,
+  int numProcessors,
+  pcoord_t **machine_coords_,
+  int taskDim,
+  procId_t numTasks,
+  tcoord_t **task_coords,
+  procId_t *task_communication_xadj_,
+  procId_t *task_communication_adj_,
+  procId_t *proc_to_task_xadj, /*output*/
+  procId_t *proc_to_task_adj, /*output*/
+  int partArraySize,
+  procId_t *partNoArray,
+  procId_t *machine_dimensions
+)
+{
 
     const Environment *envConst_ = new Environment();
     //RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
@@ -2030,46 +2026,39 @@ void coordinateTaskMapperInterface(
 
 template <typename procId_t, typename pcoord_t, typename tcoord_t>
 void coordinateTaskMapperInterface_Fortran(
-
-        int *comm_World,
-        int procDim,
-        int numProcessors,
-        pcoord_t **machine_coords_,
-
-
-        int taskDim,
-        procId_t numTasks,
-        tcoord_t **task_coords,
-
-        procId_t *task_communication_xadj_,
-        procId_t *task_communication_adj_,
-
-        procId_t *proc_to_task_xadj, /*output*/
-        procId_t *proc_to_task_adj, /*output*/
-        int partArraySize,
-        procId_t *partNoArray,
-        int *machineDimensions
-        ){
+  int *comm_World,
+  int procDim,
+  int numProcessors,
+  pcoord_t **machine_coords_,
+  int taskDim,
+  procId_t numTasks,
+  tcoord_t **task_coords,
+  procId_t *task_communication_xadj_,
+  procId_t *task_communication_adj_,
+  procId_t *proc_to_task_xadj, /*output*/
+  procId_t *proc_to_task_adj, /*output*/
+  int partArraySize,
+  procId_t *partNoArray,
+  int *machineDimensions
+)
+{
 
 #ifdef HAVE_MPI
-    MPI_Comm cComm = MPI_Comm_f2c((MPI_Fint) *comm_World);
-    RCP<const Teuchos::Comm<int> > tcomm = RCP<const Teuchos::Comm<int> > (new Teuchos::MpiComm<int> (cComm));
+  MPI_Comm cComm = MPI_Comm_f2c((MPI_Fint) *comm_World);
+  RCP<const Teuchos::Comm<int> > tcomm = RCP<const Teuchos::Comm<int> > (new Teuchos::MpiComm<int> (cComm));
 #else
-    RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
+  RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
 #endif
-    coordinateTaskMapperInterface<procId_t, pcoord_t, tcoord_t>(
+  coordinateTaskMapperInterface<procId_t, pcoord_t, tcoord_t>(
             tcomm,
+            procDim,
             numProcessors,
             machine_coords_,
-
-
             taskDim,
             numTasks,
             task_coords,
-
             task_communication_xadj_,
             task_communication_adj_,
-
             proc_to_task_xadj, /*output*/
             proc_to_task_adj, /*output*/
             partArraySize,
