@@ -527,9 +527,7 @@ void process_elem_attributes_and_implicit_ids(Ioss::Region &region, stk::mesh::B
       entity->get_field_data("ids", elem_ids);
 
       size_t element_count = elem_ids.size();
-      int nodes_per_elem = topo.num_nodes();
 
-      std::vector<stk::mesh::EntityId> id_vec(nodes_per_elem);
       std::vector<stk::mesh::Entity> elements(element_count);
 
       for(size_t i=0; i<element_count; ++i) {
