@@ -40,25 +40,24 @@
 //@HEADER
 */
 
-#ifndef IFPACK2_SPARSECONTAINER_DECL_HPP
-#define IFPACK2_SPARSECONTAINER_DECL_HPP
+#ifndef IFPACK2_DENSECONTAINER_DECL_HPP
+#define IFPACK2_DENSECONTAINER_DECL_HPP
 
-/// \file Ifpack2_SparseContainer_decl.hpp
-/// \brief Ifpack2::SparseContainer class declaration
+/// \file Ifpack2_DenseContainer_decl.hpp
+/// \brief Ifpack2::DenseContainer class declaration
 
 #include "Ifpack2_Container.hpp"
 #include "Ifpack2_Details_MultiVectorLocalGatherScatter.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_RowMatrix.hpp"
-#include "Tpetra_CrsMatrix.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 
 namespace Ifpack2 {
 
-/// \class SparseContainer
-/// \brief Store and solve a local sparse linear problem.
+/// \class DenseContainer
+/// \brief Store and solve a local dense linear problem.
 ///
 /// Please refer to the documentation of the Container
 /// interface. Currently, Containers are used by BlockRelaxation.
@@ -67,50 +66,26 @@ namespace Ifpack2 {
 /// <li> Store the diagonal blocks </li>
 /// <li> Solve linear systems with each diagonal block </li>
 /// </ol>
-/// These correspond to the two template parameters:
-/// <ol>
-/// <li> \c MatrixType, which stores a sparse matrix </li>
-/// <li> \c InverseType, which solves linear systems with that matrix </li>
-/// </ol>
-/// This class stores each block as a sparse matrix.  Thus,
-/// <tt>MatrixType</tt> must be a specialization of Tpetra::RowMatrix
-/// or of its subclass Tpetra::CrsMatrix.  Using a sparse matrix for
-/// each block is a good idea when the blocks are large and sparse.
-/// For small and / or dense blocks, it would probably be better to
-/// use an implementation of Container that stores the blocks densely.
+/// DenseContainer stores the diagonal blocks as dense matrices, and
+/// solves them using either LAPACK (for the four Scalar types that it
+/// supports) or a custom LU factorization (for Scalar types not
+/// supported by LAPACK).
 ///
-/// The \c InverseType template parameter represents the class to use
-/// for solving linear systems with a block.  In SparseContainer, this
-/// template parameter must be a specialization of Preconditioner.
-/// Specifically, \c InverseType must implement the following methods:
-/// <ul>
-/// <li> A constructor that takes an <tt>RCP<const MatrixType></tt> </li>
-/// <li> <tt>setParameters(Teuchos::ParameterList&)</tt> </li>
-/// <li> <tt>initialize()</tt> </li>
-/// <li> <tt>compute()</tt> </li>
-/// <li> <tt>apply (const MV& X, MV& Y, ...)</tt>, where <tt>MV</tt>
-///      is the appropriate specialization of Tpetra::MultiVector </li>
-/// </ul>
-/// We also assume that \c InverseType has the following typedefs:
-/// <ul>
-/// <li> \c scalar_type </li>
-/// <li> \c local_ordinal_type </li>
-/// <li> \c global_ordinal_type </li>
-/// <li> \c node_type </li>
-/// </ul>
+/// As with Ifpack2::Container, <tt>MatrixType</tt> must be a
+/// specialization of Tpetra::RowMatrix or of its subclass
+/// Tpetra::CrsMatrix.  Using a dense matrix for each block is a good
+/// idea when the blocks are small.  For large and / or sparse blocks,
+/// it would probably be better to use an implementation of Container
+/// that stores the blocks sparsely, in particular SparseContainer.
 ///
-/// \c MatrixType and \c InverseType may store values of different
-/// types, and may have different template parameters (e.g., local or
-/// global ordinal types).  You may mix and match so long as implicit
-/// conversions are available.  The most obvious use case for this
-/// are:
-/// - <tt>MatrixType::global_ordinal_type=long long</tt> and
-///   <tt>InverseType::global_ordinal_type=short</tt>
-/// - <tt>MatrixType::scalar_type=float</tt> and
-///   <tt>InverseType::scalar_type=double</tt>
+/// This class may store the dense local matrix using values of a
+/// different type (\c LocalScalarType) than those in \c MatrixType.
+/// You may mix and match so long as implicit conversions are
+/// available between \c LocalScalarType and
+/// <tt>MatrixType::scalar_type</tt>.
 ///
-/// SparseContainer currently assumes the following about the column
-/// and row Maps of the input matrix:
+/// This class currently assumes the following about the column and
+/// row Maps of the input matrix:
 /// <ol>
 /// <li> On all processes, the column and row Maps begin with the same
 ///      set of on-process entries, in the same order.  That is,
@@ -125,8 +100,8 @@ namespace Ifpack2 {
 /// to do so will need to modify the extract() method, so that it
 /// translates explicitly between local row and column indices,
 /// instead of just assuming that they are the same.
-template<typename MatrixType, typename InverseType>
-class SparseContainer : public Container<MatrixType> {
+template<typename MatrixType, typename LocalScalarType>
+class DenseContainer : public Container<MatrixType> {
 public:
   //! \name Public typedefs
   //@{
@@ -138,12 +113,8 @@ public:
   /// different template parameters (e.g., \c scalar_type) than
   /// <tt>InverseType</tt>.
   typedef MatrixType matrix_type;
-  /// \brief The second template parameter of this class.
-  ///
-  /// This must be a specialization of Ifpack2::Preconditioner or one
-  /// of its subclasses.  It may have entirely different template
-  /// parameters (e.g., \c scalar_type) than \c MatrixType.
-  typedef InverseType inverse_type;
+  //! The second template parameter of this class.
+  typedef LocalScalarType local_scalar_type;
 
   //! The type of entries in the input (global) matrix.
   typedef typename MatrixType::scalar_type scalar_type;
@@ -181,11 +152,11 @@ public:
   ///   <tt>localRows.size()</tt> gives the number of rows in the
   ///   local matrix on each process.  This may be different on
   ///   different processes.
-  SparseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                   const Teuchos::ArrayView<const local_ordinal_type>& localRows);
+  DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
+                  const Teuchos::ArrayView<const local_ordinal_type>& localRows);
 
   //! Destructor (declared virtual for memory safety of derived classes).
-  virtual ~SparseContainer();
+  virtual ~DenseContainer ();
 
   //@}
   //! \name Get and set methods
@@ -193,8 +164,8 @@ public:
 
   /// \brief The number of rows in the local matrix on the calling process.
   ///
-  /// Local matrices must be square.  Each process has exactly one matrix.
-  /// Those matrices may vary in dimensions.
+  /// Local matrices must be square.  Each process has exactly one
+  /// matrix.  Those matrices may vary in dimensions.
   virtual size_t getNumRows() const;
 
   //! Whether the container has been successfully initialized.
@@ -211,7 +182,7 @@ public:
   //@{
 
   //! Do all set-up operations that only require matrix structure.
-  virtual void initialize();
+  virtual void initialize ();
 
   //! Extract the local diagonal block and prepare the solver.
   virtual void compute ();
@@ -221,8 +192,8 @@ public:
   apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
          Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
          Teuchos::ETransp mode=Teuchos::NO_TRANS,
-         scalar_type alpha=Teuchos::ScalarTraits< scalar_type >::one(),
-         scalar_type beta=Teuchos::ScalarTraits< scalar_type >::zero()) const;
+         scalar_type alpha=Teuchos::ScalarTraits<scalar_type>::one(),
+         scalar_type beta=Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>.
   virtual void
@@ -230,8 +201,8 @@ public:
                  Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
                  const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& D,
                  Teuchos::ETransp mode=Teuchos::NO_TRANS,
-                 scalar_type alpha=Teuchos::ScalarTraits< scalar_type >::one(),
-                 scalar_type beta=Teuchos::ScalarTraits< scalar_type >::zero()) const;
+                 scalar_type alpha=Teuchos::ScalarTraits<scalar_type>::one(),
+                 scalar_type beta=Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //@}
   //! \name Miscellaneous methods
@@ -240,7 +211,7 @@ public:
   /// \brief Print information about this object to the given output stream.
   ///
   /// operator<< uses this method.
-  virtual std::ostream& print(std::ostream& os) const;
+  virtual std::ostream& print (std::ostream& os) const;
 
   //@}
   //! @name Implementation of Teuchos::Describable
@@ -257,16 +228,19 @@ public:
 
   //@}
 private:
-  typedef typename InverseType::scalar_type         InverseScalar;
-  typedef typename InverseType::local_ordinal_type  InverseLocalOrdinal;
-  typedef typename InverseType::global_ordinal_type InverseGlobalOrdinal;
-  typedef typename InverseType::node_type           InverseNode;
-
   //! Copy constructor: Declared but not implemented, to forbid copy construction.
-  SparseContainer (const SparseContainer<MatrixType,InverseType>& rhs);
+  DenseContainer (const DenseContainer<MatrixType, LocalScalarType>& rhs);
 
-  //! Extract the submatrices identified by the local indices set by the constructor.
+  //! Extract the submatrix identified by the local indices set by the constructor.
   void extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix);
+
+  /// \brief Factor the extracted submatrix.
+  ///
+  /// Call this after calling extract().
+  void factor ();
+
+  typedef Tpetra::MultiVector<local_scalar_type, local_ordinal_type,
+                              global_ordinal_type, node_type> local_mv_type;
 
   /// \brief Post-permutation, post-view version of apply().
   ///
@@ -274,50 +248,40 @@ private:
   /// creation (or copying data), then calls this method to solve the
   /// linear system with the diagonal block.
   ///
-  /// \param X [in] Subset permutation of the input X of apply(),
-  ///   suitable for the first argument of Inverse_->apply().
-  ///
-  /// \param Y [in] Subset permutation of the input/output Y of apply(),
-  ///   suitable for the second argument of Inverse_->apply().
+  /// \param X [in] Subset permutation of the input X of apply().
+  /// \param Y [in] Subset permutation of the input/output Y of apply().
   void
-  applyImpl (const Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode>& X,
-             Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode>& Y,
+  applyImpl (const local_mv_type& X,
+             local_mv_type& Y,
              Teuchos::ETransp mode,
-             InverseScalar alpha,
-             InverseScalar beta) const;
+             const local_scalar_type alpha,
+             const local_scalar_type beta) const;
 
   //! Number of rows in the local matrix.
   size_t numRows_;
-  //! Row Map of the local diagonal block.
-  Teuchos::RCP<Tpetra::Map<InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> > localMap_;
+
   //! The local diagonal block, which compute() extracts.
-  Teuchos::RCP<Tpetra::CrsMatrix<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> > diagBlock_;
+  Teuchos::SerialDenseMatrix<int, local_scalar_type> diagBlock_;
+
+  //! Permutation array from LAPACK (GETRF).
+  Teuchos::Array<int> ipiv_;
+
+  //! Map of the input and output Tpetra::MultiVector arguments of applyImpl().
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> > localMap_;
+
   //! Solution vector.
-  mutable Teuchos::RCP<Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> > Y_;
+  mutable Teuchos::RCP<local_mv_type> Y_;
+
   //! Input vector for local problems
-  mutable Teuchos::RCP<Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> > X_;
+  mutable Teuchos::RCP<local_mv_type> X_;
+
   //! If \c true, the container has been successfully initialized.
   bool IsInitialized_;
+
   //! If \c true, the container has been successfully computed.
   bool IsComputed_;
-  //! Serial communicator (containing only MPI_COMM_SELF if MPI is used).
-  Teuchos::RCP<Teuchos::Comm<int> > localComm_;
-
-  /// \brief Local operator.
-  ///
-  /// InverseType must be a specialization of Ifpack2::Preconditioner,
-  /// with the same template parameters (in the same order) as those
-  /// of \c diagBlock_ above.  Its apply() method defines the action
-  /// of the inverse of the local matrix.  See the class documentation
-  /// for more details.
-  Teuchos::RCP<InverseType> Inverse_;
-
-  //! Parameters for the InverseType linear solve operator.
-  Teuchos::ParameterList List_;
 };
 
 }// namespace Ifpack2
 
-
-
-#endif // IFPACK2_SPARSECONTAINER_HPP
+#endif // IFPACK2_DENSECONTAINER_DECL_HPP

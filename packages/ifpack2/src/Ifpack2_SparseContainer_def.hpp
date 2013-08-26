@@ -215,7 +215,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV_mat;
   // Tpetra::MultiVector specialization corresponding to InverseType.
   typedef Tpetra::MultiVector<InverseScalar,InverseLocalOrdinal,InverseGlobalOrdinal,InverseNode> MV_inv;
-  MultiVectorLocalGatherScatter<MV_mat, MV_inv> mvgs;
+  Details::MultiVectorLocalGatherScatter<MV_mat, MV_inv> mvgs;
   const size_t numVecs = X.getNumVectors ();
 
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -336,7 +336,7 @@ weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
   // Tpetra::Vector specialization corresponding to InverseType.
   typedef Tpetra::Vector<InverseScalar, InverseLocalOrdinal,
                          InverseGlobalOrdinal, InverseNode> V_inv;
-  MultiVectorLocalGatherScatter<MV_mat, MV_inv> mvgs;
+  Details::MultiVectorLocalGatherScatter<MV_mat, MV_inv> mvgs;
   const size_t numVecs = X.getNumVectors ();
 
   TEUCHOS_TEST_FOR_EXCEPTION(
