@@ -6,7 +6,7 @@ namespace stk {
     void LocalCubicSplineFit::
     fit_internal(int n, Vectors2D& Q, Vectors2D& T)
     {
-      const bool debug_print = true;
+      const bool debug_print = false;
 
       std::vector<double>& U = m_U;
       Vectors2D& CV = m_CV;

@@ -9,6 +9,7 @@ namespace stk {
     ON_Curve * BSplineFit::
     fit(Vectors2D& points_in)
     {
+      const bool debug_print = false;
       int n_i = points_in.size();
       int n_stencil = 3; // option.n_stencil;
       Option option = ThreePoint; // FivePoint
@@ -38,9 +39,22 @@ namespace stk {
       n = n_i - 1;  // 0...n define the points
       Vectors2D q(n+1), d(n+1), D(n+1), V(n+1), T(n+1);
       std::vector<double> u(n+1), alpha(n+1);
-      for (int k=0; k <= n; k++)
+      u[0] = 0.0;
+      u[n] = 1.0;
+      double arclen = 0.0;
+      for (int k=1; k <= n; k++)
         {
-          u[k] = double(k)/double(n+1);
+          // eq (9.3)
+          //u[k] = double(k)/double(n+1);
+          // eq (9.4,5)
+          arclen += (Q[k] - Q[k-1]).Length();
+        }
+
+      for (int k=1; k <= n-1; k++)
+        {
+          // eq (9.4,5)
+          u[k] = u[k-1] + (Q[k] - Q[k-1]).Length() / arclen;
+          DPRINTLN2(k,u[k]);
         }
 
       for (int k=1; k <= n; k++)
@@ -61,8 +75,10 @@ namespace stk {
               V[k] = (1 - alpha[k])*q[k] + alpha[k]*q[k+1];
               double vkl =  V[k].Length();
               if (vkl < 1.e-12) throw std::runtime_error("can't normalize T vector");
+              DPRINTLN2(k,alpha[k]);
               // eq (9.29)
               T[k] = V[k] / vkl;
+              DPRINTLN2(k,T[k]);
             }
           // endpoints
           // eq (9.32)
@@ -76,6 +92,10 @@ namespace stk {
           if (dnl < 1.e-12) throw std::runtime_error("can't normalize T vector[n]");
           T[0] = D[0]/d0l;
           T[n] = D[n]/dnl;
+          DPRINTLN(d[1]);
+          DPRINTLN(D[1]);
+          DPRINTLN(T[0]);
+          DPRINTLN(T[n]);
         }
       fit_internal(n, Q, T);
       return create();

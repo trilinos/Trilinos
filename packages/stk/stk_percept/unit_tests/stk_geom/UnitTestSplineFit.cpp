@@ -32,32 +32,25 @@ namespace stk
 
       STKUNIT_UNIT_TEST(unit_stk_geom, test_1)
       {
-        const bool debug_print = true;
+        const bool debug_print = false;
 
         /// fit a quadratic
         LocalCubicSplineFit cf;
-        int n = 3;
+        int n = 11;
         Vectors2D Q(n);
         for (int i=0; i < n; i++)
           {
             double x = double(i)/double(n-1);
-            //double y = x*x;
-            double y = x;
-            if (i==1) {
-              x=.2;
-              y=.2;
-            }
-            double xy[] = {x, y};
-            Q[i] = Vector2D(xy);
+            double y = x*x;
+            Q[i] = Vector2D(x,y);
           }
         if (debug_print) std::cout << "Fitting quadratic with cubic spline - points = " << std::endl;
         DPRINTLN(Q);
         ON_Curve *curve = cf.fit(Q);
-        if (debug_print) 
+        if (debug_print)
           cf.print();
 
         double t0=0,t1=1;
-        //ON_BOOL32 nerr = curve->GetDomain( &t0, &t1);
         curve->GetDomain( &t0, &t1);
         DPRINTLN2(t0,t1);
         DPRINTLN(curve->SpanCount());
@@ -123,7 +116,7 @@ namespace stk
           Point3D closest_point = curve->PointAt(u);
           DPRINTLN2(u,closest_point);
           double dist = closest_point.DistanceTo(p);
-          STKUNIT_EXPECT_NEAR(dist, 0,tol);
+          STKUNIT_EXPECT_NEAR(dist, 0, tol);
         }
 
         {
@@ -137,40 +130,12 @@ namespace stk
           STKUNIT_EXPECT_NEAR(dist, 0,tol);
         }
 
-        {
-          int nn = 101;
-          for (int i = 0; i < nn; i++)
-            {
-              double t = double(i)/double(nn-1);
-              Point3D p = Q[0] + t*(Q[n-1]-Q[0]);
-              double u=0;
-              bool success = curve->GetClosestPoint(p, &u);
-              STKUNIT_EXPECT_TRUE(success);
-              Point3D closest_point = curve->PointAt(u);
-              DPRINTLN2(u,closest_point);
-              double dist = closest_point.DistanceTo(p);
-              STKUNIT_EXPECT_NEAR(dist, 0,tol);
-            }
-        }
-
-        {
-          Point3D p(1e-6,1e-6,0);
-          double u=0;
-          bool success = curve->GetClosestPoint(p, &u);
-          STKUNIT_EXPECT_TRUE(success);
-          Point3D closest_point = curve->PointAt(u);
-          DPRINTLN2(u,closest_point);
-          double dist = closest_point.DistanceTo(p);
-          STKUNIT_EXPECT_NEAR(dist, 0,tol);
-        }
-
-
         delete curve;
       }
 
       STKUNIT_UNIT_TEST(unit_stk_geom, test_2)
       {
-        const bool debug_print = true;
+        const bool debug_print = false;
         if (1)
           {
             // write a wiggly cubic curve on the "green NURBS wiggle" layer
@@ -217,8 +182,11 @@ namespace stk
                 DPRINTLN2(k, wiggle->PointAt(wiggle->Knot(k)));
                 knots.push_back(wiggle->Knot(k));
               }
-            ON_TextLog log;
-            wiggle->Dump(log);
+            if (debug_print)
+              {
+                ON_TextLog log;
+                wiggle->Dump(log);
+              }
 
             DPRINTLN(pts);
             DPRINTLN(knots);
@@ -226,7 +194,7 @@ namespace stk
             delete wiggle;
           }
 
-        if (0)
+        if (1)
           {
             double pts[][2] = {{0, 1},     {0.2, 1.3}, {1.5, 2},
                                {1.75, 2},  {2, 2}, {2.1, 0.5},
