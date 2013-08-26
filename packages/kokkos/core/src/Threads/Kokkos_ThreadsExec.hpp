@@ -243,6 +243,12 @@ inline void Threads::print_configuration( std::ostream & s , bool detail )
   Impl::ThreadsExec::print_configuration( s , detail );
 }
 
+inline bool Threads::sleep()
+{ return Impl::ThreadsExec::sleep() ; }
+
+inline bool Threads::wake()
+{ return Impl::ThreadsExec::wake() ; }
+
 inline void Threads::fence()
 { Impl::ThreadsExec::fence() ; }
 
