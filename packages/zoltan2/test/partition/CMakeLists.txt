@@ -38,18 +38,18 @@ ENDIF()
 #  )
 #ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Experimental)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    taskMapper3
-    SOURCES taskMappingTest3.cpp
-    NUM_MPI_PROCS 1
-    COMM serial mpi
-    ARGS 
-    "PART=part.txt PROC=proc.txt"
-    PASS_REGULAR_EXPRESSION "PASS"
-    FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-ENDIF()
+#IF (${PACKAGE_NAME}_ENABLE_Experimental)
+#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#    taskMapper3
+#    SOURCES taskMappingTest3.cpp
+#    NUM_MPI_PROCS 1
+#    COMM serial mpi
+#    ARGS 
+#    "PROC=machine.txt NX=8 NY=8 NZ=8"
+#    PASS_REGULAR_EXPRESSION "PASS"
+#    FAIL_REGULAR_EXPRESSION "FAIL"
+#  )
+#ENDIF()
 
 
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
@@ -108,6 +108,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_partition_tests
     GeomGenParam.txt
     proc.txt
     part.txt
+    machine.txt
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../data
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )

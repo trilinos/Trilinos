@@ -18,6 +18,18 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA)
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    1DfemAndersonAcceleration
+    SOURCES 
+    1DfemInterface.H
+    1DfemInterface.C
+    1DfemPrePostOperator.H
+    1DfemPrePostOperator.C
+    1DfemAndersonAcceleration.C
+    COMM serial mpi
+    PASS_REGULAR_EXPRESSION "Test passed!"
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     1DfemScaled
     SOURCES 
     1DfemInterface.H

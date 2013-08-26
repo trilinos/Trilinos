@@ -51,6 +51,8 @@
 #include <cuda_runtime.h>
 #include <cusparse.h>
 
+#include <Kokkos_Serial.hpp>
+
 namespace Kokkos {
 namespace Impl {
 
@@ -211,7 +213,7 @@ public:
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
       const vector_type xx_view = Kokkos::subview< vector_type >( xx , span );
-      const vector_type x_col = Kokkos::subview< vector_type >( x, col_indices[col] );
+      const vector_type x_col = Kokkos::subview< vector_type >( x, Kokkos::ALL() , col_indices[col] );
       Kokkos::deep_copy(xx_view, x_col);
     }
 
@@ -239,7 +241,7 @@ public:
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
       const vector_type yy_view = Kokkos::subview< vector_type>( yy , span );
-      const vector_type y_col = Kokkos::subview< vector_type>( y, col_indices[col] );
+      const vector_type y_col = Kokkos::subview< vector_type>( y, Kokkos::ALL() , col_indices[col] );
       Kokkos::deep_copy(y_col, yy_view );
     }
   }
@@ -279,7 +281,7 @@ public:
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
       const vector_type xx_view = Kokkos::subview< vector_type>( xx , span );
-      const vector_type x_col = Kokkos::subview< vector_type>( x, col_indices[col] );
+      const vector_type x_col = Kokkos::subview< vector_type>( x, Kokkos::ALL() , col_indices[col] );
       Kokkos::deep_copy(xx_view, x_col);
     }
 
@@ -307,7 +309,7 @@ public:
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
       const vector_type yy_view = Kokkos::subview< vector_type>( yy , span );
-      const vector_type y_col = Kokkos::subview< vector_type>( y, col_indices[col] );
+      const vector_type y_col = Kokkos::subview< vector_type>( y, Kokkos::ALL() , col_indices[col] );
       Kokkos::deep_copy(y_col, yy_view );
     }
   }
@@ -443,7 +445,7 @@ template< typename MatrixValue>
 class MatrixMarketWriter<MatrixValue,Kokkos::Cuda>
 {
 public:
-  typedef Host                                      device_type ;
+  typedef Serial                                    device_type ;
   typedef device_type::size_type                    size_type ;
   typedef CrsMatrix< MatrixValue , device_type >    matrix_type ;
 

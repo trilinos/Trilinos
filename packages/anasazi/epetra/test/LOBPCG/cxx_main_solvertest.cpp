@@ -285,7 +285,7 @@ int main(int argc, char *argv[])
   // create the output manager
   RCP< OutputManager<ScalarType> > printer = rcp( new BasicOutputManager<ScalarType>() );
 
-  if (verbose) printer->stream(Errors) << Anasazi_Version() << endl << endl;
+  if (verbose) printer->stream(Errors) << Anasazi_Version() << std::endl << std::endl;
 
   const int veclength = 99;
 
@@ -323,8 +323,8 @@ int main(int argc, char *argv[])
   // Inform the eigenproblem that you are finishing passing it information
   if ( probstd->setProblem() != true || probgen->setProblem() != true ) {
     if (verbose) {
-      printer->stream(Errors) << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
-                              << "End Result: TEST FAILED" << endl;	
+      printer->stream(Errors) << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << std::endl
+                              << "End Result: TEST FAILED" << std::endl;	
     }
 #ifdef HAVE_MPI
     MPI_Finalize() ;
@@ -346,83 +346,83 @@ int main(int argc, char *argv[])
   try 
   {
 
-    if (verbose) printer->stream(Errors) << "Testing solver(default,default) with standard eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(default,default) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls);
-    if (verbose) printer->stream(Errors) << "Testing solver(default,default) with generalized eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(default,default) with generalized eigenproblem..." << std::endl;
     testsolver(probgen,printer,orthogen,sorter,pls);
 
     pls.set<int>("Block Size",nev);
     pls.set<bool>("Full Ortho",false);
-    if (verbose) printer->stream(Errors) << "Testing solver(nev,false) with standard eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(nev,false) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls);
     TEUCHOS_TEST_FOR_EXCEPTION(pls.getEntryPtr("Block Size")->isUsed() == false, get_out, "Solver did not consume parameter \"Block Size\".");
     TEUCHOS_TEST_FOR_EXCEPTION(pls.getEntryPtr("Full Ortho")->isUsed() == false, get_out, "Solver did not consume parameter \"Full Ortho\".");
     pls.set<bool>("Full Ortho",true);
-    if (verbose) printer->stream(Errors) << "Testing solver(nev,true) with standard eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(nev,true) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls);
     pls.set<bool>("Full Ortho",false);
-    if (verbose) printer->stream(Errors) << "Testing solver(nev,false) with generalized eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(nev,false) with generalized eigenproblem..." << std::endl;
     testsolver(probgen,printer,orthogen,sorter,pls);
     pls.set<bool>("Full Ortho",true);
-    if (verbose) printer->stream(Errors) << "Testing solver(nev,true) with generalized eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(nev,true) with generalized eigenproblem..." << std::endl;
     testsolver(probgen,printer,orthogen,sorter,pls);
 
     pls.set<int>("Block Size",2*nev);
     pls.set<bool>("Full Ortho",false);
-    if (verbose) printer->stream(Errors) << "Testing solver(2*nev,false) with standard eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(2*nev,false) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls);
     pls.set<bool>("Full Ortho",true);
-    if (verbose) printer->stream(Errors) << "Testing solver(2*nev,true) with standard eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(2*nev,true) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls);
     pls.set<bool>("Full Ortho",false);
-    if (verbose) printer->stream(Errors) << "Testing solver(2*nev,false) with generalized eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(2*nev,false) with generalized eigenproblem..." << std::endl;
     testsolver(probgen,printer,orthogen,sorter,pls);
     pls.set<bool>("Full Ortho",true);
-    if (verbose) printer->stream(Errors) << "Testing solver(2*nev,true) with generalized eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(2*nev,true) with generalized eigenproblem..." << std::endl;
     testsolver(probgen,printer,orthogen,sorter,pls);
 
     pls.set<int>("Block Size",nev/2);
     pls.set<bool>("Full Ortho",false);
-    if (verbose) printer->stream(Errors) << "Testing solver(nev/2,false) with standard eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(nev/2,false) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls);
     pls.set<bool>("Full Ortho",true);
-    if (verbose) printer->stream(Errors) << "Testing solver(nev/2,true) with standard eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(nev/2,true) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls);
     pls.set<bool>("Full Ortho",false);
-    if (verbose) printer->stream(Errors) << "Testing solver(nev/2,false) with generalized eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(nev/2,false) with generalized eigenproblem..." << std::endl;
     testsolver(probgen,printer,orthogen,sorter,pls);
     pls.set<bool>("Full Ortho",true);
-    if (verbose) printer->stream(Errors) << "Testing solver(nev/2,true) with generalized eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(nev/2,true) with generalized eigenproblem..." << std::endl;
     testsolver(probgen,printer,orthogen,sorter,pls);
 
     // try with an invalid block size
     pls.set<int>("Block Size",0);
-    if (verbose) printer->stream(Errors) << "Testing solver(0) with standard eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(0) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,true);
 
     // try with a too-large block size
     pls.set<int>("Num Blocks",veclength+1);
-    if (verbose) printer->stream(Errors) << "Testing solver(toomany) with standard eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver(toomany) with standard eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,true);
 
     // try with an unset problem
     // setHermitian will mark the problem as unset
     probstd->setHermitian(false);
-    if (verbose) printer->stream(Errors) << "Testing solver with unset eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver with unset eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,true);
 
     // set the problem, and try with a non-Hermitian problem
     if ( probstd->setProblem() != true ) {
       if (verbose) {
-        printer->stream(Errors) << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
-                                << "End Result: TEST FAILED" << endl;	
+        printer->stream(Errors) << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << std::endl
+                                << "End Result: TEST FAILED" << std::endl;	
       }
 #ifdef HAVE_MPI
       MPI_Finalize() ;
 #endif
       return -1;
     }
-    if (verbose) printer->stream(Errors) << "Testing solver with non-Hermitian eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver with non-Hermitian eigenproblem..." << std::endl;
     testsolver(probstd,printer,orthostd,sorter,pls,true);
     // fix it now
     probstd->setHermitian(true);
@@ -432,7 +432,7 @@ int main(int argc, char *argv[])
     RCP< StatusTest<ScalarType,MV,OP> > dumtester = rcp( new StatusTestMaxIters<ScalarType,MV,OP>(1) );
 
     // try with a null problem
-    if (verbose) printer->stream(Errors) << "Testing solver with null eigenproblem..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver with null eigenproblem..." << std::endl;
     try {
       RCP< LOBPCG<ScalarType,MV,OP> > solver 
         = rcp( new LOBPCG<ScalarType,MV,OP>(Teuchos::null,sorter,printer,dumtester,orthostd,pls) );
@@ -443,7 +443,7 @@ int main(int argc, char *argv[])
     }
 
     // try with a null sortman
-    if (verbose) printer->stream(Errors) << "Testing solver with null sort manager..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver with null sort manager..." << std::endl;
     try {
       RCP< LOBPCG<ScalarType,MV,OP> > solver 
         = rcp( new LOBPCG<ScalarType,MV,OP>(probstd,Teuchos::null,printer,dumtester,orthostd,pls) );
@@ -454,7 +454,7 @@ int main(int argc, char *argv[])
     }
 
     // try with a output man problem
-    if (verbose) printer->stream(Errors) << "Testing solver with null output manager..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver with null output manager..." << std::endl;
     try {
       RCP< LOBPCG<ScalarType,MV,OP> > solver 
         = rcp( new LOBPCG<ScalarType,MV,OP>(probstd,sorter,Teuchos::null,dumtester,orthostd,pls) );
@@ -465,7 +465,7 @@ int main(int argc, char *argv[])
     }
 
     // try with a null status test
-    if (verbose) printer->stream(Errors) << "Testing solver with null status test..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver with null status test..." << std::endl;
     try {
       RCP< LOBPCG<ScalarType,MV,OP> > solver 
         = rcp( new LOBPCG<ScalarType,MV,OP>(probstd,sorter,printer,Teuchos::null,orthostd,pls) );
@@ -476,7 +476,7 @@ int main(int argc, char *argv[])
     }
 
     // try with a null orthoman
-    if (verbose) printer->stream(Errors) << "Testing solver with null ortho manager..." << endl;
+    if (verbose) printer->stream(Errors) << "Testing solver with null ortho manager..." << std::endl;
     try {
       RCP< LOBPCG<ScalarType,MV,OP> > solver 
         = rcp( new LOBPCG<ScalarType,MV,OP>(probstd,sorter,printer,dumtester,Teuchos::null,pls) );
@@ -487,11 +487,11 @@ int main(int argc, char *argv[])
     }
   }
   catch (const get_out &go) {
-    printer->stream(Errors) << "Test failed: " << go.what() << endl;
+    printer->stream(Errors) << "Test failed: " << go.what() << std::endl;
     testFailed = true;
   }
   catch (const std::exception &e) {
-    printer->stream(Errors) << "Caught unexpected exception: " << e.what() << endl;
+    printer->stream(Errors) << "Caught unexpected exception: " << e.what() << std::endl;
     testFailed = true;
   }
 
@@ -502,7 +502,7 @@ int main(int argc, char *argv[])
 
   if (testFailed) {
     if (verbose) {
-      printer->stream(Errors) << endl << "End Result: TEST FAILED" << endl;	
+      printer->stream(Errors) << std::endl << "End Result: TEST FAILED" << std::endl;	
     }
     return -1;
   }
@@ -510,7 +510,7 @@ int main(int argc, char *argv[])
   // Default return value
   //
   if (verbose) {
-    printer->stream(Errors) << endl << "End Result: TEST PASSED" << endl;
+    printer->stream(Errors) << std::endl << "End Result: TEST PASSED" << std::endl;
   }
   return 0;
 

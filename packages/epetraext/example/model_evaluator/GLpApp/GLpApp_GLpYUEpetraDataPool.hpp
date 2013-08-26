@@ -221,7 +221,7 @@ public:
     delete [] NdNdx2Nw;
   }
   
-  void Print(ostream& os) const;
+  void Print(std::ostream& os) const;
 };
 
 } // namespace GLpApp

@@ -80,22 +80,22 @@ namespace MueLu {
   void TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level & coarseLevel) const {
     if (PFact_ != Teuchos::null) {
       RCP<Matrix> P = coarseLevel.Get<RCP<Matrix> >("P", PFact_.get());
-      coarseLevel.Set("P", P, NoFactory::get());
-      coarseLevel.AddKeepFlag("P", NoFactory::get(), MueLu::Final);       // FIXME2: Order of Remove/Add matter (data removed otherwise). Should do something about this
+      coarseLevel.Set           ("P", P, NoFactory::get());
+      coarseLevel.AddKeepFlag   ("P", NoFactory::get(), MueLu::Final);    // FIXME2: Order of Remove/Add matter (data removed otherwise). Should do something about this
       coarseLevel.RemoveKeepFlag("P", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack, I should change behavior of Level::Set() instead. FIXME3: Should not be removed if flag was there already
     }
 
     if (RFact_ != Teuchos::null) {
       RCP<Matrix> R = coarseLevel.Get<RCP<Matrix> >("R", RFact_.get());
-      coarseLevel.Set("R", R, NoFactory::get());
-      coarseLevel.AddKeepFlag("R", NoFactory::get(), MueLu::Final);
+      coarseLevel.Set           ("R", R, NoFactory::get());
+      coarseLevel.AddKeepFlag   ("R", NoFactory::get(), MueLu::Final);
       coarseLevel.RemoveKeepFlag("R", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack
     }
 
     if ((AcFact_ != Teuchos::null) && (AcFact_ != NoFactory::getRCP())) {
       RCP<Matrix> Ac = coarseLevel.Get<RCP<Matrix> >("A", AcFact_.get());
-      coarseLevel.Set("A", Ac, NoFactory::get());
-      coarseLevel.AddKeepFlag("A", NoFactory::get(), MueLu::Final);
+      coarseLevel.Set           ("A", Ac, NoFactory::get());
+      coarseLevel.AddKeepFlag   ("A", NoFactory::get(), MueLu::Final);
       coarseLevel.RemoveKeepFlag("A", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack
     }
   }
@@ -110,8 +110,10 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(varName != "CoarseSolver" && varName != "Smoother", Exceptions::RuntimeError, "varName should be either \"CoarseSolver\" or \"Smoother\"");
 
     if (varName == "CoarseSolver") {
+      // For coarsest level, we only need one smoother (so that we don't call direct solver twice)
+      // If a user wants to do something weird there (like, solve coarsest system by using 2 forward
+      // GS and 1 backward GS), he can use MergedSmoother
       presmootherFact_  = parentFactoryManager->GetFactory("CoarseSolver");
-      postsmootherFact_ = parentFactoryManager->GetFactory("CoarseSolver");
 
     } else {
       presmootherFact_  = parentFactoryManager->GetFactory("PreSmoother");
@@ -135,15 +137,18 @@ namespace MueLu {
   void TopSmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & level) const {
     typedef MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> SmootherBase2; //TODO
 
+    if (presmootherFact_.is_null() && postsmootherFact_.is_null())
+      return;
+
     if (presmootherFact_.get() == postsmootherFact_.get()) {
       // Only call factory if at least one smoother is missing (mimic behavior of level.Get<> but level.Get<> cannot be used here as we don't know if the factory will produce both Pre and Post smoother)
-      if (!level.IsAvailable("PreSmoother", presmootherFact_.get()) || !level.IsAvailable("PostSmoother", postsmootherFact_.get())) {
+      if (!level.IsAvailable("PreSmoother", presmootherFact_.get()) || !level.IsAvailable("PostSmoother", postsmootherFact_.get()))
         presmootherFact_->CallBuild(level);
-      }
+
     } else {
-      if (!level.IsAvailable("PreSmoother",  presmootherFact_.get()))
+      if (!presmootherFact_.is_null() && !level.IsAvailable("PreSmoother",  presmootherFact_.get()))
         presmootherFact_->CallBuild(level);
-      if (!level.IsAvailable("PostSmoother", postsmootherFact_.get()))
+      if (!postsmootherFact_.is_null() && !level.IsAvailable("PostSmoother", postsmootherFact_.get()))
         postsmootherFact_->CallBuild(level);
     }
 

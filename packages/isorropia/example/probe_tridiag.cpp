@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
     ierr = A.FillComplete();
     assert(ierr==0);
 
-    cout << A << endl;
+    std::cout << A << std::endl;
 
     // Construct the graph for a diagonal matrix
     for (i=0; i<NumMyElements; i++)
@@ -180,17 +180,17 @@ int main(int argc, char *argv[])
     Teuchos::ParameterList pList;
     Isorropia::Epetra::Prober prober(RCPG1, pList, false);
 
-    cout << "Created prober" << endl;
-    cout << G1 << endl;
+    std::cout << "Created prober" << std::endl;
+    std::cout << G1 << std::endl;
 
     prober.color();
 
-    //cout << "Importer = " << (G1.Importer())->TargetMap().MinMyGID() ;
-    cout << "Done Coloring" << endl;
+    //std::cout << "Importer = " << (G1.Importer())->TargetMap().MinMyGID() ;
+    std::cout << "Done Coloring" << std::endl;
     Teuchos::RCP<Epetra_CrsMatrix> D = prober.probe(A);
-    cout << "Done Probing" << endl;
+    std::cout << "Done Probing" << std::endl;
 
-    cout << *D << endl;
+    std::cout << *D << std::endl;
     return 1;
 
 #else

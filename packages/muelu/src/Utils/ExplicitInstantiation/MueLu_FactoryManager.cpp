@@ -69,5 +69,3 @@ template class MueLu::FactoryManager<std::complex<double>, int, int, KokkosClass
 # warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
 # endif
 #endif
-
-

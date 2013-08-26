@@ -115,11 +115,11 @@ int EpetraExt_BlockDiagMatrix::SetParameters(Teuchos::ParameterList & List){
   List_=List;
 
   // Inverse storage mode
-  string dummy("multiply");
-  string ApplyMode=List_.get("apply mode",dummy);
-  if(ApplyMode==string("multiply"))    ApplyMode_=AM_MULTIPLY;
-  else if(ApplyMode==string("invert")) ApplyMode_=AM_INVERT;
-  else if(ApplyMode==string("factor")) ApplyMode_=AM_FACTOR;
+  std::string dummy("multiply");
+  std::string ApplyMode=List_.get("apply mode",dummy);
+  if(ApplyMode==std::string("multiply"))    ApplyMode_=AM_MULTIPLY;
+  else if(ApplyMode==std::string("invert")) ApplyMode_=AM_INVERT;
+  else if(ApplyMode==std::string("factor")) ApplyMode_=AM_FACTOR;
   else EPETRA_CHK_ERR(-1);
 
   return 0;
@@ -291,7 +291,7 @@ int EpetraExt_BlockDiagMatrix::ApplyInverse(const Epetra_MultiVector& X, Epetra_
 
 //=========================================================================
 // Print method
-void EpetraExt_BlockDiagMatrix::Print(ostream & os) const{
+void EpetraExt_BlockDiagMatrix::Print(std::ostream & os) const{
   int MyPID = DataMap_->Comm().MyPID();
   int NumProc = DataMap_->Comm().NumProc();
   
@@ -313,7 +313,7 @@ void EpetraExt_BlockDiagMatrix::Print(ostream & os) const{
 	  os <<  "     GID/Point";
 	os.width(20);
 	os <<  "Values ";
-	os << endl;
+	os << std::endl;
       }
       for (int i=0; i < NumMyElements1; i++) {
 	for (int ii=0; ii< DataMap_->ElementSize(i); ii++) {
@@ -331,10 +331,10 @@ void EpetraExt_BlockDiagMatrix::Print(ostream & os) const{
 	  }
           os.width(20);
           os <<  Values_[iii];
-	  os << endl;
+	  os << std::endl;
 	}
       }
-      os << flush; 
+      os << std::flush; 
     }
 
     // Do a few global ops to give I/O a chance to complete

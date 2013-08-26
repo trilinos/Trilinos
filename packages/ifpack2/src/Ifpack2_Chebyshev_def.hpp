@@ -78,7 +78,6 @@ Chebyshev<MatrixType>::setParameters (const Teuchos::ParameterList& List)
   impl_.setParameters (const_cast<Teuchos::ParameterList&> (List));
 }
 
-
 //==========================================================================
 template<class MatrixType>
 Teuchos::RCP<const Teuchos::Comm<int> >
@@ -363,6 +362,7 @@ std::string Chebyshev<MatrixType>::description() const {
 
   oss << ", global rows = " << impl_.getMatrix ()->getGlobalNumRows()
       << ", global cols = " << impl_.getMatrix ()->getGlobalNumCols()
+      << ", global nnz  = " << impl_.getMatrix ()->getGlobalNumEntries()
       << "}";
   return oss.str();
 }

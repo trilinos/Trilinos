@@ -125,7 +125,7 @@ void SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatO
   RCP<Matrix> FhatinvG = MatrixFactory::Build(G->getRowMap(), G->getGlobalMaxNumRowEntries());
   RCP<Matrix> emptyMat = MatrixFactory::Build(G->getRowMap(), G->getGlobalMaxNumRowEntries());
   emptyMat->fillComplete(G->getDomainMap(),G->getRowMap());
-  Utils2::TwoMatrixAdd(*G,false,1.0,*emptyMat,false,-1.0/omega,FhatinvG);
+  Utils2::TwoMatrixAdd(*G,false,1.0,*emptyMat,false,-1.0/omega,FhatinvG,GetOStream(Statistics2,0));
   FhatinvG->fillComplete(G->getDomainMap(),G->getRowMap()); // complete the matrix. left scaling does not change the pattern of the operator.
 
   bool lumping = pL.get<bool>("lumping");
@@ -144,12 +144,12 @@ void SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatO
   }
 
   // build D \hat{F}^{-1} G
-  RCP<Matrix> DFhatinvG = Utils::Multiply(*D,false,*FhatinvG,false);
+  RCP<Matrix> DFhatinvG = Utils::Multiply(*D,false,*FhatinvG,false,GetOStream(Statistics2,0));
 
   // build full SchurComplement operator
   // S = - 1/omega D \hat{F}^{-1} G + Z
   RCP<Matrix> S;
-  Utils2::TwoMatrixAdd(*Z,false,1.0,*DFhatinvG,false,-1.0/omega,S);
+  Utils2::TwoMatrixAdd(*Z,false,1.0,*DFhatinvG,false,-1.0/omega,S,GetOStream(Statistics2,0));
   S->fillComplete();
 
   {

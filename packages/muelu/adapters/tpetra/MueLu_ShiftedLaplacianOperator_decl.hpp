@@ -91,7 +91,7 @@ namespace MueLu {
 
     //! Auxiliary Constructor
     ShiftedLaplacianOperator(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & H,
-			     const RCP<Matrix> A, int cycles, int iters, int option, double tol) : Hierarchy_(H), A_(A), cycles_(cycles), iters_(iters), option_(option), tol_(tol)
+                             const RCP<Matrix> A, int cycles, int iters, int option, double tol) : Hierarchy_(H), A_(A), cycles_(cycles), iters_(iters), option_(option), tol_(tol)
     {
 
       // setup 2-level correction
@@ -155,7 +155,7 @@ namespace MueLu {
     RCP< Teuchos::ParameterList >  BelosList_;
     RCP< Belos::LinearProblem<Scalar,MV,OP> > BelosLP_;
     RCP< Belos::SolverManager<Scalar,MV,OP> > BelosSM_;
-    // cycles -> number of 2-level corrections
+    // cycles -> number of V-cycles
     // iters  -> number of GMRES iterations per correction
     // option -> 0 if no correction is desired
     int cycles_, iters_, option_;

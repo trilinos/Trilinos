@@ -777,7 +777,14 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     default=configuration.get('extra-cmake-options', ''),
     help="Extra options to pass to 'cmake' after all other options." \
     +" This should be used only as a last resort.  To disable packages, instead use" \
-    +" --disable-packages." )
+    +" --disable-packages.  To change test categories, use --test-categories." )
+
+  clp.add_option(
+    "--test-categories", dest="testCategories", type="string",
+    default="BASIC",
+    help="." \
+    +" Change the test categories.  Can be 'BASIC', 'CONTINUOUS', or" \
+      " 'NIGHTLY' (default 'BASIC')." )
 
   clp.add_option(
     "-j", dest="overallNumProcs", type="string", default="",
@@ -1037,6 +1044,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   else:
     print "  --continue-if-no-enables \\"
   print "  --extra-cmake-options='"+options.extraCmakeOptions+"' \\"
+  print "  --test-categories='"+options.testCategories+"' \\"
   if options.overallNumProcs:
     print "  -j"+options.overallNumProcs+" \\"
   print "  --make-options='"+options.makeOptions+"' \\"

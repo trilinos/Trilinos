@@ -43,7 +43,7 @@ public:
   }
 
   //! Constructor with given Label.
-  BaseObject(const string& Label)
+  BaseObject(const std::string& Label)
   {
     Label_ = Label;
   }
@@ -52,13 +52,13 @@ public:
   virtual ~BaseObject() {};
 
   //! Sets the Label of this object to \c Label.
-  void SetLabel(const string& Label)
+  void SetLabel(const std::string& Label)
   {
     Label_ = Label;
   }
 
   //! Returns the Label of this object.
-  const string& GetLabel() const
+  const std::string& GetLabel() const
   {
     return(Label_);
   }
@@ -69,7 +69,7 @@ public:
 
 private:
   //! Label of this object.
-  string Label_;
+  std::string Label_;
 
   static int count_;
 };

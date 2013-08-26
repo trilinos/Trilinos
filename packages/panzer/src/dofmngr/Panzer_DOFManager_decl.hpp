@@ -55,6 +55,8 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "Tpetra_Map.hpp"
+
 namespace panzer {
 
 
@@ -238,7 +240,19 @@ public:
     */
   void printFieldInformation(std::ostream & os) const;
 
+  /** Turn on/off the use of a tie break object in the
+    * createOneToOne algorithm. Turning this one gives 
+    * better load balancing.
+    */
+  void enableTieBreak(bool enable)   
+  { useTieBreak_ = enable; }
+
 protected:
+
+   /** Use Zoltan2 to locally reorder with RCM.
+     */
+   Teuchos::RCP<const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> >
+   runLocalRCMReordering(const Teuchos::RCP<const Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,KokkosClassic::DefaultNode::DefaultNodeType> > &);
 
    /** Using the natural ordering associated with the std::vector
      * retrieved from the connection manager
@@ -280,6 +294,8 @@ protected:
 
   bool requireOrientations_;
   std::vector<std::vector<char> > orientation_;
+
+  bool useTieBreak_;
 };
 
 }

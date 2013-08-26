@@ -47,7 +47,7 @@
 #include <ParallelMachine.hpp>
 
 #include <Kokkos_Cuda.hpp>
-#include <Kokkos_Host.hpp>
+#include <Kokkos_Threads.hpp>
 #include <Kokkos_hwloc.hpp>
 
 #if ! defined( KOKKOS_HAVE_MPI )
@@ -122,14 +122,14 @@ Machine::Machine( int * argc , char *** argv )
       const std::pair<unsigned,unsigned> core_top  = Kokkos::hwloc::get_core_topology();
       const unsigned                     core_size = Kokkos::hwloc::get_core_capacity();
 
-      std::pair<unsigned,unsigned> host_gang_top(core_top.first,core_top.second * core_size);
+      std::pair<unsigned,unsigned> league_gang(core_top.first,core_top.second * core_size);
 
       if ( i + 2 < *argc ) {
-        host_gang_top.first  = atoi( (*argv)[i+1] );
-        host_gang_top.second = atoi( (*argv)[i+2] );
+        league_gang.first  = atoi( (*argv)[i+1] );
+        league_gang.second = atoi( (*argv)[i+2] );
       }
 
-      Kokkos::Host::initialize( host_gang_top , core_top );
+      Kokkos::Threads::initialize( league_gang , core_top );
     }
   }
 
@@ -155,7 +155,7 @@ Machine::Machine( int * argc , char *** argv )
 
 Machine::~Machine()
 {
-  Kokkos::Host::finalize();
+  Kokkos::Threads::finalize();
 #if defined( KOKKOS_HAVE_CUDA )
   Kokkos::Cuda::finalize();
 #endif
@@ -167,7 +167,7 @@ Machine::~Machine()
 void Machine::print_configuration( std::ostream & msg ) const
 {
   msg << "MPI [ " << m_mpi_rank << " / " << m_mpi_size << " ]" << std::endl ;
-  Kokkos::Host::print_configuration( msg );
+  Kokkos::Threads::print_configuration( msg );
 #if defined( KOKKOS_HAVE_CUDA )
   Kokkos::Cuda::print_configuration( msg );
 #endif

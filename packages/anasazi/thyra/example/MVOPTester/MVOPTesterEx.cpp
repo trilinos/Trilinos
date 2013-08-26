@@ -88,9 +88,9 @@ int main(int argc, char *argv[])
 
 #ifndef HAVE_EPETRA_THYRA
   MyOM->stream(Anasazi::Warnings) 
-    << "Please configure Anasazi with:" << endl
-    << "--enable-epetra-thyra" << endl
-    << "--enable-anasazi-thyra" << endl;
+    << "Please configure Anasazi with:" << std::endl
+    << "--enable-epetra-thyra" << std::endl
+    << "--enable-anasazi-thyra" << std::endl;
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
@@ -175,20 +175,20 @@ int main(int argc, char *argv[])
   ierr = Anasazi::TestMultiVecTraits<double,TMVB>(MyOM,thyra_ivec);
   gerr |= ierr;
   if (ierr) {
-    MyOM->stream(Anasazi::Warnings) << "*** ThyraAdapter PASSED TestMultiVecTraits()" << endl;
+    MyOM->stream(Anasazi::Warnings) << "*** ThyraAdapter PASSED TestMultiVecTraits()" << std::endl;
   }
   else {
-    MyOM->stream(Anasazi::Warnings) << "*** ThyraAdapter FAILED TestMultiVecTraits() ***" << endl << endl;
+    MyOM->stream(Anasazi::Warnings) << "*** ThyraAdapter FAILED TestMultiVecTraits() ***" << std::endl << std::endl;
   }
 
   // test the Thyra operator adapter
   ierr = Anasazi::TestOperatorTraits<double,TMVB,TLOB>(MyOM,thyra_ivec,thyra_op);
   gerr |= ierr;
   if (ierr) {
-    MyOM->stream(Anasazi::Warnings) << "*** ThyraAdapter PASSED TestOperatorTraits()" << endl;
+    MyOM->stream(Anasazi::Warnings) << "*** ThyraAdapter PASSED TestOperatorTraits()" << std::endl;
   }
   else {
-    MyOM->stream(Anasazi::Warnings) << "*** ThyraAdapter FAILED TestOperatorTraits() ***" << endl << endl;
+    MyOM->stream(Anasazi::Warnings) << "*** ThyraAdapter FAILED TestOperatorTraits() ***" << std::endl << std::endl;
   }
 #endif
 

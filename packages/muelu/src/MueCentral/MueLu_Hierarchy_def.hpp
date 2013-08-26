@@ -220,14 +220,9 @@ namespace MueLu {
       // The release is done later
     }
 
-    //RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    //level.print(*out,Teuchos::VERB_EXTREME);
-
     RCP<Matrix> Ac = Teuchos::null;
     if (level.IsAvailable("A"))
       Ac = level.Get<RCP<Matrix> >("A");
-
-    //level.print(*out,Teuchos::VERB_EXTREME);
 
     // Test if we reach the end of the hierarchy
     RCP<TopSmootherFactory> smootherFact;
@@ -247,21 +242,15 @@ namespace MueLu {
 
     // Build smoother/solver
     if (!smootherFact.is_null()) {
-      //level.print(*out,Teuchos::VERB_EXTREME);
       level.Request(*smootherFact);
-      //level.print(*out,Teuchos::VERB_EXTREME);
       smootherFact->Build(level);
-      //level.print(*out,Teuchos::VERB_EXTREME);
       level.Release(*smootherFact);
-      //level.print(*out,Teuchos::VERB_EXTREME);
     }
 
     if (isLastLevel == true && isOrigLastLevel == false) {
       // Earlier in the function, we constructed the next coarse level, and requested data for the that level,
       // assuming that we are not at the coarsest level. Now, we changed our mind, so we have to relese that.
-      //Levels_[nextLevelID]->print(*out,Teuchos::VERB_EXTREME);
       Levels_[nextLevelID]->Release(TopRAPFactory(rcpcoarseLevelManager, rcpnextLevelManager));
-      //Levels_[nextLevelID]->print(*out,Teuchos::VERB_EXTREME);
       Levels_.pop_back(); // remove next level
     }
 
@@ -273,10 +262,8 @@ namespace MueLu {
       // Release the hierarchy data
       // We release so late to help blocked solvers, as the smoothers for them need A blocks
       // which we construct in RAPFactory
-      //level.print(*out,Teuchos::VERB_EXTREME);
       TopRAPFactory coarseRAPFactory(rcpfineLevelManager, rcpcoarseLevelManager);
       level.Release(coarseRAPFactory);
-      //level.print(*out,Teuchos::VERB_EXTREME);
     }
 
     return isLastLevel;
@@ -326,7 +313,7 @@ namespace MueLu {
     manager.Clean();
 
     std::ostringstream ss;
-    ss << print(ss, GetVerbLevel());
+    print(ss, GetVerbLevel());
     GetOStream(Statistics0,0) << ss.str();
 
   } // Setup()
@@ -564,7 +551,7 @@ namespace MueLu {
     MUELU_DESCRIBE; //macro that defines out0
 
     std::ostringstream ss;
-    ss << print(ss, verbLevel);
+    print(ss, verbLevel);
 
     out0 << ss.str();
 
@@ -577,8 +564,8 @@ namespace MueLu {
 
   // NOTE: at some point this should be replaced by a friend operator <<
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::ostream& Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(std::ostream& out, const VerbLevel verbLevel) const {
-    if (verbLevel & Parameters0) {
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(std::ostream& out, const VerbLevel verbLevel) const {
+    if (verbLevel & Statistics0) {
       out << std::endl << "--------------------------------------------------------------------------------"
            << std::endl << "---                            Multigrid Summary                             ---"
            << std::endl << "--------------------------------------------------------------------------------"
@@ -604,17 +591,17 @@ namespace MueLu {
     }
     double operatorComplexity = Teuchos::as<double>(totalNnz) / Levels_[0]->template Get< RCP<Matrix> >("A")->getGlobalNumEntries();
 
-    if (verbLevel & Parameters0)
+    if (verbLevel & Statistics0)
       out << "Number of levels    = " << GetNumLevels() << std::endl;
     if (verbLevel & Statistics0)
       out << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
                                       << operatorComplexity << std::endl;
-    if (verbLevel & Parameters0) {
+    if (verbLevel & Statistics0) {
       out << "Max Coarse Size     = " << maxCoarseSize_ << std::endl;
       out << "Implicit Transpose  = " << (implicitTranspose_ ? "true" : "false") << std::endl;
     }
 
-    if (verbLevel & Parameters1) {
+    if (verbLevel & Statistics0) {
       Xpetra::global_size_t tt = rowsPerLevel[0];
       int rowspacer = 2; while (tt != 0) { tt /= 10; rowspacer++; }
       tt = nnzPerLevel[0];
@@ -651,13 +638,12 @@ namespace MueLu {
     }
 
 
-    if (verbLevel & Statistics1) {
+    if (verbLevel & Statistics2) {
       Teuchos::OSTab tab2(out);
       for (int i = 0; i < GetNumLevels(); ++i)
         Levels_[i]->print(out, verbLevel);
     }
 
-    return out;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

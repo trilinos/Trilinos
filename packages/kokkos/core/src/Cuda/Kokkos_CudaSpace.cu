@@ -57,6 +57,33 @@
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
+namespace Impl {
+
+DeepCopy<HostSpace,CudaSpace>
+  ::DeepCopy( void * dst , const void * src , size_t n )
+{
+  CUDA_SAFE_CALL( cudaMemcpy( dst , src , n , cudaMemcpyDefault ) );
+}
+
+DeepCopy<CudaSpace,HostSpace>
+  ::DeepCopy( void * dst , const void * src , size_t n )
+{
+  CUDA_SAFE_CALL( cudaMemcpy( dst , src , n , cudaMemcpyDefault ) );
+}
+
+DeepCopy<CudaSpace,CudaSpace>
+  ::DeepCopy( void * dst , const void * src , size_t n )
+{
+  CUDA_SAFE_CALL( cudaMemcpy( dst , src , n , cudaMemcpyDefault ) );
+}
+
+} // namespace Impl
+} // namespace Kokkos
+
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
 namespace {
 
 class CudaMemoryTrackingEntry : public Impl::MemoryTrackingEntry
@@ -109,24 +136,6 @@ Impl::MemoryTracking & cuda_space_singleton()
 
 /*--------------------------------------------------------------------------*/
 
-DeepCopy<HostSpace,CudaSpace>
-  ::DeepCopy( void * dst , const void * src , size_t n )
-{
-  CUDA_SAFE_CALL( cudaMemcpy( dst , src , n , cudaMemcpyDefault ) );
-}
-
-DeepCopy<CudaSpace,HostSpace>
-  ::DeepCopy( void * dst , const void * src , size_t n )
-{
-  CUDA_SAFE_CALL( cudaMemcpy( dst , src , n , cudaMemcpyDefault ) );
-}
-
-DeepCopy<CudaSpace,CudaSpace>
-  ::DeepCopy( void * dst , const void * src , size_t n )
-{
-  CUDA_SAFE_CALL( cudaMemcpy( dst , src , n , cudaMemcpyDefault ) );
-}
-
 /*--------------------------------------------------------------------------*/
 
 void * CudaSpace::allocate(
@@ -135,7 +144,9 @@ void * CudaSpace::allocate(
   const size_t           scalar_size ,
   const size_t           scalar_count )
 {
-  HostSpace::assert_master_thread( "Kokkos::CudaSpace::allocate" );
+  if ( HostSpace::in_parallel() ) {
+    Kokkos::Impl::throw_runtime_exception( "Kokkos::CudaSpace::allocate ERROR : Called with HostSpace::in_parallel" );
+  }
 
   const size_t size = scalar_size * scalar_count ;
 
@@ -170,14 +181,18 @@ void * CudaSpace::allocate(
 
 void CudaSpace::increment( const void * ptr )
 {
-  HostSpace::assert_master_thread( "Kokkos::CudaSpace::increment" );
+  if ( HostSpace::in_parallel() ) {
+    Kokkos::Impl::throw_runtime_exception( "Kokkos::CudaSpace::increment ERROR : Called with HostSpace::in_parallel" );
+  }
 
   cuda_space_singleton().increment( ptr );
 }
 
 void CudaSpace::decrement( const void * ptr )
 {
-  HostSpace::assert_master_thread( "Kokkos::CudaSpace::decrement" );
+  if ( HostSpace::in_parallel() ) {
+    Kokkos::Impl::throw_runtime_exception( "Kokkos::CudaSpace::decrement ERROR : Called with HostSpace::in_parallel" );
+  }
 
   cuda_space_singleton().decrement( ptr );
 }
@@ -188,20 +203,6 @@ void CudaSpace::print_memory_view( std::ostream & o )
 }
 
 //----------------------------------------------------------------------------
-
-size_t CudaSpace::preferred_alignment(
-  size_t scalar_size , size_t scalar_count )
-{
-  const size_t align = 0 == Impl::MEMORY_ALIGNMENT % scalar_size
-                     ? Impl::MEMORY_ALIGNMENT / scalar_size : 0 ;
-  const size_t threshold = Impl::MEMORY_ALIGNMENT_THRESHOLD * align ;
-
-  if ( align && threshold < scalar_count && scalar_count % align ) {
-    scalar_count += align - scalar_count % align ;
-  }
-
-  return scalar_count ;
-}
 
 std::string CudaSpace::query_label( const void * p )
 {

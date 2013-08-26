@@ -300,7 +300,7 @@ in the above example to do an export operation to y, adding the contributions th
 
   //! @name Print object to an output stream
   //@{ 
-  virtual void Print(ostream & os) const;
+  virtual void Print(std::ostream & os) const;
   //@}
  protected:
 

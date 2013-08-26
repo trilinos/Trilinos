@@ -58,7 +58,7 @@ int main( int argc , char ** argv )
 {
   comm::Machine machine = comm::Machine::init( & argc , & argv );
 
-  const int comm_size = comm::size( machine );
+  // const int comm_size = comm::size( machine );
   const int comm_rank = comm::rank( machine );
   const std::pair<unsigned,unsigned> core_top = Kokkos::hwloc::get_core_topology();
   const unsigned                     core_cap = Kokkos::hwloc::get_core_capacity();
@@ -113,8 +113,8 @@ int main( int argc , char ** argv )
 
       error = error
             || argc <= i
-            || thread_capacity      < gang_count * gang_worker
-            || gang_worker_capacity < gang_worker
+            || thread_capacity      < unsigned( gang_count * gang_worker )
+            || gang_worker_capacity < unsigned( gang_worker )
             || cuda_device_count <= cuda_device
             ;
     }
@@ -155,10 +155,10 @@ int main( int argc , char ** argv )
   if ( 0 == error ) {
 
     if ( gang_count && gang_worker ) {
-      Kokkos::Host::initialize( gang_count , gang_worker );
+      Kokkos::Threads::initialize( std::pair<unsigned,unsigned>( gang_count , gang_worker ) );
 
       if ( test_iter ) {
-        Test::driver_modified_gram_schmidt<Kokkos::Host>
+        Test::driver_modified_gram_schmidt<Kokkos::Threads>
           ( test_length_begin ,
             test_length_end ,
             test_count ,
@@ -166,10 +166,10 @@ int main( int argc , char ** argv )
             machine );
       }
       else {
-        Kokkos::Host::print_configuration( std::cout );
+        Kokkos::Threads::print_configuration( std::cout );
       }
 
-      Kokkos::Host::finalize();
+      Kokkos::Threads::finalize();
     }
 
 #if defined( KOKKOS_HAVE_CUDA )

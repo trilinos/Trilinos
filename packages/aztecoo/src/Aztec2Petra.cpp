@@ -149,8 +149,8 @@ int Aztec2Petra(int * proc_config,
       int *BlockIndices = global_bindx + bpntr[i];
       int ierr = AA->BeginInsertGlobalValues(BlockRow, NumBlockEntries, BlockIndices);
       if (ierr!=0) {
-	cerr << "Error in BeginInsertGlobalValues(GlobalBlockRow = " << BlockRow 
-	     << ") = " << ierr << endl; 
+	std::cerr << "Error in BeginInsertGlobalValues(GlobalBlockRow = " << BlockRow 
+	     << ") = " << ierr << std::endl; 
 	EPETRA_CHK_ERR(ierr);
       }
       int LDA = rpntr[i+1] - rpntr[i];
@@ -160,21 +160,21 @@ int Aztec2Petra(int * proc_config,
 	double * Values = val + indx[j];
 	ierr = AA->SubmitBlockEntry(Values, LDA, NumRows, NumCols);
 	if (ierr!=0) {
-	  cerr << "Error in SubmitBlockEntry, GlobalBlockRow = " << BlockRow 
-	       << "GlobalBlockCol = " << BlockIndices[j] << "Error = " << ierr << endl; 
+	  std::cerr << "Error in SubmitBlockEntry, GlobalBlockRow = " << BlockRow 
+	       << "GlobalBlockCol = " << BlockIndices[j] << "Error = " << ierr << std::endl; 
 	  EPETRA_CHK_ERR(ierr);
 	}
       }
       ierr = AA->EndSubmitEntries();
       if (ierr!=0) {
-	cerr << "Error in EndSubmitEntries(GlobalBlockRow = " << BlockRow 
-	     << ") = " << ierr << endl; 
+	std::cerr << "Error in EndSubmitEntries(GlobalBlockRow = " << BlockRow 
+	     << ") = " << ierr << std::endl; 
 	EPETRA_CHK_ERR(ierr);
       }
     }}  
     int ierr=AA->FillComplete();    
     if (ierr!=0) {
-      cerr <<"Error in Epetra_VbrMatrix FillComplete" << ierr << endl;
+      std::cerr <<"Error in Epetra_VbrMatrix FillComplete" << ierr << std::endl;
       EPETRA_CHK_ERR(ierr);
     }
     
@@ -210,7 +210,7 @@ int Aztec2Petra(int * proc_config,
       int ierr = AA->InsertGlobalValues(MyGlobalElements[row], numEntries, row_vals, col_inds);
 #endif
       if (ierr!=0) {
-	cerr << "Error puting row " << MyGlobalElements[row] << endl;
+	std::cerr << "Error puting row " << MyGlobalElements[row] << std::endl;
 	EPETRA_CHK_ERR(ierr);
       }
 #ifdef EPETRA_NO_32BIT_GLOBAL_INDICES
@@ -219,19 +219,19 @@ int Aztec2Petra(int * proc_config,
       ierr = AA->InsertGlobalValues(MyGlobalElements[row], 1, val+row, MyGlobalElements+row);
 #endif
       if (ierr!=0) {
-	cerr << "Error putting  diagonal" << endl;
+	std::cerr << "Error putting  diagonal" << std::endl;
 	EPETRA_CHK_ERR(ierr);
       }
     }
 
     int ierr=AA->FillComplete();
     if (ierr!=0) {
-      cerr << "Error in Epetra_CrsMatrix_FillComplete" << endl;
+      std::cerr << "Error in Epetra_CrsMatrix_FillComplete" << std::endl;
       EPETRA_CHK_ERR(ierr);
     }
     A = dynamic_cast<Epetra_RowMatrix *> (AA); // cast CRS pointer to RowMatrix pointer
   }
-  else cerr << "Not a supported AZ_MATRIX data type" << endl;
+  else std::cerr << "Not a supported AZ_MATRIX data type" << std::endl;
 
 
   // Create x vector

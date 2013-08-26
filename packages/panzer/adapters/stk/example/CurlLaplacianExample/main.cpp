@@ -144,6 +144,7 @@ void solveTpetraSystem(panzer::LinearObjContainer & container);
 // calls MPI_Init and MPI_Finalize
 int main(int argc,char * argv[])
 {
+   using std::endl; 
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
    using panzer::StrPureBasisPair;
@@ -282,15 +283,15 @@ int main(int argc,char * argv[])
      linObjFactory = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager_int));
    }
    else {
-     const Teuchos::RCP<panzer::ConnManager<int,long> > conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<long>(mesh));
+     const Teuchos::RCP<panzer::ConnManager<int,panzer::Ordinal64> > conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<panzer::Ordinal64>(mesh));
 
-     panzer::DOFManagerFactory<int,long> globalIndexerFactory;
-     RCP<panzer::UniqueGlobalIndexer<int,long> > dofManager_long
+     panzer::DOFManagerFactory<int,panzer::Ordinal64> globalIndexerFactory;
+     RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > dofManager_long
            = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
      dofManager = dofManager;
 
      // construct some linear algebra object, build object to pass to evaluators
-     linObjFactory = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,long>(comm,dofManager_long));
+     linObjFactory = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>(comm,dofManager_long));
    }
 
    // Setup STK response library for writing out the solution fields
@@ -417,9 +418,9 @@ int main(int argc,char * argv[])
    /////////////////////////////////////////////////////////////
 
    if(useTpetra)
-      std::cout << "ALL PASSED: Tpetra" << endl;
+      std::cout << "ALL PASSED: Tpetra" << std::endl;
    else
-      std::cout << "ALL PASSED: Epetra" << endl;
+      std::cout << "ALL PASSED: Epetra" << std::endl;
 
    return 0;
 }
@@ -454,7 +455,7 @@ void solveEpetraSystem(panzer::LinearObjContainer & container)
 
 void solveTpetraSystem(panzer::LinearObjContainer & container)
 {
-  typedef panzer::TpetraLinearObjContainer<double,int,long> LOC;
+  typedef panzer::TpetraLinearObjContainer<double,int,panzer::Ordinal64> LOC;
 
   LOC & tp_container = Teuchos::dyn_cast<LOC>(container);
 
@@ -464,8 +465,8 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
   // only copied shallowly and will be overwritten by the solve, so we
   // make a deep copy here.  That way we can compare the result
   // against the original X_guess.
-  typedef Tpetra::MultiVector<double,int,long> MV;
-  typedef Tpetra::Operator<double,int,long> OP;
+  typedef Tpetra::MultiVector<double,int,panzer::Ordinal64> MV;
+  typedef Tpetra::Operator<double,int,panzer::Ordinal64> OP;
   typedef Belos::LinearProblem<double,MV, OP> ProblemType;
   Teuchos::RCP<ProblemType> problem(new ProblemType(tp_container.get_A(), tp_container.get_x(), tp_container.get_f()));
   TEUCHOS_ASSERT(problem->setProblem());
@@ -487,7 +488,7 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
 
   Belos::ReturnType result = solver.solve();
   if (result == Belos::Converged)
-    std::cout << "Result: Converged." << endl;
+    std::cout << "Result: Converged." << std::endl;
   else {
     TEUCHOS_ASSERT(false); // FAILURE!
   }

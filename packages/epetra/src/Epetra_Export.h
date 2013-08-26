@@ -281,7 +281,7 @@ and entries 5 and 6 on PEs 1 and 2.
 
   //! @name Print object to an output stream
   //@{ 
-  virtual void Print(ostream & os) const;
+  virtual void Print(std::ostream & os) const;
   //@}
  protected:
 

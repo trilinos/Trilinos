@@ -81,11 +81,12 @@ public:
     dst.value[2] += src.value[2] ;
   }
 
+  ReduceMultiFunctorTraits() {}
 };
 
 
 template< typename ScalarType , class DeviceType >
-class ReduceMultiFunctor
+class ReduceMultiFunctor : public ReduceMultiFunctorTraits< ScalarType , DeviceType >
 {
 public:
   typedef DeviceType  device_type ;
@@ -116,7 +117,6 @@ public:
     dst.value[1] += 1 + ival ;
     dst.value[2] += work_total - ival ;
   }
-
 };
 
 } // namespace Test
@@ -131,10 +131,9 @@ public:
   typedef typename device_type::size_type size_type ;
   typedef typename device_type::memory_space memory_space ;
 
-  typedef Test::ReduceMultiFunctorTraits< ScalarType , device_type > reduce_traits ;
-  typedef typename reduce_traits::value_type value_type ;
-
+  typedef Test::ReduceMultiFunctorTraits< ScalarType , device_type > reduce_type ;
   typedef Test::ReduceMultiFunctor< ScalarType , device_type > functor_type ;
+  typedef typename reduce_type::value_type value_type ;
 
 
   //------------------------------------
@@ -143,32 +142,21 @@ public:
 
   void run_test( const size_type nwork , const size_type nfunctor )
   {
-    typedef Kokkos::Impl
-      ::ParallelReduceFunctorValue< value_type , device_type >
-         result_functor_type ;
+    Kokkos::MultiFunctorParallelReduce< DeviceType > reduce_op ;
 
-    const result_functor_type result_functor ;
+    for ( size_type j = 0 ; j < nfunctor ; ) {
+      const size_type work_beg = (size_t(nwork) * size_t(j) ) / nfunctor ;
+      const size_type work_end = (size_t(nwork) * size_t(++j) ) / nfunctor ;
+      const size_type work_count = work_end - work_beg ;
 
-    {
-      Kokkos::MultiFunctorParallelReduce< reduce_traits ,
-                                               result_functor_type ,
-                                               device_type >
-        reduce_op( result_functor );
-
-      for ( size_type j = 0 ; j < nfunctor ; ) {
-        const size_type work_beg = (size_t(nwork) * size_t(j) ) / nfunctor ;
-        const size_type work_end = (size_t(nwork) * size_t(++j) ) / nfunctor ;
-        const size_type work_count = work_end - work_beg ;
-
-        reduce_op.push_back( work_count , functor_type( nwork , work_beg ) );
-      }
-
-      reduce_op.execute();
+      reduce_op.push_back( work_count , functor_type( nwork , work_beg ) );
     }
+
+    reduce_op.execute();
 
     value_type result ;
 
-    result_functor.result( result );
+    reduce_op.output( & result );
 
     const unsigned long nw   = nwork ;
     const unsigned long nsum = nw % 2 ? nw * (( nw + 1 )/2 )

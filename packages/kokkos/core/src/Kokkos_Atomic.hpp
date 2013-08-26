@@ -64,7 +64,7 @@
       ! defined( KOKKOS_ATOMICS_USE_INTEL ) && \
       ! defined( KOKKOS_ATOMICS_USE_OMP31 )
 
-// Compiling for Host and atomic implementation has not been pre-selected,
+// Compiling for non-Cuda atomic implementation has not been pre-selected,
 // choose the best implementation for the detected compiler.
 // Preference: GCC, INTEL, OMP31
 

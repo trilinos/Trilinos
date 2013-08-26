@@ -92,10 +92,10 @@ CLIP_solver::CLIP_solver(const Epetra_CrsMatrix* ASub_,
     print_flag = prt_summary + 10*prt_debug;
     fout.open("CLIP_solver.data");
     fout << "----------------- CLIP solver summary information "
-	 << "-----------------" << endl;
+	 << "-----------------" << std::endl;
   }
   if (print_flag > 0) fout << "number of global dofs        = " << ndof_global 
-			   << endl;
+			   << std::endl;
   //
   // process constraint equations
   //
@@ -144,9 +144,9 @@ CLIP_solver::CLIP_solver(const Epetra_CrsMatrix* ASub_,
   if (print_flag > 0) {
     endtime = MPI_Wtime();
     fout << "elapsed time for clip solver init  = " 
-	 << endtime-starttime << " seconds" << endl;
-    if (krylov_method != 1) fout << "pcg solver will be used" << endl;
-    if (krylov_method == 1) fout << "gmres solver will be used" << endl;
+	 << endtime-starttime << " seconds" << std::endl;
+    if (krylov_method != 1) fout << "pcg solver will be used" << std::endl;
+    if (krylov_method == 1) fout << "gmres solver will be used" << std::endl;
     fout.close();
   }
 }
@@ -215,8 +215,8 @@ void CLIP_solver::process_constraints()
   //
   ncon_global = ConStandard->NumGlobalCols();
   if (print_flag > 0) {
-    fout << "number of global constraints = " << ncon_global << endl;
-    fout << "constraint data ------------------------------------" << endl;
+    fout << "number of global constraints = " << ncon_global << std::endl;
+    fout << "constraint data ------------------------------------" << std::endl;
   }
  if (ncon_global > 0) {
     int nsub_gdofs, *sub_gdofs, flag(0), nx2, nx2_global, *x2_dof;
@@ -259,11 +259,11 @@ void CLIP_solver::process_constraints()
     sprintf(fname, "%s.dat", fname);
     std::ofstream ffout;
     ffout.open(fname);
-    ffout << ASub->NumMyRows() << endl;
-    for (i=0; i<ASub->NumMyRows(); i++) ffout << ASub->GRID(i) << endl;
-    ffout << StandardMap->NumMyElements() << endl;
+    ffout << ASub->NumMyRows() << std::endl;
+    for (i=0; i<ASub->NumMyRows(); i++) ffout << ASub->GRID(i) << std::endl;
+    ffout << StandardMap->NumMyElements() << std::endl;
     for (i=0; i<StandardMap->NumMyElements(); i++) 
-      ffout << StandardMap->GID(i) << endl;
+      ffout << StandardMap->GID(i) << std::endl;
     ffout.close();
     */
     // replaced *StandardMap with ConStandard->RowMap() 
@@ -313,7 +313,7 @@ void CLIP_solver::process_constraints()
     Epetra_Vector v2(Row_Map);
     v1.PutScalar(1.0);
     Block_Stiff->Multiply(false, v1, v2);
-    cout << v2 << endl;
+    std::cout << v2 << std::endl;
     */
   }
   else {
@@ -342,14 +342,14 @@ void CLIP_solver::process_constraints()
     if (MyPID == 0) {
       if (print_flag > 0) {
 	fout << "ratio of nnzs after static condensation = "
-	     << nnz_after/nnz_before << endl;
+	     << nnz_after/nnz_before << std::endl;
 	fout << "normalized constraint error check       = " << con_error_norm 
-	     << endl;
+	     << std::endl;
 	fout << "maximum nnz in any row of T matrix      = " << max_nnz_row 
-	     << endl;
+	     << std::endl;
 	fout << "infinity norm of T matrix               = " << inf_norm_Tran 
-	     << endl;
-	fout << "----------------------------------------------------" << endl;
+	     << std::endl;
+	fout << "----------------------------------------------------" << std::endl;
       }
     }
     assert(con_error_norm < 1e-10);
@@ -476,7 +476,7 @@ void CLIP_solver::determine_components()
   //  comp1[comp2[i]:comp2[i+1]-1] = subdomain dofs in component i
   //
   determine_components(a1, a2, ndof_sub, comp1, comp2, ncomp);
-  //  cout << "MyPID, ncomp = " << MyPID << " " << ncomp << endl;
+  //  std::cout << "MyPID, ncomp = " << MyPID << " " << ncomp << std::endl;
   delete [] a1; delete [] a2; delete [] arow; delete [] iflag;
 }
 
@@ -492,7 +492,7 @@ void CLIP_solver::determine_dof_sets()
   //
   Comm.ScanSum(&ncomp, &ScanSums, 1);
   Comm.SumAll(&ncomp, &ncomp_sum, 1);
-  //  cout << "MyPID, ScanSums = " << MyPID << " " << ScanSums << endl;
+  //  std::cout << "MyPID, ScanSums = " << MyPID << " " << ScanSums << std::endl;
   //
   // first determine subdomains containing each dof
   //  sub1[sub2[i]:sub2[i+1]-1] = subdomains containing dof i
@@ -529,8 +529,8 @@ void CLIP_solver::determine_dof_sets()
   /*
   if (MyPID == 3) {
     for (i=0; i<ndof_sub; i++) {
-      for (j=sub2[i]; j<sub2[i+1]; j++) cout << sub1[j] << " ";
-      cout << endl;
+      for (j=sub2[i]; j<sub2[i+1]; j++) std::cout << sub1[j] << " ";
+      std::cout << std::endl;
     }
   }
   */
@@ -590,8 +590,8 @@ void CLIP_solver::determine_dof_sets()
     ival[i] = (int) (lower - &values[0]);
     icount[ival[i]]++;
     /*
-    if (MyPID == 0) cout << "val, ival = " << dval_orig[i] << " " 
-    			 << ival[i] << endl;
+    if (MyPID == 0) std::cout << "val, ival = " << dval_orig[i] << " " 
+    			 << ival[i] << std::endl;
     */
   }
   delete [] dval; delete [] dval_orig; delete [] values;
@@ -626,17 +626,17 @@ void CLIP_solver::determine_dof_sets()
   gdofs = SubMap->MyGlobalElements();
   double *xyz;
   Coords_red->ExtractView(&xyz, &MyLDA);
-  cout << *ConStandard << endl;
+  std::cout << *ConStandard << std::endl;
     if (MyPID == 1) {
     for (i=0; i<ndof_set; i++) {
-      cout << "local, global, coords sub dofs in dof set: subs " << i << " :";
+      std::cout << "local, global, coords sub dofs in dof set: subs " << i << " :";
       dof = dset1[dset2[i]];
-      for (j=sub2[dof]; j<sub2[dof+1]; j++) cout << sub1[j] << " ";
-      cout << endl;
+      for (j=sub2[dof]; j<sub2[dof+1]; j++) std::cout << sub1[j] << " ";
+      std::cout << std::endl;
       for (j=dset2[i]; j<dset2[i+1]; j++) {
-	cout << dset1[j] << " " << gdofs[dset1[j]] << ": " << xyz[dset1[j]] 
+	std::cout << dset1[j] << " " << gdofs[dset1[j]] << ": " << xyz[dset1[j]] 
 	     << " " << xyz[dset1[j]+MyLDA] << " " << xyz[dset1[j]+2*MyLDA]
-	     << endl;
+	     << std::endl;
       }
     }
   }
@@ -684,9 +684,9 @@ void CLIP_solver::determine_dof_sets()
   /*
   if (MyPID == 0) {
     for (i=0; i<ndof_set; i++) {
-      cout << "global sub dofs in dof set " << i << endl;
+      std::cout << "global sub dofs in dof set " << i << std::endl;
       for (j=dset2[i]; j<dset2[i+1]; j++) {
-	cout << gdofs[dset1[j]] << endl;
+	std::cout << gdofs[dset1[j]] << std::endl;
       }
     }
   }
@@ -727,21 +727,21 @@ void CLIP_solver::determine_corner_dofs()
 	get_cand_dofs(i, adof, adof_flag, ndof_cand);
 	nexist = 0;
 	if (MyPID == -1) {
-	  cout << "num_sub  = " << num_sub << endl;
-	  cout << "ndim     = " << ndim << endl;
-	  cout << "rot_flag = " << rot_flag << endl;
-	  cout << "coordinates for edge dof set" << endl;
+	  std::cout << "num_sub  = " << num_sub << std::endl;
+	  std::cout << "ndim     = " << ndim << std::endl;
+	  std::cout << "rot_flag = " << rot_flag << std::endl;
+	  std::cout << "coordinates for edge dof set" << std::endl;
 	  for (j=dset2[i]; j<dset2[i+1]; j++) {
 	    dof = dset1[j];
-	    cout << xyz[dof] << " " << xyz[dof+MyLDA] << " " 
-		 << xyz[dof+2*MyLDA] << endl;
+	    std::cout << xyz[dof] << " " << xyz[dof+MyLDA] << " " 
+		 << xyz[dof+2*MyLDA] << std::endl;
 	  }
-	  cout << "ndof_cand = " << ndof_cand << endl;
-	  cout << "coordinates of candidate dofs" << endl;
+	  std::cout << "ndof_cand = " << ndof_cand << std::endl;
+	  std::cout << "coordinates of candidate dofs" << std::endl;
 	  for (j=0; j<ndof_cand; j++) {
 	    dof = adof[j];
-	    cout << xyz[dof] << " " << xyz[dof+MyLDA] << " " 
-		 << xyz[dof+2*MyLDA] << endl;
+	    std::cout << xyz[dof] << " " << xyz[dof+MyLDA] << " " 
+		 << xyz[dof+2*MyLDA] << std::endl;
 	  }
 	}
 	for (j=0; j<ndof_cand; j++) {
@@ -775,18 +775,18 @@ void CLIP_solver::determine_corner_dofs()
       if ((num_sub == 2) && (ndim == 3) && (rot_flag == 0)) {
 	get_cand_dofs(i, adof, adof_flag, ndof_cand);
 	if (MyPID == -1) {
-	  cout << "coordinates for face dof set" << endl;
+	  std::cout << "coordinates for face dof set" << std::endl;
 	  for (j=dset2[i]; j<dset2[i+1]; j++) {
 	    dof = dset1[j];
-	    cout << xyz[dof] << " " << xyz[dof+MyLDA] << " " 
-		 << xyz[dof+2*MyLDA] << endl;
+	    std::cout << xyz[dof] << " " << xyz[dof+MyLDA] << " " 
+		 << xyz[dof+2*MyLDA] << std::endl;
 	  }
-	  cout << "ndof_cand = " << ndof_cand << endl;
-	  cout << "coordinates of candidate dofs" << endl;
+	  std::cout << "ndof_cand = " << ndof_cand << std::endl;
+	  std::cout << "coordinates of candidate dofs" << std::endl;
 	  for (j=0; j<ndof_cand; j++) {
 	    dof = adof[j];
-	    cout << xyz[dof] << " " << xyz[dof+MyLDA] << " " 
-		 << xyz[dof+2*MyLDA] << endl;
+	    std::cout << xyz[dof] << " " << xyz[dof+MyLDA] << " " 
+		 << xyz[dof+2*MyLDA] << std::endl;
 	  }
 	}
 	nexist = 0;
@@ -824,8 +824,8 @@ void CLIP_solver::determine_corner_dofs()
   for (i=0; i<ndof_sub; i++)
     if (corner_flag[i] > 0) { 
       x = xyz[i]; y = xyz[i+MyLDA]; z = xyz[i+2*MyLDA];
-      cout << "MyPID, corner, coords = " << MyPID << " " << gdofs[i] << " " 
-	   << x << " " << y << " " << z << endl;
+      std::cout << "MyPID, corner, coords = " << MyPID << " " << gdofs[i] << " " 
+	   << x << " " << y << " " << z << std::endl;
     }
   */
 }
@@ -874,7 +874,7 @@ void CLIP_solver::determine_extra_corners()
   for (i=0; i<nextra; i++) {
     dof = dofR[extra_corner[i]];
     corner_flag[dof] = 1;
-    //    cout << "MyPID, nextra_corner = " << MyPID << " " << nextra << endl; 
+    //    std::cout << "MyPID, nextra_corner = " << MyPID << " " << nextra << std::endl; 
   }
   Comm.MaxAll(&nextra, &max_added_corner, 1);
   delete [] bound_flag; delete [] rowbeg, delete [] colidx; delete [] vals;
@@ -888,8 +888,8 @@ void CLIP_solver::determine_extra_corners()
   Coords_red->ExtractView(&xyz, &MyLDA);
   for (i=0; i<nextra; i++) {
     dof = adof[extra_corner[i]];
-    cout << "MyPID, xyz extra = " << MyPID << " " << xyz[dof] << " " 
-	 << xyz[dof+MyLDA] << " " << xyz[dof+2*MyLDA] << endl;
+    std::cout << "MyPID, xyz extra = " << MyPID << " " << xyz[dof] << " " 
+	 << xyz[dof+MyLDA] << " " << xyz[dof+2*MyLDA] << std::endl;
   }
   */
 }
@@ -949,17 +949,17 @@ void CLIP_solver::modify_dof_sets()
   delete [] dset2_orig;
 
   if (MyPID == -3) {
-    cout << "dset2 = ";
-    for (i=0; i<=ndof_set; i++) cout << dset2[i] << " ";
-    cout << endl;
+    std::cout << "dset2 = ";
+    for (i=0; i<=ndof_set; i++) std::cout << dset2[i] << " ";
+    std::cout << std::endl;
     double *xyz; int MyLDA;
     Coords_red->ExtractView(&xyz, &MyLDA);
     for (i=0; i<ndof_set; i++) {
-      cout << "coordinates of dofs in dof_set " << i << endl;
+      std::cout << "coordinates of dofs in dof_set " << i << std::endl;
       for (j=dset2[i]; j<dset2[i+1]; j++) {
 	dof = dset1[j];
-	cout << xyz[dof] << " " << xyz[dof+MyLDA] << " " << xyz[dof+2*MyLDA]
-	     << endl;
+	std::cout << xyz[dof] << " " << xyz[dof+MyLDA] << " " << xyz[dof+2*MyLDA]
+	     << std::endl;
       }
     }
   }
@@ -1096,8 +1096,8 @@ void CLIP_solver::calculate_coarse()
   delete [] sub_diag;
   /*  
   if (MyPID == 3) {
-    cout << "weights = " << endl;
-    for (i=0; i<nB; i++) cout << weight[i] << endl;
+    std::cout << "weights = " << std::endl;
+    for (i=0; i<nB; i++) std::cout << weight[i] << std::endl;
   }
   */
   //
@@ -1116,10 +1116,10 @@ void CLIP_solver::calculate_coarse()
 	    ARinvCT, nR, BETA, CARinvCT, ndof_set);
   /*
   if (MyPID == 0) {
-    cout << "CARinvCT = " << endl;
+    std::cout << "CARinvCT = " << std::endl;
     for (i=0; i<ndof_set; i++) {
-      for (j=0; j<ndof_set; j++) cout << CARinvCT[j*ndof_set+i] << " ";
-      cout << endl;
+      for (j=0; j<ndof_set; j++) std::cout << CARinvCT[j*ndof_set+i] << " ";
+      std::cout << std::endl;
     }
   }
   */
@@ -1191,12 +1191,12 @@ void CLIP_solver::calculate_coarse()
   PhiB->FillComplete(Columns_own, Map_temp);
   PhiB->OptimizeStorage();
   delete Phi;
-  //  cout << *PhiB << endl;
+  //  std::cout << *PhiB << std::endl;
   /*  
   Epetra_Vector xB(Columns_own); xB.PutScalar(1.0);
   Epetra_Vector PhiBxB(MapB);
   PhiB->Multiply(false, xB, PhiBxB);
-  cout << PhiBxB << endl;
+  std::cout << PhiBxB << std::endl;
   */
   //
   // gather coarse stiffness matrix to processor 0
@@ -1222,13 +1222,13 @@ void CLIP_solver::calculate_coarse()
   Kc.OptimizeStorage();
   work_Kc = new Epetra_Vector(Kc.RowMap());
   delete Kc_dist;
-  //  cout << Kc << endl;
+  //  std::cout << Kc << std::endl;
   /*    
   Epetra_Vector X(Kc.RowMap());
   X.PutScalar(1.0);
   Epetra_Vector Kc_X(Kc.RowMap());
   Kc.Multiply(false, X, Kc_X);
-  cout << Kc_X << endl;
+  std::cout << Kc_X << std::endl;
   */
   double *Xvecs = 0;
   //
@@ -1244,14 +1244,14 @@ void CLIP_solver::calculate_coarse()
       rowbeg[i+1] = rowbeg[i] + NumEntries;
     }
     if (print_flag > 0) 
-      fout << "coarse problem dimension = " << ngather << endl;
+      fout << "coarse problem dimension = " << ngather << std::endl;
     nnz = rowbeg[ngather];
     /*
     std::ofstream ffout;
     ffout.open("coarse_mat.dat");
     for (i=0; i<ngather; i++) 
       for (j=rowbeg[i]; j<rowbeg[i+1]; j++)
-	ffout << i+1 << " " << colidx[j]+1 << " " << vals[j] << endl;
+	ffout << i+1 << " " << colidx[j]+1 << " " << vals[j] << std::endl;
     ffout.close();
     */
     CLAPS_sparse_lu *AA;
@@ -1264,7 +1264,7 @@ void CLIP_solver::calculate_coarse()
     }
     if (print_flag > 0) fout << "num_rigid_mode, num_tied_down = " 
 			     << num_rigid_mode << " "
-			     << num_tied_down << endl;
+			     << num_tied_down << std::endl;
     AKc = new CLAPS_sparse_lu();
     AKc->factor(ngather, nnz, rowbeg, colidx, vals, scale_option);
     delete [] rowbeg;
@@ -1581,12 +1581,12 @@ void CLIP_solver::zero_pointers()
 
 void CLIP_solver::construct_subdomains()
 {
-  if (print_flag > 9) fout << "in construct_subdomains" << endl;
+  if (print_flag > 9) fout << "in construct_subdomains" << std::endl;
 }
 
 int CLIP_solver::initialize_subdomains()
 {
-  if (print_flag > 9) fout << "in initialize_subdomains" << endl;
+  if (print_flag > 9) fout << "in initialize_subdomains" << std::endl;
   return(0);
 }
 
@@ -1624,7 +1624,7 @@ void CLIP_solver::solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
   if (print_flag > 0) {
     endtime = MPI_Wtime();
     fout << "elapsed time for clip solver solve = " << endtime-starttime
-	 << " seconds" << endl;
+	 << " seconds" << std::endl;
   }
   if (print_flag >= 0) fout.close();
 }
@@ -1705,7 +1705,7 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
   r_St->Norm2(&rorig);
   rcurra[0] = rorig;
   if (print_flag > 0) {
-    fout << "original residual                          = " << rorig << endl;
+    fout << "original residual                          = " << rorig << std::endl;
   }
   if (rorig == 0) {
     uStand->PutScalar(0);
@@ -1728,8 +1728,8 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
     Comm.SumAll(&sum, &sum_all, 1);
     r_St->Norm2(&rn);
     sum_all /= rn;
-    if (MyPID == 0) cout << "1-direction normalized force = " << sum_all
-			 << endl;
+    if (MyPID == 0) std::cout << "1-direction normalized force = " << sum_all
+			 << std::endl;
   }
   */
   //
@@ -1739,11 +1739,11 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
   tpe = stat_cond();
   rB_St->Norm2(&rnorm);
   if (print_flag > 0) {
-    fout << "----------after initial static condensation---------" << endl;
-    fout << "residual                                   = " << rnorm << endl;
-    fout << "total potential energy reduction           = " << tpe << endl;
+    fout << "----------after initial static condensation---------" << std::endl;
+    fout << "residual                                   = " << rnorm << std::endl;
+    fout << "total potential energy reduction           = " << tpe << std::endl;
     if (n_orthog_used == 0)
-      fout << "----------------------------------------------------" << endl;
+      fout << "----------------------------------------------------" << std::endl;
   }
   //
   // remove part of residual parallel to null space for mode acceleration
@@ -1751,7 +1751,7 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
   //
   if (num_tied_down > 0) {
     remove_orthog_null(rB_St);
-    if (print_flag > 0) fout << "singular system being solved" << endl;
+    if (print_flag > 0) fout << "singular system being solved" << std::endl;
   }
   //
   // reduce total potential energy further by using stored vectors
@@ -1762,17 +1762,17 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
     tpe = initial_update();
     rB_St->Norm2(&rnorm);
     if (print_flag > 0) {
-      fout << "----------after using stored search directions------" << endl;
+      fout << "----------after using stored search directions------" << std::endl;
       fout << "number of search directions used           = " 
-	   << n_orthog_used << endl;
+	   << n_orthog_used << std::endl;
       fout << "residual                                   = " << rnorm
-	   << endl;
-      fout << "additional reduction in tpe                = " << tpe << endl;
+	   << std::endl;
+      fout << "additional reduction in tpe                = " << tpe << std::endl;
       if (tpe > 0) {
 	fout << "Warning: using stored search directions increased ";
-	fout << "         total potential energy" << endl;
+	fout << "         total potential energy" << std::endl;
       }
-      fout << "----------------------------------------------------" << endl;
+      fout << "----------------------------------------------------" << std::endl;
     }
     if (rnorm/rorig <= solver_tol) {
       pcg_status = max_iter_new = num_iter = 0;
@@ -1783,8 +1783,8 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
   //
   if (n_orthog_used == max_orthog) cg_iter = 0;
   for (int iter=0; iter<max_iter_new; iter++) {
-    if (MyPID == -1) cout << "iteration " << iter+1 << " of maxiter = "
-    			 << maxiter << endl;
+    if (MyPID == -1) std::cout << "iteration " << iter+1 << " of maxiter = "
+    			 << maxiter << std::endl;
     //
     // apply BDDC preconditioner
     //
@@ -1843,10 +1843,10 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
     rcurr = sqrt(rcurr);
     rcurra[iter+1] = rcurr;
     num_iter = iter+1;
-    if (MyPID == -1) cout << "n_orthog_used, cg_iter = " << n_orthog_used
-			 << " " << cg_iter << endl;
-    if (MyPID == -1) cout << "alpha, dprod, rtol = " << alpha << " " 
-    			 << dprod << " " << rcurr/rorig << endl;
+    if (MyPID == -1) std::cout << "n_orthog_used, cg_iter = " << n_orthog_used
+			 << " " << cg_iter << std::endl;
+    if (MyPID == -1) std::cout << "alpha, dprod, rtol = " << alpha << " " 
+    			 << dprod << " " << rcurr/rorig << std::endl;
     if ((iflag > 0) && (rcurr/rorig <= solver_tol)) {
       pcg_status = 0;
       break;
@@ -1877,21 +1877,21 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
     calculate_multipliers(uStand, norm_rconstraint, norm_conerror);
   }
   if (MyPID == 0) {
-    //    cout << "rorig                 = " << rorig << endl;
+    //    std::cout << "rorig                 = " << rorig << std::endl;
     if (print_flag > 0) {
-      if (num_iter > 0) fout << "rcurr(recursive)      = " << rcurr << endl;
-      fout << "rcurr(actual)         = " << ractual << endl;
+      if (num_iter > 0) fout << "rcurr(recursive)      = " << rcurr << std::endl;
+      fout << "rcurr(actual)         = " << ractual << std::endl;
       if (ncon_global > 0) {
-	fout << "rcurr(constraint)     = " << norm_rconstraint << endl;
-	fout << "constraint error norm = " << norm_conerror << endl;
+	fout << "rcurr(constraint)     = " << norm_rconstraint << std::endl;
+	fout << "constraint error norm = " << norm_conerror << std::endl;
       }
-      fout << "number of iterations  = " << num_iter << endl;
-      fout << "solver tolerance      = " << solver_tol << endl;
+      fout << "number of iterations  = " << num_iter << std::endl;
+      fout << "solver tolerance      = " << solver_tol << std::endl;
     }
     if (cg_iter > 0) {
       if ((print_flag == 2) || (print_flag == 12)) {
 	fout << "condition # estimate      relative residual" 
-	     << "   iteration" << endl;
+	     << "   iteration" << std::endl;
 	calculate_condition(cg_iter);
 	fout << std::setiosflags(std::ios::scientific | std::ios::uppercase);
 	for (i=0; i<num_iter; i++) {
@@ -1902,7 +1902,7 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
 	       << "       " 
 	       << std::setw(17) << std::setprecision(10) << rcurra[i+1]/rorig
 	       << "        " 
-	       << i+1 << endl;
+	       << i+1 << std::endl;
 	}
       }
       fout << std::resetiosflags(std::ios::scientific);
@@ -1930,7 +1930,7 @@ void CLIP_solver::gmres_solve(Epetra_Vector* uStand,
   r_St->Norm2(&rorig);
   rcurra[0] = rorig;
   if (print_flag > 0) {
-    fout << "original residual                          = " << rorig << endl;
+    fout << "original residual                          = " << rorig << std::endl;
   }
   if (rorig == 0) {
     uStand->PutScalar(0);
@@ -1944,10 +1944,10 @@ void CLIP_solver::gmres_solve(Epetra_Vector* uStand,
   stat_cond();
   rB_St->Norm2(&rnorm);
   if (print_flag > 0) {
-    fout << "----------after initial static condensation---------" << endl;
-    fout << "residual                                   = " << rnorm << endl;
+    fout << "----------after initial static condensation---------" << std::endl;
+    fout << "residual                                   = " << rnorm << std::endl;
     if (n_orthog_used == 0)
-      fout << "----------------------------------------------------" << endl;
+      fout << "----------------------------------------------------" << std::endl;
   }
   //
   // remove part of residual parallel to null space for mode acceleration
@@ -1955,7 +1955,7 @@ void CLIP_solver::gmres_solve(Epetra_Vector* uStand,
   //
   if (num_tied_down > 0) {
     remove_orthog_null(rB_St);
-    if (print_flag > 0) fout << "singular system being solved" << endl;
+    if (print_flag > 0) fout << "singular system being solved" << std::endl;
   }
   //
   // gmres iterations
@@ -1968,8 +1968,8 @@ void CLIP_solver::gmres_solve(Epetra_Vector* uStand,
     VV[i] = vals[i];
   }
   for (gmres_iter=0; gmres_iter<maxiter; gmres_iter++) {
-    if (MyPID == -1) cout << "iteration " << gmres_iter+1 
-			  << " of maxiter = " << maxiter << endl;
+    if (MyPID == -1) std::cout << "iteration " << gmres_iter+1 
+			  << " of maxiter = " << maxiter << std::endl;
     apply_preconditioner();
     //
     // gmres stuff
@@ -2020,16 +2020,16 @@ void CLIP_solver::gmres_solve(Epetra_Vector* uStand,
     calculate_multipliers(uStand, norm_rconstraint, norm_conerror);
   }
   if (MyPID == 0) {
-    //    cout << "rorig                 = " << rorig << endl;
+    //    std::cout << "rorig                 = " << rorig << std::endl;
     if (print_flag > 0) {
-      if (num_iter > 0) fout << "rcurr(recursive)      = " << rcurr << endl;
-      fout << "rcurr(actual)         = " << ractual << endl;
+      if (num_iter > 0) fout << "rcurr(recursive)      = " << rcurr << std::endl;
+      fout << "rcurr(actual)         = " << ractual << std::endl;
       if (ncon_global > 0) {
-	fout << "rcurr(constraint)     = " << norm_rconstraint << endl;
-	fout << "constraint error norm = " << norm_conerror << endl;
+	fout << "rcurr(constraint)     = " << norm_rconstraint << std::endl;
+	fout << "constraint error norm = " << norm_conerror << std::endl;
       }
-      fout << "number of iterations  = " << num_iter << endl;
-      fout << "solver tolerance      = " << solver_tol << endl;
+      fout << "number of iterations  = " << num_iter << std::endl;
+      fout << "solver tolerance      = " << solver_tol << std::endl;
     }
   }
 }
@@ -2047,23 +2047,23 @@ void CLIP_solver::remove_orthog_null(Epetra_Vector *vec)
   determine_AxB(zB_St, ApB_St);
   zB_St->Norm2(&rnorm);
   ApB_St->Scale(1/rnorm/Block_Stiff->NormInf());
-  cout << *ApB_St << endl;
+  std::cout << *ApB_St << std::endl;
   */
   Rhs_null->Multiply('T', 'N', 1.0, *Phir_St, *vec, 0.0);
   Rhs_null->Norm2(&rhsnorm);
   vec->Norm2(&rnorm);
   if (print_flag > 0) fout << "check_orthog_null (before) = " << rhsnorm/rnorm
-			   << endl;
+			   << std::endl;
   Rhs_null->ExtractView(&rhsnull);
   EL.POTRS(UPLO, num_tied_down, 1, PhirTPhir, num_tied_down, rhsnull, 
   	   num_tied_down, &INFO);
   //  vec->Multiply('N', 'N', -1.0, *Phir_St, *Rhs_null, 1.0);
   Rhs_null->Multiply('T', 'N', 1.0, *Phir_St, *vec, 0.0);
-  //  cout << *Rhs_null << endl;
+  //  std::cout << *Rhs_null << std::endl;
   Rhs_null->Norm2(&rhsnorm);
   vec->Norm2(&rnorm);
   if (print_flag > 0) fout << "check_orthog_null (after ) = " << rhsnorm/rnorm 
-			   << endl;
+			   << std::endl;
 }
 
 double CLIP_solver::stat_cond()
@@ -2093,8 +2093,8 @@ double CLIP_solver::stat_cond()
   rB_St->Update(-1.0, *workB_St, 1.0);
   /* 
   rB_St->Norm2(&dnorm);
-  if (MyPID == 0) cout << "scale_option = " << scale_option << endl;
-  if (MyPID == 0) cout << "2 norm of rB_St = " << dnorm << endl;
+  if (MyPID == 0) std::cout << "scale_option = " << scale_option << std::endl;
+  if (MyPID == 0) std::cout << "2 norm of rB_St = " << dnorm << std::endl;
   work_Sub->PutScalar(0.0);
   double *worksub;
   work_Sub->ExtractView(&worksub);
@@ -2110,16 +2110,16 @@ double CLIP_solver::stat_cond()
     sprintf(fname, "%s.dat", fname);
     std::ofstream ffout;
     ffout.open(fname);
-    ffout << ndof_sub << endl;
-    ffout << nI << endl;
-    ffout << Block_Stiff->NumMyNonzeros() << endl;
-    for (i=0; i<ndof_sub; i++) ffout << rsub[i] << endl;
-    for (i=0; i<nI; i++) ffout << dofI[i] << endl;
+    ffout << ndof_sub << std::endl;
+    ffout << nI << std::endl;
+    ffout << Block_Stiff->NumMyNonzeros() << std::endl;
+    for (i=0; i<ndof_sub; i++) ffout << rsub[i] << std::endl;
+    for (i=0; i<nI; i++) ffout << dofI[i] << std::endl;
     for (i=0; i<ndof_sub; i++) {
       Block_Stiff->ExtractMyRowView(i, NumEntries, Values, Indices);
-      ffout << NumEntries << endl;
+      ffout << NumEntries << std::endl;
       for (j=0; j<NumEntries; j++) ffout << Indices[j] << " " 
-					 << Values[j] << endl;
+					 << Values[j] << std::endl;
     }
     ffout.close();
   }
@@ -2131,13 +2131,13 @@ double CLIP_solver::stat_cond()
     sum += delta*delta;
   }
   sum = sqrt(sum);
-  cout << "MyPID, internal norm = " << MyPID << " " << sum << endl;
+  std::cout << "MyPID, internal norm = " << MyPID << " " << sum << std::endl;
 
   work_St->PutScalar(0);
   work_St->Export(*work_Sub, *Exporter, Add);
   r_St->Update(-1.0, *work_St, 1.0);
   r_St->Norm2(&dnorm);
-  if (MyPID == 0) cout << "2 norm of r_St  = " << dnorm << endl;
+  if (MyPID == 0) std::cout << "2 norm of r_St  = " << dnorm << std::endl;
   assert (dnorm == 0);
   */
   return tpe_sum;
@@ -2203,7 +2203,7 @@ void CLIP_solver::apply_preconditioner()
   myzero(TEMP_cg, ndof_sub);
   for (i=0; i<nR; i++) TEMP_cg[dofR[i]]= SOL_cg[i];
   for (i=0; i<nB; i++) zbsub[i] = TEMP_cg[dofB[i]]*weight[i];
-  //  cout << *zB_Sub << endl;
+  //  std::cout << *zB_Sub << std::endl;
   //
   // coarse grid correction
   //
@@ -2219,9 +2219,9 @@ void CLIP_solver::apply_preconditioner()
   prod_PhiB->Export(*work_Kc, *Exporter_Kc, Insert);
   PhiB->Multiply(false, *prod_PhiB, *vec_PhiB);
   for (i=0; i<nB; i++) zbsub[i] += vecphib[i]*weight[i];
-  //  cout << *zB_Sub << endl;
+  //  std::cout << *zB_Sub << std::endl;
   zB_St->Export(*zB_Sub, *ExporterB, Add);
-  //  cout << *zB_St << endl;
+  //  std::cout << *zB_St << std::endl;
   //  if (num_tied_down > 0) remove_orthog_null(zB_St);
 }
 
@@ -2309,9 +2309,9 @@ void CLIP_solver::determine_AxB(Epetra_Vector* x, Epetra_Vector* b)
   }
   work_St->Export(*work_Sub, *Exporter, Add);
   b->Norm2(&dnorm);
-  if (MyPID == 0) cout << "2 norm of ApB_St = " << dnorm << endl;
+  if (MyPID == 0) std::cout << "2 norm of ApB_St = " << dnorm << std::endl;
   work_St->Norm2(&dnorm);
-  if (MyPID == 0) cout << "2 norm of Ap_St = " << dnorm << endl;
+  if (MyPID == 0) std::cout << "2 norm of Ap_St = " << dnorm << std::endl;
   */
 }
 
@@ -2436,8 +2436,8 @@ void CLIP_solver::two_steps_CGS(int gmres_iter, Epetra_Vector* r)
     EB.GEMV(TRANS, M, N+1, ALPHA, A, LDA, &VV[M*i], BETA, Y);
     Comm.SumAll(gmres_vec, gmres_sum, N+1);
     if (MyPID == 0) {
-      cout << "orthogonality for i = " << i << endl;
-      for (int j=0; j<N+1; j++) cout << gmres_sum[j] << endl;
+      std::cout << "orthogonality for i = " << i << std::endl;
+      for (int j=0; j<N+1; j++) std::cout << gmres_sum[j] << std::endl;
     }
   }
   */
@@ -2565,9 +2565,9 @@ void CLIP_solver::calculate_condition(int miter)
     }
     DSTEV_F77(&N, &ip1, Dtri, Etri, &Z, &one, &WORK, &INFO, 1); 
     if (INFO != 0) {
-      cout << "error in call to DSTEV in CLASP_solver::calculate_condition" 
-	   << endl;
-      cout << "INFO = " << INFO << endl;
+      std::cout << "error in call to DSTEV in CLASP_solver::calculate_condition" 
+	   << std::endl;
+      std::cout << "INFO = " << INFO << std::endl;
     }
     econa[i] = Dtri[i]/Dtri[0];
   }
@@ -2586,11 +2586,11 @@ void CLIP_solver::spmat_datfile(const Epetra_CrsMatrix & A, char fname[],
     for (j=0; j<NumEntries; j++) {
       if (opt == 1)
 	ffout << i+1 << " " << Indices[j]+1 << std::setw(22) << std::setprecision(15)
-	     << Values[j] << endl;
+	     << Values[j] << std::endl;
       if (opt == 2) {
 	grow = A.GRID(i); gcol = A.GCID(Indices[j]);
 	ffout << grow+1 << " " << gcol+1 << std::setw(22) 
-	     << std::setprecision(15) << Values[j] << endl;
+	     << std::setprecision(15) << Values[j] << std::endl;
       }
     }
   }

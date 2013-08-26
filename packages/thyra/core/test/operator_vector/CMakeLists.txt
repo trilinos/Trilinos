@@ -1,6 +1,36 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
 
+SET(NUM_MPI_PROCS_SET 2 3 4)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TestingToolsUnitTests
+  SOURCES
+    TestingTools_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  SpmdLocalDataAccessUnitTests
+  SOURCES
+    SpmdLocalDataAccess_UnitTests.cpp
+    ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+FOREACH(NUM_MPI_PROCS ${NUM_MPI_PROCS_SET})
+  TRIBITS_ADD_TEST(
+    SpmdLocalDataAccessUnitTests
+    COMM mpi
+    NUM_MPI_PROCS ${NUM_MPI_PROCS}
+    STANDARD_PASS_OUTPUT
+    )
+ENDFOREACH()
+
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   test_product_space
   SOURCES test_product_space.cpp
@@ -76,9 +106,19 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES
     DefaultSpmdVectorSpace_UnitTests.cpp
     DefaultSpmdMultiVector_UnitTests.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    DefaultSpmdVector_UnitTests.cpp
+    ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
   STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
   )
+FOREACH(NUM_MPI_PROCS ${NUM_MPI_PROCS_SET})
+  TRIBITS_ADD_TEST(
+    DefaultSpmdVectorSpaceUnitTests
+    STANDARD_PASS_OUTPUT
+    COMM mpi
+    NUM_MPI_PROCS ${NUM_MPI_PROCS}
+    )
+ENDFOREACH()
 
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -127,15 +167,36 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-#TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#  DefaultSpmdVectorSpace_ParallelUnitTest
-#  SOURCES
-#    DefaultSpmdVectorSpace_Parallel_UnitTest.cpp
-#    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-#  STANDARD_PASS_OUTPUT
-#  )
-#TRIBITS_ADD_TEST(
-#  DefaultSpmdVectorSpace_ParallelUnitTests
-#  STANDARD_PASS_OUTPUT
-#  NUM_MPI_PROCS 2
-#  )
+TRIBITS_ADD_EXECUTABLE(
+  DefaultSpmdVectorSpaceParallelUnitTests
+  SOURCES
+    DefaultSpmdVectorSpace_Parallel_UnitTests.cpp
+    ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
+  )
+FOREACH(NUM_MPI_PROCS ${NUM_MPI_PROCS_SET})
+  TRIBITS_ADD_TEST(
+    DefaultSpmdVectorSpaceParallelUnitTests
+    COMM mpi
+    NUM_MPI_PROCS ${NUM_MPI_PROCS}
+    STANDARD_PASS_OUTPUT	
+  )
+ENDFOREACH()
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  DefaultClusteredSpmdProductVectorSpaceUnitTests
+  SOURCES
+    DefaultClusteredSpmdProductVectorSpace_UnitTests.cpp
+    ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+FOREACH(NUM_MPI_PROCS ${NUM_MPI_PROCS_SET})
+  TRIBITS_ADD_TEST(
+    DefaultClusteredSpmdProductVectorSpaceUnitTests
+    STANDARD_PASS_OUTPUT
+    COMM mpi
+    NUM_MPI_PROCS ${NUM_MPI_PROCS}
+    )
+ENDFOREACH()
+

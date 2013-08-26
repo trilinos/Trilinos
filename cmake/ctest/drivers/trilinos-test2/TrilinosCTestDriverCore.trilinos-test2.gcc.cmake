@@ -82,13 +82,13 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   SET(TPLBASEDIR /home/trilinos/tpl/gcc4.1.2)
 
   SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-    "-DCMAKE_BUILD_TYPE:STRING=RELEASE"
+    "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
     "-DCOVERAGE_COMMAND:FILEPATH=/usr/bin/gcov"
     "-DMEMORYCHECK_COMMAND:FILEPATH=/usr/bin/valgrind"
     "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE"
-    "-DCPPUNIT_LIBRARY:FILEPATH=${TPLBASEDIR}/cppunit-1.12.1/lib/libcppunit.a"
-    "-DCPPUNIT_INCLUDES:FILEPATH=${TPLBASEDIR}/cppunit-1.12.1/include"
+    "-DCppUnit_INCLUDE_DIRS=/home/trilinos/tpl/gcc4.1.2/cppunit-1.12.1/include"
+    "-DCppUnit_LIBRARY_DIRS=/home/trilinos/tpl/gcc4.1.2/cppunit-1.12.1/lib"
     "-DLAMMPS_INCLUDE_DIRS:FILEPATH=${TPLBASEDIR}"
     "-DTPL_LAMMPS_LIBRARIES:STIRNG=${TPLBASEDIR}/lammps/src/liblmp_wsblade.a"
     "-Dcouple_INCLUDE_DIRS:FILEPATH=${TPLBASEDIR}/couple"

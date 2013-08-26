@@ -8,7 +8,7 @@ SET(SOURCES "")
 
 FILE(GLOB SOURCES *.cpp ../common/*.cpp)
 
-SET(LIBRARIES kokkosarray_devicehost kokkosarray_impl)
+SET(LIBRARIES kokkoscore_devicethreads kokkoscore_impl)
   
 
 IF( TPL_ENABLE_CUDA AND TPL_ENABLE_CUSPARSE )
@@ -26,7 +26,7 @@ IF( TPL_ENABLE_CUDA AND TPL_ENABLE_CUSPARSE )
     )
 
   LIST( APPEND LIBRARIES
-    kokkosarray_devicecuda hybrid_fem_cuda ${CUDA_LIBRARIES} ${CUDA_cusparse_LIBRARY}
+    kokkoscore_devicecuda hybrid_fem_cuda ${CUDA_LIBRARIES} ${CUDA_cusparse_LIBRARY}
   )
 
 ENDIF()

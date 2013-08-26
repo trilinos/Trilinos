@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
 #else
   Epetra_SerialComm Comm;
 #endif
-  cout << " Testing on " << Comm <<endl;
+  std::cout << " Testing on " << Comm <<std::endl;
 
   int NumMyElements = 100;
   // Construct a Map that puts same number of equations on each processor
@@ -95,15 +95,15 @@ int main(int argc, char *argv[]) {
   // Create AztecOO instance
   AztecOO solver(problem);
   
-  cout << "Starting iterations for: " << endl;
+  std::cout << "Starting iterations for: " << std::endl;
   solver.SetLabel("AztecOO User Guide Example 1");
-  cout << solver.GetLabel() << endl;
+  std::cout << solver.GetLabel() << std::endl;
 
   solver.SetAztecOption(AZ_precond, AZ_Jacobi);
   solver.Iterate(1000, 1.0E-4);
 
-  cout << "Solver performed " << solver.NumIters() << " iterations." << endl
-       << "Norm of true residual = " << solver.TrueResidual() << endl;
+  std::cout << "Solver performed " << solver.NumIters() << " iterations." << std::endl
+       << "Norm of true residual = " << solver.TrueResidual() << std::endl;
 #ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif

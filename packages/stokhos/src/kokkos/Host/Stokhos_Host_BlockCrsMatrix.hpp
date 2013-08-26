@@ -43,7 +43,6 @@
 #define STOKHOS_HOST_BLOCKCRSMATRIX_HPP
 
 #include "Kokkos_Host.hpp"
-#include "Kokkos_ParallelFor.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_BlockCrsMatrix.hpp"

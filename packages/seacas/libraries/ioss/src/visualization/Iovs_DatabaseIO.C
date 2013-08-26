@@ -24,17 +24,33 @@
 #include <Ioss_FileInfo.h>
 #include <Ioss_SurfaceSplit.h>
 
+#include <stk_util/diag/UserPlugin.hpp>
+
+#include <boost/filesystem/path.hpp>
+#include <boost/filesystem/operations.hpp>
+
 #include <assert.h>
+
+#if defined(__APPLE__)
+ const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY = "libParaViewCatalystSierraAdapter.dylib";
+#else
+ const char* CATALYST_PLUGIN_DYNAMIC_LIBRARY = "libParaViewCatalystSierraAdapter.so";
+#endif
+
+const char* CATALYST_PLUGIN_PYTHON_MODULE = "PhactoriDriver.py";
+const char* CATALYST_PLUGIN_PATH= "viz/catalyst/install";
 
 namespace { // Internal helper functions
   int64_t get_id(const Ioss::GroupingEntity *entity,
-	   	       ex_entity_type type,
-		       Iovs::EntityIdSet *idset);
+                  ex_entity_type type,
+               Iovs::EntityIdSet *idset);
   bool set_id(const Ioss::GroupingEntity *entity,
-		      ex_entity_type type,
-		      Iovs::EntityIdSet *idset);
+              ex_entity_type type,
+              Iovs::EntityIdSet *idset);
   int64_t extract_id(const std::string &name_id);
 
+  void build_catalyst_plugin_paths(std::string& plugin_library_path,
+                                   std::string& plugin_python_path);
 } // End anonymous namespace
 
 namespace Iovs {
@@ -43,24 +59,45 @@ namespace Iovs {
 
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string& filename,
                          Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
-			 const Ioss::PropertyManager &props) :
-    Ioss::DatabaseIO (region, filename, db_usage, communicator, props)
+                         const Ioss::PropertyManager &props) :
+                         Ioss::DatabaseIO (region, filename, db_usage, communicator, props)
 
   {
+    std::ostringstream errmsg;
+    if( (db_usage == Ioss::WRITE_RESTART)||
+        (db_usage == Ioss::READ_RESTART) ){
+        errmsg << "ParaView catalyst database type cannot be used in a RESTART block.\n";
+        IOSS_ERROR(errmsg);
+    }
+    else if(db_usage == Ioss::WRITE_HEARTBEAT) {
+        errmsg << "ParaView catalyst database type cannot be used in a HEARTBEAT block.\n";
+        IOSS_ERROR(errmsg);
+    }
+    else if(db_usage == Ioss::WRITE_HISTORY) {
+        errmsg << "ParaView catalyst database type cannot be used in a HISTORY block.\n";
+        IOSS_ERROR(errmsg);
+    }
+    else if(db_usage == Ioss::READ_MODEL) {
+        errmsg << "ParaView catalyst database type cannot be used to read a model.\n";
+        IOSS_ERROR(errmsg);
+    }
+
     dbState = Ioss::STATE_UNKNOWN;
     this->pvcsa = 0;
     this->globalNodeAndElementIDsCreated = false;
 
-    if(props.exists("VISUALIZATION_SCRIPT"))
+    if(props.exists("VISUALIZATION_BLOCK_PARSE_JSON_STRING"))
       {
-      this->paraview_script_filename = props.get("VISUALIZATION_SCRIPT").get_string();
+      this->paraview_json_parse = props.get("VISUALIZATION_BLOCK_PARSE_JSON_STRING").get_string();
       }
     else
       {
-      std::ostringstream errmsg;
-      errmsg << "Property VISUALIZATION_SCRIPT not given in results output \n"
-             << "block, unable to initialize ParaView Catalyst";
-      IOSS_ERROR(errmsg);
+      this->paraview_json_parse = "{}";
+      }
+
+    if(props.exists("CATALYST_SCRIPT"))
+      {
+      this->paraview_script_filename = props.get("CATALYST_SCRIPT").get_string();
       }
 
     this->underscoreVectors = 1;
@@ -86,6 +123,11 @@ namespace Iovs {
       {
       this->createSideSets = props.get("VISUALIZATION_CREATE_SIDE_SETS").get_int();
       }
+
+    if(props.exists("VISUALIZATION_BLOCK_PARSE_INPUT_DECK_NAME"))
+      {
+        this->sierra_input_deck_name = props.get("VISUALIZATION_BLOCK_PARSE_INPUT_DECK_NAME").get_string();
+      }
   }
 
   DatabaseIO::~DatabaseIO() 
@@ -103,6 +145,44 @@ namespace Iovs {
     elemMap.release_memory();
   }
 
+  void DatabaseIO::load_plugin_library() {
+      std::string plugin_library_path;
+      std::string plugin_python_module_path;
+
+      if(!ParaViewCatalystSierraAdaptorBaseFactory::exists("ParaViewCatalystSierraAdaptor")) {
+          if(getenv("CATALYST_PLUGIN")) {
+              plugin_library_path = getenv("CATALYST_PLUGIN");
+          }
+          else {
+              build_catalyst_plugin_paths(plugin_library_path,
+                                          plugin_python_module_path);
+          }
+          sierra::Plugin::Registry::rootInstance().registerDL(plugin_library_path.c_str(), "");
+          if(!ParaViewCatalystSierraAdaptorBaseFactory::exists("ParaViewCatalystSierraAdaptor")) {
+              std::ostringstream errmsg;
+              errmsg << "Unable to load catalyst plug-in dynamic library.\n"
+                     << "Path: " << plugin_library_path << "\n";
+              IOSS_ERROR(errmsg);
+              return;
+          }
+      }
+
+      if(this->paraview_script_filename.empty()) {
+          if(plugin_python_module_path.empty()) {
+              build_catalyst_plugin_paths(plugin_library_path,
+                                          plugin_python_module_path);
+          }
+          if ( !boost::filesystem::exists(plugin_python_module_path) ) {
+              std::ostringstream errmsg;
+              errmsg << "Catalyst Python module path does not exist.\n"
+                     << "Python module path: " << plugin_python_module_path << "\n";
+              IOSS_ERROR(errmsg);
+                return;
+          }
+          this->paraview_script_filename = plugin_python_module_path;
+      }
+  }
+
   bool DatabaseIO::begin(Ioss::State state)
   {
     dbState = state;
@@ -110,11 +190,18 @@ namespace Iovs {
     Ioss::Region *region = this->get_region();
     if(region->model_defined() && !this->pvcsa)
       {
+      this->load_plugin_library();
       this->pvcsa = ParaViewCatalystSierraAdaptorBaseFactory::create("ParaViewCatalystSierraAdaptor")();
+
+      std::string separator(1, this->get_field_separator());
+
       if(this->pvcsa)
         this->pvcsa->InitializeParaViewCatalyst(this->paraview_script_filename.c_str(),
-        		                                this->underscoreVectors,
-        		                                this->applyDisplacements);
+                                                this->paraview_json_parse.c_str(),
+                                                separator.c_str(),
+                                                this->sierra_input_deck_name.c_str(),
+                                                this->underscoreVectors,
+                                                this->applyDisplacements);
       std::vector<int> element_block_id_list;
       Ioss::ElementBlockContainer const & ebc = region->get_element_blocks();
       for(int i = 0;i<ebc.size();i++)
@@ -194,7 +281,7 @@ namespace Iovs {
   component_names.push_back("GlobalElementId");
   for (I=element_blocks.begin(); I != element_blocks.end(); ++I)
     {
-	int bid = get_id((*I), EX_ELEM_BLOCK, &ids_);
+    int bid = get_id((*I), EX_ELEM_BLOCK, &ids_);
     int64_t eb_offset = (*I)->get_offset();
     if(this->pvcsa)
       this->pvcsa->CreateElementVariable(component_names,
@@ -405,7 +492,7 @@ namespace Iovs {
             new_this->handle_element_ids(eb, data, num_to_get);
 
           } else if (field.get_name() == "skin") {
-	    // Not applicable to viz output.
+        // Not applicable to viz output.
           } else {
             IOSS_WARNING << " ElementBlock " << eb->name()
                          << ". Unknown field " << field.get_name();
@@ -570,25 +657,25 @@ namespace Iovs {
       if (nodeMap.map.empty()) {
         //std::cout << "DatabaseIO::handle_node_ids nodeMap was empty, resizing and tagging serial\n";
         nodeMap.map.resize(nodeCount+1);
-	nodeMap.map[0] = -1;
+    nodeMap.map[0] = -1;
       }
 
       if (nodeMap.map[0] == -1) {
         //std::cout << "DatabaseIO::handle_node_ids nodeMap tagged serial, doing mapping\n";
-	if (int_byte_size_api() == 4) {
-	  nodeMap.set_map(static_cast<int*>(ids), num_to_get, 0);
-	} else {
-	  nodeMap.set_map(static_cast<int64_t*>(ids), num_to_get, 0);
-	}	    
+    if (int_byte_size_api() == 4) {
+      nodeMap.set_map(static_cast<int*>(ids), num_to_get, 0);
+    } else {
+      nodeMap.set_map(static_cast<int64_t*>(ids), num_to_get, 0);
+    }
       }
 
-	nodeMap.build_reverse_map(myProcessor);
+    nodeMap.build_reverse_map(myProcessor);
 
-	// Only a single nodeblock and all set
-	if (num_to_get == nodeCount) {
-	  assert(nodeMap.map[0] == -1 || nodeMap.reverse.size() == (size_t)nodeCount);
-	}
-	assert(get_region()->get_property("node_block_count").get_int() == 1);
+    // Only a single nodeblock and all set
+    if (num_to_get == nodeCount) {
+      assert(nodeMap.map[0] == -1 || nodeMap.reverse.size() == (size_t)nodeCount);
+    }
+    assert(get_region()->get_property("node_block_count").get_int() == 1);
       }
 
       nodeMap.build_reorder_map(0, num_to_get);
@@ -596,90 +683,90 @@ namespace Iovs {
     }
 
       size_t handle_block_ids(const Ioss::EntityBlock *eb,
-			      ex_entity_type map_type,
-			      Ioss::State db_state,
-			      Ioss::Map &entity_map,
-			      void* ids, size_t int_byte_size, size_t num_to_get, /*int file_pointer,*/ int my_processor)
+                  ex_entity_type map_type,
+                  Ioss::State db_state,
+                  Ioss::Map &entity_map,
+                  void* ids, size_t int_byte_size, size_t num_to_get, /*int file_pointer,*/ int my_processor)
       {
         //std::cout << "DatabaseIO::handle_block_ids executing\n";
-	/*!
-	 * NOTE: "element" is generic for "element", "face", or "edge"
-	 *
-	 * There are two modes we need to support in this routine:
-	 * 1. Initial definition of element map (local->global) and
-	 * reverseElementMap (global->local).
-	 * 2. Redefinition of element map via 'reordering' of the original
-	 * map when the elements on this processor are the same, but their
-	 * order is changed.
-	 *
-	 * So, there will be two maps the 'elementMap' map is a 'direct lookup'
-	 * map which maps current local position to global id and the
-	 * 'reverseElementMap' is an associative lookup which maps the
-	 * global id to 'original local'.  There is also a
-	 * 'reorderElementMap' which is direct lookup and maps current local
-	 * position to original local.
+    /*!
+     * NOTE: "element" is generic for "element", "face", or "edge"
+     *
+     * There are two modes we need to support in this routine:
+     * 1. Initial definition of element map (local->global) and
+     * reverseElementMap (global->local).
+     * 2. Redefinition of element map via 'reordering' of the original
+     * map when the elements on this processor are the same, but their
+     * order is changed.
+     *
+     * So, there will be two maps the 'elementMap' map is a 'direct lookup'
+     * map which maps current local position to global id and the
+     * 'reverseElementMap' is an associative lookup which maps the
+     * global id to 'original local'.  There is also a
+     * 'reorderElementMap' which is direct lookup and maps current local
+     * position to original local.
 
-	 * The ids coming in are the global ids; their position is the
-	 * local id -1 (That is, data[0] contains the global id of local
-	 * element 1 in this element block).  The 'model-local' id is
-	 * given by eb_offset + 1 + position:
-	 *
-	 * int local_position = reverseElementMap[ElementMap[i+1]]
-	 * (the elementMap and reverseElementMap are 1-based)
-	 *
-	 * But, this assumes 1..numel elements are being output at the same
-	 * time; we are actually outputting a blocks worth of elements at a
-	 * time, so we need to consider the block offsets.
-	 * So... local-in-block position 'i' is index 'eb_offset+i' in
-	 * 'elementMap' and the 'local_position' within the element
-	 * blocks data arrays is 'local_position-eb_offset'.  With this, the
-	 * position within the data array of this element block is:
-	 *
-	 * int eb_position =
-	 * reverseElementMap[elementMap[eb_offset+i+1]]-eb_offset-1
-	 *
-	 * To determine which map to update on a call to this function, we
-	 * use the following hueristics:
-	 * -- If the database state is 'Ioss::STATE_MODEL:', then update the
-	 *    'reverseElementMap'.
-	 * -- If the database state is not Ioss::STATE_MODEL, then leave
-	 *    the 'reverseElementMap' alone since it corresponds to the
-	 *    information already written to the database. [May want to add
-	 *    a Ioss::STATE_REDEFINE_MODEL]
-	 * -- Always update elementMap to match the passed in 'ids'
-	 *    array.
-	 *
-	 * NOTE: the maps are built an element block at a time...
-	 * NOTE: The mapping is done on TRANSIENT fields only; MODEL fields
-	 *       should be in the orginal order...
-	 */
+     * The ids coming in are the global ids; their position is the
+     * local id -1 (That is, data[0] contains the global id of local
+     * element 1 in this element block).  The 'model-local' id is
+     * given by eb_offset + 1 + position:
+     *
+     * int local_position = reverseElementMap[ElementMap[i+1]]
+     * (the elementMap and reverseElementMap are 1-based)
+     *
+     * But, this assumes 1..numel elements are being output at the same
+     * time; we are actually outputting a blocks worth of elements at a
+     * time, so we need to consider the block offsets.
+     * So... local-in-block position 'i' is index 'eb_offset+i' in
+     * 'elementMap' and the 'local_position' within the element
+     * blocks data arrays is 'local_position-eb_offset'.  With this, the
+     * position within the data array of this element block is:
+     *
+     * int eb_position =
+     * reverseElementMap[elementMap[eb_offset+i+1]]-eb_offset-1
+     *
+     * To determine which map to update on a call to this function, we
+     * use the following hueristics:
+     * -- If the database state is 'Ioss::STATE_MODEL:', then update the
+     *    'reverseElementMap'.
+     * -- If the database state is not Ioss::STATE_MODEL, then leave
+     *    the 'reverseElementMap' alone since it corresponds to the
+     *    information already written to the database. [May want to add
+     *    a Ioss::STATE_REDEFINE_MODEL]
+     * -- Always update elementMap to match the passed in 'ids'
+     *    array.
+     *
+     * NOTE: the maps are built an element block at a time...
+     * NOTE: The mapping is done on TRANSIENT fields only; MODEL fields
+     *       should be in the orginal order...
+     */
 
-	// Overwrite this portion of the 'elementMap', but keep other
-	// parts as they were.  We are adding elements starting at position
-	// 'eb_offset+offset' and ending at
-	// 'eb_offset+offset+num_to_get'. If the entire block is being
-	// processed, this reduces to the range 'eb_offset..eb_offset+my_element_count'
+    // Overwrite this portion of the 'elementMap', but keep other
+    // parts as they were.  We are adding elements starting at position
+    // 'eb_offset+offset' and ending at
+    // 'eb_offset+offset+num_to_get'. If the entire block is being
+    // processed, this reduces to the range 'eb_offset..eb_offset+my_element_count'
 
-	int64_t eb_offset = eb->get_offset();
+    int64_t eb_offset = eb->get_offset();
 
-	if (int_byte_size == 4) {
-	  entity_map.set_map(static_cast<int*>(ids), num_to_get, eb_offset);
-	} else {
-	  entity_map.set_map(static_cast<int64_t*>(ids), num_to_get, eb_offset);
-	}
+    if (int_byte_size == 4) {
+      entity_map.set_map(static_cast<int*>(ids), num_to_get, eb_offset);
+    } else {
+      entity_map.set_map(static_cast<int64_t*>(ids), num_to_get, eb_offset);
+    }
 
-	// Now, if the state is Ioss::STATE_MODEL, update the reverseEntityMap
-	if (db_state == Ioss::STATE_MODEL) {
-	  entity_map.build_reverse_map(num_to_get, eb_offset, my_processor);
+    // Now, if the state is Ioss::STATE_MODEL, update the reverseEntityMap
+    if (db_state == Ioss::STATE_MODEL) {
+      entity_map.build_reverse_map(num_to_get, eb_offset, my_processor);
         }
 
-	// Build the reorderEntityMap which does a direct mapping from
-	// the current topologies local order to the local order
-	// stored in the database...  This is 0-based and used for
-	// remapping output and input TRANSIENT fields.
-	entity_map.build_reorder_map(eb_offset, num_to_get);
+    // Build the reorderEntityMap which does a direct mapping from
+    // the current topologies local order to the local order
+    // stored in the database...  This is 0-based and used for
+    // remapping output and input TRANSIENT fields.
+    entity_map.build_reorder_map(eb_offset, num_to_get);
         //std::cout << "DatabaseIO::handle_block_ids returning\n";
-	return num_to_get;
+    return num_to_get;
       }
 
   int64_t DatabaseIO::handle_element_ids(const Ioss::ElementBlock *eb, void* ids, size_t num_to_get)
@@ -707,7 +794,7 @@ namespace Iovs {
 
       // Output database; nodeMap not set yet... Build a default map.
       for (int64_t i=1; i < nodeCount+1; i++) {
-	nodeMap.map[i] = i;
+    nodeMap.map[i] = i;
       }
       // Sequential map
       nodeMap.map[0] = -1;
@@ -724,12 +811,12 @@ namespace Iovs {
     if (elemMap.map.empty()) {
       elemMap.map.resize(elementCount+1);
 
-	// Output database; elementMap not set yet... Build a default map.
-	for (int64_t i=1; i < elementCount+1; i++) {
-	  elemMap.map[i] = i;
-	}
-	// Sequential map
-	elemMap.map[0] = -1;
+    // Output database; elementMap not set yet... Build a default map.
+    for (int64_t i=1; i < elementCount+1; i++) {
+      elemMap.map[i] = i;
+    }
+    // Sequential map
+    elemMap.map[0] = -1;
     }
     return elemMap;
   }
@@ -744,54 +831,54 @@ namespace Iovs {
   }
 
   int64_t DatabaseIO::put_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
-			                             void *data, size_t data_size) const
+                                         void *data, size_t data_size) const
   {
-	int64_t num_to_get = field.verify(data_size);
+    int64_t num_to_get = field.verify(data_size);
 
-	if(field.get_name() != "ids" && field.get_name() != "ids_raw")
-	  return num_to_get;
+    if(field.get_name() != "ids" && field.get_name() != "ids_raw")
+      return num_to_get;
 
-	int id = get_id(ns, EX_NODE_SET, &this->ids_);
+    int id = get_id(ns, EX_NODE_SET, &this->ids_);
 
-	if(this->createNodeSets == 0)
+    if(this->createNodeSets == 0)
       num_to_get = 0;
 
-	if (field.get_type() == Ioss::Field::INTEGER)
-	  {
-	  this->nodeMap.reverse_map_data(data, field, num_to_get);
-	  if(this->pvcsa)
-	    this->pvcsa->CreateNodeSet(ns->name().c_str(),
-	    		                   id,
-	    		                   num_to_get,
-	    		                   static_cast<int*>(data));
-	  }
-	else if (field.get_type() == Ioss::Field::INT64)
-	  {
-	  this->nodeMap.reverse_map_data(data, field, num_to_get);
+    if (field.get_type() == Ioss::Field::INTEGER)
+      {
+      this->nodeMap.reverse_map_data(data, field, num_to_get);
       if(this->pvcsa)
-	    this->pvcsa->CreateNodeSet(ns->name().c_str(),
-	    		                   id,
-	    		                   num_to_get,
-	    		                   static_cast<int64_t*>(data));
-	  }
+        this->pvcsa->CreateNodeSet(ns->name().c_str(),
+                                   id,
+                                   num_to_get,
+                                   static_cast<int*>(data));
+      }
+    else if (field.get_type() == Ioss::Field::INT64)
+      {
+      this->nodeMap.reverse_map_data(data, field, num_to_get);
+      if(this->pvcsa)
+        this->pvcsa->CreateNodeSet(ns->name().c_str(),
+                                   id,
+                                   num_to_get,
+                                   static_cast<int64_t*>(data));
+      }
 
     return num_to_get;
   }
 
   int64_t DatabaseIO::put_field_internal(const Ioss::SideSet* fs, const Ioss::Field& field,
-			                             void *data, size_t data_size) const
+                                         void *data, size_t data_size) const
   {
     size_t num_to_get = field.verify(data_size);
-	if (field.get_name() == "ids") {
-	// Do nothing, just handles an idiosyncrasy of the GroupingEntity
-	} else {
-	  num_to_get = Ioss::Utils::field_warning(fs, field, "output");
-	}
-	return num_to_get;
+    if (field.get_name() == "ids") {
+    // Do nothing, just handles an idiosyncrasy of the GroupingEntity
+    } else {
+      num_to_get = Ioss::Utils::field_warning(fs, field, "output");
+    }
+    return num_to_get;
   }
 
   int64_t DatabaseIO::put_field_internal(const Ioss::SideBlock* eb, const Ioss::Field& field,
-			                             void *data, size_t data_size) const
+                                         void *data, size_t data_size) const
   {
     int64_t num_to_get = field.verify(data_size);
 
@@ -819,12 +906,12 @@ namespace Iovs {
         if(this->createSideSets == 0)
           num_to_get = 0;
 
-  	    if(this->pvcsa)
-  	      this->pvcsa->CreateSideSet(eb->name().c_str(),
-  	    		                     id,
-  	    		                     num_to_get,
-  	    		                     &element[0],
-  	    		                     &side[0]);
+          if(this->pvcsa)
+            this->pvcsa->CreateSideSet(eb->name().c_str(),
+                                       id,
+                                       num_to_get,
+                                       &element[0],
+                                       &side[0]);
         }
       else
         {
@@ -841,15 +928,15 @@ namespace Iovs {
         if(this->createSideSets == 0)
            num_to_get = 0;
 
- 	    if(this->pvcsa)
-  	      this->pvcsa->CreateSideSet(eb->name().c_str(),
-  	    		                     id,
-  	    		                     num_to_get,
-  	    		                     &element[0],
-  	    		                     &side[0]);
+         if(this->pvcsa)
+            this->pvcsa->CreateSideSet(eb->name().c_str(),
+                                       id,
+                                       num_to_get,
+                                       &element[0],
+                                       &side[0]);
         }
       }
-	return num_to_get;
+    return num_to_get;
   }
 
 };
@@ -965,4 +1052,89 @@ namespace {
      return 0;
    }
 
+  void build_catalyst_plugin_paths(std::string& plugin_library_path,
+                                   std::string& plugin_python_path) {
+      std::string sierra_ins_dir;
+      if(getenv("SIERRA_INSTALL_DIR")) {
+          sierra_ins_dir = getenv("SIERRA_INSTALL_DIR");
+      }
+      else {
+          std::ostringstream errmsg;
+          errmsg << "Environment variable SIERRA_INSTALL_DIR not set.\n"
+                 << " Unable to find ParaView catalyst dynamic library.\n";
+          IOSS_ERROR(errmsg);
+          return;
+      }
+
+      std::string sierra_system;
+      if(getenv("SIERRA_SYSTEM")) {
+          sierra_system = getenv("SIERRA_SYSTEM");
+      }
+      else {
+          std::ostringstream errmsg;
+          errmsg << "Environment variable SIERRA_SYSTEM not set.\n"
+                 << " Unable to find ParaView catalyst dynamic library.\n";
+          IOSS_ERROR(errmsg);
+          return;
+      }
+
+      std::string sierra_version;
+      if(getenv("SIERRA_VERSION")) {
+          sierra_version = getenv("SIERRA_VERSION");
+      }
+      else {
+          std::ostringstream errmsg;
+          errmsg << "Environment variable SIERRA_VERSION not set.\n"
+                 << " Unable to find ParaView catalyst dynamic library.\n";
+          IOSS_ERROR(errmsg);
+          return;
+      }
+
+      try {
+        boost::filesystem::path sierra_ins_path(sierra_ins_dir);
+        sierra_ins_path = boost::filesystem::system_complete(sierra_ins_path);
+
+        if ( !boost::filesystem::exists(sierra_ins_path) ) {
+            std::ostringstream errmsg;
+            errmsg << "SIERRA_INSTALL_DIR directory does not exist.\n"
+                 << "Directory path: " << sierra_ins_path << "\n"
+                 << " Unable to find ParaView catalyst dynamic library.\n";
+            IOSS_ERROR(errmsg);
+            return;
+        }
+
+        while(!sierra_ins_path.parent_path().empty() &&
+               sierra_ins_path.filename() != "sierra") {
+            sierra_ins_path = sierra_ins_path.parent_path();
+        }
+
+        if(sierra_ins_path.filename() == "sierra")
+            sierra_ins_path = sierra_ins_path.parent_path();
+
+        boost::filesystem::path pip = sierra_ins_path / CATALYST_PLUGIN_PATH / sierra_system
+                                      / sierra_version / CATALYST_PLUGIN_DYNAMIC_LIBRARY;
+
+        boost::filesystem::path pmp = sierra_ins_path / CATALYST_PLUGIN_PATH / sierra_system
+                                      / sierra_version / CATALYST_PLUGIN_PYTHON_MODULE;
+
+        if ( !boost::filesystem::exists(pip) ) {
+            std::ostringstream errmsg;
+            errmsg << "Catalyst dynamic library plug-in does not exist.\n"
+                   << "File path: " << pip << "\n";
+            IOSS_ERROR(errmsg);
+              return;
+        }
+
+        plugin_library_path = pip.string();
+        plugin_python_path = pmp.string();
+      }
+      catch(boost::filesystem::filesystem_error& e) {
+          std::cerr << e.what() << std::endl;
+             std::ostringstream errmsg;
+          errmsg << "Unable to find ParaView catalyst dynamic library.\n";
+          IOSS_ERROR(errmsg);
+          return;
+      }
+
+  }
 }

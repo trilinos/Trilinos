@@ -107,14 +107,12 @@ namespace MueLu {
       if (!rebalancedAc.is_null()) {
         RCP<ParameterList> params = rcp(new ParameterList());
         params->set("printLoadBalancingInfo", true);
-        GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebalancedAc, "Ac (rebalanced)", params);
+        GetOStream(Statistics1, 0) << Utils::PrintMatrixInfo(*rebalancedAc, "Ac (rebalanced)", params);
       }
 
     } else {
       // Ac already built by the load balancing process and no load balancing needed
       GetOStream(Warnings0, 0) << "No rebalancing" << std::endl;
-      GetOStream(Warnings0, 0) << "Jamming A into Level " << coarseLevel.GetLevelID() << " w/ generating factory "
-                               << this << std::endl;
       Set(coarseLevel, "A", originalAc);
     }
 

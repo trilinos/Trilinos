@@ -27,6 +27,7 @@ APPEND_SET(HEADERS Piro_ValidPiroParameters.hpp
                    Piro_Provider.hpp
                    Piro_ProviderBase.hpp
                    Piro_ProviderHelpers.hpp
+                   Piro_SolutionObserverBase.hpp
 		   Piro_Epetra_Factory.hpp
 		   Piro_Epetra_SolverFactory.hpp
 		   Piro_SolverFactory.hpp
@@ -51,6 +52,8 @@ APPEND_SET(HEADERS Piro_MatrixFreeDecorator.hpp
 # Optional NOX Dependency (which includes LOCA)
 IF (Piro_ENABLE_NOX) 
   APPEND_SET(HEADERS Piro_Epetra_NOXSolver.hpp
+                     Piro_SteadyStateSolver.hpp
+                     Piro_SteadyStateSolver_Def.hpp
                      Piro_NOXSolver.hpp
                      Piro_NOXSolver_Def.hpp
                      Piro_Epetra_LOCASolver.hpp
@@ -65,6 +68,7 @@ IF (Piro_ENABLE_NOX)
 		     Piro_Epetra_SensitivityOperator.hpp)
   APPEND_SET(SOURCES Piro_Epetra_NOXSolver.cpp
                      Piro_Epetra_LOCASolver.cpp
+                     Piro_NOXSolver.cpp
                      Piro_LOCASolver.cpp
                      Piro_ObserverToLOCASaveDataStrategyAdapter.cpp
                      Piro_Epetra_LOCAAdaptiveSolver.cpp

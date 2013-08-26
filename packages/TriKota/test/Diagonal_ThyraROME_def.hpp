@@ -69,7 +69,7 @@ DiagonalROME<Scalar>::DiagonalROME(
   }
 
   // Locally replicated space for g
-  g_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(comm_, 1, 1);
+  g_space_ = Thyra::locallyReplicatedDefaultSpmdVectorSpace<Scalar>(comm_, 1);
 
   // Distributed space for p
   p_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(comm_, localDim, -1);

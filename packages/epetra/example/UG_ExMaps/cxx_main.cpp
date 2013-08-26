@@ -63,12 +63,12 @@ int main(int argc, char *argv[]) {
 #endif
 
   if (Comm.MyPID()==0)
-    cout << Epetra_Version() << endl << endl;
+    std::cout << Epetra_Version() << std::endl << std::endl;
 
-  cout << Comm << endl; // Print out process information
+  std::cout << Comm << std::endl; // Print out process information
   // Get the number of global equations from the command line
   if (argc!=2) { 
-    cout << "Usage: " << argv[0] << " number_of_equations" << endl;
+    std::cout << "Usage: " << argv[0] << " number_of_equations" << std::endl;
     exit(1);
    }
   int NumGlobalElements = atoi(argv[1]);
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
   // equations on each processor.
   Epetra_Map Map(NumGlobalElements, 0, Comm);
   // Get update list and number of local equations from newly created Map.
-  cout << Map << endl;
+  std::cout << Map << std::endl;
 #ifdef UG_EX1_MPI
   MPI_Finalize() ;
 #endif

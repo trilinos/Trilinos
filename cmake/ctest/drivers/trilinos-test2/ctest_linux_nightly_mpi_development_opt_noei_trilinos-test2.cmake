@@ -88,6 +88,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DNetcdf_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/pnetcdf_4.2/lib"
   "-DNetcdf_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/pnetcdf_4.2/include"
   "-DZoltan2_ENABLE_Experimental=ON"
+  "-DTPL_ENABLE_CppUnit:BOOL=ON"
   )
 
 #

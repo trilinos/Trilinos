@@ -52,10 +52,10 @@ public:
   InverseOperator() {}
   
   //! Constructor for a given Operator and type, and default parameters.
-  InverseOperator(const Operator& Op, const string Type);
+  InverseOperator(const Operator& Op, const std::string Type);
 
   //! Constructor for a given Operator, type and parameters.
-  InverseOperator(const Operator& Op, const string Type,
+  InverseOperator(const Operator& Op, const std::string Type,
                   Teuchos::ParameterList& List);
 
   //! Copy constructor.
@@ -78,10 +78,10 @@ public:
   void Reshape();
 
   //! Reshapes the object with default values.
-  void Reshape(const Operator& Op, const string Type);
+  void Reshape(const Operator& Op, const std::string Type);
 
   //! Reshapes the object by setting the Operator and the specified type.
-  void Reshape(const Operator& Op, const string Type,
+  void Reshape(const Operator& Op, const std::string Type,
                Teuchos::ParameterList& List,
                Teuchos::ParameterList* pushlist = NULL);
 
@@ -142,7 +142,7 @@ public:
   // @{ \name Miscellaneous methods
 
   //! Prints out basic information about \c this object.
-  ostream& Print(std::ostream& os, const bool verbose = true) const;
+  std::ostream& Print(std::ostream& os, const bool verbose = true) const;
 
 private:
 

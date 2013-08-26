@@ -1,5 +1,4 @@
 
-#include <Kokkos_Host.hpp>
 #include <Kokkos_Cuda.hpp>
 
 #include <ParallelComm.hpp>

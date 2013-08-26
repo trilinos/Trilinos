@@ -50,9 +50,10 @@
 #include "Stokhos_Host_StochasticProductTensor.hpp"
 #include "Stokhos_Host_SymmetricDiagonalSpec.hpp"
 #include "Stokhos_Host_CrsProductTensor.hpp"
+#include "Stokhos_Host_TiledCrsProductTensor.hpp"
+#include "Stokhos_Host_CooProductTensor.hpp"
 #include "Stokhos_Host_FlatSparse3Tensor.hpp"
 #include "Stokhos_Host_FlatSparse3Tensor_kji.hpp"
-#include "Stokhos_Host_TiledCrsProductTensor.hpp"
 
 #include "Stokhos_LexicographicBlockSparse3Tensor.hpp"
 #include "Stokhos_Host_LexicographicBlockSparse3Tensor.hpp"
@@ -60,6 +61,8 @@
 
 #include "Kokkos_hwloc.hpp"
 #include "Kokkos_Cuda.hpp"
+
+#include "cuda_runtime_api.h"
 
 using namespace KokkosKernelsUnitTest;
 
@@ -129,6 +132,22 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, TiledCrsProductTensor_Host ) {
   success = test_crs_product_tensor<Scalar,Tensor,Device>(setup, out, params);
 }
 
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CooProductTensorPacked_Host ) {
+  typedef double Scalar;
+  typedef Kokkos::Host Device;
+  typedef Stokhos::CooProductTensor<Scalar,Device,true> Tensor;
+
+  success = test_crs_product_tensor<Scalar,Tensor,Device>(setup, out);
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CooProductTensorUnpacked_Host ) {
+  typedef double Scalar;
+  typedef Kokkos::Host Device;
+  typedef Stokhos::CooProductTensor<Scalar,Device,false> Tensor;
+
+  success = test_crs_product_tensor<Scalar,Tensor,Device>(setup, out);
+}
+
 TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, FlatSparse3Tensor_Host ) {
   typedef double Scalar;
   typedef Kokkos::Host Device;
@@ -145,7 +164,7 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, FlatSparse3Tensor_kji_Host ) {
   success = test_crs_product_tensor<Scalar,Tensor,Device>(setup, out);
 }
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, ProductTensorCijk ) {
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsProductTensorCijk ) {
   success = true;
 
   typedef double value_type;
@@ -181,7 +200,7 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, ProductTensorCijk ) {
   }
 }
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, TiledProductTensorCijk ) {
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, TiledCrsProductTensorCijk ) {
   success = true;
 
   typedef double value_type;
@@ -229,6 +248,45 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, TiledProductTensorCijk ) {
       }
     }
   }
+}
+
+template <bool Pack>
+bool test_coo_product_tensor_cijk(const UnitTestSetup& setup,
+                                  Teuchos::FancyOStream& out) {
+  bool success = true;
+
+  typedef double value_type;
+  typedef Kokkos::Host Device;
+  typedef Stokhos::CooProductTensor< value_type , Device , Pack > tensor_type ;
+
+  tensor_type tensor =
+    Stokhos::create_coo_product_tensor<Device, Pack>(
+      *setup.basis, *setup.Cijk );
+
+  const size_t nEntry = tensor.entry_count();
+  size_t i, j, k;
+  for ( size_t entry = 0 ; entry < nEntry ; ++entry ) {
+    tensor.coord(entry, i, j, k);
+    double c2 = tensor.value(entry);
+    if (j == k) c2 *= 2.0;
+    double c = setup.Cijk->getValue(i,j,k);
+
+    if (std::abs(c-c2) > std::abs(c)*setup.rel_tol + setup.abs_tol) {
+      out << "(" << i << "," << j << "," << k << "):  " << c
+          << " == " << c2 << " failed!" << std::endl;
+      success = false;
+    }
+  }
+
+  return success;
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CooProductTensorCijk_Packed ) {
+  success = test_coo_product_tensor_cijk<true>(setup, out);
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CooProductTensorCijk_Unpacked ) {
+  success = test_coo_product_tensor_cijk<false>(setup, out);
 }
 
 TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, FlatSparseCijk ) {

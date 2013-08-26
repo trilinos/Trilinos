@@ -229,6 +229,17 @@ IF (${PACKAGE_NAME}_ENABLE_Euclid)
 
 ENDIF()
 
+IF (${PACKAGE_NAME}_ENABLE_Boost)
+
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/supportgraph)
+
+  SET(HEADERS ${HEADERS}
+  supportgraph/Ifpack_SupportGraph.h
+  )
+
+
+ENDIF()
+
 # Experimental code:
 # See the comments on "experimental" code in ifpack/CMakeLists.txt.  In
 # particular, experimental headers and source files are not included
@@ -236,20 +247,20 @@ ENDIF()
 # option was set at configure time.
 #
 
-APPEND_SET(${PACKAGE_NAME}_EXPERIMENTAL_HEADERS
-  supportgraph/Ifpack_SupportGraph.h
-)
+APPEND_SET(${PACKAGE_NAME}_EXPERIMENTAL_HEADERS)
 APPEND_SET(${PACKAGE_NAME}_EXPERIMENTAL_SOURCES
 
 )
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Experimental)
 IF(${PACKAGE_NAME}_ENABLE_Experimental)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/supportgraph)
   #
   # Add experimental files to HEADERS and SOURCES.
   # 
   APPEND_SET(HEADERS ${${PACKAGE_NAME}_EXPERIMENTAL_HEADERS})
   APPEND_SET(SOURCES ${${PACKAGE_NAME}_EXPERIMENTAL_SOURCES})
+
 ENDIF() # ${PACKAGE_NAME}_ENABLE_Experimental
 
 #

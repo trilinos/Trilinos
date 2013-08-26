@@ -182,7 +182,7 @@ MOERTEL::Segment* MOERTEL::Segment_BiLinearQuad::Clone()
 /*----------------------------------------------------------------------*
  |  << operator                                              mwgee 10/05|
  *----------------------------------------------------------------------*/
-ostream& operator << (ostream& os, const MOERTEL::Segment_BiLinearQuad& seg)
+std::ostream& operator << (std::ostream& os, const MOERTEL::Segment_BiLinearQuad& seg)
 {
   seg.Print(); 
   return os;

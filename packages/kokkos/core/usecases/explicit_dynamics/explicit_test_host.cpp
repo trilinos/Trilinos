@@ -49,9 +49,9 @@
 #include <Kokkos_MultiVector.hpp>
 #include <Kokkos_MDArray.hpp>
 
-#include <Kokkos_Host.hpp>
+#include <Kokkos_Threads.hpp>
 
-#include <impl/Kokkos_Host_macros.hpp>
+#include <Kokkos_Macros.hpp>
 #include <explicit_dynamics_app.hpp>
 #include <impl/Kokkos_Clear_macros.hpp>
 
@@ -65,22 +65,22 @@ void test_Host( int beg, int end, int runs, int threads)
   if ( 0 < threads ) {
     const size_t node_thread_count = ( threads + core_topo.first - 1 ) / core_topo.first ;
 
-    Kokkos::Host::initialize( core_topo.first , node_thread_count );
+    Kokkos::Threads::initialize( std::pair<unsigned,unsigned>( core_topo.first , node_thread_count ) );
 
-    std::cout << std::endl << "\"Host with manually set threads = \" , "
+    std::cout << std::endl << "\"Threads with manually set threads = \" , "
               << core_topo.first * node_thread_count << std::endl ;
   }
   else {
-    Kokkos::Host::initialize( core_topo.first , core_topo.second * core_cap );
+    Kokkos::Threads::initialize( std::pair<unsigned,unsigned>( core_topo.first , core_topo.second * core_cap ) );
 
-    std::cout << std::endl << "\"Host with detected sequential threads = \" , "
+    std::cout << std::endl << "\"Threads with detected sequential threads = \" , "
               << core_topo.first * node_thread_count << std::endl ;
   }
 
-  explicit_dynamics::driver<float,Kokkos::Host>("Host-float", beg, end, runs);
-  explicit_dynamics::driver<double,Kokkos::Host>("Host-double", beg, end, runs);
+  explicit_dynamics::driver<float,Kokkos::Threads>("Threads-float", beg, end, runs);
+  explicit_dynamics::driver<double,Kokkos::Threads>("Threads-double", beg, end, runs);
 
-  Kokkos::Host::finalize();
+  Kokkos::Threads::finalize();
 }//test_host
 
 }// namespace

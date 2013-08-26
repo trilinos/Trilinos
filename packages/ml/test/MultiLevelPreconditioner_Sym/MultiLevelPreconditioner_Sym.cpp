@@ -219,8 +219,10 @@ int main(int argc, char *argv[]) {
   if (Comm.MyPID() == 0) PrintLine();
   ML_Epetra::SetDefaults("SA",MLList);  
 
-  MLList.set("ML print initial list",1);
-  MLList.set("ML print final list",1);
+  if(!Comm.MyPID()) {
+    MLList.set("ML print initial list",1);
+    MLList.set("ML print final list",1);
+  }
 
   MLList.set("smoother: type","ILU");
   MLList.set("coarse: type","ILUT");
@@ -251,6 +253,29 @@ int main(int argc, char *argv[]) {
                                TotalErrorResidual, TotalErrorExactSol);
 
 
+  // =========================== //
+  // Ifpack G-S w/ L1
+  // =========================== //
+#ifdef HAVE_ML_IFPACK
+  if (Comm.MyPID() == 0) PrintLine();
+  ML_Epetra::SetDefaults("SA",MLList);  
+  MLList.set("smoother: use l1 Gauss-Seidel",true);
+  MLList.set("smoother: type", "Gauss-Seidel");
+  TestMultiLevelPreconditioner(mystring, MLList, Problem, 
+                               TotalErrorResidual, TotalErrorExactSol);
+#endif
+
+  // =========================== //
+  // Ifpack SGS w/ L1
+  // =========================== //
+#ifdef HAVE_ML_IFPACK
+  if (Comm.MyPID() == 0) PrintLine();
+  ML_Epetra::SetDefaults("SA",MLList);  
+  MLList.set("smoother: use l1 Gauss-Seidel",true);
+  MLList.set("smoother: type", "symmetric Gauss-Seidel");
+  TestMultiLevelPreconditioner(mystring, MLList, Problem, 
+                               TotalErrorResidual, TotalErrorExactSol);
+#endif
 
 
   // ===================== //

@@ -149,8 +149,8 @@ int main(int argc, char *argv[])
   for (int i = 0 ; i < NumVectors ; ++i) {
     TotalNorm += Norm2[i];
     if (Norm2[i] > 1e-13) {
-      cout << "Norm2[" << i << "] = " << Norm2[i] << endl;
-      cout << "Test `ML_Operator2Epetra_RowMatrix.exe' failed!" << endl;
+      std::cout << "Norm2[" << i << "] = " << Norm2[i] << std::endl;
+      std::cout << "Test `ML_Operator2Epetra_RowMatrix.exe' failed!" << std::endl;
       ML_EXIT(EXIT_FAILURE); 
     }
   }
@@ -158,8 +158,8 @@ int main(int argc, char *argv[])
   // at this point the test is passed. Some fancy (??) output,
   // and I give up.
   if (proc_config[AZ_node] == 0) {
-    cout << "Total norm = " << TotalNorm << endl;
-    cout << "Test `ML_Operator2Epetra_RowMatrix.exe' passed!" << endl;
+    std::cout << "Total norm = " << TotalNorm << std::endl;
+    std::cout << "Test `ML_Operator2Epetra_RowMatrix.exe' passed!" << std::endl;
   }
     
   // free memory

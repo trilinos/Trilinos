@@ -1,4 +1,5 @@
 
+#include <KokkosCore_config.h>
 #include <ParallelComm.hpp>
 #include <sstream>
 #include <iostream>
@@ -24,7 +25,7 @@ int main( int argc , char ** argv )
   if ( which == std::string("host") ) {
     Test::test_host( machine , input );
   }
-#if defined(HAVE_CUDA)
+#if defined(KOKKOS_HAVE_CUDA)
   else if ( which == std::string("cuda") ) {
     Test::test_cuda( machine , input );
   }

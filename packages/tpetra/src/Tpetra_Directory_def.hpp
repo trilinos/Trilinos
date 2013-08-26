@@ -84,6 +84,45 @@ namespace Tpetra {
   }
 
   template<class LO, class GO, class NT>
+  Directory<LO, GO, NT>::
+  Directory (const Teuchos::RCP<const Map<LO, GO, NT> >& map,
+             const Tpetra::Details::TieBreak<LO,GO> & tie_break)
+  {
+    // Create an implementation object of the appropriate type,
+    // depending on whether the Map is distributed or replicated, and
+    // contiguous or noncontiguous.
+    RCP<const Details::Directory<LO, GO, NT> > dir;
+    if (map->isDistributed ()) {
+      if (map->isUniform ()) {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::"
+          "Directory constructor failed to create Directory implementation.  "
+          "No implementation exists for the ContiguousUniformDirectory "
+          "using  a TieBreak object. Please report need for this use case to "
+          "the Tpetra developers.");
+        // dir = rcp (new Details::ContiguousUniformDirectory<LO, GO, NT> (map));
+      }
+      else if (map->isContiguous ()) {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::"
+          "Directory constructor failed to create Directory implementation.  "
+          "No implementation exists for the DistributedNoncontinguousDirectory "
+          "using  a TieBreak object. Please report need for this use case to "
+          "the Tpetra developers.");
+        // dir = rcp (new Details::DistributedContiguousDirectory<LO, GO, NT> (map,tie_break));
+      }
+      else {
+        dir = rcp (new Details::DistributedNoncontiguousDirectory<LO, GO, NT> (map,tie_break));
+      }
+    }
+    else {
+      dir = rcp (new Details::ReplicatedDirectory<LO, GO, NT> (map));
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(dir.is_null (), std::logic_error, "Tpetra::"
+      "Directory constructor failed to create Directory implementation.  "
+      "Please report this bug to the Tpetra developers.");
+    impl_ = dir;
+  }
+
+  template<class LO, class GO, class NT>
   Directory<LO, GO, NT>::Directory() {}
 
   template<class LO, class GO, class NT>

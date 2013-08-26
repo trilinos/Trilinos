@@ -890,7 +890,7 @@ LOCA::Epetra::AdaptiveStepper::buildConstrainedGroup(
   std::string methodName = "LOCA::Epetra::AdaptiveStepper::buildConstrainedGroup()";
 
   Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface> constraints;
-  Teuchos::RCP< std::vector<string> > constraintParamNames;
+  Teuchos::RCP< std::vector<std::string> > constraintParamNames;
 
   // Get constraint object
   if ((*constraintsList).INVALID_TEMPLATE_QUALIFIER
@@ -903,12 +903,12 @@ LOCA::Epetra::AdaptiveStepper::buildConstrainedGroup(
 
   // Get parameter names for constraints
   if ((*constraintsList).INVALID_TEMPLATE_QUALIFIER
-      isType< Teuchos::RCP< std::vector<string> > > ("Constraint Parameter Names"))
+      isType< Teuchos::RCP< std::vector<std::string> > > ("Constraint Parameter Names"))
     constraintParamNames = (*constraintsList).INVALID_TEMPLATE_QUALIFIER
-      get< Teuchos::RCP< std::vector<string> > > ("Constraint Parameter Names");
+      get< Teuchos::RCP< std::vector<std::string> > > ("Constraint Parameter Names");
   else
     globalData->locaErrorCheck->throwError(methodName,
-	  "\"Constraint Parameter Names\" parameter is not of type Teuchos::RCP< std::vector<string> >!");
+	  "\"Constraint Parameter Names\" parameter is not of type Teuchos::RCP< std::vector<std::string> >!");
 
   // Convert names to integer IDs
   std::vector<int> constraintParamIDs(constraintParamNames->size());

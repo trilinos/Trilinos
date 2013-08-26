@@ -45,7 +45,8 @@
 
 #include <Kokkos_Macros.hpp>
 #include <Kokkos_View.hpp>
-#include <Kokkos_Host.hpp>
+#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Threads.hpp>
 
 #include <impl/Kokkos_Timer.hpp>
 
@@ -76,6 +77,8 @@ void modified_gram_schmidt(
 
   comm::Machine machine )
 {
+  const Kokkos::ALL ALL ;
+
   typedef Kokkos::View< ScalarQ * ,
                              Kokkos::LayoutLeft ,
                              DeviceType ,
@@ -93,7 +96,7 @@ void modified_gram_schmidt(
 
   for ( int j = 0 ; j < count ; ++j ) {
 
-    const vector_view_type  Qj = Kokkos::subview< vector_view_type >( Q , j );
+    const vector_view_type  Qj = Kokkos::subview< vector_view_type >( Q , ALL , j );
 
     // reads  += length
     // writes += 0
@@ -109,7 +112,7 @@ void modified_gram_schmidt(
 
     for ( int k = j + 1 ; k < count ; ++k ) {
 
-      const vector_view_type  Qk = Kokkos::subview< vector_view_type >( Q , k );
+      const vector_view_type  Qk = Kokkos::subview< vector_view_type >( Q , ALL , k );
 
       // reads  += 2 * length
       // writes += 0
@@ -169,7 +172,7 @@ void driver_modified_gram_schmidt
 #if defined( __CUDACC__ )
 Kokkos::Cuda
 #else
-Kokkos::Host
+Kokkos::Threads
 #endif
 >
   ( const int length_begin ,
@@ -181,7 +184,7 @@ Kokkos::Host
 #if defined( __CUDACC__ )
   typedef Kokkos::Cuda Device ;
 #else
-  typedef Kokkos::Host Device ;
+  typedef Kokkos::Threads Device ;
 #endif
 
   const int comm_size = comm::size( machine );
@@ -190,7 +193,7 @@ Kokkos::Host
   if ( comm_rank == 0 ) {
 
     std::cout << ( Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value ?
-                   "\"Cuda\"" : "\"Host\"" )
+                   "\"Cuda\"" : "\"Threads\"" )
               << " , \"Double Precision\""
               << std::endl ;
 

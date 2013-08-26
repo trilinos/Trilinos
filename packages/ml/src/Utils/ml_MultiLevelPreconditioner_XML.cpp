@@ -29,7 +29,7 @@ using namespace Teuchos;
 
 // ============================================================================ 
 static void AddParameter(Teuchos::ParameterList& List, 
-                         const string& name, 
+                         const std::string& name, 
                          const Teuchos::ParameterEntry& entry)
 {
   if (entry.isType<int>())
@@ -44,9 +44,9 @@ static void AddParameter(Teuchos::ParameterList& List,
   {
     List.set(name, getValue<float>(entry));
   }
-  else if (entry.isType<string>())
+  else if (entry.isType<std::string>())
   {
-    List.set(name, getValue<string>(entry));
+    List.set(name, getValue<std::string>(entry));
   }
   else if (entry.isType<char>())
   {
@@ -65,14 +65,14 @@ static void AddSubList(Teuchos::ParameterList& List, Teuchos::ParameterList& Lis
   for (ParameterList::ConstIterator i = ListToAdd.begin(); i != ListToAdd.end(); ++i)
   {
     const ParameterEntry& val = ListToAdd.entry(i);
-    const string& name = ListToAdd.name(i);
+    const std::string& name = ListToAdd.name(i);
     if (val.isList()) AddSubList(List.sublist(name), ListToAdd.sublist(name));
     AddParameter(List, name, val);
   }
 }
 
 // ============================================================================ 
-int ML_Epetra::ReadXML(const string &FileName, ParameterList &List,
+int ML_Epetra::ReadXML(const std::string &FileName, ParameterList &List,
             const Epetra_Comm &Comm)
 {
   int i = 0, j;
@@ -92,9 +92,9 @@ int ML_Epetra::ReadXML(const string &FileName, ParameterList &List,
 
   if (j == 0) {
     if (OutputLevel && Comm.MyPID() == 0)
-      cout << "***" << endl
-           << "*** Unable to open XML input file '" << FileName << "'" << endl
-           << "***" << endl;
+      std::cout << "***" << std::endl
+           << "*** Unable to open XML input file '" << FileName << "'" << std::endl
+           << "***" << std::endl;
     return(0);
   }
   
@@ -120,7 +120,7 @@ int ML_Epetra::ReadXML(const string &FileName, ParameterList &List,
   else
     ao = 1;
 
-  string xxx = ListToAdd.get("SetDefaults", "not-set");
+  std::string xxx = ListToAdd.get("SetDefaults", "not-set");
   if (xxx != "not-set") {
     ML_Epetra::SetDefaults(xxx, ListToAdd,0,0,false);
   }
@@ -130,16 +130,16 @@ int ML_Epetra::ReadXML(const string &FileName, ParameterList &List,
   if  (List.isParameter("ML output")) OutputLevel = List.get("ML output", 0);
   else if (List.isParameter("output")) OutputLevel = List.get("output", 0);
   if ( (5 < OutputLevel) && (Comm.MyPID() == 0) ) {
-    cout << "***" << endl;
-    cout << "***" << " Reading XML file `" << FileName << "'..." << endl;
+    std::cout << "***" << std::endl;
+    std::cout << "***" << " Reading XML file `" << FileName << "'..." << std::endl;
     if (ao == 0)
-      cout << "***" << " Reset stored list" << endl;
+      std::cout << "***" << " Reset stored list" << std::endl;
     else if (ao == 1)
-      cout << "***" << " Parameters are added to the stored list" << endl;
+      std::cout << "***" << " Parameters are added to the stored list" << std::endl;
     if (xxx != "not-set")
-      cout << "***" << " Setting default values to type `"
-           << xxx << "'" << endl;
-    cout << "***" << endl;
+      std::cout << "***" << " Setting default values to type `"
+           << xxx << "'" << std::endl;
+    std::cout << "***" << std::endl;
   }
 
   return(1);

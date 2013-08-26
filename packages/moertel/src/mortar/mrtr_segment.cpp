@@ -148,7 +148,7 @@ bool MOERTEL::Segment::Print() const
   std::map<int,Teuchos::RCP<MOERTEL::Function> >::const_iterator curr;
   for (curr=functions_.begin(); curr != functions_.end(); ++curr)
     std::cout << curr->second->Type() << "  ";
-  std::cout << endl;
+  std::cout << std::endl;
   return true;
 }
 
@@ -252,7 +252,7 @@ bool MOERTEL::Segment::EvaluateFunction(int id, const double* xi, double* val,
 /*----------------------------------------------------------------------*
  |  << operator                                              mwgee 06/05|
  *----------------------------------------------------------------------*/
-ostream& operator << (ostream& os, const MOERTEL::Segment& seg)
+std::ostream& operator << (std::ostream& os, const MOERTEL::Segment& seg)
 {
   seg.Print(); 
   return os;

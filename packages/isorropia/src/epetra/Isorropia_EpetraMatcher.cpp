@@ -60,7 +60,7 @@ Matcher::Matcher(const Epetra_CrsMatrix * matrixPtr,const Teuchos::ParameterList
     rc=matrixPtr->ExtractCrsDataPointers(CRS_pointers_,CRS_indices_,CRS_vals_);
     
     if(rc!=0)
-        std::cout<<"Input Processing Failed"<<endl;
+        std::cout<<"Input Processing Failed"<<std::endl;
         
     U_=matrixPtr->NumGlobalRows();
     V_=matrixPtr->NumGlobalCols();
@@ -81,7 +81,7 @@ Matcher::Matcher(const Epetra_CrsMatrix * matrixPtr,const Teuchos::ParameterList
                     choice_=4;
     
 #ifdef ISORROPIA_MATCHING_STATS
-    std::cout<<"(U,V,E):"<<U_<<","<<V_<<","<<E_<<endl;
+    std::cout<<"(U,V,E):"<<U_<<","<<V_<<","<<E_<<std::endl;
 #endif
     
     finish_=false;
@@ -135,7 +135,7 @@ Matcher::Matcher(const Epetra_CrsMatrix * matrixPtr,const Teuchos::ParameterList
     #pragma omp parallel
     numThread_=omp_get_num_threads();
 #endif
-    //std::cout<<"finished:"<<endl;
+    //std::cout<<"finished:"<<std::endl;
 }
 
 Matcher::Matcher(Teuchos::RCP<const Epetra_CrsMatrix> matrixPtr,const Teuchos::ParameterList& paramlist)
@@ -147,7 +147,7 @@ Matcher::Matcher(Teuchos::RCP<const Epetra_CrsMatrix> matrixPtr,const Teuchos::P
     int rc=0,i;
     rc=matrixPtr->ExtractCrsDataPointers(CRS_pointers_,CRS_indices_,CRS_vals_);
     if(rc!=0)
-        std::cout<<"Input Processing Failed"<<endl;
+        std::cout<<"Input Processing Failed"<<std::endl;
         
     U_=matrixPtr->NumGlobalRows();
     V_=matrixPtr->NumGlobalCols();
@@ -168,7 +168,7 @@ Matcher::Matcher(Teuchos::RCP<const Epetra_CrsMatrix> matrixPtr,const Teuchos::P
                     choice_=4;
     
 #ifdef ISORROPIA_MATCHING_STATS
-    std::cout<<"(U,V,E):"<<U_<<","<<V_<<","<<E_<<endl;
+    std::cout<<"(U,V,E):"<<U_<<","<<V_<<","<<E_<<std::endl;
 #endif
     
     finish_=false;
@@ -223,7 +223,7 @@ Matcher::Matcher(Teuchos::RCP<const Epetra_CrsMatrix> matrixPtr,const Teuchos::P
     numThread_=omp_get_num_threads();
 #endif
 
-    std::cout<<"finished:"<<endl;
+    std::cout<<"finished:"<<std::endl;
 }
 
 Matcher::Matcher(const Epetra_CrsGraph * graphPtr,const Teuchos::ParameterList& paramlist)
@@ -260,7 +260,7 @@ Matcher::Matcher(const Epetra_CrsGraph * graphPtr,const Teuchos::ParameterList& 
                     choice_=4;
     
 #ifdef ISORROPIA_MATCHING_STATS
-    std::cout<<"(U,V,E):"<<U_<<","<<V_<<","<<E_<<endl;
+    std::cout<<"(U,V,E):"<<U_<<","<<V_<<","<<E_<<std::endl;
 #endif
     
     finish_=false;
@@ -350,7 +350,7 @@ Matcher::Matcher(Teuchos::RCP<const Epetra_CrsGraph> graphPtr,const Teuchos::Par
                     choice_=4;
     
 #ifdef ISORROPIA_MATCHING_STATS
-    std::cout<<"(U,V,E):"<<U_<<","<<V_<<","<<E_<<endl;
+    std::cout<<"(U,V,E):"<<U_<<","<<V_<<","<<E_<<std::endl;
 #endif
     
     finish_=false;
@@ -784,7 +784,7 @@ int Matcher::construct_layered_graph()
                 }   
             }
 #ifdef ISORROPIA_HAVE_OMP
-            #pragma omp flush
+            #pragma omp std::flush
 #endif
             startInd[tid]=pqind;
         }   
@@ -1092,7 +1092,7 @@ int Matcher::dfs_augment()
         {
             
 #ifdef ISORROPIA_HAVE_OMP
-            #pragma omp flush
+            #pragma omp std::flush
 #endif
             flag=1;
             int u=unmatchedU_[i];
@@ -1100,7 +1100,7 @@ int Matcher::dfs_augment()
             if(ind!=-1)
             {   
 #ifdef ISORROPIA_HAVE_OMP
-                #pragma omp flush
+                #pragma omp std::flush
 #endif
                 flag1=1;
                 int lnt=augment_matching(ind);
@@ -1130,8 +1130,8 @@ int Matcher::dfs_augment()
 #ifdef ISORROPIA_MATCHING_STATS
             sort(med.begin(),med.end());
             totc+=count;
-            //std::cout<<"["<<icm_<<"] unmatched="<<index<<" matched="<<count<<" size="<<totc<<" minL= "<<minL<<" maxL="<<maxL<<" medL="<<med[count/2]<<endl;
-            std::cout<<icm_<<","<<index<<","<<count<<","<<(index*1.0)/count<<","<<minL<<","<<med[count/2]<<","<<maxL<<endl;
+            //std::cout<<"["<<icm_<<"] unmatched="<<index<<" matched="<<count<<" size="<<totc<<" minL= "<<minL<<" maxL="<<maxL<<" medL="<<med[count/2]<<std::endl;
+            std::cout<<icm_<<","<<index<<","<<count<<","<<(index*1.0)/count<<","<<minL<<","<<med[count/2]<<","<<maxL<<std::endl;
             med.clear();
 #endif
             
@@ -1227,22 +1227,22 @@ int Matcher::match_hk()
     while(true)
     {
         icm_++;
-        //std::cout<<"bfs"<<endl;
+        //std::cout<<"bfs"<<std::endl;
         construct_layered_graph();
         if(finish_)
             break;
-        //std::cout<<"dfs"<<endl;
+        //std::cout<<"dfs"<<std::endl;
         count=find_set_del_M();
         if(choice_==1)
         {   
-            //std::cout<<"dw"<<endl;
+            //std::cout<<"dw"<<std::endl;
             count+=DW_phase();
         }
 #ifdef ISORROPIA_MATCHING_STATS
         totc+=count;
         sort(med.begin(),med.end());
-        //std::cout<<"["<<icm_<<"] unmatched="<<BFSInd_<<" matched="<<count<<" size="<<totc<<" minL= "<<minL<<" maxL="<<maxL<<" medL="<<med[count/2]<<endl;
-        std::cout<<icm_<<","<<BFSInd_<<","<<count<<","<<(BFSInd_*1.0)/count<<","<<minL<<","<<med[count/2]<<","<<maxL<<endl;
+        //std::cout<<"["<<icm_<<"] unmatched="<<BFSInd_<<" matched="<<count<<" size="<<totc<<" minL= "<<minL<<" maxL="<<maxL<<" medL="<<med[count/2]<<std::endl;
+        std::cout<<icm_<<","<<BFSInd_<<","<<count<<","<<(BFSInd_*1.0)/count<<","<<minL<<","<<med[count/2]<<","<<maxL<<std::endl;
         med.clear();
 #endif
     }

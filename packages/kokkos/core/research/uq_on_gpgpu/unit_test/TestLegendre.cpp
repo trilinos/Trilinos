@@ -46,8 +46,6 @@
 #include <cmath>
 #include <utility>
 
-#include <Kokkos_Host.hpp>
-
 #include <Kokkos_LegendrePolynomial.hpp>
 #include <Kokkos_ProductTensorLegendre.hpp>
 #include <Kokkos_CrsProductTensorLegendre.hpp>

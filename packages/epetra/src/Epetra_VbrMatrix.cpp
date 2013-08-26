@@ -981,7 +981,7 @@ int Epetra_VbrMatrix::OptimizeStorage() {
 
   if (StorageOptimized()) return(0); // Have we been here before?
 
-  // cout << __FILE__ << " " << __LINE__ << " " << Graph_->NumMyNonzeros() << endl ; 
+  // cout << __FILE__ << " " << __LINE__ << " " << Graph_->NumMyNonzeros() << std::endl ; 
 
   bool ConstantShape = true;
   int i,j;
@@ -1017,7 +1017,7 @@ int Epetra_VbrMatrix::OptimizeStorage() {
       }
     }    
   }  
-  // cout << __FILE__ << " " << __LINE__ << " " << Graph_->NumMyNonzeros() << endl ; 
+  // cout << __FILE__ << " " << __LINE__ << " " << Graph_->NumMyNonzeros() << std::endl ; 
 
   if ( ConstantShape ) {
 
@@ -1045,7 +1045,7 @@ int Epetra_VbrMatrix::OptimizeStorage() {
     StorageOptimized_ = true ; 
   }
 
-  // cout << __FILE__ << " " << __LINE__ << " " << Graph_->NumMyNonzeros() << endl ; 
+  // cout << __FILE__ << " " << __LINE__ << " " << Graph_->NumMyNonzeros() << std::endl ; 
 
 
   /* Work on later...
@@ -1096,7 +1096,7 @@ int Epetra_VbrMatrix::OptimizeStorage() {
      tmp += NumEntries;
      }
   */
-  // cout << __FILE__ << " " << __LINE__ << " " << Graph_->NumMyNonzeros() << endl ; 
+  // cout << __FILE__ << " " << __LINE__ << " " << Graph_->NumMyNonzeros() << std::endl ; 
   return(0);
 }
 //==========================================================================
@@ -1111,7 +1111,7 @@ int Epetra_VbrMatrix::ExtractGlobalRowCopy(int GlobalRow,
   (void)NumEntries;
   (void)values;
   (void)Indices;
-  cout << "Must implement..." << endl;
+  std::cout << "Must implement..." << std::endl;
   return(0);
 }
 //==========================================================================
@@ -3294,40 +3294,40 @@ int Epetra_VbrMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epe
   return(0);
 }
 //=========================================================================
-void Epetra_VbrMatrix::Print(ostream& os) const {
+void Epetra_VbrMatrix::Print(std::ostream& os) const {
   int MyPID = RowMap().Comm().MyPID();
   int NumProc = RowMap().Comm().NumProc();
 
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
       if (MyPID==0) {
-  os <<  "\nNumber of Global Block Rows  = "; os << NumGlobalBlockRows64(); os << endl;
-  os <<    "Number of Global Block Cols  = "; os << NumGlobalBlockCols64(); os << endl;
-  os <<    "Number of Global Block Diags = "; os << NumGlobalBlockDiagonals64(); os << endl;
-  os <<    "Number of Global Blk Entries = "; os << NumGlobalBlockEntries64(); os << endl;
-  os <<    "Global Max Num Block Entries = "; os << GlobalMaxNumBlockEntries(); os << endl;
-  os <<  "\nNumber of Global Rows        = "; os << NumGlobalRows64(); os << endl;
-  os <<    "Number of Global Cols        = "; os << NumGlobalCols64(); os << endl;
-  os <<    "Number of Global Diagonals   = "; os << NumGlobalDiagonals64(); os << endl;
-  os <<    "Number of Global Nonzeros    = "; os << NumGlobalNonzeros64(); os << endl;
-  os <<    "Global Maximum Num Entries   = "; os << GlobalMaxNumNonzeros(); os << endl;
-  if (LowerTriangular()) os <<    " ** Matrix is Lower Triangular **"; os << endl;
-  if (UpperTriangular()) os <<    " ** Matrix is Upper Triangular **"; os << endl;
-  if (NoDiagonal())      os <<    " ** Matrix has no diagonal     **"; os << endl; os << endl;
+  os <<  "\nNumber of Global Block Rows  = "; os << NumGlobalBlockRows64(); os << std::endl;
+  os <<    "Number of Global Block Cols  = "; os << NumGlobalBlockCols64(); os << std::endl;
+  os <<    "Number of Global Block Diags = "; os << NumGlobalBlockDiagonals64(); os << std::endl;
+  os <<    "Number of Global Blk Entries = "; os << NumGlobalBlockEntries64(); os << std::endl;
+  os <<    "Global Max Num Block Entries = "; os << GlobalMaxNumBlockEntries(); os << std::endl;
+  os <<  "\nNumber of Global Rows        = "; os << NumGlobalRows64(); os << std::endl;
+  os <<    "Number of Global Cols        = "; os << NumGlobalCols64(); os << std::endl;
+  os <<    "Number of Global Diagonals   = "; os << NumGlobalDiagonals64(); os << std::endl;
+  os <<    "Number of Global Nonzeros    = "; os << NumGlobalNonzeros64(); os << std::endl;
+  os <<    "Global Maximum Num Entries   = "; os << GlobalMaxNumNonzeros(); os << std::endl;
+  if (LowerTriangular()) os <<    " ** Matrix is Lower Triangular **"; os << std::endl;
+  if (UpperTriangular()) os <<    " ** Matrix is Upper Triangular **"; os << std::endl;
+  if (NoDiagonal())      os <<    " ** Matrix has no diagonal     **"; os << std::endl; os << std::endl;
       }
 
-      os <<  "\nNumber of My Block Rows  = "; os << NumMyBlockRows(); os << endl;
-      os <<    "Number of My Block Cols  = "; os << NumMyBlockCols(); os << endl;
-      os <<    "Number of My Block Diags = "; os << NumMyBlockDiagonals(); os << endl;
-      os <<    "Number of My Blk Entries = "; os << NumMyBlockEntries(); os << endl;
-      os <<    "My Max Num Block Entries = "; os << MaxNumBlockEntries(); os << endl;
-      os <<  "\nNumber of My Rows        = "; os << NumMyRows(); os << endl;
-      os <<    "Number of My Cols        = "; os << NumMyCols(); os << endl;
-      os <<    "Number of My Diagonals   = "; os << NumMyDiagonals(); os << endl;
-      os <<    "Number of My Nonzeros    = "; os << NumMyNonzeros(); os << endl;
-      os <<    "My Maximum Num Entries   = "; os << MaxNumBlockEntries(); os << endl; os << endl;
+      os <<  "\nNumber of My Block Rows  = "; os << NumMyBlockRows(); os << std::endl;
+      os <<    "Number of My Block Cols  = "; os << NumMyBlockCols(); os << std::endl;
+      os <<    "Number of My Block Diags = "; os << NumMyBlockDiagonals(); os << std::endl;
+      os <<    "Number of My Blk Entries = "; os << NumMyBlockEntries(); os << std::endl;
+      os <<    "My Max Num Block Entries = "; os << MaxNumBlockEntries(); os << std::endl;
+      os <<  "\nNumber of My Rows        = "; os << NumMyRows(); os << std::endl;
+      os <<    "Number of My Cols        = "; os << NumMyCols(); os << std::endl;
+      os <<    "Number of My Diagonals   = "; os << NumMyDiagonals(); os << std::endl;
+      os <<    "Number of My Nonzeros    = "; os << NumMyNonzeros(); os << std::endl;
+      os <<    "My Maximum Num Entries   = "; os << MaxNumBlockEntries(); os << std::endl; os << std::endl;
 
-      os << flush;
+      os << std::flush;
       
     }
     // Do a few global ops to give I/O a chance to complete
@@ -3354,7 +3354,7 @@ void Epetra_VbrMatrix::Print(ostream& os) const {
   os <<  "   Block Col Index \n";
   os.width(20);
   os <<  "   values     ";
-  os << endl;
+  os << std::endl;
       }
       for (i=0; i<NumBlockRows1; i++) {
   int BlockRow1 = GRID64(i); // Get global row number// FIXME long long
@@ -3368,24 +3368,24 @@ void Epetra_VbrMatrix::Print(ostream& os) const {
     os.width(10);
     os <<  BlockRow1 ; os << "    ";  
     os.width(10);
-    os <<  BlockIndices1[j]; os << "    " << endl;
+    os <<  BlockIndices1[j]; os << "    " << std::endl;
     os.width(20);
 
           if (Entries1[j] == 0) {
-            os << "Block Entry == NULL"<<endl;
+            os << "Block Entry == NULL"<< std::endl;
             continue;
           }
 
     Epetra_SerialDenseMatrix entry_view(View, Entries1[j]->A(), Entries1[j]->LDA(),
            RowDim1, Entries1[j]->N());
           os << entry_view; os << "    ";
-    os << endl;
+    os << std::endl;
   }
       }
 
       delete [] BlockIndices1;
       
-      os << flush;
+      os << std::flush;
       
     }
     // Do a few global ops to give I/O a chance to complete

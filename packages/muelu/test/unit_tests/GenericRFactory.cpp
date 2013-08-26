@@ -186,8 +186,8 @@ namespace MueLuTests {
     // note: the Epetra matrix-matrix multiplication using implicit transpose is buggy in parallel case
     //       (for multiplication of a square matrix with a rectangular matrix)
     //       however it seems to work for two rectangular matrices
-    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > RP = MueLu::Utils<Scalar,LO,GO>::Multiply(*R1,false,*P1,false);
-    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtP = MueLu::Utils<Scalar,LO,GO>::Multiply(*P1,true,*P1,false);
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > RP = MueLu::Utils<Scalar,LO,GO>::Multiply(*R1,false,*P1,false,out);
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtP = MueLu::Utils<Scalar,LO,GO>::Multiply(*P1,true,*P1,false,out);
 
     RCP<Vector> x = VectorFactory::Build(RP->getDomainMap());
     RCP<Vector> bRP  = VectorFactory::Build(RP->getRangeMap());
@@ -199,8 +199,8 @@ namespace MueLuTests {
 
     TEST_EQUALITY(bRP->norm1() - bPtP->norm1() < 1e-12, true);
 
-    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > RP2 = MueLu::Utils<Scalar,LO,GO>::Multiply(*R2,false,*P2,false);
-    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtP2 = MueLu::Utils<Scalar,LO,GO>::Multiply(*P2,true,*P2,false);
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > RP2 = MueLu::Utils<Scalar,LO,GO>::Multiply(*R2,false,*P2,false,out);
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtP2 = MueLu::Utils<Scalar,LO,GO>::Multiply(*P2,true,*P2,false,out);
 
     x = VectorFactory::Build(RP2->getDomainMap());
     bRP  = VectorFactory::Build(RP2->getRangeMap());
@@ -253,7 +253,7 @@ namespace MueLuTests {
       if (comm->getRank() == 0)
         out << "||NS|| = " << norms[0] << std::endl;
 
-      RCP<PgPFactory>         Pfact = rcp( new PgPFactory());
+      RCP<PgPFactory>        Pfact = rcp( new PgPFactory());
       RCP<Factory>           Rfact = rcp( new GenericRFactory() );
       RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
 
@@ -268,24 +268,24 @@ namespace MueLuTests {
 
       // Multigrid setup phase (using default parameters)
       FactoryManager M0; // how to build aggregates and smoother of the first level
-      M0.SetFactory("A", Acfact);
-      M0.SetFactory("P", Pfact);
-      M0.SetFactory("R", Rfact);
-      M0.SetFactory("Smoother", SmooFact);
+      M0.SetFactory("A",            Acfact);
+      M0.SetFactory("P",            Pfact);
+      M0.SetFactory("R",            Rfact);
+      M0.SetFactory("Smoother",     SmooFact);
       M0.SetFactory("CoarseSolver", SmooFact);
 
       FactoryManager M1; // first coarse level (Plain aggregation)
-      M1.SetFactory("A", Acfact);
-      M1.SetFactory("P", Pfact);
-      M1.SetFactory("R", Rfact);
-      M1.SetFactory("Smoother", SmooFact);
+      M1.SetFactory("A",            Acfact);
+      M1.SetFactory("P",            Pfact);
+      M1.SetFactory("R",            Rfact);
+      M1.SetFactory("Smoother",     SmooFact);
       M1.SetFactory("CoarseSolver", SmooFact);
 
       FactoryManager M2; // last level (SA)
-      M2.SetFactory("A", Acfact);
-      M2.SetFactory("P", Pfact);
-      M2.SetFactory("R", Rfact);
-      M2.SetFactory("Smoother", SmooFact);
+      M2.SetFactory("A",            Acfact);
+      M2.SetFactory("P",            Pfact);
+      M2.SetFactory("R",            Rfact);
+      M2.SetFactory("Smoother",     SmooFact);
       M2.SetFactory("CoarseSolver", SmooFact);
 
       bool bIsLastLevel = false;
@@ -297,8 +297,10 @@ namespace MueLuTests {
       RCP<Level> l1;
       RCP<Level> l2;
 
-      if(H.GetNumLevels() > 1) l1 = H.GetLevel(1);
-      if(H.GetNumLevels() > 2) l2 = H.GetLevel(2);
+      std::cout << "i = " << i << std::endl;
+
+      if (H.GetNumLevels() > 1) l1 = H.GetLevel(1);
+      if (H.GetNumLevels() > 2) l2 = H.GetLevel(2);
 
       /*RCP<Teuchos::FancyOStream> stdout = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
       l0->print(*stdout,Teuchos::VERB_EXTREME);
@@ -306,43 +308,48 @@ namespace MueLuTests {
       if(l2 != Teuchos::null) l2->print(*stdout,Teuchos::VERB_EXTREME);*/
 
       TEST_EQUALITY(l0->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
-      TEST_EQUALITY(l0->IsAvailable("PostSmoother", MueLu::NoFactory::get()), true);
-      TEST_EQUALITY(l0->IsAvailable("A",            MueLu::NoFactory::get()), true);
-      TEST_EQUALITY(l0->GetKeepFlag("PreSmoother",  MueLu::NoFactory::get()), MueLu::Final);
-      TEST_EQUALITY(l0->GetKeepFlag("A",            MueLu::NoFactory::get()), MueLu::UserData);
-      TEST_EQUALITY(l0->IsAvailable("P",            MueLu::NoFactory::get()), false);
+      TEST_EQUALITY(l0->IsAvailable("PostSmoother", MueLu::NoFactory::get()), (H.GetNumLevels() > 1 ? true : false));
       TEST_EQUALITY(l0->IsAvailable("R",            MueLu::NoFactory::get()), false);
-      TEST_EQUALITY(l0->IsRequested("P",            MueLu::NoFactory::get()), false);
+      TEST_EQUALITY(l0->IsAvailable("A",            MueLu::NoFactory::get()), true);
+      TEST_EQUALITY(l0->IsAvailable("P",            MueLu::NoFactory::get()), false);
+      TEST_EQUALITY(l0->GetKeepFlag("PreSmoother",  MueLu::NoFactory::get()), MueLu::Final);
+      if (H.GetNumLevels() > 1)
+        TEST_EQUALITY(l0->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final);
       TEST_EQUALITY(l0->IsRequested("R",            MueLu::NoFactory::get()), false);
+      TEST_EQUALITY(l0->GetKeepFlag("A",            MueLu::NoFactory::get()), MueLu::UserData);
+      TEST_EQUALITY(l0->IsRequested("P",            MueLu::NoFactory::get()), false);
 
-      if(l1 != Teuchos::null) {
+      if (l1 != Teuchos::null) {
         TEST_EQUALITY(l1->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
-        TEST_EQUALITY(l1->IsAvailable("PostSmoother", MueLu::NoFactory::get()), true);
-        TEST_EQUALITY(l1->IsAvailable("P",            MueLu::NoFactory::get()), true);
+        TEST_EQUALITY(l1->IsAvailable("PostSmoother", MueLu::NoFactory::get()), (H.GetNumLevels() > 2 ? true : false));
         TEST_EQUALITY(l1->IsAvailable("R",            MueLu::NoFactory::get()), true);
         TEST_EQUALITY(l1->IsAvailable("A",            MueLu::NoFactory::get()), true);
+        TEST_EQUALITY(l1->IsAvailable("P",            MueLu::NoFactory::get()), true);
         TEST_EQUALITY(l1->GetKeepFlag("A",            MueLu::NoFactory::get()), MueLu::Final);
         TEST_EQUALITY(l1->GetKeepFlag("P",            MueLu::NoFactory::get()), MueLu::Final);
         TEST_EQUALITY(l1->GetKeepFlag("R",            MueLu::NoFactory::get()), MueLu::Final);
-        TEST_EQUALITY(l1->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final);
+        TEST_EQUALITY(l1->GetKeepFlag("PreSmoother",  MueLu::NoFactory::get()), MueLu::Final);
+        if (H.GetNumLevels() > 2)
+          TEST_EQUALITY(l1->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final);
         TEST_EQUALITY(l1->IsRequested("Graph",        MueLu::NoFactory::get()), false);
         TEST_EQUALITY(l1->IsRequested("Aggregates",   MueLu::NoFactory::get()), false);
         TEST_EQUALITY(l1->IsRequested("Nullspace",    MueLu::NoFactory::get()), false);
       }
-      if(l2 != Teuchos::null) {
+      if (l2 != Teuchos::null) {
         TEST_EQUALITY(l2->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
-        TEST_EQUALITY(l2->IsAvailable("PostSmoother", MueLu::NoFactory::get()), true);
+        TEST_EQUALITY(l2->IsAvailable("PostSmoother", MueLu::NoFactory::get()), (H.GetNumLevels() > 3 ? true : false));
         TEST_EQUALITY(l2->IsAvailable("P",            MueLu::NoFactory::get()), true);
         TEST_EQUALITY(l2->IsAvailable("R",            MueLu::NoFactory::get()), true);
         TEST_EQUALITY(l2->IsAvailable("A",            MueLu::NoFactory::get()), true);
-        TEST_EQUALITY(l2->IsRequested("Graph",        MueLu::NoFactory::get()), false);
-        TEST_EQUALITY(l2->IsRequested("Aggregates",   MueLu::NoFactory::get()), false);
-        TEST_EQUALITY(l2->IsRequested("Nullspace",    MueLu::NoFactory::get()), false);
         TEST_EQUALITY(l2->GetKeepFlag("A",            MueLu::NoFactory::get()), MueLu::Final);
         TEST_EQUALITY(l2->GetKeepFlag("P",            MueLu::NoFactory::get()), MueLu::Final);
         TEST_EQUALITY(l2->GetKeepFlag("R",            MueLu::NoFactory::get()), MueLu::Final);
         TEST_EQUALITY(l2->GetKeepFlag("PreSmoother",  MueLu::NoFactory::get()), MueLu::Final);
-        TEST_EQUALITY(l2->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final);
+        if (H.GetNumLevels() > 3)
+          TEST_EQUALITY(l2->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final);
+        TEST_EQUALITY(l2->IsRequested("Graph",        MueLu::NoFactory::get()), false);
+        TEST_EQUALITY(l2->IsRequested("Aggregates",   MueLu::NoFactory::get()), false);
+        TEST_EQUALITY(l2->IsRequested("Nullspace",    MueLu::NoFactory::get()), false);
       }
     } // end for i=1..5
 

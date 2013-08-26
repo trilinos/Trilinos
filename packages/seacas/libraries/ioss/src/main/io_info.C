@@ -100,6 +100,8 @@ namespace {
   void info_commsets(Ioss::Region &region, bool summary);
   void info_coordinate_frames(Ioss::Region &region, bool summary);
 
+  void info_aliases(Ioss::Region &region, Ioss::GroupingEntity *ige, bool nl_pre, bool nl_post);
+  
   void info_fields(Ioss::GroupingEntity *ige,
 		   Ioss::Field::RoleType role,
 		   const std::string &header);
@@ -163,6 +165,10 @@ int main(int argc, char *argv[])
   OUTPUT << "Input:    '" << interface.filename()  << "', Type: " << interface.type()  << '\n';
   OUTPUT << '\n';
 
+  if (interface.use_generic_names()) {
+    Ioss::DatabaseIO::set_use_generic_canonical_name_default(true);
+  }
+  
   file_info(interface.filename(), interface.type(), interface);
 
   OUTPUT << "\n" << codename << " execution successful.\n";
@@ -294,6 +300,7 @@ namespace {
 	  if (header)
 	    OUTPUT << "\n";
 	}
+	info_aliases(region, *i, false, true);
 	info_fields(*i, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
 	info_fields(*i, Ioss::Field::TRANSIENT, "\tTransient: ");
       }
@@ -319,6 +326,7 @@ namespace {
 	       << std::setw(12) << num_elem << " elements, "
 	       << std::setw(3) << num_attrib << " attributes.";
 
+	info_aliases(region, *i, true, false);
 	info_fields(*i, Ioss::Field::ATTRIBUTE, "\n\tAttributes: ");
 
 	if (interface.adjacencies()) {
@@ -370,6 +378,7 @@ namespace {
 	       << std::setw(12) << num_edge << " edges, "
 	       << std::setw(3) << num_attrib << " attributes.\n";
 
+	info_aliases(region, *i, false, true);
 	info_fields(*i, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
 
 #if 0
@@ -412,6 +421,7 @@ namespace {
 	       << std::setw(12) << num_face << " faces, "
 	       << std::setw(3) << num_attrib << " attributes.\n";
 
+	info_aliases(region, *i, false, true);
 	info_fields(*i, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
 
 #if 0
@@ -443,8 +453,8 @@ namespace {
     int64_t total_sides = 0;
     while (i != fss.end()) {
       if (!summary) {
-	OUTPUT << '\n' << (*i)->type_string() << " " << std::setw(16)  << (*i)->name()
-	       << " id: " << std::setw(6)<< id(*i) << ":";
+	OUTPUT << '\n' << name(*i) << " id: " << std::setw(6)<< id(*i) << ":";
+	info_aliases(region, *i, true, false);
 	if (interface.adjacencies()) {
 	  std::vector<std::string> blocks;
 	  (*i)->block_membership(blocks);
@@ -468,8 +478,7 @@ namespace {
 	  std::string fbtype    = (*j)->get_property("topology_type").get_string();
 	  std::string partype   = (*j)->get_property("parent_topology_type").get_string();
 	  OUTPUT << "\t\t"
-		 << (*j)->type_string() << " " << (*j)->name()
-		 << ", "
+		 << name(*j) << ", "
 		 << num_side << " " << fbtype << " sides"
 		 << ", parent topology: " << partype 
 		 << "\n";
@@ -509,11 +518,11 @@ namespace {
       int64_t    num_attrib= (*i)->get_property("attribute_count").get_int();
       int64_t    num_dist  = (*i)->get_property("distribution_factor_count").get_int();
       if (!summary) {
-	OUTPUT << '\n' << (*i)->type_string() << " " << std::setw(16)  << (*i)->name()
-	       << " id: " << std::setw(6) << id(*i)   << ", "
+	OUTPUT << '\n' << name(*i) << " id: " << std::setw(6) << id(*i)   << ", "
 	       << std::setw(8) << count << " nodes" 
 	       << std::setw(3) << num_attrib << " attributes"
 	       << std::setw(8) << num_dist << " distribution factors.\n";
+	info_aliases(region, *i, false, true);
 	info_fields(*i, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
 	info_fields(*i, Ioss::Field::TRANSIENT, "\tTransient:  ");
       }
@@ -535,10 +544,11 @@ namespace {
       int64_t    count     = (*i)->get_property("entity_count").get_int();
       int64_t    num_attrib= (*i)->get_property("attribute_count").get_int();
       if (!summary) {
-	OUTPUT << '\n' << (*i)->type_string() << " " << std::setw(16)  << (*i)->name()
+	OUTPUT << '\n' << name(*i)
 	       << " id: " << std::setw(6) << id(*i)   << ", "
 	       << std::setw(8) << count << " edges"
 	       << std::setw(3) << num_attrib << " attributes.\n";
+	info_aliases(region, *i, false, true);
 	info_fields(*i, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
 	info_fields(*i, Ioss::Field::TRANSIENT, "\tTransient:  ");
       }
@@ -560,10 +570,11 @@ namespace {
       int64_t    count     = (*i)->get_property("entity_count").get_int();
       int64_t    num_attrib= (*i)->get_property("attribute_count").get_int();
       if (!summary) {
-	OUTPUT << '\n' << (*i)->type_string() << " " << std::setw(16)  << (*i)->name()
+	OUTPUT << '\n' << name(*i)
 	       << " id: " << std::setw(6) << id(*i)   << ", "
 	       << std::setw(8) << count << " faces"
 	       << std::setw(3) << num_attrib << " attributes.\n";
+	info_aliases(region, *i, false, true);
 	info_fields(*i, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
 	info_fields(*i, Ioss::Field::TRANSIENT, "\tTransient:  ");
       }
@@ -584,9 +595,10 @@ namespace {
     while (i != nss.end()) {
       int64_t    count     = (*i)->get_property("entity_count").get_int();
       if (!summary) {
-	OUTPUT << '\n' << (*i)->type_string() << " " << std::setw(16)  << (*i)->name()
+	OUTPUT << '\n' << name(*i)
 	       << " id: " << std::setw(6) << id(*i)   << ", "
 	       << std::setw(8) << count << " elements" << "\n";
+	info_aliases(region, *i, false, true);
 	info_fields(*i, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
 	info_fields(*i, Ioss::Field::TRANSIENT, "\tTransient:  ");
       }
@@ -631,6 +643,23 @@ namespace {
     }
     if (summary) {
       OUTPUT << " Number of coordinate frames  =" << std::setw(12) << cf.size() << "\n";
+    }
+  }
+
+  void info_aliases(Ioss::Region &region, Ioss::GroupingEntity *ige, bool nl_pre, bool nl_post)
+  {
+    std::vector<std::string> aliases;
+    if (region.get_aliases(ige->name(), aliases) > 0) {
+      if (nl_pre)
+	OUTPUT << "\n";
+      OUTPUT << "\tAliases: ";
+      for (size_t i=0; i < aliases.size(); i++) {
+	if (i > 0)
+	  OUTPUT << ", ";
+	OUTPUT << aliases[i];
+      }
+      if (nl_post)
+	OUTPUT << "\n";
     }
   }
 

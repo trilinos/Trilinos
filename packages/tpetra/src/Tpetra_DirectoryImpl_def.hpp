@@ -47,6 +47,7 @@
 #endif
 #include <Tpetra_Distributor.hpp>
 #include <Tpetra_Map.hpp>
+#include <Tpetra_TieBreak.hpp>
 
 #ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
 #  include <Tpetra_Details_FixedHashTable.hpp>
@@ -270,7 +271,6 @@ namespace Tpetra {
       return res;
     }
 
-
     template<class LO, class GO, class NT>
     DistributedContiguousDirectory<LO, GO, NT>::
     DistributedContiguousDirectory (const Teuchos::RCP<const typename DistributedContiguousDirectory<LO, GO, NT>::map_type>& map) :
@@ -481,6 +481,25 @@ namespace Tpetra {
       Directory<LO, GO, NT> (map),
       useHashTables_ (false) // to be revised below
     {
+      initialize(map,Teuchos::null);
+    }
+
+    template<class LO, class GO, class NT>
+    DistributedNoncontiguousDirectory<LO, GO, NT>::
+    DistributedNoncontiguousDirectory (const Teuchos::RCP<const typename DistributedNoncontiguousDirectory<LO, GO, NT>::map_type>& map,
+                                    const typename DistributedNoncontiguousDirectory<LO, GO, NT>::tie_break_type & tie_break) :
+      Directory<LO, GO, NT> (map),
+      useHashTables_ (false) // to be revised below
+    {
+      initialize(map,Teuchos::ptrFromRef(tie_break));
+    }
+
+    template<class LO, class GO, class NT>
+    void
+    DistributedNoncontiguousDirectory<LO, GO, NT>::
+    initialize (const Teuchos::RCP<const typename DistributedNoncontiguousDirectory<LO, GO, NT>::map_type>& map,
+                const Teuchos::Ptr<const typename DistributedNoncontiguousDirectory<LO, GO, NT>::tie_break_type>& tie_break)
+    {
       using Teuchos::Array;
       using Teuchos::ArrayView;
       using Teuchos::as;
@@ -679,26 +698,72 @@ namespace Tpetra {
           rcp (new Details::FixedHashTable<LO, LO> (tableKeys (),
                                                     tableLids ()));
       }
-      else { // use array-based implementation of Directory storage
-        // Allocate arrays implementing Directory storage.  Fill them
-        // with invalid values, in case the input Map's GID list is
-        // sparse (i.e., does not populate all GIDs from minAllGID to
-        // maxAllGID).
-        PIDs_ = arcp<int> (dir_numMyEntries);
-        std::fill (PIDs_.begin (), PIDs_.end (), -1);
-        LIDs_ = arcp<LO> (dir_numMyEntries);
-        std::fill (LIDs_.begin (), LIDs_.end (), LINVALID);
-        // Fill in the arrays with PIDs resp. LIDs.
-        typename Array<GO>::const_iterator iter = importElements.begin ();
-        for (size_t i = 0; i < numReceives; ++i) {
-          const GO curGID = *iter++;
-          const LO curLID = directoryMap_->getLocalElement (curGID);
-          TEUCHOS_TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
-            Teuchos::typeName(*this) << " constructor: Incoming global index "
-            << curGID << " does not have a corresponding local index in the "
-            "Directory Map.  Please report this bug to the Tpetra developers.");
-          PIDs_[curLID] = *iter++;
-          LIDs_[curLID] = *iter++;
+      else { 
+        if(tie_break==Teuchos::null) {
+          // use array-based implementation of Directory storage
+          // Allocate arrays implementing Directory storage.  Fill them
+          // with invalid values, in case the input Map's GID list is
+          // sparse (i.e., does not populate all GIDs from minAllGID to
+          // maxAllGID).
+          PIDs_ = arcp<int> (dir_numMyEntries);
+          std::fill (PIDs_.begin (), PIDs_.end (), -1);
+          LIDs_ = arcp<LO> (dir_numMyEntries);
+          std::fill (LIDs_.begin (), LIDs_.end (), LINVALID);
+          // Fill in the arrays with PIDs resp. LIDs.
+          typename Array<GO>::const_iterator iter = importElements.begin ();
+          for (size_t i = 0; i < numReceives; ++i) {
+            const GO curGID = *iter++;
+            const LO curLID = directoryMap_->getLocalElement (curGID);
+            TEUCHOS_TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
+              Teuchos::typeName(*this) << " constructor: Incoming global index "
+              << curGID << " does not have a corresponding local index in the "
+              "Directory Map.  Please report this bug to the Tpetra developers.");
+            PIDs_[curLID] = *iter++;
+            LIDs_[curLID] = *iter++;
+          }
+        }
+        else {
+          typedef std::vector<std::pair<int,LO> > VectorType;
+
+          PIDs_ = arcp<int> (dir_numMyEntries);
+          LIDs_ = arcp<LO> (dir_numMyEntries);
+          std::fill (PIDs_.begin (), PIDs_.end (), -1);
+
+          // extract all the recived entries
+          Teuchos::ArrayRCP<VectorType> owned_ids = arcp<VectorType>(dir_numMyEntries);
+          typename Array<GO>::const_iterator iter = importElements.begin ();
+          for (size_t i = 0; i < numReceives; ++i) {
+            const GO  GID = *iter++;
+            const int PID = *iter++;
+            const LO  LID = *iter++;
+
+            const LO curLID = directoryMap_->getLocalElement (GID);
+ 
+            TEUCHOS_TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
+              Teuchos::typeName(*this) << " constructor: Incoming global index "
+              << GID << " does not have a corresponding local index in the "
+              "Directory Map.  Please report this bug to the Tpetra developers.");
+            
+            owned_ids[curLID].push_back(std::make_pair(PID,LID));
+          }
+
+          // loop over each global id type
+          for(typename Teuchos::ArrayRCP<VectorType>::size_type i=0;i<owned_ids.size();i++) {
+            const GO GID = directoryMap_->getGlobalElement(i);
+
+            // produce tie break index
+            const VectorType & pid_and_lid = owned_ids[i];
+            if(pid_and_lid.size()>0) {
+              // size and greater than zero, it makes sense to 
+              // run a tie break
+              std::size_t index = tie_break->selectedIndex(GID,pid_and_lid);
+
+              // assign PIDs and LIDs based on tie_break
+              PIDs_[i] = pid_and_lid[index].first;
+              LIDs_[i] = pid_and_lid[index].second;
+            }
+            // else no GID specified by source map
+          }
         }
       }
 #else // NOT HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX

@@ -262,6 +262,24 @@ namespace Tpetra {
     }
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+               const Teuchos::ArrayRCP<Scalar>& data,
+               const size_t LDA,
+               const size_t numVecs) :
+    DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map),
+    lclMV_ (map->getNode ()),
+    releaseViewsRaisedEfficiencyWarning_ (false),
+    createViewsRaisedEfficiencyWarning_ (false),
+    createViewsNonConstRaisedEfficiencyWarning_ (false)
+  {
+    const char tfecfFuncName[] = "MultiVector(map,data,LDA,numVecs)";
+    const size_t numRows = this->getLocalLength ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < numRows, std::runtime_error,
+      ": LDA = " << LDA << " < numRows = " << numRows << ".");
+    MVT::initializeValues (lclMV_, numRows, numVecs, data, LDA);
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
@@ -448,7 +466,7 @@ namespace Tpetra {
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> this_type;
     const this_type* src = dynamic_cast<const this_type*> (&sourceObj);
     if (src == NULL) {
-      return false; 
+      return false;
     } else {
       // The target of the Import or Export calls checkSizes() in
       // DistObject::doTransfer().  By that point, we've already
@@ -478,8 +496,8 @@ namespace Tpetra {
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       permuteToLIDs.size() != permuteFromLIDs.size(), std::runtime_error,
-      ": permuteToLIDs and permuteFromLIDs must have the same size." 
-      << std::endl << "permuteToLIDs.size() = " << permuteToLIDs.size () 
+      ": permuteToLIDs and permuteFromLIDs must have the same size."
+      << std::endl << "permuteToLIDs.size() = " << permuteToLIDs.size ()
       << " != permuteFromLIDs.size() = " << permuteFromLIDs.size () << ".");
 
     // We've already called checkSizes(), so this cast must succeed.
@@ -2127,8 +2145,14 @@ namespace Tpetra {
 
     Scalar beta_local = beta; // local copy of beta; might be reassigned below
 
-    TEUCHOS_TEST_FOR_EXCEPTION( getLocalLength() != A_nrows || getNumVectors() != B_ncols || A_ncols != B_nrows, std::runtime_error,
-        errPrefix << "dimension of *this, op(A) and op(B) must be consistent.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      getLocalLength() != A_nrows || getNumVectors() != B_ncols || A_ncols != B_nrows,
+      std::runtime_error,
+      errPrefix << "dimension of *this, op(A) and op(B) must be consistent.  "
+      << std::endl << "The local part of *this is "
+      << getLocalLength() << " x " << getNumVectors()
+      << ", A is " << A_nrows << " x " << A_ncols
+      << ", and B is " << B_nrows << " x " << B_ncols << ".");
 
     bool A_is_local = !A.isDistributed();
     bool B_is_local = !B.isDistributed();
@@ -2212,18 +2236,10 @@ namespace Tpetra {
 
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! this->getMap()->isCompatible(*A.getMap()) ||
-      ! this->getMap()->isCompatible(*B.getMap()), std::runtime_error,
-      ": MultiVectors do not have compatible Maps:" << std::endl
-      << "this->getMap(): " << std::endl << *this->getMap()
-      << "A.getMap(): " << std::endl << *A.getMap() << std::endl
-      << "B.getMap(): " << std::endl << *B.getMap() << std::endl);
-#else
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       getLocalLength() != A.getLocalLength() ||
       getLocalLength() != B.getLocalLength(), std::runtime_error,
       ": MultiVectors do not have the same local length.");
-#endif
+#endif // HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       B.getNumVectors() != this->getNumVectors(), std::runtime_error,
       ": MultiVectors 'this' and B must have the same number of vectors.");

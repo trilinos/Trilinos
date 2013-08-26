@@ -65,7 +65,40 @@ struct ViewSpecialize< ScalarType , ScalarType ,
                        MemorySpace , MemoryTraits >
 { typedef LayoutScalar type ; };
 
+} // namespace Impl
+} // namespace Kokkos
+
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+
+/** \brief  Deep copy of scalar value in HostSpace */
+
+template< typename ValueType , class Arg1 , class Arg2 , class Arg3 >
+inline
+void deep_copy( ValueType & dst ,
+                const View< ValueType , Arg1 , Arg2 , Arg3 , Impl::LayoutScalar > & src ,
+                typename Impl::enable_if< (
+                  Impl::is_same< typename ViewTraits<ValueType,Arg1,Arg2,Arg3>::memory_space , HostSpace >::value 
+                ) >::type * = 0 )
+{ dst = src ; }
+
+template< typename ValueType , class Arg1 , class Arg2 , class Arg3 >
+inline
+void deep_copy( const View< ValueType , Arg1 , Arg2 , Arg3 , Impl::LayoutScalar > & dst ,
+                const ValueType & src ,
+                typename Impl::enable_if< (
+                  Impl::is_same< typename ViewTraits<ValueType,Arg1,Arg2,Arg3>::memory_space , HostSpace >::value
+                ) >::type * = 0 )
+{ dst = src ; }
+
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
 
 template<>
 struct ViewAssignment< LayoutScalar , void , void >
@@ -114,8 +147,7 @@ struct ViewAssignment< LayoutScalar , LayoutScalar , void >
   ViewAssignment( View<DT,DL,DD,DM,LayoutScalar> & dst ,
                   const View<ST,SL,SD,SM,LayoutScalar> & src ,
                   typename enable_if< (
-                    ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                     ViewTraits<ST,SL,SD,SM> >::value
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
                   ) >::type * = 0 )
   {
     typedef ViewTraits<DT,DL,DD,DM> traits ;
@@ -169,8 +201,8 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
   ViewAssignment(       View<DT,DL,DD,DM,LayoutScalar> & dst ,
                   const View<ST,SL,SD,SM,LayoutDefault> & src ,
                   const typename enable_if< (
-                    ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                     ViewTraits<ST,SL,SD,SM> >::value &&
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
+                                    ViewTraits<ST,SL,SD,SM> >::assignable_value &&
                     ( ViewTraits<ST,SL,SD,SM>::rank == 1 )
                   ), unsigned >::type i0 )
   {
@@ -193,10 +225,9 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
                   const View<ST,SL,SD,SM,LayoutDefault> & src ,
                   const unsigned i0 ,
                   const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
+                                    ViewTraits<ST,SL,SD,SM> >::assignable_value &&
                     ( ViewTraits<ST,SL,SD,SM>::rank == 2 )
-                    &&
-                    ( ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                       ViewTraits<ST,SL,SD,SM> >::value )
                   ) , unsigned >::type i1 )
   {
     typedef ViewTraits<DT,DL,DD,DM> view_traits ;
@@ -208,10 +239,10 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
     ViewTracking< view_traits >::decrement( dst.m_ptr_on_device );
 
     if ( is_left ) {
-      dst.m_ptr_on_device = src.m_ptr_on_device + i0 + src.m_stride * i1 ;
+      dst.m_ptr_on_device = src.m_ptr_on_device + i0 + src.m_stride.value * i1 ;
     }
     else {
-      dst.m_ptr_on_device = src.m_ptr_on_device + i1 + i0 * src.m_stride ;
+      dst.m_ptr_on_device = src.m_ptr_on_device + i1 + i0 * src.m_stride.value ;
     }
 
     ViewTracking< view_traits >::increment( dst.m_ptr_on_device );
@@ -228,10 +259,10 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
                   const unsigned i0 ,
                   const unsigned i1 ,
                   const typename enable_if< (
-                    ( ViewTraits<ST,SL,SD,SM>::rank == 3 )
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
+                                    ViewTraits<ST,SL,SD,SM> >::assignable_value
                     &&
-                    ( ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                       ViewTraits<ST,SL,SD,SM> >::value )
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 3 )
                   ) , unsigned >::type i2 )
   {
     typedef ViewTraits<DT,DL,DD,DM> view_traits ;
@@ -245,14 +276,14 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
     if ( is_left ) {
       dst.m_ptr_on_device =
         src.m_ptr_on_device +
-          i0 + src.m_stride * (
+          i0 + src.m_stride.value * (
           i1 + src.m_shape.N1 * i2 );
     }
     else {
       dst.m_ptr_on_device =
         src.m_ptr_on_device +
         i2 + src.m_shape.N2 * (
-        i1 ) + i0 * src.m_stride ;
+        i1 ) + i0 * src.m_stride.value ;
     }
 
     ViewTracking< view_traits >::increment( dst.m_ptr_on_device );
@@ -270,10 +301,10 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
                   const unsigned i1 ,
                   const unsigned i2 ,
                   const typename enable_if< (
-                    ( ViewTraits<ST,SL,SD,SM>::rank == 4 )
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
+                                    ViewTraits<ST,SL,SD,SM> >::assignable_value
                     &&
-                    ( ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                       ViewTraits<ST,SL,SD,SM> >::value )
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 4 )
                   ) , unsigned >::type i3 )
   {
     typedef ViewTraits<DT,DL,DD,DM> view_traits ;
@@ -287,7 +318,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
     if ( is_left ) {
       dst.m_ptr_on_device =
         src.m_ptr_on_device +
-          i0 + src.m_stride * (
+          i0 + src.m_stride.value * (
           i1 + src.m_shape.N1 * (
           i2 + src.m_shape.N2 * i3 ));
     }
@@ -296,7 +327,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
         src.m_ptr_on_device +
         i3 + src.m_shape.N3 * (
         i2 + src.m_shape.N2 * (
-        i1 )) + i0 * src.m_stride ;
+        i1 )) + i0 * src.m_stride.value ;
     }
 
     ViewTracking< view_traits >::increment( dst.m_ptr_on_device );
@@ -315,10 +346,10 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
                   const unsigned i2 ,
                   const unsigned i3 ,
                   const typename enable_if< (
-                    ( ViewTraits<ST,SL,SD,SM>::rank == 5 )
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
+                                    ViewTraits<ST,SL,SD,SM> >::assignable_value
                     &&
-                    ( ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                       ViewTraits<ST,SL,SD,SM> >::value )
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 5 )
                   ) , unsigned >::type i4 )
   {
     typedef ViewTraits<DT,DL,DD,DM> view_traits ;
@@ -332,7 +363,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
     if ( is_left ) {
       dst.m_ptr_on_device =
         src.m_ptr_on_device +
-          i0 + src.m_stride * (
+          i0 + src.m_stride.value * (
           i1 + src.m_shape.N1 * (
           i2 + src.m_shape.N2 * (
           i3 + src.m_shape.N3 * i4 )));
@@ -343,7 +374,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
           i4 + src.m_shape.N4 * (
           i3 + src.m_shape.N3 * (
           i2 + src.m_shape.N2 * (
-          i1 ))) + i0 * src.m_stride ;
+          i1 ))) + i0 * src.m_stride.value ;
     }
 
     ViewTracking< view_traits >::increment( dst.m_ptr_on_device );
@@ -363,10 +394,10 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
                   const unsigned i3 ,
                   const unsigned i4 ,
                   const typename enable_if< (
-                    ( ViewTraits<ST,SL,SD,SM>::rank == 6 )
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
+                                    ViewTraits<ST,SL,SD,SM> >::assignable_value
                     &&
-                    ( ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                       ViewTraits<ST,SL,SD,SM> >::value )
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 6 )
                   ) , unsigned >::type i5 )
   {
     typedef ViewTraits<DT,DL,DD,DM> view_traits ;
@@ -380,7 +411,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
     if ( is_left ) {
       dst.m_ptr_on_device =
         src.m_ptr_on_device +
-          i0 + src.m_stride * (
+          i0 + src.m_stride.value * (
           i1 + src.m_shape.N1 * (
           i2 + src.m_shape.N2 * (
           i3 + src.m_shape.N3 * (
@@ -393,7 +424,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
           i4 + src.m_shape.N4 * (
           i3 + src.m_shape.N3 * (
           i2 + src.m_shape.N2 * (
-          i1 )))) + i0 * src.m_stride ;
+          i1 )))) + i0 * src.m_stride.value ;
     }
 
     ViewTracking< view_traits >::increment( dst.m_ptr_on_device );
@@ -414,10 +445,10 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
                   const unsigned i4 ,
                   const unsigned i5 ,
                   const typename enable_if< (
-                    ( ViewTraits<ST,SL,SD,SM>::rank == 7 )
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
+                                    ViewTraits<ST,SL,SD,SM> >::assignable_value
                     &&
-                    ( ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                       ViewTraits<ST,SL,SD,SM> >::value )
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 7 )
                   ) , unsigned >::type i6 )
   {
     typedef ViewTraits<DT,DL,DD,DM> view_traits ;
@@ -431,7 +462,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
     if ( is_left ) {
       dst.m_ptr_on_device =
         src.m_ptr_on_device +
-          i0 + src.m_stride * (
+          i0 + src.m_stride.value * (
           i1 + src.m_shape.N1 * (
           i2 + src.m_shape.N2 * (
           i3 + src.m_shape.N3 * (
@@ -446,7 +477,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
           i4 + src.m_shape.N4 * (
           i3 + src.m_shape.N3 * (
           i2 + src.m_shape.N2 * (
-          i1 ))))) + i0 * src.m_stride ;
+          i1 ))))) + i0 * src.m_stride.value ;
     }
 
     ViewTracking< view_traits >::increment( dst.m_ptr_on_device );
@@ -468,10 +499,10 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
                   const unsigned i5 ,
                   const unsigned i6 ,
                   const typename enable_if< (
-                    ( ViewTraits<ST,SL,SD,SM>::rank == 8 )
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
+                                    ViewTraits<ST,SL,SD,SM> >::assignable_value
                     &&
-                    ( ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                       ViewTraits<ST,SL,SD,SM> >::value )
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 8 )
                   ) , unsigned >::type i7 )
   {
     typedef ViewTraits<DT,DL,DD,DM> view_traits ;
@@ -485,7 +516,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
     if ( is_left ) {
       dst.m_ptr_on_device =
         src.m_ptr_on_device +
-          i0 + src.m_stride * (
+          i0 + src.m_stride.value * (
           i1 + src.m_shape.N1 * (
           i2 + src.m_shape.N2 * (
           i3 + src.m_shape.N3 * (
@@ -502,7 +533,7 @@ struct ViewAssignment< LayoutScalar , LayoutDefault , void >
           i4 + src.m_shape.N4 * (
           i3 + src.m_shape.N3 * (
           i2 + src.m_shape.N2 * (
-          i1 )))))) + i0 * src.m_stride ;
+          i1 )))))) + i0 * src.m_stride.value ;
     }
 
     ViewTracking< view_traits >::increment( dst.m_ptr_on_device );
@@ -541,7 +572,7 @@ public:
 
   typedef View< typename traits::non_const_data_type ,
                 typename traits::array_layout ,
-                Host ,
+                typename traits::device_type::host_mirror_device_type ,
                 void > HostMirror ;
 
   enum { Rank = 0 };

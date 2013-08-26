@@ -220,6 +220,22 @@ void CudaInternal::print_configuration( std::ostream & s ) const
 {
   const CudaInternalDevices & dev_info = CudaInternalDevices::singleton();
 
+#if defined( KOKKOS_HAVE_CUDA )
+    s << "macro  KOKKOS_HAVE_CUDA      : defined" << std::endl ;
+#endif
+#if defined( KOKKOS_HAVE_CUDA_ARCH )
+    s << "macro  KOKKOS_HAVE_CUDA_ARCH = " << KOKKOS_HAVE_CUDA_ARCH
+      << " = capability " << KOKKOS_HAVE_CUDA_ARCH / 100
+      << "." << ( KOKKOS_HAVE_CUDA_ARCH % 100 ) / 10
+      << std::endl ;
+#endif
+#if defined( CUDA_VERSION )
+    s << "macro  CUDA_VERSION          = " << CUDA_VERSION
+      << " = version " << CUDA_VERSION / 1000
+      << "." << ( CUDA_VERSION % 1000 ) / 10
+      << std::endl ;
+#endif
+
   for ( int i = 0 ; i < dev_info.m_cudaDevCount ; ++i ) {
     s << "Kokkos::Cuda[ " << i << " ] "
       << dev_info.m_cudaProp[i].name

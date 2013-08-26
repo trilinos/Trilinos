@@ -283,7 +283,8 @@ namespace {
   void write_coordinate_frames(int exoid, const Ioss::CoordinateFrameContainer &frames);
   
   std::string get_entity_name(int exoid, ex_entity_type type, int64_t id,
-                              const std::string &basename, int length)
+                              const std::string &basename, int length,
+			      bool &db_has_name)
   {
     std::vector<char> buffer(length+1);
     buffer[0] = '\0';
@@ -306,12 +307,15 @@ namespace {
                 << " which does not match the embedded id " << name_id
                 << ".\n         This can cause issues later on; the entity will be renamed to '"
                 << new_name << "' (IOSS)\n\n";
+	    db_has_name = false;
             return new_name;
           }
         }
       }
+      db_has_name = true;
       return (std::string(TOPTR(buffer)));
     } else {
+      db_has_name = false;
       return Ioss::Utils::encode_entity_name(basename, id);
     }
   }
@@ -967,7 +971,7 @@ namespace Ioex {
     Ioss::Region *this_region = get_region();
     for (int i=0; i < timestep_count; i++) {
       if (tsteps[i] <= last_time) {
-        this_region->add_state(tsteps[i]);
+        this_region->add_state(tsteps[i]*timeScaleFactor);
       } else {
         if (myProcessor == 0) {
           // NOTE: Don't want to warn on all processors if there are
@@ -976,9 +980,9 @@ namespace Ioex {
           // 0... Need better warnings which won't overload in the
           // worst case...
           IOSS_WARNING << "Skipping step " << i+1 << " at time " << tsteps[i]
-                                                                           << " in database file\n\t" << get_filename()
-                                                                           << ".\n\tThe data for that step is possibly corrupt since the last time written successfully was "
-                                                                           << last_time << ".\n";
+		       << " in database file\n\t" << get_filename()
+		       << ".\n\tThe data for that step is possibly corrupt since the last time written successfully was "
+		       << last_time << ".\n";
         }
       }
     }
@@ -1416,10 +1420,18 @@ namespace Ioex {
       std::string alias = Ioss::Utils::encode_entity_name(basename, id);
       char * const X_type = TOPTR(all_X_type) + iblk * (MAX_STR_LENGTH+1);
 
+      bool db_has_name = false;
       std::string block_name;
       {
         Ioss::SerializeIO	serializeIO__(this);
-        block_name = get_entity_name(get_file_pointer(), entity_type, id, basename, maximumNameLength);
+        block_name = get_entity_name(get_file_pointer(), entity_type, id, basename,
+				     maximumNameLength, db_has_name);
+
+      }
+      if (get_use_generic_canonical_name()) {
+	std::string temp = block_name;
+	block_name = alias;
+	alias = temp;
       }
 
       std::string save_type = X_type;
@@ -1491,6 +1503,13 @@ namespace Ioex {
       }
 
       block->property_add(Ioss::Property("id", id)); // Do before adding for better error messages.
+      if (db_has_name) {
+	std::string *db_name = &block_name;
+	if (get_use_generic_canonical_name()) {
+	  db_name = &alias;
+	}
+	block->property_add(Ioss::Property("db_name", *db_name));
+      }
 
       // Maintain block order on output database...
       block->property_add(Ioss::Property("original_block_order", used_blocks++));
@@ -1524,11 +1543,8 @@ namespace Ioex {
           block->property_add(Ioss::Property(std::string("omitted"), 1));
         }
       }
-      if (block_name != alias) {
-        Ioss::GroupingEntity *test = get_region()->get_entity(alias);
-        if (test == NULL)
-          get_region()->add_alias(block_name, alias);
-      }
+
+      get_region()->add_alias(block_name, alias);
 
       // Check for additional variables.
       add_attribute_fields(entity_type, block, attributes, type);
@@ -1969,9 +1985,12 @@ namespace Ioex {
         {
           Ioss::SerializeIO	serializeIO__(this);
 
+	  bool db_has_name = false;
           side_set_name = get_entity_name(get_file_pointer(), EX_SIDE_SET, id, "surface",
-              maximumNameLength);
+					  maximumNameLength, db_has_name);
 
+	  std::string alias = Ioss::Utils::encode_entity_name("surface", id);
+	  
           if (side_set_name == "universal_sideset") {
             split_type = Ioss::SPLIT_BY_DONT_SPLIT;
           }
@@ -1984,11 +2003,24 @@ namespace Ioex {
             side_set = get_region()->get_sideset(efs_name);
             check_non_null(side_set, "sideset", efs_name);
           } else {
+	    if (get_use_generic_canonical_name()) {
+	      std::string temp = side_set_name;
+	      side_set_name = alias;
+	      alias = temp;
+	    }
             side_set = new Ioss::SideSet(this, side_set_name);
             side_set->property_add(Ioss::Property("id", id));
+	    if (db_has_name) {
+	      std::string *db_name = &side_set_name;
+	      if (get_use_generic_canonical_name()) {
+		db_name = &alias;
+	      }
+	      side_set->property_add(Ioss::Property("db_name", *db_name));
+	    }
+
             get_region()->add((Ioss::SideSet*)side_set);
 
-            get_region()->add_alias(side_set_name, Ioss::Utils::encode_entity_name("surface", id));
+            get_region()->add_alias(side_set_name, alias);
             get_region()->add_alias(side_set_name, Ioss::Utils::encode_entity_name("sideset", id));
           }
 
@@ -2481,14 +2513,30 @@ namespace Ioex {
               exodus_error(get_file_pointer(), __LINE__, myProcessor);
             attributes[ins] = num_attr;
 
+	    bool db_has_name = false;
             std::string Xset_name = get_entity_name(get_file_pointer(), type, id, base+"list",
-                maximumNameLength);
+						    maximumNameLength, db_has_name);
+
+	    std::string alias = Ioss::Utils::encode_entity_name(base+"list", id);
+
+	    if (get_use_generic_canonical_name()) {
+	      std::string temp = Xset_name;
+	      Xset_name = alias;
+	      alias = temp;
+	    }
 
             T* Xset = new T(this, Xset_name, set_params[ins].num_entry);
             Xsets[ins] = Xset;
             Xset->property_add(Ioss::Property("id", id));
+	    if (db_has_name) {
+	      std::string *db_name = &Xset_name;
+	      if (get_use_generic_canonical_name()) {
+		db_name = &alias;
+	      }
+	      Xset->property_add(Ioss::Property("db_name", *db_name));
+	    }
             get_region()->add(Xset);
-            get_region()->add_alias(Xset_name, Ioss::Utils::encode_entity_name(base+"list", id));
+            get_region()->add_alias(Xset_name, alias);
             get_region()->add_alias(Xset_name, Ioss::Utils::encode_entity_name(base+"set",  id));
           }
         }
@@ -5636,6 +5684,8 @@ namespace Ioex {
     {
       Ioss::SerializeIO	serializeIO__(this);
 
+      time /= timeScaleFactor;
+      
       state = get_database_step(state);
       if (!is_input()) {
         int ierr = ex_put_time(get_file_pointer(), state, &time);
@@ -5670,6 +5720,7 @@ namespace Ioex {
 
       if (!is_input()) {
         write_reduction_fields();
+	time /= timeScaleFactor;
         finalize_write(time);
         if (minimizeOpenFiles)
           free_file_pointer();

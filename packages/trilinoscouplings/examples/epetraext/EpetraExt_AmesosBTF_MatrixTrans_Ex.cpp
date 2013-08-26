@@ -48,6 +48,10 @@ int main(int argc, char *argv[]) {
 
   int returnierr=0;
 
+  using std::cout;
+  using std::endl;
+  using std::flush;
+
 #ifdef EPETRA_MPI
 
   // Initialize MPI

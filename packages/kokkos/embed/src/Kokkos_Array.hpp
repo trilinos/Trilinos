@@ -43,8 +43,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_ARRAY_HPP
-#define KOKKOS_ARRAY_HPP
+#ifndef KOKKOS_CORE_HPP
+#define KOKKOS_CORE_HPP
 
 #include <ostream>
 #include <Kokkos_Macros.hpp>
@@ -398,5 +398,5 @@ public:
 #include <impl/Kokkos_ArrayProxy.hpp>
 #include <impl/Kokkos_ArrayExp.hpp>
 
-#endif /* #ifndef KOKKOS_ARRAY_HPP */
+#endif /* #ifndef KOKKOS_CORE_HPP */
 

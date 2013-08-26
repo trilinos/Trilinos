@@ -49,7 +49,6 @@
 #include <Kokkos_MultiVector.hpp>
 #include <Kokkos_MDArray.hpp>
 
-#include <Kokkos_Host.hpp>
 #include <Kokkos_Cuda.hpp>
 
 #include <impl/Kokkos_Cuda_macros.hpp>

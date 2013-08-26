@@ -284,15 +284,15 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
  
     // build the connection manager 
-    const Teuchos::RCP<panzer::ConnManager<int,long> > 
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<long>(mesh));
+    const Teuchos::RCP<panzer::ConnManager<int,panzer::Ordinal64> > 
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<panzer::Ordinal64>(mesh));
 
-    panzer::DOFManagerFactory<int,long> globalIndexerFactory;
-    RCP<panzer::UniqueGlobalIndexer<int,long> > dofManager 
+    panzer::DOFManagerFactory<int,panzer::Ordinal64> globalIndexerFactory;
+    RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > dofManager 
          = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-        = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,long>(Comm.getConst(),dofManager));
+        = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>(Comm.getConst(),dofManager));
     lof = linObjFactory;
 
     rLibrary = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory)); 

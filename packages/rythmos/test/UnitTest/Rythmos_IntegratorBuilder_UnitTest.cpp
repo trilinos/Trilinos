@@ -1289,7 +1289,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_IRK ) {
   // Dense RKBT w/ WFactory
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
   RCP<ParameterList> modelPL = Teuchos::parameterList();
-  modelPL->sublist("Stratimikos").set("Linear Solver Type","AztecOO");
+  modelPL->sublist("Stratimikos").set("Linear Solver Type","Belos");
   modelPL->sublist("Stratimikos").set("Preconditioner Type","None");
   modelPL->sublist("DiagonalTransientModel").set("NumElements",2);
   RCP<Thyra::ModelEvaluator<double> > model = getDiagonalModel<double>(modelPL);

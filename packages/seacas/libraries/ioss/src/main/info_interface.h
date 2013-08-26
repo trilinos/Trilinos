@@ -61,6 +61,7 @@ namespace Info {
       double minimum_time() const {return minimumTime_;}
       int surface_split_scheme() const {return surfaceSplitScheme_;}
       char field_suffix_separator() const {return fieldSuffixSeparator_;}
+      bool use_generic_names() const {return useGenericNames_;}
 
       std::string cwd() const {return cwd_;}
       std::string filename() const {return filename_;}
@@ -82,6 +83,7 @@ namespace Info {
       bool adjacencies_;
       bool ints64Bit_;
       bool computeBBox_;
+      bool useGenericNames_;
  
       char fieldSuffixSeparator_;
       

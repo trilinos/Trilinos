@@ -49,6 +49,7 @@ namespace Ioex {
     ~SuperElement();
 
     std::string type_string() const {return "SuperElement";}
+    std::string short_type_string() const {return "superelement";}
     Ioss::EntityType type() const {return Ioss::SUPERELEMENT;}
       
     // Handle implicit properties -- These are calcuated from data stored

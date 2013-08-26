@@ -185,7 +185,7 @@ MOERTEL::Segment* MOERTEL::Segment_Linear1D::Clone()
 /*----------------------------------------------------------------------*
  |  << operator                                              mwgee 06/05|
  *----------------------------------------------------------------------*/
-ostream& operator << (ostream& os, const MOERTEL::Segment_Linear1D& seg)
+std::ostream& operator << (std::ostream& os, const MOERTEL::Segment_Linear1D& seg)
 {
   seg.Print(); 
   return os;

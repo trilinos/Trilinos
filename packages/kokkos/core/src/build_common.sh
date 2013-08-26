@@ -43,7 +43,10 @@ CUDA | Cuda | cuda )
   # -lib -o : produce library
   #
   NVCC="nvcc"
-  NVCC="${NVCC} -gencode arch=compute_20,code=sm_20 -gencode arch=compute_30,code=sm_30 -gencode arch=compute_35,code=sm_35 -maxrregcount=64"
+  NVCC="${NVCC} -DKOKKOS_HAVE_CUDA_ARCH=200 -gencode arch=compute_20,code=sm_20"
+  # NVCC="${NVCC} -DKOKKOS_HAVE_CUDA_ARCH=300 -gencode arch=compute_30,code=sm_30"
+  # NVCC="${NVCC} -DKOKKOS_HAVE_CUDA_ARCH=350 -gencode arch=compute_35,code=sm_35"
+  NVCC="${NVCC} -maxrregcount=64"
   NVCC="${NVCC} -Xcompiler -Wall,-ansi"
   NVCC="${NVCC} -lib -o libCuda.a -x cu"
 
@@ -56,7 +59,10 @@ CUDA_OSX | Cuda_OSX | cuda_osx )
   # -lib -o : produce library
   #
   NVCC="nvcc"
-  NVCC="${NVCC} -gencode arch=compute_20,code=sm_20 -gencode arch=compute_30,code=sm_30 -gencode arch=compute_35,code=sm_35 -maxrregcount=64"
+  NVCC="${NVCC} -DKOKKOS_HAVE_CUDA_ARCH=200 -gencode arch=compute_20,code=sm_20"
+  # NVCC="${NVCC} -DKOKKOS_HAVE_CUDA_ARCH=300 -gencode arch=compute_30,code=sm_30"
+  # NVCC="${NVCC} -DKOKKOS_HAVE_CUDA_ARCH=350 -gencode arch=compute_35,code=sm_35"
+  NVCC="${NVCC} -maxrregcount=64"
   NVCC="${NVCC} -Xcompiler -Wall,-ansi -Xcompiler -m64"
   NVCC="${NVCC} -lib -o libCuda.a -x cu"
 
@@ -163,7 +169,7 @@ fi
 if [ -n "${KOKKOS_HAVE_OPENMP}" ]
 then
 CXX="${CXX} -fopenmp"
-CXX_SOURCES="${CXX_SOURCES} ${KOKKOS}/src/OpenMP/Kokkos_OpenMP_Parallel.cpp"
+CXX_SOURCES="${CXX_SOURCES} ${KOKKOS}/src/OpenMP/*.cpp"
 fi
 
 #-----------------------------------------------------------------------------
@@ -191,7 +197,7 @@ fi
 INC_PATH="${INC_PATH} -I${KOKKOS}/src"
 
 CXX_SOURCES="${CXX_SOURCES} ${KOKKOS}/src/impl/*.cpp"
-CXX_SOURCES="${CXX_SOURCES} ${KOKKOS}/src/Host/*.cpp"
+CXX_SOURCES="${CXX_SOURCES} ${KOKKOS}/src/Threads/*.cpp"
 
 #-----------------------------------------------------------------------------
 #
@@ -219,49 +225,37 @@ CONFIG="KokkosCore_config.h"
 
 rm -f ${CONFIG}
 
-echo "#ifndef KOKKOS_ARRAY_CONFIG_H" >> ${CONFIG}
-echo "#define KOKKOS_ARRAY_CONFIG_H" >> ${CONFIG}
+echo "#ifndef KOKKOS_CORE_CONFIG_H" >> ${CONFIG}
+echo "#define KOKKOS_CORE_CONFIG_H" >> ${CONFIG}
 
 if [ -n "${KOKKOS_HAVE_MPI}" ] ;
 then
-  echo "#ifndef KOKKOS_HAVE_MPI" >> ${CONFIG}
   echo "#define KOKKOS_HAVE_MPI" >> ${CONFIG}
-  echo "#endif" >> ${CONFIG}
 fi
 
 if [ -n "${NVCC}" ] ;
 then
-  echo "#ifndef KOKKOS_HAVE_CUDA" >> ${CONFIG}
   echo "#define KOKKOS_HAVE_CUDA" >> ${CONFIG}
-  echo "#endif" >> ${CONFIG}
 fi
 
 if [ -n "${KOKKOS_HAVE_PTHREAD}" ] ;
 then
-  echo "#ifndef KOKKOS_HAVE_PTHREAD" >> ${CONFIG}
   echo "#define KOKKOS_HAVE_PTHREAD" >> ${CONFIG}
-  echo "#endif" >> ${CONFIG}
 fi
 
 if [ -n "${KOKKOS_HAVE_HWLOC}" ] ;
 then
-  echo "#ifndef KOKKOS_HAVE_HWLOC" >> ${CONFIG}
   echo "#define KOKKOS_HAVE_HWLOC" >> ${CONFIG}
-  echo "#endif" >> ${CONFIG}
 fi
 
 if [ -n "${KOKKOS_HAVE_OPENMP}" ] ;
 then
-  echo "#ifndef KOKKOS_HAVE_OPENMP" >> ${CONFIG}
   echo "#define KOKKOS_HAVE_OPENMP" >> ${CONFIG}
-  echo "#endif" >> ${CONFIG}
 fi
 
 if [ -n "${KOKKOS_EXPRESSION_CHECK}" ] ;
 then
-  echo "#ifndef KOKKOS_EXPRESSION_CHECK" >> ${CONFIG}
   echo "#define KOKKOS_EXPRESSION_CHECK" >> ${CONFIG}
-  echo "#endif" >> ${CONFIG}
 fi
 
 echo "#endif" >> ${CONFIG}

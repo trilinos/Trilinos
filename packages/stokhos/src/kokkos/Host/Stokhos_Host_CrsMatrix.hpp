@@ -46,7 +46,6 @@
 #include <iomanip>
 
 #include "Kokkos_Host.hpp"
-#include "Kokkos_ParallelFor.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_CrsMatrix.hpp"

@@ -66,17 +66,18 @@ namespace Tpetra {
   // Forward declaration of Directory.
   template <class LO, class GO, class N> class Directory;
 
-#  ifdef HAVE_TPETRA_FIXED_HASH_TABLE
   namespace Details {
+    // Forward declaration of TieBreak
+    template <class LO, class GO> class TieBreak;
+
+#  ifdef HAVE_TPETRA_FIXED_HASH_TABLE
     template<class GlobalOrdinal, class LocalOrdinal>
     class FixedHashTable;
-  } // namespace Details
 #  else
-  namespace Details {
     template<class GlobalOrdinal, class LocalOrdinal>
     class HashTable;
-  } // namespace Details
 #  endif // HAVE_TPETRA_FIXED_HASH_TABLE
+  } // namespace Details
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
   /// \class Map
@@ -1000,6 +1001,18 @@ namespace Tpetra {
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createOneToOne(Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &M);
+
+  /** \brief Creates a one-to-one version of the given Map where each GID is owned by only one process.
+             The rule to break ties is specifed by the tie break object.
+
+      The user must guarantee there are no duplicate GID on the same processor. Unexepected behavior may result.
+
+      \relatesalso Map
+   */
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
+  createOneToOne(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &M,
+                 const Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal> & tie_break);
 
 } // Tpetra namespace
 

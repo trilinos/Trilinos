@@ -80,7 +80,7 @@ operator()( OriginalTypeRef orig )
   // Make sure all rows in newRowMap are already on this processor
   for( int i = 0; i < nNumRows; ++i )
     matched = matched && ( oRowMap.MyGID(newRowMap_.GID(i)) );
-  if( !matched ) cerr << "EDT_CrsMatrix_SubCopy: Bad new_row_Map.  GIDs of new row map must be GIDs of the original row map on the same processor.\n";
+  if( !matched ) std::cerr << "EDT_CrsMatrix_SubCopy: Bad new_row_Map.  GIDs of new row map must be GIDs of the original row map on the same processor.\n";
 
   // Make sure all GIDs in the new domain map are GIDs in the old domain map
   if( !newRangeMap_.SameAs(newDomainMap_) ) {
@@ -90,7 +90,7 @@ operator()( OriginalTypeRef orig )
       matched = matched && ( pidList[i]>=0 );
   }
 
-  if( !matched ) cout << "EDT_CrsMatrix_SubCopy: Bad newDomainMap.  One or more GIDs in new domain map are not part of original domain map.\n";
+  if( !matched ) std::cout << "EDT_CrsMatrix_SubCopy: Bad newDomainMap.  One or more GIDs in new domain map are not part of original domain map.\n";
   assert( matched );
 
 

@@ -352,6 +352,36 @@ THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultProductVectorSpace,
 
 
 //
+// Test that a product vector space with more than one block is incompatible
+// with a vector space of the same size always!
+//
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultProductVectorSpace, twoBlockIncompatible,
+  Scalar )
+{
+  using Teuchos::describe;
+
+  const RCP<const VectorSpaceBase<Scalar> >
+    vs1 = defaultSpmdVectorSpace<Scalar>(g_localDim),
+    vs2 = defaultSpmdVectorSpace<Scalar>(2*g_localDim),
+    pvs = productVectorSpace<Scalar>(tuple(vs1,vs1)());
+  
+  out << "vs1=" << describe(*vs1);
+  out << "vs2=" << describe(*vs2);
+  out << "pvs=" << describe(*pvs);
+
+  TEST_EQUALITY(pvs->dim(), vs2->dim());
+  TEST_ASSERT(!pvs->isCompatible(*vs1));
+  TEST_ASSERT(!vs1->isCompatible(*pvs));
+  TEST_ASSERT(!pvs->isCompatible(*vs2));
+  TEST_ASSERT(!vs2->isCompatible(*pvs));
+
+}
+THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultProductVectorSpace,
+  twoBlockIncompatible )
+
+
+//
 // DefaultProductVector
 //
 

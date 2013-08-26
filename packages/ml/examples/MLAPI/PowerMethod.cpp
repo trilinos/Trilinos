@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
       
       double RQ = (y * x) / (x * x);
       if (GetMyPID() == 0)
-        cout << "iter = " << i << ", RQ = " << RQ << endl;
+        std::cout << "iter = " << i << ", RQ = " << RQ << std::endl;
 
       x = y / sqrt(y * y);
 
@@ -84,10 +84,10 @@ int main(int argc, char *argv[])
 
   } 
   catch (const int e) {
-    cout << "Caught integer exception, code = " << e << endl;
+    std::cout << "Caught integer exception, code = " << e << std::endl;
   } 
   catch (...) {
-    cout << "problems here..." << endl;
+    std::cout << "problems here..." << std::endl;
   }
 
 #ifdef HAVE_MPI

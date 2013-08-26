@@ -117,27 +117,27 @@ MOERTEL::ProjectedNode::~ProjectedNode()
  *----------------------------------------------------------------------*/
 bool MOERTEL::ProjectedNode::Print() const
 { 
-  cout << "Projected ";
+  std::cout << "Projected ";
   const MOERTEL::Node& basenode = dynamic_cast<const MOERTEL::Node&>(*this);
-  cout << basenode;
+  std::cout << basenode;
   if (pseg_)
   {
-    cout << "is on ";
-    cout << *pseg_;
-    cout << "at xi[0]/[1] = " << xi_[0] << "/" << xi_[1];
+    std::cout << "is on ";
+    std::cout << *pseg_;
+    std::cout << "at xi[0]/[1] = " << xi_[0] << "/" << xi_[1];
   }
   else
   {
-    cout << "on Segment !!!!!NULL!!!!! at xi[0]/[1] = " << xi_[0] << "/" << xi_[1];
+    std::cout << "on Segment !!!!!NULL!!!!! at xi[0]/[1] = " << xi_[0] << "/" << xi_[1];
   }
-  cout << "orth to seg " << orthseg_ << endl;
+  std::cout << "orth to seg " << orthseg_ << std::endl;
   return true;
 }
 
 /*----------------------------------------------------------------------*
  |  << operator                                              mwgee 06/05|
  *----------------------------------------------------------------------*/
-ostream& operator << (ostream& os, const MOERTEL::ProjectedNode& pnode)
+std::ostream& operator << (std::ostream& os, const MOERTEL::ProjectedNode& pnode)
 { 
   pnode.Print();
   return (os);

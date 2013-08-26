@@ -1113,7 +1113,7 @@ int Epetra_FECrsMatrix::InputGlobalValues_RowMajor(
           if (err>0) returncode = err;
           break;
         default:
-          cerr << "Epetra_FECrsMatrix: internal error, bad input mode."<<endl;
+          std::cerr << "Epetra_FECrsMatrix: internal error, bad input mode."<< std::endl;
           return(-1);
       }
     }
@@ -1150,7 +1150,7 @@ int Epetra_FECrsMatrix::InputGlobalValues(int numRows, const int_type* rows,
 
   if (format != Epetra_FECrsMatrix::ROW_MAJOR &&
       format != Epetra_FECrsMatrix::COLUMN_MAJOR) {
-    cerr << "Epetra_FECrsMatrix: unrecognized format specifier."<<endl;
+    std::cerr << "Epetra_FECrsMatrix: unrecognized format specifier."<< std::endl;
     return(-1);
   }
 
@@ -1253,7 +1253,7 @@ int Epetra_FECrsMatrix::InputNonlocalGlobalValues(int_type row,
       if (err>0) returncode = err;
       break;
     default:
-      cerr << "Epetra_FECrsMatrix: internal error, bad input mode."<<endl;
+      std::cerr << "Epetra_FECrsMatrix: internal error, bad input mode."<< std::endl;
       return(-1);
     }
     return (returncode);

@@ -1,0 +1,9 @@
+
+INCLUDE(TribitsSubPackageMacros)
+
+TRIBITS_SUBPACKAGE(Example)
+
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(query_device fixture)
+
+TRIBITS_SUBPACKAGE_POSTPROCESS()
+

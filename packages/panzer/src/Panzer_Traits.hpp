@@ -84,6 +84,8 @@
 #endif
 
 namespace panzer {
+  
+  typedef long long int Ordinal64;
 
   class LinearObjContainer;
 

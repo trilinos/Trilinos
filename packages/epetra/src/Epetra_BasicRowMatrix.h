@@ -429,7 +429,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
   //@{ 
 
   //! Print method
-  virtual void Print(ostream & os) const;
+  virtual void Print(std::ostream & os) const;
   //@}
 
   //! @name Additional methods required to support the Epetra_RowMatrix interface

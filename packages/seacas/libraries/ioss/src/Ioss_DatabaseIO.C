@@ -146,17 +146,19 @@ namespace {
 }
 
 namespace Ioss {
+  bool DatabaseIO::useGenericCanonicalNameDefault = false;
+  
   DatabaseIO::DatabaseIO(Region* region, const std::string& filename,
 			 DatabaseUsage db_usage,
 			 MPI_Comm communicator,
 			 const PropertyManager &props)
     : properties(props), commonSideTopology(NULL), DBFilename(filename), dbState(STATE_INVALID),
       isParallel(false), isSerialParallel(false), myProcessor(0), cycleCount(0), overlayCount(0),
-      splitType(SPLIT_BY_TOPOLOGIES),
+      timeScaleFactor(1.0), splitType(SPLIT_BY_TOPOLOGIES),
       dbUsage(db_usage),dbIntSizeAPI(USE_INT32_API), lowerCaseVariableNames(true),
       util_(communicator), region_(region), isInput(is_input_event(db_usage)),
       singleProcOnly(db_usage == WRITE_HISTORY || db_usage == WRITE_HEARTBEAT || SerializeIO::isEnabled()),
-      doLogging(false)
+      doLogging(false), useGenericCanonicalName(useGenericCanonicalNameDefault)
   {
     isParallel  = util_.parallel_size() > 1;
     myProcessor = util_.parallel_rank();
@@ -214,6 +216,11 @@ namespace Ioss {
     if (properties.exists("LOGGING")) {
       int logging = properties.get("LOGGING").get_int();
       set_logging(logging != 0);
+    }
+
+    if (properties.exists("USE_GENERIC_CANONICAL_NAMES")) {
+      int generic = properties.get("USE_GENERIC_CANONICAL_NAMES").get_int();
+      useGenericCanonicalName = (generic != 0);
     }
 
   }
