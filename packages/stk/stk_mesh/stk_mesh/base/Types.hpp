@@ -40,6 +40,11 @@ struct BucketTag {};
 struct EntityCommTag {};
 struct BucketRelationTag {};
 struct DynamicBucketRelationTag {};
+struct DynamicBucketNodeRelationTag {};
+struct DynamicBucketEdgeRelationTag {};
+struct DynamicBucketFaceRelationTag {};
+struct DynamicBucketElementRelationTag {};
+struct DynamicBucketOtherRelationTag {};
 struct AuxRelationTag {};
 struct DeletedEntityTag {};
 
@@ -258,6 +263,37 @@ enum ConnectivityId
   INVALID_CONNECTIVITY_ID = ~0U
 };
 
+//////////////////////////////////////////////////////////////////////////////
+
+template <EntityRank TargetRank>
+struct DynamicConnectivityTagSelector
+{
+  typedef DynamicBucketOtherRelationTag type;
+};
+
+template <>
+struct DynamicConnectivityTagSelector<stk::topology::NODE_RANK>
+{
+  typedef DynamicBucketNodeRelationTag type;
+};
+
+template <>
+struct DynamicConnectivityTagSelector<stk::topology::EDGE_RANK>
+{
+  typedef DynamicBucketEdgeRelationTag type;
+};
+
+template <>
+struct DynamicConnectivityTagSelector<stk::topology::FACE_RANK>
+{
+  typedef DynamicBucketFaceRelationTag type;
+};
+
+template <>
+struct DynamicConnectivityTagSelector<stk::topology::ELEMENT_RANK>
+{
+  typedef DynamicBucketElementRelationTag type;
+};
 
 //----------------------------------------------------------------------
 

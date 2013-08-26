@@ -436,6 +436,7 @@ struct Counter
   static int counter;
 };
 
+
 template<EntityRank TargetRank >
 class BucketConnectivity<TargetRank, DYNAMIC_CONNECTIVITY>
 {
@@ -448,11 +449,13 @@ public:
   static const EntityRank target_rank = TargetRank;
   static const ConnectivityType connectivity_type = DYNAMIC_CONNECTIVITY;
 
-  typedef std::vector<Entity,              tracking_allocator<Entity, DynamicBucketRelationTag> >              EntityVector;
-  typedef std::vector<ConnectivityOrdinal, tracking_allocator<ConnectivityOrdinal, DynamicBucketRelationTag> > ConnectivityOrdinalVector;
-  typedef std::vector<Permutation,         tracking_allocator<Permutation, DynamicBucketRelationTag> >         PermutationVector;
-  typedef std::vector<uint32_t,            tracking_allocator<uint32_t, DynamicBucketRelationTag> >            UInt32Vector;
-  typedef std::vector<uint16_t,            tracking_allocator<uint16_t, DynamicBucketRelationTag> >            UInt16Vector;
+  typedef typename DynamicConnectivityTagSelector<TargetRank>::type TagType;
+
+  typedef std::vector<Entity,              tracking_allocator<Entity, TagType> >              EntityVector;
+  typedef std::vector<ConnectivityOrdinal, tracking_allocator<ConnectivityOrdinal, TagType> > ConnectivityOrdinalVector;
+  typedef std::vector<Permutation,         tracking_allocator<Permutation, TagType> >         PermutationVector;
+  typedef std::vector<uint32_t,            tracking_allocator<uint32_t, TagType> >            UInt32Vector;
+  typedef std::vector<uint16_t,            tracking_allocator<uint16_t, TagType> >            UInt16Vector;
 
   static const unsigned chunk_size = 1u;
 
