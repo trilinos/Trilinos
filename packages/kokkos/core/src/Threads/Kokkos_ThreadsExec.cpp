@@ -41,6 +41,7 @@
 //@HEADER
 */
 
+#include <limits>
 #include <iostream>
 #include <Kokkos_Threads.hpp>
 #include <Kokkos_hwloc.hpp>
@@ -174,10 +175,14 @@ ThreadsExec::~ThreadsExec()
   m_fan_team_size = 0 ;
   m_team_rank   = 0 ;
   m_team_size   = 0 ;
-  m_league_rank = 0 ;
-  m_league_rank = 0 ;
-  m_thread_size = 0 ;
-  m_thread_size = 0 ;
+  m_init_league_rank = 0 ;
+  m_init_league_size = 0 ;
+  m_init_thread_rank = 0 ;
+  m_init_thread_size = 0 ;
+
+  m_work_league_rank = 0 ;
+  m_work_league_end  = 0 ;
+  m_work_league_size = 0 ;
 
   for ( unsigned i = 0 ; i < MAX_FAN_COUNT ; ++i ) { m_fan[i] = 0 ; }
 }
@@ -192,10 +197,14 @@ ThreadsExec::ThreadsExec()
   , m_fan_team_size(0)
   , m_team_rank(0)
   , m_team_size(0)
-  , m_league_rank(0)
-  , m_league_size(0)
-  , m_thread_rank(0)
-  , m_thread_size(0)
+  , m_init_league_rank(0)
+  , m_init_league_size(0)
+  , m_init_thread_rank(0)
+  , m_init_thread_size(0)
+
+  , m_work_league_rank(0)
+  , m_work_league_end(0)
+  , m_work_league_size(0)
 {
   for ( unsigned i = 0 ; i < MAX_FAN_COUNT ; ++i ) { m_fan[i] = 0 ; }
 
@@ -203,10 +212,14 @@ ThreadsExec::ThreadsExec()
     m_state = ThreadsExec::Inactive ;
     m_team_rank = 0 ;
     m_team_size = 1 ;
-    m_league_rank = 0 ;
-    m_league_size = 1 ;
-    m_thread_rank = 0 ;
-    m_thread_size = 1 ;
+    m_init_league_rank = 0 ;
+    m_init_league_size = 1 ;
+    m_init_thread_rank = 0 ;
+    m_init_thread_size = 1 ;
+
+    m_work_league_rank = 0 ;
+    m_work_league_end  = 1 ;
+    m_work_league_size = 1 ;
   }
 }
 
@@ -227,12 +240,16 @@ void ThreadsExec::set_threads_relationships(
 
     ThreadsExec & th = * threads[r] ;
 
-    th.m_league_rank = league_rank ;
-    th.m_league_size = team_topo.first ;
-    th.m_team_rank   = team_rank ;
-    th.m_team_size   = team_topo.second ;
-    th.m_thread_rank = th.m_team_rank + th.m_team_size * th.m_league_rank ;
-    th.m_thread_size = th.m_team_size * th.m_league_size ;
+    th.m_team_rank        = team_rank ;
+    th.m_team_size        = team_topo.second ;
+    th.m_init_league_rank = league_rank ;
+    th.m_init_league_size = team_topo.first ;
+    th.m_init_thread_rank = th.m_team_rank + th.m_team_size * th.m_init_league_rank ;
+    th.m_init_thread_size = th.m_team_size * th.m_init_league_size ;
+
+    th.m_work_league_rank = league_rank ;
+    th.m_work_league_end  = league_rank + 1 ;
+    th.m_work_league_size = team_topo.first ;
 
     th.m_fan_size = 0 ;
     th.m_fan_team_size = 0 ;
@@ -240,7 +257,7 @@ void ThreadsExec::set_threads_relationships(
     // Intra-team reduction:
     for ( int n = 1 ; ( th.m_team_rank + n < th.m_team_size ) &&
                       ( 0 == ( n & th.m_team_rank ) ) ; n <<= 1 ) {
-      th.m_fan[ th.m_fan_size ] = threads[ ( th.m_team_rank + n ) + ( th.m_league_rank * th.m_team_size ) ];
+      th.m_fan[ th.m_fan_size ] = threads[ ( th.m_team_rank + n ) + ( th.m_init_league_rank * th.m_team_size ) ];
       ++th.m_fan_size ;
       ++th.m_fan_team_size ;
     }
@@ -249,10 +266,10 @@ void ThreadsExec::set_threads_relationships(
 
     if ( th.m_team_rank == 0 ) {
 
-      for ( int n = 1 ; ( th.m_league_rank + n < th.m_league_size ) &&
-                        ( 0 == ( n & th.m_league_rank ) ) ; n <<= 1 ) {
+      for ( int n = 1 ; ( th.m_init_league_rank + n < th.m_init_league_size ) &&
+                        ( 0 == ( n & th.m_init_league_rank ) ) ; n <<= 1 ) {
 
-        th.m_fan[ th.m_fan_size++ ] = threads[ ( th.m_league_rank + n ) * th.m_team_size ];
+        th.m_fan[ th.m_fan_size++ ] = threads[ ( th.m_init_league_rank + n ) * th.m_team_size ];
       }
     }
   }}
@@ -260,7 +277,8 @@ void ThreadsExec::set_threads_relationships(
 
 void ThreadsExec::execute_get_binding( ThreadsExec & exec , const void * )
 {
-  s_threads_coord[ exec.m_thread_rank ] = Kokkos::hwloc::get_this_thread_coordinate();
+  const size_t init_thread_rank = exec.m_team_rank + exec.m_team_size * exec.m_init_league_rank ;
+  s_threads_coord[ init_thread_rank ] = Kokkos::hwloc::get_this_thread_coordinate();
 }
 
 void ThreadsExec::execute_sleep( ThreadsExec & exec , const void * )
@@ -376,7 +394,7 @@ int ThreadsExec::in_parallel()
   // the master process is a worker or is not the master process.
   return s_current_function &&
          ( & s_threads_process != s_current_function_arg ) &&
-         ( s_threads_process.m_thread_size || ! is_process() );
+         ( s_threads_process.m_team_size || ! is_process() );
 }
 
 // Wait for root thread to become inactive
@@ -395,17 +413,8 @@ void ThreadsExec::fence()
   s_current_function_arg = 0 ;
 }
 
-inline
-void ThreadsExec::activate_threads()
-{
-  for ( unsigned i = s_threads_count ; 0 < i ; ) {
-    --i ;
-    s_threads_exec[i]->m_state = ThreadsExec::Active ;
-  }
-}
-
 /** \brief  Begin execution of the asynchronous functor */
-void ThreadsExec::start( void (*func)( ThreadsExec & , const void * ) , const void * arg )
+void ThreadsExec::start( void (*func)( ThreadsExec & , const void * ) , const void * arg , int work_league_size )
 {
   verify_is_process("ThreadsExec::start" , false );
 
@@ -418,11 +427,26 @@ void ThreadsExec::start( void (*func)( ThreadsExec & , const void * ) , const vo
   s_current_function     = func ;
   s_current_function_arg = arg ;
 
-  activate_threads();
+  if ( work_league_size ) {
+    const int work_per_team = ( work_league_size + s_threads_process.m_init_league_size - 1 )
+                            / s_threads_process.m_init_league_size ;
 
-  if ( s_threads_process.m_thread_size ) {
+    for ( int i = s_threads_count ; 0 < i-- ; ) {
+      ThreadsExec & th = * s_threads_exec[i] ;
+
+      th.m_work_league_rank = std::min( th.m_init_league_rank * work_per_team , work_league_size );
+      th.m_work_league_end  = std::min( th.m_work_league_rank + work_per_team , work_league_size );
+      th.m_work_league_size = work_league_size ;
+    }
+  }
+
+  // Activate threads:
+  for ( int i = s_threads_count ; 0 < i-- ; ) {
+    s_threads_exec[i]->m_state = ThreadsExec::Active ;
+  }
+
+  if ( s_threads_process.m_team_size ) {
     // Master process is the root thread:
-    s_threads_process.m_state = ThreadsExec::Active ;
     (*func)( s_threads_process , arg );
     s_threads_process.m_state = ThreadsExec::Inactive ;
   }
@@ -444,8 +468,11 @@ bool ThreadsExec::sleep()
 
   s_current_function = & execute_sleep ;
 
-  activate_threads();
-  
+  // Activate threads:
+  for ( unsigned i = s_threads_count ; 0 < i ; ) {
+    s_threads_exec[--i]->m_state = ThreadsExec::Active ;
+  }
+
   return true ;
 }
 
@@ -457,7 +484,7 @@ bool ThreadsExec::wake()
 
   ThreadsExec::global_unlock();
 
-  if ( s_threads_process.m_thread_size ) {
+  if ( s_threads_process.m_team_size ) {
     execute_sleep( s_threads_process , 0 );
     s_threads_process.m_state = ThreadsExec::Inactive ;
   }
@@ -476,7 +503,7 @@ void ThreadsExec::execute_serial( void (*func)( ThreadsExec & , const void * ) )
   s_current_function = func ;
   s_current_function_arg = & s_threads_process ;
 
-  const unsigned begin = s_threads_process.m_thread_size ? 1 : 0 ;
+  const unsigned begin = s_threads_process.m_team_size ? 1 : 0 ;
 
   for ( unsigned i = s_threads_count ; begin < i ; ) {
     ThreadsExec & th = * s_threads_exec[ --i ];
@@ -486,7 +513,7 @@ void ThreadsExec::execute_serial( void (*func)( ThreadsExec & , const void * ) )
     wait_yield( th.m_state , ThreadsExec::Active );
   }
 
-  if ( s_threads_process.m_thread_size ) {
+  if ( s_threads_process.m_team_size ) {
     s_threads_process.m_state = ThreadsExec::Active ;
     (*func)( s_threads_process , 0 );
     s_threads_process.m_state = ThreadsExec::Inactive ;
@@ -572,8 +599,8 @@ void ThreadsExec::print_configuration( std::ostream & s , const bool detail )
   s << "Kokkos::Threads hwloc[" << core_topo.first << "x" << core_topo.second << "x" << core_size << "]" ;
 
   if ( s_threads_exec[0] ) {
-    s << " team_league[" << s_threads_exec[0]->m_league_size << "x" << s_threads_exec[0]->m_team_size << "]" ;
-    if ( 0 == s_threads_process.m_thread_size ) { s << " Asynchronous" ; }
+    s << " team_league[" << s_threads_exec[0]->m_init_league_size << "x" << s_threads_exec[0]->m_team_size << "]" ;
+    if ( 0 == s_threads_process.m_team_size ) { s << " Asynchronous" ; }
     s << " ReduceScratch[" << s_threads_reduce_size << "]"
       << " SharedScratch[" << s_threads_shared_size << "]" ;
     s << std::endl ;
@@ -592,11 +619,11 @@ void ThreadsExec::print_configuration( std::ostream & s , const bool detail )
         s_threads_coord[i].second = ~0u ;
 
         if ( th ) {
-          s << " rank(" << th->m_league_rank << "." << th->m_team_rank << ")" ;
+          s << " rank(" << th->m_init_league_rank << "." << th->m_team_rank << ")" ;
           if ( th->m_fan_size ) {
             s << " Fan ranks" ;
             for ( int j = 0 ; j < th->m_fan_size ; ++j ) {
-              s << " (" << th->m_fan[j]->m_league_rank << "." << th->m_fan[j]->m_team_rank << ")" ;
+              s << " (" << th->m_fan[j]->m_init_league_rank << "." << th->m_fan[j]->m_team_rank << ")" ;
             }
           }
         }
@@ -608,6 +635,14 @@ void ThreadsExec::print_configuration( std::ostream & s , const bool detail )
     s << " not initialized" << std::endl ;
   }
 }
+
+//----------------------------------------------------------------------------
+
+int ThreadsExec::league_max()
+{ return std::numeric_limits<int>::max(); }
+
+int ThreadsExec::team_max()
+{ return s_threads_exec[0] ? s_threads_exec[0]->m_team_size : 1 ; }
 
 //----------------------------------------------------------------------------
 
@@ -784,10 +819,13 @@ void ThreadsExec::initialize(
 
     s_threads_process.m_team_rank = 0 ;
     s_threads_process.m_team_size = 0 ;
-    s_threads_process.m_league_rank = 0 ;
-    s_threads_process.m_league_size = 0 ;
-    s_threads_process.m_thread_rank = 0 ;
-    s_threads_process.m_thread_size = 0 ;
+    s_threads_process.m_init_league_rank = 0 ;
+    s_threads_process.m_init_league_size = 0 ;
+    s_threads_process.m_init_thread_rank = 0 ;
+    s_threads_process.m_init_thread_size = 0 ;
+    s_threads_process.m_work_league_rank = 0 ;
+    s_threads_process.m_work_league_end  = 0 ;
+    s_threads_process.m_work_league_size = 0 ;
     s_threads_process.m_state = ThreadsExec::Inactive ;
 
     if ( thread_spawn_begin ) {
@@ -797,6 +835,9 @@ void ThreadsExec::initialize(
 
   //------------------------------------
   // Initialize team topology and fan-in/out relationships:
+
+  s_threads_process.m_init_league_size = team_topo.first ;
+
   ThreadsExec::set_threads_relationships( team_topo , s_threads_exec );
 
   // Initial allocations:
@@ -815,7 +856,7 @@ void ThreadsExec::finalize()
   resize_reduce_scratch(0);
   resize_shared_scratch(0);
 
-  const unsigned begin = s_threads_process.m_thread_size ? 1 : 0 ;
+  const unsigned begin = s_threads_process.m_team_size ? 1 : 0 ;
 
   for ( unsigned i = s_threads_count ; begin < i-- ; ) {
 
@@ -829,7 +870,7 @@ void ThreadsExec::finalize()
     }
   }
 
-  if ( s_threads_process.m_thread_size ) {
+  if ( s_threads_process.m_team_size ) {
     ( & s_threads_process )->~ThreadsExec();
     s_threads_exec[0] = 0 ;
   }
@@ -841,10 +882,14 @@ void ThreadsExec::finalize()
   // Reset master thread to run solo.
   s_threads_process.m_team_rank = 0 ;
   s_threads_process.m_team_size = 1 ;
-  s_threads_process.m_league_rank = 0 ;
-  s_threads_process.m_league_size = 1 ;
-  s_threads_process.m_thread_rank = 0 ;
-  s_threads_process.m_thread_size = 1 ;
+  s_threads_process.m_init_league_rank = 0 ;
+  s_threads_process.m_init_league_size = 1 ;
+  s_threads_process.m_init_thread_rank = 0 ;
+  s_threads_process.m_init_thread_size = 1 ;
+
+  s_threads_process.m_work_league_rank = 0 ;
+  s_threads_process.m_work_league_end  = 1 ;
+  s_threads_process.m_work_league_size = 1 ;
   s_threads_process.m_state = ThreadsExec::Inactive ;
 }
 

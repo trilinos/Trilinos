@@ -133,8 +133,6 @@ public:
   template< typename T >
   inline T * get_shmem( const int count );
 
-  inline std::pair<size_t,size_t> work_range( size_t ) const ;
-
   explicit inline Threads( Impl::ThreadsExec & );
 
   /**@} */
@@ -161,6 +159,10 @@ public:
   static void initialize( const std::pair<unsigned,unsigned> league_team ,
                           const std::pair<unsigned,unsigned> hardware_topology =
                                 std::pair<unsigned,unsigned>(0u,0u) );
+
+
+  static int league_max();
+  static int team_max();
 
   //@}
   /*------------------------------------------------------------------------*/

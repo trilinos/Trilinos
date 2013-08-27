@@ -79,10 +79,11 @@ protected:
     const unsigned core_size =
       Kokkos::hwloc::get_core_capacity();
 
-    const unsigned gang_count        = core_top.first ;
-    const unsigned gang_worker_count = ( core_top.second * core_size ) / 2 ;
+    const unsigned gang_count        = std::max( 1u , core_top.first );
+    const unsigned gang_worker_count = std::max( 2u , ( core_top.second * core_size ) / 2 );
 
     Kokkos::OpenMP::initialize( gang_count , gang_worker_count );
+    // Kokkos::OpenMP::print_configuration( std::cout );
   }
 
   static void TearDownTestCase()

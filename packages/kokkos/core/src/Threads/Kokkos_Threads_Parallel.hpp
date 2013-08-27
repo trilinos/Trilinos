@@ -102,7 +102,9 @@ public:
   {
     const ParallelFor & self = * ((const ParallelFor *) arg );
 
-    self.m_func( Kokkos::Threads( exec ) );
+    for ( ; exec.team_work_avail() ; exec.team_work_next() ) {
+      self.m_func( Threads( exec ) );
+    }
 
     exec.fan_in( self.m_func );
   }
@@ -111,7 +113,7 @@ public:
     : m_func( functor )
     {
       ThreadsExec::resize_shared_scratch( work.shared_size );
-      ThreadsExec::start( & ParallelFor::execute , this );
+      ThreadsExec::start( & ParallelFor::execute , this , work.league_size );
       ThreadsExec::fence();
     }
 
@@ -195,7 +197,9 @@ public:
 
     self.m_func.init( update ); // Initialize thread-local value
 
-    self.m_func( Kokkos::Threads( exec ) , update );
+    for ( ; exec.team_work_avail() ; exec.team_work_next() ) {
+      self.m_func( Threads( exec ) , update );
+    }
 
     exec.fan_in( self.m_func );
   }
@@ -208,7 +212,7 @@ public:
       ThreadsExec::resize_shared_scratch( work.shared_size );
       ThreadsExec::resize_reduce_scratch( Reduce::value_size( m_func ) );
 
-      ThreadsExec::start( & ParallelReduce::execute , this );
+      ThreadsExec::start( & ParallelReduce::execute , this , work.league_size );
 
       const pointer_type data = (pointer_type) ThreadsExec::root_reduce_scratch();
 
