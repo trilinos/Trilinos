@@ -52,6 +52,8 @@
 #include "Ifpack2_ILUT.hpp"
 #include "Ifpack2_Krylov.hpp"
 #include "Ifpack2_AdditiveSchwarz.hpp"
+#include "Ifpack2_SupportGraph.hpp"
+#include "Amesos2.hpp"
 #include <locale>
 
 
@@ -207,6 +209,16 @@ Factory::create(const std::string& prec_type,
   else if (precTypeUpper == "KRYLOV") {
     prec = rcp (new Ifpack2::Krylov<MatrixType, Ifpack2::Preconditioner<Scalar, LocalOrdinal, GlobalOrdinal, Node> > (matrix));
   }
+#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
+  else if (precTypeUpper == "SUPPORTGRAPH") {
+    if (one_mpi_rank) {
+      prec = rcp (new Ifpack2::SupportGraph<MatrixType> (matrix));
+    }
+    else {
+      prec = rcp (new Ifpack2::AdditiveSchwarz<MatrixType, Ifpack2::SupportGraph<MatrixType> > (matrix, overlap));
+    }
+  }
+#endif
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::invalid_argument, "Ifpack2::Factory::create: "

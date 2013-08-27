@@ -104,6 +104,11 @@ namespace Amesos2 {
     }
 #endif
 
+#if defined (HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL)
+    if(solverName == "amesos2_cholmod")
+      return( true );
+#endif
+
     // Otherwise, the solver is not available
     return( false );
   }

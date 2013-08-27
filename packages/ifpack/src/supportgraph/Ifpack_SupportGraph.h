@@ -822,7 +822,7 @@ int Ifpack_SupportGraph<T>::FindSupport()
   int rows = (*Matrix_).NumGlobalRows();
   int cols = (*Matrix_).NumGlobalCols();
   int num_edges  = ((*Matrix_).NumMyNonzeros() - (*Matrix_).NumMyDiagonals())/2;
-
+  std::cout << "global num rows " << rows << std::endl;
 
   // Assert square matrix                                                                       
   IFPACK_CHK_ERR((rows == cols));
@@ -1044,7 +1044,7 @@ int Ifpack_SupportGraph<T>::Initialize()
       Time_ = Teuchos::rcp( new Epetra_Time(Comm()) );
     }
 
-  
+
   Time_->ResetStartTime();
  
   FindSupport();
@@ -1117,7 +1117,8 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     IFPACK_CHK_ERR(-3);
 
   Time_->ResetStartTime();
-
+  
+  
   Inverse_->ApplyInverse(X,Y);
 
   ++NumApplyInverse_;
@@ -1134,7 +1135,7 @@ Print(std::ostream& os) const
    os << "Ifpack_SupportGraph: " << Label () << endl << endl;
   os << "Condition number estimate = " << Condest() << endl;
   os << "Global number of rows            = " << Matrix_->NumGlobalRows() << endl;
-  os << "Number of off diagonal entries in support graph matrix     = " << Support_->NumGlobalNonzeros()-Support_->NumGlobalDiagonals() << endl;
+  os << "Number of edges in support graph     = " << (Support_->NumGlobalNonzeros()-Support_->NumGlobalDiagonals())/2 << endl;
   os << "Fraction of off diagonals of support graph/off diagonals of original     = "
      << ((double)Support_->NumGlobalNonzeros()-Support_->NumGlobalDiagonals())/(Matrix_->NumGlobalNonzeros()-Matrix_->NumGlobalDiagonals());
   os << endl;

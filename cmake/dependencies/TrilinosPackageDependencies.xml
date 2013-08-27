@@ -497,7 +497,7 @@
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS value="MPI,SuperLU,SuperLUMT,SuperLUDist,PARDISO_MKL,ParMETIS,METIS"/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="Cholmod"/>
     <EmailAddresses>
       <Regression address="amesos2-regression@software.sandia.gov"/>
     </EmailAddresses>
@@ -1163,13 +1163,13 @@
   </Package>
   <Package name="Ifpack2" dir="packages/ifpack2" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Belos,Teuchos,Tpetra,KokkosClassic"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Xpetra,Zoltan2,ThyraTpetraAdapters"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Xpetra,Zoltan2,ThyraTpetraAdapters,Amesos2"/>
     <TEST_REQUIRED_DEP_PACKAGES value="Belos,Triutils,Galeri"/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="Anasazi"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Anasazi,Amesos2"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS value="QD"/>
+    <TEST_OPTIONAL_DEP_TPLS value="QD,Cholmod,Boost"/>
     <EmailAddresses>
       <Regression address="ifpack2-regression@software.sandia.gov"/>
     </EmailAddresses>
