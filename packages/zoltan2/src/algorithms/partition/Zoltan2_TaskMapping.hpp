@@ -1250,8 +1250,8 @@ public:
      *  \param model_ is the input adapter.
      *  \param soln_ is the solution object. Holds the assignment of points.
      *  \param envConst_ is the environment object.
-     *  \param task_communication_xadj_ is the solution object. Holds the assignment of points.
-     *  \param task_communication_adj_ is the environment object.
+     *  \param task_communication_xadj_ 
+     *  \param task_communication_adj_ 
      */
     CoordinateTaskMapper(
             const Teuchos::Comm<int> *comm_,
