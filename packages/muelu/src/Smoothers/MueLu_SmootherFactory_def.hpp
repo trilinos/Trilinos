@@ -90,18 +90,17 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetSmootherPrototypes(RCP<SmootherPrototype> & preSmootherPrototype, RCP<SmootherPrototype> & postSmootherPrototype) const {
-    preSmootherPrototype = preSmootherPrototype_;
+    preSmootherPrototype  = preSmootherPrototype_;
     postSmootherPrototype = postSmootherPrototype_;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    if (preSmootherPrototype_ != Teuchos::null) {
+    if (preSmootherPrototype_ != Teuchos::null)
       preSmootherPrototype_->DeclareInput(currentLevel);
-    }
-    if ((postSmootherPrototype_ != Teuchos::null) && (preSmootherPrototype_ != postSmootherPrototype_)) {
+
+    if ((postSmootherPrototype_ != Teuchos::null) && (preSmootherPrototype_ != postSmootherPrototype_))
       postSmootherPrototype_->DeclareInput(currentLevel);
-    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -175,8 +174,8 @@ namespace MueLu {
   std::string SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::description() const {
     std::ostringstream out;
     out << SmootherFactoryBase::description();
-    std::string preStr  = (preSmootherPrototype_ == Teuchos::null) ? "null" : preSmootherPrototype_->description();
-    std::string postStr = (preSmootherPrototype_ == postSmootherPrototype_) ? "pre" : ( (postSmootherPrototype_ == Teuchos::null) ? "null" : preSmootherPrototype_->description() );
+    std::string preStr  = (preSmootherPrototype_ == Teuchos::null)          ? "null" : preSmootherPrototype_->description();
+    std::string postStr = (preSmootherPrototype_ == postSmootherPrototype_) ? "pre"  : ( (postSmootherPrototype_ == Teuchos::null) ? "null" : preSmootherPrototype_->description() );
     out << "{pre = "  << preStr << ", post = "<< postStr << "}";
     return out.str();
   }
@@ -186,13 +185,20 @@ namespace MueLu {
     MUELU_DESCRIBE;
 
     if (verbLevel & Parameters0) {
-      out0 << "PreSmoother : "; if (preSmootherPrototype_  == Teuchos::null) { out0 << "null" << std::endl; } else { Teuchos::OSTab tab2(out); preSmootherPrototype_->describe(out, verbLevel); }
+      out0 << "PreSmoother : ";
+      if (preSmootherPrototype_.is_null()) {
+        out0 << "null" << std::endl;
+      } else {
+        Teuchos::OSTab tab2(out);
+        preSmootherPrototype_->describe(out, verbLevel);
+      }
 
       out0 << "PostSmoother: ";
       if      (postSmootherPrototype_ == preSmootherPrototype_) { out0 << "same as PreSmoother" << std::endl; }
       else if (postSmootherPrototype_ == Teuchos::null)         { out0 << "null" << std::endl; }
       else {
-        { Teuchos::OSTab tab2(out); postSmootherPrototype_->describe(out, verbLevel); }
+        Teuchos::OSTab tab2(out);
+        postSmootherPrototype_->describe(out, verbLevel);
         out0 << "PostSmoother is different than PreSmoother (not the same object)" << std::endl;
       }
     }
