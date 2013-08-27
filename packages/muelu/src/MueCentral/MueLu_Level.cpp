@@ -271,6 +271,17 @@ namespace MueLu {
           if (!IsKept(ename, factory, MueLu::NextRun)) {
             RemoveKeepFlag(ename, factory, MueLu::All); // will delete the data if counter == 0
 
+            // To prevent infinite looping, we need to check whether we have
+            // actually removed the data. In buggy code it may happen that we
+            // were unable to do that, for instance, if the data was outstanding
+            // request
+            if (IsKey(factory, ename)) {
+              GetOStream(Errors, 0) << "Level::Clear found Internal data inconsistency" << std::endl;
+              print(GetOStream(Errors, 0), VERB_EXTREME);
+
+              throw Exceptions::RuntimeError("Level::Clear found Internal data inconsistency");
+            }
+
             wasRemoved = true;
             break;
           }
