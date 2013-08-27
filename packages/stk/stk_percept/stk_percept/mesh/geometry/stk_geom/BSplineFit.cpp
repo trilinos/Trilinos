@@ -36,6 +36,7 @@ namespace stk {
       /// using Piegl and Tiller "The NURBS Book" notation and equation numbers
       //Vectors2D& Q = *(&tmp_points[n_stencil]);
       Vectors2D Q = points_in;  // FIXME
+      m_Q = Q;
       n = n_i - 1;  // 0...n define the points
       Vectors2D q(n+1), d(n+1), D(n+1), V(n+1), T(n+1);
       std::vector<double> u(n+1), alpha(n+1);
@@ -149,6 +150,7 @@ namespace stk {
     void BSplineFit::print()
     {
       std::cout << "n = " << m_n << " cv count= " << m_CV.size() << " U count = " << m_U.size() << std::endl;
+      std::cout << "Q= " << m_Q << std::endl;
       std::cout << "CV= " << m_CV << std::endl;
       std::cout << "U= " << m_U << std::endl;
       if (m_curve)

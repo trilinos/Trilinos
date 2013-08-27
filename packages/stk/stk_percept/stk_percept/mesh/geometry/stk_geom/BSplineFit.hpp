@@ -28,6 +28,7 @@ namespace stk {
 
       // control vertices, knots
       Vectors2D m_CV;
+      Vectors2D m_Q;
       std::vector<double> m_U;
       int m_n;
       bool m_isRational;

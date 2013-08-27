@@ -387,7 +387,9 @@ void MeshGeometry::snap_node
 
   {
 
-    double * coord = eMesh->field_data( *coordField , node );
+    int spatialDim = eMesh->get_spatial_dim();
+    double * coord_in = eMesh->field_data( *coordField , node );
+    double coord[3] = {coord_in[0], coord_in[1], (spatialDim==3?coord_in[2]:0)};
     double delta[3] = {coord[0], coord[1], coord[2]};
     double coord_0[3] = {coord[0], coord[1], coord[2]};
     bool doPrint = m_doPrint; //DEBUG_GEOM_SNAP
@@ -423,7 +425,12 @@ void MeshGeometry::snap_node
     }
     edge_length_ave /= ((double)node_elements.size());
 
-    geomKernel->snap_to(coord, geomEvaluators[evaluator_idx]->mGeometry, &edge_length_ave);
+    double *crd = &coord[0];
+    geomKernel->snap_to(crd, geomEvaluators[evaluator_idx]->mGeometry, &edge_length_ave);
+    coord_in[0] = coord[0];
+    coord_in[1] = coord[1];
+    if (spatialDim == 3)
+      coord_in[2] = coord[2];
 
     if (doCheckCPUTime) cpu1 = stk::cpu_time() - cpu0;
 

@@ -1,5 +1,6 @@
 #include <stk_percept/mesh/geometry/stk_geom/SplineFit.hpp>
 #include <iomanip>
+#include <sstream>
 #include <iterator>
 #include <utility>
 #include <string>
@@ -7,8 +8,37 @@
 namespace stk {
   namespace geom {
 
-    static std::string s_mm_prec="`20";
+    // for Mathematica, you can choose to output with precision specified 
+    //   - see BSplineFitting.nb in this directory
+    //static std::string s_mm_prec="`15";
+    static std::string s_mm_prec="";
+
+    // for cout
     static int s_precision=15;
+
+    inline void replace(std::string &str, const std::string &find_what, const std::string &replace_with)
+    {
+      std::string::size_type pos = 0;
+      while((pos = str.find(find_what, pos)) != std::string::npos)
+        {
+          str.erase(pos, find_what.length());
+          str.insert(pos, replace_with);
+          pos += replace_with.length();
+        }
+    }
+
+    inline std::string convert_to_mm(double d)
+    {
+      std::ostringstream str;
+      str << std::setprecision(s_precision);
+      str << d;
+      std::string ret = str.str();
+      replace(ret, "e", "*^");
+      replace(ret, "E", "*^");
+      ret = ret + s_mm_prec;
+      return ret;
+    }
+
     std::ostream& operator<<(std::ostream& out,  const Vectors2D& pts)
     {
       out << std::setprecision(s_precision);
@@ -18,7 +48,7 @@ namespace stk {
           out << " " << pts[i] << (i < pts.size()-1?", ":"");
           if ((i+1) % 8 == 0) out << "\n";
         }
-      out << "}";
+      out << "};";
       return out;
     }
     std::ostream& operator<<(std::ostream& out,  const Vectors3D& pts)
@@ -30,7 +60,7 @@ namespace stk {
           out << " " << pts[i] << (i < pts.size()-1?", ":"");
           if ((i+1) % 8 == 0) out << "\n";
         }
-      out << "}";
+      out << "};";
       return out;
     }
     std::ostream& operator<<(std::ostream& out,  const Points3D& pts)
@@ -42,25 +72,25 @@ namespace stk {
           out << " " << pts[i] << (i < pts.size()-1?", ":"");
           if ((i+1) % 8 == 0) out << "\n";
         }
-      out << "}";
+      out << "};";
       return out;
     }
     std::ostream& operator<<(std::ostream& out,  const Vector2D& pt)
     {
       out << std::setprecision(s_precision);
-      out << " {" << pt[0] << s_mm_prec << ", " << pt[1] << s_mm_prec << "}";
+      out << " {" << convert_to_mm(pt[0])  << ", " << convert_to_mm(pt[1])  << "}";
       return out;
     }
     std::ostream& operator<<(std::ostream& out,  const Point3D& pt)
     {
       out << std::setprecision(s_precision);
-      out << " {" << pt[0] << s_mm_prec << ", " << pt[1] << s_mm_prec << ", " << pt[2] << s_mm_prec << "}";
+      out << " {" << convert_to_mm(pt[0])  << ", " << convert_to_mm(pt[1])  << ", " << convert_to_mm(pt[2])  << "}";
       return out;
     }
     std::ostream& operator<<(std::ostream& out,  const Vector3D& pt)
     {
       out << std::setprecision(s_precision);
-      out << " {" << pt[0] << s_mm_prec << ", " << pt[1] << s_mm_prec << ", " << pt[2] << s_mm_prec << "}";
+      out << " {" << convert_to_mm(pt[0])  << ", " << convert_to_mm(pt[1])  << ", " << convert_to_mm(pt[2])  << "}";
       return out;
     }
     std::ostream& operator<<(std::ostream& out, const std::vector<double>& vec)
@@ -69,10 +99,10 @@ namespace stk {
       out << "{";
       for (unsigned i = 0; i < vec.size(); i++)
         {
-          out << " " << vec[i] << s_mm_prec << (i<vec.size()-1?",  ":"");
+          out << " " << convert_to_mm(vec[i])  << (i<vec.size()-1?",  ":"");
           if ((i+1) % 8 == 0) out << "\n";
         }
-      out << "}";
+      out << "};";
       return out;
     }
 
