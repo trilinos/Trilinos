@@ -70,9 +70,10 @@ namespace stk {
               //alpha[k] = (u[k] - u[k-1]) / ((u[k] - u[k-1]) + (u[k+1] - u[k]));
               // eq (9.30)
               alpha[k] = (u[k] - u[k-1]) / (u[k+1] - u[k-1]);
+              double akm1 = (u[k+1] - u[k]) / (u[k+1] - u[k-1]);
               // eq (9.28)
-              D[k] = (1 - alpha[k])*d[k] + alpha[k]*d[k+1];
-              V[k] = (1 - alpha[k])*q[k] + alpha[k]*q[k+1];
+              D[k] = akm1*d[k] + alpha[k]*d[k+1];
+              V[k] = akm1*q[k] + alpha[k]*q[k+1];
               double vkl =  V[k].Length();
               if (vkl < 1.e-12) throw std::runtime_error("can't normalize T vector");
               DPRINTLN2(k,alpha[k]);
@@ -82,8 +83,8 @@ namespace stk {
             }
           // endpoints
           // eq (9.32)
-          D[0] = 2.0*d[1] - D[1];
-          D[n] = 2.0*d[n] - D[n-1];
+          D[0] = d[1] + (d[1] - D[1]);
+          D[n] = d[n] + (d[n] - D[n-1]);
           //V[0] = 2*q[1] - V[1];
           //V[n] = 2*q[n] - V[n-1];
           double d0l = D[0].Length();

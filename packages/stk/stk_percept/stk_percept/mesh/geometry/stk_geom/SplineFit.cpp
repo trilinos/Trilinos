@@ -2,10 +2,12 @@
 #include <iomanip>
 #include <iterator>
 #include <utility>
+#include <string>
 
 namespace stk {
   namespace geom {
 
+    static std::string s_mm_prec="`20";
     static int s_precision=15;
     std::ostream& operator<<(std::ostream& out,  const Vectors2D& pts)
     {
@@ -46,19 +48,19 @@ namespace stk {
     std::ostream& operator<<(std::ostream& out,  const Vector2D& pt)
     {
       out << std::setprecision(s_precision);
-      out << " {" << pt[0] << ", " << pt[1] << "}";
+      out << " {" << pt[0] << s_mm_prec << ", " << pt[1] << s_mm_prec << "}";
       return out;
     }
     std::ostream& operator<<(std::ostream& out,  const Point3D& pt)
     {
       out << std::setprecision(s_precision);
-      out << " {" << pt[0] << ", " << pt[1] << ", " << pt[2] << "}";
+      out << " {" << pt[0] << s_mm_prec << ", " << pt[1] << s_mm_prec << ", " << pt[2] << s_mm_prec << "}";
       return out;
     }
     std::ostream& operator<<(std::ostream& out,  const Vector3D& pt)
     {
       out << std::setprecision(s_precision);
-      out << " {" << pt[0] << ", " << pt[1] << ", " << pt[2] << "}";
+      out << " {" << pt[0] << s_mm_prec << ", " << pt[1] << s_mm_prec << ", " << pt[2] << s_mm_prec << "}";
       return out;
     }
     std::ostream& operator<<(std::ostream& out, const std::vector<double>& vec)
@@ -67,7 +69,7 @@ namespace stk {
       out << "{";
       for (unsigned i = 0; i < vec.size(); i++)
         {
-          out << " " << vec[i] << (i<vec.size()-1?",  ":"");
+          out << " " << vec[i] << s_mm_prec << (i<vec.size()-1?",  ":"");
           if ((i+1) % 8 == 0) out << "\n";
         }
       out << "}";

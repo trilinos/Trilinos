@@ -25,6 +25,8 @@ namespace stk {
           if (disc < 0 || a < 1.e-10)
             throw std::runtime_error("disc < 0 || a <= 0");
           alpha[k] = (-b + std::sqrt(disc))/(2.0*a);
+          if (alpha[k] < -1.e-10)
+            throw std::runtime_error("alpha < 0");
           DPRINTLN2(k,alpha[k]);
           // eq (9.47)
           Pk1[k] = Q[k] + alpha[k]*T[k]/3.0;

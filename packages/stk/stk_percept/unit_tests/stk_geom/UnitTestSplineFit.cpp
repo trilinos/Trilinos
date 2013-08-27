@@ -64,16 +64,21 @@ namespace stk
           {
             DPRINTLN2(i, curve->PointAt(cf.m_U[i]));
           }
-        // this tolerance is too high - why is this evaluation not more accurate?  FIXME
-        double tol = 1.e-4;
+
+        double tol = 1.e-5;
         int kk=0;
-        for (size_t i=1; i < cf.m_U.size()-1; i += 2)
+        // can't expect this type of curve to intepolate the knots - see below - must use
+        // GetClosestPoint
+        if (0)
           {
-            Point3D pt = curve->PointAt(cf.m_U[i]);
-            Point3D Qkk = Q[kk++];
-            DPRINTLN2(pt, Qkk);
-            double dist = pt.DistanceTo(Qkk);
-            STKUNIT_EXPECT_NEAR(dist, 0, tol);
+            for (size_t i=1; i < cf.m_U.size()-1; i += 2)
+              {
+                Point3D pt = curve->PointAt(cf.m_U[i]);
+                Point3D Qkk = Q[kk++];
+                DPRINTLN2(pt, Qkk);
+                double dist = pt.DistanceTo(Qkk);
+                STKUNIT_EXPECT_NEAR(dist, 0, tol);
+              }
           }
         for (size_t i=0; i < cf.m_U.size(); i++)
           {
@@ -95,17 +100,31 @@ namespace stk
                         << PR(first_derivative) << PR(second_derivative) << std::endl;
           }
 
+        ((ON_NurbsCurve *)curve)->SetProjectionTolerance(1.e-8);
+        for (size_t i = 0; i < Q.size(); i++)
         {
-          Point3D p(0,.01,0);
+          Point3D p = Q[i];
           double u=0;
           bool success = curve->GetClosestPoint(p, &u);
           STKUNIT_EXPECT_TRUE(success);
           Point3D closest_point = curve->PointAt(u);
           DPRINTLN(closest_point);
           double dist = closest_point.DistanceTo(p);
-          STKUNIT_EXPECT_NEAR(dist, 0.01, tol);
-          STKUNIT_EXPECT_NEAR(closest_point[0], 0.0, tol);
-          STKUNIT_EXPECT_NEAR(closest_point[1], 0.0, tol);
+          DPRINTLN(dist);
+          STKUNIT_EXPECT_NEAR(dist, 0.0, tol);
+        }
+
+        {
+          Point3D p(0.1,.01,0);
+          double u=0;
+          bool success = curve->GetClosestPoint(p, &u);
+          STKUNIT_EXPECT_TRUE(success);
+          Point3D closest_point = curve->PointAt(u);
+          DPRINTLN2(u,closest_point);
+          double dist = closest_point.DistanceTo(p);
+          STKUNIT_EXPECT_NEAR(dist, 0.0, tol);
+          STKUNIT_EXPECT_NEAR(closest_point[0], 0.1, tol);
+          STKUNIT_EXPECT_NEAR(closest_point[1], 0.01, tol);
         }
 
         {
