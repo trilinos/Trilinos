@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,14 +35,14 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_HOST_LEXICOGRAPHIC_BLOCK_SPARSE_3_TENSOR_HPP
-#define STOKHOS_HOST_LEXICOGRAPHIC_BLOCK_SPARSE_3_TENSOR_HPP
+#ifndef STOKHOS_THREADS_LEXICOGRAPHIC_BLOCK_SPARSE_3_TENSOR_HPP
+#define STOKHOS_THREADS_LEXICOGRAPHIC_BLOCK_SPARSE_3_TENSOR_HPP
 
-#include "Kokkos_Host.hpp"
+#include "Kokkos_Threads.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_LexicographicBlockSparse3Tensor.hpp"
@@ -50,12 +50,12 @@
 namespace Stokhos {
 
 template< typename ValueType >
-class Multiply< LexicographicBlockSparse3Tensor< ValueType , Kokkos::Host > , void , void , DefaultSparseMatOps >
+class Multiply< LexicographicBlockSparse3Tensor< ValueType , Kokkos::Threads > , void , void , DefaultSparseMatOps >
 {
 public:
 
-  typedef Kokkos::Host::size_type size_type ;
-  typedef LexicographicBlockSparse3Tensor< ValueType , Kokkos::Host > tensor_type ;
+  typedef Kokkos::Threads::size_type size_type ;
+  typedef LexicographicBlockSparse3Tensor< ValueType , Kokkos::Threads > tensor_type ;
 
   template< typename MatrixValue , typename VectorValue >
   static void apply( const tensor_type & tensor ,
@@ -194,4 +194,4 @@ public:
 
 } // namespace Stokhos
 
-#endif /* #ifndef STOKHOS_HOST_LEXICOGRAPHIC_BLOCK_SPARSE_3_TENSOR_HPP */
+#endif /* #ifndef STOKHOS_THREADS_LEXICOGRAPHIC_BLOCK_SPARSE_3_TENSOR_HPP */

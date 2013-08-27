@@ -39,24 +39,24 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_HOST_CRS_PRODUCT_TENSOR_HPP
-#define STOKHOS_HOST_CRS_PRODUCT_TENSOR_HPP
+#ifndef STOKHOS_THREADS_CRS_PRODUCT_TENSOR_HPP
+#define STOKHOS_THREADS_CRS_PRODUCT_TENSOR_HPP
 
-#include "Kokkos_Host.hpp"
+#include "Kokkos_Threads.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_CrsProductTensor.hpp"
-#include "Stokhos_Host_TinyVec.hpp"
+#include "Stokhos_Threads_TinyVec.hpp"
 
 namespace Stokhos {
 
 template< typename ValueType >
-class Multiply< CrsProductTensor< ValueType , Kokkos::Host > , void , void , DefaultSparseMatOps >
+class Multiply< CrsProductTensor< ValueType , Kokkos::Threads > , void , void , DefaultSparseMatOps >
 {
 public:
 
-  typedef Kokkos::Host::size_type size_type ;
-  typedef CrsProductTensor< ValueType , Kokkos::Host > tensor_type ;
+  typedef Kokkos::Threads::size_type size_type ;
+  typedef CrsProductTensor< ValueType , Kokkos::Threads > tensor_type ;
 
   template< typename MatrixValue , typename VectorValue >
   static void apply( const tensor_type & tensor ,
@@ -132,4 +132,4 @@ public:
 
 } // namespace Stokhos
 
-#endif /* #ifndef STOKHOS_HOST_CRS_PRODUCT_TENSOR_HPP */
+#endif /* #ifndef STOKHOS_THREADS_CRS_PRODUCT_TENSOR_HPP */

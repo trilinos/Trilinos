@@ -434,6 +434,22 @@ public:
     }
   }
 
+  KOKKOS_INLINE_FUNCTION
+  void
+  replaceValues(OrdinalType row, OrdinalType *cols, size_t ncol, ScalarType *vals, bool force_atomic = false) const {
+    SparseRowView<CrsMatrix> row_view = this->row (row);
+    int length = row_view.length;
+    for (size_t i = 0; i<ncol; ++i) {
+      for (int j=0; j<length; ++j)
+        if (row_view.colidx(j) == cols[i] ) {
+          if ( force_atomic )
+            atomic_exchange(&row_view.value(j), vals[i]);
+          else
+            row_view.value(j) = vals[i];
+        }
+    }
+  }
+
 
 
   template<typename aScalarType, typename aOrdinalType, class aDevice, class aMemoryTraits>
@@ -675,7 +691,7 @@ generateHostGraph ( OrdinalType nrows,
   h_entries_.resize(_nnz, OrdinalType(-1));
   rows_.resize(_numRows+1);
   rows_[0] = 0;
-  for (int i = 0; i < _numRows; ++i)
+  for (OrdinalType i = 0; i < _numRows; ++i)
     rows_[i+1] = rows_[i]+cols_per_row;
 
 }

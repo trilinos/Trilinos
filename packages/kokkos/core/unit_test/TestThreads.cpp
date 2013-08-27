@@ -99,6 +99,8 @@ protected:
     team_league.second = std::max( 2u , ( core_top.second * core_size ) / 2 );
     for ( unsigned i = 0 ; i < 10 ; ++i ) {
       Kokkos::Threads::initialize( team_league );
+      Kokkos::Threads::sleep();
+      Kokkos::Threads::wake();
       Kokkos::Threads::finalize();
     }
 

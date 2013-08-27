@@ -50,26 +50,26 @@
 
 #include "TestStochastic.hpp"
 
-#include "Stokhos_Host_CrsMatrix.hpp"
-#include "Stokhos_Host_BlockCrsMatrix.hpp"
-#include "Stokhos_Host_StochasticProductTensor.hpp"
-#include "Stokhos_Host_SymmetricDiagonalSpec.hpp"
-#include "Stokhos_Host_CrsProductTensor.hpp"
-#include "Stokhos_Host_TiledCrsProductTensor.hpp"
-#include "Stokhos_Host_CooProductTensor.hpp"
-#include "Stokhos_Host_FlatSparse3Tensor.hpp"
-#include "Stokhos_Host_FlatSparse3Tensor_kji.hpp"
-#include "Stokhos_Host_LexicographicBlockSparse3Tensor.hpp"
-#include "Stokhos_Host_LinearSparse3Tensor.hpp"
+#include "Stokhos_Threads_CrsMatrix.hpp"
+#include "Stokhos_Threads_BlockCrsMatrix.hpp"
+#include "Stokhos_Threads_StochasticProductTensor.hpp"
+#include "Stokhos_Threads_SymmetricDiagonalSpec.hpp"
+#include "Stokhos_Threads_CrsProductTensor.hpp"
+#include "Stokhos_Threads_TiledCrsProductTensor.hpp"
+#include "Stokhos_Threads_CooProductTensor.hpp"
+#include "Stokhos_Threads_FlatSparse3Tensor.hpp"
+#include "Stokhos_Threads_FlatSparse3Tensor_kji.hpp"
+#include "Stokhos_Threads_LexicographicBlockSparse3Tensor.hpp"
+#include "Stokhos_Threads_LinearSparse3Tensor.hpp"
 
 namespace unit_test {
 
 template<typename Scalar>
-struct performance_test_driver<Scalar,Kokkos::Host> {
+struct performance_test_driver<Scalar,Kokkos::Threads> {
 
   static void run(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
                   bool test_block, bool symmetric, bool mkl) {
-    typedef Kokkos::Host Device;
+    typedef Kokkos::Threads Device;
 
     int nGrid;
     int nIter;
@@ -145,8 +145,8 @@ int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
 {
   const std::pair<unsigned,unsigned> core_topo =
     Kokkos::hwloc::get_core_topology();
-  //const size_t core_capacity = Kokkos::hwloc::get_core_capacity();
-  const size_t core_capacity = 1;
+  const size_t core_capacity = Kokkos::hwloc::get_core_capacity();
+  //const size_t core_capacity = 1;
 
   const size_t gang_count = core_topo.first ;
   const size_t gang_worker_count = core_topo.second * core_capacity;
@@ -163,15 +163,17 @@ int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
   }
 #endif
 
-  Kokkos::Host::initialize( gang_count , gang_worker_count );
+  Kokkos::Threads::initialize( std::make_pair(gang_count , gang_worker_count),
+                               core_topo );
+  Kokkos::Threads::print_configuration( std::cout );
 
   std::cout << std::endl << "\"Host Performance with "
             << gang_count * gang_worker_count << " threads\"" << std::endl ;
 
-  unit_test::performance_test_driver<Scalar,Kokkos::Host>::run(
+  unit_test::performance_test_driver<Scalar,Kokkos::Threads>::run(
     test_flat, test_orig, test_deg, test_lin, test_block, symmetric, mkl);
 
-  Kokkos::Host::finalize();
+  Kokkos::Threads::finalize();
 
   return 0 ;
 }

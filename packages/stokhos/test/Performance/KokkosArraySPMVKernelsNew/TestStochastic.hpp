@@ -42,7 +42,7 @@
 #include <cmath>
 #include <iostream>
 
-#include "Kokkos_Host.hpp"
+#include "Kokkos_Threads.hpp"
 #include "impl/Kokkos_Timer.hpp"
 
 #include "Stokhos_CrsMatrix.hpp"
@@ -1425,7 +1425,7 @@ void performance_test_driver_poly_deg( const int nvar ,
                                        const bool symmetric )
 {
   bool do_flat_sparse =
-    Kokkos::Impl::is_same<Device,Kokkos::Host>::value ;
+    Kokkos::Impl::is_same<Device,Kokkos::Threads>::value ;
 
   std::cout.precision(8);
 

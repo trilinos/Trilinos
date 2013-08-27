@@ -39,10 +39,10 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_HOST_SYMMETRIC_DIAGONAL_SPEC_HPP
-#define STOKHOS_HOST_SYMMETRIC_DIAGONAL_SPEC_HPP
+#ifndef STOKHOS_THREADS_SYMMETRIC_DIAGONAL_SPEC_HPP
+#define STOKHOS_THREADS_SYMMETRIC_DIAGONAL_SPEC_HPP
 
-#include "Kokkos_Host.hpp"
+#include "Kokkos_Threads.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_SymmetricDiagonalSpec.hpp"
@@ -50,9 +50,9 @@
 namespace Stokhos {
 
 template<>
-class Multiply< SymmetricDiagonalSpec< Kokkos::Host > , void , void, DefaultSparseMatOps > {
+class Multiply< SymmetricDiagonalSpec< Kokkos::Threads > , void , void, DefaultSparseMatOps > {
 public:
-  typedef Kokkos::Host device_type ;
+  typedef Kokkos::Threads device_type ;
   typedef device_type::size_type size_type ;
   typedef SymmetricDiagonalSpec< device_type > block_type ;
 
@@ -105,4 +105,4 @@ public:
 
 //----------------------------------------------------------------------------
 
-#endif /* #ifndef STOKHOS_HOST_SYMMETRIC_DIAGONAL_SPEC_HPP */
+#endif /* #ifndef STOKHOS_THREADS_SYMMETRIC_DIAGONAL_SPEC_HPP */

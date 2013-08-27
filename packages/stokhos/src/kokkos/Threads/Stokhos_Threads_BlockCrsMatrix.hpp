@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,14 +35,14 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_HOST_BLOCKCRSMATRIX_HPP
-#define STOKHOS_HOST_BLOCKCRSMATRIX_HPP
+#ifndef STOKHOS_THREADS_BLOCKCRSMATRIX_HPP
+#define STOKHOS_THREADS_BLOCKCRSMATRIX_HPP
 
-#include "Kokkos_Host.hpp"
+#include "Kokkos_Threads.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_BlockCrsMatrix.hpp"
@@ -51,16 +51,16 @@ namespace Stokhos {
 
 template< class BlockSpec , typename MatrixValue , typename VectorValue >
 class Multiply<
-  BlockCrsMatrix< BlockSpec , MatrixValue , Kokkos::Host > ,
-  Kokkos::View< VectorValue** , Kokkos::LayoutLeft , Kokkos::Host > ,
-  Kokkos::View< VectorValue** , Kokkos::LayoutLeft , Kokkos::Host > ,
+  BlockCrsMatrix< BlockSpec , MatrixValue , Kokkos::Threads > ,
+  Kokkos::View< VectorValue** , Kokkos::LayoutLeft , Kokkos::Threads > ,
+  Kokkos::View< VectorValue** , Kokkos::LayoutLeft , Kokkos::Threads > ,
   DefaultSparseMatOps >
 {
 public:
 
-  typedef Kokkos::Host                                      device_type ;
+  typedef Kokkos::Threads                                      device_type ;
   typedef device_type::size_type                    size_type ;
-  typedef Kokkos::View< VectorValue** , Kokkos::LayoutLeft , Kokkos::Host > block_vector_type ;
+  typedef Kokkos::View< VectorValue** , Kokkos::LayoutLeft , Kokkos::Threads > block_vector_type ;
   typedef BlockCrsMatrix< BlockSpec , MatrixValue , device_type >  matrix_type ;
 
   const matrix_type  m_A ;
@@ -115,5 +115,4 @@ public:
 
 } // namespace Stokhos
 
-#endif /* #ifndef STOKHOS_HOST_BLOCKCRSMATRIX_HPP */
-
+#endif /* #ifndef STOKHOS_THREADS_BLOCKCRSMATRIX_HPP */

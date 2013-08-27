@@ -161,7 +161,6 @@ public:
   //! \name Functions for the functor device interface
   //@{
 
-
   __device__ inline int league_size() const { return gridDim.x ; }
   __device__ inline int league_rank() const { return blockIdx.x ; }
 
@@ -171,6 +170,7 @@ public:
   __device__ inline void team_barrier() const { __syncthreads(); }
   __device__ inline unsigned int team_barrier_count(bool value) const
              { return __syncthreads_count(value); }
+
   template< typename T >
   __device__ inline T * get_shmem( const int count );
 

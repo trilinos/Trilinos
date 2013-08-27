@@ -39,8 +39,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_HOST_TINY_VEC_HPP
-#define STOKHOS_HOST_TINY_VEC_HPP
+#ifndef STOKHOS_THREADS_TINY_VEC_HPP
+#define STOKHOS_THREADS_TINY_VEC_HPP
 
 extern "C" {
 #include <immintrin.h>
@@ -368,4 +368,4 @@ private:
 
 } // namespace Stokhos
 
-#endif /* #ifndef STOKHOS_HOST_TINY_VEC_HPP */
+#endif /* #ifndef STOKHOS_THREADS_TINY_VEC_HPP */

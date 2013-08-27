@@ -40,10 +40,10 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Panzer_ConfigDefs.hpp"
+
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_STKConnManager_impl.hpp"
-
-#include "Panzer_Traits.hpp"
 
 namespace panzer_stk {
 

@@ -44,6 +44,8 @@
 #ifndef KOKKOS_THREADSEXEC_HPP
 #define KOKKOS_THREADSEXEC_HPP
 
+#include <utility>
+
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
@@ -81,13 +83,17 @@ private:
   int           m_fan_team_size ;
   int           m_team_rank ;
   int           m_team_size ;
-  int           m_league_rank ;
-  int           m_league_size ;
-  int           m_thread_rank ; // m_team_rank + m_team_size * m_league_rank
-  int           m_thread_size ; // m_team_size * m_league_size
+  int           m_init_league_rank ;
+  int           m_init_league_size ;
+  int           m_init_thread_rank ;
+  int           m_init_thread_size ;
+
+  int           m_work_league_rank ;
+  int           m_work_league_end ;
+  int           m_work_league_size ;
+
   ThreadsExec * m_fan[ MAX_FAN_COUNT ] ;
 
-  static void activate_threads();
   static void global_lock();
   static void global_unlock();
   static bool spawn();
@@ -182,6 +188,20 @@ public:
       }
     }
 
+  /*  When a functor using the 'device' interface requests
+   *  more teams than are initialized the parallel operation
+   *  must loop over a range of league ranks with a team_barrier
+   *  between each iteration.
+   */
+  bool team_work_avail()
+    {
+      m_shared_iter = 0 ;
+      return m_work_league_rank < m_work_league_end ;
+    }
+
+  void team_work_next()
+    { if ( ++m_work_league_rank < m_work_league_end ) team_barrier(); }
+
   inline
   std::pair< size_t , size_t >
   work_range( const size_t work_count ) const
@@ -195,19 +215,23 @@ public:
     // work_per_thread = unit_of_work_per_thread * work_align
 
     const size_t work_per_thread =
-      ( ( ( ( work_count + work_mask ) >> work_shift ) + m_thread_size - 1 ) / m_thread_size ) << work_shift ;
+      ( ( ( ( work_count + work_mask ) >> work_shift ) + m_init_thread_size - 1 ) / m_init_thread_size ) << work_shift ;
 
-    const size_t work_begin = std::min( m_thread_rank * work_per_thread , work_count );
+    const size_t work_begin = std::min( m_init_thread_rank * work_per_thread , work_count );
     const size_t work_end   = std::min( work_begin + work_per_thread , work_count );
 
     return std::pair< size_t , size_t >( work_begin , work_end );
   }
 
+
   /** \brief  Wait for previous asynchronous functor to
    *          complete and release the Threads device.
    *          Acquire the Threads device and start this functor.
    */
-  static void start( void (*)( ThreadsExec & , const void * ) , const void * );
+  static void start( void (*)( ThreadsExec & , const void * ) , const void * , int = 0 );
+
+  static int league_max();
+  static int team_max();
 
   static int  in_parallel();
   static void fence();
@@ -243,14 +267,26 @@ inline void Threads::print_configuration( std::ostream & s , bool detail )
   Impl::ThreadsExec::print_configuration( s , detail );
 }
 
+inline int Threads::league_max()
+{ return Impl::ThreadsExec::league_max() ; }
+
+inline int Threads::team_max()
+{ return Impl::ThreadsExec::team_max() ; }
+
+inline bool Threads::sleep()
+{ return Impl::ThreadsExec::sleep() ; }
+
+inline bool Threads::wake()
+{ return Impl::ThreadsExec::wake() ; }
+
 inline void Threads::fence()
 { Impl::ThreadsExec::fence() ; }
 
 inline int Threads::league_rank() const
-{ return m_exec.m_league_rank ; }
+{ return m_exec.m_work_league_rank ; }
 
 inline int Threads::league_size() const
-{ return m_exec.m_league_size ; }
+{ return m_exec.m_work_league_size ; }
 
 inline int Threads::team_rank() const
 { return m_exec.m_team_rank ; }
@@ -261,13 +297,7 @@ inline int Threads::team_size() const
 inline void Threads::team_barrier()
 { return m_exec.team_barrier(); }
 
-inline
-std::pair< size_t , size_t >
-Threads::work_range( const size_t work_count ) const
-{ return m_exec.work_range( work_count ); }
-
-inline Threads::Threads( Impl::ThreadsExec & t )
-  : m_exec( t ) { m_exec.m_shared_iter = 0 ; }
+inline Threads::Threads( Impl::ThreadsExec & t ) : m_exec( t ) {}
 
 template< typename T >
 inline

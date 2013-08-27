@@ -82,21 +82,21 @@ namespace MueLu {
 
 #undef MUELU_SHIFTEDLAPLACIAN_SHORT
 #include "MueLu_UseShortNames.hpp"
-
+    
     typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
     typedef Tpetra::MultiVector<SC,LO,GO,NO>             TMV;
     typedef Tpetra::Operator<SC,LO,GO,NO>                OP;
     typedef Belos::LinearProblem<SC,TMV,OP>              BelosLinearProblem;
     typedef Belos::SolverManager<SC,TMV,OP>              BelosSolverManager;
     typedef Belos::BlockGmresSolMgr<SC,TMV,OP>           BelosGMRES;
-
+    
   public:
 
     //! Constructors
     ShiftedLaplacian()
-      : Problem_("acoustic"), numPDEs_(1), Smoother_("schwarz"), Aggregation_("coupled"), Nullspace_("constant"), numLevels_(5), coarseGridSize_(1000),
+      : Problem_("acoustic"), numPDEs_(1), Smoother_("schwarz"), Aggregation_("coupled"), Nullspace_("constant"), numLevels_(5), coarseGridSize_(100),
 	omega_(2.0*M_PI), ashift1_((SC) 0.0), ashift2_((SC) -1.0), pshift1_((SC) 0.0), pshift2_((SC) -1.0), iters_(500), blksize_(1), tol_(1.0e-4),
-	nsweeps_(5), ncycles_(1), FGMRESoption_(false), cycles_(8), subiters_(10), option_(1),
+	nsweeps_(5), ncycles_(1), FGMRESoption_(false), cycles_(8), subiters_(10), option_(1), nproblems_(0),
 	GridTransfersExist_(false), UseLaplacian_(true), VariableShift_(false),
 	LaplaceOperatorSet_(false), ProblemMatrixSet_(false), PreconditioningMatrixSet_(false),
 	StiffMatrixSet_(false), MassMatrixSet_(false), DampMatrixSet_(false),
@@ -105,7 +105,7 @@ namespace MueLu {
 
     // Destructor
     virtual ~ShiftedLaplacian();
-
+    
     // Input
     void setParameters(const Teuchos::ParameterList List);
 
@@ -121,7 +121,7 @@ namespace MueLu {
     void setcoords(RCP<MultiVector>& Coords);
     void setProblemShifts(Scalar ashift1, Scalar ashift2);
     void setPreconditioningShifts(Scalar pshift1, Scalar pshift2);
-    void setLevelShifts(std::vector<Scalar> levelshifts);
+    void setLevelShifts(vector<Scalar> levelshifts);
     void setAggregation(int stype);
     void setSmoother(int stype);
     void setSolver(int stype);
@@ -134,7 +134,6 @@ namespace MueLu {
     void initialize();
     void setupFastRAP();
     void setupSlowRAP();
-    void setup(const double omega);
 
     // Solve phase
     void solve(const RCP<TMV> B, RCP<TMV>& X);
@@ -144,8 +143,8 @@ namespace MueLu {
     // Problem options
     // Problem  -> acoustic, elastic, acoustic-elastic
     // numPDEs_ -> number of DOFs at each node
-
-    std::string Problem_;
+    
+    std::string Problem_; 
     int numPDEs_;
     int numSetups_;
 
@@ -167,7 +166,7 @@ namespace MueLu {
     double     omega_;
     SC         ashift1_, ashift2_;
     SC         pshift1_, pshift2_;
-    std::vector<SC> levelshifts_;
+    vector<SC> levelshifts_;
 
     // Krylov solver inputs
     // iters  -> max number of iterations
@@ -183,6 +182,7 @@ namespace MueLu {
     int    cycles_;
     int    subiters_;
     int    option_;
+    int    nproblems_;
 
     // flags for setup
     bool GridTransfersExist_;
@@ -217,7 +217,7 @@ namespace MueLu {
     Teuchos::ParameterList            coarsestSmooList_;
     std::string                       ifpack2Type_;
     Teuchos::ParameterList            ifpack2List_;
-
+    
     // Operator and Preconditioner
     RCP< MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO> > MueLuOp_;
     RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >           TpetraA_;

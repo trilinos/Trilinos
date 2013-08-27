@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -129,7 +129,7 @@ public:
                       A.values.ptr_on_device() ,
                       A.graph.row_map.ptr_on_device() ,
                       A.graph.entries.ptr_on_device() ,
-                      x.ptr_on_device() , 
+                      x.ptr_on_device() ,
                       beta ,
                       y.ptr_on_device() );
 
@@ -172,7 +172,7 @@ public:
                       A.values.ptr_on_device() ,
                       A.graph.row_map.ptr_on_device() ,
                       A.graph.entries.ptr_on_device() ,
-                      x.ptr_on_device() , 
+                      x.ptr_on_device() ,
                       beta ,
                       y.ptr_on_device() );
 
@@ -190,19 +190,19 @@ class MMultiply<
   DefaultSparseMatOps >
 {
 public:
-  typedef Kokkos::Cuda                           device_type ;
-  typedef device_type::size_type                      size_type ;
-  typedef Kokkos::View< float[] , device_type >              vector_type ;
-  typedef Kokkos::View< float** , Kokkos::LayoutLeft, device_type >  multi_vector_type ;
-  typedef CrsMatrix< float , device_type >           matrix_type ;
-  typedef int                                         Ordinal ;
+  typedef Kokkos::Cuda device_type;
+  typedef device_type::size_type size_type;
+  typedef Kokkos::View< float[], Kokkos::LayoutLeft, device_type > vector_type;
+  typedef Kokkos::View< float**, Kokkos::LayoutLeft, device_type > multi_vector_type;
+  typedef CrsMatrix< float , device_type > matrix_type;
+  typedef int Ordinal;
 
   //--------------------------------------------------------------------------
 
   static void apply( const matrix_type & A ,
                      const multi_vector_type & x ,
                      const multi_vector_type & y ,
-		     const std::vector<Ordinal> & col_indices )
+                     const std::vector<Ordinal> & col_indices )
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const float alpha = 1 , beta = 0 ;
@@ -217,35 +217,37 @@ public:
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
       vector_type xx_view = Kokkos::subview<vector_type>( xx , span );
-      vector_type x_col = Kokkos::subview<vector_type>( x, col_indices[col] );
+      vector_type x_col =
+        Kokkos::subview<vector_type>( x, Kokkos::ALL(), col_indices[col] );
       Kokkos::deep_copy(xx_view, x_col);
     }
 
     // Sparse matrix-times-multivector
     cusparseStatus_t status =
       cusparseScsrmm( s.handle ,
-		      CUSPARSE_OPERATION_NON_TRANSPOSE ,
-		      n , ncol , n , 
-		      alpha ,
-		      s.descra ,
-		      A.values.ptr_on_device() ,
-		      A.graph.row_map.ptr_on_device() ,
-		      A.graph.entries.ptr_on_device() ,
-		      xx.ptr_on_device() , 
-		      n , 
-		      beta ,
-		      yy.ptr_on_device() ,
-		      n );
-    
+                      CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                      n , ncol , n ,
+                      alpha ,
+                      s.descra ,
+                      A.values.ptr_on_device() ,
+                      A.graph.row_map.ptr_on_device() ,
+                      A.graph.entries.ptr_on_device() ,
+                      xx.ptr_on_device() ,
+                      n ,
+                      beta ,
+                      yy.ptr_on_device() ,
+                      n );
+
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
       throw std::runtime_error( std::string("ERROR - cusparseDcsrmv " ) );
     }
-    
+
     // Copy columns out of continguous multivector
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
       vector_type yy_view = Kokkos::subview<vector_type>( yy , span );
-      vector_type y_col = Kokkos::subview<vector_type>( y, col_indices[col] );
+      vector_type y_col =
+        Kokkos::subview<vector_type>( y, Kokkos::ALL(), col_indices[col] );
       Kokkos::deep_copy(y_col, yy_view );
     }
   }
@@ -259,19 +261,19 @@ class MMultiply<
   DefaultSparseMatOps >
 {
 public:
-  typedef Kokkos::Cuda                           device_type ;
-  typedef device_type::size_type                      size_type ;
-  typedef Kokkos::View< double[] , device_type >              vector_type ;
-  typedef Kokkos::View< double** , Kokkos::LayoutLeft, device_type >  multi_vector_type ;
-  typedef CrsMatrix< double , device_type >           matrix_type ;
-  typedef int                                         Ordinal ;
+  typedef Kokkos::Cuda device_type;
+  typedef device_type::size_type size_type;
+  typedef Kokkos::View< double[], Kokkos::LayoutLeft, device_type > vector_type;
+  typedef Kokkos::View< double**, Kokkos::LayoutLeft, device_type > multi_vector_type;
+  typedef CrsMatrix< double , device_type > matrix_type;
+  typedef int Ordinal;
 
   //--------------------------------------------------------------------------
 
   static void apply( const matrix_type & A ,
                      const multi_vector_type & x ,
                      const multi_vector_type & y ,
-		     const std::vector<Ordinal> & col_indices )
+                     const std::vector<Ordinal> & col_indices )
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const double alpha = 1 , beta = 0 ;
@@ -286,35 +288,37 @@ public:
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
       vector_type xx_view = Kokkos::subview<vector_type>( xx , span );
-      vector_type x_col = Kokkos::subview<vector_type>( x, col_indices[col] );
+      vector_type x_col =
+        Kokkos::subview<vector_type>( x, Kokkos::ALL(), col_indices[col] );
       Kokkos::deep_copy(xx_view, x_col);
     }
 
     // Sparse matrix-times-multivector
     cusparseStatus_t status =
       cusparseDcsrmm( s.handle ,
-		      CUSPARSE_OPERATION_NON_TRANSPOSE ,
-		      n , ncol , n , 
-		      alpha ,
-		      s.descra ,
-		      A.values.ptr_on_device() ,
-		      A.graph.row_map.ptr_on_device() ,
-		      A.graph.entries.ptr_on_device() ,
-		      xx.ptr_on_device() , 
-		      n , 
-		      beta ,
-		      yy.ptr_on_device() ,
-		      n );
-    
+                      CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                      n , ncol , n ,
+                      alpha ,
+                      s.descra ,
+                      A.values.ptr_on_device() ,
+                      A.graph.row_map.ptr_on_device() ,
+                      A.graph.entries.ptr_on_device() ,
+                      xx.ptr_on_device() ,
+                      n ,
+                      beta ,
+                      yy.ptr_on_device() ,
+                      n );
+
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
       throw std::runtime_error( std::string("ERROR - cusparseDcsrmv " ) );
     }
-    
+
     // Copy columns out of continguous multivector
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
       vector_type yy_view = Kokkos::subview<vector_type>( yy , span );
-      vector_type y_col = Kokkos::subview<vector_type>( y, col_indices[col] );
+      vector_type y_col =
+        Kokkos::subview<vector_type>( y, Kokkos::ALL(), col_indices[col] );
       Kokkos::deep_copy(y_col, yy_view );
     }
   }
@@ -358,23 +362,23 @@ public:
     // Sparse matrix-times-multivector
     cusparseStatus_t status =
       cusparseScsrmm( s.handle ,
-		      CUSPARSE_OPERATION_NON_TRANSPOSE ,
-		      n , ncol , n , 
-		      alpha ,
-		      s.descra ,
-		      A.values.ptr_on_device() ,
-		      A.graph.row_map.ptr_on_device() ,
-		      A.graph.entries.ptr_on_device() ,
-		      xx.ptr_on_device() , 
-		      n , 
-		      beta ,
-		      yy.ptr_on_device() ,
-		      n );
-    
+                      CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                      n , ncol , n ,
+                      alpha ,
+                      s.descra ,
+                      A.values.ptr_on_device() ,
+                      A.graph.row_map.ptr_on_device() ,
+                      A.graph.entries.ptr_on_device() ,
+                      xx.ptr_on_device() ,
+                      n ,
+                      beta ,
+                      yy.ptr_on_device() ,
+                      n );
+
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
       throw std::runtime_error( std::string("ERROR - cusparseDcsrmv " ) );
     }
-    
+
     // Copy columns out of continguous multivector
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
@@ -422,23 +426,23 @@ public:
     // Sparse matrix-times-multivector
     cusparseStatus_t status =
       cusparseDcsrmm( s.handle ,
-		      CUSPARSE_OPERATION_NON_TRANSPOSE ,
-		      n , ncol , n , 
-		      alpha ,
-		      s.descra ,
-		      A.values.ptr_on_device() ,
-		      A.graph.row_map.ptr_on_device() ,
-		      A.graph.entries.ptr_on_device() ,
-		      xx.ptr_on_device() , 
-		      n , 
-		      beta ,
-		      yy.ptr_on_device() ,
-		      n );
-    
+                      CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                      n , ncol , n ,
+                      alpha ,
+                      s.descra ,
+                      A.values.ptr_on_device() ,
+                      A.graph.row_map.ptr_on_device() ,
+                      A.graph.entries.ptr_on_device() ,
+                      xx.ptr_on_device() ,
+                      n ,
+                      beta ,
+                      yy.ptr_on_device() ,
+                      n );
+
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
       throw std::runtime_error( std::string("ERROR - cusparseDcsrmv " ) );
     }
-    
+
     // Copy columns out of continguous multivector
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
@@ -460,7 +464,7 @@ public:
   ~MatrixMarketWriter() {}
 
   static void write(const matrix_type & A ,
-		    const std::string& filename) {}
+                    const std::string& filename) {}
 };
 
 //----------------------------------------------------------------------------
