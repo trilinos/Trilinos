@@ -59,49 +59,42 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TrilinosSmoother(std::string const & type, Teuchos::ParameterList const & paramList, LO const &overlap, RCP<FactoryBase> AFact)
+  TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TrilinosSmoother(const std::string& type, const Teuchos::ParameterList& paramList, const LO& overlap, RCP<FactoryBase> AFact)
     : type_(type), paramList_(paramList), overlap_(overlap), AFact_(AFact)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(overlap_ < 0, Exceptions::RuntimeError, "overlap_ < 0");
-  }
+    TEUCHOS_TEST_FOR_EXCEPTION(overlap_ < 0, Exceptions::RuntimeError, "Overlap parameter is negative (" << overlap << ")");
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    currentLevel.DeclareInput("A", AFact_.get()); // TODO: also call Ifpack or Ifpack2::DeclareInput?
-  }
+    bool triedEpetra = false, triedTpetra = false;
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level &currentLevel) {
-    // FactoryMonitor m(*this, "Setup Smoother");
-    if (SmootherPrototype::IsSetup() == true)
-      VerboseObject::GetOStream(Warnings0, 0) << "Warning: MueLu::DirectSolver::Setup(): Setup() has already been called";
-    TEUCHOS_TEST_FOR_EXCEPTION(s_ != Teuchos::null, Exceptions::RuntimeError, "IsSetup() == false but s_ != Teuchos::null. This does not make sense");
-
-    RCP<Matrix> A = currentLevel.Get< RCP<Matrix> >("A", AFact_.get());
-
-    if (A.is_null())
-      return;
-
-    Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
-
-    if (lib == Xpetra::UseTpetra) {
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
-      s_ = rcp( new Ifpack2Smoother(type_, paramList_, overlap_) );
-      s_->SetFactory("A", AFact_);
-#else
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external library availables for preconditionning Tpetra matrices. Compile MueLu with Ifpack2.");
+    sTpetra_ = rcp(new Ifpack2Smoother(type_, paramList_, overlap_));
+    triedTpetra = true;
 #endif
-    } else if (lib == Xpetra::UseEpetra) {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
-      s_ = GetIfpackSmoother<SC,LO,GO,NO,LMO>(TrilinosSmoother::Ifpack2ToIfpack1Type(type_), TrilinosSmoother::Ifpack2ToIfpack1Param(paramList_), overlap_, AFact_);
-#else
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external library availables for preconditionning Epetra matrices. Compile MueLu with Ifpack.");
+    sEpetra_ = GetIfpackSmoother<SC,LO,GO,NO,LMO>(TrilinosSmoother::Ifpack2ToIfpack1Type(type_), TrilinosSmoother::Ifpack2ToIfpack1Param(paramList_), overlap_, AFact_);
+    triedEpetra = true;
 #endif
-    } else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "lib != UseTpetra && lib != UseEpetra");
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION(triedTpetra && sTpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Ifpack2 smoother");
+    TEUCHOS_TEST_FOR_EXCEPTION(triedEpetra && sEpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Ifpack smoother");
+    TEUCHOS_TEST_FOR_EXCEPTION(!triedEpetra && !triedTpetra,      Exceptions::RuntimeError, "Unable to construct Ifpack/Ifpack2 smoother."
+                               "Plase enable (TPETRA and IFPACK2) or (EPETRA and IFPACK)");
+  }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(s_ == Teuchos::null, Exceptions::RuntimeError, "");
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& currentLevel) const {
+    // Decide whether we are running in Epetra or Tpetra mode
+    // Theoretically, we could make this decision in the constructor, and create only
+    // one of the smoothers. But we want to be able to reuse, so one can imagine a scenario
+    // where one first runs hierarchy with tpetra matrix, and then with epetra.
+    s_ = (currentLevel.lib() == Xpetra::UseTpetra ? sTpetra_ : sEpetra_);
+
+    s_->DeclareInput(currentLevel);
+  }
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level& currentLevel) {
+    if (SmootherPrototype::IsSetup() == true)
+      VerboseObject::GetOStream(Warnings0, 0) << "Warning: MueLu::TrilinosSmoother::Setup(): Setup() has already been called";
 
     s_->Setup(currentLevel);
 
@@ -109,22 +102,19 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Apply(): Setup() has not been called");
-    if (SmootherPrototype::IsSetup() == false)
-    std::cout << "Smoother Prototype is false" << std::endl;
-    TEUCHOS_TEST_FOR_EXCEPTION(s_ == Teuchos::null, Exceptions::RuntimeError, "IsSetup() == true but s_ == Teuchos::null. This does not make sense");
+  void TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(MultiVector& X, const MultiVector& B, const bool& InitialGuessIsZero) const {
+    TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::TrilinosSmoother::Apply(): Setup() has not been called");
 
     s_->Apply(X, B, InitialGuessIsZero);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Copy() const {
-    return rcp( new TrilinosSmoother(*this) );
+    return rcp(new TrilinosSmoother(*this));
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Ifpack2ToIfpack1Type(std::string const & type) {
+  std::string TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Ifpack2ToIfpack1Type(const std::string& type) {
     if (type == "RELAXATION") { return "point relaxation stand-alone"; }
     if (type == "CHEBYSHEV")  { return "Chebyshev"; }
     if (type == "ILUT")        { return "ILU"; } //TODO: ILU is not a valid Ifpack2 type. This is just a temporary work-around to use TrilinosSmoother with Epetra + ILU
@@ -133,7 +123,7 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Teuchos::ParameterList TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Ifpack2ToIfpack1Param(Teuchos::ParameterList const & ifpack2List) {
+  Teuchos::ParameterList TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Ifpack2ToIfpack1Param(const Teuchos::ParameterList& ifpack2List) {
     Teuchos::ParameterList ifpack1List = ifpack2List;
 
     if (ifpack2List.isParameter("relaxation: type")) {
@@ -150,9 +140,9 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   std::string TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::description() const {
     std::ostringstream out;
-    if (s_ != Teuchos::null)
+    if (s_ != Teuchos::null) {
       out << s_->description();
-    else {
+    } else {
       out << SmootherPrototype::description();
       out << "{type = " << type_ << "}";
     }
@@ -160,23 +150,17 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
-    //TODO
-    //     if (s_ != Teuchos::null) {
-    //       // Teuchos::OSTab tab2(out);
-    //       s_->print(out, verbLevel);
-    //     }
-
-    //     if (verbLevel & Debug) {
+  void TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
 
-    if (verbLevel & Parameters0) {
+    if (verbLevel & Parameters0)
       out0 << "Prec. type: " << type_ << std::endl;
-    }
 
     if (verbLevel & Parameters1) {
       out0 << "PrecType: " << type_ << std::endl;
-      out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
+      out0 << "Parameter list: " << std::endl;
+      Teuchos::OSTab tab2(out);
+      out << paramList_;
       out0 << "Overlap: " << overlap_ << std::endl;
     }
 
@@ -184,7 +168,9 @@ namespace MueLu {
       out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl
            << "-" << std::endl
            << "Epetra PrecType: " << Ifpack2ToIfpack1Type(type_) << std::endl
-           << "Epetra Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << Ifpack2ToIfpack1Param(paramList_); }
+           << "Epetra Parameter list: " << std::endl;
+      Teuchos::OSTab tab2(out);
+      out << Ifpack2ToIfpack1Param(paramList_);
     }
   }
 
