@@ -52,8 +52,9 @@
 #include "Ifpack2_ILUT.hpp"
 #include "Ifpack2_Krylov.hpp"
 #include "Ifpack2_AdditiveSchwarz.hpp"
+#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
 #include "Ifpack2_SupportGraph.hpp"
-#include "Amesos2.hpp"
+#endif
 #include <locale>
 
 
