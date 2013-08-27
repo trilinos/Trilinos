@@ -94,6 +94,7 @@ int mainCuda(bool test_flat, bool test_orig, bool test_lin, bool test_block,
   typedef unsigned long long int IntType ;
 
   Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device_id) );
+  Kokkos::Cuda::print_configuration( std::cout );
 
   cudaDeviceProp deviceProp;
   cudaGetDeviceProperties(&deviceProp, device_id);

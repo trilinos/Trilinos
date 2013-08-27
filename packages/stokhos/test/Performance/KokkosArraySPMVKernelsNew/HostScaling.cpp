@@ -50,10 +50,10 @@
 
 #include "TestStochastic.hpp"
 
-#include "Stokhos_Host_CrsMatrix.hpp"
-#include "Stokhos_Host_BlockCrsMatrix.hpp"
-#include "Stokhos_Host_StochasticProductTensor.hpp"
-#include "Stokhos_Host_CrsProductTensor.hpp"
+#include "Stokhos_Threads_CrsMatrix.hpp"
+#include "Stokhos_Threads_BlockCrsMatrix.hpp"
+#include "Stokhos_Threads_StochasticProductTensor.hpp"
+#include "Stokhos_Threads_CrsProductTensor.hpp"
 
 // Algorithms
 enum SG_Alg { ORIG_MAT_FREE, PROD_CRS };
@@ -69,10 +69,10 @@ run_test(const size_t num_cpu, const size_t num_core_per_cpu,
          const std::vector<double>& perf1 = std::vector<double>())
 {
   typedef double Scalar;
-  typedef Kokkos::Host Device;
+  typedef Kokkos::Threads Device;
   const size_t num_core = num_cpu * num_core_per_cpu;
   const size_t num_threads_per_cpu = num_core_per_cpu * num_threads_per_core;
-  Kokkos::Host::initialize( num_cpu , num_threads_per_cpu );
+  Kokkos::Threads::initialize( std::make_pair(num_cpu , num_threads_per_cpu) );
 
   std::vector<int> var_degree( d , p );
 
@@ -85,7 +85,7 @@ run_test(const size_t num_cpu, const size_t num_core_per_cpu,
       unit_test::test_original_matrix_free_vec<Scalar,Device,Stokhos::DefaultSparseMatOps>(
         var_degree , nGrid , nIter , true , symmetric );
 
-  Kokkos::Host::finalize();
+  Kokkos::Threads::finalize();
 
   double speed_up;
   if (perf1.size() > 0)

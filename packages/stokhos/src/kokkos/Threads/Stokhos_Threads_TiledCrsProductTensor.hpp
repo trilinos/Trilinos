@@ -39,24 +39,24 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_HOST_COO_PRODUCT_TENSOR_HPP
-#define STOKHOS_HOST_COO_PRODUCT_TENSOR_HPP
+#ifndef STOKHOS_THREADS_TILED_CRS_PRODUCT_TENSOR_HPP
+#define STOKHOS_THREADS_TILED_CRS_PRODUCT_TENSOR_HPP
 
-#include "Kokkos_Host.hpp"
+#include "Kokkos_Threads.hpp"
 
 #include "Stokhos_Multiply.hpp"
-#include "Stokhos_CooProductTensor.hpp"
+#include "Stokhos_TiledCrsProductTensor.hpp"
+#include "Stokhos_Threads_TinyVec.hpp"
 
 namespace Stokhos {
 
-template< typename ValueType, bool Pack >
-class Multiply< CooProductTensor< ValueType, Kokkos::Host, Pack >,
-                void, void, DefaultSparseMatOps >
+template< typename ValueType >
+class Multiply< TiledCrsProductTensor< ValueType , Kokkos::Threads > , void , void , DefaultSparseMatOps >
 {
 public:
 
-  typedef Kokkos::Host::size_type size_type ;
-  typedef CooProductTensor< ValueType , Kokkos::Host, Pack > tensor_type ;
+  typedef Kokkos::Threads::size_type size_type ;
+  typedef TiledCrsProductTensor< ValueType , Kokkos::Threads > tensor_type ;
 
   template< typename MatrixValue , typename VectorValue >
   static void apply( const tensor_type & tensor ,
@@ -64,21 +64,71 @@ public:
                      const VectorValue * const x ,
                            VectorValue * const y )
   {
-    const size_type nEntry = tensor.entry_count();
-    size_type i = 0, j = 0, k = 0, i_prev = -1;
-    VectorValue val = 0.0, carry_val = 0.0;
-    for ( size_type entry = 0 ; entry < nEntry ; ++entry ) {
-      tensor.coord(entry, i, j, k);
-      val = tensor.value(entry) * ( a[j] * x[k] + a[k] * x[j] );
-      if (i == i_prev)
-        carry_val += val;
-      else {
-        y[i_prev] += carry_val;
-        carry_val = val;
+    const size_type block_size = 2;
+    typedef TinyVec<ValueType,block_size,false> TV;
+
+    const size_type n_tile = tensor.num_tiles();
+
+    for ( size_type tile = 0 ; tile < n_tile ; ++tile ) {
+
+      const size_type i_offset = tensor.offset(tile, 0);
+      const size_type j_offset = tensor.offset(tile, 1);
+      const size_type k_offset = tensor.offset(tile, 2);
+
+      const size_type n_row = tensor.num_rows(tile);
+
+      for ( size_type i = 0 ; i < n_row ; ++i ) {
+
+        const size_type nEntry = tensor.num_entry(tile,i);
+        const size_type iEntryBeg = tensor.entry_begin(tile,i);
+        const size_type iEntryEnd = iEntryBeg + nEntry;
+              size_type iEntry    = iEntryBeg;
+
+        VectorValue ytmp = 0 ;
+
+        // Do entries with a blocked loop of size block_size
+        if (block_size > 1) {
+          const size_type nBlock = nEntry / block_size;
+          const size_type nEntryB = nBlock * block_size;
+          const size_type iEnd = iEntryBeg + nEntryB;
+
+          TV vy;
+          vy.zero();
+          int j[block_size], k[block_size];
+
+          for ( ; iEntry < iEnd ; iEntry += block_size ) {
+
+            for (size_type ii=0; ii<block_size; ++ii) {
+              j[ii] = tensor.coord(iEntry+ii,0) + j_offset;
+              k[ii] = tensor.coord(iEntry+ii,1) + k_offset;
+            }
+            TV aj(a, j), ak(a, k), xj(x, j), xk(x, k),
+              c(&(tensor.value(iEntry)));
+
+            // vy += c * ( aj * xk + ak * xj)
+            aj.times_equal(xk);
+            ak.times_equal(xj);
+            aj.plus_equal(ak);
+            c.times_equal(aj);
+            vy.plus_equal(c);
+
+          }
+
+          ytmp += vy.sum();
+        }
+
+        // Do remaining entries with a scalar loop
+        for ( ; iEntry<iEntryEnd; ++iEntry) {
+          const size_type j = tensor.coord(iEntry,0) + j_offset;
+          const size_type k = tensor.coord(iEntry,1) + k_offset;
+
+          ytmp += tensor.value(iEntry) * ( a[j] * x[k] + a[k] * x[j] );
+        }
+
+        y[i+i_offset] += ytmp ;
+        //y[i] += ytmp ;
       }
-      i_prev = i;
     }
-    y[i] += carry_val;
   }
 
   static size_type matrix_size( const tensor_type & tensor )
@@ -92,4 +142,4 @@ public:
 
 } // namespace Stokhos
 
-#endif /* #ifndef STOKHOS_HOST_CRS_PRODUCT_TENSOR_HPP */
+#endif /* #ifndef STOKHOS_THREADS_TILED_CRS_PRODUCT_TENSOR_HPP */

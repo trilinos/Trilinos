@@ -39,37 +39,57 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_HOST_STOCHASTICPRODUCTTENSOR_HPP
-#define STOKHOS_HOST_STOCHASTICPRODUCTTENSOR_HPP
+#ifndef STOKHOS_THREADS_COO_PRODUCT_TENSOR_HPP
+#define STOKHOS_THREADS_COO_PRODUCT_TENSOR_HPP
 
-#include "Kokkos_Host.hpp"
+#include "Kokkos_Threads.hpp"
 
 #include "Stokhos_Multiply.hpp"
-#include "Stokhos_StochasticProductTensor.hpp"
+#include "Stokhos_CooProductTensor.hpp"
 
 namespace Stokhos {
 
-template< typename ValueType , class TensorType >
-class Multiply< StochasticProductTensor< ValueType, TensorType,
-                                         Kokkos::Host > >
+template< typename ValueType, bool Pack >
+class Multiply< CooProductTensor< ValueType, Kokkos::Threads, Pack >,
+                void, void, DefaultSparseMatOps >
 {
 public:
-  typedef Kokkos::Host                    device_type ;
-  typedef device_type::size_type  size_type ;
-  typedef StochasticProductTensor< ValueType, TensorType, device_type > block_type ;
+
+  typedef Kokkos::Threads::size_type size_type ;
+  typedef CooProductTensor< ValueType , Kokkos::Threads, Pack > tensor_type ;
 
   template< typename MatrixValue , typename VectorValue >
-  static void apply( const block_type  & block ,
-                     const MatrixValue *       a ,
+  static void apply( const tensor_type & tensor ,
+                     const MatrixValue * const a ,
                      const VectorValue * const x ,
                            VectorValue * const y )
   {
-    typedef Multiply< typename block_type::tensor_type > tensor_multiply ;
-
-    tensor_multiply::apply( block.tensor() , a , x , y );
+    const size_type nEntry = tensor.entry_count();
+    size_type i = 0, j = 0, k = 0, i_prev = -1;
+    VectorValue val = 0.0, carry_val = 0.0;
+    for ( size_type entry = 0 ; entry < nEntry ; ++entry ) {
+      tensor.coord(entry, i, j, k);
+      val = tensor.value(entry) * ( a[j] * x[k] + a[k] * x[j] );
+      if (i == i_prev)
+        carry_val += val;
+      else {
+        y[i_prev] += carry_val;
+        carry_val = val;
+      }
+      i_prev = i;
+    }
+    y[i] += carry_val;
   }
+
+  static size_type matrix_size( const tensor_type & tensor )
+  { return tensor.dimension(); }
+
+  static size_type vector_size( const tensor_type & tensor )
+  { return tensor.dimension(); }
 };
+
+//----------------------------------------------------------------------------
 
 } // namespace Stokhos
 
-#endif /* #ifndef STOKHOS_HOST_STOCHASTICPRODUCTTENSOR_HPP */
+#endif /* #ifndef STOKHOS_THREADS_CRS_PRODUCT_TENSOR_HPP */

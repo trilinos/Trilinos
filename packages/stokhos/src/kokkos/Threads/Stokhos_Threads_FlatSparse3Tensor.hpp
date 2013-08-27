@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,14 +35,14 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_HOST_FLAT_SPARSE_3_TENSOR_HPP
-#define STOKHOS_HOST_FLAT_SPARSE_3_TENSOR_HPP
+#ifndef STOKHOS_THREADS_FLAT_SPARSE_3_TENSOR_HPP
+#define STOKHOS_THREADS_FLAT_SPARSE_3_TENSOR_HPP
 
-#include "Kokkos_Host.hpp"
+#include "Kokkos_Threads.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_FlatSparse3Tensor.hpp"
@@ -50,12 +50,12 @@
 namespace Stokhos {
 
 template< typename ValueType >
-class Multiply< FlatSparse3Tensor< ValueType , Kokkos::Host > , void , void , DefaultSparseMatOps >
+class Multiply< FlatSparse3Tensor< ValueType , Kokkos::Threads > , void , void , DefaultSparseMatOps >
 {
 public:
-  
-  typedef Kokkos::Host::size_type size_type ;
-  typedef FlatSparse3Tensor< ValueType , Kokkos::Host > tensor_type ;
+
+  typedef Kokkos::Threads::size_type size_type ;
+  typedef FlatSparse3Tensor< ValueType , Kokkos::Threads > tensor_type ;
 
   template< typename MatrixValue , typename VectorValue >
   static void apply( const tensor_type & tensor ,
@@ -64,7 +64,7 @@ public:
                            VectorValue * const y )
   {
 
-    const size_type nDim = tensor.dimension();    
+    const size_type nDim = tensor.dimension();
 
     // Loop over i
     for ( size_type i = 0; i < nDim; ++i) {
@@ -75,18 +75,18 @@ public:
       const size_type kBeg = tensor.k_begin(i);
       const size_type kEnd = kBeg + nk;
       for (size_type kEntry = kBeg; kEntry < kEnd; ++kEntry) {
-	const size_type k = tensor.k_coord(kEntry);
-	const MatrixValue ak = a[k];
-	const VectorValue xk = x[k];
+        const size_type k = tensor.k_coord(kEntry);
+        const MatrixValue ak = a[k];
+        const VectorValue xk = x[k];
 
-	// Loop over j for this i,k
-	const size_type nj = tensor.num_j(kEntry);
-	const size_type jBeg = tensor.j_begin(kEntry);
-	const size_type jEnd = jBeg + nj;
-	for (size_type jEntry = jBeg; jEntry < jEnd; ++jEntry) {
-	  const size_type j = tensor.j_coord(jEntry);
-	  ytmp += tensor.value(jEntry) * ( a[j] * xk + ak * x[j] );
-	}
+        // Loop over j for this i,k
+        const size_type nj = tensor.num_j(kEntry);
+        const size_type jBeg = tensor.j_begin(kEntry);
+        const size_type jEnd = jBeg + nj;
+        for (size_type jEntry = jBeg; jEntry < jEnd; ++jEntry) {
+          const size_type j = tensor.j_coord(jEntry);
+          ytmp += tensor.value(jEntry) * ( a[j] * xk + ak * x[j] );
+        }
       }
 
       y[i] += ytmp ;
@@ -104,5 +104,4 @@ public:
 
 } // namespace Stokhos
 
-#endif /* #ifndef STOKHOS_HOST_SPARSEPRODUCTTENSOR_HPP */
-
+#endif /* #ifndef STOKHOS_THREADS_SPARSEPRODUCTTENSOR_HPP */
