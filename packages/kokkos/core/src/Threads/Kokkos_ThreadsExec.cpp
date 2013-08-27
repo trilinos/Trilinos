@@ -647,8 +647,8 @@ int ThreadsExec::team_max()
 //----------------------------------------------------------------------------
 
 void ThreadsExec::initialize( 
-  const std::pair<unsigned,unsigned> team_topo ,
-        std::pair<unsigned,unsigned> core_use )
+  const std::pair<unsigned,unsigned> team_topology ,
+        std::pair<unsigned,unsigned> use_core_topology )
 {
   static const Sentinel sentinel ;
 
@@ -657,8 +657,8 @@ void ThreadsExec::initialize(
   std::ostringstream msg ;
 
   msg << "Kokkos::Threads::initialize("
-      << " team_topo(" << team_topo.first << "," << team_topo.second << ")"
-      << ", core_use(" << core_use.first << "," << core_use.second << ")"
+      << " team_topology(" << team_topology.first << "," << team_topology.second << ")"
+      << ", use_core_topology(" << use_core_topology.first << "," << use_core_topology.second << ")"
       << " )" ;
 
   if ( s_threads_count ) {
@@ -666,7 +666,7 @@ void ThreadsExec::initialize(
     Kokkos::Impl::throw_runtime_exception( msg.str() );
   }
 
-  const unsigned thread_count = team_topo.first * team_topo.second ;
+  const unsigned thread_count = team_topology.first * team_topology.second ;
 
   if ( 0 == thread_count ) {
     msg << " FAILED : zero thread count" ;
@@ -688,46 +688,46 @@ void ThreadsExec::initialize(
   if ( hwloc_avail ) {
 
     if ( capacity         < thread_count ||
-         core_topo.first  < core_use.first ||
-         core_topo.second < core_use.second ) {
+         core_topo.first  < use_core_topology.first ||
+         core_topo.second < use_core_topology.second ) {
       msg << " FAILED : Requested more cores or threads than HWLOC reports are available "
           << " core_topology(" << core_topo.first << "," << core_topo.second << ")"
           << " thread_capacity(" << capacity << ")" ;
       Kokkos::Impl::throw_runtime_exception( msg.str() );
     }
 
-    if ( 0 == core_use.first || 0 == core_use.second ) {
+    if ( 0 == use_core_topology.first || 0 == use_core_topology.second ) {
       // User requested that we determine best use of cores.
 
       // Start by assuming use of all available cores
-      core_use = core_topo ;
+      use_core_topology = core_topo ;
 
       if ( thread_count <= ( core_topo.first - 1 ) * core_topo.second ) {
         // Can spawn all requested threads on their own (NUMA) group of cores,
         // can execute asynchronously.
-        --core_use.first ;
+        --use_core_topology.first ;
       }
       else if ( thread_count <= core_topo.first * ( core_topo.second - 1 ) ) {
         // Can spawn all requested threads on their own core and have excess core,
         // can execute asynchronously.
-        --core_use.second ;
+        --use_core_topology.second ;
       }
       else if ( core_topo.first * core_topo.second < thread_count &&
                 thread_count <= core_topo.first * ( core_topo.second - 1 ) * core_cap ) {
         // Will oversubscribe cores and can omit one core
-        --core_use.second ;
+        --use_core_topology.second ;
       }
     }
 
-    if ( core_use.first < core_topo.first ) {
+    if ( use_core_topology.first < core_topo.first ) {
       // Can omit a (NUMA) group of cores and execute work asynchronously
       // on the other groups.
 
-      Kokkos::Impl::host_thread_mapping( team_topo , core_use , core_topo , s_threads_coord );
+      Kokkos::Impl::host_thread_mapping( team_topology , use_core_topology , core_topo , s_threads_coord );
 
       // Don't use master thread's first core coordinate (NUMA region).
       // Originally mapped:
-      //   begin = core_topo.first - core_use.first ;
+      //   begin = core_topo.first - use_core_topology.first ;
       //   end   = core_topo.first ;
       // So can decrement.
 
@@ -739,20 +739,20 @@ void ThreadsExec::initialize(
 
       asynchronous = true ;
     }
-    else if ( core_use.second < core_topo.second ) {
+    else if ( use_core_topology.second < core_topo.second ) {
       // Can omit a core from each group and execute work asynchronously
 
-      Kokkos::Impl::host_thread_mapping( team_topo , core_use , core_topo , s_threads_coord );
+      Kokkos::Impl::host_thread_mapping( team_topology , use_core_topology , core_topo , s_threads_coord );
 
       // Force master thread onto the highest rank unused core.
-      master_coord.second = ( core_topo.second - core_use.second ) - 1 ;
+      master_coord.second = ( core_topo.second - use_core_topology.second ) - 1 ;
 
       asynchronous = true ;
     }
     else {
       // Spawn threads with root thread on the master process' core
 
-      Kokkos::Impl::host_thread_mapping( team_topo , core_use , core_topo , master_coord , s_threads_coord );
+      Kokkos::Impl::host_thread_mapping( team_topology , use_core_topology , core_topo , master_coord , s_threads_coord );
 
       s_threads_coord[0] = std::pair<unsigned,unsigned>( ~0u , ~0u );
     }
@@ -836,9 +836,9 @@ void ThreadsExec::initialize(
   //------------------------------------
   // Initialize team topology and fan-in/out relationships:
 
-  s_threads_process.m_init_league_size = team_topo.first ;
+  s_threads_process.m_init_league_size = team_topology.first ;
 
-  ThreadsExec::set_threads_relationships( team_topo , s_threads_exec );
+  ThreadsExec::set_threads_relationships( team_topology , s_threads_exec );
 
   // Initial allocations:
   ThreadsExec::resize_reduce_scratch( 4096 );

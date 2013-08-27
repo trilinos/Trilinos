@@ -150,14 +150,25 @@ public:
    *  resources, but it will take time (latency) to awaken the device
    *  again (via the wake()) method so that it is ready for work.
    *
-   *  Initialize with ( league_size , team_size ).
-   *  All worker threads of a team will occupy the same NUMA node.
+   *  The 'team_topology' argument specifies
+   *    (first) the number of teams of threads - the league_size
+   *    (second) the number of threads per team - the team_size.
    *
-   *  The core topology must be less than or equal to hwloc::get_core_topology().
-   *  If core topology is not input then the full hwloc::get_core_topology() is used.
+   *  The 'use_core_topology' argument specifies the subset of available cores 
+   *  to use for the device's threads.  If 'hwloc' is available then the
+   *  full core topology can be queried via 'hwloc::get_core_topology()'.
+   *  If 'use_core_topology' is not specified and 'hwloc' is available
+   *  then the full core topology is used.  If 'hwloc' in not available
+   *  then 'use_core_topology' is ignored.
+   *
+   *  Teams of threads are evenly distributed across the core topology.
+   *  If team_topology.first*team_topology.second is less than or equal to
+   *  use_core_topology.first*use_core_topology.second then each thread
+   *  is assigned its own core.  Otherwise multiple threads in a team are
+   *  assigned to a shared core (using hyperthreads).
    */
-  static void initialize( const std::pair<unsigned,unsigned> league_team ,
-                          const std::pair<unsigned,unsigned> hardware_topology =
+  static void initialize( const std::pair<unsigned,unsigned> team_topology ,
+                          const std::pair<unsigned,unsigned> use_core_topology =
                                 std::pair<unsigned,unsigned>(0u,0u) );
 
 
