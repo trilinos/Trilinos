@@ -522,16 +522,39 @@ void process_elem_attributes_and_implicit_ids(Ioss::Region &region, stk::mesh::B
         throw std::runtime_error( msg.str() );
       }
 
-      std::vector<INT> elem_ids ;
+      // See if we need to get the list of elements...
+      bool elements_needed = false;
+      Ioss::NameList names;
+      entity->field_describe(Ioss::Field::ATTRIBUTE, &names);
 
+      stk::mesh::FieldBase *imp_id_field = meta.get_field<stk::mesh::FieldBase> ("implicit_ids");
+      if (imp_id_field) {
+	elements_needed = true;
+      } else {
+	for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
+	  if(*I == "attribute" && names.size() > 1)
+	    continue;
+	  stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (*I);
+	  if (field) {
+	    elements_needed = true;
+	    break;
+	  }
+	}
+      }
+      
+      if (!elements_needed)
+	return;
+      
+      std::vector<INT> elem_ids ;
       entity->get_field_data("ids", elem_ids);
 
       size_t element_count = elem_ids.size();
-
-      std::vector<stk::mesh::Entity> elements(element_count);
+      std::vector<stk::mesh::Entity> elements;
+      elements.reserve(element_count);
 
       for(size_t i=0; i<element_count; ++i) {
-        elements[i] = bulk.get_entity(stk::topology::ELEMENT_RANK, elem_ids[i]);
+        stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEMENT_RANK, elem_ids[i]);
+	elements.push_back(elem);
       }
 
       // Temporary (2013/04/17) kluge for Salinas porting to stk-based mesh.
@@ -540,7 +563,6 @@ void process_elem_attributes_and_implicit_ids(Ioss::Region &region, stk::mesh::B
       // instead of the "global" ids. If there exists a stk-field with the
       // name "implicit_ids", then populate the field with the correct
       // data.
-      stk::mesh::FieldBase *imp_id_field = meta.get_field<stk::mesh::FieldBase> ("implicit_ids");
       if (imp_id_field) {
         stk::io::field_data_from_ioss(bulk, imp_id_field, elements, entity, "implicit_ids");
       }
@@ -548,8 +570,6 @@ void process_elem_attributes_and_implicit_ids(Ioss::Region &region, stk::mesh::B
       // Add all element attributes as fields.
       // If the only attribute is 'attribute', then add it; otherwise the other attributes are the
       // named components of the 'attribute' field, so add them instead.
-      Ioss::NameList names;
-      entity->field_describe(Ioss::Field::ATTRIBUTE, &names);
       for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
         if(*I == "attribute" && names.size() > 1)
           continue;
