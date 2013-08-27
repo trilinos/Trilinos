@@ -605,6 +605,7 @@ namespace MueLu {
     if (verbLevel & Statistics0) {
       out << "Max Coarse Size     = " << maxCoarseSize_ << std::endl;
       out << "Implicit Transpose  = " << (implicitTranspose_ ? "true" : "false") << std::endl;
+      out << std::endl;
     }
 
     if (verbLevel & Statistics0) {
@@ -623,6 +624,7 @@ namespace MueLu {
              << Teuchos::as<double>(nnzPerLevel[i]) / rowsPerLevel[i]
              << std::setw(npspacer) << numProcsPerLevel[i] << std::endl;
       }
+      out << std::endl;
       for (int i = 0; i < GetNumLevels(); ++i) {
         RCP<SmootherBase> preSmoo, postSmoo;
         if (Levels_[i]->IsAvailable("PreSmoother"))
@@ -632,10 +634,10 @@ namespace MueLu {
         if (preSmoo != null && preSmoo == postSmoo)
           out << "Smoother (level " << i << ") both : " << preSmoo->description() << std::endl;
         else {
-          if (preSmoo != null)  out << "Smoother (level " << i << ") pre  : "
-                                                          << preSmoo->description() << std::endl;
-          if (postSmoo != null) out << "Smoother (level " << i << ") post : "
-                                                          << postSmoo->description() << std::endl;
+          out << "Smoother (level " << i << ") pre  : "
+              << (preSmoo != null ?  preSmoo->description() : " no smoother") << std::endl;
+          out << "Smoother (level " << i << ") post : "
+              << (postSmoo != null ?  postSmoo->description() : " no smoother") << std::endl;
         }
 
         out << std::endl;
