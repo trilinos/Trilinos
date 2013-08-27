@@ -46,6 +46,8 @@
 #ifndef MUELU_LEVEL_HPP
 #define MUELU_LEVEL_HPP
 
+#include <Xpetra_Map.hpp>               // for UnderlyingLib definition
+
 #include "MueLu_BoostGraphviz.hpp"
 
 #include "MueLu_KeepType.hpp"
@@ -334,6 +336,9 @@ namespace MueLu {
     enum   RequestMode { REQUEST, RELEASE, UNDEF };
     RequestMode GetRequestMode() const { return requestMode_; }
 
+    void setlib(Xpetra::UnderlyingLib lib) { lib_ = lib; }
+    Xpetra::UnderlyingLib lib() { return lib_; }
+
   private:
 
     //! Copy constructor.
@@ -362,6 +367,7 @@ namespace MueLu {
     const FactoryBase* GetFactory(const std::string& varname, const FactoryBase* factory) const;
 
     static RequestMode requestMode_;
+    Xpetra::UnderlyingLib lib_;
 
     typedef const FactoryBase*          Key1;
     typedef const std::string           Key2;
