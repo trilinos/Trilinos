@@ -754,8 +754,7 @@ template< class T , class L , class D , class M , class S >
 typename View<T,L,D,M,S>::HostMirror
 create_mirror_view( const View<T,L,D,M,S> & view ,
                     typename Impl::enable_if<
-                      Impl::is_same< typename ViewTraits<T,L,D,M>::memory_space ,
-                                     HostSpace >::value
+                      Impl::ViewAssignable< typename View<T,L,D,M,S>::HostMirror , View<T,L,D,M,S> >::value
                     >::type * = 0 )
 {
   return view ;
@@ -765,11 +764,10 @@ template< class T , class L , class D , class M , class S >
 typename View<T,L,D,M,S>::HostMirror
 create_mirror_view( const View<T,L,D,M,S> & view ,
                     typename Impl::enable_if<
-                      ! Impl::is_same< typename ViewTraits<T,L,D,M>::memory_space ,
-                                       HostSpace >::value
+                      ! Impl::ViewAssignable< typename View<T,L,D,M,S>::HostMirror , View<T,L,D,M,S> >::value
                     >::type * = 0 )
 {
-  typedef typename View<T,L,D,M>::HostMirror host_view ;
+  typedef typename View<T,L,D,M,S>::HostMirror host_view ;
   host_view tmp ;
   Impl::ViewAssignment< S >( tmp , view );
   return tmp ;
