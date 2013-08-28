@@ -287,8 +287,8 @@ STKUNIT_UNIT_TEST(FieldParallel, parallel_min)
       STKUNIT_ASSERT_EQUAL(field_3_ptr[0], min_proc);
     }
     else {
-      stk::mesh::PairIterEntityComm entity_comm = bulk_data.entity_comm(bulk_data.entity_key(node));
-      const int num_procs = entity_comm.size()+1;
+      stk::mesh::PairIterEntityComm ent_comm = bulk_data.entity_comm(bulk_data.entity_key(node));
+      const int num_procs = ent_comm.size()+1;
       std::cout<<"min: proc "<<this_proc<<" skipping non-shared ghost node "<<bulk_data.identifier(node)<<", num-procs: "<<num_procs<<std::endl;
     }
   }
