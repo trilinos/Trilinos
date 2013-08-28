@@ -1642,6 +1642,13 @@ namespace stk {
       // Find the step on the database with time closest to the requested time...
       Ioss::Region *region = m_input_region.get();
       int step_count = region->get_property("state_count").get_int();
+      if (step_count == 0) {
+        std::ostringstream msg ;
+        msg << " ERROR: Restart database '" << region->get_database()->get_filename()
+	    << " has no transient data.";
+        throw std::runtime_error( msg.str() );
+      }
+      
       double delta_min = 1.0e30;
       int    step_min  = 0;
       for (int istep = 0; istep < step_count; istep++) {
