@@ -70,7 +70,8 @@ SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
 SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
 
 SET(EXTRA_CONFIGURE_OPTIONS
-  "-DMuelu_ENABLE_Experimental:BOOL=ON"
+  "-DMueLu_ENABLE_Experimental:BOOL=ON"
+  "-DXpetra_ENABLE_Experimental:BOOL=ON"
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
   "-DSuperLU_INCLUDE_DIRS=/home/jhu/Software/SuperLU_4.3/SRC"
   "-DSuperLU_LIBRARY_DIRS=/home/jhu/Software/SuperLU_4.3/lib"
