@@ -256,7 +256,7 @@ namespace stk {
 
     void get_sorted_curve_node_entities(PerceptMesh& eMesh, stk::mesh::Part& part, std::vector<stk::mesh::Entity>& sorted_entities)
     {
-      bool debug_print = false;
+      bool debug_print = true;
 #define APRINTLN(a) do { if (debug_print) std::cout << #a << " = " << a << std::endl; } while(0)
 #define APRINTLN2(a,b) do { if (debug_print) std::cout << #a << " = " << a << " " << #b << " = " << b << std::endl; } while(0)
 
@@ -378,7 +378,9 @@ namespace stk {
       if (node_list.front() == node_list.back())
         {
           // periodic case
-          // FIXME
+          //throw std::runtime_error("periodic not ready");
+          sorted_entities.resize(0);
+          sorted_entities.assign(node_list.begin(), node_list.end());
         }
       else
         {
@@ -1936,7 +1938,7 @@ namespace stk {
                             }
                             if (streaming_size) eMesh.setStreamingSize(m_M);
                             if (remove_geometry_blocks) eMesh.remove_geometry_blocks_on_output(input_geometry);
-                            if (1) eMesh.dump_vtk(output_mesh+".vtk",false);
+                            if (0) eMesh.dump_vtk(output_mesh+".vtk",false);
                             eMesh.save_as(output_mesh);
                             if (DEBUG_ADAPT_MAIN || 0 == p_rank) {
                               stk::percept::pout() << "P[" << p_rank << "] AdaptMain:: ... mesh saved\n";

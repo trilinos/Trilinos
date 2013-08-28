@@ -32,6 +32,8 @@ namespace stk {
       /// create an OpenNURBS curve that fits the given input points
       virtual ON_Curve * fit(Vectors2D& input) = 0;
 
+      static bool s_debug_print;
+
     };
 
     std::ostream& operator<<(std::ostream& out, const Vectors2D& pts);

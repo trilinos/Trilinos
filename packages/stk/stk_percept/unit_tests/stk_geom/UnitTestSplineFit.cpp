@@ -26,6 +26,7 @@ namespace stk
     namespace unit_tests
     {
 
+
       //=============================================================================
       //=============================================================================
       //=============================================================================
@@ -60,9 +61,9 @@ namespace stk
         DPRINTLN(curve->HasNurbForm());
         DPRINTLN(curve->PointAtStart());
         DPRINTLN(curve->PointAtEnd());
-        for (size_t i=0; i < cf.m_U.size(); i++)
+        for (size_t i=0; i < cf.U().size(); i++)
           {
-            DPRINTLN2(i, curve->PointAt(cf.m_U[i]));
+            DPRINTLN2(i, curve->PointAt(cf.U()[i]));
           }
 
         double tol = 1.e-5;
@@ -71,32 +72,32 @@ namespace stk
         // GetClosestPoint
         if (0)
           {
-            for (size_t i=1; i < cf.m_U.size()-1; i += 2)
+            for (size_t i=1; i < cf.U().size()-1; i += 2)
               {
-                Point3D pt = curve->PointAt(cf.m_U[i]);
+                Point3D pt = curve->PointAt(cf.U()[i]);
                 Point3D Qkk = Q[kk++];
                 DPRINTLN2(pt, Qkk);
                 double dist = pt.DistanceTo(Qkk);
                 STKUNIT_EXPECT_NEAR(dist, 0, tol);
               }
           }
-        for (size_t i=0; i < cf.m_U.size(); i++)
+        for (size_t i=0; i < cf.U().size(); i++)
           {
-            DPRINTLN2(i, curve->DerivativeAt(cf.m_U[i]));
+            DPRINTLN2(i, curve->DerivativeAt(cf.U()[i]));
           }
-        for (size_t i=0; i < cf.m_U.size(); i++)
+        for (size_t i=0; i < cf.U().size(); i++)
           {
-            DPRINTLN2(i, curve->CurvatureAt(cf.m_U[i]));
+            DPRINTLN2(i, curve->CurvatureAt(cf.U()[i]));
           }
 
-        for (size_t i=0; i < cf.m_U.size(); i++)
+        for (size_t i=0; i < cf.U().size(); i++)
           {
             ON_3dPoint point;
             ON_3dVector first_derivative;
             ON_3dVector second_derivative;
-            curve->Ev2Der(cf.m_U[i], point, first_derivative, second_derivative);
+            curve->Ev2Der(cf.U()[i], point, first_derivative, second_derivative);
             if (debug_print)
-              std::cout << PR(i) << PR(cf.m_U[i]) << PR(point)
+              std::cout << PR(i) << PR(cf.U()[i]) << PR(point)
                         << PR(first_derivative) << PR(second_derivative) << std::endl;
           }
 
@@ -151,6 +152,239 @@ namespace stk
 
         delete curve;
       }
+
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+
+      STKUNIT_UNIT_TEST(unit_stk_geom, test_periodic)
+      {
+        const bool debug_print = false;
+        SplineFit::s_debug_print = debug_print;
+
+        /// fit a circle
+        LocalCubicSplineFit cf;
+        cf.setIsPeriodic(true);
+        int n = 13;
+        Vectors2D Q(n);
+        const double r = 1.0;
+        for (int i=0; i < n; i++)
+          {
+            double theta = 2.0*M_PI*double(i)/double(n-1);
+            double x = r*std::cos(theta);
+            double y = r*std::sin(theta);
+            Q[i] = Vector2D(x,y);
+          }
+        if (debug_print) std::cout << "Fitting circle with cubic spline - points = " << std::endl;
+        DPRINTLN(Q);
+        ON_Curve *curve = cf.fit(Q);
+        if (debug_print)
+          cf.print();
+
+        double t0=0,t1=1;
+        curve->GetDomain( &t0, &t1);
+        DPRINTLN2(t0,t1);
+        DPRINTLN(curve->SpanCount());
+        std::vector<double> spanKnots(curve->SpanCount()+1);
+        curve->GetSpanVector(&spanKnots[0]);
+        DPRINTLN(spanKnots);
+        DPRINTLN(curve->HasNurbForm());
+        DPRINTLN(curve->PointAtStart());
+        DPRINTLN(curve->PointAtEnd());
+        for (size_t i=0; i < cf.U().size(); i++)
+          {
+            DPRINTLN2(i, curve->PointAt(cf.U()[i]));
+          }
+
+        double tol = 1.e-5;
+        for (size_t i=0; i < cf.U().size(); i++)
+          {
+            DPRINTLN2(i, curve->DerivativeAt(cf.U()[i]));
+          }
+        for (size_t i=0; i < cf.U().size(); i++)
+          {
+            DPRINTLN2(i, curve->CurvatureAt(cf.U()[i]));
+          }
+
+        for (size_t i=0; i < cf.U().size(); i++)
+          {
+            ON_3dPoint point;
+            ON_3dVector first_derivative;
+            ON_3dVector second_derivative;
+            curve->Ev2Der(cf.U()[i], point, first_derivative, second_derivative);
+            if (debug_print)
+              std::cout << PR(i) << PR(cf.U()[i]) << PR(point)
+                        << PR(first_derivative) << PR(second_derivative) << std::endl;
+          }
+
+        ((ON_NurbsCurve *)curve)->SetProjectionTolerance(1.e-8);
+        for (size_t i = 0; i < Q.size(); i++)
+        {
+          Point3D p = Q[i];
+          double u=0;
+          bool success = curve->GetClosestPoint(p, &u);
+          STKUNIT_EXPECT_TRUE(success);
+          Point3D closest_point = curve->PointAt(u);
+          DPRINTLN(closest_point);
+          double dist = closest_point.DistanceTo(p);
+          DPRINTLN(dist);
+          STKUNIT_EXPECT_NEAR(dist, 0.0, tol);
+        }
+
+        {
+          Point3D p(1.01,0.0,0);
+          double u=0;
+          bool success = curve->GetClosestPoint(p, &u);
+          STKUNIT_EXPECT_TRUE(success);
+          Point3D closest_point = curve->PointAt(u);
+          DPRINTLN2(u,closest_point);
+          double dist = closest_point.DistanceTo(p);
+          STKUNIT_EXPECT_NEAR(dist, 0.01, tol);
+          STKUNIT_EXPECT_NEAR(closest_point[0], 1.0, tol);
+          STKUNIT_EXPECT_NEAR(closest_point[1], 0.0, tol);
+        }
+
+        {
+          Point3D p(0,1.1,0);
+          double u=0;
+          bool success = curve->GetClosestPoint(p, &u);
+          STKUNIT_EXPECT_TRUE(success);
+          Point3D closest_point = curve->PointAt(u);
+          DPRINTLN2(u,closest_point);
+          double dist = closest_point.DistanceTo(p);
+          STKUNIT_EXPECT_NEAR(dist, 0.1, tol);
+        }
+
+        delete curve;
+      }
+
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+
+      STKUNIT_UNIT_TEST(unit_stk_geom, test_closed)
+      {
+        const bool debug_print = false;
+        SplineFit::s_debug_print = debug_print;
+
+        double naca_0012_21pts[][2] =
+          {{1,  0},
+           {0.97552826,  0.00341331},
+           {0.9045085, 0.01277464},
+           {0.79389263,  0.02590486},
+           {0.6545085, 0.04009273},
+           {0.5, 0.05231025},
+           {0.3454915, 0.0591394},
+           {0.20610737,  0.05745444},
+           {0.0954915, 0.04592861},
+           {0.02447174,  0.02586248},
+           {0, 0},
+           {0.02447174,  -0.02586248},
+           {0.0954915, -0.04592861},
+           {0.20610737,  -0.05745443},
+           {0.3454915, -0.0591394},
+           {0.5, -0.05231025},
+           {0.6545085, -0.04009273},
+           {0.79389263,  -0.02590486},
+           {0.9045085, -0.01277464},
+           {0.97552826,  -0.00341331},
+           {1, 0}};
+
+        /// fit a circle
+        LocalCubicSplineFit cf;
+        cf.setIsPeriodic(false);
+        int n = 21;
+        Vectors2D Q(n);
+        for (int i=0; i < n; i++)
+          {
+            Q[i] = Vector2D(naca_0012_21pts[i][0], naca_0012_21pts[i][1]);
+          }
+        if (debug_print) std::cout << "Fitting naca_0012_21pts with cubic spline - points = " << std::endl;
+        DPRINTLN(Q);
+        ON_Curve *curve = cf.fit(Q);
+        if (debug_print)
+          cf.print();
+
+        double t0=0,t1=1;
+        curve->GetDomain( &t0, &t1);
+        DPRINTLN2(t0,t1);
+        DPRINTLN(curve->SpanCount());
+        std::vector<double> spanKnots(curve->SpanCount()+1);
+        curve->GetSpanVector(&spanKnots[0]);
+        DPRINTLN(spanKnots);
+        DPRINTLN(curve->HasNurbForm());
+        DPRINTLN(curve->PointAtStart());
+        DPRINTLN(curve->PointAtEnd());
+        for (size_t i=0; i < cf.U().size(); i++)
+          {
+            DPRINTLN2(i, curve->PointAt(cf.U()[i]));
+          }
+
+        double tol = 1.e-5;
+        for (size_t i=0; i < cf.U().size(); i++)
+          {
+            DPRINTLN2(i, curve->DerivativeAt(cf.U()[i]));
+          }
+        for (size_t i=0; i < cf.U().size(); i++)
+          {
+            DPRINTLN2(i, curve->CurvatureAt(cf.U()[i]));
+          }
+
+        for (size_t i=0; i < cf.U().size(); i++)
+          {
+            ON_3dPoint point;
+            ON_3dVector first_derivative;
+            ON_3dVector second_derivative;
+            curve->Ev2Der(cf.U()[i], point, first_derivative, second_derivative);
+            if (debug_print)
+              std::cout << PR(i) << PR(cf.U()[i]) << PR(point)
+                        << PR(first_derivative) << PR(second_derivative) << std::endl;
+          }
+
+        ((ON_NurbsCurve *)curve)->SetProjectionTolerance(1.e-8);
+        for (size_t i = 0; i < Q.size(); i++)
+        {
+          Point3D p = Q[i];
+          double u=0;
+          bool success = curve->GetClosestPoint(p, &u);
+          STKUNIT_EXPECT_TRUE(success);
+          Point3D closest_point = curve->PointAt(u);
+          DPRINTLN(closest_point);
+          double dist = closest_point.DistanceTo(p);
+          DPRINTLN(dist);
+          STKUNIT_EXPECT_NEAR(dist, 0.0, tol);
+        }
+
+        {
+          Point3D p(1.01,0.0,0);
+          double u=0;
+          bool success = curve->GetClosestPoint(p, &u);
+          STKUNIT_EXPECT_TRUE(success);
+          Point3D closest_point = curve->PointAt(u);
+          DPRINTLN2(u,closest_point);
+          double dist = closest_point.DistanceTo(p);
+          STKUNIT_EXPECT_NEAR(dist, 0.01, tol);
+          STKUNIT_EXPECT_NEAR(closest_point[0], 1.0, tol);
+          STKUNIT_EXPECT_NEAR(closest_point[1], 0.0, tol);
+        }
+
+        {
+          Point3D p(-0.01,0.,0);
+          double u=0;
+          bool success = curve->GetClosestPoint(p, &u);
+          STKUNIT_EXPECT_TRUE(success);
+          Point3D closest_point = curve->PointAt(u);
+          DPRINTLN2(u,closest_point);
+          double dist = closest_point.DistanceTo(p);
+          STKUNIT_EXPECT_NEAR(dist, 0.01, tol);
+        }
+
+        delete curve;
+      }
+
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
 
       STKUNIT_UNIT_TEST(unit_stk_geom, test_2)
       {

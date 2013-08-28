@@ -12,6 +12,7 @@ namespace stk {
     //   - see BSplineFitting.nb in this directory
     //static std::string s_mm_prec="`15";
     static std::string s_mm_prec="";
+    bool SplineFit::s_debug_print = false;
 
     // for cout
     static int s_precision=15;
