@@ -129,6 +129,7 @@ namespace MueLu {
     void setCycles(int ncycles);
     void setIterations(int iters);
     void setTolerance(double tol);
+    void setCoarseGridSize(int coarsegridsize);
 
     // various initialization/setup functions
     void initialize();

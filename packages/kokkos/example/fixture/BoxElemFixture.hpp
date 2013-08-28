@@ -44,6 +44,7 @@
 #ifndef KOKKOS_EXAMPLE_BOXELEMFIXTURE_HPP
 #define KOKKOS_EXAMPLE_BOXELEMFIXTURE_HPP
 
+#include <stdio.h>
 #include <utility>
 
 #include <Kokkos_View.hpp>
@@ -57,10 +58,56 @@
 namespace Kokkos {
 namespace Example {
 
+struct MapGridUnitCube {
+
+  const float m_a ;
+  const float m_b ;
+  const float m_c ;
+  const unsigned m_max_x ;
+  const unsigned m_max_y ;
+  const unsigned m_max_z ;
+
+  MapGridUnitCube( const unsigned grid_max_x ,
+                   const unsigned grid_max_y ,
+                   const unsigned grid_max_z ,
+                   const float bubble_x = 0 , // 1.1f ,
+                   const float bubble_y = 0 , // 1.2f ,
+                   const float bubble_z = 0 ) // 1.3f )
+    : m_a( bubble_x )
+    , m_b( bubble_y )
+    , m_c( bubble_z )
+    , m_max_x( grid_max_x )
+    , m_max_y( grid_max_y )
+    , m_max_z( grid_max_z )
+    {}
+
+  template< typename Scalar >
+  KOKKOS_INLINE_FUNCTION
+  void operator()( int grid_x ,
+                   int grid_y ,
+                   int grid_z ,
+                   Scalar & coord_x ,
+                   Scalar & coord_y ,
+                   Scalar & coord_z ) const
+    {
+      // Map to a unit cube [0,1]^3
+
+      const double x = double(grid_x) / double(m_max_x);
+      const double y = double(grid_y) / double(m_max_y);
+      const double z = double(grid_z) / double(m_max_z);
+    
+      coord_x = x + x * x * ( x - 1 ) * ( x - 1 ) * m_a ;
+      coord_y = y + y * y * ( y - 1 ) * ( y - 1 ) * m_b ;
+      coord_z = z + z * z * ( z - 1 ) * ( z - 1 ) * m_c ;
+    }
+};
+
 /** \brief  Generate a distributed unstructured finite element mesh
  *          from a partitioned NX*NY*NZ box of elements.
  */
-template< class Device , BoxElemPart::ElemOrder Order >
+template< class Device ,
+          BoxElemPart::ElemOrder Order ,
+          class CoordinateMap = MapGridUnitCube >
 class BoxElemFixture {
 public:
 
@@ -72,7 +119,9 @@ private:
   typedef Kokkos::Example::HexElement_TensorData< ElemNode > hex_data ;
 
   Kokkos::Example::BoxElemPart m_box_part ;
+  CoordinateMap                m_coord_map ;
 
+  Kokkos::View< double  *[3] ,        Device > m_node_coord ;
   Kokkos::View< unsigned*[3] ,        Device > m_node_grid ;
   Kokkos::View< unsigned*[ElemNode] , Device > m_elem_node ;
   Kokkos::View< unsigned*[2] ,        Device > m_recv_node ;
@@ -84,6 +133,7 @@ private:
 public:
 
   typedef Kokkos::View< const unsigned * [ElemNode] , Device , Kokkos::MemoryUnmanaged > elem_node_type ;
+  typedef Kokkos::View< const double   * [3] , Device , Kokkos::MemoryUnmanaged > node_coord_type ;
   typedef Kokkos::View< const unsigned * [3] , Device , Kokkos::MemoryUnmanaged > node_grid_type ;
   typedef Kokkos::View< const unsigned * [2] , Device , Kokkos::MemoryUnmanaged > comm_list_type ;
   typedef Kokkos::View< const unsigned *     , Device , Kokkos::MemoryUnmanaged > send_nodeid_type ;
@@ -102,12 +152,16 @@ public:
   unsigned node_grid( unsigned inode , unsigned iaxis ) const { return m_node_grid(inode,iaxis); }
 
   KOKKOS_INLINE_FUNCTION
+  double node_coord( unsigned inode , unsigned iaxis ) const { return m_node_coord(inode,iaxis); }
+
+  KOKKOS_INLINE_FUNCTION
   unsigned node_grid_max( unsigned iaxis ) const { return m_box_part.global_coord_max(iaxis); }
 
   KOKKOS_INLINE_FUNCTION
   unsigned elem_node( unsigned ielem , unsigned inode ) const { return m_elem_node(ielem,inode); }
 
   elem_node_type   elem_node()   const { return m_elem_node ; }
+  node_coord_type  node_coord()  const { return m_node_coord ; }
   node_grid_type   node_grid()   const { return m_node_grid ; }
   comm_list_type   recv_node()   const { return m_recv_node ; }
   comm_list_type   send_node()   const { return m_send_node ; }
@@ -115,11 +169,13 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   BoxElemFixture( const BoxElemFixture & rhs )
-    : m_box_part( rhs.m_box_part )
-    , m_node_grid( rhs.m_node_grid )
-    , m_elem_node( rhs.m_elem_node )
-    , m_recv_node( rhs.m_recv_node )
-    , m_send_node( rhs.m_send_node )
+    : m_box_part(   rhs.m_box_part )
+    , m_coord_map(  rhs.m_coord_map )
+    , m_node_coord( rhs.m_node_coord )
+    , m_node_grid(  rhs.m_node_grid )
+    , m_elem_node(  rhs.m_elem_node )
+    , m_recv_node(  rhs.m_recv_node )
+    , m_send_node(  rhs.m_send_node )
     , m_send_node_id( rhs.m_send_node_id )
     {
       for ( unsigned i = 0 ; i < ElemNode ; ++i ) {
@@ -133,6 +189,8 @@ public:
   BoxElemFixture & operator = ( const BoxElemFixture & rhs )
     {
       m_box_part      = rhs.m_box_part ;
+      m_coord_map     = rhs.m_coord_map ;
+      m_node_coord    = rhs.m_node_coord ;
       m_node_grid     = rhs.m_node_grid ;
       m_elem_node     = rhs.m_elem_node ;
       m_recv_node     = rhs.m_recv_node ;
@@ -155,10 +213,14 @@ public:
                   const unsigned elem_ny ,
                   const unsigned elem_nz )
   : m_box_part( Order , decompose , global_size , global_rank , elem_nx , elem_ny , elem_nz )
-  , m_node_grid( "fixture_node_grid" , m_box_part.uses_node_count() )
-  , m_elem_node( "fixture_elem_node" , m_box_part.uses_elem_count() )
-  , m_recv_node( "fixture_recv_node" , m_box_part.recv_node_msg_count() )
-  , m_send_node( "fixture_send_node" , m_box_part.send_node_msg_count() )
+  , m_coord_map( m_box_part.global_coord_max(0) ,
+                 m_box_part.global_coord_max(1) ,
+                 m_box_part.global_coord_max(2) )
+  , m_node_coord( "fixture_node_coord" , m_box_part.uses_node_count() )
+  , m_node_grid(  "fixture_node_grid" , m_box_part.uses_node_count() )
+  , m_elem_node(  "fixture_elem_node" , m_box_part.uses_elem_count() )
+  , m_recv_node(  "fixture_recv_node" , m_box_part.recv_node_msg_count() )
+  , m_send_node(  "fixture_send_node" , m_box_part.send_node_msg_count() )
   , m_send_node_id( "fixture_send_node_id" , m_box_part.send_node_id_count() )
   {
     {
@@ -195,24 +257,34 @@ public:
       const size_t ielem = i / ElemNode ;
       const size_t inode = i % ElemNode ;
 
-      unsigned elem_coord[3] ;
-      unsigned node_coord[3] ;
+      unsigned elem_grid[3] ;
+      unsigned node_grid[3] ;
 
-      m_box_part.uses_elem_coord( ielem , elem_coord );
+      m_box_part.uses_elem_coord( ielem , elem_grid );
 
-      node_coord[0] = elem_coord[0] + m_elem_node_local[inode][0] ;
-      node_coord[1] = elem_coord[1] + m_elem_node_local[inode][1] ;
-      node_coord[2] = elem_coord[2] + m_elem_node_local[inode][2] ;
+      enum { elem_node_scale = Order == BoxElemPart::ElemLinear ? 1 :
+                               Order == BoxElemPart::ElemQuadratic ? 2 : 0 };
 
-      m_elem_node(ielem,inode) = m_box_part.local_node_id( node_coord );
+      node_grid[0] = elem_node_scale * elem_grid[0] + m_elem_node_local[inode][0] ;
+      node_grid[1] = elem_node_scale * elem_grid[1] + m_elem_node_local[inode][1] ;
+      node_grid[2] = elem_node_scale * elem_grid[2] + m_elem_node_local[inode][2] ;
+
+      m_elem_node(ielem,inode) = m_box_part.local_node_id( node_grid );
     }
 
     if ( i < m_node_grid.dimension_0() ) {
-      unsigned node_coord[3] ;
-      m_box_part.local_node_coord( i , node_coord );
-      m_node_grid(i,0) = node_coord[0] ;
-      m_node_grid(i,1) = node_coord[1] ;
-      m_node_grid(i,2) = node_coord[2] ;
+      unsigned node_grid[3] ;
+      m_box_part.local_node_coord( i , node_grid );
+      m_node_grid(i,0) = node_grid[0] ;
+      m_node_grid(i,1) = node_grid[1] ;
+      m_node_grid(i,2) = node_grid[2] ;
+
+      m_coord_map( node_grid[0] ,
+                   node_grid[1] ,
+                   node_grid[2] ,
+                   m_node_coord(i,0) ,
+                   m_node_coord(i,1) ,
+                   m_node_coord(i,2) );
     }
 
     if ( i < m_recv_node.dimension_0() ) {
