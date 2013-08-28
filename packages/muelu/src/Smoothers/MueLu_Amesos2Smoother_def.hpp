@@ -46,6 +46,8 @@
 #ifndef MUELU_AMESOS2SMOOTHER_DEF_HPP
 #define MUELU_AMESOS2SMOOTHER_DEF_HPP
 
+#include <algorithm>
+
 #include "MueLu_ConfigDefs.hpp"
 #if defined (HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
 #include <Xpetra_Matrix.hpp>
@@ -62,8 +64,15 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Amesos2Smoother(const std::string& type, const Teuchos::ParameterList& paramList)
-    : type_(type), paramList_(paramList)
-  {
+    : type_(type), paramList_(paramList) {
+    if (!type_.empty()) {
+      // Transform string to "Abcde" notation
+      std::transform(type_.begin(),   type_.end(),   type_.begin(), ::tolower);
+      std::transform(type_.begin(), ++type_.begin(), type_.begin(), ::toupper);
+    }
+    if (type_ == "Superlu_dist")
+      type_ = "Superludist";
+
     // Set default solver type
     // TODO: It would be great is Amesos2 provides directly this kind of logic for us
     if (type_ == "") {
@@ -78,7 +87,7 @@ namespace MueLu {
                                      "to use one of these libraries. Amesos2 must be compiled with one of these solvers or"
                                      "a valid Amesos2 solver have to be specified explicitly.");
 #endif
-    } // if(type_ == "")
+    }
 
     //TMP: Amesos2 KLU never available but most MueLu tests are using KLU by default
     // (ex: examples driven by ML parameter lists)
