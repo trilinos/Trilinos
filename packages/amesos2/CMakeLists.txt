@@ -13,10 +13,6 @@ SET(${PACKAGE_NAME_UC}_RELEASE_DATE "07/28/2011")
 # B) Set up package-specific options
 #
 
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_BUILD_EXPERIMENTAL
-  HAVE_EXPERIMENTAL
-  "Enable experimental features"
-  OFF )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_VERBOSE_DEBUG
   HAVE_${PACKAGE_NAME_UC}_VERBOSE_DEBUG
@@ -37,10 +33,23 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TIMERS
 # support for an otherwise enabled third-part solver library
 #
 
+
+IF(${PACKAGE_NAME}_ENABLE_Cholmod)
+  SET(HAVE_AMESOS2_CHOLMOD ON )
+ENDIF()
+
+
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_LAPACK
   HAVE_${PACKAGE_NAME_UC}_LAPACK
   "Enable the dense serial solver interface"
   OFF )
+
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Experimental
+  HAVE_AMESOS2_EXPERIMENTAL
+  "Enable building and installation of experimental Amesos2 features."
+  NO )
 
 TRIBITS_ADD_DEBUG_OPTION()
 

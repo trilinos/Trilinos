@@ -108,3 +108,32 @@ IF (${PACKAGE_NAME}_ENABLE_LAPACK)
     COMM serial mpi
     )
 ENDIF()
+
+
+##### CHOLMOD Tests #####
+
+IF (${PACKAGE_NAME}_ENABLE_Cholmod)
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyCholmodFiles
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    SOURCE_FILES cholmod_test.xml
+    EXEDEPS Solver_Test
+    )
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME Cholmod_Solver_Test
+    ARGS "--xml-params=cholmod_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    STANDARD_PASS_OUTPUT
+    COMM serial mpi
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Cholmod_UnitTests
+    SOURCES
+      Cholmod_UnitTests
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM serial mpi
+    CATEGORIES NIGHTLY
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF()

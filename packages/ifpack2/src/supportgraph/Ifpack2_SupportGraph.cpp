@@ -1,12 +1,11 @@
-// @HEADER
+/*@HEADER
 // ***********************************************************************
 //
-//           Panzer: A partial differential equation assembly
-//       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
+//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//                 Copyright (2009) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,26 +34,29 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
-// @HEADER
+//@HEADER
+*/
 
-#ifndef PANZER_CONFIGDEFS_H
-#define PANZER_CONFIGDEFS_H
+#include "Ifpack2_SupportGraph_decl.hpp"
 
-#ifndef __cplusplus
-#define __cplusplus
-#endif
+#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
-#include "Panzer_config.hpp"
+#include "Ifpack2_SupportGraph_def.hpp"
+#include "Ifpack2_ExplicitInstantiationHelpers.hpp"
+#include "Ifpack2_ETIHelperMacros.h"
 
-namespace panzer {
-#ifdef PANZER_HAVE_LONG_LONG_INT
-  typedef long long int Ordinal64;
-#else
-  typedef long Ordinal64;
-#endif
+namespace Ifpack2 {
+
+  #define LCLINST(S,LO,GO) \
+          IFPACK2_INST(SUPPORTGRAPH,S,LO,GO)
+
+  IFPACK2_ETI_MANGLING_TYPEDEFS()
+
+  IFPACK2_INSTANTIATE_SLG_REAL(LCLINST)
+
 }
 
 #endif

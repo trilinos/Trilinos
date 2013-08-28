@@ -89,14 +89,14 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator()( device_type dev , value_type & dst ) const
   {
-    const size_type thread_size = dev.team_size() * dev.league_size();
-    const size_type thread_rank = dev.team_rank() + dev.team_size() * dev.league_rank();
-    const size_type work_per_thread = ( nwork + thread_size - 1 ) / thread_size ;
-    const size_type work_begin = thread_rank * work_per_thread ;
-    const size_type work_end   = nwork < work_begin + work_per_thread
-                               ? nwork : work_begin + work_per_thread ;
+    const int thread_rank = dev.team_rank() + dev.team_size() * dev.league_rank();
+    const int thread_size = dev.team_size() * dev.league_size();
+    const int chunk = ( nwork + thread_size - 1 ) / thread_size ;
 
-    for ( size_type iwork = work_begin ; iwork < work_end ; ++iwork ) {
+    size_type iwork = chunk * thread_rank ;
+    const size_type iwork_end = iwork + chunk < nwork ? iwork + chunk : nwork ;
+
+    for ( ; iwork < iwork_end ; ++iwork ) {
       dst.value[0] += 1 ;
       dst.value[1] += iwork + 1 ;
       dst.value[2] += nwork - iwork ;
