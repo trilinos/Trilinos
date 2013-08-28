@@ -1623,7 +1623,7 @@ namespace stk {
       }
     }
 
-    void MeshData::process_restart_input(double time)
+    double MeshData::process_restart_input(double time)
     {
       // Find the step on the database with time closest to the requested time...
       Ioss::Region *region = m_input_region.get();
@@ -1641,13 +1641,13 @@ namespace stk {
         }
       }
       // Exodus steps are 1-based;
-      process_restart_input(step_min+1);
+      return process_restart_input(step_min+1);
     }
 
-    void MeshData::process_restart_input(int step)
+    double MeshData::process_restart_input(int step)
     {
       if (step <= 0)
-        return;
+        return 0;
 
       int missing_fields = 0;
       ThrowErrorMsgIf (Teuchos::is_null(m_input_region),
@@ -1703,6 +1703,9 @@ namespace stk {
       region->end_state(step);
 
       bulk_data().modification_end();
+
+      // return time
+      return region->get_state_time(step);
     }
   } // namespace io
 } // namespace stk

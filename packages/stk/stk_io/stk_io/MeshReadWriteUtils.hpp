@@ -334,8 +334,8 @@ namespace stk {
 
         void add_restart_field(stk::mesh::FieldBase &field, std::string db_name = std::string());
         int  process_restart_output(double time);
-        void process_restart_input(int step);
-        void process_restart_input(double time);
+        double process_restart_input(int step);
+        double process_restart_input(double time);
 
         void define_restart_fields(); // Add all fields flagged as restart fields to restart database.
         // QUESTIONS: 
