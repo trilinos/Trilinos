@@ -254,12 +254,14 @@ namespace stk {
       return clone;
     }
 
-    void get_sorted_curve_node_entities(PerceptMesh& eMesh, stk::mesh::Part& part, std::vector<stk::mesh::Entity>& sorted_entities)
+    /// returns true if closed found
+    bool get_sorted_curve_node_entities(PerceptMesh& eMesh, stk::mesh::Part& part, std::vector<stk::mesh::Entity>& sorted_entities)
     {
-      bool debug_print = true;
+      bool debug_print = false;
 #define APRINTLN(a) do { if (debug_print) std::cout << #a << " = " << a << std::endl; } while(0)
 #define APRINTLN2(a,b) do { if (debug_print) std::cout << #a << " = " << a << " " << #b << " = " << b << std::endl; } while(0)
 
+      bool closed = false;
       if (debug_print) std::cout << "AdaptMain::get_sorted_curve_node_entities: processing part = " << part.name() << std::endl;
       VERIFY_OP_ON(part.primary_entity_rank(), ==, eMesh.edge_rank(), "bad part");
 
@@ -351,10 +353,10 @@ namespace stk {
                   if (last_node_edges[kdir].entity() != current_edge && this_part(eMesh.bucket(last_node_edges[kdir].entity() )))
                     {
                       current_edge = last_node_edges[kdir].entity();
-                      // check for periodicity
+                      // check for closed
                       if (idir == 0 && current_edge == edge_first)
                         {
-                          if (debug_print) std::cout << "AdaptMain::get_sorted_curve_node_entities: found periodic condition..." << std::endl;
+                          if (debug_print) std::cout << "AdaptMain::get_sorted_curve_node_entities: found closed condition..." << std::endl;
                           VERIFY_OP_ON(last_node, ==, edge_nodes[1].entity(), "integrity check failed");
                           node_list.push_front(edge_nodes[1].entity());
                           ++idir; //force loop exit
@@ -377,8 +379,8 @@ namespace stk {
 
       if (node_list.front() == node_list.back())
         {
-          // periodic case
-          //throw std::runtime_error("periodic not ready");
+          // closed case
+          closed = true;
           sorted_entities.resize(0);
           sorted_entities.assign(node_list.begin(), node_list.end());
         }
@@ -389,6 +391,7 @@ namespace stk {
 
           if (debug_print) VERIFY_OP_ON(node_list.size(), ==, node_set.size(), "node set/list error for part= "+part.name());
         }
+      return closed;
     }
 
     static void fit_geometry_create_parts_meta(PerceptMesh& eMesh, stk::mesh::PartVector& surface_parts, stk::mesh::PartVector& topo_parts)
@@ -428,6 +431,10 @@ namespace stk {
     static void fit_geometry(PerceptMesh& eMesh, std::string filename, stk::mesh::PartVector& surface_parts, stk::mesh::PartVector& topo_parts)
     {
 #if defined(STK_PERCEPT_HAS_GEOMETRY)
+      using namespace stk::geom;
+
+      bool debug_print = false;
+      SplineFit::s_debug_print = debug_print;
       ON::Begin();
 
       FILE* file = ON::OpenFile( filename.c_str(), "wb" );
@@ -470,9 +477,6 @@ namespace stk {
 
       // object table
       {
-        bool debug_print = false;
-        using namespace stk::geom;
-
         //const stk::mesh::PartVector & parts = eMesh.get_fem_meta_data()->get_parts();
         //stk::mesh::PartVector surface_parts;
         //stk::mesh::PartVector topo_parts;
@@ -491,9 +495,12 @@ namespace stk {
             stk::mesh::Part& part = *topo_parts[ipart];
 
             std::vector<stk::mesh::Entity> sorted_entities;
-            get_sorted_curve_node_entities(eMesh, *surface_parts[ipart], sorted_entities);
+            bool isClosed = get_sorted_curve_node_entities(eMesh, *surface_parts[ipart], sorted_entities);
 
             LocalCubicSplineFit cf;
+            if (isClosed) {
+              cf.setIsPeriodic(true);  // default is to assume a smooth seam at the closed/repeated node
+            }
             int n = sorted_entities.size();
             Vectors2D Q(n);
             for (int i=0; i < n; i++)
