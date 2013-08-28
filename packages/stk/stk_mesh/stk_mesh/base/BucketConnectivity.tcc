@@ -459,22 +459,6 @@ public:
 
   static const unsigned chunk_size = 1u;
 
-  BucketConnectivity() //default constructed BucketConnectivity implies connectivity is not used
-    : m_from_rank(InvalidEntityRank)
-    , m_direction(Lower)
-    , m_active(false)
-    , m_needs_shrink_to_fit(false)
-    , m_num_inactive(0)
-    , m_indices()
-    , m_num_connectivities()
-    , m_total_connectivities(0)
-    , m_targets()
-    , m_ordinals()
-    , m_permutations()
-    , m_bulk_data(NULL)
-    , m_id(Counter::counter++)
-  {}
-
   BucketConnectivity(EntityRank from_rank, BulkData *bulk_data)
     : m_from_rank(from_rank)
     , m_direction( (m_from_rank > TargetRank) ? Lower : ((m_from_rank == TargetRank) ? Adjacent : Higher))
