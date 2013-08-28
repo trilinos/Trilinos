@@ -436,6 +436,45 @@ struct Counter
   static int counter;
 };
 
+// Uncomment to enable profiling
+//#define STK_MESH_ANALYZE_DYN_CONN
+
+#ifdef STK_MESH_ANALYZE_DYN_CONN
+struct DynConnData
+{
+  EntityRank m_from_rank;
+  EntityRank m_to_rank;
+  size_t m_max_capacity;
+  size_t m_abandoned_space;
+  size_t m_unused_chunk_capacity;
+  size_t m_num_growths;
+  size_t m_num_entity_relocations;
+  size_t m_utilization_ratio_pct;
+  size_t m_total_unused_memory;
+  size_t m_unused_capacity;
+  size_t m_total_num_conn;
+
+
+  DynConnData(EntityRank from_rank, EntityRank to_rank) :
+    m_from_rank(from_rank),
+    m_to_rank(to_rank),
+    m_max_capacity(0),
+    m_abandoned_space(0),
+    m_unused_chunk_capacity(0),
+    m_num_growths(0),
+    m_num_entity_relocations(0),
+    m_utilization_ratio_pct(0),
+    m_total_unused_memory(0),
+    m_unused_capacity(0),
+    m_total_num_conn(0)
+  {}
+};
+
+struct DynConnMetrics
+{
+  static std::vector<DynConnData> m_data;
+};
+#endif
 
 template<EntityRank TargetRank >
 class BucketConnectivity<TargetRank, DYNAMIC_CONNECTIVITY>
@@ -474,8 +513,14 @@ public:
     , m_bulk_data(bulk_data)
     , m_id(Counter::counter++)
     , m_rank_sensitive_higher_connectivity_cmp(*m_bulk_data)
-    , m_rank_sensitive_lower_connectivity_cmp(* m_bulk_data)
-  {}
+    , m_rank_sensitive_lower_connectivity_cmp(*m_bulk_data)
+    , m_last_capacity(0)
+  {
+#ifdef STK_MESH_ANALYZE_DYN_CONN
+    DynConnMetrics::m_data.push_back(DynConnData(from_rank, target_rank));
+    m_data_idx = DynConnMetrics::m_data.size() - 1;
+#endif
+  }
 
   // Entity iterator
 
@@ -799,6 +844,13 @@ public:
 
 private:
 
+#ifdef STK_MESH_ANALYZE_DYN_CONN
+  DynConnData& data() const
+  {
+    return DynConnMetrics::m_data[m_data_idx];
+  }
+#endif
+
   void copy_connectivity(unsigned from_ordinal, SelfType& to, unsigned to_ordinal)
   {
     unsigned num_conn    = m_num_connectivities[from_ordinal];
@@ -862,10 +914,32 @@ private:
 
     temp.swap(data);
     ThrowAssert(data.capacity() == capacity); // no growths took place
+    m_last_capacity = capacity;
   }
 
   void resize_and_order_by_index(unsigned capacity = 0u)
   {
+#ifdef STK_MESH_ANALYZE_DYN_CONN
+    if (capacity != 0u) {
+      ++data().m_num_growths;
+    }
+
+    if (m_targets.capacity() > data().m_max_capacity) {
+      data().m_max_capacity = m_targets.capacity();
+      data().m_total_unused_memory = m_targets.capacity() - m_total_connectivities;
+      data().m_unused_capacity = m_targets.capacity() - m_targets.size();
+      data().m_total_num_conn = m_total_connectivities;
+      const size_t total_unused_active = m_targets.size() - m_total_connectivities;
+      size_t total_unused_chunk_capacity = 0;
+      for (size_t i = 0, e = m_num_connectivities.size(); i < e; ++i) {
+        total_unused_chunk_capacity += num_chunks(m_num_connectivities[i]) * chunk_size - m_num_connectivities[i];
+      }
+      data().m_abandoned_space = total_unused_active - total_unused_chunk_capacity;
+      data().m_unused_chunk_capacity = total_unused_chunk_capacity;
+      data().m_utilization_ratio_pct = (100 * m_total_connectivities) / m_targets.capacity();
+    }
+#endif
+
     //compute needed capacity
     if (capacity == 0u) {
       for( size_t i=0, e=m_indices.size(); i<e; ++i) {
@@ -888,14 +962,17 @@ private:
   // The default capacity_ratio enables the most of the speed of the simple doubling
   // policy, while preventing the O(N^2) memory growth that would occur for
   // pathologically ordered add_connectivity calls under that policy.
-  unsigned compute_new_connectivity_capacity(unsigned capacity_ratio = 8)
+  unsigned compute_new_connectivity_capacity(unsigned minimum_size, unsigned capacity_ratio = 8)
   {
     const unsigned old_capacity = m_targets.capacity();
     static const unsigned careful_threshold = 2048;
 
     if (old_capacity < careful_threshold)
     {
-      const unsigned new_capacity = old_capacity > 0 ? 2 * old_capacity : 8*chunk_size;
+      unsigned new_capacity = old_capacity > 0 ? 2 * old_capacity : 8*chunk_size;
+      while (new_capacity < minimum_size) {
+        new_capacity *= 2;
+      }
       return new_capacity;
     }
 
@@ -928,7 +1005,7 @@ private:
 
     if (chunks_available < chunks_needed_by_entity)
     {
-      const unsigned new_capacity = compute_new_connectivity_capacity();
+      const unsigned new_capacity = compute_new_connectivity_capacity(m_targets.size() + chunks_needed_by_entity * chunk_size);
       resize_and_order_by_index(new_capacity);
     }
 
@@ -939,6 +1016,10 @@ private:
     //copy to end
     if (!last_entity_by_index)
     {
+#ifdef STK_MESH_ANALYZE_DYN_CONN
+      ++data().m_num_entity_relocations;
+#endif
+
       uint32_t new_index = static_cast<uint32_t>(m_targets.size());
 
       m_targets.insert(m_targets.end(), chunks_needed_by_entity*chunk_size, invalid);
@@ -1047,6 +1128,7 @@ private:
     const Permutation* permutations_begin = begin_permutations(bucket_ordinal);
     const Permutation* permutations_end   = end_permutations(bucket_ordinal);
 
+    ThrowAssertMsg(m_last_capacity == m_targets.capacity(), "Expected " << m_last_capacity << " found " << m_targets.capacity());
     ThrowAssertMsg((keys_end - keys_begin) == num_connectivity(bucket_ordinal),
                    "Expected data to be of size " << num_connectivity(bucket_ordinal) << ", " << bucket_ordinal << " has keys " << keys_end - keys_begin);
 
@@ -1117,6 +1199,8 @@ private:
     if (!m_active) {
       ThrowAssertMsg(m_num_connectivities.size() == 0, "Expect empty data if inactive");
     }
+
+    ThrowAssertMsg(m_last_capacity == m_targets.capacity(), "Expected " << m_last_capacity << " found " << m_targets.capacity());
 
     unsigned connectivities_sum = 0;
     size_t lim = m_num_connectivities.size();
@@ -1209,6 +1293,12 @@ private:
 
   impl::HigherConnectivityRankSensitiveCompare<BulkData>  m_rank_sensitive_higher_connectivity_cmp;
   impl::LowerConnectivitityRankSensitiveCompare<BulkData>  m_rank_sensitive_lower_connectivity_cmp;
+
+  size_t m_last_capacity;
+
+#ifdef STK_MESH_ANALYZE_DYN_CONN
+  size_t m_data_idx;
+#endif
 };
 
 }}} //namespace stk::mesh::impl

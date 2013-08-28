@@ -38,6 +38,10 @@ namespace mesh {
 
 namespace impl {
 int Counter::counter = 0;
+
+#ifdef STK_MESH_ANALYZE_DYN_CONN
+std::vector<DynConnData> DynConnMetrics::m_data;
+#endif
 }
 
 namespace {
