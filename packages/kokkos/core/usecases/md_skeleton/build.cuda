@@ -1,4 +1,4 @@
-KOKKOSPATH=../LAMMPS-Kokkos/lib/kokkos/core/src
+KOKKOSPATH=../../src
 FLAGS="-I./ -I${KOKKOSPATH} -DKOKKOS_HAVE_CUDA -arch=sm_35 -L${KOKKOSPATH} -lkokkosarraycuda -lcuda -lcudart -O3 -g"
 rm *.o
 nvcc -c -x cu force.cpp ${FLAGS}
