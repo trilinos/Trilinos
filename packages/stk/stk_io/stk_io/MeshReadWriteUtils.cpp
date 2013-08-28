@@ -1621,8 +1621,6 @@ namespace stk {
 
       Ioss::Region *region = m_input_region.get();
       if (region) {
-        bulk_data().modification_begin();
-
         // Pick which time index to read into solution field.
         region->begin_state(step);
 
@@ -1632,8 +1630,6 @@ namespace stk {
         input_sideset_fields(*region, bulk_data());
 
         region->end_state(step);
-
-        bulk_data().modification_end();
 
       } else {
         std::cerr << "INTERNAL ERROR: Mesh Input Region pointer is NULL in process_input_request.\n";
@@ -1672,7 +1668,6 @@ namespace stk {
                        "There is no Input mesh/restart region associated with this Mesh Data.");
 
       Ioss::Region *region = m_input_region.get();
-      bulk_data().modification_begin();
 
       // Pick which time index to read into solution field.
       region->begin_state(step);
@@ -1719,8 +1714,6 @@ namespace stk {
       }
 
       region->end_state(step);
-
-      bulk_data().modification_end();
 
       // return time
       return region->get_state_time(step);
