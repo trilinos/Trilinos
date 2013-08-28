@@ -1703,10 +1703,15 @@ namespace stk {
           // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
           // (should probably do edges and faces also...)
           // Get Ioss::GroupingEntity corresponding to the nodes on this part...
-          if (rank != stk::mesh::MetaData::NODE_RANK && use_nodeset_for_part_nodes_fields()) {
-            std::string nodes_name = part->name() + "_nodes";
-            Ioss::GroupingEntity *node_entity = region->get_entity(nodes_name);
-            if (node_entity != NULL) {
+          if (rank != stk::mesh::MetaData::NODE_RANK) {
+	    Ioss::GroupingEntity *node_entity = NULL;
+	    if (use_nodeset_for_part_nodes_fields()) {
+	      std::string nodes_name = part->name() + "_nodes";
+	      node_entity = region->get_entity(nodes_name);
+	    } else {
+	      node_entity = region->get_entity("nodeblock_1");
+	    }
+	    if (node_entity != NULL) {
 	      missing_fields += ioss_restore_restart_fields(bulk_data(), *part,
 							    stk::mesh::MetaData::NODE_RANK, node_entity);
             }
