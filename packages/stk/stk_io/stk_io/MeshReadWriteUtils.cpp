@@ -543,7 +543,7 @@ void process_elem_attributes_and_implicit_ids(Ioss::Region &region, stk::mesh::B
       }
       
       if (!elements_needed)
-	return;
+	continue;
       
       std::vector<INT> elem_ids ;
       entity->get_field_data("ids", elem_ids);
