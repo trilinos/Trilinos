@@ -130,6 +130,24 @@ public:
 
   inline void team_barrier();
 
+  /* Collectively compute the league-wide unordered exclusive prefix sum.
+   * Values are ordered within a team, but not between teams (i.e. the start
+   * values of thread 0 in each team are not ordered according to team number).
+   * This call does not use a global synchronization. Multiple unordered scans
+   * can be in-flight at the same time (using different scratch_views).
+   * The scratch-view will hold the complete sum in the end.
+   */
+  template< class VT >
+  inline typename VT::value_type unordered_scan
+             (typename VT::value_type& value, VT& scratch_view);
+
+  /* Collectively compute the team-wide exclusive prefix sum using CUDA Unbound.
+   * Values are ordered, the last thread returns the sum of all values
+   * in the team less its own value
+   */
+  template< typename T >
+  inline T team_scan(T& value);
+
   template< typename T >
   inline T * get_shmem( const int count );
 
