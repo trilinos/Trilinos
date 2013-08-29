@@ -183,6 +183,7 @@ APPEND_SET(HEADERS
   NOX_Version.H
   NOX_GlobalData.H
   NOX_PrePostOperator_Vector.H
+  NOX_Assert.H
   )
 APPEND_SET(SOURCES
   NOX_Utils.C
