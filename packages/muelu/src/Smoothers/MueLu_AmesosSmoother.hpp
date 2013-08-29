@@ -192,16 +192,14 @@ namespace MueLu {
   //! Non-member templated function GetAmesosSmoother() returns a new AmesosSmoother object when <Scalar, LocalOrdinal, GlobalOrdinal> == <double, int, int>. Otherwise, an exception is thrown.
   //! This function simplifies the usage of AmesosSmoother objects inside of templates as templates do not have to be specialized for <double, int, int> (see DirectSolver for an example).
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > GetAmesosSmoother(const std::string& type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList(), RCP<FactoryBase> AFact = Teuchos::null) {
+  RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > GetAmesosSmoother(const std::string& type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList()) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "AmesosSmoother cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
     return Teuchos::null;
   }
   //
   template <>
-  inline RCP<MueLu::SmootherPrototype<double, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void,int,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps> > GetAmesosSmoother<double, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void,int,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>(const std::string& type, const Teuchos::ParameterList& paramList, RCP<FactoryBase> AFact) {
-    RCP<AmesosSmoother> smoo = rcp( new AmesosSmoother(type, paramList) );
-    smoo->SetFactory("A", AFact);
-    return smoo;
+  inline RCP<MueLu::SmootherPrototype<double, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void,int,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps> > GetAmesosSmoother<double, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void,int,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>(const std::string& type, const Teuchos::ParameterList& paramList) {
+    return rcp(new AmesosSmoother(type, paramList));
   }
 
 } // namespace MueLu

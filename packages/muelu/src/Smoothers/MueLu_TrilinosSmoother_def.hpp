@@ -59,23 +59,27 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TrilinosSmoother(const std::string& type, const Teuchos::ParameterList& paramList, const LO& overlap, RCP<FactoryBase> AFact)
-    : type_(type), paramList_(paramList), overlap_(overlap), AFact_(AFact)
+  TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TrilinosSmoother(const std::string& type, const Teuchos::ParameterList& paramList, const LO& overlap)
+    : type_(type), paramList_(paramList), overlap_(overlap)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(overlap_ < 0, Exceptions::RuntimeError, "Overlap parameter is negative (" << overlap << ")");
 
     bool triedEpetra = false, triedTpetra = false;
-
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
     sTpetra_ = rcp(new Ifpack2Smoother(type_, paramList_, overlap_));
+    TEUCHOS_TEST_FOR_EXCEPTION(sTpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Ifpack2 smoother");
     triedTpetra = true;
 #endif
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
-    sEpetra_ = GetIfpackSmoother<SC,LO,GO,NO,LMO>(TrilinosSmoother::Ifpack2ToIfpack1Type(type_), TrilinosSmoother::Ifpack2ToIfpack1Param(paramList_), overlap_, AFact_);
+    try {
+      sEpetra_ = GetIfpackSmoother<SC,LO,GO,NO,LMO>(TrilinosSmoother::Ifpack2ToIfpack1Type(type_), TrilinosSmoother::Ifpack2ToIfpack1Param(paramList_), overlap_);
+      TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Ifpack smoother");
+    } catch (Exceptions::RuntimeError) {
+      // IfpackSmoother throws if Scalar != double, LocalOrdinal != int, GlobalOrdinal != int
+      GetOStream(Warnings0,0) << "Skipping IfpackSmoother construction due to incorrect type" << std::endl;
+    }
     triedEpetra = true;
 #endif
-    TEUCHOS_TEST_FOR_EXCEPTION(triedTpetra && sTpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Ifpack2 smoother");
-    TEUCHOS_TEST_FOR_EXCEPTION(triedEpetra && sEpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Ifpack smoother");
     TEUCHOS_TEST_FOR_EXCEPTION(!triedEpetra && !triedTpetra,      Exceptions::RuntimeError, "Unable to construct Ifpack/Ifpack2 smoother."
                                "Plase enable (TPETRA and IFPACK2) or (EPETRA and IFPACK)");
   }
@@ -94,7 +98,7 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level& currentLevel) {
     if (SmootherPrototype::IsSetup() == true)
-      VerboseObject::GetOStream(Warnings0, 0) << "Warning: MueLu::TrilinosSmoother::Setup(): Setup() has already been called";
+      this->GetOStream(Warnings0, 0) << "Warning: MueLu::TrilinosSmoother::Setup(): Setup() has already been called";
 
     s_->Setup(currentLevel);
 

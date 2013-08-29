@@ -65,15 +65,20 @@ namespace MueLu {
     bool triedEpetra = false, triedTpetra = false;
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
     sTpetra_ = rcp(new Amesos2Smoother(type_, paramList_));
+    TEUCHOS_TEST_FOR_EXCEPTION(sTpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Amesos2 direct solver");
     triedTpetra = true;
 #endif
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
-    sEpetra_ = GetAmesosSmoother<SC,LO,GO,NO,LMO>(type_, paramList_);
+    try {
+      sEpetra_ = GetAmesosSmoother<SC,LO,GO,NO,LMO>(type_, paramList_);
+      TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Amesos direct solver");
+    } catch (Exceptions::RuntimeError) {
+      // AmesosSmoother throws if Scalar != double, LocalOrdinal != int, GlobalOrdinal != int
+      this->GetOStream(Warnings0,0) << "Skipping AmesosSmoother construction due to incorrect type" << std::endl;
+    }
     triedEpetra = true;
 #endif
-    TEUCHOS_TEST_FOR_EXCEPTION(triedTpetra && sTpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Amesos2 direct solver");
-    TEUCHOS_TEST_FOR_EXCEPTION(triedEpetra && sEpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Amesos direct solver");
-    TEUCHOS_TEST_FOR_EXCEPTION(!triedEpetra && !triedTpetra,      Exceptions::RuntimeError, "Unable to construct direct solver. Plase enable (TPETRA and AMESOS2) or (EPETRA and AMESOS)");
+    TEUCHOS_TEST_FOR_EXCEPTION(!triedEpetra && !triedTpetra, Exceptions::RuntimeError, "Unable to construct direct solver. Plase enable (TPETRA and AMESOS2) or (EPETRA and AMESOS)");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -90,7 +95,7 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level& currentLevel) {
     if (SmootherPrototype::IsSetup() == true)
-      VerboseObject::GetOStream(Warnings0, 0) << "Warning: MueLu::DirectSolver::Setup(): Setup() has already been called";
+      this->GetOStream(Warnings0, 0) << "Warning: MueLu::DirectSolver::Setup(): Setup() has already been called";
 
     s_->Setup(currentLevel);
 
