@@ -114,7 +114,7 @@ namespace MueLu {
     @param B right-hand side
     @param InitialGuessIsZero
     */
-    void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero=false) const;
+    void Apply(MultiVector &X, const MultiVector& B, bool InitialGuessIsZero = false) const;
 
     //@}
 

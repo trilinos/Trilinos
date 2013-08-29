@@ -182,7 +182,7 @@ namespace MueLu {
     @param B right-hand side
     @param InitialGuessIsZero (optional) If false, some work can be avoided.  Whether this actually saves any work depends on the underlying Ifpack implementation.
     */
-    void Apply(MultiVector& X, MultiVector const &B, bool const &InitialGuessIsZero=false) const;
+    void Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero = false) const;
 
     //@}
 

@@ -147,7 +147,7 @@ namespace MueLu {
     SmootherPrototype::IsSetup(true);
   }
 
-  void AmesosSmoother::Apply(MultiVector& X, const MultiVector& B, const bool& InitialGuessIsZero) const {
+  void AmesosSmoother::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Apply(): Setup() has not been called");
 
     Epetra_MultiVector &epX = Utils::MV2NonConstEpetraMV(X);
