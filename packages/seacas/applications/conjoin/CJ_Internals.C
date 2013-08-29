@@ -234,7 +234,7 @@ int Excn::Internals::write_meta_data(const Mesh<INT> &mesh,
   	 
     if (mesh.blockCount > 0) {
       for (size_t i=0; i < mesh.blockCount; i++) {
-	std::strncpy(names[i], blocks[i].name_.c_str(), name_size);
+	std::strncpy(names[i], sorted_blocks[i].name_.c_str(), name_size);
 	names[i][name_size] = 0;
       }
       ex_put_names(exodusFilePtr, EX_ELEM_BLOCK, names);
