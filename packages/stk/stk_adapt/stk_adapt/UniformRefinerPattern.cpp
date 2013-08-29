@@ -7,8 +7,6 @@ namespace stk {
 
     bool allow_single_refine = false;
 
-    STK_Adapt_Auto_Part stk_adapt_auto_part;
-
     const std::string UniformRefinerPatternBase::m_oldElementsPartName = "urp_oldElements";
 
     std::string UniformRefinerPatternBase::s_convert_options =

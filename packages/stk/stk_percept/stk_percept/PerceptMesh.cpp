@@ -71,6 +71,8 @@ namespace stk {
 
     PerceptMesh *PerceptMesh::s_static_singleton_instance = 0;
 
+    STK_Adapt_Auto_Part stk_adapt_auto_part;
+
     //std::string PerceptMesh::s_omit_part = "_urp_original";
     //std::string PerceptMesh::s_omit_part = "_urporig";
     std::string PerceptMesh::s_omit_part = "_uo";  // stk_io now lowercases everything

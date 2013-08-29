@@ -1010,6 +1010,12 @@ namespace stk {
         }
     }
 
+    /// signifies a part that has been defined automatically during adaptivity
+
+    struct STK_Adapt_Auto_Part {};
+    extern STK_Adapt_Auto_Part stk_adapt_auto_part;
+
+
   }
 }
 

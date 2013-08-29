@@ -137,10 +137,6 @@ namespace stk {
 
     struct SierraPort {};
 
-    /// signifies a part that has been defined automatically during adaptivity
-    struct STK_Adapt_Auto_Part {};
-    extern STK_Adapt_Auto_Part stk_adapt_auto_part;
-
     inline int new_sub_entity_nodes_check( NewSubEntityNodesType& new_sub_entity_nodes, int i_entity_rank, int j_ordinal_of_entity, int k_ordinal_of_node_on_entity)
     {
       try {
@@ -2550,7 +2546,7 @@ namespace stk {
               {
                 stk::mesh::Part& part = eMesh.get_fem_meta_data()->declare_part("refine_new_nodes_part", mesh::MetaData::NODE_RANK);
                 mesh::MetaData & meta = mesh::MetaData::get(part);
-                meta.declare_attribute_no_delete(part, &stk_adapt_auto_part);
+                meta.declare_attribute_no_delete(part, &stk::percept::stk_adapt_auto_part);
               }
           }
 
@@ -2567,14 +2563,14 @@ namespace stk {
                 {
                   stk::mesh::Part& part = eMesh.get_fem_meta_data()->declare_part(active_part_name, part_ranks[irank]);
                   mesh::MetaData & meta = mesh::MetaData::get(part);
-                  meta.declare_attribute_no_delete(part, &stk_adapt_auto_part);
+                  meta.declare_attribute_no_delete(part, &stk::percept::stk_adapt_auto_part);
                 }
               stk::mesh::Part* inactive_elements_part = eMesh.get_non_const_part(inactive_part_name);
               if (!inactive_elements_part)
                 {
                   stk::mesh::Part& part = eMesh.get_fem_meta_data()->declare_part(inactive_part_name, part_ranks[irank]);
                   mesh::MetaData & meta = mesh::MetaData::get(part);
-                  meta.declare_attribute_no_delete(part, &stk_adapt_auto_part);
+                  meta.declare_attribute_no_delete(part, &stk::percept::stk_adapt_auto_part);
                 }
             }
           }
@@ -2800,7 +2796,7 @@ namespace stk {
                                                     << oldPartName << " rank= " << m_primaryEntityRank << std::endl;
               stk::mesh::Part& part = eMesh.get_fem_meta_data()->declare_part(oldPartName, m_primaryEntityRank);
               mesh::MetaData & meta = mesh::MetaData::get(part);
-              meta.declare_attribute_no_delete(part, &stk_adapt_auto_part);
+              meta.declare_attribute_no_delete(part, &stk::percept::stk_adapt_auto_part);
             }
         }
       }
