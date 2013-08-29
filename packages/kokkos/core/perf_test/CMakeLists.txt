@@ -4,22 +4,19 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINRARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../TPL)
 
-SET(SOURCES PerfTestMain.cpp PerfTestHost.cpp ../TPL/gtest/gtest-all.cc)
-SET(LIBRARIES kokkoscore_devicethreads kokkoscore_impl)
+SET(SOURCES
+  PerfTestMain.cpp
+  PerfTestHost.cpp
+  ../TPL/gtest/gtest-all.cc
+  )
 
 IF(Kokkos_ENABLE_Cuda)
-  TRIBITS_ADD_LIBRARY(
-    perf_cuda
-    SOURCES PerfTestCuda.cu
-    DEPLIBS
-    CUDALIBRARY
-  )
-  LIST( APPEND SOURCES
-    PerfTestCuda.cpp
-  )
-  LIST( APPEND LIBRARIES
-    kokkoscore_devicecuda perf_cuda
-  )
+
+  CUDA_COMPILE( OBJECTS_CUDA PerfTestCuda.cu )
+
+  LIST( APPEND SOURCES PerfTestCuda.cpp )
+  LIST( APPEND SOURCES ${OBJECTS_CUDA} )
+
 ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -28,5 +25,5 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION "[  PASSED  ]"
-  DEPLIBS ${LIBRARIES}
+  DEPLIBS kokkoscore
   )

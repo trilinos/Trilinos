@@ -3,6 +3,12 @@ INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../src)
+
+# For CUDA_COMPILE to find the KokkosCore_config.h
+# For CUDA_COMPILE to find the kokkos/core/src include directory.
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../core/src)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../core/src)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../core/TPL)
 
 SET(SOURCES
@@ -11,7 +17,7 @@ SET(SOURCES
   ../../core/TPL/gtest/gtest-all.cc
   )
 
-SET(LIBRARIES kokkoscore_impl)
+SET(LIBRARIES kokkoscore)
 
 IF(Kokkos_ENABLE_OpenMP)
   LIST( APPEND SOURCES
@@ -21,18 +27,10 @@ ENDIF()
 
 IF(Kokkos_ENABLE_Cuda)
 
-  TRIBITS_ADD_LIBRARY(
-    kokkos_containers_unit_cuda
-    SOURCES TestCuda.cu 
-    DEPLIBS
-    CUDALIBRARY
-  )
-  LIST( APPEND SOURCES
-    TestCuda.cpp
-  )
-  LIST( APPEND LIBRARIES
-    kokkoscore_devicecuda kokkos_containers_unit_cuda
-  )
+  CUDA_COMPILE( OBJECTS_CUDA TestCuda.cu )
+
+  LIST( APPEND SOURCES ${OBJECTS_CUDA} TestCuda.cpp )
+
 ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(

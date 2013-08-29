@@ -11,28 +11,16 @@ SET(SOURCES
   ../TPL/gtest/gtest-all.cc
   )
 
-SET(LIBRARIES kokkoscore_devicethreads kokkoscore_impl)
-
 IF(Kokkos_ENABLE_OpenMP)
-  LIST( APPEND SOURCES
-    TestOpenMP.cpp
-  )
+  LIST( APPEND SOURCES TestOpenMP.cpp )
 ENDIF()
 
 IF(Kokkos_ENABLE_Cuda)
 
-  TRIBITS_ADD_LIBRARY(
-    unit_cuda
-    SOURCES TestCudaFunctions.cu
-    DEPLIBS
-    CUDALIBRARY
-  )
-  LIST( APPEND SOURCES
-    TestCuda.cpp
-  )
-  LIST( APPEND LIBRARIES
-    kokkoscore_devicecuda unit_cuda
-  )
+  CUDA_COMPILE(OBJECTS_CUDA TestCudaFunctions.cu)
+
+  LIST( APPEND SOURCES TestCuda.cpp ${OBJECTS_CUDA} )
+
 ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -41,6 +29,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION "[  PASSED  ]"
-  DEPLIBS ${LIBRARIES}
+  DEPLIBS kokkoscore
   )
   

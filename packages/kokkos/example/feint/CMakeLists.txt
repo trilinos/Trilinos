@@ -3,11 +3,12 @@ INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../core/src)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../core/src)
+
 SET(SOURCES "")
 
 FILE(GLOB SOURCES *.cpp)
-
-SET(LIBRARIES kokkosexample_fixture)
 
 IF( Kokkos_ENABLE_Cuda )
 
@@ -16,13 +17,9 @@ IF( Kokkos_ENABLE_Cuda )
     CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
   ENDIF()
 
-  TRIBITS_ADD_LIBRARY(
-    feint_cuda
-    SOURCES feint_cuda.cu
-    CUDALIBRARY
-    )
+  CUDA_COMPILE( OBJECTS_CUDA feint_cuda.cu )
 
-  LIST( APPEND LIBRARIES kokkosexample_fixture_cuda )
+  LIST( APPEND SOURCES ${OBJECTS_CUDA} )
 
 ENDIF()
 
@@ -30,6 +27,6 @@ TRIBITS_ADD_EXECUTABLE(
   feint
   SOURCES ${SOURCES}
   COMM serial mpi
-  DEPLIBS ${LIBRARIES}
+  DEPLIBS kokkosexample_fixture
   )
 

@@ -3,6 +3,11 @@ INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../src)
+
+# Include directories for KokkosCore
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../core/src)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../core/src)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../core/TPL)
 
 SET(SOURCES
@@ -11,28 +16,13 @@ SET(SOURCES
   ../../core/TPL/gtest/gtest-all.cc
   )
 
-SET(LIBRARIES kokkoscore_impl)
-
 IF(Kokkos_ENABLE_OpenMP)
-  LIST( APPEND SOURCES
-    TestOpenMP.cpp
-  )
+  LIST( APPEND SOURCES TestOpenMP.cpp)
 ENDIF()
 
 IF(Kokkos_ENABLE_Cuda)
-
-  TRIBITS_ADD_LIBRARY(
-    kokkos_containers_performance_cuda
-    SOURCES TestCuda.cu 
-    DEPLIBS
-    CUDALIBRARY
-  )
-  LIST( APPEND SOURCES
-    TestCuda.cpp
-  )
-  LIST( APPEND LIBRARIES
-    kokkoscore_devicecuda kokkos_containers_performance_cuda
-  )
+  CUDA_COMPILE( OBJECTS_CUDA TestCuda.cu )
+  LIST( APPEND SOURCES TestCuda.cpp ${OBJECTS_CUDA} )
 ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -41,6 +31,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION "[  PASSED  ]"
-  DEPLIBS ${LIBRARIES}
+  DEPLIBS kokkoscore
   )
   
