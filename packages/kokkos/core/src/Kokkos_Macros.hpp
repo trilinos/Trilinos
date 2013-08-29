@@ -43,10 +43,10 @@
 //@HEADER
 */
 
-#include <KokkosCore_config.h>
-
 #ifndef KOKKOS_MACROS_HPP
 #define KOKKOS_MACROS_HPP
+
+#include <KokkosCore_config.h>
 
 namespace Kokkos {
 class HostSpace ;

@@ -4,15 +4,24 @@ INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
+#----------------------------------------------------------------------------
+# set nvcc behavior
+#
+# SET(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)
+
+SET(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF CACHE BOOL
+    "" FORCE )
+SET(CUDA_PROPAGATE_HOST_FLAGS              OFF CACHE BOOL
+    "" FORCE )
+
+#----------------------------------------------------------------------------
+
 SET(HEADERS "")
 SET(SOURCES "")
 SET(CUDA_SOURCES "")
 
 FILE(GLOB HEADERS *.hpp)
 FILE(GLOB CUDA_SOURCES *.cu)
-
-#set nvcc behavior
-set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)
 
 CUDA_COMPILE(CUDA_OBJECTS ${CUDA_SOURCES})
 
