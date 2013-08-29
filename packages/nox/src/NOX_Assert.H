@@ -1,12 +1,12 @@
-// @HEADER
+//@HEADER
 // ************************************************************************
-//
-//                           Intrepid Package
-//                 Copyright (2007) Sandia Corporation
-//
+// 
+//            NOX: An Object-Oriented Nonlinear Solver Package
+//                 Copyright (2002) Sandia Corporation
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,21 +34,30 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions: Alejandro Mota (amota@sandia.gov)
-//
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
-// @HEADER
+//  CVS Information
+//  $Source$
+//  $Author$
+//  $Date$
+//  $Revision$
+// ************************************************************************
+//@HEADER
 
-#if !defined(Intrepid_MiniTensor_h)
-#define Intrepid_MiniTensor_h
+#ifndef NOX_ASSERT_H
+#define NOX_ASSERT_H
 
-#include "Intrepid_MiniTensor_Vector.h"
-#include "Intrepid_MiniTensor_Tensor.h"
-#include "Intrepid_MiniTensor_Tensor3.h"
-#include "Intrepid_MiniTensor_Tensor4.h"
+#include "NOX_Common.H"
+#include "Teuchos_Assert.hpp"
 
-#include "Intrepid_MiniTensor_Geometry.h"
-#include "Intrepid_MiniTensor_LinearAlgebra.h"
-#include "Intrepid_MiniTensor_Mechanics.h"
+// Uses TEUCHOS_ASSERT but only in debug mode.  Check is disabled in
+// released mode TEUCHOS_ASSERT is normally not disabled in optimized
+// builds.
+#ifdef HAVE_NOX_DEBUG
+#define NOX_ASSERT(test) TEUCHOS_ASSERT(test)
+#else
+#define NOX_ASSERT(test)
+#endif
 
-#endif //Intrepid_MiniTensor_h
+#endif

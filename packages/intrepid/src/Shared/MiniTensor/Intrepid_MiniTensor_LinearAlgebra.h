@@ -369,6 +369,10 @@ template<typename T, Index N>
 boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
 polar_left_logV(Tensor<T, N> const & F);
 
+template<typename T, Index N>
+boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
+polar_left_logV_eig(Tensor<T, N> const & F);
+
 ///
 /// Left polar decomposition with matrix logarithm for V using eig_spd_cos
 /// \param F tensor (often a deformation-gradient-like tensor)

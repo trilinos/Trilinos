@@ -247,6 +247,16 @@ Tensor4<typename Promote<S, T>::type, N>
 operator/(Tensor4<T, N> const & A, S const & s);
 
 ///
+/// 4th-order scalar tensor division
+/// \param s scalar
+/// \param A 4th-order tensor
+/// \return \f$ s / A \f$
+///
+template<typename S, typename T, Index N>
+Tensor4<typename Promote<S, T>::type, N>
+operator/(S const & s, Tensor4<T, N> const & A);
+
+///
 /// 4th-order tensor transpose
 ///
 template<typename T, Index N>

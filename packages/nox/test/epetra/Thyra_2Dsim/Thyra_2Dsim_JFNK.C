@@ -82,7 +82,7 @@ using namespace std;
 
 TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, perturbation_unit_tests)
 {
-  Teuchos::TimeMonitor::zeroOutTimers();
+  //Teuchos::TimeMonitor::zeroOutTimers();
 
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
@@ -299,12 +299,12 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, perturbation_unit_tests)
     TEST_FLOATING_EQUALITY(jfnkOp->getDelta(),1.0e-7,tol_mach_eps);
   }
 
-  Teuchos::TimeMonitor::summarize();
+  //Teuchos::TimeMonitor::summarize();
 }
   
 TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, solve_no_prec)
 {
-  Teuchos::TimeMonitor::zeroOutTimers();
+  //Teuchos::TimeMonitor::zeroOutTimers();
 
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
@@ -409,12 +409,12 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, solve_no_prec)
   // Final return value (0 = successfull, non-zero = failure)
   TEST_ASSERT(solvStatus == NOX::StatusTest::Converged);
 
-  Teuchos::TimeMonitor::summarize();
+  //Teuchos::TimeMonitor::summarize();
 }
   
 TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, solve_Jacobi_prec_using_ME)
 {
-  Teuchos::TimeMonitor::zeroOutTimers();
+  //Teuchos::TimeMonitor::zeroOutTimers();
 
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
@@ -525,5 +525,5 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, solve_Jacobi_prec_using_ME)
   // Final return value (0 = successfull, non-zero = failure)
   TEST_ASSERT(solvStatus == NOX::StatusTest::Converged);
 
-  Teuchos::TimeMonitor::summarize();
+  //Teuchos::TimeMonitor::summarize();
 }

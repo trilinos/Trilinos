@@ -47,10 +47,7 @@
 #include <iostream>
 #include <vector>
 
-#include "Intrepid_MiniTensor_Definitions.h"
-#include "Intrepid_MiniTensor_Storage.h"
 #include "Intrepid_MiniTensor_TensorBase.h"
-#include "Intrepid_MiniTensor_Utilities.h"
 
 namespace Intrepid {
 
@@ -253,6 +250,16 @@ operator*(Vector<T, N> const & u, S const & s);
 template<typename S, typename T, Index N>
 Vector<typename Promote<S, T>::type, N>
 operator/(Vector<T, N> const & u, S const & s);
+
+///
+/// Scalar vector division
+/// \param s scalar
+/// \param u vector that divides scalar with each component
+/// \return \f$ s / u \f$
+///
+template<typename S, typename T, Index N>
+Vector<typename Promote<S, T>::type, N>
+operator/(S const & s, Vector<T, N> const & u);
 
 ///
 /// Vector dot product

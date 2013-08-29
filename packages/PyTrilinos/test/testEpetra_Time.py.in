@@ -59,6 +59,15 @@ Epetra = fromPyTrilinosImport('Epetra', options.testharness)
 class EpetraTimeTestCase(unittest.TestCase):
     "TestCase for Epetra.Time"
 
+    # Implement our own assertGreater() method for older Python versions that do
+    # not support it
+    def assertGreater(self, first, second, msg=None):
+        pythonVersion = sys.version_info[0] + sys.version_info[1]/10.0
+        if pythonVersion >= 2.7:
+            return unittest.TestCase.assertGreater(self, first, second, msg)
+        else:
+            return unittest.TestCase.assertTrue(self, first > second, msg)
+
     # Need tests for ResetStartTime
 
     def setUp(self):

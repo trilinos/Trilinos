@@ -534,6 +534,22 @@ operator/(Tensor<T, N> const & A, S const & s)
 }
 
 //
+// Scalar tensor division
+//
+template<typename S, typename T, Index N>
+inline
+Tensor<typename Promote<S, T>::type, N>
+operator/(S const & s, Tensor<T, N> const & A)
+{
+  Tensor<typename Promote<S, T>::type, N>
+  B(A.get_dimension());
+
+  split(A, s, B);
+
+  return B;
+}
+
+//
 // Tensor vector product v = A u
 //
 template<typename S, typename T, Index N>
@@ -1442,9 +1458,9 @@ sym(Tensor<T, N> const & A)
       T const & s11 = A(1,1);
       T const & s22 = A(2,2);
 
-      T const s01 = 0.5 * (A(0,1) + A(1,0));
-      T const s02 = 0.5 * (A(0,2) + A(2,0));
-      T const s12 = 0.5 * (A(1,2) + A(2,1));
+      T const & s01 = 0.5 * (A(0,1) + A(1,0));
+      T const & s02 = 0.5 * (A(0,2) + A(2,0));
+      T const & s12 = 0.5 * (A(1,2) + A(2,1));
 
       B(0,0) = s00;
       B(0,1) = s01;
@@ -1465,7 +1481,7 @@ sym(Tensor<T, N> const & A)
       T const & s00 = A(0,0);
       T const & s11 = A(1,1);
 
-      T const s01 = 0.5 * (A(0,1) + A(1,0));
+      T const & s01 = 0.5 * (A(0,1) + A(1,0));
 
       B(0,0) = s00;
       B(0,1) = s01;
@@ -1503,9 +1519,9 @@ skew(Tensor<T, N> const & A)
 
     case 3:
     {
-      T const s01 = 0.5*(A(0,1)-A(1,0));
-      T const s02 = 0.5*(A(0,2)-A(2,0));
-      T const s12 = 0.5*(A(1,2)-A(2,1));
+      T const & s01 = 0.5*(A(0,1)-A(1,0));
+      T const & s02 = 0.5*(A(0,2)-A(2,0));
+      T const & s12 = 0.5*(A(1,2)-A(2,1));
 
       B(0,0) = 0.0;
       B(0,1) = s01;
@@ -1523,7 +1539,7 @@ skew(Tensor<T, N> const & A)
 
     case 2:
     {
-      T const s01 = 0.5*(A(0,1)-A(1,0));
+      T const & s01 = 0.5*(A(0,1)-A(1,0));
 
       B(0,0) = 0.0;
       B(0,1) = s01;
