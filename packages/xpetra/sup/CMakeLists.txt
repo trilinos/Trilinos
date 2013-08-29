@@ -9,6 +9,7 @@ INCLUDE(TrilinosCreateClientTemplateHeaders)
 
 SET(HEADERS "")
 APPEND_GLOB(HEADERS */*.hpp)
+APPEND_GLOB(HEADERS */*.cpp)
 
 SET(SOURCES "mac.cpp") # Avoid empty library (MacOs 'ar' utility doesn't work on empty library).
 IF (${PACKAGE_NAME}_ENABLE_Epetra)

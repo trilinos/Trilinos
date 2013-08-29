@@ -98,17 +98,17 @@ namespace Xpetra {
 
     //! Constructor for a fused import
     EpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
-		    const Import<LocalOrdinal,GlobalOrdinal,Node> &importer,
-		    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap = Teuchos::null,
-		    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap = Teuchos::null,
-		    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+                    const Import<LocalOrdinal,GlobalOrdinal,Node> &importer,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap = Teuchos::null,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap = Teuchos::null,
+                    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     //! Constructor for a fused export
     EpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
-		    const Export<LocalOrdinal,GlobalOrdinal,Node> &exporter,
-		    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap = Teuchos::null,
-		    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap = Teuchos::null,
-		    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+                    const Export<LocalOrdinal,GlobalOrdinal,Node> &exporter,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap = Teuchos::null,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap = Teuchos::null,
+                    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     //! Destructor.
     virtual ~EpetraCrsMatrix() { }
@@ -147,10 +147,10 @@ namespace Xpetra {
     //! Expert static fill complete
     //** \warning This is an expert-only routine and should not be called from user code. */
     void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
-				  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
-				  const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
-				  const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
-				  const RCP<ParameterList> &params=Teuchos::null);
+                                  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+                                  const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
+                                  const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
+                                  const RCP<ParameterList> &params=Teuchos::null);
     //@}
 
     //! @name Transformational Methods

@@ -78,10 +78,10 @@ namespace Xpetra {
 
 
   EpetraCrsMatrix::EpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
-				   const Import<LocalOrdinal,GlobalOrdinal,Node> &importer,
-				   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
-				   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
-				   const Teuchos::RCP<Teuchos::ParameterList>& params):
+                                   const Import<LocalOrdinal,GlobalOrdinal,Node> &importer,
+                                   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
+                                   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
+                                   const Teuchos::RCP<Teuchos::ParameterList>& params):
     isFillResumed_(false)
   {
     XPETRA_DYNAMIC_CAST(const EpetraCrsMatrix, *sourceMatrix, tSourceMatrix, "Xpetra::EpetraCrsMatrix constructor only accepts Xpetra::EpetraCrsMatrix as an input argument.");
@@ -99,10 +99,10 @@ namespace Xpetra {
   }
 
   EpetraCrsMatrix::EpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
-				   const Export<LocalOrdinal,GlobalOrdinal,Node> &exporter,
-				   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
-				   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
-				   const Teuchos::RCP<Teuchos::ParameterList>& params):
+                                   const Export<LocalOrdinal,GlobalOrdinal,Node> &exporter,
+                                   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
+                                   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
+                                   const Teuchos::RCP<Teuchos::ParameterList>& params):
     isFillResumed_(false)
   {
     XPETRA_DYNAMIC_CAST(const EpetraCrsMatrix, *sourceMatrix, tSourceMatrix, "Xpetra::EpetraCrsMatrix constructor only accepts Xpetra::EpetraCrsMatrix as an input argument.");
@@ -200,7 +200,7 @@ namespace Xpetra {
 
     myRowptr.Resize(N+1);
     for(size_t i=0; i<N+1; i++)
-      myRowptr[i] = Teuchos::as<int>(rowptr[i]); 
+      myRowptr[i] = Teuchos::as<int>(rowptr[i]);
   }
 
 
@@ -539,23 +539,23 @@ namespace Xpetra {
       const RCP<const Epetra_Import> & myImport = eImporter.getEpetra_Import();
       int rv=0;
       if(myImport==Teuchos::null)
-	rv=mtx_->ReplaceDomainMapAndImporter( toEpetra(newDomainMap),0);
+        rv=mtx_->ReplaceDomainMapAndImporter( toEpetra(newDomainMap),0);
       else
-	rv=mtx_->ReplaceDomainMapAndImporter( toEpetra(newDomainMap),&*myImport);
+        rv=mtx_->ReplaceDomainMapAndImporter( toEpetra(newDomainMap),&*myImport);
       TEUCHOS_TEST_FOR_EXCEPTION(rv != 0, std::runtime_error, "Xpetra::EpetraCrsMatrix::replaceDomainMapAndImporter FAILED!");
   }
 
 
   void EpetraCrsMatrix::expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
-						 const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
-						 const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer,
-						 const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter,
-						 const RCP<ParameterList> & params) {
+                                                 const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+                                                 const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer,
+                                                 const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter,
+                                                 const RCP<ParameterList> & params) {
     XPETRA_MONITOR("EpetraCrsMatrix::expertStaticFillComplete");
     int rv=0;
     const Epetra_Import * myimport =0;
     const Epetra_Export * myexport =0;
-    
+
     if(!importer.is_null()) {
       XPETRA_DYNAMIC_CAST(const EpetraImport, *importer, eImporter, "Xpetra::EpetraCrsMatrix::expertStaticFillComplete only accepts Xpetra::EpetraImport.");
       myimport = eImporter.getEpetra_Import().getRawPtr();
@@ -567,6 +567,6 @@ namespace Xpetra {
 
     rv=mtx_->ExpertStaticFillComplete(toEpetra(domainMap), toEpetra(rangeMap), myimport, myexport);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(rv != 0, std::runtime_error, "Xpetra::EpetraCrsMatrix::expertStaticFillComplete FAILED!");  
+    TEUCHOS_TEST_FOR_EXCEPTION(rv != 0, std::runtime_error, "Xpetra::EpetraCrsMatrix::expertStaticFillComplete FAILED!");
   }
 }
