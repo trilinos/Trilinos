@@ -410,10 +410,10 @@ void pack_owned_verify( CommAll & all , const BulkData & mesh )
 
         // see if we also have ghosts
         unsigned ghost_count = 0 ;
-        for ( size_t k = 0 ; k < comm.size() ; ++k ) {
-          ThrowRequireMsg( !(comm[k].ghost_id == 1 && comm[k].proc == share_proc ) ,
+        for ( size_t kk = 0 ; kk < comm.size() ; ++kk ) {
+          ThrowRequireMsg( !(comm[kk].ghost_id == 1 && comm[kk].proc == share_proc ) ,
                            "error - shouldn't have shared and aura, only shared and custom ghost");
-          if ( comm[k].ghost_id > 1 && comm[k].proc == share_proc ) {
+          if ( comm[kk].ghost_id > 1 && comm[kk].proc == share_proc ) {
             ++ghost_count ;
           }
         }

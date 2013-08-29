@@ -237,7 +237,7 @@ template <class MESHA, class MESHB>  void LinearInterpolate<MESHA,MESHB>::apply 
       for (map_const_iterator k=i; k!=j; ++k,++n) {
         const EntityKeyA from_key = k->second;
         const double *c = mesha.coord(from_key); 
-        for (unsigned k=0; k<Dimension; ++k) Corners(n,k) = c[k];
+        for (unsigned kk=0; kk<Dimension; ++kk) Corners(n,kk) = c[kk];
       } 
     }
 
@@ -263,8 +263,8 @@ template <class MESHA, class MESHB>  void LinearInterpolate<MESHA,MESHB>::apply 
       for (unsigned n=0; n<field_size; ++n) {
         unsigned m=0;
         for (map_const_iterator k=i; k!= j; ++k,++m) {
-          const EntityKeyA from_key = k->second;
-          const double *c = mesha.value(from_key,f);
+          const EntityKeyA this_from_key = k->second;
+          const double *c = mesha.value(this_from_key,f);
           Values[m] = c[n];
         }
         // So, we have choosen corner 0 as the base of the span
