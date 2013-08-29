@@ -872,7 +872,7 @@ public:
 
 private:
 
-  DynConnData& data() const
+  DynConnData& profile_data() const
   {
     return DynConnMetrics::m_data[m_data_idx];
   }
@@ -947,21 +947,21 @@ private:
   {
 #ifdef STK_MESH_ANALYZE_DYN_CONN
     if (capacity != 0u) {
-      ++data().m_num_growths;
+      ++profile_data().m_num_growths;
     }
 
-    if (m_targets.capacity() > data().m_max_capacity) {
-      data().m_max_capacity = m_targets.capacity();
-      data().m_total_unused_memory = m_targets.capacity() - m_total_connectivities;
-      data().m_unused_capacity = m_targets.capacity() - m_targets.size();
-      data().m_total_num_conn = m_total_connectivities;
+    if (m_targets.capacity() > profile_data().m_max_capacity) {
+      profile_data().m_max_capacity = m_targets.capacity();
+      profile_data().m_total_unused_memory = m_targets.capacity() - m_total_connectivities;
+      profile_data().m_unused_capacity = m_targets.capacity() - m_targets.size();
+      profile_data().m_total_num_conn = m_total_connectivities;
       const size_t total_unused_active = m_targets.size() - m_total_connectivities;
       size_t total_unused_chunk_capacity = 0;
       for (size_t i = 0, e = m_num_connectivities.size(); i < e; ++i) {
         total_unused_chunk_capacity += num_chunks(m_num_connectivities[i]) * chunk_size - m_num_connectivities[i];
       }
-      data().m_abandoned_space = total_unused_active - total_unused_chunk_capacity;
-      data().m_unused_chunk_capacity = total_unused_chunk_capacity;
+      profile_data().m_abandoned_space = total_unused_active - total_unused_chunk_capacity;
+      profile_data().m_unused_chunk_capacity = total_unused_chunk_capacity;
     }
 #endif
 
@@ -1043,7 +1043,7 @@ private:
     {
 #ifdef STK_MESH_ANALYZE_DYN_CONN
       if (chunks_used_by_entity > 0) {
-        ++data().m_num_entity_relocations;
+        ++profile_data().m_num_entity_relocations;
       }
 #endif
 
