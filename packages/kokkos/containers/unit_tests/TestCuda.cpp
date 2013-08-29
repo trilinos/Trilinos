@@ -49,6 +49,8 @@
 #include <stdint.h>
 
 #include <iomanip>
+#include <Kokkos_Vector.hpp>
+#include <TestVector.hpp>
 
 namespace Test {
 
@@ -108,16 +110,23 @@ extern void cuda_test_deep_copy(  uint32_t num_nodes );
       cuda_test_deep_copy(num_nodes);                     \
   }
 
+#define CUDA_VECTOR_COMBINE_TEST( size )                             \
+  TEST_F( cuda, vector_combination##size##x) {       \
+      test_vector_combinations<int,Kokkos::Cuda>(size);                     \
+  }
+
 CUDA_INSERT_TEST(close,               100000, 90000, 100, 500)
 CUDA_INSERT_TEST(far,                 100000, 90000, 100, 500)
 CUDA_INSERT_TEST(mark_pending_delete, 100000, 90000, 100, 500)
 CUDA_FAILED_INSERT_TEST( 10000, 5000 )
 CUDA_ASSIGNEMENT_TEST( 10000, 5000 )
 CUDA_DEEP_COPY( 10000, 5000 )
+//CUDA_VECTOR_COMBINE_TEST( 10 )
+//CUDA_VECTOR_COMBINE_TEST( 3057 )
 
 #undef CUDA_INSERT_TEST
 #undef CUDA_FAILED_INSERT_TEST
 #undef CUDA_ASSIGNEMENT_TEST
 #undef CUDA_DEEP_COPY
-
+#undef CUDA_VECTOR_COMBINE
 }
