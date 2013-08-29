@@ -43,7 +43,6 @@
 #define Intrepid_MiniTensor_Storage_h
 
 #include "Intrepid_MiniTensor_Definitions.h"
-#include "Teuchos_ArrayRCP.hpp"
 
 namespace Intrepid {
 

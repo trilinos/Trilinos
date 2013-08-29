@@ -271,6 +271,22 @@ operator/(Tensor4<T, N> const & A, S const & s)
 }
 
 //
+// 4th-order scalar tensor division
+//
+template<typename S, typename T, Index N>
+inline
+Tensor4<typename Promote<S, T>::type, N>
+operator/(S const & s, Tensor4<T, N> const & A)
+{
+  Tensor4<typename Promote<S, T>::type, N>
+  B(A.get_dimension());
+
+  split(A, s, B);
+
+  return B;
+}
+
+//
 // Indexing for constant 4th order tensor
 // \param i index
 // \param j index

@@ -344,6 +344,22 @@ operator/(Vector<T, N> const & u, S const & s)
 }
 
 //
+// Scalar vector division
+//
+template<typename S, typename T, Index N>
+inline
+Vector<typename Promote<S, T>::type, N>
+operator/(S const & s, Vector<T, N> const & u)
+{
+  Vector<typename Promote<S, T>::type, N>
+  v(u.get_dimension());
+
+  split(u, s, v);
+
+  return v;
+}
+
+//
 // Vector dot product
 //
 template<typename S, typename T, Index N>

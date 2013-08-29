@@ -47,7 +47,6 @@
 #include <iostream>
 #include <vector>
 
-#include "Intrepid_MiniTensor_Definitions.h"
 #include "Intrepid_MiniTensor_Storage.h"
 #include "Intrepid_MiniTensor_Utilities.h"
 
@@ -288,6 +287,13 @@ scale(TensorBase<R, Store> const & A, S const & s, TensorBase<T, Store> & B);
 template<typename R, typename S, typename T, typename Store>
 void
 divide(TensorBase<R, Store> const & A, S const & s, TensorBase<T, Store> & B);
+
+///
+/// Base split (scalar divided by tensor)
+///
+template<typename R, typename S, typename T, typename Store>
+void
+split(TensorBase<R, Store> const & A, S const & s, TensorBase<T, Store> & B);
 
 } // namespace Intrepid
 

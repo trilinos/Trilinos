@@ -42,10 +42,6 @@
 #if !defined(Intrepid_MiniTensor_h)
 #define Intrepid_MiniTensor_h
 
-#include "Intrepid_MiniTensor_Definitions.h"
-#include "Intrepid_MiniTensor_Utilities.h"
-
-#include "Intrepid_MiniTensor_TensorBase.h"
 #include "Intrepid_MiniTensor_Vector.h"
 #include "Intrepid_MiniTensor_Tensor.h"
 #include "Intrepid_MiniTensor_Tensor3.h"
