@@ -318,7 +318,7 @@ void verify_set_position_mapping(const std::string &type,
     size_t loc_pos = global_sets[i].position_;
     for (size_t p=0; p < part_count; p++) {
       if (global_sets[i].id  != sets[p][loc_pos].id ||
-	  global_sets[i].name_ != sets[p][loc_pos].name_ ||
+	  case_compare(global_sets[i].name_, sets[p][loc_pos].name_) != 0 ||
 	  sets[p][loc_pos].position_ != i) {
 	problem = true;
 	std::cerr << "\nMismatch for global " << type << " at position " << i
