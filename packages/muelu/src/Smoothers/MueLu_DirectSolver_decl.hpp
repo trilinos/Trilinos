@@ -107,6 +107,9 @@ namespace MueLu {
 
     //@}
 
+    //! Custom SetFactory
+    void SetFactory(const std::string& varName, const RCP<const FactoryBase>& factory);
+
     //! When this prototype is cloned using Copy(), the clone is an Amesos or an Amesos2 smoother.
     RCP<SmootherPrototype> Copy() const;
 

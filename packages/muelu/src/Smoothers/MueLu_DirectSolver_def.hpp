@@ -82,6 +82,15 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetFactory(const std::string& varName, const RCP<const FactoryBase>& factory) {
+    // We need to propagate SetFactory to proper place
+    if (!sEpetra_.is_null())
+      sEpetra_->SetFactory(varName, factory);
+    if (!sTpetra_.is_null())
+      sTpetra_->SetFactory(varName, factory);
+  }
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& currentLevel) const {
     // Decide whether we are running in Epetra or Tpetra mode
     // Theoretically, we could make this decision in the constructor, and create only

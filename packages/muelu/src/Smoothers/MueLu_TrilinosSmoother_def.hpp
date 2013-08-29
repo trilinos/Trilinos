@@ -76,12 +76,21 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Ifpack smoother");
     } catch (Exceptions::RuntimeError) {
       // IfpackSmoother throws if Scalar != double, LocalOrdinal != int, GlobalOrdinal != int
-      GetOStream(Warnings0,0) << "Skipping IfpackSmoother construction due to incorrect type" << std::endl;
+      this->GetOStream(Warnings0,0) << "Skipping IfpackSmoother construction due to incorrect type" << std::endl;
     }
     triedEpetra = true;
 #endif
     TEUCHOS_TEST_FOR_EXCEPTION(!triedEpetra && !triedTpetra,      Exceptions::RuntimeError, "Unable to construct Ifpack/Ifpack2 smoother."
                                "Plase enable (TPETRA and IFPACK2) or (EPETRA and IFPACK)");
+  }
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetFactory(const std::string& varName, const RCP<const FactoryBase>& factory) {
+    // We need to propagate SetFactory to proper place
+    if (!sEpetra_.is_null())
+      sEpetra_->SetFactory(varName, factory);
+    if (!sTpetra_.is_null())
+      sTpetra_->SetFactory(varName, factory);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

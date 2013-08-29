@@ -102,7 +102,7 @@ namespace MueLu {
     friend class TrilinosSmoother;
 
 
-    TrilinosSmoother(const std::string& type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList(), const LO& overlap = 0, RCP<FactoryBase> AFact = Teuchos::null);
+    TrilinosSmoother(const std::string& type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList(), const LO& overlap = 0);
 
     //! Destructor
     virtual ~TrilinosSmoother() { }
@@ -126,6 +126,9 @@ namespace MueLu {
     void Apply(MultiVector& X, const MultiVector& B, const bool& InitialGuessIsZero = false) const;
 
     //@}
+
+    //! Custom SetFactory
+    void SetFactory(const std::string& varName, const RCP<const FactoryBase>& factory);
 
     //! When this prototype is cloned using Copy(), the clone is an Ifpack or an Ifpack2 smoother.
     RCP<SmootherPrototype> Copy() const;
@@ -194,7 +197,7 @@ namespace MueLu {
   Teuchos::RCP<MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node2,LocalMatOps2> >
   TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::clone(const RCP<Node2>& node2, const Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2, LocalMatOps2> >& A_newnode) const {
 #if defined(HAVE_MUELU_IFPACK2)
-    RCP<TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > cloneSmoother = rcp(new TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2>(type_, paramList_, overlap_, AFact_));
+    RCP<TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > cloneSmoother = rcp(new TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2>(type_, paramList_, overlap_));
     Teuchos::RCP<MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >  cloneSB;
 
     Teuchos::RCP<MueLu::Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > ifpack2Smoother = Teuchos::rcp_dynamic_cast<MueLu::Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >(this->s_);
