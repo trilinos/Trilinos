@@ -48,6 +48,77 @@ void assemble_data(std::vector<std::string>& names,
 
 }
 
+void print_dynamic_connectivity_profile( ParallelMachine parallel, int parallel_rank, std::ostream & out)
+{
+  for (EntityRank from_rank = 0; from_rank < 5; ++from_rank) {
+    for (EntityRank to_rank = 0; to_rank < 5; ++to_rank) {
+
+      size_t sum_max_capacity = 0;
+      size_t sum_abandoned_space = 0;
+      size_t sum_unused_chunk_capacity = 0;
+      size_t sum_num_growths = 0;
+      size_t sum_num_entity_relocations = 0;
+      size_t sum_total_unused_memory = 0;
+      size_t sum_unused_capactity = 0;
+      size_t sum_total_num_conn = 0;
+      size_t num_connectivity_objs = 0;
+
+      for (size_t d = 0, de = impl::DynConnMetrics::m_data.size(); d < de; ++d) {
+        if (impl::DynConnMetrics::m_data[d].m_from_rank == from_rank && impl::DynConnMetrics::m_data[d].m_to_rank == to_rank) {
+          sum_max_capacity           += impl::DynConnMetrics::m_data[d].m_max_capacity;
+          sum_abandoned_space        += impl::DynConnMetrics::m_data[d].m_abandoned_space;
+          sum_unused_chunk_capacity  += impl::DynConnMetrics::m_data[d].m_unused_chunk_capacity;
+          sum_num_growths            += impl::DynConnMetrics::m_data[d].m_num_growths;
+          sum_num_entity_relocations += impl::DynConnMetrics::m_data[d].m_num_entity_relocations;
+          sum_total_unused_memory    += impl::DynConnMetrics::m_data[d].m_total_unused_memory;
+          sum_unused_capactity       += impl::DynConnMetrics::m_data[d].m_unused_capacity;
+          sum_total_num_conn         += impl::DynConnMetrics::m_data[d].m_total_num_conn;
+          ++num_connectivity_objs;
+        }
+      }
+
+      size_t send_buf[] = {sum_max_capacity, sum_abandoned_space, sum_unused_chunk_capacity, sum_num_growths, sum_num_entity_relocations, sum_total_unused_memory, sum_unused_capactity, sum_total_num_conn, num_connectivity_objs};
+      static const int buf_size = sizeof(send_buf) / sizeof(size_t);
+      size_t recv_buf[buf_size];
+      int err = MPI_Reduce((void*)send_buf, (void*)recv_buf, buf_size, MPI_LONG_LONG, MPI_SUM, 0 /*root*/, parallel);
+      ThrowRequire(err == MPI_SUCCESS);
+
+      if (parallel_rank == 0) {
+
+        size_t global_sum_max_capacity = recv_buf[0];
+        size_t global_sum_abandoned_space = recv_buf[1];
+        size_t global_sum_unused_chunk_capacity = recv_buf[2];
+        size_t global_sum_num_growths = recv_buf[3];
+        size_t global_sum_num_entity_relocations = recv_buf[4];
+        size_t global_sum_total_unused_memory = recv_buf[5];
+        size_t global_sum_unused_capacity = recv_buf[6];
+        size_t global_sum_total_num_conn = recv_buf[7];
+        size_t global_num_connectivity_objs = recv_buf[8];
+
+        if (global_sum_max_capacity != 0) {
+          std::ostringstream oss;
+
+          oss << "DYNAMIC CONNECTIVITY PROFILE FOR CONNECIVITIES FROM " << from_rank << " TO " << to_rank << " (averages are per connectivity object)\n";
+
+          oss << "  total num connectivity:         " << std::setw(10) << global_sum_total_num_conn         << ", average num connectivity:       " << std::setw(6) << global_sum_total_num_conn / global_num_connectivity_objs << "\n";
+          oss << "  total max capacity:             " << std::setw(10) << global_sum_max_capacity           << ", average max capacity:           " << std::setw(6) << global_sum_max_capacity / global_num_connectivity_objs << "\n";
+          oss << "  total unused memory:            " << std::setw(10) << global_sum_total_unused_memory    << ", average unused memory:          " << std::setw(6) << global_sum_total_unused_memory / global_num_connectivity_objs << "\n";
+          // Utilization of under 50% are a concern
+          oss << "                                              average utilization percent:    " << std::setw(6) << (global_sum_total_num_conn * 100) / global_sum_max_capacity << "\n";
+          oss << "  total abandoned space:          " << std::setw(10) << global_sum_abandoned_space        << ", average abandoned space:        " << std::setw(6) << global_sum_abandoned_space / global_num_connectivity_objs << "\n";
+          oss << "  total unused chunk capacity:    " << std::setw(10) << global_sum_unused_chunk_capacity  << ", average unused chunk capacity:  " << std::setw(6) << global_sum_unused_chunk_capacity / global_num_connectivity_objs << "\n";
+          oss << "  total unused capacity:          " << std::setw(10) << global_sum_unused_capacity        << ", average unused capacity:        " << std::setw(6) << global_sum_unused_chunk_capacity / global_num_connectivity_objs << "\n";
+          oss << "  total num growths:              " << std::setw(10) << global_sum_num_growths            << ", average num growths:            " << std::setw(6) << global_sum_num_growths / global_num_connectivity_objs << "\n";
+          oss << "  total num entity relocations:   " << std::setw(10) << global_sum_num_entity_relocations << ", average num entity relocations: " << std::setw(6) << global_sum_num_entity_relocations / global_num_connectivity_objs << "\n";
+          oss << "  total num connectivity objects: " << std::setw(10) << global_num_connectivity_objs << "\n";
+
+          out << oss.str() << std::endl;
+        }
+      }
+    }
+  }
+}
+
 void print_max_stk_memory_usage( ParallelMachine parallel, int parallel_rank, std::ostream & out)
 {
   std::vector<size_t> memory;
@@ -155,78 +226,6 @@ void print_max_stk_memory_usage( ParallelMachine parallel, int parallel_rank, st
     }
     out << oss.str() << std::endl;
   }
-
-#ifdef STK_MESH_ANALYZE_DYN_CONN
-  for (EntityRank from_rank = 0; from_rank < 5; ++from_rank) {
-    for (EntityRank to_rank = 0; to_rank < 5; ++to_rank) {
-
-      size_t sum_max_capacity = 0;
-      size_t sum_abandoned_space = 0;
-      size_t sum_unused_chunk_capacity = 0;
-      size_t sum_num_growths = 0;
-      size_t sum_num_entity_relocations = 0;
-      size_t sum_utilization_ratio_pct = 0;
-      size_t sum_total_unused_memory = 0;
-      size_t sum_unused_capactity = 0;
-      size_t sum_total_num_conn = 0;
-      size_t num_connectivity_objs = 0;
-
-      for (size_t d = 0, de = impl::DynConnMetrics::m_data.size(); d < de; ++d) {
-        if (impl::DynConnMetrics::m_data[d].m_from_rank == from_rank && impl::DynConnMetrics::m_data[d].m_to_rank == to_rank) {
-          sum_max_capacity           += impl::DynConnMetrics::m_data[d].m_max_capacity;
-          sum_abandoned_space        += impl::DynConnMetrics::m_data[d].m_abandoned_space;
-          sum_unused_chunk_capacity  += impl::DynConnMetrics::m_data[d].m_unused_chunk_capacity;
-          sum_num_growths            += impl::DynConnMetrics::m_data[d].m_num_growths;
-          sum_num_entity_relocations += impl::DynConnMetrics::m_data[d].m_num_entity_relocations;
-          sum_utilization_ratio_pct  += impl::DynConnMetrics::m_data[d].m_utilization_ratio_pct;
-          sum_total_unused_memory    += impl::DynConnMetrics::m_data[d].m_total_unused_memory;
-          sum_unused_capactity       += impl::DynConnMetrics::m_data[d].m_unused_capacity;
-          sum_total_num_conn         += impl::DynConnMetrics::m_data[d].m_total_num_conn;
-          ++num_connectivity_objs;
-        }
-      }
-
-      size_t send_buf[] = {sum_max_capacity, sum_abandoned_space, sum_unused_chunk_capacity, sum_num_growths, sum_num_entity_relocations, sum_utilization_ratio_pct, sum_total_unused_memory, sum_unused_capactity, sum_total_num_conn, num_connectivity_objs};
-      static const int buf_size = sizeof(send_buf) / sizeof(size_t);
-      size_t recv_buf[buf_size];
-      int err = MPI_Reduce((void*)send_buf, (void*)recv_buf, buf_size, MPI_LONG_LONG, MPI_SUM, 0 /*root*/, parallel);
-      ThrowRequire(err == MPI_SUCCESS);
-
-      if (parallel_rank == 0) {
-
-        size_t global_sum_max_capacity = recv_buf[0];
-        size_t global_sum_abandoned_space = recv_buf[1];
-        size_t global_sum_unused_chunk_capacity = recv_buf[2];
-        size_t global_sum_num_growths = recv_buf[3];
-        size_t global_sum_num_entity_relocations = recv_buf[4];
-        size_t global_sum_utilization_ratio_pct = recv_buf[5];
-        size_t global_sum_total_unused_memory = recv_buf[6];
-        size_t global_sum_unused_capacity = recv_buf[7];
-        size_t global_sum_total_num_conn = recv_buf[8];
-        size_t global_num_connectivity_objs = recv_buf[9];
-
-        if (global_sum_max_capacity != 0) {
-          std::ostringstream oss;
-
-          oss << "DYNAMIC CONNECTIVITY PROFILE FOR CONNECIVITIES FROM " << from_rank << " to " << to_rank << "\n";
-
-          oss << "  total num connectivity:         " << std::setw(10) << global_sum_total_num_conn         << ", average num connectivity:       " << std::setw(6) << global_sum_total_num_conn / global_num_connectivity_objs << "\n";
-          oss << "  total max capacity:             " << std::setw(10) << global_sum_max_capacity           << ", average max capacity:           " << std::setw(6) << global_sum_max_capacity / global_num_connectivity_objs << "\n";
-          oss << "  total unused memory:            " << std::setw(10) << global_sum_total_unused_memory    << ", average unused memory:          " << std::setw(6) << global_sum_total_unused_memory / global_num_connectivity_objs << "\n";
-          oss << "                                              average utilization percent:    " << std::setw(6) << global_sum_utilization_ratio_pct / global_num_connectivity_objs << "\n";
-          oss << "  total abandoned space:          " << std::setw(10) << global_sum_abandoned_space        << ", average abandoned space:        " << std::setw(6) << global_sum_abandoned_space / global_num_connectivity_objs << "\n";
-          oss << "  total unused chunk capacity:    " << std::setw(10) << global_sum_unused_chunk_capacity  << ", average unused chunk capacity:  " << std::setw(6) << global_sum_unused_chunk_capacity / global_num_connectivity_objs << "\n";
-          oss << "  total unused capacity:          " << std::setw(10) << global_sum_unused_capacity        << ", average unused capacity:        " << std::setw(6) << global_sum_unused_chunk_capacity / global_num_connectivity_objs << "\n";
-          oss << "  total num growths:              " << std::setw(10) << global_sum_num_growths            << ", average num growths:            " << std::setw(6) << global_sum_num_growths / global_num_connectivity_objs << "\n";
-          oss << "  total num entity relocations:   " << std::setw(10) << global_sum_num_entity_relocations << ", average num entity relocations: " << std::setw(6) << global_sum_num_entity_relocations / global_num_connectivity_objs << "\n";
-          oss << "  total num connectivity objects: " << std::setw(10) << global_num_connectivity_objs << "\n";
-
-          out << oss.str() << std::endl;
-        }
-      }
-    }
-  }
-#endif
 }
 
 }} // namespace stk::mesh

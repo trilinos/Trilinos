@@ -159,6 +159,9 @@ BulkData::~BulkData()
 #ifdef STK_PROFILE_MEMORY
   print_max_stk_memory_usage(parallel(), parallel_rank(), std::cout);
 #endif
+#ifdef STK_MESH_ANALYZE_DYN_CONN
+  print_dynamic_connectivity_profile(parallel(), parallel_rank(), std::cout);
+#endif
 
 #ifdef SIERRA_MIGRATION
   for(size_t i=0; i<m_fmwk_aux_relations.size(); ++i) {

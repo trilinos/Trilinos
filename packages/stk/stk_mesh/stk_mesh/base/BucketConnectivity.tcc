@@ -439,21 +439,51 @@ struct Counter
 // Uncomment to enable profiling
 //#define STK_MESH_ANALYZE_DYN_CONN
 
-#ifdef STK_MESH_ANALYZE_DYN_CONN
+
+// Profiling data for an individual dynamic connectivity object
 struct DynConnData
 {
+  // from-rank for the associated dynamic connectivity
   EntityRank m_from_rank;
-  EntityRank m_to_rank;
-  size_t m_max_capacity;
-  size_t m_abandoned_space;
-  size_t m_unused_chunk_capacity;
-  size_t m_num_growths;
-  size_t m_num_entity_relocations;
-  size_t m_utilization_ratio_pct;
-  size_t m_total_unused_memory;
-  size_t m_unused_capacity;
-  size_t m_total_num_conn;
 
+  // to-rank for the associated dynamic connectivity
+  EntityRank m_to_rank;
+
+  // the maximum capacity ever achieved by connectivity vectors
+  size_t m_max_capacity;
+
+  // at the point at which maximum capacity (member above) was achieved, how much memory
+  // was lost due to "abandoned space".
+  // "abandoned space" - When an entity overflows its current chunks, it gets additional
+  // chunks but must be copied to the end. The space left behind is abandoned and will
+  // not be reused until the next compress (resize_and_order_by_index).
+  size_t m_abandoned_space;
+
+  // at the point at which maximum capacity (member above) was achieved, how much memory
+  // was lost due to unused chunk capacity. If chunk size is > 1, it's possible that an
+  // entity is not using all the space available in it's chunk. For example, if chunk size
+  // is 8 and an entity has 5 connectivities, then unused chunk capacity is 3 for that
+  // entity. This member stores the sum over all entities.
+  size_t m_unused_chunk_capacity;
+
+  // The number of times this dynamic connectivity had to be grown
+  size_t m_num_growths;
+
+  // The number of times any entity overflowed it's chunk allocation and had to be
+  // copied to the end
+  size_t m_num_entity_relocations;
+
+  // at the point at which maximum capacity (member above) was achieved, what is the
+  // total amount of wasted memory
+  size_t m_total_unused_memory;
+
+  // at the point at which maximum capacity (member above) was achieved, what is the
+  // amount of memory that is wasted due to vector capacity growth over-provisioning.
+  size_t m_unused_capacity;
+
+  // at the point at which maximum capacity (member above) was achieved, what is the
+  // number of connectivity being stored.
+  size_t m_total_num_conn;
 
   DynConnData(EntityRank from_rank, EntityRank to_rank) :
     m_from_rank(from_rank),
@@ -463,7 +493,6 @@ struct DynConnData
     m_unused_chunk_capacity(0),
     m_num_growths(0),
     m_num_entity_relocations(0),
-    m_utilization_ratio_pct(0),
     m_total_unused_memory(0),
     m_unused_capacity(0),
     m_total_num_conn(0)
@@ -474,7 +503,6 @@ struct DynConnMetrics
 {
   static std::vector<DynConnData> m_data;
 };
-#endif
 
 template<EntityRank TargetRank >
 class BucketConnectivity<TargetRank, DYNAMIC_CONNECTIVITY>
@@ -844,12 +872,10 @@ public:
 
 private:
 
-#ifdef STK_MESH_ANALYZE_DYN_CONN
   DynConnData& data() const
   {
     return DynConnMetrics::m_data[m_data_idx];
   }
-#endif
 
   void copy_connectivity(unsigned from_ordinal, SelfType& to, unsigned to_ordinal)
   {
@@ -936,7 +962,6 @@ private:
       }
       data().m_abandoned_space = total_unused_active - total_unused_chunk_capacity;
       data().m_unused_chunk_capacity = total_unused_chunk_capacity;
-      data().m_utilization_ratio_pct = (100 * m_total_connectivities) / m_targets.capacity();
     }
 #endif
 
@@ -1017,7 +1042,9 @@ private:
     if (!last_entity_by_index)
     {
 #ifdef STK_MESH_ANALYZE_DYN_CONN
-      ++data().m_num_entity_relocations;
+      if (chunks_used_by_entity > 0) {
+        ++data().m_num_entity_relocations;
+      }
 #endif
 
       uint32_t new_index = static_cast<uint32_t>(m_targets.size());
@@ -1296,9 +1323,7 @@ private:
 
   size_t m_last_capacity;
 
-#ifdef STK_MESH_ANALYZE_DYN_CONN
   size_t m_data_idx;
-#endif
 };
 
 }}} //namespace stk::mesh::impl
