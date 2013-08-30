@@ -299,6 +299,58 @@ inline void Threads::team_barrier()
 
 inline Threads::Threads( Impl::ThreadsExec & t ) : m_exec( t ) {}
 
+template< class ViewType >
+inline typename ViewType::value_type Threads::unordered_scan
+   (typename ViewType::value_type& value, ViewType& scratch_view) {
+  //gives back an ordered sum within a team, last thread has the highest value)
+  typename ViewType::value_type sum = team_scan(value);
+
+  //
+  typename ViewType::value_type global_sum;
+
+  if(team_rank()==team_size()-1)
+    global_sum = atomic_fetch_add(&scratch_view(0),sum+value);
+
+  typename ViewType::value_type* temp = get_shmem<typename ViewType::value_type>( 1 );
+  if(team_rank()==team_size()-1)
+    temp[0]=global_sum;
+
+  //TODO: reduce shared memory counter again?
+  team_barrier();
+  return temp[0] + sum;
+}
+
+//TODO: find optimal implementation CRT i.e.
+//team_scan calculates the exclusive prefix sum of the values of the threads
+//return values are monotonous increasing with thread index
+template< typename T >
+inline T Threads::team_scan( T& value ) {
+
+  if( team_size() == 1 ) return 0;
+
+  T* temp = get_shmem<T>( team_size() );
+  temp[team_rank()] = value;
+
+
+  team_barrier();
+
+  // If team sizes are small it is faster to use a single thread to do the scan
+  if( team_rank() == 0 ) {
+    T old = 0;
+    for( int i = 0; i < team_size(); i++ ) {
+    const T next = temp[i];
+    temp[i] = old;
+    old += next;
+    }
+  }
+  team_barrier();
+
+  //TODO: reduce sharedmem counter again? CRT
+  return temp[team_rank()];
+
+  //TODO: implement team_scan with log(n) algorithm? Probably not usefull if team_size is small CRT
+}
+
 template< typename T >
 inline
 T * Threads::get_shmem( const int count )
