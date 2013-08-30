@@ -292,8 +292,10 @@ int main(int argc, char *argv[]) {
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
   ifpackType = "RELAXATION";
   ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
-  RCP<SmootherPrototype> smoProto11     = rcp( new TrilinosSmoother(ifpackType, ifpackList, 0, A11Fact) );
-  RCP<SmootherPrototype> smoProto22     = rcp( new TrilinosSmoother(ifpackType, ifpackList, 0, A22Fact) );
+  RCP<SmootherPrototype> smoProto11     = rcp( new TrilinosSmoother(ifpackType, ifpackList, 0) );
+  smoProto11->SetFactory("A", A11Fact);
+  RCP<SmootherPrototype> smoProto22     = rcp( new TrilinosSmoother(ifpackType, ifpackList, 0) );
+  smoProto22->SetFactory("A", A22Fact);
 
   //RCP<SmootherPrototype> smoProto11     = rcp( new DirectSolver("", Teuchos::ParameterList(), A11Fact) );
   //RCP<SmootherPrototype> smoProto22     = rcp( new DirectSolver("", Teuchos::ParameterList(), A22Fact) );

@@ -543,7 +543,8 @@ int main(int argc, char *argv[]) {
     ifpackSCList.set("relaxation: damping factor", SC_omega );
     ifpackSCType = "RELAXATION";
     ifpackSCList.set("relaxation: type", "Gauss-Seidel");
-    smoProtoSC     = rcp( new TrilinosSmoother(ifpackSCType, ifpackSCList, 0, SFact) );
+    smoProtoSC     = rcp( new TrilinosSmoother(ifpackSCType, ifpackSCList, 0) );
+    smoProtoSC->SetFactory("A", SFact);
   }
   else {
     Teuchos::ParameterList ifpackDSList;
