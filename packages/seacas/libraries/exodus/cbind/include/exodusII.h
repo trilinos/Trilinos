@@ -58,8 +58,8 @@
 #endif
 
 /* EXODUS II version number */
-#define EX_API_VERS 5.26f
-#define EX_API_VERS_NODOT 526
+#define EX_API_VERS 5.27f
+#define EX_API_VERS_NODOT 527
 #define EX_VERS EX_API_VERS
 #define NEMESIS_API_VERSION		EX_API_VERS
 #define NEMESIS_API_VERSION_NODOT	EX_API_VERS_NODOT
@@ -720,7 +720,7 @@ extern "C" {
 
   EXODUS_EXPORT void ex_err(const char *module_name, const char *message, int err_num);
   EXODUS_EXPORT void ex_get_err(const char** msg, const char** func, int* errcode);
-  EXODUS_EXPORT void ex_opts(int options);
+  EXODUS_EXPORT int ex_opts(int options);
   EXODUS_EXPORT int ex_inquire(int exoid, int inquiry, void_int*, float*, char*);
   EXODUS_EXPORT int64_t ex_inquire_int(int exoid, int inquiry);
   EXODUS_EXPORT int ex_int64_status(int exoid);
