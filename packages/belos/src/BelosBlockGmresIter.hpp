@@ -571,6 +571,8 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
     TEUCHOS_TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,
                                "Belos::BlockGmresIter::initialize(): Cannot initialize state storage!");
 
+    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero(), one = Teuchos::ScalarTraits<ScalarType>::one();
+
     // NOTE:  In BlockGmresIter, V and Z are required!!!
     // inconsitent multivectors widths and lengths will not be tolerated, and
     // will be treated with exceptions.
@@ -607,7 +609,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
         for (int i=0; i<curDim_+blockSize_; i++) nevind[i] = i;
         Teuchos::RCP<const MV> newV = MVT::CloneView( *newstate.V, nevind );
         Teuchos::RCP<MV> lclV = MVT::CloneViewNonConst( *V_, nevind );
-        MVT::MvAddMv( 1.0, *newV, 0.0, *newV, *lclV );
+        MVT::MvAddMv( one, *newV, zero, *newV, *lclV );
 
         // done with local pointers
         lclV = Teuchos::null;
@@ -770,7 +772,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   {
     int i, j, maxidx;
     ScalarType sigma, mu, vscale, maxelem;
-    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero(), one = Teuchos::ScalarTraits<ScalarType>::one();
 
     // Get correct dimension based on input "dim"
     // Remember that ortho failures result in an exit before updateLSQR() is called.
@@ -839,7 +841,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
           } else {
             vscale = -sigma / ((*R_)(curDim+j,curDim+j) + mu);
           }
-          beta[curDim+j] = 2.0*vscale*vscale/(sigma + vscale*vscale);
+          beta[curDim+j] = Teuchos::as<ScalarType>(2)*one*vscale*vscale/(sigma + vscale*vscale);
           (*R_)(curDim+j,curDim+j) = maxelem*mu;
           for (i=0; i<blockSize_; i++)
             (*R_)(curDim+j+1+i,curDim+j) /= vscale;
