@@ -95,7 +95,7 @@ namespace MueLu {
     bool optimizeStorage = true;
     bool allowMLMultiply = false;
 
-    tmpAP = Utils::Multiply(*A, false, *X, false, doFillComplete, optimizeStorage, allowMLMultiply);
+    tmpAP = Utils::Multiply(*A, false, *X, false, this->GetOStream(Statistics2,1), doFillComplete, optimizeStorage, allowMLMultiply);
     C.Apply(*tmpAP, *T);
 
     // R_0 = -A*X_0
@@ -124,10 +124,10 @@ namespace MueLu {
         // This is done by default for Tpetra as the three argument version requires tmpAP
         // to *not* be locally indexed which defeats the purpose
         // TODO: need a three argument Tpetra version which allows reuse of already fill-completed matrix
-        tmpAP = Utils::Multiply(*A, false, *P, false,        doFillComplete, optimizeStorage, allowMLMultiply);
+        tmpAP = Utils::Multiply(*A, false, *P, false, this->GetOStream(Statistics2,1), doFillComplete, optimizeStorage, allowMLMultiply);
       else {
         // Reuse the MxM pattern
-        tmpAP = Utils::Multiply(*A, false, *P, false, tmpAP, doFillComplete, optimizeStorage, allowMLMultiply);
+        tmpAP = Utils::Multiply(*A, false, *P, false, tmpAP, this->GetOStream(Statistics2,1), doFillComplete, optimizeStorage, allowMLMultiply);
       }
       C.Apply(*tmpAP, *T);
       AP = T;
@@ -149,7 +149,7 @@ namespace MueLu {
       // X_{k+1} = X_k + alpha*P_k
 #ifndef TWO_ARG_MATRIX_ADD
       newX = Teuchos::null;
-      Utils2::TwoMatrixAdd(*P, false, alpha, *X, false, Teuchos::ScalarTraits<Scalar>::one(), newX);
+      Utils2::TwoMatrixAdd(*P, false, alpha, *X, false, Teuchos::ScalarTraits<Scalar>::one(), newX, this->GetOStream(Statistics2,1));
       newX->fillComplete(P0.getDomainMap(), P0.getRangeMap());
       X.swap(newX);
 #else
@@ -162,7 +162,7 @@ namespace MueLu {
       // R_{k+1} = R_k - alpha*A*P_k
 #ifndef TWO_ARG_MATRIX_ADD
       newR = Teuchos::null;
-      Utils2::TwoMatrixAdd(*AP, false, -alpha, *R, false, Teuchos::ScalarTraits<Scalar>::one(), newR);
+      Utils2::TwoMatrixAdd(*AP, false, -alpha, *R, false, Teuchos::ScalarTraits<Scalar>::one(), newR, this->GetOStream(Statistics2,1));
       newR->fillComplete(P0.getDomainMap(), P0.getRangeMap());
       R.swap(newR);
 #else
@@ -180,7 +180,7 @@ namespace MueLu {
       // P_{k+1} = Z_{k+1} + beta*P_k
 #ifndef TWO_ARG_MATRIX_ADD
       newP = Teuchos::null;
-      Utils2::TwoMatrixAdd(*P, false, beta, *Z, false, Teuchos::ScalarTraits<Scalar>::one(), newP);
+      Utils2::TwoMatrixAdd(*P, false, beta, *Z, false, Teuchos::ScalarTraits<Scalar>::one(), newP, this->GetOStream(Statistics2,1));
       newP->fillComplete(P0.getDomainMap(), P0.getRangeMap());
       P.swap(newP);
 #else
