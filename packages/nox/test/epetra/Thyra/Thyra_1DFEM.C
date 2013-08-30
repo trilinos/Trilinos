@@ -481,20 +481,6 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_1DFEM, AndersonAcceleration_UserPrec)
   Teuchos::RCP<ModelEvaluator1DFEM<double> > model = 
     modelEvaluator1DFEM<double>(Teuchos::rcp(&Comm,false),num_elements,x00,x01);
 
-  ::Stratimikos::DefaultLinearSolverBuilder builder;
-  
-  Teuchos::RCP<Teuchos::ParameterList> p = 
-    Teuchos::rcp(new Teuchos::ParameterList);
-  p->set("Linear Solver Type", "AztecOO");
-  p->sublist("Linear Solver Types").sublist("AztecOO").sublist("Forward Solve").sublist("AztecOO Settings").set("Output Frequency",20);
-  p->set("Preconditioner Type", "Ifpack");
-  builder.setParameterList(p);
-
-  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> > 
-    lowsFactory = builder.createLinearSolveStrategy("");
-
-  model->set_W_factory(lowsFactory);
-
   // Create the initial guess
   Teuchos::RCP< ::Thyra::VectorBase<double> >
     initial_guess = model->getNominalValues().get_x()->clone_v();
