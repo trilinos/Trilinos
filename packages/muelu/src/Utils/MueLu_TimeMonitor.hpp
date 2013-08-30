@@ -57,9 +57,6 @@
 
 namespace MueLu {
 
-  // Helper function. Similar to Teuchos::TimeMonitor::summarize().
-  ArrayRCP<double> ReduceMaxMinAvg(double localValue, Teuchos::Comm<int> const &comm, int rootNode = 0);
-
   /*! @class TimeMonitor
 
       @brief Integrates Teuchos::TimeMonitor with MueLu verbosity system.
@@ -97,17 +94,6 @@ namespace MueLu {
         // Stop the timer
         timer_->stop();
 
-        if (IsPrint(RuntimeTimings)) {
-          //FIXME: creates lot of barriers. An option to report time of proc0 only instead would be nice
-          //FIXME: MPI_COMM_WORLD only... BTW, it is also the case in Teuchos::TimeMonitor...
-          //
-          // mfh 11 Nov 2012: Actually, Teuchos::TimeMonitor::summarize() has multiple overloads that take a Teuchos::Comm.
-          ArrayRCP<double> stats = ReduceMaxMinAvg(timer_->totalElapsedTime(), *Teuchos::DefaultComm<int>::getComm ());
-
-          //FIXME: Not very important for now, but timer will be printed even if verboseLevel of Monitor/Object changed
-          //       between Monitor constructor and destructor.
-          GetOStream(RuntimeTimings, 0) << "Timer: " << " max=" << stats[0] << " min=" << stats[1] << " avg=" << stats[2] << std::endl;
-        }
       }
     }
 
@@ -161,18 +147,6 @@ namespace MueLu {
 
         // Stop the timer
         timer_->stop();
-
-        if (IsPrint(RuntimeTimings)) {
-          //FIXME: creates lot of barriers. An option to report time of proc0 only instead would be nice
-          //FIXME: MPI_COMM_WORLD only... BTW, it is also the case in Teuchos::TimeMonitor...
-          //TODO          ArrayRCP<double> stats = ReduceMaxMinAvg(timer_->totalElapsedTime(), *Teuchos::DefaultComm<int>::getComm ());
-          //
-          // mfh 11 Nov 2012: Actually, Teuchos::TimeMonitor::summarize() has multiple overloads that take a Teuchos::Comm.
-
-          //FIXME: Not very important for now, but timer will be printed even if verboseLevel of Monitor/Object changed
-          //       between Monitor constructor and destructor.
-          //TODO GetOStream(RuntimeTimings, 0) << "Timer: " << " max=" << stats[0] << " min=" << stats[1] << " avg=" << stats[2] << std::endl;
-        }
       }
     }
 
