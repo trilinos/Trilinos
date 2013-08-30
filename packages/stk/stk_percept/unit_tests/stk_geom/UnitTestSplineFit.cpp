@@ -33,7 +33,8 @@ namespace stk
 
       STKUNIT_UNIT_TEST(unit_stk_geom, test_1)
       {
-        const bool debug_print = false;
+        const bool debug_print = true;
+        SplineFit::s_debug_print = debug_print;
 
         /// fit a quadratic
         LocalCubicSplineFit cf;
@@ -149,6 +150,98 @@ namespace stk
           double dist = closest_point.DistanceTo(p);
           STKUNIT_EXPECT_NEAR(dist, 0,tol);
         }
+
+        delete curve;
+      }
+
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+
+      STKUNIT_UNIT_TEST(unit_stk_geom, test_five_point)
+      {
+        const bool debug_print = true;
+        SplineFit::s_debug_print = debug_print;
+
+        /// fit a quadratic
+        LocalCubicSplineFit cf(BSplineFit::FivePoint);
+        int n = 14;
+        Vectors2D Q(3);
+        Q[0] = Vector2D(-2,0);
+        Q[1] = Vector2D(-1,0);
+        Q[2] = Vector2D(-.5,0);
+        for (int i=0; i < n; i++)
+          {
+            double x = double(i)/double(n-1);
+            double y = x*x;
+            Q.push_back( Vector2D(x,y) );
+          }
+        if (debug_print) std::cout << "Fitting quadratic with cubic spline - points = " << std::endl;
+        DPRINTLN(Q);
+        ON_Curve *curve = cf.fit(Q);
+        if (debug_print)
+          cf.print();
+
+        delete curve;
+      }
+
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+
+      STKUNIT_UNIT_TEST(unit_stk_geom, test_five_point_1)
+      {
+        const bool debug_print = true;
+        SplineFit::s_debug_print = debug_print;
+
+        /// fit a quadratic
+        LocalCubicSplineFit cf (BSplineFit::FivePoint);
+        int n = 7;
+        Vectors2D Q(n);
+        Q[0] = Vector2D(-2,0);
+        Q[1] = Vector2D(-1,0);
+        Q[2] = Vector2D(-.5,0);
+        Q[3] = Vector2D(0,0);
+        Q[4] = Vector2D(1,1);
+        Q[5] = Vector2D(2,2);
+        Q[6] = Vector2D(2.5,2.5);
+        if (debug_print) std::cout << "Fitting quadratic with cubic spline - points = " << std::endl;
+        DPRINTLN(Q);
+        ON_Curve *curve = cf.fit(Q);
+        if (debug_print)
+          cf.print();
+
+        delete curve;
+      }
+
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+
+      STKUNIT_UNIT_TEST(unit_stk_geom, test_five_point_2)
+      {
+        const bool debug_print = true;
+        SplineFit::s_debug_print = debug_print;
+
+        /// fit a quadratic
+        LocalCubicSplineFit cf (BSplineFit::ThreePoint);
+        int n = 7;
+        Vectors2D Q(n);
+        Q[0] = Vector2D(-3,0);
+        Q[1] = Vector2D(-2,0.3);
+        Q[2] = Vector2D(-1,0.3);
+        Q[3] = Vector2D(0,0);
+        Q[4] = Vector2D(1,1);
+        Q[5] = Vector2D(2,2);
+        Q[6] = Vector2D(2.5,2.5);
+        if (debug_print) std::cout << "Fitting quadratic with cubic spline - points = " << std::endl;
+        DPRINTLN(Q);
+        std::vector<int> isCorner(n, 0);
+        isCorner[3] = 1;
+        cf.setIsCorner(isCorner);
+        ON_Curve *curve = cf.fit(Q);
+        if (debug_print)
+          cf.print();
 
         delete curve;
       }
@@ -320,7 +413,7 @@ namespace stk
             DPRINTLN2(i, curve->PointAt(cf.U()[i]));
           }
 
-        double tol = 1.e-5;
+        double tol = 1.e-4;
         for (size_t i=0; i < cf.U().size(); i++)
           {
             DPRINTLN2(i, curve->DerivativeAt(cf.U()[i]));

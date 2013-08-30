@@ -31,13 +31,36 @@ namespace stk {
           // eq (9.47)
           Pk1[k] = Q[k] + alpha[k]*T[k]/3.0;
           Pk2[k] = Q[k+1] - alpha[k]*T[k+1]/3.0;
+          if (m_isCorner[k+1])
+            {
+              Vector2D Tkp = k > 0 ? (2.0*T[k] - T[k-1]) : T[k];
+              Pk2[k] = Q[k+1] - alpha[k]*Tkp/3.0;
+            }
+          if (m_isCorner[k])
+            {
+              Vector2D Tkp = k < n-1 ? (2.0*T[k+1] - T[k+2]) : T[k];
+              Pk1[k] = Q[k] + alpha[k]*T[k]/3.0;
+            }
           // eq (9.52)
           u[k+1] = u[k] + 3.0*(Pk2[k] - Pk1[k]).Length();
           DPRINTLN2(k,u[k+1]);
         }
       int order = 4; // degree=3, order = degree+1
       int offset = order-1; // note: P&T convention is order, not order-1 as OpenNURBS seems to require 
-      int nU = 2*offset+2*(n-1);
+
+      // fixup for corners
+      int ncorner=0;
+      for (int k=1; k <= n-1; k++)
+        {
+          if (m_isCorner[k])
+            {
+              ++ncorner;
+            }
+        }
+      DPRINTLN(ncorner);
+
+      int nU = 2*offset+2*(n-1) + ncorner;
+
       U.resize(nU);
       for (int k=0; k < offset; k++)
         {
@@ -51,9 +74,11 @@ namespace stk {
           double uk=u[k]/u[n];
           U[ki++] = uk;
           U[ki++] = uk;
+          if (m_isCorner[k])
+            U[ki++] = uk;
         }
 
-      int nCV = 2 + 2*n;
+      int nCV = 2 + 2*n + ncorner;
       m_CV.resize(nCV);
       // eq (9.53)
       CV[0] = Q[0];
@@ -62,6 +87,8 @@ namespace stk {
         {
           CV[ki++] = Pk1[k];
           CV[ki++] = Pk2[k];
+          if (m_isCorner[k+1])
+            CV[ki++] = Q[k+1];
         }
       if (debug_print) std::cout << "ki= " << ki << " CV.size= " << CV.size() << std::endl;
       CV[ki] = Q[n];
@@ -70,6 +97,7 @@ namespace stk {
       DPRINTLN(T);
       DPRINTLN(CV);
       DPRINTLN(U);
+
     }
 
   }

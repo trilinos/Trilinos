@@ -14,11 +14,23 @@ namespace stk {
     class BSplineFit : public SplineFit
     {
     public:
-      BSplineFit() : m_n(0), m_isRational(false),
+      /** Choice for how many points around a given input point to use to calculate tangent vectors
+       *
+       * FivePoint has the advantage or recognizing straight lines (3 points) and corners with
+       * two straight lines eminating from it.  Also, known corners can be identified (in a later
+       * version of this code) by the user and enforced with the 5pt scheme.
+       *
+       * Three point is less susceptible to noisy data.
+       */
+      enum Option { ThreePoint = 3, FivePoint = 5 };
+
+      BSplineFit(Option option = ThreePoint) : m_option(option), m_n(0), m_isRational(false),
                      m_isPeriodic(false), m_isClosed(false), m_curve(0) {}
 
       void setIsPeriodic(bool per) { m_isPeriodic=per; }
       bool getIsPeriodic() { return m_isPeriodic; }
+      void setIsCorner(const std::vector<int>& isCorner) { m_isCorner = isCorner; }
+      //void setIsCorner(int index, bool isCorner) { if (isCorner) m_isCorner[index] = 1; }
 
       bool getIsClosed() { return m_isClosed; }
 
@@ -38,10 +50,14 @@ namespace stk {
       // given m_CV, m_U, gives the ON_NurbsCurve
       ON_Curve * create();
 
+      double alpha_five_point(int k, Vectors2D& d, int doff, bool allow_corner=true);
+
     protected:
+      Option m_option;
       // control vertices, knots
       Vectors2D m_CV;
       Vectors2D m_Q;
+      std::vector<int> m_isCorner; // intentional use of int to avoid packed bool
       std::vector<double> m_U;
       int m_n;
       bool m_isRational;

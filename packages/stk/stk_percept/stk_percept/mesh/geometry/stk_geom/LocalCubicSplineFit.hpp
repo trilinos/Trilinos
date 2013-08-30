@@ -10,6 +10,8 @@ namespace stk {
     class LocalCubicSplineFit : public BSplineFit
     {
     public:
+      LocalCubicSplineFit(Option option = ThreePoint) : BSplineFit(option) {}
+
       /// create an OpenNURBS curve that fits the given input points
       virtual void fit_internal(int n, Vectors2D& Q, Vectors2D& T);
     };

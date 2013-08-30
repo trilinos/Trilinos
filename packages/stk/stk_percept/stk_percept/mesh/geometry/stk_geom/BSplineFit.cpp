@@ -4,21 +4,38 @@ namespace stk {
   namespace geom {
 
 
-    enum Option { ThreePoint = 3, FivePoint = 5 };
+    double BSplineFit::alpha_five_point(int k, Vectors2D& d, int doff, bool allow_corner)
+    {
+      double dkp1kp2 = std::fabs(ON_CrossProduct(d[k+1+doff],d[k+2+doff])[2]);
+      double dkm1k = std::fabs(ON_CrossProduct(d[k-1+doff],d[k+doff])[2]);
+      double den = dkm1k+dkp1kp2;
+      if (den < 1.e-8)   // FIXME tol
+        {
+          if (allow_corner)
+            {
+              std::cout << "tmp srk FOUND CORNER at k= " << k << std::endl;
+              m_isCorner[k] = 1;
+            }
+          return 1.0;  // implies a corner - for smoothing the corner, return 0.5
+        }
+      if (m_isCorner[k])
+        return 1.0;
+      return dkm1k/den;
+    }
 
     ON_Curve * BSplineFit::
     fit(Vectors2D& points_in)
     {
       const bool debug_print = SplineFit::s_debug_print;
       int n_i = points_in.size();
-      Option option = ThreePoint; // FivePoint
       //int n_stencil = option; // option.n_stencil;
       int n = n_i - 1; // 0...n define the points
 
       /// using Piegl and Tiller "The NURBS Book" notation and equation numbers
-      //Vectors2D& Q = *(&tmp_points[n_stencil]);
-      Vectors2D Q = points_in;  // FIXME
+      Vectors2D Q = points_in;
       m_Q = Q;
+      if (m_isCorner.size() == 0)
+        m_isCorner.assign(n+1,0);
 
       double arclen = 0.0;
       for (int k=1; k <= n; k++)
@@ -58,8 +75,30 @@ namespace stk {
           q[k] = Q[k] - Q[k-1];
           d[k] = q[k]/(u[k] - u[k-1]);
         }
-      if (option == ThreePoint)
+
+      if (m_option == ThreePoint)
         {
+          /**
+           *        0   1   2   ...  n-1   n   n+1   n+2   n+3
+           *
+           *                               0    1     2   ....  periodic overlap
+           *
+           *   ThreePoint:
+           *      u[n+1] defined as u[n]+(u[1]-u[0]);
+           *      q[n+1] = q[1]
+           *      d[n+1] = d[1]
+           *      allows definition of alpha[n] and T[n], then
+           *      T0 == Tn
+           *
+           *   FivePoint:
+           *      u[n+1] = u[n] + (u[1]-u[0]);
+           *      u[n+2] = u[n+1] + (u[2]-u[1]);
+           *      u[n+3] = u[n+2] + (u[3]-u[2]);
+           *      alpha[n, n+1, n+2] can now be defined, and T[n, n+1, n+2]
+           *      then T[0] = T[n], T[1] = T[n+1], T[2] = T[n+2]
+           *
+           */
+
           int N = n-1;
           if (m_isPeriodic)
             {
@@ -74,15 +113,16 @@ namespace stk {
             {
               // eq (9.30)
               alpha[k] = (u[k] - u[k-1]) / (u[k+1] - u[k-1]);
-              double akm1 = (u[k+1] - u[k]) / (u[k+1] - u[k-1]);
-              // eq (9.28)
-              D[k] = akm1*d[k] + alpha[k]*d[k+1];
-              V[k] = akm1*q[k] + alpha[k]*q[k+1];
-              double vkl =  V[k].Length();
-              if (vkl < 1.e-12) throw std::runtime_error("can't normalize T vector");
+              if (m_isCorner[k])
+                alpha[k]=1.0;
+              // eq (9.28,29)
+              D[k] = (1.0-alpha[k])*d[k] + alpha[k]*d[k+1];
+              V[k] = (1.0-alpha[k])*q[k] + alpha[k]*q[k+1];
+              double d0l =  D[k].Length();
+              if (d0l < 1.e-12) throw std::runtime_error("can't normalize T vector");
               DPRINTLN2(k,alpha[k]);
               // eq (9.29)
-              T[k] = V[k] / vkl;
+              T[k] = D[k] / d0l;
               DPRINTLN2(k,T[k]);
             }
           if (m_isPeriodic)
@@ -93,25 +133,122 @@ namespace stk {
             {
               // endpoints
               // eq (9.32)
-              D[0] = d[1] + (d[1] - D[1]);
-              D[n] = d[n] + (d[n] - D[n-1]);
+              D[0] = 2*d[1] - D[1];
+              D[n] = 2*d[n] - D[n-1];
               V[0] = 2*q[1] - V[1];
               V[n] = 2*q[n] - V[n-1];
-              double v0l = V[0].Length();
-              double vnl = V[n].Length();
-              if (v0l < 1.e-12) throw std::runtime_error("can't normalize T vector[0]");
-              if (vnl < 1.e-12) throw std::runtime_error("can't normalize T vector[n]");
-              T[0] = V[0]/v0l;
-              T[n] = V[n]/vnl;
+              double d0l = D[0].Length();
+              double dnl = D[n].Length();
+              if (d0l < 1.e-12) throw std::runtime_error("can't normalize T vector[0]");
+              if (dnl < 1.e-12) throw std::runtime_error("can't normalize T vector[n]");
+              T[0] = D[0]/d0l;
+              T[n] = D[n]/dnl;
               DPRINTLN(d[1]);
               DPRINTLN(D[1]);
               DPRINTLN(T[0]);
               DPRINTLN(T[n]);
             }
         }
-      else if (option == FivePoint)
+
+      //////////////////////////////////////////////////////////////////////////////////
+      ///  FivePoint
+      //////////////////////////////////////////////////////////////////////////////////
+      else if (m_option == FivePoint)
         {
-          throw std::runtime_error("BSplineFit FivePoint option not yet implemented");
+          int doff = 0;
+          int N0 = 2;
+          int N = n-2;
+          alpha.resize(n+1+3);
+          if (m_isPeriodic)
+            {
+              double unp1 = u[n] + (u[1]-u[0]);
+              double unp2 = unp1 + (u[2]-u[1]);
+              double unp3 = unp2 + (u[3]-u[2]);
+
+              u.push_back(unp1);
+              u.push_back(unp2);
+              u.push_back(unp3);
+
+              q.push_back(q[1]);
+              q.push_back(q[2]);
+              q.push_back(q[3]);
+
+              d.push_back(d[1]);
+              d.push_back(d[2]);
+              d.push_back(d[3]);
+
+              Vector2D v2;
+              T.push_back(v2);
+              T.push_back(v2);
+              T.push_back(v2);
+
+              N = n;
+            }
+          else
+            {
+              // -1,...,n+2
+              Vectors2D dx0;
+              dx0.push_back(Vector2D());
+              dx0.insert(dx0.end(), d.begin(), d.end());
+              dx0.push_back(Vector2D());
+              dx0.push_back(Vector2D());
+              DPRINTLN(d);
+              d = dx0;
+              // endpoints
+              // eq (9.33)
+              doff = 1;
+              Vector2D *dx = &d[1];
+              DPRINTLN(d);
+              dx[0]   = 2*dx[1]   - dx[2];
+              dx[-1]  = 2*dx[0]   - dx[1];
+              dx[n+1] = 2*dx[n]   - dx[n-1];
+              dx[n+2] = 2*dx[n+1] - dx[n];
+              DPRINTLN(d);
+            }
+          DPRINTLN(u);
+          for (int k = N0; k <= N; k++)
+            {
+              // eq (9.31)
+              alpha[k] = alpha_five_point(k, d, doff);
+              double akm1 = 1.0-alpha[k];
+              // eq (9.29)
+              //Vector2D Dk = akm1*d[k] + alpha[k]*d[k+1];
+              Vector2D Dk = akm1*d[k+doff] + alpha[k]*d[k+1+doff];
+              double dkl =  Dk.Length();
+              if (dkl < 1.e-12) throw std::runtime_error("can't normalize T vector");
+              DPRINTLN2(k,alpha[k]);
+              // eq (9.29)
+              T[k] = Dk / dkl;
+              DPRINTLN2(k,T[k]);
+            }
+
+          if (m_isPeriodic)
+            {
+              T[0] = T[n];
+              T[1] = T[n+1];
+              T[2] = T[n+2];
+              T.resize(n+1);
+            }
+          else
+            {
+              for (int k=0; k < 2; k++)
+                {
+                  alpha[k] = alpha_five_point(k, d, doff, false);
+                  D[k] = (1-alpha[k])*d[k+doff] + alpha[k]*d[k+1+doff];
+                  double dkl = D[k].Length();
+                  if (dkl < 1.e-12) throw std::runtime_error("can't normalize T vector[0]");
+                  T[k] = D[k]/dkl;
+                }
+              for (int k=n-1; k <= n; k++)
+                {
+                  alpha[k] = alpha_five_point(k, d, doff, false);
+                  D[k] = (1-alpha[k])*d[k+doff] + alpha[k]*d[k+1+doff];
+                  double dkl = D[k].Length();
+                  if (dkl < 1.e-12) throw std::runtime_error("can't normalize T vector[0]");
+                  T[k] = D[k]/dkl;
+                }
+            }
+          DPRINTLN(alpha);
         }
       if (0 && m_isPeriodic && m_isClosed)
         {
