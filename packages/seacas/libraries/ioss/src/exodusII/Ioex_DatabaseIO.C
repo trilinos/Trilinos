@@ -1018,8 +1018,14 @@ namespace Ioex {
     int64_t num_border_elems   = 0;
 
     bool nemesis_file = true;
+    // If someone changed to EX_VERBOSE, temporarily change to default
+    // so this call does not report an error in the serial case.
+    // (See Trac 10774)
+    int old_val = ex_opts(EX_DEFAULT); 
     int error = ex_get_init_info(get_file_pointer(),
         &num_proc, &num_proc_in_file, &file_type[0]);
+    ex_opts(old_val); // Reset back to what it was.
+
     if (error < 0) {
       // Not a nemesis file
       nemesis_file = false;
