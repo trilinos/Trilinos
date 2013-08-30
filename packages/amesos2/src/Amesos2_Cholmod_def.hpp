@@ -86,23 +86,26 @@ Cholmod<Matrix,Vector>::Cholmod(
 template <class Matrix, class Vector>
 Cholmod<Matrix,Vector>::~Cholmod( )
 {
-  
-  CHOL::cholmod_free_factor (&(data_.L),&(data_.c));
+  CHOL::cholmod_free_factor (&(data_.L), &(data_.c));
 
-  CHOL::cholmod_finish(&data_.c);
+  CHOL::cholmod_free_dense(&(data_.Y), &data_.c);
+  CHOL::cholmod_free_dense(&(data_.E), &data_.c);
+
+  CHOL::cholmod_finish(&(data_.c));
 }
 
 template<class Matrix, class Vector>
 int
 Cholmod<Matrix,Vector>::preOrdering_impl()
 {
-  {
+  if ( this->root_ ){
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor preOrderTimer(this->timers_.preOrderTime_);
 #endif
-    data_.L = CHOL::cholmod_analyze (data_.A, &(data_.c));
+    data_.L = CHOL::cholmod_analyze (&data_.A, &(data_.c));
+    skip_symfact = true;
   }
-
+  
   return(0);
 }
 
@@ -111,6 +114,21 @@ template <class Matrix, class Vector>
 int
 Cholmod<Matrix,Vector>::symbolicFactorization_impl()
 {
+  if ( this->root_ ){
+    if ( !skip_symfact ){
+#ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::TimeMonitor symFactTimer(this->timers_.symFactTime_);
+#endif
+      CHOL::cholmod_resymbol (&data_.A, NULL, 0, true, data_.L, &(data_.c));
+    } else {
+      /*
+       * Symbolic factorization has already occured in preOrdering_impl,
+       * but if the user calls this routine directly later, we need to
+       * redo the symbolic factorization.
+       */
+      skip_symfact = false;
+    }
+  }
 
   return(0);
 }
@@ -122,19 +140,17 @@ Cholmod<Matrix,Vector>::numericFactorization_impl()
 {
   using Teuchos::as;
 
-
   int info = 0;
   if ( this->root_ ){
 
 #ifdef HAVE_AMESOS2_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION( data_.A->ncol != as<size_t>(this->globalNumCols_),
-                        std::runtime_error,
-                        "Error in converting to cholmod_sparse: wrong number of global columns." );
-    TEUCHOS_TEST_FOR_EXCEPTION( data_.A->nrow != as<size_t>(this->globalNumRows_),
-                        std::runtime_error,
-                        "Error in converting to cholmod_sparse: wrong number of global rows." );
+    TEUCHOS_TEST_FOR_EXCEPTION(data_.A.ncol != as<size_t>(this->globalNumCols_),
+			       std::runtime_error,
+			       "Error in converting to cholmod_sparse: wrong number of global columns." );
+    TEUCHOS_TEST_FOR_EXCEPTION(data_.A.nrow != as<size_t>(this->globalNumRows_),
+			       std::runtime_error,
+			       "Error in converting to cholmod_sparse: wrong number of global rows." );
 #endif
-
 
     { // Do factorization
 #ifdef HAVE_AMESOS2_TIMERS
@@ -148,7 +164,7 @@ Cholmod<Matrix,Vector>::numericFactorization_impl()
       std::cout << "colptr_ : " << colptr_.toString() << std::endl;
 #endif
       //cholmod_print_sparse(data_.A,"A",&(data_.c));
-      CHOL::cholmod_factorize(data_.A, data_.L, &(data_.c));
+      CHOL::cholmod_factorize(&data_.A, data_.L, &(data_.c));
       //cholmod_print_factor(data_.L,"L",&(data_.c));
       info = (&data_.c)->status;
       
@@ -159,13 +175,9 @@ Cholmod<Matrix,Vector>::numericFactorization_impl()
   /* All processes should have the same error code */
   Teuchos::broadcast(*(this->matrixA_->getComm()), 0, &info);
 
-  //global_size_type info_st = as<global_size_type>(info);
-  //TEUCHOS_TEST_FOR_EXCEPTION( (info_st > 0) && (info_st <= this->globalNumCols_),
-  //std::runtime_error,
-  //"Factorization complete, but matrix is singular. Division by zero eminent");
-  TEUCHOS_TEST_FOR_EXCEPTION( info == 2,
-    std::runtime_error,
-    "Memory allocation failure in Cholmod factorization");
+  TEUCHOS_TEST_FOR_EXCEPTION(info == 2,
+			     std::runtime_error,
+			     "Memory allocation failure in Cholmod factorization");
 
   return(info);
 }
@@ -195,55 +207,44 @@ Cholmod<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
 #endif
     Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
                              chol_type>::do_get(B, bValues(),
-                                               as<size_t>(ld_rhs),
-                                               ROOTED, this->rowIndexBase_);
+						as<size_t>(ld_rhs),
+						ROOTED, this->rowIndexBase_);
       
   }
 
-
   int ierr = 0; // returned error code
 
-
   if ( this->root_ ) {
-
-
     {
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
 #endif
 
-      function_map::cholmod_allocate_dense(as<int>(this->globalNumRows_),as<int>(nrhs),as<int>(ld_rhs),bValues.getRawPtr(),&data_.btemp);
-      function_map::cholmod_allocate_dense(as<int>(this->globalNumRows_),as<int>(nrhs),as<int>(ld_rhs),xValues.getRawPtr(),&data_.xtemp);
-
-      data_.b = &(data_.btemp);
-      data_.x = &(data_.xtemp);
+      function_map::cholmod_init_dense(as<int>(this->globalNumRows_),
+				       as<int>(nrhs), as<int>(ld_rhs),
+				       bValues.getRawPtr(), &data_.b);
+      function_map::cholmod_init_dense(as<int>(this->globalNumRows_),
+				       as<int>(nrhs), as<int>(ld_rhs),
+				       xValues.getRawPtr(), &data_.x);
     }
 
 
     {                           // Do solve!
 #ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
+      Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
 
-
-    CHOL::cholmod_dense *Y = NULL;
-    CHOL::cholmod_dense *E = NULL;
-    CHOL::cholmod_solve2(CHOLMOD_A,data_.L,data_.b,NULL,&data_.x,NULL,&Y,&E,&data_.c);
-    ierr = (&data_.c)->status;
-    CHOL::cholmod_free_dense(&Y,&data_.c);
-    CHOL::cholmod_free_dense(&E,&data_.c);
-
+      CHOL::cholmod_dense *xtemp = &(data_.x);
+      CHOL::cholmod_solve2(CHOLMOD_A, data_.L, &data_.b, NULL,
+			   &xtemp, NULL, &data_.Y, &data_.E, &data_.c);
+      ierr = (&data_.c)->status;
     }
-
-    
   }
 
   /* All processes should have the same error code */
   Teuchos::broadcast(*(this->getComm()), 0, &ierr);
 
-  TEUCHOS_TEST_FOR_EXCEPTION( ierr == -2,
-                      std::runtime_error,
-                      "Ran out of memory" );
+  TEUCHOS_TEST_FOR_EXCEPTION(ierr == -2, std::runtime_error, "Ran out of memory" );
 
   /* Update X's global values */
   {
@@ -253,8 +254,8 @@ Cholmod<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     
     Util::put_1d_data_helper<
       MultiVecAdapter<Vector>,chol_type>::do_put(X, xValues(),
-                                         as<size_t>(ld_rhs),
-                                         ROOTED, this->rowIndexBase_);
+						 as<size_t>(ld_rhs),
+						 ROOTED, this->rowIndexBase_);
     
   }
 
@@ -369,7 +370,6 @@ Cholmod<Matrix,Vector>::loadA_impl(EPhase current_phase)
   Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
 #endif
 
-
   // Only the root image needs storage allocated
   if( this->root_ ){
     nzvals_.resize(this->globalNumNonZeros_);
@@ -383,9 +383,9 @@ Cholmod<Matrix,Vector>::loadA_impl(EPhase current_phase)
     Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
 #endif
 
-    TEUCHOS_TEST_FOR_EXCEPTION( this->rowIndexBase_ != this->columnIndexBase_,
-                        std::runtime_error,
-                        "Row and column maps have different indexbase ");
+    TEUCHOS_TEST_FOR_EXCEPTION(this->rowIndexBase_ != this->columnIndexBase_,
+			       std::runtime_error,
+			       "Row and column maps have different indexbase ");
     Util::get_ccs_helper<
     MatrixAdapter<Matrix>,chol_type,int,int>::do_get(this->matrixA_.ptr(),
                                                     nzvals_(), rowind_(),
@@ -393,21 +393,22 @@ Cholmod<Matrix,Vector>::loadA_impl(EPhase current_phase)
                                                     ARBITRARY,
                                                     this->rowIndexBase_);
   }
-
+  
   if( this->root_ ){
-    TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<int>(this->globalNumNonZeros_),
-                        std::runtime_error,
-                        "Did not get the expected number of non-zero vals");
+    TEUCHOS_TEST_FOR_EXCEPTION(nnz_ret != as<int>(this->globalNumNonZeros_),
+			       std::runtime_error,
+			       "Did not get the expected number of non-zero vals");
 
-    function_map::cholmod_allocate_sparse(as<size_t>(this->globalNumRows_),as<size_t>(this->globalNumCols_),as<size_t>(this->globalNumNonZeros_),0,colptr_.getRawPtr(),nzvals_.getRawPtr(),rowind_.getRawPtr(),&data_.Atemp);
-        
-    data_.A = &(data_.Atemp);
-    
-    
-
+    function_map::cholmod_init_sparse(as<size_t>(this->globalNumRows_),
+				      as<size_t>(this->globalNumCols_),
+				      as<size_t>(this->globalNumNonZeros_),
+				      0,
+				      colptr_.getRawPtr(),
+				      nzvals_.getRawPtr(),
+				      rowind_.getRawPtr(),
+				      &(data_.A));
   }
-
-
+  
   return true;
 }
 

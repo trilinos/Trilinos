@@ -509,9 +509,9 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="MPI,SuperLU,SuperLUMT,SuperLUDist,PARDISO_MKL,ParMETIS,METIS"/>
+    <LIB_OPTIONAL_DEP_TPLS value="MPI,SuperLU,SuperLUMT,SuperLUDist,PARDISO_MKL,ParMETIS,METIS,Cholmod"/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS value="Cholmod"/>
+    <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
       <Regression address="amesos2-regression@software.sandia.gov"/>
     </EmailAddresses>
@@ -1181,9 +1181,9 @@
     <TEST_REQUIRED_DEP_PACKAGES value="Belos,Triutils,Galeri"/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Anasazi,Amesos2"/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="Cholmod,Boost"/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS value="QD,Cholmod,Boost"/>
+    <TEST_OPTIONAL_DEP_TPLS value="QD"/>
     <EmailAddresses>
       <Regression address="ifpack2-regression@software.sandia.gov"/>
     </EmailAddresses>
