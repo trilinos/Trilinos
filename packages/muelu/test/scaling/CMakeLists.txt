@@ -50,6 +50,13 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     )
 
   TRIBITS_ADD_EXECUTABLE(
+    MatrixMatrixMultiply
+    SOURCES MatrixMatrixMultiply.cpp
+    COMM mpi
+    DEPLIBS muelu xpetra muelu-adapters
+    )
+
+  TRIBITS_ADD_EXECUTABLE(
     ${MueLu_ScalingTestName}
     SOURCES ScalingTest.cpp
     COMM serial mpi
