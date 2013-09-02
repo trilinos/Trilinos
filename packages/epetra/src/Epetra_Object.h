@@ -123,10 +123,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Object {
 
   //! Print object to an output stream
   //! Print method
-  virtual void Print(ostream & os) const;
+  virtual void Print(std::ostream & os) const;
 
   //! Error reporting method
-  virtual int ReportError(const string Message, int ErrorCode) const;
+  virtual int ReportError(const std::string Message, int ErrorCode) const;
   //@}
 
   
@@ -142,21 +142,21 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Object {
 
 
  protected:
-  string toString(const int& x) const {
+  std::string toString(const int& x) const {
      char s[100];
      sprintf(s, "%d", x);
-     return string(s);
+     return std::string(s);
 }
-  string toString(const long long& x) const {
+  std::string toString(const long long& x) const {
      char s[100];
      sprintf(s, "%lld", x);
-     return string(s);
+     return std::string(s);
 }
 
-  string toString(const double& x) const {
+  std::string toString(const double& x) const {
      char s[100];
      sprintf(s, "%g", x);
-     return string(s);
+     return std::string(s);
 }
   
 
@@ -170,14 +170,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Object {
 
 };
 
-inline ostream& operator<<(ostream& os, const Epetra_Object& obj)
+inline std::ostream& operator<<(std::ostream& os, const Epetra_Object& obj)
 {
   if (Epetra_FormatStdout) {
 /*    const Epetra_fmtflags  olda = os.setf(ios::right,ios::adjustfield);
     const Epetra_fmtflags  oldf = os.setf(ios::scientific,ios::floatfield);
     const int              oldp = os.precision(12); */
 
-    os << obj.Label() << endl;
+    os << obj.Label() << std::endl;
     obj.Print(os);
 
 /*    os.setf(olda,ios::adjustfield);

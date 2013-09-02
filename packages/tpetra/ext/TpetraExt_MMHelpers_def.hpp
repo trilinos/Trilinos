@@ -47,7 +47,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "TpetraExt_MMHelpers_decl.hpp"
 
-/*! \file Tpetra_MMHelpers_def.hpp 
+/*! \file TpetraExt_MMHelpers_def.hpp
 
     The implementations for the MatrixMatrix helper classes. 
  */

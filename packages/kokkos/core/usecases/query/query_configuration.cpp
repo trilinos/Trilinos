@@ -46,7 +46,7 @@
 #include <iostream>
 #include <sstream>
 
-#include <Kokkos_Host.hpp>
+#include <Kokkos_Threads.hpp>
 
 #if defined( KOKKOS_HAVE_CUDA )
 #include <Kokkos_Cuda.hpp>
@@ -63,7 +63,7 @@ int main( int argc , char ** argv )
 
   msg << "MPI rank(" << comm::rank(machine) << ") {" ;
 
-  Kokkos::Host::print_configuration( msg );
+  Kokkos::Threads::print_configuration( msg );
 
 #if defined( KOKKOS_HAVE_CUDA )
   Kokkos::Cuda::print_configuration( msg );

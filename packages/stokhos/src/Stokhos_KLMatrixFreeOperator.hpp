@@ -117,7 +117,7 @@ namespace Stokhos {
     //! Returns an approximate infinity norm of the operator matrix.
     virtual double NormInf() const;
     
-    //! Returns a character string describing the operator
+    //! Returns a character std::string describing the operator
     virtual const char* Label () const;
   
     //! Returns the current UseTranspose setting.
@@ -160,7 +160,7 @@ namespace Stokhos {
   protected:
     
     //! Label for operator
-    string label;
+    std::string label;
 
     //! Stores SG parallel communicator
     Teuchos::RCP<const EpetraExt::MultiComm> sg_comm;

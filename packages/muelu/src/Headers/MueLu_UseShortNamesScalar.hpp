@@ -38,6 +38,10 @@ typedef MueLu::BlockedPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOp
 typedef MueLu::BlockedRAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> BlockedRAPFactory;
 #endif
 
+#ifdef MUELU_BRICKAGGREGATIONFACTORY_SHORT
+typedef MueLu::BrickAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> BrickAggregationFactory;
+#endif
+
 #ifdef MUELU_BRAESSSARAZINSMOOTHER_SHORT
 typedef MueLu::BraessSarazinSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> BraessSarazinSmoother;
 #endif
@@ -100,10 +104,6 @@ typedef MueLu::FakeSmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,Loca
 
 #ifdef MUELU_FILTEREDAFACTORY_SHORT
 typedef MueLu::FilteredAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> FilteredAFactory;
-#endif
-
-#ifdef MUELU_GAUSSSEIDELSMOOTHER_SHORT
-typedef MueLu::GaussSeidelSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> GaussSeidelSmoother;
 #endif
 
 #ifdef MUELU_GENERICRFACTORY_SHORT
@@ -276,6 +276,10 @@ typedef MueLu::TransPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
 
 #ifdef MUELU_TRILINOSSMOOTHER_SHORT
 typedef MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TrilinosSmoother;
+#endif
+
+#ifdef MUELU_USERPFACTORY_SHORT
+typedef MueLu::UserPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> UserPFactory;
 #endif
 
 #ifdef MUELU_UTILITIES_SHORT

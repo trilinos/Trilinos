@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,32 +35,40 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 #include <utility>
 #include <cmath>
 #include <iostream>
 
-#include "Kokkos_Host.hpp"
+#include "Kokkos_Threads.hpp"
 #include "impl/Kokkos_Timer.hpp"
 
 #include "Stokhos_CrsMatrix.hpp"
 #include "Stokhos_BlockCrsMatrix.hpp"
 #include "Stokhos_StochasticProductTensor.hpp"
+#include "Stokhos_SymmetricDiagonalSpec.hpp"
 #include "Stokhos_CrsProductTensor.hpp"
 #include "Stokhos_TiledCrsProductTensor.hpp"
+#include "Stokhos_CooProductTensor.hpp"
 #include "Stokhos_FlatSparse3Tensor.hpp"
 #include "Stokhos_FlatSparse3Tensor_kji.hpp"
 #include "Stokhos_LexicographicBlockSparse3Tensor.hpp"
 #include "Stokhos_LinearSparse3Tensor.hpp"
 
+#if defined(HAVE_MPI) && 0
+#include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
 #include "Stokhos_LegendreBasis.hpp"
 #include "Stokhos_JacobiBasis.hpp"
 #include "Stokhos_CompletePolynomialBasis.hpp"
 #include "Stokhos_TotalOrderBasis.hpp"
 #include "Stokhos_Sparse3Tensor.hpp"
 #include "Stokhos_LTBSparse3Tensor.hpp"
+#include "Stokhos_Sparse3TensorUtilities.hpp"
 
 namespace unit_test {
 
@@ -132,9 +140,9 @@ test_product_tensor_matrix(
                              Kokkos::LayoutLeft ,
                              Device > block_vector_type ;
 
-   typedef Stokhos::StochasticProductTensor< value_type , TensorType , Device > tensor_type ;
+  typedef Stokhos::StochasticProductTensor< value_type , TensorType , Device > tensor_type ;
 
-    typedef Stokhos::BlockCrsMatrix< tensor_type , value_type , Device > matrix_type ;
+  typedef Stokhos::BlockCrsMatrix< tensor_type , value_type , Device > matrix_type ;
   typedef typename matrix_type::graph_type graph_type ;
 
   typedef ScalarType value_type ;
@@ -236,6 +244,477 @@ test_product_tensor_matrix(
   perf[5] = flops_per_block;
 
   return perf ;
+}
+
+template< typename ScalarType , class Device >
+std::vector<double>
+test_product_tensor_diagonal_matrix(
+  const std::vector<int> & var_degree ,
+  const int nGrid ,
+  const int iterCount ,
+  const bool symmetric )
+{
+  typedef ScalarType value_type ;
+  typedef Kokkos::View< value_type**,
+                             Kokkos::LayoutLeft ,
+                             Device > block_vector_type ;
+
+  //------------------------------
+
+  typedef Stokhos::BlockCrsMatrix< Stokhos::SymmetricDiagonalSpec< Device > ,
+                                  value_type , Device > matrix_type ;
+
+  typedef typename matrix_type::graph_type  graph_type ;
+
+  typedef ScalarType value_type ;
+  typedef Stokhos::OneDOrthogPolyBasis<int,value_type> abstract_basis_type;
+  typedef Stokhos::JacobiBasis<int,value_type> basis_type;
+  typedef Stokhos::LexographicLess<Stokhos::MultiIndex<int> > order_type;
+  typedef Stokhos::TotalOrderBasis<int,value_type,order_type> product_basis_type;
+  typedef Stokhos::Sparse3Tensor<int,value_type> Cijk_type;
+
+  using Teuchos::rcp;
+  using Teuchos::RCP;
+  using Teuchos::Array;
+
+  // Create Stochastic Galerkin basis and expansion
+  const size_t num_KL = var_degree.size();
+  Array< RCP<const abstract_basis_type> > bases(num_KL);
+  for (size_t i=0; i<num_KL; i++) {
+    if (symmetric)
+      bases[i] = Teuchos::rcp(new basis_type(var_degree[i],1.0,1.0,true));
+    else
+      bases[i] = Teuchos::rcp(new basis_type(var_degree[i],1.0,2.0,true));
+  }
+  RCP<const product_basis_type> basis =
+    rcp(new product_basis_type(
+          bases, ScalarTolerances<value_type>::sparse_cijk_tol()));
+  RCP<Cijk_type> Cijk = basis->computeTripleProductTensor();
+
+  //------------------------------
+  // Generate FEM graph:
+
+  std::vector< std::vector<size_t> > fem_graph ;
+
+  const size_t fem_length = nGrid * nGrid * nGrid ;
+  const size_t fem_graph_length = unit_test::generate_fem_graph( nGrid , fem_graph );
+
+  const size_t stoch_length = basis->size();
+
+  //------------------------------
+
+  block_vector_type x = block_vector_type( "x" , stoch_length , fem_length );
+  block_vector_type y = block_vector_type( "y" , stoch_length , fem_length );
+
+  typename block_vector_type::HostMirror hx = Kokkos::create_mirror( x );
+
+  for ( size_t iColFEM = 0 ;   iColFEM < fem_length ;   ++iColFEM ) {
+  for ( size_t iColStoch = 0 ; iColStoch < stoch_length ; ++iColStoch ) {
+    hx(iColStoch,iColFEM) = 1.0;
+  }}
+
+  Kokkos::deep_copy( x , hx );
+
+  //------------------------------
+  // Generate CRS matrix of blocks with symmetric diagonal storage
+
+  matrix_type matrix ;
+
+  matrix.block  = Stokhos::SymmetricDiagonalSpec< Device >( stoch_length );
+  matrix.graph  = Kokkos::create_crsarray<graph_type>(
+    std::string("test product tensor graph") , fem_graph );
+  matrix.values = block_vector_type(
+    "matrix" , matrix.block.matrix_size() , fem_graph_length );
+
+  {
+    typename block_vector_type::HostMirror hM =
+      Kokkos::create_mirror( matrix.values );
+
+    for ( size_t iRowStoch = 0 ; iRowStoch < stoch_length ; ++iRowStoch ) {
+      for ( size_t iRowFEM = 0 , iEntryFEM = 0 ; iRowFEM < fem_length ; ++iRowFEM ) {
+
+        for ( size_t iRowEntryFEM = 0 ; iRowEntryFEM < fem_graph[iRowFEM].size() ; ++iRowEntryFEM , ++iEntryFEM ) {
+
+          for ( size_t iColStoch = 0 ; iColStoch < stoch_length ; ++iColStoch ) {
+
+            const size_t offset = matrix.block.matrix_offset( iRowStoch , iColStoch );
+
+            hM( offset , iEntryFEM ) = 1.0 ;
+          }
+        }
+
+      }
+    }
+
+    Kokkos::deep_copy( matrix.values , hM );
+  }
+
+  //------------------------------
+
+  Kokkos::Impl::Timer clock ;
+  for ( int iter = 0 ; iter < iterCount ; ++iter ) {
+    Stokhos::multiply( matrix , x , y );
+  }
+  Device::fence();
+
+  const double seconds_per_iter = clock.seconds() / ((double) iterCount );
+  const double flops_per_block = 2.0*stoch_length*stoch_length;
+  const double flops = 1e-9*fem_graph_length*flops_per_block;
+
+  std::vector<double> perf(6);
+  perf[0] = fem_length * stoch_length ;
+  perf[1] = seconds_per_iter;
+  perf[2] = flops / seconds_per_iter;
+  perf[3] = Cijk->num_entries();
+  perf[4] = stoch_length;
+  perf[5] = flops_per_block;
+  return perf;
+}
+
+//----------------------------------------------------------------------------
+// Flatten to a plain CRS matrix
+//
+//  Outer DOF == fem
+//  Inner DOF == stochastic
+
+template< typename ScalarType , class Device >
+std::vector<double>
+test_product_flat_commuted_matrix(
+  const std::vector<int> & var_degree ,
+  const int nGrid ,
+  const int iterCount ,
+  const bool symmetric )
+{
+  typedef ScalarType value_type ;
+  typedef Kokkos::View< value_type[] , Device > vector_type ;
+
+  //------------------------------
+
+  typedef Stokhos::CrsMatrix<value_type,Device> matrix_type ;
+  typedef Kokkos::CrsArray<int,Device,void,int> crsarray_type ;
+
+  typedef ScalarType value_type ;
+  typedef Stokhos::OneDOrthogPolyBasis<int,value_type> abstract_basis_type;
+  typedef Stokhos::JacobiBasis<int,value_type> basis_type;
+  typedef Stokhos::LexographicLess<Stokhos::MultiIndex<int> > order_type;
+  typedef Stokhos::TotalOrderBasis<int,value_type,order_type> product_basis_type;
+  typedef Stokhos::Sparse3Tensor<int,value_type> Cijk_type;
+
+  using Teuchos::rcp;
+  using Teuchos::RCP;
+  using Teuchos::Array;
+
+  // Create Stochastic Galerkin basis and expansion
+  const size_t num_KL = var_degree.size();
+  Array< RCP<const abstract_basis_type> > bases(num_KL);
+  for (size_t i=0; i<num_KL; i++) {
+    if (symmetric)
+      bases[i] = Teuchos::rcp(new basis_type(var_degree[i],1.0,1.0,true));
+    else
+      bases[i] = Teuchos::rcp(new basis_type(var_degree[i],1.0,2.0,true));
+  }
+  RCP<const product_basis_type> basis =
+    rcp(new product_basis_type(
+          bases, ScalarTolerances<value_type>::sparse_cijk_tol()));
+  RCP<Cijk_type> Cijk = basis->computeTripleProductTensor();
+
+  //------------------------------
+  // Generate FEM graph:
+
+  std::vector< std::vector<size_t> > fem_graph ;
+
+  const size_t fem_length = nGrid * nGrid * nGrid ;
+
+  unit_test::generate_fem_graph( nGrid , fem_graph );
+
+  //------------------------------
+  // Stochastic graph
+
+  const size_t stoch_length = basis->size();
+  std::vector< std::vector< int > > stoch_graph( stoch_length );
+#if defined(HAVE_MPI) && 0
+    Epetra_MpiComm comm(MPI_COMM_WORLD);
+#else
+    Epetra_SerialComm comm;
+#endif
+  Teuchos::RCP<Epetra_CrsGraph> cijk_graph = Stokhos::sparse3Tensor2CrsGraph(
+    *basis, *Cijk, comm);
+  for ( size_t i = 0 ; i < stoch_length ; ++i ) {
+    int len = cijk_graph->NumGlobalIndices(i);
+    stoch_graph[i].resize(len);
+    int len2;
+    cijk_graph->ExtractGlobalRowCopy(i, len, len2, &stoch_graph[i][0]);
+  }
+
+  //------------------------------
+  // Generate flattened graph with FEM outer and stochastic inner
+
+  const size_t flat_length = fem_length * stoch_length ;
+
+  std::vector< std::vector<size_t> > flat_graph( flat_length );
+
+  for ( size_t iOuterRow = 0 ; iOuterRow < fem_length ; ++iOuterRow ) {
+
+    const size_t iOuterRowNZ = fem_graph[iOuterRow].size();
+
+    for ( size_t iInnerRow = 0 ; iInnerRow < stoch_length ; ++iInnerRow ) {
+
+      const size_t iInnerRowNZ = stoch_graph[ iInnerRow ].size(); ;
+      const size_t iFlatRowNZ  = iOuterRowNZ * iInnerRowNZ ;
+      const size_t iFlatRow    = iInnerRow + iOuterRow * stoch_length ;
+
+      flat_graph[iFlatRow].resize( iFlatRowNZ );
+
+      size_t iFlatEntry = 0 ;
+
+      for ( size_t iOuterEntry = 0 ; iOuterEntry < iOuterRowNZ ; ++iOuterEntry ) {
+
+        const size_t iOuterCol = fem_graph[iOuterRow][iOuterEntry];
+
+        for ( size_t iInnerEntry = 0 ; iInnerEntry < iInnerRowNZ ; ++iInnerEntry ) {
+
+          const size_t iInnerCol   = stoch_graph[iInnerRow][iInnerEntry] ;
+          const size_t iFlatColumn = iInnerCol + iOuterCol * stoch_length ;
+
+          flat_graph[iFlatRow][iFlatEntry] = iFlatColumn ;
+
+          ++iFlatEntry ;
+        }
+      }
+    }
+  }
+
+  //------------------------------
+
+  vector_type x = vector_type( "x" , flat_length );
+  vector_type y = vector_type( "y" , flat_length );
+
+  typename vector_type::HostMirror hx = Kokkos::create_mirror( x );
+
+  for ( size_t iCol = 0 ; iCol < flat_length ; ++iCol ) {
+    hx(iCol) = 1.0;
+  }
+
+  Kokkos::deep_copy( x , hx );
+
+  //------------------------------
+
+  matrix_type matrix ;
+
+  matrix.graph = Kokkos::create_crsarray<crsarray_type>(
+    std::string("testing") , flat_graph );
+
+  const size_t flat_graph_length = matrix.graph.entries.dimension_0();
+
+  matrix.values = vector_type( "matrix" , flat_graph_length );
+  {
+    typename vector_type::HostMirror hM =
+      Kokkos::create_mirror( matrix.values );
+
+    for ( size_t iRow = 0 , iEntry = 0 ; iRow < flat_length ; ++iRow ) {
+
+      for ( size_t iRowEntry = 0 ; iRowEntry < flat_graph[ iRow ].size() ; ++iRowEntry , ++iEntry ) {
+
+        hM( iEntry ) = 1.0 ;
+      }
+
+    }
+
+    Kokkos::deep_copy( matrix.values , hM );
+  }
+
+  //Kokkos::write_matrix_market(matrix, "flat_commuted.mm");
+
+  //------------------------------
+
+  Kokkos::Impl::Timer clock ;
+  for ( int iter = 0 ; iter < iterCount ; ++iter ) {
+    Stokhos::multiply( matrix , x , y );
+  }
+  Device::fence();
+
+  const double seconds_per_iter = clock.seconds() / ((double) iterCount );
+  const double flops = 2.0*1e-9*flat_graph_length / seconds_per_iter;
+
+  std::vector<double> perf(4);
+  perf[0] = flat_length ;
+  perf[1] = seconds_per_iter;
+  perf[2] = flops;
+  perf[3] = flat_graph_length ;
+  return perf;
+}
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+// Flatten to a plain CRS matrix
+//
+//  Outer DOF == stochastic
+//  Inner DOF == fem
+
+template< typename ScalarType , class Device >
+std::vector<double>
+test_product_flat_original_matrix(
+  const std::vector<int> & var_degree ,
+  const int nGrid ,
+  const int iterCount ,
+  const bool symmetric )
+{
+  typedef ScalarType value_type ;
+  typedef Kokkos::View< value_type[] , Device > vector_type ;
+
+  //------------------------------
+
+  typedef Stokhos::CrsMatrix<value_type,Device> matrix_type ;
+  typedef Kokkos::CrsArray<int,Device,void,int> crsarray_type ;
+
+  typedef ScalarType value_type ;
+  typedef Stokhos::OneDOrthogPolyBasis<int,value_type> abstract_basis_type;
+  typedef Stokhos::JacobiBasis<int,value_type> basis_type;
+  typedef Stokhos::LexographicLess<Stokhos::MultiIndex<int> > order_type;
+  typedef Stokhos::TotalOrderBasis<int,value_type,order_type> product_basis_type;
+  typedef Stokhos::Sparse3Tensor<int,value_type> Cijk_type;
+
+  using Teuchos::rcp;
+  using Teuchos::RCP;
+  using Teuchos::Array;
+
+  // Create Stochastic Galerkin basis and expansion
+  const size_t num_KL = var_degree.size();
+  Array< RCP<const abstract_basis_type> > bases(num_KL);
+  for (size_t i=0; i<num_KL; i++) {
+    if (symmetric)
+      bases[i] = Teuchos::rcp(new basis_type(var_degree[i],1.0,1.0,true));
+    else
+      bases[i] = Teuchos::rcp(new basis_type(var_degree[i],1.0,2.0,true));
+  }
+  RCP<const product_basis_type> basis =
+    rcp(new product_basis_type(
+          bases, ScalarTolerances<value_type>::sparse_cijk_tol()));
+  RCP<Cijk_type> Cijk = basis->computeTripleProductTensor();
+
+  //------------------------------
+  // Generate FEM graph:
+
+  std::vector< std::vector<size_t> > fem_graph ;
+
+  const size_t fem_length = nGrid * nGrid * nGrid ;
+
+  unit_test::generate_fem_graph( nGrid , fem_graph );
+
+  //------------------------------
+  // Stochastic graph
+
+  const size_t stoch_length = basis->size();
+  std::vector< std::vector< int > > stoch_graph( stoch_length );
+#if defined(HAVE_MPI) && 0
+    Epetra_MpiComm comm(MPI_COMM_WORLD);
+#else
+    Epetra_SerialComm comm;
+#endif
+  Teuchos::RCP<Epetra_CrsGraph> cijk_graph = Stokhos::sparse3Tensor2CrsGraph(
+    *basis, *Cijk, comm);
+  for ( size_t i = 0 ; i < stoch_length ; ++i ) {
+    int len = cijk_graph->NumGlobalIndices(i);
+    stoch_graph[i].resize(len);
+    int len2;
+    cijk_graph->ExtractGlobalRowCopy(i, len, len2, &stoch_graph[i][0]);
+  }
+
+  //------------------------------
+  // Generate flattened graph with stochastic outer and FEM inner
+
+  const size_t flat_length = fem_length * stoch_length ;
+
+  std::vector< std::vector<size_t> > flat_graph( flat_length );
+
+  for ( size_t iOuterRow = 0 ; iOuterRow < stoch_length ; ++iOuterRow ) {
+
+    const size_t iOuterRowNZ = stoch_graph[iOuterRow].size();
+
+    for ( size_t iInnerRow = 0 ; iInnerRow < fem_length ; ++iInnerRow ) {
+
+      const size_t iInnerRowNZ = fem_graph[iInnerRow].size();
+      const size_t iFlatRowNZ  = iOuterRowNZ * iInnerRowNZ ;
+      const size_t iFlatRow    = iInnerRow + iOuterRow * fem_length ;
+
+      flat_graph[iFlatRow].resize( iFlatRowNZ );
+
+      size_t iFlatEntry = 0 ;
+
+      for ( size_t iOuterEntry = 0 ; iOuterEntry < iOuterRowNZ ; ++iOuterEntry ) {
+
+        const size_t iOuterCol = stoch_graph[ iOuterRow ][ iOuterEntry ];
+
+        for ( size_t iInnerEntry = 0 ; iInnerEntry < iInnerRowNZ ; ++iInnerEntry ) {
+
+          const size_t iInnerCol   = fem_graph[ iInnerRow][iInnerEntry];
+          const size_t iFlatColumn = iInnerCol + iOuterCol * fem_length ;
+
+          flat_graph[iFlatRow][iFlatEntry] = iFlatColumn ;
+          ++iFlatEntry ;
+        }
+      }
+    }
+  }
+
+  //------------------------------
+
+  vector_type x = vector_type( "x" , flat_length );
+  vector_type y = vector_type( "y" , flat_length );
+
+  typename vector_type::HostMirror hx = Kokkos::create_mirror( x );
+
+  for ( size_t iCol = 0 ; iCol < flat_length ; ++iCol ) {
+    hx(iCol) = 1.0;
+  }
+
+  Kokkos::deep_copy( x , hx );
+
+  //------------------------------
+
+  matrix_type matrix ;
+
+  matrix.graph = Kokkos::create_crsarray<crsarray_type>( std::string("testing") , flat_graph );
+
+  const size_t flat_graph_length = matrix.graph.entries.dimension_0();
+
+  matrix.values = vector_type( "matrix" , flat_graph_length );
+  {
+    typename vector_type::HostMirror hM =
+      Kokkos::create_mirror( matrix.values );
+
+    for ( size_t iRow = 0 , iEntry = 0 ; iRow < flat_length ; ++iRow ) {
+
+      for ( size_t iRowEntry = 0 ; iRowEntry < flat_graph[ iRow ].size() ; ++iRowEntry , ++iEntry ) {
+
+        hM( iEntry ) = 1.0 ;
+
+      }
+
+    }
+
+    Kokkos::deep_copy( matrix.values , hM );
+  }
+
+  //Kokkos::write_matrix_market(matrix, "flat_original.mm");
+
+  //------------------------------
+
+  Kokkos::Impl::Timer clock ;
+  for ( int iter = 0 ; iter < iterCount ; ++iter ) {
+    Stokhos::multiply( matrix , x , y );
+  }
+  Device::fence();
+
+  const double seconds_per_iter = clock.seconds() / ((double) iterCount );
+  const double flops = 2.0*1e-9*flat_graph_length / seconds_per_iter;
+
+  std::vector<double> perf(4);
+  perf[0] = flat_length ;
+  perf[1] = seconds_per_iter;
+  perf[2] = flops;
+  perf[3] = flat_graph_length ;
+  return perf;
 }
 
 template< typename ScalarType , class Device >
@@ -760,6 +1239,104 @@ test_original_matrix_free_vec(
   return perf;
 }
 
+template< class Scalar, class Device >
+void performance_test_driver_all( const int pdeg ,
+                                  const int minvar ,
+                                  const int maxvar ,
+                                  const int nGrid ,
+                                  const int nIter ,
+                                  const bool test_block ,
+                                  const bool symmetric )
+{
+  //------------------------------
+  // Generate FEM graph:
+
+  std::vector< std::vector<size_t> > fem_graph ;
+
+  const size_t fem_nonzeros =
+    unit_test::generate_fem_graph( nGrid , fem_graph );
+
+  //------------------------------
+
+  std::cout.precision(8);
+
+  //------------------------------
+
+  std::cout << std::endl << "\"FEM NNZ = " << fem_nonzeros << "\"" << std::endl;
+
+  std::cout << std::endl
+            << "\"#nGrid\" , "
+            << "\"#Variable\" , "
+            << "\"PolyDegree\" , "
+            << "\"#Bases\" , "
+            << "\"#TensorEntry\" , "
+            << "\"VectorSize\" , "
+            << "\"Original-Flat MXV-Time\" , "
+            << "\"Original-Flat MXV-Speedup\" , "
+            << "\"Original-Flat MXV-GFLOPS\" , "
+            << "\"Commuted-Flat MXV-Speedup\" , "
+            << "\"Commuted-Flat MXV-GFLOPS\" , "
+            << "\"Block-Diagonal MXV-Speedup\" , "
+            << "\"Block-Diagonal MXV-GFLOPS\" , "
+            << "\"Block-Crs-Tensor MXV-Speedup\" , "
+            << "\"Block-Crs-Tensor MXV-GFLOPS\" , "
+            << std::endl ;
+
+  for ( int nvar = minvar ; nvar <= maxvar ; ++nvar ) {
+
+    std::vector<int> var_degree( nvar , pdeg );
+
+    //------------------------------
+
+    const std::vector<double> perf_flat_original =
+      test_product_flat_original_matrix<Scalar,Device>(
+        var_degree , nGrid , nIter , symmetric );
+
+    const std::vector<double> perf_flat_commuted =
+      test_product_flat_commuted_matrix<Scalar,Device>(
+        var_degree , nGrid , nIter , symmetric );
+
+    const std::vector<double> perf_matrix =
+      test_product_tensor_diagonal_matrix<Scalar,Device>(
+        var_degree , nGrid , nIter , symmetric );
+
+    const std::vector<double> perf_crs_tensor =
+      test_product_tensor_matrix<Scalar,Stokhos::CrsProductTensor<Scalar,Device>,Device>(
+        var_degree , nGrid , nIter , symmetric );
+
+    if ( perf_flat_commuted[0] != perf_flat_original[0] ||
+         perf_flat_commuted[3] != perf_flat_original[3] ) {
+      std::cout << "ERROR: Original and commuted matrix sizes do not match"
+                << std::endl
+                << "  original size = " << perf_flat_original[0]
+                << " , nonzero = " << perf_flat_original[3]
+                << std::endl
+                << "  commuted size = " << perf_flat_commuted[0]
+                << " , nonzero = " << perf_flat_commuted[3]
+                << std::endl ;
+    }
+
+    std::cout << nGrid << " , "
+              << nvar << " , "
+              << pdeg << " , "
+              << perf_crs_tensor[4] << " , "
+              << perf_crs_tensor[3] << " , "
+              << perf_flat_original[0] << " , "
+              << perf_flat_original[1] << " , "
+              << perf_flat_original[1] / perf_flat_original[1] << " , "
+              << perf_flat_original[2] << " , "
+              << perf_flat_original[1] / perf_flat_commuted[1] << " , "
+              << perf_flat_commuted[2] << " , "
+              << perf_flat_original[1] / perf_matrix[1] << " , "
+              << perf_matrix[2] << " , "
+              << perf_flat_original[1] / perf_crs_tensor[1] << " , "
+              << perf_crs_tensor[2] << " , "
+              << std::endl ;
+  }
+
+  //------------------------------
+}
+
 template< class Scalar, class Device , class SparseMatOps >
 void performance_test_driver_poly( const int pdeg ,
                                    const int minvar ,
@@ -769,9 +1346,6 @@ void performance_test_driver_poly( const int pdeg ,
                                    const bool test_block ,
                                    const bool symmetric )
 {
-  // bool do_flat_sparse =
-  //   Kokkos::Impl::is_same<Device,Kokkos::Host>::value ;
-
   std::cout.precision(8);
 
   //------------------------------
@@ -793,6 +1367,8 @@ void performance_test_driver_poly( const int pdeg ,
             << "\"Original-Matrix-Free-Block-MXV-GFLOPS\" , "
             << "\"Block-Crs-Tensor MXV-Speedup\" , "
             << "\"Block-Crs-Tensor MXV-GFLOPS\" , "
+            << "\"Block-Coo-Tensor MXV-Speedup\" , "
+            << "\"Block-Coo-Tensor MXV-GFLOPS\" , "
             // << "\"Block-Tiled Crs-Tensor MXV-Speedup\" , "
             // << "\"Block-Tiled Crs-3-Tensor MXV-GFLOPS\" , "
             << std::endl ;
@@ -802,6 +1378,11 @@ void performance_test_driver_poly( const int pdeg ,
 
     const std::vector<double> perf_crs_tensor =
       test_product_tensor_matrix<Scalar,Stokhos::CrsProductTensor<Scalar,Device>,Device>(
+        var_degree , nGrid , nIter , symmetric );
+
+    const bool Pack = Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value;
+    const std::vector<double> perf_coo_tensor =
+      test_product_tensor_matrix<Scalar,Stokhos::CooProductTensor<Scalar,Device,Pack>,Device>(
         var_degree , nGrid , nIter , symmetric );
 
     // const std::vector<double> perf_tiled_crs_tensor =
@@ -819,11 +1400,13 @@ void performance_test_driver_poly( const int pdeg ,
               << perf_crs_tensor[3] << " , "
               << perf_original_mat_free_block[0] << " , "
               << perf_original_mat_free_block[1] << " , "
-              << perf_original_mat_free_block[1] / perf_original_mat_free_block[1] << " , "
+              << perf_original_mat_free_block[1] /
+                 perf_original_mat_free_block[1] << " , "
               << perf_original_mat_free_block[2] << " , "
               << perf_original_mat_free_block[1] / perf_crs_tensor[1] << " , "
-              // << perf_crs_tensor[1] << " , "
               << perf_crs_tensor[2] << " , "
+              << perf_original_mat_free_block[1] / perf_coo_tensor[1] << " , "
+              << perf_coo_tensor[2] << " , "
               // << perf_original_mat_free_block[1] / perf_tiled_crs_tensor[1] << " , "
               // << perf_tiled_crs_tensor[2]
               << std::endl ;
@@ -842,7 +1425,7 @@ void performance_test_driver_poly_deg( const int nvar ,
                                        const bool symmetric )
 {
   bool do_flat_sparse =
-    Kokkos::Impl::is_same<Device,Kokkos::Host>::value ;
+    Kokkos::Impl::is_same<Device,Kokkos::Threads>::value ;
 
   std::cout.precision(8);
 

@@ -43,7 +43,7 @@ namespace MLAPI {
   //! Creates a matrix using the TRIUTILS gallery.
   // ====================================================================== 
   
-  Operator Gallery(const string ProblemType, const Space& MySpace);
+  Operator Gallery(const std::string ProblemType, const Space& MySpace);
 
   // ====================================================================== 
   //! Creates a 1D shifted Laplacian.

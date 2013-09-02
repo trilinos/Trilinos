@@ -99,8 +99,8 @@ namespace MueLu {
 
       {
         SubFactoryMonitor subM(*this, "MxM: K x P", coarseLevel);
-        KP = Utils::Multiply(*K, false, *P, false, KP);
-        MP = Utils::Multiply(*M, false, *P, false, MP);
+        KP = Utils::Multiply(*K, false, *P, false, KP, GetOStream(Statistics2, 0));
+        MP = Utils::Multiply(*M, false, *P, false, MP, GetOStream(Statistics2, 0));
         Set(coarseLevel, "AP Pattern", KP);
       }
 
@@ -114,22 +114,23 @@ namespace MueLu {
       //     if (IsAvailable(coarseLevel, "RAP Pattern"))
       // Ac = Get< RCP<Matrix> >(coarseLevel, "RAP Pattern");
 
+      bool doFillComplete=true;
       if (implicitTranspose_) {
         SubFactoryMonitor m2(*this, "MxM: P' x (KP) (implicit)", coarseLevel);
-        Kc = Utils::Multiply(*P, true, *KP, false, Kc, true, doOptimizedStorage);
-        Mc = Utils::Multiply(*P, true, *MP, false, Mc, true, doOptimizedStorage);
+        Kc = Utils::Multiply(*P, true, *KP, false, Kc, GetOStream(Statistics2, 0), doFillComplete, doOptimizedStorage);
+        Mc = Utils::Multiply(*P, true, *MP, false, Mc, GetOStream(Statistics2, 0), doFillComplete, doOptimizedStorage);
       }
       else {
         RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
         SubFactoryMonitor m2(*this, "MxM: R x (KP) (explicit)", coarseLevel);
-        Kc = Utils::Multiply(*R, false, *KP, false, Kc, true, doOptimizedStorage);
-        Mc = Utils::Multiply(*R, false, *MP, false, Mc, true, doOptimizedStorage);
+        Kc = Utils::Multiply(*R, false, *KP, false, Kc, GetOStream(Statistics2, 0), doFillComplete, doOptimizedStorage);
+        Mc = Utils::Multiply(*R, false, *MP, false, Mc, GetOStream(Statistics2, 0), doFillComplete, doOptimizedStorage);
       }
 
       // recombine to get K+shift*M
       int level     = coarseLevel.GetLevelID();
       Scalar shift  = shifts_[level];
-      Utils2::TwoMatrixAdd(*Kc, false, (Scalar) 1.0, *Mc, false, shift, Ac);
+      Utils2::TwoMatrixAdd(*Kc, false, (Scalar) 1.0, *Mc, false, shift, Ac, GetOStream(Statistics2, 0));
       Ac->fillComplete();
 
       if (checkAc_)

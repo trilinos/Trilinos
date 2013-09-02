@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -120,7 +120,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Traits, IsADType, vector2_type )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, Value, vector2_type, double )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, ScalarValue, vector2_type, double )
 
-// 
+//
 // Sacado::ETPCE::OrthogPoly
 //
 typedef Sacado::ETPCE::OrthogPoly<double,storage_type> pce_type;
@@ -141,7 +141,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, ScalarValue, pce_expr_type, double
 // Sacado::MP::Vector
 //
 #ifdef HAVE_STOKHOS_KOKKOSCORE
-typedef Kokkos::Host node_type;
+typedef Kokkos::Threads node_type;
 typedef Stokhos::DynamicStorage<int,double,node_type> kokkos_storage_type;
 typedef Sacado::MP::Vector<kokkos_storage_type,node_type> mp_type;
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, ScalarType, mp_type, double )

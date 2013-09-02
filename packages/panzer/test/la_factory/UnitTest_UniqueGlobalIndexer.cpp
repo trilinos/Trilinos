@@ -42,6 +42,8 @@
 
 #include "UnitTest_UniqueGlobalIndexer.hpp"
 
+#include "Panzer_Traits.hpp"
+
 namespace panzer {
 namespace unit_test {
 
@@ -527,15 +529,15 @@ const std::vector<LocalOrdinalT> & BlockUniqueGlobalIndexer<LocalOrdinalT,Global
 }
 
 template class UniqueGlobalIndexer<int,int>;
-template class UniqueGlobalIndexer<int,long>;
+template class UniqueGlobalIndexer<int,panzer::Ordinal64>;
 template class UniqueGlobalIndexer<short,int>;
 
 template class UniqueGlobalIndexer_Element<int,int>;
-template class UniqueGlobalIndexer_Element<int,long>;
+template class UniqueGlobalIndexer_Element<int,panzer::Ordinal64>;
 template class UniqueGlobalIndexer_Element<short,int>;
 
 template class BlockUniqueGlobalIndexer<int,int>;
-template class BlockUniqueGlobalIndexer<int,long>;
+template class BlockUniqueGlobalIndexer<int,panzer::Ordinal64>;
 template class BlockUniqueGlobalIndexer<short,int>;
 
 

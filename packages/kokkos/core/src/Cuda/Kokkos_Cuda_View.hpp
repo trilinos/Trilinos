@@ -95,7 +95,7 @@ inline
 void deep_copy( ValueType & dst ,
                 const View< ValueType , LayoutSrc , Cuda , MemoryTraits , Impl::LayoutScalar > & src )
 {
-  (void)DeepCopy<HostSpace,CudaSpace>( & dst , src.ptr_on_device() , sizeof(ValueType) );
+  (void)Impl::DeepCopy<HostSpace,CudaSpace>( & dst , src.ptr_on_device() , sizeof(ValueType) );
 }
 
 template< typename ValueType , class LayoutDst , class MemoryTraits >
@@ -103,7 +103,7 @@ inline
 void deep_copy( const View< ValueType , LayoutDst , Cuda , MemoryTraits , Impl::LayoutScalar > & dst ,
                 const ValueType & src )
 {
-  (void)DeepCopy<CudaSpace,HostSpace>( dst.ptr_on_device() , & src , sizeof(ValueType) );
+  (void)Impl::DeepCopy<CudaSpace,HostSpace>( dst.ptr_on_device() , & src , sizeof(ValueType) );
 }
 
 } // namespace Kokkos
@@ -430,6 +430,19 @@ struct ViewSpecialize< const ScalarType , const ScalarType ,
                        CudaSpace , MemoryRandomRead >
 { typedef CudaTexture type ; };
 
+/** \brief Scalar View matching **/
+template< typename ScalarType >
+struct ViewSpecialize< const ScalarType , const ScalarType ,
+                       LayoutLeft , unsigned_<0> , unsigned_<0> ,
+                       CudaSpace , MemoryRandomRead >
+{ typedef CudaTexture type ; };
+
+template< typename ScalarType >
+struct ViewSpecialize< const ScalarType , const ScalarType ,
+                       LayoutRight , unsigned_<0> , unsigned_<0> ,
+                       CudaSpace , MemoryRandomRead >
+{ typedef CudaTexture type ; };
+
 #endif
 
 //----------------------------------------------------------------------------
@@ -445,15 +458,8 @@ struct ViewAssignment< CudaTexture , CudaTexture , void >
   ViewAssignment(       View<DT,DL,DD,DM,CudaTexture> & dst ,
                   const View<ST,SL,SD,SM,CudaTexture> & src ,
                   const typename enable_if<(
-                    ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                     ViewTraits<ST,SL,SD,SM> >::value
-                    &&
-                    ShapeCompatible< typename ViewTraits<DT,DL,DD,DM>::shape_type ,
-                                     typename ViewTraits<ST,SL,SD,SM>::shape_type >::value
-                    &&
-                    is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout ,
-                             typename ViewTraits<ST,SL,SD,SM>::array_layout >::value
-                  )>::type * = 0 )
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
+                  ) >::type * = 0 )
   {
     typedef View<DT,DL,DD,DM,CudaTexture> DstViewType ;
 
@@ -482,27 +488,22 @@ struct ViewAssignment< CudaTexture , LayoutDefault , void >
   ViewAssignment(       View<DT,DL,DD,DM,CudaTexture> & dst ,
                   const View<ST,SL,SD,SM,LayoutDefault> & src ,
                   const typename enable_if<(
-                    ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                     ViewTraits<ST,SL,SD,SM> >::value
-                    &&
-                    ShapeCompatible< typename ViewTraits<DT,DL,DD,DM>::shape_type ,
-                                     typename ViewTraits<ST,SL,SD,SM>::shape_type >::value
-                    &&
-                    is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout ,
-                             typename ViewTraits<ST,SL,SD,SM>::array_layout >::value
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
                   )>::type * = 0 )
   {
     typedef View<DT,DL,DD,DM,CudaTexture> DstViewType ;
 
     typedef typename DstViewType::shape_type  shape_type ;
     typedef typename DstViewType::scalar_type scalar_type ;
+    typedef typename DstViewType::stride_type stride_type ;
 
     dst.m_texture = CudaTextureFetch< scalar_type >( src.m_ptr_on_device );
-    dst.m_stride  = src.m_stride ;
 
     shape_type::assign( dst.m_shape,
                         src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
                         src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
+
+    stride_type::assign( dst.m_stride , src.m_stride.value );
   }
 };
 
@@ -527,11 +528,12 @@ private:
 
   template< class , class , class > friend struct Impl::ViewAssignment ;
 
+  typedef Impl::LayoutStride< typename traits::shape_type ,
+                              typename traits::array_layout > stride_type ;
+
   Impl::CudaTextureFetch<typename traits::scalar_type > m_texture ;
   typename traits::shape_type           m_shape ;
-  unsigned                              m_stride ;
-  enum { m_stride_static = Impl::StaticStride<typename traits::shape_type,
-	                                          typename traits::array_layout >::Stride};
+  stride_type                           m_stride ;
 
 public:
 
@@ -544,7 +546,7 @@ public:
 
   typedef View< typename traits::non_const_data_type ,
                 typename traits::array_layout ,
-                Host ,
+                typename traits::device_type::host_mirror_device_type ,
                 void > HostMirror ;
 
   enum { Rank = traits::rank };
@@ -558,6 +560,18 @@ public:
   KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_5() const { return m_shape.N5 ; }
   KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_6() const { return m_shape.N6 ; }
   KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_7() const { return m_shape.N7 ; }
+  KOKKOS_INLINE_FUNCTION typename traits::size_type size() const
+  {
+    return   m_shape.N0
+           * m_shape.N1
+           * m_shape.N2
+           * m_shape.N3
+           * m_shape.N4
+           * m_shape.N5
+           * m_shape.N6
+           * m_shape.N7
+           ;
+  }
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION
@@ -566,8 +580,11 @@ public:
 
   //------------------------------------
 
-  View() : m_texture(), m_stride(0)
-   { traits::shape_type::assign(m_shape,0,0,0,0,0,0,0,0); }
+  View() : m_texture()
+   {
+     traits::shape_type::assign(m_shape,0,0,0,0,0,0,0,0);
+     stride_type::assign( m_stride , 0 );
+   }
 
   ~View() {}
 
@@ -584,7 +601,7 @@ public:
 
   template< class RT , class RL, class RD , class RM , class RS >
   View( const View<RT,RL,RD,RM,RS> & rhs )
-    : m_texture(0), m_stride(0)
+    : m_texture(0)
     {
       Impl::ViewAssignment< Impl::CudaTexture , RS >( *this , rhs );
     }
@@ -658,7 +675,7 @@ public:
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * i1 ];
+      return m_texture[ i0 + m_stride.value * i1 ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 >
@@ -671,7 +688,7 @@ public:
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
+      return m_texture[ i0 + m_stride.value * (
                         i1 + m_shape.N1 * i2 ) ];
     }
 
@@ -685,7 +702,7 @@ public:
       KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
+      return m_texture[ i0 + m_stride.value * (
                         i1 + m_shape.N1 * (
                         i2 + m_shape.N2 * i3 )) ];
     }
@@ -702,7 +719,7 @@ public:
       KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
+      return m_texture[ i0 + m_stride.value * (
                         i1 + m_shape.N1 * (
                         i2 + m_shape.N2 * (
                         i3 + m_shape.N3 * i4 ))) ];
@@ -720,7 +737,7 @@ public:
       KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
+      return m_texture[ i0 + m_stride.value * (
                         i1 + m_shape.N1 * (
                         i2 + m_shape.N2 * (
                         i3 + m_shape.N3 * (
@@ -739,7 +756,7 @@ public:
       KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
+      return m_texture[ i0 + m_stride.value * (
                         i1 + m_shape.N1 * (
                         i2 + m_shape.N2 * (
                         i3 + m_shape.N3 * (
@@ -759,7 +776,7 @@ public:
       KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0,i1,i2,i3,i4,i5,i6,i7 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ i0 + (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) * (
+      return m_texture[ i0 + m_stride.value * (
                         i1 + m_shape.N1 * (
                         i2 + m_shape.N2 * (
                         i3 + m_shape.N3 * (
@@ -783,7 +800,7 @@ public:
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ i1 + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
+      return m_texture[ i1 + i0 * m_stride.value ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 >
@@ -796,7 +813,7 @@ public:
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ i2 + m_shape.N2 * i1 + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
+      return m_texture[ i2 + m_shape.N2 * i1 + i0 * m_stride.value ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
@@ -811,7 +828,7 @@ public:
 
       return m_texture[ i3 + m_shape.N3 * (
                         i2 + m_shape.N2 * (
-                        i1 )) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
+                        i1 )) + i0 * m_stride.value ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -829,7 +846,7 @@ public:
       return m_texture[ i4 + m_shape.N4 * (
                         i3 + m_shape.N3 * (
                         i2 + m_shape.N2 * (
-                        i1 ))) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
+                        i1 ))) + i0 * m_stride.value ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -848,7 +865,7 @@ public:
                         i4 + m_shape.N4 * (
                         i3 + m_shape.N3 * (
                         i2 + m_shape.N2 * (
-                        i1 )))) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
+                        i1 )))) + i0 * m_stride.value ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -868,7 +885,7 @@ public:
                         i4 + m_shape.N4 * (
                         i3 + m_shape.N3 * (
                         i2 + m_shape.N2 * (
-                        i1 ))))) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
+                        i1 ))))) + i0 * m_stride.value ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -889,7 +906,7 @@ public:
                         i4 + m_shape.N4 * (
                         i3 + m_shape.N3 * (
                         i2 + m_shape.N2 * (
-                        i1 )))))) + i0 * (m_stride_static==0?m_stride:static_cast<unsigned>(m_stride_static)) ];
+                        i1 )))))) + i0 * m_stride.value ];
     }
 
   //------------------------------------
@@ -909,11 +926,11 @@ public:
     }
     else if ( is_left ) {
       s[0] = 1 ;
-      s[1] = m_stride ;
+      s[1] = m_stride.value ;
       for ( int i = 2 ; i < Rank ; ++i ) { s[i] = s[i-1] * dimension(i-1); }
     }
     else {
-      s[0] = m_stride ;
+      s[0] = m_stride.value ;
       s[Rank-1] = 1 ;
       for ( int i = Rank - 2 ; 0 < i ; --i ) { s[i] = s[i+1] * dimension(i+1); }
     }

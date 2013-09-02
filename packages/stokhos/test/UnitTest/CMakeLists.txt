@@ -238,7 +238,7 @@ ENDIF()
 
 IF(Stokhos_ENABLE_Sacado)
 
-  INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/../sacado/test/utils)
+  INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/../sacado/test/utils)
 
   SET(UTILS_SOURCES
     ${PACKAGE_SOURCE_DIR}/../sacado/test/utils/Sacado_Random.hpp
@@ -343,10 +343,10 @@ IF(Stokhos_ENABLE_Sacado)
       )
 
     SET(CUDA_SOURCES "")
-    SET(KKUT_DEPLIBS stokhos kokkosarray_impl kokkosarray_devicehost)
+    SET(KKUT_DEPLIBS stokhos kokkoscore_impl)
     IF (Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
       CUDA_COMPILE(CUDA_SOURCES Stokhos_KokkosArrayKernelsUnitTestNew_Cuda.cu)
-      SET(KKUT_DEPLIBS ${KKUT_DEPLIBS} kokkosarray_devicecuda)
+      SET(KKUT_DEPLIBS ${KKUT_DEPLIBS} kokkoscore_devicecuda)
     ENDIF()
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       KokkosArrayKernelsUnitTestNew
@@ -359,24 +359,6 @@ IF(Stokhos_ENABLE_Sacado)
       DEPLIBS ${KKUT_DEPLIBS}
       )
 
-    # SET(KOKKOS_ARRAY_UQ ${CMAKE_CURRENT_SOURCE_DIR}/../../../kokkos/array/research/uq_on_gpgpu/src)
-  #   INCLUDE_DIRECTORIES(${KOKKOS_ARRAY_UQ})
-  #   SET(CUDA_SOURCES "")
-  #   IF (Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_DeviceCuda)
-  #     CUDA_COMPILE(CUDA_SOURCES Stokhos_KokkosCoreKernelsUnitTest_Cuda.cu)
-  #   ENDIF()
-  #   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  #     KokkosCoreKernelsUnitTest
-  #     SOURCES Stokhos_KokkosCoreKernelsUnitTest.hpp
-  #             Stokhos_KokkosCoreKernelsUnitTest.cpp
-  #             ${KOKKOS_ARRAY_UQ}/impl/Kokkos_LegendrePolynomial.cpp
-  #             ${KOKKOS_ARRAY_UQ}/impl/Kokkos_ProductTensorLegendre.cpp
-  #             ${CUDA_SOURCES}
-  #     COMM serial mpi
-  #     STANDARD_PASS_OUTPUT
-  #     NUM_MPI_PROCS 1
-  #     DEPLIBS ${KKUT_DEPLIBS}
-  #     )
   ENDIF()
 
 ENDIF()

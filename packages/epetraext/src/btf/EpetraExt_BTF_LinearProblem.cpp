@@ -54,6 +54,8 @@
 using std::vector;
 using std::map;
 using std::set;
+using std::cout;
+using std::endl;
 
 #define MATTRANS_F77 F77_FUNC(mattrans,MATTRANS)
 #define GENBTF_F77   F77_FUNC(genbtf,GENBTF)

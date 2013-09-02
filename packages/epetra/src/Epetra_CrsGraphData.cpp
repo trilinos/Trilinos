@@ -119,7 +119,7 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV, const Epetra_Bloc
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   LL_data = new IndexData<long long>(RowMap.GlobalIndicesLongLong() ? NumMyBlockRows_ : 0, ! StaticProfile);
 #endif
-  //cout << "--CRSGD created(rowmap ctr), addr: " << this << endl; //DATA_DEBUG
+  //cout << "--CRSGD created(rowmap ctr), addr: " << this << std::endl; //DATA_DEBUG
 }
 
 //=============================================================================
@@ -196,7 +196,7 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV,
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   LL_data = new IndexData<long long>(RowMap.GlobalIndicesLongLong() ? NumMyBlockRows_ : 0, ! StaticProfile);
 #endif
-  //cout << "--CRSGD created(rowmap&colmap ctr), addr: " << this << endl; //DATA_DEBUG
+  //cout << "--CRSGD created(rowmap&colmap ctr), addr: " << this << std::endl; //DATA_DEBUG
 }
 
 //=============================================================================
@@ -250,7 +250,7 @@ Epetra_CrsGraphData::~Epetra_CrsGraphData() {
   Filled_ = false;      // they're about to go out of scope, after all
   Allocated_ = false;
 
-  //cout << "--CRSGD destroyed, addr: " << this << endl; //DATA_DEBUG
+  //cout << "--CRSGD destroyed, addr: " << this << std::endl; //DATA_DEBUG
 }
 
 //==========================================================================
@@ -289,36 +289,36 @@ int Epetra_CrsGraphData::ReAllocateAndCast(char*& UserPtr, int& Length, const in
 }
 
 //==========================================================================
-void Epetra_CrsGraphData::Print(ostream& os, int level) const {
+void Epetra_CrsGraphData::Print(std::ostream& os, int level) const {
   bool four_bit = (level >= 4);      // 4-bit = BlockMaps
   bool two_bit = ((level % 4) >= 2); // 2-bit = Indices
   bool one_bit = ((level % 2) == 1); // 1-bit = Everything else
 
-  os << "\n***** CrsGraphData (output level " << level << ") *****" << endl;
+  os << "\n***** CrsGraphData (output level " << level << ") *****" << std::endl;
 
   if(four_bit) {
-    os << "RowMap_:\n" << RowMap_ << endl;
-    os << "ColMap_:\n" << ColMap_ << endl;
-    os << "DomainMap_:\n" << DomainMap_ << endl;
-    os << "RangeMap_:\n" << RangeMap_ << endl;
+    os << "RowMap_:\n" << RowMap_ << std::endl;
+    os << "ColMap_:\n" << ColMap_ << std::endl;
+    os << "DomainMap_:\n" << DomainMap_ << std::endl;
+    os << "RangeMap_:\n" << RangeMap_ << std::endl;
   }
   
   if(one_bit) {
     os.width(26); os << "HaveColMap_: "              << HaveColMap_;
     os.width(25); os << "Filled_: "                  << Filled_;
     os.width(25); os << "Allocated_: "               << Allocated_;
-    os.width(25); os << "Sorted_: "                  << Sorted_ << endl;
+    os.width(25); os << "Sorted_: "                  << Sorted_ << std::endl;
     os.width(26); os << "StorageOptimized_: "        << StorageOptimized_;
     os.width(25); os << "SortGhostsAssociatedWithEachProcessor_: " << SortGhostsAssociatedWithEachProcessor_;
     os.width(25); os << "NoRedundancies_: "          << NoRedundancies_;
     os.width(25); os << "IndicesAreGlobal_: "        << IndicesAreGlobal_;
-    os.width(25); os << "IndicesAreLocal_: "         << IndicesAreLocal_ << endl;
+    os.width(25); os << "IndicesAreLocal_: "         << IndicesAreLocal_ << std::endl;
     os.width(26); os << "IndicesAreContiguous_: "    << IndicesAreContiguous_;
     os.width(25); os << "LowerTriangular_: "         << LowerTriangular_;
     os.width(25); os << "UpperTriangular_: "         << UpperTriangular_;
-    os.width(25); os << "NoDiagonal_: "              << NoDiagonal_ << endl;
-    os.width(25); os << "GlobalConstantsComputed_: " << GlobalConstantsComputed_ << endl;
-    os.width(25); os << "StaticProfile_: " << StaticProfile_ << endl << endl;
+    os.width(25); os << "NoDiagonal_: "              << NoDiagonal_ << std::endl;
+    os.width(25); os << "GlobalConstantsComputed_: " << GlobalConstantsComputed_ << std::endl;
+    os.width(25); os << "StaticProfile_: " << StaticProfile_ << std::endl << std::endl;
     
     os.width(10); os << "NGBR_: " << NumGlobalBlockRows_;
     os.width(10); os << "NGBC_: " << NumGlobalBlockCols_;
@@ -328,7 +328,7 @@ void Epetra_CrsGraphData::Print(ostream& os, int level) const {
     os.width(10); os << "NGC_: "  << NumGlobalCols_;
     os.width(10); os << "NGD_: "  << NumGlobalDiagonals_;
     os.width(10); os << "NGN_: "  << NumGlobalNonzeros_;
-    os.width(10); os << "IB_: "   << IndexBase_ << endl;
+    os.width(10); os << "IB_: "   << IndexBase_ << std::endl;
     os.width(10); os << "GMRD_: " << GlobalMaxRowDim_;
     os.width(11); os << "GMCD_: " << GlobalMaxColDim_;
     os.width(11); os << "GMNI_: " << GlobalMaxNumIndices_;
@@ -337,7 +337,7 @@ void Epetra_CrsGraphData::Print(ostream& os, int level) const {
     os.width(10); os << "NMBD_: " << NumMyBlockDiagonals_;
     os.width(10); os << "NME_: "  << NumMyEntries_;
     os.width(10); os << "NMR_: "  << NumMyRows_;
-    os.width(10); os << "CV_: " << CV_ << endl;
+    os.width(10); os << "CV_: " << CV_ << std::endl;
     os.width(10); os << "NMC_: "  << NumMyCols_;
     os.width(10); os << "NMD_: "  << NumMyDiagonals_;
     os.width(10); os << "NMN_: "  << NumMyNonzeros_;
@@ -346,17 +346,17 @@ void Epetra_CrsGraphData::Print(ostream& os, int level) const {
     os.width(11); os << "MNI_: "  << MaxNumIndices_;
     os.width(11); os << "MNN_: "  << MaxNumNonzeros_;
     os.width(11); os << "GMNN_: " << GlobalMaxNumNonzeros_;
-    os.width(11); os << "RC: " << ReferenceCount() << endl << endl;
+    os.width(11); os << "RC: " << ReferenceCount() << std::endl << std::endl;
     
-    os << "NIPR_: " << NumIndicesPerRow_ << endl;
-    os << "NAIPR_: " << NumAllocatedIndicesPerRow_ << endl;
-    os << "IndexOffset_: " << IndexOffset_ << endl;
+    os << "NIPR_: " << NumIndicesPerRow_ << std::endl;
+    os << "NAIPR_: " << NumAllocatedIndicesPerRow_ << std::endl;
+    os << "IndexOffset_: " << IndexOffset_ << std::endl;
   if(RowMap_.GlobalIndicesInt() || (RowMap_.GlobalIndicesLongLong() && IndicesAreLocal_))
-      os << "All_Indices_: " << data->All_Indices_ << endl;
+      os << "All_Indices_: " << data->All_Indices_ << std::endl;
 
   if(RowMap_.GlobalIndicesLongLong() && IndicesAreGlobal_)
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-      os << "All_Indices_: " << LL_data->All_Indices_ << endl;
+      os << "All_Indices_: " << LL_data->All_Indices_ << std::endl;
 #else
       throw "Epetra_CrsGraphData::Print: GlobalIndicesLongLong but no long long API";
 #endif
@@ -365,7 +365,7 @@ void Epetra_CrsGraphData::Print(ostream& os, int level) const {
   if(two_bit) {
   if(RowMap_.GlobalIndicesInt() || (RowMap_.GlobalIndicesLongLong() && IndicesAreLocal_))
   {
-      os << "Indices_: " << data->Indices_ << endl;
+      os << "Indices_: " << data->Indices_ << std::endl;
     if(data->Indices_ != 0) {
         for(int i = 0; i < NumMyBlockRows_; i++) {
     os << "Indices_[" << i << "]: (" << data->Indices_[i] << ") ";
@@ -373,7 +373,7 @@ void Epetra_CrsGraphData::Print(ostream& os, int level) const {
       for(int j = 0; j < NumAllocatedIndicesPerRow_[i]; j++)
         os << data->Indices_[i][j] << " ";
     }
-    os << endl;
+    os << std::endl;
       }
    }
   }
@@ -381,7 +381,7 @@ void Epetra_CrsGraphData::Print(ostream& os, int level) const {
   if(RowMap_.GlobalIndicesLongLong() && IndicesAreGlobal_)
   {
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-      os << "Indices_: " << LL_data->Indices_ << endl;
+      os << "Indices_: " << LL_data->Indices_ << std::endl;
     if(LL_data->Indices_ != 0) {
         for(int i = 0; i < NumMyBlockRows_; i++) {
     os << "Indices_[" << i << "]: (" << LL_data->Indices_[i] << ") ";
@@ -389,7 +389,7 @@ void Epetra_CrsGraphData::Print(ostream& os, int level) const {
       for(int j = 0; j < NumAllocatedIndicesPerRow_[i]; j++)
         os << LL_data->Indices_[i][j] << " ";
     }
-    os << endl;
+    os << std::endl;
       }
   }
 #else
@@ -398,7 +398,7 @@ void Epetra_CrsGraphData::Print(ostream& os, int level) const {
    }
   }
   
-  os << "***** End CrsGraphData *****" << endl;
+  os << "***** End CrsGraphData *****" << std::endl;
 }
 
 

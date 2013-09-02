@@ -211,14 +211,14 @@ int main(int argc, char *argv[])
 
   // passing check
   if(total_norm > 1e-15){
-    if (Comm.MyPID()==0) cout << "EpetraExt:: PointToBlockDiagPermute tests FAILED (||res||="<<total_norm<<")." << endl;
+    if (Comm.MyPID()==0) std::cout << "EpetraExt:: PointToBlockDiagPermute tests FAILED (||res||="<<total_norm<<")." << std::endl;
 #ifdef EPETRA_MPI
     MPI_Finalize() ;
 #endif
     return -1;
   }
   else{
-    if (Comm.MyPID()==0) cout << "EpetraExt:: PointToBlockDiagPermute tests passed (||res||="<<total_norm<<")." << endl;
+    if (Comm.MyPID()==0) std::cout << "EpetraExt:: PointToBlockDiagPermute tests passed (||res||="<<total_norm<<")." << std::endl;
 #ifdef EPETRA_MPI
     MPI_Finalize() ;
 #endif

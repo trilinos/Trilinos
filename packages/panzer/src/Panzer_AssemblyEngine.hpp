@@ -98,6 +98,6 @@ namespace panzer {
   
 }
 
-#include "Panzer_AssemblyEngine_impl.hpp"
+// #include "Panzer_AssemblyEngine_impl.hpp"
 
 #endif

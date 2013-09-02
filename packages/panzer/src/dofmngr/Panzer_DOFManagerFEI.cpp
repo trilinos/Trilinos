@@ -41,6 +41,7 @@
 // @HEADER
 
 #include "Panzer_config.hpp"
+#include "Panzer_Traits.hpp"
 
 #include "Panzer_DOFManagerFEI_decl.hpp"
 #include "Panzer_DOFManagerFEI_impl.hpp"
@@ -87,9 +88,9 @@ void getOwnedAndSharedIndices_T<int>(const fei::SharedPtr<fei::VectorSpace> & vs
 
 #ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
 
-template class panzer::DOFManagerFEI<int,long int>;
+template class panzer::DOFManagerFEI<int,panzer::Ordinal64>;
 template class panzer::DOFManagerFEI<int,int>;
 template class panzer::DOFManagerFEI<short,int>;
-template class panzer::DOFManagerFEI<char,long int>;
+template class panzer::DOFManagerFEI<char,panzer::Ordinal64>;
 
 #endif

@@ -98,7 +98,7 @@ public:
   typedef SizeType                                            size_type;
 
   typedef CrsArray< DataType , Arg1Type , Arg2Type , SizeType > crsarray_type;
-  typedef CrsArray< DataType , array_layout , Host , SizeType > HostMirror;
+  typedef CrsArray< DataType , array_layout , typename device_type::host_mirror_device_type , SizeType > HostMirror;
   typedef View< const size_type* , array_layout, device_type >  row_map_type;
   typedef View<       DataType*  , array_layout, device_type >  entries_type;
 

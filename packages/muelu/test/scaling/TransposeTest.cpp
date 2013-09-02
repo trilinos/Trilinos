@@ -189,8 +189,8 @@ int main(int argc, char *argv[]) {
     for (int i=0; i<optNraps; ++i) {
       coarseLevel.Request("R", RFact.get());
       {
-	TimeMonitor tm(*RKernelTimer);
-	RFact->Build(fineLevel, coarseLevel);
+        TimeMonitor tm(*RKernelTimer);
+        RFact->Build(fineLevel, coarseLevel);
       }
       coarseLevel.Release("R", RFact.get());
     }

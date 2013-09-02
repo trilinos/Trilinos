@@ -207,7 +207,7 @@ void Multiply(
 
   //Now call the appropriate method to perform the actual multiplication.
 
-  CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crsmat(C);
+  CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> crsmat(C);
 
   MMdetails::mult_A_B(Aview, Bview, crsmat);
 
@@ -738,6 +738,7 @@ void mult_A_B(
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
   bool onlyCalculateStructure)
 {
+  typedef Teuchos::ScalarTraits<Scalar> STS;
   //TEUCHOS_FUNC_TIME_MONITOR_DIFF("mult_A_B", mult_A_B);
   LocalOrdinal C_firstCol = Bview.colMap->getMinLocalIndex();
   LocalOrdinal C_lastCol = Bview.colMap->getMaxLocalIndex();
@@ -829,7 +830,11 @@ void mult_A_B(
 
     for(k = OrdinalTraits<size_t>::zero(); k < Aview.numEntriesPerRow[i]; ++k) {
       LocalOrdinal Ak = Acol2Brow[Aindices_i[k]];
-      Scalar Aval = onlyCalculateStructure ? Teuchos::as<Scalar>(0) : Aval_i[k];
+      Scalar Aval = Aval_i[k];
+      if (onlyCalculateStructure)
+        Aval = STS::zero();
+      else if (Aval == STS::zero())
+        continue;
 
       if (Bview.remote[Ak]) continue;
 
@@ -893,7 +898,11 @@ void mult_A_B(
 
     for(k = OrdinalTraits<size_t>::zero(); k < Aview.numEntriesPerRow[i]; ++k) {
       LocalOrdinal Ak = Acol2Brow[Aindices_i[k]];
-      Scalar Aval = onlyCalculateStructure ? Teuchos::as<Scalar>(0) : Aval_i[k];
+      Scalar Aval = Aval_i[k];
+      if (onlyCalculateStructure)
+        Aval = STS::zero();
+      else if (Aval == STS::zero())
+        continue;
 
       if (!Bview.remote[Ak]) continue;
 

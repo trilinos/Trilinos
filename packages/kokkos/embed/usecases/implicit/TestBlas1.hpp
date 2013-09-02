@@ -309,7 +309,7 @@ double dot( const ParallelDataMap & map ,
 
   Dot<vector_scalar_type,void,Device>( count , x.ptr_on_device() , local_result );
 
-#if defined( HAVE_MPI )
+#if defined( KOKKOS_HAVE_MPI )
   MPI_Allreduce( & local_result , & result , 1 , MPI_DOUBLE , MPI_SUM , map.machine.mpi_comm );
 #else
   result = local_result ;
@@ -336,7 +336,7 @@ double dot( const ParallelDataMap & map ,
 
   Dot<vector_scalar_type,vector_scalar_type,Device>( count , x.ptr_on_device() , y.ptr_on_device() , local_result );
 
-#if defined( HAVE_MPI )
+#if defined( KOKKOS_HAVE_MPI )
   MPI_Allreduce( & local_result , & result , 1 , MPI_DOUBLE , MPI_SUM , map.machine.mpi_comm );
 #else
   result = local_result ;

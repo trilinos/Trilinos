@@ -20,10 +20,8 @@ namespace Iovs {
   }
 
   IOFactory::IOFactory()
-    : Ioss::IOFactory("paraview_catalyst")
+    : Ioss::IOFactory("catalyst")
   {
-    Ioss::IOFactory::alias("paraview_catalyst", "paraview");
-
     // Tell the database to register itself with sierra's product registry.
     // XXX exodus doesn't do this, do we need to?
     // register_library_versions();

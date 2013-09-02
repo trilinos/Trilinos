@@ -133,10 +133,10 @@ find_type(Index const dimension, Index const number_nodes)
 //
 // Constructor for SphericalParametrization
 //
-template<typename T>
+template<typename T, Index N>
 inline
-SphericalParametrization<T>::SphericalParametrization(
-    Tensor4<T> const & A) : tangent_(A)
+SphericalParametrization<T, N>::SphericalParametrization(
+    Tensor4<T, N> const & A) : tangent_(A)
 {
   minimum_ = std::numeric_limits<T>::max();
   maximum_ = std::numeric_limits<T>::min();
@@ -146,24 +146,24 @@ SphericalParametrization<T>::SphericalParametrization(
 //
 // Evaluation for SphericalParemetrization
 //
-template<typename T>
+template<typename T, Index N>
 inline
 void
-SphericalParametrization<T>::operator()(Vector<T> const & parameters)
+SphericalParametrization<T, N>::operator()(
+    Vector<T, dimension_const<N, 2>::value> const & parameters
+)
 {
-  assert(parameters.get_dimension() == 2);
-
   T const &
   phi = parameters(0);
 
   T const &
   theta = parameters(1);
 
-  Vector<T> const
+  Vector<T, N> const
   normal(sin(phi) * sin(theta), cos(phi), sin(phi) * cos(theta));
 
   // Localization tensor
-  Tensor<T> const
+  Tensor<T, N> const
   Q = dot(normal, dot(tangent_, normal));
 
   T const
@@ -185,10 +185,10 @@ SphericalParametrization<T>::operator()(Vector<T> const & parameters)
 //
 // Constructor for StereographicParametrization
 //
-template<typename T>
+template<typename T, Index N>
 inline
-StereographicParametrization<T>::StereographicParametrization(
-    Tensor4<T> const & A) : tangent_(A)
+StereographicParametrization<T, N>::StereographicParametrization(
+    Tensor4<T, N> const & A) : tangent_(A)
 {
   minimum_ = std::numeric_limits<T>::max();
   maximum_ = std::numeric_limits<T>::min();
@@ -198,13 +198,13 @@ StereographicParametrization<T>::StereographicParametrization(
 //
 // Evaluation for StereographicParemetrization
 //
-template<typename T>
+template<typename T, Index N>
 inline
 void
-StereographicParametrization<T>::operator()(Vector<T> const & parameters)
+StereographicParametrization<T, N>::operator()(
+    Vector<T, dimension_const<N, 2>::value> const & parameters
+)
 {
-  assert(parameters.get_dimension() == 2);
-
   T const &
   x = parameters(0);
 
@@ -214,13 +214,13 @@ StereographicParametrization<T>::operator()(Vector<T> const & parameters)
   T const
   r2 = x * x + y * y;
 
-  Vector<T>
+  Vector<T, N>
   normal(2.0 * x, 2.0 * y, r2 - 1.0);
 
   normal /= (r2 + 1.0);
 
   // Localization tensor
-  Tensor<T> const
+  Tensor<T, N> const
   Q = dot(normal, dot(tangent_, normal));
 
   T const
@@ -242,10 +242,10 @@ StereographicParametrization<T>::operator()(Vector<T> const & parameters)
 //
 // Constructor for ProjectiveParametrization
 //
-template<typename T>
+template<typename T, Index N>
 inline
-ProjectiveParametrization<T>::ProjectiveParametrization(
-    Tensor4<T> const & A) : tangent_(A)
+ProjectiveParametrization<T, N>::ProjectiveParametrization(
+    Tensor4<T, N> const & A) : tangent_(A)
 {
   minimum_ = std::numeric_limits<T>::max();
   maximum_ = std::numeric_limits<T>::min();
@@ -255,13 +255,13 @@ ProjectiveParametrization<T>::ProjectiveParametrization(
 //
 // Evaluation for ProjectiveParemetrization
 //
-template<typename T>
+template<typename T, Index N>
 inline
 void
-ProjectiveParametrization<T>::operator()(Vector<T> const & parameters)
+ProjectiveParametrization<T, N>::operator()(
+    Vector<T, dimension_const<N, 4>::value> const & parameters
+)
 {
-  assert(parameters.get_dimension() == 4);
-
   T const &
   x = parameters(0);
 
@@ -274,11 +274,11 @@ ProjectiveParametrization<T>::operator()(Vector<T> const & parameters)
   T const &
   lambda = parameters(3);
 
-  const Vector<T>
+  const Vector<T, N>
   normal(x, y, z);
 
   // Localization tensor
-  Tensor<T> const
+  Tensor<T, N> const
   Q = dot(normal, dot(tangent_, normal));
 
   T const
@@ -303,10 +303,10 @@ ProjectiveParametrization<T>::operator()(Vector<T> const & parameters)
 //
 // Constructor for TangentParametrization
 //
-template<typename T>
+template<typename T, Index N>
 inline
-TangentParametrization<T>::TangentParametrization(
-    Tensor4<T> const & A) : tangent_(A)
+TangentParametrization<T, N>::TangentParametrization(
+    Tensor4<T, N> const & A) : tangent_(A)
 {
   minimum_ = std::numeric_limits<T>::max();
   maximum_ = std::numeric_limits<T>::min();
@@ -316,10 +316,12 @@ TangentParametrization<T>::TangentParametrization(
 //
 // Evaluation for TangentParemetrization
 //
-template<typename T>
+template<typename T, Index N>
 inline
 void
-TangentParametrization<T>::operator()(Vector<T> const & parameters)
+TangentParametrization<T, N>::operator()(
+    Vector<T, dimension_const<N, 2>::value> const & parameters
+)
 {
   assert(parameters.get_dimension() == 2);
 
@@ -332,7 +334,7 @@ TangentParametrization<T>::operator()(Vector<T> const & parameters)
   T const
   r = std::sqrt(x * x + y * y);
 
-  Vector<T>
+  Vector<T, N>
   normal(3, ZEROS);
 
   if (r > 0.0) {
@@ -342,7 +344,7 @@ TangentParametrization<T>::operator()(Vector<T> const & parameters)
   }
 
   // Localization tensor
-  Tensor<T> const
+  Tensor<T, N> const
   Q = dot(normal, dot(tangent_, normal));
 
   T const
@@ -364,10 +366,10 @@ TangentParametrization<T>::operator()(Vector<T> const & parameters)
 //
 // Constructor for CartesianParametrization
 //
-template<typename T>
+template<typename T, Index N>
 inline
-CartesianParametrization<T>::CartesianParametrization(
-    Tensor4<T> const & A) : tangent_(A)
+CartesianParametrization<T, N>::CartesianParametrization(
+    Tensor4<T, N> const & A) : tangent_(A)
 {
   minimum_ = std::numeric_limits<T>::max();
   maximum_ = std::numeric_limits<T>::min();
@@ -377,13 +379,13 @@ CartesianParametrization<T>::CartesianParametrization(
 //
 // Evaluation for CartesianParemetrization
 //
-template<typename T>
+template<typename T, Index N>
 inline
 void
-CartesianParametrization<T>::operator()(Vector<T> const & parameters)
+CartesianParametrization<T, N>::operator()(
+    Vector<T, dimension_const<N, 3>::value> const & parameters
+)
 {
-  assert(parameters.get_dimension() == 3);
-
   T const &
   x = parameters(0);
 
@@ -393,11 +395,11 @@ CartesianParametrization<T>::operator()(Vector<T> const & parameters)
   T const
   z = parameters(2);
 
-  const Vector<T>
+  const Vector<T, N>
   normal(x, y, z);
 
   // Localization tensor
-  Tensor<T> const
+  Tensor<T, N> const
   Q = dot(normal, dot(tangent_, normal));
 
   T const
@@ -419,12 +421,12 @@ CartesianParametrization<T>::operator()(Vector<T> const & parameters)
 //
 // Constructor for ParametricGrid
 //
-template<typename T>
+template<typename T, Index N>
 inline
-ParametricGrid<T>::ParametricGrid(
-    Vector<T> const & lower,
-    Vector<T> const & upper,
-    Vector<Index> const & points_per_dimension)
+ParametricGrid<T, N>::ParametricGrid(
+    Vector<T, N> const & lower,
+    Vector<T, N> const & upper,
+    Vector<Index, N> const & points_per_dimension)
 {
   assert(lower.get_dimension() == upper.get_dimension());
   assert(lower.get_dimension() == points_per_dimension.get_dimension());
@@ -439,11 +441,11 @@ ParametricGrid<T>::ParametricGrid(
 //
 // Traverse the grid and apply the visitor to each point.
 //
-template<typename T>
+template<typename T, Index N>
 template<typename Visitor>
 inline
 void
-ParametricGrid<T>::traverse(Visitor & visitor) const
+ParametricGrid<T, N>::traverse(Visitor & visitor) const
 {
   // Loop over the grid
   Index const
@@ -456,9 +458,7 @@ ParametricGrid<T>::traverse(Visitor & visitor) const
     total_number_points *= points_per_dimension_(dimension);
   }
 
-  //std::cout << "Total number of points: " << total_number_points << std::endl;
-
-  Vector<LongCount>
+  Vector<LongCount, N>
   steps(number_parameters, ONES);
 
   for (Index dimension = 1; dimension < number_parameters; ++dimension) {
@@ -466,16 +466,13 @@ ParametricGrid<T>::traverse(Visitor & visitor) const
         steps(dimension - 1) * points_per_dimension_(dimension - 1);
   }
 
-  //std::cout << "Points per dimension  : " << points_per_dimension_ << std::endl;
-  //std::cout << "Steps                 : " << steps << std::endl;
-
-  Vector<Index>
+  Vector<Index, N>
   indices(number_parameters, ZEROS);
 
-  Vector<T>
+  Vector<T, N>
   position_in_grid(number_parameters, ZEROS);
 
-  Vector<T>
+  Vector<T, N> const
   span = upper_ - lower_;
 
   for (LongCount point = 1;  point <= total_number_points; ++point) {

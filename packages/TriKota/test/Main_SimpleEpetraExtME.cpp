@@ -37,6 +37,7 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
+#include <ostream>
 
 namespace {
 
@@ -69,7 +70,7 @@ int main(int argc, char* argv[])
 
   try {
 
-    *out << "\nStarting TriKota Example!" << endl;
+    *out << "\nStarting TriKota Example!" << std::endl;
     
     // Construct driver with default file names
     TriKota::Driver dakota;

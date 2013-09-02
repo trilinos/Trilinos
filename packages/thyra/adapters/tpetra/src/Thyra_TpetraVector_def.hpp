@@ -93,19 +93,22 @@ TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getConstTpetraVector() con
 }
 
 
-// Overridden from SpmdVectorBase
+// Overridden from SpmdMultiVectorBase
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const SpmdVectorSpaceBase<Scalar> >
-TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::spmdSpace() const
+TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::spmdSpaceImpl() const
 {
   return tpetraVectorSpace_;
 }
 
 
+// Overridden from SpmdVectorBase
+
+
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNonconstLocalDataImpl(
+void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNonconstLocalVectorDataImpl(
   const Ptr<ArrayRCP<Scalar> > &localValues )
 {
   *localValues = tpetraVector_.getNonconstObj()->get1dViewNonConst();
@@ -113,7 +116,7 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNonconstLocalDataI
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalDataImpl(
+void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalVectorDataImpl(
   const Ptr<ArrayRCP<const Scalar> > &localValues ) const
 {
   *localValues = tpetraVector_->get1dView();
@@ -121,6 +124,7 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalDataImpl(
 
 
 // private
+
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 template<class TpetraVector_t>

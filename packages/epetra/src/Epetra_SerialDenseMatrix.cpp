@@ -225,8 +225,8 @@ Epetra_SerialDenseMatrix& Epetra_SerialDenseMatrix::operator = (const Epetra_Ser
 		return(*this); // Special case of both are views to same data.
 
 	if(std::strcmp(Label(), Source.Label()) != 0)
-		throw ReportError("operator= type mismatch (lhs = " + string(Label()) + 
-											", rhs = " + string(Source.Label()) + ").", -5);
+		throw ReportError("operator= type mismatch (lhs = " + std::string(Label()) + 
+      ", rhs = " + std::string(Source.Label()) + ").", -5);
 	
 	if(Source.CV_ == View) {
 		if(CV_ == Copy) { // C->V only
@@ -524,27 +524,27 @@ int  Epetra_SerialDenseMatrix::Multiply (char SideA, double ScalarAB,
   return(0);
 }
 //=========================================================================
-void Epetra_SerialDenseMatrix::Print(ostream& os) const {
-	os << endl;
+void Epetra_SerialDenseMatrix::Print(std::ostream& os) const {
+	os << std::endl;
 	if(CV_ == Copy)
-		os << "Data access mode: Copy" << endl;
+		os << "Data access mode: Copy" << std::endl;
 	else
-		os << "Data access mode: View" << endl;
+		os << "Data access mode: View" << std::endl;
 	if(A_Copied_)
-		os << "A_Copied: yes" << endl;
+		os << "A_Copied: yes" << std::endl;
 	else
-		os << "A_Copied: no" << endl;
-	os << "Rows(M): " << M_ << endl;
-	os << "Columns(N): " << N_ << endl;
-	os << "LDA: " << LDA_ << endl;
+		os << "A_Copied: no" << std::endl;
+	os << "Rows(M): " << M_ << std::endl;
+	os << "Columns(N): " << N_ << std::endl;
+	os << "LDA: " << LDA_ << std::endl;
 	if(M_ == 0 || N_ == 0)
-		os << "(matrix is empty, no values to display)" << endl;
+		os << "(matrix is empty, no values to display)" << std::endl;
 	else
 		for(int i = 0; i < M_; i++) {
 			for(int j = 0; j < N_; j++){
 				os << (*this)(i,j) << " ";
 			}
-			os << endl;
+			os << std::endl;
 		}
 }
 //=========================================================================

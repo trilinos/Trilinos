@@ -54,7 +54,8 @@ namespace Thyra {
 
 template<class Scalar>
 SpmdVectorSpaceDefaultBase<Scalar>::SpmdVectorSpaceDefaultBase()
-  :mapCode_(-1), defaultLocalOffset_(-1), defaultGlobalDim_(-1), localSubDim_(-1)
+  :mapCode_(-1), defaultLocalOffset_(-1), defaultGlobalDim_(-1),
+   localSubDim_(-1), isLocallyReplicated_(false)
 {}
 
 
@@ -72,6 +73,13 @@ template<class Scalar>
 Ordinal SpmdVectorSpaceDefaultBase<Scalar>::mapCode() const
 {
   return mapCode_;
+}
+
+
+template<class Scalar>
+bool SpmdVectorSpaceDefaultBase<Scalar>::isLocallyReplicated() const
+{
+  return isLocallyReplicated_;
 }
 
 
@@ -130,11 +138,6 @@ bool SpmdVectorSpaceDefaultBase<Scalar>::isCompatible(
   if (nonnull(spmdVecSpc)) {
     return mapCode() == spmdVecSpc->mapCode();
   }
-
-  // Check for in-core views
-  if( this->hasInCoreView() && vecSpc.hasInCoreView() && this->dim() == vecSpc.dim() )
-    return true;
-  // 2009/05/11: rabartl: ToDo: Remove this!
   
   // Check for product vector interface
   const Ptr<const ProductVectorSpaceBase<Scalar> > pvsb =
@@ -159,44 +162,101 @@ bool SpmdVectorSpaceDefaultBase<Scalar>::isCompatible(
 
 
 template<class Scalar>
-void SpmdVectorSpaceDefaultBase<Scalar>::updateState( const Ordinal globalDim )
+void SpmdVectorSpaceDefaultBase<Scalar>::updateState(const Ordinal globalDim,
+  const bool isLocallyReplicated_in)
 {
+  namespace SVSU = SpmdVectorSpaceUtilities;
+
+  //
+  // A) Get the comm, comm info, and local subdim
+  //
+
   localSubDim_ = this->localSubDim(); 
+
   const Teuchos::RCP<const Teuchos::Comm<Ordinal> >
     comm = this->getComm();
-  if( localSubDim_ >= 0 ) {
-    int numProc = 1;
-    if( comm.get() ) {
-      numProc = comm->getSize();
+
+  int numProcs = 1;
+  if (nonnull(comm)) {
+    numProcs = comm->getSize();
+  }
+
+  //
+  // B) Determine the type of vector space
+  //
+
+  Ordinal sumLocalSubDims = localSubDim_;
+
+  bool isSerialOrLocallyReplicated = false;
+  bool isEmpty = false;
+  bool isDistributed = false;
+
+  if (isLocallyReplicated_in) {
+    // Avoid communication when we know this is locally replicated
+    isSerialOrLocallyReplicated = true;
+    if (sumLocalSubDims == 0) {
+      isEmpty = true;
     }
-    if( numProc > 1 && (localSubDim_ < globalDim || globalDim < 0) ) {
-      mapCode_ = SpmdVectorSpaceUtilities::computeMapCode(*comm,localSubDim_);
-      defaultLocalOffset_
-        = SpmdVectorSpaceUtilities::computeLocalOffset(*comm,localSubDim_);
-      if( globalDim < 1 ) {
-        defaultGlobalDim_
-          = SpmdVectorSpaceUtilities::computeGlobalDim(*comm,localSubDim_);
-      }
-      else {
-        defaultGlobalDim_ = globalDim;
-        // ToDo: Perform global reduction to check that this is correct in
-        // debug build
-      }
-    }
-    else {
-      // This is a serial or a locally-replicated parallel
-      // vector space.
-      mapCode_ = localSubDim_;
-      defaultLocalOffset_ = 0;
-      defaultGlobalDim_ = localSubDim_;
-    }
+    TEUCHOS_ASSERT_EQUALITY(localSubDim_, globalDim);
   }
   else {
-    mapCode_  = -1;     // Uninitialized!
-    defaultLocalOffset_ = -1;
-    defaultGlobalDim_ = -1;
+    if (numProcs > 1) {
+      sumLocalSubDims = SVSU::computeGlobalDim(*comm, localSubDim_);
+    }
+    if (sumLocalSubDims == 0) {
+      // This is an uninitialized space (zero on every process)
+      isEmpty = true;
+    }
+    else if (
+      numProcs == 1
+      ||
+      (
+        sumLocalSubDims / numProcs == globalDim
+        &&
+        sumLocalSubDims % numProcs == 0
+        )
+      )
+    {
+      // This is a serial or a locally-replicated parallel
+      // vector space.
+      isSerialOrLocallyReplicated = true;
+      //TEUCHOS_TEST_FOR_EXCEPTION(numProcs > 1, std::logic_error,
+      //  "Error, you are creating a locally replicated vector space implicitly which"
+      //  " is very inefficient.  Please pass in isLocallyReplicated=true to avoid"
+      //  " unnecessary global communication!");
+      // ToDo: Add runtime option to assert that an implicit VS is not being
+      // created which is a performance problem.
+    }
+    else {
+      // This is a regular distributed vector space
+      isDistributed = true;
+    }
   }
+
+  //
+  // C) Set the state of the vector space for the given type
+  //
+
+  if (isEmpty) {
+    mapCode_  = 0;
+    defaultLocalOffset_ = 0;
+    defaultGlobalDim_ = 0;
+  }
+  else if (isSerialOrLocallyReplicated) {
+    isLocallyReplicated_ = true;
+    mapCode_ = localSubDim_;
+    defaultLocalOffset_ = 0;
+    defaultGlobalDim_ = localSubDim_;
+  }
+  else {
+    TEUCHOS_ASSERT(isDistributed);
+    defaultGlobalDim_ = sumLocalSubDims;
+    mapCode_ = SVSU::computeMapCode(*comm, localSubDim_);
+    defaultLocalOffset_ = SVSU::computeLocalOffset(*comm, localSubDim_);
+  }
+
   smallVecSpcFcty_ = defaultSpmdVectorSpaceFactory<Scalar>(comm);
+
 }
 
  

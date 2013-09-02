@@ -46,7 +46,7 @@
 
 #if defined( __CUDACC__ )
 
-#include <Kokkos_ParallelFor.hpp>
+#include <Kokkos_Parallel.hpp>
 
 #include <Cuda/Kokkos_Cuda_Parallel.hpp>
 
@@ -56,7 +56,7 @@ namespace Impl {
 //----------------------------------------------------------------------------
 
 template< class FunctorType , class WorkSpec >
-class ParallelFor< FunctorType , Cuda , WorkSpec > {
+class ParallelFor< FunctorType , WorkSpec , Cuda > {
 public:
 
   const FunctorType     m_work_functor ;
@@ -83,8 +83,8 @@ public:
   }
 
 
-  ParallelFor( const Cuda::size_type  work_count ,
-               const FunctorType    & functor )
+  ParallelFor( const FunctorType    & functor ,
+               const Cuda::size_type  work_count )
     : m_work_functor( functor )
     , m_work_count(  work_count )
     {
@@ -103,7 +103,7 @@ public:
 //----------------------------------------------------------------------------
 
 template< class FunctorType >
-class ParallelFor< FunctorType , Cuda , CudaWorkConfig > {
+class ParallelFor< FunctorType , CudaWorkConfig , Cuda > {
 public:
 
   const FunctorType m_work_functor ;
@@ -122,8 +122,8 @@ public:
     m_work_functor( iwork );
   }
 
-  ParallelFor( const CudaWorkConfig & work_config ,
-               const FunctorType    & functor )
+  ParallelFor( const FunctorType    & functor ,
+               const CudaWorkConfig & work_config )
   : m_work_functor( functor )
   {
     const dim3 grid( work_config.grid[0] ,

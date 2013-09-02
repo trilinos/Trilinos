@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <KokkosCore_config.h>
 #include <Kokkos_Macros.hpp>
 
 template< class Space > int test();
@@ -20,29 +21,33 @@ int test_cuda();
 
 int main()
 {
-  std::cout << std::endl << "test< Host >()" << std::endl ;
+  std::cout << std::endl << "test< HostSpace >()" << std::endl ;
   test< Kokkos::HostSpace >();
 
-  std::cout << std::endl << "testdyn< Host >()" << std::endl ;
+  std::cout << std::endl << "testdyn< HostSpace >()" << std::endl ;
   testdyn< Kokkos::HostSpace >();
 
-  std::cout << std::endl << "test_functor< Host >()" << std::endl ;
+  std::cout << std::endl << "test_functor< HostSpace >()" << std::endl ;
   test_functor< Kokkos::HostSpace >();
 
-  std::cout << std::endl << "test_inner_product< Host >()" << std::endl ;
+  std::cout << std::endl << "test_inner_product< HostSpace >()" << std::endl ;
   test_inner_product< Kokkos::HostSpace >();
 
-  std::cout << std::endl << "test< Cuda >()" << std::endl ;
+#if defined( KOKKOS_HAVE_CUDA )
+
+  std::cout << std::endl << "test< CudaSpace >()" << std::endl ;
   test< Kokkos::CudaSpace >();
 
-  std::cout << std::endl << "testdyn< Cuda >()" << std::endl ;
+  std::cout << std::endl << "testdyn< CudaSpace >()" << std::endl ;
   testdyn< Kokkos::CudaSpace >();
 
-  std::cout << std::endl << "test_functor< Cuda >()" << std::endl ;
+  std::cout << std::endl << "test_functor< CudaSpace >()" << std::endl ;
   test_functor< Kokkos::CudaSpace >();
 
-  std::cout << std::endl << "test_inner_product< Cuda >()" << std::endl ;
+  std::cout << std::endl << "test_inner_product< CudaSpace >()" << std::endl ;
   test_inner_product< Kokkos::CudaSpace >();
+
+#endif
 
   return 0 ;
 }

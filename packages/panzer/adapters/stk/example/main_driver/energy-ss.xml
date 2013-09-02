@@ -22,6 +22,10 @@
             </ParameterList>
         </ParameterList>
 
+        <ParameterList name="Rebalance">
+          <Parameter name="Enabled" type="bool" value="true"/>
+        </ParameterList>
+
     </ParameterList>
 
     <ParameterList name="Initial Conditions">
@@ -143,7 +147,7 @@
     </ParameterList>
 
     <ParameterList name="Output">
-        <Parameter name="File Name" type="string" value="energy-ss.exo.exo"/>
+        <Parameter name="File Name" type="string" value="energy-ss.exo"/>
     </ParameterList>
 
     <ParameterList name="Options">

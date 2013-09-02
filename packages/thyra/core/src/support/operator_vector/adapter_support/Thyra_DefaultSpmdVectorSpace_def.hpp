@@ -74,8 +74,9 @@ void DefaultSpmdVectorSpace<Scalar>::initialize(
 
 template<class Scalar>
 void DefaultSpmdVectorSpace<Scalar>::initialize(
-  const RCP<const Teuchos::Comm<Ordinal> > &comm
-  ,const Ordinal localSubDim_in, const Ordinal globalDim
+  const RCP<const Teuchos::Comm<Ordinal> > &comm,
+  const Ordinal localSubDim_in, const Ordinal globalDim,
+  const bool isLocallyReplicated_in
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -91,7 +92,7 @@ void DefaultSpmdVectorSpace<Scalar>::initialize(
     numProc_ = 1;
     procRank_ = 0;
   }
-  this->updateState(globalDim);
+  this->updateState(globalDim, isLocallyReplicated_in);
 }
 
 
@@ -235,7 +236,8 @@ template<class Scalar>
 RCP< const VectorSpaceBase<Scalar> >
 DefaultSpmdVectorSpace<Scalar>::clone() const
 {
-  return defaultSpmdVectorSpace<Scalar>(comm_,localSubDim_,this->dim());
+  return defaultSpmdVectorSpace<Scalar>(comm_, localSubDim_, this->dim(),
+    this->isLocallyReplicated());
 }
 
 

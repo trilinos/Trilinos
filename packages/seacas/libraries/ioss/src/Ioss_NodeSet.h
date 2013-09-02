@@ -47,6 +47,7 @@ namespace Ioss {
 	    int64_t number_nodes);
 
     std::string type_string() const {return "NodeSet";}
+    std::string short_type_string() const {return "nodelist";}
     EntityType type() const {return NODESET;}
       
     // Handle implicit properties -- These are calcuated from data stored

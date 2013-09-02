@@ -252,7 +252,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MapColoring: public Epetra_DistObject {
   //@{ 
   
   //! Print method
-  virtual void Print(ostream & os) const;
+  virtual void Print(std::ostream & os) const;
   //@}
   
  private:

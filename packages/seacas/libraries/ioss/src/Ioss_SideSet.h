@@ -52,6 +52,7 @@ namespace Ioss {
     ~SideSet();
 
     std::string type_string() const {return "SideSet";}
+    std::string short_type_string() const {return "surface";}
     EntityType type() const {return SIDESET;}
 
     bool add(SideBlock    *side_block);

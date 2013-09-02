@@ -221,7 +221,7 @@ public:
   }
 
   //! Sets the Label of \c this object.
-  Space& operator=(const string& Label)
+  Space& operator=(const std::string& Label)
   {
     SetLabel(Label);
     return(*this);
@@ -277,22 +277,22 @@ public:
   // @}
   // @{ \name Miscellanous methods
 
-  //! Prints on ostream basic information about \c this object.
+  //! Prints on std::ostream basic information about \c this object.
   std::ostream& Print(std::ostream& os,
                       const bool verbose = true) const
   {
     if (GetMyPID() == 0) {
-      os << endl;
-      os << "*** MLAPI::Space ***" << endl;
-      os << "Label               = " << GetLabel() << endl;
-      os << "NumMyElements()     = " << GetNumMyElements() << endl;
-      os << "NumGlobalElements() = " << GetNumGlobalElements() << endl;
-      os << "Offset              = " << GetOffset() << endl;
+      os << std::endl;
+      os << "*** MLAPI::Space ***" << std::endl;
+      os << "Label               = " << GetLabel() << std::endl;
+      os << "NumMyElements()     = " << GetNumMyElements() << std::endl;
+      os << "NumGlobalElements() = " << GetNumGlobalElements() << std::endl;
+      os << "Offset              = " << GetOffset() << std::endl;
       if (IsLinear())
-        os << "Distribution is linear" << endl;
+        os << "Distribution is linear" << std::endl;
       else
-        os << "Distribution is not linear" << endl;
-      os << endl;
+        os << "Distribution is not linear" << std::endl;
+      os << std::endl;
     }
 
     if (verbose) {
@@ -307,7 +307,7 @@ public:
             os.width(20);
             os << "LID";
             os.width(20);
-            os << "GID" << endl << endl;
+            os << "GID" << std::endl << std::endl;
           }
 
           for (int i = 0 ; i < GetNumMyElements() ; ++i) {
@@ -316,7 +316,7 @@ public:
             os.width(20);
             os << i;
             os.width(20);
-            os << (*this)(i) << endl;
+            os << (*this)(i) << std::endl;
           }
         }
         Barrier();
@@ -324,7 +324,7 @@ public:
       Barrier();
 
       if (GetMyPID() == 0)
-        os << endl;
+        os << std::endl;
     }
 
     Barrier();

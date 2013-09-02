@@ -148,14 +148,12 @@ int main(int argc, char *argv[]) {
 
   // - Repartitioning
 #if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MUELU_ISORROPIA)
-  int optRepartition = 1;                 clp.setOption("repartition",    &optRepartition,        "enable repartitioning");
-  LO optMinRowsPerProc = 50;              clp.setOption("minRowsPerProc", &optMinRowsPerProc,     "min #rows allowable per proc before repartitioning occurs");
-  double optNnzImbalance = 1.2;           clp.setOption("nnzImbalance",   &optNnzImbalance,       "max allowable nonzero imbalance before repartitioning occurs");
+  int    optRepartition    = 1;             clp.setOption("repartition",    &optRepartition,        "enable repartitioning");
+  LO     optMinRowsPerProc = 50;            clp.setOption("minRowsPerProc", &optMinRowsPerProc,     "min #rows allowable per proc before repartitioning occurs");
+  double optNnzImbalance   = 1.2;           clp.setOption("nnzImbalance",   &optNnzImbalance,       "max allowable nonzero imbalance before repartitioning occurs");
 #else
   int optRepartition = 0;
-  LO optMinRowsPerProc = 50;
-  double optNnzImbalance = 1.2;
-#endif // HAVE_MPI && HAVE_MUELU_ZOLTAN
+#endif
 
   switch (clp.parse(argc, argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -229,7 +227,7 @@ int main(int argc, char *argv[]) {
   Finest->Set("A",Op);
   //Finest->Set("Nullspace",xNS);
 
-  if(optRepartition==1) {
+  if (optRepartition==1) {
     // create null space
 
     RCP<MultiVector> nullspace;

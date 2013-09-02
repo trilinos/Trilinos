@@ -242,11 +242,20 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
   TEUCHOS_DEPRECATED typedef typename MatrixType::node_type Node;
 
 
+  //! The type of the Kokkos Node used by the input MatrixType.
+  typedef typename MatrixType::mat_vec_type mat_vec_type;
+
+  //! Preserved only for backwards compatibility.  Please use "mat_vec_type".
+  TEUCHOS_DEPRECATED typedef typename MatrixType::mat_vec_type LocalMatOps;
+
+
   //! The type of the magnitude (absolute value) of a matrix entry.
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
   //! Preserved only for backwards compatibility.  Please use "magnitude_type".
   TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
+
+  template <class new_matrix_type> friend class RILUK;
 
   //! RILUK constuctor with variable number of indices per row.
   /*! Creates a RILUK object and allocates storage.
@@ -257,10 +266,16 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
   RILUK(const Teuchos::RCP<const MatrixType>& A_in);
 
  private:
+
   //! Copy constructor.
   RILUK(const RILUK<MatrixType> & src);
 
  public:
+
+
+  //! Clone preconditioner to a new node type
+  template <typename new_matrix_type> Teuchos::RCP< RILUK< new_matrix_type > > clone(const Teuchos::RCP<const new_matrix_type>& A_newnode) const;
+
   //! Ifpack2_RILUK Destructor
   virtual ~RILUK();
 
@@ -376,6 +391,7 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
     ConditionNumberEstimate - The maximum across all processors of
     the infinity-norm estimate of the condition number of the inverse of LDU.
   */
+
   magnitude_type computeCondEst(Teuchos::ETransp mode) const;
   magnitude_type computeCondEst(CondestType CT = Ifpack2::Cheap,
                                local_ordinal_type MaxIters = 1550,
@@ -413,16 +429,22 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
   int getGlobalNumEntries() const {return(getL().getGlobalNumEntries()+getU().getGlobalNumEntries());}
 
   //! Returns the Ifpack2::IlukGraph associated with this factored matrix.
-  const Teuchos::RCP<Ifpack2::IlukGraph<local_ordinal_type,global_ordinal_type,node_type> >& getGraph() const {return(Graph_);}
+  const Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type,mat_vec_type> > >& getGraph() const {return(Graph_);}
 
   //! Returns the L factor associated with this factored matrix.
   const MatrixType& getL() const {return(*L_);}
-
   //! Returns the D factor associated with this factored matrix.
   const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> & getD() const {return(*D_);}
 
   //! Returns the U factor associated with this factored matrix.
   const MatrixType& getU() const {return(*U_);}
+
+  //! Returns A as a CRS Matrix
+  Teuchos::RCP<const MatrixType > getCrsMatrix() const
+  {
+    return A_;
+  }
+
 
   //@{ \name Additional methods required to support the Tpetra::Operator interface.
 
@@ -455,7 +477,7 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
      Teuchos::RCP<const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& Xout,
      Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& Yout) const;
   bool isOverlapped_;
-  Teuchos::RCP<Ifpack2::IlukGraph<local_ordinal_type,global_ordinal_type,node_type> > Graph_;
+  Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type,mat_vec_type> > > Graph_;
   const Teuchos::RCP<const MatrixType> A_;
   Teuchos::RCP<MatrixType> L_;
   Teuchos::RCP<MatrixType> U_;
@@ -480,7 +502,63 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
   mutable Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > OverlapX_;
   mutable Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > OverlapY_;
   Tpetra::CombineMode OverlapMode_;
+
+
 };
+
+//Set necessary local solve parameters when using ThrustGPU node
+namespace detail{
+   template<class MatrixType, class NodeType, class MatSolveType>
+   struct setLocalSolveParams{
+	static Teuchos::RCP<Teuchos::ParameterList> setParams (const Teuchos::RCP<Teuchos::ParameterList>& param){
+		return param;
+	}
+    };
+#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUSPARSE)
+   template<class MatrixType, class Scalar>
+   struct setLocalSolveParams<MatrixType, KokkosClassic::ThrustGPUNode, KokkosClassic::CUSPARSEOps<Scalar, KokkosClassic::ThrustGPUNode> >{
+	static Teuchos::RCP<Teuchos::ParameterList> setParams (const Teuchos::RCP<Teuchos::ParameterList>& param){
+	 	 param->sublist("fillComplete").sublist("Local Sparse Ops").set("Prepare Solve",true);
+		 return param;
+	}
+    };
+#endif
+} //end namespace detail
+
+template <class MatrixType> 
+template <typename new_matrix_type>
+Teuchos::RCP< RILUK< new_matrix_type > >  
+RILUK<MatrixType>::clone(const Teuchos::RCP< const new_matrix_type>& A_newnode) const{
+  typedef typename new_matrix_type::node_type new_node_type;
+  typedef typename new_matrix_type::mat_solve_type mat_solve_type;
+  typedef RILUK< new_matrix_type > new_riluk_type;
+  Teuchos::RCP<new_riluk_type> new_riluk = Teuchos::rcp(new new_riluk_type(A_newnode));
+
+  Teuchos::RCP<Teuchos::ParameterList> plClone = Teuchos::parameterList();
+  plClone = detail::setLocalSolveParams<new_matrix_type, new_node_type, mat_solve_type>::setParams(plClone);
+  
+  Teuchos::RCP<new_node_type> new_node = A_newnode->getNode();
+  new_riluk->L_ = L_->clone(new_node, plClone);
+  new_riluk->U_ = U_->clone(new_node, plClone);
+  new_riluk->D_ = D_->clone(new_node);
+  new_riluk->isOverlapped_ = isOverlapped_;
+  new_riluk->UseTranspose_ = UseTranspose_;
+  new_riluk->LevelOfFill_ = LevelOfFill_;
+  new_riluk->LevelOfOverlap_ = LevelOfOverlap_;
+  new_riluk->NumMyDiagonals_ = NumMyDiagonals_;
+  new_riluk->isAllocated_ = isAllocated_;
+  new_riluk->isInitialized_ = isInitialized_;
+  new_riluk->numInitialize_ = numInitialize_;
+  new_riluk->numCompute_ = numCompute_;
+  new_riluk->numApply_ =  numApply_;
+  new_riluk->Factored_ = Factored_;
+  new_riluk->RelaxValue_ = RelaxValue_;
+  new_riluk->Athresh_ = Athresh_;
+  new_riluk->Rthresh_ = Rthresh_;
+  new_riluk->Condest_ = Condest_;
+  new_riluk->OverlapMode_ = OverlapMode_;
+  return new_riluk;
+}
 
 }//namespace Ifpack2
 

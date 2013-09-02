@@ -142,8 +142,8 @@ int AZOO_Scale(int action,
   if (options[AZ_pre_calc] == AZ_reuse) {
     if (scaling->scaling_data == NULL) {
       if (options[AZ_output] != AZ_none) {
-        cerr << "AZOO_Scale ERROR, AZ_reuse requested, but"
-           << " scaling->scaling_data==NULL"<<endl;
+        std::cerr << "AZOO_Scale ERROR, AZ_reuse requested, but"
+           << " scaling->scaling_data==NULL"<<std::endl;
       }
       return(-1);
     }
@@ -155,7 +155,7 @@ int AZOO_Scale(int action,
       vec = AZOO_create_scaling_vector(A, options[AZ_scaling]);
       if (vec == NULL) {
         if (options[AZ_output] != AZ_none) {
-          cerr << "AZOO_create_scaling_vector ERROR"<<endl;
+          std::cerr << "AZOO_create_scaling_vector ERROR"<<std::endl;
         }
         return(-1);
       }
@@ -173,8 +173,8 @@ int AZOO_Scale(int action,
 
       if (scaling->scaling_data == NULL || vec == NULL) {
         if (options[AZ_output] != AZ_none) {
-          cerr << "AZOO_Scale ERROR, vec == NULL or"
-             << " scaling->scaling_data==NULL"<<endl;
+          std::cerr << "AZOO_Scale ERROR, vec == NULL or"
+             << " scaling->scaling_data==NULL"<<std::endl;
         }
         return(-1);
       }

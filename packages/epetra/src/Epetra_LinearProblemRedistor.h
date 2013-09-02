@@ -221,7 +221,7 @@ class Epetra_LinearProblemRedistor {
   //@{ 
   
   //! Print method
-  virtual void Print(ostream & os) const;
+  virtual void Print(std::ostream & os) const;
   //@}
   
  private: 

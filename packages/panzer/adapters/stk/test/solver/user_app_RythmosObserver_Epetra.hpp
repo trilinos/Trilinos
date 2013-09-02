@@ -85,9 +85,9 @@ namespace user_app {
 				  const Rythmos::StepControlInfo<double> &stepCtrlInfo,
 				  const int timeStepIter)
     { 
-      cout << "*************************ROGER in Time************************************"  << endl;
-      cout << "time = " << stepper.getStepStatus().time << endl;
-      cout << *(stepper.getStepStatus().solution);
+      std::cout << "*************************ROGER in Time************************************"  << std::endl;
+      std::cout << "time = " << stepper.getStepStatus().time << std::endl;
+      std::cout << *(stepper.getStepStatus().solution);
       Teuchos::RCP<const Thyra::VectorBase<double> > solution = stepper.getStepStatus().solution;
       
       // Next few lines are inefficient, but we can revisit later

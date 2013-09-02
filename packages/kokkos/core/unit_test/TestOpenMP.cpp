@@ -43,7 +43,7 @@
 
 #include <gtest/gtest.h>
 
-// Force OMP atomics
+// Force OMP atomics for testing only
 
 #define KOKKOS_ATOMICS_USE_OMP31
 #include <Kokkos_Atomic.hpp>
@@ -79,10 +79,11 @@ protected:
     const unsigned core_size =
       Kokkos::hwloc::get_core_capacity();
 
-    const unsigned gang_count        = core_top.first ;
-    const unsigned gang_worker_count = ( core_top.second * core_size ) / 2 ;
+    const unsigned gang_count        = std::max( 1u , core_top.first );
+    const unsigned gang_worker_count = std::max( 2u , ( core_top.second * core_size ) / 2 );
 
     Kokkos::OpenMP::initialize( gang_count , gang_worker_count );
+    // Kokkos::OpenMP::print_configuration( std::cout );
   }
 
   static void TearDownTestCase()
@@ -95,8 +96,6 @@ protected:
   }
 };
 
-
-#if 1
 
 TEST_F( openmp, view_impl) {
   test_view_impl< Kokkos::OpenMP >();
@@ -133,40 +132,36 @@ TEST_F( openmp, long_reduce_dynamic_view ) {
 
 TEST_F( openmp , atomics )
 {
-  const int loop_count = 1e6 ;
+  const int loop_count = 1e4 ;
 
-  ASSERT_TRUE( ( TestAtomic::Loop<int,Kokkos::Host>(loop_count,1) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<int,Kokkos::Host>(loop_count,2) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<int,Kokkos::Host>(loop_count,3) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<int,Kokkos::OpenMP>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<int,Kokkos::OpenMP>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<int,Kokkos::OpenMP>(loop_count,3) ) );
 
-  ASSERT_TRUE( ( TestAtomic::Loop<unsigned int,Kokkos::Host>(loop_count,1) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<unsigned int,Kokkos::Host>(loop_count,2) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<unsigned int,Kokkos::Host>(loop_count,3) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned int,Kokkos::OpenMP>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned int,Kokkos::OpenMP>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned int,Kokkos::OpenMP>(loop_count,3) ) );
 
-  ASSERT_TRUE( ( TestAtomic::Loop<long int,Kokkos::Host>(loop_count,1) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<long int,Kokkos::Host>(loop_count,2) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<long int,Kokkos::Host>(loop_count,3) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<long int,Kokkos::OpenMP>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<long int,Kokkos::OpenMP>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<long int,Kokkos::OpenMP>(loop_count,3) ) );
 
-  ASSERT_TRUE( ( TestAtomic::Loop<unsigned long int,Kokkos::Host>(loop_count,1) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<unsigned long int,Kokkos::Host>(loop_count,2) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<unsigned long int,Kokkos::Host>(loop_count,3) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned long int,Kokkos::OpenMP>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned long int,Kokkos::OpenMP>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<unsigned long int,Kokkos::OpenMP>(loop_count,3) ) );
 
-  ASSERT_TRUE( ( TestAtomic::Loop<long long int,Kokkos::Host>(loop_count,1) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<long long int,Kokkos::Host>(loop_count,2) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<long long int,Kokkos::Host>(loop_count,3) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<long long int,Kokkos::OpenMP>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<long long int,Kokkos::OpenMP>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<long long int,Kokkos::OpenMP>(loop_count,3) ) );
 
-  ASSERT_TRUE( ( TestAtomic::Loop<double,Kokkos::Host>(loop_count,1) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<double,Kokkos::Host>(loop_count,2) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<double,Kokkos::Host>(loop_count,3) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<double,Kokkos::OpenMP>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<double,Kokkos::OpenMP>(loop_count,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<double,Kokkos::OpenMP>(loop_count,3) ) );
 
-  ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::Host>(100,1) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::Host>(100,2) ) );
-  ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::Host>(100,3) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::OpenMP>(100,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::OpenMP>(100,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::OpenMP>(100,3) ) );
 }
-
-#endif
-
-#if 0
 
 TEST_F( openmp , view_remap )
 {
@@ -208,78 +203,6 @@ TEST_F( openmp , view_remap )
     ASSERT_EQ( value , ((int) output(i0,i1,i2,i3) ) );
   }}}}
 }
-
-TEST_F( openmp, long_multi_reduce) {
-  TestReduceMulti< long , Kokkos::OpenMP >( 1000000 , 7 );
-}
-
-//----------------------------------------------------------------------------
-
-struct OpenMPFunctor
-  : public Kokkos::Impl::OpenMPThreadWorker
-{
-  struct Finalize {
-
-    typedef int value_type ;
-
-    volatile int & flag ;
-
-    void operator()( const value_type & value ) const
-      { flag += value + 1 ; }
-
-    Finalize( int & f ) : flag(f) {}
-  };
-
-  struct Reduce {
-
-    typedef int value_type ;
-
-    static void init( int & update ) { update = 0 ; }
-
-    static void join( volatile int & update , const volatile int & input )
-      { update += input ; }
-  };
-
-  typedef Kokkos::Impl::ReduceOperator< Reduce , Finalize > reduce_type ;
-
-  typedef int value_type ;
-
-  const reduce_type reduce ;
-
-  OpenMPFunctor( int & f ) : reduce(f)
-    { Kokkos::Impl::OpenMPThreadWorker::execute(); }
-
-  void execute_on_thread( Kokkos::Impl::OpenMPThread & thread ) const
-    {
-      reduce.init( thread.reduce_data() );
-
-      host_barrier( thread );
-      host_barrier( thread );
-      host_reduce( thread , reduce );
-      host_reduce( thread , reduce );
-      host_barrier( thread );
-    }
-};
-
-TEST_F( openmp , openmp_thread )
-{
-  const int N = 1000 ;
-  int flag = 0 ;
-
-  for ( int i = 0 ; i < N ; ++i ) {
-    OpenMPFunctor tmp( flag );
-  }
-
-  ASSERT_EQ( flag , N * 2 );
-
-  for ( int i = 0 ; i < 10 ; ++i ) {
-    Kokkos::OpenMP::sleep();
-    Kokkos::OpenMP::wake();
-  }
-
-}
-
-#endif
 
 //----------------------------------------------------------------------------
 

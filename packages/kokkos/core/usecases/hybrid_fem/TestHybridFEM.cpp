@@ -7,7 +7,6 @@
 #include <string>
 #include <sstream>
 #include <iostream>
-#include <Kokkos_Host.hpp>
 #include <Kokkos_hwloc.hpp>
 
 //----------------------------------------------------------------------------

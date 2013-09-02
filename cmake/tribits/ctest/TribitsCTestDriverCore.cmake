@@ -1525,7 +1525,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
             MESSAGE("\nRunning coverage for package '${TRIBITS_PACKAGE}' ...\n")
             CTEST_COVERAGE(
               BUILD "${CTEST_BINARY_DIRECTORY}"
-              LABELS ${TRIBITS_PACKAGE}
+              LABELS ${TRIBITS_PACKAGE} ${TRIBITS_PACKAGE}Libs ${TRIBITS_PACKAGE}Exes
               )
             IF (CTEST_DO_SUBMIT)
               CTEST_SUBMIT( PARTS Coverage )

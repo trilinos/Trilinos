@@ -160,8 +160,8 @@ SumIntoGlobalBlock_Deterministic(double alpha,const Epetra_RowMatrix & determBlo
 
     int BaseRow = determMap.GID(i);
     ierr = this->SumIntoGlobalValues(ROffset_*BaseRow + Row, NumIndices, &Values[0], &Indices[0]);
-    if (ierr != 0) cout << "WARNING InterlacedOperator::SumIntoBlock_Deterministic SumIntoGlobalValues err = " << ierr <<
-            "\n\t  Row " << ROffset_*BaseRow + Row << ", Col start " << Indices[0] << endl;
+    if (ierr != 0) std::cout << "WARNING InterlacedOperator::SumIntoBlock_Deterministic SumIntoGlobalValues err = " << ierr <<
+            "\n\t  Row " << ROffset_*BaseRow + Row << ", Col start " << Indices[0] << std::endl;
 
   }
 }

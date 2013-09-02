@@ -110,12 +110,12 @@ void Prober::setList(const Teuchos::ParameterList& paramlist)
 
   /* Ensure Distance 2 */
   Teuchos::ParameterList dummy;
-  string two,s_dummy;
+  std::string two,s_dummy;
   Teuchos::ParameterList zoltan=List_.get("ZOLTAN",dummy);
 //   two=zoltan.get("DISTANCE",s_dummy);
 //   if(strcmp(two.c_str(),"2")){
 //     if(!input_graph_->Comm().MyPID())
-//       cerr<<"WARNING: Prober requires distance 2 coloring.  Resetting coloring type for you."<<endl;
+//       std::cerr<<"WARNING: Prober requires distance 2 coloring.  Resetting coloring type for you."<<std::endl;
 //     zoltan.set("DISTANCE","2");
 //     List_.set("ZOLTAN",zoltan);
 //   }

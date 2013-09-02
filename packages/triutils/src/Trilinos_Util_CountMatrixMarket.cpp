@@ -83,8 +83,8 @@ void TTrilinos_Util_CountMatrixMarket( const char *data_file,
     
     fgets( buffer, BUFSIZE, in_file ) ;
     bool symmetric = false ; 
-    string headerline1 = buffer;
-    if ( headerline1.find("symmetric") != string::npos) symmetric = true; 
+    std::string headerline1 = buffer;
+    if ( headerline1.find("symmetric") != std::string::npos) symmetric = true; 
     fgets( buffer, BUFSIZE, in_file ) ;
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 
       int_type i, j; 
@@ -113,7 +113,7 @@ void TTrilinos_Util_CountMatrixMarket( const char *data_file,
 	  first_off_diag = false ; 
 	}
 	if ( ( j > i && ! upper ) || ( i > j && upper ) ) { 
-	  cout << "file not symmetric" << endl ; 
+	  std::cout << "file not symmetric" << std::endl ; 
 	  exit(1) ; 
 	}
 	non_zeros[j-1]++ ; 

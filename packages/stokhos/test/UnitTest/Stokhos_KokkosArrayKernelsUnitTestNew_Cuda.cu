@@ -35,8 +35,10 @@
 #include "Stokhos_Cuda_CrsMatrix.hpp"
 #include "Stokhos_Cuda_BlockCrsMatrix.hpp"
 #include "Stokhos_Cuda_StochasticProductTensor.hpp"
+#include "Stokhos_Cuda_SymmetricDiagonalSpec.hpp"
 #include "Stokhos_Cuda_CrsProductTensor.hpp"
 #include "Stokhos_Cuda_TiledCrsProductTensor.hpp"
+#include "Stokhos_Cuda_CooProductTensor.hpp"
 #include "Stokhos_Cuda_LinearSparse3Tensor.hpp"
 
 #include "Kokkos_Cuda.hpp"
@@ -53,6 +55,27 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsMatrixFree_Cuda ) {
 
   success = test_crs_matrix_free<Scalar,Device,SparseMatOps>(
     setup, test_block, out);
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsDenseBlock_Cuda ) {
+  typedef double Scalar;
+  typedef Kokkos::Cuda Device;
+
+  success = test_crs_dense_block<Scalar,Device>(setup, out);
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsFlatCommuted_Cuda ) {
+  typedef double Scalar;
+  typedef Kokkos::Cuda Device;
+
+  success = test_crs_flat_commuted<Scalar,Device>(setup, out);
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsFlatOriginal_Cuda ) {
+  typedef double Scalar;
+  typedef Kokkos::Cuda Device;
+
+  success = test_crs_flat_original<Scalar,Device>(setup, out);
 }
 
 TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsProductTensor_Cuda ) {
@@ -72,6 +95,22 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, TiledCrsProductTensor_Cuda ) {
   params.set("Tile Size", 10);
   params.set("Max Tiles", 10000);
   success = test_crs_product_tensor<Scalar,Tensor,Device>(setup, out, params);
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CooProductTensorPacked_Cuda ) {
+  typedef double Scalar;
+  typedef Kokkos::Cuda Device;
+  typedef Stokhos::CooProductTensor<Scalar,Device,true> Tensor;
+
+  success = test_crs_product_tensor<Scalar,Tensor,Device>(setup, out);
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CooProductTensorUnpacked_Cuda ) {
+  typedef double Scalar;
+  typedef Kokkos::Cuda Device;
+  typedef Stokhos::CooProductTensor<Scalar,Device,false> Tensor;
+
+  success = test_crs_product_tensor<Scalar,Tensor,Device>(setup, out);
 }
 
 TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, LinearTensorSymmetric_Cuda ) {

@@ -59,12 +59,12 @@ namespace panzer {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::BlockedDOFManager()
-   : fieldsRegistered_(false), maxSubFieldNum_(-1), requireOrientations_(false), useDOFManagerFEI_(true)
+   : fieldsRegistered_(false), maxSubFieldNum_(-1), requireOrientations_(false), useDOFManagerFEI_(true), useTieBreak_(false)
 { }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::BlockedDOFManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm)
-   : fieldsRegistered_(false), maxSubFieldNum_(-1), requireOrientations_(false), useDOFManagerFEI_(true)
+   : fieldsRegistered_(false), maxSubFieldNum_(-1), requireOrientations_(false), useDOFManagerFEI_(true), useTieBreak_(false)
 {
    setConnManager(connMngr,mpiComm);
 }
@@ -592,6 +592,7 @@ buildNewIndexer(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > &
   }
   else {
     Teuchos::RCP<panzer::DOFManager<LocalOrdinalT,GlobalOrdinalT> > dofManager = Teuchos::rcp(new panzer::DOFManager<LocalOrdinalT,GlobalOrdinalT>);
+    dofManager->enableTieBreak(useTieBreak_);
     dofManager->setConnManager(connManager,mpiComm);
 
     return dofManager;

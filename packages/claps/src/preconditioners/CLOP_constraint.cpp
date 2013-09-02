@@ -101,8 +101,8 @@ int CLOP_constraint::factor()
   //
   determine_if_all_simple(simple_flag);
   if (print_flag > 0) {
-    if (simple_flag != 0) *fout << "constraints of type simple " << endl;
-    else                  *fout << "constraints of type complex" << endl;
+    if (simple_flag != 0) *fout << "constraints of type simple " << std::endl;
+    else                  *fout << "constraints of type complex" << std::endl;
   }
   //
   // forward factorization of constraints
@@ -152,7 +152,7 @@ int CLOP_constraint::factor()
   //
   delete [] dimcol; delete [] dvec; delete [] imap;
   delete [] row_degree; delete [] cola; delete [] sfaca;
-  if (print_flag > 0) *fout << "CLOP_constraint::factor completed" << endl;
+  if (print_flag > 0) *fout << "CLOP_constraint::factor completed" << std::endl;
   return 0;
 }
 
@@ -400,7 +400,7 @@ void CLOP_constraint::Tran(Epetra_CrsMatrix* & Tran, Epetra_Map* & RowMapMyCon,
   Comm.SumAll(&nc1, &nc1_sum, 1);
   if ((print_flag >= 0) && (ncol_global > nc1_sum)) {
     *fout << "Warning: there are " << ncol_global - nc1_sum 
-	  << " redundant constraints " << endl;
+	  << " redundant constraints " << std::endl;
   }
   //
   // determine non-constrained (type 1) dofs in sub_gdofs array

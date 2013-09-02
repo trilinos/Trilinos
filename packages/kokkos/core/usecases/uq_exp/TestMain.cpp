@@ -69,7 +69,7 @@ void run( const std::string & argline , comm::Machine machine )
       cmd_error = true ;
     }
   }
-#if KOKKOS_HAVE_CUDA
+#if defined( KOKKOS_HAVE_CUDA )
   else if ( which == std::string("cuda") ) {
 
     input >> which ;

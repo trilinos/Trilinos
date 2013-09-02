@@ -96,8 +96,8 @@ int BlockMultiVector::ExtractBlockValues(Epetra_MultiVector & BaseVector, int Gl
    for (int i=0; i<BaseMap_.NumMyElements(); i++) {
       localIndex = this->Map().LID((IndexOffset + BaseMap_.GID(i)));
       if (localIndex==-1) { 
-	     cout << "Error in  BlockMultiVector::GetBlock: " << i << " " 
-		  << IndexOffset << " " << BaseMap_.GID(i) << endl;
+	     std::cout << "Error in  BlockMultiVector::GetBlock: " << i << " " 
+		  << IndexOffset << " " << BaseMap_.GID(i) << std::endl;
 	     return -1;
       }
       for (int j=0; j<NumVectors(); j++)
@@ -118,8 +118,8 @@ int BlockMultiVector::LoadBlockValues(const Epetra_MultiVector & BaseVector, int
    for (int i=0; i<BaseMap_.NumMyElements(); i++) {
       localIndex = this->Map().LID((IndexOffset + BaseMap_.GID(i)));
       if (localIndex==-1) { 
-	     cout << "Error in  BlockMultiVector::GetBlock: " << i << " " 
-		  << IndexOffset << " " << BaseMap_.GID(i) << endl;
+	     std::cout << "Error in  BlockMultiVector::GetBlock: " << i << " " 
+		  << IndexOffset << " " << BaseMap_.GID(i) << std::endl;
 	     return -1;
       }
       for (int j=0; j<NumVectors(); j++)

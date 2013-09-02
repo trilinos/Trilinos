@@ -46,6 +46,7 @@ namespace Ioss {
       : Ioss::GroupingEntity(NULL, "null_entity", 0) {}
       
     std::string type_string() const {return "NullEntity";}
+    std::string short_type_string() const {return "null";}
     EntityType type() const {return INVALID_TYPE;}
       
     // Handle implicit properties -- These are calcuated from data stored

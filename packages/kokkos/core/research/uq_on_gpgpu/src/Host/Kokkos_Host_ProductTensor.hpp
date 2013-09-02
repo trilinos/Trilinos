@@ -61,12 +61,12 @@ namespace Impl {
 //----------------------------------------------------------------------------
 
 template< typename ValueType >
-class Multiply< SparseProductTensor< 3 , ValueType , Host > , void , void >
+class Multiply< SparseProductTensor< 3 , ValueType , Threads > , void , void >
 {
 public:
 
-  typedef Host::size_type size_type ;
-  typedef SparseProductTensor< 3 , ValueType , Host > tensor_type ;
+  typedef Threads::size_type size_type ;
+  typedef SparseProductTensor< 3 , ValueType , Threads > tensor_type ;
 
   template< typename MatrixValue , typename VectorValue >
   static void apply( const tensor_type & tensor ,
@@ -341,12 +341,12 @@ private:
 #endif
 
 template< typename ValueType >
-class Multiply< CrsProductTensor< 3 , ValueType , Host > , void , void >
+class Multiply< CrsProductTensor< 3 , ValueType , Threads > , void , void >
 {
 public:
 
-  typedef Host::size_type size_type ;
-  typedef CrsProductTensor< 3 , ValueType , Host > tensor_type ;
+  typedef Threads::size_type size_type ;
+  typedef CrsProductTensor< 3 , ValueType , Threads > tensor_type ;
 
   template< typename MatrixValue , typename VectorValue >
   static void apply( const tensor_type & tensor ,
@@ -426,19 +426,19 @@ public:
 //----------------------------------------------------------------------------
 
 template< typename ValueType >
-class Multiply< SparseProductTensor< 3 , ValueType , Host > ,
-                SymmetricDiagonalSpec< Kokkos::Host > , void >
+class Multiply< SparseProductTensor< 3 , ValueType , Threads > ,
+                SymmetricDiagonalSpec< Kokkos::Threads > , void >
 {
 public:
-  typedef Host::size_type size_type ;
-  typedef SparseProductTensor< 3 , ValueType , Host > tensor_type ;
+  typedef Threads::size_type size_type ;
+  typedef SparseProductTensor< 3 , ValueType , Threads > tensor_type ;
 
   template< typename MatrixValue >
   static void apply( const tensor_type & tensor ,
                      const MatrixValue * const a ,
                            MatrixValue * const M )
   {
-    const SymmetricDiagonalSpec< Kokkos::Host >
+    const SymmetricDiagonalSpec< Kokkos::Threads >
       spec( tensor.dimension() );
 
     const size_type nEntry  = tensor.entry_count();

@@ -167,6 +167,34 @@
     </EmailAddresses>
     <ParentPackage value="Kokkos"/>
   </Package>
+  <Package name="KokkosContainers" dir="packages/kokkos/containers" type="EX">
+    <LIB_REQUIRED_DEP_PACKAGES value="KokkosCore"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES value="KokkosCore"/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="Pthread,CUDA,HWLOC"/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="CUSPARSE,Pthread"/>
+    <EmailAddresses>
+      <Regression address="kokkos-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Kokkos"/>
+  </Package>
+  <Package name="KokkosExample" dir="packages/kokkos/example" type="EX">
+    <LIB_REQUIRED_DEP_PACKAGES value="KokkosCore"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES value="KokkosCore"/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="CUSPARSE,MKL"/>
+    <EmailAddresses>
+      <Regression address="kokkos-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Kokkos"/>
+  </Package>
   <Package name="KokkosCompat" dir="packages/kokkos/compat" type="EX">
     <LIB_REQUIRED_DEP_PACKAGES value="KokkosCore,KokkosClassic,Teuchos"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="ThreadPool"/>
@@ -183,7 +211,7 @@
   </Package>
   <Package name="Kokkos" dir="packages/kokkos" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="KokkosClassic,KokkosCore,KokkosCompat"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="KokkosClassic,KokkosCore,KokkosContainers,KokkosExample,KokkosCompat"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -469,7 +497,7 @@
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS value="MPI,SuperLU,SuperLUMT,SuperLUDist,PARDISO_MKL,ParMETIS,METIS"/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="Cholmod"/>
     <EmailAddresses>
       <Regression address="amesos2-regression@software.sandia.gov"/>
     </EmailAddresses>
@@ -1055,7 +1083,7 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Galeri"/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="HYPRE,HIPS,SuperLU,SPARSKIT"/>
+    <LIB_OPTIONAL_DEP_TPLS value="HYPRE,HIPS,SuperLU,SPARSKIT,Boost"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS value="HYPRE,SuperLU,SPARSKIT"/>
     <EmailAddresses>
@@ -1135,13 +1163,13 @@
   </Package>
   <Package name="Ifpack2" dir="packages/ifpack2" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Belos,Teuchos,Tpetra,KokkosClassic"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Xpetra,Zoltan2,ThyraTpetraAdapters"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Xpetra,Zoltan2,ThyraTpetraAdapters,Amesos2"/>
     <TEST_REQUIRED_DEP_PACKAGES value="Belos,Triutils,Galeri"/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="Anasazi"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Anasazi,Amesos2"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS value="QD"/>
+    <TEST_OPTIONAL_DEP_TPLS value="QD,Cholmod,Boost"/>
     <EmailAddresses>
       <Regression address="ifpack2-regression@software.sandia.gov"/>
     </EmailAddresses>
@@ -1414,8 +1442,8 @@
     <ParentPackage value=""/>
   </Package>
   <Package name="Panzer" dir="packages/panzer" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Kokkos,Sacado,Phalanx,Intrepid,FEI,ThyraCore,ThyraTpetraAdapters,ThyraEpetraAdapters,Tpetra,Epetra,EpetraExt"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="STK,SEACASIoss,SEACASExodus,Teko,Stokhos,MueLu"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Kokkos,Sacado,Phalanx,Intrepid,FEI,ThyraCore,ThyraTpetraAdapters,ThyraEpetraAdapters,Tpetra,Epetra,EpetraExt,Zoltan"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="STK,SEACASIoss,SEACASExodus,Teko,Stokhos,MueLu,Ifpack2"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Stratimikos,Piro,NOX,Rythmos"/>
     <LIB_REQUIRED_DEP_TPLS value="MPI,Boost"/>
@@ -1547,7 +1575,7 @@
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS value="ExodusII"/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="CppUnit"/>
     <EmailAddresses>
       <Regression address="mesquite-regression@software.sandia.gov"/>
     </EmailAddresses>

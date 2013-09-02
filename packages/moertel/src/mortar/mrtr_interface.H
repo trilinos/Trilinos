@@ -221,7 +221,7 @@ in any geometrical configuration. It is though computationally advantageous when
 as few as possible processes work on a single interface and non-overlapping subsets of
 processes work on different interfaces at the same time.
 
-The \ref MOERTEL::Interface class supports the ostream& operator <<
+The \ref MOERTEL::Interface class supports the std::ostream& operator <<
 
 \author Glen Hansen (gahanse@sandia.gov)
 
@@ -856,10 +856,10 @@ private:
   // don't want = operator
   Interface operator = (const Interface& old);
 
-  // print local segment information to cout
+  // print local segment information to std::cout
   bool PrintSegments() const;
 
-  // print local node information to cout
+  // print local node information to std::cout
   bool PrintNodes() const;
 
   // get a view of a MOERTEL::Node (of either side) specifying node id
@@ -947,6 +947,6 @@ private:
 } // namespace MOERTEL
 
 // operator <<
-ostream& operator << (ostream& os, const MOERTEL::Interface& inter); 
+std::ostream& operator << (std::ostream& os, const MOERTEL::Interface& inter); 
 
 #endif // MOERTEL_INTERFACE_H

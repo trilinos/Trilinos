@@ -40,12 +40,14 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Panzer_ConfigDefs.hpp"
+
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_STKConnManager_impl.hpp"
 
 namespace panzer_stk {
 
 template class STKConnManager<int>;
-template class STKConnManager<long>;
+template class STKConnManager<panzer::Ordinal64>;
 
 }

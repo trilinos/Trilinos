@@ -1,5 +1,6 @@
 
 INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -39,3 +40,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   XHOSTTYPE AIX
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  read_MatrixMarket
+  SOURCES ml_read_MatrixMarket.cpp
+  ARGS "--matrix=A.mm"
+  NUM_MPI_PROCS 1-4
+  COMM serial mpi
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_ml_basic_examples
+  SOURCE_FILES A.mm
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+)

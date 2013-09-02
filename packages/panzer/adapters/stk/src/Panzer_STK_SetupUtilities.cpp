@@ -293,6 +293,41 @@ void getSubcellElements(const panzer_stk::STK_Interface & mesh,
   }
 }
 
+void getUniversalSubcellElements(const panzer_stk::STK_Interface & mesh,
+				 const std::string & blockId, 
+				 const std::vector<stk::mesh::Entity*> & entities,
+				 std::vector<std::size_t> & localEntityIds, 
+				 std::vector<stk::mesh::Entity*> & elements)
+{
+  // for verifying that an element is in specified block
+  stk::mesh::Part * blockPart = mesh.getElementBlockPart(blockId);
+  stk::mesh::Part * universalPart = &mesh.getMetaData()->universal_part();
+  stk::mesh::EntityRank elementRank = mesh.getElementRank();
+  
+  // loop over each entitiy extracting elements and local entity ID that
+  // are containted in specified block.
+  std::vector<stk::mesh::Entity*>::const_iterator entityItr;
+  for(entityItr=entities.begin();entityItr!=entities.end();++entityItr) {
+    stk::mesh::Entity * entity = *entityItr;
+    
+    stk::mesh::PairIterRelation relations = entity->relations(elementRank);
+
+    for(std::size_t e=0;e<relations.size();++e) {
+      stk::mesh::Entity * element = relations[e].entity();
+      std::size_t entityId = relations[e].identifier();
+	
+      // is this element in requested block
+      bool inBlock = element->bucket().member(*blockPart);
+      bool onProc = element->bucket().member(*universalPart);
+      if(inBlock && onProc) {
+        // add element and Side ID to output vectors
+        elements.push_back(element);
+        localEntityIds.push_back(entityId);
+      }
+    }
+  }
+}
+
 void getSideElementCascade(const panzer_stk::STK_Interface & mesh,
                            const std::string & blockId, 
                            const std::vector<stk::mesh::Entity*> & sides,

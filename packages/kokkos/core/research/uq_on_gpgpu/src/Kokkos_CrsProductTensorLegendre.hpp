@@ -49,6 +49,7 @@
 #include <vector>
 #include <stdexcept>
 #include <Kokkos_Macros.hpp>
+#include <Kokkos_Threads.hpp>
 #include <Kokkos_View.hpp>
 #include <Kokkos_BlockCrsMatrix.hpp>
 #include <Kokkos_ProductTensorLegendre.hpp>
@@ -56,6 +57,8 @@
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
+
+class Cuda ; // In case Kokkos_Cuda.hpp has not been included
 
 enum CrsProductTensorLegendreVariant {
   CrsProductTensorLegendreVariant_SeparateDiagonal , 
@@ -391,16 +394,16 @@ namespace Impl {
 template< typename MatrixScalar ,
           typename VectorScalar >
 class Multiply<
-  BlockCrsMatrix< CrsProductTensorLegendre< MatrixScalar , Host > ,
-                  MatrixScalar , Host > ,
-  View< VectorScalar** , LayoutLeft , Host > ,
-  View< VectorScalar** , LayoutLeft , Host > >
+  BlockCrsMatrix< CrsProductTensorLegendre< MatrixScalar , Threads > ,
+                  MatrixScalar , Threads > ,
+  View< VectorScalar** , LayoutLeft , Threads > ,
+  View< VectorScalar** , LayoutLeft , Threads > >
 {
 private:
 
-  typedef BlockCrsMatrix< CrsProductTensorLegendre< MatrixScalar , Host > ,
-                          MatrixScalar , Host > matrix_type ;
-  typedef View< VectorScalar** , LayoutLeft , Host > vector_type ;
+  typedef BlockCrsMatrix< CrsProductTensorLegendre< MatrixScalar , Threads > ,
+                          MatrixScalar , Threads > matrix_type ;
+  typedef View< VectorScalar** , LayoutLeft , Threads > vector_type ;
 
   const matrix_type m_A ;
   const vector_type m_x ;
@@ -408,7 +411,7 @@ private:
 
 public:
 
-  typedef Host                             device_type ;
+  typedef Threads                          device_type ;
   typedef typename device_type::size_type  size_type ;
 
   KOKKOS_INLINE_FUNCTION

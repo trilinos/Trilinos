@@ -67,14 +67,21 @@
 namespace MueLu {
 
  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+ Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Zoltan2Interface() {
+    defaultZoltan2Params = rcp(new ParameterList());
+    defaultZoltan2Params->set("algorithm",             "multijagged");
+    defaultZoltan2Params->set("partitioning_approach", "partition");
+ }
+
+ template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
  RCP<const ParameterList> Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< RCP<const FactoryBase> >("A",                      Teuchos::null, "Factory of the matrix A");
-    validParamList->set< RCP<const FactoryBase> >("Coordinates",            Teuchos::null, "Factory of the coordinates");
-    validParamList->set< RCP<const FactoryBase> >("number of partitions",   Teuchos::null, "(advanced) Factory computing the number of partitions");
-    validParamList->set< int >                   ("rowWeight",                          0, "Default weight to rows (total weight = nnz + rowWeight");
-    validParamList->set< std::string >           ("algorithm",              "multijagged", "Zoltan2 partitioning algorithm (multijagged,rcb)");
+    validParamList->set< RCP<const FactoryBase> >   ("A",                      Teuchos::null, "Factory of the matrix A");
+    validParamList->set< RCP<const FactoryBase> >   ("Coordinates",            Teuchos::null, "Factory of the coordinates");
+    validParamList->set< RCP<const FactoryBase> >   ("number of partitions",   Teuchos::null, "(advanced) Factory computing the number of partitions");
+    validParamList->set< int >                      ("rowWeight",                          0, "Default weight to rows (total weight = nnz + rowWeight");
+    validParamList->set< RCP<const ParameterList> > ("ParameterList",          Teuchos::null, "Zoltan2 parameters");
 
     return validParamList;
   }
@@ -152,17 +159,26 @@ namespace MueLu {
     }
     weights[0] = weightsPerRow.getRawPtr();
 
-    Teuchos::ParameterList params;
+    RCP<const ParameterList> providedList = pL.get<RCP<const ParameterList> >("ParameterList");
+    ParameterList Zoltan2Params;
+    if (providedList != Teuchos::null)
+      Zoltan2Params = *providedList;
 
-    std::string algo = pL.get<std::string>("algorithm");
-    TEUCHOS_TEST_FOR_EXCEPTION(algo != "multijagged" && algo != "rcb", Exceptions::RuntimeError, "Unknown partitioning algorithm: \"" << algo << "\"");
-    params.set("algorithm",             algo);
-    params.set("num_global_parts",      Teuchos::as<int>(numParts));
-    params.set("partitioning_approach", "partition");
-    // NOTE: "compute metrics" is buggy in Zoltan2, especially for large runs
-    // params.set("compute_metrics",         "true");
+    // Merge defalt Zoltan2 parameters with user provided
+    // If default and user parameters contain the same parameter name, user one is always preferred
+    for (ParameterList::ConstIterator param = defaultZoltan2Params->begin(); param != defaultZoltan2Params->end(); param++) {
+      const std::string& pName = defaultZoltan2Params->name(param);
+      if (!Zoltan2Params.isParameter(pName))
+        Zoltan2Params.set(pName, defaultZoltan2Params->get<std::string>(pName));
+    }
+    Zoltan2Params.set("num_global_parts", Teuchos::as<int>(numParts));
 
-    GetOStream(Runtime0,0) << "Zoltan2 parameters:" << std::endl << "----------" << std::endl << params << "----------" << std::endl;
+    GetOStream(Runtime0,0) << "Zoltan2 parameters:" << std::endl << "----------" << std::endl << Zoltan2Params << "----------" << std::endl;
+
+    const std::string& algo = Zoltan2Params.get<std::string>("algorithm");
+    TEUCHOS_TEST_FOR_EXCEPTION(algo != "multijagged" &&
+                               algo != "rcb",
+                               Exceptions::RuntimeError, "Unknown partitioning algorithm: \"" << algo << "\"");
 
     typedef Zoltan2::BasicCoordinateInput<Zoltan2::BasicUserTypes<SC,GO,LO,GO> > InputAdapterType;
     typedef Zoltan2::PartitioningProblem<InputAdapterType> ProblemType;
@@ -170,7 +186,7 @@ namespace MueLu {
     InputAdapterType adapter(numElements, map->getNodeElementList().getRawPtr(), values, strides, weights, strides);
 
     const Teuchos::MpiComm<int>& comm = static_cast<const Teuchos::MpiComm<int>& >(*map->getComm());
-    RCP<ProblemType> problem(new ProblemType(&adapter, &params, *comm.getRawMpiComm()));
+    RCP<ProblemType> problem(new ProblemType(&adapter, &Zoltan2Params, *comm.getRawMpiComm()));
 
     {
       SubFactoryMonitor m1(*this, "Zoltan2 " + toString(algo), level);
@@ -182,17 +198,18 @@ namespace MueLu {
 
     const zoltan2_partId_t * parts = problem->getSolution().getPartList();
 
-    // KDDKDD NEW:  At present, Zoltan2 does not guarantee that the
-    // KDDKDD NEW:  parts in getPartList() are listed in the same order
-    // KDDKDD NEW:  as the input.  Using getIdList() compensates for
-    // KDDKDD NEW:  differences in the order.  Eventually, Zoltan2 will
-    // KDDKDD NEW:  guarantee identical ordering; at that time, all code
-    // KDDKDD NEW:  marked with "KDDKDD NEW" can be reverted to the code
-    // KDDKDD NEW:  marked with "KDDKDD OLD".
+    // K. Devine comment:
+    //   At present, Zoltan2 does not guarantee that the parts in getPartList() are listed
+    //   in the same order as the input. Using getIdList() compensates for differences
+    //   in the order. Eventually, Zoltan2 will guarantee identical ordering; at that time,
+    //   all code marked with
+    //       "KDDKDD NEW"
+    //   can be reverted to the code marked with
+    //       "KDDKDD OLD".
     const GO * zgids = problem->getSolution().getIdList();  // KDDKDD  NEW
 
     for (GO i = 0; i < numElements; i++) {
-      //GO localID = i;   // KDDKDD OLD
+      // GO localID = i;                           // KDDKDD OLD
       GO localID = map->getLocalElement(zgids[i]); // KDDKDD NEW
       int partNum = parts[i];
 

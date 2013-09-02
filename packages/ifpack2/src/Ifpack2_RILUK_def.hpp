@@ -326,7 +326,7 @@ void RILUK<MatrixType>::initialize() {
 
   if (Graph_ != Teuchos::null) return;
 
-  Graph_ = Teuchos::rcp(new Ifpack2::IlukGraph<local_ordinal_type,global_ordinal_type,node_type>(A_->getCrsGraph(), LevelOfFill_, LevelOfOverlap_));
+  Graph_ = Teuchos::rcp(new Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type,mat_vec_type> >(A_->getCrsGraph(), LevelOfFill_, LevelOfOverlap_));
 
   Graph_->constructFilledGraph();
 

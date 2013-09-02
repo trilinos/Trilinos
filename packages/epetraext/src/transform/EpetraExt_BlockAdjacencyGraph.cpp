@@ -99,7 +99,7 @@ namespace EpetraExt {
     B.Comm().MaxAll( &myMatProc, &matProc, 1 );
 
     if( matProc == -1)
-      { cout << "FAIL for Global!  All CrsGraph entries must be on one processor!\n"; abort(); }
+      { std::cout << "FAIL for Global!  All CrsGraph entries must be on one processor!\n"; abort(); }
 
     int i= 0, j = 0, k, l = 0, p, pm, q = -1, ns;
     int tree_height;

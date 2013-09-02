@@ -72,6 +72,27 @@ struct ScalarTraits<int>
 };
 
 template<>
+struct ScalarTraits<unsigned int>
+{
+  typedef unsigned int magnitudeType;
+  typedef unsigned int halfPrecision;
+  typedef unsigned int doublePrecision;
+  static const bool isComplex = false;
+  static const bool isOrdinal = true;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = false;
+  static inline __device__ __host__ magnitudeType magnitude(unsigned int a) { return (unsigned int)fabsf((float)a); }
+  static inline __device__ __host__ unsigned int zero()  { return 0; }
+  static inline __device__ __host__ unsigned int one()   { return 1; }
+  static inline __device__ __host__ unsigned int conjugate(unsigned int x) { return x; }
+  static inline __device__ __host__ unsigned int real(unsigned int x) { return x; }
+  static inline __device__ __host__ unsigned int imag(unsigned int)   { return 0; }
+  static inline __device__ __host__ bool isnaninf(unsigned int) { return false; }
+  static inline __device__ __host__ unsigned int squareroot(unsigned int x) { return (unsigned int)sqrtf((float)x); }          // perhaps this cast should be replaced by an explicit call like __float2int_rn
+  static inline __device__ __host__ unsigned int pow(unsigned int x, unsigned int y) { return (unsigned int)powf((float)x,(float)y); }  // perhaps this cast should be replaced by an explicit call like __float2int_rn
+};
+
+template<>
 struct ScalarTraits<long int>
 {
   typedef long int magnitudeType;

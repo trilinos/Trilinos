@@ -1,10 +1,17 @@
 #ifndef KOKKOS_MULTIVECTOR_H_
 #define KOKKOS_MULTIVECTOR_H_
 
+#include <KokkosCore_config.h>
+
 #include <Kokkos_View.hpp>
-#include <Kokkos_Host.hpp>
+#include <Kokkos_Threads.hpp>
+
+#ifdef KOKKOS_HAVE_OPENMP
 #include <Kokkos_OpenMP.hpp>
+#endif
+#ifdef KOKKOS_HAVE_CUDA
 #include <Kokkos_Cuda.hpp>
+#endif
 #include <Kokkos_Macros.hpp>
 #include <Kokkos_ParallelReduce.hpp>
 #include <ctime>

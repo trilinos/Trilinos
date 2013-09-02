@@ -64,7 +64,7 @@ class STK_Interface;
 class SquareQuadMeshFactory : public STK_MeshFactory {
 public:
    //! Constructor
-   SquareQuadMeshFactory();
+   SquareQuadMeshFactory(bool enableRebalance=false);
 
    //! Destructor
    ~SquareQuadMeshFactory();

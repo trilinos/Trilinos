@@ -43,7 +43,7 @@
 #ifndef PANZER_TRAITS_HPP
 #define PANZER_TRAITS_HPP
 
-#include "Panzer_config.hpp"
+#include "Panzer_ConfigDefs.hpp"
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
@@ -84,7 +84,7 @@
 #endif
 
 namespace panzer {
-
+  
   class LinearObjContainer;
 
   struct Traits : public PHX::TraitsBase {

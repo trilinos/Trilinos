@@ -43,9 +43,6 @@
 #ifndef PANZER_ASSEMBLY_ENGINE_IMPL_HPP
 #define PANZER_ASSEMBLY_ENGINE_IMPL_HPP
 
-#include "Epetra_Vector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_CrsMatrix.h"
 #include "Phalanx_FieldManager.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_AssemblyEngine_InArgs.hpp"

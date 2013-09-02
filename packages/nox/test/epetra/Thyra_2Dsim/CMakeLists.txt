@@ -30,10 +30,25 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
     NUM_MPI_PROCS 1
     PASS_REGULAR_EXPRESSION "Test passed!"
     )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Thyra_Rosenbrock_AndersonAcceleration
+    SOURCES ${UNIT_TEST_DRIVER}  ModelEvaluatorRosenbrock.hpp ModelEvaluatorRosenbrock.cpp
+    Thyra_Rosenbrock_AndersonAcceleration.cpp
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "Test passed!"
+    )
   
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Thyra_RowSumScaling
     SOURCES ModelEvaluator2DSim.hpp ModelEvaluator2DSim_def.hpp Thyra_RowSumScaling.C
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "Test passed!"
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Thyra_Heq
+    SOURCES  ModelEvaluatorHeq.hpp ModelEvaluatorHeq_def.hpp Thyra_Heq.C
     NUM_MPI_PROCS 1
     PASS_REGULAR_EXPRESSION "Test passed!"
     )

@@ -48,12 +48,13 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "TpetraExt_MMHelpers.hpp"
 
-/*! \file Tpetra_MatrixMatrix_decl.hpp
+/*! \file TpetraExt_MatrixMatrix_decl.hpp
 
     The declarations for the class Tpetra::MMMultiMultiply and related non-member constructors.
  */
 
 namespace Tpetra {
+
 namespace MatrixMatrix {
 
 /// \brief Sparse matrix-matrix multiply

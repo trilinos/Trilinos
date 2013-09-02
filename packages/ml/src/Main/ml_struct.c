@@ -7100,7 +7100,7 @@ double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
    /* ------------------------------------------------------------ */
    if (Rmat->to == NULL) {    /* coarsest grid */
 
-/*if ( comm->ML_mypid == 0 ) cout << ep_sol.MyLength() << " " << ep_sol.GlobalLength() << " " << endl; */
+/*if ( comm->ML_mypid == 0 ) std::cout << ep_sol.MyLength() << " " << ep_sol.GlobalLength() << " " << std::endl; */
 
       if ( ML_CSolve_Check( csolve ) == 1 ) {
          ML_CSolve_Apply(csolve, lengf, ep_sol, lengf, ep_rhss);
@@ -7154,7 +7154,7 @@ double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
   tot_size_WKC = lengc;
 #endif
 
-/*if ( comm->ML_mypid == 0 ) cout << "Recursing down" << endl; */
+/*if ( comm->ML_mypid == 0 ) std::cout << "Recursing down" << std::endl; */
 
       Epetra_Map Map ( tot_size_WKC , lengc , 0 , ep_res.Comm() );
       Epetra_MultiVector ep_rhs2 ( Map , ep_res.NumVectors() );
@@ -7207,7 +7207,7 @@ double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
       if (ml->ML_scheme == ML_MGW)
 	ML_Cycle_MG( Rmat->to, ep_sol2, ep_rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
 
-/*if ( comm->ML_mypid == 0 ) cout << "Recursing up" << endl; */
+/*if ( comm->ML_mypid == 0 ) std::cout << "Recursing up" << std::endl; */
       /* ------------------------------------------------------------ */
       /* transform the data from equation to grid space, do grid      */
       /* transfer and then transfer back to equation space            */

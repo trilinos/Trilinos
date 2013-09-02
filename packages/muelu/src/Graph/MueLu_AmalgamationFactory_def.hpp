@@ -135,7 +135,7 @@ namespace MueLu {
       GlobalOrdinal gDofId = colMap->getGlobalElement(i);
 
       // translate DOFGid to node id
-      GlobalOrdinal gNodeId = DOFGid2NodeId(gDofId, A, fullblocksize, offset, indexBase);
+      GlobalOrdinal gNodeId = DOFGid2NodeId(gDofId, fullblocksize, offset, indexBase);
 
       // gblockid -> gDofId/lDofId
       if (nodegid2dofgids_->count(gNodeId) == 0) {
@@ -173,7 +173,7 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const GlobalOrdinal AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DOFGid2NodeId(GlobalOrdinal gid, const RCP<Matrix>& A, LocalOrdinal blockSize, const GlobalOrdinal offset, const GlobalOrdinal indexBase) {
+  const GlobalOrdinal AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DOFGid2NodeId(GlobalOrdinal gid, LocalOrdinal blockSize, const GlobalOrdinal offset, const GlobalOrdinal indexBase) {
     // here, the assumption is, that the node map has the same indexBase as the dof map
     GlobalOrdinal globalblockid = ((GlobalOrdinal) gid - offset - indexBase) / blockSize + indexBase;
     return globalblockid;

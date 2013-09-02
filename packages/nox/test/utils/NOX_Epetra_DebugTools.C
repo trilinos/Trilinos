@@ -149,7 +149,7 @@ NOX::Epetra::DebugTools::compute_matrix_using_operator( const Epetra_Operator * 
       }
     }
     if( (0 == op->Comm().MyPID()) && (0 == (col % outFreq)) )
-      std::cout << "-" << flush;
+      std::cout << "-" << std::flush;
   }
   if( 0 == op->Comm().MyPID() )
     std::cout << "*" << std::endl;

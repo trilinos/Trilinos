@@ -116,7 +116,7 @@ int main(int argc, char **argv)
 #endif
 
      if (test_host) {
-       bool status = MPVectorExample<MaxSize,Kokkos::Host>::run(
+       bool status = MPVectorExample<MaxSize,Kokkos::Threads>::run(
 	 storage_method, n, sz, nblocks, nthreads, reset, print);
        
        if (status)

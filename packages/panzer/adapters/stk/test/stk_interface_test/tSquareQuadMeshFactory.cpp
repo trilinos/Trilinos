@@ -62,6 +62,7 @@
 
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/Selector.hpp"
+#include <stk_rebalance/ZoltanPartition.hpp>
 
 namespace panzer_stk {
 
@@ -753,6 +754,39 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, element_counts)
       test4(out,success,commUT);
       break;
    };
+}
+
+TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory,rebalance)
+{
+   int size = 0; 
+   MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+   pl->set("X Elements",5);
+   pl->set("Y Elements",5);
+   
+   SquareQuadMeshFactory factory; 
+   factory.setParameterList(pl);
+   RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+   TEST_ASSERT(mesh!=Teuchos::null);
+
+   Teuchos::ParameterList params;
+
+   mesh->rebalance(params);
+   mesh->buildLocalElementIDs();
+
+   // check to make sure that user specified parameters work
+   Teuchos::ParameterList zoltan_params;
+   zoltan_params.set("ZOLTAN DEBUG LEVEL","10");
+   mesh->rebalance(zoltan_params);
+   mesh->buildLocalElementIDs();
+
+   // check the size for the repartitioned mesh
+   if(size==2) {
+     std::vector<stk::mesh::Entity*> elements;
+     mesh->getMyElements(elements);
+     TEST_ASSERT(elements.size()==12 || elements.size()==13);
+   }
 }
 
 void test1(Teuchos::FancyOStream &out, bool &success, MPI_Comm & comm)

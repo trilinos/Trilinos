@@ -46,9 +46,9 @@
 
 #include <omp.h>
 
-#include <Kokkos_ParallelFor.hpp>
+#include <Kokkos_Parallel.hpp>
 #include <Kokkos_ParallelReduce.hpp>
-#include <Host/Kokkos_Host_Thread.hpp>
+#include <OpenMP/Kokkos_Host_Thread.hpp>
 
 namespace Kokkos {
 namespace Impl {
@@ -56,14 +56,14 @@ namespace Impl {
 //----------------------------------------------------------------------------
 
 template< class FunctorType , class WorkSpec >
-class ParallelFor< FunctorType , OpenMP , WorkSpec > {
+class ParallelFor< FunctorType , WorkSpec , OpenMP > {
 public:
 
   typedef Kokkos::HostSpace::size_type  size_type ;
 
   inline
-  ParallelFor( const size_type work_count ,
-               const FunctorType & functor )
+  ParallelFor( const FunctorType & functor ,
+               const size_type work_count )
   {
 #if defined( __INTEL_COMPILER )
     enum { vectorize = is_same<WorkSpec,VectorParallel>::value };
@@ -101,57 +101,20 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-template< typename ValueType >
-class ParallelReduceFunctorValue< ValueType , OpenMP >
-{
-public:
-  typedef ValueType value_type ;
-
-  ParallelReduceFunctorValue() {}
-
-  inline void operator()( const value_type & ) const {}
-
-  void result( value_type & value ) const
-  {
-    value_type * const ptr = (value_type*) OpenMP::root_reduce_scratch();
-    value = *ptr ;
-  }
-};
-
-template< typename MemberType >
-class ParallelReduceFunctorValue< MemberType[] , OpenMP >
-{
-public:
-  typedef MemberType    value_type[] ;
-  const HostSpace::size_type value_count ;
-
-  inline void operator()( const MemberType [] ) const {}
-
-  explicit
-  ParallelReduceFunctorValue( HostSpace::size_type n )
-    : value_count(n)
-    {}
-
-  void result( value_type result ) const
-  {
-    MemberType * const ptr = (MemberType *) OpenMP::root_reduce_scratch();
-
-    for ( HostSpace::size_type i = 0 ; i < value_count ; ++i ) result[i] = ptr[i] ;
-  }
-};
-
-//----------------------------------------------------------------------------
-
-template< class FunctorType , class ValueOper , class FinalizeType , class WorkSpec >
-class ParallelReduce< FunctorType , ValueOper , FinalizeType , OpenMP , WorkSpec > {
+template< class FunctorType , class WorkSpec >
+class ParallelReduce< FunctorType , WorkSpec , OpenMP > {
 public:
 
   typedef Kokkos::HostSpace::size_type  size_type ;
 
+  typedef typename ReduceAdapter< FunctorType >::pointer_type pointer_type ;
+
+  typedef ReduceAdapter< FunctorType > ReduceOp ;
+
   inline
-  ParallelReduce( const size_type      work_count ,
-                  const FunctorType  & functor ,
-                  const FinalizeType & finalize )
+  ParallelReduce( const FunctorType  & functor ,
+                  const size_t         work_count ,
+                  pointer_type         result = 0 )
   {
 #if defined( __INTEL_COMPILER )
     enum { work_align = is_same<WorkSpec,VectorParallel>::value &&
@@ -165,9 +128,7 @@ public:
 
     OpenMP::assert_ready("Kokkos::OpenMP - parallel_reduce");
 
-    const ReduceOperator< ValueOper , FinalizeType > reduce( finalize );
-
-    OpenMP::resize_reduce_scratch( reduce.value_size() * work_align );
+    OpenMP::resize_reduce_scratch( ReduceOp::value_size( functor ) * work_align );
 
 #pragma omp parallel
     {
@@ -177,28 +138,32 @@ public:
         thread.work_range( work_count );
 
       if ( ! work_mask ) {
-        reduce.init( thread.reduce_data() );
+        functor.init( ReduceOp::reference( thread.reduce_data() ) );
 
         for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
-          functor( iwork , reduce.reference( thread.reduce_data() ) );
+          functor( iwork , ReduceOp::reference( thread.reduce_data() ) );
         }
       }
       else {
 #if defined( __INTEL_COMPILER )
+        const size_type count = ReduceOp::value_count( functor );
 
 #pragma simd
 #pragma ivdep
         for ( size_type j = 0 ; j < work_align ; ++j ) {
-          reduce.init( thread.reduce_data() , j );
+          functor.init( ReduceOp::reference( thread.reduce_data() , count * j ) );
         }
 
 #pragma simd vectorlength(work_align)
 #pragma ivdep
         for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
-          functor( iwork , reduce.reference( thread.reduce_data() , iwork & work_mask ) );
+          functor( iwork , ReduceOp::reference( thread.reduce_data() , count * ( iwork & work_mask ) ) );
         }
 
-        reduce.template join< work_align >( thread.reduce_data() );
+        for ( size_type j = 1 ; j < work_align ; ++j ) {
+          functor.join( ReduceOp::reference( thread.reduce_data() ) ,
+                        ReduceOp::reference( thread.reduce_data() , count * j ) );
+        }
 #endif
       }
     }
@@ -208,11 +173,21 @@ public:
       HostThread & root = * OpenMP::get_host_thread();
       for ( unsigned i = 1 ; i < n ; ++i ) {
         HostThread & th = * OpenMP::get_host_thread(i);
-        reduce.join( root.reduce_data() , th.reduce_data() );
+        functor.join( ReduceOp::reference( root.reduce_data() ) ,
+                      ReduceOp::reference( th.reduce_data() ) );
       }
-      reduce.finalize( root.reduce_data() );
+      ReduceOp::final( functor , root.reduce_data() );
+    }
+
+    if ( result ) {
+      const pointer_type ptr = (pointer_type) OpenMP::root_reduce_scratch();
+      const unsigned n = ReduceOp::value_count( functor );
+
+      for ( unsigned i = 0 ; i < n ; ++i ) { result[i] = ptr[i] ; }
     }
   }
+
+  void wait() {}
 };
 
 //----------------------------------------------------------------------------

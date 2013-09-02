@@ -46,7 +46,7 @@
 //#define THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
 
 #include "Thyra_DefaultSpmdMultiVector_decl.hpp"
-#include "Thyra_SpmdMultiVectorBase.hpp"
+#include "Thyra_SpmdMultiVectorDefaultBase.hpp"
 #include "Thyra_VectorSpaceFactoryBase.hpp"
 #include "Thyra_DefaultSpmdVector.hpp"
 #include "Teuchos_Assert.hpp"
@@ -186,13 +186,13 @@ void DefaultSpmdMultiVector<Scalar>::initialize(
   const Ordinal leadingDim_in
   )
 {
-  const Ordinal leadingDim =
-    (leadingDim_in >= 0 ? leadingDim_in : spmdRangeSpace->localSubDim());
+  const Ordinal localSubDim = spmdRangeSpace->localSubDim();
+  const Ordinal leadingDim = (leadingDim_in >= 0 ? leadingDim_in : localSubDim);
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_ASSERT(!is_null(spmdRangeSpace));
   TEUCHOS_ASSERT(!is_null(domainSpace));
-  if (spmdRangeSpace->dim()) {
-    TEUCHOS_ASSERT(!is_null(localValues));
+  if (spmdRangeSpace->dim() && localSubDim) {
+    TEUCHOS_ASSERT(nonnull(localValues));
   }
   TEUCHOS_ASSERT_INEQUALITY(leadingDim, >=, spmdRangeSpace->localSubDim());
 #endif
@@ -234,20 +234,6 @@ DefaultSpmdMultiVector<Scalar>::domainScalarProdVecSpc() const
   std::cerr << "\nSpmdMultiVectorStd<Scalar>::domainScalarProdVecSpc() const called!\n";
 #endif
   return domainSpace_;
-}
-
-
-// Overridden public functions from SpmdMultiVectorBase
-
-
-template<class Scalar>
-RCP<const SpmdVectorSpaceBase<Scalar> >
-DefaultSpmdMultiVector<Scalar>::spmdSpace() const
-{
-#ifdef THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nSpmdMultiVectorStd<Scalar>::spmdSpace() const called!\n";
-#endif
-  return spmdRangeSpace_;
 }
 
 
@@ -356,12 +342,23 @@ DefaultSpmdMultiVector<Scalar>::nonconstNonContigSubViewImpl(
 
 
 template<class Scalar>
-void DefaultSpmdMultiVector<Scalar>::getNonconstLocalDataImpl(
+RCP<const SpmdVectorSpaceBase<Scalar> >
+DefaultSpmdMultiVector<Scalar>::spmdSpaceImpl() const
+{
+#ifdef THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
+  std::cerr << "\nSpmdMultiVectorStd<Scalar>::spmdSpace() const called!\n";
+#endif
+  return spmdRangeSpace_;
+}
+
+
+template<class Scalar>
+void DefaultSpmdMultiVector<Scalar>::getNonconstLocalMultiVectorDataImpl(
   const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
   )
 {
 #ifdef THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nSpmdMultiVectorStd<Scalar>::getLocalDataImpl() called!\n";
+  std::cerr << "\nSpmdMultiVectorStd<Scalar>::getLocalMultiVectorDataImpl() called!\n";
 #endif
   *localValues = localValues_;
   *leadingDim = leadingDim_;
@@ -369,7 +366,7 @@ void DefaultSpmdMultiVector<Scalar>::getNonconstLocalDataImpl(
 
 
 template<class Scalar>
-void DefaultSpmdMultiVector<Scalar>::getLocalDataImpl(
+void DefaultSpmdMultiVector<Scalar>::getLocalMultiVectorDataImpl(
   const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
   ) const
 {

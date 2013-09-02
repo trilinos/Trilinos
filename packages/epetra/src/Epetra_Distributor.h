@@ -200,7 +200,7 @@ class Epetra_Distributor {
 
   //! @name Print object to an output stream
   //@{ 
-  virtual void Print(ostream & os) const = 0;
+  virtual void Print(std::ostream & os) const = 0;
   //@}
 };
 #endif /* EPETRA_DISTRIBUTOR_H */

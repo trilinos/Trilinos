@@ -49,14 +49,14 @@ namespace Impl {
 
 template< class BlockSpec , typename MatrixValue , typename VectorValue >
 class Multiply<
-  BlockCrsMatrix< BlockSpec , MatrixValue , Host > ,
-  Kokkos::View< VectorValue** , LayoutLeft , Host > ,
-  Kokkos::View< VectorValue** , LayoutLeft , Host > >
+  BlockCrsMatrix< BlockSpec , MatrixValue , Threads > ,
+  Kokkos::View< VectorValue** , LayoutLeft , Threads > ,
+  Kokkos::View< VectorValue** , LayoutLeft , Threads > >
 {
 public:
-  typedef Host                                      device_type ;
+  typedef Threads                                      device_type ;
   typedef device_type::size_type                    size_type ;
-  typedef View< VectorValue** , LayoutLeft , Host > block_vector_type ;
+  typedef View< VectorValue** , LayoutLeft , Threads > block_vector_type ;
   typedef BlockCrsMatrix< BlockSpec , MatrixValue , device_type >  matrix_type ;
 
   const matrix_type  m_A ;

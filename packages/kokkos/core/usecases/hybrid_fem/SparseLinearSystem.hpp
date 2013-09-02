@@ -78,7 +78,7 @@ struct Multiply ;
 
 /* Device-specific specializations */
 #include <SparseLinearSystem_Cuda.hpp>
-#include <SparseLinearSystem_Host.hpp>
+#include <SparseLinearSystem_Threads.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

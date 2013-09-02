@@ -303,6 +303,7 @@
     <Dependency name="EpetraExt" type="ILO"/>
     <Dependency name="Xpetra" type="LO"/>
     <Dependency name="Galeri" type="TR"/>
+    <Dependency name="Amesos2" type="LO"/>
     <Dependency name="Belos" type="LR"/>
     <Dependency name="Anasazi" type="TO"/>
     <Dependency name="Zoltan2" type="LO"/>
@@ -742,7 +743,7 @@
     <Dependency name="RTOp" type="ILR"/>
     <Dependency name="Kokkos" type="LR"/>
     <Dependency name="Epetra" type="LR"/>
-    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Zoltan" type="LR"/>
     <Dependency name="Shards" type="ILR"/>
     <Dependency name="GlobiPack" type="ITO"/>
     <Dependency name="Triutils" type="ILO"/>
@@ -762,7 +763,7 @@
     <Dependency name="Belos" type="ILO"/>
     <Dependency name="Anasazi" type="ILO"/>
     <Dependency name="Zoltan2" type="ILO"/>
-    <Dependency name="Ifpack2" type="ILO"/>
+    <Dependency name="Ifpack2" type="LO"/>
     <Dependency name="Stratimikos" type="TO"/>
     <Dependency name="FEI" type="LR"/>
     <Dependency name="Teko" type="LO"/>

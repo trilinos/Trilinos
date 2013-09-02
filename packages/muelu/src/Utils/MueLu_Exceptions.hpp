@@ -89,6 +89,13 @@ namespace MueLu {
       Incompatible(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
     };
 
+    //! Exception throws to report data dependency problems between factories.
+    class DependencyError : public Teuchos::ExceptionBase
+    {
+    public:
+      DependencyError(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
+    };
+
   }
 }
 

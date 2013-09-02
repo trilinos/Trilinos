@@ -47,7 +47,7 @@
 
 #include <impl/Kokkos_Timer.hpp>
 
-#include <Kokkos_Host.hpp>
+#include <Kokkos_Threads.hpp>
 #include <Kokkos_hwloc.hpp>
 
 #include <PerfTestHexGrad.hpp>
@@ -64,26 +64,23 @@ protected:
   static void SetUpTestCase()
   {
     const std::pair<unsigned,unsigned> core_topo = Kokkos::hwloc::get_core_topology();
-    const unsigned                     core_size = Kokkos::hwloc::get_core_capacity();
-    const unsigned thread_count = std::min( 8u , core_topo.first *
-                                                 core_topo.second *
-                                                 core_size );
+    const std::pair<unsigned,unsigned> league_team( core_topo.first , 4 );
 
-    Kokkos::Host::initialize( core_topo.first , thread_count / core_topo.first );
+    Kokkos::Threads::initialize( league_team );
   }
 
   static void TearDownTestCase()
   {
-    Kokkos::Host::finalize();
+    Kokkos::Threads::finalize();
   }
 };
 
 TEST_F( host, hexgrad ) {
-  EXPECT_NO_THROW(run_test_hexgrad< Kokkos::Host>( 10, 20, "Kokkos::Host" ));
+  EXPECT_NO_THROW(run_test_hexgrad< Kokkos::Threads>( 10, 20, "Kokkos::Threads" ));
 }
 
 TEST_F( host, gramschmidt ) {
-  EXPECT_NO_THROW(run_test_gramschmidt< Kokkos::Host>( 10, 20, "Kokkos::Host" ));
+  EXPECT_NO_THROW(run_test_gramschmidt< Kokkos::Threads>( 10, 20, "Kokkos::Threads" ));
 }
 
 } // namespace Test

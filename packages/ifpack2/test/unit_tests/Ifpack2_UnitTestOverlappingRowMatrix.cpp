@@ -179,7 +179,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, Lo
   // Build the overlapping graph using                  //
   // CreateOverlappingMatrix.                            //
   // ================================================== //
-  Teuchos::RCP<const CrsType> C = Ifpack2::CreateOverlapMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A,OverlapLevel);
+  Teuchos::RCP<const CrsType> C = Ifpack2::CreateOverlapMatrix<CrsType>(A,OverlapLevel);
 
   // simple checks on global quantities
   size_t NumGlobalRowsC = C->getGlobalNumRows();

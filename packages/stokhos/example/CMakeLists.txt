@@ -381,7 +381,7 @@ IF(Stokhos_ENABLE_Sacado)
     TRIBITS_ADD_EXECUTABLE(
       sacado_mpvector_example
       SOURCES sacado_mpvector_example.cpp
-              sacado_mpvector_example_host.cpp
+              sacado_mpvector_example_threads.cpp
 	      ${CUDA_SOURCES}
       COMM serial mpi
       DEPLIBS stokhos
@@ -504,3 +504,5 @@ ENDIF()
 IF(Stokhos_ENABLE_Experimental)
   ADD_SUBDIRECTORY(experimental)
 ENDIF()
+
+ADD_SUBDIRECTORY(sarah)

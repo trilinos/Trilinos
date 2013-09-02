@@ -42,6 +42,8 @@
 
 #include "Piro_NullSpaceUtils.hpp"
 
+#include "Piro_StratimikosUtils.hpp"
+
 namespace Piro {
 
 MLRigidBodyModes::MLRigidBodyModes(int numPDEs_)
@@ -51,27 +53,6 @@ MLRigidBodyModes::MLRigidBodyModes(int numPDEs_)
      numScalar(0),
      mlUsed(false)
 {
-}
-
-Teuchos::RCP<Teuchos::ParameterList>
-extractStratimikosParams(const Teuchos::RCP<Teuchos::ParameterList> &piroParams)
-{
-
-  Teuchos::RCP<Teuchos::ParameterList> result;
-
-  const std::string solverToken = piroParams->get<std::string>("Solver Type");
-  if (solverToken == "NOX" || solverToken == "LOCA" || solverToken == "LOCA Adaptive") {
-    result = Teuchos::sublist(Teuchos::sublist(Teuchos::sublist(Teuchos::sublist(Teuchos::sublist(
-                piroParams, "NOX"), "Direction"), "Newton"), "Stratimikos Linear Solver"), "Stratimikos");
-  } else if (solverToken == "Rythmos") {
-    if (piroParams->isSublist("Rythmos")) {
-      result = Teuchos::sublist(Teuchos::sublist(piroParams, "Rythmos"), "Stratimikos");
-    } else if (piroParams->isSublist("Rythmos Solver")) {
-      result = Teuchos::sublist(Teuchos::sublist(piroParams, "Rythmos Solver"), "Stratimikos");
-    }
-  }
-
-  return result;
 }
 
 void
@@ -87,6 +68,15 @@ MLRigidBodyModes::setPiroPL(const Teuchos::RCP<Teuchos::ParameterList>& piroPara
       mlUsed = true;
     }
   }
+
+}
+
+void
+MLRigidBodyModes::updateMLPL(const Teuchos::RCP<Teuchos::ParameterList>& mlParams){
+
+  mlList = mlParams;
+
+  informML();
 
 }
 
@@ -138,10 +128,13 @@ MLRigidBodyModes::informML(){
   mlList->set("PDE equations", numPDEs);
 
   if (numElasticityDim > 0 ) {
-    std::cout << "\nEEEEE setting ML Null Space for Elasticity-type problem of Dimension: " 
-          << numElasticityDim <<  " nodes  " << x.size() << " nullspace  " << nullSpaceDim << std::endl;
-    std::cout << "\nIKIKIK number scalar dofs: " <<numScalar <<  ", number PDEs  " << numPDEs << std::endl;
+
+//    std::cout << "\nEEEEE setting ML Null Space for Elasticity-type problem of Dimension: " 
+//          << numElasticityDim <<  " nodes  " << x.size() << " nullspace  " << nullSpaceDim << std::endl;
+//    std::cout << "\nIKIKIK number scalar dofs: " <<numScalar <<  ", number PDEs  " << numPDEs << std::endl;
+
     (void) Piro_ML_Coord2RBM(x.size(), &x[0], &y[0], &z[0], &rr[0], numPDEs, numScalar, nullSpaceDim);
+
     //const Epetra_Comm &comm = app->getMap()->Comm();
     //Epetra_Map map(nNodes*numPDEs, 0, comm);
     //Epetra_MultiVector rbm_mv(Copy, map, rbm, nNodes*numPDEs, nullSpaceDim + numScalar);
@@ -149,6 +142,7 @@ MLRigidBodyModes::informML(){
     //for (int i = 0; i<nNodes*numPDEs*(nullSpaceDim+numScalar); i++)
     //   std::cout << rbm[i] << std::endl;
     //EpetraExt::MultiVectorToMatrixMarketFile("rbm.mm", rbm_mv);
+
     mlList->set("null space: type", "pre-computed");
     mlList->set("null space: dimension", nullSpaceDim);
     mlList->set("null space: vectors", &rr[0]);

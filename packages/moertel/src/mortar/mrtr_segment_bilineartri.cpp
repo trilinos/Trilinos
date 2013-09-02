@@ -186,7 +186,7 @@ MOERTEL::Segment* MOERTEL::Segment_BiLinearTri::Clone()
 /*----------------------------------------------------------------------*
  |  << operator                                              mwgee 10/05|
  *----------------------------------------------------------------------*/
-ostream& operator << (ostream& os, const MOERTEL::Segment_BiLinearTri& seg)
+std::ostream& operator << (std::ostream& os, const MOERTEL::Segment_BiLinearTri& seg)
 {
   seg.Print(); 
   return os;

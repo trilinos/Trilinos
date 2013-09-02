@@ -145,6 +145,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   SuperLUDist     "cmake/TPLs/"    SS
   SuperLUMT	  "cmake/TPLs/"	   SS
   SuperLU         "cmake/TPLs/"    SS
+  Cholmod	  "cmake/TPLs/"	   EX
   Zlib            "cmake/TPLs/"    SS
   UMFPACK         "cmake/TPLs/"    SS
   MA28            "cmake/TPLs/"    TS
@@ -169,6 +170,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   QT              "cmake/TPLs/"    SS
   gtest           "cmake/TPLs/"    EX
   BoostLib        "cmake/TPLs/"    SS
+  BoostAlbLib     "cmake/TPLs/"    SS
   OpenNURBS       "cmake/TPLs/"    EX
   Portals         "cmake/TPLs/"    SS
   CrayPortals     "cmake/TPLs/"    SS

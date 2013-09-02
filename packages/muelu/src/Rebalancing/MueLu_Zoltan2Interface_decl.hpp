@@ -85,7 +85,7 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    Zoltan2Interface() {}
+    Zoltan2Interface();
 
     //! Destructor
     virtual ~Zoltan2Interface() { }
@@ -103,6 +103,9 @@ namespace MueLu {
     void Build(Level &level) const;
 
     //@}
+
+  private:
+    RCP<ParameterList> defaultZoltan2Params;
 
   };  //class Zoltan2Interface
 

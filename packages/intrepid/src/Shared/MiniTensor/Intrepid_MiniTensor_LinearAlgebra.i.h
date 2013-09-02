@@ -48,20 +48,21 @@ namespace Intrepid {
 // R^N tensor Frobenius norm
 // \return \f$ \sqrt{A:A} \f$
 //
-template<typename T>
+template<typename T, Index N>
 inline
 T
-norm(Tensor<T> const & A)
+norm(Tensor<T, N> const & A)
 {
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
-  T s = 0.0;
+  T
+  s = 0.0;
 
-  switch (N) {
+  switch (dimension) {
 
     default:
-      s = dotdot(A, A);
+      s = norm_f_square(A);
       break;
 
     case 3:
@@ -84,31 +85,33 @@ norm(Tensor<T> const & A)
 // R^N tensor 1-norm
 // \return \f$ \max_{j \in {0,\cdots,N}}\Sigma_{i=0}^N |A_{ij}| \f$
 //
-template<typename T>
+template<typename T, Index N>
 inline
 T
-norm_1(Tensor<T> const & A)
+norm_1(Tensor<T, N> const & A)
 {
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
-  Vector<T> v(N);
+  Vector<T, N>
+  v(dimension);
 
-  T s = 0.0;
+  T
+  s = 0.0;
 
-  switch (N) {
+  switch (dimension) {
 
     default:
 
-      for (Index i = 0; i < N; ++i) {
+      for (Index i = 0; i < dimension; ++i) {
         T t = 0.0;
-        for (Index j = 0; j < N; ++j) {
+        for (Index j = 0; j < dimension; ++j) {
           t += std::abs(A(j, i));
         }
         v(i) = t;
       }
 
-      for (Index i = 0; i < N; ++i) {
+      for (Index i = 0; i < dimension; ++i) {
         s = std::max(s, v(i));
       }
       break;
@@ -137,30 +140,31 @@ norm_1(Tensor<T> const & A)
 // R^N tensor infinity-norm
 // \return \f$ \max_{i \in {0,\cdots,N}}\Sigma_{j=0}^N |A_{ij}| \f$
 //
-template<typename T>
+template<typename T, Index N>
 inline
 T
-norm_infinity(Tensor<T> const & A)
+norm_infinity(Tensor<T, N> const & A)
 {
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
-  Vector<T> v(N);
+  Vector<T, N>
+  v(dimension);
 
   T s = 0.0;
 
-  switch (N) {
+  switch (dimension) {
 
     default:
-      for (Index i = 0; i < N; ++i) {
+      for (Index i = 0; i < dimension; ++i) {
         T t = 0.0;
-        for (Index j = 0; j < N; ++j) {
+        for (Index j = 0; j < dimension; ++j) {
           t += std::abs(A(i, j));
         }
         v(i) = t;
       }
 
-      for (Index i = 0; i < N; ++i) {
+      for (Index i = 0; i < dimension; ++i) {
         s = std::max(s, v(i));
       }
       break;
@@ -191,15 +195,15 @@ norm_infinity(Tensor<T> const & A)
 // \param i index
 // \param j index
 //
-template<typename T>
+template<typename T, Index N>
 void
-swap_row(Tensor<T> & A, Index const i, Index const j)
+swap_row(Tensor<T, N> & A, Index const i, Index const j)
 {
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
   if (i != j) {
-    for (Index k = 0; k < N; ++k) {
+    for (Index k = 0; k < dimension; ++k) {
       std::swap(A(i, k), A(j, k));
     }
   }
@@ -212,15 +216,15 @@ swap_row(Tensor<T> & A, Index const i, Index const j)
 // \param i index
 // \param j index
 //
-template<typename T>
+template<typename T, Index N>
 void
-swap_col(Tensor<T> & A, Index const i, Index const j)
+swap_col(Tensor<T, N> & A, Index const i, Index const j)
 {
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
   if (i != j) {
-    for (Index k = 0; k < N; ++k) {
+    for (Index k = 0; k < dimension; ++k) {
       std::swap(A(k, i), A(k, j));
     }
   }
@@ -235,22 +239,23 @@ swap_col(Tensor<T> & A, Index const i, Index const j)
 // \param A tensor
 // \return \f$ \det A \f$
 //
-template<typename T>
+template<typename T, Index N>
 inline
 T
-det(Tensor<T> const & A)
+det(Tensor<T, N> const & A)
 {
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
-  T s = 0.0;
+  T
+  s = 0.0;
 
-  switch (N) {
+  switch (dimension) {
 
     default:
     {
       int sign = 1;
-      for (Index i = 0; i < N; ++i) {
+      for (Index i = 0; i < dimension; ++i) {
         const T d = det(subtensor(A, i, 1));
         s += sign * d * A(i, 1);
         sign *= -1;
@@ -259,10 +264,9 @@ det(Tensor<T> const & A)
     break;
 
     case 3:
-      s =
-          -A(0,2)*A(1,1)*A(2,0) + A(0,1)*A(1,2)*A(2,0) +
-          A(0,2)*A(1,0)*A(2,1) - A(0,0)*A(1,2)*A(2,1) -
-          A(0,1)*A(1,0)*A(2,2) + A(0,0)*A(1,1)*A(2,2);
+      s = -A(0,2)*A(1,1)*A(2,0) + A(0,1)*A(1,2)*A(2,0) +
+           A(0,2)*A(1,0)*A(2,1) - A(0,0)*A(1,2)*A(2,1) -
+           A(0,1)*A(1,0)*A(2,2) + A(0,0)*A(1,1)*A(2,2);
       break;
 
     case 2:
@@ -279,20 +283,20 @@ det(Tensor<T> const & A)
 // \param A tensor
 // \return \f$ A:I \f$
 //
-template<typename T>
+template<typename T, Index N>
 inline
 T
-trace(Tensor<T> const & A)
+trace(Tensor<T, N> const & A)
 {
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
   T s = 0.0;
 
-  switch (N) {
+  switch (dimension) {
 
     default:
-      for (Index i = 0; i < N; ++i) {
+      for (Index i = 0; i < dimension; ++i) {
         s += A(i,i);
       }
       break;
@@ -315,10 +319,10 @@ trace(Tensor<T> const & A)
 // \param A tensor
 // \return \f$ I_A = A:I \f$
 //
-template<typename T>
+template<typename T, Index N>
 inline
 T
-I1(Tensor<T> const & A)
+I1(Tensor<T, N> const & A)
 {
   return trace(A);
 }
@@ -328,21 +332,21 @@ I1(Tensor<T> const & A)
 // \param A tensor
 // \return \f$ II_A = \frac{1}{2}((I_A)^2-I_{A^2}) \f$
 //
-template<typename T>
+template<typename T, Index N>
 inline
 T
-I2(Tensor<T> const & A)
+I2(Tensor<T, N> const & A)
 {
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
   T
   s = 0.0;
 
-  const T
+  T const
   trA = trace(A);
 
-  switch (N) {
+  switch (dimension) {
 
     default:
       s = 0.5 * (trA * trA - trace(A * A));
@@ -367,10 +371,10 @@ I2(Tensor<T> const & A)
 // \param A tensor
 // \return \f$ III_A = \det A \f$
 //
-template<typename T>
+template<typename T, Index N>
 inline
 T
-I3(Tensor<T> const & A)
+I3(Tensor<T, N> const & A)
 {
   return det(A);
 }

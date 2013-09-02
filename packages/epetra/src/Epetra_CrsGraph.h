@@ -974,10 +974,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
   //@{ 
 
   //! Print method
-  virtual void Print(ostream& os) const;
+  virtual void Print(std::ostream& os) const;
 
-  void PrintGraphData(ostream& os) const {CrsGraphData_->Print(os);}
-  void PrintGraphData(ostream& os, int level) const {CrsGraphData_->Print(os, level);}
+  void PrintGraphData(std::ostream& os) const {CrsGraphData_->Print(os);}
+  void PrintGraphData(std::ostream& os, int level) const {CrsGraphData_->Print(os, level);}
   //@}
 
   //! @name Deprecated methods:  These methods still work, but will be removed in a future version

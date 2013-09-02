@@ -534,6 +534,8 @@ int Ifpack_SupportGraph<T>::findall(std::vector<int>& tree, int root, int *table
 	  findall(tree, child, table, children,num_verts);
 	}
     }
+
+  return 0;
 }
 //============================================================================== 
 template<typename T>
@@ -707,17 +709,8 @@ int Ifpack_SupportGraph<T>::AMST()
       std::cout << children[i] << std::endl;
       }*/
 
-  std::vector<int> ExtraIndices[num_verts];
-  std::vector<double> ExtraValues[num_verts];
-
-  for(int i = 0; i < num_verts; i++)
-    {
-      std::vector<int> temp;
-      std::vector<double> temp2;
-      ExtraIndices[i] = temp;
-      ExtraValues[i] = temp2;
-    }
-
+  std::vector<std::vector<int> > ExtraIndices(num_verts);
+  std::vector<std::vector<double> > ExtraValues(num_verts);
 
 
   for(int i = 0; i < roots.size(); i++)
@@ -777,10 +770,7 @@ int Ifpack_SupportGraph<T>::AMST()
 	  upper = TreeNz[i] - 2;
 	  Indices[TreeNz[i]-1] = p[i];
 
-	  if(!edge(i,p[i],gtemp).second)
-	    {
-	      std::cout << "WTFFFFFF" << std::endl;
-	    }
+
 	  Values[TreeNz[i]-1] = get(weightmap, edge(i, p[i], gtemp).first) + shift;
 	}
 
@@ -798,7 +788,7 @@ int Ifpack_SupportGraph<T>::AMST()
       int s = 0;
       for(int j = TreeNz[i] + 1; j < TotalNz[i]; j++)
 	{
-	      std::cout << "extra" << std::endl;
+
 	      Indices[j] = ExtraIndices[i][s];
 	      Values[j] = ExtraValues[i][s];
 
@@ -832,6 +822,7 @@ int Ifpack_SupportGraph<T>::FindSupport()
   int rows = (*Matrix_).NumGlobalRows();
   int cols = (*Matrix_).NumGlobalCols();
   int num_edges  = ((*Matrix_).NumMyNonzeros() - (*Matrix_).NumMyDiagonals())/2;
+  std::cout << "global num rows " << rows << std::endl;
 
   // Assert square matrix                                                                       
   IFPACK_CHK_ERR((rows == cols));
@@ -933,6 +924,7 @@ int Ifpack_SupportGraph<T>::FindSupport()
   int *l = new int[num_verts];
   for(int i = 0; i < num_verts; i++)
     {
+      Indices[i][0] = i;
       l[i] = 1;
     }
   
@@ -1000,14 +992,16 @@ int Ifpack_SupportGraph<T>::FindSupport()
      }
   
   // Create the CrsMatrix for the support graph                                                 
-  Support_ = rcp(new Epetra_CrsMatrix(Copy, Matrix().RowMatrixRowMap(),l, true));
-
+  Support_ = rcp(new Epetra_CrsMatrix(Copy, Matrix().RowMatrixRowMap(),l, false));
+  
  
   // Fill in the matrix with the stl vectors for each row                                       
   for(int i = 0; i < num_verts; i++)
     {
       (*Support_).InsertGlobalValues(i,l[i],&Values[i][0],&Indices[i][0]);
     }
+
+  
  
   (*Support_).FillComplete();
 
@@ -1050,7 +1044,7 @@ int Ifpack_SupportGraph<T>::Initialize()
       Time_ = Teuchos::rcp( new Epetra_Time(Comm()) );
     }
 
-  
+
   Time_->ResetStartTime();
  
   FindSupport();
@@ -1123,7 +1117,8 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     IFPACK_CHK_ERR(-3);
 
   Time_->ResetStartTime();
-
+  
+  
   Inverse_->ApplyInverse(X,Y);
 
   ++NumApplyInverse_;
@@ -1140,7 +1135,7 @@ Print(std::ostream& os) const
    os << "Ifpack_SupportGraph: " << Label () << endl << endl;
   os << "Condition number estimate = " << Condest() << endl;
   os << "Global number of rows            = " << Matrix_->NumGlobalRows() << endl;
-  os << "Number of off diagonal entries in support graph matrix     = " << Support_->NumGlobalNonzeros()-Support_->NumGlobalDiagonals() << endl;
+  os << "Number of edges in support graph     = " << (Support_->NumGlobalNonzeros()-Support_->NumGlobalDiagonals())/2 << endl;
   os << "Fraction of off diagonals of support graph/off diagonals of original     = "
      << ((double)Support_->NumGlobalNonzeros()-Support_->NumGlobalDiagonals())/(Matrix_->NumGlobalNonzeros()-Matrix_->NumGlobalDiagonals());
   os << endl;
@@ -1168,6 +1163,8 @@ Print(std::ostream& os) const
   os << "Now calling the underlying preconditioner's print()" << std::endl;
 
   Inverse_->Print(os);
+
+  return os;
 }
 //==============================================================================
 template<typename T>

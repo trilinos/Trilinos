@@ -8,7 +8,7 @@ FILE(GLOB HEADERS *.hpp)
 FILE(GLOB SOURCES *.cpp)
 
 TRIBITS_ADD_LIBRARY(
-    kokkosarray_impl
+    kokkoscore_impl
     NOINSTALLHEADERS ${HEADERS}
     SOURCES ${SOURCES}
     DEPLIBS 

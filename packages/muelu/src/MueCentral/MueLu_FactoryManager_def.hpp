@@ -58,7 +58,6 @@
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
-//#include "MueLu_GaussSeidelSmoother.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_CoupledAggregationFactory.hpp"
@@ -185,7 +184,7 @@ namespace MueLu {
   const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetAndReturnDefaultFactory(const std::string & varName, const RCP<const FactoryBase> & factory) const {
     TEUCHOS_TEST_FOR_EXCEPTION(factory == Teuchos::null, Exceptions::RuntimeError, "");
 
-    GetOStream(Warnings0,  0) << "Attention: No factory has been specified for building '" << varName << "'." << std::endl;
+    GetOStream(Warnings1,  0) << "Attention: No factory has been specified for building '" << varName << "'." << std::endl;
     GetOStream(Warnings00, 0) << "           Using default factory ";
     { Teuchos::OSTab tab(getOStream(), 7); factory->describe(GetOStream(Warnings00), GetVerbLevel());}
 

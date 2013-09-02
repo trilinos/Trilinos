@@ -81,7 +81,6 @@ namespace MueLu {
     //@}
 
   }; //class SmootherBase
-
 } //namespace MueLu
 
 #define MUELU_SMOOTHERBASE_SHORT

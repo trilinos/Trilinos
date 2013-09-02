@@ -65,34 +65,34 @@ enum Type {
 ///
 /// Length of a segment
 ///
-template<typename T>
+template<typename T, Index N>
 T
-length(Vector<T> const & p0, Vector<T> const & p1);
+length(Vector<T, N> const & p0, Vector<T, N> const & p1);
 
 ///
 /// Area of a triangle
 ///
-template<typename T>
+template<typename T, Index N>
 T
-area(Vector<T> const & p0, Vector<T> const & p1,
-    Vector<T> const & p2);
+area(Vector<T, N> const & p0, Vector<T, N> const & p1,
+     Vector<T, N> const & p2);
 
 ///
 /// Area of a quadrilateral, assummed planar. If not planar, returns
 /// the sum of the areas of the two triangles p0,p1,p2 and p0,p2,p3
 ///
-template<typename T>
+template<typename T, Index N>
 T
-area(Vector<T> const & p0, Vector<T> const & p1,
-    Vector<T> const & p2, Vector<T> const & p3);
+area(Vector<T, N> const & p0, Vector<T, N> const & p1,
+     Vector<T, N> const & p2, Vector<T, N> const & p3);
 
 ///
 /// Volume of tetrahedron
 ///
-template<typename T>
+template<typename T, Index N>
 T
-volume(Vector<T> const & p0, Vector<T> const & p1,
-    Vector<T> const & p2, Vector<T> const & p3);
+volume(Vector<T, N> const & p0, Vector<T, N> const & p1,
+       Vector<T, N> const & p2, Vector<T, N> const & p3);
 
 ///
 /// Volume of pyramid of quadrilateral base
@@ -100,23 +100,23 @@ volume(Vector<T> const & p0, Vector<T> const & p1,
 /// Base is p0,p1,p2,p3
 /// Apex is p4
 ///
-template<typename T>
+template<typename T, Index N>
 T
-volume(Vector<T> const & p0, Vector<T> const & p1,
-    Vector<T> const & p2, Vector<T> const & p3,
-    Vector<T> const & p4);
+volume(Vector<T, N> const & p0, Vector<T, N> const & p1,
+       Vector<T, N> const & p2, Vector<T, N> const & p3,
+       Vector<T, N> const & p4);
 
 ///
 /// Volume of hexahedron
 /// Assumption: all faces are planar
 /// Decompose into 3 pyramids
 ///
-template<typename T>
+template<typename T, Index N>
 T
-volume(Vector<T> const & p0, Vector<T> const & p1,
-    Vector<T> const & p2, Vector<T> const & p3,
-    Vector<T> const & p4, Vector<T> const & p5,
-    Vector<T> const & p6, Vector<T> const & p7);
+volume(Vector<T, N> const & p0, Vector<T, N> const & p1,
+       Vector<T, N> const & p2, Vector<T, N> const & p3,
+       Vector<T, N> const & p4, Vector<T, N> const & p5,
+       Vector<T, N> const & p6, Vector<T, N> const & p7);
 
 ///
 /// Centroids of segment, triangle, tetrahedron, quadrilateral
@@ -124,33 +124,33 @@ volume(Vector<T> const & p0, Vector<T> const & p1,
 /// For these we can just take the average of the vertices.
 /// WARNING: This is not the center of mass.
 ///
-template<typename T>
-Vector<T>
-centroid(std::vector<Vector<T> > const & points);
+template<typename T, Index N>
+Vector<T, N>
+centroid(std::vector<Vector<T, N> > const & points);
 
 ///
 /// The surface normal of a face
 /// Input: 3 independent nodes on the face
 /// Output: normal vector
 ///
-template<typename T>
-Vector<T>
-normal(Vector<T> const & p0,
-    Vector<T> const & p1,
-    Vector<T> const & p2);
+template<typename T, Index N>
+Vector<T, N>
+normal(Vector<T, N> const & p0,
+       Vector<T, N> const & p1,
+       Vector<T, N> const & p2);
 
 ///
 /// Given 3 points p0, p1, p2 that define a plane
 /// determine if point p is in the same side of the normal
 /// to the plane as defined by the right hand rule.
 ///
-template<typename T>
+template<typename T, Index N>
 bool
 in_normal_side(
-    Vector<T> const & p,
-    Vector<T> const & p0,
-    Vector<T> const & p1,
-    Vector<T> const & p2);
+    Vector<T, N> const & p,
+    Vector<T, N> const & p0,
+    Vector<T, N> const & p1,
+    Vector<T, N> const & p2);
 
 ///
 /// Given two iterators to a container of points,
@@ -158,8 +158,12 @@ in_normal_side(
 /// \param start end: define sequence of points
 /// \return vectors that define the bounding box
 ///
+template<typename T, typename I, Index N>
+std::pair< Vector<T, N>, Vector<T, N> >
+bounding_box(I start, I end);
+
 template<typename T, typename I>
-std::pair< Vector<T>, Vector<T> >
+std::pair< Vector<T, DYNAMIC>, Vector<T, DYNAMIC> >
 bounding_box(I start, I end);
 
 ///
@@ -168,54 +172,54 @@ bounding_box(I start, I end);
 /// \param min max points defining the box
 /// \return whether the point is inside
 ///
-template<typename T>
+template<typename T, Index N>
 bool
 in_box(
-    Vector<T> const & p,
-    Vector<T> const & min,
-    Vector<T> const & max);
+    Vector<T, N> const & p,
+    Vector<T, N> const & min,
+    Vector<T, N> const & max);
 
 ///
 /// Generate random point inside bounding box
 /// \param min max the bounding box
 /// \return p point inside box
 ///
-template<typename T>
-Vector<T>
+template<typename T, Index N>
+Vector<T, N>
 random_in_box(
-    Vector<T> const & min,
-    Vector<T> const & max);
+    Vector<T, N> const & min,
+    Vector<T, N> const & max);
 
 ///
 /// Given 4 points p0, p1, p2, p3 that define a tetrahedron
 /// determine if point p is inside it.
 ///
-template<typename T>
+template<typename T, Index N>
 bool
 in_tetrahedron(
-    Vector<T> const & p,
-    Vector<T> const & p0,
-    Vector<T> const & p1,
-    Vector<T> const & p2,
-    Vector<T> const & p3);
+    Vector<T, N> const & p,
+    Vector<T, N> const & p0,
+    Vector<T, N> const & p1,
+    Vector<T, N> const & p2,
+    Vector<T, N> const & p3);
 
 ///
 /// Given 8 points that define a hexahedron
 /// determine if point p is inside it.
 /// Assumption: faces are planar
 ///
-template<typename T>
+template<typename T, Index N>
 bool
 in_hexahedron(
-    Vector<T> const & p,
-    Vector<T> const & p0,
-    Vector<T> const & p1,
-    Vector<T> const & p2,
-    Vector<T> const & p3,
-    Vector<T> const & p4,
-    Vector<T> const & p5,
-    Vector<T> const & p6,
-    Vector<T> const & p7);
+    Vector<T, N> const & p,
+    Vector<T, N> const & p0,
+    Vector<T, N> const & p1,
+    Vector<T, N> const & p2,
+    Vector<T, N> const & p3,
+    Vector<T, N> const & p4,
+    Vector<T, N> const & p5,
+    Vector<T, N> const & p6,
+    Vector<T, N> const & p7);
 
 ///
 /// Closest point
@@ -223,9 +227,9 @@ in_hexahedron(
 /// \param n vector of points to test
 /// \return index to closest point
 ///
-template<typename T>
-typename std::vector< Vector<T> >::size_type
-closest_point(Vector<T> const & p, std::vector< Vector<T> > const & n);
+template<typename T, Index N>
+typename std::vector< Vector<T, N> >::size_type
+closest_point(Vector<T, N> const & p, std::vector< Vector<T, N> > const & n);
 
 /// Median of a sequence defined by random
 /// access iterators. Undefined for empty set.
@@ -243,14 +247,14 @@ median(Iterator begin, Iterator end);
 /// \param p0 ... corner nodes
 /// \return interpolated position
 ///
-template<typename T>
-Vector<T>
+template<typename T, Index N>
+Vector<T, N>
 interpolate_quadrilateral(
-    Vector<T> & xi,
-    Vector<T> const & p0,
-    Vector<T> const & p1,
-    Vector<T> const & p2,
-    Vector<T> const & p3);
+    Vector<T, dimension_const<N, 2>::value> & xi,
+    Vector<T, N> const & p0,
+    Vector<T, N> const & p1,
+    Vector<T, N> const & p2,
+    Vector<T, N> const & p3);
 
 ///
 /// Given triangle nodes and a position
@@ -259,13 +263,13 @@ interpolate_quadrilateral(
 /// \param p0 ... corner nodes
 /// \return interpolated position
 ///
-template<typename T>
-Vector<T>
+template<typename T, Index N>
+Vector<T, N>
 interpolate_triangle(
-    Vector<T> & xi,
-    Vector<T> const & p0,
-    Vector<T> const & p1,
-    Vector<T> const & p2);
+    Vector<T, dimension_const<N, 3>::value> & xi,
+    Vector<T, N> const & p0,
+    Vector<T, N> const & p1,
+    Vector<T, N> const & p2);
 
 ///
 /// Given hexahedron nodes and a position
@@ -274,18 +278,18 @@ interpolate_triangle(
 /// \param p0 ... corner nodes
 /// \return interpolated position
 ///
-template<typename T>
-Vector<T>
+template<typename T, Index N>
+Vector<T, N>
 interpolate_hexahedron(
-    Vector<T> & xi,
-    Vector<T> const & p0,
-    Vector<T> const & p1,
-    Vector<T> const & p2,
-    Vector<T> const & p3,
-    Vector<T> const & p4,
-    Vector<T> const & p5,
-    Vector<T> const & p6,
-    Vector<T> const & p7);
+    Vector<T, dimension_const<N, 3>::value> & xi,
+    Vector<T, N> const & p0,
+    Vector<T, N> const & p1,
+    Vector<T, N> const & p2,
+    Vector<T, N> const & p3,
+    Vector<T, N> const & p4,
+    Vector<T, N> const & p5,
+    Vector<T, N> const & p6,
+    Vector<T, N> const & p7);
 
 ///
 /// Given tetrahedron nodes and a position
@@ -294,14 +298,14 @@ interpolate_hexahedron(
 /// \param p0 ... corner nodes
 /// \return interpolated position
 ///
-template<typename T>
-Vector<T>
+template<typename T, Index N>
+Vector<T, N>
 interpolate_tetrahedron(
-    Vector<T> & xi,
-    Vector<T> const & p0,
-    Vector<T> const & p1,
-    Vector<T> const & p2,
-    Vector<T> const & p3);
+    Vector<T, dimension_const<N, 4>::value> & xi,
+    Vector<T, N> const & p0,
+    Vector<T, N> const & p1,
+    Vector<T, N> const & p2,
+    Vector<T, N> const & p3);
 
 ///
 /// Given element type and nodes and a position
@@ -311,12 +315,12 @@ interpolate_tetrahedron(
 /// \param v ... corner nodes
 /// \return interpolated position
 ///
-template<typename T>
-Vector<T>
+template<typename T, Index M, Index N>
+Vector<T, N>
 interpolate_element(
     ELEMENT::Type element_type,
-    Vector<T> & xi,
-    std::vector< Vector<T> > const & v);
+    Vector<T, M> & xi,
+    std::vector< Vector<T, N> > const & v);
 
 ///
 /// Given a vector of points, determine
@@ -324,9 +328,9 @@ interpolate_element(
 /// \param points vector of points
 /// \return distance matrix
 ///
-template<typename T>
+template<typename T, Index N>
 std::vector< std::vector<T> >
-distance_matrix(std::vector< Vector<T> > const & points);
+distance_matrix(std::vector< Vector<T, N> > const & points);
 
 ///
 /// Given a distance matrix, determine the minimum
@@ -348,21 +352,15 @@ find_type(Index const dimension, Index const number_nodes);
 ///
 /// Spherical parametrization functor
 ///
-template<typename T>
+template<typename T, Index N>
 class SphericalParametrization
 {
 public:
 
-  ///
-  /// Constructor that takes material tangent
-  ///
-  SphericalParametrization(Tensor4<T> const & A = Tensor4<T>());
+  SphericalParametrization(Tensor4<T, N> const & A);
 
-  ///
-  ///
-  ///
   void
-  operator()(Vector<T> const & parameters);
+  operator()(Vector<T, dimension_const<N, 2>::value> const & parameters);
 
   T
   get_minimum() const {return minimum_;}
@@ -370,48 +368,42 @@ public:
   T
   get_maximum() const {return maximum_;}
 
-  Vector<T>
+  Vector<T, N>
   get_arg_minimum() const {return arg_minimum_;}
 
-  Vector<T>
+  Vector<T, N>
   get_arg_maximum() const {return arg_maximum_;}
 
 private:
 
-  Tensor4<T> const &
+  Tensor4<T, N> const &
   tangent_;
 
   T
   minimum_;
 
-  Vector<T>
+  Vector<T, N>
   arg_minimum_;
 
   T
   maximum_;
 
-  Vector<T>
+  Vector<T, N>
   arg_maximum_;
 };
 
 ///
 /// Stereographic parametrization functor
 ///
-template<typename T>
+template<typename T, Index N>
 class StereographicParametrization
 {
 public:
 
-  ///
-  /// Constructor that takes material tangent
-  ///
-  StereographicParametrization(Tensor4<T> const & A = Tensor4<T>());
+  StereographicParametrization(Tensor4<T, N> const & A);
 
-  ///
-  ///
-  ///
   void
-  operator()(Vector<T> const & parameters);
+  operator()(Vector<T, dimension_const<N, 2>::value> const & parameters);
 
   T
   get_minimum() const {return minimum_;}
@@ -419,34 +411,34 @@ public:
   T
   get_maximum() const {return maximum_;}
 
-  Vector<T>
+  Vector<T, N>
   get_arg_minimum() const {return arg_minimum_;}
 
-  Vector<T>
+  Vector<T, N>
   get_arg_maximum() const {return arg_maximum_;}
 
 private:
 
-  Tensor4<T> const &
+  Tensor4<T, N> const &
   tangent_;
 
   T
   minimum_;
 
-  Vector<T>
+  Vector<T, N>
   arg_minimum_;
 
   T
   maximum_;
 
-  Vector<T>
+  Vector<T, N>
   arg_maximum_;
 };
 
 ///
 /// Projective parametrization functor
 ///
-template<typename T>
+template<typename T, Index N>
 class ProjectiveParametrization
 {
 public:
@@ -454,13 +446,13 @@ public:
   ///
   /// Constructor that takes material tangent
   ///
-  ProjectiveParametrization(Tensor4<T> const & A = Tensor4<T>());
+  ProjectiveParametrization(Tensor4<T, N> const & A);
 
   ///
   ///
   ///
   void
-  operator()(Vector<T> const & parameters);
+  operator()(Vector<T, dimension_const<N, 4>::value> const & parameters);
 
   T
   get_minimum() const {return minimum_;}
@@ -468,34 +460,34 @@ public:
   T
   get_maximum() const {return maximum_;}
 
-  Vector<T>
+  Vector<T, N>
   get_arg_minimum() const {return arg_minimum_;}
 
-  Vector<T>
+  Vector<T, N>
   get_arg_maximum() const {return arg_maximum_;}
 
 private:
 
-  Tensor4<T> const &
+  Tensor4<T, N> const &
   tangent_;
 
   T
   minimum_;
 
-  Vector<T>
+  Vector<T, N>
   arg_minimum_;
 
   T
   maximum_;
 
-  Vector<T>
+  Vector<T, N>
   arg_maximum_;
 };
 
 ///
 /// Tangent parametrization functor
 ///
-template<typename T>
+template<typename T, Index N>
 class TangentParametrization
 {
 public:
@@ -503,13 +495,13 @@ public:
   ///
   /// Constructor that takes material tangent
   ///
-  TangentParametrization(Tensor4<T> const & A = Tensor4<T>());
+  TangentParametrization(Tensor4<T, N> const & A);
 
   ///
   ///
   ///
   void
-  operator()(Vector<T> const & parameters);
+  operator()(Vector<T, dimension_const<N, 2>::value> const & parameters);
 
   T
   get_minimum() const {return minimum_;}
@@ -517,48 +509,42 @@ public:
   T
   get_maximum() const {return maximum_;}
 
-  Vector<T>
+  Vector<T, N>
   get_arg_minimum() const {return arg_minimum_;}
 
-  Vector<T>
+  Vector<T, N>
   get_arg_maximum() const {return arg_maximum_;}
 
 private:
 
-  Tensor4<T> const &
+  Tensor4<T, N> const &
   tangent_;
 
   T
   minimum_;
 
-  Vector<T>
+  Vector<T, N>
   arg_minimum_;
 
   T
   maximum_;
 
-  Vector<T>
+  Vector<T, N>
   arg_maximum_;
 };
 
 ///
 /// Cartesian parametrization functor
 ///
-template<typename T>
+template<typename T, Index N>
 class CartesianParametrization
 {
 public:
 
-  ///
-  /// Constructor that takes material tangent
-  ///
-  CartesianParametrization(Tensor4<T> const & A = Tensor4<T>());
+  CartesianParametrization(Tensor4<T, N> const & A);
 
-  ///
-  ///
-  ///
   void
-  operator()(Vector<T> const & parameters);
+  operator()(Vector<T, dimension_const<N, 3>::value> const & parameters);
 
   T
   get_minimum() const {return minimum_;}
@@ -566,34 +552,34 @@ public:
   T
   get_maximum() const {return maximum_;}
 
-  Vector<T>
+  Vector<T, N>
   get_arg_minimum() const {return arg_minimum_;}
 
-  Vector<T>
+  Vector<T, N>
   get_arg_maximum() const {return arg_maximum_;}
 
 private:
 
-  Tensor4<T> const &
+  Tensor4<T, N> const &
   tangent_;
 
   T
   minimum_;
 
-  Vector<T>
+  Vector<T, N>
   arg_minimum_;
 
   T
   maximum_;
 
-  Vector<T>
+  Vector<T, N>
   arg_maximum_;
 };
 
 ///
 /// Parametric grid class
 ///
-template<typename T>
+template<typename T, Index N>
 class ParametricGrid
 {
 
@@ -611,9 +597,9 @@ public:
   /// \param points_per_dimension number of points in each dimension
   ///
   ParametricGrid(
-      Vector<T> const & lower,
-      Vector<T> const & upper,
-      Vector<Index> const & points_per_dimension);
+      Vector<T, N> const & lower,
+      Vector<T, N> const & upper,
+      Vector<Index, N> const & points_per_dimension);
 
   ///
   ///
@@ -623,13 +609,13 @@ public:
 
 private:
 
-  Vector<T>
+  Vector<T, N>
   lower_;
 
-  Vector<T>
+  Vector<T, N>
   upper_;
 
-  Vector<Index>
+  Vector<Index, N>
   points_per_dimension_;
 
 };

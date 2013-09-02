@@ -222,30 +222,30 @@ public:
   \brief not implemented
   */
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const 
-  { cout << "Mortar_ML_Preconditioner::Apply does not make sense for an ML-Multilevel Operator\n"
+  { std::cout << "Mortar_ML_Preconditioner::Apply does not make sense for an ML-Multilevel Operator\n"
          << "Use ApplyInverse\n";throw -1;return(-1);}
     
   /*!
   \brief not implemented
   */
-  int SetUseTranspose(bool UseTranspose) { cout << "Mortar_ML_Preconditioner::SetUseTranspose not impl.\n";return -1;}
+  int SetUseTranspose(bool UseTranspose) { std::cout << "Mortar_ML_Preconditioner::SetUseTranspose not impl.\n";return -1;}
 
   /*!
   \brief not implemented
   */
-  double NormInf() const {cout << "Mortar_ML_Preconditioner::NormInf not impl.\n";
+  double NormInf() const {std::cout << "Mortar_ML_Preconditioner::NormInf not impl.\n";
                           return(-1.0);}
 
 
   /*!
   \brief not implemented
   */
-  bool UseTranspose() const {cout << "Mortar_ML_Preconditioner::UseTranspose not impl.\n"; return false;}
+  bool UseTranspose() const {std::cout << "Mortar_ML_Preconditioner::UseTranspose not impl.\n"; return false;}
 
   /*!
   \brief not implemented
   */
-  bool HasNormInf() const {cout << "Mortar_ML_Preconditioner::HasNormInf not impl.\n"; return false;}
+  bool HasNormInf() const {std::cout << "Mortar_ML_Preconditioner::HasNormInf not impl.\n"; return false;}
 
   //@}
 

@@ -553,6 +553,16 @@ public:
      */
    void setInitialStateTime(double value) { initialStateTime_ = value; }
 
+   /** Rebalance using zoltan. Note that this will void the local element ids.
+     */
+   void rebalance(const Teuchos::ParameterList & params);
+
+   /** Set the weight for a particular element block. Larger means more costly
+     * to assemble and evaluate.
+     */
+   void setBlockWeight(const std::string & blockId,double weight)
+   { blockWeights_[blockId] = weight; }
+
 public: // static operations
    static const std::string coordsString;
    static const std::string nodesString;
@@ -580,6 +590,13 @@ protected:
      */
    Teuchos::RCP<Teuchos::MpiComm<int> > getSafeCommunicator(stk::ParallelMachine parallelMach) const;
 
+   /** In a pure local operation apply the user specified block weights for each
+     * element block to the field that defines the load balance weighting. This
+     * uses the blockWeights_ member to determine the user value that has been
+     * set for a particular element block.
+     */
+   void applyElementLoadBalanceWeights();
+
    std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > periodicBCs_;
 
    Teuchos::RCP<stk::mesh::fem::FEMMetaData> metaData_;
@@ -599,6 +616,7 @@ protected:
    VectorFieldType * coordinatesField_;
    ProcIdFieldType * processorIdField_;
    LocalIdFieldType * localIdField_;
+   SolutionFieldType * loadBalField_;
    
    // maps field names to solution field stk mesh handles
    std::map<std::pair<std::string,std::string>,SolutionFieldType*> fieldNameToSolution_;
@@ -629,6 +647,9 @@ protected:
 
    // uses lazy evaluation
    mutable Teuchos::RCP<std::vector<stk::mesh::Entity*> > orderedElementVector_;
+
+   // for element block weights
+   std::map<std::string,double> blockWeights_;
 
    // Object describing how to sort a vector of elements using
    // local ID as the key, very short lived object

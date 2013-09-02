@@ -60,7 +60,7 @@ namespace Kokkos {
 
 //----------------------------------------------------------------------------
 
-#if defined( HAVE_MPI )
+#if defined( KOKKOS_HAVE_MPI )
 
 template< typename AScalarType ,
           typename VScalarType ,
@@ -124,9 +124,9 @@ private:
 
     vector_type vsend = subview<vector_type>( v , send_range );
 
-    DeepCopy<HostSpace,typename Device::memory_space>( m_host_send_buffer.ptr_on_device() ,
-                                                       vsend.ptr_on_device() ,
-                                                       m_map.count_send * m_chunk * sizeof(scalar_type) );
+    Impl::DeepCopy<HostSpace,typename Device::memory_space>( m_host_send_buffer.ptr_on_device() ,
+                                                             vsend.ptr_on_device() ,
+                                                             m_map.count_send * m_chunk * sizeof(scalar_type) );
 
     for ( unsigned i = 0 , j = 0 ; i < m_map.host_send.dimension_0() ; ++i ) {
       const int proc  = m_map.host_send(i,0);
@@ -195,9 +195,9 @@ private:
 
     // Copy received data to device memory.
 
-    DeepCopy<typename Device::memory_space,HostSpace>( vrecv.ptr_on_device() ,
-                                                       m_host_recv_buffer.ptr_on_device() ,
-                                                       m_map.count_receive * m_chunk * sizeof(scalar_type) );
+    Impl::DeepCopy<typename Device::memory_space,HostSpace>( vrecv.ptr_on_device() ,
+                                                             m_host_recv_buffer.ptr_on_device() ,
+                                                             m_map.count_receive * m_chunk * sizeof(scalar_type) );
   }
 
 public:
