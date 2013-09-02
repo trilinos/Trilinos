@@ -43,9 +43,9 @@ CUDA | Cuda | cuda )
   # -lib -o : produce library
   #
   NVCC="nvcc"
-  NVCC="${NVCC} -DKOKKOS_HAVE_CUDA_ARCH=200 -gencode arch=compute_20,code=sm_20"
+  #NVCC="${NVCC} -DKOKKOS_HAVE_CUDA_ARCH=200 -gencode arch=compute_20,code=sm_20"
   # NVCC="${NVCC} -DKOKKOS_HAVE_CUDA_ARCH=300 -gencode arch=compute_30,code=sm_30"
-  # NVCC="${NVCC} -DKOKKOS_HAVE_CUDA_ARCH=350 -gencode arch=compute_35,code=sm_35"
+  NVCC="${NVCC} -DKOKKOS_HAVE_CUDA_ARCH=350 -gencode arch=compute_35,code=sm_35"
   NVCC="${NVCC} -maxrregcount=64"
   NVCC="${NVCC} -Xcompiler -Wall,-ansi"
   NVCC="${NVCC} -lib -o libCuda.a -x cu"
