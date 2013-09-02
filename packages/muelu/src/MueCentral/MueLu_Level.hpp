@@ -145,8 +145,7 @@ namespace MueLu {
       const FactoryBase* fac = GetFactory(ename, factory);
 
       if (fac == NoFactory::get()) {
-        // user defined data
-        // keep data
+        // Any data set with a NoFactory gets UserData keep flag by default
         AddKeepFlag(ename, NoFactory::get(), MueLu::UserData);
       }
 

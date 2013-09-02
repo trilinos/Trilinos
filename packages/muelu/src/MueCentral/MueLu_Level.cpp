@@ -227,13 +227,13 @@ namespace MueLu {
     // Note: when data is released (fac,ename) depends on it often happened that some
     //       of this data has (recursively) been released too often
     if (IsRequestedBy(fac, ename, requestedBy)) {
+
+      // In general all data (fac,ename) depends on is released when calling Get in generating factory (fac) Build method
+      // Here we check the need to release the dependencies of some data that has been requested (by factory "requestedBy")
+      // but the corresponding Build function of factory "fac" has never been called. Therefore the dependencies
+      // have never been released. Do it now.
       if (CountRequestedFactory(fac) == 1      &&     // check if factory fac is not requested by another factory
           IsAvailableFactory(fac)    == false) {      // check if Build function of factory fac has been called
-        // In general all data (fac,ename) depends on is released with the Get calls in the Build
-        // function of the generating factory fac.
-        // Here we have to release the dependencies of some data that has been requested (by factory "requestedBy")
-        // but the corresponding Build function of factory "fac" has never been called. Therefore the dependencies
-        // have never been released. Do it now.
         Release(*fac);
       }
 
