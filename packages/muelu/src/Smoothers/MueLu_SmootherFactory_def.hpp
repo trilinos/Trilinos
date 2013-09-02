@@ -174,7 +174,7 @@ namespace MueLu {
     std::ostringstream out;
     out << SmootherFactoryBase::description();
     std::string preStr  = (preSmootherPrototype_ == Teuchos::null)          ? "null" : preSmootherPrototype_->description();
-    std::string postStr = (preSmootherPrototype_ == postSmootherPrototype_) ? "pre"  : ( (postSmootherPrototype_ == Teuchos::null) ? "null" : preSmootherPrototype_->description() );
+    std::string postStr = (preSmootherPrototype_ == postSmootherPrototype_) ? "pre"  : ( (postSmootherPrototype_ == Teuchos::null) ? "null" : postSmootherPrototype_->description() );
     out << "{pre = "  << preStr << ", post = "<< postStr << "}";
     return out.str();
   }
