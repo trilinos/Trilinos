@@ -131,6 +131,8 @@
 #include "MueLu_IsorropiaInterface.hpp"
 //#include "MueLu_RebalanceAcFactory.hpp"
 #include "MueLu_RebalanceBlockAcFactory.hpp"
+#include "MueLu_RebalanceBlockInterpolationFactory.hpp"
+#include "MueLu_RebalanceBlockRestrictionFactory.hpp"
 #include "MueLu_RebalanceBlockTransferFactory.hpp"
 #endif
 
@@ -681,13 +683,12 @@ int main(int argc, char *argv[]) {
   //rebM11->SetIgnoreUserData(true);
 
   // Reordering of the transfer operators
-  RCP<RebalanceBlockTransferFactory> RebalancedBlockPFact = rcp(new RebalanceBlockTransferFactory());
-  RebalancedBlockPFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Interpolation")));
+  RCP<RebalanceBlockInterpolationFactory> RebalancedBlockPFact = rcp(new RebalanceBlockInterpolationFactory());
   RebalancedBlockPFact->SetFactory("P", PFact); // use non-rebalanced block P operator as input
   RebalancedBlockPFact->AddFactoryManager(rebM11);
 
-  RCP<RebalanceBlockTransferFactory> RebalancedBlockRFact = rcp(new RebalanceBlockTransferFactory());
-  RebalancedBlockRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
+  RCP<RebalanceBlockRestrictionFactory> RebalancedBlockRFact = rcp(new RebalanceBlockRestrictionFactory());
+  //RebalancedBlockRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
   RebalancedBlockRFact->SetFactory("R", RFact); // non-rebalanced block P operator
   RebalancedBlockRFact->AddFactoryManager(rebM11);
 
@@ -928,8 +929,11 @@ int main(int argc, char *argv[]) {
   RebAcFact->AddFactoryManager(rebM11);
 
   // Reordering of the transfer operators
-  RCP<RebalanceBlockTransferFactory> RebalancedBlockPFact = rcp(new RebalanceBlockTransferFactory());
+  /*RCP<RebalanceBlockTransferFactory> RebalancedBlockPFact = rcp(new RebalanceBlockTransferFactory());
   RebalancedBlockPFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Interpolation")));
+  RebalancedBlockPFact->SetFactory("P", PFact); // non-rebalanced block P operator
+  RebalancedBlockPFact->AddFactoryManager(rebM11);*/
+  RCP<RebalanceBlockInterpolationFactory> RebalancedBlockPFact = rcp(new RebalanceBlockInterpolationFactory());
   RebalancedBlockPFact->SetFactory("P", PFact); // non-rebalanced block P operator
   RebalancedBlockPFact->AddFactoryManager(rebM11);
 
