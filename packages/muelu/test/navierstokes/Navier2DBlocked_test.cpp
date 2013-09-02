@@ -594,6 +594,18 @@ int main(int argc, char *argv[]) {
   RepartitionFact->SetFactory("A", rebA11Fact);
   RepartitionFact->SetFactory("Partition", isoInterface);
 
+  // second repartition factory
+  RCP<Factory> RepartitionFact2 = rcp(new RepartitionFactory());
+  {
+    Teuchos::ParameterList paramList;
+    paramList.set("minRowsPerProcessor", 1);
+    paramList.set("nonzeroImbalance", 500.0);
+    paramList.set("startLevel",10); // deactivate repartitioning here!
+    RepartitionFact2->SetParameterList(paramList);
+  }
+  RepartitionFact2->SetFactory("A", rebA22Fact);
+  RepartitionFact2->SetFactory("Partition", isoInterface); // this is not valid
+
   ////////////////////////////////////////// build non-rebalanced matrix blocks
   // build factories for transfer operator P(1,1) and R(1,1)
   RCP<AmalgamationFactory> amalgFact11 = rcp(new AmalgamationFactory());
@@ -681,15 +693,22 @@ int main(int argc, char *argv[]) {
   rebM11->SetFactory("Nullspace", nspFact11);
   //rebM11->SetIgnoreUserData(true);
 
+  RCP<FactoryManager> rebM22 = rcp(new FactoryManager());
+  rebM22->SetFactory("A", AcFact ); // important: must be a 2x2 block A Factory
+  rebM22->SetFactory("Importer", RepartitionFact2); // use dummy repartitioning factory
+  rebM22->SetFactory("Nullspace", nspFact22);
+
   // Reordering of the transfer operators
   RCP<RebalanceBlockInterpolationFactory> RebalancedBlockPFact = rcp(new RebalanceBlockInterpolationFactory());
   RebalancedBlockPFact->SetFactory("P", PFact); // use non-rebalanced block P operator as input
   RebalancedBlockPFact->AddFactoryManager(rebM11);
+  RebalancedBlockPFact->AddFactoryManager(rebM22);
 
   RCP<RebalanceBlockRestrictionFactory> RebalancedBlockRFact = rcp(new RebalanceBlockRestrictionFactory());
   //RebalancedBlockRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
   RebalancedBlockRFact->SetFactory("R", RFact); // non-rebalanced block P operator
   RebalancedBlockRFact->AddFactoryManager(rebM11);
+  RebalancedBlockRFact->AddFactoryManager(rebM22);
 
   ///////////////////////////////////////// initialize non-rebalanced block transfer operators
   // output are the non-rebalanced block transfer operators used as input in AcFact to build
