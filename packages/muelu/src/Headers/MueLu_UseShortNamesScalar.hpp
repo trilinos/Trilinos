@@ -210,10 +210,6 @@ typedef MueLu::RebalanceBlockInterpolationFactory<Scalar,LocalOrdinal,GlobalOrdi
 typedef MueLu::RebalanceBlockRestrictionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RebalanceBlockRestrictionFactory;
 #endif
 
-#ifdef MUELU_REBALANCEBLOCKTRANSFERFACTORY_SHORT
-typedef MueLu::RebalanceBlockTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RebalanceBlockTransferFactory;
-#endif
-
 #ifdef MUELU_REBALANCETRANSFERFACTORY_SHORT
 typedef MueLu::RebalanceTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RebalanceTransferFactory;
 #endif

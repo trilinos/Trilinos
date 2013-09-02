@@ -50,7 +50,6 @@ RebalanceAcFactory
 RebalanceBlockAcFactory
 RebalanceBlockInterpolationFactory
 RebalanceBlockRestrictionFactory
-RebalanceBlockTransferFactory
 RebalanceTransferFactory
 RepartitionFactory - #ifdef HAVE_MPI
 RigidBodyModeFactory

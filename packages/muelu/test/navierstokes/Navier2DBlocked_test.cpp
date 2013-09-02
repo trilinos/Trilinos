@@ -133,7 +133,6 @@
 #include "MueLu_RebalanceBlockAcFactory.hpp"
 #include "MueLu_RebalanceBlockInterpolationFactory.hpp"
 #include "MueLu_RebalanceBlockRestrictionFactory.hpp"
-#include "MueLu_RebalanceBlockTransferFactory.hpp"
 #endif
 
 #include "MueLu_UseDefaultTypes.hpp"
