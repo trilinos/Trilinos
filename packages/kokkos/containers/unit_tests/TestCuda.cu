@@ -48,10 +48,12 @@
 #include <Kokkos_Cuda.hpp>
 
 #include <Kokkos_UnorderedMap.hpp>
+#include <Kokkos_Vector.hpp>
 
 
 //----------------------------------------------------------------------------
 #include <TestUnorderedMap.hpp>
+#include <TestVector.hpp>
 
 namespace Test {
 
@@ -93,6 +95,11 @@ void cuda_test_assignment_operators(  uint32_t num_nodes )
 void cuda_test_deep_copy(  uint32_t num_nodes )
 {
   test_deep_copy< Kokkos::Cuda >( num_nodes );
+}
+
+void cuda_test_vector_combinations(unsigned int size)
+{
+  test_vector_combinations<int,Kokkos::Cuda>(size);
 }
 
 }

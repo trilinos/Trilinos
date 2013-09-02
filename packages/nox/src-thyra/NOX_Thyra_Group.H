@@ -120,13 +120,13 @@ namespace NOX {
           Jacobian-Free Newton Krylov operator (use the class
           NOX::Thyra::MatrixFreeJacobianOperator).
 
-          \param[in] initial_guess Initial guess for the solution vector
-	  \param[in] model ModelEvaluator
-	  \param[in] linear_op Forward operator for the Jacobian.  Must be non-null
-	  \param[in] lows_factory Factory for building and updating linear solver.
-	  \param[in] prec_op Preconditioner operator.  If set to Teuchos::null, no preconditioner will be used.
-	  \param[in] prec_factory Factory for updating the precondiitoner.  If set to Teuchos::null and there is a non-null prec_op, then the preconditioner will be updated using the model evaluator as long as the ModelEvaluator::outArgs supports W_prec.
-	  \param[in] weight_vector Optional diagonal weighting vector for the model.
+          \param[in] initial_guess (Required) Initial guess for the solution vector
+	  \param[in] model (Required) ModelEvaluator
+	  \param[in] linear_op (Optional) Forward operator for the Jacobian.  Must be non-null for Newton-based solvers.
+	  \param[in] lows_factory (Optional) Factory for building and updating linear solver.
+	  \param[in] prec_op (Optional) Preconditioner operator.  If set to Teuchos::null and a non-null prec_factory exists, the prec_op will be constructed using the preconditioner factory.
+	  \param[in] prec_factory (Optional) Factory for updating the precondiitoner.  If set to Teuchos::null and there is a non-null prec_op, then the preconditioner will be updated using the model evaluator as long as the ModelEvaluator::outArgs supports W_prec.
+	  \param[in] weight_vector (Optional) diagonal weighting vector for the model.
       */
       Group(const NOX::Thyra::Vector& initial_guess,
 	    const Teuchos::RCP<const ::Thyra::ModelEvaluator<double> >& model,
@@ -234,6 +234,11 @@ namespace NOX {
 				    const NOX::Abstract::MultiVector& input, 
 				    NOX::Abstract::MultiVector& result) const;
   
+      NOX::Abstract::Group::ReturnType 
+      applyRightPreconditioning(bool useTranspose,
+				Teuchos::ParameterList& params,
+				const NOX::Abstract::Vector& input, 
+				NOX::Abstract::Vector& result) const;
       //@}
 
       /** @name "Is" functions

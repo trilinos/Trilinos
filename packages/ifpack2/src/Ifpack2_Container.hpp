@@ -122,7 +122,11 @@ public:
              const Teuchos::ArrayView<const local_ordinal_type>& localRows) :
     inputMatrix_ (matrix),
     localRows_ (localRows.begin (), localRows.end ())
-  {}
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      matrix.is_null (), std::invalid_argument, "Ifpack2::Container: "
+      "The constructor's input matrix must be non-null.");
+  }
 
   //! Destructor.
   virtual ~Container() {};

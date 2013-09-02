@@ -78,6 +78,8 @@ namespace MueLu {
 
     bool useTpetra = (A->getRowMap()->lib() == Xpetra::UseTpetra);
 
+    Teuchos::FancyOStream& mmfancy = this->GetOStream(Statistics2, 0);
+
     // T is used only for projecting onto
     RCP<CrsMatrix> T_ = CrsMatrixFactory::Build(C.GetPattern());
     T_->fillComplete(P0.getDomainMap(), P0.getRangeMap());
@@ -95,7 +97,7 @@ namespace MueLu {
     bool optimizeStorage = true;
     bool allowMLMultiply = false;
 
-    tmpAP = Utils::Multiply(*A, false, *X, false, doFillComplete, optimizeStorage, allowMLMultiply);
+    tmpAP = Utils::Multiply(*A, false, *X, false, mmfancy, doFillComplete, optimizeStorage, allowMLMultiply);
     C.Apply(*tmpAP, *T);
 
     // R_0 = -A*X_0
@@ -119,15 +121,15 @@ namespace MueLu {
 
     for (size_t k = 0; k < nIts_; k++) {
       // AP = constrain(A*P)
-      if (k == 0 || useTpetra)
+      if (k == 0 || useTpetra) {
         // Construct the MxM pattern from scratch
         // This is done by default for Tpetra as the three argument version requires tmpAP
         // to *not* be locally indexed which defeats the purpose
         // TODO: need a three argument Tpetra version which allows reuse of already fill-completed matrix
-        tmpAP = Utils::Multiply(*A, false, *P, false,        doFillComplete, optimizeStorage, allowMLMultiply);
-      else {
+        tmpAP = Utils::Multiply(*A, false, *P, false,        mmfancy, doFillComplete, optimizeStorage, allowMLMultiply);
+      } else {
         // Reuse the MxM pattern
-        tmpAP = Utils::Multiply(*A, false, *P, false, tmpAP, doFillComplete, optimizeStorage, allowMLMultiply);
+        tmpAP = Utils::Multiply(*A, false, *P, false, tmpAP, mmfancy, doFillComplete, optimizeStorage, allowMLMultiply);
       }
       C.Apply(*tmpAP, *T);
       AP = T;
@@ -149,7 +151,7 @@ namespace MueLu {
       // X_{k+1} = X_k + alpha*P_k
 #ifndef TWO_ARG_MATRIX_ADD
       newX = Teuchos::null;
-      Utils2::TwoMatrixAdd(*P, false, alpha, *X, false, Teuchos::ScalarTraits<Scalar>::one(), newX);
+      Utils2::TwoMatrixAdd(*P, false, alpha, *X, false, Teuchos::ScalarTraits<Scalar>::one(), newX, mmfancy);
       newX->fillComplete(P0.getDomainMap(), P0.getRangeMap());
       X.swap(newX);
 #else
@@ -162,7 +164,7 @@ namespace MueLu {
       // R_{k+1} = R_k - alpha*A*P_k
 #ifndef TWO_ARG_MATRIX_ADD
       newR = Teuchos::null;
-      Utils2::TwoMatrixAdd(*AP, false, -alpha, *R, false, Teuchos::ScalarTraits<Scalar>::one(), newR);
+      Utils2::TwoMatrixAdd(*AP, false, -alpha, *R, false, Teuchos::ScalarTraits<Scalar>::one(), newR, mmfancy);
       newR->fillComplete(P0.getDomainMap(), P0.getRangeMap());
       R.swap(newR);
 #else
@@ -180,7 +182,7 @@ namespace MueLu {
       // P_{k+1} = Z_{k+1} + beta*P_k
 #ifndef TWO_ARG_MATRIX_ADD
       newP = Teuchos::null;
-      Utils2::TwoMatrixAdd(*P, false, beta, *Z, false, Teuchos::ScalarTraits<Scalar>::one(), newP);
+      Utils2::TwoMatrixAdd(*P, false, beta, *Z, false, Teuchos::ScalarTraits<Scalar>::one(), newP, mmfancy);
       newP->fillComplete(P0.getDomainMap(), P0.getRangeMap());
       P.swap(newP);
 #else

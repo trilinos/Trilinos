@@ -1,5 +1,8 @@
 Trilinos development
 ====================
+
+* Added a Fixed-point Anderson Acceleration solver.  Unit tests exist for Epetra and Thyra adapters.
+
 * Added example of user defined preconditioner with a JFNK forward operator to the thyra support.
 
 * Removed all usage of EpetraExt::ModelEvaluator in favor of a direct inhertance from the Thyra::ModelEvaluator.  The EpetraExt::ModelEvaluator is being deprected.

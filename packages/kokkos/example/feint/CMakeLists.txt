@@ -7,11 +7,9 @@ SET(SOURCES "")
 
 FILE(GLOB SOURCES *.cpp)
 
-SET(LIBRARIES kokkosexample_fixture kokkoscore_devicethreads kokkoscore_impl)
+SET(LIBRARIES kokkosexample_fixture)
 
-IF( TPL_ENABLE_CUDA AND TPL_ENABLE_CUSPARSE )
-
-  SET(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)
+IF( Kokkos_ENABLE_Cuda )
 
   # add MPI include dir to nvcc
   IF( TPL_ENABLE_MPI )
@@ -19,14 +17,12 @@ IF( TPL_ENABLE_CUDA AND TPL_ENABLE_CUSPARSE )
   ENDIF()
 
   TRIBITS_ADD_LIBRARY(
-    test_fixture_cuda
-    SOURCES TestFixture.cu
+    feint_cuda
+    SOURCES feint_cuda.cu
     CUDALIBRARY
     )
 
-  LIST( APPEND LIBRARIES
-    kokkoscore_devicecuda test_fixture_cuda
-  )
+  LIST( APPEND LIBRARIES kokkosexample_fixture_cuda )
 
 ENDIF()
 

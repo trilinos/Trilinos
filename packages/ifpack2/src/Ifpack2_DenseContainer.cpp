@@ -1,12 +1,11 @@
-// @HEADER
-//
+/*@HEADER
 // ***********************************************************************
 //
-//        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
+//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//                 Copyright (2009) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,39 +34,32 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
-//
-// @HEADER
-#include "MueLu_TimeMonitor.hpp"
+//@HEADER
+*/
 
-namespace MueLu {
+#include "Ifpack2_DenseContainer_decl.hpp"
 
-  // TODO: this function can be templated (T=double).
-  ArrayRCP<double> ReduceMaxMinAvg(double localValue, Teuchos::Comm<int> const &comm, int rootNode) {
-    ArrayRCP<double> r = ArrayRCP<double>(3, localValue);
+#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
-#ifdef HAVE_MPI
-    double & maxTime = r[0], & minTime = r[1], & avgTime = r[2];
+#include "Ifpack2_DenseContainer_def.hpp"
+#include "Ifpack2_ExplicitInstantiationHelpers.hpp"
+#include "Ifpack2_ETIHelperMacros.h"
 
-    // Note: workaround because reduce() is not implemented in Teuchos::Comm
-    const Teuchos::MpiComm<int> & mpiComm = dynamic_cast<const Teuchos::MpiComm<int>& >(comm);
-    MPI_Comm rawMpiComm = (*mpiComm.getRawMpiComm())();
-    //
 
-    // DEBUG std::cout << comm.getRank() << ": " << localValue << std::endl;
+#define IFPACK2_INST_DENSE_CONTAINER(S,LO,GO)                           \
+  template class DenseContainer<Tpetra::CrsMatrix< S , LO , GO >, S >;  \
 
-    int ntimers=1;
-    MPI_Reduce(&localValue, &maxTime, ntimers, MPI_DOUBLE, MPI_MAX, rootNode, rawMpiComm);
-    MPI_Reduce(&localValue, &minTime, ntimers, MPI_DOUBLE, MPI_MIN, rootNode, rawMpiComm);
-    MPI_Reduce(&localValue, &avgTime, ntimers, MPI_DOUBLE, MPI_SUM, rootNode, rawMpiComm); avgTime /= comm.getSize();
-#endif // HAVE_MPI
 
-    return r;
-  }
+namespace Ifpack2 {
 
-} // namespace MueLu
+  IFPACK2_ETI_MANGLING_TYPEDEFS()
+
+  IFPACK2_INSTANTIATE_SLG(IFPACK2_INST_DENSE_CONTAINER)
+
+}
+
+#endif
+

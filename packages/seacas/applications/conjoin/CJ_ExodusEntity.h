@@ -73,7 +73,6 @@ namespace Excn {
       }
     }
     
-    IntVector truthTable[3];
     std::vector<INT> localNodeToGlobal;
     std::vector<INT> localElementToGlobal;
     
@@ -110,15 +109,16 @@ namespace Excn {
     
     size_t entity_count() const {return elementCount;}
     
-    char elType[MAX_STR_LENGTH+1];
-    std::string name_;
+    IntVector truthTable;
     std::vector<std::string> attributeNames;
+    std::string name_;
     int64_t id;
     size_t elementCount;
     size_t nodesPerElement;
     size_t attributeCount;
     size_t offset_;
     size_t position_;
+    char elType[MAX_STR_LENGTH+1];
 
     Block& operator=(const Block& other) {
       id = other.id;
@@ -138,6 +138,7 @@ namespace Excn {
   {
     NodeSet() : id(0), nodeCount(0), dfCount(0), offset_(0), position_(0), name_("") {}
     
+    IntVector truthTable;
     int64_t id;
     size_t nodeCount;
     size_t dfCount;
@@ -170,6 +171,7 @@ namespace Excn {
   {
     SideSet() : id(0), sideCount(0), dfCount(0), offset_(0), position_(0), name_("") {}
     
+    IntVector truthTable;
     int64_t id;
     size_t sideCount;
     size_t dfCount;

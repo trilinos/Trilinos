@@ -63,7 +63,7 @@ BlockRelaxation (const Teuchos::RCP<const row_matrix_type>& A)
   IsParallel_ (false),
   ZeroStartingSolution_ (true),
   DoBackwardGS_ (false),
-  Condest_ (-STS::one ()),
+  Condest_ (STS::real(-STS::one ())),
   IsInitialized_ (false),
   IsComputed_ (false),
   NumInitialize_ (0),
@@ -431,7 +431,7 @@ void BlockRelaxation<MatrixType,ContainerType>::compute()
 
   // reset values
   IsComputed_ = false;
-  Condest_ = -STS::one ();
+  Condest_ = STS::real(-STS::one ());
 
   // Extract the submatrices
   ExtractSubmatrices ();

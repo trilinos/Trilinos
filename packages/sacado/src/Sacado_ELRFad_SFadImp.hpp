@@ -114,6 +114,8 @@ Expr(const Expr<S>& x) : update_val_(x.updateValue())
 
   if (update_val_)
     this->val() = x.val();
+  else
+    this->val() = T(0.);
 }
 
 

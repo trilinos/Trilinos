@@ -333,6 +333,16 @@ Tensor<typename Promote<S, T>::type, N>
 operator/(Tensor<T, N> const & A, S const & s);
 
 ///
+/// Scalar tensor division
+/// \param s scalar
+/// \param A tensor that divides scalar with each component
+/// \return \f$ s / A \f$
+///
+template<typename S, typename T, Index N>
+Tensor<typename Promote<S, T>::type, N>
+operator/(S const & s, Tensor<T, N> const & A);
+
+///
 /// Tensor input
 /// \param A tensor
 /// \param is input stream

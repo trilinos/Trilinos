@@ -447,15 +447,14 @@ void ModelEvaluator1DFEM<Scalar>::evalModelImpl(
       J->FillComplete();
     
     if (nonnull(M_inv)) {
-
-      // invert the Jacobian diagonal for the preconditioner    
+      // invert the Jacobian diagonal for the preconditioner
       M_inv->ExtractDiagonalCopy(*J_diagonal_);
       
       for (int i=0; i < J_diagonal_->MyLength(); ++i)
 	(*J_diagonal_)[i] = 1.0 / ((*J_diagonal_)[i]);
-
-      M_inv->ReplaceDiagonalValues(*J_diagonal_);
-
+      
+      M_inv->PutScalar(0.0);
+      M_inv->ReplaceDiagonalValues(*J_diagonal_);	
       M_inv->FillComplete();
     }
 

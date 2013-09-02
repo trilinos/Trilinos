@@ -1,8 +1,8 @@
 #!/usr/bin/tcsh
-rm -rf CMakeCache.txt
+rm -rf CMakeCache.txt CMakeFiles
 cmake \
 -D CMAKE_INSTALL_PREFIX="/home/rppawlo/JUNK" \
--D Trilinos_ENABLE_DEBUG=OFF \
+-D Trilinos_ENABLE_DEBUG=ON \
 -D Trilinos_ENABLE_TEUCHOS_TIME_MONITOR:BOOL=ON \
 -D AztecOO_ENABLE_TEUCHOS_TIME_MONITOR:BOOL=ON \
 -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \

@@ -237,6 +237,16 @@ Tensor3<typename Promote<S, T>::type, N>
 operator/(Tensor3<T, N> const & A, S const & s);
 
 ///
+/// 3rd-order scalar tensor division
+/// \param s scalar
+/// \param A 3rd-order tensor
+/// \return \f$ s / A \f$
+///
+template<typename S, typename T, Index N>
+Tensor3<typename Promote<S, T>::type, N>
+operator/(S const & s, Tensor3<T, N> const & A);
+
+///
 /// 3rd-order tensor vector product
 /// \param A 3rd-order tensor
 /// \param u vector

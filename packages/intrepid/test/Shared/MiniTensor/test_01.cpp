@@ -284,6 +284,15 @@ test_arithmetic(Index const dimension)
   divided = error <= machine_epsilon<Scalar>();
   passed = passed && divided;
 
+  Tensor const
+  G = 1.0 / C;
+
+  error = norm_f_square(G) - sum_squares;
+
+  bool const
+  split = error <= machine_epsilon<Scalar>();
+  passed = passed && split;
+
   return passed;
 }
 

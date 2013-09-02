@@ -458,3 +458,79 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_1DFEM, JFNK_UserPrec)
 
   Teuchos::TimeMonitor::summarize();
 }
+
+TEUCHOS_UNIT_TEST(NOX_Thyra_1DFEM, AndersonAcceleration_UserPrec)
+{
+  Teuchos::TimeMonitor::zeroOutTimers();
+
+  // Create a communicator for Epetra objects
+#ifdef HAVE_MPI
+  Epetra_MpiComm Comm( MPI_COMM_WORLD );
+#else
+  Epetra_SerialComm Comm;
+#endif
+
+  const int num_elements = 100;
+
+  // Make sure there is at least one element on each core
+  TEST_ASSERT(Comm.NumProc() < num_elements+1);
+
+  // Create the model evaluator object
+  double x00 = 0.0;
+  double x01 = 1.0;
+  Teuchos::RCP<ModelEvaluator1DFEM<double> > model = 
+    modelEvaluator1DFEM<double>(Teuchos::rcp(&Comm,false),num_elements,x00,x01);
+
+  // Create the initial guess
+  Teuchos::RCP< ::Thyra::VectorBase<double> >
+    initial_guess = model->getNominalValues().get_x()->clone_v();
+
+  Thyra::V_S(initial_guess.ptr(),Teuchos::ScalarTraits<double>::one());
+
+  // Create the Preconditioner operator
+  Teuchos::RCP< ::Thyra::PreconditionerBase<double> > precOp = 
+    model->create_W_prec();
+
+  // Create the NOX::Thyra::Group
+  Teuchos::RCP<NOX::Thyra::Group> nox_group = 
+    Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, model, Teuchos::null, Teuchos::null, precOp, Teuchos::null));
+
+  //nox_group->computeF();
+
+  // Create the NOX status tests and the solver
+  // Create the convergence tests
+  Teuchos::RCP<NOX::StatusTest::NormF> absresid =
+    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
+  Teuchos::RCP<NOX::StatusTest::NormWRMS> wrms =
+    Teuchos::rcp(new NOX::StatusTest::NormWRMS(1.0e-2, 1.0e-8));
+  Teuchos::RCP<NOX::StatusTest::Combo> converged =
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
+  converged->addStatusTest(absresid);
+  converged->addStatusTest(wrms);
+  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(2000));
+  Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
+    Teuchos::rcp(new NOX::StatusTest::FiniteValue);
+  Teuchos::RCP<NOX::StatusTest::Combo> combo =
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
+  combo->addStatusTest(fv);
+  combo->addStatusTest(converged);
+  combo->addStatusTest(maxiters);
+
+  // Create nox parameter list
+  Teuchos::RCP<Teuchos::ParameterList> nl_params = Teuchos::parameterList();
+  nl_params->set("Nonlinear Solver", "Anderson Accelerated Fixed-Point");
+  nl_params->sublist("Anderson Parameters").set("Storage Depth", 100);
+  nl_params->sublist("Anderson Parameters").set("Mixing Parameter", -0.9);
+  nl_params->sublist("Anderson Parameters").sublist("Preconditioning").set("Precondition", true);
+
+  // Create the solver
+  Teuchos::RCP<NOX::Solver::Generic> solver = 
+    NOX::Solver::buildSolver(nox_group, combo, nl_params);
+  NOX::StatusTest::StatusType solvStatus = solver->solve();
+
+  TEST_EQUALITY(solvStatus,NOX::StatusTest::Converged);
+  TEST_EQUALITY(solver->getNumIterations(),103);
+
+  Teuchos::TimeMonitor::summarize();
+}

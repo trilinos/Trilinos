@@ -562,6 +562,25 @@ divide(TensorBase<R, Store> const & A, S const & s, TensorBase<T, Store> & B)
   return;
 }
 
+//
+// Base split (scalar divided by tensor)
+//
+template<typename R, typename S, typename T, typename Store>
+void
+split(TensorBase<R, Store> const & A, S const & s, TensorBase<T, Store> & B)
+{
+  Index const
+  number_components = A.get_number_components();
+
+  assert(B.get_number_components() == number_components);
+
+  for (Index i = 0; i < number_components; ++i) {
+    B[i] = s / A[i];
+  }
+
+  return;
+}
+
 } // namespace Intrepid
 
 #endif // Intrepid_MiniTensor_TensorBase_i_h

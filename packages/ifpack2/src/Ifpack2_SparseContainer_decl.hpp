@@ -47,82 +47,13 @@
 /// \brief Ifpack2::SparseContainer class declaration
 
 #include "Ifpack2_Container.hpp"
+#include "Ifpack2_Details_MultiVectorLocalGatherScatter.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_RowMatrix.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RefCountPtr.hpp"
 
-namespace { // anonymous
-
-// This is an implementation detail of SparseContainer.  This class
-// may cease to exist or change its interface at any time.
-//
-// Ifpack2::SparseContainer uses this class to copy data between the
-// input ordering (of apply() and weightedApply()) and the ordering of
-// the InverseType operator (where InverseType is the second template
-// parameter of SparseContainer).  The latter ordering is a permuted
-// subset of the former.  Hence, we've chosen the terms "gather" and
-// "scatter" to refer to the copy operation to resp. from the
-// InverseType operator's ordering.
-//
-// MV_in and MV_out are possibly different specializations of
-// Tpetra::MultiVector.  MV_in corresponds to the input arguments of
-// apply() and weightedApply(), and MV_out to the input arguments of
-// InverseType::apply().  The two specializations of
-// Tpetra::MultiVector may have entirely different template
-// parameters, even different Scalar types.  This is a good way to
-// experiment with mixed-precision computation.  Since MV_in and
-// MV_out may be different types, it makes sense to implement "local
-// gather / scatter" as a separate class that uses the public
-// interface of Tpetra::MultiVector, rather than an instance method
-// (which would have to be templated).
-template<class MV_in, class MV_out>
-class MultiVectorLocalGatherScatter {
-public:
-  void
-  gather (MV_out& X_out,
-          const MV_in& X_in,
-          const Teuchos::ArrayView<const typename MV_in::local_ordinal_type>& perm) const
-  {
-    using Teuchos::ArrayRCP;
-    const size_t numRows = X_out.getLocalLength ();
-    const size_t numVecs = X_in.getNumVectors ();
-
-    for (size_t j = 0; j < numVecs; ++j) {
-      ArrayRCP<const typename MV_in::scalar_type> X_in_j = X_in.getData (j);
-      ArrayRCP<typename MV_out::scalar_type> X_out_j = X_out.getDataNonConst (j);
-
-      for (size_t i = 0; i < numRows; ++i) {
-        const size_t i_perm = perm[i];
-        X_out_j[i] = X_in_j[i_perm];
-      }
-    }
-  }
-
-  void
-  scatter (MV_in& X_in,
-           const MV_out& X_out,
-           const Teuchos::ArrayView<const typename MV_in::local_ordinal_type>& perm) const
-  {
-    using Teuchos::ArrayRCP;
-    const size_t numRows = X_out.getLocalLength ();
-    const size_t numVecs = X_in.getNumVectors ();
-
-    for (size_t j = 0; j < numVecs; ++j) {
-      ArrayRCP<typename MV_in::scalar_type> X_in_j = X_in.getDataNonConst (j);
-      ArrayRCP<const typename MV_out::scalar_type> X_out_j = X_out.getData (j);
-
-      for (size_t i = 0; i < numRows; ++i) {
-        const size_t i_perm = perm[i];
-        X_in_j[i_perm] = X_out_j[i];
-      }
-    }
-  }
-};
-
-} // namespace (anonymous)
 
 namespace Ifpack2 {
 

@@ -449,7 +449,7 @@ or it will hang your code."
 // Ignore the Print() method for all classes.  Only the above Print()
 // method will be implemented
 %ignore *::Print;
-%ignore operator<<(ostream &, const Epetra_Object &); // From python, use __str__
+%ignore operator<<(std::ostream &, const Epetra_Object &); // From python, use __str__
 %include "Epetra_Object.h"
 
 ///////////////////////////////

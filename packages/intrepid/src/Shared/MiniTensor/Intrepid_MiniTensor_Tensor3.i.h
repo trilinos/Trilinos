@@ -82,7 +82,6 @@ TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
   return;
 }
 
-
 //
 //  Create 3rd-order tensor from array
 //
@@ -266,6 +265,22 @@ operator/(Tensor3<T, N> const & A, S const & s)
   B(A.get_dimension());
 
   divide(A, s, B);
+
+  return B;
+}
+
+//
+// 3rd-order scalar tensor division
+//
+template<typename S, typename T, Index N>
+inline
+Tensor3<typename Promote<S, T>::type, N>
+operator/(S const & s, Tensor3<T, N> const & A)
+{
+  Tensor3<typename Promote<S, T>::type, N>
+  B(A.get_dimension());
+
+  split(A, s, B);
 
   return B;
 }

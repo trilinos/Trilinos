@@ -1716,6 +1716,42 @@ polar_left_logV(Tensor<T, N> const & F)
   return boost::make_tuple(V, R, v);
 }
 
+template<typename T, Index N>
+boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
+polar_left_logV_eig(Tensor<T, N> const & F)
+{
+  Index const
+  dimension = F.get_dimension();
+
+  Tensor<T, N> const
+  b = dot_t(F, F);
+
+  Tensor<T, N>
+  V(dimension), D(dimension);
+
+  boost::tie(V, D) = eig_sym(b);
+
+  Tensor<T, N>
+  DQ(dimension, ZEROS), DI(dimension, ZEROS), DL(dimension, ZEROS);
+
+  for (Index i = 0; i < dimension; ++i) {
+    DQ(i,i) = std::sqrt(D(i,i));
+    DI(i,i) = 1.0 / DQ(i,i);
+    DL(i,i) = std::log(DQ(i,i));
+  }
+
+  Tensor<T, N> const
+  R = dot(V, DI) * t_dot(V, F);
+
+  Tensor<T, N> const
+  X = V * dot_t(DQ, V);
+
+  Tensor<T, N> const
+  x = V * dot_t(DL, V);
+
+  return boost::make_tuple(X, R, x);
+}
+
 //
 // R^N left polar decomposition with matrix logarithm for V
 // \param F tensor (often a deformation-gradient-like tensor)

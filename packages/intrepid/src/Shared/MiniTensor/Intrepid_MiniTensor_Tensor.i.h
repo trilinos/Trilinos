@@ -534,6 +534,22 @@ operator/(Tensor<T, N> const & A, S const & s)
 }
 
 //
+// Scalar tensor division
+//
+template<typename S, typename T, Index N>
+inline
+Tensor<typename Promote<S, T>::type, N>
+operator/(S const & s, Tensor<T, N> const & A)
+{
+  Tensor<typename Promote<S, T>::type, N>
+  B(A.get_dimension());
+
+  split(A, s, B);
+
+  return B;
+}
+
+//
 // Tensor vector product v = A u
 //
 template<typename S, typename T, Index N>
