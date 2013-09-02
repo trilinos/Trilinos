@@ -99,7 +99,9 @@ namespace MueLu {
     // Theoretically, we could make this decision in the constructor, and create only
     // one of the smoothers. But we want to be able to reuse, so one can imagine a scenario
     // where one first runs hierarchy with tpetra matrix, and then with epetra.
-    s_ = (currentLevel.lib() == Xpetra::UseTpetra ? sTpetra_ : sEpetra_);
+    bool useTpetra = currentLevel.lib() == Xpetra::UseTpetra;
+    s_ = (useTpetra ? sTpetra_ : sEpetra_);
+    TEUCHOS_TEST_FOR_EXCEPTION(s_.is_null(), Exceptions::RuntimeError, "Smoother for " << (useTpetra ? "Tpetra" : "Epetra") << " was not constructed");
 
     s_->DeclareInput(currentLevel);
   }
@@ -123,14 +125,22 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Copy() const {
-    return rcp(new TrilinosSmoother(*this));
+    RCP<TrilinosSmoother> newSmoo = rcp(new TrilinosSmoother(type_, paramList_, overlap_));
+
+    if (!sEpetra_.is_null())
+      newSmoo->sEpetra_ = sEpetra_->Copy();
+    if (!sTpetra_.is_null())
+      newSmoo->sTpetra_ = sTpetra_->Copy();
+    newSmoo->s_ = (s_.get() == sTpetra_.get() ? newSmoo->sTpetra_ : newSmoo->sEpetra_);
+
+    return newSmoo;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   std::string TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Ifpack2ToIfpack1Type(const std::string& type) {
     if (type == "RELAXATION") { return "point relaxation stand-alone"; }
     if (type == "CHEBYSHEV")  { return "Chebyshev"; }
-    if (type == "ILUT")        { return "ILU"; } //TODO: ILU is not a valid Ifpack2 type. This is just a temporary work-around to use TrilinosSmoother with Epetra + ILU
+    if (type == "ILUT")       { return "ILU"; } //TODO: ILU is not a valid Ifpack2 type. This is just a temporary work-around to use TrilinosSmoother with Epetra + ILU
 
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Cannot convert Ifpack2 preconditioner name to Ifpack: unkown type: " + type);
   }
