@@ -108,64 +108,60 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildSmoother(Level & currentLevel, PreOrPost const preOrPost) const {
+  void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildSmoother(Level& currentLevel, PreOrPost const preOrPost) const {
     RCP<SmootherPrototype> preSmoother;
     RCP<SmootherPrototype> postSmoother;
 
-    if ((preOrPost == BOTH || preOrPost == PRE) && (preSmootherPrototype_ != Teuchos::null)) {
-      preSmoother = preSmootherPrototype_->Copy();
-      //preSmoother = rcp( new SmootherPrototype(preSmootherPrototype_) );
-      //TODO if outputlevel high enough
-      //TODO preSmoother.Print();
-      preSmoother->Setup(currentLevel);
-      currentLevel.Release(*preSmoother);
 
-      // Level Set
-      currentLevel.Set<RCP<SmootherBase> >("PreSmoother", preSmoother, this);
+    // We guarantee that after the Build() call there will be data on the level with name "PreSmoother" and "PostSmoother".
+    // However, this data may be Teuchos::null
+
+    if ((preOrPost & PRE) && !preSmootherPrototype_.is_null()) {
+        preSmoother = preSmootherPrototype_->Copy();
+        preSmoother->Setup(currentLevel);
+
+        currentLevel.Set<RCP<SmootherBase> >("PreSmoother", preSmoother, this);
     }
 
-    if ((preOrPost == BOTH || preOrPost == POST) && (postSmootherPrototype_ != Teuchos::null))
-      {
-        if (preOrPost == BOTH && preSmootherPrototype_ == postSmootherPrototype_) {
+    if ((preOrPost & POST) && !postSmootherPrototype_.is_null()) {
+      if (preOrPost == BOTH && preSmootherPrototype_ == postSmootherPrototype_) {
+        // Simple reuse
+        // Same prototypes for pre- and post-smoothers mean that we only need to call Setup only once
+        postSmoother = preSmoother;
 
-          // Very simple reuse. TODO: should be done in MueMat too
-          postSmoother = preSmoother;
+        //            }  else if (preOrPost == BOTH &&
+        //                        preSmootherPrototype_ != Teuchos::null &&
+        //                        preSmootherPrototype_->GetType() == postSmootherPrototype_->GetType()) {
 
-          //            }  else if (preOrPost == BOTH &&
-          //                        preSmootherPrototype_ != Teuchos::null &&
-          //                        preSmootherPrototype_->GetType() == postSmootherPrototype_->GetType()) {
+        //               // More complex reuse case: need implementation of CopyParameters() and a smoothers smart enough to know when parameters affect the setup phase.
 
-          //               // More complex reuse case: need implementation of CopyParameters() and a smoothers smart enough to know when parameters affect the setup phase.
+        //               // YES: post-smoother == pre-smoother
+        //               // => copy the pre-smoother to avoid the setup phase of the post-smoother.
+        //               postSmoother = preSmoother->Copy();
+        //               // If the post-smoother parameters are different from
+        //               // pre-smoother, the parameters stored in the post-smoother
+        //               // prototype are copied in the new post-smoother object.
+        //               postSmoother->CopyParameters(postSmootherPrototype_);
+        //               // If parameters don't influence the Setup phase (it is the case
+        //               // for Jacobi, Chebyshev...), PostSmoother is already setup. Nothing
+        //               // more to do. In the case of ILU, parameters of the smoother
+        //               // are in fact the parameters of the Setup phase. The call to
+        //               // CopyParameters resets the smoother (only if parameters are
+        //               // different) and we must call Setup() again.
+        //               postSmoother->Setup(currentLevel);
 
-          //               // YES: post-smoother == pre-smoother
-          //               // => copy the pre-smoother to avoid the setup phase of the post-smoother.
-          //               postSmoother = preSmoother->Copy();
-          //               // If the post-smoother parameters are different from
-          //               // pre-smoother, the parameters stored in the post-smoother
-          //               // prototype are copied in the new post-smoother object.
-          //               postSmoother->CopyParameters(postSmootherPrototype_);
-          //               // If parameters don't influence the Setup phase (it is the case
-          //               // for Jacobi, Chebyshev...), PostSmoother is already setup. Nothing
-          //               // more to do. In the case of ILU, parameters of the smoother
-          //               // are in fact the parameters of the Setup phase. The call to
-          //               // CopyParameters resets the smoother (only if parameters are
-          //               // different) and we must call Setup() again.
-          //               postSmoother->Setup(currentLevel);
+        //               // TODO: if CopyParameters do not exist, do setup twice.
 
-          //               // TODO: if CopyParameters do not exist, do setup twice.
-
-        } else {
-
-          // NO reuse: preOrPost==POST or post-smoother != pre-smoother
-          // Copy the prototype and run the setup phase.
-          postSmoother = postSmootherPrototype_->Copy();
-          postSmoother->Setup(currentLevel);
-          currentLevel.Release(*postSmoother);
-        }
-
-        // Level Set
-        currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoother, this);
+      } else {
+        // No reuse:
+        //  - either we only do postsmoothing without any presmoothing
+        //  - or our postsmoother is different from presmoother
+        postSmoother = postSmootherPrototype_->Copy();
+        postSmoother->Setup(currentLevel);
       }
+
+      currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoother, this);
+    }
 
   } // Build()
 
