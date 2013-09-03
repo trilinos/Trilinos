@@ -131,13 +131,230 @@ namespace MueLu {
 
 
     std::vector<Teuchos::RCP<const FactoryManagerBase> >::const_iterator it;
-    /*for(it = FactManager_.begin(); it!=FactManager_.end(); ++it) {
+
+#if 1
+
+    std::vector<GO> fullRangeMapVector;
+    std::vector<GO> fullDomainMapVector;
+
+    std::vector<RCP<const Map> > subBlockARangeMaps;
+    std::vector<RCP<const Map> > subBlockADomainMaps;
+    subBlockARangeMaps.reserve(bA->Rows());
+    subBlockADomainMaps.reserve(bA->Cols());
+
+    std::vector<Teuchos::RCP<Matrix> > subBlockRebA;
+    subBlockRebA.reserve(bA->Cols() * bA->Rows());
+
+    for(int i=0; i<bA->Rows(); i++) {
+      for(int j=0; j<bA->Cols(); j++) {
+        // extract matrix block
+        Teuchos::RCP<CrsMatrix> Amij = bA->getMatrix(i, j);
+        Teuchos::RCP<CrsMatrixWrap> Awij = Teuchos::rcp(new CrsMatrixWrap(Amij));
+        Teuchos::RCP<Matrix> Aij = Teuchos::rcp_dynamic_cast<Matrix>(Awij);
+        //subBlockRebA[i*bA->Cols() + j] = Aij;
+        subBlockRebA.push_back(Aij);
+      }
+    }
+
+    int curBlockId = 0;
+
+    for(it = FactManager_.begin(); it!=FactManager_.end(); ++it) {
       SetFactoryManager fineSFM  (rcpFromRef(fineLevel),   *it);
       SetFactoryManager coarseSFM(rcpFromRef(coarseLevel), *it);
 
       Teuchos::RCP<const Import> rebalanceImporter = coarseLevel.Get<Teuchos::RCP<const Import> >("Importer", (*it)->GetFactory("Importer").get());
-    }*/
 
+      // rebalance diagonal block
+
+      // extract matrix block
+      Teuchos::RCP<Matrix> Aii = subBlockRebA[curBlockId*bA->Cols() + curBlockId];
+
+      Teuchos::RCP<Matrix> rebAii;
+      if(rebalanceImporter != Teuchos::null) {
+        std::stringstream ss; ss << "Rebalancing matrix block A(" << curBlockId << "," << curBlockId << ")";
+        SubFactoryMonitor subM(*this, ss.str(), coarseLevel);
+        RCP<const Map> targetMap = rebalanceImporter->getTargetMap();
+
+        const ParameterList & pL = GetParameterList();
+
+        ParameterList XpetraList;
+        //if (pL.get<bool>("useSubcomm") == true) {
+          //GetOStream(Runtime0,0) << "Replacing maps with a subcommunicator" << std::endl;
+          XpetraList.set("Restrict Communicator",false /*true*/ /*XXX*/);
+        //}
+        // NOTE: If the communicator is restricted away, Build returns Teuchos::null.
+        rebAii = MatrixFactory::Build(Aii, *rebalanceImporter, targetMap, targetMap, rcp(&XpetraList,false));
+
+        if (!rebAii.is_null())
+          rebAii->SetFixedBlockSize(Aii->GetFixedBlockSize());
+
+        if (!rebAii.is_null()) {
+          RCP<ParameterList> params = rcp(new ParameterList());
+          params->set("printLoadBalancingInfo", true);
+          std::stringstream ss2; ss2 << "A(" << curBlockId << "," << curBlockId << ") rebalanced:";
+          GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebAii, ss2.str(), params);
+        }
+      }  // rebalance matrix block A(i,i)
+      else {
+        rebAii = Aii;
+        /*RCP<ParameterList> params = rcp(new ParameterList());
+        params->set("printLoadBalancingInfo", true);
+        std::stringstream ss2; ss2 << "A(" << curBlockId << "," << curBlockId << ") not rebalanced:";
+        GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebAii, ss2.str(), params);*/
+      }
+
+      subBlockRebA[curBlockId*bA->Cols() + curBlockId] = rebAii;
+
+      // rebalance off-diagonal matrix blocks in same row
+      for(int j=0; j<bA->Cols(); j++) {
+        if(j==curBlockId) continue;  // jump over block diagonal matrix block
+
+        // extract matrix block
+        Teuchos::RCP<Matrix> Aij = subBlockRebA[curBlockId*bA->Cols() + j];
+
+        Teuchos::RCP<Matrix> rebAij;
+        if(rebalanceImporter!=Teuchos::null) {
+          std::stringstream ss3; ss3 << "Rebalancing matrix block A(" << curBlockId << "," << j << ")";
+          SubFactoryMonitor subM(*this, ss3.str(), coarseLevel);
+          RCP<const Map> targetMap = rebalanceImporter->getTargetMap();
+
+          const ParameterList & pL = GetParameterList();
+
+          Teuchos::RCP<Map> dummy; // The 3rd argument says to use the original domain map
+          rebAij = MatrixFactory::Build(Aij, *rebalanceImporter, dummy, targetMap);
+
+          // copy strided map info from non-rebalanced to rebalanced matrix
+          if (!rebAij.is_null() && Aij->IsView("stridedMaps"))
+            rebAij->CreateView("stridedMaps", Aij);
+
+          if (!rebAij.is_null()) {
+            RCP<ParameterList> params = rcp(new ParameterList());
+            params->set("printLoadBalancingInfo", true);
+            std::stringstream ss4; ss4 << "A(" << curBlockId << "," << j << ") rebalanced:";
+            GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebAij, ss4.str(), params);
+          }
+        } // rebalance matrix block A(i,j)
+        else {
+          rebAij = Aij;
+          /*RCP<ParameterList> params = rcp(new ParameterList());
+          params->set("printLoadBalancingInfo", true);
+          std::stringstream ss2; ss2 << "A(" << curBlockId << "," << j << ") not rebalanced:";
+          GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebAij, ss2.str(), params);*/
+        }
+
+        subBlockRebA[curBlockId*bA->Cols() + j] = rebAij;
+      } // end loop over all columns
+
+      // rebalance off-diagonal matrix blocks in same column
+      for(int i=0; i<bA->Rows(); i++) {
+        if(i==curBlockId) continue;  // jump over block diagonal matrix block
+
+        // extract matrix block
+        Teuchos::RCP<Matrix> Aij = subBlockRebA[i*bA->Cols() + curBlockId];
+
+        Teuchos::RCP<Matrix> rebAij;
+        if(rebalanceImporter!=Teuchos::null) {
+          std::stringstream ss; ss << "Rebalancing matrix block (" << i << "," << curBlockId << ")";
+          SubFactoryMonitor subM(*this, ss.str(), coarseLevel);
+          RCP<const Map> targetMap = rebalanceImporter->getTargetMap();
+
+          rebAij = Aij; // just a copy
+          Teuchos::RCP<const CrsMatrixWrap> rebAwij = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(rebAij);
+          Teuchos::RCP<CrsMatrix> rebAmij = rebAwij->getCrsMatrix();
+          Teuchos::RCP<const Import> rebAijImport = ImportFactory::Build(targetMap,Aij->getColMap());
+          rebAmij->replaceDomainMapAndImporter(targetMap,rebAijImport);
+
+          // copy strided map info from non-rebalanced to rebalanced matrix
+          if (!rebAij.is_null() && Aij->IsView("stridedMaps"))
+            rebAij->CreateView("stridedMaps", Aij);
+
+          if (!rebAij.is_null()) {
+            RCP<ParameterList> params = rcp(new ParameterList());
+            params->set("printLoadBalancingInfo", true);
+            std::stringstream ss2; ss2 << "A(" << i << "," << curBlockId << ") rebalanced:";
+            GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebAij, ss2.str(), params);
+          }
+        } // rebalance matrix block A(1,0)
+        else {
+          rebAij = Aij;
+          /*RCP<ParameterList> params = rcp(new ParameterList());
+          params->set("printLoadBalancingInfo", true);
+          std::stringstream ss2; ss2 << "A(" << i << "," << curBlockId << ") not rebalanced:";
+          GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebAij, ss2.str(), params);*/
+        }
+
+        subBlockRebA[i*bA->Cols() + curBlockId] = rebAij;
+      } // end loop over all rows
+
+
+      // build full range and full domain map (strided)
+      subBlockARangeMaps.push_back(rebAii->getRangeMap());
+      Teuchos::ArrayView< const GlobalOrdinal > nodeRangeMap = subBlockARangeMaps.back()->getNodeElementList();
+      fullRangeMapVector.insert(fullRangeMapVector.end(), nodeRangeMap.begin(), nodeRangeMap.end());
+      sort(fullRangeMapVector.begin(), fullRangeMapVector.end());
+
+      subBlockADomainMaps.push_back(rebAii->getDomainMap());
+      Teuchos::ArrayView< const GlobalOrdinal > nodeDomainMap = subBlockADomainMaps.back()->getNodeElementList();
+      fullDomainMapVector.insert(fullDomainMapVector.end(), nodeDomainMap.begin(), nodeDomainMap.end());
+      sort(fullDomainMapVector.begin(), fullDomainMapVector.end());
+
+      curBlockId++;
+    } // end loop over all block rows
+
+    // now, subBlockRebA contains all rebalanced matrix blocks
+
+    // extract map index base from maps of blocked A
+    GO rangeIndexBase  = 0;
+    GO domainIndexBase = 0;
+    rangeIndexBase = bA->getRangeMap()->getIndexBase();
+    domainIndexBase= bA->getDomainMap()->getIndexBase();
+
+    Teuchos::ArrayView<GO> fullRangeMapGIDs(&fullRangeMapVector[0],fullRangeMapVector.size());
+    Teuchos::RCP<const StridedMap> stridedRgFullMap = Teuchos::rcp_dynamic_cast<const StridedMap>(rangeMapExtractor->getFullMap());
+    std::vector<size_t> stridedData = stridedRgFullMap->getStridingData();
+    Teuchos::RCP<const StridedMap > fullRangeMap =
+        StridedMapFactory::Build(
+            bA->getRangeMap()->lib(),
+            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+            fullRangeMapGIDs,
+            rangeIndexBase,
+            stridedData,
+            bA->getRangeMap()->getComm(),
+            stridedRgFullMap->getStridedBlockId(),
+            stridedRgFullMap->getOffset());
+
+    Teuchos::ArrayView<GO> fullDomainMapGIDs(&fullDomainMapVector[0],fullDomainMapVector.size());
+
+    Teuchos::RCP<const StridedMap> stridedDoFullMap = Teuchos::rcp_dynamic_cast<const StridedMap>(domainMapExtractor->getFullMap());
+    std::vector<size_t> stridedData2 = stridedDoFullMap->getStridingData();
+    Teuchos::RCP<const StridedMap > fullDomainMap =
+        StridedMapFactory::Build(
+            bA->getDomainMap()->lib(),
+            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+            fullDomainMapGIDs,
+            domainIndexBase,
+            stridedData2,
+            bA->getDomainMap()->getComm(),
+            stridedDoFullMap->getStridedBlockId(),
+            stridedDoFullMap->getOffset());
+
+    // build map extractors
+    Teuchos::RCP<const MapExtractorClass> rebRangeMapExtractor  = MapExtractorFactoryClass::Build(fullRangeMap, subBlockARangeMaps);
+    Teuchos::RCP<const MapExtractorClass> rebDomainMapExtractor = MapExtractorFactoryClass::Build(fullDomainMap, subBlockADomainMaps);
+
+    Teuchos::RCP<BlockedCrsMatrix> reb_bA = Teuchos::rcp(new BlockedCrsMatrix(rebRangeMapExtractor,rebDomainMapExtractor,10));
+    for(int i=0; i<bA->Rows(); i++) {
+      for(int j=0; j<bA->Cols(); j++) {
+       Teuchos::RCP<const CrsMatrixWrap> crsOpij = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(subBlockRebA[i*bA->Cols() + j]);
+       Teuchos::RCP<CrsMatrix> crsMatij = crsOpij->getCrsMatrix();
+       reb_bA->setMatrix(i,j,crsMatij);
+      }
+    }
+    reb_bA->fillComplete();
+    //reb_bA->describe(*out,Teuchos::VERB_EXTREME);
+    coarseLevel.Set("A", Teuchos::rcp_dynamic_cast<Matrix>(reb_bA), this);
+
+#else
     it = FactManager_.begin(); // we're only interested in the first factory manager
 
     Teuchos::RCP<const Import> rebalanceImporter = Teuchos::null;
@@ -147,17 +364,6 @@ namespace MueLu {
 
       rebalanceImporter = coarseLevel.Get<Teuchos::RCP<const Import> >("Importer", (*it)->GetFactory("Importer").get());
       if(rebalanceImporter != Teuchos::null) {
-        /*Teuchos::RCP< const Map> sourceMap = rebalanceImporter->getSourceMap();
-        for(size_t i = 0; i < domainMapExtractor->NumMaps(); i++) {
-          Teuchos::RCP<const Map> m = domainMapExtractor->getMap(i);
-          if(m->isSameAs(*sourceMap)) std::cout << " domainMap " << i << " is same as sourceMap" << std::endl;
-          if(m->isCompatible(*sourceMap)) std::cout << " domainMap " << i << " is compatible with sourceMap" << std::endl;
-        }
-        for(size_t i = 0; i < rangeMapExtractor->NumMaps(); i++) {
-          Teuchos::RCP<const Map> m = rangeMapExtractor->getMap(i);
-          if(m->isSameAs(*sourceMap)) std::cout << " rangeMap " << i << " is same as sourceMap" << std::endl;
-          if(m->isCompatible(*sourceMap)) std::cout << " rangeMap " << i << " is compatible with sourceMap" << std::endl;
-        }*/
 
         // extract matrix block
         Teuchos::RCP<CrsMatrix> Am00 = bA->getMatrix(0, 0);
@@ -432,6 +638,8 @@ namespace MueLu {
       // TODO remove me
       //Set(coarseLevel, "A", originalAc);
     } // end "do rebalancing"
+
+#endif
 
 #if 0
     if (rebalanceFacts_.begin() != rebalanceFacts_.end()) {

@@ -401,6 +401,9 @@
  *  2d Navier Stokes example (for Epetra)
  *
  *  using block matrices
+ *
+ *  3 level multigrid with Braess-Sarazin smoother
+ *  rebalance block (0,0), no rebalancing of block (1,1)
  */
 
 
@@ -639,6 +642,8 @@ int main(int argc, char *argv[]) {
   M11->SetFactory("P", P11Fact);  // non-rebalanced transfer operator block P(1,1)
   M11->SetFactory("R", R11Fact);  // non-rebalanced transfer operator block R(1,1)
   M11->SetFactory("Aggregates", UncoupledAggFact11);
+  M11->SetFactory("Graph", dropFact11);
+  M11->SetFactory("DofsPerNode", dropFact11);
   M11->SetFactory("UnAmalgamationInfo", amalgFact11);
   M11->SetFactory("Nullspace", nspFact11); // TODO check me?
   M11->SetFactory("CoarseMap", coarseMapFact11);
@@ -677,6 +682,8 @@ int main(int argc, char *argv[]) {
   M22->SetFactory("P", P22Fact); // non-rebalanced transfer operator P(2,2)
   M22->SetFactory("R", R22Fact); // non-rebalanced transfer operator R(2,2)
   M22->SetFactory("Aggregates", UncoupledAggFact22 /* UncoupledAggFact11 *//*XXX*/); // aggregates from block (1,1)
+  M22->SetFactory("Graph", dropFact22);
+  M22->SetFactory("DofsPerNode", dropFact22);
   M22->SetFactory("Nullspace", nspFact22); // TODO check me
   M22->SetFactory("UnAmalgamationInfo", amalgFact22);
   M22->SetFactory("Ptent", P22Fact);
@@ -718,7 +725,8 @@ int main(int argc, char *argv[]) {
 
   ///////////////////////////////////////// initialize rebalanced coarse block AC factory
   RebalancedAcFact->SetFactory("A", AcFact);   // use non-rebalanced block operator as input
-  RebalancedAcFact->AddFactoryManager(rebM11); // -> TODO add Isorropia interface objects here
+  RebalancedAcFact->AddFactoryManager(rebM11);
+  RebalancedAcFact->AddFactoryManager(rebM22);
 
   //////////////////////////////////////////////////////////////////////
   // Smoothers
@@ -1016,7 +1024,7 @@ int main(int argc, char *argv[]) {
 
   H->Setup(M,0,maxLevels);
 
-  *out << std::endl;
+  /**out << std::endl;
   *out << "print content of multigrid levels:" << std::endl;
 
   Finest->print(*out);
@@ -1025,7 +1033,7 @@ int main(int argc, char *argv[]) {
   coarseLevel->print(*out);
 
   RCP<Level> coarseLevel2 = H->GetLevel(2);
-  coarseLevel2->print(*out);
+  coarseLevel2->print(*out);*/
 
   RCP<MultiVector> xLsg = MultiVectorFactory::Build(xstridedfullmap,1);
 
