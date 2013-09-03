@@ -91,14 +91,20 @@ namespace MueLu {
 
     //TMP: Amesos2 KLU never available but most MueLu tests are using KLU by default
     // (ex: examples driven by ML parameter lists)
-    // -> temporarily fallback to SUPERLU
+    // -> temporarily fallback to SUPERLU or SUPERLU_dist
     // Remove this when KLU becomes available.
 #if defined(HAVE_AMESOS2_SUPERLU)
     if (type_ == "Klu" && Amesos2::query(type_) == false) {
       type_ = "Superlu";
       this->GetOStream(Warnings0, 0) << "Warning: MueLu::Amesos2Smoother: KLU2 not available. Using SuperLu instead" << std::endl;
     }
-#endif // HAVE_AMESOS2_SUPERLU
+#elif defined(HAVE_AMESOS2_SUPERLUDIST)// HAVE_AMESOS2_SUPERLUDIST
+    if (type_ == "Klu" && Amesos2::query(type_) == false) {
+      type_ = "Superludist";
+      this->GetOStream(Warnings0, 0) << "Warning: MueLu::Amesos2Smoother: KLU2 not available. Using SuperLu_dist instead" << std::endl;
+    }
+#endif // HAVE_AMESOS2_SUPERLU/DIST
+
     // END OF TMP
 
     // Check the validity of the solver type parameter
