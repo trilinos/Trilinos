@@ -22,7 +22,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Navier2D_Epetra
       SOURCES Navier2D_Epetra.cpp
-      COMM serial mpi
+      COMM mpi
       DEPLIBS muelu xpetra
       )
 
