@@ -234,7 +234,7 @@ namespace MueLu {
     // procs
     bool bExpert = true;
     GO gMinNumRowsForPtent = 0;
-    LO lMinNumRowsForPtent = Teuchos::as<LocalOrdinal>(numRowsForPtent);
+    GO lMinNumRowsForPtent = Teuchos::as<GlobalOrdinal>(numRowsForPtent);  /* LO->GO conversion */
     minAll(comm,lMinNumRowsForPtent,gMinNumRowsForPtent);
     if(aggregates.AggregatesCrossProcessors() || gMinNumRowsForPtent == 0) {
       bExpert = false;
