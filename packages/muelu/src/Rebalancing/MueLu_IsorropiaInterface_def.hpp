@@ -280,7 +280,7 @@ namespace MueLu {
         for(size_t j=0; j<DOFs.size(); j++) {
           // transform global DOF ids to local DOF ids using rowMap
           // note: The vector decomposition is based on rowMap
-          LO lDofId = rowMap->getLocalElement(DOFs[j]);
+          //LO lDofId = rowMap->getLocalElement(DOFs[j]);
 
           // put the same domain id to all DOFs of the same node
           decompEntries[i*stridedblocksize + j] = Teuchos::as<GO>(array[i]);

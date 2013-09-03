@@ -94,7 +94,7 @@ namespace MueLuTests {
 
         // Test when it is not a sublist
         try {
-          const std::string& param = Teuchos::getValue<std::string>(paramValue);
+          const std::string& testparam = Teuchos::getValue<std::string>(paramValue);
           RUN;
           continue;
         } catch (Teuchos::bad_any_cast) { }

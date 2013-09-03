@@ -280,7 +280,7 @@ namespace MueLu {
     Teuchos::RCP< Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >
     clone(const RCP<Node2> &node2) const;
 
-    void setlib(Xpetra::UnderlyingLib lib) { lib_ = lib; }
+    void setlib(Xpetra::UnderlyingLib inlib) { lib_ = inlib; }
     Xpetra::UnderlyingLib lib() { return lib_; }
 
   private:

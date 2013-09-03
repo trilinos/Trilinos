@@ -140,8 +140,8 @@ namespace MueLu {
     std::vector<Teuchos::RCP<Matrix> > subBlockRebA;
     subBlockRebA.reserve(bA->Cols() * bA->Rows());
 
-    for(int i=0; i<bA->Rows(); i++) {
-      for(int j=0; j<bA->Cols(); j++) {
+    for(size_t i=0; i<bA->Rows(); i++) {
+      for(size_t j=0; j<bA->Cols(); j++) {
         // extract matrix block
         Teuchos::RCP<CrsMatrix> Amij = bA->getMatrix(i, j);
         Teuchos::RCP<CrsMatrixWrap> Awij = Teuchos::rcp(new CrsMatrixWrap(Amij));
@@ -151,7 +151,7 @@ namespace MueLu {
       }
     }
 
-    int curBlockId = 0;
+    size_t curBlockId = 0;
     std::vector<Teuchos::RCP<const FactoryManagerBase> >::const_iterator it;
     for(it = FactManager_.begin(); it!=FactManager_.end(); ++it) {
       SetFactoryManager fineSFM  (rcpFromRef(fineLevel),   *it);
@@ -170,7 +170,7 @@ namespace MueLu {
         SubFactoryMonitor subM(*this, ss.str(), coarseLevel);
         RCP<const Map> targetMap = rebalanceImporter->getTargetMap();
 
-        const ParameterList & pL = GetParameterList();
+        //const ParameterList & pL = GetParameterList();
 
         ParameterList XpetraList;
         //if (pL.get<bool>("useSubcomm") == true) {
@@ -201,7 +201,7 @@ namespace MueLu {
       subBlockRebA[curBlockId*bA->Cols() + curBlockId] = rebAii;
 
       // rebalance off-diagonal matrix blocks in same row
-      for(int j=0; j<bA->Cols(); j++) {
+      for(size_t j=0; j<bA->Cols(); j++) {
         if(j==curBlockId) continue;  // jump over block diagonal matrix block
 
         // extract matrix block
@@ -212,8 +212,6 @@ namespace MueLu {
           std::stringstream ss3; ss3 << "Rebalancing matrix block A(" << curBlockId << "," << j << ")";
           SubFactoryMonitor subM(*this, ss3.str(), coarseLevel);
           RCP<const Map> targetMap = rebalanceImporter->getTargetMap();
-
-          const ParameterList & pL = GetParameterList();
 
           Teuchos::RCP<Map> dummy; // The 3rd argument says to use the original domain map
           rebAij = MatrixFactory::Build(Aij, *rebalanceImporter, dummy, targetMap);
@@ -241,7 +239,7 @@ namespace MueLu {
       } // end loop over all columns
 
       // rebalance off-diagonal matrix blocks in same column
-      for(int i=0; i<bA->Rows(); i++) {
+      for(size_t i=0; i<bA->Rows(); i++) {
         if(i==curBlockId) continue;  // jump over block diagonal matrix block
 
         // extract matrix block
@@ -338,8 +336,8 @@ namespace MueLu {
     Teuchos::RCP<const MapExtractorClass> rebDomainMapExtractor = MapExtractorFactoryClass::Build(fullDomainMap, subBlockADomainMaps);
 
     Teuchos::RCP<BlockedCrsMatrix> reb_bA = Teuchos::rcp(new BlockedCrsMatrix(rebRangeMapExtractor,rebDomainMapExtractor,10));
-    for(int i=0; i<bA->Rows(); i++) {
-      for(int j=0; j<bA->Cols(); j++) {
+    for(size_t i=0; i<bA->Rows(); i++) {
+      for(size_t j=0; j<bA->Cols(); j++) {
        Teuchos::RCP<const CrsMatrixWrap> crsOpij = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(subBlockRebA[i*bA->Cols() + j]);
        Teuchos::RCP<CrsMatrix> crsMatij = crsOpij->getCrsMatrix();
        reb_bA->setMatrix(i,j,crsMatij);

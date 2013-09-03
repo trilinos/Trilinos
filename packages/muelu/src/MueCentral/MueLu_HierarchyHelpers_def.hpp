@@ -135,9 +135,9 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TopSmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & level) const {
     // TODO: get rid of these
-    typedef MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> SmootherBase2;
-    typedef MueLu::SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> SmootherFactory;
-    typedef MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> SmootherPrototype;
+    typedef MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> SmootherBase2_type;
+    typedef MueLu::SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> SmootherFactory_type;
+    typedef MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> SmootherPrototype_type;
 
     if (preSmootherFact_.is_null() && postSmootherFact_.is_null())
       return;
@@ -153,9 +153,9 @@ namespace MueLu {
     if (!preSmootherFact_.is_null()) {
       // Checking for null is not sufficient, as SmootherFactory(null, something) does not generate "PreSmoother"
       bool isAble = true;
-      RCP<const SmootherFactory> s = rcp_dynamic_cast<const SmootherFactory>(preSmootherFact_);
+      RCP<const SmootherFactory_type> s = rcp_dynamic_cast<const SmootherFactory_type>(preSmootherFact_);
       if (!s.is_null()) {
-        RCP<SmootherPrototype> pre, post;
+        RCP<SmootherPrototype_type> pre, post;
         s->GetSmootherPrototypes(pre, post);
         if (pre.is_null())
           isAble = false;
@@ -164,7 +164,7 @@ namespace MueLu {
       }
 
       if (isAble) {
-        RCP<SmootherBase2> Pre  = level.Get<RCP<SmootherBase2> >("PreSmoother", preSmootherFact_.get());
+        RCP<SmootherBase2_type> Pre  = level.Get<RCP<SmootherBase2_type> >("PreSmoother", preSmootherFact_.get());
 
         level.Set           ("PreSmoother", Pre, NoFactory::get());
 
@@ -176,9 +176,9 @@ namespace MueLu {
     if (!postSmootherFact_.is_null()) {
       // Checking for null is not sufficient, as SmootherFactory(something, null) does not generate "PostSmoother"
       bool isAble = true;
-      RCP<const SmootherFactory> s = rcp_dynamic_cast<const SmootherFactory>(postSmootherFact_);
+      RCP<const SmootherFactory_type> s = rcp_dynamic_cast<const SmootherFactory_type>(postSmootherFact_);
       if (!s.is_null()) {
-        RCP<SmootherPrototype> pre, post;
+        RCP<SmootherPrototype_type> pre, post;
         s->GetSmootherPrototypes(pre, post);
         if (post.is_null())
           isAble = false;
@@ -187,7 +187,7 @@ namespace MueLu {
       }
 
       if (isAble) {
-        RCP<SmootherBase2> Post = level.Get<RCP<SmootherBase2> >("PostSmoother", postSmootherFact_.get());
+        RCP<SmootherBase2_type> Post = level.Get<RCP<SmootherBase2_type> >("PostSmoother", postSmootherFact_.get());
 
         level.Set           ("PostSmoother", Post, NoFactory::get());
 
