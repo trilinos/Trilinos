@@ -107,6 +107,8 @@ namespace MueLu {
     currentLevel.DeclareInput("permP",       permFact_.get());
     currentLevel.DeclareInput("permQT",      permFact_.get());
     currentLevel.DeclareInput("permScaling", permFact_.get());
+
+    s_->DeclareInput(currentLevel);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
