@@ -89,6 +89,7 @@
 #include <Ifpack2_SparseContainer.hpp>
 #include <Ifpack2_ILUT.hpp>
 
+
 namespace {
 using Tpetra::global_size_t;
 typedef tif_utest::Node Node;
@@ -134,7 +135,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SparseContainer, ILUT, Scalar, LocalOrdinal, G
 
   out << "SparseContainer constructor" << endl;
 
-  Ifpack2::SparseContainer<CRS,ILUTlo> MyContainer (crsmatrix, localRows);
+  Ifpack2::SparseContainer<CRS, ILUTlo> MyContainer (crsmatrix, localRows);
 
   out << "Setting SparseContainer parameters" << endl;
 
@@ -340,6 +341,10 @@ UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
 // because we don't know how to find out if explicit instantiation is
 // enabled for these types.
 #ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
+// mfh 03 Sep 2013: Do explicit instantiation for this case, since
+// it's not covered in Ifpack2_SparseContainer.cpp.
+template class Ifpack2::SparseContainer<Tpetra::CrsMatrix<float, short, int>,
+                                        Ifpack2::ILUT<Tpetra::CrsMatrix<float, short, short> > >;
 UNIT_TEST_GROUP_SCALAR_ORDINAL(float, short, int)
 #endif
 
