@@ -112,9 +112,25 @@ namespace MueLu {
     RCP<SmootherPrototype> preSmoother;
     RCP<SmootherPrototype> postSmoother;
 
-
-    // We guarantee that after the Build() call there will be data on the level with name "PreSmoother" and "PostSmoother".
-    // However, this data may be Teuchos::null
+    // SmootherFactory is quite tricky because of the fact that one of the smoother prototypes may be zero.
+    // The challenge is that we have no way of knowing how user uses this factory. For instance, lets say
+    // user wants to use s1 prototype as a presmoother, and s2 as a postsmoother. He could do:
+    //   (a) create SmootherFactory(s1, s2), or
+    //   (b) create SmootherFactory(s1, null) and SmootherFactory(null, s2)
+    // It may also happen that somewhere somebody set presmoother factory = postsmoother factory = (a)
+    // How do you do DeclareInput in this case? It could easily introduce a bug if a user does not check
+    // whether presmoother = postsmoother. A buggy code could look like that:
+    //   RCP<SmootherFactory> s = rcp(new SmootherFactory(s1,s2));
+    //   level.Request("PreSmoother",  s.get());
+    //   level.Request("PostSmoother", s.get());
+    //   Get<RCP<SmootherBase> > pre  = Get<RCP<SmootherBase> >("PreSmoother",  s.get());
+    //   Get<RCP<SmootherBase> > post = Get<RCP<SmootherBase> >("PostSmoother", s.get());
+    // This code would call DeclareInput in request mode twice, but as the Build method generates both Pre and Post
+    // smoothers, it would call DelcareInput in release mode only once, leaving requests.
+    // This code has another problem if s2 = Teuchos::null. In that case, despite the request for PostSmoother, the factory
+    // would not generate one, and second Get would throw. The real issue here is that given a Factory pointer
+    // there is no way to be sure that this factory would generate any of "PreSmoother" or "PostSmoother", unless you are
+    // able to cast it to SmootherFactory, do GetPrototypes and to check whether any of those is Teuchos::null.
 
     if ((preOrPost & PRE) && !preSmootherPrototype_.is_null()) {
         preSmoother = preSmootherPrototype_->Copy();

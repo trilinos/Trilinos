@@ -76,8 +76,7 @@ namespace MueLu {
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class TrilinosSmoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
-  {
+  class TrilinosSmoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 #undef MUELU_TRILINOSSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -97,10 +96,6 @@ namespace MueLu {
          setup.  See MueLu::Ifpack2Smoother for summary of the most commonly used parameters. See the Ifpack/Ifpack2
          documentation for the full set.
     */
-
-    template<class Scalar2, class LocalOrdinal2, class GlobalOrdinal2, class Node2, class LocalMatOps2>
-    friend class TrilinosSmoother;
-
 
     TrilinosSmoother(const std::string& type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList(), const LO& overlap = 0);
 
@@ -132,6 +127,11 @@ namespace MueLu {
 
     //! When this prototype is cloned using Copy(), the clone is an Ifpack or an Ifpack2 smoother.
     RCP<SmootherPrototype> Copy() const;
+
+
+    //! Friend declaration required for clone() functionality
+    template<class Scalar2, class LocalOrdinal2, class GlobalOrdinal2, class Node2, class LocalMatOps2>
+    friend class TrilinosSmoother;
 
     template<typename Node2, typename LocalMatOps2>
     RCP<MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node2,LocalMatOps2> > clone(const RCP<Node2>& node2, const Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2,LocalMatOps2> >& A_newnode) const;
