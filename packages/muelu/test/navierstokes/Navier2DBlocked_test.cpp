@@ -425,7 +425,7 @@ int main(int argc, char *argv[]) {
 
 #ifndef HAVE_TEUCHOS_LONG_LONG_INT
   *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
-#endif
+
 
   // custom parameters
   LocalOrdinal maxLevels = 3;
@@ -548,8 +548,6 @@ int main(int argc, char *argv[]) {
 
   Finest->Set("Nullspace2",nullspace22);
 
-
-#if 1
 
   /////////////////////////////////////////// define rebalanced block AC factory
   // This is the main factory for "A" and defines the input for
@@ -775,254 +773,6 @@ int main(int argc, char *argv[]) {
   M.SetFactory("PostSmoother",     smootherFact);
   M.SetFactory("CoarseSolver", coarseSolverFact);
 
-#else
-
-  /////////////////////////////////////////////// define subblocks of A
-  // make A11 block and A22 block available as variable "A" generated
-  // by A11Fact and A22Fact
-  RCP<SubBlockAFactory> A11Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 0, 0));
-  RCP<SubBlockAFactory> A22Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 1, 1));
-
-  ///////////////////////////////////////// define CoalesceDropFactory and Aggregation for A11
-  // set up amalgamation for A11. Note: we're using a default null space factory (Teuchos::null)
-  RCP<AmalgamationFactory> amalgFact11 = rcp(new AmalgamationFactory());
-  amalgFact11->SetFactory("A", A11Fact);
-
-  amalgFact11->setDefaultVerbLevel(Teuchos::VERB_EXTREME);
-  RCP<CoalesceDropFactory> dropFact11 = rcp(new CoalesceDropFactory());
-  dropFact11->SetFactory("A", A11Fact);
-  dropFact11->SetFactory("UnAmalgamationInfo", amalgFact11);
-  dropFact11->setDefaultVerbLevel(Teuchos::VERB_EXTREME);
-  //RCP<CoupledAggregationFactory> CoupledAggFact11 = rcp(new CoupledAggregationFactory());
-  RCP<UncoupledAggregationFactory> CoupledAggFact11 = rcp(new UncoupledAggregationFactory());
-  CoupledAggFact11->SetFactory("Graph", dropFact11);
-  CoupledAggFact11->SetMinNodesPerAggregate(9);
-  CoupledAggFact11->SetMaxNeighAlreadySelected(2);
-  CoupledAggFact11->SetOrdering(MueLu::AggOptions::NATURAL);
-  //CoupledAggFact11->SetPhase3AggCreation(0.5);
-
-  ///////////////////////////////////////// define transfer ops for A11
-#if 0
-  // use PG-AMG
-  RCP<PgPFactory> P11Fact = rcp(new PgPFactory());
-
-  RCP<GenericRFactory> R11Fact = rcp(new GenericRFactory());
-  Teuchos::RCP<NullspaceFactory> nspFact11 = Teuchos::rcp(new NullspaceFactory("Nullspace1",P11tentFact));
-
-  Teuchos::RCP<NullspaceFactory> nspFact11 = Teuchos::rcp(new NullspaceFactory("Nullspace1"));
-
-  RCP<CoarseMapFactory> coarseMapFact11 = Teuchos::rcp(new CoarseMapFactory());
-  coarseMapFact11->setStridingData(stridingInfo);
-  coarseMapFact11->setStridedBlockId(0);
-
-  //////////////////////////////// define factory manager for (1,1) block
-  RCP<FactoryManager> M11 = rcp(new FactoryManager());
-  M11->SetFactory("A", A11Fact);
-  M11->SetFactory("P", P11Fact);
-  M11->SetFactory("R", R11Fact);
-  M11->SetFactory("Aggregates", CoupledAggFact11);
-  M11->SetFactory("UnAmalgamationInfo", amalgFact11);
-  M11->SetFactory("Nullspace", nspFact11);
-  // M11->SetFactory("Ptent", P11tentFact);
-  M11->SetFactory("CoarseMap", coarseMapFact11);
-#else
-  RCP<TentativePFactory> P11Fact = rcp(new TentativePFactory());
-
-  RCP<TransPFactory> R11Fact = rcp(new TransPFactory());
-
-  Teuchos::RCP<NullspaceFactory> nspFact11 = Teuchos::rcp(new NullspaceFactory("Nullspace1"));
-  nspFact11->SetFactory("Nullspace1",P11Fact);
-
-  RCP<CoarseMapFactory> coarseMapFact11 = Teuchos::rcp(new CoarseMapFactory());
-  coarseMapFact11->setStridingData(stridingInfo);
-  coarseMapFact11->setStridedBlockId(0);
-
-  //////////////////////////////// define factory manager for (1,1) block
-  RCP<FactoryManager> M11 = rcp(new FactoryManager());
-  M11->SetFactory("A", A11Fact);
-  M11->SetFactory("P", P11Fact);
-  M11->SetFactory("R", R11Fact);
-  M11->SetFactory("Aggregates", CoupledAggFact11);
-  M11->SetFactory("UnAmalgamationInfo", amalgFact11);
-  M11->SetFactory("Nullspace", nspFact11);
-  // M11->SetFactory("Ptent", P11Fact);
-  M11->SetFactory("CoarseMap", coarseMapFact11);
-#endif
-  M11->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
-
-  ////////////////////////////////////////// prepare null space for A22
-  RCP<MultiVector> nullspace22 = MultiVectorFactory::Build(xstridedpremap, 1);  // this is a 2D standard null space
-  Teuchos::ArrayRCP<Scalar> nsValues22 = nullspace22->getDataNonConst(0);
-  for (int j=0; j< nsValues22.size(); ++j) {
-    nsValues22[j] = 1.0;
-  }
-
-  Finest->Set("Nullspace2",nullspace22);
-
-  ///////////////////////////////////////// define transfer ops for A22
-#if 0
-  // use PGAMG
-  RCP<AmalgamationFactory> amalgFact22 = rcp(new AmalgamationFactory(A22Fact));
-  RCP<TentativePFactory> P22tentFact = rcp(new TentativePFactory(CoupledAggFact11, amalgFact22));
-
-  RCP<SaPFactory> P22Fact = rcp(new SaPFactory(P22tentFact));
-
-  //RCP<GenericRFactory> R22Fact = rcp(new GenericRFactory(P22Fact));
-  RCP<TransPFactory> R22Fact = rcp(new TransPFactory(P22Fact));
-
-  Teuchos::RCP<NullspaceFactory> nspFact22 = Teuchos::rcp(new NullspaceFactory("Nullspace2",P22tentFact));
-  RCP<CoarseMapFactory> coarseMapFact22 = Teuchos::rcp(new CoarseMapFactory(CoupledAggFact11, nspFact22));
-  coarseMapFact22->setStridingData(stridingInfo);
-  coarseMapFact22->setStridedBlockId(1);
-
-  //////////////////////////////// define factory manager for (2,2) block
-  RCP<FactoryManager> M22 = rcp(new FactoryManager());
-  M22->SetFactory("A", A22Fact);
-  M22->SetFactory("P", P22Fact);
-  M22->SetFactory("R", R22Fact);
-  M22->SetFactory("Aggregates", AggFact22);
-  M22->SetFactory("Nullspace", nspFact22);
-  M22->SetFactory("Ptent", P22tentFact);
-  M22->SetFactory("CoarseMap", coarseMapFact22);
-  M22->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
-
-#else
-  // use TentativePFactory
-  RCP<AmalgamationFactory> amalgFact22 = rcp(new AmalgamationFactory());
-  RCP<TentativePFactory> P22Fact = rcp(new TentativePFactory()); // check me (fed with A22) wrong column GIDS!!!
-
-  RCP<TransPFactory> R22Fact = rcp(new TransPFactory());
-
-  Teuchos::RCP<NullspaceFactory> nspFact22 = Teuchos::rcp(new NullspaceFactory("Nullspace2"));
-  nspFact22->SetFactory("Nullspace2", P22Fact);
-  RCP<CoarseMapFactory> coarseMapFact22 = Teuchos::rcp(new CoarseMapFactory());
-  coarseMapFact22->setStridingData(stridingInfo);
-  coarseMapFact22->setStridedBlockId(1);
-
-  //////////////////////////////// define factory manager for (2,2) block
-  RCP<FactoryManager> M22 = rcp(new FactoryManager());
-  M22->SetFactory("A", A22Fact);
-  M22->SetFactory("P", P22Fact);
-  M22->SetFactory("R", R22Fact);
-  M22->SetFactory("Aggregates", CoupledAggFact11);
-  M22->SetFactory("Nullspace", nspFact22);
-  M22->SetFactory("UnAmalgamationInfo", amalgFact22); // TODO oops what about that? it was M11 before?
-  M22->SetFactory("Ptent", P22Fact);
-  M22->SetFactory("CoarseMap", coarseMapFact22);
-  M22->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
-#endif
-
-  /////////////////////////////////////////// define blocked transfer ops
-  RCP<BlockedPFactory> PFact = rcp(new BlockedPFactory()); // use row map index base from bOp
-  PFact->AddFactoryManager(M11);
-  PFact->AddFactoryManager(M22);
-
-  RCP<GenericRFactory> RFact = rcp(new GenericRFactory());
-  RFact->SetFactory("P", PFact);
-
-  RCP<Factory> AcFact = rcp(new BlockedRAPFactory());
-  AcFact->SetFactory("P", PFact);
-  AcFact->SetFactory("R", RFact);
-
-  ///////////////////////// Experiment
-
-  ////////////////////////////////////// EXPERIMENT
-  // create "Partition"
-  RCP<SubBlockAFactory> rebA11Fact = Teuchos::rcp(new SubBlockAFactory(AcFact, 0, 0));
-
-  RCP<MueLu::IsorropiaInterface<LO, GO, NO, LMO> > isoInterface = rcp(new MueLu::IsorropiaInterface<LO, GO, NO, LMO>());
-  isoInterface->SetFactory("A", rebA11Fact);
-
-  // Repartitioning (creates "Importer" from "Partition")
-  RCP<Factory> RepartitionFact = rcp(new RepartitionFactory());
-  {
-    Teuchos::ParameterList paramList;
-    paramList.set("minRowsPerProcessor", 200);
-    paramList.set("nonzeroImbalance", 1.3);
-    RepartitionFact->SetParameterList(paramList);
-  }
-  RepartitionFact->SetFactory("A", rebA11Fact);
-  RepartitionFact->SetFactory("Partition", isoInterface);
-
-  //////////////////////////////// define factory manager for (1,1) block
-  RCP<FactoryManager> rebM11 = rcp(new FactoryManager());
-  rebM11->SetFactory("A", rebA11Fact);
-  rebM11->SetFactory("Importer", RepartitionFact);
-  rebM11->SetFactory("Nullspace", nspFact11);
-
-
-  RCP<RebalanceBlockAcFactory> RebAcFact = rcp(new RebalanceBlockAcFactory());
-  RebAcFact->SetFactory("A", AcFact);
-  RebAcFact->AddFactoryManager(rebM11);
-
-  // Reordering of the transfer operators
-  /*RCP<RebalanceBlockTransferFactory> RebalancedBlockPFact = rcp(new RebalanceBlockTransferFactory());
-  RebalancedBlockPFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Interpolation")));
-  RebalancedBlockPFact->SetFactory("P", PFact); // non-rebalanced block P operator
-  RebalancedBlockPFact->AddFactoryManager(rebM11);*/
-  RCP<RebalanceBlockInterpolationFactory> RebalancedBlockPFact = rcp(new RebalanceBlockInterpolationFactory());
-  RebalancedBlockPFact->SetFactory("P", PFact); // non-rebalanced block P operator
-  RebalancedBlockPFact->AddFactoryManager(rebM11);
-
-  RCP<RebalanceBlockTransferFactory> RebalancedBlockRFact = rcp(new RebalanceBlockTransferFactory());
-  RebalancedBlockRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
-  RebalancedBlockRFact->SetFactory("R", RFact); // non-rebalanced block P operator
-  RebalancedBlockRFact->SetFactory("Nullspace", rebM11->GetFactory("Ptent")); // TODO
-  RebalancedBlockRFact->AddFactoryManager(rebM11);
-
-
-  *out << "Creating Braess-Sarazin Smoother" << std::endl;
-
-  //////////////////////////////////////////////////////////////////////
-  // Smoothers
-
-  //Another factory manager for braes sarazin smoother
-  //Schur Complement Factory, using the factory to generate AcFact
-  SC omega = 1.3;
-    RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
-    SFact->SetParameter("omega", Teuchos::ParameterEntry(omega));
-    SFact->SetFactory("A", MueLu::NoFactory::getRCP());
-
-    //Smoother Factory, using SFact as a factory for A
-    std::string ifpackSCType;
-    Teuchos::ParameterList ifpackSCList;
-    ifpackSCList.set("relaxation: sweeps", (LocalOrdinal) 3);
-    ifpackSCList.set("relaxation: damping factor", (Scalar) 1.0);
-    ifpackSCType = "RELAXATION";
-    ifpackSCList.set("relaxation: type", "Gauss-Seidel");
-    RCP<SmootherPrototype> smoProtoSC     = rcp( new TrilinosSmoother(ifpackSCType, ifpackSCList, 0, SFact) );
-    RCP<SmootherFactory> SmooSCFact = rcp( new SmootherFactory(smoProtoSC) );
-
-    RCP<BraessSarazinSmoother> smootherPrototype     = rcp( new BraessSarazinSmoother(3,omega) );
-
-  RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );
-
-  RCP<BraessSarazinSmoother> coarseSolverPrototype = rcp( new BraessSarazinSmoother(3,omega) );
-
-  RCP<SmootherFactory>   coarseSolverFact      = rcp( new SmootherFactory(coarseSolverPrototype, Teuchos::null) );
-
-  RCP<FactoryManager> MB = rcp(new FactoryManager());
-  MB->SetFactory("A",     SFact);
-  MB->SetFactory("Smoother",    SmooSCFact);
-  MB->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
-  smootherPrototype->SetFactoryManager(MB);
-  coarseSolverPrototype->SetFactoryManager(MB);
-
-
-
-  // main factory manager
-  FactoryManager M;
-  M.SetFactory("A",            RebAcFact); // TODO switch back
-  M.SetFactory("P",            RebalancedBlockPFact);     // TODO switch back
-  M.SetFactory("R",            RebalancedBlockRFact);     // TODO switch back
-  M.SetFactory("Smoother",     smootherFact); // TODO fix me
-  M.SetFactory("PreSmoother",     smootherFact); // TODO fix me
-  M.SetFactory("PostSmoother",     smootherFact); // TODO fix me
-  M.SetFactory("CoarseSolver", coarseSolverFact);
-  //////////////////////////////////// setup multigrid
-#endif
-
-
   H->Setup(M,0,maxLevels);
 
   /**out << std::endl;
@@ -1083,6 +833,8 @@ int main(int argc, char *argv[]) {
 
     aztecSolver.Iterate(maxIts, tol);
   }
+
+#endif // end ifndef HAVE_LONG_LONG_INT
 
    return EXIT_SUCCESS;
 }
