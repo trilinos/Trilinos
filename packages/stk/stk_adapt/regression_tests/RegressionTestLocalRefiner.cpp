@@ -185,6 +185,7 @@ namespace stk
 
       STKUNIT_UNIT_TEST(regr_localRefiner, break_tet_to_tet_N_5_EdgeBased)
       {
+#ifdef NDEBUG
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
         if (LARGE_TEST_ONLY || !DO_TESTS) return;
@@ -247,6 +248,7 @@ namespace stk
             // end_demo
           }
 
+#endif
       }
 
       STKUNIT_UNIT_TEST(regr_localRefiner, break_tet_to_tet_N_5_EdgeBased_shock)
