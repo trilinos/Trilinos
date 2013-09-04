@@ -80,6 +80,8 @@ Cholmod<Matrix,Vector>::Cholmod(
   (&data_.c)->nmethods=9;
   //(&data_.c)->method[0].ordering=CHOLMOD_AMD;
   //(&data_.c)->print=5;
+  data_.Y = NULL;
+  data_.E = NULL;
 }
 
 
@@ -188,6 +190,7 @@ int
 Cholmod<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> >       X,
                                    const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
 {
+  std::cout << "entered amesos solve" << std::endl;
   using Teuchos::as;
 
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
@@ -212,6 +215,7 @@ Cholmod<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
       
   }
 
+  
   int ierr = 0; // returned error code
 
   if ( this->root_ ) {
@@ -227,7 +231,7 @@ Cholmod<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
 				       as<int>(nrhs), as<int>(ld_rhs),
 				       xValues.getRawPtr(), &data_.x);
     }
-
+    std::cout << "2" << std::endl;
 
     {                           // Do solve!
 #ifdef HAVE_AMESOS2_TIMERS
@@ -235,12 +239,15 @@ Cholmod<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
 #endif
 
       CHOL::cholmod_dense *xtemp = &(data_.x);
+      
       CHOL::cholmod_solve2(CHOLMOD_A, data_.L, &data_.b, NULL,
 			   &xtemp, NULL, &data_.Y, &data_.E, &data_.c);
+      
       ierr = (&data_.c)->status;
     }
   }
 
+  
   /* All processes should have the same error code */
   Teuchos::broadcast(*(this->getComm()), 0, &ierr);
 
