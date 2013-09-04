@@ -17,6 +17,8 @@ IF( Kokkos_ENABLE_Cuda )
     CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
   ENDIF()
 
+  # Add subpackage include path dependencies for CUDA_COMPILE().
+  CUDA_INCLUDE_DIRECTORIES( ${KokkosCore_INCLUDE_DIRS} )
   CUDA_COMPILE( OBJECTS_CUDA TestCuda.cu )
 
   LIST( APPEND SOURCES ${OBJECTS_CUDA} )

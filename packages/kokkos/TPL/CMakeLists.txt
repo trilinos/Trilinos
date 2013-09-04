@@ -29,8 +29,13 @@ IF( Kokkos_ENABLE_Cuda )
 
 ENDIF()
 
+# Need this to set up the ${KokkosTPL_INCLUDE_DIRS} variable
+# required by downstream subpackages.
+#
+# wish: TRIBITS_ADD_HEADER_LIBRARY
+#
 TRIBITS_ADD_LIBRARY(
-    kokkosTPL
+    kokkosTPL_unused_dummy
     HEADERS ""
     SOURCES KokkosTPL_dummy.cpp
     DEPLIBS 
