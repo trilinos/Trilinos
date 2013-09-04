@@ -251,10 +251,10 @@ namespace Xpetra {
             if((gid - Teuchos::as<GlobalOrdinal>(j) - goStridedOffset - offset_ - indexBase_) / Teuchos::as<GlobalOrdinal>(getFixedBlockSize()) - goZeroOffset - cnt != 0) {
               printf("goZeroOffset: %i\n",goZeroOffset);
               printf("dofGids[0]: %i \n",dofGids[0]);
-              printf("stridedOffset: %i\n",nStridedOffset);
+              printf("stridedOffset: %lu\n",nStridedOffset);
               printf("offset_: %i\n",offset_);
               printf("goStridedOffset: %i\n",goStridedOffset);
-              printf("getFixedBlkSize: %i\n",getFixedBlockSize());
+              printf("getFixedBlkSize: %lu\n",getFixedBlockSize());
               std::cout << "gid: " << gid << " GID: " <<  (gid - Teuchos::as<GlobalOrdinal>(j) - goStridedOffset) / Teuchos::as<GlobalOrdinal>(getFixedBlockSize()) - goZeroOffset - cnt << std::endl;
               return false;
             }

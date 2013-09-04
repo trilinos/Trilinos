@@ -335,7 +335,7 @@ namespace MueLu {
     enum   RequestMode { REQUEST, RELEASE, UNDEF };
     RequestMode GetRequestMode() const { return requestMode_; }
 
-    void setlib(Xpetra::UnderlyingLib lib) { lib_ = lib; }
+    void setlib(Xpetra::UnderlyingLib lib2) { lib_ = lib2; }
     Xpetra::UnderlyingLib lib() { return lib_; }
 
   private:
