@@ -1,0 +1,78 @@
+#%Module -*- tcl -*-
+# module-trace on
+# module-verbosity on
+
+# import the sierra_module_utilities: note, the main sierra module files
+#    search for this location, but, we just hard-code it here
+
+lappend auto_path "/projects/sierra/common_modules"
+package require sierra_module_utilities
+
+#
+# set INSTALL_PATH /usr/netpub
+set PYTHON_PATH /projects/percept/linux_rhel6/epd.current
+
+#
+proc ModulesHelp { } {
+    global PYTHON_PATH
+
+    # Python writes the version to stderr, so we need to to special magic to display it.
+    catch { exec -- $PYTHON_PATH/bin/python -V } msg
+    puts stderr "\t$msg for scientific computing"
+    puts stderr "\tThis python includes optimized numpy and scipy (MKL), as well as mpi4py, matplotlib, ipython, et al."
+}
+
+#
+set module_name "[module-info name]"
+set module_version "[file tail $module_name]"
+set module_dirname "[file dirname $module_name]"
+# debug outputs
+# puts stderr "module_name=$module_name"
+# puts stderr "module_version=$module_version"
+# puts stderr "module_dirname=$module_dirname"
+module-whatis "Python $module_version for scientific computing"
+
+# Fix up modulepath to remove the trailing colon for this process only.
+# This is so 'conflict sierra' doesn't search /sierra
+# All conflict statements must come after this statement.
+set env(MODULEPATH) [ string trimright "$env(MODULEPATH)" ":" ]
+
+# Is this redhat or something else?
+if { [IsRedHat] } {
+    set release [GetMajorSystemVersion]
+    if { $release != 6 } {
+        puts stderr " This modulefile only works for RedHat 6"
+        puts stderr " This machine is $line"
+        exit 1
+        }
+} else {
+    puts stderr " This modulefile only works on RedHat machines (ie, that have a /etc/redhat-release file.)"
+    exit 1
+}
+
+#module-trace on
+#module-verbosity on
+
+# other sierra-python modules are probably not a conflict as we prepend all the paths
+#conflict $module_dirname
+
+# Set this so that other scripts can tell if we're using the new
+# or old modules structure.
+setenv SIERRA_MODULES_VERSION 2
+# Set this for the newer sierra-config.
+setenv SIERRA_SYSTEM desktop
+
+# If SIERRA_INSTALL_DIR is not set, set it.
+if {([array names env SIERRA_INSTALL_DIR] != "SIERRA_INSTALL_DIR") ||
+    ([string length $env(SIERRA_INSTALL_DIR)] <= 0)} {
+    setenv SIERRA_INSTALL_DIR /projects/sierra/linux/install
+}
+## setenv SIERRA_SNTOOLS_PATH [GetSierraSntoolsPath master]
+
+# executable binaries
+prepend-path PATH $PYTHON_PATH/bin
+
+# shared library dependencies for some python modules
+#PathCheck
+prepend-path LD_LIBRARY_PATH $PYTHON_PATH/lib
+

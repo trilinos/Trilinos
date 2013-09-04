@@ -1,13 +1,10 @@
 #%Module -*- tcl -*-
-# find the directory that this module is being loaded from
-# and import the sierra_module_utilities from it.
-foreach value [split $env(MODULEPATH) :] {
-  if { [string last $value $ModulesCurrentModulefile] > -1} {
-    lappend auto_path [string range $ModulesCurrentModulefile 0 [string length $value]]
-    package require sierra_module_utilities
-    break
-  }
-}
+#
+# import the sierra_module_utilities: note, the main sierra module files
+#    search for this location, but, we just hard-code it here
+
+lappend auto_path "/projects/sierra/common_modules"
+package require sierra_module_utilities
 
 #
 proc ModulesHelp { } {
@@ -21,24 +18,24 @@ module-whatis "Percept verification tools."
 # All conflict statements must come after this statement.
 set env(MODULEPATH) [ string trimright "$env(MODULEPATH)" ":" ]
 
-##srk Is this redhat or something else?
-# if { [IsRedHat] } {
-#     set release [GetMajorSystemVersion]
-#     if { $release != 5 } {
-#         puts stderr " This modulefile only works for RedHat 5"
-#         puts stderr " This machine is $line"
-#         exit 1
-#         }
-# } else {
-#     puts stderr " This modulefile only works on RedHat machines (ie, that have a /etc/redhat-release file.)"
-#     exit 1
-# }
+# Is this redhat or something else?
+if { [IsRedHat] } {
+    set release [GetMajorSystemVersion]
+    if { $release != 6 } {
+        puts stderr " This modulefile only works for RedHat 6"
+        puts stderr " This machine is $line"
+        exit 1
+        }
+} else {
+    puts stderr " This modulefile only works on RedHat machines (ie, that have a /etc/redhat-release file.)"
+    exit 1
+}
 
 # we do not know if any of this should be here...
-#conflict sierra-devel-rhel6 sierra-devel-gcc sierra-devel-intel sierra-devel-pathscale sierra-devel-pgi 
+#conflict sierra-devel-rhel6 sierra-devel-gcc sierra-devel-intel sierra-devel-pathscale sierra-devel-pgi
 #conflict sierra sierra-rhel6 sierra-gcc sierra-intel sierra-pathscale sierra-pgi
 
-# Set this so that other scripts can tell if we're using the new 
+# Set this so that other scripts can tell if we're using the new
 # or old modules structure.
 setenv SIERRA_MODULES_VERSION 2
 
@@ -51,17 +48,19 @@ setenv SIERRA_MODULES_VERSION 2
 ##srk SubModuleLoad seacas
 module load seacas
 
-# shared library version of python with numpy, scipy, mpi4py 
+# shared library version of python with numpy, scipy, mpi4py
 # also includes the sierra-mpi needed by mpi4py module
 ##srk SubModuleLoad contrib/2.7-scipy
-module load /projects/percept/modules/linux/python-2.7-scipy
+# module load /projects/percept/modules/linux/python-2.7-scipy
+module load /projects/percept/modules/linux/epd-python
 
-set INSTALL_PATH /usr/netpub
-set SWIG_PATH $INSTALL_PATH/swig-2.0.4
-set PERCEPT_PATH /projects/percept
+# srk why do we need swig? should only be needed for building...
+# set INSTALL_PATH /usr/netpub
+# set SWIG_PATH $INSTALL_PATH/swig-2.0.4
+# prepend-path MANPATH $SWIG_PATH/share/man
+# prepend-path PATH $SWIG_PATH/bin
 
-prepend-path MANPATH $SWIG_PATH/share/man
-prepend-path PATH $SWIG_PATH/bin
+set PERCEPT_PATH /projects/percept/linux_rhel6/percept_install
 
 prepend-path PATH $PERCEPT_PATH/bin
 
@@ -72,6 +71,7 @@ prepend-path LD_LIBRARY_PATH $PERCEPT_PATH/lib
 prepend-path LD_LIBRARY_PATH $PERCEPT_PATH/lib/python2.7/site-packages/PyTrilinos
 
 # the shared libraries for percept
-prepend-path LD_LIBRARY_PATH $PERCEPT_PATH/site-packages
+# prepend-path LD_LIBRARY_PATH $PERCEPT_PATH/site-packages
 
-setenv PERCEPT_BIN_PATH $PERCEPT_PATH/bin/latest
+# setenv PERCEPT_BIN_PATH $PERCEPT_PATH/bin/latest
+setenv PERCEPT_INSTALL_PATH $PERCEPT_PATH
