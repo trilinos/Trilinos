@@ -75,9 +75,8 @@
 //#include "MueLu_RebalanceTransferFactory.hpp"
 //#include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_IsorropiaInterface.hpp"
-//#include "MueLu_RebalanceAcFactory.hpp"
-#include "MueLu_RebalanceBlockAcFactory.hpp"
 #endif
+#include "MueLu_RebalanceBlockAcFactory_decl.hpp"
 
 namespace MueLu {
 
