@@ -48,13 +48,14 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
+#include "MueLu_ConfigDefs.hpp"
+
 #if defined(HAVE_MUELU_AMESOS)
 #include <Amesos_config.h>
 #endif
 #if defined(HAVE_MUELU_AMESOS2)
 #include <Amesos2_config.h>
 #endif
-#include "MueLu_ConfigDefs.hpp"
 
 #include "MueLu_TestHelpers.hpp"
 
