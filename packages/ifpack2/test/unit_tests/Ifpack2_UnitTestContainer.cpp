@@ -90,6 +90,21 @@
 #include <Ifpack2_ILUT.hpp>
 
 
+// mfh 03 Sep 2013: Instantiate the unit tests for the very special
+// case of Scalar=float, LO=short, and GO=int for the global matrix,
+// and Scalar=float, LO=short, GO=short for the local matrix.  This
+// case is not covered in Ifpack2_SparseContainer.cpp.  We will use
+// this case below; we have to put it here because explicit
+// instantiations can't be in an anonymous namespace (even if
+// namespace-qualified).  We only do this if explicit instantiation is
+// turned off, because we don't know how to find out if explicit
+// instantiation is enabled for these types.
+#ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
+template class Ifpack2::SparseContainer<Tpetra::CrsMatrix<float, short, int>,
+                                        Ifpack2::ILUT<Tpetra::CrsMatrix<float, short, short> > >;
+#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
+
+
 namespace {
 using Tpetra::global_size_t;
 typedef tif_utest::Node Node;
@@ -336,17 +351,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseContainer, FullMatrixSameScalar, Scalar, 
 // Instantiate the unit tests for Scalar=double, LO=int, and GO=int.
 UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
 
-// Instantiate the unit tests for Scalar=float, LO=short, and GO=int.
-// For now, we only do this if explicit instantiation is turned off,
-// because we don't know how to find out if explicit instantiation is
-// enabled for these types.
+// mfh 03 Sep 2013: See the explicit instantiation at the top of this file.
 #ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-// mfh 03 Sep 2013: Do explicit instantiation for this case, since
-// it's not covered in Ifpack2_SparseContainer.cpp.
-template class Ifpack2::SparseContainer<Tpetra::CrsMatrix<float, short, int>,
-                                        Ifpack2::ILUT<Tpetra::CrsMatrix<float, short, short> > >;
 UNIT_TEST_GROUP_SCALAR_ORDINAL(float, short, int)
-#endif
+#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
 #if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
 // Instantiate the unit tests for Scalar=dd_real, LO=int, and GO=int.
