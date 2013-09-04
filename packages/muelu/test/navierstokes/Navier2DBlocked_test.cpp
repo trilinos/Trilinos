@@ -1,13 +1,3 @@
-/*
- * Navier2DBlocked_test.cpp
- *
- *  Created on: 16 Aug 2013
- *      Author: wiesner
- */
-
-
-
-
 // @HEADER
 //
 // ***********************************************************************
@@ -53,13 +43,6 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * Navier2D_epetra.cpp
- *
- *  Created on: Mar 26, 2011
- *      Author: wiesner
- */
-
 #include <unistd.h>
 #include <iostream>
 #include <fstream>
@@ -127,9 +110,7 @@
 #if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MUELU_ISORROPIA)
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
-//#include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_IsorropiaInterface.hpp"
-//#include "MueLu_RebalanceAcFactory.hpp"
 #include "MueLu_RebalanceBlockAcFactory.hpp"
 #include "MueLu_RebalanceBlockInterpolationFactory.hpp"
 #include "MueLu_RebalanceBlockRestrictionFactory.hpp"
@@ -423,8 +404,21 @@ int main(int argc, char *argv[]) {
   Teuchos::Time myTime("global");
   Teuchos::TimeMonitor MM(myTime);
 
-#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MUELU_ISORROPIA)
+  // read in some command line parameters
+  Teuchos::CommandLineProcessor clp(false);
 
+  int rebalanceBlock0 = 1;      clp.setOption("rebalanceBlock0",       &rebalanceBlock0,     "rebalance block 0 (1=yes, else=no)");
+  int rebalanceBlock1 = 1;      clp.setOption("rebalanceBlock1",       &rebalanceBlock1,     "rebalance block 1 (1=yes, else=no)");
+
+  switch (clp.parse(argc,argv)) {
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+  }
+
+
+#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MUELU_ISORROPIA)
 #ifndef HAVE_TEUCHOS_LONG_LONG_INT
   *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
 
@@ -566,7 +560,7 @@ int main(int argc, char *argv[]) {
   // output is non-rebalanced coarse block matrix Ac
   // used as input for rebalanced block coarse factory RebalancedAcFact
   RCP<Factory> AcFact = rcp(new BlockedRAPFactory());
-  AcFact->SetFactory("A", MueLu::NoFactory::getRCP()); /* XXX */ // todo check me
+  AcFact->SetFactory("A", MueLu::NoFactory::getRCP());
   AcFact->SetFactory("P", PFact);  // use non-rebalanced block prolongator as input
   AcFact->SetFactory("R", RFact);  // use non-rebalanced block restrictor as input
 
@@ -583,8 +577,8 @@ int main(int argc, char *argv[]) {
   RCP<SubBlockAFactory> rebA22Fact = Teuchos::rcp(new SubBlockAFactory(AcFact, 1, 1));
 
   // define rebalancing factory for coarse block matrix A(1,1)
-  RCP<MueLu::IsorropiaInterface<LO, GO, NO, LMO> > isoInterface = rcp(new MueLu::IsorropiaInterface<LO, GO, NO, LMO>());
-  isoInterface->SetFactory("A", rebA11Fact);
+  RCP<MueLu::IsorropiaInterface<LO, GO, NO, LMO> > isoInterface1 = rcp(new MueLu::IsorropiaInterface<LO, GO, NO, LMO>());
+  isoInterface1->SetFactory("A", rebA11Fact);
 
   // Repartitioning (creates "Importer" from "Partition")
   RCP<Factory> RepartitionFact = rcp(new RepartitionFactory());
@@ -592,22 +586,33 @@ int main(int argc, char *argv[]) {
     Teuchos::ParameterList paramList;
     paramList.set("minRowsPerProcessor", 200);
     paramList.set("nonzeroImbalance", 1.3);
+    if(rebalanceBlock0 == 1)
+      paramList.set("startLevel",1);
+    else
+      paramList.set("startLevel",10); // supress rebalancing
     RepartitionFact->SetParameterList(paramList);
   }
   RepartitionFact->SetFactory("A", rebA11Fact);
-  RepartitionFact->SetFactory("Partition", isoInterface);
+  RepartitionFact->SetFactory("Partition", isoInterface1);
+
+  // define rebalancing factory for coarse block matrix A(1,1)
+  RCP<MueLu::IsorropiaInterface<LO, GO, NO, LMO> > isoInterface2 = rcp(new MueLu::IsorropiaInterface<LO, GO, NO, LMO>());
+  isoInterface2->SetFactory("A", rebA22Fact);
 
   // second repartition factory
   RCP<Factory> RepartitionFact2 = rcp(new RepartitionFactory());
   {
     Teuchos::ParameterList paramList;
-    paramList.set("minRowsPerProcessor", 1);
-    paramList.set("nonzeroImbalance", 500.0);
-    paramList.set("startLevel",10); // deactivate repartitioning here!
+    paramList.set("minRowsPerProcessor", 100);
+    paramList.set("nonzeroImbalance", 1.2);
+    if(rebalanceBlock1 == 1)
+      paramList.set("startLevel",1);
+    else
+      paramList.set("startLevel",10); // supress rebalancing
     RepartitionFact2->SetParameterList(paramList);
   }
   RepartitionFact2->SetFactory("A", rebA22Fact);
-  RepartitionFact2->SetFactory("Partition", isoInterface); // this is not valid
+  RepartitionFact2->SetFactory("Partition", isoInterface2); // this is not valid
 
   ////////////////////////////////////////// build non-rebalanced matrix blocks
   // build factories for transfer operator P(1,1) and R(1,1)
