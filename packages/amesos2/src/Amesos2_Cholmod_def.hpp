@@ -100,13 +100,11 @@ template<class Matrix, class Vector>
 int
 Cholmod<Matrix,Vector>::preOrdering_impl()
 {
-  if ( this->root_ ){
-#ifdef HAVE_AMESOS2_TIMERS
+ #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor preOrderTimer(this->timers_.preOrderTime_);
 #endif
     data_.L = CHOL::cholmod_analyze (&data_.A, &(data_.c));
     skip_symfact = true;
-  }
   
   return(0);
 }
@@ -116,8 +114,7 @@ template <class Matrix, class Vector>
 int
 Cholmod<Matrix,Vector>::symbolicFactorization_impl()
 {
-  if ( this->root_ ){
-    if ( !skip_symfact ){
+  if ( !skip_symfact ){
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor symFactTimer(this->timers_.symFactTime_);
 #endif
@@ -130,8 +127,7 @@ Cholmod<Matrix,Vector>::symbolicFactorization_impl()
        */
       skip_symfact = false;
     }
-  }
-
+  
   return(0);
 }
 
@@ -143,8 +139,7 @@ Cholmod<Matrix,Vector>::numericFactorization_impl()
   using Teuchos::as;
 
   int info = 0;
-  if ( this->root_ ){
-
+  
 #ifdef HAVE_AMESOS2_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(data_.A.ncol != as<size_t>(this->globalNumCols_),
 			       std::runtime_error,
@@ -172,7 +167,7 @@ Cholmod<Matrix,Vector>::numericFactorization_impl()
       
     }
     
-  }
+  
 
   /* All processes should have the same error code */
   Teuchos::broadcast(*(this->matrixA_->getComm()), 0, &info);
@@ -190,10 +185,9 @@ int
 Cholmod<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> >       X,
                                    const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
 {
-  std::cout << "entered amesos solve" << std::endl;
   using Teuchos::as;
 
-  const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
+  const global_size_type ld_rhs = X->getGlobalLength();
   const size_t nrhs = X->getGlobalNumVectors();
   
   Teuchos::RCP<const Tpetra::Map<local_ordinal_type,
@@ -218,7 +212,6 @@ Cholmod<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
   
   int ierr = 0; // returned error code
 
-  if ( this->root_ ) {
     {
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
@@ -231,7 +224,7 @@ Cholmod<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
 				       as<int>(nrhs), as<int>(ld_rhs),
 				       xValues.getRawPtr(), &data_.x);
     }
-    std::cout << "2" << std::endl;
+
 
     {                           // Do solve!
 #ifdef HAVE_AMESOS2_TIMERS
@@ -245,7 +238,7 @@ Cholmod<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
       
       ierr = (&data_.c)->status;
     }
-  }
+  
 
   
   /* All processes should have the same error code */
@@ -378,11 +371,11 @@ Cholmod<Matrix,Vector>::loadA_impl(EPhase current_phase)
 #endif
 
   // Only the root image needs storage allocated
-  if( this->root_ ){
-    nzvals_.resize(this->globalNumNonZeros_);
-    rowind_.resize(this->globalNumNonZeros_);
-    colptr_.resize(this->globalNumCols_ + 1);
-  }
+  
+  nzvals_.resize(this->globalNumNonZeros_);
+  rowind_.resize(this->globalNumNonZeros_);
+  colptr_.resize(this->globalNumCols_ + 1);
+    
 
   int nnz_ret = 0;
   {
@@ -401,20 +394,20 @@ Cholmod<Matrix,Vector>::loadA_impl(EPhase current_phase)
                                                     this->rowIndexBase_);
   }
   
-  if( this->root_ ){
-    TEUCHOS_TEST_FOR_EXCEPTION(nnz_ret != as<int>(this->globalNumNonZeros_),
-			       std::runtime_error,
-			       "Did not get the expected number of non-zero vals");
+  
+  TEUCHOS_TEST_FOR_EXCEPTION(nnz_ret != as<int>(this->globalNumNonZeros_),
+			     std::runtime_error,
+			     "Did not get the expected number of non-zero vals");
 
-    function_map::cholmod_init_sparse(as<size_t>(this->globalNumRows_),
-				      as<size_t>(this->globalNumCols_),
-				      as<size_t>(this->globalNumNonZeros_),
-				      0,
-				      colptr_.getRawPtr(),
-				      nzvals_.getRawPtr(),
-				      rowind_.getRawPtr(),
-				      &(data_.A));
-  }
+  function_map::cholmod_init_sparse(as<size_t>(this->globalNumRows_),
+				    as<size_t>(this->globalNumCols_),
+				    as<size_t>(this->globalNumNonZeros_),
+				    0,
+				    colptr_.getRawPtr(),
+				    nzvals_.getRawPtr(),
+				    rowind_.getRawPtr(),
+				    &(data_.A));
+  
   
   return true;
 }
