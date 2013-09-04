@@ -1,6 +1,9 @@
 SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   #SubPackageName       Directory         Class    Req/Opt
+  #
   Classic               classic           PS       OPTIONAL
+  # New Kokkos subpackages:
+  TPL                   TPL               PS       OPTIONAL
   Core                  core              EX       OPTIONAL
   Containers            containers        EX       OPTIONAL
   Example               example           EX       OPTIONAL

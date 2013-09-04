@@ -8,12 +8,12 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../src)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../core/src)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../core/src)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../core/TPL)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../TPL)
 
 SET(SOURCES
   TestMain.cpp 
   TestThreads.cpp
-  ../../core/TPL/gtest/gtest-all.cc
+  ../../TPL/gtest/gtest-all.cc
   )
 
 IF(Kokkos_ENABLE_OpenMP)

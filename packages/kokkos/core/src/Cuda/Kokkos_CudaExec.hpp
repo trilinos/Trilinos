@@ -53,7 +53,7 @@
 /*--------------------------------------------------------------------------*/
 
 #if defined( __CUDACC__ )
-#include <Cuda/cub/cub.cuh>
+#include <cub/cub.cuh>
 
 namespace Kokkos {
 namespace Impl {
