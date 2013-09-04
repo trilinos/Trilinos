@@ -64,7 +64,7 @@ template <class T>
 size_t generateRandomNumber(T a, T b);
 
 // generate distinct seeds for each process.  The seeds are different each run, but print to screen in case the run needs reproducibility.
-unsigned int generateSeed(Teuchos::Comm<int> const &comm);
+unsigned int generateSeed(Teuchos::Comm<int> const &comm, const double initSeed=-1);
 
 // generate random map
 Teuchos::RCP<const Map> generateRandomContiguousMap(size_t const minRowsPerProc, size_t const maxRowsPerProc,
@@ -104,6 +104,16 @@ int main(int argc, char *argv[]) {
 
   bool optDumpMatrices   = false; clp.setOption("dump", "nodump",       &optDumpMatrices,     "write matrix to file");
   bool optTimings        = false; clp.setOption("timings", "notimings", &optTimings,          "print timings to screen");
+  double optSeed         = -1;    clp.setOption("seed",                 &optSeed,             "random number seed (cast to unsigned int)");
+
+  std::ostringstream description;
+  description << "This is a parallel-only test of the sparse matrix matrix multiply.  Two\n"
+              << "\"random\" matrices are generated. They are most likely rectangular.  Each\n"
+              << "has random contiguous domain and range maps. Each row has a random number of\n"
+              << "entries with random global column IDs. The matrix values are identically 1,\n"
+              << "and success is declared if the multiply finishes.";
+  clp.setDocString(description.str().c_str());
+                    
 
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -115,6 +125,9 @@ int main(int argc, char *argv[]) {
   {
   TimeMonitor globalTimeMonitor(*TimeMonitor::getNewTimer("MatrixMatrixMultiplyTest: S - Global Time"));
 
+  unsigned int seed = generateSeed(*comm, optSeed);
+  ST::seedrandom(seed);
+
   for (int jj=0; jj<optNmults; ++jj) {
 
     RCP<Matrix> A;
@@ -125,9 +138,6 @@ int main(int argc, char *argv[]) {
     size_t maxRowsPerProc   = optMaxRowsPerProc;
     size_t minRowsPerProc   = optMinRowsPerProc;
     if (minRowsPerProc > maxRowsPerProc) minRowsPerProc=maxRowsPerProc;
-
-    unsigned int seed = generateSeed(*comm);
-    ST::seedrandom(seed);
 
     // Create row map.  This will also be used as the range map.
     RCP<const Map> rowMapForA = generateRandomContiguousMap(minRowsPerProc, maxRowsPerProc, comm, xpetraParameters.GetLib());
@@ -180,6 +190,8 @@ int main(int argc, char *argv[]) {
 
     } //scope for multiply
 
+    seed = generateSeed(*comm);
+
   } //for (int jj=0; jj<optNmults; ++jj)
 
   } // end of globalTimeMonitor
@@ -204,11 +216,13 @@ size_t generateRandomNumber(T a, T b)
 
 //- -- --------------------------------------------------------
 
-unsigned int generateSeed(Teuchos::Comm<int> const &comm)
+unsigned int generateSeed(Teuchos::Comm<int> const &comm, const double initSeed)
 {
   timeval t1;
   gettimeofday(&t1, NULL);
-  unsigned int seed = t1.tv_usec * t1.tv_sec;
+  unsigned int seed;
+  if (initSeed > -1) seed = Teuchos::as<unsigned int>(initSeed);
+  else               seed = t1.tv_usec * t1.tv_sec;
   // use variant of proc 0's seed so we can always reproduce the results
   const Teuchos::MpiComm<int> &mpicomm = dynamic_cast<const Teuchos::MpiComm<int> &>(comm);
   TEUCHOS_TEST_FOR_EXCEPTION(&mpicomm==0,MueLu::Exceptions::RuntimeError,"cast to MpiComm failed");
