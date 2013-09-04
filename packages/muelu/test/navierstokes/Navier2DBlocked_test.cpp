@@ -423,6 +423,8 @@ int main(int argc, char *argv[]) {
   Teuchos::Time myTime("global");
   Teuchos::TimeMonitor MM(myTime);
 
+#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MUELU_ISORROPIA)
+
 #ifndef HAVE_TEUCHOS_LONG_LONG_INT
   *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
 
@@ -835,6 +837,6 @@ int main(int argc, char *argv[]) {
   }
 
 #endif // end ifndef HAVE_LONG_LONG_INT
-
+#endif // #if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MUELU_ISORROPIA)
    return EXIT_SUCCESS;
 }
