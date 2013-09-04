@@ -551,7 +551,7 @@ ENDFUNCTION()
 FUNCTION(UNITTEST_TARNIPED_ENABLE_ALL)
 
   MESSAGE("\n***")
-  MESSAGE("*** Testing TARNIPE() enable all packages")
+  MESSAGE("*** Testing TARNIPE() enable all packages (no tests)")
   MESSAGE("***\n")
 
   # Debugging
@@ -607,8 +607,13 @@ FUNCTION(UNITTEST_TARNIPED_ENABLE_ALL_TESTS)
 
   UNITTEST_COMPARE_CONST(${PROJECT_NAME}_ENABLE_Teuchos ON)
   UNITTEST_COMPARE_CONST(${PROJECT_NAME}_ENABLE_RTOp ON)
-  UNITTEST_COMPARE_CONST(${PROJECT_NAME}_ENABLE_Ex2Package1 ON)
-  UNITTEST_COMPARE_CONST(${PROJECT_NAME}_ENABLE_Ex2Package2 ON)
+  UNITTEST_COMPARE_CONST(${PROJECT_NAME}_ENABLE_Ex2Package1 OFF)
+  UNITTEST_COMPARE_CONST(${PROJECT_NAME}_ENABLE_Ex2Package2 OFF)
+
+  # NOTE: Above, implicitly non-enabled packages are disabled even if they
+  # have tests that are enabled.  This makes the logic in
+  # TribitsCTestDriverCore.cmake avoid enabling modified packages if they are
+  # not to be implicilty enabled in CI testing.
 
 ENDFUNCTION()
 
@@ -616,7 +621,7 @@ ENDFUNCTION()
 FUNCTION(UNITTEST_TARNIPED_ENABLE_ALL_Ex2Package1_ENABLE_TESTS)
 
   MESSAGE("\n***")
-  MESSAGE("*** Testing TARNIPED() with all packages and tests for only Ex2Package1")
+  MESSAGE("*** Testing TARNIPED() with all packages and tests, Ex2Package1 not excluded")
   MESSAGE("***\n")
 
   # Debugging
@@ -625,17 +630,19 @@ FUNCTION(UNITTEST_TARNIPED_ENABLE_ALL_Ex2Package1_ENABLE_TESTS)
   SET(${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE ON)
   SET(${PROJECT_NAME}_ENABLE_ALL_PACKAGES ON)
   SET(Ex2Package1_ENABLE_TESTS ON)
+  SET(Ex2Package2_ENABLE_TESTS ON)
 
   UNITTEST_HELPER_READ_AND_PROESS_PACKAGES()
 
   UNITTEST_COMPARE_CONST(${PROJECT_NAME}_ENABLE_Ex2Package1 ON)
   UNITTEST_COMPARE_CONST(Ex2Package1_ENABLE_TESTS ON)
   UNITTEST_COMPARE_CONST(${PROJECT_NAME}_ENABLE_Ex2Package2 ON)
-  UNITTEST_COMPARE_CONST(Ex2Package2_ENABLE_TESTS "")
+  UNITTEST_COMPARE_CONST(Ex2Package2_ENABLE_TESTS ON)
 
-  MESSAGE("Unit test: Disabling repository implicitly excluded packages.")
+  MESSAGE("Unit test: Disabling repository implicitly excluded packages and tests, Ex2Package1 not excluded.")
 
   SET(${EXTRA_REPO_NAME}_NO_IMPLICIT_PACKAGE_ENABLE ON)
+  SET(${EXTRA_REPO_NAME}_NO_IMPLICIT_PACKAGE_ENABLE_EXCEPT Ex2Package1)
 
   TRIBITS_APPLY_REPOSITORY_NO_IMPLICIT_PACKAGE_ENABLE_DISABLE()  
 
@@ -643,6 +650,10 @@ FUNCTION(UNITTEST_TARNIPED_ENABLE_ALL_Ex2Package1_ENABLE_TESTS)
   UNITTEST_COMPARE_CONST(${PROJECT_NAME}_ENABLE_RTOp ON)
   UNITTEST_COMPARE_CONST(${PROJECT_NAME}_ENABLE_Ex2Package1 ON)
   UNITTEST_COMPARE_CONST(${PROJECT_NAME}_ENABLE_Ex2Package2 OFF)
+
+  # NOTE: The above shows that if you want to leave enabled a package in a
+  # repo that has implicit package enables turned on, then you need to add
+  # that package to the exclude list!
 
 ENDFUNCTION()
 
