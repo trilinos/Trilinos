@@ -1148,7 +1148,7 @@
     <ParentPackage value=""/>
   </Package>
   <Package name="ShyLU" dir="packages/shylu" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES value="IQR,Epetra,Isorropia,AztecOO,Belos,Ifpack,Amesos,Teuchos"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="IQR,Epetra,Isorropia,AztecOO,Belos,Ifpack,Amesos,Teuchos,Anasazi"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES value="ML"/>
     <TEST_OPTIONAL_DEP_PACKAGES/>

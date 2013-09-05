@@ -157,6 +157,13 @@ int Ifpack_ShyLU::Initialize()
     	slu_config_.iqrKrylovDim = List_.get<double>("IQR Krylov Dim", 0.5);
     	slu_config_.iqrNumIter = List_.get<int>("IQR Number Iterations", 1);
     }
+    if (schurApproxMethod == "Projection")
+    {
+    	slu_config_.schurSolver = "Projection";
+    	slu_config_.schurApproxMethod = 5;
+    	slu_config_.projectionSpaceDim = List_.get<double>("Projection Subspace Dimension", 0.5);
+    	slu_config_.projectionNumIter = List_.get<int>("Projection Number Iterations", 1);
+    }
     if (schurApproxMethod == "A22AndBlockDiagonals")
     {
         slu_config_.schurApproxMethod = 1;

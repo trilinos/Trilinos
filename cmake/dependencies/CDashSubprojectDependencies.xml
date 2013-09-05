@@ -329,6 +329,7 @@
   <SubProject name="ShyLU">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="RTOp" type="ILO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILR"/>
     <Dependency name="Triutils" type="ILR"/>
@@ -342,6 +343,7 @@
     <Dependency name="Ifpack" type="LR"/>
     <Dependency name="ML" type="TR"/>
     <Dependency name="Belos" type="LR"/>
+    <Dependency name="Anasazi" type="LR"/>
     <Dependency name="IQR" type="LR"/>
     <EmailAddresses>
       <Email address="shylu-regression@software.sandia.gov"/>

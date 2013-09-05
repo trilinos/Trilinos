@@ -356,6 +356,53 @@ static int shylu_local_solve(
         solveSbar.stop();
         /*std::cout << "RADU SHYLU: solve Sbar: "
         		  << solveSbar.totalElapsedTime() << std::endl;*/
+    } else if (config->schurSolver == "Projection")
+    {
+        Teuchos::Time solveSbar("solve Sbar");
+        solveSbar.start();
+
+        if (data->firstIteration) {
+			// Computation phase - only during the first outer GMRES iteration
+			int sSize = data->schur_op->OperatorDomainMap().NumGlobalElements();
+			int kSize = std::floor(config->projectionSpaceDim * sSize);
+
+			Teuchos::ParameterList projectionPL;
+			projectionPL.set("relative subspace dimension",
+							 config->projectionSpaceDim);
+			Teuchos::RCP<Epetra_Operator> G = Teuchos::rcp(data->schur_op->G_,
+														   false);
+			data->projectionPreconditioner = Teuchos::rcp(
+					new ShyLUProjectionPrec(data->schur_op,
+											G,
+											projectionPL));
+			data->projectionPreconditioner->Setup();
+
+			if (! Xs.Comm().MyPID()) {
+				std::cout << "KSIZE: " << kSize
+						  << ", SSIZE: " << sSize;
+			}
+
+			data->firstIteration = false;
+        }
+
+		// Solve phase
+		if (config->projectionNumIter > 0) {
+			ShyLUGMRESManager newGmresManager(data->schur_op->OperatorDomainMap(),
+											  config->iqrNumIter+1, false);
+			double tol=1e-10;
+			IQR::IdPreconditioner L;
+			IQR::GMRES<Epetra_Operator, Epetra_MultiVector,
+					   IQR::IdPreconditioner, ShyLUProjectionPrec, ShyLUGMRESManager,
+					   std::vector<double>, double>
+					(*(data->schur_op), Xs, Bs, &L, &*(data->projectionPreconditioner),
+					 newGmresManager, config->projectionNumIter, tol);
+		} else {
+			data->projectionPreconditioner->ApplyInverse(Bs, Xs);
+		}
+		solveSbar.stop();
+		/*std::cout << "RADU SHYLU: solve Sbar: "
+				  << solveSbar.totalElapsedTime() << std::endl;*/
+
     } else if (config->schurSolver == "Amesos")
     {
         Amesos_BaseSolver *solver2 = data->dsolver;

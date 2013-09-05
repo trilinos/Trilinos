@@ -59,6 +59,7 @@
 
 #include "gmres.h"
 #include "gmres_tools.h"
+#include <ProjectionPreconditioner.hpp>
 
 //#include "shylu_debug_manager.hpp"
 
@@ -70,6 +71,9 @@ typedef IQR::GMRESManager<Epetra_BlockMap,
 						  std::vector<std::vector<double> >,
 						  std::vector<double> >
 			ShyLUGMRESManager;
+
+typedef IQR::ProjectionPreconditioner<Epetra_BlockMap, Epetra_Operator,
+									  Epetra_MultiVector> ShyLUProjectionPrec;
 
 typedef struct
 {
@@ -87,6 +91,7 @@ typedef struct
     //Epetra_CrsMatrix *D;        // Actual D Matrix, not reqd for Amesos_KLU
                                 // but required for Amesos_Pardiso
     Teuchos::RCP<ShyLUGMRESManager> gmresManager;
+    Teuchos::RCP<ShyLUProjectionPrec> projectionPreconditioner;
     bool firstIteration;
     Teuchos::RCP<Epetra_CrsMatrix> Sbar; // Approx Schur complement
     Teuchos::RCP<Epetra_CrsGraph> localSbargraph; // graph of local Sbar
@@ -113,8 +118,12 @@ typedef struct
     int schurApproxMethod;      // ==1 implies blockdiagonal + A22
                                 // ==2 implies dropping based
     							// ==4 implies IQR
+    							// ==5 implies Projection
     double iqrKrylovDim;
     int iqrNumIter;
+
+    double projectionSpaceDim;
+    int projectionNumIter;
 
     double relative_threshold;  // Relative threshold for dropping
                                 // only used if schurApproxMethod == 2
