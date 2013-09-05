@@ -356,9 +356,13 @@ void CudaInternal::initialize( int cuda_device_id )
     // and scratch space for partial reduction values.
     // Allocate some initial space.  This will grow as needed.
 
-    (void) scratch_unified( 16 * sizeof(size_type) );
-    (void) scratch_flags( m_maxWarpCount * Impl::CudaTraits::WarpSize * 2 * sizeof(size_type) );
-    (void) scratch_space( m_maxBlock * 2 * sizeof(size_type) );
+    {
+      const unsigned reduce_block_count = m_maxWarpCount * Impl::CudaTraits::WarpSize ;
+
+      (void) scratch_unified( 16 * sizeof(size_type) );
+      (void) scratch_flags( reduce_block_count * 2  * sizeof(size_type) );
+      (void) scratch_space( reduce_block_count * 16 * sizeof(size_type) );
+    }
   }
   else {
 
