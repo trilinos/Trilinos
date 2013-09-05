@@ -9,27 +9,44 @@
 
 int main()
 {
-  enum { UseAtomic = false };
-
 #if defined( KOKKOS_HAVE_PTHREAD )
   {
-    std::cout << "feint< Threads >" << std::endl ;
+    std::pair<unsigned,unsigned> use_cores =
+      Kokkos::hwloc::get_core_topology();
 
-    // One team of one thread.
-    std::pair<unsigned,unsigned> team_topology( 1 , 1 );
+    // Use 4 cores per NUMA region, unless fewer available
+    use_cores.second = std::min( 4u , use_cores.second );
+
+    // Use 2 cores per team and 1 thread/core:
+    std::pair<unsigned,unsigned>
+      team_topology( use_cores.first * use_cores.second / 2 , 2 );
 
     Kokkos::Threads::initialize( team_topology );
-    Kokkos::Example::feint< Kokkos::Threads , UseAtomic >();
+
+    std::cout << "feint< Threads , NotUsingAtomic >" << std::endl ;
+    Kokkos::Example::feint< Kokkos::Threads , false >();
+
+    std::cout << "feint< Threads , Usingtomic >" << std::endl ;
+    Kokkos::Example::feint< Kokkos::Threads , true  >();
+
     Kokkos::Threads::finalize();
   }
 #endif
 
 #if defined( KOKKOS_HAVE_CUDA )
   {
-    std::cout << "feint< Cuda >" << std::endl ;
+    const unsigned device_count = Kokkos::Cuda::detect_device_count();
 
-    Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
-    Kokkos::Example::feint< Kokkos::Cuda , UseAtomic >();
+    // Use the last device:
+
+    Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device_count-1) );
+
+    std::cout << "feint< Cuda , NotUsingAtomic >" << std::endl ;
+    Kokkos::Example::feint< Kokkos::Cuda , false >();
+
+    std::cout << "feint< Cuda , UsingAtomic >" << std::endl ;
+    Kokkos::Example::feint< Kokkos::Cuda , true  >();
+
     Kokkos::Cuda::finalize();
   }
 #endif
