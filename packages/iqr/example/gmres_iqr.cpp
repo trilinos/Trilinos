@@ -26,12 +26,17 @@
 
 #include <gmres_tools.h>
 #include <gmres.h>
+#include <ProjectionPreconditioner.hpp>
 
 namespace {
 typedef double Scalar;
 typedef std::vector<Scalar> LocalVector;
 typedef std::vector<LocalVector> LocalMatrix;
 typedef IQR::GMRESManager<Epetra_BlockMap, Epetra_MultiVector, LocalMatrix, LocalVector> MyGMRESManager;
+typedef IQR::ProjectionPreconditioner<Epetra_BlockMap,
+									  Epetra_Operator,
+									  Epetra_MultiVector>
+		MyProjectionPreconditioner;
 
 struct IdPreconditioner
 {
@@ -125,6 +130,12 @@ int main(int argc, char** argv)
         *RHS = *LHS ; //  b = x/ ||x|| = Ab/ ||Ab||
     }
 
+    // Testing ProjectionPreconditioner
+    Teuchos::ParameterList projPL;
+    projPL.set("relative subspace dimension", 0.01, "");
+    MyProjectionPreconditioner projectionPreconditioner(A, A, projPL);
+    projectionPreconditioner.Setup();
+    projectionPreconditioner.ApplyInverse(*RHS, *LHS);
 
     // Stage one
     MyGMRESManager gmresManager1(A->Map(), maxIter1, false);

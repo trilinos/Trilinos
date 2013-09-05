@@ -29,6 +29,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 SET(HEADERS ${HEADERS}
   gmres.h
   gmres_tools.h
+  ProjectionPreconditioner.hpp
   )
 
 SET(SOURCES ${SOURCES}

@@ -447,20 +447,6 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="IQR" dir="packages/iqr" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES value="Epetra,EpetraExt,Galeri,Teuchos"/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Regression address="iqr-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value=""/>
-  </Package>
   <Package name="Amesos2" dir="packages/amesos2" type="EX">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Tpetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt"/>
@@ -1116,6 +1102,20 @@
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
       <Regression address="anasazi-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value=""/>
+  </Package>
+  <Package name="IQR" dir="packages/iqr" type="EX">
+    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES value="Epetra,EpetraExt,Galeri,Teuchos,Anasazi"/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="iqr-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>

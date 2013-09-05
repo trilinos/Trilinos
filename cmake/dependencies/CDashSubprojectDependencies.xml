@@ -159,19 +159,6 @@
       <Email address="galeri-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
-  <SubProject name="IQR">
-    <Dependency name="Teuchos" type="TR"/>
-    <Dependency name="ThreadPool" type="ITO"/>
-    <Dependency name="Epetra" type="TR"/>
-    <Dependency name="Triutils" type="ITO"/>
-    <Dependency name="Tpetra" type="ITO"/>
-    <Dependency name="EpetraExt" type="TR"/>
-    <Dependency name="Xpetra" type="ITO"/>
-    <Dependency name="Galeri" type="TR"/>
-    <EmailAddresses>
-      <Email address="iqr-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </SubProject>
   <SubProject name="Amesos2">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
@@ -291,6 +278,21 @@
       <Email address="anasazi-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
+  <SubProject name="IQR">
+    <Dependency name="Teuchos" type="TR"/>
+    <Dependency name="ThreadPool" type="ITO"/>
+    <Dependency name="RTOp" type="ITO"/>
+    <Dependency name="Epetra" type="TR"/>
+    <Dependency name="Triutils" type="ITO"/>
+    <Dependency name="Tpetra" type="ITO"/>
+    <Dependency name="EpetraExt" type="TR"/>
+    <Dependency name="Xpetra" type="ITO"/>
+    <Dependency name="Galeri" type="TR"/>
+    <Dependency name="Anasazi" type="TR"/>
+    <EmailAddresses>
+      <Email address="iqr-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
   <SubProject name="Zoltan2">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
@@ -336,11 +338,11 @@
     <Dependency name="Isorropia" type="LR"/>
     <Dependency name="AztecOO" type="LR"/>
     <Dependency name="Galeri" type="ITO"/>
-    <Dependency name="IQR" type="LR"/>
     <Dependency name="Amesos" type="LR"/>
     <Dependency name="Ifpack" type="LR"/>
     <Dependency name="ML" type="TR"/>
     <Dependency name="Belos" type="LR"/>
+    <Dependency name="IQR" type="LR"/>
     <EmailAddresses>
       <Email address="shylu-regression@software.sandia.gov"/>
     </EmailAddresses>
