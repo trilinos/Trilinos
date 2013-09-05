@@ -28,7 +28,7 @@ public:
 
     // flex != 0 means that we will use flexible gmres and
     // we have to use w
-    GMRESManager(const Map& map, const int &rest, const int flex = 0);
+    GMRESManager(const Map& map, const int &rest, const int flex = 0, const bool scaling = true);
     ~GMRESManager();
 
     // Public methods
@@ -43,6 +43,7 @@ public:
     int restart;
     int  m;
     int isFlex;
+    bool doScaling;
 
     // Q
     LocalVector cs;
@@ -60,10 +61,11 @@ public:
 };
 
 template < typename Map, typename MultiVector, typename LocalMatrix, typename LocalVector >
-GMRESManager< Map, MultiVector, LocalMatrix, LocalVector >::GMRESManager(const Map& map, const int &rest, const int flex)
+GMRESManager< Map, MultiVector, LocalMatrix, LocalVector >::GMRESManager(const Map& map, const int &rest, const int flex, const bool scaling)
     : restart(rest),
       m(-1),
       isFlex(flex),
+      doScaling(scaling),
       cs(rest + 1, 0.0),
       sn(rest + 1, 0.0),
       H(rest + 1, LocalVector(rest, 0.0)),
@@ -220,9 +222,9 @@ int GMRESManager< Map, MultiVector,
         x.Update(bq[i], *vi, 1.0);
     }
 
-
-    x.Scale(scaling);
-
+    if (doScaling) {
+        x.Scale(scaling);
+    }
 
     // solving R_{n} y_{n} = bp and setting x = x + Q_{n} y_{n} 
     Update(x, mm-1, H, bp, *w); // summing to x the solution of Rx=bp

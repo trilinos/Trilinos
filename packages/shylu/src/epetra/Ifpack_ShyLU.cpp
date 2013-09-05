@@ -156,6 +156,7 @@ int Ifpack_ShyLU::Initialize()
     	slu_config_.schurApproxMethod = 4;
     	slu_config_.iqrKrylovDim = List_.get<double>("IQR Krylov Dim", 0.5);
     	slu_config_.iqrNumIter = List_.get<int>("IQR Number Iterations", 1);
+        slu_config_.iqrScaling = List_.get<bool>("IQR Scaling", true);
     }
     if (schurApproxMethod == "Projection")
     {
@@ -163,6 +164,8 @@ int Ifpack_ShyLU::Initialize()
     	slu_config_.schurApproxMethod = 5;
     	slu_config_.projectionSpaceDim = List_.get<double>("Projection Subspace Dimension", 0.5);
     	slu_config_.projectionNumIter = List_.get<int>("Projection Number Iterations", 1);
+        slu_config_.projectionMatrix = List_.get<int>("Projection Matrix", 0);
+        slu_data_.Amat = Teuchos::rcp(A_, false);
     }
     if (schurApproxMethod == "A22AndBlockDiagonals")
     {
@@ -218,6 +221,7 @@ int Ifpack_ShyLU::Initialize()
     }
 
     slu_data_.firstIteration = true;
+    slu_data_.iqrCurrentIteration = 0;
 
     IsInitialized_ = true;
     return 0;

@@ -10,6 +10,12 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_SerialDenseMatrix.hpp>
+
+#include <Epetra_Import.h>
+
+#include <EpetraExt_OperatorOut.h>
+#include <EpetraExt_MultiVectorOut.h>
 
 namespace IQR
 {
@@ -86,7 +92,7 @@ public:
 
 	// Constructor
 	//
-	ProjectionPreconditioner(Teuchos::RCP<const Operator> A,
+	ProjectionPreconditioner(Teuchos::RCP<const Operator> S,
 							 Teuchos::RCP<const Operator> G,
 							 const Teuchos::ParameterList parameters);
 	// Destructor
@@ -101,9 +107,11 @@ private:
 	int GramSchmidtCustom();
 
 	// Data
-	Teuchos::RCP<const Operator> A_;
+	Teuchos::RCP<const Operator> S_;
 	Teuchos::RCP<const Operator> G_;
-	Teuchos::RCP<const Map> map_;
+	Teuchos::RCP<const Map> Smap_;
+	Teuchos::RCP<const Map> Gmap_;
+	Teuchos::RCP<MultiVector> Unonrestricted_;
 	Teuchos::RCP<MultiVector> U_;
 	Teuchos::RCP<MultiVector> V_;
 	std::vector<Anasazi::Value<double> > eigenvalues_;
@@ -117,18 +125,18 @@ template < typename Map,
 		   typename Operator,
 		   typename MultiVector >
 ProjectionPreconditioner<Map, Operator, MultiVector>
-		::ProjectionPreconditioner(Teuchos::RCP<const Operator> A,
+		::ProjectionPreconditioner(Teuchos::RCP<const Operator> S,
 			 	 	 	 	 	   Teuchos::RCP<const Operator> G,
 			 	 	 	 	 	   const Teuchos::ParameterList parameters)
-		 : A_(A),
+		 : S_(S),
 		   G_(G),
-		   map_(&(G_->OperatorDomainMap()), false),
+		   Smap_(&(S_->OperatorDomainMap()), false),
+		   Gmap_(&(G_->OperatorDomainMap()), false),
 		   parameters_(parameters),
 		   lambda_(1.0),
 		   numVectors_(0),
 		   myPID_(G_->Comm().MyPID())
 {
-
 }
 
 template < typename Map,
@@ -149,9 +157,9 @@ int ProjectionPreconditioner<Map, Operator, MultiVector>
 	// eigenvectors: [U1, D] = eigs(G_, N_)
 
 	double relativeSubspaceDim = parameters_.get<double>("relative subspace dimension", 0.5);
-	numVectors_ = static_cast<int>(relativeSubspaceDim * map_->NumGlobalElements());
+	numVectors_ = static_cast<int>(relativeSubspaceDim * Smap_->NumGlobalElements());
 
-	Teuchos::RCP<MultiVector> ivec = Teuchos::rcp(new MultiVector(*map_, 1));
+	Teuchos::RCP<MultiVector> ivec = Teuchos::rcp(new MultiVector(*Gmap_, 1));
 	ivec->Random();
 
 	Teuchos::RCP<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem;
@@ -187,8 +195,9 @@ int ProjectionPreconditioner<Map, Operator, MultiVector>
 
 	Anasazi::Eigensolution<double,MV> sol = MyProblem->getSolution();
 	eigenvalues_ = sol.Evals;
-	U_ = sol.Evecs;
+	Unonrestricted_ = sol.Evecs;
 	std::vector<int> index = sol.index;
+
 	if (sol.numVecs != numVectors_) {
 		if (!myPID_) {
 			std::cout << "Number of computed eigenvalues lower than requested" << std::endl;
@@ -199,9 +208,25 @@ int ProjectionPreconditioner<Map, Operator, MultiVector>
 		return -1;
 	}
 
-	// Compute V1 = A_ * U1 ; do I need to zero out V_ before?
-	V_ = Teuchos::rcp(new MultiVector(*map_, numVectors_));
-	OPT::Apply(*A_, *U_, *V_);
+	// If S_ and G_ don't have the same map we need to restrict the U_ vectors
+	// to the same space as S_
+	if (! Smap_->SameAs(*Gmap_)) {
+		// We need to build an importer, restric U_ to the map of S_ and
+		Epetra_Import restrictor(*Smap_, *Gmap_);
+		U_ = Teuchos::rcp(new MultiVector(*Smap_, numVectors_));
+		U_->Import(*Unonrestricted_, restrictor, Insert);
+	} else {
+		// U_ and Unonrestricted_ should point to the same thing
+		U_ = Unonrestricted_;
+	}
+
+    // Compute V1 = A_ * U1
+	V_ = Teuchos::rcp(new MultiVector(*Smap_, numVectors_));
+    for (int i = 0; i < numVectors_; ++i) {
+        MultiVector& ui = *((*U_)(i));
+        MultiVector& vi = *((*V_)(i));
+        S_->Apply(ui, vi);
+    }
 
 	// Compute [V, U] = GramSchmidtCustom(V1, U1)
 	GramSchmidtCustom();
@@ -218,21 +243,23 @@ template < typename Map,
 int ProjectionPreconditioner<Map, Operator, MultiVector>
 		::ApplyInverse(const MultiVector &B, MultiVector& X) const
 {
+    // TODO: you can actually get rid of the second loop in i
+    // and also of the Bq temp vector
 	for (int k = 0; k < B.NumVectors(); ++k) {
-		MultiVector* currentB = B(k);
+        const MultiVector* currentB = B(k);
 		MultiVector* currentX = X(k);
 
 		// Compute Bv = V^T * B
-		// and     Bq = (1 / lambda) * (B - V * Bv)
-		std::vector<double> Bv(numVectors_, 0.0);
-		Teuchos::RCP<MultiVector> Bq;
-		Bq = MVT::CloneCopy(*currentB);
-		for (int i = 0; i < numVectors_; ++i) {
-			MultiVector& vi = *((*V_)(i));
-			(*V_)(i)->Dot(*currentB, &Bv[i]);
-			Bq->Update(-1.0 * Bv[i], vi, 1.0);
-			Bq->Scale(1.0 / lambda_);
-		}
+        // Compute Bq = (1 / lambda) * (B - V * Bv)
+        std::vector<double> Bv(numVectors_, 0.0);
+        Teuchos::RCP<MultiVector> Bq;
+        Bq = MVT::CloneCopy(*currentB);
+        for (int i = 0; i < numVectors_; ++i) {
+            MultiVector& vi = *((*V_)(i));
+            vi.Dot(*currentB, &Bv[i]);
+            Bq->Update(-1.0 * Bv[i], vi, 1.0);
+        }
+        Bq->Scale(1.0 / lambda_);
 
 		// X = U * Bv + Bq
 		*currentX = *Bq;
@@ -251,16 +278,15 @@ int ProjectionPreconditioner<Map, Operator, MultiVector>::GramSchmidtCustom()
 {
 	// First the orthogonalization part
 	std::vector<double> p(numVectors_ * numVectors_, 0.0);
-	std::vector<double> dots(numVectors_);
 	for (int i = 0; i < numVectors_; ++i) {
-		MultiVector* vi = (*V_)(i);
-		MultiVector* ui = (*U_)(i);
+        MultiVector* vi = (*V_)(i);
+        MultiVector* ui = (*U_)(i);
 		for (int j = 0; j < i; ++j) {
 			double& pij = p[i * numVectors_ + j];
 			double a, b;
-			MultiVector* vj = (*V_)(j);
-			MultiVector* uj = (*U_)(j);
-			vi->Dot(*vj, &a);
+            MultiVector* vj = (*V_)(j);
+            MultiVector* uj = (*U_)(j);
+            vi->Dot(*vj, &a);
 			vj->Dot(*vj, &b);
 			pij = a / b;
 			vi->Update(-1.0 * pij, *vj, 1.0);
@@ -270,10 +296,10 @@ int ProjectionPreconditioner<Map, Operator, MultiVector>::GramSchmidtCustom()
 
 	// Then the normalization
 	std::vector<double> normsV(numVectors_, 0.0);
-	MVT::MvNorm(*V_, normsV);
+    MVT::MvNorm(*V_, normsV);
 	for (int i = 0; i < numVectors_; ++i) {
-		(*V_)(i)->Scale(normsV[i]);
-		(*U_)(i)->Scale(normsV[i]);
+        (*V_)(i)->Scale(1.0 / normsV[i]);
+        (*U_)(i)->Scale(1.0 / normsV[i]);
 	}
 
 	return 0;

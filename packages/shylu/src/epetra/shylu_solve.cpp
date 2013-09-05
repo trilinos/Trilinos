@@ -316,7 +316,7 @@ static int shylu_local_solve(
 
 			data->gmresManager = Teuchos::rcp(
 					new ShyLUGMRESManager(data->schur_op->OperatorDomainMap(),
-										  kSize, false));
+                                          kSize, false, config->iqrScaling));
 
 			double tol = 1e-10;
 			IQR::IdPreconditioner L, M;
@@ -369,17 +369,30 @@ static int shylu_local_solve(
 			Teuchos::ParameterList projectionPL;
 			projectionPL.set("relative subspace dimension",
 							 config->projectionSpaceDim);
-			Teuchos::RCP<Epetra_Operator> G = Teuchos::rcp(data->schur_op->G_,
-														   false);
-			data->projectionPreconditioner = Teuchos::rcp(
-					new ShyLUProjectionPrec(data->schur_op,
-											G,
-											projectionPL));
+			int projectionMatrix = config->projectionMatrix;
+            if (projectionMatrix == 0 /* Using G */) {
+                Teuchos::RCP<Epetra_Operator> G = Teuchos::rcp(data->schur_op->G_, false);
+                    data->projectionPreconditioner = Teuchos::rcp(
+                            new ShyLUProjectionPrec(data->schur_op,
+                                                    G,
+                                                    projectionPL));
+            } else if (projectionMatrix == 1 /* Using S */) {
+                data->projectionPreconditioner = Teuchos::rcp(
+                        new ShyLUProjectionPrec(data->schur_op,
+                                                data->schur_op,
+                                                projectionPL));
+            } else /* Using A */ {
+                data->projectionPreconditioner = Teuchos::rcp(
+                        new ShyLUProjectionPrec(data->schur_op,
+                                                data->Amat,
+                                                projectionPL));
+            }
 			data->projectionPreconditioner->Setup();
 
 			if (! Xs.Comm().MyPID()) {
 				std::cout << "KSIZE: " << kSize
-						  << ", SSIZE: " << sSize;
+						  << ", SSIZE: " << sSize
+						  << std::endl;
 			}
 
 			data->firstIteration = false;
@@ -388,7 +401,7 @@ static int shylu_local_solve(
 		// Solve phase
 		if (config->projectionNumIter > 0) {
 			ShyLUGMRESManager newGmresManager(data->schur_op->OperatorDomainMap(),
-											  config->iqrNumIter+1, false);
+											  config->projectionNumIter+1, false);
 			double tol=1e-10;
 			IQR::IdPreconditioner L;
 			IQR::GMRES<Epetra_Operator, Epetra_MultiVector,

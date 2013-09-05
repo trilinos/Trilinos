@@ -90,7 +90,10 @@ typedef struct
     //Epetra_Map *LDColMap;       // ColMap for block diagonals
     //Epetra_CrsMatrix *D;        // Actual D Matrix, not reqd for Amesos_KLU
                                 // but required for Amesos_Pardiso
-    Teuchos::RCP<ShyLUGMRESManager> gmresManager;
+    Teuchos::RCP<Epetra_Operator> Amat;
+    Teuchos::RCP<ShyLUGMRESManager> gmresManager1;
+    Teuchos::RCP<ShyLUGMRESManager> gmresManager2;
+    int iqrCurrentIteration;
     Teuchos::RCP<ShyLUProjectionPrec> projectionPreconditioner;
     bool firstIteration;
     Teuchos::RCP<Epetra_CrsMatrix> Sbar; // Approx Schur complement
@@ -121,9 +124,11 @@ typedef struct
     							// ==5 implies Projection
     double iqrKrylovDim;
     int iqrNumIter;
+    bool iqrScaling;
 
     double projectionSpaceDim;
     int projectionNumIter;
+    int projectionMatrix; // 0 == G, 1 == S, 2 == A
 
     double relative_threshold;  // Relative threshold for dropping
                                 // only used if schurApproxMethod == 2

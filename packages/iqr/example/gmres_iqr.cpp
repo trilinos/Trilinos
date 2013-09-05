@@ -56,6 +56,11 @@ std::function<int(const Epetra_Operator&, Epetra_MultiVector&, const Epetra_Mult
         gmresSolve2 = &IQR::GMRES<Epetra_Operator, Epetra_MultiVector,
                                          IdPreconditioner, MyGMRESManager, MyGMRESManager,
                                          LocalVector, Scalar>;
+std::function<int(const Epetra_Operator&, Epetra_MultiVector&, const Epetra_MultiVector&,
+                  IdPreconditioner*, MyProjectionPreconditioner*, MyGMRESManager&, int &, Scalar &)>
+        gmresSolveProj = &IQR::GMRES<Epetra_Operator, Epetra_MultiVector,
+                                         IdPreconditioner, MyProjectionPreconditioner, MyGMRESManager,
+                                         LocalVector, Scalar>;
 }
 
 int main(int argc, char** argv)
@@ -129,13 +134,6 @@ int main(int argc, char** argv)
         LHS->Scale(1./ rescaledLHS);
         *RHS = *LHS ; //  b = x/ ||x|| = Ab/ ||Ab||
     }
-
-    // Testing ProjectionPreconditioner
-    Teuchos::ParameterList projPL;
-    projPL.set("relative subspace dimension", 0.01, "");
-    MyProjectionPreconditioner projectionPreconditioner(A, A, projPL);
-    projectionPreconditioner.Setup();
-    projectionPreconditioner.ApplyInverse(*RHS, *LHS);
 
     // Stage one
     MyGMRESManager gmresManager1(A->Map(), maxIter1, false);
@@ -239,6 +237,20 @@ int main(int argc, char** argv)
         std::cout << "Time: " << t1.totalElapsedTime() << std::endl;
     }
 
+    // Testing ProjectionPreconditioner
+    tolAchieved = tol;
+    //RHS->SetSeed(10);
+    RHS->PutScalar(1.0);
+    LHS2->PutScalar(0.0);
+
+    Teuchos::ParameterList projPL;
+    double projDim = std::atof(argv[6]);
+    projPL.set("relative subspace dimension", projDim, "");
+    MyProjectionPreconditioner projectionPreconditioner(A, A, projPL);
+    projectionPreconditioner.Setup();
+    projectionPreconditioner.ApplyInverse(*RHS, *LHS);
+//    MyGMRESManager gmresManagerP(A->Map(), krylovDim, false);
+//    int errP = gmresSolveProj(*A, *LHS2, *RHS, &L, &projectionPreconditioner, gmresManagerP, maxIter2, tolAchieved);
 
     MPI_Finalize();
 
