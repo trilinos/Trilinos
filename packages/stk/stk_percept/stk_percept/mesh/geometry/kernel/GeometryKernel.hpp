@@ -10,7 +10,7 @@ typedef int GeometryHandle;
 class GeometryKernel
 {
 public:
-    GeometryKernel() {}
+    GeometryKernel() : m_spatialDim(3) {}
     virtual ~GeometryKernel() {};
 
     virtual bool read_file(const std::string& file_name,
@@ -29,7 +29,10 @@ public:
     virtual bool is_curve(GeometryHandle geom) const = 0;
 
     virtual bool is_surface(GeometryHandle geom) const = 0;
-
+    void set_spatial_dim(int dim) { m_spatialDim = dim; }
+    int get_spatial_dim() { return m_spatialDim; }
+private:
+  int m_spatialDim;
 };
 
 #endif // GEOMETRYKERNEL_HPP

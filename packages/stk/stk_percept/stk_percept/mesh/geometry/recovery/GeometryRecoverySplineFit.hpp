@@ -17,6 +17,7 @@ namespace stk {
       GeometryRecoverySplineFit(PerceptMesh& eMesh) : m_eMesh(eMesh) {}
 
 #if defined( STK_PERCEPT_HAS_GEOMETRY )
+      typedef std::set<stk::mesh::Entity, stk::mesh::EntityLess> SetOfEntities;
 
       /// after opening a mesh, but before commit, call this to find and create the topology parts on the meta data
       ///   needed to associate geometry with the mesh
@@ -30,8 +31,16 @@ namespace stk {
       stk::mesh::Part& create_clone_part(const std::string& clone_name, const stk::mesh::EntityRank rank_to_clone, bool make_part_io_part=true );
       stk::mesh::Part& clone_part_bulk(const stk::mesh::Part& part, const std::string& clone_name, const stk::mesh::EntityRank rank_to_clone, bool make_part_io_part=true );
 
-      /// returns true if closed found
-      bool get_sorted_curve_node_entities(stk::mesh::Part& part, std::vector<stk::mesh::Entity>& sorted_entities);
+      /// returns true if closed found - returns multiple closed loops if they exist
+      void get_sorted_curve_node_entities_and_split(stk::mesh::Part& part, std::vector< std::vector<stk::mesh::Entity> >& sorted_nodes_all, std::vector<bool>& isClosed_all);
+
+
+    private:
+      /// returns true if closed found - finds first closed loop if multiple loops - @see get_sorted_curve_node_entities_and_split
+
+      bool get_sorted_curve_node_entities(stk::mesh::Part& part, stk::mesh::Entity edge_first, std::vector<stk::mesh::Entity>& sorted_nodes);
+
+      //int check_for_corners(Vectors2D& Q, double alpha, std::vector<int>& corners);
 #endif
 
     private:

@@ -33,7 +33,7 @@ namespace stk
 
       STKUNIT_UNIT_TEST(unit_stk_geom, test_1)
       {
-        const bool debug_print = true;
+        const bool debug_print = false;
         SplineFit::s_debug_print = debug_print;
 
         /// fit a quadratic
@@ -160,7 +160,7 @@ namespace stk
 
       STKUNIT_UNIT_TEST(unit_stk_geom, test_five_point)
       {
-        const bool debug_print = true;
+        const bool debug_print = false;
         SplineFit::s_debug_print = debug_print;
 
         /// fit a quadratic
@@ -191,7 +191,7 @@ namespace stk
 
       STKUNIT_UNIT_TEST(unit_stk_geom, test_five_point_1)
       {
-        const bool debug_print = true;
+        const bool debug_print = false;
         SplineFit::s_debug_print = debug_print;
 
         /// fit a quadratic
@@ -220,7 +220,7 @@ namespace stk
 
       STKUNIT_UNIT_TEST(unit_stk_geom, test_five_point_2)
       {
-        const bool debug_print = true;
+        const bool debug_print = false;
         SplineFit::s_debug_print = debug_print;
 
         /// fit a quadratic
@@ -238,6 +238,48 @@ namespace stk
         DPRINTLN(Q);
         std::vector<int> isCorner(n, 0);
         isCorner[3] = 1;
+        cf.setIsCorner(isCorner);
+        ON_Curve *curve = cf.fit(Q);
+        if (debug_print)
+          cf.print();
+
+        delete curve;
+      }
+
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+
+      STKUNIT_UNIT_TEST(unit_stk_geom, test_corner)
+      {
+        const bool debug_print = false;
+        SplineFit::s_debug_print = debug_print;
+
+        /// fit a quadratic
+        LocalCubicSplineFit cf (BSplineFit::ThreePoint);
+        int n = 8;
+        Vectors2D Q(n);
+        Q[0] = Vector2D(-3.2,3);
+        Q[1] = Vector2D(-2.2,2);
+        Q[2] = Vector2D(-1.2,1);
+        Q[3] = Vector2D(-.2,0);
+        Q[4] = Vector2D(.2,0);
+        Q[5] = Vector2D(1.2,1);
+        Q[6] = Vector2D(2.2,2);
+        Q[7] = Vector2D(3.2,3);
+
+        int offset=0;
+        if (1)
+          {
+            Q.insert(Q.begin()+4, Vector2D(0,0));
+            ++n;
+            offset=1;
+          }
+        if (debug_print) std::cout << "Fitting quadratic with cubic spline - points = " << std::endl;
+        DPRINTLN(Q);
+        std::vector<int> isCorner(n, 0);
+        isCorner[3] = 1;
+        isCorner[4+offset] = 1;
         cf.setIsCorner(isCorner);
         ON_Curve *curve = cf.fit(Q);
         if (debug_print)

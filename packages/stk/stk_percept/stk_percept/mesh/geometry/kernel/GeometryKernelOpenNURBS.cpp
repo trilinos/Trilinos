@@ -139,7 +139,7 @@ void GeometryKernelOpenNURBS::snap_to
     surface->EvPoint(u, v, p);
     point[0] = p.x;
     point[1] = p.y;
-    point[2] = p.z;
+    if (get_spatial_dim() == 3) point[2] = p.z;
   }
   else if (curve)
   {
@@ -150,7 +150,7 @@ void GeometryKernelOpenNURBS::snap_to
     curve->EvPoint(u, p);
     point[0] = p.x;
     point[1] = p.y;
-    point[2] = p.z;
+    if (get_spatial_dim() == 3) point[2] = p.z;
   }
 }
 
@@ -169,7 +169,7 @@ void GeometryKernelOpenNURBS::normal_at(KernelPoint& point, GeometryHandle geom,
     surface->EvNormal(u, v, norm);
     normal[0] = norm[0];
     normal[1] = norm[1];
-    normal[2] = norm[2];
+    if (get_spatial_dim() == 3) normal[2] = norm[2];
   }
   else if (curve)
   {
@@ -186,7 +186,7 @@ void GeometryKernelOpenNURBS::normal_at(KernelPoint& point, GeometryHandle geom,
     // FIXME
     normal[0] = kappa[0];
     normal[1] = kappa[1];
-    normal[2] = kappa[2];
+    if (get_spatial_dim() == 3) normal[2] = kappa[2];
   }
 }
 

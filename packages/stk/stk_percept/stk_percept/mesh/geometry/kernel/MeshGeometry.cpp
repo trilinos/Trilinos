@@ -84,7 +84,7 @@ int MeshGeometry::classify_bucket(const stk::mesh::Bucket& bucket, size_t& curve
                if (cv != classify_value || t != curveOrSurfaceEvaluator)
                  {
                    std::cout << "cv = " << cv << " classify_value= " << classify_value << " t= " << t << " curveOrSurfaceEvaluator= " << curveOrSurfaceEvaluator << std::endl;
-                   exit(123);
+                   throw std::runtime_error("cv problem");
                  }
              }
          }
@@ -199,33 +199,34 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
 
     // If we have more than one evaluator we will project to each and
     // keep the best one.
+    int spatialDim = eMesh->get_spatial_dim();
     if(evaluators.size() > 1)
     {
       double * coords = eMesh->field_data(*coordField , cur_node);
-      double orig_pos[3] = {coords[0], coords[1], coords[2]};
+      double orig_pos[3] = {coords[0], coords[1], (spatialDim==3 ? coords[2] : 0) };
       double smallest_dist_sq = 9999999.9;
       double best_pos[3] = {0,0,0};
       for(s=0; s<evaluators.size(); s++)
       {
         // Always start with the original position.
-        for(int f=0; f<3; f++)
+        for(int f=0; f < spatialDim; f++)
           coords[f] = orig_pos[f];
         // Do the projection (changes "coords" variable).
         snap_node(eMesh, cur_node, evaluators[s]);
         // See if this projection is closer to the original point
         // than any of the previous ones.
         double dist_sq = 0.0;
-        for(int f=0; f<3; f++)
+        for(int f=0; f < spatialDim; f++)
           dist_sq += (orig_pos[f] - coords[f]) * (orig_pos[f] - coords[f]);
         if(dist_sq < smallest_dist_sq)
         {
           smallest_dist_sq = dist_sq;
-          for(int f=0; f<3; f++)
+          for(int f=0; f < spatialDim; f++)
             best_pos[f] = coords[f];
         }
       }
       // Load the best projection into the actual coordinates.
-      for(int f=0; f<3; f++)
+      for(int f=0; f < spatialDim; f++)
         coords[f] = best_pos[f];
     }
     // If we know we only have one evaluator don't bother with all
@@ -535,7 +536,7 @@ void MeshGeometry::normal_at
     {
       std::string str = geomKernel->get_attribute(evaluator_idx);
       std::cout << "tmp geom snap_points_to_geometry eval name= " << str << " node id= " << eMesh->identifier(node)
-                << " coords b4= " << coord[0] << " " << coord[1] << " " << coord[2];
+                << " coords b4= " << coord[0] << " " << coord[1] << " " << (eMesh->get_spatial_dim() == 3 ? coord[2] : 0);
     }
 
     if ( is_dbg_node( coord ) )
@@ -547,7 +548,7 @@ void MeshGeometry::normal_at
 
     if (doPrint)
     {
-      std::cout << " normal = " << normal[0] << " " << normal[1] << " " << normal[2]
+      std::cout << " normal = " << normal[0] << " " << normal[1] << " " << (eMesh->get_spatial_dim() == 3 ? normal[2] : 0)
                 << std::endl;
       //if (str.substr(6,5)=="20004") block_20004
       //{

@@ -7,6 +7,9 @@
 #include <stk_percept/mesh/geometry/stk_geom/LocalCubicSplineFit.hpp>
 #endif
 
+#define APRINTLN(a) do { if (debug_print) std::cout << #a << " = " << a << std::endl; } while(0)
+#define APRINTLN2(a,b) do { if (debug_print) std::cout << #a << " = " << a << " " << #b << " = " << b << std::endl; } while(0)
+
 namespace stk {
   namespace percept {
 
@@ -24,7 +27,7 @@ namespace stk {
     {
       stk::mesh::Part * clone_p = m_eMesh.get_fem_meta_data()->get_part(clone_name);
       if (!clone_p)
-        throw std::runtime_error("AdaptMain::clone_part: no part named: "+clone_name);
+        throw std::runtime_error("GeometryRecoverySplineFit::clone_part: no part named: "+clone_name);
       stk::mesh::Part& clone = *clone_p;
 
       stk::mesh::Selector this_part(part);
@@ -52,57 +55,71 @@ namespace stk {
       return clone;
     }
 
-    /// returns true if closed found
-    bool GeometryRecoverySplineFit::get_sorted_curve_node_entities(stk::mesh::Part& part, std::vector<stk::mesh::Entity>& sorted_entities)
+    void GeometryRecoverySplineFit::get_sorted_curve_node_entities_and_split(stk::mesh::Part& part, std::vector< std::vector<stk::mesh::Entity> >& sorted_nodes_all, std::vector<bool>& isClosed_all)
     {
       bool debug_print = false;
-#define APRINTLN(a) do { if (debug_print) std::cout << #a << " = " << a << std::endl; } while(0)
-#define APRINTLN2(a,b) do { if (debug_print) std::cout << #a << " = " << a << " " << #b << " = " << b << std::endl; } while(0)
-
-      bool closed = false;
-      if (debug_print) std::cout << "AdaptMain::get_sorted_curve_node_entities: processing part = " << part.name() << std::endl;
-      VERIFY_OP_ON(part.primary_entity_rank(), ==, m_eMesh.edge_rank(), "bad part");
-
-      typedef std::set<stk::mesh::Entity, stk::mesh::EntityLess> SetOfEntities;
-      SetOfEntities node_set(*m_eMesh.get_bulk_data());
-
-      //typedef std::list<stk::mesh::Entity, stk::mesh::EntityLess> ListOfEntities;
-      //ListOfEntities node_list(*m_eMesh.get_bulk_data());
-      typedef std::list<stk::mesh::Entity> ListOfEntities;
-      ListOfEntities node_list;
+      sorted_nodes_all.resize(0);
+      isClosed_all.resize(0);
 
       stk::mesh::Selector this_part(part);
       stk::mesh::Entity edge_first = stk::mesh::Entity();
+      SetOfEntities edge_set(*m_eMesh.get_bulk_data());
       const std::vector<stk::mesh::Bucket*> & edge_buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.edge_rank() );
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = edge_buckets.begin() ; k != edge_buckets.end() ; ++k )
         {
           if (this_part(**k))
             {
               stk::mesh::Bucket & bucket = **k ;
-              edge_first = bucket[0];
-              break;
-            }
-        }
-
-      int node_set_nnodes=0;
-      if (debug_print)
-        {
-          const std::vector<stk::mesh::Bucket*> & node_buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.node_rank() );
-          for ( std::vector<stk::mesh::Bucket*>::const_iterator k = node_buckets.begin() ; k != node_buckets.end() ; ++k )
-            {
-              if (this_part(**k))
+              for (unsigned iedge=0; iedge < bucket.size(); iedge++)
                 {
-                  stk::mesh::Bucket & bucket = **k ;
-                  const unsigned num_nodes_in_bucket = bucket.size();
-                  node_set_nnodes += num_nodes_in_bucket;
-                  for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)
-                    {
-                      stk::mesh::Entity node = bucket[iNode];
-                      node_set.insert(node);
-                    }
+                  stk::mesh::Entity edge = bucket[iedge];
+                  edge_set.insert(edge);
                 }
             }
         }
+
+      unsigned iloop=0;
+      while (iloop < 10000)
+        {
+          edge_first = *edge_set.begin();
+          std::vector<stk::mesh::Entity> sorted_nodes;
+          bool closed = get_sorted_curve_node_entities(part, edge_first, sorted_nodes);
+          sorted_nodes_all.push_back(sorted_nodes);
+          isClosed_all.push_back(closed);
+          if (debug_print) std::cout << "tmp srk init iloop = " << iloop << " sorted_nodes.size()= " << sorted_nodes.size()
+                                     << " edge_set.size= " << edge_set.size() << std::endl;
+          for (unsigned ii=0; ii < sorted_nodes.size(); ++ii)
+            {
+              const MyPairIterRelation node_edges(*m_eMesh.get_bulk_data(), sorted_nodes[ii], m_eMesh.edge_rank() );
+              for (unsigned jj=0; jj < node_edges.size(); jj++)
+                {
+                  edge_set.erase(node_edges[jj].entity());
+                }
+            }
+          if (debug_print) std::cout << "tmp srk after iloop = " << iloop << " sorted_nodes.size()= " << sorted_nodes.size()
+                                     << " edge_set.size= " << edge_set.size() << std::endl;
+          if (edge_set.size() == 0)
+            {
+              if (debug_print) std::cout << "tmp srk found end of (possible) multiple closed loops, iloop = " << iloop << std::endl;
+              break;
+            }
+          if (debug_print) std::cout << "tmp srk found multiple closed loops, iloop = " << iloop << std::endl;
+          ++iloop;
+        }
+    }
+
+    /// returns true if closed found
+    bool GeometryRecoverySplineFit::get_sorted_curve_node_entities(stk::mesh::Part& part, stk::mesh::Entity edge_first, std::vector<stk::mesh::Entity>& sorted_nodes)
+    {
+      bool debug_print = false;
+      bool closed = false;
+      if (debug_print) std::cout << "GeometryRecoverySplineFit::get_sorted_curve_node_entities: processing part = " << part.name() << std::endl;
+      VERIFY_OP_ON(part.primary_entity_rank(), ==, m_eMesh.edge_rank(), "bad part");
+
+      stk::mesh::Selector this_part(part);
+
+      typedef std::list<stk::mesh::Entity> ListOfEntities;
+      ListOfEntities node_list;
 
       const MyPairIterRelation edge_nodes(*m_eMesh.get_bulk_data(), edge_first, m_eMesh.node_rank() );
       VERIFY_OP_ON(edge_nodes.size(), ==, 2, "bad edge");
@@ -154,7 +171,7 @@ namespace stk {
                       // check for closed
                       if (idir == 0 && current_edge == edge_first)
                         {
-                          if (debug_print) std::cout << "AdaptMain::get_sorted_curve_node_entities: found closed condition..." << std::endl;
+                          if (debug_print) std::cout << "GeometryRecoverySplineFit::get_sorted_curve_node_entities: found closed condition..." << std::endl;
                           VERIFY_OP_ON(last_node, ==, edge_nodes[1].entity(), "integrity check failed");
                           node_list.push_front(edge_nodes[1].entity());
                           ++idir; //force loop exit
@@ -168,26 +185,22 @@ namespace stk {
                 }
               if (!found_new_edge)
                 continue_proc = false;
-
-              //VERIFY_OP_ON(found, ==, true, "hmmm");
             }
         }
       APRINTLN(node_list.size());
-      APRINTLN2(node_set_nnodes,node_set.size());
 
       if (node_list.front() == node_list.back())
         {
           // closed case
           closed = true;
-          sorted_entities.resize(0);
-          sorted_entities.assign(node_list.begin(), node_list.end());
+          sorted_nodes.resize(0);
+          sorted_nodes.assign(node_list.begin(), node_list.end());
         }
       else
         {
-          sorted_entities.resize(0);
-          sorted_entities.assign(node_list.begin(), node_list.end());
+          sorted_nodes.resize(0);
+          sorted_nodes.assign(node_list.begin(), node_list.end());
 
-          if (debug_print) VERIFY_OP_ON(node_list.size(), ==, node_set.size(), "node set/list error for part= "+part.name());
         }
       return closed;
     }
@@ -225,6 +238,35 @@ namespace stk {
         }
     }
 
+    int check_for_corners(stk::geom::Vectors2D& Q, double alpha, std::vector<int>& corners)
+    {
+      corners.resize(0);
+      int n = Q.size()-1;
+      stk::geom::Vectors2D T(n+1);
+      for (int i=0; i <= n-1; i++)
+        {
+          T[i] = Q[i+1]-Q[i];
+          double tl = T[i].Length();
+          if (tl < 1.e-12)
+            throw std::runtime_error("can't normalize T");
+          T[i] /= tl;
+        }
+      corners.resize(n+1);
+      corners.assign(n+1,0);
+      int nc=0;
+      for (int i=1; i <= n-1; i++)
+        {
+          double included_angle = std::acos(T[i-1]*T[i]);
+          double angle = M_PI - alpha;
+          if (included_angle > angle)
+            {
+              corners[i] = 1;
+              std::cout << "tmp srk found corner at i= " << i << std::endl;
+              ++nc;
+            }
+        }
+      return nc;
+    }
 
     void GeometryRecoverySplineFit::fit_geometry(const std::string& filename)
     {
@@ -291,39 +333,60 @@ namespace stk {
           {
             stk::mesh::Part& part = *m_topo_parts[ipart];
 
-            std::vector<stk::mesh::Entity> sorted_entities;
-            bool isClosed = get_sorted_curve_node_entities(*m_surface_parts[ipart], sorted_entities);
+            std::vector< std::vector<stk::mesh::Entity> > sorted_nodes_all;
+            std::vector<bool> isClosed_all;
 
-            LocalCubicSplineFit cf;
-            if (isClosed) {
-              cf.setIsPeriodic(true);  // default is to assume a smooth seam at the closed/repeated node
-            }
-            int n = sorted_entities.size();
-            Vectors2D Q(n);
-            for (int i=0; i < n; i++)
+            get_sorted_curve_node_entities_and_split(*m_surface_parts[ipart], sorted_nodes_all, isClosed_all);
+            if (debug_print) std::cout << "found " << sorted_nodes_all.size() << " loops " << std::endl;
+            for (unsigned iloop=0; iloop < sorted_nodes_all.size(); iloop++)
               {
-                double *cdata = m_eMesh.field_data(m_eMesh.get_coordinates_field(), sorted_entities[i]);
-                Q[i] = Vector2D(cdata[0], cdata[1]);
-              }
+                bool isClosed = isClosed_all[iloop];
+                std::vector<stk::mesh::Entity>& sorted_nodes = sorted_nodes_all[iloop];
 
-            DPRINTLN(Q);
-            ON_Curve *curve = cf.fit(Q);
-            if (debug_print)
-              {
-                std::cout << "Part = " << part.name() << std::endl;
-                cf.print();
-              }
+                LocalCubicSplineFit cf;
+                if (isClosed) {
+                  // FIXME default is to assume a smooth seam at the closed/repeated node
+                  cf.setIsPeriodic(false);
+                }
+                int n = sorted_nodes.size();
+                Vectors2D Q(n);
+                for (int i=0; i < n; i++)
+                  {
+                    double *cdata = m_eMesh.field_data(m_eMesh.get_coordinates_field(), sorted_nodes[i]);
+                    Q[i] = Vector2D(cdata[0], cdata[1]);
+                  }
 
-            if ( curve->IsValid() )
-              {
-                ONX_Model_Object& mo = model.m_object_table.AppendNew();
-                mo.m_object = curve;
-                mo.m_bDeleteObject = true;
-                mo.m_attributes.m_layer_index = 0;
-                mo.m_attributes.m_name = part.name().c_str();
+                double alpha = 115.0*M_PI/180.0;
+                std::vector<int> corners;
+                int nc = check_for_corners(Q, alpha, corners);
+                DPRINTLN(corners);
+                DPRINTLN(Q);
+                if (nc)
+                  {
+                    std::cout << "Part = " << part.name() << " nc= " << nc << std::endl;
+                    cf.setIsCorner(corners);
+                  }
+                ON_Curve *curve = cf.fit(Q);
+                if (debug_print)
+                  {
+                    std::cout << "Part = " << part.name() << std::endl;
+                    cf.print();
+                    //if (nc) exit(1);
+                  }
+
+                if ( curve->IsValid() )
+                  {
+                    ONX_Model_Object& mo = model.m_object_table.AppendNew();
+                    mo.m_object = curve;
+                    mo.m_bDeleteObject = true;
+                    mo.m_attributes.m_layer_index = 0;
+                    // use the same name for each geometry object - hopefully this is ok - geometry kernel will
+                    //   then loop over all objects and find closest projection
+                    mo.m_attributes.m_name = part.name().c_str();
+                  }
+                else
+                  delete curve;
               }
-            else
-              delete curve;
           }
       }
 

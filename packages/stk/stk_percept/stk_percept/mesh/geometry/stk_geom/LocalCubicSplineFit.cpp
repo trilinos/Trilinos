@@ -33,14 +33,26 @@ namespace stk {
           Pk2[k] = Q[k+1] - alpha[k]*T[k+1]/3.0;
           if (m_isCorner[k+1])
             {
-              Vector2D Tkp = k > 0 ? (2.0*T[k] - T[k-1]) : T[k];
-              Pk2[k] = Q[k+1] - alpha[k]*Tkp/3.0;
+              Vector2D Tkm = k > 0 ? (2.0*T[k] - T[k-1]) : T[k];
+              if (1)
+                Tkm = T[k];
+              Pk2[k] = Q[k+1] - alpha[k]*Tkm/3.0;
             }
           if (m_isCorner[k])
             {
               Vector2D Tkp = k < n-1 ? (2.0*T[k+1] - T[k+2]) : T[k];
-              Pk1[k] = Q[k] + alpha[k]*T[k]/3.0;
+              if (1)
+                Tkp = T[k];
+              Pk1[k] = Q[k] + alpha[k]*Tkp/3.0;
             }
+          // force a straight line
+
+          // if (m_isCorner[k+1] && m_isCorner[k])
+          //   {
+          //     Pk2[k] = Q[k+1] - alpha[k]*T[k]/3.0;
+          //     Pk1[k] = Q[k] + alpha[k]*T[k]/3.0;
+          //   }
+
           // eq (9.52)
           u[k+1] = u[k] + 3.0*(Pk2[k] - Pk1[k]).Length();
           DPRINTLN2(k,u[k+1]);
