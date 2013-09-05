@@ -93,25 +93,24 @@ AdditiveSchwarz<MatrixType,LocalInverseType>::AdditiveSchwarz(const Teuchos::RCP
     IsOverlapping_ = true;
 
   if (OverlapLevel_ == 0) {
+    const GlobalOrdinal indexBase = Matrix_->getRowMap()->getIndexBase();
+
     SerialMap_= rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>
                     (Teuchos::OrdinalTraits<global_size_t>::invalid(), 
                      Matrix_->getRowMap()->getNodeElementList(), 
-                     Teuchos::OrdinalTraits<GlobalOrdinal>::zero(),
-                     Matrix_->getComm(), Matrix_->getNode()));
+                     indexBase, Matrix_->getComm(), Matrix_->getNode()));
 
     DistributedMap_= rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>
                          (Teuchos::OrdinalTraits<global_size_t>::invalid(), 
                           Matrix_->getRowMap()->getNodeElementList(), 
-                          Teuchos::OrdinalTraits<GlobalOrdinal>::zero(),
-                          Matrix_->getComm(), Matrix_->getNode()));
+                          indexBase, Matrix_->getComm(), Matrix_->getNode()));
 
     Teuchos::RCP<Teuchos::SerialComm<int> > LComm = Teuchos::rcp( new Teuchos::SerialComm<int> ());
 
     LocalDistributedMap_= rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>
                               (Teuchos::OrdinalTraits<global_size_t>::invalid(),
                                Matrix_->getRowMap()->getNodeNumElements(),
-                               Teuchos::OrdinalTraits<GlobalOrdinal>::zero(),
-                               LComm, Matrix_->getNode()));
+                               indexBase, LComm, Matrix_->getNode()));
 
   }
 
@@ -175,6 +174,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::apply(const Tpetra::MultiVect
 
   size_t NumVectors = X.getNumVectors();
 
+  Time_->reset();
   Time_->start();
 
   Teuchos::RCP<MultiVectorType> OverlappingX,OverlappingY,Xtmp;
@@ -191,15 +191,15 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::apply(const Tpetra::MultiVect
   else {
     Xtmp = Teuchos::rcp(new MultiVectorType(X));
     
-    MultiVectorType Serial(SerialMap_, X.getNumVectors());
+    MultiVectorType Serial(SerialMap_, NumVectors);
 
     Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > SerialImporter_ = 
       rcp(new Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>(SerialMap_,Xtmp->getMap()));
     
     Serial.doImport(*Xtmp,*SerialImporter_,Tpetra::INSERT);
 
-    OverlappingX = Teuchos::rcp(new MultiVectorType(LocalDistributedMap_, X.getNumVectors()));
-    OverlappingY = Teuchos::rcp(new MultiVectorType(LocalDistributedMap_, X.getNumVectors()));
+    OverlappingX = Teuchos::rcp(new MultiVectorType(LocalDistributedMap_, NumVectors));
+    OverlappingY = Teuchos::rcp(new MultiVectorType(LocalDistributedMap_, NumVectors));
     
     //OverlappingX->putScalar(0.0);
     //OverlappingY->putScalar(0.0);
@@ -214,7 +214,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::apply(const Tpetra::MultiVect
     Teuchos::ArrayRCP<const Scalar> values = Distributed.get1dView();
     size_t index = 0;
 
-    for (size_t v = 0; v < X.getNumVectors(); v++) {
+    for (size_t v = 0; v < NumVectors; v++) {
       for (size_t i = 0; i < Matrix_->getRowMap()->getNodeNumElements(); i++) {
         OverlappingX->replaceLocalValue(i, v, values[index]);
         index++;
@@ -265,7 +265,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::apply(const Tpetra::MultiVect
     Teuchos::ArrayRCP<const Scalar> values = OverlappingY->get1dView();
     size_t index = 0;
 
-    for (size_t v = 0; v < X.getNumVectors(); v++) {
+    for (size_t v = 0; v < NumVectors; v++) {
       for (size_t i = 0; i < Matrix_->getRowMap()->getNodeNumElements(); i++) {
         Y.replaceLocalValue(i, v, values[index]);
         index++;
@@ -299,6 +299,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::applyTempl(const Tpetra::Mult
 
   size_t NumVectors = X.getNumVectors();
 
+  Time_->reset();
   Time_->start();
 
   Teuchos::RCP<DomainMultiVectorType> OverlappingX,Xtmp;
@@ -316,20 +317,20 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::applyTempl(const Tpetra::Mult
   else {
     Xtmp = Teuchos::rcp(new DomainMultiVectorType(X));
 
-    DomainMultiVectorType Serial(SerialMap_, X.getNumVectors());
+    DomainMultiVectorType Serial(SerialMap_, NumVectors);
 
     Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > SerialImporter_ =
       rcp(new Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>(SerialMap_,Xtmp->getMap()));
 
     Serial.doImport(*Xtmp,*SerialImporter_,Tpetra::INSERT);
 
-    OverlappingX = Teuchos::rcp(new DomainMultiVectorType(LocalDistributedMap_, X.getNumVectors()));
-    OverlappingY = Teuchos::rcp(new RangeMultiVectorType(LocalDistributedMap_, X.getNumVectors()));
+    OverlappingX = Teuchos::rcp(new DomainMultiVectorType(LocalDistributedMap_, NumVectors));
+    OverlappingY = Teuchos::rcp(new RangeMultiVectorType(LocalDistributedMap_, NumVectors));
 
     OverlappingX->putScalar(0.0);
     OverlappingY->putScalar(0.0);
 
-    DomainMultiVectorType Distributed(DistributedMap_, X.getNumVectors());
+    DomainMultiVectorType Distributed(DistributedMap_, NumVectors);
 
     Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > DistributedImporter_ =
       rcp(new Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>(DistributedMap_,Xtmp->getMap()));
@@ -339,7 +340,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::applyTempl(const Tpetra::Mult
     Teuchos::ArrayRCP<const Scalar> values = Distributed.get1dView();
     size_t index = 0;
 
-    for (size_t v = 0; v < X.getNumVectors(); v++) {
+    for (size_t v = 0; v < NumVectors; v++) {
       for (size_t i = 0; i < Matrix_->getRowMap()->getNodeNumElements(); i++) {
         OverlappingX->replaceLocalValue(i, v, values[index]);
         index++;
@@ -390,7 +391,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::applyTempl(const Tpetra::Mult
     Teuchos::ArrayRCP<const Scalar> values = OverlappingY->get1dView();
     size_t index = 0;
 
-    for (size_t v = 0; v < X.getNumVectors(); v++) {
+    for (size_t v = 0; v < NumVectors; v++) {
       for (size_t i = 0; i < Matrix_->getRowMap()->getNodeNumElements(); i++) {
         Y.replaceLocalValue(i, v, values[index]);
         index++;
@@ -532,6 +533,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::compute()
 {
   if (!IsInitialized_) initialize();
 
+  Time_->reset();
   Time_->start();
   IsComputed_ = false;
   Condest_ = -1.0;
