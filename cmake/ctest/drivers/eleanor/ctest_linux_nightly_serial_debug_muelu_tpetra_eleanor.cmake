@@ -68,9 +68,12 @@ SET(CTEST_TEST_TYPE Nightly)
 SET(CTEST_TEST_TIMEOUT 900)
 
 SET(Trilinos_PACKAGES MueLu Xpetra)
-SET(EXTRA_EXCLUDE_PACKAGES ML Epetra Triutils Zoltan)
+#SET(EXTRA_EXCLUDE_PACKAGES ML Epetra Triutils Zoltan)
 
 SET(EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_Epetra:BOOL=OFF"
+  "-DTrilinos_ENABLE_ML:BOOL=OFF"
+  "-DTrilinos_ENABLE_Zoltan:BOOL=OFF"
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
   "-DSuperLU_INCLUDE_DIRS=/home/jhu/Software/SuperLU_4.3/SRC"
   "-DSuperLU_LIBRARY_DIRS=/home/jhu/Software/SuperLU_4.3/lib"
