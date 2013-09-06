@@ -837,6 +837,9 @@ namespace stk {
     {
       if (!Teuchos::is_null(m_output_region))
         stk::io::delete_selector_property(*m_output_region);
+
+      if (!Teuchos::is_null(m_restart_region))
+        stk::io::delete_selector_property(*m_restart_region);
     }
 
     stk::mesh::FieldBase & MeshData::get_coordinate_field()
