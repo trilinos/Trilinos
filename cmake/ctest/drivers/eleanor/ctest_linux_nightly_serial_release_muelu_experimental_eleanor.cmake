@@ -65,20 +65,13 @@ SET(BUILD_TYPE RELEASE)
 SET(BUILD_DIR_NAME SERIAL_RELEASE_DEV_MueLu_Experimental)
 SET(CTEST_PARALLEL_LEVEL 8)
 #SET(CTEST_TEST_TYPE Nightly)
-SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
+SET(CTEST_TEST_TIMEOUT 900)
 
 SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DMueLu_ENABLE_Experimental:BOOL=ON"
   "-DXpetra_ENABLE_Experimental:BOOL=ON"
-  "-DTPL_ENABLE_SuperLU:BOOL=ON"
-  "-DSuperLU_INCLUDE_DIRS=/home/jhu/Software/SuperLU_4.3/SRC"
-  "-DSuperLU_LIBRARY_DIRS=/home/jhu/Software/SuperLU_4.3/lib"
-  "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
-
-  "-DTPL_BLAS_LIBRARIES:STRING=-L/usr/local/intel/Compiler/11.1/064/mkl/lib/em64t -L/usr/local/intel/Compiler/11.1/064/lib/intel64 -L/usr/lib64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread"
-  "-DTPL_LAPACK_LIBRARIES:STRING=-L/usr/local/intel/Compiler/11.1/064/mkl/lib/em64t -L/usr/local/intel/Compiler/11.1/064/lib/intel64 -L/usr/lib64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread"
 )
 
 #
