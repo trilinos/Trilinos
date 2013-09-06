@@ -52,12 +52,16 @@
 namespace Kokkos {
 namespace Example {
 
+/** \brief  Vector valued function to numerically integrate.
+ *
+ *  F(X) = { 1 , x , y , z , x*y , y*z , z*x , x*y*z }
+ *
+ *  Integrates on a unit cube to:
+ *    { 1 , 1/2 , 1/2 , 1/2 , 1/4 , 1/4 , 1/4 , 1/8 }
+ */
 struct MyFunctionType {
 
   enum { value_count = 8 };
-
-  // Integral on a unit cube:
-  // { 1 , 1/2 , 1/2 , 1/2 , 1/4 , 1/4 , 1/4 , 1/8 }
 
   // Evaluate function at coordinate.
   template< typename CoordType , typename ValueType >
@@ -81,32 +85,47 @@ void feint(
   const unsigned global_elem_ny ,
   const unsigned global_elem_nz )
 {
+  //----------------------------------------
+  // Create the unstructured finite element mesh box fixture on the device:
+
+  typedef Kokkos::Example::
+    BoxElemFixture< Device , Kokkos::Example::BoxElemPart::ElemLinear >
+    // BoxElemFixture< Device , Kokkos::Example::BoxElemPart::ElemQuadratic >
+      BoxFixtureType ;
+
+  // MPI distributed parallel domain decomposition of the fixture.
+  // Either by element (DecomposeElem) or by node (DecomposeNode)
+  // with ghosted elements.
+
+  static const Kokkos::Example::BoxElemPart::Decompose
+    decompose = Kokkos::Example::BoxElemPart:: DecomposeElem ;
+    // decompose = Kokkos::Example::BoxElemPart:: DecomposeNode ;
+
+  // Not using MPI in this example.
   const unsigned mpi_rank = 0 ;
   const unsigned mpi_size = 1 ;
 
-  static const Kokkos::Example::BoxElemPart::Decompose
-    decompose = Kokkos::Example::BoxElemPart:: DecomposeElem ; // DecomposeElem | DecomposeNode ;
-
-  // typedef Kokkos::Example::BoxElemFixture< Device , Kokkos::Example::BoxElemPart:: ElemLinear > BoxFixtureType ;
-  typedef Kokkos::Example::BoxElemFixture< Device , Kokkos::Example::BoxElemPart:: ElemQuadratic > BoxFixtureType ;
-
-  typedef Kokkos::Example::FiniteElementIntegration< BoxFixtureType , MyFunctionType , UseAtomic > FeintType ;
-
-  typedef Kokkos::Example::LumpElemToNode< typename FeintType::NodeValueType ,
-                                           typename FeintType::ElemValueType ,
-                                           UseAtomic > LumpType ;
-
   const BoxFixtureType fixture( decompose , mpi_size , mpi_rank ,
-                                global_elem_nx , global_elem_ny , global_elem_nz );
+                                global_elem_nx ,
+                                global_elem_ny ,
+                                global_elem_nz );
+
+  //----------------------------------------
+  // Create and execute the numerical integration functor on the device:
+
+  typedef Kokkos::Example::
+    FiniteElementIntegration< BoxFixtureType , MyFunctionType , UseAtomic >
+      FeintType ;
 
   const FeintType feint( fixture , MyFunctionType() );
 
   typename FeintType::value_type elem_integral ;
 
+  // A reduction for the global integral:
   Kokkos::parallel_reduce( fixture.elem_count() , feint , elem_integral );
 
   if ( elem_integral.error ) {
-    std::cout << "Spatial jacobian error" << std::endl ;
+    std::cout << "An element had a spatial jacobian error" << std::endl ;
     return ;
   }
 
@@ -116,6 +135,14 @@ void feint(
   }
   std::cout << std::endl ;
  
+  //----------------------------------------
+  // Create and execute the nodal lumped value projection and reduction functor:
+
+  typedef Kokkos::Example::
+    LumpElemToNode< typename FeintType::NodeValueType ,
+                    typename FeintType::ElemValueType ,
+                    UseAtomic > LumpType ;
+
   const LumpType lump( feint.m_node_lumped ,
                        feint.m_elem_integral ,
                        fixture.elem_node() );

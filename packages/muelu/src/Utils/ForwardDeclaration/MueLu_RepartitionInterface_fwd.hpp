@@ -1,9 +1,9 @@
-/*
-//@HEADER
-// ************************************************************************
+// @HEADER
 //
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
+// ***********************************************************************
+//
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,71 +35,29 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact
+//                    Jeremie Gaidamour (jngaida@sandia.gov)
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
 //
-// ************************************************************************
-//@HEADER
-*/
+// ***********************************************************************
+//
+// @HEADER
+#ifndef MUELU_REPARTITIONINTERFACE_FWD_HPP
+#define MUELU_REPARTITIONINTERFACE_FWD_HPP
 
-#include <iostream>
-#include <sstream>
 
-#include <KokkosCore_config.h>
 
-#if defined( KOKKOS_HAVE_MPI )
-#include <mpi.h>
-#endif
 
-#include <Kokkos_hwloc.hpp>
-#include <Kokkos_Threads.hpp>
-#include <Kokkos_Cuda.hpp>
-#include <Kokkos_OpenMP.hpp>
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-int main( int argc , char ** argv )
-{
-  std::ostringstream msg ;
-
-#if defined( KOKKOS_HAVE_MPI )
-
-  MPI_Init( & argc , & argv );
-
-  int mpi_rank = 0 ;
-
-  MPI_Comm_rank( MPI_COMM_WORLD , & mpi_rank );
-
-  msg << "MPI rank(" << mpi_rank << ") " ;
-
-#endif
-
-  msg << "{" << std::endl ;
-
-  if ( Kokkos::hwloc::available() ) {
-    const std::pair<unsigned,unsigned> core_top = Kokkos::hwloc::get_core_topology();
-    const unsigned                     core_cap = Kokkos::hwloc::get_core_capacity();
-
-    msg << "hwloc( NUMA[" << core_top.first
-        << "] x CORE[" << core_top.second
-        << "] x HT[" << core_cap << "] )"
-        << std::endl ;
-  }
-
-#if defined( KOKKOS_HAVE_CUDA )
-  Kokkos::Cuda::print_configuration( msg );
-#endif
-
-  msg << "}" << std::endl ;
-
-  std::cout << msg.str();
-
-#if defined( KOKKOS_HAVE_MPI )
-
-  MPI_Finalize();
-
-#endif
-
-  return 0 ;
+namespace MueLu {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  class RepartitionInterface;
 }
 
+#ifndef MUELU_REPARTITIONINTERFACE_SHORT
+#define MUELU_REPARTITIONINTERFACE_SHORT
+#endif
+
+
+
+#endif // MUELU_REPARTITIONINTERFACE_FWD_HPP

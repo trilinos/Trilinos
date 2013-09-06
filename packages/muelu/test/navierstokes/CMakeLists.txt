@@ -84,7 +84,28 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND
       COMM mpi
       )
 
-
+    TRIBITS_ADD_EXECUTABLE(
+      Navier2DBlocked_rebalancing2
+      SOURCES Navier2DBlocked_test2.cpp
+      COMM mpi
+      DEPLIBS muelu xpetra
+      )
+      
+    TRIBITS_ADD_TEST(
+      Navier2DBlocked_rebalancing2
+      NAME "Navier2DBlockedReuseAggs"
+      ARGS "--rebalanceBlocks=0"
+      NUM_MPI_PROCS 4
+      COMM mpi
+      )
+    TRIBITS_ADD_TEST(
+      Navier2DBlocked_rebalancing2
+      NAME "Navier2DBlockedReuseAggsReb"
+      ARGS "--rebalanceBlocks=1"
+      NUM_MPI_PROCS 4
+      COMM mpi
+      )
+            
     #TRIBITS_ADD_EXECUTABLE_AND_TEST(
     #  Navier2DBlocked_Simple
     #  SOURCES Navier2DBlocked_Simple.cpp

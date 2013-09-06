@@ -1,29 +1,17 @@
 /*
- * MueLu_IsorropiaInterface_decl.hpp
+ * MueLu_RepartitionInterface_decl.hpp
  *
- *  Created on: Jun 10, 2013
- *      Author: tobias
+ *  Created on: 5 Sep 2013
+ *      Author: wiesner
  */
 
-#ifndef MUELU_ISORROPIAINTERFACE_DECL_HPP_
-#define MUELU_ISORROPIAINTERFACE_DECL_HPP_
+#ifndef MUELU_REPARTITIONINTERFACE_DECL_HPP_
+#define MUELU_REPARTITIONINTERFACE_DECL_HPP_
 
-#include "MueLu_ConfigDefs.hpp"
-
-//#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
-
+#include <Xpetra_Map.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_CrsGraphFactory.hpp> //TODO
-
-#ifdef HAVE_MUELU_EPETRA
-#include <Xpetra_EpetraCrsGraph.hpp>
-#endif
-
-#ifdef HAVE_MUELU_TPETRA
-#include <Xpetra_TpetraCrsGraph.hpp>
-#endif
 
 #include "MueLu_SingleLevelFactoryBase.hpp"
 
@@ -34,21 +22,27 @@
 #include "MueLu_AmalgamationInfo_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
+
 namespace MueLu {
 
   /*!
-    @class IsorropiaInterface
-    @brief Interface to Isorropia package.
+    @class RepartitionInterface
+    @brief Helper class which transforms an "AmalgamatedPartition" array to an unamalgamated "Partition".
 
+    This class is meant to be used with IsorropiaInterface which in general provides the amalgamated partition information
+    and an AmalgamationFactory which defines the amalgamation/unamalgamation process.
+    The output is a "Partition" (unamalgamated) which can be used by the RepartitionFactory class.
+
+    Input: matrix A, unamalgamation information (that corresponds to matrix A)
   */
 
   //FIXME: this class should not be templated
   template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType,
             class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class IsorropiaInterface : public SingleLevelFactoryBase {
+  class RepartitionInterface : public SingleLevelFactoryBase {
 
     typedef double Scalar; // FIXME
-#undef MUELU_ISORROPIAINTERFACE_SHORT
+#undef MUELU_REPARTITIONINTERFACE_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -57,10 +51,10 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    IsorropiaInterface() { }
+    RepartitionInterface() { }
 
     //! Destructor
-    virtual ~IsorropiaInterface() { }
+    virtual ~RepartitionInterface() { }
     //@}
 
     RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
@@ -82,12 +76,9 @@ namespace MueLu {
 
 
 
-  };  //class IsorropiaInterface
+  };  //class RepartitionInterface
 
 } //namespace MueLu
 
-#define MUELU_ISORROPIAINTERFACE_SHORT
-//#endif //if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
-
-
-#endif /* MUELU_ISORROPIAINTERFACE_DECL_HPP_ */
+#define MUELU_REPARTITIONINTERFACE_SHORT
+#endif /* MUELU_REPARTITIONINTERFACE_DECL_HPP_ */
