@@ -15,6 +15,7 @@ MaxLinkAggregationAlgorithm
 OnePtAggregationAlgorithm
 PRFactory
 RebalanceMapFactory
+RepartitionInterface
 SmallAggregationAlgorithm
 UncoupledAggregationAlgorithm
 UncoupledAggregationFactory
