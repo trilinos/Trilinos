@@ -60,20 +60,17 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.eleanor.gcc.cmake")
 # Set the options specific to this build case
 #
 
-SET(COMM_TYPE SERIAL)
-SET(BUILD_TYPE DEBUG)
-SET(BUILD_DIR_NAME SERIAL_DEBUG_DEV_MueLu_Tpetra)
+SET(COMM_TYPE MPI)
+SET(BUILD_TYPE RELEASE)
+SET(BUILD_DIR_NAME MPI_RELEASE_DEV_MueLu)
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
 SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_PACKAGES MueLu Xpetra)
-#SET(EXTRA_EXCLUDE_PACKAGES ML Epetra Triutils Zoltan)
+SET(Trilinos_PACKAGES MueLu Xpetra Amesos2 Zoltan2)
 
 SET(EXTRA_CONFIGURE_OPTIONS
-  "-DTrilinos_ENABLE_Epetra:BOOL=OFF"
-  "-DTrilinos_ENABLE_ML:BOOL=OFF"
-  "-DTrilinos_ENABLE_Zoltan:BOOL=OFF"
+  "-DZoltan2_ENABLE_Experimental:BOOL=ON"
 )
 
 #

@@ -86,7 +86,10 @@ int main( int argc , char ** argv )
         << std::endl ;
   }
 
+#if defined( KOKKOS_HAVE_CUDA )
   Kokkos::Cuda::print_configuration( msg );
+#endif
+
   msg << "}" << std::endl ;
 
   std::cout << msg.str();
