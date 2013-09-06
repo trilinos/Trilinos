@@ -158,7 +158,7 @@ namespace Ioss {
 
     bool get_use_generic_canonical_name() const {return useGenericCanonicalName;}
     void set_use_generic_canonical_name(bool yes_no) {useGenericCanonicalName = yes_no;}
-    static void set_use_generic_canonical_name_default(bool yes_no) {useGenericCanonicalNameDefault = yes_no;}
+    static bool set_use_generic_canonical_name_default(bool yes_no);
 
     virtual int maximum_symbol_length() const {return 0;} // Default is unlimited...
     char get_field_separator() const;

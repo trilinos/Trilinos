@@ -229,6 +229,13 @@ namespace Ioss {
   {
   }
 
+  bool DatabaseIO::set_use_generic_canonical_name_default(bool yes_no)
+  {
+    bool old_value = useGenericCanonicalNameDefault;
+    useGenericCanonicalNameDefault = yes_no;
+    return old_value;
+  }
+
   int DatabaseIO::int_byte_size_api() const
   {
     if (dbIntSizeAPI == USE_INT32_API) {
