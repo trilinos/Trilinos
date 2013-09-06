@@ -40,8 +40,8 @@
 //@HEADER
 */
 
-/// \file Ifpack2_ILUT_decl.hpp
-/// \brief Declaration of ILUT preconditioner
+/// \file Ifpack2_SupportGraph_decl.hpp
+/// \brief Declaration of SupportGraph preconditioner
 
 #ifndef IFPACK2_SUPPORTGRAPH_DECL_HPP
 #define IFPACK2_SUPPORTGRAPH_DECL_HPP
@@ -77,27 +77,25 @@ namespace Teuchos {
 
 namespace Ifpack2 {
 
-/// \class ILUT
-/// \brief ILUT (incomplete LU factorization with threshold) of a Tpetra sparse matrix.
+/// \class SupportGraph
+/// \brief SupportGraph of a Tpetra sparse matrix.
 /// \tparam Specialization of Tpetra::CrsMatrix or Tpetra::RowMatrix.
 ///
-/// This class computes an ILUT sparse incomplete factorization with
-/// specified fill and drop tolerance, of a given sparse matrix
+/// This class computes a maximum weight spanning tree
+/// or multiple trees (forest), of a given sparse matrix
 /// represented as a Tpetra::RowMatrix.
 ///
 /// \warning If the matrix is distributed over multiple MPI processes,
 ///   this class will not work correctly by itself.  You must use it
 ///   as a subdomain solver inside of a domain decomposition method
 ///   like AdditiveSchwarz (which see).  If you use Factory to create
-///   an ILUT preconditioner, the Factory will automatically wrap ILUT
-///   in AdditiveSchwarz for you, if the matrix's communicator
+///   an SupportGraph preconditioner, the Factory will automatically wrap
+///   SupportGraph in AdditiveSchwarz for you, if the matrix's communicator
 ///   contains multiple processes.
 ///
 /// See the documentation of setParameters() for a list of valid
 /// parameters.
 ///
-/// This version of ILUT is a translation of Aztec's ILUT
-/// implementation, which was written by Ray Tuminaro.
 template<class MatrixType>
 class SupportGraph :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
@@ -168,29 +166,15 @@ public:
 
   /// \brief Set preconditioner parameters.
   ///
-  /// ILUT implements the following parameters:
+  /// SupportGraph implements the following parameters:
   /// <ul>
-  /// <li> "fact: ilut level-of-fill" (\c int)
-  /// <li> "fact: drop tolerance" (\c magnitude_type)
   /// <li> "fact: absolute threshold" (\c magnitude_type)
   /// <li> "fact: relative threshold" (\c magnitude_type)
-  /// <li> "fact: relax value" (\c magnitude_type)
   /// </ul>
-  /// "fact: drop tolerance" is the magnitude threshold for dropping
-  /// entries.  It corresponds to the \f$\tau\f$ parameter in Saad's
-  /// original description of ILUT.  "fact: ilut level-of-fill" is the
-  /// number of entries to keep in the strict upper triangle of the
-  /// current row, and in the strict lower triangle of the current
-  /// row.  It corresponds to the \f$p\f$ parameter in Saad's original
-  /// description.  ILUT always keeps the diagonal entry in the
-  /// current row, regardless of the drop tolerance or fill level.
-  ///
   /// The absolute and relative threshold parameters affect how this
-  /// code modifies the diagonal entry of the output factor.  These
-  /// parameters are not part of the original ILUT algorithm, but we
-  /// include them for consistency with other Ifpack2 preconditioners.
+  /// code modifies the diagonal entry of the output factor.
   ///
-  /// The "fact: relax value" parameter currently has no effect.
+ 
   void setParameters (const Teuchos::ParameterList& params);
 
 
@@ -211,11 +195,9 @@ public:
     return(IsInitialized_);
   }
 
-  //! Compute factors L and U using the specified diagonal perturbation thresholds and relaxation parameters.
-  /*! This function computes the ILUT factors L and U using the current:
+  //! Compute factor by having Cholmod do a complete factorization.
+  /*! This function computes the SupportGraph factor using the current:
     <ol>
-    <li> Value for the drop tolerance
-    <li> Value for the level of fill
     <li> Value for the \e a \e priori diagonal threshold values.
     </ol>
    */
@@ -231,7 +213,7 @@ public:
   //! @name Methods implementing Tpetra::Operator.
   //@{
 
-  //! Returns the result of a ILUT forward/back solve on a Tpetra::MultiVector X in Y.
+  //! Returns the result of a SupportGraph forward/back solve on a Tpetra::MultiVector X in Y.
   /*!
     \param
     X - (In) A Tpetra::MultiVector of dimension NumVectors to solve for.
@@ -259,7 +241,7 @@ public:
   //@{
   //! \name Mathematical functions.
 
-  //! Returns the result of a ILUT forward/back solve on a Tpetra::MultiVector X in Y.
+  //! Returns the result of a SupportGraph forward/back solve on a Tpetra::MultiVector X in Y.
   /*!
     \param
     X - (In) A Tpetra::MultiVector of dimension NumVectors to solve for.

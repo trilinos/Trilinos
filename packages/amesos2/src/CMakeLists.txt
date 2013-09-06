@@ -246,7 +246,7 @@ ENDIF()
     #ADD_SUBDIRECTORY(SuiteSparse/KLU2/Source)
 #ENDIF()
 
-IF (${PACKAGE_NAME}_BUILD_EXPERIMENTAL)
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
    IF (${PACKAGE_NAME}_ENABLE_Cholmod)	
       APPEND_SET(HEADERS
 	Amesos2_Cholmod.hpp
