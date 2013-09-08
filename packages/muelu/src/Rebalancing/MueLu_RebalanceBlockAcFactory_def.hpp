@@ -346,23 +346,23 @@ namespace MueLu {
     //reb_bA->describe(*out,Teuchos::VERB_EXTREME);
     coarseLevel.Set("A", Teuchos::rcp_dynamic_cast<Matrix>(reb_bA), this);
 
-
-#if 0
+    // rebalance additional data:
+    // be aware, that we just call the rebalance factories without switching to local
+    // factory managers, i.e. the rebalance factories have to be defined with the appropriate
+    // factories by the user!
     if (rebalanceFacts_.begin() != rebalanceFacts_.end()) {
       SubFactoryMonitor m2(*this, "Rebalance additional data", coarseLevel);
 
       // call Build of all user-given transfer factories
       for (std::vector<RCP<const FactoryBase> >::const_iterator it = rebalanceFacts_.begin(); it != rebalanceFacts_.end(); ++it) {
-        GetOStream(Runtime0, 0) << "RebalanceAc: call rebalance factory " << (*it).get() << ": " << (*it)->description() << std::endl;
+        GetOStream(Runtime0, 0) << "RebalanceBlockedAc: call rebalance factory " << (*it).get() << ": " << (*it)->description() << std::endl;
         (*it)->CallBuild(coarseLevel);
       }
     }
-#endif
   } //Build()
 
-#if 0
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RebalanceBlockedAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddRebalanceFactory(const RCP<const FactoryBase>& factory) {
+  void RebalanceBlockAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddRebalanceFactory(const RCP<const FactoryBase>& factory) {
 
     /*TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const TwoLevelFactoryBase>(factory) == Teuchos::null, Exceptions::BadCast,
                                "MueLu::RAPFactory::AddTransferFactory: Transfer factory is not derived from TwoLevelFactoryBase. "
@@ -370,7 +370,7 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(hasDeclaredInput_, Exceptions::RuntimeError, "MueLu::RAPFactory::AddTransferFactory: Factory is being added after we have already declared input");*/
     rebalanceFacts_.push_back(factory);
   } //AddRebalanceFactory()
-#endif
+
 } //namespace MueLu
 
 

@@ -118,7 +118,7 @@ namespace MueLu {
     Rebalancing factories are derived from SingleLevelFactoryBase and rebalance the underlaying object
     (e.g. map, vector,...) to fit to the rebalanced maps.
     */
-    //void AddRebalanceFactory(const RCP<const FactoryBase>& factory);
+    void AddRebalanceFactory(const RCP<const FactoryBase>& factory);
 
     //! Returns number of transfer factories.
     size_t NumRebalanceFactories() const { return rebalanceFacts_.size(); }
