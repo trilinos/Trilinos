@@ -70,6 +70,7 @@
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 #include "MueLu_FactoryManager_fwd.hpp"
+#include "MueLu_Types.hpp"
 
 // MPI helper
 #define sumAll(rcpComm, in, out)                                        \
