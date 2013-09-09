@@ -381,7 +381,13 @@ Bucket *BucketRepository::allocate_bucket(EntityRank arg_entity_rank,
 {
 
   Bucket * new_bucket = bucket_allocator().allocate(1);
-  new_bucket = new (new_bucket) Bucket(m_mesh, arg_entity_rank, arg_key, arg_capacity, m_connectivity_map);
+  try {
+    new_bucket = new (new_bucket) Bucket(m_mesh, arg_entity_rank, arg_key, arg_capacity, m_connectivity_map);
+  } catch(std::runtime_error & e) {
+    bucket_allocator().deallocate(new_bucket,1);
+    throw e;
+  }
+
   std::vector<Bucket *> &bucket_vec = m_buckets[arg_entity_rank];
   new_bucket->m_bucket_id = bucket_vec.size();
   bucket_vec.push_back(new_bucket);
