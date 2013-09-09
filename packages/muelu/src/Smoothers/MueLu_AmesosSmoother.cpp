@@ -72,6 +72,7 @@ namespace MueLu {
     }
     if (type_ == "Amesos_klu")     type_ = "Klu";
     if (type_ == "Amesos_umfpack") type_ = "Umfpack";
+    if (type_ == "Superlu_dist")   type_ = "Superludist";
 
     // set default solver type
     if (type_ == "") {
