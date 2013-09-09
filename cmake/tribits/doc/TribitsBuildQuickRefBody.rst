@@ -989,6 +989,10 @@ packages in extra repos) then the configure time might be excessive and
 therefore you might want to be able to add configuration timing to see where
 the time is being spent.
 
+NOTE: This requires that you are running on a Linux/Unix system that has the
+stanard command 'date'.  CMake does not have built-in timing functions so you
+have to query the system.
+
 
 Building (Makefile generator)
 =============================

@@ -57,6 +57,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable building and installation of experimental Ifpack2 features."
   NO )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Zoltan2
+  HAVE_IFPACK2_ZOLTAN2
+  "Enables Zoltan2 reordering in Ifpack_AdditiveSchwarz"
+  NO )
 
 #
 # C) Add the libraries, tests, and examples

@@ -1621,11 +1621,13 @@ extern void   AZ_sym_rescale_vbr(double x[], int data_org[], int options[]);
 #  ifdef AZ_ENABLE_TIMEMONITOR
 #    define AZ_TIMERS_ENABLED 1
 #    include "Teuchos_CTimeMonitor.h"
-#    define AZ_START_TIMER( label, ID )                                 \
+#    define AZ_START_TIMER( label, ID ) {                               \
        static int ID = -1;                                              \
        ID = Teuchos_startTimer( label, ID );
-#    define AZ_STOP_TIMER( ID )                                         \
+#    define AZ_STOP_TIMER_BEFORE_EARLY_RETURN( ID )                     \
        Teuchos_stopTimer( ID );
+#    define AZ_STOP_TIMER( ID )                                         \
+       Teuchos_stopTimer( ID ); }
 #  else
 #    define AZ_TIMERS_ENABLED 0
 #  endif
