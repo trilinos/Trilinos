@@ -166,20 +166,61 @@ void RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node,
       GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebRii, ss2.str(), params);
     }
 
+    // fix striding information for rebalanced diagonal block rebRii
+    RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rgRMapExtractor = bOriginalTransferOp->getRangeMapExtractor(); // original map extractor
+    Teuchos::RCP<const StridedMap> orig_stridedRgMap = Teuchos::rcp_dynamic_cast<const StridedMap>(rgRMapExtractor->getMap(Teuchos::as<size_t>(curBlockId)));
+    Teuchos::RCP<const Map> stridedRgMap = Teuchos::null;
+    if(orig_stridedRgMap != Teuchos::null) {
+      std::vector<size_t> stridingData = orig_stridedRgMap->getStridingData();
+      Teuchos::ArrayView< const GlobalOrdinal > nodeRangeMapii = rebRii->getRangeMap()->getNodeElementList();
+      stridedRgMap = StridedMapFactory::Build(
+          originalTransferOp->getRangeMap()->lib(),
+          Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+          nodeRangeMapii,
+          rebRii->getRangeMap()->getIndexBase(),
+          stridingData,
+          originalTransferOp->getRangeMap()->getComm(),
+          orig_stridedRgMap->getStridedBlockId(),
+          orig_stridedRgMap->getOffset());
+    }
+    RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > doRMapExtractor = bOriginalTransferOp->getDomainMapExtractor(); // original map extractor
+    Teuchos::RCP<const StridedMap> orig_stridedDoMap = Teuchos::rcp_dynamic_cast<const StridedMap>(doRMapExtractor->getMap(Teuchos::as<size_t>(curBlockId)));
+    Teuchos::RCP<const Map> stridedDoMap = Teuchos::null;
+    if(orig_stridedDoMap != Teuchos::null) {
+      std::vector<size_t> stridingData = orig_stridedDoMap->getStridingData();
+      Teuchos::ArrayView< const GlobalOrdinal > nodeDomainMapii = rebRii->getDomainMap()->getNodeElementList();
+      stridedDoMap = StridedMapFactory::Build(
+          originalTransferOp->getDomainMap()->lib(),
+          Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+          nodeDomainMapii,
+          rebRii->getDomainMap()->getIndexBase(),
+          stridingData,
+          originalTransferOp->getDomainMap()->getComm(),
+          orig_stridedDoMap->getStridedBlockId(),
+          orig_stridedDoMap->getOffset());
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(stridedRgMap == Teuchos::null,Exceptions::RuntimeError, "MueLu::RebalanceBlockRestrictionFactory::Build: failed to generate striding information. error.");
+    TEUCHOS_TEST_FOR_EXCEPTION(stridedDoMap == Teuchos::null,Exceptions::RuntimeError, "MueLu::RebalanceBlockRestrictionFactory::Build: failed to generate striding information. error.");
+
+    // replace stridedMaps view in diagonal sub block
+    if(rebRii->IsView("stridedMaps")) rebRii->RemoveView("stridedMaps");
+    rebRii->CreateView("stridedMaps", stridedRgMap, stridedDoMap);
+
     // store rebalanced subblock
     subBlockRebR.push_back(rebRii);
 
     // append strided row map (= range map) to list of range maps.
-    Teuchos::RCP<const Map> rangeMapii = rebRii->getRangeMap();
+    Teuchos::RCP<const Map> rangeMapii = rebRii->getRowMap("stridedMaps"); //rebRii->getRangeMap();
     subBlockRRangeMaps.push_back(rangeMapii);
-    Teuchos::ArrayView< const GlobalOrdinal > nodeRangeMapii = rangeMapii->getNodeElementList();
+    Teuchos::ArrayView< const GlobalOrdinal > nodeRangeMapii = rebRii->getRangeMap()->getNodeElementList();
     fullRangeMapVector.insert(fullRangeMapVector.end(), nodeRangeMapii.begin(), nodeRangeMapii.end());
     sort(fullRangeMapVector.begin(), fullRangeMapVector.end());
 
     // append strided col map (= domain map) to list of range maps.
-    Teuchos::RCP<const Map> domainMapii = rebRii->getDomainMap();
+    Teuchos::RCP<const Map> domainMapii = rebRii->getColMap("stridedMaps"); //rebRii->getDomainMap();
     subBlockRDomainMaps.push_back(domainMapii);
-    Teuchos::ArrayView< const GlobalOrdinal > nodeDomainMapii = domainMapii->getNodeElementList();
+    Teuchos::ArrayView< const GlobalOrdinal > nodeDomainMapii = rebRii->getDomainMap()->getNodeElementList();
     fullDomainMapVector.insert(fullDomainMapVector.end(), nodeDomainMapii.begin(), nodeDomainMapii.end());
     sort(fullDomainMapVector.begin(), fullDomainMapVector.end());
 
@@ -220,34 +261,56 @@ void RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node,
   RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rangeRMapExtractor = bOriginalTransferOp->getRangeMapExtractor(); // original map extractor
   Teuchos::ArrayView<GO> fullRangeMapGIDs(&fullRangeMapVector[0],fullRangeMapVector.size());
   Teuchos::RCP<const StridedMap> stridedRgFullMap = Teuchos::rcp_dynamic_cast<const StridedMap>(rangeRMapExtractor->getFullMap());
-  std::vector<size_t> stridedData = stridedRgFullMap->getStridingData();
-
-  Teuchos::RCP<const StridedMap > fullRangeMap =
-      StridedMapFactory::Build(
-          originalTransferOp->getRangeMap()->lib(),
-          Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-          fullRangeMapGIDs,
-          rangeIndexBase,
-          stridedData,
-          originalTransferOp->getRangeMap()->getComm(),
-          stridedRgFullMap->getStridedBlockId(),
-          stridedRgFullMap->getOffset());
+  Teuchos::RCP<const Map > fullRangeMap = Teuchos::null;
+  if(stridedRgFullMap != Teuchos::null) {
+    std::vector<size_t> stridedData = stridedRgFullMap->getStridingData();
+    fullRangeMap =
+        StridedMapFactory::Build(
+            originalTransferOp->getRangeMap()->lib(),
+            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+            fullRangeMapGIDs,
+            rangeIndexBase,
+            stridedData,
+            originalTransferOp->getRangeMap()->getComm(),
+            stridedRgFullMap->getStridedBlockId(),
+            stridedRgFullMap->getOffset());
+  } else {
+    fullRangeMap =
+        MapFactory::Build(
+            originalTransferOp->getRangeMap()->lib(),
+            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+            fullRangeMapGIDs,
+            rangeIndexBase,
+            originalTransferOp->getRangeMap()->getComm());
+  }
 
   RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > domainAMapExtractor = bOriginalTransferOp->getDomainMapExtractor();
   Teuchos::ArrayView<GO> fullDomainMapGIDs(&fullDomainMapVector[0],fullDomainMapVector.size());
   Teuchos::RCP<const StridedMap> stridedDoFullMap = Teuchos::rcp_dynamic_cast<const StridedMap>(domainAMapExtractor->getFullMap());
-  std::vector<size_t> stridedData2 = stridedDoFullMap->getStridingData();
+  Teuchos::RCP<const Map > fullDomainMap = Teuchos::null;
+  if(stridedDoFullMap != Teuchos::null) {
+    TEUCHOS_TEST_FOR_EXCEPTION(stridedDoFullMap==Teuchos::null, Exceptions::BadCast, "MueLu::BlockedPFactory::Build: full map in domain map extractor has no striding information! error.");
+    std::vector<size_t> stridedData2 = stridedDoFullMap->getStridingData();
+    fullDomainMap =
+        StridedMapFactory::Build(
+            originalTransferOp->getDomainMap()->lib(),
+            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+            fullDomainMapGIDs,
+            domainIndexBase,
+            stridedData2,
+            originalTransferOp->getDomainMap()->getComm(),
+            stridedDoFullMap->getStridedBlockId(),
+            stridedDoFullMap->getOffset());
+  } else {
 
-  Teuchos::RCP<const StridedMap > fullDomainMap =
-      StridedMapFactory::Build(
-          originalTransferOp->getDomainMap()->lib(),
-          Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-          fullDomainMapGIDs,
-          domainIndexBase,
-          stridedData2,
-          originalTransferOp->getDomainMap()->getComm(),
-          stridedDoFullMap->getStridedBlockId(),
-          stridedDoFullMap->getOffset());
+    fullDomainMap =
+        MapFactory::Build(
+            originalTransferOp->getDomainMap()->lib(),
+            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+            fullDomainMapGIDs,
+            domainIndexBase,
+            originalTransferOp->getDomainMap()->getComm());
+  }
 
   // build map extractors
   Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rangeMapExtractor  =
