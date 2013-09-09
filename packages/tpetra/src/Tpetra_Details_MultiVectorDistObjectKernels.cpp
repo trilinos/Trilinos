@@ -45,8 +45,9 @@
 #include "Teuchos_ScalarTraits.hpp"
 
 #include "Tpetra_Details_MultiVectorDistObjectKernels.hpp"
+#include "Tpetra_ConfigDefs.hpp"
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && TPETRA_USE_KOKKOS_DISTOBJECT
 
 #include "Tpetra_ETIHelperMacros.h"
 #include "Tpetra_Details_MultiVectorDistObjectKernels_def.hpp"
