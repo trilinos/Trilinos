@@ -25,8 +25,6 @@
 
 static const size_t NODE_RANK = stk::mesh::MetaData::NODE_RANK;
 
-#define ct_assert(e) extern char (*ct_assert(void)) [sizeof(char[1 - 2*!(e)])]
-
 typedef stk::search::ident::IdentProc<stk::mesh::EntityKey, unsigned> IdentProc;
 typedef stk::search::box::AxisAlignedBoundingBox<IdentProc, double, 3> AxisAlignedBoundingBox3D;
 typedef stk::search::box::PointBoundingBox<IdentProc, double, 3> PointBoundingBox3D;
@@ -203,7 +201,7 @@ void build_node_axis_bbox(stk::mesh::Part &part,
 
   for (size_t i = 0; i < num_entities; ++i) {
     AxisAlignedBoundingBox3D   domain;
-    ct_assert(sizeof(domain.key.ident) >= sizeof(stk::mesh::EntityKey));
+    BOOST_STATIC_ASSERT(sizeof(domain.key.ident) >= sizeof(stk::mesh::EntityKey));
     domain.key.ident = bulk_data.entity_key(entities[i]);
 
     double *fld_data = (double*)bulk_data.field_data(*coordinates, entities[i]);
@@ -238,7 +236,7 @@ void build_axis_bbox(stk::mesh::Part &part,
 
   for (size_t i = 0; i < num_entities; ++i) {
     AxisAlignedBoundingBox3D   domain;
-    ct_assert(sizeof(domain.key.ident) >= sizeof(stk::mesh::EntityKey));
+    BOOST_STATIC_ASSERT(sizeof(domain.key.ident) >= sizeof(stk::mesh::EntityKey));
     domain.key.ident = bulk_data.entity_key(entities[i]);
 
     stk::mesh::Entity const * entity_nodes = bulk_data.begin_nodes(entities[i]);
@@ -289,7 +287,7 @@ void build_node_cent_bbox(stk::mesh::Part &part,
 
   for (size_t i = 0; i < num_entities; ++i) {
     PointBoundingBox3D   p;
-    ct_assert(sizeof(p.key.ident) >= sizeof(stk::mesh::EntityKey));
+    BOOST_STATIC_ASSERT(sizeof(p.key.ident) >= sizeof(stk::mesh::EntityKey));
     p.key.ident = bulk_data.entity_key(entities[i]);
 
     double *fld_data = (double*)bulk_data.field_data(*coordinates, entities[i]);
@@ -315,7 +313,7 @@ void build_cent_bbox(stk::mesh::Part &part,
 
   for (size_t i = 0; i < num_entities; ++i) {
     PointBoundingBox3D   p;
-    ct_assert(sizeof(p.key.ident) >= sizeof(stk::mesh::EntityKey));
+    BOOST_STATIC_ASSERT(sizeof(p.key.ident) >= sizeof(stk::mesh::EntityKey));
     p.key.ident = bulk_data.entity_key(entities[i]);
 
     p.center[0] = 0;

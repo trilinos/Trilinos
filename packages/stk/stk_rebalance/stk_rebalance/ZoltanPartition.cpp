@@ -31,17 +31,8 @@ double static_zoltan_version(const double v=0) {
   return version;
 }
 
-inline unsigned num_gid_entries() {
-  static const unsigned n=2;
-  return n;
-}
-
 inline unsigned num_lid_entries() {
   static const unsigned n=2;
-  return n;
-}
-inline unsigned wdim() {
-  static const unsigned n=1;
   return n;
 }
 
@@ -62,12 +53,6 @@ inline void convert_param_to_string(const Parameters &from,
   }
 }
 
-inline void fill_parameters (const char *T[][2],
-                             const int  i,
-                             Parameters &Entry)
-{
-  for (int j=0; j<i; ++j) Entry.set(T[j][0], T[j][1]);
-}
 
 void fill_name_conversion( Parameters & name_conversion )
 {
@@ -936,7 +921,9 @@ void Zoltan::determine_new_partition (bool &RebalancingNeeded)
                                   &num_exported,    &export_gids,
                                   &export_lids,     &export_procs );
   if (status != ZOLTAN_OK) {
-    throw std::runtime_error("Zoltan_Balance() returned error code " + status);
+    char status_string[16];
+    sprintf(status_string, "%d", status);
+    throw std::runtime_error(std::string("Zoltan_Balance() returned error code ") + status_string);
   }
 
   //: Initialize destination processor IDs (dest_proc_ids)
@@ -949,8 +936,6 @@ void Zoltan::determine_new_partition (bool &RebalancingNeeded)
     for (int j=0; j < num_exported; ++j ) {
 
       //: Get exported region, local, global, and processor ids
-      //const unsigned rid = export_gids[ j*::num_gid_entries() ];  // Region ID variable
-      //if (!rid) throw runtime_error ("Region ID variable should be non-zero.");
       const unsigned lid = export_lids[ j*::num_lid_entries() ];  // Local  ID variable
       const unsigned pid = export_procs[ j ];                     // Exported Processor ID (i.e., MPI "rank" )
 

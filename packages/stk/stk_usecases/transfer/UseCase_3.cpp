@@ -172,7 +172,6 @@ use_case_3_driver(stk::ParallelMachine  comm,
 
   IdentProcRelation::const_iterator i=relation.begin(), end=relation.end();
   for (;i!=end; ++i) {
-    stk::mesh::EntityKey domain_entity_key(i->first.ident);
     stk::mesh::EntityKey range_entity_key(i->second.ident);
 
     const int domain_owning_proc = i->first.proc;

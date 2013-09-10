@@ -40,8 +40,6 @@
 
 #include <Shards_BasicTopologies.hpp>
 
-#define ct_assert(e) extern char (*ct_assert(void)) [sizeof(char[1 - 2*!(e)])]
-
 using namespace stk::diag;
 using namespace stk::search;
 using namespace use_case;
@@ -75,7 +73,7 @@ void get_idents(stk::mesh::BulkData &bulk_data,
                 std::vector<ParallelIndex::Key> &ident_vector,
                 stk::mesh::Part &skin_part)
 {
-  ct_assert(sizeof(ParallelIndex::Key) >= sizeof(stk::mesh::EntityKey));
+  BOOST_STATIC_ASSERT(sizeof(ParallelIndex::Key) >= sizeof(stk::mesh::EntityKey));
   ident_vector.clear();
   const stk::mesh::MetaData&   meta_data = stk::mesh::MetaData::get(bulk_data);
 

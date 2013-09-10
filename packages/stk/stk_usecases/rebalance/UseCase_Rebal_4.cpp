@@ -129,10 +129,10 @@ void GreedySideset::notify_mod_cycle(const stk::mesh::BulkData& mesh)
 
 unsigned GreedySideset::num_elems() const {return total_number_entities_ ;}
 int GreedySideset::get_new_partition(stk::mesh::EntityProcVec &new_partition){
-std::vector<mesh::Entity>::iterator i=mesh_information_.mesh_entities.begin();
-std::vector<int>     ::iterator j=mesh_information_.dest_proc_ids.begin();
-  for (;i != mesh_information_.mesh_entities.end(),
-        j != mesh_information_.dest_proc_ids.end();
+  std::vector<mesh::Entity>::iterator i=mesh_information_.mesh_entities.begin();
+  std::vector<int>     ::iterator j=mesh_information_.dest_proc_ids.begin();
+  for (; (i != mesh_information_.mesh_entities.end()) 
+         && (j != mesh_information_.dest_proc_ids.end());
         ++i,++j) {
     mesh::Entity mesh_entity = *i;
     int proc = *j;

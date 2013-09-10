@@ -36,8 +36,6 @@
 #include <stk_search_util/stk_mesh/CreateBoundingBox.hpp>
 #include <stk_search_util/stk_mesh/PrintBoundingBox.hpp>
 
-#define ct_assert(e) extern char (*ct_assert(void)) [sizeof(char[1 - 2*!(e)])]
-
 using namespace stk::diag;
 using namespace use_case;
 
@@ -70,7 +68,7 @@ std::ostream& operator<<(std::ostream& ostr, const std::vector<T> &v){
 void get_idents(stk::mesh::BulkData &bulk_data,
                 std::vector<ParallelIndex::Key> &ident_vector)
 {
-  ct_assert(sizeof(ParallelIndex::Key) >= sizeof(stk::mesh::EntityKey));
+  BOOST_STATIC_ASSERT(sizeof(ParallelIndex::Key) >= sizeof(stk::mesh::EntityKey));
   ident_vector.clear();
   const stk::mesh::MetaData&   meta_data = stk::mesh::MetaData::get(bulk_data);
 
