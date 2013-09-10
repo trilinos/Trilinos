@@ -294,22 +294,6 @@ bool check_bucket_ptrs(const stk::mesh::Bucket &bucket)
   return true;
 }
 
-bool check_strictly_ordered(const stk::mesh::Bucket &bucket)
-{
-  if (bucket.size() == 0 )
-    return true;
-
-  stk::mesh::EntityLess eless(bucket.mesh());
-  stk::mesh::Bucket::iterator e_i = bucket.begin();
-  stk::mesh::Bucket::iterator e_last = bucket.end() - 1;
-  for(; e_i != e_last; ++e_i)
-  {
-    if (!eless(*e_i, *(e_i + 1)))
-      return false;
-  }
-  return true;
-}
-
 template <typename Data_T>
 bool check_nonempty_strictly_ordered(Data_T data[], size_t sz, bool reject_0_lt_0 = true )
 {
@@ -327,32 +311,6 @@ bool check_nonempty_strictly_ordered(Data_T data[], size_t sz, bool reject_0_lt_
   }
   return true;
 }
-
-bool check_data_consistent(stk::mesh::Field<double> &data_field, const stk::mesh::Bucket &bucket)
-{
-  if (bucket.size() == 0 )
-    return true;
-
-  const stk::mesh::BulkData &mesh = bucket.mesh();
-
-  const double *field_data = mesh.field_data(data_field, bucket, 0);
-  if (field_data)
-  {
-    size_t num_entities = bucket.size();
-    for (size_t i = 0; i < num_entities; ++i)
-    {
-      stk::mesh::EntityId entity_id = mesh.identifier(bucket[i]);
-      double val = field_data[i];
-      if ((val < entity_id - 0.001) || (entity_id + 0.001 < val))
-      {
-        std::cout << "val = " << val << "  entity_id = " << entity_id << std::endl;
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
 
 void check_test_partition_invariant(const SelectorFixture& fix,
                                     const stk::mesh::impl::Partition &partition)

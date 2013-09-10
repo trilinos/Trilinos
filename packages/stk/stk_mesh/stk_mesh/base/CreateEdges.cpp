@@ -43,31 +43,11 @@ struct shared_edge_type
     return l.nodes[1] < r.nodes[1];
   }
 
-  friend inline bool operator > (shared_edge_type const& l, shared_edge_type const& r)
-  {
-    return r < l;
-  }
-
   friend inline bool operator == (shared_edge_type const& l, shared_edge_type const& r)
   {
     return    (l.topology == r.topology)
            && (l.nodes[0] == r.nodes[0])
            && (l.nodes[1] == r.nodes[1]);
-  }
-
-  friend inline bool operator != (shared_edge_type const& l, shared_edge_type const& r)
-  {
-    return !(l==r);
-  }
-
-  friend inline bool operator <= (shared_edge_type const& l, shared_edge_type const& r)
-  {
-    return (l<r) || (l==r);
-  }
-
-  friend inline bool operator >= (shared_edge_type const& l, shared_edge_type const& r)
-  {
-    return (l>r) || (l==r);
   }
 };
 

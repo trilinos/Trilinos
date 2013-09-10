@@ -48,16 +48,6 @@ void assert_same_universe( const Part & superset ,
                    universal_part_name() );
 }
 
-void assert_same( const Part & part1 ,
-                  const Part & part2,
-                  const char * method )
-{
-  ThrowErrorMsgIf( & part1 != & part2,
-                   method << "(...) FAILED Requirement that " <<
-                   "Part[" << part1.name() << "] and " <<
-                   "Part[" << part2.name() << "] are the same" );
-}
-
 void assert_not_same( const Part & part1 ,
                       const Part & part2 ,
                       const char * method )
@@ -66,17 +56,6 @@ void assert_not_same( const Part & part1 ,
                    method << "(...) FAILED Requirement that " <<
                    "Part[" << part1.name() << "] and " <<
                    "Part[" << part2.name() << "] are not the same" );
-}
-
-void assert_superset( Part & superset ,
-                      Part & subset ,
-                      const char * method )
-{
-  ThrowErrorMsgIf( ! contain( subset.supersets() , superset ),
-                   method << "(...) FAILED Requirement that " <<
-                   "Part[" << superset.name() << "] " <<
-                   "is a superset of " <<
-                   "Part[" << subset.name() << "]" );
 }
 
 void assert_not_superset( const Part & superset ,

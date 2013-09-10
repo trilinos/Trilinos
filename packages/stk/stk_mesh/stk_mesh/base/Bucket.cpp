@@ -31,13 +31,6 @@ enum IgnoreMe
   DUMMY_VALUE = 0
 };
 
-inline unsigned align( size_t nb )
-{
-  enum { BYTE_ALIGN = 16 };
-  const unsigned gap = nb % BYTE_ALIGN ;
-  if ( gap ) { nb += BYTE_ALIGN - gap ; }
-  return nb ;
-}
 
 // TODO: When we get C++11, use lambdas instead of these functors
 

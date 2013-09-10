@@ -19,6 +19,11 @@ namespace stk {
 namespace mesh {
 
 namespace {
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunneeded-internal-declaration"
+#endif
 inline
 const FieldBase::Restriction & empty_field_restriction()
 {
@@ -26,6 +31,10 @@ const FieldBase::Restriction & empty_field_restriction()
   static const FieldBase::Restriction empty ;
   return empty ;
 }
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+
 }//namespace anonymous
 
 //Given a field and a range of parts, determine whether the field has a restriction

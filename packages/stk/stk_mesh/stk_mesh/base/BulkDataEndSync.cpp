@@ -868,7 +868,7 @@ bool BulkData::internal_modification_end( bool regenerate_aura, modification_opt
   //a single larger bucket, and also does a sort.
   //If optimize_buckets has not been requested, still do the sort.
 
-  if ((opt == MOD_END_COMPRESS_AND_SORT) ) {
+  if ( opt == MOD_END_COMPRESS_AND_SORT ) {
     m_bucket_repository.optimize_buckets();
   }
   else {

@@ -52,14 +52,6 @@ void BulkData::require_valid_relation( const char action[] ,
   }
 }
 
-namespace {
-
-inline bool is_degenerate_relation ( const Relation &r1 , const Relation &r2 )
-{
-  return r1.raw_relation_id() == r2.raw_relation_id() && r1.entity() != r2.entity() ;
-}
-
-}
 
 //----------------------------------------------------------------------
 bool BulkData::internal_declare_relation(Entity e_from, Entity e_to,
