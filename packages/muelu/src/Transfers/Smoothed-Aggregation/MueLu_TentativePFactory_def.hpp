@@ -233,10 +233,14 @@ namespace MueLu {
     // TODO remove the global communication here to detect empty processors and fix ESFC for empty
     // procs
     bool bExpert = true;
+#if 1  // safe variant: disable expert mode if there are empty processors
     GO gMinNumRowsForPtent = 0;
     GO lMinNumRowsForPtent = Teuchos::as<GlobalOrdinal>(numRowsForPtent);  /* LO->GO conversion */
     minAll(comm,lMinNumRowsForPtent,gMinNumRowsForPtent);
     if(aggregates.AggregatesCrossProcessors() || gMinNumRowsForPtent == 0) {
+#else // see ticket #193
+    if(aggregates.AggregatesCrossProcessors()) {
+#endif
       bExpert = false;
     }
 
