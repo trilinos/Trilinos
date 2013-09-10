@@ -3,6 +3,7 @@
 
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_search/BoundingBox.hpp>
+#include <stk_search/diag/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
 #include <stk_search/diag/IdentProc.hpp>
 
@@ -104,55 +105,7 @@ namespace stk
       }
     };
 
-
-    // FIXME
-    //template<unsigned SpatialDim>
-    //std::ostream &operator<<(std::ostream &out, const typename BuildBoundingBoxes<SpatialDim>::BoundingBox &bbox)
-    std::ostream &operator<<(std::ostream &out, const BuildBoundingBoxes<3>::AABoundingBox &bbox);
-
-    //template<unsigned SpatialDim>
-    //std::ostream &operator<<(std::ostream &out, const typename BuildBoundingBoxes<SpatialDim>::BoundingBox &bbox)
-    std::ostream &operator<<(std::ostream &out, const BuildBoundingBoxes<3>::BoundingPoint &bbox);
-
-    std::ostream &operator<<(std::ostream &out, const BuildBoundingBoxes<2>::AABoundingBox &bbox);
-
-    //template<unsigned SpatialDim>
-    //std::ostream &operator<<(std::ostream &out, const typename BuildBoundingBoxes<SpatialDim>::BoundingBox &bbox)
-    std::ostream &operator<<(std::ostream &out, const BuildBoundingBoxes<2>::BoundingPoint &bbox);
-
-#if 0
-    template<unsigned SpatialDim>
-    std::ostream &operator<<(std::ostream &out, const typename BuildBoundingBoxes<SpatialDim>::AABoundingBox &bbox)
-    {
-      out << "bbox_min = { "
-          << bbox.lower(0) << ",  "
-          << bbox.lower(1) << ",  "
-          << bbox.lower(2) << "}  "
-          << "bbox_max = { "
-          << bbox.upper(0) << ",  "
-          << bbox.upper(1) << ",  "
-          << bbox.upper(2) << "}  ";
-      return out;
-    }
-#endif
-
-#if 0
-    template<typename BBox_loc>
-    std::ostream &operator<<(std::ostream &out, const BBox_loc &bbox)
-    {
-      out << "bbox_min = { "
-          << bbox.lower(0) << ",  "
-          << bbox.lower(1) << ",  "
-          << bbox.lower(2) << "}  "
-          << "bbox_max = { "
-          << bbox.upper(0) << ",  "
-          << bbox.upper(1) << ",  "
-          << bbox.upper(2) << "}  ";
-      return out;
-    }
-#endif
-
-  }
-}
+  } //namespace percept
+} //namespace stk
 
 #endif

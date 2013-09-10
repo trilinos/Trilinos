@@ -4,7 +4,6 @@
 #include <stk_percept/function/internal/SimpleSearcher.hpp>
 #include <stk_percept/function/internal/STKSearcher.hpp>
 #include <stk_percept/function/internal/STKSearcherDef.hpp>
-#include <stk_percept/function/internal/BuildBoundingBoxesDef.hpp>
 #include <stk_percept/ParallelUtil.hpp>
 
 namespace stk
