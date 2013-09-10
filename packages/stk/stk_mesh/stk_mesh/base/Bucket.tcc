@@ -101,7 +101,7 @@ public:
 private:
   friend class impl::BucketRepository;
   friend class impl::Partition;
-  friend class impl::OverwriteEntityFunctor;
+  friend struct impl::OverwriteEntityFunctor;
   friend class BulkData;                // Replacement friend.
   friend union Entity;
   friend struct utest::ReversePartition;
