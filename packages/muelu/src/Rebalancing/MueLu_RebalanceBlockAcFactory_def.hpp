@@ -163,8 +163,6 @@ namespace MueLu {
         SubFactoryMonitor subM(*this, ss.str(), coarseLevel);
         RCP<const Map> targetMap = rebalanceImporter->getTargetMap();
 
-        std::cout << "CHECKPOINT a" << std::endl;
-
         //const ParameterList & pL = GetParameterList();
 
         ParameterList XpetraList;
@@ -174,8 +172,6 @@ namespace MueLu {
         //}
         // NOTE: If the communicator is restricted away, Build returns Teuchos::null.
         rebAii = MatrixFactory::Build(Aii, *rebalanceImporter, targetMap, targetMap, rcp(&XpetraList,false));
-
-        std::cout << "CHECKPOINT b" << std::endl;
 
         /*if (!rebAii.is_null())
           rebAii->SetFixedBlockSize(Aii->GetFixedBlockSize());*/
@@ -187,7 +183,6 @@ namespace MueLu {
           GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebAii, ss2.str(), params);
         }
 
-        std::cout << "CHECKPOINT c" << std::endl;
       }  // rebalance matrix block A(i,i)
       else {
         rebAii = Aii;
