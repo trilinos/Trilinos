@@ -134,6 +134,8 @@ panzer::buildWorksets(const panzer::PhysicsBlock& pb,
 
      }
 
+     i->details.push_back(Teuchos::rcpFromRef(*i));
+
      return worksets_ptr;
   } // end special case
 
@@ -169,6 +171,7 @@ panzer::buildWorksets(const panzer::PhysicsBlock& pb,
     wkst->block_id = pb.elementBlockID();
     wkst->subcell_dim = pb.cellData().baseCellDimension();
     wkst->subcell_index = 0;
+    wkst->details.push_back(Teuchos::rcpFromRef(*wkst));
   }
   
   TEUCHOS_ASSERT(local_begin == local_cell_ids.end());
@@ -322,6 +325,7 @@ panzer::buildBCWorkset(const panzer::PhysicsBlock & volume_pb,
     worksets[side->first].block_id = volume_pb.elementBlockID();
     worksets[side->first].subcell_dim = volume_pb.cellData().baseCellDimension() - 1;
     worksets[side->first].subcell_index = side->first;
+    worksets[side->first].details.push_back(Teuchos::rcpFromRef(worksets[side->first]));
   }
 
   // setup the integration rules and bases

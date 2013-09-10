@@ -271,6 +271,7 @@ namespace panzer {
     fm.postRegistrationSetup(sd);
 
     panzer::GlobalEvaluationDataContainer gedc;
+    gedc.addDataObject("Scatter IC Container",gl_loc);
     gedc.addDataObject("Solution Gather Container",loc);
     fm.preEvaluate<panzer::Traits::Residual>(gedc);
 
@@ -278,8 +279,6 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
 
     panzer::Workset & workset = (*work_sets)[0];
-    workset.ghostedLinContainer = loc;
-    workset.linContainer = gl_loc;
     workset.alpha = 0.0;
     workset.beta = 2.0; // derivatives multiplied by 2
     workset.time = 0.0;

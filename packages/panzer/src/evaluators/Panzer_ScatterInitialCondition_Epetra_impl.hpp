@@ -53,6 +53,7 @@
 #include "Epetra_CrsMatrix.h"
 
 #include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
 
@@ -69,6 +70,7 @@ panzer::ScatterInitialCondition_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
 ScatterInitialCondition_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                        const Teuchos::ParameterList& p)
   : globalIndexer_(indexer) 
+  , globalDataKey_("Scatter IC Container")
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
@@ -92,6 +94,9 @@ ScatterInitialCondition_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalInde
 
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
+
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
 
   this->setName(scatterName+" Scatter Residual");
 }
@@ -119,6 +124,21 @@ postRegistrationSetup(typename Traits::SetupData d,
 // **********************************************************************
 template<typename Traits,typename LO,typename GO>
 void panzer::ScatterInitialCondition_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+  // extract linear object container
+  epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(globalDataKey_));
+ 
+  if(epetraContainer_==Teuchos::null) {
+    // extract linear object container
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
+  }
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO>
+void panzer::ScatterInitialCondition_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
    std::vector<GO> GIDs;
@@ -128,9 +148,7 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
-         = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.linContainer);
-   Teuchos::RCP<Epetra_Vector> x = epetraContainer->get_x(); 
+   Teuchos::RCP<Epetra_Vector> x = epetraContainer_->get_x(); 
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -198,6 +216,9 @@ ScatterInitialCondition_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalInde
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
 
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
+
   this->setName(scatterName+" Scatter Tangent");
 }
 
@@ -224,6 +245,21 @@ postRegistrationSetup(typename Traits::SetupData d,
 // **********************************************************************
 template<typename Traits,typename LO,typename GO>
 void panzer::ScatterInitialCondition_Epetra<panzer::Traits::Tangent, Traits,LO,GO>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+  // extract linear object container
+  epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(globalDataKey_));
+ 
+  if(epetraContainer_==Teuchos::null) {
+    // extract linear object container
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
+  }
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO>
+void panzer::ScatterInitialCondition_Epetra<panzer::Traits::Tangent, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
    TEUCHOS_ASSERT(false);
@@ -235,9 +271,7 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
-         = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.linContainer);
-   Teuchos::RCP<Epetra_Vector> x = epetraContainer->get_x(); 
+   Teuchos::RCP<Epetra_Vector> x = epetraContainer_->get_x(); 
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the

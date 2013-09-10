@@ -169,8 +169,6 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
     for (std::size_t i = 0; i < w.size(); ++i) {
       panzer::Workset& workset = w[i];
 
-      workset.ghostedLinContainer = in.ghostedContainer_;
-      workset.linContainer = in.container_;
       workset.alpha = in.alpha;
       workset.beta = in.beta;
       workset.time = in.time;
@@ -319,8 +317,6 @@ evaluateBCs(const panzer::BCType bc_type,
           local_side_fm.template preEvaluate<EvalT>(gedc);
 
           // build and evaluate fields for the workset: only one workset per face
-          workset.ghostedLinContainer = in.ghostedContainer_;
-          workset.linContainer = in.container_;
 	  workset.alpha = in.alpha;
 	  workset.beta = in.beta;
 	  workset.time = in.time;

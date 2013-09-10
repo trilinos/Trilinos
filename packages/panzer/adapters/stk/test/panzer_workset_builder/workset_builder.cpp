@@ -145,6 +145,11 @@ namespace panzer {
       TEST_EQUALITY((*worksets[i])[0].cell_vertex_coordinates(2,3,1), cell_vertex_coordinates(2,3,1));
 
       TEST_ASSERT((*worksets[i])[0].cell_local_ids == local_cell_ids);
+
+      // test that the "details" vector is properly setup (first index points to self)
+      TEST_EQUALITY((*worksets[i])[0].details.size(),1); 
+      TEST_EQUALITY((*worksets[i])[0].details[0]->cell_vertex_coordinates(0,0,0), cell_vertex_coordinates(0,0,0));
+      TEST_EQUALITY((*worksets[i])[0].details[0]->cell_vertex_coordinates(2,3,1), cell_vertex_coordinates(2,3,1));
     }
     
 
@@ -266,12 +271,15 @@ namespace panzer {
     std::map<unsigned,panzer::Workset>& workset_bc0 = *bc_worksets[0];
     TEST_EQUALITY(workset_bc0[3].num_cells, 4);
     TEST_EQUALITY(workset_bc0[3].block_id, "eblock-0_0");
+    TEST_EQUALITY(workset_bc0[3].details.size(), 1);
     std::map<unsigned,panzer::Workset>& workset_bc1 = *bc_worksets[1];
     TEST_EQUALITY(workset_bc1[1].num_cells, 4);
     TEST_EQUALITY(workset_bc1[1].block_id, "eblock-1_0");
+    TEST_EQUALITY(workset_bc1[1].details.size(), 1);
     std::map<unsigned,panzer::Workset>& workset_bc2 = *bc_worksets[2];
     TEST_EQUALITY(workset_bc2[2].num_cells, 6);
     TEST_EQUALITY(workset_bc2[2].block_id, "eblock-1_0");
+    TEST_EQUALITY(workset_bc2[2].details.size(),1);
 
     // for debugging purposes
     out << "\nWORKSEST_0 - Side 3: ";
