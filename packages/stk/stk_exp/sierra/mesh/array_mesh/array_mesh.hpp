@@ -492,7 +492,6 @@ inline
 void array_mesh::get_side_nodes(SidesetIndex sideset_index, int side, std::vector<int>& node_nums) const
 {
   int elem_num = m_sidesets[sideset_index].elem_nums[side];
-  stk::topology elem_topo = get_element_topology(elem_num);
   int elem_local_side = m_sidesets[sideset_index].elem_local_sides[side];
   get_side_nodes(elem_num, elem_local_side, node_nums);
 }
