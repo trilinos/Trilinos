@@ -860,6 +860,7 @@ void BulkData::new_bucket_callback(EntityRank rank, unsigned const* part_ord_beg
   // Allocate all field data for this bucket
   if (total_field_data_size > 0) {
     unsigned char* all_data = field_data_allocator().allocate(total_field_data_size);
+    ThrowRequireMsg(all_data != NULL, "Out of memory; please raise your ulimit");
     m_field_raw_data[rank].push_back(all_data);
 
     // Set data ptrs in field meta datas
