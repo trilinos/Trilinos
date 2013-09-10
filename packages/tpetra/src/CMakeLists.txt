@@ -33,6 +33,11 @@ APPEND_SET(HEADERS ${DIR}/${PACKAGE_NAME}_ETIHelperMacros.h)
 # C) Define the targets for package's library(s)
 #
 
+IF (KokkosClassic_ENABLE_Thrust)
+  FILE(GLOB CUDA_SOURCES *.cu)
+  PACKAGE_ADD_CUDA_LIBRARY(tpetra_cuda SOURCES ${CUDA_SOURCES})
+ENDIF()
+
 TRIBITS_ADD_LIBRARY(
   tpetra
   HEADERS ${HEADERS}

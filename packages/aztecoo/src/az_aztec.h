@@ -1636,6 +1636,7 @@ extern void   AZ_sym_rescale_vbr(double x[], int data_org[], int options[]);
 #endif
 #if !AZ_TIMERS_ENABLED
 #  define AZ_START_TIMER( label, ID ) ((void)0)
+#  define AZ_STOP_TIMER_BEFORE_EARLY_RETURN( ID ) ((void)0)
 #  define AZ_STOP_TIMER( ID ) ((void)0)
 #endif
 

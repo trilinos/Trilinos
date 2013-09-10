@@ -22,21 +22,21 @@ template <   typename Key
            , typename Compare = less<typename Impl::remove_const<Key>::type>
            , typename Hash = hash<typename Impl::remove_const<Key>::type>
         >
-class unordered_map;
+class UnorderedMap;
 
 
 template <  typename DKey, typename DT, typename DDevice
           , typename SKey, typename ST, typename SDevice
           , typename Compare, typename Hash >
-inline void deep_copy(         unordered_map<DKey, DT, DDevice, Compare, Hash> & dst
-                       , const unordered_map<SKey, ST, SDevice, Compare, Hash> & src )
+inline void deep_copy(         UnorderedMap<DKey, DT, DDevice, Compare, Hash> & dst
+                       , const UnorderedMap<SKey, ST, SDevice, Compare, Hash> & src )
 {
   Impl::UnorderedMap::deep_copy_impl(dst, src);
 }
 
 
 
-enum unordered_map_insert_state
+enum UnorderedMap_insert_state
 {
     INSERT_FAILED
   , INSERT_SUCCESS
@@ -49,7 +49,7 @@ template <   typename Key
            , typename Compare
            , typename Hash
         >
-class unordered_map
+class UnorderedMap
 {
 public: // public types and constants
   typedef Impl::UnorderedMap::map_data<Key,T,Device,Compare,Hash> map_data;
@@ -67,9 +67,9 @@ public: // public types and constants
   typedef typename map_data::node_block_type node_block_type;
   typedef typename map_data::size_type size_type;
 
-  typedef pair<unordered_map_insert_state, pointer> insert_result;
+  typedef pair<UnorderedMap_insert_state, pointer> insert_result;
 
-  typedef unordered_map<Key,T,typename Device::host_mirror_device_type,Compare,Hash> HostMirror;
+  typedef UnorderedMap<Key,T,typename Device::host_mirror_device_type,Compare,Hash> HostMirror;
 
 private:
 
@@ -81,7 +81,7 @@ private:
 
 public: //public member functions
 
-  unordered_map(  uint32_t arg_num_nodes = 0
+  UnorderedMap(  uint32_t arg_num_nodes = 0
                 , compare_type compare = compare_type()
                 , hash_type hash = hash_type()
                )
@@ -104,7 +104,7 @@ public: //public member functions
     const uint32_t curr_size = size();
     new_capacity = new_capacity < curr_size ? curr_size : new_capacity;
 
-    unordered_map<key_type, mapped_type, device_type, compare_type, hash_type>
+    UnorderedMap<key_type, mapped_type, device_type, compare_type, hash_type>
       tmp(new_capacity, m_data.key_compare, m_data.key_hash);
 
     if (new_capacity > 0u && failed_inserts() == 0u ) {
@@ -396,7 +396,7 @@ private: // private members
   map_data m_data;
 
   template <typename KKey, typename TT, typename DDevice, typename CCompare, typename HHash>
-  friend class unordered_map;
+  friend class UnorderedMap;
 
   template <  class MapDst, class MapSrc >
   friend void Impl::UnorderedMap::deep_copy_impl( MapDst & dst, const MapSrc & src);
@@ -408,7 +408,7 @@ template <   typename Key
            , typename Compare
            , typename Hash
         >
-class unordered_map< const Key, T, Device, Compare, Hash>
+class UnorderedMap< const Key, T, Device, Compare, Hash>
 {
 public: // public types and constants
   typedef Impl::UnorderedMap::map_data<const Key, T,Device,Compare,Hash> map_data;
@@ -425,16 +425,16 @@ public: // public types and constants
   typedef typename map_data::node_type node_type;
   typedef typename map_data::size_type size_type;
 
-  typedef unordered_map<Key,T,typename Device::host_mirror_device_type,Compare,Hash> HostMirror;
+  typedef UnorderedMap<Key,T,typename Device::host_mirror_device_type,Compare,Hash> HostMirror;
 
 public: //public member functions
 
-  unordered_map()
+  UnorderedMap()
     : m_data()
   {}
 
   template <typename UMap>
-  unordered_map(  const UMap & umap )
+  UnorderedMap(  const UMap & umap )
     : m_data( umap.m_data )
   {}
 
@@ -451,7 +451,7 @@ public: //public member functions
     const uint32_t curr_size = size();
     new_capacity = new_capacity < curr_size ? curr_size : new_capacity;
 
-    unordered_map<key_type, mapped_type, device_type, compare_type, hash_type>
+    UnorderedMap<key_type, mapped_type, device_type, compare_type, hash_type>
       tmp(new_capacity, m_data.key_compare, m_data.key_hash);
 
     if (new_capacity > 0u && failed_inserts() == 0u ) {
@@ -568,7 +568,7 @@ private: // private members
   map_data m_data;
 
   template <typename KKey, typename TT, typename DDevice, typename CCompare, typename HHash>
-  friend class unordered_map;
+  friend class UnorderedMap;
 
   template <  class MapDst, class MapSrc >
   friend void Impl::UnorderedMap::deep_copy_impl( MapDst & dst, const MapSrc & src);
@@ -581,7 +581,7 @@ template <   typename Key
            , typename Compare
            , typename Hash
         >
-class unordered_map< const Key, const T, Device, Compare, Hash>
+class UnorderedMap< const Key, const T, Device, Compare, Hash>
 {
 public: // public types and constants
   typedef Impl::UnorderedMap::map_data<const Key, const T,Device,Compare,Hash> map_data;
@@ -598,16 +598,16 @@ public: // public types and constants
   typedef typename map_data::node_type node_type;
   typedef typename map_data::size_type size_type;
 
-  typedef unordered_map<Key,T,typename Device::host_mirror_device_type,Compare,Hash> HostMirror;
+  typedef UnorderedMap<Key,T,typename Device::host_mirror_device_type,Compare,Hash> HostMirror;
 
 public: //public member functions
 
-  unordered_map()
+  UnorderedMap()
     : m_data()
   {}
 
   template <typename UMap>
-  unordered_map(  const UMap & umap )
+  UnorderedMap(  const UMap & umap )
     : m_data( umap.m_data )
   {}
 
@@ -624,7 +624,7 @@ public: //public member functions
     const uint32_t curr_size = size();
     new_capacity = new_capacity < curr_size ? curr_size : new_capacity;
 
-    unordered_map<key_type, mapped_type, device_type, compare_type, hash_type>
+    UnorderedMap<key_type, mapped_type, device_type, compare_type, hash_type>
       tmp(new_capacity, m_data.key_compare, m_data.key_hash);
 
     if (new_capacity > 0u && failed_inserts() == 0u ) {
@@ -682,7 +682,7 @@ private: // private members
   map_data m_data;
 
   template <typename KKey, typename TT, typename DDevice, typename CCompare, typename HHash>
-  friend class unordered_map;
+  friend class UnorderedMap;
 
   template <  class MapDst, class MapSrc >
   friend void Impl::UnorderedMap::deep_copy_impl( MapDst & dst, const MapSrc & src);
@@ -693,7 +693,7 @@ template <   typename Key
            , typename Compare
            , typename Hash
         >
-class unordered_map< const Key, void, Device, Compare, Hash>
+class UnorderedMap< const Key, void, Device, Compare, Hash>
 {
 public: // public types and constants
   typedef Impl::UnorderedMap::map_data<const Key, void,Device,Compare,Hash> map_data;
@@ -710,16 +710,16 @@ public: // public types and constants
   typedef typename map_data::node_type node_type;
   typedef typename map_data::size_type size_type;
 
-  typedef unordered_map<Key,void,typename Device::host_mirror_device_type,Compare,Hash> HostMirror;
+  typedef UnorderedMap<Key,void,typename Device::host_mirror_device_type,Compare,Hash> HostMirror;
 
 public: //public member functions
 
-  unordered_map()
+  UnorderedMap()
     : m_data()
   {}
 
   template <typename UMap>
-  unordered_map(  const UMap & umap )
+  UnorderedMap(  const UMap & umap )
     : m_data( umap.m_data )
   {}
 
@@ -736,7 +736,7 @@ public: //public member functions
     const uint32_t curr_size = size();
     new_capacity = new_capacity < curr_size ? curr_size : new_capacity;
 
-    unordered_map<key_type, mapped_type, device_type, compare_type, hash_type>
+    UnorderedMap<key_type, mapped_type, device_type, compare_type, hash_type>
       tmp(new_capacity, m_data.key_compare, m_data.key_hash);
 
     if (new_capacity > 0u && failed_inserts() == 0u ) {
@@ -794,7 +794,7 @@ private: // private members
   map_data m_data;
 
   template <typename KKey, typename TT, typename DDevice, typename CCompare, typename HHash>
-  friend class unordered_map;
+  friend class UnorderedMap;
 
   template <  class MapDst, class MapSrc >
   friend void Impl::UnorderedMap::deep_copy_impl( MapDst & dst, const MapSrc & src);

@@ -1,12 +1,15 @@
-// @HEADER
-// ***********************************************************************
+/*
+//@HEADER
+// ************************************************************************
 //
-//                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
+//                             Kokkos
+//         Manycore Performance-Portable Multidimensional Arrays
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+//              Copyright (2012) Sandia Corporation
 //
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,17 +37,31 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
+// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
 //
-// ***********************************************************************
-// @HEADER
+// ************************************************************************
+//@HEADER
+*/
 
-template <typename Scalar>
-int mainCuda(bool test_flat, bool test_orig, bool test_lin, bool test_block,
-             bool symmetric, int device_id)
-{
-  return 0 ;
-}
+#include "KokkosCompat_View.hpp"
+#include "KokkosCompat_View_def.hpp"
 
-template int mainCuda<float>(bool, bool, bool, bool, bool, int);
-template int mainCuda<double>(bool, bool, bool, bool, bool, int);
+#include "KokkosCore_config.h"
+#include "Kokkos_Cuda.hpp"
+
+namespace Kokkos {
+  namespace Compat {
+
+#define COMPAT_INSTANT_CUDA(T) \
+    COMPAT_INSTANT(T,Kokkos::Cuda)
+
+    COMPAT_INSTANT_CUDA(float)
+    COMPAT_INSTANT_CUDA(double)
+    COMPAT_INSTANT_CUDA(int)
+    COMPAT_INSTANT_CUDA(long)
+    COMPAT_INSTANT_CUDA(unsigned)
+    COMPAT_INSTANT_CUDA(unsigned long)
+    COMPAT_INSTANT_CUDA(char)
+
+  } // namespace Compat
+} // namespace Kokkos

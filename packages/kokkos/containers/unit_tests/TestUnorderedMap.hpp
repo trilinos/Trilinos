@@ -166,8 +166,8 @@ void test_insert_close(  uint32_t num_nodes
                        , uint32_t num_duplicates
                       )
 {
-  typedef Kokkos::unordered_map<uint32_t,uint32_t, Device> map_type;
-  typedef Kokkos::unordered_map<const uint32_t,const uint32_t, Device> const_map_type;
+  typedef Kokkos::UnorderedMap<uint32_t,uint32_t, Device> map_type;
+  typedef Kokkos::UnorderedMap<const uint32_t,const uint32_t, Device> const_map_type;
 
   const uint32_t expected_inserts = (num_inserts + num_duplicates -1u) / num_duplicates;
 
@@ -199,8 +199,8 @@ void test_insert_far(  uint32_t num_nodes
                        , uint32_t num_duplicates
                       )
 {
-  typedef Kokkos::unordered_map<uint32_t,uint32_t, Device> map_type;
-  typedef Kokkos::unordered_map<const uint32_t,const uint32_t, Device> const_map_type;
+  typedef Kokkos::UnorderedMap<uint32_t,uint32_t, Device> map_type;
+  typedef Kokkos::UnorderedMap<const uint32_t,const uint32_t, Device> const_map_type;
 
   const uint32_t expected_inserts = (num_inserts + num_duplicates -1u) / num_duplicates;
 
@@ -229,8 +229,8 @@ void test_insert_far(  uint32_t num_nodes
 template <typename Device>
 void test_failed_insert( uint32_t num_nodes)
 {
-  typedef Kokkos::unordered_map<uint32_t,uint32_t, Device> map_type;
-  typedef Kokkos::unordered_map<const uint32_t,const uint32_t, Device> const_map_type;
+  typedef Kokkos::UnorderedMap<uint32_t,uint32_t, Device> map_type;
+  typedef Kokkos::UnorderedMap<const uint32_t,const uint32_t, Device> const_map_type;
 
   map_type map(num_nodes);
   Device::fence();
@@ -248,8 +248,8 @@ void test_insert_mark_pending_delete(  uint32_t num_nodes
                                      , uint32_t num_duplicates
                                     )
 {
-  typedef Kokkos::unordered_map<uint32_t,uint32_t, Device> map_type;
-  typedef Kokkos::unordered_map<const uint32_t,const uint32_t, Device> const_map_type;
+  typedef Kokkos::UnorderedMap<uint32_t,uint32_t, Device> map_type;
+  typedef Kokkos::UnorderedMap<const uint32_t,const uint32_t, Device> const_map_type;
 
   const uint32_t expected_inserts = (num_inserts + num_duplicates -1u) / num_duplicates;
 
@@ -295,9 +295,9 @@ void test_insert_mark_pending_delete(  uint32_t num_nodes
 template <typename Device>
 void test_assignement_operators( uint32_t num_nodes )
 {
-  typedef Kokkos::unordered_map<uint32_t,uint32_t, Device> map_type;
-  typedef Kokkos::unordered_map<const uint32_t, uint32_t, Device> non_insertable_map_type;
-  typedef Kokkos::unordered_map<const uint32_t, const uint32_t, Device> const_map_type;
+  typedef Kokkos::UnorderedMap<uint32_t,uint32_t, Device> map_type;
+  typedef Kokkos::UnorderedMap<const uint32_t, uint32_t, Device> non_insertable_map_type;
+  typedef Kokkos::UnorderedMap<const uint32_t, const uint32_t, Device> const_map_type;
 
   map_type map(num_nodes);
   Device::fence();
@@ -332,12 +332,12 @@ void test_deep_copy( uint32_t num_nodes )
 {
   typedef typename Device::host_mirror_device_type host_type ;
 
-  typedef Kokkos::unordered_map<uint32_t,uint32_t, Device> map_type;
-  typedef Kokkos::unordered_map<const uint32_t, uint32_t, Device> non_insertable_map_type;
-  typedef Kokkos::unordered_map<const uint32_t, const uint32_t, Device> const_map_type;
+  typedef Kokkos::UnorderedMap<uint32_t,uint32_t, Device> map_type;
+  typedef Kokkos::UnorderedMap<const uint32_t, uint32_t, Device> non_insertable_map_type;
+  typedef Kokkos::UnorderedMap<const uint32_t, const uint32_t, Device> const_map_type;
 
-  typedef Kokkos::unordered_map<uint32_t, uint32_t, host_type> host_map_type;
-  typedef Kokkos::unordered_map<const uint32_t, const uint32_t, host_type> const_host_map_type;
+  typedef Kokkos::UnorderedMap<uint32_t, uint32_t, host_type> host_map_type;
+  typedef Kokkos::UnorderedMap<const uint32_t, const uint32_t, host_type> const_host_map_type;
 
   map_type map(num_nodes);
   Device::fence();

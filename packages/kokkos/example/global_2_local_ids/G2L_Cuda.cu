@@ -1,12 +1,13 @@
-// @HEADER
-// ***********************************************************************
-//
-//                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
-//
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
+/*
+//@HEADER
+// ************************************************************************
+// 
+//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
+//              Copyright (2012) Sandia Corporation
+// 
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,17 +35,22 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-//
-// ***********************************************************************
-// @HEADER
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
+*/
 
-template <typename Scalar>
-int mainCuda(bool test_flat, bool test_orig, bool test_lin, bool test_block,
-             bool symmetric, int device_id)
+#include <G2L.hpp>
+#include <Kokkos_Cuda.hpp>
+#include <iostream>
+
+namespace G2L {
+
+size_t run_cuda(unsigned num_ids, unsigned num_find_iterations)
 {
-  return 0 ;
+  std::cout << "Cuda" << std::endl;
+  return run_test<Kokkos::Cuda>(num_ids,num_find_iterations);
 }
 
-template int mainCuda<float>(bool, bool, bool, bool, bool, int);
-template int mainCuda<double>(bool, bool, bool, bool, bool, int);
+} //namespace G2L

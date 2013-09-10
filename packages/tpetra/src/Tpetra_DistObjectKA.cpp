@@ -1,11 +1,12 @@
+/*
 // @HEADER
 // ***********************************************************************
 //
-//                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -34,17 +35,32 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
-// ***********************************************************************
+// ************************************************************************
 // @HEADER
+*/
 
-template <typename Scalar>
-int mainCuda(bool test_flat, bool test_orig, bool test_lin, bool test_block,
-             bool symmetric, int device_id)
-{
-  return 0 ;
-}
+#include "Tpetra_DistObjectKA.hpp"
 
-template int mainCuda<float>(bool, bool, bool, bool, bool, int);
-template int mainCuda<double>(bool, bool, bool, bool, bool, int);
+#if TPETRA_USE_KOKKOS_DISTOBJECT
+
+#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+
+#include "Tpetra_ETIHelperMacros.h"
+#include "Tpetra_DistObjectKA_def.hpp"
+
+namespace Tpetra {
+
+ TPETRA_ETI_MANGLING_TYPEDEFS()
+
+ TPETRA_INSTANTIATE_PLGN(TPETRA_DISTOBJECTKA_INSTANT)
+
+ // The "SLGN" stuff above doesn't work for Packet=char, which is the base class for Tpetra::CrsMatrix
+ TPETRA_INSTANTIATE_LGN(TPETRA_DISTOBJECTKA_INSTANT_CHAR)
+
+} // namespace Tpetra
+
+#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+
+#endif // TPETRA_USE_KOKKOS_DISTOBJECT
