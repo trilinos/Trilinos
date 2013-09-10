@@ -19,6 +19,10 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_BaseClass.hpp"
 
+// MPI helper
+#define sumAll(rcpComm, in, out)                                        \
+  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
+
 namespace MueLu {
 
   //! @brief Local permutation strategy
