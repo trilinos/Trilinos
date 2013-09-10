@@ -2,10 +2,13 @@ INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../fixture)
 
 SET(SOURCES "")
 
 FILE(GLOB SOURCES *.cpp)
+
+LIST( APPEND SOURCES ../fixture/BoxElemPart.cpp)
 
 IF( Kokkos_ENABLE_Cuda )
 
@@ -25,6 +28,6 @@ TRIBITS_ADD_EXECUTABLE(
   feint
   SOURCES ${SOURCES}
   COMM serial mpi
-  DEPLIBS kokkosexample_fixture
+  DEPLIBS kokkoscore
   )
 
