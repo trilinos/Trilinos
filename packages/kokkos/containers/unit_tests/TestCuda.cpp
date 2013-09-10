@@ -87,25 +87,25 @@ extern void cuda_test_vector_combinations(unsigned int size);
 
 
 #define CUDA_INSERT_TEST( name, num_nodes, num_inserts, num_duplicates, repeat )                                \
-  TEST_F( cuda, unordered_map_insert_##name##_##num_nodes##_##num_inserts##_##num_duplicates##_##repeat##x) {   \
+  TEST_F( cuda, UnorderedMap_insert_##name##_##num_nodes##_##num_inserts##_##num_duplicates##_##repeat##x) {   \
     for (int i=0; i<repeat; ++i)                                                                                \
       cuda_test_insert_##name(num_nodes,num_inserts,num_duplicates);                                            \
   }
 
 #define CUDA_FAILED_INSERT_TEST( num_nodes, repeat )                           \
-  TEST_F( cuda, unordered_map_failed_insert_##num_nodes##_##repeat##x) {       \
+  TEST_F( cuda, UnorderedMap_failed_insert_##num_nodes##_##repeat##x) {       \
     for (int i=0; i<repeat; ++i)                                               \
       cuda_test_failed_insert(num_nodes);                                      \
   }
 
 #define CUDA_ASSIGNEMENT_TEST( num_nodes, repeat )                               \
-  TEST_F( cuda, unordered_map_assignment_operators_##num_nodes##_##repeat##x) {  \
+  TEST_F( cuda, UnorderedMap_assignment_operators_##num_nodes##_##repeat##x) {  \
     for (int i=0; i<repeat; ++i)                                                 \
       cuda_test_assignment_operators(num_nodes);                                 \
   }
 
 #define CUDA_DEEP_COPY( num_nodes, repeat )                             \
-  TEST_F( cuda, unordered_map_deep_copy##num_nodes##_##repeat##x) {       \
+  TEST_F( cuda, UnorderedMap_deep_copy##num_nodes##_##repeat##x) {       \
     for (int i=0; i<repeat; ++i)                                               \
       cuda_test_deep_copy(num_nodes);                     \
   }

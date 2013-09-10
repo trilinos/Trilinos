@@ -1,21 +1,27 @@
-#ifndef KOKKOS_TEST_GLOBAL_TO_LOCAL_IDS_HPP
-#define KOKKOS_TEST_GLOBAL_TO_LOCAL_IDS_HPP
+#ifndef KOKKOS_GLOBAL_TO_LOCAL_IDS_HPP
+#define KOKKOS_GLOBAL_TO_LOCAL_IDS_HPP
 
+#include <Kokkos_Parallel.hpp>
+#include <Kokkos_ParallelReduce.hpp>
 #include <Kokkos_View.hpp>
+
 #include <Kokkos_UnorderedMap.hpp>
+
 #include <vector>
 #include <algorithm>
+#include <iomanip>
 
 #include <impl/Kokkos_Timer.hpp>
 
 // This test will simulate global ids
 
-namespace Performance {
+namespace G2L {
 
 static const unsigned begin_id_size = 256u;
 static const unsigned end_id_size = 1u << 25;
 static const unsigned id_step = 2u;
 
+//use to help generate global ids
 union helper
 {
   uint32_t word;
@@ -23,6 +29,7 @@ union helper
 };
 
 
+//generate a unique global id from the local id
 template <typename Device>
 struct generate_ids
 {
@@ -61,6 +68,7 @@ struct generate_ids
 
 };
 
+// fill a map of global_id -> local_id
 template <typename Device>
 struct fill_map
 {
@@ -86,6 +94,7 @@ struct fill_map
 
 };
 
+// check that the global id is found and that it maps to the local id
 template <typename Device>
 struct find_test
 {
@@ -125,8 +134,9 @@ struct find_test
 
 };
 
+// run test
 template <typename Device>
-void test_global_to_local_ids(unsigned num_ids)
+size_t test_global_to_local_ids(unsigned num_ids, unsigned capacity, unsigned num_find_iterations)
 {
 
   typedef Device device_type;
@@ -135,18 +145,17 @@ void test_global_to_local_ids(unsigned num_ids)
   typedef Kokkos::View<uint32_t*,device_type> local_id_view;
   typedef Kokkos::UnorderedMap<uint32_t,size_type,device_type> global_id_view;
 
-  //size
-  std::cout << num_ids << ", ";
-
   double elasped_time = 0;
   Kokkos::Impl::Timer timer;
 
   local_id_view local_2_global("local_ids", num_ids);
-  global_id_view global_2_local((3u*num_ids)/2u);
+  global_id_view global_2_local(capacity);
+
+  int shiftw = 15;
 
   //create
   elasped_time = timer.seconds();
-  std::cout << elasped_time << ", ";
+  std::cout << std::setw(shiftw) <<  "allocate: " <<  elasped_time << std::endl;
   timer.reset();
 
   // generate unique ids
@@ -156,7 +165,7 @@ void test_global_to_local_ids(unsigned num_ids)
 
   // generate
   elasped_time = timer.seconds();
-  std::cout << elasped_time << ", ";
+  std::cout << std::setw(shiftw) << "generate: " <<  elasped_time << std::endl;
   timer.reset();
 
   {
@@ -165,26 +174,53 @@ void test_global_to_local_ids(unsigned num_ids)
 
   // fill
   elasped_time = timer.seconds();
-  std::cout << elasped_time << ", ";
+  std::cout << std::setw(shiftw) << "fill: " <<  elasped_time << std::endl;
   timer.reset();
 
 
-  size_t num_errors = 0;
-  for (int i=0; i<100; ++i)
-  {
-    find_test<Device> find(global_2_local, local_2_global,num_errors);
+  size_t num_errors = global_2_local.failed_inserts();
+
+  if (num_errors == 0u) {
+    for (unsigned i=0; i<num_find_iterations; ++i)
+    {
+      find_test<Device> find(global_2_local, local_2_global,num_errors);
+    }
+
+    // find
+    elasped_time = timer.seconds();
+    std::cout << std::setw(shiftw) << "lookup: " <<  elasped_time << std::endl;
+  }
+  else {
+    std::cout << "    !!! Fill Failed !!!" << std::endl;
   }
 
-  // find
-  elasped_time = timer.seconds();
-  std::cout << elasped_time << std::endl;
+  return num_errors;
+}
 
-  ASSERT_EQ( num_errors, 0u);
+template <typename Device>
+size_t run_test(unsigned num_ids, unsigned num_find_iterations)
+{
+  // expect to fail
+  unsigned capacity = (num_ids*2u)/3u;
+  std::cout << "  capacity at 66%" << std::endl;
+  test_global_to_local_ids<Device>(num_ids, capacity, num_find_iterations);
+
+  //should not fail
+  std::cout << "  capacity at 100%" << std::endl;
+  capacity = num_ids;
+  size_t num_errors = test_global_to_local_ids<Device>(num_ids, capacity, num_find_iterations);
+
+  //should not fail
+  std::cout << "  capacity at 150%" << std::endl;
+  capacity = (num_ids*3u)/2u;
+  num_errors += test_global_to_local_ids<Device>(num_ids, capacity, num_find_iterations);
+
+  return num_errors;
 }
 
 
-} // namespace Performance
+} // namespace G2L
 
 
-#endif //KOKKOS_TEST_GLOBAL_TO_LOCAL_IDS_HPP
+#endif //KOKKOS_GLOBAL_TO_LOCAL_IDS_HPP
 
