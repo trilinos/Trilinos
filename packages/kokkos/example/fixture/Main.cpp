@@ -2,9 +2,14 @@
 #include <utility>
 #include <iostream>
 
-#include <Kokkos_Threads.hpp>
-#include <Kokkos_Cuda.hpp>
+#include <KokkosCore_config.h>
+
 #include <BoxElemPart.hpp>
+
+#include <Kokkos_Threads.hpp>
+#if defined( KOKKOS_HAVE_CUDA )
+#include <Kokkos_Cuda.hpp>
+#endif
 
 namespace Kokkos {
 namespace Example {

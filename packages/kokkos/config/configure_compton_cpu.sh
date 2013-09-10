@@ -24,7 +24,7 @@ CMAKE_PROJECT_DIR="${HOME}/Trilinos"
 
 # Location for installation:
 
-CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D CMAKE_INSTALL_PREFIX=/home/projects/kokkos/mic/`date +%F`"
+CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D CMAKE_INSTALL_PREFIX=/home/projects/kokkos/host/`date +%F`"
 
 #-----------------------------------------------------------------------------
 # General build options.
@@ -42,13 +42,17 @@ CUDA_ARCH=""
 # CUDA_ARCH="30"
 # CUDA_ARCH="35"
 
+# Build with Intel compiler
+
+INTEL=ON
+
 # Build for MIC architecture:
 
-INTEL_XEON_PHI=ON
+# INTEL_XEON_PHI=ON
 
 # Build with HWLOC at location:
 
-HWLOC_BASE_DIR="/home/projects/libraries/mic/hwloc/1.6.2"
+HWLOC_BASE_DIR="/home/projects/libraries/host/hwloc/1.6.2"
 
 # Location for MPI to use in examples:
 

@@ -5,7 +5,11 @@
 #include <KokkosCore_config.h>
 #include <Kokkos_hwloc.hpp>
 #include <Kokkos_Threads.hpp>
+
+#if defined( KOKKOS_HAVE_CUDA )
 #include <Kokkos_Cuda.hpp>
+#endif
+
 #include <feint_fwd.hpp>
 
 int main()
