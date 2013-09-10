@@ -385,7 +385,7 @@ namespace MueLu {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_ML)
     ML_Comm* comm;
     ML_Comm_Create(&comm);
-    fos << "****** USING ML's MATRIX MATRIX MULTIPLY (LNM version) ******" << std::endl;
+    //fos << "****** USING ML's MATRIX MATRIX MULTIPLY (LNM version) ******" << std::endl;
 #ifdef HAVE_MPI
     // ML_Comm uses MPI_COMM_WORLD, so try to use the same communicator as epA.
     const Epetra_MpiComm * Mcomm = dynamic_cast<const Epetra_MpiComm*>(&(epA.Comm()));
