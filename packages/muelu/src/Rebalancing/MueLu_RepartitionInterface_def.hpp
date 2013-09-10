@@ -48,6 +48,9 @@ namespace MueLu {
     RCP<Xpetra::Vector<GO, LO, GO, NO> > amalgPartition = Get< RCP<Xpetra::Vector<GO, LO, GO, NO> > >(level, "AmalgamatedPartition");
     RCP<AmalgamationInfo> amalgInfo                     = Get< RCP<AmalgamationInfo> >(level, "UnAmalgamationInfo");
 
+    RCP<const Teuchos::Comm< int > > comm = A->getRowMap()->getComm();
+    const int myRank = comm->getRank();
+
     ArrayRCP<GO> amalgPartitionData = amalgPartition->getDataNonConst(0);
 
     RCP<const Map> rowMap        = A->getRowMap();
@@ -100,18 +103,21 @@ namespace MueLu {
       // the results stored in array. The decomposition vector is created using the rowMap of A
 
       // transform local node id to global node id.
-      GO gNodeId = nodeMap->getGlobalElement(i);
+      //GO gNodeId = nodeMap->getGlobalElement(i);
 
       // extract global DOF ids that belong to gNodeId
-      std::vector<GlobalOrdinal> DOFs = (*nodegid2dofgids)[gNodeId];
-
-      for(size_t j=0; j<DOFs.size(); j++) {
+      /*std::vector<GlobalOrdinal> DOFs = (*nodegid2dofgids)[gNodeId];
+      for(size_t j=0; j<stridedblocksize; j++) {
+        decompEntries[i*stridedblocksize + j] = myRank;
+      }*/
+      for(size_t j=0; j<stridedblocksize/*DOFs.size()*/; j++) {
         // transform global DOF ids to local DOF ids using rowMap
         // note: The vector decomposition is based on rowMap
-        LO lDofId = rowMap->getLocalElement(DOFs[j]);
+        //LO lDofId = rowMap->getLocalElement(DOFs[j]);     // -> i doubt that we need this!
 
         // put the same domain id to all DOFs of the same node
         decompEntries[i*stridedblocksize + j] = amalgPartitionData[i];
+        //decompEntries[lDofId] = amalgPartitionData[i];
       }
 
     }
