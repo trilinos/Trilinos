@@ -370,7 +370,9 @@ namespace stk {
                     {
                       elems.push_back(element);
                       ++nele;
-                      if (DEBUG_REMOVE_OLD_PARTS) std::cout << "tmp adding to oldParts = " << element << std::endl;
+                      if (DEBUG_REMOVE_OLD_PARTS) {
+                        std::cout << "tmp adding to oldParts = "; m_eMesh.print(element); std::cout << std::endl;
+                      }
                     }
                 }
             }
@@ -379,7 +381,9 @@ namespace stk {
 
       for (unsigned ielem=0; ielem < elems.size(); ielem++)
         {
-          if (DEBUG_REMOVE_OLD_PARTS) std::cout << "tmp addOldElementsToPart element = " << elems[ielem] << std::endl;
+          if (DEBUG_REMOVE_OLD_PARTS) {
+            std::cout << "tmp addOldElementsToPart element = "; m_eMesh.print(elems[ielem]); std::cout << std::endl;
+          }
           m_eMesh.get_bulk_data()->change_entity_parts( elems[ielem], add_parts, remove_parts );
         }
 
@@ -1078,7 +1082,7 @@ namespace stk {
 
           for (unsigned irank = 0; irank < ranks.size(); irank++)
             {
-
+              //std::cout << "removeOldElements irank= " << irank << " ranks[]= " << ranks[irank] << std::endl;
 #if PERCEPT_USE_FAMILY_TREE
               if (irank == 0)
                 removeFamilyTrees();
@@ -1161,6 +1165,8 @@ namespace stk {
       std::vector<stk::mesh::EntityRank> ranks_to_be_deleted;
       ranks_to_be_deleted.push_back(stk::mesh::MetaData::ELEMENT_RANK);
       ranks_to_be_deleted.push_back(m_eMesh.side_rank());
+      if (m_eMesh.get_spatial_dim() == 3)
+        ranks_to_be_deleted.push_back(m_eMesh.edge_rank());
 
       //std::cout << "tmp srk ranks_to_be_deleted= " << ranks_to_be_deleted << std::endl;
 
@@ -3508,8 +3514,7 @@ namespace stk {
 #else
                       elements_to_be_destroyed.insert(element_p);
 #endif
-                      //std::cout << "tmp removing elem = " << *element_p << " ";
-                      //m_eMesh.print_entity(std::cout, *element_p);
+                      //std::cout << "tmp removing elem = "; m_eMesh.print(element_p);
                     }
                 }
             }
@@ -3597,7 +3602,9 @@ namespace stk {
               shards::CellTopology cell_topo(m_eMesh.get_cell_topology(element_p));
               std::cout << "tmp Refiner::removeElements couldn't remove element in pass2,...\n tmp destroy_entity returned false: cell= " << cell_topo.getName() << std::endl;
               const percept::MyPairIterRelation elem_relations (m_eMesh, element_p, m_eMesh.entity_rank(element_p)+1);
-              std::cout << "tmp elem_relations.size() = " << elem_relations.size() << std::endl;
+              std::cout << "tmp elem_relations[rank+1].size() = " << elem_relations.size() << std::endl;
+              const percept::MyPairIterRelation elem_relations_elem (m_eMesh, element_p, m_eMesh.element_rank());
+              std::cout << "tmp elem_relations[3].size() = " << elem_relations_elem.size() << std::endl;
 
               throw std::logic_error("Refiner::removeElements couldn't remove element, destroy_entity returned false.");
             }

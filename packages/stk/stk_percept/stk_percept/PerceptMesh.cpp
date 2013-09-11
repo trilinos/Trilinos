@@ -4647,9 +4647,13 @@ namespace stk {
                 {
                   stk::mesh::Entity element = bucket[iElement];
                   if (list && list->find(element) == list->end()) continue;
-                  ++nelem;
+                  const CellTopologyData * const cell_topo_data = this->get_cell_topology(element);
                   const MyPairIterRelation elem_nodes(*get_bulk_data(), element, node_rank() );
                   nnode_per_elem = elem_nodes.size(); // FIXME for hetero mesh
+                  if (nnode_per_elem == 0 || !cell_topo_data)
+                    continue;
+
+                  ++nelem;
                   nelem_node_size += nnode_per_elem + 1;
                   for (unsigned inode = 0; inode < elem_nodes.size(); inode++)
                     {
@@ -4691,6 +4695,10 @@ namespace stk {
                   stk::mesh::Entity element = bucket[iElement];
                   if (list && list->find(element) == list->end()) continue;
                   const MyPairIterRelation elem_nodes(*get_bulk_data(), element, node_rank() );
+                  const CellTopologyData * const cell_topo_data = this->get_cell_topology(element);
+                  if (elem_nodes.size() == 0 || !cell_topo_data)
+                    continue;
+
                   file << elem_nodes.size() << " ";
                   for (unsigned inode = 0; inode < elem_nodes.size(); inode++)
                     {
@@ -4714,6 +4722,10 @@ namespace stk {
                 {
                   stk::mesh::Entity element = bucket[iElement];
                   if (list && list->find(element) == list->end()) continue;
+                  const CellTopologyData * const cell_topo_data = this->get_cell_topology(element);
+                  const MyPairIterRelation elem_nodes(*get_bulk_data(), element, node_rank() );
+                  if (elem_nodes.size() == 0 || !cell_topo_data)
+                    continue;
                   file << vtk_type(*this, element) << "\n";
                 }
             }
@@ -4726,7 +4738,7 @@ namespace stk {
         {
           const CellTopologyData * const cell_topo_data = this->get_cell_topology(entity);
           shards::CellTopology cell_topo(cell_topo_data);
-          out << " Elem: " << identifier(entity) << " rank= " << entity_rank(entity) << " topo: " << cell_topo.getName() << " nodes: [";
+          out << " Elem: " << identifier(entity) << " rank= " << entity_rank(entity) << " topo: " << (cell_topo_data?cell_topo.getName():"null") << " nodes: [";
 
           const MyPairIterRelation elem_nodes(*get_bulk_data(), entity, node_rank() );
           unsigned num_node = elem_nodes.size();
