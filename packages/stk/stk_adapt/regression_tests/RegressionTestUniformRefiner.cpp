@@ -2802,7 +2802,7 @@ namespace stk
                 UNIFORM_REFINER breaker(eMesh1, break_pattern, proc_rank_field);
 
                 //breaker.setRemoveOldElements(false);
-                breaker.setIgnoreSideSets(true);
+                //breaker.setIgnoreSideSets(true);
                 breaker.doBreak();
 
                 eMesh1.save_as(output_files_loc+"heterogeneous_sideset_1.e");
