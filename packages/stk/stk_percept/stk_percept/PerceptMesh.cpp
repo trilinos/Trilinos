@@ -1464,10 +1464,13 @@ namespace stk {
       if ( m_metaData == NULL) {
         throw std::runtime_error("PerceptMesh::setCoordinatesField() requires metadata ");
       }
-      m_coordinatesField = m_metaData->get_field<VectorFieldType >("coordinates");
-      if (m_coordinatesField == NULL) {
-          throw std::runtime_error("PerceptMesh::setCoordinatesField() could not obtain the field from meta data");
-      }
+      if (m_metaData->is_commit())
+        {
+          m_coordinatesField = m_metaData->get_field<VectorFieldType >("coordinates");
+          if (m_coordinatesField == NULL) {
+            throw std::runtime_error("PerceptMesh::setCoordinatesField() could not obtain the field from meta data");
+          }
+        }
     }
 
     stk::mesh::Part* PerceptMesh::
