@@ -353,10 +353,10 @@ namespace stk {
 
 
       if (0) std::cout << "tmp here 12 ordinal= " << ordinal << " [ " << getNumNewElemPerElem() << "] newElement_ptr= "<< &newElement<< std::endl;
-      bool foundSide = findSideRelations(eMesh, parent_elem, newElement);
-      if (!foundSide && eMesh.entity_rank(parent_elem) < eMesh.element_rank()) {
-        //throw std::runtime_error("UniformRefinerPatternBase:: set_parent_child_relations couldn't set child side to elem relations");
-      }
+      //bool foundSide = findSideRelations(eMesh, parent_elem, newElement);
+      //if (!foundSide && eMesh.entity_rank(parent_elem) < eMesh.element_rank()) {
+      //  //throw std::runtime_error("UniformRefinerPatternBase:: set_parent_child_relations couldn't set child side to elem relations");
+      // }
 #endif
     }
 
