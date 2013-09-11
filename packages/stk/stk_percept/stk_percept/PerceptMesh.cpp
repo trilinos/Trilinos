@@ -1376,13 +1376,21 @@ namespace stk {
       ,m_large_mesh(false)
       ,m_MAX_IDENT(0)
     {
-      if (!bulkData)
-        throw std::runtime_error("PerceptMesh::PerceptMesh: must pass in non-null bulkData");
-      m_comm = bulkData->parallel();
+      //if (!bulkData)
+      //  throw std::runtime_error("PerceptMesh::PerceptMesh: must pass in non-null bulkData");
+      if (bulkData)
+        set_bulk_data(bulkData);
 
       if (isCommitted)
         setCoordinatesField();
       s_static_singleton_instance = this;
+    }
+
+    void PerceptMesh::set_bulk_data(stk::mesh::BulkData *bulkData)
+    {
+      m_bulkData = bulkData;
+      m_comm = bulkData->parallel();
+      setCoordinatesField();
     }
 
     void PerceptMesh::
@@ -1453,8 +1461,8 @@ namespace stk {
     }
 
     void PerceptMesh::setCoordinatesField() {
-      if (m_bulkData == NULL || m_metaData == NULL) {
-        throw std::runtime_error("PerceptMesh::setCoordinatesField() requires metadata and bulkdata");
+      if ( m_metaData == NULL) {
+        throw std::runtime_error("PerceptMesh::setCoordinatesField() requires metadata ");
       }
       m_coordinatesField = m_metaData->get_field<VectorFieldType >("coordinates");
       if (m_coordinatesField == NULL) {
@@ -4482,10 +4490,12 @@ namespace stk {
         case shards::Hexahedron<20>::key:
           return "25";
 
+        case shards::Line<2>::key:
+          return "3";
+
           // unimplemented
         case shards::Node::key: return "Node";
         case shards::Particle::key: return "Particle";
-        case shards::Line<2>::key: return "Line<2>";
         case shards::Line<3>::key: return "Line<3>";
         case shards::ShellLine<2>::key: return "ShellLine<2>";
         case shards::ShellLine<3>::key: return "ShellLine<3>";
@@ -4617,6 +4627,8 @@ namespace stk {
     void PerceptMesh::dump_vtk(std::string filename, bool dump_sides, std::set<stk::mesh::Entity> *list)
     {
       unsigned sdr = (dump_sides?side_rank():element_rank());
+      if (get_spatial_dim()==3 && dump_sides) sdr = edge_rank();
+
       typedef std::map<stk::mesh::Entity , unsigned, stk::mesh::EntityLess> NodeMap;
       NodeMap node_map(*get_bulk_data());
       unsigned nnode_per_elem=0;

@@ -589,7 +589,7 @@ namespace stk {
 
       if (0) doPrintSizes();
 
-      get_side_part_relations(false, m_side_part_map);
+      //get_side_part_relations(false, m_side_part_map);
       checkPolarity(m_eMesh);
 
       CommDataType buffer_entry;
@@ -1522,13 +1522,14 @@ namespace stk {
       stk::mesh::PartVector * fromParts = &(m_breakPattern[irank]->getFromParts());
       if (fromParts)
         {
+          if (0) std::cout << "tmp srk1 rank= " << rank << " fromParts->size()= " << fromParts->size() << std::endl;
           selector = mesh::selectUnion(*fromParts);
         }
 
       std::vector<stk::mesh::Entity> elems;
 
       const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( rank );
-      //std::cout << "tmp srk1 rank= " << rank << " buckets.size= " << buckets.size() << std::endl;
+      if (0) std::cout << "tmp srk1 rank= " << rank << " buckets.size= " << buckets.size() << std::endl;
       for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
           stk::mesh::Bucket & bucket = **k ;
@@ -2745,6 +2746,55 @@ namespace stk {
         }
     }
 
+    static bool bucket_only_auto_part(stk::mesh::Bucket& bucket)
+    {
+      stk::mesh::PartVector side_parts;
+      bucket.supersets(side_parts);
+      for (unsigned isp=0; isp < side_parts.size(); ++isp)
+        {
+          if ( !stk::mesh::is_auto_declared_part(*side_parts[isp]) )
+            {
+              return false;
+            }
+        }
+      return true;
+    }
+
+    static bool s_debugCSF = false;
+
+    bool Refiner::connect(stk::mesh::Entity side, bool& valid_side_part_map)
+    {
+      bool found = false;
+      percept::MyPairIterRelation side_nodes (m_eMesh, side,m_eMesh.node_rank());
+
+      for (unsigned isnode=0; isnode < side_nodes.size(); isnode++)
+        {
+          percept::MyPairIterRelation node_elements ( m_eMesh, side_nodes[isnode].entity(), m_eMesh.element_rank());
+          for (unsigned ienode=0; ienode < node_elements.size(); ienode++)
+            {
+              stk::mesh::Entity element = node_elements[ienode].entity();
+
+              //if (element.relations(node_rank).size() == 0)
+              if (m_eMesh.get_bulk_data()->num_connectivity(element, m_eMesh.node_rank()) == 0)
+                continue;
+              if (m_eMesh.isGhostElement(element))
+                continue;
+
+              // FIXME
+              if (m_eMesh.isLeafElement(element))
+                {
+                  if (connectSidesForced(element, side, valid_side_part_map))
+                    {
+                      found = true;
+                    }
+                }
+              if (found) break;
+            }
+          if (found) break;
+        }
+      return found;
+    }
+
     // fast reconnector
     void Refiner::
     fix_side_sets_2(bool allow_not_found)
@@ -2779,23 +2829,37 @@ namespace stk {
           for ( vector<stk::mesh::Bucket*>::const_iterator it_side_bucket = side_buckets.begin() ; it_side_bucket != side_buckets.end() ; ++it_side_bucket )
             {
               stk::mesh::Bucket & side_bucket = **it_side_bucket ;
+              // if (bucket_only_auto_part(side_bucket))
+              //   {
+              //     continue;
+              //   }
+              if (m_eMesh.is_in_geometry_parts(m_geomFile, side_bucket))
+                {
+                  continue;
+                }
+
               const unsigned num_elements_in_side_bucket = side_bucket.size();
               for (unsigned i_side = 0; i_side < num_elements_in_side_bucket; i_side++)
                 {
                   stk::mesh::Entity side = side_bucket[i_side];
 
-                  if (m_eMesh.isGhostElement(side))
-                    continue;
-
-                  //if (side.relations(node_rank).size() == 0)
-                  if (m_eMesh.get_bulk_data()->num_connectivity(side, node_rank) == 0)
-                    continue;
-
+                  bool isGhostElement = m_eMesh.isGhostElement(side);
+                  bool nconn = m_eMesh.get_bulk_data()->num_connectivity(side, node_rank) == 0;
+                  bool notIsLeaf = !m_eMesh.isLeafElement(side);
                   // skip if it's a parent
-                  if (!m_eMesh.isLeafElement(side))
-                    continue;
 
-                  side_set.insert(side);
+                  bool doContinue = isGhostElement || nconn || notIsLeaf;
+                  if (0)
+                    {
+                      std::cout << (doContinue?"not ":"") << " inserting side = " << side << " side-is-leaf? " << m_eMesh.isLeafElement(side)
+                                << " isGhostElement= " << isGhostElement
+                                << " nconn= " << nconn
+                                << " notIsLeaf = " << notIsLeaf
+                                << std::endl;
+                      m_eMesh.print(side);
+                    }
+                  if (!doContinue)
+                    side_set.insert(side);
                 }
             }
           for (SetOfEntities::iterator ise=side_set.begin(); ise != side_set.end(); ++ise)
@@ -2828,6 +2892,10 @@ namespace stk {
           for ( vector<stk::mesh::Bucket*>::const_iterator it_side_bucket = side_buckets.begin() ; it_side_bucket != side_buckets.end() ; ++it_side_bucket )
             {
               stk::mesh::Bucket & side_bucket = **it_side_bucket ;
+              if (bucket_only_auto_part(side_bucket))
+                {
+                  continue;
+                }
 
               if (m_eMesh.is_in_geometry_parts(m_geomFile, side_bucket))
                 {
@@ -2860,140 +2928,8 @@ namespace stk {
 
               bool found = false;
               bool valid_side_part_map = false;
-              percept::MyPairIterRelation side_nodes (m_eMesh, side,node_rank);
 
-              for (unsigned isnode=0; isnode < side_nodes.size(); isnode++)
-                {
-                  percept::MyPairIterRelation node_elements ( m_eMesh, side_nodes[isnode].entity(), element_rank);
-                  for (unsigned ienode=0; ienode < node_elements.size(); ienode++)
-                    {
-                      stk::mesh::Entity element = node_elements[ienode].entity();
-
-                      //if (element.relations(node_rank).size() == 0)
-                      if (m_eMesh.get_bulk_data()->num_connectivity(element, node_rank) == 0)
-                        continue;
-                      if (m_eMesh.isGhostElement(element))
-                        continue;
-
-                      // FIXME
-                      if (m_eMesh.isLeafElement(element))
-                        {
-                          if (connectSidesForced(element, side, valid_side_part_map))
-                            {
-                              found = true;
-                            }
-                        }
-                      if (found) break;
-                    }
-                  if (found) break;
-                }
-
-              // try again with coordinate compare
-              const bool try_again = false; // for future...
-              if (try_again && !found)
-                {
-                  if (DEBUG_GSPR) std::cout << "tmp srk f2: !found... " << std::endl;
-                  stk::mesh::Entity found_element;
-                  for (unsigned isnode=0; isnode < side_nodes.size(); isnode++)
-                    {
-                      percept::MyPairIterRelation node_elements (m_eMesh, side_nodes[isnode].entity(),element_rank);
-                      for (unsigned ienode=0; ienode < node_elements.size(); ienode++)
-                        {
-                          stk::mesh::Entity element = node_elements[ienode].entity();
-
-                          //if (element.relations(node_rank).size() == 0)
-                          if (m_eMesh.get_bulk_data()->num_connectivity(element, node_rank) == 0)
-                            continue;
-                          if (m_eMesh.isGhostElement(element))
-                            continue;
-
-                          // FIXME
-                          if (m_eMesh.isLeafElement(element))
-                            {
-                              bool csf = connectSidesForced(element, side, valid_side_part_map, true);
-                              if (DEBUG_GSPR) {
-                                std::cout << "tmp srk f2: csf= " << csf << " elem= "; m_eMesh.print(element, true, true);
-                                std::cout << " side= "; m_eMesh.print(side, true, true);
-                              }
-                              if (csf)
-                                {
-                                  found = true;
-                                  found_element = element;
-                                }
-                            }
-                          if (found) break;
-                        }
-                      if (found) break;
-                    }
-
-                  // brute force
-                  if (1 && !found)
-                    {
-                      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::ELEMENT_RANK );
-                      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
-                        {
-                          stk::mesh::Bucket & bucket = **k ;
-                          const unsigned num_elements_in_bucket = bucket.size();
-                          for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
-                            {
-                              stk::mesh::Entity element = bucket[iElement];
-                              //if (element.relations(node_rank).size() == 0)
-                              if (m_eMesh.get_bulk_data()->num_connectivity(element, node_rank) == 0)
-                                continue;
-                              if (m_eMesh.isGhostElement(element))
-                                continue;
-
-                              // FIXME
-                              if (m_eMesh.isLeafElement(element))
-                                {
-                                  bool csf = connectSidesForced(element, side, valid_side_part_map, true);
-                                  if (csf && DEBUG_GSPR) {
-                                    std::cout << "tmp srk f2a: csf= " << csf << " elem= "; m_eMesh.print(element, true, true);
-                                    std::cout << " side= "; m_eMesh.print(side, true, true);
-                                  }
-                                  if (csf)
-                                    {
-                                      found = true;
-                                      found_element = element;
-                                    }
-                                }
-                              if (found) break;
-                            }
-                          if (found) break;
-                        }
-                    }
-
-                  if (found)
-                    {
-                      double ave_edge_length = m_eMesh.edge_length_ave(side);
-
-                      const percept::MyPairIterRelation elem_nodes (m_eMesh, found_element, stk::mesh::MetaData::NODE_RANK);
-                      for (unsigned isnode=0; isnode < side_nodes.size(); isnode++)
-                        {
-                          stk::mesh::Entity side_node = side_nodes[isnode].entity();
-                          for (unsigned ienode=0; ienode < elem_nodes.size(); ienode++)
-                            {
-                              stk::mesh::Entity elem_node = elem_nodes[ienode].entity();
-                              if (!m_eMesh.match(side_node, elem_node, false, ave_edge_length)
-                                  && m_eMesh.match(side_node, elem_node, true, ave_edge_length))
-                                {
-                                  EXCEPTWATCH;
-                                  std::cout << "fix_side_sets_2: reconnecting side_node= " << m_eMesh.identifier(side_node) << " to " << m_eMesh.identifier(elem_node) << std::endl;
-                                  bool del = m_eMesh.get_bulk_data()->destroy_relation( side, side_node, side_nodes[isnode].relation_ordinal());
-                                  if (!del)
-                                    {
-                                      throw std::runtime_error("fix_side_sets_2::couldn't delete relation");
-                                    }
-                                  {
-                                    EXCEPTWATCH;
-                                    m_eMesh.get_bulk_data()->declare_relation( side, elem_node, side_nodes[isnode].relation_ordinal());
-                                  }
-                                  break;
-                                }
-                            }
-                        }
-                    }
-                } // try again
+              found = connect(side, valid_side_part_map);
 
               if (!found)
                 {
@@ -3003,8 +2939,13 @@ namespace stk {
                     }
                   else
                     {
-                      std::cout << "ERROR: side = " << side << " side-is-leaf? " << m_eMesh.isLeafElement(side) << std::endl;
+                      std::cout << "ERROR: side = " << side << " side-is-leaf? " << m_eMesh.isLeafElement(side)
+                                << " valid_side_part_map= " << valid_side_part_map
+                                << std::endl;
                       m_eMesh.print(side);
+                      s_debugCSF = true;
+                      found = connect(side, valid_side_part_map);
+
                       stk::mesh::PartVector side_parts;
                       m_eMesh.bucket(side).supersets(side_parts);
                       for (unsigned isp = 0; isp < side_parts.size(); isp++)
@@ -3073,7 +3014,8 @@ namespace stk {
     bool Refiner::connectSidesForced(stk::mesh::Entity element, stk::mesh::Entity side_elem, bool& valid_side_part_map, bool use_coordinate_compare)
     {
       EXCEPTWATCH;
-      bool debug = false;
+      valid_side_part_map = true;
+      bool debug = s_debugCSF;
       //if (m_eMesh.identifier(side_elem) == 4348) debug = true;
       //       if (m_eMesh.identifier(element) == 71896)
       //         {
@@ -3145,12 +3087,13 @@ namespace stk {
           isShell = true;
         }
       int spatialDim = m_eMesh.get_spatial_dim();
-      if (spatialDim == 3 && isShell && m_eMesh.entity_rank(side_elem) == m_eMesh.edge_rank())
+      //if (spatialDim == 3 && isShell && m_eMesh.entity_rank(side_elem) == m_eMesh.edge_rank())
+      if (spatialDim == 3 && m_eMesh.entity_rank(side_elem) == m_eMesh.edge_rank())
         {
           element_nsides = (unsigned) element_topo.getEdgeCount();
         }
 
-      if (debug) std::cout << "isShell= " << isShell << std::endl;
+      if (debug) std::cout << "isShell= " << isShell << " element_nsides= " << element_nsides << std::endl;
 
       int permIndex = -1;
       int permPolarity = 1;
@@ -3160,7 +3103,7 @@ namespace stk {
       // try search
       for (unsigned j_element_side = 0; j_element_side < element_nsides; j_element_side++)
         {
-          m_eMesh.element_side_permutation(element, side_elem, j_element_side, permIndex, permPolarity, use_coordinate_compare, false);
+          m_eMesh.element_side_permutation(element, side_elem, j_element_side, permIndex, permPolarity, use_coordinate_compare, debug && false);
           if (permIndex >= 0)
             {
               k_element_side = j_element_side;

@@ -470,6 +470,8 @@ namespace stk {
 
       //========================================================================================================================
       // low-level interfaces
+      /// allow for setting bulk data when this PerceptMesh adopted a MetaData with null BulkData
+      void set_bulk_data(stk::mesh::BulkData *bulkData);
 
       /// find all neighbors touching one of my nodes
       void get_node_neighbors(stk::mesh::Entity element, std::set<stk::mesh::Entity>& neighbors);

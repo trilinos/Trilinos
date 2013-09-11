@@ -51,6 +51,7 @@
 #include <stk_percept/fixtures/HeterogeneousFixture.hpp>
 #include <stk_percept/fixtures/QuadFixture.hpp>
 #include <stk_percept/fixtures/WedgeFixture.hpp>
+#include <stk_percept/fixtures/SingleTetFixture.hpp>
 
 #include <stk_adapt/IEdgeBasedAdapterPredicate.hpp>
 #include <stk_adapt/ElementRefinePredicate.hpp>
@@ -59,6 +60,8 @@
 
 #include <stk_percept/function/ElementOp.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
+#include <stk_mesh/base/CreateEdges.hpp>
+#include <stk_mesh/base/Comm.hpp>
 
 #include <regression_tests/RegressionTestLocalRefiner.hpp>
 
@@ -925,6 +928,129 @@ namespace stk
             do_moving_shock_test_square_sidesets<Local_Tri3_Tri3_N>(eMesh2, num_time_steps, false, false, "uns-");
           }
         }
+      }
+
+      STKUNIT_UNIT_TEST(regr_localRefiner, one_tet_with_edges)
+      {
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        if (LARGE_TEST_ONLY || !DO_TESTS) return;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        if (p_size == 1)
+          {
+            {
+              stk::percept::SingleTetFixture mesh(pm, false);
+              stk::io::put_io_part_attribute(  mesh.m_block_tet );
+              mesh.m_metaData.commit();
+              mesh.populate();
+
+              bool isCommitted = true;
+              percept::PerceptMesh eMesh(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
+              eMesh.save_as("tmp.e");
+            }
+
+            {
+              percept::PerceptMesh eMesh;
+              eMesh.open("tmp.e");
+
+              int scalarDimension = 0; // a scalar
+              stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+              stk::mesh::FieldBase* refine_field = eMesh.add_field("refine_field", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
+
+              const std::string part_for_edges_name = "tmp_part_for_edges";
+              stk::mesh::Part * part_for_edges = eMesh.get_fem_meta_data()->get_part(part_for_edges_name);
+              if(part_for_edges==0) {
+                part_for_edges = &eMesh.get_fem_meta_data()->declare_part(part_for_edges_name, shards::CellTopology( shards::getCellTopologyData<shards::Line<2> >() ) );
+              }
+
+              stk::mesh::Part& edge_part = *part_for_edges;
+              stk::io::put_io_part_attribute(*part_for_edges);
+              Local_Tet4_Tet4_N break_tet_to_tet_N(eMesh);
+
+              eMesh.commit();
+
+              if (1)
+              {
+                stk::mesh::create_edges(*eMesh.get_bulk_data());
+
+                // sanity on mesh counts; overall time
+                std::vector<size_t> counts;
+                stk::mesh::comm_mesh_counts(*eMesh.get_bulk_data() , counts);
+
+                std::cout << "Mesh has  "
+                          << counts[0] << " nodes, "
+                          << counts[1] << " edges, "
+                          << counts[2] << " faces, "
+                          << counts[3] << " elements" << std::endl;
+                if (1)
+                  {
+                    stk::mesh::PartVector add_parts(1, &edge_part), remove_parts;
+                    std::vector<stk::mesh::Entity> edges;
+                    const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( eMesh.edge_rank() );
+                    for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+                      {
+                        stk::mesh::Bucket & bucket = **k ;
+                        const unsigned num_edges_in_bucket = bucket.size();
+                        for (unsigned iEdge = 0; iEdge < num_edges_in_bucket; iEdge++)
+                          {
+                            stk::mesh::Entity edge = bucket[iEdge];
+                            edges.push_back(edge);
+                          }
+                      }
+
+                    eMesh.get_bulk_data()->modification_begin();
+                    for (unsigned iEdge = 0; iEdge < edges.size(); iEdge++)
+                      {
+                        eMesh.get_bulk_data()->change_entity_parts( edges[iEdge], add_parts, remove_parts );
+                      }
+                    eMesh.get_bulk_data()->modification_end();
+                  }
+                //eMesh.print_info("after create edges", 2);
+              }
+
+              std::cout << "nele= " << eMesh.get_number_elements() << std::endl;
+              std::cout << "nnode= " << eMesh.get_number_nodes() << std::endl;
+              stk::mesh::Entity element_0 = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), 1);
+              double *fd = eMesh.field_data(refine_field, element_0);
+              fd[0] = 1.0;
+
+              eMesh.save_as( output_files_loc+"one_tet_with_edges_0.e");
+
+              ElementRefinePredicate erp(eMesh, 0, refine_field, 0.0);
+
+              PredicateBasedElementAdapter<ElementRefinePredicate>
+                breaker(erp, eMesh, break_tet_to_tet_N, proc_rank_field);
+
+              breaker.setRemoveOldElements(true);
+              breaker.setAlwaysInitializeNodeRegistry(false);
+
+              breaker.doBreak();
+              eMesh.save_as(output_files_loc+"one_tet_with_edges_1.e");
+
+
+              breaker.deleteParentElements();
+              eMesh.save_as(output_files_loc+"one_tet_with_edges_2.e");
+              std::cout << "nele= " << eMesh.get_number_elements() << std::endl;
+              std::cout << "nnode= " << eMesh.get_number_nodes() << std::endl;
+
+              eMesh.dump_vtk("one-tet.vtk",true);
+
+              if (1)
+              {
+                // sanity on mesh counts; overall time
+                std::vector<size_t> counts;
+                stk::mesh::comm_mesh_counts(*eMesh.get_bulk_data() , counts);
+
+                std::cout << "Mesh has  "
+                          << counts[0] << " nodes, "
+                          << counts[1] << " edges, "
+                          << counts[2] << " faces, "
+                          << counts[3] << " elements" << std::endl;
+              }
+            }
+          }
       }
 
       //  ====================================================================================================================================

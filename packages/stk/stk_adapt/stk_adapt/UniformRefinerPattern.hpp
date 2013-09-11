@@ -2590,9 +2590,9 @@ namespace stk {
             for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
               {
                 stk::mesh::Part *  part = *i_part ;
-                if ( stk::mesh::is_auto_declared_part(*part) )
-                  continue;
-                std::cout << ", " << part->name();
+                //if ( stk::mesh::is_auto_declared_part(*part) )
+                //  continue;
+                std::cout << " part= " <<  part->name() << std::endl;
               }
             std::cout << std::endl;
           }
@@ -2690,6 +2690,14 @@ namespace stk {
 
                 bool isConvertedPart = ( (part->name()).find(getAppendConvertString()) != std::string::npos);
                 doThisPart = doThisPart && !isConvertedPart;
+                if (DEBUG_SET_NEEDED_PARTS)
+                  {
+                    std::cout << "isOldElementsPart= " << isOldElementsPart 
+                              << " m_primaryEntityRank= " << m_primaryEntityRank
+                              << " part->primary_entity_rank() = " << part->primary_entity_rank()
+                              << " isConvertedPart= " << isConvertedPart
+                              << std::endl;
+                  }
 
                 if (!isOldElementsPart)
                   {

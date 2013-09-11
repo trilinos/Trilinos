@@ -10,7 +10,8 @@
 
 #include <stk_adapt/Percept_MOAB_SimplexTemplateRefiner.hpp>
 
-#include "UniformRefinerPattern_Line2_Line2_2_sierra.hpp"
+//#include "UniformRefinerPattern_Line2_Line2_2_sierra.hpp"
+#include "RefinerPattern_Line2_Line2_N.hpp"
 
 /** NOTE: A lot of the following code is unfinished (greedy triangulation scheme).
  *  The call to triangulate_tet_generic has been replaced with a call to the
@@ -103,11 +104,12 @@ namespace stk {
     {
 
       RefinerPattern<shards::Triangle<3>, shards::Triangle<3>, -1 > * m_face_breaker;
+      RefinerPattern<shards::Line<2>, shards::Line<2>, -1 > * m_edge_breaker;
 
     public:
 
       RefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::Tetrahedron<4>, shards::Tetrahedron<4>  >(eMesh),
-                                                                                                    m_face_breaker(0)
+                                                                                                    m_face_breaker(0), m_edge_breaker(0)
       {
         m_primaryEntityRank = stk::mesh::MetaData::ELEMENT_RANK;
 
@@ -115,38 +117,31 @@ namespace stk {
         Elem::StdMeshObjTopologies::bootstrap();
 
         m_face_breaker =  new RefinerPattern<shards::Triangle<3>, shards::Triangle<3>, -1 > (eMesh, block_names) ;
+        m_edge_breaker =  new RefinerPattern<shards::Line<2>, shards::Line<2>, -1 > (eMesh, block_names) ;
 
       }
 
       ~RefinerPattern()
       {
         if (m_face_breaker) delete m_face_breaker;
+        if (m_edge_breaker) delete m_edge_breaker;
       }
 
       void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
       {
         EXCEPTWATCH;
-        bp = std::vector<UniformRefinerPatternBase *>(2u, 0);
+        bp = std::vector<UniformRefinerPatternBase *>(3u, 0);
         bp[0] = this;
         bp[1] = m_face_breaker;
+        bp[2] = m_edge_breaker;
       }
 
       virtual void doBreak() {}
       void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
       {
-#if 0
-        // FIXME - tmp, for now to create a centroid node which we delete later
-        needed_entities.resize(2);
-        needed_entities[0].first = m_eMesh.edge_rank();
-        needed_entities[0].second = 1u;
-        needed_entities[1].first = stk::mesh::MetaData::ELEMENT_RANK;
-        needed_entities[1].second = 1u;
-#else
         needed_entities.resize(1);
         needed_entities[0].first = m_eMesh.edge_rank();
         needed_entities[0].second = 1u;
-#endif
-
       }
 
       // FIXME - for now, create more than we need (to fix this right we need a change to the Refiner.cpp interface)

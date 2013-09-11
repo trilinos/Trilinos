@@ -170,6 +170,10 @@ namespace stk {
             std::vector<stk::mesh::Entity> elements(1,element);
             interpolateElementFields(eMesh, elements, newElement);
 
+            if (0) {
+              std::cout << "newElement= " ; eMesh.print(newElement); std::cout << std::endl;
+            }
+
             element_pool++;
 
           }
