@@ -70,16 +70,6 @@ namespace panzer {
     std::string block_id;
 
     int subcell_index; //! If workset corresponds to a sub cell, what is the index?
-  };
-
-  /** This is the main workset object. Not that it inherits from WorksetDetails, this
-    * is to maintain backwards compatibility in the use of the workset object. The addition
-    * of a details vector supports things like DG based assembly.
-    */
-  struct Workset : public WorksetDetails {
-    
-    std::size_t num_cells;
-    int subcell_dim; //! If workset corresponds to a sub cell, what is the dimension?
 
     //! Value correspondes to integration order.  Use the offest for indexing.
     Teuchos::RCP< std::vector<int> > ir_degrees;
@@ -91,6 +81,16 @@ namespace panzer {
 
     //! Static basis function data, key is basis name, value is index in the static_bases vector
     std::vector<Teuchos::RCP< panzer::BasisValues<double,Intrepid::FieldContainer<double> > > > bases;
+  };
+
+  /** This is the main workset object. Not that it inherits from WorksetDetails, this
+    * is to maintain backwards compatibility in the use of the workset object. The addition
+    * of a details vector supports things like DG based assembly.
+    */
+  struct Workset : public WorksetDetails {
+    
+    std::size_t num_cells;
+    int subcell_dim; //! If workset corresponds to a sub cell, what is the dimension?
 
     std::vector<Teuchos::RCP<WorksetDetails> > details; // note that (*this) is set to index [0]
                                                         // when using panzers workset construction
