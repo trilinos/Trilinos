@@ -129,8 +129,14 @@ public:
   };
 
   typedef page_aligned_allocator<unsigned char, FieldDataTag> field_data_allocator;
+#ifdef __IBMCPP__
+  // The IBM compiler is easily confused by complex template types...
+  typedef std::vector<FieldMetaData>             FieldMetaDataVector;
+  typedef std::vector<FieldMetaDataVector>       FieldMetaDataVectorVector;
+#else
   typedef std::vector<FieldMetaData, tracking_allocator<FieldMetaData, FieldDataTag> >             FieldMetaDataVector;
   typedef std::vector<FieldMetaDataVector, tracking_allocator<FieldMetaDataVector, FieldDataTag> > FieldMetaDataVectorVector;
+#endif
 
 
   inline const FieldMetaDataVector & get_meta_data_for_field(const FieldBase & f, const stk::mesh::EntityRank rank) const {
