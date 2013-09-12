@@ -19,5 +19,6 @@ namespace SEAMS {
   void set_type(const SEAMS::Aprepro &apr, SEAMS::symrec* var, int type);
   void cleanup_memory();
   bool is_directory(const std::string &filepath);
+  bool check_valid_var(const char *s);
 }
 #endif
