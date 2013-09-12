@@ -460,6 +460,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
         AZ_terminate_status_print(i, iter, status, rec_residual, params,
                                   true_scaled_r, actual_residual, options,
                                   proc_config);
+        AZ_STOP_TIMER_BEFORE_EARLY_RETURN( gmresID );
         return;
       }
 
@@ -507,6 +508,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
         AZ_terminate_status_print(AZ_breakdown, iter, status, rec_residual, params,
                                   true_scaled_r, actual_residual, options,
                                   proc_config);
+        AZ_STOP_TIMER_BEFORE_EARLY_RETURN( gmresID );
         return;
       }
       if ( (i == kspace) || convergence_info->converged || iter == options[AZ_max_iter]) {
@@ -544,6 +546,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
 	    AZ_terminate_status_print(AZ_loss, iter, status, rec_residual, params,
 				      true_scaled_r, actual_residual, options,
 				      proc_config);
+	    AZ_STOP_TIMER_BEFORE_EARLY_RETURN( gmresID );
 	    return;
 	  }
 	}

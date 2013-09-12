@@ -114,6 +114,76 @@ TensorBase<T, Store>::TensorBase(A)
 }
 
 //
+// 4th-order tensor from 2nd-order tensor
+//
+
+namespace {
+
+inline
+Index
+second_to_fourth_dimension(Index const dimension_2nd)
+{
+  Index
+  dimension_4th = 0;
+
+  switch (dimension_2nd) {
+
+  default:
+    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
+    std::cerr << std::endl;
+    std::cerr << "Invalid dimension for 2nd-order tensor.";
+    std::cerr << std::endl;
+    exit(1);
+    break;
+
+  case 1:
+    dimension_4th = 1;
+    break;
+
+  case 4:
+    dimension_4th = 2;
+    break;
+
+  case 9:
+    dimension_4th = 3;
+    break;
+
+  case 16:
+    dimension_4th = 4;
+    break;
+
+  }
+
+  return dimension_4th;
+}
+
+} //anonymous namespace
+
+template<typename T, Index N>
+inline
+Tensor4<T, N>::Tensor4(Tensor<T, dimension_square<N>::value> const & A)
+{
+  Index const
+  dimension_2nd = A.get_dimension();
+
+  Index const
+  dimension_4th = second_to_fourth_dimension(dimension_2nd);
+
+  Tensor4<T, N> &
+  self = (*this);
+
+  self.set_dimension(dimension_4th);
+
+  Index const
+  number_components = dimension_2nd * dimension_2nd;
+
+  for (Index i = 0; i < number_components; ++i) {
+    self[i] = A[i];
+  }
+
+  return;
+}
+//
 // 4th-order tensor simple destructor
 //
 template<typename T, Index N>
@@ -328,6 +398,16 @@ Tensor4<T, N>::operator()(
   dimension = self.get_dimension();
 
   return self[((i * dimension + j) * dimension + k) * dimension + l];
+}
+
+///
+/// 4th-order inverse
+///
+template<typename T, Index N>
+Tensor4<T, N>
+inverse(Tensor4<T, N> const & A)
+{
+  return Tensor4<T, N>(inverse(Tensor<T, N>(A)));
 }
 
 } // namespace Intrepid

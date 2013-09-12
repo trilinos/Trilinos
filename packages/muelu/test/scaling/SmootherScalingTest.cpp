@@ -190,6 +190,7 @@ int main(int argc, char *argv[]) {
       level.SetFactoryManager(fm);
       level.SetLevelID(0);
       level.Set("A", A);
+      level.setlib(xpetraParameters.GetLib());
     }
 
     TimeMonitor tm(*TimeMonitor::getNewTimer("SmootherScalingTest: 2 - Smoother Setup"));
@@ -229,7 +230,12 @@ int main(int argc, char *argv[]) {
       }
 */
       smoother = rcp(new TrilinosSmoother(ifpackType, ifpackList));
+      // smoother->SetFactory("A", level.GetFactory("A"));
+      level.Request(*smoother);
+
       smoother->Setup(level);
+
+      level.Release(*smoother);
     }
 
 

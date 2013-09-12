@@ -1587,7 +1587,7 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
   # C part 2) Loop backwards over ETI packages if ETI is enabled
   #
 
-  # do this regardless of whether project level ETI is enabled
+  # Do this regardless of whether project level ETI is enabled
   IF("${${PROJECT_NAME}_ETI_PACKAGES}" STREQUAL "")
     MESSAGE("\nNo ETI support requested by packages.\n")
   ELSE()
@@ -1598,11 +1598,20 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
     LIST(REVERSE REVERSE_ETI_LIST)
     FOREACH(PACKAGE_NAME ${REVERSE_ETI_LIST})
       MESSAGE("Processing ETI support: ${PACKAGE_NAME}")
+      IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
+        TIMER_GET_RAW_SECONDS(PROCESS_ETI_START_SECONDS)
+      ENDIF()
       SET(ETIFILE ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/ExplicitInstantiationSupport.cmake)
       IF(NOT EXISTS "${ETIFILE}")
         MESSAGE(FATAL_ERROR "Could not find ${PACKAGE_NAME} ETI support file ${ETIFILE}")
       ENDIF()
       INCLUDE("${ETIFILE}")
+      IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
+        TIMER_GET_RAW_SECONDS(PROCESS_ETI_STOP_SECONDS)
+        TIMER_PRINT_REL_TIME(${PROCESS_ETI_START_SECONDS}
+          ${PROCESS_ETI_STOP_SECONDS}
+          "Time to process ETI support for package ${PACKAGE_NAME}")
+      ENDIF()
     ENDFOREACH()
   ENDIF()
 

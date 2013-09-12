@@ -431,16 +431,17 @@ TEUCHOS_UNIT_TEST(MiniTensor, Inverse2x2)
 {
   std::srand(std::time(NULL));
 
-  Tensor<Real, 2>
-  A = 2.0 * (Tensor<Real, 2>(RANDOM)) + eye<Real, 2>() - Tensor<Real, 2>(ONES);
+  Tensor<Real, 2> const
+  A = 2.0 * eye<Real, 2>() + Tensor<Real, 2>(RANDOM);
 
-  Tensor<Real, 2>
+  Tensor<Real, 2> const
   B = inverse(A);
 
-  Tensor<Real, 2>
-  C = A * B;;
+  Tensor<Real, 2> const
+  C = A * B;
 
-  Real const error = norm(C - eye<Real, 2>()) / norm(A);
+  Real const
+  error = norm(C - eye<Real, 2>()) / norm(A);
 
   TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
 }
@@ -448,16 +449,18 @@ TEUCHOS_UNIT_TEST(MiniTensor, Inverse2x2)
 TEUCHOS_UNIT_TEST(MiniTensor, Inverse3x3)
 {
   std::srand(std::time(NULL));
-  Tensor<Real, 3>
-  A = 2.0 * (Tensor<Real, 3>(RANDOM)) + eye<Real, 3>() - Tensor<Real, 3>(ONES);
 
-  Tensor<Real, 3>
+  Tensor<Real, 3> const
+  A = 2.0 * eye<Real, 3>() + Tensor<Real, 3>(RANDOM);
+
+  Tensor<Real, 3> const
   B = inverse(A);
 
-  Tensor<Real, 3>
-  C = A * B;;
+  Tensor<Real, 3> const
+  C = A * B;
 
-  Real const error = norm(C - eye<Real, 3>()) / norm(A);
+  Real const
+  error = norm(C - eye<Real, 3>()) / norm(A);
 
   TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
 }
@@ -466,18 +469,42 @@ TEUCHOS_UNIT_TEST(MiniTensor, InverseNxN)
 {
   std::srand(std::time(NULL));
 
-  Index const N = double(std::rand()) / double(RAND_MAX) * 7.0 + 4.0;
+  Index const
+  N = double(std::rand()) / double(RAND_MAX) * 7.0 + 4.0;
 
-  Tensor<Real>
-  A = 2.0 * (Tensor<Real>(N, RANDOM)) + eye<Real>(N) - Tensor<Real>(N, ONES);
+  Tensor<Real> const
+  A = 2.0 * eye<Real>(N) + Tensor<Real>(N, RANDOM);
 
-  Tensor<Real>
+  Tensor<Real> const
   B = inverse(A);
 
-  Tensor<Real>
-  C = A * B;;
+  Tensor<Real> const
+  C = A * B;
 
-  Real const error = norm(C - eye<Real>(N)) / norm(A);
+  Real const
+  error = norm(C - eye<Real>(N)) / norm(A);
+
+  TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
+}
+
+TEUCHOS_UNIT_TEST(MiniTensor, Inverse_4th_NxN)
+{
+  std::srand(std::time(NULL));
+
+  Index const
+  N = double(std::rand()) / double(RAND_MAX) * 2.0 + 2.0;
+
+  Tensor4<Real> const
+  A = 2.0 * identity_1<Real>(N) + Tensor4<Real>(N, RANDOM);
+
+  Tensor4<Real> const
+  B = inverse(A);
+
+  Tensor4<Real> const
+  C = dotdot(A, B);
+
+  Real const
+  error = norm_f(C - identity_1<Real>(N)) / norm_f(A);
 
   TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
 }

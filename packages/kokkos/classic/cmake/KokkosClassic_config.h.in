@@ -44,6 +44,7 @@
 /* Other package dependencies */
 #cmakedefine HAVE_KOKKOSCLASSIC_TEUCHOS
 #cmakedefine HAVE_KOKKOSCLASSIC_THREADPOOL
+#cmakedefine HAVE_KOKKOSCLASSIC_KOKKOSCORE
 
 /* TPL Dependencies */
 #cmakedefine HAVE_KOKKOSCLASSIC_SERIAL

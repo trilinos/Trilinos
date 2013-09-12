@@ -174,7 +174,6 @@ namespace MueLu {
     for (size_t i=0; i<NSDim; ++i)
       if (coarseMap->getNodeNumElements() > 0) coarseNS[i] = coarseNullspace->getDataNonConst(i);
 
-
     //This makes the rowmap of Ptent the same as that of fineA.
     //This requires moving some parts of some local Q's to other processors
     //because aggregates can span processors.
@@ -227,6 +226,24 @@ namespace MueLu {
     // Dense QR solver
     Teuchos::SerialQRDenseSolver<LO,SC> qrSolver;
 
+    // decide whether to use ESFC or not
+    // use expert mode if aggregates do not overlap processors and there are no empty processors
+    // if there are aggregates which cross processors or if there are empty processors we have to
+    // use the expensive but very safe assembly routine for Ptentative
+    // TODO remove the global communication here to detect empty processors and fix ESFC for empty
+    // procs
+    bool bExpert = true;
+#if 1  // safe variant: disable expert mode if there are empty processors
+    GO gMinNumRowsForPtent = 0;
+    GO lMinNumRowsForPtent = Teuchos::as<GlobalOrdinal>(numRowsForPtent);  /* LO->GO conversion */
+    minAll(comm,lMinNumRowsForPtent,gMinNumRowsForPtent);
+    if(aggregates.AggregatesCrossProcessors() || gMinNumRowsForPtent == 0) {
+#else // see ticket #193
+    if(aggregates.AggregatesCrossProcessors()) {
+#endif
+      bExpert = false;
+    }
+
     //Allocate temporary storage for the tentative prolongator.
     Array<GO> globalColPtr(maxAggSize*NSDim,0);
     Array<LO> localColPtr(maxAggSize*NSDim,0);
@@ -253,12 +270,12 @@ namespace MueLu {
 
     RCP<CrsMatrix> PtentCrs;
 
-    if (aggregates.AggregatesCrossProcessors()) {
+    if (!bExpert) { // slow mode
       RCP<CrsMatrixWrap> PtentCrsWrap = rcp(new CrsMatrixWrap(rowMapForPtent, NSDim, Xpetra::StaticProfile));
       PtentCrs   = PtentCrsWrap->getCrsMatrix();
       Ptentative = PtentCrsWrap;
     }
-    else {
+    else { // fast mode for aggregates which do not cross processors...
       // Note: NNZ/row estimate is zero since we're using ESFC.
       RCP<CrsMatrixWrap> PtentCrsWrap = rcp(new CrsMatrixWrap(rowMapForPtent, coarseMap, 0, Xpetra::StaticProfile));
       PtentCrs   = PtentCrsWrap->getCrsMatrix();
@@ -478,7 +495,7 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
           } //for (size_t k=0; k<NSDim; ++k)
 
           try{
-            if (aggregates.AggregatesCrossProcessors()) {
+            if (!bExpert) {
               Ptentative->insertGlobalValues(globalRow,globalColPtr.view(0,nnz),valPtr.view(0,nnz));
             }
             else {
@@ -505,7 +522,7 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
     // ************* end of aggregate-wise QR ********************
     // ***********************************************************
 
-    if (!aggregates.AggregatesCrossProcessors()) {
+    if (bExpert) {
       GetOStream(Runtime1,0) << "TentativePFactory : aggregates do not cross process boundaries" << std::endl;
       // The QR will have plenty of zeros if we're NSDim > 1.  If NSDim==1, we still might have a handful of BCs.
       // We need to shrink down the CRS arrays and copy them over the the "real" CrsArrays.
@@ -518,6 +535,7 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
       ArrayView<LO>     colind_new = ptent_colind();
       ArrayView<Scalar> values_new = ptent_values();
       size_t count=0;
+
       // Collapse and copy
       for(size_t i=0; i<numRowsForPtent; i++) {
         rowptr_new[i]=count;
@@ -527,6 +545,7 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
           count++;
         }
       }
+
       rowptr_new[numRowsForPtent]=count;
 
       if(count!=total_nnz_count) throw std::runtime_error("MueLu error in data copy!");
@@ -591,8 +610,6 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
 
       Ptentative->fillComplete(coarseMap,fineA.getDomainMap()); //(domain,range) of Ptentative
     } //if (!aggregatesAreLocal)
-
-
 
 //    RCP<const Map> realColMap = Ptentative->getColMap();
 //    sleep(1);

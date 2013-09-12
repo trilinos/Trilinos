@@ -58,7 +58,7 @@
 
 namespace Xpetra {
 
-  template <class Scalar, class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar, class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
   class MatrixFactory {
 #undef XPETRA_MATRIXFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
@@ -70,18 +70,8 @@ namespace Xpetra {
   public:
 
     //! Constructor specifying the number of non-zeros for all rows.
-    static RCP<Matrix> Build(const RCP<const Map> &rowMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile) {
-      // if const block size && blocksize == 1
-
-      return rcp( new CrsMatrixWrap(rowMap, maxNumEntriesPerRow, pftype) );
-
-      // elseif
-
-      // return vbr
-
-      // else
-
-      // TEUCHOS_TEST_FOR_EXCEPTION(1,Xpetra::Exceptions::BadCast,"?");
+    static RCP<Matrix> Build(const RCP<const Map>& rowMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile) {
+      return rcp(new CrsMatrixWrap(rowMap, maxNumEntriesPerRow, pftype));
     }
 
     //! Constructor specifying the max number of non-zeros per row and providing column map
@@ -100,11 +90,13 @@ namespace Xpetra {
     }
 
     //! Constructor for creating a diagonal Xpetra::Matrix using the entries of a given vector for the diagonal
-    static RCP<Matrix> Build(const RCP<const Vector> & diagonal) {
-      Teuchos::ArrayRCP<const Scalar> vals = diagonal->getData(0);
-      Teuchos::RCP<CrsMatrixWrap> mtx = Teuchos::rcp(new CrsMatrixWrap(diagonal->getMap(), 1, Xpetra::StaticProfile));
-      LocalOrdinal NumMyElements = diagonal->getMap()->getNodeNumElements();
+    static RCP<Matrix> Build(const RCP<const Vector>& diagonal) {
+      Teuchos::ArrayRCP<const Scalar>         vals             = diagonal->getData(0);
+      LocalOrdinal                            NumMyElements    = diagonal->getMap()->getNodeNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = diagonal->getMap()->getNodeElementList();
+
+      Teuchos::RCP<CrsMatrixWrap> mtx = Teuchos::rcp(new CrsMatrixWrap(diagonal->getMap(), 1, Xpetra::StaticProfile));
+
       for (LocalOrdinal i = 0; i < NumMyElements; ++i) {
           mtx->insertGlobalValues(MyGlobalElements[i],
                                   Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
@@ -114,57 +106,49 @@ namespace Xpetra {
       return mtx;
     }
 
-
     //! Constructor to create a Matrix using a fusedImport-style construction.  The originalMatrix must be a Xpetra::CrsMatrixWrap under the hood or this will fail.
-    static RCP<Matrix> Build(const RCP<const Matrix> & sourceMatrix, const Import &importer, const RCP<const Map> & domainMap = Teuchos::null, const RCP<const Map> & rangeMap = Teuchos::null,const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
-
+    static RCP<Matrix> Build(const RCP<const Matrix>& sourceMatrix, const Import& importer, const RCP<const Map>& domainMap = Teuchos::null, const RCP<const Map>& rangeMap = Teuchos::null, const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
       RCP<const CrsMatrixWrap> crsOp = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(sourceMatrix);
       if (crsOp == Teuchos::null)
-	throw(Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed"));
+        throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
+
       RCP<CrsMatrix> originalCrs = crsOp->getCrsMatrix();
-      RCP<CrsMatrix> newCrs = CrsMatrixFactory::Build(originalCrs,importer,domainMap,rangeMap,params);
-      if(newCrs->hasMatrix()) 
-	return rcp(new CrsMatrixWrap(newCrs));
-      else 
-	return Teuchos::null;
+      RCP<CrsMatrix> newCrs      = CrsMatrixFactory::Build(originalCrs, importer, domainMap, rangeMap, params);
+      if (newCrs->hasMatrix())
+        return rcp(new CrsMatrixWrap(newCrs));
+      else
+        return Teuchos::null;
     }
 
     //! Constructor to create a Matrix using a fusedExport-style construction.  The originalMatrix must be a Xpetra::CrsMatrixWrap under the hood or this will fail.
     static RCP<Matrix> Build(const RCP<const Matrix> & sourceMatrix, const Export &exporter, const RCP<const Map> & domainMap = Teuchos::null, const RCP<const Map> & rangeMap = Teuchos::null,const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
-
       RCP<const CrsMatrixWrap> crsOp = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(sourceMatrix);
       if (crsOp == Teuchos::null)
-	throw(Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed"));
-      RCP<CrsMatrix> originalCrs = crsOp->getCrsMatrix();
-      return rcp(new CrsMatrixWrap(CrsMatrixFactory::Build(originalCrs,exporter,domainMap,rangeMap,params)));
-    }
+        throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
 
+      RCP<CrsMatrix> originalCrs = crsOp->getCrsMatrix();
+      return rcp(new CrsMatrixWrap(CrsMatrixFactory::Build(originalCrs, exporter, domainMap, rangeMap, params)));
+    }
 
 #ifdef HAVE_XPETRA_EXPERIMENTAL
     static RCP<Matrix> BuildCopy(const RCP<const Matrix> A) {
         RCP<const CrsMatrixWrap> oldOp = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(A);
         if (oldOp == Teuchos::null)
-            throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
+          throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
 
         RCP<const CrsMatrix> oldCrsOp = oldOp->getCrsMatrix();
 
 #ifdef HAVE_XPETRA_EPETRA
         RCP<const EpetraCrsMatrix> oldECrsOp = Teuchos::rcp_dynamic_cast<const EpetraCrsMatrix>(oldCrsOp);
-        if (oldECrsOp != Teuchos::null) {
-            // Underlying matrix is Epetra
-            //RCP<const EpetraCrsMatrix> oldECrsOp = Teuchos::rcp_dynamic_cast<const EpetraCrsMatrix>(oldCrsOp);
-            RCP<EpetraCrsMatrix> newECrsOp(new EpetraCrsMatrix(*oldECrsOp));
-            RCP<CrsMatrixWrap> newOp(new CrsMatrixWrap(newECrsOp));
-
-            return newOp;
-        }
+        if (oldECrsOp != Teuchos::null)
+          throw Exceptions::RuntimeError("Xpetra::BuildCopy(): cannot conver this templated matrix to Epetra");
 #endif
 
 #ifdef HAVE_XPETRA_TPETRA
         // Underlying matrix is Tpetra
         RCP<const TpetraCrsMatrix> oldTCrsOp = Teuchos::rcp_dynamic_cast<const TpetraCrsMatrix>(oldCrsOp);
         RCP<TpetraCrsMatrix> newTCrsOp(new TpetraCrsMatrix(*oldTCrsOp));
-        RCP<CrsMatrixWrap> newOp(new CrsMatrixWrap(newTCrsOp));
+        RCP<CrsMatrixWrap>   newOp    (new CrsMatrixWrap(newTCrsOp));
 
         return newOp;
 #else
@@ -173,7 +157,6 @@ namespace Xpetra {
 #endif
     }
 #endif // ifdef HAVE_XPETRA_EXPERIMENTAL
-
   };
 
 }

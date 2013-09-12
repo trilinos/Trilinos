@@ -41,6 +41,8 @@
 //
 // @HEADER
 
+#if defined (HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL)
+
 #include "Amesos2_Cholmod_decl.hpp"
 
 #ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
@@ -68,3 +70,5 @@ namespace Amesos2 {
 }
 
 #endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+
+#endif

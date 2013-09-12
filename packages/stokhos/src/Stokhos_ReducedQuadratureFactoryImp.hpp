@@ -1252,7 +1252,7 @@ solver_CompressedSensing(
   Pecos::CompressedSensingTool CS;
   Teuchos::SerialDenseMatrix<ordinal_type, value_type> AA(A, transa);
   Teuchos::SerialDenseVector<ordinal_type, value_type> bb(b);
-  Pecos::RealMatrixList xx;
+  Pecos::RealMatrixArray xx;
   Pecos::CompressedSensingOptions opts;
   Pecos::CompressedSensingOptionsList opts_list;
   CS.solve(AA, bb, xx, opts, opts_list);

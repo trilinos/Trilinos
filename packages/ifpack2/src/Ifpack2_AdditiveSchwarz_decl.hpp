@@ -316,7 +316,12 @@ protected:
   Teuchos::RCP<Teuchos::Time> Time_;
   //! Pointer to the local solver.
   Teuchos::RCP<LocalInverseType> Inverse_;
-
+  //! SerialMap for filtering multivector with no overlap.
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > SerialMap_;
+  //! Distributed map for filtering multivector with no overlap.
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > DistributedMap_;
+  //! Local distributed map for filtering multivector with no overlap.
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > LocalDistributedMap_;
 }; // class AdditiveSchwarz
 
 }// end namespace

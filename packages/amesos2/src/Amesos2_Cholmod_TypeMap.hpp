@@ -116,29 +116,6 @@ namespace Teuchos {
     }
   };
 
-  /*
-  template <typename TypeFrom>
-  class ValueTypeConversionTraits<Amesos2::CHOL::doublecomplex, TypeFrom>
-  {
-  public:
-    static Amesos2::CHOL::doublecomplex convert( const TypeFrom t )
-    {                           // adapt conversion as necessary
-      Amesos2::CHOL::_doublecomplex ret;
-      ret.r = Teuchos::as<double>(t.real());
-      ret.i = Teuchos::as<double>(t.imag());
-      return( ret );
-    }
-
-    static Amesos2::CHOL::doublecomplex safeConvert( const TypeFrom t )
-    {                           // adapt conversion as necessary
-      Amesos2::CHOL::doublecomplex ret;
-      ret.r = Teuchos::as<double>(t.real());
-      ret.i = Teuchos::as<double>(t.imag());
-      return( ret );
-    }
-    };*/
-
-
   // Also convert *from* New_Solver types
   template <typename TypeTo>
   class ValueTypeConversionTraits<TypeTo, Amesos2::CHOL::complex>
@@ -165,29 +142,6 @@ namespace Teuchos {
     }
   };
 
-  /*
-  template <typename TypeTo>
-  class ValueTypeConversionTraits<TypeTo, Amesos2::CHOL::doublecomplex>
-  {
-  public:
-    static TypeTo convert( const Amesos2::CHOL::doublecomplex t )
-    {
-      typedef typename TypeTo::value_type value_type;
-      value_type ret_r = Teuchos::as<value_type>( t.r );
-      value_type ret_i = Teuchos::as<value_type>( t.i );
-      return ( TypeTo( ret_r, ret_i ) );
-    }
-
-    // No special checks for safe Convert
-    static TypeTo safeConvert( const Amesos2::CHOL::doublecomplex t )
-    {
-      typedef typename TypeTo::value_type value_type;
-      value_type ret_r = Teuchos::as<value_type>( t.r );
-      value_type ret_i = Teuchos::as<value_type>( t.i );
-      return ( TypeTo( ret_r, ret_i ) );
-    }
-    };*/
-
   //@}  End Conversion group
 
 } // end namespace Teuchos
@@ -198,18 +152,12 @@ namespace Amesos2 {
   // forward declaration due to circular reference
   template <class, class> class Cholmod;
 
-  /* Specialize the Amesos::TypeMap struct for PardisoMKL types.
-   *
-   * Additional nested types may be added without harm.  For an example, look at
-   * Amesos2_Superlu_TypeMap.hpp
-   */
   template <>
   struct TypeMap<Cholmod,float>
   {
     typedef float type;
     typedef float magnitude_type;
   };
-
 
   template <>
   struct TypeMap<Cholmod,double>
@@ -220,41 +168,13 @@ namespace Amesos2 {
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 
-  /*
-   * We map the std complex types to the appropriate PardisoMKL complex
-   * types.
-   */
-
-  template <>
-  struct TypeMap<Cholmod,std::complex<float> >
-  {
-    typedef CHOL::complex type;
-    typedef float magnitude_type;
-  };
-
-  /*
   template <>
   struct TypeMap<Cholmod,std::complex<double> >
   {
-    typedef CHOL::doublecomplex type;
-    typedef double magnitude_type;
-    };*/
-
-
-  template <>
-  struct TypeMap<Cholmod,CHOL::complex>
-  {
     typedef CHOL::complex type;
-    typedef float magnitude_type;
+    typedef double magnitude_type;
   };
 
-  /*
-  template <>
-  struct TypeMap<Cholmod,CHOL::doublecomplex>
-  {
-    typedef CHOL::doublecomplex type;
-    typedef double magnitude_type;
-    };*/
 #endif  // HAVE_TEUCHOS_COMPLEX
 
   /* \endcond Choldmod_type_specializations */

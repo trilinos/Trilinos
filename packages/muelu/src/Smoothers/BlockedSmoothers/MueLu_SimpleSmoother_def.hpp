@@ -174,11 +174,13 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero) const
+  void SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::BraessSarazinSmoother::Apply(): Setup() has not been called");
 
     Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
+
+    SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
 
     // wrap current solution vector in RCP
     RCP<MultiVector> rcpX = Teuchos::rcpFromRef(X);
@@ -190,8 +192,8 @@ namespace MueLu {
     // incrementally improve solution vector X
     for (LocalOrdinal run = 0; run < nSweeps_; ++run) {
       // 1) calculate current residual
-      residual->update(1.0,B,0.0); // residual = B
-      A_->apply(*rcpX, *residual, Teuchos::NO_TRANS, -1.0, 1.0);
+      residual->update(one,B,zero); // residual = B
+      A_->apply(*rcpX, *residual, Teuchos::NO_TRANS, -one, one);
 
       // split residual vector
       Teuchos::RCP<MultiVector> r1 = rangeMapExtractor_->ExtractVector(residual, 0);
@@ -200,32 +202,32 @@ namespace MueLu {
       // 2) solve F * \Delta \tilde{x}_1 = r_1
       //    start with zero guess \Delta \tilde{x}_1
       RCP<MultiVector> xtilde1 = MultiVectorFactory::Build(F_->getRowMap(),1);
-      xtilde1->putScalar(0.0);
+      xtilde1->putScalar(zero);
       velPredictSmoo_->Apply(*xtilde1,*r1);
 
       // 3) calculate rhs for SchurComp equation
       //    r_2 - D \Delta \tilde{x}_1
       RCP<MultiVector> schurCompRHS = MultiVectorFactory::Build(Z_->getRowMap(),1);
       D_->apply(*xtilde1,*schurCompRHS);
-      schurCompRHS->update(1.0,*r2,-1.0);
+      schurCompRHS->update(one,*r2,-one);
 
       // 4) solve SchurComp equation
       //    start with zero guess \Delta \tilde{x}_2
       RCP<MultiVector> xtilde2 = MultiVectorFactory::Build(Z_->getRowMap(),1);
-      xtilde2->putScalar(0.0);
+      xtilde2->putScalar(zero);
       schurCompSmoo_->Apply(*xtilde2,*schurCompRHS);
 
       // 5) scale xtilde2 with omega
       //    store this in xhat2
       RCP<MultiVector> xhat2 = MultiVectorFactory::Build(Z_->getRowMap(),1);
-      xhat2->update(omega_,*xtilde2,0.0);
+      xhat2->update(omega_,*xtilde2,zero);
 
       // 6) calculate xhat1
       RCP<MultiVector> xhat1      = MultiVectorFactory::Build(F_->getRowMap(),1);
       RCP<MultiVector> xhat1_temp = MultiVectorFactory::Build(F_->getRowMap(),1);
       G_->apply(*xhat2,*xhat1_temp); // store result temporarely in xtilde1_temp
-      xhat1->elementWiseMultiply(1/omega_,*diagFinv_,*xhat1_temp,0.0);
-      xhat1->update(1.0,*xtilde1,-1.0);
+      xhat1->elementWiseMultiply(one/omega_,*diagFinv_,*xhat1_temp,zero);
+      xhat1->update(one,*xtilde1,-one);
 
       // 7) extract parts of solution vector X
       Teuchos::RCP<MultiVector> x1 = domainMapExtractor_->ExtractVector(rcpX, 0);
@@ -233,8 +235,8 @@ namespace MueLu {
 
       // 8) update solution vector with increments xhat1 and xhat2
       //    rescale increment for x2 with omega_
-      x1->update(1.0,*xhat1,1.0);    // x1 = x1_old + xhat1
-      x2->update(omega_,*xhat2,1.0); // x2 = x2_old + omega xhat2
+      x1->update(one,*xhat1,one);    // x1 = x1_old + xhat1
+      x2->update(omega_,*xhat2,one); // x2 = x2_old + omega xhat2
 
       // write back solution in global vector X
       domainMapExtractor_->InsertVector(x1, 0, rcpX);

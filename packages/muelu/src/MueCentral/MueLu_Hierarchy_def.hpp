@@ -80,6 +80,8 @@ namespace MueLu {
     AddLevel(Finest);
 
     Finest->Set("A", A);
+
+    lib_ = A->getRowMap()->lib();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -114,6 +116,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddNewLevel() {
     RCP<Level> newLevel = Levels_[LastLevelID()]->Build(); // new coarse level, using copy constructor
+    newLevel->setlib(lib_);
     this->AddLevel(newLevel);                              // add to hierarchy
   }
 
@@ -181,7 +184,8 @@ namespace MueLu {
 
     TEUCHOS_TEST_FOR_EXCEPTION(LastLevelID() < coarseLevelID, Exceptions::RuntimeError, "MueLu::Hierarchy:Setup(): level " << coarseLevelID << " (specified by coarseLevelID argument) must be built before calling this function.");
 
-    Level & level = *Levels_[coarseLevelID];
+    Level& level = *Levels_[coarseLevelID];
+    level.setlib(lib_);
 
     CheckLevel(level, coarseLevelID);
 
@@ -282,6 +286,8 @@ namespace MueLu {
 
     // Check for fine level matrix A
     TEUCHOS_TEST_FOR_EXCEPTION(!Levels_[startLevel]->IsAvailable("A"), Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): no fine level matrix A! Set fine level matrix A using Level.Set()");
+    RCP<Matrix> A = Levels_[startLevel]->template Get<RCP<Matrix> >("A");
+    lib_ = A->getRowMap()->lib();
 
     // Check coarse levels
     // TODO: check if Ac available. If yes, issue a warning (bcse level already built...)
@@ -599,6 +605,7 @@ namespace MueLu {
     if (verbLevel & Statistics0) {
       out << "Max Coarse Size     = " << maxCoarseSize_ << std::endl;
       out << "Implicit Transpose  = " << (implicitTranspose_ ? "true" : "false") << std::endl;
+      out << std::endl;
     }
 
     if (verbLevel & Statistics0) {
@@ -617,6 +624,7 @@ namespace MueLu {
              << Teuchos::as<double>(nnzPerLevel[i]) / rowsPerLevel[i]
              << std::setw(npspacer) << numProcsPerLevel[i] << std::endl;
       }
+      out << std::endl;
       for (int i = 0; i < GetNumLevels(); ++i) {
         RCP<SmootherBase> preSmoo, postSmoo;
         if (Levels_[i]->IsAvailable("PreSmoother"))
@@ -626,10 +634,10 @@ namespace MueLu {
         if (preSmoo != null && preSmoo == postSmoo)
           out << "Smoother (level " << i << ") both : " << preSmoo->description() << std::endl;
         else {
-          if (preSmoo != null)  out << "Smoother (level " << i << ") pre  : "
-                                                          << preSmoo->description() << std::endl;
-          if (postSmoo != null) out << "Smoother (level " << i << ") post : "
-                                                          << postSmoo->description() << std::endl;
+          out << "Smoother (level " << i << ") pre  : "
+              << (preSmoo != null ?  preSmoo->description() : " no smoother") << std::endl;
+          out << "Smoother (level " << i << ") post : "
+              << (postSmoo != null ?  postSmoo->description() : " no smoother") << std::endl;
         }
 
         out << std::endl;

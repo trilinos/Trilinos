@@ -90,6 +90,12 @@ namespace Tpetra {
     const bool barrierBetween_default = false;
     // Default value of the "Use distinct tags" parameter.
     const bool useDistinctTags_default = true;
+    // Default value of the "Enable MPI CUDA RDMA support"
+#ifdef TPETRA_ENABLE_MPI_CUDA_RDMA
+    const bool enable_cuda_rdma_default = true;
+#else
+    const bool enable_cuda_rdma_default = false;
+#endif
   } // namespace (anonymous)
 
   int Distributor::getTag (const int pathTag) const {
@@ -152,6 +158,7 @@ namespace Tpetra {
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
+    , enable_cuda_rdma_ (enable_cuda_rdma_default)
     , numExports_ (0)
     , selfMessage_ (false)
     , numSends_ (0)
@@ -170,6 +177,7 @@ namespace Tpetra {
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
+    , enable_cuda_rdma_ (enable_cuda_rdma_default)
     , numExports_ (0)
     , selfMessage_ (false)
     , numSends_ (0)
@@ -188,6 +196,7 @@ namespace Tpetra {
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
+    , enable_cuda_rdma_ (enable_cuda_rdma_default)
     , numExports_ (0)
     , selfMessage_ (false)
     , numSends_ (0)
@@ -207,6 +216,7 @@ namespace Tpetra {
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
+    , enable_cuda_rdma_ (enable_cuda_rdma_default)
     , numExports_ (0)
     , selfMessage_ (false)
     , numSends_ (0)
@@ -224,6 +234,7 @@ namespace Tpetra {
     , sendType_ (distributor.sendType_)
     , barrierBetween_ (distributor.barrierBetween_)
     , debug_ (distributor.debug_)
+    , enable_cuda_rdma_ (distributor.enable_cuda_rdma_)
     , numExports_ (distributor.numExports_)
     , selfMessage_ (distributor.selfMessage_)
     , numSends_ (distributor.numSends_)
@@ -285,6 +296,7 @@ namespace Tpetra {
     std::swap (sendType_, rhs.sendType_);
     std::swap (barrierBetween_, rhs.barrierBetween_);
     std::swap (debug_, rhs.debug_);
+    std::swap (enable_cuda_rdma_, rhs.enable_cuda_rdma_);
     std::swap (numExports_, rhs.numExports_);
     std::swap (selfMessage_, rhs.selfMessage_);
     std::swap (numSends_, rhs.numSends_);
@@ -363,6 +375,7 @@ namespace Tpetra {
       getIntegralValue<Details::EDistributorSendType> (*plist, "Send type");
     const bool useDistinctTags = plist->get<bool> ("Use distinct tags");
     const bool debug = plist->get<bool> ("Debug");
+    const bool enable_cuda_rdma = plist->get<bool> ("Enable MPI CUDA RDMA support");
 
     // We check this property explicitly, since we haven't yet learned
     // how to make a validator that can cross-check properties.
@@ -389,6 +402,7 @@ namespace Tpetra {
     barrierBetween_ = barrierBetween;
     useDistinctTags_ = useDistinctTags;
     debug_ = debug;
+    enable_cuda_rdma_ = enable_cuda_rdma;
 
     // ParameterListAcceptor semantics require pointer identity of the
     // sublist passed to setParameterList(), so we save the pointer.
@@ -407,6 +421,7 @@ namespace Tpetra {
     const bool barrierBetween = barrierBetween_default;
     const bool useDistinctTags = useDistinctTags_default;
     const bool debug = tpetraDistributorDebugDefault;
+    const bool enable_cuda_rdma = enable_cuda_rdma_default;
 
     Array<std::string> sendTypes = distributorSendTypes ();
     const std::string defaultSendType ("Send");
@@ -428,6 +443,10 @@ namespace Tpetra {
                 "MPI message tags for different code paths.");
     plist->set ("Debug", debug, "Whether to print copious debugging output on "
                 "all processes.");
+    plist->set ("Enable MPI CUDA RDMA support", enable_cuda_rdma,
+                "Whether to enable RDMA support for MPI communication between "
+                "CUDA GPUs.  Only enable this if you know for sure your MPI "
+                "library supports it.");
 
     Teuchos::setupVerboseObjectSublist (&*plist);
     return Teuchos::rcp_const_cast<const ParameterList> (plist);
@@ -639,6 +658,8 @@ namespace Tpetra {
           out << "\"Use distinct tags\": "
               << (useDistinctTags_ ? "true" : "false") << endl;
           out << "\"Debug\": " << (debug_ ? "true" : "false") << endl;
+          out << "\"Enable MPI CUDA RDMA support\": " <<
+            (enable_cuda_rdma_ ? "true" : "false") << endl;
         }
       }
       if (vl == VERB_LOW) {

@@ -47,8 +47,14 @@
 #include <utility>
 #include <iostream>
 
+#include <KokkosCore_config.h>
+
 #include <Kokkos_Threads.hpp>
+
+#if defined( KOKKOS_HAVE_CUDA )
 #include <Kokkos_Cuda.hpp>
+#endif
+
 #include <BoxElemPart.hpp>
 #include <BoxElemFixture.hpp>
 

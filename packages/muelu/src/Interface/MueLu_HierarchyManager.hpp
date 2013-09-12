@@ -130,13 +130,17 @@ namespace MueLu {
     }
 
     //! Setup Hierarchy object
-    virtual void SetupHierarchy(Hierarchy & H) const {
+    virtual void SetupHierarchy(Hierarchy& H) const {
       TEUCHOS_TEST_FOR_EXCEPTION(!H.GetLevel(0)->IsAvailable("A"), Exceptions::RuntimeError, "No fine level operator");
 
       // Setup Matrix
       // TODO: I should certainly undo this somewhere...
       RCP<Level>  l  = H.GetLevel(0);
       RCP<Matrix> Op = l->Get<RCP<Matrix> >("A");
+
+      Xpetra::UnderlyingLib lib = Op->getRowMap()->lib();
+      H.setlib(lib);
+
       SetupMatrix(*Op);
       SetupExtra(H);
 

@@ -45,7 +45,11 @@
 #include <Teuchos_DataAccess.hpp>
 #include <Teuchos_Range1D.hpp>
 #include "Tpetra_ConfigDefs.hpp"
+#if TPETRA_USE_KOKKOS_DISTOBJECT
+#include "Tpetra_DistObjectKA.hpp"
+#else
 #include "Tpetra_DistObject.hpp"
+#endif
 #include "Tpetra_ViewAccepter.hpp"
 #include <Kokkos_MultiVector.hpp>
 #include <Teuchos_BLAS_types.hpp>
@@ -321,7 +325,11 @@ namespace Tpetra {
            class GlobalOrdinal=LocalOrdinal,
            class Node=KokkosClassic::DefaultNode::DefaultNodeType>
   class MultiVector :
+#if TPETRA_USE_KOKKOS_DISTOBJECT
+    public DistObjectKA<Scalar, LocalOrdinal, GlobalOrdinal, Node>
+#else
     public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
+#endif
   {
   public:
     //! @name Typedefs to facilitate template metaprogramming.
@@ -336,6 +344,12 @@ namespace Tpetra {
     //! The Kokkos Node type.
     typedef Node          node_type;
 
+#if TPETRA_USE_KOKKOS_DISTOBJECT
+    typedef DistObjectKA<Scalar, LocalOrdinal, GlobalOrdinal, Node> DO;
+    typedef typename DO::device_type device_type;
+#else
+    typedef DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> DO;
+#endif
 
     //@}
     //! @name Constructors and destructor
@@ -1028,14 +1042,40 @@ namespace Tpetra {
     virtual bool
     checkSizes (const SrcDistObject& sourceObj);
 
+    //! Number of packets to send per LID
+    virtual size_t constantNumberOfPackets () const;
+
+#if TPETRA_USE_KOKKOS_DISTOBJECT
+    virtual void
+    copyAndPermute (
+      const SrcDistObject& sourceObj,
+      size_t numSameIDs,
+      const Kokkos::View<const LocalOrdinal*, device_type> &permuteToLIDs,
+      const Kokkos::View<const LocalOrdinal*, device_type> &permuteFromLIDs);
+
+    virtual void
+    packAndPrepare (
+      const SrcDistObject& sourceObj,
+      const Kokkos::View<const LocalOrdinal*, device_type> &exportLIDs,
+      Kokkos::View<Scalar*, device_type> &exports,
+      const Kokkos::View<size_t*, device_type> &numPacketsPerLID,
+      size_t& constantNumPackets,
+      Distributor &distor);
+
+    virtual void
+    unpackAndCombine (
+      const Kokkos::View<const LocalOrdinal*, device_type> &importLIDs,
+      const Kokkos::View<const Scalar*, device_type> &imports,
+      const Kokkos::View<size_t*, device_type> &numPacketsPerLID,
+      size_t constantNumPackets,
+      Distributor &distor,
+      CombineMode CM);
+#else
     virtual void
     copyAndPermute (const SrcDistObject& sourceObj,
                     size_t numSameIDs,
                     const ArrayView<const LocalOrdinal>& permuteToLIDs,
                     const ArrayView<const LocalOrdinal>& permuteFromLIDs);
-
-    //! Number of packets to send per LID
-    virtual size_t constantNumberOfPackets () const;
 
     virtual void
     packAndPrepare (const SrcDistObject& sourceObj,
@@ -1052,6 +1092,7 @@ namespace Tpetra {
                       size_t constantNumPackets,
                       Distributor& distor,
                       CombineMode CM);
+#endif
 
     void createViews () const;
     void createViewsNonConst (KokkosClassic::ReadWriteOption rwo);
@@ -1075,6 +1116,25 @@ namespace Tpetra {
     mutable bool createViewsNonConstRaisedEfficiencyWarning_;
 
     //@}
+
+#if TPETRA_USE_KOKKOS_DISTOBJECT
+
+    Kokkos::View<const Scalar*, device_type, Kokkos::MemoryUnmanaged>
+    getKokkosView() const {
+      Teuchos::ArrayRCP<const Scalar> buff = MVT::getValues (lclMV_);
+      Kokkos::View<const Scalar*, device_type, Kokkos::MemoryUnmanaged> v(
+        buff.getRawPtr(), buff.size());
+      return v;
+    }
+    Kokkos::View<Scalar*, device_type, Kokkos::MemoryUnmanaged>
+    getKokkosViewNonConst() {
+      Teuchos::ArrayRCP<Scalar> buff = MVT::getValuesNonConst (lclMV_);
+      Kokkos::View<Scalar*, device_type, Kokkos::MemoryUnmanaged> v(
+        buff.getRawPtr(), buff.size());
+      return v;
+    }
+
+#endif
   }; // class MultiVector
 
   /// \brief Nonmember MultiVector constructor: make a MultiVector from a given Map.

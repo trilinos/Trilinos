@@ -68,17 +68,12 @@ SET(CTEST_TEST_TYPE Nightly)
 SET(CTEST_TEST_TIMEOUT 900)
 
 SET(Trilinos_PACKAGES MueLu Xpetra)
-SET(EXTRA_EXCLUDE_PACKAGES Kokkos Ifpack2 ML Tpetra Stratimikos Triutils AztecOO)
+#SET(EXTRA_EXCLUDE_PACKAGES Kokkos Ifpack2 ML Tpetra Stratimikos Triutils AztecOO)
 
 SET(EXTRA_CONFIGURE_OPTIONS
-  "-DTPL_ENABLE_SuperLU:BOOL=ON"
-  "-DSuperLU_INCLUDE_DIRS=/home/jhu/Software/SuperLU_4.3/SRC"
-  "-DSuperLU_LIBRARY_DIRS=/home/jhu/Software/SuperLU_4.3/lib"
-  "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
-
-  "-DTPL_BLAS_LIBRARIES:STRING=-L/usr/local/intel/Compiler/11.1/064/mkl/lib/em64t -L/usr/local/intel/Compiler/11.1/064/lib/intel64 -L/usr/lib64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread"
-  "-DTPL_LAPACK_LIBRARIES:STRING=-L/usr/local/intel/Compiler/11.1/064/mkl/lib/em64t -L/usr/local/intel/Compiler/11.1/064/lib/intel64 -L/usr/lib64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread"
-
+  "-DTrilinos_ENABLE_Kokkos:BOOL=OFF"
+  "-DTrilinos_ENABLE_Tpetra:BOOL=OFF"
+  "-DTrilinos_ENABLE_ML:BOOL=OFF"
 )
 
 #

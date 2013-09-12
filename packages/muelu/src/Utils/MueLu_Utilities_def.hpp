@@ -840,16 +840,24 @@ namespace MueLu {
 
       TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GO), Exceptions::RuntimeError, "Incompatible sizes");
 
-      Teuchos::Array<GO>     inds;
-      Teuchos::Array<double> vals;
+      Teuchos::Array<GO> inds;
+      Teuchos::Array<SC> vals;
       for (int i = 0; i < m; i++) {
         int row, rownnz;
         ifs.read(reinterpret_cast<char*>(&row),    sizeof(row));
         ifs.read(reinterpret_cast<char*>(&rownnz), sizeof(rownnz));
         inds.resize(rownnz);
         vals.resize(rownnz);
-        for (int j = 0; j < rownnz; j++) ifs.read(reinterpret_cast<char*>(&inds[0]+j), sizeof(inds[j]));
-        for (int j = 0; j < rownnz; j++) ifs.read(reinterpret_cast<char*>(&vals[0]+j), sizeof(vals[j]));
+        for (int j = 0; j < rownnz; j++) {
+          int index;
+          ifs.read(reinterpret_cast<char*>(&index), sizeof(index));
+          inds[j] = Teuchos::as<GO>(index);
+        }
+        for (int j = 0; j < rownnz; j++) {
+          double value;
+          ifs.read(reinterpret_cast<char*>(&value), sizeof(value));
+          vals[j] = Teuchos::as<SC>(value);
+        }
         A->insertGlobalValues(row, inds, vals);
       }
       A->fillComplete();

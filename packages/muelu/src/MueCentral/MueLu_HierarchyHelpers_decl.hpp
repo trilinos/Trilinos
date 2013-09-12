@@ -123,8 +123,8 @@ namespace MueLu {
     void Build(Level & level) const;
 
   private:
-    RCP<const FactoryBase> presmootherFact_;
-    RCP<const FactoryBase> postsmootherFact_;
+    RCP<const FactoryBase> preSmootherFact_;
+    RCP<const FactoryBase> postSmootherFact_;
   };
 
 } // namespace MueLu

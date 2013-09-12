@@ -43,10 +43,17 @@
 #include "Ifpack2_AdditiveSchwarz_decl.hpp"
 #include "Ifpack2_ILUT_decl.hpp"
 
+#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
+#include "Ifpack2_SupportGraph_decl.hpp"
+#endif
+
 #ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
 #include "Ifpack2_AdditiveSchwarz_def.hpp"
 #include "Ifpack2_ILUT_def.hpp"
+#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
+#include "Ifpack2_SupportGraph_def.hpp"
+#endif
 #include "Ifpack2_ETIHelperMacros.h"
 
 #include "KokkosClassic_config.h"

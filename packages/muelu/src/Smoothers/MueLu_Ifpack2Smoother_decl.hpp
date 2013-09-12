@@ -174,7 +174,7 @@ namespace MueLu {
     @param B right-hand side
     @param InitialGuessIsZero (optional) If false, some work can be avoided. Whether this actually saves any work depends on the underlying Ifpack2 implementation.
     */
-    void Apply(MultiVector& X, MultiVector const &B, bool const &InitialGuessIsZero=false) const;
+    void Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero = false) const;
 
     //@}
 
@@ -186,7 +186,7 @@ namespace MueLu {
     //@}
 
     //! Clone the smoother to a different node type
-    template<typename Node2, typename LocalMatOps2> 
+    template<typename Node2, typename LocalMatOps2>
     RCP<MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node2,LocalMatOps2> > clone(const RCP<Node2>& node2, const Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2,LocalMatOps2> >& A_newnode) const;
 
     //! @name Overridden from Teuchos::Describable

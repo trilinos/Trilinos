@@ -93,6 +93,8 @@ class CudaSpace ;
 
 #if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ )
 
+/*  Compiling with CUDA compiler for device code. */
+
 #if ( __CUDA_ARCH__ < 200 )
 #error "Cuda device capability >= 2.0 is required"
 #endif
@@ -108,6 +110,8 @@ class CudaSpace ;
 #if defined( __CUDACC__ ) && ! defined( __CUDA_ARCH__ )
 
 /*  Compiling with CUDA compiler for host code. */
+
+#define KOKKOS_FORCEINLINE_FUNCTION  __forceinline__
 
 #endif /* #if defined( __CUDACC__ ) && ! defined( __CUDA_ARCH__ ) */
 

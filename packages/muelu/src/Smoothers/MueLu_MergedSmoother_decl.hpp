@@ -54,48 +54,40 @@ namespace MueLu {
 
   class Level;
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class MergedSmoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
-  {
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  class MergedSmoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 #undef MUELU_MERGEDSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
-    // UNUSED: typedef vector::size_type size_type;
-    //         ArrayRCP<RCP<SmootherPrototype>>::size_type
-
     //! @name Constructors / destructors
     //@{
 
     //! Constructor
-    MergedSmoother(ArrayRCP<RCP<SmootherPrototype> > & smootherList, bool verbose=false);
+    MergedSmoother(ArrayRCP<RCP<SmootherPrototype> >& smootherList, bool verbose = false);
 
     //! Copy constructor (performs a deep copy of input object)
     MergedSmoother(const MergedSmoother& src);
 
     //! Copy method (performs a deep copy of input object)
-    // TODO: Copy() should be virtual (if a subclass of MergedSmoother is created later) ?
     RCP<SmootherPrototype> Copy() const;
 
     //! Destructor
-    virtual ~MergedSmoother();
+    virtual ~MergedSmoother() { }
     //@}
 
     //! @name Set/Get methods
     //@{
 
-    void StandardOrder();
-    void ReverseOrder();
+    void StandardOrder() { reverseOrder_ = false; }
+    void ReverseOrder()  { reverseOrder_ = true;  }
 
-    bool GetReverseOrder() const; // TODO: GetOrder() is a better name (+ enum to define order)
-
-    // UNUSED // TODO: GetSmoother() do not take into account the reverseOrder option. Might be confusing... To be changed in MueMat too
-    // const SmootherPrototype & GetSmoother(size_type Smoother) const;
+    // TODO: GetOrder() is a better name (+ enum to define order)
+    bool GetReverseOrder() const { return reverseOrder_; }
 
     //  TODO  const ArrayRCP<const RCP<const SmootherPrototype> > & GetSmootherList() const;
-    const ArrayRCP<const RCP<SmootherPrototype> > /* & */ GetSmootherList() const;
+    const ArrayRCP<const RCP<SmootherPrototype> > GetSmootherList() const { return smootherList_; }
 
-    // UNUSED size_type GetNumSmoothers() const;
     //@}
 
     void DeclareInput(Level &currentLevel) const;
@@ -104,7 +96,7 @@ namespace MueLu {
     //@{
 
     /*! @brief Set up. */
-    void Setup(Level &level);
+    void Setup(Level& level);
 
     /*! @brief Apply
 
@@ -114,13 +106,14 @@ namespace MueLu {
     @param B right-hand side
     @param InitialGuessIsZero
     */
-    void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero=false) const;
+    void Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero = false) const;
 
     //@}
 
-    //! @name Utilities.
-    //@{
-    void Print(std::string prefix) const;
+    //! Custom SetFactory
+    void SetFactory(const std::string& varName, const RCP<const FactoryBase>& factory);
+
+    void print(Teuchos::FancyOStream& out, const VerbLevel verbLevel = Default) const;
 
     void CopyParameters(RCP<SmootherPrototype> src); // TODO: wrong prototype. We do not need an RCP here.
 

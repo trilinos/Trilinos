@@ -76,7 +76,7 @@ namespace MueLu {
     //@{
 
     //! Apply smoother.
-    virtual void Apply(MultiVector &x, MultiVector const &rhs, bool const &InitialGuessIsZero = false) const = 0;
+    virtual void Apply(MultiVector& x, const MultiVector& rhs, bool InitialGuessIsZero = false) const = 0;
 
     //@}
 

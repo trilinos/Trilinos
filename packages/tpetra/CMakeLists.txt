@@ -272,6 +272,20 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF
   )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_Kokkos_DistObject
+  TPETRA_ENABLE_KOKKOS_DISTOBJECT
+  "Use experimental Kokkos::View for DistObject methods, enabling efficient communication for GPU node types."
+  OFF
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_MPI_CUDA_RDMA
+  TPETRA_ENABLE_MPI_CUDA_RDMA
+  "Enable RDMA support for MPI communication between CUDA GPUs.  Only turn this on if you know for sure your MPI library supports it.  Requires also enabling Tpetra_ENABLE_Kokkos_DistObject."
+  OFF
+  )
+
 
 #
 # C) Add the libraries, tests, and examples

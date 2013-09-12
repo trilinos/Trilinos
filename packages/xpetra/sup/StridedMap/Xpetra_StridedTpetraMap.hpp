@@ -225,8 +225,8 @@ namespace Xpetra {
      *  \pre elementList.size() % getFixedBlockSize() == 0
      *  \post CheckConsistency() == true
      */
-    StridedTpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase, std::vector<size_t>& stridingInfo, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId=-1, const Teuchos::RCP< Node > &node=KokkosClassic::DefaultNode::getDefaultNode())
-    : Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElements, elementList, indexBase, comm, node), Xpetra::StridedMap<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElements, elementList, indexBase, stridingInfo, comm, stridedBlockId)
+    StridedTpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase, std::vector<size_t>& stridingInfo, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId=-1, GlobalOrdinal offset = 0, const Teuchos::RCP< Node > &node=KokkosClassic::DefaultNode::getDefaultNode())
+    : Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElements, elementList, indexBase, comm, node), Xpetra::StridedMap<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElements, elementList.size(), indexBase, stridingInfo, comm, stridedBlockId, offset)
     {
         if(stridedBlockId != -1) {
           TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo.size() < Teuchos::as<size_t>(stridedBlockId), Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: stridedBlockId > stridingInfo.size()");

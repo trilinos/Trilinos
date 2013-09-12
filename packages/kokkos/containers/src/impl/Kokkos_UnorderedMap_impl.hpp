@@ -484,9 +484,9 @@ struct map_data
            , compare_type compare
            , hash_type hash
           )
-    : node_blocks("unordered_map_nodes", (static_cast<uint32_t>((num_nodes+node_block_type::size-1u)/node_block_type::size)))
-    , hashes("unordered_map_hashes", find_hash_size(capacity()) )
-    , counts("unordered_map_counts")
+    : node_blocks("UnorderedMap_nodes", (static_cast<uint32_t>((num_nodes+node_block_type::size-1u)/node_block_type::size)))
+    , hashes("UnorderedMap_hashes", find_hash_size(capacity()) )
+    , counts("UnorderedMap_counts")
     , key_compare(compare)
     , key_hash(hash)
   {}
@@ -809,8 +809,8 @@ inline void deep_copy_data_impl( MapDst & dst, const MapSrc & src )
 {
   typedef typename MapDst::node_block_type node_block_type;
   typedef Kokkos::Impl::DeepCopy< typename MapDst::device_type::memory_space, typename MapSrc::device_type::memory_space > raw_deep_copy;
-  dst.node_blocks = typename MapDst::node_block_view("unordered_map_nodes", src.node_blocks.size());
-  dst.hashes = typename MapDst::hash_view("unordered_map_hashes", src.hashes.size());
+  dst.node_blocks = typename MapDst::node_block_view("UnorderedMap_nodes", src.node_blocks.size());
+  dst.hashes = typename MapDst::hash_view("UnorderedMap_hashes", src.hashes.size());
 
   raw_deep_copy(const_cast<node_block_type*>(dst.node_blocks.ptr_on_device()), src.node_blocks.ptr_on_device(), sizeof(node_block_type) * src.node_blocks.size());
   raw_deep_copy(const_cast<node_atomic*>(dst.hashes.ptr_on_device()), src.hashes.ptr_on_device(), sizeof(node_atomic) * src.hashes.size());

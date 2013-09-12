@@ -53,7 +53,7 @@
 /*--------------------------------------------------------------------------*/
 
 #if defined( __CUDACC__ )
-#include <Cuda/cub/cub.cuh>
+#include <cub/cub.cuh>
 
 namespace Kokkos {
 namespace Impl {
@@ -256,25 +256,32 @@ struct CudaParallelLaunch< DriverType , true > {
                       const dim3       & block ,
                       const int          shmem )
   {
-    if ( sizeof( Kokkos::Impl::CudaTraits::ConstantGlobalBufferType ) <
-         sizeof( DriverType ) ) {
-      Kokkos::Impl::throw_runtime_exception( std::string("CudaParallelLaunch FAILED: Functor is too large") );
-    }
+    if ( grid.x && block.x ) {
 
-    if ( CudaTraits::SharedMemoryCapacity < shmem ) {
-      Kokkos::Impl::throw_runtime_exception( std::string("CudaParallelLaunch FAILED: shared memory request is too large") );
-    }
-    else if ( shmem ) {
-      cudaFuncSetCacheConfig( cuda_parallel_launch_constant_memory< DriverType > , cudaFuncCachePreferShared );
-    } else {
-      cudaFuncSetCacheConfig( cuda_parallel_launch_constant_memory< DriverType > , cudaFuncCachePreferL1 );
-    }
+      if ( sizeof( Kokkos::Impl::CudaTraits::ConstantGlobalBufferType ) <
+           sizeof( DriverType ) ) {
+        Kokkos::Impl::throw_runtime_exception( std::string("CudaParallelLaunch FAILED: Functor is too large") );
+      }
 
-    // Copy functor to constant memory on the device
-    cudaMemcpyToSymbol( kokkos_impl_cuda_constant_memory_buffer , & driver , sizeof(DriverType) );
+      if ( CudaTraits::SharedMemoryCapacity < shmem ) {
+        Kokkos::Impl::throw_runtime_exception( std::string("CudaParallelLaunch FAILED: shared memory request is too large") );
+      }
+      else if ( shmem ) {
+        cudaFuncSetCacheConfig( cuda_parallel_launch_constant_memory< DriverType > , cudaFuncCachePreferShared );
+      } else {
+        cudaFuncSetCacheConfig( cuda_parallel_launch_constant_memory< DriverType > , cudaFuncCachePreferL1 );
+      }
 
-    // Invoke the driver function on the device
-    cuda_parallel_launch_constant_memory< DriverType ><<< grid , block , shmem >>>();
+      // Copy functor to constant memory on the device
+      cudaMemcpyToSymbol( kokkos_impl_cuda_constant_memory_buffer , & driver , sizeof(DriverType) );
+
+      // Invoke the driver function on the device
+      cuda_parallel_launch_constant_memory< DriverType ><<< grid , block , shmem >>>();
+
+#if defined( KOKKOS_EXPRESSION_CHECK )
+      Kokkos::Cuda::fence();
+#endif
+    }
   }
 };
 
@@ -287,16 +294,23 @@ struct CudaParallelLaunch< DriverType , false > {
                       const dim3       & block ,
                       const int          shmem )
   {
-    if ( CudaTraits::SharedMemoryCapacity < shmem ) {
-      Kokkos::Impl::throw_runtime_exception( std::string("CudaParallelLaunch FAILED: shared memory request is too large") );
-    }
-    else if ( shmem ) {
-      cudaFuncSetCacheConfig( cuda_parallel_launch_constant_memory< DriverType > , cudaFuncCachePreferShared );
-    } else {
-      cudaFuncSetCacheConfig( cuda_parallel_launch_constant_memory< DriverType > , cudaFuncCachePreferL1 );
-    }
+    if ( grid.x && block.x ) {
 
-    cuda_parallel_launch_local_memory< DriverType ><<< grid , block , shmem >>>( driver );
+      if ( CudaTraits::SharedMemoryCapacity < shmem ) {
+        Kokkos::Impl::throw_runtime_exception( std::string("CudaParallelLaunch FAILED: shared memory request is too large") );
+      }
+      else if ( shmem ) {
+        cudaFuncSetCacheConfig( cuda_parallel_launch_constant_memory< DriverType > , cudaFuncCachePreferShared );
+      } else {
+        cudaFuncSetCacheConfig( cuda_parallel_launch_constant_memory< DriverType > , cudaFuncCachePreferL1 );
+      }
+
+      cuda_parallel_launch_local_memory< DriverType ><<< grid , block , shmem >>>( driver );
+
+#if defined( KOKKOS_EXPRESSION_CHECK )
+      Kokkos::Cuda::fence();
+#endif
+    }
   }
 };
 

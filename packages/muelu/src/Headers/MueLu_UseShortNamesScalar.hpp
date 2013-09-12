@@ -198,6 +198,18 @@ typedef MueLu::RAPShiftFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOp
 typedef MueLu::RebalanceAcFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RebalanceAcFactory;
 #endif
 
+#ifdef MUELU_REBALANCEBLOCKACFACTORY_SHORT
+typedef MueLu::RebalanceBlockAcFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RebalanceBlockAcFactory;
+#endif
+
+#ifdef MUELU_REBALANCEBLOCKINTERPOLATIONFACTORY_SHORT
+typedef MueLu::RebalanceBlockInterpolationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RebalanceBlockInterpolationFactory;
+#endif
+
+#ifdef MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_SHORT
+typedef MueLu::RebalanceBlockRestrictionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RebalanceBlockRestrictionFactory;
+#endif
+
 #ifdef MUELU_REBALANCETRANSFERFACTORY_SHORT
 typedef MueLu::RebalanceTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RebalanceTransferFactory;
 #endif

@@ -343,11 +343,15 @@ IF(Stokhos_ENABLE_Sacado)
       )
 
     SET(CUDA_SOURCES "")
-    SET(KKUT_DEPLIBS stokhos kokkoscore_impl)
+    SET(KKUT_DEPLIBS stokhos kokkoscore)
     IF (Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
+      # add MPI include dir to nvcc
+      IF( TPL_ENABLE_MPI )
+        CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
+      ENDIF()
       CUDA_COMPILE(CUDA_SOURCES Stokhos_KokkosArrayKernelsUnitTestNew_Cuda.cu)
-      SET(KKUT_DEPLIBS ${KKUT_DEPLIBS} kokkoscore_devicecuda)
     ENDIF()
+
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       KokkosArrayKernelsUnitTestNew
       SOURCES Stokhos_KokkosArrayKernelsUnitTestNew.hpp

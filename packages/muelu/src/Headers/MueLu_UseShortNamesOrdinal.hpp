@@ -70,6 +70,10 @@ typedef MueLu::PRFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PRFactory;
 typedef MueLu::RebalanceMapFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RebalanceMapFactory;
 #endif
 
+#ifdef MUELU_REPARTITIONINTERFACE_SHORT
+typedef MueLu::RepartitionInterface<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RepartitionInterface;
+#endif
+
 #ifdef MUELU_SMALLAGGREGATIONALGORITHM_SHORT
 typedef MueLu::SmallAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SmallAggregationAlgorithm;
 #endif

@@ -111,9 +111,6 @@ inverse(Tensor<T, N> const & A)
     // Determine full pivot
     T pivot = 0.0;
 
-    // Initialized here due to GCC 4.4.X spurious uninitialized warning.
-    T s = 0.0;
-
     IndexIter pivot_row_iter = intact_rows.begin();
     IndexIter pivot_col_iter = intact_cols.begin();
 
@@ -125,7 +122,7 @@ inverse(Tensor<T, N> const & A)
 
         Index const row = *rows_iter;
         Index const col = *cols_iter;
-        s = std::abs(S(row, col));
+        T s = std::abs(S(row, col));
 
         if (s > pivot) {
 
@@ -683,10 +680,7 @@ log_gregory(Tensor<T, N> const & A)
   T
   norm_term = norm_1(term);
 
-  // Initialized here due to GCC 4.4.X spurious uninitialized warning.
   T
-  relative_error = 0.0;
-
   relative_error = norm_term / norm_tensor;
 
   Tensor<T, N> const
@@ -1473,10 +1467,6 @@ polar_rotation(Tensor<T, N> const & A)
   Index
   num_iter = 0;
  
-  // Initialized here due to GCC 4.4.X spurious uninitialized warning.
-  T
-  delta = 0.0;
-
   while (num_iter < max_iter) {
 
     Tensor<T, N>
@@ -1496,6 +1486,7 @@ polar_rotation(Tensor<T, N> const & A)
     Tensor<T, N>
     D = Z - X;
 
+    T
     delta = norm(D) / norm(Z);
 
     if (scale == true && delta < tol_scale) {
@@ -1898,16 +1889,10 @@ eig_sym_NxN(Tensor<T, N> const & A)
   Tensor<T, N>
   V = identity<T, N>(dimension);
 
-  // Initialized here due to GCC 4.4.X spurious uninitialized warning.
   T
-  off = 0.0;
-
   off = norm_off_diagonal(D);
 
-  // Initialized here due to GCC 4.4.X spurious uninitialized warning.
-  T 
-  tol = 0.0;
-
+  T
   tol = machine_epsilon<T>() * norm(A);
 
   Index const

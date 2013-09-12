@@ -532,7 +532,8 @@ int main(int argc, char *argv[]) {
   ifpackPredictList.set("relaxation: damping factor", PRED_omega );
   ifpackPredictType = "RELAXATION";
   ifpackPredictList.set("relaxation: type", "Gauss-Seidel");
-  smoProtoPredict = rcp( new TrilinosSmoother(ifpackPredictType, ifpackPredictList, 0, A00Fact) );
+  smoProtoPredict = rcp( new TrilinosSmoother(ifpackPredictType, ifpackPredictList, 0) );
+  smoProtoPredict->SetFactory("A", A00Fact);
   RCP<SmootherFactory> SmooPredictFact = rcp( new SmootherFactory(smoProtoPredict) );
   // define temporary FactoryManager that is used as input for BraessSarazin smoother
   RCP<FactoryManager> MPredict = rcp(new FactoryManager());
