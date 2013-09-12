@@ -64,6 +64,9 @@
 /* Define when enabling RDMA support for MPI communication for CUDA GPUs */
 #cmakedefine TPETRA_ENABLE_MPI_CUDA_RDMA
 
+/* Define when enabling Tpetra for refactoring to new KokkosCore interface */
+#cmakedefine TPETRA_HAVE_KOKKOS_REFACTOR
+
 /* Define if user requested explicit instantiation of classes into libtpetra */
 #cmakedefine HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
