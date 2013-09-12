@@ -12,12 +12,6 @@
 #include "CJ_Version.h"
 #include "SL_tokenize.h"
 
-#if defined(__PUMAGON__)
-#define NPOS (size_t)-1
-#else
-#define NPOS std::string::npos
-#endif
-
 namespace {
   void parse_variable_names(const char *tokens, StringIdVector *variable_list);
 }

@@ -36,10 +36,9 @@
 #include <sys/unistd.h>
 #include <string>
 
-#if defined(__PUMAGON__)
-#define NPOS (size_t)-1
-#else
-#define NPOS std::string::npos
+#ifdef HAVE_MPI
+#include <mpi.h>
+#include <numeric>
 #endif
 
 #include <sys/stat.h>
@@ -214,11 +213,11 @@ namespace Ioss {
   //: last period.
   const std::string FileInfo::extension() const
   {
-    size_t ind  = filename_.find_last_of(".", NPOS);
-    size_t inds = filename_.find_last_of("/", NPOS);
+    size_t ind  = filename_.find_last_of(".", std::string::npos);
+    size_t inds = filename_.find_last_of("/", std::string::npos);
 
     // Protect against './filename' returning /filename as extension
-    if (ind != NPOS && (inds == NPOS || inds < ind))
+    if (ind != std::string::npos && (inds == std::string::npos || inds < ind))
       return filename_.substr(ind+1, filename_.size());
     else
       return std::string();
@@ -227,7 +226,7 @@ namespace Ioss {
   const std::string FileInfo::pathname() const
   {
     size_t ind = filename_.find_last_of("/", filename_.size());
-    if (ind != NPOS)
+    if (ind != std::string::npos)
       return filename_.substr(0,ind);
     else
       return std::string();
@@ -236,7 +235,7 @@ namespace Ioss {
   const std::string FileInfo::tailname() const
   {
     size_t ind = filename_.find_last_of("/", filename_.size());
-    if (ind != NPOS)
+    if (ind != std::string::npos)
       return filename_.substr(ind+1, filename_.size());
     else
       return filename_; // No path, just return the filename
@@ -248,7 +247,7 @@ namespace Ioss {
 
     // Strip off the extension
     size_t ind = tail.find_last_of('.', tail.size());
-    if (ind != NPOS)
+    if (ind != std::string::npos)
       return tail.substr(0,ind);
     else
       return tail;
