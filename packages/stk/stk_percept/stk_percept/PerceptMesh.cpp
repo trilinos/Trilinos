@@ -4467,36 +4467,50 @@ namespace stk {
     static std::string vtk_type(PerceptMesh& eMesh, stk::mesh::Entity element)
     {
       const CellTopologyData * topology_data = eMesh.get_cell_topology(element);
+      if (!topology_data)
+        {
+          const MyPairIterRelation elem_nodes(*eMesh.get_bulk_data(), element, eMesh.node_rank());
+          unsigned nn = elem_nodes.size();
+          switch(nn)
+            {
+            case 2:   return "3";
+            case 3:   return "5";
+            case 4:
+              if (eMesh.get_spatial_dim() == 2)
+                return "9";
+              else
+                return "10";
+            case 5:   return "14";
+            case 6:
+              if (eMesh.get_spatial_dim() == 2)
+                return "22";
+              else
+                return "13";
+            case 8:
+              if (eMesh.get_spatial_dim() == 2)
+                return "23";
+              else
+                return "12";
+            case 10:  return "24";
+            case 20:  return "25";
+            default:
+              return toString(nn);
+            }
+        }
 
       switch(topology_data->key)
         {
-        case shards::Triangle<3>::key:
-          return "5";
-        case shards::Quadrilateral<4>::key:
-          return "9";
-        case shards::Tetrahedron<4>::key:
-          return "10";
-        case shards::Pyramid<5>::key:
-          return "14";
-        case shards::Wedge<6>::key:
-          return "13";
-        case shards::Hexahedron<8>::key:
-          return "12";
-
-        case shards::Triangle<6>::key:
-          return "22";
-
-        case shards::Quadrilateral<8>::key:
-          return "23";
-
-        case shards::Tetrahedron<10>::key:
-          return "24";
-
-        case shards::Hexahedron<20>::key:
-          return "25";
-
-        case shards::Line<2>::key:
-          return "3";
+        case shards::Line<2>::key:            return "3";
+        case shards::Triangle<3>::key:        return "5";
+        case shards::Quadrilateral<4>::key:   return "9";
+        case shards::Tetrahedron<4>::key:     return "10";
+        case shards::Pyramid<5>::key:         return "14";
+        case shards::Wedge<6>::key:           return "13";
+        case shards::Hexahedron<8>::key:      return "12";
+        case shards::Triangle<6>::key:        return "22";
+        case shards::Quadrilateral<8>::key:   return "23";
+        case shards::Tetrahedron<10>::key:    return "24";
+        case shards::Hexahedron<20>::key:     return "25";
 
           // unimplemented
         case shards::Node::key: return "Node";
@@ -4649,10 +4663,9 @@ namespace stk {
                 {
                   stk::mesh::Entity element = bucket[iElement];
                   if (list && list->find(element) == list->end()) continue;
-                  const CellTopologyData * const cell_topo_data = this->get_cell_topology(element);
                   const MyPairIterRelation elem_nodes(*get_bulk_data(), element, node_rank() );
                   nnode_per_elem = elem_nodes.size(); // FIXME for hetero mesh
-                  if (nnode_per_elem == 0 || !cell_topo_data)
+                  if (nnode_per_elem == 0)
                     continue;
 
                   ++nelem;
@@ -4697,8 +4710,7 @@ namespace stk {
                   stk::mesh::Entity element = bucket[iElement];
                   if (list && list->find(element) == list->end()) continue;
                   const MyPairIterRelation elem_nodes(*get_bulk_data(), element, node_rank() );
-                  const CellTopologyData * const cell_topo_data = this->get_cell_topology(element);
-                  if (elem_nodes.size() == 0 || !cell_topo_data)
+                  if (elem_nodes.size() == 0)
                     continue;
 
                   file << elem_nodes.size() << " ";
@@ -4724,9 +4736,8 @@ namespace stk {
                 {
                   stk::mesh::Entity element = bucket[iElement];
                   if (list && list->find(element) == list->end()) continue;
-                  const CellTopologyData * const cell_topo_data = this->get_cell_topology(element);
                   const MyPairIterRelation elem_nodes(*get_bulk_data(), element, node_rank() );
-                  if (elem_nodes.size() == 0 || !cell_topo_data)
+                  if (elem_nodes.size() == 0)
                     continue;
                   file << vtk_type(*this, element) << "\n";
                 }
@@ -5246,7 +5257,7 @@ namespace stk {
       throw std::runtime_error("no geometry available, set STK_PERCEPT_HAS_GEOMETRY flag: not implemented");
 #endif
     }
-    
+
     //====================================================================================================================================
     //====================================================================================================================================
     //====================================================================================================================================

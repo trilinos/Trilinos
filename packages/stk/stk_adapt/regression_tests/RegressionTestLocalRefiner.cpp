@@ -966,6 +966,10 @@ namespace stk
             {
               percept::PerceptMesh eMesh;
               eMesh.open("tmp.e");
+              if (!do_part_for_edges)
+                {
+                  eMesh.set_create_edges(true);
+                }
 
               int scalarDimension = 0; // a scalar
               stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
@@ -982,19 +986,30 @@ namespace stk
 
               eMesh.commit();
 
+              {
+                std::vector<size_t> counts;
+                stk::mesh::comm_mesh_counts(*eMesh.get_bulk_data() , counts);
+                std::cout << "Initial mesh has  "
+                          << counts[0] << " nodes, "
+                          << counts[1] << " edges, "
+                          << counts[2] << " faces, "
+                          << counts[3] << " elements" << std::endl;
+              }
+
               if (part_for_edges)
                 {
                   stk::mesh::create_edges(*eMesh.get_bulk_data());
 
-                  // sanity on mesh counts; overall time
-                  std::vector<size_t> counts;
-                  stk::mesh::comm_mesh_counts(*eMesh.get_bulk_data() , counts);
+                  {
+                    std::vector<size_t> counts;
+                    stk::mesh::comm_mesh_counts(*eMesh.get_bulk_data() , counts);
+                    std::cout << "Mesh after create_edges has  "
+                              << counts[0] << " nodes, "
+                              << counts[1] << " edges, "
+                              << counts[2] << " faces, "
+                              << counts[3] << " elements" << std::endl;
+                  }
 
-                  std::cout << "Mesh has  "
-                            << counts[0] << " nodes, "
-                            << counts[1] << " edges, "
-                            << counts[2] << " faces, "
-                            << counts[3] << " elements" << std::endl;
                   if (1)
                     {
                       stk::mesh::PartVector add_parts(1, part_for_edges), remove_parts;
@@ -1066,8 +1081,10 @@ namespace stk
 
       STKUNIT_UNIT_TEST(regr_localRefiner, tet_with_edges)
       {
-        //do_tet_edge_test(1, true);
-        do_tet_edge_test(2, false);
+        do_tet_edge_test(1, false);
+        // do_tet_edge_test(2, false);
+        // do_tet_edge_test(1, true);
+        // do_tet_edge_test(2, true);
 
       }
 

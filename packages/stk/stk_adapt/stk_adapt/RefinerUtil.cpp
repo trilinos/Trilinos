@@ -448,11 +448,21 @@ namespace stk {
       if (eMesh.get_spatial_dim() == 2) rank_start = eMesh.element_rank();
       for (stk::mesh::EntityRank rank = rank_start; rank <= eMesh.element_rank(); ++rank)
         {
+          std::string active_part_name = "refine_active_elements_part_"+toString(rank);
+          //std::string inactive_part_name = "refine_inactive_elements_part_"+toString(rank);
+          stk::mesh::Part* active_child_elements_part = eMesh.get_part(active_part_name);
+          stk::mesh::Selector sel_part;
+          if (active_child_elements_part)
+            {
+              sel_part = stk::mesh::Selector(*active_child_elements_part);
+            }
+          //stk::mesh::Part* inactive_parent_elements_part = eMesh.get_part(inactive_part_name);
+
           const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( rank );
           for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
             {
               stk::mesh::Bucket & bucket = **k ;
-              if (bucket.owned())
+              if (bucket.owned() && sel_part(bucket))
                 {
                   const CellTopologyData * cell_topo_data = eMesh.get_cell_topology(bucket);
                   CellTopology topo(cell_topo_data);
@@ -484,10 +494,10 @@ namespace stk {
         }
 
       // now create new/missing edges
+      eMesh.get_bulk_data()->modification_begin();
       std::vector<stk::mesh::Entity> new_edges;
       eMesh.createEntities(eMesh.edge_rank(), new_edge_set.size(), new_edges);
 
-      eMesh.get_bulk_data()->modification_begin();
       unsigned count=0;
       for (SubDimCellSet::iterator edge_it = new_edge_set.begin(); edge_it != new_edge_set.end(); ++edge_it, ++count)
         {
