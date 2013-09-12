@@ -144,6 +144,20 @@ namespace stk {
 
 
     template<>
+    struct my_fast_hash<SDCEntityType, 2> : public std::unary_function< MySubDimCell<SDCEntityType, 2, CompareSDCEntityType>, std::size_t>
+    {
+      typedef MySubDimCell<SDCEntityType, 2, CompareSDCEntityType> _Tp ;
+
+      inline std::size_t
+      operator()(const _Tp& x) const
+      {
+        return x.getHash();
+      }
+
+    };
+
+
+    template<>
     struct my_fast_hash<SDCEntityType, 4> : public std::unary_function< MySubDimCell<SDCEntityType, 4, CompareSDCEntityType>, std::size_t>
     {
       typedef MySubDimCell<SDCEntityType, 4, CompareSDCEntityType> _Tp ;
@@ -156,6 +170,27 @@ namespace stk {
 
     };
 
+
+    template<>
+    struct my_fast_equal_to<SDCEntityType, 2> :  public std::binary_function< MySubDimCell<SDCEntityType, 2, CompareSDCEntityType>,
+                                                                              MySubDimCell<SDCEntityType, 2, CompareSDCEntityType>, bool>
+    {
+      typedef MySubDimCell<SDCEntityType, 2, CompareSDCEntityType> _Tp ;
+      inline bool
+      operator()(const _Tp& x, const _Tp& y) const
+      {
+        if (x.getHash() != y.getHash()) return false;
+        if (x.size() != y.size()) return false;
+        _Tp::const_iterator ix = x.begin();
+        _Tp::const_iterator iy = y.begin();
+        MyEntityEqual ee = MyEntityEqual(&(x.m_eMesh));
+        for (; ix != x.end(); ix++, iy++)
+          {
+            if (!ee(*ix, *iy)) return false;
+          }
+        return true;
+      }
+    };
 
     template<>
     struct my_fast_equal_to<SDCEntityType, 4> :  public std::binary_function< MySubDimCell<SDCEntityType, 4, CompareSDCEntityType>,

@@ -114,6 +114,7 @@ namespace stk {
       ,m_ioss_write_options("")
       ,m_large_mesh(false)
       ,m_MAX_IDENT(0)
+      ,m_createEdges(false)
     {
       init( m_comm);
       s_static_singleton_instance = this;
@@ -1375,6 +1376,7 @@ namespace stk {
       ,m_ioss_write_options("")
       ,m_large_mesh(false)
       ,m_MAX_IDENT(0)
+      ,m_createEdges(false)
     {
       //if (!bulkData)
       //  throw std::runtime_error("PerceptMesh::PerceptMesh: must pass in non-null bulkData");
@@ -5244,7 +5246,7 @@ namespace stk {
       throw std::runtime_error("no geometry available, set STK_PERCEPT_HAS_GEOMETRY flag: not implemented");
 #endif
     }
-
+    
     //====================================================================================================================================
     //====================================================================================================================================
     //====================================================================================================================================

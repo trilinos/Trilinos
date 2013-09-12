@@ -930,7 +930,7 @@ namespace stk
         }
       }
 
-      static void do_tet_edge_test(unsigned ntets)
+      static void do_tet_edge_test(unsigned ntets, bool do_part_for_edges)
       {
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
@@ -972,18 +972,17 @@ namespace stk
               stk::mesh::FieldBase* refine_field = eMesh.add_field("refine_field", stk::mesh::MetaData::ELEMENT_RANK, scalarDimension);
 
               const std::string part_for_edges_name = "tmp_part_for_edges";
-              stk::mesh::Part * part_for_edges = eMesh.get_fem_meta_data()->get_part(part_for_edges_name);
-              if(part_for_edges==0) {
+              stk::mesh::Part * part_for_edges = 0;
+              if (do_part_for_edges) {
                 part_for_edges = &eMesh.get_fem_meta_data()->declare_part(part_for_edges_name, shards::CellTopology( shards::getCellTopologyData<shards::Line<2> >() ) );
               }
 
-              stk::mesh::Part& edge_part = *part_for_edges;
-              stk::io::put_io_part_attribute(*part_for_edges);
+              if (part_for_edges) stk::io::put_io_part_attribute(*part_for_edges);
               Local_Tet4_Tet4_N break_tet_to_tet_N(eMesh);
 
               eMesh.commit();
 
-              if (1)
+              if (part_for_edges)
                 {
                   stk::mesh::create_edges(*eMesh.get_bulk_data());
 
@@ -998,7 +997,7 @@ namespace stk
                             << counts[3] << " elements" << std::endl;
                   if (1)
                     {
-                      stk::mesh::PartVector add_parts(1, &edge_part), remove_parts;
+                      stk::mesh::PartVector add_parts(1, part_for_edges), remove_parts;
                       std::vector<stk::mesh::Entity> edges;
                       const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( eMesh.edge_rank() );
                       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
@@ -1067,8 +1066,9 @@ namespace stk
 
       STKUNIT_UNIT_TEST(regr_localRefiner, tet_with_edges)
       {
-        //do_tet_edge_test(1);
-         do_tet_edge_test(2);
+        //do_tet_edge_test(1, true);
+        do_tet_edge_test(2, false);
+
       }
 
       //  ====================================================================================================================================

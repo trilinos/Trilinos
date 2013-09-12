@@ -473,6 +473,10 @@ namespace stk {
       /// allow for setting bulk data when this PerceptMesh adopted a MetaData with null BulkData
       void set_bulk_data(stk::mesh::BulkData *bulkData);
 
+      /// create stk::mesh::Entity edges for each new edge in the mesh during adaptivity
+      void set_create_edges(bool create_edges) { m_createEdges = create_edges; }
+      bool get_create_edges() { return m_createEdges; }
+
       /// find all neighbors touching one of my nodes
       void get_node_neighbors(stk::mesh::Entity element, std::set<stk::mesh::Entity>& neighbors);
 
@@ -875,6 +879,7 @@ namespace stk {
       std::vector<stk::mesh::EntityId>      m_idServer; // high water mark
       bool                                  m_large_mesh;
       stk::mesh::EntityId                   m_MAX_IDENT;
+      bool                                  m_createEdges;
 
     private:
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);

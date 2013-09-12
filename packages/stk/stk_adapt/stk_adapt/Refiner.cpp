@@ -8,6 +8,7 @@
 #endif
 
 #include <stk_adapt/Refiner.hpp>
+#include <stk_adapt/RefinerUtil.hpp>
 
 #include <stk_percept/MeshUtil.hpp>
 
@@ -1125,6 +1126,10 @@ namespace stk {
       bulkData.modification_end();
       /**/                                                TRACE_PRINT("Refiner: modification_end...done ");
 
+      if (m_eMesh.get_create_edges())
+        {
+          RefinerUtil::create_missing_edges(m_eMesh);
+        }
       //std::cout << "tmp dump_elements 3" << std::endl;
       //m_eMesh.dump_elements();
 
