@@ -203,6 +203,14 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
 }
 
 template <typename Traits,typename LocalOrdinalT>
+void SGEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+applyDirichletBCs(const LinearObjContainer & counter,
+                  LinearObjContainer & result) const
+{
+  TEUCHOS_ASSERT(false); // not yet implemented
+}
+
+template <typename Traits,typename LocalOrdinalT>
 Teuchos::MpiComm<int> SGEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getComm() const
 {

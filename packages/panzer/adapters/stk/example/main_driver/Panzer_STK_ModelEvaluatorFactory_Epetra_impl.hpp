@@ -590,7 +590,7 @@ namespace panzer_stk {
       thyra_me = Thyra::epetraModelEvaluator(ep_me,lowsFactory);
     }
     else {
-      thyra_me = Teuchos::rcp(new panzer::ModelEvaluator<double,KokkosClassic::DefaultNode::DefaultNodeType>
+      thyra_me = Teuchos::rcp(new panzer::ModelEvaluator<double>
                   (fmb,m_response_library,linObjFactory,p_names,lowsFactory,global_data,is_transient,t_init));
     }
 
@@ -1408,7 +1408,7 @@ namespace panzer_stk {
                  const bool write_graphviz_file,
                  const std::string& graphviz_file_prefix)
   {
-    typedef panzer::ModelEvaluator<double,KokkosClassic::DefaultNode::DefaultNodeType> PanzerME;
+    typedef panzer::ModelEvaluator<double> PanzerME;
 
     Teuchos::ParameterList & p = *this->getNonconstParameterList();
     Teuchos::ParameterList & user_data = p.sublist("User Data");
