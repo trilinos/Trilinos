@@ -1510,14 +1510,14 @@ namespace Ioss {
 
 	  // See if there is an 'db_name' property...
 	  if (ge->property_exists(db_name_str())) {
-	    std::string name = ge->get_property(db_name_str()).get_string();
+	    std::string db_name = ge->get_property(db_name_str()).get_string();
 
 	    if (this_ge->property_exists(db_name_str())) {
 	      // Remove the old property...
 	      this_ge->property_erase(db_name_str());
 	    }
 	    // Set the new property
-	    this_ge->property_add(Property(db_name_str(), name));
+	    this_ge->property_add(Property(db_name_str(), db_name));
 	  }
 
 	  // See if there is a 'original_topology_type' property...
