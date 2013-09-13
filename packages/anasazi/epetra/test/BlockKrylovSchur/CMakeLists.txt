@@ -38,6 +38,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Epetra_BKS_sym_test
+  SOURCES cxx_main_sym.cpp
+  ARGS 
+    "--verbose"
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Epetra_BKS_nh_test
   SOURCES cxx_main_nh.cpp
   ARGS 
