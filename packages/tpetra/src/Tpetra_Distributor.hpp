@@ -1893,7 +1893,7 @@ namespace Tpetra {
     // to the GPU must occur after the waits.
     typedef Kokkos::View<const Packet*, Layout, Device, Mem> exports_view;
     typedef Kokkos::View<Packet*, Layout, Device, Mem> imports_view;
-    if (enable_cuda_rdma_ && !exports_view::is_hostspace) {
+    if (!enable_cuda_rdma_ && !exports_view::is_hostspace) {
       typename exports_view::HostMirror host_exports =
         Kokkos::create_mirror_view(exports);
       typename imports_view::HostMirror host_imports =
@@ -1930,7 +1930,7 @@ namespace Tpetra {
     // to the GPU must occur after the waits.
     typedef Kokkos::View<const Packet*, Layout, Device, Mem> exports_view;
     typedef Kokkos::View<Packet*, Layout, Device, Mem> imports_view;
-    if (enable_cuda_rdma_ && !exports_view::is_hostspace) {
+    if (!enable_cuda_rdma_ && !exports_view::is_hostspace) {
       typename exports_view::HostMirror host_exports =
         Kokkos::create_mirror_view(exports);
       typename imports_view::HostMirror host_imports =
@@ -2685,7 +2685,7 @@ namespace Tpetra {
     // to the GPU must occur after the waits.
     typedef Kokkos::View<const Packet*, Layout, Device, Mem> exports_view;
     typedef Kokkos::View<Packet*, Layout, Device, Mem> imports_view;
-    if (enable_cuda_rdma_ && !exports_view::is_hostspace) {
+    if (!enable_cuda_rdma_ && !exports_view::is_hostspace) {
       typename exports_view::HostMirror host_exports =
         Kokkos::create_mirror_view(exports);
       typename imports_view::HostMirror host_imports =
@@ -2717,7 +2717,7 @@ namespace Tpetra {
     // to the GPU must occur after the waits.
     typedef Kokkos::View<const Packet*, Layout, Device, Mem> exports_view;
     typedef Kokkos::View<Packet*, Layout, Device, Mem> imports_view;
-    if (enable_cuda_rdma_ && !exports_view::is_hostspace) {
+    if (!enable_cuda_rdma_ && !exports_view::is_hostspace) {
       typename exports_view::HostMirror host_exports =
         Kokkos::create_mirror_view(exports);
       typename imports_view::HostMirror host_imports =
