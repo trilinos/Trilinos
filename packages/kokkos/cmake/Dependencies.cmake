@@ -6,6 +6,7 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Core                  core              EX       OPTIONAL
   Classic               classic           PS       OPTIONAL
   Containers            containers        EX       OPTIONAL
+  LinAlg                linalg            EX       OPTIONAL
   Example               example           EX       OPTIONAL
   Compat                compat            EX       OPTIONAL
   )

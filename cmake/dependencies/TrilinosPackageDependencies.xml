@@ -195,6 +195,20 @@
     </EmailAddresses>
     <ParentPackage value="Kokkos"/>
   </Package>
+  <Package name="KokkosLinAlg" dir="packages/kokkos/linalg" type="EX">
+    <LIB_REQUIRED_DEP_PACKAGES value="KokkosCore"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="kokkos-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="Kokkos"/>
+  </Package>
   <Package name="KokkosExample" dir="packages/kokkos/example" type="EX">
     <LIB_REQUIRED_DEP_PACKAGES value="KokkosCore,KokkosContainers"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
@@ -225,7 +239,7 @@
   </Package>
   <Package name="Kokkos" dir="packages/kokkos" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="KokkosTPL,KokkosCore,KokkosClassic,KokkosContainers,KokkosExample,KokkosCompat"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="KokkosTPL,KokkosCore,KokkosClassic,KokkosContainers,KokkosLinAlg,KokkosExample,KokkosCompat"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -309,7 +323,7 @@
   </Package>
   <Package name="Tpetra" dir="packages/tpetra" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,KokkosClassic"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,KokkosCore,KokkosCompat"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,KokkosCore,KokkosCompat,KokkosLinAlg,KokkosContainers"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
