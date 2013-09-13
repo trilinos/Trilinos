@@ -690,7 +690,8 @@ int main(int argc, char *argv[]) {
     ifpackSCList.set("relaxation: damping factor", (Scalar) 1.0);
     ifpackSCType = "RELAXATION";
     ifpackSCList.set("relaxation: type", "Gauss-Seidel");
-    RCP<SmootherPrototype> smoProtoSC     = rcp( new TrilinosSmoother(ifpackSCType, ifpackSCList, 0, SFact) );
+    RCP<SmootherPrototype> smoProtoSC     = rcp( new TrilinosSmoother(ifpackSCType, ifpackSCList, 0) );
+    smoProtoSC->SetFactory("A", SFact);
     RCP<SmootherFactory> SmooSCFact = rcp( new SmootherFactory(smoProtoSC) );
 
     RCP<BraessSarazinSmoother> smootherPrototype     = rcp( new BraessSarazinSmoother(3,omega) );

@@ -78,6 +78,7 @@
 #include "MueLu_FilteredAFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_IsorropiaInterface.hpp"
+#include "MueLu_RepartitionInterface.hpp"
 #include "MueLu_MultiVectorTransferFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
@@ -168,6 +169,7 @@ namespace MueLu {
       if (factoryName == "UncoupledAggregationFactory")     return BuildUncoupledAggregationFactory     (paramList, factoryMapIn);
       if (factoryName == "UserAggregationFactory")          return Build2<UserAggregationFactory>       (paramList, factoryMapIn);
       if (factoryName == "UserPFactory")                    return Build2<UserPFactory>                 (paramList, factoryMapIn);
+      if (factoryName == "RepartitionInterface")            return Build2<RepartitionInterface>         (paramList, factoryMapIn);
 #ifdef HAVE_MUELU_EXPERIMENTAL
       if (factoryName == "EminPFactory")                    return Build2<EminPFactory>                 (paramList, factoryMapIn);
       if (factoryName == "PatternFactory")                  return Build2<PatternFactory>               (paramList, factoryMapIn);

@@ -60,67 +60,102 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DirectSolver(std::string const & type, Teuchos::ParameterList const & paramList)
-    : type_(type), paramList_(paramList)
-  { }
+  DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DirectSolver(const std::string& type, const Teuchos::ParameterList& paramList)
+    : type_(type), paramList_(paramList) {
+    // The original idea behind all smoothers was to use prototype pattern. However, it does not fully work of the dependencies
+    // calculation. Particularly, we need to propagate DeclareInput to proper prototypes. Therefore, both TrilinosSmoother and
+    // DirectSolver do not follow the pattern exactly.
+    // The difference is that in order to propagate the calculation of dependencies, we need to call a DeclareInput on a
+    // constructed object (or objects, as we have two different code branches for Epetra and Tpetra). The only place where we
+    // could construct these objects is the constructor. Thus, we need to store RCPs, and both TrilinosSmoother and DirectSolver
+    // obtain a state: they contain RCP to smoother prototypes.
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-    this->Input(currentLevel, "A"); // TODO: also call Amesos or Amesos2::DeclareInput?
+    // We want DirectSolver to be able to work with both Epetra and Tpetra objects, therefore we try to construct both
+    // Amesos and Amesos2 solver prototypes. The construction really depends on configuration options.
+    bool triedEpetra = false, triedTpetra = false;
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+    sTpetra_ = rcp(new Amesos2Smoother(type_, paramList_));
+    TEUCHOS_TEST_FOR_EXCEPTION(sTpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Amesos2 direct solver");
+    triedTpetra = true;
+#endif
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
+    try {
+      // GetAmesosSmoother masks the template argument matching, and simply throws if template arguments are incompatible with Epetra
+      sEpetra_ = GetAmesosSmoother<SC,LO,GO,NO,LMO>(type_, paramList_);
+      TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Amesos direct solver");
+    } catch (Exceptions::RuntimeError) {
+      // AmesosSmoother throws if Scalar != double, LocalOrdinal != int, GlobalOrdinal != int
+      this->GetOStream(Warnings0,0) << "Skipping AmesosSmoother construction due to incorrect type" << std::endl;
+    }
+    triedEpetra = true;
+#endif
+
+    // Check if we were able to construct at least one solver. In many cases that's all we need, for instance if a user
+    // simply wants to use Tpetra only stack, never enables Amesos, and always runs Tpetra objects.
+    TEUCHOS_TEST_FOR_EXCEPTION(!triedEpetra && !triedTpetra, Exceptions::RuntimeError, "Unable to construct direct solver. Plase enable (TPETRA and AMESOS2) or (EPETRA and AMESOS)");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level &currentLevel) {
-    //FactoryMonitor m(*this, "Setup Smoother");
-    if (SmootherPrototype::IsSetup() == true) VerboseObject::GetOStream(Warnings0, 0) << "Warning: MueLu::DirectSolver::Setup(): Setup() has already been called";
-    TEUCHOS_TEST_FOR_EXCEPTION(s_ != Teuchos::null, Exceptions::RuntimeError, "IsSetup() == false but s_ != Teuchos::null. This does not make sense");
+  void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetFactory(const std::string& varName, const RCP<const FactoryBase>& factory) {
+    // We need to propagate SetFactory to proper place
+    if (!sEpetra_.is_null()) sEpetra_->SetFactory(varName, factory);
+    if (!sTpetra_.is_null()) sTpetra_->SetFactory(varName, factory);
+  }
 
-    RCP<Matrix> A = Factory::Get< RCP<Matrix> >(currentLevel, "A");
-    Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& currentLevel) const {
+    // Decide whether we are running in Epetra or Tpetra mode
+    //
+    // Theoretically, we could make this decision in the constructor, and create only
+    // one of the smoothers. But we want to be able to reuse, so one can imagine a scenario
+    // where one first runs hierarchy with tpetra matrix, and then with epetra.
+    bool useTpetra = currentLevel.lib() == Xpetra::UseTpetra;
+    s_ = (useTpetra ? sTpetra_ : sEpetra_);
+    TEUCHOS_TEST_FOR_EXCEPTION(s_.is_null(), Exceptions::RuntimeError, "Direct solver for " << (useTpetra ? "Tpetra" : "Epetra") << " was not constructed");
 
-    if (lib == Xpetra::UseTpetra) {
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
-      s_ = rcp( new Amesos2Smoother(type_, paramList_) );
-#else
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external direct solver library availables for Tpetra matrices. Compile MueLu with Amesos2");
-#endif
-    } else if (lib == Xpetra::UseEpetra) {
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
-      s_ = GetAmesosSmoother<SC,LO,GO,NO,LMO>(type_, paramList_);
-#else
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "No external direct solver library availables for Epetra matrices. Compile MueLu with Amesos"); // add Amesos2 to the msg when support for Amesos2+Epetra is implemented.
-#endif
-    } else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "lib != UseTpetra && lib != UseEpetra");
-    }
+    s_->DeclareInput(currentLevel);
+  }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(s_ == Teuchos::null, Exceptions::RuntimeError, "");
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level& currentLevel) {
+    if (SmootherPrototype::IsSetup() == true)
+      this->GetOStream(Warnings0, 0) << "Warning: MueLu::DirectSolver::Setup(): Setup() has already been called";
 
-    s_->SetFactory("A", this->GetFactory("A"));
     s_->Setup(currentLevel);
 
     SmootherPrototype::IsSetup(true);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero) const {
+  void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Apply(): Setup() has not been called");
-    TEUCHOS_TEST_FOR_EXCEPTION(s_ == Teuchos::null, Exceptions::RuntimeError, "IsSetup() == true but s_ == Teuchos::null. This does not make sense");
 
     s_->Apply(X, B, InitialGuessIsZero);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Copy() const {
-    return rcp( new DirectSolver(*this) );
+    RCP<DirectSolver> newSmoo =  rcp(new DirectSolver(*this));
+
+    // We need to be quite careful with Copy
+    // We still want DirectSolver to follow Prototype Pattern, so we need to hide the fact that we do have some state
+    if (!sEpetra_.is_null())
+      newSmoo->sEpetra_ = sEpetra_->Copy();
+    if (!sTpetra_.is_null())
+      newSmoo->sTpetra_ = sTpetra_->Copy();
+
+    // Copy the default mode
+    newSmoo->s_ = (s_.get() == sTpetra_.get() ? newSmoo->sTpetra_ : newSmoo->sEpetra_);
+
+    return newSmoo;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   std::string DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::description() const {
     std::ostringstream out;
-    if (s_ != Teuchos::null)
+    if (s_ != Teuchos::null) {
       out << s_->description();
-    else {
+    } else {
       out << SmootherPrototype::description();
       out << "{type = " << type_ << "}";
     }
@@ -128,27 +163,20 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
-    //TODO
-    //     if (s_ != Teuchos::null) {
-    //       // Teuchos::OSTab tab2(out);
-    //       s_->print(out, verbLevel);
-    //     }
-
-    //     if (verbLevel & Debug) {
+  void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
 
-    if (verbLevel & Parameters0) {
+    if (verbLevel & Parameters0)
       out0 << "Prec. type: " << type_ << std::endl;
-    }
 
     if (verbLevel & Parameters1) {
-      out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab3(out); out << paramList_; }
+      out0 << "Parameter list: " << std::endl;
+      Teuchos::OSTab tab3(out);
+      out << paramList_;
     }
 
-    if (verbLevel & Debug) {
+    if (verbLevel & Debug)
       out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl;
-    }
   }
 
 } // namespace MueLu

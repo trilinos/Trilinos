@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
   std::cout << "=============== Setup transfers only ====================" << std::endl;
 
   Hierarchy H;
-  H.SetDefaultVerbLevel(MueLu::High);
+  H.SetDefaultVerbLevel(MueLu::Medium);
 
   RCP<Level> finestLevel = H.GetLevel();
   finestLevel->Set("A", A);
@@ -169,12 +169,6 @@ int main(int argc, char *argv[]) {
   H.Keep("Ptent", TentativePFact.get());  //SaPFact is the generating factory for P.
 
   H.Setup(M,startLevel,maxLevels);
-
-  std::cout << std::endl << std::endl;
-  std::cout << "=========================================\n"
-            << "Status of the preconditioner between runs\n"
-            << "=========================================" << std::endl;
-  H.print();
 
   std::cout << "=============== Setup smoothers only ====================" << std::endl;
 
@@ -207,9 +201,6 @@ int main(int argc, char *argv[]) {
 
   LO nIts = 9;
   H.Iterate(*B, nIts, *X);
-
-  H.print();
-
 
   //
   // Print relative residual norm

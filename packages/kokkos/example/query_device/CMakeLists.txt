@@ -7,22 +7,10 @@ SET(SOURCES "")
 
 FILE(GLOB SOURCES *.cpp)
 
-SET(LIBRARIES kokkoscore_devicethreads kokkoscore_impl)
-
-IF( TPL_ENABLE_CUDA AND TPL_ENABLE_CUSPARSE )
-
-  SET(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)
-
-  LIST( APPEND LIBRARIES
-    kokkoscore_devicecuda
-  )
-
-ENDIF()
-
 TRIBITS_ADD_EXECUTABLE(
   query_device
   SOURCES ${SOURCES}
   COMM serial mpi
-  DEPLIBS ${LIBRARIES}
+  DEPLIBS kokkoscore
   )
 

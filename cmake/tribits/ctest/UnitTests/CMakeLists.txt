@@ -150,6 +150,7 @@ FUNCTION(CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
   TRIBITS_ADD_ADVANCED_TEST( ${TEST_CORE_NAME}
     OVERALL_WORKING_DIRECTORY TEST_NAME
     ${TEST_BLOCKS}
+    OVERALL_NUM_MPI_PROCS 1
     )
 
 ENDFUNCTION()
@@ -639,6 +640,10 @@ IF (PYTHON_EXECUTABLE)
       "Final set of non-enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Stokhos Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Panzer Teko Stalix 26"
       "MODIFIED_PACKAGES_LIST='':  No modified packages to justify continuous integration test iteration"
     )
+
+
+  # ToDo: Test modified package not to be implicitly enabled to not be enabled!
+
 
 ENDIF(PYTHON_EXECUTABLE)
 

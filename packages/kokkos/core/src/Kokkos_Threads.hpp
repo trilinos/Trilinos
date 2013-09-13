@@ -172,7 +172,7 @@ public:
    *    (first) the number of teams of threads - the league_size
    *    (second) the number of threads per team - the team_size.
    *
-   *  The 'use_core_topology' argument specifies the subset of available cores 
+   *  The 'use_core_topology' argument specifies the subset of available cores
    *  to use for the device's threads.  If 'hwloc' is available then the
    *  full core topology can be queried via 'hwloc::get_core_topology()'.
    *  If 'use_core_topology' is not specified and 'hwloc' is available
@@ -187,7 +187,7 @@ public:
    */
   static void initialize( const std::pair<unsigned,unsigned> team_topology ,
                           const std::pair<unsigned,unsigned> use_core_topology =
-                                std::pair<unsigned,unsigned>(0u,0u) );
+                                std::make_pair (0u, 0u) );
 
 
   static int league_max();

@@ -496,7 +496,7 @@ ENDMACRO()
 # Select only packages that are modified or failed in the last CI iteration
 #
 
-MACRO(ENABLE_MODIFIED_PACKAGES_ONLY)
+MACRO(ENABLE_ONLY_MODIFIED_PACKAGES)
 
   #
   # A) Get the list of changed packages
@@ -1192,7 +1192,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
       "\n***"
       "\n*** Determining what packages to enable based on what changed ..."
       "\n***\n")
-    ENABLE_MODIFIED_PACKAGES_ONLY()
+    ENABLE_ONLY_MODIFIED_PACKAGES()
     SET(${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES ON)
   ENDIF()
 

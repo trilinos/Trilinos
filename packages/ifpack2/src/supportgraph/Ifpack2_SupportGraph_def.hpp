@@ -271,15 +271,12 @@ template<class MatrixType>
   typedef typename graph_traits < Graph >::edge_descriptor Edge;
   typedef typename graph_traits < Graph >::vertex_descriptor Vertex;
 
-  std::cout << "*************************" << std::endl;
-  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
   size_t rows = A_->getNodeNumRows();
   //int cols = A_->getGlobalNumCols();
   int num_edges  = (A_->getNodeNumEntries() - A_->getNodeNumDiags())/2;
 
   // Rename for clarity
   size_t num_verts = A_->getGlobalNumRows();
-  std::cout << "global number of rows in A " << num_verts << std::endl;
 
   // Create data structures for the BGL code and temp data structures for extraction
   E *edge_array = new E[num_edges];
@@ -498,21 +495,11 @@ template<class MatrixType>
 
   Support_->fillComplete();
 
-  //Support_->print(std::cout);
-
-
-     
   
   //Support_->describe (*out, Teuchos::VERB_EXTREME);
 
-  
-
-
   delete edge_array;
   delete weights;
-  //delete values;
-  //delete indices;
-  //delete l;
   delete diagonal;
   delete Values;
   delete Indices;
@@ -537,14 +524,10 @@ void SupportGraph<MatrixType>::initialize() {
       std::runtime_error, "Ifpack2::SuppotGraph::initialize: In serial or one-process "
       "mode, the input matrix must be square.");
 
-    std::cout << "finding support" << std::endl;
     findSupport();
-    std::cout << "found support" << std::endl;
     
     solver = Amesos2::create<MatrixType, Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >("amesos2_cholmod", Support_);
     solver->symbolicFactorization();
-
-
   }
 
   IsInitialized_ = true;
@@ -574,14 +557,7 @@ void SupportGraph<MatrixType>::compute() {
   Teuchos::Time timer ("SupportGraph::compute");
   { // Timer scope for timing compute()
     Teuchos::TimeMonitor timeMon (timer, true);
-    //const scalar_type zero = STS::zero ();
-    //    const scalar_type one  = STS::one ();
-
-    //const local_ordinal_type myNumRows = A_->getNodeNumRows ();
-
-    
-
-
+        
     // =================== //
     // start factorization //
     // =================== //
@@ -618,6 +594,8 @@ void SupportGraph<MatrixType>::applyTempl(
                RangeScalar alpha,
                RangeScalar beta) const
 {
+  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
+
   using Teuchos::RCP;
   using Teuchos::rcp;
   typedef Tpetra::MultiVector<DomainScalar, local_ordinal_type, global_ordinal_type, node_type> MV;
@@ -657,9 +635,13 @@ void SupportGraph<MatrixType>::applyTempl(
     }
   
     RCP<MV> Ycopy = rcpFromRef(Y);
+    
+    //Xcopy->describe(*out,Teuchos::VERB_EXTREME);
+    //Ycopy->describe(*out,Teuchos::VERB_EXTREME);
 
     solver->setB(Xcopy);
     solver->setX(Ycopy);
+
     solver->solve();
   }
 

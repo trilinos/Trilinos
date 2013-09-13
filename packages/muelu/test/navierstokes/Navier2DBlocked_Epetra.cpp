@@ -521,7 +521,8 @@ int main(int argc, char *argv[]) {
   ifpack11List.set("relaxation: damping factor", (SC) 0.5);
   ifpack11Type = "RELAXATION";
   ifpack11List.set("relaxation: type", "Gauss-Seidel");
-  RCP<SmootherPrototype> smoProto11     = rcp( new TrilinosSmoother(ifpack11Type, ifpack11List, 0, A11Fact) );
+  RCP<SmootherPrototype> smoProto11     = rcp( new TrilinosSmoother(ifpack11Type, ifpack11List, 0) );
+  smoProto11->SetFactory("A", A11Fact);
   RCP<SmootherFactory> Smoo11Fact = rcp( new SmootherFactory(smoProto11) );
   Smoo11Fact->SetFactory("A",A11Fact);
 
@@ -638,7 +639,8 @@ int main(int argc, char *argv[]) {
   ifpack22List.set("relaxation: damping factor", (SC) 0.3);
   ifpack22Type = "RELAXATION";
   ifpack22List.set("relaxation: type", "Gauss-Seidel");
-  RCP<SmootherPrototype> smoProto22     = rcp( new TrilinosSmoother(ifpack22Type, ifpack22List, 0, A22Fact) );
+  RCP<SmootherPrototype> smoProto22     = rcp( new TrilinosSmoother(ifpack22Type, ifpack22List, 0) );
+  smoProto22->SetFactory("A", A22Fact);
   RCP<SmootherFactory> Smoo22Fact = rcp( new SmootherFactory(smoProto22) );
 
   ////////////////////////////////////////// prepare null space for A22

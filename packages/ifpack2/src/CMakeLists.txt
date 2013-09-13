@@ -27,13 +27,21 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
 IF (${PACKAGE_NAME}_ENABLE_Boost)
 IF (${PACKAGE_NAME}_ENABLE_Amesos2)
+IF (${PACKAGE_NAME}_ENABLE_Cholmod)
 
-  SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/supportgraph)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/supportgraph)
 
-  APPEND_GLOB(HEADERS ${DIR}/supportgraph/*.hpp)
-  APPEND_GLOB(SOURCES ${DIR}/supportgraph/*.cpp)
-  TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/supportgraph)
 
+SET(HEADERS ${HEADERS}
+supportgraph/Ifpack2_SupportGraph_decl.hpp
+supportgraph/Ifpack2_SupportGraph_def.hpp
+)
+SET(SOURCES ${SOURCES}
+supportgraph/Ifpack2_SupportGraph.cpp
+)
+
+ENDIF()
 ENDIF()
 ENDIF()
 ENDIF()
@@ -42,8 +50,6 @@ ENDIF()
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_SET(HEADERS ${DIR}/${PACKAGE_NAME}_config.h )
-
-
 
 #
 # C) Define the targets for package's library(s)

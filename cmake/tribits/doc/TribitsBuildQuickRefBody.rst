@@ -186,6 +186,16 @@ a) Configuring a package(s) along with all of the packages it can use::
   only be turned on for <TRIBITS_PACKAGE> (or any other packages specifically
   enabled).
 
+  NOTE: If a TriBITS package <TRIBITS_PACKAGE> has subpackages (e.g. <A>, <B>,
+  etc.), then enabling the package is equivalent to typing::
+
+       -D <Project>_ENABLE_<TRIBITS_PACKAGE><A>:BOOL=ON \
+       -D <Project>_ENABLE_<TRIBITS_PACKAGE><B>:BOOL=ON \
+       ...
+
+  However, a TriBITS subpackage will only be enabled if it is not disabled
+  either explicitly or implicitly.
+
 b) Configuring <Project> to test all effects of changing a given package(s)::
 
     $ ./do-configure \
@@ -223,17 +233,23 @@ d) Disable a package and all its dependencies::
          -D <Project>_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
          -D <Project>_ENABLE_<PACKAGE_B>:BOOL=OFF
 
-   Above, this will enable <PACKAGE_A> and all of the packages that it
-   depends on except for <PACKAGE_B> and all of its forward dependencies.
-   For example, if you run::
+  Above, this will enable <PACKAGE_A> and all of the packages that it
+  depends on except for <PACKAGE_B> and all of its forward dependencies.
 
-     $ ./do-configure \
-        -D <Project>_ENABLE_Thyra:BOOL=ON \
-        -D <Project>_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
-        -D <Project>_ENABLE_Epetra:BOOL=OFF
+  NOTE: If a TriBITS package <TRIBITS_PACKAGE> has subpackages (e.g. <A>, <B>,
+  etc.), then disabling the package is equivalent to typing::
 
-   The packages Thyra, RTOp, and Teuchos will be enabled, but the packages
-   Epetra, EpetraExt will be disabled.
+       -D <Project>_ENABLE_<TRIBITS_PACKAGE><A>:BOOL=OFF \
+       -D <Project>_ENABLE_<TRIBITS_PACKAGE><B>:BOOL=OFF \
+       ...
+
+  The disable of the subpackage is this case will override any enables.
+
+  NOTE: If a disabled package is a required dependency of some explicitly
+  enabled downstream package, then the configure will error out if
+  <Project>_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF.  Otherwise, a WARNING
+  will be printed and the downstream package will be disabled and
+  configuration will continue.
 
 e) Removing all package enables in the Cache
 
@@ -642,7 +658,7 @@ cmake version 2.8.5 or higher.  The variable will be ignored in prior releases
 of cmake.
 
 
-Enabling support for optional Third-Party Libraries (TPLs)
+Enabling support for an optional Third-Party Library (TPL)
 ----------------------------------------------------------
 
 To enable a given TPL, set::
@@ -714,6 +730,20 @@ WARNING: Do *not* try to hack the system and set::
 
 This is not compatible with proper CMake usage and it not guaranteed
 to be supported.
+
+
+Disabling support for a Third-Party Library (TPL)
+--------------------------------------------------
+
+Disabling a TPL explicitly can be done using::
+
+  -D TPL_ENABLE_<TPLNAME>:BOOL=OFF
+
+NOTE: If a disabled TPL is a required dependency of some explicitly enabled
+downstream package, then the configure will error out if
+<Project>_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF.  Otherwise, a WARNING will
+be printed and the downstream package will be disabled and configuration will
+continue.
 
 
 Disabling tentatively enabled TPLs
@@ -988,6 +1018,10 @@ If you configuring a large number of packages (perhaps including add-on
 packages in extra repos) then the configure time might be excessive and
 therefore you might want to be able to add configuration timing to see where
 the time is being spent.
+
+NOTE: This requires that you are running on a Linux/Unix system that has the
+stanard command 'date'.  CMake does not have built-in timing functions so you
+have to query the system.
 
 
 Building (Makefile generator)

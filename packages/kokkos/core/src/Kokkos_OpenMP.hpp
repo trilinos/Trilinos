@@ -104,7 +104,7 @@ public:
 
   static void initialize( const std::pair<unsigned,unsigned> gang_topo ,
                           const std::pair<unsigned,unsigned> core_use =
-                                std::pair<unsigned,unsigned>(0,0) );
+                                std::make_pair (0u, 0u) );
 
   //------------------------------------
 

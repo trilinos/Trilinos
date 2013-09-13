@@ -206,6 +206,18 @@ namespace Teuchos
     //! Multiplies the \c m by \c n matrix \c A by the real scalar \c cto/cfrom.
     void LASCL(const char TYPE, const OrdinalType kl, const OrdinalType ku, const MagnitudeType cfrom, const MagnitudeType cto, const OrdinalType m, const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* info) const;
 
+    //! Computes a QR factorization with column pivoting of a matrix \c A: A*P = Q*R using Level 3 BLAS
+    void 
+    GEQP3(const OrdinalType m, 
+	  const OrdinalType n, ScalarType* A, 
+	  const OrdinalType lda, 
+	  OrdinalType *jpvt, 
+	  ScalarType* TAU, 
+	  ScalarType* WORK, 
+	  const OrdinalType lwork, 
+	  MagnitudeType* RWORK, 
+	  OrdinalType* info ) const;
+
     //! Apply a series of row interchanges to the matrix A.
     void
     LASWP (const OrdinalType N,
@@ -734,6 +746,23 @@ namespace Teuchos
       }
     }
 
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  void 
+  LAPACK<OrdinalType,ScalarType>::
+  GEQP3 (const OrdinalType m, 
+	 const OrdinalType n, 
+	 ScalarType* A, 
+	 const OrdinalType lda, 
+	 OrdinalType *jpvt, 
+	 ScalarType* TAU, 
+	 ScalarType* WORK, 
+	 const OrdinalType lwork, 
+	 MagnitudeType* RWORK, 
+	 OrdinalType* info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
 
   template<typename OrdinalType, typename ScalarType>
@@ -1344,6 +1373,17 @@ namespace Teuchos
     void GETRS(const char TRANS, const int n, const int nrhs, const float* A, const int lda, const int* IPIV, float* B, const int ldb, int* info) const;
     void LASCL(const char TYPE, const int kl, const int ku, const float cfrom, const float cto, const int m, const int n, float* A, const int lda, int* info) const;
 
+    void 
+    GEQP3 (const int m, 
+	   const int n, 
+	   float* A, 
+	   const int lda, 
+	   int *jpvt, 
+	   float* TAU, 
+	   float* WORK, 
+	   const int lwork, 
+	   float* RWORK, 
+	   int* info) const;
 
     void LASWP (const int N,
 		float A[],
@@ -1468,6 +1508,18 @@ namespace Teuchos
     void GETRS(const char TRANS, const int n, const int nrhs, const double* A, const int lda, const int* IPIV, double* B, const int ldb, int* info) const;
     void LASCL(const char TYPE, const int kl, const int ku, const double cfrom, const double cto, const int m, const int n, double* A, const int lda, int* info) const;
 
+    void 
+    GEQP3 (const int m, 
+	   const int n, 
+	   double* A, 
+	   const int lda, 
+	   int *jpvt, 
+	   double* TAU, 
+	   double* WORK, 
+	   const int lwork, 
+	   double* RWORK, 
+	   int* info) const;
+
     void LASWP (const int N,
 		double A[],
 		const int LDA,
@@ -1590,6 +1642,18 @@ namespace Teuchos
     void GETRF(const int m, const int n, std::complex<float>* A, const int lda, int* IPIV, int* info) const;
     void GETRS(const char TRANS, const int n, const int nrhs, const std::complex<float>* A, const int lda, const int* IPIV, std::complex<float>* B, const int ldb, int* info) const;
     void LASCL(const char TYPE, const int kl, const int ku, const float cfrom, const float cto, const int m, const int n, std::complex<float>* A, const int lda, int* info) const;
+    
+    void 
+    GEQP3 (const int m, 
+	   const int n, 
+	   std::complex<float>* A, 
+	   const int lda, 
+	   int *jpvt, 
+	   std::complex<float>* TAU, 
+	   std::complex<float>* WORK, 
+	   const int lwork, 
+	   float* RWORK, 
+	   int* info) const;
 
     void LASWP (const int N,
 		std::complex<float> A[],
@@ -1690,6 +1754,18 @@ namespace Teuchos
     void GETRF(const int m, const int n, std::complex<double>* A, const int lda, int* IPIV, int* info) const;
     void GETRS(const char TRANS, const int n, const int nrhs, const std::complex<double>* A, const int lda, const int* IPIV, std::complex<double>* B, const int ldb, int* info) const;
     void LASCL(const char TYPE, const int kl, const int ku, const double cfrom, const double cto, const int m, const int n, std::complex<double>* A, const int lda, int* info) const;
+
+    void 
+    GEQP3 (const int m, 
+	   const int n, 
+	   std::complex<double>* A, 
+	   const int lda, 
+	   int *jpvt, 
+	   std::complex<double>* TAU, 
+	   std::complex<double>* WORK, 
+	   const int lwork, 
+	   double* RWORK, 
+	   int* info) const;
 
     void LASWP (const int N,
 		std::complex<double> A[],

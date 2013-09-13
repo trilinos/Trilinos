@@ -58,6 +58,9 @@
 namespace Kokkos {
 namespace Example {
 
+/** \brief  Map a grid onto a unit cube with smooth nonlinear grading
+ *          of the map.
+ */
 struct MapGridUnitCube {
 
   const float m_a ;
@@ -70,9 +73,9 @@ struct MapGridUnitCube {
   MapGridUnitCube( const unsigned grid_max_x ,
                    const unsigned grid_max_y ,
                    const unsigned grid_max_z ,
-                   const float bubble_x = 0 , // 1.1f ,
-                   const float bubble_y = 0 , // 1.2f ,
-                   const float bubble_z = 0 ) // 1.3f )
+                   const float bubble_x = 1.1f ,
+                   const float bubble_y = 1.2f ,
+                   const float bubble_z = 1.3f )
     : m_a( bubble_x )
     , m_b( bubble_y )
     , m_c( bubble_z )
@@ -101,6 +104,14 @@ struct MapGridUnitCube {
       coord_z = z + z * z * ( z - 1 ) * ( z - 1 ) * m_c ;
     }
 };
+
+} // namespace Example
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Example {
 
 /** \brief  Generate a distributed unstructured finite element mesh
  *          from a partitioned NX*NY*NZ box of elements.

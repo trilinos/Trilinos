@@ -275,7 +275,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<typename BrickAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::container> BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Construct1DMap(const RCP<const Teuchos::Comm<int> >& comm, const ArrayRCP<const double>& x) const {
+  RCP<typename BrickAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::container> BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Construct1DMap(const RCP<const Teuchos::Comm<int> >& comm, const ArrayRCP<const Scalar>& x) const {
     int numProcs = comm->getSize();
     int n = x.size();
 
@@ -288,6 +288,8 @@ namespace MueLu {
       (*gMap)[x[i]] = 0;
 
     // Step 2: exchange coordinates
+    // NOTE: we assume the coordinates are double, or double compatible
+    // That means that for complex case, we assume that all imaginary parts are zeros
     if (isMPI && numProcs > 1) {
       MPI_Comm rawComm;
       if (isMPI)
@@ -299,7 +301,7 @@ namespace MueLu {
 
       sendBuf.resize(sendCnt);
       for (typename container::const_iterator cit = gMap->begin(); cit != gMap->end(); cit++)
-        sendBuf[cnt++] = cit->first;
+        sendBuf[cnt++] = Teuchos::as<double>(STS::real(cit->first));
 
       MPI_Allgather(&sendCnt, 1, MPI_INT, recvCnt.getRawPtr(), 1, MPI_INT, rawComm);
       Displs[0] = 0;
@@ -310,7 +312,7 @@ namespace MueLu {
       MPI_Allgatherv(sendBuf.getRawPtr(), sendCnt, MPI_DOUBLE, recvBuf.getRawPtr(), recvCnt.getRawPtr(), Displs.getRawPtr(), MPI_DOUBLE, rawComm);
 
       for (int i = 0; i < recvSize; i++)
-        (*gMap)[recvBuf[i]] = 0;
+        (*gMap)[Teuchos::as<Scalar>(recvBuf[i])] = 0;
     }
 
     GlobalOrdinal cnt = 0;

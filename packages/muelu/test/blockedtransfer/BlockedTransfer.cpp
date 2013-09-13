@@ -248,7 +248,7 @@ int main(int argc, char *argv[]) {
   Teuchos::ArrayView< const GlobalOrdinal > map2eleList = map2->getNodeElementList();
   localGids.insert(localGids.end(), map2eleList.begin(), map2eleList.end());
   Teuchos::ArrayView<GlobalOrdinal> eleList(&localGids[0],localGids.size());
-  bigMap = MapFactory::Build(lib, numElements, eleList, 0, comm); // create full big map (concatenation of map1 and map2)
+  bigMap = StridedMapFactory::Build(lib, numElements, eleList, 0, stridingInfo, comm); // create full big map (concatenation of map1 and map2)
 
   std::vector<Teuchos::RCP<const Map> > maps;
   maps.push_back(map1); maps.push_back(map2);
@@ -292,8 +292,10 @@ int main(int argc, char *argv[]) {
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
   ifpackType = "RELAXATION";
   ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
-  RCP<SmootherPrototype> smoProto11     = rcp( new TrilinosSmoother(ifpackType, ifpackList, 0, A11Fact) );
-  RCP<SmootherPrototype> smoProto22     = rcp( new TrilinosSmoother(ifpackType, ifpackList, 0, A22Fact) );
+  RCP<SmootherPrototype> smoProto11     = rcp( new TrilinosSmoother(ifpackType, ifpackList, 0) );
+  smoProto11->SetFactory("A", A11Fact);
+  RCP<SmootherPrototype> smoProto22     = rcp( new TrilinosSmoother(ifpackType, ifpackList, 0) );
+  smoProto22->SetFactory("A", A22Fact);
 
   //RCP<SmootherPrototype> smoProto11     = rcp( new DirectSolver("", Teuchos::ParameterList(), A11Fact) );
   //RCP<SmootherPrototype> smoProto22     = rcp( new DirectSolver("", Teuchos::ParameterList(), A22Fact) );

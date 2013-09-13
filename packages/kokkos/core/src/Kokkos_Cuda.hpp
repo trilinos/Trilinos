@@ -139,6 +139,8 @@ public:
   /** \brief  Initialize, telling the CUDA run-time library which device to use. */
   static void initialize( const SelectDevice = SelectDevice() );
 
+  static int is_initialized();
+
   /** \brief  Cuda device architecture of the selected device.
    *          Matches the __CUDA_ARCH__ specification.
    */

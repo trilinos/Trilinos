@@ -66,9 +66,8 @@
 namespace Amesos2 {
 
   namespace CHOL {
-    #include "cholmod_core.h"
-    #include "cholmod.h"
-    
+#   include "cholmod_core.h"
+#   include "cholmod.h"
   }
 
   
@@ -76,7 +75,9 @@ namespace Amesos2 {
   struct FunctionMap<Cholmod,double>
   {
     
-    static void cholmod_allocate_sparse(size_t nrow, size_t ncol, size_t nzmax, int sorted, void *p, void *x, void*i, CHOL::cholmod_sparse *sparse)
+    static void cholmod_init_sparse(size_t nrow, size_t ncol, size_t nzmax,
+				    int sorted, void *p, void *x, void *i,
+				    CHOL::cholmod_sparse *sparse)
     {
       sparse->nrow = nrow;
       sparse->ncol = ncol;
@@ -92,7 +93,8 @@ namespace Amesos2 {
       sparse->i = i;
     }
 
-    static void cholmod_allocate_dense(int nrow, int ncol, int d, void *x, CHOL::cholmod_dense *dense)
+    static void cholmod_init_dense(int nrow, int ncol, int d, void *x,
+				   CHOL::cholmod_dense *dense)
     {
       dense->nrow = nrow;
       dense->ncol = ncol;
@@ -101,14 +103,14 @@ namespace Amesos2 {
       dense->dtype = CHOLMOD_DOUBLE;
       dense->x = x;
     }
-
-    
   };
 
-template <>
+  template <>
   struct FunctionMap<Cholmod,float>
   {
-    static void cholmod_allocate_sparse(size_t nrow, size_t ncol, size_t nzmax, int sorted, void *p, void *x, void*i, CHOL::cholmod_sparse* sparse)
+    static void cholmod_init_sparse(size_t nrow, size_t ncol, size_t nzmax,
+				    int sorted, void *p, void *x, void*i,
+				    CHOL::cholmod_sparse* sparse)
     {
       sparse->nrow = nrow;
       sparse->ncol = ncol;
@@ -125,7 +127,8 @@ template <>
     }
 
 
-    static void cholmod_allocate_dense(int nrow, int ncol, int d, void *x, CHOL::cholmod_dense *dense)
+    static void cholmod_init_dense(int nrow, int ncol, int d, void *x,
+				   CHOL::cholmod_dense *dense)
     {
       dense->nrow = nrow;
       dense->ncol = ncol;
@@ -134,21 +137,16 @@ template <>
       dense->dtype = CHOLMOD_SINGLE;
       dense->x = x;
     }
-
-
-
-    
   };
-    
- 
 
 #ifdef HAVE_TEUCHOS_COMPLEX
-
   template <>
   struct FunctionMap<Cholmod,CHOL::complex>
   {
 
-    static void cholmod_allocate_sparse(size_t nrow, size_t ncol, size_t nzmax, int sorted, void *p, void *x, void*i, CHOL::cholmod_sparse* sparse)
+    static void cholmod_init_sparse(size_t nrow, size_t ncol, size_t nzmax,
+				    int sorted, void *p, void *x, void *i,
+				    CHOL::cholmod_sparse* sparse)
     {
       sparse->nrow = nrow;
       sparse->ncol = ncol;
@@ -163,9 +161,9 @@ template <>
       sparse->i = i;
 
     }
-
   
-    static void cholmod_allocate_dense(int nrow, int ncol, int d, void *x, CHOL::cholmod_dense *dense)
+    static void cholmod_init_dense(int nrow, int ncol, int d, void *x,
+				   CHOL::cholmod_dense *dense)
     {
       dense->nrow = nrow;
       dense->ncol = ncol;
@@ -173,11 +171,7 @@ template <>
       dense->xtype = CHOLMOD_COMPLEX;
       dense->x = x;
     }
-
-    
-
   };
-
 #endif
 
 } // end namespace Amesos2

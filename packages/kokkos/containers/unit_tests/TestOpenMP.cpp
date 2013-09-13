@@ -91,25 +91,25 @@ protected:
 };
 
 #define OPENMP_INSERT_TEST( name, num_nodes, num_inserts, num_duplicates, repeat )                                \
-  TEST_F( openmp, unordered_map_insert_##name##_##num_nodes##_##num_inserts##_##num_duplicates##_##repeat##x) {   \
+  TEST_F( openmp, UnorderedMap_insert_##name##_##num_nodes##_##num_inserts##_##num_duplicates##_##repeat##x) {   \
     for (int i=0; i<repeat; ++i)                                                                                  \
       test_insert_##name<Kokkos::OpenMP>(num_nodes,num_inserts,num_duplicates);                                   \
   }
 
 #define OPENMP_FAILED_INSERT_TEST( num_nodes, repeat )                         \
-  TEST_F( openmp, unordered_map_failed_insert_##num_nodes##_##repeat##x) {     \
+  TEST_F( openmp, UnorderedMap_failed_insert_##num_nodes##_##repeat##x) {     \
     for (int i=0; i<repeat; ++i)                                               \
       test_failed_insert<Kokkos::OpenMP>(num_nodes);                             \
   }
 
 #define OPENMP_ASSIGNEMENT_TEST( num_nodes, repeat )                             \
-  TEST_F( openmp, unordered_map_assignment_operators_##num_nodes##_##repeat##x) {       \
+  TEST_F( openmp, UnorderedMap_assignment_operators_##num_nodes##_##repeat##x) {       \
     for (int i=0; i<repeat; ++i)                                               \
       test_assignement_operators<Kokkos::OpenMP>(num_nodes);                     \
   }
 
 #define OPENMP_DEEP_COPY( num_nodes, repeat )                             \
-  TEST_F( openmp, unordered_map_deep_copy##num_nodes##_##repeat##x) {       \
+  TEST_F( openmp, UnorderedMap_deep_copy##num_nodes##_##repeat##x) {       \
     for (int i=0; i<repeat; ++i)                                               \
       test_deep_copy<Kokkos::OpenMP>(num_nodes);                     \
   }

@@ -36,12 +36,22 @@ int main(int argc, char *argv[]) {
 
   bool verbose = true;
   bool debug = false;
+  bool dynXtraNev = false;
   std::string which("SM");
+  int nx = 10;        // Discretization points in any one direction.
+  int nev = 4;
+  int blockSize = 1;
+  int numBlocks = 20;
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM,LM,SR,LR,SI,or LI).");
+  cmdp.setOption("nx",&nx,"Number of discretization points in each direction; n=nx*nx.");
+  cmdp.setOption("nev",&nev,"Number of eigenvalues to compute.");
+  cmdp.setOption("blocksize",&blockSize,"Block Size.");
+  cmdp.setOption("numblocks",&numBlocks,"Number of blocks for the Krylov-Schur form.");
+  cmdp.setOption("dynrestart","nodynrestart",&dynXtraNev,"Use dynamic restart boundary to accelerate convergence.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
     MPI_Finalize();
@@ -58,7 +68,6 @@ int main(int argc, char *argv[]) {
   typedef Anasazi::OperatorTraits<ScalarType,MV,OP>  OPT;
 
   //  Dimension of the matrix
-  int nx = 10;        // Discretization points in any one direction.
   int NumGlobalElements = nx*nx;  // Size of matrix nx*nx
 
   // Construct a Map that puts approximately the same number of
@@ -111,7 +120,8 @@ int main(int argc, char *argv[]) {
   // Diffusion coefficient, can be set by user.
   // When rho*h/2 <= 1, the discrete convection-diffusion operator has real eigenvalues.
   // When rho*h/2 > 1, the operator has complex eigenvalues.
-  double rho = 2*nx+1;
+  //double rho = 2*nx+1;
+  double rho = 0.0;
   
   // Compute coefficients for discrete convection-diffution operator
   const double one = 1.0;
@@ -227,9 +237,6 @@ int main(int argc, char *argv[]) {
   //
   //  Variables used for the Block Krylov Schur Method
   //    
-  int nev = 4;
-  int blockSize = 1;
-  int numBlocks = 20;
   int maxRestarts = 500;
   //int stepSize = 5;
   double tol = 1e-8;
@@ -261,6 +268,7 @@ int main(int argc, char *argv[]) {
   MyPL.set( "Maximum Restarts", maxRestarts );
   //MyPL.set( "Step Size", stepSize );
   MyPL.set( "Convergence Tolerance", tol );
+  MyPL.set("Dynamic Extra NEV",dynXtraNev);
 
   // Create an Epetra_MultiVector for an initial vector to start the solver.
   // Note:  This needs to have the same number of columns as the blocksize.

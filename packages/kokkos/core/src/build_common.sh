@@ -4,11 +4,22 @@
 # Shared portion of build script for the base Kokkos functionality
 # Simple build script with options
 #-----------------------------------------------------------------------------
-if [ ! -d "${KOKKOS}" ] ;
+if [    ! -d "${KOKKOS}" \
+     -o ! -d "${KOKKOS}/src" \
+     -o ! -d "${KOKKOS}/src/impl" \
+     -o ! -d "${KOKKOS}/src/Cuda" \
+     -o ! -d "${KOKKOS}/src/OpenMP" \
+     -o ! -d "${KOKKOS}/src/Threads" \
+   ] ;
 then
-echo "Must set KOKKOS to the top level Kokkos directory"
+echo "Must set KOKKOS to the kokkos/core directory"
 exit -1
 fi
+
+#-----------------------------------------------------------------------------
+
+INC_PATH="-I${KOKKOS}/src"
+INC_PATH="${INC_PATH} -I${KOKKOS}/../TPL"
 
 #-----------------------------------------------------------------------------
 
@@ -37,35 +48,33 @@ OMP | omp | OpenMP )
   ;;
 #-------------------------------
 CUDA | Cuda | cuda )
-  NVCC_SOURCES="${NVCC_SOURCES} ${KOKKOS}/src/Cuda/*.cu"
+  # CUDA_ARCH options: 20 30 35
+  CUDA_ARCH=${1} ; shift 1
   #
   # -x cu : process all files through the Cuda compiler as Cuda code.
   # -lib -o : produce library
   #
-  NVCC="nvcc"
-  #NVCC="${NVCC} -DKOKKOS_HAVE_CUDA_ARCH=200 -gencode arch=compute_20,code=sm_20"
-  # NVCC="${NVCC} -DKOKKOS_HAVE_CUDA_ARCH=300 -gencode arch=compute_30,code=sm_30"
-  NVCC="${NVCC} -DKOKKOS_HAVE_CUDA_ARCH=350 -gencode arch=compute_35,code=sm_35"
+  NVCC="nvcc -DKOKKOS_HAVE_CUDA_ARCH=${CUDA_ARCH}0 -gencode arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH}"
   NVCC="${NVCC} -maxrregcount=64"
   NVCC="${NVCC} -Xcompiler -Wall,-ansi"
   NVCC="${NVCC} -lib -o libCuda.a -x cu"
 
+  NVCC_SOURCES="${NVCC_SOURCES} ${KOKKOS}/src/Cuda/*.cu"
   LIB="${LIB} libCuda.a -L/usr/local/cuda/lib64 -lcudart -lcusparse"
   ;;#-------------------------------
 CUDA_OSX | Cuda_OSX | cuda_osx )
-  NVCC_SOURCES="${NVCC_SOURCES} ${KOKKOS}/src/Cuda/*.cu"
+  # CUDA_ARCH options: 20 30 35
+  CUDA_ARCH=${1} ; shift 1
   #
   # -x cu : process all files through the Cuda compiler as Cuda code.
   # -lib -o : produce library
   #
-  NVCC="nvcc"
-  NVCC="${NVCC} -DKOKKOS_HAVE_CUDA_ARCH=200 -gencode arch=compute_20,code=sm_20"
-  # NVCC="${NVCC} -DKOKKOS_HAVE_CUDA_ARCH=300 -gencode arch=compute_30,code=sm_30"
-  # NVCC="${NVCC} -DKOKKOS_HAVE_CUDA_ARCH=350 -gencode arch=compute_35,code=sm_35"
+  NVCC="nvcc -DKOKKOS_HAVE_CUDA_ARCH=${CUDA_ARCH}0 -gencode arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH}"
   NVCC="${NVCC} -maxrregcount=64"
   NVCC="${NVCC} -Xcompiler -Wall,-ansi -Xcompiler -m64"
   NVCC="${NVCC} -lib -o libCuda.a -x cu"
 
+  NVCC_SOURCES="${NVCC_SOURCES} ${KOKKOS}/src/Cuda/*.cu"
   LIB="${LIB} libCuda.a -Xlinker -rpath -Xlinker /Developer/NVIDIA/CUDA-5.5/lib -L /Developer/NVIDIA/CUDA-5.5/lib -lcudart -lcusparse"
   ;;
 #-------------------------------
@@ -193,8 +202,6 @@ then
 fi
 
 #-----------------------------------------------------------------------------
-
-INC_PATH="${INC_PATH} -I${KOKKOS}/src"
 
 CXX_SOURCES="${CXX_SOURCES} ${KOKKOS}/src/impl/*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ${KOKKOS}/src/Threads/*.cpp"

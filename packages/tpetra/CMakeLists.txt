@@ -272,6 +272,39 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF
   )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_Kokkos_DistObject
+  TPETRA_ENABLE_KOKKOS_DISTOBJECT
+  "Use experimental Kokkos::View for DistObject methods, enabling efficient communication for GPU node types."
+  OFF
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_MPI_CUDA_RDMA
+  TPETRA_ENABLE_MPI_CUDA_RDMA
+  "Enable RDMA support for MPI communication between CUDA GPUs.  Only turn this on if you know for sure your MPI library supports it.  Requires also enabling Tpetra_ENABLE_Kokkos_DistObject."
+  OFF
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_Kokkos_Refactor
+  TPETRA_ENABLE_KOKKOS_REFACTOR
+  "Enable Tpetra code for refactor to new KokkosCore interface."
+  OFF
+  )
+
+# Determine whether Kokkos refactor code is really supported
+IF (Tpetra_ENABLE_Kokkos_Refactor AND
+    Tpetra_ENABLE_KokkosCore AND
+    Tpetra_ENABLE_KokkosCompat AND
+    Tpetra_ENABLE_KokkosLinAlg AND
+    Tpetra_ENABLE_KokkosContainers)
+  SET(Tpetra_Have_Kokkos_Refactor ON CACHE INTERNAL "")
+ELSE()
+  SET(Tpetra_Have_Kokkos_Refactor OFF CACHE INTERNAL "")
+ENDIF()
+# Set corresponding value of CPP macro
+GLOBAL_SET(TPETRA_HAVE_KOKKOS_REFACTOR ${Tpetra_Have_Kokkos_Refactor})
 
 #
 # C) Add the libraries, tests, and examples

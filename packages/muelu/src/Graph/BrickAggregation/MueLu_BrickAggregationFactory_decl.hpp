@@ -78,6 +78,7 @@ namespace MueLu {
     typedef Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node>                Import;
     typedef Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>         ImportFactory;
     typedef MueLu::Aggregates<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Aggregates;
+    typedef Teuchos::ScalarTraits<Scalar>                                  STS;
 
     // Comparator for doubles
     // Generally, the coordinates for coarser levels would come out of averaging of fine level coordinates
@@ -88,9 +89,9 @@ namespace MueLu {
     class compare {
     public:
       bool operator()(const Scalar& x, const Scalar& y) {
-        if (Teuchos::ScalarTraits<Scalar>::magnitude(x - y) < 1e-14)
+        if (STS::magnitude(x - y) < 1e-14)
           return false;
-        return x < y;
+        return STS::real(x) < STS::real(y);
       }
     };
     typedef std::map<Scalar,GlobalOrdinal,compare> container;
@@ -131,7 +132,7 @@ namespace MueLu {
 
   private:
     void Setup(const RCP<const Teuchos::Comm<int> >& comm, const RCP<MultiVector>& coords, const RCP<const Map>& map) const;
-    RCP<container> Construct1DMap(const RCP<const Teuchos::Comm<int> >& comm, const ArrayRCP<const double>& x) const;
+    RCP<container> Construct1DMap(const RCP<const Teuchos::Comm<int> >& comm, const ArrayRCP<const Scalar>& x) const;
 
     bool           isRoot  (LocalOrdinal LID) const;
     GlobalOrdinal getRoot  (LocalOrdinal LID) const;

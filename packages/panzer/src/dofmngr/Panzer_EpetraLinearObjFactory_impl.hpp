@@ -44,6 +44,9 @@
 #define PANZER_EPETRA_LINEAR_OBJ_FACTORY_IMPL_HPP
 
 #include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_ThyraObjContainer.hpp"
+
+#include "Thyra_SpmdVectorBase.hpp"
 
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
@@ -272,6 +275,38 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
          }
       }
    }
+}
+
+template <typename Traits,typename LocalOrdinalT>
+void  EpetraLinearObjFactory<Traits,LocalOrdinalT>::
+applyDirichletBCs(const LinearObjContainer & counter,
+                  LinearObjContainer & result) const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::dyn_cast;
+
+  const ThyraObjContainer<double> & th_counter = dyn_cast<const ThyraObjContainer<double> >(counter);
+  ThyraObjContainer<double> & th_result  = dyn_cast<ThyraObjContainer<double> >(result);
+  
+  RCP<const Thyra::VectorBase<double> > count = th_counter.get_x_th();
+  RCP<const Thyra::VectorBase<double> > f_in = th_counter.get_f_th();
+  RCP<Thyra::VectorBase<double> > f_out = th_result.get_f_th();
+
+  Teuchos::ArrayRCP<const double> count_array,f_in_array;
+  Teuchos::ArrayRCP<double> f_out_array;
+
+  rcp_dynamic_cast<const Thyra::SpmdVectorBase<double> >(count,true)->getLocalData(Teuchos::ptrFromRef(count_array));
+  rcp_dynamic_cast<const Thyra::SpmdVectorBase<double> >(f_in,true)->getLocalData(Teuchos::ptrFromRef(f_in_array));
+  rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(f_out,true)->getNonconstLocalData(Teuchos::ptrFromRef(f_out_array));
+
+  TEUCHOS_ASSERT(count_array.size()==f_in_array.size());
+  TEUCHOS_ASSERT(count_array.size()==f_out_array.size());
+
+  for(Teuchos::ArrayRCP<double>::size_type i=0;i<count_array.size();i++) {
+    if(count_array[i]!=0.0)
+      f_out_array[i] = f_in_array[i];
+  }
 }
 
 template <typename Traits,typename LocalOrdinalT>

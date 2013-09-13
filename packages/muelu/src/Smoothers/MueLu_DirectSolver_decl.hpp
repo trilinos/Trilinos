@@ -82,7 +82,7 @@ namespace MueLu {
 
     //! @brief Constructor
     //! Note: only parameters shared by Amesos and Amesos2 should be used for type and paramList (example: type= "Klu", "Superlu", paramList = <empty>) .
-    DirectSolver(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList());
+    DirectSolver(const std::string& type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList());
 
     //! Destructor
     virtual ~DirectSolver() { }
@@ -92,7 +92,7 @@ namespace MueLu {
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) const;
+    void DeclareInput(Level& currentLevel) const;
 
     //@}
 
@@ -100,12 +100,15 @@ namespace MueLu {
     //@{
 
     //! DirectSolver cannot be turned into a smoother using Setup(). Setup() always returns a RuntimeError exception.
-    void Setup(Level &currentLevel);
+    void Setup(Level& currentLevel);
 
     //! DirectSolver cannot be applied. Apply() always returns a RuntimeError exception.
-    void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero=false) const;
+    void Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero = false) const;
 
     //@}
+
+    //! Custom SetFactory
+    void SetFactory(const std::string& varName, const RCP<const FactoryBase>& factory);
 
     //! When this prototype is cloned using Copy(), the clone is an Amesos or an Amesos2 smoother.
     RCP<SmootherPrototype> Copy() const;
@@ -116,7 +119,7 @@ namespace MueLu {
     //! Return a simple one-line description of this object.
     std::string description() const;
 
-    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
+    void print(Teuchos::FancyOStream& out, const VerbLevel verbLevel = Default) const;
 
     //@}
 
@@ -137,7 +140,9 @@ namespace MueLu {
     //
 
     //! Smoother
-    RCP<SmootherPrototype> s_;
+    RCP<SmootherPrototype> sEpetra_, sTpetra_;
+    mutable
+      RCP<SmootherPrototype> s_;
 
   }; // class DirectSolver
 

@@ -153,7 +153,11 @@ int main(int argc, char** argv) {
   Kokkos::Cuda::SelectDevice select_device(device);
   Kokkos::Cuda::initialize(select_device);
 #else
-  device_type::initialize(std::pair<unsigned int,unsigned int>(teams,num_threads));
+  #ifdef _OPENMP
+  Kokkos::OpenMP::initialize(teams*num_threads);
+  #else
+  Kokkos::Threads::initialize(std::pair<unsigned int,unsigned int>(teams,num_threads));
+  #endif
 #endif
 
   System system;

@@ -82,7 +82,7 @@ namespace Xpetra {
     StridedEpetraMap(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, std::vector<size_t>& stridingInfo, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId=-1, GlobalOrdinal offset = 0, const Teuchos::RCP< Node > &node=KokkosClassic::DefaultNode::getDefaultNode());
 
     //! Map constructor with user-defined non-contiguous (arbitrary) distribution.
-    StridedEpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase, std::vector<size_t>& stridingInfo, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId=-1, const Teuchos::RCP< Node > &node=KokkosClassic::DefaultNode::getDefaultNode());
+    StridedEpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase, std::vector<size_t>& stridingInfo, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId=-1, GlobalOrdinal offset = 0, const Teuchos::RCP< Node > &node=KokkosClassic::DefaultNode::getDefaultNode());
 
     //! Map destructor.
     ~StridedEpetraMap() { }
@@ -188,8 +188,8 @@ namespace Xpetra {
     //! EpetraMap constructor to wrap a Epetra_Map object
     StridedEpetraMap(const Teuchos::RCP<const Epetra_BlockMap> &map, std::vector<size_t>& stridingInfo, LocalOrdinal stridedBlockId=-1, GlobalOrdinal offset = 0)
       : EpetraMap(map), StridedMap<int, int>(stridingInfo, map->IndexBase(), stridedBlockId, offset) {
-      int nDofsPerNode = Teuchos::as<int>(getFixedBlockSize());
-      TEUCHOS_TEST_FOR_EXCEPTION(map_->NumMyPoints() % nDofsPerNode != 0, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: wrong distribution of dofs among processors.");
+      //int nDofsPerNode = Teuchos::as<int>(getFixedBlockSize());
+      //TEUCHOS_TEST_FOR_EXCEPTION(map_->NumMyPoints() % nDofsPerNode != 0, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: wrong distribution of dofs among processors.");
       TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: CheckConsistency() == false");
     }
 
@@ -213,7 +213,19 @@ namespace Xpetra {
       }
       else {
         Teuchos::ArrayView< const GlobalOrdinal > dofGids = getNodeElementList();
-        //std::sort(dofGids.begin(),dofGids.end());
+        /*std::vector<GlobalOrdinal> dofGids;
+        dofGids.reserve(dofGidsView.size());
+        dofGids.insert(dofGids.end(), dofGidsView.begin(), dofGidsView.end());
+        std::sort(dofGids.begin(),dofGids.end());*/
+
+        if(dofGids.size() == 0)  // special treatment for empty processors
+        {
+          return true;
+        }
+
+        if(dofGids.size() % stridingInfo_[stridedBlockId_] != 0) {
+          return false;
+        }
 
         // determine nStridedOffset
         size_t nStridedOffset = 0;
@@ -224,26 +236,30 @@ namespace Xpetra {
 
         const GlobalOrdinal goStridedOffset = Teuchos::as<GlobalOrdinal>(nStridedOffset);
         const GlobalOrdinal goZeroOffset = (dofGids[0] - nStridedOffset - offset_ - indexBase_) / Teuchos::as<GlobalOrdinal>(getFixedBlockSize());
-        /*printf("goZeroOffset: %i\n",goZeroOffset);
-        printf("dofGids[0]: %i \n",dofGids[0]);
-        printf("stridedOffset: %i\n",nStridedOffset);
-        printf("offset_: %i\n",offset_);
-        printf("goStridedOffset: %i\n",goStridedOffset);
-        printf("getFixedBlkSize: %i\n",getFixedBlockSize());*/
 
-        GlobalOrdinal cnt = 0;
+        GlobalOrdinal cnt = 0; // this variable contains the check sum for the current node
+        // loop over all local nodes
         for(size_t i = 0; i<Teuchos::as<size_t>(dofGids.size())/stridingInfo_[stridedBlockId_]; i+=stridingInfo_[stridedBlockId_]) {
+
+          // loop over all DOFs that belong to current node
+          const GlobalOrdinal first_gid = dofGids[i];
+          // this is, what we expect to be the same for all DOFs of the same node
+          cnt = (first_gid - goStridedOffset - offset_ - indexBase_) / Teuchos::as<GlobalOrdinal>(getFixedBlockSize()) - goZeroOffset;
 
           for(size_t j=0; j<stridingInfo_[stridedBlockId_]; j++) {
             const GlobalOrdinal gid = dofGids[i+j];
             if((gid - Teuchos::as<GlobalOrdinal>(j) - goStridedOffset - offset_ - indexBase_) / Teuchos::as<GlobalOrdinal>(getFixedBlockSize()) - goZeroOffset - cnt != 0) {
-              //std::cout << "gid: " << gid << " GID: " <<  (gid - Teuchos::as<GlobalOrdinal>(j) - goStridedOffset) / Teuchos::as<GlobalOrdinal>(getFixedBlockSize()) - goZeroOffset - cnt << std::endl;
+              printf("goZeroOffset: %i\n",goZeroOffset);
+              printf("dofGids[0]: %i \n",dofGids[0]);
+              printf("stridedOffset: %lu\n",nStridedOffset);
+              printf("offset_: %i\n",offset_);
+              printf("goStridedOffset: %i\n",goStridedOffset);
+              printf("getFixedBlkSize: %lu\n",getFixedBlockSize());
+              std::cout << "gid: " << gid << " GID: " <<  (gid - Teuchos::as<GlobalOrdinal>(j) - goStridedOffset) / Teuchos::as<GlobalOrdinal>(getFixedBlockSize()) - goZeroOffset - cnt << std::endl;
               return false;
             }
           }
-          cnt++;
         }
-
       }
 
       return true;

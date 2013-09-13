@@ -8,13 +8,16 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 IF (Stokhos_ENABLE_KokkosCore)
 
-  SET(DEPLIBS stokhos kokkoscore_impl)
+  SET(DEPLIBS stokhos kokkoscore)
   SET(CUDA_SOURCES "")
   IF (Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
     GET_PROPERTY(Stokhos_CUDA_INC_DIRS DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
     CUDA_INCLUDE_DIRECTORIES(${Stokhos_CUDA_INC_DIRS})
+    # add MPI include dir to nvcc
+    IF( TPL_ENABLE_MPI )
+      CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
+    ENDIF()
     CUDA_COMPILE(CUDA_SOURCES TestCuda.cu)
-    SET(DEPLIBS ${DEPLIBS} kokkoscore_devicecuda)
   ELSE()
     SET(CUDA_SOURCES TestCudaStub.cpp)
   ENDIF()
@@ -33,7 +36,7 @@ IF (Stokhos_ENABLE_KokkosCore)
     SOURCES TestStochastic.hpp
             HostScaling.cpp
     COMM serial mpi
-    DEPLIBS stokhos kokkoscore_impl
+    DEPLIBS stokhos kokkoscore
     )
 
 ENDIF()

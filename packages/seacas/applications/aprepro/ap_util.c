@@ -108,6 +108,31 @@ FILE* open_file(char *file, char *mode)
   return pointer;
 }
 
+int check_valid_var(char *var)
+{
+  /* Check that 'var' meets the restriction for a variable name
+   * L(:|L|D)*
+   * D [0-9]
+   * L [A-Za-z_]
+   */
+  
+  int i=1;
+  int length = strlen(var);
+  if (length == 0)
+    return 0;
+
+  if (!isalpha(var[0])) {
+    return 0;
+  }
+
+  for (i=1; i < length; i++) {
+    char c = var[i];
+    if (!isalnum(c) && c != ':' && c != '_')
+      return 0;
+  }
+  return 1;
+}
+
 FILE *check_open_file(char *file, char *mode)
 {
   FILE *pointer = NULL;

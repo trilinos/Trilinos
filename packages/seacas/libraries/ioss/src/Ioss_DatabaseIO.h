@@ -48,6 +48,7 @@
 #include <Ioss_BoundingBox.h>
 
 #include <vector>
+#include <set>
 
 namespace Ioss {
   class GroupingEntity;
@@ -158,7 +159,7 @@ namespace Ioss {
 
     bool get_use_generic_canonical_name() const {return useGenericCanonicalName;}
     void set_use_generic_canonical_name(bool yes_no) {useGenericCanonicalName = yes_no;}
-    static void set_use_generic_canonical_name_default(bool yes_no) {useGenericCanonicalNameDefault = yes_no;}
+    static bool set_use_generic_canonical_name_default(bool yes_no);
 
     virtual int maximum_symbol_length() const {return 0;} // Default is unlimited...
     char get_field_separator() const;
@@ -401,6 +402,7 @@ namespace Ioss {
     DatabaseIO(const DatabaseIO&); // Do not implement
     DatabaseIO& operator=(const DatabaseIO&); // Do not implement
 
+    
     mutable std::map<std::string, AxisAlignedBoundingBox> elementBlockBoundingBoxes;
 
     Ioss::ParallelUtils util_; // Encapsulate parallel and other utility functions.
@@ -412,6 +414,13 @@ namespace Ioss {
                                   // given on the mesh file e.g. "fireset".  Both names are still aliases.
     static bool useGenericCanonicalNameDefault; // Default setting for useGenericCanonicalName. 
                                                 // Typically set by app.
+
+    // Keep a list of files that are currently going to be written to by the current application.
+    // Throw an exception if application has multiple output requests with the same basename.
+    // For example, a 2 processor results.e.2.0 results.e.2.1 would raise an error if also
+    // outputting to results.e
+    static void check_for_duplicate_output_file(const std::string &filename);
+    static std::set<std::string> outputFileList; 
   };
 }
 #endif

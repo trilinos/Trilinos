@@ -60,6 +60,7 @@
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_CrsMatrix.hpp>
+#include <Xpetra_StridedMapFactory.hpp>
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
 
@@ -88,7 +89,9 @@ namespace MueLu {
     typedef Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOMatrix; //TODO
     typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorClass;
 
-    RCP<OMatrix> Ain = Get< RCP<OMatrix> >(currentLevel, "A");
+    RCP<OMatrix> Ain = Teuchos::null;
+    Ain = Get< RCP<OMatrix> >(currentLevel, "A");
+
     RCP<BlockedCrsOMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsOMatrix>(Ain);
 
     TEUCHOS_TEST_FOR_EXCEPTION(bA==Teuchos::null, Exceptions::BadCast, "MueLu::SubBlockAFactory::Build: input matrix A is not of type BlockedCrsMatrix! error.");
@@ -104,6 +107,7 @@ namespace MueLu {
     //////////////// EXPERIMENTAL
     // extract striding information from RangeMapExtractor
 
+    /* XXX */
     Teuchos::RCP<const MapExtractorClass> rgMapExtractor = bA->getRangeMapExtractor();
     Teuchos::RCP<const MapExtractorClass> doMapExtractor = bA->getDomainMapExtractor();
 
@@ -113,13 +117,36 @@ namespace MueLu {
     Teuchos::RCP<const StridedMap> srgMap = Teuchos::rcp_dynamic_cast<const StridedMap>(rgMap);
     Teuchos::RCP<const StridedMap> sdoMap = Teuchos::rcp_dynamic_cast<const StridedMap>(doMap);
 
+    if(srgMap == Teuchos::null) {
+      Teuchos::RCP<const Map> fullRgMap = rgMapExtractor->getFullMap();
+      Teuchos::RCP<const StridedMap> sFullRgMap = Teuchos::rcp_dynamic_cast<const StridedMap>(fullRgMap);
+      TEUCHOS_TEST_FOR_EXCEPTION(sFullRgMap==Teuchos::null, Exceptions::BadCast, "MueLu::SubBlockAFactory::Build: full rangeMap is not a strided map");
+      std::vector<size_t> stridedData = sFullRgMap->getStridingData();
+      if(stridedData.size() == 1 && row_ > 0) // we have block matrices. use striding block information 0
+        srgMap = StridedMapFactory::Build(rgMap->lib(), rgMap, stridedData, 0, sFullRgMap->getOffset());
+      else // we have strided matrices. use striding information of the corresponding block
+        srgMap = StridedMapFactory::Build(rgMap->lib(), rgMap, stridedData, row_, sFullRgMap->getOffset());
+    }
+
+    if(sdoMap == Teuchos::null) {
+      Teuchos::RCP<const Map> fullDoMap = doMapExtractor->getFullMap();
+      Teuchos::RCP<const StridedMap> sFullDoMap = Teuchos::rcp_dynamic_cast<const StridedMap>(fullDoMap);
+      TEUCHOS_TEST_FOR_EXCEPTION(sFullDoMap==Teuchos::null, Exceptions::BadCast, "MueLu::SubBlockAFactory::Build: full domainMap is not a strided map");
+      std::vector<size_t> stridedData2 = sFullDoMap->getStridingData();
+      if(stridedData2.size() == 1 && row_ > 0) // we have block matrices. use striding block information 0
+        sdoMap = StridedMapFactory::Build(doMap->lib(), doMap, stridedData2, 0, sFullDoMap->getOffset());
+      else // we have strided matrices. use striding information of the corresponding block
+        sdoMap = StridedMapFactory::Build(doMap->lib(), doMap, stridedData2, col_, sFullDoMap->getOffset());
+    }
+
     TEUCHOS_TEST_FOR_EXCEPTION(srgMap==Teuchos::null, Exceptions::BadCast, "MueLu::SubBlockAFactory::Build: rangeMap " << row_ << " is not a strided map");
     TEUCHOS_TEST_FOR_EXCEPTION(sdoMap==Teuchos::null, Exceptions::BadCast, "MueLu::SubBlockAFactory::Build: domainMap " << col_ << " is not a strided map");
 
     GetOStream(Statistics1) << "A(" << row_ << "," << col_ << ") has strided maps: range map fixed block size=" << srgMap->getFixedBlockSize() << " strided block id = " << srgMap->getStridedBlockId() << ", domain map fixed block size=" << sdoMap->getFixedBlockSize() << ", strided block id=" << sdoMap->getStridedBlockId() << std::endl;
 
     if(Op->IsView("stridedMaps") == true) Op->RemoveView("stridedMaps");
-    Op->CreateView("stridedMaps", rgMap, doMap);
+    Op->CreateView("stridedMaps", srgMap, sdoMap);
+    TEUCHOS_TEST_FOR_EXCEPTION(Op->IsView("stridedMaps")==false, Exceptions::RuntimeError, "MueLu::SubBlockAFactory::Build: failed to set stridedMaps");
 
     //////////////// EXPERIMENTAL
 

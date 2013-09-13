@@ -55,9 +55,9 @@ namespace MueLu {
   };
 
   enum PreOrPost {
-    PRE,
-    POST,
-    BOTH
+    PRE  = 0x1,
+    POST = 0x2,
+    BOTH = 0x3
   };
 
 }

@@ -83,25 +83,25 @@ protected:
 };
 
 #define THREADS_INSERT_TEST( name, num_nodes, num_inserts, num_duplicates, repeat )                                \
-  TEST_F( threads, unordered_map_insert_##name##_##num_nodes##_##num_inserts##_##num_duplicates##_##repeat##x) {   \
+  TEST_F( threads, UnorderedMap_insert_##name##_##num_nodes##_##num_inserts##_##num_duplicates##_##repeat##x) {   \
     for (int i=0; i<repeat; ++i)                                                                                \
       test_insert_##name<Kokkos::Threads>(num_nodes,num_inserts,num_duplicates);                                   \
   }
 
 #define THREADS_FAILED_INSERT_TEST( num_nodes, repeat )                            \
-  TEST_F( threads, unordered_map_failed_insert_##num_nodes##_##repeat##x) {       \
+  TEST_F( threads, UnorderedMap_failed_insert_##num_nodes##_##repeat##x) {       \
     for (int i=0; i<repeat; ++i)                                               \
       test_failed_insert<Kokkos::Threads>(num_nodes);                             \
   }
 
 #define THREADS_ASSIGNEMENT_TEST( num_nodes, repeat )                             \
-  TEST_F( threads, unordered_map_assignment_operators_##num_nodes##_##repeat##x) {       \
+  TEST_F( threads, UnorderedMap_assignment_operators_##num_nodes##_##repeat##x) {       \
     for (int i=0; i<repeat; ++i)                                               \
       test_assignement_operators<Kokkos::Threads>(num_nodes);                     \
   }
 
 #define THREADS_DEEP_COPY( num_nodes, repeat )                             \
-  TEST_F( threads, unordered_map_deep_copy##num_nodes##_##repeat##x) {       \
+  TEST_F( threads, UnorderedMap_deep_copy##num_nodes##_##repeat##x) {       \
     for (int i=0; i<repeat; ++i)                                               \
       test_deep_copy<Kokkos::Threads>(num_nodes);                     \
   }

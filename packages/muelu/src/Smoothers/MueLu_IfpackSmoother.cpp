@@ -123,7 +123,7 @@ namespace MueLu {
     SmootherPrototype::IsSetup(true);
   }
 
-  void IfpackSmoother::Apply(MultiVector& X, MultiVector const &B, bool const &InitialGuessIsZero) const {
+  void IfpackSmoother::Apply(MultiVector& X, MultiVector const &B, bool InitialGuessIsZero) const {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Apply(): Setup() has not been called");
 
     // Forward the InitialGuessIsZero option to Ifpack

@@ -135,7 +135,7 @@ namespace MueLu {
 
     SmootherFactory(RCP<SmootherPrototype> preSmootherPrototype, RCP<SmootherPrototype> postSmootherPrototype);
 
-    virtual ~SmootherFactory();
+    virtual ~SmootherFactory() { }
     //@}
 
     //! @name Set/Get methods.
@@ -148,12 +148,12 @@ namespace MueLu {
     void SetSmootherPrototypes(RCP<SmootherPrototype> preSmootherPrototype, RCP<SmootherPrototype> postSmootherPrototype);
 
     //! Get smoother prototypes.
-    void GetSmootherPrototypes(RCP<SmootherPrototype> & preSmootherPrototype, RCP<SmootherPrototype> & postSmootherPrototype) const;
+    void GetSmootherPrototypes(RCP<SmootherPrototype>& preSmootherPrototype, RCP<SmootherPrototype>& postSmootherPrototype) const;
 
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) const;
+    void DeclareInput(Level& currentLevel) const;
 
     //@}
 
@@ -178,7 +178,7 @@ namespace MueLu {
     */
     void Build(Level& currentLevel) const;
 
-    void BuildSmoother(Level & currentLevel, PreOrPost const preOrPost = BOTH) const; // Build()
+    void BuildSmoother(Level& currentLevel, const PreOrPost preOrPost = BOTH) const; // Build()
 
     //@}
 
@@ -191,13 +191,15 @@ namespace MueLu {
 
     //! Print the object with some verbosity level to an FancyOStream object.
     using MueLu::Describable::describe; // overloading, not hiding
-    void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
+    void describe(Teuchos::FancyOStream& out, const VerbLevel verbLevel = Default) const;
 
     //@}
 
   private:
     RCP<SmootherPrototype> preSmootherPrototype_;
     RCP<SmootherPrototype> postSmootherPrototype_;
+
+    void CheckPrototypes() const;
 
     //@}
 
