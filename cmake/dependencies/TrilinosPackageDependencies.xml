@@ -671,6 +671,34 @@
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
   </Package>
+  <Package name="SEACASPLT" dir="packages/seacas/libraries/plt" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="seacas-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="SEACAS"/>
+  </Package>
+  <Package name="SEACASSVDI" dir="packages/seacas/libraries/svdi" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="seacas-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="SEACAS"/>
+  </Package>
   <Package name="SEACASAlgebra" dir="packages/seacas/applications/algebra" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes,SEACASSuplib,SEACASExodus_for"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
@@ -687,6 +715,20 @@
   </Package>
   <Package name="SEACASAprepro" dir="packages/seacas/applications/aprepro" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="SEACASSuplib"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="seacas-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="SEACAS"/>
+  </Package>
+  <Package name="SEACASBlot" dir="packages/seacas/applications/blot" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes,SEACASSuplib,SEACASExodus_for,SEACASPLT"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -785,6 +827,20 @@
   </Package>
   <Package name="SEACASExotxt" dir="packages/seacas/applications/exotxt" type="SS">
     <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes,SEACASSuplib,SEACASExodus_for"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="seacas-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="SEACAS"/>
+  </Package>
+  <Package name="SEACASFastq" dir="packages/seacas/applications/fastq" type="SS">
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes,SEACASSuplib,SEACASExodus_for,SEACASPLT"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -966,7 +1022,7 @@
     <ParentPackage value="SEACAS"/>
   </Package>
   <Package name="SEACAS" dir="packages/seacas" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASExodus_for,SEACASNemesis,SEACASIoss,SEACASChaco,SEACASAprepro_lib,SEACASSupes,SEACASSuplib,SEACASAlgebra,SEACASAprepro,SEACASConjoin,SEACASEjoin,SEACASEpu,SEACASExodiff,SEACASExomatlab,SEACASExotxt,SEACASGjoin,SEACASGen3D,SEACASGenshell,SEACASGrepos,SEACASGrope,SEACASMapvarlib,SEACASMapvar,SEACASMapvar-kd,SEACASNemslice,SEACASNemspread,SEACASTxtexo"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASExodus_for,SEACASNemesis,SEACASIoss,SEACASChaco,SEACASAprepro_lib,SEACASSupes,SEACASSuplib,SEACASPLT,SEACASSVDI,SEACASAlgebra,SEACASAprepro,SEACASBlot,SEACASConjoin,SEACASEjoin,SEACASEpu,SEACASExodiff,SEACASExomatlab,SEACASExotxt,SEACASFastq,SEACASGjoin,SEACASGen3D,SEACASGenshell,SEACASGrepos,SEACASGrope,SEACASMapvarlib,SEACASMapvar,SEACASMapvar-kd,SEACASNemslice,SEACASNemspread,SEACASTxtexo"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="SEACASExo2mat,SEACASMat2exo"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
