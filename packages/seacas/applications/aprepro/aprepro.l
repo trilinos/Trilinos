@@ -82,6 +82,7 @@ char  *temp_f, *tmpstr;
 extern char *get_temp_filename(void);
 extern FILE *open_file(char *file, char *mode);
 extern FILE *check_open_file(char *file, char *mode);
+extern int   check_valid_var(char *var);
 void bad_variable_syntax(char *string);
  
 #define MAX_IF_NESTING 64
