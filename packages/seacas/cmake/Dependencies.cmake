@@ -7,8 +7,11 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Aprepro_lib libraries/aprepro_lib   SS  REQUIRED
   Supes       libraries/supes         SS  REQUIRED
   Suplib      libraries/suplib        SS  REQUIRED
+  PLT         libraries/plt           SS  REQUIRED
+  SVDI        libraries/svdi          SS  REQUIRED
   Algebra     applications/algebra    SS  REQUIRED
   Aprepro     applications/aprepro    SS  REQUIRED
+  Blot        applications/blot       SS  REQUIRED
   Conjoin     applications/conjoin    SS  REQUIRED
   Ejoin       applications/ejoin      SS  REQUIRED
   Epu         applications/epu        SS  REQUIRED
@@ -16,6 +19,7 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Exodiff     applications/exodiff    SS  REQUIRED
   Exomatlab   applications/exomatlab  SS  REQUIRED
   Exotxt      applications/exotxt     SS  REQUIRED
+  Fastq       applications/fastq      SS  REQUIRED
   Gjoin       applications/gjoin      SS  REQUIRED
   Gen3D       applications/gen3d      SS  REQUIRED
   Genshell    applications/genshell   SS  REQUIRED
