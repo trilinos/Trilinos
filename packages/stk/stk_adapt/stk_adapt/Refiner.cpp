@@ -959,7 +959,8 @@ namespace stk {
             unsigned num_elem_needed = num_elem_not_ghost * m_breakPattern[irank]->getNumNewElemPerElem();
 
             // FIXME TMP
-            if (CHECK_DEBUG)
+#define DEBUG_1 0
+            if (DEBUG_1 || CHECK_DEBUG)
               {
                 std::cout << "tmp Refiner::doBreak: irank= " << irank << " ranks[irank]= " << ranks[irank] << " bp= ["
                           << m_breakPattern[irank]->getFromTopoPartName() << " ==> "
@@ -1128,7 +1129,9 @@ namespace stk {
 
       if (m_eMesh.get_create_edges())
         {
+          if (DEBUG_1) std::cout << "Adapt: create_missing_edges... start" << std::endl;
           RefinerUtil::create_missing_edges(m_eMesh);
+          if (DEBUG_1) std::cout << "Adapt: create_missing_edges... end" << std::endl;
         }
       //std::cout << "tmp dump_elements 3" << std::endl;
       //m_eMesh.dump_elements();
@@ -1238,34 +1241,38 @@ namespace stk {
     void Refiner::removeEmptyElements()
     {
       if (CHECK_DEBUG) std::cout << "removeEmptyElements start.... " << std::endl;
-      elements_to_be_destroyed_type list(*m_eMesh.get_bulk_data());
 
-      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( stk::mesh::MetaData::ELEMENT_RANK );
-
-      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+      for (unsigned irank=0; irank < m_ranks.size(); irank++)
         {
-          stk::mesh::Bucket & bucket = **k ;
+          elements_to_be_destroyed_type list(*m_eMesh.get_bulk_data());
 
-          const unsigned num_elements_in_bucket = bucket.size();
-          for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+          const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_ranks[irank] );
+
+          for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
             {
-              stk::mesh::Entity element = bucket[iElement];
-              if (0 == m_eMesh.get_bulk_data()->num_connectivity(element, stk::mesh::MetaData::NODE_RANK))
+              stk::mesh::Bucket & bucket = **k ;
+
+              const unsigned num_elements_in_bucket = bucket.size();
+              for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                 {
+                  stk::mesh::Entity element = bucket[iElement];
+                  if (0 == m_eMesh.get_bulk_data()->num_connectivity(element, stk::mesh::MetaData::NODE_RANK))
+                    {
 #if UNIFORM_REF_REMOVE_OLD_STD_VECTOR
-                  list.push_back(element);
+                      list.push_back(element);
 #else
-                  list.insert(element);
+                      list.insert(element);
 #endif
+                    }
                 }
             }
-        }
 
-      //getNodeRegistry().clear_elements_to_be_deleted(&list);
-      //m_eMesh.get_bulk_data()->modification_begin();
-      //std::cout << "tmp removeElements(parents) " << std::endl;
-      removeElements(list);
-      //m_eMesh.get_bulk_data()->modification_end();
+          //getNodeRegistry().clear_elements_to_be_deleted(&list);
+          //m_eMesh.get_bulk_data()->modification_begin();
+          //std::cout << "tmp removeElements(parents) " << std::endl;
+          removeElements(list);
+          //m_eMesh.get_bulk_data()->modification_end();
+        }
       if (CHECK_DEBUG) std::cout << "removeEmptyElements ....end " << std::endl;
 
     }
@@ -1533,7 +1540,7 @@ namespace stk {
       stk::mesh::PartVector * fromParts = &(m_breakPattern[irank]->getFromParts());
       if (fromParts)
         {
-          if (0) std::cout << "tmp srk1 rank= " << rank << " fromParts->size()= " << fromParts->size() << std::endl;
+          if (DEBUG_1) std::cout << "tmp srk1 rank= " << rank << " fromParts->size()= " << fromParts->size() << std::endl;
           selector = mesh::selectUnion(*fromParts);
         }
 

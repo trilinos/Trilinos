@@ -502,8 +502,17 @@ namespace stk {
       for (SubDimCellSet::iterator edge_it = new_edge_set.begin(); edge_it != new_edge_set.end(); ++edge_it, ++count)
         {
           const SubDimCell2& edge = *edge_it;
-          eMesh.get_bulk_data()->declare_relation(new_edges[count], edge[0], 0);
-          eMesh.get_bulk_data()->declare_relation(new_edges[count], edge[1], 1);
+          bool in_order = eMesh.identifier(edge[0]) < eMesh.identifier(edge[1]);
+          if (in_order)
+            {
+              eMesh.get_bulk_data()->declare_relation(new_edges[count], edge[0], 0);
+              eMesh.get_bulk_data()->declare_relation(new_edges[count], edge[1], 1);
+            }
+          else
+            {
+              eMesh.get_bulk_data()->declare_relation(new_edges[count], edge[1], 0);
+              eMesh.get_bulk_data()->declare_relation(new_edges[count], edge[0], 1);
+            }
         }
       eMesh.get_bulk_data()->modification_end();
     }
