@@ -777,12 +777,12 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     create_output_truth_table(global, glob_blocks, element_vars, elem_truth_table);
 
     if (!interface.append()) {
-      int error = ex_put_all_var_param(ExodusFile::output(),
-				       global_vars.count(OUT),
-				       nodal_vars.count(OUT),
-				       element_vars.count(OUT), TOPTR(elem_truth_table),
-				       nodeset_vars.count(OUT), TOPTR(global.truthTable[NSET]),
-				       sideset_vars.count(OUT), TOPTR(global.truthTable[SSET]));
+      error = ex_put_all_var_param(ExodusFile::output(),
+				   global_vars.count(OUT),
+				   nodal_vars.count(OUT),
+				   element_vars.count(OUT), TOPTR(elem_truth_table),
+				   nodeset_vars.count(OUT), TOPTR(global.truthTable[NSET]),
+				   sideset_vars.count(OUT), TOPTR(global.truthTable[SSET]));
       if (error < 0)
 	exodus_error(__LINE__);
     }
@@ -2616,7 +2616,7 @@ namespace {
 	if (error < 0)
 	  exodus_error(__LINE__);
 	if (glob_ssets[ss].dfCount > 0) {
-	  int error = ex_put_set_dist_fact(exoid, EX_SIDE_SET, glob_ssets[ss].id,
+	  error = ex_put_set_dist_fact(exoid, EX_SIDE_SET, glob_ssets[ss].id,
 					   reinterpret_cast<void*>(&glob_ssets[ss].distFactors[0]));
 	  if (error < 0)
 	    exodus_error(__LINE__);

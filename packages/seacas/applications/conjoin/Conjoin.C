@@ -2458,7 +2458,6 @@ namespace {
       // For each input exodus file, get it's truth table and fill
       // in the location in the output truth table...
 
-      bool is_sidenodeset = vars.objectType==NSET || vars.objectType==SSET;
       size_t part_count = blocks.size();
       for (size_t p = 0; p < part_count; p++) {
 	ExodusFile id(p);
@@ -2742,7 +2741,6 @@ namespace {
 			       size_t p, int time_step, int time_step_out)
   {
     int error = 0;
-    bool is_sidenodeset = vars.objectType==NSET || vars.objectType==SSET;
 
     ExodusFile id(p);
     int id_out = ExodusFile::output();// output file identifier
