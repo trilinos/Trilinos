@@ -44,6 +44,7 @@ public:
     int  m;
     int isFlex;
     bool doScaling;
+    int id;
 
     // Q
     LocalVector cs;
@@ -94,7 +95,7 @@ GMRESManager< Map, MultiVector, LocalMatrix, LocalVector >::~GMRESManager()
     if (isFlex != 0) {
         delete w;
     }
-    delete P;
+    //delete P;
 }
 
 template < typename Map, typename MultiVector, typename LocalMatrix, typename LocalVector >
@@ -177,6 +178,8 @@ int GMRESManager< Map, MultiVector,
     }
 
     //std::cout << "GMRES_TOOLS.solve: prec with m = " << mm << std::endl;
+    int myPID = map_.Comm().MyPID();
+    if (! myPID) std::cout << "Apply inverse " << id << "\n";
 
     int i;
     LocalVector bp(mm + 1, 0.0);
@@ -232,7 +235,7 @@ int GMRESManager< Map, MultiVector,
     if(P != 0 && isFlex == 0) {
         P->ApplyInverse(x, X);
     } else {
-        X = x;
+    X = x;
     }
 
     return 0;

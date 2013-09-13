@@ -157,6 +157,7 @@ int Ifpack_ShyLU::Initialize()
     	slu_config_.iqrKrylovDim = List_.get<double>("IQR Krylov Dim", 0.5);
     	slu_config_.iqrNumIter = List_.get<int>("IQR Number Iterations", 1);
         slu_config_.iqrScaling = List_.get<bool>("IQR Scaling", true);
+        slu_config_.iqrNestedLevel = List_.get<int>("IQR Nested Level", 0);
     }
     if (schurApproxMethod == "Projection")
     {
@@ -222,6 +223,8 @@ int Ifpack_ShyLU::Initialize()
 
     slu_data_.firstIteration = true;
     slu_data_.iqrCurrentIteration = 0;
+    slu_data_.iqrApplication = 0;
+    slu_data_.savedGmresManagers.resize(slu_config_.iqrNestedLevel);
 
     IsInitialized_ = true;
     return 0;
