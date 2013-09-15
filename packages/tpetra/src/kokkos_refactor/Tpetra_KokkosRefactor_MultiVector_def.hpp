@@ -492,6 +492,18 @@ namespace KokkosRefactor {
     const size_t numCols = this->getNumVectors ();
     const size_t stride = MVT::getStride (lclMV_);
 
+    // TODO (mfh 15 Sep 2013) When we replace
+    // KokkosClassic::MultiVector with a Kokkos::View, there are two
+    // ways to copy the data:
+    //
+    // 1. Get a (sub)view of each column and call deep_copy on that.
+    // 2. Write a custom kernel to copy the data.
+    //
+    // The first is easier, but the second might be more performant in
+    // case we decide to use layouts other than LayoutLeft.  It might
+    // even make sense to hide whichVectors_ in an entirely new layout
+    // for Kokkos Views.
+
     // Copy rows [0, numSameIDs-1] of the local multivectors.
     //
     // For GPU Nodes: All of this happens using device pointers; this
@@ -555,9 +567,9 @@ namespace KokkosRefactor {
       perm.src = sourceMV.getKokkosView();
       perm.dest = getKokkosViewNonConst();
       perm.src_whichVectors =
-        getKokkosViewDeepCopy<device_type>(sourceMV.whichVectors_ ());
+        getKokkosViewDeepCopy<device_type> (sourceMV.whichVectors_ ());
       perm.dest_whichVectors =
-        getKokkosViewDeepCopy<device_type>(whichVectors_ ());
+        getKokkosViewDeepCopy<device_type> (whichVectors_ ());
       perm.src_stride = MVT::getStride (sourceMV.lclMV_);
       perm.dest_stride = stride;
       perm.numCols = numCols;
@@ -585,8 +597,9 @@ namespace KokkosRefactor {
     typedef Array<size_t>::size_type size_type;
 
     // If we have no exports, there is nothing to do
-    if (exportLIDs.size() == 0)
+    if (exportLIDs.size () == 0) {
       return;
+    }
 
     // We've already called checkSizes(), so this cast must succeed.
     const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
@@ -603,8 +616,22 @@ namespace KokkosRefactor {
       the data for a Packet (all data associated with an LID) is
       required to be contiguous. */
 
+    // FIXME (mfh 15 Sep 2013) Would it make sense to rethink the
+    // packing scheme in the above comment?  The data going to a
+    // particular process must be contiguous, of course, but those
+    // data could include entries from multiple LIDs.  DistObject just
+    // needs to know how to index into that data.  Kokkos is good at
+    // decoupling storage intent from data layout choice.
+
     const size_t numCols = sourceMV.getNumVectors ();
+
+    // FIXME (mfh 15 Sep 2013) MVT doesn't make sense, since (a) we
+    // only ever plan to support one local multivector implementation,
+    // and (b) Tpetra::MultiVector doesn't give users hooks to insert
+    // their own data structure, anyway.
+
     const size_t stride = MVT::getStride (sourceMV.lclMV_);
+
     // This spares us from needing to fill numExportPacketsPerLID.
     // Setting constantNumPackets to a nonzero value signals that
     // all packets have the same number of entries.
@@ -613,7 +640,7 @@ namespace KokkosRefactor {
     const size_t numExportLIDs = exportLIDs.size ();
     const size_t newExportsSize = numCols * numExportLIDs;
     if (exports.size () != newExportsSize) {
-      Kokkos::Compat::realloc(exports, newExportsSize);
+      Kokkos::Compat::realloc (exports, newExportsSize);
     }
 
     if (numCols == 1) { // special case for one column only
@@ -623,39 +650,34 @@ namespace KokkosRefactor {
         Details::PackArraySingleColumnConstantStride<Scalar,LocalOrdinal,device_type> pack;
         pack.exportLIDs = exportLIDs;
         pack.exports = exports;
-        pack.src = sourceMV.getKokkosView();
+        pack.src = sourceMV.getKokkosView ();
         pack.pack();
       }
       else {
+	// FIXME (mfh 15 Sep 2013) It's not clear to me whether this
+	// case could ever get triggered, since single-column
+	// MultiVectors should always have constant stride.  However,
+	// we would need to check this first.
         Details::PackArraySingleColumnOffset<Scalar,LocalOrdinal,device_type> pack;
         pack.exportLIDs = exportLIDs;
         pack.exports = exports;
-        pack.src = sourceMV.getKokkosView();
+        pack.src = sourceMV.getKokkosView ();
         pack.offset = sourceMV.whichVectors_[0] * stride;
         pack.pack();
       }
     }
     else { // the source MultiVector has multiple columns
-      if (sourceMV.isConstantStride ()) {
-        Details::PackArrayMultiColumnConstantStride<Scalar,LocalOrdinal,device_type> pack;
-        pack.exportLIDs = exportLIDs;
-        pack.exports = exports;
-        pack.src = sourceMV.getKokkosView();
-        pack.stride = stride;
-        pack.numCols = numCols;
-        pack.pack();
-      }
-      else {
-        Details::PackArrayMultiColumnVariableStride<Scalar,LocalOrdinal,device_type> pack;
-        pack.exportLIDs = exportLIDs;
-        pack.exports = exports;
-        pack.src = sourceMV.getKokkosView();
+      Details::PackArrayMultiColumnConstantStride<Scalar,LocalOrdinal,device_type> pack;
+      pack.exportLIDs = exportLIDs;
+      pack.exports = exports;	
+      pack.src = sourceMV.getKokkosView();
+      pack.stride = stride;
+      pack.numCols = numCols;
+      if (! sourceMV.isConstantStride ()) {
         pack.srcWhichVectors =
-          getKokkosViewDeepCopy<device_type>(sourceMV.whichVectors_ ());
-        pack.stride = stride;
-        pack.numCols = numCols;
-        pack.pack();
+          getKokkosViewDeepCopy<device_type> (sourceMV.whichVectors_ ());
       }
+      pack.pack ();
     }
   }
 
