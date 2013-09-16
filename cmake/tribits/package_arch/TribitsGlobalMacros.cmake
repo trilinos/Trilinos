@@ -339,34 +339,26 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_CIRCULAR_REF_DETECTION_FAILURE OFF CACHE BOOL
     "If test output complaining about circular references is found, then the test will fail." )
 
-  IF (WIN32 AND NOT CYGWIN)
-    SET(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES_DEFAULT FALSE)
+  ADVANCED_SET(${PROJECT_NAME}_DEPS_DEFAULT_OUTPUT_DIR ""
+    CACHE FILEPATH
+    "If set to non-null, this is the default directory where package dependency files will be written.")
+
+  IF (${PROJECT_NAME}_DEPS_DEFAULT_OUTPUT_DIR)
+    SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE_DEFAULT
+      "${${PROJECT_NAME}_DEPS_DEFAULT_OUTPUT_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}")
   ELSE()
-    SET(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES_DEFAULT TRUE)
+    SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE_DEFAULT "")
   ENDIF()
-  ADVANCED_SET(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES
-    "${${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES_DEFAULT}"
-    CACHE BOOL
-    "Output any XML dependency files or not." )
-
-  # 2009/01/19: rabartl: Above: This file outputs just fine on MS Windows
-  # using MS Visual Studio but it causes the entire file to
-  # diff.  There must be something wrong with a newlines or something
-  # that is causing this.  If people are going to be doing real
-  # development work on MS Windows with MS Visual Studio, then we need
-  # to fix this so that the dependency files will get created and
-  # checked in correctly.  I will look into this later.
-
-  SET(DEPENDENCIES_DIR ${${PROJECT_NAME}_PACKAGE_DEPS_FILES_DIR})
-
   ADVANCED_SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE
-    "${CMAKE_CURRENT_SOURCE_DIR}/${DEPENDENCIES_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}"
+    "${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE_DEFAULT}"
     CACHE STRING
     "Output XML file containing ${PROJECT_NAME} dependenices used by tools (if not empty)." )
   
-  IF(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE)
+  IF(${PROJECT_NAME}_DEPS_DEFAULT_OUTPUT_DIR AND
+    ${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE
+    )
     SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT
-      "${CMAKE_CURRENT_SOURCE_DIR}/${DEPENDENCIES_DIR}/${${PROJECT_NAME}_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME}" )
+      "${${PROJECT_NAME}_DEPS_DEFAULT_OUTPUT_DIR}/${${PROJECT_NAME}_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME}" )
   ELSE()
     SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT "")
   ENDIF()
@@ -375,9 +367,11 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
     CACHE STRING
     "Output XML file used by CDash in ${PROJECT_NAME}-independent format (if not empty)." )
   
-  IF(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE)
+  IF(${PROJECT_NAME}_DEPS_DEFAULT_OUTPUT_DIR AND
+    ${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE
+    )
     SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE_DEFAULT
-      "${CMAKE_CURRENT_SOURCE_DIR}/${DEPENDENCIES_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_TABLE_HTML_FILE_NAME}" )
+      "${${PROJECT_NAME}_DEPS_DEFAULT_OUTPUT_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_TABLE_HTML_FILE_NAME}" )
   ELSE()
     SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE_DEFAULT "")
   ENDIF()
@@ -385,10 +379,6 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
     "${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE_DEFAULT}"
     CACHE STRING
     "HTML ${PROJECT_NAME} dependenices file that will be written to (if not empty)." )
-
-  ADVANCED_SET(${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR
-    "" CACHE PATH
-    "Output the full XML dependency files in the given directory." )
 
   #
   # Extra repositories
@@ -738,7 +728,7 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
   SET(${PROJECT_NAME}_TPLS)
 
   #
-  # A) Process the native repos
+  # A) Read native repos
   #
 
   IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
@@ -787,42 +777,10 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
     TRIBITS_PROCESS_TPLS_LISTS(${NATIVE_REPO_NAME} ${NATIVE_REPO_DIR})
 
   ENDFOREACH()
-      
-  #
-  # A.2) Process the package and TPL dependencies
-  #
-    
-  TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES()
-  
-  IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
-    TIMER_GET_RAW_SECONDS(SET_UP_DEPENDENCIES_TIME_STOP_SECONDS)
-    TIMER_PRINT_REL_TIME(${SET_UP_DEPENDENCIES_TIME_START_SECONDS}
-      ${SET_UP_DEPENDENCIES_TIME_STOP_SECONDS}
-      "\nTotal time to read in and process native package dependencies")
-  ENDIF()
-  
-  #
-  # 3) Write the XML dependency files for the native ${PROJECT_NAME} packages
-  #
-  
-  IF (${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES)
-    IF (${PROJECT_NAME}_PACKAGES)
-      TRIBITS_WRITE_XML_DEPENDENCY_FILES()
-    ELSE()
-      MESSAGE("\nSkipping the generation of XML dependency files because"
-        " there are no native packages!")
-    ENDIF()
-  ENDIF()
 
   #
-  # 4) Read in the list of externally defined packages and TPLs in external
-  # repositories
+  # B) Read extra repos
   #
-
-  IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
-    TIMER_GET_RAW_SECONDS(SET_UP_EXTRA_DEPENDENCIES_TIME_START_SECONDS)
-  ENDIF()
-
 
   # Allow list to be seprated by ',' instead of just by ';'.  This is needed
   # by the unit test driver code
@@ -919,45 +877,28 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
   ENDFOREACH()
 
   #
-  # 5) Read in the package dependencies again to now pick up all of the
-  # defined packages (not just the core packages)
+  # C) Process list of list of packages, TPLs, etc.
   #
 
-  IF (${PROJECT_NAME}_EXTRA_REPOSITORIES)
+  #
+  # C.1) Package dependencies for all of the packages for all of the defined
+  # packages (not just the core packages)
+  #
 
-    TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES()
+  TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES()
 
-    IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
-      TIMER_GET_RAW_SECONDS(SET_UP_EXTRA_DEPENDENCIES_TIME_STOP_SECONDS)
-      TIMER_PRINT_REL_TIME(${SET_UP_EXTRA_DEPENDENCIES_TIME_START_SECONDS}
-        ${SET_UP_EXTRA_DEPENDENCIES_TIME_STOP_SECONDS}
-        "\nTotal time to read in and process all (core and extra) package dependencies")
-    ENDIF()
-
+  IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
+    TIMER_GET_RAW_SECONDS(SET_UP_DEPENDENCIES_TIME_STOP_SECONDS)
+    TIMER_PRINT_REL_TIME(${SET_UP_DEPENDENCIES_TIME_START_SECONDS}
+      ${SET_UP_DEPENDENCIES_TIME_STOP_SECONDS}
+      "\nTotal time to read in and process all (native and extra) package dependencies")
   ENDIF()
 
   #
-  # 6) Write out the XML dependency files again but this time for the full
-  # list in the build directory!
+  # C.2) Write out the XML dependency files for the full list of dependencies!
   #
 
-  IF (${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR)
-    #MESSAGE("Writing dependency XML files in ${${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR} ...")
-    SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE
-      "${${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}" )
-    IF(PYTHON_EXECUTABLE)
-      SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE
-        "${${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR}/${${PROJECT_NAME}_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME}" )
-      IF (${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE)
-        SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE
-          "${${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_TABLE_HTML_FILE_NAME}" )
-      ENDIF()
-    ELSE()
-      SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE "")
-      SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE "")
-    ENDIF()
-    TRIBITS_WRITE_XML_DEPENDENCY_FILES()
-  ENDIF()
+  TRIBITS_WRITE_XML_DEPENDENCY_FILES()
 
 ENDMACRO()
 
@@ -1926,68 +1867,3 @@ MACRO(TRIBITS_EXCLUDE_AUTOTOOLS_FILES) # PACKAGE_NAME LIST_RETURN)
   TRIBITS_EXCLUDE_FILES(${FILES_TO_EXCLUDE}) 
 
 ENDMACRO()
-
-
-#
-# Function that looks for changed package dependency files and adds reminder
-# to commit the files.
-#
-
-FUNCTION(TRIBITS_REMIND_ABOUT_UNCOMMITTED_DEPENDENCY_FILES)
-  IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
-
-    FIND_PROGRAM(GIT_EXE NAMES ${GIT_NAME})
-    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE("GIT_EXE=${GIT_EXE}")
-    ENDIF()
-
-    IF (GIT_EXE AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
-
-      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        MESSAGE("\nChecking for uncommitted changes to generated dependency files ...\n")
-      ENDIF()
-
-      EXECUTE_PROCESS(COMMAND ${GIT_EXE} status
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        TIMEOUT 10
-        OUTPUT_VARIABLE GIT_STATUS_OUT
-        )
-
-      SET(DEPS_FILES_DIR ${${PROJECT_NAME}_PACKAGE_DEPS_FILES_DIR})
-
-      STRING(REGEX MATCH
-        "${DEPS_FILES_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}"
-        FOUND_AUTODEP_FILE "${GIT_STATUS_OUT}")
-
-      IF (FOUND_AUTODEP_FILE)
-
-        MESSAGE(
-          "\n***"
-          "\n*** REMINDER: COMMIT AUTOGENERATED DEPENDENCY FILES!"
-          "\n***"
-          "\n"
-          "\nYou must have changed one or more Dependencies.cmake files and therefore"
-          "\nthis configure phase has updated the autogenerated files:"
-          "\n"
-          "\n  ${FOUND_AUTODEP_FILE}"
-          "\n  ${DEPS_FILES_DIR}/${${PROJECT_NAME}_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME}"
-          "\n  ${DEPS_FILES_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_TABLE_HTML_FILE_NAME}"
-          "\n"
-          "\nIMPORTANT: Remember to commit these files along with the rest of the files"
-          "\nrelated to this dependency change!"
-          "\n"
-          "\nWARNING: Failure to commit these files can cause your fellow developers much"
-          "\npain and aggravation and can break the automated processes that depend on"
-          "\nthese files being up to date!"
-          "\n"
-          "\n***"
-          "\n*** NOTE ABOVE REMINDER TO COMMIT AUTOGENERATED DEPENDENCY FILES!"
-          "\n***"
-          "\n"
-          )
-      ENDIF()
-
-    ENDIF()
-
-  ENDIF()
-ENDFUNCTION()
