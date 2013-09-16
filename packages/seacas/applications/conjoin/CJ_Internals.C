@@ -1243,8 +1243,8 @@ namespace {
 	    ex_err(routine,errmsg,status);
 	    return(EX_FATAL);
 	  }
+	  ex_compress_variable(exodusFilePtr, varid, 1);
 	}
-	ex_compress_variable(exodusFilePtr, varid, 1);
 
 	if (dimension > 1) {
 	  status=nc_def_var(exodusFilePtr, VAR_COORD_Y, nc_flt_code(exodusFilePtr), 1, dim, &varid);
@@ -1255,8 +1255,8 @@ namespace {
 	    ex_err(routine,errmsg,status);
 	    return(EX_FATAL);
 	  }
+	  ex_compress_variable(exodusFilePtr, varid, 1);
 	}
-	ex_compress_variable(exodusFilePtr, varid, 1);
 
 	if (dimension > 2) {
 	  status=nc_def_var(exodusFilePtr, VAR_COORD_Z, nc_flt_code(exodusFilePtr), 1, dim, &varid);
@@ -1267,8 +1267,8 @@ namespace {
 	    ex_err(routine,errmsg,status);
 	    return(EX_FATAL);
 	  }
+	  ex_compress_variable(exodusFilePtr, varid, 1);
 	}
-	ex_compress_variable(exodusFilePtr, varid, 1);
 
       } else {
 	// node coordinate arrays:  -- all stored together (old method)2
