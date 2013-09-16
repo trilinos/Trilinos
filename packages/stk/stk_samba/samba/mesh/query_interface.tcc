@@ -130,7 +130,7 @@ template <typename MeshHandle>
 template <typename ToIndex, typename FromIndex>
 inline
 ToIndex query_interface<MeshHandle>::convert(FromIndex from) const
-{ return mesh_impl().convert<ToIndex>(from); }
+{ return mesh_impl().template convert<ToIndex>(from); }
 
 template <typename MeshHandle>
 inline

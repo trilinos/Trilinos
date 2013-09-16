@@ -4,14 +4,14 @@ template <typename MeshImpl>
 inline partition_index conversion_impl<MeshImpl>::convert(entity_key k) const
 {
   mesh_impl().validate_helper(k);
-  return mesh_impl().convert_helper<partition_index>(k);
+  return mesh_impl().template convert_helper<partition_index>(k);
 }
 
 template <typename MeshImpl>
 inline entity_key conversion_impl<MeshImpl>::convert(partition_index d) const
 {
   mesh_impl().validate_helper(d);
-  return mesh_impl().convert_helper<entity_key>(d);
+  return mesh_impl().template convert_helper<entity_key>(d);
 }
 
 template <typename MeshImpl>
@@ -20,7 +20,7 @@ inline
 ToIndex conversion_impl<MeshImpl>::convert(FromIndex from) const
 {
   mesh_impl().validate_helper(from);
-  return mesh_impl().convert_helper<ToIndex>(from);
+  return mesh_impl().template convert_helper<ToIndex>(from);
 }
 
 //*************************************************************************
