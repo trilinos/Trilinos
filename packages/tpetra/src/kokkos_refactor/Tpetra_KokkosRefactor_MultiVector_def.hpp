@@ -1230,6 +1230,15 @@ namespace KokkosRefactor {
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
     typedef ScalarTraits<MT> STM;
 
+    // FIXME (mfh 15 Sep 2013) When migrating to use Kokkos::View, we
+    // should have the post-reduce kernel do the square root(s) on the
+    // device.  If we make norm2() fill in a Kokkos::View instead of a
+    // Teuchos::ArrayView, we could have norm2() leave the results of
+    // the norm(s) on the device, instead of bringing them back to the
+    // host.  I don't think it makes sense to template norm2() on the
+    // output View type; users should use a View type compatible with
+    // the MultiVector's native device.
+
     const size_t numVecs = this->getNumVectors();
     TEUCHOS_TEST_FOR_EXCEPTION(as<size_t>(norms.size()) != numVecs,
       std::runtime_error,
