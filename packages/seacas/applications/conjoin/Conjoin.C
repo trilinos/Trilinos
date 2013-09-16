@@ -2413,7 +2413,7 @@ namespace {
 	  // of current value and then iterate over specified blocks and
 	  // set those positive.  This way can make sure that the
 	  // variable truly exists for the block that the user specified.
-	  bool found_it = false;
+	  found_it = false;
 	  for (size_t b=0; b < global.count(vars.objectType); b++) {
 	    if (glob_blocks[b].id == variable_names[i].second) {
 	      if (glob_blocks[b].truthTable[out_position] == 0) {
