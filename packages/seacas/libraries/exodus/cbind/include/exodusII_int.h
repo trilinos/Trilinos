@@ -621,7 +621,7 @@ typedef enum ex_coordinate_frame_type ex_coordinate_frame_type;
 
 /* Internal structure declarations */
 
-struct file_item {
+struct ex_file_item {
   int                   file_id;
   nc_type               netcdf_type_code;
   int                   int64_status;
@@ -631,7 +631,7 @@ struct file_item {
   unsigned int          shuffle:1;               /* 1 true, 0 false */                   
   unsigned int          file_type:2;             /* 0 - classic, 1 -- 64 bit classic, 2 --netcdf4,  3 --netcdf4 classic */
   unsigned int          is_parallel:1;            /* 1 true, 0 false */
-  struct file_item*     next;
+  struct ex_file_item*     next;
 };
 
 struct elem_blk_parm
@@ -700,7 +700,8 @@ extern struct obj_stats* exoII_fam;
 extern struct obj_stats* exoII_nm;
 
 
-struct file_item* ex_find_file_item(int exoid);
+struct ex_file_item* ex_find_file_item(int exoid);
+struct ex_file_item* ex_add_file_item(int exoid);
 struct obj_stats *ex_get_stat_ptr  ( int exoid, struct obj_stats** obj_ptr);
 
 void ex_rm_stat_ptr  (int exoid, struct obj_stats** obj_ptr);
