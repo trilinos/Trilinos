@@ -71,6 +71,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node> class Map;
 
   namespace Details {
+    // Forward declaration.
     template <class LocalOrdinal, class GlobalOrdinal> class TieBreak;
 
     /// \class Directory

@@ -487,6 +487,51 @@ struct ViewRemap< OutputView ,  InputView , 0 >
   }
 };
 
+template< class OutputView , unsigned Rank = OutputView::Rank >
+struct ViewFill
+{
+  typedef typename OutputView::device_type       device_type ;
+  typedef typename OutputView::const_value_type  const_value_type ;
+  typedef typename device_type::size_type        size_type ;
+
+  const OutputView output ;
+  const_value_type input ;
+
+  ViewFill( const OutputView & arg_out , const_value_type & arg_in )
+    : output( arg_out ), input( arg_in )
+    {
+      parallel_for( output.dimension_0() , *this );
+    }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i0 ) const
+  {
+    for ( size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
+    for ( size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
+    for ( size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
+    for ( size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
+    for ( size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
+    for ( size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
+    for ( size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
+      output(i0,i1,i2,i3,i4,i5,i6,i7) = input ;
+    }}}}}}}
+  }
+};
+
+template< class OutputView >
+struct ViewFill< OutputView , 0 >
+{
+  typedef typename OutputView::device_type       device_type ;
+  typedef typename OutputView::const_value_type  const_value_type ;
+  typedef typename OutputView::device_space      dst_space ;
+
+  ViewFill( const OutputView & arg_out , const_value_type & arg_in )
+  {
+    DeepCopy< dst_space , dst_space >( arg_out.ptr_on_device() , & arg_in ,
+                                       sizeof(const_value_type) );
+  }
+};
+
 } // namespace Impl
 } // namespace Kokkos
 
@@ -494,6 +539,20 @@ struct ViewRemap< OutputView ,  InputView , 0 >
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
+
+//----------------------------------------------------------------------------
+/** \brief  Deep copy a value into a view.
+ */
+template< class DT , class DL , class DD , class DM , class DS >
+inline
+void deep_copy( const View<DT,DL,DD,DM,DS> & dst ,
+                typename Impl::enable_if<(
+                  Impl::is_same< typename ViewTraits<DT,DL,DD,DM>::non_const_scalar_type ,
+                                 typename ViewTraits<DT,DL,DD,DM>::scalar_type >::value
+                ), typename ViewTraits<DT,DL,DD,DM>::const_scalar_type >::type & value )
+{
+  Impl::ViewFill< View<DT,DL,DD,DM,DS> >( dst , value );
+}
 
 //----------------------------------------------------------------------------
 /** \brief  A deep copy between views of the same specialization, compatible type,

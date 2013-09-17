@@ -1011,6 +1011,16 @@ public:
       { ASSERT_EQ( hx(ip,i1,i2,i3) , hy(ip,i1,i2,i3) ); }
     }}}}
 
+    Kokkos::deep_copy( dx , T(0) );
+    Kokkos::deep_copy( hx , dx );
+
+    for ( size_t ip = 0 ; ip < N0 ; ++ip ) {
+    for ( size_t i1 = 0 ; i1 < N1 ; ++i1 ) {
+    for ( size_t i2 = 0 ; i2 < N2 ; ++i2 ) {
+    for ( size_t i3 = 0 ; i3 < N3 ; ++i3 ) {
+      { ASSERT_EQ( hx(ip,i1,i2,i3) , T(0) ); }
+    }}}}
+
     dz = dx ; ASSERT_EQ( dx, dz); ASSERT_NE( dy, dz);
     dz = dy ; ASSERT_EQ( dy, dz); ASSERT_NE( dx, dz);
 

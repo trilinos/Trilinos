@@ -654,10 +654,10 @@ namespace KokkosRefactor {
         pack.pack();
       }
       else {
-	// FIXME (mfh 15 Sep 2013) It's not clear to me whether this
-	// case could ever get triggered, since single-column
-	// MultiVectors should always have constant stride.  However,
-	// we would need to check this first.
+        // FIXME (mfh 15 Sep 2013) It's not clear to me whether this
+        // case could ever get triggered, since single-column
+        // MultiVectors should always have constant stride.  However,
+        // we would need to check this first.
         Details::PackArraySingleColumnOffset<Scalar,LocalOrdinal,device_type> pack;
         pack.exportLIDs = exportLIDs;
         pack.exports = exports;
@@ -667,17 +667,26 @@ namespace KokkosRefactor {
       }
     }
     else { // the source MultiVector has multiple columns
-      Details::PackArrayMultiColumnConstantStride<Scalar,LocalOrdinal,device_type> pack;
-      pack.exportLIDs = exportLIDs;
-      pack.exports = exports;	
-      pack.src = sourceMV.getKokkosView();
-      pack.stride = stride;
-      pack.numCols = numCols;
-      if (! sourceMV.isConstantStride ()) {
+      if (sourceMV.isConstantStride ()) {
+        Details::PackArrayMultiColumnConstantStride<Scalar,LocalOrdinal,device_type> pack;
+        pack.exportLIDs = exportLIDs;
+        pack.exports = exports;
+        pack.src = sourceMV.getKokkosView();
+        pack.stride = stride;
+        pack.numCols = numCols;
+        pack.pack ();
+      }
+      else {
+        Details::PackArrayMultiColumnVariableStride<Scalar,LocalOrdinal,device_type> pack;
+        pack.exportLIDs = exportLIDs;
+        pack.exports = exports;
+        pack.src = sourceMV.getKokkosView();
+        pack.stride = stride;
+        pack.numCols = numCols;
         pack.srcWhichVectors =
           getKokkosViewDeepCopy<device_type> (sourceMV.whichVectors_ ());
+        pack.pack ();
       }
-      pack.pack ();
     }
   }
 

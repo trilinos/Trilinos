@@ -86,7 +86,7 @@ namespace Tpetra {
   template<class LO, class GO, class NT>
   Directory<LO, GO, NT>::
   Directory (const Teuchos::RCP<const Map<LO, GO, NT> >& map,
-             const Tpetra::Details::TieBreak<LO,GO> & tie_break)
+             const Tpetra::Details::TieBreak<LO,GO> & tieBreak)
   {
     // Create an implementation object of the appropriate type,
     // depending on whether the Map is distributed or replicated, and
@@ -96,21 +96,21 @@ namespace Tpetra {
       if (map->isUniform ()) {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::"
           "Directory constructor failed to create Directory implementation.  "
-          "No implementation exists for the ContiguousUniformDirectory "
-          "using  a TieBreak object. Please report need for this use case to "
+          "No implementation exists for ContiguousUniformDirectory "
+          "using a TieBreak object.  Please report need for this use case to "
           "the Tpetra developers.");
-        // dir = rcp (new Details::ContiguousUniformDirectory<LO, GO, NT> (map));
+        // dir = rcp (new Details::ContiguousUniformDirectory<LO, GO, NT> (map, tieBreak));
       }
       else if (map->isContiguous ()) {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::"
           "Directory constructor failed to create Directory implementation.  "
-          "No implementation exists for the DistributedNoncontinguousDirectory "
-          "using  a TieBreak object. Please report need for this use case to "
+          "No implementation exists for DistributedNoncontinguousDirectory "
+          "using a TieBreak object.  Please report need for this use case to "
           "the Tpetra developers.");
-        // dir = rcp (new Details::DistributedContiguousDirectory<LO, GO, NT> (map,tie_break));
+        // dir = rcp (new Details::DistributedContiguousDirectory<LO, GO, NT> (map, tieBreak));
       }
       else {
-        dir = rcp (new Details::DistributedNoncontiguousDirectory<LO, GO, NT> (map,tie_break));
+        dir = rcp (new Details::DistributedNoncontiguousDirectory<LO, GO, NT> (map, tieBreak));
       }
     }
     else {
