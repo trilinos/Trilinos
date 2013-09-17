@@ -48,6 +48,29 @@ enum AttemptedStepStatusFlag { PREDICT_AGAIN, CONTINUE_ANYWAY, REP_ERR_FAIL, REP
 /** \brief . */
 enum StepControlStrategyState { UNINITIALIZED, BEFORE_FIRST_STEP, MID_STEP, AFTER_CORRECTION, READY_FOR_NEXT_STEP };
 
+/** \brief Convert StepControlStrategyState to string. */
+inline
+const char* toString( const StepControlStrategyState stepControlStrategyState )
+{
+  switch(stepControlStrategyState) {
+    case UNINITIALIZED:
+      return "UNINITIALIZED";
+    case BEFORE_FIRST_STEP:
+      return "BEFORE_FIRST_STEP";
+    case MID_STEP:
+      return "MID_STEP";
+    case AFTER_CORRECTION:
+      return "AFTER_CORRECTION";
+    case READY_FOR_NEXT_STEP:
+      return "READY_FOR_NEXT_STEP";
+#ifdef HAVE_RYTHMOS_DEBUG
+    default:
+      TEUCHOS_TEST_FOR_EXCEPT("Invalid enum value!");
+#endif
+  }
+  return 0; // Should never get here!
+}
+
 /** \brief The member functions in the StepControlStrategyBase move you
  * between these states in the following fashion:
  *
@@ -93,7 +116,7 @@ public:
       const StepperBase<Scalar>& stepper
       , Scalar* stepSize
       , StepSizeType* stepSizeType
-      , int* order 
+      , int* order
       ) = 0;
 
   /** \brief . */
@@ -102,7 +125,7 @@ public:
       , const RCP<const Thyra::VectorBase<Scalar> >& soln
       , const RCP<const Thyra::VectorBase<Scalar> >& ee
       , int solveStatus
-      ) = 0; 
+      ) = 0;
 
   /** \brief . */
   virtual bool acceptStep(

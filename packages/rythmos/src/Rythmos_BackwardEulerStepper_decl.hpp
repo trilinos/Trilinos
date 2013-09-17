@@ -30,6 +30,7 @@
 #define Rythmos_BACKWARD_EULER_STEPPER_DECL_H
 
 #include "Rythmos_SolverAcceptingStepperBase.hpp"
+#include "Rythmos_StepControlStrategyAcceptingStepperBase.hpp"
 #include "Rythmos_InterpolatorAcceptingObjectBase.hpp"
 #include "Rythmos_SingleResidualModelEvaluator.hpp"
 #include "Rythmos_MomentoBase.hpp"
@@ -44,7 +45,7 @@ namespace Rythmos {
 
 
 /** \brief Concrete momento class for the BackwardEulerStepper.
- * 
+ *
  * Note:  The model is not contained in the momento and must be set on the stepper in addition to the momento.
  */
 template<class Scalar>
@@ -76,7 +77,7 @@ template<class Scalar>
       if (!Teuchos::is_null(this->getMyParamList())) {
         m->setParameterList(Teuchos::parameterList(*(this->getMyParamList())));
       }
-      // How do I copy the VerboseObject data?  
+      // How do I copy the VerboseObject data?
       // 07/10/09 tscoffe:  Its not set up in Teuchos to do this yet
       return m;
     }
@@ -94,40 +95,40 @@ template<class Scalar>
     { }
 
     void set_scaled_x_old(const RCP<const VectorBase<Scalar> >& scaled_x_old )
-    { 
+    {
       scaled_x_old_ = Teuchos::null;
       if (!Teuchos::is_null(scaled_x_old)) {
-        scaled_x_old_ = scaled_x_old->clone_v(); 
+        scaled_x_old_ = scaled_x_old->clone_v();
       }
     }
     RCP<VectorBase<Scalar> > get_scaled_x_old() const
     { return scaled_x_old_; }
 
     void set_x_dot_old(const RCP<const VectorBase<Scalar> >& x_dot_old )
-    { 
+    {
       x_dot_old_ = Teuchos::null;
       if (!Teuchos::is_null(x_dot_old)) {
-        x_dot_old_ = x_dot_old->clone_v(); 
+        x_dot_old_ = x_dot_old->clone_v();
       }
     }
     RCP<VectorBase<Scalar> > get_x_dot_old() const
     { return x_dot_old_; }
 
     void set_x(const RCP<const VectorBase<Scalar> >& x )
-    { 
+    {
       x_ = Teuchos::null;
       if (!Teuchos::is_null(x)) {
-        x_ = x->clone_v(); 
+        x_ = x->clone_v();
       }
     }
     RCP<VectorBase<Scalar> > get_x() const
     { return x_; }
 
     void set_x_dot(const RCP<const VectorBase<Scalar> >& x_dot )
-    { 
+    {
       x_dot_ = Teuchos::null;
       if (!Teuchos::is_null(x_dot)) {
-        x_dot_ = x_dot->clone_v(); 
+        x_dot_ = x_dot->clone_v();
       }
     }
     RCP<VectorBase<Scalar> > get_x_dot() const
@@ -164,10 +165,10 @@ template<class Scalar>
     { return haveInitialCondition_; }
 
     void set_parameterList(const RCP<const ParameterList>& pl)
-    { 
+    {
       parameterList_ = Teuchos::null;
       if (!Teuchos::is_null(pl)) {
-        parameterList_ = Teuchos::parameterList(*pl); 
+        parameterList_ = Teuchos::parameterList(*pl);
       }
     }
     RCP<ParameterList> get_parameterList() const
@@ -179,7 +180,7 @@ template<class Scalar>
     { return basePoint_; }
 
     void set_neModel(const RCP<Rythmos::SingleResidualModelEvaluator<Scalar> >& neModel)
-    { 
+    {
       neModel_ = Teuchos::null;
       if (!Teuchos::is_null(neModel)) {
         neModel_ = Teuchos::rcp(new Rythmos::SingleResidualModelEvaluator<Scalar>);
@@ -217,7 +218,7 @@ template<class Scalar>
     bool haveInitialCondition_;
     RCP<Teuchos::ParameterList> parameterList_;
     Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
-    RCP<Rythmos::SingleResidualModelEvaluator<Scalar> >  neModel_; 
+    RCP<Rythmos::SingleResidualModelEvaluator<Scalar> >  neModel_;
     RCP<InterpolatorBase<Scalar> > interpolator_;
 
 };
@@ -234,21 +235,22 @@ template<class Scalar>
  * features, you should really use the <tt>ImplicitBDFStepper</tt> class.
  */
 template<class Scalar>
-class BackwardEulerStepper : 
+class BackwardEulerStepper :
   virtual public SolverAcceptingStepperBase<Scalar>,
+  virtual public StepControlStrategyAcceptingStepperBase<Scalar>,
   virtual public InterpolatorAcceptingObjectBase<Scalar>
 {
 public:
-  
+
   /** \brief . */
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
-  
-  /** \name Constructors, intializers, Misc. */
+
+  /** \name Constructors, initializers, Misc. */
   //@{
 
   /** \brief . */
   BackwardEulerStepper();
-  
+
   /** \brief . */
   BackwardEulerStepper(
     const RCP<Thyra::ModelEvaluator<Scalar> >& model,
@@ -256,10 +258,10 @@ public:
     );
 
   //@}
-  
+
   /** \name Overridden from InterpolatorAcceptingObjectBase */
   //@{
-  
+
   /** \brief . */
   void setInterpolator(const RCP<InterpolatorBase<Scalar> >& interpolator);
 
@@ -268,9 +270,27 @@ public:
 
   /** \brief . */
   RCP<const InterpolatorBase<Scalar> > getInterpolator() const;
-  
+
   /** \brief . */
   RCP<InterpolatorBase<Scalar> > unSetInterpolator();
+
+  //@}
+
+  /** \name Overridden from StepControlStrategyAcceptingStepperBase */
+  //@{
+
+  /** \brief . */
+  void setStepControlStrategy(
+      const RCP<StepControlStrategyBase<Scalar> >& stepControlStrategy
+      );
+
+  /** \brief . */
+  RCP<StepControlStrategyBase<Scalar> >
+    getNonconstStepControlStrategy();
+
+  /** \brief . */
+  RCP<const StepControlStrategyBase<Scalar> >
+    getStepControlStrategy() const;
 
   //@}
 
@@ -294,7 +314,7 @@ public:
 
   /** \name Overridden from StepperBase */
   //@{
- 
+
   /** \brief Returns true. */
   bool supportsCloning() const;
 
@@ -315,7 +335,7 @@ public:
 
   /** \brief . */
   void setNonconstModel(const RCP<Thyra::ModelEvaluator<Scalar> >& model);
-  
+
   /** \brief . */
   RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const;
 
@@ -332,10 +352,10 @@ public:
 
   /** \brief . */
   Scalar takeStep(Scalar dt, StepSizeType flag);
-  
+
   /** \brief . */
   const StepStatus<Scalar> getStepStatus() const;
-  
+
   //@}
 
   /** \name Overridden from InterpolationBufferBase */
@@ -351,10 +371,10 @@ public:
     const Array<RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
     const Array<RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
     );
-  
+
   /** \brief . */
   TimeRange<Scalar> getTimeRange() const;
-  
+
   /** \brief . */
   void getPoints(
     const Array<Scalar>& time_vec,
@@ -362,10 +382,10 @@ public:
     Array<RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
     Array<ScalarMag>* accuracy_vec
     ) const;
-  
+
   /** \brief . */
   void getNodes(Array<Scalar>* time_vec) const;
-  
+
   /** \brief . */
   void removeNodes(Array<Scalar>& time_vec);
 
@@ -373,27 +393,27 @@ public:
   int getOrder() const;
 
   //@}
-  
+
   /** \name Overridden from Teuchos::ParameterListAcceptor */
   //@{
 
   /** \brief . */
   void setParameterList(RCP<Teuchos::ParameterList> const& paramList);
-  
+
   /** \brief . */
   RCP<Teuchos::ParameterList> getNonconstParameterList();
-  
+
   /** \brief . */
   RCP<Teuchos::ParameterList> unsetParameterList();
-  
+
   /** \brief. */
   RCP<const Teuchos::ParameterList> getValidParameters() const;
- 
+
   //@}
 
   /** \name Overridden from Teuchos::Describable */
   //@{
-  
+
   /** \brief . */
   void describe(
     Teuchos::FancyOStream  &out,
@@ -404,7 +424,7 @@ public:
 
   /** \name Momento functions. */
   //@{
-  
+
   /** \brief Get momento object for use in restarts
   *
   */
@@ -430,12 +450,15 @@ private:
   bool haveInitialCondition_;
   RCP<const Thyra::ModelEvaluator<Scalar> > model_;
   RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
+  RCP<StepControlStrategyBase<Scalar> > stepControl_;
+  RCP<Thyra::VectorBase<Scalar> > x_old_;
   RCP<Thyra::VectorBase<Scalar> > scaled_x_old_;
   RCP<Thyra::VectorBase<Scalar> > x_dot_old_;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
   RCP<Thyra::VectorBase<Scalar> > x_;
   RCP<Thyra::VectorBase<Scalar> > x_dot_;
+  RCP<Thyra::VectorBase<Scalar> > dx_;
   Scalar t_;
   Scalar t_old_;
 
@@ -448,13 +471,16 @@ private:
 
   RCP<InterpolatorBase<Scalar> > interpolator_;
 
+  int newtonConvergenceStatus_;
+
 
   // //////////////////////////
   // Private member functions
 
   void defaultInitializeAll_();
-  void initialize();
+  void initialize_();
   void checkConsistentState_();
+  void obtainPredictor_();
 
 };
 
