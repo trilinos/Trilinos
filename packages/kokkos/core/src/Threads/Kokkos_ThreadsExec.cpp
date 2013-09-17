@@ -349,13 +349,10 @@ void ThreadsExec::execute_shared_resize( ThreadsExec & exec , const void * )
 
 void * ThreadsExec::get_shmem( const int size )
 {
-  enum { MASK  = ParallelWorkRequest::shared_align - 1 };
-
   // m_shared_iter is in bytes, convert to integer offsets
   const int offset = m_shared_iter >> power_of_two<sizeof(int)>::value ;
 
-  // Round up size alignment
-  m_shared_iter += ( size + int(MASK) ) & ~int(MASK);
+  m_shared_iter += size ;
 
   if ( m_shared_end < m_shared_iter ) {
     Kokkos::Impl::throw_runtime_exception( std::string("ThreadsExec::get_shmem FAILED : exceeded shared memory size" ) );

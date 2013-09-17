@@ -191,8 +191,7 @@ public:
   template< typename T >
   __device__ inline T team_scan(T& value);
 
-  template< typename T >
-  __device__ inline T * get_shmem( const int count );
+  __device__ inline void * get_shmem( const int size );
 
   __device__ inline Cuda( Impl::CudaExec & exec ) : m_exec(exec) {}
   __device__ inline Cuda( const Cuda & rhs ) : m_exec(rhs.m_exec) {}
@@ -221,7 +220,7 @@ private:
   template< typename T >
     inline T team_scan(T& value);
 
-  template< typename T > T * get_shmem( const int count );
+  void * get_shmem( const int size );
 
   Cuda( Impl::CudaExec & );
 

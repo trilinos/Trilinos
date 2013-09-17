@@ -86,10 +86,10 @@ operator<<(std::ostream & os, Tensor<T, N> const & A)
 
   for (Index i = 0; i < dimension; ++i) {
 
-    os << std::scientific << A(i,0);
+    os << std::scientific << std::setprecision(16) << A(i,0);
 
     for (Index j = 1; j < dimension; ++j) {
-      os << std::scientific << "," << A(i,j);
+      os << "," << std::scientific  << std::setprecision(16) << A(i,j);
     }
 
     os << std::endl;

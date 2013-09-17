@@ -101,6 +101,7 @@ private:
 
   const FunctorType          m_functor ;
   const ParallelWorkRequest  m_work ;
+  const int                  m_shmem ;
 
   ParallelFor();
   ParallelFor & operator = ( const ParallelFor & );
@@ -111,7 +112,7 @@ public:
   __device__
   void operator()(void) const
   {
-    CudaExec exec( 0 , m_work.shared_size );
+    CudaExec exec( 0 , m_shmem );
     m_functor( Cuda( exec ) );
   }
 
@@ -119,13 +120,13 @@ public:
                const ParallelWorkRequest &  work )
     : m_functor( functor )
     , m_work( std::min( work.league_size , size_t(cuda_internal_maximum_grid_count()) ) ,
-              std::min( work.team_size ,   size_t(CudaTraits::WarpSize * cuda_internal_maximum_warp_count()) ) ,
-              work.shared_size )
+              std::min( work.team_size ,   size_t(CudaTraits::WarpSize * cuda_internal_maximum_warp_count()) ) )
+    , m_shmem( FunctorShmemSize< FunctorType >::value( functor ) )
     {
       const dim3 grid(  m_work.league_size , 1 , 1 );
       const dim3 block( m_work.team_size , 1, 1 );
 
-      CudaParallelLaunch< ParallelFor >( *this , grid , block , m_work.shared_size );
+      CudaParallelLaunch< ParallelFor >( *this , grid , block , m_shmem );
     }
 };
 
