@@ -76,12 +76,12 @@ namespace MueLu {
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy(const RCP<Matrix> & A)
     : maxCoarseSize_(50), implicitTranspose_(false), isPreconditioner_(true), isDumpingEnabled_(false), dumpLevel_(-1)
   {
+    lib_ = A->getRowMap()->lib();
+
     RCP<Level> Finest = rcp( new Level() );
     AddLevel(Finest);
 
     Finest->Set("A", A);
-
-    lib_ = A->getRowMap()->lib();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -106,6 +106,7 @@ namespace MueLu {
 
     Levels_.push_back(level);
     level->SetLevelID(levelID);
+    level->setlib(lib_);
 
     if (levelID == 0)
       level->SetPreviousLevel(Teuchos::null);
