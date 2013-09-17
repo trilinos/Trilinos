@@ -55,9 +55,15 @@ namespace Details {
   /// \tparam LocalOrdinal The type of local indices.
   /// \tparam GlobalOrdinal The type of global indices.
   ///
-  /// This class is used in the implementation of Directory to break
-  /// ties in ownership of global indices.
-  template <typename LocalOrdinal,typename GlobalOrdinal>
+  /// This class provides an abstract interface to a way for Directory
+  /// to "break ties" in ownership of global indices.  To "break a
+  /// tie" for a global index GID means: Given a set of one or more
+  /// (PID, LID) pairs, where each PID is a process that owns GID and
+  /// LID is the corresponding local index of GID, choose exactly one
+  /// (PID, LID) pair from that set.  Furthermore, this choice must be
+  /// a <i>global</i> choice, that is, the same on all participating
+  /// processes.
+  template <typename LocalOrdinal, typename GlobalOrdinal>
   class TieBreak {
   public:
     /// \brief Representation of a global index on a process.
@@ -79,12 +85,14 @@ namespace Details {
       int PID;
     };
 
-    //! Virtual destructor (needed for memory safety of derived classes).
+    //! Virtual destructor (for memory safety of derived classes).
     virtual ~TieBreak () {}
 
-    /// \brief Given a global index GID, and a list of (PID, LID)
-    ///   pairs (of processes that own GID, and the local index on
-    ///   that process), return the index of one pair in the list.
+    /// \brief Break any ties in ownership of the given global index GID.
+    ///
+    /// Given a global index GID, and a set of (PID, LID) pairs (of
+    /// processes that own GID, and the local index of GID on that
+    /// process), return the index of one pair in the list.
     ///
     /// This method must always be called collectively over all the
     /// processes in the Directory's communicator.  Subclasses reserve
@@ -96,6 +104,10 @@ namespace Details {
     /// same list of pairs, all these processes must return the same
     /// index.  (It would also be a good idea for subclasses not to be
     /// sensitive to the order of pairs.)
+    ///
+    /// FIXME (mfh 17 Sep 2013) I'm not a fan of the name of this
+    /// method.  We should call it something more indicative of its
+    /// function, like "arbitrateOwnership" or "breakTie".
     virtual std::size_t
     selectedIndex (GlobalOrdinal GID, 
 		   const std::vector<std::pair<int, LocalOrdinal> >& pid_and_lid) const = 0;
