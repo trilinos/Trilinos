@@ -1070,12 +1070,6 @@ namespace stk {
 
             }
 
-          if (debug)
-            {
-              std::cout << " nnodes= " << nnodes << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " << (nnodes>=2?m_eMesh.identifier(subDimEntity[1]):-1)
-                        << " owning_elementId= " << owning_elementId
-                        <<  std::endl;
-            }
           for (unsigned inode=0; inode < nnodes; inode++)
             {
               stk::mesh::EntityId id = nodeIds_onSE.m_entity_id_vector[inode];

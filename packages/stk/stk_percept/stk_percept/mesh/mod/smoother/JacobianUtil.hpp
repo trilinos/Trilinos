@@ -33,10 +33,12 @@ namespace stk {
       double m_grad[NNODES_MAX][NNODES_MAX][3];
       int m_num_nodes;
       bool m_scale_to_unit;
+      bool m_use_approximate_quadratic_jacobian;
 
-      JacobianUtil() :
+      JacobianUtil(bool use_approximate_quadratic_jacobian=true) :
         m_num_nodes(0),
-        m_scale_to_unit(false)
+        m_scale_to_unit(false),
+        m_use_approximate_quadratic_jacobian(use_approximate_quadratic_jacobian)
       {
       }
 
@@ -85,6 +87,7 @@ namespace stk {
                           const CellTopologyData * topology_data_in = 0 );
 
     private:
+      void check_unhandled_topo(const CellTopologyData * topology_data);
 
       inline bool jacobian_matrix_3D(double &detJ, DenseMatrix<3,3>& A, const double *x0, const double *x1, const double *x2, const double *x3)
       {

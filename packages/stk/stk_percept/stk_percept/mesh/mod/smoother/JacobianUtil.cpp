@@ -227,6 +227,15 @@ namespace stk {
 
     }
 
+    void JacobianUtil::check_unhandled_topo(const CellTopologyData * topology_data)
+    {
+      if (!m_use_approximate_quadratic_jacobian)
+        {
+          shards::CellTopology topology(topology_data);
+          std::cout << "topology = " << topology.getName() << std::endl;
+          throw std::runtime_error("unknown/unhandled topology in JacobianUtil");
+        }
+    }
     /// modeled after code from Mesquite::IdealWeightMeanRatio::evaluate()
     bool JacobianUtil::operator()(double& m,  PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::FieldBase *coord_field,
                                   const CellTopologyData * topology_data )
@@ -253,6 +262,9 @@ namespace stk {
 
       switch(topology_data->key)
         {
+        case shards::Triangle<4>::key:
+        case shards::Triangle<6>::key:
+          check_unhandled_topo(topology_data);
         case shards::Triangle<3>::key:
           //n[0] = 0; n[1] = 0; n[2] = 1;
           x2d[0] = VERTEX(v_i[0]);
@@ -262,6 +274,9 @@ namespace stk {
           for (i = 0; i < 3; i++) { m_detJ[i] = m; m_J[i] = J; }
           break;
 
+        case shards::Quadrilateral<8>::key:
+        case shards::Quadrilateral<9>::key:
+          check_unhandled_topo(topology_data);
         case shards::Quadrilateral<4>::key:
           //n[0] = 0; n[1] = 0; n[2] = 1;
           for (i = 0; i < 4; ++i) {
@@ -273,6 +288,10 @@ namespace stk {
           m = average_metrics(m_detJ, 4);
           break;
 
+        case shards::Tetrahedron<8>::key:
+        case shards::Tetrahedron<10>::key:
+        case shards::Tetrahedron<11>::key:
+          check_unhandled_topo(topology_data);
         case shards::Tetrahedron<4>::key:
           metric_valid = jacobian_matrix_tet_3D(m, m_J[0],
                                                 VERTEX(v_i[0]),
@@ -283,6 +302,9 @@ namespace stk {
           for (i = 1; i < 4; i++) { m_detJ[i] = m; m_J[i] = m_J[0]; }
           break;
 
+        case shards::Pyramid<13>::key:
+        case shards::Pyramid<14>::key:
+          check_unhandled_topo(topology_data);
         case shards::Pyramid<5>::key:
           {
             bool err=false;
@@ -312,6 +334,10 @@ namespace stk {
           }
           break;
 
+
+        case shards::Wedge<15>::key:
+        case shards::Wedge<18>::key:
+          check_unhandled_topo(topology_data);
         case shards::Wedge<6>::key:
           for (i = 0; i < 6; ++i) {
             metric_valid = jacobian_matrix_wedge_3D(m_detJ[i], m_J[i],
@@ -323,6 +349,9 @@ namespace stk {
           m = average_metrics(m_detJ, 6);
           break;
 
+        case shards::Hexahedron<20>::key:
+        case shards::Hexahedron<27>::key:
+          check_unhandled_topo(topology_data);
         case shards::Hexahedron<8>::key:
           for (i = 0; i < 8; ++i) {
             metric_valid = jacobian_matrix_3D(m_detJ[i], m_J[i],
@@ -345,29 +374,12 @@ namespace stk {
         case shards::Beam<2>::key:
         case shards::Beam<3>::key:
 
-        case shards::Triangle<4>::key:
-        case shards::Triangle<6>::key:
         case shards::ShellTriangle<3>::key:
         case shards::ShellTriangle<6>::key:
 
-        case shards::Quadrilateral<8>::key:
-        case shards::Quadrilateral<9>::key:
-        case shards::ShellQuadrilateral<4>::key:
         case shards::ShellQuadrilateral<8>::key:
         case shards::ShellQuadrilateral<9>::key:
-
-        case shards::Tetrahedron<8>::key:
-        case shards::Tetrahedron<10>::key:
-        case shards::Tetrahedron<11>::key:
-
-        case shards::Hexahedron<20>::key:
-        case shards::Hexahedron<27>::key:
-
-        case shards::Pyramid<13>::key:
-        case shards::Pyramid<14>::key:
-
-        case shards::Wedge<15>::key:
-        case shards::Wedge<18>::key:
+        case shards::ShellQuadrilateral<4>::key:
 
         case shards::Pentagon<5>::key:
         case shards::Hexagon<6>::key:

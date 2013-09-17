@@ -2529,11 +2529,13 @@ namespace stk {
               std::string inactive_part_name = "refine_inactive_elements_part_"+toString(part_ranks[irank]);
 
               stk::mesh::Part* active_child_elements_part = get_part(active_part_name);
+              (void)active_child_elements_part;
               stk::mesh::Part* inactive_parent_elements_part = get_part(inactive_part_name);
 
               num_inactive += stk::mesh::count_selected_entities(stk::mesh::Selector(*inactive_parent_elements_part),
                                                                  bulk_data.buckets(part_ranks[irank]));
-              new_selector |= stk::mesh::Selector(*active_child_elements_part);
+              //new_selector |= stk::mesh::Selector(*active_child_elements_part);
+              new_selector &= !stk::mesh::Selector(*inactive_parent_elements_part);
             }
           if (0 == num_inactive)
             {
@@ -4454,10 +4456,20 @@ namespace stk {
       factory.read_file(geometry_file_name, this);
 
       const std::vector<GeometryEvaluator*>& geomEvals = mesh_geometry.getGeomEvaluators();
+      if (!get_rank()) std::cout << "tmp srk m_sync_io_regions= " << m_sync_io_regions << std::endl;
+      stk::io::MeshData& mesh_data = *m_iossMeshData;
+      if (Teuchos::is_null(mesh_data.selector()))
+        {
+          Teuchos::RCP<stk::mesh::Selector> io_mesh_selector =
+            Teuchos::rcp(new stk::mesh::Selector(get_fem_meta_data()->universal_part()));
+          mesh_data.set_selector(io_mesh_selector);
+        }
+      stk::mesh::Selector & io_mesh_selector = *(mesh_data.selector());
       for (unsigned i = 0; i < geomEvals.size(); i++)
         {
-          if (!get_rank()) std::cout << " tmp srk adding geomEvals[i]->mPart->name()..." << geomEvals[i]->mPart->name() << std::endl;
+          //if (!get_rank()) std::cout << " tmp srk adding geomEvals[i]->mPart->name()..." << geomEvals[i]->mPart->name() << std::endl;
           add_io_omitted_part(geomEvals[i]->mPart);
+          if (0) io_mesh_selector &= !stk::mesh::Selector(*geomEvals[i]->mPart);
         }
 #else
         throw std::runtime_error("no geometry available, set STK_PERCEPT_HAS_GEOMETRY flag: not implemented");
