@@ -139,7 +139,7 @@ public:
     enum { TEAM_SIZE = 256 };
 
     Kokkos::ParallelWorkRequest request ; 
-    request.shared_size = 0 ;
+
     request.team_size   = TEAM_SIZE ;
     request.league_size = ( nwork + TEAM_SIZE - 1 ) / TEAM_SIZE ;
 
@@ -182,10 +182,19 @@ struct SharedRequestFunctor {
 
   enum { SHARED_COUNT = 1000 };
 
+  typedef Kokkos::View<int*,device_type,Kokkos::MemoryUnmanaged> shared_int_array_type ;
+
+  // Tell how much shared memory will be required by this functor:
+  inline
+  unsigned shmem_size() const
+  {
+    return shared_int_array_type::shmem_size( SHARED_COUNT );
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()( device_type dev , value_type & update ) const
   {
-    int * const shared = dev.template get_shmem<int>( SHARED_COUNT );
+    const shared_int_array_type shared( dev , SHARED_COUNT );
 
     for ( int i = dev.team_rank() ; i < SHARED_COUNT ; i += dev.team_size() ) {
       shared[i] = i + dev.league_rank();
@@ -215,14 +224,12 @@ struct TestSharedRequest {
 
   void run()
   {
-    Kokkos::ParallelWorkRequest request ;
-    request.shared_size = 0 ;
-    request.team_size   = 256 ;
-    request.league_size = 64 ;
-
     typedef Test::SharedRequestFunctor<Device> Functor ;
 
-    request.add_shmem<int>( Functor::SHARED_COUNT );
+    Kokkos::ParallelWorkRequest request ;
+
+    request.team_size   = 256 ;
+    request.league_size = 64 ;
 
     int error_count = 0 ;
 
