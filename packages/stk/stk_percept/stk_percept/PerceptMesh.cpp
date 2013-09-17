@@ -4456,7 +4456,7 @@ namespace stk {
       factory.read_file(geometry_file_name, this);
 
       const std::vector<GeometryEvaluator*>& geomEvals = mesh_geometry.getGeomEvaluators();
-      if (!get_rank()) std::cout << "tmp srk m_sync_io_regions= " << m_sync_io_regions << std::endl;
+      //if (!get_rank()) std::cout << "tmp srk m_sync_io_regions= " << m_sync_io_regions << std::endl;
       stk::io::MeshData& mesh_data = *m_iossMeshData;
       if (Teuchos::is_null(mesh_data.selector()))
         {
