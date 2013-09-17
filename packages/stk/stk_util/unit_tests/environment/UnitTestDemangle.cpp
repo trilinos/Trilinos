@@ -97,7 +97,7 @@ STKUNIT_UNIT_TEST(UnitTestDemangle, UnitTest)
   }
 
   {
-#if (__GNUC_MINOR__ > 4)
+#if (__GNUC_MINOR__ > 4) || defined(__clang__)
     std::string linux_name("bool ()");
 #else
     std::string linux_name("bool ()()");
