@@ -30,6 +30,11 @@
 #ifndef RYTHMOS_RK_BUTCHER_TABLEAU_HPP
 #define RYTHMOS_RK_BUTCHER_TABLEAU_HPP
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 #include "Rythmos_Types.hpp"
 #include "Rythmos_RKButcherTableauBase.hpp"
 

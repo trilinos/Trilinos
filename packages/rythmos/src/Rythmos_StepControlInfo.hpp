@@ -2,6 +2,11 @@
 #ifndef RYTHMOS_STEP_CONTROL_INFO_HPP
 #define RYTHMOS_STEP_CONTROL_INFO_HPP
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 #include "Rythmos_StepperSupportTypes.hpp"
 
 namespace Rythmos {

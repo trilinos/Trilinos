@@ -29,6 +29,11 @@
 #ifndef Rythmos_IMPLICITBDF_STEPPER_STEP_CONTROL_DEF_H
 #define Rythmos_IMPLICITBDF_STEPPER_STEP_CONTROL_DEF_H
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 #include "Rythmos_ImplicitBDFStepperStepControl_decl.hpp"
 #include "Rythmos_ImplicitBDFStepper.hpp"
 #include "Rythmos_ImplicitBDFStepperErrWtVecCalc.hpp"

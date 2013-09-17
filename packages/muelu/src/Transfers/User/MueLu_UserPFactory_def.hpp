@@ -46,6 +46,11 @@
 #ifndef MUELU_USERPFACTORY_DEF_HPP
 #define MUELU_USERPFACTORY_DEF_HPP
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 #include <Xpetra_MultiVectorFactory.hpp>
 
 #include "MueLu_Utilities.hpp"
