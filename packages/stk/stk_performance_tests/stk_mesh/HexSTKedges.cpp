@@ -29,68 +29,6 @@
 namespace stk {
 namespace performance_tests {
 
-namespace {
-
-//This very simple test will visit all local elements, gather coordinates,
-//compute element-centroid (simple average of nodal coords) for each, and
-//store the sum of the centroids in sum_centroid.
-void do_stk_gather_test(stk::mesh::BulkData& bulk, std::vector<double>& sum_centroid)
-{
-  using namespace stk::mesh;
-  typedef Field<double,Cartesian> VectorField;
-
-  MetaData& meta = MetaData::get(bulk);
-  const unsigned spatial_dim = meta.spatial_dimension();
-  for(unsigned d=0; d<spatial_dim; ++d) sum_centroid[d] = 0;
-
-  std::vector<double> elem_centroid(spatial_dim, 0);
-
-  const VectorField& coord_field = *meta.get_field<VectorField>("coordinates");
-
-  Selector local = meta.locally_owned_part();
-
-  BucketVector buckets;
-  get_buckets(local, bulk.buckets(stk::mesh::MetaData::ELEMENT_RANK), buckets);
-
-  std::vector<double> elem_node_coords;
-
-  size_t num_elems = 0;
-  for(size_t ib=0; ib<buckets.size(); ++ib) {
-    const Bucket& b = *buckets[ib];
-    num_elems += b.size();
-    const size_t num_nodes = b.topology().num_nodes();
-    const size_t len = num_nodes*spatial_dim;
-    if (elem_node_coords.size() != len) elem_node_coords.resize(len);
-
-    for(size_t i=0; i<b.size(); ++i) {
-      Entity elem = b[i];
-      Entity const* node_rels = bulk.begin_nodes(elem);
-      const int num_elem_nodes = bulk.num_nodes(elem);
-
-      //here's the gather:
-
-      unsigned offset = 0;
-      for(int n = 0; n < num_elem_nodes; ++n) {
-        Entity node = node_rels[n];
-        double* node_coords = bulk.field_data(coord_field, node);
-        elem_node_coords[offset++] = node_coords[0];
-        elem_node_coords[offset++] = node_coords[1];
-        elem_node_coords[offset++] = node_coords[2];
-      }
-
-      stk::performance_tests::calculate_centroid_3d(num_elem_nodes, &elem_node_coords[0], &elem_centroid[0]);
-
-      //add this element-centroid to the sum_centroid vector, and
-      //re-zero the element-centroid vector:
-      sum_centroid[0] += elem_centroid[0]; elem_centroid[0] = 0;
-      sum_centroid[1] += elem_centroid[1]; elem_centroid[1] = 0;
-      sum_centroid[2] += elem_centroid[2]; elem_centroid[2] = 0;
-    }
-  }
-}
-
-} // empty namespace
-
 TEST(hex_edges, hex_edges)
 {
   //vector of mesh-dimensions holds the number of elements in each dimension.

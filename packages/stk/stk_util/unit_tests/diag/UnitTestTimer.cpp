@@ -152,7 +152,7 @@ STKUNIT_UNIT_TEST(UnitTestTimer, UnitTest)
     
     stk::diag::TimeBlock _time(lap_timer);
     double x = quick_work();
-    x = x;
+    (void) x;
     std::ostringstream oss;
     oss << x << std::endl;
     
