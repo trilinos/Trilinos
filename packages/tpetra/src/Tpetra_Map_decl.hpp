@@ -530,7 +530,6 @@ namespace Tpetra {
     ///
     /// "Globally distributed" means that <i>all</i> of the following
     /// are true:
-    ///
     /// <ol>
     /// <li> The map's communicator has more than one process.</li>
     /// <li> There is at least one process in the map's communicator,
@@ -549,7 +548,6 @@ namespace Tpetra {
     /// \brief True if and only if \c map is compatible with this Map.
     ///
     /// Two Maps are "compatible" if all of the following are true:
-    ///
     /// <ol>
     /// <li> Their communicators have the same numbers of processes.
     ///    (This is necessary even to call this method.)</li>
@@ -567,9 +565,10 @@ namespace Tpetra {
     /// compatible, then it is legal to assign X to Y or to assign Y
     /// to X.
     ///
-    /// If the input Map and this Map have different communicators,
-    /// the behavior of this method is currently undefined if the two
-    /// communicators have different numbers of processes.
+    /// The behavior of this method is undefined if the input Map's
+    /// communicator and this Map's communicator have different
+    /// numbers of processes.  This method must be called collectively
+    /// over this Map's communicator.
     bool isCompatible (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const;
 
     /// \brief True if and only if \c map is identical to this Map.
@@ -598,9 +597,10 @@ namespace Tpetra {
     /// alone identical.  Two identical Maps correspond to the same
     /// permutation.
     ///
-    /// If the input Map and this Map have different communicators,
-    /// the behavior of this method is undefined if the two
-    /// communicators have different numbers of processes.
+    /// The behavior of this method is undefined if the input Map's
+    /// communicator and this Map's communicator have different
+    /// numbers of processes.  This method must be called collectively
+    /// over this Map's communicator.
     bool isSameAs (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const;
 
     //@}
