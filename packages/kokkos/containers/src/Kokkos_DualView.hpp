@@ -79,11 +79,13 @@ public:
 
   // Define unmanaged view types
   typedef Kokkos::View<T,L,D,Kokkos::MemoryUnmanaged> t_dev_um;
-  typedef typename t_dev_um::HostMirror t_host_um;
+  typedef Kokkos::View<typename t_host::data_type,typename t_host::array_layout,
+                       typename t_host::device_type,Kokkos::MemoryUnmanaged> t_host_um;
 
   // Define const unmanaged view types
   typedef Kokkos::View<typename t_dev::const_data_type,L,D,Kokkos::MemoryUnmanaged> t_dev_const_um;
-  typedef typename t_dev_const_um::HostMirror t_host_const_um;
+  typedef Kokkos::View<typename t_host::const_data_type,typename t_host::array_layout,
+                       typename t_host::device_type,Kokkos::MemoryUnmanaged> t_host_const_um;
 
   /* provide the same typedefs as a view for scalar, data and value types */
 
@@ -155,13 +157,14 @@ public:
     if(dev) {
       if((modified_host > 0) && (modified_host >= modified_device)) {
       Kokkos::deep_copy(d_view,h_view);
+      modified_host = modified_device = 0;
       }
     } else {
       if((modified_device > 0) && (modified_device >= modified_host)) {
       Kokkos::deep_copy(h_view,d_view);
+      modified_host = modified_device = 0;
       }
     }
-    modified_host = modified_device = 0;
   }
 
   /* Mark data as dirty on a device */
@@ -177,6 +180,23 @@ public:
     } else {
       modified_host = (modified_device > modified_host ? modified_device : modified_host)  + 1;
     }
+  }
+
+  /* Realloc both views, no deep copy */
+
+  void realloc( const size_t n0 = 0 ,
+           const size_t n1 = 0 ,
+           const size_t n2 = 0 ,
+           const size_t n3 = 0 ,
+           const size_t n4 = 0 ,
+           const size_t n5 = 0 ,
+           const size_t n6 = 0 ,
+           const size_t n7 = 0 ) {
+     Kokkos::realloc(d_view,n0,n1,n2,n3,n4,n5,n6,n7);
+     h_view = create_mirror_view( d_view );
+
+     /* Reset dirty flags */
+     modified_device = modified_host = 0;
   }
 
   /* Resize both views, only do deep_copy in space which was last marked as dirty */

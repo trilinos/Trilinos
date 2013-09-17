@@ -9,7 +9,7 @@
 
 #include <Kokkos_Threads.hpp>
 #include <Kokkos_Cuda.hpp>
-#include "Kokkos_MultiVector.hpp"
+#include "Kokkos_MV.hpp"
 #ifndef DEVICE
 #define DEVICE 1
 #endif

@@ -56,7 +56,7 @@
 #endif
 #include <Kokkos_Macros.hpp>
 #include <Kokkos_CrsArray.hpp>
-#include <Kokkos_MultiVector.hpp>
+#include <Kokkos_MV.hpp>
 
 #ifndef _OPENMP
 #include <Kokkos_Threads.hpp>
