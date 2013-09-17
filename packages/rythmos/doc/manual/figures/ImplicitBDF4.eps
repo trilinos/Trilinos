@@ -1,7 +1,7 @@
 %!PS-Adobe-2.0 EPSF-2.0
 %%Title: figures/ImplicitBDF4.eps
-%%Creator: gnuplot 4.6 patchlevel 0
-%%CreationDate: Tue Aug 14 13:11:38 2012
+%%Creator: gnuplot 4.6 patchlevel 3
+%%CreationDate: Sat Aug 24 11:27:09 2013
 %%DocumentFonts: (atend)
 %%BoundingBox: 50 50 230 176
 %%EndComments
@@ -47,7 +47,7 @@ gnudict begin
   } if
 } def
 %
-% Gnuplot Prolog Version 4.4 (August 2010)
+% Gnuplot Prolog Version 4.6 (September 2012)
 %
 %/SuppressPDFMark true def
 %
@@ -314,7 +314,8 @@ gnudict begin
 /PatternFill {gsave /PFa [ 9 2 roll ] def
   PFa 0 get PFa 2 get 2 div add PFa 1 get PFa 3 get 2 div add translate
   PFa 2 get -2 div PFa 3 get -2 div PFa 2 get PFa 3 get Rec
-  gsave 1 setgray fill grestore clip
+  TransparentPatterns {} {gsave 1 setgray fill grestore} ifelse
+  clip
   currentlinewidth 0.5 mul setlinewidth
   /PFs PFa 2 get dup mul PFa 3 get dup mul add sqrt def
   0 0 M PFa 5 get rotate PFs -2 div dup translate
@@ -428,11 +429,11 @@ systemdict /pdfmark known not {
 SDict begin [
   /Title (figures/ImplicitBDF4.eps)
   /Subject (gnuplot plot)
-  /Creator (gnuplot 4.6 patchlevel 0)
+  /Creator (gnuplot 4.6 patchlevel 3)
   /Author (ccober)
 %  /Producer (gnuplot)
 %  /Keywords ()
-  /CreationDate (Tue Aug 14 13:11:38 2012)
+  /CreationDate (Sat Aug 24 11:27:09 2013)
   /DOCINFO pdfmark
 end
 } ifelse
@@ -450,6 +451,7 @@ newpath
 BackgroundColor 0 lt 3 1 roll 0 lt exch 0 lt or or not {BackgroundColor C 1.000 0 0 3600.00 2520.00 BoxColFill} if
 1.000 UL
 LTb
+LCb setrgbcolor
 938 448 M
 63 0 V
 2346 0 R
@@ -458,6 +460,7 @@ LTb
 (1.0e-14) Rshow
 1.000 UL
 LTb
+LCb setrgbcolor
 938 594 M
 31 0 V
 2378 0 R
@@ -470,6 +473,7 @@ LTb
 (1.0e-12) Rshow
 1.000 UL
 LTb
+LCb setrgbcolor
 938 887 M
 31 0 V
 2378 0 R
@@ -482,6 +486,7 @@ LTb
 (1.0e-10) Rshow
 1.000 UL
 LTb
+LCb setrgbcolor
 938 1180 M
 31 0 V
 2378 0 R
@@ -494,6 +499,7 @@ LTb
 (1.0e-8) Rshow
 1.000 UL
 LTb
+LCb setrgbcolor
 938 1473 M
 31 0 V
 2378 0 R
@@ -506,6 +512,7 @@ LTb
 (1.0e-6) Rshow
 1.000 UL
 LTb
+LCb setrgbcolor
 938 1766 M
 31 0 V
 2378 0 R
@@ -518,6 +525,7 @@ LTb
 (1.0e-4) Rshow
 1.000 UL
 LTb
+LCb setrgbcolor
 938 2059 M
 31 0 V
 2378 0 R
@@ -530,23 +538,16 @@ LTb
 (1.0e-2) Rshow
 1.000 UL
 LTb
+LCb setrgbcolor
 938 2352 M
 31 0 V
 2378 0 R
 -31 0 V
-938 448 M
+978 448 M
 0 31 V
 0 1873 R
 0 -31 V
-982 448 M
-0 31 V
-0 1873 R
-0 -31 V
-1021 448 M
-0 31 V
-0 1873 R
-0 -31 V
-1056 448 M
+1046 448 M
 0 63 V
 0 1841 R
 0 -63 V
@@ -554,39 +555,20 @@ LTb
 (1.0e-3) Cshow
 1.000 UL
 LTb
-1286 448 M
+LCb setrgbcolor
+1256 448 M
 0 31 V
 0 1873 R
 0 -31 V
-1421 448 M
+1533 448 M
 0 31 V
 0 1873 R
 0 -31 V
-1516 448 M
+1675 448 M
 0 31 V
 0 1873 R
 0 -31 V
-1590 448 M
-0 31 V
-0 1873 R
-0 -31 V
-1650 448 M
-0 31 V
-0 1873 R
-0 -31 V
-1702 448 M
-0 31 V
-0 1873 R
-0 -31 V
-1746 448 M
-0 31 V
-0 1873 R
-0 -31 V
-1785 448 M
-0 31 V
-0 1873 R
-0 -31 V
-1820 448 M
+1743 448 M
 0 63 V
 0 1841 R
 0 -63 V
@@ -594,39 +576,20 @@ LTb
 (1.0e-2) Cshow
 1.000 UL
 LTb
-2050 448 M
+LCb setrgbcolor
+1953 448 M
 0 31 V
 0 1873 R
 0 -31 V
-2184 448 M
+2230 448 M
 0 31 V
 0 1873 R
 0 -31 V
-2280 448 M
+2373 448 M
 0 31 V
 0 1873 R
 0 -31 V
-2354 448 M
-0 31 V
-0 1873 R
-0 -31 V
-2414 448 M
-0 31 V
-0 1873 R
-0 -31 V
-2465 448 M
-0 31 V
-0 1873 R
-0 -31 V
-2509 448 M
-0 31 V
-0 1873 R
-0 -31 V
-2548 448 M
-0 31 V
-0 1873 R
-0 -31 V
-2583 448 M
+2440 448 M
 0 63 V
 0 1841 R
 0 -63 V
@@ -634,39 +597,20 @@ LTb
 (1.0e-1) Cshow
 1.000 UL
 LTb
-2813 448 M
+LCb setrgbcolor
+2650 448 M
 0 31 V
 0 1873 R
 0 -31 V
-2948 448 M
+2927 448 M
 0 31 V
 0 1873 R
 0 -31 V
-3043 448 M
+3070 448 M
 0 31 V
 0 1873 R
 0 -31 V
-3117 448 M
-0 31 V
-0 1873 R
-0 -31 V
-3178 448 M
-0 31 V
-0 1873 R
-0 -31 V
-3229 448 M
-0 31 V
-0 1873 R
-0 -31 V
-3273 448 M
-0 31 V
-0 1873 R
-0 -31 V
-3312 448 M
-0 31 V
-0 1873 R
-0 -31 V
-3347 448 M
+3137 448 M
 0 63 V
 0 1841 R
 0 -63 V
@@ -674,8 +618,14 @@ LTb
 (1.0e0) Cshow
 1.000 UL
 LTb
-1.000 UL
+LCb setrgbcolor
+3347 448 M
+0 31 V
+0 1873 R
+0 -31 V
+stroke
 LTb
+LCb setrgbcolor
 938 2352 N
 938 448 L
 2409 0 V
@@ -695,169 +645,179 @@ LTb
 1.000 UP
 1.000 UL
 LTb
+LCb setrgbcolor
 % Begin plot #1
 1.000 UP
 2.000 UL
 LT0
+LC0 setrgbcolor
 LCb setrgbcolor
-2732 2244 M
-(Implicit BDF1) Rshow
+2696 1561 M
+(IBDF1) Rshow
 LT0
-2816 2244 M
+2780 1561 M
 399 0 V
-2124 2156 M
--230 -38 V
--230 -42 V
--230 -42 V
--230 -44 V
-974 1947 L
-2124 2156 Pls
-1894 2118 Pls
-1664 2076 Pls
-1434 2034 Pls
-1204 1990 Pls
-974 1947 Pls
-3015 2244 Pls
+2020 2156 M
+-209 -38 V
+-210 -42 V
+-210 -42 V
+-210 -44 V
+971 1947 L
+2020 2156 Pls
+1811 2118 Pls
+1601 2076 Pls
+1391 2034 Pls
+1181 1990 Pls
+971 1947 Pls
+2979 1561 Pls
 % End plot #1
 % Begin plot #2
 2.000 UL
 LT1
+LC1 setrgbcolor
 LCb setrgbcolor
-2732 2104 M
+2696 1421 M
 (Order = 1) Rshow
 LT1
-2816 2104 M
+2780 1421 M
 399 0 V
--1091 43 R
--230 -44 V
--230 -44 V
--230 -44 V
--230 -44 V
-974 1927 L
+2020 2147 M
+-209 -44 V
+-210 -44 V
+-210 -44 V
+-210 -44 V
+971 1927 L
 % End plot #2
 % Begin plot #3
 1.000 UP
 stroke
 LT2
+LC2 setrgbcolor
 LCb setrgbcolor
-2732 1964 M
-(Implicit BDF2) Rshow
+2696 1281 M
+(IBDF2) Rshow
 LT2
-2816 1964 M
+2780 1281 M
 399 0 V
-2124 1893 M
--230 -81 V
--230 -85 V
--230 -86 V
--230 -88 V
-974 1466 L
-2124 1893 Star
-1894 1812 Star
-1664 1727 Star
-1434 1641 Star
-1204 1553 Star
-974 1466 Star
-3015 1964 Star
+2020 1893 M
+-209 -81 V
+-210 -85 V
+-210 -86 V
+-210 -88 V
+971 1466 L
+2020 1893 Star
+1811 1812 Star
+1601 1727 Star
+1391 1641 Star
+1181 1553 Star
+971 1466 Star
+2979 1281 Star
 % End plot #3
 % Begin plot #4
 2.000 UL
 LT3
+LC3 setrgbcolor
 LCb setrgbcolor
-2732 1824 M
+2696 1141 M
 (Order = 2) Rshow
 LT3
-2816 1824 M
+2780 1141 M
 399 0 V
--1091 30 R
--230 -88 V
--230 -88 V
--230 -88 V
--230 -88 V
-974 1413 L
+2020 1854 M
+-209 -88 V
+-210 -88 V
+-210 -88 V
+-210 -88 V
+971 1413 L
 % End plot #4
 % Begin plot #5
 1.000 UP
 stroke
 LT4
+LC4 setrgbcolor
 LCb setrgbcolor
-2732 1684 M
-(Implicit BDF3) Rshow
+2696 1001 M
+(IBDF3) Rshow
 LT4
-2816 1684 M
+2780 1001 M
 399 0 V
-2124 1638 M
-1894 1514 L
-1664 1386 L
-1434 1255 L
-1204 1124 L
-974 992 L
-2124 1638 BoxF
-1894 1514 BoxF
-1664 1386 BoxF
-1434 1255 BoxF
-1204 1124 BoxF
-974 992 BoxF
-3015 1684 BoxF
+2020 1638 M
+1811 1514 L
+1601 1386 L
+1391 1255 L
+1181 1124 L
+971 992 L
+2020 1638 BoxF
+1811 1514 BoxF
+1601 1386 BoxF
+1391 1255 BoxF
+1181 1124 BoxF
+971 992 BoxF
+2979 1001 BoxF
 % End plot #5
 % Begin plot #6
 2.000 UL
 LT5
+LC5 setrgbcolor
 LCb setrgbcolor
-2732 1544 M
+2696 861 M
 (Order = 3) Rshow
 LT5
-2816 1544 M
+2780 861 M
 399 0 V
--1091 76 R
-1894 1487 L
-1664 1355 L
-1434 1223 L
-1204 1091 L
-974 958 L
+2020 1620 M
+1811 1487 L
+1601 1355 L
+1391 1223 L
+1181 1091 L
+971 958 L
 % End plot #6
 % Begin plot #7
 1.000 UP
 stroke
 LT6
+LC6 setrgbcolor
 LCb setrgbcolor
-2732 1404 M
-(Implicit BDF4) Rshow
+2696 721 M
+(IBDF4) Rshow
 LT6
-2816 1404 M
+2780 721 M
 399 0 V
-2124 1387 M
-1894 1221 L
-1664 1049 L
-1434 874 L
-1204 698 L
-974 512 L
-2124 1387 CircleF
-1894 1221 CircleF
-1664 1049 CircleF
-1434 874 CircleF
-1204 698 CircleF
-974 512 CircleF
-3015 1404 CircleF
+2020 1387 M
+1811 1221 L
+1601 1049 L
+1391 874 L
+1181 698 L
+971 512 L
+2020 1387 CircleF
+1811 1221 CircleF
+1601 1049 CircleF
+1391 874 CircleF
+1181 698 CircleF
+971 512 CircleF
+2979 721 CircleF
 % End plot #7
 % Begin plot #8
 2.000 UL
 LT7
+LC7 setrgbcolor
 LCb setrgbcolor
-2732 1264 M
+2696 581 M
 (Order = 4) Rshow
 LT7
-2816 1264 M
+2780 581 M
 399 0 V
--1091 63 R
-1894 1150 L
-1664 974 L
-1434 798 L
-1204 621 L
-978 448 L
+2020 1327 M
+1811 1150 L
+1601 974 L
+1391 798 L
+1181 621 L
+975 448 L
 % End plot #8
 stroke
 1.000 UL
 LTb
+LCb setrgbcolor
 938 2352 N
 938 448 L
 2409 0 V
@@ -867,6 +827,7 @@ Z stroke
 1.000 UP
 1.000 UL
 LTb
+LCb setrgbcolor
 stroke
 grestore
 end

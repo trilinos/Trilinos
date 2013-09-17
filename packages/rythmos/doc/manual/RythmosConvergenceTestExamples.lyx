@@ -231,6 +231,60 @@ b & = & \gamma_{1}/((f/L)*cos((f/L)*t_{0}+\phi))[=1]
 
 \end_inset
 
+The solution is shown in Fig.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:fig:SinCos-exact"
+
+\end_inset
+
+.
+ 
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename figures/sincos.eps
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Exact solution to the Sine-Cosine problem.
+\begin_inset CommandInset label
+LatexCommand label
+name "rythmos:fig:SinCos-exact"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
 Therefore this model has three model parameters and two initial conditions
  which effect the exact solution as above.
  
@@ -298,7 +352,7 @@ and for the default initial conditions,
 
 \end_inset
 
-The time differentiated sensivtivities, 
+The time differentiated sensitivities, 
 \begin_inset Formula $\dot{\mathbf{s}}=\partial\mathbf{s}/\partial t=\partial/\partial t(\partial\mathbf{x}/\partial\mathbf{p})=\partial/\partial\mathbf{p}(\partial\mathbf{x}/\partial t)$
 \end_inset
 
@@ -310,6 +364,193 @@ The time differentiated sensivtivities,
 \left(\frac{b}{L}\right)\cos\left(\left(\frac{f}{L}\right)t+\phi\right)-\frac{b\, f\, t}{L^{2}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right) & -\frac{2b\, f}{L^{2}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)\left(\frac{b}{L}\right)-\frac{b\, f^{2}\, t}{L^{3}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)\\
 -\frac{b\, f}{L^{2}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)+\frac{b\, f^{2}\, t}{L^{3}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right) & \frac{2b\, f^{2}}{L^{3}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)+\frac{b\, f^{3}\, t}{L^{4}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)
 \end{array}\right]
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Log-Time Problem
+\begin_inset CommandInset label
+LatexCommand label
+name "rythmos:sec:Log-Time-Problem"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This problem was generated to be similar to those seen in Charon.
+ What is different about this solution is that it evolves on logarithmic
+ scale.
+ As seen in Fig.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:fig:LogTime-exact"
+
+\end_inset
+
+, the solution has a very sharp gradient near 
+\begin_inset Formula $t=10^{-9}$
+\end_inset
+
+ and then decays over many order of magnitude until near constant at 
+\begin_inset Formula $t=1$
+\end_inset
+
+.
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="1" columns="2">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top" width="0pt">
+<column alignment="center" valignment="top" width="0pt">
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+a)
+\begin_inset Graphics
+	filename figures/logtime-log.eps
+	width 2.75in
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+b)
+\begin_inset Graphics
+	filename figures/logtime-linear.eps
+	width 2.75in
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Exact solution to the Log-Time problem with a) logarithmic x-axis and b)
+ linear x-axis.
+\begin_inset CommandInset label
+LatexCommand label
+name "rythmos:fig:LogTime-exact"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+From Fig.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:fig:LogTime-exact"
+
+\end_inset
+
+, one can see the challenge to capture the strong transient for 
+\begin_inset Formula $10^{-10}\leq t<10^{-8}$
+\end_inset
+
+ requiring step sizes at least as small as 
+\begin_inset Formula $\Delta t=10^{-11}$
+\end_inset
+
+, and then transition to larger and larger time steps as 
+\begin_inset Formula $t\rightarrow1$
+\end_inset
+
+ to reduce the overall computational costs.
+\end_layout
+
+\begin_layout Standard
+The ODE for this problem is
+\begin_inset Formula 
+\[
+x(t)=\frac{a\left(bt^{4}+ct^{9/2}\right)}{\left(b+\sqrt{t}\right)\left(d+t^{4}\right)}
+\]
+
+\end_inset
+
+where 
+\begin_inset Formula $a=1.4$
+\end_inset
+
+, 
+\begin_inset Formula $b=0.0001$
+\end_inset
+
+, 
+\begin_inset Formula $c=0.1$
+\end_inset
+
+, 
+\begin_inset Formula $d=10^{-36}$
+\end_inset
+
+, and the initial condition is 
+\begin_inset Formula $x(0)=0.$
+\end_inset
+
+ The center of the rapid increase is approximately 
+\begin_inset Formula $d^{1/4}$
+\end_inset
+
+, the product 
+\begin_inset Formula $ac$
+\end_inset
+
+ sets the steady state value, and the center of the decay is approximately
+ 
+\begin_inset Formula $b^{2}$
+\end_inset
+
+.
+ The time derivative is given by
+\begin_inset Formula 
+\[
+\dot{x}=\frac{at^{3}\left(8b^{2}d+b\sqrt{t}\left((9c+7)d+(c-1)t^{4}\right)+8cdt\right)}{2\left(b+\sqrt{t}\right)^{2}\left(d+t^{4}\right)^{2}}.
 \]
 
 \end_inset

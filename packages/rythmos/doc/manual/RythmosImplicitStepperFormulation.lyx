@@ -299,6 +299,25 @@ where
 Backward Euler
 \end_layout
 
+\begin_layout Subsubsection
+Constant Step Size
+\end_layout
+
+\begin_layout Standard
+In Fig.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:fig:BackwardEuler-Constant-dt"
+
+\end_inset
+
+, the order of accuracy is shown for Backward Euler for the SinCos problem.
+\end_layout
+
 \begin_layout Standard
 \begin_inset Float figure
 placement H
@@ -331,7 +350,9 @@ reference "rythmos:sec:SinCos-Problem"
 \end_inset
 
 ) using Backward Euler.
-\end_layout
+\begin_inset CommandInset label
+LatexCommand label
+name "rythmos:fig:BackwardEuler-Constant-dt"
 
 \end_inset
 
@@ -341,6 +362,538 @@ reference "rythmos:sec:SinCos-Problem"
 \end_inset
 
 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Variable Step Size
+\end_layout
+
+\begin_layout Standard
+A good test for variable step size is the Log-Time problem which is defined
+ in Sec.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:sec:Log-Time-Problem"
+
+\end_inset
+
+.
+ To adjust the step size, the FirstOrderErrorStepControlStrategy uses the
+ difference between the predicted and final solution as an measure of the
+ temporal error and sets the next step size to maintain the user specified
+ level of error.
+ Figure
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:fig:BackwardEuler-Variable-dt"
+
+\end_inset
+
+ shows this for the Backward Euler method for four different relative errors,
+ 
+\begin_inset Formula $\epsilon_{r}=$
+\end_inset
+
+ 
+\begin_inset Formula $10^{-2}$
+\end_inset
+
+, 
+\begin_inset Formula $10^{-3}$
+\end_inset
+
+, 
+\begin_inset Formula $10^{-4}$
+\end_inset
+
+, and 
+\begin_inset Formula $10^{-5}$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="2" columns="2">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top" width="0pt">
+<column alignment="center" valignment="top" width="0pt">
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+a)
+\begin_inset Graphics
+	filename figures/BackwardEuler_FirstOrderError_var_dt_RelError=1.0e-2.eps
+	lyxscale 125
+	width 2.75in
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+b)
+\begin_inset Graphics
+	filename figures/BackwardEuler_FirstOrderError_var_dt_RelError=1.0e-3.eps
+	lyxscale 125
+	width 2.75in
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+c)
+\begin_inset Graphics
+	filename figures/BackwardEuler_FirstOrderError_var_dt_RelError=1.0e-4.eps
+	lyxscale 125
+	width 2.75in
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+d)
+\begin_inset Graphics
+	filename figures/BackwardEuler_FirstOrderError_var_dt_RelError=1.0e-5.eps
+	lyxscale 125
+	width 2.75in
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Solution and time step sizes for the Log-Time Problem (Section
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:sec:Log-Time-Problem"
+
+\end_inset
+
+) using Backward Euler with various relative errors in the FirstOrderErrorStepCo
+ntrolStrategy: a) 
+\begin_inset Formula $\epsilon_{r}=$
+\end_inset
+
+ a) 
+\begin_inset Formula $10^{-2}$
+\end_inset
+
+, b) 
+\begin_inset Formula $10^{-3}$
+\end_inset
+
+, c) 
+\begin_inset Formula $10^{-4}$
+\end_inset
+
+, and d) 
+\begin_inset Formula $10^{-5}$
+\end_inset
+
+.
+\begin_inset CommandInset label
+LatexCommand label
+name "rythmos:fig:BackwardEuler-Variable-dt"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In Table
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:tab:BackwardEuler-Variable-dt-Log-Time"
+
+\end_inset
+
+, the errors for this problem are shown.
+ For each magnitude reduction in the relative-error specification, the number
+ of steps increases by a factor of 2-3 and a similar reduction in the error
+ norms and global errors.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Log-Time Errors for Backward Euler with Variable Step Size for the Log-Time
+ Problem.
+\begin_inset CommandInset label
+LatexCommand label
+name "rythmos:tab:BackwardEuler-Variable-dt-Log-Time"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset Tabular
+<lyxtabular version="3" rows="5" columns="4">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $\epsilon_{r}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Number of Steps
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Error Norm (
+\begin_inset Formula $0\leq t_{n}\leq1$
+\end_inset
+
+)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Global Error (
+\begin_inset Formula $t=1$
+\end_inset
+
+)
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $10^{-2}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+213
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.0224098
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.0224576
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $10^{-3}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+563
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.0132322
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.0132634
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $10^{-4}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1534
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.00480765
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.00482358
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $10^{-5}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4168
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.00153523
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.00154173
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The exponential growth in the time step size, 
+\begin_inset Formula $\Delta t$
+\end_inset
+
+, over 
+\begin_inset Formula $10^{-8}<t<1$
+\end_inset
+
+ is approximately 8% (
+\begin_inset Formula $\Delta t_{n}\approx1.08\Delta t_{n-1}$
+\end_inset
+
+), which doubles the step size approximately every 10 time steps, and is
+ unaffected by the relative error, 
+\begin_inset Formula $\epsilon_{r}$
+\end_inset
+
+.
+ The primary effect of 
+\begin_inset Formula $\epsilon_{r}$
+\end_inset
+
+ is to reduce 
+\begin_inset Formula $\Delta t$
+\end_inset
+
+ over the majority of the run, except for the initial few steps (~10).
+ The two `blips' near 
+\begin_inset Formula $t=10^{-9}$
+\end_inset
+
+ are evident with all 
+\begin_inset Formula $\epsilon_{r}$
+\end_inset
+
+, and correspond to the locations where the curvature in the solution are
+ large.
 \end_layout
 
 \end_body
