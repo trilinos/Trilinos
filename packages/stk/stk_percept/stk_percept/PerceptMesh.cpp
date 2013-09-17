@@ -685,7 +685,7 @@ namespace stk {
           throw std::logic_error("logic error in PerceptMesh::get_number_elements");
         }
 
-      unsigned nedges = count[ node_rank() ];
+      unsigned nedges = count[ edge_rank() ];
       stk::ParallelMachine pm = get_bulk_data()->parallel();
       stk::all_reduce( pm, stk::ReduceSum<1>( &nedges ) );
       return nedges;
