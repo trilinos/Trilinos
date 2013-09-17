@@ -2534,8 +2534,8 @@ namespace stk {
 
               num_inactive += stk::mesh::count_selected_entities(stk::mesh::Selector(*inactive_parent_elements_part),
                                                                  bulk_data.buckets(part_ranks[irank]));
-              //new_selector |= stk::mesh::Selector(*active_child_elements_part);
-              new_selector &= !stk::mesh::Selector(*inactive_parent_elements_part);
+              new_selector |= stk::mesh::Selector(*active_child_elements_part);
+              //new_selector &= !stk::mesh::Selector(*inactive_parent_elements_part);
             }
           if (0 == num_inactive)
             {
