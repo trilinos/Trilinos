@@ -607,6 +607,20 @@ void STK_Interface::getMyElements(const std::string & blockID,std::vector<stk::m
    stk::mesh::get_selected_entities(ownedBlock,bulkData_->buckets(elementRank),elements);
 }
 
+void STK_Interface::getNeighborElements(std::vector<stk::mesh::Entity*> & elements) const
+{
+   std::vector<stk::mesh::Entity*> ghosted_entities;
+
+   // get all ghosted entities (those recieved from other processors)
+   bulkData_->shared_aura().receive_list(ghosted_entities);
+
+   // filter out the elements from the list of ghosted entities
+   stk::mesh::EntityRank elementRank = getElementRank();
+   for(std::size_t i=0;i<ghosted_entities.size();i++)
+     if(ghosted_entities[i]->entity_rank()==elementRank)
+       elements.push_back(ghosted_entities[i]); 
+}
+
 void STK_Interface::getMySides(const std::string & sideName,std::vector<stk::mesh::Entity*> & sides) const
 {
    stk::mesh::Part * sidePart = getSideset(sideName);
@@ -690,16 +704,20 @@ void STK_Interface::getNodesetNames(std::vector<std::string> & names) const
 
 std::size_t STK_Interface::elementLocalId(stk::mesh::Entity * elmt) const
 {
-   const std::size_t * fieldCoords = stk::mesh::field_data(*localIdField_,*elmt);
-   return fieldCoords[0];
+   return elementLocalId(elmt->identifier());
+   // const std::size_t * fieldCoords = stk::mesh::field_data(*localIdField_,*elmt);
+   // return fieldCoords[0];
 }
 
 std::size_t STK_Interface::elementLocalId(stk::mesh::EntityId gid) const
 {
-   stk::mesh::EntityRank elementRank = getElementRank();
-   stk::mesh::Entity * elmt = bulkData_->get_entity(elementRank,gid);
-   TEUCHOS_ASSERT(elmt->owner_rank()==procRank_);
-   return elementLocalId(elmt);
+   // stk::mesh::EntityRank elementRank = getElementRank();
+   // stk::mesh::Entity * elmt = bulkData_->get_entity(elementRank,gid);
+   // TEUCHOS_ASSERT(elmt->owner_rank()==procRank_);
+   // return elementLocalId(elmt);
+   boost::unordered_map<stk::mesh::EntityId,std::size_t>::const_iterator itr = localIDHash_.find(gid);
+   TEUCHOS_ASSERT(itr!=localIDHash_.end());
+   return itr->second;
 }
 
 
@@ -808,6 +826,9 @@ void STK_Interface::buildLocalElementIDs()
       // set local element ID
       std::size_t * localId = stk::mesh::field_data(*localIdField_,element);
       localId[0] = currentLocalId_;
+
+      localIDHash_[element.identifier()] = currentLocalId_;
+
       currentLocalId_++;
    }
 
