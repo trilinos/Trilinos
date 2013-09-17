@@ -712,12 +712,123 @@ ENDMACRO()
 
 
 #
-# Read in ${PROJECT_NAME} packages and TPLs, process dependencies, write XML files
+# Run the git log command to get the verison info for a git rep
 #
-# The reason that these steps are all jammed into one macro is so that the XML
-# dependencies of just the core ${PROJECT_NAME} packages can be processed, have the
-# XML files written, and then read in the extra set of packages and process
-# the dependencies again.
+
+FUNCTION(TRIBITS_GENERATE_SINGLE_REPO_VERSION_STRING  GIT_REPO_DIR
+   SINGLE_REPO_VERSION_STRING_OUT
+  )
+
+  IF (NOT GIT_EXEC)
+    MESSAGE(SEND_ERROR "ERROR, the program '${GIT_NAME}' could not be found!"
+      "  We can not generate the repo version file!")
+  ENDIF()
+
+  EXECUTE_PROCESS(
+    COMMAND ${GIT_EXEC} log -1 --pretty=format:"%h [%ad] <%ae>"
+    WORKING_DIRECTORY ${GIT_REPO_DIR}
+    RESULT_VARIABLE GIT_RETURN
+    OUTPUT_VARIABLE GIT_OUTPUT
+    )
+
+  # NOTE: ABove we have to add quotes '"' or CMake will not accept the
+  # command.  However, git will put those quotes in the output so we have to
+  # strip them out later :-(
+
+  IF (NOT GIT_RETURN STREQUAL 0)
+    MESSAGE(SEND_ERROR "ERROR, ${GIT_EXEC} command returned ${GIT_RETURN}!=0!")
+  ENDIF()
+
+  # Strip the quotes off :-(
+  STRING(LENGTH "${GIT_OUTPUT}" GIT_OUTPUT_LEN)
+  MATH(EXPR OUTPUT_NUM_CHARS_TO_KEEP "${GIT_OUTPUT_LEN}-2")
+  STRING(SUBSTRING "${GIT_OUTPUT}" 1 ${OUTPUT_NUM_CHARS_TO_KEEP} GIT_VERSION_INFO)
+  
+  SET(${SINGLE_REPO_VERSION_STRING_OUT} ${GIT_VERSION_INFO} PARENT_SCOPE)
+
+ENDFUNCTION()
+
+
+#
+# Get the versions of all the git repos
+#
+
+FUNCTION(TRIBITS_GENERATE_REPO_VERSION_FILE_STRING  PROJECT_REPO_VERSION_FILE_STRING_OUT)
+
+  SET(REPO_VERSION_FILE_STR "")
+
+  TRIBITS_GENERATE_SINGLE_REPO_VERSION_STRING(
+     ${CMAKE_CURRENT_SOURCE_DIR}
+     SINGLE_REPO_VERSION)
+  APPEND_STRING_VAR(REPO_VERSION_FILE_STR
+    "*** Base Git Repo: ${PROJECT_NAME}\n"
+    "${SINGLE_REPO_VERSION}\n" )
+
+  # Allow list to be seprated by ',' instead of just by ';'
+  SPLIT("${${PROJECT_NAME}_EXTRA_REPOSITORIES}"  "," ${PROJECT_NAME}_EXTRA_REPOSITORIES)
+
+  SET(EXTRAREPO_IDX 0)
+  FOREACH(EXTRA_REPO ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
+
+    #PRINT_VAR(EXTRA_REPO)
+    #PRINT_VAR(EXTRAREPO_IDX)
+    #PRINT_VAR(${PROJECT_NAME}_EXTRA_REPOSITORIES_PACKSTATS)
+
+    LIST(GET ${PROJECT_NAME}_EXTRA_REPOSITORIES_DIRS ${EXTRAREPO_IDX}
+      EXTRAREPO_DIR )
+    #PRINT_VAR(EXTRAREPO_DIR)
+
+    LIST(GET ${PROJECT_NAME}_EXTRA_REPOSITORIES_REPOTYPES ${EXTRAREPO_IDX}
+      EXTRAREPO_REPOTYPE )
+    #PRINT_VAR(EXTRAREPO_REPOTYPE)
+
+    IF (NOT EXTRAREPO_REPOTYPE STREQUAL "GIT")
+      MESSAGE(SEND_ERROR "ERROR, For extra repo ${EXTRA_REPO},"
+        " repo type = '${EXTRAREPO_REPOTYPE}' != GIT!")
+    ENDIF()
+
+    TRIBITS_GENERATE_SINGLE_REPO_VERSION_STRING(
+       "${CMAKE_CURRENT_SOURCE_DIR}/${EXTRAREPO_DIR}"
+       SINGLE_REPO_VERSION)
+    APPEND_STRING_VAR(REPO_VERSION_FILE_STR
+      "*** Git Repo: ${EXTRAREPO_DIR}\n"
+      "${SINGLE_REPO_VERSION}\n" )
+
+    #PRINT_VAR(REPO_VERSION_FILE_STR)
+
+    MATH(EXPR EXTRAREPO_IDX "${EXTRAREPO_IDX}+1")
+
+  ENDFOREACH()
+
+  SET(${PROJECT_REPO_VERSION_FILE_STRING_OUT} ${REPO_VERSION_FILE_STR} PARENT_SCOPE)
+
+ENDFUNCTION()
+
+
+#
+# Function that generates the project repos version file
+#
+# This function is designed so that it can be unit tested!
+#
+
+FUNCTION(TRIBITS_GENERATE_REPO_VERSION_OUTPUT_AND_FILE)
+  # Get the repos versions
+  TRIBITS_GENERATE_REPO_VERSION_FILE_STRING(PROJECT_REPO_VERSION_FILE_STRING)
+  # Print the versions
+  MESSAGE("\n${PROJECT_NAME} repos versions:\n"
+    "--------------------------------------------------------------------------------\n"
+    "${PROJECT_REPO_VERSION_FILE_STRING}"
+    " --------------------------------------------------------------------------------\n"
+    )
+  #) Write out the version file
+  FILE(WRITE
+    "${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_REPO_VERSION_FILE_NAME}"
+    "${PROJECT_REPO_VERSION_FILE_STRING}")
+ENDFUNCTION()
+
+
+#
+# Read in ${PROJECT_NAME} packages and TPLs, process dependencies, write XML files
 #
 
 MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
@@ -728,7 +839,23 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
   SET(${PROJECT_NAME}_TPLS)
 
   #
-  # A) Read native repos
+  # A) Create the ${PROJECT_NAME}RepoVersion.txt file if requested
+  #
+  
+  IF (${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE)
+    # A) Find git first here so we  don't have to find it in called function so
+    # it can be unit tested.
+    FIND_PROGRAM(GIT_EXEC ${GIT_NAME})
+    # B) Get repo versions, print to stdout and write file 
+    TRIBITS_GENERATE_REPO_VERSION_OUTPUT_AND_FILE()
+    # C) Add install target for this file
+    INSTALL(
+      FILES "${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_REPO_VERSION_FILE_NAME}"
+      DESTINATION "." )
+  ENDIF()
+
+  #
+  # B) Read native repos
   #
 
   IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
@@ -747,10 +874,10 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
     #PRINT_VAR(${NATIVE_REPO_NAME}_SOURCE_DIR)
 
     #
-    # A.1) Define the lists of all ${NATIVE_REPO_NAME} native packages and TPLs
+    # B.1) Define the lists of all ${NATIVE_REPO_NAME} native packages and TPLs
     #
     
-    # A.1.a) Read the core ${NATIVE_REPO_NAME} packages
+    # B.1.a) Read the core ${NATIVE_REPO_NAME} packages
   
     SET(${NATIVE_REPO_NAME}_PACKAGES_FILE
       "${${NATIVE_REPO_NAME}_SOURCE_DIR}/${${PROJECT_NAME}_PACKAGES_FILE_NAME}")
@@ -763,7 +890,7 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
     
     TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS(${NATIVE_REPO_NAME} ${NATIVE_REPO_DIR})
     
-    # A.1.b) Read the core TPLs dependencies
+    # B.1.b) Read the core TPLs dependencies
   
     SET(${NATIVE_REPO_NAME}_TPLS_FILE
       "${${NATIVE_REPO_NAME}_SOURCE_DIR}/${${PROJECT_NAME}_TPLS_FILE_NAME}")
@@ -779,7 +906,7 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
   ENDFOREACH()
 
   #
-  # B) Read extra repos
+  # C) Read extra repos
   #
 
   # Allow list to be seprated by ',' instead of just by ';'.  This is needed
@@ -877,11 +1004,11 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
   ENDFOREACH()
 
   #
-  # C) Process list of list of packages, TPLs, etc.
+  # D) Process list of list of packages, TPLs, etc.
   #
 
   #
-  # C.1) Package dependencies for all of the packages for all of the defined
+  # D.1) Package dependencies for all of the packages for all of the defined
   # packages (not just the core packages)
   #
 
@@ -895,7 +1022,7 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
   ENDIF()
 
   #
-  # C.2) Write out the XML dependency files for the full list of dependencies!
+  # D.2) Write out the XML dependency files for the full list of dependencies!
   #
 
   TRIBITS_WRITE_XML_DEPENDENCY_FILES()
@@ -1195,7 +1322,7 @@ MACRO(TRIBITS_SETUP_ENV)
   # Find Perl
   
   FIND_PACKAGE(Perl)
-  
+
   # Do Fortran stuff
   
   INCLUDE(TribitsFortranMangling)
