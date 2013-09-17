@@ -1185,12 +1185,18 @@ namespace stk {
                             snr.declareGlobalParts();
                           }
 #endif
+
                         GeometryRecoverySplineFit grsf(eMesh);
+#if defined(STK_PERCEPT_HAS_GEOMETRY)
                         if (fit_geometry_file != "")
                           {
                             grsf.fit_geometry_create_parts_meta();
                           }
-
+#elif defined(__IBMCPP__)
+                        std::ostringstream oss;
+                        oss << "\nERROR: Geometry and/or smoothing is not currently supported on this platform. Try running with geometry turned off.";
+                        throw std::runtime_error(oss.str());
+#endif
                         eMesh.commit();
 
                         //eMesh.delete_side_sets();
@@ -1205,10 +1211,12 @@ namespace stk {
                             eMesh.print_info("PerceptMesh info:", print_info);
                           }
 
+#if defined(STK_PERCEPT_HAS_GEOMETRY)
                         if (fit_geometry_file != "")
                           {
                             grsf.fit_geometry(fit_geometry_file);
                           }
+#endif
 
                         // print message about rbars being treated and beams being refined
 //                         if (!eMesh.get_rank())
