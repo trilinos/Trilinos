@@ -46,7 +46,7 @@ EXAMPLE
       fout.close();
       ...
 
-      A good place to be this is within a unit test!  That way it is
+      A good place to rse this is within a unit test!  That way it is
       easily auto-generated.
 
       One can generate the latex to be 'input'ted another latex
