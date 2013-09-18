@@ -608,16 +608,26 @@ void STK_Interface::getMyElements(const std::string & blockID,std::vector<stk::m
 
 void STK_Interface::getNeighborElements(std::vector<stk::mesh::Entity*> & elements) const
 {
-   std::vector<stk::mesh::Entity*> ghosted_entities;
+   // setup local ownership
+   stk::mesh::Selector neighborBlock = (!metaData_->locally_owned_part());
 
-   // get all ghosted entities (those recieved from other processors)
-   bulkData_->shared_aura().receive_list(ghosted_entities);
-
-   // filter out the elements from the list of ghosted entities
+   // grab elements
    stk::mesh::EntityRank elementRank = getElementRank();
-   for(std::size_t i=0;i<ghosted_entities.size();i++)
-     if(ghosted_entities[i]->entity_rank()==elementRank)
-       elements.push_back(ghosted_entities[i]); 
+   stk::mesh::get_selected_entities(neighborBlock,bulkData_->buckets(elementRank),elements);
+}
+
+void STK_Interface::getNeighborElements(const std::string & blockID,std::vector<stk::mesh::Entity*> & elements) const
+{
+   stk::mesh::Part * elementBlock = getElementBlockPart(blockID);
+
+   TEUCHOS_TEST_FOR_EXCEPTION(elementBlock==0,std::logic_error,"Could not find element block \"" << blockID << "\"");
+
+   // setup local ownership
+   stk::mesh::Selector neighborBlock = (!metaData_->locally_owned_part()) & (*elementBlock);
+
+   // grab elements
+   stk::mesh::EntityRank elementRank = getElementRank();
+   stk::mesh::get_selected_entities(neighborBlock,bulkData_->buckets(elementRank),elements);
 }
 
 void STK_Interface::getMySides(const std::string & sideName,std::vector<stk::mesh::Entity*> & sides) const

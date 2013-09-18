@@ -214,6 +214,10 @@ public:
      */
    void getNeighborElements(std::vector<stk::mesh::Entity*> & elements) const;
 
+   /** Get a vector of elements not owned by this processor but in a particular block
+     */
+   void getNeighborElements(const std::string & blockID,std::vector<stk::mesh::Entity*> & elements) const;
+
    /** Get Entities corresponding to the side set requested. 
      * The Entites in the vector should be a dimension
      * lower then <code>getDimension()</code>.

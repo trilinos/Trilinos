@@ -101,27 +101,51 @@ TEUCHOS_UNIT_TEST(tGhosting, get_neighbor_elements)
    int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
    out << "Running numprocs = " << numprocs << " rank = " << rank << std::endl;
 
+   TEUCHOS_ASSERT(numprocs==4);
+
    SquareQuadMeshFactory factory; 
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    mesh->writeToExodus("TEST.exo");
 
-   std::vector<stk::mesh::Entity*> neighbors;
+   {
+     std::vector<stk::mesh::Entity*> neighbors;
+     mesh->getNeighborElements(neighbors);
 
-   mesh->getNeighborElements(neighbors);
+     std::size_t vec[4];
+     vec[0] = 8;
+     vec[1] = 8;
+     vec[2] = 6;
+     vec[3] = 6;
 
-   switch(rank) {
-   case 0:
-   case 1:
-     TEST_EQUALITY(neighbors.size(),8);
-     break;
-   case 2:
-   case 3:
-     TEST_EQUALITY(neighbors.size(),6);
-     break;
-   default:
-     TEST_ASSERT(false);
-   };
+     TEST_EQUALITY(neighbors.size(),vec[rank]);
+   }
+
+   {
+     std::vector<stk::mesh::Entity*> neighbors;
+     mesh->getNeighborElements("eblock-0_0",neighbors);
+
+     std::size_t vec[4];
+     vec[0] = 4;
+     vec[1] = 4;
+     vec[2] = 3;
+     vec[3] = 3;
+
+     TEST_EQUALITY(neighbors.size(),vec[rank]);
+   }
+
+   {
+     std::vector<stk::mesh::Entity*> neighbors;
+     mesh->getNeighborElements("eblock-1_0",neighbors);
+
+     std::size_t vec[4];
+     vec[0] = 4;
+     vec[1] = 4;
+     vec[2] = 3;
+     vec[3] = 3;
+
+     TEST_EQUALITY(neighbors.size(),vec[rank]);
+   }
 }
 
 }
