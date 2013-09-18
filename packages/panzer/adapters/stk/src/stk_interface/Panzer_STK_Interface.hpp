@@ -97,7 +97,6 @@ public:
    typedef stk::mesh::Field<double> SolutionFieldType;
    typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
    typedef stk::mesh::Field<ProcIdData> ProcIdFieldType;
-   typedef stk::mesh::Field<std::size_t> LocalIdFieldType;
 
    // some simple exception classes
    struct ElementBlockException : public std::logic_error 
@@ -633,7 +632,6 @@ protected:
 
    VectorFieldType * coordinatesField_;
    ProcIdFieldType * processorIdField_;
-   LocalIdFieldType * localIdField_;
    SolutionFieldType * loadBalField_;
    
    // maps field names to solution field stk mesh handles
