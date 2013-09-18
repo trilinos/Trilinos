@@ -806,9 +806,10 @@ ENDFUNCTION()
 
 
 #
-# Function that generates the project repos version file
+# Generate the project repos version file and print to stdout
 #
-# This function is designed so that it can be unit tested!
+# This function is designed so that it can be unit tested from inside of a
+# cmake -P script.
 #
 
 FUNCTION(TRIBITS_GENERATE_REPO_VERSION_OUTPUT_AND_FILE)
@@ -828,15 +829,17 @@ ENDFUNCTION()
 
 
 #
-# Read in ${PROJECT_NAME} packages and TPLs, process dependencies, write XML files
+# Create project dependencies file and create install target
+#
+# NOTE: Before calling this function, the extra repos datastructure must be
+# filled out!
+#
+# NOTE: This function can not be called in a cmake -P script because it has a
+# call to INSTALL()!  That is why this function is seprated out from
+# TRIBITS_GENERATE_REPO_VERSION_OUTPUT_AND_FILE().
 #
 
-MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
-
-  # Set to empty
-  SET(${PROJECT_NAME}_PACKAGES)
-  SET(${PROJECT_NAME}_PACKAGE_DIRS)
-  SET(${PROJECT_NAME}_TPLS)
+FUNCTION(TRIBITS_GENERATE_REPO_VERSION_OUTPUT_AND_FILE_AND_INSTALL)
 
   #
   # A) Create the ${PROJECT_NAME}RepoVersion.txt file if requested
@@ -853,6 +856,19 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
       FILES "${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_REPO_VERSION_FILE_NAME}"
       DESTINATION "." )
   ENDIF()
+
+ENDFUNCTION()
+
+#
+# Read in ${PROJECT_NAME} packages and TPLs, process dependencies, write XML files
+#
+
+MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
+
+  # Set to empty
+  SET(${PROJECT_NAME}_PACKAGES)
+  SET(${PROJECT_NAME}_PACKAGE_DIRS)
+  SET(${PROJECT_NAME}_TPLS)
 
   #
   # B) Read native repos
