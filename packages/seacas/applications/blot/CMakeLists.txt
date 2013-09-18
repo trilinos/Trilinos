@@ -23,7 +23,7 @@ TRIBITS_ADD_LIBRARY(
 TRIBITS_ADD_EXECUTABLE(blot_x11 NOEXEPREFIX NOEXESUFFIX
 				LINKER_LANGUAGE Fortran
 			        SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/blot.f
-			        DEPLIBS blotlib svdi_cgi svdi_cgi_x11 
+			        DEPLIBS blotlib svdi_cgi_x11 
 			        COMM serial mpi)
 install_executable(blot_x11)
 
