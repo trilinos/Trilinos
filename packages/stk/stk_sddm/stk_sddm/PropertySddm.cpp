@@ -46,6 +46,7 @@ not_found_error(
 }
 
 
+#if 0
 std::runtime_error
 exists_error(
   const Property &              property,
@@ -56,6 +57,7 @@ exists_error(
   
   return std::runtime_error(oss.str());
 }
+#endif
 
 } // namespace <unnamed>
 

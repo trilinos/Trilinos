@@ -30,10 +30,17 @@ protected:
   
 //  virtual std::ostream &describe(std::ostream &oss) const;
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Woverloaded-virtual"
+#endif
   virtual bool validate() const {
     return true;
   }
-  
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+
 protected:
   size_t        m_minCount;
   size_t        m_maxCount;
