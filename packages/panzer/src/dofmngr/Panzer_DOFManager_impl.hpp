@@ -379,7 +379,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
     if(faConstruct.size()>0) {
       fa_fps_.push_back(rcp(new FieldAggPattern(faConstruct, ga_fp_)));
     
-      // how many global IDs are this this element block?
+      // how many global IDs are in this element block?
       int gidsInBlock = fa_fps_[fa_fps_.size()-1]->numberIds();
       elementBlockGIDCount_.push_back(gidsInBlock);
     }
@@ -565,7 +565,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
   }
 
   //////////////////////////////////////////////////////////////////
-  // this is where the code is modified to artificial induce GIDs
+  // this is where the code is modified to artificially induce GIDs
   // over 2 Billion unknowns
   //////////////////////////////////////////////////////////////////
   #if 0
@@ -748,7 +748,8 @@ const std::vector<int> & DOFManager<LO,GO>::getBlockFieldNumbers(const std::stri
 
 template <typename LO, typename GO>
 const std::pair<std::vector<int>,std::vector<int> > & 
-DOFManager<LO,GO>::getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum, int subcellDim,int subcellId) const{
+DOFManager<LO,GO>::getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum, int subcellDim,int subcellId) const
+{
   TEUCHOS_TEST_FOR_EXCEPTION(!buildConnectivityRun_,std::logic_error,"DOFManager::getGIDFieldOffsets_closure: BuildConnectivity must be run first.");
   std::map<std::string,int>::const_iterator bitr = blockNameToID_.find(blockId);
   if(bitr==blockNameToID_.end())
@@ -763,7 +764,8 @@ DOFManager<LO,GO>::getGIDFieldOffsets_closure(const std::string & blockId, int f
 }
 
 template <typename LO, typename GO>
-void DOFManager<LO,GO>::ownedIndices(const std::vector<GO> & indices,std::vector<bool> & isOwned) const{
+void DOFManager<LO,GO>::ownedIndices(const std::vector<GO> & indices,std::vector<bool> & isOwned) const
+{
   //Resizes the isOwned array.
   if(indices.size()!=isOwned.size())
     isOwned.resize(indices.size(),false);
@@ -883,7 +885,6 @@ void DOFManager<LO,GO>::buildUnknownsOrientation()
       const GO * connPtr = connMngr_->getConnectivity(elmts[e]); 
       const std::vector<GO> connectivity(connPtr,connPtr+connSz);
 
-
       orientation_helpers::computeCellEdgeOrientations(topEdgeIndices, connectivity, fieldPattern, eOrientation);
     }
   }
@@ -892,8 +893,6 @@ void DOFManager<LO,GO>::buildUnknownsOrientation()
 template <typename LO, typename GO>
 void DOFManager<LO,GO>::getElementOrientation(LO localElmtId,std::vector<double> & gidsOrientation) const
 {
-   // TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::getElementOrientation not implemented yet!");
-
    TEUCHOS_TEST_FOR_EXCEPTION(orientation_.size()==0,std::logic_error,
                               "DOFManager::getElementOrientations: Orientations were not constructed!");
 
