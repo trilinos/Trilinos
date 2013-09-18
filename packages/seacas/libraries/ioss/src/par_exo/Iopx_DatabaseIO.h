@@ -107,7 +107,11 @@ namespace Iopx {
     bool needs_shared_node_information() const {return true;}
 
     // Check to see if database state is ok...
-    bool ok(bool write_message = false) const;
+    // If 'write_message' true, then output a warning message indicating the problem.
+    // If 'error_message' non-null, then put the warning message into the string and return it.
+    // If 'bad_count' non-null, it counts the number of processors where the file does not exist.
+    //    if ok returns false, but *bad_count==0, then the routine does not support this argument.
+    bool ok(bool write_message = false, std::string *error_message=NULL, int *bad_count=NULL) const;
 
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
