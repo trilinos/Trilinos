@@ -158,20 +158,6 @@ void deep_copy( const View< DT, DL, OpenMP, DM, DS> & dst ,
   Impl::OpenMPViewRemap< dst_type , src_type , dst_type::rank >( dst , src );
 }
 
-/** \brief  Deep copy of scalar value */
-
-template< typename ValueType , class LayoutSrc , class MemoryTraits >
-inline
-void deep_copy( ValueType & dst ,
-                const View< ValueType , LayoutSrc , OpenMP , MemoryTraits , Impl::LayoutScalar > & src )
-{ dst = src ; }
-
-template< typename ValueType , class LayoutDst , class MemoryTraits >
-inline
-void deep_copy( const View< ValueType , LayoutDst , OpenMP , MemoryTraits , Impl::LayoutScalar > & dst ,
-                const ValueType & src )
-{ dst = src ; }
-
 } // namespace Kokkos
 
 #endif /* #ifndef KOKKOS_OPENMP_VIEW_HPP */

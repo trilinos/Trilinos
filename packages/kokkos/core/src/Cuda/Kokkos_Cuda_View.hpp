@@ -89,29 +89,6 @@ struct AssertShapeBoundsAbort< CudaSpace >
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-
-template< typename ValueType , class LayoutSrc , class MemoryTraits >
-inline
-void deep_copy( ValueType & dst ,
-                const View< ValueType , LayoutSrc , Cuda , MemoryTraits , Impl::LayoutScalar > & src )
-{
-  (void)Impl::DeepCopy<HostSpace,CudaSpace>( & dst , src.ptr_on_device() , sizeof(ValueType) );
-}
-
-template< typename ValueType , class LayoutDst , class MemoryTraits >
-inline
-void deep_copy( const View< ValueType , LayoutDst , Cuda , MemoryTraits , Impl::LayoutScalar > & dst ,
-                const ValueType & src )
-{
-  (void)Impl::DeepCopy<CudaSpace,HostSpace>( dst.ptr_on_device() , & src , sizeof(ValueType) );
-}
-
-} // namespace Kokkos
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
 namespace Impl {
 
 // Cuda 5.0 <texture_types.h> defines 'cudaTextureObject_t'

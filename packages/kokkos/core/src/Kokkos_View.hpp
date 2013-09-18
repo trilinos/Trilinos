@@ -51,7 +51,7 @@
 #include <Kokkos_MemoryTraits.hpp>
 
 #include <impl/Kokkos_StaticAssert.hpp>
-#include <impl/Kokkos_ArrayTraits.hpp>
+#include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_Shape.hpp>
 #include <impl/Kokkos_AnalyzeShape.hpp>
 
@@ -476,8 +476,8 @@ template< class OutputView , class InputView  >
 struct ViewRemap< OutputView ,  InputView , 0 >
 {
   typedef typename OutputView::value_type   value_type ;
-  typedef typename OutputView::device_space dst_space ;
-  typedef typename InputView ::device_space src_space ;
+  typedef typename OutputView::memory_space dst_space ;
+  typedef typename InputView ::memory_space src_space ;
 
   ViewRemap( const OutputView & arg_out , const InputView & arg_in )
   {
@@ -523,7 +523,7 @@ struct ViewFill< OutputView , 0 >
 {
   typedef typename OutputView::device_type       device_type ;
   typedef typename OutputView::const_value_type  const_value_type ;
-  typedef typename OutputView::device_space      dst_space ;
+  typedef typename OutputView::memory_space      dst_space ;
 
   ViewFill( const OutputView & arg_out , const_value_type & arg_in )
   {
@@ -810,40 +810,53 @@ subview( const View<T,L,D,M,S> & src ,
 
 
 template< class T , class L , class D , class M , class S >
-typename View<T,L,D,M,S>::HostMirror
-create_mirror_view( const View<T,L,D,M,S> & view ,
-                    typename Impl::enable_if<
-                      Impl::ViewAssignable< typename View<T,L,D,M,S>::HostMirror , View<T,L,D,M,S> >::value
-                    >::type * = 0 )
+typename Impl::enable_if<(
+    View<T,L,D,M,S>::is_managed 
+  ), typename View<T,L,D,M,S>::HostMirror >::type
+inline
+create_mirror( const View<T,L,D,M,S> & src )
 {
-  return view ;
+  typedef View<T,L,D,M,S>                  view_type ;
+  typedef typename view_type::HostMirror    host_view_type ;
+  typedef typename view_type::memory_space  memory_space ;
+
+  // 'view' is managed therefore we can allocate a
+  // compatible host_view through the ordinary constructor.
+  
+  std::string label = memory_space::query_label( src.ptr_on_device() );
+  label.append("_mirror");
+
+  return host_view_type( label ,
+                         src.dimension_0() ,
+                         src.dimension_1() ,
+                         src.dimension_2() ,
+                         src.dimension_3() ,
+                         src.dimension_4() ,
+                         src.dimension_5() ,
+                         src.dimension_6() ,
+                         src.dimension_7() );
 }
 
 template< class T , class L , class D , class M , class S >
-typename View<T,L,D,M,S>::HostMirror
-create_mirror_view( const View<T,L,D,M,S> & view ,
-                    typename Impl::enable_if<
-                      ! Impl::ViewAssignable< typename View<T,L,D,M,S>::HostMirror , View<T,L,D,M,S> >::value
-                    >::type * = 0 )
+typename Impl::enable_if<(
+    View<T,L,D,M,S>::is_managed &&
+    Impl::ViewAssignable< typename View<T,L,D,M,S>::HostMirror , View<T,L,D,M,S> >::value
+  ), typename View<T,L,D,M,S>::HostMirror >::type
+inline
+create_mirror_view( const View<T,L,D,M,S> & src )
 {
-  typedef typename View<T,L,D,M,S>::HostMirror host_view ;
-  host_view tmp ;
-  Impl::ViewAssignment< S >( tmp , view );
-  return tmp ;
+  return src ;
 }
 
 template< class T , class L , class D , class M , class S >
-typename View<T,L,D,M,S>::HostMirror
-create_mirror( const View<T,L,D,M,S> & view )
+typename Impl::enable_if<(
+    View<T,L,D,M,S>::is_managed &&
+    ! Impl::ViewAssignable< typename View<T,L,D,M,S>::HostMirror , View<T,L,D,M,S> >::value
+  ), typename View<T,L,D,M,S>::HostMirror >::type
+inline
+create_mirror_view( const View<T,L,D,M,S> & src )
 {
-#if KOKKOS_MIRROR_VIEW_OPTIMIZE
-  return create_mirror_view( view );
-#else
-  typedef typename View<T,L,D,M,S>::HostMirror host_view ;
-  host_view tmp ;
-  Impl::ViewAssignment< S >( tmp , view );
-  return tmp ;
-#endif
+  return create_mirror( src );
 }
 
 } // namespace Kokkos
@@ -852,7 +865,6 @@ create_mirror( const View<T,L,D,M,S> & view )
 //----------------------------------------------------------------------------
 
 #include <impl/Kokkos_ViewDefault.hpp>
-#include <impl/Kokkos_ViewScalar.hpp>
 #include <impl/Kokkos_ViewTileLeft.hpp>
 
 //----------------------------------------------------------------------------

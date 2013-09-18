@@ -48,7 +48,7 @@
 #include <utility>
 #include <Kokkos_Macros.hpp>
 #include <Kokkos_Layout.hpp>
-#include <impl/Kokkos_ArrayTraits.hpp>
+#include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_StaticAssert.hpp>
 
 //----------------------------------------------------------------------------
