@@ -1156,6 +1156,9 @@ Pointer to a Epetra_BlockMap object. ";
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
 ElementSize, int IndexBase, const Epetra_Comm &Comm) ";
 
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
+ElementSize, long long IndexBase, const Epetra_Comm &Comm) ";
+
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int
 NumMyElements, int ElementSize, int IndexBase, const Epetra_Comm
 &Comm)
@@ -1193,6 +1196,10 @@ Pointer to a Epetra_BlockMap object. ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
 NumMyElements, int ElementSize, int IndexBase, const Epetra_Comm
+&Comm) ";
+
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
+NumMyElements, int ElementSize, long long IndexBase, const Epetra_Comm
 &Comm) ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int
@@ -1242,6 +1249,10 @@ Pointer to a Epetra_BlockMap object. ";
 NumMyElements, const long long *MyGlobalElements, int ElementSize, int
 IndexBase, const Epetra_Comm &Comm) ";
 
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
+NumMyElements, const long long *MyGlobalElements, int ElementSize,
+long long IndexBase, const Epetra_Comm &Comm) ";
+
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int
 NumMyElements, const int *MyGlobalElements, const int
 *ElementSizeList, int IndexBase, const Epetra_Comm &Comm)
@@ -1289,6 +1300,26 @@ Pointer to a Epetra_BlockMap object. ";
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
 NumMyElements, const long long *MyGlobalElements, const int
 *ElementSizeList, int IndexBase, const Epetra_Comm &Comm) ";
+
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
+NumMyElements, const long long *MyGlobalElements, const int
+*ElementSizeList, long long IndexBase, const Epetra_Comm &Comm) ";
+
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobal_Elements, int
+NumMy_Elements, const long long *myGlobalElements, int ElementSize,
+int indexBase, const Epetra_Comm &comm, bool UserIsDistributedGlobal,
+long long UserMinAllGID, long long UserMaxAllGID)
+
+Epetra_BlockMap constructor for a user-defined arbitrary distribution
+of constant size elements, where the user provides all the globals.
+
+WARNING:  This method is intended for expert developer use only, and
+should never be called by user code. ";
+
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int
+NumMy_Elements, const int *myGlobalElements, int ElementSize, int
+indexBase, const Epetra_Comm &comm, bool UserIsDistributedGlobal, int
+UserMinAllGID, int UserMaxAllGID) ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(const Epetra_BlockMap &map)
 
@@ -1397,7 +1428,7 @@ Epetra_BlockMap::MaxAllGID64() const ";
 %feature("docstring")  Epetra_BlockMap::MinMyGID "int
 Epetra_BlockMap::MinMyGID() const
 
-Returns the maximum global ID owned by this processor. ";
+Returns the minimum global ID owned by this processor. ";
 
 %feature("docstring")  Epetra_BlockMap::MinMyGID64 "long long
 Epetra_BlockMap::MinMyGID64() const ";
@@ -1479,6 +1510,9 @@ is out-of-range. ";
 Epetra_BlockMap::IndexBase() const
 
 Index base for this map. ";
+
+%feature("docstring")  Epetra_BlockMap::IndexBase64 "long long
+Epetra_BlockMap::IndexBase64() const ";
 
 %feature("docstring")  Epetra_BlockMap::NumGlobalPoints "int
 Epetra_BlockMap::NumGlobalPoints() const
@@ -1588,6 +1622,14 @@ the calling processor. ";
 %feature("docstring")  Epetra_BlockMap::MyGlobalElements64 "long long
 * Epetra_BlockMap::MyGlobalElements64() const ";
 
+%feature("docstring")  Epetra_BlockMap::MyGlobalElements "void
+Epetra_BlockMap::MyGlobalElements(const int *&IntGIDs, const long long
+*&LLGIDs) const ";
+
+%feature("docstring")  Epetra_BlockMap::MyGlobalElements "void
+Epetra_BlockMap::MyGlobalElements(int *&IntGIDs, long long *&LLGIDs)
+";
+
 %feature("docstring")  Epetra_BlockMap::FirstPointInElementList "int
 * Epetra_BlockMap::FirstPointInElementList() const
 
@@ -1659,6 +1701,77 @@ Epetra_BlockMapData* Epetra_BlockMap::DataPtr() const
 Returns a pointer to the BlockMapData instance this BlockMap uses.
 
 (Intended for developer use only for testing purposes.) ";
+
+%feature("docstring")  Epetra_BlockMap::RemoveEmptyProcesses "Epetra_BlockMap * Epetra_BlockMap::RemoveEmptyProcesses() const
+
+Return a new BlockMap with processes with zero elements removed.
+
+WARNING:  This method is only for expert users. Understanding how to
+use this method correctly requires some familiarity with semantics of
+MPI communicators.
+
+We make no promises of backwards compatibility for this method. It may
+go away or change at any time.  This method first computes a new
+communicator, which contains only those processes in this Map's
+communicator (the \"original communicator\") that have a nonzero
+number of elements in this BlockMap (the \"original BlockMap\"). It
+then returns a new BlockMap distributed over the new communicator. The
+new BlockMap represents the same distribution as the original
+BlockMap, except that processes containing zero elements are not
+included in the new BlockMap or its communicator. On processes not
+included in the new BlockMap or communicator, this method returns
+NULL.
+
+The returned BlockMap always has a distinct communicator from this
+BlockMap's original communicator. The new communicator contains a
+subset of processes from the original communicator. Even if the number
+of processes in the new communicator equals the number of processes in
+the original communicator, the new communicator is distinct. (In an
+MPI implementation, the new communicator is created using
+MPI_Comm_split.)
+
+This method must be called collectively on the original communicator.
+It leaves the original Map and communicator unchanged.
+
+This method was intended for applications such as algebraic multigrid
+or other multilevel preconditioners. Construction of each level of the
+multilevel preconditioner typically requires constructing sparse
+matrices, which in turn requires all-reduces over all participating
+processes at that level. Matrix sizes at successively coarser levels
+shrink geometrically. At the coarsest levels, some processes might be
+left with zero rows of the matrix, or the multigrid implementation
+might \"rebalance\" (redistribute the matrix) and intentionally leave
+some processes with zero rows. Removing processes with zero rows makes
+the all-reduces and other communication operations cheaper. ";
+
+%feature("docstring")  Epetra_BlockMap::ReplaceCommWithSubset "Epetra_BlockMap * Epetra_BlockMap::ReplaceCommWithSubset(const
+Epetra_Comm *Comm) const
+
+Replace this BlockMap's communicator with a subset communicator.
+
+WARNING:  This method is only for expert users. Understanding how to
+use this method correctly requires some familiarity with semantics of
+MPI communicators.
+
+We make no promises of backwards compatibility for this method. It may
+go away or change at any time.
+
+The input communicator's processes are a subset of this BlockMap's
+current communicator's processes.
+
+On processes which are not included in the input communicator, the
+input communicator is null.  This method must be called collectively
+on the original communicator. It leaves the original BlockMap and
+communicator unchanged.
+
+This method differs from removeEmptyProcesses(), in that it does not
+assume that excluded processes have zero entries. For example, one
+might wish to remove empty processes from the row BlockMap of a
+CrsGraph using removeEmptyProcesses(), and then apply the resulting
+subset communicator to the column, domain, and range Maps of the same
+graph. For the latter three Maps, one would in general use this method
+instead of removeEmptyProcesses(), giving the new row BlockMap's
+communicator to this method. ";
 
 
 // File: classEpetra__BlockMapData.xml
@@ -1773,6 +1886,28 @@ will receive a copy of Values. ";
 
 %feature("docstring")  Epetra_Comm::Broadcast "virtual int
 Epetra_Comm::Broadcast(long *MyVals, int Count, int Root) const =0
+
+Epetra_Comm Broadcast function.
+
+Take list of input values from the root processor and sends to all
+other processors.
+
+Parameters:
+-----------
+
+MyVals:  InOut On entry, the root processor contains the list of
+values. On exit, all processors will have the same list of values.
+Note that values must be allocated on all processor before the
+broadcast.
+
+Count:  In On entry, contains the length of the list of Values.
+
+Root:  In On entry, contains the processor from which all processors
+will receive a copy of Values. ";
+
+%feature("docstring")  Epetra_Comm::Broadcast "virtual int
+Epetra_Comm::Broadcast(long long *MyVals, int Count, int Root) const
+=0
 
 Epetra_Comm Broadcast function.
 
@@ -3320,7 +3455,12 @@ on this processor. ";
 %feature("docstring")  Epetra_CrsGraph::IndexBase "int
 Epetra_CrsGraph::IndexBase() const
 
-Returns the index base for row and column indices for this graph. ";
+Returns the index base for row and column indices for this graph.
+
+Index base for this map. ";
+
+%feature("docstring")  Epetra_CrsGraph::IndexBase64 "long long
+Epetra_CrsGraph::IndexBase64() const ";
 
 %feature("docstring")  Epetra_CrsGraph::RowMap "const
 Epetra_BlockMap& Epetra_CrsGraph::RowMap() const
@@ -3347,6 +3487,43 @@ function. Returns 0 if map is replaced, -1 if not.
 
 ( IndicesAreLocal()==false && IndicesAreGlobal()==false) ||
 ColMap().PointSameAs(newmap)==true ";
+
+%feature("docstring")  Epetra_CrsGraph::ReplaceDomainMapAndImporter "int Epetra_CrsGraph::ReplaceDomainMapAndImporter(const Epetra_BlockMap
+&NewDomainMap, const Epetra_Import *NewImporter)
+
+Replaces the current DomainMap & Importer with the user-specified map
+object.
+
+Replaces the current DomainMap and Importer with the user-specified
+map object, but only if the matrix has been FillCompleted, Importer's
+TargetMap matches the ColMap and Importer's SourceMap matches the
+DomainMap (assuming the importer isn't null). If an Importer is passed
+in, Epetra_CrsMatrix will copy it. Returns 0 if map/importer is
+replaced, -1 if not.
+
+(!NewImporter && ColMap().PointSameAs(NewDomainMap)) || (NewImporter
+&& ColMap().PointSameAs(NewImporter->TargetMap()) &&
+NewDomainMap.PointSameAs(NewImporter->SourceMap())) ";
+
+%feature("docstring")  Epetra_CrsGraph::RemoveEmptyProcessesInPlace "int Epetra_CrsGraph::RemoveEmptyProcessesInPlace(const Epetra_BlockMap
+*NewMap)
+
+Remove processes owning zero rows from the Maps and their
+communicator.
+
+Remove processes owning zero rows from the Maps and their
+communicator. WARNING:  This method is ONLY for use by experts.
+
+We make NO promises of backwards compatibility. This method may change
+or disappear at any time.
+
+Parameters:
+-----------
+
+newMap:  [in] This must be the result of calling the
+removeEmptyProcesses() method on the row BlockMap. If it is not, this
+method's behavior is undefined. This pointer will be null on excluded
+processes. ";
 
 %feature("docstring")  Epetra_CrsGraph::ColMap "const
 Epetra_BlockMap& Epetra_CrsGraph::ColMap() const
@@ -3828,6 +4005,98 @@ CV:  - (In) An Epetra_DataAccess enumerated type set to Copy or View.
 
 Graph:  - (In) A Epetra_CrsGraph object, constructed directly or
 extracted from another Epetra matrix object. ";
+
+%feature("docstring")  Epetra_CrsMatrix::Epetra_CrsMatrix "Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix
+&SourceMatrix, const Epetra_Import &RowImporter, const Epetra_Map
+*DomainMap=0, const Epetra_Map *RangeMap=0, bool
+RestrictCommunicator=false)
+
+Epetra CrsMatrix constructor that also fuses Import and
+FillComplete().
+
+A common use case is to create an empty destination Epetra_CrsMatrix,
+redistribute from a source CrsMatrix (by an Import or Export
+operation), then call FillComplete() on the destination CrsMatrix.
+This constructor fuses these three cases, for an Import
+redistribution.
+
+Fusing redistribution and FillComplete() exposes potential
+optimizations. For example, it may make constructing the column map
+faster, and it may avoid intermediate unoptimized storage in the
+destination Epetra_CrsMatrix. These optimizations may improve
+performance for specialized kernels like sparse matrix-matrix
+multiply, as well as for redistributing data after doing load
+balancing.
+
+The resulting matrix is fill complete (in the sense of Filled()) and
+has optimized storage (in the sense of StorageOptimized()). It the
+DomainMap is taken from the SourceMatrix, the RangeMap is presumed to
+be RowImporter.TargetMap() if not specified
+
+Parameters:
+-----------
+
+SourceMatrix:  [in] The source matrix from which to import. The source
+of an Import must have a nonoverlapping distribution.
+
+RowImporter:  [in] The Import instance containing a precomputed
+redistribution plan. The source Map of the Import must be the same as
+the row Map of sourceMatrix.
+
+DomainMap:  [in] The new domainMap for the new matrix. If not
+specified, then the DomainMap of the SourceMatrix is used.
+
+RangeMap:  [in] The new rangeMap for the new matrix. If not specified,
+then RowImporter.TargetMap() is used.
+
+RestrictCommunicator:  [in] Restricts the resulting communicator to
+active processes only. ";
+
+%feature("docstring")  Epetra_CrsMatrix::Epetra_CrsMatrix "Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix
+&SourceMatrix, const Epetra_Export &RowExporter, const Epetra_Map
+*DomainMap=0, const Epetra_Map *RangeMap=0, bool
+RestrictCommunicator=false)
+
+Epetra CrsMatrix constructor that also fuses Ex[prt and
+FillComplete().
+
+A common use case is to create an empty destination Epetra_CrsMatrix,
+redistribute from a source CrsMatrix (by an Import or Export
+operation), then call FillComplete() on the destination CrsMatrix.
+This constructor fuses these three cases, for an Import
+redistribution.
+
+Fusing redistribution and FillComplete() exposes potential
+optimizations. For example, it may make constructing the column map
+faster, and it may avoid intermediate unoptimized storage in the
+destination Epetra_CrsMatrix. These optimizations may improve
+performance for specialized kernels like sparse matrix-matrix
+multiply, as well as for redistributing data after doing load
+balancing.
+
+The resulting matrix is fill complete (in the sense of Filled()) and
+has optimized storage (in the sense of StorageOptimized()). It the
+DomainMap is taken from the SourceMatrix, the RangeMap is presumed to
+be RowImporter.TargetMap() if not specified
+
+Parameters:
+-----------
+
+SourceMatrix:  [in] The source matrix from which to import. The source
+of an Import must have a nonoverlapping distribution.
+
+RowExporter:  [in] The Export instance containing a precomputed
+redistribution plan. The source Map of the Import must be the same as
+the row Map of sourceMatrix.
+
+DomainMap:  [in] The new domainMap for the new matrix. If not
+specified, then the DomainMap of the SourceMatrix is used.
+
+RangeMap:  [in] The new rangeMap for the new matrix. If not specified,
+then RowExporter.TargetMap() is used.
+
+RestrictCommunicator:  [in] Restricts the resulting communicator to
+active processes only. ";
 
 %feature("docstring")  Epetra_CrsMatrix::Epetra_CrsMatrix "Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix &Matrix)
 
@@ -4873,7 +5142,12 @@ on this processor. ";
 %feature("docstring")  Epetra_CrsMatrix::IndexBase "int
 Epetra_CrsMatrix::IndexBase() const
 
-Returns the index base for row and column indices for this graph. ";
+Returns the index base for row and column indices for this graph.
+
+Index base for this map. ";
+
+%feature("docstring")  Epetra_CrsMatrix::IndexBase64 "long long
+Epetra_CrsMatrix::IndexBase64() const ";
 
 %feature("docstring")  Epetra_CrsMatrix::StaticGraph "bool
 Epetra_CrsMatrix::StaticGraph()
@@ -4928,6 +5202,44 @@ function. Returns 0 if map is replaced, -1 if not.
 
 ( IndicesAreLocal()==false && IndicesAreGlobal()==false) ||
 ColMap().PointSameAs(newmap)==true ";
+
+%feature("docstring")  Epetra_CrsMatrix::ReplaceDomainMapAndImporter "int Epetra_CrsMatrix::ReplaceDomainMapAndImporter(const Epetra_Map
+&NewDomainMap, const Epetra_Import *NewImporter)
+
+Replaces the current DomainMap & Importer with the user-specified map
+object.
+
+Replaces the current DomainMap and Importer with the user-specified
+map object, but only if the matrix has been FillCompleted, Importer's
+TargetMap matches the ColMap and Importer's SourceMap matches the
+DomainMap (assuming the importer isn't null). If an Importer is passed
+in, Epetra_CrsMatrix will copy it.
+
+Returns 0 if map/importer is replaced, -1 if not.
+
+(!NewImporter && ColMap().PointSameAs(NewDomainMap)) || (NewImporter
+&& ColMap().PointSameAs(NewImporter->TargetMap()) &&
+NewDomainMap.PointSameAs(NewImporter->SourceMap())) ";
+
+%feature("docstring")  Epetra_CrsMatrix::RemoveEmptyProcessesInPlace "int Epetra_CrsMatrix::RemoveEmptyProcessesInPlace(const
+Epetra_BlockMap *NewMap)
+
+Remove processes owning zero rows from the Maps and their
+communicator.
+
+Remove processes owning zero rows from the Maps and their
+communicator. WARNING:  This method is ONLY for use by experts.
+
+We make NO promises of backwards compatibility. This method may change
+or disappear at any time.
+
+Parameters:
+-----------
+
+newMap:  [in] This must be the result of calling the
+removeEmptyProcesses() method on the row Map. If it is not, this
+method's behavior is undefined. This pointer will be null on excluded
+processes. ";
 
 %feature("docstring")  Epetra_CrsMatrix::ColMap "const Epetra_Map&
 Epetra_CrsMatrix::ColMap() const
@@ -5250,6 +5562,56 @@ has not been performed or Storage has not been Optimized.
 
 WARNING:  This method is intended for expert only, its use may require
 user code modifications in future versions of Epetra. ";
+
+%feature("docstring")  Epetra_CrsMatrix::ExpertExtractIndexOffset "Epetra_IntSerialDenseVector &
+Epetra_CrsMatrix::ExpertExtractIndexOffset()
+
+Returns a reference to the Epetra_IntSerialDenseVector used to hold
+the local IndexOffsets (CRS rowptr)
+
+WARNING:  This method is intended for experts only, its use may
+require user code modifications in future versions of Epetra. ";
+
+%feature("docstring")  Epetra_CrsMatrix::ExpertExtractIndices "Epetra_IntSerialDenseVector & Epetra_CrsMatrix::ExpertExtractIndices()
+
+Returns a reference to the Epetra_IntSerialDenseVector used to hold
+the local All_Indices (CRS colind)
+
+WARNING:  This method is intended for experts only, its use may
+require user code modifications in future versions of Epetra. ";
+
+%feature("docstring")  Epetra_CrsMatrix::ExpertExtractValues "double*& Epetra_CrsMatrix::ExpertExtractValues()
+
+Returns a reference to the double* used to hold the values array.
+
+WARNING:  This method is intended for experts only, its use may
+require user code modifications in future versions of Epetra. ";
+
+%feature("docstring")  Epetra_CrsMatrix::ExpertStaticFillComplete "int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map
+&DomainMap, const Epetra_Map &RangeMap, const Epetra_Import
+*Importer=0, const Epetra_Export *Exporter=0, int NumMyDiagonals=-1)
+
+Performs a FillComplete on an object that aready has filled CRS data.
+
+Performs a lightweight FillComplete on an object that already has
+filled IndexOffsets, All_Indices and All_Values. This routine is
+needed to support the EpetraExt::MatrixMatrix::Multiply and should not
+be called by users. WARNING:   Epetra_CrsMatrix will assume ownership
+of the Importer/Exporter you pass in. You should not deallocate it
+afterwards.
+
+This method is intended for expert developer use only, and should
+never be called by user code. ";
+
+%feature("docstring")  Epetra_CrsMatrix::ExpertMakeUniqueCrsGraphData
+"int Epetra_CrsMatrix::ExpertMakeUniqueCrsGraphData()
+
+Makes sure this matrix has a unique CrsGraphData object.
+
+This routine is needed to support the
+EpetraExt::MatrixMatrix::Multiply and should not be called by users.
+WARNING:  This method is intended for expert developer use only, and
+should never be called by user code. ";
 
 %feature("docstring")
 Epetra_CrsMatrix::SortGhostsAssociatedWithEachProcessor "int
@@ -5882,6 +6244,15 @@ Epetra_Distributor* Epetra_Distributor::Clone()=0
 
 Epetra_Distributor clone constructor. ";
 
+%feature("docstring")  Epetra_Distributor::ReverseClone "virtual
+Epetra_Distributor* Epetra_Distributor::ReverseClone()=0
+
+Create and extract the reverse version of the distributor.
+
+This is not a const method since a reverse distributor might need to
+be created. This works like Clone, returning a new object the user
+must deallocate. ";
+
 %feature("docstring")  Epetra_Distributor::~Epetra_Distributor "virtual Epetra_Distributor::~Epetra_Distributor()
 
 Epetra_Distributor Destructor. ";
@@ -6189,6 +6560,11 @@ x_force of entries 2 and 3 on PEs 0 and 1, and entries 5 and 6 on PEs
 %feature("docstring")  Epetra_Export::Epetra_Export "Epetra_Export::Epetra_Export(const Epetra_Export &Exporter)
 
 Epetra_Export copy constructor. ";
+
+%feature("docstring")  Epetra_Export::Epetra_Export "Epetra_Export::Epetra_Export(const Epetra_Import &Exporter)
+
+Epetra_Export pseudo-copy constructor. Creates an Epetra_Export in the
+reverse direction of the Epetra_Import argument. ";
 
 %feature("docstring")  Epetra_Export::~Epetra_Export "Epetra_Export::~Epetra_Export(void)
 
@@ -7615,6 +7991,23 @@ Epetra_Flops Destructor.
 Completely deletes a Epetra_Flops object. ";
 
 
+// File: classEpetra__GIDTypeSerialDenseVector_3_01int_01_4.xml
+%feature("docstring") Epetra_GIDTypeSerialDenseVector< int > " ";
+
+
+// File: classEpetra__GIDTypeSerialDenseVector_3_01long_01long_01_4.xml
+%feature("docstring") Epetra_GIDTypeSerialDenseVector< long long > "
+";
+
+
+// File: classEpetra__GIDTypeVector_3_01int_01_4.xml
+%feature("docstring") Epetra_GIDTypeVector< int > " ";
+
+
+// File: classEpetra__GIDTypeVector_3_01long_01long_01_4.xml
+%feature("docstring") Epetra_GIDTypeVector< long long > " ";
+
+
 // File: classEpetra__HashTable.xml
 %feature("docstring") Epetra_HashTable "";
 
@@ -7789,9 +8182,42 @@ we can use the importer we constructed in the above example to do an
 export operation to y, adding the contributions that come from
 multiple processors. ";
 
+%feature("docstring")  Epetra_Import::Epetra_Import "Epetra_Import::Epetra_Import(const Epetra_BlockMap &TargetMap, const
+Epetra_BlockMap &SourceMap, int NumRemotePIDs, const int *RemotePIDs)
+
+Expert-only import constructor.
+
+The additional RemotePIDs argument should be filled with the owning
+PIDs (from the SourceMap) of the remote GIDs in the TargetMap. The
+normal Import constructor computes this for you with a call to
+RemoteIDList. However in some cases (MakeImportExport) we already have
+this information.
+
+WARNING: THIS METHOD IS FOR INTERNAL USE ONLY. USERS SHOULD NOT CALL
+THIS CONSTRUCTOR ";
+
+%feature("docstring")  Epetra_Import::Epetra_Import "Epetra_Import::Epetra_Import(const Epetra_BlockMap &TargetMap, const
+Epetra_BlockMap &SourceMap, int NumRemotePIDs, const int *RemotePIDs,
+const int &NumExportIDs, const int *ExportLIDs, const int *ExportPIDs)
+
+Expert-only import constructor.
+
+The RemotePIDs argument should be filled with the owning PIDs (from
+the SourceMap) of the remote GIDs in the TargetMap. The normal Import
+constructor computes this for you with a call to RemoteIDList. However
+in some cases (MakeImportExport) we already have this information. We
+also require information on the Export PIDs/GIDs so we can use the
+Distributor's CreateFromSendsAndReceives method. WARNING: THIS METHOD
+IS FOR INTERNAL USE ONLY. USERS SHOULD NOT CALL THIS CONSTRUCTOR ";
+
 %feature("docstring")  Epetra_Import::Epetra_Import "Epetra_Import::Epetra_Import(const Epetra_Import &Importer)
 
 Epetra_Import copy constructor. ";
+
+%feature("docstring")  Epetra_Import::Epetra_Import "Epetra_Import::Epetra_Import(const Epetra_Export &Exporter)
+
+Epetra_Import pseudo-copy constructor. Creates an Epetra_Import in the
+reverse direction of the Epetra_Export argument. ";
 
 %feature("docstring")  Epetra_Import::~Epetra_Import "Epetra_Import::~Epetra_Import(void)
 
@@ -10113,6 +10539,9 @@ Pointer to a Epetra_Map object. ";
 %feature("docstring")  Epetra_LocalMap::Epetra_LocalMap "Epetra_LocalMap::Epetra_LocalMap(long long NumMyElements, int
 IndexBase, const Epetra_Comm &Comm) ";
 
+%feature("docstring")  Epetra_LocalMap::Epetra_LocalMap "Epetra_LocalMap::Epetra_LocalMap(long long NumMyElements, long long
+IndexBase, const Epetra_Comm &Comm) ";
+
 %feature("docstring")  Epetra_LocalMap::Epetra_LocalMap "Epetra_LocalMap::Epetra_LocalMap(const Epetra_LocalMap &map)
 
 Epetra_LocalMap copy constructor. ";
@@ -10785,8 +11214,8 @@ Epetra_LongLongVector::MyLength() const
 Returns the local vector length on the calling processor of vectors in
 the multi-vector. ";
 
-%feature("docstring")  Epetra_LongLongVector::GlobalLength "long long
-Epetra_LongLongVector::GlobalLength() const
+%feature("docstring")  Epetra_LongLongVector::GlobalLength64 "long
+long Epetra_LongLongVector::GlobalLength64() const
 
 Returns the global vector length of vectors in the multi-vector. ";
 
@@ -10915,6 +11344,9 @@ Pointer to a Epetra_Map object. ";
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int IndexBase,
 const Epetra_Comm &Comm) ";
 
+%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, long long
+IndexBase, const Epetra_Comm &Comm) ";
+
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(int NumGlobalElements, int NumMyElements, int
 IndexBase, const Epetra_Comm &Comm)
 
@@ -10946,6 +11378,9 @@ Pointer to a Epetra_Map object. ";
 
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int NumMyElements,
 int IndexBase, const Epetra_Comm &Comm) ";
+
+%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int NumMyElements,
+long long IndexBase, const Epetra_Comm &Comm) ";
 
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(int NumGlobalElements, int NumMyElements, const
 int *MyGlobalElements, int IndexBase, const Epetra_Comm &Comm)
@@ -10988,6 +11423,25 @@ Pointer to a Epetra_Map object. ";
 const long long *MyGlobalElements, int IndexBase, const Epetra_Comm
 &Comm) ";
 
+%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int NumMyElements,
+const long long *MyGlobalElements, long long IndexBase, const
+Epetra_Comm &Comm) ";
+
+%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobal_Elements, int
+NumMy_Elements, const long long *myGlobalElements, int indexBase,
+const Epetra_Comm &comm, bool UserIsDistributedGlobal, long long
+UserMinAllGID, long long UserMaxAllGID)
+
+Epetra_Map constructor for a user-defined arbitrary distribution of
+elements, where the user provides all the globals.
+
+WARNING:  This method is intended for expert developer use only, and
+should never be called by user code. ";
+
+%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(int NumGlobal_Elements, int NumMy_Elements,
+const int *myGlobalElements, int indexBase, const Epetra_Comm &comm,
+bool UserIsDistributedGlobal, int UserMinAllGID, int UserMaxAllGID) ";
+
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(const Epetra_Map &map)
 
 Epetra_Map copy constructor. ";
@@ -10995,6 +11449,78 @@ Epetra_Map copy constructor. ";
 %feature("docstring")  Epetra_Map::~Epetra_Map "Epetra_Map::~Epetra_Map(void)
 
 Epetra_Map destructor. ";
+
+%feature("docstring")  Epetra_Map::RemoveEmptyProcesses "Epetra_Map *
+Epetra_Map::RemoveEmptyProcesses() const
+
+Return a new BlockMap with processes with zero elements removed.
+
+WARNING:  This method is only for expert users. Understanding how to
+use this method correctly requires some familiarity with semantics of
+MPI communicators.
+
+We make no promises of backwards compatibility for this method. It may
+go away or change at any time.  This method first computes a new
+communicator, which contains only those processes in this Map's
+communicator (the \"original communicator\") that have a nonzero
+number of elements in this BlockMap (the \"original BlockMap\"). It
+then returns a new BlockMap distributed over the new communicator. The
+new BlockMap represents the same distribution as the original
+BlockMap, except that processes containing zero elements are not
+included in the new BlockMap or its communicator. On processes not
+included in the new BlockMap or communicator, this method returns
+NULL.
+
+The returned BlockMap always has a distinct communicator from this
+BlockMap's original communicator. The new communicator contains a
+subset of processes from the original communicator. Even if the number
+of processes in the new communicator equals the number of processes in
+the original communicator, the new communicator is distinct. (In an
+MPI implementation, the new communicator is created using
+MPI_Comm_split.)
+
+This method must be called collectively on the original communicator.
+It leaves the original Map and communicator unchanged.
+
+This method was intended for applications such as algebraic multigrid
+or other multilevel preconditioners. Construction of each level of the
+multilevel preconditioner typically requires constructing sparse
+matrices, which in turn requires all-reduces over all participating
+processes at that level. Matrix sizes at successively coarser levels
+shrink geometrically. At the coarsest levels, some processes might be
+left with zero rows of the matrix, or the multigrid implementation
+might \"rebalance\" (redistribute the matrix) and intentionally leave
+some processes with zero rows. Removing processes with zero rows makes
+the all-reduces and other communication operations cheaper. ";
+
+%feature("docstring")  Epetra_Map::ReplaceCommWithSubset "Epetra_Map
+* Epetra_Map::ReplaceCommWithSubset(const Epetra_Comm *Comm) const
+
+Replace this Map's communicator with a subset communicator.
+
+WARNING:  This method is only for expert users. Understanding how to
+use this method correctly requires some familiarity with semantics of
+MPI communicators.
+
+We make no promises of backwards compatibility for this method. It may
+go away or change at any time.
+
+The input communicator's processes are a subset of this Map's current
+communicator's processes.
+
+On processes which are not included in the input communicator, the
+input communicator is null.  This method must be called collectively
+on the original communicator. It leaves the original BlockMap and
+communicator unchanged.
+
+This method differs from removeEmptyProcesses(), in that it does not
+assume that excluded processes have zero entries. For example, one
+might wish to remove empty processes from the row Map of a CrsGraph
+using removeEmptyProcesses(), and then apply the resulting subset
+communicator to the column, domain, and range Maps of the same graph.
+For the latter three Maps, one would in general use this method
+instead of removeEmptyProcesses(), giving the new row Map's
+communicator to this method. ";
 
 
 // File: classEpetra__MapColoring.xml
@@ -11301,6 +11827,28 @@ will receive a copy of Values. ";
 
 %feature("docstring")  Epetra_MpiComm::Broadcast "int
 Epetra_MpiComm::Broadcast(long *MyVals, int Count, int Root) const
+
+Epetra_MpiComm Broadcast function.
+
+Take list of input values from the root processor and sends to all
+other processors.
+
+Parameters:
+-----------
+
+Values:  InOut On entry, the root processor contains the list of
+values. On exit, all processors will have the same list of values.
+Note that values must be allocated on all processor before the
+broadcast.
+
+Count:  In On entry, contains the length of the list of Values.
+
+Root:  In On entry, contains the processor from which all processors
+will receive a copy of Values. ";
+
+%feature("docstring")  Epetra_MpiComm::Broadcast "int
+Epetra_MpiComm::Broadcast(long long *MyVals, int Count, int Root)
+const
 
 Epetra_MpiComm Broadcast function.
 
@@ -11883,6 +12431,14 @@ Copy constructor. ";
 
 Clone method. ";
 
+%feature("docstring")  Epetra_MpiDistributor::ReverseClone "Epetra_Distributor * Epetra_MpiDistributor::ReverseClone()
+
+Create and extract the reverse version of the distributor.
+
+This is not a const method since a reverse distributor might need to
+be created. This works like Clone, returning a new object the user
+must deallocate. ";
+
 %feature("docstring")  Epetra_MpiDistributor::~Epetra_MpiDistributor "Epetra_MpiDistributor::~Epetra_MpiDistributor()
 
 Destructor (declared virtual for memory safety). ";
@@ -11958,6 +12514,50 @@ responsible for deallocating them after use. ";
 Epetra_MpiDistributor::CreateFromRecvs(const int &NumRemoteIDs, const
 long long *RemoteGIDs, const int *RemotePIDs, bool Deterministic, int
 &NumExportIDs, long long *&ExportGIDs, int *&ExportPIDs) ";
+
+%feature("docstring")  Epetra_MpiDistributor::CreateFromSendsAndRecvs
+"int Epetra_MpiDistributor::CreateFromSendsAndRecvs(const int
+&NumExportIDs, const int *ExportPIDs, const int &NumRemoteIDs, const
+int *RemoteGIDs, const int *RemotePIDs, bool Deterministic)
+
+Create a communication plan from send list and a recv list.
+
+Given a list of process IDs to which to send the given number of data
+IDs, and a list of remote data IDs and corresponding process IDs from
+which to receive data, construct a communication plan for efficiently
+scattering data to these processes.
+
+Needless to say, knowing both of these at the same time is a pretty
+rare occurance. But if it happens, this routine will avoid a lot of
+communication that CreateFromSends or CreateFromRecvs would have to
+do.
+
+zero if this worked.
+
+Parameters:
+-----------
+
+NumExportIDs:  [in] Number of data IDs that need to be sent from the
+calling process.
+
+ExportPIDs:  [in] List of process IDs that will get the exported data
+IDs.
+
+NumRemoteIDs:  [in] Number of data IDs the calling process will be
+receiving.
+
+RemoteGIDs:  [in] List of data IDs that the calling process wants to
+receive.
+
+RemotePIDs:  [in] List of IDs of the processes that will send the
+remote data IDs to the calling process.
+
+Deterministic:  [in] Currently has no effect. ";
+
+%feature("docstring")  Epetra_MpiDistributor::CreateFromSendsAndRecvs
+"int Epetra_MpiDistributor::CreateFromSendsAndRecvs(const int
+&NumExportIDs, const int *ExportPIDs, const int &NumRemoteIDs, const
+long long *RemoteGIDs, const int *RemotePIDs, bool Deterministic) ";
 
 /*  Execute Gather/Scatter Operations  */
 
@@ -16058,6 +16658,27 @@ Root:  In On entry, contains the processor from which all processors
 will receive a copy of MyVals. ";
 
 %feature("docstring")  Epetra_SerialComm::Broadcast "int
+Epetra_SerialComm::Broadcast(long long *MyVals, int Count, int Root)
+const
+
+Epetra_SerialComm Broadcast function.
+
+A no-op for a serial communicator.
+
+Parameters:
+-----------
+
+MyVals:  InOut On entry, the root processor contains the list of
+values. On exit, all processors will have the same list of values.
+Note that values must be allocated on all processor before the
+broadcast.
+
+Count:  In On entry, contains the length of the list of MyVals.
+
+Root:  In On entry, contains the processor from which all processors
+will receive a copy of MyVals. ";
+
+%feature("docstring")  Epetra_SerialComm::Broadcast "int
 Epetra_SerialComm::Broadcast(char *MyVals, int Count, int Root) const
 
 Epetra_SerialComm Broadcast function.
@@ -18114,6 +18735,12 @@ Epetra_SerialDistributor Copy Constructor. ";
 %feature("docstring")  Epetra_SerialDistributor::Clone "Epetra_Distributor* Epetra_SerialDistributor::Clone()
 
 Clone method. ";
+
+%feature("docstring")  Epetra_SerialDistributor::ReverseClone "Epetra_Distributor* Epetra_SerialDistributor::ReverseClone()
+
+Create and extract the reverse version of the distributor.
+
+This is not implemented for SeriaDistributor. ";
 
 %feature("docstring")
 Epetra_SerialDistributor::~Epetra_SerialDistributor "Epetra_SerialDistributor::~Epetra_SerialDistributor()
@@ -20178,7 +20805,12 @@ This function returns the max over all processor of MaxNumNonzeros().
 %feature("docstring")  Epetra_VbrMatrix::IndexBase "int
 Epetra_VbrMatrix::IndexBase() const
 
-Returns the index base for row and column indices for this graph. ";
+Returns the index base for row and column indices for this graph.
+
+Index base for this map. ";
+
+%feature("docstring")  Epetra_VbrMatrix::IndexBase64 "long long
+Epetra_VbrMatrix::IndexBase64() const ";
 
 %feature("docstring")  Epetra_VbrMatrix::Graph "const
 Epetra_CrsGraph& Epetra_VbrMatrix::Graph() const
@@ -21215,6 +21847,165 @@ NumMyBlockRows, bool AllocSorted) ";
 // File: structEpetra__HashTable_1_1Node.xml
 
 
+// File: namespaceEpetra__Import__Util.xml
+%feature("docstring")
+Epetra_Import_Util::TPackAndPrepareWithOwningPIDs "int
+Epetra_Import_Util::TPackAndPrepareWithOwningPIDs(const
+Epetra_CrsMatrix &A, int NumExportIDs, int *ExportLIDs, int
+&LenExports, char *&Exports, int &SizeOfPacket, int *Sizes, bool
+&VarSizes, std::vector< int > &pids) ";
+
+%feature("docstring")
+Epetra_Import_Util::PackAndPrepareWithOwningPIDs "int
+Epetra_Import_Util::PackAndPrepareWithOwningPIDs(const
+Epetra_CrsMatrix &SourceMatrix, int NumExportIDs, int *ExportLIDs, int
+&LenExports, char *&Exports, int &SizeOfPacket, int *Sizes, bool
+&VarSizes, std::vector< int > &SourcePids)
+
+PackAndPrepareWithOwningPIDs.
+
+Note: The SourcePids vector should contain a list of owning PIDs for
+each column in the ColMap, as from Epetra_Util::GetPids, without the
+\"-1 for local\" option being used.
+
+WARNING:  This method is intended for expert developer use only, and
+should never be called by user code. ";
+
+%feature("docstring")  Epetra_Import_Util::TUnpackWithOwningPIDsCount
+"int Epetra_Import_Util::TUnpackWithOwningPIDsCount(const
+Epetra_CrsMatrix &SourceMatrix, int NumSameIDs, int NumRemoteIDs,
+const int *RemoteLIDs, int NumPermuteIDs, const int *PermuteToLIDs,
+const int *PermuteFromLIDs, int LenImports, char *Imports) ";
+
+%feature("docstring")  Epetra_Import_Util::UnpackWithOwningPIDsCount "int Epetra_Import_Util::UnpackWithOwningPIDsCount(const
+Epetra_CrsMatrix &SourceMatrix, int NumSameIDs, int NumRemoteIDs,
+const int *RemoteLIDs, int NumPermuteIDs, const int *PermuteToLIDs,
+const int *PermuteFromLIDs, int LenImports, char *Imports)
+
+UnpackWithOwningPIDsCount.
+
+Counts the number of non-zeros in the resulting matrix. Call this
+before UnpackAndCombineIntoCrsArrays.
+
+WARNING:  This method is intended for expert developer use only, and
+should never be called by user code. ";
+
+%feature("docstring")
+Epetra_Import_Util::TUnpackAndCombineIntoCrsArrays "int
+Epetra_Import_Util::TUnpackAndCombineIntoCrsArrays(const
+Epetra_CrsMatrix &SourceMatrix, int NumSameIDs, int NumRemoteIDs,
+const int *RemoteLIDs, int NumPermuteIDs, const int *PermuteToLIDs,
+const int *PermuteFromLIDs, int LenImports, char *Imports, int
+TargetNumRows, int TargetNumNonzeros, int *CSR_rowptr, int_type
+*CSR_colind, double *CSR_vals, const std::vector< int > &SourcePids,
+std::vector< int > &TargetPids) ";
+
+%feature("docstring")
+Epetra_Import_Util::UnpackAndCombineIntoCrsArrays "int
+Epetra_Import_Util::UnpackAndCombineIntoCrsArrays(const
+Epetra_CrsMatrix &SourceMatrix, int NumSameIDs, int NumRemoteIDs,
+const int *RemoteLIDs, int NumPermuteIDs, const int *PermuteToLIDs,
+const int *PermuteFromLIDs, int LenImports, char *Imports, int
+TargetNumRows, int TargetNumNonzeros, int *CSR_rowptr, int
+*CSR_colind, double *CSR_values, const std::vector< int > &SourcePids,
+std::vector< int > &TargetPids)
+
+UnpackAndCombineIntoCrsArrays.
+
+You should call UnpackWithOwningPIDsCount first and allocate all
+arrays accordingly.
+
+Note: The SourcePids vector (on input) should contain of owning PIDs
+for each column in the ColMap, as from Epetra_Util::GetPids, with the
+\"-1 for local\" option being used.
+
+Note: The TargetPids vector (on output) will contain of owning PIDs
+for each column in the ColMap, as from Epetra_Util::GetPids, with the
+\"-1 for local\" option being used.
+
+WARNING:  This method is intended for expert developer use only, and
+should never be called by user code. ";
+
+%feature("docstring")
+Epetra_Import_Util::UnpackAndCombineIntoCrsArrays "int
+Epetra_Import_Util::UnpackAndCombineIntoCrsArrays(const
+Epetra_CrsMatrix &SourceMatrix, int NumSameIDs, int NumRemoteIDs,
+const int *RemoteLIDs, int NumPermuteIDs, const int *PermuteToLIDs,
+const int *PermuteFromLIDs, int LenImports, char *Imports, int
+TargetNumRows, int TargetNumNonzeros, int *CSR_rowptr, long long
+*CSR_colind, double *CSR_values, const std::vector< int > &SourcePids,
+std::vector< int > &TargetPids)
+
+UnpackAndCombineIntoCrsArrays.
+
+You should call UnpackWithOwningPIDsCount first and allocate all
+arrays accordingly.
+
+Note: The SourcePids vector (on input) should contain of owning PIDs
+for each column in the ColMap, as from Epetra_Util::GetPids, with the
+\"-1 for local\" option being used.
+
+Note: The TargetPids vector (on output) will contain of owning PIDs
+for each column in the ColMap, as from Epetra_Util::GetPids, with the
+\"-1 for local\" option being used.
+
+WARNING:  This method is intended for expert developer use only, and
+should never be called by user code. ";
+
+%feature("docstring")
+Epetra_Import_Util::TLowCommunicationMakeColMapAndReindex "int
+Epetra_Import_Util::TLowCommunicationMakeColMapAndReindex(int N, const
+int *rowptr, int *colind_LID, const int_type *colind_GID, const
+Epetra_Map &domainMap, const int *owningPIDs, bool
+SortGhostsAssociatedWithEachProcessor, std::vector< int > &RemotePIDs,
+MapType1 &NewColMap) ";
+
+%feature("docstring")
+Epetra_Import_Util::LowCommunicationMakeColMapAndReindex "int
+Epetra_Import_Util::LowCommunicationMakeColMapAndReindex(int N, const
+int *rowptr, int *colind, const Epetra_Map &domainMap, const int
+*owningPIDs, bool SortGhostsAssociatedWithEachProcessor, std::vector<
+int > &RemotePIDs, Epetra_BlockMap &NewColMap)
+
+LowCommunicationMakeColMapAndReindex.
+
+If you know the owning PIDs already, you can make the colmap a lot
+less expensively.
+
+Note: The owningPids vector (on input) should contain of owning PIDs
+for each column in the ColMap, as from Epetra_Util::GetPids, with the
+\"-1 for local\" can be used, or not, here.
+
+Note: This method will return a std::vector of the RemotePIDs, used
+for construction of the importer.
+
+WARNING:  This method is intended for expert developer use only, and
+should never be called by user code. ";
+
+%feature("docstring")
+Epetra_Import_Util::LowCommunicationMakeColMapAndReindex "int
+Epetra_Import_Util::LowCommunicationMakeColMapAndReindex(int N, const
+int *rowptr, int *colind_LID, long long *colind_GID, const Epetra_Map
+&domainMap, const int *owningPIDs, bool
+SortGhostsAssociatedWithEachProcessor, std::vector< int > &RemotePIDs,
+Epetra_BlockMap &NewColMap)
+
+LowCommunicationMakeColMapAndReindex.
+
+If you know the owning PIDs already, you can make the colmap a lot
+less expensively.
+
+Note: The owningPids vector (on input) should contain of owning PIDs
+for each column in the ColMap, as from Epetra_Util::GetPids, with the
+\"-1 for local\" can be used, or not, here.
+
+Note: This method will return a std::vector of the RemotePIDs, used
+for construction of the importer.
+
+WARNING:  This method is intended for expert developer use only, and
+should never be called by user code. ";
+
+
 // File: Epetra__BasicDirectory_8cpp.xml
 
 
@@ -21426,16 +22217,16 @@ EPETRA_OBJECT_REF comm) ";
 
 %feature("docstring")  epetra_map_create1_64 "EPETRA_OBJECT_PTR
 MANGLE() epetra_map_create1_64(EPETRA_LONG_LONG numGlobalElements,
-EPETRA_INT indexBase, EPETRA_OBJECT_REF comm) ";
+EPETRA_LONG_LONG indexBase, EPETRA_OBJECT_REF comm) ";
 
 %feature("docstring")  epetra_map_create2_64 "EPETRA_OBJECT_PTR
 MANGLE() epetra_map_create2_64(EPETRA_LONG_LONG numGlobalElements,
-EPETRA_INT numMyElements, EPETRA_INT indexBase, EPETRA_OBJECT_REF
-comm) ";
+EPETRA_INT numMyElements, EPETRA_LONG_LONG indexBase,
+EPETRA_OBJECT_REF comm) ";
 
 %feature("docstring")  epetra_map_create3_64 "EPETRA_OBJECT_PTR
 MANGLE() epetra_map_create3_64(EPETRA_LONG_LONG numGlobalElements,
-EPETRA_INT numLocalElements, long long *updateList, EPETRA_INT
+EPETRA_INT numLocalElements, long long *updateList, EPETRA_LONG_LONG
 indexBase, EPETRA_OBJECT_REF comm) ";
 
 %feature("docstring")  epetra_map_nummyelements "int MANGLE()
@@ -21524,7 +22315,7 @@ EPETRA_OBJECT_REF comm) ";
 
 %feature("docstring")  epetra_map_create1_64 "EPETRA_OBJECT_PTR
 MANGLE() epetra_map_create1_64(EPETRA_LONG_LONG numGlobalEquations,
-EPETRA_INT indexBase, EPETRA_OBJECT_REF comm) ";
+EPETRA_LONG_LONG indexBase, EPETRA_OBJECT_REF comm) ";
 
 %feature("docstring")  epetra_map_create2_64 "EPETRA_OBJECT_PTR
 MANGLE() epetra_map_create2_64(EPETRA_LONG_LONG numGlobalEquations,
@@ -21699,6 +22490,12 @@ epetra_crsgraph_compress_out_duplicates(int len, int *list, int
 // File: Epetra__Fortran__wrappers_8h.xml
 
 
+// File: Epetra__GIDTypeSerialDenseVector_8h.xml
+
+
+// File: Epetra__GIDTypeVector_8h.xml
+
+
 // File: Epetra__HashTable_8h.xml
 
 
@@ -21706,6 +22503,12 @@ epetra_crsgraph_compress_out_duplicates(int len, int *list, int
 
 
 // File: Epetra__Import_8h.xml
+
+
+// File: Epetra__Import__Util_8cpp.xml
+
+
+// File: Epetra__Import__Util_8h.xml
 
 
 // File: Epetra__IntSerialDenseMatrix_8cpp.xml
@@ -22418,6 +23221,40 @@ Epetra_Util_binary_search(int item, const int *list, int len, int
 Epetra_Util_binary_search(long long item, const long long *list, int
 len, int &insertPoint) ";
 
+%feature("docstring")  Epetra_Util_binary_search_aux "int
+Epetra_Util_binary_search_aux(T item, const int *list, const T
+*aux_list, int len, int &insertPoint)
+
+Utility function to perform a binary-search on a list of data.
+Important assumption: data is assumed to be sorted.
+
+Parameters:
+-----------
+
+item:  to be searched for
+
+list:  to be searched in
+
+aux_list:
+
+len:  Length of list
+
+insertPoint:  Input/Output. If item is found, insertPoint is not
+referenced. If item is not found, insertPoint is set to the offset at
+which item should be inserted in list such that order (sortedness)
+would be maintained.
+
+offset Location in list at which aux_list[list[i]] item was found. -1
+if not found. ";
+
+%feature("docstring")  Epetra_Util_binary_search_aux "int
+Epetra_Util_binary_search_aux(int item, const int *list, const int
+*aux_list, int len, int &insertPoint) ";
+
+%feature("docstring")  Epetra_Util_binary_search_aux "int
+Epetra_Util_binary_search_aux(long long item, const int *list, const
+long long *aux_list, int len, int &insertPoint) ";
+
 %feature("docstring")  Epetra_Util_ExtractHbData "int
 Epetra_Util_ExtractHbData(Epetra_CrsMatrix *A, Epetra_MultiVector
 *LHS, Epetra_MultiVector *RHS, int &M, int &N, int &nz, int *&ptr, int
@@ -22503,6 +23340,39 @@ int *list, int len, int &insertPoint) ";
 
 %feature("docstring")  Epetra_Util_binary_search "EPETRA_LIB_DLL_EXPORT int Epetra_Util_binary_search(long long item,
 const long long *list, int len, int &insertPoint) ";
+
+%feature("docstring")  Epetra_Util_binary_search_aux "int
+Epetra_Util_binary_search_aux(T item, const int *list, const T
+*aux_list, int len, int &insertPoint)
+
+Utility function to perform a binary-search on a list of data.
+Important assumption: data is assumed to be sorted.
+
+Parameters:
+-----------
+
+item:  to be searched for
+
+list:  to be searched in
+
+aux_list:
+
+len:  Length of list
+
+insertPoint:  Input/Output. If item is found, insertPoint is not
+referenced. If item is not found, insertPoint is set to the offset at
+which item should be inserted in list such that order (sortedness)
+would be maintained.
+
+offset Location in list at which aux_list[list[i]] item was found. -1
+if not found. ";
+
+%feature("docstring")  Epetra_Util_binary_search_aux "EPETRA_LIB_DLL_EXPORT int Epetra_Util_binary_search_aux(int item,
+const int *list, const int *aux_list, int len, int &insertPoint) ";
+
+%feature("docstring")  Epetra_Util_binary_search_aux "EPETRA_LIB_DLL_EXPORT int Epetra_Util_binary_search_aux(long long
+item, const int *list, const long long *aux_list, int len, int
+&insertPoint) ";
 
 %feature("docstring")  Epetra_Util_insert_empty_positions "int
 Epetra_Util_insert_empty_positions(T *&array, int &usedLength, int
@@ -22613,8 +23483,8 @@ ldrhs:  (Out) Stride between columns of lhs. ";
 %feature("docstring")  Epetra_Version "string Epetra_Version() ";
 
 
-// File: dir_233cfbe96499141f251547db95e4fda3.xml
+// File: dir_c28b042a2418d35caaaa6464579dc35b.xml
 
 
-// File: dir_29eb5d4e506afeb59b852f05b8c1a238.xml
+// File: dir_f6851ea359105c1d53a5a9f371acdf87.xml
 

@@ -3623,6 +3623,9 @@ Galeri::toString(const int &x) ";
 Galeri::toString(const unsigned int &x) ";
 
 %feature("docstring")  Galeri::FiniteElements::toString "string
+Galeri::toString(const long int &x) ";
+
+%feature("docstring")  Galeri::FiniteElements::toString "string
 Galeri::toString(const double &x) ";
 
 %feature("docstring")
@@ -4019,17 +4022,17 @@ Galeri::Matrices::Vander(const Epetra_Map *Map, const double value) ";
 // File: ml_MLAPI.xml
 
 
-// File: dir_83c6dce543ad695bb9704f6bf70daa7f.xml
+// File: dir_7a67d7719be9289505a330b66ee41094.xml
 
 
-// File: dir_da9a02cbd345ffddae58604b9dfe1707.xml
+// File: dir_f456f4d6927b4443a0cca4b7420c5255.xml
 
 
-// File: dir_3e4054923dec99bc1d6b48fcf5433e95.xml
+// File: dir_c0765b827d87ecb7998b5c7ce35ee884.xml
 
 
-// File: dir_467b95ce87aa0ef5cd28c6f7bf50ec25.xml
+// File: dir_ef45ee3b2458b155b5a8cba8e1268ef1.xml
 
 
-// File: dir_ffaff38ab9f6978c2d165634937e41a3.xml
+// File: dir_6dcc33419093b15ca44aab5243024532.xml
 

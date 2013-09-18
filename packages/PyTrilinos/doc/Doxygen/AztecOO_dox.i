@@ -445,8 +445,8 @@ Set all Aztec parameter values using an existing Aztec params array.
 
 /*  Standard AztecOO solve methods.  */
 
-%feature("docstring")  AztecOO::Iterate "int AztecOO::Iterate(int
-MaxIters, double Tolerance)
+%feature("docstring")  AztecOO::Iterate "int AztecOO::Iterate(long
+long MaxIters, double Tolerance)
 
 AztecOO iteration function.
 
@@ -1485,8 +1485,8 @@ Epetra matrices passed in by AztecOO. ";
 %feature("docstring")  AztecOO_Version "string AztecOO_Version() ";
 
 
-// File: dir_7894d9566ccc3a34f56a76d817e62719.xml
+// File: dir_8a35d7d0f4500f63bcc3479cc90948e9.xml
 
 
-// File: dir_d2a30b9de7594b3f8f120c191973da80.xml
+// File: dir_f73bf658f7ba1b95ecfd512f6602dd00.xml
 

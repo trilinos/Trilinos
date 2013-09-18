@@ -503,6 +503,68 @@ EpetraExt::Exception::Print() ";
 "virtual EpetraExt::InPlaceTransform< T >::~InPlaceTransform() ";
 
 
+// File: classEpetraExt_1_1LightweightCrsMatrix.xml
+%feature("docstring") EpetraExt::LightweightCrsMatrix "";
+
+%feature("docstring")
+EpetraExt::LightweightCrsMatrix::LightweightCrsMatrix "EpetraExt::LightweightCrsMatrix::LightweightCrsMatrix(const
+Epetra_CrsMatrix &A, RemoteOnlyImport &RowImporter) ";
+
+%feature("docstring")
+EpetraExt::LightweightCrsMatrix::LightweightCrsMatrix "EpetraExt::LightweightCrsMatrix::LightweightCrsMatrix(const
+Epetra_CrsMatrix &A, Epetra_Import &RowImporter) ";
+
+%feature("docstring")
+EpetraExt::LightweightCrsMatrix::~LightweightCrsMatrix "EpetraExt::LightweightCrsMatrix::~LightweightCrsMatrix() ";
+
+
+// File: classEpetraExt_1_1LightweightMap.xml
+%feature("docstring") EpetraExt::LightweightMap "";
+
+%feature("docstring")  EpetraExt::LightweightMap::LightweightMap "EpetraExt::LightweightMap::LightweightMap() ";
+
+%feature("docstring")  EpetraExt::LightweightMap::LightweightMap "EpetraExt::LightweightMap::LightweightMap(int NumGlobalElements, int
+NumMyElements, const int *MyGlobalElements, int IndexBase, bool
+GenerateHash=true) ";
+
+%feature("docstring")  EpetraExt::LightweightMap::LightweightMap "EpetraExt::LightweightMap::LightweightMap(const Epetra_Map &Map) ";
+
+%feature("docstring")  EpetraExt::LightweightMap::LightweightMap "EpetraExt::LightweightMap::LightweightMap(const LightweightMap &Map)
+";
+
+%feature("docstring")  EpetraExt::LightweightMap::~LightweightMap "EpetraExt::LightweightMap::~LightweightMap() ";
+
+%feature("docstring")  EpetraExt::LightweightMap::LID "int
+EpetraExt::LightweightMap::LID(int GID) const ";
+
+%feature("docstring")  EpetraExt::LightweightMap::GID "int
+EpetraExt::LightweightMap::GID(int LID) const ";
+
+%feature("docstring")  EpetraExt::LightweightMap::NumMyElements "int
+EpetraExt::LightweightMap::NumMyElements() const ";
+
+%feature("docstring")  EpetraExt::LightweightMap::MyGlobalElements "int * EpetraExt::LightweightMap::MyGlobalElements() const ";
+
+%feature("docstring")  EpetraExt::LightweightMap::IndexBase "int
+EpetraExt::LightweightMap::IndexBase() const ";
+
+%feature("docstring")  EpetraExt::LightweightMap::MinLID "int
+EpetraExt::LightweightMap::MinLID() const ";
+
+%feature("docstring")  EpetraExt::LightweightMap::MaxLID "int
+EpetraExt::LightweightMap::MaxLID() const ";
+
+
+// File: classEpetraExt_1_1LightweightMapData.xml
+%feature("docstring") EpetraExt::LightweightMapData "";
+
+%feature("docstring")
+EpetraExt::LightweightMapData::LightweightMapData "EpetraExt::LightweightMapData::LightweightMapData() ";
+
+%feature("docstring")
+EpetraExt::LightweightMapData::~LightweightMapData "EpetraExt::LightweightMapData::~LightweightMapData() ";
+
+
 // File: classEpetraExt_1_1LinearProblem__CrsSingletonFilter.xml
 %feature("docstring") EpetraExt::LinearProblem_CrsSingletonFilter "
 
@@ -1422,6 +1484,51 @@ const ";
 const ";
 
 
+// File: classEpetraExt_1_1RemoteOnlyImport.xml
+%feature("docstring") EpetraExt::RemoteOnlyImport "";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::RemoteOnlyImport "EpetraExt::RemoteOnlyImport::RemoteOnlyImport(const Epetra_Import
+&Importer, LightweightMap &RemoteOnlyTargetMap) ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::~RemoteOnlyImport
+"EpetraExt::RemoteOnlyImport::~RemoteOnlyImport() ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::NumSameIDs "int
+EpetraExt::RemoteOnlyImport::NumSameIDs() ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::NumPermuteIDs "int EpetraExt::RemoteOnlyImport::NumPermuteIDs() ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::NumRemoteIDs "int
+EpetraExt::RemoteOnlyImport::NumRemoteIDs() ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::NumExportIDs "int
+EpetraExt::RemoteOnlyImport::NumExportIDs() ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::ExportLIDs "int*
+EpetraExt::RemoteOnlyImport::ExportLIDs() ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::ExportPIDs "int*
+EpetraExt::RemoteOnlyImport::ExportPIDs() ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::RemoteLIDs "int*
+EpetraExt::RemoteOnlyImport::RemoteLIDs() ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::PermuteToLIDs "int* EpetraExt::RemoteOnlyImport::PermuteToLIDs() ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::PermuteFromLIDs "int* EpetraExt::RemoteOnlyImport::PermuteFromLIDs() ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::NumSend "int
+EpetraExt::RemoteOnlyImport::NumSend() ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::Distributor "Epetra_Distributor& EpetraExt::RemoteOnlyImport::Distributor() ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::SourceMap "const
+Epetra_BlockMap& EpetraExt::RemoteOnlyImport::SourceMap() const ";
+
+%feature("docstring")  EpetraExt::RemoteOnlyImport::TargetMap "const
+LightweightMap& EpetraExt::RemoteOnlyImport::TargetMap() const ";
+
+
 // File: classEpetraExt_1_1RowMatrix__Transpose.xml
 %feature("docstring") EpetraExt::RowMatrix_Transpose "
 
@@ -1435,17 +1542,13 @@ EpetraExt::RowMatrix_Transpose::~RowMatrix_Transpose "EpetraExt::RowMatrix_Trans
 Destructor. ";
 
 %feature("docstring")
-EpetraExt::RowMatrix_Transpose::RowMatrix_Transpose "EpetraExt::RowMatrix_Transpose::RowMatrix_Transpose(bool
-MakeDataContiguous=false, Epetra_Map *TransposeRowMap=0, bool
-IgnoreNonLocalCols=false)
+EpetraExt::RowMatrix_Transpose::RowMatrix_Transpose "EpetraExt::RowMatrix_Transpose::RowMatrix_Transpose(Epetra_Map
+*TransposeRowMap=0, bool IgnoreNonLocalCols=false)
 
 Constructor.
 
 Parameters:
 -----------
-
-In:  MakeDataContiguous - Whether to optimize form of matrix to be
-contiguous data storage.
 
 In:  TransposeRowMap - Map to be used for row mapping of transpose
 matrix
@@ -1462,6 +1565,13 @@ Foward Data Migration. ";
 EpetraExt::RowMatrix_Transpose::rvs()
 
 Reverse Data Migration. ";
+
+%feature("docstring")
+EpetraExt::RowMatrix_Transpose::ReleaseTranspose "void
+EpetraExt::RowMatrix_Transpose::ReleaseTranspose()
+
+Release the pointer to TransposeMatrix_ (so you can take the matrix
+out w/o worring about deallocation) ";
 
 
 // File: classEpetraExt_1_1SameTypeTransform.xml
@@ -1877,10 +1987,6 @@ Method for internal use... sparsedot forms a dot-product between two
 sparsely-populated 'vectors'. Important assumption: assumes the
 indices in u_ind and v_ind are sorted. ";
 
-%feature("docstring")  EpetraExt::mult_A_B "int
-EpetraExt::mult_A_B(CrsMatrixStruct &Aview, CrsMatrixStruct &Bview,
-CrsWrapper &C) ";
-
 %feature("docstring")  EpetraExt::mult_A_Btrans "int
 EpetraExt::mult_A_Btrans(CrsMatrixStruct &Aview, CrsMatrixStruct
 &Bview, CrsWrapper &C) ";
@@ -1895,7 +2001,13 @@ EpetraExt::mult_Atrans_Btrans(CrsMatrixStruct &Aview, CrsMatrixStruct
 
 %feature("docstring")  EpetraExt::import_and_extract_views "int
 EpetraExt::import_and_extract_views(const Epetra_CrsMatrix &M, const
-Epetra_Map &targetMap, CrsMatrixStruct &Mview) ";
+Epetra_Map &targetMap, CrsMatrixStruct &Mview, const Epetra_Import
+*prototypeImporter=0) ";
+
+%feature("docstring")  EpetraExt::import_only "int
+EpetraExt::import_only(const Epetra_CrsMatrix &M, const Epetra_Map
+&targetMap, CrsMatrixStruct &Mview, const Epetra_Import
+*prototypeImporter=0) ";
 
 %feature("docstring")  EpetraExt::form_map_union "int
 EpetraExt::form_map_union(const Epetra_Map *map1, const Epetra_Map
@@ -1903,6 +2015,39 @@ EpetraExt::form_map_union(const Epetra_Map *map1, const Epetra_Map
 
 %feature("docstring")  EpetraExt::find_rows_containing_cols "Epetra_Map* EpetraExt::find_rows_containing_cols(const
 Epetra_CrsMatrix &M, const Epetra_Map &column_map) ";
+
+%feature("docstring")  EpetraExt::C_estimate_nnz "static int
+EpetraExt::C_estimate_nnz(const Epetra_CrsMatrix &A, const
+Epetra_CrsMatrix &B) ";
+
+%feature("docstring")  EpetraExt::auto_resize "static int
+EpetraExt::auto_resize(std::vector< int > &x, int num_new) ";
+
+%feature("docstring")  EpetraExt::aztecoo_and_ml_compatible_map_union
+"int EpetraExt::aztecoo_and_ml_compatible_map_union(const
+Epetra_CrsMatrix &B, const LightweightCrsMatrix &Bimport, Epetra_Map
+*&unionmap, std::vector< int > &Cremotepids, std::vector< int >
+&Bcols2Ccols, std::vector< int > &Icols2Ccols) ";
+
+%feature("docstring")  EpetraExt::resize_doubles "void
+EpetraExt::resize_doubles(int nold, int nnew, double *&d) ";
+
+%feature("docstring")  EpetraExt::mult_A_B_newmatrix "int
+EpetraExt::mult_A_B_newmatrix(const Epetra_CrsMatrix &A, const
+Epetra_CrsMatrix &B, CrsMatrixStruct &Bview, std::vector< int >
+&Bcol2Ccol, std::vector< int > &Bimportcol2Ccol, std::vector< int >
+&Cremotepids, Epetra_CrsMatrix &C) ";
+
+%feature("docstring")  EpetraExt::mult_A_B_reuse "int
+EpetraExt::mult_A_B_reuse(const Epetra_CrsMatrix &A, const
+Epetra_CrsMatrix &B, CrsMatrixStruct &Bview, std::vector< int >
+&Bcol2Ccol, std::vector< int > &Bimportcol2Ccol, Epetra_CrsMatrix &C)
+";
+
+%feature("docstring")  EpetraExt::mult_A_B_general "int
+EpetraExt::mult_A_B_general(const Epetra_CrsMatrix &A, CrsMatrixStruct
+&Aview, const Epetra_CrsMatrix &B, CrsMatrixStruct &Bview,
+Epetra_CrsMatrix &C, bool call_FillComplete_on_result) ";
 
 %feature("docstring")  EpetraExt::dumpCrsMatrixStruct "int
 EpetraExt::dumpCrsMatrixStruct(const CrsMatrixStruct &M) ";
@@ -1917,10 +2062,29 @@ std::vector< int > &proc_col_ranges, std::vector< int > &send_rows,
 std::vector< int > &rows_per_send_proc) ";
 
 %feature("docstring")  EpetraExt::get_col_range "std::pair< int, int
+> EpetraExt::get_col_range(const Epetra_Map &emap) ";
+
+%feature("docstring")  EpetraExt::get_col_range "std::pair< int, int
 > EpetraExt::get_col_range(const Epetra_CrsMatrix &mtx) ";
 
-%feature("docstring")  EpetraExt::get_col_range "std::pair<int,int>
-EpetraExt::get_col_range(const Epetra_Map &emap) ";
+%feature("docstring")  EpetraExt::lessthan12 "static bool
+EpetraExt::lessthan12(std::pair< int, int > i, std::pair< int, int >
+j) ";
+
+%feature("docstring")  EpetraExt::build_type3_exports "int
+EpetraExt::build_type3_exports(int MyPID, int Nrecv, Epetra_BlockMap
+&DomainMap, std::vector< int > &ReverseRecvSizes, const int
+*ReverseRecvBuffer, std::vector< int > &ExportLID3, std::vector< int >
+&ExportPID3) ";
+
+%feature("docstring")  EpetraExt::build_type2_exports "int
+EpetraExt::build_type2_exports(const Epetra_CrsMatrix &SourceMatrix,
+ImportType &MyImporter, std::vector< int > &ExportLID2, std::vector<
+int > &ExportPID2) ";
+
+%feature("docstring")  EpetraExt::build_type1_exports "int
+EpetraExt::build_type1_exports(const Epetra_Import *Importer1,
+std::vector< int > &ExportLID1, std::vector< int > &ExportPID1) ";
 
 %feature("docstring")  EpetraExt::EpetraExt_Version "std::string
 EpetraExt::EpetraExt_Version() ";
@@ -3167,6 +3331,9 @@ EpetraExt::ceil31log2(int n) ";
 // File: EpetraExt__MatrixMatrix_8h.xml
 
 
+// File: EpetraExt__MatrixMatrix__mult__A__B_8cpp.xml
+
+
 // File: EpetraExt__MMHelpers_8cpp.xml
 
 
@@ -3362,17 +3529,17 @@ std::string &delimiters=\" \") ";
 // File: EpetraExt__XMLWriter_8h.xml
 
 
-// File: dir_11c281d317fac26a80734cfdf01c3276.xml
+// File: dir_cb80c121f24c70c7a4b561f595ba9927.xml
 
 
-// File: dir_390ceb73d984add9550a91a5a05c10bc.xml
+// File: dir_85711abe00875279a70c57be3659607b.xml
 
 
-// File: dir_df40b4453a44ce93def4751f410362de.xml
+// File: dir_3f29d24c85b760a56f30077e8701749c.xml
 
 
-// File: dir_1446c85883e8456091748f28f5dc619d.xml
+// File: dir_02075efc9fc9886485969955af469447.xml
 
 
-// File: dir_7af1f200b770e582760f7ec5a7e1d7c3.xml
+// File: dir_1ae696161bbe420c2d19609da368ed95.xml
 

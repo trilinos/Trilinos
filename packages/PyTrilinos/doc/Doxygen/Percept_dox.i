@@ -560,8 +560,8 @@ stk::percept::ComputeFieldValues::get_fieldValues(const
 stk::mesh::Entity &element, MDArray &transformed_basis_values,
 mesh::FieldBase *field, MDArray &output_field_values)
 
-NOTE: this is needed since FunctionSpaceTools::evaluate method assumes
-the output array is initialized to 0 ";
+NOTE: this is needed since Intrepid::FunctionSpaceTools::evaluate
+method assumes the output array is initialized to 0 ";
 
 
 // File: classstk_1_1percept_1_1ConstantFunction.xml
@@ -3876,6 +3876,10 @@ stk::adapt::Refiner::setAlwaysInitializeNodeRegistry(bool do_init) ";
 %feature("docstring")
 stk::adapt::Refiner::getAlwaysInitializeNodeRegistry "bool
 stk::adapt::Refiner::getAlwaysInitializeNodeRegistry() ";
+
+%feature("docstring")  stk::adapt::Refiner::snapAndSmooth "void
+stk::adapt::Refiner::snapAndSmooth(bool geomSnap, std::string
+geomFile) ";
 
 %feature("docstring")  stk::adapt::Refiner::deleteParentElements "void stk::adapt::Refiner::deleteParentElements()
 
@@ -12327,88 +12331,88 @@ char **argv) ";
 // File: deprecated.xml
 
 
-// File: dir_11f034dd7735221cdf627bf79f3072dc.xml
+// File: dir_d92ff505098abaafff1c638d1bbbae3d.xml
 
 
-// File: dir_3650b8648b98b754fdec60c37bf0dc95.xml
+// File: dir_bd51fcfc8d4b130b1ce998156a6d310e.xml
 
 
-// File: dir_972ece956570245404e1b799a1859c28.xml
+// File: dir_4d6130a78c2be336119916ce61299c0f.xml
 
 
-// File: dir_88a03661e184aeb19be31dcbf2058403.xml
+// File: dir_4f27867b4328da017adfbab5c9592d61.xml
 
 
-// File: dir_86d9755b1d9028ac71e5cc1c36f168f1.xml
+// File: dir_0c96c831014f4800848ef5c164474c9b.xml
 
 
-// File: dir_954e47fdee18c4918c689d29195f8395.xml
+// File: dir_0ff9ffb57049b7b204e917c311bf8273.xml
 
 
-// File: dir_0941ebabbc452a1d3783e7c2234b0985.xml
+// File: dir_aabbf6c57ebee80c07a51d536f8c6ee4.xml
 
 
-// File: dir_a25ddaaa64c8aa19203fd4d33d0c2425.xml
+// File: dir_f166736e6f71fc44a4c4af803219fd1c.xml
 
 
-// File: dir_afc3b0b0577b2468d37f97703cc327d8.xml
+// File: dir_16a028baa4767fc6a626da42123bc1b3.xml
 
 
-// File: dir_0e473d907fbca9a6ade6d6c3de8bdff8.xml
+// File: dir_adec5b2459395adae43029ce3f56a051.xml
 
 
-// File: dir_19d3ce17e8f9e372363f2114f3dbcd20.xml
+// File: dir_f3dec63ad7dcd1cd7bc564a9d07a8419.xml
 
 
-// File: dir_cdeef988af37fd61781324a92413ec46.xml
+// File: dir_c7b7b29d09dbcfefa1267dd1e486a902.xml
 
 
-// File: dir_ce4d385d7da70846972fe7d1116aeaa9.xml
+// File: dir_76d2623cc50095218e5c58620b1fe301.xml
 
 
-// File: dir_0831f8d588f2754b86cefbbc7533e6cb.xml
+// File: dir_2ea365ca5e68145e28b60258875c7b5c.xml
 
 
-// File: dir_2721ee84a542daf599cbb9e5a489547b.xml
+// File: dir_4d7600bb77c4274622a2860ebd298a21.xml
 
 
-// File: dir_d3157ce94e39b061aa74600e8e4e431d.xml
+// File: dir_a62182feb1f1a2ba615e2f671f9c9926.xml
 
 
-// File: dir_0defabeaccbd07bbd140d268e2f41fd9.xml
+// File: dir_112cb1a48eb91eaec5f7f90d9b3eaa80.xml
 
 
-// File: dir_939612a4f550c6384b6f75b967919c63.xml
+// File: dir_e860e2eb9fc923930bd00dc8e13f5cb7.xml
 
 
-// File: dir_32031a3b22d1ae4e8f376ff6a496f3d0.xml
+// File: dir_141725522269e17694b70dd4ee4d77cd.xml
 
 
-// File: dir_dc90e54d5d10f796f8c92cc919e361bc.xml
+// File: dir_b58c6b5c56d14040c20e8b4d9f96fc65.xml
 
 
-// File: dir_4467ffbefb08b7ba3cf95a1b2f780234.xml
+// File: dir_4a1360e2e3c3d89b3a6942d2084566aa.xml
 
 
-// File: dir_6f07f491ab744074018df0847278a6ff.xml
+// File: dir_9b2a6426752a5ae5e3ecf8dc5c003873.xml
 
 
-// File: dir_634d56cc0e1f94b03ae0bd7693bf304d.xml
+// File: dir_df84c86fc447eee1ce5fc22cbe038e9a.xml
 
 
-// File: dir_aa698353c03beac8eec839f77dbd7cfc.xml
+// File: dir_8fffc3d25d823de15ade6753c28258de.xml
 
 
-// File: dir_c2e4336b4d72311dc5d317b35195bcbf.xml
+// File: dir_2bae049dd285a67e4a85487d8cad0b04.xml
 
 
-// File: dir_88e797595a8ec3f773d78a2377cad2f2.xml
+// File: dir_f4eab07bd3ba21401803fc34800a7498.xml
 
 
-// File: dir_abab4e79a7a8ddb45125c4bf4e64cebe.xml
+// File: dir_cde10f829d7431a2018904c6bea11a01.xml
 
 
-// File: dir_19fbb4666aa3fd0c5547b10975f59150.xml
+// File: dir_8a0fb271172002653995cfee38d1dc20.xml
 
 
 // File: indexpage.xml
