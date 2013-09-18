@@ -616,7 +616,14 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_1DFEM, AndersonAcceleration_IfpackPrec)
   NOX::StatusTest::StatusType solvStatus = solver->solve();
 
   TEST_ASSERT(solvStatus == NOX::StatusTest::Converged);
-  TEST_EQUALITY(solver->getNumIterations(),15);
+
+  // Ifpack preconditioning affects convergence!
+  if (Comm.NumProc() == 1) {
+    TEST_EQUALITY(solver->getNumIterations(),5);
+  }
+  else if (Comm.NumProc() == 4) {
+    TEST_EQUALITY(solver->getNumIterations(),15);
+  }
 
   Teuchos::TimeMonitor::summarize();
 }
