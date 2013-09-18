@@ -67,7 +67,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy()
-    : maxCoarseSize_(50), implicitTranspose_(false), isPreconditioner_(true), isDumpingEnabled_(false), dumpLevel_(-1)
+    : maxCoarseSize_(50), implicitTranspose_(false), isPreconditioner_(true), lib_(Xpetra::UseTpetra), isDumpingEnabled_(false), dumpLevel_(-1)
   {
     AddLevel(rcp( new Level() ));
   }
@@ -156,6 +156,7 @@ namespace MueLu {
   // Coherence checks todo in Setup() (using an helper function):
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CheckLevel(Level& level, int levelID) {
+    TEUCHOS_TEST_FOR_EXCEPTION(level.lib() != lib_, Exceptions::RuntimeError, "MueLu::Hierarchy::CheckLevel(): wrong underlying linear algebra library.");
     TEUCHOS_TEST_FOR_EXCEPTION(level.GetLevelID() != levelID, Exceptions::RuntimeError, "MueLu::Hierarchy::CheckLevel(): wrong level ID");
     TEUCHOS_TEST_FOR_EXCEPTION(levelID != 0 && level.GetPreviousLevel() != Levels_[levelID-1], Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): wrong level parent");
   }
