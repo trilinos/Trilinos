@@ -64,6 +64,7 @@
 #include <stk_percept/mesh/mod/smoother/MeshSmoother.hpp>
 #include <stk_percept/mesh/mod/smoother/ReferenceMeshSmoother1.hpp>
 
+#include <stk_adapt/UniformRefinerPattern_def.hpp>
 
 // this is for testing the local-refine refactoring
 #define UNIFORM_REFINER UniformRefiner

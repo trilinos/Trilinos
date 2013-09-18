@@ -6,6 +6,7 @@
 #include <stk_percept/mesh/mod/smoother/MeshSmoother.hpp>
 #include <stk_percept/mesh/mod/smoother/SpacingFieldUtil.hpp>
 
+//#include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 
@@ -45,8 +46,9 @@ namespace stk {
       return 0.0;
     }
 
-    static void print_comm_list( const BulkData & mesh , bool doit )
+    static void print_comm_list( const stk::mesh::BulkData & mesh , bool doit )
     {
+      using namespace stk::mesh;
       if ( doit ) {
         std::ostringstream msg ;
 
@@ -67,7 +69,7 @@ namespace stk {
           else if ( Deleted == mesh.state(entity) ) { msg << " del" ; }
           else { msg << "    " ; }
 
-          for ( PairIterEntityComm ec = mesh.entity_comm(i->key); ! ec.empty() ; ++ec ) {
+          for ( stk::mesh::PairIterEntityComm ec = mesh.entity_comm(i->key); ! ec.empty() ; ++ec ) {
             msg << " gid, proc (" << ec->ghost_id << "," << ec->proc << ")" ;
           }
           msg << std::endl ;

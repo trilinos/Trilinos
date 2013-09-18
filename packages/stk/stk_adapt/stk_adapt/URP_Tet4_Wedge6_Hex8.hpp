@@ -75,6 +75,11 @@ namespace stk {
         throw std::runtime_error("shouldn't call URP_Tet4_Wedge6_Hex8::getFromTypeKey()");
 
       }
+      virtual unsigned getToTypeKey()
+      {
+        throw std::runtime_error("shouldn't call URP_Tet4_Wedge6_Hex8::getToTypeKey()");
+
+      }
 
       virtual std::string getFromTopoPartName() { 
         shards::CellTopology cell_topo(getFromTopology());

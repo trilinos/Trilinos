@@ -189,7 +189,7 @@ namespace stk {
           }
       }
 
-      static void fixture_setup()
+      void fixture_setup()
       {
         //std::cout << "tmp fixture_setup" << std::endl;
         static bool is_setup = false;

@@ -96,7 +96,10 @@ namespace stk {
       virtual unsigned getFromTypeKey()
       {
         throw std::runtime_error("shouldn't call URP_Heterogeneous_QuadraticRefine_3D::getFromTypeKey()");
-
+      }
+      virtual unsigned getToTypeKey()
+      {
+        throw std::runtime_error("shouldn't call URP_Heterogeneous_QuadraticRefine_3D::getToTypeKey()");
       }
 
       virtual const CellTopologyData *  getFromTopology()

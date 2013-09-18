@@ -232,6 +232,11 @@ namespace stk {
         //throw std::runtime_error("shouldn't call URP_Pyramid5_Pyramid5::getFromTypeKey()");
         return shards::Pyramid<5>::key;
       }
+      virtual unsigned getToTypeKey()
+      {
+        //throw std::runtime_error("shouldn't call URP_Pyramid5_Pyramid5::getToTypeKey()");
+        return shards::Pyramid<5>::key;
+      }
 
       virtual std::string getFromTopoPartName() { 
         shards::CellTopology cell_topo(getFromTopology());

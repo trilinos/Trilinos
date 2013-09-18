@@ -110,6 +110,11 @@ namespace stk {
         throw std::runtime_error("shouldn't call URP_Heterogeneous_3D::getFromTypeKey()");
 
       }
+      virtual unsigned getToTypeKey()
+      {
+        throw std::runtime_error("shouldn't call URP_Heterogeneous_3D::getToTypeKey()");
+
+      }
 
       virtual std::string getFromTopoPartName() { 
         shards::CellTopology cell_topo(getFromTopology());
