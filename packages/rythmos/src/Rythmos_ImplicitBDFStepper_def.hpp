@@ -698,6 +698,7 @@ ImplicitBDFStepper<Scalar>::getValidParameters() const
   if (is_null(validPL)) {
     RCP<Teuchos::ParameterList>
       pl = Teuchos::parameterList();
+    pl->sublist(RythmosStepControlSettings_name);
     Teuchos::setupVerboseObjectSublist(&*pl);
     validPL = pl;
   }

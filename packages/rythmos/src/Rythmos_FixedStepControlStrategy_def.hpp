@@ -41,15 +41,20 @@ void FixedStepControlStrategy<Scalar>::setStepControlState_(
   StepControlStrategyState newState)
 {
   if (stepControlState_ == UNINITIALIZED) {
-    TEUCHOS_TEST_FOR_EXCEPT(newState != BEFORE_FIRST_STEP);
+    TEUCHOS_TEST_FOR_EXCEPTION(newState != BEFORE_FIRST_STEP, std::logic_error,
+                               "newState = " << toString(newState) << "\n");
   } else if (stepControlState_ == BEFORE_FIRST_STEP) {
-    TEUCHOS_TEST_FOR_EXCEPT(newState != MID_STEP);
+    TEUCHOS_TEST_FOR_EXCEPTION(newState != MID_STEP, std::logic_error,
+                               "newState = " << toString(newState) << "\n");
   } else if (stepControlState_ == MID_STEP) {
-    TEUCHOS_TEST_FOR_EXCEPT(newState != AFTER_CORRECTION);
+    TEUCHOS_TEST_FOR_EXCEPTION(newState != AFTER_CORRECTION, std::logic_error,
+                               "newState = " << toString(newState) << "\n");
   } else if (stepControlState_ == AFTER_CORRECTION) {
-    TEUCHOS_TEST_FOR_EXCEPT(newState != READY_FOR_NEXT_STEP);
+    TEUCHOS_TEST_FOR_EXCEPTION(newState != READY_FOR_NEXT_STEP,std::logic_error,
+                               "newState = " << toString(newState) << "\n");
   } else if (stepControlState_ == READY_FOR_NEXT_STEP) {
-    TEUCHOS_TEST_FOR_EXCEPT(newState != MID_STEP);
+    TEUCHOS_TEST_FOR_EXCEPTION(newState != MID_STEP, std::logic_error,
+                               "newState = " << toString(newState) << "\n");
   }
   stepControlState_ = newState;
 }
@@ -69,6 +74,8 @@ template<class Scalar>
 void FixedStepControlStrategy<Scalar>::initialize(
   const StepperBase<Scalar>& stepper)
 {
+  stepControlState_ = UNINITIALIZED;
+  // Any other initialization goes here.
   setStepControlState_(BEFORE_FIRST_STEP);
 }
 
