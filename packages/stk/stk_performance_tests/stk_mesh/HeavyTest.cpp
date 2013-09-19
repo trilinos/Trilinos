@@ -163,4 +163,12 @@ STKUNIT_UNIT_TEST( heavy, heavy )
       stk::print_timers_and_memory(&PHASE_NAMES[0], &timings[0], NUM_PHASES + 1);
     }
   }
+
+  if (bulk_data.parallel_rank() == 0) {
+    std::cout<<"### Total Number of Steps Taken ###: 1"<<std::endl;
+    std::cout<<"### Total Wall Clock Run Time Used ###: "<< timings[NUM_PHASES] <<std::endl;
+    size_t current_memory = 0, high_water_memory = 0;
+    stk::get_memory_usage(current_memory, high_water_memory);
+    std::cout<<"Total Memory In Use "<<high_water_memory<<std::endl;
+  }
 }
