@@ -58,6 +58,9 @@ clean:
 	*.dvi *.aux *.toc *.idx *.ind *.ilg \
 	*.log *.out *.bbl *.blg *.lof *.lot *.tex~ *.log *~
 
+cleanall: clean
+	@rm -f Rythmos.pdf RythmosSAND.pdf
+
 help:
 	@echo ''
 	@echo '  Build Rythmos Manuals:'
@@ -66,6 +69,7 @@ help:
 	@echo ''
 	@echo ' a) all........build all manuals'
 	@echo ' b) clean......remove all built objects'
+	@echo ' b) cleanall...clean + remove Rythmos.pdf and RythmosSAND.pdf'
 	@echo ' c) article....build manual using article format'
 	@echo ' d) sand.......build manual using SAND format'
 

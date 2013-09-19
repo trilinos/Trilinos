@@ -108,35 +108,15 @@ An easy way to create a Rythmos ParameterList is to get a valid ParameterList
  from the IntegatorBuilder, and manipulate the parameters from there.
  In this way, one able to correctly setup the Integrator and Stepper for
  a transient soution.
- For example,
-\begin_inset listings
-inline false
-status open
-
-\begin_layout Plain Layout
-
-RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
-\end_layout
-
-\begin_layout Plain Layout
-
-RCP<ParameterList> pl = Teuchos::parameterList();     
-\end_layout
-
-\begin_layout Plain Layout
-
-pl->setParameters(*(ib->getValidParameters()));
-\end_layout
-
-\begin_layout Plain Layout
-
-pl->sublist("Integrator Settings").set("Final Time", 1.0e-0); 
-\end_layout
+ For example, 
+\begin_inset CommandInset include
+LatexCommand input
+filename "RythmosParameterListExample.tex"
 
 \end_inset
 
-Obviously, most software will get its input specification from the XML version
- of the ParameterLists, and then pass them onto Rythmos.
+ Obviously, most software will get its input specification from the XML
+ version of the ParameterLists, and then pass them onto Rythmos.
  The description provided here can also help in setting up those XML files.
  
 \end_layout

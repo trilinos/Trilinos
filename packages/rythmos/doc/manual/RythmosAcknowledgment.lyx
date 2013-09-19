@@ -64,8 +64,12 @@ Acknowledgment
 \end_layout
 
 \begin_layout Standard
-The authors would like to thank ...
- 
+The first author would like to thank several individuals for their help
+ while he has been learning not only Rythmos but also the Trilinos environment:
+ Andy Salinger, Roger Pawlowski, Todd Coffey, Ross Bartlett, and Brent Perschbac
+her.
+ Their guidance and helpful suggestions have greatly improved the overall
+ experience of learning and struggles of this complex set of codes.
 \end_layout
 
 \end_body

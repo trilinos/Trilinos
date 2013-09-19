@@ -79,7 +79,7 @@ methods and tries to obtain the best of both worlds.
 \paragraph*{Fixed-Leading-Coefficient Formula\cite{BDF-FLC}}
 
 To begin, we need a predictor polynomial, $\phi_{p}(t)$, that uses
-the past solution values (possibility at uneven intervals)
+the past solution values (possiblity at uneven intervals)
 \[
 \phi_{p}(t_{n-i})=x_{n-i}\mbox{{\,\,\,\ for\,\,}}i=1,\ldots,s
 \]
@@ -146,8 +146,8 @@ x{}_{n}-x_{n(0)}=\beta_{0}\,\Delta t_{n}[\dot{x}_{n}-\dot{x}_{n(0)}].
 \]
 
 
-Note that the predictor and corrector are intertwined. One should
-not try to use a different predictor as this will change the predictor
+Note that the predictor and corrector are interwined. One should not
+try to use a different predictor as this will change the predictor
 polynomial, $\phi_{p}(t)$, and its presentation of past solution
 values. Also the predictor is dependent on the time derivative at
 the last time step, so one should be careful to keep the solution,
