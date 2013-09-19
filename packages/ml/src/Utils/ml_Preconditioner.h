@@ -138,6 +138,10 @@ namespace ML_Epetra
 
     //! Destroys all structures allocated in \c ComputePreconditioner() if the preconditioner has been computed.
     virtual int DestroyPreconditioner()=0;
+
+    //! Return operator complexity and #nonzeros in fine grid matrix.
+    virtual void Complexities(double &complexity, double &fineNnz)=0;
+
     //@}
 
 
