@@ -1074,7 +1074,7 @@ namespace stk {
             {
               stk::mesh::EntityId id = nodeIds_onSE.m_entity_id_vector[inode];
               if (!m_eMesh.is_valid(nodeIds_onSE[inode])) {
-                if (debug) std::cout << " invalid deleting " << id << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " << (nnodes>=2?m_eMesh.identifier(subDimEntity[1]):-1)
+                if (debug) std::cout << " invalid deleting " << id << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " << (nnodes>=2?(int)m_eMesh.identifier(subDimEntity[1]):-1)
                                      << " owning_elementId= " << owning_elementId
                                      <<  std::endl;
                 continue;
@@ -1084,14 +1084,14 @@ namespace stk {
 
               if (nodes_to_be_deleted && nodes_to_be_deleted->find(nodeIds_onSE[inode]) != nodes_to_be_deleted->end())
                 {
-                  if (debug) std::cout << " deleting " << id << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " << (nnodes>=2?m_eMesh.identifier(subDimEntity[1]):-1)
+                  if (debug) std::cout << " deleting " << id << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " << (nnodes>=2?(int)m_eMesh.identifier(subDimEntity[1]):-1)
                                        << " owning_elementId= " << owning_elementId
                                        <<  std::endl;
                   ++num_delete;
                 }
               else if (!nodes_to_be_deleted && stk::mesh::Deleted == bulk_data.state(nodeIds_onSE[inode]) )
                 {
-                  if (debug) std::cout << " 2 deleting " << id << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " <<  (nnodes>=2?m_eMesh.identifier(subDimEntity[1]):-1)
+                  if (debug) std::cout << " 2 deleting " << id << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " <<  (nnodes>=2?(int)m_eMesh.identifier(subDimEntity[1]):-1)
                                        << " owning_elementId= " << owning_elementId
                                        <<  std::endl;
                   ++num_delete;
@@ -1113,7 +1113,7 @@ namespace stk {
           if (nodeIds_onSE.size() == 0)
             {
               stk::mesh::EntityId id = nodeIds_onSE.m_entity_id_vector[0];
-              if (debug) std::cout << " to_erase deleting " << id << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " << (nnodes>=2?m_eMesh.identifier(subDimEntity[1]):-1)
+              if (debug) std::cout << " to_erase deleting " << id << " sd=" << m_eMesh.identifier(subDimEntity[0]) << " " << (nnodes>=2?(int)m_eMesh.identifier(subDimEntity[1]):-1)
                                    << " owning_elementId= " << owning_elementId
                                    <<  std::endl;
               to_erase.push_back(&(iter->first));
@@ -1545,7 +1545,7 @@ namespace stk {
 
           std::ostringstream sout;
           sout << "P[" << m_eMesh.get_rank() << "] registerNeedNewNode:: element= " << m_eMesh.identifier(element) << " nidSize= " << nidSize
-               << " nid= " << (nidSize ? m_eMesh.identifier(nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>()[0]) : -1);
+               << " nid= " << (nidSize ? (int)m_eMesh.identifier(nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>()[0]) : -1);
 
           //m_eMesh.print(sout, element,false,true);
           sout << " smark= " << smark << " gotMark= " << gotMark << " needNodes= " << needNodes << " isG= " << m_eMesh.isGhostElement(element)
