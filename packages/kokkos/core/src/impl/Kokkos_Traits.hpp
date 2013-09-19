@@ -78,15 +78,23 @@ template< class X >           struct is_same<X,X> : public true_type {};
 
 template <typename T> struct is_const : public false_type {};
 template <typename T> struct is_const<const T> : public true_type {};
+template <typename T> struct is_const<const T & > : public true_type {};
 
 //----------------------------------------------------------------------------
 // C++11 Type transformations:
 
 template <typename T> struct remove_const { typedef T type; };
 template <typename T> struct remove_const<const T> { typedef T type; };
+template <typename T> struct remove_const<const T & > { typedef T & type; };
 
 template <typename T> struct add_const { typedef const T type; };
+template <typename T> struct add_const<T & > { typedef const T & type; };
 template <typename T> struct add_const<const T> { typedef const T type; };
+template <typename T> struct add_const<const T & > { typedef const T & type; };
+
+template<typename T> struct remove_reference { typedef T type ; };
+template<typename T> struct remove_reference< T & > { typedef T type ; };
+template<typename T> struct remove_reference< const T & > { typedef const T type ; };
 
 //----------------------------------------------------------------------------
 // C++11 Other type generators:
@@ -141,28 +149,30 @@ struct if_c
 
   typedef FalseType type;
 
-  static KOKKOS_INLINE_FUNCTION
-  typename add_const<type>::type &
-    select( typename add_const<type>::type & v ) { return v ; }
+
+  typedef typename remove_const<
+          typename remove_reference<type>::type >::type value_type ;
+
+  typedef typename add_const<value_type>::type const_value_type ;
 
   static KOKKOS_INLINE_FUNCTION
-  typename remove_const<type>::type &
-    select( typename remove_const<type>::type & v ) { return v ; }
+  const_value_type & select( const_value_type & v ) { return v ; }
 
-  template< class T >
   static KOKKOS_INLINE_FUNCTION
-  type select( const T & ) { return type(); }
-
-
-  template< class T >
-  static KOKKOS_INLINE_FUNCTION
-  typename add_const<type>::type &
-    select( const T & , typename add_const<type>::type & v ) { return v ; }
+  value_type & select( value_type & v ) { return v ; }
 
   template< class T >
   static KOKKOS_INLINE_FUNCTION
-  typename remove_const<type>::type &
-    select( const T & , typename remove_const<type>::type & v ) { return v ; }
+  value_type & select( const T & ) { value_type * ptr(0); return *ptr ; }
+
+
+  template< class T >
+  static KOKKOS_INLINE_FUNCTION
+  const_value_type & select( const T & , const_value_type & v ) { return v ; }
+
+  template< class T >
+  static KOKKOS_INLINE_FUNCTION
+  value_type & select( const T & , value_type & v ) { return v ; }
 };
 
 template <typename TrueType, typename FalseType>
@@ -172,29 +182,32 @@ struct if_c< true , TrueType , FalseType >
 
   typedef TrueType type;
 
-  static KOKKOS_INLINE_FUNCTION
-  typename add_const<type>::type &
-    select( typename add_const<type>::type & v ) { return v ; }
+
+  typedef typename remove_const<
+          typename remove_reference<type>::type >::type value_type ;
+
+  typedef typename add_const<value_type>::type const_value_type ;
 
   static KOKKOS_INLINE_FUNCTION
-  typename remove_const<type>::type &
-    select( typename remove_const<type>::type & v ) { return v ; }
+  const_value_type & select( const_value_type & v ) { return v ; }
+
+  static KOKKOS_INLINE_FUNCTION
+  value_type & select( value_type & v ) { return v ; }
+
+  template< class T >
+  static KOKKOS_INLINE_FUNCTION
+  value_type & select( const T & ) { value_type * ptr(0); return *ptr ; }
+
 
   template< class F >
   static KOKKOS_INLINE_FUNCTION
-  type select( const F & ) { return type(); }
-
-
-  template< class F >
-  static KOKKOS_INLINE_FUNCTION
-  typename add_const<type>::type &
-    select( typename add_const<type>::type & v , const F & ) { return v ; }
+  const_value_type & select( const_value_type & v , const F & ) { return v ; }
 
   template< class F >
   static KOKKOS_INLINE_FUNCTION
-  typename remove_const<type>::type &
-    select( typename remove_const<type>::type & v , const F & ) { return v ; }
+  value_type & select( value_type & v , const F & ) { return v ; }
 };
+
 
 template <typename Cond, typename TrueType, typename FalseType>
 struct if_ : public if_c<Cond::value, TrueType, FalseType> {};

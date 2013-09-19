@@ -373,7 +373,7 @@ struct ViewInit
     for ( size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
     for ( size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
     for ( size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
-      new (&output(i0,i1,i2,i3,i4,i5,i6,i7)) scalar_type(default_value) ;
+      new (&output.at(i0,i1,i2,i3,i4,i5,i6,i7)) scalar_type(default_value) ;
     }}}}}}}
   }
 };
@@ -467,7 +467,7 @@ struct ViewRemap
     for ( size_type i5 = 0 ; i5 < n5 ; ++i5 ) {
     for ( size_type i6 = 0 ; i6 < n6 ; ++i6 ) {
     for ( size_type i7 = 0 ; i7 < n7 ; ++i7 ) {
-      output(i0,i1,i2,i3,i4,i5,i6,i7) = input(i0,i1,i2,i3,i4,i5,i6,i7);
+      output.at(i0,i1,i2,i3,i4,i5,i6,i7) = input.at(i0,i1,i2,i3,i4,i5,i6,i7);
     }}}}}}}
   }
 };
@@ -513,7 +513,7 @@ struct ViewFill
     for ( size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
     for ( size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
     for ( size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
-      output(i0,i1,i2,i3,i4,i5,i6,i7) = input ;
+      output.at(i0,i1,i2,i3,i4,i5,i6,i7) = input ;
     }}}}}}}
   }
 };

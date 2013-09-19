@@ -678,10 +678,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
     for ( unsigned i1 = 0 ; i1 < lsh.N1 ; ++i1 )
     for ( unsigned i2 = 0 ; i2 < lsh.N2 ; ++i2 )
     {
-      if ( & left(i0,i1,i2)  != & left(i0,i1,i2,0) )  { update |= 3 ; }
-      if ( & left(i0,i1,i2)  != & left(i0,i1,i2,0,0) )  { update |= 3 ; }
-      if ( & right(i0,i1,i2) != & right(i0,i1,i2,0) ) { update |= 3 ; }
-      if ( & right(i0,i1,i2) != & right(i0,i1,i2,0,0) ) { update |= 3 ; }
+      if ( & left(i0,i1,i2)  != & left.at(i0,i1,i2,0,0,0,0,0) )  { update |= 3 ; }
+      if ( & right(i0,i1,i2) != & right.at(i0,i1,i2,0,0,0,0,0) ) { update |= 3 ; }
     }
   }
 };
@@ -772,10 +770,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
     for ( unsigned i0 = 0 ; i0 < lsh.N0 ; ++i0 )
     for ( unsigned i1 = 0 ; i1 < lsh.N1 ; ++i1 )
     {
-      if ( & left(i0,i1)  != & left(i0,i1,0) )  { update |= 3 ; }
-      if ( & left(i0,i1)  != & left(i0,i1,0,0) )  { update |= 3 ; }
-      if ( & right(i0,i1) != & right(i0,i1,0) ) { update |= 3 ; }
-      if ( & right(i0,i1) != & right(i0,i1,0,0) ) { update |= 3 ; }
+      if ( & left(i0,i1)  != & left.at(i0,i1,0,0,0,0,0,0) )  { update |= 3 ; }
+      if ( & right(i0,i1) != & right.at(i0,i1,0,0,0,0,0,0) ) { update |= 3 ; }
     }
   }
 };
@@ -843,10 +839,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 1 >
   {
     for ( unsigned i0 = 0 ; i0 < lsh.N0 ; ++i0 )
     {
-      if ( & left(i0)  != & left(i0,0) )  { update |= 3 ; }
-      if ( & left(i0)  != & left(i0,0,0) )  { update |= 3 ; }
-      if ( & right(i0) != & right(i0,0) ) { update |= 3 ; }
-      if ( & right(i0) != & right(i0,0,0) ) { update |= 3 ; }
+      if ( & left(i0)  != & left.at(i0,0,0,0,0,0,0,0) )  { update |= 3 ; }
+      if ( & right(i0) != & right.at(i0,0,0,0,0,0,0,0) ) { update |= 3 ; }
     }
   }
 };
@@ -992,6 +986,10 @@ public:
     hx = Kokkos::create_mirror( dx );
     hy = Kokkos::create_mirror( dy );
 
+    // T v1 = hx() ;    // Generates compile error as intended
+    // T v2 = hx(0,0) ; // Generates compile error as intended
+    // hx(0,0) = v2 ;   // Generates compile error as intended
+
     size_t count = 0 ;
     for ( size_t ip = 0 ; ip < N0 ; ++ip ) {
     for ( size_t i1 = 0 ; i1 < hx.dimension_1() ; ++i1 ) {
@@ -1128,6 +1126,7 @@ public:
     const_vector_right_type cvr2 = Kokkos::subview< const_vector_right_type >( mv , Kokkos::ALL() , 1 );
     const_vector_right_type cvr3 = Kokkos::subview< const_vector_right_type >( mv , Kokkos::ALL() , 2 );
 
+    ASSERT_TRUE( & v1[0] == & v1(0) );
     ASSERT_TRUE( & v1[0] == & mv(0,0) );
     ASSERT_TRUE( & v2[0] == & mv(0,1) );
     ASSERT_TRUE( & v3[0] == & mv(0,2) );
