@@ -698,7 +698,7 @@ ImplicitBDFStepper<Scalar>::getValidParameters() const
   if (is_null(validPL)) {
     RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     // This line is required to pass StepperValidator UnitTest!
-    //pl->sublist(RythmosStepControlSettings_name);
+    pl->sublist(RythmosStepControlSettings_name);
     Teuchos::setupVerboseObjectSublist(&*pl);
     validPL = pl;
   }
@@ -1056,9 +1056,9 @@ void ImplicitBDFStepper<Scalar>::initialize_()
   if (stepControl_ == Teuchos::null) {
     RCP<ImplicitBDFStepperStepControl<Scalar> > implicitBDFStepperStepControl =
       Teuchos::rcp(new ImplicitBDFStepperStepControl<Scalar>());
-    //RCP<Teuchos::ParameterList> stepControlPL =
-    //  Teuchos::sublist(parameterList_, RythmosStepControlSettings_name);
-    //implicitBDFStepperStepControl->setParameterList(stepControlPL);
+    RCP<Teuchos::ParameterList> stepControlPL =
+      Teuchos::sublist(parameterList_, RythmosStepControlSettings_name);
+    implicitBDFStepperStepControl->setParameterList(stepControlPL);
     this->setStepControlStrategy(implicitBDFStepperStepControl);
   }
   stepControl_->initialize(*this);

@@ -912,7 +912,7 @@ BackwardEulerStepper<Scalar>::getValidParameters() const
   if (is_null(validPL)) {
     RCP<ParameterList> pl = Teuchos::parameterList();
     // This line is required to pass StepperValidator UnitTest!
-    //pl->sublist(RythmosStepControlSettings_name);
+    pl->sublist(RythmosStepControlSettings_name);
     Teuchos::setupVerboseObjectSublist(&*pl);
     validPL = pl;
   }
@@ -1000,10 +1000,10 @@ void BackwardEulerStepper<Scalar>::initialize_()
   if (stepControl_ == Teuchos::null) {
     RCP<StepControlStrategyBase<Scalar> > stepControlStrategy =
       Teuchos::rcp(new FixedStepControlStrategy<Scalar>());
-    //RCP<Teuchos::ParameterList> stepControlPL =
-    //  Teuchos::sublist(parameterList_, RythmosStepControlSettings_name);
+    RCP<Teuchos::ParameterList> stepControlPL =
+      Teuchos::sublist(parameterList_, RythmosStepControlSettings_name);
 
-    //stepControlStrategy->setParameterList(stepControlPL);
+    stepControlStrategy->setParameterList(stepControlPL);
     this->setStepControlStrategy(stepControlStrategy);
   }
   stepControl_->initialize(*this);
