@@ -115,9 +115,7 @@ int main(int argc, char *argv[]) {
   GO nx = 100, ny = 100;
   clp.setOption("nx",                   &nx,              "mesh size in x direction");
   clp.setOption("ny",                   &ny,              "mesh size in y direction");
-  std::string xmlFileName = "tutorial1a.xml"; clp.setOption("xml", &xmlFileName,     "read parameters from a file. Otherwise, this example uses by default 'tutorial1a.xml'");
-  //int    amgAsPrecond      = 1;      clp.setOption("precond",               &amgAsPrecond,     "apply multigrid as preconditioner");
-  //int    amgAsSolver       = 0;      clp.setOption("fixPoint",              &amgAsSolver,      "apply multigrid as solver");
+  std::string xmlFileName = "tutorial2a.xml"; clp.setOption("xml", &xmlFileName,     "read parameters from a file. Otherwise, this example uses by default 'tutorial1a.xml'");
   int mgridSweeps = 1; clp.setOption("mgridSweeps", &mgridSweeps, "number of multigrid sweeps within Multigrid solver.");
   std::string printTimings = "no";   clp.setOption("timings", &printTimings,     "print timings to screen [yes/no]");
   double tol               = 1e-12;  clp.setOption("tol",                   &tol,              "solver convergence tolerance");
@@ -154,6 +152,9 @@ int main(int argc, char *argv[]) {
   // create matrix
   Teuchos::RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(Galeri::CreateCrsMatrix("Laplace2D", epMap.get(), GaleriList));
 
+  double hx = 1./(nx-1); double hy = 1./(ny-1);
+  epA->Scale(1./(hx*hy));
+
   // Epetra -> Xpetra
   Teuchos::RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
   Teuchos::RCP<CrsMatrixWrap> exAWrap = Teuchos::rcp(new CrsMatrixWrap(exA));
@@ -171,6 +172,9 @@ int main(int argc, char *argv[]) {
   RCP<Vector> xB = Teuchos::rcp(new Xpetra::EpetraVector(B));
   RCP<Vector> xX = Teuchos::rcp(new Xpetra::EpetraVector(X));
 
+  xX->setSeed(100);
+  xX->randomize();
+
   // build null space vector
   RCP<const Map> map = A->getRowMap();
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(map, 1);
@@ -179,7 +183,7 @@ int main(int argc, char *argv[]) {
   comm->barrier();
   tm = Teuchos::null;
 
-  fancyout << "Galeri complete.\n========================================================" << std::endl;
+  fancyout << "========================================================\nGaleri complete.\n========================================================" << std::endl;
 
   // =========================================================================
   // Preconditioner construction
@@ -187,8 +191,9 @@ int main(int argc, char *argv[]) {
   comm->barrier();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1.5 - MueLu read XML")));
   ParameterListInterpreter mueLuFactory(xmlFileName, *comm);
-
   comm->barrier();
+  tm = Teuchos::null;
+
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
 
   RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
@@ -210,7 +215,10 @@ int main(int argc, char *argv[]) {
     //
     RCP<Epetra_Vector> exactLsgVec = rcp(new Epetra_Vector(X->Map()));
     {
+      fancyout << "========================================================\nCalculate exact solution." << std::endl;
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3 - direct solve")));
       exactLsgVec->PutScalar(0.0);
+      exactLsgVec->Update(1.0,*X,1.0);
       Epetra_LinearProblem epetraProblem(epA.get(), exactLsgVec.get(), B.get());
 
       Amesos amesosFactory;
@@ -219,15 +227,21 @@ int main(int argc, char *argv[]) {
       rcp_directSolver->NumericFactorization();
       rcp_directSolver->Solve();
 
-      //std::cout << *exactLsgVec << std::endl;
+      comm->barrier();
+      tm = Teuchos::null;
     }
 
     //
     // Solve Ax = b using AMG as a preconditioner in AztecOO
     //
+
     RCP<Epetra_Vector> precLsgVec = rcp(new Epetra_Vector(X->Map()));
     {
+      fancyout << "========================================================\nUse multigrid hierarchy as preconditioner within CG." << std::endl;
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - AMG as preconditioner")));
+
       precLsgVec->PutScalar(0.0);
+      precLsgVec->Update(1.0,*X,1.0);
       Epetra_LinearProblem epetraProblem(epA.get(), precLsgVec.get(), B.get());
 
       AztecOO aztecSolver(epetraProblem);
@@ -240,26 +254,32 @@ int main(int argc, char *argv[]) {
       double tol = 1e-8;
 
       aztecSolver.Iterate(maxIts, tol);
+
+      comm->barrier();
+      tm = Teuchos::null;
     }
 
+    //////////////////
+
+    // use multigrid hierarchy as solver
     RCP<Vector> mgridLsgVec = VectorFactory::Build(map);
     mgridLsgVec->putScalar(0.0);
-    //if (amgAsSolver) {
     {
-      tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Fixed Point Solve")));
-
-      // perform 10 iterations with multigrid
+      fancyout << "========================================================\nUse multigrid hierarchy as solver." << std::endl;
+      tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 5 - Multigrid Solve")));
+      mgridLsgVec->update(1.0,*xX,1.0);
       H->IsPreconditioner(false);
       H->Iterate(*xB, mgridSweeps, *mgridLsgVec);
+      comm->barrier();
+      tm = Teuchos::null;
+    }
 
-    } //else if (amgAsPrecond) {*/
+    //////////////////
 
+    fancyout << "========================================================\nExport results.\n========================================================" << std::endl;
     ofstream myfile;
     std::stringstream ss; ss << "example" << MyPID << ".txt";
     myfile.open (ss.str().c_str());
-    //myfile << "Writing this to a file.\n";
-
-
 
     //////////////////
 
@@ -322,14 +342,14 @@ int main(int argc, char *argv[]) {
             myfile.precision(18); // set high precision for output
 
             // add solution vector entry
-            myfile.width(20);
+            myfile.width(25);
             myfile << (*exactLsgVec)[iii];
 
             // add preconditioned solution vector entry
-            myfile.width(20);
+            myfile.width(25);
             myfile << (*precLsgVec)[iii];
 
-            myfile.width(20);
+            myfile.width(25);
             Teuchos::ArrayRCP<SC> mgridLsgVecData = mgridLsgVec->getDataNonConst(0);
             myfile << mgridLsgVecData[iii];
 
@@ -350,14 +370,12 @@ int main(int argc, char *argv[]) {
     ////////////
     myfile.close();
 
-  //}
   comm->barrier();
   tm = Teuchos::null;
   globalTimeMonitor = Teuchos::null;
 
   if (printTimings == "yes") {
     TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union);
-    //MueLu::MutuallyExclusiveTime<MueLu::BaseClass>::PrintParentChildPairs();
   }
 
   return 0;
