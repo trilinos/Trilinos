@@ -28,14 +28,12 @@ namespace performance_tests {
 namespace  {
 
 void create_entities( BulkData & bulk,
-                      Part& node_part,
-                      Part& hex_part,
+                      PartVector& node_parts,
+                      PartVector& elem_parts,
                       // FIXME Part& active_elements_part,
                       HexRefineInfo& refine_info)
 {
   HexRefineInfo refine_info_half(refine_info.m_level-1, refine_info.m_nx, refine_info.m_ny, refine_info.m_nz);
-  PartVector add_parts;
-  add_parts.push_back(&node_part);
 
   unsigned eid_start = 1 + refine_info.elem_id_offset();
   unsigned eid_end = eid_start + refine_info.num_elems();
@@ -46,7 +44,7 @@ void create_entities( BulkData & bulk,
   boost::unordered_map<unsigned, Entity> node_map;
 
   for(unsigned nid=nid_start; nid<nid_end; ++nid) {
-    Entity e = bulk.declare_entity(0, nid, add_parts);
+    Entity e = bulk.declare_entity(0, nid, node_parts);
     node_map[nid] = e;
   }
 
@@ -83,12 +81,12 @@ void create_entities( BulkData & bulk,
       }
     }
 
-    stk::mesh::declare_element( bulk, hex_part, entity_id , elem_node);
+    stk::mesh::declare_element( bulk, elem_parts, entity_id , elem_node);
 
 #if 0
     for (unsigned i = 0; i<8; ++i) {
       stk::mesh::Entity const node = bulk.get_entity( MetaData::NODE_RANK , elem_node[i] );
-      bulk.change_entity_parts(*node, add_parts);
+      bulk.change_entity_parts(*node, node_parts);
 
       ThrowRequireMsg( node != NULL, "found null node in create_entities");
 
@@ -118,7 +116,7 @@ TEST( hex_refine, hex_refine)
 
   //unsigned num_elems = ex*ey*ez;
   fixtures::HexFixture fixture(MPI_COMM_WORLD, ex, ey, ez);
-  fixture.m_fem_meta.commit();
+  fixture.m_meta.commit();
   fixture.generate_mesh();
   double create_time = stk::cpu_time() - start_time;
 
@@ -137,7 +135,7 @@ TEST( hex_refine, hex_refine)
     unsigned num_elems_new = refine_info.num_elems();
     std::cout << "num_elems_new for level = " << level << " = " << num_elems_new << std::endl;
     fixture.m_bulk_data.modification_begin();
-    create_entities(fixture.m_bulk_data, fixture.m_node_part, fixture.m_hex_part, refine_info);
+    create_entities(fixture.m_bulk_data, fixture.m_node_parts, fixture.m_elem_parts, refine_info);
     fixture.m_bulk_data.modification_end();
   }
 

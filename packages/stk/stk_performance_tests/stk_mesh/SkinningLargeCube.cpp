@@ -352,9 +352,9 @@ STKUNIT_UNIT_TEST( skinning_large_cube, skinning_large_cube)
     start_time = stk::wall_time();
     stk::mesh::fixtures::HexFixture fixture(pm,NX,NY,NZ);
     const EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
-    const EntityRank side_rank = fixture.m_fem_meta.side_rank();
+    const EntityRank side_rank = fixture.m_meta.side_rank();
 
-    stk::mesh::MetaData & fem_meta = fixture.m_fem_meta;
+    stk::mesh::MetaData & fem_meta = fixture.m_meta;
     stk::mesh::BulkData & mesh = fixture.m_bulk_data;
 
     stk::mesh::Part & skin_part = fem_meta.declare_part("skin_part");

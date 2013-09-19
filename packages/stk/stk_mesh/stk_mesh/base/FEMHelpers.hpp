@@ -30,10 +30,19 @@ namespace mesh {
  *          and nodes conformal to that topology.
  */
 Entity declare_element( BulkData & mesh ,
-                          Part & part ,
-                          const EntityId elem_id ,
-                          const EntityId node_id[] );
+                        PartVector & parts , // parts[0] expected to have topology
+                        const EntityId elem_id ,
+                        const EntityId node_id[] );
 
+inline
+Entity declare_element( BulkData & mesh ,
+                        Part & part ,
+                        const EntityId elem_id ,
+                        const EntityId node_id[] )
+{
+  PartVector vec(1, &part);
+  return declare_element(mesh, vec, elem_id, node_id);
+}
 
 /** \brief  Create (or find) an element side.
  *

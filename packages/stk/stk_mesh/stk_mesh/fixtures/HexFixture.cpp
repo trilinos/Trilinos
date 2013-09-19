@@ -35,17 +35,17 @@ namespace fixtures {
     m_nx(nx),
     m_ny(ny),
     m_nz(nz),
-    m_fem_meta( m_spatial_dimension ),
-    m_bulk_data(  m_fem_meta
+    m_meta( m_spatial_dimension ),
+    m_bulk_data(  m_meta
                 , pm
 #ifdef SIERRA_MIGRATION
                 , false
 #endif
                 , connectivity_map
                ),
-    m_hex_part( declare_part<shards::Hexahedron<8> >(m_fem_meta, "hex_part") ),
-    m_node_part( m_fem_meta.declare_part("node_part", MetaData::NODE_RANK ) ),
-    m_coord_field( m_fem_meta.declare_field<CoordFieldType>("Coordinates") )
+    m_elem_parts( 1, &declare_part<shards::Hexahedron<8> >(m_meta, "hex_part") ),
+    m_node_parts( 1, &m_meta.declare_part("node_part", MetaData::NODE_RANK ) ),
+    m_coord_field( m_meta.declare_field<CoordFieldType>("Coordinates") )
 {
   typedef shards::Hexahedron<8> Hex8 ;
 
@@ -53,7 +53,7 @@ namespace fixtures {
   put_field(
     m_coord_field,
     MetaData::NODE_RANK,
-    m_fem_meta.universal_part(),
+    m_meta.universal_part(),
     m_spatial_dimension);
 
 }
@@ -119,9 +119,6 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
   {
     // Declare the elements that belong on this process
 
-    PartVector add_parts;
-    add_parts.push_back(&m_node_part);
-
     std::vector<EntityId>::iterator ib = element_ids_on_this_processor.begin();
     const std::vector<EntityId>::iterator ie = element_ids_on_this_processor.end();
     for (; ib != ie; ++ib) {
@@ -140,11 +137,11 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
       elem_node[6] = node_id( ix+1 , iy+1 , iz+1 );
       elem_node[7] = node_id( ix   , iy+1 , iz+1 );
 
-      stk::mesh::declare_element( m_bulk_data, m_hex_part, elem_id( ix , iy , iz ) , elem_node);
+      stk::mesh::declare_element( m_bulk_data, m_elem_parts, elem_id( ix , iy , iz ) , elem_node);
 
       for (unsigned i = 0; i<8; ++i) {
         stk::mesh::Entity const node = m_bulk_data.get_entity( MetaData::NODE_RANK , elem_node[i] );
-        m_bulk_data.change_entity_parts(node, add_parts);
+        m_bulk_data.change_entity_parts(node, m_node_parts);
 
         ThrowRequireMsg( m_bulk_data.is_valid(node),
           "This process should know about the nodes that make up its element");

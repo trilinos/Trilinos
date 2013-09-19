@@ -60,22 +60,21 @@ void verify_declare_element_edge(
 } // unnamed namespace
 
 Entity declare_element( BulkData & mesh ,
-                          Part & part ,
-                          const EntityId elem_id ,
-                          const EntityId node_id[] )
+                        PartVector & parts ,
+                        const EntityId elem_id ,
+                        const EntityId node_id[] )
 {
   MetaData & fem_meta = MetaData::get(mesh);
-  const CellTopologyData * const top = fem_meta.get_cell_topology( part ).getCellTopologyData();
+  const CellTopologyData * const top = fem_meta.get_cell_topology( *parts[0] ).getCellTopologyData();
 
   ThrowErrorMsgIf(top == NULL,
-                  "Part " << part.name() << " does not have a local topology");
+                  "Part " << parts[0]->name() << " does not have a local topology");
 
   PartVector empty ;
-  PartVector add( 1 ); add[0] = & part ;
 
   const EntityRank entity_rank = MetaData::ELEMENT_RANK;
 
-  Entity elem = mesh.declare_entity( entity_rank, elem_id, add );
+  Entity elem = mesh.declare_entity( entity_rank, elem_id, parts );
 
   const EntityRank node_rank = MetaData::NODE_RANK;
 

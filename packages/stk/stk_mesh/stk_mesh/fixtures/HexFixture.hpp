@@ -54,11 +54,12 @@ class HexFixture
   const unsigned                m_nx;
   const unsigned                m_ny;
   const unsigned                m_nz;
-  MetaData                      m_fem_meta;
+  MetaData                      m_meta;
   BulkData                      m_bulk_data;
-  Part &                        m_hex_part;
-  Part &                        m_node_part;
+  PartVector                    m_elem_parts;
+  PartVector                    m_node_parts;
   CoordFieldType &              m_coord_field ;
+
 
   /**
    * Thinking in terms of a 3D grid of nodes, get the id of the node in
@@ -111,6 +112,23 @@ class HexFixture
   void generate_mesh();
 
   void generate_mesh( std::vector<EntityId> & element_ids_on_this_processor );
+
+  // When creating entities, you can tell HexFixture what parts to add
+  // elements and nodes.
+
+  template <typename Iterator>
+  void add_elem_parts(Iterator itr, size_t num)
+  {
+    ThrowRequire(!m_meta.is_commit());
+    m_elem_parts.insert(m_elem_parts.end(), itr, itr + num);
+  }
+
+  template <typename Iterator>
+  void add_node_parts(Iterator itr, size_t num)
+  {
+    ThrowRequire(!m_meta.is_commit());
+    m_node_parts.insert(m_node_parts.end(), itr, itr + num);
+  }
 
  private:
 
