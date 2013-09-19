@@ -30,6 +30,8 @@
 #define Rythmos_SIMPLE_STEP_CONTROL_STRATEGY_DEF_H
 
 #include "Rythmos_SimpleStepControlStrategy_decl.hpp"
+#include "Thyra_VectorStdOps.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 namespace Rythmos {
 
@@ -287,8 +289,8 @@ bool SimpleStepControlStrategy<Scalar>::acceptStep(
     return false;
 
   bool return_status = true;
-  Scalar maxAbs_x  = std::max(max(*x_),-min(*x_));
-  Scalar maxAbs_dx = std::max(max(*dx_),-min(*dx_));
+  Scalar maxAbs_x  = std::max(Thyra::max(*x_),-Thyra::min(*x_));
+  Scalar maxAbs_dx = std::max(Thyra::max(*dx_),-Thyra::min(*dx_));
   Scalar dx_tolerance = dxRelativeTolerance_ * maxAbs_x + dxAbsoluteTolerance_;
   if (maxAbs_dx > dx_tolerance) return_status = false;
 

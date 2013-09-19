@@ -30,6 +30,7 @@
 #include "Teuchos_UnitTestHarness.hpp"
 
 #include "Rythmos_IntegratorBuilder.hpp"
+#include "Rythmos_DefaultIntegrator.hpp"
 #include "Rythmos_BackwardEuler_ConvergenceTest.hpp"
 
 namespace Rythmos {

@@ -30,6 +30,7 @@
 #define Rythmos_FIXED_STEP_CONTROL_STRATEGY_DEF_H
 
 #include "Rythmos_FixedStepControlStrategy_decl.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 namespace Rythmos {
 

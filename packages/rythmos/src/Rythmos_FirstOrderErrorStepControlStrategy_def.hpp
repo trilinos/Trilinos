@@ -30,6 +30,8 @@
 #define Rythmos_FIRSTORDERERROR_STEP_CONTROL_STRATEGY_DEF_H
 
 #include "Rythmos_FirstOrderErrorStepControlStrategy_decl.hpp"
+#include "Thyra_VectorStdOps.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 namespace Rythmos {
 
@@ -288,17 +290,16 @@ bool FirstOrderErrorStepControlStrategy<Scalar>::acceptStep(
 
   // Let's construct the weight here for now.  We will replace with it
   // with a errWtVecSet() in the future.
-  Thyra::abs(*x_, ptrFromRef(*errWtVec_));
-  Vt_S(ptrFromRef(*errWtVec_), errorRelativeTolerance_);
-  Vp_S(ptrFromRef(*errWtVec_), errorAbsoluteTolerance_);
-  reciprocal(*errWtVec_, ptrFromRef(*errWtVec_));
+  Thyra::abs(*x_, Teuchos::ptrFromRef(*errWtVec_));
+  Thyra::Vt_S(Teuchos::ptrFromRef(*errWtVec_), errorRelativeTolerance_);
+  Thyra::Vp_S(Teuchos::ptrFromRef(*errWtVec_), errorAbsoluteTolerance_);
+  reciprocal(*errWtVec_, Teuchos::ptrFromRef(*errWtVec_));
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  Vt_StV(ptrFromRef(*errWtVec_), ST::one(), *errWtVec_); // We square w because
-                                                         // of how weighted
-                                                         // norm_2 is computed.
+  // We square w because of how weighted norm_2 is computed.
+  Vt_StV(Teuchos::ptrFromRef(*errWtVec_), ST::one(), *errWtVec_);
   // divide by N to get RMS norm
   int N = x_->space()->dim();
-  Vt_S(ptrFromRef(*errWtVec_), Teuchos::as<Scalar>(1.0/N));
+  Vt_S(Teuchos::ptrFromRef(*errWtVec_), Teuchos::as<Scalar>(1.0/N));
   double wrms = norm_2(*errWtVec_,(*dx_));
   stepSizeFactor_ = sqrt(2.0/wrms);     // Factor for 1st order. See
                                         // Gresho and Sani, "Incompressible

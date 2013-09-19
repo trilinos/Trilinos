@@ -207,9 +207,11 @@ template<class Scalar>
 
   private:
     RCP<Thyra::VectorBase<Scalar> > scaled_x_old_;
+    RCP<Thyra::VectorBase<Scalar> > x_old_;
     RCP<Thyra::VectorBase<Scalar> > x_dot_old_;
     RCP<Thyra::VectorBase<Scalar> > x_;
     RCP<Thyra::VectorBase<Scalar> > x_dot_;
+    RCP<Thyra::VectorBase<Scalar> > dx_;
     Scalar t_;
     Scalar t_old_;
     Scalar dt_;
