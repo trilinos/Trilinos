@@ -30,6 +30,8 @@
 #define Rythmos_FIRSTORDERERROR_STEP_CONTROL_STRATEGY_DECL_H
 
 #include "Rythmos_StepControlStrategyBase.hpp"
+#include "Thyra_VectorBase.hpp"
+#include "Teuchos_VerboseObject.hpp"
 
 namespace Rythmos {
 
