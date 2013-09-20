@@ -2142,8 +2142,8 @@ void PartitioningSolution<Adapter>::RemapParts()
       remap = new partId_t[nGlobalParts_];
       for (partId_t i = 0; i < nGlobalParts_; i++) remap[i] = -1;
 
-      bool *used = new bool[nGlobalParts_];
-      for (partId_t i = 0; i < nGlobalParts_; i++) used[i] = false;
+      bool *used = new bool[np];
+      for (partId_t i = 0; i < np; i++) used[i] = false;
 
       // First, process all matched parts
       for (partId_t i = 0; i < nGlobalParts_; i++) {
