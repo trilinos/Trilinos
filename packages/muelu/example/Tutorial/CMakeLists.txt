@@ -24,14 +24,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(tutorial1_cp
   SOURCE_FILES tutorial1a.xml tutorial1b.xml tutorial1c.xml tutorial1d.xml tutorial1e.xml
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  tutorial2
-  SOURCES tutorial2.cpp
-  NUM_MPI_PROCS 2
-  COMM mpi serial
-  )
+ADD_SUBDIRECTORY(hands-on)
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(tutorial2_cp
-  SOURCE_FILES plotSolution.sh 
-  )
 ENDIF()
