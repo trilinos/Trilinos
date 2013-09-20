@@ -37,6 +37,10 @@
 #include <Intrepid_CellTools.hpp>
 #include <Intrepid_FunctionSpaceTools.hpp>
 
+#if defined(STK_PERCEPT_USE_INTREPID)
+#include <stk_percept/element/intrepid/BasisTable.hpp>
+#endif
+
 //using namespace sierra;
 using namespace Intrepid;
 
@@ -252,10 +256,10 @@ namespace stk
       if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) 2" << std::endl;
 
       // map cell topology to a basis
-      PerceptMesh::BasisTypeRCP basis;
+      BasisTable::BasisTypeRCP basis;
       if (m_cached_topo_key != cell_topo_data->key)
         {
-          basis = PerceptMesh::getBasis(topo);
+          basis = BasisTable::getBasis(topo);
           m_cached_basis = basis;
           m_cached_topo_key = cell_topo_data->key;
         }

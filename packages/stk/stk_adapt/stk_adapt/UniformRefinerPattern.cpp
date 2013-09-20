@@ -2,6 +2,11 @@
 #include <stk_adapt/UniformRefinerPattern.hpp>
 #include <stk_mesh/base/EntityCommDatabase.hpp>
 
+
+#if defined(STK_PERCEPT_USE_INTREPID)
+#include <stk_percept/element/intrepid/BasisTable.hpp>
+#endif
+
 namespace stk {
   namespace adapt {
 
@@ -1580,7 +1585,7 @@ namespace stk {
                 }
               percept::MyPairIterRelation elem_nodes (eMesh, element, mesh::MetaData::NODE_RANK);
 
-              PerceptMesh::BasisTypeRCP basis = eMesh.getBasis(cell_topo);
+              BasisTable::BasisTypeRCP basis = BasisTable::getBasis(cell_topo);
               MDArray output_tmp(elem_nodes.size(), 1);
               MDArray input_param_coords_tmp(1, topoDim);
 
@@ -1765,7 +1770,7 @@ namespace stk {
         }
       else
         {
-          PerceptMesh::BasisTypeRCP basis = eMesh.getBasis(cell_topo);
+          BasisTable::BasisTypeRCP basis = BasisTable::getBasis(cell_topo);
           basis->getValues(basis_val, input_param_coords, Intrepid::OPERATOR_VALUE);
         }
       if (0)
