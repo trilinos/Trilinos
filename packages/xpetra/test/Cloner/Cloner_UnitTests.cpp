@@ -240,6 +240,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Cloner, MatrixCloneTpetra, double, int, int, NodeType )
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Cloner, MatrixCloneEpetra, double, int, int, NodeType )
 #else
-#warn Skipping Cloner tests as KokkosClassic is not enabled
+#warning Skipping Cloner tests as KokkosClassic is not enabled
 #endif
 }
