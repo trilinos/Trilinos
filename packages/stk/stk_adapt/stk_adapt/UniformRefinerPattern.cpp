@@ -4,7 +4,9 @@
 
 
 #if defined(STK_PERCEPT_USE_INTREPID)
+#if !STK_PERCEPT_LITE
 #include <stk_percept/element/intrepid/BasisTable.hpp>
+#endif
 #endif
 
 namespace stk {
@@ -1518,6 +1520,9 @@ namespace stk {
     interpolateFields(percept::PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::Entity newElement,  const unsigned *child_nodes,
                       RefTopoX_arr ref_topo_x, stk::mesh::FieldBase *field)
     {
+#if STK_PERCEPT_LITE
+      VERIFY_MSG("not available in PerceptMeshLite");
+#else
       EXCEPTWATCH;
 
       unsigned *null_u = 0;
@@ -1614,6 +1619,7 @@ namespace stk {
                     }
                   if (found) throw std::runtime_error("error in Intrepid");
                 }
+
             }
         }
 
@@ -1686,6 +1692,7 @@ namespace stk {
           std::cout << "tmp newElement: " << std::endl;
           eMesh.print_entity(std::cout, newElement, eMesh.get_coordinates_field() );
         }
+#endif
     }
 
     /// do interpolation for all fields
@@ -1740,6 +1747,9 @@ namespace stk {
     interpolateIntrepid(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field, shards::CellTopology& cell_topo,
                         MDArray& output_pts, stk::mesh::Entity element, MDArray& input_param_coords, double time_val)
     {
+#if STK_PERCEPT_LITE
+      VERIFY_MSG("not available in PerceptMeshLite");
+#else
       int fieldStride = output_pts.dimension(1);
       unsigned *null_u = 0;
 
@@ -1793,6 +1803,7 @@ namespace stk {
               output_pts(0, i_stride) += f_data[i_stride]*basis_val(i_node, 0);
             }
         }
+#endif
     }
 
 

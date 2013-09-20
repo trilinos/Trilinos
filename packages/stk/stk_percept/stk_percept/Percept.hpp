@@ -57,16 +57,16 @@
 
 /* The following is to avoid the following error from boost::ublas libraries:
 
-"/scratch/srkenno/code/TPLs_src/boost/boost/numeric/ublas/detail/config.hpp", line 170: catastrophic error: 
+"/scratch/srkenno/code/TPLs_src/boost/boost/numeric/ublas/detail/config.hpp", line 170: catastrophic error:
           #error directive: Your compiler and/or configuration is unsupported
           by this verions of uBLAS. Define BOOST_UBLAS_UNSUPPORTED_COMPILER=0
           to override this message. Boost 1.32.0 includes uBLAS with support
           for many older compilers.
-  #error Your compiler and/or configuration is unsupported by this verions of uBLAS. Define BOOST_UBLAS_UNSUPPORTED_COMPILER=0 to 
+  #error Your compiler and/or configuration is unsupported by this verions of uBLAS. Define BOOST_UBLAS_UNSUPPORTED_COMPILER=0 to
   override this message. Boost 1.32.0 includes uBLAS with support for many older compilers.
 */
 
-#if defined(__PGI) 
+#if defined(__PGI)
 #define BOOST_UBLAS_UNSUPPORTED_COMPILER 0
 #endif
 
