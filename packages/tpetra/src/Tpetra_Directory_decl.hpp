@@ -138,14 +138,13 @@ namespace Tpetra {
     ///   the Map's <tt>this</tt> pointer as the input argument.
     explicit Directory (const Teuchos::RCP<const map_type>& map);
 
-    /// \brief Constructor (using a tie break class to decide ownership)
+    /// \brief Constructor (using a tie break class to decide ownership).
     ///
     /// \param map [in] The Map object for which to create the Directory.
-    /// \param tie_break [in] An instance of a TieBreak to determine 
-    ///                       ownership.
+    /// \param tie_break [in] A TieBreak instance to determine ownership.
     ///
-    /// \note This constructor is NOT invoked by Map's constructor, and for
-    ///       now only works with continguous maps
+    /// \note This constructor is NOT invoked by Map's constructor,
+    ///   and for now only works with noncontiguous Maps.
     explicit Directory (const Teuchos::RCP<const map_type>& map,
                         const Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal> & tie_break);
 
@@ -182,20 +181,20 @@ namespace Tpetra {
       if (clone_map->isDistributed ()) {
         if (clone_map->isUniform ()) {
           typedef Details::ContiguousUniformDirectory<LO, GO, Node> impl_type;
-          dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (clone_map);
+          dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (*clone_map);
         }
         else if (clone_map->isContiguous ()) {
           typedef Details::DistributedContiguousDirectory<LO, GO, Node> impl_type;
-          dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (clone_map);
+          dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (*clone_map);
         }
         else { // not contiguous
           typedef Details::DistributedNoncontiguousDirectory<LO, GO, Node> impl_type;
-          dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (clone_map);
+          dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (*clone_map);
         }
       }
       else { // locally replicated (not distributed)
         typedef Details::ReplicatedDirectory<LO, GO, Node> impl_type;
-        dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (clone_map);
+        dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (*clone_map);
       }
       return dir;
     }
@@ -283,6 +282,9 @@ namespace Tpetra {
     ///   Map (e.g., locally replicated or globally distributed,
     ///   contiguous or noncontiguous).
     typedef Details::Directory<LocalOrdinal, GlobalOrdinal, Node> base_type;
+
+    //! The Directory's Map.
+    Teuchos::RCP<const map_type> map_;
 
     //! Implementation of this object.
     Teuchos::RCP<const base_type> impl_;
