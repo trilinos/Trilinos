@@ -1601,7 +1601,7 @@ namespace stk {
 
           std::ostringstream sout;
           sout << "P[" << m_eMesh.get_rank() << "] query:: " << msg << " element= " << m_eMesh.identifier(element) << " nidSize= " << nidSize
-               << " nid= " << (nidSize ? m_eMesh.identifier(nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>()[0]) : -1);
+               << " nid= " << (nidSize ? (int)m_eMesh.identifier(nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>()[0]) : -1);
           sout << " smark= " << smark << " gotMark= " << gotMark << " isG= " << m_eMesh.isGhostElement(element)
                << " is_empty= " << is_empty << " subDimEntity= ";
 
@@ -2885,7 +2885,8 @@ namespace stk {
 
     void NodeRegistry::dumpDB(std::string msg)
     {
-      if (!DEBUG_NR_UNREF) return;
+      bool dnru = DEBUG_NR_UNREF;
+      if (!dnru) return;
       SubDimCellToDataMap::iterator iter;
       SubDimCellToDataMap& map = m_cell_2_data_map;
       std::cout << msg << " tmp dumpDB map size: " << map.size() << std::endl;
