@@ -58,6 +58,8 @@ class Epetra_CrsMatrix;
 
 namespace panzer {
 
+class EpetraLinearObjContainer;
+
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 class UniqueGlobalIndexer;
 
@@ -95,6 +97,8 @@ public:
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
   
+  void preEvaluate(typename Traits::PreEvalData d);
+
   void evaluateFields(typename Traits::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
@@ -114,6 +118,9 @@ private:
   Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
   std::vector<int> fieldIds_; // field IDs needing mapping
 
+  std::string globalDataKey_; // what global data does this fill?
+
+  Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer_;
 };
 
 // **************************************************************
@@ -134,6 +141,8 @@ public:
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
+
+  void preEvaluate(typename Traits::PreEvalData d);
   
   void evaluateFields(typename Traits::EvalData workset);
   
@@ -153,6 +162,10 @@ private:
   // for scattering
   Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
   std::vector<int> fieldIds_; // field IDs needing mapping
+
+  std::string globalDataKey_; // what global data does this fill?
+
+  Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer_;
 
 };
 

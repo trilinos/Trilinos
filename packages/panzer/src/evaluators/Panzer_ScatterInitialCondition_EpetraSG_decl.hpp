@@ -44,6 +44,8 @@
 #ifndef PANZER_SCATTER_INITIAL_CONDITION_EPETRA_SG_DECL_HPP
 #define PANZER_SCATTER_INITIAL_CONDITION_EPETRA_SG_DECL_HPP
 
+#include "Panzer_SGEpetraLinearObjContainer.hpp"
+
 namespace panzer {
 
 // **************************************************************
@@ -64,6 +66,8 @@ public:
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
+
+  void preEvaluate(typename Traits::PreEvalData d);
   
   void evaluateFields(typename Traits::EvalData workset);
   
@@ -84,6 +88,9 @@ private:
   Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
   std::vector<int> fieldIds_; // field IDs needing mapping
 
+  std::string globalDataKey_; // what global data does this fill?
+
+  Teuchos::RCP<SGEpetraLinearObjContainer> sgEpetraContainer_;
 };
 
 // **************************************************************

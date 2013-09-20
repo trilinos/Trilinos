@@ -60,6 +60,7 @@ panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::SGResidual, Traits,LO,GO
 ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
                                 const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
+   , globalDataKey_("Residual Scatter Container")
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
@@ -91,6 +92,9 @@ ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
 
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
+
   this->setName(scatterName+" Scatter Residual (SGResidual)");
 }
 
@@ -121,12 +125,14 @@ template<typename Traits,typename LO,typename GO,typename NodeT>
 void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::SGResidual, Traits,LO,GO,NodeT>::
 preEvaluate(typename Traits::PreEvalData d)
 {
+/*
    // extract dirichlet counter from container
-   Teuchos::RCP<LOC> tpetraContainer 
-         = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject("Dirichlet Counter"),true);
+   sgTpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject("Dirichlet Counter"),true);
 
-   dirichletCounter_ = tpetraContainer->get_x();
+   dirichletCounter_ = sgTpetraContainer_->get_x();
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
+*/
+  TEUCHOS_ASSERT(false);
 }
 
 // **********************************************************************
@@ -134,6 +140,7 @@ template<typename Traits,typename LO,typename GO,typename NodeT>
 void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::SGResidual, Traits,LO,GO,NodeT>::
 evaluateFields(typename Traits::EvalData workset)
 { 
+/*
    typedef SGTpetraLinearObjContainer<double,LO,GO,NodeT> SGLOC;
 
    std::vector<GO> GIDs;
@@ -143,9 +150,7 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<SGLOC> sgTpetraContainer 
-         = Teuchos::rcp_dynamic_cast<SGLOC>(workset.ghostedLinContainer);
-   Teuchos::RCP<typename LOC::VectorType> r_template = (*sgTpetraContainer->begin())->get_f();
+   Teuchos::RCP<typename LOC::VectorType> r_template = (*sgTpetraContainer_->begin())->get_f();
    Teuchos::RCP<const typename LOC::MapType> map = r_template->getMap();
 
    Teuchos::ArrayRCP<double> dc_array = dirichletCounter_->get1dViewNonConst();
@@ -192,7 +197,7 @@ evaluateFields(typename Traits::EvalData workset)
             // loop over stochastic basis scatter field values to residual vectors
             int stochIndex = 0;
             typename SGLOC::iterator itr; 
-            for(itr=sgTpetraContainer->begin();itr!=sgTpetraContainer->end();++itr,++stochIndex) {
+            for(itr=sgTpetraContainer_->begin();itr!=sgTpetraContainer_->end();++itr,++stochIndex) {
                Teuchos::RCP<typename LOC::VectorType> f = (*itr)->get_f();
     	       f->replaceLocalValue(lid,field.coeff(stochIndex));
             }
@@ -202,6 +207,8 @@ evaluateFields(typename Traits::EvalData workset)
          }
       }
    }
+*/
+  TEUCHOS_ASSERT(false);
 }
 
 // **********************************************************************
@@ -273,12 +280,14 @@ template<typename Traits,typename LO,typename GO,typename NodeT>
 void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::SGJacobian, Traits,LO,GO,NodeT>::
 preEvaluate(typename Traits::PreEvalData d)
 {
+/*
    // extract dirichlet counter from container
-   Teuchos::RCP<LOC> tpetraContainer 
-         = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject("Dirichlet Counter"),true);
+   sgTpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject("Dirichlet Counter"),true);
 
-   dirichletCounter_ = tpetraContainer->get_x();
+   dirichletCounter_ = sgTpetraContainer_->get_x();
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
+*/
+  TEUCHOS_ASSERT(false);
 }
 
 // **********************************************************************
@@ -286,6 +295,7 @@ template<typename Traits,typename LO,typename GO,typename NodeT>
 void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::SGJacobian, Traits,LO,GO,NodeT>::
 evaluateFields(typename Traits::EvalData workset)
 { 
+/*
    typedef SGTpetraLinearObjContainer<double,LO,GO,NodeT> SGLOC;
 
    std::vector<GO> GIDs;
@@ -295,9 +305,7 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<SGLOC> sgTpetraContainer 
-         = Teuchos::rcp_dynamic_cast<SGLOC>(workset.ghostedLinContainer);
-   Teuchos::RCP<typename LOC::CrsMatrixType> Jac_template = (*sgTpetraContainer->begin())->get_A();
+   Teuchos::RCP<typename LOC::CrsMatrixType> Jac_template = (*sgTpetraContainer_->begin())->get_A();
    Teuchos::RCP<const typename LOC::MapType> map = Jac_template->getRowMap();
 
    Teuchos::ArrayRCP<double> dc_array = dirichletCounter_->get1dViewNonConst();
@@ -345,7 +353,7 @@ evaluateFields(typename Traits::EvalData workset)
             // loop over stochastic basis scatter field values to residual vectors
             int stochIndex = 0;
             typename SGLOC::iterator itr; 
-            for(itr=sgTpetraContainer->begin();itr!=sgTpetraContainer->end();++itr,++stochIndex) {
+            for(itr=sgTpetraContainer_->begin();itr!=sgTpetraContainer_->end();++itr,++stochIndex) {
                Teuchos::RCP<typename LOC::VectorType> r = (*itr)->get_f();
                Teuchos::RCP<typename LOC::CrsMatrixType> Jac = (*itr)->get_A();
                Teuchos::ArrayRCP<double> r_array = r->get1dViewNonConst();
@@ -381,6 +389,10 @@ evaluateFields(typename Traits::EvalData workset)
          }
       }
    }
+
+*/
+ 
+   TEUCHOS_ASSERT(false); // lets face it this doesn't work
 }
 
 // **********************************************************************

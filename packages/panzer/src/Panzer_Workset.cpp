@@ -43,7 +43,7 @@
 #include "Panzer_Workset.hpp"
 
 namespace panzer {
- 
+
   std::ostream& operator<<(std::ostream& os, const panzer::Workset& w)
   {
     using std::endl;

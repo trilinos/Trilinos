@@ -356,7 +356,7 @@ ul.auto-toc {
 <li><a class="reference internal" href="#generating-verbose-output" id="id24">5.14&nbsp;&nbsp;&nbsp;Generating verbose output</a></li>
 <li><a class="reference internal" href="#enabling-disabling-deprecated-warnings" id="id25">5.15&nbsp;&nbsp;&nbsp;Enabling/disabling deprecated warnings</a></li>
 <li><a class="reference internal" href="#disabling-deprecated-code" id="id26">5.16&nbsp;&nbsp;&nbsp;Disabling deprecated code</a></li>
-<li><a class="reference internal" href="#disable-update-of-package-dependency-information" id="id27">5.17&nbsp;&nbsp;&nbsp;Disable update of package dependency information</a></li>
+<li><a class="reference internal" href="#outputting-package-dependency-information" id="id27">5.17&nbsp;&nbsp;&nbsp;Outputting package dependency information</a></li>
 <li><a class="reference internal" href="#enabling-different-test-categories" id="id28">5.18&nbsp;&nbsp;&nbsp;Enabling different test categories</a></li>
 <li><a class="reference internal" href="#enabling-support-for-coverage-testing" id="id29">5.19&nbsp;&nbsp;&nbsp;Enabling support for coverage testing</a></li>
 <li><a class="reference internal" href="#viewing-configure-options-and-documentation" id="id30">5.20&nbsp;&nbsp;&nbsp;Viewing configure options and documentation</a></li>
@@ -1242,14 +1242,36 @@ is free of calling deprecated code.</p>
 <tt class="docutils literal">Trilinos_HIDE_DEPRECATED_CODE</tt> for individual package
 <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt>.</p>
 </div>
-<div class="section" id="disable-update-of-package-dependency-information">
-<h2><a class="toc-backref" href="#id27">5.17&nbsp;&nbsp;&nbsp;Disable update of package dependency information</a></h2>
-<p>To turn off the update/generation of the various XML and HTML package
-dependency files (and speed up configuration), use the configure option:</p>
+<div class="section" id="outputting-package-dependency-information">
+<h2><a class="toc-backref" href="#id27">5.17&nbsp;&nbsp;&nbsp;Outputting package dependency information</a></h2>
+<p>To generate the various XML and HTML package dependency files, one can set the
+output directory when configuring using:</p>
 <pre class="literal-block">
--D Trilinos_DEPS_XML_OUTPUT_FILE:FILEPATH=
+-D Trilinos_DEPS_DEFAULT_OUTPUT_DIR:FILEPATH=&lt;SOME_PATH&gt;
 </pre>
-<p>NOTE: One must start with a clean CMake cache for this to work.</p>
+<p>This will generate, by default, the output files
+TrilinosPackageDependencies.xml, TrilinosPackageDependenciesTable.html, and
+CDashSubprojectDependencies.xml.</p>
+<p>The filepath for TrilinosPackageDependencies.xml can be overridden using:</p>
+<pre class="literal-block">
+-D Trilinos_DEPS_XML_OUTPUT_FILE:FILEPATH=&lt;SOME_FILE_PATH&gt;
+</pre>
+<p>The filepath for TrilinosPackageDependenciesTable.html can be overridden
+using:</p>
+<pre class="literal-block">
+-D Trilinos_DEPS_HTML_OUTPUT_FILE:FILEPATH=&lt;SOME_FILE_PATH&gt;
+</pre>
+<p>The filepath for CDashSubprojectDependencies.xml can be overridden using:</p>
+<pre class="literal-block">
+-D Trilinos_CDASH_DEPS_XML_OUTPUT_FILE:FILEPATH=&lt;SOME_FILE_PATH&gt;
+</pre>
+<p>NOTES:</p>
+<ul class="simple">
+<li>One must start with a clean CMake cache for all of these defaults to work.</li>
+<li>The files TrilinosPackageDependenciesTable.html and
+CDashSubprojectDependencies.xml will only get generated if support for
+Python is enabled.</li>
+</ul>
 </div>
 <div class="section" id="enabling-different-test-categories">
 <h2><a class="toc-backref" href="#id28">5.18&nbsp;&nbsp;&nbsp;Enabling different test categories</a></h2>

@@ -91,22 +91,25 @@ void panzer::evaluateInitialCondition(WorksetContainer & wkstContainer,
 				      Teuchos::RCP<panzer::LinearObjContainer> loc,
 				      const double time_stamp)
 {   
+  GlobalEvaluationDataContainer gedc;
+  gedc.addDataObject("Scatter IC Container",loc);
+
   for(std::map< std::string,Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >::const_iterator itr=phx_ic_field_managers.begin();
       itr!=phx_ic_field_managers.end();++itr) {
     std::string blockId = itr->first;
     Teuchos::RCP< PHX::FieldManager<panzer::Traits> > fm = itr->second;
-    std::vector<panzer::Workset>& w = *wkstContainer.getVolumeWorksets(blockId);
-    
+
+    fm->preEvaluate<panzer::Traits::Residual>(gedc);
+
     // Loop over worksets in this element block
+    std::vector<panzer::Workset>& w = *wkstContainer.getVolumeWorksets(blockId);
     for (std::size_t i = 0; i < w.size(); ++i) {
       panzer::Workset& workset = w[i];
       
-      workset.linContainer = loc;
       // Need to figure out how to get restart time from Rythmos.
       workset.time = time_stamp;
       
       fm->evaluateFields<panzer::Traits::Residual>(workset);
     }
   }
-  
 }

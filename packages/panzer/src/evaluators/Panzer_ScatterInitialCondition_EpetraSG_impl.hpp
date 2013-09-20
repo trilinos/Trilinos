@@ -52,6 +52,7 @@
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_SGEpetraLinearObjContainer.hpp"
+#include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -67,6 +68,7 @@ panzer::ScatterInitialCondition_Epetra<panzer::Traits::SGResidual, Traits,LO,GO>
 ScatterInitialCondition_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                        const Teuchos::ParameterList& p)
   : globalIndexer_(indexer) 
+  , globalDataKey_("Scatter IC Container")
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
@@ -91,6 +93,9 @@ ScatterInitialCondition_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalInde
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
 
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
+
   this->setName(scatterName+" Scatter Residual (SGResidual)");
 }
 
@@ -100,8 +105,6 @@ void panzer::ScatterInitialCondition_Epetra<panzer::Traits::SGResidual, Traits,L
 postRegistrationSetup(typename Traits::SetupData d, 
 		      PHX::FieldManager<Traits>& fm)
 {
-  // globalIndexer_ = d.globalIndexer_;
-
   fieldIds_.resize(scatterFields_.size());
   // load required field numbers for fast use
   for(std::size_t fd=0;fd<scatterFields_.size();++fd) {
@@ -117,6 +120,23 @@ postRegistrationSetup(typename Traits::SetupData d,
 // **********************************************************************
 template<typename Traits,typename LO,typename GO>
 void panzer::ScatterInitialCondition_Epetra<panzer::Traits::SGResidual, Traits,LO,GO>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+  typedef SGEpetraLinearObjContainer SGLOC;
+
+  // extract linear object container
+  sgEpetraContainer_ = Teuchos::rcp_dynamic_cast<SGLOC>(d.getDataObject(globalDataKey_));
+ 
+  if(sgEpetraContainer_==Teuchos::null) {
+    // extract linear object container
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    sgEpetraContainer_ = Teuchos::rcp_dynamic_cast<SGLOC>(loc);
+  }
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO>
+void panzer::ScatterInitialCondition_Epetra<panzer::Traits::SGResidual, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
    std::vector<GO> GIDs;
@@ -126,9 +146,7 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<SGEpetraLinearObjContainer> sgEpetraContainer 
-         = Teuchos::rcp_dynamic_cast<SGEpetraLinearObjContainer>(workset.linContainer);
-   Teuchos::RCP<Epetra_Vector> x_template = (*sgEpetraContainer->begin())->get_x();
+   Teuchos::RCP<Epetra_Vector> x_template = (*sgEpetraContainer_->begin())->get_x();
    const Epetra_BlockMap & map = x_template->Map();
 
    // NOTE: A reordering of these loops will likely improve performance
@@ -165,7 +183,7 @@ evaluateFields(typename Traits::EvalData workset)
             // loop over stochastic basis scatter field values to residual vectors
             int stochIndex = 0;
             panzer::SGEpetraLinearObjContainer::iterator itr; 
-            for(itr=sgEpetraContainer->begin();itr!=sgEpetraContainer->end();++itr,++stochIndex)
+            for(itr=sgEpetraContainer_->begin();itr!=sgEpetraContainer_->end();++itr,++stochIndex)
                (*(*itr)->get_x())[lid] = field.coeff(stochIndex);
          }
       }

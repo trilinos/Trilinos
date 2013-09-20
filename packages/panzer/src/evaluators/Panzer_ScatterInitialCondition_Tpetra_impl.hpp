@@ -65,6 +65,7 @@ panzer::ScatterInitialCondition_Tpetra<panzer::Traits::Residual, Traits,LO,GO,No
 ScatterInitialCondition_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                        const Teuchos::ParameterList& p)
   : globalIndexer_(indexer) 
+  , globalDataKey_("Scatter IC Container")
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
@@ -88,6 +89,9 @@ ScatterInitialCondition_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalInde
 
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
+
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
 
   this->setName(scatterName+" Scatter Residual");
 }
@@ -115,6 +119,23 @@ postRegistrationSetup(typename Traits::SetupData d,
 // **********************************************************************
 template<typename Traits,typename LO,typename GO,typename NodeT>
 void panzer::ScatterInitialCondition_Tpetra<panzer::Traits::Residual, Traits,LO,GO,NodeT>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+  typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
+
+  // extract linear object container
+  tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject(globalDataKey_));
+ 
+  if(tpetraContainer_==Teuchos::null) {
+    // extract linear object container
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
+  }
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO,typename NodeT>
+void panzer::ScatterInitialCondition_Tpetra<panzer::Traits::Residual, Traits,LO,GO,NodeT>::
 evaluateFields(typename Traits::EvalData workset)
 { 
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
@@ -126,9 +147,7 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<LOC> tpetraContainer 
-         = Teuchos::rcp_dynamic_cast<LOC>(workset.linContainer);
-   Teuchos::RCP<typename LOC::VectorType> x = tpetraContainer->get_x(); 
+   Teuchos::RCP<typename LOC::VectorType> x = tpetraContainer_->get_x(); 
    Teuchos::ArrayRCP<double> x_array = x->get1dViewNonConst();
 
    // NOTE: A reordering of these loops will likely improve performance
@@ -173,6 +192,7 @@ panzer::ScatterInitialCondition_Tpetra<panzer::Traits::Tangent, Traits,LO,GO,Nod
 ScatterInitialCondition_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                        const Teuchos::ParameterList& p)
   : globalIndexer_(indexer) 
+  , globalDataKey_("Scatter IC Container")
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
@@ -196,6 +216,9 @@ ScatterInitialCondition_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalInde
 
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
+
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
 
   this->setName(scatterName+" Scatter Tangent");
 }
@@ -223,6 +246,23 @@ postRegistrationSetup(typename Traits::SetupData d,
 // **********************************************************************
 template<typename Traits,typename LO,typename GO,typename NodeT>
 void panzer::ScatterInitialCondition_Tpetra<panzer::Traits::Tangent, Traits,LO,GO,NodeT>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+  typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
+
+  // extract linear object container
+  tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject(globalDataKey_));
+ 
+  if(tpetraContainer_==Teuchos::null) {
+    // extract linear object container
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
+  }
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO,typename NodeT>
+void panzer::ScatterInitialCondition_Tpetra<panzer::Traits::Tangent, Traits,LO,GO,NodeT>::
 evaluateFields(typename Traits::EvalData workset)
 { 
    TEUCHOS_ASSERT(false);
@@ -236,9 +276,7 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<LOC> tpetraContainer 
-         = Teuchos::rcp_dynamic_cast<LOC>(workset.linContainer);
-   Teuchos::RCP<typename LOC::VectorType> x = tpetraContainer->get_x(); 
+   Teuchos::RCP<typename LOC::VectorType> x = tpetraContainer_->get_x(); 
    Teuchos::ArrayRCP<double> x_array = x->get1dViewNonConst();
 
    // NOTE: A reordering of these loops will likely improve performance

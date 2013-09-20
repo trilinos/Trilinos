@@ -695,7 +695,23 @@ NOX::Thyra::Group::applyRightPreconditioning(bool useTranspose,
 {
   NOX_ASSERT(nonnull(prec_));
   
-  if (out_args_.supports( ::Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) {
+  // A nonnull prec_factory_ means we are using Jacobian for M and use
+  // the prec_factory_ to produce M^{-1}.  Otherwise, we assume that
+  // M^{-1} is provided directly by the user from the model evaluator.
+  // Finally if the model evauator does not support a prec then just
+  // use the operator the user supplied prec_ object and assume they
+  // know when to update it externally.
+
+  if (nonnull(prec_factory_)) {
+    NOX_ASSERT(nonnull(losb_));
+
+    if (!this->isJacobian())
+      const_cast<NOX::Thyra::Group*>(this)->computeJacobian();
+    
+    this->scaleResidualAndJacobian();
+    prec_factory_->initializePrec(losb_, prec_.get());
+  }
+  else if (out_args_.supports( ::Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) {
     in_args_.set_x(x_vec_->getThyraRCPVector().assert_not_null());
     out_args_.set_W_prec(prec_);
     model_->evalModel(in_args_, out_args_);
@@ -708,11 +724,20 @@ NOX::Thyra::Group::applyRightPreconditioning(bool useTranspose,
   NOX::Thyra::Vector* resultThyraVectorPtr = dynamic_cast<NOX::Thyra::Vector*>(&result);
   NOX_ASSERT(resultThyraVectorPtr != NULL);
 
-  ::Thyra::apply(*prec_->getRightPrecOp(),
+  // Could be left, right or unspecified
+  Teuchos::RCP<const ::Thyra::LinearOpBase<double> > tmp_prec_ = prec_->getRightPrecOp();
+  if (is_null(tmp_prec_))
+    tmp_prec_ = prec_->getUnspecifiedPrecOp();
+  NOX_ASSERT(nonnull(tmp_prec_));
+
+  ::Thyra::apply(*tmp_prec_,
 		 ::Thyra::NOTRANS,
 		 *inputThyraVectorPtr->getThyraRCPVector(),
 		 outArg(*resultThyraVectorPtr->getThyraRCPVector().ptr()));
-  
+
+  if (nonnull(prec_factory_)) 
+    this->unscaleResidualAndJacobian();
+
   return NOX::Abstract::Group::Ok;
 }
   

@@ -148,8 +148,7 @@ public:
   template< typename T >
   inline T team_scan(T& value);
 
-  template< typename T >
-  inline T * get_shmem( const int count );
+  inline void * get_shmem( const int size );
 
   explicit inline Threads( Impl::ThreadsExec & );
 

@@ -113,13 +113,11 @@ namespace panzer_stk {
     std::vector<std::size_t>::const_iterator sideID = localSideTopoIDs.begin();
     std::vector<stk::mesh::Entity*>::const_iterator parentElement = parentElements.begin();
     for ( ; sideID != localSideTopoIDs.end(); ++side,++sideID,++parentElement) {
-
-      // get local element ids so we can get vertex coordinates
-      std::vector<std::size_t> localElementIDs;
-      localElementIDs.push_back(mesh->elementLocalId(*parentElement));
     
+      std::vector<stk::mesh::Entity*> elementEntities;
+      elementEntities.push_back(*parentElement);
       Intrepid::FieldContainer<double> vertices;
-      mesh->getElementVertices(localElementIDs,vertices);
+      mesh->getElementVertices(elementEntities,vertices);
       
       panzer::CellData sideCellData(1,*sideID,parentTopology);
       RCP<panzer::IntegrationRule> ir = Teuchos::rcp(new panzer::IntegrationRule(cubDegree,sideCellData));

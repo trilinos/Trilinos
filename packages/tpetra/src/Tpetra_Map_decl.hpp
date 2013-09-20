@@ -850,15 +850,18 @@ namespace Tpetra {
     /// common case for the prolongation or restriction operators in
     /// algebraic multigrid.
     ///
-    /// \warning Never allow this pointer to escape the Map.  The
-    ///   directory must hold an RCP to this Map, which must be
-    ///   non-owning to prevent a circular dependency.  Therefore,
-    ///   allowing the Directory to persist beyond this Map would
-    ///   result in a dangling RCP. We avoid this by not sharing the
-    ///   Directory.
-    ///
     /// \note This is declared "mutable" so that getRemoteIndexList()
     ///   can create the Directory on demand.
+    ///
+    /// \warning The Directory is an implementation detail of its Map.
+    ///   It does not make sense to expose in the public interface of
+    ///   Map.  Resist the temptation to do so.  There is no need,
+    ///   because Map's public interface already exposes the one
+    ///   useful feature of Directory, via getRemoteIndexList().  We
+    ///   only use Teuchos::RCP here because the more appropriate
+    ///   std::unique_ptr is a C++11 feature and is therefore not
+    ///   available to us.  Developers should not construe the use of
+    ///   Teuchos::RCP as permission to share this object.
     mutable Teuchos::RCP<Directory<LocalOrdinal,GlobalOrdinal,Node> > directory_;
 
   }; // Map class
@@ -1051,8 +1054,7 @@ namespace Tpetra {
     // we can clone inexpensively, so there is no harm in creating it
     // here.
     if (! directory_.is_null ()) {
-      // The weak reference prevents circularity.
-      map->directory_ = directory_->template clone<Node2> (map.create_weak ());
+      map->directory_ = directory_->template clone<Node2> (*map);
     }
     return map;
   }

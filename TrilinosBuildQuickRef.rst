@@ -889,15 +889,38 @@ This will override the global behavior set by
 ``<TRIBITS_PACKAGE>``.
 
 
-Disable update of package dependency information
-------------------------------------------------
+Outputting package dependency information
+-----------------------------------------
 
-To turn off the update/generation of the various XML and HTML package
-dependency files (and speed up configuration), use the configure option::
+To generate the various XML and HTML package dependency files, one can set the
+output directory when configuring using::
 
-  -D Trilinos_DEPS_XML_OUTPUT_FILE:FILEPATH=
+  -D Trilinos_DEPS_DEFAULT_OUTPUT_DIR:FILEPATH=<SOME_PATH>
 
-NOTE: One must start with a clean CMake cache for this to work.
+This will generate, by default, the output files
+TrilinosPackageDependencies.xml, TrilinosPackageDependenciesTable.html, and
+CDashSubprojectDependencies.xml.
+
+The filepath for TrilinosPackageDependencies.xml can be overridden using::
+
+  -D Trilinos_DEPS_XML_OUTPUT_FILE:FILEPATH=<SOME_FILE_PATH>
+
+The filepath for TrilinosPackageDependenciesTable.html can be overridden
+using::
+
+  -D Trilinos_DEPS_HTML_OUTPUT_FILE:FILEPATH=<SOME_FILE_PATH>
+
+The filepath for CDashSubprojectDependencies.xml can be overridden using::
+
+  -D Trilinos_CDASH_DEPS_XML_OUTPUT_FILE:FILEPATH=<SOME_FILE_PATH>
+
+NOTES:
+
+* One must start with a clean CMake cache for all of these defaults to work.
+
+* The files TrilinosPackageDependenciesTable.html and
+  CDashSubprojectDependencies.xml will only get generated if support for
+  Python is enabled.
 
 
 Enabling different test categories

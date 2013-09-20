@@ -40,22 +40,35 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_CONFIGDEFS_H
-#define PANZER_CONFIGDEFS_H
+#ifndef PANZER_EVALUATOR_CrossProduct_HPP
+#define PANZER_EVALUATOR_CrossProduct_HPP
 
-#ifndef __cplusplus
-#define __cplusplus
-#endif
-
-#include "Panzer_config.hpp"
+#include "Phalanx_Evaluator_Macros.hpp"
+#include "Phalanx_MDField.hpp"
 
 namespace panzer {
-#ifdef PANZER_HAVE_LONG_LONG_INT
-  typedef long long int Ordinal64;
-#else
-  // typedef long Ordinal64;
-  typedef int Ordinal64;
-#endif
+    
+  /** \brief Evaluates cross product at a set of points
+
+      v_a \times v_b
+
+    <Parameter name="Result Name" type="string" value="<Name to give to cross product field>"/>
+    <Parameter name="Point Rule" type="RCP<const PointRule>" value="<user specified point rule>"/>
+    <Parameter name="Vector A Name" type="string" value="<vector a name>"/>
+    <Parameter name="Vector B Name" type="string" value="<vector b name>"/>
+  */
+PHX_EVALUATOR_CLASS(CrossProduct)
+  
+  PHX::MDField<ScalarT> vec_a_cross_vec_b;
+  PHX::MDField<ScalarT> vec_a, vec_b;
+
+  bool useScalarField;
+
+  int num_pts;
+  int num_dim;
+
+PHX_EVALUATOR_CLASS_END
+
 }
 
 #endif

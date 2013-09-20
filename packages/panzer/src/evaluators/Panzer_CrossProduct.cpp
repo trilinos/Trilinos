@@ -40,22 +40,11 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_CONFIGDEFS_H
-#define PANZER_CONFIGDEFS_H
-
-#ifndef __cplusplus
-#define __cplusplus
-#endif
-
 #include "Panzer_config.hpp"
 
-namespace panzer {
-#ifdef PANZER_HAVE_LONG_LONG_INT
-  typedef long long int Ordinal64;
-#else
-  // typedef long Ordinal64;
-  typedef int Ordinal64;
-#endif
-}
+#include "Panzer_ExplicitTemplateInstantiation.hpp"
 
-#endif
+#include "Panzer_CrossProduct.hpp"
+#include "Panzer_CrossProduct_impl.hpp"
+
+PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer::CrossProduct)
