@@ -17,32 +17,32 @@ MACRO(TRIBITS_REPOSITORY_DEFINE_PACKAGING)
     /.git/
     ".gitignore"
     classicMakefile
-    ".*.pyc"
-    ${Trilinos_SOURCE_PATH}/cmake/tribits/common_tools/git
+    ${Trilinos_SOURCE_PATH}/sparse_checkout.sh
+    ${Trilinos_SOURCE_PATH}/cmake/tribits/common_tools/git/
     ${Trilinos_SOURCE_PATH}/cmake/CMakeKitwareBacklog.txt
     ${Trilinos_SOURCE_PATH}/cmake/TODO
-    ${Trilinos_SOURCE_PATH}/cmake/ctest
-    ${Trilinos_SOURCE_PATH}/packages/ITAPS
-    ${Trilinos_SOURCE_PATH}/packages/external
-    ${Trilinos_SOURCE_PATH}/packages/jpetra
-    ${Trilinos_SOURCE_PATH}/packages/cmmlib
+    ${Trilinos_SOURCE_PATH}/cmake/ctest/
+    ${Trilinos_SOURCE_PATH}/packages/ITAPS/
+    ${Trilinos_SOURCE_PATH}/packages/external/
+    ${Trilinos_SOURCE_PATH}/packages/jpetra/
+    ${Trilinos_SOURCE_PATH}/packages/cmmlib/
     ${Trilinos_SOURCE_PATH}/packages/configure.ac
     ${Trilinos_SOURCE_PATH}/packages/configure
     ${Trilinos_SOURCE_PATH}/packages/Makefile.am
     ${Trilinos_SOURCE_PATH}/packages/Makefile.in
     ${Trilinos_SOURCE_PATH}/doc/[^b]
     ${Trilinos_SOURCE_PATH}/README_old
-    ${Trilinos_SOURCE_PATH}/sampleScripts/old_autotools
-    ${Trilinos_SOURCE_PATH}/sampleScripts/git-profiles
-    ${Trilinos_SOURCE_PATH}/SIERRA
-    ${Trilinos_SOURCE_PATH}/commonTools/test/coverage
-    ${Trilinos_SOURCE_PATH}/commonTools/test/harness
+    ${Trilinos_SOURCE_PATH}/sampleScripts/old_autotools/
+    ${Trilinos_SOURCE_PATH}/sampleScripts/git-profiles/
+    ${Trilinos_SOURCE_PATH}/SIERRA/
+    ${Trilinos_SOURCE_PATH}/commonTools/test/coverage/
+    ${Trilinos_SOURCE_PATH}/commonTools/test/harness/
     ${Trilinos_SOURCE_PATH}/commonTools/test/utilities/README
-    ${Trilinos_SOURCE_PATH}/commonTools/test/utilities/dependencies
-    ${Trilinos_SOURCE_PATH}/commonTools/test/utilities/packages
+    ${Trilinos_SOURCE_PATH}/commonTools/test/utilities/dependencies/
+    ${Trilinos_SOURCE_PATH}/commonTools/test/utilities/packages/
     ${Trilinos_SOURCE_PATH}/commonTools/test/utilities/r.*
-    ${Trilinos_SOURCE_PATH}/commonTools/scripts
-    ${Trilinos_SOURCE_PATH}/commonTools/release
+    ${Trilinos_SOURCE_PATH}/commonTools/scripts/
+    ${Trilinos_SOURCE_PATH}/commonTools/release/
     ${Trilinos_SOURCE_PATH}/packages/common/DoxyfilePackageTemplate
     ${Trilinos_SOURCE_PATH}/stamp-h.in
     ${Trilinos_SOURCE_PATH}/configure.ac
@@ -51,7 +51,7 @@ MACRO(TRIBITS_REPOSITORY_DEFINE_PACKAGING)
     ${Trilinos_SOURCE_PATH}/Makefile.am
     ${Trilinos_SOURCE_PATH}/Makefile.in
     ${Trilinos_SOURCE_PATH}/bootstrap
-    ${Trilinos_SOURCE_PATH}/config
+    ${Trilinos_SOURCE_PATH}/config/
     )
 
   SET(TRIBITS_CPACK_PACKAGES_TO_NOT_IGNORE ${TRIBITS_CPACK_PACKAGES_TO_NOT_IGNORE}
