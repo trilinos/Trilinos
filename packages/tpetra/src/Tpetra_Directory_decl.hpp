@@ -54,8 +54,8 @@ namespace Tpetra {
   /// \class Directory
   /// \brief Implement mapping from global ID to process ID and local ID.
   ///
-  /// This class is an implementation detail of \c Map.  It is mainly
-  /// of interest to Tpetra developers and does not normally appear in
+  /// This class is an implementation detail of Map.  It is mainly of
+  /// interest to Tpetra developers and does not normally appear in
   /// users' code.  If using this with a Map, the template parameters
   /// of Directory should always be the same as the template
   /// parameters of Map.
@@ -97,7 +97,7 @@ namespace Tpetra {
   ///    in the communicator), in that it allows lookups without
   ///    communication (once the array has been built).
   ///
-  /// 3. If the user's Map is distributed and noncontiguous, then the
+  /// 4. If the user's Map is distributed and noncontiguous, then the
   ///    Directory must store a general mapping from global ID to
   ///    (process ID, local ID).  It can't afford to store the whole
   ///    mapping redundantly on all processes, so the Directory
@@ -110,6 +110,11 @@ namespace Tpetra {
   /// omitted.  The \c GlobalOrdinal type defaults to the
   /// <tt>LocalOrdinal</tt> type, and the \c Node type defaults to
   /// Kokkos' default Node type.
+  ///
+  /// \note To Tpetra developers: As of fall 2013, Directory no longer
+  ///   keeps a reference to the Map that created it.  This will
+  ///   facilitate Tpetra's port to use (new) Kokkos data structures
+  ///   and handle semantics, by removing this circular dependency.
   ///
   /// \note To Epetra developers: This class corresponds roughly to
   ///   Epetra_Directory or Epetra_BasicDirectory.  Epetra_BlockMap
@@ -136,7 +141,7 @@ namespace Tpetra {
     ///
     /// \note This constructor is invoked by Map's constructor, using
     ///   the Map's <tt>this</tt> pointer as the input argument.
-    explicit Directory (const Teuchos::RCP<const map_type>& map);
+    explicit Directory (const map_type& map);
 
     /// \brief Constructor (using a tie break class to decide ownership).
     ///
@@ -145,8 +150,8 @@ namespace Tpetra {
     ///
     /// \note This constructor is NOT invoked by Map's constructor,
     ///   and for now only works with noncontiguous Maps.
-    explicit Directory (const Teuchos::RCP<const map_type>& map,
-                        const Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal> & tie_break);
+    explicit Directory (const map_type& map,
+                        const Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal>& tie_break);
 
     //! Destructor.
     ~Directory ();
@@ -171,7 +176,7 @@ namespace Tpetra {
     /// a host (CPU) copy of a device (GPU) object.
     template <class Node2>
     RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> >
-    clone (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node2> > &clone_map) const
+    clone (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node2> >& clone_map) const
     {
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
@@ -217,6 +222,9 @@ namespace Tpetra {
     /// own those GIDs.  Tpetra uses this to figure out the locations
     /// of nonlocal Map entries.
     ///
+    /// \param map [in] The Map given to this Directory instance's
+    ///   constructor.
+    ///
     /// \param globalIDs [in] List of global IDs to look up.
     ///
     /// \param nodeIDs [out] On input, an array view with the same
@@ -233,7 +241,8 @@ namespace Tpetra {
     /// \note If <tt>nodeIDs.size() != globalIDs.size()</tt>, then
     ///   this method throws std::runtime_error.
     LookupStatus
-    getDirectoryEntries (const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
+    getDirectoryEntries (const map_type& map,
+			 const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
                          const Teuchos::ArrayView<int>& nodeIDs) const;
 
     /// \brief Given a global ID list, return a list of their owning
@@ -244,6 +253,9 @@ namespace Tpetra {
     /// own those GIDs, as well as the list of the local identifiers
     /// (LIDs).  Tpetra uses this to figure out the locations of
     /// nonlocal Map entries.
+    ///
+    /// \param map [in] The Map given to this Directory instance's
+    ///   constructor.
     ///
     /// \param globalIDs [in] List of global IDs to look up.
     ///
@@ -269,7 +281,8 @@ namespace Tpetra {
     ///   <tt>localIDs.size() != globalIDs.size()</tt>, then
     ///   this method throws std::runtime_error.
     LookupStatus
-    getDirectoryEntries (const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
+    getDirectoryEntries (const map_type& map,
+			 const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
                          const Teuchos::ArrayView<int>& nodeIDs,
                          const Teuchos::ArrayView<LocalOrdinal>& localIDs) const;
     //@}
@@ -283,9 +296,6 @@ namespace Tpetra {
     ///   contiguous or noncontiguous).
     typedef Details::Directory<LocalOrdinal, GlobalOrdinal, Node> base_type;
 
-    //! The Directory's Map.
-    Teuchos::RCP<const map_type> map_;
-
     //! Implementation of this object.
     Teuchos::RCP<const base_type> impl_;
 
@@ -295,7 +305,7 @@ namespace Tpetra {
     template <class LO, class GO, class N> friend class Directory;
 
     //! Empty constructor, for delayed initialization by clone()
-    Directory();
+    Directory ();
 
     //! Assignment operator: declared private but not defined on purpose.
     Directory<LocalOrdinal, GlobalOrdinal, Node>&
