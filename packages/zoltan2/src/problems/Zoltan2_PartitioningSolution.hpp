@@ -2036,11 +2036,10 @@ void PartitioningSolution<Adapter>::RemapParts()
   if (me == 0) {
     idx = new int[tnVtx+1];
     sizes = new int[np];
+    sizes[0] = nedges;
   }
   if (np > 1)
     Teuchos::gather<int, int>(&nedges, 1, sizes, 1, 0, *comm_);
-  else
-    sizes[0] = nedges;
 
   // prefix sum to build the idx array
   if (me == 0) {
