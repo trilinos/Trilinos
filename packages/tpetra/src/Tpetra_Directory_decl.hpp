@@ -176,30 +176,30 @@ namespace Tpetra {
     /// a host (CPU) copy of a device (GPU) object.
     template <class Node2>
     RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> >
-    clone (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node2> >& clone_map) const
+    clone (const Map<LocalOrdinal,GlobalOrdinal,Node2>& clone_map) const
     {
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
       using Teuchos::rcp_dynamic_cast;
 
       RCP<Directory<LO, GO, Node2> > dir (new Directory<LO, GO, Node2> ());
-      if (clone_map->isDistributed ()) {
-        if (clone_map->isUniform ()) {
+      if (clone_map.isDistributed ()) {
+        if (clone_map.isUniform ()) {
           typedef Details::ContiguousUniformDirectory<LO, GO, Node> impl_type;
-          dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (*clone_map);
+          dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (clone_map);
         }
-        else if (clone_map->isContiguous ()) {
+        else if (clone_map.isContiguous ()) {
           typedef Details::DistributedContiguousDirectory<LO, GO, Node> impl_type;
-          dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (*clone_map);
+          dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (clone_map);
         }
         else { // not contiguous
           typedef Details::DistributedNoncontiguousDirectory<LO, GO, Node> impl_type;
-          dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (*clone_map);
+          dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (clone_map);
         }
       }
       else { // locally replicated (not distributed)
         typedef Details::ReplicatedDirectory<LO, GO, Node> impl_type;
-        dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (*clone_map);
+        dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (clone_map);
       }
       return dir;
     }
