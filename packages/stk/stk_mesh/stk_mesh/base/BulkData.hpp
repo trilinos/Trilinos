@@ -650,6 +650,8 @@ public:
 
   void comm_procs( EntityKey key, std::vector<int> & procs ) const;
 
+  void comm_procs( std::vector<EntityKey> & keys, std::vector<int> & procs ) const;
+
   void comm_procs( const Ghosting & ghost ,
                    EntityKey key, std::vector<int> & procs ) const;
 

@@ -742,6 +742,35 @@ void BulkData::comm_procs( EntityKey key, std::vector<int> & procs ) const
   procs.erase( i , procs.end() );
 }
 
+void BulkData::comm_procs( std::vector<EntityKey> & keys, std::vector<int> & procs ) const
+{
+  procs.clear();
+
+  int num = keys.size();
+  std::vector<int> procs_tmp;
+  for (int i = 0; i < num; ++i)
+  {
+    comm_procs(keys[i], procs_tmp);
+    std::sort(procs_tmp.begin(), procs_tmp.end(), std::less<int>());
+
+    if (i == 0)
+      procs.swap(procs_tmp);  // first loop, just collect procs for this object
+    else
+    {
+      // subsequent loops keep the intersection
+      std::vector<int> result;
+      std::back_insert_iterator<std::vector<int> > result_itr(result);
+      std::set_intersection(procs.begin(),
+                            procs.end(),
+                            procs_tmp.begin(),
+                            procs_tmp.end(),
+                            result_itr,
+                            std::less<int>());
+      procs.swap(result);
+    }
+  }
+}
+
 void BulkData::comm_procs( const Ghosting & ghost ,
                            EntityKey key, std::vector<int> & procs ) const
 {
