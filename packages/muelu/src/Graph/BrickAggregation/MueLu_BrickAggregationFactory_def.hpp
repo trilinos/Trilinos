@@ -279,8 +279,9 @@ namespace MueLu {
     int numProcs = comm->getSize();
     int n = x.size();
 
-    RCP<const Teuchos::MpiComm<int> > mpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
-    bool isMPI = !mpiComm.is_null();
+    RCP<const Teuchos::MpiComm<int> > dupMpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm->duplicate());
+
+    bool isMPI = !dupMpiComm.is_null();
 
     // Step 1: Create a local vector with unique coordinate points
     RCP<container> gMap = rcp(new container);
@@ -293,7 +294,7 @@ namespace MueLu {
     if (isMPI && numProcs > 1) {
       MPI_Comm rawComm;
       if (isMPI)
-        rawComm = (*mpiComm->getRawMpiComm())();
+        rawComm = (*dupMpiComm->getRawMpiComm())();
 
       int           sendCnt = gMap->size(), cnt = 0, recvSize;
       Array<int>    recvCnt(numProcs), Displs(numProcs);

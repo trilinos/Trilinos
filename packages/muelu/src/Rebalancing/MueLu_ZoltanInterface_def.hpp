@@ -100,17 +100,16 @@ namespace MueLu {
     float zoltanVersion_;
     Zoltan_Initialize(0, NULL, &zoltanVersion_);
 
-    // Tell Zoltan what kind of local/global IDs we will use.
-    // In our case, each GID is two ints and there are no local ids.
-    // One can skip this step if the IDs are just single ints.
-    // TODO define zoltanComm as a subcommunicator?!;
-    RCP<const Teuchos::MpiComm<int> >            mpiComm    = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(rowMap->getComm());
-    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > zoltanComm = mpiComm->getRawMpiComm();
+    RCP<const Teuchos::MpiComm<int> >            dupMpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(rowMap->getComm()->duplicate());
+    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > zoltanComm = dupMpiComm->getRawMpiComm();
 
     RCP<Zoltan> zoltanObj_ = rcp(new Zoltan((*zoltanComm)()));  //extract the underlying MPI_Comm handle and create a Zoltan object
     if (zoltanObj_ == Teuchos::null)
       throw Exceptions::RuntimeError("MueLu::Zoltan : Unable to create Zoltan data structure");
 
+    // Tell Zoltan what kind of local/global IDs we will use.
+    // In our case, each GID is two ints and there are no local ids.
+    // One can skip this step if the IDs are just single ints.
     int rv;
     if ((rv = zoltanObj_->Set_Param("num_gid_entries", "1")) != ZOLTAN_OK)
       throw Exceptions::RuntimeError("MueLu::Zoltan::Setup : setting parameter 'num_gid_entries' returned error code " + Teuchos::toString(rv));

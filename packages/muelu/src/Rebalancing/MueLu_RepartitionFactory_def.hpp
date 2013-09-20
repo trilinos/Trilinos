@@ -140,7 +140,8 @@ namespace MueLu {
     GO                     indexBase = rowMap->getIndexBase();
     Xpetra::UnderlyingLib  lib       = rowMap->lib();
 
-    RCP<const Teuchos::Comm<int> > comm = rowMap->getComm();
+    RCP<const Teuchos::Comm<int> > origComm = rowMap->getComm();
+    RCP<const Teuchos::Comm<int> > comm = origComm->duplicate();
     int myRank   = comm->getRank();
     int numProcs = comm->getSize();
 
@@ -229,7 +230,7 @@ namespace MueLu {
     GO numPartitions;
     if (IsAvailable(currentLevel, "number of partitions")) {
       numPartitions = Get<GO>(currentLevel, "number of partitions");
-      GetOStream(Warnings0, 0) << "Using user-provided \"number of partitions\", its performance is uknown" << std::endl;
+      GetOStream(Warnings0, 0) << "Using user-provided \"number of partitions\", the performance is unknown" << std::endl;
 
     } else {
       if (Teuchos::as<GO>(A->getGlobalNumRows()) < minRowsPerProcessor) {
@@ -479,7 +480,7 @@ namespace MueLu {
     }
 
     // Step 3: Construct importer
-    RCP<Map>          newRowMap      = MapFactory   ::Build(lib, rowMap->getGlobalNumElements(), myGIDs(), indexBase, comm);
+    RCP<Map>          newRowMap      = MapFactory   ::Build(lib, rowMap->getGlobalNumElements(), myGIDs(), indexBase, origComm);
     RCP<const Import> rowMapImporter = ImportFactory::Build(rowMap, newRowMap);
 
     Set(currentLevel, "Importer", rowMapImporter);
@@ -527,10 +528,14 @@ namespace MueLu {
     GO                     indexBase = rowMap->getIndexBase();
     Xpetra::UnderlyingLib  lib       = rowMap->lib();
 
-    RCP<const Teuchos::Comm<int> > comm = rowMap->getComm();
-    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawMpiComm = (rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm))->getRawMpiComm();
+    RCP<const Teuchos::Comm<int> > comm = rowMap->getComm()->duplicate();
     int myRank   = comm->getRank();
     int numProcs = comm->getSize();
+
+    RCP<const Teuchos::MpiComm<int> > tmpic = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
+    TEUCHOS_TEST_FOR_EXCEPTION(tmpic == Teuchos::null, Exceptions::RuntimeError, "Cannot cast base Teuchos::Comm to Teuchos::MpiComm object.");
+    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawMpiComm = tmpic->getRawMpiComm();
+
 
     // maxLocal is a constant which determins the number of largest edges which are being exchanged
     // The idea is that we do not want to construct the full bipartite graph, but simply a subset of

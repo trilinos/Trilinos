@@ -185,8 +185,10 @@ namespace MueLu {
 
     InputAdapterType adapter(numElements, map->getNodeElementList().getRawPtr(), values, strides, weights, strides);
 
-    const Teuchos::MpiComm<int>& comm = static_cast<const Teuchos::MpiComm<int>& >(*map->getComm());
-    RCP<ProblemType> problem(new ProblemType(&adapter, &Zoltan2Params, *comm.getRawMpiComm()));
+    RCP<const Teuchos::MpiComm<int> >            dupMpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(rowMap->getComm()->duplicate());
+    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > zoltanComm = dupMpiComm->getRawMpiComm();
+
+    RCP<ProblemType> problem(new ProblemType(&adapter, &Zoltan2Params, (*zoltanComm)()));
 
     {
       SubFactoryMonitor m1(*this, "Zoltan2 " + toString(algo), level);
