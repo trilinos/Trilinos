@@ -62,6 +62,7 @@
 //---------------------------------------------------------------------------
 Solver_AztecOO::Solver_AztecOO()
   : tolerance_(1.e-6), maxIters_(500), useTranspose_(false), paramlist_(NULL),
+    linProb(NULL),
     useML_(false),
 #ifdef HAVE_FEI_ML
    ml_prec_(NULL), ml_defaults_set_(false),
@@ -84,6 +85,7 @@ Solver_AztecOO::~Solver_AztecOO()
 {
   delete azoo_;
   delete paramlist_;
+  delete linProb;
 #ifdef HAVE_FEI_ML
   delete [] ml_aztec_options_;
   delete [] ml_aztec_params_;
@@ -165,8 +167,6 @@ int Solver_AztecOO::solve(fei::LinearSystem* linearSystem,
     return(-1);
   }
 
-  Epetra_LinearProblem linProb(epetra_op,x,b);
-
   //when we call azoo_->SetProblem, it will set some options. So we will
   //first take a copy of all options and params, then reset them after the
   //call to SetProblem. That way we preserve any options that have already
@@ -206,7 +206,10 @@ int Solver_AztecOO::solve(fei::LinearSystem* linearSystem,
   }
 
   if (precond != NULL) {
-    azoo_->SetProblem(linProb);
+    Epetra_LinearProblem * newlinProb = new Epetra_LinearProblem(epetra_op,x,b);
+    azoo_->SetProblem(*newlinProb);
+    delete linProb;
+    linProb = newlinProb;
 
     azoo_->SetAllAztecOptions(&(azoptions[0]));
     azoo_->SetAllAztecParams(&(azparams[0]));
@@ -224,7 +227,10 @@ int Solver_AztecOO::solve(fei::LinearSystem* linearSystem,
   }
 
   if (needNewPreconditioner) {
-    azoo_->SetProblem(linProb);
+    Epetra_LinearProblem * newlinProb = new Epetra_LinearProblem(epetra_op,x,b);
+    azoo_->SetProblem(*newlinProb);
+    delete linProb;
+    linProb = newlinProb;
 
     azoo_->SetAllAztecOptions(&(azoptions[0]));
     azoo_->SetAllAztecParams(&(azparams[0]));

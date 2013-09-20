@@ -142,6 +142,8 @@ class Solver_AztecOO : public fei::Solver, private fei::Logger {
   bool useTranspose_;
   Teuchos::ParameterList* paramlist_;
 
+  Epetra_LinearProblem *linProb;
+
   bool useML_;
 #ifdef HAVE_FEI_ML
   ML_Epetra::MultiLevelPreconditioner* ml_prec_;
