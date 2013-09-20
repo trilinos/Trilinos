@@ -196,7 +196,7 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Cloner, MatrixCloneEpetra, Scalar, LO, GO, N2 )
   {
-#ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_EPETRA
     typedef typename KokkosClassic::DefaultNode::DefaultNodeType N1;
 
     RCP<N1> n1(new N1());
