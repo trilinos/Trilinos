@@ -241,7 +241,7 @@ namespace MueLu {
         // Make sure that each processor has approximately minRowsPerProcessor
         numPartitions = A->getGlobalNumRows() / minRowsPerProcessor;
       }
-      numPartitions = std::min(numPartitions, numProcs);
+      numPartitions = std::min(numPartitions, Teuchos::as<GO>(numProcs));
 
       Set(currentLevel, "number of partitions", numPartitions);
     }
@@ -330,7 +330,7 @@ namespace MueLu {
       // First, lets try to see if processor 0 gets any data. If it does, no need to do anything
       // For that, lets calculate the smalles part id that is valid.
       GO oldPartId, minPartId = Teuchos::OrdinalTraits<GO>::max();
-      if (myGIDs.size())  minPartId = std::min(minPartId, myRank);
+      if (myGIDs.size())  minPartId = std::min(minPartId, Teuchos::as<GO>(myRank));
       if (sendMap.size()) minPartId = std::min(minPartId, sendMap.begin()->first);
       minAll(comm, minPartId, oldPartId);
 
