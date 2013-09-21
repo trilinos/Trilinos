@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
   GO nx = 100, ny = 100;
   clp.setOption("nx",                   &nx,              "mesh size in x direction");
   clp.setOption("ny",                   &ny,              "mesh size in y direction");
-  std::string xmlFileName = "tutorial3a.xml"; clp.setOption("xml", &xmlFileName,     "read parameters from a file. Otherwise, this example uses by default 'tutorial1a.xml'");
+  std::string xmlFileName = "xml/s3a.xml"; clp.setOption("xml", &xmlFileName,     "read parameters from a file. Otherwise, this example uses by default 'tutorial1a.xml'");
   int mgridSweeps = 1; clp.setOption("mgridSweeps", &mgridSweeps, "number of multigrid sweeps within Multigrid solver.");
   std::string printTimings = "no";   clp.setOption("timings", &printTimings,     "print timings to screen [yes/no]");
   double tol               = 1e-12;  clp.setOption("tol",                   &tol,              "solver convergence tolerance");

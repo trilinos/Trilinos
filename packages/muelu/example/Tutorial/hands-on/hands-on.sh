@@ -90,7 +90,7 @@ function printSubMenu() {
 	  rm -f example*.txt # clean up
 	  rm -f output.log
 	  echo
-          echo "*** 2D Laplace example ***"
+          echo "*** Change solver ***"
           echo ""
           echo -n "XML file="
           read XMLFILE
@@ -112,7 +112,7 @@ function printSubMenu() {
 	  rm -f example*.txt # clean up
 	  rm -f output.log
 	  echo
-          echo "*** 2D Laplace example ***"
+          echo "*** Change processors ***"
           echo ""
           echo -n "#processors="
           read PROCS
