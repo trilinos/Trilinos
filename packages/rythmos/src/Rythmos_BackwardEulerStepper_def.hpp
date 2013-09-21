@@ -119,6 +119,7 @@ void BackwardEulerStepper<Scalar>::defaultInitializeAll_()
   neModel_ = Teuchos::null;
   parameterList_ = Teuchos::null;
   interpolator_ = Teuchos::null;
+  stepControl_ = Teuchos::null;
   newtonConvergenceStatus_ = -1;
 }
 
@@ -1033,21 +1034,26 @@ template<class Scalar>
 RCP<const MomentoBase<Scalar> >
 BackwardEulerStepper<Scalar>::getMomento() const
 {
-  RCP<BackwardEulerStepperMomento<Scalar> > momento = Teuchos::rcp(new BackwardEulerStepperMomento<Scalar>());
+  RCP<BackwardEulerStepperMomento<Scalar> > momento =
+    Teuchos::rcp(new BackwardEulerStepperMomento<Scalar>());
   momento->set_scaled_x_old(scaled_x_old_);
+  momento->set_x_old(x_old_);
   momento->set_x_dot_old(x_dot_old_);
   momento->set_x(x_);
   momento->set_x_dot(x_dot_);
+  momento->set_dx(dx_);
   momento->set_t(t_);
   momento->set_t_old(t_old_);
   momento->set_dt(dt_);
   momento->set_numSteps(numSteps_);
+  momento->set_newtonConvergenceStatus(newtonConvergenceStatus_);
   momento->set_isInitialized(isInitialized_);
   momento->set_haveInitialCondition(haveInitialCondition_);
   momento->set_parameterList(parameterList_);
   momento->set_basePoint(basePoint_);
   momento->set_neModel(neModel_);
   momento->set_interpolator(interpolator_);
+  momento->set_stepControl(stepControl_);
   return momento;
 }
 
@@ -1058,25 +1064,30 @@ void BackwardEulerStepper<Scalar>::setMomento(
     const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver
     )
 {
-  Ptr<const BackwardEulerStepperMomento<Scalar> > feMomentoPtr =
-    Teuchos::ptr_dynamic_cast<const BackwardEulerStepperMomento<Scalar> >(momentoPtr,true);
-  const BackwardEulerStepperMomento<Scalar>& feMomento = *feMomentoPtr;
+  Ptr<const BackwardEulerStepperMomento<Scalar> > beMomentoPtr =
+    Teuchos::ptr_dynamic_cast<const BackwardEulerStepperMomento<Scalar> >
+      (momentoPtr,true);
+  const BackwardEulerStepperMomento<Scalar>& beMomento = *beMomentoPtr;
   model_ = model;
   solver_ = solver;
-  scaled_x_old_ = feMomento.get_scaled_x_old();
-  x_dot_old_ = feMomento.get_x_dot_old();
-  x_ = feMomento.get_x();
-  x_dot_ = feMomento.get_x_dot();
-  t_ = feMomento.get_t();
-  t_old_ = feMomento.get_t_old();
-  dt_ = feMomento.get_dt();
-  numSteps_ = feMomento.get_numSteps();
-  isInitialized_ = feMomento.get_isInitialized();
-  haveInitialCondition_ = feMomento.get_haveInitialCondition();
-  parameterList_ = feMomento.get_parameterList();
-  basePoint_ = feMomento.get_basePoint();
-  neModel_ = feMomento.get_neModel();
-  interpolator_ = feMomento.get_interpolator();
+  scaled_x_old_ = beMomento.get_scaled_x_old();
+  x_old_ = beMomento.get_x_old();
+  x_dot_old_ = beMomento.get_x_dot_old();
+  x_ = beMomento.get_x();
+  x_dot_ = beMomento.get_x_dot();
+  dx_ = beMomento.get_dx();
+  t_ = beMomento.get_t();
+  t_old_ = beMomento.get_t_old();
+  dt_ = beMomento.get_dt();
+  numSteps_ = beMomento.get_numSteps();
+  newtonConvergenceStatus_ = beMomento.get_newtonConvergenceStatus();
+  isInitialized_ = beMomento.get_isInitialized();
+  haveInitialCondition_ = beMomento.get_haveInitialCondition();
+  parameterList_ = beMomento.get_parameterList();
+  basePoint_ = beMomento.get_basePoint();
+  neModel_ = beMomento.get_neModel();
+  interpolator_ = beMomento.get_interpolator();
+  stepControl_ = beMomento.get_stepControl();
   this->checkConsistentState_();
 }
 
@@ -1088,6 +1099,7 @@ void BackwardEulerStepper<Scalar>::checkConsistentState_()
     TEUCHOS_ASSERT( !Teuchos::is_null(solver_) );
     TEUCHOS_ASSERT( haveInitialCondition_ );
     TEUCHOS_ASSERT( !Teuchos::is_null(interpolator_) );
+    TEUCHOS_ASSERT( !Teuchos::is_null(stepControl_) );
   }
   if (haveInitialCondition_) {
     // basePoint_ should be defined

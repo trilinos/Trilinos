@@ -46,7 +46,8 @@ namespace Rythmos {
 
 /** \brief Concrete momento class for the BackwardEulerStepper.
  *
- * Note:  The model is not contained in the momento and must be set on the stepper in addition to the momento.
+ * Note:  The model and solver is not contained in the momento and must be
+ *        set on the stepper in addition to the momento.
  */
 template<class Scalar>
   class BackwardEulerStepperMomento :
@@ -59,11 +60,14 @@ template<class Scalar>
 
     RCP<MomentoBase<Scalar> > clone() const
     {
-      RCP<BackwardEulerStepperMomento<Scalar> > m = rcp(new BackwardEulerStepperMomento<Scalar>());
+      RCP<BackwardEulerStepperMomento<Scalar> > m =
+        rcp(new BackwardEulerStepperMomento<Scalar>());
       m->set_scaled_x_old(scaled_x_old_);
       m->set_x_dot_old(x_dot_old_);
       m->set_x(x_);
+      m->set_x_old(x_old_);
       m->set_x_dot(x_dot_);
+      m->set_dx(dx_);
       m->set_t(t_);
       m->set_t_old(t_old_);
       m->set_dt(dt_);
@@ -74,6 +78,7 @@ template<class Scalar>
       m->set_basePoint(basePoint_);
       m->set_neModel(neModel_);
       m->set_interpolator(interpolator_);
+      m->set_stepControl(stepControl_);
       if (!Teuchos::is_null(this->getMyParamList())) {
         m->setParameterList(Teuchos::parameterList(*(this->getMyParamList())));
       }
@@ -114,6 +119,16 @@ template<class Scalar>
     RCP<VectorBase<Scalar> > get_x_dot_old() const
     { return x_dot_old_; }
 
+    void set_x_old(const RCP<const VectorBase<Scalar> >& x_old )
+    {
+      x_old_ = Teuchos::null;
+      if (!Teuchos::is_null(x_old)) {
+        x_old_ = x_old->clone_v();
+      }
+    }
+    RCP<VectorBase<Scalar> > get_x_old() const
+    { return x_old_; }
+
     void set_x(const RCP<const VectorBase<Scalar> >& x )
     {
       x_ = Teuchos::null;
@@ -123,6 +138,16 @@ template<class Scalar>
     }
     RCP<VectorBase<Scalar> > get_x() const
     { return x_; }
+
+    void set_dx(const RCP<const VectorBase<Scalar> >& dx )
+    {
+      dx_ = Teuchos::null;
+      if (!Teuchos::is_null(dx)) {
+        dx_ = dx->clone_v();
+      }
+    }
+    RCP<VectorBase<Scalar> > get_dx() const
+    { return dx_; }
 
     void set_x_dot(const RCP<const VectorBase<Scalar> >& x_dot )
     {
@@ -153,6 +178,11 @@ template<class Scalar>
     { numSteps_ = numSteps; }
     int get_numSteps() const
     { return numSteps_; }
+
+    void set_newtonConvergenceStatus(const int & newtonConvergenceStatus)
+    { newtonConvergenceStatus_ = newtonConvergenceStatus; }
+    int get_newtonConvergenceStatus() const
+    { return newtonConvergenceStatus_; }
 
     void set_isInitialized(const bool & isInitialized)
     { isInitialized_ = isInitialized; }
@@ -200,6 +230,17 @@ template<class Scalar>
     RCP<InterpolatorBase<Scalar> > get_interpolator() const
     { return interpolator_; }
 
+    void set_stepControl(const RCP<StepControlStrategyBase<Scalar> >& stepControl)
+    {
+      stepControl_ = Teuchos::null;
+      if (!Teuchos::is_null(stepControl)) {
+        TEUCHOS_ASSERT(stepControl->supportsCloning());
+        stepControl_ = stepControl->cloneStepControlStrategyAlgorithm();
+      }
+    }
+    RCP<StepControlStrategyBase<Scalar> > get_stepControl() const
+    { return stepControl_; }
+
     void setParameterList(const RCP<ParameterList>& paramList)
     { this->setMyParamList(paramList); }
     RCP<const ParameterList> getValidParameters() const
@@ -216,12 +257,14 @@ template<class Scalar>
     Scalar t_old_;
     Scalar dt_;
     int numSteps_;
+    int newtonConvergenceStatus_;
     bool isInitialized_;
     bool haveInitialCondition_;
     RCP<Teuchos::ParameterList> parameterList_;
     Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
     RCP<Rythmos::SingleResidualModelEvaluator<Scalar> >  neModel_;
     RCP<InterpolatorBase<Scalar> > interpolator_;
+    RCP<StepControlStrategyBase<Scalar> > stepControl_;
 
 };
 
@@ -452,7 +495,6 @@ private:
   bool haveInitialCondition_;
   RCP<const Thyra::ModelEvaluator<Scalar> > model_;
   RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
-  RCP<StepControlStrategyBase<Scalar> > stepControl_;
   RCP<Thyra::VectorBase<Scalar> > x_old_;
   RCP<Thyra::VectorBase<Scalar> > scaled_x_old_;
   RCP<Thyra::VectorBase<Scalar> > x_dot_old_;
@@ -472,6 +514,7 @@ private:
   RCP<Teuchos::ParameterList> parameterList_;
 
   RCP<InterpolatorBase<Scalar> > interpolator_;
+  RCP<StepControlStrategyBase<Scalar> > stepControl_;
 
   int newtonConvergenceStatus_;
 
