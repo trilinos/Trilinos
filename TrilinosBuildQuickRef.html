@@ -1640,18 +1640,21 @@ installing.</p>
 CPack.</p>
 <div class="section" id="creating-a-tarball-of-the-source-tree">
 <h2><a class="toc-backref" href="#id54">9.1&nbsp;&nbsp;&nbsp;Creating a tarball of the source tree</a></h2>
-<p>To create a source tarball of the project, use:</p>
+<p>To create a source tarball of the project, first configure with the list of
+desired packages (see <a class="reference internal" href="#selecting-the-list-of-packages-to-enable">Selecting the list of packages to enable</a>),  use:</p>
 <pre class="literal-block">
 $ make package_source
 </pre>
 <p>The above command will tar up <em>everything</em> in the source tree (except for
-files explicitly excluded in the CMakeLists.txt files) so make sure that you
-start with a totally clean source tree before you do this.  You can also
-include generated files, such as Doxygen output files first, then run <tt class="docutils literal">make
-package_source</tt> and it will be included in the distribution.</p>
-<p>Note to developers: You can control what gets put into the tarball by setting
-the cache variable <tt class="docutils literal">CPACK_SOURCE_IGNORE_FILES</tt> when configuring with CMake.
-This variable is set internally the Trilinos CMakeLists.txt files.</p>
+files explicitly excluded in the CMakeLists.txt files and packages that are
+not enabled) so make sure that you start with a totally clean source tree
+before you do this.  You can clean the source tree first to remove all ignored
+files using:</p>
+<pre class="literal-block">
+$ git clean -fd -x
+</pre>
+<p>You can also include generated files, such as Doxygen output files first, then
+run <tt class="docutils literal">make package_source</tt> and it will be included in the distribution.</p>
 </div>
 </div>
 <div class="section" id="dashboard-submissions">

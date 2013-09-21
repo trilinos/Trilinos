@@ -1343,19 +1343,21 @@ CPack.
 Creating a tarball of the source tree
 -------------------------------------
 
-To create a source tarball of the project, use::
+To create a source tarball of the project, first configure with the list of
+desired packages (see `Selecting the list of packages to enable`_),  use::
 
  $ make package_source
 
 The above command will tar up *everything* in the source tree (except for
-files explicitly excluded in the CMakeLists.txt files) so make sure that you
-start with a totally clean source tree before you do this.  You can also
-include generated files, such as Doxygen output files first, then run ``make
-package_source`` and it will be included in the distribution.
+files explicitly excluded in the CMakeLists.txt files and packages that are
+not enabled) so make sure that you start with a totally clean source tree
+before you do this.  You can clean the source tree first to remove all ignored
+files using::
 
-Note to developers: You can control what gets put into the tarball by setting
-the cache variable ``CPACK_SOURCE_IGNORE_FILES`` when configuring with CMake.
-This variable is set internally the Trilinos CMakeLists.txt files.
+  $ git clean -fd -x
+
+You can also include generated files, such as Doxygen output files first, then
+run ``make package_source`` and it will be included in the distribution.
 
 
 Dashboard submissions
