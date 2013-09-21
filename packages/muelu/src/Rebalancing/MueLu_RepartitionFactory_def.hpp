@@ -526,10 +526,10 @@ namespace MueLu {
                                                                                                                GO numPartitions, bool keepProc0) const {
     RCP<const Map>         rowMap    = A.getRowMap();
     GO                     indexBase = rowMap->getIndexBase();
-    Xpetra::UnderlyingLib  lib       = rowMap->lib();
+    //Xpetra::UnderlyingLib  lib       = rowMap->lib(); // unused variable
 
     RCP<const Teuchos::Comm<int> > comm = rowMap->getComm()->duplicate();
-    int myRank   = comm->getRank();
+    //int myRank   = comm->getRank(); // unused variable
     int numProcs = comm->getSize();
 
     RCP<const Teuchos::MpiComm<int> > tmpic = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
