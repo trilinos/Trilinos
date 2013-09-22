@@ -930,15 +930,26 @@ FUNCTION(TRIBITS_GENERATE_REPO_VERSION_OUTPUT_AND_FILE_AND_INSTALL)
   #
   
   IF (${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE)
-    # A) Find git first here so we  don't have to find it in called function so
-    # it can be unit tested.
-    FIND_PROGRAM(GIT_EXEC ${GIT_NAME})
-    # B) Get repo versions, print to stdout and write file 
-    TRIBITS_GENERATE_REPO_VERSION_OUTPUT_AND_FILE()
-    # C) Add install target for this file
-    INSTALL(
-      FILES "${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_REPO_VERSION_FILE_NAME}"
-      DESTINATION "." )
+    # A) Make sure that there is a .git dir in the project.
+    IF (EXISTS "${PROJECT_SOURCE_DIR}/.git")
+      SET(PROJECT_SOURCE_IS_GIT_REPO TRUE)
+    ELSE()
+      SET(PROJECT_SOURCE_IS_GIT_REPO FALSE)
+    ENDIF()
+    IF (PROJECT_SOURCE_IS_GIT_REPO)
+      # Find git first here so we  don't have to find it in called function so
+      # it can be unit tested.
+      FIND_PROGRAM(GIT_EXEC ${GIT_NAME})
+      # Get repo versions, print to stdout and write file 
+      TRIBITS_GENERATE_REPO_VERSION_OUTPUT_AND_FILE()
+      # Add install target for this file
+      INSTALL(
+        FILES "${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_REPO_VERSION_FILE_NAME}"
+        DESTINATION "." )
+    ELSE()
+      MESSAGE("\nNOTE: Skipping generation of ${${PROJECT_NAME}_REPO_VERSION_FILE_NAME}"
+        " because project source is not a git repo!") 
+    ENDIF()
   ENDIF()
 
 ENDFUNCTION()
