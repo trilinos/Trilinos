@@ -64,6 +64,50 @@ INCLUDE(TimingUtils)
 INCLUDE(CheckIncludeFileCXX)
 
 
+#
+# Assert and setup project binary directory and other project varibles.
+#
+
+MACRO(TRIBITS_ASSERT_AND_SETUP_PROJECT_BINARY_DIR_AND_VARS)
+
+  IF ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
+    MESSAGE(FATAL_ERROR "ERROR! "
+      "CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
+      " == CMAKE_CURRENT_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}"
+      "\n${PROJECT_NAME} does not support in source builds!\n"
+      "NOTE: You must now delete the CMakeCache.txt file and the CMakeFiles/ directory under"
+      " the source directory for ${PROJECT_NAME} or you will not be able to configure ${PROJECT_NAME} correctly!"
+      "\nYou must now run something like:\n"
+      "  $ rm -r CMakeCache.txt CMakeFiles/"
+      "\n"
+      "Please create a different directory and configure ${PROJECT_NAME} under that such as:\n"
+      "  $ mkdir MY_BUILD\n"
+      "  $ cd MY_BUILD\n"
+      "  $ cmake [OPTIONS] .."
+      )
+  ENDIF()
+  
+  STRING(TOUPPER ${PROJECT_NAME} PROJECT_NAME_UC)
+  SET(PROJECT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "")
+  SET(PROJECT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "")
+  PRINT_VAR(PROJECT_SOURCE_DIR)
+  PRINT_VAR(PROJECT_BINARY_DIR)
+  # Above, we put these in the cache so we can grep them out of the cache file
+  
+  MESSAGE("-- " "CMAKE_VERSION = ${CMAKE_VERSION}")
+
+ENDMACRO()
+
+
+#
+# Find Python
+#
+
+MACRO(TRIBITS_FIND_PYTHON_INTERP)
+  INCLUDE(TribitsFindPythonInterp)
+  TRIBITS_FIND_PYTHON()
+  PRINT_VAR(PYTHON_EXECUTABLE)
+ENDMACRO()
 
 #
 # Define and option to include a file that reads in a bunch of options
@@ -91,7 +135,7 @@ ENDMACRO()
 # Define all of the standard global package architecture options.
 #
 
-MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
+MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
 
   SET( ${PROJECT_NAME}_ENABLE_ALL_PACKAGES OFF CACHE BOOL
     "Enable all packages (Primary Stable and perhaps Secondary Stable packages)." )
@@ -279,6 +323,9 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
     ${${PROJECT_NAME}_ELEVATE_SS_TO_PS_DEFAULT}
     CACHE BOOL
     "Elevate all defined SS SE packages to PS packages." )
+
+  ADVANCED_SET( ${PROJECT_NAME}_ENABLE_CPACK_PACKAGING OFF CACHE BOOL
+    "Eanble support for creating a distribution using CPack" ) 
 
   ADVANCED_SET( ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE OFF CACHE BOOL
     "Allow secondary stable packages and code to be implicitly enabled." )
@@ -709,6 +756,44 @@ MACRO(TRIBITS_READ_IN_NATIVE_REPOSITORIES)
   ENDIF()
 ENDMACRO()
 
+
+#
+# Combine native and extra repos
+#
+# Combines ${PROJECT_NAME}_NATIVE_REPOSITORIES and
+# ${PROJECT_NAME}_EXTRA_REPOSITORIES into a single list
+# ${PROJECT_NAME}_EXTRA_REPOSITORIES.
+#
+
+MACRO(TRIBITS_COMBINE_NATIVE_AND_EXTRA_REPOS)
+
+  # Define a single variable that will loop over native and extra Repositories
+  #
+  # NOTE: ${PROJECT_NAME}_EXTRA_REPOSITORIES should be defined after the above
+  # options call.
+  #
+  ASSERT_DEFINED(${PROJECT_NAME}_NATIVE_REPOSITORIES)
+  #PRINT_VAR(${PROJECT_NAME}_NATIVE_REPOSITORIES)
+  ASSERT_DEFINED(${PROJECT_NAME}_EXTRA_REPOSITORIES)
+  #PRINT_VAR(${PROJECT_NAME}_EXTRA_REPOSITORIES)
+  SET(${PROJECT_NAME}_ALL_REPOSITORIES ${${PROJECT_NAME}_NATIVE_REPOSITORIES}
+    ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
+
+  # Loop through the Repositories, set their base directories and run their
+  # options setup callback functions.
+  FOREACH(REPO ${${PROJECT_NAME}_ALL_REPOSITORIES})
+    TRIBITS_GET_REPO_NAME_DIR(${REPO}  REPO_NAME  REPO_DIR)
+    SET(${REPO_NAME}_SOURCE_DIR "${PROJECT_SOURCE_DIR}/${REPO_DIR}")
+    SET(${REPO_NAME}_BINARY_DIR "${PROJECT_BINARY_DIR}/${REPO_DIR}")
+    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      MESSAGE("Processing extra options call-backs for ${REPO}")
+      PRINT_VAR(${REPO_NAME}_SOURCE_DIR)
+      PRINT_VAR(${REPO_NAME}_BINARY_DIR)
+    ENDIF()
+    TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS_RUNNER(${REPO_NAME})
+  ENDFOREACH()
+
+ENDMACRO()
 
 #
 # Run the git log command to get the verison info for a git rep
@@ -1770,6 +1855,184 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
     TIMER_PRINT_REL_TIME(${CONFIGURE_PACKAGES_TIME_START_SECONDS}
       ${CONFIGURE_PACKAGES_TIME_STOP_SECONDS}
       "\nTotal time to configure enabled packages")
+  ENDIF()
+
+ENDMACRO()
+
+
+#
+# Set up for packaging and distribution
+#
+
+MACRO(TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION)
+
+  # ToDo: Add ${PROJECT_NAME}_ENABLE_CPACK_PACKAGING and use it in the below
+  # if statement as well.
+
+  IF (${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
+  
+    IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
+      # Start the global timer
+      TIMER_GET_RAW_SECONDS(CPACK_SETUP_TIME_START_SECONDS)
+    ENDIF()
+  
+    # K.1) Loop through the Repositories and run their callback functions.
+  
+    FOREACH(REPO ${${PROJECT_NAME}_ALL_REPOSITORIES})
+      TRIBITS_GET_REPO_NAME_DIR(${REPO}  REPO_NAME  REPO_DIR)
+      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+        MESSAGE("Processing packaging call-backs for ${REPO_NAME}")
+      ENDIF()
+      TRIBITS_REPOSITORY_DEFINE_PACKAGING_RUNNER(${REPO_NAME})
+    ENDFOREACH()
+     
+    # K.2) Removing any SE packages not enabled from the tarball
+  
+    TRIBITS_GET_ENABLED_LIST_LIST(
+      ${PROJECT_NAME}_SE_PACKAGES ${PROJECT_NAME}
+      OFF  # ENABLED_FLAG
+      TRUE  # INCLUDE_EMPTY 
+      NON_ENABLED_SE_PACKAGES  NUM_NON_ENABLED_SE_PACKAGES)
+    #PRINT_VAR(NON_ENABLED_SE_PACKAGES)
+  
+    FOREACH(TRIBITS_PACKAGE ${NON_ENABLED_SE_PACKAGES})
+  
+      # Determine if this is a package to not ignore
+      FIND_LIST_ELEMENT(TRIBITS_CPACK_PACKAGES_TO_NOT_IGNORE
+         ${TRIBITS_PACKAGE}  TRIBITS_PACKAGE_DONT_IGNORE)
+  
+      IF (NOT TRIBITS_PACKAGE_DONT_IGNORE)
+  
+        LIST(FIND ${PROJECT_NAME}_SE_PACKAGES ${TRIBITS_PACKAGE} PACKAGE_IDX)
+        LIST(GET ${PROJECT_NAME}_SE_PACKAGE_DIRS ${PACKAGE_IDX} PACKAGE_DIR)
+        # ToDo: Repalce the above O(N) LIST(FIND ...) with a O(1) lookup ...
+        
+        # Checking if we have a relative path to the package's files. Since the
+        # exclude is a regular expression any "../" will be interpretted as <any
+        # char><any char>/ which would never match the package's actual
+        # directory. There isn't a direct way in cmake to convert a relative
+        # path into an absolute path with string operations so as a way of
+        # making sure that we get the correct path of the package we use a
+        # find_path for the CMakeLists.txt file for the package. Since the
+        # package has to have this file to work correctly it should be
+        # guaranteed to be there.
+        STRING(REGEX MATCH "[.][.]/" IS_RELATIVE_PATH ${PACKAGE_DIR})
+        IF("${IS_RELATIVE_PATH}" STREQUAL "")
+          SET(CPACK_SOURCE_IGNORE_FILES "${PROJECT_SOURCE_DIR}/${PACKAGE_DIR}/"
+            ${CPACK_SOURCE_IGNORE_FILES})
+        ELSE()
+          FIND_PATH(ABSOLUTE_PATH  CMakeLists.txt  PATHS 
+            ${PROJECT_SOURCE_DIR}/${PACKAGE_DIR} NO_DEFAULT_PATH)
+          IF("${ABSOLUTE_PATH}" STREQUAL "ABSOLUTE_PATH-NOTFOUND")
+            MESSAGE(AUTHOR_WARNING "Relative path found for disabled package"
+              " ${TRIBITS_PACKAGE} but package was missing a CMakeLists.txt file."
+              " This disabled package will likely not be excluded from a source release")
+          ENDIF()
+          SET(CPACK_SOURCE_IGNORE_FILES ${ABSOLUTE_PATH} ${CPACK_SOURCE_IGNORE_FILES})
+        ENDIF()
+      ENDIF()
+  
+    ENDFOREACH()
+  
+    IF(${PROJECT_NAME}_VERBOSE_CONFIGURE OR
+      ${PROJECT_NAME}_DUMP_CPACK_SOURCE_IGNORE_FILES
+      )
+      MESSAGE("Exclude files when building source packages")
+      FOREACH(item ${CPACK_SOURCE_IGNORE_FILES})
+        MESSAGE(${item})
+      ENDFOREACH()
+    ENDIF()
+  
+    # K.3) Set up install component dependencies
+  
+    TRIBITS_GET_ENABLED_LIST_LIST(
+      ${PROJECT_NAME}_PACKAGES  ${PROJECT_NAME}
+      ON  # ENABLED_FLAG
+      FALSE  # INCLUDE_EMPTY 
+      ENABLED_PACKAGES  NUM_ENABLED)
+    #message("ENABLED PACKAGES: ${ENABLED_PACKAGES} ${NUM_ENABLED}")
+  
+    FOREACH(PKG ${ENABLED_PACKAGES})
+      IF(NOT "${${PKG}_LIB_REQUIRED_DEP_PACKAGES}" STREQUAL "")
+          string(TOUPPER ${PKG} UPPER_PKG)
+          #message("${UPPER_PKG} depends on : ${${PKG}_LIB_REQUIRED_DEP_PACKAGES}")
+          SET(CPACK_COMPONENT_${UPPER_PKG}_DEPENDS ${${PKG}_LIB_REQUIRED_DEP_PACKAGES})
+      ENDIF()
+      #message("${PKG} depends on : ${${PKG}_LIB_REQUIRED_DEP_PACKAGES}")
+    ENDFOREACH()
+  
+    # K.4) Resetting the name to avoid overwriting registery keys when installing
+  
+    IF(WIN32)
+      SET(CPACK_PACKAGE_NAME "${CPACK_PACKAGE_NAME}-${${PROJECT_NAME}_VERSION}")
+      IF (TPL_ENABLE_MPI)
+        SET(CPACK_PACKAGE_NAME "${CPACK_PACKAGE_NAME}-mpi")
+      ELSE ()
+        SET(CPACK_PACKAGE_NAME "${CPACK_PACKAGE_NAME}-serial")
+      ENDIF()
+      SET(CPACK_GENERATOR "NSIS")
+      SET(CPACK_NSIS_MODIFY_PATH OFF)
+    ENDIF()
+   
+    # K.5) Finally process with CPack
+    INCLUDE(CPack)
+  
+    IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
+      TIMER_GET_RAW_SECONDS(CPACK_SETUP_TIME_STOP_SECONDS)
+      TIMER_PRINT_REL_TIME(${CPACK_SETUP_TIME_START_SECONDS}  ${CPACK_SETUP_TIME_STOP_SECONDS}
+        "Total time to set up for CPack packaging")
+    ENDIF()
+  
+  ENDIF()
+
+ENDMACRO()
+
+
+#
+# Setup for installation
+#
+
+MACRO(TRIBITS_SETUP_FOR_INSTALLATION)
+
+  # Set up to install <Package>Config.cmake, <Project>Config.cmake, and export
+  # makefiles.
+
+  IF((${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES
+      OR ${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
+    AND NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING
+    )
+  
+    INCLUDE(TribitsWriteClientExportFiles)
+  
+    TRIBITS_WRITE_PROJECT_CLIENT_EXPORT_FILES()
+  
+    IF (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
+      # TEMPORARY: Install a compatibility copy of ${PROJECT_NAME}Config.cmake
+      # where was previously installed to warn and load the new file.
+      SET(COMPATIBILITY_CONFIG_INCLUDE ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake)
+      CONFIGURE_FILE(
+        ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsConfigInclude.cmake.in
+        ${COMPATIBILITY_CONFIG_INCLUDE}
+        @ONLY
+        )
+      INSTALL(
+        FILES ${COMPATIBILITY_CONFIG_INCLUDE}
+        DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
+        )
+    ENDIF()
+  
+  ENDIF()
+
+  # Export the library dependencies. This will let client projects
+  # refer to all TPLs used by ${PROJECT_NAME}. (KRL, 26 Nov 2009)
+  #
+  
+  IF (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
+    MESSAGE("")
+    MESSAGE("Exporting library dependencies ...")
+    MESSAGE("")
+    EXPORT_LIBRARY_DEPENDENCIES(
+      ${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}LibraryDepends.cmake )
   ENDIF()
 
 ENDMACRO()
