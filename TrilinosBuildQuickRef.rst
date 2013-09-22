@@ -1344,9 +1344,14 @@ Creating a tarball of the source tree
 -------------------------------------
 
 To create a source tarball of the project, first configure with the list of
-desired packages (see `Selecting the list of packages to enable`_),  use::
+desired packages and configure with::
 
- $ make package_source
+  -D Trilinos_ENABLE_CPACK_PACKAGING:BOOL=ON
+
+see `Selecting the list of packages to enable`_), then generate the
+distribution files using::
+
+  $ make package_source
 
 The above command will tar up *everything* in the source tree (except for
 files explicitly excluded in the CMakeLists.txt files and packages that are

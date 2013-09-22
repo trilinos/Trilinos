@@ -1641,7 +1641,12 @@ CPack.</p>
 <div class="section" id="creating-a-tarball-of-the-source-tree">
 <h2><a class="toc-backref" href="#id54">9.1&nbsp;&nbsp;&nbsp;Creating a tarball of the source tree</a></h2>
 <p>To create a source tarball of the project, first configure with the list of
-desired packages (see <a class="reference internal" href="#selecting-the-list-of-packages-to-enable">Selecting the list of packages to enable</a>),  use:</p>
+desired packages and configure with:</p>
+<pre class="literal-block">
+-D Trilinos_ENABLE_CPACK_PACKAGING:BOOL=ON
+</pre>
+<p>see <a class="reference internal" href="#selecting-the-list-of-packages-to-enable">Selecting the list of packages to enable</a>), then generate the
+distribution files using:</p>
 <pre class="literal-block">
 $ make package_source
 </pre>
