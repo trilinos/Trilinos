@@ -58,12 +58,6 @@ struct PhysicalLayout {
   long long int stride[8]; //distance between two neighboring elements in a given dimension
 
   template< class T , class L , class D , class M >
-  PhysicalLayout( const View<T,L,D,M,LayoutScalar> & view )
-    : layout_type( Scalar )
-    , rank( 0 )
-    { for(int i=0;i<8;i++) stride[i] = 0; }
-
-  template< class T , class L , class D , class M >
   PhysicalLayout( const View<T,L,D,M,LayoutDefault> & view )
     : layout_type( is_same< typename View<T,L,D,M>::array_layout , LayoutLeft  >::value ? Left : (
                    is_same< typename View<T,L,D,M>::array_layout , LayoutRight >::value ? Right : Error ))

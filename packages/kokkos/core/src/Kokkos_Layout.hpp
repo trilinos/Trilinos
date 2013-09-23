@@ -46,7 +46,7 @@
 #ifndef KOKKOS_LAYOUT_HPP
 #define KOKKOS_LAYOUT_HPP
 
-#include <impl/Kokkos_ArrayTraits.hpp>
+#include <impl/Kokkos_Traits.hpp>
 
 namespace Kokkos {
 

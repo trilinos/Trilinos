@@ -14,6 +14,7 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(CGI_SOURCES "")
 APPEND_GLOB(CGI_SOURCES
+	${DIR}/cgi/cgisdum.c
 	${DIR}/cgi/vdicgi.c
         ${DIR}/cgi/sdcgif.f
         ${DIR}/cgi/vdicgi_char.f

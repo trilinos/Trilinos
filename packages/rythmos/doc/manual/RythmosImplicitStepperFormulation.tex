@@ -68,8 +68,78 @@ and recalling $f\left(\dot{x}(x_{n}),x(x_{n})\right)=0$.
 
 \subsection{Backward Euler}
 
+
+\subsubsection{Constant Step Size}
+
+In Fig.~\ref{rythmos:fig:BackwardEuler-Constant-dt}, the order of
+accuracy is shown for Backward Euler for the SinCos problem.
+
 \begin{figure}[H]
 \centering{}\includegraphics[scale=1.5]{figures/BackwardEuler}\caption{Order of accuracy for the SinCos Problem (Section~\ref{rythmos:sec:SinCos-Problem})
-using Backward Euler.}
+using Backward Euler.\label{rythmos:fig:BackwardEuler-Constant-dt}}
 \end{figure}
 
+
+
+\subsubsection{Variable Step Size}
+
+A good test for variable step size is the Log-Time problem which is
+defined in Sec.~\ref{rythmos:sec:Log-Time-Problem}. To adjust the
+step size, the FirstOrderErrorStepControlStrategy uses the difference
+between the predicted and final solution as an measure of the temporal
+error and sets the next step size to maintain the user specified level
+of error. Figure~\ref{rythmos:fig:BackwardEuler-Variable-dt} shows
+this for the Backward Euler method for four different relative errors,
+$\epsilon_{r}=$ $10^{-2}$, $10^{-3}$, $10^{-4}$, and $10^{-5}$. 
+
+\begin{figure}[H]
+\centering{}%
+\begin{tabular}{cc}
+a)\includegraphics[width=2.75in]{figures/BackwardEuler_FirstOrderError_var_dt_RelError=1\lyxdot 0e-2} & b)\includegraphics[width=2.75in]{figures/BackwardEuler_FirstOrderError_var_dt_RelError=1\lyxdot 0e-3}\tabularnewline
+c)\includegraphics[width=2.75in]{figures/BackwardEuler_FirstOrderError_var_dt_RelError=1\lyxdot 0e-4} & d)\includegraphics[width=2.75in]{figures/BackwardEuler_FirstOrderError_var_dt_RelError=1\lyxdot 0e-5}\tabularnewline
+\end{tabular}\caption{Solution and time step sizes for the Log-Time Problem (Section~\ref{rythmos:sec:Log-Time-Problem})
+using Backward Euler with various relative errors in the FirstOrderErrorStepControlStrategy:
+a) $\epsilon_{r}=$ a) $10^{-2}$, b) $10^{-3}$, c) $10^{-4}$, and
+d) $10^{-5}$.\label{rythmos:fig:BackwardEuler-Variable-dt}}
+\end{figure}
+
+
+In Table~\ref{rythmos:tab:BackwardEuler-Variable-dt-Log-Time}, the
+errors for this problem are shown. For each magnitude reduction in
+the relative-error specification, the number of steps increases by
+a factor of 2-3 and a similar reduction in the error norms and global
+errors.
+
+\begin{table}
+
+
+\begin{centering}
+\caption{Log-Time Errors for Backward Euler with Variable Step Size for the
+Log-Time Problem.\label{rythmos:tab:BackwardEuler-Variable-dt-Log-Time}}
+\begin{tabular}{|c|c|c|c|}
+\hline 
+$\epsilon_{r}$ & Number of Steps & Error Norm ($0\leq t_{n}\leq1$) & Global Error ($t=1$)\tabularnewline
+\hline 
+\hline 
+$10^{-2}$ & 213 & 0.0224098 & 0.0224576\tabularnewline
+\hline 
+$10^{-3}$ & 563 & 0.0132322 & 0.0132634\tabularnewline
+\hline 
+$10^{-4}$ & 1534 & 0.00480765 & 0.00482358\tabularnewline
+\hline 
+$10^{-5}$ & 4168 & 0.00153523 & 0.00154173\tabularnewline
+\hline 
+\end{tabular}
+\par\end{centering}
+
+\end{table}
+
+
+The exponential growth in the time step size, $\Delta t$, over $10^{-8}<t<1$
+is approximately 8\% ($\Delta t_{n}\approx1.08\Delta t_{n-1}$), which
+doubles the step size approximately every 10 time steps, and is unaffected
+by the relative error, $\epsilon_{r}$. The primary effect of $\epsilon_{r}$
+is to reduce $\Delta t$ over the majority of the run, except for
+the initial few steps (\textasciitilde{}10). The two `blips' near
+$t=10^{-9}$ are evident with all $\epsilon_{r}$, and correspond
+to the locations where the curvature in the solution are large.

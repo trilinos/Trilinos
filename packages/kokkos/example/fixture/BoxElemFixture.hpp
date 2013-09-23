@@ -143,11 +143,11 @@ private:
 
 public:
 
-  typedef Kokkos::View< const unsigned * [ElemNode] , Device , Kokkos::MemoryUnmanaged > elem_node_type ;
-  typedef Kokkos::View< const double   * [3] , Device , Kokkos::MemoryUnmanaged > node_coord_type ;
-  typedef Kokkos::View< const unsigned * [3] , Device , Kokkos::MemoryUnmanaged > node_grid_type ;
-  typedef Kokkos::View< const unsigned * [2] , Device , Kokkos::MemoryUnmanaged > comm_list_type ;
-  typedef Kokkos::View< const unsigned *     , Device , Kokkos::MemoryUnmanaged > send_nodeid_type ;
+  typedef Kokkos::View< const unsigned * [ElemNode] , Device > elem_node_type ;
+  typedef Kokkos::View< const double   * [3] , Device > node_coord_type ;
+  typedef Kokkos::View< const unsigned * [3] , Device > node_grid_type ;
+  typedef Kokkos::View< const unsigned * [2] , Device > comm_list_type ;
+  typedef Kokkos::View< const unsigned *     , Device > send_nodeid_type ;
 
   KOKKOS_INLINE_FUNCTION
   unsigned node_count() const { return m_node_grid.dimension_0(); }

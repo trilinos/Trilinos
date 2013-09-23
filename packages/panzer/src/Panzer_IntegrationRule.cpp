@@ -107,3 +107,28 @@ void panzer::IntegrationRule::print(std::ostream & os)
       << ", Side = " << side
       << " )";
 }
+
+void panzer::IntegrationRule::referenceCoordinates(Intrepid::FieldContainer<double> & cub_points)
+{
+    // build an interpid cubature rule
+    Teuchos::RCP< Intrepid::Cubature<double,Intrepid::FieldContainer<double> > > intrepid_cubature;
+    Intrepid::DefaultCubatureFactory<double,Intrepid::FieldContainer<double> > cubature_factory;
+    
+    if (!isSide())
+      intrepid_cubature = cubature_factory.create(*(topology),cubature_degree);
+    else
+      intrepid_cubature = cubature_factory.create(*(side_topology),cubature_degree);
+
+    int num_ip = intrepid_cubature->getNumPoints();
+    Intrepid::FieldContainer<double> cub_weights(num_ip);
+
+    // now compute weights (and throw them out) as well as reference points
+    if (!isSide()) {
+      cub_points = Intrepid::FieldContainer<double>(num_ip, topology->getDimension());
+      intrepid_cubature->getCubature(cub_points, cub_weights);
+    }
+    else {
+      cub_points = Intrepid::FieldContainer<double>(num_ip, side_topology->getDimension());
+      intrepid_cubature->getCubature(cub_points, cub_weights);
+    }
+}

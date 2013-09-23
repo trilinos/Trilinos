@@ -46,7 +46,7 @@
 
 #include <cstddef>
 #include <Kokkos_Macros.hpp>
-#include <impl/Kokkos_ArrayTraits.hpp>
+#include <impl/Kokkos_Traits.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

@@ -46,6 +46,11 @@
 #ifndef MUELU_FILTEREDAFACTORY_DEF_HPP
 #define MUELU_FILTEREDAFACTORY_DEF_HPP
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixFactory.hpp>
 

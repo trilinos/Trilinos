@@ -334,7 +334,7 @@ int main (int argc, char *argv[])
   fprintf(stderr,"translating %s to %s ...\n",argv[1],filename);
 
   /* read database paramters */
-  line=(char *) calloc ((MAX_LINE_LENGTH+1),sizeof(char *));
+  line=(char *) calloc ((MAX_LINE_LENGTH+1),sizeof(char));
   err = ex_get_init(exo_file,line,
 	&num_axes,&num_nodes,&num_elements,&num_blocks,
         &num_node_sets,&num_side_sets);
@@ -372,7 +372,7 @@ int main (int argc, char *argv[])
   str2= (char **) calloc (n,sizeof(char *));
   for (i=0;i<nstr2;i++)
     str2[i]=(char *) calloc ((MAX_LINE_LENGTH+1),sizeof(char));
-  str= (char *) calloc ((MAX_LINE_LENGTH+1)*n,sizeof(char *));
+  str= (char *) calloc ((MAX_LINE_LENGTH+1)*n,sizeof(char));
 
   /* title */
   PutStr("Title",line);

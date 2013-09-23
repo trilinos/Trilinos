@@ -37,22 +37,24 @@
 namespace Rythmos {
 
 
-template<class Scalar> 
+template<class Scalar>
 RCP<RampingIntegrationControlStrategy<Scalar> >
 rampingIntegrationControlStrategy()
 {
   RCP<RampingIntegrationControlStrategy<Scalar> >
-    integrationControl = Teuchos::rcp(new RampingIntegrationControlStrategy<Scalar>());
+    integrationControl =
+      Teuchos::rcp(new RampingIntegrationControlStrategy<Scalar>());
   return integrationControl;
 }
 
 
-template<class Scalar> 
+template<class Scalar>
 RCP<RampingIntegrationControlStrategy<Scalar> >
 rampingIntegrationControlStrategy( const RCP<ParameterList> &paramList )
 {
   RCP<RampingIntegrationControlStrategy<Scalar> >
-    integrationControl = Teuchos::rcp(new RampingIntegrationControlStrategy<Scalar>());
+    integrationControl =
+      Teuchos::rcp(new RampingIntegrationControlStrategy<Scalar>());
   integrationControl->setParameterList(paramList);
   return integrationControl;
 }
@@ -66,48 +68,92 @@ rampingIntegrationControlStrategy( const RCP<ParameterList> &paramList )
 // Static members
 
 
-template<class Scalar> 
+template<class Scalar>
+const std::string
+RampingIntegrationControlStrategy<Scalar>::take_variable_steps_name_
+= "Take Variable Steps";
+
+template<class Scalar>
+const bool
+RampingIntegrationControlStrategy<Scalar>::take_variable_steps_default_
+= true;
+
+
+template<class Scalar>
+const std::string
+RampingIntegrationControlStrategy<Scalar>::num_constant_steps_name_
+= "Number of Initial Constant Steps";
+
+template<class Scalar>
+const int
+RampingIntegrationControlStrategy<Scalar>::num_constant_steps_default_
+= 0;
+
+
+template<class Scalar>
 const std::string
 RampingIntegrationControlStrategy<Scalar>::num_ramping_steps_name_
 = "Number of Ramping Steps";
 
-template<class Scalar> 
+template<class Scalar>
 const int
 RampingIntegrationControlStrategy<Scalar>::num_ramping_steps_default_
 = 6;
 
 
-template<class Scalar> 
+template<class Scalar>
 const std::string
 RampingIntegrationControlStrategy<Scalar>::initial_dt_name_
 = "Initial dt";
 
-template<class Scalar> 
+template<class Scalar>
 const double
 RampingIntegrationControlStrategy<Scalar>::initial_dt_default_
 = -1.0;
 
 
-template<class Scalar> 
+template<class Scalar>
+const std::string
+RampingIntegrationControlStrategy<Scalar>::min_dt_name_
+= "Min dt";
+
+template<class Scalar>
+const double
+RampingIntegrationControlStrategy<Scalar>::min_dt_default_
+= std::numeric_limits<Scalar>::min();
+
+
+template<class Scalar>
 const std::string
 RampingIntegrationControlStrategy<Scalar>::max_dt_name_
 = "Max dt";
 
-template<class Scalar> 
+template<class Scalar>
 const double
 RampingIntegrationControlStrategy<Scalar>::max_dt_default_
 = std::numeric_limits<Scalar>::max();
 
 
-template<class Scalar> 
+template<class Scalar>
 const std::string
 RampingIntegrationControlStrategy<Scalar>::ramping_factor_name_
 = "Ramping Factor";
 
-template<class Scalar> 
+template<class Scalar>
 const double
 RampingIntegrationControlStrategy<Scalar>::ramping_factor_default_
 = 1.0;
+
+
+template<class Scalar>
+const std::string
+RampingIntegrationControlStrategy<Scalar>::max_step_failures_name_
+= "Maximum Number of Step Failures";
+
+template<class Scalar>
+const int
+RampingIntegrationControlStrategy<Scalar>::max_step_failures_default_
+= 100;
 
 
 
@@ -115,19 +161,24 @@ RampingIntegrationControlStrategy<Scalar>::ramping_factor_default_
 
 
 template<class Scalar>
-RampingIntegrationControlStrategy<Scalar>::RampingIntegrationControlStrategy() :
-  num_ramping_steps_(num_ramping_steps_default_),
-  initial_dt_(initial_dt_default_),
-  max_dt_(max_dt_default_),
-  ramping_factor_(ramping_factor_default_),
-  current_dt_(-1.0)
+RampingIntegrationControlStrategy<Scalar>::RampingIntegrationControlStrategy()
+  : take_variable_steps_(take_variable_steps_default_),
+    num_constant_steps_(num_constant_steps_default_),
+    num_ramping_steps_(num_ramping_steps_default_),
+    initial_dt_(initial_dt_default_),
+    min_dt_(min_dt_default_),
+    max_dt_(max_dt_default_),
+    ramping_factor_(ramping_factor_default_),
+    num_step_failures_(0),
+    max_step_failures_(max_step_failures_default_),
+    current_dt_(-1.0)
 {}
 
 
 // Overridden from ParameterListAcceptor
 
 
-template<class Scalar> 
+template<class Scalar>
 void RampingIntegrationControlStrategy<Scalar>::setParameterList(
   RCP<ParameterList> const& paramList
   )
@@ -139,30 +190,58 @@ void RampingIntegrationControlStrategy<Scalar>::setParameterList(
   paramList->validateParametersAndSetDefaults(*getValidParameters());
   this->setMyParamList(paramList);
 
-  num_ramping_steps_ = paramList->get<int>(num_ramping_steps_name_);
-  initial_dt_ = paramList->get<double>(initial_dt_name_);
-  max_dt_ = paramList->get<double>(max_dt_name_);
-  ramping_factor_ = paramList->get<double>(ramping_factor_name_);
+  take_variable_steps_ = paramList->get<bool>  (take_variable_steps_name_,
+                                                take_variable_steps_default_);
+  num_constant_steps_  = paramList->get<int>   (num_constant_steps_name_,
+                                                num_constant_steps_default_);
+  num_ramping_steps_   = paramList->get<int>   (num_ramping_steps_name_,
+                                                num_ramping_steps_default_);
+  initial_dt_          = paramList->get<double>(initial_dt_name_,
+                                                initial_dt_default_);
+  min_dt_              = paramList->get<double>(min_dt_name_, min_dt_default_);
+  max_dt_              = paramList->get<double>(max_dt_name_, max_dt_default_);
+  ramping_factor_      = paramList->get<double>(ramping_factor_name_,
+                                                ramping_factor_default_);
+  max_step_failures_   = paramList->get<int>   (max_step_failures_name_,
+                                                max_step_failures_default_);
 
   Teuchos::readVerboseObjectSublist(&*paramList,this);
 }
 
 
-template<class Scalar> 
+template<class Scalar>
 RCP<const ParameterList>
 RampingIntegrationControlStrategy<Scalar>::getValidParameters() const
 {
   static RCP<const ParameterList> validPL;
   if (is_null(validPL) ) {
     RCP<ParameterList> pl = Teuchos::parameterList();
+
+    pl->set( take_variable_steps_name_, take_variable_steps_default_,
+      "Take variable time steps after '" + num_constant_steps_name_ +
+      "' plus '" + num_ramping_steps_name_ + "' steps.  Variable time "
+      "stepping allows the Stepper to adjust the time step through a "
+      "StepControlStrategy after fixed time steps during initial constant "
+      "steps and ramping steps.  If false, fixed-time steps are taken "
+      "after ramping.  Fixed time stepping requires the Stepper "
+      "to take the time step set by this IntegrationControlStrategy.");
+    pl->set(num_constant_steps_name_, num_constant_steps_default_,
+      "Number of initial constant steps to take before starting the ramping.");
     pl->set(num_ramping_steps_name_, num_ramping_steps_default_,
-      "Number of ramping steps to take before handing control to variable stepper.");
+      "Number of ramping steps to take before handing control to "
+      "variable stepper if '" + take_variable_steps_name_ +
+      "' is set to true.  Otherwise take fixed-time steps.");
     pl->set(initial_dt_name_, initial_dt_default_,
-	    "Initial teim step.");
+	    "Initial time step.");
+    pl->set(min_dt_name_, min_dt_default_,
+	    "Minimum time step.");
     pl->set(max_dt_name_, max_dt_default_,
 	    "Maximum time step.");
     pl->set(ramping_factor_name_, ramping_factor_default_,
-	    "Time step growth factor used during ramping phase.dt_{n+1} = (ramping factor) * dt_n");
+	    "Time step growth factor used during ramping phase. dt_{n+1} = "
+      "(ramping factor) * dt_n");
+    pl->set(max_step_failures_name_, max_step_failures_default_,
+	    "The maximum number of step failures before exiting with error.");
     Teuchos::setupVerboseObjectSublist(&*pl);
     validPL = pl;
   }
@@ -189,11 +268,16 @@ RampingIntegrationControlStrategy<Scalar>::cloneIntegrationControlStrategy() con
   const RCP<const ParameterList> paramList = this->getParameterList();
   if (!is_null(paramList))
     integrCtrlStry->setParameterList(Teuchos::parameterList(*paramList));
-  integrCtrlStry->num_ramping_steps_ = this->num_ramping_steps_;
-  integrCtrlStry->initial_dt_ = this->initial_dt_;
-  integrCtrlStry->max_dt_ = this->max_dt_;
-  integrCtrlStry->ramping_factor_ = this->ramping_factor_;
-  integrCtrlStry->current_dt_ = this->current_dt_;
+
+  integrCtrlStry->take_variable_steps_ = this->take_variable_steps_;
+  integrCtrlStry->num_constant_steps_  = this->num_constant_steps_;
+  integrCtrlStry->num_ramping_steps_   = this->num_ramping_steps_;
+  integrCtrlStry->initial_dt_          = this->initial_dt_;
+  integrCtrlStry->min_dt_              = this->min_dt_;
+  integrCtrlStry->max_dt_              = this->max_dt_;
+  integrCtrlStry->ramping_factor_      = this->ramping_factor_;
+  integrCtrlStry->current_dt_          = this->current_dt_;
+
   return integrCtrlStry;
 }
 
@@ -231,25 +315,30 @@ RampingIntegrationControlStrategy<Scalar>::getNextStepControlInfo(
 #ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT(integrationTimeDomain_.length() > ST::zero());
 #endif
-  
+
   StepControlInfo<Scalar> trialStepCtrlInfo;
-  
-  if (timeStepIter == 0)
+
+  if (timeStepIter < num_constant_steps_)
     current_dt_ = initial_dt_;
-  else
+  else if (timeStepIter < num_constant_steps_ + num_ramping_steps_)
     current_dt_ *= ramping_factor_;
 
-  if (timeStepIter < num_ramping_steps_) {
+  current_dt_ = std::min(max_dt_, current_dt_);
+  current_dt_ = std::max(min_dt_, current_dt_);
+
+  num_step_failures_ = std::min(num_step_failures_--,0);
+
+  trialStepCtrlInfo.stepSize = current_dt_;
+  if (take_variable_steps_) {
+    if (timeStepIter < num_constant_steps_ + num_ramping_steps_)
+      trialStepCtrlInfo.stepType = STEP_TYPE_FIXED;
+    else
+      trialStepCtrlInfo.stepType = STEP_TYPE_VARIABLE;
+  } else {
     trialStepCtrlInfo.stepType = STEP_TYPE_FIXED;
-    trialStepCtrlInfo.stepSize = current_dt_;
-  }
-  else  {
-    trialStepCtrlInfo.stepType = STEP_TYPE_VARIABLE;
-    trialStepCtrlInfo.stepSize = max_dt_;
   }
 
   return trialStepCtrlInfo;
-  
 }
 
 
@@ -261,15 +350,15 @@ bool RampingIntegrationControlStrategy<Scalar>::resetForFailedTimeStep(
   const StepControlInfo<Scalar> &stepCtrlInfo
   )
 {
-  // \todo Implement more control over this in the PL
-  current_dt_ /= ramping_factor_;
-  // \todo Put in a max number of attempted time steps (otherwise infinite
-  // loop)
+  if (current_dt_ == min_dt_) return false;
+  num_step_failures_++;
+  if (num_step_failures_ > max_step_failures_) return false;
+  current_dt_ = std::max(min_dt_, current_dt_/ramping_factor_);
   return true;
 }
 
 
-// 
+//
 // Explicit Instantiation macro
 //
 // Must be expanded from within the Rythmos namespace!
@@ -284,7 +373,7 @@ bool RampingIntegrationControlStrategy<Scalar>::resetForFailedTimeStep(
   \
   template RCP<RampingIntegrationControlStrategy< SCALAR > > \
   rampingIntegrationControlStrategy( const RCP<ParameterList> &paramList );
-   
+
 
 } // namespace Rythmos
 

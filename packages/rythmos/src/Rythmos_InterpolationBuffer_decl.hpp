@@ -46,8 +46,8 @@ enum IBPolicy {
 
 
 /** \brief concrete class for interpolation buffer functionality. */
-template<class Scalar> 
-class InterpolationBuffer : 
+template<class Scalar>
+class InterpolationBuffer :
   virtual public InterpolationBufferBase<Scalar>,
   virtual public InterpolatorAcceptingObjectBase<Scalar>
 {
@@ -58,7 +58,7 @@ public:
   /// Redefined from Rythmos::InterpolationBufferBase
   /** \brief. */
   RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
-    
+
   /** \brief. */
   InterpolationBuffer();
 
@@ -67,10 +67,10 @@ public:
 
   /** \brief Redefined from Rythmos::InterpolatorAcceptingObjectBase */
   //@{
-  
+
   /// Set the interpolator for this buffer
   void setInterpolator(const RCP<InterpolatorBase<Scalar> >& interpolator);
-  
+
   /** \brief . */
   RCP<InterpolatorBase<Scalar> >
     getNonconstInterpolator();
@@ -78,7 +78,7 @@ public:
   /** \brief . */
   RCP<const InterpolatorBase<Scalar> >
     getInterpolator() const;
-  
+
   /// Unset the interpolator for this buffer
   RCP<InterpolatorBase<Scalar> > unSetInterpolator();
 
@@ -86,13 +86,13 @@ public:
 
   /// Set the maximum storage of this buffer
   void setStorage( int storage );
-    
+
   /// Get the maximum storage of this buffer
   int getStorage() const;
 
   /** \brief . */
   IBPolicy getIBPolicy();
-        
+
   /// Destructor
   ~InterpolationBuffer() {};
 
@@ -118,7 +118,7 @@ public:
 
   /// Get order of interpolation
   int getOrder() const;
-    
+
   /// Remove interpolation nodes
   void removeNodes(Array<Scalar>& time_vec);
 
@@ -143,7 +143,7 @@ public:
   RCP<Teuchos::ParameterList> unsetParameterList();
 
   RCP<const Teuchos::ParameterList> getValidParameters() const;
-    
+
 private:
 
   RCP<InterpolatorBase<Scalar> > interpolator_;
@@ -166,9 +166,9 @@ private:
  * \relates InterpolationBuffer.
  */
 template<class Scalar>
-RCP<InterpolationBuffer<Scalar> > interpolationBuffer( 
+RCP<InterpolationBuffer<Scalar> > interpolationBuffer(
   const RCP<InterpolatorBase<Scalar> >& interpolator = Teuchos::null,
-  int storage = 0 
+  int storage = 0
   )
 {
   RCP<InterpolationBuffer<Scalar> > ib = rcp(new InterpolationBuffer<Scalar>());

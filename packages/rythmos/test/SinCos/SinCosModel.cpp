@@ -76,14 +76,14 @@ namespace {
 namespace Rythmos {
 
 // non-member Constructor
-RCP<SinCosModel> sinCosModel() 
+RCP<SinCosModel> sinCosModel()
 {
   RCP<SinCosModel> model = rcp(new SinCosModel);
   return(model);
 }
 
 // non-member Constructor
-RCP<SinCosModel> sinCosModel(bool implicit) 
+RCP<SinCosModel> sinCosModel(bool implicit)
 {
   RCP<SinCosModel> model = sinCosModel();
   model->setImplicitFlag(implicit);
@@ -118,7 +118,7 @@ SinCosModel::SinCosModel()
   g_space_ = Thyra::defaultSpmdVectorSpace<double>(ng_);
 }
 
-void SinCosModel::setImplicitFlag(bool implicit) 
+void SinCosModel::setImplicitFlag(bool implicit)
 {
   if (isImplicit_ != implicit) {
     isInitialized_ = false;
@@ -267,7 +267,7 @@ SinCosModel::create_W() const
       V_V(multivec->col(1).ptr(),*vec);
     }
   }
-  RCP<Thyra::LinearOpWithSolveBase<double> > W = 
+  RCP<Thyra::LinearOpWithSolveBase<double> > W =
     Thyra::linearOpWithSolve<double>(
       *W_factory,
       matrix
@@ -294,15 +294,15 @@ SinCosModel::create_W_op() const
 
 
 
-RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > 
+RCP<const Thyra::LinearOpWithSolveFactoryBase<double> >
 SinCosModel::get_W_factory() const
 {
-  RCP<Thyra::LinearOpWithSolveFactoryBase<double> > W_factory = 
+  RCP<Thyra::LinearOpWithSolveFactoryBase<double> > W_factory =
     Thyra::defaultSerialDenseLinearOpWithSolveFactory<double>();
   return W_factory;
 }
 //  RCP<const Thyra::LinearOpBase<double> > fwdOp = this->create_W_op();
-//  RCP<Thyra::LinearOpWithSolveBase<double> > W = 
+//  RCP<Thyra::LinearOpWithSolveBase<double> > W =
 //    Thyra::linearOpWithSolve<double>(
 //      *W_factory,
 //      fwdOp
@@ -344,7 +344,7 @@ void SinCosModel::evalModelImpl(
       );
 
   const RCP<const VectorBase<double> > x_in = inArgs.get_x().assert_not_null();
-  Thyra::ConstDetachedVectorView<double> x_in_view( *x_in ); 
+  Thyra::ConstDetachedVectorView<double> x_in_view( *x_in );
 
   //double t = inArgs.get_t();
   double a = a_;
@@ -352,7 +352,7 @@ void SinCosModel::evalModelImpl(
   double L = L_;
   if (acceptModelParams_) {
     const RCP<const VectorBase<double> > p_in = inArgs.get_p(0).assert_not_null();
-    Thyra::ConstDetachedVectorView<double> p_in_view( *p_in ); 
+    Thyra::ConstDetachedVectorView<double> p_in_view( *p_in );
     a = p_in_view[0];
     f = p_in_view[1];
     L = p_in_view[2];
@@ -368,15 +368,15 @@ void SinCosModel::evalModelImpl(
 
   const RCP<VectorBase<double> > f_out = outArgs.get_f();
   const RCP<Thyra::LinearOpBase<double> > W_out = outArgs.get_W_op();
-  RCP<Thyra::MultiVectorBase<double> > DfDp_out; 
+  RCP<Thyra::MultiVectorBase<double> > DfDp_out;
   if (acceptModelParams_) {
-    Derivative<double> DfDp = outArgs.get_DfDp(0); 
+    Derivative<double> DfDp = outArgs.get_DfDp(0);
     DfDp_out = DfDp.getMultiVector();
   }
 
   if (!isImplicit_) { // isImplicit_ == false
     if (!is_null(f_out)) {
-      Thyra::DetachedVectorView<double> f_out_view( *f_out ); 
+      Thyra::DetachedVectorView<double> f_out_view( *f_out );
       f_out_view[0] = x_in_view[1];
       f_out_view[1] = (f/L)*(f/L)*(a-x_in_view[0]);
     }
@@ -399,7 +399,7 @@ void SinCosModel::evalModelImpl(
     }
   } else { // isImplicit_ == true
     if (!is_null(f_out)) {
-      Thyra::DetachedVectorView<double> f_out_view( *f_out ); 
+      Thyra::DetachedVectorView<double> f_out_view( *f_out );
       Thyra::ConstDetachedVectorView<double> x_dot_in_view( *x_dot_in );
       f_out_view[0] = x_dot_in_view[0] - x_in_view[1];
       f_out_view[1] = x_dot_in_view[1] - (f/L)*(f/L)*(a-x_in_view[0]);
@@ -443,7 +443,7 @@ RCP<const Teuchos::Array<std::string> > SinCosModel::get_p_names(int l) const
 #ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, Np_ );
 #endif
-  RCP<Teuchos::Array<std::string> > p_strings = 
+  RCP<Teuchos::Array<std::string> > p_strings =
     Teuchos::rcp(new Teuchos::Array<std::string>());
   p_strings->push_back("Model Coefficient:  a");
   p_strings->push_back("Model Coefficient:  f");
@@ -466,7 +466,7 @@ void SinCosModel::setupInOutArgs_() const
   if (isInitialized_) {
     return;
   }
-    
+
   {
     // Set up prototypical InArgs
     ModelEvaluatorBase::InArgsSetup<double> inArgs;
@@ -499,9 +499,9 @@ void SinCosModel::setupInOutArgs_() const
     outArgs_ = outArgs;
   }
 
-  // Set up nominal values 
+  // Set up nominal values
   nominalValues_ = inArgs_;
-  if (haveIC_) 
+  if (haveIC_)
   {
     nominalValues_.set_t(t0_ic_);
     const RCP<VectorBase<double> > x_ic = createMember(x_space_);
@@ -550,7 +550,7 @@ void SinCosModel::setParameterList(RCP<ParameterList> const& paramList)
   bool isImplicit = get<bool>(*pl,Implicit_name);
   bool acceptModelParams = get<bool>(*pl,AcceptModelParams_name);
   bool haveIC = get<bool>(*pl,HaveIC_name);
-  if ( (isImplicit != isImplicit_) || 
+  if ( (isImplicit != isImplicit_) ||
        (acceptModelParams != acceptModelParams_) ||
        (haveIC != haveIC_)
      ) {
@@ -578,35 +578,35 @@ RCP<const ParameterList> SinCosModel::getValidParameters() const
     pl->set(AcceptModelParams_name, AcceptModelParams_default);
     pl->set(HaveIC_name, HaveIC_default);
     Teuchos::setDoubleParameter(
-        Coeff_a_name, Coeff_a_default, "Coefficient a in model", 
-        &*pl 
+        Coeff_a_name, Coeff_a_default, "Coefficient a in model",
+        &*pl
         );
     Teuchos::setDoubleParameter(
-        Coeff_f_name, Coeff_f_default, "Coefficient f in model", 
-        &*pl 
+        Coeff_f_name, Coeff_f_default, "Coefficient f in model",
+        &*pl
         );
     Teuchos::setDoubleParameter(
-        Coeff_L_name, Coeff_L_default, "Coefficient L in model", 
-        &*pl 
+        Coeff_L_name, Coeff_L_default, "Coefficient L in model",
+        &*pl
         );
     Teuchos::setDoubleParameter(
-        IC_x0_name, IC_x0_default, "Initial Condition for x0", 
-        &*pl 
+        IC_x0_name, IC_x0_default, "Initial Condition for x0",
+        &*pl
         );
     Teuchos::setDoubleParameter(
-        IC_x1_name, IC_x1_default, "Initial Condition for x1", 
-        &*pl 
+        IC_x1_name, IC_x1_default, "Initial Condition for x1",
+        &*pl
         );
     Teuchos::setDoubleParameter(
-        IC_t0_name, IC_t0_default, "Initial time t0", 
-        &*pl 
+        IC_t0_name, IC_t0_default, "Initial time t0",
+        &*pl
         );
     validPL = pl;
   }
   return validPL;
 }
 
-void SinCosModel::calculateCoeffFromIC_() 
+void SinCosModel::calculateCoeffFromIC_()
 {
   phi_ = atan(((f_/L_)/x1_ic_)*(x0_ic_-a_))-(f_/L_)*t0_ic_;
   b_ = x1_ic_/((f_/L_)*cos((f_/L_)*t0_ic_+phi_));

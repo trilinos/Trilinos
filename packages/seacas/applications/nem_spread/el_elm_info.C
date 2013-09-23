@@ -108,7 +108,7 @@ int elem_info(int info, int ielem_type, int supp)
 
 {
 
-  int   answer;
+  int   answer = 0;
   const char *yo = "elem_info: ";
 
   /* return desired element information */

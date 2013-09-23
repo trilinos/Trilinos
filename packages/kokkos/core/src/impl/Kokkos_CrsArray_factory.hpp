@@ -52,6 +52,28 @@ namespace Kokkos {
 template< class DataType , class Arg1Type , class Arg2Type , typename SizeType >
 inline
 typename CrsArray< DataType , Arg1Type , Arg2Type , SizeType >::HostMirror
+create_mirror( const CrsArray<DataType,Arg1Type,Arg2Type,SizeType > & view )
+{
+  // Force copy:
+  typedef Impl::ViewAssignment< Impl::LayoutDefault > alloc ;
+  typedef CrsArray< DataType , Arg1Type , Arg2Type , SizeType >  crsarray_type ;
+
+  typename crsarray_type::HostMirror               tmp ;
+  typename crsarray_type::row_map_type::HostMirror tmp_row_map = create_mirror( view.row_map );
+
+  tmp.row_map = tmp_row_map ; // Assignment of 'const' from 'non-const'
+  tmp.entries = create_mirror( view.entries );
+
+  // Deep copy:
+  deep_copy( tmp_row_map , view.row_map );
+  deep_copy( tmp.entries , view.entries );
+
+  return tmp ;
+}
+
+template< class DataType , class Arg1Type , class Arg2Type , typename SizeType >
+inline
+typename CrsArray< DataType , Arg1Type , Arg2Type , SizeType >::HostMirror
 create_mirror_view( const CrsArray<DataType,Arg1Type,Arg2Type,SizeType > & view ,
                     typename Impl::enable_if< ViewTraits<DataType,Arg1Type,Arg2Type,void>::is_hostspace >::type * = 0 )
 {
@@ -64,57 +86,9 @@ typename CrsArray< DataType , Arg1Type , Arg2Type , SizeType >::HostMirror
 create_mirror_view( const CrsArray<DataType,Arg1Type,Arg2Type,SizeType > & view ,
                     typename Impl::enable_if< ! ViewTraits<DataType,Arg1Type,Arg2Type,void>::is_hostspace >::type * = 0 )
 {
-  // Force copy:
-  typedef Impl::ViewAssignment< Impl::LayoutDefault > alloc ;
-  typedef CrsArray< DataType , Arg1Type , Arg2Type , SizeType >  crsarray_type ;
-
-  typename crsarray_type::HostMirror               tmp ;
-  typename crsarray_type::row_map_type::HostMirror tmp_row_map ;
-
-  // Allocation to match:
-  (void)alloc( tmp_row_map , view.row_map );
-  (void)alloc( tmp.entries , view.entries );
-
-  // Assignment of 'const' from 'non-const'
-  tmp.row_map = tmp_row_map ;
-
-  // Deep copy:
-  deep_copy( tmp_row_map , view.row_map );
-  deep_copy( tmp.entries , view.entries );
-
-  return tmp ;
+  return create_mirror( view );
 }
 
-template< class DataType , class Arg1Type , class Arg2Type , typename SizeType >
-inline
-typename CrsArray< DataType , Arg1Type , Arg2Type , SizeType >::HostMirror
-create_mirror( const CrsArray<DataType,Arg1Type,Arg2Type,SizeType > & view )
-{
-#if KOKKOS_MIRROR_VIEW_OPTIMIZE
-  // Allow choice via type:
-  return create_mirror_view( view );
-#else
-  // Force copy:
-  typedef Impl::ViewAssignment< Impl::LayoutDefault > alloc ;
-  typedef CrsArray< DataType , Arg1Type , Arg2Type , SizeType >  crsarray_type ;
-
-  typename crsarray_type::HostMirror               tmp ;
-  typename crsarray_type::row_map_type::HostMirror tmp_row_map ;
-
-  // Allocation to match:
-  (void)alloc( tmp_row_map , view.row_map );
-  (void)alloc( tmp.entries , view.entries );
-
-  // Assignment of 'const' from 'non-const'
-  tmp.row_map = tmp_row_map ;
-
-  // Deep copy:
-  deep_copy( tmp_row_map , view.row_map );
-  deep_copy( tmp.entries , view.entries );
-
-  return tmp ;
-#endif
-}
 
 } // namespace Kokkos
 

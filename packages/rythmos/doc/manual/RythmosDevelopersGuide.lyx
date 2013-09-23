@@ -1,0 +1,596 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Section
+Introduction
+\end_layout
+
+\begin_layout Standard
+The primary purpose of the Developer's Guide is to provide the high-level
+ OO design and description of the C++ interfaces and concrete implementations
+ for the solution of a broad class of transient ordinary differential equations
+ (ODEs) and differential algebraic equations (DAEs) in a consistent manner.
+ Although Doxygen is a good tool to explore the details of the C++ interfaces
+ and classes, it rarely provides the high-level interaction of these objects
+ and how they are intended to be used.
+ Therefore in this Developer's Guide, the high-level description is given
+ in order for new Rythmos developers can get the basic design of Rythmos.
+ It is intended that this description should remain fairly stable over time,
+ and not require many updates.
+ However detailed information, which could change more often, is left to
+ the Doxygen webpages, which obviously provides quick and easy document
+ generation of software implementation.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename figures/IntegratorStepperDesign.png
+	lyxscale 75
+	width 5in
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+General relationships between the Integrators, IntegrationControlStrategies,
+ Steppers and StepControlStrategies.
+\begin_inset CommandInset label
+LatexCommand label
+name "rythmos:fig:IntegratorStepperDesign"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Interpolation-Buffer Base
+\begin_inset CommandInset label
+LatexCommand label
+name "rythmos:sec:InterpolationBufferBase"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+An InterpolationBuffer is basically a container of solutions and time derivative
+s (
+\begin_inset Quotes eld
+\end_inset
+
+states
+\begin_inset Quotes erd
+\end_inset
+
+) at discrete times (
+\begin_inset Quotes eld
+\end_inset
+
+time nodes
+\begin_inset Quotes erd
+\end_inset
+
+) over a time range in ascending order, and can be used for storing checkpoints
+ and breakpoints of the state for later use.
+ With an Interpolator specified, a state at desired 
+\begin_inset Quotes eld
+\end_inset
+
+time points
+\begin_inset Quotes erd
+\end_inset
+
+ can be returned over the time range with an accuracy of the order of the
+ Interpolator.
+ See Fig
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:fig:InterpolationBuffer"
+
+\end_inset
+
+.
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename figures/InterpolationBuffer.png
+	lyxscale 75
+	width 4in
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Illustrating the time points and time nodes in InterpolationBuffer with
+ a linear interpolator.
+\begin_inset CommandInset label
+LatexCommand label
+name "rythmos:fig:InterpolationBuffer"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Part of the design here is to separate the state information (solutions
+ and time derivatives) from how the state is integrated to that time.
+ This can be used when separate ODEs and DAEs with different time integrators
+ are advanced in time, and wish to share their states (e.g., forward and adjoint
+ states, and operator-split solutions).
+ No direct synchronizing of time steps is required between them; time steps
+ of each state can be interpolated between for each integrator.
+ 
+\end_layout
+
+\begin_layout Standard
+An important caveat here is that the interpolated solutions are not guaranteed
+ to satisfy the ODE/DAE at the interpolated 
+\begin_inset Quotes eld
+\end_inset
+
+time points
+\begin_inset Quotes erd
+\end_inset
+
+.
+ This may be important for simulations where conservation is required, e.g.,
+ conservation of mass, momentum and energy.
+ The InterpolationBuffer can be still useful in this situation, but the
+ 
+\begin_inset Quotes eld
+\end_inset
+
+time nodes
+\begin_inset Quotes erd
+\end_inset
+
+ should be used to ensure that the state satisfies the governing ODEs/DAEs.
+\end_layout
+
+\begin_layout Subsection
+Integrator Base
+\end_layout
+
+\begin_layout Standard
+Time integration is carried out by Integrators, which inherit from Interpolation
+BufferBase, and advance the state in time (step-by-step) with Steppers.
+ Integrators therefore have a set of states at given times (see Sec.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:sec:InterpolationBufferBase"
+
+\end_inset
+
+), and can provide states to client requests.
+ If the client requests a time point within the current time range, the
+ Integrator can simply return an interpolated state.
+ If the client requests a point forward in time, the Integrator will advance
+ the state to include the requested time.
+\end_layout
+
+\begin_layout Standard
+The primary function of the Integrator is to manage the 
+\begin_inset Quotes eld
+\end_inset
+
+high-level
+\begin_inset Quotes erd
+\end_inset
+
+ time coordination required by the clients.
+ Examples of this time marching would include output of the solution state
+ at various times, managing checkpoints between solution states and adjoint
+ states, coordinating states between operator-split solutions, etc.
+ All these coordinations have very little to do with individual time steps,
+ and more with times where the solution states are required.
+ This helps define the difference between Integrators and Steppers when
+ it comes to step-size selection (Integration and Step Control Strategies).
+\end_layout
+
+\begin_layout Standard
+In general the Integrator will request the largest step size required to
+ meet the next 
+\begin_inset Quotes eld
+\end_inset
+
+coordination
+\begin_inset Quotes erd
+\end_inset
+
+ (see Section
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:sec:Integration-Control-Strategy"
+
+\end_inset
+
+), and leave the leave final determination of the step size to the Stepper
+ based on client specification, e.g., fixed or variable step size, order,
+ and accuracy (see Section
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:sec:Step-Control-Strategy"
+
+\end_inset
+
+).
+ Many times the step size completed by the Stepper will not advance the
+ state to the Integrator requested time, and the Integrator will simply
+ request another time step from the Stepper.
+ With that said, the Integrator has the flexibility to more directly control
+ the time stepping, and control the step size used by the Steppers.
+ However allowing the Stepper to choose the step size based on the Step
+ Control Strategy and having the Integration Control Strategy select 
+\begin_inset Quotes eld
+\end_inset
+
+coordination
+\begin_inset Quotes erd
+\end_inset
+
+ times is the preferred approach.
+\end_layout
+
+\begin_layout Subsection
+Integration Control-Strategy
+\begin_inset CommandInset label
+LatexCommand label
+name "rythmos:sec:Integration-Control-Strategy"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The Integration Control-Strategy is meant to determine the step size needed
+ for 
+\begin_inset Quotes eld
+\end_inset
+
+high-level
+\begin_inset Quotes erd
+\end_inset
+
+ simulation coordination (e.g., operator splitting), solution output, and/or
+ Stepper failure.
+ In the Integration Control-Strategy, we are not concerned with the accuracy
+ of the solution, as much as we are concerned with when are solutions needed.
+ Obviously one could control the Stepper step size with the Integration
+ control-strategy by using a 
+\emph on
+fixed
+\emph default
+ step type and requiring the desired step size be taken.
+ This is especially useful for Steppers that can only handle 
+\emph on
+fixed
+\emph default
+ step types.
+\end_layout
+
+\begin_layout Subsection
+Stepper Base
+\end_layout
+
+\begin_layout Standard
+A Stepper is a basic building block for DAE/ODE solvers.
+ It advances the state by ONE time step,
+\begin_inset Formula 
+\[
+x_{n-1}\underset{\Delta t}{\longrightarrow}x_{n},
+\]
+
+\end_inset
+
+that has been requested by the Integrator.
+ This time step can be fixed or variable, where a 
+\emph on
+fixed 
+\emph default
+step size indicates the stepper will take the requested step size or fail,
+ and where a 
+\emph on
+variable
+\emph default
+ step size allows the Stepper to adjust the step size to meet accuracy and/or
+ order requirements, and report to the Integrator the step size taken.
+ Most Steppers can be implemented very quickly for fixed step sizes, and
+ allow the Integrator to control the step size through an Integration Control-St
+rategy (see Sec.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:sec:Integration-Control-Strategy"
+
+\end_inset
+
+).
+ For variable step sizes, the Stepper needs a Step Control-Strategy (see
+ Sec.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:sec:Step-Control-Strategy"
+
+\end_inset
+
+) in order to adjust the step size based on error/order, and handle time
+ step failures.
+\end_layout
+
+\begin_layout Subsection
+Step Control-Strategy
+\begin_inset CommandInset label
+LatexCommand label
+name "rythmos:sec:Step-Control-Strategy"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename figures/StepControlStrategy.png
+	lyxscale 75
+	width 5in
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Progression of the ControlStrategyState through a sequence of StepControlStrateg
+y functions by a Stepper.
+\begin_inset CommandInset label
+LatexCommand label
+name "rythmos:fig:StepControlStateProgression"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+Step Control-Strategies are for adjusting the step size when a Stepper is
+ requested to take a variable step size by an Integrator.
+ In order to handle the correct progression of calls to Step Control-Strategies
+ functions (see Fig.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "rythmos:fig:StepControlStateProgression"
+
+\end_inset
+
+), a ControlStrategyState is used, and can have the following values, 
+\family typewriter
+\shape smallcaps
+UNINITIALIZED
+\family default
+\shape default
+, 
+\family typewriter
+\shape smallcaps
+BEFORE_FIRST_STEP
+\family default
+\shape default
+, 
+\family typewriter
+\shape smallcaps
+MID_STEP
+\family default
+\shape default
+, 
+\family typewriter
+\shape smallcaps
+AFTER_CORRECTION
+\family default
+\shape default
+, and 
+\family typewriter
+\shape smallcaps
+READY_FOR_NEXT STEP
+\family default
+\shape default
+.
+\end_layout
+
+\begin_layout Standard
+The functions 
+\emph on
+initialize()
+\emph default
+ and 
+\emph on
+setRequestedStepsize()
+\emph default
+ are used to prepare for the first step each time the Integrator calls the
+ Stepper, i.e., setting the requested step size and initializing the Error
+ Weight Vector.
+ The 
+\emph on
+nextStepsize() 
+\emph default
+function is used to complete anything before starting the step.
+ The 
+\emph on
+setCorrection()
+\emph default
+ functions is used to perform anything after the solver.
+ i.e., the correction.
+ At this point the Stepper uses the StepControlStrategy to determine if
+ the step was acceptable with 
+\emph on
+acceptStep().
+ 
+\emph default
+If the step was acceptable, final computations of the solution and time
+ derivative are completed for the next time step by 
+\emph on
+completeStep()
+\emph default
+.
+ If the step was not acceptable, the step size and/order could be adjusted
+ by the StepControlStrategy function, 
+\emph on
+rejectStep()
+\emph default
+, and the time step retried in order to obtain an acceptable time step.
+ The
+\emph on
+ rejectStep()
+\emph default
+ function could completely reject the step and return control to the Integrator
+ to see if the Integrator Control Strategy can do something to revive the
+ time step.
+\end_layout
+
+\end_body
+\end_document

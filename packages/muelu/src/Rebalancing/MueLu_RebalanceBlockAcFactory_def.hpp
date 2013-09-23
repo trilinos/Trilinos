@@ -416,9 +416,9 @@ namespace MueLu {
       SubFactoryMonitor m2(*this, "Rebalance additional data", coarseLevel);
 
       // call Build of all user-given transfer factories
-      for (std::vector<RCP<const FactoryBase> >::const_iterator it = rebalanceFacts_.begin(); it != rebalanceFacts_.end(); ++it) {
-        GetOStream(Runtime0, 0) << "RebalanceBlockedAc: call rebalance factory " << (*it).get() << ": " << (*it)->description() << std::endl;
-        (*it)->CallBuild(coarseLevel);
+      for (std::vector<RCP<const FactoryBase> >::const_iterator it2 = rebalanceFacts_.begin(); it2 != rebalanceFacts_.end(); ++it2) {
+        GetOStream(Runtime0, 0) << "RebalanceBlockedAc: call rebalance factory " << (*it2).get() << ": " << (*it2)->description() << std::endl;
+        (*it2)->CallBuild(coarseLevel);
       }
     }
   } //Build()

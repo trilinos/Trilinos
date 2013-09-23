@@ -2295,7 +2295,7 @@ namespace {
     }
 
     /* Start over with *list_ptr correctly allocated */
-    free((char *)list_ptr);
+    free((char *)(*list_ptr));
     *list_ptr = (int *) malloc(components*sizeof(int));
     if ( *list_ptr == NULL) {
       fprintf(stderr,"Memory exhausted in extract_connected_lists\n");

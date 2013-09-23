@@ -97,7 +97,6 @@ public:
    typedef stk::mesh::Field<double> SolutionFieldType;
    typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
    typedef stk::mesh::Field<ProcIdData> ProcIdFieldType;
-   typedef stk::mesh::Field<std::size_t> LocalIdFieldType;
 
    // some simple exception classes
    struct ElementBlockException : public std::logic_error 
@@ -214,6 +213,10 @@ public:
      * are not owned.
      */
    void getNeighborElements(std::vector<stk::mesh::Entity*> & elements) const;
+
+   /** Get a vector of elements not owned by this processor but in a particular block
+     */
+   void getNeighborElements(const std::string & blockID,std::vector<stk::mesh::Entity*> & elements) const;
 
    /** Get Entities corresponding to the side set requested. 
      * The Entites in the vector should be a dimension
@@ -633,7 +636,6 @@ protected:
 
    VectorFieldType * coordinatesField_;
    ProcIdFieldType * processorIdField_;
-   LocalIdFieldType * localIdField_;
    SolutionFieldType * loadBalField_;
    
    // maps field names to solution field stk mesh handles

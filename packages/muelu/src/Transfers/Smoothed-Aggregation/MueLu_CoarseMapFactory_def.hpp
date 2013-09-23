@@ -53,6 +53,11 @@
 #ifndef MUELU_COARSEMAPFACTORY_DEF_HPP_
 #define MUELU_COARSEMAPFACTORY_DEF_HPP_
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_StridedMapFactory.hpp>
 

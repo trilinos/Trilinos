@@ -89,14 +89,14 @@
       <Parameter name="A"                                   type="string" value="myRAPFact"/>
       <Parameter name="UnAmalgamationInfo"                  type="string" value="myRebAmalgFact"/>
     </ParameterList>
-    
+
     <ParameterList name="myRepartitionInterface">
       <Parameter name="factory"                             type="string" value="RepartitionInterface"/>
       <Parameter name="A"                                   type="string" value="myRAPFact"/>
-      <Parameter name="AmalgamatedPartition"                type="string" value="myIsorropiaInterface"/>                
+      <Parameter name="AmalgamatedPartition"                type="string" value="myIsorropiaInterface"/>
       <Parameter name="UnAmalgamationInfo"                  type="string" value="myRebAmalgFact"/>
     </ParameterList>
-    
+
 
     <ParameterList name="myRepartitionFact">
       <Parameter name="factory"                             type="string" value="RepartitionFactory"/>
@@ -105,7 +105,7 @@
       <Parameter name="minRowsPerProcessor"                 type="int"    value="800"/> <!-- default = 2000 -->
       <Parameter name="nonzeroImbalance"                    type="double" value="1.1"/> <!-- default = 1.2 -->
       <Parameter name="startLevel"                          type="int"    value="1"/>   <!-- default = 1 -->
-      <Parameter name="diffusiveHeuristic"                  type="int"    value="0"/>
+      <Parameter name="remapPartitions"                     type="bool"   value="false"/>
     </ParameterList>
 
     <ParameterList name="myRebalanceProlongatorFact">
@@ -117,7 +117,7 @@
     <ParameterList name="myRebalanceRestrictionFact">
       <Parameter name="factory"                             type="string" value="RebalanceTransferFactory"/>
       <Parameter name="type"                                type="string" value="Restriction"/>
-      <Parameter name="R"                                   type="string" value="myRestrictorFact"/>     
+      <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
       <Parameter name="Nullspace"                           type="string" value="myTentativePFact"/>
     </ParameterList>
 

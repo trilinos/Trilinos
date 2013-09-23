@@ -23,7 +23,7 @@ TRIBITS_ADD_LIBRARY(
 TRIBITS_ADD_EXECUTABLE(fastq_x11 NOEXEPREFIX NOEXESUFFIX
 				LINKER_LANGUAGE Fortran
 			        SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/fastq.f
-			        DEPLIBS fastqlib svdi_cgi svdi_cgi_x11 
+			        DEPLIBS fastqlib svdi_cgi_x11 
 			        COMM serial mpi)
 install_executable(fastq_x11)
 

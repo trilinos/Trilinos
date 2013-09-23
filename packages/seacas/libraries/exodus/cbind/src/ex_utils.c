@@ -1516,7 +1516,7 @@ void ex_compress_variable(int exoid, int varid, int type)
 {
 #if !defined(NOT_NETCDF4)
 
-  struct file_item* file = ex_find_file_item(exoid);
+  struct ex_file_item* file = ex_find_file_item(exoid);
 
   if (!file ) {
     char errmsg[MAX_ERR_LENGTH];

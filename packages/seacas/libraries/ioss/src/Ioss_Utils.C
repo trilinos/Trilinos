@@ -171,8 +171,10 @@ std::string Ioss::Utils::fixup_type(const std::string &base, int nodes_per_eleme
   // stays the same, the 3D name becomes 'trishell#'
   if (spatial == 3) {
     if      (type == "triangle3") type = "trishell3";
+    else if (type == "triangle4") type = "trishell4";
     else if (type == "triangle6") type = "trishell6";
     else if (type == "tri3")      type = "trishell3";
+    else if (type == "tri4")      type = "trishell4";
     else if (type == "tri6")      type = "trishell6";
   }
 

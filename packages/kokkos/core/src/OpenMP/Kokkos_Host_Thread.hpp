@@ -46,7 +46,7 @@
 
 #include <Kokkos_HostSpace.hpp>
 #include <Kokkos_Parallel.hpp>
-#include <impl/Kokkos_ArrayTraits.hpp>
+#include <impl/Kokkos_Traits.hpp>
 
 namespace Kokkos {
 namespace Impl {

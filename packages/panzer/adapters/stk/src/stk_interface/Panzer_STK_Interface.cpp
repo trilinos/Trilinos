@@ -182,7 +182,6 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
    // associating the field with a part: universal part!
    stk::mesh::put_field( *coordinatesField_ , nodeRank, metaData_->universal_part(), getDimension());
    stk::mesh::put_field( *processorIdField_ , elementRank, metaData_->universal_part());
-   stk::mesh::put_field( *localIdField_ , elementRank, metaData_->universal_part());
    stk::mesh::put_field( *loadBalField_ , elementRank, metaData_->universal_part());
 
    initializeFieldsInSTK(fieldNameToSolution_,nodeRank,setupIO);
@@ -609,16 +608,26 @@ void STK_Interface::getMyElements(const std::string & blockID,std::vector<stk::m
 
 void STK_Interface::getNeighborElements(std::vector<stk::mesh::Entity*> & elements) const
 {
-   std::vector<stk::mesh::Entity*> ghosted_entities;
+   // setup local ownership
+   stk::mesh::Selector neighborBlock = (!metaData_->locally_owned_part());
 
-   // get all ghosted entities (those recieved from other processors)
-   bulkData_->shared_aura().receive_list(ghosted_entities);
-
-   // filter out the elements from the list of ghosted entities
+   // grab elements
    stk::mesh::EntityRank elementRank = getElementRank();
-   for(std::size_t i=0;i<ghosted_entities.size();i++)
-     if(ghosted_entities[i]->entity_rank()==elementRank)
-       elements.push_back(ghosted_entities[i]); 
+   stk::mesh::get_selected_entities(neighborBlock,bulkData_->buckets(elementRank),elements);
+}
+
+void STK_Interface::getNeighborElements(const std::string & blockID,std::vector<stk::mesh::Entity*> & elements) const
+{
+   stk::mesh::Part * elementBlock = getElementBlockPart(blockID);
+
+   TEUCHOS_TEST_FOR_EXCEPTION(elementBlock==0,std::logic_error,"Could not find element block \"" << blockID << "\"");
+
+   // setup local ownership
+   stk::mesh::Selector neighborBlock = (!metaData_->locally_owned_part()) & (*elementBlock);
+
+   // grab elements
+   stk::mesh::EntityRank elementRank = getElementRank();
+   stk::mesh::get_selected_entities(neighborBlock,bulkData_->buckets(elementRank),elements);
 }
 
 void STK_Interface::getMySides(const std::string & sideName,std::vector<stk::mesh::Entity*> & sides) const
@@ -796,7 +805,6 @@ void STK_Interface::initializeFromMetaData()
    // declare coordinates and node parts
    coordinatesField_ = &metaData_->declare_field<VectorFieldType>(coordsString);
    processorIdField_ = &metaData_->declare_field<ProcIdFieldType>("PROC_ID");
-   localIdField_     = &metaData_->declare_field<LocalIdFieldType>("LOCAL_ID");
    loadBalField_     = &metaData_->declare_field<SolutionFieldType>("LOAD_BAL");
 
    // stk::mesh::put_field( *coordinatesField_ , getNodeRank() , metaData_->universal_part() );
@@ -812,27 +820,40 @@ void STK_Interface::buildLocalElementIDs()
    orderedElementVector_ = Teuchos::null; // forces rebuild of ordered lists
 
    // might be better (faster) to do this by buckets
-   Teuchos::RCP<std::vector<stk::mesh::Entity*> > elements 
-      = Teuchos::rcp(new std::vector<stk::mesh::Entity*>);
-   getMyElements(*elements);
+   std::vector<stk::mesh::Entity*> elements;
+   getMyElements(elements);
  
-   for(std::size_t index=0;index<elements->size();++index) {
-      stk::mesh::Entity & element = *((*elements)[index]);
+   for(std::size_t index=0;index<elements.size();++index) {
+      stk::mesh::Entity & element = *(elements[index]);
 
       // set processor rank
       ProcIdData * procId = stk::mesh::field_data(*processorIdField_,element);
       procId[0] = Teuchos::as<ProcIdData>(procRank_);
-
-      // set local element ID
-      std::size_t * localId = stk::mesh::field_data(*localIdField_,element);
-      localId[0] = currentLocalId_;
 
       localIDHash_[element.identifier()] = currentLocalId_;
 
       currentLocalId_++;
    }
 
-   orderedElementVector_ = elements; 
+   // copy elements into the ordered element vector
+   orderedElementVector_ = Teuchos::rcp(new std::vector<stk::mesh::Entity*>(elements));
+
+   elements.clear();
+   getNeighborElements(elements);
+
+   for(std::size_t index=0;index<elements.size();++index) {
+      stk::mesh::Entity & element = *(elements[index]);
+
+      // set processor rank
+      ProcIdData * procId = stk::mesh::field_data(*processorIdField_,element);
+      procId[0] = Teuchos::as<ProcIdData>(procRank_);
+
+      localIDHash_[element.identifier()] = currentLocalId_;
+
+      currentLocalId_++;
+   }
+
+   orderedElementVector_->insert(orderedElementVector_->end(),elements.begin(),elements.end());
 }
 
 void STK_Interface::applyElementLoadBalanceWeights()

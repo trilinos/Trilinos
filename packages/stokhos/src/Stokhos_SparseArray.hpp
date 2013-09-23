@@ -42,6 +42,11 @@
 #ifndef STOKHOS_SPARSEARRAY_HPP
 #define STOKHOS_SPARSEARRAY_HPP
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 #include <algorithm>
 #include "Teuchos_Array.hpp"
 

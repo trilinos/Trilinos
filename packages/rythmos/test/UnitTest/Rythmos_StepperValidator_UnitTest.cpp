@@ -56,7 +56,7 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, BackwardEuler ) {
   pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Backward Euler");
   ib->setParameterList(pl);
   sv->setIntegratorBuilder(ib);
-  
+
   sv->validateStepper();
   TEST_ASSERT( true );
 }
@@ -168,6 +168,6 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, Theta ) {
 }
 #endif // HAVE_RYTHMOS_EXPERIMENTAL
 
-} // namespace Rythmos 
+} // namespace Rythmos
 
 

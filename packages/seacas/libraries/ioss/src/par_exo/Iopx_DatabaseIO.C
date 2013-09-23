@@ -554,7 +554,7 @@ namespace Iopx {
         Ioss::SIDESET   | Ioss::SIDEBLOCK | Ioss::REGION    | Ioss::SUPERELEMENT;
   }
 
-  bool DatabaseIO::ok(bool write_message) const
+  bool DatabaseIO::ok(bool write_message, std::string *error_msg, int *bad_count) const
   {
     if (fileExists) {
       // File has already been opened at least once...
@@ -587,27 +587,40 @@ namespace Iopx {
 
     // Check for valid exodus_file_ptr (valid >= 0; invalid < 0)
     int global_file_ptr = util().global_minmax(exodus_file_ptr, Ioss::ParallelUtils::DO_MIN);
-    if (write_message && global_file_ptr < 0) {
-      // See which processors could not open/create the file...
+    if (global_file_ptr < 0 && (write_message || error_msg != NULL || bad_count != NULL)) {
       Ioss::IntVector status;
-      util().gather(exodus_file_ptr, status);
-      if (myProcessor == 0) {
-        std::string open_create = is_input() ? "open input" : "create output";
-        bool first = true;
-        std::ostringstream errmsg;
-        errmsg << "ERROR: Unable to " << open_create << " database '" << get_filename() << "' of type 'exodusII'";
-        if (isParallel) {
-          errmsg << "\n       on processor(s): ";
-          for (int i=0; i < util().parallel_size(); i++) {
-            if (status[i] < 0) {
-              if (!first) errmsg << ", ";
-              errmsg << i;
-              first = false;
-            }
-          }
-        }
-        errmsg << "\n";
-        std::cerr << errmsg.str();
+      util().all_gather(exodus_file_ptr, status);
+
+      if (write_message || error_msg != NULL) {
+	// See which processors could not open/create the file...
+	std::string open_create = is_input() ? "open input" : "create output";
+	bool first = true;
+	std::ostringstream errmsg;
+	errmsg << "ERROR: Unable to " << open_create << " database '" << get_filename() << "' of type 'exodusII'";
+	if (isParallel) {
+	  errmsg << "\n\ton processor(s): ";
+	  for (int i=0; i < util().parallel_size(); i++) {
+	    if (status[i] < 0) {
+	      if (!first) errmsg << ", ";
+	      errmsg << i;
+	      first = false;
+	    }
+	  }
+	}
+	if (error_msg != NULL) {
+	  *error_msg = errmsg.str();
+	}
+	if (write_message && myProcessor == 0) {
+	  errmsg << "\n";
+	  std::cerr << errmsg.str();
+	}
+      }
+      if (bad_count != NULL) {
+	for (int i=0; i < util().parallel_size(); i++) {
+	  if (status[i] < 0) {
+	    (*bad_count)++;
+	  }
+	}
       }
     }
 

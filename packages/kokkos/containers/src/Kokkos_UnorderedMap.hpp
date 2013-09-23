@@ -7,7 +7,7 @@
 #include <Kokkos_View.hpp>
 #include <Kokkos_Atomic.hpp>
 
-#include <impl/Kokkos_ArrayTraits.hpp>
+#include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_UnorderedMap_impl.hpp>
 
 #include <iostream>

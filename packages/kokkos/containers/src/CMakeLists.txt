@@ -30,12 +30,12 @@ INSTALL(FILES ${HEADERS_IMPL} DESTINATION ${TRILINOS_INCDIR}/impl/)
 # template instantiation, then we will need to uncomment out the
 # TRIBITS_ADD_LIBRARY statement below.
 
-#TRIBITS_ADD_LIBRARY(
-#    kokkoscontainers
-#    HEADERS ${HEADERS}
-#    NOINSTALLHEADERS ${HEADERS_IMPL}
-#    SOURCES ${SOURCES}
-#    DEPLIBS
-#    )
+TRIBITS_ADD_LIBRARY(
+    kokkoscontainers
+    HEADERS ${HEADERS}
+    NOINSTALLHEADERS ${HEADERS_IMPL}
+    SOURCES ${SOURCES}
+    DEPLIBS
+    )
 
 #-----------------------------------------------------------------------------

@@ -46,6 +46,11 @@
 #ifndef MUELU_TRANSPFACTORY_DEF_HPP
 #define MUELU_TRANSPFACTORY_DEF_HPP
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_Time.hpp>
 
