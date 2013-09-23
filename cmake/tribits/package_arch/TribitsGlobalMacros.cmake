@@ -827,27 +827,59 @@ FUNCTION(TRIBITS_GENERATE_SINGLE_REPO_VERSION_STRING  GIT_REPO_DIR
       "  We can not generate the repo version file!")
   ENDIF()
 
+  # A) Get the basic version info.
+
   EXECUTE_PROCESS(
     COMMAND ${GIT_EXEC} log -1 --pretty=format:"%h [%ad] <%ae>"
     WORKING_DIRECTORY ${GIT_REPO_DIR}
     RESULT_VARIABLE GIT_RETURN
     OUTPUT_VARIABLE GIT_OUTPUT
     )
-
-  # NOTE: ABove we have to add quotes '"' or CMake will not accept the
+  # NOTE: Above we have to add quotes '"' or CMake will not accept the
   # command.  However, git will put those quotes in the output so we have to
   # strip them out later :-(
 
   IF (NOT GIT_RETURN STREQUAL 0)
     MESSAGE(SEND_ERROR "ERROR, ${GIT_EXEC} command returned ${GIT_RETURN}!=0!")
+    SET(GIT_VERSION_INFO "Error, could not get version info!")
+  ELSE()
+    # Strip the quotes off :-(
+    STRING(LENGTH "${GIT_OUTPUT}" GIT_OUTPUT_LEN)
+    MATH(EXPR OUTPUT_NUM_CHARS_TO_KEEP "${GIT_OUTPUT_LEN}-2")
+    STRING(SUBSTRING "${GIT_OUTPUT}" 1 ${OUTPUT_NUM_CHARS_TO_KEEP}
+      GIT_VERSION_INFO)
   ENDIF()
 
-  # Strip the quotes off :-(
-  STRING(LENGTH "${GIT_OUTPUT}" GIT_OUTPUT_LEN)
-  MATH(EXPR OUTPUT_NUM_CHARS_TO_KEEP "${GIT_OUTPUT_LEN}-2")
-  STRING(SUBSTRING "${GIT_OUTPUT}" 1 ${OUTPUT_NUM_CHARS_TO_KEEP} GIT_VERSION_INFO)
+  # B) Get the first 80 chars of the summary message for more info
+
+  EXECUTE_PROCESS(
+    COMMAND ${GIT_EXEC} log -1 --pretty=format:"%s"
+    WORKING_DIRECTORY ${GIT_REPO_DIR}
+    RESULT_VARIABLE GIT_RETURN
+    OUTPUT_VARIABLE GIT_OUTPUT
+    )
+
+  IF (NOT GIT_RETURN STREQUAL 0)
+    MESSAGE(SEND_ERROR "ERROR, ${GIT_EXEC} command returned ${GIT_RETURN}!=0!")
+    SET(GIT_VERSION_SUMMARY "Error, could not get version summary!")
+  ELSE()
+    # Strip ouf quotes and quote the 80 char string
+    SET(MAX_SUMMARY_LEN 80)
+    MATH(EXPR MAX_SUMMARY_LEN_PLUS_2 "${MAX_SUMMARY_LEN}+2")
+    STRING(LENGTH "${GIT_OUTPUT}" GIT_OUTPUT_LEN)
+    MATH(EXPR OUTPUT_NUM_CHARS_TO_KEEP "${GIT_OUTPUT_LEN}-2")
+    STRING(SUBSTRING "${GIT_OUTPUT}" 1 ${OUTPUT_NUM_CHARS_TO_KEEP}
+      GIT_OUTPUT_STRIPPED)
+    IF (GIT_OUTPUT_LEN GREATER ${MAX_SUMMARY_LEN_PLUS_2})
+      STRING(SUBSTRING "${GIT_OUTPUT_STRIPPED}" 0 ${MAX_SUMMARY_LEN}
+         GIT_SUMMARY_STR)
+    ELSE()
+      SET(GIT_SUMMARY_STR "${GIT_OUTPUT_STRIPPED}")
+    ENDIF()
+  ENDIF()
   
-  SET(${SINGLE_REPO_VERSION_STRING_OUT} ${GIT_VERSION_INFO} PARENT_SCOPE)
+  SET(${SINGLE_REPO_VERSION_STRING_OUT}
+    "${GIT_VERSION_INFO}\n${GIT_SUMMARY_STR}" PARENT_SCOPE)
 
 ENDFUNCTION()
 
