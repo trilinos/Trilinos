@@ -32,7 +32,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(laplace2d_cp
-  SOURCE_FILES hands-on.sh xml/s2a.xml xml/s2b.xml
+  SOURCE_FILES hands-on.sh MueLu_Agg2VTK.py xml/s2a.xml xml/s2b.xml xml/s4a.xml
   )
   
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -45,4 +45,11 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_COPY_FILES_TO_BINARY_DIR(recirc2d_cp
   SOURCE_FILES hands-on.sh xml/s3a.xml xml/s3b.xml xml/s3c.xml
   )
+  
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  recirc2d_api
+  SOURCES recirc2d_api.cpp
+  NUM_MPI_PROCS 2
+  COMM mpi serial
+  )  
   

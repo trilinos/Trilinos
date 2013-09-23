@@ -12,8 +12,12 @@
 \usepackage{subfigure}
 
 \usepackage{calc}
+%
 \usepackage{flowchart} % also loads tikz
+\usepackage{tikz}
 \usetikzlibrary{arrows}
+%\usepackage{pgflibraryarrows}
+
 
 
 %
@@ -58,383 +62,20 @@
 
 \author{Tobias Wiesner}
 \begin{document}
+
 \section{Tutorial 1}
-\subsection{Welcome}
-Welcome to \MueLu, the next generation multigrid package in Trilinos. This tutorial demonstrates how to generate a multigrid hierarchy for a 1D Laplace equation using MueLu.
+Welcome to \MueLu, the next generation multigrid package in Trilinos.
 
-The outline of this very first tutorial is as follows. In the next section we present a small test program for a 1D Laplace equation. We use this test program with different sets of multigrid parameters and show the basics of the xml input deck of \MueLu. In the last section we give an overview of the factories involved in generating smoothed aggregation transfer operators.
+\MueLu~ is meant to be the successor package of the ML Trilinos package, which implements a smoothed aggregation based algebraic Multigrid method. \MueLu~ is designed as a framework that is flexible enough not only to provide smoothed aggregation based algebraic multigrid but also Ruge-Stueben AMG or even geometric multigrid methods\footnote{Note, that MueLu is still in an early phase of development and only has a smoothed aggregation AMG method implemented yet.}.
 
-\subsection{Test program}
-A rather general test program can be found in \texttt{tutorial1.cpp}. The purpose of this test program is to provide a framework to be able to test different multigrid parameters. The program first creates a 1D Laplace test problem, then builds a multigrid hierarchy using some parameters from user given xml parameter files and finally solves the problem using the multigrid solver or using a Krylov subspace method with the generated multigrid method as preconditioner. In the following paragraphs we shortly explain the different parts of the test program and give some common remarks on how to use \MueLu. 
+%Based on a very modern software framework it provides easy-to-use XML interfaces for the user.
 
-\paragraph{Input variables}
-The minimum input that is needed to generate a multigrid hierarchy is a fine level matrix $A$ and the corresponding near null space (or near kernel) of the fine level matrix $A$. \MueLu~is completely based on \Xpetra, a thin wrapper for the linear algebra packages Epetra and Tpetra in Trilinos. That is, the input information for \MueLu~has to be an \Xpetra~matrix object for the fine level matrix $A$ as well as an \Xpetra~multi vector for the null space.
+\paragraph{Preparation for hands-on tutorial}
+To compile the test programs, you first have to run the configuration script, that prepares the compilation on your computer. Just open a terminal, change to the folder with the text examples and type \verb|./do-configure|. Usually you have to do this step only once in the beginning.
 
-Listing \ref{listing:galeri1dlaplace} gives an example how to generate a 1D Laplace example using the Galeri package. First, a global map has to be generated using the given communicator object. When creating the map, the user can choose either Epetra or Tpetra as underlying linear algebra framework. Then, the system matrix $A$ is generated using the global map. For a 1D Laplace example a constant vector is a good approximation for the near null space.
-\begin{Listing} 
-\begin{center} 
-\begin{lstlisting}[language=C++,label=listing:galeri1dlaplace]
-RCP<Matrix>      A;
-RCP<MultiVector> nullspace;
+After the configuration process you can compile the test programs by typing \verb|make|. The compiler now should generate the executables \verb|Laplace2D.exe|, \verb|Recirc2D.exe| and \verb|Recirc2D_api.exe|. 
 
-RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-
-Teuchos::ParameterList galeriList;
-galeriList.set("nx", 100);
-    
-// generate map
-RCP<const Map> map = Galeri::Xpetra::CreateMap<LO, GO, Node> (Xpetra::UseEpetra, "Cartesian1D", comm, galeriList);
-
-// generate 1D Laplace matrix
-RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-        Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace1D", map, galeriList);
-A = Pr->BuildMatrix();
-
-// generate 1D null space vector
-nullspace = MultiVectorFactory::Build(map, 1);
-nullspace->putScalar(Teuchos::ScalarTraits<SC>::one());
-\end{lstlisting}
-\caption{Generate 1D Laplace problem using Galeri::Xpetra.} 
-\label{listing:galeri1dlaplace}
-\end{center}
-\end{Listing}
-
-In listing \ref{listing:epetra2xpetra} one can find how to transform given Epetra objects for the system matrix, right hand side as well as (near) null space to \Xpetra.
-\begin{Listing} 
-\begin{center} 
-\begin{lstlisting}[language=C++,label=listing:epetra2xpetra]
-RCP<Matrix>      A;
-RCP<MultiVector> nullspace;
-
-RCP<Epetra_CrsMatrix> epA = ... // System matrix (Epetra)
-RCP<Epetra_Vector> epv = ...    // RHS vector (Epetra)
-RCP<Epetra_MultiVector> epNS = ... // null space (multi) vector
-
-// Epetra_CrsMatrix -> Xpetra::Matrix
-RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
-RCP<CrsMatrixWrap> crsOp = Teuchos::rcp(new CrsMatrixWrap(exA));
-A = Teuchos::rcp_dynamic_cast<Matrix>(crsOp);
-A->SetFixedBlockSize(1); // assuming 1 DOF per node
-
-// Epetra_Vector -> Xpetra::Vector
-RCP<Vector> xRhs = Teuchos::rcp(new Xpetra::EpetraVector(epv));
-nullspace = Teuchos::rcp(new Xpetra::EpetraMultiVector(epNS));
-
-// Epetra_Map -> Xpetra::Map
-const RCP< const Map> map = Xpetra::toXpetra(epA->RowMap());
-\end{lstlisting}
-\caption{Generate Xpetra objects from Epetra objects.} 
-\label{listing:epetra2xpetra}
-\end{center}
-\end{Listing}
-
-\paragraph{Multigrid setup}
-Assuming the fine level matrix $A$ and the corresponding fine level near null space to be available we can generate the multigrid hiearchy. Following the code in listing \ref{listing:mueluhierarchy} we first create a \verb|ParameterListInterpreter| object which interprets some input parameters from the xml file "tutorial1.xml". A description of the xml parameter file follows in the next subsection.
-Once a \verb|Hierarchy| object has been created it is filled with the available fine level information. Finally the \verb|SetupHierarchy| function is called which actually generates the multigrid hierarchy.
-\begin{Listing} 
-\begin{center} 
-\begin{lstlisting}[language=C++,label=listing:epetra2xpetra]
-ParameterListInterpreter mueLuFactory("tutorial1.xml", *comm);
-RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
-
-H->GetLevel(0)->Set("A",           A);
-H->GetLevel(0)->Set("Nullspace",   nullspace);
-mueLuFactory.SetupHierarchy(*H);
-\end{lstlisting}
-\caption{Build multigrid hierarchy} 
-\label{listing:mueluhierarchy}
-\end{center}
-\end{Listing}
-
-\paragraph{Multigrid as solver}
-After the multigrid hierarchy object has been built and filled we can use it to solve a linear system.
-Listing \ref{amgassolver} demonstrates how to do $25$ sweeps with the previously generated multigrid method. Therein \verb|X| is a given vector with an initial guess for the solution. Finally it stores the solution vector. Vector \verb|B| is the right hand side vector.
-\begin{Listing} 
-\begin{center} 
-\begin{lstlisting}[language=C++,label=listing:AmgAsSolver]
-H->IsPreconditioner(false);
-H->Iterate(*B, 25, *X);
-\end{lstlisting}
-\caption{Use AMG as solver.} 
-\label{listing:amgassolver}
-\end{center}
-\end{Listing}
-
-\paragraph{Multigrid as preconditioner}
-Another option is to use the \MueLu hierarchy as preconditioner within a Krylov subspace solver such as CG or GMRES. In listing \ref{listing:amgaspreconditioner} an example is shown how to use the \verb|Hierarchy| as a preconditioner for a CG method from the Belos package.
-Again \verb|X| is the solution vector with a given initial guess. Vector \verb|B| is the right hand side vector.
-\begin{Listing} 
-\begin{center} 
-\begin{lstlisting}[language=C++,label=listing:AmgAsPreconditioner]
-// Operator and Multivector type that will be used with Belos
-typedef MultiVector          MV;
-typedef Belos::OperatorT<MV> OP;
-
-H->IsPreconditioner(true);
-
-// Define Operator and Preconditioner
-RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
-RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>(H));  // Turns a MueLu::Hierarchy object into a Belos operator
-
-// Construct a Belos LinearProblem object
-RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
-belosProblem->setLeftPrec(belosPrec);
-belosProblem->setProblem();
-
-// Belos parameter list
-ParameterList belosList;
-belosList.set("Maximum Iterations",    200); 
-belosList.set("Convergence Tolerance", 1e-5);   
-belosList.set("Verbosity",             Belos::Errors );
-belosList.set("Output Frequency",      1);
-belosList.set("Output Style",          Belos::Brief);
-
-// Create an iterative solver manager
-RCP< Belos::SolverManager<SC, MV, OP> > solver;
-solver = rcp(new Belos::BlockCGSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
-
-// Perform solve
-Belos::ReturnType ret = Belos::Unconverged;
-ret = solver->solve();
-cout << "Number of iterations: " << solver->getNumIters() << endl;
-\end{lstlisting}
-\caption{Use AMG as preconditioner within Belos.} 
-\label{listing:amgaspreconditioner}
-\end{center}
-\end{Listing}
-
-\subsection{Tutorial 1a: Basic XML parameters}
-The setup routine for the multigrid hiearchy is controled by the xml file used as input for the \verb|ParameterListInterpreter| object.
-
-Listing \ref{listing:minimalXML} gives a minimal example for a \MueLu XML input file. The most important part is the \textit{Hierarchy} section where basic parameters for the multigrid hierarchy are defined, such as the maximum allowed number of multigrid levels, the maximum allowed size of the coarse grid problem before coarsening stops or the verbosity level for screen output. In listing \ref{listing:minimalXML} the \textit{Factories} section is empty, i.e. default settings are assumed for building the multigrid hierarchy.
-Per default a smoothed aggregation algebraic multigrid method is used, that is designed for symmetric positive definite problems. A standard Galerkin product operator is used to build the coarse level matrices by computing the $RAP$ product (without load rebalancing). The restriction operator is the transposed of the smoothed prolongation operator that is generated using information from a coupled aggregation strategy. The coupled aggregation strategy allows aggregates which overlap processor boundaries. As multigrid level smoother one sweep with an undamped symmetric Gauss Seidel method is applied. On the coarsest level we use a direct solver.
-Even if the default settings are a good choice for most symmetric problems it is important to adapt the parameters to the underlaying problem. In the next sections we demonstrate how to change some parameters using the XML input deck.
-\begin{Listing} 
-\begin{center} 
-\begin{lstlisting}[language=XML,label=listing:minimalXML]
-<ParameterList name="MueLu">
-
-  <!-- Configuration of the Xpetra operator (fine level) -->
-  <ParameterList name="Matrix">
-    <Parameter name="PDE equations" type="int" value="1"/> <!-- Number of PDE equations at each grid node.-->
-  </ParameterList>
-
-  <!-- Factory collection -->
-  <ParameterList name="Factories">
-
-  </ParameterList>
-
-  <!-- Definition of the multigrid preconditioner -->
-  <ParameterList name="Hierarchy">
-
-    <Parameter name="numDesiredLevel" type="int"      value="10"/> <!-- Max number of levels -->
-    <Parameter name="maxCoarseSize" type="int"      value="1000"/> <!-- Min number of rows on coarsest level -->
-    <Parameter name="verbosity" type="string"   value="High"/> <!--None, Low, Medium, High, Extreme -->
-  </ParameterList>
-</ParameterList>
-
-\end{lstlisting}
-\caption{Structure of XML input file for \MueLu} 
-\label{listing:minimalXML}
-\end{center}
-\end{Listing}
-
-\subsection{Tutorial 1b: Level smoothers}
-\begin{Listing} 
-\begin{center} 
-\begin{lstlisting}[language=XML,label=listing:chebyXML]
-<ParameterList name="MueLu">
-
-  <ParameterList name="Factories">
-
-    <ParameterList name="myChebyshev">
-      <Parameter name="factory" type="string" value="TrilinosSmoother"/>
-      <Parameter name="type" type="string" value="CHEBYSHEV"/>
-
-      <ParameterList name="ParameterList">
-        <Parameter name="chebyshev: degree" type="int" value="1"/>
-        <Parameter name="chebyshev: ratio eigenvalue" type="double" value="20"/>
-        <Parameter name="chebyshev: min eigenvalue" type="double" value="1.0"/>
-        <Parameter name="chebyshev: zero starting solution" type="bool" value="true"/>
-      </ParameterList>
-    </ParameterList>
-
-  </ParameterList>
-
-  <ParameterList name="Hierarchy">
-    <Parameter name="numDesiredLevel" type="int"      value="10"/> 
-    <Parameter name="maxCoarseSize" type="int"      value="10"/> 
-    <Parameter name="verbosity" type="string"   value="Low"/>
-    <ParameterList name="AllButCoarsestLevel">
-      <Parameter name="startLevel" type="int"      value="0"/>
-      <Parameter name="Smoother" type="string"   value="myChebyshev"/>
-    </ParameterList>
-    <ParameterList name="CoarsestLevel">
-      <Parameter name="CoarseSolver" type="string"   value="DirectSolver"/>
-    </ParameterList>
-  </ParameterList>
-</ParameterList>
-\end{lstlisting}
-\caption{Structure of XML input file for \MueLu with Chebyshev level smoother} 
-\label{listing:chebyXML}
-\end{center}
-\end{Listing}
-
-In listing \ref{listing:chebyXML} we replace the default symmetric Gauss Seidel sweeps by some Chebyshev polynomial smoother. In the \textit{Factories} section of the XML input file we first define a new section for our new Chebyshev smoother. We name it "myChebyshev", but any other name would also be ok.
-The "myChebyshev" smoother is a \textit{TrilinosSmoother} of type \textit{CHEBYSHEV}. The \textit{TrilinosSmoother} class provides all iterative and polynomial smoothers such as Jacobi, Gauss Seidel and variants and Chebyshev. The internal parameter list within the "myChebyshev" section is used to define the smoother specific parameters, e.g. the number of sweeps and damping parameters or the polynomial degree. Most of the parameters are self-explaining and can be found in the documentation.
-
-Once we have defined our new smoother factory we have to use it within our multigrid hierarchy. Here we add a new subsection to the \textit{Hierarchy} section with the fixed name "AllButCoarsestLevel". Therein we define the "Smoother" to be of type "myChebyshev", where the name must be exactly the same of the factory that we've declared before.
-
-The subsection "CoarsestLevel" can be used to define some special factories for the coarsest level. In our example we explicitely define the "CoarseSolver" variable to be a direct solver.
-
-\subsection{Tutorial 1c: More level smoothers}
-\begin{Listing} 
-\begin{center} 
-\begin{lstlisting}[language=XML,label=listing:sgsXML]
-<ParameterList name="MueLu">
-
-  <ParameterList name="Factories">
-    <ParameterList name="mySymGaussSeidel">
-      <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
-      <Parameter name="type"                                type="string" value="RELAXATION"/>
-      <ParameterList name="ParameterList">
-        <Parameter name="relaxation: type"                  type="string" value="Symmetric Gauss-Seidel"/>
-        <Parameter name="relaxation: sweeps"                type="int"    value="2"/>
-        <Parameter name="relaxation: damping factor"        type="double" value="1"/>
-      </ParameterList>
-    </ParameterList>
-
-  </ParameterList>
-
-  <ParameterList name="Hierarchy">
-    <Parameter name="numDesiredLevel" type="int" value="10"/> 
-    <Parameter name="maxCoarseSize" type="int" value="10"/> 
-    <ParameterList name="AllButCoarsestLevel">
-      <Parameter name="startLevel" type="int" value="0"/>
-      <Parameter name="Smoother" type="string" value="mySymGaussSeidel"/>
-    </ParameterList>
-    <ParameterList name="CoarsestLevel">
-      <Parameter name="CoarseSolver" type="string"   value="mySymGaussSeidel"/>
-    </ParameterList>
-
-  </ParameterList>
-</ParameterList>
-
-\end{lstlisting}
-\caption{Structure of XML input file for \MueLu~ with symmetric GaussSeidel level smoothers} 
-\label{listing:sgsXML}
-\end{center}
-\end{Listing}
-
-Listing \ref{listing:sgsXML} is very similar to listing \ref{listing:chebyXML}. The only difference is, that now we use 2 sweeps with undamped symmetric Gauss Seidel as level smoother on all multigrid levels. We also replaced the direct solver on the coarsest level with the symmetric Gauss Seidel smoother.
-
-
-\subsection{Tutorial 1d: Plain aggregation}
-\begin{Listing} 
-\begin{center} 
-\begin{lstlisting}[language=XML,label=listing:plainAggregationXML]
-<ParameterList name="MueLu">
-  <ParameterList name="Factories">
-    <ParameterList name="UncoupledAggregationFact">
-      <Parameter name="factory" type="string" value="UncoupledAggregationFactory"/>
-      <Parameter name="Ordering" type="string" value="Natural"/>
-      <Parameter name="MaxNeighAlreadySelected" type="int" value="0"/>
-      <Parameter name="MinNodesPerAggregate" type="int" value="2"/>
-    </ParameterList>  
-    <ParameterList name="myTentativePFact">
-      <Parameter name="factory" type="string" value="TentativePFactory"/>
-    </ParameterList>
-    <ParameterList name="myRestrictorFact">
-      <Parameter name="factory" type="string" value="TransPFactory"/>
-      <Parameter name="P" type="string" value="myTentativePFact"/>
-    </ParameterList>
-  </ParameterList>
-
-  <ParameterList name="Hierarchy">
-
-    <Parameter name="numDesiredLevel" type="int"      value="10"/> 
-    <Parameter name="maxCoarseSize" type="int"      value="10"/>
-    <ParameterList name="AllButCoarsestLevel">
-      <Parameter name="startLevel" type="int"      value="0"/>
-      <Parameter name="Aggregates" type="string"   value="UncoupledAggregationFact"/>
-      <Parameter name="Nullspace" type="string"   value="myTentativePFact"/>
-      <Parameter name="P" type="string"   value="myTentativePFact"/>
-      <Parameter name="R" type="string"   value="myRestrictorFact"/>
-    </ParameterList>
-  </ParameterList>
-</ParameterList>
-\end{lstlisting}
-\caption{Structure of XML input file for \MueLu~ with plain aggregation transfer operators} 
-\label{listing:plainAggregationXML}
-\end{center}
-\end{Listing}
-
-In listing \ref{listing:plainAggregationXML} we demonstrate how to use non-smoothed transfer operators and a user-defined aggregation strategy. Again we define a "myTentativePFact" object of type "TentativePFactory" in the \textit{Factories} section. The restriction operator just shall be built as $R=P^T$. Therefore we add a "myRestrictorFact" of type "TransPFactory" and declare to use "myTentativePFact" as input variable "P" for "myRestrictorFact". This way we build the transpose of the tentative prolongation operator generated by "myTentativePFact" and store it as restriction operator (generated by "myRestrictorFact").
-
-Furthermore, we want to be somewhat more specific about the aggregates. We define a "UncoupledAggregationFact" object to be of type "UncoupledAggregationFactory", where we can define some more aggregation parameters such as the minimum size of nodes per aggregate. We no want to use our "UncoupledAggregationFact" object to generate the aggregates that are used within our "myTentativePFact" prolongation operator factory. In general we have several options to do that. We could either add an additional parameter "Aggregates" in our "myTentativePFact" object and declare the aggregates built with the "UncoupdledAggregationFact" object to be input of the tentative prolongation factory (similar to how we did it for variable "P" in "myRestrictorFact"). The alternative is to declare our "UncoupledAggregationFact" to be our default factory for the variable "Aggregates", as it is done in listing \ref{listing:plainAggregationXML} by adding a parameter entry for the variable "Aggregates" in the "AllButCoarsestLevel" section.
-
-A closer look to the "AllButCoarsestLevel" parameter section reveals, that beside of the entries for the variables "P", "R" and "Aggregates" we also have an entry for the variable "Nullspace" which points to the "myTentativePFactory". This is important. Some factories (e.g. the TentativePFactory) produce different variables (namely for TentativePFactory it is "P" for the non-smoothed transfer operator and "Nullspace" for the coarse level null space vector). If a factory generates different variables we have to make sure that we use the same factory for all these variables. Otherwise the factory manager would create a new instance for the default factory of the variable, which could either mean that some data is calculated twice or the program is just crashing, since the data is not consistent any more.
-
-\subsection{General workflow of multigrid setup}
-
-\begin{figure}
-\begin{tikzpicture}[>=latex',font={\sf \small}]
-\def\datawidth{2cm}
-\def\dataheight{0.5cm}
-\def\factorywidth{5cm}
-\def\factoryheight{0.75cm}
-
-\node(A) at (3,1) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{A};
-\node(Nullspace) at (0,1) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{Nullspace};
-\coordinate (co1) at (-3,1);
-\coordinate (co2) at (-3,-4);
-\coordinate (co3) at (3,-6);
-\coordinate (co4) at (-3,-5);
-\node(CoalesceDropFactory) at (0,0) [draw, predproc, minimum width=\factorywidth, minimum height=\factoryheight]{CoalesceDropFactory};
-\node(Graph) at (0,-1) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{Graph};
-\node(AggregationFactory) at (0,-2) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]{AggregationFactory};
-\node(Aggregates) at (0,-3) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{Aggregates};
-\node(TentativePFactory) at (0,-4) [draw, predproc, minimum width=\factorywidth, minimum height=\factoryheight]{TentativePFactory};
-\node(Ptent) at (0,-5) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{P};
-\node(SaPFactory) at (0,-6) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]{SaPFactory};
-\node(P) at (0,-7) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{P};
-\node(TransPFactory) at (6,-7) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]{TransPFactory};
-\node(R) at (6,-8) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{R};
-\node(RAPFactory) at (3,-9) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]{RAPFactory};
-\node(A2) at (3,-10) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{A};
-\node(Nullspace2) at (0,-10) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{Nullspace};
-\draw[-] (Nullspace) -- (co1);
-\draw[-] (co1) -- (co2);
-\draw[->] (co2) -- (TentativePFactory);
-\draw[->] (A) |- (CoalesceDropFactory);
-\draw[->] (CoalesceDropFactory) -- (Graph);
-\draw[->] (Graph) -- (AggregationFactory);
-\draw[->] (AggregationFactory) -- (Aggregates);
-\draw[->] (Aggregates) -- (TentativePFactory);
-\draw[-]  (A) -- (co3);
-\draw[->] (co3) -- (SaPFactory);
-\draw[->] (TentativePFactory) -- (Ptent);
-\draw[->] (Ptent) -- (SaPFactory);
-\draw[->] (SaPFactory) -- (P);
-\draw[->] (P) |- (RAPFactory);
-\draw[->] (P) -- (TransPFactory);
-\draw[->] (TransPFactory) -- (R);
-\draw[->] (R) |- (RAPFactory);
-\draw[-]  (TentativePFactory) -- (co4);
-\draw[->] (co4) |- (Nullspace2);
-\draw[->] (RAPFactory) -- (A2);
-\end{tikzpicture}
-\caption{General workflow for smoothed aggregation transfer operators and Galerkin product}
-\label{fig:generalworkflow}
-\end{figure}
-
-In figure \ref{fig:generalworkflow} we show the process of generating smoothed aggregation transfer operators. We start with an approximation of the fine level null space and the fine level matrix $A$. 
-First, the \textit{CoalesceDropFactory} builds the graph of the fine level matrix $A$. If requested by the user it is possible to apply some filtering strategy to the fine level matrix before the graph is built. The graph of matrix $A$ is then used to build aggregates. The fine level null space together with the aggregation information is needed to define the non-smoothed tentative prolongation operator with the \textit{TentativePFactory}. Be aware that there are some more connections between the \textit{CoalesceDropFactory} and the \textit{TentativePFactory}, which are not shown here for simplicity. In case of not just one DOF per node, the \textit{CoalesceDropFactory} makes use of a helper class \textit{AmalgamationFactory} which amalgamates the matrix for finding the amalgamated graph. The hidden \textit{AmalgamationFactory} provides some information which is used in the \textit{TentativePFactory} to reconstruct the unamalgamated transfer operators from the amalgamated aggregation information. More details follow in other tutorials with vector problems instead of scalar problems.
-
-Note, that the \textit{TentativePFactory} both generates the non-smoothed tentative transfer operator as well as the coarse level null space. Once the tentative prolongation operator is built, it is smoothed using the \textit{SaPFactory}. The \textit{TransPFacotry} builds the restriction operator just by transposing the smoothed prolongation operator. Finally, the \textit{RAPFactory} builds the coarse level matrix $A$.
-
-Alltogether, the algorithm ends with an approximation of the coarse level null space and a coarse matrix $A$.
-
+For visualization purposes make sure, that python is installed on your machine with the VTK bindings. Furthermore \verb|paraview| is needed for displaying the multigrid aggregates (optional) and \verb|gnuplot| is needed for plotting the solutions.
 
 \section{Tutorial 2}
 
@@ -532,7 +173,7 @@ By setting the maximum multigrid levels to 1 and using a Jacobi smoother as coar
  \end{graybox}
 
 \paragraph{Step 2: Increase number of multigrid levels.}
-The next step is to increase the number of multigrid levels. We begin with a 2 level multigrid method. We choose the parameters \texttt{numDesiredLevel} \texttt{maxCoarseSize} accordingly such that a 2 level multigrid hierarchy is built. The parameter \texttt{maxCoarseSize} defines the size of the coarse level problem (number of matrix rows of the coarsest system) before the multigrid coarsening is stopped. Again we use Jacobi iterations as level smoothers on all multigrid levels with a fixed damping parameter $\omega=0.9$.
+The next step is to increase the number of multigrid levels. We begin with a 2 level multigrid method. We choose the parameters \texttt{numDesiredLevel} and \texttt{maxCoarseSize} accordingly such that a 2 level multigrid hierarchy is built. The parameter \texttt{maxCoarseSize} defines the size of the coarse level problem (number of matrix rows of the coarsest system) before the multigrid coarsening is stopped. Again we use Jacobi iterations as level smoothers on all multigrid levels with a fixed damping parameter $\omega=0.9$.
 As one can see from figures  \ref{fig:2dlap121} to \ref{fig:2dlap12100} the error is reduced more efficiently when using more multigrid levels. A too high number of level smoothing sweeps with Jacobi gives no significant improvement.
 
 \begin{graybox}
@@ -828,6 +469,7 @@ That is, the restrictor would be smoothed using the information of $A^T$. Howeve
 R = P^T = \widehat{P}^T - \omega \widehat{P}^T A.
 \end{displaymath}
 This corresponds to apply the same smoothing strategy to the non-smoothed restriction operator $\widehat{R}=\widehat{P}^T$ which is applied to the (tentative) prolongation operator with using $A^T$ as input instead of matrix $A$. Figure \ref{fig:simpledesignpgamg} shows the changed factory design. The dashed line denotes, that the same smoothing strategy is used than for the prolongation operator. The concept is known as Petrov-Galerkin smoothed aggregation approach in the literature.
+A more advanced transfer operator smoothing strategy for non-symmetric linear systems that is based on the Petrov-Galerkin approach is described in \cite{sala2008}. Another approach based on SchurComplement approximations can be found in \cite{wiesner2013}.
 
 \begin{figure}
 \scalebox{0.5}{
@@ -871,7 +513,9 @@ This corresponds to apply the same smoothing strategy to the non-smoothed restri
 
 \paragraph{Non-smoothed transfer operators}
 
-Listing \ref{listing:PAAMGXML} shows the parameters for non-smoothed transfer operators. The aggregates are built by the \verb|UncoupledAggregationFactory| which means that aggregates cannot overlap processor boundaries.
+Listing \ref{listing:PAAMGXML} shows the parameters for non-smoothed transfer operators. 
+
+The aggregates are built by the \verb|UncoupledAggregationFactory| which means that aggregates cannot overlap processor boundaries.
 
 \begin{Listing} 
 \begin{center} 
@@ -1018,6 +662,306 @@ When using \verb|MinNodesPerAggregate|$=9$ the multigrid setup routine produces 
 \end{verbatim}}
 
 When using even bigger numbers for \verb|MinNodesPerAggregate| the results should not change. A closer look to the output of the aggregation factory reveals that the aggregation factory was not able to build aggregates as big as the user desired. The aggregation algorithm then builds small "emergency" aggregates. It's important to choose a reasonable value for the minimum size of the aggregates to obtain a good coarsening rate and a low operator complexity. The idea of the \verb|MinNodesPerAggregate| is to define a desired coarsening ratio, but be aware, that it cannot guarantee a high coarsening rate if this parameter is chosen too high.
+
+\paragraph{Smoothed aggregation for non-symmetric problems}
+Next, let's try smoothed transfer operators for the non-symmetric linear system and compare the results of the transfer operator designs in \ref{fig:simpledesignsaamg} and \ref{fig:simpledesignpgamg} with the non-smoothed transfer operators.
+
+\begin{Listing}
+\begin{center}
+\begin{lstlisting}[language=xml]
+<ParameterList name="myTentativePFact">
+ <Parameter name="factory" type="string" value="TentativePFactory"/>
+</ParameterList>
+<ParameterList name="myProlongatorFact">
+ <Parameter name="factory" type="string" value="SaPFactory"/>
+ <!--<Parameter name="factory" type="string" value="PgPFactory"/>-->
+ <Parameter name="P" type="string" value="myTentativePFact"/>
+</ParameterList>
+<ParameterList name="myRestrictorFact">
+ <Parameter name="factory" type="string" value="TransPFactory"/>
+ <Parameter name="P" type="string" value="myProlongatorFact"/>
+ <!--<Parameter name="P" type="string" value="myTentativePFact"/>-->
+ <!--<Parameter name="factory" type="string" value="GenericRFactory"/>-->
+</ParameterList>
+\end{lstlisting}
+\caption{Fragment of XML input file for different transfer operators.} 
+\label{listing:Transfers}
+\end{center}
+\end{Listing}
+
+In listing \ref{listing:Transfers} one can find some fragments of the XML parameters for the transfer operators. Note, that some options are commented out and inactive (using the \verb|<!--  -->| keywords).
+
+\begin{graybox}
+ \textbf{Exercise}
+ \begin{itemize}
+  \item Load the \verb|Recirc2D| example on a $50\times 50$ mesh. Create your own \verb|mysolvers.xml| XML parameter file using the \verb|xml/s3b.xml| file as template. It contains the standard parameters including the definitions of listing \ref{listing:Transfers}. Run the example with your \verb|mysolvers.xml| file as solver input.
+  \item The parameters from \verb|xml/s3b.xml| define the standard smoothed aggregation transfer operators for symmetric problems. Compare the output with the non-smoothed transfer operators from \verb|xml/s3a.xml|. How do the different transfer operator strategies affect the convergence behaviour and the number of GMRES iterations?
+  \item Change the factory for the restriction operator from \verb|TransPFactory| to \verb|GenericRFactory| and rerun the example. How do the results change?
+  \item Change the prolongation smoothing strategy from \verb|SaPFactory| to \verb|PgPFactory|. How do the results change?
+  \item Try to use a smoothed prolongation operator with a non-smoothed restriction operator. How does it affect the results? Important: the \verb|GenericRFactory| does not accept a tentative prolongation operator as input. Use the \verb|TransPFactory| as base for the restriction operator with the tentative prolongator as input!
+ \end{itemize}
+\end{graybox}
+
+Solving the \texttt{Recirc2D} example on the $50\times 50$ mesh with the default solver parameters from \verb|xml/s3a.xml| needs 19 GMRES iterations with the 4 level AMG preconditioner. When using smoothed aggregation as in \ref{fig:simpledesignsaamg} (default settings from \verb|xml/s3b.xml|) 29 GMRES iterations are needed. Obviously smoothed aggregation (SA-AMG) with the transposed smoothed prolongator as restriction operator is not designed for non-symmetric problems. 
+
+If we keep the \verb|SaPFactory| for smoothing the prolongation operator but change from the \verb|TransPFactory| to the \verb|GenericRFactory| which corresponds to use a Petrov Galerkin approach for transfer operator smoothing we can reduce the number of GMRES iterations to 22 which is still higher than for the non-smoothed transfer operators. If we finally change the prolongation smoothing strategy from the \verb|SaPFactory| to \verb|PgPFactory| and keep the Petrov Galerkin approach for the restriction operators we only need 13 GMRES iterations to solve the problem. These (optimal) settings can be found in \verb|xml/s3c.xml|. In contrary to \verb|SaPFactory| which chooses too high smoothing parameters $\omega$ resulting from some eigenvalue estimations which are only valid for symmetric linear systems, the \verb|PgPFactory| generates variable damping parameters using some energy minimization principles.
+
+\section{Tutorial 4}
+
+\subsection{Building aggregates}
+
+The aggregates are built using the graph of the fine level matrix $A$. The graph is generated by the \verb|CoalesceDropFactory|. Since we still only restrict ourself to scalar problems with one degree of freedom per node (\verb|DofsPerNode|=$1$), the graph of the fine level matrix is trivial to build.
+Figure \ref{fig:simpledesignaggregates} shows the extended transfer operator design with the additional \verb|CoalesceDropFactory|.
+
+Especially for anisotropic or non-symmetric problems it may be advantageous to drop small entries from the graph of $A$ and use a filtered graph for generating aggregates. 
+
+In listing \ref{listing:CoalesceDropFactory} one can find the definition of the \verb|myCoalesceDropFactory| which drops all values of the fine level matrix $A$ with the absolute value smaller than $0.01$. Of course, the \verb|myCoalesceDropFactory| has to be registered to generate the variable \verb|Graph|, which is used by the aggregation factory. The user can either define its own aggregation factory (see e.g. previous tutorial) or use the default aggreagtion factory. Be aware that the given XML file is not complete. For demonstration purposes we also introduced a \verb|RAPFactory| which makes use of the user-defined transfer factories \verb|myProlongatorFact| as well as \verb|myRestrictorFact| which are not defined in listing \ref{listing:CoalesceDropFactory}. A full XML file with all necessary definitions can be found in \verb|xml/s4b.xml|.
+
+\begin{figure}
+\scalebox{0.6}{
+\begin{tikzpicture}[>=latex',font={\sf \small}, node distance=2cm]
+\def\datawidth{2cm}
+\def\dataheight{0.5cm}
+\def\factorywidth{4cm}
+\def\factoryheight{0.75cm}
+%\draw[help lines] (-10,-10) grid (10,10);
+\begin{scope}[>=triangle 60]
+\node(A) at (-3,10) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{$A$};
+\node(CoalesceDropFactory) at (-3,8) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]{CoalesceDropFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=nothing] (AggregationFactory) {AggregationFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AggregationFactory] (TentativePFactory) {TentativePFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=TentativePFactory] (SaPFactory) {SaPFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=SaPFactory,node distance=6cm] (TransPFactory) {TransPFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=SaPFactory] (RAPFactory) {RAPFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=RAPFactory,node distance=9cm] (AggExportFactory) {AggregationExportFactory};
+\node(A2) at (-3,-2) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{$A_c$};
+\draw[->] (A) -- (CoalesceDropFactory);
+\draw[->] (CoalesceDropFactory) -- node [near start, left] {Graph} (AggregationFactory);
+\draw[->] (A) to[out=180,in=180] node [near start, left] {} (TentativePFactory);
+\draw[->] (A) to[out=180,in=180] node [near start, left] {} (SaPFactory);
+\draw[->] (A) to[out=180,in=180] node [near start, left] {} (RAPFactory);
+\draw[->] (AggregationFactory) -- node [near start, left] {Aggregates} (TentativePFactory);
+\draw[->] (TentativePFactory) -- node [near start, left] {P} (SaPFactory);
+\draw[->] (SaPFactory) -- node [near start, below] {} (TransPFactory);
+\draw[->] (SaPFactory) -- node [near start, left] {P} (RAPFactory);
+\draw[->] (TransPFactory) -- node [near start, below] {R} (RAPFactory);
+\draw[->] (RAPFactory) -- node [near start, below] {} (A2);
+\draw[o->] (RAPFactory) -- (AggExportFactory);
+\draw[->] (AggregationFactory) to[out=0,in=100] node [near start, right] {Aggregates} (AggExportFactory);
+\draw[->] (CoalesceDropFactory) to[out=0,in=80] node [near start, right] {DofsPerNode} (AggExportFactory);
+\end{scope}
+\end{tikzpicture}
+} % end scalebox
+\caption{Simple factory design for building aggregates.}
+\label{fig:simpledesignaggregates}
+\end{figure}
+
+\begin{Listing}
+\begin{center}
+\begin{lstlisting}[language=xml]
+<ParameterList name="Factories">
+
+  <ParameterList name="myCoalesceDropFact">
+   <Parameter name="factory" type="string" value="CoalesceDropFactory"/>
+   <Parameter name="lightweight wrap" type="bool"   value="true"/>
+   <!-- for aggregation dropping -->
+   <Parameter name="aggregation threshold" type="double" value="0.01"/>
+  </ParameterList>
+       
+  <ParameterList name="myRAPFact">
+   <Parameter name="factory" type="string" value="RAPFactory"/>
+   <Parameter name="P" type="string" value="myProlongatorFact"/>
+   <Parameter name="R" type="string" value="myRestrictorFact"/>
+   <ParameterList name="TransferFactories">
+    <!-- <Parameter name="Visualization" type="string" value="myAggExportFact"/> -->
+   </ParameterList>
+  </ParameterList>  
+</ParameterList>
+
+<!-- Definition of the multigrid preconditioner -->
+<ParameterList name="Hierarchy">
+  <Parameter name="numDesiredLevel" type="int" value="10"/> 
+  <Parameter name="maxCoarseSize" type="int" value="10"/>
+  <ParameterList name="AllButCoarsestLevel">
+    <Parameter name="Graph" type="string"   value="myCoalesceDropFact"/>
+    <Parameter name="A" type="string"   value="myRAPFact"/>
+  </ParameterList>
+  ...
+</ParameterList>
+\end{lstlisting}
+\caption{Fragment of XML input file for CoalesceDropFactory with dropping small entries from matrix graph.} 
+\label{listing:CoalesceDropFactory}
+\end{center}
+\end{Listing}
+
+\subsection{Export and visualization of aggregates}
+For debugging purposes it can be very useful to visualize the aggregates. In \MueLu~ there is a helper factory named \verb|AggregationExportFactory| which can be used to export the aggregates for visualization purposes. 
+
+The \verb|AggregationExportFactory| acts as a small helper factory within the \verb|RAPFactory| which writes out some aggregation information to files on the hard disk (see figure \ref{fig:simpledesignaggregates}). In a postprocessing step one can use these files together with some mesh information to generate pictures of the aggregates on each level. 
+
+In \verb|xml/s4b.xml| a \verb|AggregationExportFactory| defined and incorporated into the \verb|RAPFactory|. Note, that the export of aggregates is optional. It is necessary to define an \verb|AggregationExportFactory| and a \verb|RAPFactory| for exporting the aggregation information . One cannot use the internal default factories which are automatically generated when not defined by the user explicitely!
+
+\begin{graybox}
+ \textbf{Exercise}
+ \begin{itemize}
+  \item Load the \verb|Laplace2D| example on a $50\times 50$ mesh on 2 processors and apply the \verb|xml/s4a.xml| solver which exports the aggregates. 
+  \item Open another terminal and change to the folder with the \verb|hands-on.sh| script. One should find new files with  filenames like \verb|aggs_level0_proc0.txt| which contains the aggregation information for the different multigrid levels and processors. Note, that these files are automatically removed as soon as you finish the \verb|hands-on.sh| script (e.g. using option 11).
+  \item Run the \verb|MueLu_Agg2VTK.py| python script which generates some VTK files visualizing the aggregates using the aggregation information and the mesh coordinates. The python script assumes that you have used 2 processors. In case you are using a different number of processors you can adapt the \verb|numprocs| variable in the \verb|MueLu_Agg2VTK.py| script accordingly. Note, the visualization script is not tested for anisotropic meshes.
+  \item Use \verb|paraview| to display the \verb|aggs*.vtp| files that have been generated by the postprocessing script \verb|MueLu_Agg2VTK.py|.
+ \end{itemize}
+\end{graybox}
+
+\begin{graybox}
+ \textbf{Exercise}
+ \begin{itemize}
+  \item Repeat above steps for the \verb|Recirc2D| example on a $50\times 50$ mesh. Compare the aggregates from the \verb|xml/s4a.xml| parameter file with the aggregates when using the \verb|xml/s4b.xml| parameter file, which drops some small entries of the fine level matrix $A$ when building the graph.
+  \item Vary the number of processors. Don't forget to adapt the \verb|numprocs| variable in the postprocessing script. In \verb|paraview| choose the variable \verb|proc| for the coloring. Then the color denotes the processor the aggregate belongs to. How do the aggregates change when switching from 2 to 3 processors?
+  \item Try the solver parameters from \verb|xml/s4c.xml| vor the \verb|Recirc2D| example on a $50\times 50$ mesh and compare them with the results for the \verb|xml/s4a.xml| and \verb|xml/s4b.xml| parameters. Which differences do you observe?
+ \end{itemize}
+\end{graybox}
+
+Figure \ref{fig:symAggs} shows the aggregates for the Laplace2D problem on the different multigrid levels starting with an isotropic $50\times 50$ mesh. No dropping of small entries was used when building the matrix graph. For visualization purposes the "midpoint" of each aggregate defines the coordinate of the supernode on the next coarser level. Be aware that these supernodes are purely algebraic. There is no coarse mesh for algebraic multigrid methods. As one can see from the colors an uncoupled aggregation strategy has been applied using 2 processors. The aggregates do not cross the processor boundaries.
+
+\begin{figure}
+\includegraphics[width=\textwidth]{images/aggsSymm.png} 
+\caption{Aggregates for Laplace2D example on $50\times 50$ mesh without dropping.}
+\label{fig:symAggs}
+\end{figure}
+
+Figure \ref{fig:nonsymAggs} shows the aggregates for the Recirc2D problem. When building the matrix graph, entries with values smaller than $0.01$ were dropped. Obviously the shape of the aggregates follows the direction of convection of the example. Again an uncoupled aggregation strategy has been used on 2 processors. The aggregates do not cross processor boundaries.
+\begin{figure}
+\includegraphics[width=\textwidth]{images/aggsNonSymm.png} 
+\caption{Aggregates for Recirc2D example on $50\times 50$ mesh with dropping.}
+\label{fig:nonsymAggs}
+\end{figure}
+
+Comparing figures ref{fig:symAggs} and \ref{fig:nonsymAggsCoupled} one finds the difference between the \verb|UncoupledAggregationFactory| and the \verb|CoupledAggregationFactory| factory. For the \verb|CoupledAggregationFactory| the aggregates can overlap processor boundaries.
+\begin{figure}
+\includegraphics[width=\textwidth]{images/aggsSymmCoupled.png} 
+\caption{Aggregates for Laplace2D example on $50\times 50$ mesh without dropping using a coupled aggregation strategy.}
+\label{fig:nonsymAggsCoupled}
+\end{figure}
+
+Using the \verb|CoupledAggregationFactory| in general is not recommended, since
+\begin{itemize}
+\item[-] the aggregation routine itself needs some global communication,
+\item[-] building the tentative prolongation operator from the aggregates needs some global communication,
+\item[-] prolongator smoothing is more expensive due to a higher overlap.
+\end{itemize}
+The implementation of a \verb|CoupledAggregationFactory| is highly complicated and therefore error-prone and less robust.
+
+\section{Tutorial 5}
+
+In this tutorial we want to introduce the C++ API of \MueLu. We write a small test program for the \verb|Recirc2D| example as introduced in the first example, but instead of building the multigrid hierarchy using an xml parameter file we use the C++ routines to define the multigrid method.
+
+\subsection{Test program}
+The source code of the test program can be found in \verb|recirc2d_api.cpp|. Most of the source code is not relevant for this tutorial. First, the parallel environment is initialized and some parameters are read from the command line. Then the linear system is generated using the \verb|Galeri| package from Trilinos. The linear system has to be transformed to \Xpetra~ objects, that are needed by \MueLu. Supposing that we have the fine level matrix $A$ and a null space vector we can build the multigrid method.
+Note, that we are using the refrence-counted pointers from the \verb|Teuchos| package in Trilinos. The so-called \verb|RCP| pointers automatically free used memory as soon as the underlaying object is destroyed. This simplifies programming a lot and avoids memory leaks\footnote{See http://trilinos.sandia.gov/RefCountPtrBeginnersGuideSAND.pdf for an introduction to RCP pointers.}
+
+\paragraph{Create Multigrid hierarchy.}
+The central part of the multigrid setup phase is given in listing \ref{listing:CppAPI}.
+In line 1 we create a new Hierarchy object, which stores the multigrid hiearchy and provides the basic functionality for a multigrid method, such as a V cycle or a W cycle. Next we set some basic parameters of the multigrid hierarchy, such as the maximum coarse level size and the verbosity level for debug output.
+
+\paragraph{Define finest level object.}
+The second step is to define and fill the finest level object with the initial information. The Hierarchy object, that has been generated above provides an empty level that is returned by the \verb|GetLevel| function. Then we store the finest level matrix $A$ as variable "A" and the fine level null space vector as variable "Nullspace" in the Level object using the \verb|Set| member function.
+
+\paragraph{Define a factory collection.}
+The next step is to define the factory collection and create instances of all factories that we wanna use to replace the internal default factories. For demonstration purposes we want to create a multigrid hierarchy with non-smoothed transfer operators. % and a symmetric Gauss-Seidel method as multigrid smoother on all multigrid levels.
+Since the \MueLu default settings define a smoothed aggregation prolongation operator with the transposed of the smoothed prolongator as restriction operator, we just have to "overwrite" the prolongation factory as it is done in line 14 of listing \ref{listing:CppAPI}. There we create our own instance of a tentative non-smoothed prolongation factory and store it in the local variable \verb|PFact|. Later we will show how to register our \verb|PFact| instance of the non-smoothed prolongation operator in the multigrid hierarchy setup routine.
+
+For demonstration purposes we create an instance of the \verb|TransPFactory| to generate the restriction operator, too. With the line
+\begin{verbatim}
+RFact->SetFactory("P", PFact);
+\end{verbatim}
+we declare the variable "P" generated by our non-smoothed prolongation operator factoy \verb|PFact| as input prolongator that is to be used to calculate the restriction operator by building the transpose. In general you use the \verb|SetFactory| member function to declare the input variables of a factory. The first parameter gives the name of the input variable and the second prameter the generating factory object of the variable. The \verb|SetFactory| member function is very useful to explicitely declare the input variables and factories for a given factory. If you don't declare the input variables \MueLu~ will try to use default factories to generate the necessary input data or - in the worst case - will fail if it is not able to generate the needed data using the default factories.
+
+It should be rather simple to build the factory collection if you have the corresponding XML parameter file or a picture of the factory design (as e.g. in figure \ref{fig:simpledesignnonsmoothed}). The building blocks correspond to the factory instances and the arrows in between the building blocks are defined by corresponding \verb|SetFactory| calls. If you have the XML parameter files, then the parameters with the name "factory" give the class name of the factory class (e.g. \verb|SaPFactory|). All other parameters with different names usually define the arrows between the factories.
+
+\paragraph{Setup level smoothers.}
+For the level smoothers \MueLu~ uses the prototype design pattern \footnote{see e.g. http://en.wikipedia.org/wiki/Prototype\_pattern}. 
+We create a new \verb|TrilinosSmoother| prototype object which is fed by a parameter list with all necessary parameters (e.g. for a Symmetric Gauss-Seidel smoother). A list of all possible parameters can be found in the class documentation.
+The prototype object then is used as parameter for the \verb|SmootherFactory| instance. In each multigrid level the smoother factory then creates a new instance of the level smoother based on the information from the prototype class.
+
+\paragraph{The factory manager}
+The \verb|FactoryManager| object is the heart of the multigrid setup phase since it manages all the dependencies between the factories. The default implementation automatically creates factories which are necessary to build a multigrid hierarchy for symmetric positive definite systems (with smoothed aggregation transfer operators etc...). The user can change this default behaviour by defining new factories (see above) and registering them in the \verb|FactoryManager| object. In listing \ref{listing:CppAPI} line 34-39 a \verb|FactoryManager| object is created and the previously defined factories for the transfer operators and smoothers are registered as default factories for the variables "P", "R", "Nullspace", "Smoother" and "CoarseSolver" using the \verb|SetFactory| function.
+
+If we register the new factories as default factories in the \verb|FactoryManager| object most of the factory specific connections are not necessary any more. For example in listing \ref{listing:CppAPI} we could remove line 16, since then the \verb|TransPFactory| woudl use the object with name "P" that is generated by the default factory which is again \verb|PFact| as defined in line 14 and registered as default factory in line 37. We could also remove line 36, since the \verb|FactoryManager| in its default implementation would automatically generate an \verb|TransPFactory| instance for building the restriction operator. In this case, our \verb|TransPFactory| instance defined in line 15 would be created but never used. It is not registered in the factory manager and therefore not involved in the setup process.
+
+In general it is a good idea to rely on the factory manager rather on defining all factories by hand. Often one forgets some factories or connections between factories resulting in hard-to-debug inconsistencies between the default factories in the factory manager and some lost factories in the factory collection. The factory manager makes it easy to generate a consistent set of factories for the multigrid setup phase.
+
+\paragraph{Build the multigrid hierarchy}
+Last but not least, the multigrid hiearchy is built by the simple call
+\begin{verbatim}
+H->Setup(M, 0, maxLevels);
+\end{verbatim}
+where \verb|M| is the factory manager and the other parameters define the level id of the finest level and the maximum number of allowed multigrid levels.
+The generated hierarchy then can be used as solver or preconditioner within a Krylov method. Corresponding code snippets how to do this can be found in the example program in \verb|recirc2d_api.cpp|.
+
+\begin{Listing}
+\begin{center}
+\begin{lstlisting}[language=c++]
+  RCP<Hierarchy> H = rcp ( new Hierarchy() );
+  H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+  H->SetMaxCoarseSize(maxCoarseSize);
+  H->setlib(Xpetra::UseEpetra);
+
+  // build finest Level
+  RCP<MueLu::Level> Finest = H->GetLevel();
+  Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+  Finest->setlib(Xpetra::UseEpetra);
+  Finest->Set("A",A);
+  Finest->Set("Nullspace",nullspace);
+
+  // create factories for transfer operators
+  RCP<TentativePFactory> PFact = Teuchos::rcp(new TentativePFactory());
+  RCP<TransPFactory>     RFact = Teuchos::rcp(new TransPFactory());
+  RFact->SetFactory("P", PFact);
+
+  // build level smoothers
+  // use symmetric Gauss-Seidel both for fine and coarse level smoother
+  RCP<SmootherPrototype> smooProto;
+  std::string ifpackType;
+  Teuchos::ParameterList ifpackList;
+  ifpackList.set("relaxation: sweeps", (LO) 1);
+  ifpackList.set("relaxation: damping factor", (SC) 1.0);
+  ifpackType = "RELAXATION";
+  ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
+
+  smooProto = Teuchos::rcp( new TrilinosSmoother(ifpackType, ifpackList) );
+  RCP<SmootherFactory> SmooFact;
+  if (maxLevels > 1)
+    SmooFact = rcp( new SmootherFactory(smooProto) );
+
+  // design multigrid hierarchy
+  FactoryManager M;
+  M.SetFactory("P", PFact);
+  M.SetFactory("R", RFact);
+  M.SetFactory("Nullspace", PFact);
+  M.SetFactory("Smoother", SmooFact);
+  M.SetFactory("CoarseSolver", SmooFact);
+
+  H->Setup(M, 0, maxLevels);
+\end{lstlisting}
+\caption{C++ API for defining multigrid hierarchy.} 
+\label{listing:CppAPI}
+\end{center}
+\end{Listing}
+
+\begin{graybox}
+ \textbf{Exercise}
+ \begin{itemize}
+  \item The \verb|FactoryManager| per default uses a \verb|CoupledAggregationFactory| strategy. Often there are many good reasons to switch to the \verb|UncoupledAggregationFactory|. Extend the test program in \verb|Recirc2d_api.cpp| to use uncoupled aggregation instead of coupled aggregation. Use the \verb|SetParameter| member function to set internal variables in the \verb|UncoupledAggregationFactory| class, such as \verb|MinNodesPerAggregate|:
+  \begin{verbatim}
+  RCP<UncoupledAggregationFactory> UCAggFact = 
+                rcp(new UncoupledAggregationFactory());
+  UCAggFact->SetParameter("MinNodesPerAggregate",
+                   Teuchos::ParameterEntry(minPerAgg));
+  \end{verbatim}
+  The general rule for all factory classes is: the list of all valid parameters is located in the \verb|GetValidParameterList()| member function\footnote{Find the parameters of the uncoupled aggregation strategy e.g. in packages/muelu/src/Graph/UncoupledAggregation/MueLu\_UncoupledAggregationFactory\_def.hpp.}.
+  \item Of course, we do not want to set the prolongation operator smoothing aside. Since it is a non-symmetric problem we choose the Petrov-Galerkin approach together with the flexible prolongation operator smoothing strategy from the \verb|PgPFactory|. Extend the test program by a \verb|PgPFactory| instance for prolongation smoothing. Use the tentative prolongation factory \verb|PFact| as input for the \verb|PgPFactory|. For the Petrov-Galerkin transfer operator smoothing approach switch from \verb|TransPFactory| to the \verb|GenericRFactory|. Set the factory dependencies accoordingly and update the factory manager.
+  \item Introduce an option to use the smoothed prolongation operator (generated by the \verb|PgPFactory|) together with a non-smoothed restriction operator (the transpose of the output of the \verb|TentativePFactory|). Note, that the \verb|GenericRFactory| does not accept a \verb|TentativePFactory| as input. For that case, use a \verb|TransPFactory| instead.
+ \end{itemize}
+\end{graybox}
 
 \section{Tutorial n}
 
@@ -1267,4 +1211,14 @@ When using even bigger numbers for \verb|MinNodesPerAggregate| the results shoul
 \end{scope}
 \end{tikzpicture}
 } % end scalebox
+
+\begin{thebibliography}{9}
+\bibitem{vanek1996} Vanek, P. and Mandel, J. and Brezina, M. Algebraic Multigrid by Smoothed Aggregation for Second and Fourth Order Elliptic Problems, Computing, 1996, 56, p. 179--196
+\bibitem{sala2008} Sala, M. and Tuminaro, R. S., A new Petrov-Galerkin Smoothed Aggregation Preconditioner for nonsymmetric Linear Systems, SIAM J. Sci. Comput., 2008, 31, p. 143--166
+\bibitem{wiesner2013} Wiesner, T. A., Tuminaro, R. S., Wall, W. A. and Gee, M. W., Multigrid transfers for nonsymmetric systems based on Schur complements and Galerkin projections., Numer. Linear Algebra Appl., 2013, doi: 10.1002/nla.1889
+%\bibitem{hackbusch1994} Wolfgang Hackbusch, Iterative Solution of Large Sparse Systems of Equations, Springer, New York, 1994.
+%\bibitem{saad2005} Yousef Saad, Multilevel ILU with reorderings for diagonal dominance, SIAM J. Sci. Comput, 2005, vol. 27.
+%\bibitem{duff1999} I.S. Duff and J. Koster, The design and use of algorithms for permuting large entries to the diagonal of sparse matrices, SIAM J. Matrix Anal. Appl., 1999, vol. 20, p. 889--901.
+\end{thebibliography}
+
 \end{document}

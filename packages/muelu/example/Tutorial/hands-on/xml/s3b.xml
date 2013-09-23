@@ -14,37 +14,24 @@
       <Parameter name="factory"                             type="string" value="UncoupledAggregationFactory"/>
       <Parameter name="Ordering"                            type="string" value="Natural"/>
       <Parameter name="MaxNeighAlreadySelected"             type="int"    value="0"/>
-      <Parameter name="MinNodesPerAggregate"                type="int"    value="2"/>
+      <Parameter name="MinNodesPerAggregate"                type="int"    value="4"/>
     </ParameterList>
     
     <ParameterList name="myTentativePFact">
       <Parameter name="factory"                             type="string" value="TentativePFactory"/>
     </ParameterList>
     <ParameterList name="myProlongatorFact">
-      <Parameter name="factory"                             type="string" value="PgPFactory"/>
+      <Parameter name="factory"                             type="string" value="SaPFactory"/>
       <Parameter name="P"                                   type="string" value="myTentativePFact"/>
     </ParameterList>
     <ParameterList name="myRestrictorFact">
-      <!-- <Parameter name="factory"                             type="string" value="TransPFactory"/> -->
-      <!-- <Parameter name="P"                                   type="string" value="myTentativePFact"/>-->
-      <Parameter name="factory"                             type="string" value="GenericRFactory"/>
+      <Parameter name="factory"                             type="string" value="TransPFactory"/>
       <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
+      <!--<Parameter name="P"                                   type="string" value="myTentativePFact"/>-->
+      <!--<Parameter name="factory"                             type="string" value="GenericRFactory"/>-->
     </ParameterList>
 
     <!-- =======================  SMOOTHERS  ======================= -->
-
-    <ParameterList name="Chebyshev">
-      <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
-      <Parameter name="type"                                type="string" value="CHEBYSHEV"/>
-
-      <ParameterList name="ParameterList">
-        <Parameter name="chebyshev: degree"                 type="int"     value="3"/>>
-        <!-- 7 in 2D, 20 in 3D -->
-        <Parameter name="chebyshev: ratio eigenvalue"       type="double"  value="7"/>
-        <Parameter name="chebyshev: min eigenvalue"         type="double"  value="1.0"/>
-        <Parameter name="chebyshev: zero starting solution" type="bool"    value="true"/>
-      </ParameterList>
-    </ParameterList>
 
     <ParameterList name="myJacobi">
       <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>

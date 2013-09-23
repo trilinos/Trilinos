@@ -2,6 +2,8 @@
 
 
 rm -f example*.txt
+rm -f aggs*.txt # clean up
+rm -f nodes*.txt
 
 function genTitle() {
   title=" === $EXAMPLE ($NX x $NY) === \n\n solver: $XMLFILE   procs: $PROCS   Multigrid sweeps: $SWEEPS\n\n"
@@ -33,6 +35,8 @@ function printSubMenu() {
       1 ) # clean up
           echo "No of multigrid sweeps=$SWEEPS"
 	  rm -f example*.txt # clean up
+	  rm -f aggs*.txt # clean up
+	  rm -f nodes*.txt
 	  rm -f output.log
 	  runExample $NX $NY $SWEEPS $XMLFILE $PROCS $EXE
 	  cat example*.txt > example.txt
@@ -46,6 +50,8 @@ function printSubMenu() {
           ;;
       2 ) #clean up
 	  rm -f example*.txt # clean up
+	  rm -f aggs*.txt # clean up
+	  rm -f nodes*.txt
 	  rm -f output.log
 	  echo
 	  echo -n "Number of multigrid sweeps: "
@@ -64,6 +70,8 @@ function printSubMenu() {
 
       3 ) #change mesh
       	  rm -f example*.txt # clean up
+      	  rm -f aggs*.txt # clean up
+      	  rm -f nodes*.txt
 	  rm -f output.log
 	  echo
           echo "*** Change mesh ***"
@@ -88,6 +96,8 @@ function printSubMenu() {
           ;;
       4 ) #change solver
 	  rm -f example*.txt # clean up
+	  rm -f aggs*.txt # clean up
+	  rm -f nodes*.txt
 	  rm -f output.log
 	  echo
           echo "*** Change solver ***"
@@ -110,6 +120,8 @@ function printSubMenu() {
           ;;
       5 ) #change procs
 	  rm -f example*.txt # clean up
+	  rm -f aggs*.txt # clean up
+	  rm -f nodes*.txt
 	  rm -f output.log
 	  echo
           echo "*** Change processors ***"
@@ -143,6 +155,8 @@ function printSubMenu() {
       $(( ${#options[@]}+1 )) ) 
 	  echo "Clear example."; 
 	  rm -f example*.txt # clean up
+	  rm -f aggs*.txt # clean up
+	  rm -f nodes*.txt
 	  rm -f output.log
 	  exit
 	  break;;
@@ -216,6 +230,7 @@ function printMenu() {
       $(( ${#options[@]}+1 )) ) 
 	  echo "Goodbye!"; 
 	  rm -f example*.txt # clean up
+	  rm -f aggs*.txt # clean up
 	  rm -f output.log
 	  break;;
       *) echo "Invalid option. Try another one.";continue;;
@@ -228,6 +243,8 @@ function printMenu() {
 function runExample() {
   mpirun -np $5 $6 --nx=$1 --ny=$2 --mgridSweeps=$3 --xml=$4 | tee output.log
   echo "Press q to return." >> output.log
+  python ./MueLu_Agg2VTK.py &
+  rm -f nodes*.txt
 }
 
 function plotSolution() {
