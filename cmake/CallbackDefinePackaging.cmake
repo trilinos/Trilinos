@@ -64,20 +64,10 @@ MACRO(TRIBITS_REPOSITORY_DEFINE_PACKAGING)
     # a .txt extension. This is only the case with the PackageMaker 
     # generator, but it doesn't hurt to do it for other generators as
     # well.
-    MACRO(COPY_INSTALLER_RESOURCE _varname _source _destination)
-      SET("${_varname}" "${_destination}")
-      IF (EXISTS "${_destination}")
-        FILE(REMOVE_RECURSE "${_destination}")
-      ENDIF ()
-      CONFIGURE_FILE(
-        "${_source}" 
-        "${_destination}" 
-        COPYONLY)
-    ENDMACRO()
-    COPY_INSTALLER_RESOURCE(Trilinos_README
+    TRIBITS_COPY_INSTALLER_RESOURCE(Trilinos_README
       "${Trilinos_SOURCE_DIR}/README"
       "${Trilinos_BINARY_DIR}/README.txt")
-    COPY_INSTALLER_RESOURCE(Trilinos_LICENSE
+    TRIBITS_COPY_INSTALLER_RESOURCE(Trilinos_LICENSE
       "${Trilinos_SOURCE_DIR}/LICENSE"
       "${Trilinos_BINARY_DIR}/LICENSE.txt")
   
@@ -94,7 +84,7 @@ MACRO(TRIBITS_REPOSITORY_DEFINE_PACKAGING)
     SET(CPACK_SOURCE_GENERATOR "TGZ")
     SET(CPACK_SOURCE_FILE_NAME "trilinos-source-${Trilinos_VERSION}")
     SET(CPACK_COMPONENTS_ALL ${Trilinos_PACKAGES} Unspecified)
-  
+
   ENDIF()  
   
 ENDMACRO()
