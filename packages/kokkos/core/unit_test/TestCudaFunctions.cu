@@ -48,6 +48,8 @@
 #include <Kokkos_Cuda.hpp>
 
 #include <Kokkos_View.hpp>
+#include <impl/Kokkos_ViewTileLeft.hpp>
+
 #include <Kokkos_CrsArray.hpp>
 
 //----------------------------------------------------------------------------
