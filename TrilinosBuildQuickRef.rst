@@ -1092,6 +1092,20 @@ stanard command 'date'.  CMake does not have built-in timing functions so you
 have to query the system.
 
 
+Generating a project repo version file
+--------------------------------------
+
+In development mode working with local git repos for the project sources, on
+can generate a TrilinosRepoVersion.txt file which lists all of the repos and
+their current versions using::
+
+   -D <PROJECT>_GENERATE_REPO_VERSION_FILE:BOOL=ON
+
+This will cause a TrilinosRepoVersion.txt file to get created in the binary
+directory, get installed in the install directory, and get included in the
+soruce distribution tarball.
+
+
 Building (Makefile generator)
 =============================
 
